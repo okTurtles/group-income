@@ -322,11 +322,32 @@ input:focus {
 }
 
 .group-member.unpaid {
-  background: rgba(248, 255, 250, 1);
-  border-left: 1rem solid rgba(161, 206, 41, 1);
+  background: rgba(255, 248, 241, 1);
+  border-left: 1rem solid rgba(249, 147, 0, 1);
 
 }
 
+.total.needs td {
+  padding-bottom: 1rem;
+}
+
+tr.paid td span {
+  text-decoration: line-through;
+}
+
+.payment-information td span .paid {
+  display: none;
+}
+
+.payment-information tr {
+  border-bottom: .2rem dashed rgba(251, 251, 251, 1);
+}
+
+tr.paid td .date span.paid {
+  display: block;
+  font-size: 1.2rem;
+  text-decoration: none;
+}
 .new-user-container .btn {
   margin: 1rem;
   width: 10rem;
@@ -381,7 +402,7 @@ input:focus {
 }
 
 .dashboard-bottom {
-  padding: 5rem;
+  padding: 2.5rem;
 }
 
 .group-dashboard h2 {
@@ -389,6 +410,10 @@ input:focus {
 
 .group-dashboard span {
   display: block;
+}
+
+.payment-information td {
+  padding: 0 1.25rem;
 }
 
 .payment-disbursal {
@@ -429,6 +454,28 @@ input:focus {
 .income-received-item {
   display: block;
   text-align: center;
+}
+
+.amount .add-income.btn {
+  padding: 0rem .5rem;
+  font-size: 1.2rem
+}
+
+.total.contributions.contributed {
+  border-top: .5rem solid rgba(240,240,240,1);
+}
+
+.total.contributions.contributed .amount {
+  color: rgba(161, 209, 12, 1);
+}
+
+.total.contributions.remaining .amount {
+  color: rgba(249, 147, 0, 1);
+}
+
+.total.contributions td {
+  padding: 1rem 1.25rem;
+  background-color: rgba(251, 251, 251, 1);
 }
 /* ==========================================================================
    Helper classes
