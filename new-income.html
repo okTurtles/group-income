@@ -12,7 +12,7 @@
         
         <script src="js/vendor/modernizr-2.8.3.min.js"></script>
     </head>
-    <body class="new-user">
+    <body>
       <div class="wrapper">
         <!--[if lt IE 8]>
             <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
@@ -27,7 +27,6 @@
               <li><a href="new-income.html">New Income</a></li>
               <li><a href="pay-group.html">Pay Group</a></li>
             </ul>
-
           </nav>
         </header>
         
@@ -36,29 +35,15 @@
         <div class="container">          
           <div class="new-user-container">
             <div class="icon"></div>
-            <div class="new-user">
-              <h2>Personal details</h2>
-              <input class="text-input" name="full_name" placeholder="Your full name">
-              <label for="full_name">Your name</label>
-              <input class="text-input" name="email" placeholder="email@domain.com">
-              <label for="email">Email address</label>
-              <input class="text-input" name="phone_number" placeholder="555-555-5555">
-              <label for="phone_number">Phone number</label>
-              <h2 class="contribution-limits">Payment Information</h2>
-              <input class="text-input" name="venmo" placeholder="@your_venmo_account">
-              <label for="email"><img class="venmo" src="images/venmo.png" alt="venmo"> account number</label>
-              <input class="text-input" name="venmo" placeholder="0000000000000000000000000000000000">
-              <label for="email"><img class="venmo" src="images/bitcoin.png" alt="Bitcoin"> address</label>
-              <input class="text-input" name="venmo" placeholder="email@domain.com">
-              <label for="email"><img class="venmo" src="images/paypal.png" alt="PayPal"> (IF DIFFERENT THAN EMAIL)</label>
-              <input class="text-input" name="payment_notes">
-              <label for="payment_notes">Additional payment instructions</label>
-              <h2 class="contribution-limits">Contribution limits</h2>
+            <div class="add-income">
+              <h2>Your income to date</h2>
+              <h3>$2,600.00</h3>
+              <span class="income-received-item">01/01/16 - $1300</span>
+              <span class="income-received-item">01/15/16 - $1300</span>
+              <h2 class="contribution-limits">Add new income</h2>
               <input class="text-input contribution-limit" name="giving_limit" placeholder="0">
-              <label for="giving_limit">Giving Limit <span class="dollar-label">$</span></label>
-              <input class="text-input contribution-limit" name="receiving_limit" placeholder="0">
-              <label for="receiving_limit">Receiving Limit <span class="dollar-label">$</span></label>
-              <button class="sign-in btn">Sign Up</button>
+              <label for="giving_limit">Amount <span class="dollar-label">$</span></label>
+              <button class="sign-in btn">Add</button>
             </div>
           </div>
           

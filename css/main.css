@@ -117,6 +117,11 @@ body .wrapper {
   background: linear-gradient(to bottom,  #fcfffb 0%,#edfef8 50%,#caf9fd 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
   filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fcfffb', endColorstr='#caf9fd',GradientType=0 ); /* IE6-9 */
   padding-bottom: 5rem;
+  height: 100%;
+}
+
+
+body.new-user .wrapper {
   height: auto;
 }
 
@@ -198,6 +203,12 @@ nav li a:hover {
   margin-top: 4rem;
 }
 
+.add-income h3, .pay-group h3 {
+  text-align: center;
+  font-size: 3.6rem;
+  font-weight: 300;
+}
+
 .new-user-container.collapsed {
   width: 15rem;
   border-radius: 15rem;
@@ -224,7 +235,7 @@ nav li a:hover {
   padding: 1.5rem 1.5rem .5rem 1.5rem;
 }
 
-.new-user label {
+label {
   display: block;
   position: relative;
   text-transform: uppercase;
@@ -247,38 +258,46 @@ img.venmo {
   font-size: 1.8rem;
 }
 
-.new-user .text-input {
+.text-input {
   width: 27rem;
 }
 
-.new-user input:focus {
+input:focus {
   border-bottom: 2px solid rgba(161, 206, 41, 1);
   outline: none;
 }
 
+.payment-options {
+  display: inline-block; float: right;
+}
+
 .group-member {
   list-style: none;
-  display: inline-block;
   background-color: rgba(250,250,250,1);
   padding: 2rem;
   border-radius: .3rem;
-  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#a1ce29', endColorstr='#fafafa',GradientType=0 ); /* IE6-9 */
-  -webkit-box-shadow: 0px 10px 19px -6px rgba(64,92,97,0.24);
-  -moz-box-shadow: 0px 10px 19px -6px rgba(64,92,97,0.24);
-  box-shadow: 0px 10px 19px -6px rgba(64,92,97,0.24);
   margin: .5rem;
-  text-align: center;
-  height: 6rem;
+  text-align: left;
 }
 
 .payment-information .date {
-  font-size: 1.8rem;
   color: rgba(200,200,200,1);
   display: block;
+  text-align: left;
+}
+
+.payment-information table {
+  width: 100%;
 }
 
 .payment-information .amount {
-  font-size: 3.6rem;
+  display: block;
+  text-align: right;
+  font-weight: 700;
+}
+
+.payment-information .total .amount {
+  font-size: 2.4rem;
 }
 
 .group-member .member-name {
@@ -303,10 +322,9 @@ img.venmo {
 }
 
 .group-member.unpaid {
-  background: #a1ce29;
-  background: -moz-linear-gradient(top,  rgba(161, 206, 41, .25) 1%, rgba(251, 255, 251, 1) 15%); 
-  background: -webkit-linear-gradient(top,  rgba(161, 206, 41, .25) 1%, rgba(251, 255, 251, 1) 15%);
-  background: linear-gradient(to bottom,  rgba(161, 206, 41, .25) 1%, rgba(251, 255, 251, 1) 15%);
+  background: rgba(248, 255, 250, 1);
+  border-left: 1rem solid rgba(161, 206, 41, 1);
+
 }
 
 .new-user-container .btn {
@@ -374,7 +392,6 @@ img.venmo {
 }
 
 .payment-disbursal {
-  border-bottom: 2px dashed rgba(200, 201, 213, 1);
 }
 
 .payment-disbursal li .paid, .payment-disbursal li .unpaid, .payment-disbursal li .user-payment-date {
@@ -382,10 +399,11 @@ img.venmo {
 }
 
 .payment-disbursal li.paid .user-payment-date {
-  display: block;
+  display: inline-block;
   font-size: 1.8rem;
   text-align: center;
   padding-top: 0.5rem;
+  float: right;
 }
 
 .payment-disbursal li.paid {
@@ -406,6 +424,11 @@ img.venmo {
 
 .payment-options img {
   height: .9rem;
+}
+
+.income-received-item {
+  display: block;
+  text-align: center;
 }
 /* ==========================================================================
    Helper classes
