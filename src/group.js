@@ -10,9 +10,9 @@ module.exports = function (server, Sequelize, db) {
       }
     },
     method: 'GET',
-    path: '/user/{id}',
+    path: '/group/{id}',
     handler: function (request, reply) {
-      db.User.find({where: {id: request.params.id}})
+      db.Group.find({where: {id: request.params.id}})
       .then(reply)
       .catch(reply)
     }
@@ -23,17 +23,14 @@ module.exports = function (server, Sequelize, db) {
       validate: {
         payload: {
           name: Joi.string().min(3).max(50).required(),
-          email: Joi.string().email().required(),
-          phone: Joi.string().min(7).max(14).required(),
-          contriGL: Joi.number().integer().required(),
-          contriRL: Joi.number().integer().required()
+          creator: Joi.number().min(1).required()
         }
       }
     },
     method: 'POST',
-    path: '/user/',
+    path: '/group/',
     handler: function (request, reply) {
-      db.User.create(request.payload)
+      db.Group.create(request.payload)
       .then(function (res) {
         reply(res.dataValues)
       })
@@ -41,15 +38,12 @@ module.exports = function (server, Sequelize, db) {
     }
   })
 
-  db.User = db.define('User', {
+  db.Group = db.define('BIGroup', {
     name: {type: Sequelize.STRING},
-    email: {type: Sequelize.STRING},
-    phone: {type: Sequelize.STRING},
-    contriGL: {type: Sequelize.INTEGER},
-    contriRL: {type: Sequelize.INTEGER}
+    creator: {type: Sequelize.INTEGER}
   }, {
     freezeTableName: true
   })
 
-  return db.User.sync()
+  return db.Group.sync()
 }
