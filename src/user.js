@@ -12,10 +12,9 @@ module.exports = function (server, Sequelize, db) {
     method: 'GET',
     path: '/user/{id}',
     handler: function (request, reply) {
-      db.User.find({id: request.params.id})
-      .then(function (user) {
-        reply(user)
-      })
+      db.User.find({where: {id: request.params.id}})
+      .then(reply)
+      .catch(reply)
     }
   })
 
@@ -38,6 +37,7 @@ module.exports = function (server, Sequelize, db) {
       .then(function (res) {
         reply(res.dataValues)
       })
+      .catch(reply)
     }
   })
 
