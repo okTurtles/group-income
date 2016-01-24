@@ -1,16 +1,27 @@
 {
   "name": "group-income-simple",
   "version": "0.0.1",
-  "private":true,
+  "private": true,
   "description": "",
   "main": "src/index.js",
   "scripts": {
+    "start": "node src/index.js",
     "test": "npm test"
   },
   "repository": {
     "type": "git",
     "url": "git@gitlab.okturtles.com:okturtles/group-income-simple.git"
   },
-  "author": "",
-  "license": "GPL-3.0"
+  "author": "okTurtles Foundation",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "bluebird": "3.x",
+    "hapi": "^12.1.0",
+    "joi": "^7.2.2",
+    "sequelize": "^3.18.0",
+    "sqlite3": "^3.1.1"
+  },
+  "devDependencies": {
+    "mocha": "*"
+  }
 }
