@@ -1,18 +1,55 @@
+var Joi = require('joi')
+
 module.exports = function (server, Sequelize, db) {
   server.route({
+    config: {
+      validate: {
+        params: {
+          id: Joi.number().integer().min(1).required()
+        }
+      }
+    },
     method: 'GET',
-    path: '/user/{user}',
+    path: '/user/{id}',
     handler: function (request, reply) {
-        reply('Hello ' + request.params.user)
+      db.User.find({id: request.params.id})
+      .then(function (user) {
+        reply(user)
+      })
     }
   })
 
-  var User = db.define('user', {
-    firstName: {type: Sequelize.STRING},
-    lastName: {type: Sequelize.STRING}
+  server.route({
+    config: {
+      validate: {
+        payload: {
+          name: Joi.string().min(3).max(50).required(),
+          email: Joi.string().email().required(),
+          phone: Joi.string().min(7).max(14).required(),
+          contriGL: Joi.number().integer().required(),
+          contriRL: Joi.number().integer().required()
+        }
+      }
+    },
+    method: 'POST',
+    path: '/user/',
+    handler: function (request, reply) {
+      db.User.create(request.payload)
+      .then(function (res) {
+        reply(res.dataValues)
+      })
+    }
+  })
+
+  db.User = db.define('User', {
+    name: {type: Sequelize.STRING},
+    email: {type: Sequelize.STRING},
+    phone: {type: Sequelize.STRING},
+    contriGL: {type: Sequelize.INTEGER},
+    contriRL: {type: Sequelize.INTEGER}
   }, {
     freezeTableName: true
   })
 
-  return User.sync()
+  return db.User.sync()
 }

@@ -5,12 +5,15 @@ server.connection({port: 3000})
 
 var Sequelize = require('sequelize')
 var db = new Sequelize('sqlite.db', '', '', {
-  dialect: 'sqlite'
+  dialect: 'sqlite',
+  host: 'sqlite.db'
 })
 
 Promise.all([
   require('./user')(server, Sequelize, db)
-]).then(function () {
+])
+.then(function () {return db.sync()})
+.then(function () {
   server.start(function () {
     console.log('Server running at:', server.info.uri)
   })
