@@ -1,0 +1,16 @@
+{
+  "name": "group-income-simple",
+  "version": "0.0.1",
+  "private":true,
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "npm test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@gitlab.okturtles.com:okturtles/group-income-simple.git"
+  },
+  "author": "",
+  "license": "GPL-3.0"
+}
