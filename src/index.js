@@ -9,10 +9,14 @@ var db = new Sequelize('sqlite.db', '', '', {
   host: 'sqlite.db'
 })
 
-Promise.all([
-  require('./user')(server, Sequelize, db)
-])
-.then(function () {return db.sync()})
+Promise.resolve()
+.then(function () {require('./user')(server, Sequelize, db)})
+.then(function () {require('./group')(server, Sequelize, db)})
+.then(function () {
+  db.User.hasMany(db.Group, {foreignKey: {name: 'creator', allowNull: false}, constraints: true})
+  db.Group.belongsTo(db.User, {foreignKey: {name: 'creator', allowNull: false}, constraints: true})
+  return db.sync()
+})
 .then(function () {
   server.start(function () {
     console.log('Server running at:', server.info.uri)
