@@ -27,7 +27,7 @@ module.exports = function (server, Sequelize, db) {
       })
       .then(function (equals) {
         if (!equals) return Promise.reject(new Error('Invalid email or password'))
-        return db.Session.create({id: uuid.v4(), user: savedUser.id, logout: null})
+        return db.Session.create({id: uuid.v4(), userId: savedUser.id, logout: null})
       })
       .then(function (session) {
         request.cookieAuth.set(session.dataValues)
@@ -47,10 +47,10 @@ module.exports = function (server, Sequelize, db) {
     method: 'POST',
     path: '/session/logout',
     handler: function (request, reply) {
-      var userId = request.auth.credentials.user
+      var userId = request.auth.credentials.userId
 
       request.cookieAuth.clear()
-      db.Session.update({logout: Date.now()}, {where: {user: userId}})
+      db.Session.update({logout: Date.now()}, {where: {userId: userId}})
       .then(function () {
         reply()
       })
@@ -63,7 +63,7 @@ module.exports = function (server, Sequelize, db) {
 
   db.Session = db.define('Session', {
     id: {type: Sequelize.UUID, primaryKey: true},
-    user: {type: Sequelize.INTEGER, allowNull: false},
+    userId: {type: Sequelize.INTEGER, allowNull: false},
     logout: {type: Sequelize.DATE, allowNull: true}
   }, {
     freezeTableName: true

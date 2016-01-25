@@ -17,7 +17,7 @@ module.exports = function (server, Sequelize, db) {
     method: 'POST',
     path: '/invite/',
     handler: function (request, reply) {
-      var userId = request.auth.credentials.user
+      var userId = request.auth.credentials.userId
       var groupId = request.payload.groupId
 
       db.UserGroup.count({where: {userId: userId, groupId: groupId}})

@@ -85,13 +85,13 @@ module.exports = function (server, Sequelize, db) {
       .then(function (user) {
         if (user == null) return Promise.reject(new Error('Invalid verification link'))
         savedUser = user.dataValues
-        return db.Session.create({id: uuid.v4(), user: savedUser.id, logout: null})
+        return db.Session.create({id: uuid.v4(), userId: savedUser.id, logout: null})
       })
       .then(function (session) {
         savedSession = session.dataValues
         return db.User.update({verification: null}, {where: {id: savedUser.id}})
       })
-      .then(function () {
+      .then(function (user) {
         request.cookieAuth.set(savedSession)
         reply({user: savedUser, session: savedSession})
       })

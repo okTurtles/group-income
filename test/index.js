@@ -268,11 +268,42 @@ describe('Full walkthrough', function () {
           assert(err === null)
           assert(res.res.statusCode === 200)
           assert(res.res.text.length > 0)
-          // console.log(err)
-          // console.log(res.res.statusCode)
-          // console.log(res.res.text)
           done()
         })
+      })
+    })
+  })
+
+  describe('Income', function () {
+    var income = null
+    it('Should be possible to create an income', function (done) {
+      request.post('http://localhost:' + PORT + '/income/')
+      .set('Content-Type', 'application/json')
+      .set('Cookie', cookie1)
+      .send('{"amount": 1200}')
+      .end(function (err, res) {
+        assert(err === null)
+        assert(res.res.statusCode === 200)
+        assert(res.res.text.length > 0)
+        income = JSON.parse(res.res.text).income
+        assert(income.amount === 1200)
+        done()
+      })
+    })
+
+    it('Should be possible to update an income', function (done) {
+      request.post('http://localhost:' + PORT + '/income/')
+      .set('Content-Type', 'application/json')
+      .set('Cookie', cookie1)
+      .send('{"amount": 1500}')
+      .end(function (err, res) {
+        assert(err === null)
+        assert(res.res.statusCode === 200)
+        assert(res.res.text.length > 0)
+        var newIncome = JSON.parse(res.res.text).income
+        assert(newIncome.amount === 1500)
+        assert(newIncome.id === income.id)
+        done()
       })
     })
   })
