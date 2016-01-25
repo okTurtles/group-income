@@ -1,8 +1,11 @@
+/* globals logger */
+
 var Joi = require('joi')
 
 module.exports = function (server, Sequelize, db) {
   server.route({
     config: {
+      auth: 'cookie_strategy',
       validate: {
         params: {
           id: Joi.number().integer().min(1).required()
@@ -12,35 +15,74 @@ module.exports = function (server, Sequelize, db) {
     method: 'GET',
     path: '/group/{id}',
     handler: function (request, reply) {
-      db.Group.find({where: {id: request.params.id}})
-      .then(reply)
-      .catch(reply)
+      db.UserGroup.findOne({where: {groupId: request.params.id, userId: request.auth.credentials.user}, include: [db.User, db.Group]})
+      .then(function (group) {
+        reply(group)
+      })
+      .catch(function (err) {
+        logger(err)
+        reply(err)
+      })
     }
   })
 
   server.route({
     config: {
+      auth: 'cookie_strategy',
       validate: {
         payload: {
-          name: Joi.string().min(3).max(50).required(),
-          creator: Joi.number().min(1).required()
+          name: Joi.string().min(3).max(50).required()
         }
       }
     },
     method: 'POST',
     path: '/group/',
     handler: function (request, reply) {
-      db.Group.create(request.payload)
-      .then(function (res) {
-        reply(res.dataValues)
+      var savedGroup = null
+      var userId = request.auth.credentials.user
+
+      db.transaction(function (t) {
+        return db.Group.create(request.payload, {transaction: t})
+        .then(function (group) {
+          savedGroup = group.dataValues
+          return db.UserGroup.create({userId: userId, groupId: savedGroup.id}, {transaction: t})
+        })
+        .then(function (stuff) {
+          reply({group: savedGroup})
+        })
       })
-      .catch(reply)
+      .catch(function (err) {
+        logger(err)
+        reply(err)
+      })
+    }
+  })
+
+  server.route({
+    config: {
+      auth: 'cookie_strategy',
+      validate: {
+        params: {
+          group: Joi.number().integer().min(1).required()
+        }
+      }
+    },
+    method: 'POST',
+    path: '/group/{group}/invite',
+    handler: function (request, reply) {
+      db.UserGroup.create({userId: request.auth.credentials.user, groupId: request.params.group})
+      .then(function (association) {
+        reply({userGroup: association.dataValues})
+      })
+      .catch(function (err) {
+        logger(err)
+        reply(err)
+      })
     }
   })
 
   db.Group = db.define('BIGroup', {
-    name: {type: Sequelize.STRING},
-    creator: {type: Sequelize.INTEGER}
+    name: {type: Sequelize.STRING, unique: true, allowNull: false}
   }, {
     freezeTableName: true
   })
