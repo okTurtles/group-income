@@ -27,6 +27,7 @@
     "hapi": "^12.1.0",
     "hapi-auth-cookie": "^5.0.0",
     "joi": "^7.2.2",
+    "moment": "^2.11.1",
     "node-uuid": "^1.4.7",
     "sequelize": "^3.18.0",
     "sqlite3": "^3.1.1",

@@ -33,9 +33,10 @@ Promise.resolve()
 .then(function () { require('./group')(server, Sequelize, db) })
 .then(function () { require('./userGroup')(server, Sequelize, db) })
 .then(function () { require('./invite')(server, Sequelize, db) })
+.then(function () { require('./income')(server, Sequelize, db) })
 .then(function () {
-  db.User.hasMany(db.Session, {foreignKey: {name: 'user', allowNull: false}, constraints: true})
-  db.Session.belongsTo(db.User, {foreignKey: {name: 'user', allowNull: false}, constraints: true})
+  db.User.hasMany(db.Session, {foreignKey: {name: 'userId', allowNull: false}, constraints: true})
+  db.Session.belongsTo(db.User, {foreignKey: {name: 'userId', allowNull: false}, constraints: true})
 
   db.User.hasMany(db.UserGroup, {foreignKey: {name: 'userId', allowNull: false}, constraints: true})
   db.UserGroup.belongsTo(db.User, {foreignKey: {name: 'userId', allowNull: false}, constraints: true})

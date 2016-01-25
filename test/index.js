@@ -31,10 +31,18 @@ describe('Full walkthrough', function () {
         assert(res.res.statusCode === 200)
         var parsed = JSON.parse(res.res.text)
         assert(parsed.user != null)
-        assert(parsed.session != null)
-        cookie1 = cookieParser(res.res.headers)
-        assert(cookie1.length > 0)
-        done()
+        var url = parsed.link
+        assert(url.length > 0)
+
+        request.post(url)
+        .end(function (err, res) {
+          assert(err === null)
+          assert(res.res.statusCode === 200)
+          assert(res.res.text.length > 0)
+          cookie1 = cookieParser(res.res.headers)
+          assert(cookie1.length > 0)
+          done()
+        })
       })
     })
 
@@ -50,6 +58,7 @@ describe('Full walkthrough', function () {
         assert(parsed.phone === '12345667')
         assert(parsed.contriGL === 5)
         assert(parsed.contriRL === 7)
+        assert(parsed.verification === null)
         done()
       })
     })
@@ -63,10 +72,18 @@ describe('Full walkthrough', function () {
         assert(res.res.statusCode === 200)
         var parsed = JSON.parse(res.res.text)
         assert(parsed.user != null)
-        assert(parsed.session != null)
-        cookie2 = cookieParser(res.res.headers)
-        assert(cookie2.length > 0)
-        done()
+        var url = parsed.link
+        assert(url.length > 0)
+
+        request.post(url)
+        .end(function (err, res) {
+          assert(err === null)
+          assert(res.res.statusCode === 200)
+          assert(res.res.text.length > 0)
+          cookie2 = cookieParser(res.res.headers)
+          assert(cookie2.length > 0)
+          done()
+        })
       })
     })
 
@@ -79,10 +96,18 @@ describe('Full walkthrough', function () {
         assert(res.res.statusCode === 200)
         var parsed = JSON.parse(res.res.text)
         assert(parsed.user != null)
-        assert(parsed.session != null)
-        cookie3 = cookieParser(res.res.headers)
-        assert(cookie3.length > 0)
-        done()
+        var url = parsed.link
+        assert(url.length > 0)
+
+        request.post(url)
+        .end(function (err, res) {
+          assert(err === null)
+          assert(res.res.statusCode === 200)
+          assert(res.res.text.length > 0)
+          cookie3 = cookieParser(res.res.headers)
+          assert(cookie3.length > 0)
+          done()
+        })
       })
     })
   })
@@ -180,9 +205,6 @@ describe('Full walkthrough', function () {
       .send('{"email":"bob@test.com", "password":"baconbaconbacon"}')
       .end(function (err, res) {
         cookie1 = cookieParser(res.res.headers)
-        // console.log(err)
-        // console.log(res.res.statusCode)
-        // console.log(res.res.text)
         assert(err === null)
         assert(res.res.statusCode === 200)
         assert(res.res.text.length > 0)
@@ -198,9 +220,6 @@ describe('Full walkthrough', function () {
       .set('Cookie', cookie3)
       .send('{"groupId":1, "email":"invited@test.com"}')
       .end(function (err, res) {
-        // console.log(err)
-        // console.log(res.res.statusCode)
-        // console.log(res.res.text)
         assert(err != null)
         assert(res.res.statusCode === 500)
         assert(res.res.text.length > 0)
@@ -226,9 +245,6 @@ describe('Full walkthrough', function () {
           assert(err != null)
           assert(res.res.statusCode === 302)
           assert(res.res.text.length > 0)
-          // console.log(err)
-          // console.log(res.res.statusCode)
-          // console.log(res.res.text)
           done()
         })
       })
@@ -252,11 +268,42 @@ describe('Full walkthrough', function () {
           assert(err === null)
           assert(res.res.statusCode === 200)
           assert(res.res.text.length > 0)
-          // console.log(err)
-          // console.log(res.res.statusCode)
-          // console.log(res.res.text)
           done()
         })
+      })
+    })
+  })
+
+  describe('Income', function () {
+    var income = null
+    it('Should be possible to create an income', function (done) {
+      request.post('http://localhost:' + PORT + '/income/')
+      .set('Content-Type', 'application/json')
+      .set('Cookie', cookie1)
+      .send('{"amount": 1200}')
+      .end(function (err, res) {
+        assert(err === null)
+        assert(res.res.statusCode === 200)
+        assert(res.res.text.length > 0)
+        income = JSON.parse(res.res.text).income
+        assert(income.amount === 1200)
+        done()
+      })
+    })
+
+    it('Should be possible to update an income', function (done) {
+      request.post('http://localhost:' + PORT + '/income/')
+      .set('Content-Type', 'application/json')
+      .set('Cookie', cookie1)
+      .send('{"amount": 1500}')
+      .end(function (err, res) {
+        assert(err === null)
+        assert(res.res.statusCode === 200)
+        assert(res.res.text.length > 0)
+        var newIncome = JSON.parse(res.res.text).income
+        assert(newIncome.amount === 1500)
+        assert(newIncome.id === income.id)
+        done()
       })
     })
   })

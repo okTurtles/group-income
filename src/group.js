@@ -15,7 +15,7 @@ module.exports = function (server, Sequelize, db) {
     method: 'GET',
     path: '/group/{id}',
     handler: function (request, reply) {
-      db.UserGroup.findOne({where: {groupId: request.params.id, userId: request.auth.credentials.user}, include: [db.User, db.Group]})
+      db.UserGroup.findOne({where: {groupId: request.params.id, userId: request.auth.credentials.userId}, include: [db.User, db.Group]})
       .then(function (group) {
         reply(group)
       })
@@ -39,7 +39,7 @@ module.exports = function (server, Sequelize, db) {
     path: '/group/',
     handler: function (request, reply) {
       var savedGroup = null
-      var userId = request.auth.credentials.user
+      var userId = request.auth.credentials.userId
 
       db.transaction(function (t) {
         return db.Group.create(request.payload, {transaction: t})
@@ -70,7 +70,7 @@ module.exports = function (server, Sequelize, db) {
     method: 'POST',
     path: '/group/{group}/invite',
     handler: function (request, reply) {
-      db.UserGroup.create({userId: request.auth.credentials.user, groupId: request.params.group})
+      db.UserGroup.create({userId: request.auth.credentials.userId, groupId: request.params.group})
       .then(function (association) {
         reply({userGroup: association.dataValues})
       })
