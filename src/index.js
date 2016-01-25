@@ -15,6 +15,7 @@ server.register(cookie, function (err) {
   server.auth.strategy('cookie_strategy', 'cookie', {
     password: 'abcdef',
     cookie: 'group-income-simple',
+    ttl: 2592000000, // 1 month
     isSecure: false // HTTP allowed
   })
 })

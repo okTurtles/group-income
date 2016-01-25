@@ -1,9 +1,9 @@
 /* globals logger */
 
 var Joi = require('joi')
-// var bcrypt = require('bcrypt')
-// var hash = Promise.promisify(bcrypt.hash)
-// var compare = Promise.promisify(bcrypt.compare)
+var bcrypt = require('bcrypt')
+var uuid = require('node-uuid')
+var compare = Promise.promisify(bcrypt.compare)
 module.exports = function (server, Sequelize, db) {
   server.route({
     config: {
@@ -17,6 +17,7 @@ module.exports = function (server, Sequelize, db) {
     method: 'POST',
     path: '/session/login',
     handler: function (request, reply) {
+      var savedUser = null
       db.User.findOne({where: {email: request.payload.email}})
       .then(function (result) {
         var invalid = function () {
@@ -25,7 +26,15 @@ module.exports = function (server, Sequelize, db) {
 
         if (result == null) return invalid()
 
-        console.log(result)
+        savedUser = result.dataValues
+        return compare(request.payload.password, savedUser.password)
+      })
+      .then(function () {
+        return db.Session.create({id: uuid.v4(), user: savedUser.id, logout: null})
+      })
+      .then(function (session) {
+        request.cookieAuth.set(session.dataValues)
+        reply({session: session.dataValues})
       })
       .catch(function (err) {
         logger(err)

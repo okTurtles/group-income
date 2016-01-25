@@ -5,6 +5,9 @@ var request = require('superagent')
 var assert = require('assert')
 var cookie1 = ''
 var cookie2 = ''
+var cookieParser = function (headers) {
+  return headers['set-cookie'][0].split('; ')[0]
+}
 
 describe('Full walkthrough', function () {
   describe('User', function () {
@@ -28,7 +31,7 @@ describe('Full walkthrough', function () {
         var parsed = JSON.parse(res.res.text)
         assert(parsed.user != null)
         assert(parsed.session != null)
-        cookie1 = res.res.headers['set-cookie'][0].split('; ')[0]
+        cookie1 = cookieParser(res.res.headers)
         assert(cookie1.length > 0)
         done()
       })
@@ -60,7 +63,7 @@ describe('Full walkthrough', function () {
         var parsed = JSON.parse(res.res.text)
         assert(parsed.user != null)
         assert(parsed.session != null)
-        cookie2 = res.res.headers['set-cookie'][0].split('; ')[0]
+        cookie2 = cookieParser(res.res.headers)
         assert(cookie2.length > 0)
         done()
       })
@@ -127,9 +130,7 @@ describe('Full walkthrough', function () {
         assert(err === null)
         assert(res.res.statusCode === 200)
         assert(res.res.text === '')
-        // console.log(err)
-        // console.log(res.res.statusCode)
-        // console.log(res.res.text)
+        cookie1 = ''
         done()
       })
     })
@@ -138,12 +139,24 @@ describe('Full walkthrough', function () {
       request.get('http://localhost:' + PORT + '/group/1')
       .set('Cookie', cookie1)
       .end(function (err, res) {
-        console.log(err)
-        console.log(res.res.statusCode)
-        console.log(res.res.text)
+        assert(err != null)
+        assert(res.res.statusCode === 401)
+        done()
+      })
+    })
+
+    it('Should login', function (done) {
+      request.post('http://localhost:' + PORT + '/session/login')
+      .set('Content-Type', 'application/json')
+      .send('{"email":"bob@test.com", "password":"baconbaconbacon"}')
+      .end(function (err, res) {
+        cookie1 = cookieParser(res.res.headers)
+        // console.log(err)
+        // console.log(res.res.statusCode)
+        // console.log(res.res.text)
         assert(err === null)
         assert(res.res.statusCode === 200)
-        assert(res.res.text === '')
+        assert(res.res.text.length > 0)
         done()
       })
     })

@@ -15,7 +15,6 @@ module.exports = function (server, Sequelize, db) {
     method: 'GET',
     path: '/group/{id}',
     handler: function (request, reply) {
-      console.log(request.auth.credentials, '*****')
       db.UserGroup.findOne({where: {groupId: request.params.id, userId: request.auth.credentials.user}, include: [db.User, db.Group]})
       .then(function (group) {
         reply(group)
