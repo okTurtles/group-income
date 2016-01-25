@@ -58,6 +58,29 @@ module.exports = function (server, Sequelize, db) {
     }
   })
 
+  server.route({
+    config: {
+      auth: 'cookie_strategy',
+      validate: {
+        params: {
+          group: Joi.number().integer().min(1).required()
+        }
+      }
+    },
+    method: 'POST',
+    path: '/group/{group}/invite',
+    handler: function (request, reply) {
+      db.UserGroup.create({userId: request.auth.credentials.user, groupId: request.params.group})
+      .then(function (association) {
+        reply({userGroup: association.dataValues})
+      })
+      .catch(function (err) {
+        logger(err)
+        reply(err)
+      })
+    }
+  })
+
   db.Group = db.define('BIGroup', {
     name: {type: Sequelize.STRING, unique: true, allowNull: false}
   }, {

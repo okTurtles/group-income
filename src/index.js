@@ -1,3 +1,4 @@
+require('dotenv').load()
 global.Promise = require('bluebird')
 global.logger = function (err) { // Improve this later
   console.error(err)
@@ -31,6 +32,7 @@ Promise.resolve()
 .then(function () { require('./session')(server, Sequelize, db) })
 .then(function () { require('./group')(server, Sequelize, db) })
 .then(function () { require('./userGroup')(server, Sequelize, db) })
+.then(function () { require('./invite')(server, Sequelize, db) })
 .then(function () {
   db.User.hasMany(db.Session, {foreignKey: {name: 'user', allowNull: false}, constraints: true})
   db.Session.belongsTo(db.User, {foreignKey: {name: 'user', allowNull: false}, constraints: true})
@@ -40,6 +42,10 @@ Promise.resolve()
 
   db.Group.hasMany(db.UserGroup, {foreignKey: {name: 'groupId', allowNull: false}, constraints: true})
   db.UserGroup.belongsTo(db.Group, {foreignKey: {name: 'groupId', allowNull: false}, constraints: true})
+
+  db.Group.hasMany(db.Invite, {foreignKey: {name: 'groupId', allowNull: false}, constraints: true})
+  db.Invite.belongsTo(db.Group, {foreignKey: {name: 'groupId', allowNull: false}, constraints: true})
+  db.Invite.belongsTo(db.User, {foreignKey: {name: 'creatorId', allowNull: false}, constraints: true})
 
   return db.sync()
 })

@@ -23,6 +23,7 @@
   "dependencies": {
     "bcrypt": "^0.8.5",
     "bluebird": "3.x",
+    "dotenv": "^2.0.0",
     "hapi": "^12.1.0",
     "hapi-auth-cookie": "^5.0.0",
     "joi": "^7.2.2",

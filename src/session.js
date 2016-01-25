@@ -20,16 +20,13 @@ module.exports = function (server, Sequelize, db) {
       var savedUser = null
       db.User.findOne({where: {email: request.payload.email}})
       .then(function (result) {
-        var invalid = function () {
-          return reply(new Error('Invalid email or password'))
-        }
-
-        if (result == null) return invalid()
+        if (result == null) return Promise.reject(new Error('Invalid email or password'))
 
         savedUser = result.dataValues
         return compare(request.payload.password, savedUser.password)
       })
-      .then(function () {
+      .then(function (equals) {
+        if (!equals) return Promise.reject(new Error('Invalid email or password'))
         return db.Session.create({id: uuid.v4(), user: savedUser.id, logout: null})
       })
       .then(function (session) {

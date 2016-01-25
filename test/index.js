@@ -5,6 +5,7 @@ var request = require('superagent')
 var assert = require('assert')
 var cookie1 = ''
 var cookie2 = ''
+var cookie3 = ''
 var cookieParser = function (headers) {
   return headers['set-cookie'][0].split('; ')[0]
 }
@@ -65,6 +66,22 @@ describe('Full walkthrough', function () {
         assert(parsed.session != null)
         cookie2 = cookieParser(res.res.headers)
         assert(cookie2.length > 0)
+        done()
+      })
+    })
+
+    it('Should POST (3)', function (done) {
+      request.post('http://localhost:' + PORT + '/user/')
+      .set('Content-Type', 'application/json')
+      .send('{"name":"User number three", "password":"baconbaconbacon", "email":"john@test.com", "phone":"6478392654", "contriGL":20, "contriRL":1}')
+      .end(function (err, res) {
+        assert(err === null)
+        assert(res.res.statusCode === 200)
+        var parsed = JSON.parse(res.res.text)
+        assert(parsed.user != null)
+        assert(parsed.session != null)
+        cookie3 = cookieParser(res.res.headers)
+        assert(cookie3.length > 0)
         done()
       })
     })
@@ -145,6 +162,18 @@ describe('Full walkthrough', function () {
       })
     })
 
+    it('Should not login (invalid password)', function (done) {
+      request.post('http://localhost:' + PORT + '/session/login')
+      .set('Content-Type', 'application/json')
+      .send('{"email":"bob@test.com", "password":"invalidpassword"}')
+      .end(function (err, res) {
+        assert(err != null)
+        assert(res.res.statusCode === 500) // Good enough for now
+        assert(res.res.text.length > 0)
+        done()
+      })
+    })
+
     it('Should login', function (done) {
       request.post('http://localhost:' + PORT + '/session/login')
       .set('Content-Type', 'application/json')
@@ -158,6 +187,76 @@ describe('Full walkthrough', function () {
         assert(res.res.statusCode === 200)
         assert(res.res.text.length > 0)
         done()
+      })
+    })
+  })
+
+  describe('Invite', function () {
+    it('Should refuse to invite if not part of the group', function (done) {
+      request.post('http://localhost:' + PORT + '/invite/')
+      .set('Content-Type', 'application/json')
+      .set('Cookie', cookie3)
+      .send('{"groupId":1, "email":"invited@test.com"}')
+      .end(function (err, res) {
+        // console.log(err)
+        // console.log(res.res.statusCode)
+        // console.log(res.res.text)
+        assert(err != null)
+        assert(res.res.statusCode === 500)
+        assert(res.res.text.length > 0)
+        done()
+      })
+    })
+
+    it('Should create an invitation and send an email', function (done) {
+      request.post('http://localhost:' + PORT + '/invite/')
+      .set('Content-Type', 'application/json')
+      .set('Cookie', cookie1)
+      .send('{"groupId":1, "email":"invited@test.com"}')
+      .end(function (err, res) {
+        assert(err === null)
+        assert(res.res.statusCode === 200)
+        var parsed = JSON.parse(res.res.text)
+        var url = parsed.link
+        assert(url.length > 0)
+
+        request.post(url)
+        .redirects(0)
+        .end(function (err, res) {
+          assert(err != null)
+          assert(res.res.statusCode === 302)
+          assert(res.res.text.length > 0)
+          // console.log(err)
+          // console.log(res.res.statusCode)
+          // console.log(res.res.text)
+          done()
+        })
+      })
+    })
+
+    it('Should create an invitation and send an email', function (done) {
+      request.post('http://localhost:' + PORT + '/invite/')
+      .set('Content-Type', 'application/json')
+      .set('Cookie', cookie1)
+      .send('{"groupId":1, "email":"jack@test.com"}')
+      .end(function (err, res) {
+        assert(err === null)
+        assert(res.res.statusCode === 200)
+        var parsed = JSON.parse(res.res.text)
+        var url = parsed.link
+        assert(url.length > 0)
+
+        request.post(url)
+        .redirects(0)
+        .end(function (err, res) {
+          assert(err === null)
+          assert(res.res.statusCode === 200)
+          assert(res.res.text.length > 0)
+          // console.log(err)
+          // console.log(res.res.statusCode)
+          // console.log(res.res.text)
+          done()
+        })
       })
     })
   })
