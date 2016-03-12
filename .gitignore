@@ -1,2 +1,4 @@
 node_modules/
+dist/
 sqlite.db
+NOTES.md
