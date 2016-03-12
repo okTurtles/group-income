@@ -18,17 +18,14 @@ module.exports = grunt => {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
 
-    // Alternatively (or in addition to), use
-    // https://github.com/substack/watchify
-    watch: {
+    watch: { // https://github.com/gruntjs/grunt-contrib-watch
       browserify: {
-        files: ['src/scripts/**/*.js'],
+        files: ['<%= browserify.dist.files["dist/app.js"] %>'],
         tasks: ['browserify']
       },
-      // Live reloading: https://github.com/gruntjs/grunt-contrib-watch/blob/master/docs/watch-examples.md#live-reloading
       livereload: {
-        options: { livereload: true },
-        files: ['dest/**/*']
+        options: { livereload: true }, // port 35729 by default
+        files: ['dist/**/*']
       }
     },
 
@@ -37,7 +34,7 @@ module.exports = grunt => {
         options: {
           transform: [['babelify', {presets: ['es2015', 'stage-3']}]]
         },
-        files: { 'dist/app.js': ['src/app.js'] }
+        files: { 'dist/app.js': ['frontend/**/*.js', '!frontend/static/**'] }
         // src: ['src/scripts/app.js'],
         // dest: 'dist/scripts/app.js'
       }
@@ -52,17 +49,30 @@ module.exports = grunt => {
       }
     },
 
-    clean: { dist: ['dist/*'] }
+    clean: { dist: ['dist/*'] },
 
-    //       https://github.com/gruntjs/grunt-contrib-connect
+    connect: { // https://github.com/gruntjs/grunt-contrib-connect
+      options: {
+        port: 8000,
+        base: 'dist',
+        livereload: true
+      },
+      dev: {}
+    }
+
+    // TODO: see also
+    //       https://github.com/vuejs/vueify
     //       https://github.com/lud2k/grunt-serve
-    //       https://github.com/gruntjs/grunt-contrib-watch/blob/master/docs/watch-examples.md#live-reloading
-    // TODO: see https://github.com/vuejs/vueify
+    //       https://github.com/substack/watchify
     //       https://github.com/AgentME/browserify-hmr
     //       https://medium.com/@dan_abramov/the-death-of-react-hot-loader-765fa791d7c4
 
   })
   grunt.registerTask('default', [])
-  grunt.registerTask('dev', []) // TODO: run the API server and the watch server
-  grunt.registerTask('dist', ['copy'])
+    // TODO: run npm scripts from package.json using: grunt-shell + grunt-execute
+    //       you can also take a page from DNSChain:
+    //       https://github.com/okTurtles/dnschain/blob/ea2eddd62c8e42322eaea86db304783a47049802/Gruntfile.coffee#L51-L79
+  grunt.registerTask('dev', ['connect', 'watch'])
+  grunt.registerTask('build', ['copy', 'browserify'])
+  grunt.registerTask('dist', ['build'])
 }
