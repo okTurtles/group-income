@@ -31,7 +31,9 @@ module.exports = grunt => {
       // to kill the child when files change.
       options: {spawn: false},
       browserify: {
-        files: ['<%= browserify.dist.files["dist/app.js"] %>'],
+        files: ['<%= browserify.dist.files["dist/simple/app.js"] %>'],
+        // this doesn't work either:
+        // files: ['frontend/**/*.(js|vue)', '!frontend/_static/**'],
         tasks: ['standard', 'browserify']
       },
       livereload: {
@@ -47,9 +49,9 @@ module.exports = grunt => {
     browserify: {
       dist: {
         options: {
-          transform: [['babelify', {presets: ['es2015', 'stage-3']}]]
+          transform: ['vueify', ['babelify', {presets: ['es2015', 'stage-3']}]]
         },
-        files: { 'dist/app.js': ['frontend/**/*.js', '!frontend/_static/**'] }
+        files: { 'dist/simple/app.js': ['frontend/**/*.(js|vue)', '!frontend/_static/**'] }
       }
     },
 
