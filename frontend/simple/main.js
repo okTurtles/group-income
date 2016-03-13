@@ -2,9 +2,10 @@ import Vue from 'vue'
 import Router from 'vue-router'
 // import { domain, fromNow } from './filters'
 import App from './components/App.vue'
-import Hello from './components/Hello.vue'
-// import ItemView from './components/ItemView.vue'
-// import UserView from './components/UserView.vue'
+import UserProfileView from './components/UserProfileView.vue'
+import UserGroupView from './components/UserGroupView.vue'
+import NewIncomeView from './components/NewIncomeView.vue'
+import PayGroupView from './components/PayGroupView.vue'
 
 // install router
 Vue.use(Router)
@@ -21,8 +22,21 @@ var router = new Router({
 })
 
 router.map({
-  '/hello/:page': {
-    component: Hello
+  '/user-profile': {
+    name: 'user-profile',
+    component: UserProfileView
+  },
+  '/user-group': {
+    name: 'user-group',
+    component: UserGroupView
+  },
+  '/new-income': {
+    name: 'new-income',
+    component: NewIncomeView
+  },
+  '/pay-group': {
+    name: 'pay-group',
+    component: PayGroupView
   }
 })
 
@@ -31,7 +45,7 @@ router.beforeEach(function () {
 })
 
 router.redirect({
-  '*': '/hello/1'
+  '*': '/user-profile'
 })
 
 router.start(App, '#app')
