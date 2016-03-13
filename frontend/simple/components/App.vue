@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import Hello from '../_components/Hello.vue'
+import Hello from './Hello.vue'
 
 export default {
   components: {

@@ -65,7 +65,7 @@ module.exports = grunt => {
       },
       frontend: {
         cwd: 'frontend/',
-        src: ['**', '!_*/**', '!**/*.md'], // folders with _ don't get copied
+        src: ['**/*.html', '!_*/**'], // folders with _ don't get copied
         dest: 'dist',
         expand: true
       }
