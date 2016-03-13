@@ -129,9 +129,10 @@ module.exports = grunt => {
   grunt.registerTask('default', ['dev'])
   grunt.registerTask('backend', ['backend:relaunch', 'watch'])
   grunt.registerTask('dev', ['build', 'connect', 'backend']) // backend calls watch
-  grunt.registerTask('build', ['copy', 'browserify', 'standard'])
+  grunt.registerTask('build', ['standard', 'copy', 'browserify'])
   grunt.registerTask('dist', ['build'])
-  grunt.registerTask('dist', ['execute:api_test'])
+  // TODO: make it so you don't have to run `grunt test` in a separate terminal window
+  grunt.registerTask('test', ['execute:api_test'])
 
   // -------------------------------------------------------------------------
   //  Code for running backend server at the same time as frontend server
