@@ -27,6 +27,8 @@ Run all servers + watch files for changes:
 grunt dev
 ```
 
+- After running `grunt dev`, visit the website: [http://localhost:8000](http://localhost:8000)
+
 Clean up files in `dist/` and the `sqlite.db` file (which will be better handled in the future):
 
 ```
@@ -36,10 +38,10 @@ grunt clean
 Run the tests:
 
 ```
-# In on terminal window
+# In one terminal window
 grunt dev
 # In another terminal window
 grunt test
 ```
 
-In the future you'll be able to just run `grunt test` by itself.
+- In the future you'll be able to just run `grunt test` by itself.
