@@ -18,6 +18,7 @@ var fs = require('fs')
 var path = require('path')
 var url = require('url')
 var S = require('string')
+var fork = require('child_process').fork
 
 module.exports = grunt => {
   require('load-grunt-tasks')(grunt)
@@ -26,13 +27,20 @@ module.exports = grunt => {
     pkg: grunt.file.readJSON('package.json'),
 
     watch: { // https://github.com/gruntjs/grunt-contrib-watch
+      // prevent watch from spawning. if we don't do this, we won't be able
+      // to kill the child when files change.
+      options: {spawn: false},
       browserify: {
         files: ['<%= browserify.dist.files["dist/app.js"] %>'],
-        tasks: ['browserify']
+        tasks: ['standard', 'browserify']
       },
       livereload: {
         options: { livereload: true }, // port 35729 by default
         files: ['dist/**/*']
+      },
+      backend: {
+        files: ['backend/**/*.js'],
+        tasks: ['standard', 'backend:relaunch']
       }
     },
 
@@ -60,7 +68,20 @@ module.exports = grunt => {
       }
     },
 
-    clean: { dist: ['dist/*'] },
+    standard: { dev: {} },
+
+    execute: {
+      api_server: { src: 'backend/index.js' },
+      api_test: {
+        src: './node_modules/.bin/mocha',
+        options: { args: ['-R', 'spec', '--bail', 'test/'] }
+      },
+      // we don't do `standard` linting this way (output not as pretty)
+      // but keep it around just to show the alternative
+      standard: { src: './node_modules/standard/bin/cmd.js' }
+    },
+
+    clean: { dist: ['dist/*', './sqlite.db'] },
 
     connect: { // https://github.com/gruntjs/grunt-contrib-connect
       options: {
@@ -71,7 +92,6 @@ module.exports = grunt => {
           middlewares.unshift((req, res, next) => {
             var f = url.parse(req.url).pathname
             f = path.join('dist', S(f).endsWith('/') ? f + 'index.html' : f)
-            // grunt.log.writeln(`request for: ${req.url}`)
             if (S(f).endsWith('.html') && fs.existsSync(f)) {
               ssi.compileFile(f, (err, content) => {
                 if (err) {
@@ -90,7 +110,6 @@ module.exports = grunt => {
       },
       dev: {}
     }
-
     // TODO: see also
     //       https://github.com/vuejs/vueify
     //       https://github.com/lud2k/grunt-serve
@@ -99,11 +118,50 @@ module.exports = grunt => {
     //       https://medium.com/@dan_abramov/the-death-of-react-hot-loader-765fa791d7c4
 
   })
-  grunt.registerTask('default', [])
-    // TODO: run npm scripts from package.json using: grunt-shell + grunt-execute
-    //       you can also take a page from DNSChain:
-    //       https://github.com/okTurtles/dnschain/blob/ea2eddd62c8e42322eaea86db304783a47049802/Gruntfile.coffee#L51-L79
-  grunt.registerTask('dev', ['connect', 'watch'])
-  grunt.registerTask('build', ['copy', 'browserify'])
+
+  // -------------------------------------------------------------------------
+  //  Grunt Tasks
+  // -------------------------------------------------------------------------
+
+  grunt.registerTask('default', ['dev'])
+  grunt.registerTask('backend', ['backend:relaunch', 'watch'])
+  grunt.registerTask('dev', ['connect', 'backend']) // backend calls watch
+  grunt.registerTask('build', ['copy', 'browserify', 'standard'])
   grunt.registerTask('dist', ['build'])
+  grunt.registerTask('dist', ['execute:api_test'])
+
+  // -------------------------------------------------------------------------
+  //  Code for running backend server at the same time as frontend server
+  // -------------------------------------------------------------------------
+
+  var child = {running: false}
+
+  grunt.registerTask('backend:relaunch', '[internal]', function () {
+    var done = this.async() // tell grunt we're async
+
+    if (child.running) {
+      grunt.log.writeln('Killing child!')
+      child.running = false
+      child.proc.kill('SIGINT') // nicer...
+    }
+    var fork2 = (child) => {
+      grunt.log.writeln('backend: forking...')
+      var spawnOpts = {
+        cwd: process.cwd(),
+        env: process.env,
+        stdio: 'inherit'
+      }
+      child.proc = fork('./backend/index.js', process.argv, spawnOpts)
+      child.running = true
+      child.proc.on('exit', (c) => {
+        if (child.running) {
+          grunt.log.error `child exited with code: ${c}`
+          process.exit(c)
+        }
+      })
+      done()
+    }
+    setTimeout(fork2, 1000, child) // 1 second later
+  })
 }
+
