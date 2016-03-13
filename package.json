@@ -11,7 +11,7 @@
   },
   "standard": {
     "ignore": [
-      "frontend/static/*"
+      "frontend/_static/*"
     ],
     "parser": "babel-eslint"
   },
@@ -46,6 +46,8 @@
     "grunt-contrib-connect": "1.0.0",
     "grunt-contrib-copy": "1.0.0",
     "grunt-contrib-watch": "0.6.1",
+    "grunt-execute": "0.2.2",
+    "grunt-standard": "2.0.0",
     "load-grunt-tasks": "3.4.1",
     "mocha": "2.4.5",
     "node-ssi": "0.3.1",
