@@ -25,15 +25,16 @@ module.exports = grunt => {
 
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
+    files: {
+      frontend: ['frontend/**/*.{vue,js}', '!frontend/_static/**']
+    },
 
     watch: { // https://github.com/gruntjs/grunt-contrib-watch
       // prevent watch from spawning. if we don't do this, we won't be able
       // to kill the child when files change.
       options: {spawn: false},
       browserify: {
-        files: ['<%= browserify.dist.files["dist/simple/app.js"] %>'],
-        // this doesn't work either:
-        // files: ['frontend/**/*.(js|vue)', '!frontend/_static/**'],
+        files: ['<%= files.frontend %>'],
         tasks: ['standard', 'browserify']
       },
       livereload: {
@@ -51,7 +52,7 @@ module.exports = grunt => {
         options: {
           transform: ['vueify', ['babelify', {presets: ['es2015', 'stage-3']}]]
         },
-        files: { 'dist/simple/app.js': ['frontend/**/*.(js|vue)', '!frontend/_static/**'] }
+        files: { 'dist/simple/app.js': ['<%= files.frontend %>'] }
       }
     },
 
@@ -127,7 +128,7 @@ module.exports = grunt => {
 
   grunt.registerTask('default', ['dev'])
   grunt.registerTask('backend', ['backend:relaunch', 'watch'])
-  grunt.registerTask('dev', ['connect', 'backend']) // backend calls watch
+  grunt.registerTask('dev', ['build', 'connect', 'backend']) // backend calls watch
   grunt.registerTask('build', ['copy', 'browserify', 'standard'])
   grunt.registerTask('dist', ['build'])
   grunt.registerTask('dist', ['execute:api_test'])
