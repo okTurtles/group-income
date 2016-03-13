@@ -92,18 +92,23 @@ module.exports = grunt => {
         base: 'dist',
         livereload: true,
         middleware: (connect, opts, middlewares) => {
+          var serveSsiFile = (path, req, res) => {
+            ssi.compileFile(path, (err, content) => {
+              if (err) {
+                console.error(err.stack)
+                throw err
+              }
+              console.log(`Req: ${req.url} => sending node-ssi parsed file: ${path}`)
+              res.end(content)
+            })
+          }
           middlewares.unshift((req, res, next) => {
             var f = url.parse(req.url).pathname
             f = path.join('dist', S(f).endsWith('/') ? f + 'index.html' : f)
             if (S(f).endsWith('.html') && fs.existsSync(f)) {
-              ssi.compileFile(f, (err, content) => {
-                if (err) {
-                  console.error(err.stack)
-                  throw err
-                }
-                console.log(`Req: ${req.url} => sending node-ssi parsed file: ${f}`)
-                res.end(content)
-              })
+              serveSsiFile(f, req, res)
+            } else if (S(f).startsWith('dist/simple/') && !S(f).endsWith('.js')) {
+              serveSsiFile('dist/simple/index.html', req, res)
             } else {
               next()
             }

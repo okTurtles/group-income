@@ -14,7 +14,11 @@ Vue.use(Router)
 // Vue.filter('domain', domain)
 
 // routing
-var router = new Router()
+var router = new Router({
+  hashbang: false,
+  history: true,
+  root: '/simple'
+})
 
 router.map({
   '/hello/:page': {
