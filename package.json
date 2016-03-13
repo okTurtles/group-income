@@ -48,6 +48,8 @@
     "grunt-contrib-watch": "0.6.1",
     "load-grunt-tasks": "3.4.1",
     "mocha": "2.4.5",
+    "node-ssi": "0.3.1",
+    "string": "3.3.1",
     "superagent": "1.8.0",
     "vueify": "8.3.6",
     "vueify-insert-css": "1.0.0"
