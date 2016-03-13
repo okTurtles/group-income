@@ -12,6 +12,13 @@ https://github.com/substack/watchify
 https://github.com/vuejs/vueify
 */
 
+var SSI = require('node-ssi')
+var ssi = new SSI({baseDir: './dist', encoding: 'utf-8'})
+var fs = require('fs')
+var path = require('path')
+var url = require('url')
+var S = require('string')
+
 module.exports = grunt => {
   require('load-grunt-tasks')(grunt)
 
@@ -34,17 +41,21 @@ module.exports = grunt => {
         options: {
           transform: [['babelify', {presets: ['es2015', 'stage-3']}]]
         },
-        files: { 'dist/app.js': ['frontend/**/*.js', '!frontend/static/**'] }
-        // src: ['src/scripts/app.js'],
-        // dest: 'dist/scripts/app.js'
+        files: { 'dist/app.js': ['frontend/**/*.js', '!frontend/_static/**'] }
       }
     },
 
     copy: {
+      resources: { // TODO: these might be moved to a git submodule later
+        cwd: 'frontend/_static/',
+        src: ['css/**', 'images/**', 'js/vendor/**'],
+        dest: 'dist',
+        expand: true
+      },
       frontend: {
-        cwd: 'frontend/static/',
-        src: ['**'],
-        dest: 'dist/static',
+        cwd: 'frontend/',
+        src: ['**', '!_*/**', '!**/*.md'], // folders with _ don't get copied
+        dest: 'dist',
         expand: true
       }
     },
@@ -55,7 +66,27 @@ module.exports = grunt => {
       options: {
         port: 8000,
         base: 'dist',
-        livereload: true
+        livereload: true,
+        middleware: (connect, opts, middlewares) => {
+          middlewares.unshift((req, res, next) => {
+            var f = url.parse(req.url).pathname
+            f = path.join('dist', S(f).endsWith('/') ? f + 'index.html' : f)
+            // grunt.log.writeln(`request for: ${req.url}`)
+            if (S(f).endsWith('.html') && fs.existsSync(f)) {
+              ssi.compileFile(f, (err, content) => {
+                if (err) {
+                  console.error(err.stack)
+                  throw err
+                }
+                console.log(`Req: ${req.url} => sending node-ssi parsed file: ${f}`)
+                res.end(content)
+              })
+            } else {
+              next()
+            }
+          })
+          return middlewares
+        }
       },
       dev: {}
     }
