@@ -137,6 +137,7 @@ module.exports = grunt => {
   grunt.registerTask('build', ['standard', 'copy', 'browserify'])
   grunt.registerTask('dist', ['build'])
   // TODO: make it so you don't have to run `grunt test` in a separate terminal window
+  //       simplest way would be to edit the file `test/index.js` to run the server
   grunt.registerTask('test', ['execute:api_test'])
 
   // -------------------------------------------------------------------------
