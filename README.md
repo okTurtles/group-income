@@ -49,3 +49,7 @@ grunt test
 ```
 
 - In the future you'll be able to just run `grunt test` by itself.
+
+## License
+
+See `LICENSE` file.
