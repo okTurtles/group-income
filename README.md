@@ -1,6 +1,10 @@
-# Group Income Simple
+# Group Income (Simple Edition)
 
-Lorem ipsum dolor sit amet, consectetur adipisicing elit. Iure provident ut veritatis tempora alias eaque ad blanditiis quae consectetur, id, repellendus nisi optio laboriosam soluta distinctio unde. Tempore, maxime, eos!
+[![Join the chat at https://gitter.im/okTurtles/group-income](https://badges.gitter.im/okTurtles/group-income.svg)](https://gitter.im/okTurtles/group-income?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
+Group Income allows groups to guarantee its members a minimum income.
+
+Its accounting system can be implemented using a simple Excel spreadsheet, or on blockchains like Ethereum (which is where we're headed). This centralized "Simple Edition" is our way to rapidly prototype, develop, and research the concept with real groups.
 
 ## Installation
 
