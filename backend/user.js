@@ -55,7 +55,7 @@ module.exports = function (server, Sequelize, db) {
       })
       .then(function (user) {
         // TODO: Don't send the link before going to production
-        var link = process.env.DOMAIN + '/user/' + user.dataValues.verification + '/verify'
+        var link = process.env.API_URL + '/user/' + user.dataValues.verification + '/verify'
         email.send(user.dataValues.email, 'Please verify your Group Income account', 'Click this link: ' + link)
         reply({user: user.dataValues, link: link})
       })

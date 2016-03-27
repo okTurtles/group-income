@@ -1,18 +1,16 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 // import { domain, fromNow } from './filters'
-import App from './components/App.vue'
+import App from './App.vue'
 import UserProfileView from './components/UserProfileView.vue'
 import UserGroupView from './components/UserGroupView.vue'
 import NewIncomeView from './components/NewIncomeView.vue'
 import PayGroupView from './components/PayGroupView.vue'
 
+require('superagent-promise-plugin').patch(require('superagent'))
+
 // install router
 Vue.use(Router)
-
-// register filters globally
-// Vue.filter('fromNow', fromNow)
-// Vue.filter('domain', domain)
 
 // routing
 var router = new Router({
@@ -22,22 +20,13 @@ var router = new Router({
 })
 
 router.map({
-  '/user-profile': {
-    name: 'user-profile',
-    component: UserProfileView
-  },
-  '/user-group': {
-    name: 'user-group',
-    component: UserGroupView
-  },
-  '/new-income': {
-    name: 'new-income',
-    component: NewIncomeView
-  },
-  '/pay-group': {
-    name: 'pay-group',
-    component: PayGroupView
-  }
+  '/': { component: UserGroupView },
+  '/new-user': { component: UserProfileView },
+  '/user': { component: UserProfileView },
+  '/user/:username': { component: UserProfileView },
+  '/user-group': { component: UserGroupView },
+  '/new-income': { component: NewIncomeView },
+  '/pay-group': { component: PayGroupView }
 })
 
 router.beforeEach(function () {
@@ -45,7 +34,7 @@ router.beforeEach(function () {
 })
 
 router.redirect({
-  '*': '/user-profile'
+  '*': '/' // TODO: make this a 404
 })
 
 router.start(App, '#app')

@@ -19,6 +19,13 @@ var path = require('path')
 var url = require('url')
 var S = require('string')
 var fork = require('child_process').fork
+var vueify = require('vueify')
+// var envify = require('envify/custom') // not needed b/c of transform-inline-environment-variables
+
+vueify.compiler.applyConfig({ babel: {
+  presets: ['es2015', 'stage-3'],
+  plugins: ['transform-runtime', 'transform-inline-environment-variables']
+} })
 
 module.exports = grunt => {
   require('load-grunt-tasks')(grunt)
@@ -33,24 +40,33 @@ module.exports = grunt => {
       // prevent watch from spawning. if we don't do this, we won't be able
       // to kill the child when files change.
       options: {spawn: false},
+      // TODO: consider instead using the `watchify` option on browserify
       browserify: {
-        files: ['<%= files.frontend %>'],
-        tasks: ['standard', 'browserify']
-      },
-      livereload: {
         options: { livereload: true }, // port 35729 by default
-        files: ['dist/**/*']
+        files: ['<%= files.frontend %>'],
+        tasks: ['standard:dev', 'browserify']
       },
       backend: {
         files: ['backend/**/*.js'],
-        tasks: ['standard', 'backend:relaunch']
+        tasks: ['standard:dev', 'backend:relaunch']
+      },
+      gruntfile: {
+        files: ['.Gruntfile.babel.js', 'Gruntfile.js'],
+        tasks: ['standard:gruntfile']
       }
     },
 
     browserify: {
-      dist: {
+      dev: {
         options: {
-          transform: ['vueify', ['babelify', {presets: ['es2015', 'stage-3']}]]
+          transform: ['vueify', ['babelify', {
+            presets: ['es2015', 'stage-3'],
+            plugins: ['transform-inline-environment-variables'] // babelify plugins
+          }]],
+          plugins: ['transform-runtime'],                       // browserify plugins
+          browserifyOptions: {
+            debug: process.env.NODE_ENV === 'development'       // enables source maps
+          }
         },
         files: { 'dist/simple/app.js': ['<%= files.frontend %>'] }
       }
@@ -72,10 +88,10 @@ module.exports = grunt => {
     },
 
     standard: {
-      // everything (following options in package.json)
+      // everything except standard ignore (following options in package.json)
       dev: {},
       // explicitely lint gruntfile as leading '.' causes it to be ignored
-      gruntfile: {src: '.Gruntfile.babel.js'}
+      gruntfile: {src: ['.Gruntfile.babel.js', 'Gruntfile.js']}
     },
 
     execute: {
@@ -144,6 +160,7 @@ module.exports = grunt => {
   // TODO: make it so you don't have to run `grunt test` in a separate terminal window
   //       simplest way would be to edit the file `test/index.js` to run the server
   grunt.registerTask('test', ['execute:api_test'])
+  // TODO: add 'deploy'
 
   // -------------------------------------------------------------------------
   //  Code for running backend server at the same time as frontend server

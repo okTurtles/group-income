@@ -1,13 +1,22 @@
-require('dotenv').load()
-global.Promise = require('bluebird')
+global.Promise = require('bluebird') // TODO: get rid of this since we're using babel?
 global.logger = function (err) { // Improve this later
   console.error(err)
   console.error(err.stack)
 }
 var Hapi = require('hapi')
 var cookie = require('hapi-auth-cookie')
-var server = new Hapi.Server()
-server.connection({port: 3000})
+var corsHeaders = require('hapi-cors-headers')
+
+var server = new Hapi.Server({
+  // TODO: improve logging and base it on process.env.NODE_ENV
+  debug: { request: ['error'], log: ['error'] }
+  // connections: {routes: {cors: cors}},
+})
+server.connection({
+  port: process.env.API_PORT
+  // host: '0.0.0.0', routes: { cors: cors }
+})
+server.ext('onPreResponse', corsHeaders)
 server.register(cookie, function (err) {
   if (err) {
     console.error(err)
@@ -28,12 +37,12 @@ var db = new Sequelize('sqlite.db', '', '', {
 })
 
 Promise.resolve()
-.then(function () { require('./user')(server, Sequelize, db) })
-.then(function () { require('./session')(server, Sequelize, db) })
-.then(function () { require('./group')(server, Sequelize, db) })
-.then(function () { require('./userGroup')(server, Sequelize, db) })
-.then(function () { require('./invite')(server, Sequelize, db) })
-.then(function () { require('./income')(server, Sequelize, db) })
+.then(() => require('./user')(server, Sequelize, db))
+.then(() => require('./session')(server, Sequelize, db))
+.then(() => require('./group')(server, Sequelize, db))
+.then(() => require('./userGroup')(server, Sequelize, db))
+.then(() => require('./invite')(server, Sequelize, db))
+.then(() => require('./income')(server, Sequelize, db))
 .then(function () {
   db.User.hasMany(db.Session, {foreignKey: {name: 'userId', allowNull: false}, constraints: true})
   db.Session.belongsTo(db.User, {foreignKey: {name: 'userId', allowNull: false}, constraints: true})

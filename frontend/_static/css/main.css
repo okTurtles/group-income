@@ -182,7 +182,7 @@ nav li {
 }
 
 .index .wrapper {
-  background-image: url(../images/home-bg.jpeg);
+  background-image: url(/images/home-bg.jpeg);
   background-size: cover;
 }
 
