@@ -32,7 +32,7 @@ module.exports = function (server, Sequelize, db) {
           completed: null})
       })
       .then(function (invite) {
-        var link = process.env.DOMAIN + '/invite/' + invite.dataValues.id + '/accept'
+        var link = process.env.API_URL + '/invite/' + invite.dataValues.id + '/accept'
         email.send(request.payload.email,
           'You\'ve been invited to join a group on Group Income',
           'Click this link: ' + link)
@@ -69,7 +69,7 @@ module.exports = function (server, Sequelize, db) {
       })
       .then(function (user) {
         if (user == null) { // new account
-          var redirect = process.env.FRONTEND + '/register.html?invite=' + request.params.invite
+          var redirect = process.env.FRONTEND_URL + '/register.html?invite=' + request.params.invite
           reply({redirect: redirect}).redirect(redirect)
         } else { // already exists
           return db.UserGroup.create({userId: user.dataValues.id, groupId: savedInvite.BIGroup.dataValues.id})

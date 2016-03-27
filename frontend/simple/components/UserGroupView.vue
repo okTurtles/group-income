@@ -1,5 +1,5 @@
 <template>
-  <div class="user-profile">
+  <div class="user-group">
     <h1>{{ msg }}</h1>
   </div>
 </template>
