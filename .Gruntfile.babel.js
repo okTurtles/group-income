@@ -71,7 +71,12 @@ module.exports = grunt => {
       }
     },
 
-    standard: { dev: {} },
+    standard: {
+      // everything (following options in package.json)
+      dev: {},
+      // explicitely lint gruntfile as leading '.' causes it to be ignored
+      gruntfile: {src: '.Gruntfile.babel.js'}
+    },
 
     execute: {
       api_server: { src: 'backend/index.js' },
