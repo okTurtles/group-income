@@ -50,6 +50,10 @@ grunt test
 
 - In the future you'll be able to just run `grunt test` by itself.
 
+## Contributing
+
+Make sure to work in a named branch. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for details.
+
 ## License
 
 See `LICENSE` file.
