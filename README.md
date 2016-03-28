@@ -1,6 +1,6 @@
 # Group Income (Simple Edition)
 
-[![Join the chat at https://gitter.im/okTurtles/group-income](https://badges.gitter.im/okTurtles/group-income.svg)](https://gitter.im/okTurtles/group-income?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [![Build Status](https://img.shields.io/travis/okTurtles/group-income-simple/master.svg)](https://travis-ci.org/okTurtles/group-income-simple)
+[![Gitter](https://img.shields.io/gitter/room/okTurtles/group-income.svg)]() [![Build Status](https://img.shields.io/travis/okTurtles/group-income-simple/master.svg)](https://travis-ci.org/okTurtles/group-income-simple)
 
 Group Income allows groups to guarantee its members a minimum income.
 
