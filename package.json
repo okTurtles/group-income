@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node backend/index.js",
     "pretest": "./node_modules/standard/bin/cmd.js",
-    "test": "./node_modules/mocha/bin/mocha"
+    "test": "grunt test"
   },
   "standard": {
     "ignore": [
