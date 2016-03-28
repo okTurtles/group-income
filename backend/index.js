@@ -33,7 +33,8 @@ server.register(cookie, function (err) {
 var Sequelize = require('sequelize')
 var db = new Sequelize('sqlite.db', '', '', {
   dialect: 'sqlite',
-  host: 'sqlite.db'
+  // TODO this litters the local directory with a database file called sqlite.db, which is not ideal.
+  storage: process.argv.indexOf('test') !== -1 ? 'sqlite.db' : ':memory:'
 })
 
 module.exports = Promise.resolve()
