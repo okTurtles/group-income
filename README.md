@@ -42,13 +42,8 @@ grunt clean
 Run the tests:
 
 ```
-# In one terminal window
-grunt dev
-# In another terminal window
 grunt test
 ```
-
-- In the future you'll be able to just run `grunt test` by itself.
 
 ## Contributing
 

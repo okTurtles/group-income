@@ -34,13 +34,13 @@ module.exports = function (server, Sequelize, db) {
           name: Joi.string().min(3).max(50).required(),
           email: Joi.string().email().required(),
           password: Joi.string().min(7).max(50).required(),
-          phone: Joi.string().min(7).max(14),
+          phone: Joi.string().min(7).max(14).allow(''),
           contriGL: Joi.number().integer().required(),
           contriRL: Joi.number().integer().required(),
-          payPaypal: Joi.string(),
-          payBitcoin: Joi.string(),
-          payVenmo: Joi.string(),
-          payInstructions: Joi.string()
+          payPaypal: Joi.string().allow(''),
+          payBitcoin: Joi.string().allow(''),
+          payVenmo: Joi.string().allow(''),
+          payInstructions: Joi.string().allow('')
         }
       }
     },

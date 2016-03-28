@@ -1,4 +1,13 @@
-global.Promise = require('bluebird') // TODO: get rid of this since we're using babel?
+// Override global.Promise with bluebird.
+// Why? Because:
+//
+// - Bluebird adds many convenient APIs:
+//    http://bluebirdjs.com/docs/api-reference.html)
+// - Sequelize already uses bluebird, so we might as well take advantage of those APIs
+// - Bluebird's promises are better designed and have fewer issues than native ones:
+//    http://jamesknelson.com/are-es6-promises-swallowing-your-errors/)
+global.Promise = require('bluebird')
+
 global.logger = function (err) { // Improve this later
   console.error(err)
   console.error(err.stack)
@@ -31,14 +40,14 @@ server.register(cookie, function (err) {
 })
 
 var Sequelize = require('sequelize')
-var db = new Sequelize('sqlite.db', '', '', {
+var db = new Sequelize('database', '', '', {
   dialect: 'sqlite',
-  // TODO this litters the local directory with a database file called sqlite.db, which is not ideal.
+  // TODO: find better location for sqlite.db file
   storage: process.argv.indexOf('test') !== -1 ? 'sqlite.db' : ':memory:'
 })
 
 module.exports = Promise.resolve()
-.then(() => require('./user')(server, Sequelize, db))
+.then(() => require('./user')(server, Sequelize, db)) // implicit return arrow syntax
 .then(() => require('./session')(server, Sequelize, db))
 .then(() => require('./group')(server, Sequelize, db))
 .then(() => require('./userGroup')(server, Sequelize, db))
