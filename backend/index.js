@@ -36,7 +36,7 @@ var db = new Sequelize('sqlite.db', '', '', {
   host: 'sqlite.db'
 })
 
-Promise.resolve()
+module.exports = Promise.resolve()
 .then(() => require('./user')(server, Sequelize, db))
 .then(() => require('./session')(server, Sequelize, db))
 .then(() => require('./group')(server, Sequelize, db))
@@ -59,8 +59,5 @@ Promise.resolve()
 
   return db.sync()
 })
-.then(function () {
-  server.start(function () {
-    console.log('Server running at:', server.info.uri)
-  })
-})
+.then(() => server.start())
+.then(() => console.log('Server running at:', server.info.uri))

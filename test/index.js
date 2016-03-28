@@ -11,6 +11,10 @@ var cookieParser = function (headers) {
 }
 
 describe('Full walkthrough', function () {
+  it('Should start the server', function () {
+    return require('../backend/index.js')
+  })
+
   describe('User', function () {
     it('Should GET (empty)', function (done) {
       request.get('http://localhost:' + PORT + '/user/1')
