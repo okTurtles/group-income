@@ -37,7 +37,6 @@
     "standard": "5.4.1",
     "string": "3.3.1",
     "superagent": "1.8.0",
-    "superagent-promise-plugin": "3.1.0",
     "vue": "1.0.17",
     "vue-router": "0.7.11"
   },

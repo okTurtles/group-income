@@ -1,3 +1,11 @@
+// globals setup
+var Promise = global.Promise = require('bluebird') // see comment in backend/index.js
+// fix superagent so that .end() returns a promise
+var superagent = require('superagent')
+// going off the hint in: https://github.com/jomaxx/superagent-promise-plugin/blob/master/src/superagent-promise-plugin.js
+superagent.Request.prototype.end = Promise.promisify(superagent.Request.prototype.end)
+
+// load components
 import Vue from 'vue'
 import Router from 'vue-router'
 // import { domain, fromNow } from './filters'
@@ -6,8 +14,6 @@ import UserProfileView from './components/UserProfileView.vue'
 import UserGroupView from './components/UserGroupView.vue'
 import NewIncomeView from './components/NewIncomeView.vue'
 import PayGroupView from './components/PayGroupView.vue'
-
-require('superagent-promise-plugin').patch(require('superagent'))
 
 // install router
 Vue.use(Router)

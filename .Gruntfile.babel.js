@@ -5,11 +5,6 @@ http://chris.house/blog/grunt-configuration-for-react-browserify-babelify/
 https://www.reddit.com/r/javascript/comments/352f83/using_browserify_babelify_with_es6_modules_anyway/
 http://www.sitepoint.com/setting-up-es6-project-using-babel-browserify/
 https://babeljs.io/docs/setup/#browserify
-
-https://github.com/babel/babelify
-https://github.com/jmreidy/grunt-browserify
-https://github.com/substack/watchify
-https://github.com/vuejs/vueify
 */
 
 var SSI = require('node-ssi')
@@ -36,11 +31,11 @@ module.exports = grunt => {
       frontend: ['frontend/**/*.{vue,js}', '!frontend/_static/**']
     },
 
-    watch: { // https://github.com/gruntjs/grunt-contrib-watch
+    watch: {
       // prevent watch from spawning. if we don't do this, we won't be able
       // to kill the child when files change.
       options: {spawn: false},
-      // TODO: consider instead using the `watchify` option on browserify
+      // consider instead using the `watchify` option on browserify
       browserify: {
         options: { livereload: true }, // port 35729 by default
         files: ['<%= files.frontend %>'],
@@ -107,7 +102,7 @@ module.exports = grunt => {
 
     clean: { dist: ['dist/*', './sqlite.db'] },
 
-    connect: { // https://github.com/gruntjs/grunt-contrib-connect
+    connect: {
       options: {
         port: 8000,
         base: 'dist',
@@ -139,12 +134,11 @@ module.exports = grunt => {
       },
       dev: {}
     }
-    // TODO: see also
-    //       https://github.com/vuejs/vueify
-    //       https://github.com/lud2k/grunt-serve
-    //       https://github.com/substack/watchify
-    //       https://github.com/AgentME/browserify-hmr
-    //       https://medium.com/@dan_abramov/the-death-of-react-hot-loader-765fa791d7c4
+    // see also:
+    // https://github.com/lud2k/grunt-serve
+    // https://github.com/substack/watchify
+    // https://github.com/AgentME/browserify-hmr
+    // https://medium.com/@dan_abramov/the-death-of-react-hot-loader-765fa791d7c4
 
   })
 
