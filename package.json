@@ -26,7 +26,6 @@
     "bluebird": "3.3.4",
     "hapi": "12.1.0",
     "hapi-auth-cookie": "5.0.0",
-    "hapi-cors-headers": "1.0.0",
     "joi": "7.2.2",
     "jquery": "2.2.2",
     "lodash": "4.6.1",
@@ -41,6 +40,7 @@
     "vue-router": "0.7.11"
   },
   "devDependencies": {
+    "babel-cli": "6.6.5",
     "babel-core": "6.7.2",
     "babel-eslint": "5.0.0",
     "babel-plugin-transform-inline-environment-variables": "6.5.0",

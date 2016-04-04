@@ -1,9 +1,11 @@
 /* globals logger */
 
+var Promise = require('bluebird')
 var Joi = require('joi')
 var bcrypt = require('bcrypt')
 var email = require('./helpers/email')
 var uuid = require('node-uuid')
+var ErrToBoom = require('./helpers/utils')
 var hash = Promise.promisify(bcrypt.hash)
 
 module.exports = function (server, Sequelize, db) {
@@ -22,7 +24,8 @@ module.exports = function (server, Sequelize, db) {
       .then(reply)
       .catch(function (err) {
         logger(err)
-        reply(err)
+        // http://hapijs.com/api/#error-transformation
+        reply(ErrToBoom.badRequest(err))
       })
     }
   })
@@ -61,7 +64,7 @@ module.exports = function (server, Sequelize, db) {
       })
       .catch(function (err) {
         logger(err)
-        reply(err)
+        reply(ErrToBoom.badRequest(err))
       })
     }
   })
@@ -97,7 +100,7 @@ module.exports = function (server, Sequelize, db) {
       })
       .catch(function (err) {
         logger(err)
-        reply(err)
+        reply(ErrToBoom.badRequest(err))
       })
     }
   })

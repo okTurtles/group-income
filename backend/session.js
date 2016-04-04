@@ -3,6 +3,7 @@
 var Joi = require('joi')
 var bcrypt = require('bcrypt')
 var uuid = require('node-uuid')
+var Promise = require('bluebird')
 var compare = Promise.promisify(bcrypt.compare)
 module.exports = function (server, Sequelize, db) {
   server.route({
