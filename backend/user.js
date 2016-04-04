@@ -5,8 +5,8 @@ var Joi = require('joi')
 var bcrypt = require('bcrypt')
 var email = require('./helpers/email')
 var uuid = require('node-uuid')
-var ErrToBoom = require('./helpers/utils')
 var hash = Promise.promisify(bcrypt.hash)
+import { ErrToBoom } from './helpers/utils'
 
 module.exports = function (server, Sequelize, db) {
   server.route({

@@ -146,35 +146,38 @@ module.exports = grunt => {
   //  Code for running backend server at the same time as frontend server
   // -------------------------------------------------------------------------
 
-  var child = {running: false}
+  var child = null
 
   grunt.registerTask('backend:relaunch', '[internal]', function () {
     var done = this.async() // tell grunt we're async
-
-    if (child.running) {
-      grunt.log.writeln('Killing child!')
-      child.running = false
-      child.proc.kill('SIGINT') // nicer...
-    }
-    var fork2 = (child) => {
+    var fork2 = function () {
       grunt.log.writeln('backend: forking...')
-      var spawnOpts = {
-        execPath: './node_modules/.bin/babel-node',
+      child = fork('./backend/index.js', process.argv, {
+        execArgv: ['-r', 'babel-register'],
         cwd: process.cwd(),
-        env: process.env,
-        stdio: 'inherit'
-      }
-      child.proc = fork('./backend/index.js', process.argv, spawnOpts)
-      child.running = true
-      child.proc.on('exit', (c) => {
-        if (child.running) {
-          grunt.log.error `child exited with code: ${c}`
-          process.exit(c)
+        env: process.env
+      })
+      child.on('error', (err) => {
+        if (err) {
+          console.error('error starting or sending message to child:', err)
+          process.exit(1)
+        }
+      })
+      child.on('exit', (c) => {
+        if (c !== 0) {
+          grunt.log.error(`child exited with error code: ${c}`.bold)
+          process.exit(c || -1)
         }
       })
       done()
     }
-    setTimeout(fork2, 1000, child) // 1 second later
+    if (child) {
+      grunt.log.writeln('Killing child!')
+      // wait for successful shutdown to avoid EADDRINUSE errors
+      child.on('message', fork2)
+      child.send({})
+    } else {
+      fork2()
+    }
   })
 }
-
