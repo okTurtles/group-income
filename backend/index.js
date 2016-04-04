@@ -4,7 +4,7 @@
 // http://jamesknelson.com/are-es6-promises-swallowing-your-errors/
 global.Promise = require('bluebird')
 
-global.logger = function (err) { // Improve this later
+var logger = global.logger = function (err) { // Improve this later
   console.error(err)
   console.error(err.stack)
 }
@@ -16,7 +16,6 @@ var server = new Hapi.Server({
   debug: { request: ['error'], log: ['error'] }
 })
 server.connection({
-  host: '127.0.0.1', // Because sometimes I get a weird Error: listen EADDRINUSE 0.0.0.0:3000
   port: process.env.API_PORT,
   // See: https://github.com/hapijs/discuss/issues/262#issuecomment-204616831
   routes: { cors: { origin: [process.env.FRONTEND_URL] } }
@@ -61,8 +60,27 @@ module.exports = Promise.resolve()
   db.Group.hasMany(db.Invite, {foreignKey: {name: 'groupId', allowNull: false}, constraints: true})
   db.Invite.belongsTo(db.Group, {foreignKey: {name: 'groupId', allowNull: false}, constraints: true})
   db.Invite.belongsTo(db.User, {foreignKey: {name: 'creatorId', allowNull: false}, constraints: true})
-
   return db.sync()
 })
 .then(() => server.start())
 .then(() => console.log('Server running at:', server.info.uri))
+.catch((err) => {
+  console.error('Server failed to start!')
+  logger(err)
+  process.exit(1)
+})
+
+// when spawned via grunt, listen for message to cleanly shutdown and relinquish port
+process.on('message', () => {
+  console.log('message received in child, shutting down...')
+  server.stop()
+  .then(() => {
+    console.log('Hapi server down')
+    process.send({}) // tell grunt we've successfully shutdown the server
+    process.nextTick(() => process.exit(0)) // triple-check we quit :P
+  })
+  .catch((err) => {
+    console.error('Error shutting down:', err)
+    process.exit(1)
+  })
+})

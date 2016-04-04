@@ -11,9 +11,9 @@ const Boom = require('boom')
 //     }
 //   }
 // })
-// TODO: autogen these by going through Boom's methods
-exports.ErrToBoom = {
-  badRequest: function (err) {
+export let ErrToBoom = {
+    // TODO: autogen these by going through Boom's methods
+  badRequest (err) {
     return Boom.badRequest(err.errors && err.errors[0].message || err.message)
   }
 }
