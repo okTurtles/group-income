@@ -1,8 +1,5 @@
-// globals setup
 var Promise = global.Promise = require('bluebird') // see comment in backend/index.js
-// fix superagent so that .end() returns a promise
-var superagent = require('superagent')
-// going off the hint in: https://github.com/jomaxx/superagent-promise-plugin/blob/master/src/superagent-promise-plugin.js
+var superagent = require('superagent') // fix superagent so that .end() returns a promise
 superagent.Request.prototype.end = Promise.promisify(superagent.Request.prototype.end)
 
 // load components

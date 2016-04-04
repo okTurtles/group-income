@@ -14,13 +14,6 @@ var path = require('path')
 var url = require('url')
 var S = require('string')
 var fork = require('child_process').fork
-var vueify = require('vueify')
-// var envify = require('envify/custom') // not needed b/c of transform-inline-environment-variables
-
-vueify.compiler.applyConfig({ babel: {
-  presets: ['es2015', 'stage-3'],
-  plugins: ['transform-runtime', 'transform-inline-environment-variables']
-} })
 
 module.exports = grunt => {
   require('load-grunt-tasks')(grunt)
@@ -54,13 +47,9 @@ module.exports = grunt => {
     browserify: {
       dev: {
         options: {
-          transform: ['vueify', ['babelify', {
-            presets: ['es2015', 'stage-3'],
-            plugins: ['transform-inline-environment-variables'] // babelify plugins
-          }]],
-          plugins: ['transform-runtime'],                       // browserify plugins
+          transform: ['vueify', 'babelify'],
           browserifyOptions: {
-            debug: process.env.NODE_ENV === 'development'       // enables source maps
+            debug: process.env.NODE_ENV === 'development' // enables source maps
           }
         },
         files: { 'dist/simple/app.js': ['<%= files.frontend %>'] }
@@ -90,10 +79,9 @@ module.exports = grunt => {
     },
 
     execute: {
-      api_server: { src: 'backend/index.js' },
       api_test: {
         src: './node_modules/.bin/mocha',
-        options: { args: ['-R', 'spec', '--bail', 'test/'] }
+        options: { args: ['--compilers', 'js:babel-register', '-R', 'spec', '--bail', 'test/'] }
       },
       // we don't do `standard` linting this way (output not as pretty)
       // but keep it around just to show the alternative
@@ -171,6 +159,7 @@ module.exports = grunt => {
     var fork2 = (child) => {
       grunt.log.writeln('backend: forking...')
       var spawnOpts = {
+        execPath: './node_modules/.bin/babel-node',
         cwd: process.cwd(),
         env: process.env,
         stdio: 'inherit'

@@ -1,11 +1,7 @@
-// Override global.Promise with bluebird.
-// Why? Because:
-//
-// - Bluebird adds many convenient APIs:
-//    http://bluebirdjs.com/docs/api-reference.html)
-// - Sequelize already uses bluebird, so we might as well take advantage of those APIs
-// - Bluebird's promises are better designed and have fewer issues than native ones:
-//    http://jamesknelson.com/are-es6-promises-swallowing-your-errors/)
+// Bluebird adds many convenient APIs: http://bluebirdjs.com/docs/api-reference.html
+// Sequelize already uses bluebird, so we might as well take advantage of those APIs
+// Bluebird's promises are better designed and have fewer issues than native ones:
+// http://jamesknelson.com/are-es6-promises-swallowing-your-errors/
 global.Promise = require('bluebird')
 
 global.logger = function (err) { // Improve this later
@@ -14,18 +10,17 @@ global.logger = function (err) { // Improve this later
 }
 var Hapi = require('hapi')
 var cookie = require('hapi-auth-cookie')
-var corsHeaders = require('hapi-cors-headers')
 
 var server = new Hapi.Server({
   // TODO: improve logging and base it on process.env.NODE_ENV
   debug: { request: ['error'], log: ['error'] }
-  // connections: {routes: {cors: cors}},
 })
 server.connection({
-  port: process.env.API_PORT
-  // host: '0.0.0.0', routes: { cors: cors }
+  host: '127.0.0.1', // Because sometimes I get a weird Error: listen EADDRINUSE 0.0.0.0:3000
+  port: process.env.API_PORT,
+  // See: https://github.com/hapijs/discuss/issues/262#issuecomment-204616831
+  routes: { cors: { origin: [process.env.FRONTEND_URL] } }
 })
-server.ext('onPreResponse', corsHeaders)
 server.register(cookie, function (err) {
   if (err) {
     console.error(err)
