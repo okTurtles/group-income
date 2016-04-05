@@ -2,9 +2,9 @@
 
 [![Gitter](https://img.shields.io/gitter/room/okTurtles/group-income.svg)]() [![Build Status](https://img.shields.io/travis/okTurtles/group-income-simple/master.svg)](https://travis-ci.org/okTurtles/group-income-simple)
 
-Group Income allows groups to guarantee its members a minimum income.
+[Group Income](http://groupincome.org/) is a fair income sharing mechanism that allows groups to provide their members a minimum income.
 
-Its accounting system can be implemented using a simple Excel spreadsheet, or on blockchains like Ethereum (which is where we're headed). This centralized "Simple Edition" is our way to rapidly prototype, develop, and research the concept with real groups.
+Its accounting system can be implemented using a simple Excel spreadsheet, or on blockchains like Ethereum (which is [where we're headed](https://github.com/okTurtles/group-income)). This centralized "Simple Edition" of Group Income is our way to rapidly prototype, develop, and research the concept with real groups.
 
 ## Installation
 
