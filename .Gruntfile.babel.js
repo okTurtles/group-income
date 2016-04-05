@@ -14,6 +14,22 @@ var path = require('path')
 var url = require('url')
 var S = require('string')
 var fork = require('child_process').fork
+var vueify = require('vueify')
+var ejs = require('ejs')
+
+// per: https://github.com/vuejs/vue-loader/issues/197#issuecomment-205617193
+vueify.compiler.applyConfig({
+  customCompilers: {
+    // WARNING: EJS in .vue files is EJS 2.0!
+    //          In .ejs files it's 1.0 until we fork ejsify and update it
+    // TODO: fork ejsify and update its ejs
+    ejs: function (content, cb, compiler, filepath) {
+      content = content.replace(/&lt;%/g, '<%')
+      content = content.replace(/%&gt;/g, '%>') // hack
+      cb(null, ejs.render(content, {filename: filepath}))
+    }
+  }
+})
 
 module.exports = grunt => {
   require('load-grunt-tasks')(grunt)

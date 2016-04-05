@@ -8,12 +8,10 @@ import UserProfileView from './views/UserProfileView.vue'
 import UserGroupView from './views/UserGroupView.vue'
 import NewIncomeView from './views/NewIncomeView.vue'
 import PayGroupView from './views/PayGroupView.vue'
-import Include from './js/Include'
 import { wrap } from './js/utils'
 
 Vue.config.debug = process.env.NODE_ENV === 'development'
 Vue.use(Router)
-Vue.use(Include)
 
 var router = new Router({
   hashbang: false,

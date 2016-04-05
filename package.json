@@ -50,6 +50,7 @@
     "babel-register": "6.7.2",
     "babel-runtime": "5.8.35",
     "babelify": "7.2.0",
+    "ejs": "2.4.1",
     "ejsify": "1.0.0",
     "grunt": "0.4.5",
     "grunt-browserify": "5.0.0",
