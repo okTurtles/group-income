@@ -21,7 +21,7 @@ module.exports = grunt => {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
     files: {
-      frontend: ['frontend/**/*.{vue,js}', '!frontend/_static/**']
+      frontend: ['frontend/**/*.{vue,ejs,js}', '!frontend/_static/**']
     },
 
     watch: {
@@ -47,7 +47,7 @@ module.exports = grunt => {
     browserify: {
       dev: {
         options: {
-          transform: ['vueify', 'babelify'],
+          transform: ['vueify', 'ejsify', 'babelify'],
           browserifyOptions: {
             debug: process.env.NODE_ENV === 'development' // enables source maps
           }

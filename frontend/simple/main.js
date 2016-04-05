@@ -2,20 +2,19 @@ var Promise = global.Promise = require('bluebird') // see comment in backend/ind
 var superagent = require('superagent') // fix superagent so that .end() returns a promise
 superagent.Request.prototype.end = Promise.promisify(superagent.Request.prototype.end)
 
-// load components
 import Vue from 'vue'
 import Router from 'vue-router'
-// import { domain, fromNow } from './filters'
-import App from './App.vue'
-import UserProfileView from './components/UserProfileView.vue'
-import UserGroupView from './components/UserGroupView.vue'
-import NewIncomeView from './components/NewIncomeView.vue'
-import PayGroupView from './components/PayGroupView.vue'
+import UserProfileView from './views/UserProfileView.vue'
+import UserGroupView from './views/UserGroupView.vue'
+import NewIncomeView from './views/NewIncomeView.vue'
+import PayGroupView from './views/PayGroupView.vue'
+import Include from './js/Include'
+import { wrap } from './js/utils'
 
-// install router
+Vue.config.debug = process.env.NODE_ENV === 'development'
 Vue.use(Router)
+Vue.use(Include)
 
-// routing
 var router = new Router({
   hashbang: false,
   history: true,
@@ -23,13 +22,20 @@ var router = new Router({
 })
 
 router.map({
-  '/': { component: UserGroupView },
-  '/new-user': { component: UserProfileView },
+  '/': { component: { template: wrap(require('./views/test.ejs')()) } },
+  '/new-user': {
+    component: UserProfileView,
+    title: 'Create User' // https://github.com/okTurtles/group-income-simple/issues/45
+  },
   '/user': { component: UserProfileView },
   '/user/:username': { component: UserProfileView },
   '/user-group': { component: UserGroupView },
   '/new-income': { component: NewIncomeView },
-  '/pay-group': { component: PayGroupView }
+  '/pay-group': { component: PayGroupView },
+  '/ejs-page': {
+    component: { template: wrap(require('./views/test.ejs')()) },
+    title: 'EJS Test Page'
+  }
 })
 
 router.beforeEach(function () {
@@ -40,17 +46,5 @@ router.redirect({
   '*': '/' // TODO: make this a 404
 })
 
-router.start(App, '#app')
-
-// alt from https://github.com/vuejs/vuex/blob/master/examples/todomvc/main.js
-/*
-import Vue from 'vue'
-import store from './vuex/store'
-import App from './components/App.vue'
-
-new Vue({
-  store, // inject store to all children
-  el: 'body',
-  components: { App }
-})
-*/
+var App = Vue.extend({})
+router.start(App, 'html') // bind to html so we can change the title and head section
