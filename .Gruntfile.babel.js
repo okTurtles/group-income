@@ -15,21 +15,8 @@ var url = require('url')
 var S = require('string')
 var fork = require('child_process').fork
 var vueify = require('vueify')
-var ejs = require('ejs')
 
-// per: https://github.com/vuejs/vue-loader/issues/197#issuecomment-205617193
-vueify.compiler.applyConfig({
-  customCompilers: {
-    // WARNING: EJS in .vue files is EJS 2.0!
-    //          In .ejs files it's 1.0 until we fork ejsify and update it
-    // TODO: fork ejsify and update its ejs
-    ejs: function (content, cb, compiler, filepath) {
-      content = content.replace(/&lt;%/g, '<%')
-      content = content.replace(/%&gt;/g, '%>') // hack
-      cb(null, ejs.render(content, {filename: filepath}))
-    }
-  }
-})
+// EJS support at the bottom of the file, below grunt setup
 
 module.exports = grunt => {
   require('load-grunt-tasks')(grunt)
@@ -63,7 +50,7 @@ module.exports = grunt => {
     browserify: {
       dev: {
         options: {
-          transform: ['vueify', 'ejsify', 'babelify'],
+          transform: ['vueify', ejsify, 'babelify'],
           browserifyOptions: {
             debug: process.env.NODE_ENV === 'development' // enables source maps
           }
@@ -195,5 +182,37 @@ module.exports = grunt => {
     } else {
       fork2()
     }
+  })
+}
+
+// ----------------------------------------
+// EJS support for .vue files + via require
+// TODO: move this to some nicer place
+// ----------------------------------------
+var through = require('through2')
+
+// per: https://github.com/vuejs/vue-loader/issues/197#issuecomment-205617193
+vueify.compiler.applyConfig({
+  customCompilers: {
+    ejs: function (content, cb, compiler, filepath) {
+      cb(null, loadEJS(filepath, content)())
+    }
+  }
+})
+// TODO: see comment in simple/js/utils.js
+function loadEJS (path, str) {
+  str = str.replace(/&lt;%/g, '<%').replace(/%&gt;/g, '%>') // hack
+  return require('ejs').compile(str, {
+    filename: path,
+    compileDebug: process.env.NODE_ENV === 'development',
+    client: true // this is necessary for ejsify to work
+  })
+}
+// with inspiration from the ejsify package
+function ejsify (file) {
+  return !S(file).endsWith('.ejs')
+  ? through()
+  : through(function (buf, encoding, cb) {
+    cb(null, `module.exports = (${loadEJS(file, buf.toString('utf8'))})`)
   })
 }
