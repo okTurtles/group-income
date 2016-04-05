@@ -1,14 +1,44 @@
 <!doctype html>
 <html class="no-js" lang="">
-    <head>
-        <!--# include file="/head.html" -->
-    </head>
-    <body>
-        <!--[if lt IE 8]>
-            <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
-        <![endif]-->
-        <div id="app" class="wrapper"></div>
-        <script src="/js/vendor/jquery-1.12.0.min.js"></script>
-        <script src="/simple/app.js"></script>
-    </body>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title v-if="!$route.title">Group Income Simple</title>
+    <template v-else>
+      <title>{{ $route.title }}</title>
+    </template>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- TODO: should these be here? am guessing not? -->
+    <link href='//fonts.googleapis.com/css?family=Lato:300,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="/css/normalize.css">
+    <link rel="stylesheet" href="/css/main.css">
+    <script src="/js/vendor/modernizr-2.8.3.min.js"></script>
+  </head>
+  <body>
+    <!--[if lt IE 8]>
+      <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+    <![endif]-->
+    <div id="app" class="wrapper">
+      <header>
+        <div class="groupincome-logo">
+          <img class="black" src="/images/groupincome-logo-black.png">
+        </div>
+        <nav>
+          <ul>
+            <li><a v-link="'/new-user'">New User</a></li>
+            <li><a v-link="'/user'">User Profile</a></li>
+            <li><a v-link="'/user-group'">User Group</a></li>
+            <li><a v-link="'/new-income'">New Income</a></li>
+            <li><a v-link="'/pay-group'">Pay Group</a></li>
+            <li><a v-link="'/ejs-page'">EJS page test</a></li>
+          </ul>
+        </nav>
+      </header>
+      <div class="container">
+        <router-view></router-view>
+      </div>
+    </div>
+    <script src="/simple/app.js"></script>
+  </body>
 </html>
