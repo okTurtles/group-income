@@ -1,6 +1,6 @@
 # Getting Started With The Frontend
 
-A guide for web designers and developers, new and—especially—old!
+A "modern web development" guide for web designers and developers.
 
 _This guide assumes you know how to use `git` and GitHub!_
 
@@ -245,7 +245,7 @@ __Pros__
 
 ### What Vue.js is good for (and not)
 
-- _Rewrite this section. It's somewhat outdated (in the sense that the decision has been made), and it doesn't fit in with the above because it's just copy/pasted from the [GitHub issue](https://github.com/okTurtles/group-income-simple/issues/37)._
+> Rewrite this section. It's somewhat outdated (in the sense that the decision has been made), and it doesn't fit in with the above because it's just copy/pasted from the [GitHub issue](https://github.com/okTurtles/group-income-simple/issues/37).
 
 - Reducing HTML markup and making collaboration easier. To open a facebook-style chatbox at the bottom of the window, you just insert `<chatbox param1="foo" param2="bar"></chatbox>`, etc.
 - Synchronizing data between the view (the widget) and the model (the JS object). I.e. [two-way data bindings](http://vuejs.org/guide/forms.html). **Rule of thumb:** if data-binding is unnecessary then there's no need for Vue.js to be involved.
@@ -266,7 +266,7 @@ Vue.js can be used to prevent the EJS from overcrowding the markup.
 
 ### Some code not needed
 
-- _Rewrite this section. It's somewhat outdated (in the sense that the decision has been made), and it doesn't fit in with the above because it's just copy/pasted from the [GitHub issue](https://github.com/okTurtles/group-income-simple/issues/37)._
+> Rewrite this section. It's somewhat outdated (in the sense that the decision has been made), and it doesn't fit in with the above because it's just copy/pasted from the [GitHub issue](https://github.com/okTurtles/group-income-simple/issues/37).
 
 Sorry @wemeetagain for not figuring this out earlier, but I think you'll agree that it doesn't make sense to replace one line of markup (the `<button>` tag) with a [26 line `.vue` file](https://github.com/okTurtles/group-income-simple/blob/edd63c0ee5bd69bd8e830f57025f3dbbf566d8c2/frontend/simple/components/Button.vue). Suggesting that we do that was my silly mistake. OTOH such mistakes are useful for figuring out what Vue.js is and isn't really useful for.
 
