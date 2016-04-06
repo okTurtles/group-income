@@ -17,13 +17,17 @@ Although it pains us to give up 4-spaced tabs, we're trying out [`standard`](htt
 
 [![js-standard-style](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard)
 
+## Designers: Read this!
+
+We've put in _a lot_ of energy into taming the craziness of modern web development (where HTML files are shunned and everything involves running crazy command-line tools before you can see the results of your work).
+
+As such, for you we've created a simple-to-follow guide on how to get started designing for this project:
+
+- __[:book: Getting Started](docs/Getting-Started-frontend.md)__
+
 ## Development
 
-Build the app:
-
-```
-grunt dist
-```
+See [Getting Started](docs/Getting-Started-frontend.md) to get setup. The basic grunt workflow commands are listed below:
 
 Run all servers + watch files for changes:
 
@@ -32,6 +36,12 @@ grunt dev
 ```
 
 - After running `grunt dev`, visit the website: [http://localhost:8000](http://localhost:8000)
+
+Build the app for distribution:
+
+```
+grunt dist
+```
 
 Clean up files in `dist/` and the `sqlite.db` file (which will be better handled in the future):
 
