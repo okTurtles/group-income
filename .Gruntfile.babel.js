@@ -18,11 +18,14 @@ var vueify = require('vueify')
 
 // EJS support at the bottom of the file, below grunt setup
 
-module.exports = grunt => {
+module.exports = (grunt) => {
   require('load-grunt-tasks')(grunt)
 
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
+
+    checkDependencies: {this: {options: {install: true}}},
+
     files: {
       frontend: ['frontend/**/*.{vue,ejs,js}', '!frontend/_static/**']
     },
@@ -139,7 +142,7 @@ module.exports = grunt => {
 
   grunt.registerTask('default', ['dev'])
   grunt.registerTask('backend', ['backend:relaunch', 'watch'])
-  grunt.registerTask('dev', ['build', 'connect', 'backend']) // backend calls watch
+  grunt.registerTask('dev', ['checkDependencies', 'build', 'connect', 'backend']) // backend calls watch
   grunt.registerTask('build', ['standard', 'copy', 'browserify'])
   grunt.registerTask('dist', ['build'])
   grunt.registerTask('test', ['standard', 'execute:api_test'])

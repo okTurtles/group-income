@@ -5,20 +5,42 @@ A guide for web designers and developers, new and—especially—old!
 _This guide assumes you know how to use `git` and GitHub!_
 
 - [Architecture Stack Overview](#architecture-stack-overview)
+    + [Node.js](#nodejs---javascript-environment)
+    + [NPM](#npm---node-package-manager)
+    + [Grunt](#grunt---task-runner)
+    + [Hapi.js](#hapijs---nodejs-powered-https-server)
+    + [Browserify](#browserify---module-system--bundler)
+    + [Babel](#babel---tomorrows-javascript-featurestoday)
+    + [Vue.js](#vuejs---modern-frontend-component-framework)
+    + [EJS](#ejs---like-php-but-javascript)
+    + [Bulma](#bulma---lightweight-modern-flexbox-css-framework)
+- [Frontend Workflow](#frontend-workflow)
+    + [How do I get set up / just run the site?](#how-do-i-get-set-up--just-run-the-site)
+    + [What does `npm install` do?](#what-does-npm-install-do)
+    + [What does `grunt dev` do?](#what-does-grunt-dev-do)
+    + [What files do I edit?](#what-files-do-i-edit)
+    + [How do I use jQuery or *[insert javascript library here]*?](#how-do-i-use-jquery-or-insert-javascript-library-here)
+    + [My question isn't listed here!](#my-question-isnt-listed-here)
+- ["A Pox On Modern Web Development!"](#a-pox-on-modern-web-development)
+    + [What Happened To Web Development?](#what-happened-to-web-development)
+    + [The rise of the "single page app"](#the-rise-of-the-single-page-app)
+    + [What Vue.js is good for (and not)](#what-vuejs-is-good-for-and-not)
+    + [What EJS is good for](#what-ejs-is-good-for)
+    + [Some code not needed](#some-code-not-needed)
 
 ## Architecture Stack Overview
 
 These are the technologies this project uses. You don't need to understand everything about them, but you must at least read the descriptions below to understand _what_ they are (starting from the lowest-level and working our way up):
 
-__[Node.js](https://nodejs.org/)__ - _JavaScript Environment_
+###### __[Node.js](https://nodejs.org/)__ - _JavaScript Environment_
 
 Node.js is the platform that all the other tech we use builds upon. It's _an environment for running javascript outside of the browser_, and it has been used to do almost everything, from creating web servers, to creating tools and utilities, to powering standalone applications like Slack.
 
-__[NPM](https://www.npmjs.com/)__ - _Node Package Manager_
+###### __[NPM](https://www.npmjs.com/)__ - _Node Package Manager_
 
 Used for all kinds of JavaScript projects (backend and/or frontend). Any sort of module/library/framework you can think of is stored here. Yes, even jQuery.
 
-__[Grunt](http://gruntjs.com/)__ - _Task Runner_
+###### __[Grunt](http://gruntjs.com/)__ - _Task Runner_
 
 For doing things like:
 
@@ -26,11 +48,11 @@ For doing things like:
 - Watching files for changes and performing actions automatically (like syntax-checking/"linting" them, combining them, copying them, etc.)
 - Converting files from one format into another (bundling `.vue` and `.ejs` files into `.js`, etc.)
 
-__[Hapi.js](http://hapijs.com/)__ - _Node.js-powered HTTP(S) Server_
+###### __[Hapi.js](http://hapijs.com/)__ - _Node.js-powered HTTP(S) Server_
 
 Powers the backend API that the frontend talks to. It's responsible for managing the database of groups and users, and together with the frontend it uses cookies to authenticate users.
 
-__[Browserify](http://browserify.org/)__ - _Module System + Bundler_
+###### __[Browserify](http://browserify.org/)__ - _Module System + Bundler_
 
 Makes it possible to write front-end code in the same way Node.js backend code is written. Instead of including a library like jQuery using a `<script>` tag, you `npm install jquery --save`  it, and then `var $ = require('jquery')` it. Browserify is much more than that however, it also:
 
@@ -38,18 +60,18 @@ Makes it possible to write front-end code in the same way Node.js backend code i
 - The transforms make it possible to `require` any file format in JavaScript (like `.ejs` and `.vue` files!) and bundle it all together into a single javascript bundle.
 - It can act as a pre-processor, so that when files are read in their contents can be transformed in the resulting JS bundle. This includes obvious things like minifying JavaScript, but also can include string-replacement, etc.
 
-__[Babel](https://babeljs.io/)__ - _Tomorrow's JavaScript Features—Today!_
+###### __[Babel](https://babeljs.io/)__ - _Tomorrow's JavaScript Features—Today!_
 
 The JavaScript language is always evolving. Oftentimes new features will be "solidified" by the standards bodies but won't yet be available in either web browser or Node.js environments. That's where Babel comes in. It lets you use tomorrow's by automatically rewriting files with new syntax into older syntax that browsers (and/or node.js) support.
 
 - Babel can be used through a variety of tools, including Browserify! Vue.js templates automatically use Babel, so you can use the latest JS features within them.
 - Like Browserify, Babel also supports plugins. In fact we use one called `transform-inline-environment-variables` to automatically replace environment variables like `process.env.NODE_ENV` with their corresponding values (both on the frontend and the backend).
 
-__[Vue.js](http://blog.evanyou.me/2015/10/25/vuejs-re-introduction/)__ - _Modern Frontend Component Framework_
+###### __[Vue.js](http://blog.evanyou.me/2015/10/25/vuejs-re-introduction/)__ - _Modern Frontend Component Framework_
 
 A frontend web framework like React.js but, IMO, significantly simpler and yet at least as powerful. See the important [section below](#TODO-this) is devoted to explaining its role (when/where/how to use it). Vue.js powers many websites, has [a large](https://github.com/vuejs/awesome-vue) [community](http://forum.vuejs.org/), [100% code coverage](https://codecov.io/github/vuejs/vue?branch=master), and [Evan You](https://twitter.com/youyuxi) is amazing.
 
-__[EJS](http://ejs.co/)__ - _Like PHP, but JavaScript_
+###### __[EJS](http://ejs.co/)__ - _Like PHP, but JavaScript_
 
 This project supports using it in `.vue` files and by itself in standalone `.ejs` files. Lets you do things like:
 
@@ -61,7 +83,7 @@ This project supports using it in `.vue` files and by itself in standalone `.ejs
 <% } %>
 ```
 
-__[Bulma](http://bulma.io/)__ - _Lightweight Modern [Flexbox](https://github.com/okTurtles/group-income-simple/wiki/Architecture-Notes#misc-useful-things) CSS Framework_
+###### __[Bulma](http://bulma.io/)__ - _Lightweight Modern [Flexbox](https://github.com/okTurtles/group-income-simple/wiki/Architecture-Notes#misc-useful-things) CSS Framework_
 
 Incorporating this to the site is on the TODO and is [an open issue](https://github.com/okTurtles/group-income-simple/issues/16) to take!
 
@@ -69,7 +91,7 @@ Incorporating this to the site is on the TODO and is [an open issue](https://git
 
 For those new to "modern web development", we have a section below to quickly bring you up to speed, and you should read that first:
 
-- ["A Pox On Modern Web Development!"](#a-pox-on-modern-web-development)
+__["A Pox On Modern Web Development!"](#a-pox-on-modern-web-development)__
 
 #### How do I get set up / just run the site?
 
@@ -91,11 +113,7 @@ If all went well you should be able to visit: [http://localhost:8000](http://loc
 
 #### What does `npm install` do?
 
-It installs the dependencies that this project relies on and places them into the `node_modules/` folder.
-
-__You have to re-run this command whenever we update or add new dependencies!__
-
-In other words, if you pull the latest changes from the `master` and `grunt dev` stops working it may be because you need to run `npm install` to fetch a recently added dependency.
+It installs the dependencies that this project relies on and places them into the `node_modules/` folder. We've setup grunt to verify you always have the latest dependencies installed, but you do need to run this command at least once.
 
 #### What does `grunt dev` do?
 
@@ -169,7 +187,7 @@ export default {
 
 Generally speaking: ask before adding any new dependencies! (Either in the [chat](https://gitter.im/okTurtles/group-income) or the [forums](https://forums.okturtles.com/index.php?board=9.0) or a GitHub issue.)
 
-#### My question isn't listed here?
+#### My question isn't listed here!
 
 That's OK! Ask us in the [chat](https://gitter.im/okTurtles/group-income) or the [forums](https://forums.okturtles.com/index.php?board=9.0) or open a GitHub issue! :)
 
