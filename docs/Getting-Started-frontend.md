@@ -14,6 +14,7 @@ _This guide assumes you know how to use `git` and GitHub!_
     + [Vue.js](#vuejs---modern-frontend-component-framework)
     + [EJS](#ejs---like-php-but-javascript)
     + [Bulma](#bulma---lightweight-modern-flexbox-css-framework)
+    + [Honorable Mentions: Webpack, Gulp, React](#honorable-mentions-webpack-gulp-react)
 - [Frontend Workflow](#frontend-workflow)
     + [How do I get set up / just run the site?](#how-do-i-get-set-up--just-run-the-site)
     + [What does `npm install` do?](#what-does-npm-install-do)
@@ -69,7 +70,12 @@ The JavaScript language is always evolving. Oftentimes new features will be "sol
 
 ###### __[Vue.js](http://blog.evanyou.me/2015/10/25/vuejs-re-introduction/)__ - _Modern Frontend Component Framework_
 
-A frontend web framework like React.js but, IMO, significantly simpler and yet at least as powerful. See the important [section below](#TODO-this) is devoted to explaining its role (when/where/how to use it). Vue.js powers many websites, has [a large](https://github.com/vuejs/awesome-vue) [community](http://forum.vuejs.org/), [100% code coverage](https://codecov.io/github/vuejs/vue?branch=master), and [Evan You](https://twitter.com/youyuxi) is amazing.
+A frontend web framework like React.js but, IMO, significantly simpler and yet at least as powerful:
+
+- http://blog.evanyou.me/2015/10/25/vuejs-re-introduction/
+- http://vuejs.org/guide/comparison.html
+
+In the section [What Vue.js is good for (and not)](#what-vuejs-is-good-for-and-not) we discuss its role and when/where/how to use it.
 
 ###### __[EJS](http://ejs.co/)__ - _Like PHP, but JavaScript_
 
@@ -87,11 +93,17 @@ This project supports using it in `.vue` files and by itself in standalone `.ejs
 
 Incorporating this to the site is on the TODO and is [an open issue](https://github.com/okTurtles/group-income-simple/issues/16) to take!
 
+##### Honorable Mentions: [Webpack](https://webpack.github.io/), [Gulp](http://gulpjs.com/), [React](https://github.com/facebook/react)
+
+We've chosen (for now at least) to use Browserify over Webpack, Grunt over Gulp, an Vue.js over React, even though these are all perfectly fine tools in the modern web development toolkit. Briefly, our reasoning:
+
+- Although Webpack has features that Browserify does not, it is also far more complicated, requiring greater documentation to use, and I don't think it provides web-based implementations of Node.js's API the way Browserify does. For now at least, Browserify seems to be serving our needs just fine.
+- The reasons for choosing Vue.js over React are mentioned [above](#vuejs---modern-frontend-component-framework).
+- Grunt and Gulp appear to be about evenly matched, and although Gulp seems to be hip and has a nifty design, Grunt is also perfectly well designed and works just as well. We were familiar with Grunt already so we chose it. Plus we like its emphasis on configuration over code. Either tool will serve you well.
+
 ## Frontend Workflow
 
-For those new to "modern web development", we have a section below to quickly bring you up to speed, and you should read that first:
-
-__["A Pox On Modern Web Development!"](#a-pox-on-modern-web-development)__
+For those new to "modern web development", we have a section below to quickly bring you up to speed, and you should read that first: __["A Pox On Modern Web Development!"](#a-pox-on-modern-web-development)__
 
 #### How do I get set up / just run the site?
 
@@ -126,13 +138,14 @@ A lot of things. Its output will tell you exactly what it does, but the general 
 
 #### What files do I edit?
 
-For frontend developers the relevant folders and files are within the `frontend/` folder:
+For frontend developers the relevant folders and files are within the `frontend/simple/` folder. The `frontend/` folder contains some files & folders that are best ignored:
 
-- The files immediately within the `frontend/` folder represent the "top level" of the `groupincome.org` website. These HTML files are not part of "Group Income Simple" itself, they are there mostly to just act as placeholders. The actual website for groupincome.org is located in a [different repo](https://github.com/okTurtles/groupincome.org).
-- `_static/` - This folder contains HTML markup that we're converting into `.vue` and `.ejs` files. Just ignore this folder for the most part, it's there only for reference and will be deleted soon.
-- `simple/` - __This is where frontend for "Group Income Simple" resides.__
+- The files immediately within the `frontend/` folder represent the "top level" of the `groupincome.org` website. These HTML files __are not__ part of "Group Income Simple" itself. They are there mostly as placeholders for the groupincome.org site, which is located in a [different repo](https://github.com/okTurtles/groupincome.org).
+- `_static/` - This folder contains HTML markup that we're converting into `.vue` and `.ejs` files. Just *ignore this folder* for the most part, it's there only for reference and will be deleted soon.
 
-The `frontend/simple/` folder is where the frontend development happens. Here are the important files and folders within it and what their purpose is:
+The `frontend/simple/` folder is where the frontend development happens!
+
+Here are the important files and folders within `frontend/simple/`:
 
 - `index.html` - This is the "entry point" for the frontend and the _only HTML file_ in the entire web app. Everything starts with this file being served. It loads the `dist/app.js` bundle that gets created by Browserify, and that file contains the contents of all of the `.js`, `.vue`, and `.ejs` files.
     + __Designer note:__ This file is _purposefully minimal!_ You will rarely need to modify this file. If we modify it, it might only be to make it even smaller by removing any unnecessary `<script>` and `<link>` tags within it. This file is the "header and footer" that gets applied to _every "page"_ of our web app, and for that reason it's best to keep it as short as necessary.
@@ -220,8 +233,6 @@ With this came radical shifts in how web development was done. Now it was necess
 React.js and Vue.js are examples of frameworks that support the creation of such components.
 
 Browserify and Webpack are module systems and bundlers to efficiently organizing and loading the various resources these New Apps need.
-
-So, that brings us the next section on Vue.js, which is based on research summarized in issue [#37](https://github.com/okTurtles/group-income-simple/issues/37).
 
 ### The rise of the "single page app"
 
