@@ -201,11 +201,10 @@ vueify.compiler.applyConfig({
 })
 // TODO: see comment in simple/js/utils.js
 function loadEJS (path, str) {
-  str = str.replace(/&lt;%/g, '<%').replace(/%&gt;/g, '%>') // hack
   return require('ejs').compile(str, {
     filename: path,
     compileDebug: process.env.NODE_ENV === 'development',
-    client: true // this is necessary for ejsify to work
+    client: true // needed for generating the module.exports string in ejsify
   })
 }
 // with inspiration from the ejsify package
@@ -213,6 +212,6 @@ function ejsify (file) {
   return !S(file).endsWith('.ejs')
   ? through()
   : through(function (buf, encoding, cb) {
-    cb(null, `module.exports = (${loadEJS(file, buf.toString('utf8'))})`)
+    cb(null, `module.exports = (${loadEJS(file, buf.toString('utf8'))})()`)
   })
 }

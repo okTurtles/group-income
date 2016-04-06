@@ -1,4 +1,4 @@
-var Promise = global.Promise = require('bluebird') // see comment in backend/index.js
+var Promise = window.Promise = require('bluebird') // see comment in backend/index.js
 var superagent = require('superagent') // fix superagent so that .end() returns a promise
 superagent.Request.prototype.end = Promise.promisify(superagent.Request.prototype.end)
 
@@ -8,7 +8,7 @@ import UserProfileView from './views/UserProfileView.vue'
 import UserGroupView from './views/UserGroupView.vue'
 import NewIncomeView from './views/NewIncomeView.vue'
 import PayGroupView from './views/PayGroupView.vue'
-import { wrap } from './js/utils'
+import { wrap } from './js/utils' // wrap string in a tag (<div> by default)
 
 Vue.config.debug = process.env.NODE_ENV === 'development'
 Vue.use(Router)
@@ -20,7 +20,7 @@ var router = new Router({
 })
 
 router.map({
-  '/': { component: { template: wrap(require('./views/test.ejs')()) } },
+  '/': { component: UserGroupView },
   '/new-user': {
     component: UserProfileView,
     title: 'Create User' // https://github.com/okTurtles/group-income-simple/issues/45
@@ -31,7 +31,7 @@ router.map({
   '/new-income': { component: NewIncomeView },
   '/pay-group': { component: PayGroupView },
   '/ejs-page': {
-    component: { template: wrap(require('./views/test.ejs')()) },
+    component: { template: wrap(require('./views/test.ejs')) },
     title: 'EJS Test Page'
   }
 })
