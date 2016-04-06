@@ -23,7 +23,7 @@ We've put in _a lot_ of energy into taming the craziness of modern web developme
 
 As such, for you we've created a simple-to-follow guide on how to get started designing for this project:
 
-- __[:book: Getting Started](docs/Getting-Started-frontend.md)__
+__[:book: Getting Started](docs/Getting-Started-frontend.md)__
 
 ## Development
 
