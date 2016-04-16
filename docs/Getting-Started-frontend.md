@@ -112,7 +112,10 @@ When links are clicked, or a new "page" is visited, a piece of JavaScript called
 
 ### Why??
 
-Managing web servers is a PITA.
+Two main reasons:
+
+1. Managing web servers is a PITA.
+2. Web apps can become huge, and bundlers like browserify/webpack make loading them more efficient by loading (and unloading) only those resources/components that are currently needed.
 
 It used to be that servers would render HTML (using a server-side templating language and/or programming language like PHP) for each page that is visited. Everyone remembers putting this in their HTML (right?):
 
@@ -139,9 +142,9 @@ __Cons__
 
 __Pros__
 
-- Reduces reliance on servers. This is a Good Thing™ both from a performance standpoint as well as a general Internet POV.
-- Now the server just acts as an API and does little else.
+- Reduces reliance on servers. This is a Good Thing™ both from a performance standpoint as well as a general Internet POV. Now the server just acts as an API and does little else.
 - You can distribute your entire website/app as _static files!_ Just chuck your `index.html` and `app.js` file (and any other static resources) onto any CDN (even IPFS!) and you're good to go. No need to worry about managing a server! You can even create a purely P2P app this way with "no server"!
+- For large web apps it makes it much easier to dynamically load (and unload) only those resources/components/widgets that the application currently needs.
 
 ## Architecture Stack Overview
 
@@ -217,7 +220,7 @@ We've chosen (for now at least) to use Browserify over Webpack, Grunt over Gulp,
 
 ## Frontend Workflow
 
-For those new to "modern web development", we have a section below to quickly bring you up to speed, and you should read that first: __["A Pox On Modern Web Development!"](#a-pox-on-modern-web-development)__
+For those new to "modern web development", we have a section above to quickly bring you up to speed, and you should read that first: __["A Pox On Modern Web Development!"](#a-pox-on-modern-web-development)__
 
 #### How do I get set up / just run the site?
 
