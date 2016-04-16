@@ -1,6 +1,6 @@
 # Group Income (Simple Edition)
 
-[![Gitter](https://img.shields.io/gitter/room/okTurtles/group-income.svg)]() [![Build Status](https://img.shields.io/travis/okTurtles/group-income-simple/master.svg)](https://travis-ci.org/okTurtles/group-income-simple)
+[![Gitter](https://img.shields.io/gitter/room/okTurtles/group-income.svg)](https://gitter.im/okTurtles/group-income) [![Build Status](https://img.shields.io/travis/okTurtles/group-income-simple/master.svg)](https://travis-ci.org/okTurtles/group-income-simple)
 
 [Group Income](http://groupincome.org/) is a fair income sharing mechanism that allows groups to provide their members a minimum income.
 

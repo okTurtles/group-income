@@ -1,9 +1,18 @@
-# Getting Started With The Frontend
+# Modern Frontend Web Development Guide
 
-A "modern web development" guide for web designers and developers.
+**Author: [Greg Slepak](https://twitter.com/taoeffect)**
 
-_This guide assumes you know how to use `git` and GitHub!_
+This is a guide for web designers and developers, useful for general understanding, and is also tailored specifically to how we're using these techniques in Group Income (Simple Edition).
 
+This guide assumes you know how to use `git` and GitHub!
+
+If you already fully grok modern web dev and want to get started immediately, skip ahead to [Frontend Workflow](#frontend-workflow).
+
+- ["A Pox On Modern Web Development!"](#a-pox-on-modern-web-development)
+    + [What Happened To Web Development?](#what-happened-to-web-development)
+    + [The rise of the "single page app"](#the-rise-of-the-single-page-app)
+    + [Why??](#why)
+    + [Pros/Cons](#proscons)
 - [Architecture Stack Overview](#architecture-stack-overview)
     + [Node.js](#nodejs---javascript-environment)
     + [NPM](#npm---node-package-manager)
@@ -20,18 +29,123 @@ _This guide assumes you know how to use `git` and GitHub!_
     + [What does `npm install` do?](#what-does-npm-install-do)
     + [What does `grunt dev` do?](#what-does-grunt-dev-do)
     + [What files do I edit?](#what-files-do-i-edit)
+    + [How do I add a new page to the website?](#how-do-i-add-a-new-page-to-the-website)
+    + [When should I create a `.vue` file instead of an `.ejs` file?](#when-should-i-create-a-vue-file-instead-of-an-ejs-file)
     + [How do I use jQuery or *[insert javascript library here]*?](#how-do-i-use-jquery-or-insert-javascript-library-here)
     + [My question isn't listed here!](#my-question-isnt-listed-here)
-- ["A Pox On Modern Web Development!"](#a-pox-on-modern-web-development)
-    + [What Happened To Web Development?](#what-happened-to-web-development)
-    + [The rise of the "single page app"](#the-rise-of-the-single-page-app)
+- [Appendix](#appendix)
     + [What Vue.js is good for (and not)](#what-vuejs-is-good-for-and-not)
-    + [What EJS is good for](#what-ejs-is-good-for)
-    + [Some code not needed](#some-code-not-needed)
+    + [What EJS is good for (and not)](#what-ejs-is-good-for-and-not)
+    + [Useful Links](#useful-links)
+
+## "A Pox On Modern Web Development!"
+
+Web development used to be simple. Back in the day, all that was needed to make a website was some HTML, CSS, and _maybe_ some Photoshop or a sprinkling of "JavaScript". If you wanted to get fancy, _maybe_ some PHP.
+
+Those days are long over.
+
+Today, web development has mostly forgotten about HTML and CSS. Instead, it's SASS this and JSX that. We've got "Components", and people don't even believe in HTML files anymore. Web frameworks seem to drop out of the sky as if it were christmas every day... What's a seasoned web designer to do?
+
+Don't worry, friend! This document will explain how we got here, and by the end of it you'll understand why modern web development is the way it is and how to pretend as if you didn't care about HTML files either!
+
+### What Happened To Web Development?
+
+In a word, __apps__. From its inception the "web" and "apps" were on a collision coarse, and most of us didn't realize it. Apps increasingly needed to talk to various web services and would increasingly store much of their data online.
+
+Meanwhile, the tools that were used to create websites became more advanced as the web became more vital and companies began competing to attract visitors using the latest in fancy web technology. This technology was used for one primary purpose: creating user interfaces. And it became _really_ good at it.
+
+At some point the web collectively realized that the web standards known as HTML/CSS/JavaScript (and _web browsers_) had advanced to such a point that they were now beginning to seriously compete with applications. At the same time, application developers were looking at these tools and discovered that they could use them to create applications just as well!
+
+Moreover and most critically, _these fantastic UI/UX tools had AMAZING cross-platform support!_ A breakthrough occurred through the union of two technologies: Node.js and the web browser. Node.js gave JavaScript access to the Desktop OS itself, and thus the web _merged_ with apps.
+
+Various [cross-platform frameworks](http://electron.atom.io) started popping up promising to slash development time and costs while maintaining a high-quality experience across all platforms, _even mobile devices!_
+
+And thus applications like [Slack](https://slack.com) and [Atom](https://atom.io) were born.
+
+With this came radical shifts in how web development was done. Now it was necessary to "get organized!" Applications needed to run tens, even hundreds of thousands of lines of JavaScript, tossing around HTML and CSS all over the place, and do this all super-efficiently. These New Apps wanted UIs that could be loaded over any modern web browser over the Internet, as well as "Apps" that were just bundled versions of those websites. They also no longer wanted to have to rewrite the wheel for everything, so that led to the rise of _Components_—reusable chunks of HTML/CSS/JavaScript for doing one thing (like displaying a photo album) that could be dropped in to any project as easy as: `<photoalbum></photoalbum>`
+
+React and Vue.js are examples of frameworks that support the creation of such components.
+
+Browserify and Webpack are module systems and bundlers for efficiently organizing and loading the various resources these New Apps need.
+
+### The rise of the "single page app"
+
+To those new to "modern web development", one of the quirkiest aspects of it is its use (or more accurately, *non-use*) of HTML files.
+
+Indeed, the modern web app uses *just a single `index.html` file for the entire "website"!*
+
+If you visit one of these "single-page app" sites and `view-source`, you'll see practically nothing, just a mostly empty HTML file that can look like this:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Site</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script src="static/build.js"></script>
+  </body>
+</html>
+
+```
+
+The browser, meanwhile, will show a bunch of stuff that doesn't match that HTML!
+
+What's going on?
+
+```html
+<script src="static/build.js"></script>
+```
+
+This line loads a "javascript bundle", a file that will load everything else that's necessary to display the website, and the JavaScript will be used to *asynchronously load HTML, CSS, image files, etc.* and *swap out the existing document structure for the new stuff*.
+
+You can see what the loaded HTML actually is by using your browser's web dev tools (you can bring them up by right-clicking on a portion of the page and choosing `Inspect Element`).
+
+When links are clicked, or a new "page" is visited, a piece of JavaScript called a **client-side router** will do several things:
+
+- It will load the requested document/component/page asynchronously using an AJAX (`HTMLHttpRequest` aka XHR)
+- It will swap out the old HTML and javascript for the new HTML and JavaScript
+- If necessary, it will *programmatically change the website's location bar to display a new URL to give the appearance of a normal "page visit"!*
+- It will also programmatically update the browser's history so that the back/forward buttons work normally as user's expect.
+
+### Why??
+
+Managing web servers is a PITA.
+
+It used to be that servers would render HTML (using a server-side templating language and/or programming language like PHP) for each page that is visited. Everyone remembers putting this in their HTML (right?):
+
+```php
+<? include($_SERVER['DOCUMENT_ROOT'] . '/includes/header.php'); ?>
+```
+
+Well, as convenient as that was (to avoiding repeating the same HTML all over the place), it required there be *a server* that did all the heavy-lifting, assembling each one of these pages and sending the HTML back to clients. That's problematic for several reasons:
+
+- It puts more load on the server for something that clients (web browsers) could do themselves
+- More importantly, it requires that someone run and maintain one of these PHP servers
+
+Well, with client-side rendering and single-page apps, you can now put all of that logic into the client-side javascript and ship *most of your website, except the database (essentially)* as **static files** that can be hosted anywhere! Just toss the onto a CDN (or multiple CDNs!) and be done with it!
+
+The database portion continues to live on the server and now *just* provides a RESTful API.
+
+### Pros/Cons
+
+__Cons__
+
+- Some people might find this setup confusing and difficult to work with as it requires a lot of machinery (like Browserify/Webpack).
+- Only some search engines support indexing such ~~websites~~ web *apps*, because they require JavaScript to display the page.
+- Similarly, won't work for users who disable JavaScript.
+
+__Pros__
+
+- Reduces reliance on servers. This is a Good Thing™ both from a performance standpoint as well as a general Internet POV.
+- Now the server just acts as an API and does little else.
+- You can distribute your entire website/app as _static files!_ Just chuck your `index.html` and `app.js` file (and any other static resources) onto any CDN (even IPFS!) and you're good to go. No need to worry about managing a server! You can even create a purely P2P app this way with "no server"!
 
 ## Architecture Stack Overview
 
-These are the technologies this project uses. You don't need to understand everything about them, but you must at least read the descriptions below to understand _what_ they are (starting from the lowest-level and working our way up):
+These are the technologies this project uses. You don't need to understand everything about them, but you must at least read the descriptions below to understand _what_ they are. They are listed in order of lowest-level to highest-level:
 
 ###### __[Node.js](https://nodejs.org/)__ - _JavaScript Environment_
 
@@ -39,7 +153,7 @@ Node.js is the platform that all the other tech we use builds upon. It's _an env
 
 ###### __[NPM](https://www.npmjs.com/)__ - _Node Package Manager_
 
-Used for all kinds of JavaScript projects (backend and/or frontend). Any sort of module/library/framework you can think of is stored here. Yes, even jQuery.
+Used for all kinds of JavaScript projects (backend and/or frontend). Any sort of module/library/framework you can think of is stored here. Yes, even jQuery. ;)
 
 ###### __[Grunt](http://gruntjs.com/)__ - _Task Runner_
 
@@ -97,9 +211,9 @@ Incorporating this to the site is on the TODO and is [an open issue](https://git
 
 We've chosen (for now at least) to use Browserify over Webpack, Grunt over Gulp, an Vue.js over React, even though these are all perfectly fine tools in the modern web development toolkit. Briefly, our reasoning:
 
-- Although Webpack has features that Browserify does not, it is also far more complicated, requiring greater documentation to use, and I don't think it provides web-based implementations of Node.js's API the way Browserify does. For now at least, Browserify seems to be serving our needs just fine.
+- Although Webpack has features that Browserify does not, it is also far more difficult to get up and running with, and I don't think it provides web-based implementations of Node.js's API the way Browserify does. For now at least, Browserify seems to be serving our needs just fine, but we [may yet switch to it](https://github.com/okTurtles/group-income-simple/issues/44).
 - The reasons for choosing Vue.js over React are mentioned [above](#vuejs---modern-frontend-component-framework).
-- Grunt and Gulp appear to be about evenly matched, and although Gulp seems to be hip and has a nifty design, Grunt is also perfectly well designed and works just as well. We were familiar with Grunt already so we chose it. Plus we like its emphasis on configuration over code. Either tool will serve you well.
+- Grunt and Gulp appear to be about evenly matched, and although Gulp seems to be hip and has a nifty design, Grunt is also perfectly well designed too and works just as well. We were already experienced with Grunt so we went with it. Plus, we like its emphasis on configuration over code and its native support for template strings. Either tool will serve you well.
 
 ## Frontend Workflow
 
@@ -156,6 +270,47 @@ Here are the important files and folders within `frontend/simple/`:
 - `js/` - Any handy JavaScript code that _you create_ should be placed here.
     + __Designer note:__ Generally as a designer you can ignore this folder. Most of the JavaScript that designers need can either be `require`'d (see the next section) or created directly within `.vue` or `.ejs` files.
 
+#### How do I add a new page to the website?
+
+1. Create either a new `.vue` or `.ejs` file within `simple/views`
+2. Link to it using the [v-link](https://vuejs.github.io/vue-router/en/link.html) directive, and if necessary update the `index.html` file (which currently has a global header/footer with page links)
+3. Update the [`vue-router` mapping](https://vuejs.github.io/vue-router/en/basic.html) configuration in `simple/main.js`
+
+If you're adding an `.ejs` file, you might add the following to the router config:
+
+```js
+'/ejs-page': {
+  component: { template: wrap(require('./views/test.ejs')) },
+  title: 'EJS Test Page'
+}
+```
+
+The `wrap` function wraps the content of the file in a tag (`div` by default) in order to prevent [fragment instances](http://vuejs.org/guide/components.html#Fragment-Instance) (which Vue.js doesn't like).
+
+If you're adding a `.vue` file, you could add:
+
+```js
+'/example-page': {
+  component: { template: require('./views/test.vue') },
+  title: 'Example Page'
+}
+```
+
+#### When should I create a `.vue` file instead of an `.ejs` file?
+
+- If you're creating a logic-heavy page that takes advantage of Vue.js's two-way data bindings feature.
+- If you are designing a complex, self-contained re-usable component. In Group Income, a good candidate for such a component is this payment row widget:
+
+    ![row](https://gitlab.okturtles.com/uploads/okturtles/group-income-simple/b3d1ff2112/row.jpg)
+
+Remember, **you can use Vue.js features within `.ejs` files!**
+
+There's no problem with using the [v-link](https://vuejs.github.io/vue-router/en/link.html) directive within an `.ejs` file when linking to another "page".
+
+Otherwise we recommend sticking with `.ejs` files, although to be honest it doesn't matter much.
+
+See [the Appendix](#appendix) for important notes on using EJS with Vue.js and vice-versa.
+
 #### How do I use jQuery or _[insert javascript library here]_?
 
 Any third-party "vendor" code that you need should be added using `npm`. For example, this project already has `jQuery` (version specified in `package.json`), and that was installed using `npm` like so:
@@ -204,87 +359,38 @@ Generally speaking: ask before adding any new dependencies! (Either in the [chat
 
 That's OK! Ask us in the [chat](https://gitter.im/okTurtles/group-income) or the [forums](https://forums.okturtles.com/index.php?board=9.0) or open a GitHub issue! :)
 
-## "A Pox On Modern Web Development!"
-
-Web design used to be simple. Back in the good old days all you needed to make a website was HTML, CSS, and _maybe_ some Photoshop or a sprinkling of "JavaScript". If you really wanted to make an impression you _might_ throw in some PHP.
-
-Sadly or gladly, those days are long over.
-
-Nowadays, modern web development has mostly forgotten about HTML and CSS. Instead, it's SASS this and JSX that. "Components". Pfft! They don't even believe in HTML files anymore! Web frameworks dropping out of the sky like candy... What's a seasoned web designer to do?
-
-Welp, don't worry friend, this document is here to bring you up to speed, and you can rest easy knowing that we put in a great amount of effort into making the transition to modern web development understandable, simple, and familiar.
-
-### What Happened To Web Development?
-
-__Apps.__ From its inception the "web" and "app" were on a collision coarse and most of us didn't realize it. Apps increasingly needed to talk to various web services and would increasingly store much of their data online.
-
-Meanwhile, the tools that were used to create websites became more advanced as the web became more vital and companies began competing to attract visitors using the latest in fancy web technology. This technology was used for one primary purpose: creating user interfaces. And it became _really_ good at it.
-
-At some point the web collectively realized that the web standards known as HTML/CSS/JavaScript had advanced to such a point that they were now beginning to seriously compete with applications. At the same time, application developers were looking at these tools and discovered that they could use them to create applications just as well!
-
-Moreover and most critically, _these fantastic UI/UX tools had AMAZING cross-platform support!_ By combining two technologies: Node.js and the modern web browser, JavaScript and its fellow web standards _merged_ with apps.
-
-Various cross-platform frameworks started popping up promising to slash development time and costs while maintaining a high-quality experience across all platforms, _even mobile devices!_
-
-And thus applications like Slack were born.
-
-With this came radical shifts in how web development was done. Now it was necessary to "get organized!" Applications needed to run tens, even hundreds of thousands of lines of JavaScript, tossing around HTML and CSS all over the place, and do this all super-efficiently. These New Apps wanted UIs that could be loaded over any modern web browser over the Internet, as well as "Apps" that were just bundled versions of those website. And they no longer wanted to have to rewrite the wheel for everything, and that led to the rise of _Components_—reusable chunks of HTML/CSS/JavaScript for doing one thing (like displaying a photo album) that could be dropped in to any project as easy as: `<photoalbum></photoalbum>`
-
-React.js and Vue.js are examples of frameworks that support the creation of such components.
-
-Browserify and Webpack are module systems and bundlers to efficiently organizing and loading the various resources these New Apps need.
-
-### The rise of the "single page app"
-
-- _Unfinished section!_
-
-Quickly: single page apps (consisting of a single "index.html" file and client-side "routing") are a recent invention. They have their pros as well as their cons.
-
-The basic idea motivation behind them is to move more logic away from the server and to the client.
-
-__Cons__
-
-- Some people will find them confusing and unnecessarily difficult to work with. They require a lot of machinery (like Browserify/Webpack) to work.
-- Only some search engines support indexing them because they require JavaScript to display the page.
-- They require JavaScript to be enabled. For some people this is a con.
-
-__Pros__
-
-- Reduces reliance on servers. This is a Good Thing™ both from a performance standpoint as well as a general Internet POV.
-- Now the server just acts as an API and does little else.
-- You can distribute your entire website/app as _static files!_ Just chuck your `index.html` and `app.js` file (and any other static resources) onto any CDN (even IPFS!) and you're good to go. No need to worry about managing a server! You can even create a purely P2P app this way with "no server"!
+## Appendix
 
 ### What Vue.js is good for (and not)
-
-> Rewrite this section. It's somewhat outdated (in the sense that the decision has been made), and it doesn't fit in with the above because it's just copy/pasted from the [GitHub issue](https://github.com/okTurtles/group-income-simple/issues/37).
 
 - Reducing HTML markup and making collaboration easier. To open a facebook-style chatbox at the bottom of the window, you just insert `<chatbox param1="foo" param2="bar"></chatbox>`, etc.
 - Synchronizing data between the view (the widget) and the model (the JS object). I.e. [two-way data bindings](http://vuejs.org/guide/forms.html). **Rule of thumb:** if data-binding is unnecessary then there's no need for Vue.js to be involved.
 - Creating logic-heavy widgets for widget-heavy "apps" like Slack, etc.
 - Serving "web 2.0" (2.5?) static websites. I.e. you put your entire modern website in an `.html` file, have it call an API, and serve it to people over a CDN. Thanks to client-side routers the URL will magically change on "page visit". :point_left: This might be the most relevant part for us as it works well with the future move to Ethereum.
 
-It's **not** convenient for much else. It is especially not good for designers who are used to plain-old markup. Apparently, [being friendly toward designers is one of its strong points](http://vuejs.org/guide/comparison.html), but that's compared to other frameworks like React.js / Angular / Ember. Nor is it useful for creating relatively "small" widgets like input fields or buttons. 
+It's **not** convenient for much else. It is especially not good for designers who are used to plain-old markup. Apparently, [being friendly toward designers is one of its strong points](http://vuejs.org/guide/comparison.html), but that's compared to other frameworks like React.js / Angular / Ember. Nor is it useful for creating relatively "small" widgets like custom input fields or buttons.
 
-Many websites, including many "large scale" websites, have little need for this stuff. Even twitter and github don't do the single-page app thing!
-
-### What EJS is good for
+### What EJS is good for (and not)
 
 EJS is basically PHP except JavaScript.
 
-So it is good for that style of programming, and it is therefore much more friendly and usable for designers (and programmers!).
+So it is good for that style of programming, and it is therefore much more friendly and usable for designers (and programmers!). It's great for doing simple things like:
 
-Vue.js can be used to prevent the EJS from overcrowding the markup.
+- Avoiding repetition by including some file using `<%- include file %>` ([example](https://github.com/okTurtles/group-income-simple/blob/ebafb48385c63d271eb6a210545efbcc8d43d99c/frontend/simple/views/test.ejs#L10))
+- Adding simple logic like "display this chunk of HTML `if` something, otherwise display this other thing"
 
-### Some code not needed
+You can mix-and-match EJS with [Vue template syntax](http://vuejs.org/guide/syntax.html) within `.vue` files by setting the template language to `ejs`:
 
-> Rewrite this section. It's somewhat outdated (in the sense that the decision has been made), and it doesn't fit in with the above because it's just copy/pasted from the [GitHub issue](https://github.com/okTurtles/group-income-simple/issues/37).
+```vue
+<template lang="ejs">
+  <div class="user-group">
+    <h1>{{ msg }}</h1>
+    <div><%- include included %></div>
+  </div>
+</template>
+```
 
-Sorry @wemeetagain for not figuring this out earlier, but I think you'll agree that it doesn't make sense to replace one line of markup (the `<button>` tag) with a [26 line `.vue` file](https://github.com/okTurtles/group-income-simple/blob/edd63c0ee5bd69bd8e830f57025f3dbbf566d8c2/frontend/simple/components/Button.vue). Suggesting that we do that was my silly mistake. OTOH such mistakes are useful for figuring out what Vue.js is and isn't really useful for.
+### Useful Links
 
-Many of the `.vue` files could be replaced by `.ejs` files. OTOH with `.ejs` it may be the case that unless we do a bunch of `pagename/index.html` files the `.ejs` will have to be rendered on the fly by Hapi (making the frontend not serve-able by CDNs and possibly causing issues with future Ethereum integration).
-
-If we want to serve static content without a folder hierarchy then the `vue-router` is needed, otherwise not.
-
-If we don't go the single-page static site route then the only thing in #6 that might be worth using Vue.js for is this widget:
-
-![row](https://gitlab.okturtles.com/uploads/okturtles/group-income-simple/b3d1ff2112/row.jpg)
+- See our [Architecture Notes](https://github.com/okTurtles/group-income-simple/wiki/Architecture-Notes) for additional useful links and tutorials.
+- Some of this discussion comes from [issue 37](https://github.com/okTurtles/group-income-simple/issues/37).
