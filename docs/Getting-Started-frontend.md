@@ -31,7 +31,10 @@ If you already fully grok modern web dev and want to get started immediately, sk
     + [What files do I edit?](#what-files-do-i-edit)
     + [How do I add a new page to the website?](#how-do-i-add-a-new-page-to-the-website)
     + [When should I create a `.vue` file instead of an `.ejs` file?](#when-should-i-create-a-vue-file-instead-of-an-ejs-file)
-    + [How do I use jQuery or *[insert javascript library here]*?](#how-do-i-use-jquery-or-insert-javascript-library-here)
+    + [Where should I put non-JavaScript assets like CSS, images, etc.?](#where-should-i-put-non-javascript-assets-like-css-images-etc)
+    + [Where should I put JavaScript *someone else* wrote (e.g. jQuery)?](#where-should-i-put-javascript-someone-else-wrote-eg-jquery)
+    + [Where's the best place to put JavaScript *that I* create?](#wheres-the-best-place-to-put-javascript-that-i-create)
+    + [My web app's `app.js` bundle is huge, how do I break it up?](#my-web-apps-appjs-bundle-is-huge-how-do-i-break-it-up)
     + [My question isn't listed here!](#my-question-isnt-listed-here)
 - [Appendix](#appendix)
     + [What Vue.js is good for (and not)](#what-vuejs-is-good-for-and-not)
@@ -105,7 +108,7 @@ You can see what the loaded HTML actually is by using your browser's web dev too
 
 When links are clicked, or a new "page" is visited, a piece of JavaScript called a **client-side router** will do several things:
 
-- It will load the requested document/component/page asynchronously using an AJAX (`HTMLHttpRequest` aka XHR)
+- It will load the requested document/component/page asynchronously using an AJAX (`XMLHttpRequest` aka XHR)
 - It will swap out the old HTML and javascript for the new HTML and JavaScript
 - If necessary, it will *programmatically change the website's location bar to display a new URL to give the appearance of a normal "page visit"!*
 - It will also programmatically update the browser's history so that the back/forward buttons work normally as user's expect.
@@ -240,9 +243,14 @@ grunt dev
 
 If all went well you should be able to visit: [http://localhost:8000](http://localhost:8000)
 
+----
+
 #### What does `npm install` do?
 
 It installs the dependencies that this project relies on and places them into the `node_modules/` folder. We've setup grunt to verify you always have the latest dependencies installed, but you do need to run this command at least once.
+
+----
+
 
 #### What does `grunt dev` do?
 
@@ -253,14 +261,16 @@ A lot of things. Its output will tell you exactly what it does, but the general 
 - It launches a web server to let you see the site
 - It watches files for changes, recompiling them and refreshing the browser anytime most files in `frontend/` are changed, and re-running the backend API server whenever files in `backend/` are changed
 
+----
+
 #### What files do I edit?
 
-For frontend developers the relevant folders and files are within the `frontend/simple/` folder. The `frontend/` folder contains some files & folders that are best ignored:
+The `frontend/simple/` folder contains the frontend code.
 
-- The files immediately within the `frontend/` folder represent the "top level" of the `groupincome.org` website. These HTML files __are not__ part of "Group Income Simple" itself. They are there mostly as placeholders for the groupincome.org site, which is located in a [different repo](https://github.com/okTurtles/groupincome.org).
-- `_static/` - This folder contains HTML markup that we're converting into `.vue` and `.ejs` files. Just *ignore this folder* for the most part, it's there only for reference and will be deleted soon.
+The other files/folders within `frontend/` should be ignored:
 
-The `frontend/simple/` folder is where the frontend development happens!
+- `frontend/index.html` - Just a placeholder for [the groupincome.org repo](https://github.com/okTurtles/groupincome.org).
+- `_static/` - To be deleted soon. Contains markup that's being converting into `.vue` and `.ejs` files.
 
 Here are the important files and folders within `frontend/simple/`:
 
@@ -269,9 +279,13 @@ Here are the important files and folders within `frontend/simple/`:
 - `main.js` - This is the entry point for all of the frontend code, where our modern web app starts. This file is responsible for setting up the Vue.js [`vue-router`](https://github.com/vuejs/vue-router), the client-side machinery that replicates the effect of having "different pages with different URLs" (modern web dev trickery that unbelievably isn't as ridiculous as it sounds). It is also responsible for loading all of the other "pages" (located in `views/`) and code (located in `js/`) that the website has.
     + __Designer note:__ If you want to add a "new page" to the site (i.e. a new link in the top `<nav>` bar), then you will need to modify this file to update the routes.
 - `views/` - This contains all of the "pages" of the website. These are stored either [`.vue` files](https://vuejs.github.io/vue-loader/start/spec.html) or `.ejs` files, which are just HTML files that support [using JavaScript like PHP](http://ejs.co) between [`<%` and `%>` tags](https://github.com/mde/ejs/blob/master/README.md#features).
-    + __Designer note:__ `.vue` files are best suited for creating re-usable components. Make sure to read __[What Vue.js is good for (and not)](#what-vuejs-is-good-for-and-not)__ below! They _can_ be used to create "pages", but for that `.ejs` files seem to make more sense.
-- `js/` - Any handy JavaScript code that _you create_ should be placed here.
+    + __Designer note:__ See: [When should I create a `.vue` file instead of an `.ejs` file?](#when-should-i-create-a-vue-file-instead-of-an-ejs-file)
+- `js/` - Folder for placing "handy js that's used in lots of places" _that you wrote_ (not third-party, [that goes in `assets/vendor/`](#where-should-i-put-javascript-someone-else-wrote-eg-jquery)).
     + __Designer note:__ Generally as a designer you can ignore this folder. Most of the JavaScript that designers need can either be `require`'d (see the next section) or created directly within `.vue` or `.ejs` files.
+- `assets/` - Grunt simply copies the folders within here to the output directory: `dist/`. This is where you drop in CSS files, images, and any other static assets.
+    + __Developer note:__ Currently we do not [translate](https://github.com/gruntjs/grunt-contrib-sass), optimize, minify, or [fingerprint](http://guides.rubyonrails.org/asset_pipeline.html#what-is-fingerprinting-and-why-should-i-care-questionmark) any of these assets, but we will (using grunt). We won't, however, be "bundling" these assets via Webpack or browserify. "Bundling" refers to the practice of concatenating js, css (sometimes [even images!](https://github.com/webpack/file-loader)) and putting into a single `.js` file. This might have [made sense in the HTTP/1.0 days](https://jakearchibald.com/2016/link-in-body), however HTTP/2.0 makes this bizarro practice [totally unnecessary](https://blog.cloudflare.com/http-2-for-web-developers/).
+
+----
 
 #### How do I add a new page to the website?
 
@@ -299,6 +313,8 @@ If you're adding a `.vue` file, you could add:
 }
 ```
 
+----
+
 #### When should I create a `.vue` file instead of an `.ejs` file?
 
 - If you're creating a logic-heavy page that takes advantage of Vue.js's two-way data bindings feature.
@@ -314,24 +330,155 @@ Otherwise we recommend sticking with `.ejs` files, although to be honest it does
 
 See [the Appendix](#appendix) for important notes on using EJS with Vue.js and vice-versa.
 
-#### How do I use jQuery or _[insert javascript library here]_?
+----
 
-Any third-party "vendor" code that you need should be added using `npm`. For example, this project already has `jQuery` (version specified in `package.json`), and that was installed using `npm` like so:
+#### Where should I put non-JavaScript assets like CSS, images, etc.?
+
+*If they're your assets:*
+
+Just place them into the appropriate folder(s) within `simple/assets`. You might need to re-run `grunt dev` and refresh the page (our gruntfile currently doesn't watch for asset changes). Grunt will copy them into `dist/`.
+
+Then load them like normal (so `dist/images/bitcoin.png` is loaded as `<img src="/images/bitcoin.png">`).
+
+*If they're someone else's (e.g. a CSS framework):*
+
+Place them in `simple/assets/vendor`.
+
+Please add only uncompressed/unminified assets to this folder (if possible) as that makes debugging simpler. We'll add minification later on (via grunt).
+
+----
+
+#### Where should I put JavaScript *someone else* wrote (e.g. jQuery)?
+
+Recall that single-page-apps (SPAs) typically have [*a single* global JavaScript bundle](#the-rise-of-the-single-page-app) that gets loaded. In our setup, this file is stored in `dist/simple/app.js`.
+
+There are two ways to include third-party code:
+
+1. **"Asynchronously" / "Lazily" / "On Demand":** This is the preferred approach as it prevents `app.js` from getting bloated.
+2. **"Globally":** This is through the standard use of `require`. Anything that's `require`'d gets placed into the `app.js` bundle. Unless a third-party library is used so frequently that it makes sense to have it in `app.js`, you should prefer the lazy-load approach.
+
+We cover all approaches below.
+
+**Method 1.1: Lazy-loading a "vendor" lib using `<script2>`**
+
+This example explores our "convenience [element directive](http://vuejs.org/guide/custom-directive.html#Element-Directives)" [`<script2>`](https://github.com/okTurtles/group-income-simple/blob/master/frontend/simple/js/Script2.js) that is basically identical to `<script>`. It is especially useful within `.ejs` pages that use libraries like jQuery.
+
+If the latest version of a library is available on npm *from a trusted source*, then you can add it as a project dependency and then [symlink](https://duckduckgo.com/?q=symbolic+link) it into the vendor folder. For example, here's how we did this with jQuery:
 
 ```
 npm install jquery --save
 ```
 
-It can then be used within `.vue` and `.ejs` files by `require`ing it. For example, `views/UserProfileView.vue` (a file that may or may not be renamed/deleted at some point) contains this `<script>` section:
+You can check the version that we're using by looking inside `package.json`. Updating to the latest version is done by explicitly requesting it:
+
+```
+npm install jquery@latest --save
+```
+
+Next, we symlink jQuery into the vendor folder:
+
+```
+$ cd frontend/simple/assets/vendor
+$ ln -s ../../../../node_modules/jquery/dist/jquery.js
+```
+
+The symlink keeps makes it simple to stay up-to-date with the latest version of the library. `grunt dev` will then copy actual file (not the symlink) into the `dist/` folder.
+
+Note we symlink'd the un-minified version of the library. This makes debugging easier, and grunt will minify it for us when we create production builds.
+
+Now, to actually use jQuery, *you'd think* it would be a simple matter of using a `<script>` tag like so:
+
+```html
+<script src="/simple/vendor/jquery.js" async></script> <!-- Doesn't work! -->
+```
+
+However Vue.js currently [prevents this behavior](https://github.com/vuejs/vue-router/issues/467) for reasons that are not clear. To get around that, we've created a nearly-identical `<script2>` tag (which we might later release as a standalone vue plugin).
+
+So instead, you can do this in both `.vue` and `.ejs` files:
+
+```html
+<script2 src="/simple/vendor/jquery.js" async></script2> <!-- Works! -->
+```
+
+**Scirpt2 SPA-focused Features**
+
+We've added a few additional attributes for convenience and for dealing with inefficiencies that can result from SPAs:
+
+- `vendor` (**string**) - Instead typing out the full path to the script, you can just type its name. The following is equivalent to `src="/simple/vendor/jquery.js"`:
+
+    ```html
+    <script2 vendor="jquery" async></script2>
+    ```
+    
+- `global` (**string**) - Useful to avoid loading a script twice. If this global variable is defined, do nothing. For example, this prevents loading jQuery again if `window.jQuery` already exists:
+
+    ```html
+    <script2 vendor="jquery" global="jQuery"></script2>
+    ```
+    
+- `unload` (**boolean** or **string**) - Deletes the variable specified by `global` when the user visits a different route (i.e. clicks to a different "page"). Can also run a JS expression. Useful to prevent memory usage from ballooning.
+    - Runs `delete window.jQuery` on route change:
+
+        ```html
+        <script2 vendor="jquery" global="jQuery" unload></script2>
+        ```
+    - Runs both `delete window.jQuery` and [`jQuery.noConflict(true)`](http://api.jquery.com/jQuery.noConflict/) on route change to fully remove jQuery:
+
+        ```html
+        <script2 vendor="jquery" global="jQuery" unload="jQuery.noConflict(true)"></script2>
+        ```    
+
+Using this approach is fairly straightforward within `.ejs` files. An example of using it within `.vue` files is given at the end of this section. Script2's implementation is stored in [`frontend/simple/js/Script2.js`](https://github.com/okTurtles/group-income-simple/blob/master/frontend/simple/js/Script2.js).
+
+**Method 1.2: Lazy-load an entire route**
+
+Perhaps a small section of your website uses a [fancy Vue.js component](https://github.com/vuejs/awesome-vue#ui-components). To avoid bloating your `app.js` file, you can lazy-load the entire route (i.e. an entire "page") by leveraging the *code-splitting* capabilities of browserify or webpack. Webpack is better at this than browserify, but both can do it.
+
+See [the `vue-router` documentation for details](http://vuejs.github.io/vue-router/en/lazy.html).
+
+
+**Method 2: Globally including a commonly used third-party library**
+
+Unless you use code-splitting features mentioned above, any use of `require` to load a library will result in that library's direct inclusion within the `app.js` bundle.
+
+Not all libraries can be loaded using `require`, but if the library exists on npm, it's `require`able. Most libraries are "[AMD](https://webpack.github.io/docs/amd.html)/[CommonJS](https://webpack.github.io/docs/commonjs.html)" compatible these days and therefore are `require`able. All libraries can be made requireable via [browserify-shim](https://github.com/thlorenz/browserify-shim) (but this is kinda hackish).
+
+Our project adds several very handy third-party libraries to its `app.js` bundle via this method:
+
+- [lodash](https://lodash.com)
+- [string](http://stringjs.com)
+- [superagent](https://github.com/visionmedia/superagent)
+- [bluebird](http://bluebirdjs.com/docs/getting-started.html) ([tutorial](http://blog.runnable.com/post/143035495456/bluebird-in-the-wild-advanced-promise-based))
+
+All of these can be used within `.vue` and `.ejs` files by `require`ing them.
+
+Let's end with an example that combines this technique along with the `<script2>` technique from *Method 1.1* within a `.vue` file:
 
 ```vue
+<template>
+  <div class="myComponent">
+    <form>
+      <!-- ... component code ... -->
+      <button class="sign-in btn" @click.prevent="submit">Sign Up</button>
+    </form>
+    <div id="response" v-bind:class="responseClass">{{ response }}</div>
+    <!-- load /simple/vendor/jquery.js -->
+    <script2 vendor="jquery" global="jQuery" async></script2>
+  </div>
+</template>
+
+<style>
+  #response.error {color:red;}
+  #response {color:green;}
+</style>
+
 <script>
-var request = require('superagent')
-var $ = require('jquery')
+var request = require('superagent') // note: this adds superagent to app.js
 
 export default {
   methods: {
     submit: async function () {
+      var $ = window.jQuery
       try {
         var response = await request.post(process.env.API_URL+'/user/')
           .type('form').send($('form.new-user').serialize()).end()
@@ -356,7 +503,22 @@ export default {
 </script>
 ```
 
-Generally speaking: ask before adding any new dependencies! (Either in the [chat](https://gitter.im/okTurtles/group-income) or the [forums](https://forums.okturtles.com/index.php?board=9.0) or a GitHub issue.)
+*Please ask before adding any new project dependencies! (Either in [our chat](https://gitter.im/okTurtles/group-income), on the [forums](https://forums.okturtles.com/index.php?board=9.0), or via a GitHub issue.)*
+
+----
+
+#### Where's the best place to put JavaScript *that I* create?
+
+- If the JavaScript is *specific to a page you're working on:* put it directly into the `.ejs` or `.vue` file
+- Otherwise, for JS that's used across multiple files, place it into a `.js` file within `simple/js` and then `require` it from within the `.vue` or `.ejs` files
+
+----
+
+#### My web app's `app.js` bundle is huge, how do I break it up?
+
+See Methods 1.1. and 1.2 in [Where should I put JavaScript *someone else* wrote (e.g. jQuery)?](#where-should-i-put-javascript-someone-else-wrote-eg-jquery).
+
+----
 
 #### My question isn't listed here!
 
