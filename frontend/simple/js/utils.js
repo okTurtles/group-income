@@ -4,6 +4,27 @@ export function wrap (s, tag = 'div') {
   return `<${tag}>${s}</${tag}>`
 }
 
+var S = require('string')
+var _ = require('lodash')
+
+export function insertScript (el, src, opts = {}) {
+  var s = document.createElement('script')
+  var defaults = _.partialRight(_.assignWith, (objVal, srcVal, key) =>
+    (_.isUndefined(objVal) || objVal === '') && srcVal !== '' ? srcVal : objVal
+  )
+  // omit the special options that Script2 supports
+  defaults(s, _.omit(opts, ['vendor', 'global', 'unload']), {
+    type: 'text/javascript'
+  })
+  s.src = src
+  el.appendChild(s)
+}
+
+export function insertVendorScript (el, libname, opts = {}) {
+  libname = `/simple/vendor/${S(libname).endsWith('.js') ? libname : libname + '.js'}`
+  insertScript(el, libname, opts)
+}
+
 // This function is currently located in .Gruntfile.babel.js
 // The problem is that fs.readFileSync doesn't work here (we're not in node)
 // However it might be possible to do it this way (and avoid the ejsify thing)

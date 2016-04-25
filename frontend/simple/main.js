@@ -12,6 +12,7 @@ import { wrap } from './js/utils' // wrap string in a tag (<div> by default)
 
 Vue.config.debug = process.env.NODE_ENV === 'development'
 Vue.use(Router)
+Vue.use(require('./js/Script2'))
 
 var router = new Router({
   hashbang: false,

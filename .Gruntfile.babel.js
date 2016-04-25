@@ -26,10 +26,6 @@ module.exports = (grunt) => {
 
     checkDependencies: {this: {options: {install: true}}},
 
-    files: {
-      frontend: ['frontend/**/*.{vue,ejs,js}', '!frontend/_static/**']
-    },
-
     watch: {
       // prevent watch from spawning. if we don't do this, we won't be able
       // to kill the child when files change.
@@ -37,8 +33,8 @@ module.exports = (grunt) => {
       // consider instead using the `watchify` option on browserify
       browserify: {
         options: { livereload: true }, // port 35729 by default
-        files: ['<%= files.frontend %>'],
-        tasks: ['standard:dev', 'browserify']
+        files: ['frontend/*.html', 'frontend/simple/**/*'],
+        tasks: ['standard:dev', 'copy', 'browserify']
       },
       backend: {
         files: ['backend/**/*.js'],
@@ -58,21 +54,21 @@ module.exports = (grunt) => {
             debug: process.env.NODE_ENV === 'development' // enables source maps
           }
         },
-        files: { 'dist/simple/app.js': ['<%= files.frontend %>'] }
+        files: { 'dist/simple/app.js': ['frontend/simple/**/*.{vue,ejs,js}', '!frontend/simple/assets/**/*'] }
       }
     },
 
     copy: {
-      resources: { // TODO: these might be moved to a git submodule later
-        cwd: 'frontend/_static/',
-        src: ['css/**', 'images/**', 'js/vendor/**'],
-        dest: 'dist',
-        expand: true
-      },
-      frontend: {
+      html_files: {
         cwd: 'frontend/',
         src: ['**/*.html', '!_*/**'], // folders with _ don't get copied
         dest: 'dist',
+        expand: true
+      },
+      assets: {
+        cwd: 'frontend/simple/assets',
+        src: ['**/*'],
+        dest: 'dist/simple',
         expand: true
       }
     },
@@ -117,7 +113,7 @@ module.exports = (grunt) => {
             f = path.join('dist', S(f).endsWith('/') ? f + 'index.html' : f)
             if (S(f).endsWith('.html') && fs.existsSync(f)) {
               serveSsiFile(f, req, res)
-            } else if (S(f).startsWith('dist/simple/') && !S(f).endsWith('.js')) {
+            } else if (S(f).startsWith('dist/simple/') && !/(\/(css|images|vendor)\/|\.js$)/.test(f)) {
               serveSsiFile('dist/simple/index.html', req, res)
             } else {
               next()

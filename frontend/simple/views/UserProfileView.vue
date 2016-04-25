@@ -17,11 +17,11 @@
         <label for="phone">Phone number</label>
         <h2 class="contribution-limits">Payment Information</h2>
         <input class="text-input" name="payVenmo" placeholder="@your_venmo_account">
-        <label for="email"><img class="venmo" src="/images/venmo.png" alt="venmo"> account</label>
+        <label for="email"><img class="venmo" src="images/venmo.png" alt="venmo"> account</label>
         <input class="text-input" name="payBitcoin" placeholder="0000000000000000000000000000000000">
-        <label for="email"><img class="venmo" src="/images/bitcoin.png" alt="Bitcoin"> address</label>
+        <label for="email"><img class="venmo" src="images/bitcoin.png" alt="Bitcoin"> address</label>
         <input class="text-input" name="payPaypal" placeholder="email@domain.com">
-        <label for="email"><img class="venmo" src="/images/paypal.png" alt="PayPal"> (IF DIFFERENT THAN EMAIL)</label>
+        <label for="email"><img class="venmo" src="images/paypal.png" alt="PayPal"> (IF DIFFERENT THAN EMAIL)</label>
         <input class="text-input" name="payInstructions">
         <label for="payment_notes">Additional payment instructions</label>
         <h2 class="contribution-limits">Contribution limits</h2>
@@ -32,6 +32,11 @@
         <button class="sign-in btn" @click.prevent="submit">Sign Up</button>
       </form>
       <div id="response" v-bind:class="responseClass">{{ response }}</div>
+      <!-- This doesn't work: <script src="/simple/vendor/jquery.js" async></script>
+           See: https://github.com/vuejs/vue-router/issues/467
+           Instead we use <script2>:
+      -->
+      <script2 vendor="jquery" async global="jQuery" unload="jQuery.noConflict(true)"></script2>
     </div>
 </template>
 
@@ -42,11 +47,11 @@
 
 <script>
 var request = require('superagent')
-var $ = require('jquery')
 
 export default {
   methods: {
     submit: async function () {
+      var $ = window.jQuery
       try {
         var response = await request.post(process.env.API_URL+'/user/')
           .type('form').send($('form.new-user').serialize()).end()

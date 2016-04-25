@@ -11,7 +11,8 @@
   },
   "standard": {
     "ignore": [
-      "frontend/_static/*"
+      "frontend/_static/*",
+      "frontend/simple/assets/vendor/*"
     ],
     "parser": "babel-eslint"
   },
