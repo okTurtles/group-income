@@ -207,10 +207,11 @@ function loadEJS (path, str) {
   })
 }
 // with inspiration from the ejsify package
+import {waitForGlobal} from './frontend/simple/js/utils'
 function ejsify (file) {
   return !S(file).endsWith('.ejs')
   ? through()
   : through(function (buf, encoding, cb) {
-    cb(null, `module.exports = (${loadEJS(file, buf.toString('utf8'))})()`)
+    cb(null, `module.exports = (${loadEJS(file, buf.toString('utf8'))})({waitForGlobal: ${waitForGlobal}})`)
   })
 }

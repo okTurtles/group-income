@@ -36,7 +36,7 @@
            See: https://github.com/vuejs/vue-router/issues/467
            Instead we use <script2>:
       -->
-      <script2 vendor="jquery" async global="jQuery" unload="jQuery.noConflict(true)"></script2>
+      <script2 vendor="jquery" global="jQuery" unload="jQuery.noConflict(true)"></script2>
     </div>
 </template>
 

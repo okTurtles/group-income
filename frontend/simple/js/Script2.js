@@ -12,69 +12,61 @@
 // 1. search-replace "<script " with "<script2 "
 // 2. search-replace "</script>" with "</script2>"
 
-// ------------------------------------------------------------
-// This file will be converted into a standalone vue plugin
-// and that is why we're modeling its structure after:
-// https://github.com/vuejs/vue-touch/blob/master/vue-touch.js
-// https://github.com/BosNaufal/vue-simple-store/blob/master/vue-simple-store.js
-// ------------------------------------------------------------
-
 // TODO: get rid of this import and standalone-ify this file
-import {insertScript, insertVendorScript} from './utils'
+import {insertScript, insertVendorScript, waitForGlobal} from './utils'
 
 ;(function () {
-  var Script2 = {intalled: false}
+  var Script2 = {installed: false}
 
   Script2.install = function (Vue, options = {}) {
     if (Script2.installed) return
-    var customAttrs = ['vendor', 'global', 'unload']
+    var customAttrs = ['vendor', 'global', 'unload', 'waitfor']
     // from: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script
-    var scriptAttrs = ['src', 'type', 'defer', 'async', 'integrity', 'text', 'crossorigin']
+    // don't have 'async' or 'defer' bc those don't allow document.write according to:
+    // http://www.html5rocks.com/en/tutorials/speed/script-loading/
+    var scriptAttrs = ['src', 'type', 'integrity', 'text', 'crossorigin']
 
     // http://vuejs.org/guide/custom-directive.html
     Vue.elementDirective('script2', {
       params: customAttrs.concat(scriptAttrs),
       bind () {
-        var sym = this.params.global
-        if (sym && window[sym]) {
-          // console.log(`window.${sym} already loaded`)
-          return
+        if (this.params.global && window[this.params.global]) {
+          return // already loaded
         }
+        var parent = this.el.parentElement
+
         if (this.params.vendor) {
-          insertVendorScript(this.el, this.params.vendor, this.params)
+          insertVendorScript(parent, this.params.vendor, this.params)
         } else if (this.params.src) {
-          insertScript(this.el, this.params.src, this.params)
+          insertScript(parent, this.params.src, this.params)
         } else {
-          console.error('ERROR! No `src` or `vendor` parameter on <script2> tag!')
+          // TODO: create the plugin and call it vue-restore-script
+          var s = document.createElement('script')
+          s.type = 'text/javascript'
+          s.appendChild(document.createTextNode(this.el.innerHTML))
+          this.params.waitfor
+            ? waitForGlobal(this.params.waitfor, () => parent.appendChild(s))
+            : Vue.nextTick(() => parent.appendChild(s))
         }
+        Vue.util.remove(this.el) // remove <script2> since we inserted a <script>
       },
       unbind () {
-        // console.log(`${this.name} - unbind!`)
         var unload = this.params.unload
         if (unload) {
-          if (typeof unload === 'string') {
-            // console.log('executing:', unload)
-            new Function(unload)() // eslint-disable-line
-          }
+          if (typeof unload === 'string') new Function(unload)() // eslint-disable-line
           var sym = this.params.global
-          if (!sym) {
-            console.error(`${this.name}: can't unload! attribute 'global' not defined!`)
-          } else {
-            delete window[sym]
-            // console.log(`deleted: window.${sym}`)
-          }
+          sym
+            ? delete window[sym]
+            : console.error(`${this.name}: can't unload! attribute 'global' not defined!`)
         }
       }
     })
   }
   if (typeof exports === 'object') {
-    // node / ES6 module
-    module.exports = Script2
+    module.exports = Script2  // node / ES6 module
   } else if (typeof define === 'function' && define.amd) {
-    // requirejs
-    define([], () => Script2) // implicit return
+    define([], () => Script2) // requirejs
   } else if (window.Vue) {
-    // loaded via <script> tag in HTML
-    Vue.use(Script2)
+    Vue.use(Script2)          // loaded via <script> tag in HTML
   }
 })()

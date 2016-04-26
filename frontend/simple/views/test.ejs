@@ -10,8 +10,17 @@
 <div><%- include included %></div>
 <p>
     TODO:
-    <ul>
+    <ul id="todo">
         <li>investigate the hot-component reloading</li>
     </ul>
 </p>
-<script2 vendor="jquery" global="jQuery" async></script2>
+<script2 vendor="jquery" global="jQuery"></script2>
+<script2 type="text/javascript" waitfor="$">
+    $('#todo').append('<li>This was inserted via jQuery using script2</li>')
+</script2>
+<%
+    // waitForGlobal is a global function in all EJS templates
+    waitForGlobal('$', function () {
+        $('#todo').append('<li>This was inserted via jQuery using EJS `&lt;% .. %&gt;` templates</li>')
+    })
+%>
