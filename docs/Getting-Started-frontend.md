@@ -71,7 +71,7 @@ React and Vue.js are examples of frameworks that support the creation of such co
 
 Browserify and Webpack are module systems and bundlers for efficiently organizing and loading the various resources these New Apps need.
 
-### The rise of the "single page app"
+### The rise of the "single page app" (SPA)
 
 To those new to "modern web development", one of the quirkiest aspects of it is its use (or more accurately, *non-use*) of HTML files.
 
@@ -106,19 +106,21 @@ This line loads a "javascript bundle", a file that will load everything else tha
 
 You can see what the loaded HTML actually is by using your browser's web dev tools (you can bring them up by right-clicking on a portion of the page and choosing `Inspect Element`).
 
-When links are clicked, or a new "page" is visited, a piece of JavaScript called a **client-side router** will do several things:
+When links are clicked, or a new "page" is visited, a piece of JavaScript called a **client-side _router_** will do several things:
 
 - It will load the requested document/component/page asynchronously using an AJAX (`XMLHttpRequest` aka XHR)
 - It will swap out the old HTML and javascript for the new HTML and JavaScript
 - If necessary, it will *programmatically change the website's location bar to display a new URL to give the appearance of a normal "page visit"!*
 - It will also programmatically update the browser's history so that the back/forward buttons work normally as user's expect.
 
+**Client-side routers are *the* secret sauce behind SPAs**, and while most "modern frontend web frameworks" will ship with their own, you can find plenty of [standalone ones](https://github.com/tildeio/router.js/), or even [code your own](http://joakim.beng.se/blog/posts/a-javascript-router-in-20-lines.html).
+
 ### Why??
 
 Two main reasons:
 
 1. Managing web servers is a PITA.
-2. Web apps can become huge, and bundlers like browserify/webpack make loading them more efficient by loading (and unloading) only those resources/components that are currently needed.
+2. Web apps can become huge, and bundlers like browserify/webpack can make it simpler to manage dependencies. At the same time, many of these tools and frameworks (especially webpack and anything more complicated than Vue.js), add lots of totally unnecessary complexity that 95% of front-end developers *[don't need](https://slack-files.com/T03JT4FC2-F151AAF7A-13fe6f98da)*, especially in an [HTTP2 world](https://blog.cloudflare.com/http-2-for-web-developers/).
 
 It used to be that servers would render HTML (using a server-side templating language and/or programming language like PHP) for each page that is visited. Everyone remembers putting this in their HTML (right?):
 
@@ -190,12 +192,15 @@ The JavaScript language is always evolving. Oftentimes new features will be "sol
 
 ###### __[Vue.js](http://blog.evanyou.me/2015/10/25/vuejs-re-introduction/)__ - _Modern Frontend Component Framework_
 
-A frontend web framework like React.js but, IMO, significantly simpler and yet at least as powerful:
+A frontend web framework that takes some inspiration from React, but is simply better in many ways (TLDR: just as powerful and *far* simpler):
 
-- http://blog.evanyou.me/2015/10/25/vuejs-re-introduction/
-- http://vuejs.org/guide/comparison.html
+- [http://blog.evanyou.me/2015/10/25/vuejs-re-introduction/](http://blog.evanyou.me/2015/10/25/vuejs-re-introduction/)
+- [http://vuejs.org/guide/comparison.html](http://vuejs.org/guide/comparison.html)
+- [https://medium.com/the-vue-point/announcing-vue-js-2-0-8af1bde7ab9](https://medium.com/the-vue-point/announcing-vue-js-2-0-8af1bde7ab9)
 
 In the section [What Vue.js is good for (and not)](#what-vuejs-is-good-for-and-not) we discuss its role and when/where/how to use it.
+
+Another fantastic and comparable framework for working with single-page-apps (SPAs) is [Riot](http://riotjs.com/). Both are great, I just came across Vue.js first.
 
 ###### __[EJS](http://ejs.co/)__ - _Like PHP, but JavaScript_
 
@@ -357,11 +362,13 @@ There are two ways to include third-party code:
 1. **"Asynchronously" / "Lazily" / "On Demand":** This is the preferred approach as it prevents `app.js` from getting bloated.
 2. **"Globally":** This is through the standard use of `require`. Anything that's `require`'d gets placed into the `app.js` bundle. Unless a third-party library is used so frequently that it makes sense to have it in `app.js`, you should prefer the lazy-load approach.
 
-We cover all approaches below.
+We cover both approaches below.
 
-**Method 1.1: Lazy-loading a "vendor" lib using `<script2>`**
+**Method 1.1: Lazy-loading a "vendor" lib using Script2**
 
-This example explores our "convenience [element directive](http://vuejs.org/guide/custom-directive.html#Element-Directives)" [`<script2>`](https://github.com/okTurtles/group-income-simple/blob/master/frontend/simple/js/Script2.js) that is basically identical to `<script>`. It is especially useful within `.ejs` pages that use libraries like jQuery.
+TODO: rewrite/simplify this section. "just use script2 instead of script".
+
+This example explores our [`<script2>`](https://github.com/okTurtles/group-income-simple/blob/master/frontend/simple/js/Script2.js) component. It's a drop-in replacement for `<script>` that we created because many frameworks (including both Vue.js and Riot). We created it because many front-end frameworks  It is especially useful within `.ejs` pages that use libraries like jQuery.
 
 If the latest version of a library is available on npm *from a trusted source*, then you can add it as a project dependency and then [symlink](https://duckduckgo.com/?q=symbolic+link) it into the vendor folder. For example, here's how we did this with jQuery:
 
@@ -400,7 +407,7 @@ To avoid loading every vendor script on every page, we created a drop-in replace
 <script2 src="/simple/vendor/jquery.js"></script2> <!-- Works! -->
 ```
 
-**Scirpt2 SPA-focused Features**
+**Script2 SPA-focused Features**
 
 Since all javascript is being loaded into one "context" as a user "visits pages", we've added an `unload` attribute that you can use to keep RAM usage low, but generally you won't need this. Also, this will be changed to an event that's emitted very soon, so you would use the standard `v-on` semantics to listen for it. This section to be re-written soon.
 
