@@ -32,11 +32,11 @@
         <button class="sign-in btn" @click.prevent="submit">Sign Up</button>
       </form>
       <div id="response" v-bind:class="responseClass">{{ response }}</div>
-      <!-- This doesn't work: <script src="/simple/vendor/jquery.js" async></script>
+      <!-- This doesn't work: <script src="/simple/vendor/jquery.js"></script>
            See: https://github.com/vuejs/vue-router/issues/467
            Instead we use <script2>:
       -->
-      <script2 vendor="jquery" global="jQuery" unload="jQuery.noConflict(true)"></script2>
+      <script2 src="/simple/vendor/jquery.js" global="jQuery" unload="jQuery.noConflict(true)"></script2>
     </div>
 </template>
 

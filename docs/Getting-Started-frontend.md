@@ -386,49 +386,32 @@ The symlink keeps makes it simple to stay up-to-date with the latest version of 
 
 Note we symlink'd the un-minified version of the library. This makes debugging easier, and grunt will minify it for us when we create production builds.
 
-Now, to actually use jQuery, *you'd think* it would be a simple matter of using a `<script>` tag like so:
+Compared to many other SPA frameworks, Vue.js really shines in many respects, but on the other hand it is still somewhat opinionated and [prevents `<script>` usage in templates](https://github.com/vuejs/vue-router/issues/467). So to load jQuery this will not work:
 
 ```html
 <script src="/simple/vendor/jquery.js" async></script> <!-- Doesn't work! -->
 ```
 
-However Vue.js currently [prevents this behavior](https://github.com/vuejs/vue-router/issues/467) for reasons that are not clear. To get around that, we've created a nearly-identical `<script2>` tag (which we might later release as a standalone vue plugin).
+This can create a rough time for web designers and developers whose workflow includes vendor scripts (like jQuery) on some pages but not others.
 
-So instead, you can do this in both `.vue` and `.ejs` files:
+To avoid loading every vendor script on every page, we created a drop-in replacement component called Script2. Just add a `2` to the end of `script` tags:
 
 ```html
-<script2 src="/simple/vendor/jquery.js" async></script2> <!-- Works! -->
+<script2 src="/simple/vendor/jquery.js"></script2> <!-- Works! -->
 ```
 
 **Scirpt2 SPA-focused Features**
 
-We've added a few additional attributes for convenience and for dealing with inefficiencies that can result from SPAs:
+Since all javascript is being loaded into one "context" as a user "visits pages", we've added an `unload` attribute that you can use to keep RAM usage low, but generally you won't need this. Also, this will be changed to an event that's emitted very soon, so you would use the standard `v-on` semantics to listen for it. This section to be re-written soon.
 
-- `vendor` (**string**) - Instead typing out the full path to the script, you can just type its name. The following is equivalent to `src="/simple/vendor/jquery.js"`:
-
-    ```html
-    <script2 vendor="jquery" async></script2>
-    ```
-    
-- `global` (**string**) - Useful to avoid loading a script twice. If this global variable is defined, do nothing. For example, this prevents loading jQuery again if `window.jQuery` already exists:
+- `unload` (**string**) - Runs a JS expression when the user visits a different route (i.e. clicks to a different "page"). Useful to prevent memory usage from ballooning. For example, this runs [`jQuery.noConflict(true)`](http://api.jquery.com/jQuery.noConflict/)  to fully remove jQuery:
 
     ```html
-    <script2 vendor="jquery" global="jQuery"></script2>
+    TODO: make this an event that's emitted! and do v-on
+    <script2 src="jquery.js" unload="jQuery.noConflict(true)"></script2>
     ```
-    
-- `unload` (**boolean** or **string**) - Deletes the variable specified by `global` when the user visits a different route (i.e. clicks to a different "page"). Can also run a JS expression. Useful to prevent memory usage from ballooning.
-    - Runs `delete window.jQuery` on route change:
 
-        ```html
-        <script2 vendor="jquery" global="jQuery" unload></script2>
-        ```
-    - Runs both `delete window.jQuery` and [`jQuery.noConflict(true)`](http://api.jquery.com/jQuery.noConflict/) on route change to fully remove jQuery:
-
-        ```html
-        <script2 vendor="jquery" global="jQuery" unload="jQuery.noConflict(true)"></script2>
-        ```    
-
-Using this approach is fairly straightforward within `.ejs` files. An example of using it within `.vue` files is given at the end of this section. Script2's implementation is stored in [`frontend/simple/js/Script2.js`](https://github.com/okTurtles/group-income-simple/blob/master/frontend/simple/js/Script2.js).
+Script2 will be published as a standalone Vue.js plugin soon, but until then you can see its implementation in [`frontend/simple/js/Script2.js`](https://github.com/okTurtles/group-income-simple/blob/master/frontend/simple/js/Script2.js).
 
 **Method 1.2: Lazy-load an entire route**
 

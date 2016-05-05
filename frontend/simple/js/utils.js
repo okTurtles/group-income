@@ -4,6 +4,8 @@ export function wrap (s, tag = 'div') {
   return `<${tag}>${s}</${tag}>`
 }
 
+// use of this function is heavily discouraged! it's rather hackish.
+// see also comment in test.ejs as to why script2 should be used instead.
 export function waitForGlobal (sym, fn, {global = window, timeout = 100} = {}) {
   global[sym] ? fn() : setTimeout(waitForGlobal, timeout, sym, fn, {global, timeout})
 }
@@ -11,41 +13,27 @@ export function waitForGlobal (sym, fn, {global = window, timeout = 100} = {}) {
 var _ = require('lodash')
 
 export function insertScript (el, src, opts = {}) {
-  var s = document.createElement('script')
-  var defaults = _.partialRight(_.assignWith, (objVal, srcVal, key) =>
-    (_.isUndefined(objVal) || objVal === '') && srcVal !== '' ? srcVal : objVal
-  )
-  // omit the special options that Script2 supports
-  defaults(s, _.omit(opts, ['vendor', 'global', 'unload', 'waitfor']), {
-    type: 'text/javascript'
+  return new Promise(function (resolve, reject) {
+    var s = document.createElement('script')
+    var defaults = _.partialRight(_.assignWith, (objVal, srcVal, key) =>
+      (_.isUndefined(objVal) || objVal === '') && srcVal !== '' ? srcVal : objVal
+    )
+    // omit the special options that Script2 supports
+    defaults(s, _.omit(opts, ['unload']), {
+      type: 'text/javascript'
+    })
+    // according to: http://www.html5rocks.com/en/tutorials/speed/script-loading/
+    // async does not like 'document.write' usage, which we & vue.js make
+    // heavy use of based on the SPA style. Also, async can result
+    // in code getting executed out of order from how it is inlined on the page.
+    s.async = false // therefore set this to false
+    s.src = src
+    // inspiration from: https://github.com/eldargab/load-script/blob/master/index.js
+    // and: https://github.com/ded/script.js/blob/master/src/script.js#L70-L82
+    function success () { resolve(src) }
+    s.onload = success
+    s.onreadystatechange = () => { if (this.readyState === 'complete') success() } // IE
+    s.onerror = () => { console.error('failed to load:', src); reject(src) }
+    el.appendChild(s)
   })
-  // according to: http://www.html5rocks.com/en/tutorials/speed/script-loading/
-  // async does not like 'document.write' usage, which we & vue.js make
-  // heavy use of based on the SPA style. Also, async can result
-  // in code getting executed out of order from how it is inlined on the page.
-  s.async = false // therefore set this to false
-  s.src = src
-  el.appendChild(s)
 }
-
-export function insertVendorScript (el, libname, opts = {}) {
-  libname = `/simple/vendor/${/\.js$/.test(libname) ? libname : libname + '.js'}`
-  insertScript(el, libname, opts)
-}
-
-// This function is currently located in .Gruntfile.babel.js
-// The problem is that fs.readFileSync doesn't work here (we're not in node)
-// However it might be possible to do it this way (and avoid the ejsify thing)
-// by using this: https://github.com/substack/brfs
-// TODO: investigate this alternative. Then in main.js we'd do:
-//       template: loadEJS('./views/test.ejs')
-// export function loadEJS (pathOrStr, str, opts = {}) {
-//   var path = pathOrStr
-//   if (_.isPlainObject(str)) opts = str
-//   if (/\.ejs$/.test(pathOrStr)) str = fs.readFileSync(pathOrStr)
-//   str = require('ejs').render(str, opts.data || {}, _.merge({
-//     filename: path,
-//     compileDebug: process.env.NODE_ENV === 'development'
-//   }, opts))
-//   return opts.wrap ? wrap(str, opts.wrap) : str
-// }

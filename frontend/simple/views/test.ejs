@@ -14,13 +14,26 @@
         <li>investigate the hot-component reloading</li>
     </ul>
 </p>
-<script2 vendor="jquery" global="jQuery"></script2>
-<script2 type="text/javascript" waitfor="$">
+<script2 src="/simple/vendor/jquery.js" global="jQuery"></script2>
+<script2 type="text/javascript">
     $('#todo').append('<li>This was inserted via jQuery using script2</li>')
 </script2>
 <%
-    // waitForGlobal is a global function in all EJS templates
-    waitForGlobal('$', function () {
+    // waitForGlobal used to be a global function in all EJS templates
+    // However it has been removed because this usage *WILL NOT WORK*.
+    // Here's why:
+    // 
+    // - The code below gets executed immediately, even when
+    //   this test.ejs "page" isn't being displayed.
+    // - Therefore, if another page is displayed that *does*
+    //   load jQuery, then this code gets run, but that page
+    //   might not have a '#todo' list, or worse, it might have
+    //   one but for a totally different purpose!
+    // 
+    // Therefore just use script2 as shown above.
+    /* waitForGlobal('$', function () {
+        console.log('FOO')
         $('#todo').append('<li>This was inserted via jQuery using EJS `&lt;% .. %&gt;` templates</li>')
     })
+    */
 %>
