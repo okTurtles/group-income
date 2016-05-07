@@ -23,7 +23,7 @@ If you already fully grok modern web dev and want to get started immediately, sk
     + [Vue.js](#vuejs---modern-frontend-component-framework)
     + [EJS](#ejs---like-php-but-javascript)
     + [Bulma](#bulma---lightweight-modern-flexbox-css-framework)
-    + [Honorable Mentions: Webpack, Gulp, React](#honorable-mentions-webpack-gulp-react)
+    + [Honorable Mentions: Webpack, Gulp, React, Riot.js, Rollup](#honorable-mentions-webpack-gulp-react-riotjs-rollup)
 - [Frontend Workflow](#frontend-workflow)
     + [How do I get set up / just run the site?](#how-do-i-get-set-up--just-run-the-site)
     + [What does `npm install` do?](#what-does-npm-install-do)
@@ -200,7 +200,7 @@ A frontend web framework that takes some inspiration from React, but is simply b
 
 In the section [What Vue.js is good for (and not)](#what-vuejs-is-good-for-and-not) we discuss its role and when/where/how to use it.
 
-[Riot.js](http://riotjs.com/) is another fantastic and comparable framework for working with single-page-apps (SPAs). Both are great, I just came across Vue.js first.
+[Riot.js](http://riotjs.com/) is another (very similar) fantastic framework for working with single-page-apps (SPAs). Both are great, I just came across Vue.js first.
 
 ###### __[EJS](http://ejs.co/)__ - _Like PHP, but JavaScript_
 
@@ -218,13 +218,15 @@ This project supports using it in `.vue` files and by itself in standalone `.ejs
 
 Incorporating this to the site is on the TODO and is [an open issue](https://github.com/okTurtles/group-income-simple/issues/16) to take!
 
-##### Honorable Mentions: [Webpack](https://webpack.github.io/), [Gulp](http://gulpjs.com/), [React](https://github.com/facebook/react)
+##### Honorable Mentions: [Webpack](https://webpack.github.io/), [Gulp](http://gulpjs.com/), [React](https://github.com/facebook/react), [Riot.js](http://riotjs.com), [Rollup](http://rollupjs.org)
 
 We've chosen (for now at least) to use Browserify over Webpack, Grunt over Gulp, an Vue.js over React, even though these are all perfectly fine tools in the modern web development toolkit. Briefly, our reasoning:
 
 - Although Webpack has features that Browserify does not, it is also far more difficult to get up and running with, and I don't think it provides web-based implementations of Node.js's API the way Browserify does. For now at least, Browserify seems to be serving our needs just fine, but we [may yet switch to it](https://github.com/okTurtles/group-income-simple/issues/44).
 - The reasons for choosing Vue.js over React are mentioned [above](#vuejs---modern-frontend-component-framework).
 - Grunt and Gulp appear to be about evenly matched, and although Gulp seems to be hip and has a nifty design, Grunt is also perfectly well designed too and works just as well. We were already experienced with Grunt so we went with it. Plus, we like its emphasis on configuration over code and its native support for template strings. Either tool will serve you well.
+- Riot.js is very similar to Vue.js, perhaps even more minimalist. I might have used it instead had I come across it first. Both are great!
+- Rollup is an extremely efficient bundler that takes advantage of ES6 modules to bundle only the functions you use and their dependencies (instead of entire modules). Because of this it produces smaller bundles than either Browserify or Webpack (currently). Webpack 2 plans to also implement the tooling necessary to do this, and you can use Rollup with Browserify via the [rollupify](https://github.com/nolanlawson/rollupify) transform.
 
 ## Frontend Workflow
 
@@ -355,7 +357,7 @@ Please add only uncompressed/unminified assets to this folder (if possible) as t
 
 #### Where should I put JavaScript *someone else* wrote (e.g. jQuery)?
 
-Recall that single-page-apps (SPAs) typically have [*a single* global JavaScript bundle](#the-rise-of-the-single-page-app) that gets loaded. In our setup, this file is stored in `dist/simple/app.js`.
+Recall that single-page-apps (SPAs) often have [*a single* global JavaScript bundle](#the-rise-of-the-single-page-app) that gets loaded. In our setup, this file is stored in `dist/simple/app.js`.
 
 There are two ways to include third-party code:
 
@@ -366,9 +368,11 @@ We cover both approaches below.
 
 **Method 1.1: Lazy-loading a "vendor" lib using Script2**
 
-There are a variety of ways to load code asynchronously. We're going to ignore all of the fancy new techniques that have come along for doing this (that includes RequireJS-style AMD files, code-splitting, "System.import", and whatever else they think of next).
+There are a variety of ways to load code asynchronously. We're going to ignore all of the fancy new techniques that have come along for doing this (that includes [RequireJS](http://requirejs.org)-style AMD files, [code-splitting](http://vuejs.github.io/vue-router/en/lazy.html), ["System.import"](https://github.com/systemjs/systemjs), and whatever else they think of next).
 
-Instead, my *strong* recommendation, after evaluating all of those … interesting alternatives, is to simply use the good old `<script>` tag as you've always done. This is possible in SPAs (even in frameworks that don't officially support it!) thanks to simple libraries like [VueScript2](https://github.com/taoeffect/vue-script2).
+Instead, my *strong* recommendation after evaluating all of those … interesting alternatives, is to simply use the good old-fashioned `<script>` tag that everyone is already familiar with, unless there's a very compelling reason not to. This is possible in SPAs (even in frameworks that don't officially support it!) thanks to simple libraries like [VueScript2](https://github.com/taoeffect/vue-script2). You'll waste less time, your website will load faster, and your designer will thank you.
+
+*Example: Loading jQuery only on specific "pages"/routes*
 
 First, grab the latest version of a library you want to include from *from a trusted source* on npm. For example, here's how we did this with jQuery:
 
@@ -389,17 +393,18 @@ $ cd frontend/simple/assets/vendor
 $ ln -s ../../../../node_modules/jquery/dist/jquery.js
 ```
 
-The symlink will make it simple for us to stay up-to-date with the latest version of the library. `grunt dev` will copy actual file (not the symlink) into the `dist/` folder. We've symlink'd the un-minified version of the library to make debugging easier, and because grunt will minify it for us when we create production builds.
+The symlink will make it simple for us to stay up-to-date with the latest version of the library. `grunt dev` will copy the actual file (not the symlink) into the `dist/` folder. We've symlink'd the un-minified version of the library to make debugging easier, and because we can use grunt to minify it when creating production builds.
 
-Next, just load jQuery in your template:
+Next, just load jQuery in your template like normal:
 
 ```html
 <script src="/simple/vendor/jquery.js"></script>
+<script> /* do something with $ */ </script>
 ```
 
 This will work in both `.vue` and `.ejs` files thanks to the [`script2ify` browserify transform](https://github.com/taoeffect/vue-script2/blob/master/README.md#using-script-via-browserify-transform).
 
-Behind the scenes, this `<script>` tag is really a VueScript2 Vue.js component that ensures scripts are loaded one at a time in the order they appear on the page. You can add an `async` attribute to have them not wait for each other.
+Behind the scenes, this `<script>` tag is transformed into a VueScript2 Vue.js component that injects and loads the scripts. Using VueScript2 prevents jQuery from being bundled, and will load it only when the user visits a route that requests it (and only if it's not already loaded). By default, scripts are loaded one at a time in the order they appear on the page. You can add an `async` attribute to the `<script>` tag to have it be injected immediately without waiting for others.
 
 - :book: See [the `vue-script2` documentation](https://github.com/taoeffect/vue-script2) for more info
 
@@ -416,7 +421,7 @@ Any use of `require` (without code splitting) will result in that module's direc
 - In `.vue` files, `require` can be used within the `<script>` section (not to be confused with any VueScript2 `<script>` tags in the `<template>` section, see note below).
 - In `.ejs` files, `require` can be used between the delimiters `<%` and `%>`.
 
-NOTE: `require` *cannot* be used within inlined `<script>` VueScript2 tags since that code is not parsed when the bundle is created, but at "runtime" when it's injected into a page. However, code within VueScript2 tags can access variables that were `require`'d elsewhere.
+NOTE: `require` *cannot* be used within inlined `<script>` VueScript2 tags since that code is not parsed when the bundle is created, but at "runtime" when it's injected into a page. However, code within VueScript2 tags can access global variables that were `require`'d elsewhere.
 
 *Please ask before adding any new project dependencies! (Either in [our chat](https://gitter.im/okTurtles/group-income), on the [forums](https://forums.okturtles.com/index.php?board=9.0), or via a GitHub issue.)*
 
@@ -425,7 +430,7 @@ NOTE: `require` *cannot* be used within inlined `<script>` VueScript2 tags since
 #### Where's the best place to put JavaScript *that I* create?
 
 - If the JavaScript is *specific to a page you're working on:* put it directly into the `.ejs` or `.vue` file
-- Otherwise, for JS that's used across multiple files, place it into a `.js` file within `simple/js` and then `require` it from within the `.vue` or `.ejs` files
+- Otherwise, for JS that's used across multiple files, place it into a `.js` file within `simple/js` and then `require` it within a `.vue` or `.ejs` file
 
 ----
 
@@ -459,7 +464,7 @@ So it is good for that style of programming, and it is therefore much more frien
 - Avoiding repetition by including some file using `<%- include file %>` ([example](https://github.com/okTurtles/group-income-simple/blob/ebafb48385c63d271eb6a210545efbcc8d43d99c/frontend/simple/views/test.ejs#L10))
 - Adding simple logic like "display this chunk of HTML `if` something, otherwise display this other thing"
 
-You can mix-and-match EJS with [Vue template syntax](http://vuejs.org/guide/syntax.html) within `.vue` files by setting the template language to `ejs`:
+You can even use EJS syntax within within `.vue` files by setting the [template language](http://vuejs.org/guide/syntax.html) to `ejs`:
 
 ```vue
 <template lang="ejs">
