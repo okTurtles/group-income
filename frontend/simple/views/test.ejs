@@ -14,10 +14,12 @@
         <li>investigate the hot-component reloading</li>
     </ul>
 </p>
-<script2 src="/simple/vendor/jquery.js" global="jQuery"></script2>
-<script2 type="text/javascript">
+<script src="/simple/vendor/jquery.js"></script>
+<script>
     $('#todo').append('<li>This was inserted via jQuery using script2</li>')
-</script2>
+    var request = require('superagent')
+    console.log(request)
+</script>
 <%
     // waitForGlobal used to be a global function in all EJS templates
     // However it has been removed because this usage *WILL NOT WORK*.

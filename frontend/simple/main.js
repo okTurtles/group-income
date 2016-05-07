@@ -1,6 +1,8 @@
-var Promise = window.Promise = require('bluebird') // see comment in backend/index.js
-var superagent = require('superagent') // fix superagent so that .end() returns a promise
-superagent.Request.prototype.end = Promise.promisify(superagent.Request.prototype.end)
+// uncomment once we decide to use bluebird
+// var Promise = window.Promise = require('bluebird') // see comment in backend/index.js
+// we can simply use jQuery instead of superagent
+// var superagent = require('superagent') // fix superagent so that .end() returns a promise
+// superagent.Request.prototype.end = Promise.promisify(superagent.Request.prototype.end)
 
 import Vue from 'vue'
 import Router from 'vue-router'
@@ -12,7 +14,7 @@ import { wrap } from './js/utils' // wrap string in a tag (<div> by default)
 
 Vue.config.debug = process.env.NODE_ENV === 'development'
 Vue.use(Router)
-Vue.use(require('./js/Script2'))
+Vue.use(require('vue-script2'))
 
 var router = new Router({
   hashbang: false,

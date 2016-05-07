@@ -49,7 +49,7 @@ module.exports = (grunt) => {
     browserify: {
       dev: {
         options: {
-          transform: ['vueify', ejsify, 'babelify'],
+          transform: [script2ify, 'vueify', ejsify, 'babelify'],
           browserifyOptions: {
             debug: process.env.NODE_ENV === 'development' // enables source maps
           }
@@ -186,7 +186,8 @@ module.exports = (grunt) => {
 
 // ----------------------------------------
 // EJS support for .vue files + via require
-// TODO: move this to some nicer place
+// TODO: move this to some nicer place. A grunt folder
+//       would also allow us to move this entire file.
 // ----------------------------------------
 var through = require('through2')
 
@@ -214,5 +215,24 @@ function ejsify (file) {
     // see comment in test.ejs for why waitForGlobal is no longer used
     // cb(null, `module.exports = (${loadEJS(file, buf.toString('utf8'))})({waitForGlobal: ${waitForGlobal}})`)
     cb(null, `module.exports = (${loadEJS(file, buf.toString('utf8'))})()`)
+  })
+}
+
+// This will replace <script> with <script2> in .html, .vue and .ejs files
+// EXCEPT:
+// - within <!-- comments -->
+// - top-level <script> tags within .vue files
+// Additional exclusion per: http://www.rexegg.com/regex-best-trick.html
+// Excluding <pre> tags did not seem to work, however.
+function script2ify (file) {
+  return !/\.(vue|html|ejs)$/.test(file) // edit to support other file types
+  ? through()
+  : through(function (buf, encoding, cb) {
+    // avoid replacing top-level <script> tags in .vue files
+    var regex = /\.vue$/.test(file)
+    ? /<!--.*?-->|^<script>|^<\/script>|(?:<(\/)?script([ >]))/gm
+    : /<!--.*?-->|(?:<(\/)?script([ >]))/gm
+    var replacement = (m, p1, p2) => p2 ? `<${p1 || ''}script2${p2}` : m
+    cb(null, buf.toString('utf8').replace(regex, replacement))
   })
 }
