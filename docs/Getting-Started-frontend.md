@@ -71,7 +71,7 @@ React and Vue.js are examples of frameworks that support the creation of such co
 
 Browserify and Webpack are module systems and bundlers for efficiently organizing and loading the various resources these New Apps need.
 
-### The rise of the "single page app"
+### The rise of the "single page app" (SPA)
 
 To those new to "modern web development", one of the quirkiest aspects of it is its use (or more accurately, *non-use*) of HTML files.
 
@@ -106,19 +106,21 @@ This line loads a "javascript bundle", a file that will load everything else tha
 
 You can see what the loaded HTML actually is by using your browser's web dev tools (you can bring them up by right-clicking on a portion of the page and choosing `Inspect Element`).
 
-When links are clicked, or a new "page" is visited, a piece of JavaScript called a **client-side router** will do several things:
+When links are clicked, or a new "page" is visited, a piece of JavaScript called a **client-side _router_** will do several things:
 
 - It will load the requested document/component/page asynchronously using an AJAX (`XMLHttpRequest` aka XHR)
 - It will swap out the old HTML and javascript for the new HTML and JavaScript
 - If necessary, it will *programmatically change the website's location bar to display a new URL to give the appearance of a normal "page visit"!*
 - It will also programmatically update the browser's history so that the back/forward buttons work normally as user's expect.
 
+**Client-side routers are *the* secret sauce behind SPAs**, and while most "modern frontend web frameworks" will ship with their own, you can find plenty of [standalone ones](https://github.com/tildeio/router.js/), or even [code your own](http://joakim.beng.se/blog/posts/a-javascript-router-in-20-lines.html).
+
 ### Why??
 
 Two main reasons:
 
 1. Managing web servers is a PITA.
-2. Web apps can become huge, and bundlers like browserify/webpack make loading them more efficient by loading (and unloading) only those resources/components that are currently needed.
+2. Web apps can become huge, and bundlers like browserify/webpack can make it simpler to manage dependencies. At the same time, many of these tools and frameworks (especially webpack and anything more complicated than Vue.js), add lots of totally unnecessary complexity that 95% of front-end developers *[don't need](https://slack-files.com/T03JT4FC2-F151AAF7A-13fe6f98da)*, especially in an [HTTP2 world](https://blog.cloudflare.com/http-2-for-web-developers/).
 
 It used to be that servers would render HTML (using a server-side templating language and/or programming language like PHP) for each page that is visited. Everyone remembers putting this in their HTML (right?):
 
@@ -190,12 +192,15 @@ The JavaScript language is always evolving. Oftentimes new features will be "sol
 
 ###### __[Vue.js](http://blog.evanyou.me/2015/10/25/vuejs-re-introduction/)__ - _Modern Frontend Component Framework_
 
-A frontend web framework like React.js but, IMO, significantly simpler and yet at least as powerful:
+A frontend web framework that takes some inspiration from React, but is simply better in many ways (TLDR: just as powerful and *far* simpler):
 
-- http://blog.evanyou.me/2015/10/25/vuejs-re-introduction/
-- http://vuejs.org/guide/comparison.html
+- [http://blog.evanyou.me/2015/10/25/vuejs-re-introduction/](http://blog.evanyou.me/2015/10/25/vuejs-re-introduction/)
+- [http://vuejs.org/guide/comparison.html](http://vuejs.org/guide/comparison.html)
+- [https://medium.com/the-vue-point/announcing-vue-js-2-0-8af1bde7ab9](https://medium.com/the-vue-point/announcing-vue-js-2-0-8af1bde7ab9)
 
 In the section [What Vue.js is good for (and not)](#what-vuejs-is-good-for-and-not) we discuss its role and when/where/how to use it.
+
+Another fantastic and comparable framework for working with single-page-apps (SPAs) is [Riot](http://riotjs.com/). Both are great, I just came across Vue.js first.
 
 ###### __[EJS](http://ejs.co/)__ - _Like PHP, but JavaScript_
 
@@ -355,15 +360,17 @@ Recall that single-page-apps (SPAs) typically have [*a single* global JavaScript
 There are two ways to include third-party code:
 
 1. **"Asynchronously" / "Lazily" / "On Demand":** This is the preferred approach as it prevents `app.js` from getting bloated.
-2. **"Globally":** This is through the standard use of `require`. Anything that's `require`'d gets placed into the `app.js` bundle. Unless a third-party library is used so frequently that it makes sense to have it in `app.js`, you should prefer the lazy-load approach.
+2. **"Globally":** This is through the standard use of `require`. Anything that's `require`'d gets placed into the `app.js` bundle (unless you're using webpack's fancy-but-unnecessary code-splitting features). Unless a third-party library is used so frequently that it makes sense to have it in `app.js`, you should prefer the lazy-load approach.
 
-We cover all approaches below.
+We cover both approaches below.
 
-**Method 1.1: Lazy-loading a "vendor" lib using `<script2>`**
+**Method 1.1: Lazy-loading a "vendor" lib using Script2**
 
-This example explores our "convenience [element directive](http://vuejs.org/guide/custom-directive.html#Element-Directives)" [`<script2>`](https://github.com/okTurtles/group-income-simple/blob/master/frontend/simple/js/Script2.js) that is basically identical to `<script>`. It is especially useful within `.ejs` pages that use libraries like jQuery.
+There are a variety of ways to load code asynchronously. We're going to ignore all of the fancy new techniques that have come along for doing this (that includes RequireJS-style AMD files, code-splitting, "System.import", and whatever else they think of next).
 
-If the latest version of a library is available on npm *from a trusted source*, then you can add it as a project dependency and then [symlink](https://duckduckgo.com/?q=symbolic+link) it into the vendor folder. For example, here's how we did this with jQuery:
+Instead, my *strong* recommendation, after evaluating all those ... interesting alternatives, is to simply use the good old `<script>` tag as you've always done. This is possible in SPAs (even in frameworks that don't officially support it!) thanks to simple libraries like [`vue-script2`](https://github.com/taoeffect/vue-script2).
+
+First, grab the latest version of a library you want to include from *from a trusted source* on npm. For example, here's how we did this with jQuery:
 
 ```
 npm install jquery --save
@@ -375,133 +382,41 @@ You can check the version that we're using by looking inside `package.json`. Upd
 npm install jquery@latest --save
 ```
 
-Next, we symlink jQuery into the vendor folder:
+Next we [symlink](https://duckduckgo.com/?q=symbolic+link) it into our `vendor/` folder:
 
 ```
 $ cd frontend/simple/assets/vendor
 $ ln -s ../../../../node_modules/jquery/dist/jquery.js
 ```
 
-The symlink keeps makes it simple to stay up-to-date with the latest version of the library. `grunt dev` will then copy actual file (not the symlink) into the `dist/` folder.
+The symlink will make it simple for us to stay up-to-date with the latest version of the library. `grunt dev` will copy actual file (not the symlink) into the `dist/` folder. We've symlink'd the un-minified version of the library to make debugging easier, and because grunt will minify it for us when we create production builds.
 
-Note we symlink'd the un-minified version of the library. This makes debugging easier, and grunt will minify it for us when we create production builds.
-
-Now, to actually use jQuery, *you'd think* it would be a simple matter of using a `<script>` tag like so:
+Next, just load jQuery in your template:
 
 ```html
-<script src="/simple/vendor/jquery.js" async></script> <!-- Doesn't work! -->
+<script src="/simple/vendor/jquery.js"></script>
 ```
 
-However Vue.js currently [prevents this behavior](https://github.com/vuejs/vue-router/issues/467) for reasons that are not clear. To get around that, we've created a nearly-identical `<script2>` tag (which we might later release as a standalone vue plugin).
+This will work in both `.vue` and `.ejs` files thanks to the [`script2ify` browserify transform](https://github.com/taoeffect/vue-script2/blob/master/README.md#using-script-via-browserify-transform).
 
-So instead, you can do this in both `.vue` and `.ejs` files:
+Behind the scenes, this `<script>` tag is really a VueScript2 component that ensures scripts are loaded one at time in the order they appear on the page. You can add an `async` attribute to have them not wait for each other.
 
-```html
-<script2 src="/simple/vendor/jquery.js" async></script2> <!-- Works! -->
-```
-
-**Scirpt2 SPA-focused Features**
-
-We've added a few additional attributes for convenience and for dealing with inefficiencies that can result from SPAs:
-
-- `vendor` (**string**) - Instead typing out the full path to the script, you can just type its name. The following is equivalent to `src="/simple/vendor/jquery.js"`:
-
-    ```html
-    <script2 vendor="jquery" async></script2>
-    ```
-    
-- `global` (**string**) - Useful to avoid loading a script twice. If this global variable is defined, do nothing. For example, this prevents loading jQuery again if `window.jQuery` already exists:
-
-    ```html
-    <script2 vendor="jquery" global="jQuery"></script2>
-    ```
-    
-- `unload` (**boolean** or **string**) - Deletes the variable specified by `global` when the user visits a different route (i.e. clicks to a different "page"). Can also run a JS expression. Useful to prevent memory usage from ballooning.
-    - Runs `delete window.jQuery` on route change:
-
-        ```html
-        <script2 vendor="jquery" global="jQuery" unload></script2>
-        ```
-    - Runs both `delete window.jQuery` and [`jQuery.noConflict(true)`](http://api.jquery.com/jQuery.noConflict/) on route change to fully remove jQuery:
-
-        ```html
-        <script2 vendor="jquery" global="jQuery" unload="jQuery.noConflict(true)"></script2>
-        ```    
-
-Using this approach is fairly straightforward within `.ejs` files. An example of using it within `.vue` files is given at the end of this section. Script2's implementation is stored in [`frontend/simple/js/Script2.js`](https://github.com/okTurtles/group-income-simple/blob/master/frontend/simple/js/Script2.js).
+- :book: See [the `vue-script2` documentation](https://github.com/taoeffect/vue-script2) for more info
 
 **Method 1.2: Lazy-load an entire route**
 
-Perhaps a small section of your website uses a [fancy Vue.js component](https://github.com/vuejs/awesome-vue#ui-components). To avoid bloating your `app.js` file, you can lazy-load the entire route (i.e. an entire "page") by leveraging the *code-splitting* capabilities of browserify or webpack. Webpack is better at this than browserify, but both can do it.
+You can lazy-load an entire route (i.e. an entire "page") by leveraging the *code-splitting* capabilities of browserify or webpack.
 
-See [the `vue-router` documentation for details](http://vuejs.github.io/vue-router/en/lazy.html).
-
+- :book: See [the `vue-router` documentation](http://vuejs.github.io/vue-router/en/lazy.html) for more info
 
 **Method 2: Globally including a commonly used third-party library**
 
-Unless you use code-splitting features mentioned above, any use of `require` to load a library will result in that library's direct inclusion within the `app.js` bundle.
+Any use of `require` (without code splitting) will result in that module's direct inclusion within the `app.js` bundle.
 
-Not all libraries can be loaded using `require`, but if the library exists on npm, it's `require`able. Most libraries are "[AMD](https://webpack.github.io/docs/amd.html)/[CommonJS](https://webpack.github.io/docs/commonjs.html)" compatible these days and therefore are `require`able. All libraries can be made requireable via [browserify-shim](https://github.com/thlorenz/browserify-shim) (but this is kinda hackish).
+- In `.vue` files, `require` can be used within the `<script>` section (not to be confused with any VueScript2 `<script>` tags in the `<template>` section, see note below).
+- In `.ejs` files, `require` can be used between the delimiters `<%` and `%>`.
 
-Our project adds several very handy third-party libraries to its `app.js` bundle via this method:
-
-- [lodash](https://lodash.com)
-- [string](http://stringjs.com)
-- [superagent](https://github.com/visionmedia/superagent)
-- [bluebird](http://bluebirdjs.com/docs/getting-started.html) ([tutorial](http://blog.runnable.com/post/143035495456/bluebird-in-the-wild-advanced-promise-based))
-
-All of these can be used within `.vue` and `.ejs` files by `require`ing them.
-
-Let's end with an example that combines this technique along with the `<script2>` technique from *Method 1.1* within a `.vue` file:
-
-```vue
-<template>
-  <div class="myComponent">
-    <form>
-      <!-- ... component code ... -->
-      <button class="sign-in btn" @click.prevent="submit">Sign Up</button>
-    </form>
-    <div id="response" v-bind:class="responseClass">{{ response }}</div>
-    <!-- load /simple/vendor/jquery.js -->
-    <script2 vendor="jquery" global="jQuery" async></script2>
-  </div>
-</template>
-
-<style>
-  #response.error {color:red;}
-  #response {color:green;}
-</style>
-
-<script>
-var request = require('superagent') // note: this adds superagent to app.js
-
-export default {
-  methods: {
-    submit: async function () {
-      var $ = window.jQuery
-      try {
-        var response = await request.post(process.env.API_URL+'/user/')
-          .type('form').send($('form.new-user').serialize()).end()
-        this.response = response.text
-        this.responseClass.error = false
-      } catch (err) {
-        this.responseClass.error = true
-        this.response = err.response.body.message
-      }
-    }
-  },
-  data () {
-    return {
-      msg: 'User Profile!',
-      responseClass: {
-        error: false
-      },
-      response: ''
-    }
-  }
-}
-</script>
-```
+NOTE: `require` *cannot* be used with inlined `<script>` VueScript2 tags since that code is not parsed when the bundle is created, but at "runtime" when it's injected into a page. However, code within VueScript2 tags can access variables that were `require`'d elsewhere.
 
 *Please ask before adding any new project dependencies! (Either in [our chat](https://gitter.im/okTurtles/group-income), on the [forums](https://forums.okturtles.com/index.php?board=9.0), or via a GitHub issue.)*
 

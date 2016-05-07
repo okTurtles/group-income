@@ -5,6 +5,10 @@ before_script:
   - npm install grunt-cli -g
 env:
   - CXX=g++-4.8  
+# https://github.com/okTurtles/group-income-simple/issues/58
+branches:
+  only: 
+    - master
 addons:
   apt:
     sources:

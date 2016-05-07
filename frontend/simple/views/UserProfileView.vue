@@ -32,11 +32,7 @@
         <button class="sign-in btn" @click.prevent="submit">Sign Up</button>
       </form>
       <div id="response" v-bind:class="responseClass">{{ response }}</div>
-      <!-- This doesn't work: <script src="/simple/vendor/jquery.js" async></script>
-           See: https://github.com/vuejs/vue-router/issues/467
-           Instead we use <script2>:
-      -->
-      <script2 vendor="jquery" async global="jQuery" unload="jQuery.noConflict(true)"></script2>
+      <script src="/simple/vendor/jquery.js" unload="jQuery.noConflict(true)"></script>
     </div>
 </template>
 
@@ -46,21 +42,18 @@
 </style>
 
 <script>
-var request = require('superagent')
-
 export default {
   methods: {
-    submit: async function () {
+    submit: function () {
       var $ = window.jQuery
-      try {
-        var response = await request.post(process.env.API_URL+'/user/')
-          .type('form').send($('form.new-user').serialize()).end()
-        this.response = response.text
+      $.post(process.env.API_URL+'/user/', $('form.new-user').serialize())
+      .done((data, status, jqXHR) => {
+        this.response = jqXHR.responseText
         this.responseClass.error = false
-      } catch (err) {
+      }).fail((jqXHR, status, err) => {
         this.responseClass.error = true
-        this.response = err.response.body.message
-      }
+        this.response = jqXHR.responseJSON.message
+      })
     }
   },
   data () {
