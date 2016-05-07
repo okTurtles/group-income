@@ -10,7 +10,7 @@ If you already fully grok modern web dev and want to get started immediately, sk
 
 - ["A Pox On Modern Web Development!"](#a-pox-on-modern-web-development)
     + [What Happened To Web Development?](#what-happened-to-web-development)
-    + [The rise of the "single page app"](#the-rise-of-the-single-page-app)
+    + [The rise of the "single page app"](#the-rise-of-the-single-page-app-spa)
     + [Why??](#why)
     + [Pros/Cons](#proscons)
 - [Architecture Stack Overview](#architecture-stack-overview)
@@ -357,7 +357,7 @@ Please add only uncompressed/unminified assets to this folder (if possible) as t
 
 #### Where should I put JavaScript *someone else* wrote (e.g. jQuery)?
 
-Recall that single-page-apps (SPAs) often have [*a single* global JavaScript bundle](#the-rise-of-the-single-page-app) that gets loaded. In our setup, this file is stored in `dist/simple/app.js`.
+Recall that single-page-apps (SPAs) often have [*a single* global JavaScript bundle](#the-rise-of-the-single-page-app-spa) that gets loaded. In our setup, this file is stored in `dist/simple/app.js`.
 
 There are two ways to include third-party code:
 
