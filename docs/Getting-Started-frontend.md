@@ -200,7 +200,7 @@ A frontend web framework that takes some inspiration from React, but is simply b
 
 In the section [What Vue.js is good for (and not)](#what-vuejs-is-good-for-and-not) we discuss its role and when/where/how to use it.
 
-Another fantastic and comparable framework for working with single-page-apps (SPAs) is [Riot](http://riotjs.com/). Both are great, I just came across Vue.js first.
+[Riot.js](http://riotjs.com/) is another fantastic and comparable framework for working with single-page-apps (SPAs). Both are great, I just came across Vue.js first.
 
 ###### __[EJS](http://ejs.co/)__ - _Like PHP, but JavaScript_
 
@@ -368,7 +368,7 @@ We cover both approaches below.
 
 There are a variety of ways to load code asynchronously. We're going to ignore all of the fancy new techniques that have come along for doing this (that includes RequireJS-style AMD files, code-splitting, "System.import", and whatever else they think of next).
 
-Instead, my *strong* recommendation, after evaluating all those ... interesting alternatives, is to simply use the good old `<script>` tag as you've always done. This is possible in SPAs (even in frameworks that don't officially support it!) thanks to simple libraries like [`vue-script2`](https://github.com/taoeffect/vue-script2).
+Instead, my *strong* recommendation, after evaluating all of those … interesting alternatives, is to simply use the good old `<script>` tag as you've always done. This is possible in SPAs (even in frameworks that don't officially support it!) thanks to simple libraries like [VueScript2](https://github.com/taoeffect/vue-script2).
 
 First, grab the latest version of a library you want to include from *from a trusted source* on npm. For example, here's how we did this with jQuery:
 
@@ -399,7 +399,7 @@ Next, just load jQuery in your template:
 
 This will work in both `.vue` and `.ejs` files thanks to the [`script2ify` browserify transform](https://github.com/taoeffect/vue-script2/blob/master/README.md#using-script-via-browserify-transform).
 
-Behind the scenes, this `<script>` tag is really a VueScript2 component that ensures scripts are loaded one at time in the order they appear on the page. You can add an `async` attribute to have them not wait for each other.
+Behind the scenes, this `<script>` tag is really a VueScript2 Vue.js component that ensures scripts are loaded one at a time in the order they appear on the page. You can add an `async` attribute to have them not wait for each other.
 
 - :book: See [the `vue-script2` documentation](https://github.com/taoeffect/vue-script2) for more info
 
@@ -416,7 +416,7 @@ Any use of `require` (without code splitting) will result in that module's direc
 - In `.vue` files, `require` can be used within the `<script>` section (not to be confused with any VueScript2 `<script>` tags in the `<template>` section, see note below).
 - In `.ejs` files, `require` can be used between the delimiters `<%` and `%>`.
 
-NOTE: `require` *cannot* be used with inlined `<script>` VueScript2 tags since that code is not parsed when the bundle is created, but at "runtime" when it's injected into a page. However, code within VueScript2 tags can access variables that were `require`'d elsewhere.
+NOTE: `require` *cannot* be used within inlined `<script>` VueScript2 tags since that code is not parsed when the bundle is created, but at "runtime" when it's injected into a page. However, code within VueScript2 tags can access variables that were `require`'d elsewhere.
 
 *Please ask before adding any new project dependencies! (Either in [our chat](https://gitter.im/okTurtles/group-income), on the [forums](https://forums.okturtles.com/index.php?board=9.0), or via a GitHub issue.)*
 
