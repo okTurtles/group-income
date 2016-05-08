@@ -2,3 +2,4 @@ node_modules/
 dist/
 sqlite.db
 NOTES.md
+frontend/simple/js/Script2.js

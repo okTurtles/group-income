@@ -16,9 +16,9 @@
 </p>
 <script src="/simple/vendor/jquery.js"></script>
 <script>
-    $('#todo').append('<li>This was inserted via jQuery using script2</li>')
-    var request = require('superagent')
-    console.log(request)
+    // VueScript2.load('/simple/vendor/jquery.js').then(function () {
+        $('#todo').append('<li>This was inserted via jQuery using script2</li>')
+    // })
 </script>
 <%
     // waitForGlobal used to be a global function in all EJS templates

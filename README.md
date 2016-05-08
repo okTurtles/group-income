@@ -55,6 +55,12 @@ Run the tests:
 grunt test
 ```
 
+## Troubleshooting
+
+The recent release of Node 6.0 has caused some problems for some of our dependencies.
+
+So if you run into any errors [during the setup](docs/Getting-Started-frontend.md#how-do-i-get-set-up--just-run-the-site), try the suggestions in [`Troubleshooting.md`](docs/Troubleshooting.md).
+
 ## Contributing
 
 Make sure to work in a named branch. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for details.
