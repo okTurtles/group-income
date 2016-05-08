@@ -67,4 +67,4 @@ Make sure to work in a named branch. See [`CONTRIBUTING.md`](CONTRIBUTING.md) fo
 
 ## License
 
-See `LICENSE` file.
+See [`LICENSE`](docs/LICENSE).
