@@ -8,6 +8,8 @@ This guide assumes you know how to use `git` and GitHub!
 
 If you already fully grok modern web dev and want to get started immediately, skip ahead to [Frontend Workflow](#frontend-workflow).
 
+*And if you'd like to help out with this project, [get in touch!](https://gitter.im/okTurtles/group-income)*
+
 - ["A Pox On Modern Web Development!"](#a-pox-on-modern-web-development)
     + [What Happened To Web Development?](#what-happened-to-web-development)
     + [The rise of the "single page app"](#the-rise-of-the-single-page-app-spa)
@@ -53,7 +55,7 @@ Don't worry, friend! This document will explain how we got here, and by the end 
 
 ### What Happened To Web Development?
 
-In a word, __apps__. From its inception the "web" and "apps" were on a collision coarse, and most of us didn't realize it. Apps increasingly needed to talk to various web services and would increasingly store much of their data online.
+In a word, __apps__. From its inception the "web" and "apps" were on a collision course, and most of us didn't realize it. Apps increasingly needed to talk to various web services and would increasingly store much of their data online.
 
 Meanwhile, the tools that were used to create websites became more advanced as the web became more vital and companies began competing to attract visitors using the latest in fancy web technology. This technology was used for one primary purpose: creating user interfaces. And it became _really_ good at it.
 
