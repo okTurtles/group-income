@@ -1,8 +1,9 @@
 /* globals describe, it */
 
-var PORT = 3000
+var PORT = process.env.API_PORT
 var request = require('superagent')
 var assert = require('assert')
+// var should = require('should')
 var cookie1 = ''
 var cookie2 = ''
 var cookie3 = ''
@@ -17,7 +18,7 @@ describe('Full walkthrough', function () {
 
   describe('User', function () {
     it('Should GET (empty)', function (done) {
-      request.get('http://localhost:' + PORT + '/user/1')
+      request.get(`http://localhost:${PORT}/user/1`)
       .end(function (err, res) {
         assert(err === null)
         assert(res.res.statusCode === 200)
@@ -27,9 +28,8 @@ describe('Full walkthrough', function () {
     })
 
     it('Should POST', function (done) {
-      request.post('http://localhost:' + PORT + '/user/')
-      .set('Content-Type', 'application/json')
-      .send('{"name":"hi hello", "password":"baconbaconbacon", "email":"bob@test.com", "phone":"12345667", "contriGL":5, "contriRL":7}')
+      request.post(`http://localhost:${PORT}/user/`)
+      .send({name: 'hi hello', password: 'baconbaconbacon', email: 'bob@test.com', phone: '12345667', contriGL: 5, contriRL: 7})
       .end(function (err, res) {
         assert(err === null)
         assert(res.res.statusCode === 200)
@@ -51,7 +51,7 @@ describe('Full walkthrough', function () {
     })
 
     it('Should GET (non-empty)', function (done) {
-      request.get('http://localhost:' + PORT + '/user/1')
+      request.get(`http://localhost:${PORT}/user/1`)
       .end(function (err, res) {
         assert(err === null)
         assert(res.res.statusCode === 200)
@@ -68,9 +68,8 @@ describe('Full walkthrough', function () {
     })
 
     it('Should POST (2)', function (done) {
-      request.post('http://localhost:' + PORT + '/user/')
-      .set('Content-Type', 'application/json')
-      .send('{"name":"User number two", "password":"baconbaconbacon", "email":"jack@test.com", "phone":"959040392", "contriGL":2, "contriRL":99}')
+      request.post(`http://localhost:${PORT}/user/`)
+      .send({name: 'User number two', password: 'baconbaconbacon', email: 'jack@test.com', phone: '959040392', contriGL: 2, contriRL: 99})
       .end(function (err, res) {
         assert(err === null)
         assert(res.res.statusCode === 200)
@@ -92,9 +91,8 @@ describe('Full walkthrough', function () {
     })
 
     it('Should POST (3)', function (done) {
-      request.post('http://localhost:' + PORT + '/user/')
-      .set('Content-Type', 'application/json')
-      .send('{"name":"User number three", "password":"baconbaconbacon", "email":"john@test.com", "phone":"6478392654", "contriGL":20, "contriRL":1}')
+      request.post(`http://localhost:${PORT}/user/`)
+      .send({name: 'User number three', password: 'baconbaconbacon', email: 'john@test.com', phone: '6478392654', contriGL: 20, contriRL: 1})
       .end(function (err, res) {
         assert(err === null)
         assert(res.res.statusCode === 200)
@@ -118,7 +116,7 @@ describe('Full walkthrough', function () {
 
   describe('Group', function () {
     it('Should GET (no cookie)', function (done) {
-      request.get('http://localhost:' + PORT + '/group/1')
+      request.get(`http://localhost:${PORT}/group/1`)
       .end(function (err, res) {
         assert(err != null)
         assert(res.res.statusCode === 401)
@@ -127,10 +125,9 @@ describe('Full walkthrough', function () {
     })
 
     it('Should POST', function (done) {
-      request.post('http://localhost:' + PORT + '/group/')
-      .set('Content-Type', 'application/json')
+      request.post(`http://localhost:${PORT}/group/`)
       .set('Cookie', cookie1)
-      .send('{"name":"my super group"}')
+      .send({name: 'my super group'})
       .end(function (err, res) {
         assert(err === null)
         assert(res.res.statusCode === 200)
@@ -141,7 +138,7 @@ describe('Full walkthrough', function () {
     })
 
     it('Should GET (non-empty)', function (done) {
-      request.get('http://localhost:' + PORT + '/group/1')
+      request.get(`http://localhost:${PORT}/group/1`)
       .set('Cookie', cookie1)
       .end(function (err, res) {
         assert(err === null)
@@ -157,7 +154,7 @@ describe('Full walkthrough', function () {
     })
 
     it('Should GET (unauthorized)', function (done) {
-      request.get('http://localhost:' + PORT + '/group/1')
+      request.get(`http://localhost:${PORT}/group/1`)
       .set('Cookie', cookie2)
       .end(function (err, res) {
         assert(err === null)
@@ -170,7 +167,7 @@ describe('Full walkthrough', function () {
 
   describe('Session', function () {
     it('Should logout', function (done) {
-      request.post('http://localhost:' + PORT + '/session/logout')
+      request.post(`http://localhost:${PORT}/session/logout`)
       .set('Cookie', cookie1)
       .end(function (err, res) {
         assert(err === null)
@@ -182,7 +179,7 @@ describe('Full walkthrough', function () {
     })
 
     it('Should be unauthorized to load a group', function (done) {
-      request.get('http://localhost:' + PORT + '/group/1')
+      request.get(`http://localhost:${PORT}/group/1`)
       .set('Cookie', cookie1)
       .end(function (err, res) {
         assert(err != null)
@@ -192,9 +189,8 @@ describe('Full walkthrough', function () {
     })
 
     it('Should not login (invalid password)', function (done) {
-      request.post('http://localhost:' + PORT + '/session/login')
-      .set('Content-Type', 'application/json')
-      .send('{"email":"bob@test.com", "password":"invalidpassword"}')
+      request.post(`http://localhost:${PORT}/session/login`)
+      .send({email: 'bob@test.com', password: 'invalidpassword'})
       .end(function (err, res) {
         assert(err != null)
         assert(res.res.statusCode === 500) // Good enough for now
@@ -204,9 +200,8 @@ describe('Full walkthrough', function () {
     })
 
     it('Should login', function (done) {
-      request.post('http://localhost:' + PORT + '/session/login')
-      .set('Content-Type', 'application/json')
-      .send('{"email":"bob@test.com", "password":"baconbaconbacon"}')
+      request.post(`http://localhost:${PORT}/session/login`)
+      .send({email: 'bob@test.com', password: 'baconbaconbacon'})
       .end(function (err, res) {
         cookie1 = cookieParser(res.res.headers)
         assert(err === null)
@@ -219,10 +214,9 @@ describe('Full walkthrough', function () {
 
   describe('Invite', function () {
     it('Should refuse to invite if not part of the group', function (done) {
-      request.post('http://localhost:' + PORT + '/invite/')
-      .set('Content-Type', 'application/json')
+      request.post(`http://localhost:${PORT}/invite/`)
       .set('Cookie', cookie3)
-      .send('{"groupId":1, "email":"invited@test.com"}')
+      .send({groupId: 1, email: 'invited@test.com'})
       .end(function (err, res) {
         assert(err != null)
         assert(res.res.statusCode === 500)
@@ -232,10 +226,9 @@ describe('Full walkthrough', function () {
     })
 
     it('Should create an invitation and send an email', function (done) {
-      request.post('http://localhost:' + PORT + '/invite/')
-      .set('Content-Type', 'application/json')
+      request.post(`http://localhost:${PORT}/invite/`)
       .set('Cookie', cookie1)
-      .send('{"groupId":1, "email":"invited@test.com"}')
+      .send({groupId: 1, email: 'invited@test.com'})
       .end(function (err, res) {
         assert(err === null)
         assert(res.res.statusCode === 200)
@@ -255,10 +248,9 @@ describe('Full walkthrough', function () {
     })
 
     it('Should create an invitation and send an email', function (done) {
-      request.post('http://localhost:' + PORT + '/invite/')
-      .set('Content-Type', 'application/json')
+      request.post(`http://localhost:${PORT}/invite/`)
       .set('Cookie', cookie1)
-      .send('{"groupId":1, "email":"jack@test.com"}')
+      .send({groupId: 1, email: 'jack@test.com'})
       .end(function (err, res) {
         assert(err === null)
         assert(res.res.statusCode === 200)
@@ -281,10 +273,9 @@ describe('Full walkthrough', function () {
   describe('Income', function () {
     var income = null
     it('Should be possible to create an income', function (done) {
-      request.post('http://localhost:' + PORT + '/income/')
-      .set('Content-Type', 'application/json')
+      request.post(`http://localhost:${PORT}/income/`)
       .set('Cookie', cookie1)
-      .send('{"amount": 1200}')
+      .send({amount: 1200})
       .end(function (err, res) {
         assert(err === null)
         assert(res.res.statusCode === 200)
@@ -296,10 +287,9 @@ describe('Full walkthrough', function () {
     })
 
     it('Should be possible to update an income', function (done) {
-      request.post('http://localhost:' + PORT + '/income/')
-      .set('Content-Type', 'application/json')
+      request.post(`http://localhost:${PORT}/income/`)
       .set('Cookie', cookie1)
-      .send('{"amount": 1500}')
+      .send({amount: 1500})
       .end(function (err, res) {
         assert(err === null)
         assert(res.res.statusCode === 200)

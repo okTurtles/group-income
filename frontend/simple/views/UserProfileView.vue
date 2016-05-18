@@ -46,6 +46,7 @@ export default {
   methods: {
     submit: function () {
       var $ = window.jQuery
+      this.response = ''
       $.post(process.env.API_URL+'/user/', $('form.new-user').serialize())
       .done((data, status, jqXHR) => {
         this.response = jqXHR.responseText

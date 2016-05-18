@@ -3,6 +3,7 @@ node_js:
   - "5"
 before_script:
   - npm install grunt-cli -g
+  - npm install
 env:
   - CXX=g++-4.8  
 # https://github.com/okTurtles/group-income-simple/issues/58
@@ -16,3 +17,8 @@ addons:
     packages:
       - gcc-4.8
       - g++-4.8
+      - xvfb
+# https://github.com/electron/electron/blob/master/docs/tutorial/testing-on-headless-ci.md
+install:
+  - export DISPLAY=':99.0'
+  - Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
