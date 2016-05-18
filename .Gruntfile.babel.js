@@ -81,9 +81,11 @@ module.exports = (grunt) => {
     },
 
     execute: {
+      // could replace w/https://github.com/pghalliday/grunt-mocha-test
+      // but unless there's a real need we'll stick with this
       api_test: {
         src: './node_modules/.bin/mocha',
-        options: { args: ['--compilers', 'js:babel-register', '-R', 'spec', '--bail', 'test/'] }
+        options: { args: ['--compilers', 'js:babel-register', '-R', 'spec', '--bail'] }
       },
       // we don't do `standard` linting this way (output not as pretty)
       // but keep it around just to show the alternative
@@ -94,9 +96,9 @@ module.exports = (grunt) => {
 
     connect: {
       options: {
-        port: 8000,
+        port: process.env.FRONTEND_PORT,
         base: 'dist',
-        livereload: true,
+        livereload: process.env.NODE_ENV === 'development',
         middleware: (connect, opts, middlewares) => {
           var serveSsiFile = (path, req, res) => {
             ssi.compileFile(path, (err, content) => {
@@ -141,7 +143,7 @@ module.exports = (grunt) => {
   grunt.registerTask('dev', ['checkDependencies', 'build', 'connect', 'backend']) // backend calls watch
   grunt.registerTask('build', ['standard', 'copy', 'browserify'])
   grunt.registerTask('dist', ['build'])
-  grunt.registerTask('test', ['standard', 'execute:api_test'])
+  grunt.registerTask('test', ['dist', 'connect', 'execute:api_test'])
   // TODO: add 'deploy'
 
   // -------------------------------------------------------------------------

@@ -6,8 +6,7 @@
   "main": "backend/index.js",
   "scripts": {
     "start": "node backend/index.js",
-    "pretest": "./node_modules/standard/bin/cmd.js",
-    "test": "grunt test"
+    "test": "xvfb-maybe grunt test"
   },
   "standard": {
     "ignore": [
@@ -65,10 +64,13 @@
     "grunt-standard": "2.0.0",
     "load-grunt-tasks": "3.4.1",
     "mocha": "2.4.5",
+    "nightmare": "2.4.0",
     "node-ssi": "0.3.1",
+    "should": "8.3.1",
     "through2": "2.0.1",
     "vue-hot-reload-api": "1.3.2",
     "vueify": "8.3.7",
-    "vueify-insert-css": "1.0.0"
+    "vueify-insert-css": "1.0.0",
+    "xvfb-maybe": "0.1.3"
   }
 }
