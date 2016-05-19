@@ -26,7 +26,8 @@ server.register(cookie, function (err) {
     process.exit(1)
   }
   server.auth.strategy('cookie_strategy', 'cookie', {
-    password: 'abcdef', // TODO: must be >= 32 chars: https://github.com/hapijs/hapi/issues/3040
+    // must be >= 32 chars: https://github.com/hapijs/hapi/issues/3040
+    password: 'abcdefabcdefabcdefabcdefabcdefabcdef',
     cookie: 'group-income-simple',
     ttl: 2592000000, // 1 month
     isSecure: false // HTTP allowed
