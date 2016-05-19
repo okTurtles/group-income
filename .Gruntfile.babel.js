@@ -13,7 +13,6 @@ var fs = require('fs')
 var path = require('path')
 var url = require('url')
 var S = require('string')
-var fork = require('child_process').fork
 var vueify = require('vueify')
 
 // EJS support at the bottom of the file, below grunt setup
@@ -81,10 +80,12 @@ module.exports = (grunt) => {
     },
 
     execute: {
-      // could replace w/https://github.com/pghalliday/grunt-mocha-test
-      // but unless there's a real need we'll stick with this
+      // TODO: could replace w/https://github.com/pghalliday/grunt-mocha-test
+      // that would also solve our issue of grunt-execute currently
+      // being unmaintained.
       api_test: {
         src: './node_modules/.bin/mocha',
+        // options: { args: [...(node6 ? [] : ['--compilers', 'js:babel-register']), '-R', 'spec', '--bail'] }
         options: { args: ['--compilers', 'js:babel-register', '-R', 'spec', '--bail'] }
       },
       // we don't do `standard` linting this way (output not as pretty)
@@ -140,27 +141,26 @@ module.exports = (grunt) => {
 
   grunt.registerTask('default', ['dev'])
   grunt.registerTask('backend', ['backend:relaunch', 'watch'])
-  grunt.registerTask('dev', ['checkDependencies', 'build', 'connect', 'backend']) // backend calls watch
+  grunt.registerTask('dev', ['checkDependencies', 'build', 'connect', 'backend'])
   grunt.registerTask('build', ['standard', 'copy', 'browserify'])
   grunt.registerTask('dist', ['build'])
   grunt.registerTask('test', ['dist', 'connect', 'execute:api_test'])
-  // TODO: add 'deploy'
+  // TODO: add 'deploy' per:
+  //       https://github.com/okTurtles/group-income-simple/issues/10
 
   // -------------------------------------------------------------------------
   //  Code for running backend server at the same time as frontend server
   // -------------------------------------------------------------------------
 
+  // var node6 = process.versions.node.split('.')[0] >= 6
+  var fork = require('child_process').fork
   var child = null
 
   grunt.registerTask('backend:relaunch', '[internal]', function () {
     var done = this.async() // tell grunt we're async
     var fork2 = function () {
       grunt.log.writeln('backend: forking...')
-      child = fork('./backend/index.js', process.argv, {
-        execArgv: ['-r', 'babel-register'],
-        cwd: process.cwd(),
-        env: process.env
-      })
+      child = fork('./backend/index.js', process.argv, {execArgv: ['-r', 'babel-register']})
       child.on('error', (err) => {
         if (err) {
           console.error('error starting or sending message to child:', err)

@@ -1,4 +1,4 @@
-/* globals describe, it */
+/* eslint-env mocha */
 
 var PORT = process.env.API_PORT
 var request = require('superagent')

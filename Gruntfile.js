@@ -7,9 +7,12 @@
 //       and figure out whether we should switch to using version 6:
 //       https://github.com/vuejs/vue-loader/issues/96#issuecomment-162910917
 
-require('babel-register') // http://stackoverflow.com/a/34195553/1781435
-                          // https://babeljs.io/docs/setup/#babel_register
-                          // TODO: No longer needed in Node 6: https://gist.github.com/rauchg/8199de60db48026a6670620a1c33b700
+// http://stackoverflow.com/a/34195553/1781435
+// https://babeljs.io/docs/setup/#babel_register
+//
+// TODO: https://github.com/okTurtles/group-income-simple/issues/73
+//       process.versions.node.split('.')[0] < 6
+require('babel-register')
 
 // transform-inline-environment-variables should will replace
 // process.env.VARIABLE strings like C macros (with their values)
