@@ -1,6 +1,5 @@
 /* eslint-env mocha */
 /* globals $ */
-/* eslint-disable no-spaced-func, no-unexpected-multiline */
 
 /*
 To see how Nightmare does its server stuff see:
@@ -9,7 +8,6 @@ To see how Nightmare does its server stuff see:
 - https://github.com/segmentio/nightmare/blob/2771166/test/index.js#L43-L46
 */
 
-global.Promise = require('bluebird')
 require('should')
 
 var Nightmare = require('nightmare')
@@ -25,17 +23,10 @@ describe.only('Frontend', function () {
 
   describe('New user page', function () {
     it('Should create user George', async function () {
-      // this semi-colon at the end of of this.timeout is *required*.
-      // For details, see: https://phabricator.babeljs.io/T7372#78495
-      this.timeout(12000);
-      (await n.goto(page('new-user')))
+      // the semi-colon here is *VERY IMPORTANT*!
+      // see: https://github.com/feross/standard/issues/525
+      ;(await n.goto(page('new-user')))
       .should.containEql({code: 200, url: page('new-user')})
-      // for some reason we have to access `this`
-      // only *after* we call `await` once.
-      console.log(`<--${new Date().toTimeString()}-->`)
-      console.log('typeof this:', typeof this, Object.keys(this))
-      await n.wait(2000)
-      console.log(`</-${new Date().toTimeString()}-->`)
       return n.wait('#response')
       .insert('input[name="name"]', 'George')
       .insert('input[name="email"]', 'george@lasvegas.com')
