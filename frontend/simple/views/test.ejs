@@ -1,5 +1,5 @@
-<div>
-    <h1>this is ejs!</h1>
+<div class="content">
+    <h1 class="title">this is ejs!</h1>
     <% if (false) { %>
         <p>test1</p>
     <% } else { %>
@@ -7,13 +7,13 @@
     <% } %>
     <p>Click <a v-link="'/new-user'">here</a> to create a new user.</p>
 </div>
-<div><%- include included %></div>
-<p>
-    TODO:
+<div class="content">
+    <%- include included %>
+    <p>TODO:</p>
     <ul id="todo">
         <li>investigate the hot-component reloading</li>
     </ul>
-</p>
+</div>
 <script src="/simple/vendor/jquery.js"></script>
 <script>
     // VueScript2.load('/simple/vendor/jquery.js').then(function () {

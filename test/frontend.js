@@ -13,7 +13,7 @@ require('should')
 var Nightmare = require('nightmare')
 var url = require('url')
 
-describe.only('Frontend', function () {
+describe('Frontend', function () {
   var n = Nightmare({show: !!process.env.SHOW_BROWSER, height: 900})
   after(() => { n.end() })
 
@@ -50,7 +50,8 @@ describe.only('Frontend', function () {
 
   describe('EJS test page', function () {
     it('TODO list should have at least two items', function () {
-      return n.click('#testEJS').wait('#todo')
+      return n.click('#testEJS')
+      .wait(() => typeof $ !== 'undefined')
       .evaluate(() => $('#todo').children().length)
       .should.finally.greaterThan(1)
     })

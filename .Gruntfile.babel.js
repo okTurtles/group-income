@@ -17,6 +17,8 @@ var vueify = require('vueify')
 
 // EJS support at the bottom of the file, below grunt setup
 
+var development = process.env.NODE_ENV === 'development'
+
 module.exports = (grunt) => {
   require('load-grunt-tasks')(grunt)
 
@@ -32,8 +34,18 @@ module.exports = (grunt) => {
       // consider instead using the `watchify` option on browserify
       browserify: {
         options: { livereload: true }, // port 35729 by default
-        files: ['frontend/*.html', 'frontend/simple/**/*'],
+        files: ['frontend/*.html', 'frontend/simple/**/*.{vue,ejs,js}'],
         tasks: ['standard:dev', 'copy', 'browserify']
+      },
+      css: {
+        options: { livereload: true },
+        files: ['frontend/simple/sass/**/*.{sass,scss}'],
+        tasks: ['sass']
+      },
+      html: {
+        options: { livereload: true },
+        files: ['frontend/simple/**/*.html'],
+        tasks: ['copy']
       },
       backend: {
         files: ['backend/**/*.js'],
@@ -50,10 +62,21 @@ module.exports = (grunt) => {
         options: {
           transform: [script2ify, 'vueify', ejsify, 'babelify'],
           browserifyOptions: {
-            debug: process.env.NODE_ENV === 'development' // enables source maps
+            debug: development // enables source maps
           }
         },
         files: { 'dist/simple/app.js': ['frontend/simple/**/*.{vue,ejs,js}', '!frontend/simple/assets/**/*'] }
+      }
+    },
+
+    sass: {
+      options: {
+        sourceMap: development,
+        outputStyle: development ? 'nested' : 'compressed',
+        includePaths: ['./node_modules/bulma', './node_modules/font-awesome/scss']
+      },
+      dev: {
+        files: {'dist/simple/css/main.css': 'frontend/simple/sass/main.sass'}
       }
     },
 
@@ -142,7 +165,7 @@ module.exports = (grunt) => {
   grunt.registerTask('default', ['dev'])
   grunt.registerTask('backend', ['backend:relaunch', 'watch'])
   grunt.registerTask('dev', ['checkDependencies', 'build', 'connect', 'backend'])
-  grunt.registerTask('build', ['standard', 'copy', 'browserify'])
+  grunt.registerTask('build', ['standard', 'copy', 'sass', 'browserify'])
   grunt.registerTask('dist', ['build'])
   grunt.registerTask('test', ['dist', 'connect', 'execute:api_test'])
   // TODO: add 'deploy' per:

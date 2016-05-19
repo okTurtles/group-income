@@ -24,6 +24,8 @@
   "dependencies": {
     "bcrypt": "0.8.6",
     "bluebird": "3.4.0",
+    "bulma": "0.0.26",
+    "font-awesome": "4.6.1",
     "hapi": "13.4.0",
     "hapi-auth-cookie": "6.1.1",
     "joi": "8.1.0",
@@ -42,8 +44,6 @@
   "devDependencies": {
     "babel-core": "6.9.0",
     "babel-eslint": "6.0.4",
-    "babel-plugin-transform-async-to-generator": "6.8.0",
-    "babel-plugin-transform-es2015-modules-commonjs": "6.8.0",
     "babel-plugin-transform-inline-environment-variables": "6.8.0",
     "babel-plugin-transform-runtime": "6.9.0",
     "babel-polyfill": "6.9.0",
@@ -61,6 +61,7 @@
     "grunt-contrib-copy": "1.0.0",
     "grunt-contrib-watch": "1.0.0",
     "grunt-execute": "taoeffect/grunt-execute#c0d49ef2d63800ffc4748c2ac2db40ecd6dd3793",
+    "grunt-sass": "1.2.0",
     "grunt-standard": "2.0.0",
     "load-grunt-tasks": "3.5.0",
     "mocha": "2.4.5",
