@@ -1,7 +1,7 @@
 <template lang="ejs">
-  <div class="user-group">
-    <h1>{{ msg }}</h1>
-    <div><%- include included %></div>
+  <div class="content user-group">
+    <h1 class="title">{{ msg }}</h1>
+    <%- include included %>
   </div>
 </template>
 

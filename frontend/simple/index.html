@@ -1,5 +1,5 @@
 <!doctype html>
-<html class="no-js" lang="">
+<html>
   <head>
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
@@ -9,9 +9,8 @@
     </template>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- TODO: should these be here? am guessing not? -->
+    <!-- TODO: all resources should be served by our server only -->
     <!-- <link href='//fonts.googleapis.com/css?family=Lato:300,700' rel='stylesheet' type='text/css'> -->
-    <link rel="stylesheet" href="css/normalize.css">
     <link rel="stylesheet" href="css/main.css">
   </head>
   <body>
@@ -19,24 +18,34 @@
       <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
     <![endif]-->
     <div id="app" class="wrapper">
-      <header>
-        <div class="groupincome-logo">
-          <img class="black" src="images/groupincome-logo-black.png">
-        </div>
-        <nav>
-          <ul>
-            <li><a v-link="'/new-user'">New User</a></li>
-            <li><a v-link="'/user'">User Profile</a></li>
-            <li><a v-link="'/user-group'">User Group</a></li>
-            <li><a v-link="'/new-income'">New Income</a></li>
-            <li><a v-link="'/pay-group'">Pay Group</a></li>
-            <li><a v-link="'/ejs-page'" id="testEJS">EJS page test</a></li>
-          </ul>
+      <header class="header">
+        <nav class="nav">
+          <div class="nav-left">
+            <a href="/simple/" class="nav-item">
+              <!-- see: http://bulma.io/documentation/elements/image/ -->
+              <!-- TODO: resize this image to make it smaller? -->
+              <img src="images/groupincome-logo-black.png">
+            </a>
+          </div>
+          <!-- bulmized nav -->
+          <!-- see also centered level as alternative:
+          http://bulma.io/documentation/components/level/ -->
+          <div class="nav-center">
+            <a class="nav-item" v-link="'/new-user'">New User</a>
+            <a class="nav-item" v-link="'/user'">User Profile</a>
+            <a class="nav-item" v-link="'/user-group'">User Group</a>
+            <a class="nav-item" v-link="'/new-income'">New Income</a>
+            <a class="nav-item" v-link="'/pay-group'">Pay Group</a>
+            <a class="nav-item" v-link="'/ejs-page'" id="testEJS">EJS page test</a>
+          </div>
         </nav>
       </header>
-      <div class="container">
-        <router-view></router-view>
-      </div>
+      <section class="section">
+        <!-- content class? http://bulma.io/documentation/elements/content/ -->
+        <div class="container">
+          <router-view></router-view>
+        </div>        
+      </section>
     </div>
     <script src="/simple/app.js"></script>
   </body>
