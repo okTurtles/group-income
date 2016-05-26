@@ -1,0 +1,109 @@
+label {
+  display: block;
+  position: relative;
+  text-transform: uppercase;
+  font-size: 1.2rem;
+  margin-top: .5rem;
+  margin-bottom: 1.5rem;
+  font-weight: bold;
+}
+
+// ----------------------------------
+// stuff that we definitely do not
+// need now that we're using bulma
+// and SASS
+// ----------------------------------
+html {
+  height: 100%;
+  font-size: 62.5%; // TODO: ???
+}
+
+body {
+  background-color: rgba(243, 254, 243, 1);
+  color: rgba(90, 94, 93, 1);
+  font-family: "Lato", "HelveticaNeue", "Helvetica Neue", Helvetica, sans-serif;
+  font-size: 1.6rem;
+  height: 100%;
+}
+
+// TODO: this DXImageTransform insanity & other browser-specific
+//       stuff needs to be replaced with either SASS specific
+//       stuff or autoprefixer (like bulma does it)
+body .wrapper {
+    background: #fcfffb; // Old browsers
+  background: -moz-linear-gradient(top,  #fcfffb 0%, #edfef8 50%, #caf9fd 100%); // FF3.6-15
+  background: -webkit-linear-gradient(top,  #fcfffb 0%,#edfef8 50%,#caf9fd 100%); // Chrome10-25,Safari5.1-6
+  background: linear-gradient(to bottom,  #fcfffb 0%,#edfef8 50%,#caf9fd 100%); // W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fcfffb', endColorstr='#caf9fd',GradientType=0 ); // IE6-9
+  padding-bottom: 5rem;
+  height: 100%;
+}
+
+body.new-user .wrapper {
+  height: auto;
+}
+
+// TODO: ??
+// body * {
+//   transition: all .25s;
+// }
+
+p {
+  font-weight: 300;
+}
+
+b, h1, h2, h3, h4 {
+  font-weight: 700;
+}
+
+// .groupincome-logo, nav {
+//   display: inline-block;
+// }
+
+// .groupincome-logo {
+//   padding: 2rem;
+// }
+
+// TODO: bulmize!
+// nav ul {
+//   margin: 0;
+//   padding-right: 2rem;
+// }
+
+// nav {
+//   float: right;
+// }
+
+// nav li {
+//   font-size: 1.8rem;
+//   list-style: none;
+//   margin: 0;
+//   display: inline-block;
+// }
+// 
+// nav li a {
+//   text-decoration: none;
+//   color: rgba(90, 94, 92, 1);
+//   display: block;
+//   padding: 4rem 1.5rem 1.5rem 1.5rem;
+//   color: rgba(83, 83, 83, 1);
+//   border-top: .5rem solid rgba(99, 201, 240, 0);
+// }
+
+// nav li a:hover {
+//   border-top: .5rem solid rgba(99, 201, 240, 1);
+//   color: rgba(99, 201, 240, 1);
+// }
+
+
+.groupincome-logo .white {
+  display: none;
+}
+
+
+.container {
+  width: 100%;
+  height: auto;
+}
+
+

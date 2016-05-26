@@ -1,15 +1,24 @@
 // see: http://bulma.io/documentation/overview/start/
-// override bulma variables
 
+// load font awesome *before* bulma since
+// bulma customizes .fa and some other stuff
+@import "font-awesome" // uncomment to add font-awesome support
+
+// -----------------------------
+// override bulma variables here
+// -----------------------------
 
 // $link-visited: #ed6c63
 
 @import "bulma"
 
-// font awesome stuff
-// @import "font-awesome" // uncomment to add font-awesome support
+// -----------------------------
+// override bulma classes here
+// -----------------------------
 
-// groupincome specific
+// -----------------------------
+// import our styles
+// -----------------------------
+
 @import "forgotten-resets"
-// @import "misc" // don't really need this?
 @import "groupincome"

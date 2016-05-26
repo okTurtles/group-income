@@ -27,21 +27,21 @@ describe('Frontend', function () {
       // see: https://github.com/feross/standard/issues/525
       ;(await n.goto(page('new-user')))
       .should.containEql({code: 200, url: page('new-user')})
-      return n.wait('#response')
+      return n.wait('.signup span.help')
       .insert('input[name="name"]', 'George')
       .insert('input[name="email"]', 'george@lasvegas.com')
       .insert('input[name="password"]', '$$111$$')
-      .click('form.new-user button.sign-in')
-      .wait(() => document.querySelector('#response').innerText !== '')
-      .evaluate(() => document.querySelector('#response').className)
+      .click('.signup button.submit')
+      .wait(() => document.querySelector('.signup span.help').innerText !== '')
+      .evaluate(() => document.querySelector('.signup span.help').className)
       .should.finally.not.equal('error')
     })
 
     it('Should fail to create George again', function () {
-      return n.click('form.new-user button.sign-in')
-      .wait(() => document.querySelector('#response').innerText !== '')
+      return n.click('.signup button.submit')
+      .wait(() => document.querySelector('.signup span.help').innerText !== '')
       .evaluate(function () {
-        var response = document.querySelector('#response')
+        var response = document.querySelector('.signup span.help')
         return {name: response.className, text: response.innerText}
       })
       .should.finally.containEql({name: 'error', text: 'email must be unique'})

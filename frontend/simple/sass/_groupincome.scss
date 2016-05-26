@@ -1,119 +1,10 @@
-// TODO: replace the stuff below as much as possible
-//       with proper bulma variables. Most of these
-//       css rules should simply be deleted and replaced
-//       with bulma usage stuff (i.e. body, nav, input, h1, p, .container etc)
-//       
-//       The only rules in this file should really be
-//       .groupincome related rules
-
-html {
-  height: 100%;
-  font-size: 62.5%; // TODO: ???
+.centered {
+  margin: 0 auto;
 }
 
-body {
-  background-color: rgba(243, 254, 243, 1);
-  color: rgba(90, 94, 93, 1);
-  font-family: "Lato", "HelveticaNeue", "Helvetica Neue", Helvetica, sans-serif;
-  font-size: 1.6rem;
-  height: 100%;
-}
 
-// TODO: this DXImageTransform insanity & other browser-specific
-//       stuff needs to be replaced with either SASS specific
-//       stuff or autoprefixer (like bulma does it)
-body .wrapper {
-    background: #fcfffb; // Old browsers
-  background: -moz-linear-gradient(top,  #fcfffb 0%, #edfef8 50%, #caf9fd 100%); // FF3.6-15
-  background: -webkit-linear-gradient(top,  #fcfffb 0%,#edfef8 50%,#caf9fd 100%); // Chrome10-25,Safari5.1-6
-  background: linear-gradient(to bottom,  #fcfffb 0%,#edfef8 50%,#caf9fd 100%); // W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+
-  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fcfffb', endColorstr='#caf9fd',GradientType=0 ); // IE6-9
-  padding-bottom: 5rem;
-  height: 100%;
-}
-
-body.new-user .wrapper {
-  height: auto;
-}
-
-// TODO: ??
-// body * {
-//   transition: all .25s;
-// }
-
-p {
-  font-weight: 300;
-}
-
-b, h1, h2, h3, h4 {
-  font-weight: 700;
-}
-
-// .groupincome-logo, nav {
-//   display: inline-block;
-// }
-
-// .groupincome-logo {
-//   padding: 2rem;
-// }
-
-// TODO: bulmize!
-// nav ul {
-//   margin: 0;
-//   padding-right: 2rem;
-// }
-
-// nav {
-//   float: right;
-// }
-
-// nav li {
-//   font-size: 1.8rem;
-//   list-style: none;
-//   margin: 0;
-//   display: inline-block;
-// }
-// 
-// nav li a {
-//   text-decoration: none;
-//   color: rgba(90, 94, 92, 1);
-//   display: block;
-//   padding: 4rem 1.5rem 1.5rem 1.5rem;
-//   color: rgba(83, 83, 83, 1);
-//   border-top: .5rem solid rgba(99, 201, 240, 0);
-// }
-
-// nav li a:hover {
-//   border-top: .5rem solid rgba(99, 201, 240, 1);
-//   color: rgba(99, 201, 240, 1);
-// }
-
-.groupincome-logo .white {
-  display: none;
-}
-
-.index .groupincome-logo .white {
-  display: inline-block;
-}
-
-.index .groupincome-logo .black {
-  display: none;
-}
-
-.index nav li a {
-  color: rgba(255,255,255,1)
-}
-
-.index .wrapper {
-  background-image: url(/simple/images/home-bg.jpeg);
-  background-size: cover;
-}
-
-.container {
-  width: 100%;
-  height: auto;
-}
-
+// TODO: delete (or move to pre-bulma-style) as many of these as possible
+//       and replace with bulma-specific stuff
 .new-user-container {
   width: 30rem;
   background-color: rgba(255,255,255,1);
@@ -165,16 +56,6 @@ b, h1, h2, h3, h4 {
   padding: 1.5rem 1.5rem .5rem 1.5rem;
 }
 
-label {
-  display: block;
-  position: relative;
-  text-transform: uppercase;
-  font-size: 1.2rem;
-  margin-top: .5rem;
-  margin-bottom: 1.5rem;
-  font-weight: bold;
-}
-
 img.venmo {
   height: 1rem;
   position: relative;
@@ -192,10 +73,11 @@ img.venmo {
   width: 27rem;
 }
 
-input:focus {
-  border-bottom: 2px solid rgba(161, 206, 41, 1);
-  outline: none;
-}
+// This causes problems with input text fields and bulma
+// input:focus {
+//   border-bottom: 2px solid rgba(161, 206, 41, 1);
+//   outline: none;
+// }
 
 .payment-options {
   display: inline-block; float: right;

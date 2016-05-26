@@ -72,11 +72,18 @@ module.exports = (grunt) => {
     sass: {
       options: {
         sourceMap: development,
+        // sourceMapRoot: '/',
         outputStyle: development ? 'nested' : 'compressed',
         includePaths: ['./node_modules/bulma', './node_modules/font-awesome/scss']
       },
       dev: {
-        files: {'dist/simple/css/main.css': 'frontend/simple/sass/main.sass'}
+        files: [{
+          expand: true,
+          cwd: 'frontend/simple/sass',
+          src: ['*.{sass,scss}', '!_*/**'],
+          dest: 'dist/simple/css/',
+          ext: '.css'
+        }]
       }
     },
 
@@ -137,12 +144,17 @@ module.exports = (grunt) => {
           middlewares.unshift((req, res, next) => {
             var f = url.parse(req.url).pathname
             f = path.join('dist', S(f).endsWith('/') ? f + 'index.html' : f)
-            if (S(f).endsWith('.html') && fs.existsSync(f)) {
+            if (/^dist\/(frontend|node_modules)\/.*\.(sass|scss|js|vue|ejs)$/.test(f)) {
+              // handle serving source-maps
+              res.end(fs.readFileSync(S(f).chompLeft('dist/').s))
+            } else if (S(f).endsWith('.html') && fs.existsSync(f)) {
+              // parse all HTML files for SSI
               serveSsiFile(f, req, res)
-            } else if (S(f).startsWith('dist/simple/') && !/(\/(css|images|vendor)\/|\.js$)/.test(f)) {
+            } else if (S(f).startsWith('dist/simple/') && !/\.[a-z][a-z0-9]+(\?[^\/]*)?$/.test(f)) {
+              // if we are a vue-router route, send parsed main index file
               serveSsiFile('dist/simple/index.html', req, res)
             } else {
-              next()
+              next() // otherwise send the resource itself, whatever it is
             }
           })
           return middlewares

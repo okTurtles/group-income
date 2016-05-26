@@ -1,8 +1,11 @@
 <template>
-  <div>
-    <div class="user-profile">
-      <h1>{{ msg }}</h1>
-    </div>
+  <section class="section">
+    <!-- main containers:
+     .container  http://bulma.io/documentation/layout/container/
+     .content    http://bulma.io/documentation/elements/content/
+     .section    http://bulma.io/documentation/layout/section/
+     .block      base/classes.sass (just adds 20px margin-bottom except for last)
+     -->
     <div class="new-user-container">
       <div class="icon"></div>
       <form class="new-user">
@@ -34,15 +37,17 @@
       <div id="response" v-bind:class="responseClass">{{ response }}</div>
       <script src="/simple/vendor/jquery.js" unload="jQuery.noConflict(true)"></script>
     </div>
+  </section>
 </template>
 
 <style>
-  #response.error {color:red;}
-  #response {color:green;}
+  /*#response.error {color:red;}*/
+  /*#response {color:green;}*/
 </style>
 
 <script>
 export default {
+  name: 'UserProfileView',
   methods: {
     submit: function () {
       var $ = window.jQuery
@@ -59,7 +64,6 @@ export default {
   },
   data () {
     return {
-      msg: 'User Profile!',
       responseClass: {
         error: false
       },

@@ -29,7 +29,7 @@
     "hapi": "13.4.0",
     "hapi-auth-cookie": "6.1.1",
     "joi": "8.1.0",
-    "jquery": "2.2.3",
+    "jquery": "3.0.0-rc1",
     "lodash": "4.12.0",
     "moment": "2.13.0",
     "node-uuid": "1.4.7",

@@ -6,10 +6,12 @@
 
 import Vue from 'vue'
 import Router from 'vue-router'
+import SignUp from './views/SignUp.vue'
 import UserProfileView from './views/UserProfileView.vue'
 import UserGroupView from './views/UserGroupView.vue'
 import NewIncomeView from './views/NewIncomeView.vue'
 import PayGroupView from './views/PayGroupView.vue'
+import NavBar from './views/NavBar.vue'
 import { wrap } from './js/utils' // wrap string in a tag (<div> by default)
 
 Vue.config.debug = process.env.NODE_ENV === 'development'
@@ -26,8 +28,8 @@ var router = new Router({
 router.map({
   '/': { component: UserGroupView },
   '/new-user': {
-    component: UserProfileView,
-    title: 'Create User' // https://github.com/okTurtles/group-income-simple/issues/45
+    component: SignUp,
+    title: 'Sign Up' // page title. see issue #45
   },
   '/user': { component: UserProfileView },
   '/user/:username': { component: UserProfileView },
@@ -48,5 +50,5 @@ router.redirect({
   '*': '/' // TODO: make this a 404
 })
 
-var App = Vue.extend({})
+var App = Vue.extend({components: {NavBar}})
 router.start(App, 'html') // bind to html so we can change the title and head section
