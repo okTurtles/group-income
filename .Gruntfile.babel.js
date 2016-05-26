@@ -35,7 +35,7 @@ module.exports = (grunt) => {
       browserify: {
         options: { livereload: true }, // port 35729 by default
         files: ['frontend/*.html', 'frontend/simple/**/*.{vue,ejs,js}'],
-        tasks: ['standard:dev', 'copy', 'browserify']
+        tasks: ['exec:standard', 'copy', 'browserify']
       },
       css: {
         options: { livereload: true },
@@ -49,11 +49,11 @@ module.exports = (grunt) => {
       },
       backend: {
         files: ['backend/**/*.js'],
-        tasks: ['standard:dev', 'backend:relaunch']
+        tasks: ['exec:standard', 'backend:relaunch']
       },
       gruntfile: {
         files: ['.Gruntfile.babel.js', 'Gruntfile.js'],
-        tasks: ['standard:gruntfile']
+        tasks: ['exec:standardgrunt']
       }
     },
 
@@ -102,25 +102,11 @@ module.exports = (grunt) => {
       }
     },
 
-    standard: {
-      // everything except standard ignore (following options in package.json)
-      dev: {},
-      // explicitely lint gruntfile as leading '.' causes it to be ignored
-      gruntfile: {src: ['.Gruntfile.babel.js', 'Gruntfile.js']}
-    },
-
-    execute: {
-      // TODO: could replace w/https://github.com/pghalliday/grunt-mocha-test
-      // that would also solve our issue of grunt-execute currently
-      // being unmaintained.
-      api_test: {
-        src: './node_modules/.bin/mocha',
-        // options: { args: [...(node6 ? [] : ['--compilers', 'js:babel-register']), '-R', 'spec', '--bail'] }
-        options: { args: ['--compilers', 'js:babel-register', '-R', 'spec', '--bail'] }
-      },
-      // we don't do `standard` linting this way (output not as pretty)
-      // but keep it around just to show the alternative
-      standard: { src: './node_modules/standard/bin/cmd.js' }
+    exec: {
+      // could replace w/https://github.com/pghalliday/grunt-mocha-test
+      test: './node_modules/.bin/mocha --compilers js:babel-register -R spec --bail',
+      standard: './node_modules/.bin/standard',
+      standardgrunt: './node_modules/.bin/standard .Gruntfile.babel.js Gruntfile.js'
     },
 
     clean: { dist: ['dist/*', './sqlite.db'] },
@@ -177,9 +163,9 @@ module.exports = (grunt) => {
   grunt.registerTask('default', ['dev'])
   grunt.registerTask('backend', ['backend:relaunch', 'watch'])
   grunt.registerTask('dev', ['checkDependencies', 'build', 'connect', 'backend'])
-  grunt.registerTask('build', ['standard', 'copy', 'sass', 'browserify'])
+  grunt.registerTask('build', ['exec:standard', 'copy', 'sass', 'browserify'])
   grunt.registerTask('dist', ['build'])
-  grunt.registerTask('test', ['dist', 'connect', 'execute:api_test'])
+  grunt.registerTask('test', ['dist', 'connect', 'exec:test'])
   // TODO: add 'deploy' per:
   //       https://github.com/okTurtles/group-income-simple/issues/10
 

@@ -34,7 +34,7 @@ describe('Frontend', function () {
       .click('.signup button.submit')
       .wait(() => document.querySelector('.signup span.help').innerText !== '')
       .evaluate(() => document.querySelector('.signup span.help').className)
-      .should.finally.not.equal('error')
+      .should.finally.containEql('success')
     })
 
     it('Should fail to create George again', function () {
@@ -42,9 +42,9 @@ describe('Frontend', function () {
       .wait(() => document.querySelector('.signup span.help').innerText !== '')
       .evaluate(function () {
         var response = document.querySelector('.signup span.help')
-        return {name: response.className, text: response.innerText}
+        return {err: response.className.indexOf('danger') !== -1, text: response.innerText}
       })
-      .should.finally.containEql({name: 'error', text: 'email must be unique'})
+      .should.finally.containEql({err: true, text: 'email must be unique'})
     })
   })
 
