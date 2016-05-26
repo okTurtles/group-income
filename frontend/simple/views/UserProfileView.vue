@@ -34,18 +34,19 @@
         <label for="contriRL">Receiving Limit <span class="dollar-label">$</span></label>
         <button class="sign-in btn" @click.prevent="submit">Sign Up</button>
       </form>
-      <div id="response" v-bind:class="responseClass">{{ response }}</div>
-      <script src="/simple/vendor/jquery.js" unload="jQuery.noConflict(true)"></script>
+      <div id="response" :class="responseClass">{{ response }}</div>
     </div>
   </section>
 </template>
 
 <style>
+  /*these are globally applied. do like in SignUp.vue instead*/
   /*#response.error {color:red;}*/
   /*#response {color:green;}*/
 </style>
 
 <script>
+var $ = require('jquery')
 export default {
   name: 'UserProfileView',
   methods: {

@@ -15,6 +15,8 @@ var url = require('url')
 var S = require('string')
 var vueify = require('vueify')
 
+import {fromPairs} from 'lodash'
+
 // EJS support at the bottom of the file, below grunt setup
 
 var development = process.env.NODE_ENV === 'development'
@@ -65,8 +67,9 @@ module.exports = (grunt) => {
             debug: development // enables source maps
           }
         },
-        files: { 'dist/simple/app.js': ['frontend/simple/**/*.{vue,ejs,js}', '!frontend/simple/assets/**/*'] }
-      }
+        files: { 'dist/simple/app.js': ['frontend/simple/main.js'] }
+      },
+      userGroupView: lazyLoadVueShim('UserGroupView')
     },
 
     sass: {
@@ -205,6 +208,39 @@ module.exports = (grunt) => {
       fork2()
     }
   })
+}
+
+// ----------------------------------------
+// For generating lazy-loaded components
+// ----------------------------------------
+
+function lazyLoadVueShim (module, {out, views} = {out: 'dist/simple/js', views: 'frontend/simple/views'}) {
+  module = S(module).chompRight('.vue').s
+  return {
+    options: {
+      transform: [script2ify, 'vueify', ejsify, 'babelify', 'browserify-shim'],
+      browserifyOptions: {
+        debug: development, // enables source maps
+        standalone: module
+        // Setting `bundleExternal: false` means we could theoretically
+        // not have to deal with maintaining the browserify-shim stuff
+        // in package.json, however:
+        // 1. browserify requires that key defined in there or it won't run
+        // 2. sometimes we genuinely want to bundle modules that are external
+        //    to the one we are lazy-loading.
+        // So instead we use grunt-browserify's `exclude` option.
+        // That seems to work. If it stops working, the alternative
+        // is to use the "browserify-shim" key in package.json, like so:
+        // "browserify-shim": {
+        //   "vue": "global:Vue",
+        //   "vue-hot-reload-api": "global:HOTAPI"
+        // }
+      },
+      exclude: ['vue', 'vue-hot-reload-api']
+    },
+    // we use fromPairs because JS doesn't seem to support variable key syntax
+    files: fromPairs([[`${out}/${module}.js`, [`${views}/${module}.vue`]]])
+  }
 }
 
 // ----------------------------------------

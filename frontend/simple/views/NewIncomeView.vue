@@ -45,7 +45,7 @@
             <i class="fa fa-dollar"></i>
           </p>
           <button class="button is-success" @click.prevent="submit">Sign Up</button>
-          <div id="response" v-bind:class="responseClass">{{ response }}</div>
+          <div id="response" :class="responseClass">{{ response }}</div>
         </div>
         <div class="column"></div>
       </div>

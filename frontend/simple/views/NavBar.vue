@@ -87,24 +87,24 @@
 </template>
 
 <script>
-  var $ = require('jquery')
-  export default {
-    name: 'NavBar',
-    methods: {
-      loginOrLogout () {
-        if (!this.loggedIn) this.toggleModal()
-      },
-      toggleModal() {
-        $(this.$els.modal).toggleClass('is-active')
-      }
+var $ = require('jquery')
+export default {
+  name: 'NavBar',
+  methods: {
+    loginOrLogout () {
+      if (!this.loggedIn) this.toggleModal()
     },
-    data() {
-      return {
-        loggedIn: false
-      }
+    toggleModal () {
+      $(this.$els.modal).toggleClass('is-active')
+    }
+  },
+  data () {
+    return {
+      loggedIn: false
     }
   }
-  // TODO: the stuff below
+}
+// TODO: the stuff below
 /*
   $('.modal-button').click(function() {
     var target = $(this).data('target');

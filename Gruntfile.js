@@ -14,6 +14,9 @@
 //       process.versions.node.split('.')[0] < 6
 require('babel-register')
 
+// TODO: Now that node 6 supports almost everything,
+//       merge stuff in .Gruntfile.babel.js into here and delete that file.
+
 // transform-inline-environment-variables should will replace
 // process.env.VARIABLE strings like C macros (with their values)
 // And because of additional lines in .Gruntfile.babel.js this is done on both
@@ -25,9 +28,10 @@ var PORTS = {
   BACKEND: 3000
 }
 _.assign(process.env, {
-  NODE_ENV: _.intersection(process.argv, ['dist', 'deploy'])[0] ? 'production' : 'development',
+  NODE_ENV: process.env.NODE_ENV || _.intersection(process.argv, ['dist', 'deploy'])[0] ? 'production' : 'development',
   API_PORT: PORTS.BACKEND,
   FRONTEND_PORT: PORTS.FRONTEND,
+  // TODO: make the protocol (http vs https) variable based on environment var
   API_URL: 'http://localhost:' + PORTS.BACKEND,
   FRONTEND_URL: 'http://localhost:' + PORTS.FRONTEND
 })

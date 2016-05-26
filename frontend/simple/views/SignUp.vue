@@ -13,18 +13,21 @@
           <div class="box centered" style="max-width:400px">
             <h2 class="subtitle">Sign Up</h2>
                   
-            <p class="control">
+            <p class="control has-icon">
               <input class="input" name="name" placeholder="Name">
+              <i class="fa fa-user"></i>
             </p>
-            <p class="control">
+            <p class="control has-icon">
               <input class="input" name="email" placeholder="Email">
+              <i class="fa fa-envelope"></i>
             </p>
-            <p class="control">
+            <p class="control has-icon">
               <input class="input" name="password" placeholder="Password" type="password">
+              <i class="fa fa-lock"></i>
             </p>
             <div class="level is-mobile top-align">
               <div class="level-item" style="padding-right:5px">
-                <span class="help is-marginless" v-bind:class="[error ? 'is-danger' : 'is-success']">{{ response }}</span>
+                <span class="help is-marginless" :class="[error ? 'is-danger' : 'is-success']">{{ response }}</span>
               </div>
               <div class="level-item is-narrow">
                 <button class="button submit is-success" @click.prevent="submit">Sign Up</button>
