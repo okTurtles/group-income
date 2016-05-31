@@ -6,7 +6,7 @@
      .section    http://bulma.io/documentation/layout/section/
      .block      base/classes.sass (just adds 20px margin-bottom except for last)
      -->
-    <form class="container signup">
+    <form v-el:form class="container signup">
       <div class="columns is-gapless">
         <div class="column is-hidden-mobile"></div>
         <div class="column is-10">
@@ -49,19 +49,18 @@
 </style>
 
 <script>
-var $ = require('jquery')
+var serialize = require('form-serialize')
+var request = require('superagent')
 export default {
   name: 'UserProfileView',
   methods: {
     submit: function () {
       this.response = ''
-      $.post(process.env.API_URL+'/user/', $('form.signup').serialize())
-      .done((data, status, jqXHR) => {
-        this.response = jqXHR.responseText
-        this.error = false
-      }).fail((jqXHR, status, err) => {
-        this.error = true
-        this.response = jqXHR.responseJSON.message
+      request.post(process.env.API_URL+'/user/')
+      .send(serialize(this.$els.form, {hash: true}))
+      .end((err, res) => {
+        this.error = !!err || !res.ok
+        this.response = this.error ? res.body.message : res.text
       })
     }
   },

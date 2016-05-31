@@ -87,7 +87,7 @@
 </template>
 
 <script>
-var $ = require('jquery')
+var $ = require('sprint-js')
 export default {
   name: 'NavBar',
   methods: {

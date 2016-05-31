@@ -14,11 +14,12 @@
         <li>investigate the hot-component reloading</li>
     </ul>
 </div>
-<script src="/simple/vendor/jquery.js"></script>
+<!-- Note, we already require sprint.js so using <script> to
+    load it here doesn't make sense. The only reason it's here
+    is to test VueScript2. Eventually this will be removed. -->
+<script src="/simple/vendor/sprint.js"></script>
 <script>
-    // VueScript2.load('/simple/vendor/jquery.js').then(function () {
-        $('#todo').append('<li>This was inserted via jQuery using script2</li>')
-    // })
+    $('#todo').append('<li>This was inserted via Sprint.js using script2</li>')
 </script>
 <%
     // waitForGlobal used to be a global function in all EJS templates

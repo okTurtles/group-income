@@ -22,19 +22,20 @@ describe('Frontend', function () {
   })
 
   describe('New user page', function () {
-    it('Should create user George', async function () {
-      // the semi-colon here is *VERY IMPORTANT*!
-      // see: https://github.com/feross/standard/issues/525
-      ;(await n.goto(page('new-user')))
-      .should.containEql({code: 200, url: page('new-user')})
-      return n.wait('.signup span.help')
-      .insert('input[name="name"]', 'George')
-      .insert('input[name="email"]', 'george@lasvegas.com')
-      .insert('input[name="password"]', '$$111$$')
-      .click('.signup button.submit')
-      .wait(() => document.querySelector('.signup span.help').innerText !== '')
-      .evaluate(() => document.querySelector('.signup span.help').className)
-      .should.finally.containEql('success')
+    it('Should create user George', function () {
+      this.timeout(5000)
+      return n.goto(page('new-user'))
+      .should.finally.containEql({code: 200, url: page('new-user')})
+      .then(() => {
+        return n.wait('.signup')
+        .insert('input[name="name"]', 'George')
+        .insert('input[name="email"]', 'george@lasvegas.com')
+        .insert('input[name="password"]', '$$111$$')
+        .click('.signup button.submit')
+        .wait(() => document.querySelector('.signup span.help').innerText !== '')
+        .evaluate(() => document.querySelector('.signup span.help').className)
+        .should.finally.containEql('success')
+      })
     })
 
     it('Should fail to create George again', function () {
@@ -42,7 +43,10 @@ describe('Frontend', function () {
       .wait(() => document.querySelector('.signup span.help').innerText !== '')
       .evaluate(function () {
         var response = document.querySelector('.signup span.help')
-        return {err: response.className.indexOf('danger') !== -1, text: response.innerText}
+        return {
+          err: response.className.indexOf('danger') !== -1,
+          text: response.innerText
+        }
       })
       .should.finally.containEql({err: true, text: 'email must be unique'})
     })

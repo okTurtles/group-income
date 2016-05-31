@@ -12,7 +12,11 @@
 //
 // TODO: https://github.com/okTurtles/group-income-simple/issues/73
 //       process.versions.node.split('.')[0] < 6
-require('babel-register')
+require('babel-register')({
+  // http://stackoverflow.com/a/36044758/1781435
+  // ignore everything in node_modules except lodash-es
+  ignore: /node_modules\/(?!lodash-es)/
+})
 
 // TODO: Now that node 6 supports almost everything,
 //       merge stuff in .Gruntfile.babel.js into here and delete that file.
@@ -21,14 +25,12 @@ require('babel-register')
 // process.env.VARIABLE strings like C macros (with their values)
 // And because of additional lines in .Gruntfile.babel.js this is done on both
 // the backend and the frontend.
-var _ = require('lodash')
-
 var PORTS = {
   FRONTEND: 8000,
   BACKEND: 3000
 }
-_.assign(process.env, {
-  NODE_ENV: process.env.NODE_ENV || _.intersection(process.argv, ['dist', 'deploy'])[0] ? 'production' : 'development',
+Object.assign(process.env, {
+  NODE_ENV: process.env.NODE_ENV || process.argv.some(x => /\b(dist|deploy)\b/.test(x)) ? 'production' : 'development',
   API_PORT: PORTS.BACKEND,
   FRONTEND_PORT: PORTS.FRONTEND,
   // TODO: make the protocol (http vs https) variable based on environment var

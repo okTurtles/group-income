@@ -7,15 +7,14 @@ http://www.sitepoint.com/setting-up-es6-project-using-babel-browserify/
 https://babeljs.io/docs/setup/#browserify
 */
 
-var SSI = require('node-ssi')
-var ssi = new SSI({baseDir: './dist', encoding: 'utf-8'})
 var fs = require('fs')
 var path = require('path')
 var url = require('url')
 var S = require('string')
 var vueify = require('vueify')
+var pathmodify = require('pathmodify')
 
-import {fromPairs} from 'lodash'
+import fromPairs from 'lodash-es/fromPairs'
 
 // EJS support at the bottom of the file, below grunt setup
 
@@ -59,18 +58,10 @@ module.exports = (grunt) => {
       }
     },
 
-    browserify: {
-      dev: {
-        options: {
-          transform: [script2ify, 'vueify', ejsify, 'babelify'],
-          browserifyOptions: {
-            debug: development // enables source maps
-          }
-        },
-        files: { 'dist/simple/app.js': ['frontend/simple/main.js'] }
-      },
-      userGroupView: lazyLoadVueShim('UserGroupView')
-    },
+    browserify: browserifyCfg({
+      straight: [{ 'dist/simple/app.js': ['frontend/simple/main.js'] }],
+      lazy: [{ 'dist/simple/js/UserGroupView.js': ['frontend/simple/views/UserGroupView.vue'] }]
+    }),
 
     sass: {
       options: {
@@ -105,6 +96,7 @@ module.exports = (grunt) => {
       }
     },
 
+    // https://github.com/sindresorhus/grunt-shell is another nice alternative
     exec: {
       // could replace w/https://github.com/pghalliday/grunt-mocha-test
       test: './node_modules/.bin/mocha --compilers js:babel-register -R spec --bail',
@@ -120,16 +112,6 @@ module.exports = (grunt) => {
         base: 'dist',
         livereload: process.env.NODE_ENV === 'development',
         middleware: (connect, opts, middlewares) => {
-          var serveSsiFile = (path, req, res) => {
-            ssi.compileFile(path, (err, content) => {
-              if (err) {
-                console.error(err.stack)
-                throw err
-              }
-              console.log(`Req: ${req.url} => sending node-ssi parsed file: ${path}`)
-              res.end(content)
-            })
-          }
           middlewares.unshift((req, res, next) => {
             var f = url.parse(req.url).pathname
             f = path.join('dist', S(f).endsWith('/') ? f + 'index.html' : f)
@@ -138,10 +120,11 @@ module.exports = (grunt) => {
               res.end(fs.readFileSync(S(f).chompLeft('dist/').s))
             } else if (S(f).endsWith('.html') && fs.existsSync(f)) {
               // parse all HTML files for SSI
-              serveSsiFile(f, req, res)
+              res.end(fs.readFileSync(f))
             } else if (S(f).startsWith('dist/simple/') && !/\.[a-z][a-z0-9]+(\?[^\/]*)?$/.test(f)) {
-              // if we are a vue-router route, send parsed main index file
-              serveSsiFile('dist/simple/index.html', req, res)
+              // if we are a vue-router route, send main index file
+              console.log(`Req: ${req.url}, sending index.html for: ${f}`)
+              res.end(fs.readFileSync('dist/simple/index.html'))
             } else {
               next() // otherwise send the resource itself, whatever it is
             }
@@ -214,33 +197,44 @@ module.exports = (grunt) => {
 // For generating lazy-loaded components
 // ----------------------------------------
 
-function lazyLoadVueShim (module, {out, views} = {out: 'dist/simple/js', views: 'frontend/simple/views'}) {
-  module = S(module).chompRight('.vue').s
-  return {
-    options: {
-      transform: [script2ify, 'vueify', ejsify, 'babelify', 'browserify-shim'],
-      browserifyOptions: {
-        debug: development, // enables source maps
-        standalone: module
-        // Setting `bundleExternal: false` means we could theoretically
-        // not have to deal with maintaining the browserify-shim stuff
-        // in package.json, however:
-        // 1. browserify requires that key defined in there or it won't run
-        // 2. sometimes we genuinely want to bundle modules that are external
-        //    to the one we are lazy-loading.
-        // So instead we use grunt-browserify's `exclude` option.
-        // That seems to work. If it stops working, the alternative
-        // is to use the "browserify-shim" key in package.json, like so:
-        // "browserify-shim": {
-        //   "vue": "global:Vue",
-        //   "vue-hot-reload-api": "global:HOTAPI"
-        // }
+function browserifyCfg ({straight, lazy}, cfg = {}) {
+  var globalize = x => // views/UserGroupView.vue -> UserGroupView
+    S(path.parse(x).name).dasherize().capitalize().camelize().s
+  var keyify = x => // views/UserGroupView.vue -> userGroupView
+    S(path.parse(x).name).dasherize().chompLeft('-').camelize().s
+  function gencfg (out, paths, isLazy) {
+    var c = {
+      options: {
+        transform: [script2ify, 'vueify', ejsify, 'babelify'],
+        plugin: [[pathmodify, {
+          // we remap it to 'lodash' and require functions like so: import mapValues from 'lodash/mapValues'
+          // otherwise we get this bizarre error:
+          // ParseError: 'import' and 'export' may appear only with 'sourceType: module'
+          mods: pathmodify.mod.dir('lodash-es', path.join(__dirname, 'node_modules', 'lodash-es'), 'lodash')
+        }]],
+        browserifyOptions: {
+          debug: development // enables source maps
+        }
       },
-      exclude: ['vue', 'vue-hot-reload-api']
-    },
-    // we use fromPairs because JS doesn't seem to support variable key syntax
-    files: fromPairs([[`${out}/${module}.js`, [`${views}/${module}.vue`]]])
+      files: fromPairs([[out, paths]])
+    }
+    if (isLazy) {
+      c.options.browserifyOptions.standalone = globalize(out)
+      c.options.exclude = ['vue', 'vue-hot-reload-api']
+    }
+    return c
   }
+  for (let map of straight) {
+    for (let out in map) {
+      cfg[keyify(out)] = gencfg(out, map[out], false)
+    }
+  }
+  for (let map of lazy) {
+    for (let out in map) {
+      cfg[keyify(out)] = gencfg(out, map[out], true)
+    }
+  }
+  return cfg
 }
 
 // ----------------------------------------
@@ -262,7 +256,7 @@ vueify.compiler.applyConfig({
 function loadEJS (path, str) {
   return require('ejs').compile(str, {
     filename: path,
-    compileDebug: process.env.NODE_ENV === 'development',
+    compileDebug: development,
     client: true // needed for generating the module.exports string in ejsify
   })
 }

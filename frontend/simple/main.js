@@ -11,10 +11,12 @@ import UserProfileView from './views/UserProfileView.vue'
 import NewIncomeView from './views/NewIncomeView.vue'
 import PayGroupView from './views/PayGroupView.vue'
 import NavBar from './views/NavBar.vue'
-import { wrap, lazyLoadVue } from './js/utils'
+import utils, { wrap, lazyLoadVue, superagentHeader } from './js/utils'
 
 Vue.config.debug = process.env.NODE_ENV === 'development'
 Vue.use(Router)
+
+superagentHeader('Authorization', `gi ${utils.sign('hello', utils.keypair)}`)
 
 var router = new Router({
   hashbang: false,

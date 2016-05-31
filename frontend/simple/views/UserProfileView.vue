@@ -8,7 +8,7 @@
      -->
     <div class="new-user-container">
       <div class="icon"></div>
-      <form class="new-user">
+      <form class="new-user" v-el:form>
         <h2>Personal details</h2>
         <input class="text-input" name="name" placeholder="Your full name">
         <label for="name">Your name</label>
@@ -46,21 +46,12 @@
 </style>
 
 <script>
-var $ = require('jquery')
 export default {
   name: 'UserProfileView',
   methods: {
     submit: function () {
-      var $ = window.jQuery
-      this.response = ''
-      $.post(process.env.API_URL+'/user/', $('form.new-user').serialize())
-      .done((data, status, jqXHR) => {
-        this.response = jqXHR.responseText
-        this.responseClass.error = false
-      }).fail((jqXHR, status, err) => {
-        this.responseClass.error = true
-        this.response = jqXHR.responseJSON.message
-      })
+      this.responseClass.error = true
+      this.response = 'not implemented'
     }
   },
   data () {
