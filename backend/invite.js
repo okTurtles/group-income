@@ -23,7 +23,12 @@ server.route({
     var userId = request.auth.credentials.userId
     var groupId = request.payload.groupId
 
-    db.UserGroup.count({where: {userId: userId, groupId: groupId}})
+    db.User.count({include: [{
+      model: db.Group,
+      required: true,
+      through: {where: {userId: userId, groupId: groupId}}
+    }]})
+    // db.UserGroup.count({where: {userId: userId, groupId: groupId}})
     .then(function (count) {
       if (count < 1) return Promise.reject(new Error('Must be a member of the group to invite'))
 
@@ -59,9 +64,6 @@ server.route({
   method: 'POST',
   path: '/invite/{invite}/accept',
   handler: function (request, reply) {
-    // TODO: Check raw headers, if a cookie is present
-    // AND it doesn't match the invitation email, clear the session data
-    // and exit immediately with an error
     var savedInvite = null
 
     db.Invite.findOne({where: {id: request.params.invite}, include: db.Group})
@@ -75,10 +77,11 @@ server.route({
         var redirect = process.env.FRONTEND_URL + '/register.html?invite=' + request.params.invite
         reply({redirect: redirect}).redirect(redirect)
       } else { // already exists
-        return db.UserGroup.create({userId: user.dataValues.id, groupId: savedInvite.BIGroup.dataValues.id})
-        .then(function (association) {
-          reply({association: association.dataValues})
-        })
+        return user.addGroup(savedInvite.groupId).then(reply)
+        // return db.UserGroup.create({userId: user.dataValues.id, groupId: savedInvite.BIGroup.dataValues.id})
+        // .then(function (association) {
+        //   reply({association: association.dataValues})
+        // })
       }
     })
     .catch(function (err) {
@@ -90,12 +93,11 @@ server.route({
 
 db.Invite = db.define('Invite', {
   id: {type: Sequelize.UUID, primaryKey: true},
-  groupId: {type: Sequelize.INTEGER, allowNull: false},
-  creatorId: {type: Sequelize.INTEGER, allowNull: false},
+  // groupId and creatorId are added by .belongsTo in index.js
   email: {type: Sequelize.STRING, allowNull: false},
   completed: {type: Sequelize.DATE, allowNull: true}
 }, {
   freezeTableName: true
 })
 
-module.exports = db.Invite.sync()
+// module.exports = db.Invite.sync()

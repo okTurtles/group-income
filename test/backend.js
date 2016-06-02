@@ -42,112 +42,60 @@ describe('Full walkthrough', function () {
   })
 
   describe('User', function () {
-    it('Should GET (empty)', function (done) {
-      request.get(`http://localhost:${PORT}/user/`)
+    it('Should GET (empty)', function () {
+      return request.get(`http://localhost:${PORT}/user/`)
       .set('Authorization', `gi ${signatures[0]}`)
-      .end(function (err, res) {
-        should(err).be.null()
-        res.status.should.equal(200)
-        done()
-      })
+      .should.be.rejectedWith({status: 404})
     })
 
-    it('Should POST', function (done) {
-      request.post(`http://localhost:${PORT}/user/`)
+    it('Should POST', async function () {
+      var res = await request.post(`http://localhost:${PORT}/user/`)
       .send({name: 'hi hello', password: 'baconbaconbacon', email: 'bob@test.com', phone: '12345667', contriGL: 5, contriRL: 7})
       .set('Authorization', `gi ${signatures[0]}`)
-      .end(function (err, res) {
-        should(err).be.null()
-        res.status.should.equal(200)
-        res.body.user.should.not.be.null()
-        res.body.link.length.should.be.greaterThan(0)
-        request.post(res.body.link).end(function (err, res) {
-          should(err).be.null()
-          res.status.should.equal(200)
-          res.text.length.should.be.greaterThan(0)
-          done()
-        })
-      })
+      res.status.should.equal(200)
     })
 
-    it('Should GET (non-empty)', function (done) {
-      request.get(`http://localhost:${PORT}/user/`)
+    it('Should GET (non-empty)', async function () {
+      var res = await request.get(`http://localhost:${PORT}/user/`)
       .set('Authorization', `gi ${signatures[0]}`)
-      .end(function (err, res) {
-        should(err).be.null()
-        res.status.should.equal(200)
-        res.body.id.should.equal(personas[0].publicKey)
-        res.body.name.should.equal('hi hello')
-        res.body.email.should.equal('bob@test.com')
-        res.body.phone.should.equal('12345667')
-        res.body.contriGL.should.equal(5)
-        res.body.contriRL.should.equal(7)
-        should(res.body.verification).be.null()
-        done()
-      })
+      res.status.should.equal(200)
+      res.body.id.should.equal(personas[0].publicKey)
+      res.body.name.should.equal('hi hello')
+      res.body.email.should.equal('bob@test.com')
+      res.body.phone.should.equal('12345667')
+      res.body.contriGL.should.equal(5)
+      res.body.contriRL.should.equal(7)
     })
 
-    it('Should POST (2)', function (done) {
-      request.post(`http://localhost:${PORT}/user/`)
+    it('Should POST (2)', async function () {
+      var res = await request.post(`http://localhost:${PORT}/user/`)
       .send({name: 'User number two', password: 'baconbaconbacon', email: 'jack@test.com', phone: '959040392', contriGL: 2, contriRL: 99})
       .set('Authorization', `gi ${signatures[1]}`)
-      .end(function (err, res) {
-        should(err).be.null()
-        res.status.should.equal(200)
-        res.body.user.should.not.be.null()
-        res.body.link.length.should.be.greaterThan(0)
-
-        request.post(res.body.link)
-        .end(function (err, res) {
-          should(err).be.null()
-          res.status.should.equal(200)
-          res.text.length.should.be.greaterThan(0)
-          done()
-        })
-      })
+      res.status.should.equal(200)
     })
 
-    it('Should POST (3)', function (done) {
-      request.post(`http://localhost:${PORT}/user/`)
+    it('Should POST (3)', async function () {
+      var res = await request.post(`http://localhost:${PORT}/user/`)
       .send({name: 'User number three', password: 'baconbaconbacon', email: 'john@test.com', phone: '6478392654', contriGL: 20, contriRL: 1})
       .set('Authorization', `gi ${signatures[2]}`)
-      .end(function (err, res) {
-        should(err).be.null()
-        res.status.should.equal(200)
-        res.body.user.should.not.be.null()
-        res.body.link.length.should.be.greaterThan(0)
-
-        request.post(res.body.link)
-        .end(function (err, res) {
-          should(err).be.null()
-          res.status.should.equal(200)
-          res.text.length.should.be.greaterThan(0)
-          done()
-        })
-      })
+      res.status.should.equal(200)
     })
   })
 
   describe('Group', function () {
-    it('Should GET (no cookie)', function (done) {
-      request.get(`http://localhost:${PORT}/group/1`)
-      .end(function (err, res) {
-        should(err).not.null()
-        res.status.should.equal(401)
-        done()
-      })
+    var group1name = 'my super group'
+
+    it('Should GET (no cookie)', function () {
+      return request.get(`http://localhost:${PORT}/group/1`) // This 'return' is important
+      .should.be.rejectedWith({status: 401})
     })
 
-    it('Should POST', function (done) {
-      request.post(`http://localhost:${PORT}/group/`)
+    it('Should POST', async function () {
+      var res = await request.post(`http://localhost:${PORT}/group/`)
       .set('Authorization', `gi ${signatures[0]}`)
-      .send({name: 'my super group'})
-      .end(function (err, res) {
-        should(err).be.null()
-        res.status.should.equal(200)
-        res.body.group.should.not.be.null()
-        done()
-      })
+      .send({name: group1name})
+      res.status.should.equal(200)
+      res.body.group.should.not.be.null()
     })
 
     it('Should GET (non-empty)', function (done) {
@@ -157,68 +105,23 @@ describe('Full walkthrough', function () {
         should(err).be.null()
         res.status.should.equal(200)
         res.body.id.should.equal(1)
-        res.body.userId.should.equal(personas[0].publicKey)
-        res.body.groupId.should.equal(1)
-        res.body.User.id.should.equal(personas[0].publicKey)
-        res.body.BIGroup.id.should.equal(1)
+        res.body.name.should.equal(group1name)
+        res.body.Users.should.have.length(1)
+        res.body.Users[0].id.should.equal(personas[0].publicKey)
         done()
       })
     })
 
-    it('Should GET (unauthorized)', function (done) {
-      request.get(`http://localhost:${PORT}/group/1`)
+    it("Shouldn't GET (unauthorized)", function () {
+      return request.get(`http://localhost:${PORT}/group/1`)
       .set('Authorization', `gi ${signatures[1]}`)
-      .end(function (err, res) {
-        should(err).be.null()
-        res.status.should.equal(200)
-        res.text.should.equal('')
-        done()
-      })
-    })
-  })
-  // TODO: get rid of this Session stuff, we're no longer using cookies
-  describe('Session', function () {
-    it('Should logout', function (done) {
-      request.post(`http://localhost:${PORT}/session/logout`)
-      .set('Authorization', `gi ${signatures[0]}`)
-      .end(function (err, res) {
-        should(err).be.null()
-        res.status.should.equal(200)
-        res.text.should.equal('')
-        done()
-      })
+      .should.be.rejectedWith({status: 404})
     })
 
-    it('Should be unauthorized to load a group', function (done) {
-      request.get(`http://localhost:${PORT}/group/1`)
+    it('Should be unauthorized to load a group', function () {
+      return request.get(`http://localhost:${PORT}/group/1`)
       .set('Authorization', `gi ${unsignedMsg}`)
-      .end(function (err, res) {
-        err.should.not.equal(null)
-        res.status.should.equal(401)
-        done()
-      })
-    })
-
-    it('Should not login (invalid password)', function (done) {
-      request.post(`http://localhost:${PORT}/session/login`)
-      .send({email: 'bob@test.com', password: 'invalidpassword'})
-      .end(function (err, res) {
-        err.should.not.equal(null)
-        res.status.should.equal(500) // Good enough for now
-        res.text.length.should.be.greaterThan(0)
-        done()
-      })
-    })
-
-    it('Should login', function (done) {
-      request.post(`http://localhost:${PORT}/session/login`)
-      .send({email: 'bob@test.com', password: 'baconbaconbacon'})
-      .end(function (err, res) {
-        should(err).be.null()
-        res.status.should.equal(200)
-        res.text.length.should.be.greaterThan(0)
-        done()
-      })
+      .should.be.rejectedWith({status: 401})
     })
   })
 

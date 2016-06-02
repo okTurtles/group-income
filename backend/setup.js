@@ -65,4 +65,5 @@ export var db = new Sequelize('database', '', '', {
   dialect: 'sqlite',
   // TODO: find better location for sqlite.db file
   storage: process.argv.indexOf('test') !== -1 ? 'sqlite.db' : ':memory:'
+  // storage: 'sqlite.db'
 })

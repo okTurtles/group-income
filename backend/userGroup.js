@@ -1,3 +1,5 @@
+// TODO: delete this file, it's no longer being used
+
 import {db} from './setup'
 
 var Sequelize = require('Sequelize')
@@ -8,5 +10,3 @@ db.UserGroup = db.define('UserGroup', {
 }, {
   freezeTableName: true
 })
-
-module.exports = db.UserGroup.sync()

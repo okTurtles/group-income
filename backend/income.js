@@ -18,41 +18,31 @@ server.route({
   },
   method: 'POST',
   path: '/income/',
-  handler: function (request, reply) {
-    var savedUser = null
-    var currentMonth = moment().format('MM-Y')
-    db.User.findOne({where: {id: request.auth.credentials.userId}})
-    .then(function (user) {
-      savedUser = user.dataValues
-      return db.Income.findOne({where: {userId: savedUser.id, month: currentMonth}})
-    })
-    .then(function (existingIncome) {
-      if (existingIncome != null) {
-        return db.Income.update({amount: request.payload.amount}, {where: {id: existingIncome.dataValues.id}})
-        .then(function () {
-          return db.Income.findOne({where: {id: existingIncome.dataValues.id}})
-        })
-      } else {
-        return db.Income.create({id: uuid.v4(), userId: savedUser.id, month: currentMonth, amount: request.payload.amount})
-      }
-    })
-    .then(function (income) {
-      reply({income: income.dataValues})
-    })
-    .catch(function (err) {
+  handler: async function (request, reply) {
+    try {
+      var currentMonth = moment().format('MM-Y')
+      var amount = request.payload.amount
+      var userId = request.auth.credentials.userId
+      var [income, created] = await db.Income.findOrCreate({
+        where: {userId: userId, month: currentMonth}, defaults: {amount: amount}
+      })
+      if (!created) await income.update({amount: amount})
+      reply({income: income.toJSON()})
+    } catch (err) {
       logger(err)
       reply(err)
-    })
+    }
   }
 })
 
 db.Income = db.define('Income', {
-  id: {type: Sequelize.UUID, primaryKey: true},
-  userId: {type: Sequelize.STRING, allowNull: false},
+  // id: {type: Sequelize.UUID, primaryKey: true, defaultValue: Sequelize.UUIDV4},
+  // For whatever reason Sequelize.UUIDV4 results in findOrCreate throwing a
+  // bizarre error related to "val.replace is not a function"
+  id: {type: Sequelize.UUID, primaryKey: true, defaultValue: uuid.v4},
+  // userId is added via foreign key in index.js
   month: {type: Sequelize.STRING, allowNull: false},
   amount: {type: Sequelize.INTEGER, allowNull: false}
 }, {
   freezeTableName: true
 })
-
-module.exports = db.Income.sync()

@@ -2,7 +2,7 @@
 
 import {server, db} from './setup'
 
-// TODO: get rid of this session stuff
+// TODO: delete this file
 //       See: https://github.com/okTurtles/group-income-simple/issues/81
 
 var Joi = require('joi')

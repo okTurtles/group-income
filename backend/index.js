@@ -1,7 +1,7 @@
 import {server, db} from './setup'
 
 // Sequelize already uses bluebird, so we might as well take advantage of those APIs
-var Promise = global.Promise = require('bluebird')
+global.Promise = require('bluebird')
 // TODO: use Bluebird to handle swallowed errors (combine with Good logging?)
 //       http://jamesknelson.com/are-es6-promises-swallowing-your-errors/
 global.logger = function (err) { // Improve this later
@@ -10,26 +10,21 @@ global.logger = function (err) { // Improve this later
 }
 
 module.exports = (async function () {
-  await Promise.all([
-    require('./user'),
-    require('./session'), // TODO: get rid of this session stuff
-    require('./group'),
-    require('./userGroup'),
-    require('./invite'),
-    require('./income')
-  ])
-  db.User.hasMany(db.Session, {foreignKey: {name: 'userId', allowNull: false}, constraints: true})
-  db.Session.belongsTo(db.User, {foreignKey: {name: 'userId', allowNull: false}, constraints: true})
+  require('./user')
+  require('./group')
+  require('./invite') // TODO: get rid of this too?
+  require('./income')
+  // http://docs.sequelizejs.com/en/latest/docs/associations/
+  // adds getUsers, setUsers, addUser, addUsers to Group
+  // getGroups, setGroups, addGroup, and addGroups to User
+  db.User.belongsToMany(db.Group, {through: 'UserGroup', allowNull: false})
+  db.Group.belongsToMany(db.User, {through: 'UserGroup', allowNull: false})
+  // see 'Target keys': http://docs.sequelizejs.com/en/latest/docs/associations/#belongsto
+  // adds creatorId to Invite which points to User's primary key
+  db.Invite.belongsTo(db.User, {foreignKey: 'creatorId', allowNull: false})
+  db.Invite.belongsTo(db.Group, {foreignKey: 'groupId', allowNull: false}) // adds groupId to Invite
 
-  db.User.hasMany(db.UserGroup, {foreignKey: {name: 'userId', allowNull: false}, constraints: true})
-  db.UserGroup.belongsTo(db.User, {foreignKey: {name: 'userId', allowNull: false}, constraints: true})
-
-  db.Group.hasMany(db.UserGroup, {foreignKey: {name: 'groupId', allowNull: false}, constraints: true})
-  db.UserGroup.belongsTo(db.Group, {foreignKey: {name: 'groupId', allowNull: false}, constraints: true})
-
-  db.Group.hasMany(db.Invite, {foreignKey: {name: 'groupId', allowNull: false}, constraints: true})
-  db.Invite.belongsTo(db.Group, {foreignKey: {name: 'groupId', allowNull: false}, constraints: true})
-  db.Invite.belongsTo(db.User, {foreignKey: {name: 'creatorId', allowNull: false}, constraints: true})
+  db.Income.belongsTo(db.User, {foreignKey: 'userId', allowNull: false})
 
   await db.sync()
   await server.start()

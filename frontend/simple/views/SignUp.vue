@@ -14,15 +14,11 @@
             <h2 class="subtitle">Sign Up</h2>
                   
             <p class="control has-icon">
-              <input class="input" name="name" placeholder="Name">
+              <input class="input" name="name" placeholder="username">
               <i class="fa fa-user"></i>
             </p>
             <p class="control has-icon">
-              <input class="input" name="email" placeholder="Email">
-              <i class="fa fa-envelope"></i>
-            </p>
-            <p class="control has-icon">
-              <input class="input" name="password" placeholder="Password" type="password">
+              <input class="input" name="password" placeholder="password" type="password">
               <i class="fa fa-lock"></i>
             </p>
             <div class="level is-mobile top-align">
@@ -60,7 +56,7 @@ export default {
       .send(serialize(this.$els.form, {hash: true}))
       .end((err, res) => {
         this.error = !!err || !res.ok
-        this.response = this.error ? res.body.message : res.text
+        this.response = this.error ? res.body.message : (res.text === '' ? 'success' : res.text)
       })
     }
   },
