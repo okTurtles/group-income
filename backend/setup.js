@@ -1,7 +1,9 @@
 'use strict'
 
+// setup the database and re-export 'db'
+export {db} from './database'
+
 const Hapi = require('hapi')
-const Sequelize = require('sequelize')
 const Boom = require('boom')
 
 // ---------------------------------------
@@ -19,6 +21,10 @@ server.connection({
   routes: { cors: { origin: [process.env.FRONTEND_URL] } }
 })
 
+// ---------------------------------------
+// Setup authentication
+// ---------------------------------------
+
 server.auth.scheme('gi-auth', function (server, options) {
   return {
     authenticate: function (request, reply) {
@@ -31,7 +37,7 @@ server.auth.scheme('gi-auth', function (server, options) {
       try {
         json = JSON.parse(b642str(json))
       } catch (e) {
-        return reply(Boom.unauthorized('Invalid token format'))
+        return reply(Boom.badRequest('Invalid token format'))
       }
       // http://hapijs.com/api/#serverauthschemename-scheme
       options.verify(request, json, (err, isValid, credentials) => {
@@ -55,15 +61,4 @@ server.auth.strategy('gi-auth', 'gi-auth', {
     json.userId = json.key
     cb(null, result, json)
   }
-})
-
-// ---------------------------------------
-// Setup database
-// ---------------------------------------
-
-export var db = new Sequelize('database', '', '', {
-  dialect: 'sqlite',
-  // TODO: find better location for sqlite.db file
-  storage: process.argv.indexOf('test') !== -1 ? 'sqlite.db' : ':memory:'
-  // storage: 'sqlite.db'
 })

@@ -34,9 +34,8 @@
     "lodash-es": "4.13.1",
     "moment": "2.13.0",
     "node-uuid": "1.4.7",
-    "sequelize": "3.23.3",
+    "sails-memory": "github:taoeffect/sails-memory#256748c618524f2689a1b4ed1a5db1aa8e0c1831",
     "sprint-js": "0.1.0",
-    "sqlite3": "3.1.4",
     "string": "3.3.1",
     "superagent": "2.0.0",
     "tweetnacl": "0.14.3",
@@ -45,7 +44,8 @@
     "vue-animate": "0.0.4",
     "vue-form": "0.3.1",
     "vue-router": "0.7.13",
-    "vue-script2": "1.2.1"
+    "vue-script2": "1.2.1",
+    "waterline": "0.12.1"
   },
   "devDependencies": {
     "babel-core": "6.9.1",

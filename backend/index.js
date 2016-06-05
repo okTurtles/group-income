@@ -1,5 +1,3 @@
-import {server, db} from './setup'
-
 // Sequelize already uses bluebird, so we might as well take advantage of those APIs
 global.Promise = require('bluebird')
 // TODO: use Bluebird to handle swallowed errors (combine with Good logging?)
@@ -9,24 +7,20 @@ global.logger = function (err) { // Improve this later
   console.error(err.stack)
 }
 
+import {server, db} from './setup'
+
+// TODO: get rid of Sequelize (unless it fixes itself)
+//       https://github.com/okTurtles/group-income-simple/issues/82
+//       Keep an eye on:
+//       - https://github.com/sequelize/sequelize/issues/1608
+//       - https://github.com/tgriesser/knex/issues/802
+//       - https://github.com/fahad19/firenze/issues/48
 module.exports = (async function () {
+  await db.loaded
   require('./user')
   require('./group')
   require('./invite') // TODO: get rid of this too?
   require('./income')
-  // http://docs.sequelizejs.com/en/latest/docs/associations/
-  // adds getUsers, setUsers, addUser, addUsers to Group
-  // getGroups, setGroups, addGroup, and addGroups to User
-  db.User.belongsToMany(db.Group, {through: 'UserGroup', allowNull: false})
-  db.Group.belongsToMany(db.User, {through: 'UserGroup', allowNull: false})
-  // see 'Target keys': http://docs.sequelizejs.com/en/latest/docs/associations/#belongsto
-  // adds creatorId to Invite which points to User's primary key
-  db.Invite.belongsTo(db.User, {foreignKey: 'creatorId', allowNull: false})
-  db.Invite.belongsTo(db.Group, {foreignKey: 'groupId', allowNull: false}) // adds groupId to Invite
-
-  db.Income.belongsTo(db.User, {foreignKey: 'userId', allowNull: false})
-
-  await db.sync()
   await server.start()
   console.log('API server running at:', server.info.uri)
 })() // returns a promise that's either rejected or resolved

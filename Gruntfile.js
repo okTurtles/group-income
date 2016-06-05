@@ -13,6 +13,10 @@
 // TODO: https://github.com/okTurtles/group-income-simple/issues/73
 //       process.versions.node.split('.')[0] < 6
 require('babel-register')({
+  // this next line is needed to prevent issue with lodash-es
+  //   export { default as add } from './add';
+  //   ^^^^^^
+  //   SyntaxError: Unexpected token export
   // http://stackoverflow.com/a/36044758/1781435
   // ignore everything in node_modules except lodash-es
   ignore: /node_modules\/(?!lodash-es)/

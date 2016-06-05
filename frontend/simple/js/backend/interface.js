@@ -11,5 +11,6 @@ export default class Keys {
   verifyMessage () {}
 }
 
+// http://noiseprotocol.org/
 export default class MessageRelay {
 }
