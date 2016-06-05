@@ -62,9 +62,10 @@ video {
  * Hide visually and from screen readers
  */
 
-.hidden {
-  display: none !important;
-}
+// Use Bulma's .is-hidden-* classes
+// .hidden {
+//   display: none !important;
+// }
 
 /*
  * Hide only visually, but have it available for screen readers:
@@ -118,12 +119,14 @@ video {
  *    `:before` to contain the top-margins of child elements.
  */
 
-.clearfix:before,
-.clearfix:after {
-  content: " "; /* 1 */
-  display: table; /* 2 */
-}
+// Use Bulma's +clearfix mixin or .is-clearfix class instead
 
-.clearfix:after {
-  clear: both;
-}
+// .clearfix:before,
+// .clearfix:after {
+//   content: " "; /* 1 */
+//   display: table; /* 2 */
+// }
+
+// .clearfix:after {
+//   clear: both;
+// }

@@ -1,11 +1,14 @@
 <template>
-  <div>
-    <div class="user-profile">
-      <h1>{{ msg }}</h1>
-    </div>
+  <section class="section">
+    <!-- main containers:
+     .container  http://bulma.io/documentation/layout/container/
+     .content    http://bulma.io/documentation/elements/content/
+     .section    http://bulma.io/documentation/layout/section/
+     .block      base/classes.sass (just adds 20px margin-bottom except for last)
+     -->
     <div class="new-user-container">
       <div class="icon"></div>
-      <form class="new-user">
+      <form class="new-user" v-el:form>
         <h2>Personal details</h2>
         <input class="text-input" name="name" placeholder="Your full name">
         <label for="name">Your name</label>
@@ -31,35 +34,28 @@
         <label for="contriRL">Receiving Limit <span class="dollar-label">$</span></label>
         <button class="sign-in btn" @click.prevent="submit">Sign Up</button>
       </form>
-      <div id="response" v-bind:class="responseClass">{{ response }}</div>
-      <script src="/simple/vendor/jquery.js" unload="jQuery.noConflict(true)"></script>
+      <div id="response" :class="responseClass">{{ response }}</div>
     </div>
+  </section>
 </template>
 
 <style>
-  #response.error {color:red;}
-  #response {color:green;}
+  /*these are globally applied. do like in SignUp.vue instead*/
+  /*#response.error {color:red;}*/
+  /*#response {color:green;}*/
 </style>
 
 <script>
 export default {
+  name: 'UserProfileView',
   methods: {
     submit: function () {
-      var $ = window.jQuery
-      this.response = ''
-      $.post(process.env.API_URL+'/user/', $('form.new-user').serialize())
-      .done((data, status, jqXHR) => {
-        this.response = jqXHR.responseText
-        this.responseClass.error = false
-      }).fail((jqXHR, status, err) => {
-        this.responseClass.error = true
-        this.response = jqXHR.responseJSON.message
-      })
+      this.responseClass.error = true
+      this.response = 'not implemented'
     }
   },
   data () {
     return {
-      msg: 'User Profile!',
       responseClass: {
         error: false
       },

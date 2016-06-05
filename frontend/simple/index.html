@@ -9,44 +9,29 @@
     </template>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- TODO: all resources should be served by our server only -->
-    <!-- <link href='//fonts.googleapis.com/css?family=Lato:300,700' rel='stylesheet' type='text/css'> -->
     <link rel="stylesheet" href="css/main.css">
   </head>
-  <body>
-    <!--[if lt IE 8]>
-      <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+  <body id="app">
+    <!--[if lt IE 9]>
+      <div class="modal is-active">
+        <div class="modal-content">
+          <h1 class="title">Outdated browser</h1>
+          <p>You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+        </div>
+      </div>
     <![endif]-->
-    <div id="app" class="wrapper">
-      <header class="header">
-        <nav class="nav">
-          <div class="nav-left">
-            <a href="/simple/" class="nav-item">
-              <!-- see: http://bulma.io/documentation/elements/image/ -->
-              <!-- TODO: resize this image to make it smaller? -->
-              <img src="images/groupincome-logo-black.png">
-            </a>
-          </div>
-          <!-- bulmized nav -->
-          <!-- see also centered level as alternative:
-          http://bulma.io/documentation/components/level/ -->
-          <div class="nav-center">
-            <a class="nav-item" v-link="'/new-user'">New User</a>
-            <a class="nav-item" v-link="'/user'">User Profile</a>
-            <a class="nav-item" v-link="'/user-group'">User Group</a>
-            <a class="nav-item" v-link="'/new-income'">New Income</a>
-            <a class="nav-item" v-link="'/pay-group'">Pay Group</a>
-            <a class="nav-item" v-link="'/ejs-page'" id="testEJS">EJS page test</a>
-          </div>
-        </nav>
-      </header>
-      <section class="section">
-        <!-- content class? http://bulma.io/documentation/elements/content/ -->
-        <div class="container">
-          <router-view></router-view>
-        </div>        
-      </section>
-    </div>
+    <nav-bar></nav-bar>
+    <router-view></router-view>
     <script src="/simple/app.js"></script>
+    <noscript>
+      <section class="hero is-fullheight">
+        <div class="hero-body">
+          <div class="container has-text-centered">
+            <h1 class="title">JavaScript disabled!</h1>
+            <p>This app requires JavaScript to function.</p>
+          </div>
+        </div>
+      </section>
+    </noscript>
   </body>
 </html>

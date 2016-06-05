@@ -7,13 +7,14 @@ http://www.sitepoint.com/setting-up-es6-project-using-babel-browserify/
 https://babeljs.io/docs/setup/#browserify
 */
 
-var SSI = require('node-ssi')
-var ssi = new SSI({baseDir: './dist', encoding: 'utf-8'})
 var fs = require('fs')
 var path = require('path')
 var url = require('url')
 var S = require('string')
 var vueify = require('vueify')
+var pathmodify = require('pathmodify')
+
+import fromPairs from 'lodash-es/fromPairs'
 
 // EJS support at the bottom of the file, below grunt setup
 
@@ -35,7 +36,7 @@ module.exports = (grunt) => {
       browserify: {
         options: { livereload: true }, // port 35729 by default
         files: ['frontend/*.html', 'frontend/simple/**/*.{vue,ejs,js}'],
-        tasks: ['standard:dev', 'copy', 'browserify']
+        tasks: ['exec:standard', 'copy', 'browserify']
       },
       css: {
         options: { livereload: true },
@@ -49,34 +50,34 @@ module.exports = (grunt) => {
       },
       backend: {
         files: ['backend/**/*.js'],
-        tasks: ['standard:dev', 'backend:relaunch']
+        tasks: ['exec:standard', 'backend:relaunch']
       },
       gruntfile: {
         files: ['.Gruntfile.babel.js', 'Gruntfile.js'],
-        tasks: ['standard:gruntfile']
+        tasks: ['exec:standardgrunt']
       }
     },
 
-    browserify: {
-      dev: {
-        options: {
-          transform: [script2ify, 'vueify', ejsify, 'babelify'],
-          browserifyOptions: {
-            debug: development // enables source maps
-          }
-        },
-        files: { 'dist/simple/app.js': ['frontend/simple/**/*.{vue,ejs,js}', '!frontend/simple/assets/**/*'] }
-      }
-    },
+    browserify: browserifyCfg({
+      straight: [{ 'dist/simple/app.js': ['frontend/simple/main.js'] }],
+      lazy: [{ 'dist/simple/js/UserGroupView.js': ['frontend/simple/views/UserGroupView.vue'] }]
+    }),
 
     sass: {
       options: {
         sourceMap: development,
+        // sourceMapRoot: '/',
         outputStyle: development ? 'nested' : 'compressed',
         includePaths: ['./node_modules/bulma', './node_modules/font-awesome/scss']
       },
       dev: {
-        files: {'dist/simple/css/main.css': 'frontend/simple/sass/main.sass'}
+        files: [{
+          expand: true,
+          cwd: 'frontend/simple/sass',
+          src: ['*.{sass,scss}', '!_*/**'],
+          dest: 'dist/simple/css/',
+          ext: '.css'
+        }]
       }
     },
 
@@ -95,25 +96,12 @@ module.exports = (grunt) => {
       }
     },
 
-    standard: {
-      // everything except standard ignore (following options in package.json)
-      dev: {},
-      // explicitely lint gruntfile as leading '.' causes it to be ignored
-      gruntfile: {src: ['.Gruntfile.babel.js', 'Gruntfile.js']}
-    },
-
-    execute: {
-      // TODO: could replace w/https://github.com/pghalliday/grunt-mocha-test
-      // that would also solve our issue of grunt-execute currently
-      // being unmaintained.
-      api_test: {
-        src: './node_modules/.bin/mocha',
-        // options: { args: [...(node6 ? [] : ['--compilers', 'js:babel-register']), '-R', 'spec', '--bail'] }
-        options: { args: ['--compilers', 'js:babel-register', '-R', 'spec', '--bail'] }
-      },
-      // we don't do `standard` linting this way (output not as pretty)
-      // but keep it around just to show the alternative
-      standard: { src: './node_modules/standard/bin/cmd.js' }
+    // https://github.com/sindresorhus/grunt-shell is another nice alternative
+    exec: {
+      // could replace w/https://github.com/pghalliday/grunt-mocha-test
+      test: './node_modules/.bin/mocha --compilers js:babel-register -R spec --bail',
+      standard: './node_modules/.bin/standard',
+      standardgrunt: './node_modules/.bin/standard .Gruntfile.babel.js Gruntfile.js'
     },
 
     clean: { dist: ['dist/*', './sqlite.db'] },
@@ -124,25 +112,21 @@ module.exports = (grunt) => {
         base: 'dist',
         livereload: process.env.NODE_ENV === 'development',
         middleware: (connect, opts, middlewares) => {
-          var serveSsiFile = (path, req, res) => {
-            ssi.compileFile(path, (err, content) => {
-              if (err) {
-                console.error(err.stack)
-                throw err
-              }
-              console.log(`Req: ${req.url} => sending node-ssi parsed file: ${path}`)
-              res.end(content)
-            })
-          }
           middlewares.unshift((req, res, next) => {
             var f = url.parse(req.url).pathname
             f = path.join('dist', S(f).endsWith('/') ? f + 'index.html' : f)
-            if (S(f).endsWith('.html') && fs.existsSync(f)) {
-              serveSsiFile(f, req, res)
-            } else if (S(f).startsWith('dist/simple/') && !/(\/(css|images|vendor)\/|\.js$)/.test(f)) {
-              serveSsiFile('dist/simple/index.html', req, res)
+            if (/^dist\/(frontend|node_modules)\/.*\.(sass|scss|js|vue|ejs)$/.test(f)) {
+              // handle serving source-maps
+              res.end(fs.readFileSync(S(f).chompLeft('dist/').s))
+            } else if (S(f).endsWith('.html') && fs.existsSync(f)) {
+              // parse all HTML files for SSI
+              res.end(fs.readFileSync(f))
+            } else if (S(f).startsWith('dist/simple/') && !/\.[a-z][a-z0-9]+(\?[^\/]*)?$/.test(f)) {
+              // if we are a vue-router route, send main index file
+              console.log(`Req: ${req.url}, sending index.html for: ${f}`)
+              res.end(fs.readFileSync('dist/simple/index.html'))
             } else {
-              next()
+              next() // otherwise send the resource itself, whatever it is
             }
           })
           return middlewares
@@ -165,9 +149,9 @@ module.exports = (grunt) => {
   grunt.registerTask('default', ['dev'])
   grunt.registerTask('backend', ['backend:relaunch', 'watch'])
   grunt.registerTask('dev', ['checkDependencies', 'build', 'connect', 'backend'])
-  grunt.registerTask('build', ['standard', 'copy', 'sass', 'browserify'])
+  grunt.registerTask('build', ['exec:standard', 'copy', 'sass', 'browserify'])
   grunt.registerTask('dist', ['build'])
-  grunt.registerTask('test', ['dist', 'connect', 'execute:api_test'])
+  grunt.registerTask('test', ['dist', 'connect', 'exec:test'])
   // TODO: add 'deploy' per:
   //       https://github.com/okTurtles/group-income-simple/issues/10
 
@@ -210,6 +194,50 @@ module.exports = (grunt) => {
 }
 
 // ----------------------------------------
+// For generating lazy-loaded components
+// ----------------------------------------
+
+function browserifyCfg ({straight, lazy}, cfg = {}) {
+  var globalize = x => // views/UserGroupView.vue -> UserGroupView
+    S(path.parse(x).name).dasherize().capitalize().camelize().s
+  var keyify = x => // views/UserGroupView.vue -> userGroupView
+    S(path.parse(x).name).dasherize().chompLeft('-').camelize().s
+  function gencfg (out, paths, isLazy) {
+    var c = {
+      options: {
+        transform: [script2ify, 'vueify', ejsify, 'babelify'],
+        plugin: [[pathmodify, {
+          // we remap it to 'lodash' and require functions like so: import mapValues from 'lodash/mapValues'
+          // otherwise we get this bizarre error:
+          // ParseError: 'import' and 'export' may appear only with 'sourceType: module'
+          mods: pathmodify.mod.dir('lodash-es', path.join(__dirname, 'node_modules', 'lodash-es'), 'lodash')
+        }]],
+        browserifyOptions: {
+          debug: development // enables source maps
+        }
+      },
+      files: fromPairs([[out, paths]])
+    }
+    if (isLazy) {
+      c.options.browserifyOptions.standalone = globalize(out)
+      c.options.exclude = ['vue', 'vue-hot-reload-api']
+    }
+    return c
+  }
+  for (let map of straight) {
+    for (let out in map) {
+      cfg[keyify(out)] = gencfg(out, map[out], false)
+    }
+  }
+  for (let map of lazy) {
+    for (let out in map) {
+      cfg[keyify(out)] = gencfg(out, map[out], true)
+    }
+  }
+  return cfg
+}
+
+// ----------------------------------------
 // EJS support for .vue files + via require
 // TODO: move this to some nicer place. A grunt folder
 //       would also allow us to move this entire file.
@@ -228,7 +256,7 @@ vueify.compiler.applyConfig({
 function loadEJS (path, str) {
   return require('ejs').compile(str, {
     filename: path,
-    compileDebug: process.env.NODE_ENV === 'development',
+    compileDebug: development,
     client: true // needed for generating the module.exports string in ejsify
   })
 }

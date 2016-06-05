@@ -6,16 +6,17 @@
 
 import Vue from 'vue'
 import Router from 'vue-router'
+import SignUp from './views/SignUp.vue'
 import UserProfileView from './views/UserProfileView.vue'
-import UserGroupView from './views/UserGroupView.vue'
 import NewIncomeView from './views/NewIncomeView.vue'
 import PayGroupView from './views/PayGroupView.vue'
-import { wrap } from './js/utils' // wrap string in a tag (<div> by default)
+import NavBar from './views/NavBar.vue'
+import utils, { wrap, lazyLoadVue, superagentHeader } from './js/utils'
 
 Vue.config.debug = process.env.NODE_ENV === 'development'
 Vue.use(Router)
-Vue.use(require('vue-script2'))
-// Vue.use(require('./js/Script2'))
+
+superagentHeader('Authorization', `gi ${utils.sign('hello', utils.keypair)}`)
 
 var router = new Router({
   hashbang: false,
@@ -24,19 +25,22 @@ var router = new Router({
 })
 
 router.map({
-  '/': { component: UserGroupView },
+  '/': { component: SignUp },
   '/new-user': {
-    component: UserProfileView,
-    title: 'Create User' // https://github.com/okTurtles/group-income-simple/issues/45
+    title: 'Sign Up', // page title. see issue #45
+    component: SignUp
   },
   '/user': { component: UserProfileView },
   '/user/:username': { component: UserProfileView },
-  '/user-group': { component: UserGroupView },
+  '/user-group': {
+    title: 'Your Group',
+    component: lazyLoadVue('UserGroupView')
+  },
   '/new-income': { component: NewIncomeView },
   '/pay-group': { component: PayGroupView },
   '/ejs-page': {
-    component: { template: wrap(require('./views/test.ejs')) },
-    title: 'EJS Test Page'
+    title: 'EJS Test Page',
+    component: { template: wrap(require('./views/test.ejs')) }
   }
 })
 
@@ -48,5 +52,5 @@ router.redirect({
   '*': '/' // TODO: make this a 404
 })
 
-var App = Vue.extend({})
+var App = Vue.extend({components: {NavBar}})
 router.start(App, 'html') // bind to html so we can change the title and head section
