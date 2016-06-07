@@ -1,7 +1,6 @@
-// See note in Gruntfile.js for why we have this here
-require('babel-register')({ignore: /node_modules\/(?!lodash-es)/})
+// lodash not lodash-es; see pathmodify in .Gruntfile.babel.js
+import _ from 'lodash'
 
-const _ = require('lodash-es')
 const uuid = require('node-uuid')
 const Waterline = require('waterline')
 const waterline = new Waterline()
@@ -35,7 +34,7 @@ var schema = _.reduce({
     contriGL: {type: 'integer', required: true},
     contriRL: {type: 'integer', required: true},
     // optional
-    email: {type: 'string', unique: true},
+    email: {type: 'string'},
     phone: {type: 'string'},
     payPaypal: {type: 'string'},
     payBitcoin: {type: 'string'},

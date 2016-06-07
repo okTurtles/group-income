@@ -29,20 +29,20 @@ describe('Frontend', function () {
       .then(() => {
         return n.wait('.signup')
         .insert('input[name="name"]', 'George')
-        // .insert('input[name="email"]', 'george@lasvegas.com')
+        .insert('input[name="email"]', 'george@lasvegas.com')
         .insert('input[name="password"]', '$$111$$')
         .click('.signup button.submit')
-        .wait(() => document.querySelector('.signup span.help').innerText !== '')
-        .evaluate(() => document.querySelector('.signup span.help').className)
+        .wait(() => document.getElementById('serverMsg').innerText !== '')
+        .evaluate(() => document.getElementById('serverMsg').className)
         .should.finally.containEql('success')
       })
     })
 
     it('Should fail to create George again', function () {
       return n.click('.signup button.submit')
-      .wait(() => document.querySelector('.signup span.help').innerText !== '')
+      .wait(() => document.getElementById('serverMsg').innerText !== '')
       .evaluate(function () {
-        var response = document.querySelector('.signup span.help')
+        var response = document.getElementById('serverMsg')
         return {
           err: response.className.indexOf('danger') !== -1,
           text: response.innerText

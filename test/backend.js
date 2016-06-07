@@ -1,9 +1,6 @@
 /* eslint-env mocha */
 
-// http://stackoverflow.com/a/36044758/1781435
-// ignore everything in node_modules except lodash-es
-require('babel-register')({ignore: /node_modules\/(?!lodash-es)/})
-const _ = require('lodash-es')
+const _ = require('lodash') // not lodash-es; see .Gruntfile.babel.js
 const request = require('superagent')
 const should = require('should')
 const nacl = require('tweetnacl')

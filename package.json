@@ -31,6 +31,7 @@
     "form-serialize": "0.7.1",
     "hapi": "13.4.1",
     "joi": "8.4.0",
+    "localforage": "1.4.2",
     "lodash-es": "4.13.1",
     "moment": "2.13.0",
     "node-uuid": "1.4.7",
@@ -42,7 +43,7 @@
     "tweetnacl-util": "0.13.3",
     "vue": "1.0.24",
     "vue-animate": "0.0.4",
-    "vue-form": "0.3.1",
+    "vue-form": "github:taoeffect/vue-form#9d915b4a383c269349e913f6dbbf0790e58885ee",
     "vue-router": "0.7.13",
     "vue-script2": "1.2.1",
     "waterline": "0.12.1"

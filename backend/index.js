@@ -9,12 +9,6 @@ global.logger = function (err) { // Improve this later
 
 import {server, db} from './setup'
 
-// TODO: get rid of Sequelize (unless it fixes itself)
-//       https://github.com/okTurtles/group-income-simple/issues/82
-//       Keep an eye on:
-//       - https://github.com/sequelize/sequelize/issues/1608
-//       - https://github.com/tgriesser/knex/issues/802
-//       - https://github.com/fahad19/firenze/issues/48
 module.exports = (async function () {
   await db.loaded
   require('./user')

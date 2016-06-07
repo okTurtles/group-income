@@ -1,7 +1,7 @@
 /* globals logger */
 
 import {server, db} from './setup'
-import _ from 'lodash-es' // for some reason using 'require' causes problems
+import _ from 'lodash'
 
 var Promise = require('bluebird')
 var Joi = require('joi')
@@ -29,7 +29,7 @@ server.route({
     auth: 'gi-auth',
     validate: { payload: {
       name: Joi.string().min(3).max(50).required(),
-      email: Joi.string().email().allow(''),
+      email: Joi.string().email().allow('').required(),
       password: Joi.string().min(7).max(50).required(),
       phone: Joi.string().min(7).max(14).allow(''),
       contriGL: Joi.number().integer().required(),

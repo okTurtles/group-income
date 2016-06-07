@@ -14,7 +14,9 @@ var S = require('string')
 var vueify = require('vueify')
 var pathmodify = require('pathmodify')
 
-import fromPairs from 'lodash-es/fromPairs'
+// This is the only place where we import from 'lodash-es' instead of 'lodash'
+// see pathmodify notes below on why.
+import _ from 'lodash-es'
 
 // EJS support at the bottom of the file, below grunt setup
 
@@ -202,21 +204,28 @@ function browserifyCfg ({straight, lazy}, cfg = {}) {
     S(path.parse(x).name).dasherize().capitalize().camelize().s
   var keyify = x => // views/UserGroupView.vue -> userGroupView
     S(path.parse(x).name).dasherize().chompLeft('-').camelize().s
+  var p = (s, ...v) => _.flatten(_.zip(s, v)).join('').replace('/', path.sep)
+
   function gencfg (out, paths, isLazy) {
     var c = {
       options: {
         transform: [script2ify, 'vueify', ejsify, 'babelify'],
         plugin: [[pathmodify, {
-          // we remap it to 'lodash' and require functions like so: import mapValues from 'lodash/mapValues'
+          mods: [
+          // we remap 'lodash-es' to 'lodash' and require functions like so:
+          //  import mapValues from 'lodash/mapValues'
           // otherwise we get this bizarre error:
-          // ParseError: 'import' and 'export' may appear only with 'sourceType: module'
-          mods: pathmodify.mod.dir('lodash-es', path.join(__dirname, 'node_modules', 'lodash-es'), 'lodash')
+          //  ParseError: 'import' and 'export' may appear only with 'sourceType: module'
+            pathmodify.mod.dir('lodash-es', p`${__dirname}/node_modules/lodash-es`, 'lodash'),
+            pathmodify.mod.re(/^jquery$/i, 'sprint-js'),
+            pathmodify.mod.dir('vendor', p`${__dirname}/frontend/simple/assets/vendor`)
+          ]
         }]],
         browserifyOptions: {
           debug: development // enables source maps
         }
       },
-      files: fromPairs([[out, paths]])
+      files: _.fromPairs([[out, paths]])
     }
     if (isLazy) {
       c.options.browserifyOptions.standalone = globalize(out)
