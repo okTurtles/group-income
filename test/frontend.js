@@ -54,6 +54,7 @@ describe('Frontend', function () {
 
   describe('EJS test page', function () {
     it('TODO list should have at least two items', function () {
+      // return n.click('nav.nav .nav-center > .nav-item:last-child')
       return n.click('#testEJS')
       .wait(() => typeof $ !== 'undefined')
       .evaluate(() => $('#todo').children().length)

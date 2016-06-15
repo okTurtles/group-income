@@ -66,12 +66,7 @@ module.exports = (grunt) => {
     }),
 
     sass: {
-      options: {
-        sourceMap: development,
-        // sourceMapRoot: '/',
-        outputStyle: development ? 'nested' : 'compressed',
-        includePaths: ['./node_modules/bulma', './node_modules/font-awesome/scss']
-      },
+      options: sassCfg(),
       dev: {
         files: [{
           expand: true,
@@ -196,6 +191,22 @@ module.exports = (grunt) => {
 }
 
 // ----------------------------------------
+// SASS specific stuff
+// ----------------------------------------
+
+// This is used by grunt-sass and vueify
+function sassCfg () {
+  return {
+    sourceMap: development,
+    // https://github.com/vuejs/vueify/issues/34#issuecomment-161722961
+    indentedSyntax: true,
+    // sourceMapRoot: '/',
+    outputStyle: development ? 'nested' : 'compressed',
+    includePaths: ['./node_modules/bulma', './node_modules/font-awesome/scss']
+  }
+}
+
+// ----------------------------------------
 // For generating lazy-loaded components
 // ----------------------------------------
 
@@ -217,6 +228,7 @@ function browserifyCfg ({straight, lazy}, cfg = {}) {
           // otherwise we get this bizarre error:
           //  ParseError: 'import' and 'export' may appear only with 'sourceType: module'
             pathmodify.mod.dir('lodash-es', p`${__dirname}/node_modules/lodash-es`, 'lodash'),
+            // some libraries (like jquery-validity) require('jquery')
             pathmodify.mod.re(/^jquery$/i, 'sprint-js'),
             pathmodify.mod.dir('vendor', p`${__dirname}/frontend/simple/assets/vendor`)
           ]
@@ -253,8 +265,10 @@ function browserifyCfg ({straight, lazy}, cfg = {}) {
 // ----------------------------------------
 var through = require('through2')
 
-// per: https://github.com/vuejs/vue-loader/issues/197#issuecomment-205617193
+// per: https://github.com/vuejs/vueify#configuring-options
+//      https://github.com/vuejs/vue-loader/issues/197#issuecomment-205617193
 vueify.compiler.applyConfig({
+  sass: sassCfg(),
   customCompilers: {
     ejs: function (content, cb, compiler, filepath) {
       cb(null, loadEJS(filepath, content)())

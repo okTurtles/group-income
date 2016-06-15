@@ -1,11 +1,14 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import SignUp from './views/SignUp.vue'
+import CreateGroup from './views/CreateGroup.vue'
 import UserProfileView from './views/UserProfileView.vue'
-import NewIncomeView from './views/NewIncomeView.vue'
+// import NewIncomeView from './views/NewIncomeView.vue'
 import PayGroupView from './views/PayGroupView.vue'
 import NavBar from './views/NavBar.vue'
 import utils, { wrap, lazyLoadVue, superagentHeader } from './js/utils'
+import store from './js/state'
+import './js/transitions'
 
 Vue.config.debug = process.env.NODE_ENV === 'development'
 Vue.use(Router)
@@ -31,7 +34,8 @@ router.map({
     title: 'Your Group',
     component: lazyLoadVue('UserGroupView')
   },
-  '/new-income': { component: NewIncomeView },
+  // '/new-income': { component: NewIncomeView },
+  '/new-group': { component: CreateGroup },
   '/pay-group': { component: PayGroupView },
   '/ejs-page': {
     title: 'EJS Test Page',
@@ -47,5 +51,8 @@ router.redirect({
   '*': '/' // TODO: make this a 404
 })
 
-var App = Vue.extend({components: {NavBar}})
+var App = Vue.extend({
+  components: {NavBar},
+  store // make this and all child components aware of the new store
+})
 router.start(App, 'html') // bind to html so we can change the title and head section
