@@ -7,6 +7,7 @@
 
 <script>
 export default {
+  name: 'UserGroupView',
   data () {
     return {
       // note: changing this line won't causes changes

@@ -1,5 +1,5 @@
 <template>
-  <!-- 
+  <!--
   From what I can tell, .header seems to have been replaced
   by .nav. And .navbar is no longer being used.
 
@@ -24,8 +24,9 @@
           </a>
         </div>
         <div class="nav-center">
+          <!-- TODO: use v-for to dynamically generate these? -->
           <a class="nav-item" v-link="{activeClass: 'is-active', path: '/new-group'}">Start a group</a>
-          <a class="nav-item" v-link="{activeClass: 'is-active', path: '/new-user'}">New User</a>
+          <a class="nav-item" v-link="{activeClass: 'is-active', path: '/signup'}">New User</a>
           <a class="nav-item" v-link="{activeClass: 'is-active', path: '/user'}">Profile</a>
           <a class="nav-item" v-link="{activeClass: 'is-active', path: '/user-group'}">Group</a>
           <a class="nav-item" v-link="{activeClass: 'is-active', path: '/pay-group'}">Pay Group</a>

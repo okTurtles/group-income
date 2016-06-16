@@ -15,7 +15,7 @@
         <div class="column is-10">
           <div class="box centered" style="max-width:400px">
             <h2 class="subtitle">Sign Up</h2>
-                  
+
             <p class="control has-icon">
               <input v-form-ctrl class="input" name="name" pattern="\S*" placeholder="username" required>
               <i class="fa fa-user"></i>
@@ -58,12 +58,14 @@
 </style>
 
 <script>
+import Vue from 'vue'
+import {loginLogout} from '../js/mixins'
 var serialize = require('form-serialize')
 var request = require('superagent')
-var Vue = require('Vue')
 
 export default {
-  name: 'UserProfileView',
+  name: 'SignUp',
+  mixins: [loginLogout],
   methods: {
     submit: function () {
       this.response = ''
@@ -71,9 +73,16 @@ export default {
       .send(serialize(this.form, {hash: true}))
       .end((err, res) => {
         this.error = !!err || !res.ok
+        console.log('this.error', this.error)
         this.response = this.error ? res.body.message : (res.text === '' ? 'success' : res.text)
+        if (!this.error && this.$route.query.next) {
+          this.login()
+          this.$route.router.go({path: this.$route.query.next})
+        }
       })
     },
+    // TODO: put all this into vue-form; see:
+    //       https://github.com/okTurtles/group-income-simple/issues/95
     formHook: function (form) {
       this.form = form.el
       var untouched = this.untouched

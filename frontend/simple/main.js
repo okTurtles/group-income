@@ -24,9 +24,15 @@ var router = new Router({
 
 router.map({
   '/': { component: SignUp },
-  '/new-user': {
-    title: 'Sign Up', // page title. see issue #45
+  '/signup': {
+    title: 'Sign Up',  // page title. see issue #45
+    name: SignUp.name, // route name. important!
     component: SignUp
+  },
+  '/new-group': {
+    title: 'Create Group',
+    name: CreateGroup.name,
+    component: CreateGroup
   },
   '/user': { component: UserProfileView },
   '/user/:username': { component: UserProfileView },
@@ -35,7 +41,6 @@ router.map({
     component: lazyLoadVue('UserGroupView')
   },
   // '/new-income': { component: NewIncomeView },
-  '/new-group': { component: CreateGroup },
   '/pay-group': { component: PayGroupView },
   '/ejs-page': {
     title: 'EJS Test Page',

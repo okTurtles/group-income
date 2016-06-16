@@ -6,13 +6,21 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 
+const S = require('string')
+
 Vue.use(Vuex)
 
-const state = { count: 0 }
+const state = {
+  // TODO: this should be managed by Keychain, not here
+  loggedIn: false
+}
 
-// Mutations must be synchronous! Note that you neve call these directly!
+// Mutations must be synchronous! Never call these directly!
 // http://vuex.vuejs.org/en/mutations.html
-const mutations = { INCREMENT (state) { state.count++ } }
+const mutations = {
+  LOGIN (state) { state.loggedIn = true },
+  LOGOUT (state) { state.loggedIn = false }
+}
 
 // =======================
 // Exports
@@ -20,13 +28,17 @@ const mutations = { INCREMENT (state) { state.count++ } }
 
 export const types = Object.keys(mutations)
 
-// Async operations performed within actions
+// For now we dynamically generate all the actions like this.
+// It's rare when anything more complicated is needed, but there
+// is an example here:
 // http://vuex.vuejs.org/en/actions.html
-export const actions = {
-  increment: ({ dispatch }) => dispatch(types.INCREMENT)
-}
+export const actions = types.reduce((o, el) => {
+  var action = S(el.toLowerCase()).camelize().s
+  o[action] = ({dispatch}, ...args) => dispatch(el, ...args)
+  return o
+}, {})
 
-// If it gets more complicated use modules:
+// If it gets more complicated, use modules:
 // http://vuex.vuejs.org/en/structure.html
 
 // create the store
