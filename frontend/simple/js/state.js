@@ -10,6 +10,7 @@ const S = require('string')
 
 Vue.use(Vuex)
 
+// TODO: save only relevant state to localforage
 const state = {
   // TODO: this should be managed by Keychain, not here
   loggedIn: false

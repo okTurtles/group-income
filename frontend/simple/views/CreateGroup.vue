@@ -40,7 +40,7 @@ export default {
       console.log(this.$options.name, 'activate!')
       if (!this.loggedIn) {
         console.log(this.$options.name, `redirecting to ${SignUp.name}!`)
-        transition.redirect({name: SignUp.name, query: {next: this.$route.path}})
+        transition.redirect({name: SignUp.name, query: {next: this.$route.path}, replace: true})
       } else {
         transition.next()
       }
