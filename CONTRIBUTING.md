@@ -1,11 +1,11 @@
 ## Before submitting an issue
 
 - Read the [Troubleshooting](https://github.com/okTurtles/group-income-simple/blob/master/docs/Troubleshooting.md) docs!
-- Spend at least 5 seconds searching for existing issues.
+- Spend at least 5 seconds searching for existing open *or closed* issues.
 
 ## Before beginning development
 
-- If you don't have repo write rights, create a fork.
+- :point_right: **[Read our about Mileposts methodology!](docs/Mileposts-Methodology.md)** :point_left:
 - **Work in a named branch off of `master`, e.g. `yourname`**
 
 ## Before submitting a pull request
