@@ -71,11 +71,11 @@ All of the tasks necessary to make it possible for a user to log in to the site 
 
 - [ ] #29 - Backend database user schema & API
 - [ ] #17 - Add session info to database **(shared with MP #50)**
-- [ ] #30 - Clear cookies on logout
+- [x] #30 - Clear cookies on logout
 - [ ] #28 - Frontend JS for AJAX login/logout
 - [ ] #45 - Markup for login interface
 - [ ] #44 - Create backend unit tests for login/logout
-- [ ] #45 - Create frontend unit tests for login/logout
+- [ ] #47 - Create frontend unit tests for login/logout
 
 ------------
 
@@ -86,3 +86,5 @@ All of the tasks necessary to make it possible for a user to log in to the site 
 > So @rachel's working on #29 and making good progress on it. I've almost got the frontend js working, see the latest updates I posted in #28.
 >
 > Once I get #28 closed I plan to work with @dan on integrating the markup (#45) with the JS in #28.
+
+_**@taoeffect** closed issue #30 in `383a764`_
