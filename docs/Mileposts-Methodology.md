@@ -14,7 +14,7 @@ Mileposts are a special type of issue in the Issues tracker.
 
 The purpose of a milepost is to make it easy for new collaborators, and the project lead, to figure out what's going on.
 
-Therefore, mileposts ask the _milepost lead_ to take on certain _energy expenditures_ in explaining _what's going on._ This saves energy overall because it means that energy does not need to be expended by _every potential new contributor._
+Therefore, mileposts ask the _milepost lead_ to take on certain _energy expenditures_ in explaining _what's going on._ This saves energy overall because it means that energy does not need to be expended by _every new contributor._
 
 ### _Mileposts_ vs _Milestones_
 
@@ -46,7 +46,7 @@ Mileposts **SHOULD** contain comments of the following nature:
 
 - Regular or semi-regular updates on the current status/progress of the Milepost.
 - Contain information about who is working on what part of the milepost.
-- Questions & answers from other existing or potential contributors about the nature/status of the milepost.
+- Questions & answers from other existing or new contributors about the nature/status of the milepost.
 
 ## Example Milepost
 
