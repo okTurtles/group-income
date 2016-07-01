@@ -53,6 +53,7 @@ Mileposts **SHOULD** contain comments of the following nature:
 ### User Login mechanism
 
 Assigned: **@taoeffect** _(doesn't need to be explicitely written if the UI supports it)_
+
 Branch: **userlogin**
 
 #### Description
@@ -83,4 +84,5 @@ All of the tasks necessary to make it possible for a user to log in to the site 
 **Comment 1 by @taoeffect**
 
 > So @rachel's working on #29 and making good progress on it. I've almost got the frontend js working, see the latest updates I posted in #28.
+>
 > Once I get #28 closed I plan to work with @dan on integrating the markup (#45) with the JS in #28.
