@@ -1,6 +1,6 @@
 # The Mileposts Methodology
 
-**Mileposts** is a **simple software methodology** for working together on an software project.
+**Mileposts** is a simple software methodology for working together on an software project.
 
 The goal is to make it _simple, safe, and yet fast_ to dive in to a project and stay up-to-date with its progress.
 
@@ -12,40 +12,40 @@ Mileposts are a special type of issue in the Issues tracker.
 
 ### Purpose of a Milepost
 
-The purpose of a milepost is **to make it easy for new collaborators, and the project lead, to figure out what's going on.**
+The purpose of a milepost is to make it easy for new collaborators, and the project lead, to figure out what's going on.
 
-Therefore, mileposts ask the _milepost lead_ to take on certain _energy expenditures_ in explaining _what's going on._ This **saves energy overall** because it means that energy does not need to be expended by _every potential new contributor._
+Therefore, mileposts ask the _milepost lead_ to take on certain _energy expenditures_ in explaining _what's going on._ This saves energy overall because it means that energy does not need to be expended by _every potential new contributor._
 
 ### _Mileposts_ vs _Milestones_
 
-- A milepost (MP) is _assigned-to_ and _managed-by_ a **specific person:** the **milepost lead**.
+- A milepost (MP) is _assigned-to_ and _managed-by_ a specific person: the milepost lead.
 - Both milestones and mileposts aggregate _other issues_ together.
 - Mileposts can contain issues that are assigned to a milestone, but a milepost does not need to be assigned to a milestone.
-- Mileposts describe a specific _subarea_ of the project that has been **claimed** by the milepost lead (and those who may be helping them work on that subarea).
+- Mileposts describe a specific _subarea_ of the project that has been claimed by the milepost lead (and those who may be helping them work on that subarea).
 
 ### The Milepost "Spec"
 
 A milepost is an issue that has this format:
 
-- **MUST** have a **tag** that is one of: `Milepost` or `milepost` or `MILEPOST`.
+- **MUST** have a tag that is one of: `Milepost` or `milepost` or `MILEPOST`.
   - The tag's color **SHOULD** stand out from other tags (black or white are good choices).
-- **MUST** use a **title** that represents **the subarea** being worked on.
-- **MUST** be **assigned** to the milepost lead.
-- **MUST** state the **branch** that's tracking the _latest progress_ for the milepost.
-- **MUST** contain a **description** of the subarea that's being worked on.
+- **MUST** use a title that represents the subarea being worked on.
+- **MUST** be assigned to the milepost lead.
+- **MUST** state the branch that's tracking the _latest progress_ for the milepost.
+- **MUST** contain a description of the subarea that's being worked on.
 - **SHOULD** state the (user)names of any other collaborators who are (or might) be working on this milepost.
-- **MUST** contain a **list of files** that might be modified, created, or deleted.
+- **MUST** contain a list of files that might be modified, created, or deleted.
   - **IF** a milepost shares files with another milepost, then that **MUST** be _clearly and explicitely_ stated (e.g. `(shared with MP #30)`).
-- **MUST** have a **list of issues** (with checkboxes) that are being worked on as part of this milepost.
+- **MUST** have a list of issues (with checkboxes) that are being worked on as part of this milepost.
   - Each issue in the list **SHOULD** have a brief description (can just be the issue's title).
   - **IF** a milepost shares an issue with another milepost, then that **MUST** be _clearly and explicitely_ stated (e.g. `(shared with MP #30)`).
-- **SHOULD** contain a **roadmap** describing what the plan is to close the milepost.
+- **SHOULD** contain a roadmap describing what the plan is to close the milepost.
 - **MAY** be assigned to a milestone.
 
-Mileposts **SHOULD** contain **comments** of the following nature:
+Mileposts **SHOULD** contain comments of the following nature:
 
 - Regular or semi-regular updates on the current status/progress of the Milepost.
-- Contain information about **who** is working on **what part** of the milepost.
+- Contain information about who is working on what part of the milepost.
 - Questions & answers from other existing or potential contributors about the nature/status of the milepost.
 
 ## Example Milepost
