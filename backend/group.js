@@ -44,7 +44,6 @@ server.route({
       var userId = request.auth.credentials.userId
       request.payload.users = [userId]
       var group = await db.Group.create(request.payload)
-      // await group.addUser(userId)
       reply({group: group.toJSON()})
     } catch (err) {
       logger(err)

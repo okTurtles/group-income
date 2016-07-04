@@ -14,7 +14,9 @@ var S = require('string')
 var vueify = require('vueify')
 var pathmodify = require('pathmodify')
 
-import fromPairs from 'lodash-es/fromPairs'
+// This is the only place where we import from 'lodash-es' instead of 'lodash'
+// see pathmodify notes below on why.
+import _ from 'lodash-es'
 
 // EJS support at the bottom of the file, below grunt setup
 
@@ -64,12 +66,7 @@ module.exports = (grunt) => {
     }),
 
     sass: {
-      options: {
-        sourceMap: development,
-        // sourceMapRoot: '/',
-        outputStyle: development ? 'nested' : 'compressed',
-        includePaths: ['./node_modules/bulma', './node_modules/font-awesome/scss']
-      },
+      options: sassCfg(),
       dev: {
         files: [{
           expand: true,
@@ -194,6 +191,22 @@ module.exports = (grunt) => {
 }
 
 // ----------------------------------------
+// SASS specific stuff
+// ----------------------------------------
+
+// This is used by grunt-sass and vueify
+function sassCfg () {
+  return {
+    sourceMap: development,
+    // https://github.com/vuejs/vueify/issues/34#issuecomment-161722961
+    indentedSyntax: true,
+    // sourceMapRoot: '/',
+    outputStyle: development ? 'nested' : 'compressed',
+    includePaths: ['./node_modules/bulma', './node_modules/font-awesome/scss']
+  }
+}
+
+// ----------------------------------------
 // For generating lazy-loaded components
 // ----------------------------------------
 
@@ -202,21 +215,29 @@ function browserifyCfg ({straight, lazy}, cfg = {}) {
     S(path.parse(x).name).dasherize().capitalize().camelize().s
   var keyify = x => // views/UserGroupView.vue -> userGroupView
     S(path.parse(x).name).dasherize().chompLeft('-').camelize().s
+  var p = (s, ...v) => _.flatten(_.zip(s, v)).join('').replace('/', path.sep)
+
   function gencfg (out, paths, isLazy) {
     var c = {
       options: {
         transform: [script2ify, 'vueify', ejsify, 'babelify'],
         plugin: [[pathmodify, {
-          // we remap it to 'lodash' and require functions like so: import mapValues from 'lodash/mapValues'
+          mods: [
+          // we remap 'lodash-es' to 'lodash' and require functions like so:
+          //  import mapValues from 'lodash/mapValues'
           // otherwise we get this bizarre error:
-          // ParseError: 'import' and 'export' may appear only with 'sourceType: module'
-          mods: pathmodify.mod.dir('lodash-es', path.join(__dirname, 'node_modules', 'lodash-es'), 'lodash')
+          //  ParseError: 'import' and 'export' may appear only with 'sourceType: module'
+            pathmodify.mod.dir('lodash-es', p`${__dirname}/node_modules/lodash-es`, 'lodash'),
+            // some libraries (like jquery-validity) require('jquery')
+            pathmodify.mod.re(/^jquery$/i, 'sprint-js'),
+            pathmodify.mod.dir('vendor', p`${__dirname}/frontend/simple/assets/vendor`)
+          ]
         }]],
         browserifyOptions: {
           debug: development // enables source maps
         }
       },
-      files: fromPairs([[out, paths]])
+      files: _.fromPairs([[out, paths]])
     }
     if (isLazy) {
       c.options.browserifyOptions.standalone = globalize(out)
@@ -244,8 +265,10 @@ function browserifyCfg ({straight, lazy}, cfg = {}) {
 // ----------------------------------------
 var through = require('through2')
 
-// per: https://github.com/vuejs/vue-loader/issues/197#issuecomment-205617193
+// per: https://github.com/vuejs/vueify#configuring-options
+//      https://github.com/vuejs/vue-loader/issues/197#issuecomment-205617193
 vueify.compiler.applyConfig({
+  sass: sassCfg(),
   customCompilers: {
     ejs: function (content, cb, compiler, filepath) {
       cb(null, loadEJS(filepath, content)())

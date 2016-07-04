@@ -1,8 +1,8 @@
-import {Backend, Keys} from './interface'
+import {Backend, Keychain} from './interface'
 
 export default class HapiBackend extends Backend {
 
 }
 
-export default class HapiKeys extends Keys {
+export default class HapiKeys extends Keychain {
 }

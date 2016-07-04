@@ -1,5 +1,6 @@
 node_modules/
 dist/
+.imdone/
 sqlite.db
 NOTES.md
-frontend/simple/js/Script2.js
+frontend/simple/js/ignored

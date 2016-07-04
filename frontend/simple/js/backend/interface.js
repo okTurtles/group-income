@@ -4,8 +4,7 @@ export default class Backend {
   getGroupWithId (id) {}
 }
 
-// maybe a Keychain?
-export default class Keys {
+export default class Keychain {
   genKeys () {}
   signMessage () {}
   verifyMessage () {}

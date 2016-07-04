@@ -1,5 +1,5 @@
 <template>
-  <!-- 
+  <!--
   From what I can tell, .header seems to have been replaced
   by .nav. And .navbar is no longer being used.
 
@@ -24,10 +24,11 @@
           </a>
         </div>
         <div class="nav-center">
-          <a class="nav-item" v-link="{activeClass: 'is-active', path: '/new-user'}">New User</a>
+          <!-- TODO: use v-for to dynamically generate these? -->
+          <a class="nav-item" v-link="{activeClass: 'is-active', path: '/new-group'}">Start a group</a>
+          <a class="nav-item" v-link="{activeClass: 'is-active', path: '/signup'}">New User</a>
           <a class="nav-item" v-link="{activeClass: 'is-active', path: '/user'}">Profile</a>
           <a class="nav-item" v-link="{activeClass: 'is-active', path: '/user-group'}">Group</a>
-          <a class="nav-item" v-link="{activeClass: 'is-active', path: '/new-income'}">New Income</a>
           <a class="nav-item" v-link="{activeClass: 'is-active', path: '/pay-group'}">Pay Group</a>
           <a class="nav-item" v-link="{activeClass: 'is-active', path: '/ejs-page'}" id="testEJS">EJS test</a>
         </div>
@@ -87,7 +88,6 @@
 </template>
 
 <script>
-var $ = require('sprint-js')
 export default {
   name: 'NavBar',
   methods: {
@@ -95,7 +95,8 @@ export default {
       if (!this.loggedIn) this.toggleModal()
     },
     toggleModal () {
-      $(this.$els.modal).toggleClass('is-active')
+      // https://github.com/oneuijs/You-Dont-Need-jQuery#css--style
+      this.$els.modal.classList.toggle('is-active')
     }
   },
   data () {
@@ -106,6 +107,7 @@ export default {
 }
 // TODO: the stuff below
 /*
+https://github.com/oneuijs/You-Dont-Need-jQuery#css--style
   $('.modal-button').click(function() {
     var target = $(this).data('target');
     $('html').addClass('is-clipped');

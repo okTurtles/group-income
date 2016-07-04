@@ -13,9 +13,11 @@ npm install -g grunt-cli
 npm install
 ```
 
-Although it pains us to give up 4-spaced tabs, we're trying out [`standard`](https://github.com/feross/standard) for the code style to see how it goes. See also: [linting in editors on "save"](https://github.com/feross/standard#text-editor-plugins).
+This project is works best with Node version 6+.
 
-[![js-standard-style](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard)
+We use [js-standard](https://github.com/feross/standard) for the code style and [mileposts](https://github.com/taoeffect/mileposts) for efficient project management.
+
+[![js-standard-style](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard) &nbsp; [![mileposts](https://cdn.rawgit.com/taoeffect/mileposts/master/badge/badge.svg)](https://github.com/taoeffect/mileposts)
 
 ## Designers: Read this!
 
@@ -27,7 +29,7 @@ __[:book: Getting Started](docs/Getting-Started-frontend.md)__
 
 ## Development
 
-See [Getting Started](docs/Getting-Started-frontend.md) to get setup. The basic grunt workflow commands are listed below:
+See **[Contributing](docs/CONTRIBUTING.md)** and **[Getting Started](docs/Getting-Started-frontend.md)** to get setup. The basic grunt workflow commands are listed below:
 
 Run all servers + watch files for changes:
 
@@ -57,13 +59,7 @@ grunt test
 
 ## Troubleshooting
 
-The recent release of Node 6.0 has caused some problems for some of our dependencies.
-
-So if you run into any errors [during the setup](docs/Getting-Started-frontend.md#how-do-i-get-set-up--just-run-the-site), try the suggestions in [`Troubleshooting.md`](docs/Troubleshooting.md).
-
-## Contributing
-
-Make sure to work in a named branch. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for details.
+If you run into any errors [during the setup](docs/Getting-Started-frontend.md#how-do-i-get-set-up--just-run-the-site), try the suggestions in [`Troubleshooting.md`](docs/Troubleshooting.md).
 
 ## License
 

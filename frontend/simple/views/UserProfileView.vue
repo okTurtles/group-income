@@ -41,6 +41,7 @@
 
 <style>
   /*these are globally applied. do like in SignUp.vue instead*/
+  /*or set <style scoped> per: https://github.com/vuejs/vueify#scoped-css */
   /*#response.error {color:red;}*/
   /*#response {color:green;}*/
 </style>
