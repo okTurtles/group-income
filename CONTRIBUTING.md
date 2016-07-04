@@ -5,8 +5,9 @@
 
 ## Before beginning development
 
-- :point_right: **[Read our about Mileposts methodology!](docs/Mileposts-Methodology.md)** :point_left:
-- **Work in a named branch off of `master`, e.g. `yourname`**
+1. **Read the [Mileposts Methodology](https://github.com/taoeffect/mileposts)**
+2. Work in a **named branch** off of `master`, e.g. `yourname`
+3. If you're a designer or frontend developer, we recommend reading: __[Getting Started](docs/Getting-Started-frontend.md)__
 
 ## Before submitting a pull request
 
