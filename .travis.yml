@@ -2,24 +2,37 @@ language: node_js
 node_js:
   - "5"
   - "6"
+# https://docs.travis-ci.com/user/gui-and-headless-browsers/#Using-xvfb-to-Run-Tests-That-Require-a-GUI
+# to specify screen resolution, add this to before_script instead of init.d/xvfb start:
+# - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x16"
 before_script:
-  - npm install grunt-cli -g
-  - npm install
+  - sh -e /etc/init.d/xvfb start
+  - sleep 3 # give xvfb some time to start
+compiler: clang # per: https://docs.travis-ci.com/user/languages/c
+# https://docs.travis-ci.com/user/environment-variables
 env:
-  - CXX=g++-4.8  
-# https://github.com/okTurtles/group-income-simple/issues/58
+  - CXX=clang++ DISPLAY=':99.0' DEBUG='nightmare*'
 branches:
-  only: 
-    - master
+  only:
+    - master # https://github.com/okTurtles/group-income-simple/issues/58
 addons:
   apt:
-    sources:
-      - ubuntu-toolchain-r-test
     packages:
-      - gcc-4.8
-      - g++-4.8
       - xvfb
+# don't seem to need these anymore
+# env:
+#   - CXX=g++-4.8 DISPLAY=':99.0' DEBUG='nightmare*'
+# addons:
+#   apt:
+#     sources:
+#       - ubuntu-toolchain-r-test
+#     packages:
+#       - gcc-4.8
+#       - g++-4.8
+#       - xvfb
+# going by the travis recommendations above (seems cleaner)
 # https://github.com/electron/electron/blob/master/docs/tutorial/testing-on-headless-ci.md
-install:
-  - export DISPLAY=':99.0'
-  - Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+# install:
+#   - export DISPLAY=':99.0'
+#   - export DEBUG='nightmare*'
+#   - Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
