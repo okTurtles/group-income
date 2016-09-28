@@ -29,7 +29,7 @@ __[:book: Getting Started](docs/Getting-Started-frontend.md)__
 
 ## Development
 
-See **[Contributing](docs/CONTRIBUTING.md)** and **[Getting Started](docs/Getting-Started-frontend.md)** to get setup. The basic grunt workflow commands are listed below:
+See **[Contributing](CONTRIBUTING.md)** and **[Getting Started](docs/Getting-Started-frontend.md)** to get setup. The basic grunt workflow commands are listed below:
 
 Run all servers + watch files for changes:
 
