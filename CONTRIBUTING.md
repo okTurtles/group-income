@@ -3,11 +3,18 @@
 - Read the [Troubleshooting](https://github.com/okTurtles/group-income-simple/blob/master/docs/Troubleshooting.md) docs!
 - Spend at least 5 seconds searching for existing open *or closed* issues.
 
-## Before beginning development
+## !! BEFORE BEGINNING DEVELOPMENT !!
+
+If you're a designer or frontend developer, we recommend reading: __[Getting Started](docs/Getting-Started-frontend.md)__
 
 1. **Read the [Mileposts Methodology](https://github.com/taoeffect/mileposts)**
-2. Work in a **named branch** off of `master`, e.g. `yourname`
-3. If you're a designer or frontend developer, we recommend reading: __[Getting Started](docs/Getting-Started-frontend.md)__
+2. Look through all the [open issues](https://github.com/okTurtles/group-income-simple/issues).
+3. Look at the entire codebase.
+4. Decide what you'd like to do, which will be either:
+  - Create your own milepost (like [this one](https://github.com/okTurtles/group-income-simple/issues/92))
+  - Help out with an [existing milepost](https://github.com/okTurtles/group-income-simple/labels/Milepost)
+5. Double-check [with the current devs](https://gitter.im/okTurtles/group-income) to make sure everyone's on the same page.
+6. Work in a **named branch** off of `master`, e.g. `yourname`, and submit any pull requests to `master` from that.
 
 ## Before submitting a pull request
 
