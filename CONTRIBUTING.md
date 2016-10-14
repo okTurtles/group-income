@@ -21,7 +21,7 @@ Then, [tell folks what you'll be working on](https://gitter.im/okTurtles/group-i
 
 ### 2. FORK this repo
 
-Everyone must follow these rules (inspired by the [C4.1](http://hintjens.com/blog:93) process). No exceptions.
+Everyone must follow the rules below (inspired by the [C4.1](http://hintjens.com/blog:93) process) to submit _code_ (documentation may be edited directly by maintainers):
 
 1. **Always** work in your own fork and submit pull requests (PRs) to `master`.
 2. **Always** submit a _minimal and accurate answer_ to any issue. The simplest solution is the best solution.
@@ -47,6 +47,6 @@ This contribution policy will evolve over time. For now it is based on a mixture
 
 ## How to submit an issue
 
-- Check if there's an open/closed issue that answers you question.
+- Check if there's an open/closed issue that answers your question.
 - Read [troubleshooting docs](docs/Troubleshooting.md).
 - **Create an issue in the required [problem-solution](ISSUE_TEMPLATE.md) or [milepost](https://github.com/taoeffect/mileposts) format.**
