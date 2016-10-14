@@ -3,7 +3,7 @@
 Make sure:
 
 - You have at least Node version 6 installed
-- You've [followed the setup instructions](https://github.com/okTurtles/group-income-simple/blob/master/docs/Getting-Started-frontend.md#how-do-i-get-set-up--just-run-the-site)
+- You've [followed the setup instructions](Getting-Started-frontend.md#how-do-i-get-set-up--just-run-the-site)
 
 Try:
 
