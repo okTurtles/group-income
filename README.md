@@ -19,17 +19,14 @@ We use [js-standard](https://github.com/feross/standard) for the code style and 
 
 [![js-standard-style](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard) &nbsp; [![mileposts](https://cdn.rawgit.com/taoeffect/mileposts/master/badge/badge.svg)](https://github.com/taoeffect/mileposts)
 
-## Designers: Read this!
+## Contributing
 
-We've put in _a lot_ of energy into taming the craziness of modern web development (where HTML files are shunned and everything involves running crazy command-line tools before you can see the results of your work).
+#### Read first!
 
-As such, for you we've created a simple-to-follow guide on how to get started designing for this project:
+- **[:book: CONTRIBUTING.md](CONTRIBUTING.md) (required reading to send a PR!)**
+- [:book: Getting Started — Modern frontend concepts & project overview](docs/Getting-Started-frontend.md)
 
-__[:book: Getting Started](docs/Getting-Started-frontend.md)__
-
-## Development
-
-See **[Contributing](CONTRIBUTING.md)** and **[Getting Started](docs/Getting-Started-frontend.md)** to get setup. The basic grunt workflow commands are listed below:
+#### Basic workflow
 
 Run all servers + watch files for changes:
 
@@ -63,4 +60,4 @@ If you run into any errors [during the setup](docs/Getting-Started-frontend.md#h
 
 ## License
 
-See [`LICENSE`](docs/LICENSE).
+GPLv3. See [`LICENSE`](docs/LICENSE) for license details and [`CONTRIBUTING.md`](CONTRIBUTING.md) for contributing policy.
