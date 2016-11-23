@@ -49,6 +49,7 @@ server.route({
       await db.User.create(request.payload)
       reply()
     } catch (err) {
+      console.log(err)
       if (err.invalidAttributes) {
         // invalidAttributes looks like: {
         // id:

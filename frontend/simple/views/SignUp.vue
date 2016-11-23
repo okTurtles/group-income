@@ -68,6 +68,7 @@ export default {
   mixins: [loginLogout],
   methods: {
     submit: function () {
+    console.log('') //TODO Debug
       this.response = ''
       request.post(`${process.env.API_URL}/user/`)
       .send(serialize(this.form, {hash: true}))
@@ -77,7 +78,7 @@ export default {
         this.response = this.error ? res.body.message : (res.text === '' ? 'success' : res.text)
         if (!this.error && this.$route.query.next) {
           this.login()
-          this.$route.router.go({path: this.$route.query.next})
+          this.$route.router.push({path: this.$route.query.next})
         }
       })
     },

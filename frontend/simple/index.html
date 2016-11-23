@@ -3,35 +3,38 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title v-if="!$route.title">Group Income Simple</title>
+    <title v-if="!$route.meta.title">Group Income Simple</title>
     <template v-else>
-      <title>{{ $route.title }}</title>
+      <title>{{ $route.meta.title }}</title>
     </template>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="css/main.css">
   </head>
-  <body id="app">
+  <body>
     <!--[if lt IE 9]>
-      <div class="modal is-active">
+    <div class="modal is-active">
         <div class="modal-content">
-          <h1 class="title">Outdated browser</h1>
-          <p>You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
+            <h1 class="title">Outdated browser</h1>
+            <p>You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
         </div>
-      </div>
+    </div>
     <![endif]-->
-    <nav-bar></nav-bar>
-    <router-view></router-view>
+    <div id="app">
+        <nav-bar></nav-bar>
+        <router-view></router-view>
+    </div>
     <script src="/simple/app.js"></script>
     <noscript>
-      <section class="hero is-fullheight">
-        <div class="hero-body">
-          <div class="container has-text-centered">
-            <h1 class="title">JavaScript disabled!</h1>
-            <p>This app requires JavaScript to function.</p>
-          </div>
-        </div>
-      </section>
+        <section class="hero is-fullheight">
+            <div class="hero-body">
+                <div class="container has-text-centered">
+                    <h1 class="title">JavaScript disabled!</h1>
+                    <p>This app requires JavaScript to function.</p>
+                </div>
+            </div>
+        </section>
     </noscript>
   </body>
 </html>
+<script src="/simple/app.js"></script>

@@ -1,3 +1,4 @@
+/*
 export default class Backend {
   // account related
   // group related
@@ -13,3 +14,5 @@ export default class Keychain {
 // http://noiseprotocol.org/
 export default class MessageRelay {
 }
+*/
+
