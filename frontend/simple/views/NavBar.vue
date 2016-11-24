@@ -26,12 +26,12 @@
         <div class="nav-center">
           <!-- TODO: use v-for to dynamically generate these? -->
           <!--TODO figure out what needs to be done with active classe after upgrade  "{activeClass: 'is-active', path: '/new-group'}"-->
-          <router-link class="nav-item" v-bind:class="{activeClass: 'is-active'}" to="/new-group">Start a group</router-link>
-          <router-link class="nav-item" v-bind:class="{activeClass: 'is-active'}" to="/signup">New User</router-link>
-          <router-link class="nav-item" v-bind:class="{activeClass: 'is-active'}" to="/user">Profile</router-link>
-          <router-link class="nav-item" v-bind:class="{activeClass: 'is-active'}" to="/user-group">Group</router-link>
-          <router-link class="nav-item" v-bind:class="{activeClass: 'is-active'}" to="/pay-group">Pay Group</router-link>
-          <router-link class="nav-item" v-bind:class="{activeClass: 'is-active'}" to="/ejs-page" id="testEJS">EJS test</router-link>
+          <router-link class="nav-item" v-bind:class="{activeClass: 'is-active'}" to="new-group">Start a group</router-link>
+          <router-link class="nav-item" v-bind:class="{activeClass: 'is-active'}" to="signup">New User</router-link>
+          <router-link class="nav-item" v-bind:class="{activeClass: 'is-active'}" to="user">Profile</router-link>
+          <router-link class="nav-item" v-bind:class="{activeClass: 'is-active'}" to="user-group">Group</router-link>
+          <router-link class="nav-item" v-bind:class="{activeClass: 'is-active'}" to="pay-group">Pay Group</router-link>
+          <router-link class="nav-item" v-bind:class="{activeClass: 'is-active'}" to="ejs-page" id="testEJS">EJS test</router-link>
         </div>
         <!-- to put buttons in a nav, don't put the .nav-item
         on the button itself, but on a span.nav-item that encloses
@@ -39,7 +39,7 @@
         <div class="nav-right">
           <span class="nav-item is-tab control">
             <router-link class="button is-success" to="/new-user">Sign Up</router-link>
-            <a href="#"
+            <a href="#" class="button"
                v-bind:class="'button is-' + loggedIn ? 'danger' : 'primary'"
               @click.prevent="toggleModal"
             >

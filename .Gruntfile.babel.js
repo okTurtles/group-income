@@ -220,7 +220,7 @@ function browserifyCfg ({straight, lazy}, cfg = {}) {
   function gencfg (out, paths, isLazy) {
     var c = {
       options: {
-        transform: [script2ify, 'vueify', ejsify, 'babelify'],
+        transform: [script2ify, 'vueify', ejsify, 'babelify', 'aliasify'],
         plugin: [[pathmodify, {
           mods: [
           // we remap 'lodash-es' to 'lodash' and require functions like so:

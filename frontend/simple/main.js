@@ -19,34 +19,46 @@ superagentHeader('Authorization', `gi ${utils.sign('hello', utils.keypair)}`)
 var router = new Router({
   mode: 'history',
   base: '/simple',
+  scrollBehavior (to, from, savedPosition) {
+    return { x: 0, y: 0 }
+  },
   routes: [
     {
       path: '/',
-      component: SignUp
+      component: SignUp,
+      meta: {
+        title: 'Sign Up'  // page title. see issue #45
+      }
     },
     {
       path: '/signup',
       component: SignUp,
+      name: SignUp.name, // route name. important!
       meta: {
-        title: 'Sign Up',  // page title. see issue #45
-        name: SignUp.name // route name. important!
+        title: 'Sign Up'  // page title. see issue #45
       }
     },
     {
       path: '/new-group',
       component: CreateGroup,
+      name: CreateGroup.name,
       meta: {
-        title: 'Create Group',
-        name: CreateGroup.name
+        title: 'Create Group'
       }
     },
     {
       path: '/user',
-      component: UserProfileView
+      component: UserProfileView,
+      meta: {
+        title: 'User Profile'
+      }
     },
     {
       path: '/user/:username',
-      component: UserProfileView
+      component: UserProfileView,
+      meta: {
+        title: 'User Profile'
+      }
     },
     {
       path: '/user-group',
@@ -57,7 +69,10 @@ var router = new Router({
     },
     {
       path: '/pay-group',
-      component: PayGroupView
+      component: PayGroupView,
+      meta: {
+        title: 'Pay Group'
+      }
     },
     {
       path: '/ejs-page',
@@ -65,18 +80,22 @@ var router = new Router({
       meta: {
         title: 'EJS Test Page'
       }
+    },
+    {
+      path: '*',
+      redirect: '/'
     }
   ]
 })
 
-router.beforeEach(function () {
-  window.scrollTo(0, 0)
+router.beforeEach((to, from, next) => {
+  document.title = to.meta.title
+  next()
 })
 /* eslint-disable no-new */
 new Vue({
   router: router,
   components: {NavBar},
-  render: h => h('router-view'),
   store // make this and all child components aware of the new store
 }).$mount('#app')
 
