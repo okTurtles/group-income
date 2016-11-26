@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-
+import VeeValidate from 'vee-validate'
 import SignUp from './views/SignUp.vue'
 import CreateGroup from './views/CreateGroup.vue'
 import UserProfileView from './views/UserProfileView.vue'
@@ -12,7 +12,7 @@ import store from './js/state'
 import './js/transitions'
 
 Vue.use(Router)
-Vue.use(require('vue-form'), { invalidClass: 'is-danger' })
+Vue.use(VeeValidate)
 
 superagentHeader('Authorization', `gi ${utils.sign('hello', utils.keypair)}`)
 

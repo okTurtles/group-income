@@ -6,7 +6,7 @@
      .section    http://bulma.io/documentation/layout/section/
      .block      base/classes.sass (just adds 20px margin-bottom except for last)
      -->
-    <form novalidate v-form hook="formHook"
+    <form novalidate  hook="formHook"
       name="formData" class="container signup"
       @submit.prevent="submit"
     >
@@ -17,17 +17,18 @@
             <h2 class="subtitle">Sign Up</h2>
 
             <p class="control has-icon">
-              <input v-form-ctrl class="input" name="name" pattern="\S*" placeholder="username" required>
+              <input class="input" name="name" v-validate data-rules="required|regex:^\s*\S+\s*$" placeholder="username" required>
               <i class="fa fa-user"></i>
-              <span v-if="formData.name.$error.pattern" class="help is-danger">Username cannot contain spaces</span>
+              <span v-show="errors.has('name')" class="help is-danger">Username cannot contain spaces</span>
             </p>
             <p class="control has-icon">
-              <input v-form-ctrl class="input" name="email" type="email" placeholder="email" required>
+              <input class="input" name="email" v-validate data-rules="required|email" type="email" placeholder="email" required>
               <i class="fa fa-envelope"></i>
-              <span v-if="formData.email.$error.email" class="help is-danger">Not an email</span>
+              <span v-show="errors.has('email')" class="help is-danger">Not an email</span>
             </p>
             <p class="control has-icon">
-              <input v-form-ctrl class="input" name="password" placeholder="password" type="password" required>
+              <input class="input" name="password" v-validate data-rules="required|min:7" placeholder="password" type="password" required>
+              <span v-show="errors.has('password')" class="help is-danger">Password must be at least 7 characters</span>
               <i class="fa fa-lock"></i>
             </p>
             <div class="level is-mobile top-align">
@@ -68,10 +69,9 @@ export default {
   mixins: [loginLogout],
   methods: {
     submit: function () {
-    console.log('') //TODO Debug
       this.response = ''
       request.post(`${process.env.API_URL}/user/`)
-      .send(serialize(this.form, {hash: true}))
+      .send(serialize(this.form = this.$el.getElementsByTagName('form')[0], {hash: true}))
       .end((err, res) => {
         this.error = !!err || !res.ok
         console.log('this.error', this.error)
