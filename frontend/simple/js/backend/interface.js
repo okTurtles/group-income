@@ -1,15 +1,15 @@
-export default class Backend {
+export class Backend {
   // account related
   // group related
   getGroupWithId (id) {}
 }
 
-export default class Keychain {
+export class Keychain {
   genKeys () {}
   signMessage () {}
   verifyMessage () {}
 }
 
 // http://noiseprotocol.org/
-export default class MessageRelay {
+export class MessageRelay {
 }
