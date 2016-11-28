@@ -1,6 +1,5 @@
 language: node_js
 node_js:
-  - "5"
   - "6"
 # https://docs.travis-ci.com/user/gui-and-headless-browsers/#Using-xvfb-to-Run-Tests-That-Require-a-GUI
 # to specify screen resolution, add this to before_script instead of init.d/xvfb start:

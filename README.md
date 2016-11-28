@@ -8,12 +8,31 @@ Its accounting system can be implemented using a simple Excel spreadsheet, or on
 
 ## Installation
 
+This project works best with nodejs version 6 or later.
+
+#### With [Yarn](https://yarnpkg.com/en/docs/install) *(recommended!)*
+
+```
+yarn global add grunt-cli
+yarn install
+```
+
+Also, [for now](https://github.com/yarnpkg/yarn/issues/1088#issuecomment-263170516), please manually run once:
+
+```
+yarn config set save-prefix ''
+```
+
+See also: **[Migrating from NPM](https://yarnpkg.com/en/docs/migrating-from-npm)**
+
+#### With NPM
+
 ```
 npm install -g grunt-cli
 npm install
 ```
 
-This project is works best with Node version 6+.
+---
 
 We use [js-standard](https://github.com/feross/standard) for the code style and [mileposts](https://github.com/taoeffect/mileposts) for efficient project management.
 

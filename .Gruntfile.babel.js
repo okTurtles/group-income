@@ -28,7 +28,11 @@ module.exports = (grunt) => {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
 
-    checkDependencies: {this: {options: {install: true}}},
+    checkDependencies: {this: {options: {
+      // Do not auto-install since we're using yarn now, and that doesn't (yet)
+      // See: https://github.com/mgol/grunt-check-dependencies/issues/14
+      install: false
+    }}},
 
     watch: {
       // prevent watch from spawning. if we don't do this, we won't be able
