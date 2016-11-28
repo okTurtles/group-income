@@ -4,6 +4,7 @@ import VeeValidate from 'vee-validate'
 import SignUp from './views/SignUp.vue'
 import CreateGroup from './views/CreateGroup.vue'
 import UserProfileView from './views/UserProfileView.vue'
+import VueScript from 'vue-script2'
 // import NewIncomeView from './views/NewIncomeView.vue'
 import PayGroupView from './views/PayGroupView.vue'
 import NavBar from './views/NavBar.vue'
@@ -13,6 +14,7 @@ import './js/transitions'
 
 Vue.use(Router)
 Vue.use(VeeValidate)
+Vue.use(VueScript)
 
 superagentHeader('Authorization', `gi ${utils.sign('hello', utils.keypair)}`)
 

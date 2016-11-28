@@ -220,7 +220,7 @@ function browserifyCfg ({straight, lazy}, cfg = {}) {
   function gencfg (out, paths, isLazy) {
     var c = {
       options: {
-        transform: [script2ify, 'vueify', ejsify, 'babelify', 'aliasify'],
+        transform: [script2ify, 'vueify', ejsify, 'babelify'],
         plugin: [[pathmodify, {
           mods: [
           // we remap 'lodash-es' to 'lodash' and require functions like so:
@@ -230,7 +230,8 @@ function browserifyCfg ({straight, lazy}, cfg = {}) {
             pathmodify.mod.dir('lodash-es', p`${__dirname}/node_modules/lodash-es`, 'lodash'),
             // some libraries (like jquery-validity) require('jquery')
             pathmodify.mod.re(/^jquery$/i, 'sprint-js'),
-            pathmodify.mod.dir('vendor', p`${__dirname}/frontend/simple/assets/vendor`)
+            pathmodify.mod.dir('vendor', p`${__dirname}/frontend/simple/assets/vendor`),
+            pathmodify.mod.id('vue', p`${__dirname}/node_modules/vue/dist/vue.js`)
           ]
         }]],
         browserifyOptions: {

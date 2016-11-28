@@ -1,7 +1,6 @@
 /* globals logger */
 
 import {server, db} from './setup'
-import _ from 'lodash'
 
 var Promise = require('bluebird')
 var Joi = require('joi')
@@ -49,7 +48,6 @@ server.route({
       await db.User.create(request.payload)
       reply()
     } catch (err) {
-      console.log(err)
       if (err.invalidAttributes) {
         // invalidAttributes looks like: {
         // id:
@@ -60,11 +58,7 @@ server.route({
         //  [ { value: 'asdfsdf',
         //      rule: 'unique',
         //      message: 'A record with that `name` already exists (`asdfsdf`).' } ] }
-        var dupes = _(err.invalidAttributes)
-        .pickBy(_.matchesProperty('[0]', {rule: 'unique'}))
-        .omit('id') // users don't need to know that their public key is already registered
-        .map(_.property('[0].value')).value()
-        reply(Boom.conflict(`Already exists: ${dupes.join(', ')}`))
+        reply(Boom.conflict('Already exists'))
       } else {
         logger(err)
         reply(err)
