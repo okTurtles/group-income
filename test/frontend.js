@@ -39,12 +39,12 @@ describe('Frontend', function () {
     })
 
     it('Should fail to create George again', function () {
-      if (process.env.TRAVIS) {
-        // TODO: figure out why travis is timing out on this one!
-        console.log('!! SKIPPING: Should fail to create George again')
-        console.log('!! make sure to figure this one out!')
-        return Promise.resolve('skipping')
-      }
+      // if (process.env.TRAVIS) {
+      //   // TODO: figure out why travis is timing out on this one!
+      //   console.log('!! SKIPPING: Should fail to create George again')
+      //   console.log('!! make sure to figure this one out!')
+      //   return Promise.resolve('skipping')
+      // }
       return n.click('.signup button.submit')
       .wait(() => document.getElementById('serverMsg').className.indexOf('danger') !== -1)
       // .wait(() => document.getElementById('serverMsg').innerText !== '')
