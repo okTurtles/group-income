@@ -41,4 +41,11 @@ Object.assign(process.env, {
   API_URL: 'http://localhost:' + PORTS.BACKEND,
   FRONTEND_URL: 'http://localhost:' + PORTS.FRONTEND
 })
-module.exports = require('./.Gruntfile.babel.js')
+
+if (!process.env.LOAD_NO_FILE) {
+  let target = process.env.LOAD_TARGET_FILE || './.Gruntfile.babel.js'
+  console.log('Gruntfile.js: loading file with babel support:', target)
+  module.exports = require(target)
+} else {
+  console.log('Gruntfile.js: just calling babel-register, not loading any file.')
+}

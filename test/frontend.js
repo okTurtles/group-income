@@ -41,15 +41,6 @@ describe('Frontend', function () {
     it('Should fail to create George again', function () {
       return n.click('.signup button.submit')
       .wait(() => document.getElementById('serverMsg').className.indexOf('danger') !== -1)
-      // .wait(() => document.getElementById('serverMsg').innerText !== '')
-      // .evaluate(function () {
-      //   var response = document.getElementById('serverMsg')
-      //   return {
-      //     err: response.className.indexOf('danger') !== -1,
-      //     text: response.innerText
-      //   }
-      // })
-      // .should.finally.containEql({err: true})
     })
   })
 /* TODO Fix Scriptify RegEx
