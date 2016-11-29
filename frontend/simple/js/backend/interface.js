@@ -13,5 +13,3 @@ export class Keychain {
 // http://noiseprotocol.org/
 export class MessageRelay {
 }
-*/
-
