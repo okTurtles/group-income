@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 
-const _ = require('lodash') // not lodash-es; see .Gruntfile.babel.js
+const _ = require('lodash-es') // not lodash-es; see .Gruntfile.babel.js
 const request = require('superagent')
 const should = require('should')
 const nacl = require('tweetnacl')

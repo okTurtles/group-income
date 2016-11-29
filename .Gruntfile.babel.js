@@ -14,8 +14,6 @@ var S = require('string')
 var vueify = require('vueify')
 var pathmodify = require('pathmodify')
 
-// This is the only place where we import from 'lodash-es' instead of 'lodash'
-// see pathmodify notes below on why.
 import _ from 'lodash-es'
 
 // EJS support at the bottom of the file, below grunt setup
@@ -100,7 +98,10 @@ module.exports = (grunt) => {
     // https://github.com/sindresorhus/grunt-shell is another nice alternative
     exec: {
       // could replace w/https://github.com/pghalliday/grunt-mocha-test
-      test: './node_modules/.bin/mocha --compilers js:babel-register -R spec --bail',
+      test: {
+        cmd: './node_modules/.bin/mocha --require Gruntfile.js -R spec --bail',
+        options: {env: {LOAD_NO_FILE: 'true', ...process.env}}
+      },
       standard: './node_modules/.bin/standard',
       standardgrunt: './node_modules/.bin/standard .Gruntfile.babel.js Gruntfile.js'
     },
@@ -168,7 +169,9 @@ module.exports = (grunt) => {
     var done = this.async() // tell grunt we're async
     var fork2 = function () {
       grunt.log.writeln('backend: forking...')
-      child = fork('./backend/index.js', process.argv, {execArgv: ['-r', 'babel-register']})
+      child = fork('Gruntfile.js', process.argv, {
+        env: {LOAD_TARGET_FILE: './backend/index.js', ...process.env}
+      })
       child.on('error', (err) => {
         if (err) {
           console.error('error starting or sending message to child:', err)
@@ -225,13 +228,11 @@ function browserifyCfg ({straight, lazy}, cfg = {}) {
     var c = {
       options: {
         transform: [script2ify, 'vueify', ejsify, 'babelify'],
+        // NOTE: if you run into any problems with loading lodash on the frontend
+        //       try uncommenting & playing with the following line:
+        // transform: [script2ify, 'vueify', ejsify, ['babelify', {global: true, ignore: /node_modules\/(?!lodash-es\/)/}]],
         plugin: [[pathmodify, {
           mods: [
-          // we remap 'lodash-es' to 'lodash' and require functions like so:
-          //  import mapValues from 'lodash/mapValues'
-          // otherwise we get this bizarre error:
-          //  ParseError: 'import' and 'export' may appear only with 'sourceType: module'
-            pathmodify.mod.dir('lodash-es', p`${__dirname}/node_modules/lodash-es`, 'lodash'),
             // some libraries (like jquery-validity) require('jquery')
             pathmodify.mod.re(/^jquery$/i, 'sprint-js'),
             pathmodify.mod.dir('vendor', p`${__dirname}/frontend/simple/assets/vendor`)
