@@ -1,5 +1,4 @@
-// lodash not lodash-es; see pathmodify in .Gruntfile.babel.js
-import _ from 'lodash'
+import _ from 'lodash-es'
 
 const uuid = require('node-uuid')
 const Waterline = require('waterline')
@@ -12,7 +11,10 @@ var config = {
   },
   connections: {
     default: {adapter: 'memory'}
-  }
+  },
+  // this is some crap: https://github.com/balderdashy/waterline/issues/887#issuecomment-84016834
+  // TODO: fix this. or just get rid of waterline.
+  defaults: { migrate: 'safe' }
 }
 
 // TODO: It is extremely important to set the migrate property to safe in your models when working with existing databases.
@@ -62,7 +64,9 @@ var schema = _.reduce({
   // see other Model config values here:
   // https://github.com/balderdashy/waterline-docs/blob/master/models/configuration.md
   result[key] = Waterline.Collection.extend({
-    identity: key.toLowerCase(), connection: 'default', attributes: value,
+    identity: key.toLowerCase(),
+    connection: 'default',
+    attributes: value,
     autoPK: !_.find(value, _.matches({primaryKey: true}))
   })
   waterline.loadCollection(result[key])
