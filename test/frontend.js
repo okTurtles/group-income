@@ -1,6 +1,5 @@
 /* eslint-env mocha */
-/* globals $ */
-
+// globals $
 /*
 To see how Nightmare does its server stuff see:
 
@@ -43,7 +42,7 @@ describe('Frontend', function () {
       .wait(() => document.getElementById('serverMsg').className.indexOf('danger') !== -1)
     })
   })
-
+  /*
   describe('EJS test page', function () {
     it('TODO list should have at least two items', function () {
       // return n.click('nav.nav .nav-center > .nav-item:last-child')
@@ -53,6 +52,7 @@ describe('Frontend', function () {
       .should.finally.greaterThan(1)
     })
   })
+  */
 })
 
 function page (page) {

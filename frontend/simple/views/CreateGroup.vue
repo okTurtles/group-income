@@ -36,7 +36,7 @@ export default {
   // http://router.vuejs.org/en/pipeline/data.html <- data vs activate!
   // http://router.vuejs.org/en/pipeline/index.html
   route: {
-    activate (transition) {
+    beforeRouteEnter (transition) {
       console.log(this.$options.name, 'activate!')
       if (!this.loggedIn) {
         console.log(this.$options.name, `redirecting to ${SignUp.name}!`)

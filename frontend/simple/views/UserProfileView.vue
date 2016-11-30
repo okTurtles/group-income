@@ -8,7 +8,7 @@
      -->
     <div class="new-user-container">
       <div class="icon"></div>
-      <form class="new-user" v-el:form>
+      <form class="new-user" ref="form">
         <h2>Personal details</h2>
         <input class="text-input" name="name" placeholder="Your full name">
         <label for="name">Your name</label>
