@@ -6,7 +6,7 @@
      .section    http://bulma.io/documentation/layout/section/
      .block      base/classes.sass (just adds 20px margin-bottom except for last)
      -->
-    <form novalidate  hook="formHook"
+    <form novalidate ref="form"
       name="formData" class="container signup"
       @submit.prevent="submit"
     >
@@ -17,7 +17,7 @@
             <h2 class="subtitle">Sign Up</h2>
 
             <p class="control has-icon">
-              <input class="input" name="name" v-validate data-rules="required|regex:^\s*\S+\s*$" placeholder="username" required>
+              <input class="input" name="name" v-validate data-rules="required|regex:^\S+$" placeholder="username" required>
               <i class="fa fa-user"></i>
               <span v-show="errors.has('name')" class="help is-danger">Username cannot contain spaces</span>
             </p>
@@ -38,7 +38,7 @@
                 </span>
               </div>
               <div class="level-item is-narrow">
-                <button class="button submit is-success" type="submit" :disabled="disabledForm">
+                <button class="button submit is-success" type="submit" :disabled="errors.any() || !fields.dirty()">
                   Sign Up
                 </button>
               </div>
@@ -69,9 +69,10 @@ export default {
   mixins: [loginLogout],
   methods: {
     submit: function () {
+      console.log(this.errors)
       this.response = ''
       request.post(`${process.env.API_URL}/user/`)
-      .send(serialize(this.form = this.$el.getElementsByTagName('form')[0], {hash: true}))
+      .send(serialize(this.$refs.form, {hash: true}))
       .end((err, res) => {
         this.error = !!err || !res.ok
         console.log('this.error', this.error)
@@ -81,39 +82,6 @@ export default {
           this.$route.router.push({path: this.$route.query.next})
         }
       })
-    },
-    // TODO: put all this into vue-form; see:
-    //       https://github.com/okTurtles/group-income-simple/issues/95
-    formHook: function (form) {
-      this.form = form.el
-      var untouched = this.untouched
-      // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#Memory_issues
-      function handleEvent (e) {
-        // console.log('handleEvent:', e.target.name)
-        // form.controls[e.target.name].directive.update($(e.target).val())
-        var el = e.target
-        if (el.required && untouched.length > 0) {
-          var index = untouched.indexOf(el.name)
-          index > -1 && untouched.splice(index, 1)
-        }
-        form.controls[el.name].directive.update(el.value)
-      }
-      Vue.nextTick(() => {
-        Object.values(form.controls).forEach((ctrl) => {
-          // console.log('adding listener to:', ctrl)
-          ctrl.el.required && untouched.push(ctrl.el.name)
-          ctrl.el.addEventListener('input', handleEvent)
-          this.$on('hook:beforeDestroy', () => {
-            // console.log('DEBUG: removing  listener for:', ctrl.name)
-            ctrl.el.removeEventListener('input', handleEvent)
-          })
-        })
-      })
-    }
-  },
-  computed: {
-    disabledForm: function () {
-      return this.untouched.length > 0 || this.formData.$invalid
     }
   },
   data () {
