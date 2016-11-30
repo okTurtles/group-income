@@ -1,6 +1,5 @@
 .idea/
 node_modules/
-.idea/
 dist/
 .imdone/
 sqlite.db
