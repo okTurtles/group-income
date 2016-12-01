@@ -52,7 +52,7 @@ export default {
     transition: {type: String, default: 'fade'},
     showSteps: {type: Boolean, default: true}
   },
-  ready () {
+  mounted () {
     if (!this.loggedIn)
       setTimeout(() => this.next(), 5000)
   },

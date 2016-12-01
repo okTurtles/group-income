@@ -1,4 +1,4 @@
-export class Backend {
+export default class Backend {
   // account related
   // group related
   getGroupWithId (id) {}

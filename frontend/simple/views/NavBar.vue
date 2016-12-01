@@ -25,21 +25,22 @@
         </div>
         <div class="nav-center">
           <!-- TODO: use v-for to dynamically generate these? -->
-          <a class="nav-item" v-link="{activeClass: 'is-active', path: '/new-group'}">Start a group</a>
-          <a class="nav-item" v-link="{activeClass: 'is-active', path: '/signup'}">New User</a>
-          <a class="nav-item" v-link="{activeClass: 'is-active', path: '/user'}">Profile</a>
-          <a class="nav-item" v-link="{activeClass: 'is-active', path: '/user-group'}">Group</a>
-          <a class="nav-item" v-link="{activeClass: 'is-active', path: '/pay-group'}">Pay Group</a>
-          <a class="nav-item" v-link="{activeClass: 'is-active', path: '/ejs-page'}" id="testEJS">EJS test</a>
+          <!--TODO figure out what needs to be done with active classe after upgrade  "{activeClass: 'is-active', path: '/new-group'}"-->
+          <router-link class="nav-item" active-class ="is-active" to="new-group">Start a group</router-link>
+          <router-link class="nav-item" active-class ="is-active" to="signup">New User</router-link>
+          <router-link class="nav-item" active-class ="is-active" to="user">Profile</router-link>
+          <router-link class="nav-item" active-class ="is-active" to="user-group">Group</router-link>
+          <router-link class="nav-item" active-class ="is-active" to="pay-group">Pay Group</router-link>
+          <router-link class="nav-item" active-class ="is-active" to="ejs-page" id="testEJS">EJS test</router-link>
         </div>
         <!-- to put buttons in a nav, don't put the .nav-item
         on the button itself, but on a span.nav-item that encloses
         them. see: http://bulma.io/documentation/components/nav/ -->
         <div class="nav-right">
           <span class="nav-item is-tab control">
-            <a class="button is-success" v-link="'/new-user'">Sign Up</a>
-            <a href="#"
-              class="button is-{{ loggedIn ? 'danger' : 'primary'}}"
+            <router-link class="button is-success" to="/new-user">Sign Up</router-link>
+            <a href="#" class="button"
+               v-bind:class="loggedIn ? 'is-danger' : 'is-primary'"
               @click.prevent="toggleModal"
             >
               {{ loggedIn ? 'Sign Out' : 'Log In' }}
@@ -49,7 +50,7 @@
       </div>
     </nav>
     <!-- TODO: in vue 2.x v-el is deprecated and v-ref should be used instead -->
-    <div class="modal" v-el:modal>
+    <div class="modal" ref="modal">
       <div class="modal-background"></div>
       <div class="modal-content" style="width: 300px">
         <div class="card is-rounded">
@@ -96,7 +97,7 @@ export default {
     },
     toggleModal () {
       // https://github.com/oneuijs/You-Dont-Need-jQuery#css--style
-      this.$els.modal.classList.toggle('is-active')
+      this.$refs.modal.classList.toggle('is-active')
     }
   },
   data () {

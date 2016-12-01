@@ -6,7 +6,7 @@
      .section    http://bulma.io/documentation/layout/section/
      .block      base/classes.sass (just adds 20px margin-bottom except for last)
      -->
-    <form novalidate v-form hook="formHook"
+    <form novalidate ref="form"
       name="formData" class="container signup"
       @submit.prevent="submit"
     >
@@ -17,17 +17,18 @@
             <h2 class="subtitle">Sign Up</h2>
 
             <p class="control has-icon">
-              <input v-form-ctrl class="input" name="name" pattern="\S*" placeholder="username" required>
+              <input class="input" name="name" v-validate data-rules="required|regex:^\S+$" placeholder="username" required>
               <i class="fa fa-user"></i>
-              <span v-if="formData.name.$error.pattern" class="help is-danger">Username cannot contain spaces</span>
+              <span v-show="errors.has('name')" class="help is-danger">Username cannot contain spaces</span>
             </p>
             <p class="control has-icon">
-              <input v-form-ctrl class="input" name="email" type="email" placeholder="email" required>
+              <input class="input" name="email" v-validate data-rules="required|email" type="email" placeholder="email" required>
               <i class="fa fa-envelope"></i>
-              <span v-if="formData.email.$error.email" class="help is-danger">Not an email</span>
+              <span v-show="errors.has('email')" class="help is-danger">Not an email</span>
             </p>
             <p class="control has-icon">
-              <input v-form-ctrl class="input" name="password" placeholder="password" type="password" required>
+              <input class="input" name="password" v-validate data-rules="required|min:7" placeholder="password" type="password" required>
+              <span v-show="errors.has('password')" class="help is-danger">Password must be at least 7 characters</span>
               <i class="fa fa-lock"></i>
             </p>
             <div class="level is-mobile top-align">
@@ -37,7 +38,7 @@
                 </span>
               </div>
               <div class="level-item is-narrow">
-                <button class="button submit is-success" type="submit" :disabled="disabledForm">
+                <button class="button submit is-success" type="submit" :disabled="errors.any() || !fields.dirty()">
                   Sign Up
                 </button>
               </div>
@@ -68,51 +69,19 @@ export default {
   mixins: [loginLogout],
   methods: {
     submit: function () {
+      console.log(this.errors)
       this.response = ''
       request.post(`${process.env.API_URL}/user/`)
-      .send(serialize(this.form, {hash: true}))
+      .send(serialize(this.$refs.form, {hash: true}))
       .end((err, res) => {
         this.error = !!err || !res.ok
         console.log('this.error', this.error)
         this.response = this.error ? res.body.message : (res.text === '' ? 'success' : res.text)
         if (!this.error && this.$route.query.next) {
           this.login()
-          this.$route.router.go({path: this.$route.query.next})
+          this.$route.router.push({path: this.$route.query.next})
         }
       })
-    },
-    // TODO: put all this into vue-form; see:
-    //       https://github.com/okTurtles/group-income-simple/issues/95
-    formHook: function (form) {
-      this.form = form.el
-      var untouched = this.untouched
-      // https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#Memory_issues
-      function handleEvent (e) {
-        // console.log('handleEvent:', e.target.name)
-        // form.controls[e.target.name].directive.update($(e.target).val())
-        var el = e.target
-        if (el.required && untouched.length > 0) {
-          var index = untouched.indexOf(el.name)
-          index > -1 && untouched.splice(index, 1)
-        }
-        form.controls[el.name].directive.update(el.value)
-      }
-      Vue.nextTick(() => {
-        Object.values(form.controls).forEach((ctrl) => {
-          // console.log('adding listener to:', ctrl)
-          ctrl.el.required && untouched.push(ctrl.el.name)
-          ctrl.el.addEventListener('input', handleEvent)
-          this.$on('hook:beforeDestroy', () => {
-            // console.log('DEBUG: removing  listener for:', ctrl.name)
-            ctrl.el.removeEventListener('input', handleEvent)
-          })
-        })
-      })
-    }
-  },
-  computed: {
-    disabledForm: function () {
-      return this.untouched.length > 0 || this.formData.$invalid
     }
   },
   data () {

@@ -235,7 +235,8 @@ function browserifyCfg ({straight, lazy}, cfg = {}) {
           mods: [
             // some libraries (like jquery-validity) require('jquery')
             pathmodify.mod.re(/^jquery$/i, 'sprint-js'),
-            pathmodify.mod.dir('vendor', p`${__dirname}/frontend/simple/assets/vendor`)
+            pathmodify.mod.dir('vendor', p`${__dirname}/frontend/simple/assets/vendor`),
+            pathmodify.mod.id('vue', p`${__dirname}/node_modules/vue/dist/vue.js`)
           ]
         }]],
         browserifyOptions: {
