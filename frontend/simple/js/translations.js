@@ -15,23 +15,18 @@ i18next.init(i18next.init({
     allowMultiLoading: false
   }
 }))
-// create vue plugin to provide functionality statically and on instances
+// create vue plugin to provide i18n component
+
 var translation = {}
 translation.install = function (Vue, options) {
-  Vue.L = function (key, comments, options) {
-    if (typeof comments === 'object') {
-      options = comments
-      comments = null
-    }
-    return i18next.t(key, options)
-  }
-  Vue.prototype.$L = function (key, comments, options) {
-    if (typeof comments === 'object') {
-      options = comments
-      comments = null
-    }
-    return i18next.t(key, options)
-  }
   Vue.component('i18n', I18n)
 }
 Vue.use(translation)
+
+export default function (key, comments, options) {
+  if (typeof comments === 'object') {
+    options = comments
+    comments = null
+  }
+  return i18next.t(key, options)
+}

@@ -325,17 +325,13 @@ function script2ify (file) {
     cb(null, buf.toString('utf8').replace(regex, replacement))
   })
 }
-//
+
 var localeObject = {}
-try {
-  localeObject = JSON.parse(fs.readFileSync('./frontend/simple/locales/en/translation.json'))
-} catch (ex) {
-}
 function localify (file) {
   return !/\.(vue|html|ejs)$/.test(file)
     ? through()
     : through(function (buf, encoding, cb) {
-      let functionEx = new RegExp(/([.|.$])L(\s*)\((\s*)(['|"])(\S*)(['|"])(\s*)([,|)])((\s*)(['|"])(\S*)(['|"])([,|)]))*/mg)
+      let functionEx = new RegExp(/\bL\(\s*['"](.*?)['"]\s*(?:,\s*['"](.*?)['"]\s*)?\)/mg)
       let markupEx = new RegExp(/<i18n([\u0000-\uFFFF]*?)>([\u0000-\uFFFF]*?)<\/i18n>/mg)
       let commentEx = new RegExp(/comment(\s*)=(\s*)("|')([\u0000-\uFFFF]*?)("|')/mg)
       let text = buf.toString('utf8')
@@ -359,4 +355,5 @@ function localify (file) {
 
 function saveLocale () {
   fs.writeFileSync('./frontend/simple/locales/en/translation.json', JSON.stringify(localeObject))
+  localeObject = {}
 }

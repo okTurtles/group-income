@@ -9,7 +9,7 @@ import UserProfileView from './views/UserProfileView.vue'
 import PayGroupView from './views/PayGroupView.vue'
 import NavBar from './views/NavBar.vue'
 import utils, { wrap, lazyLoadVue, superagentHeader } from './js/utils'
-import store from './js/state.js'
+import store from './js/state'
 import './js/transitions'
 
 Vue.use(Router)
