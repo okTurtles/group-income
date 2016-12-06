@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import Router from 'vue-router'
+import './js/translations'
 import VeeValidate from 'vee-validate'
 import SignUp from './views/SignUp.vue'
 import CreateGroup from './views/CreateGroup.vue'
@@ -8,7 +9,7 @@ import UserProfileView from './views/UserProfileView.vue'
 import PayGroupView from './views/PayGroupView.vue'
 import NavBar from './views/NavBar.vue'
 import utils, { wrap, lazyLoadVue, superagentHeader } from './js/utils'
-import store from './js/state'
+import store from './js/state.js'
 import './js/transitions'
 
 Vue.use(Router)
