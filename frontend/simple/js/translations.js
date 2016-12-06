@@ -9,7 +9,7 @@ i18next.use(XHR)
 // Set backend to xhr
 i18next.init(i18next.init({
   lng: navigator.language,
-  defaultValue:'en',
+  defaultValue: 'en',
   backend: {
     loadPath: '/simple/locales/{{lng}}/{{ns}}.json',
     allowMultiLoading: false
@@ -18,10 +18,18 @@ i18next.init(i18next.init({
 // create vue plugin to provide functionality statically and on instances
 var translation = {}
 translation.install = function (Vue, options) {
-  Vue.translate = function (key, options) {
+  Vue.L = function (key, comments, options) {
+    if (typeof comments === 'object') {
+      options = comments
+      comments = null
+    }
     return i18next.t(key, options)
   }
-  Vue.prototype.$translate = function (key, options) {
+  Vue.prototype.$L = function (key, comments, options) {
+    if (typeof comments === 'object') {
+      options = comments
+      comments = null
+    }
     return i18next.t(key, options)
   }
   Vue.component('i18n', I18n)

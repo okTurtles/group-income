@@ -26,19 +26,19 @@
         <div class="nav-center">
           <!-- TODO: use v-for to dynamically generate these? -->
           <!--TODO figure out what needs to be done with active classe after upgrade  "{activeClass: 'is-active', path: '/new-group'}"-->
-          <router-link class="nav-item" active-class ="is-active" to="new-group"><i18n id="Navigation.StartAGroup">Start a group</i18n></router-link>
-          <router-link class="nav-item" active-class ="is-active" to="signup"><i18n id="Navigation.NewUser">New User</i18n></router-link>
-          <router-link class="nav-item" active-class ="is-active" to="user"><i18n id="Navigation.NewUser">Profile</i18n></router-link>
-          <router-link class="nav-item" active-class ="is-active" to="user-group"><i18n id="Navigation.Group">Group</i18n></router-link>
-          <router-link class="nav-item" active-class ="is-active" to="pay-group"><i18n id="Navigation.PayGroup">Pay Group</i18n></router-link>
-          <router-link class="nav-item" active-class ="is-active" to="ejs-page" id="testEJS"><i18n id="Navigation.PayGroup">EJS test</i18n></router-link>
+          <router-link class="nav-item" active-class ="is-active" to="new-group"><i18n>Start a group</i18n></router-link>
+          <router-link class="nav-item" active-class ="is-active" to="signup"><i18n>New User</i18n></router-link>
+          <router-link class="nav-item" active-class ="is-active" to="user"><i18n>Profile</i18n></router-link>
+          <router-link class="nav-item" active-class ="is-active" to="user-group"><i18n>Group</i18n></router-link>
+          <router-link class="nav-item" active-class ="is-active" to="pay-group"><i18n>Pay Group</i18n></router-link>
+          <router-link class="nav-item" active-class ="is-active" to="ejs-page" id="testEJS"><i18n>EJS test</i18n></router-link>
         </div>
         <!-- to put buttons in a nav, don't put the .nav-item
         on the button itself, but on a span.nav-item that encloses
         them. see: http://bulma.io/documentation/components/nav/ -->
         <div class="nav-right">
           <span class="nav-item is-tab control">
-            <router-link class="button is-success" to="/new-user"><i18n id="Navigation.SignUp">Sign Up</i18n></router-link>
+            <router-link class="button is-success" to="/new-user"><i18n>Sign Up</i18n></router-link>
             <a href="#" class="button"
                v-bind:class="loggedIn ? 'is-danger' : 'is-primary'"
               @click.prevent="toggleModal"
@@ -56,7 +56,7 @@
         <div class="card is-rounded">
           <div class="card-content">
             <h1 class="title">
-              <i18n id="Navigation.LogIn">Log In</i18n>
+              <i18n>Log In</i18n>
             </h1>
             <p class="control has-icon">
               <input class="input" type="email" placeholder="Email">
@@ -69,7 +69,7 @@
             <p class="control">
               <label class="checkbox">
                 <input type="checkbox">
-                <i18n id="Navigation.RememberMe">Remember me</i18n>
+                <i18n>Remember me</i18n>
               </label>
             </p>
             <p class="control">
@@ -77,7 +77,7 @@
                 @click="loginOrLogout"
               >
                 <i class="fa fa-user"></i>
-                <i18n id="Navigation.LogIn">Login</i18n>
+                <i18n>Login</i18n>
               </button>
             </p>
           </div>

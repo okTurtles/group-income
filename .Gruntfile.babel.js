@@ -129,7 +129,7 @@ module.exports = (grunt) => {
             } else if (S(f).endsWith('.html') && fs.existsSync(f)) {
               // parse all HTML files for SSI
               res.end(fs.readFileSync(f))
-            } else if (S(f).startsWith('dist/simple/') && !/\.[a-z][a-z0-9]+(\?[^\/]*)?$/.test(f)) {
+            } else if (S(f).startsWith('dist/simple/') && !/\.[a-z][a-z0-9]+(\?[^/]*)?$/.test(f)) {
               // if we are a vue-router route, send main index file
               console.log(`Req: ${req.url}, sending index.html for: ${f}`)
               res.end(fs.readFileSync('dist/simple/index.html'))
@@ -157,7 +157,8 @@ module.exports = (grunt) => {
   grunt.registerTask('default', ['dev'])
   grunt.registerTask('backend', ['backend:relaunch', 'watch'])
   grunt.registerTask('dev', ['checkDependencies', 'build', 'connect', 'backend'])
-  grunt.registerTask('build', ['exec:standard', 'copy', 'sass', 'browserify'])
+  grunt.registerTask('saveLocale', 'Saving Localization Text', saveLocale)
+  grunt.registerTask('build', ['exec:standard', 'copy', 'sass', 'browserify', 'saveLocale'])
   grunt.registerTask('dist', ['build'])
   grunt.registerTask('test', ['dist', 'connect', 'exec:test'])
   // TODO: add 'deploy' per:
@@ -233,7 +234,7 @@ function browserifyCfg ({straight, lazy}, cfg = {}) {
   function gencfg (out, paths, isLazy) {
     var c = {
       options: {
-        transform: [script2ify, 'vueify', ejsify, 'babelify'],
+        transform: [localify, script2ify, 'vueify', ejsify, 'babelify'],
         // NOTE: if you run into any problems with loading lodash on the frontend
         //       try uncommenting & playing with the following line:
         // transform: [script2ify, 'vueify', ejsify, ['babelify', {global: true, ignore: /node_modules\/(?!lodash-es\/)/}]],
@@ -323,4 +324,39 @@ function script2ify (file) {
     var replacement = (m, p1, p2) => p2 ? `<${p1 || ''}script2${p2}` : m
     cb(null, buf.toString('utf8').replace(regex, replacement))
   })
+}
+//
+var localeObject = {}
+try {
+  localeObject = JSON.parse(fs.readFileSync('./frontend/simple/locales/en/translation.json'))
+} catch (ex) {
+}
+function localify (file) {
+  return !/\.(vue|html|ejs)$/.test(file)
+    ? through()
+    : through(function (buf, encoding, cb) {
+      let functionEx = new RegExp(/([.|.$])L(\s*)\((\s*)(['|"])(\S*)(['|"])(\s*)([,|)])((\s*)(['|"])(\S*)(['|"])([,|)]))*/mg)
+      let markupEx = new RegExp(/<i18n([\u0000-\uFFFF]*?)>([\u0000-\uFFFF]*?)<\/i18n>/mg)
+      let commentEx = new RegExp(/comment(\s*)=(\s*)("|')([\u0000-\uFFFF]*?)("|')/mg)
+      let text = buf.toString('utf8')
+      let matches
+      while ((matches = markupEx.exec(text)) !== null) {
+        let comment = ''
+        let result = commentEx.exec(matches[1])
+        if (result) {
+          comment = result[4]
+        }
+        localeObject[ matches[2] ] = {text: matches[2], comment: comment}
+      }
+      while ((matches = functionEx.exec(text)) !== null) {
+        let text = matches[5]
+        let comment = matches[9]
+        localeObject[ text ] = {text: text, comment: comment || ''}
+      }
+      cb(null, buf)
+    })
+}
+
+function saveLocale () {
+  fs.writeFileSync('./frontend/simple/locales/en/translation.json', JSON.stringify(localeObject))
 }
