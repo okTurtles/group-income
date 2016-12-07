@@ -4,12 +4,12 @@ import Vue from 'vue'
 import I18n from '../views/i18n.vue'
 
 i18next.use(XHR)
-
 // Initialize language to browser language
 // Set backend to xhr
 i18next.init(i18next.init({
-  lng: navigator.language,
+  lng: /^en-/.test(navigator.language) ? 'en' : navigator.language,
   defaultValue: 'en',
+  fallbackLng: 'en',
   backend: {
     loadPath: '/simple/locales/{{lng}}/{{ns}}.json',
     allowMultiLoading: false

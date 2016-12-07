@@ -331,9 +331,9 @@ function localify (file) {
   return !/\.(vue|html|ejs)$/.test(file)
     ? through()
     : through(function (buf, encoding, cb) {
-      let functionEx = new RegExp(/\bL\(\s*['"](.*?)['"]\s*(?:,\s*['"](.*?)['"]\s*)?\)/mg)
-      let markupEx = new RegExp(/<i18n([\u0000-\uFFFF]*?)>([\u0000-\uFFFF]*?)<\/i18n>/mg)
-      let commentEx = new RegExp(/comment(\s*)=(\s*)("|')([\u0000-\uFFFF]*?)("|')/mg)
+      let functionEx = /\bL\(\s*['"](.*?)['"]\s*(?:,\s*['"](.*?)['"]\s*)?\)/mg
+      let markupEx = /<i18n([\u0000-\uFFFF]*?)>([\u0000-\uFFFF]*?)<\/i18n>/mg
+      let commentEx = /comment\s*=\s*["']([\u0000-\uFFFF]*?)["']/mg
       let text = buf.toString('utf8')
       let matches
       while ((matches = markupEx.exec(text)) !== null) {
@@ -345,8 +345,8 @@ function localify (file) {
         localeObject[ matches[2] ] = {text: matches[2], comment: comment}
       }
       while ((matches = functionEx.exec(text)) !== null) {
-        let text = matches[5]
-        let comment = matches[9]
+        let text = matches[1]
+        let comment = matches[2]
         localeObject[ text ] = {text: text, comment: comment || ''}
       }
       cb(null, buf)
