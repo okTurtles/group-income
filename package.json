@@ -6,7 +6,8 @@
   "main": "backend/index.js",
   "scripts": {
     "start": "node backend/index.js",
-    "test": "xvfb-maybe grunt test"
+    "test": "xvfb-maybe grunt test",
+    "i18n": "node scripts/i18n.js"
   },
   "standard": {
     "ignore": [
@@ -65,6 +66,7 @@
     "babel-register": "6.18.0",
     "babel-runtime": "6.18.0",
     "babelify": "7.3.0",
+    "cheerio": "0.22.0",
     "grunt": "1.0.1",
     "grunt-browserify": "5.0.0",
     "grunt-check-dependencies": "1.0.0",

@@ -157,8 +157,7 @@ module.exports = (grunt) => {
   grunt.registerTask('default', ['dev'])
   grunt.registerTask('backend', ['backend:relaunch', 'watch'])
   grunt.registerTask('dev', ['checkDependencies', 'build', 'connect', 'backend'])
-  grunt.registerTask('saveLocale', 'Saving Localization Text', saveLocale)
-  grunt.registerTask('build', ['exec:standard', 'copy', 'sass', 'browserify', 'saveLocale'])
+  grunt.registerTask('build', ['exec:standard', 'copy', 'sass', 'browserify'])
   grunt.registerTask('dist', ['build'])
   grunt.registerTask('test', ['dist', 'connect', 'exec:test'])
   // TODO: add 'deploy' per:
@@ -234,7 +233,7 @@ function browserifyCfg ({straight, lazy}, cfg = {}) {
   function gencfg (out, paths, isLazy) {
     var c = {
       options: {
-        transform: [localify, script2ify, 'vueify', ejsify, 'babelify'],
+        transform: [script2ify, 'vueify', ejsify, 'babelify'],
         // NOTE: if you run into any problems with loading lodash on the frontend
         //       try uncommenting & playing with the following line:
         // transform: [script2ify, 'vueify', ejsify, ['babelify', {global: true, ignore: /node_modules\/(?!lodash-es\/)/}]],
@@ -351,9 +350,4 @@ function localify (file) {
       }
       cb(null, buf)
     })
-}
-
-function saveLocale () {
-  fs.writeFileSync('./frontend/simple/locales/en/translation.json', JSON.stringify(localeObject))
-  localeObject = {}
 }
