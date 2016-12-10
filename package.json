@@ -6,7 +6,8 @@
   "main": "backend/index.js",
   "scripts": {
     "start": "node backend/index.js",
-    "test": "xvfb-maybe grunt test"
+    "test": "xvfb-maybe grunt test",
+    "i18n": "node scripts/i18n.js"
   },
   "standard": {
     "ignore": [
@@ -31,6 +32,8 @@
     "form-data": "2.1.2",
     "form-serialize": "0.7.1",
     "hapi": "13.4.1",
+    "i18next": "4.1.0",
+    "i18next-xhr-backend": "1.2.1",
     "joi": "8.4.0",
     "knex": "0.12.6",
     "localforage": "1.4.3",
@@ -63,6 +66,7 @@
     "babel-register": "6.18.0",
     "babel-runtime": "6.18.0",
     "babelify": "7.3.0",
+    "cheerio": "0.22.0",
     "grunt": "1.0.1",
     "grunt-browserify": "5.0.0",
     "grunt-check-dependencies": "1.0.0",

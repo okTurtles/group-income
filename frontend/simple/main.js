@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import Router from 'vue-router'
+import './js/translations'
 import VeeValidate from 'vee-validate'
 import SignUp from './views/SignUp.vue'
 import CreateGroup from './views/CreateGroup.vue'

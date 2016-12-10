@@ -92,6 +92,12 @@ module.exports = (grunt) => {
         src: ['**/*'],
         dest: 'dist/simple',
         expand: true
+      },
+      translations: {
+        cwd: 'frontend/simple/locales',
+        src: ['**/*'],
+        dest: 'dist/simple/locales',
+        expand: true
       }
     },
 
@@ -123,7 +129,7 @@ module.exports = (grunt) => {
             } else if (S(f).endsWith('.html') && fs.existsSync(f)) {
               // parse all HTML files for SSI
               res.end(fs.readFileSync(f))
-            } else if (S(f).startsWith('dist/simple/') && !/\.[a-z][a-z0-9]+(\?[^\/]*)?$/.test(f)) {
+            } else if (S(f).startsWith('dist/simple/') && !/\.[a-z][a-z0-9]+(\?[^/]*)?$/.test(f)) {
               // if we are a vue-router route, send main index file
               console.log(`Req: ${req.url}, sending index.html for: ${f}`)
               res.end(fs.readFileSync('dist/simple/index.html'))
@@ -317,4 +323,31 @@ function script2ify (file) {
     var replacement = (m, p1, p2) => p2 ? `<${p1 || ''}script2${p2}` : m
     cb(null, buf.toString('utf8').replace(regex, replacement))
   })
+}
+
+var localeObject = {}
+function localify (file) {
+  return !/\.(vue|html|ejs)$/.test(file)
+    ? through()
+    : through(function (buf, encoding, cb) {
+      let functionEx = /\bL\(\s*['"](.*?)['"]\s*(?:,\s*['"](.*?)['"]\s*)?\)/mg
+      let markupEx = /<i18n([\u0000-\uFFFF]*?)>([\u0000-\uFFFF]*?)<\/i18n>/mg
+      let commentEx = /comment\s*=\s*["']([\u0000-\uFFFF]*?)["']/mg
+      let text = buf.toString('utf8')
+      let matches
+      while ((matches = markupEx.exec(text)) !== null) {
+        let comment = ''
+        let result = commentEx.exec(matches[1])
+        if (result) {
+          comment = result[4]
+        }
+        localeObject[ matches[2] ] = {text: matches[2], comment: comment}
+      }
+      while ((matches = functionEx.exec(text)) !== null) {
+        let text = matches[1]
+        let comment = matches[2]
+        localeObject[ text ] = {text: text, comment: comment || ''}
+      }
+      cb(null, buf)
+    })
 }
