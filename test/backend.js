@@ -1,6 +1,7 @@
 /* eslint-env mocha */
 
-const _ = require('lodash-es') // not lodash-es; see .Gruntfile.babel.js
+import _ from 'lodash-es'
+
 const request = require('superagent')
 const should = require('should')
 const nacl = require('tweetnacl')
@@ -38,7 +39,7 @@ describe('Full walkthrough', function () {
     return require('../backend/index.js')
   })
 
-  describe('User', function () {
+  describe.skip('User', function () {
     it('Should GET (empty)', function () {
       return request.get(`http://localhost:${PORT}/user/`)
       .set('Authorization', `gi ${signatures[0]}`)
@@ -79,7 +80,7 @@ describe('Full walkthrough', function () {
     })
   })
 
-  describe('Group', function () {
+  describe.skip('Group', function () {
     var group1name = 'my super group'
 
     it('Should GET (no cookie)', function () {
@@ -122,7 +123,7 @@ describe('Full walkthrough', function () {
     })
   })
 
-  describe('Invite', function () {
+  describe.skip('Invite', function () {
     it('Should refuse to invite if not part of the group', function (done) {
       request.post(`http://localhost:${PORT}/invite/`)
       .set('Authorization', `gi ${signatures[2]}`)
@@ -177,7 +178,7 @@ describe('Full walkthrough', function () {
     })
   })
 
-  describe('Income', function () {
+  describe.skip('Income', function () {
     var income = null
     it('Should be possible to create an income', function (done) {
       request.post(`http://localhost:${PORT}/income/`)

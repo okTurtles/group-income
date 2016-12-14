@@ -324,30 +324,3 @@ function script2ify (file) {
     cb(null, buf.toString('utf8').replace(regex, replacement))
   })
 }
-
-var localeObject = {}
-function localify (file) {
-  return !/\.(vue|html|ejs)$/.test(file)
-    ? through()
-    : through(function (buf, encoding, cb) {
-      let functionEx = /\bL\(\s*['"](.*?)['"]\s*(?:,\s*['"](.*?)['"]\s*)?\)/mg
-      let markupEx = /<i18n([\u0000-\uFFFF]*?)>([\u0000-\uFFFF]*?)<\/i18n>/mg
-      let commentEx = /comment\s*=\s*["']([\u0000-\uFFFF]*?)["']/mg
-      let text = buf.toString('utf8')
-      let matches
-      while ((matches = markupEx.exec(text)) !== null) {
-        let comment = ''
-        let result = commentEx.exec(matches[1])
-        if (result) {
-          comment = result[4]
-        }
-        localeObject[ matches[2] ] = {text: matches[2], comment: comment}
-      }
-      while ((matches = functionEx.exec(text)) !== null) {
-        let text = matches[1]
-        let comment = matches[2]
-        localeObject[ text ] = {text: text, comment: comment || ''}
-      }
-      cb(null, buf)
-    })
-}
