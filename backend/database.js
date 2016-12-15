@@ -1,91 +1,169 @@
-import _ from 'lodash-es'
+'use strict'
 
-const uuid = require('node-uuid')
-const Waterline = require('waterline')
-const waterline = new Waterline()
+import Knex from 'knex'
+import {Model, transaction, ValidationError} from 'objection'
+import {toHash, makeEntry} from '../shared/functions'
 
-var config = {
-  adapters: {
-    // TODO: process.argv.indexOf('test') !== -1 ? 'sqlite.db' : ':memory:'
-    memory: require('sails-memory')
+// TODO: consider using https://github.com/flumedb/flumedb
+
+// Initialize knex connection.
+const knex = Knex({
+  client: 'sqlite3',
+  connection: {
+    filename: process.env.NODE_ENV === 'production' ? 'groupincome.db' : ':memory:'
   },
-  connections: {
-    default: {adapter: 'memory'}
-  },
-  // this is some crap: https://github.com/balderdashy/waterline/issues/887#issuecomment-84016834
-  // TODO: fix this. or just get rid of waterline.
-  defaults: { migrate: 'safe' }
+  useNullAsDefault: true
+})
+
+Model.knex(knex)
+
+// Create tables and return a promise that the importing file can wait on
+export const loaded = knex.schema
+  .createTableIfNotExists('HashToData', function (table) {
+    table.increments()
+    table.text('hash').notNullable()
+    table.text('value').notNullable()
+  })
+
+// =======================
+// Models
+// =======================
+
+// Optional validation based on ajv library. This is not a database
+// schema. Nothing is generated based on this!
+// https://github.com/epoberezkin/ajv/blob/master/COERCION.md
+class HashToData extends Model {
+  static tableName = 'HashToData'
+  static jsonSchema = {
+    type: 'object',
+    required: ['hash', 'value'],
+    properties: {
+      id: {type: 'integer'},
+      hash: {type: 'string'},
+      value: {type: 'string'}
+    }
+  }
+  $beforeInsert () {
+    var hash = toHash(this.value)
+    if (this.hash !== hash) {
+      throw new ValidationError(`HashToData: calculated ${hash} != given ${this.hash}!`)
+    }
+  }
 }
 
-// TODO: It is extremely important to set the migrate property to safe in your models when working with existing databases.
-// https://github.com/balderdashy/waterline-docs/blob/master/models/models.md#using-an-existing-database
-// Validation rules: https://github.com/balderdashy/waterline-docs/blob/master/models/validations.md
-var schema = _.reduce({
-  // TODO: check out beforeCreate/afterCreate:
-  //       https://github.com/balderdashy/waterline-docs/blob/master/models/lifecycle-callbacks.md
-  Group: {
-    // types: https://github.com/balderdashy/waterline-docs/blob/master/models/data-types-attributes.md
-    name: {type: 'string', unique: true, required: true},
-    // https://github.com/balderdashy/waterline-docs/blob/master/models/associations/many-to-many.md
-    users: {collection: 'user', via: 'groups'}
-  },
-  User: {
-    id: {type: 'string', primaryKey: true, required: true},
-    name: {type: 'string', unique: true, required: true},
-    password: {type: 'string', required: true},
-    contriGL: {type: 'integer', required: true},
-    contriRL: {type: 'integer', required: true},
-    // optional
-    email: {type: 'string'},
-    phone: {type: 'string'},
-    payPaypal: {type: 'string'},
-    payBitcoin: {type: 'string'},
-    payVenmo: {type: 'string'},
-    payInstructions: {type: 'string'},
-    // reference to Group
-    groups: {collection: 'group', via: 'users'}
-  },
-  Income: {
-    id: {type: 'string', primaryKey: true, defaultsTo: uuid.v4},
-    month: {type: 'string', required: true},
-    amount: {type: 'integer', required: true},
-    // foreign key, https://github.com/balderdashy/waterline-docs/blob/master/models/associations/one-to-one.md
-    user: {model: 'user'}
-  },
-  Invite: {
-    id: {type: 'string', primaryKey: true, defaultsTo: uuid.v4},
-    email: {type: 'string', required: true},
-    completed: {type: 'date'},
-    // foreign keys
-    creator: {model: 'user'},
-    group: {model: 'group'}
+// See also https://vincit.github.io/objection.js/#virtualattributes
+class Log extends Model {
+  static _tableName = 'Log'
+  static get tableName () { return this._tableName }
+  static set tableName (name) { this._tableName = name }
+  static jsonSchema = {
+    type: 'object',
+    required: ['entry', 'hash'],
+    properties: {
+      id: {type: 'integer'},
+      entry: {
+        type: 'object',
+        properties: {
+          version: {type: 'string'},
+          parentHash: {type: ['string', 'null']},
+          data: {type: 'object'}
+        }
+      },
+      hash: {type: 'string'},
+      created_at: {type: 'string'}
+    }
   }
-}, (result, value, key) => {
-  // see other Model config values here:
-  // https://github.com/balderdashy/waterline-docs/blob/master/models/configuration.md
-  result[key] = Waterline.Collection.extend({
-    identity: key.toLowerCase(),
-    connection: 'default',
-    attributes: value,
-    autoPK: !_.find(value, _.matches({primaryKey: true}))
-  })
-  waterline.loadCollection(result[key])
-  return result
-}, {})
+  static table (name) {
+    this.tableName = name
+    // even though calling .table on the query is probably not necessary since
+    // it copies it from this.tableName upon creation, we do it anyway just to
+    // be absolutely certain that this query is associated with this table name
+    // https://vincit.github.io/objection.js/#context
+    return this.query().context({onBuild: builder => builder.table(name)})
+  }
+  $beforeInsert () { this.created_at = new Date().toISOString() }
+}
 
-export var db = {
-  loaded: new Promise((resolve, reject) => {
-    // https://github.com/balderdashy/waterline-docs/blob/master/introduction/getting-started.md
-    waterline.initialize(config, function (err, ontology) {
-      if (err) {
-        console.error('Waterline.initialize', err)
-        reject(err)
-      } else {
-        _.forOwn(schema, (v, k) => {
-          db[k] = ontology.collections[k.toLowerCase()]
-        })
-        resolve()
-      }
-    })
+// =======================
+// wrapper methods to add log entries / create groups
+// =======================
+
+export async function createGroup (hash, entry) {
+  // TODO: add proper debugging events using Good
+  if (entry.parentHash) throw new Error('parentHash must be null!')
+  await HashToData.query().insert({hash, value: JSON.stringify(entry)})
+  Log.tableName = hash
+  var table = Log.tableName // get chomped tableName based on hash
+  await knex.schema.createTableIfNotExists(table, function (table) {
+    table.increments()
+    table.text('entry').notNullable()
+    table.text('hash').notNullable()
+    table.dateTime('created_at').notNullable()
   })
+  await Log.table(hash).insert({entry, hash})
+  console.log('created group:', table, entry)
+  return hash
+}
+
+export async function appendLogEntry (groupId, hash, entry) {
+  var {parentHash: claimedHash} = entry
+  if (!claimedHash) throw new Error('hash cannot be null!')
+  var {hash: previousHash} = await lastEntry(groupId)
+  if (previousHash !== claimedHash) {
+    throw new ValidationError(`claimed hash: ${claimedHash}, reality: ${previousHash}`)
+  }
+  return transaction(HashToData, Log, async function (HashToData, Log) {
+    await HashToData.query().insert({hash, value: JSON.stringify(entry)})
+    await Log.table(groupId).insert({entry, hash})
+    console.log('inserted log entry:', entry, hash)
+    return hash
+  })
+}
+
+export async function lastEntry (groupId) {
+  return Log.table(groupId).findById(Log.table(groupId).max('id'))
+}
+
+// TODO: does this stream need to be consumed? what happens if it isn't?
+//       do we need to close it anyway after some time or something?
+export function streamEntriesSince (groupId, opts) {
+  if (opts.timestamp) {
+    return Log.table(groupId).where('created_at', '>', opts.timestamp).stream()
+  } else if (opts.entryNum) {
+    return Log.table(groupId).where('id', '>', opts.entryNum).stream()
+  } else {
+    throw new Error('opts.timestamp or opts.entryNum required!')
+  }
+}
+
+// =======================
+// Test with: DEBUG=knex:* babel-node backend/database.js
+// =======================
+
+const testDatabaseJs = process.env._.indexOf('babel-node') !== -1
+
+if (testDatabaseJs) {
+  (async function () {
+    try {
+      await loaded
+      var entry = makeEntry({hello: 'world!', pubkey: 'foobarbaz'})
+      var groupId = toHash(entry)
+      console.log('creating group:', groupId)
+      await createGroup(groupId, entry)
+
+      entry.data = {crazy: 'lady'}
+      entry.parentHash = groupId
+      var res = await appendLogEntry(groupId, toHash(entry), entry)
+      console.log(`added log entry ${JSON.stringify(entry.data)} with result:`, res)
+      res = await lastEntry(groupId)
+      console.log(`last log entry for ${Log.tableName}:`, res)
+
+      knex.destroy()
+      process.exit(0)
+    } catch (err) {
+      console.log('exception:', err.message, err.stack)
+      knex.destroy()
+      process.exit(1)
+    }
+  })()
 }

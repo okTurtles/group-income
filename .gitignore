@@ -1,7 +1,8 @@
-.idea/
-node_modules/
-dist/
-.imdone/
-sqlite.db
-NOTES.md
-frontend/simple/js/ignored
+/.idea/
+/node_modules/
+/dist/
+/.imdone/
+/NOTES.md
+/frontend/simple/js/ignored
+/sqlite.db
+/groupincome.db

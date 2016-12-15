@@ -2,35 +2,25 @@
 
 [![Gitter](https://img.shields.io/gitter/room/okTurtles/group-income.svg)](https://gitter.im/okTurtles/group-income) [![Build Status](https://img.shields.io/travis/okTurtles/group-income-simple/master.svg)](https://travis-ci.org/okTurtles/group-income-simple) [![Deps](https://david-dm.org/okTurtles/group-income-simple.svg)](https://david-dm.org/okTurtles/group-income-simple/#info=dependencies) [![Dev Deps](https://david-dm.org/okTurtles/group-income-simple/dev-status.svg)](https://david-dm.org/okTurtles/group-income-simple/#info=devDependencies)
 
-[Group Income](http://groupincome.org/) is a fair income sharing mechanism that allows groups to provide their members a minimum income.
+[Group Income](https://groupincome.org/) is a fair income sharing mechanism that allows groups to provide their members a minimum income.
 
-Its accounting system can be implemented using a simple Excel spreadsheet, or on blockchains like Ethereum (which is [where we're headed](https://github.com/okTurtles/group-income)). This centralized "Simple Edition" of Group Income is our way to rapidly prototype, develop, and research the concept with real groups.
+This semi-centralized "Simple Edition" of Group Income is our way to rapidly prototype, develop, and research the concept with real groups.
 
 ## Installation
 
-This project works best with nodejs version 6 or later.
+1. If you haven't already, install [Node.js](https://nodejs.org) (version 6 or greater).
+2. Install [Yarn](https://yarnpkg.com/en/docs/install).
+3. Install [`grunt-cli`](https://github.com/gruntjs/grunt-cli) globally (since it's a global tool, you can use either NPM or Yarn).
+4. Clone this repo (or a fork of it if you plan on contributing) and `cd` into it.
 
-#### With [Yarn](https://yarnpkg.com/en/docs/install) *(recommended!)*
-
-```
-yarn global add grunt-cli
-yarn install
-```
-
-Also, [for now](https://github.com/yarnpkg/yarn/issues/1088#issuecomment-263170516), please manually run once:
+Finally, run the commands below to [configure yarn](https://github.com/yarnpkg/yarn/issues/1088#issuecomment-263170516) to always install precise versions, and then install the project dependencies:
 
 ```
 yarn config set save-prefix ''
+yarn install
 ```
 
-See also: **[Migrating from NPM](https://yarnpkg.com/en/docs/migrating-from-npm)**
-
-#### With NPM
-
-```
-npm install -g grunt-cli
-npm install
-```
+Now try out the [dev workflow](#basic-workflow).
 
 ---
 
