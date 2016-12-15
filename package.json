@@ -13,6 +13,7 @@
     "ignore": [
       "frontend/_static/*",
       "frontend/simple/assets/vendor/*",
+      "frontend/simple/js/primus.js",
       "backend/discard/*"
     ],
     "parser": "babel-eslint"
@@ -45,6 +46,9 @@
     "objection": "0.6.2",
     "poop": "2.0.2",
     "primus": "6.0.7",
+    "primus-responder": "1.0.4",
+    "primus-rooms": "3.4.1",
+    "sha.js": "2.4.8",
     "sprint-js": "0.1.0",
     "sqlite3": "3.1.8",
     "string": "3.3.3",
@@ -56,8 +60,9 @@
     "velocity-animate": "1.4.0",
     "vue": "2.1.6",
     "vue-router": "2.1.1",
-    "vue-script2": "1.2.2",
-    "vuex": "2.0.0"
+    "vue-script2": "2.0.0",
+    "vuex": "2.0.0",
+    "ws": "1.1.1"
   },
   "devDependencies": {
     "babel-core": "6.20.0",

@@ -7,18 +7,19 @@ http://www.sitepoint.com/setting-up-es6-project-using-babel-browserify/
 https://babeljs.io/docs/setup/#browserify
 */
 
-var fs = require('fs')
-var path = require('path')
-var url = require('url')
-var S = require('string')
-var vueify = require('vueify')
-var pathmodify = require('pathmodify')
+const fs = require('fs')
+const path = require('path')
+const url = require('url')
+const S = require('string')
+const vueify = require('vueify')
+const pathmodify = require('pathmodify')
 
 import _ from 'lodash-es'
-
-// EJS support at the bottom of the file, below grunt setup
+import {setupPrimus} from './shared/functions'
 
 var development = process.env.NODE_ENV === 'development'
+
+setupPrimus(require('http').createServer(), true)
 
 module.exports = (grunt) => {
   require('load-grunt-tasks')(grunt)

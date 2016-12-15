@@ -7,22 +7,25 @@ global.logger = function (err) {
   console.error(err.stack)
 }
 
-import {loaded as db} from './database'
-import {loaded as server} from './server'
+import * as db from './database'
+import * as server from './server'
 
-module.exports = Promise.all([db, server])
+module.exports = Promise.all([db.loaded, server.loaded])
 
 // when spawned via grunt, listen for message to cleanly shutdown and relinquish port
-process.on('message', () => {
+process.on('message', function () {
   console.log('message received in child, shutting down...')
-  server.stop()
-  .then(() => {
-    console.log('Hapi server down')
-    process.send({}) // tell grunt we've successfully shutdown the server
-    process.nextTick(() => process.exit(0)) // triple-check we quit :P
+  var primus = server.hapi.primus
+  primus.on('close', async function () {
+    try {
+      await server.hapi.stop()
+      console.log('Hapi server down')
+      process.send({}) // tell grunt we've successfully shutdown the server
+      process.nextTick(() => process.exit(0)) // triple-check we quit :P
+    } catch (err) {
+      console.error('Error shutting down:', err)
+      process.exit(1)
+    }
   })
-  .catch((err) => {
-    console.error('Error shutting down:', err)
-    process.exit(1)
-  })
+  primus.destroy({timeout: 1000}) // TODO: close: false ?
 })
