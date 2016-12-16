@@ -18,21 +18,21 @@
     load it here doesn't make sense. The only reason it's here
     is to test VueScript2. Eventually this will be removed. -->
 <script src="/simple/vendor/sprint.js"></script>
-<script>
-    $('#todo').append('<li>This was inserted via Sprint.js using script2</li>')
+<script type="text/javascript">
+  $('#todo').append('<li>This was inserted via Sprint.js using script2</li>')
 </script>
 <%
     // waitForGlobal used to be a global function in all EJS templates
     // However it has been removed because this usage *WILL NOT WORK*.
     // Here's why:
-    // 
+    //
     // - The code below gets executed immediately, even when
     //   this test.ejs "page" isn't being displayed.
     // - Therefore, if another page is displayed that *does*
     //   load jQuery, then this code gets run, but that page
     //   might not have a '#todo' list, or worse, it might have
     //   one but for a totally different purpose!
-    // 
+    //
     // Therefore just use script2 as shown above.
     /* waitForGlobal('$', function () {
         console.log('FOO')

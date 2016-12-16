@@ -5,7 +5,7 @@
 	- [2. FORK this repo](#2-fork-this-repo)
 	- [3. Follow this Contribution Policy](#3-follow-this-contribution-policy)
 		- [Licensing and Ownership](#licensing-and-ownership)
-		- [Patch Requirements](#patch-requirements)
+		- [Pull Request Requirements](#pull-request-requirements)
 - [How to submit an issue](#how-to-submit-an-issue)
 
 ## How to contribute code
@@ -39,11 +39,13 @@ This contribution policy will evolve over time. For now it is based on a mixture
 2. All patches are owned by their authors. There SHALL NOT be any copyright assignment process.
 3. Each Contributor SHALL be responsible for identifying themselves in the project Contributor list.
 
-#### Patch Requirements
+#### Pull Request Requirements
 
-1. A patch SHOULD be a minimal and accurate answer to exactly one identified and agreed problem.
-2. A patch SHALL NOT include non-trivial code from other projects unless the Contributor is the original author of that code.
-3. A patch MUST pass all tests on at least the principle target platform.
+1. A PR SHOULD be a minimal and accurate answer to exactly one identified and agreed problem.
+2. A PR SHALL NOT include non-trivial code from other projects unless the Contributor is the original author of that code.
+3. A PR MUST pass all tests on at least the principle target platform.
+4. A PR MUST include new tests for any new functionality introduced.
+5. A PR SHOULD avoid "callback-hell" style and instead prefer "async/await" style.
 
 ## How to submit an issue
 

@@ -8,8 +8,8 @@ export function wrap (s, tag = 'div') {
 // with browserify-shim. See Gruntfile for details.
 import Vue from 'vue'
 import VS2 from 'vue-script2'
+// import VS2 from './ignored/Script2'
 Vue.use(VS2)
-// Vue.use(require('./js/Script2'))
 
 export function lazyLoadVue (component, base = '/simple/js') {
   // if we wanted to support vue-hot-reload-api in

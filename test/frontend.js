@@ -22,7 +22,7 @@ describe('Frontend', function () {
     return require('../backend/index.js')
   })
 
-  describe('New user page', function () {
+  describe.skip('New user page', function () {
     it('Should create user George', function () {
       this.timeout(5000)
       return n.goto(page('signup'))
@@ -56,7 +56,7 @@ describe('Frontend', function () {
             L('this is some translatable Text','this is relevant commentary')
             L('this text lacks a comment')
         </script>
-        
+
          `
       let path = 'script.vue'
       fs.writeFile(path, script, (err) => {
@@ -104,6 +104,7 @@ describe('Frontend', function () {
     })
   })
   /*
+  // TODO: fix this test by fixing: https://github.com/okTurtles/group-income-simple/issues/130
    describe('EJS test page', function () {
    it('TODO list should have at least two items', function () {
    // return n.click('nav.nav .nav-center > .nav-item:last-child')
