@@ -1,5 +1,7 @@
 /* eslint-env mocha */
 
+const Promise = global.Promise = require('bluebird')
+
 import _ from 'lodash-es'
 import {EVENT_TYPE} from '../shared/constants'
 import {makeEntry, toHash} from '../shared/functions'
@@ -8,8 +10,6 @@ const request = require('superagent')
 const should = require('should') // eslint-disable-line
 const nacl = require('tweetnacl')
 const Primus = require('../frontend/simple/js/primus')
-
-const Promise = global.Promise = require('bluebird')
 
 const {API_URL: API} = process.env
 const {SUCCESS} = EVENT_TYPE
@@ -47,10 +47,7 @@ describe('Full walkthrough', function () {
 
   function createSocket (done) {
     var num = sockets.length
-    var primus = new Primus(process.env.API_URL, {
-      timeout: 3000,
-      strategy: false // don't reconnect
-    })
+    var primus = new Primus(API, {timeout: 3000, strategy: false})
     primus.on('open', done)
     primus.on('error', err => done(err))
     primus.on('data', msg => {
@@ -69,11 +66,12 @@ describe('Full walkthrough', function () {
     })
   }
 
-  function postEvent (event, id) {
+  function postEvent (event) {
+    entry.id++
     entry.data = event
     entry.parentHash = hash
     hash = toHash(entry)
-    return request.post(`${API}/event/${id || groupId}`)
+    return request.post(`${API}/event/${groupId}`)
       .set('Authorization', `gi ${signatures[0]}`)
       .send({hash, entry})
   }
@@ -93,7 +91,7 @@ describe('Full walkthrough', function () {
   })
 
   describe('Group Setup', function () {
-    entry = makeEntry({hello: 'world!', pubkey: 'foobarbaz'})
+    entry = makeEntry(0, {hello: 'world!', pubkey: 'foobarbaz'})
     groupId = hash = toHash(entry)
 
     it('Should create a group', async function () {
@@ -121,7 +119,7 @@ describe('Full walkthrough', function () {
     })
 
     it('Should join another member', function (done) {
-      createSocket(() => joinRoom(sockets[1], groupId, done))
+      createSocket(err => err ? done(err) : joinRoom(sockets[1], groupId, done))
     })
 
     // TODO: these event, as well as all messages sent over the sockets

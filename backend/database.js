@@ -20,8 +20,7 @@ Model.knex(knex)
 // Create tables and return a promise that the importing file can wait on
 export const loaded = knex.schema
   .createTableIfNotExists('HashToData', function (table) {
-    table.increments()
-    table.text('hash').notNullable()
+    table.text('hash').primary()
     table.text('value').notNullable()
   })
 
@@ -34,11 +33,11 @@ export const loaded = knex.schema
 // https://github.com/epoberezkin/ajv/blob/master/COERCION.md
 class HashToData extends Model {
   static tableName = 'HashToData'
+  static idColumn = 'hash'
   static jsonSchema = {
     type: 'object',
     required: ['hash', 'value'],
     properties: {
-      id: {type: 'integer'},
       hash: {type: 'string'},
       value: {type: 'string'}
     }
@@ -58,19 +57,13 @@ class Log extends Model {
   static set tableName (name) { this._tableName = name }
   static jsonSchema = {
     type: 'object',
-    required: ['entry', 'hash'],
+    required: ['id', 'version', 'parentHash', 'data', 'hash'],
     properties: {
       id: {type: 'integer'},
-      entry: {
-        type: 'object',
-        properties: {
-          version: {type: 'string'},
-          parentHash: {type: ['string', 'null']},
-          data: {type: 'object'}
-        }
-      },
-      hash: {type: 'string'},
-      created_at: {type: 'string'}
+      version: {type: 'string'},
+      parentHash: {type: ['string', 'null']},
+      data: {type: 'object'},
+      hash: {type: 'string'}
     }
   }
   static table (name) {
@@ -81,7 +74,9 @@ class Log extends Model {
     // https://vincit.github.io/objection.js/#context
     return this.query().context({onBuild: builder => builder.table(name)})
   }
-  $beforeInsert () { this.created_at = new Date().toISOString() }
+  $beforeInsert () {
+    console.log(`[Log] ${this.tableName} INSERT:`, this.toJSON())
+  }
 }
 
 // =======================
@@ -96,12 +91,13 @@ export async function createGroup (hash, entry) {
   var table = Log.tableName // get chomped tableName based on hash
   await knex.schema.createTableIfNotExists(table, function (table) {
     table.increments()
-    table.text('entry').notNullable()
+    table.text('version').notNullable()
+    table.text('parentHash')
+    table.text('data').notNullable()
     table.text('hash').notNullable()
-    table.dateTime('created_at').notNullable()
   })
-  await Log.table(hash).insert({entry, hash})
-  console.log('created group:', table, entry)
+  await Log.table(hash).insert({...entry, hash})
+  console.log('createGroup():', table, entry)
   return hash
 }
 
@@ -114,8 +110,8 @@ export async function appendLogEntry (groupId, hash, entry) {
   }
   return transaction(HashToData, Log, async function (HashToData, Log) {
     await HashToData.query().insert({hash, value: JSON.stringify(entry)})
-    await Log.table(groupId).insert({entry, hash})
-    console.log('inserted log entry:', entry, hash)
+    await Log.table(groupId).insert({...entry, hash})
+    console.log('appendLogEntry():', entry, hash)
     return hash
   })
 }
@@ -126,14 +122,8 @@ export async function lastEntry (groupId) {
 
 // TODO: does this stream need to be consumed? what happens if it isn't?
 //       do we need to close it anyway after some time or something?
-export function streamEntriesSince (groupId, opts) {
-  if (opts.timestamp) {
-    return Log.table(groupId).where('created_at', '>', opts.timestamp).stream()
-  } else if (opts.entryNum) {
-    return Log.table(groupId).where('id', '>', opts.entryNum).stream()
-  } else {
-    throw new Error('opts.timestamp or opts.entryNum required!')
-  }
+export function streamEntriesSince (groupId, id) {
+  return Log.table(groupId).where('id', '>', id).stream()
 }
 
 // =======================
@@ -146,11 +136,12 @@ if (testDatabaseJs) {
   (async function () {
     try {
       await loaded
-      var entry = makeEntry({hello: 'world!', pubkey: 'foobarbaz'})
+      var entry = makeEntry(0, {hello: 'world!', pubkey: 'foobarbaz'})
       var groupId = toHash(entry)
       console.log('creating group:', groupId)
       await createGroup(groupId, entry)
 
+      entry.id++
       entry.data = {crazy: 'lady'}
       entry.parentHash = groupId
       var res = await appendLogEntry(groupId, toHash(entry), entry)

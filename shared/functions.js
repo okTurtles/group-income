@@ -5,13 +5,12 @@ const Primus = require('primus')
 const path = require('path')
 
 export function toHash (value) {
-  // TODO: use safe/guaranteed JSON encoding?
-  // - https://github.com/primus/ejson
-  // - https://tonyarcieri.com/introducing-tjson-a-stricter-typed-form-of-json (seems abandoned)
+  // TODO: use safe/guaranteed JSON encoding? https://github.com/primus/ejson
   // TODO: get rid of this check when we switch to Flowtype
-  if (typeof value === 'object') value = JSON.stringify(value)
-  else if (typeof value !== 'string') {
-    throw new Error('value must be string or object. Instead got:', typeof value)
+  switch (typeof value) {
+    case 'object': value = JSON.stringify(value); break
+    case 'string': break
+    default: throw new Error('value must be string or object.')
   }
   value = createHash('sha256').update(value, 'utf8').digest('hex')
   var buff = multihash.encode(Buffer.from(value, 'hex'), 'sha2-256')
@@ -19,7 +18,7 @@ export function toHash (value) {
 }
 
 export function makeResponse (event, data, err) {
-  if (!err && event === EVENT_TYPE.RROR) {
+  if (!err && event === EVENT_TYPE.ERROR) {
     err = data
     data = null
   }
@@ -28,8 +27,8 @@ export function makeResponse (event, data, err) {
   return response
 }
 
-export function makeEntry (data, parentHash = null, version = '0') {
-  return {version, parentHash, data}
+export function makeEntry (id, data, parentHash = null, version = '0.0.1') {
+  return {id, version, parentHash, data}
 }
 
 // generate and save primus client file

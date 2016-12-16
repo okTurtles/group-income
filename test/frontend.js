@@ -1,5 +1,5 @@
 /* eslint-env mocha */
-// globals $
+/* globals $ */
 /*
  To see how Nightmare does its server stuff see:
 
@@ -7,12 +7,12 @@
  - https://github.com/segmentio/nightmare/blob/2771166/test/index.js#L43-L46
  */
 
-var should = require('should')
+const should = require('should')
 
-var Nightmare = require('nightmare')
-var url = require('url')
-var exec = require('child_process').execFile
-var fs = require('fs')
+const Nightmare = require('nightmare')
+const url = require('url')
+const exec = require('child_process').execFile
+const fs = require('fs')
 
 describe('Frontend', function () {
   var n = Nightmare({ show: !!process.env.SHOW_BROWSER, height: 900 })
@@ -103,18 +103,15 @@ describe('Frontend', function () {
       })
     })
   })
-  /*
-  // TODO: fix this test by fixing: https://github.com/okTurtles/group-income-simple/issues/130
-   describe('EJS test page', function () {
-   it('TODO list should have at least two items', function () {
-   // return n.click('nav.nav .nav-center > .nav-item:last-child')
-   return n.click('#testEJS')
-   .wait(() => typeof $ !== 'undefined')
-   .evaluate(() => $('#todo').children().length)
-   .should.finally.greaterThan(1)
-   })
-   })
-   */
+
+  describe('EJS test page', function () {
+    it('List should have at least two items', function () {
+      return n.goto(page('ejs-page'))
+        .wait(() => typeof $ === 'function' && !!$().prevUntil)
+        .evaluate(() => $('#todo').children().length)
+        .should.finally.greaterThan(1)
+    })
+  })
 })
 
 function page (page) {

@@ -36,7 +36,7 @@ var PORTS = {
   BACKEND: 3000
 }
 Object.assign(process.env, {
-  NODE_ENV: process.env.NODE_ENV || process.argv.some(x => /\b(dist|deploy)\b/.test(x)) ? 'production' : 'development',
+  NODE_ENV: process.env.NODE_ENV || (process.argv.some(x => /\b(dist|deploy)\b/.test(x)) ? 'production' : 'development'),
   API_PORT: PORTS.BACKEND,
   FRONTEND_PORT: PORTS.FRONTEND,
   // TODO: make the protocol (http vs https) variable based on environment var

@@ -11,8 +11,9 @@ const {SUCCESS, EVENT} = EVENT_TYPE
 module.exports = function (server) {
   const payloadValidation = {
     hash: Joi.string().required(),
-    // must match db.Log.jsonSchema.properties.entry
+    // must match db.Log.jsonSchema.properties (except for separated hash)
     entry: Joi.object({
+      id: Joi.number().integer().min(0).required(),
       version: Joi.string().required(),
       parentHash: Joi.string().allow(null).required(),
       data: Joi.object()
