@@ -69,7 +69,7 @@ describe('Frontend', function () {
           if (err) {
             throw err
           }
-          fs.readFile(output, (err, json) => {
+          fs.readFile(output, 'utf8', (err, json) => {
             if (err) {
               throw err
             }

@@ -6,6 +6,8 @@ import {toHash, makeEntry} from '../shared/functions'
 
 // TODO: consider using https://github.com/flumedb/flumedb
 
+var Entry // prevent 'undefined' linter complains, see shared/{types,functions}.js
+
 // Initialize knex connection.
 const knex = Knex({
   client: 'sqlite3',
@@ -57,7 +59,7 @@ class Log extends Model {
   static set tableName (name) { this._tableName = name }
   static jsonSchema = {
     type: 'object',
-    required: ['id', 'version', 'parentHash', 'data', 'hash'],
+    required: ['version', 'parentHash', 'data', 'hash'],
     properties: {
       id: {type: 'integer'},
       version: {type: 'string'},
@@ -83,7 +85,7 @@ class Log extends Model {
 // wrapper methods to add log entries / create groups
 // =======================
 
-export async function createGroup (hash, entry) {
+export async function createGroup (hash: string, entry: Object) {
   // TODO: add proper debugging events using Good
   if (entry.parentHash) throw new Error('parentHash must be null!')
   await HashToData.query().insert({hash, value: JSON.stringify(entry)})
@@ -94,14 +96,16 @@ export async function createGroup (hash, entry) {
     table.text('version').notNullable()
     table.text('parentHash')
     table.text('data').notNullable()
-    table.text('hash').notNullable()
+    table.text('hash').notNullable().index()
   })
   await Log.table(hash).insert({...entry, hash})
   console.log('createGroup():', table, entry)
   return hash
 }
 
-export async function appendLogEntry (groupId, hash, entry) {
+export async function appendLogEntry (
+  groupId: string, hash: string, entry: Entry
+) {
   var {parentHash: claimedHash} = entry
   if (!claimedHash) throw new Error('hash cannot be null!')
   var {hash: previousHash} = await lastEntry(groupId)
@@ -116,32 +120,33 @@ export async function appendLogEntry (groupId, hash, entry) {
   })
 }
 
-export async function lastEntry (groupId) {
+export async function lastEntry (groupId: string) {
   return Log.table(groupId).findById(Log.table(groupId).max('id'))
 }
 
 // TODO: does this stream need to be consumed? what happens if it isn't?
 //       do we need to close it anyway after some time or something?
-export function streamEntriesSince (groupId, id) {
-  return Log.table(groupId).where('id', '>', id).stream()
+export function streamEntriesSince (groupId: string, hash: string) {
+  return Log.table(groupId).where(
+    'id', '>', Log.table(groupId).select('id').where('hash', hash)
+  ).stream()
 }
 
 // =======================
 // Test with: DEBUG=knex:* babel-node backend/database.js
 // =======================
 
-const testDatabaseJs = process.env._.indexOf('babel-node') !== -1
+const testDatabaseJs = process.env._
 
-if (testDatabaseJs) {
+if (testDatabaseJs && testDatabaseJs.indexOf('babel-node') !== -1) {
   (async function () {
     try {
       await loaded
-      var entry = makeEntry(0, {hello: 'world!', pubkey: 'foobarbaz'})
+      var entry = makeEntry({hello: 'world!', pubkey: 'foobarbaz'})
       var groupId = toHash(entry)
       console.log('creating group:', groupId)
       await createGroup(groupId, entry)
 
-      entry.id++
       entry.data = {crazy: 'lady'}
       entry.parentHash = groupId
       var res = await appendLogEntry(groupId, toHash(entry), entry)

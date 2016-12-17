@@ -1,0 +1,19 @@
+[ignore]
+# https://flowtype.org/docs/advanced-configuration.html
+# https://flowtype.org/docs/declarations.html
+.*/node_modules/.*
+.*/dist/.*
+.*/ignored/.*
+.*/frontend/_static/.*
+.*/frontend/simple/assets/.*
+.*/backend/discard/.*
+# temporary (delete me)
+.*/interface.js
+
+[libs]
+shared/types.js
+
+[options]
+unsafe.enable_getters_and_setters=true
+module.ignore_non_literal_requires=true
+all=true

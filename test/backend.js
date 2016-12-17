@@ -9,10 +9,12 @@ import {makeEntry, toHash} from '../shared/functions'
 const request = require('superagent')
 const should = require('should') // eslint-disable-line
 const nacl = require('tweetnacl')
-const Primus = require('../frontend/simple/js/primus')
+const Primus = require('../frontend/simple/assets/vendor/primus')
 
 const {API_URL: API} = process.env
 const {SUCCESS} = EVENT_TYPE
+
+var Entry // prevent 'undefined' linter complains, see shared/{types,functions}.js
 
 var b642buf = b64 => Buffer.from(b64, 'base64')
 var buf2b64 = buf => Buffer.from(buf).toString('base64')
@@ -42,7 +44,7 @@ var signatures = personas.map(x => sign(x))
 //       and compromises privacy).
 
 describe('Full walkthrough', function () {
-  var groupId, entry, hash
+  var groupId: string, entry: Entry, hash: string
   var sockets = []
 
   function createSocket (done) {
@@ -67,7 +69,6 @@ describe('Full walkthrough', function () {
   }
 
   function postEvent (event) {
-    entry.id++
     entry.data = event
     entry.parentHash = hash
     hash = toHash(entry)
@@ -91,7 +92,7 @@ describe('Full walkthrough', function () {
   })
 
   describe('Group Setup', function () {
-    entry = makeEntry(0, {hello: 'world!', pubkey: 'foobarbaz'})
+    entry = makeEntry({hello: 'world!', pubkey: 'foobarbaz'})
     groupId = hash = toHash(entry)
 
     it('Should create a group', async function () {

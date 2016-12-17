@@ -8,12 +8,11 @@ const Joi = require('joi')
 
 const {SUCCESS, EVENT} = EVENT_TYPE
 
-module.exports = function (server) {
+module.exports = function (server: Object) {
   const payloadValidation = {
     hash: Joi.string().required(),
     // must match db.Log.jsonSchema.properties (except for separated hash)
     entry: Joi.object({
-      id: Joi.number().integer().min(0).required(),
       version: Joi.string().required(),
       parentHash: Joi.string().allow(null).required(),
       data: Joi.object()
@@ -43,10 +42,14 @@ module.exports = function (server) {
       validate: { payload: payloadValidation }
     },
     method: ['PUT', 'POST'],
-    path: '/event/{id}',
+    path: '/event/{groupId}',
     handler: async function (request, reply) {
       try {
-        var groupId = request.params.id
+        // TODO: echo back the entry if it's the latest, or send with a different
+        //       status code the entries that the client is missing
+        //       or, send back an error if the parentHash doesn't exist
+        //       in the database at all. (or an error if hash is invalid)
+        var groupId = request.params.groupId
         var {hash, entry} = request.payload
         await db.appendLogEntry(groupId, hash, entry)
         server.primus.room(groupId).write(makeResponse(EVENT, {hash, entry}))

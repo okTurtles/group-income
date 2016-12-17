@@ -5,7 +5,11 @@
 const Boom = require('boom')
 const nacl = require('tweetnacl')
 
-exports.register = function (server, opts, next) {
+exports.register = function (
+  server: Object,
+  opts: Object,
+  next: (?Error) => void
+) {
   server.auth.scheme('gi-auth', function (server, options) {
     return {
       authenticate: function (request, reply) {

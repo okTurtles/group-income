@@ -110,7 +110,8 @@ module.exports = (grunt) => {
         options: {env: {LOAD_NO_FILE: 'true', ...process.env}}
       },
       standard: './node_modules/.bin/standard',
-      standardgrunt: './node_modules/.bin/standard .Gruntfile.babel.js Gruntfile.js'
+      standardgrunt: './node_modules/.bin/standard .Gruntfile.babel.js Gruntfile.js',
+      flow: './node_modules/.bin/flow'
     },
 
     clean: { dist: ['dist/*', './sqlite.db'] },
