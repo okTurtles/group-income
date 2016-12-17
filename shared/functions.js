@@ -1,19 +1,11 @@
 import multihash from 'multihashes'
-import {EVENT_TYPE} from './constants'
 const createHash = require('sha.js')
 const Primus = require('primus')
 const path = require('path')
 
-// flowtype BS
-// import type {JSONType, JSONObject, Response, Entry} from './types.js'
-// this gives "./types.js. Required module not found" for some reason
-// so we do this instead:
-var JSONType, JSONObject, Response, Entry, EvType
-// note technically we could do "declare export type" instead of "declare type"
-// to fix it, but then my linter complains and I don't get syntax hightlighting
-// in Atom.
+import type {JSONType, JSONObject, Response, Entry, EvType, EvTypeErr} from './types'
 
-export function toHash (value: JSONObject | string) {
+export function toHash (value: JSONObject | Entry | string): string {
   // TODO: use safe/guaranteed JSON encoding? https://github.com/primus/ejson
   if (typeof value === 'object') {
     value = JSON.stringify(value)
@@ -23,24 +15,39 @@ export function toHash (value: JSONObject | string) {
   return multihash.toB58String(buff)
 }
 
+// TODO: this is bullshit.
+// import {EVENT_TYPE} from './constants'
+// const ERROR: EvTypeErr = EVENT_TYPE.ERROR
+// const ERROR: EvTypeErr = 'error'
+// https://github.com/facebook/flow/issues/3041
 // https://flowtype.org/docs/functions.html#too-many-arguments
 export function makeResponse (
   event: EvType,
-  data?: JSONType,
-  err?: (string | {message: string})
+  data: JSONType,
+  // err?: (string | {message: string})
+  err?: JSONType
+  // err?: string
+  // err?: (JSONType | {message: JSONType})
 ) : Response {
-  var response: Response = {event}
-  if (event === EVENT_TYPE.ERROR) {
+  // var response: Response = {event, data}
+  if (event === 'error') {
+  // if (event === ERROR) {
     if (err) {
-      response.data = data
-      response.err = err
+      // response.data = data
+      // response.err = err
+      // return data ? {event, data, err} : {event, err}
+      // return {event, data, err}
+      // return ({event, data, err}: {event: EvTypeErr; data: ?JSONType; err: string})
+      return ({event, data, err}: {event: EvTypeErr; data: ?JSONType; err: JSONType})
+      // return {event, data, err: err.message || err}
+      // return ({event, data, err: err.message || err}: {event: EvTypeErr; data: ?JSONType; err: string})
+      // return ({event, data, err: err.message || err}: {event: EvTypeErr; data: ?JSONType; err: JSONType})
     } else {
-      response.err = data
+      // response.err = data
+      return {event, err: data}
     }
-  } else {
-    response.data = data
   }
-  return response
+  return {event, data}
 }
 
 export function makeEntry (

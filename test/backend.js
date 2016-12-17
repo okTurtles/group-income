@@ -14,7 +14,7 @@ const Primus = require('../frontend/simple/assets/vendor/primus')
 const {API_URL: API} = process.env
 const {SUCCESS} = EVENT_TYPE
 
-var Entry // prevent 'undefined' linter complains, see shared/{types,functions}.js
+import type {Entry} from '../shared/types'
 
 var b642buf = b64 => Buffer.from(b64, 'base64')
 var buf2b64 = buf => Buffer.from(buf).toString('base64')

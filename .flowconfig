@@ -11,7 +11,7 @@
 .*/interface.js
 
 [libs]
-shared/types.js
+shared/declarations.js
 
 [options]
 unsafe.enable_getters_and_setters=true

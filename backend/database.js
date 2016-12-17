@@ -6,7 +6,7 @@ import {toHash, makeEntry} from '../shared/functions'
 
 // TODO: consider using https://github.com/flumedb/flumedb
 
-var Entry // prevent 'undefined' linter complains, see shared/{types,functions}.js
+import type {Entry} from '../shared/types'
 
 // Initialize knex connection.
 const knex = Knex({
