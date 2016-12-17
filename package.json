@@ -25,6 +25,7 @@
   "author": "okTurtles Foundation",
   "license": "GPL-3.0",
   "dependencies": {
+    "append-batch": "0.0.1",
     "bcrypt": "1.0.1",
     "bluebird": "3.4.6",
     "boom": "4.2.0",
@@ -44,6 +45,7 @@
     "multihashes": "0.3.0",
     "node-uuid": "1.4.7",
     "objection": "0.6.2",
+    "obv": "0.0.0",
     "poop": "2.0.2",
     "primus": "6.0.7",
     "primus-responder": "1.0.4",
