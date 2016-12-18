@@ -33,7 +33,9 @@ export const types = Object.keys(mutations)
 // It's rare when anything more complicated is needed, but there
 // is an example here:
 // http://vuex.vuejs.org/en/actions.html
-export const actions = types.reduce((o, el) => {
+export const actions: {
+  [key: string]: Function
+} = types.reduce((o, el) => {
   var action = S(el.toLowerCase()).camelize().s
   o[action] = ({dispatch}, ...args) => dispatch(el, ...args)
   return o

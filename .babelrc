@@ -1,4 +1,4 @@
 {
   "presets": ["es2015", "stage-3"],
-  "plugins": ["transform-inline-environment-variables", "transform-runtime", "transform-class-properties"]
+  "plugins": ["transform-flow-strip-types", "transform-inline-environment-variables", "transform-runtime", "transform-class-properties"]
 }

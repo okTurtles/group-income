@@ -23,10 +23,13 @@ translation.install = function (Vue, options) {
 }
 Vue.use(translation)
 
-export default function (key, comments, options) {
+export default function (
+  key: string,
+  comments: string | Object,
+  options: ?Object
+) {
   if (typeof comments === 'object') {
     options = comments
-    comments = null
   }
   return i18next.t(key, options)
 }

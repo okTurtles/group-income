@@ -1,6 +1,6 @@
 // wrap to prevent fragment instances:
 // http://vuejs.org/guide/components.html#Fragment-Instance
-export function wrap (s, tag = 'div') {
+export function wrap (s: string, tag: string = 'div') {
   return `<${tag}>${s}</${tag}>`
 }
 
@@ -11,11 +11,11 @@ import VS2 from 'vue-script2'
 // import VS2 from './ignored/Script2'
 Vue.use(VS2)
 
-export function lazyLoadVue (component, base = '/simple/js') {
+export function lazyLoadVue (component: string, base: string = '/simple/js') {
   // if we wanted to support vue-hot-reload-api in
   // lazy-loaded modules, then we could do something like this in main.js:
   // window.HOTAPI = require('vue-hot-reload-api')
-  return function (resolve, reject) {
+  return function (resolve: Function, reject: Function) {
     VS2.load(`${base}/${component}.js`)
     .then(() => resolve(window[component]))
     .catch((err) => reject(err))
@@ -24,7 +24,7 @@ export function lazyLoadVue (component, base = '/simple/js') {
 
 // These headers will be included with all superagent requests
 var request = require('superagent')
-export function superagentHeader (header, value) {
+export function superagentHeader (header: string, value: string) {
   for (let method of ['get', 'post']) {
     var m = request[method] // var m = request.prototype[method]
     request[method] = (...args) => m.apply(request, args).set(header, value)
@@ -45,13 +45,16 @@ var ary2b64 = ary => new Buffer(ary).toString('base64')
 // app.js just for this tiny function which is simple to implement ourselves.
 // import mapValues from 'lodash/mapValues'
 export let _ = {
-  mapValues (obj, fn, o = {}) {
+  mapValues (obj: Object, fn: Function, o: Object = {}) {
     for (let key in obj) { o[key] = fn(obj[key]) }
     return o
   }
 }
 
-export function sign (msg, {publicKey, secretKey}) {
+export function sign (
+  msg: string,
+  {publicKey, secretKey}: {publicKey: string; secretKey: string}
+) {
   return str2b64(JSON.stringify({
     msg: msg,
     key: publicKey,

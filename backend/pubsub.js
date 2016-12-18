@@ -11,7 +11,7 @@ import {makeResponse, setupPrimus} from '../shared/functions'
 
 const {ERROR, SUCCESS} = EVENT_TYPE
 
-module.exports = function (hapi) {
+module.exports = function (hapi: Object) {
   var primus = setupPrimus(hapi.listener)
   // makes it possible to access primus via: hapi.primus
   hapi.decorate('server', 'primus', primus)
