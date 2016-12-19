@@ -45,6 +45,14 @@ var router = new Router({
       name: CreateGroup.name,
       meta: {
         title: 'Create Group'
+      },
+      beforeEnter (to, from, next) {
+        if (!store.state.loggedIn) {
+          console.log(to.name, `redirecting to ${SignUp.name}!`)
+          next({ path: '/signup' })
+        } else {
+          next()
+        }
       }
     },
     {
