@@ -1,34 +1,34 @@
 <template>
     <form novalidate ref="form"
-          name="formData" class="container"
+          name="formData" class="container eventlog"
           @submit.prevent="submit"
     >
         <section class="section">
             <p class="control">
-              <h1>Log Postion: {{logPosition}}</h1>
+              <h1>Log Postion: <span id="LogPosition">{{logPosition}}</span></h1>
             <div>
-              <a class="button is-primary" v-on:click="backward">
+              <a class="button backward is-primary" v-on:click="backward">
                 <span class="icon">
                   <i class="fa fa-step-backward"></i>
                 </span>
               </a>
-              <a class="button is-primary" v-on:click="forward">
+              <a class="button forward is-primary" v-on:click="forward">
                     <span class="icon">
                       <i class="fa fa-step-forward"></i>
                     </span>
               </a>
             </div>
               <span class="select">
-                <select ref="type" data-rules="required">
+                <select ref="type" name="type" data-rules="required">
                   <option value="" disabled selected>Select an Event Type</option>
-                  <option>Payment</option>
-                  <option>Voting</option>
-                  <option>Creation</option>
+                  <option value="Payment">Payment</option>
+                  <option value="Voting">Voting</option>
+                  <option value="Creation">Creation</option>
                 </select>
               </span>
             </p>
             <p class="control">
-                <textarea class="textarea" placeholder="payload" ref="payload"></textarea>
+                <textarea class="textarea" name="payload" placeholder="payload" ref="payload"></textarea>
             </p>
             <div class="level-item is-narrow">
                 <button class="button submit is-success" data-rules="required" type="submit">

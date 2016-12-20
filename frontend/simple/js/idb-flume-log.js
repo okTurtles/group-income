@@ -52,30 +52,37 @@ export default async function log (vuex) {
   }
 
   let batcher = function (batch, cb) {
-    let i = -1
-    let hash
-    let next = (err) => {
+    // DB must be canonical source of current log may lose sync with two windows open
+    localforage.getItem('current', (err, cur) => {
       if (err) {
         return cb(err)
       }
-      i++
-      if (i < batch.length) {
-        let value = batch[ i ]
-        let entry = makeEntry(value, current)
-        hash = toHash(entry)
-        localforage.setItem(hash, entry, (err) => {
-          if (err) {
-            return cb(err)
-          }
-          current = hash
-          localforage.setItem('current', current, next)
-        })
-      } else {
-        since.set(current)
-        return cb(null, since.value)
+      current = cur
+      let i = -1
+      let hash
+      let next = (err) => {
+        if (err) {
+          return cb(err)
+        }
+        i++
+        if (i < batch.length) {
+          let value = batch[ i ]
+          let entry = makeEntry(value, current)
+          hash = toHash(entry)
+          localforage.setItem(hash, entry, (err) => {
+            if (err) {
+              return cb(err)
+            }
+            current = hash
+            localforage.setItem('current', current, next)
+          })
+        } else {
+          since.set(current)
+          return cb(null, since.value)
+        }
       }
-    }
-    next()
+      next()
+    })
   }
 
   let append = Append(batcher)
@@ -146,6 +153,9 @@ export default async function log (vuex) {
           return cb(err)
         }
         if (!maxFound) {
+          if (cursor === null) {
+            return cb(true)
+          }
           localforage.getItem(cursor, (err, data) => {
             if (err) {
               return cb(err)
