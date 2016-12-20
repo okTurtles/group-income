@@ -6,6 +6,18 @@
         <section class="section">
             <p class="control">
               <h1>Log Postion: {{logPosition}}</h1>
+            <div>
+              <a class="button is-primary" v-on:click="backward">
+                <span class="icon">
+                  <i class="fa fa-step-backward"></i>
+                </span>
+              </a>
+              <a class="button is-primary" v-on:click="forward">
+                    <span class="icon">
+                      <i class="fa fa-step-forward"></i>
+                    </span>
+              </a>
+            </div>
               <span class="select">
                 <select ref="type" data-rules="required">
                   <option value="" disabled selected>Select an Event Type</option>
@@ -85,6 +97,12 @@
         },
         submit: function (){
           this.$store.dispatch('apppendLog', {type: this.$refs.type.options[this.$refs.type.selectedIndex].value, payload: this.$refs.payload.value})
+        },
+        forward: function (){
+          this.$store.dispatch('forward')
+        },
+        backward: function (){
+          this.$store.dispatch('backward')
         }
       }
     }

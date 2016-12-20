@@ -32,8 +32,6 @@
     "bulma": "0.0.28",
     "ejs": "2.5.5",
     "flumedb": "0.1.0",
-    "flumeview-query": "3.0.3",
-    "flumeview-reduce": "1.0.2",
     "font-awesome": "4.7.0",
     "form-data": "2.1.2",
     "form-serialize": "0.7.1",

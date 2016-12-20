@@ -6,7 +6,7 @@ const storeName = 'EventLogStorage'
 const name = 'Group Income'
 
 // Generate a log
-export default async function log (store) {
+export default async function log (vuex) {
   // Initialize localforage to Index
   // https://www.html5rocks.com/en/tutorials/offline/quota-research/#toc-overview
   localforage.config({
@@ -19,6 +19,7 @@ export default async function log (store) {
   // since is the Observable object
   // https://github.com/dominictarr/obv
   let since = Obv()
+  let store = vuex
 
   // Load current state of the log
   try {
@@ -31,12 +32,22 @@ export default async function log (store) {
   }
   since.set(current)
 
-  function get (hash, cb) {
-    return localforage.getItem(hash, (err, entry) => {
+  function get (opts, cb) {
+    let hash
+    if (typeof opts === 'string') {
+      hash = opts
+    } else {
+      hash = opts.hash
+    }
+    localforage.getItem(hash, (err, entry) => {
       if (err) {
         return cb(err)
       }
-      return cb(null, entry.data)
+      if (opts.parentHash) {
+        return cb(null, entry.parentHash)
+      } else {
+        return cb(null, entry.data)
+      }
     })
   }
 
@@ -78,7 +89,8 @@ export default async function log (store) {
     let max = opts.lt ? opts.lt : opts.lte ? opts.lte : current
     let values = opts.values || true
     let seqs = opts.seqs || false
-    let cursor = current
+    // Only Query inside the parameters of VUEX state
+    let cursor = store ? store.state.logPosition : current
     let minFound = false
     let maxFound = false
 

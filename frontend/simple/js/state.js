@@ -23,8 +23,12 @@ const mutations = {
   LOGIN (state) { state.loggedIn = true },
   LOGOUT (state) { state.loggedIn = false },
   UPDATELOG (state, hash) { state.logPosition = hash },
-  POPOFFSET (state) {},
-  PUSHOFFSET (state) {}
+  SETOFFSET (state, offset) {
+    if (!Array.isArray(offset)) {
+      throw new TypeError('Invalid Offset')
+    }
+    state.offset = offset
+  }
 }
 
 export const actions = {
@@ -35,6 +39,7 @@ export const actions = {
         if (err) {
           throw err
         }
+        commit('SETOFFSET', [])
         commit('UPDATELOG', hash)
       })
     })()
@@ -42,16 +47,34 @@ export const actions = {
   backward ({commit, state}) {
     (async function () {
       let db = await EventLog()
-      db.get(state.logPosition, (err, entry) => {
-        if (err) {
-          throw err
-        }
-        commit('UPDATELOG', entry)
-      })
+      if (state.logPosition) {
+        db.get({ hash: state.logPosition, parentHash: true }, (err, hash) => {
+          if (err) {
+            throw err
+          }
+          let offset = state.offset.slice(0)
+          offset.push(state.logPosition)
+          commit('SETOFFSET', offset)
+          commit('UPDATELOG', hash)
+        })
+      }
     })()
   },
-  forward () {
-
+  forward ({commit, state}) {
+    (async function () {
+      let db = await EventLog()
+      if (state.offset.length) {
+        let offset = state.offset.slice(0)
+        let prior = offset.pop()
+        db.get({ hash: prior, parentHash: true }, (err) => {
+          if (err) {
+            throw err
+          }
+          commit('SETOFFSET', offset)
+          commit('UPDATELOG', prior)
+        })
+      }
+    })()
   },
   loggedIn: state => state.loggedIn
 }
