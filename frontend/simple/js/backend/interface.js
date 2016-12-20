@@ -1,5 +1,16 @@
 // A "contract" is an immutable piece of code.
 
+// TODO: edit .flowconfig to unignore this file
+
+// Two most useful FlowType docs:
+// https://flowtype.org/docs/quick-reference.html
+// https://flowtype.org/docs/objects.html
+// https://flowtype.org/docs/functions.html
+
+// Useful reading on ES6 classes:
+// http://www.benmvp.com/learning-es6-classes/
+// https://www.sitepoint.com/object-oriented-javascript-deep-dive-es6-classes/
+
 export class Backend {
   /* these functions all return promises */
   // data retrieval
@@ -19,6 +30,30 @@ export class MessageRelay {
 // =======================
 // Utility classes
 // =======================
+
+// TODO: are classes really the right way to go? what about POJOs + FlowType?
+
+export class Key {
+  static TYPE_AES = 0
+  constructor (type, data) {
+    this._type = type
+    this._data = data
+  }
+  get type () { this._type }
+  get data () { this._data }
+}
+
+export class KeyPair {
+  constructor (pub, priv) {
+    this._pub = pub
+    this._priv = priv
+  }
+}
+
+export class Crypto {
+  genKeypair (type) {}
+  encryptData (data, key) {}
+}
 
 export class Keychain {
   genKeys () {}

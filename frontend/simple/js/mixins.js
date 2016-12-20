@@ -7,7 +7,7 @@ const {login, logout} = actions
 export const loginLogout = {
   vuex: {
     getters: {
-      loggedIn: state => state.loggedIn
+      loggedIn: (state: Object) => state.loggedIn
     },
     actions: {login, logout}
   }

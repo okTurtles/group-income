@@ -50,7 +50,6 @@
         </div>
       </div>
     </nav>
-    <!-- TODO: in vue 2.x v-el is deprecated and v-ref should be used instead -->
     <div class="modal" ref="modal">
       <div class="modal-background"></div>
       <div class="modal-content" style="width: 300px">

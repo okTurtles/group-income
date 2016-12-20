@@ -1,5 +1,7 @@
 /* eslint-env mocha */
 
+const Promise = global.Promise = require('bluebird')
+
 import _ from 'lodash-es'
 import {EVENT_TYPE} from '../shared/constants'
 import {makeEntry, toHash} from '../shared/functions'
@@ -7,12 +9,12 @@ import {makeEntry, toHash} from '../shared/functions'
 const request = require('superagent')
 const should = require('should') // eslint-disable-line
 const nacl = require('tweetnacl')
-const Primus = require('../frontend/simple/js/primus')
-
-const Promise = global.Promise = require('bluebird')
+const Primus = require('../frontend/simple/assets/vendor/primus')
 
 const {API_URL: API} = process.env
 const {SUCCESS} = EVENT_TYPE
+
+import type {Entry} from '../shared/types'
 
 var b642buf = b64 => Buffer.from(b64, 'base64')
 var buf2b64 = buf => Buffer.from(buf).toString('base64')
@@ -42,15 +44,12 @@ var signatures = personas.map(x => sign(x))
 //       and compromises privacy).
 
 describe('Full walkthrough', function () {
-  var groupId, entry, hash
+  var groupId: string, entry: Entry, hash: string
   var sockets = []
 
   function createSocket (done) {
     var num = sockets.length
-    var primus = new Primus(process.env.API_URL, {
-      timeout: 3000,
-      strategy: false // don't reconnect
-    })
+    var primus = new Primus(API, {timeout: 3000, strategy: false})
     primus.on('open', done)
     primus.on('error', err => done(err))
     primus.on('data', msg => {
@@ -69,11 +68,11 @@ describe('Full walkthrough', function () {
     })
   }
 
-  function postEvent (event, id) {
+  function postEvent (event) {
     entry.data = event
     entry.parentHash = hash
     hash = toHash(entry)
-    return request.post(`${API}/event/${id || groupId}`)
+    return request.post(`${API}/event/${groupId}`)
       .set('Authorization', `gi ${signatures[0]}`)
       .send({hash, entry})
   }
@@ -121,7 +120,7 @@ describe('Full walkthrough', function () {
     })
 
     it('Should join another member', function (done) {
-      createSocket(() => joinRoom(sockets[1], groupId, done))
+      createSocket(err => err ? done(err) : joinRoom(sockets[1], groupId, done))
     })
 
     // TODO: these event, as well as all messages sent over the sockets
