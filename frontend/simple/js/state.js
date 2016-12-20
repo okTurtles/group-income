@@ -5,22 +5,55 @@
 
 import Vue from 'vue'
 import Vuex from 'vuex'
-
-const S = require('string')
+import EventLog from './event-log'
 
 Vue.use(Vuex)
 
 // TODO: save only relevant state to localforage
 const state = {
+  logPosition: null,
   // TODO: this should be managed by Keychain, not here
-  loggedIn: false
+  loggedIn: false,
+  offset: []
 }
 
 // Mutations must be synchronous! Never call these directly!
 // http://vuex.vuejs.org/en/mutations.html
 const mutations = {
   LOGIN (state) { state.loggedIn = true },
-  LOGOUT (state) { state.loggedIn = false }
+  LOGOUT (state) { state.loggedIn = false },
+  UPDATELOG (state, hash) { state.logPosition = hash },
+  POPOFFSET (state) {},
+  PUSHOFFSET (state) {}
+}
+
+export const actions = {
+  apppendLog ({commit}, value) {
+    (async function () {
+      let db = await EventLog()
+      db.append(value, (err, hash) => {
+        if (err) {
+          throw err
+        }
+        commit('UPDATELOG', hash)
+      })
+    })()
+  },
+  backward ({commit, state}) {
+    (async function () {
+      let db = await EventLog()
+      db.get(state.logPosition, (err, entry) => {
+        if (err) {
+          throw err
+        }
+        commit('UPDATELOG', entry)
+      })
+    })()
+  },
+  forward () {
+
+  },
+  loggedIn: state => state.loggedIn
 }
 
 // =======================
@@ -29,18 +62,8 @@ const mutations = {
 
 export const types = Object.keys(mutations)
 
-// For now we dynamically generate all the actions like this.
-// It's rare when anything more complicated is needed, but there
-// is an example here:
-// http://vuex.vuejs.org/en/actions.html
-export const actions = types.reduce((o, el) => {
-  var action = S(el.toLowerCase()).camelize().s
-  o[action] = ({dispatch}, ...args) => dispatch(el, ...args)
-  return o
-}, {})
-
 // If it gets more complicated, use modules:
 // http://vuex.vuejs.org/en/structure.html
 
 // create the store
-export default new Vuex.Store({state, mutations})
+export default new Vuex.Store({state, mutations, actions})

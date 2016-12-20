@@ -2,17 +2,17 @@ import localforage from 'localforage'
 import { toHash, makeEntry } from '../../../shared/functions'
 import Append from 'append-batch'
 import Obv from 'obv'
-const store = 'EventLogStorage'
+const storeName = 'EventLogStorage'
 const name = 'Group Income'
 
 // Generate a log
-export default async function log () {
+export default async function log (store) {
   // Initialize localforage to Index
   // https://www.html5rocks.com/en/tutorials/offline/quota-research/#toc-overview
   localforage.config({
     driver: localforage.INDEXEDDB,
-    name: name,
-    storeName: store
+    name,
+    storeName
   })
   /* eslint-disable no-unused-vars */
   let current
@@ -26,32 +26,48 @@ export default async function log () {
   } catch (ex) {
     current = null
   }
+  if (store) {
+    store.commit('UPDATELOG', current)
+  }
   since.set(current)
 
   function get (hash, cb) {
-    return localforage.getItem(hash, cb)
+    return localforage.getItem(hash, (err, entry) => {
+      if (err) {
+        return cb(err)
+      }
+      return cb(null, entry.data)
+    })
   }
 
-  var append = Append(function (batch, cb) {
-    async function store (value) {
-      let entry = makeEntry(value, current)
-      let hash = toHash(entry)
-      try {
-        await localforage.setItem(hash, entry)
-      } catch (ex) {
-        return cb(ex)
+  let batcher = function (batch, cb) {
+    let i = -1
+    let hash
+    let next = (err) => {
+      if (err) {
+        return cb(err)
       }
-      current = hash
-      try {
-        await localforage.setItem(store, current)
-      } catch (ex) {
-        return cb(ex)
+      i++
+      if (i < batch.length) {
+        let value = batch[ i ]
+        let entry = makeEntry(value, current)
+        hash = toHash(entry)
+        localforage.setItem(hash, entry, (err) => {
+          if (err) {
+            return cb(err)
+          }
+          current = hash
+          localforage.setItem('current', current, next)
+        })
+      } else {
+        since.set(current)
+        return cb(null, since.value)
       }
     }
+    next()
+  }
 
-    batch.forEach(store)
-    since.set(current)
-  })
+  let append = Append(batcher)
 
   // Pull Stream representig how the log is accessed
   // API: https://github.com/pull-stream/pull-stream
@@ -60,11 +76,13 @@ export default async function log () {
     // Flumedb api for greater than, greater than equal, less than, less than equal
     let min = opts.gt ? opts.gt : opts.gte ? opts.gte : null
     let max = opts.lt ? opts.lt : opts.lte ? opts.lte : current
+    let values = opts.values || true
+    let seqs = opts.seqs || false
     let cursor = current
     let minFound = false
     let maxFound = false
 
-    return async function (end, cb) {
+    return function (end, cb) {
       if (end) {
         return cb(end)
       }
@@ -72,58 +90,81 @@ export default async function log () {
       if (!current) {
         cb(true)
       }
+      // close if at the end
+      if (cursor === null) {
+        return cb(true)
+      }
       let value
+      let seq
       // Loop through the log until you reach the max (or the most recent)
-      // Throw errors if you the minimum or the end of the list before the maximum
-      while (!maxFound) {
-        // We reached the end of the list without finding the max value
-        if (cursor === null) {
-          return cb(new Error('Max value not present in Log'))
-        }
-        try {
-          value = await get(cursor)
-        } catch (ex) {
-          // TODO if this does not come back we should attempt to get value from the server before throwing exception
-          return cb(ex)
-        }
-        if (cursor === min) {
-          minFound = true
-        }
-        if (cursor === max) {
-          maxFound = true
-        }
-        if (!maxFound && minFound) {
-          return cb(new Error('Min is greater than Max in log depth'))
-        }
-        cursor = value.parent
-      }
-      if (maxFound && !minFound) {
-        if (value) {
-          return cb(null, value.data)
-        } else {
-          try {
-            value = await get(cursor)
-          } catch (ex) {
-            // TODO if this does not come back we should attempt to get value from the server before throwing exception
-            return cb(ex)
-          }
-          if (cursor === min) {
-            minFound = true
-          }
-          cursor = value.parent
+      // Throw errors if you the minimum or the end of the list before the maximum\
+      let yeld = () => {
+        if (maxFound && !minFound) {
+          if (value) {
+            if (seqs) {
+              return cb(null, seq)
+            } else {
+              return cb(null, value)
+            }
+          } else {
+            localforage.getItem(cursor, (err, data) => {
+              if (err) {
+                return cb(err)
+              }
+              value = data.data
+              if (cursor === min) {
+                minFound = true
+              }
+              seq = cursor
+              cursor = data.parentHash
 
-          return cb(null, value.data)
+              if (seqs) {
+                return cb(null, seq)
+              } else {
+                return cb(null, value)
+              }
+            })
+          }
+        } else {
+          return cb(true)
         }
-      } else {
-        cb(true)
       }
+      let next = (err) => {
+        if (err) {
+          return cb(err)
+        }
+        if (!maxFound) {
+          localforage.getItem(cursor, (err, data) => {
+            if (err) {
+              return cb(err)
+            }
+            value = data.data
+            if (cursor === min) {
+              minFound = true
+            }
+            if (cursor === max) {
+              maxFound = true
+            }
+            if (!maxFound && minFound) {
+              return cb(new Error('Min is greater than Max in log depth'))
+            }
+            seq = cursor
+            cursor = data.parentHash
+            next()
+          })
+        } else {
+          return yeld()
+        }
+      }
+      next()
     }
   }
 
   return {
-    dir: store,
+    dir: storeName,
     since: since,
     stream: stream,
-    append: append
+    append: append,
+    get: get
   }
 }
