@@ -44,6 +44,58 @@ describe('Frontend', function () {
         .wait(() => document.getElementById('serverMsg').className.indexOf('danger') !== -1)
     })
   })
+  describe('Event Log Test', function () {
+    it('Should Append to the log', function () {
+      this.timeout(10000)
+      return n.goto(page('event-log'))
+        .should.finally.containEql({ code: 200, url: page('event-log') })
+        .then(() => {
+          return n.wait(2000).evaluate((current, eventCount) => {
+            return { current: document.getElementById('LogPosition').innerText, eventCount: document.querySelectorAll('.event').length }
+          }).then((result) => {
+            return n.insert('textarea[name="payload"]', 'This is a test Group Creation Event')
+              .select('select[name="type"]', 'Creation')
+              .click('button.submit')
+              .wait(2000)
+              .evaluate(() => {
+                return { current: document.getElementById('LogPosition').innerText, eventCount: document.querySelectorAll('.event').length }
+              }).then((obj) => {
+                should(obj.eventCount).equal(result.eventCount + 1)
+                should(obj.current !== result.current).equal(true)
+              })
+          })
+        })
+    })
+    it('Should Traverse Log', function () {
+      this.timeout(10000)
+      return n.goto(page('event-log'))
+        .then(() => {
+          return n.wait(2000).insert('textarea[name="payload"]', 'This is a test Group Creation Event')
+            .select('select[name="type"]', 'Creation')
+            .click('button.submit')
+            .wait(2000)
+            .evaluate(() => {
+              return document.getElementById('LogPosition').innerText
+            }).then((initial) => {
+              return n.click('a.backward').wait(1000)
+                .evaluate(() => {
+                  return document.getElementById('LogPosition').innerText
+                })
+                .then((secondary) => {
+                  should(initial !== secondary).equal(true)
+                  return n.click('a.forward').wait(1000)
+                    .evaluate(() => {
+                      return document.getElementById('LogPosition').innerText
+                    })
+                    .then((tertiary) => {
+                      should(initial).equal(tertiary)
+                    })
+                })
+            })
+        })
+    })
+  })
+
   describe('Test Localization Gathering Function', function () {
     it('Verify output of transform functions', function (done) {
       let script = `

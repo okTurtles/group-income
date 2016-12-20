@@ -5,6 +5,8 @@ import VeeValidate from 'vee-validate'
 import SignUp from './views/SignUp.vue'
 import CreateGroup from './views/CreateGroup.vue'
 import UserProfileView from './views/UserProfileView.vue'
+import TestEventLog from './views/EventLog.vue'
+import EventLog from './js/event-log'
 // import NewIncomeView from './views/NewIncomeView.vue'
 import PayGroupView from './views/PayGroupView.vue'
 import NavBar from './views/NavBar.vue'
@@ -91,6 +93,13 @@ var router = new Router({
       }
     },
     {
+      path: '/event-log',
+      component: TestEventLog,
+      meta: {
+        title: 'Event Log Test Page'
+      }
+    },
+    {
       path: '*',
       redirect: '/'
     }
@@ -101,10 +110,11 @@ router.beforeEach((to, from, next) => {
   document.title = to.meta.title
   next()
 })
-/* eslint-disable no-new */
-new Vue({
-  router: router,
-  components: {NavBar},
-  store // make this and all child components aware of the new store
-}).$mount('#app')
-
+EventLog(store).then(() => {
+  /* eslint-disable no-new */
+  new Vue({
+    router: router,
+    components: {NavBar},
+    store // make this and all child components aware of the new store
+  }).$mount('#app')
+})

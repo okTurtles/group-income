@@ -32,6 +32,7 @@
           <router-link class="nav-item" active-class ="is-active" to="user-group"><i18n>Group</i18n></router-link>
           <router-link class="nav-item" active-class ="is-active" to="pay-group"><i18n>Pay Group</i18n></router-link>
           <router-link class="nav-item" active-class ="is-active" to="ejs-page" id="testEJS"><i18n>EJS test</i18n></router-link>
+          <router-link class="nav-item" active-class ="is-active" to="event-log"><i18n>Event Log test</i18n></router-link>
         </div>
         <!-- to put buttons in a nav, don't put the .nav-item
         on the button itself, but on a span.nav-item that encloses
