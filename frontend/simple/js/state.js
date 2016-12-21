@@ -6,6 +6,7 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import EventLog from './event-log'
+import bluebird from 'bluebird'
 
 Vue.use(Vuex)
 
@@ -22,59 +23,55 @@ const state = {
 const mutations = {
   LOGIN (state) { state.loggedIn = true },
   LOGOUT (state) { state.loggedIn = false },
-  UPDATELOG (state, hash) { state.logPosition = hash },
-  SETOFFSET (state, offset) {
-    if (!Array.isArray(offset)) {
-      throw new TypeError('Invalid Offset')
+  UPDATELOG (state, hash) {
+    let offset = state.offset
+    if (typeof hash === 'object') {
+      offset = hash.offset
+      hash = hash.hash
     }
+    state.logPosition = hash
     state.offset = offset
   }
 }
 
 export const actions = {
-  apppendLog ({commit}, value) {
-    (async function () {
-      let db = await EventLog()
-      db.append(value, (err, hash) => {
-        if (err) {
-          throw err
-        }
-        commit('SETOFFSET', [])
-        commit('UPDATELOG', hash)
-      })
-    })()
+  async apppendLog ({commit}, value) {
+    let db = await EventLog()
+    let append = bluebird.promisify(db.append)
+    try {
+      let hash = await append(value)
+      commit('UPDATELOG', {hash, offset: []})
+    } catch (ex) {
+      throw ex
+    }
   },
-  backward ({commit, state}) {
-    (async function () {
-      let db = await EventLog()
-      if (state.logPosition) {
-        db.get({ hash: state.logPosition, parentHash: true }, (err, hash) => {
-          if (err) {
-            throw err
-          }
-          let offset = state.offset.slice(0)
-          offset.push(state.logPosition)
-          commit('SETOFFSET', offset)
-          commit('UPDATELOG', hash)
-        })
-      }
-    })()
-  },
-  forward ({commit, state}) {
-    (async function () {
-      let db = await EventLog()
-      if (state.offset.length) {
+  async backward ({commit, state}) {
+    let db = await EventLog()
+    if (state.logPosition) {
+      let get = bluebird.promisify(db.get)
+      let hash = await get({ hash: state.logPosition, parentHash: true })
+      try {
         let offset = state.offset.slice(0)
-        let prior = offset.pop()
-        db.get({ hash: prior, parentHash: true }, (err) => {
-          if (err) {
-            throw err
-          }
-          commit('SETOFFSET', offset)
-          commit('UPDATELOG', prior)
-        })
+        offset.push(state.logPosition)
+        commit('UPDATELOG', {hash, offset})
+      } catch (ex) {
+        throw ex
       }
-    })()
+    }
+  },
+  async forward ({commit, state}) {
+    let db = await EventLog()
+    if (state.offset.length) {
+      let get = bluebird.promisify(db.get)
+      let offset = state.offset.slice(0)
+      let prior = offset.pop()
+      try {
+        await get({ hash: prior, parentHash: true })
+        commit('UPDATELOG', {hash: prior, offset})
+      } catch (ex) {
+        throw ex
+      }
+    }
   },
   loggedIn: state => state.loggedIn
 }
@@ -84,9 +81,6 @@ export const actions = {
 // =======================
 
 export const types = Object.keys(mutations)
-
-// If it gets more complicated, use modules:
-// http://vuex.vuejs.org/en/structure.html
 
 // create the store
 export default new Vuex.Store({state, mutations, actions})

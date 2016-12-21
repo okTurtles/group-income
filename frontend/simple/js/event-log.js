@@ -4,8 +4,7 @@ var log
 var db
 export default async function EventLog (store) {
   if (!db) {
-    log = await
-    idbLog(store)
+    log = await idbLog(store)
     db = flumeDB(log)
     return db
   } else {

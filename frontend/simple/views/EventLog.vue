@@ -56,7 +56,7 @@
         </section>
     </form>
 </template>
-<style>
+<style scoped>
   .submit{
     margin: 10px 0;
   }
@@ -75,16 +75,14 @@
           return this.$store.state.logPosition
         }
       },
-      created () {
-        (async function (){
-          db = await EventLog()
-          this.$store.subscribe((mutation, state) => {
-            if(mutation.type === 'UPDATELOG'){
-              this.fetchData()
-            }
-          })
+      created: async function () {
+        db = await EventLog()
+        this.fetchData()
+      },
+      watch: {
+        logPosition: function () {
           this.fetchData()
-        }.bind(this))()
+        }
       },
       methods: {
         fetchData: function(){
