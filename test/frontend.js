@@ -11,7 +11,7 @@ const should = require('should')
 
 const Nightmare = require('nightmare')
 const url = require('url')
-const exec = require('child_process').execFile
+const exec = require('child_process').execFileSync
 const fs = require('fs')
 
 describe('Frontend', function () {
@@ -45,59 +45,50 @@ describe('Frontend', function () {
     })
   })
   describe('Event Log Test', function () {
-    it('Should Append to the log', function () {
+    it('Should Append to the log', async function () {
       this.timeout(10000)
-      return n.goto(page('event-log'))
+      await n.goto(page('event-log'))
         .should.finally.containEql({ code: 200, url: page('event-log') })
-        .then(() => {
-          return n.wait(2000).evaluate((current, eventCount) => {
-            return { current: document.getElementById('LogPosition').innerText, eventCount: document.querySelectorAll('.event').length }
-          }).then((result) => {
-            return n.insert('textarea[name="payload"]', 'This is a test Group Creation Event')
-              .select('select[name="type"]', 'Creation')
-              .click('button.submit')
-              .wait(2000)
-              .evaluate(() => {
-                return { current: document.getElementById('LogPosition').innerText, eventCount: document.querySelectorAll('.event').length }
-              }).then((obj) => {
-                should(obj.eventCount).equal(result.eventCount + 1)
-                should(obj.current !== result.current).equal(true)
-              })
-          })
+      let result = await n.wait('#Log')
+        .evaluate((current, eventCount) => {
+          return { current: document.getElementById('LogPosition').innerText, eventCount: document.querySelectorAll('.event').length }
         })
+      let obj = await n.insert('textarea[name="payload"]', 'This is a test Group Creation Event')
+        .select('select[name="type"]', 'Creation')
+        .click('button.submit')
+        .wait(2000)
+        .evaluate(() => {
+          return { current: document.getElementById('LogPosition').innerText, eventCount: document.querySelectorAll('.event').length }
+        })
+      should(obj.eventCount).equal(result.eventCount + 1)
+      should(obj.current !== result.current).equal(true)
     })
-    it('Should Traverse Log', function () {
+    it('Should Traverse Log', async function () {
       this.timeout(10000)
-      return n.goto(page('event-log'))
-        .then(() => {
-          return n.wait(2000).insert('textarea[name="payload"]', 'This is a test Group Creation Event')
-            .select('select[name="type"]', 'Creation')
-            .click('button.submit')
-            .wait(2000)
-            .evaluate(() => {
-              return document.getElementById('LogPosition').innerText
-            }).then((initial) => {
-              return n.click('a.backward').wait(1000)
-                .evaluate(() => {
-                  return document.getElementById('LogPosition').innerText
-                })
-                .then((secondary) => {
-                  should(initial !== secondary).equal(true)
-                  return n.click('a.forward').wait(1000)
-                    .evaluate(() => {
-                      return document.getElementById('LogPosition').innerText
-                    })
-                    .then((tertiary) => {
-                      should(initial).equal(tertiary)
-                    })
-                })
-            })
+      await n.goto(page('event-log'))
+      let initial = await n.wait('textarea[name="payload"]')
+        .insert('textarea[name="payload"]', 'This is a test Group Creation Event')
+        .select('select[name="type"]', 'Creation')
+        .click('button.submit')
+        .wait(2000)
+        .evaluate(() => {
+          return document.getElementById('LogPosition').innerText
         })
+      let secondary = await n.click('a.backward').wait(1000)
+        .evaluate(() => {
+          return document.getElementById('LogPosition').innerText
+        })
+      should(initial !== secondary).equal(true)
+      let tertiary = await n.click('a.forward').wait(1000)
+        .evaluate(() => {
+          return document.getElementById('LogPosition').innerText
+        })
+      should(initial).equal(tertiary)
     })
   })
 
   describe('Test Localization Gathering Function', function () {
-    it('Verify output of transform functions', function (done) {
+    it('Verify output of transform functions', function () {
       let script = `
         <template>
             <i18n comment = "Amazing Test">A test of sorts</i18n>
@@ -111,48 +102,27 @@ describe('Frontend', function () {
 
          `
       let path = 'script.vue'
-      fs.writeFile(path, script, (err) => {
-        if (err) {
-          throw err
-        }
-        let output = 'translation.json'
-        let args = ['scripts/i18n.js', path, output]
-        exec('node', args, (err, stdout, stderr) => {
-          if (err) {
-            throw err
-          }
-          fs.readFile(output, 'utf8', (err, json) => {
-            if (err) {
-              throw err
-            }
-            let localeObject = JSON.parse(json)
-            should(localeObject).have.property('A test of sorts')
-            should(localeObject).have.property('A test of wit')
-            should(localeObject).have.property('A test of strength')
-            should(localeObject).have.property('this is some translatable Text')
-            should(localeObject).have.property('this text lacks a comment')
-            should(localeObject['A test of sorts']).have.property('comment', 'Amazing Test')
-            should(localeObject['A test of wit']).have.property('comment', 'Amazing Test2')
-            should(localeObject['this is some translatable Text']).have.property('comment', 'this is relevant commentary')
-            should(localeObject['this is some translatable Text']).have.property('text', 'this is some translatable Text')
-            should(localeObject['this text lacks a comment']).have.property('text', 'this text lacks a comment')
-            should(localeObject['A test of sorts']).have.property('text', 'A test of sorts')
-            should(localeObject['A test of wit']).have.property('text', 'A test of wit')
-            should(localeObject['A test of strength']).have.property('text', 'A test of strength')
-            fs.unlink(path, (err) => {
-              if (err) {
-                throw err
-              }
-              fs.unlink(output, (err) => {
-                if (err) {
-                  throw err
-                }
-                done()
-              })
-            })
-          })
-        })
-      })
+      fs.writeFileSync(path, script)
+      let output = 'translation.json'
+      let args = ['scripts/i18n.js', path, output]
+      exec('node', args)
+      let json = fs.readFileSync(output, 'utf8')
+      let localeObject = JSON.parse(json)
+      should(localeObject).have.property('A test of sorts')
+      should(localeObject).have.property('A test of wit')
+      should(localeObject).have.property('A test of strength')
+      should(localeObject).have.property('this is some translatable Text')
+      should(localeObject).have.property('this text lacks a comment')
+      should(localeObject['A test of sorts']).have.property('comment', 'Amazing Test')
+      should(localeObject['A test of wit']).have.property('comment', 'Amazing Test2')
+      should(localeObject['this is some translatable Text']).have.property('comment', 'this is relevant commentary')
+      should(localeObject['this is some translatable Text']).have.property('text', 'this is some translatable Text')
+      should(localeObject['this text lacks a comment']).have.property('text', 'this text lacks a comment')
+      should(localeObject['A test of sorts']).have.property('text', 'A test of sorts')
+      should(localeObject['A test of wit']).have.property('text', 'A test of wit')
+      should(localeObject['A test of strength']).have.property('text', 'A test of strength')
+      fs.unlinkSync(path)
+      fs.unlinkSync(output)
     })
   })
 

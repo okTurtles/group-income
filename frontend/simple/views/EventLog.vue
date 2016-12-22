@@ -35,6 +35,7 @@
                     Submit
                 </button>
             </div>
+          <div id="Log">
             <div class="box event" v-for="event in events">
               <article class="media">
                 <div class="media-left">
@@ -53,10 +54,11 @@
                 </div>
               </article>
             </div>
+          </div>
         </section>
     </form>
 </template>
-<style>
+<style scoped>
   .submit{
     margin: 10px 0;
   }
@@ -75,16 +77,14 @@
           return this.$store.state.logPosition
         }
       },
-      created () {
-        (async function (){
-          db = await EventLog()
-          this.$store.subscribe((mutation, state) => {
-            if(mutation.type === 'UPDATELOG'){
-              this.fetchData()
-            }
-          })
+      created: function () {
+        db = EventLog()
+        this.fetchData()
+      },
+      watch: {
+        logPosition: function () {
           this.fetchData()
-        }.bind(this))()
+        }
       },
       methods: {
         fetchData: function(){

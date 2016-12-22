@@ -1,11 +1,13 @@
-import idbLog from '../js/idb-flume-log'
+import {default as idbLog, attachVuex} from '../js/idb-flume-log'
+
 import flumeDB from 'flumedb'
 var log
 var db
-export default async function EventLog (store) {
+export const loaded = idbLog().then((value) => { log = value })
+export const attachStore = attachVuex
+
+export default function EventLog () {
   if (!db) {
-    log = await
-    idbLog(store)
     db = flumeDB(log)
     return db
   } else {

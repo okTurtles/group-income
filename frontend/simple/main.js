@@ -6,7 +6,7 @@ import SignUp from './views/SignUp.vue'
 import CreateGroup from './views/CreateGroup.vue'
 import UserProfileView from './views/UserProfileView.vue'
 import TestEventLog from './views/EventLog.vue'
-import EventLog from './js/event-log'
+import { loaded, attachStore } from './js/event-log'
 // import NewIncomeView from './views/NewIncomeView.vue'
 import PayGroupView from './views/PayGroupView.vue'
 import NavBar from './views/NavBar.vue'
@@ -110,7 +110,8 @@ router.beforeEach((to, from, next) => {
   document.title = to.meta.title
   next()
 })
-EventLog(store).then(() => {
+loaded.then(() => {
+  attachStore(store)
   /* eslint-disable no-new */
   new Vue({
     router: router,
