@@ -64,7 +64,19 @@ export const actions = {
         .then(() => { commit('UPDATELOG', {hash: prior, offset}) })
     }
   },
-  loggedIn: state => state.loggedIn
+  loggedIn: state => state.loggedIn,
+  login ({commit, state}) {
+    if (state.loggedIn) {
+      return
+    }
+    commit('LOGIN')
+  },
+  logout ({commit, state}) {
+    if (!state.loggedIn) {
+      return
+    }
+    commit('LOGOUT')
+  }
 }
 
 // =======================
