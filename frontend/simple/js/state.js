@@ -5,8 +5,8 @@
 
 import Vue from 'vue'
 import Vuex from 'vuex'
-import EventLog from './event-log'
-import bluebird from 'bluebird'
+import {default as EventLog, loaded} from './event-log'
+import Promise from 'bluebird'
 
 Vue.use(Vuex)
 
@@ -17,7 +17,14 @@ const state = {
   loggedIn: false,
   offset: []
 }
-
+var db
+var append
+var get
+loaded.then(() => {
+  db = EventLog()
+  append = Promise.promisify(db.append)
+  get = Promise.promisify(db.get)
+})
 // Mutations must be synchronous! Never call these directly!
 // http://vuex.vuejs.org/en/mutations.html
 const mutations = {
@@ -35,42 +42,26 @@ const mutations = {
 }
 
 export const actions = {
-  async apppendLog ({commit}, value) {
-    let db = await EventLog()
-    let append = bluebird.promisify(db.append)
-    try {
-      let hash = await append(value)
-      commit('UPDATELOG', {hash, offset: []})
-    } catch (ex) {
-      throw ex
-    }
+  apppendLog ({commit}, value) {
+    append(value)
+      .then((hash) => { commit('UPDATELOG', {hash, offset: []}) })
   },
-  async backward ({commit, state}) {
-    let db = await EventLog()
+  backward ({commit, state}) {
     if (state.logPosition) {
-      let get = bluebird.promisify(db.get)
-      let hash = await get({ hash: state.logPosition, parentHash: true })
-      try {
-        let offset = state.offset.slice(0)
-        offset.push(state.logPosition)
-        commit('UPDATELOG', {hash, offset})
-      } catch (ex) {
-        throw ex
-      }
+      get({ hash: state.logPosition, parentHash: true })
+        .then((hash) => {
+          let offset = state.offset.slice(0)
+          offset.push(state.logPosition)
+          commit('UPDATELOG', {hash, offset})
+        })
     }
   },
-  async forward ({commit, state}) {
-    let db = await EventLog()
+  forward ({commit, state}) {
     if (state.offset.length) {
-      let get = bluebird.promisify(db.get)
       let offset = state.offset.slice(0)
       let prior = offset.pop()
-      try {
-        await get({ hash: prior, parentHash: true })
-        commit('UPDATELOG', {hash: prior, offset})
-      } catch (ex) {
-        throw ex
-      }
+      get({ hash: prior, parentHash: true })
+        .then(() => { commit('UPDATELOG', {hash: prior, offset}) })
     }
   },
   loggedIn: state => state.loggedIn

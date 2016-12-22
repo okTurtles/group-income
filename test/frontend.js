@@ -49,9 +49,10 @@ describe('Frontend', function () {
       this.timeout(10000)
       await n.goto(page('event-log'))
         .should.finally.containEql({ code: 200, url: page('event-log') })
-      let result = await n.wait(2000).evaluate((current, eventCount) => {
-        return { current: document.getElementById('LogPosition').innerText, eventCount: document.querySelectorAll('.event').length }
-      })
+      let result = await n.wait('#Log')
+        .evaluate((current, eventCount) => {
+          return { current: document.getElementById('LogPosition').innerText, eventCount: document.querySelectorAll('.event').length }
+        })
       let obj = await n.insert('textarea[name="payload"]', 'This is a test Group Creation Event')
         .select('select[name="type"]', 'Creation')
         .click('button.submit')
@@ -65,7 +66,8 @@ describe('Frontend', function () {
     it('Should Traverse Log', async function () {
       this.timeout(10000)
       await n.goto(page('event-log'))
-      let initial = await n.wait(2000).insert('textarea[name="payload"]', 'This is a test Group Creation Event')
+      let initial = await n.wait('textarea[name="payload"]')
+        .insert('textarea[name="payload"]', 'This is a test Group Creation Event')
         .select('select[name="type"]', 'Creation')
         .click('button.submit')
         .wait(2000)

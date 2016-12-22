@@ -35,6 +35,7 @@
                     Submit
                 </button>
             </div>
+          <div id="Log">
             <div class="box event" v-for="event in events">
               <article class="media">
                 <div class="media-left">
@@ -53,6 +54,7 @@
                 </div>
               </article>
             </div>
+          </div>
         </section>
     </form>
 </template>
@@ -75,8 +77,8 @@
           return this.$store.state.logPosition
         }
       },
-      created: async function () {
-        db = await EventLog()
+      created: function () {
+        db = EventLog()
         this.fetchData()
       },
       watch: {

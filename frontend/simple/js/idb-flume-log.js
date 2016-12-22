@@ -4,9 +4,17 @@ import Append from 'append-batch'
 import Obv from 'obv'
 const storeName = 'EventLogStorage'
 const name = 'Group Income'
+let store
+let current = null
 
+export function attachVuex (vuex) {
+  store = vuex
+  if (current) {
+    store.commit('UPDATELOG', current)
+  }
+}
 // Generate a log
-export default async function log (vuex) {
+export default async function log () {
   // Initialize localforage to Index
   // https://www.html5rocks.com/en/tutorials/offline/quota-research/#toc-overview
   localforage.config({
@@ -14,22 +22,12 @@ export default async function log (vuex) {
     name,
     storeName
   })
-  let current
   // since is the Observable object
   // https://github.com/dominictarr/obv
   let since = Obv()
-  let store = vuex
 
   // Load current state of the log
-  try {
-    current = await localforage.getItem('current')
-  } catch (ex) {
-    console.log(ex)
-    current = null
-  }
-  if (store) {
-    store.commit('UPDATELOG', current)
-  }
+  current = await localforage.getItem('current')
   since.set(current)
 
   function get (opts, cb) {
@@ -61,13 +59,9 @@ export default async function log (vuex) {
         let value = batch[ i ]
         let entry = makeEntry(value, current)
         hash = toHash(entry)
-        try {
-          await localforage.setItem(hash, entry)
-          current = hash
-          await localforage.setItem('current', current)
-        } catch (ex) {
-          return cb(ex)
-        }
+        await localforage.setItem(hash, entry)
+        current = hash
+        await localforage.setItem('current', current)
       }
       since.set(current)
       return cb(null, since.value)
@@ -107,8 +101,8 @@ export default async function log (vuex) {
       let seq
       // Loop through the log until you reach the max (or the most recent)
       // Throw errors if the minimum or the end of the list is before the maximum
-      while (!maxFound) {
-        try {
+      try {
+        while (!maxFound) {
           let data = await localforage.getItem(cursor)
           value = data.data
           if (cursor === min) {
@@ -122,19 +116,15 @@ export default async function log (vuex) {
           }
           seq = cursor
           cursor = data.parentHash
-        } catch (ex) {
-          return cb(ex)
         }
-      }
-      if (maxFound && !minFound) {
-        if (value) {
-          if (seqs) {
-            return cb(null, seq)
+        if (maxFound && !minFound) {
+          if (value) {
+            if (seqs) {
+              return cb(null, seq)
+            } else {
+              return cb(null, value)
+            }
           } else {
-            return cb(null, value)
-          }
-        } else {
-          try {
             let data = await localforage.getItem(cursor)
             value = data.data
             if (cursor === min) {
@@ -142,18 +132,17 @@ export default async function log (vuex) {
             }
             seq = cursor
             cursor = data.parentHash
-
             if (seqs) {
               return cb(null, seq)
             } else {
               return cb(null, value)
             }
-          } catch (ex) {
-            return cb(ex)
           }
+        } else {
+          return cb(true)
         }
-      } else {
-        return cb(true)
+      } catch (ex) {
+        return cb(ex)
       }
     }
   }
