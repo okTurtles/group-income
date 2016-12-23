@@ -30,23 +30,23 @@ export default async function log () {
   current = await localforage.getItem('current')
   since.set(current)
 
-  function get (opts, cb) {
+  async function get (opts, cb) {
     let hash
     if (typeof opts === 'string') {
       hash = opts
     } else {
       hash = opts.hash
     }
-    localforage.getItem(hash, (err, entry) => {
-      if (err) {
-        return cb(err)
-      }
+    try {
+      let entry = await localforage.getItem(hash)
       if (opts.parentHash) {
         return cb(null, entry.parentHash)
       } else {
         return cb(null, entry.data)
       }
-    })
+    } catch (ex) {
+      return cb(ex)
+    }
   }
 
   let batcher = async function (batch, cb) {
@@ -77,8 +77,8 @@ export default async function log () {
   function stream (opts) {
     opts = opts || {}
     // Flumedb api for greater than, greater than equal, less than, less than equal
-    let min = opts.gt ? opts.gt : opts.gte ? opts.gte : null
-    let max = opts.lt ? opts.lt : opts.lte ? opts.lte : current
+    let min = opts.gt ? opts.gt : (opts.gte ? opts.gte : null)
+    let max = opts.lt ? opts.lt : (opts.lte ? opts.lte : current)
     let seqs = opts.seqs || false
     // Only Query inside the parameters of VUEX state
     let cursor = store ? store.state.logPosition : current
