@@ -42,26 +42,24 @@ const mutations = {
 }
 
 export const actions = {
-  apppendLog ({commit}, value) {
-    append(value)
-      .then((hash) => { commit('UPDATELOG', {hash, offset: []}) })
+  async apppendLog ({commit}, value) {
+    let hash = await append(value)
+    commit('UPDATELOG', {hash, offset: []})
   },
-  backward ({commit, state}) {
+  async backward ({commit, state}) {
     if (state.logPosition) {
-      get({ hash: state.logPosition, parentHash: true })
-        .then((hash) => {
-          let offset = state.offset.slice(0)
-          offset.push(state.logPosition)
-          commit('UPDATELOG', {hash, offset})
-        })
+      let hash = await get({ hash: state.logPosition, parentHash: true })
+      let offset = state.offset.slice(0)
+      offset.push(state.logPosition)
+      commit('UPDATELOG', {hash, offset})
     }
   },
-  forward ({commit, state}) {
+  async forward ({commit, state}) {
     if (state.offset.length) {
       let offset = state.offset.slice(0)
       let prior = offset.pop()
-      get({ hash: prior, parentHash: true })
-        .then(() => { commit('UPDATELOG', {hash: prior, offset}) })
+      await get({ hash: prior, parentHash: true })
+      commit('UPDATELOG', {hash: prior, offset})
     }
   },
   loggedIn: state => state.loggedIn,
