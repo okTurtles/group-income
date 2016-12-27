@@ -79,6 +79,7 @@
       },
       created: function () {
         db = EventLog()
+        pull(db.payment.stream(), pull.drain(console.log))
         this.fetchData()
       },
       watch: {
@@ -88,7 +89,7 @@
       },
       methods: {
         fetchData: function(){
-          pull(db.stream({lt: this.logPosition }), pull.collect((err, events) =>{
+          pull(db.stream({lt: this.logPosition, values: true }), pull.collect((err, events) =>{
             if(err){
               throw err
             }
