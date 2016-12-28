@@ -65,7 +65,7 @@ export default async function log () {
         current = hash
         await localforage.setItem('current', current)
         since.set(current)
-        notify.push({seq: hash, value: value})
+        notify({seq: hash, value: value})
       }
       return cb(null, since.value)
     } catch (ex) {
