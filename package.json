@@ -56,6 +56,7 @@
     "primus": "6.0.7",
     "primus-responder": "1.0.4",
     "primus-rooms": "3.4.1",
+    "pull-notify": "0.1.1",
     "pull-stream": "3.5.0",
     "sha.js": "2.4.8",
     "sprint-js": "0.1.0",
