@@ -82,13 +82,13 @@ export default async function log () {
   // API: https://github.com/pull-stream/pull-stream
   function stream (opts) {
     opts = opts || {}
-    // Flumedb api for greater than, greater than equal, less than, less than equal
-    let min = opts.gt ? opts.gt : opts.gte ? opts.gte : null
-    let max = opts.lt ? opts.lt : opts.lte ? opts.lte : current
-    let seqs = opts.seqs || false
-    let values = opts.values || false
     // Only Query inside the parameters of VUEX state
     let cursor = store ? store.state.logPosition : current
+    // Flumedb api for greater than, greater than equal, less than, less than equal
+    let min = opts.gt ? opts.gt : opts.gte ? opts.gte : null
+    let max = opts.lt ? opts.lt : opts.lte ? opts.lte : cursor
+    let seqs = opts.seqs || false
+    let values = opts.values || false
     let minFound = false
     let maxFound = false
 
@@ -164,6 +164,7 @@ export default async function log () {
     stream: stream,
     append: append,
     get: get,
-    notifier: notifier
+    notifier: notifier,
+    store: () => { return store }
   }
 }

@@ -34,9 +34,10 @@
                 <button class="button submit is-success" data-rules="required" type="submit">
                     Submit
                 </button>
+                <span id="count">Count: {{events.length}}</span>
             </div>
           <div id="Log">
-            <div class="box event" v-for="event in events">
+            <div class="box event" v-for="event in eventList" :key="event.seq">
               <article class="media">
                 <div class="media-left">
                   <figure class="image is-64x64">
@@ -46,9 +47,9 @@
                 <div class="media-content">
                   <div class="content">
                     <p>
-                      <strong>{{ event.type }}</strong> <small>@groupincomegroup</small> <small>31m</small>
+                      <strong>{{ event.value.type }}</strong> <small>@groupincomegroup</small> <small>31m</small>
                       <br>
-                      {{ event.payload }}
+                      {{ event.value.payload }}
                     </p>
                   </div>
                 </div>
@@ -66,7 +67,7 @@
 
 <script>
     import EventLog from '../js/event-log'
-    import pull from 'pull-stream'
+    import Pull from 'pull-stream'
     var db
     export default{
       data () {
@@ -75,26 +76,26 @@
       computed: {
         logPosition () {
           return this.$store.state.logPosition
+        },
+        eventList () {
+          return this.events.map(event => event)
         }
       },
       created: function () {
         db = EventLog()
-        pull(db.payment.stream(), pull.drain(console.log))
+        this.$store.watch((state) => { return state.offset.length }, () => {
+          this.events = []
+          this.fetchData()
+        })
+       // Pull(db.payment.stream(), Pull.drain(console.log))
         this.fetchData()
       },
-      watch: {
-        logPosition: function () {
-          this.fetchData()
-        }
-      },
       methods: {
-        fetchData: function(){
-          pull(db.stream({lt: this.logPosition, values: true }), pull.collect((err, events) =>{
-            if(err){
-              throw err
-            }
-            this.events = events
-          }))
+        fetchData: function () {
+          Pull(db.events.stream(), Pull.drain(this.appendEvents))
+        },
+        appendEvents: function (event) {
+          this.events.push(event)
         },
         submit: function (){
           this.$store.dispatch('apppendLog', {type: this.$refs.type.options[this.$refs.type.selectedIndex].value, payload: this.$refs.payload.value})
