@@ -2,6 +2,7 @@ import localforage from 'localforage'
 import { toHash, makeEntry } from '../../../shared/functions'
 import Append from 'append-batch'
 import Obv from 'obv'
+import Notify from 'pull-notify'
 const storeName = 'EventLogStorage'
 const name = 'Group Income'
 let store
@@ -25,6 +26,7 @@ export default async function log () {
   // since is the Observable object
   // https://github.com/dominictarr/obv
   let since = Obv()
+  let notify = Notify()
 
   // Load current state of the log
   current = await localforage.getItem('current')
@@ -62,8 +64,9 @@ export default async function log () {
         await localforage.setItem(hash, entry)
         current = hash
         await localforage.setItem('current', current)
+        since.set(current)
+        notify({seq: hash, value: value})
       }
-      since.set(current)
       return cb(null, since.value)
     } catch (ex) {
       return cb(ex)
@@ -71,17 +74,21 @@ export default async function log () {
   }
 
   let append = Append(batcher)
+  function notifier () {
+    return notify.listen()
+  }
 
   // Pull Stream representig how the log is accessed
   // API: https://github.com/pull-stream/pull-stream
   function stream (opts) {
     opts = opts || {}
-    // Flumedb api for greater than, greater than equal, less than, less than equal
-    let min = opts.gt ? opts.gt : (opts.gte ? opts.gte : null)
-    let max = opts.lt ? opts.lt : (opts.lte ? opts.lte : current)
-    let seqs = opts.seqs || false
     // Only Query inside the parameters of VUEX state
     let cursor = store ? store.state.logPosition : current
+    // Flumedb api for greater than, greater than equal, less than, less than equal
+    let min = opts.gt ? opts.gt : (opts.gte ? opts.gte : null)
+    let max = opts.lt ? opts.lt : (opts.lte ? opts.lte : cursor)
+    let seqs = opts.seqs || false
+    let values = opts.values || false
     let minFound = false
     let maxFound = false
 
@@ -119,7 +126,9 @@ export default async function log () {
         }
         if (maxFound && !minFound) {
           if (value) {
-            if (seqs) {
+            if (seqs && values) {
+              return cb(null, {seq, value})
+            } else if (seqs) {
               return cb(null, seq)
             } else {
               return cb(null, value)
@@ -132,7 +141,9 @@ export default async function log () {
             }
             seq = cursor
             cursor = data.parentHash
-            if (seqs) {
+            if (seqs && values) {
+              return cb(null, {seq, value})
+            } else if (seqs) {
               return cb(null, seq)
             } else {
               return cb(null, value)
@@ -152,6 +163,8 @@ export default async function log () {
     since: since,
     stream: stream,
     append: append,
-    get: get
+    get: get,
+    notifier: notifier,
+    store: () => { return store }
   }
 }

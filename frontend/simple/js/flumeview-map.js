@@ -1,12 +1,12 @@
 const Pull = require('pull-stream')
 const Notify = require('pull-notify')
-export default function (filter) {
+export default function (map) {
   return function (log, name) {
     return {
       since: log.since,
       methods: { stream: 'source' },
       createSink: function (cb) {
-        return Pull.filter(filter)
+        return Pull.map(map)
       },
       stream: function () {
         let notify = Notify()
@@ -15,7 +15,7 @@ export default function (filter) {
         Pull(log.stream({ seqs: true, values: true }), Pull.drain((data) => {
           notify(data)
         }), () => {
-          // End stream when log postion changes to the past
+          // End Stream when log postion changes to the past
           stop = store.watch((state) => {
             return state.offset.length
           }, () => {
@@ -26,7 +26,7 @@ export default function (filter) {
             notify(data)
           }))
         })
-        return Pull(notify.listen(), Pull.filter(filter))
+        return Pull(notify.listen(), Pull.map(map))
       },
       close: (cb) => { return cb() },
       destroy: (cb) => { return cb() }
