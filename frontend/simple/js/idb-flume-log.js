@@ -19,10 +19,12 @@ export default async function log () {
   // Initialize localforage to Index
   // https://www.html5rocks.com/en/tutorials/offline/quota-research/#toc-overview
   localforage.config({
-    driver: localforage.INDEXEDDB,
     name,
     storeName
   })
+  setTimeout(() => {
+    console.log(`Local Forage has selected the ${localforage.driver()} driver`)
+  }, 0)
   // since is the Observable object
   // https://github.com/dominictarr/obv
   let since = Obv()
