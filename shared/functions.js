@@ -58,6 +58,32 @@ export function makeEntry (
   return {version, parentHash, data}
 }
 
+export function makeGroup (
+  groupName: string,
+  sharedValues: string,
+  changePercentage: number,
+  openMembership: boolean,
+  memberApprovalPercentage: number,
+  memberRemovalPercentage: number,
+  incomeProvided: boolean,
+  conrtibutionPrivacy: string,
+  founder: string
+) {
+  return {
+    version: '0.0.1',
+    creationDate: new Date(),
+    groupName,
+    sharedValues,
+    changePercentage,
+    openMembership,
+    memberApprovalPercentage,
+    memberRemovalPercentage,
+    incomeProvided,
+    conrtibutionPrivacy,
+    founder
+  }
+}
+
 // generate and save primus client file
 // https://github.com/primus/primus#client-library
 export function setupPrimus (server: Object, saveAndDestroy: boolean = false) {

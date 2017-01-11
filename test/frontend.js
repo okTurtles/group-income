@@ -53,9 +53,10 @@ describe('Frontend', function () {
         .evaluate((current, eventCount) => {
           return { current: document.getElementById('LogPosition').innerText, eventCount: document.querySelectorAll('.event').length }
         })
-      let obj = await n.insert('textarea[name="payload"]', 'This is a test Group Creation Event')
-        .select('select[name="type"]', 'Creation')
-        .click('button.submit')
+      let obj = await n.click('#random')
+        .insert('textarea[name="payload"]', 'This is a test payment event')
+        .select('select[name="type"]', 'Payment')
+        .click('#submit')
         .wait(4000)
         .evaluate(() => {
           return { current: document.getElementById('LogPosition').innerText, eventCount: document.querySelectorAll('.event').length }

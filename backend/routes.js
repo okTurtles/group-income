@@ -52,7 +52,7 @@ module.exports = function (server: Object) {
         var groupId = request.params.groupId
         var {hash, entry} = request.payload
         await db.appendLogEntry(groupId, hash, entry)
-        server.primus.room(groupId).write(makeResponse(EVENT, {hash, entry}))
+        server.primus.room(groupId).write(makeResponse(EVENT, {groupId, hash, entry}))
         reply(makeResponse(SUCCESS, {hash}))
       } catch (err) {
         logger(err)
