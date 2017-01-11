@@ -6,18 +6,26 @@ import SignUp from './views/SignUp.vue'
 import CreateGroup from './views/CreateGroup.vue'
 import UserProfileView from './views/UserProfileView.vue'
 import TestEventLog from './views/EventLog.vue'
-import { loaded, attachStore } from './js/event-log'
 // import NewIncomeView from './views/NewIncomeView.vue'
 import PayGroupView from './views/PayGroupView.vue'
 import NavBar from './views/NavBar.vue'
 import utils, { wrap, lazyLoadVue, superagentHeader } from './js/utils'
 import store from './js/state'
 import './js/transitions'
+import Primus from './assets/vendor/primus'
 
 Vue.use(Router)
 Vue.use(VeeValidate)
 
 superagentHeader('Authorization', `gi ${utils.sign('hello', utils.keypair)}`)
+
+var primus = new Primus(process.env.API_URL, {timeout: 3000, strategy: false})
+primus.on('disconnection', () => store.commit('updateSocket', null))
+primus.on('error', err => console.log(err))
+primus.on('data', msg => {
+  store.dispatch('receiveEvent', msg)
+})
+store.commit('updateSocket', primus)
 
 var router = new Router({
   mode: 'history',
@@ -49,9 +57,9 @@ var router = new Router({
         title: 'Create Group'
       },
       beforeEnter (to, from, next) {
-        if (!store.state.loggedIn) {
+        if (!store.state.loggedInUser) {
           console.log(to.name, `redirecting to ${SignUp.name}!`)
-          next({ path: '/signup' })
+          next({ path: '/signup', query: { next: to.path } })
         } else {
           next()
         }
@@ -110,12 +118,11 @@ router.beforeEach((to, from, next) => {
   document.title = to.meta.title
   next()
 })
-loaded.then(() => {
-  attachStore(store)
-  /* eslint-disable no-new */
-  new Vue({
-    router: router,
-    components: {NavBar},
-    store // make this and all child components aware of the new store
-  }).$mount('#app')
-})
+
+/* eslint-disable no-new */
+new Vue({
+  router: router,
+  components: {NavBar},
+  store // make this and all child components aware of the new store
+}).$mount('#app')
+
