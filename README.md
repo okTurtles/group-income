@@ -8,23 +8,17 @@ This semi-centralized "Simple Edition" of Group Income is our way to rapidly pro
 
 ## Installation
 
-1. If you haven't already, install [Node.js](https://nodejs.org) (version 6 or greater).
-2. Install [Yarn](https://yarnpkg.com/en/docs/install).
-3. Install [`grunt-cli`](https://github.com/gruntjs/grunt-cli) globally (since it's a global tool, you can use either NPM or Yarn).
-4. Clone this repo (or a fork of it if you plan on contributing) and `cd` into it.
-
-Finally, run the commands below to [configure yarn](https://github.com/yarnpkg/yarn/issues/1088#issuecomment-263170516) to always install precise versions, and then install the project dependencies:
-
-```
-yarn config set save-prefix ''
-yarn install
-```
+1. Install [Node.js](https://nodejs.org) (version 6 or greater).
+2. Install [Grunt](https://github.com/gruntjs/grunt): `npm install -g grunt-cli`
+3. Install [Yarn](https://yarnpkg.com/en/docs/install).
+4. Clone this repo (or a fork of it if you plan on [contributing](#contributing)) and `cd` into it.
+5. Install dependencies: `yarn install`
 
 Now try out the [dev workflow](#basic-workflow).
 
 ---
 
-We use [js-standard](https://github.com/feross/standard) for the code style and [mileposts](https://github.com/taoeffect/mileposts) for efficient project management.
+We use [standard](https://github.com/feross/standard) for the code style and [mileposts](https://github.com/taoeffect/mileposts) for efficient project management.
 
 [![js-standard-style](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard) &nbsp; [![mileposts](https://cdn.rawgit.com/taoeffect/mileposts/master/badge/badge.svg)](https://github.com/taoeffect/mileposts)
 
