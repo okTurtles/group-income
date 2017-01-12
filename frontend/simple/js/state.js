@@ -107,11 +107,18 @@ export const actions = {
     if (state.loggedInUser) {
       return
     }
+    // TODO: Create a loop for join rooms for the available groups of the logged in user
     commit('LOGIN', user)
   },
-  logout ({commit, state}) {
+  async logout ({commit, state}) {
     if (!state.loggedInUser) {
       return
+    }
+    // leave the rooms joined by the user
+    let available = state.availableGroups
+    for (let i = 0; i < available.length; i++) {
+      let room = available[i]
+      await leaveRoom(state.socket, room)
     }
     commit('LOGOUT')
   }
@@ -138,6 +145,14 @@ function joinRoom (socket, room) {
       } else {
         reject(new Error(`Failed to join ${room}`))
       }
+    })
+  })
+}
+
+function leaveRoom (socket, room) {
+  return new Promise((resolve) => {
+    socket.writeAndWait({action: 'leave', room}, function (response) {
+      resolve() // not critical if this fails
     })
   })
 }
