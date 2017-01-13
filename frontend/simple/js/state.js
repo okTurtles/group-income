@@ -108,7 +108,7 @@ export const actions = {
       return
     }
     // TODO: Create a loop for join rooms for the available groups of the logged in user
-    commit('LOGIN', user)
+    commit('login', user)
   },
   async logout ({commit, state}) {
     if (!state.loggedInUser) {
@@ -120,7 +120,7 @@ export const actions = {
       let room = available[i]
       await leaveRoom(state.socket, room)
     }
-    commit('LOGOUT')
+    commit('logout')
   }
 }
 
