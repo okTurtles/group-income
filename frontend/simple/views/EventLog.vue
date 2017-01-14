@@ -77,7 +77,7 @@
         logPosition () {
           if(this.$store.state.currentGroupLog){
             this.fetchData()
-            return this.$store.state.currentGroupLog.current
+            return this.$store.state.currentGroupLog.currentLogPosition
           } else {
             return null
           }

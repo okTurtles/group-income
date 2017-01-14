@@ -67,23 +67,23 @@ export async function put (log, opts) {
     value = opts
   }
   let db = getDB(log.groupId)
-  let current = await db.getItem('current')
-  let entry = makeEntry(value, current)
+  let currentLogPosition = await db.getItem('currentLogPosition')
+  let entry = makeEntry(value, currentLogPosition)
   let hash = toHash(entry)
   // Do not post to server if it is an update from server
   if (!opts.update || (typeof opts.update !== 'boolean')) {
     await postEvent(log.groupId, hash, entry)
   }
   await db.setItem(hash, entry)
-  await db.setItem('current', hash)
-  log.current = hash
+  await db.setItem('currentLogPosition', hash)
+  log.currentLogPosition = hash
   return log
 }
 // collect returns a collection of events
 export async function collect (log) {
   let db = getDB(log.groupId)
   let collection = []
-  let cursor = log.current
+  let cursor = log.currentLogPosition
   while (cursor) {
     let entry = await db.getItem(cursor)
     collection.unshift(entry.data)
@@ -112,8 +112,8 @@ export default async function EventLog (group) {
     await postGroup(groupHash, groupEntry)
     let db = getDB(groupHash)
     await db.setItem(groupHash, groupEntry)
-    await db.setItem('current', groupHash)
-    let log = {groupId: groupHash, current: groupHash}
+    await db.setItem('currentLogPosition', groupHash)
+    let log = {groupId: groupHash, currentLogPosition: groupHash}
     return log
     // string case
   } else if (typeof group === 'string') {
@@ -122,11 +122,11 @@ export default async function EventLog (group) {
     if (!groupEntry) {
       throw new TypeError('Invalid Group')
     }
-    let current = await db.getItem('current')
-    if (!current) {
+    let currentLogPosition = await db.getItem('currentLogPosition')
+    if (!currentLogPosition) {
       throw new TypeError('Invalid Group')
     }
-    let log = {groupId: group, current: current}
+    let log = {groupId: group, currentLogPosition: currentLogPosition}
     return log
   } else {
     throw new TypeError('Invalid Group')

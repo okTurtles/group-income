@@ -50,7 +50,7 @@ export const actions = {
       await joinRoom(state.socket, group)
     }
     commit('updateCurrentGroupLog', log)
-    available.push(log.current)
+    available.push(log.currentLogPosition)
     commit('updateAvailableGroups', available)
   },
   // TODO: Connect this to user credentials
@@ -79,7 +79,7 @@ export const actions = {
         let log = await EventLog(msg.data.groupId)
         log = await put(log, { value: msg.data.entry.data, update: true })
         // update current if the event is for the current group
-        if (state.currentGroupLog && state.currentGroupLog.current === msg.data.groupId) {
+        if (state.currentGroupLog && state.currentGroupLog.currentLogPosition === msg.data.groupId) {
           commit('updateCurrentGroupLog', log)
         }
       }
@@ -87,10 +87,10 @@ export const actions = {
   },
   async backward ({commit, state}) {
     if (state.currentGroupLog) {
-      let hash = await get(state.currentGroupLog, { hash: state.currentGroupLog.current, parentHash: true })
-      let log = {genesis: state.currentGroupLog.genesis, current: hash}
+      let hash = await get(state.currentGroupLog, { hash: state.currentGroupLog.currentLogPosition, parentHash: true })
+      let log = {groupId: state.currentGroupLog.groupId, currentLogPosition: hash}
       let offset = state.offset.slice(0)
-      offset.push(state.currentGroupLog.current)
+      offset.push(state.currentGroupLog.currentLogPosition)
       commit('updateCurrentGroupLog', {log, offset})
     }
   },
@@ -98,7 +98,7 @@ export const actions = {
     if (state.currentGroupLog && state.offset.length) {
       let offset = state.offset.slice(0)
       let prior = offset.pop()
-      let log = {genesis: state.currentGroupLog.genesis, current: prior}
+      let log = {groupId: state.currentGroupLog.groupId, currentLogPosition: prior}
       commit('updateCurrentGroupLog', {log, offset})
     }
   },
