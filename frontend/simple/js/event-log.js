@@ -12,30 +12,7 @@ function getDB (hash) {
   })
   return db
 }
-function postEvent (groupId, hash, entry) {
-  return new Promise(function (resolve, reject) {
-    request.post(`${process.env.API_URL}/event/${groupId}`)
-      .send({hash, entry})
-      .end(function (err, res) {
-        if (err) {
-          return reject(err)
-        }
-        return resolve()
-      })
-  })
-}
-function postGroup (hash, entry) {
-  return new Promise(function (resolve, reject) {
-    request.post(`${process.env.API_URL}/group`)
-      .send({hash, entry})
-      .end(function (err, res) {
-        if (err) {
-          return reject(err)
-        }
-        return resolve(res.hash)
-      })
-  })
-}
+
 // =======================
 // Exports
 // =======================
@@ -72,7 +49,8 @@ export async function put (log, opts) {
   let hash = toHash(entry)
   // Do not post to server if it is an update from server
   if (!opts.update || (typeof opts.update !== 'boolean')) {
-    await postEvent(log.groupId, hash, entry)
+    await request.post(`${process.env.API_URL}/event/${log.groupId}`)
+      .send({hash, entry})
   }
   await db.setItem(hash, entry)
   await db.setItem('currentLogPosition', hash)
@@ -109,7 +87,8 @@ export default async function EventLog (group) {
     let event = {type: 'Creation', payload: groupData}
     let groupEntry = makeEntry(event)
     let groupHash = toHash(groupEntry)
-    await postGroup(groupHash, groupEntry)
+    await request.post(`${process.env.API_URL}/group`)
+      .send({hash: groupHash, entry: groupEntry})
     let db = getDB(groupHash)
     await db.setItem(groupHash, groupEntry)
     await db.setItem('currentLogPosition', groupHash)
