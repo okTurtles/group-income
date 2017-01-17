@@ -5,7 +5,7 @@
 
 import Vue from 'vue'
 import Vuex from 'vuex'
-import {default as EventLog, put, get} from './event-log'
+import EventLog from './event-log'
 import {EVENT_TYPE} from '../../../shared/constants'
 const {SUCCESS} = EVENT_TYPE
 
@@ -44,7 +44,7 @@ const mutations = {
 
 export const actions = {
   async createGroup ({commit, state}, group) {
-    let log = await EventLog(group)
+    let log = await EventLog.createEventLogFromGroup(group)
     let available = state.availableGroups
     if (state.socket) {
       await joinRoom(state.socket, group)
@@ -61,13 +61,13 @@ export const actions = {
       if (state.socket) {
         await joinRoom(state.socket, group)
       }
-      let log = await EventLog(group)
+      let log = await EventLog.getEventLogForGroupId(group)
       let offset = []
       commit('updateCurrentGroupLog', {log, offset})
     }
   },
   async appendLog ({commit, state}, event) {
-    let log = await put(state.currentGroupLog, event)
+    let log = await EventLog.addItemToLog(state.currentGroupLog, event)
     commit('updateCurrentGroupLog', log)
   },
   async receiveEvent ({commit, state}, msg) {
@@ -76,9 +76,9 @@ export const actions = {
       let available = state.availableGroups
       // check to see if this event is for an available group
       if (available.find((grp) => { return msg.data.groupId === grp })) {
-        let log = await EventLog(msg.data.groupId)
-        log = await put(log, { value: msg.data.entry.data, update: true })
-        // update current if the event is for the current group
+        let log = await EventLog.getEventLogForGroupId(msg.data.groupId)
+        log = await EventLog.addItemToLog(log, msg.data.entry.data, true)
+        // update curren.t if the event is for the current group
         if (state.currentGroupLog && state.currentGroupLog.currentLogPosition === msg.data.groupId) {
           commit('updateCurrentGroupLog', log)
         }
@@ -87,8 +87,8 @@ export const actions = {
   },
   async backward ({commit, state}) {
     if (state.currentGroupLog) {
-      let hash = await get(state.currentGroupLog, { hash: state.currentGroupLog.currentLogPosition, parentHash: true })
-      let log = {groupId: state.currentGroupLog.groupId, currentLogPosition: hash}
+      let entry = await EventLog.getItemFromLog(state.currentGroupLog, state.currentGroupLog.currentLogPosition)
+      let log = {groupId: state.currentGroupLog.groupId, currentLogPosition: entry.parentHash}
       let offset = state.offset.slice(0)
       offset.push(state.currentGroupLog.currentLogPosition)
       commit('updateCurrentGroupLog', {log, offset})
