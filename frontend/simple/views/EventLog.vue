@@ -49,9 +49,9 @@
                 <div class="media-content">
                   <div class="content">
                     <p>
-                      <strong>{{ event.type }}</strong> <small>@groupincomegroup</small> <small>31m</small>
+                      <strong>{{ event.data.type }}</strong> <small>@groupincomegroup</small> <small>31m</small>
                       <br>
-                      {{ event.payload }}
+                      {{ event.data.payload }}
                     </p>
                   </div>
                 </div>
@@ -68,54 +68,55 @@
 </style>
 
 <script>
-  import {collect} from '../js/event-log.js'
-    export default{
-      data () {
-       return {events:[]}
-      },
-      computed: {
-        logPosition () {
-          if(this.$store.state.currentGroupLog){
-            this.fetchData()
-            return this.$store.state.currentGroupLog.current
-          } else {
-            return null
-          }
-        },
-        eventList () {
-          return this.events.map(event => event)
+  import EventLog from '../js/event-log.js'
+  import {makeGroup, makeEvent} from '../../../shared/functions'
+  export default{
+    data () {
+     return {events:[]}
+    },
+    computed: {
+      logPosition () {
+        if(this.$store.state.currentGroupLog){
+          this.fetchData()
+          return this.$store.state.currentGroupLog.currentLogPosition
+        } else {
+          return null
         }
       },
-      methods: {
-        fetchData: async function () {
-            this.events = await collect(this.$store.state.currentGroupLog)
-        },
-        createRandomGroup: function () {
-          let getRandomInt = (min, max)=> {
-            return Math.floor(Math.random() * (max - min)) + min;
-          }
-          let group = {
-            groupName: `Group ${getRandomInt(1, 100)}` ,
-            sharedValues: 'Testing this software',
-            changePercentage: getRandomInt(1, 100) ,
-            openMembership: false,
-            memberApprovalPercentage: getRandomInt(1, 100),
-            memberRemovalPercentage: getRandomInt(1, 100),
-            incomeProvided: getRandomInt(1, 2000),
-            conrtibutionPrivacy: "Very Private",
-            founder: this.$store.state.loggedInUser
-          }
-          this.$store.dispatch('createGroup', group)
-        },
-        submit: function () {
-          this.$store.dispatch('appendLog', {type: this.$refs.type.options[this.$refs.type.selectedIndex].value, payload: this.$refs.payload.value})
-        },
-        forward: function () {
-          this.$store.dispatch('forward')
-        },
-        backward: function () {
-          this.$store.dispatch('backward')
+      eventList () {
+        return this.events.map(event => event)
+      }
+    },
+    methods: {
+      fetchData: async function () {
+          this.events = await EventLog.collect(this.$store.state.currentGroupLog)
+      },
+      createRandomGroup: function () {
+        let getRandomInt = (min, max)=> {
+          return Math.floor(Math.random() * (max - min)) + min;
         }
+        let group =  makeGroup(
+          `Group ${getRandomInt(1, 100)}` ,
+          'Testing this software',
+          getRandomInt(1, 100),
+          false,
+          getRandomInt(1, 100),
+          getRandomInt(1, 100),
+          getRandomInt(1, 2000),
+          'Very Private',
+          this.$store.state.loggedInUser
+        )
+        this.$store.dispatch('createGroup', group)
+      },
+      submit: function () {
+        this.$store.dispatch('appendLog', makeEvent(this.$refs.type.options[this.$refs.type.selectedIndex].value, this.$refs.payload.value))
+      },
+      forward: function () {
+        this.$store.dispatch('forward')
+      },
+      backward: function () {
+        this.$store.dispatch('backward')
       }
     }
+  }
 </script>
