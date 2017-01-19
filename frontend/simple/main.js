@@ -11,20 +11,14 @@ import PayGroupView from './views/PayGroupView.vue'
 import NavBar from './views/NavBar.vue'
 import utils, { wrap, lazyLoadVue, superagentHeader } from './js/utils'
 import store from './js/state'
+import pubsub from './js/pubsub'
 import './js/transitions'
-import Primus from './assets/vendor/primus'
 
 Vue.use(Router)
 Vue.use(VeeValidate)
 
+pubsub(store)
 superagentHeader('Authorization', `gi ${utils.sign('hello', utils.keypair)}`)
-
-var primus = new Primus(process.env.API_URL, {timeout: 3000, strategy: ['disconnect', 'online', 'timeout']})
-primus.on('disconnection', () => store.commit('updateSocket', null))
-primus.on('error', err => console.log(err))
-primus.on('data', msg => store.dispatch('receiveEvent', msg))
-primus.on('open', () => store.commit('updateSocket', primus))
-primus.on('reconnected', () => store.commit('updateSocket', primus))
 
 var router = new Router({
   mode: 'history',

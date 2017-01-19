@@ -39,7 +39,7 @@
                 <span id="count">Count: {{events.length}}</span>
             </div>
           <div id="Log">
-            <div class="box event" v-for="event in eventList">
+            <div class="box event" v-for="event in events">
               <article class="media">
                 <div class="media-left">
                   <figure class="image is-64x64">
@@ -76,15 +76,12 @@
     },
     computed: {
       logPosition () {
-        if(this.$store.state.currentGroupLog){
+        if (this.$store.state.currentGroupLog) {
           this.fetchData()
           return this.$store.state.currentGroupLog.currentLogPosition
         } else {
           return null
         }
-      },
-      eventList () {
-        return this.events.map(event => event)
       }
     },
     methods: {
@@ -92,8 +89,8 @@
           this.events = await EventLog.collect(this.$store.state.currentGroupLog)
       },
       createRandomGroup: function () {
-        let getRandomInt = (min, max)=> {
-          return Math.floor(Math.random() * (max - min)) + min;
+        let getRandomInt = (min, max) => {
+          return Math.floor(Math.random() * (max - min)) + min
         }
         let group =  makeGroup(
           `Group ${getRandomInt(1, 100)}` ,

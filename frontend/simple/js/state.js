@@ -6,8 +6,9 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import EventLog from './event-log'
+import {makeLog} from '../../../shared/functions'
 import {EVENT_TYPE} from '../../../shared/constants'
-const {SUCCESS} = EVENT_TYPE
+const {SUCCESS, ERROR} = EVENT_TYPE
 
 Vue.use(Vuex)
 
@@ -78,7 +79,7 @@ export const actions = {
       if (available.find((grp) => { return msg.data.groupId === grp })) {
         let log = await EventLog.getEventLogForGroupId(msg.data.groupId)
         log = await EventLog.addItemToLog(log, msg.data.entry.data, true)
-        // update curren.t if the event is for the current group
+        // update current if the event is for the current group
         if (state.currentGroupLog && state.currentGroupLog.currentLogPosition === msg.data.groupId) {
           commit('updateCurrentGroupLog', log)
         }
@@ -88,7 +89,7 @@ export const actions = {
   async backward ({commit, state}) {
     if (state.currentGroupLog) {
       let entry = await EventLog.getItemFromLog(state.currentGroupLog, state.currentGroupLog.currentLogPosition)
-      let log = {groupId: state.currentGroupLog.groupId, currentLogPosition: entry.parentHash}
+      let log = makeLog(state.currentGroupLog.groupId, entry.parentHash)
       let offset = state.offset.slice(0)
       offset.push(state.currentGroupLog.currentLogPosition)
       commit('updateCurrentGroupLog', {log, offset})
@@ -98,11 +99,10 @@ export const actions = {
     if (state.currentGroupLog && state.offset.length) {
       let offset = state.offset.slice(0)
       let prior = offset.pop()
-      let log = {groupId: state.currentGroupLog.groupId, currentLogPosition: prior}
+      let log = makeLog(state.currentGroupLog.groupId, prior)
       commit('updateCurrentGroupLog', {log, offset})
     }
   },
-  loggedIn: state => !!state.loggedInUser,
   login ({commit, state}, user) {
     if (state.loggedInUser) {
       return
@@ -141,7 +141,7 @@ function joinRoom (socket, room) {
   return new Promise((resolve, reject) => {
     socket.writeAndWait({action: 'join', room}, function (response) {
       if (response.event === SUCCESS) {
-        resolve()
+        resolve(response)
       } else {
         reject(new Error(`Failed to join ${room}`))
       }
@@ -152,7 +152,10 @@ function joinRoom (socket, room) {
 function leaveRoom (socket, room) {
   return new Promise((resolve) => {
     socket.writeAndWait({action: 'leave', room}, function (response) {
-      resolve() // not critical if this fails
+      if (response.event === ERROR) {
+        console.log(response)
+      }
+      resolve(response) // not critical if this fails
     })
   })
 }
