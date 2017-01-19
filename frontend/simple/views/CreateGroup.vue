@@ -58,11 +58,13 @@
               </div>
               <div class="tile notification is-danger">
                 <p class="title"><i18n>How transparent should your group be about who contributes?</i18n></p>
-                <select class="select" v-validate data-vv-rules="required" data-vv-as="Conrtibution Privacy" name="conrtibutionPrivacy" v-model="conrtibutionPrivacy">
-                  <option value="">Select an option</option>
-                  <option value="Very Private">Very Private</option>
-                </select>
-                <span v-show="errors.has('conrtibutionPrivacy')" class="help is-danger">{{ errors.first('conrtibutionPrivacy') }}</span>
+                <p class="select">
+                  <select v-validate data-vv-rules="required" data-vv-as="Conrtibution Privacy" name="contributionPrivacy" v-model="contributionPrivacy">
+                    <option value="">Select an option</option>
+                    <option value="Very Private">Very Private</option>
+                  </select>
+                </p>
+                <span v-show="errors.has('contributionPrivacy')" class="help is-danger">{{ errors.first('contributionPrivacy') }}</span>
               </div>
               <div class="tile">
                 <button class="button is-success center" type="submit" :disabled="errors.any() || !fields.passed()">Next: Invite Members</button>
@@ -90,7 +92,6 @@
      height: 26px;
   }
   .notification {
-    min-width: 442px;
     display: block;
     padding: 30px;
     margin: 10px 5px;
@@ -104,6 +105,7 @@
     padding: 10px 10px 0 10px;
     border-bottom: 0.2rem dashed #69707a;
     font-size: 20px;
+    width: 70%;
   }
   .is-info textarea.dotted{
     border: 0.2rem dashed white;
@@ -112,6 +114,7 @@
   textarea.dotted{
     border: 0.2rem dashed #69707a;
     height: 150px;
+    width: 70%;
   }
   .notfication.is-info textarea.dotted{
     color: white;
@@ -208,7 +211,28 @@ input[type=range]::-webkit-slider-thumb {
   height: 26px;
   width: 26px;
   background: #ffffff;
+}
+input[type=range]::-moz-range-thumb {
+  -webkit-appearance: none;
+}
+/* Special styling for WebKit/Blink */
+input[type=range]::-moz-range-thumb {
+  -webkit-appearance: none;
+  border-radius: 50%;
+  height: 26px;
+  width: 26px;
+  background: #ffffff;
+}
 
+input[type=range]::-moz-range-track {
+  width: 100%;
+  height: 8.4px;
+  cursor: pointer;
+  animate: 0.2s;
+  box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+  background: #3071a9;
+  border-radius: 1.3px;
+  border: 0.2px solid #010101;
 }
 
 </style>
@@ -216,16 +240,26 @@ input[type=range]::-webkit-slider-thumb {
 <script>
 import SignUp from './SignUp.vue'
 import {loginLogout} from '../js/mixins'
-import serialize  from 'form-serialize'
+import {makeGroup} from '../../../shared/functions'
 
 export default {
   name: 'CreateGroupView',
   methods: {
     submit: function(){
       this.$validator.validateAll()
-        .then(()=>{
-           let group = serialize(this.$refs.form, {hash: true})
-           console.log(group)
+        .then(() => {
+           let group = makeGroup(
+             this.groupName,
+             this.sharedValue,
+             this.changePercentage,
+             this.openMembership,
+             this.memberApprovalPercentage,
+             this.memberRemovalPercentage,
+             this.incomeProvided,
+             this.contributionPrivacy,
+             this.$store.state.loggedInUser
+           )
+           this.$store.dispatch('createGroup', group)
         })
       }
   },
@@ -238,7 +272,7 @@ export default {
       memberApprovalPercentage: 0,
       memberRemovalPercentage: 0,
       incomeProvided: null,
-      conrtibutionPrivacy: null
+      contributionPrivacy: null
     }
   }
 }
