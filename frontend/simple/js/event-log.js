@@ -1,5 +1,5 @@
 import localforage from 'localforage'
-import {toHash, makeEntry, makeEvent} from '../../../shared/functions'
+import {toHash, makeEntry, makeEvent, makeLog} from '../../../shared/functions'
 import request from 'superagent'
 import {EVENTS} from '../../../shared/events'
 import {Log, Group} from '../../../shared/types'
@@ -24,7 +24,7 @@ function getDB (hash: string) {
 // =======================
 // getItemFromLog retrieves from the log
 // opts object allows for parent hash to be returned instead of data
-const EventLog = {
+export default {
   async getItemFromLog (log: Log, hash: string) {
     let db = getDB(log.groupId)
     let entry = await db.getItem(hash)
@@ -34,8 +34,7 @@ const EventLog = {
   // returns the current state of the log
   async addItemToLog (log: Log, value: any, update ? : boolean) : Log {
     let db = getDB(log.groupId)
-    let currentLogPosition = await
-    db.getItem('currentLogPosition')
+    let currentLogPosition = await db.getItem('currentLogPosition')
     let entry = makeEntry(value, currentLogPosition)
     let hash = toHash(entry)
     // Do not post to server if it is an update from server
@@ -71,7 +70,7 @@ const EventLog = {
     let db = getDB(hash)
     await db.setItem(hash, entry)
     await db.setItem('currentLogPosition', hash)
-    let log = { groupId: hash, currentLogPosition: hash }
+    let log = makeLog(hash, hash)
     return log
   },
   // Retrieve an Event log based upon arguments
@@ -86,8 +85,7 @@ const EventLog = {
     if (!currentLogPosition) {
       throw new TypeError('Invalid Group')
     }
-    let log = { groupId: groupId, currentLogPosition: currentLogPosition }
+    let log = makeLog(groupId, currentLogPosition)
     return log
   }
 }
-export default EventLog

@@ -69,7 +69,7 @@ export default {
   mixins: [loginLogout],
   methods: {
     submit: function () {
-     console.log(this.errors)
+      console.log(this.errors)
       this.response = ''
       request.post(`${process.env.API_URL}/user/`)
       .send(serialize(this.$refs.form, {hash: true}))
