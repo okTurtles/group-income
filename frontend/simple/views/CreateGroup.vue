@@ -85,13 +85,18 @@
     vertical-align: bottom;
     margin: 10px 0;
   }
+  .select:after {
+    border: 1px solid #69707a;
+    border-right: 0;
+    border-top: 0;
+  }
   .center {
     margin: auto auto
   }
   .percentage{
      height: 26px;
   }
-  .notification {
+  .question-group .notification {
     display: block;
     padding: 30px;
     margin: 10px 5px;
@@ -111,6 +116,16 @@
     border: 0.2rem dashed white;
     color: white;
   }
+
+  .percentage{
+    background-color: transparent;
+    color: inherit;
+    border: none;
+    outline:none;
+    font-size: 28px;
+    border: 1px;
+  }
+
   textarea.dotted{
     border: 0.2rem dashed #69707a;
     height: 150px;
@@ -123,118 +138,102 @@
   input[type=range]{
     background-color: blue
   }
+  /* Slider toggle Styles */
   /* The switch - the box around the slider */
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 60px;
-  height: 34px;
-}
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+  }
 
-/* Hide default HTML checkbox */
-.switch input {display:none;}
+  /* Hide default HTML checkbox */
+  .switch input {display:none;}
 
-/* The slider */
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #ccc;
-  -webkit-transition: .4s;
-  transition: .4s;
-}
+  /* The slider */
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    -webkit-transition: .4s;
+    transition: .4s;
+  }
 
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 26px;
-  width: 26px;
-  left: 4px;
-  bottom: 4px;
-  background-color: white;
-  -webkit-transition: .4s;
-  transition: .4s;
-}
-.percentage{
-  background-color: transparent;
-  color: inherit;
-  border: none;
-  outline:none;
-  font-size: 28px;
-  border: 1px;
-}
-input:checked + .slider {
-  background-color: #2196F3;
-}
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    -webkit-transition: .4s;
+    transition: .4s;
+  }
 
-input:focus + .slider {
-  box-shadow: 0 0 1px #2196F3;
-}
+  input:checked + .slider {
+    background-color: #2196F3;
+  }
 
-input:checked + .slider:before {
-  -webkit-transform: translateX(26px);
-  -ms-transform: translateX(26px);
-  transform: translateX(26px);
-}
+  input:focus + .slider {
+    box-shadow: 0 0 1px #2196F3;
+  }
 
-/* Rounded sliders */
-.slider.round {
-  border-radius: 34px;
-}
+  input:checked + .slider:before {
+    -webkit-transform: translateX(26px);
+    -ms-transform: translateX(26px);
+    transform: translateX(26px);
+  }
 
-.slider.round:before {
-  border-radius: 50%;
-}
+  /* Rounded sliders */
+  .slider.round {
+    border-radius: 34px;
+  }
 
-input[type=range] {
-  -webkit-appearance: none; /* Hides the slider so that custom slider can be made */
-  background-color: #ccc; /* Otherwise white in Chrome */
-  border-radius: 34px;
-  padding: 4px;
-}
+  .slider.round:before {
+    border-radius: 50%;
+  }
+  /* end slider toggle styles */
+  /* rounded range controls */
+  input[type=range] {
+    -moz-appearance: none;
+    -webkit-appearance: none;
+    background-color: #ccc;
+    border-radius: 34px;
+    padding: 4px;
+    height: 34px;
+  }
 
-input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-}
+  input[type=range]:focus {
+    outline: none;
+  }
 
-input[type=range]:focus {
-  outline: none; /* Removes the blue border. You should probably do some kind of focus styling for accessibility reasons though. */
-}
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    border-radius: 50%;
+    height: 26px;
+    width: 26px;
+    background: #ffffff;
+  }
 
-/* Special styling for WebKit/Blink */
-input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  border-radius: 50%;
-  height: 26px;
-  width: 26px;
-  background: #ffffff;
-}
-input[type=range]::-moz-range-thumb {
-  -webkit-appearance: none;
-}
-/* Special styling for WebKit/Blink */
-input[type=range]::-moz-range-thumb {
-  -webkit-appearance: none;
-  border-radius: 50%;
-  height: 26px;
-  width: 26px;
-  background: #ffffff;
-}
+  input[type=range]::-moz-range-thumb {
+    -moz-appearance: none;
+    border-radius: 50%;
+    height: 26px;
+    width: 26px;
+    background: #ffffff;
+    border: none;
+  }
 
-input[type=range]::-moz-range-track {
-  width: 100%;
-  height: 8.4px;
-  cursor: pointer;
-  animate: 0.2s;
-  box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
-  background: #3071a9;
-  border-radius: 1.3px;
-  border: 0.2px solid #010101;
-}
-
+  input[type=range]::-moz-range-track {
+    background: transparent;
+    border-color: transparent;
+    color: transparent;
+  }
 </style>
 
 <script>
@@ -272,7 +271,7 @@ export default {
       memberApprovalPercentage: 0,
       memberRemovalPercentage: 0,
       incomeProvided: null,
-      contributionPrivacy: null
+      contributionPrivacy: ""
     }
   }
 }
