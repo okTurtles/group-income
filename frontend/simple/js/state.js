@@ -28,15 +28,29 @@ const mutations = {
   login (state, user) { state.loggedInUser = user },
   logout (state) { state.loggedInUser = null },
   updateCurrentGroupLog (state, log) {
-    if (Array.isArray(log.offset)) {
+    if (log.offsetPush) {
+      state.offset.push(state.currentGroupLog.currentLogPosition)
       state.currentGroupLog = log.log
-      state.offset = log.offset
+    } else if (log.offsetPop) {
+      state.offset.pop()
+      state.currentGroupLog = log.log
     } else {
       state.currentGroupLog = log
     }
   },
-  updateAvailableGroups (state, available) {
-    state.availableGroups = available
+  addAvailableGroup (state, available) {
+    if (!state.availableGroups.find((grp) => grp === available)) {
+      state.availableGroups.push(available)
+    }
+  },
+  removeAvailableGroup (state, available) {
+    let index = state.availableGroups.findIndex((grp) => grp === available)
+    if (index) {
+      state.availableGroups.splice(index, 1)
+    }
+  },
+  clearAvailableGroups (state, available) {
+    state.availableGroups = []
   },
   updateSocket (state, socket) {
     state.socket = socket
@@ -46,13 +60,11 @@ const mutations = {
 export const actions = {
   async createGroup ({commit, state}, group) {
     let log = await EventLog.createEventLogFromGroup(group)
-    let available = state.availableGroups
     if (state.socket) {
       await joinRoom(state.socket, group)
     }
     commit('updateCurrentGroupLog', log)
-    available.push(log.currentLogPosition)
-    commit('updateAvailableGroups', available)
+    commit('addAvailableGroup', log.groupId)
   },
   // TODO: Connect this to user credentials
   // limits to available groups for user
@@ -90,17 +102,14 @@ export const actions = {
     if (state.currentGroupLog) {
       let entry = await EventLog.getItemFromLog(state.currentGroupLog, state.currentGroupLog.currentLogPosition)
       let log = makeLog(state.currentGroupLog.groupId, entry.parentHash)
-      let offset = state.offset.slice(0)
-      offset.push(state.currentGroupLog.currentLogPosition)
-      commit('updateCurrentGroupLog', {log, offset})
+      commit('updateCurrentGroupLog', {log, offsetPush: true})
     }
   },
   async forward ({commit, state}) {
     if (state.currentGroupLog && state.offset.length) {
-      let offset = state.offset.slice(0)
-      let prior = offset.pop()
+      let prior = state.offset[state.offset.length - 1]
       let log = makeLog(state.currentGroupLog.groupId, prior)
-      commit('updateCurrentGroupLog', {log, offset})
+      commit('updateCurrentGroupLog', {log, offsetPop: true})
     }
   },
   login ({commit, state}, user) {
@@ -121,6 +130,12 @@ export const actions = {
       await leaveRoom(state.socket, room)
     }
     commit('logout')
+    commit('logout')
+  },
+  async stateTest ({commit, state}) {
+    let available = state.availableGroups
+    available.push('group')
+    console.log('')
   }
 }
 

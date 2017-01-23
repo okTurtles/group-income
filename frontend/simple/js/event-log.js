@@ -32,7 +32,7 @@ export default {
   },
   // addItemToLog appends to the log
   // returns the current state of the log
-  async addItemToLog (log: Log, value: any, update ? : boolean) : Log {
+  async addItemToLog (log: Log, value: any, update? : boolean) : Log {
     let db = getDB(log.groupId)
     let currentLogPosition = await db.getItem('currentLogPosition')
     let entry = makeEntry(value, currentLogPosition)
