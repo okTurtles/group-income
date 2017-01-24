@@ -6,16 +6,15 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import EventLog from './event-log'
-import {makeLog} from '../../../shared/functions'
 import {EVENT_TYPE} from '../../../shared/constants'
+import userSession from './user-session'
 const {SUCCESS, ERROR} = EVENT_TYPE
 
 Vue.use(Vuex)
 
 // TODO: save only relevant state to localforage
 const state = {
-  currentGroupLog: null,
-  availableGroups: [],
+  currentLogPosition: null,
   // TODO: this should be managed by Keychain, not here
   loggedInUser: null,
   offset: [],
@@ -25,32 +24,19 @@ const state = {
 // Mutations must be synchronous! Never call these directly!
 // http://vuex.vuejs.org/en/mutations.html
 const mutations = {
-  login (state, user) { state.loggedInUser = user },
+  login (state, userHashKey) { state.loggedInUser = userHashKey },
   logout (state) { state.loggedInUser = null },
-  updateCurrentGroupLog (state, log) {
-    if (log.offsetPush) {
-      state.offset.push(state.currentGroupLog.currentLogPosition)
-      state.currentGroupLog = log.log
-    } else if (log.offsetPop) {
+  updateCurrentLogPosition (state, currentLogPosition) {
+    if (currentLogPosition.offsetPush) {
+      state.offset.push(state.currentLogPosition)
+      state.currentLogPosition = currentLogPosition.currentLogPosition
+    } else if (currentLogPosition.offsetPop) {
       state.offset.pop()
-      state.currentGroupLog = log.log
+      state.currentLogPosition = currentLogPosition.currentLogPosition
     } else {
-      state.currentGroupLog = log
+      state.currentLogPosition = currentLogPosition
+      state.offset = []
     }
-  },
-  addAvailableGroup (state, available) {
-    if (!state.availableGroups.find((grp) => grp === available)) {
-      state.availableGroups.push(available)
-    }
-  },
-  removeAvailableGroup (state, available) {
-    let index = state.availableGroups.findIndex((grp) => grp === available)
-    if (index) {
-      state.availableGroups.splice(index, 1)
-    }
-  },
-  clearAvailableGroups (state, available) {
-    state.availableGroups = []
   },
   updateSocket (state, socket) {
     state.socket = socket
@@ -59,57 +45,53 @@ const mutations = {
 
 export const actions = {
   async createGroup ({commit, state}, group) {
-    let log = await EventLog.createEventLogFromGroup(group)
+    let groupId = await EventLog.createEventLogFromGroup(group)
     if (state.socket) {
-      await joinRoom(state.socket, group)
+      await joinRoom(state.socket, groupId)
     }
-    commit('updateCurrentGroupLog', log)
-    commit('addAvailableGroup', log.groupId)
+    commit('updateCurrentLogPosition', groupId)
   },
   // TODO: Connect this to user credentials
   // limits to available groups for user
-  async loadGroup ({commit, state}, group) {
-    let available = state.availableGroups
-    if (available.find((grp) => { return group === grp })) {
-      if (state.socket) {
-        await joinRoom(state.socket, group)
-      }
-      let log = await EventLog.getEventLogForGroupId(group)
-      let offset = []
-      commit('updateCurrentGroupLog', {log, offset})
+  async loadGroup ({commit, state}, groupId) {
+    await userSession.setCurrentGroup(state.loggedInUser, groupId)
+    if (state.socket) {
+      await joinRoom(state.socket, groupId)
     }
+    let currentLogPosition = await EventLog.getCurrentLogPositionForGroup(groupId)
+    commit('updateCurrentLogPosition', currentLogPosition)
   },
   async appendLog ({commit, state}, event) {
-    let log = await EventLog.addItemToLog(state.currentGroupLog, event)
-    commit('updateCurrentGroupLog', log)
+    let currentLogPosition = await EventLog.addItemToLog(event)
+    commit('updateCurrentLogPosition', currentLogPosition)
   },
   async receiveEvent ({commit, state}, msg) {
-    // check if this is a log update
     if (msg.data && msg.data.entry && msg.data.entry.parentHash) {
-      let available = state.availableGroups
+      let session = await userSession.getSession(state.loggedInUser)
+      let available = session.availableGroups
+      // TODO Add checks that confirms current entry is the parent of the new event
+      // and respond to the case where updates are missing
       // check to see if this event is for an available group
       if (available.find((grp) => { return msg.data.groupId === grp })) {
-        let log = await EventLog.getEventLogForGroupId(msg.data.groupId)
-        log = await EventLog.addItemToLog(log, msg.data.entry.data, true)
+        let currentLogPosition = await EventLog.updateLogFromServer(msg.data.groupId, msg.data.entry.data)
         // update current if the event is for the current group
-        if (state.currentGroupLog && state.currentGroupLog.currentLogPosition === msg.data.groupId) {
-          commit('updateCurrentGroupLog', log)
+        if (session.currentGroup === msg.data.groupId) {
+          commit('updateCurrentLogPosition', currentLogPosition)
         }
       }
     }
   },
   async backward ({commit, state}) {
-    if (state.currentGroupLog) {
-      let entry = await EventLog.getItemFromLog(state.currentGroupLog, state.currentGroupLog.currentLogPosition)
-      let log = makeLog(state.currentGroupLog.groupId, entry.parentHash)
-      commit('updateCurrentGroupLog', {log, offsetPush: true})
+    if (state.currentLogPosition) {
+      let entry = await EventLog.getItemFromLog(state.currentLogPosition)
+      let currentLogPosition = entry.parentHash
+      commit('updateCurrentLogPosition', {currentLogPosition, offsetPush: true})
     }
   },
   async forward ({commit, state}) {
-    if (state.currentGroupLog && state.offset.length) {
-      let prior = state.offset[state.offset.length - 1]
-      let log = makeLog(state.currentGroupLog.groupId, prior)
-      commit('updateCurrentGroupLog', {log, offsetPop: true})
+    if (state.offset.length) {
+      let currentLogPosition = state.offset[state.offset.length - 1]
+      commit('updateCurrentLogPosition', {currentLogPosition, offsetPop: true})
     }
   },
   login ({commit, state}, user) {
@@ -130,12 +112,15 @@ export const actions = {
       await leaveRoom(state.socket, room)
     }
     commit('logout')
-    commit('logout')
   },
-  async stateTest ({commit, state}) {
-    let available = state.availableGroups
-    available.push('group')
-    console.log('')
+  async createUser ({commit, state}, user) {
+    // TODO Create a real user creation
+    if (state.loggedInUser) {
+      return
+    }
+    let userHashKey = '2XbExTFJy4MqcgJP32MFc4VgV1HSa5dD9naF99MvR4LB'
+    await userSession.createSession(userHashKey)
+    commit('login', userHashKey)
   }
 }
 

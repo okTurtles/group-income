@@ -12,11 +12,13 @@ import NavBar from './views/NavBar.vue'
 import utils, { wrap, lazyLoadVue, superagentHeader } from './js/utils'
 import store from './js/state'
 import pubsub from './js/pubsub'
+import {attachVuex} from './js/event-log'
 import './js/transitions'
 
 Vue.use(Router)
 Vue.use(VeeValidate)
 
+attachVuex(store)
 pubsub(store)
 superagentHeader('Authorization', `gi ${utils.sign('hello', utils.keypair)}`)
 

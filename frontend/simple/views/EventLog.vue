@@ -36,7 +36,7 @@
                 <a class="button submit" id="random" v-on:click="createRandomGroup">
                   Create Random Group
                 </a>
-                <span id="count">Count: {{events.length}}</span>
+                Count: <span id="count">{{events.length}}</span>
             </div>
           <div id="Log">
             <div class="box event" v-for="event in events">
@@ -74,19 +74,18 @@
     data () {
      return {events:[]}
     },
+    created(){
+      this.$store.dispatch('createUser')
+    },
     computed: {
       logPosition () {
-        if (this.$store.state.currentGroupLog) {
-          this.fetchData()
-          return this.$store.state.currentGroupLog.currentLogPosition
-        } else {
-          return null
-        }
+        this.fetchData()
+        return this.$store.state.currentLogPosition
       }
     },
     methods: {
       fetchData: async function () {
-          this.events = await EventLog.collect(this.$store.state.currentGroupLog)
+          this.events = await EventLog.collect()
       },
       createRandomGroup: function () {
         let getRandomInt = (min, max) => {

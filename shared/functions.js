@@ -3,7 +3,7 @@ const createHash = require('sha.js')
 const Primus = require('primus')
 const path = require('path')
 
-import type {JSONType, JSONObject, Response, Entry, EvType, EvTypeErr, EventType, Event, Group, Log} from './types'
+import type {JSONType, JSONObject, Response, Entry, EvType, EvTypeErr, EventType, Event, Group, UserSession} from './types'
 
 export function toHash (value: JSONObject | Entry | string): string {
   // TODO: use safe/guaranteed JSON encoding? https://github.com/primus/ejson
@@ -50,11 +50,12 @@ export function makeResponse (
   return {event, data}
 }
 
-export function makeLog (
-  groupId: string,
-  currentLogPosition: string
-): Log {
-  return {groupId, currentLogPosition}
+export function makeUserSession (
+  currentGroup: ?string ='',
+  availableGroups: ?[string]= [],
+  version: ?string = '0.0.1'
+) : UserSession {
+  return {version, currentGroup, availableGroups}
 }
 
 export function makeEntry (
