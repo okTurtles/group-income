@@ -79,8 +79,12 @@
     },
     computed: {
       logPosition () {
-        this.fetchData()
-        return this.$store.state.currentLogPosition
+        if(this.$store.state.session && this.$store.state.session.currentGroup) {
+          this.fetchData()
+          return this.$store.state.session.currentGroup.currentLogPosition
+        } else {
+          return null
+        }
       }
     },
     methods: {

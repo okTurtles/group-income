@@ -49,27 +49,28 @@ describe('Frontend', function () {
       this.timeout(12000)
       await n.goto(page('event-log'))
         .should.finally.containEql({ code: 200, url: page('event-log') })
-      let result = await n.wait(4000)
+      let result = await n.wait('#random')
         .evaluate((current, eventCount) => {
           return { current: document.getElementById('LogPosition').innerText, eventCount: document.querySelectorAll('.event').length }
         })
-      let obj = await n.click('#random')
-        .insert('textarea[name="payload"]', 'This is a test payment event')
+      await n.click('#random').wait(() => Number(document.getElementById('count').innerText) > 0)
+
+      let obj = await n.insert('textarea[name="payload"]', 'This is a test payment event')
         .select('select[name="type"]', 'Payment')
         .click('#submit')
-        .wait(4000)
+        .wait(() => Number(document.getElementById('count').innerText) > 1)
         .evaluate(() => {
           return { current: document.getElementById('LogPosition').innerText, eventCount: document.querySelectorAll('.event').length }
         })
-      should(obj.eventCount).equal(result.eventCount + 1)
+      should(obj.eventCount).equal(result.eventCount + 2)
       should(obj.current !== result.current).equal(true)
     })
     it('Should Traverse Log', async function () {
       this.timeout(10000)
       await n.goto(page('event-log'))
       let initial = await n.wait('textarea[name="payload"]')
-        .insert('textarea[name="payload"]', 'This is a test Group Creation Event')
-        .select('select[name="type"]', 'Creation')
+        .insert('textarea[name="payload"]', 'This is a test Group Payment Event')
+        .select('select[name="type"]', 'Payment')
         .click('button.submit')
         .wait(2000)
         .evaluate(() => {

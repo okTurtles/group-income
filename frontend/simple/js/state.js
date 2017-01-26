@@ -7,17 +7,21 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import EventLog from './event-log'
 import {EVENT_TYPE} from '../../../shared/constants'
-import userSession from './user-session'
+import {makeUserSession} from '../../../shared/functions'
+import localforage from 'localforage'
+import _ from 'lodash-es'
 const {SUCCESS, ERROR} = EVENT_TYPE
 
 Vue.use(Vuex)
-
+let _userSessions = localforage.createInstance({
+  name: 'Group Income',
+  storeName: 'User Sessions'
+})
 // TODO: save only relevant state to localforage
 const state = {
-  currentLogPosition: null,
+  session: null,
   // TODO: this should be managed by Keychain, not here
   loggedInUser: null,
-  offset: [],
   socket: null
 }
 
@@ -28,14 +32,33 @@ const mutations = {
   logout (state) { state.loggedInUser = null },
   updateCurrentLogPosition (state, currentLogPosition) {
     if (currentLogPosition.offsetPush) {
-      state.offset.push(state.currentLogPosition)
-      state.currentLogPosition = currentLogPosition.currentLogPosition
+      state.session.offset.push(state.session.currentGroup.currentLogPosition)
+      state.session.currentGroup.currentLogPosition = currentLogPosition.currentLogPosition
     } else if (currentLogPosition.offsetPop) {
-      state.offset.pop()
-      state.currentLogPosition = currentLogPosition.currentLogPosition
+      state.session.offset.pop()
+      state.session.currentGroup.currentLogPosition = currentLogPosition.currentLogPosition
     } else {
-      state.currentLogPosition = currentLogPosition
-      state.offset = []
+      state.session.currentGroup.currentLogPosition = currentLogPosition
+      state.session.offset = []
+    }
+  },
+  updateSession (state, session) {
+    state.session = session
+  },
+  addAvailableGroup (state, available) {
+    if (!state.session.availableGroups.find((grp) => grp === available)) {
+      state.session.availableGroups.push(available)
+    }
+  },
+  removeAvailableGroup (state, available) {
+    let index = state.session.availableGroups.findIndex((grp) => grp === available)
+    if (index > -1) {
+      state.session.availableGroups.splice(index, 1)
+    }
+  },
+  setCurrentGroup (state, group) {
+    if (state.session.availableGroups.find((grp) => grp === group.groupId)) {
+      state.session.currentGroup = group
     }
   },
   updateSocket (state, socket) {
@@ -49,69 +72,67 @@ export const actions = {
     if (state.socket) {
       await joinRoom(state.socket, groupId)
     }
-    commit('updateCurrentLogPosition', groupId)
+    saveSessionDebounced(state)
   },
-  // TODO: Connect this to user credentials
-  // limits to available groups for user
-  async loadGroup ({commit, state}, groupId) {
-    await userSession.setCurrentGroup(state.loggedInUser, groupId)
-    if (state.socket) {
-      await joinRoom(state.socket, groupId)
-    }
-    let currentLogPosition = await EventLog.getCurrentLogPositionForGroup(groupId)
-    commit('updateCurrentLogPosition', currentLogPosition)
+  async appendLog ({state}, event) {
+    await EventLog.addItemToLog(event)
+    saveSessionDebounced(state)
+    console.log('happened')
   },
-  async appendLog ({commit, state}, event) {
-    let currentLogPosition = await EventLog.addItemToLog(event)
-    commit('updateCurrentLogPosition', currentLogPosition)
-  },
-  async receiveEvent ({commit, state}, msg) {
+  async receiveEvent ({state}, msg) {
     if (msg.data && msg.data.entry && msg.data.entry.parentHash) {
-      let session = await userSession.getSession(state.loggedInUser)
-      let available = session.availableGroups
+      let available = state.session.availableGroups
       // TODO Add checks that confirms current entry is the parent of the new event
       // and respond to the case where updates are missing
       // check to see if this event is for an available group
       if (available.find((grp) => { return msg.data.groupId === grp })) {
-        let currentLogPosition = await EventLog.updateLogFromServer(msg.data.groupId, msg.data.entry.data)
-        // update current if the event is for the current group
-        if (session.currentGroup === msg.data.groupId) {
-          commit('updateCurrentLogPosition', currentLogPosition)
-        }
+        await EventLog.updateLogFromServer(msg.data.groupId, msg.data.entry.data)
+        saveSessionDebounced(state)
       }
     }
   },
   async backward ({commit, state}) {
-    if (state.currentLogPosition) {
-      let entry = await EventLog.getItemFromLog(state.currentLogPosition)
+    if (state.session.currentGroup) {
+      let entry = await EventLog.getItemFromLog(state.session.currentGroup.currentLogPosition)
       let currentLogPosition = entry.parentHash
       commit('updateCurrentLogPosition', {currentLogPosition, offsetPush: true})
+      saveSessionDebounced(state)
     }
   },
-  async forward ({commit, state}) {
-    if (state.offset.length) {
-      let currentLogPosition = state.offset[state.offset.length - 1]
+  forward ({commit, state}) {
+    if (state.session.offset.length) {
+      let currentLogPosition = state.session.offset[state.session.offset.length - 1]
       commit('updateCurrentLogPosition', {currentLogPosition, offsetPop: true})
+      saveSessionDebounced(state)
     }
   },
-  login ({commit, state}, user) {
+  async login ({commit, state}, user) {
     if (state.loggedInUser) {
       return
     }
-    // TODO: Create a loop for join rooms for the available groups of the logged in user
     commit('login', user)
+    let session = await _userSessions.getItem(state.loggedInUser)
+    commit('updateSession', session)
+    let available = state.session.availableGroups
+    for (let i = 0; i < available.length; i++) {
+      let room = available[i]
+      await joinRoom(state.socket, room)
+    }
   },
   async logout ({commit, state}) {
     if (!state.loggedInUser) {
       return
     }
+    await _userSessions.setItem(state.loggedInUser, state.session)
     // leave the rooms joined by the user
-    let available = state.availableGroups
+    let available = state.session.availableGroups
     for (let i = 0; i < available.length; i++) {
       let room = available[i]
       await leaveRoom(state.socket, room)
     }
+    commit('updateSession', null)
     commit('logout')
+    saveSession(state)
   },
   async createUser ({commit, state}, user) {
     // TODO Create a real user creation
@@ -119,8 +140,10 @@ export const actions = {
       return
     }
     let userHashKey = '2XbExTFJy4MqcgJP32MFc4VgV1HSa5dD9naF99MvR4LB'
-    await userSession.createSession(userHashKey)
+    let session = makeUserSession()
+    await _userSessions.setItem(userHashKey, session)
     commit('login', userHashKey)
+    commit('updateSession', session)
   }
 }
 
@@ -159,3 +182,10 @@ function leaveRoom (socket, room) {
     })
   })
 }
+async function saveSession (state) {
+  if (!state.loggedInUser || !state.session) {
+    return
+  }
+  await _userSessions.setItem(state.loggedInUser, state.session)
+}
+const saveSessionDebounced = _.debounce(saveSession, 500, { 'maxWait': 5000 })

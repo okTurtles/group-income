@@ -17,8 +17,9 @@ export type Entry = {
 }
 export type UserSession = {
   version: string;
-  currentGroup: string;
+  currentGroup: Log;
   availableGroups : [string];
+  offset : [string];
 }
 export type Group = {
   version: string;
@@ -33,6 +34,10 @@ export type Group = {
   contributionPrivacy: string;
   founderHashKey: string;
   data: JSONObject;
+}
+export type Log= {
+  groupId: string;
+  currentLogPosition: string;
 }
 import type {EvType, EvTypeErr, EvTypeOK} from './constants'
 export type {EvType, EvTypeErr, EvTypeOK}
