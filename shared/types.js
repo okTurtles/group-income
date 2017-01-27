@@ -15,13 +15,23 @@ export type Entry = {
   parentHash: ?string;
   version: ?string;
 }
-// TODO: Remove when possible
-export type UserSession = {
-  version: string;
-  currentGroup: Log;
-  availableGroups : [string];
-  offset : [string];
+
+// https://github.com/facebook/flow/issues/3041
+export type Response = {
+  event: EvType;
+  err?: string;
+  data?: JSONType
 }
+
+import type {
+  EvType, EvTypeErr, EvTypeOK,
+  EntryType, EntryPayment, EntryCreation, EntryVoting
+} from './constants'
+export type {
+  EvType, EvTypeErr, EvTypeOK,
+  EntryType, EntryPayment, EntryCreation, EntryVoting
+}
+
 export type Group = {
   version: string;
   creationDate: date;
@@ -36,19 +46,16 @@ export type Group = {
   founderHashKey: string;
   data: JSONObject;
 }
+
 // TODO: Remove when possible
-export type Log= {
+export type UserSession = {
+  version: string;
+  currentGroup: Log;
+  availableGroups : [string];
+  offset : [string];
+}
+// TODO: Remove when possible
+export type Log = {
   groupId: string;
   currentLogPosition: string;
 }
-import type {EvType, EvTypeErr, EvTypeOK} from './constants'
-export type {EvType, EvTypeErr, EvTypeOK}
-
-export type Response =
-  // | {event: EvTypeErr; err: string; data?: JSONType}
-  // https://github.com/facebook/flow/issues/3041
-  | {event: EvTypeErr; err: JSONType; data?: JSONType}
-  | {event: EvTypeOK; data: JSONType}
-
-import type {EventType, EventTypePayment, EventTypeCreation, EventTypeVoting, Event} from './events'
-export type {EventType, EventTypePayment, EventTypeCreation, EventTypeVoting, Event}

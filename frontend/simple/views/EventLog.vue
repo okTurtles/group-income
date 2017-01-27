@@ -69,7 +69,8 @@
 
 <script>
   import EventLog from '../js/event-log.js'
-  import {makeGroup, makeEvent} from '../../../shared/functions'
+  import request from 'superagent'
+  import {toHash, makeGroup, makeEntry} from '../../../shared/functions'
   export default{
     data () {
      return {events:[]}
@@ -79,17 +80,23 @@
     },
     computed: {
       logPosition () {
-        if(this.$store.state.session && this.$store.state.session.currentGroup) {
+        // TODO: a comment was added to the review to PR 155 to properly deal with this
+        //       but was never incorporated. Same for fetchData below.
+        // See: https://github.com/okTurtles/group-income-simple/pull/155#discussion_r97190874
+        if(this.$store.state.session && this.$store.state.settings.currentGroup) {
           this.fetchData()
-          return this.$store.state.session.currentGroup.currentLogPosition
+          return this.$store.state.settings.currentGroup.currentLogPosition
         } else {
           return null
         }
       }
     },
     methods: {
+      // TODO: https://github.com/okTurtles/group-income-simple/pull/155#discussion_r97190874
       fetchData: async function () {
-          this.events = await EventLog.collect()
+        var groupId = this.$store.state.settings.currentGroup.groupId
+        var from = this.$store.state.settings.currentGroup.currentLogPosition
+        this.events = await EventLog.collect(groupId, from)
       },
       createRandomGroup: function () {
         let getRandomInt = (min, max) => {
@@ -106,10 +113,21 @@
           'Very Private',
           this.$store.state.loggedInUser
         )
-        this.$store.dispatch('createGroup', group)
+        let entry = makeEntry(CREATION, group, null)
+        let hash = toHash(entry)
+        request.post(`${process.env.API_URL}/group`).send({ hash, entry })
+        // this.$store.dispatch('createGroup', group)
       },
       submit: function () {
-        this.$store.dispatch('appendLog', makeEvent(this.$refs.type.options[this.$refs.type.selectedIndex].value, this.$refs.payload.value))
+        var type = this.$refs.type
+        var entry = makeEntry(
+          type.options[type.selectedIndex].value,
+          this.$refs.payload.value,
+          this.$store.state.settings.currentGroup.currentLogPosition
+        )
+        let hash = toHash(entry)
+        request.post(`${process.env.API_URL}/event/${groupId}`).send({hash, entry})
+        // this.$store.dispatch('appendLog', entry)
       },
       forward: function () {
         this.$store.dispatch('forward')

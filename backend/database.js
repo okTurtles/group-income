@@ -81,7 +81,7 @@ class Log extends Model {
 // wrapper methods to add log entries / create groups
 // =======================
 
-export async function createGroup (hash: string, entry: Object) {
+export async function createGroup (hash: string, entry: Entry): string {
   // TODO: add proper debugging events using Good
   if (entry.parentHash) throw new Error('parentHash must be null!')
   await HashToData.query().insert({hash, value: JSON.stringify(entry)})
@@ -99,7 +99,7 @@ export async function createGroup (hash: string, entry: Object) {
 
 export async function appendLogEntry (
   groupId: string, hash: string, entry: Entry
-) {
+): string {
   var {parentHash: claimedHash} = entry
   if (!claimedHash) throw new Error('hash cannot be null!')
   var {hash: previousHash} = await lastEntry(groupId)

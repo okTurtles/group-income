@@ -6,21 +6,24 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import EventLog from './event-log'
-import {EVENT_TYPE} from '../../../shared/constants'
-import {makeUserSession} from '../../../shared/functions'
 import localforage from 'localforage'
 import _ from 'lodash-es'
-const {SUCCESS, ERROR} = EVENT_TYPE
+import {makeUserSession, makeLog} from '../../../shared/functions'
+import {EVENT_TYPE} from '../../../shared/constants'
+const {ERROR} = EVENT_TYPE
+
+import type {Entry} from '../../../shared/types'
 
 Vue.use(Vuex)
-// appSessionData is the persistent store of the state between online sessions
-const appSessionData = localforage.createInstance({
-  name: 'Group Income',
-  storeName: 'Application Sessions'
-})
-// TODO: save only relevant state to localforage
+
+// persistent store of the state between online sessions
+const settings = localforage.createInstance({name: 'Group Income', storeName: 'Settings'})
+function saveSettings () { settings.setItem(state.loggedInUser, state.settings) }
+const saveSettingsDebounced = _.debounce(saveSettings, 500, {maxWait: 5000})
+
+// This is the Vuex state object
 const state = {
-  session: null,
+  settings: {},
   // TODO: this should be managed by Keychain, not here
   loggedInUser: null,
   socket: null
@@ -31,80 +34,84 @@ const state = {
 const mutations = {
   login (state, userHashKey) { state.loggedInUser = userHashKey },
   logout (state) { state.loggedInUser = null },
+  updateSession (state, session) { state.settings = session },
+  updateSocket (state, socket) { state.socket = socket },
   updateCurrentLogPosition (state, currentLogPosition) {
     if (currentLogPosition.offsetPush) {
-      state.session.offset.push(state.session.currentGroup.currentLogPosition)
-      state.session.currentGroup.currentLogPosition = currentLogPosition.currentLogPosition
+      state.settings.offset.push(state.settings.currentGroup.currentLogPosition)
+      state.settings.currentGroup.currentLogPosition = currentLogPosition.currentLogPosition
     } else if (currentLogPosition.offsetPop) {
-      state.session.offset.pop()
-      state.session.currentGroup.currentLogPosition = currentLogPosition.currentLogPosition
+      state.settings.offset.pop()
+      state.settings.currentGroup.currentLogPosition = currentLogPosition.currentLogPosition
     } else {
-      state.session.currentGroup.currentLogPosition = currentLogPosition
-      state.session.offset = []
+      state.settings.currentGroup.currentLogPosition = currentLogPosition
+      state.settings.offset = []
     }
   },
-  updateSession (state, session) {
-    state.session = session
-  },
   addAvailableGroup (state, available) {
-    if (!state.session.availableGroups.find((grp) => grp === available)) {
-      state.session.availableGroups.push(available)
+    if (!state.settings.availableGroups.find((grp) => grp === available)) {
+      state.settings.availableGroups.push(available)
     }
   },
   removeAvailableGroup (state, available) {
-    let index = state.session.availableGroups.findIndex((grp) => grp === available)
+    let index = state.settings.availableGroups.findIndex((grp) => grp === available)
     if (index > -1) {
-      state.session.availableGroups.splice(index, 1)
+      state.settings.availableGroups.splice(index, 1)
     }
   },
   setCurrentGroup (state, group) {
-    if (state.session.availableGroups.find((grp) => grp === group.groupId)) {
-      state.session.currentGroup = group
+    if (state.settings.availableGroups.find((grp) => grp === group.groupId)) {
+      state.settings.currentGroup = group
     }
-  },
-  updateSocket (state, socket) {
-    state.socket = socket
   }
 }
 
 export const actions = {
+  // TODO: This should *visually* create a group. That hasn't been implemented yet.
+  //       And it should be renamed to "groupCreated" or something like that, because
+  //       the way that groups are created is an event is sent via the RESTful API
+  //       to the server, and then the server responds over pubsub with an echo
+  //       of the same exact event that we just sent to the RESTful API. This tells
+  //       us that the server has successfully saved it to its database, so therefore
+  //       it's OK for us to save it to ours, and that is done again, just like on the
+  //       server, as simply adding an entry to the log, e.g. here via appendLog.
+  //
+  //       So there needs to be somewhere a big switch statement that *interprets*
+  //       the types of events that are added to the log, and updates the UI accordingly.
+  //       But either way, this 'createGroup' function has got to go.
   async createGroup ({commit, state}, group) {
-    let groupId = await EventLog.createEventLogFromGroup(group)
-    if (state.socket) {
-      await joinRoom(state.socket, groupId)
-    }
-    saveSessionDebounced(state)
+    // let groupId = await EventLog.createEventLogFromGroup(group)
+    commit('addAvailableGroup', groupId)
+    commit('setCurrentGroup', makeLog(groupId, groupId))
+    saveSettingsDebounced()
+    // TODO: joining the room should be moved out of here because this function is
+    //       'createGroup', not 'createGroupAndJoinRoom'. Also because these actions
+    //       have a single expected purpose: updating the Vuex state, and that's it.
+    state.socket && await joinRoom(state.socket, groupId)
   },
-  async appendLog ({state}, event) {
-    await EventLog.addItemToLog(event)
-    saveSessionDebounced(state)
-    console.log('happened')
-  },
-  async receiveEvent ({state}, msg) {
-    if (msg.data && msg.data.entry && msg.data.entry.parentHash) {
-      let available = state.session.availableGroups
-      // TODO Add checks that confirms current entry is the parent of the new event
-      // and respond to the case where updates are missing
-      // check to see if this event is for an available group
-      if (available.find((grp) => { return msg.data.groupId === grp })) {
-        await EventLog.updateLogFromServer(msg.data.groupId, msg.data.entry.data)
-        saveSessionDebounced(state)
-      }
-    }
+  async appendLog ({commit, state}, hash: string, entry: Entry) {
+    var groupId = state.settings.currentGroup.groupId
+    await EventLog.addLogEntry(groupId, hash, entry)
+    commit('updateCurrentLogPosition', hash)
+    console.log('happened') // TODO: add better logging
   },
   async backward ({commit, state}) {
-    if (state.session.currentGroup) {
-      let entry = await EventLog.getItemFromLog(state.session.currentGroup.currentLogPosition)
+    // TODO: if an if can fail, it must be error checked. Same goes for everywhere
+    //       else in this file where there's an 'if'.
+    if (state.settings.currentGroup) {
+      let groupId = state.settings.currentGroup.groupId
+      let hash = state.settings.currentGroup.currentLogPosition
+      let entry = await EventLog.getLogEntry(groupId, hash)
       let currentLogPosition = entry.parentHash
       commit('updateCurrentLogPosition', {currentLogPosition, offsetPush: true})
-      saveSessionDebounced(state)
+      saveSettingsDebounced()
     }
   },
   forward ({commit, state}) {
-    if (state.session.offset.length) {
-      let currentLogPosition = state.session.offset[state.session.offset.length - 1]
+    if (state.settings.offset.length) {
+      let currentLogPosition = state.settings.offset[state.settings.offset.length - 1]
       commit('updateCurrentLogPosition', {currentLogPosition, offsetPop: true})
-      saveSessionDebounced(state)
+      saveSettingsDebounced()
     }
   },
   async login ({commit, state}, user) {
@@ -112,9 +119,9 @@ export const actions = {
       return
     }
     commit('login', user)
-    let session = await appSessionData.getItem(state.loggedInUser)
+    let session = await settings.getItem(state.loggedInUser)
     commit('updateSession', session)
-    let available = state.session.availableGroups
+    let available = state.settings.availableGroups
     for (let i = 0; i < available.length; i++) {
       let room = available[i]
       await joinRoom(state.socket, room)
@@ -124,16 +131,16 @@ export const actions = {
     if (!state.loggedInUser) {
       return
     }
-    await appSessionData.setItem(state.loggedInUser, state.session)
+    await settings.setItem(state.loggedInUser, state.settings)
     // leave the rooms joined by the user
-    let available = state.session.availableGroups
+    let available = state.settings.availableGroups
     for (let i = 0; i < available.length; i++) {
       let room = available[i]
       await leaveRoom(state.socket, room)
     }
     commit('updateSession', null)
     commit('logout')
-    saveSession(state)
+    saveSettings(state)
   },
   async createUser ({commit, state}, user) {
     // TODO Create a real user creation
@@ -142,7 +149,7 @@ export const actions = {
     }
     let userHashKey = '2XbExTFJy4MqcgJP32MFc4VgV1HSa5dD9naF99MvR4LB'
     let session = makeUserSession()
-    await appSessionData.setItem(userHashKey, session)
+    await settings.setItem(userHashKey, session)
     commit('login', userHashKey)
     commit('updateSession', session)
   }
@@ -161,32 +168,19 @@ export default new Vuex.Store({state, mutations, actions})
 // Helpers
 // =======================
 
+// TODO: maybe it makes more sense to move these into pubsub.js?
 function joinRoom (socket, room) {
   return new Promise((resolve, reject) => {
     socket.writeAndWait({action: 'join', room}, function (response) {
-      if (response.event === SUCCESS) {
-        resolve(response)
-      } else {
-        reject(new Error(`Failed to join ${room}`))
-      }
+      (response.event === ERROR ? reject : resolve)(response)
     })
   })
 }
 
 function leaveRoom (socket, room) {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     socket.writeAndWait({action: 'leave', room}, function (response) {
-      if (response.event === ERROR) {
-        console.log(response)
-      }
-      resolve(response) // not critical if this fails
+      (response.event === ERROR ? reject : resolve)(response)
     })
   })
 }
-async function saveSession (state) {
-  if (!state.loggedInUser || !state.session) {
-    return
-  }
-  await appSessionData.setItem(state.loggedInUser, state.session)
-}
-const saveSessionDebounced = _.debounce(saveSession, 500, { 'maxWait': 5000 })

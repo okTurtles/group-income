@@ -1,53 +1,52 @@
 import multihash from 'multihashes'
-const createHash = require('sha.js')
+const blake = require('blakejs')
 const Primus = require('primus')
 const path = require('path')
 
-import type {JSONType, JSONObject, Response, Entry, EvType, EvTypeErr, EventType, Event, Group, Log, UserSession} from './types'
+import {EVENT_TYPE} from './constants'
+import type {
+  JSONType, JSONObject, Response, Entry, EvType, EntryType,
+  Group, Log, UserSession
+} from './types'
 
 export function toHash (value: JSONObject | Entry | string): string {
   // TODO: use safe/guaranteed JSON encoding? https://github.com/primus/ejson
   if (typeof value === 'object') {
     value = JSON.stringify(value)
   }
-  value = createHash('sha256').update(value, 'utf8').digest('hex')
-  var buff = multihash.encode(Buffer.from(value, 'hex'), 'sha2-256')
+  value = blake.blake2bHex(value)
+  var buff = multihash.encode(Buffer.from(value, 'hex'), 'blake2b')
   return multihash.toB58String(buff)
 }
 
-// TODO: this is bullshit.
-// import {EVENT_TYPE} from './constants'
-// const ERROR: EvTypeErr = EVENT_TYPE.ERROR
-// const ERROR: EvTypeErr = 'error'
-// https://github.com/facebook/flow/issues/3041
-// https://flowtype.org/docs/functions.html#too-many-arguments
 export function makeResponse (
   event: EvType,
   data: JSONType,
-  // err?: (string | {message: string})
-  err?: JSONType
-  // err?: string
-  // err?: (JSONType | {message: JSONType})
+  err?: (string | {message: string})
 ) : Response {
-  // var response: Response = {event, data}
-  if (event === 'error') {
-  // if (event === ERROR) {
+  // This type wrangling voodoo comes courtesy of: https://github.com/facebook/flow/issues/3041#issuecomment-268027891
+  // TODO: less BS plz.
+  if (event === EVENT_TYPE.ERROR) {
     if (err) {
-      // response.data = data
-      // response.err = err
-      // return data ? {event, data, err} : {event, err}
-      // return {event, data, err}
-      // return ({event, data, err}: {event: EvTypeErr; data: ?JSONType; err: string})
-      return ({event, data, err}: {event: EvTypeErr; data: ?JSONType; err: JSONType})
-      // return {event, data, err: err.message || err}
-      // return ({event, data, err: err.message || err}: {event: EvTypeErr; data: ?JSONType; err: string})
-      // return ({event, data, err: err.message || err}: {event: EvTypeErr; data: ?JSONType; err: JSONType})
+      return {
+        event: EVENT_TYPE.ERROR,
+        data,
+        err: typeof err === 'string' ? err : err.message
+      }
     } else {
-      // response.err = data
-      return {event, err: data}
+      return {event, err: String(data)}
     }
   }
   return {event, data}
+}
+
+export function makeEntry (
+  type: EntryType,
+  data: JSONObject,
+  parentHash: ?string,
+  version: ?string = '0.0.1'
+): Entry {
+  return {type, version, parentHash, data}
 }
 
 export function makeLog (
@@ -64,22 +63,6 @@ export function makeUserSession (
   version: ?string = '0.0.1'
 ) : UserSession {
   return {version, currentGroup, availableGroups, offset}
-}
-
-export function makeEntry (
-  data: JSONObject,
-  parentHash: ?string = null,
-  version: ?string = '0.0.1'
-): Entry {
-  return {version, parentHash, data}
-}
-
-export function makeEvent (
-  type : EventType,
-  payload: JSONObject,
-  version: ?string = '0.0.1'
-) : Event {
-  return {type, payload, version}
 }
 
 export function makeGroup (
@@ -123,3 +106,40 @@ export function setupPrimus (server: Object, saveAndDestroy: boolean = false) {
   }
   return primus
 }
+
+/*
+// TODO: this is bullshit.
+// import {EVENT_TYPE} from './constants'
+// const ERROR: EvTypeErr = EVENT_TYPE.ERROR
+// const ERROR: EvTypeErr = 'error'
+// https://github.com/facebook/flow/issues/3041
+// https://flowtype.org/docs/functions.html#too-many-arguments
+export function makeResponse (
+  event: EvType,
+  data: JSONType,
+  // err?: (string | {message: string})
+  err?: JSONType
+  // err?: string
+  // err?: (JSONType | {message: JSONType})
+) : Response {
+  // var response: Response = {event, data}
+  if (event === 'error') {
+  // if (event === ERROR) {
+    if (err) {
+      // response.data = data
+      // response.err = err
+      // return data ? {event, data, err} : {event, err}
+      // return {event, data, err}
+      // return ({event, data, err}: {event: EvTypeErr; data: ?JSONType; err: string})
+      return ({event, data, err}: {event: EvTypeErr; data: ?JSONType; err: JSONType})
+      // return {event, data, err: err.message || err}
+      // return ({event, data, err: err.message || err}: {event: EvTypeErr; data: ?JSONType; err: string})
+      // return ({event, data, err: err.message || err}: {event: EvTypeErr; data: ?JSONType; err: JSONType})
+    } else {
+      // response.err = data
+      return {event, err: data}
+    }
+  }
+  return {event, data}
+}
+*/

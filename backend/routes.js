@@ -42,6 +42,7 @@ module.exports = function (server: Object) {
       validate: { payload: payloadValidation }
     },
     method: ['PUT', 'POST'],
+    // TODO: do group signature based authentication here to prevent spam
     path: '/event/{groupId}',
     handler: async function (request, reply) {
       try {
