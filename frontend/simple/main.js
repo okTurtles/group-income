@@ -5,16 +5,21 @@ import VeeValidate from 'vee-validate'
 import SignUp from './views/SignUp.vue'
 import CreateGroup from './views/CreateGroup.vue'
 import UserProfileView from './views/UserProfileView.vue'
+import TestEventLog from './views/EventLog.vue'
 // import NewIncomeView from './views/NewIncomeView.vue'
 import PayGroupView from './views/PayGroupView.vue'
 import NavBar from './views/NavBar.vue'
 import utils, { wrap, lazyLoadVue, superagentHeader } from './js/utils'
 import store from './js/state'
+import pubsub from './js/pubsub'
+import {attachVuex} from './js/event-log'
 import './js/transitions'
 
 Vue.use(Router)
 Vue.use(VeeValidate)
 
+attachVuex(store)
+pubsub(store)
 superagentHeader('Authorization', `gi ${utils.sign('hello', utils.keypair)}`)
 
 var router = new Router({
@@ -45,6 +50,14 @@ var router = new Router({
       name: CreateGroup.name,
       meta: {
         title: 'Create Group'
+      },
+      beforeEnter (to, from, next) {
+        if (!store.state.loggedInUser) {
+          console.log(to.name, `redirecting to ${SignUp.name}!`)
+          next({ path: '/signup', query: { next: to.path } })
+        } else {
+          next()
+        }
       }
     },
     {
@@ -83,6 +96,13 @@ var router = new Router({
       }
     },
     {
+      path: '/event-log',
+      component: TestEventLog,
+      meta: {
+        title: 'Event Log Test Page'
+      }
+    },
+    {
       path: '*',
       redirect: '/'
     }
@@ -93,6 +113,7 @@ router.beforeEach((to, from, next) => {
   document.title = to.meta.title
   next()
 })
+
 /* eslint-disable no-new */
 new Vue({
   router: router,

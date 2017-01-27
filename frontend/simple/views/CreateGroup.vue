@@ -30,21 +30,6 @@ import SignUp from './SignUp.vue'
 import {loginLogout} from '../js/mixins'
 
 export default {
-  name: 'CreateGroupView',
-  mixins: [loginLogout],
-  // http://router.vuejs.org/en/pipeline/hooks.html
-  // http://router.vuejs.org/en/pipeline/data.html <- data vs activate!
-  // http://router.vuejs.org/en/pipeline/index.html
-  route: {
-    beforeRouteEnter (transition) {
-      console.log(this.$options.name, 'activate!')
-      if (!this.loggedIn) {
-        console.log(this.$options.name, `redirecting to ${SignUp.name}!`)
-        transition.redirect({name: SignUp.name, query: {next: this.$route.path}, replace: true})
-      } else {
-        transition.next()
-      }
-    }
-  }
+  name: 'CreateGroupView'
 }
 </script>

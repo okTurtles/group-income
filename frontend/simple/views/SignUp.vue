@@ -79,7 +79,7 @@ export default {
         this.response = this.error ? res.body.message : (res.text === '' ? 'success' : res.text)
         if (!this.error && this.$route.query.next) {
           this.login()
-          this.$route.router.push({path: this.$route.query.next})
+          this.$router.push({path: this.$route.query.next})
         }
       })
     }
