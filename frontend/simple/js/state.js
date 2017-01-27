@@ -13,9 +13,10 @@ import _ from 'lodash-es'
 const {SUCCESS, ERROR} = EVENT_TYPE
 
 Vue.use(Vuex)
-let _userSessions = localforage.createInstance({
+// appSessionData is the persistent store of the state between online sessions
+const appSessionData = localforage.createInstance({
   name: 'Group Income',
-  storeName: 'User Sessions'
+  storeName: 'Application Sessions'
 })
 // TODO: save only relevant state to localforage
 const state = {
@@ -111,7 +112,7 @@ export const actions = {
       return
     }
     commit('login', user)
-    let session = await _userSessions.getItem(state.loggedInUser)
+    let session = await appSessionData.getItem(state.loggedInUser)
     commit('updateSession', session)
     let available = state.session.availableGroups
     for (let i = 0; i < available.length; i++) {
@@ -123,7 +124,7 @@ export const actions = {
     if (!state.loggedInUser) {
       return
     }
-    await _userSessions.setItem(state.loggedInUser, state.session)
+    await appSessionData.setItem(state.loggedInUser, state.session)
     // leave the rooms joined by the user
     let available = state.session.availableGroups
     for (let i = 0; i < available.length; i++) {
@@ -141,7 +142,7 @@ export const actions = {
     }
     let userHashKey = '2XbExTFJy4MqcgJP32MFc4VgV1HSa5dD9naF99MvR4LB'
     let session = makeUserSession()
-    await _userSessions.setItem(userHashKey, session)
+    await appSessionData.setItem(userHashKey, session)
     commit('login', userHashKey)
     commit('updateSession', session)
   }
@@ -186,6 +187,6 @@ async function saveSession (state) {
   if (!state.loggedInUser || !state.session) {
     return
   }
-  await _userSessions.setItem(state.loggedInUser, state.session)
+  await appSessionData.setItem(state.loggedInUser, state.session)
 }
 const saveSessionDebounced = _.debounce(saveSession, 500, { 'maxWait': 5000 })

@@ -15,6 +15,7 @@ export type Entry = {
   parentHash: ?string;
   version: ?string;
 }
+// TODO: Remove when possible
 export type UserSession = {
   version: string;
   currentGroup: Log;
@@ -35,6 +36,7 @@ export type Group = {
   founderHashKey: string;
   data: JSONObject;
 }
+// TODO: Remove when possible
 export type Log= {
   groupId: string;
   currentLogPosition: string;

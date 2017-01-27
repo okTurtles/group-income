@@ -46,7 +46,7 @@ describe('Frontend', function () {
   })
   describe('Event Log Test', function () {
     it('Should Append to the log', async function () {
-      this.timeout(12000)
+      this.timeout(10000)
       await n.goto(page('event-log'))
         .should.finally.containEql({ code: 200, url: page('event-log') })
       let result = await n.wait('#random')
@@ -72,16 +72,24 @@ describe('Frontend', function () {
         .insert('textarea[name="payload"]', 'This is a test Group Payment Event')
         .select('select[name="type"]', 'Payment')
         .click('button.submit')
-        .wait(2000)
+        .wait(() => {
+          return document.getElementById('LogPosition').innerText !== ''
+        })
         .evaluate(() => {
           return document.getElementById('LogPosition').innerText
         })
-      let secondary = await n.click('a.backward').wait(1000)
+      let secondary = await n.click('a.backward')
+        .wait((initial) => {
+          return document.getElementById('LogPosition').innerText !== initial
+        }, initial)
         .evaluate(() => {
           return document.getElementById('LogPosition').innerText
         })
       should(initial !== secondary).equal(true)
-      let tertiary = await n.click('a.forward').wait(1000)
+      let tertiary = await n.click('a.forward')
+        .wait((secondary) => {
+          return document.getElementById('LogPosition').innerText !== secondary
+        }, secondary)
         .evaluate(() => {
           return document.getElementById('LogPosition').innerText
         })
