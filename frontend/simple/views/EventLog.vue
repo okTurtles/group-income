@@ -75,10 +75,9 @@
 
   export default {
     data () {
-     return {events:[]}
+      return {events: []}
     },
     created () {
-      // this.$store.dispatch('createUser')
       this.$store.dispatch('loadState') // TODO: get this working
     },
     computed: {
@@ -98,8 +97,8 @@
           return Math.floor(Math.random() * (max - min)) + min
           // return min
         }
-        let group =  makeGroup(
-          `Group ${getRandomInt(1, 100)}` ,
+        let group = makeGroup(
+          `Group ${getRandomInt(1, 100)}`,
           'Testing this software',
           getRandomInt(1, 100),
           false,

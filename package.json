@@ -17,7 +17,8 @@
     ],
     "parser": "babel-eslint",
     "plugins": [
-      "flowtype"
+      "flowtype",
+      "html"
     ],
     "extends": [
       "plugin:flowtype/recommended"
@@ -85,6 +86,7 @@
     "chalk": "1.1.3",
     "cheerio": "0.22.0",
     "eslint-plugin-flowtype": "2.30.0",
+    "eslint-plugin-html": "2.0.0",
     "flow-bin": "0.38.0",
     "grunt": "1.0.1",
     "grunt-browserify": "5.0.0",
