@@ -72,14 +72,14 @@
   import {makeGroup, makeEvent} from '../../../shared/functions'
   export default{
     data () {
-     return {events:[]}
+      return {events: []}
     },
-    created(){
+    created () {
       this.$store.dispatch('createUser')
     },
     computed: {
       logPosition () {
-        if(this.$store.state.session && this.$store.state.session.currentGroup) {
+        if (this.$store.state.session && this.$store.state.session.currentGroup) {
           this.fetchData()
           return this.$store.state.session.currentGroup.currentLogPosition
         } else {
@@ -89,14 +89,14 @@
     },
     methods: {
       fetchData: async function () {
-          this.events = await EventLog.collect()
+        this.events = await EventLog.collect()
       },
       createRandomGroup: function () {
         let getRandomInt = (min, max) => {
           return Math.floor(Math.random() * (max - min)) + min
         }
-        let group =  makeGroup(
-          `Group ${getRandomInt(1, 100)}` ,
+        let group = makeGroup(
+          `Group ${getRandomInt(1, 100)}`,
           'Testing this software',
           getRandomInt(1, 100),
           false,
