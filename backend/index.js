@@ -23,6 +23,8 @@ process.on('message', function () {
     try {
       await server.hapi.stop()
       console.log('Hapi server down')
+      await db.stop()
+      console.log('database stopped')
       process.send({}) // tell grunt we've successfully shutdown the server
       process.nextTick(() => process.exit(0)) // triple-check we quit :P
     } catch (err) {

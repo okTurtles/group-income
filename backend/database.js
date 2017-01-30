@@ -3,7 +3,7 @@
 import Knex from 'knex'
 import {Model, transaction, ValidationError} from 'objection'
 import {toHash, makeEntry} from '../shared/functions'
-
+import {ENTRY_TYPE} from '../shared/constants'
 import type {Entry} from '../shared/types'
 
 // Initialize knex connection.
@@ -55,12 +55,13 @@ class Log extends Model {
   static tableName = 'Log'
   static jsonSchema = {
     type: 'object',
-    required: ['version', 'parentHash', 'data', 'hash'],
+    required: ['version', 'type', 'parentHash', 'data', 'hash'],
     properties: {
       id: {type: 'integer'},
       version: {type: 'string'},
+      type: {type: 'string'},
       parentHash: {type: ['string', 'null']},
-      data: {type: 'object'},
+      data: {type: ['object', 'string']},
       hash: {type: 'string'}
     }
   }
@@ -81,13 +82,14 @@ class Log extends Model {
 // wrapper methods to add log entries / create groups
 // =======================
 
-export async function createGroup (hash: string, entry: Entry): string {
+export async function createGroup (hash: string, entry: Entry): Promise<string> {
   // TODO: add proper debugging events using Good
   if (entry.parentHash) throw new Error('parentHash must be null!')
   await HashToData.query().insert({hash, value: JSON.stringify(entry)})
   await knex.schema.createTableIfNotExists(hash, function (table) {
     table.increments()
     table.text('version').notNullable()
+    table.text('type').notNullable()
     table.text('parentHash')
     table.text('data').notNullable()
     table.text('hash').notNullable().index()
@@ -99,14 +101,14 @@ export async function createGroup (hash: string, entry: Entry): string {
 
 export async function appendLogEntry (
   groupId: string, hash: string, entry: Entry
-): string {
+): Promise<string> {
   var {parentHash: claimedHash} = entry
   if (!claimedHash) throw new Error('hash cannot be null!')
   var {hash: previousHash} = await lastEntry(groupId)
   if (previousHash !== claimedHash) {
     throw new ValidationError(`claimed hash: ${claimedHash}, reality: ${previousHash}`)
   }
-  Log.tableName = groupId
+  Log.tableName = groupId // just in case the call to `transaction` needs it...
   return transaction(HashToData, Log, async function (HashToData, Log) {
     await HashToData.query().insert({hash, value: JSON.stringify(entry)})
     await Log.table(groupId).insert({...entry, hash})
@@ -123,10 +125,18 @@ export async function lastEntry (groupId: string) {
 
 // TODO: does this stream need to be consumed? what happens if it isn't?
 //       do we need to close it anyway after some time or something?
+// "On an HTTP server, make sure to manually close your streams if a request is aborted."
+// From: http://knexjs.org/#Interfaces-Streams
+// https://github.com/tgriesser/knex/wiki/Manually-Closing-Streams
+// => request.on('close', stream.end.bind(stream))
 export function streamEntriesSince (groupId: string, hash: string) {
   return Log.table(groupId).where(
     'id', '>', Log.table(groupId).select('id').where('hash', hash)
   ).stream()
+}
+
+export async function stop () {
+  await knex.destroy()
 }
 
 // =======================
@@ -139,7 +149,7 @@ if (testDatabaseJs && testDatabaseJs.indexOf('babel-node') !== -1) {
   (async function () {
     try {
       await loaded
-      var entry = makeEntry({hello: 'world!', pubkey: 'foobarbaz'})
+      var entry = makeEntry(ENTRY_TYPE.CREATION, {hello: 'world!', pubkey: 'foobarbaz'}, null)
       var groupId = toHash(entry)
       console.log('creating group:', groupId)
       await createGroup(groupId, entry)

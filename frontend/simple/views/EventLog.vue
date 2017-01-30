@@ -49,9 +49,9 @@
                 <div class="media-content">
                   <div class="content">
                     <p>
-                      <strong>{{ event.data.type }}</strong> <small>@groupincomegroup</small> <small>31m</small>
+                      <strong>{{ event.type }}</strong> <small>@groupincomegroup</small> <small>31m</small>
                       <br>
-                      {{ event.data.payload }}
+                      {{ event.data }}
                     </p>
                   </div>
                 </div>
@@ -68,39 +68,35 @@
 </style>
 
 <script>
-  import EventLog from '../js/event-log.js'
-  import request from 'superagent'
-  import {toHash, makeGroup, makeEntry} from '../../../shared/functions'
-  export default{
+  import * as db from '../js/database'
+  import backend from '../js/backend'
+  import {makeGroup, makeEntry, toHash} from '../../../shared/functions'
+  import {RESPONSE_TYPE, ENTRY_TYPE} from '../../../shared/constants'
+
+  export default {
     data () {
      return {events:[]}
     },
-    created(){
-      this.$store.dispatch('createUser')
+    created () {
+      // this.$store.dispatch('createUser')
+      this.$store.dispatch('loadState') // TODO: get this working
     },
     computed: {
       logPosition () {
-        // TODO: a comment was added to the review to PR 155 to properly deal with this
-        //       but was never incorporated. Same for fetchData below.
-        // See: https://github.com/okTurtles/group-income-simple/pull/155#discussion_r97190874
-        if(this.$store.state.session && this.$store.state.settings.currentGroup) {
-          this.fetchData()
-          return this.$store.state.settings.currentGroup.currentLogPosition
-        } else {
-          return null
-        }
+        // TODO: this. point is to update this.events anytime logPosition changes
+        this.recollectEvents()
+        return this.$store.state.currentGroup.logPosition
       }
     },
     methods: {
-      // TODO: https://github.com/okTurtles/group-income-simple/pull/155#discussion_r97190874
-      fetchData: async function () {
-        var groupId = this.$store.state.settings.currentGroup.groupId
-        var from = this.$store.state.settings.currentGroup.currentLogPosition
-        this.events = await EventLog.collect(groupId, from)
+      recollectEvents: async function () {
+        var {groupId, logPosition} = this.$store.state.currentGroup
+        this.events = await db.collect(groupId, logPosition)
       },
-      createRandomGroup: function () {
+      createRandomGroup: async function () {
         let getRandomInt = (min, max) => {
           return Math.floor(Math.random() * (max - min)) + min
+          // return min
         }
         let group =  makeGroup(
           `Group ${getRandomInt(1, 100)}` ,
@@ -109,25 +105,34 @@
           false,
           getRandomInt(1, 100),
           getRandomInt(1, 100),
-          getRandomInt(1, 2000),
           'Very Private',
-          this.$store.state.loggedInUser
+          'alsdfjlskdfjaslkfjsldkfj'
         )
-        let entry = makeEntry(CREATION, group, null)
+        let entry = makeEntry(ENTRY_TYPE.CREATION, group, null)
         let hash = toHash(entry)
-        request.post(`${process.env.API_URL}/group`).send({ hash, entry })
-        // this.$store.dispatch('createGroup', group)
+        let res = await backend.publishLogEntry(hash, entry, hash)
+        if (!res || res.type === RESPONSE_TYPE.ERROR) {
+          console.error('failed to create group!')
+        } else {
+          // TODO: subscribe first and then have handleEvent be auto called
+          console.log('group created. server response:', res)
+          await this.$store.dispatch('handleEvent', {groupId: hash, hash, entry})
+          await backend.subscribe(hash)
+        }
       },
-      submit: function () {
-        var type = this.$refs.type
-        var entry = makeEntry(
-          type.options[type.selectedIndex].value,
+      submit: async function () {
+        // TODO: handle adding the same event twice. (do we need a nonce for now?)
+        // TODO: test invalid hash for entry
+        // TODO: test adding to the wrong groupId
+        // TODO: test adding to the wrong parentHash
+        let groupId = this.$store.state.currentGroup.groupId
+        let entry = makeEntry(
+          this.$refs.type.options[this.$refs.type.selectedIndex].value,
           this.$refs.payload.value,
-          this.$store.state.settings.currentGroup.currentLogPosition
+          await db.recentHash(groupId)
         )
-        let hash = toHash(entry)
-        request.post(`${process.env.API_URL}/event/${groupId}`).send({hash, entry})
-        // this.$store.dispatch('appendLog', entry)
+        let res = await backend.publishLogEntry(groupId, entry)
+        console.log('entry sent, server response:', res)
       },
       forward: function () {
         this.$store.dispatch('forward')

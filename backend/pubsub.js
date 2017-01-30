@@ -2,52 +2,68 @@
 
 'use strict'
 
-// setup websockets
 // primus events: https://github.com/primus/primus#events
+// https://github.com/primus/primus-emit (better than primus-emitter)
 
-// import * as db from './database'
-import {EVENT_TYPE} from '../shared/constants'
+import {bold} from 'chalk'
+import {RESPONSE_TYPE} from '../shared/constants'
 import {makeResponse, setupPrimus} from '../shared/functions'
 
-const {ERROR, SUCCESS} = EVENT_TYPE
+const {ERROR, SUCCESS, JOINED, LEFT} = RESPONSE_TYPE
+
+// TODO: decide whether it's better to switch to HTTP2 intead of using websockets
+// https://www.reddit.com/r/rust/comments/5p6a8z/a_hyper_update_v010_last_week_tokio_soon/
+//
+// NOTE: primus-rooms can be used with primus-multiplex
+//       primus-multiplex makes it so that the server can have
+//       multiple channels, and each channel then can have multiple rooms.
+// https://github.com/cayasso/primus-multiplex/blob/master/examples/node/rooms/index.js
 
 module.exports = function (hapi: Object) {
   var primus = setupPrimus(hapi.listener)
-  // makes it possible to access primus via: hapi.primus
+  // make it possible to access primus via: hapi.primus
   hapi.decorate('server', 'primus', primus)
+
+  primus.on('roomserror', function (error, spark) {
+    console.log(bold.red('Rooms error from ' + spark.id), error)
+  })
+  primus.on('joinroom', function (room, spark) {
+    console.log(bold.yellow(spark.id + ' joined ' + room))
+  })
 
   primus.on('connection', function (spark) {
     // spark is the new connection. https://github.com/primus/primus#sparkheaders
     const {id, address} = spark
     // console.log('connection has the following headers', headers)
-    console.log(`[pubsub] ${id} connected from:`, address)
+    console.log(bold(`[pubsub] ${id} connected from:`), address)
 
     // https://github.com/swissmanu/primus-responder
-    spark.on('request', function (data, done) {
-      console.log('[pubsub] received REQUEST from client:', data)
-      var {room, action} = data
-      var response = makeResponse(SUCCESS, {action, id})
+    spark.on('request', async function (data, done) {
+      var {groupId, action} = data
+      var success = makeResponse(SUCCESS, {action, id})
+      console.log(bold(`[pubsub] ACTION '${action}' from '${id}' with data:`), data)
       try {
         switch (action) {
-          case 'join':
-            spark.join(room, function () {
-              console.log(`[pubsub] ACTION: ${action} ROOM: ${room} client: ${id}`)
-              spark.room(room).except(id).write(response)
-              done(response)
+          case 'sub':
+            spark.join(groupId, function () {
+              spark.on('leaveallrooms', (rooms) => {
+                // this gets called on spark.leaveAll and 'disconnection'
+                rooms.forEach(groupId => {
+                  primus.room(groupId).write(makeResponse(LEFT, {groupId, id}))
+                })
+              })
+              spark.room(groupId).except(id).write(makeResponse(JOINED, {groupId, id}))
+              done(success)
             })
             break
-          case 'leave':
-            spark.leave(room, () => {
-              console.log(`[pubsub] ACTION: ${action} ROOM: ${room} client: ${id}`)
-              // TODO: do we notify other clients here as well?
-              done(response)
-            })
+          case 'unsub':
+            spark.room(groupId).except(id).write(makeResponse(LEFT, {groupId, id}))
+            spark.leave(groupId, () => done(success))
             break
           default:
-            console.error(`[pubsub] client ${id} didn't give us a valid action!`, data)
-            spark.leaveAll() // remove this person from all the rooms
-            // TODO: do we notify other clients here as well?
-            done(makeResponse(ERROR, 'invalid action'))
+            console.error(bold.red(`[pubsub] client ${id} didn't give us a valid action!`), data)
+            spark.leaveAll()
+            done(makeResponse(ERROR, `invalid action: ${action}`))
             spark.end()
         }
       } catch (err) {
@@ -57,28 +73,7 @@ module.exports = function (hapi: Object) {
     })
 
     spark.on('data', function (data) {
-      console.log('[pubsub] received DATA from client:', data)
-      /* var {room, action} = data
-      var response = makeResponse(SUCCESS, {action, id})
-      try {
-        switch (action) {
-          case 'eventsSince':
-            spark.rooms().forEach((room) => {
-              // TODO: accept an argument (timestamp or entryNum)
-              db.streamEntriesSince(room, {entryNum: 0}).pipe(spark)
-            })
-            break
-          default:
-            console.error(`client ${id} didn't give us a valid action!`, data)
-            spark.leaveAll() // remove this person from all the rooms
-            // TODO: do we notify other clients here as well?
-            done(makeResponse(ERROR, 'invalid action'))
-            spark.end()
-        }
-      } catch (err) {
-        spark.write(makeResponse(ERROR, {action: action || null}, err))
-        logger(err)
-      } */
+      console.log(bold.red('[pubsub] received UNHANDLED DATA from client:', data))
     })
   })
 

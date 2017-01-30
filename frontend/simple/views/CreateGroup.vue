@@ -27,7 +27,6 @@
 
 <script>
 import SignUp from './SignUp.vue'
-import {loginLogout} from '../js/mixins'
 
 export default {
   name: 'CreateGroupView'

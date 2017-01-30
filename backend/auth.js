@@ -3,7 +3,8 @@
 // https://hapijs.com/tutorials/plugins
 
 const Boom = require('boom')
-const nacl = require('tweetnacl')
+
+import {verify} from '../shared/functions'
 
 exports.register = function (
   server: Object,
@@ -36,11 +37,10 @@ exports.register = function (
   })
 
   var b642buf = b64 => Buffer.from(b64, 'base64')
-  var str2buf = str => Buffer.from(str, 'utf8')
   var b642str = b64 => b642buf(b64).toString('utf8')
   server.auth.strategy('gi-auth', 'gi-auth', {
     verify: function (req, json, cb) {
-      var result = nacl.sign.detached.verify(str2buf(json.msg), b642buf(json.sig), b642buf(json.key))
+      var result = verify(json)
       json.userId = json.key
       cb(null, result, json)
     }

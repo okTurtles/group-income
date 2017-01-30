@@ -1,32 +1,24 @@
-// TODO: edit .flowconfig to unignore this file
-
-// Two most useful FlowType docs:
-// https://flowtype.org/docs/quick-reference.html
-// https://flowtype.org/docs/objects.html
-// https://flowtype.org/docs/functions.html
-// Useful reading on ES6 classes:
+// Handy reading on ES6 classes:
 // http://www.benmvp.com/learning-es6-classes/
 // https://www.sitepoint.com/object-oriented-javascript-deep-dive-es6-classes/
 
-// TODO: merge with event-log.js
-export class Backend {
-  async retrieveGroup (id) {} // resolves to a Group object
-  async retrieveIdentity (id) {} // resolves to an Identity object (IPNS?)
-  async createGroup (group) {}
-  async createIdentity (identity) {}
-}
+import type {Entry} from '../../../../shared/types'
 
-// TODO: merge with pubsub
-// must be compatible with tor
-export class MessageRelay {
-  sendEphemeralMsg (groupOrIdentity, msg) {}
-  sendLogMsg (group, msg) {}
+export class Backend {
+  publishLogEntry (groupId: string, entry: Entry, hash?: string) {}
+  subscribe (groupId: string) {}
+  unsubscribe (groupId: string) {}
+  subscriptions () {}
+  // TODO: these
+  // async createIdentity (identity) {}
+  // async getIdentity (id) {}
 }
 
 // =======================
 // Utility classes
 // =======================
 
+/*
 export class Key {
   constructor (privKey, pubKey?) {
     this.privKey = privKey
@@ -37,14 +29,15 @@ export class Key {
   signMessage (msg) {}
   verifySignature (msg, sig) {}
 }
+*/
+
+// =======================
+// Contracts & related classes. "Contracts" represent immutable code.
+// =======================
 
 export class Operation {}
 export class OpManageOps extends Operation {}
 export class OpSign extends Operation {}
-
-// =======================
-// Contracts — classes representing immutable code
-// =======================
 
 export class IdentityContract {
   constructor () {
