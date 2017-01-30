@@ -78,7 +78,6 @@ export const actions = {
   async appendLog ({state}, event) {
     await EventLog.addItemToLog(event)
     saveSessionDebounced(state)
-    console.log('happened')
   },
   async receiveEvent ({state}, msg) {
     if (msg.data && msg.data.entry && msg.data.entry.parentHash) {
