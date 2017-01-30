@@ -20,6 +20,10 @@ Vue.use(VeeValidate)
 
 attachVuex(store)
 pubsub(store)
+window.onbeforeunload = () => {
+  store.dispatch('saveSession')
+  return 'Saving Session'
+}
 superagentHeader('Authorization', `gi ${utils.sign('hello', utils.keypair)}`)
 
 var router = new Router({
