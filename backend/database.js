@@ -10,6 +10,7 @@ import type {Entry} from '../shared/types'
 const knex = Knex({
   client: 'sqlite3',
   connection: {
+    // TODO: change :memory: to test.db and drop all tables from it at launch
     filename: process.env.NODE_ENV === 'production' ? 'groupincome.db' : ':memory:'
   },
   useNullAsDefault: true
@@ -61,7 +62,7 @@ class Log extends Model {
       version: {type: 'string'},
       type: {type: 'string'},
       parentHash: {type: ['string', 'null']},
-      data: {type: ['object', 'string']},
+      data: {type: 'object'},
       hash: {type: 'string'}
     }
   }

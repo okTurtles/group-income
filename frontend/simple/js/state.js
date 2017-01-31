@@ -11,9 +11,17 @@ import type {Entry} from '../../../shared/types'
 
 Vue.use(Vuex)
 
+export type LogState = {groupId: string | null; position: string | null;}
+function makeLogState (
+  groupId: string | null, position: string | null
+): LogState {
+  return {groupId, position}
+}
+
 // This is the Vuex state object
-const state = {
-  currentGroup: {},
+// Type annotation explanation: https://flowtype.org/docs/objects.html
+const state: {currentGroup: LogState} = {
+  currentGroup: makeLogState(null, null),
   offset: [],
   groups: [], // groups we're part of. This might be represented differently later
   loggedIn: false // TODO: properly handle this
@@ -22,17 +30,17 @@ const state = {
 // Mutations must be synchronous! Never call these directly!
 // http://vuex.vuejs.org/en/mutations.html
 const mutations = {
-  logPosition (state, logPosition) {
-    state.currentGroup.logPosition = logPosition
+  logPosition (state, logPosition: string) {
+    state.currentGroup.position = logPosition
     state.offset = []
   },
   backward (state, offset) {
-    state.offset.push(state.currentGroup.logPosition)
-    state.currentGroup.logPosition = offset
+    state.offset.push(state.currentGroup.position)
+    state.currentGroup.position = offset
   },
   forward (state) {
     if (state.offset.length > 0) {
-      state.currentGroup.logPosition = state.offset.pop()
+      state.currentGroup.position = state.offset.pop()
     }
   },
   addGroup (state, groupId) {
@@ -45,7 +53,7 @@ const mutations = {
   setGroups (state, groups) {
     state.groups = groups
   },
-  setCurrentGroup (state, currentGroup) {
+  setCurrentGroup (state, currentGroup: LogState) {
     state.currentGroup = currentGroup
     state.offset = []
   }
@@ -56,28 +64,31 @@ export const actions = {
     {state}: {state: Object}
   ) {
     await db.saveSettings({
-      groupId: state.currentGroup.groupId,
+      currentGroup: state.currentGroup,
       groups: state.groups
     })
   },
   async loadState (
-    {commit, state}: {state: Object}
+    {commit, state}: {commit: Function, state: Object}
   ) {
-    let {groups, groupId} = await db.loadSettings()
-    commit('setCurrentGroup', groupId, await db.recentHash(groupId))
-    commit('setGroups', groups)
+    let {groups, currentGroup} = await db.loadSettings()
+    commit('setCurrentGroup', currentGroup || makeLogState(null, null))
+    commit('setGroups', groups || [])
   },
 
-  // this is main entry point for getting events into the log.
+  // this function is called from ./pubsub.js and is the entry point
+  // for getting events into the log.
   // mirrors `handleEvent` in backend/server.js
   async handleEvent (
     {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object},
     {groupId, hash, entry}: {groupId: string, hash: string, entry: Entry}
   ) {
-    console.log(`HANDLING EVENT for ${groupId}:`, entry) // TODO: add better logging
+    console.log(`handleEvent for ${groupId}:`, entry)
     await db.addLogEntry(groupId, hash, entry)
+    // TODO: verify each entry is signed by a group member
     if (entry.type === ENTRY_TYPE.CREATION) {
-      commit('setCurrentGroup', {groupId, logPosition: groupId})
+      // TODO: verify we created this group before calling setCurrentGroup
+      commit('setCurrentGroup', makeLogState(groupId, groupId))
       commit('addGroup', groupId)
       dispatch('saveState')
     } else {
@@ -90,8 +101,8 @@ export const actions = {
     {commit, state}: {commit: Function, state: Object}
   ) {
     if (state.currentGroup) {
-      let {groupId, logPosition} = state.currentGroup
-      let entry = await db.getLogEntry(groupId, logPosition)
+      let {groupId, position} = state.currentGroup
+      let entry = await db.getLogEntry(groupId, position)
       commit('backward', entry.parentHash)
     }
   },

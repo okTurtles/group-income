@@ -47,6 +47,7 @@ module.exports = function (hapi: Object) {
           case 'sub':
             spark.join(groupId, function () {
               spark.on('leaveallrooms', (rooms) => {
+                console.log(bold.yellow(`[pubsub] ${id} leaveallrooms`))
                 // this gets called on spark.leaveAll and 'disconnection'
                 rooms.forEach(groupId => {
                   primus.room(groupId).write(makeResponse(LEFT, {groupId, id}))
@@ -79,6 +80,6 @@ module.exports = function (hapi: Object) {
 
   primus.on('disconnection', function (spark) {
     // the spark that disconnected
-    console.log(`[pubsub] ${spark.id} disconnected`)
+    console.log(bold.yellow(`[pubsub] ${spark.id} disconnection`))
   })
 }

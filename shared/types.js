@@ -1,11 +1,12 @@
 /* eslint no-undef: "off", no-unused-vars: "off" */
 
-// Run flow with: yarn run flow
+// Run flow with: `yarn flow` OR `yarn run flow`
 
-// https://flowtype.org/docs/advanced-configuration.html
+// Start Here: https://flowtype.org/docs/syntax.html
+// From: https://flowtype.org/docs/builtins.html#mixed
 // https://flowtype.org/docs/declarations.html
 // https://flowtype.org/docs/modules.html#import-type
-// From: https://flowtype.org/docs/builtins.html#mixed
+// https://flowtype.org/docs/advanced-configuration.html
 
 // =======================
 // Common/universal types
@@ -34,15 +35,18 @@ export type EntryPayment = 'payment'
 export type EntryCreation = 'creation' // TODO: better, more specific name
 export type EntryVoting = 'voting'
 
-export type Entry = {
+// export type Entry = { // <- was causing problems
+export interface Entry {
   type: EntryType;
   data: JSONObject;
   parentHash: string | null;
   version: string;
 }
 
+// NOTE: If Flow isn't making any sense try changing this from a type to an interface!
 // https://github.com/facebook/flow/issues/3041
 export type Response = {
+// export interface Response {
   type: ResType;
   err?: string;
   data?: JSONType

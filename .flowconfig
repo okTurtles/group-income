@@ -13,6 +13,7 @@
 .*/frontend/simple/assets/.*
 .*/backend/discard/.*
 .*/frontend/simple/js/backend/interface.js
+# .*/test/frontend.js
 
 [libs]
 shared/declarations.js

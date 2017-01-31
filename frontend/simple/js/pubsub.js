@@ -14,18 +14,16 @@ export const primus = new Primus(
 )
 export default function (store: Object) {
   primus.on('error', err => console.log('SOCKET ERR:', err.message))
-  primus.on('open', () => {
-    console.log('websocket connection opened!')
-    primus.on('data', msg => {
-      console.log('SOCKET GOT DATA:', msg)
-      if (msg.type === RESPONSE_TYPE.ENTRY) {
-        var {groupId, hash, entry} = msg.data
-        store.dispatch('handleEvent', {groupId, hash, entry})
-      } else {
-        // TODO: this!!
-        console.log('SOCKET UNHANDLED EVENT!', msg)
-      }
-    })
+  primus.on('open', () => console.log('websocket connection opened!'))
+  primus.on('data', msg => {
+    if (msg.type === RESPONSE_TYPE.ENTRY) {
+      console.log('SOCKET GOT NEW LOG ENTRY:', msg)
+      if (!msg.data) throw Error('malformed message: ' + JSON.stringify(msg))
+      store.dispatch('handleEvent', msg.data)
+    } else {
+      // TODO: this!!
+      console.log('SOCKET UNHANDLED EVENT!', msg)
+    }
   })
 }
 

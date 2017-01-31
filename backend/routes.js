@@ -5,6 +5,9 @@ import {makeResponse} from '../shared/functions'
 // const Boom = require('boom')
 const Joi = require('joi')
 
+// NOTE: We could get rid of this RESTful API and just rely on pubsub.js to do this
+//       —BUT HTTP2 might be better than websockets and so we keep this around.
+//       See related TODO in pubsub.js and the reddit discussion link.
 module.exports = function (server: Object) {
   const payloadValidation = Joi.object({
     hash: Joi.string().required(),
@@ -13,7 +16,7 @@ module.exports = function (server: Object) {
       version: Joi.string().required(),
       type: Joi.string().required(),
       parentHash: Joi.string().allow(null),
-      data: [Joi.string(), Joi.object()]
+      data: Joi.object()
     })
   })
   server.route({

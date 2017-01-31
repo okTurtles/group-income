@@ -59,7 +59,6 @@
 </style>
 
 <script>
-import Vue from 'vue'
 var serialize = require('form-serialize')
 var request = require('superagent')
 

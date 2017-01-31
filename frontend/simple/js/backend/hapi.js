@@ -44,13 +44,15 @@ export class HapiBackend extends Backend {
     var res = await pubsub.joinRoom(groupId)
     this._subscriptions.push(groupId)
     console.log('subscribed to:', groupId, 'response:', res)
+    return res
   }
   async unsubscribe (groupId: string) {
     let index = this._subscriptions.indexOf(groupId)
     if (index === -1) {
       return console.error('HapiBackend.unsubscribe: not subscribed!', groupId)
     }
-    await pubsub.leaveRoom(groupId)
+    var res = await pubsub.leaveRoom(groupId)
     this._subscriptions.splice(index, 1)
+    return res
   }
 }

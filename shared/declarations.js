@@ -24,6 +24,8 @@ declare var describe: any
 declare var it: any
 declare var after: any
 declare var $: any
+// nightmare globals
+declare var document: any
 
 // =======================
 // Fix "Required module not found" in a hackish way.

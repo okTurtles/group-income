@@ -23,7 +23,7 @@ hapi.connection({
 hapi.decorate('server', 'handleEvent', async function (
   groupId: string, hash: string, entry: Entry
 ) {
-  console.log('[server] handleEvent:', entry)
+  console.log(bold('[server] handleEvent:'), entry)
   if (entry.type === ENTRY_TYPE.CREATION) {
     await db.createGroup(groupId, entry)
   } else {

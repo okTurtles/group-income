@@ -18,11 +18,12 @@
                     </span>
               </a>
             </div>
+              Select an Event Type:
               <span class="select">
                 <select ref="type" name="type" data-rules="required">
-                  <option value="" disabled selected>Select an Event Type</option>
-                  <option value="Payment">Payment</option>
-                  <option value="Voting">Voting</option>
+                  <!-- Values must match the types in shared/types.js -->
+                  <option value="payment" selected>Payment</option>
+                  <option value="voting">Voting</option>
                 </select>
               </span>
             </p>
@@ -78,19 +79,22 @@
       return {events: []}
     },
     created () {
-      this.$store.dispatch('loadState') // TODO: get this working
+      // NOTE: this works, but backend doesn't persist database, so during
+      //       development this makes things break.
+      // console.log('dispatching loadState!')
+      // this.$store.dispatch('loadState')
     },
     computed: {
       logPosition () {
         // TODO: this. point is to update this.events anytime logPosition changes
         this.recollectEvents()
-        return this.$store.state.currentGroup.logPosition
+        return this.$store.state.currentGroup.position
       }
     },
     methods: {
       recollectEvents: async function () {
-        var {groupId, logPosition} = this.$store.state.currentGroup
-        this.events = await db.collect(groupId, logPosition)
+        var {groupId, position} = this.$store.state.currentGroup
+        this.events = await db.collect(groupId, position)
       },
       createRandomGroup: async function () {
         let getRandomInt = (min, max) => {
@@ -107,30 +111,36 @@
           'Very Private',
           'alsdfjlskdfjaslkfjsldkfj'
         )
+        // subscribe first and so that handleEvent is automatically dispatched
         let entry = makeEntry(ENTRY_TYPE.CREATION, group, null)
         let hash = toHash(entry)
+        await backend.subscribe(hash)
         let res = await backend.publishLogEntry(hash, entry, hash)
         if (!res || res.type === RESPONSE_TYPE.ERROR) {
           console.error('failed to create group!')
         } else {
-          // TODO: subscribe first and then have handleEvent be auto called
           console.log('group created. server response:', res)
-          await this.$store.dispatch('handleEvent', {groupId: hash, hash, entry})
-          await backend.subscribe(hash)
         }
       },
       submit: async function () {
-        // TODO: handle adding the same event twice. (do we need a nonce for now?)
+        // TODO: verify adding the same event twice works correctly
         // TODO: test invalid hash for entry
         // TODO: test adding to the wrong groupId
         // TODO: test adding to the wrong parentHash
         let groupId = this.$store.state.currentGroup.groupId
-        let entry = makeEntry(
-          this.$refs.type.options[this.$refs.type.selectedIndex].value,
-          this.$refs.payload.value,
+        let type = this.$refs.type.value
+        // let type = this.$refs.type.options[this.$refs.type.selectedIndex].value
+        var key
+        switch (type) {
+          case ENTRY_TYPE.PAYMENT: key = 'amount'; break
+          case ENTRY_TYPE.VOTING: key = 'vote'; break
+          default: throw Error('unsupported Entry type: ' + type)
+        }
+        let res = await backend.publishLogEntry(groupId, makeEntry(
+          type,
+          {[key]: this.$refs.payload.value},
           await db.recentHash(groupId)
-        )
-        let res = await backend.publishLogEntry(groupId, entry)
+        ))
         console.log('entry sent, server response:', res)
       },
       forward: function () {

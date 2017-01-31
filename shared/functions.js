@@ -23,20 +23,13 @@ export function toHash (value: JSONObject | Entry | string): string {
 export function makeResponse (
   type: ResType,
   data: JSONType,
-  err?: (string | {message: string})
+  err?: string | {message: string}
 ): Response {
-  // This type wrangling voodoo comes courtesy of: https://github.com/facebook/flow/issues/3041#issuecomment-268027891
-  // TODO: less BS plz.
+  //   // This type wrangling voodoo comes courtesy of: https://github.com/facebook/flow/issues/3041#issuecomment-268027891
   if (type === RESPONSE_TYPE.ERROR) {
-    if (err) {
-      return {
-        type: RESPONSE_TYPE.ERROR,
-        data,
-        err: typeof err === 'string' ? err : err.message
-      }
-    } else {
-      return {type, err: String(data)}
-    }
+    return err
+    ? {type, data, err: typeof err === 'string' ? err : err.message}
+    : {type, err: String(data)}
   }
   return {type, data}
 }
@@ -96,7 +89,11 @@ var str2buf = str => Buffer.from(str, 'utf8')
 var str2b64 = str => str2buf(str).toString('base64')
 var ary2b64 = ary => Buffer.from(ary).toString('base64')
 
-export function sign ({publicKey, secretKey}, futz = '', msg = 'hello!') {
+export function sign (
+  {publicKey, secretKey}: {publicKey: string, secretKey: string},
+  futz: string = '',
+  msg: string = 'hello!'
+) {
   return str2b64(JSON.stringify({
     msg: msg + futz,
     key: publicKey,
@@ -104,43 +101,8 @@ export function sign ({publicKey, secretKey}, futz = '', msg = 'hello!') {
   }))
 }
 
-export function verify ({msg, key, sig}) {
+export function verify (
+  {msg, key, sig}: {msg: string, key: string, sig: string}
+) {
   return nacl.sign.detached.verify(str2buf(msg), b642buf(sig), b642buf(key))
 }
-
-/*
-// TODO: this is bullshit.
-// import {RESPONSE_TYPE} from './constants'
-// const ERROR: ResTypeErr = RESPONSE_TYPE.ERROR
-// const ERROR: ResTypeErr = 'error'
-// https://github.com/facebook/flow/issues/3041
-// https://flowtype.org/docs/functions.html#too-many-arguments
-export function makeResponse (
-  event: ResType,
-  data: JSONType,
-  // err?: (string | {message: string})
-  err?: JSONType
-  // err?: string
-  // err?: (JSONType | {message: JSONType})
-) : Response {
-  // var response: Response = {event, data}
-  if (event === 'error') {
-  // if (event === ERROR) {
-    if (err) {
-      // response.data = data
-      // response.err = err
-      // return data ? {event, data, err} : {event, err}
-      // return {event, data, err}
-      // return ({event, data, err}: {event: ResTypeErr; data: ?JSONType; err: string})
-      return ({event, data, err}: {event: ResTypeErr; data: ?JSONType; err: JSONType})
-      // return {event, data, err: err.message || err}
-      // return ({event, data, err: err.message || err}: {event: ResTypeErr; data: ?JSONType; err: string})
-      // return ({event, data, err: err.message || err}: {event: ResTypeErr; data: ?JSONType; err: JSONType})
-    } else {
-      // response.err = data
-      return {event, err: data}
-    }
-  }
-  return {event, data}
-}
-*/
