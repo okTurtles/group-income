@@ -41,7 +41,7 @@ export async function addLogEntry (groupId: string, hash: string, entry: Entry) 
       throw new Error('group creation entry with non-null previousHash!')
     }
   } else if (last !== entry.parentHash) {
-    console.error(`addLogEntry: new entry hash bad parentHash: ${entry.parentHash}. Should be: ${last}. Entry:`, entry)
+    console.error(`addLogEntry: new entry has bad parentHash: ${entry.parentHash}. Should be: ${last}. Entry:`, entry)
     throw new Error('incorrect previousHash for entry!')
   }
   await log.setItem('HEAD', hash)

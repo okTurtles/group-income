@@ -1,17 +1,22 @@
 'use strict'
 
 import Knex from 'knex'
+import fs from 'fs'
 import {Model, transaction, ValidationError} from 'objection'
 import {toHash, makeEntry} from '../shared/functions'
 import {ENTRY_TYPE} from '../shared/constants'
 import type {Entry} from '../shared/types'
 
+const production = process.env.NODE_ENV === 'production'
+
+// delete the test database if it exists
+!production && fs.existsSync('test.db') && fs.unlinkSync('test.db')
+
 // Initialize knex connection.
 const knex = Knex({
   client: 'sqlite3',
   connection: {
-    // TODO: change :memory: to test.db and drop all tables from it at launch
-    filename: process.env.NODE_ENV === 'production' ? 'groupincome.db' : ':memory:'
+    filename: production ? 'groupincome.db' : 'test.db'
   },
   useNullAsDefault: true
 })

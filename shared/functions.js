@@ -1,8 +1,14 @@
 import multihash from 'multihashes'
 const blake = require('blakejs')
 const Primus = require('primus')
-const path = require('path')
 const nacl = require('tweetnacl')
+
+// TODO: switch to this implementation on node
+// https://github.com/ludios/node-blake2
+// var blake2 = require('blake2');
+// var h = blake2.createHash('blake2b');
+// h.update(new Buffer("test"));
+// console.log(h.digest("hex"));
 
 import {RESPONSE_TYPE} from './constants'
 import type {
@@ -76,7 +82,7 @@ export function setupPrimus (server: Object, saveAndDestroy: boolean = false) {
   primus.plugin('rooms', require('primus-rooms'))
   primus.plugin('responder', require('primus-responder'))
   if (saveAndDestroy) {
-    primus.save(path.join(__dirname, '../frontend/simple/assets/vendor/primus.js'))
+    primus.save(require('path').join(__dirname, '../frontend/simple/assets/vendor/primus.js'))
     primus.destroy()
   }
   return primus
