@@ -129,7 +129,6 @@
         // TODO: test adding to the wrong parentHash
         let groupId = this.$store.state.currentGroup.groupId
         let type = this.$refs.type.value
-        // let type = this.$refs.type.options[this.$refs.type.selectedIndex].value
         var key
         switch (type) {
           case ENTRY_TYPE.PAYMENT: key = 'amount'; break

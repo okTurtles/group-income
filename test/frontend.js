@@ -56,7 +56,7 @@ describe('Frontend', function () {
       await n.click('#random').wait(() => Number(document.getElementById('count').innerText) > 0)
 
       let obj = await n.insert('textarea[name="payload"]', 'This is a test payment event')
-        .select('select[name="type"]', 'Payment')
+        .select('select[name="type"]', 'payment')
         .click('#submit')
         .wait(() => Number(document.getElementById('count').innerText) > 1)
         .evaluate(() => {
@@ -70,7 +70,7 @@ describe('Frontend', function () {
       await n.goto(page('event-log'))
       let initial = await n.wait('textarea[name="payload"]')
         .insert('textarea[name="payload"]', 'This is a test Group Payment Event')
-        .select('select[name="type"]', 'Payment')
+        .select('select[name="type"]', 'payment')
         .click('button.submit')
         .wait(() => {
           return document.getElementById('LogPosition').innerText !== ''

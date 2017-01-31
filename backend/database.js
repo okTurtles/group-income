@@ -104,7 +104,7 @@ export async function appendLogEntry (
   groupId: string, hash: string, entry: Entry
 ): Promise<string> {
   var {parentHash: claimedHash} = entry
-  if (!claimedHash) throw new Error('hash cannot be null!')
+  if (!claimedHash) throw new Error('entry parentHash cannot be null!')
   var {hash: previousHash} = await lastEntry(groupId)
   if (previousHash !== claimedHash) {
     throw new ValidationError(`claimed hash: ${claimedHash}, reality: ${previousHash}`)
