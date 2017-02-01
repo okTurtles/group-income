@@ -60,7 +60,7 @@ export function makeGroup (
   founderHashKey: string
 ) : Group {
   return {
-    creationDate: 'now', // new Date().toISOString(),
+    creationDate: new Date().toISOString(),
     groupName,
     sharedValues,
     changePercentage,
@@ -79,6 +79,9 @@ export function setupPrimus (server: Object, saveAndDestroy: boolean = false) {
     transformer: 'uws',
     rooms: {wildcard: false}
   })
+  // these 'requires' are placed inline instead of at the top to prevent
+  // their contents from being inlined to the app bundle on the frontend
+  // (thanks to Webpack/Rollup "tree-shaking" and "hoisting")
   primus.plugin('rooms', require('primus-rooms'))
   primus.plugin('responder', require('primus-responder'))
   if (saveAndDestroy) {

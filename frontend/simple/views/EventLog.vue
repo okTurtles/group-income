@@ -81,8 +81,8 @@
     created () {
       // NOTE: this works, but backend doesn't persist database, so during
       //       development this makes things break.
-      // console.log('dispatching loadState!')
-      // this.$store.dispatch('loadState')
+      // console.log('dispatching loadSettings!')
+      // this.$store.dispatch('loadSettings')
     },
     computed: {
       logPosition () {
@@ -99,7 +99,6 @@
       createRandomGroup: async function () {
         let getRandomInt = (min, max) => {
           return Math.floor(Math.random() * (max - min)) + min
-          // return min
         }
         let group = makeGroup(
           `Group ${getRandomInt(1, 100)}`,
@@ -111,6 +110,7 @@
           'Very Private',
           'alsdfjlskdfjaslkfjsldkfj'
         )
+        // TODO: move this stuff somewhere else that makes sense.
         // subscribe first and so that handleEvent is automatically dispatched
         let entry = makeEntry(ENTRY_TYPE.CREATION, group, null)
         let hash = toHash(entry)
@@ -123,7 +123,6 @@
         }
       },
       submit: async function () {
-        // TODO: verify adding the same event twice works correctly
         // TODO: test invalid hash for entry
         // TODO: test adding to the wrong groupId
         // TODO: test adding to the wrong parentHash

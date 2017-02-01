@@ -68,31 +68,20 @@ describe('Frontend', function () {
     it('Should Traverse Log', async function () {
       this.timeout(10000)
       await n.goto(page('event-log'))
+      let prior = await n.evaluate(() => document.getElementById('LogPosition').innerText)
       let initial = await n.wait('textarea[name="payload"]')
         .insert('textarea[name="payload"]', 'This is a test Group Payment Event')
         .select('select[name="type"]', 'payment')
         .click('button.submit')
-        .wait(() => {
-          return document.getElementById('LogPosition').innerText !== ''
-        })
-        .evaluate(() => {
-          return document.getElementById('LogPosition').innerText
-        })
+        .wait(prior => document.getElementById('LogPosition').innerText !== prior, prior)
+        .evaluate(() => document.getElementById('LogPosition').innerText)
       let secondary = await n.click('a.backward')
-        .wait((initial) => {
-          return document.getElementById('LogPosition').innerText !== initial
-        }, initial)
-        .evaluate(() => {
-          return document.getElementById('LogPosition').innerText
-        })
+        .wait(initial => document.getElementById('LogPosition').innerText !== initial, initial)
+        .evaluate(() => document.getElementById('LogPosition').innerText)
       should(initial !== secondary).equal(true)
       let tertiary = await n.click('a.forward')
-        .wait((secondary) => {
-          return document.getElementById('LogPosition').innerText !== secondary
-        }, secondary)
-        .evaluate(() => {
-          return document.getElementById('LogPosition').innerText
-        })
+        .wait(secondary => document.getElementById('LogPosition').innerText !== secondary, secondary)
+        .evaluate(() => document.getElementById('LogPosition').innerText)
       should(initial).equal(tertiary)
     })
   })

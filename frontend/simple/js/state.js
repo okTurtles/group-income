@@ -60,7 +60,7 @@ const mutations = {
 }
 
 export const actions = {
-  async saveState (
+  async saveSettings (
     {state}: {state: Object}
   ) {
     await db.saveSettings({
@@ -68,7 +68,7 @@ export const actions = {
       groups: state.groups
     })
   },
-  async loadState (
+  async loadSettings (
     {commit, state}: {commit: Function, state: Object}
   ) {
     let {groups, currentGroup} = await db.loadSettings()
@@ -90,7 +90,7 @@ export const actions = {
       // TODO: verify we created this group before calling setCurrentGroup
       commit('setCurrentGroup', makeLogState(groupId, groupId))
       commit('addGroup', groupId)
-      dispatch('saveState')
+      dispatch('saveSettings')
     } else {
       commit('logPosition', hash)
     }
