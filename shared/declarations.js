@@ -1,6 +1,10 @@
 /* eslint no-undef: "off", no-unused-vars: "off" */
 // =======================
-// prevent flow from bitching about globals
+// This file prevents flow from bitching about globals and "Required module not found"
+// https://github.com/facebook/flow/issues/2092#issuecomment-232917073
+//
+// Note that the modules can (and should) be properly fixed with flow-typed
+// https://github.com/okTurtles/group-income-simple/issues/157
 // =======================
 
 // TODO: create a script in scripts/ to run flow via grunt-exec
@@ -9,12 +13,7 @@
 //       and also a strong urging to not overdue the types because
 //       FlowType is a little bit stupid and it can turn into a
 //       banging-head-on-desk timesink (literally those words).
-// TODO: create a types/ folder and put the module stuff below into
-//       a separate file. Have the script mention these files on error
-// TODO: if necessary, export the declarations above (in a separate exports
-//       file) and import them in the files where they're used. This helps
-//       with readability and it will make the linters stop bitching without
-//       needing to create a global for each one of them in package.json.
+//       Have the script explain which files represent what.
 
 // our globals
 declare function logger(err: Error): void
@@ -25,10 +24,13 @@ declare var describe: any
 declare var it: any
 declare var after: any
 declare var $: any
+// nightmare globals
+declare var document: any
 
 // =======================
-// prevent flow from bitching about "Required module not found"
-// https://github.com/facebook/flow/issues/2092#issuecomment-232917073
+// Fix "Required module not found" in a hackish way.
+// TODO: Proper fix is to use:
+// https://github.com/okTurtles/group-income-simple/issues/157
 // =======================
 declare module 'bcrypt' { declare module.exports: any }
 declare module 'bluebird' { declare module.exports: any }
@@ -84,6 +86,7 @@ declare module 'vue-hot-reload-api' { declare module.exports: any }
 declare module 'vueify' { declare module.exports: any }
 declare module 'vueify-insert-css' { declare module.exports: any }
 declare module 'xvfb-maybe' { declare module.exports: any }
+declare module 'blakejs' { declare module.exports: any }
 
 // .vue and .ejs files
 declare module '../views/i18n.vue' { declare module.exports: Object }
@@ -97,6 +100,11 @@ declare module './views/UserGroupView.vue' { declare module.exports: Object }
 declare module './views/UserProfileView.vue' { declare module.exports: Object }
 declare module './views/VueAssistant.vue' { declare module.exports: Object }
 declare module './views/test.ejs' { declare module.exports: string }
+declare module './views/EventLog.vue' { declare module.exports: Object }
+
+// special case for interface.js
+declare module './interface' { declare module.exports: any }
 
 // we ignored everything in assets/, so...
 declare module '../frontend/simple/assets/vendor/primus' { declare module.exports: Function }
+declare module '../assets/vendor/primus' { declare module.exports: Function }

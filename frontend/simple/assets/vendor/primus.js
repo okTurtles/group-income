@@ -2309,6 +2309,7 @@ Primus.prototype.reserved.events = {
   'reconnect': 1,
   'offline': 1,
   'timeout': 1,
+  'destroy': 1,
   'online': 1,
   'error': 1,
   'close': 1,
@@ -3276,7 +3277,7 @@ Primus.prototype.decoder = function decoder(data, fn) {
 
   fn(err, data);
 };
-Primus.prototype.version = "6.0.7";
+Primus.prototype.version = "6.0.8";
 
 if (
      'undefined' !== typeof document

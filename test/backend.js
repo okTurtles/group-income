@@ -2,9 +2,10 @@
 
 const Promise = global.Promise = require('bluebird')
 
+import chalk from 'chalk'
 import _ from 'lodash-es'
-import {EVENT_TYPE} from '../shared/constants'
-import {makeEntry, toHash} from '../shared/functions'
+import {RESPONSE_TYPE, ENTRY_TYPE} from '../shared/constants'
+import {makeEntry, toHash, sign} from '../shared/functions'
 
 const request = require('superagent')
 const should = require('should') // eslint-disable-line
@@ -12,23 +13,16 @@ const nacl = require('tweetnacl')
 const Primus = require('../frontend/simple/assets/vendor/primus')
 
 const {API_URL: API} = process.env
-const {SUCCESS} = EVENT_TYPE
+const {SUCCESS} = RESPONSE_TYPE
+const {CREATION, PAYMENT, VOTING} = ENTRY_TYPE
+
+chalk.enabled = true // for some reason it's not detecting that terminal supports colors
+const {bold} = chalk
+console.log(bold('COLORS SUPPORTED?'), chalk.supportsColor)
 
 import type {Entry} from '../shared/types'
 
-var b642buf = b64 => Buffer.from(b64, 'base64')
 var buf2b64 = buf => Buffer.from(buf).toString('base64')
-var str2buf = str => Buffer.from(str, 'utf8')
-var str2b64 = str => str2buf(str).toString('base64')
-var ary2b64 = ary => Buffer.from(ary).toString('base64')
-
-function sign ({publicKey, secretKey}, futz = '', msg = 'hello!') {
-  return str2b64(JSON.stringify({
-    msg: msg + futz,
-    key: publicKey,
-    sig: ary2b64(nacl.sign.detached(str2buf(msg), b642buf(secretKey)))
-  }))
-}
 var personas = _.times(3, () => nacl.sign.keyPair()).map(x => _.mapValues(x, buf2b64))
 var signatures = personas.map(x => sign(x))
 // var unsignedMsg = sign(personas[0], 'futz')
@@ -53,26 +47,20 @@ describe('Full walkthrough', function () {
     primus.on('open', done)
     primus.on('error', err => done(err))
     primus.on('data', msg => {
-      if (msg.data && msg.data.entry) {
-        console.log(`[test] primus[${num}] entry data:`, msg.data.entry.data)
-      } else {
-        console.log(`[test] primus[${num}] event:`, msg)
-      }
+      console.log(bold(`[test] ONDATA primus[${num}] msg:`), msg)
     })
     sockets.push(primus)
   }
 
-  function joinRoom (socket, room, done) {
-    socket.writeAndWait({action: 'join', room}, function (response) {
-      done(response.event === SUCCESS ? null : response)
+  function joinRoom (socket, groupId, done) {
+    socket.writeAndWait({action: 'sub', groupId}, function (response) {
+      done(response.type === SUCCESS ? null : response)
     })
   }
 
-  function postEvent (event) {
-    entry.data = event
-    entry.parentHash = hash
-    hash = toHash(entry)
-    return request.post(`${API}/event/${groupId}`)
+  function postEntry (entry, hash, group) {
+    if (!group) group = groupId
+    return request.post(`${API}/event/${group}`)
       .set('Authorization', `gi ${signatures[0]}`)
       .send({hash, entry})
   }
@@ -92,11 +80,11 @@ describe('Full walkthrough', function () {
   })
 
   describe('Group Setup', function () {
-    entry = makeEntry({hello: 'world!', pubkey: 'foobarbaz'})
+    entry = makeEntry(CREATION, {hello: 'world!'}, null)
     groupId = hash = toHash(entry)
 
     it('Should create a group', async function () {
-      var res = await request.post(`${API}/group`).send({hash, entry})
+      var res = await postEntry(entry, hash)
       res.body.data.hash.should.equal(groupId)
     })
   })
@@ -107,16 +95,15 @@ describe('Full walkthrough', function () {
     })
 
     it('Should post an event', async function () {
-      var res = await postEvent({new: 'data'})
-      res.body.event.should.equal(SUCCESS)
+      entry = makeEntry(PAYMENT, {new: 'data'}, hash)
+      hash = toHash(entry)
+      var res = await postEntry(entry, hash)
+      res.body.type.should.equal(SUCCESS)
     })
 
     it('Should fail with wrong parentHash', function () {
       entry.parentHash = null
-      return request.post(`${API}/event/${groupId}`)
-        .set('Authorization', `gi ${signatures[0]}`)
-        .send({hash: toHash(entry), entry})
-        .should.be.rejected()
+      return postEntry(entry, toHash(entry)).should.be.rejected()
     })
 
     it('Should join another member', function (done) {
@@ -127,8 +114,10 @@ describe('Full walkthrough', function () {
     //       should all be authenticated and identified by the user's
     //       identity contract
     it('Should post another event', async function () {
-      var res = await postEvent({newer: 'data2'})
-      res.body.event.should.equal(SUCCESS)
+      entry = makeEntry(VOTING, {newer: 'data2'}, hash)
+      hash = toHash(entry)
+      var res = await postEntry(entry, hash)
+      res.body.type.should.equal(SUCCESS)
       // delay so that the sockets receive notification
       return Promise.delay(200)
     })
