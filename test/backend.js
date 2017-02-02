@@ -6,6 +6,7 @@ import chalk from 'chalk'
 import _ from 'lodash-es'
 import {RESPONSE_TYPE, ENTRY_TYPE} from '../shared/constants'
 import {makeEntry, toHash, sign} from '../shared/functions'
+import type {Entry} from '../shared/types'
 
 const request = require('superagent')
 const should = require('should') // eslint-disable-line
@@ -19,8 +20,6 @@ const {CREATION, PAYMENT, VOTING} = ENTRY_TYPE
 chalk.enabled = true // for some reason it's not detecting that terminal supports colors
 const {bold} = chalk
 console.log(bold('COLORS SUPPORTED?'), chalk.supportsColor)
-
-import type {Entry} from '../shared/types'
 
 var buf2b64 = buf => Buffer.from(buf).toString('base64')
 var personas = _.times(3, () => nacl.sign.keyPair()).map(x => _.mapValues(x, buf2b64))

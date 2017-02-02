@@ -40,7 +40,7 @@ exports.register = function (
   var b642str = b64 => b642buf(b64).toString('utf8')
   server.auth.strategy('gi-auth', 'gi-auth', {
     verify: function (req, json, cb) {
-      var result = verify(json)
+      var result = verify(json.msg, json.key, json.sig)
       json.userId = json.key
       cb(null, result, json)
     }

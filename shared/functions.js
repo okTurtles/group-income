@@ -12,7 +12,7 @@ const nacl = require('tweetnacl')
 
 import {RESPONSE_TYPE} from './constants'
 import type {
-  JSONType, JSONObject, Response, Entry, ResType, EntryType, Group
+  JSONType, JSONObject, Response, ResType, Entry, Group
 } from './types'
 
 export function toHash (value: JSONObject | Entry | string): string {
@@ -41,10 +41,10 @@ export function makeResponse (
 }
 
 export function makeEntry (
-  type: EntryType,
-  data: JSONObject,
+  type: string,
+  data: string,
   parentHash: string | null,
-  version?: string = '0.0.1'
+  version?: string = '0.0.2'
 ): Entry {
   return {type, version, parentHash, data}
 }
@@ -111,7 +111,7 @@ export function sign (
 }
 
 export function verify (
-  {msg, key, sig}: {msg: string, key: string, sig: string}
+  msg: string, key: string, sig: string
 ) {
   return nacl.sign.detached.verify(str2buf(msg), b642buf(sig), b642buf(key))
 }

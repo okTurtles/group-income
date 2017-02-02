@@ -15,7 +15,7 @@ module.exports = function (server: Object) {
     entry: Joi.object({
       version: Joi.string().required(),
       type: Joi.string().required(),
-      parentHash: Joi.string().allow(null),
+      parentHash: Joi.string().allow([null, '']),
       data: Joi.object()
     })
   })

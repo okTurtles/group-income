@@ -9,38 +9,4 @@ export class Backend {
   subscribe (groupId: string) {}
   unsubscribe (groupId: string) {}
   subscriptions () {}
-  // TODO: these
-  // async createIdentity (identity) {}
-  // async getIdentity (id) {}
-}
-
-// =======================
-// Utility classes
-// =======================
-
-/*
-export class Key {
-  constructor (privKey, pubKey?) {
-    this.privKey = privKey
-    this.pubKey = pubKey
-  }
-  encrypt (data) {}
-  decrypt (data) {}
-  signMessage (msg) {}
-  verifySignature (msg, sig) {}
-}
-*/
-
-// =======================
-// Contracts & related classes. "Contracts" represent immutable code.
-// =======================
-
-export class Operation {}
-export class OpManageOps extends Operation {}
-export class OpSign extends Operation {}
-
-export class IdentityContract {
-  constructor () {
-    this.statements = []
-  }
 }

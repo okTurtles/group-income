@@ -8,17 +8,9 @@
 // https://flowtype.org/docs/modules.html#import-type
 // https://flowtype.org/docs/advanced-configuration.html
 
-// =======================
-// Common/universal types
-// =======================
-
 export type JSONType = string | number | boolean | null | JSONObject | JSONArray;
 export type JSONObject = { [key:string]: JSONType };
 export type JSONArray = Array<JSONType>;
-
-// =======================
-// Application-specific types
-// =======================
 
 export type ResType =
   | ResTypeErr | ResTypeOK | ResTypeAlready
@@ -30,19 +22,6 @@ export type ResTypeJoined = 'joined'
 export type ResTypeLeft = 'left'
 export type ResTypeEntry = 'entry'
 
-export type EntryType = EntryPayment | EntryCreation | EntryVoting
-export type EntryPayment = 'payment'
-export type EntryCreation = 'creation' // TODO: better, more specific name
-export type EntryVoting = 'voting'
-
-// export type Entry = { // <- was causing problems
-export interface Entry {
-  type: EntryType;
-  data: JSONObject;
-  parentHash: string | null;
-  version: string;
-}
-
 // NOTE: If Flow isn't making any sense try changing this from a type to an interface!
 // https://github.com/facebook/flow/issues/3041
 export type Response = {
@@ -52,6 +31,16 @@ export type Response = {
   data?: JSONType
 }
 
+// export type Entry = { // <- was causing problems
+export interface Entry {
+  type: string;
+  data: string;
+  parentHash: string | null;
+  version: string;
+  // TODO: signature/pubkey for data?
+}
+
+// TODO: move this to events.js and eventually get rid of it using TypeScript
 export type Group = {
   creationDate: string;
   groupName: string;

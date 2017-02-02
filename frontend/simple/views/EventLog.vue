@@ -73,6 +73,9 @@
   import backend from '../js/backend'
   import {makeGroup, makeEntry, toHash} from '../../../shared/functions'
   import {RESPONSE_TYPE, ENTRY_TYPE} from '../../../shared/constants'
+  import {HashableGroup} from '../js/events'
+  import multihash from 'multihashes'
+  const blake = require('blakejs')
 
   export default {
     data () {
@@ -112,8 +115,24 @@
         )
         // TODO: move this stuff somewhere else that makes sense.
         // subscribe first and so that handleEvent is automatically dispatched
-        let entry = makeEntry(ENTRY_TYPE.CREATION, group, null)
+        let entry = makeEntry(ENTRY_TYPE.CREATION, group, '')
         let hash = toHash(entry)
+
+        let serialized = HashableGroup.serialize(entry)
+        console.log('serialized:', serialized)
+        let arr = blake.blake2b(serialized)
+        // see: https://github.com/feross/typedarray-to-buffer/blob/master/index.js
+        var buf = new Buffer(arr.buffer)
+        console.log('arr.byteLength:', arr.byteLength, 'arr.buffer.byteLength:', arr.buffer.byteLength)
+        if (arr.byteLength !== arr.buffer.byteLength) {
+          // Respect the "view", i.e. byteOffset and byteLength, without doing a copy
+          buf = buf.slice(arr.byteOffset, arr.byteOffset + arr.byteLength)
+        }
+        let bufHash = multihash.toB58String(multihash.encode(buf, 'blake2b'))
+        console.log('hashes:', hash, 'vs', bufHash)
+        let deserialized = HashableGroup.deserialize(serialized)
+        console.log('deserialized:', deserialized)
+
         await backend.subscribe(hash)
         let res = await backend.publishLogEntry(hash, entry, hash)
         if (!res || res.type === RESPONSE_TYPE.ERROR) {

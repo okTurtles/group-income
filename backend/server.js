@@ -3,7 +3,7 @@
 import * as db from './database'
 import Hapi from 'hapi'
 import GiAuth from './auth'
-import {RESPONSE_TYPE, ENTRY_TYPE} from '../shared/constants'
+import {RESPONSE_TYPE} from '../shared/constants'
 import {makeResponse} from '../shared/functions'
 import type {Entry} from '../shared/types'
 import {bold} from 'chalk'
@@ -24,7 +24,7 @@ hapi.decorate('server', 'handleEvent', async function (
   groupId: string, hash: string, entry: Entry
 ) {
   console.log(bold('[server] handleEvent:'), entry)
-  if (entry.type === ENTRY_TYPE.CREATION) {
+  if (!entry.parentHash) {
     await db.createGroup(groupId, entry)
   } else {
     await db.appendLogEntry(groupId, hash, entry)
