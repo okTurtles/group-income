@@ -82,8 +82,6 @@
 </template>
 
 <script>
-import SignUp from './SignUp.vue'
-import {loginLogout} from '../js/mixins'
 import {makeGroup} from '../../../shared/functions'
 
 export default {
@@ -92,39 +90,39 @@ export default {
     submit: function () {
       this.$validator.validateAll()
         .then(() => {
-           let group = makeGroup(
-             this.groupName,
-             this.sharedValue,
-             this.changePercentage,
-             this.openMembership,
-             this.memberApprovalPercentage,
-             this.memberRemovalPercentage,
-             this.incomeProvided,
-             this.contributionPrivacy,
-             this.$store.state.loggedInUser
+          let group = makeGroup(
+          this.groupName,
+          this.sharedValue,
+          this.changePercentage,
+          this.openMembership,
+          this.memberApprovalPercentage,
+          this.memberRemovalPercentage,
+          this.incomeProvided,
+          this.contributionPrivacy,
+          this.$store.state.loggedInUser
            )
-           let count = this.$store.state.availableGroups.length
-           let unwatch = this.$store.watch((state) => {
+          let count = this.$store.state.availableGroups.length
+          let unwatch = this.$store.watch((state) => {
             return state.availableGroups.length > count
-           },
-           () => {
+          },
+          () => {
             this.created = true
             unwatch()
-           })
-           this.$store.dispatch('createGroup', group)
+          })
+          this.$store.dispatch('createGroup', group)
         })
     }
   },
   data: function () {
     return {
-      groupName: null ,
+      groupName: null,
       sharedValues: null,
       changePercentage: 0,
       openMembership: false,
       memberApprovalPercentage: 0,
       memberRemovalPercentage: 0,
       incomeProvided: null,
-      contributionPrivacy: "",
+      contributionPrivacy: '',
       created: false
     }
   }
