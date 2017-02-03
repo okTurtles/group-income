@@ -1,18 +1,20 @@
 'use strict'
 
 import Knex from 'knex'
+import fs from 'fs'
 import {Model, transaction, ValidationError} from 'objection'
-import {toHash, makeEntry} from '../shared/functions'
+import {HashableEntry, Group} from '../shared/events'
 
-// TODO: consider using https://github.com/flumedb/flumedb
+const production = process.env.NODE_ENV === 'production'
 
-import type {Entry} from '../shared/types'
+// delete the test database if it exists
+!production && fs.existsSync('test.db') && fs.unlinkSync('test.db')
 
 // Initialize knex connection.
 const knex = Knex({
   client: 'sqlite3',
   connection: {
-    filename: process.env.NODE_ENV === 'production' ? 'groupincome.db' : ':memory:'
+    filename: production ? 'groupincome.db' : 'test.db'
   },
   useNullAsDefault: true
 })
@@ -44,25 +46,18 @@ class HashToData extends Model {
       value: {type: 'string'}
     }
   }
-  $beforeInsert () {
-    var hash = toHash(this.value)
-    if (this.hash !== hash) {
-      throw new ValidationError(`HashToData: calculated ${hash} != given ${this.hash}!`)
-    }
-  }
 }
 
 // See also https://vincit.github.io/objection.js/#virtualattributes
 class Log extends Model {
-  static _tableName = 'Log'
-  static get tableName () { return this._tableName }
-  static set tableName (name) { this._tableName = name }
+  static tableName = 'Log'
   static jsonSchema = {
     type: 'object',
-    required: ['version', 'parentHash', 'data', 'hash'],
+    required: ['version', 'type', 'parentHash', 'data', 'hash'],
     properties: {
       id: {type: 'integer'},
       version: {type: 'string'},
+      type: {type: 'string'},
       parentHash: {type: ['string', 'null']},
       data: {type: 'object'},
       hash: {type: 'string'}
@@ -77,7 +72,7 @@ class Log extends Model {
     return this.query().context({onBuild: builder => builder.table(name)})
   }
   $beforeInsert () {
-    console.log(`[Log] ${this.tableName} INSERT:`, this.toJSON())
+    console.log(`[Log] ${Log.tableName} INSERT:`, this.toJSON())
   }
 }
 
@@ -85,51 +80,66 @@ class Log extends Model {
 // wrapper methods to add log entries / create groups
 // =======================
 
-export async function createGroup (hash: string, entry: Object) {
+export async function createGroup (
+  groupId: string,
+  entry: HashableEntry
+): Promise<string> {
   // TODO: add proper debugging events using Good
   if (entry.parentHash) throw new Error('parentHash must be null!')
-  await HashToData.query().insert({hash, value: JSON.stringify(entry)})
-  Log.tableName = hash
-  var table = Log.tableName // get chomped tableName based on hash
-  await knex.schema.createTableIfNotExists(table, function (table) {
+  await HashToData.query().insert({hash: groupId, value: entry.toJSON()})
+  await knex.schema.createTableIfNotExists(groupId, function (table) {
     table.increments()
     table.text('version').notNullable()
+    table.text('type').notNullable()
     table.text('parentHash')
     table.text('data').notNullable()
     table.text('hash').notNullable().index()
   })
-  await Log.table(hash).insert({...entry, hash})
-  console.log('createGroup():', table, entry)
-  return hash
+  await Log.table(groupId).insert({...entry.toObject(), hash: groupId})
+  console.log('createGroup():', groupId, entry)
+  return groupId
 }
 
 export async function appendLogEntry (
-  groupId: string, hash: string, entry: Entry
-) {
-  var {parentHash: claimedHash} = entry
-  if (!claimedHash) throw new Error('hash cannot be null!')
+  groupId: string,
+  entry: HashableEntry
+): Promise<string> {
+  var claimedHash = entry.toObject().parentHash
+  if (!claimedHash) throw new Error('entry parentHash cannot be null!')
   var {hash: previousHash} = await lastEntry(groupId)
   if (previousHash !== claimedHash) {
     throw new ValidationError(`claimed hash: ${claimedHash}, reality: ${previousHash}`)
   }
-  return transaction(HashToData, Log, async function (HashToData, Log) {
-    await HashToData.query().insert({hash, value: JSON.stringify(entry)})
-    await Log.table(groupId).insert({...entry, hash})
-    console.log('appendLogEntry():', entry, hash)
-    return hash
+  const hash = entry.toHash()
+  Log.tableName = groupId // just in case the call to `transaction` needs it...
+  await transaction(HashToData, Log, async function (HashToData, Log) {
+    await HashToData.query().insert({hash, value: entry.toJSON()})
+    await Log.table(groupId).insert({...entry.toObject(), hash})
   })
+  console.log('appendLogEntry():', entry, hash)
+  return hash
 }
 
 export async function lastEntry (groupId: string) {
-  return Log.table(groupId).findById(Log.table(groupId).max('id'))
+  // `findById` is broken, creates a query referencing the wrong table, so we use `where`
+  var entries = await Log.table(groupId).where('id', Log.table(groupId).max('id'))
+  return entries[0]
 }
 
 // TODO: does this stream need to be consumed? what happens if it isn't?
 //       do we need to close it anyway after some time or something?
+// "On an HTTP server, make sure to manually close your streams if a request is aborted."
+// From: http://knexjs.org/#Interfaces-Streams
+// https://github.com/tgriesser/knex/wiki/Manually-Closing-Streams
+// => request.on('close', stream.end.bind(stream))
 export function streamEntriesSince (groupId: string, hash: string) {
   return Log.table(groupId).where(
     'id', '>', Log.table(groupId).select('id').where('hash', hash)
   ).stream()
+}
+
+export async function stop () {
+  await knex.destroy()
 }
 
 // =======================
@@ -142,15 +152,14 @@ if (testDatabaseJs && testDatabaseJs.indexOf('babel-node') !== -1) {
   (async function () {
     try {
       await loaded
-      var entry = makeEntry({hello: 'world!', pubkey: 'foobarbaz'})
-      var groupId = toHash(entry)
+      var entry = new Group({hello: 'world!', pubkey: 'foobarbaz'})
+      var groupId = entry.toHash()
       console.log('creating group:', groupId)
       await createGroup(groupId, entry)
 
-      entry.data = {crazy: 'lady'}
-      entry.parentHash = groupId
-      var res = await appendLogEntry(groupId, toHash(entry), entry)
-      console.log(`added log entry ${JSON.stringify(entry.data)} with result:`, res)
+      entry = new Group({crazy: 'lady'}, groupId)
+      var res = await appendLogEntry(groupId, entry)
+      console.log(`added log entry ${entry.toJSON()} with result:`, res)
       res = await lastEntry(groupId)
       console.log(`last log entry for ${Log.tableName}:`, res)
 

@@ -53,8 +53,9 @@ export default {
     showSteps: {type: Boolean, default: true}
   },
   mounted () {
-    if (!this.loggedIn)
+    if (!this.loggedIn) {
       setTimeout(() => this.next(), 5000)
+    }
   },
   methods: {
     next () {

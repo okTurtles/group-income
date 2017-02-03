@@ -1,46 +1,32 @@
 /* eslint no-undef: "off", no-unused-vars: "off" */
 
-// Run flow with: yarn run flow
+// Run flow with: `yarn flow` OR `yarn run flow`
 
-// https://flowtype.org/docs/advanced-configuration.html
+// Start Here: https://flowtype.org/docs/syntax.html
+// From: https://flowtype.org/docs/builtins.html#mixed
 // https://flowtype.org/docs/declarations.html
 // https://flowtype.org/docs/modules.html#import-type
-// From: https://flowtype.org/docs/builtins.html#mixed
+// https://flowtype.org/docs/advanced-configuration.html
+
 export type JSONType = string | number | boolean | null | JSONObject | JSONArray;
 export type JSONObject = { [key:string]: JSONType };
 export type JSONArray = Array<JSONType>;
 
-export type Entry = {
-  data: JSONObject;
-  parentHash: ?string;
-  version: ?string;
-}
-export type Group = {
-  version: string;
-  creationDate: date;
-  groupName: string;
-  sharedValues: string;
-  changePercentage: number;
-  openMembership: boolean;
-  memberApprovalPercentage: number;
-  memberRemovalPercentage: number;
-  incomeProvided: number;
-  contributionPrivacy: string;
-  founderHashKey: string;
-  data: JSONObject;
-}
-export type Log= {
-  groupId: string;
-  currentLogPosition: string;
-}
-import type {EvType, EvTypeErr, EvTypeOK} from './constants'
-export type {EvType, EvTypeErr, EvTypeOK}
+export type ResType =
+  | ResTypeErr | ResTypeOK | ResTypeAlready
+  | ResTypeJoined | ResTypeLeft | ResTypeEntry
+export type ResTypeErr = 'error'
+export type ResTypeOK = 'success'
+export type ResTypeAlready = 'already'
+export type ResTypeJoined = 'joined'
+export type ResTypeLeft = 'left'
+export type ResTypeEntry = 'entry'
 
-export type Response =
-  // | {event: EvTypeErr; err: string; data?: JSONType}
-  // https://github.com/facebook/flow/issues/3041
-  | {event: EvTypeErr; err: JSONType; data?: JSONType}
-  | {event: EvTypeOK; data: JSONType}
-
-import type {EventType, EventTypePayment, EventTypeCreation, EventTypeVoting, Event} from './events'
-export type {EventType, EventTypePayment, EventTypeCreation, EventTypeVoting, Event}
+// NOTE: If Flow isn't making any sense try changing this from a type to an interface!
+// https://github.com/facebook/flow/issues/3041
+export type Response = {
+// export interface Response {
+  type: ResType;
+  err?: string;
+  data?: JSONType
+}

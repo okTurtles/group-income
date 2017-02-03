@@ -5,7 +5,7 @@
     >
         <section class="section">
             <p class="control">
-              <h1>Log Postion: <span id="LogPosition">{{logPosition}}</span></h1>
+              <h1>Log Postion: <span id="LogPosition">{{ position }}</span></h1>
             <div>
               <a class="button backward is-primary" v-on:click="backward">
                 <span class="icon">
@@ -18,11 +18,12 @@
                     </span>
               </a>
             </div>
+              Select an Event Type:
               <span class="select">
                 <select ref="type" name="type" data-rules="required">
-                  <option value="" disabled selected>Select an Event Type</option>
-                  <option value="Payment">Payment</option>
-                  <option value="Voting">Voting</option>
+                  <!-- must exactly match the types in shared/events.js -->
+                  <option value="Payment" selected>Payment</option>
+                  <option value="Vote">Vote</option>
                 </select>
               </span>
             </p>
@@ -36,7 +37,7 @@
                 <a class="button submit" id="random" v-on:click="createRandomGroup">
                   Create Random Group
                 </a>
-                <span id="count">Count: {{events.length}}</span>
+                Count: <span id="count">{{ events.length }}</span>
             </div>
           <div id="Log">
             <div class="box event" v-for="event in events">
@@ -49,9 +50,9 @@
                 <div class="media-content">
                   <div class="content">
                     <p>
-                      <strong>{{ event.data.type }}</strong> <small>@groupincomegroup</small> <small>31m</small>
+                      <strong>{{ event.toObject().type }}</strong> <small>@groupincomegroup</small> <small>31m</small>
                       <br>
-                      {{ event.data.payload }}
+                      {{ event.toObject().data }}
                     </p>
                   </div>
                 </div>
@@ -68,45 +69,64 @@
 </style>
 
 <script>
-  import EventLog from '../js/event-log.js'
-  import {makeGroup, makeEvent} from '../../../shared/functions'
-  export default{
+  import * as db from '../js/database'
+  import backend from '../js/backend'
+  import {Events} from '../../../shared/events'
+
+  export default {
     data () {
-     return {events:[]}
+      return {events: []}
+    },
+    created () {
+      // NOTE: this works, but backend doesn't persist database, so during
+      //       development this makes things break.
+      // this.$store.dispatch('loadSettings').then(() => {
+      //   this.$store.state.groups.forEach(backend.subscribe)
+      // })
     },
     computed: {
-      logPosition () {
-        if (this.$store.state.currentGroupLog) {
-          this.fetchData()
-          return this.$store.state.currentGroupLog.currentLogPosition
-        } else {
-          return null
-        }
+      position () {
+        this.refresh() // update this.events anytime the position changes
+        return this.$store.state.currentGroup.position
       }
     },
     methods: {
-      fetchData: async function () {
-          this.events = await EventLog.collect(this.$store.state.currentGroupLog)
+      refresh: async function () {
+        var {groupId, position} = this.$store.state.currentGroup
+        this.events = await db.collect(groupId, position)
       },
-      createRandomGroup: function () {
-        let getRandomInt = (min, max) => {
-          return Math.floor(Math.random() * (max - min)) + min
+      createRandomGroup: async function () {
+        let randInt = (min, max) => Math.floor(Math.random() * (max - min)) + min
+        // TODO: move this stuff somewhere else that makes sense.
+        // subscribe first and so that handleEvent is automatically dispatched
+        let entry = new Events.Group({
+          groupName: `Group ${randInt(1, 100)}`,
+          sharedValues: 'Testing this software',
+          changePercentage: randInt(1, 100),
+          openMembership: false,
+          memberApprovalPercentage: randInt(1, 100),
+          memberRemovalPercentage: randInt(1, 100),
+          contributionPrivacy: 'Very Private',
+          founderHashKey: 'alsdfjlskdfjaslkfjsldkfj'
+        })
+        let hash = entry.toHash()
+        await backend.subscribe(hash)
+        let res = await backend.publishLogEntry(hash, entry, hash)
+        if (!res.ok) {
+          console.error('failed to create group:', res.text)
+        } else {
+          console.log('group created. server response:', res.body)
         }
-        let group =  makeGroup(
-          `Group ${getRandomInt(1, 100)}` ,
-          'Testing this software',
-          getRandomInt(1, 100),
-          false,
-          getRandomInt(1, 100),
-          getRandomInt(1, 100),
-          getRandomInt(1, 2000),
-          'Very Private',
-          this.$store.state.loggedInUser
-        )
-        this.$store.dispatch('createGroup', group)
       },
-      submit: function () {
-        this.$store.dispatch('appendLog', makeEvent(this.$refs.type.options[this.$refs.type.selectedIndex].value, this.$refs.payload.value))
+      submit: async function () {
+        let groupId = this.$store.state.currentGroup.groupId
+        let type = this.$refs.type.value
+        var entry = new Events[type](
+          { [type.toLowerCase()]: this.$refs.payload.value },
+          await db.recentHash(groupId)
+        )
+        let res = await backend.publishLogEntry(groupId, entry)
+        console.log('entry sent, server response:', res)
       },
       forward: function () {
         this.$store.dispatch('forward')

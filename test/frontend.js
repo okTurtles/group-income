@@ -46,44 +46,42 @@ describe('Frontend', function () {
   })
   describe('Event Log Test', function () {
     it('Should Append to the log', async function () {
-      this.timeout(12000)
       await n.goto(page('event-log'))
         .should.finally.containEql({ code: 200, url: page('event-log') })
-      let result = await n.wait(4000)
-        .evaluate((current, eventCount) => {
-          return { current: document.getElementById('LogPosition').innerText, eventCount: document.querySelectorAll('.event').length }
-        })
-      let obj = await n.click('#random')
-        .insert('textarea[name="payload"]', 'This is a test payment event')
+      let result = await n.wait('#random').evaluate(() => ({
+        current: document.getElementById('LogPosition').innerText,
+        eventCount: document.querySelectorAll('.event').length
+      }))
+      await n.click('#random')
+        .wait(() => +document.getElementById('count').innerText > 0)
+      let obj = await n.insert('textarea[name="payload"]', 'This is a test payment event')
         .select('select[name="type"]', 'Payment')
         .click('#submit')
-        .wait(4000)
-        .evaluate(() => {
-          return { current: document.getElementById('LogPosition').innerText, eventCount: document.querySelectorAll('.event').length }
-        })
-      should(obj.eventCount).equal(result.eventCount + 1)
+        .wait(() => +document.getElementById('count').innerText > 1)
+        .evaluate(() => ({
+          current: document.getElementById('LogPosition').innerText,
+          eventCount: document.querySelectorAll('.event').length
+        }))
+      should(obj.eventCount).equal(result.eventCount + 2)
       should(obj.current !== result.current).equal(true)
     })
+
     it('Should Traverse Log', async function () {
-      this.timeout(10000)
       await n.goto(page('event-log'))
+      let prior = await n.evaluate(() => document.getElementById('LogPosition').innerText)
       let initial = await n.wait('textarea[name="payload"]')
-        .insert('textarea[name="payload"]', 'This is a test Group Creation Event')
-        .select('select[name="type"]', 'Creation')
+        .insert('textarea[name="payload"]', 'This is a test Group Payment Event')
+        .select('select[name="type"]', 'Payment')
         .click('button.submit')
-        .wait(2000)
-        .evaluate(() => {
-          return document.getElementById('LogPosition').innerText
-        })
-      let secondary = await n.click('a.backward').wait(1000)
-        .evaluate(() => {
-          return document.getElementById('LogPosition').innerText
-        })
+        .wait(prior => document.getElementById('LogPosition').innerText !== prior, prior)
+        .evaluate(() => document.getElementById('LogPosition').innerText)
+      let secondary = await n.click('a.backward')
+        .wait(initial => document.getElementById('LogPosition').innerText !== initial, initial)
+        .evaluate(() => document.getElementById('LogPosition').innerText)
       should(initial !== secondary).equal(true)
-      let tertiary = await n.click('a.forward').wait(1000)
-        .evaluate(() => {
-          return document.getElementById('LogPosition').innerText
-        })
+      let tertiary = await n.click('a.forward')
+        .wait(secondary => document.getElementById('LogPosition').innerText !== secondary, secondary)
+        .evaluate(() => document.getElementById('LogPosition').innerText)
       should(initial).equal(tertiary)
     })
   })

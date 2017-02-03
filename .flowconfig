@@ -1,14 +1,21 @@
 [ignore]
-# https://flowtype.org/docs/advanced-configuration.html
-# https://flowtype.org/docs/declarations.html
+# Config related docs:
+# - https://flowtype.org/docs/advanced-configuration.html
+# - https://flowtype.org/docs/declarations.html
+# Generally useful FlowType docs:
+# - https://flowtype.org/docs/quick-reference.html
+# - https://flowtype.org/docs/objects.html
+# - https://flowtype.org/docs/functions.html
 .*/node_modules/.*
 .*/dist/.*
 .*/ignored/.*
 .*/frontend/_static/.*
 .*/frontend/simple/assets/.*
 .*/backend/discard/.*
-# temporary (delete me)
-.*/interface.js
+.*/frontend/simple/js/backend/interface.js
+.*/frontend/simple/js/crypto.js
+.*/frontend/simple/js/identity.js
+# .*/test/frontend.js
 
 [libs]
 shared/declarations.js

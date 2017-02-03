@@ -50,7 +50,7 @@ var router = new Router({
         title: 'Create Group'
       },
       beforeEnter (to, from, next) {
-        if (!store.state.loggedInUser) {
+        if (!store.state.loggedIn) {
           console.log(to.name, `redirecting to ${SignUp.name}!`)
           next({ path: '/signup', query: { next: to.path } })
         } else {
@@ -118,4 +118,3 @@ new Vue({
   components: {NavBar},
   store // make this and all child components aware of the new store
 }).$mount('#app')
-

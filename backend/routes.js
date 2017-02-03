@@ -1,40 +1,24 @@
 /* globals logger */
 
-import * as db from './database'
-import {EVENT_TYPE} from '../shared/constants'
+import {RESPONSE_TYPE} from '../shared/constants'
 import {makeResponse} from '../shared/functions'
+import {Events} from '../shared/events'
 // const Boom = require('boom')
 const Joi = require('joi')
 
-const {SUCCESS, EVENT} = EVENT_TYPE
-
+// NOTE: We could get rid of this RESTful API and just rely on pubsub.js to do this
+//       —BUT HTTP2 might be better than websockets and so we keep this around.
+//       See related TODO in pubsub.js and the reddit discussion link.
 module.exports = function (server: Object) {
-  const payloadValidation = {
+  const payloadValidation = Joi.object({
     hash: Joi.string().required(),
     // must match db.Log.jsonSchema.properties (except for separated hash)
     entry: Joi.object({
       version: Joi.string().required(),
-      parentHash: Joi.string().allow(null).required(),
+      type: Joi.string().required(),
+      parentHash: Joi.string().allow([null, '']),
       data: Joi.object()
     })
-  }
-  server.route({
-    config: { validate: { payload: payloadValidation } },
-    method: ['PUT', 'POST'],
-    path: '/group',
-    // TODO: we have to prevent spam. can't have someone flooding the server.
-    handler: async function (request, reply) {
-      try {
-        // TODO: here we should register our pubkey with the server which in
-        //       turn should be used by gi-auth to authenticate other actions.
-        var {hash, entry} = request.payload
-        await db.createGroup(hash, entry)
-        reply(makeResponse(SUCCESS, {hash}))
-      } catch (err) {
-        logger(err)
-        reply(err)
-      }
-    }
   })
   server.route({
     config: {
@@ -42,6 +26,8 @@ module.exports = function (server: Object) {
       validate: { payload: payloadValidation }
     },
     method: ['PUT', 'POST'],
+    // TODO: we have to prevent spam. can't have someone flooding the server.
+    //       do group signature based authentication here to prevent spam
     path: '/event/{groupId}',
     handler: async function (request, reply) {
       try {
@@ -51,9 +37,9 @@ module.exports = function (server: Object) {
         //       in the database at all. (or an error if hash is invalid)
         var groupId = request.params.groupId
         var {hash, entry} = request.payload
-        await db.appendLogEntry(groupId, hash, entry)
-        server.primus.room(groupId).write(makeResponse(EVENT, {groupId, hash, entry}))
-        reply(makeResponse(SUCCESS, {hash}))
+        var event = Events[entry.type].fromObject(entry, hash)
+        await server.handleEvent(groupId, event)
+        reply(makeResponse(RESPONSE_TYPE.SUCCESS, {hash}))
       } catch (err) {
         logger(err)
         reply(err)
