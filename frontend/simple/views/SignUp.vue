@@ -1,5 +1,5 @@
 <template>
-  <section class="section">
+  <section class="section full-screen">
     <!-- main containers:
      .container  http://bulma.io/documentation/layout/container/
      .content    http://bulma.io/documentation/elements/content/
