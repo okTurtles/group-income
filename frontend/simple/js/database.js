@@ -1,9 +1,7 @@
 'use strict'
 
 import localforage from 'localforage'
-import {toHash} from '../../../shared/functions'
-import {ENTRY_TYPE} from '../../../shared/constants'
-import type {Entry} from '../../../shared/types'
+import {HashableEntry, Events} from '../../../shared/events'
 
 const _logs = new Map()
 function groupLog (storeName: string): Object {
@@ -19,24 +17,29 @@ function groupLog (storeName: string): Object {
 // - Call out to asynchronous APIs via superagent
 // They SHOULD:
 // - Mirror what's in backend/database.js
-export function getLogEntry (groupId: string, hash: string): Promise<Entry> {
-  return groupLog(groupId).getItem(hash)
+export async function getLogEntry (
+  groupId: string, hash: string
+): Promise<HashableEntry> {
+  var {type, proto} = await groupLog(groupId).getItem(hash)
+  return Events[type].fromProtobuf(proto, hash)
 }
 
 export function recentHash (groupId: string): Promise<string> {
   return groupLog(groupId).getItem('HEAD')
 }
 
-export async function addLogEntry (groupId: string, hash: string, entry: Entry) {
-  let expected = toHash(entry)
-  if (hash !== expected) throw new Error(`hash mismatch: ${hash} != ${expected}`)
+export async function addLogEntry (
+  groupId: string, event: HashableEntry
+) {
+  let hash = event.toHash()
   let log = groupLog(groupId)
   let last = await log.getItem('HEAD')
   let exists = await log.getItem(hash)
+  let entry = event.toObject()
   if (exists) {
     return console.log('addLogEntry: disregarding already existing entry:', entry)
   }
-  if (entry.type === ENTRY_TYPE.CREATION) {
+  if (entry.type === Events.Group.name) {
     if (entry.previousHash) {
       throw new Error('group creation entry with non-null previousHash!')
     }
@@ -45,20 +48,19 @@ export async function addLogEntry (groupId: string, hash: string, entry: Entry) 
     throw new Error('incorrect previousHash for entry!')
   }
   await log.setItem('HEAD', hash)
-  await log.setItem(hash, entry)
+  await log.setItem(hash, {type: entry.type, proto: event.toProtobuf()})
   return hash
 }
 // collect returns a collection of events
 export async function collect (
   groupId: string, from: string
-): Promise<Array<Entry>> {
-  let log = groupLog(groupId)
+): Promise<Array<HashableEntry>> {
   let collection = []
   let cursor = from
   while (cursor) {
-    let entry = await log.getItem(cursor)
+    let entry = await getLogEntry(groupId, cursor)
     collection.unshift(entry)
-    cursor = entry.parentHash
+    cursor = entry.toObject().parentHash
   }
   return collection
 }

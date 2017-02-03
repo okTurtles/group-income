@@ -3,9 +3,7 @@
 import Knex from 'knex'
 import fs from 'fs'
 import {Model, transaction, ValidationError} from 'objection'
-import {toHash, makeEntry} from '../shared/functions'
-import {ENTRY_TYPE} from '../shared/constants'
-import type {Entry} from '../shared/types'
+import {HashableEntry, Group} from '../shared/events'
 
 const production = process.env.NODE_ENV === 'production'
 
@@ -48,12 +46,6 @@ class HashToData extends Model {
       value: {type: 'string'}
     }
   }
-  $beforeInsert () {
-    var hash = toHash(this.value)
-    if (this.hash !== hash) {
-      throw new ValidationError(`HashToData: calculated ${hash} != given ${this.hash}!`)
-    }
-  }
 }
 
 // See also https://vincit.github.io/objection.js/#virtualattributes
@@ -88,11 +80,14 @@ class Log extends Model {
 // wrapper methods to add log entries / create groups
 // =======================
 
-export async function createGroup (hash: string, entry: Entry): Promise<string> {
+export async function createGroup (
+  groupId: string,
+  entry: HashableEntry
+): Promise<string> {
   // TODO: add proper debugging events using Good
   if (entry.parentHash) throw new Error('parentHash must be null!')
-  await HashToData.query().insert({hash, value: JSON.stringify(entry)})
-  await knex.schema.createTableIfNotExists(hash, function (table) {
+  await HashToData.query().insert({hash: groupId, value: entry.toJSON()})
+  await knex.schema.createTableIfNotExists(groupId, function (table) {
     table.increments()
     table.text('version').notNullable()
     table.text('type').notNullable()
@@ -100,27 +95,29 @@ export async function createGroup (hash: string, entry: Entry): Promise<string> 
     table.text('data').notNullable()
     table.text('hash').notNullable().index()
   })
-  await Log.table(hash).insert({...entry, hash})
-  console.log('createGroup():', hash, entry)
-  return hash
+  await Log.table(groupId).insert({...entry.toObject(), hash: groupId})
+  console.log('createGroup():', groupId, entry)
+  return groupId
 }
 
 export async function appendLogEntry (
-  groupId: string, hash: string, entry: Entry
+  groupId: string,
+  entry: HashableEntry
 ): Promise<string> {
-  var {parentHash: claimedHash} = entry
+  var claimedHash = entry.toObject().parentHash
   if (!claimedHash) throw new Error('entry parentHash cannot be null!')
   var {hash: previousHash} = await lastEntry(groupId)
   if (previousHash !== claimedHash) {
     throw new ValidationError(`claimed hash: ${claimedHash}, reality: ${previousHash}`)
   }
+  const hash = entry.toHash()
   Log.tableName = groupId // just in case the call to `transaction` needs it...
-  return transaction(HashToData, Log, async function (HashToData, Log) {
-    await HashToData.query().insert({hash, value: JSON.stringify(entry)})
-    await Log.table(groupId).insert({...entry, hash})
-    console.log('appendLogEntry():', entry, hash)
-    return hash
+  await transaction(HashToData, Log, async function (HashToData, Log) {
+    await HashToData.query().insert({hash, value: entry.toJSON()})
+    await Log.table(groupId).insert({...entry.toObject(), hash})
   })
+  console.log('appendLogEntry():', entry, hash)
+  return hash
 }
 
 export async function lastEntry (groupId: string) {
@@ -155,15 +152,14 @@ if (testDatabaseJs && testDatabaseJs.indexOf('babel-node') !== -1) {
   (async function () {
     try {
       await loaded
-      var entry = makeEntry(ENTRY_TYPE.CREATION, {hello: 'world!', pubkey: 'foobarbaz'}, null)
-      var groupId = toHash(entry)
+      var entry = new Group({hello: 'world!', pubkey: 'foobarbaz'})
+      var groupId = entry.toHash()
       console.log('creating group:', groupId)
       await createGroup(groupId, entry)
 
-      entry.data = {crazy: 'lady'}
-      entry.parentHash = groupId
-      var res = await appendLogEntry(groupId, toHash(entry), entry)
-      console.log(`added log entry ${JSON.stringify(entry.data)} with result:`, res)
+      entry = new Group({crazy: 'lady'}, groupId)
+      var res = await appendLogEntry(groupId, entry)
+      console.log(`added log entry ${entry.toJSON()} with result:`, res)
       res = await lastEntry(groupId)
       console.log(`last log entry for ${Log.tableName}:`, res)
 

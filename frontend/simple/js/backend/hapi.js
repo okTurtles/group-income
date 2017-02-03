@@ -3,8 +3,8 @@
 import request from 'superagent'
 import {Backend} from './interface'
 import * as pubsub from '../pubsub'
-import {toHash, sign} from '../../../../shared/functions'
-import type {Entry} from '../../../../shared/types'
+import {sign} from '../../../../shared/functions'
+import {HashableEntry} from '../../../../shared/events'
 
 // temporary identity for signing
 const nacl = require('tweetnacl')
@@ -25,13 +25,11 @@ export class HapiBackend extends Backend {
       subs.forEach(pubsub.joinRoom)
     })
   }
-  async publishLogEntry (groupId: string, entry: Entry, hash?: string) {
-    if (!hash) hash = toHash(entry)
-    console.log('about to publishLogEntry:', entry)
-    let res = await request.post(`${process.env.API_URL}/event/${groupId}`)
+  publishLogEntry (groupId: string, entry: HashableEntry) {
+    console.log(`publishLogEntry to ${groupId}:`, entry)
+    return request.post(`${process.env.API_URL}/event/${groupId}`)
       .set('Authorization', `gi ${signature}`)
-      .send({hash, entry})
-    return res.body
+      .send({hash: entry.toHash(), entry: entry.toObject()})
   }
   subscriptions () {
     return this._subscriptions // return a copy instead?

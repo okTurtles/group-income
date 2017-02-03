@@ -6,8 +6,7 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import * as db from './database'
-import {ENTRY_TYPE} from '../../../shared/constants'
-import type {Entry} from '../../../shared/types'
+import {Events} from '../../../shared/events'
 
 Vue.use(Vuex)
 
@@ -63,15 +62,18 @@ export const actions = {
   async saveSettings (
     {state}: {state: Object}
   ) {
-    await db.saveSettings({
+    const settings = {
       currentGroup: state.currentGroup,
       groups: state.groups
-    })
+    }
+    await db.saveSettings(settings)
+    console.log('saved settings:', settings)
   },
   async loadSettings (
     {commit, state}: {commit: Function, state: Object}
   ) {
     let {groups, currentGroup} = await db.loadSettings()
+    console.log('loadSettings:', currentGroup, groups)
     commit('setCurrentGroup', currentGroup || makeLogState(null, null))
     commit('setGroups', groups || [])
   },
@@ -81,19 +83,20 @@ export const actions = {
   // mirrors `handleEvent` in backend/server.js
   async handleEvent (
     {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object},
-    {groupId, hash, entry}: {groupId: string, hash: string, entry: Entry}
+    {groupId, hash, entry}: {groupId: string, hash: string, entry: Object}
   ) {
     console.log(`handleEvent for ${groupId}:`, entry)
-    await db.addLogEntry(groupId, hash, entry)
+    entry = Events[entry.type].fromObject(entry, hash)
+    await db.addLogEntry(groupId, entry)
     // TODO: verify each entry is signed by a group member
-    if (entry.type === ENTRY_TYPE.CREATION) {
+    if (!entry.toObject().parentHash) {
       // TODO: verify we created this group before calling setCurrentGroup
       commit('setCurrentGroup', makeLogState(groupId, groupId))
       commit('addGroup', groupId)
-      dispatch('saveSettings')
     } else {
       commit('logPosition', hash)
     }
+    dispatch('saveSettings')
   },
 
   // time travel related
@@ -103,7 +106,7 @@ export const actions = {
     if (state.currentGroup) {
       let {groupId, position} = state.currentGroup
       let entry = await db.getLogEntry(groupId, position)
-      commit('backward', entry.parentHash)
+      commit('backward', entry.toObject().parentHash)
     }
   },
   forward (
