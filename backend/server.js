@@ -3,9 +3,7 @@
 import * as db from './database'
 import Hapi from 'hapi'
 import GiAuth from './auth'
-import {RESPONSE_TYPE} from '../shared/constants'
-import {makeResponse} from '../shared/functions'
-import type {Entry} from '../shared/types'
+import {HashableEntry} from '../shared/events'
 import {bold} from 'chalk'
 
 export var hapi = new Hapi.Server({
@@ -21,15 +19,15 @@ hapi.connection({
 })
 
 hapi.decorate('server', 'handleEvent', async function (
-  groupId: string, hash: string, entry: Entry
+  groupId: string, entry: HashableEntry
 ) {
   console.log(bold('[server] handleEvent:'), entry)
-  if (!entry.parentHash) {
+  if (!entry.toObject().parentHash) {
     await db.createGroup(groupId, entry)
   } else {
-    await db.appendLogEntry(groupId, hash, entry)
+    await db.appendLogEntry(groupId, entry)
   }
-  var response = makeResponse(RESPONSE_TYPE.ENTRY, {groupId, hash, entry})
+  var response = entry.toResponse(groupId)
   console.log(bold.blue(`broadcasting to room ${groupId}:`), response)
   hapi.primus.room(groupId).write(response)
 })

@@ -30,25 +30,3 @@ export type Response = {
   err?: string;
   data?: JSONType
 }
-
-// export type Entry = { // <- was causing problems
-export interface Entry {
-  type: string;
-  data: string;
-  parentHash: string | null;
-  version: string;
-  // TODO: signature/pubkey for data?
-}
-
-// TODO: move this to events.js and eventually get rid of it using TypeScript
-export type Group = {
-  creationDate: string;
-  groupName: string;
-  sharedValues: string;
-  changePercentage: number;
-  openMembership: boolean;
-  memberApprovalPercentage: number;
-  memberRemovalPercentage: number;
-  contributionPrivacy: string;
-  founderHashKey: string;
-}

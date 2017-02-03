@@ -1,7 +1,7 @@
 'use strict'
 
-import {verify} from '../../../../shared/functions'
-import HashableEntry from './events'
+import {verify} from '../../../shared/functions'
+import {HashableEntry} from '../../../shared/events'
 
 // "Contract" represent immutable code.
 

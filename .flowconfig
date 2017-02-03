@@ -13,6 +13,8 @@
 .*/frontend/simple/assets/.*
 .*/backend/discard/.*
 .*/frontend/simple/js/backend/interface.js
+.*/frontend/simple/js/crypto.js
+.*/frontend/simple/js/identity.js
 # .*/test/frontend.js
 
 [libs]

@@ -5,7 +5,7 @@
     >
         <section class="section">
             <p class="control">
-              <h1>Log Postion: <span id="LogPosition">{{logPosition}}</span></h1>
+              <h1>Log Postion: <span id="LogPosition">{{ position }}</span></h1>
             <div>
               <a class="button backward is-primary" v-on:click="backward">
                 <span class="icon">
@@ -21,9 +21,9 @@
               Select an Event Type:
               <span class="select">
                 <select ref="type" name="type" data-rules="required">
-                  <!-- Values must match the types in shared/types.js -->
-                  <option value="payment" selected>Payment</option>
-                  <option value="voting">Voting</option>
+                  <!-- must exactly match the types in shared/events.js -->
+                  <option value="Payment" selected>Payment</option>
+                  <option value="Vote">Vote</option>
                 </select>
               </span>
             </p>
@@ -37,7 +37,7 @@
                 <a class="button submit" id="random" v-on:click="createRandomGroup">
                   Create Random Group
                 </a>
-                Count: <span id="count">{{events.length}}</span>
+                Count: <span id="count">{{ events.length }}</span>
             </div>
           <div id="Log">
             <div class="box event" v-for="event in events">
@@ -50,9 +50,9 @@
                 <div class="media-content">
                   <div class="content">
                     <p>
-                      <strong>{{ event.type }}</strong> <small>@groupincomegroup</small> <small>31m</small>
+                      <strong>{{ event.toObject().type }}</strong> <small>@groupincomegroup</small> <small>31m</small>
                       <br>
-                      {{ event.data }}
+                      {{ event.toObject().data }}
                     </p>
                   </div>
                 </div>
@@ -71,11 +71,7 @@
 <script>
   import * as db from '../js/database'
   import backend from '../js/backend'
-  import {makeGroup, makeEntry, toHash} from '../../../shared/functions'
-  import {RESPONSE_TYPE, ENTRY_TYPE} from '../../../shared/constants'
-  import {HashableGroup} from '../js/events'
-  import multihash from 'multihashes'
-  const blake = require('blakejs')
+  import {Events} from '../../../shared/events'
 
   export default {
     data () {
@@ -84,80 +80,52 @@
     created () {
       // NOTE: this works, but backend doesn't persist database, so during
       //       development this makes things break.
-      // console.log('dispatching loadSettings!')
-      // this.$store.dispatch('loadSettings')
+      // this.$store.dispatch('loadSettings').then(() => {
+      //   this.$store.state.groups.forEach(backend.subscribe)
+      // })
     },
     computed: {
-      logPosition () {
-        // TODO: this. point is to update this.events anytime logPosition changes
-        this.recollectEvents()
+      position () {
+        this.refresh() // update this.events anytime the position changes
         return this.$store.state.currentGroup.position
       }
     },
     methods: {
-      recollectEvents: async function () {
+      refresh: async function () {
         var {groupId, position} = this.$store.state.currentGroup
         this.events = await db.collect(groupId, position)
       },
       createRandomGroup: async function () {
-        let getRandomInt = (min, max) => {
-          return Math.floor(Math.random() * (max - min)) + min
-        }
-        let group = makeGroup(
-          `Group ${getRandomInt(1, 100)}`,
-          'Testing this software',
-          getRandomInt(1, 100),
-          false,
-          getRandomInt(1, 100),
-          getRandomInt(1, 100),
-          'Very Private',
-          'alsdfjlskdfjaslkfjsldkfj'
-        )
+        let randInt = (min, max) => Math.floor(Math.random() * (max - min)) + min
         // TODO: move this stuff somewhere else that makes sense.
         // subscribe first and so that handleEvent is automatically dispatched
-        let entry = makeEntry(ENTRY_TYPE.CREATION, group, '')
-        let hash = toHash(entry)
-
-        let serialized = HashableGroup.serialize(entry)
-        console.log('serialized:', serialized)
-        let arr = blake.blake2b(serialized)
-        // see: https://github.com/feross/typedarray-to-buffer/blob/master/index.js
-        var buf = new Buffer(arr.buffer)
-        console.log('arr.byteLength:', arr.byteLength, 'arr.buffer.byteLength:', arr.buffer.byteLength)
-        if (arr.byteLength !== arr.buffer.byteLength) {
-          // Respect the "view", i.e. byteOffset and byteLength, without doing a copy
-          buf = buf.slice(arr.byteOffset, arr.byteOffset + arr.byteLength)
-        }
-        let bufHash = multihash.toB58String(multihash.encode(buf, 'blake2b'))
-        console.log('hashes:', hash, 'vs', bufHash)
-        let deserialized = HashableGroup.deserialize(serialized)
-        console.log('deserialized:', deserialized)
-
+        let entry = new Events.Group({
+          groupName: `Group ${randInt(1, 100)}`,
+          sharedValues: 'Testing this software',
+          changePercentage: randInt(1, 100),
+          openMembership: false,
+          memberApprovalPercentage: randInt(1, 100),
+          memberRemovalPercentage: randInt(1, 100),
+          contributionPrivacy: 'Very Private',
+          founderHashKey: 'alsdfjlskdfjaslkfjsldkfj'
+        })
+        let hash = entry.toHash()
         await backend.subscribe(hash)
         let res = await backend.publishLogEntry(hash, entry, hash)
-        if (!res || res.type === RESPONSE_TYPE.ERROR) {
-          console.error('failed to create group!')
+        if (!res.ok) {
+          console.error('failed to create group:', res.text)
         } else {
-          console.log('group created. server response:', res)
+          console.log('group created. server response:', res.body)
         }
       },
       submit: async function () {
-        // TODO: test invalid hash for entry
-        // TODO: test adding to the wrong groupId
-        // TODO: test adding to the wrong parentHash
         let groupId = this.$store.state.currentGroup.groupId
         let type = this.$refs.type.value
-        var key
-        switch (type) {
-          case ENTRY_TYPE.PAYMENT: key = 'amount'; break
-          case ENTRY_TYPE.VOTING: key = 'vote'; break
-          default: throw Error('unsupported Entry type: ' + type)
-        }
-        let res = await backend.publishLogEntry(groupId, makeEntry(
-          type,
-          {[key]: this.$refs.payload.value},
+        var entry = new Events[type](
+          { [type.toLowerCase()]: this.$refs.payload.value },
           await db.recentHash(groupId)
-        ))
+        )
+        let res = await backend.publishLogEntry(groupId, entry)
         console.log('entry sent, server response:', res)
       },
       forward: function () {

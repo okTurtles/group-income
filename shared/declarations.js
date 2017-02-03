@@ -87,6 +87,7 @@ declare module 'vueify' { declare module.exports: any }
 declare module 'vueify-insert-css' { declare module.exports: any }
 declare module 'xvfb-maybe' { declare module.exports: any }
 declare module 'blakejs' { declare module.exports: any }
+declare module 'protobufjs/light' { declare module.exports: any }
 
 // .vue and .ejs files
 declare module '../views/i18n.vue' { declare module.exports: Object }

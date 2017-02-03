@@ -2,6 +2,7 @@
 
 import {RESPONSE_TYPE} from '../shared/constants'
 import {makeResponse} from '../shared/functions'
+import {Events} from '../shared/events'
 // const Boom = require('boom')
 const Joi = require('joi')
 
@@ -36,7 +37,8 @@ module.exports = function (server: Object) {
         //       in the database at all. (or an error if hash is invalid)
         var groupId = request.params.groupId
         var {hash, entry} = request.payload
-        await server.handleEvent(groupId, hash, entry)
+        var event = Events[entry.type].fromObject(entry, hash)
+        await server.handleEvent(groupId, event)
         reply(makeResponse(RESPONSE_TYPE.SUCCESS, {hash}))
       } catch (err) {
         logger(err)

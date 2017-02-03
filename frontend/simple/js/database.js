@@ -1,9 +1,7 @@
 'use strict'
 
 import localforage from 'localforage'
-import {toHash} from '../../../shared/functions'
-import {ENTRY_TYPE} from '../../../shared/constants'
-import type {Entry} from '../../../shared/types'
+import {HashableEntry, Events} from '../../../shared/events'
 
 const _logs = new Map()
 function groupLog (storeName: string): Object {
@@ -19,24 +17,29 @@ function groupLog (storeName: string): Object {
 // - Call out to asynchronous APIs via superagent
 // They SHOULD:
 // - Mirror what's in backend/database.js
-export function getLogEntry (groupId: string, hash: string): Promise<Entry> {
-  return groupLog(groupId).getItem(hash)
+export async function getLogEntry (
+  groupId: string, hash: string
+): Promise<HashableEntry> {
+  var entry = await groupLog(groupId).getItem(hash)
+  return Events[entry.type].fromObject(entry, hash)
 }
 
 export function recentHash (groupId: string): Promise<string> {
   return groupLog(groupId).getItem('HEAD')
 }
 
-export async function addLogEntry (groupId: string, hash: string, entry: Entry) {
-  let expected = toHash(entry)
-  if (hash !== expected) throw new Error(`hash mismatch: ${hash} != ${expected}`)
+export async function addLogEntry (
+  groupId: string, event: HashableEntry
+) {
+  let hash = event.toHash()
   let log = groupLog(groupId)
   let last = await log.getItem('HEAD')
   let exists = await log.getItem(hash)
+  let entry = event.toObject()
   if (exists) {
     return console.log('addLogEntry: disregarding already existing entry:', entry)
   }
-  if (entry.type === ENTRY_TYPE.CREATION) {
+  if (entry.type === Events.Group.name) {
     if (entry.previousHash) {
       throw new Error('group creation entry with non-null previousHash!')
     }
@@ -44,6 +47,9 @@ export async function addLogEntry (groupId: string, hash: string, entry: Entry) 
     console.error(`addLogEntry: new entry has bad parentHash: ${entry.parentHash}. Should be: ${last}. Entry:`, entry)
     throw new Error('incorrect previousHash for entry!')
   }
+  // NOTE: we could save the protobuf instead, in which case we'd need to save
+  // an object that looks like: {type: entry.type, buf: event.toProtobuf()}
+  // TODO: find out how much space we'd save if we did that
   await log.setItem('HEAD', hash)
   await log.setItem(hash, entry)
   return hash
@@ -51,13 +57,13 @@ export async function addLogEntry (groupId: string, hash: string, entry: Entry) 
 // collect returns a collection of events
 export async function collect (
   groupId: string, from: string
-): Promise<Array<Entry>> {
+): Promise<Array<HashableEntry>> {
   let log = groupLog(groupId)
   let collection = []
   let cursor = from
   while (cursor) {
     let entry = await log.getItem(cursor)
-    collection.unshift(entry)
+    collection.unshift(Events[entry.type].fromObject(entry, cursor))
     cursor = entry.parentHash
   }
   return collection

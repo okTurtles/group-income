@@ -1,30 +1,10 @@
-import multihash from 'multihashes'
-const blake = require('blakejs')
+'use strict'
+
 const Primus = require('primus')
 const nacl = require('tweetnacl')
 
-// TODO: switch to this implementation on node
-// https://github.com/ludios/node-blake2
-// var blake2 = require('blake2');
-// var h = blake2.createHash('blake2b');
-// h.update(new Buffer("test"));
-// console.log(h.digest("hex"));
-
 import {RESPONSE_TYPE} from './constants'
-import type {
-  JSONType, JSONObject, Response, ResType, Entry, Group
-} from './types'
-
-export function toHash (value: JSONObject | Entry | string): string {
-  // TODO: use safe/guaranteed JSON encoding? https://github.com/primus/ejson
-  if (typeof value === 'object') {
-    value = JSON.stringify(value)
-  }
-  // TODO: this doesn't seem correct.
-  value = blake.blake2bHex(value)
-  var buff = multihash.encode(Buffer.from(value, 'hex'), 'blake2b')
-  return multihash.toB58String(buff)
-}
+import type {JSONType, Response, ResType} from './types'
 
 export function makeResponse (
   type: ResType,
@@ -38,38 +18,6 @@ export function makeResponse (
     : {type, err: String(data)}
   }
   return {type, data}
-}
-
-export function makeEntry (
-  type: string,
-  data: string,
-  parentHash: string | null,
-  version?: string = '0.0.2'
-): Entry {
-  return {type, version, parentHash, data}
-}
-
-export function makeGroup (
-  groupName: string,
-  sharedValues: string,
-  changePercentage: number,
-  openMembership: boolean,
-  memberApprovalPercentage: number,
-  memberRemovalPercentage: number,
-  contributionPrivacy: string,
-  founderHashKey: string
-) : Group {
-  return {
-    creationDate: new Date().toISOString(),
-    groupName,
-    sharedValues,
-    changePercentage,
-    openMembership,
-    memberApprovalPercentage,
-    memberRemovalPercentage,
-    contributionPrivacy,
-    founderHashKey
-  }
 }
 
 // generate and save primus client file

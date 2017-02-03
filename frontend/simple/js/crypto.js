@@ -1,11 +1,9 @@
 'use strict'
 
 import scrypt from 'scrypt-async'
-import Serializable from './events'
 
-export class Key extends Serializable {
+export class Key {
   constructor (privKey, pubKey, salt) {
-    super()
     this.privKey = privKey
     this.pubKey = pubKey // optional
     this.salt = salt  // optional

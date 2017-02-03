@@ -2,10 +2,10 @@
 // http://www.benmvp.com/learning-es6-classes/
 // https://www.sitepoint.com/object-oriented-javascript-deep-dive-es6-classes/
 
-import type {Entry} from '../../../../shared/types'
+import {HashableEntry} from '../../../../shared/events'
 
 export class Backend {
-  publishLogEntry (groupId: string, entry: Entry, hash?: string) {}
+  publishLogEntry (groupId: string, entry: HashableEntry) {}
   subscribe (groupId: string) {}
   unsubscribe (groupId: string) {}
   subscriptions () {}
