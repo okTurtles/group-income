@@ -23,6 +23,7 @@
                   <p class="title percentage">{{changePercentage}}%</p>
                   <input type="range" v-validate data-vv-as="Percentage to change rules" data-vv-rules="between:1,100"  min="0" max="100" name="changePercentage" v-model="changePercentage">
                   <span v-show="errors.has('changePercentage')" class="help is-danger">The Percentage to change rules field must be between 1% and 100%</span>
+                  <input v-if="dev" type="text" v-model="changePercentage" name="proxyChangePercentage" style="opacity:0; position: absolute;">
                 </div>
             </div>
             <div class="tile is-4 is-vertical question-group">
@@ -40,12 +41,14 @@
                 <p class="title">{{memberApprovalPercentage}}%</p>
                 <input type="range" min="0" max="100" data-vv-as="Member Approval Percentage" v-validate data-vv-rules="between:1,100" name="memberApprovalPercentage" v-model="memberApprovalPercentage">
                 <span v-show="errors.has('memberApprovalPercentage')" class="help is-danger">The Member Approval Percentage field must be between 1% and 100%.</span>
+                <input v-if="dev" type="text" v-model="memberApprovalPercentage" name="proxyMemberApprovalPercentage" style="opacity:0; position: absolute;">
               </div>
               <div class="tile notification">
                 <p class="title"><i18n>How many members should it take to remove a member?</i18n></p>
                 <p class="title">{{memberRemovalPercentage}}%</p>
                 <input type="range" min="0" max="100" data-vv-as="Member Removal Percentage" v-validate data-vv-rules="between:1,100" name="memberRemovalPercentage" v-model="memberRemovalPercentage">
                 <span v-show="errors.has('memberRemovalPercentage')" class="help is-danger">The Member Removal Percentage field must be between 1% and 100%.</span>
+                <input v-if="dev" type="text" v-model="memberRemovalPercentage" name="proxyMemberRemovalPercentage" style="opacity:0; position: absolute;">
               </div>
             </div>
             <div class="tile is-4 is-vertical question-group">
@@ -68,7 +71,7 @@
               </div>
               <div class="tile">
                 <div class="center">
-                  <div id="successMsg" v-if="created" class="help is-success">Success</div>
+                  <div id="successMsg" v-if="created" class="created">Success</div>
                 <button class="button is-success center" type="submit" :disabled="errors.any() || !fields.passed()">Create Group</button>
                 </div>
               </div>
@@ -88,6 +91,11 @@ import {Events} from '../../../shared/events'
 export default {
   name: 'CreateGroupView',
   methods: {
+    computed: {
+      dev: function () {
+        return process.env.NODE_ENV === 'development'
+      }
+    },
     submit: function () {
       this.$validator.validateAll()
         .then(async function () {

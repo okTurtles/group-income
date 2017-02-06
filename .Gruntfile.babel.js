@@ -13,6 +13,7 @@ const url = require('url')
 const S = require('string')
 const vueify = require('vueify')
 const pathmodify = require('pathmodify')
+const envify = require('envify')
 
 import _ from 'lodash-es'
 import {setupPrimus} from './shared/functions'
@@ -235,7 +236,7 @@ function browserifyCfg ({straight, lazy}, cfg = {}) {
   function gencfg (out, paths, isLazy) {
     var c = {
       options: {
-        transform: [script2ify, 'vueify', ejsify, 'babelify'],
+        transform: [script2ify, 'vueify', ejsify, 'babelify', envify],
         // NOTE: if you run into any problems with loading lodash on the frontend
         //       try uncommenting & playing with the following line:
         // transform: [script2ify, 'vueify', ejsify, ['babelify', {global: true, ignore: /node_modules\/(?!lodash-es\/)/}]],

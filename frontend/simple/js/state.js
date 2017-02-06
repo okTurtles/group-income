@@ -23,7 +23,7 @@ const state: {currentGroup: LogState} = {
   currentGroup: makeLogState(null, null),
   offset: [],
   groups: [], // groups we're part of. This might be represented differently later
-  loggedIn: false // TODO: properly handle this
+  loggedIn: true // TODO: properly handle this
 }
 
 // Mutations must be synchronous! Never call these directly!
