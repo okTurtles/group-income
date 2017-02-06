@@ -82,35 +82,36 @@
 </template>
 
 <script>
-import {makeGroup} from '../../../shared/functions'
+import backend from '../js/backend'
+import {Events} from '../../../shared/events'
 
 export default {
   name: 'CreateGroupView',
   methods: {
     submit: function () {
       this.$validator.validateAll()
-        .then(() => {
-          let group = makeGroup(
-          this.groupName,
-          this.sharedValue,
-          this.changePercentage,
-          this.openMembership,
-          this.memberApprovalPercentage,
-          this.memberRemovalPercentage,
-          this.incomeProvided,
-          this.contributionPrivacy,
-          this.$store.state.loggedInUser
-           )
-          let count = this.$store.state.availableGroups.length
-          let unwatch = this.$store.watch((state) => {
-            return state.availableGroups.length > count
-          },
-          () => {
-            this.created = true
-            unwatch()
+        .then(async function () {
+          let entry = new Events.Group({
+            groupName: this.groupName,
+            sharedValue: this.sharedValue,
+            changePercentage: this.changePercentage,
+            openMembership: this.openMembership,
+            memberApprovalPercentage: this.memberApprovalPercentage,
+            memberRemovalPercentage: this.memberRemovalPercentage,
+            incomeProvided: this.incomeProvided,
+            contributionPrivacy: this.contributionPrivacy,
+            founderHashKey: 'alsdfjlskdfjaslkfjsldkfj'
           })
-          this.$store.dispatch('createGroup', group)
-        })
+          let hash = entry.toHash()
+          await backend.subscribe(hash)
+          let res = await backend.publishLogEntry(hash, entry, hash)
+          if (!res.ok) {
+            console.error('failed to create group:', res.text)
+          } else {
+            this.created = true
+            console.log('group created. server response:', res.body)
+          }
+        }.bind(this))
     }
   },
   data: function () {
