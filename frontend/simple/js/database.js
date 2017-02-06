@@ -20,8 +20,8 @@ function groupLog (storeName: string): Object {
 export async function getLogEntry (
   groupId: string, hash: string
 ): Promise<HashableEntry> {
-  var entry = await groupLog(groupId).getItem(hash)
-  return Events[entry.type].fromObject(entry, hash)
+  var {type, proto} = await groupLog(groupId).getItem(hash)
+  return Events[type].fromProtobuf(proto, hash)
 }
 
 export function recentHash (groupId: string): Promise<string> {
@@ -47,24 +47,20 @@ export async function addLogEntry (
     console.error(`addLogEntry: new entry has bad parentHash: ${entry.parentHash}. Should be: ${last}. Entry:`, entry)
     throw new Error('incorrect previousHash for entry!')
   }
-  // NOTE: we could save the protobuf instead, in which case we'd need to save
-  // an object that looks like: {type: entry.type, buf: event.toProtobuf()}
-  // TODO: find out how much space we'd save if we did that
   await log.setItem('HEAD', hash)
-  await log.setItem(hash, entry)
+  await log.setItem(hash, {type: entry.type, proto: event.toProtobuf()})
   return hash
 }
 // collect returns a collection of events
 export async function collect (
   groupId: string, from: string
 ): Promise<Array<HashableEntry>> {
-  let log = groupLog(groupId)
   let collection = []
   let cursor = from
   while (cursor) {
-    let entry = await log.getItem(cursor)
-    collection.unshift(Events[entry.type].fromObject(entry, cursor))
-    cursor = entry.parentHash
+    let entry = await getLogEntry(groupId, cursor)
+    collection.unshift(entry)
+    cursor = entry.toObject().parentHash
   }
   return collection
 }
