@@ -69,7 +69,7 @@
               <div class="tile">
                 <div class="center">
                   <div id="successMsg" v-if="created" class="help is-success">Success</div>
-                <button class="button is-success center" type="submit" :disabled="errors.any() || !fields.passed()">Next: Invite Members</button>
+                <button class="button is-success center" type="submit" :disabled="errors.any() || !fields.passed()">Create Group</button>
                 </div>
               </div>
             </div>
