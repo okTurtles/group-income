@@ -86,6 +86,26 @@ describe('Frontend', function () {
     })
   })
 
+  describe('Group Creation Test', function () {
+    it('Should create a group', async function () {
+      this.timeout(90000)
+      await n.goto(page('new-group'))
+        .should.finally.containEql({ code: 200, url: page('new-group') })
+      let created = await n.insert('input[name="groupName"]', 'Test Group')
+        .insert('textarea[name="sharedValues"]', 'Testing this software')
+        .insert('input[name="groupName"]', 'Test Group')
+        .insert('input[name="incomeProvided"]', '200')
+        .insert('input[name="proxyChangePercentage"]', '75')
+        .insert('input[name="proxyMemberApprovalPercentage"]', '75')
+        .insert('input[name="proxyMemberRemovalPercentage"]', '75')
+        .select('select[name="contributionPrivacy"]', 'Very Private')
+        .click('button[type="submit"]')
+        .wait(() => !!document.getElementById('successMsg'))
+        .evaluate(() => !!document.getElementById('successMsg'))
+      should(created).equal(true)
+    })
+  })
+
   describe('Test Localization Gathering Function', function () {
     it('Verify output of transform functions', function () {
       let script = `

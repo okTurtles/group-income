@@ -1,5 +1,5 @@
 <template>
-  <section class="section">
+  <section class="section full-screen">
     <!-- main containers:
      .container  http://bulma.io/documentation/layout/container/
      .content    http://bulma.io/documentation/elements/content/
@@ -17,17 +17,17 @@
             <h2 class="subtitle">Sign Up</h2>
 
             <p class="control has-icon">
-              <input class="input" name="name" v-validate data-rules="required|regex:^\S+$" placeholder="username" required>
+              <input class="input" name="name" v-validate data-vv-rules="required|regex:^\S+$" placeholder="username" required>
               <i class="fa fa-user"></i>
               <span v-show="errors.has('name')" class="help is-danger">Username cannot contain spaces</span>
             </p>
             <p class="control has-icon">
-              <input class="input" name="email" v-validate data-rules="required|email" type="email" placeholder="email" required>
+              <input class="input" name="email" v-validate data-vv-rules="required|email" type="email" placeholder="email" required>
               <i class="fa fa-envelope"></i>
               <span v-show="errors.has('email')" class="help is-danger">Not an email</span>
             </p>
             <p class="control has-icon">
-              <input class="input" name="password" v-validate data-rules="required|min:7" placeholder="password" type="password" required>
+              <input class="input" name="password" v-validate data-vv-rules="required|min:7" placeholder="password" type="password" required>
               <span v-show="errors.has('password')" class="help is-danger">Password must be at least 7 characters</span>
               <i class="fa fa-lock"></i>
             </p>
@@ -38,7 +38,7 @@
                 </span>
               </div>
               <div class="level-item is-narrow">
-                <button class="button submit is-success" type="submit" :disabled="errors.any() || !fields.dirty()">
+                <button class="button submit is-success" type="submit" :disabled="errors.any() || !fields.passed()">
                   Sign Up
                 </button>
               </div>
