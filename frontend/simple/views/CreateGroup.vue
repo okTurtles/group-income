@@ -26,7 +26,6 @@
 </template>
 
 <script>
-
 export default {
   name: 'CreateGroupView'
 }

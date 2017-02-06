@@ -244,9 +244,13 @@ function browserifyCfg ({straight, lazy}, cfg = {}) {
             // some libraries (like jquery-validity) require('jquery')
             pathmodify.mod.re(/^jquery$/i, 'sprint-js'),
             pathmodify.mod.dir('vendor', p`${__dirname}/frontend/simple/assets/vendor`),
-            pathmodify.mod.id('vue', p`${__dirname}/node_modules/vue/dist/vue.js`),
+            // https://vuejs.org/v2/guide/installation.html#Standalone-vs-Runtime-only-Build
+            pathmodify.mod.id('vue', p`${__dirname}/node_modules/vue/dist/vue.common.js`)
+            // pathmodify.mod.id('vue', p`${__dirname}/node_modules/vue/dist/vue.js`),
             // TODO Discover Why lodash-es does not bundle correctly the following is a short term work around
-            pathmodify.mod.id('lodash-es', p`${__dirname}/node_modules/lodash/index.js`)
+            // NOTE: the below is incorrect, since lodash-es is located in
+            // node_modules/lodash-es/, not node_modules/lodash/
+            // pathmodify.mod.id('lodash-es', p`${__dirname}/node_modules/lodash/index.js`)
           ]
         }]],
         browserifyOptions: {

@@ -5,187 +5,117 @@
 
 import Vue from 'vue'
 import Vuex from 'vuex'
-import EventLog from './event-log'
-import {EVENT_TYPE} from '../../../shared/constants'
-import {makeUserSession} from '../../../shared/functions'
-import localforage from 'localforage'
-import _ from 'lodash-es'
-const {SUCCESS, ERROR} = EVENT_TYPE
+import * as db from './database'
+import {Events} from '../../../shared/events'
 
 Vue.use(Vuex)
-// appSessionData is the persistent store of the state between online sessions
-const appSessionData = localforage.createInstance({
-  name: 'Group Income',
-  storeName: 'Application Sessions'
-})
-// TODO: save only relevant state to localforage
-const state = {
-  session: null,
-  // TODO: this should be managed by Keychain, not here
-  loggedInUser: null,
-  socket: null
+
+export type LogState = {groupId: string | null; position: string | null;}
+function makeLogState (
+  groupId: string | null, position: string | null
+): LogState {
+  return {groupId, position}
+}
+
+// This is the Vuex state object
+// Type annotation explanation: https://flowtype.org/docs/objects.html
+const state: {currentGroup: LogState} = {
+  currentGroup: makeLogState(null, null),
+  offset: [],
+  groups: [], // groups we're part of. This might be represented differently later
+  loggedIn: false // TODO: properly handle this
 }
 
 // Mutations must be synchronous! Never call these directly!
 // http://vuex.vuejs.org/en/mutations.html
 const mutations = {
-  login (state, userHashKey) { state.loggedInUser = userHashKey },
-  logout (state) { state.loggedInUser = null },
-  updateCurrentLogPosition (state, currentLogPosition) {
-    if (currentLogPosition.offsetPush) {
-      state.session.offset.push(state.session.currentGroup.currentLogPosition)
-      state.session.currentGroup.currentLogPosition = currentLogPosition.currentLogPosition
-    } else if (currentLogPosition.offsetPop) {
-      state.session.offset.pop()
-      state.session.currentGroup.currentLogPosition = currentLogPosition.currentLogPosition
-    } else {
-      state.session.currentGroup.currentLogPosition = currentLogPosition
-      state.session.offset = []
+  logPosition (state, logPosition: string) {
+    state.currentGroup.position = logPosition
+    state.offset = []
+  },
+  backward (state, offset) {
+    state.offset.push(state.currentGroup.position)
+    state.currentGroup.position = offset
+  },
+  forward (state) {
+    if (state.offset.length > 0) {
+      state.currentGroup.position = state.offset.pop()
     }
   },
-  updateSession (state, session) {
-    state.session = session
+  addGroup (state, groupId) {
+    state.groups.indexOf(groupId) < 0 && state.groups.push(groupId)
   },
-  addAvailableGroup (state, available) {
-    if (!state.session.availableGroups.find((grp) => grp === available)) {
-      state.session.availableGroups.push(available)
-    }
+  removeGroup (state, groupId) {
+    let index = state.groups.indexOf(groupId)
+    index > -1 && state.groups.splice(index, 1)
   },
-  removeAvailableGroup (state, available) {
-    let index = state.session.availableGroups.findIndex((grp) => grp === available)
-    if (index > -1) {
-      state.session.availableGroups.splice(index, 1)
-    }
+  setGroups (state, groups) {
+    state.groups = groups
   },
-  setCurrentGroup (state, group) {
-    if (state.session.availableGroups.find((grp) => grp === group.groupId)) {
-      state.session.currentGroup = group
-    }
-  },
-  updateSocket (state, socket) {
-    state.socket = socket
+  setCurrentGroup (state, currentGroup: LogState) {
+    state.currentGroup = currentGroup
+    state.offset = []
   }
 }
 
 export const actions = {
-  async createGroup ({commit, state}, group) {
-    let groupId = await EventLog.createEventLogFromGroup(group)
-    if (state.socket) {
-      await joinRoom(state.socket, groupId)
+  async saveSettings (
+    {state}: {state: Object}
+  ) {
+    const settings = {
+      currentGroup: state.currentGroup,
+      groups: state.groups
     }
-    saveSessionDebounced(state)
+    await db.saveSettings(settings)
+    console.log('saved settings:', settings)
   },
-  async appendLog ({state}, event) {
-    await EventLog.addItemToLog(event)
-    saveSessionDebounced(state)
+  async loadSettings (
+    {commit, state}: {commit: Function, state: Object}
+  ) {
+    let {groups, currentGroup} = await db.loadSettings()
+    console.log('loadSettings:', currentGroup, groups)
+    commit('setCurrentGroup', currentGroup || makeLogState(null, null))
+    commit('setGroups', groups || [])
   },
-  async receiveEvent ({state}, msg) {
-    if (msg.data && msg.data.entry && msg.data.entry.parentHash) {
-      let available = state.session.availableGroups
-      // TODO Add checks that confirms current entry is the parent of the new event
-      // and respond to the case where updates are missing
-      // check to see if this event is for an available group
-      if (available.find((grp) => { return msg.data.groupId === grp })) {
-        await EventLog.updateLogFromServer(msg.data.groupId, msg.data.entry.data)
-        saveSessionDebounced(state)
-      }
+
+  // this function is called from ./pubsub.js and is the entry point
+  // for getting events into the log.
+  // mirrors `handleEvent` in backend/server.js
+  async handleEvent (
+    {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object},
+    {groupId, hash, entry}: {groupId: string, hash: string, entry: Object}
+  ) {
+    console.log(`handleEvent for ${groupId}:`, entry)
+    entry = Events[entry.type].fromObject(entry, hash)
+    await db.addLogEntry(groupId, entry)
+    // TODO: verify each entry is signed by a group member
+    if (!entry.toObject().parentHash) {
+      // TODO: verify we created this group before calling setCurrentGroup
+      commit('setCurrentGroup', makeLogState(groupId, groupId))
+      commit('addGroup', groupId)
+    } else {
+      commit('logPosition', hash)
     }
+    dispatch('saveSettings')
   },
-  async backward ({commit, state}) {
-    if (state.session.currentGroup) {
-      let entry = await EventLog.getItemFromLog(state.session.currentGroup.currentLogPosition)
-      let currentLogPosition = entry.parentHash
-      commit('updateCurrentLogPosition', {currentLogPosition, offsetPush: true})
-      saveSessionDebounced(state)
-    }
-  },
-  forward ({commit, state}) {
-    if (state.session.offset.length) {
-      let currentLogPosition = state.session.offset[state.session.offset.length - 1]
-      commit('updateCurrentLogPosition', {currentLogPosition, offsetPop: true})
-      saveSessionDebounced(state)
-    }
-  },
-  async login ({commit, state}, user) {
-    if (state.loggedInUser) {
-      return
-    }
-    commit('login', user)
-    let session = await appSessionData.getItem(state.loggedInUser)
-    commit('updateSession', session)
-    let available = state.session.availableGroups
-    for (let i = 0; i < available.length; i++) {
-      let room = available[i]
-      await joinRoom(state.socket, room)
+
+  // time travel related
+  async backward (
+    {commit, state}: {commit: Function, state: Object}
+  ) {
+    if (state.currentGroup) {
+      let {groupId, position} = state.currentGroup
+      let entry = await db.getLogEntry(groupId, position)
+      commit('backward', entry.toObject().parentHash)
     }
   },
-  async logout ({commit, state}) {
-    if (!state.loggedInUser) {
-      return
-    }
-    await appSessionData.setItem(state.loggedInUser, state.session)
-    // leave the rooms joined by the user
-    let available = state.session.availableGroups
-    for (let i = 0; i < available.length; i++) {
-      let room = available[i]
-      await leaveRoom(state.socket, room)
-    }
-    commit('updateSession', null)
-    commit('logout')
-    saveSession(state)
-  },
-  async createUser ({commit, state}, user) {
-    // TODO Create a real user creation
-    if (state.loggedInUser) {
-      return
-    }
-    let userHashKey = '2XbExTFJy4MqcgJP32MFc4VgV1HSa5dD9naF99MvR4LB'
-    let session = makeUserSession()
-    await appSessionData.setItem(userHashKey, session)
-    commit('login', userHashKey)
-    commit('updateSession', session)
+  forward (
+    {commit, state}: {commit: Function, state: Object}
+  ) {
+    state.currentGroup && commit('forward')
   }
 }
-
-// =======================
-// Exports
-// =======================
 
 export const types = Object.keys(mutations)
 
-// create the store
 export default new Vuex.Store({state, mutations, actions})
-
-// =======================
-// Helpers
-// =======================
-
-function joinRoom (socket, room) {
-  return new Promise((resolve, reject) => {
-    socket.writeAndWait({action: 'join', room}, function (response) {
-      if (response.event === SUCCESS) {
-        resolve(response)
-      } else {
-        reject(new Error(`Failed to join ${room}`))
-      }
-    })
-  })
-}
-
-function leaveRoom (socket, room) {
-  return new Promise((resolve) => {
-    socket.writeAndWait({action: 'leave', room}, function (response) {
-      if (response.event === ERROR) {
-        console.log(response)
-      }
-      resolve(response) // not critical if this fails
-    })
-  })
-}
-async function saveSession (state) {
-  if (!state.loggedInUser || !state.session) {
-    return
-  }
-  await appSessionData.setItem(state.loggedInUser, state.session)
-}
-const saveSessionDebounced = _.debounce(saveSession, 500, { 'maxWait': 5000 })
