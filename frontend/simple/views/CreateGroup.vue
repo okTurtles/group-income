@@ -91,11 +91,6 @@ import {Events} from '../../../shared/events'
 export default {
   name: 'CreateGroupView',
   methods: {
-    computed: {
-      dev: function () {
-        return process.env.NODE_ENV === 'development'
-      }
-    },
     submit: function () {
       this.$validator.validateAll()
         .then(async function () {
@@ -132,7 +127,8 @@ export default {
       memberRemovalPercentage: 0,
       incomeProvided: null,
       contributionPrivacy: '',
-      created: false
+      created: false,
+      dev: process.env.NODE_ENV === 'development'
     }
   }
 }

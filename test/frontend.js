@@ -88,7 +88,7 @@ describe('Frontend', function () {
 
   describe('Group Creation Test', function () {
     it('Should create a group', async function () {
-      this.timeout(90000)
+      this.timeout(10000)
       await n.goto(page('new-group'))
         .should.finally.containEql({ code: 200, url: page('new-group') })
       let created = await n.insert('input[name="groupName"]', 'Test Group')
