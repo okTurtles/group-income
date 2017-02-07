@@ -46,6 +46,7 @@ describe('Frontend', function () {
   })
   describe('Event Log Test', function () {
     it('Should Append to the log', async function () {
+      this.timeout(10000)
       await n.goto(page('event-log'))
         .should.finally.containEql({ code: 200, url: page('event-log') })
       let result = await n.wait('#random').evaluate(() => ({
@@ -67,6 +68,7 @@ describe('Frontend', function () {
     })
 
     it('Should Traverse Log', async function () {
+      this.timeout(10000)
       await n.goto(page('event-log'))
       let prior = await n.evaluate(() => document.getElementById('LogPosition').innerText)
       let initial = await n.wait('textarea[name="payload"]')
