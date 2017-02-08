@@ -23,6 +23,7 @@
                   <p class="title percentage">{{changePercentage}}%</p>
                   <input type="range" v-validate data-vv-as="Percentage to change rules" data-vv-rules="between:1,100"  min="0" max="100" name="changePercentage" v-model="changePercentage">
                   <span v-show="errors.has('changePercentage')" class="help is-danger">The Percentage to change rules field must be between 1% and 100%</span>
+                  <!-- this is used for nightmare and only rendered in 'development' mode. Without this nightmare has trouble triggering the events for vue that updates the model when values are set -->
                   <input v-if="dev" type="text" v-model="changePercentage" name="proxyChangePercentage" style="opacity:0; position: absolute;">
                 </div>
             </div>
@@ -41,6 +42,7 @@
                 <p class="title">{{memberApprovalPercentage}}%</p>
                 <input type="range" min="0" max="100" data-vv-as="Member Approval Percentage" v-validate data-vv-rules="between:1,100" name="memberApprovalPercentage" v-model="memberApprovalPercentage">
                 <span v-show="errors.has('memberApprovalPercentage')" class="help is-danger">The Member Approval Percentage field must be between 1% and 100%.</span>
+                <!-- this is used for nightmare and only rendered in 'development' mode. Without this nightmare has trouble triggering the events for vue that updates the model when values are set -->
                 <input v-if="dev" type="text" v-model="memberApprovalPercentage" name="proxyMemberApprovalPercentage" style="opacity:0; position: absolute;">
               </div>
               <div class="tile notification">
@@ -48,6 +50,7 @@
                 <p class="title">{{memberRemovalPercentage}}%</p>
                 <input type="range" min="0" max="100" data-vv-as="Member Removal Percentage" v-validate data-vv-rules="between:1,100" name="memberRemovalPercentage" v-model="memberRemovalPercentage">
                 <span v-show="errors.has('memberRemovalPercentage')" class="help is-danger">The Member Removal Percentage field must be between 1% and 100%.</span>
+                <!-- this is used for nightmare and only rendered in 'development' mode. Without this nightmare has trouble triggering the events for vue that updates the model when values are set -->
                 <input v-if="dev" type="text" v-model="memberRemovalPercentage" name="proxyMemberRemovalPercentage" style="opacity:0; position: absolute;">
               </div>
             </div>
@@ -128,6 +131,7 @@ export default {
       incomeProvided: null,
       contributionPrivacy: '',
       created: false,
+      // this determines whether or not to render proxy components for nightmare
       dev: process.env.NODE_ENV === 'development'
     }
   }
