@@ -11,6 +11,8 @@ import {HashableEntry} from '../../../shared/events'
 //   type: string;
 // }
 
+// http://www.indelible.org/ink/protobuf-polymorphism/
+
 export class Operation extends HashableEntry {
   // TODO: make these TypeScript annotations
   static TYPE_SIGN = 'sign'
