@@ -20,8 +20,8 @@ function groupLog (storeName: string): Object {
 export async function getLogEntry (
   groupId: string, hash: string
 ): Promise<HashableEntry> {
-  var {type, proto} = await groupLog(groupId).getItem(hash)
-  return Events[type].fromProtobuf(proto, hash)
+  var entry = await groupLog(groupId).getItem(hash)
+  return Events[entry.type].fromObject(entry, hash)
 }
 
 export function recentHash (groupId: string): Promise<string> {
@@ -47,8 +47,9 @@ export async function addLogEntry (
     console.error(`addLogEntry: new entry has bad parentHash: ${entry.parentHash}. Should be: ${last}. Entry:`, entry)
     throw new Error('incorrect previousHash for entry!')
   }
+  // save object instead of protobuf because it takes less space (see #172)
   await log.setItem('HEAD', hash)
-  await log.setItem(hash, {type: entry.type, proto: event.toProtobuf()})
+  await log.setItem(hash, entry)
   return hash
 }
 // collect returns a collection of events
