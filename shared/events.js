@@ -10,47 +10,34 @@ const blake = require('blakejs')
 const {Type, Field, Root} = protobuf
 const root = new Root().define('groupincome')
 
-export class HashableEntry {
+export class Hashable {
   // Type annotations to make Flow happy
-  _entry: Object
   _hash: string
-  static message: any
-  static Initialize (dataFields) {
-    var msg = new Type(this.name)
-    var msgData = new Type(this.name + 'Data')
-    dataFields.forEach(([field, type], idx) => {
-      msgData.add(new Field(field, idx + 1, type))
+  _obj: Object
+  // set `fields` in subclasses using: static fields = Class.Declare([...])
+  static fields: any // https://developers.google.com/protocol-buffers/docs/proto3
+  static Declare (fields) {
+    var t = new Type(this.name)
+    fields.forEach(([name, type, rule], idx) => {
+      t.add(new Field(name, idx + 1, type, rule))
     })
-    msg.add(new Field('version', 1, 'string'))
-    msg.add(new Field('type', 2, 'string'))
-    msg.add(new Field('parentHash', 3, 'string'))
-    msg.add(new Field('data', 4, msgData.name))
-    root.add(msgData)
-    root.add(msg)
-    return msg
-  }
-  static fromProtobuf (buffer, hash) {
-    var instance = new this()
-    instance._entry = this.message.decode(buffer).toObject()
-    if (instance.toHash() !== hash) throw Error('fromProtobuf: corrupt hash!')
-    return instance
+    root.add(t)
+    return t
   }
   static fromObject (obj, hash) {
     var instance = new this()
-    instance._entry = obj
+    instance._obj = obj
     if (instance.toHash() !== hash) throw Error('fromObject: corrupt hash!')
     return instance
   }
-  constructor (data: JSONObject = {}, parentHash?: string) {
-    // Variables prefixed with _ MUST NOT BE MODIFIED EXTERNALLY!
-    this._entry = {
-      version: '0.0.1',
-      type: this.constructor.name,
-      parentHash: parentHash || '',
-      data
-    }
+  static fromProtobuf (buffer, hash) {
+    var instance = new this()
+    instance._obj = this.fields.decode(buffer).toObject()
+    if (instance.toHash() !== hash) throw Error('fromProtobuf: corrupt hash!')
+    return instance
   }
-  toHash () {
+  constructor (obj?: Object) { this._obj = obj || {} }
+  toHash (): string {
     // no need to hash twice
     if (this._hash) return this._hash
     // TODO: for node/electron, switch to: https://github.com/ludios/node-blake2
@@ -60,20 +47,97 @@ export class HashableEntry {
     this._hash = multihash.toB58String(multihash.encode(buf, 'blake2b'))
     return this._hash
   }
-  toResponse (groupId: string) {
+  toProtobuf (): Buffer { return this.constructor.fields.encode(this._obj).finish() }
+  toJSON () { return JSON.stringify(this._obj) }
+  toObject () { return this._obj } // NOTE: NEVER MODIFY THE RETURNED OBJECT!
+}
+
+export class HashableEntry extends Hashable {
+  static Declare (fields) {
+    var msgData = super.Declare(fields)
+    var msg = new Type(this.name + 'Entry')
+    msg.add(new Field('version', 1, 'string'))
+    msg.add(new Field('type', 2, 'string'))
+    msg.add(new Field('parentHash', 3, 'string'))
+    msg.add(new Field('data', 4, msgData.name))
+    root.add(msg)
+    return msg
+  }
+  constructor (data: JSONObject = {}, parentHash?: string) {
+    super()
+    this._obj = {
+      version: '0.0.1',
+      type: this.constructor.name,
+      parentHash: parentHash || '',
+      data
+    }
+  }
+  toResponse (contractId: string) {
     return makeResponse(RESPONSE_TYPE.ENTRY, {
-      groupId,
+      contractId,
       hash: this.toHash(),
       entry: this.toObject()
     })
   }
-  toProtobuf () { return this.constructor.message.encode(this._entry).finish() }
-  toJSON () { return JSON.stringify(this._entry) }
-  toObject () { return this._entry } // NOTE: NEVER MODIFY THE RETURNED OBJECT!
+  get data (): Object { return this.toObject().data }
 }
 
-export class Group extends HashableEntry {
-  static message = Group.Initialize([
+export class HashableContract extends HashableEntry {
+  // The difference between .data and .state is that .state represents
+  // the contract's current state as a result of the summation of all actions.
+  // It is better to hook up UI bindings to .state than to .data for this reason.
+  _state: Object
+  static actions = {
+    // places class declarations of subclasses of HashableEntry's here.
+  }
+  static fromState (state) {
+    var instance = new this()
+    instance._state = state
+    return instance
+  }
+  toState () { return this._state || this.data }
+  initStateFromData () { this._state = Object.assign({}, this.data) }
+  get state (): Object { return this._state }
+  // A contract has:
+  // 1. code (actions)
+  // 2. data (state, updated by sending actions to the contract)
+  //
+  // A contract can be:
+  // 1. created (defined)
+  // 2. acted upon (by sending a txn to it that calls an action)
+  // 3. subscribed to (to get the list of txns that have been sent to it)
+  // 4. read from (the reduction of txns produces the current state)
+  //
+  // In our implementation, each method invocation (txn) is a HashableEntry
+  //
+  // NOTE: Each contract represents its own log of events. If a user
+  //       is in multiple groups and changes their profile's contribution
+  //       amount... well, that should only be reflected in that group's
+  //       log. But if they change their profile picture, that shouldn't
+  //       be stored in the group's log. Where is that message stored?
+  //       Clearly they must have their own log that they're generating.
+  //       So they must have a profile independent of the group, and a
+  //       group-specific profile. But the group-specific profile
+  //       can just be built-up by sending messages like this to the
+  //       group log:
+  //
+  //       ProfileAdjustment: {name: 'Greg', adjustment: {giveLimit: 100}}
+  //
+  //       That "ProfileAdjustment" in turn would represent an *action*
+  //       on the GroupContract.
+}
+
+export class HashableAction extends HashableEntry {
+  apply (contract: HashableContract) {}
+}
+
+// =======================
+// Group Contract
+// =======================
+
+export class Group extends HashableContract {
+  static fields = Group.Declare([
+    // TODO: add 'groupPubkey'
     ['creationDate', 'string'],
     ['groupName', 'string'],
     ['sharedValues', 'string'],
@@ -82,25 +146,55 @@ export class Group extends HashableEntry {
     ['memberApprovalPercentage', 'uint32'],
     ['memberRemovalPercentage', 'uint32'],
     ['contributionPrivacy', 'string'],
-    ['founderHashKey', 'string']
+    ['founderUsername', 'string']
   ])
+  static actions = { Payment, Vote, ProfileAdjustment }
   constructor (data: JSONObject, parentHash?: string) {
     super({...data, creationDate: new Date().toISOString()}, parentHash)
   }
 }
 
-export class Payment extends HashableEntry {
-  static message = Payment.Initialize([
+export class Payment extends HashableAction {
+  static fields = Payment.Declare([
     ['payment', 'string'] // TODO: change to 'double' and add other fields
   ])
+  apply (contract: HashableContract) {
+    if (!contract.state.payments) contract.state.payments = []
+    contract.state.payments.push(this.data)
+  }
 }
 
-export class Vote extends HashableEntry {
-  static message = Vote.Initialize([
-    ['vote', 'string'] // TODO: make real
+export class Vote extends HashableAction {
+  static fields = Vote.Declare([
+    ['vote', 'string'] // TODO: make a real vote
   ])
+  apply (contract: HashableContract) {
+    if (!contract.state.payments) contract.state.votes = []
+    contract.state.votes.push(this.data)
+  }
 }
 
-export const Events = {
-  Group, Payment, Vote
+export class ProfileAdjustment extends HashableAction {
+  // TODO: this
+}
+
+// =======================
+// Identity Contract
+// =======================
+
+export class Attribute extends Hashable {
+  static fields = Attribute.Declare([
+    ['name', 'string'], // name of the attribute
+    ['value', 'bytes']  // corresponding value (as a Buffer)
+  ])
+  constructor (name: string, value: string) {
+    super({name, value: Buffer.from(value, 'utf8')})
+  }
+}
+
+export class Identity extends HashableContract {
+  static fields = Identity.Declare([
+    ['name', 'string'],
+    ['attributes', 'Attribute', 'repeated']
+  ])
 }

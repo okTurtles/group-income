@@ -27,17 +27,17 @@ export default function (store: Object) {
   })
 }
 
-export function joinRoom (groupId: string) {
+export function joinRoom (contractId: string) {
   return new Promise((resolve, reject) => {
-    primus.writeAndWait({action: 'sub', groupId}, function (response) {
+    primus.writeAndWait({action: 'sub', contractId}, function (response) {
       (response.type === ERROR ? reject : resolve)(response)
     })
   })
 }
 
-export function leaveRoom (groupId: string) {
+export function leaveRoom (contractId: string) {
   return new Promise((resolve, reject) => {
-    primus.writeAndWait({action: 'unsub', groupId}, function (response) {
+    primus.writeAndWait({action: 'unsub', contractId}, function (response) {
       (response.type === ERROR ? reject : resolve)(response)
     })
   })

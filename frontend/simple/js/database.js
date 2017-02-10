@@ -1,7 +1,9 @@
 'use strict'
 
 import localforage from 'localforage'
-import {HashableEntry, Events} from '../../../shared/events'
+import * as Events from '../../../shared/events'
+
+const {HashableEntry} = Events
 
 const _logs = new Map()
 function groupLog (storeName: string): Object {

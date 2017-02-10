@@ -1,10 +1,10 @@
 'use strict'
 
 import request from 'superagent'
-import {Backend} from './interface'
+import {Backend, TrustedNamespace} from './interface'
 import * as pubsub from '../pubsub'
 import {sign} from '../../../../shared/functions'
-import {HashableEntry} from '../../../../shared/events'
+import {HashableEntry, Identity} from '../../../../shared/events'
 
 // temporary identity for signing
 const nacl = require('tweetnacl')
@@ -52,5 +52,18 @@ export class HapiBackend extends Backend {
     var res = await pubsub.leaveRoom(groupId)
     this._subscriptions.splice(index, 1)
     return res
+  }
+}
+
+export class HapiNamespace extends TrustedNamespace {
+  // prefix groups with `group/` and users with `user/`
+  register (name: string, identity: Identity) {
+    console.log(`register name:`, name)
+    return request.post(`${process.env.API_URL}/name`)
+      .send({hash: identity.toHash(), entry: identity.toObject()})
+  }
+  lookup (name: string) {
+    console.log(`lookup name:`, name)
+    return request.get(`${process.env.API_URL}/name/${name}`)
   }
 }

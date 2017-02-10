@@ -6,7 +6,7 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import * as db from './database'
-import {Events} from '../../../shared/events'
+import * as Events from '../../../shared/events'
 
 Vue.use(Vuex)
 
@@ -62,6 +62,7 @@ export const actions = {
   async saveSettings (
     {state}: {state: Object}
   ) {
+    // TODO: encrypt these
     const settings = {
       currentGroup: state.currentGroup,
       groups: state.groups
@@ -83,16 +84,19 @@ export const actions = {
   // mirrors `handleEvent` in backend/server.js
   async handleEvent (
     {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object},
-    {groupId, hash, entry}: {groupId: string, hash: string, entry: Object}
+    {contractId, hash, entry}: {contractId: string, hash: string, entry: Object}
   ) {
-    console.log(`handleEvent for ${groupId}:`, entry)
+    // TODO: change `groupId` to `contractId` and have a map of contracts
+    //       that we're subscribed to.
+    console.log(`handleEvent for ${contractId}:`, entry)
     entry = Events[entry.type].fromObject(entry, hash)
-    await db.addLogEntry(groupId, entry)
+    await db.addLogEntry(contractId, entry)
+    // TODO: Handle arbitrary contract events. these might not be group related
     // TODO: verify each entry is signed by a group member
     if (!entry.toObject().parentHash) {
       // TODO: verify we created this group before calling setCurrentGroup
-      commit('setCurrentGroup', makeLogState(groupId, groupId))
-      commit('addGroup', groupId)
+      commit('setCurrentGroup', makeLogState(contractId, contractId))
+      commit('addGroup', contractId)
     } else {
       commit('logPosition', hash)
     }

@@ -6,13 +6,14 @@ import chalk from 'chalk'
 import _ from 'lodash-es'
 import {RESPONSE_TYPE} from '../shared/constants'
 import {sign} from '../shared/functions'
-import {HashableEntry, Events} from '../shared/events'
+import * as Events from '../shared/events'
 
 const request = require('superagent')
 const should = require('should') // eslint-disable-line
 const nacl = require('tweetnacl')
 const Primus = require('../frontend/simple/assets/vendor/primus')
 
+const {HashableEntry} = Events
 const {API_URL: API} = process.env
 const {SUCCESS} = RESPONSE_TYPE
 

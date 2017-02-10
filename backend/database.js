@@ -27,6 +27,10 @@ export const loaded = knex.schema
     table.text('hash').primary()
     table.text('value').notNullable()
   })
+  .createTableIfNotExists('Namespace', function (table) {
+    table.text('name').primary()
+    table.text('value').notNullable()
+  })
 
 // =======================
 // Models
@@ -43,6 +47,19 @@ class HashToData extends Model {
     required: ['hash', 'value'],
     properties: {
       hash: {type: 'string'},
+      value: {type: 'string'}
+    }
+  }
+}
+
+class Namespace extends Model {
+  static tableName = 'Namespace'
+  static idColumn = 'name'
+  static jsonSchema = {
+    type: 'object',
+    required: ['name', 'value'],
+    properties: {
+      name: {type: 'string'},
       value: {type: 'string'}
     }
   }
@@ -80,7 +97,7 @@ class Log extends Model {
 // wrapper methods to add log entries / create groups
 // =======================
 
-export async function createGroup (
+export async function createLog (
   groupId: string,
   entry: HashableEntry
 ): Promise<string> {
@@ -96,7 +113,7 @@ export async function createGroup (
     table.text('hash').notNullable().index()
   })
   await Log.table(groupId).insert({...entry.toObject(), hash: groupId})
-  console.log('createGroup():', groupId, entry)
+  console.log('createLog():', groupId, entry)
   return groupId
 }
 
@@ -138,6 +155,23 @@ export function streamEntriesSince (groupId: string, hash: string) {
   ).stream()
 }
 
+// =======================
+// wrapper methods to add / lookup names
+// =======================
+
+export function registerName (name: string, value: string) {
+  return Namespace.query().insert({name, value})
+}
+
+export async function lookupName (name: string) {
+  var values = await Namespace.query().select('value').where('name', name)
+  return values && values[0]
+}
+
+// =======================
+// utility functions
+// =======================
+
 export async function stop () {
   await knex.destroy()
 }
@@ -155,7 +189,7 @@ if (testDatabaseJs && testDatabaseJs.indexOf('babel-node') !== -1) {
       var entry = new Group({hello: 'world!', pubkey: 'foobarbaz'})
       var groupId = entry.toHash()
       console.log('creating group:', groupId)
-      await createGroup(groupId, entry)
+      await createLog(groupId, entry)
 
       entry = new Group({crazy: 'lady'}, groupId)
       var res = await appendLogEntry(groupId, entry)

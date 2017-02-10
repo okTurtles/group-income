@@ -69,9 +69,9 @@
 </style>
 
 <script>
+  import * as Events from '../../../shared/events'
   import * as db from '../js/database'
   import backend from '../js/backend'
-  import {Events} from '../../../shared/events'
 
   export default {
     data () {

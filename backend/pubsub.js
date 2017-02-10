@@ -39,27 +39,27 @@ module.exports = function (hapi: Object) {
 
     // https://github.com/swissmanu/primus-responder
     spark.on('request', async function (data, done) {
-      var {groupId, action} = data
+      var {contractId, action} = data
       var success = makeResponse(SUCCESS, {action, id})
       console.log(bold(`[pubsub] ACTION '${action}' from '${id}' with data:`), data)
       try {
         switch (action) {
           case 'sub':
-            spark.join(groupId, function () {
+            spark.join(contractId, function () {
               spark.on('leaveallrooms', (rooms) => {
                 console.log(bold.yellow(`[pubsub] ${id} leaveallrooms`))
                 // this gets called on spark.leaveAll and 'disconnection'
-                rooms.forEach(groupId => {
-                  primus.room(groupId).write(makeResponse(LEFT, {groupId, id}))
+                rooms.forEach(contractId => {
+                  primus.room(contractId).write(makeResponse(LEFT, {contractId, id}))
                 })
               })
-              spark.room(groupId).except(id).write(makeResponse(JOINED, {groupId, id}))
+              spark.room(contractId).except(id).write(makeResponse(JOINED, {contractId, id}))
               done(success)
             })
             break
           case 'unsub':
-            spark.room(groupId).except(id).write(makeResponse(LEFT, {groupId, id}))
-            spark.leave(groupId, () => done(success))
+            spark.room(contractId).except(id).write(makeResponse(LEFT, {contractId, id}))
+            spark.leave(contractId, () => done(success))
             break
           default:
             console.error(bold.red(`[pubsub] client ${id} didn't give us a valid action!`), data)
