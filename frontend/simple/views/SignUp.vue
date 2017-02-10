@@ -18,18 +18,24 @@
 
             <p class="control has-icon">
               <input class="input" name="name" v-validate data-vv-rules="required|regex:^\S+$" placeholder="username" required>
-              <i class="fa fa-user"></i>
+              <span class="icon is-small">
+                <i class="fa fa-user"></i>
+              </span>
               <span v-show="errors.has('name')" class="help is-danger">Username cannot contain spaces</span>
             </p>
             <p class="control has-icon">
               <input class="input" name="email" v-validate data-vv-rules="required|email" type="email" placeholder="email" required>
-              <i class="fa fa-envelope"></i>
+              <span class="icon is-small">
+                <i class="fa fa-envelope"></i>
+              </span>
               <span v-show="errors.has('email')" class="help is-danger">Not an email</span>
             </p>
             <p class="control has-icon">
               <input class="input" name="password" v-validate data-vv-rules="required|min:7" placeholder="password" type="password" required>
               <span v-show="errors.has('password')" class="help is-danger">Password must be at least 7 characters</span>
-              <i class="fa fa-lock"></i>
+              <span class="icon is-small">
+                <i class="fa fa-lock"></i>
+              </span>
             </p>
             <div class="level is-mobile top-align">
               <div class="level-item" style="padding-right:5px">
