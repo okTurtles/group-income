@@ -11,12 +11,12 @@
               <p class="title is-1"><i18n>Describe your group</i18n></p>
               <div class="box">
                 <p class="title"><i18n>What is your Group's Name?</i18n></p>
-                <input type="text" v-validate data-vv-as="Group Name" data-vv-rules="required" name="groupName" v-model="groupName" class="dotted">
+                <input type="text" v-validate data-vv-as="Group Name" data-vv-rules="required" name="groupName" v-model="groupName" class="input">
                 <span v-if="errors.has('groupName')" data-control='groupName' class="help is-danger">{{ errors.first('groupName') }}</span>
               </div>
               <div class="box">
                 <p class="title"><i18n>What are your shared values?</i18n></p>
-                <textarea class="dotted" v-validate data-vv-as="Shared Values" data-vv-rules="required" name="sharedValues" v-model="sharedValues"></textarea>
+                <textarea class="textarea" v-validate data-vv-as="Shared Values" data-vv-rules="required" name="sharedValues" v-model="sharedValues"></textarea>
                 <span v-if="errors.has('sharedValues')" data-control='sharedValues' class="help is-danger">{{ errors.first('sharedValues') }}</span>
               </div>
               <div class="box">
@@ -60,7 +60,12 @@
               <p class="title is-1"><i18n>Resource allocation</i18n></p>
               <div class="box">
                 <p class="title"><i18n>How much income will your group seek to provide</i18n></p>
-                <i class="fa fa-usd symbol" aria-hidden="true" ></i><input type="text" data-vv-as="Income Provided" v-validate data-vv-rules="decimal:2" name="incomeProvided" v-model="incomeProvided" class="dotted">
+                <p class="control has-icon">
+                  <input type="text" data-vv-as="Income Provided" v-validate data-vv-rules="decimal:2" name="incomeProvided" v-model="incomeProvided" class="input">
+                  <span class="icon">
+                    <i class="fa fa-usd" aria-hidden="true" ></i>
+                  </span>
+                </p>
                 <span v-if="errors.has('incomeProvided')" data-control="incomeProvided" class="help is-danger">The Income Provided field must be a numeric currency amount and may contain 2 decimal points.</span>
               </div>
               <div class="box" >

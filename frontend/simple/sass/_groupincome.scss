@@ -289,47 +289,11 @@ tr.paid td .date span.paid {
   padding: 1rem 1.25rem;
   background-color: rgba(251, 251, 251, 1);
 }
-
-.is-danger .is-danger{
-  color: white;
-}
-.symbol{
-  vertical-align: bottom;
-  margin: 10px 0;
-}
-.question-group .notification .select:after {
-  border: 1px solid #69707a;
-  border-right: 0;
-  border-top: 0;
-}
 .center {
   text-align: center;
 }
 .percentage{
   height: 26px;
-}
-.question-group .notification {
-  display: block;
-  padding: 30px;
-  margin: 10px 5px;
-  text-align: center;
-}
-.dotted{
-  vertical-align: bottom;
-  background-color: transparent;
-  border: none;
-  margin: 10px;
-  padding: 10px 10px 0 10px;
-  border-bottom: 0.2rem dashed #69707a;
-  font-size: 20px;
-  width: 70%;
-}
-.is-info textarea.dotted{
-  border: 0.2rem dashed white;
-  color: white;
-}
-
-.percentage{
   background-color: transparent;
   color: inherit;
   border: none;
@@ -337,19 +301,24 @@ tr.paid td .date span.paid {
   font-size: 28px;
   border: 1px;
 }
+@mixin appearance($value) {
+  -webkit-appearance: $value;
+  -moz-appearance: $value;
+  -ms-appearance: $value;
+}
+@mixin transition($value) {
+  -webkit-transition: $value;
+  -moz-transition: $value;
+  -ms-transition: $value;
+  transition: $value;
+}
+@mixin transform($value) {
+  -webkit-transform: $value;
+  -moz-transform: $value;
+  -ms-transform: $value;
+  transform: $value;
+}
 
-textarea.dotted{
-  border: 0.2rem dashed #69707a;
-  height: 150px;
-  width: 70%;
-}
-.notfication.is-info textarea.dotted{
-  color: white;
-  border-color: white;
-}
-input[type=range]{
-  background-color: blue
-}
 /* Slider toggle Styles */
 /* The switch - the box around the slider */
 .switch {
@@ -370,8 +339,7 @@ input[type=range]{
   right: 0;
   bottom: 0;
   background-color: #ccc;
-  -webkit-transition: .4s;
-  transition: .4s;
+  @include transition(.4s);
   &.round {
     border-radius: 34px;
     &:before {
@@ -386,8 +354,7 @@ input[type=range]{
     left: 4px;
     bottom: 4px;
     background-color: white;
-    -webkit-transition: .4s;
-    transition: .4s;
+    @include transition(.4s);
   }
 }
 
@@ -399,15 +366,12 @@ input:checked {
     box-shadow: 0 0 1px #2196F3;
   }
   & + .slider:before {
-    -webkit-transform: translateX(26px);
-    -ms-transform: translateX(26px);
-    transform: translateX(26px);
+    @include ransform(translateX(26px));
   }
 }
 /* rounded range controls */
 input[type=range] {
-  -moz-appearance: none;
-  -webkit-appearance: none;
+  @include appearance(none);
   background-color: #ccc;
   border-radius: 34px;
   padding: 4px;
@@ -415,19 +379,14 @@ input[type=range] {
   &:focus {
     outline: none;
   }
-  &::-webkit-slider-thumb {
-    -webkit-appearance: none;
+  &::-webkit-slider-thumb, &::-moz-range-thumb  {
+    @include appearance(none);
     border-radius: 50%;
     height: 26px;
     width: 26px;
     background: #ffffff;
   }
   &::-moz-range-thumb {
-    -moz-appearance: none;
-    border-radius: 50%;
-    height: 26px;
-    width: 26px;
-    background: #ffffff;
     border: none;
   }
   &::-moz-range-track {
@@ -436,7 +395,7 @@ input[type=range] {
     color: transparent;
   }
 }
-
+/* ended rounded range controls */
 .full-screen, html, body, #app{
   height: 100%;
 }
@@ -447,14 +406,14 @@ input[type=range] {
   margin-top: 5px;
   text-align: center;
 }
-
-.create-group .select:after {
- border-color: #ccc;
-}
-
-.create-group .box {
-  margin-bottom: 0;
-  border-radius: 0;
+.create-group {
+  .select:after {
+    border-color: #ccc;
+  }
+  .box {
+    margin-bottom: 0;
+    border-radius: 0;
+  }
 }
 .button-box {
   display: flex;
@@ -465,5 +424,4 @@ input[type=range] {
 }
 .centered-button {
   max-width:50%;
-
 }
