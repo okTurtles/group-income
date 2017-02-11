@@ -99,7 +99,7 @@
         let randInt = (min, max) => Math.floor(Math.random() * (max - min)) + min
         // TODO: move this stuff somewhere else that makes sense.
         // subscribe first and so that handleEvent is automatically dispatched
-        let entry = new Events.Group({
+        let entry = new Events.GroupContract({
           groupName: `Group ${randInt(1, 100)}`,
           sharedValues: 'Testing this software',
           changePercentage: randInt(1, 100),

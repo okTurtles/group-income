@@ -86,8 +86,7 @@ export const actions = {
     {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object},
     {contractId, hash, entry}: {contractId: string, hash: string, entry: Object}
   ) {
-    // TODO: change `groupId` to `contractId` and have a map of contracts
-    //       that we're subscribed to.
+    // TODO: have a map of contracts that we're subscribed to.
     console.log(`handleEvent for ${contractId}:`, entry)
     entry = Events[entry.type].fromObject(entry, hash)
     await db.addLogEntry(contractId, entry)

@@ -6,7 +6,7 @@ import * as Events from '../../../shared/events'
 const {HashableEntry} = Events
 
 const _logs = new Map()
-function groupLog (storeName: string): Object {
+function getLog (storeName: string): Object {
   if (!_logs.has(storeName)) {
     _logs.set(storeName, localforage.createInstance({name: 'GILog', storeName}))
   }
@@ -20,32 +20,28 @@ function groupLog (storeName: string): Object {
 // They SHOULD:
 // - Mirror what's in backend/database.js
 export async function getLogEntry (
-  groupId: string, hash: string
+  contractId: string, hash: string
 ): Promise<HashableEntry> {
-  var entry = await groupLog(groupId).getItem(hash)
+  var entry = await getLog(contractId).getItem(hash)
   return Events[entry.type].fromObject(entry, hash)
 }
 
-export function recentHash (groupId: string): Promise<string> {
-  return groupLog(groupId).getItem('HEAD')
+export function recentHash (contractId: string): Promise<string> {
+  return getLog(contractId).getItem('HEAD')
 }
 
 export async function addLogEntry (
-  groupId: string, event: HashableEntry
+  contractId: string, event: HashableEntry
 ) {
   let hash = event.toHash()
-  let log = groupLog(groupId)
+  let log = getLog(contractId)
   let last = await log.getItem('HEAD')
   let exists = await log.getItem(hash)
   let entry = event.toObject()
   if (exists) {
     return console.log('addLogEntry: disregarding already existing entry:', entry)
   }
-  if (entry.type === Events.Group.name) {
-    if (entry.previousHash) {
-      throw new Error('group creation entry with non-null previousHash!')
-    }
-  } else if (last !== entry.parentHash) {
+  if (entry.parentHash && last !== entry.parentHash) {
     console.error(`addLogEntry: new entry has bad parentHash: ${entry.parentHash}. Should be: ${last}. Entry:`, entry)
     throw new Error('incorrect previousHash for entry!')
   }
@@ -56,12 +52,12 @@ export async function addLogEntry (
 }
 // collect returns a collection of events
 export async function collect (
-  groupId: string, from: string
+  contractId: string, from: string
 ): Promise<Array<HashableEntry>> {
   let collection = []
   let cursor = from
   while (cursor) {
-    let entry = await getLogEntry(groupId, cursor)
+    let entry = await getLogEntry(contractId, cursor)
     collection.unshift(entry)
     cursor = entry.toObject().parentHash
   }

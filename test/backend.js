@@ -7,11 +7,11 @@ import _ from 'lodash-es'
 import {RESPONSE_TYPE} from '../shared/constants'
 import {sign} from '../shared/functions'
 import * as Events from '../shared/events'
+import pubsub from '../frontend/simple/js/pubsub'
 
 const request = require('superagent')
 const should = require('should') // eslint-disable-line
 const nacl = require('tweetnacl')
-const Primus = require('../frontend/simple/assets/vendor/primus')
 
 const {HashableEntry} = Events
 const {API_URL: API} = process.env
@@ -37,28 +37,25 @@ var signatures = personas.map(x => sign(x))
 //       and compromises privacy).
 
 describe('Full walkthrough', function () {
-  var groupId: string, entry: HashableEntry
+  var contractId: string, entry: HashableEntry
   var sockets = []
 
   function createSocket (done) {
     var num = sockets.length
-    var primus = new Primus(API, {timeout: 3000, strategy: false})
-    primus.on('open', done)
-    primus.on('error', err => done(err))
-    primus.on('data', msg => {
-      console.log(bold(`[test] ONDATA primus[${num}] msg:`), msg)
+    var primus = pubsub({
+      url: API,
+      options: {timeout: 3000, strategy: false},
+      handlers: {
+        open: done,
+        error: err => done(err),
+        data: msg => console.log(bold(`[test] ONDATA primus[${num}] msg:`), msg)
+      }
     })
     sockets.push(primus)
   }
 
-  function joinRoom (socket, groupId, done) {
-    socket.writeAndWait({action: 'sub', groupId}, function (response) {
-      done(response.type === SUCCESS ? null : response)
-    })
-  }
-
   function postEntry (entry, group) {
-    if (!group) group = groupId
+    if (!group) group = contractId
     return request.post(`${API}/event/${group}`)
       .set('Authorization', `gi ${signatures[0]}`)
       .send({hash: entry.toHash(), entry: entry.toObject()})
@@ -80,16 +77,16 @@ describe('Full walkthrough', function () {
 
   describe('Group Setup', function () {
     it('Should create a group', async function () {
-      entry = new Events.Group({hello: 'world!', pubkey: 'foobarbaz'})
-      groupId = entry.toHash()
+      entry = new Events.GroupContract({hello: 'world!', pubkey: 'foobarbaz'})
+      contractId = entry.toHash()
       var res = await postEntry(entry)
-      res.body.data.hash.should.equal(groupId)
+      res.body.data.hash.should.equal(contractId)
     })
   })
 
   describe('Pubsub tests', function () {
-    it('Should join group room', function (done) {
-      joinRoom(sockets[0], groupId, done)
+    it('Should join group room', function () {
+      return sockets[0].sub(contractId)
     })
 
     it('Should post an event', async function () {
@@ -105,7 +102,11 @@ describe('Full walkthrough', function () {
     })
 
     it('Should join another member', function (done) {
-      createSocket(err => err ? done(err) : joinRoom(sockets[1], groupId, done))
+      createSocket(err => {
+        err
+        ? done(err)
+        : sockets[1].sub(contractId).then(() => done()).catch(done)
+      })
     })
 
     // TODO: these events, as well as all messages sent over the sockets

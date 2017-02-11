@@ -3,7 +3,7 @@
 import Knex from 'knex'
 import fs from 'fs'
 import {Model, transaction, ValidationError} from 'objection'
-import {HashableEntry, Group} from '../shared/events'
+import {HashableEntry, GroupContract} from '../shared/events'
 
 const production = process.env.NODE_ENV === 'production'
 
@@ -98,13 +98,13 @@ class Log extends Model {
 // =======================
 
 export async function createLog (
-  groupId: string,
+  contractId: string,
   entry: HashableEntry
 ): Promise<string> {
   // TODO: add proper debugging events using Good
   if (entry.parentHash) throw new Error('parentHash must be null!')
-  await HashToData.query().insert({hash: groupId, value: entry.toJSON()})
-  await knex.schema.createTableIfNotExists(groupId, function (table) {
+  await HashToData.query().insert({hash: contractId, value: entry.toJSON()})
+  await knex.schema.createTableIfNotExists(contractId, function (table) {
     table.increments()
     table.text('version').notNullable()
     table.text('type').notNullable()
@@ -112,34 +112,34 @@ export async function createLog (
     table.text('data').notNullable()
     table.text('hash').notNullable().index()
   })
-  await Log.table(groupId).insert({...entry.toObject(), hash: groupId})
-  console.log('createLog():', groupId, entry)
-  return groupId
+  await Log.table(contractId).insert({...entry.toObject(), hash: contractId})
+  console.log('createLog():', contractId, entry)
+  return contractId
 }
 
 export async function appendLogEntry (
-  groupId: string,
+  contractId: string,
   entry: HashableEntry
 ): Promise<string> {
   var claimedHash = entry.toObject().parentHash
   if (!claimedHash) throw new Error('entry parentHash cannot be null!')
-  var {hash: previousHash} = await lastEntry(groupId)
-  if (previousHash !== claimedHash) {
-    throw new ValidationError(`claimed hash: ${claimedHash}, reality: ${previousHash}`)
+  var {hash: parentHash} = await lastEntry(contractId)
+  if (parentHash !== claimedHash) {
+    throw new ValidationError(`claimed hash: ${claimedHash}, reality: ${parentHash}`)
   }
   const hash = entry.toHash()
-  Log.tableName = groupId // just in case the call to `transaction` needs it...
+  Log.tableName = contractId // just in case the call to `transaction` needs it...
   await transaction(HashToData, Log, async function (HashToData, Log) {
     await HashToData.query().insert({hash, value: entry.toJSON()})
-    await Log.table(groupId).insert({...entry.toObject(), hash})
+    await Log.table(contractId).insert({...entry.toObject(), hash})
   })
   console.log('appendLogEntry():', entry, hash)
   return hash
 }
 
-export async function lastEntry (groupId: string) {
+export async function lastEntry (contractId: string) {
   // `findById` is broken, creates a query referencing the wrong table, so we use `where`
-  var entries = await Log.table(groupId).where('id', Log.table(groupId).max('id'))
+  var entries = await Log.table(contractId).where('id', Log.table(contractId).max('id'))
   return entries[0]
 }
 
@@ -149,9 +149,9 @@ export async function lastEntry (groupId: string) {
 // From: http://knexjs.org/#Interfaces-Streams
 // https://github.com/tgriesser/knex/wiki/Manually-Closing-Streams
 // => request.on('close', stream.end.bind(stream))
-export function streamEntriesSince (groupId: string, hash: string) {
-  return Log.table(groupId).where(
-    'id', '>', Log.table(groupId).select('id').where('hash', hash)
+export function streamEntriesSince (contractId: string, hash: string) {
+  return Log.table(contractId).where(
+    'id', '>', Log.table(contractId).select('id').where('hash', hash)
   ).stream()
 }
 
@@ -186,15 +186,15 @@ if (testDatabaseJs && testDatabaseJs.indexOf('babel-node') !== -1) {
   (async function () {
     try {
       await loaded
-      var entry = new Group({hello: 'world!', pubkey: 'foobarbaz'})
-      var groupId = entry.toHash()
-      console.log('creating group:', groupId)
-      await createLog(groupId, entry)
+      var entry = new GroupContract({hello: 'world!', pubkey: 'foobarbaz'})
+      var contractId = entry.toHash()
+      console.log('creating group:', contractId)
+      await createLog(contractId, entry)
 
-      entry = new Group({crazy: 'lady'}, groupId)
-      var res = await appendLogEntry(groupId, entry)
+      entry = new GroupContract({crazy: 'lady'}, contractId)
+      var res = await appendLogEntry(contractId, entry)
       console.log(`added log entry ${entry.toJSON()} with result:`, res)
-      res = await lastEntry(groupId)
+      res = await lastEntry(contractId)
       console.log(`last log entry for ${Log.tableName}:`, res)
 
       knex.destroy()

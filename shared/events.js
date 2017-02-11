@@ -10,6 +10,8 @@ const blake = require('blakejs')
 const {Type, Field, Root} = protobuf
 const root = new Root().define('groupincome')
 
+// To ensure objects consistently hash across all platforms, we use protobufs
+// instead of hashing the JSON, since order of object keys is unspecified in JSON
 export class Hashable {
   // Type annotations to make Flow happy
   _hash: string
@@ -135,8 +137,8 @@ export class HashableAction extends HashableEntry {
 // Group Contract
 // =======================
 
-export class Group extends HashableContract {
-  static fields = Group.Declare([
+export class GroupContract extends HashableContract {
+  static fields = GroupContract.Declare([
     // TODO: add 'groupPubkey'
     ['creationDate', 'string'],
     ['groupName', 'string'],
@@ -192,8 +194,8 @@ export class Attribute extends Hashable {
   }
 }
 
-export class Identity extends HashableContract {
-  static fields = Identity.Declare([
+export class IdentityContract extends HashableContract {
+  static fields = IdentityContract.Declare([
     ['name', 'string'],
     ['attributes', 'Attribute', 'repeated']
   ])

@@ -54,7 +54,7 @@ module.exports = function (server: Object) {
     handler: async function (request, reply) {
       try {
         var {hash, entry} = request.payload
-        var identity = Events.Identity.fromObject(entry, hash)
+        var identity = Events.IdentityContract.fromObject(entry, hash)
         var exists = await db.lookupName(identity.data.name)
         if (exists) {
           reply(Boom.conflict('exists'))
