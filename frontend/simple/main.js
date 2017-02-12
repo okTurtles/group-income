@@ -16,6 +16,8 @@ import './js/transitions'
 Vue.use(Router)
 Vue.use(VeeValidate)
 
+Vue.events = new Vue() // global event bus, use: https://vuejs.org/v2/api/#Instance-Methods-Events
+
 var router = new Router({
   mode: 'history',
   base: '/simple',

@@ -77,17 +77,23 @@
   import * as db from '../js/database'
   import backend from '../js/backend'
   import {mapGetters} from 'vuex'
+  import Vue from 'vue'
+
+  // during development this can become somewhat unwieldy,
+  // so set this to `true` to verify that persisting the state works
+  const testLoadingSettings = false
 
   export default {
     data () {
       return {events: []}
     },
-    created () {
-      // NOTE: this works, but backend doesn't persist database, so during
-      //       development this makes things break.
-      // this.$store.dispatch('loadSettings').then(() => {
-      //   this.$store.state.contracts.forEach(backend.subscribe)
-      // })
+    async created () {
+      if (testLoadingSettings) {
+        await this.$store.dispatch('loadSettings')
+        backend.subscriptions().forEach(backend.subscribe)
+        const position = await db.recentHash(this.$store.state.currentGroupId)
+        position && this.$store.commit('setPosition', position)
+      }
     },
     computed: {
       position () {
@@ -117,7 +123,14 @@
         })
         let hash = entry.toHash()
         // always subscribe *BEFORE* publishing the entry!
-        await backend.subscribe(hash)
+        await backend.subscribe(hash) // NOTE: in the real app we should handle any errors here
+        // will be called once we receive event back and save it to store
+        Vue.events.$once(hash, (contractId, entry) => {
+          console.log('Entry received back and stored! Setting our new group:', entry)
+          this.$store.commit('setCurrentGroupId', hash)
+          this.$store.commit('setPosition', hash)
+        })
+        // Finally, publish the entry to the server (do this last)
         let res = await backend.publishLogEntry(hash, entry, hash)
         if (!res.ok) {
           console.error('failed to create group:', res.text)
@@ -132,6 +145,11 @@
           { [type.toLowerCase()]: this.$refs.payload.value },
           await db.recentHash(groupId)
         )
+        const hash = entry.toHash()
+        Vue.events.$once(hash, (contractId, entry) => {
+          console.log('action received back, updating position to:', hash)
+          this.$store.commit('setPosition', hash)
+        })
         let res = await backend.publishLogEntry(groupId, entry)
         console.log('entry sent, server response:', res)
       },

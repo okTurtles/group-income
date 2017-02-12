@@ -75,7 +75,7 @@ const getters = {
   }
 }
 
-export const actions = {
+const actions = {
   // this function is called from ./pubsub.js and is the entry point
   // for getting events into the log.
   // mirrors `handleEvent` in backend/server.js
@@ -85,7 +85,7 @@ export const actions = {
   ) {
     // verify we're expecting to hear from this contract
     if (state.whitelist.indexOf(contractId) === -1) {
-      // TODO: use a global notification object to both display a notification
+      // TODO: use a global notification system to both display a notification
       //       and throw an exception and write a log message.
       return console.error(`EVENT NOT WHITELISTED:`, contractId, entry)
     }
@@ -100,26 +100,18 @@ export const actions = {
       await db.addLogEntry(contractId, entry)
       entry.initStateFromData()
       commit('addContract', {contractId, contract: entry})
-      // TODO: get rid of this, current group should be set outside of handleEvent
-      if (entry instanceof Events.GroupContract) {
-        commit('setCurrentGroupId', hash)
-        commit('setPosition', hash)
-      }
     } else if (entry instanceof Events.HashableAction) {
       var contract = state.contracts[contractId]
-      console.log(`handleEvent for ${entry.constructor.name} on ${contract.name}:`, entry)
+      console.log(`handleEvent for ${entry.constructor.name} on ${contract.constructor.name}:`, entry)
       // TODO: verify each entry is signed by a group member
       await db.addLogEntry(contractId, entry)
       entry.apply(contract, Vue)
-      // TODO: get rid of this? we'll probably just use vue-devtools
-      if (contractId === state.currentGroupId) {
-        commit('setPosition', hash)
-      }
     } else {
       return console.error(`UNKNOWN EVENT TYPE!`, contractId, entry)
     }
     // handleEvent might be called very frequently, so save only after a pause
     debouncedSave(dispatch)
+    Vue.events.$emit(hash, contractId, entry)
   },
 
   // persisting the state
@@ -129,7 +121,7 @@ export const actions = {
     // TODO: encrypt these
     const settings = {
       currentGroupId: state.currentGroupId,
-      contracts: mapValues(state.contracts, v => ({type: v.state.type, state: v.state})),
+      contracts: mapValues(state.contracts, v => ({type: v.constructor.name, state: v.state})),
       whitelist: state.whitelist
     }
     await db.saveSettings(settings)
