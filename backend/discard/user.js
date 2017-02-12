@@ -1,7 +1,7 @@
 /* globals logger */
 
 import {server, db} from './setup'
-import _ from 'lodash-es'
+import _ from 'lodash'
 
 var Promise = require('bluebird')
 var Joi = require('joi')

@@ -26,7 +26,8 @@ export class Hashable {
     root.add(t)
     return t
   }
-  static fromObject (obj, hash) {
+  // https://flowtype.org/docs/classes.html#this-type
+  static fromObject (obj, hash): this {
     var instance = new this()
     instance._obj = obj
     if (instance.toHash() !== hash) throw Error('fromObject: corrupt hash!')
@@ -97,9 +98,13 @@ export class HashableContract extends HashableEntry {
     instance._state = state
     return instance
   }
-  toState () { return this._state || this.data }
   initStateFromData () { this._state = Object.assign({}, this.data) }
   get state (): Object { return this._state }
+
+  // override this method to determine if the action can be posted to the
+  // contract. Typically this is done by signature verification.
+  // TODO: implement this in subclasses
+  isActionAllowed (action: HashableAction): boolean { return false }
   // A contract has:
   // 1. code (actions)
   // 2. data (state, updated by sending actions to the contract)
@@ -130,7 +135,9 @@ export class HashableContract extends HashableEntry {
 }
 
 export class HashableAction extends HashableEntry {
-  apply (contract: HashableContract) {}
+  // Why the extra Vue parameter?
+  // https://vuejs.org/v2/guide/reactivity.html#Change-Detection-Caveats
+  apply (contract: HashableContract, Vue: Object) {}
 }
 
 // =======================
@@ -160,8 +167,8 @@ export class Payment extends HashableAction {
   static fields = Payment.Declare([
     ['payment', 'string'] // TODO: change to 'double' and add other fields
   ])
-  apply (contract: HashableContract) {
-    if (!contract.state.payments) contract.state.payments = []
+  apply (contract: HashableContract, Vue: Object) {
+    if (!contract.state.payments) Vue.set(contract.state, 'payments', [])
     contract.state.payments.push(this.data)
   }
 }
@@ -170,8 +177,8 @@ export class Vote extends HashableAction {
   static fields = Vote.Declare([
     ['vote', 'string'] // TODO: make a real vote
   ])
-  apply (contract: HashableContract) {
-    if (!contract.state.payments) contract.state.votes = []
+  apply (contract: HashableContract, Vue: Object) {
+    if (!contract.state.votes) Vue.set(contract.state, 'votes', [])
     contract.state.votes.push(this.data)
   }
 }

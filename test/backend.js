@@ -3,7 +3,7 @@
 const Promise = global.Promise = require('bluebird')
 
 import chalk from 'chalk'
-import _ from 'lodash-es'
+import _ from 'lodash'
 import {RESPONSE_TYPE} from '../shared/constants'
 import {sign} from '../shared/functions'
 import * as Events from '../shared/events'

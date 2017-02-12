@@ -46,7 +46,8 @@ declare module 'i18next-xhr-backend' { declare module.exports: any }
 declare module 'joi' { declare module.exports: any }
 declare module 'knex' { declare module.exports: any }
 declare module 'localforage' { declare module.exports: any }
-declare module 'lodash-es' { declare module.exports: any }
+declare module 'lodash' { declare module.exports: any }
+declare module 'lodash/debounce' { declare module.exports: any }
 declare module 'moment' { declare module.exports: any }
 declare module 'multihashes' { declare module.exports: any }
 declare module 'node-uuid' { declare module.exports: any }

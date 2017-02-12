@@ -19,7 +19,7 @@ var signature = sign({
 
 // initiate websocket connection with defaults.
 // do this in this file, for a few reasons:
-// 1. Because test/backend.js also imports it and uses different settings,
+// 1. Because test/backend.js also imports pubsub.js and uses different settings,
 //    and will throw an error if ./state.js is imported. So we import that here,
 //    not in pubsub.js.
 // 2. By adding methods to the Primus prototype, we can guarantee that the
@@ -52,9 +52,8 @@ const primus = pubsub({
 export class HapiBackend extends Backend {
   constructor () {
     super()
-    this._subscriptions = []
     primus.on('reconnected', () => {
-      var subs = this._subscriptions
+      var subs = this.subscriptions()
       console.log('websocket connection re-established. re-joining:', subs)
       subs.forEach(contractId => primus.sub(contractId))
     })
@@ -66,25 +65,24 @@ export class HapiBackend extends Backend {
       .send({hash: entry.toHash(), entry: entry.toObject()})
   }
   subscriptions () {
-    return this._subscriptions // return a copy instead?
+    return Object.keys(store.state.contracts)
   }
   async subscribe (contractId: string) {
     console.log('subscribing to:', contractId)
-    if (this._subscriptions.indexOf(contractId) !== -1) {
-      return console.log('already subscribed:', contractId)
-    }
+    // this mutation makes sure not to add duplicates
+    store.commit('whitelist', contractId)
+    // we don't need to check if we're already subscribed, server handles that
     var res = await primus.sub(contractId)
-    this._subscriptions.push(contractId)
-    console.log('subscribed to:', contractId, 'response:', res)
+    console.log('subscribed response:', res)
     return res
   }
   async unsubscribe (contractId: string) {
-    let index = this._subscriptions.indexOf(contractId)
-    if (index === -1) {
+    if (this.subscriptions().indexOf(contractId) === -1) {
       return console.error('HapiBackend.unsubscribe: not subscribed!', contractId)
     }
     var res = await primus.unsub(contractId)
-    this._subscriptions.splice(index, 1)
+    store.commit('removeContract', contractId)
+    store.dispatch('saveSettings')
     return res
   }
 }

@@ -45,17 +45,22 @@ module.exports = function (hapi: Object) {
         console.log(bold(`[pubsub] REQUEST '${type}' from '${id}'`), req)
         switch (type) {
           case SUB:
-            spark.join(contractId, function () {
-              spark.on('leaveallrooms', (rooms) => {
-                console.log(bold.yellow(`[pubsub] ${id} leaveallrooms`))
-                // this gets called on spark.leaveAll and 'disconnection'
-                rooms.forEach(contractId => {
-                  primus.room(contractId).write(reply(UNSUB, {contractId, id}))
+            if (spark.rooms().indexOf(contractId) === -1) {
+              spark.join(contractId, function () {
+                spark.on('leaveallrooms', (rooms) => {
+                  console.log(bold.yellow(`[pubsub] ${id} leaveallrooms`))
+                  // this gets called on spark.leaveAll and 'disconnection'
+                  rooms.forEach(contractId => {
+                    primus.room(contractId).write(reply(UNSUB, {contractId, id}))
+                  })
                 })
+                spark.room(contractId).except(id).write(req)
+                done(success)
               })
-              spark.room(contractId).except(id).write(req)
+            } else {
+              console.log(`[pubsub] ${id} already subscribed to: ${contractId}`)
               done(success)
-            })
+            }
             break
           case UNSUB:
             spark.room(contractId).except(id).write(req)

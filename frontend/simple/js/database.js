@@ -81,8 +81,3 @@ export function saveSettings (state: Object): Promise<*> {
 export function loadSettings (): Promise<Object> {
   return appSettings.getItem('testUser')
 }
-
-// const saveSettings = _.debounce(() => {
-//  appSettings.setItem('testUser', state),
-//  500, {maxWait: 5000}
-// })

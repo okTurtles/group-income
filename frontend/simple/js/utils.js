@@ -22,47 +22,10 @@ export function lazyLoadVue (component: string, base: string = '/simple/js') {
   }
 }
 
-// These headers will be included with all superagent requests
-var request = require('superagent')
-export function superagentHeader (header: string, value: string) {
-  for (let method of ['get', 'post']) {
-    var m = request[method] // var m = request.prototype[method]
-    request[method] = (...args) => m.apply(request, args).set(header, value)
-  }
+// additional tiny versions of lodash functions are available in VueScript2
+export function mapValues (obj: Object, fn: Function, o: Object = {}) {
+  for (let key in obj) { o[key] = fn(obj[key]) }
+  return o
 }
 
-const nacl = require('tweetnacl')
-// const {encodeBase64, decodeBase64} = require('tweetnacl-util')
-
-var b642buf = b64 => new Buffer(b64, 'base64')
-var buf2b64 = buf => new Buffer(buf).toString('base64')
-var str2buf = str => new Buffer(str, 'utf8')
-var str2b64 = str => str2buf(str).toString('base64')
-var ary2b64 = ary => new Buffer(ary).toString('base64')
-
-// using lodash-es (which is what we're doing here even though it doesn't seem
-// like it [see pathmodify in .Gruntfile.babel.js]), adds an extra 2000 lines to
-// app.js just for this tiny function which is simple to implement ourselves.
-// import mapValues from 'lodash/mapValues'
-export let _ = {
-  mapValues (obj: Object, fn: Function, o: Object = {}) {
-    for (let key in obj) { o[key] = fn(obj[key]) }
-    return o
-  }
-}
-
-export function sign (
-  msg: string,
-  {publicKey, secretKey}: {publicKey: string; secretKey: string}
-) {
-  return str2b64(JSON.stringify({
-    msg: msg,
-    key: publicKey,
-    sig: ary2b64(nacl.sign.detached(str2buf(msg), b642buf(secretKey)))
-  }))
-}
-// TODO: generate these properly at the right time and store in the right location
-//       See backend/interface.js
-export const keypair = _.mapValues(nacl.sign.keyPair(), buf2b64)
-
-export default { wrap, lazyLoadVue, superagentHeader, sign, keypair, _ }
+export default { wrap, lazyLoadVue }
