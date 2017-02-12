@@ -39,6 +39,7 @@ var signatures = personas.map(x => sign(x))
 describe('Full walkthrough', function () {
   var contractId: string, entry: HashableEntry
   var sockets = []
+  var users = {}
 
   function createSocket (done) {
     var num = sockets.length
@@ -54,8 +55,18 @@ describe('Full walkthrough', function () {
     sockets.push(primus)
   }
 
+  function createIdentity (name, email) {
+    return new Events.IdentityContract({
+      attributes: [
+        {name: 'name', value: name},
+        {name: 'email', value: email}
+      ]
+    })
+  }
+
   function postEntry (entry, group) {
     if (!group) group = contractId
+    console.log(bold.yellow('sending entry with hash:'), entry.toHash())
     return request.post(`${API}/event/${group}`)
       .set('Authorization', `gi ${signatures[0]}`)
       .send({hash: entry.toHash(), entry: entry.toObject()})
@@ -73,6 +84,50 @@ describe('Full walkthrough', function () {
     for (let primus of sockets) {
       primus.destroy({timeout: 500})
     }
+  })
+
+  describe('Identity tests', function () {
+    it('Should create identity contracts for Alice and Bob', async function () {
+      users.bob = createIdentity('Bob', 'bob@okturtles.com')
+      users.alice = createIdentity('Alice', 'alice@okturtles.org')
+      const {alice, bob} = users
+      // verify attribute creation and state initialization
+      bob.data.attributes[0].value.should.equal('Bob')
+      bob.data.attributes[1].value.should.equal('bob@okturtles.com')
+      should.not.exist(bob.state)
+      alice.initStateFromData()
+      bob.initStateFromData()
+      alice.state.attributes.name.should.equal('Alice')
+      bob.state.attributes.email.should.equal('bob@okturtles.com')
+      // send them off!
+      var res = await postEntry(alice, alice.toHash())
+      res.body.data.hash.should.equal(alice.toHash())
+      res = await postEntry(bob, bob.toHash())
+      res.body.data.hash.should.equal(bob.toHash())
+    })
+
+    it('Should register Alice and Bob in the namespace', async function () {
+      const {alice, bob} = users
+      var res = await request.post(`${process.env.API_URL}/name`)
+        .send({name: alice.state.attributes.name, value: alice.toHash()})
+      res.body.type.should.equal(SUCCESS)
+      res = await request.post(`${process.env.API_URL}/name`)
+        .send({name: bob.state.attributes.name, value: bob.toHash()})
+      res.body.type.should.equal(SUCCESS)
+    })
+
+    it('Should verify namespace lookups work', async function () {
+      const {alice} = users
+      var res = await request.get(`${process.env.API_URL}/name/${alice.state.attributes.name}`)
+      res.body.data.value.should.equal(alice.toHash())
+      request.get(`${process.env.API_URL}/name/susan`).should.be.rejected()
+    })
+
+    it.skip('Should add attestation from Bob to Alice', function () {
+    })
+
+    it.skip('Alice should fail to invite Bob to non-existant group', function () {
+    })
   })
 
   describe('Group Setup', function () {
@@ -119,20 +174,5 @@ describe('Full walkthrough', function () {
       // delay so that the sockets receive notification
       return Promise.delay(200)
     })
-/*
-    it('Should GET (non-empty)', function (done) {
-      request.get(`${API}/group/1`)
-      .set('Authorization', `gi ${signatures[0]}`)
-      .end(function (err, res) {
-        should(err).be.null()
-        res.status.should.equal(200)
-        res.body.id.should.equal(1)
-        res.body.name.should.equal(group1name)
-        res.body.users.should.have.length(1)
-        res.body.users[0].id.should.equal(personas[0].publicKey)
-        done()
-      })
-    })
-*/
   })
 })

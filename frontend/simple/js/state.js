@@ -8,7 +8,7 @@ import Vuex from 'vuex'
 import * as db from './database'
 import * as Events from '../../../shared/events'
 
-// https://github.com/lodash/babel-plugin-lodash#faq
+// babel transforms lodash imports: https://github.com/lodash/babel-plugin-lodash#faq
 // for diff between 'lodash/map' and 'lodash/fp/map'
 // see: https://github.com/lodash/lodash/wiki/FP-Guide
 import debounce from 'lodash/debounce'
@@ -29,19 +29,6 @@ const state = {
 // Mutations must be synchronous! Never call these directly!
 // http://vuex.vuejs.org/en/mutations.html
 const mutations = {
-  setPosition (state, position: string) {
-    state.position = position
-    state.offset = []
-  },
-  backward (state, offset) {
-    state.offset.push(state.position)
-    state.position = offset
-  },
-  forward (state) {
-    if (state.offset.length > 0) {
-      state.position = state.offset.pop()
-    }
-  },
   addContract (state, {contractId, contract}) {
     // "Mutations Follow Vue's Reactivity Rules" - important for modifying objects
     // See: https://vuex.vuejs.org/en/mutations.html
@@ -65,6 +52,20 @@ const mutations = {
   },
   setWhitelist (state, whitelist) {
     state.whitelist = whitelist
+  },
+  // time travel related
+  setPosition (state, position: string) {
+    state.position = position
+    state.offset = []
+  },
+  backward (state, offset) {
+    state.offset.push(state.position)
+    state.position = offset
+  },
+  forward (state) {
+    if (state.offset.length > 0) {
+      state.position = state.offset.pop()
+    }
   }
 }
 
@@ -91,18 +92,24 @@ const actions = {
     }
 
     entry = Events[entry.type].fromObject(entry, hash)
+    const aName = entry.constructor.name
     if (entry instanceof Events.HashableContract) {
-      console.log(`handleEvent for new ${entry.constructor.name}:`, entry)
+      console.log(`handleEvent for new ${aName}:`, entry)
       if (entry.toObject().parentHash) {
         // TODO: use a global notification object to handle this and all other errors
-        return console.error(`${entry.constructor.name} has non-null parentHash!`, entry)
+        return console.error(`${aName} has non-null parentHash!`, entry)
       }
       await db.addLogEntry(contractId, entry)
       entry.initStateFromData()
       commit('addContract', {contractId, contract: entry})
     } else if (entry instanceof Events.HashableAction) {
       var contract = state.contracts[contractId]
-      console.log(`handleEvent for ${entry.constructor.name} on ${contract.constructor.name}:`, entry)
+      const cName = contract.constructor.name
+      console.log(`handleEvent for ${aName} on ${cName}:`, entry)
+      if (!contract.isActionAllowed(entry)) {
+        // TODO: implement isActionAllowed in all actions, and handle error better
+        return console.error(`bad action ${aName} on ${cName} (${contractId}):`, entry)
+      }
       // TODO: verify each entry is signed by a group member
       await db.addLogEntry(contractId, entry)
       entry.apply(contract, Vue)

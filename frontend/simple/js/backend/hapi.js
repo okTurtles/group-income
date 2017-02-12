@@ -5,7 +5,7 @@ import store from '../state'
 import {Backend, TrustedNamespace} from './interface'
 import pubsub from '../pubsub'
 import {sign} from '../../../../shared/functions'
-import {HashableEntry, IdentityContract} from '../../../../shared/events'
+import {HashableEntry, IdentityContract, HashableAction} from '../../../../shared/events'
 import {RESPONSE_TYPE} from '../../../../shared/constants'
 
 // temporary identity for signing
@@ -60,6 +60,12 @@ export class HapiBackend extends Backend {
   }
   publishLogEntry (contractId: string, entry: HashableEntry) {
     console.log(`publishLogEntry to ${contractId}:`, entry)
+    if (entry instanceof HashableAction) {
+      var contract = store.state.contracts[contractId]
+      if (!contract.isActionAllowed(entry)) {
+        // TODO: this. do not publish malformed entry. something is very wrong.
+      }
+    }
     return request.post(`${process.env.API_URL}/event/${contractId}`)
       .set('Authorization', `gi ${signature}`)
       .send({hash: entry.toHash(), entry: entry.toObject()})
@@ -89,10 +95,9 @@ export class HapiBackend extends Backend {
 
 export class HapiNamespace extends TrustedNamespace {
   // prefix groups with `group/` and users with `user/`
-  register (name: string, identity: IdentityContract) {
-    console.log(`register name:`, name)
-    return request.post(`${process.env.API_URL}/name`)
-      .send({hash: identity.toHash(), entry: identity.toObject()})
+  register (name: string, value: string) {
+    console.log(`registering name:`, name)
+    return request.post(`${process.env.API_URL}/name`).send({name, value})
   }
   lookup (name: string) {
     console.log(`lookup name:`, name)

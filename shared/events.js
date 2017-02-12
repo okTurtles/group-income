@@ -59,7 +59,7 @@ export class HashableEntry extends Hashable {
   static Declare (fields) {
     var msgData = super.Declare(fields)
     var msg = new Type(this.name + 'Entry')
-    msg.add(new Field('version', 1, 'string'))
+    msg.add(new Field('version', 1, 'uint32'))
     msg.add(new Field('type', 2, 'string'))
     msg.add(new Field('parentHash', 3, 'string'))
     msg.add(new Field('data', 4, msgData.name))
@@ -69,7 +69,7 @@ export class HashableEntry extends Hashable {
   constructor (data: JSONObject = {}, parentHash?: string) {
     super()
     this._obj = {
-      version: '0.0.1',
+      version: 0,
       type: this.constructor.name,
       parentHash: parentHash || '',
       data
@@ -104,7 +104,7 @@ export class HashableContract extends HashableEntry {
   // override this method to determine if the action can be posted to the
   // contract. Typically this is done by signature verification.
   // TODO: implement this in subclasses
-  isActionAllowed (action: HashableAction): boolean { return false }
+  isActionAllowed (action: HashableAction): boolean { return true }
   // A contract has:
   // 1. code (actions)
   // 2. data (state, updated by sending actions to the contract)
@@ -193,17 +193,20 @@ export class ProfileAdjustment extends HashableAction {
 
 export class Attribute extends Hashable {
   static fields = Attribute.Declare([
-    ['name', 'string'], // name of the attribute
-    ['value', 'bytes']  // corresponding value (as a Buffer)
+    ['name', 'string'],
+    ['value', 'string']
   ])
-  constructor (name: string, value: string) {
-    super({name, value: Buffer.from(value, 'utf8')})
-  }
 }
 
 export class IdentityContract extends HashableContract {
   static fields = IdentityContract.Declare([
-    ['name', 'string'],
     ['attributes', 'Attribute', 'repeated']
   ])
+  initStateFromData () {
+    super.initStateFromData()
+    this._state.attributes = this.data.attributes.reduce((accum, v) => {
+      accum[v.name] = v.value
+      return accum
+    }, {})
+  }
 }

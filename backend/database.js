@@ -73,7 +73,7 @@ class Log extends Model {
     required: ['version', 'type', 'parentHash', 'data', 'hash'],
     properties: {
       id: {type: 'integer'},
-      version: {type: 'string'},
+      version: {type: 'integer'},
       type: {type: 'string'},
       parentHash: {type: ['string', 'null']},
       data: {type: 'object'},
@@ -165,7 +165,7 @@ export function registerName (name: string, value: string) {
 
 export async function lookupName (name: string) {
   var values = await Namespace.query().select('value').where('name', name)
-  return values && values[0]
+  return values[0] && values[0].value
 }
 
 // =======================

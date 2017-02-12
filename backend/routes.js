@@ -15,7 +15,7 @@ module.exports = function (server: Object) {
     hash: Joi.string().required(),
     // must match db.Log.jsonSchema.properties (except for separated hash)
     entry: Joi.object({
-      version: Joi.string().required(),
+      version: Joi.number().integer().required(),
       type: Joi.string().required(),
       parentHash: Joi.string().allow([null, '']),
       data: Joi.object()
@@ -48,20 +48,20 @@ module.exports = function (server: Object) {
     }
   })
   server.route({
-    config: { validate: { payload: payloadValidation } },
+    config: { validate: { payload: {
+      name: Joi.string().required(),
+      value: Joi.string().required()
+    } } },
     method: ['POST'],
     path: '/name',
     handler: async function (request, reply) {
       try {
-        var {hash, entry} = request.payload
-        var identity = Events.IdentityContract.fromObject(entry, hash)
-        var exists = await db.lookupName(identity.data.name)
-        if (exists) {
+        const {name, value} = request.payload
+        if (await db.lookupName(name)) {
           reply(Boom.conflict('exists'))
         } else {
-          await server.handleEvent(hash, entry)
-          await db.registerName(identity.data.name, hash)
-          reply(makeResponse(RESPONSE_TYPE.SUCCESS, {hash}))
+          await db.registerName(name, value)
+          reply(makeResponse(RESPONSE_TYPE.SUCCESS))
         }
       } catch (err) {
         logger(err)
@@ -74,8 +74,8 @@ module.exports = function (server: Object) {
     path: '/name/{name}',
     handler: async function (request, reply) {
       try {
-        var hash = await db.lookupName(request.params.name)
-        reply(hash ? makeResponse(RESPONSE_TYPE.SUCCESS, {hash}) : Boom.notFound())
+        var value = await db.lookupName(request.params.name)
+        reply(value ? makeResponse(RESPONSE_TYPE.SUCCESS, {value}) : Boom.notFound())
       } catch (err) {
         logger(err)
         reply(err)
