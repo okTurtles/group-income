@@ -31,7 +31,7 @@
               <textarea class="textarea" name="payload" placeholder="payload" ref="payload"></textarea>
           </p>
           <p class="control">
-            Current Group: {{ currentGroup ? currentGroup.state : '' }}
+            Current Group: {{ currentGroup || '' }}
           </p>
           <div class="level-item is-narrow">
               <button class="button submit is-success" id="submit" type="submit">

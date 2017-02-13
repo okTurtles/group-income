@@ -94,11 +94,6 @@ describe('Full walkthrough', function () {
       // verify attribute creation and state initialization
       bob.data.attributes[0].value.should.equal('Bob')
       bob.data.attributes[1].value.should.equal('bob@okturtles.com')
-      should.not.exist(bob.state)
-      alice.initStateFromData()
-      bob.initStateFromData()
-      alice.state.attributes.name.should.equal('Alice')
-      bob.state.attributes.email.should.equal('bob@okturtles.com')
       // send them off!
       var res = await postEntry(alice, alice.toHash())
       res.body.data.hash.should.equal(alice.toHash())
@@ -109,16 +104,16 @@ describe('Full walkthrough', function () {
     it('Should register Alice and Bob in the namespace', async function () {
       const {alice, bob} = users
       var res = await request.post(`${process.env.API_URL}/name`)
-        .send({name: alice.state.attributes.name, value: alice.toHash()})
+        .send({name: alice.data.attributes[0].value, value: alice.toHash()})
       res.body.type.should.equal(SUCCESS)
       res = await request.post(`${process.env.API_URL}/name`)
-        .send({name: bob.state.attributes.name, value: bob.toHash()})
+        .send({name: bob.data.attributes[0].value, value: bob.toHash()})
       res.body.type.should.equal(SUCCESS)
     })
 
     it('Should verify namespace lookups work', async function () {
       const {alice} = users
-      var res = await request.get(`${process.env.API_URL}/name/${alice.state.attributes.name}`)
+      var res = await request.get(`${process.env.API_URL}/name/${alice.data.attributes[0].value}`)
       res.body.data.value.should.equal(alice.toHash())
       request.get(`${process.env.API_URL}/name/susan`).should.be.rejected()
     })

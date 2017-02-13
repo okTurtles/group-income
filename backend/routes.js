@@ -61,7 +61,7 @@ module.exports = function (server: Object) {
           reply(Boom.conflict('exists'))
         } else {
           await db.registerName(name, value)
-          reply(makeResponse(RESPONSE_TYPE.SUCCESS))
+          reply(makeResponse(RESPONSE_TYPE.SUCCESS, {name}))
         }
       } catch (err) {
         logger(err)

@@ -5,7 +5,7 @@ import store from '../state'
 import {Backend, TrustedNamespace} from './interface'
 import pubsub from '../pubsub'
 import {sign} from '../../../../shared/functions'
-import {HashableEntry, IdentityContract, HashableAction} from '../../../../shared/events'
+import {HashableEntry, HashableAction} from '../../../../shared/events'
 import {RESPONSE_TYPE} from '../../../../shared/constants'
 
 // temporary identity for signing

@@ -86,21 +86,30 @@ export class HashableEntry extends Hashable {
 }
 
 export class HashableContract extends HashableEntry {
-  // The difference between .data and .state is that .state represents
-  // the contract's current state as a result of the summation of all actions.
-  // It is better to hook up UI bindings to .state than to .data for this reason.
-  _state: Object
   static actions = {
     // places class declarations of subclasses of HashableEntry's here.
   }
-  static fromState (state) {
+  static vuex = {
+    // vuex module namespaced under this contract's hash (see `registerVuexModule`)
+    // see details: https://vuex.vuejs.org/en/modules.html
+    namespaced: true
+    // mutations must be named exactly the same as corresponding Actions
+  }
+  // creates an new instance and registers its state on the vuex store
+  static fromState (store, hash, state) {
     var instance = new this()
-    instance._state = state
+    instance._hash = hash
+    instance.registerVuexModule(store, state)
     return instance
   }
-  initStateFromData () { this._state = Object.assign({}, this.data) }
-  get state (): Object { return this._state }
-
+  registerVuexModule (store: Object, state?: Object) {
+    var module = Object.assign({}, this.constructor.vuex)
+    module.state = state || {...module.state, ...this.data}
+    store.registerModule(this.toHash(), module)
+  }
+  unregisterVuexModule (store: Object) {
+    store.unregisterModule(this.toHash())
+  }
   // override this method to determine if the action can be posted to the
   // contract. Typically this is done by signature verification.
   // TODO: implement this in subclasses
@@ -137,7 +146,9 @@ export class HashableContract extends HashableEntry {
 export class HashableAction extends HashableEntry {
   // Why the extra Vue parameter?
   // https://vuejs.org/v2/guide/reactivity.html#Change-Detection-Caveats
-  apply (contract: HashableContract, Vue: Object) {}
+  apply (store: Object, contractId: string, Vue: Object) {
+    store.commit(`${contractId}/${this.constructor.name}`, this.data)
+  }
 }
 
 // =======================
@@ -158,6 +169,14 @@ export class GroupContract extends HashableContract {
     ['founderUsername', 'string']
   ])
   static actions = { Payment, Vote, ProfileAdjustment }
+  static vuex = {
+    ...GroupContract.vuex, // make sure we're namespaced
+    state: { votes: [], payments: [] },
+    mutations: {
+      Payment (state, data) { state.payments.push(data) },
+      Vote (state, data) { state.votes.push(data) }
+    }
+  }
   constructor (data: JSONObject, parentHash?: string) {
     super({...data, creationDate: new Date().toISOString()}, parentHash)
   }
@@ -167,20 +186,12 @@ export class Payment extends HashableAction {
   static fields = Payment.Declare([
     ['payment', 'string'] // TODO: change to 'double' and add other fields
   ])
-  apply (contract: HashableContract, Vue: Object) {
-    if (!contract.state.payments) Vue.set(contract.state, 'payments', [])
-    contract.state.payments.push(this.data)
-  }
 }
 
 export class Vote extends HashableAction {
   static fields = Vote.Declare([
     ['vote', 'string'] // TODO: make a real vote
   ])
-  apply (contract: HashableContract, Vue: Object) {
-    if (!contract.state.votes) Vue.set(contract.state, 'votes', [])
-    contract.state.votes.push(this.data)
-  }
 }
 
 export class ProfileAdjustment extends HashableAction {
@@ -202,9 +213,11 @@ export class IdentityContract extends HashableContract {
   static fields = IdentityContract.Declare([
     ['attributes', 'Attribute', 'repeated']
   ])
-  initStateFromData () {
-    super.initStateFromData()
-    this._state.attributes = this.data.attributes.reduce((accum, v) => {
+  registerVuexModule (store: Object, state?: Object) {
+    super.registerVuexModule(store, state)
+    var myState = store[this.toHash()]
+    // transform attributes from an array of pairs into an easier-to-access key-value map
+    myState.attributes = myState.attributes.reduce((accum, v) => {
       accum[v.name] = v.value
       return accum
     }, {})

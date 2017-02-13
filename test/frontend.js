@@ -46,6 +46,7 @@ describe('Frontend', function () {
   })
   describe('Event Log Test', function () {
     it('Should Append to the log', async function () {
+      this.timeout(4000) // this one takes a while for some reason
       await n.goto(page('event-log'))
         .should.finally.containEql({ code: 200, url: page('event-log') })
       let result = await n.wait('#random').evaluate(() => ({

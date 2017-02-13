@@ -16,10 +16,14 @@ import {mapValues} from './utils'
 
 Vue.use(Vuex)
 
+var store // this is set and made the default export at the bottom of the file.
+          // we have it declared here to make it accessible in mutations
+
 // This is the Vuex state object
 const state = {
   position: null,
   offset: [],
+  // NOTE: time travel is broken now. Should be implemented using `store.subscribe` instead of that
   currentGroupId: null,
   contracts: {}, // contracts we've successfully subscribed to
   whitelist: [], // contracts we're expecting to subscribe to
@@ -29,12 +33,17 @@ const state = {
 // Mutations must be synchronous! Never call these directly!
 // http://vuex.vuejs.org/en/mutations.html
 const mutations = {
+  applyAction (state, {action, contractId}) {
+    action.apply(store, contractId, Vue)
+  },
   addContract (state, {contractId, contract}) {
     // "Mutations Follow Vue's Reactivity Rules" - important for modifying objects
     // See: https://vuex.vuejs.org/en/mutations.html
     Vue.set(state.contracts, contractId, contract)
+    contract.registerVuexModule(store)
   },
   removeContract (state, contractId) {
+    state.contracts[contractId].unregisterVuexModule(store)
     Vue.delete(state.contracts, contractId)
     let index = state.whitelist.indexOf(contractId)
     index > -1 && state.whitelist.splice(index, 1)
@@ -70,9 +79,10 @@ const mutations = {
 }
 
 // https://vuex.vuejs.org/en/getters.html
+// https://vuex.vuejs.org/en/modules.html
 const getters = {
   currentGroup (state) {
-    return state.contracts[state.currentGroupId]
+    return state[state.currentGroupId]
   }
 }
 
@@ -100,7 +110,6 @@ const actions = {
         return console.error(`${aName} has non-null parentHash!`, entry)
       }
       await db.addLogEntry(contractId, entry)
-      entry.initStateFromData()
       commit('addContract', {contractId, contract: entry})
     } else if (entry instanceof Events.HashableAction) {
       var contract = state.contracts[contractId]
@@ -112,12 +121,13 @@ const actions = {
       }
       // TODO: verify each entry is signed by a group member
       await db.addLogEntry(contractId, entry)
-      entry.apply(contract, Vue)
+      commit('applyAction', {contractId, action: entry})
     } else {
       return console.error(`UNKNOWN EVENT TYPE!`, contractId, entry)
     }
     // handleEvent might be called very frequently, so save only after a pause
     debouncedSave(dispatch)
+    // let any listening components know that we've received, processed, and stored the event
     Vue.events.$emit(hash, contractId, entry)
   },
 
@@ -128,7 +138,11 @@ const actions = {
     // TODO: encrypt these
     const settings = {
       currentGroupId: state.currentGroupId,
-      contracts: mapValues(state.contracts, v => ({type: v.constructor.name, state: v.state})),
+      contracts: mapValues(state.contracts, v => ({
+        type: v.constructor.name,
+        id: v.toHash(),
+        state: state[v.toHash()]
+      })),
       whitelist: state.whitelist
     }
     await db.saveSettings(settings)
@@ -140,7 +154,8 @@ const actions = {
     const settings = await db.loadSettings()
     console.log('loadSettings:', settings)
     let {contracts, currentGroupId, whitelist} = settings
-    contracts = mapValues(contracts, v => Events[v.type].fromState(v.state))
+    // NOTE: `fromState` will automatically call `registerVuexModule` for us
+    contracts = mapValues(contracts, v => Events[v.type].fromState(store, v.id, v.state))
     commit('setCurrentGroupId', currentGroupId)
     commit('setContracts', contracts || [])
     commit('setWhitelist', whitelist || [])
@@ -164,4 +179,5 @@ const actions = {
 
 const debouncedSave = debounce(dispatch => dispatch('saveSettings'), 500)
 
-export default new Vuex.Store({state, mutations, getters, actions})
+store = new Vuex.Store({state, mutations, getters, actions})
+export default store
