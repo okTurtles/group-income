@@ -27,7 +27,7 @@ const state = {
   currentGroupId: null,
   contracts: {}, // contracts we've successfully subscribed to
   whitelist: [], // contracts we're expecting to subscribe to
-  loggedIn: false // TODO: properly handle this
+  loggedIn: true// TODO: properly handle this
 }
 
 // Mutations must be synchronous! Never call these directly!

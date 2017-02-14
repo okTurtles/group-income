@@ -93,8 +93,9 @@
   </section>
 </template>
 <script>
+import Vue from 'vue'
 import backend from '../js/backend'
-import {Events} from '../../../shared/events'
+import * as Events from '../../../shared/events'
 
 export default {
   name: 'CreateGroupView',
@@ -111,7 +112,7 @@ export default {
         ctrlEl.scrollIntoView()
       }
       if (success) {
-        let entry = new Events.Group({
+        let entry = new Events.GroupContract({
           groupName: this.groupName,
           sharedValue: this.sharedValue,
           changePercentage: this.changePercentage,
@@ -124,12 +125,16 @@ export default {
         })
         let hash = entry.toHash()
         await backend.subscribe(hash)
+        Vue.events.$once(hash, (contractId, entry) => {
+          this.$store.commit('setCurrentGroupId', hash)
+          this.$store.commit('setPosition', hash)
+        })
         let res = await backend.publishLogEntry(hash, entry, hash)
         if (!res.ok) {
-          console.error('failed to create group:', res.text)
+          console.error('failed to create group contract:', res.text)
         } else {
           this.created = true
-          console.log('group created. server response:', res.body)
+          console.log('group contract created. server response:', res.body)
         }
       }
     }

@@ -366,7 +366,7 @@ input:checked {
     box-shadow: 0 0 1px #2196F3;
   }
   & + .slider:before {
-    @include ransform(translateX(26px));
+    @include transform(translateX(26px));
   }
 }
 /* rounded range controls */
@@ -379,7 +379,7 @@ input[type=range] {
   &:focus {
     outline: none;
   }
-  &::-webkit-slider-thumb, &::-moz-range-thumb  {
+  &::-webkit-slider-thumb {
     @include appearance(none);
     border-radius: 50%;
     height: 26px;
@@ -387,6 +387,11 @@ input[type=range] {
     background: #ffffff;
   }
   &::-moz-range-thumb {
+    @include appearance(none);
+    border-radius: 50%;
+    height: 26px;
+    width: 26px;
+    background: #ffffff;
     border: none;
   }
   &::-moz-range-track {
