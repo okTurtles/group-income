@@ -13,15 +13,7 @@
 // =======================
 
 // https://babeljs.io/docs/setup/#babel_register
-require('babel-register')({
-  // this next line is needed to prevent issue with lodash-es
-  //   export { default as add } from './add';
-  //   ^^^^^^
-  //   SyntaxError: Unexpected token export
-  // http://stackoverflow.com/a/36044758/1781435
-  // ignore everything in node_modules except lodash-es
-  ignore: /node_modules\/(?!lodash-es)/
-})
+require('babel-register')
 
 // =======================
 // Global environment variables setup

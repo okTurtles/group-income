@@ -5,8 +5,15 @@
 import {HashableEntry} from '../../../../shared/events'
 
 export class Backend {
-  publishLogEntry (groupId: string, entry: HashableEntry) {}
-  subscribe (groupId: string) {}
-  unsubscribe (groupId: string) {}
+  publishLogEntry (contractId: string, entry: HashableEntry) {}
+  subscribe (contractId: string) {}
+  unsubscribe (contractId: string) {}
   subscriptions () {}
+}
+
+// this is the Group Income namespace
+export class TrustedNamespace {
+  // prefix groups with `group/` and users with `user/`
+  register (name: string, value: string) {}
+  lookup (name: string) {}
 }

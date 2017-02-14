@@ -9,16 +9,14 @@ import TestEventLog from './views/EventLog.vue'
 // import NewIncomeView from './views/NewIncomeView.vue'
 import PayGroupView from './views/PayGroupView.vue'
 import NavBar from './views/NavBar.vue'
-import utils, { wrap, lazyLoadVue, superagentHeader } from './js/utils'
+import { wrap, lazyLoadVue } from './js/utils'
 import store from './js/state'
-import pubsub from './js/pubsub'
 import './js/transitions'
 
 Vue.use(Router)
 Vue.use(VeeValidate)
 
-pubsub(store)
-superagentHeader('Authorization', `gi ${utils.sign('hello', utils.keypair)}`)
+Vue.events = new Vue() // global event bus, use: https://vuejs.org/v2/api/#Instance-Methods-Events
 
 var router = new Router({
   mode: 'history',

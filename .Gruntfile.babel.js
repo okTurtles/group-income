@@ -14,7 +14,7 @@ const S = require('string')
 const vueify = require('vueify')
 const pathmodify = require('pathmodify')
 
-import _ from 'lodash-es'
+import _ from 'lodash'
 import {setupPrimus} from './shared/functions'
 
 var development = process.env.NODE_ENV === 'development'
@@ -236,9 +236,6 @@ function browserifyCfg ({straight, lazy}, cfg = {}) {
     var c = {
       options: {
         transform: [script2ify, 'vueify', ejsify, 'babelify'],
-        // NOTE: if you run into any problems with loading lodash on the frontend
-        //       try uncommenting & playing with the following line:
-        // transform: [script2ify, 'vueify', ejsify, ['babelify', {global: true, ignore: /node_modules\/(?!lodash-es\/)/}]],
         plugin: [[pathmodify, {
           mods: [
             // some libraries (like jquery-validity) require('jquery')
@@ -246,11 +243,6 @@ function browserifyCfg ({straight, lazy}, cfg = {}) {
             pathmodify.mod.dir('vendor', p`${__dirname}/frontend/simple/assets/vendor`),
             // https://vuejs.org/v2/guide/installation.html#Standalone-vs-Runtime-only-Build
             pathmodify.mod.id('vue', p`${__dirname}/node_modules/vue/dist/vue.common.js`)
-            // pathmodify.mod.id('vue', p`${__dirname}/node_modules/vue/dist/vue.js`),
-            // TODO Discover Why lodash-es does not bundle correctly the following is a short term work around
-            // NOTE: the below is incorrect, since lodash-es is located in
-            // node_modules/lodash-es/, not node_modules/lodash/
-            // pathmodify.mod.id('lodash-es', p`${__dirname}/node_modules/lodash/index.js`)
           ]
         }]],
         browserifyOptions: {

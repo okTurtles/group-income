@@ -1,19 +1,11 @@
 'use strict'
 
 import {verify} from '../../../shared/functions'
-import {HashableEntry} from '../../../shared/events'
-
-// "Contract" represent immutable code.
-
-// export interface Signable {
-//   data: string;
-//   sig: string;
-//   type: string;
-// }
+import {HashableContract, HashableAction} from '../../../shared/events'
 
 // http://www.indelible.org/ink/protobuf-polymorphism/
 
-export class Operation extends HashableEntry {
+export class Operation extends HashableAction {
   // TODO: make these TypeScript annotations
   static TYPE_SIGN = 'sign'
   constructor ({authorizedKeys}) {
@@ -40,7 +32,8 @@ export class OpSign extends Operation {
   }
 }
 
-export class IdentityContract extends HashableEntry {
+export class IdentityContract extends HashableContract {
+  static actions = {}
   constructor ({ownerPubKey, attributes}) {
     super()
     // this.attestations: Array<Signable> = []
