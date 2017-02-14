@@ -3,16 +3,17 @@
 const Promise = global.Promise = require('bluebird')
 
 import chalk from 'chalk'
-import _ from 'lodash-es'
+import _ from 'lodash'
 import {RESPONSE_TYPE} from '../shared/constants'
 import {sign} from '../shared/functions'
-import {HashableEntry, Events} from '../shared/events'
+import * as Events from '../shared/events'
+import pubsub from '../frontend/simple/js/pubsub'
 
 const request = require('superagent')
 const should = require('should') // eslint-disable-line
 const nacl = require('tweetnacl')
-const Primus = require('../frontend/simple/assets/vendor/primus')
 
+const {HashableEntry} = Events
 const {API_URL: API} = process.env
 const {SUCCESS} = RESPONSE_TYPE
 
@@ -36,28 +37,36 @@ var signatures = personas.map(x => sign(x))
 //       and compromises privacy).
 
 describe('Full walkthrough', function () {
-  var groupId: string, entry: HashableEntry
+  var contractId: string, entry: HashableEntry
   var sockets = []
+  var users = {}
 
   function createSocket (done) {
     var num = sockets.length
-    var primus = new Primus(API, {timeout: 3000, strategy: false})
-    primus.on('open', done)
-    primus.on('error', err => done(err))
-    primus.on('data', msg => {
-      console.log(bold(`[test] ONDATA primus[${num}] msg:`), msg)
+    var primus = pubsub({
+      url: API,
+      options: {timeout: 3000, strategy: false},
+      handlers: {
+        open: done,
+        error: err => done(err),
+        data: msg => console.log(bold(`[test] ONDATA primus[${num}] msg:`), msg)
+      }
     })
     sockets.push(primus)
   }
 
-  function joinRoom (socket, groupId, done) {
-    socket.writeAndWait({action: 'sub', groupId}, function (response) {
-      done(response.type === SUCCESS ? null : response)
+  function createIdentity (name, email) {
+    return new Events.IdentityContract({
+      attributes: [
+        {name: 'name', value: name},
+        {name: 'email', value: email}
+      ]
     })
   }
 
   function postEntry (entry, group) {
-    if (!group) group = groupId
+    if (!group) group = contractId
+    console.log(bold.yellow('sending entry with hash:'), entry.toHash())
     return request.post(`${API}/event/${group}`)
       .set('Authorization', `gi ${signatures[0]}`)
       .send({hash: entry.toHash(), entry: entry.toObject()})
@@ -77,18 +86,57 @@ describe('Full walkthrough', function () {
     }
   })
 
+  describe('Identity tests', function () {
+    it('Should create identity contracts for Alice and Bob', async function () {
+      users.bob = createIdentity('Bob', 'bob@okturtles.com')
+      users.alice = createIdentity('Alice', 'alice@okturtles.org')
+      const {alice, bob} = users
+      // verify attribute creation and state initialization
+      bob.data.attributes[0].value.should.equal('Bob')
+      bob.data.attributes[1].value.should.equal('bob@okturtles.com')
+      // send them off!
+      var res = await postEntry(alice, alice.toHash())
+      res.body.data.hash.should.equal(alice.toHash())
+      res = await postEntry(bob, bob.toHash())
+      res.body.data.hash.should.equal(bob.toHash())
+    })
+
+    it('Should register Alice and Bob in the namespace', async function () {
+      const {alice, bob} = users
+      var res = await request.post(`${process.env.API_URL}/name`)
+        .send({name: alice.data.attributes[0].value, value: alice.toHash()})
+      res.body.type.should.equal(SUCCESS)
+      res = await request.post(`${process.env.API_URL}/name`)
+        .send({name: bob.data.attributes[0].value, value: bob.toHash()})
+      res.body.type.should.equal(SUCCESS)
+    })
+
+    it('Should verify namespace lookups work', async function () {
+      const {alice} = users
+      var res = await request.get(`${process.env.API_URL}/name/${alice.data.attributes[0].value}`)
+      res.body.data.value.should.equal(alice.toHash())
+      request.get(`${process.env.API_URL}/name/susan`).should.be.rejected()
+    })
+
+    it.skip('Should add attestation from Bob to Alice', function () {
+    })
+
+    it.skip('Alice should fail to invite Bob to non-existant group', function () {
+    })
+  })
+
   describe('Group Setup', function () {
     it('Should create a group', async function () {
-      entry = new Events.Group({hello: 'world!', pubkey: 'foobarbaz'})
-      groupId = entry.toHash()
+      entry = new Events.GroupContract({hello: 'world!', pubkey: 'foobarbaz'})
+      contractId = entry.toHash()
       var res = await postEntry(entry)
-      res.body.data.hash.should.equal(groupId)
+      res.body.data.hash.should.equal(contractId)
     })
   })
 
   describe('Pubsub tests', function () {
-    it('Should join group room', function (done) {
-      joinRoom(sockets[0], groupId, done)
+    it('Should join group room', function () {
+      return sockets[0].sub(contractId)
     })
 
     it('Should post an event', async function () {
@@ -104,7 +152,11 @@ describe('Full walkthrough', function () {
     })
 
     it('Should join another member', function (done) {
-      createSocket(err => err ? done(err) : joinRoom(sockets[1], groupId, done))
+      createSocket(err => {
+        err
+        ? done(err)
+        : sockets[1].sub(contractId).then(() => done()).catch(done)
+      })
     })
 
     // TODO: these events, as well as all messages sent over the sockets
@@ -117,20 +169,5 @@ describe('Full walkthrough', function () {
       // delay so that the sockets receive notification
       return Promise.delay(200)
     })
-/*
-    it('Should GET (non-empty)', function (done) {
-      request.get(`${API}/group/1`)
-      .set('Authorization', `gi ${signatures[0]}`)
-      .end(function (err, res) {
-        should(err).be.null()
-        res.status.should.equal(200)
-        res.body.id.should.equal(1)
-        res.body.name.should.equal(group1name)
-        res.body.users.should.have.length(1)
-        res.body.users[0].id.should.equal(personas[0].publicKey)
-        done()
-      })
-    })
-*/
   })
 })

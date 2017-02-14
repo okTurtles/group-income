@@ -19,17 +19,17 @@ hapi.connection({
 })
 
 hapi.decorate('server', 'handleEvent', async function (
-  groupId: string, entry: HashableEntry
+  contractId: string, entry: HashableEntry
 ) {
   console.log(bold('[server] handleEvent:'), entry)
   if (!entry.toObject().parentHash) {
-    await db.createGroup(groupId, entry)
+    await db.createLog(contractId, entry)
   } else {
-    await db.appendLogEntry(groupId, entry)
+    await db.appendLogEntry(contractId, entry)
   }
-  var response = entry.toResponse(groupId)
-  console.log(bold.blue(`broadcasting to room ${groupId}:`), response)
-  hapi.primus.room(groupId).write(response)
+  var response = entry.toResponse(contractId)
+  console.log(bold.blue(`broadcasting to room ${contractId}:`), response)
+  hapi.primus.room(contractId).write(response)
 })
 
 // https://hapijs.com/tutorials/plugins

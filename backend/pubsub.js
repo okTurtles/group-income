@@ -7,9 +7,9 @@
 
 import {bold} from 'chalk'
 import {RESPONSE_TYPE} from '../shared/constants'
-import {makeResponse, setupPrimus} from '../shared/functions'
+import {makeResponse as reply, setupPrimus} from '../shared/functions'
 
-const {ERROR, SUCCESS, JOINED, LEFT} = RESPONSE_TYPE
+const {ERROR, SUCCESS, SUB, UNSUB, PUB} = RESPONSE_TYPE
 
 // TODO: decide whether it's better to switch to HTTP2 intead of using websockets
 // https://www.reddit.com/r/rust/comments/5p6a8z/a_hyper_update_v010_last_week_tokio_soon/
@@ -38,38 +38,46 @@ module.exports = function (hapi: Object) {
     console.log(bold(`[pubsub] ${id} connected from:`), address)
 
     // https://github.com/swissmanu/primus-responder
-    spark.on('request', async function (data, done) {
-      var {groupId, action} = data
-      var success = makeResponse(SUCCESS, {action, id})
-      console.log(bold(`[pubsub] ACTION '${action}' from '${id}' with data:`), data)
+    spark.on('request', async function (req, done) {
       try {
-        switch (action) {
-          case 'sub':
-            spark.join(groupId, function () {
-              spark.on('leaveallrooms', (rooms) => {
-                console.log(bold.yellow(`[pubsub] ${id} leaveallrooms`))
-                // this gets called on spark.leaveAll and 'disconnection'
-                rooms.forEach(groupId => {
-                  primus.room(groupId).write(makeResponse(LEFT, {groupId, id}))
+        var {type, data: {contractId}} = req
+        var success = reply(SUCCESS, {type, id})
+        console.log(bold(`[pubsub] REQUEST '${type}' from '${id}'`), req)
+        switch (type) {
+          case SUB:
+            if (spark.rooms().indexOf(contractId) === -1) {
+              spark.join(contractId, function () {
+                spark.on('leaveallrooms', (rooms) => {
+                  console.log(bold.yellow(`[pubsub] ${id} leaveallrooms`))
+                  // this gets called on spark.leaveAll and 'disconnection'
+                  rooms.forEach(contractId => {
+                    primus.room(contractId).write(reply(UNSUB, {contractId, id}))
+                  })
                 })
+                spark.room(contractId).except(id).write(req)
+                done(success)
               })
-              spark.room(groupId).except(id).write(makeResponse(JOINED, {groupId, id}))
+            } else {
+              console.log(`[pubsub] ${id} already subscribed to: ${contractId}`)
               done(success)
-            })
+            }
             break
-          case 'unsub':
-            spark.room(groupId).except(id).write(makeResponse(LEFT, {groupId, id}))
-            spark.leave(groupId, () => done(success))
+          case UNSUB:
+            spark.room(contractId).except(id).write(req)
+            spark.leave(contractId, () => done(success))
+            break
+          case PUB:
+            spark.room(contractId).except(id).write(req)
             break
           default:
-            console.error(bold.red(`[pubsub] client ${id} didn't give us a valid action!`), data)
+            console.error(bold.red(`[pubsub] client ${id} didn't give us a valid type!`), req)
             spark.leaveAll()
-            done(makeResponse(ERROR, `invalid action: ${action}`))
+            done(reply(ERROR, `invalid type: ${type}`))
             spark.end()
         }
       } catch (err) {
-        done(makeResponse(ERROR, {action: action || null}, err))
         logger(err)
+        done(reply(ERROR, err))
       }
     })
 

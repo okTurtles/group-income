@@ -2,42 +2,38 @@
 
 import Primus from '../assets/vendor/primus'
 import {RESPONSE_TYPE} from '../../../shared/constants'
-const {ERROR} = RESPONSE_TYPE
+import {makeResponse as request} from '../../../shared/functions'
+const {ERROR, PUB, SUB, UNSUB} = RESPONSE_TYPE
 
-export const primus = new Primus(
-  process.env.API_URL,
-  {
-    // TODO: are these right? need to brainstorm situations and verify.
-    timeout: 3000,
-    strategy: ['disconnect', 'online', 'timeout']
-  }
-)
-export default function (store: Object) {
-  primus.on('error', err => console.log('SOCKET ERR:', err.message))
-  primus.on('open', () => console.log('websocket connection opened!'))
-  primus.on('data', msg => {
-    if (msg.type === RESPONSE_TYPE.ENTRY) {
-      console.log('SOCKET GOT NEW LOG ENTRY:', msg)
-      if (!msg.data) throw Error('malformed message: ' + JSON.stringify(msg))
-      store.dispatch('handleEvent', msg.data)
-    } else {
-      // TODO: this!!
-      console.log('SOCKET UNHANDLED EVENT!', msg)
-    }
-  })
+// see commentary in ./backend/hapi.js for more info about this file
+export default function (
+  {options, url, handlers}: {options: Object, url: string, handlers: Object}
+) {
+  var primus = new Primus(url, options)
+  Object.keys(handlers).forEach(event => primus.on(event, handlers[event]))
+  return primus
 }
 
-export function joinRoom (groupId: string) {
+Primus.prototype.sub = function (contractId: string) {
   return new Promise((resolve, reject) => {
-    primus.writeAndWait({action: 'sub', groupId}, function (response) {
+    this.writeAndWait(request(SUB, {contractId}), function (response) {
       (response.type === ERROR ? reject : resolve)(response)
     })
   })
 }
 
-export function leaveRoom (groupId: string) {
+Primus.prototype.unsub = function (contractId: string) {
   return new Promise((resolve, reject) => {
-    primus.writeAndWait({action: 'unsub', groupId}, function (response) {
+    this.writeAndWait(request(UNSUB, {contractId}), function (response) {
+      (response.type === ERROR ? reject : resolve)(response)
+    })
+  })
+}
+
+Primus.prototype.pub = function (contractId: string, data: Object) {
+  // TODO: do not send message, return error immediately if connection is down
+  return new Promise((resolve, reject) => {
+    this.writeAndWait(request(PUB, {contractId, data}), function (response) {
       (response.type === ERROR ? reject : resolve)(response)
     })
   })
