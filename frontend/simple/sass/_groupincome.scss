@@ -373,9 +373,8 @@ input:checked {
 input[type=range] {
   @include appearance(none);
   background-color: #ccc;
-  border-radius: 34px;
-  padding: 4px;
-  height: 34px;
+  height: 2px;
+  margin: 10px;
   &:focus {
     outline: none;
   }
@@ -385,6 +384,7 @@ input[type=range] {
     height: 26px;
     width: 26px;
     background: #ffffff;
+    border: solid #ccc 3px;
   }
   &::-moz-range-thumb {
     @include appearance(none);
@@ -392,7 +392,7 @@ input[type=range] {
     height: 26px;
     width: 26px;
     background: #ffffff;
-    border: none;
+    border: solid #ccc 3px;
   }
   &::-moz-range-track {
     background: transparent;
