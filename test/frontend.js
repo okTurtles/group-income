@@ -88,11 +88,69 @@ describe('Frontend', function () {
     })
   })
 
+  describe('Sign up Test', function () {
+    let randInt = (min, max) => Math.floor(Math.random() * (max - min)) + min
+    let username = `testuser${randInt(0, 10000000)}${randInt(10000000, 20000000)}`
+    it('Should register User', async function () {
+      this.timeout(10000)
+      await n.goto(page('signup'))
+      let signedup = await n.insert('#name', username)
+        .insert('#email', `test@testgroupincome.com`)
+        .insert('#password', 'testtest')
+        .click('button[type="submit"]')
+        .wait(() => !!document.getElementById('serverMsg').innerText)
+        .evaluate(() => document.getElementById('serverMsg').innerText)
+      should(signedup).equal('success')
+      /*
+      await n.insert('#name')
+        .insert('#email')
+        .insert('#password')
+        .wait(() => !document.getElementById('name').innerText &&
+        !document.getElementById('email').innerText &&
+        !document.getElementById('password').innerText)
+        */
+    })
+    it('Test Logout and Login', async function () {
+      this.timeout(10000)
+      let response = await n.click('#LoginBtn')
+        .wait(() => document.getElementById('LoginBtn').classList.contains('is-primary'))
+        .click('#LoginBtn')
+        .wait(() => document.getElementById('LoginModal').classList.contains('is-active'))
+        .insert('#LoginName', username)
+        .insert('#LoginPassword', 'testtest')
+        .click('#LoginButton')
+        .wait(() => !!document.getElementById('LoginResponse'))
+        .evaluate(() => document.getElementById('LoginResponse').innerText)
+      should(response).not.equal('Invalid username or password')
+    })
+    /* There appears to be a bug in nightmare that causes the insert and type commands to enter old data into the field if the
+    insert or type commands or used more than once on the same field. This concatenates the old values to the new.
+     This occurs regardless of whether you clear the field or not. Until its fixed skip this validation test
+     */
+    it.skip('Test Validation', async function () {
+      this.timeout(40000)
+      await n.goto(page('signup'))
+      let badUsername = 't e s t'
+      let badEmail = `@fail`
+      // let badPassword = `789`// six is so afraid
+      let denied = await n.insert('#name', badUsername)
+        .insert('#email', badEmail)
+        .insert('#password', ' ')
+        .evaluate(() => document.querySelector('button[type="submit"]').disabled)
+      should(denied).equal(true)
+      let usernameMsg = await n.evaluate(() => !!document.getElementById('badUsername'))
+      should(usernameMsg).equal(true)
+      let emailMsg = await n.evaluate(() => !!document.getElementById('badEmail'))
+      should(emailMsg).equal(true)
+      let passwordMsg = await n.evaluate(() => !!document.getElementById('badPassword'))
+      should(passwordMsg).equal(true)
+    })
+  })
+
   describe('Group Creation Test', function () {
     it('Should create a group', async function () {
       this.timeout(10000)
-      await n.goto(page('new-group'))
-        .should.finally.containEql({ code: 200, url: page('new-group') })
+      await n.click('#CreateGroup')
       let created = await n.insert('input[name="groupName"]', 'Test Group')
         .insert('textarea[name="sharedValues"]', 'Testing this software')
         .insert('input[name="groupName"]', 'Test Group')

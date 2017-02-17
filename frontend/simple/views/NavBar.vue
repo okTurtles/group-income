@@ -26,8 +26,8 @@
         <div class="nav-center">
           <!-- TODO: use v-for to dynamically generate these? -->
           <!--TODO figure out what needs to be done with active classe after upgrade  "{activeClass: 'is-active', path: '/new-group'}"-->
-          <router-link class="nav-item" active-class ="is-active" to="new-group"><i18n>Start a group</i18n></router-link>
-          <router-link class="nav-item" active-class ="is-active" to="signup"><i18n>New User</i18n></router-link>
+          <router-link class="nav-item" active-class ="is-active" to="new-group" id="CreateGroup"><i18n>Start a group</i18n></router-link>
+          <router-link class="nav-item" active-class ="is-active" to="signup" v-show="!$store.state.loggedIn"><i18n>New User</i18n></router-link>
           <router-link class="nav-item" active-class ="is-active" to="user"><i18n>Profile</i18n></router-link>
           <router-link class="nav-item" active-class ="is-active" to="user-group"><i18n>Group</i18n></router-link>
           <router-link class="nav-item" active-class ="is-active" to="pay-group"><i18n>Pay Group</i18n></router-link>
@@ -39,18 +39,18 @@
         them. see: http://bulma.io/documentation/components/nav/ -->
         <div class="nav-right">
           <span class="nav-item is-tab control">
-            <router-link class="button is-success" to="/new-user"><i18n>Sign Up</i18n></router-link>
-            <a href="#" class="button"
-               v-bind:class="loggedIn ? 'is-danger' : 'is-primary'"
+            <router-link v-show="!$store.state.loggedIn" class="button is-success" to="/new-user"><i18n>Sign Up</i18n></router-link>
+            <a href="#" id="LoginBtn" class="button"
+               v-bind:class="$store.state.loggedIn  ? 'is-danger' : 'is-primary'"
               @click.prevent="toggleModal"
             >
-              {{ loggedIn ? 'Sign Out' : 'Log In' }}
+              {{ $store.state.loggedIn ? 'Sign Out' : 'Log In' }}
             </a>
           </span>
         </div>
       </div>
     </nav>
-    <div class="modal" ref="modal">
+    <div class="modal" ref="modal" id="LoginModal">
       <div class="modal-background"></div>
       <div class="modal-content" style="width: 300px">
         <div class="card is-rounded">
@@ -59,24 +59,27 @@
               <i18n>Log In</i18n>
             </h1>
             <p class="control has-icon">
-              <input class="input" type="email" placeholder="Email">
-              <i class="fa fa-envelope"></i>
+              <input class="input" id="LoginName" name="name" v-model="name" v-validate data-vv-rules="required|regex:^\S+$" placeholder="username" required>
+              <span class="icon">
+                <i class="fa fa-user"></i>
+              </span>
+              <span v-show="errors.has('name')" class="help is-danger"><i18n>Username cannot contain spaces</i18n></span>
             </p>
             <p class="control has-icon">
-              <input class="input" type="password" placeholder="Password">
-              <i class="fa fa-lock"></i>
+              <input class="input" id="LoginPassword" name="password" v-model="password" v-validate data-vv-rules="required|min:7" placeholder="password" type="password" required>
+              <span v-show="errors.has('password')" class="help is-danger">Password must be at least 7 characters</span>
+              <span class="icon is-small">
+                <i class="fa fa-lock"></i>
+              </span>
             </p>
+            <span class="help is-danger" id="LoginResponse" v-show="response">{{response}}</span>
             <p class="control">
-              <label class="checkbox">
-                <input type="checkbox">
-                <i18n>Remember me</i18n>
-              </label>
-            </p>
-            <p class="control">
-              <button class="button is-primary is-medium is-fullwidth"
-                @click="loginOrLogout"
+              <button id="LoginButton" class="button is-primary is-medium is-fullwidth"
+                @click="login" :disabled="errors.any() || !fields.passed()"
               >
-                <i class="fa fa-user"></i>
+                <span class="icon is-medium">
+                  <i class="fa fa-user"></i>
+                </span>
                 <i18n>Login</i18n>
               </button>
             </p>
@@ -89,20 +92,60 @@
 </template>
 
 <script>
+import Vue from 'vue'
+import * as db from '../js/database'
+import multihash from 'multihashes'
+import {HapiNamespace} from '../js/backend/hapi'
+var namespace = new HapiNamespace()
 export default {
   name: 'NavBar',
+  created: function () {
+    Vue.events.$on('login', this.toggleModal)
+  },
   methods: {
-    loginOrLogout () {
-      if (!this.loggedIn) this.toggleModal()
+    login: async function () {
+      try {
+        let response = await namespace.lookup(this.name)
+        let identity = JSON.parse(response.text)
+        let login = await db.retrieveLogin(identity.data.value)
+        let passHash = multihash.toB58String(multihash.encode(new Buffer(this.password), 'blake2b'))
+        if (passHash === login) {
+          this.$store.commit('login', this.name)
+          this.toggleModal()
+          console.log('login succeeded')
+        } else {
+          this.response = 'Invalid username or password'
+          console.log('login failed')
+        }
+      } catch (ex) {
+        this.response = 'Invalid username or password'
+        console.log('login failed')
+      }
+    },
+    logout: function () {
+      this.$store.commit('logout')
     },
     toggleModal () {
-      // https://github.com/oneuijs/You-Dont-Need-jQuery#css--style
-      this.$refs.modal.classList.toggle('is-active')
+      if (!this.$refs.modal.classList.contains('is-active') && this.$store.state.loggedIn) {
+        this.logout()
+      } else {
+        this.response = null
+        this.name = null
+        this.password = null
+        this.errors.clear()
+        // https://github.com/oneuijs/You-Dont-Need-jQuery#css--style
+        this.$refs.modal.classList.toggle('is-active')
+        if (this.$route.query.next) {
+          this.$router.push({path: this.$route.query.next})
+        }
+      }
     }
   },
   data () {
     return {
-      loggedIn: false
+      name: null,
+      password: null,
+      response: null
     }
   }
 }
