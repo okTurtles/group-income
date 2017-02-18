@@ -34,16 +34,16 @@ const state = {
 // http://vuex.vuejs.org/en/mutations.html
 const mutations = {
   applyAction (state, {action, contractId}) {
-    action.apply(store, contractId, Vue)
+    action.apply(store, contractId)
   },
   addContract (state, {contractId, contract}) {
     // "Mutations Follow Vue's Reactivity Rules" - important for modifying objects
     // See: https://vuex.vuejs.org/en/mutations.html
     Vue.set(state.contracts, contractId, contract)
-    contract.registerVuexModule(store)
+    contract.registerVuexState(store)
   },
   removeContract (state, contractId) {
-    state.contracts[contractId].unregisterVuexModule(store)
+    state.contracts[contractId].unregisterVuexState(store)
     Vue.delete(state.contracts, contractId)
     let index = state.whitelist.indexOf(contractId)
     index > -1 && state.whitelist.splice(index, 1)
@@ -154,7 +154,7 @@ const actions = {
     const settings = await db.loadSettings()
     console.log('loadSettings:', settings)
     let {contracts, currentGroupId, whitelist} = settings
-    // NOTE: `fromState` will automatically call `registerVuexModule` for us
+    // NOTE: `fromState` will automatically call `registerVuexState` for us
     contracts = mapValues(contracts, v => Events[v.type].fromState(store, v.id, v.state))
     commit('setCurrentGroupId', currentGroupId)
     commit('setContracts', contracts || [])

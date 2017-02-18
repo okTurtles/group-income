@@ -57,6 +57,11 @@ module.exports = (grunt) => {
         files: ['backend/**/*.js'],
         tasks: ['exec:standard', 'backend:relaunch']
       },
+      shared: {
+        options: { livereload: true },
+        files: ['shared/**/*.js'],
+        tasks: ['exec:standard', 'browserify', 'backend:relaunch']
+      },
       gruntfile: {
         files: ['.Gruntfile.babel.js', 'Gruntfile.js'],
         tasks: ['exec:standardgrunt']

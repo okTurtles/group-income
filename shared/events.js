@@ -6,9 +6,16 @@ import {makeResponse} from './functions'
 import {RESPONSE_TYPE} from './constants'
 import type {JSONObject} from './types'
 
+const nacl = require('tweetnacl')
 const blake = require('blakejs')
 const {Type, Field, Root} = protobuf
 const root = new Root().define('groupincome')
+// import Vue for: https://vuejs.org/v2/guide/reactivity.html#Change-Detection-Caveats
+const Vue = typeof window !== 'undefined' ? require('vue') : {
+  // TODO: remove this when we switch to electron?
+  set: (o, k, v) => { o[k] = v },
+  delete: (o, k) => { delete o[k] }
+}
 
 // To ensure objects consistently hash across all platforms, we use protobufs
 // instead of hashing the JSON, since order of object keys is unspecified in JSON
@@ -16,13 +23,22 @@ export class Hashable {
   // Type annotations to make Flow happy
   _hash: string
   _obj: Object
-  // set `fields` in subclasses using: static fields = Class.Declare([...])
+  _sig: Buffer // TODO: implement
+  // `fields` represents the *initial* fields/data that the contract is created with
+  // set `fields` in subclasses using: static fields = Class.Fields([...])
   static fields: any // https://developers.google.com/protocol-buffers/docs/proto3
-  static Declare (fields) {
+  static Fields (fields) {
     var t = new Type(this.name)
-    fields.forEach(([name, type, rule], idx) => {
-      t.add(new Field(name, idx + 1, type, rule))
-    })
+    var idx = 0
+    var addFields = ([name, type, rule]) => {
+      t.add(new Field(name, ++idx, type, rule))
+    }
+    // we make sure subclasses inherit the fields defined in the superclass
+    // note that this doesn't work: super.fields && super.fields.forEach(addFields)
+    var pf = root.lookup(Object.getPrototypeOf(this).name)
+    pf && pf.fieldsArray && pf.fieldsArray.forEach(f => addFields([f.name, f.type, f.rule]))
+    // now add our fields
+    fields.forEach(addFields)
     root.add(t)
     return t
   }
@@ -35,11 +51,16 @@ export class Hashable {
   }
   static fromProtobuf (buffer, hash) {
     var instance = new this()
-    instance._obj = this.fields.decode(buffer).toObject()
+    instance._obj = this.fields.decode(buffer).toObject({bytes: String})
     if (instance.toHash() !== hash) throw Error('fromProtobuf: corrupt hash!')
     return instance
   }
-  constructor (obj?: Object) { this._obj = obj || {} }
+  constructor (obj?: Object) {
+    // Unless we do this we'll get different hashes on the server and the frontend 'bytes'
+    this._obj = this.constructor.fields.fromObject(obj || {}).toObject({
+      bytes: String // http://dcode.io/protobuf.js/global.html#ConversionOptions
+    })
+  }
   toHash (): string {
     // no need to hash twice
     if (this._hash) return this._hash
@@ -53,11 +74,17 @@ export class Hashable {
   toProtobuf (): Buffer { return this.constructor.fields.encode(this._obj).finish() }
   toJSON () { return JSON.stringify(this._obj) }
   toObject () { return this._obj } // NOTE: NEVER MODIFY THE RETURNED OBJECT!
+  // signature related
+  signWithKey (key: Uint8Array) {
+    this._sig = nacl.sign.detached(this.toProtobuf(), key)
+  }
+  get signature (): Buffer { return this._sig }
+  set signature (sig: Buffer) { this._sig = sig }
 }
 
 export class HashableEntry extends Hashable {
-  static Declare (fields) {
-    var msgData = super.Declare(fields)
+  static Fields (fields) {
+    var msgData = super.Fields(fields)
     var msg = new Type(this.name + 'Entry')
     msg.add(new Field('version', 1, 'uint32'))
     msg.add(new Field('type', 2, 'string'))
@@ -67,13 +94,12 @@ export class HashableEntry extends Hashable {
     return msg
   }
   constructor (data: JSONObject = {}, parentHash?: string) {
-    super()
-    this._obj = {
+    super({
       version: 0,
-      type: this.constructor.name,
       parentHash: parentHash || '',
       data
-    }
+    })
+    this._obj.type = this.constructor.name
   }
   toResponse (contractId: string) {
     return makeResponse(RESPONSE_TYPE.ENTRY, {
@@ -85,35 +111,82 @@ export class HashableEntry extends Hashable {
   get data (): Object { return this.toObject().data }
 }
 
-export class HashableContract extends HashableEntry {
-  static actions = {
-    // places class declarations of subclasses of HashableEntry's here.
+// =======================
+// Base contract class
+// =======================
+
+// helper functions for setting transforms.
+function ArrayToMap (keyPicker, valuePicker) {
+  // 'this' will be bound to the contract instance in case it's needed
+  return function (state, param) {
+    state[param] = state[param].reduce((accum, v) => {
+      accum[keyPicker] = valuePicker ? v[valuePicker] : v
+      return accum
+    }, {})
   }
-  static vuex = {
-    // vuex module namespaced under this contract's hash (see `registerVuexModule`)
+}
+
+export class HashableContract extends HashableEntry {
+  _store: ?Object
+  static fields = HashableContract.Fields([
+    ['authorizations', 'Authorization', 'repeated']
+  ])
+  static transforms = HashableContract.Transforms({
+    authorizations: ArrayToMap('name')
+  })
+  static vuex = HashableContract.Vuex({
+    // vuex module namespaced under this contract's hash (see `registerVuexState`)
     // see details: https://vuex.vuejs.org/en/modules.html
-    namespaced: true
+    namespaced: true,
+    // registerVuexState will copy the entry's .data is copied to this state
+    state: {},
     // mutations must be named exactly the same as corresponding Actions
+    mutations: {}
+  })
+  static Transforms (transforms) {
+    return {...(Object.getPrototypeOf(this).transforms || {}), ...transforms}
+  }
+  static Vuex (vuex) {
+    return {...(Object.getPrototypeOf(this).vuex || {}), ...vuex}
   }
   // creates an new instance and registers its state on the vuex store
   static fromState (store, hash, state) {
     var instance = new this()
     instance._hash = hash
-    instance.registerVuexModule(store, state)
+    instance.registerVuexState(store, state)
     return instance
   }
-  registerVuexModule (store: Object, state?: Object) {
+  get state (): Object {
+    return this._store()[this.toHash()].state
+  }
+  registerVuexState (store: Object, state?: Object) {
+    // this._store = store // NOTE: DO NOT DO THIS! Causes frontend tests to hang inexplicably! I'm guessing it's because of dynamic 'this'
+    // So instead we create a closure to capture `store` and retrieve it without binding `this`
+    this._store = () => store
     var module = Object.assign({}, this.constructor.vuex)
-    module.state = state || {...module.state, ...this.data}
+    if (state) {
+      // presence of state indicates this was called via fromState!
+      module.state = state
+    } else {
+      module.state = {...module.state, ...this.data}
+      // transforms only necessary if not defrosted via fromState!
+      for (let [param, fn] of Object.entries(this.constructor.transforms)) {
+        fn.call(this, module.state, param)
+      }
+    }
     store.registerModule(this.toHash(), module)
   }
-  unregisterVuexModule (store: Object) {
+  unregisterVuexState (store: Object) {
     store.unregisterModule(this.toHash())
+    this._store = undefined
   }
   // override this method to determine if the action can be posted to the
   // contract. Typically this is done by signature verification.
-  // TODO: implement this in subclasses
-  isActionAllowed (action: HashableAction): boolean { return true }
+  isActionAllowed (action: HashableAction): boolean {
+    return true // TODO: delete this and uncomment the stuff below!
+    // const authClass = action.constructor.authorization
+    // return authClass.isAuthorized(action, this.state.authorizations[authClass.name])
+  }
   // A contract has:
   // 1. code (actions)
   // 2. data (state, updated by sending actions to the contract)
@@ -144,10 +217,56 @@ export class HashableContract extends HashableEntry {
 }
 
 export class HashableAction extends HashableEntry {
-  // Why the extra Vue parameter?
-  // https://vuejs.org/v2/guide/reactivity.html#Change-Detection-Caveats
-  apply (store: Object, contractId: string, Vue: Object) {
+  static authorization = CanModifyState // by default we assume CanModifyState
+  apply (store: Object, contractId: string) {
     store.commit(`${contractId}/${this.constructor.name}`, this.data)
+  }
+}
+
+// =======================
+// Authorization related
+// =======================
+
+export class AuthorizedKeys extends Hashable {
+  static fields = AuthorizedKeys.Fields([
+    ['keys', 'bytes', 'repeated'],
+    ['n', 'uint32'] // the n of n-of-m
+  ])
+}
+
+export class Authorization extends Hashable {
+  static fields = Authorization.Fields([
+    ['name', 'string'], // the subclass name
+    ['data', 'string'], // arbitrary data associated with this operation
+    ['auths', 'AuthorizedKeys', 'repeated']
+  ])
+  static isAuthorized (action: HashableAction, authData: Object) {
+    return authData.auths.some(auth => {
+      const buf = action.toProtobuf()
+      var count = 0
+      for (let key of auth.keys) {
+        if (nacl.detached.verify(buf, action.signature, key)) {
+          if (++count >= auth.n) return true
+        }
+      }
+      return false
+    })
+  }
+  // TODO: delete this
+  static dummyAuth (data = '') {
+    return {name: this.name, data, auths: [{keys: [Buffer.from('1')], n: 1}]}
+  }
+}
+
+export class CanModifyAuths extends Authorization {
+  static isAuthorized (action: HashableAction, authData: Object) {
+    return true // TODO: delete this! we just haven't implemented key.verify yet
+  }
+}
+export class CanModifyState extends Authorization {
+  static isAuthorized (action: HashableAction, authData: Object) {
+    // TODO: delete this and test with real signatures
+    return action.data.sender === authData.data
   }
 }
 
@@ -156,7 +275,7 @@ export class HashableAction extends HashableEntry {
 // =======================
 
 export class GroupContract extends HashableContract {
-  static fields = GroupContract.Declare([
+  static fields = GroupContract.Fields([
     // TODO: add 'groupPubkey'
     ['creationDate', 'string'],
     ['groupName', 'string'],
@@ -168,28 +287,26 @@ export class GroupContract extends HashableContract {
     ['contributionPrivacy', 'string'],
     ['founderUsername', 'string']
   ])
-  static actions = { Payment, Vote, ProfileAdjustment }
-  static vuex = {
-    ...GroupContract.vuex, // make sure we're namespaced
+  static vuex = GroupContract.Vuex({
     state: { votes: [], payments: [] },
     mutations: {
       Payment (state, data) { state.payments.push(data) },
       Vote (state, data) { state.votes.push(data) }
     }
-  }
+  })
   constructor (data: JSONObject, parentHash?: string) {
     super({...data, creationDate: new Date().toISOString()}, parentHash)
   }
 }
 
 export class Payment extends HashableAction {
-  static fields = Payment.Declare([
+  static fields = Payment.Fields([
     ['payment', 'string'] // TODO: change to 'double' and add other fields
   ])
 }
 
 export class Vote extends HashableAction {
-  static fields = Vote.Declare([
+  static fields = Vote.Fields([
     ['vote', 'string'] // TODO: make a real vote
   ])
 }
@@ -203,23 +320,74 @@ export class ProfileAdjustment extends HashableAction {
 // =======================
 
 export class Attribute extends Hashable {
-  static fields = Attribute.Declare([
+  static fields = Attribute.Fields([
     ['name', 'string'],
     ['value', 'string']
   ])
 }
 
 export class IdentityContract extends HashableContract {
-  static fields = IdentityContract.Declare([
+  static fields = IdentityContract.Fields([
     ['attributes', 'Attribute', 'repeated']
   ])
-  registerVuexModule (store: Object, state?: Object) {
-    super.registerVuexModule(store, state)
-    var myState = store[this.toHash()]
-    // transform attributes from an array of pairs into an easier-to-access key-value map
-    myState.attributes = myState.attributes.reduce((accum, v) => {
-      accum[v.name] = v.value
-      return accum
-    }, {})
-  }
+  static transforms = IdentityContract.Transforms({
+    attributes: ArrayToMap('name', 'value')
+  })
+  static vuex = IdentityContract.Vuex({
+    mutations: {
+      SetAttribute (state, {name, value}) { Vue.set(state.attributes, name, value) },
+      DeleteAttribute (state, {name}) { Vue.delete(state.attributes, name) }
+    }
+  })
+}
+
+export class SetAttribute extends HashableAction {
+  static fields = SetAttribute.Fields([['attribute', 'Attribute']])
+}
+export class DeleteAttribute extends HashableAction {
+  static fields = DeleteAttribute.Fields([['name', 'string']])
+}
+
+// =======================
+// Mailbox Contract
+// =======================
+
+// NOTE: for now, identities will have a mailbox associated with them via
+//       a 'mailbox' attribute.
+// NOTE: mailboxes can be compacted when a non-trivial number of messages
+//       have been deleted by creating a new mailbox initialized with all of the
+//       messages that haven't been deleted, and deleting the old mailbox.
+
+export class MailboxContract extends HashableContract {
+  static vuex = MailboxContract.Vuex({
+    state: { messages: [] },
+    mutations: {
+      PostMessage (state, data) { state.messages.push(data) },
+      PostInvite (state, data) { state.messages.push(data) },
+      AuthorizeSender (state, data) {
+        state.authorizations[AuthorizeSender.authorization.name].data = data.sender
+      }
+    }
+  })
+}
+
+export class PostMessage extends HashableAction {
+  static fields = PostMessage.Fields([
+    ['from', 'string'],
+    ['headers', 'string', 'repeated'],
+    ['message', 'string']
+  ])
+}
+
+export class PostInvite extends HashableAction {
+  static fields = PostInvite.Fields([
+    ['groupId', 'string']
+  ])
+}
+
+export class AuthorizeSender extends HashableAction {
+  static authorization = CanModifyAuths
+  static fields = AuthorizeSender.Fields([
+    ['sender', 'string']
+  ])
 }

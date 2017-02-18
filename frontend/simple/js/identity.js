@@ -3,6 +3,11 @@
 import {verify} from '../../../shared/functions'
 import {HashableContract, HashableAction} from '../../../shared/events'
 
+// =======================
+// NOTE: this file is not used and will be deleted soon.
+//       the classes within it are being slowly migrated to: /shared/events.js
+// =======================
+
 // http://www.indelible.org/ink/protobuf-polymorphism/
 
 export class Operation extends HashableAction {

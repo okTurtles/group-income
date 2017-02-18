@@ -37,10 +37,14 @@ var signatures = personas.map(x => sign(x))
 //       and compromises privacy).
 
 describe('Full walkthrough', function () {
-  var contractId: string, entry: HashableEntry
   var sockets = []
   var users = {}
+  var groups = {}
+  var recentHash = {}
 
+  function latestHash (contract) {
+    return recentHash[contract.toHash()]
+  }
   function createSocket (done) {
     var num = sockets.length
     var primus = pubsub({
@@ -57,19 +61,48 @@ describe('Full walkthrough', function () {
 
   function createIdentity (name, email) {
     return new Events.IdentityContract({
+      authorizations: [Events.CanModifyAuths.dummyAuth(name)],
       attributes: [
         {name: 'name', value: name},
         {name: 'email', value: email}
       ]
     })
   }
+  function createGroup (name, data) {
+    return new Events.GroupContract({
+      authorizations: [Events.CanModifyAuths.dummyAuth(name)],
+      groupName: name,
+      ...data
+    })
+  }
 
-  function postEntry (entry, group) {
-    if (!group) group = contractId
+  async function createMailboxFor (user) {
+    var mailbox = new Events.MailboxContract({
+      authorizations: [Events.CanModifyAuths.dummyAuth(user.toHash())]
+    })
+    await postEntry(mailbox)
+    await postEntry(
+      new Events.SetAttribute({attribute: {
+        name: 'mailbox', value: mailbox.toHash()
+      }}, latestHash(user)),
+      user
+    )
+  }
+
+  async function postEntry (entry, contractId) {
+    if (!contractId) {
+      contractId = entry.toHash()
+    } else if (contractId instanceof HashableEntry) {
+      contractId = contractId.toHash()
+    }
     console.log(bold.yellow('sending entry with hash:'), entry.toHash())
-    return request.post(`${API}/event/${group}`)
+    var res = await request.post(`${API}/event/${contractId}`)
       .set('Authorization', `gi ${signatures[0]}`)
       .send({hash: entry.toHash(), entry: entry.toObject()})
+    res.body.type.should.equal(SUCCESS)
+    res.body.data.hash.should.equal(entry.toHash())
+    recentHash[contractId] = entry.toHash()
+    return res
   }
 
   it('Should start the server', function () {
@@ -95,9 +128,9 @@ describe('Full walkthrough', function () {
       bob.data.attributes[0].value.should.equal('Bob')
       bob.data.attributes[1].value.should.equal('bob@okturtles.com')
       // send them off!
-      var res = await postEntry(alice, alice.toHash())
+      var res = await postEntry(alice)
       res.body.data.hash.should.equal(alice.toHash())
-      res = await postEntry(bob, bob.toHash())
+      res = await postEntry(bob)
       res.body.data.hash.should.equal(bob.toHash())
     })
 
@@ -118,6 +151,13 @@ describe('Full walkthrough', function () {
       request.get(`${process.env.API_URL}/name/susan`).should.be.rejected()
     })
 
+    it('Should create mailboxes for Alice and Bob', async function () {
+      // Object.values(users).forEach(async user => await createMailboxFor(user))
+      await createMailboxFor(users.alice)
+      await createMailboxFor(users.bob)
+    })
+    // TODO: handle incoming pubsub events from server and update contracts accordingly
+
     it.skip('Should add attestation from Bob to Alice', function () {
     })
 
@@ -127,35 +167,35 @@ describe('Full walkthrough', function () {
 
   describe('Group Setup', function () {
     it('Should create a group', async function () {
-      entry = new Events.GroupContract({hello: 'world!', pubkey: 'foobarbaz'})
-      contractId = entry.toHash()
-      var res = await postEntry(entry)
-      res.body.data.hash.should.equal(contractId)
+      groups.group1 = createGroup('group1')
+      await postEntry(groups.group1)
     })
   })
 
   describe('Pubsub tests', function () {
     it('Should join group room', function () {
-      return sockets[0].sub(contractId)
+      return sockets[0].sub(groups.group1.toHash())
     })
 
-    it('Should post an event', async function () {
-      entry = new Events.Payment({payment: 'data'}, entry.toHash())
-      var res = await postEntry(entry)
-      res.body.type.should.equal(SUCCESS)
+    it('Should post an event', function () {
+      return postEntry(
+        new Events.Payment({payment: '123'}, latestHash(groups.group1)),
+        groups.group1
+      )
     })
 
     it('Should fail with wrong parentHash', function () {
-      let bad = entry.toObject()
-      bad = new Events[bad.type](bad.data, '')
-      return postEntry(bad).should.be.rejected()
+      return postEntry(
+        new Events.Payment({payment: 'abc'}, ''),
+        groups.group1
+      ).should.be.rejected()
     })
 
     it('Should join another member', function (done) {
       createSocket(err => {
         err
         ? done(err)
-        : sockets[1].sub(contractId).then(() => done()).catch(done)
+        : sockets[1].sub(groups.group1.toHash()).then(() => done()).catch(done)
       })
     })
 
@@ -163,9 +203,10 @@ describe('Full walkthrough', function () {
     //       should all be authenticated and identified by the user's
     //       identity contract
     it('Should post another event', async function () {
-      entry = new Events.Vote({vote: 'data2'}, entry.toHash())
-      var res = await postEntry(entry)
-      res.body.type.should.equal(SUCCESS)
+      await postEntry(
+        new Events.Vote({vote: 'data2'}, latestHash(groups.group1)),
+        groups.group1
+      )
       // delay so that the sockets receive notification
       return Promise.delay(200)
     })

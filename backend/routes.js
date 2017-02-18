@@ -11,20 +11,19 @@ const Joi = require('joi')
 //       —BUT HTTP2 might be better than websockets and so we keep this around.
 //       See related TODO in pubsub.js and the reddit discussion link.
 module.exports = function (server: Object) {
-  const payloadValidation = Joi.object({
-    hash: Joi.string().required(),
-    // must match db.Log.jsonSchema.properties (except for separated hash)
-    entry: Joi.object({
-      version: Joi.number().integer().required(),
-      type: Joi.string().required(),
-      parentHash: Joi.string().allow([null, '']),
-      data: Joi.object()
-    })
-  })
   server.route({
     config: {
       auth: 'gi-auth',
-      validate: { payload: payloadValidation }
+      validate: { payload: {
+        hash: Joi.string().required(),
+        // must match db.Log.jsonSchema.properties (except for separated hash)
+        entry: Joi.object({
+          version: Joi.number().integer().required(),
+          type: Joi.string().required(),
+          parentHash: Joi.string().allow([null, '']),
+          data: Joi.object()
+        })
+      } }
     },
     method: ['PUT', 'POST'],
     // TODO: we have to prevent spam. can't have someone flooding the server.
