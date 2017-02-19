@@ -5,8 +5,10 @@ import store from '../state'
 import {Backend, TrustedNamespace} from './interface'
 import pubsub from '../pubsub'
 import {sign} from '../../../../shared/functions'
-import {HashableEntry, HashableAction} from '../../../../shared/events'
+import * as Events from '../../../../shared/events'
 import {RESPONSE_TYPE} from '../../../../shared/constants'
+
+const {HashableEntry, HashableAction} = Events
 
 // temporary identity for signing
 const nacl = require('tweetnacl')
@@ -61,9 +63,11 @@ export class HapiBackend extends Backend {
   publishLogEntry (contractId: string, entry: HashableEntry) {
     console.log(`publishLogEntry to ${contractId}:`, entry)
     if (entry instanceof HashableAction) {
-      var contract = store.state.contracts[contractId]
-      if (!contract.isActionAllowed(entry)) {
-        // TODO: this. do not publish malformed entry. something is very wrong.
+      var contractType = store.state.contracts[contractId]
+      if (!Events[contractType].isActionAllowed(entry)) {
+        // TODO: post a proper notification to the user
+        console.error('entry not allowed', entry)
+        return Promise.reject('entry not allowed! this should never happen!')
       }
     }
     return request.post(`${process.env.API_URL}/event/${contractId}`)
@@ -76,7 +80,7 @@ export class HapiBackend extends Backend {
   async subscribe (contractId: string) {
     console.log('subscribing to:', contractId)
     // this mutation makes sure not to add duplicates
-    store.commit('whitelist', contractId)
+    store.commit('expecting', contractId)
     // we don't need to check if we're already subscribed, server handles that
     var res = await primus.sub(contractId)
     console.log('subscribed response:', res)

@@ -12,55 +12,54 @@ import * as Events from '../../../shared/events'
 // for diff between 'lodash/map' and 'lodash/fp/map'
 // see: https://github.com/lodash/lodash/wiki/FP-Guide
 import debounce from 'lodash/debounce'
-import {mapValues} from './utils'
 
 Vue.use(Vuex)
 
 var store // this is set and made the default export at the bottom of the file.
           // we have it declared here to make it accessible in mutations
 
-// This is the Vuex state object
+// 'state' is the Vuex state object
+// NOTE: THE STATE CAN ONLY STORE *SERIALIZABLE* OBJECTS! THAT MEANS IF YOU TRY
+//       TO STORE AN INSTANCE OF A CLASS (LIKE A CONTRACT), IT WILL NOT STORE
+//       THE ACTUAL CONTRACT, BUT JSON.STRINGIFY(CONTRACT) INSTEAD!
 const state = {
   position: null,
   offset: [],
   // NOTE: time travel is broken now. Should be implemented using `store.subscribe` instead of that
   currentGroupId: null,
-  contracts: {}, // contracts we've successfully subscribed to
-  whitelist: [], // contracts we're expecting to subscribe to
+  contracts: {}, // contractIds => type (for contracts we've successfully subscribed to)
+  expecting: [], // contractIds we've just published but haven't received back yet
   loggedIn: true// TODO: properly handle this
 }
 
 // Mutations must be synchronous! Never call these directly!
 // http://vuex.vuejs.org/en/mutations.html
 const mutations = {
-  applyAction (state, {action, contractId}) {
-    action.apply(store, contractId)
-  },
-  addContract (state, {contractId, contract}) {
+  addContract (state, {contractId, type, data}) {
     // "Mutations Follow Vue's Reactivity Rules" - important for modifying objects
     // See: https://vuex.vuejs.org/en/mutations.html
-    Vue.set(state.contracts, contractId, contract)
-    contract.registerVuexState(store)
+    Vue.set(state.contracts, contractId, type)
+    store.registerModule(contractId, {...Events[type].vuex, ...{state: data}})
+    // we've successfully received it back, so remove it from expectation expecting
+    let index = state.expecting.indexOf(contractId)
+    index > -1 && state.expecting.splice(index, 1)
   },
   removeContract (state, contractId) {
-    state.contracts[contractId].unregisterVuexState(store)
+    store.unregisterModule(contractId)
     Vue.delete(state.contracts, contractId)
-    let index = state.whitelist.indexOf(contractId)
-    index > -1 && state.whitelist.splice(index, 1)
   },
-  setContracts (state, groups) {
-    state.contracts = groups
+  setContracts (state, contracts) {
+    for (let contract of contracts) {
+      mutations.addContract(state, contract)
+    }
   },
   setCurrentGroupId (state, currentGroupId) {
     state.currentGroupId = currentGroupId
     state.offset = []
   },
-  whitelist (state, contractId) {
-    let index = state.whitelist.indexOf(contractId)
-    index === -1 && state.whitelist.push(contractId)
-  },
-  setWhitelist (state, whitelist) {
-    state.whitelist = whitelist
+  expecting (state, contractId) {
+    let index = state.expecting.indexOf(contractId)
+    index === -1 && state.expecting.push(contractId)
   },
   // time travel related
   setPosition (state, position: string) {
@@ -95,33 +94,32 @@ const actions = {
     {contractId, hash, entry}: {contractId: string, hash: string, entry: Object}
   ) {
     // verify we're expecting to hear from this contract
-    if (state.whitelist.indexOf(contractId) === -1) {
+    if (state.expecting.indexOf(contractId) === -1 && !state.contracts[contractId]) {
       // TODO: use a global notification system to both display a notification
       //       and throw an exception and write a log message.
-      return console.error(`EVENT NOT WHITELISTED:`, contractId, entry)
+      return console.error(`NOT EXPECTING EVENT!`, contractId, entry)
     }
 
-    entry = Events[entry.type].fromObject(entry, hash)
-    const aName = entry.constructor.name
+    const type = entry.type
+    entry = Events[type].fromObject(entry, hash)
     if (entry instanceof Events.HashableContract) {
-      console.log(`handleEvent for new ${aName}:`, entry)
+      console.log(`handleEvent for new ${type}:`, entry)
       if (entry.toObject().parentHash) {
         // TODO: use a global notification object to handle this and all other errors
-        return console.error(`${aName} has non-null parentHash!`, entry)
+        return console.error(`${type} has non-null parentHash!`, entry)
       }
       await db.addLogEntry(contractId, entry)
-      commit('addContract', {contractId, contract: entry})
+      commit('addContract', {contractId, type, data: entry.toVuexState()})
     } else if (entry instanceof Events.HashableAction) {
-      var contract = state.contracts[contractId]
-      const cName = contract.constructor.name
-      console.log(`handleEvent for ${aName} on ${cName}:`, entry)
-      if (!contract.isActionAllowed(entry)) {
+      const contractType = state.contracts[contractId]
+      console.log(`handleEvent for ${type} on ${contractType}:`, entry)
+      if (!Events[contractType].isActionAllowed(state[contractType], entry)) {
         // TODO: implement isActionAllowed in all actions, and handle error better
-        return console.error(`bad action ${aName} on ${cName} (${contractId}):`, entry)
+        return console.error(`bad action ${type} on ${contractType} (${contractId}):`, entry)
       }
       // TODO: verify each entry is signed by a group member
       await db.addLogEntry(contractId, entry)
-      commit('applyAction', {contractId, action: entry})
+      commit(`${contractId}/${type}`, entry.data)
     } else {
       return console.error(`UNKNOWN EVENT TYPE!`, contractId, entry)
     }
@@ -138,12 +136,11 @@ const actions = {
     // TODO: encrypt these
     const settings = {
       currentGroupId: state.currentGroupId,
-      contracts: mapValues(state.contracts, v => ({
-        type: v.constructor.name,
-        id: v.toHash(),
-        state: state[v.toHash()]
-      })),
-      whitelist: state.whitelist
+      contracts: Object.keys(state.contracts).map(contractId => ({
+        contractId,
+        type: state.contracts[contractId],
+        data: state[contractId]
+      }))
     }
     await db.saveSettings(settings)
     console.log('saveSettings:', settings)
@@ -153,12 +150,8 @@ const actions = {
   ) {
     const settings = await db.loadSettings()
     console.log('loadSettings:', settings)
-    let {contracts, currentGroupId, whitelist} = settings
-    // NOTE: `fromState` will automatically call `registerVuexState` for us
-    contracts = mapValues(contracts, v => Events[v.type].fromState(store, v.id, v.state))
-    commit('setCurrentGroupId', currentGroupId)
-    commit('setContracts', contracts || [])
-    commit('setWhitelist', whitelist || [])
+    commit('setCurrentGroupId', settings.currentGroupId)
+    commit('setContracts', settings.contracts || [])
   },
 
   // time travel related

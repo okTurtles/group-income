@@ -65,19 +65,18 @@ export class Hashable {
     // no need to hash twice
     if (this._hash) return this._hash
     // TODO: for node/electron, switch to: https://github.com/ludios/node-blake2
-    let uint8array = blake.blake2b(this.toProtobuf())
+    let uint8array = blake.blake2b(this.toProtobuf(), null, 32)
+    // TODO: if we switch to webpack we may need: https://github.com/feross/buffer
     // https://github.com/feross/typedarray-to-buffer
     var buf = new Buffer(uint8array.buffer)
-    this._hash = multihash.toB58String(multihash.encode(buf, 'blake2b'))
+    this._hash = multihash.toB58String(multihash.encode(buf, 'blake2b', 32))
     return this._hash
   }
   toProtobuf (): Buffer { return this.constructor.fields.encode(this._obj).finish() }
   toJSON () { return JSON.stringify(this._obj) }
   toObject () { return this._obj } // NOTE: NEVER MODIFY THE RETURNED OBJECT!
   // signature related
-  signWithKey (key: Uint8Array) {
-    this._sig = nacl.sign.detached(this.toProtobuf(), key)
-  }
+  signWithKey (key: Uint8Array) { this._sig = nacl.sign.detached(this.toProtobuf(), key) }
   get signature (): Buffer { return this._sig }
   set signature (sig: Buffer) { this._sig = sig }
 }
@@ -115,7 +114,8 @@ export class HashableEntry extends Hashable {
 // Base contract class
 // =======================
 
-// helper functions for setting transforms.
+// helper functions for transforming parameters in this.data
+// into a different format in the vuex state.
 function ArrayToMap (keyPicker, valuePicker) {
   // 'this' will be bound to the contract instance in case it's needed
   return function (state, param) {
@@ -127,7 +127,6 @@ function ArrayToMap (keyPicker, valuePicker) {
 }
 
 export class HashableContract extends HashableEntry {
-  _store: ?Object
   static fields = HashableContract.Fields([
     ['authorizations', 'Authorization', 'repeated']
   ])
@@ -149,43 +148,20 @@ export class HashableContract extends HashableEntry {
   static Vuex (vuex) {
     return {...(Object.getPrototypeOf(this).vuex || {}), ...vuex}
   }
-  // creates an new instance and registers its state on the vuex store
-  static fromState (store, hash, state) {
-    var instance = new this()
-    instance._hash = hash
-    instance.registerVuexState(store, state)
-    return instance
-  }
-  get state (): Object {
-    return this._store()[this.toHash()].state
-  }
-  registerVuexState (store: Object, state?: Object) {
-    // this._store = store // NOTE: DO NOT DO THIS! Causes frontend tests to hang inexplicably! I'm guessing it's because of dynamic 'this'
-    // So instead we create a closure to capture `store` and retrieve it without binding `this`
-    this._store = () => store
-    var module = Object.assign({}, this.constructor.vuex)
-    if (state) {
-      // presence of state indicates this was called via fromState!
-      module.state = state
-    } else {
-      module.state = {...module.state, ...this.data}
-      // transforms only necessary if not defrosted via fromState!
-      for (let [param, fn] of Object.entries(this.constructor.transforms)) {
-        fn.call(this, module.state, param)
-      }
-    }
-    store.registerModule(this.toHash(), module)
-  }
-  unregisterVuexState (store: Object) {
-    store.unregisterModule(this.toHash())
-    this._store = undefined
-  }
   // override this method to determine if the action can be posted to the
   // contract. Typically this is done by signature verification.
-  isActionAllowed (action: HashableAction): boolean {
+  static isActionAllowed (state: Object, action: HashableAction): boolean {
     return true // TODO: delete this and uncomment the stuff below!
     // const authClass = action.constructor.authorization
-    // return authClass.isAuthorized(action, this.state.authorizations[authClass.name])
+    // return authClass.isAuthorized(action, state.authorizations[authClass.name])
+  }
+  // returns .data converted to vuex state using transforms and any default state
+  toVuexState () {
+    var state = {...this.constructor.vuex.state, ...this.data}
+    for (let [param, fn] of Object.entries(this.constructor.transforms)) {
+      fn.call(this, state, param)
+    }
+    return state
   }
   // A contract has:
   // 1. code (actions)
@@ -218,9 +194,6 @@ export class HashableContract extends HashableEntry {
 
 export class HashableAction extends HashableEntry {
   static authorization = CanModifyState // by default we assume CanModifyState
-  apply (store: Object, contractId: string) {
-    store.commit(`${contractId}/${this.constructor.name}`, this.data)
-  }
 }
 
 // =======================

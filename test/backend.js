@@ -91,6 +91,7 @@ describe('Full walkthrough', function () {
 
   async function postEntry (entry, contractId) {
     if (!contractId) {
+      // TODO: here we would subscribe to the contract for events
       contractId = entry.toHash()
     } else if (contractId instanceof HashableEntry) {
       contractId = contractId.toHash()
@@ -185,10 +186,10 @@ describe('Full walkthrough', function () {
     })
 
     it('Should fail with wrong parentHash', function () {
-      return postEntry(
+      return should(postEntry(
         new Events.Payment({payment: 'abc'}, ''),
         groups.group1
-      ).should.be.rejected()
+      )).be.rejected()
     })
 
     it('Should join another member', function (done) {
