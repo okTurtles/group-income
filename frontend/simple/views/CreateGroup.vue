@@ -121,7 +121,7 @@ export default {
           memberRemovalPercentage: this.memberRemovalPercentage,
           incomeProvided: this.incomeProvided,
           contributionPrivacy: this.contributionPrivacy,
-          founderHashKey: 'alsdfjlskdfjaslkfjsldkfj'
+          founderHashKey: this.$store.state.loggedIn
         })
         let hash = entry.toHash()
         await backend.subscribe(hash)

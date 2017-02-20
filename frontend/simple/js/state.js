@@ -27,12 +27,18 @@ const state = {
   currentGroupId: null,
   contracts: {}, // contracts we've successfully subscribed to
   whitelist: [], // contracts we're expecting to subscribe to
-  loggedIn: true// TODO: properly handle this
+  loggedIn: false// TODO: properly handle this
 }
 
 // Mutations must be synchronous! Never call these directly!
 // http://vuex.vuejs.org/en/mutations.html
 const mutations = {
+  login (state, user) {
+    state.loggedIn = user
+  },
+  logout (state) {
+    state.loggedIn = false
+  },
   applyAction (state, {action, contractId}) {
     action.apply(store, contractId, Vue)
   },
