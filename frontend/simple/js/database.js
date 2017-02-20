@@ -81,16 +81,4 @@ export function saveSettings (state: Object): Promise<*> {
 export function loadSettings (): Promise<Object> {
   return appSettings.getItem('testUser')
 }
-// =======================
-// Store login information
-// =======================
-const loginInfo = localforage.createInstance({
-  name: 'Group Income',
-  storeName: 'Login Information'
-})
-export function storeLogin (identity: string, hash: string): Promise<Object> {
-  return loginInfo.setItem(identity, hash)
-}
-export function retrieveLogin (identity: string): Promise<Object> {
-  return loginInfo.getItem(identity)
-}
+

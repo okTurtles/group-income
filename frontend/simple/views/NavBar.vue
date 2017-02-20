@@ -51,7 +51,7 @@
       </div>
     </nav>
     <div class="modal" ref="modal" id="LoginModal">
-      <div class="modal-background"></div>
+      <div class="modal-background" v-on:click="toggleModal"></div>
       <div class="modal-content" style="width: 300px">
         <div class="card is-rounded">
           <div class="card-content">
@@ -93,8 +93,6 @@
 
 <script>
 import Vue from 'vue'
-import * as db from '../js/database'
-import multihash from 'multihashes'
 import {HapiNamespace} from '../js/backend/hapi'
 var namespace = new HapiNamespace()
 export default {
@@ -105,18 +103,12 @@ export default {
   methods: {
     login: async function () {
       try {
+        // TODO Insert cryptography here
         let response = await namespace.lookup(this.name)
-        let identity = JSON.parse(response.text)
-        let login = await db.retrieveLogin(identity.data.value)
-        let passHash = multihash.toB58String(multihash.encode(new Buffer(this.password), 'blake2b'))
-        if (passHash === login) {
-          this.$store.commit('login', this.name)
-          this.toggleModal()
-          console.log('login succeeded')
-        } else {
-          this.response = 'Invalid username or password'
-          console.log('login failed')
-        }
+        let identity = response.body
+        console.log(`Retrieved identity ${identity}`)
+        this.$store.commit('login', this.name)
+        this.toggleModal()
       } catch (ex) {
         this.response = 'Invalid username or password'
         console.log('login failed')
@@ -128,7 +120,9 @@ export default {
     toggleModal () {
       if (!this.$refs.modal.classList.contains('is-active') && this.$store.state.loggedIn) {
         this.logout()
+        this.$router.push({path: '/'})
       } else {
+        document.getElementById('LoginName').focus()
         this.response = null
         this.name = null
         this.password = null

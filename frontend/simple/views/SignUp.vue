@@ -16,11 +16,11 @@
           <div class="box centered" style="max-width:400px">
             <h2 class="subtitle">Sign Up</h2>
 
-            <a v-on:click="forwardToLogin" style="margin-left: 65%">Already a member?</a>
+            <a v-on:click="forwardToLogin" style="margin-left: 65%">Have an account?</a>
 
 
             <p class="control has-icon">
-              <input id="name" class="input" name="name" v-model="name" v-on:blur="checkName" v-validate data-vv-rules="required|regex:^\S+$" placeholder="username" required>
+              <input id="name" class="input" name="name" v-model="name" v-on:keypress="checkName" v-validate data-vv-rules="required|regex:^\S+$" placeholder="username" required>
               <span class="icon is-small">
                 <i class="fa fa-user"></i>
               </span>
@@ -70,9 +70,8 @@
 
 <script>
 import Vue from 'vue'
+import _ from 'lodash'
 import * as Events from '../../../shared/events'
-import * as db from '../js/database'
-import multihash from 'multihashes'
 import {HapiNamespace} from '../js/backend/hapi'
 var namespace = new HapiNamespace()
 
@@ -89,7 +88,7 @@ export default {
           ]
         })
         await namespace.register(this.name, user.toHash())
-        await db.storeLogin(user.toHash(), multihash.toB58String(multihash.encode(new Buffer(this.password), 'blake2b')))
+        // TODO Just add cryptographic magic
         this.response = 'success'
         if (this.$route.query.next) {
           setTimeout(() => {
@@ -107,7 +106,7 @@ export default {
     forwardToLogin: function () {
       Vue.events.$emit('login')
     },
-    checkName: async function () {
+    checkName: _.debounce(async function () {
       if (this.name && !this.errors.has('name')) {
         try {
           await namespace.lookup(this.name)
@@ -117,7 +116,7 @@ export default {
         }
         return this.nameAvailable
       }
-    }
+    }, 700, {maxWait: 2000})
   },
   data () {
     return {

@@ -68,7 +68,7 @@ describe('Frontend', function () {
     })
 
     it('Should Traverse Log', async function () {
-      this.timeout(10000)
+      this.timeout(4000)
       await n.goto(page('event-log'))
       let prior = await n.evaluate(() => document.getElementById('LogPosition').innerText)
       let initial = await n.wait('textarea[name="payload"]')
@@ -92,7 +92,7 @@ describe('Frontend', function () {
     let randInt = (min, max) => Math.floor(Math.random() * (max - min)) + min
     let username = `testuser${randInt(0, 10000000)}${randInt(10000000, 20000000)}`
     it('Should register User', async function () {
-      this.timeout(10000)
+      this.timeout(4000)
       await n.goto(page('signup'))
       let signedup = await n.insert('#name', username)
         .insert('#email', `test@testgroupincome.com`)
@@ -111,7 +111,7 @@ describe('Frontend', function () {
         */
     })
     it('Test Logout and Login', async function () {
-      this.timeout(10000)
+      this.timeout(4000)
       let response = await n.click('#LoginBtn')
         .wait(() => document.getElementById('LoginBtn').classList.contains('is-primary'))
         .click('#LoginBtn')
@@ -128,14 +128,14 @@ describe('Frontend', function () {
      This occurs regardless of whether you clear the field or not. Until its fixed skip this validation test
      */
     it.skip('Test Validation', async function () {
-      this.timeout(40000)
+      this.timeout(4000)
       await n.goto(page('signup'))
       let badUsername = 't e s t'
       let badEmail = `@fail`
-      // let badPassword = `789`// six is so afraid
+      let badPassword = `789`// six is so afraid
       let denied = await n.insert('#name', badUsername)
         .insert('#email', badEmail)
-        .insert('#password', ' ')
+        .insert('#password', badPassword)
         .evaluate(() => document.querySelector('button[type="submit"]').disabled)
       should(denied).equal(true)
       let usernameMsg = await n.evaluate(() => !!document.getElementById('badUsername'))
@@ -149,7 +149,7 @@ describe('Frontend', function () {
 
   describe('Group Creation Test', function () {
     it('Should create a group', async function () {
-      this.timeout(10000)
+      this.timeout(4000)
       await n.click('#CreateGroup')
       let created = await n.insert('input[name="groupName"]', 'Test Group')
         .insert('textarea[name="sharedValues"]', 'Testing this software')
