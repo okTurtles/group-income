@@ -28,7 +28,7 @@ const state = {
   // NOTE: time travel is broken now. Should be implemented using `store.subscribe` instead of that
   currentGroupId: null,
   contracts: {}, // contractIds => type (for contracts we've successfully subscribed to)
-  expecting: [], // contractIds we've just published but haven't received back yet
+  pending: [], // contractIds we've just published but haven't received back yet
   loggedIn: false// TODO: properly handle this
 }
 
@@ -46,9 +46,9 @@ const mutations = {
     // See: https://vuex.vuejs.org/en/mutations.html
     Vue.set(state.contracts, contractId, type)
     store.registerModule(contractId, {...Events[type].vuex, ...{state: data}})
-    // we've successfully received it back, so remove it from expectation expecting
-    let index = state.expecting.indexOf(contractId)
-    index > -1 && state.expecting.splice(index, 1)
+    // we've successfully received it back, so remove it from expectation pending
+    let index = state.pending.indexOf(contractId)
+    index > -1 && state.pending.splice(index, 1)
   },
   removeContract (state, contractId) {
     store.unregisterModule(contractId)
@@ -63,9 +63,9 @@ const mutations = {
     state.currentGroupId = currentGroupId
     state.offset = []
   },
-  expecting (state, contractId) {
-    let index = state.expecting.indexOf(contractId)
-    index === -1 && state.expecting.push(contractId)
+  pending (state, contractId) {
+    let index = state.pending.indexOf(contractId)
+    index === -1 && state.pending.push(contractId)
   },
   // time travel related
   setPosition (state, position: string) {
@@ -100,7 +100,7 @@ const actions = {
     {contractId, hash, entry}: {contractId: string, hash: string, entry: Object}
   ) {
     // verify we're expecting to hear from this contract
-    if (state.expecting.indexOf(contractId) === -1 && !state.contracts[contractId]) {
+    if (state.pending.indexOf(contractId) === -1 && !state.contracts[contractId]) {
       // TODO: use a global notification system to both display a notification
       //       and throw an exception and write a log message.
       return console.error(`NOT EXPECTING EVENT!`, contractId, entry)
