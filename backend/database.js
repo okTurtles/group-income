@@ -5,6 +5,7 @@ import fs from 'fs'
 import {Model, transaction, ValidationError} from 'objection'
 import {HashableEntry, GroupContract} from '../shared/events'
 
+const Transform = require('stream').Transform
 const production = process.env.NODE_ENV === 'production'
 
 // delete the test database if it exists
@@ -106,7 +107,7 @@ export async function createLog (
   await HashToData.query().insert({hash: contractId, value: entry.toJSON()})
   await knex.schema.createTableIfNotExists(contractId, function (table) {
     table.increments()
-    table.text('version').notNullable()
+    table.integer('version').notNullable()
     table.text('type').notNullable()
     table.text('parentHash')
     table.text('data').notNullable()
@@ -143,16 +144,44 @@ export async function lastEntry (contractId: string) {
   return entries[0]
 }
 
-// TODO: does this stream need to be consumed? what happens if it isn't?
-//       do we need to close it anyway after some time or something?
 // "On an HTTP server, make sure to manually close your streams if a request is aborted."
 // From: http://knexjs.org/#Interfaces-Streams
 // https://github.com/tgriesser/knex/wiki/Manually-Closing-Streams
 // => request.on('close', stream.end.bind(stream))
+// NOTE: On Hapi.js the event is 'disconnect'.
 export function streamEntriesSince (contractId: string, hash: string) {
-  return Log.table(contractId).where(
-    'id', '>', Log.table(contractId).select('id').where('hash', hash)
-  ).stream()
+  console.log('streamEntriesSince():', contractId, hash)
+  var isBeginning = true
+  return knex(contractId).select('*')
+  .where(
+    'id', '>=', knex(contractId).select('id').where('hash', hash).limit(1)
+  )
+  .orderBy('id')
+  .pipe(new Transform({
+    // NOTE: Hapi cannot handle object mode, but knex forces objectMode (and ignores
+    //       me if I try to pass options {objectMode: false}. So we transform the
+    //       the objects into JSON, and explicitely configure these paramters:
+    readableObjectMode: false,
+    writableObjectMode: true,
+    transform: function (data, encoding, callback) {
+      var obj = {hash: data.hash}
+      delete data['id']
+      delete data['hash']
+      data.data = JSON.parse(data.data)
+      obj.entry = data
+      var string = JSON.stringify(obj)
+      if (isBeginning) {
+        isBeginning = false
+        callback(null, '[' + string)
+      } else {
+        callback(null, ',' + string)
+      }
+    },
+    flush: function (callback) {
+      this.push(']')
+      callback()
+    }
+  }))
 }
 
 // =======================

@@ -22,7 +22,7 @@ describe('Frontend', function () {
     return require('../backend/index.js')
   })
 
-  describe.skip('New user page', function () {
+  describe('New user page', function () {
     it('Should create user George', function () {
       this.timeout(5000)
       return n.goto(page('signup'))

@@ -112,6 +112,7 @@
         // TODO: move this stuff somewhere else that makes sense.
         // subscribe first and so that handleEvent is automatically dispatched
         let entry = new Events.GroupContract({
+          authorizations: [Events.CanModifyAuths.dummyAuth()],
           groupName: `Group ${randInt(1, 100)}`,
           sharedValues: 'Testing this software',
           changePercentage: randInt(1, 100),

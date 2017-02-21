@@ -11,25 +11,24 @@ const Joi = require('joi')
 //       —BUT HTTP2 might be better than websockets and so we keep this around.
 //       See related TODO in pubsub.js and the reddit discussion link.
 module.exports = function (server: Object) {
-  const payloadValidation = Joi.object({
-    hash: Joi.string().required(),
-    // must match db.Log.jsonSchema.properties (except for separated hash)
-    entry: Joi.object({
-      version: Joi.number().integer().required(),
-      type: Joi.string().required(),
-      parentHash: Joi.string().allow([null, '']),
-      data: Joi.object()
-    })
-  })
   server.route({
+    path: '/event/{contractId}',
+    method: ['PUT', 'POST'],
     config: {
       auth: 'gi-auth',
-      validate: { payload: payloadValidation }
+      validate: { payload: {
+        hash: Joi.string().required(),
+        // must match db.Log.jsonSchema.properties (except for separated hash)
+        entry: Joi.object({
+          version: Joi.number().integer().required(),
+          type: Joi.string().required(),
+          parentHash: Joi.string().allow([null, '']),
+          data: Joi.object()
+        })
+      } }
     },
-    method: ['PUT', 'POST'],
     // TODO: we have to prevent spam. can't have someone flooding the server.
     //       do group signature based authentication here to prevent spam
-    path: '/event/{contractId}',
     handler: async function (request, reply) {
       try {
         // TODO: echo back the entry if it's the latest, or send with a different
@@ -48,12 +47,31 @@ module.exports = function (server: Object) {
     }
   })
   server.route({
+    path: '/events/{contractId}/{since}',
+    method: ['GET'],
+    handler: async function (request, reply) {
+      try {
+        const {contractId, since} = request.params
+        var stream = await db.streamEntriesSince(contractId, since)
+        // "On an HTTP server, make sure to manually close your streams if a request is aborted."
+        // From: http://knexjs.org/#Interfaces-Streams
+        //       https://github.com/tgriesser/knex/wiki/Manually-Closing-Streams
+        // Plus: https://hapijs.com/api#request-events
+        request.on('disconnect', stream.end.bind(stream))
+        reply(stream)
+      } catch (err) {
+        logger(err)
+        reply(err)
+      }
+    }
+  })
+  server.route({
+    path: '/name',
+    method: ['POST'],
     config: { validate: { payload: {
       name: Joi.string().required(),
       value: Joi.string().required()
     } } },
-    method: ['POST'],
-    path: '/name',
     handler: async function (request, reply) {
       try {
         const {name, value} = request.payload
@@ -70,12 +88,25 @@ module.exports = function (server: Object) {
     }
   })
   server.route({
-    method: ['GET'],
     path: '/name/{name}',
+    method: ['GET'],
     handler: async function (request, reply) {
       try {
         var value = await db.lookupName(request.params.name)
         reply(value ? makeResponse(RESPONSE_TYPE.SUCCESS, {value}) : Boom.notFound())
+      } catch (err) {
+        logger(err)
+        reply(err)
+      }
+    }
+  })
+  server.route({
+    path: '/latestHash/{contractId}',
+    method: ['GET'],
+    handler: async function (request, reply) {
+      try {
+        var entry = await db.lastEntry(request.params.contractId)
+        reply(entry ? makeResponse(RESPONSE_TYPE.SUCCESS, {hash: entry.hash}) : Boom.notFound())
       } catch (err) {
         logger(err)
         reply(err)
