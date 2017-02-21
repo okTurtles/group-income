@@ -2,6 +2,7 @@
 
 const Promise = global.Promise = require('bluebird')
 
+import Vue from 'vue'
 import chalk from 'chalk'
 import _ from 'lodash'
 import {RESPONSE_TYPE} from '../shared/constants'
@@ -10,8 +11,17 @@ import * as Events from '../shared/events'
 import pubsub from '../frontend/simple/js/pubsub'
 
 const request = require('superagent')
+const fetch = require('node-fetch') // TODO: switch from request to fetch API fully, see NOTE below
 const should = require('should') // eslint-disable-line
 const nacl = require('tweetnacl')
+const stream = require('stream')
+
+// NOTE: fetch API docs:
+// https://github.com/bitinn/node-fetch
+// https://jakearchibald.com/2015/thats-so-fetch/
+// https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch
+// https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
+// https://github.com/github/fetch
 
 const {HashableEntry} = Events
 const {API_URL: API} = process.env
@@ -36,8 +46,8 @@ var signatures = personas.map(x => sign(x))
 //       member's key to all the groups that they're in (that's unweildy
 //       and compromises privacy).
 
-describe('Full walkthrough', function () {
-  var sockets = []
+describe.only('Full walkthrough', function () {
+  const events = new Vue()
   var users = {}
   var groups = {}
   var recentHash = {}
@@ -45,18 +55,21 @@ describe('Full walkthrough', function () {
   function latestHash (contract) {
     return recentHash[contract.toHash()]
   }
-  function createSocket (done) {
-    var num = sockets.length
-    var primus = pubsub({
-      url: API,
-      options: {timeout: 3000, strategy: false},
-      handlers: {
-        open: done,
-        error: err => done(err),
-        data: msg => console.log(bold(`[test] ONDATA primus[${num}] msg:`), msg)
-      }
+  function createSocket () {
+    return new Promise((resolve, reject) => {
+      var primus = pubsub({
+        url: API,
+        options: {timeout: 3000, strategy: false},
+        handlers: {
+          open: () => resolve(primus),
+          error: err => reject(err),
+          data: msg => {
+            console.log(bold(`[test] ONDATA msg:`), msg)
+            events.$emit(msg.data.hash, msg.data)
+          }
+        }
+      })
     })
-    sockets.push(primus)
   }
 
   function createIdentity (name, email) {
@@ -80,6 +93,7 @@ describe('Full walkthrough', function () {
     var mailbox = new Events.MailboxContract({
       authorizations: [Events.CanModifyAuths.dummyAuth(user.toHash())]
     })
+    await user.socket.sub(mailbox.toHash())
     await postEntry(mailbox)
     await postEntry(
       new Events.SetAttribute({attribute: {
@@ -87,11 +101,11 @@ describe('Full walkthrough', function () {
       }}, latestHash(user)),
       user
     )
+    user.mailbox = mailbox
   }
 
   async function postEntry (entry, contractId) {
     if (!contractId) {
-      // TODO: here we would subscribe to the contract for events
       contractId = entry.toHash()
     } else if (contractId instanceof HashableEntry) {
       contractId = contractId.toHash()
@@ -107,16 +121,13 @@ describe('Full walkthrough', function () {
   }
 
   it('Should start the server', function () {
+    this.timeout(10000)
     return require('../backend/index.js')
   })
 
-  it('Should open websocket connection', function (done) {
-    createSocket(done)
-  })
-
   after(function () {
-    for (let primus of sockets) {
-      primus.destroy({timeout: 500})
+    for (let user of Object.values(users)) {
+      user.socket && user.socket.destroy({timeout: 500})
     }
   })
 
@@ -137,45 +148,91 @@ describe('Full walkthrough', function () {
 
     it('Should register Alice and Bob in the namespace', async function () {
       const {alice, bob} = users
-      var res = await request.post(`${process.env.API_URL}/name`)
+      var res = await request.post(`${API}/name`)
         .send({name: alice.data.attributes[0].value, value: alice.toHash()})
       res.body.type.should.equal(SUCCESS)
-      res = await request.post(`${process.env.API_URL}/name`)
+      res = await request.post(`${API}/name`)
         .send({name: bob.data.attributes[0].value, value: bob.toHash()})
       res.body.type.should.equal(SUCCESS)
+      alice.socket = 'hello'
+      should(alice.socket).equal('hello')
     })
 
     it('Should verify namespace lookups work', async function () {
       const {alice} = users
-      var res = await request.get(`${process.env.API_URL}/name/${alice.data.attributes[0].value}`)
+      var res = await request.get(`${API}/name/${alice.data.attributes[0].value}`)
       res.body.data.value.should.equal(alice.toHash())
-      request.get(`${process.env.API_URL}/name/susan`).should.be.rejected()
+      request.get(`${API}/name/susan`).should.be.rejected()
     })
 
-    it('Should create mailboxes for Alice and Bob', async function () {
+    it('Should open sockets for Alice and Bob', async function () {
+      for (let user of Object.values(users)) {
+        user.socket = await createSocket()
+      }
+    })
+
+    it('Should create mailboxes for Alice and Bob and subscribe', async function () {
       // Object.values(users).forEach(async user => await createMailboxFor(user))
       await createMailboxFor(users.alice)
       await createMailboxFor(users.bob)
     })
-    // TODO: handle incoming pubsub events from server and update contracts accordingly
-
-    it.skip('Should add attestation from Bob to Alice', function () {
-    })
-
-    it.skip('Alice should fail to invite Bob to non-existant group', function () {
-    })
   })
 
-  describe('Group Setup', function () {
-    it('Should create a group', async function () {
+  describe('Group tests', function () {
+    it('Should create a group & subscribe Alice', async function () {
       groups.group1 = createGroup('group1')
+      await users.alice.socket.sub(groups.group1.toHash())
       await postEntry(groups.group1)
     })
-  })
 
-  describe('Pubsub tests', function () {
-    it('Should join group room', function () {
-      return sockets[0].sub(groups.group1.toHash())
+    // NOTE: The frontend needs to use the `fetch` API instead of superagent because
+    //       superagent doesn't support streaming, whereas fetch does.
+    // TODO: We should also remove superagent as a dependency since `fetch` does
+    //       everything we need. Use fetch from now on.
+    it('Should get mailbox info for Bob', async function () {
+      // 1. look up bob's username to get his identity contract
+      const {bob} = users
+      const bobsName = bob.data.attributes[0].value
+      var res = await request.get(`${API}/name/${bobsName}`)
+      const bobsContractId = res.body.data.value
+      should(bobsContractId).equal(bob.toHash())
+      // 2. fetch all events for his identity contract to get latest state for it
+      res = await fetch(`${API}/events/${bobsContractId}/${bobsContractId}`)
+      should(res.body).be.an.instanceof(stream.Transform)
+      var events = await res.json()
+      console.log(bold.red('EVENTS:'), events)
+      // NOTE: even though we could avoid creating instances out of these events,
+      //       we do it anyways even in these tests just to remind the reader
+      //       that .fromObject must be called on the input data, so that the
+      //       hash-based ingrity check is done.
+      // Illustraiting its importance: when converting the code below from
+      // raw-objects to instances, the hash check failed and I caught several bugs!
+      var [contract, ...actions] = events.map(e => {
+        return Events[e.entry.type].fromObject(e.entry, e.hash)
+      })
+      var state = contract.toVuexState()
+      actions.forEach(action => {
+        let type = action.constructor.name
+        contract.constructor.vuex.mutations[type](state, action.data)
+      })
+      console.log(bold.red('FINAL STATE:'), state)
+      // 3. get bob's mailbox contractId from his identity contract attributes
+      should(state.attributes.mailbox).equal(bob.mailbox.toHash())
+      // 4. fetch the latest hash for bob's mailbox.
+      //    we don't need latest state for it just latest hash
+      res = await fetch(`${API}/latestHash/${state.attributes.mailbox}`).then(r => r.json())
+      should(res.data.hash).equal(latestHash(bob.mailbox))
+    })
+
+    it("Should invite Bob to Alice's group", function (done) {
+      var mailbox = users.bob.mailbox
+      var invite = new Events.PostInvite({groupId: groups.group1.toHash()}, latestHash(mailbox))
+      events.$once(invite.toHash(), ({contractId, hash, entry}) => {
+        console.log('Bob successfully got invite!', entry)
+        should(entry.data.groupId).equal(groups.group1.toHash())
+        done()
+      })
+      postEntry(invite, mailbox.toHash())
     })
 
     it('Should post an event', function () {
@@ -192,14 +249,6 @@ describe('Full walkthrough', function () {
       )).be.rejected()
     })
 
-    it('Should join another member', function (done) {
-      createSocket(err => {
-        err
-        ? done(err)
-        : sockets[1].sub(groups.group1.toHash()).then(() => done()).catch(done)
-      })
-    })
-
     // TODO: these events, as well as all messages sent over the sockets
     //       should all be authenticated and identified by the user's
     //       identity contract
@@ -213,3 +262,21 @@ describe('Full walkthrough', function () {
     })
   })
 })
+
+// Potentially useful for dealing with fetch API:
+// function streamToPromise (stream, dataHandler) {
+//   return new Promise((resolve, reject) => {
+//     stream.on('data', (...args) => {
+//       try { dataHandler(...args) } catch (err) { reject(err) }
+//     })
+//     stream.on('end', resolve)
+//     stream.on('error', reject)
+//   })
+// }
+// see: https://github.com/bitinn/node-fetch/blob/master/test/test.js
+// This used to be in the 'Should get mailbox info for Bob' test, before the
+// server manually created a JSON array out of the objects being streamed.
+// await streamToPromise(res.body, chunk => {
+//   console.log(bold.red('CHUNK:'), chunk.toString())
+//   events.push(JSON.parse(chunk.toString()))
+// })

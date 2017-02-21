@@ -9,7 +9,7 @@ import type {JSONObject} from './types'
 const nacl = require('tweetnacl')
 const blake = require('blakejs')
 const {Type, Field, Root} = protobuf
-const root = new Root().define('groupincome')
+const root = new Root({bytes: String}).define('groupincome')
 // import Vue for: https://vuejs.org/v2/guide/reactivity.html#Change-Detection-Caveats
 const Vue = typeof window !== 'undefined' ? require('vue') : {
   // TODO: remove this when we switch to electron?
@@ -46,7 +46,7 @@ export class Hashable {
   static fromObject (obj, hash): this {
     var instance = new this()
     instance._obj = obj
-    if (instance.toHash() !== hash) throw Error('fromObject: corrupt hash!')
+    if (instance.toHash() !== hash) throw Error(`hash obj: ${instance.toHash()} != hash: ${hash}`)
     return instance
   }
   static fromProtobuf (buffer, hash) {
@@ -57,7 +57,7 @@ export class Hashable {
   }
   constructor (obj?: Object) {
     // Unless we do this we'll get different hashes on the server and the frontend 'bytes'
-    this._obj = this.constructor.fields.fromObject(obj || {}).toObject({
+    this._obj = !obj ? {} : this.constructor.fields.fromObject(obj).toObject({
       bytes: String // http://dcode.io/protobuf.js/global.html#ConversionOptions
     })
   }
@@ -120,7 +120,7 @@ function ArrayToMap (keyPicker, valuePicker) {
   // 'this' will be bound to the contract instance in case it's needed
   return function (state, param) {
     state[param] = state[param].reduce((accum, v) => {
-      accum[keyPicker] = valuePicker ? v[valuePicker] : v
+      accum[v[keyPicker]] = valuePicker ? v[valuePicker] : v
       return accum
     }, {})
   }
@@ -308,7 +308,7 @@ export class IdentityContract extends HashableContract {
   })
   static vuex = IdentityContract.Vuex({
     mutations: {
-      SetAttribute (state, {name, value}) { Vue.set(state.attributes, name, value) },
+      SetAttribute (state, {attribute: {name, value}}) { Vue.set(state.attributes, name, value) },
       DeleteAttribute (state, {name}) { Vue.delete(state.attributes, name) }
     }
   })
