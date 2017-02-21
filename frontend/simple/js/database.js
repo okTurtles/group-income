@@ -81,3 +81,4 @@ export function saveSettings (state: Object): Promise<*> {
 export function loadSettings (): Promise<Object> {
   return appSettings.getItem('testUser')
 }
+

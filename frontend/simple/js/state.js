@@ -29,12 +29,18 @@ const state = {
   currentGroupId: null,
   contracts: {}, // contractIds => type (for contracts we've successfully subscribed to)
   expecting: [], // contractIds we've just published but haven't received back yet
-  loggedIn: true// TODO: properly handle this
+  loggedIn: false// TODO: properly handle this
 }
 
 // Mutations must be synchronous! Never call these directly!
 // http://vuex.vuejs.org/en/mutations.html
 const mutations = {
+  login (state, user) {
+    state.loggedIn = user
+  },
+  logout (state) {
+    state.loggedIn = false
+  },
   addContract (state, {contractId, type, data}) {
     // "Mutations Follow Vue's Reactivity Rules" - important for modifying objects
     // See: https://vuex.vuejs.org/en/mutations.html
