@@ -6,6 +6,7 @@ import SignUp from './views/SignUp.vue'
 import CreateGroup from './views/CreateGroup.vue'
 import UserProfileView from './views/UserProfileView.vue'
 import TestEventLog from './views/EventLog.vue'
+import Invite from './views/Invite.vue'
 // import NewIncomeView from './views/NewIncomeView.vue'
 import PayGroupView from './views/PayGroupView.vue'
 import NavBar from './views/NavBar.vue'
@@ -98,6 +99,26 @@ var router = new Router({
         title: 'Event Log Test Page'
       }
     },
+    /* Guards need to be created for any route that should not be directly accessed by url */
+    {
+      path: '/invite',
+      name: Invite.name,
+      component: Invite,
+      meta: {
+        title: 'Invite Group Members'
+      },
+      beforeEnter (to, from, next) {
+        if (!store.state.loggedIn) {
+          console.log(to.name, `redirecting to ${SignUp.name}!`)
+          next({ path: '/signup', query: { next: '/new-group' } })
+        } else if (!store.state.currentGroupId) {
+          console.log(to.name, `redirecting to ${CreateGroup.name}!`)
+          next({ path: '/new-group' })
+        } else {
+          next()
+        }
+      }
+    },
     {
       path: '*',
       redirect: '/'
@@ -109,7 +130,11 @@ router.beforeEach((to, from, next) => {
   document.title = to.meta.title
   next()
 })
-
+/* global sessionStorage */
+let user = sessionStorage.getItem('loggedIn')
+if (user) {
+  store.dispatch('login', user)
+}
 /* eslint-disable no-new */
 new Vue({
   router: router,

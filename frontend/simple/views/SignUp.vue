@@ -14,17 +14,15 @@
         <div class="column is-hidden-mobile"></div>
         <div class="column is-10">
           <div class="box centered" style="max-width:400px">
-            <h2 class="subtitle">Sign Up</h2>
+            <h2 class="subtitle"><i18n>Sign Up</i18n></h2>
 
-            <a v-on:click="forwardToLogin" style="margin-left: 65%">Have an account?</a>
-
-
+            <a v-on:click="forwardToLogin" style="margin-left: 65%"><i18n>Have an account?</i18n></a>
             <p class="control has-icon">
               <input id="name" class="input" name="name" v-model="name" v-on:keypress="checkName" v-validate data-vv-rules="required|regex:^\S+$" placeholder="username" required>
               <span class="icon is-small">
                 <i class="fa fa-user"></i>
               </span>
-              <span v-if="errors.has('name')" id="badUsername" class="help is-danger">Username cannot contain spaces</span>
+              <span v-if="errors.has('name')" id="badUsername" class="help is-danger"><i18n>Username cannot contain spaces</i18n></span>
               <span v-show="nameAvailable != null && !errors.has('name') " class="help" v-bind:class="[nameAvailable ? 'is-success' : 'is-danger']">{{ nameAvailable ? 'name is available' : 'name is unavailable' }}</span>
             </p>
             <p class="control has-icon">
@@ -32,7 +30,7 @@
               <span class="icon is-small">
                 <i class="fa fa-envelope"></i>
               </span>
-              <span v-if="errors.has('email')" id="badEmail" class="help is-danger">Not an email</span>
+              <span v-if="errors.has('email')" id="badEmail" class="help is-danger"><i18n>Not an email</i18n></span>
             </p>
             <p class="control has-icon">
               <input class="input" id="password" name="password" v-model="password" v-validate data-vv-rules="required|min:7" placeholder="password" type="password" required>
@@ -49,7 +47,7 @@
               </div>
               <div class="level-item is-narrow">
                 <button class="button submit is-success" type="submit" :disabled="errors.any() || !fields.passed()">
-                  Sign Up
+                  <i18n>Sign Up</i18n>
                 </button>
               </div>
             </div>
@@ -69,24 +67,47 @@
 </style>
 
 <script>
+import request from 'superagent'
+import backend from '../js/backend'
 import Vue from 'vue'
 import _ from 'lodash'
 import * as Events from '../../../shared/events'
 import {HapiNamespace} from '../js/backend/hapi'
+import nacl from 'tweetnacl'
+import {sign} from '../../../shared/functions'
+// import backend from '../js/backend'
 var namespace = new HapiNamespace()
-
+var buf2b64 = buf => Buffer.from(buf).toString('base64')
+var signature = sign(_.mapValues(nacl.sign.keyPair(), buf2b64))
+var postEvent = function (event, contract) {
+  return request.post(`${process.env.API_URL}/event/${contract || event.toHash()}`)
+          .set('Authorization', `gi ${signature}`)
+          .send({hash: event.toHash(), entry: event.toObject()})
+}
 // TODO: fix all this
 export default {
   name: 'SignUp',
   methods: {
     submit: async function () {
       try {
+        // Do this mutation first in order to have events correctly save
+        this.$store.commit('login', this.name)
         let user = new Events.IdentityContract({
+          authorizations: [Events.CanModifyAuths.dummyAuth()],
           attributes: [
             {name: 'name', value: this.name},
             {name: 'email', value: this.email}
           ]
         })
+        await backend.subscribe(user.toHash())
+        await postEvent(user)
+        let mailbox = new Events.MailboxContract({
+          authorizations: [Events.CanModifyAuths.dummyAuth(user.toHash())]
+        })
+        await backend.subscribe(mailbox.toHash())
+        await postEvent(mailbox)
+        let attribute = new Events.SetAttribute({attribute: {name: 'mailbox', value: mailbox.toHash()}}, user.toHash())
+        await postEvent(attribute, user.toHash())
         await namespace.register(this.name, user.toHash())
         // TODO Just add cryptographic magic
         this.response = 'success'
@@ -95,7 +116,9 @@ export default {
             this.$router.push({path: this.$route.query.next})
           }, 1000)
         }
-        this.$store.commit('login', this.name)
+        this.$store.dispatch('login', this.name)
+        // await backend.subscribe(mailbox.toHash())
+        // await backend.subscribe(mailbox.toHash())
         this.error = false
       } catch (ex) {
         console.log(ex)
@@ -104,7 +127,7 @@ export default {
       }
     },
     forwardToLogin: function () {
-      Vue.events.$emit('login')
+      Vue.events.$emit('loginModal')
     },
     checkName: _.debounce(async function () {
       if (this.name && !this.errors.has('name')) {

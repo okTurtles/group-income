@@ -14,7 +14,7 @@ import * as Events from '../../../shared/events'
 import debounce from 'lodash/debounce'
 
 Vue.use(Vuex)
-
+/* global sessionStorage */
 var store // this is set and made the default export at the bottom of the file.
           // we have it declared here to make it accessible in mutations
 
@@ -37,9 +37,11 @@ const state = {
 const mutations = {
   login (state, user) {
     state.loggedIn = user
+    sessionStorage.setItem('loggedIn', user)
   },
   logout (state) {
     state.loggedIn = false
+    sessionStorage.clear()
   },
   addContract (state, {contractId, type, data}) {
     // "Mutations Follow Vue's Reactivity Rules" - important for modifying objects
@@ -92,6 +94,26 @@ const getters = {
 }
 
 const actions = {
+  async login (
+    {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object},
+    user: string
+  ) {
+    dispatch('loadSettings', user)
+    Vue.events.$once('loaded', () => {
+      commit('login', user)
+      Vue.events.$emit('login', user)
+    })
+  },
+  async logout (
+    {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object},
+  ) {
+    let user = state.loggedIn
+    dispatch('saveSettings', user)
+    Vue.events.$once('saved', () => {
+      commit('logout')
+      Vue.events.$emit('logout', user)
+    })
+  },
   // this function is called from ./pubsub.js and is the entry point
   // for getting events into the log.
   // mirrors `handleEvent` in backend/server.js
@@ -130,14 +152,15 @@ const actions = {
       return console.error(`UNKNOWN EVENT TYPE!`, contractId, entry)
     }
     // handleEvent might be called very frequently, so save only after a pause
-    debouncedSave(dispatch)
+    debouncedSave(dispatch, state.loggedIn)
     // let any listening components know that we've received, processed, and stored the event
     Vue.events.$emit(hash, contractId, entry)
   },
 
   // persisting the state
   async saveSettings (
-    {state}: {state: Object}
+    {state}: {state: Object},
+    user: string
   ) {
     // TODO: encrypt these
     const settings = {
@@ -148,16 +171,21 @@ const actions = {
         data: state[contractId]
       }))
     }
-    await db.saveSettings(settings)
+    await db.saveSettings(user, settings)
+    Vue.events.$emit('saved', user)
     console.log('saveSettings:', settings)
   },
   async loadSettings (
-    {commit, state}: {commit: Function, state: Object}
+    {commit, state}: {commit: Function, state: Object},
+    user: string
   ) {
-    const settings = await db.loadSettings()
-    console.log('loadSettings:', settings)
-    commit('setCurrentGroupId', settings.currentGroupId)
-    commit('setContracts', settings.contracts || [])
+    const settings = await db.loadSettings(user)
+    if (settings) {
+      console.log('loadSettings:', settings)
+      commit('setCurrentGroupId', settings.currentGroupId)
+      commit('setContracts', settings.contracts || [])
+    }
+    Vue.events.$emit('loaded', user)
   },
 
   // time travel related
@@ -176,7 +204,7 @@ const actions = {
   }
 }
 
-const debouncedSave = debounce(dispatch => dispatch('saveSettings'), 500)
+const debouncedSave = debounce((dispatch, user) => dispatch('saveSettings', user), 500)
 
 store = new Vuex.Store({state, mutations, getters, actions})
 export default store

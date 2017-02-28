@@ -98,7 +98,7 @@ var namespace = new HapiNamespace()
 export default {
   name: 'NavBar',
   created: function () {
-    Vue.events.$on('login', this.toggleModal)
+    Vue.events.$on('loginModal', this.toggleModal)
   },
   methods: {
     login: async function () {
@@ -107,15 +107,17 @@ export default {
         let response = await namespace.lookup(this.name)
         let identity = response.body
         console.log(`Retrieved identity ${identity}`)
-        this.$store.commit('login', this.name)
-        this.toggleModal()
+        this.$store.dispatch('login', this.name)
+        Vue.events.$once('login', () => {
+          this.toggleModal()
+        })
       } catch (ex) {
         this.response = 'Invalid username or password'
         console.log('login failed')
       }
     },
     logout: function () {
-      this.$store.commit('logout')
+      this.$store.dispatch('logout')
     },
     toggleModal () {
       if (!this.$refs.modal.classList.contains('is-active') && this.$store.state.loggedIn) {
