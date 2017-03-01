@@ -82,7 +82,7 @@
                 <div class="center">
                   <div id="successMsg" v-if="created" class="created"><i18n>Success</i18n></div>
                   <button class="button is-success is-large center" v-if="!created" type="submit"><i18n>Create Group</i18n></button>
-                  <a class="button is-warning is-large center" v-if="created" v-on:click="next"><i18n>Next: Invite Group Members</i18n></a>
+                  <a class="button is-warning is-large center" id="nextButton" v-if="created" v-on:click="next"><i18n>Next: Invite Group Members</i18n></a>
                 </div>
               </div>
             </div>

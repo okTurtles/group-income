@@ -46,7 +46,7 @@ var signatures = personas.map(x => sign(x))
 //       member's key to all the groups that they're in (that's unweildy
 //       and compromises privacy).
 
-describe.only('Full walkthrough', function () {
+describe('Full walkthrough', function () {
   const events = new Vue()
   var users = {}
   var groups = {}

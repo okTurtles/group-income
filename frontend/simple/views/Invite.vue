@@ -6,8 +6,8 @@
           <div class="columns is-gapless">
             <div class="column">
               <p class="control has-addons">
-                <input class="input" type="text" v-model="searchUser" placeholder="Find a member">
-                <a class="button is-info" v-on:click="add">
+                <input id="searchUser" class="input" type="text" v-model="searchUser" placeholder="Find a member">
+                <a id="addButton" class="button is-info" v-on:click="add">
                   <i18n>Add</i18n>
                 </a>
               </p>
@@ -21,7 +21,7 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr v-for="(member, index) in members">
+                <tr v-for="(member, index) in members" class="member">
                   <td>
                     <div class="media">
                       <div class="media-left">
@@ -43,7 +43,7 @@
               <div class="center button-box">
                 <div class="center">
                   <div id="successMsg" v-if="invited" class="created"><i18n>Success</i18n></div>
-                  <button class="button is-success is-large center" v-if="!invited" v-on:click="submit" type="submit"><i18n>Invite Members</i18n></button>
+                  <button class="button is-success is-large center" v-if="!invited" :disabled="!members.length" v-on:click="submit" type="submit"><i18n>Invite Members</i18n></button>
                   <a class="button is-warning is-large center" v-if="invited"><i18n>Next: ?</i18n></a>
                 </div>
               </div>
