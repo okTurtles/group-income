@@ -7,6 +7,7 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import * as db from './database'
 import * as Events from '../../../shared/events'
+import backend from '../js/backend'
 
 // babel transforms lodash imports: https://github.com/lodash/babel-plugin-lodash#faq
 // for diff between 'lodash/map' and 'lodash/fp/map'
@@ -99,8 +100,11 @@ const actions = {
     user: string
   ) {
     dispatch('loadSettings', user)
-    Vue.events.$once('loaded', () => {
+    Vue.events.$once('loaded', async function () {
       commit('login', user)
+      for (let [key] of Object.entries(state.contracts)) {
+        await backend.subscribe(key)
+      }
       Vue.events.$emit('login', user)
     })
   },
