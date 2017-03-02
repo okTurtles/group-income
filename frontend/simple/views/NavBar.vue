@@ -104,13 +104,10 @@ export default {
     login: async function () {
       try {
         // TODO Insert cryptography here
-        let response = await namespace.lookup(this.name)
-        let identity = response.body
+        let identity = await namespace.lookup(this.name)
         console.log(`Retrieved identity ${identity}`)
-        this.$store.dispatch('login', this.name)
-        Vue.events.$once('login', () => {
-          this.toggleModal()
-        })
+        await this.$store.dispatch('login', this.name)
+        this.toggleModal()
       } catch (ex) {
         this.response = 'Invalid username or password'
         console.log('login failed')

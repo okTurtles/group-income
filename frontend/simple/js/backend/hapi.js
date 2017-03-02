@@ -9,7 +9,7 @@ import * as Events from '../../../../shared/events'
 import {RESPONSE_TYPE} from '../../../../shared/constants'
 
 const {HashableEntry, HashableAction} = Events
-
+/* global fetch */
 // temporary identity for signing
 const nacl = require('tweetnacl')
 var buf2b64 = buf => Buffer.from(buf).toString('base64')
@@ -95,17 +95,28 @@ export class HapiBackend extends Backend {
     store.dispatch('saveSettings')
     return res
   }
+  // TODO add event strean method returning string.transform
+  async latestHash (contractId: string) {
+    let response = await fetch(`${process.env.API_URL}/latestHash/${contractId}`).then(r => r.json())
+    return response.data.hash
+  }
+  async eventsSince (contractId: string, since: string) {
+    let response = fetch(`${process.env.API_URL}/events/${contractId}/${since}`).then(r => r.json())
+    return response
+  }
 }
 
 export class HapiNamespace extends TrustedNamespace {
   // prefix groups with `group/` and users with `user/`
-  register (name: string, value: string) {
+  async register (name: string, value: string) {
     console.log(`registering name:`, name)
-    return request.post(`${process.env.API_URL}/name`).send({name, value})
+    let response = await request.post(`${process.env.API_URL}/name`).send({name, value})
+    return response.body.data
   }
-  lookup (name: string) {
+  async lookup (name: string) {
     console.log(`lookup name:`, name)
     // TODO: should `name` be encodeURI'd?
-    return request.get(`${process.env.API_URL}/name/${name}`)
+    let response = await request.get(`${process.env.API_URL}/name/${name}`)
+    return response.body.data.value
   }
 }

@@ -55,21 +55,10 @@
   </section>
 </template>
 <script>
-import fetch from 'node-fetch'
-import request from 'superagent'
 import * as Events from '../../../shared/events'
-import _ from 'lodash'
+import backend from '../js/backend/'
 import {HapiNamespace} from '../js/backend/hapi'
-import nacl from 'tweetnacl'
-import {sign} from '../../../shared/functions'
 var namespace = new HapiNamespace()
-var buf2b64 = buf => Buffer.from(buf).toString('base64')
-var signature = sign(_.mapValues(nacl.sign.keyPair(), buf2b64))
-var postEvent = function (event, contract) {
-  return request.post(`${process.env.API_URL}/event/${contract || event.toHash()}`)
-          .set('Authorization', `gi ${signature}`)
-          .send({hash: event.toHash(), entry: event.toObject()})
-}
 
 export default {
   name: 'InviteView',
@@ -85,8 +74,7 @@ export default {
     add: async function () {
       if (this.searchUser) {
         try {
-          let response = await namespace.lookup(this.searchUser)
-          let contractId = response.body.data.value
+          let contractId = await namespace.lookup(this.searchUser)
           if (!this.members.find(member => member.name === this.searchUser)) {
             this.members.push({name: this.searchUser, contractId: contractId})
           }
@@ -103,8 +91,7 @@ export default {
     submit: async function () {
       for (let i = 0; i < this.members.length; i++) {
         let member = this.members[i]
-        let fetched = await fetch(`${process.env.API_URL}/events/${member.contractId}/${member.contractId}`)
-        let events = await fetched.json()
+        let events = await backend.eventsSince(member.contractId, member.contractId)
         let [contract, ...actions] = events.map(e => {
           return Events[e.entry.type].fromObject(e.entry, e.hash)
         })
@@ -113,10 +100,9 @@ export default {
           let type = action.constructor.name
           contract.constructor.vuex.mutations[type](state, action.data)
         })
-        let res = await fetch(`${process.env.API_URL}/latestHash/${state.attributes.mailbox}`).then(r => r.json())
-        let mailbox = res.data.hash
+        let mailbox = await backend.latestHash(state.attributes.mailbox)
         let invite = new Events.PostInvite({groupId: this.$store.state.currentGroupId}, mailbox)
-        await postEvent(invite, state.attributes.mailbox)
+        await backend.publishLogEntry(state.attributes.mailbox, invite)
       }
       this.invited = true
     }
