@@ -81,4 +81,12 @@ export function saveSettings (user: string, state: Object): Promise<*> {
 export function loadSettings (user: string): Promise<Object> {
   return appSettings.getItem(user)
 }
-
+export function saveCurrentUser (user: string): Promise<Object> {
+  return appSettings.setItem('currentUser', user)
+}
+export function clearCurrentUser (): Promise<Object> {
+  return appSettings.setItem('currentUser', null)
+}
+export function loadCurrentUser (): Promise<Object> {
+  return appSettings.getItem('currentUser')
+}

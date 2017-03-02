@@ -22,7 +22,7 @@
               <span class="icon is-small">
                 <i class="fa fa-user"></i>
               </span>
-              <span v-if="errors.has('name')" id="badUsername" class="help is-danger"><i18n>Username cannot contain spaces</i18n></span>
+              <i18n v-if="errors.has('name')" id="badUsername" class="help is-danger">Username cannot contain spaces</i18n>
               <span v-show="nameAvailable != null && !errors.has('name') " class="help" v-bind:class="[nameAvailable ? 'is-success' : 'is-danger']">{{ nameAvailable ? 'name is available' : 'name is unavailable' }}</span>
             </p>
             <p class="control has-icon">
@@ -30,11 +30,11 @@
               <span class="icon is-small">
                 <i class="fa fa-envelope"></i>
               </span>
-              <span v-if="errors.has('email')" id="badEmail" class="help is-danger"><i18n>Not an email</i18n></span>
+              <i18n v-if="errors.has('email')" id="badEmail" class="help is-danger">Not an email</i18n>
             </p>
             <p class="control has-icon">
               <input class="input" id="password" name="password" v-model="password" v-validate data-vv-rules="required|min:7" placeholder="password" type="password" required>
-              <span v-if="errors.has('password')" id="badPassword" class="help is-danger">Password must be at least 7 characters</span>
+              <i18n v-if="errors.has('password')" id="badPassword" class="help is-danger">Password must be at least 7 characters</i18n>
               <span class="icon is-small">
                 <i class="fa fa-lock"></i>
               </span>
@@ -67,23 +67,12 @@
 </style>
 
 <script>
-import request from 'superagent'
 import backend from '../js/backend'
 import Vue from 'vue'
 import _ from 'lodash'
 import * as Events from '../../../shared/events'
 import {HapiNamespace} from '../js/backend/hapi'
-import nacl from 'tweetnacl'
-import {sign} from '../../../shared/functions'
-// import backend from '../js/backend'
 var namespace = new HapiNamespace()
-var buf2b64 = buf => Buffer.from(buf).toString('base64')
-var signature = sign(_.mapValues(nacl.sign.keyPair(), buf2b64))
-var postEvent = function (event, contract) {
-  return request.post(`${process.env.API_URL}/event/${contract || event.toHash()}`)
-          .set('Authorization', `gi ${signature}`)
-          .send({hash: event.toHash(), entry: event.toObject()})
-}
 // TODO: fix all this
 export default {
   name: 'SignUp',
@@ -100,14 +89,14 @@ export default {
           ]
         })
         await backend.subscribe(user.toHash())
-        await postEvent(user)
+        await backend.publishLogEntry(user.toHash(), user)
         let mailbox = new Events.MailboxContract({
           authorizations: [Events.CanModifyAuths.dummyAuth(user.toHash())]
         })
         await backend.subscribe(mailbox.toHash())
-        await postEvent(mailbox)
+        await backend.publishLogEntry(mailbox.toHash(), mailbox)
         let attribute = new Events.SetAttribute({attribute: {name: 'mailbox', value: mailbox.toHash()}}, user.toHash())
-        await postEvent(attribute, user.toHash())
+        await backend.publishLogEntry(user.toHash(), attribute)
         await namespace.register(this.name, user.toHash())
         // TODO Just add cryptographic magic
         this.response = 'success'
@@ -121,6 +110,7 @@ export default {
         // await backend.subscribe(mailbox.toHash())
         this.error = false
       } catch (ex) {
+        this.$store.commit('logout')
         console.log(ex)
         this.response = ex.toString()
         this.error = true

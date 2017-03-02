@@ -1,13 +1,13 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import './js/translations'
+import * as db from './js/database'
 import VeeValidate from 'vee-validate'
 import SignUp from './views/SignUp.vue'
 import CreateGroup from './views/CreateGroup.vue'
 import UserProfileView from './views/UserProfileView.vue'
 import TestEventLog from './views/EventLog.vue'
 import Invite from './views/Invite.vue'
-// import NewIncomeView from './views/NewIncomeView.vue'
 import PayGroupView from './views/PayGroupView.vue'
 import NavBar from './views/NavBar.vue'
 import { wrap, lazyLoadVue } from './js/utils'
@@ -18,7 +18,31 @@ Vue.use(Router)
 Vue.use(VeeValidate)
 
 Vue.events = new Vue() // global event bus, use: https://vuejs.org/v2/api/#Instance-Methods-Events
-
+/*
+  The following are reusable guard for routes
+  the 'guard' defines how the route is blocked and the redirect determines the redirect behavior
+  when a route is blocked
+ */
+// Check if user is logged in
+var loginGuard = {
+  guard: store => !store.state.loggedIn,
+  redirect: (to, from) => ({ path: '/signup', query: { next: to.path } })
+}
+// Check if user has a group to invite users to
+var inviteGuard = {
+  guard: store => !store.state.currentGroupId,
+  redirect: (to, from) => ({ path: '/new-group' })
+}
+function createEnterGuards (store, ...guards) {
+  return function (to, from, next) {
+    for (let current of guards) {
+      if (current.guard(store, to, from)) {
+        return next(current.redirect(to, from))
+      }
+    }
+    next()
+  }
+}
 var router = new Router({
   mode: 'history',
   base: '/simple',
@@ -48,14 +72,7 @@ var router = new Router({
       meta: {
         title: 'Create Group'
       },
-      beforeEnter (to, from, next) {
-        if (!store.state.loggedIn) {
-          console.log(to.name, `redirecting to ${SignUp.name}!`)
-          next({ path: '/signup', query: { next: to.path } })
-        } else {
-          next()
-        }
-      }
+      beforeEnter: createEnterGuards(store, loginGuard)
     },
     {
       path: '/user',
@@ -107,17 +124,7 @@ var router = new Router({
       meta: {
         title: 'Invite Group Members'
       },
-      beforeEnter (to, from, next) {
-        if (!store.state.loggedIn) {
-          console.log(to.name, `redirecting to ${SignUp.name}!`)
-          next({ path: '/signup', query: { next: '/new-group' } })
-        } else if (!store.state.currentGroupId) {
-          console.log(to.name, `redirecting to ${CreateGroup.name}!`)
-          next({ path: '/new-group' })
-        } else {
-          next()
-        }
-      }
+      beforeEnter: createEnterGuards(store, loginGuard, inviteGuard)
     },
     {
       path: '*',
@@ -130,14 +137,16 @@ router.beforeEach((to, from, next) => {
   document.title = to.meta.title
   next()
 })
-/* global sessionStorage */
-let user = sessionStorage.getItem('loggedIn')
-if (user) {
-  store.dispatch('login', user)
+async function loadLastUser () {
+  let user = await db.loadCurrentUser()
+  if (user) {
+    await store.dispatch('login', user)
+  }
+  /* eslint-disable no-new */
+  new Vue({
+    router: router,
+    components: {NavBar},
+    store // make this and all child components aware of the new store
+  }).$mount('#app')
 }
-/* eslint-disable no-new */
-new Vue({
-  router: router,
-  components: {NavBar},
-  store // make this and all child components aware of the new store
-}).$mount('#app')
+loadLastUser()
