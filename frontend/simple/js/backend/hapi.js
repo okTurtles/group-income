@@ -1,6 +1,7 @@
 'use strict'
 
 import request from 'superagent'
+import fetch from 'node-fetch'
 import store from '../state'
 import {Backend, TrustedNamespace} from './interface'
 import pubsub from '../pubsub'
@@ -9,7 +10,6 @@ import * as Events from '../../../../shared/events'
 import {RESPONSE_TYPE} from '../../../../shared/constants'
 
 const {HashableEntry, HashableAction} = Events
-/* global fetch */
 // temporary identity for signing
 const nacl = require('tweetnacl')
 var buf2b64 = buf => Buffer.from(buf).toString('base64')

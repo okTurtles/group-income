@@ -88,6 +88,14 @@ const mutations = {
 const getters = {
   currentGroup (state) {
     return state[state.currentGroupId]
+  },
+  mailbox (state) {
+    for (let [key, value] of Object.entries(state.contract)) {
+      if (value === 'MailboxContract') {
+        return key
+      }
+    }
+    return null
   }
 }
 
@@ -101,6 +109,7 @@ const actions = {
     await db.saveCurrentUser(user)
     for (let key of Object.keys(state.contracts)) {
       await backend.subscribe(key)
+      // await backend.synchronize(key)
     }
     Vue.events.$emit('login', user)
   },

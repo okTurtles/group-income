@@ -8,6 +8,7 @@ import CreateGroup from './views/CreateGroup.vue'
 import UserProfileView from './views/UserProfileView.vue'
 import TestEventLog from './views/EventLog.vue'
 import Invite from './views/Invite.vue'
+import Mailbox from './views/Mailbox.vue'
 // import NewIncomeView from './views/NewIncomeView.vue'
 import PayGroupView from './views/PayGroupView.vue'
 import NavBar from './views/NavBar.vue'
@@ -137,6 +138,14 @@ var router = new Router({
         title: 'Invite Group Members'
       },
       beforeEnter: createEnterGuards(store, loginGuard, inviteGuard)
+    },
+    {
+      path: '/mailbox',
+      name: Mailbox.name,
+      component: Mailbox,
+      meta: {
+        title: 'Mailbox'
+      }
     },
     {
       path: '*',
