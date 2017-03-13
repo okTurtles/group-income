@@ -35,6 +35,7 @@
     "bluebird": "3.4.7",
     "boom": "4.2.0",
     "bulma": "0.3.1",
+    "cuckoo-filter": "1.0.3",
     "ejs": "2.5.5",
     "font-awesome": "4.7.0",
     "form-data": "2.1.2",

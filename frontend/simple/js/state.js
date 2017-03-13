@@ -8,7 +8,7 @@ import Vuex from 'vuex'
 import * as db from './database'
 import * as Events from '../../../shared/events'
 import backend from '../js/backend'
-
+import {ScalableCuckooFilter as Filter} from 'cuckoo-filter'
 // babel transforms lodash imports: https://github.com/lodash/babel-plugin-lodash#faq
 // for diff between 'lodash/map' and 'lodash/fp/map'
 // see: https://github.com/lodash/lodash/wiki/FP-Guide
@@ -29,7 +29,8 @@ const state = {
   currentGroupId: null,
   contracts: {}, // contractIds => type (for contracts we've successfully subscribed to)
   pending: [], // contractIds we've just published but haven't received back yet
-  loggedIn: false// TODO: properly handle this
+  loggedIn: false, // TODO: properly handle this
+  mailFilter: new Filter(200, 2, 4, 2)
 }
 
 // Mutations must be synchronous! Never call these directly!
@@ -63,6 +64,15 @@ const mutations = {
     state.currentGroupId = currentGroupId
     state.offset = []
   },
+  setMailFilter (state, mailFilter) {
+    state.mailFilter = mailFilter
+  },
+  addToFilter (state, hash) {
+    state.mailFilter.add(hash)
+  },
+  removeFromFilter (state, hash) {
+    state.mailFilter.remove(hash)
+  },
   pending (state, contractId) {
     let index = state.pending.indexOf(contractId)
     index === -1 && state.pending.push(contractId)
@@ -90,7 +100,7 @@ const getters = {
     return state[state.currentGroupId]
   },
   mailbox (state) {
-    for (let [key, value] of Object.entries(state.contract)) {
+    for (let [key, value] of Object.entries(state.contracts)) {
       if (value === 'MailboxContract') {
         return key
       }
@@ -109,7 +119,16 @@ const actions = {
     await db.saveCurrentUser(user)
     for (let key of Object.keys(state.contracts)) {
       await backend.subscribe(key)
-      // await backend.synchronize(key)
+      let latest = await backend.latestHash(key)
+      let recent = await db.recentHash(key)
+      if (latest !== recent) {
+        let events = await backend.eventsSince(key, recent)
+        for (let i = 0; i < events.length; i++) {
+          let event = events[i]
+          event.contractId = key
+          await dispatch('handleEvent', event)
+        }
+      }
     }
     Vue.events.$emit('login', user)
   },
@@ -120,6 +139,14 @@ const actions = {
     await db.clearCurrentUser()
     commit('logout')
     Vue.events.$emit('logout')
+  },
+  addToFilter ({dispatch, commit}, hash) {
+    commit('addToFilter', hash)
+    debouncedSave(dispatch)
+  },
+  removeFromFilter ({dispatch, commit}, hash) {
+    commit('removeFromFilter', hash)
+    debouncedSave(dispatch)
   },
   // this function is called from ./pubsub.js and is the entry point
   // for getting events into the log.
@@ -175,7 +202,8 @@ const actions = {
         contractId,
         type: state.contracts[contractId],
         data: state[contractId]
-      }))
+      })),
+      mailFilter: state.mailFilter.toJSON()
     }
     await db.saveSettings(state.loggedIn, settings)
     console.log('saveSettings:', settings)
@@ -188,6 +216,7 @@ const actions = {
       console.log('loadSettings:', settings)
       commit('setCurrentGroupId', settings.currentGroupId)
       commit('setContracts', settings.contracts || [])
+      commit('setMailFilter', Filter.fromJSON(settings.mailFilter))
     }
   },
 

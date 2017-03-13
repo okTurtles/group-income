@@ -145,7 +145,8 @@ var router = new Router({
       component: Mailbox,
       meta: {
         title: 'Mailbox'
-      }
+      },
+      beforeEnter: createEnterGuards(store, loginGuard)
     },
     {
       path: '*',

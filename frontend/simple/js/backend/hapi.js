@@ -9,7 +9,7 @@ import {sign} from '../../../../shared/functions'
 import * as Events from '../../../../shared/events'
 import {RESPONSE_TYPE} from '../../../../shared/constants'
 
-const {HashableEntry, HashableAction} = Events
+const {HashableEntry} = Events
 // temporary identity for signing
 const nacl = require('tweetnacl')
 var buf2b64 = buf => Buffer.from(buf).toString('base64')
@@ -62,14 +62,10 @@ export class HapiBackend extends Backend {
   }
   publishLogEntry (contractId: string, entry: HashableEntry) {
     console.log(`publishLogEntry to ${contractId}:`, entry)
-    if (entry instanceof HashableAction) {
-      var contractType = store.state.contracts[contractId]
-      if (!Events[contractType].isActionAllowed(entry)) {
-        // TODO: post a proper notification to the user
-        console.error('entry not allowed', entry)
-        return Promise.reject('entry not allowed! this should never happen!')
-      }
-    }
+    // TODO: There used to be a permission check here buts its duplicated when a subcribed
+    // contract received the events
+    // in cases like send of messages the check information is not known so this check
+    // is better left to the server and the subscribers to perform the check
     return request.post(`${process.env.API_URL}/event/${contractId}`)
       .set('Authorization', `gi ${signature}`)
       .send({hash: entry.toHash(), entry: entry.toObject()})

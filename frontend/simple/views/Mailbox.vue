@@ -19,19 +19,19 @@
                 <span class="panel-icon">
                   <i class="fa fa-envelope"></i>
                 </span>
-                <a v-on:click="inbox">messages</a>
+                <a v-on:click="inboxMode">messages</a>
               </div>
               <div class="panel-block">
                 <span class="panel-icon">
                   <i class="fa fa-users"></i>
                 </span>
-                <a>invites</a>
+                <a v-on:click="invitesMode">invites</a>
               </div>
               <div class="panel-block">
                 <span class="panel-icon">
                   <i class="fa fa-trash"></i>
                 </span>
-                <a>deleted</a>
+                <a v-on:click="deletedMode">deleted</a>
               </div>
             </div>
           </div>
@@ -39,7 +39,7 @@
           <div class="column is-two-thirds">
             <div id="compose" class="panel" v-show="mode === 'compose'">
               <div class="panel-heading">
-                <div><strong>Type:</strong>&nbsp;{{composedMessage.type}}</div>
+                <div><strong>Type:</strong>&nbsp;{{currentMessage.constructor.name}}</div>
                 <div><strong style="margin-top: auto">To:</strong>&nbsp;
                   <input class="input is-small" type="text" style="width: 90%;" v-model="recipient">
                   <a class="button is-small" v-on:click="addRecipient">
@@ -59,22 +59,22 @@
                 </table>
               </div>
               <div class="panel-block">
-                <textarea class="textarea"  v-model="composedMessage.text"></textarea>
+                <textarea class="textarea"></textarea>
               </div>
               <div class="panel-block" >
-                <button class="button is-success" type="submit" v-on:click="send"  style="margin-left:auto; margin-right: 0"><i18n>Send</i18n></button>
+                <button class="button is-success" type="submit" v-on:click="send" :disabled="composedMessage.data.message"  style="margin-left:auto; margin-right: 0"><i18n>Send</i18n></button>
                 <button class="button is-danger" type="submit" v-on:click="cancel" style="margin-left:10px; margin-right: 0"><i18n>Cancel</i18n></button>
               </div>
             </div>
             <div class="panel" v-show="mode === 'read'">
               <div class="panel-heading">
-                <div><strong>Type:</strong>&nbsp;{{currentMessage.type}}</div>
-                <div><strong>From:</strong>&nbsp;{{currentMessage.from}}</div>
+                <div><strong>Type:</strong>&nbsp;{{currentMessage.constructor.name}}</div>
+                <div><strong>From:</strong>&nbsp;{{currentMessage.data.from}}</div>
               </div>
-              <p class="panel-block">{{currentMessage.text}}</p>
+              <p class="panel-block">{{currentMessage.data.message}}</p>
               <div class="panel-block" >
                 <button class="button is-danger" type="submit" style="margin-left:auto; margin-right: 0" v-on:click="remove(index)"><i18n>Delete</i18n></button>
-                <button class="button is-primary" type="submit" v-on:click="inbox"  style="margin-left:10px; margin-right: 0"><i18n>Return to Inbox</i18n></button>
+                <button class="button is-primary" type="submit" v-on:click="inboxMode"  style="margin-left:10px; margin-right: 0"><i18n>Return to Inbox</i18n></button>
               </div>
             </div>
             <table class="table is-bordered is-striped is-narrow" v-show="mode === 'inbox'">
@@ -93,8 +93,8 @@
                       </p>
                     </div>
                     <div class="media-content" v-on:click="read(index)">
-                      <div><strong>Type:</strong>&nbsp;{{message.type}}</div>
-                      <div><strong>From:</strong>&nbsp;{{message.from}}</div>
+                      <div><strong>Type:</strong>&nbsp;{{message.constructor.name}}</div>
+                      <div><strong v-if="message.data.from">From:</strong>&nbsp;{{message.data.from}}</div>
                     </div>
                     <div class="media-right" v-on:click="remove(index)">
                       <button class="delete" ></button>
@@ -128,25 +128,66 @@ import * as db from '../js/database'
 import * as Events from '../../../shared/events'
 import {HapiNamespace} from '../js/backend/hapi'
 var namespace = new HapiNamespace()
-// TODO: fix all this
-let defaultMessage = { type: 'Message', headers: [], from: null, message: null }
 export default {
   name: 'Mailbox',
-  mounted () {
+  mounted: function () {
     this.fetchData()
+  },
+  computed: {
+    mailbox () {
+      return this.$store.getters.mailbox
+    }
   },
   methods: {
     fetchData: async function () {
-      let mailbox = this.$store.getters.mailbox
-      backend.synchronize(mailbox)
-      this.messages = db.collect(mailbox)
+      let current = await db.recentHash(this.mailbox)
+      let messages = await db.collect(this.mailbox, current)
+      for (let i = 0; i < messages.length; i++) {
+        let msg = messages[i]
+        switch (msg.constructor.name) {
+          case 'PostMessage':
+            if (!this.$store.state.mailFilter.contains(msg.toHash())) {
+              this.inbox.push(msg)
+            } else {
+              this.deleted.push(msg)
+            }
+            break
+          case 'PostInvite':
+            if (!this.$store.state.mailFilter.contains(msg.toHash())) {
+              this.invites.push(msg)
+            } else {
+              this.deleted.push(msg)
+            }
+            break
+        }
+      }
+      switch (this.mode) {
+        case 'inbox':
+          this.messages = this.inbox
+          break
+        case 'compose':
+          this.messages = this.inbox
+          break
+        case 'read':
+          this.messages = this.inbox
+          break
+      }
     },
     cancel: function () {
-      this.composedMessage = defaultMessage
-      this.inbox()
+      this.composedMessage = new Events.PostMessage({from: null, message: null}, null)
+      this.inboxMode()
     },
-    inbox: function () {
+    inboxMode: function () {
       this.mode = 'inbox'
+      this.messages = this.inbox
+    },
+    deletedMode: function () {
+      this.mode = 'inbox'
+      this.messages = this.deleted
+    },
+    invitesMode: function () {
+      this.mode = 'inbox'
+      this.messages = this.invites
     },
     send: async function () {
       for (let i = 0; i < this.recipients.length; i++) {
@@ -161,15 +202,19 @@ export default {
           contract.constructor.vuex.mutations[type](state, action.data)
         })
         let mailbox = await backend.latestHash(state.attributes.mailbox)
-        let invite = new Events.PostMessage({from: this.$store.state.loggedIn, message: }, mailbox)
+        let invite = new Events.PostMessage({from: this.$store.state.loggedIn, message: this.composedMessage.message}, mailbox)
         await backend.publishLogEntry(state.attributes.mailbox, invite)
       }
-      this.invited = true
+      this.inboxMode()
     },
     remove: function (index) {
       if (Number.isInteger(index)) {
+        this.$store.dispatch('addToFilter', this.messages[index].toHash())
+        this.deleted.push(this.messages[index])
         this.messages.splice(index, 1)
       } else {
+        this.$store.dispatch('addToFilter', this.messages[this.currentIndex].toHash())
+        this.deleted.push(this.messages[this.currentIndex])
         this.message.splice(this.currentIndex, 1)
         this.currentIndex = null
       }
@@ -207,9 +252,12 @@ export default {
       mode: 'compose',
       recipient: null,
       recipients: [],
-      messages: [{ type: 'Message', from: 'that dude', text: 'some stuff goes here' }],
-      composedMessage: defaultMessage,
-      currentMessage: { type: null, from: null, text: null },
+      inbox: [],
+      invites: [],
+      deleted: [],
+      messages: [],
+      composedMessage: new Events.PostMessage({from: null, message: null}, null),
+      currentMessage: new Events.PostMessage({from: null, message: null}, null),
       currentIndex: null,
       error: null
     }
