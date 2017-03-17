@@ -7,40 +7,40 @@
           <div class="column is-one-quarter">
             <div class="panel">
               <div class="panel-heading">
-                Menu
+                <i18n>Menu</i18n>
               </div>
               <div class="panel-block">
                 <span class="panel-icon">
                   <i class="fa fa-pencil"></i>
                 </span>
-                <a v-on:click="compose">compose</a>
+                <a v-on:click="compose"><i18n>compose</i18n></a>
               </div>
               <div class="panel-block">
                 <span class="panel-icon">
                   <i class="fa fa-envelope"></i>
                 </span>
-                <a v-on:click="inboxMode">messages</a>
+                <a v-on:click="inboxMode"><i18n>inbox</i18n></a>
               </div>
               <div class="panel-block">
                 <span class="panel-icon">
                   <i class="fa fa-users"></i>
                 </span>
-                <a v-on:click="invitesMode">invites</a>
+                <a v-on:click="invitesMode"><i18n>invites</i18n></a>
               </div>
               <div class="panel-block">
                 <span class="panel-icon">
                   <i class="fa fa-trash"></i>
                 </span>
-                <a v-on:click="deletedMode">deleted</a>
+                <a v-on:click="deletedMode"><i18n>deleted</i18n></a>
               </div>
             </div>
           </div>
           <div class="column"></div>
           <div class="column is-two-thirds">
-            <div id="compose" class="panel" v-show="mode === 'compose'">
+            <div id="compose" class="panel" v-show="mode === 'Compose'">
               <div class="panel-heading">
-                <div><strong>Type:</strong>&nbsp;{{currentMessage.constructor.name}}</div>
-                <div><strong style="margin-top: auto">To:</strong>&nbsp;
+                <div><strong><i18n>Type</i18n>:</strong>&nbsp;<i18n>PostMessage</i18n></div>
+                <div><strong style="margin-top: auto"><i18n>To</i18n>:</strong>&nbsp;
                   <input class="input is-small" type="text" style="width: 90%;" v-model="recipient">
                   <a class="button is-small" v-on:click="addRecipient">
                     <span class="icon is-small">
@@ -59,28 +59,29 @@
                 </table>
               </div>
               <div class="panel-block">
-                <textarea class="textarea"></textarea>
+                <textarea class="textarea" v-model="composedMessage"></textarea>
               </div>
               <div class="panel-block" >
-                <button class="button is-success" type="submit" v-on:click="send" :disabled="composedMessage.data.message"  style="margin-left:auto; margin-right: 0"><i18n>Send</i18n></button>
+                <button class="button is-success" type="submit" v-on:click="send" :disabled="!composedMessage"  style="margin-left:auto; margin-right: 0"><i18n>Send</i18n></button>
                 <button class="button is-danger" type="submit" v-on:click="cancel" style="margin-left:10px; margin-right: 0"><i18n>Cancel</i18n></button>
               </div>
             </div>
-            <div class="panel" v-show="mode === 'read'">
+            <div class="panel" v-show="mode === 'Read'">
               <div class="panel-heading">
                 <div><strong>Type:</strong>&nbsp;{{currentMessage.constructor.name}}</div>
-                <div><strong>From:</strong>&nbsp;{{currentMessage.data.from}}</div>
+                <div><strong>From:</strong>&nbsp;{{ currentMessage.constructor.name === 'PostInvite' ? currentMessage.data.groupId : currentMessage.data.from}}</div>
               </div>
-              <p class="panel-block">{{currentMessage.data.message}}</p>
+              <p class="panel-block" v-if="currentMessage.data.message">{{currentMessage.data.message}}</p>
+              <p class="panel-block" v-if="currentMessage.constructor.name === 'PostInvite'"><router-link v-if="!$store.state.mailFilter.contains(currentMessage.toHash())" v-bind:to="{ path: '/join', query: { groupId: currentMessage.data.groupId, inviteHash: currentMessage.toHash() } }" ><i18n>Respond to Invite</i18n></router-link></p>
               <div class="panel-block" >
-                <button class="button is-danger" type="submit" style="margin-left:auto; margin-right: 0" v-on:click="remove(index)"><i18n>Delete</i18n></button>
-                <button class="button is-primary" type="submit" v-on:click="inboxMode"  style="margin-left:10px; margin-right: 0"><i18n>Return to Inbox</i18n></button>
+                <button class="button is-danger" v-if="currentMessage.constructor.name !== 'PostInvite'" type="submit" style="margin-left:auto; margin-right: 0" v-on:click="remove(index)"><i18n>Delete</i18n></button>
+                <button class="button is-primary" type="submit" v-on:click="returnMode" style="margin-left:10px; margin-right: 0"><i18n>Return</i18n></button>
               </div>
             </div>
-            <table class="table is-bordered is-striped is-narrow" v-show="mode === 'inbox'">
+            <table class="table is-bordered is-striped is-narrow" v-show="(mode === 'Inbox') || (mode === 'Deleted') || (mode === 'Invites')">
               <thead>
               <tr>
-                <th><i18n>Messages</i18n></th>
+                <th><i18n>{{mode}}</i18n></th>
               </tr>
               </thead>
               <tbody>
@@ -94,7 +95,9 @@
                     </div>
                     <div class="media-content" v-on:click="read(index)">
                       <div><strong>Type:</strong>&nbsp;{{message.constructor.name}}</div>
-                      <div><strong v-if="message.data.from">From:</strong>&nbsp;{{message.data.from}}</div>
+                      <div v-if="message.data.from"><strong>From:</strong>&nbsp;{{message.data.from}}</div>
+                      <div v-if="message.data.groupId"><strong>From:</strong>&nbsp;{{message.data.groupId}}</div>
+                      <span v-if="message.data.message" style="color: grey">{{message.data.message.substr(0,50)}}...</span>
                     </div>
                     <div class="media-right" v-on:click="remove(index)">
                       <button class="delete" ></button>
@@ -123,6 +126,7 @@
 </style>
 
 <script>
+import _ from 'lodash'
 import backend from '../js/backend'
 import * as db from '../js/database'
 import * as Events from '../../../shared/events'
@@ -136,13 +140,25 @@ export default {
   computed: {
     mailbox () {
       return this.$store.getters.mailbox
+    },
+    newest () {
+      return this.$store.state[this.mailbox].messages.length
+    }
+  },
+  watch: {
+    newest: function () {
+      this.fetchData()
     }
   },
   methods: {
-    fetchData: async function () {
+    fetchData: _.debounce(async function () {
       let current = await db.recentHash(this.mailbox)
       let messages = await db.collect(this.mailbox, current)
-      for (let i = 0; i < messages.length; i++) {
+      this.inbox = []
+      this.invites = []
+      this.deleted = []
+      this.messages = []
+      for (let i = messages.length - 1; i >= 0; i--) {
         let msg = messages[i]
         switch (msg.constructor.name) {
           case 'PostMessage':
@@ -162,32 +178,49 @@ export default {
         }
       }
       switch (this.mode) {
-        case 'inbox':
+        case 'Invites':
+          this.messages = this.invites
+          break
+        case 'Deleted':
+          this.messages = this.deleted
+          break
+        case 'Inbox':
           this.messages = this.inbox
           break
-        case 'compose':
+        case 'Compose':
           this.messages = this.inbox
           break
-        case 'read':
+        case 'Read':
           this.messages = this.inbox
           break
       }
-    },
+    }, 700, {maxWait: 5000}),
     cancel: function () {
       this.composedMessage = new Events.PostMessage({from: null, message: null}, null)
       this.inboxMode()
     },
     inboxMode: function () {
-      this.mode = 'inbox'
+      this.mode = 'Inbox'
       this.messages = this.inbox
     },
     deletedMode: function () {
-      this.mode = 'inbox'
+      this.mode = 'Deleted'
       this.messages = this.deleted
     },
     invitesMode: function () {
-      this.mode = 'inbox'
+      this.mode = 'Invites'
       this.messages = this.invites
+    },
+    returnMode: function () {
+      if (this.messages === this.deleted) {
+        this.deletedMode()
+      }
+      if (this.messages === this.inbox) {
+        this.inboxMode()
+      }
+      if (this.messages === this.invites) {
+        this.invitesMode()
+      }
     },
     send: async function () {
       for (let i = 0; i < this.recipients.length; i++) {
@@ -202,28 +235,36 @@ export default {
           contract.constructor.vuex.mutations[type](state, action.data)
         })
         let mailbox = await backend.latestHash(state.attributes.mailbox)
-        let invite = new Events.PostMessage({from: this.$store.state.loggedIn, message: this.composedMessage.message}, mailbox)
+        let invite = new Events.PostMessage({from: this.$store.state.loggedIn, message: this.composedMessage}, mailbox)
         await backend.publishLogEntry(state.attributes.mailbox, invite)
       }
+      this.composedMessage = ''
       this.inboxMode()
     },
     remove: function (index) {
       if (Number.isInteger(index)) {
-        this.$store.dispatch('addToFilter', this.messages[index].toHash())
-        this.deleted.push(this.messages[index])
-        this.messages.splice(index, 1)
+        if (this.mode === 'Deleted') {
+          this.$store.dispatch('removeFromFilter', this.messages[index].toHash())
+          this.messages.splice(index, 1)
+          this.fetchData()
+        } else {
+          this.$store.dispatch('addToFilter', this.messages[index].toHash())
+          this.deleted.push(this.messages[index])
+          this.messages.splice(index, 1)
+        }
       } else {
         this.$store.dispatch('addToFilter', this.messages[this.currentIndex].toHash())
         this.deleted.push(this.messages[this.currentIndex])
-        this.message.splice(this.currentIndex, 1)
+        this.messages.splice(this.currentIndex, 1)
         this.currentIndex = null
+        this.inboxMode()
       }
     },
     compose: function () {
-      this.mode = 'compose'
+      this.mode = 'Compose'
     },
     read: function (index) {
-      this.mode = 'read'
+      this.mode = 'Read'
       if (Number.isInteger(index)) {
         this.currentMessage = this.messages[index]
         this.currentIndex = index
@@ -249,15 +290,15 @@ export default {
   },
   data () {
     return {
-      mode: 'compose',
+      mode: 'Inbox',
       recipient: null,
       recipients: [],
       inbox: [],
       invites: [],
       deleted: [],
       messages: [],
-      composedMessage: new Events.PostMessage({from: null, message: null}, null),
-      currentMessage: new Events.PostMessage({from: null, message: null}, null),
+      composedMessage: '',
+      currentMessage: new Events.PostMessage({from: null, message: ''}, null),
       currentIndex: null,
       error: null
     }

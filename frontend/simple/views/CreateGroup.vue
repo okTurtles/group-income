@@ -119,14 +119,14 @@ export default {
         let entry = new Events.GroupContract({
           authorizations: [Events.CanModifyAuths.dummyAuth()],
           groupName: this.groupName,
-          sharedValue: this.sharedValue,
+          sharedValue: this.sharedValues,
           changePercentage: this.changePercentage,
           openMembership: this.openMembership,
           memberApprovalPercentage: this.memberApprovalPercentage,
           memberRemovalPercentage: this.memberRemovalPercentage,
           incomeProvided: this.incomeProvided,
           contributionPrivacy: this.contributionPrivacy,
-          founderHashKey: this.$store.state.loggedIn
+          founderUsername: this.$store.state.loggedIn
         })
         let hash = entry.toHash()
         await backend.subscribe(hash)
@@ -134,13 +134,10 @@ export default {
           this.$store.commit('setCurrentGroupId', hash)
           this.$store.commit('setPosition', hash)
         })
-        let res = await backend.publishLogEntry(hash, entry)
-        if (!res.ok) {
-          console.error('failed to create group contract:', res.text)
-        } else {
-          this.created = true
-          console.log('group contract created. server response:', res.body)
-        }
+        await backend.publishLogEntry(hash, entry)
+        let founder = new Events.AcknowledgeFounder({ username: this.$store.state.loggedIn }, hash)
+        await backend.publishLogEntry(hash, founder)
+        this.created = true
       }
     }
   },

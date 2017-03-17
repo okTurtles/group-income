@@ -9,7 +9,7 @@ import UserProfileView from './views/UserProfileView.vue'
 import TestEventLog from './views/EventLog.vue'
 import Invite from './views/Invite.vue'
 import Mailbox from './views/Mailbox.vue'
-// import NewIncomeView from './views/NewIncomeView.vue'
+import Join from './views/Join.vue'
 import PayGroupView from './views/PayGroupView.vue'
 import NavBar from './views/NavBar.vue'
 import { wrap, lazyLoadVue } from './js/utils'
@@ -43,17 +43,22 @@ var inviteGuard = {
     return { path: '/new-group' }
   }
 }
+var joinGuard = {
+  guard (store, to, from) {
+    return from.name !== Mailbox.name
+  },
+  redirect (to, from) {
+    return { path: '/mailbox' }
+  }
+}
 function createEnterGuards (store, ...guards) {
   return function (to, from, next) {
-    for (let i = 0; i < guards.length; i++) {
-      let current = guards[i]
-      if (current.guard(store)) {
+    for (let current of guards) {
+      if (current.guard(store, to, from)) {
         return next(current.redirect(to, from))
-      } else {
-        continue
       }
     }
-    return next()
+    next()
   }
 }
 var router = new Router({
@@ -147,6 +152,15 @@ var router = new Router({
         title: 'Mailbox'
       },
       beforeEnter: createEnterGuards(store, loginGuard)
+    },
+    {
+      path: '/join',
+      name: Join.name,
+      component: Join,
+      meta: {
+        title: 'Join a Group'
+      },
+      beforeEnter: createEnterGuards(store, loginGuard, joinGuard)
     },
     {
       path: '*',

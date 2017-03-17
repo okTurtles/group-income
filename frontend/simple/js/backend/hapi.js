@@ -97,7 +97,7 @@ export class HapiBackend extends Backend {
     return response.data.hash
   }
   async eventsSince (contractId: string, since: string) {
-    let response = fetch(`${process.env.API_URL}/events/${contractId}/${since}`).then(r => r.json())
+    let response = await fetch(`${process.env.API_URL}/events/${contractId}/${since}`).then(r => r.json())
     return response
   }
 }
