@@ -74,11 +74,19 @@ const appSettings = localforage.createInstance({
 })
 
 // TODO: replace 'testUser' with something real based on login
-export function saveSettings (state: Object): Promise<*> {
-  return appSettings.setItem('testUser', state)
+export function saveSettings (user: string, state: Object): Promise<*> {
+  return appSettings.setItem(user, state)
 }
 
-export function loadSettings (): Promise<Object> {
-  return appSettings.getItem('testUser')
+export function loadSettings (user: string): Promise<Object> {
+  return appSettings.getItem(user)
 }
-
+export function saveCurrentUser (user: string): Promise<Object> {
+  return appSettings.setItem('currentUser', user)
+}
+export function clearCurrentUser (): Promise<Object> {
+  return appSettings.setItem('currentUser', null)
+}
+export function loadCurrentUser (): Promise<Object> {
+  return appSettings.getItem('currentUser')
+}

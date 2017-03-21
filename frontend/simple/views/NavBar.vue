@@ -98,16 +98,15 @@ var namespace = new HapiNamespace()
 export default {
   name: 'NavBar',
   created: function () {
-    Vue.events.$on('login', this.toggleModal)
+    Vue.events.$on('loginModal', this.toggleModal)
   },
   methods: {
     login: async function () {
       try {
         // TODO Insert cryptography here
-        let response = await namespace.lookup(this.name)
-        let identity = response.body
+        let identity = await namespace.lookup(this.name)
         console.log(`Retrieved identity ${identity}`)
-        this.$store.commit('login', this.name)
+        await this.$store.dispatch('login', this.name)
         this.toggleModal()
       } catch (ex) {
         this.response = 'Invalid username or password'
@@ -115,7 +114,7 @@ export default {
       }
     },
     logout: function () {
-      this.$store.commit('logout')
+      this.$store.dispatch('logout')
     },
     toggleModal () {
       if (!this.$refs.modal.classList.contains('is-active') && this.$store.state.loggedIn) {

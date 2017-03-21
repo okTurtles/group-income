@@ -7,6 +7,7 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import * as db from './database'
 import * as Events from '../../../shared/events'
+import backend from '../js/backend'
 
 // babel transforms lodash imports: https://github.com/lodash/babel-plugin-lodash#faq
 // for diff between 'lodash/map' and 'lodash/fp/map'
@@ -14,7 +15,6 @@ import * as Events from '../../../shared/events'
 import debounce from 'lodash/debounce'
 
 Vue.use(Vuex)
-
 var store // this is set and made the default export at the bottom of the file.
           // we have it declared here to make it accessible in mutations
 
@@ -92,6 +92,29 @@ const getters = {
 }
 
 const actions = {
+  async login (
+    {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object},
+    user: string
+  ) {
+    commit('login', user)
+    await dispatch('loadSettings')
+    await db.saveCurrentUser(user)
+    for (let key of Object.keys(state.contracts)) {
+      await backend.subscribe(key)
+    }
+    Vue.events.$emit('login', user)
+  },
+  async logout (
+    {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object},
+  ) {
+    await dispatch('saveSettings')
+    await db.clearCurrentUser()
+    commit('logout')
+    for (let key of Object.keys(state.contracts)) {
+      await backend.unsubscribe(key)
+    }
+    Vue.events.$emit('logout')
+  },
   // this function is called from ./pubsub.js and is the entry point
   // for getting events into the log.
   // mirrors `handleEvent` in backend/server.js
@@ -148,16 +171,18 @@ const actions = {
         data: state[contractId]
       }))
     }
-    await db.saveSettings(settings)
+    await db.saveSettings(state.loggedIn, settings)
     console.log('saveSettings:', settings)
   },
   async loadSettings (
     {commit, state}: {commit: Function, state: Object}
   ) {
-    const settings = await db.loadSettings()
-    console.log('loadSettings:', settings)
-    commit('setCurrentGroupId', settings.currentGroupId)
-    commit('setContracts', settings.contracts || [])
+    const settings = await db.loadSettings(state.loggedIn)
+    if (settings) {
+      console.log('loadSettings:', settings)
+      commit('setCurrentGroupId', settings.currentGroupId)
+      commit('setContracts', settings.contracts || [])
+    }
   },
 
   // time travel related

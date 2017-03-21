@@ -1,3 +1,4 @@
+/* global fetch */
 'use strict'
 
 import request from 'superagent'
@@ -8,8 +9,7 @@ import {sign} from '../../../../shared/functions'
 import * as Events from '../../../../shared/events'
 import {RESPONSE_TYPE} from '../../../../shared/constants'
 
-const {HashableEntry, HashableAction} = Events
-
+const {HashableEntry} = Events
 // temporary identity for signing
 const nacl = require('tweetnacl')
 var buf2b64 = buf => Buffer.from(buf).toString('base64')
@@ -62,20 +62,13 @@ export class HapiBackend extends Backend {
   }
   publishLogEntry (contractId: string, entry: HashableEntry) {
     console.log(`publishLogEntry to ${contractId}:`, entry)
-    if (entry instanceof HashableAction) {
-      var contractType = store.state.contracts[contractId]
-      if (!Events[contractType].isActionAllowed(entry)) {
-        // TODO: post a proper notification to the user
-        console.error('entry not allowed', entry)
-        return Promise.reject('entry not allowed! this should never happen!')
-      }
-    }
+    // There used to be a permission check here buts its duplicated when a subcribed
+    // contract received the events
+    // in cases like send of messages the check information is not known so this check
+    // is better left to the server and the subscribers to perform the check
     return request.post(`${process.env.API_URL}/event/${contractId}`)
       .set('Authorization', `gi ${signature}`)
       .send({hash: entry.toHash(), entry: entry.toObject()})
-  }
-  subscriptions () {
-    return Object.keys(store.state.contracts)
   }
   async subscribe (contractId: string) {
     console.log('subscribing to:', contractId)
@@ -95,17 +88,28 @@ export class HapiBackend extends Backend {
     store.dispatch('saveSettings')
     return res
   }
+  // TODO add event strean method returning string.transform
+  async latestHash (contractId: string) {
+    let response = await fetch(`${process.env.API_URL}/latestHash/${contractId}`).then(r => r.json())
+    return response.data.hash
+  }
+  async eventsSince (contractId: string, since: string) {
+    let response = await fetch(`${process.env.API_URL}/events/${contractId}/${since}`).then(r => r.json())
+    return response
+  }
 }
 
 export class HapiNamespace extends TrustedNamespace {
   // prefix groups with `group/` and users with `user/`
-  register (name: string, value: string) {
+  async register (name: string, value: string) {
     console.log(`registering name:`, name)
-    return request.post(`${process.env.API_URL}/name`).send({name, value})
+    let response = await request.post(`${process.env.API_URL}/name`).send({name, value})
+    return response.body.data
   }
-  lookup (name: string) {
+  async lookup (name: string) {
     console.log(`lookup name:`, name)
     // TODO: should `name` be encodeURI'd?
-    return request.get(`${process.env.API_URL}/name/${name}`)
+    let response = await request.get(`${process.env.API_URL}/name/${name}`)
+    return response.body.data.value
   }
 }

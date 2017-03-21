@@ -21,8 +21,9 @@ describe('Frontend', function () {
   it('Should start the backend server if necessary', function () {
     return require('../backend/index.js')
   })
-
-  describe('New user page', function () {
+  let randInt = (min, max) => Math.floor(Math.random() * (max - min)) + min
+  let username = `testuser${randInt(0, 10000000)}${randInt(10000000, 20000000)}`
+  describe.skip('New user page', function () {
     it('Should create user George', function () {
       this.timeout(5000)
       return n.goto(page('signup'))
@@ -89,11 +90,10 @@ describe('Frontend', function () {
   })
 
   describe('Sign up Test', function () {
-    let randInt = (min, max) => Math.floor(Math.random() * (max - min)) + min
-    let username = `testuser${randInt(0, 10000000)}${randInt(10000000, 20000000)}`
     it('Should register User', async function () {
       this.timeout(4000)
       await n.goto(page('signup'))
+        .wait('#name')
       let signedup = await n.insert('#name', username)
         .insert('#email', `test@testgroupincome.com`)
         .insert('#password', 'testtest')
@@ -148,6 +148,16 @@ describe('Frontend', function () {
   })
 
   describe('Group Creation Test', function () {
+    before(async function () {
+      await n.goto(page('signup'))
+        .wait('#name')
+      await n.insert('#name', username + '2')
+      .insert('#email', `test2@testgroupincome.com`)
+      .insert('#password', 'testtest')
+      .click('button[type="submit"]')
+      .wait(() => !!document.getElementById('serverMsg').innerText)
+      .evaluate(() => document.getElementById('serverMsg').innerText)
+    })
     it('Should create a group', async function () {
       this.timeout(4000)
       await n.click('#CreateGroup')
@@ -159,6 +169,25 @@ describe('Frontend', function () {
         .insert('input[name="proxyMemberApprovalPercentage"]', '75')
         .insert('input[name="proxyMemberRemovalPercentage"]', '75')
         .select('select[name="contributionPrivacy"]', 'Very Private')
+        .click('button[type="submit"]')
+        .wait(() => !!document.getElementById('successMsg'))
+        .evaluate(() => !!document.getElementById('successMsg'))
+      should(created).equal(true)
+    })
+    it('Should invite memebers to group', async function () {
+      this.timeout(4000)
+      await n.click('#nextButton')
+        .wait(() => !!document.getElementById('addButton'))
+      let count = await n.insert('#searchUser', username)
+        .click('#addButton')
+        .wait(() => document.querySelectorAll('.member').length > 0)
+        .click('.delete')
+        .wait(() => document.querySelectorAll('.member').length < 1)
+        .evaluate(() => +document.querySelectorAll('.member').length)
+      should(count).equal(0)
+      let created = await n.insert('#searchUser', username)
+        .click('#addButton')
+        .wait(() => document.querySelectorAll('.member').length > 0)
         .click('button[type="submit"]')
         .wait(() => !!document.getElementById('successMsg'))
         .evaluate(() => !!document.getElementById('successMsg'))
