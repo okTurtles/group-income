@@ -8,7 +8,7 @@ import CreateGroup from './views/CreateGroup.vue'
 import UserProfileView from './views/UserProfileView.vue'
 import TestEventLog from './views/EventLog.vue'
 import Invite from './views/Invite.vue'
-import PayGroupView from './views/PayGroupView.vue'
+import PayGroup from './views/PayGroup.vue'
 import NavBar from './views/NavBar.vue'
 import { wrap, lazyLoadVue } from './js/utils'
 import store from './js/state'
@@ -97,7 +97,7 @@ var router = new Router({
     },
     {
       path: '/pay-group',
-      component: PayGroupView,
+      component: PayGroup,
       meta: {
         title: 'Pay Group'
       }

@@ -1,19 +1,27 @@
 <template>
-  <section class="section">
-    <!-- main containers:
-     .container  http://bulma.io/documentation/layout/container/
-     .content    http://bulma.io/documentation/elements/content/
-     .section    http://bulma.io/documentation/layout/section/
-     .block      base/classes.sass (just adds 20px margin-bottom except for last)
-     -->
-  </section>
+  <vue-assistant :views="views" @done="done"></vue-assistant>
 </template>
-
-<style>
-</style>
-
 <script>
+import VueAssistant from './VueAssistant.vue'
+import SignUp from './SignUp.vue'
+import PayGroup from './PayGroup.vue'
 export default {
-  name: 'UserProfileView'
+  name: 'UserProfileView',
+  components: {
+    'vue-assistant': VueAssistant
+  },
+  data () {
+    return {
+      views: [SignUp, PayGroup, {
+        template: `<pay-group title='Overwritten title!' @next="$emit('next')"></pay-group>`,
+        components: {'pay-group': PayGroup}
+      }]
+    }
+  },
+  methods: {
+    done () {
+      window.alert('done!')
+    }
+  }
 }
 </script>
