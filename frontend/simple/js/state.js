@@ -8,7 +8,6 @@ import Vuex from 'vuex'
 import * as db from './database'
 import * as Events from '../../../shared/events'
 import backend from '../js/backend'
-import {ScalableCuckooFilter as Filter} from 'cuckoo-filter'
 // babel transforms lodash imports: https://github.com/lodash/babel-plugin-lodash#faq
 // for diff between 'lodash/map' and 'lodash/fp/map'
 // see: https://github.com/lodash/lodash/wiki/FP-Guide
@@ -22,7 +21,6 @@ var store // this is set and made the default export at the bottom of the file.
 // NOTE: THE STATE CAN ONLY STORE *SERIALIZABLE* OBJECTS! THAT MEANS IF YOU TRY
 //       TO STORE AN INSTANCE OF A CLASS (LIKE A CONTRACT), IT WILL NOT STORE
 //       THE ACTUAL CONTRACT, BUT JSON.STRINGIFY(CONTRACT) INSTEAD!
-var filter = new Filter(200, 2, 4, 2)
 const state = {
   position: null,
   offset: [],
@@ -31,8 +29,7 @@ const state = {
   contracts: {}, // contractIds => type (for contracts we've successfully subscribed to)
   pending: [], // contractIds we've just published but haven't received back yet
   loggedIn: false, // TODO: properly handle this
-  mailChanged: new Date(),
-  mailFilter: filter.toJSON()
+  deletedMail: []
 }
 
 // Mutations must be synchronous! Never call these directly!
@@ -60,6 +57,41 @@ const mutations = {
   setContracts (state, contracts) {
     for (let contract of contracts) {
       mutations.addContract(state, contract)
+    }
+  },
+  setDeletedMail (state, deletedMail) {
+    state.deletedMail = deletedMail
+  },
+  deleteMail (state, hash) {
+    let mailbox
+    for (let [key, value] of Object.entries(state.contracts)) {
+      if (value === 'MailboxContract') {
+        mailbox = key
+        break
+      }
+    }
+    if (mailbox) {
+      let index = state[ mailbox ].messages.findIndex(msg => msg.hash === hash)
+      if (index > -1) {
+        let message = state[ mailbox ].messages.splice(index, 1)[0]
+        state.deletedMail.push(message)
+      }
+    }
+  },
+  restoreMail (state, hash) {
+    let mailbox
+    for (let [key, value] of Object.entries(state.contracts)) {
+      if (value === 'MailboxContract') {
+        mailbox = key
+        break
+      }
+    }
+    if (mailbox) {
+      let index = state.deletedMail.findIndex(msg => msg.hash === hash)
+      if (index > -1) {
+        let message = state.deletedMail.splice(index, 1)[0]
+        state[ mailbox ].messages.push(message)
+      }
     }
   },
   setCurrentGroupId (state, currentGroupId) {
@@ -137,8 +169,13 @@ const actions = {
     commit('logout')
     Vue.events.$emit('logout')
   },
-  setMailFilter ({dispatch, commit}, filter) {
-    commit('setMailFilter', filter)
+  deleteMail ({dispatch, commit}, hash) {
+    commit('deleteMail', hash)
+    debouncedSave(dispatch)
+  },
+  restoreMail ({dispatch, commit}, hash) {
+    console.log('happened', hash)
+    commit('restoreMail', hash)
     debouncedSave(dispatch)
   },
   // this function is called from ./pubsub.js and is the entry point
@@ -174,6 +211,7 @@ const actions = {
       }
       // TODO: verify each entry is signed by a group member
       await db.addLogEntry(contractId, entry)
+      entry.data.hash = hash
       commit(`${contractId}/${type}`, entry.data)
     } else {
       return console.error(`UNKNOWN EVENT TYPE!`, contractId, entry)
@@ -196,7 +234,7 @@ const actions = {
         type: state.contracts[contractId],
         data: state[contractId]
       })),
-      mailFilter: state.mailFilter
+      deletedMail: state.deletedMail
     }
     await db.saveSettings(state.loggedIn, settings)
     console.log('saveSettings:', settings)
@@ -209,7 +247,7 @@ const actions = {
       console.log('loadSettings:', settings)
       commit('setCurrentGroupId', settings.currentGroupId)
       commit('setContracts', settings.contracts || [])
-      commit('setMailFilter', settings.mailFilter)
+      commit('setDeletedMail', settings.deletedMail)
     }
   },
 

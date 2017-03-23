@@ -102,10 +102,10 @@ export default {
         })
         let mailbox = await backend.latestHash(state.attributes.mailbox)
         let date = new Date()
-        let invite = new Events.PostInvite({groupId: this.$store.state.currentGroupId, inviteDate: date.toString()}, mailbox)
+        let invite = new Events.PostInvite({groupId: this.$store.state.currentGroupId, sentDate: date.toString()}, mailbox)
         await backend.publishLogEntry(state.attributes.mailbox, invite)
         let latest = await backend.latestHash(this.$store.state.currentGroupId)
-        let invited = new Events.RecordInvitation({ username: member.name, inviteHash: invite.toHash(), inviteDate: date.toString() }, latest)
+        let invited = new Events.RecordInvitation({ username: member.name, inviteHash: invite.toHash(), sentDate: date.toString() }, latest)
         await backend.publishLogEntry(this.$store.state.currentGroupId, invited)
       }
       this.invited = true

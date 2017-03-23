@@ -119,7 +119,7 @@ export default {
         let entry = new Events.GroupContract({
           authorizations: [Events.CanModifyAuths.dummyAuth()],
           groupName: this.groupName,
-          sharedValue: this.sharedValues,
+          sharedValues: this.sharedValues,
           changePercentage: this.changePercentage,
           openMembership: this.openMembership,
           memberApprovalPercentage: this.memberApprovalPercentage,

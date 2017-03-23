@@ -368,20 +368,21 @@ export class PostMessage extends HashableAction {
   static fields = PostMessage.Fields([
     ['from', 'string'],
     ['headers', 'string', 'repeated'],
-    ['message', 'string']
+    ['message', 'string'],
+    ['sentDate', 'string']
   ])
 }
 export class PostInvite extends HashableAction {
   static fields = PostInvite.Fields([
     ['groupId', 'string'],
-    ['inviteDate', 'string']
+    ['sentDate', 'string']
   ])
 }
 export class RecordInvitation extends HashableAction {
   static fields = RecordInvitation.Fields([
     ['username', 'string'],
     ['inviteHash', 'string'],
-    ['inviteDate', 'string']
+    ['sentDate', 'string']
   ])
 }
 export class AcceptInvitation extends HashableAction {

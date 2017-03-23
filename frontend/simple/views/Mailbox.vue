@@ -39,9 +39,9 @@
           <div class="column is-two-thirds">
             <div id="compose" class="panel" v-show="mode === 'Compose'">
               <div class="panel-heading">
-                <div><strong><i18n>Type</i18n>:</strong>&nbsp;<i18n>PostMessage</i18n></div>
+                <div><strong><i18n>Type</i18n>:</strong>&nbsp;<i18n>Message</i18n></div>
                 <div><strong style="margin-top: auto"><i18n>To</i18n>:</strong>&nbsp;
-                  <input class="input is-small" type="text" style="width: 90%;" v-model="recipient">
+                  <input class="input is-small" type="text" style="width: 80%;" v-model="recipient" v-on:blur="addRecipient">
                   <a class="button is-small" v-on:click="addRecipient">
                     <span class="icon is-small">
                       <i class="fa fa-plus-circle"></i>
@@ -68,14 +68,15 @@
             </div>
             <div class="panel" v-show="mode === 'Read'">
               <div class="panel-heading">
-                <div><strong>Type:</strong>&nbsp;{{currentMessage.constructor.name}}</div>
-                <div><strong>From:</strong>&nbsp;{{ currentMessage.constructor.name === 'PostInvite' ? currentMessage.data.groupId : currentMessage.data.from}}</div>
+                <div><strong>Type:</strong>&nbsp;{{ currentMessage.groupId ?  'Invite' : 'Message'}}</div>
+                <div><strong>Sent:</strong>&nbsp;{{formatDate(currentMessage.sentDate)}}</div>
+                <div><strong>From:</strong>&nbsp;{{ currentMessage.groupId ?  currentMessage.groupId : currentMessage.from}}</div>
               </div>
-              <p class="panel-block" v-if="currentMessage.data.message">{{currentMessage.data.message}}</p>
-              <p class="panel-block" v-if="currentMessage.constructor.name === 'PostInvite'"><router-link v-if="!$store.state.mailFilter.contains(currentMessage.toHash())" v-bind:to="{ path: '/join', query: { groupId: currentMessage.data.groupId, inviteHash: currentMessage.toHash() } }" ><i18n>Respond to Invite</i18n></router-link></p>
+              <p class="panel-block" v-if="currentMessage.message">{{currentMessage.message}}</p>
+              <p class="panel-block" v-if="currentMessage.groupId && !(deleted === messages)"><router-link v-bind:to="{ path: '/join', query: { groupId: currentMessage.groupId, inviteHash: currentMessage.hash } }" ><i18n>Respond to Invite</i18n></router-link></p>
               <div class="panel-block" >
-                <button class="button is-danger" v-if="currentMessage.constructor.name !== 'PostInvite'" type="submit" style="margin-left:auto; margin-right: 0" v-on:click="remove(index)"><i18n>Delete</i18n></button>
-                <button class="button is-primary" type="submit" v-on:click="returnMode" style="margin-left:10px; margin-right: 0"><i18n>Return</i18n></button>
+                <button class="button is-danger" v-if="!currentMessage.groupId" type="submit" style="margin-left:auto; margin-right: 0" v-on:click="remove(index)"><i18n>{{ messages === deleted ? 'Restore' : 'Delete' }}</i18n></button>
+                <button class="button is-primary" type="submit" v-on:click="returnMode" v-bind:style="deleted !== messages  || !currentMessage.groupId  ? 'margin-left:10px; margin-right: 0' : 'margin-left:auto; margin-right: 0'"><i18n>Return</i18n></button>
               </div>
             </div>
             <table class="table is-bordered is-striped is-narrow" v-show="(mode === 'Inbox') || (mode === 'Deleted') || (mode === 'Invites')">
@@ -94,13 +95,13 @@
                       </p>
                     </div>
                     <div class="media-content" v-on:click="read(index)">
-                      <div><strong>Type:</strong>&nbsp;{{message.constructor.name}}</div>
-                      <div v-if="message.data.from"><strong>From:</strong>&nbsp;{{message.data.from}}</div>
-                      <div v-if="message.data.groupId"><strong>From:</strong>&nbsp;{{message.data.groupId}}</div>
-                      <span v-if="message.data.message" style="color: grey">{{message.data.message.substr(0,50)}}...</span>
+                      <div><strong>Sent:</strong>&nbsp;{{formatDate(message.sentDate)}}</div>
+                      <div v-if="message.from"><strong>From:</strong>&nbsp;{{message.from}}</div>
+                      <div v-if="message.groupId"><strong>From:</strong>&nbsp;{{message.groupId}}</div>
+                      <span v-if="message.message" style="color: grey">{{message.message.substr(0,50)}}...</span>
                     </div>
-                    <div class="media-right" v-on:click="remove(index)">
-                      <button class="delete" ></button>
+                    <div v-if="!message.groupId" type="submit"class="media-right" v-on:click="remove(index)">
+                      <button  class="delete" ></button>
                     </div>
                   </div>
                 </td>
@@ -128,10 +129,8 @@
 <script>
 import _ from 'lodash'
 import backend from '../js/backend'
-import * as db from '../js/database'
 import * as Events from '../../../shared/events'
 import {HapiNamespace} from '../js/backend/hapi'
-import {ScalableCuckooFilter as Filter} from 'cuckoo-filter'
 var namespace = new HapiNamespace()
 export default {
   name: 'Mailbox',
@@ -142,53 +141,33 @@ export default {
     mailbox () {
       return this.$store.getters.mailbox
     },
-    newest () {
-      return this.$store.state[this.mailbox].messages.length
-    },
-    mailChanged () {
-      return this.$store.state.mailChanged
-    },
-    mailFilter () {
-      return Filter.fromJSON(this.$store.state.mailFilter.filter)
+    mail () {
+      return this.$store.state[this.mailbox].messages
     }
   },
   watch: {
-    newest: function () {
-      this.fetchData()
-    },
-    mailChanged: function () {
+    mail: function () {
       this.fetchData()
     }
   },
   methods: {
     fetchData: _.debounce(async function () {
-      let current = await db.recentHash(this.mailbox)
-      let messages = await db.collect(this.mailbox, current)
-      let mailFilter = Filter.fromJSON(this.$store.state.mailFilter)
       this.inbox = []
       this.invites = []
-      this.deleted = []
+      this.deleted = this.$store.state.deletedMail
       this.messages = []
-      for (let i = messages.length - 1; i >= 0; i--) {
-        let msg = messages[i]
-        console.log(mailFilter.count)
-        switch (msg.constructor.name) {
-          case 'PostMessage':
-            if (!mailFilter.contains(msg.toHash())) {
-              this.inbox.push(msg)
-            } else {
-              this.deleted.push(msg)
-            }
-            break
-          case 'PostInvite':
-            if (!mailFilter.contains(msg.toHash())) {
-              this.invites.push(msg)
-            } else {
-              this.deleted.push(msg)
-            }
-            break
+      for (let i = this.mail.length - 1; i >= 0; i--) {
+        let msg = this.mail[i]
+        if (!msg.groupId) {
+          this.inbox.push(msg)
+        } else {
+          this.invites.push(msg)
         }
       }
+      let criteria = [(msg) => new Date(msg.sentDate)]
+      _.sortBy(this.inbox, criteria)
+      _.sortBy(this.invites, criteria)
+      _.sortBy(this.deleted, criteria)
       switch (this.mode) {
         case 'Invites':
           this.messages = this.invites
@@ -207,6 +186,12 @@ export default {
           break
       }
     }, 700, {maxWait: 5000}),
+    formatDate: function (date) {
+      if (date) {
+        let formatString = new Date(date)
+        return formatString.toString()
+      }
+    },
     cancel: function () {
       this.composedMessage = new Events.PostMessage({from: null, message: null}, null)
       this.inboxMode()
@@ -247,33 +232,26 @@ export default {
           contract.constructor.vuex.mutations[type](state, action.data)
         })
         let mailbox = await backend.latestHash(state.attributes.mailbox)
-        let invite = new Events.PostMessage({from: this.$store.state.loggedIn, message: this.composedMessage}, mailbox)
+        let date = new Date()
+        let invite = new Events.PostMessage({sentDate: date.toString(), from: this.$store.state.loggedIn, message: this.composedMessage}, mailbox)
         await backend.publishLogEntry(state.attributes.mailbox, invite)
       }
       this.composedMessage = ''
       this.inboxMode()
     },
     remove: function (index) {
-      let mailFilter = Filter.fromJSON(this.$store.state.mailFilter)
       if (Number.isInteger(index)) {
         if (this.mode === 'Deleted') {
-          mailFilter.remove(this.messages[index].toHash())
-          console.log(mailFilter.contains(this.messages[index].toHash()))
-          this.$store.dispatch('setMailFilter', mailFilter.toJSON())
-          this.messages.splice(index, 1)
+          this.$store.dispatch('restoreMail', this.messages[index].hash)
         } else {
-          mailFilter.add(this.messages[index].toHash())
-          console.log(mailFilter.contains(this.messages[index].toHash()))
-          this.$store.dispatch('setMailFilter', mailFilter.toJSON())
-          this.deleted.push(this.messages[index])
-          this.messages.splice(index, 1)
+          this.$store.dispatch('deleteMail', this.messages[index].hash)
         }
       } else {
-        mailFilter.add(this.messages[this.currentIndex].toHash())
-        console.log(mailFilter.contains(this.messages[this.currentIndex].toHash()))
-        this.$store.dispatch('setMailFilter', mailFilter.toJSON())
-        this.deleted.push(this.messages[this.currentIndex])
-        this.messages.splice(this.currentIndex, 1)
+        if (this.messages === this.deleted) {
+          this.$store.dispatch('restoreMail', this.messages[this.currentIndex].hash)
+        } else {
+          this.$store.dispatch('deleteMail', this.messages[this.currentIndex].hash)
+        }
         this.currentIndex = null
         this.inboxMode()
       }

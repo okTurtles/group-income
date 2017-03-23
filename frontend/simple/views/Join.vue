@@ -126,14 +126,14 @@ export default {
       let acceptance = new Events.AcceptInvitation({ username: this.$store.state.loggedIn, inviteHash: this.$route.query.inviteHash, acceptanceDate: new Date() }, latest)
       await backend.publishLogEntry(this.$route.query.groupId, acceptance)
       await backend.subscribe(this.$route.query.groupId)
-      this.$store.dispatch('addToFilter', this.$route.query.inviteHash)
+      this.$store.dispatch('deleteMail', this.$route.query.inviteHash)
       this.$router.push({path: '/mailbox'})
     },
     decline: async function () {
       let latest = await backend.latestHash(this.$route.query.groupId)
       let declination = new Events.DeclineInvitation({ username: this.$store.state.loggedIn, inviteHash: this.$route.query.inviteHash, declinedDate: new Date() }, latest)
       await backend.publishLogEntry(this.$route.query.groupId, declination)
-      this.$store.dispatch('addToFilter', this.$route.query.inviteHash)
+      this.$store.dispatch('deleteMail', this.$route.query.inviteHash)
       this.$router.push({path: '/mailbox'})
     },
     formatDate: function (date) {
