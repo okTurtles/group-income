@@ -430,3 +430,10 @@ input[type=range] {
 .centered-button {
   max-width:50%;
 }
+@font-face {
+  font-family: Foco;
+  src: url(../fonts/FocoBold.ttf);
+}
+.brand-font {
+  font-family: Foco;
+}

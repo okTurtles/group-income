@@ -34,7 +34,7 @@
             </p>
             <p class="control has-icon">
               <input class="input" id="password" name="password" v-model="password" v-validate data-vv-rules="required|min:7" placeholder="password" type="password" required>
-              <span v-if="errors.has('password')" id="badPassword" class="help is-danger">Password must be at least 7 characters</span>
+              <span v-if="errors.has('password')" id="badPassword" class="help is-danger"><i18n>Password must be at least 7 characters</i18n></span>
               <span class="icon is-small">
                 <i class="fa fa-lock"></i>
               </span>

@@ -16,23 +16,23 @@
     <nav class="nav">
       <div class="container">
         <div class="nav-left">
-          <a href="/simple/" class="nav-item is-tab">
+          <router-link to="/" class="nav-item is-tab">
             <!-- TODO: fix image shrinking when window is too small -->
             <!-- TODO: resize this image itself to make it smaller -->
             <!-- see: http://bulma.io/documentation/elements/image/ -->
-            <img src="images/groupincome-logo-black.png">
-          </a>
+            <img src="images/logo-transparent.png">
+          </router-link>
         </div>
         <div class="nav-center">
           <!-- TODO: use v-for to dynamically generate these? -->
           <!--TODO figure out what needs to be done with active classe after upgrade  "{activeClass: 'is-active', path: '/new-group'}"-->
           <router-link class="nav-item" active-class ="is-active" to="new-group" id="CreateGroup"><i18n>Start a group</i18n></router-link>
-          <router-link class="nav-item" active-class ="is-active" to="signup" v-show="!$store.state.loggedIn"><i18n>New User</i18n></router-link>
-          <router-link class="nav-item" active-class ="is-active" to="user"><i18n>Profile</i18n></router-link>
-          <router-link class="nav-item" active-class ="is-active" to="user-group"><i18n>Group</i18n></router-link>
-          <router-link class="nav-item" active-class ="is-active" to="pay-group"><i18n>Pay Group</i18n></router-link>
-          <router-link class="nav-item" active-class ="is-active" to="ejs-page" id="testEJS"><i18n>EJS test</i18n></router-link>
-          <router-link v-if="$store.state.loggedIn" class="nav-item" active-class ="is-active" to="event-log"><i18n>Event Log test</i18n></router-link>
+          <router-link class="nav-item" active-class ="is-active" to="signup" v-show="$store.state.loggedIn"><i18n>New User</i18n></router-link>
+          <router-link class="nav-item" active-class ="is-active" to="user" v-show="$store.state.loggedIn"><i18n>Profile</i18n></router-link>
+          <router-link class="nav-item" active-class ="is-active" to="user-group" v-show="$store.state.loggedIn"><i18n>Group</i18n></router-link>
+          <router-link class="nav-item" active-class ="is-active" to="pay-group" v-show="$store.state.loggedIn"><i18n>Pay Group</i18n></router-link>
+          <router-link class="nav-item" active-class ="is-active" to="ejs-page" id="testEJS" v-show="dev"><i18n>EJS test</i18n></router-link>
+          <router-link class="nav-item" active-class ="is-active" to="event-log" v-show="dev"><i18n>Event Log test</i18n></router-link>
           <router-link v-if="$store.state.loggedIn" class="nav-item" active-class ="is-active" to="mailbox"><i18n>Mailbox</i18n></router-link>
         </div>
         <!-- to put buttons in a nav, don't put the .nav-item
@@ -40,13 +40,16 @@
         them. see: http://bulma.io/documentation/components/nav/ -->
         <div class="nav-right">
           <span class="nav-item is-tab control">
-            <router-link v-show="!$store.state.loggedIn" class="button is-success" to="/new-user"><i18n>Sign Up</i18n></router-link>
+            <router-link v-show="!$store.state.loggedIn" class="button is-success" to="signup"><i18n>Sign Up</i18n></router-link>
             <a href="#" id="LoginBtn" class="button"
                v-bind:class="$store.state.loggedIn  ? 'is-danger' : 'is-primary'"
               @click.prevent="toggleModal"
             >
               {{ $store.state.loggedIn ? 'Sign Out' : 'Log In' }}
             </a>
+            <div class="button" style="border: 0" v-if="$store.state.loggedIn">
+              <img src="http://bulma.io/images/placeholders/16x16.png" data-pin-nopin="true">&nbsp;<strong>Welcome, {{$store.state.loggedIn}}</strong>
+            </div>
           </span>
         </div>
       </div>
@@ -139,7 +142,8 @@ export default {
     return {
       name: null,
       password: null,
-      response: null
+      response: null,
+      dev: process.env.NODE_ENV === 'development'
     }
   }
 }

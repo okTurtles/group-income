@@ -11,7 +11,7 @@
                   <i18n>Add</i18n>
                 </a>
               </p>
-              <span v-if="error" id="badUsername" class="help is-danger"><i18n>Invalid Username</i18n></span>
+
             </div>
             <div class="column">
               <table class="table is-bordered is-striped is-narrow">

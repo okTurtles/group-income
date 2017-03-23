@@ -167,6 +167,9 @@ const actions = {
     await dispatch('saveSettings')
     await db.clearCurrentUser()
     commit('logout')
+    for (let key of Object.keys(state.contracts)) {
+      await backend.unsubscribe(key)
+    }
     Vue.events.$emit('logout')
   },
   deleteMail ({dispatch, commit}, hash) {

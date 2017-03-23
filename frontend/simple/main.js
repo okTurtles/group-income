@@ -12,6 +12,7 @@ import Mailbox from './views/Mailbox.vue'
 import Join from './views/Join.vue'
 import PayGroupView from './views/PayGroupView.vue'
 import NavBar from './views/NavBar.vue'
+import Home from './views/Home.vue'
 import { wrap, lazyLoadVue } from './js/utils'
 import store from './js/state'
 import './js/transitions'
@@ -33,6 +34,10 @@ var loginGuard = {
   redirect (to, from) {
     return { path: '/signup', query: { next: to.path } }
   }
+}
+var signupGuard = {
+  guard: store => !!store.state.loggedIn,
+  redirect: (to, from) => ({ path: '/' })
 }
 // Check if user has a group to invite users to
 var inviteGuard = {
@@ -70,9 +75,9 @@ var router = new Router({
   routes: [
     {
       path: '/',
-      component: SignUp,
+      component: Home,
       meta: {
-        title: 'Sign Up'  // page title. see issue #45
+        title: 'Group Income'  // page title. see issue #45
       }
     },
     {
@@ -81,7 +86,8 @@ var router = new Router({
       name: SignUp.name, // route name. important!
       meta: {
         title: 'Sign Up'  // page title. see issue #45
-      }
+      },
+      beforeEnter: createEnterGuards(store, signupGuard)
     },
     {
       path: '/new-group',
