@@ -131,6 +131,7 @@ import backend from '../js/backend'
 import * as db from '../js/database'
 import * as Events from '../../../shared/events'
 import {HapiNamespace} from '../js/backend/hapi'
+import {ScalableCuckooFilter as Filter} from 'cuckoo-filter'
 var namespace = new HapiNamespace()
 export default {
   name: 'Mailbox',
@@ -143,10 +144,19 @@ export default {
     },
     newest () {
       return this.$store.state[this.mailbox].messages.length
+    },
+    mailChanged () {
+      return this.$store.state.mailChanged
+    },
+    mailFilter () {
+      return Filter.fromJSON(this.$store.state.mailFilter.filter)
     }
   },
   watch: {
     newest: function () {
+      this.fetchData()
+    },
+    mailChanged: function () {
       this.fetchData()
     }
   },
@@ -154,22 +164,24 @@ export default {
     fetchData: _.debounce(async function () {
       let current = await db.recentHash(this.mailbox)
       let messages = await db.collect(this.mailbox, current)
+      let mailFilter = Filter.fromJSON(this.$store.state.mailFilter)
       this.inbox = []
       this.invites = []
       this.deleted = []
       this.messages = []
       for (let i = messages.length - 1; i >= 0; i--) {
         let msg = messages[i]
+        console.log(mailFilter.count)
         switch (msg.constructor.name) {
           case 'PostMessage':
-            if (!this.$store.state.mailFilter.contains(msg.toHash())) {
+            if (!mailFilter.contains(msg.toHash())) {
               this.inbox.push(msg)
             } else {
               this.deleted.push(msg)
             }
             break
           case 'PostInvite':
-            if (!this.$store.state.mailFilter.contains(msg.toHash())) {
+            if (!mailFilter.contains(msg.toHash())) {
               this.invites.push(msg)
             } else {
               this.deleted.push(msg)
@@ -242,18 +254,24 @@ export default {
       this.inboxMode()
     },
     remove: function (index) {
+      let mailFilter = Filter.fromJSON(this.$store.state.mailFilter)
       if (Number.isInteger(index)) {
         if (this.mode === 'Deleted') {
-          this.$store.dispatch('removeFromFilter', this.messages[index].toHash())
+          mailFilter.remove(this.messages[index].toHash())
+          console.log(mailFilter.contains(this.messages[index].toHash()))
+          this.$store.dispatch('setMailFilter', mailFilter.toJSON())
           this.messages.splice(index, 1)
-          this.fetchData()
         } else {
-          this.$store.dispatch('addToFilter', this.messages[index].toHash())
+          mailFilter.add(this.messages[index].toHash())
+          console.log(mailFilter.contains(this.messages[index].toHash()))
+          this.$store.dispatch('setMailFilter', mailFilter.toJSON())
           this.deleted.push(this.messages[index])
           this.messages.splice(index, 1)
         }
       } else {
-        this.$store.dispatch('addToFilter', this.messages[this.currentIndex].toHash())
+        mailFilter.add(this.messages[this.currentIndex].toHash())
+        console.log(mailFilter.contains(this.messages[this.currentIndex].toHash()))
+        this.$store.dispatch('setMailFilter', mailFilter.toJSON())
         this.deleted.push(this.messages[this.currentIndex])
         this.messages.splice(this.currentIndex, 1)
         this.currentIndex = null

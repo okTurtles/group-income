@@ -22,6 +22,7 @@ var store // this is set and made the default export at the bottom of the file.
 // NOTE: THE STATE CAN ONLY STORE *SERIALIZABLE* OBJECTS! THAT MEANS IF YOU TRY
 //       TO STORE AN INSTANCE OF A CLASS (LIKE A CONTRACT), IT WILL NOT STORE
 //       THE ACTUAL CONTRACT, BUT JSON.STRINGIFY(CONTRACT) INSTEAD!
+var filter = new Filter(200, 2, 4, 2)
 const state = {
   position: null,
   offset: [],
@@ -30,7 +31,8 @@ const state = {
   contracts: {}, // contractIds => type (for contracts we've successfully subscribed to)
   pending: [], // contractIds we've just published but haven't received back yet
   loggedIn: false, // TODO: properly handle this
-  mailFilter: new Filter(200, 2, 4, 2)
+  mailChanged: new Date(),
+  mailFilter: filter.toJSON()
 }
 
 // Mutations must be synchronous! Never call these directly!
@@ -66,12 +68,7 @@ const mutations = {
   },
   setMailFilter (state, mailFilter) {
     state.mailFilter = mailFilter
-  },
-  addToFilter (state, hash) {
-    state.mailFilter.add(hash)
-  },
-  removeFromFilter (state, hash) {
-    state.mailFilter.remove(hash)
+    state.mailChanged = new Date()
   },
   pending (state, contractId) {
     let index = state.pending.indexOf(contractId)
@@ -140,12 +137,8 @@ const actions = {
     commit('logout')
     Vue.events.$emit('logout')
   },
-  addToFilter ({dispatch, commit}, hash) {
-    commit('addToFilter', hash)
-    debouncedSave(dispatch)
-  },
-  removeFromFilter ({dispatch, commit}, hash) {
-    commit('removeFromFilter', hash)
+  setMailFilter ({dispatch, commit}, filter) {
+    commit('setMailFilter', filter)
     debouncedSave(dispatch)
   },
   // this function is called from ./pubsub.js and is the entry point
@@ -203,7 +196,7 @@ const actions = {
         type: state.contracts[contractId],
         data: state[contractId]
       })),
-      mailFilter: state.mailFilter.toJSON()
+      mailFilter: state.mailFilter
     }
     await db.saveSettings(state.loggedIn, settings)
     console.log('saveSettings:', settings)
@@ -216,7 +209,7 @@ const actions = {
       console.log('loadSettings:', settings)
       commit('setCurrentGroupId', settings.currentGroupId)
       commit('setContracts', settings.contracts || [])
-      commit('setMailFilter', Filter.fromJSON(settings.mailFilter))
+      commit('setMailFilter', settings.mailFilter)
     }
   },
 
