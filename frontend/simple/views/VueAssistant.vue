@@ -1,20 +1,15 @@
 <template>
-  <!-- TODO: would it be better if we used <vue-router>?
-           i.e. it might be better to just append a thing
-           to the URL, like /signup?next=create-group -->
-  <!-- An alternative:
-    instead of creating a full-blown "vue-assistant"
-    we can focus on squeezing the most out of vue-router by using
-    its Transition hooks and beforeEach/afterEach thing. Then
-    simply have a conditional "steps" nav view thing that's shown
-    depending on whatever the currently shown component feels is
-    approrpiate.
-    See also `abstract` router mode:
-    http://router.vuejs.org/en/options.html
-    And nested routes:
-    http://router.vuejs.org/en/nested.html
+  <!--
+  Usage:
+
+  <vue-assistant>
+    <component-1></component-1>
+    <component-2></component-2>
+    <component-3></component-3>
+    ... etc ...
+  </vue-assistant>
   -->
-  <div>
+  <div class="assistant">
     <div class="tabs is-centered is-toggle is-small" v-show="showSteps">
       <ul>
         <!-- http://vuejs.org/guide/list.html -->
@@ -25,17 +20,24 @@
         </li>
       </ul>
     </div>
+    <!-- TODO: wrap in: https://vuejs.org/v2/guide/components.html#keep-alive -->
     <component
       :is="view"
       :transition="transition"
       style="position: absolute; width: 100%"
     >
     </component>
+    <slot name="back">
+      <!-- default content goes here -->
+    </slot>
+    <slot name="next">
+      <!-- default content goes here -->
+    </slot>
   </div>
 </template>
 <style lang="sass" scoped>
 @import "sass/utilities/variables"
-// TODO: foo is a silly name, pick a better one
+// TODO: remove these styles or make them overridable. we should be styled by the parent component
 .foo
   border-bottom: 3px solid $border
   width: 20px

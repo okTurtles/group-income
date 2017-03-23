@@ -69,7 +69,7 @@ export class Hashable {
     // TODO: if we switch to webpack we may need: https://github.com/feross/buffer
     // https://github.com/feross/typedarray-to-buffer
     var buf = new Buffer(uint8array.buffer)
-    this._hash = multihash.toB58String(multihash.encode(buf, 'blake2b', 32))
+    this._hash = multihash.toB58String(multihash.encode(buf, 'blake2b-32', 32))
     return this._hash
   }
   toProtobuf (): Buffer { return this.constructor.fields.encode(this._obj).finish() }
