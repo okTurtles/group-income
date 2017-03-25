@@ -11,7 +11,8 @@
                   <i18n>Add</i18n>
                 </a>
               </p>
-
+              <i18n v-if="error" id="badUsername" class="help is-danger">Invalid Username</i18n>
+              <i18n v-if="self" class="help is-danger">Cannot Invite Yourslf</i18n>
             </div>
             <div class="column">
               <table class="table is-bordered is-striped is-narrow">
@@ -67,12 +68,19 @@ export default {
       searchUser: null,
       members: [],
       error: false,
-      invited: false
+      invited: false,
+      self: false
     }
   },
   methods: {
     add: async function () {
       if (this.searchUser) {
+        if (this.searchUser === this.$store.state.loggedIn) {
+          this.self = true
+          return
+        } else {
+          this.self = false
+        }
         try {
           let contractId = await namespace.lookup(this.searchUser)
           if (!this.members.find(member => member.name === this.searchUser)) {

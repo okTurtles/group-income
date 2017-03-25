@@ -12,18 +12,18 @@
               <div class="box">
                 <p class="title is-3"><i18n>What is your Group's Name?</i18n></p>
                 <input type="text" v-validate data-vv-as="Group Name" data-vv-rules="required" name="groupName" v-model="groupName" class="input">
-                <span v-if="errors.has('groupName')" data-control='groupName' class="help is-danger">{{ errors.first('groupName') }}</span>
+                <i18n v-if="errors.has('groupName')" data-control='groupName' class="help is-danger">{{ errors.first('groupName') }}</i18n>
               </div>
               <div class="box">
                 <p class="title is-3"><i18n>What are your shared values?</i18n></p>
                 <textarea class="textarea" v-validate data-vv-as="Shared Values" data-vv-rules="required" name="sharedValues" v-model="sharedValues"></textarea>
-                <span v-if="errors.has('sharedValues')" data-control='sharedValues' class="help is-danger">{{ errors.first('sharedValues') }}</span>
+                <i18n v-if="errors.has('sharedValues')" data-control='sharedValues' class="help is-danger">{{ errors.first('sharedValues') }}</i18n>
               </div>
               <div class="box">
                 <p class="title is-3"><i18n>What percentage of members are required to change the rules?</i18n></p>
                 <p class="title is-3 percentage">{{changePercentage}}%</p>
                 <input type="range" v-validate data-vv-as="Percentage to change rules" data-vv-rules="between:1,100"  min="0" max="100" name="changePercentage" v-model="changePercentage">
-                <span v-if="errors.has('changePercentage')" data-control='changePercentage' class="help is-danger"><i18n>The Percentage to change rules field must be between 1% and 100%</i18n></span>
+                <i18n v-if="errors.has('changePercentage')" data-control='changePercentage' class="help is-danger">The Percentage to change rules field must be between 1% and 100%</i18n>
                 <!-- this is used for nightmare and only rendered in 'development' mode. Without this nightmare has trouble triggering the events for vue that updates the model when values are set -->
                 <input v-if="dev" type="text" v-model="changePercentage" name="proxyChangePercentage" style="opacity:0; position: absolute;">
               </div>
@@ -43,7 +43,7 @@
                 <p class="title is-3"><i18n>How many members should it take to approve a new member?</i18n></p>
                 <p class="title is-3">{{memberApprovalPercentage}}%</p>
                 <input type="range" min="0" max="100" data-vv-as="Member Approval Percentage" v-validate data-vv-rules="between:1,100" name="memberApprovalPercentage" v-model="memberApprovalPercentage">
-                <span v-if="errors.has('memberApprovalPercentage')" data-control='memberApprovalPercentage' class="help is-danger"><i18n>The Member Approval Percentage field must be between 1% and 100%.</i18n></span>
+                <i18n v-if="errors.has('memberApprovalPercentage')" data-control='memberApprovalPercentage' class="help is-danger">The Member Approval Percentage field must be between 1% and 100%.</i18n>
                 <!-- this is used for nightmare and only rendered in 'development' mode. Without this nightmare has trouble triggering the events for vue that updates the model when values are set -->
                 <input v-if="dev" type="text" v-model="memberApprovalPercentage" name="proxyMemberApprovalPercentage" style="opacity:0; position: absolute;">
               </div>
@@ -51,7 +51,7 @@
                 <p class="title is-3"><i18n>How many members should it take to remove a member?</i18n></p>
                 <p class="title is-3">{{memberRemovalPercentage}}%</p>
                 <input type="range" min="0" max="100" data-vv-as="Member Removal Percentage" v-validate data-vv-rules="between:1,100" name="memberRemovalPercentage" v-model="memberRemovalPercentage">
-                <span v-if="errors.has('memberRemovalPercentage')" data-control='memberRemovalPercentage' class="help is-danger"><i18n>The Member Removal Percentage field must be between 1% and 100%.</i18n></span>
+                <i18n v-if="errors.has('memberRemovalPercentage')" data-control='memberRemovalPercentage' class="help is-danger">The Member Removal Percentage field must be between 1% and 100%.</i18n>
                 <!-- this is used for nightmare and only rendered in 'development' mode. Without this nightmare has trouble triggering the events for vue that updates the model when values are set -->
                 <input v-if="dev" type="text" v-model="memberRemovalPercentage" name="proxyMemberRemovalPercentage" style="opacity:0; position: absolute;">
               </div>
@@ -66,7 +66,7 @@
                     <i class="fa fa-usd" aria-hidden="true" ></i>
                   </span>
                 </p>
-                <span v-if="errors.has('incomeProvided')" data-control="incomeProvided" class="help is-danger"><i18n>The Income Provided field must be a numeric currency amount and may contain 2 decimal points.</i18n></span>
+                <i18n v-if="errors.has('incomeProvided')" data-control="incomeProvided" class="help is-danger">The Income Provided field must be a numeric currency amount and may contain 2 decimal points.</i18n>
               </div>
               <div class="box" >
                 <p class="title is-3"><i18n>How transparent should your group be about who contributes?</i18n></p>
@@ -76,7 +76,7 @@
                     <option value="Very Private">Very Private</option>
                   </select>
                 </p>
-                <span v-if="errors.has('contributionPrivacy')" data-control="contributionPrivacy" class="help is-danger">{{ errors.first('contributionPrivacy') }}</span>
+                <i18n v-if="errors.has('contributionPrivacy')" data-control="contributionPrivacy" class="help is-danger">{{ errors.first('contributionPrivacy') }}</i18n>
               </div>
               <div class="center button-box">
                 <div class="center">

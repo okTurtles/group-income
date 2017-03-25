@@ -28,12 +28,8 @@ Vue.events = new Vue() // global event bus, use: https://vuejs.org/v2/api/#Insta
  */
 // Check if user is logged in
 var loginGuard = {
-  guard (store) {
-    return !store.state.loggedIn
-  },
-  redirect (to, from) {
-    return { path: '/signup', query: { next: to.path } }
-  }
+  guard: store => !store.state.loggedIn,
+  redirect: (to, from) => ({ path: '/signup', query: { next: to.path } })
 }
 var signupGuard = {
   guard: store => !!store.state.loggedIn,
@@ -41,20 +37,12 @@ var signupGuard = {
 }
 // Check if user has a group to invite users to
 var inviteGuard = {
-  guard (store) {
-    return !store.state.currentGroupId
-  },
-  redirect (to, from) {
-    return { path: '/new-group' }
-  }
+  guard: store => !store.state.currentGroupId,
+  redirect: (to, from) => ({ path: '/new-group' })
 }
 var joinGuard = {
-  guard (store, to, from) {
-    return from.name !== Mailbox.name
-  },
-  redirect (to, from) {
-    return { path: '/mailbox' }
-  }
+  guard: (store, to, from) => from.name !== Mailbox.name,
+  redirect: (to, from) => ({ path: '/mailbox' })
 }
 function createEnterGuards (store, ...guards) {
   return function (to, from, next) {

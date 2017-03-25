@@ -1,7 +1,7 @@
+/* global fetch */
 'use strict'
 
 import request from 'superagent'
-import fetch from 'node-fetch'
 import store from '../state'
 import {Backend, TrustedNamespace} from './interface'
 import pubsub from '../pubsub'
@@ -69,9 +69,6 @@ export class HapiBackend extends Backend {
     return request.post(`${process.env.API_URL}/event/${contractId}`)
       .set('Authorization', `gi ${signature}`)
       .send({hash: entry.toHash(), entry: entry.toObject()})
-  }
-  subscriptions () {
-    return Object.keys(store.state.contracts)
   }
   async subscribe (contractId: string) {
     console.log('subscribing to:', contractId)

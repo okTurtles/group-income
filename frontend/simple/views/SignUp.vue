@@ -22,7 +22,7 @@
               <span class="icon is-small">
                 <i class="fa fa-user"></i>
               </span>
-              <span v-if="errors.has('name')" id="badUsername" class="help is-danger"><i18n>Username cannot contain spaces</i18n></span>
+              <i18n v-if="errors.has('name')" id="badUsername" class="help is-danger">Username cannot contain spaces</i18n>
               <span v-show="nameAvailable != null && !errors.has('name') " class="help" v-bind:class="[nameAvailable ? 'is-success' : 'is-danger']">{{ nameAvailable ? 'name is available' : 'name is unavailable' }}</span>
             </p>
             <p class="control has-icon">
@@ -30,11 +30,11 @@
               <span class="icon is-small">
                 <i class="fa fa-envelope"></i>
               </span>
-              <span v-if="errors.has('email')" id="badEmail" class="help is-danger"><i18n>Not an email</i18n></span>
+              <i18n v-if="errors.has('email')" id="badEmail" class="help is-danger">Not an email</i18n>
             </p>
             <p class="control has-icon">
               <input class="input" id="password" name="password" v-model="password" v-validate data-vv-rules="required|min:7" placeholder="password" type="password" required>
-              <span v-if="errors.has('password')" id="badPassword" class="help is-danger"><i18n>Password must be at least 7 characters</i18n></span>
+              <i18n v-if="errors.has('password')" id="badPassword" class="help is-danger">Password must be at least 7 characters</i18n>
               <span class="icon is-small">
                 <i class="fa fa-lock"></i>
               </span>

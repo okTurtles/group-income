@@ -148,6 +148,16 @@ describe('Frontend', function () {
   })
 
   describe('Group Creation Test', function () {
+    before(async function () {
+      await n.goto(page('signup'))
+        .wait('#name')
+      await n.insert('#name', username + '2')
+      .insert('#email', `test2@testgroupincome.com`)
+      .insert('#password', 'testtest')
+      .click('button[type="submit"]')
+      .wait(() => !!document.getElementById('serverMsg').innerText)
+      .evaluate(() => document.getElementById('serverMsg').innerText)
+    })
     it('Should create a group', async function () {
       this.timeout(4000)
       await n.click('#CreateGroup')
