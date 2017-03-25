@@ -4,4 +4,3 @@
 import {HapiBackend} from './hapi'
 
 export default new HapiBackend()
-

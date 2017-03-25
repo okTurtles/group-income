@@ -1,5 +1,5 @@
 <template>
-  <section class="section full-screen">
+  <section class="section">
     <!-- main containers:
      .container  http://bulma.io/documentation/layout/container/
      .content    http://bulma.io/documentation/elements/content/
@@ -10,53 +10,61 @@
       name="formData" class="container signup"
       @submit.prevent="submit"
     >
-      <div class="columns is-gapless">
-        <div class="column is-hidden-mobile"></div>
-        <div class="column is-10">
-          <div class="box centered" style="max-width:400px">
-            <h2 class="subtitle"><i18n>Sign Up</i18n></h2>
-
-            <a v-on:click="forwardToLogin" style="margin-left: 65%"><i18n>Have an account?</i18n></a>
-            <p class="control has-icon">
-              <input id="name" class="input" name="name" v-model="name" v-on:keypress="checkName" v-validate data-vv-rules="required|regex:^\S+$" placeholder="username" required>
-              <span class="icon is-small">
-                <i class="fa fa-user"></i>
-              </span>
-              <i18n v-if="errors.has('name')" id="badUsername" class="help is-danger">Username cannot contain spaces</i18n>
-              <span v-show="nameAvailable != null && !errors.has('name') " class="help" v-bind:class="[nameAvailable ? 'is-success' : 'is-danger']">{{ nameAvailable ? 'name is available' : 'name is unavailable' }}</span>
+      <div class="box centered" style="max-width:400px">
+        <div class="level is-mobile">
+          <div class="level-left">
+            <div class="level-item">
+              <p class="subtitle"><i18n>Sign Up</i18n></p>
+            </div>
+          </div>
+          <div class="level-right">
+            <p class="level-item content is-small">
+              <a @click="forwardToLogin"><i18n>Have an account?</i18n></a>
             </p>
-            <p class="control has-icon">
-              <input class="input" id= "email" name="email" v-model="email" v-validate data-vv-rules="required|email" type="email" placeholder="email" required>
-              <span class="icon is-small">
-                <i class="fa fa-envelope"></i>
+          </div>
+        </div>
+        <div class="field">
+          <p class="control has-icon">
+            <input id="name" class="input" name="name" v-model="name" @keypress="checkName" v-validate data-vv-rules="required|regex:^\S+$" placeholder="username" required>
+            <span class="icon is-small"><i class="fa fa-user"></i></span>
+          </p>
+          <p class="help is-danger" v-if="errors.has('name')" id="badUsername">
+            <i18n v-if="nameAvailable === false">name is unavailable</i18n>
+            <i18n v-else-if="name.length > 0">cannot contain spaces</i18n>
+          </p>
+          <p v-else-if="nameAvailable" class="help is-success"><i18n>name is available</i18n></p>
+        </div>
+        <div class="field">
+          <p class="control has-icon">
+            <input class="input" id= "email" name="email" v-model="email" v-validate data-vv-rules="required|email" type="email" placeholder="email" required>
+            <span class="icon is-small"><i class="fa fa-envelope"></i></span>
+          </p>
+          <i18n v-if="errors.has('email')" id="badEmail" class="help is-danger">Not an email</i18n>
+        </div>
+        <div class="field">
+          <p class="control has-icon">
+            <input class="input" id="password" name="password" v-model="password" v-validate data-vv-rules="required|min:7" placeholder="password" type="password" required>
+            <span class="icon is-small"><i class="fa fa-lock"></i></span>
+          </p>
+          <i18n v-if="errors.has('password')" id="badPassword" class="help is-danger">Password must be at least 7 characters</i18n>
+        </div>
+        <div class="level is-mobile">
+          <div class="level-left">
+            <div class="level-item content is-small">
+              <span id="serverMsg" class="help is-marginless" :class="[error ? 'is-danger' : 'is-success']">
+                {{ response }}
               </span>
-              <i18n v-if="errors.has('email')" id="badEmail" class="help is-danger">Not an email</i18n>
-            </p>
-            <p class="control has-icon">
-              <input class="input" id="password" name="password" v-model="password" v-validate data-vv-rules="required|min:7" placeholder="password" type="password" required>
-              <i18n v-if="errors.has('password')" id="badPassword" class="help is-danger">Password must be at least 7 characters</i18n>
-              <span class="icon is-small">
-                <i class="fa fa-lock"></i>
-              </span>
-            </p>
-            <div class="level is-mobile top-align">
-              <div class="level-item" style="padding-right:5px">
-                <span id="serverMsg" class="help is-marginless" :class="[error ? 'is-danger' : 'is-success']">
-                  {{ response }}
-                </span>
-              </div>
-              <div class="level-item is-narrow">
-                <button class="button submit is-success" type="submit" :disabled="errors.any() || !fields.passed()">
-                  <i18n>Sign Up</i18n>
-                </button>
-              </div>
+            </div>
+          </div>
+          <div class="level-right">
+            <div class="level-item is-narrow">
+              <button class="button submit is-success" type="submit" :disabled="errors.any() || !fields.passed()">
+                <i18n>Sign Up</i18n>
+              </button>
             </div>
           </div>
         </div>
-        <div class="column"></div>
       </div>
-      <input type="hidden" name="contriGL" value="0">
-      <input type="hidden" name="contriRL" value="0">
     </form>
   </section>
 </template>
@@ -120,14 +128,16 @@ export default {
       Vue.events.$emit('loginModal')
     },
     checkName: _.debounce(async function () {
+      this.nameAvailable = null
       if (this.name && !this.errors.has('name')) {
         try {
           await namespace.lookup(this.name)
           this.nameAvailable = false
         } catch (ex) {
+          // BUG: it could be catching a different error, not 404
+          // TODO: fix this
           this.nameAvailable = true
         }
-        return this.nameAvailable
       }
     }, 700, {maxWait: 2000})
   },

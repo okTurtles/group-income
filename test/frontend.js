@@ -174,7 +174,7 @@ describe('Frontend', function () {
         .evaluate(() => !!document.getElementById('successMsg'))
       should(created).equal(true)
     })
-    it('Should invite memebers to group', async function () {
+    it('Should invite members to group', async function () {
       this.timeout(4000)
       await n.click('#nextButton')
         .wait(() => !!document.getElementById('addButton'))
