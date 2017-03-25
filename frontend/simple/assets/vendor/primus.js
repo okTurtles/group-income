@@ -1658,7 +1658,7 @@ function URL(address, location, parser) {
           address = address.slice(0, index);
         }
       }
-    } else if (index = parse.exec(address)) {
+    } else if ((index = parse.exec(address))) {
       url[key] = index[1];
       address = address.slice(0, index.index);
     }
@@ -1736,7 +1736,7 @@ function URL(address, location, parser) {
  * @returns {URL}
  * @api public
  */
-URL.prototype.set = function set(part, value, fn) {
+function set(part, value, fn) {
   var url = this;
 
   switch (part) {
@@ -1817,7 +1817,7 @@ URL.prototype.set = function set(part, value, fn) {
  * @returns {String}
  * @api public
  */
-URL.prototype.toString = function toString(stringify) {
+function toString(stringify) {
   if (!stringify || 'function' !== typeof stringify) stringify = qs.stringify;
 
   var query
@@ -1842,7 +1842,9 @@ URL.prototype.toString = function toString(stringify) {
   if (url.hash) result += url.hash;
 
   return result;
-};
+}
+
+URL.prototype = { set: set, toString: toString };
 
 //
 // Expose the URL parser and some additional properties that might be useful for
@@ -3195,25 +3197,26 @@ Primus.prototype.client = function client() {
     // Primus when we connect.
     //
     try {
-      var prot = primus.url.protocol === 'ws+unix:' ? 'ws+unix:' : 'ws:'
-        , qsa = prot === 'ws:';
+      var options = {
+        protocol: primus.url.protocol === 'ws+unix:' ? 'ws+unix:' : 'ws:',
+        query: true
+      };
 
       //
       // Only allow primus.transport object in Node.js, it will throw in
       // browsers with a TypeError if we supply to much arguments.
       //
       if (Factory.length === 3) {
+        if ('ws+unix:' === options.protocol) {
+          options.pathname = primus.url.pathname +':'+ primus.pathname;
+        }
         primus.socket = socket = new Factory(
-          primus.uri({ protocol: prot, query: qsa }),   // URL
-          [],                                           // Sub protocols
-          primus.transport                              // options.
+          primus.uri(options),  // URL
+          [],                   // Sub protocols
+          primus.transport      // options.
         );
       } else {
-        primus.socket = socket = new Factory(primus.uri({
-          protocol: prot,
-          query: qsa
-        }));
-
+        primus.socket = socket = new Factory(primus.uri(options));
         socket.binaryType = 'arraybuffer';
       }
     } catch (e) { return primus.emit('error', e); }
@@ -3277,7 +3280,7 @@ Primus.prototype.decoder = function decoder(data, fn) {
 
   fn(err, data);
 };
-Primus.prototype.version = "6.0.9";
+Primus.prototype.version = "6.1.0";
 
 if (
      'undefined' !== typeof document

@@ -27,6 +27,9 @@
                     <div class="media">
                       <div class="media-left">
                         <p class="image is-64x64">
+                          <!-- TODO: use responsive figure:
+                        http://bulma.io/documentation/elements/image/ -->
+                          <!-- TODO: ideally these would be loaded from cache -->
                           <img src="http://bulma.io/images/placeholders/128x128.png">
                         </p>
                       </div>
@@ -41,12 +44,10 @@
                 </tr>
                 </tbody>
               </table>
-              <div class="center button-box">
-                <div class="center">
-                  <div id="successMsg" v-if="invited" class="created"><i18n>Success</i18n></div>
-                  <button class="button is-success is-large center" v-if="!invited" :disabled="!members.length" v-on:click="submit" type="submit"><i18n>Invite Members</i18n></button>
-                  <a class="button is-warning is-large center" v-if="invited"><i18n>Next: ?</i18n></a>
-                </div>
+              <div class="has-text-centered button-box">
+                <div id="successMsg" v-if="invited" class="created"><i18n>Success</i18n></div>
+                <button class="button is-success is-large" v-if="!invited" :disabled="!members.length" v-on:click="submit" type="submit"><i18n>Invite Members</i18n></button>
+                <a class="button is-warning is-large" v-if="invited"><i18n>Next: ?</i18n></a>
               </div>
             </div>
           </div>

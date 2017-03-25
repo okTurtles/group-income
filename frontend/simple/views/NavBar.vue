@@ -1,19 +1,7 @@
 <template>
-  <!--
-  From what I can tell, .header seems to have been replaced
-  by .nav. And .navbar is no longer being used.
-
-  .hero works well with .nav, and adds:
-  - gradient backgrounds
-  - special support for videos, tabs, buttons, titles and subtitles
-  - head, foot, and body sections (top, middle, bottom)
-
-  Specifically, .hero adds the ability to have a .nav that's
-  a different color from the main content of the page, but
-  blends well using tabs to switch sections (just like on bulma.io),
-  -->
   <section class="hero">
-    <nav class="nav">
+    <!-- see: http://bulma.io/documentation/components/nav/ -->
+    <nav class="nav has-shadow">
       <div class="container">
         <div class="nav-left">
           <router-link to="/" class="nav-item is-tab">
@@ -26,18 +14,15 @@
         <div class="nav-center">
           <!-- TODO: use v-for to dynamically generate these? -->
           <!--TODO figure out what needs to be done with active classe after upgrade  "{activeClass: 'is-active', path: '/new-group'}"-->
-          <router-link class="nav-item" active-class ="is-active" to="new-group" id="CreateGroup"><i18n>Start a group</i18n></router-link>
-          <router-link class="nav-item" active-class ="is-active" to="signup" v-show="$store.state.loggedIn"><i18n>New User</i18n></router-link>
-          <router-link class="nav-item" active-class ="is-active" to="user" v-show="$store.state.loggedIn"><i18n>Profile</i18n></router-link>
-          <router-link class="nav-item" active-class ="is-active" to="user-group" v-show="$store.state.loggedIn"><i18n>Group</i18n></router-link>
-          <router-link class="nav-item" active-class ="is-active" to="pay-group" v-show="$store.state.loggedIn"><i18n>Pay Group</i18n></router-link>
-          <router-link class="nav-item" active-class ="is-active" to="ejs-page" id="testEJS" v-show="dev"><i18n>EJS test</i18n></router-link>
-          <router-link class="nav-item" active-class ="is-active" to="event-log" v-show="dev"><i18n>Event Log test</i18n></router-link>
+          <router-link class="nav-item is-tab" active-class ="is-active" to="new-group" id="CreateGroup"><i18n>Start a group</i18n></router-link>
+          <router-link class="nav-item is-tab" active-class ="is-active" to="signup" v-show="$store.state.loggedIn"><i18n>New User</i18n></router-link>
+          <router-link class="nav-item is-tab" active-class ="is-active" to="user" v-show="$store.state.loggedIn"><i18n>Profile</i18n></router-link>
+          <router-link class="nav-item is-tab" active-class ="is-active" to="user-group" v-show="$store.state.loggedIn"><i18n>Group</i18n></router-link>
+          <router-link class="nav-item is-tab" active-class ="is-active" to="pay-group" v-show="$store.state.loggedIn"><i18n>Pay Group</i18n></router-link>
+          <router-link class="nav-item is-tab" active-class ="is-active" to="ejs-page" id="testEJS" v-show="dev"><i18n>EJS test</i18n></router-link>
+          <router-link class="nav-item is-tab" active-class ="is-active" to="event-log" v-show="dev"><i18n>Event Log test</i18n></router-link>
           <router-link v-if="$store.state.loggedIn" class="nav-item" active-class ="is-active" to="mailbox"><i18n>Mailbox</i18n></router-link>
         </div>
-        <!-- to put buttons in a nav, don't put the .nav-item
-        on the button itself, but on a span.nav-item that encloses
-        them. see: http://bulma.io/documentation/components/nav/ -->
         <div class="nav-right">
           <span class="nav-item is-tab control">
             <router-link v-show="!$store.state.loggedIn" class="button is-success" to="signup"><i18n>Sign Up</i18n></router-link>
@@ -59,34 +44,34 @@
       <div class="modal-content" style="width: 300px">
         <div class="card is-rounded">
           <div class="card-content">
-            <h1 class="title">
-              <i18n>Log In</i18n>
-            </h1>
-            <p class="control has-icon">
-              <input class="input" id="LoginName" name="name" v-model="name" v-validate data-vv-rules="required|regex:^\S+$" placeholder="username" required>
-              <span class="icon">
-                <i class="fa fa-user"></i>
-              </span>
-              <span v-show="errors.has('name')" class="help is-danger"><i18n>Username cannot contain spaces</i18n></span>
-            </p>
-            <p class="control has-icon">
-              <input class="input" id="LoginPassword" name="password" v-model="password" v-validate data-vv-rules="required|min:7" placeholder="password" type="password" required>
-              <span v-show="errors.has('password')" class="help is-danger">Password must be at least 7 characters</span>
-              <span class="icon is-small">
-                <i class="fa fa-lock"></i>
-              </span>
-            </p>
-            <span class="help is-danger" id="LoginResponse" v-show="response">{{response}}</span>
-            <p class="control">
-              <button id="LoginButton" class="button is-primary is-medium is-fullwidth"
-                @click="login" :disabled="errors.any() || !fields.passed()"
-              >
-                <span class="icon is-medium">
+            <h1 class="title"><i18n>Log In</i18n></h1>
+            <div class="field">
+              <p class="control has-icon">
+                <input class="input" id="LoginName" name="name" v-model="name" v-validate data-vv-rules="required|regex:^\S+$" placeholder="username" required>
+                <span class="icon">
                   <i class="fa fa-user"></i>
                 </span>
-                <i18n>Login</i18n>
-              </button>
-            </p>
+              </p>
+              <i18n v-show="errors.has('name')" class="help is-danger">Username cannot contain spaces</i18n>
+            </div>
+            <div class="field">
+              <p class="control has-icon">
+                <input class="input" id="LoginPassword" name="password" v-model="password" v-validate data-vv-rules="required|min:7" placeholder="password" type="password" required>
+                <span class="icon is-small"><i class="fa fa-lock"></i></span>
+              </p>
+              <i18n v-show="errors.has('password')" class="help is-danger">Password must be at least 7 characters</i18n>
+            </div>
+            <p class="help is-danger" id="LoginResponse" v-show="response">{{response}}</p>
+            <div class="field">
+              <p class="control">
+                <button id="LoginButton" class="button is-primary is-medium is-fullwidth"
+                  @click="login" :disabled="errors.any() || !fields.passed()"
+                >
+                  <span class="icon"><i class="fa fa-user"></i></span>
+                  <i18n>Login</i18n>
+                </button>
+              </p>
+            </div>
           </div>
         </div>
       </div>

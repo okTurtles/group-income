@@ -96,7 +96,7 @@ declare module './views/CreateGroup.vue' { declare module.exports: Object }
 declare module './views/i18n.vue' { declare module.exports: Object }
 declare module './views/NavBar.vue' { declare module.exports: Object }
 declare module './views/NewIncomeView.vue' { declare module.exports: Object }
-declare module './views/PayGroupView.vue' { declare module.exports: Object }
+declare module './views/PayGroup.vue' { declare module.exports: Object }
 declare module './views/SignUp.vue' { declare module.exports: Object }
 declare module './views/UserGroupView.vue' { declare module.exports: Object }
 declare module './views/UserProfileView.vue' { declare module.exports: Object }
