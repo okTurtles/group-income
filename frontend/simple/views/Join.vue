@@ -102,6 +102,7 @@
 <script>
 import * as Events from '../../../shared/events'
 import backend from '../js/backend/'
+import * as db from '../js/database'
 export default {
   name: 'Join',
   mounted () {
@@ -122,10 +123,12 @@ export default {
       this.state = state
     },
     accept: async function () {
-      let latest = await backend.latestHash(this.$route.query.groupId)
-      let acceptance = new Events.AcceptInvitation({ username: this.$store.state.loggedIn, inviteHash: this.$route.query.inviteHash, acceptanceDate: new Date() }, latest)
-      await backend.publishLogEntry(this.$route.query.groupId, acceptance)
       await backend.subscribe(this.$route.query.groupId)
+      await this.$store.dispatch('synchronize', this.$route.query.groupId)
+      let latest = await db.recentHash(this.$route.query.groupId)
+      let acceptance = new Events.AcceptInvitation({ username: this.$store.state.loggedIn, inviteHash: this.$route.query.inviteHash, acceptanceDate: new Date() }, latest)
+      this.$store.commit('setCurrentGroupId', this.$route.query.groupId)
+      await backend.publishLogEntry(this.$route.query.groupId, acceptance)
       this.$store.dispatch('deleteMail', this.$route.query.inviteHash)
       this.$router.push({path: '/mailbox'})
     },

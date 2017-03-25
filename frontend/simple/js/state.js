@@ -139,6 +139,18 @@ const getters = {
 }
 
 const actions = {
+  async synchronize ({dispatch}: {dispathc: Function}, contractId: string) {
+    let latest = await backend.latestHash(contractId)
+    let recent = await db.recentHash(contractId)
+    if (latest !== recent) {
+      let events = await backend.eventsSince(contractId, recent || contractId)
+      for (let i = 0; i < events.length; i++) {
+        let event = events[i]
+        event.contractId = contractId
+        await dispatch('handleEvent', event)
+      }
+    }
+  },
   async login (
     {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object},
     user: string
@@ -148,16 +160,7 @@ const actions = {
     await db.saveCurrentUser(user)
     for (let key of Object.keys(state.contracts)) {
       await backend.subscribe(key)
-      let latest = await backend.latestHash(key)
-      let recent = await db.recentHash(key)
-      if (latest !== recent) {
-        let events = await backend.eventsSince(key, recent)
-        for (let i = 0; i < events.length; i++) {
-          let event = events[i]
-          event.contractId = key
-          await dispatch('handleEvent', event)
-        }
-      }
+      await dispatch('synchronize', key)
     }
     Vue.events.$emit('login', user)
   },
@@ -216,6 +219,9 @@ const actions = {
       await db.addLogEntry(contractId, entry)
       entry.data.hash = hash
       commit(`${contractId}/${type}`, entry.data)
+      if (state.currentGroupId === contractId) {
+        commit('setPosition', hash)
+      }
     } else {
       return console.error(`UNKNOWN EVENT TYPE!`, contractId, entry)
     }
