@@ -30,9 +30,7 @@ function getMailbox (state) {
 //       TO STORE AN INSTANCE OF A CLASS (LIKE A CONTRACT), IT WILL NOT STORE
 //       THE ACTUAL CONTRACT, BUT JSON.STRINGIFY(CONTRACT) INSTEAD!
 const state = {
-  position: null,
-  offset: [],
-  // NOTE: time travel is broken now. Should be implemented using `store.subscribe` instead of that
+  position: null, // TODO: get rid of this?
   currentGroupId: null,
   contracts: {}, // contractIds => type (for contracts we've successfully subscribed to)
   pending: [], // contractIds we've just published but haven't received back yet
@@ -86,25 +84,14 @@ const mutations = {
   },
   setCurrentGroupId (state, currentGroupId) {
     state.currentGroupId = currentGroupId
-    state.offset = []
+    state.position = currentGroupId
+  },
+  setPosition (state, position) {
+    state.position = position
   },
   pending (state, contractId) {
     let index = state.pending.indexOf(contractId)
     index === -1 && state.pending.push(contractId)
-  },
-  // time travel related
-  setPosition (state, position: string) {
-    state.position = position
-    state.offset = []
-  },
-  backward (state, offset) {
-    state.offset.push(state.position)
-    state.position = offset
-  },
-  forward (state) {
-    if (state.offset.length > 0) {
-      state.position = state.offset.pop()
-    }
   }
 }
 // https://vuex.vuejs.org/en/getters.html
@@ -203,7 +190,10 @@ const actions = {
       await db.addLogEntry(contractId, entry)
       entry.data.hash = hash
       commit(`${contractId}/${type}`, entry.data)
-      if (state.currentGroupId === contractId) {
+
+      // NOTE: this is to support EventLog.vue + TimeTravel.vue
+      //       it's not super important and we'll probably get rid of it later
+      if (contractId === state.currentGroupId) {
         commit('setPosition', hash)
       }
     } else {
@@ -213,6 +203,7 @@ const actions = {
     debouncedSave(dispatch)
     // let any listening components know that we've received, processed, and stored the event
     Vue.events.$emit(hash, contractId, entry)
+    Vue.events.$emit('eventHandled', contractId, entry)
   },
 
   // persisting the state
@@ -221,6 +212,7 @@ const actions = {
   ) {
     // TODO: encrypt these
     const settings = {
+      position: state.position,
       currentGroupId: state.currentGroupId,
       contracts: Object.keys(state.contracts).map(contractId => ({
         contractId,
@@ -240,21 +232,6 @@ const actions = {
       commit('setCurrentGroupId', settings.currentGroupId)
       commit('setContracts', settings.contracts || [])
     }
-  },
-
-  // time travel related
-  async backward (
-    {commit, state}: {commit: Function, state: Object}
-  ) {
-    if (state.currentGroupId) {
-      let entry = await db.getLogEntry(state.currentGroupId, state.position)
-      commit('backward', entry.toObject().parentHash)
-    }
-  },
-  forward (
-    {commit, state}: {commit: Function, state: Object}
-  ) {
-    state.currentGroupId && commit('forward')
   }
 }
 

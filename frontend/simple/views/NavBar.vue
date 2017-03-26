@@ -4,22 +4,18 @@
     <nav class="nav has-shadow">
       <div class="container">
         <div class="nav-left">
-          <router-link to="/" class="nav-item is-tab">
-            <!-- TODO: fix image shrinking when window is too small -->
-            <!-- TODO: resize this image itself to make it smaller -->
-            <!-- see: http://bulma.io/documentation/elements/image/ -->
+          <a href="/simple/" class="nav-item" @click="toggleTimeTravel">
             <img src="images/logo-transparent.png">
-          </router-link>
+          </a>
         </div>
         <div class="nav-center">
           <!-- TODO: use v-for to dynamically generate these? -->
-          <!--TODO figure out what needs to be done with active classe after upgrade  "{activeClass: 'is-active', path: '/new-group'}"-->
-          <router-link class="nav-item is-tab" active-class ="is-active" to="new-group" id="CreateGroup"><i18n>Start a group</i18n></router-link>
-          <router-link class="nav-item is-tab" active-class ="is-active" to="user" v-show="$store.state.loggedIn"><i18n>Profile</i18n></router-link>
-          <router-link class="nav-item is-tab" active-class ="is-active" to="user-group" v-show="$store.state.loggedIn"><i18n>Group</i18n></router-link>
-          <router-link class="nav-item is-tab" active-class ="is-active" to="pay-group" v-show="$store.state.loggedIn"><i18n>Pay Group</i18n></router-link>
-          <router-link class="nav-item is-tab" active-class ="is-active" to="ejs-page" id="testEJS" v-show="dev"><i18n>EJS test</i18n></router-link>
-          <router-link class="nav-item is-tab" active-class ="is-active" to="event-log" v-show="dev"><i18n>Event Log test</i18n></router-link>
+          <router-link class="nav-item is-tab" active-class="is-active" to="new-group" id="CreateGroup"><i18n>Start a group</i18n></router-link>
+          <router-link class="nav-item is-tab" active-class="is-active" to="user" v-show="$store.state.loggedIn"><i18n>Profile</i18n></router-link>
+          <router-link class="nav-item is-tab" active-class="is-active" to="user-group" v-show="$store.state.loggedIn"><i18n>Group</i18n></router-link>
+          <router-link class="nav-item is-tab" active-class="is-active" to="pay-group" v-show="$store.state.loggedIn"><i18n>Pay Group</i18n></router-link>
+          <router-link class="nav-item is-tab" active-class="is-active" to="ejs-page" id="testEJS"><i18n>EJS test</i18n></router-link>
+          <router-link class="nav-item is-tab" active-class="is-active" to="event-log"><i18n>Event Log test</i18n></router-link>
           <router-link v-if="$store.state.loggedIn" class="nav-item" active-class ="is-active" to="mailbox">
             <i18n>Mailbox</i18n>&nbsp;
             <span id="AlertNotification" class="icon" style="color: #ed6c63" v-if="$store.getters.unread">
@@ -81,6 +77,7 @@
       </div>
       <div class="modal-close" @click="toggleModal"></div>
     </div>
+    <time-travel v-show="showTimeTravel" :toggleVisibility="toggleTimeTravel"></time-travel>
   </div>
 </template>
 
@@ -96,10 +93,12 @@ div.nav-center
 
 <script>
 import Vue from 'vue'
+import TimeTravel from './TimeTravel.vue'
 import {HapiNamespace} from '../js/backend/hapi'
 var namespace = new HapiNamespace()
 export default {
   name: 'NavBar',
+  components: {TimeTravel},
   created: function () {
     Vue.events.$on('loginModal', this.toggleModal)
   },
@@ -147,6 +146,12 @@ export default {
           this.$router.push({path: this.$route.query.next})
         }
       }
+    },
+    toggleTimeTravel (event) {
+      if (event.altKey) {
+        event.preventDefault()
+        this.showTimeTravel = !this.showTimeTravel
+      }
     }
   },
   data () {
@@ -154,7 +159,7 @@ export default {
       name: null,
       password: null,
       response: null,
-      dev: process.env.NODE_ENV === 'development'
+      showTimeTravel: true
     }
   }
 }

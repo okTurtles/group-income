@@ -67,15 +67,15 @@ describe('Frontend', function () {
       should(obj.eventCount).equal(result.eventCount + 2)
       should(obj.current !== result.current).equal(true)
     })
-
-    it('Should Traverse Log', async function () {
+    // TODO: restore this based on the new TimeTravel
+    it.skip('Should Traverse Log', async function () {
       this.timeout(4000)
       await n.goto(page('event-log'))
       let prior = await n.evaluate(() => document.getElementById('LogPosition').innerText)
       let initial = await n.wait('textarea[name="payload"]')
         .insert('textarea[name="payload"]', 'This is a test Group Payment Event')
         .select('select[name="type"]', 'Payment')
-        .click('button.submit')
+        .click('#submit')
         .wait(prior => document.getElementById('LogPosition').innerText !== prior, prior)
         .evaluate(() => document.getElementById('LogPosition').innerText)
       let secondary = await n.click('a.backward')

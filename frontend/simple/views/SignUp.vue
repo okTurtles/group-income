@@ -30,7 +30,7 @@
           </p>
           <p class="help is-danger" v-if="errors.has('name')" id="badUsername">
             <i18n v-if="nameAvailable === false">name is unavailable</i18n>
-            <i18n v-else-if="name.length > 0">cannot contain spaces</i18n>
+            <i18n v-else-if="name && name.length > 0">cannot contain spaces</i18n>
           </p>
           <p v-else-if="nameAvailable" class="help is-success"><i18n>name is available</i18n></p>
         </div>

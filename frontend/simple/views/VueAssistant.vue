@@ -1,5 +1,8 @@
 <template>
   <!--
+  TODO: make this be a map with properties for each assistant, like the assistant's
+        title, the assistant's name, whether it allows going back, etc. And bind
+        this in the same way that vue-slider-component does binding of settings.
   Usage: <vue-assistant :views="[Component1, Component2, ...]"></vue-assistant>
   -->
   <div class="assistant">
