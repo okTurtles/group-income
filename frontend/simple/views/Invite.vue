@@ -12,7 +12,7 @@
                 </a>
               </p>
               <i18n v-if="error" id="badUsername" class="help is-danger">Invalid Username</i18n>
-              <i18n v-if="self" class="help is-danger">Cannot Invite Yourslf</i18n>
+              <i18n v-if="self" class="help is-danger">Cannot Invite Yourself</i18n>
             </div>
             <div class="column">
               <table class="table is-bordered is-striped is-narrow">
