@@ -50,7 +50,7 @@
               </table>
               <div class="has-text-centered button-box">
                 <div id="successMsg" v-if="invited" class="created"><i18n>Success</i18n></div>
-                <button class="button is-success is-large" v-if="!invited" :disabled="!members.length" v-on:click="submit" type="submit"><i18n>Invite Members</i18n></button>
+                <button class="button is-success is-large" v-if="!invited" :disabled="!members.length" style="height: 120px" v-on:click="submit" type="submit"><i18n>Invite Members</i18n></button>
                 <a class="button is-warning is-large" v-if="invited"><i18n>Next: ?</i18n></a>
               </div>
             </div>
