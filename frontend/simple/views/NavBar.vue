@@ -41,7 +41,7 @@
             <h1 class="title"><i18n>Log In</i18n></h1>
             <div class="field">
               <p class="control has-icon">
-                <input class="input" id="LoginName" name="name" v-model="name" v-validate data-vv-rules="required|regex:^\S+$" placeholder="username" required>
+                <input class="input" id="LoginName" name="name" v-model="name" v-validate @keyup.enter="login" data-vv-rules="required|regex:^\S+$" placeholder="username" required>
                 <span class="icon">
                   <i class="fa fa-user"></i>
                 </span>
@@ -50,7 +50,7 @@
             </div>
             <div class="field">
               <p class="control has-icon">
-                <input class="input" id="LoginPassword" name="password" v-model="password" v-validate data-vv-rules="required|min:7" placeholder="password" type="password" required>
+                <input class="input" id="LoginPassword" name="password" v-model="password" v-validate @keyup.enter="login" data-vv-rules="required|min:7" placeholder="password" type="password" required>
                 <span class="icon is-small"><i class="fa fa-lock"></i></span>
               </p>
               <i18n v-show="errors.has('password')" class="help is-danger">Password must be at least 7 characters</i18n>
@@ -74,6 +74,16 @@
   </div>
 </template>
 
+<style lang="sass" scoped>
+div.nav-left
+  overflow: visible
+  z-index: 10
+  a
+    background-color: #fff
+div.nav-center
+  flex-shrink: inherit
+</style>
+
 <script>
 import Vue from 'vue'
 import {HapiNamespace} from '../js/backend/hapi'
@@ -83,7 +93,17 @@ export default {
   created: function () {
     Vue.events.$on('loginModal', this.toggleModal)
   },
+  mounted: function listenKeyUp () {
+    global.addEventListener('keyup', this.handleKeyUp)
+  },
   methods: {
+    handleKeyUp (event) {
+      if (this.$refs.modal.classList.contains('is-active')) {
+        if (event.keyCode === 27) {
+          this.toggleModal()
+        }
+      }
+    },
     login: async function () {
       try {
         // TODO Insert cryptography here
@@ -104,13 +124,15 @@ export default {
         this.logout()
         this.$router.push({path: '/'})
       } else {
-        document.getElementById('LoginName').focus()
         this.response = null
         this.name = null
         this.password = null
         this.errors.clear()
         // https://github.com/oneuijs/You-Dont-Need-jQuery#css--style
         this.$refs.modal.classList.toggle('is-active')
+        if (this.$refs.modal.classList.contains('is-active')) {
+          document.getElementById('LoginName').focus()
+        }
         if (this.$route.query.next) {
           this.$router.push({path: this.$route.query.next})
         }
