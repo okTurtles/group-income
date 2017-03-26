@@ -105,7 +105,7 @@ const getters = {
   },
   unread (state) {
     let mailbox = getMailbox(state)
-    return state[ mailbox ].messages.filter((msg) => !msg.read).length
+    return mailbox && state[ mailbox ].messages.filter((msg) => !msg.read).length
   }
 }
 

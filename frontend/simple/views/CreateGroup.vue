@@ -65,7 +65,7 @@
                   </p>
                   <p class="control">
                     <input class="input" type="text" name="incomeProvided"
-                      placeholder="Amount of money"
+                      placeholder="Amount"
                       data-vv-as="Income Provided"
                       v-validate data-vv-rules="decimal:2"
                       v-model="incomeProvided"
