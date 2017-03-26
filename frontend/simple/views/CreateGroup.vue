@@ -136,9 +136,9 @@ export default {
     return {
       groupName: null,
       sharedValues: null,
-      changePercentage: 0,
-      memberApprovalPercentage: 0,
-      memberRemovalPercentage: 0,
+      changePercentage: 80,
+      memberApprovalPercentage: 80,
+      memberRemovalPercentage: 80,
       incomeProvided: null,
       contributionPrivacy: '',
       created: false,
