@@ -41,7 +41,7 @@
             <h1 class="title"><i18n>Log In</i18n></h1>
             <div class="field">
               <p class="control has-icon">
-                <input class="input" id="LoginName" name="name" v-model="name" v-validate data-vv-rules="required|regex:^\S+$" placeholder="username" required>
+                <input class="input" id="LoginName" name="name" v-model="name" v-validate @keyup.enter="login" data-vv-rules="required|regex:^\S+$" placeholder="username" required>
                 <span class="icon">
                   <i class="fa fa-user"></i>
                 </span>
@@ -50,7 +50,7 @@
             </div>
             <div class="field">
               <p class="control has-icon">
-                <input class="input" id="LoginPassword" name="password" v-model="password" v-validate data-vv-rules="required|min:7" placeholder="password" type="password" required>
+                <input class="input" id="LoginPassword" name="password" v-model="password" v-validate @keyup.enter="login" data-vv-rules="required|min:7" placeholder="password" type="password" required>
                 <span class="icon is-small"><i class="fa fa-lock"></i></span>
               </p>
               <i18n v-show="errors.has('password')" class="help is-danger">Password must be at least 7 characters</i18n>
