@@ -75,6 +75,8 @@
 <style lang="sass" scoped>
 .table-header
   background-color: #fafafa
+.media
+  align-items: center
 </style>
 
 <script>
