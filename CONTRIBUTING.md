@@ -1,20 +1,20 @@
 # Contributing
 
 - [How to contribute code](#how-to-contribute-code)
-	- [1. Decide what to work on](#1-decide-what-to-work-on)
-	- [2. FORK this repo](#2-fork-this-repo)
-	- [3. Follow this Contribution Policy](#3-follow-this-contribution-policy)
-		- [Licensing and Ownership](#licensing-and-ownership)
-		- [Pull Request Requirements](#pull-request-requirements)
+    - [1. Decide what to work on](#1-decide-what-to-work-on)
+    - [2. FORK this repo](#2-fork-this-repo)
+    - [3. Follow this Contribution Policy](#3-follow-this-contribution-policy)
+        - [Licensing and Ownership](#licensing-and-ownership)
+        - [Pull Request Requirements](#pull-request-requirements)
 - [How to submit an issue](#how-to-submit-an-issue)
 
 ## How to contribute code
 
 ### 1. Decide what to work on
 
-- Check the [open issues](issues).
-- View the [open mileposts](issues?q=is%3Aopen+is%3Aissue+label%3AMilepost). *(see: [Milepost Methodology](https://github.com/taoeffect/mileposts))*
-- Check especially what's [`up for grabs`](issues?q=is%3Aopen+is%3Aissue+label%3Aup-for-grabs), [`high priority`](issues?q=is%3Aopen+is%3Aissue+label%3A%22high+priority%22), or [`low hanging fruit`](issues?q=is%3Aopen+is%3Aissue+label%3A%22low+hanging+fruit%22).
+- Check the [open issues](https://github.com/okTurtles/group-income-simple/issues).
+- View the [open mileposts](https://github.com/okTurtles/group-income-simple/labels/milepost). *(see: [Milepost Methodology](https://github.com/taoeffect/mileposts))*
+- Check especially what's [`up for grabs`](labels/Note%3AUp-for-grabs), [`high priority`](labels/Priority%3AHigh), or [`level: starter`](labels/Level%3AStarter).
 - Read some docs, like: __[:book: Frontend: Getting Started](docs/Getting-Started-frontend.md)__
 
 Then, [tell folks what you'll be working on](https://gitter.im/okTurtles/group-income), and:

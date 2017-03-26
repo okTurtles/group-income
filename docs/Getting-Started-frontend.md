@@ -63,7 +63,7 @@ At some point the web collectively realized that the web standards known as HTML
 
 Moreover and most critically, _these fantastic UI/UX tools had AMAZING cross-platform support!_ A breakthrough occurred through the union of two technologies: Node.js and the web browser. Node.js gave JavaScript access to the Desktop OS itself, and thus the web _merged_ with apps.
 
-Various [cross-platform frameworks](http://electron.atom.io) started popping up promising to slash development time and costs while maintaining a high-quality experience across all platforms, _even mobile devices!_
+Various [cross-platform frameworks](https://electron.atom.io/) started popping up promising to slash development time and costs while maintaining a high-quality experience across all platforms, _even mobile devices!_
 
 And thus applications like [Slack](https://slack.com) and [Atom](https://atom.io) were born.
 
@@ -135,7 +135,7 @@ Well, as convenient as that was (to avoiding repeating the same HTML all over th
 - It puts more load on the server for something that clients (web browsers) could do themselves
 - More importantly, it requires that someone run and maintain one of these PHP servers
 
-Well, with client-side rendering and single-page apps, you can now put all of that logic into the client-side javascript and ship *most of your website, except the database (essentially)* as **static files** that can be hosted anywhere! Just toss the onto a CDN (or multiple CDNs!) and be done with it!
+Well, with client-side rendering and single-page apps, you can now put all of that logic into the client-side javascript and ship *most of your website, except the database (essentially)* as **static files** that can be hosted anywhere! Just toss them onto a CDN (or multiple CDNs!) and be done with it!
 
 The database portion continues to live on the server and now *just* provides a RESTful API.
 
@@ -165,7 +165,7 @@ Node.js is the platform that all the other tech we use builds upon. It's _an env
 
 Used for all kinds of JavaScript projects (backend and/or frontend). Any sort of module/library/framework you can think of is stored here. Yes, even jQuery. ;)
 
-###### __[Grunt](http://gruntjs.com/)__ - _Task Runner_
+###### __[Grunt](https://gruntjs.com/)__ - _Task Runner_
 
 For doing things like:
 
@@ -173,7 +173,7 @@ For doing things like:
 - Watching files for changes and performing actions automatically (like syntax-checking/"linting" them, combining them, copying them, etc.)
 - Converting files from one format into another (bundling `.vue` and `.ejs` files into `.js`, etc.)
 
-###### __[Hapi.js](http://hapijs.com/)__ - _Node.js-powered HTTP(S) Server_
+###### __[Hapi.js](https://hapijs.com/)__ - _Node.js-powered HTTP(S) Server_
 
 Powers the backend API that the frontend talks to. It's responsible for managing the database of groups and users, and together with the frontend it uses cookies to authenticate users.
 
@@ -197,7 +197,7 @@ The JavaScript language is always evolving. Oftentimes new features will be "sol
 A frontend web framework that takes some inspiration from React, but is simply better in many ways (TLDR: just as powerful and *far* simpler):
 
 - [http://blog.evanyou.me/2015/10/25/vuejs-re-introduction/](http://blog.evanyou.me/2015/10/25/vuejs-re-introduction/)
-- [http://vuejs.org/guide/comparison.html](http://vuejs.org/guide/comparison.html)
+- [https://vuejs.org/guide/comparison.html](https://vuejs.org/guide/comparison.html)
 - [https://medium.com/the-vue-point/announcing-vue-js-2-0-8af1bde7ab9](https://medium.com/the-vue-point/announcing-vue-js-2-0-8af1bde7ab9)
 
 In the section [What Vue.js is good for (and not)](#what-vuejs-is-good-for-and-not) we discuss its role and when/where/how to use it.
@@ -218,9 +218,9 @@ This project supports using it in `.vue` files and by itself in standalone `.ejs
 
 ###### __[Bulma](http://bulma.io/)__ - _Lightweight Modern [Flexbox](https://github.com/okTurtles/group-income-simple/wiki/Architecture-Notes#misc-useful-things) CSS Framework_
 
-Incorporating this to the site is on the TODO and is [an open issue](https://github.com/okTurtles/group-income-simple/issues/16) to take!
+We chose Bulma because it's more lightweight than Bootstrap.
 
-##### Honorable Mentions: [Webpack](https://webpack.github.io/), [Gulp](http://gulpjs.com/), [React](https://github.com/facebook/react), [Riot.js](http://riotjs.com), [Rollup](http://rollupjs.org)
+##### Honorable Mentions: [Webpack](https://webpack.github.io/), [Gulp](http://gulpjs.com/), [React](https://github.com/facebook/react), [Riot.js](http://riotjs.com), [Rollup](https://rollupjs.org)
 
 We've chosen (for now at least) to use Browserify over Webpack, Grunt over Gulp, and Vue.js over React, even though these are all perfectly fine tools in the modern web development toolkit. Briefly, our reasoning:
 
@@ -240,13 +240,14 @@ The instructions below are for *NIX systems like OS X and Linux.
 
 Pre-reqs:
 
-1. Install [node.js](https://nodejs.org/) if you haven't already. On a Mac the recommended way to install Node is via [Homebrew](http://brew.sh/) via `brew install node`
-2. Install the [`grunt`](http://gruntjs.com/) command line tool via: `npm install -g grunt-cli`
+1. Install [node.js](https://nodejs.org/) if you haven't already. On a Mac the recommended way to install Node is via [Homebrew](https://brew.sh/) via: `brew install node`
+2. Install the [`grunt`](https://gruntjs.com/) command line tool via: `npm install -g grunt-cli`
+3. Install [`Yarn`](https://yarnpkg.com/en/docs/install).
 
-Once you have `npm` and `grunt`, clone this repo using `git` and within the `group-income-simple` directory run these two commands:
+Once you have `npm`, `grunt`, and `yarn`, clone this repo using `git`, and within the `group-income-simple` directory run these two commands:
 
 ```
-npm install
+yarn install
 grunt dev
 ```
 
@@ -254,9 +255,9 @@ If all went well you should be able to visit: [http://localhost:8000](http://loc
 
 ----
 
-#### What does `npm install` do?
+#### What does `yarn install` do?
 
-It installs the dependencies that this project relies on and places them into the `node_modules/` folder. We've setup grunt to verify you always have the latest dependencies installed, but you do need to run this command at least once.
+It installs the dependencies that this project relies on and places them into the `node_modules/` folder. The list of dependencies is retrieved from the `package.json` file, and stored in the `yarn.lock` file. We've set up `grunt` to verify you always have the latest dependencies installed, but you do need to run this command at least once.
 
 ----
 
@@ -287,7 +288,7 @@ Here are the important files and folders within `frontend/simple/`:
     + __Designer note:__ This file is _purposefully minimal!_ You will rarely need to modify this file. If we modify it, it might only be to make it even smaller by removing any unnecessary `<script>` and `<link>` tags within it. This file is the "header and footer" that gets applied to _every "page"_ of our web app, and for that reason it's best to keep it as short as necessary.
 - `main.js` - This is the entry point for all of the frontend code, where our modern web app starts. This file is responsible for setting up the Vue.js [`vue-router`](https://github.com/vuejs/vue-router), the client-side machinery that replicates the effect of having "different pages with different URLs" (modern web dev trickery that unbelievably isn't as ridiculous as it sounds). It is also responsible for loading all of the other "pages" (located in `views/`) and code (located in `js/`) that the website has.
     + __Designer note:__ If you want to add a "new page" to the site (i.e. a new link in the top `<nav>` bar), then you will need to modify this file to update the routes.
-- `views/` - This contains all of the "pages" of the website. These are stored either [`.vue` files](https://vuejs.github.io/vue-loader/en/start/spec.html) or `.ejs` files, which are just HTML files that support [using JavaScript like PHP](http://ejs.co) between [`<%` and `%>` tags](https://github.com/mde/ejs/blob/master/README.md#features).
+- `views/` - This contains all of the "pages" of the website. These are stored as either [`.vue` files](https://vue-loader.vuejs.org/en/start/spec.html) or `.ejs` files, which are just HTML files that support [using JavaScript like PHP](http://ejs.co) between [`<%` and `%>` tags](https://github.com/mde/ejs/blob/master/README.md#features).
     + __Designer note:__ See: [When should I create a `.vue` file instead of an `.ejs` file?](#when-should-i-create-a-vue-file-instead-of-an-ejs-file)
 - `js/` - Folder for placing "handy js that's used in lots of places" _that you wrote_ (not third-party, [that goes in `assets/vendor/`](#where-should-i-put-javascript-someone-else-wrote-eg-jquery)).
     + __Designer note:__ Generally as a designer you can ignore this folder. Most of the JavaScript that designers need can either be `require`'d (see the next section) or created directly within `.vue` or `.ejs` files.
@@ -300,25 +301,27 @@ Here are the important files and folders within `frontend/simple/`:
 #### How do I add a new page to the website?
 
 1. Create either a new `.vue` or `.ejs` file within `simple/views`
-2. Link to it using the [v-link](https://vuejs.github.io/vue-router/en/link.html) directive, and if necessary update the `index.html` file (which currently has a global header/footer with page links)
-3. Update the [`vue-router` mapping](https://vuejs.github.io/vue-router/en/basic.html) configuration in `simple/main.js`
+2. Link to it using the [router-link](https://router.vuejs.org/en/api/router-link.html) directive, and if necessary update the `index.html` file (which currently has a global header/footer with page links)
+3. Update the [`vue-router` mapping](https://router.vuejs.org/en/) configuration in `simple/main.js`
 
 If you're adding an `.ejs` file, you might add the following to the router config:
 
 ```js
-'/ejs-page': {
-  component: { template: wrap(require('./views/test.ejs')) },
-  title: 'EJS Test Page'
+path: '/example-page',
+component: { template: wrap(require('./views/test.ejs')) },
+meta: {
+  title: 'Example Page'
 }
 ```
 
-The `wrap` function wraps the content of the file in a tag (`div` by default) in order to prevent [fragment instances](http://vuejs.org/guide/components.html#Fragment-Instance) (which Vue.js doesn't like).
+The `wrap` function wraps the content of the file in a tag (`div` by default) in order to prevent [fragment instances](https://v1.vuejs.org/guide/components.html#Fragment-Instance) (which [aren't allowed in Vue.js 2.0](https://vuejs.org/v2/guide/migration.html#Fragment-Instances-removed)).
 
 If you're adding a `.vue` file, you could add:
 
 ```js
-'/example-page': {
-  component: { template: require('./views/test.vue') },
+path: '/example-page',
+component: ExamplePage,
+meta: {
   title: 'Example Page'
 }
 ```
@@ -328,13 +331,13 @@ If you're adding a `.vue` file, you could add:
 #### When should I create a `.vue` file instead of an `.ejs` file?
 
 - If you're creating a logic-heavy page that takes advantage of Vue.js's two-way data bindings feature.
-- If you are designing a complex, self-contained re-usable component. In Group Income, a good candidate for such a component is this payment row widget:
+- If you are designing a complex, self-contained reusable component. In Group Income, a good candidate for such a component is this payment row widget:
 
     ![row](https://gitlab.okturtles.com/uploads/okturtles/group-income-simple/b3d1ff2112/row.jpg)
 
 Remember, **you can use Vue.js features within `.ejs` files!**
 
-There's no problem with using the [v-link](https://vuejs.github.io/vue-router/en/link.html) directive within an `.ejs` file when linking to another "page".
+There's no problem with using the [router-link](https://router.vuejs.org/en/essentials/nested-routes.html) directive within an `.ejs` file when linking to another "page".
 
 Otherwise we recommend sticking with `.ejs` files, although to be honest it doesn't matter much.
 
@@ -371,7 +374,7 @@ We cover both approaches below.
 
 **Method 1.1: Lazy-loading a "vendor" lib using Script2**
 
-There are a variety of ways to load code asynchronously. We're going to ignore all of the fancy new techniques that have come along for doing this (that includes [RequireJS](http://requirejs.org)-style AMD files, [code-splitting](http://vuejs.github.io/vue-router/en/lazy.html), ["System.import"](https://github.com/systemjs/systemjs), and whatever else they think of next).
+There are a variety of ways to load code asynchronously. We're going to ignore all of the fancy new techniques that have come along for doing this (that includes [RequireJS](http://requirejs.org)-style AMD files, [code-splitting](https://router.vuejs.org/en/advanced/lazy-loading.html), ["System.import"](https://github.com/systemjs/systemjs), and whatever else they think of next).
 
 Instead, my *strong* recommendation after evaluating all of those … interesting alternatives, is to simply use the good old-fashioned `<script>` tag that everyone is already familiar with, unless there's a very compelling reason not to. This is possible in SPAs (even in frameworks that don't officially support it!) thanks to simple libraries like [VueScript2](https://github.com/taoeffect/vue-script2). You'll waste less time, your website will load faster, and your designer will thank you.
 
@@ -415,7 +418,7 @@ Behind the scenes, this `<script>` tag is transformed into a VueScript2 Vue.js c
 
 You can lazy-load an entire route (i.e. an entire "page") by leveraging the *code-splitting* capabilities of browserify or webpack.
 
-- :book: See [the `vue-router` documentation](http://vuejs.github.io/vue-router/en/lazy.html) for more info
+- :book: See [the `vue-router` documentation](https://router.vuejs.org/en/advanced/lazy-loading.html) for more info
 
 **Method 2: Globally including a commonly used third-party library**
 
@@ -452,11 +455,11 @@ That's OK! Ask us in the [chat](https://gitter.im/okTurtles/group-income) or the
 ### What Vue.js is good for (and not)
 
 - Reducing HTML markup and making collaboration easier. To open a facebook-style chatbox at the bottom of the window, you just insert `<chatbox param1="foo" param2="bar"></chatbox>`, etc.
-- Synchronizing data between the view (the widget) and the model (the JS object). I.e. [two-way data bindings](http://vuejs.org/guide/forms.html). **Rule of thumb:** if data-binding is unnecessary then there's no need for Vue.js to be involved.
+- Synchronizing data between the view (the widget) and the model (the JS object). I.e. [two-way data bindings](https://vuejs.org/guide/forms.html). **Rule of thumb:** if data-binding is unnecessary then there's no need for Vue.js to be involved.
 - Creating logic-heavy widgets for widget-heavy "apps" like Slack, etc.
 - Serving "web 2.0" (2.5?) static websites. I.e. you put your entire modern website in an `.html` file, have it call an API, and serve it to people over a CDN. Thanks to client-side routers the URL will magically change on "page visit". :point_left: This might be the most relevant part for us as it works well with the future move to Ethereum.
 
-It's **not** convenient for much else. It is especially not good for designers who are used to plain-old markup. Apparently, [being friendly toward designers is one of its strong points](http://vuejs.org/guide/comparison.html), but that's compared to other frameworks like React.js / Angular / Ember. Nor is it useful for creating relatively "small" widgets like custom input fields or buttons.
+It's **not** convenient for much else. It is especially not good for designers who are used to plain-old markup. Apparently, [being friendly toward designers is one of its strong points](https://vuejs.org/guide/comparison.html), but that's compared to other frameworks like React.js / Angular / Ember. Nor is it useful for creating relatively "small" widgets like custom input fields or buttons.
 
 ### What EJS is good for (and not)
 
@@ -467,7 +470,7 @@ So it is good for that style of programming, and it is therefore much more frien
 - Avoiding repetition by including some file using `<%- include file %>` ([example](https://github.com/okTurtles/group-income-simple/blob/ebafb48385c63d271eb6a210545efbcc8d43d99c/frontend/simple/views/test.ejs#L10))
 - Adding simple logic like "display this chunk of HTML `if` something, otherwise display this other thing"
 
-You can even use EJS syntax within within `.vue` files by setting the [template language](http://vuejs.org/guide/syntax.html) to `ejs`:
+You can even use EJS syntax within within `.vue` files by setting the [template language](https://vuejs.org/guide/syntax.html) to `ejs`:
 
 ```vue
 <template lang="ejs">
