@@ -33,7 +33,7 @@
         </div>
       </div>
     </nav>
-    <div class="modal" ref="modal" id="LoginModal" @keyup.esc="toggleModal">
+    <div class="modal" ref="modal" id="LoginModal">
       <div class="modal-background" v-on:click="toggleModal"></div>
       <div class="modal-content" style="width: 300px">
         <div class="card is-rounded">
@@ -83,7 +83,17 @@ export default {
   created: function () {
     Vue.events.$on('loginModal', this.toggleModal)
   },
+  mounted: function listenKeyUp () {
+    global.addEventListener('keyup', this.handleKeyUp)
+  },
   methods: {
+    handleKeyUp (event) {
+      if (this.$refs.modal.classList.contains('is-active')) {
+        if (event.keyCode === 27) {
+          this.toggleModal()
+        }
+      }
+    },
     login: async function () {
       try {
         // TODO Insert cryptography here
