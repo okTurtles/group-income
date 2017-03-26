@@ -8,7 +8,6 @@ import Vuex from 'vuex'
 import * as db from './database'
 import * as Events from '../../../shared/events'
 import backend from '../js/backend'
-
 // babel transforms lodash imports: https://github.com/lodash/babel-plugin-lodash#faq
 // for diff between 'lodash/map' and 'lodash/fp/map'
 // see: https://github.com/lodash/lodash/wiki/FP-Guide
@@ -17,7 +16,15 @@ import debounce from 'lodash/debounce'
 Vue.use(Vuex)
 var store // this is set and made the default export at the bottom of the file.
           // we have it declared here to make it accessible in mutations
-
+// Used by the getters and mutations to find the mailbox contracts
+function getMailbox (state) {
+  for (let [key, value] of Object.entries(state.contracts)) {
+    if (value === 'MailboxContract') {
+      return key
+    }
+  }
+  return null
+}
 // 'state' is the Vuex state object
 // NOTE: THE STATE CAN ONLY STORE *SERIALIZABLE* OBJECTS! THAT MEANS IF YOU TRY
 //       TO STORE AN INSTANCE OF A CLASS (LIKE A CONTRACT), IT WILL NOT STORE
@@ -27,7 +34,7 @@ const state = {
   currentGroupId: null,
   contracts: {}, // contractIds => type (for contracts we've successfully subscribed to)
   pending: [], // contractIds we've just published but haven't received back yet
-  loggedIn: false// TODO: properly handle this
+  loggedIn: false // TODO: properly handle this
 }
 
 // Mutations must be synchronous! Never call these directly!
@@ -57,6 +64,24 @@ const mutations = {
       mutations.addContract(state, contract)
     }
   },
+  deleteMail (state, hash) {
+    let mailbox = getMailbox(state)
+    if (mailbox) {
+      let index = state[ mailbox ].messages.findIndex(msg => msg.hash === hash)
+      if (index > -1) {
+        state[ mailbox ].messages.splice(index, 1)
+      }
+    }
+  },
+  readMail (state, hash) {
+    let mailbox = getMailbox(state)
+    if (mailbox) {
+      let index = state[ mailbox ].messages.findIndex(msg => msg.hash === hash)
+      if (index > -1) {
+        state[ mailbox ].messages[index].read = true
+      }
+    }
+  },
   setCurrentGroupId (state, currentGroupId) {
     state.currentGroupId = currentGroupId
     state.position = currentGroupId
@@ -69,16 +94,35 @@ const mutations = {
     index === -1 && state.pending.push(contractId)
   }
 }
-
 // https://vuex.vuejs.org/en/getters.html
 // https://vuex.vuejs.org/en/modules.html
 const getters = {
   currentGroup (state) {
     return state[state.currentGroupId]
+  },
+  mailbox (state) {
+    return getMailbox(state)
+  },
+  unread (state) {
+    let mailbox = getMailbox(state)
+    return state[ mailbox ].messages.filter((msg) => !msg.read).length
   }
 }
 
 const actions = {
+  // Used to update contracts to the current state that the server is aware of
+  async synchronize ({dispatch}: {dispathc: Function}, contractId: string) {
+    let latest = await backend.latestHash(contractId)
+    let recent = await db.recentHash(contractId)
+    if (latest !== recent) {
+      let events = await backend.eventsSince(contractId, recent || contractId)
+      for (let i = 0; i < events.length; i++) {
+        let event = events[i]
+        event.contractId = contractId
+        await dispatch('handleEvent', event)
+      }
+    }
+  },
   async login (
     {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object},
     user: string
@@ -88,6 +132,7 @@ const actions = {
     await db.saveCurrentUser(user)
     for (let key of Object.keys(state.contracts)) {
       await backend.subscribe(key)
+      await dispatch('synchronize', key)
     }
     Vue.events.$emit('login', user)
   },
@@ -96,11 +141,19 @@ const actions = {
   ) {
     await dispatch('saveSettings')
     await db.clearCurrentUser()
-    commit('logout')
     for (let key of Object.keys(state.contracts)) {
       await backend.unsubscribe(key)
     }
+    commit('logout')
     Vue.events.$emit('logout')
+  },
+  deleteMail ({dispatch, commit}, hash) {
+    commit('deleteMail', hash)
+    debouncedSave(dispatch)
+  },
+  readMail ({dispatch, commit}, hash) {
+    commit('readMail', hash)
+    debouncedSave(dispatch)
   },
   // this function is called from ./pubsub.js and is the entry point
   // for getting events into the log.
@@ -135,6 +188,7 @@ const actions = {
       }
       // TODO: verify each entry is signed by a group member
       await db.addLogEntry(contractId, entry)
+      entry.data.hash = hash
       commit(`${contractId}/${type}`, entry.data)
 
       // NOTE: this is to support EventLog.vue + TimeTravel.vue

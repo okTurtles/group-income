@@ -46,7 +46,7 @@
         </table>
         <div class="has-text-centered button-box">
           <div id="successMsg" v-if="invited" class="created"><i18n>Success</i18n></div>
-          <button class="button is-success is-large" v-if="!invited" :disabled="!members.length" v-on:click="submit" type="submit"><i18n>Invite Members</i18n></button>
+          <button class="button is-success is-large" v-if="!invited" :disabled="!members.length" style="height: 120px" v-on:click="submit" type="submit"><i18n>Invite Members</i18n></button>
           <a class="button is-warning is-large" v-if="invited"><i18n>Next: ?</i18n></a>
         </div>
       </div>
@@ -116,8 +116,12 @@ export default {
           contract.constructor.vuex.mutations[type](state, action.data)
         })
         let mailbox = await backend.latestHash(state.attributes.mailbox)
-        let invite = new Events.PostInvite({groupId: this.$store.state.currentGroupId}, mailbox)
+        let date = new Date()
+        let invite = new Events.PostInvite({groupId: this.$store.state.currentGroupId, sentDate: date.toString()}, mailbox)
         await backend.publishLogEntry(state.attributes.mailbox, invite)
+        let latest = await backend.latestHash(this.$store.state.currentGroupId)
+        let invited = new Events.RecordInvitation({ username: member.name, inviteHash: invite.toHash(), sentDate: date.toString() }, latest)
+        await backend.publishLogEntry(this.$store.state.currentGroupId, invited)
       }
       this.invited = true
     }

@@ -62,7 +62,7 @@ export class HapiBackend extends Backend {
   }
   publishLogEntry (contractId: string, entry: HashableEntry) {
     console.log(`publishLogEntry to ${contractId}:`, entry)
-    // There used to be a permission check here buts its duplicated when a subcribed
+    // TODO: There used to be a permission check here buts its duplicated when a subcribed
     // contract received the events
     // in cases like send of messages the check information is not known so this check
     // is better left to the server and the subscribers to perform the check

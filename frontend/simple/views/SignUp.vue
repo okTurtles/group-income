@@ -108,14 +108,14 @@ export default {
         await namespace.register(this.name, user.toHash())
         // TODO Just add cryptographic magic
         this.response = 'success'
+        this.$store.dispatch('login', this.name)
         if (this.$route.query.next) {
           setTimeout(() => {
             this.$router.push({path: this.$route.query.next})
           }, 1000)
+        } else {
+          this.$router.push({path: '/'})
         }
-        this.$store.dispatch('login', this.name)
-        // await backend.subscribe(mailbox.toHash())
-        // await backend.subscribe(mailbox.toHash())
         this.error = false
       } catch (ex) {
         this.$store.commit('logout')

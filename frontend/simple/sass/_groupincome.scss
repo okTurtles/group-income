@@ -126,10 +126,28 @@
 .button-box {
   display: flex;
   align-items: center;
+  flex-direction: column;
   justify-content: center;
   height: 30%;
   margin: 30px 0 0 0;
 }
 .centered-button {
   max-width: 50%;
+}
+@font-face {
+  font-family: Foco;
+  src: url(../fonts/FocoBold.ttf);
+}
+.brand-font {
+  font-family: Foco;
+}
+.unread {
+  display: inline-block;
+  padding: 2px 5px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  color: white;
+  background-color: #1fc8db;
+  border-radius: 20px;
 }
