@@ -1,58 +1,56 @@
 <template>
   <section class="section full-screen">
     <div class="columns">
-      <div class="column is-1"></div>
-        <div class="column is-10" >
-          <div class="columns is-gapless">
-            <div class="column">
-              <p class="control has-addons">
-                <input id="searchUser" class="input" type="text" v-model="searchUser" placeholder="Add a new member by username">
-                <a id="addButton" class="button is-info" v-on:click="add">
-                  <i18n>Add</i18n>
-                </a>
-              </p>
-              <i18n v-if="error" id="badUsername" class="help is-danger">Invalid Username</i18n>
-              <i18n v-if="self" class="help is-danger">Cannot Invite Yourself</i18n>
-            </div>
-            <div class="column">
-              <table class="table is-bordered is-striped is-narrow">
-                <thead>
-                <tr>
-                  <th><i18n>Group Members</i18n></th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr v-for="(member, index) in members" class="member">
-                  <td>
-                    <div class="media">
-                      <div class="media-left">
-                        <p class="image is-64x64">
-                          <!-- TODO: use responsive figure:
-                        http://bulma.io/documentation/elements/image/ -->
-                          <!-- TODO: ideally these would be loaded from cache -->
-                          <img src="http://bulma.io/images/placeholders/128x128.png">
-                        </p>
-                      </div>
-                      <div class="media-content">
-                        <strong>{{member.name}}</strong>
-                      </div>
-                      <div class="media-right">
-                        <button class="delete" v-on:click="remove(index)"></button>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-                </tbody>
-              </table>
-              <div class="has-text-centered button-box">
-                <div id="successMsg" v-if="invited" class="created"><i18n>Success</i18n></div>
-                <button class="button is-success is-large" v-if="!invited" :disabled="!members.length" v-on:click="submit" type="submit"><i18n>Invite Members</i18n></button>
-                <a class="button is-warning is-large" v-if="invited"><i18n>Next: ?</i18n></a>
-              </div>
-            </div>
-          </div>
+      <div class="column is-1" />
+      <div class="column is-10" >
+        <div class="field has-addons">
+          <p class="control" style="width: 100%">
+            <input id="searchUser" class="input" type="text" v-model="searchUser" placeholder="Add a new member by username">
+          </p>
+          <p class="control">
+            <a id="addButton" class="button is-info" v-on:click="add">
+              <i18n>Add new member</i18n>
+            </a>
+          </p>
         </div>
-       <div class="column is-1"></div>
+        <i18n v-if="error" id="badUsername" class="help is-danger">Invalid Username</i18n>
+        <i18n v-if="self" class="help is-danger">Cannot Invite Yourself</i18n>
+        <table class="table is-bordered is-striped is-narrow">
+          <thead>
+          <tr>
+            <th><i18n>Group Members</i18n></th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr v-for="(member, index) in members" class="member">
+            <td>
+              <div class="media">
+                <div class="media-left">
+                  <p class="image is-64x64">
+                    <!-- TODO: use responsive figure:
+                  http://bulma.io/documentation/elements/image/ -->
+                    <!-- TODO: ideally these would be loaded from cache -->
+                    <img src="http://bulma.io/images/placeholders/128x128.png">
+                  </p>
+                </div>
+                <div class="media-content">
+                  <strong>{{member.name}}</strong>
+                </div>
+                <div class="media-right">
+                  <button class="delete" v-on:click="remove(index)"></button>
+                </div>
+              </div>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+        <div class="has-text-centered button-box">
+          <div id="successMsg" v-if="invited" class="created"><i18n>Success</i18n></div>
+          <button class="button is-success is-large" v-if="!invited" :disabled="!members.length" v-on:click="submit" type="submit"><i18n>Invite Members</i18n></button>
+          <a class="button is-warning is-large" v-if="invited"><i18n>Next: ?</i18n></a>
+        </div>
+      </div>
+      <div class="column is-1"></div>
     </div>
   </section>
 </template>
