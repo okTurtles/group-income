@@ -4,16 +4,13 @@
     <nav class="nav has-shadow">
       <div class="container">
         <div class="nav-left">
-          <a href="/simple/" class="nav-item">
-            <!-- TODO: fix image shrinking when window is too small -->
-            <!-- TODO: resize this image itself to make it smaller -->
+          <a href="/simple/" class="nav-item" @click="toggleTimeTravel">
             <img src="images/groupincome-logo-black.png">
           </a>
         </div>
         <div class="nav-center">
           <!-- TODO: use v-for to dynamically generate these? -->
           <router-link class="nav-item is-tab" active-class="is-active" to="new-group" id="CreateGroup"><i18n>Start a group</i18n></router-link>
-          <router-link class="nav-item is-tab" active-class="is-active" to="signup" v-show="!$store.state.loggedIn"><i18n>New User</i18n></router-link>
           <router-link class="nav-item is-tab" active-class="is-active" to="user"><i18n>Profile</i18n></router-link>
           <router-link class="nav-item is-tab" active-class="is-active" to="user-group"><i18n>Group</i18n></router-link>
           <router-link class="nav-item is-tab" active-class="is-active" to="pay-group"><i18n>Pay Group</i18n></router-link>
@@ -71,6 +68,7 @@
       </div>
       <div class="modal-close" @click="toggleModal"></div>
     </div>
+    <time-travel v-show="showTimeTravel" :toggleVisibility="toggleTimeTravel"></time-travel>
   </div>
 </template>
 
@@ -86,10 +84,12 @@ div.nav-center
 
 <script>
 import Vue from 'vue'
+import TimeTravel from './TimeTravel.vue'
 import {HapiNamespace} from '../js/backend/hapi'
 var namespace = new HapiNamespace()
 export default {
   name: 'NavBar',
+  components: {TimeTravel},
   created: function () {
     Vue.events.$on('loginModal', this.toggleModal)
   },
@@ -137,13 +137,20 @@ export default {
           this.$router.push({path: this.$route.query.next})
         }
       }
+    },
+    toggleTimeTravel (event) {
+      if (event.altKey) {
+        event.preventDefault()
+        this.showTimeTravel = !this.showTimeTravel
+      }
     }
   },
   data () {
     return {
       name: null,
       password: null,
-      response: null
+      response: null,
+      showTimeTravel: true
     }
   }
 }

@@ -1,5 +1,7 @@
 <template>
   <section class="section">
+    <!-- TODO: use Bulma's .field -->
+    <!-- TODO: center using .centered like SignUp.vue -->
     <div class="columns">
       <div class="column is-1"></div>
       <div class="column is-10" >
@@ -130,7 +132,6 @@ export default {
         await backend.subscribe(hash)
         Vue.events.$once(hash, (contractId, entry) => {
           this.$store.commit('setCurrentGroupId', hash)
-          this.$store.commit('setPosition', hash)
         })
         let res = await backend.publishLogEntry(hash, entry)
         if (!res.ok) {
