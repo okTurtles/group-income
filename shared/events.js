@@ -355,8 +355,14 @@ export class MailboxContract extends HashableContract {
   static vuex = MailboxContract.Vuex({
     state: { messages: [] },
     mutations: {
-      PostMessage (state, data) { state.messages.push(data) },
-      PostInvite (state, data) { state.messages.push(data) },
+      PostMessage (state, data) {
+        data.read = false
+        state.messages.push(data)
+      },
+      PostInvite (state, data) {
+        data.read = false
+        state.messages.push(data)
+      },
       AuthorizeSender (state, data) {
         state.authorizations[AuthorizeSender.authorization.name].data = data.sender
       }

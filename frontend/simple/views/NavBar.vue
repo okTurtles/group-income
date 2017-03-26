@@ -1,5 +1,5 @@
 <template>
-  <section class="hero">
+  <div>
     <!-- see: http://bulma.io/documentation/components/nav/ -->
     <nav class="nav has-shadow">
       <div class="container">
@@ -21,7 +21,12 @@
           <router-link class="nav-item is-tab" active-class ="is-active" to="pay-group" v-show="$store.state.loggedIn"><i18n>Pay Group</i18n></router-link>
           <router-link class="nav-item is-tab" active-class ="is-active" to="ejs-page" id="testEJS" v-show="dev"><i18n>EJS test</i18n></router-link>
           <router-link class="nav-item is-tab" active-class ="is-active" to="event-log" v-show="dev"><i18n>Event Log test</i18n></router-link>
-          <router-link v-if="$store.state.loggedIn" class="nav-item" active-class ="is-active" to="mailbox"><i18n>Mailbox</i18n></router-link>
+          <router-link v-if="$store.state.loggedIn" class="nav-item" active-class ="is-active" to="mailbox">
+            <i18n>Mailbox</i18n>&nbsp;
+            <span class="icon" style="color: #ed6c63" v-if="$store.getters.unread">
+              <i class="fa fa-bell"></i>
+            </span>
+          </router-link>
         </div>
         <div class="nav-right">
           <span class="nav-item is-tab control">
@@ -77,7 +82,7 @@
       </div>
       <div class="modal-close" @click="toggleModal"></div>
     </div>
-  </section>
+  </div>
 </template>
 
 <script>

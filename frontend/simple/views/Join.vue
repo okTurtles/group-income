@@ -12,7 +12,7 @@
                 <div class="panel">
                   <div class="panel-block">
                     <div style="display: inline;">
-                      {{contract.groupName}} <i18n>is a group that was founded</i18n> {{formatDate(contract.creationDate)}}. <i18n>The Group currently has</i18n> {{state.members.length}} <i18n>active members with</i18n> # <i18n>financial contributors</i18n>.
+                      <strong>Shared Values: </strong> {{contract.sharedValues}}
                     </div>
                   </div>
                   <table class="panel-block notification is-warning">
@@ -32,10 +32,10 @@
                     {{contract.founderUsername}}
                   </div>
                   <div class="panel-block">
-                    <div><strong><i18n>Shared Values</i18n></strong></div>
+                    <div><strong><i18n>Group Info</i18n></strong></div>
                   </div>
                   <div class="panel-block">
-                    {{contract.sharedValues}}
+                    <span>{{contract.groupName}} <i18n>is a group that was founded</i18n> {{formatDate(contract.creationDate)}}. <i18n>The Group currently has</i18n> {{state.members.length}} <i18n>active members with</i18n> # <i18n>financial contributors</i18n>.</span>
                   </div>
                   <div class="panel-block">
                     <div><strong><i18n>Percentage of members are required to change the rules</i18n></strong></div>

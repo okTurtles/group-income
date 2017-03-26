@@ -16,7 +16,15 @@ import debounce from 'lodash/debounce'
 Vue.use(Vuex)
 var store // this is set and made the default export at the bottom of the file.
           // we have it declared here to make it accessible in mutations
-
+// Used by the getters and mutations to find the mailbox contracts
+function getMailbox (state) {
+  for (let [key, value] of Object.entries(state.contracts)) {
+    if (value === 'MailboxContract') {
+      return key
+    }
+  }
+  return null
+}
 // 'state' is the Vuex state object
 // NOTE: THE STATE CAN ONLY STORE *SERIALIZABLE* OBJECTS! THAT MEANS IF YOU TRY
 //       TO STORE AN INSTANCE OF A CLASS (LIKE A CONTRACT), IT WILL NOT STORE
@@ -28,8 +36,7 @@ const state = {
   currentGroupId: null,
   contracts: {}, // contractIds => type (for contracts we've successfully subscribed to)
   pending: [], // contractIds we've just published but haven't received back yet
-  loggedIn: false, // TODO: properly handle this
-  deletedMail: []
+  loggedIn: false // TODO: properly handle this
 }
 
 // Mutations must be synchronous! Never call these directly!
@@ -59,48 +66,27 @@ const mutations = {
       mutations.addContract(state, contract)
     }
   },
-  setDeletedMail (state, deletedMail) {
-    state.deletedMail = deletedMail
-  },
   deleteMail (state, hash) {
-    let mailbox
-    for (let [key, value] of Object.entries(state.contracts)) {
-      if (value === 'MailboxContract') {
-        mailbox = key
-        break
-      }
-    }
+    let mailbox = getMailbox(state)
     if (mailbox) {
       let index = state[ mailbox ].messages.findIndex(msg => msg.hash === hash)
       if (index > -1) {
-        let message = state[ mailbox ].messages.splice(index, 1)[0]
-        state.deletedMail.push(message)
+        state[ mailbox ].messages.splice(index, 1)
       }
     }
   },
-  restoreMail (state, hash) {
-    let mailbox
-    for (let [key, value] of Object.entries(state.contracts)) {
-      if (value === 'MailboxContract') {
-        mailbox = key
-        break
-      }
-    }
+  readMail (state, hash) {
+    let mailbox = getMailbox(state)
     if (mailbox) {
-      let index = state.deletedMail.findIndex(msg => msg.hash === hash)
+      let index = state[ mailbox ].messages.findIndex(msg => msg.hash === hash)
       if (index > -1) {
-        let message = state.deletedMail.splice(index, 1)[0]
-        state[ mailbox ].messages.push(message)
+        state[ mailbox ].messages[index].read = true
       }
     }
   },
   setCurrentGroupId (state, currentGroupId) {
     state.currentGroupId = currentGroupId
     state.offset = []
-  },
-  setMailFilter (state, mailFilter) {
-    state.mailFilter = mailFilter
-    state.mailChanged = new Date()
   },
   pending (state, contractId) {
     let index = state.pending.indexOf(contractId)
@@ -121,7 +107,6 @@ const mutations = {
     }
   }
 }
-
 // https://vuex.vuejs.org/en/getters.html
 // https://vuex.vuejs.org/en/modules.html
 const getters = {
@@ -129,16 +114,16 @@ const getters = {
     return state[state.currentGroupId]
   },
   mailbox (state) {
-    for (let [key, value] of Object.entries(state.contracts)) {
-      if (value === 'MailboxContract') {
-        return key
-      }
-    }
-    return null
+    return getMailbox(state)
+  },
+  unread (state) {
+    let mailbox = getMailbox(state)
+    return state[ mailbox ].messages.filter((msg) => !msg.read).length
   }
 }
 
 const actions = {
+  // Used to update contracts to the current state that the server is aware of
   async synchronize ({dispatch}: {dispathc: Function}, contractId: string) {
     let latest = await backend.latestHash(contractId)
     let recent = await db.recentHash(contractId)
@@ -169,19 +154,18 @@ const actions = {
   ) {
     await dispatch('saveSettings')
     await db.clearCurrentUser()
-    commit('logout')
     for (let key of Object.keys(state.contracts)) {
       await backend.unsubscribe(key)
     }
+    commit('logout')
     Vue.events.$emit('logout')
   },
   deleteMail ({dispatch, commit}, hash) {
     commit('deleteMail', hash)
     debouncedSave(dispatch)
   },
-  restoreMail ({dispatch, commit}, hash) {
-    console.log('happened', hash)
-    commit('restoreMail', hash)
+  readMail ({dispatch, commit}, hash) {
+    commit('readMail', hash)
     debouncedSave(dispatch)
   },
   // this function is called from ./pubsub.js and is the entry point
@@ -242,8 +226,7 @@ const actions = {
         contractId,
         type: state.contracts[contractId],
         data: state[contractId]
-      })),
-      deletedMail: state.deletedMail
+      }))
     }
     await db.saveSettings(state.loggedIn, settings)
     console.log('saveSettings:', settings)
@@ -256,7 +239,6 @@ const actions = {
       console.log('loadSettings:', settings)
       commit('setCurrentGroupId', settings.currentGroupId)
       commit('setContracts', settings.contracts || [])
-      commit('setDeletedMail', settings.deletedMail)
     }
   },
 

@@ -18,7 +18,7 @@
                     </span>
               </a>
             </div>
-            cSelect an Event Type:
+            Select an Event Type:
             <span class="select">
               <select ref="type" name="type" data-rules="required">
                 <!-- must exactly match the types in shared/events.js -->

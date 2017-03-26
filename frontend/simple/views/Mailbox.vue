@@ -19,19 +19,7 @@
                 <span class="panel-icon">
                   <i class="fa fa-envelope"></i>
                 </span>
-                <a v-on:click="inboxMode"><i18n>inbox</i18n></a>
-              </div>
-              <div class="panel-block">
-                <span class="panel-icon">
-                  <i class="fa fa-users"></i>
-                </span>
-                <a v-on:click="invitesMode"><i18n>invites</i18n></a>
-              </div>
-              <div class="panel-block">
-                <span class="panel-icon">
-                  <i class="fa fa-trash"></i>
-                </span>
-                <a v-on:click="deletedMode"><i18n>deleted</i18n></a>
+                <a v-on:click="inboxMode"><i18n>inbox</i18n> <span class="unread" v-if="$store.getters.unread">{{ $store.getters.unread }}</span></a>
               </div>
             </div>
           </div>
@@ -72,21 +60,45 @@
                 <div><strong>Sent:</strong>&nbsp;{{formatDate(currentMessage.sentDate)}}</div>
                 <div><strong>From:</strong>&nbsp;{{ currentMessage.groupId ?  currentMessage.groupId : currentMessage.from}}</div>
               </div>
-              <p class="panel-block" v-if="currentMessage.message">{{currentMessage.message}}</p>
-              <p class="panel-block" v-if="currentMessage.groupId && !(deleted === messages)"><router-link v-bind:to="{ path: '/join', query: { groupId: currentMessage.groupId, inviteHash: currentMessage.hash } }" ><i18n>Respond to Invite</i18n></router-link></p>
+              <p class="panel-block" v-if="currentMessage.message" style="display: block; word-wrap: break-word;">{{currentMessage.message}}</p>
+              <p class="panel-block" v-if="currentMessage.groupId"><router-link v-bind:to="{ path: '/join', query: { groupId: currentMessage.groupId, inviteHash: currentMessage.hash } }" ><i18n>Respond to Invite</i18n></router-link></p>
               <div class="panel-block" >
-                <button class="button is-danger" v-if="!currentMessage.groupId" type="submit" style="margin-left:auto; margin-right: 0" v-on:click="remove(index)"><i18n>{{ messages === deleted ? 'Restore' : 'Delete' }}</i18n></button>
-                <button class="button is-primary" type="submit" v-on:click="returnMode" v-bind:style="deleted !== messages  || !currentMessage.groupId  ? 'margin-left:10px; margin-right: 0' : 'margin-left:auto; margin-right: 0'"><i18n>Return</i18n></button>
+                <button class="button is-danger" v-if="!currentMessage.groupId" type="submit" style="margin-left:auto; margin-right: 0" v-on:click="remove(index)"><i18n>Delete</i18n></button>
+                <button class="button is-primary" type="submit" v-on:click="inboxMode" style="margin-left:10px; margin-right: 0"><i18n>Return</i18n></button>
               </div>
             </div>
-            <table class="table is-bordered is-striped is-narrow" v-show="(mode === 'Inbox') || (mode === 'Deleted') || (mode === 'Invites')">
+            <table class="table is-bordered is-striped is-narrow"  v-show="(mode === 'Inbox')" v-if="invites.length">
               <thead>
               <tr>
-                <th><i18n>{{mode}}</i18n></th>
+                <th><i18n>Invites</i18n></th>
               </tr>
               </thead>
               <tbody>
-              <tr v-for="(message, index) in messages">
+              <tr v-for="(message, index) in invites">
+                <td>
+                  <div class="media">
+                    <div class="media-left" v-on:click="readInvite(index)">
+                      <p class="image is-64x64">
+                        <img src="http://bulma.io/images/placeholders/128x128.png">
+                      </p>
+                    </div>
+                    <div class="media-content" v-on:click="readInvite(index)">
+                      <div><strong>Sent:</strong>&nbsp;{{formatDate(message.sentDate)}}</div>
+                      <div><strong>From:</strong>&nbsp;{{message.groupId}}</div>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+            <table class="table is-bordered is-striped is-narrow" v-show="(mode === 'Inbox')">
+              <thead>
+              <tr>
+                <th><i18n>Inbox</i18n></th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr v-for="(message, index) in inbox">
                 <td>
                   <div class="media">
                     <div class="media-left" v-on:click="read(index)">
@@ -96,17 +108,16 @@
                     </div>
                     <div class="media-content" v-on:click="read(index)">
                       <div><strong>Sent:</strong>&nbsp;{{formatDate(message.sentDate)}}</div>
-                      <div v-if="message.from"><strong>From:</strong>&nbsp;{{message.from}}</div>
-                      <div v-if="message.groupId"><strong>From:</strong>&nbsp;{{message.groupId}}</div>
-                      <span v-if="message.message" style="color: grey">{{message.message.substr(0,50)}}...</span>
+                      <div><strong>From:</strong>&nbsp;{{message.from}}</div>
+                      <span style="color: grey">{{message.message.substr(0,50)}}{{ message.message.length > 50 ? '...' : '' }} </span>
                     </div>
-                    <div v-if="!message.groupId" type="submit"class="media-right" v-on:click="remove(index)">
+                    <div type="submit"class="media-right" v-on:click="remove(index, 'inbox')">
                       <button  class="delete" ></button>
                     </div>
                   </div>
                 </td>
               </tr>
-              <tr v-if="!messages.length">
+              <tr v-if="!inbox.length">
                 <td>
                   <div class="center is-disabled"><i18n>No Messages</i18n></div>
                 </td>
@@ -154,8 +165,6 @@ export default {
     fetchData: _.debounce(async function () {
       this.inbox = []
       this.invites = []
-      this.deleted = this.$store.state.deletedMail
-      this.messages = []
       for (let i = this.mail.length - 1; i >= 0; i--) {
         let msg = this.mail[i]
         if (!msg.groupId) {
@@ -167,24 +176,6 @@ export default {
       let criteria = [(msg) => new Date(msg.sentDate)]
       _.sortBy(this.inbox, criteria)
       _.sortBy(this.invites, criteria)
-      _.sortBy(this.deleted, criteria)
-      switch (this.mode) {
-        case 'Invites':
-          this.messages = this.invites
-          break
-        case 'Deleted':
-          this.messages = this.deleted
-          break
-        case 'Inbox':
-          this.messages = this.inbox
-          break
-        case 'Compose':
-          this.messages = this.inbox
-          break
-        case 'Read':
-          this.messages = this.inbox
-          break
-      }
     }, 700, {maxWait: 5000}),
     formatDate: function (date) {
       if (date) {
@@ -193,31 +184,26 @@ export default {
       }
     },
     cancel: function () {
-      this.composedMessage = new Events.PostMessage({from: null, message: null}, null)
       this.inboxMode()
     },
+    clearCompose: function () {
+      this.composedMessage = ''
+      this.recipients = []
+    },
     inboxMode: function () {
+      this.clearCompose()
       this.mode = 'Inbox'
       this.messages = this.inbox
     },
     deletedMode: function () {
+      this.clearCompose()
       this.mode = 'Deleted'
       this.messages = this.deleted
     },
     invitesMode: function () {
+      this.clearCompose()
       this.mode = 'Invites'
       this.messages = this.invites
-    },
-    returnMode: function () {
-      if (this.messages === this.deleted) {
-        this.deletedMode()
-      }
-      if (this.messages === this.inbox) {
-        this.inboxMode()
-      }
-      if (this.messages === this.invites) {
-        this.invitesMode()
-      }
     },
     send: async function () {
       for (let i = 0; i < this.recipients.length; i++) {
@@ -236,22 +222,13 @@ export default {
         let invite = new Events.PostMessage({sentDate: date.toString(), from: this.$store.state.loggedIn, message: this.composedMessage}, mailbox)
         await backend.publishLogEntry(state.attributes.mailbox, invite)
       }
-      this.composedMessage = ''
       this.inboxMode()
     },
     remove: function (index) {
       if (Number.isInteger(index)) {
-        if (this.mode === 'Deleted') {
-          this.$store.dispatch('restoreMail', this.messages[index].hash)
-        } else {
-          this.$store.dispatch('deleteMail', this.messages[index].hash)
-        }
+        this.$store.dispatch('deleteMail', this.inbox[index].hash)
       } else {
-        if (this.messages === this.deleted) {
-          this.$store.dispatch('restoreMail', this.messages[this.currentIndex].hash)
-        } else {
-          this.$store.dispatch('deleteMail', this.messages[this.currentIndex].hash)
-        }
+        this.$store.dispatch('deleteMail', this.inbox[this.currentIndex].hash)
         this.currentIndex = null
         this.inboxMode()
       }
@@ -262,8 +239,17 @@ export default {
     read: function (index) {
       this.mode = 'Read'
       if (Number.isInteger(index)) {
-        this.currentMessage = this.messages[index]
+        this.currentMessage = this.inbox[index]
         this.currentIndex = index
+        this.$store.dispatch('readMail', this.currentMessage.hash)
+      }
+    },
+    readInvite: function (index) {
+      this.mode = 'Read'
+      if (Number.isInteger(index)) {
+        this.currentMessage = this.invites[index]
+        this.currentIndex = index
+        this.$store.dispatch('readMail', this.currentMessage.hash)
       }
     },
     removeRecipient: function (index) {
@@ -291,8 +277,6 @@ export default {
       recipients: [],
       inbox: [],
       invites: [],
-      deleted: [],
-      messages: [],
       composedMessage: '',
       currentMessage: new Events.PostMessage({from: null, message: ''}, null),
       currentIndex: null,
