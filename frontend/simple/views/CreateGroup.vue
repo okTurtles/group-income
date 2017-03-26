@@ -31,15 +31,6 @@
             <div class="column is-one-third has-text-centered create-group">
               <p class="title is-4"><i18n>Member relationships</i18n></p>
               <div class="box">
-                <p class="title is-5"><i18n>Is your group open to new members?</i18n></p>
-                <p class="title is-3" v-show="openMembership"><i18n>Yes</i18n></p>
-                <p class="title is-3" v-show="!openMembership"><i18n>No</i18n></p>
-                <label class="switch">
-                  <input type="checkbox" name="openMembership" v-model="openMembership">
-                  <div class="slider round"></div>
-                </label>
-              </div>
-              <div class="box">
                 <p class="title is-5"><i18n>How many members should it take to approve a new member?</i18n></p>
                 <p class="title is-3">{{memberApprovalPercentage}}%</p>
                 <input type="range" min="0" max="100" data-vv-as="Member Approval Percentage" v-validate data-vv-rules="between:1,100" name="memberApprovalPercentage" v-model="memberApprovalPercentage">
@@ -119,7 +110,6 @@ export default {
           groupName: this.groupName,
           sharedValue: this.sharedValues,
           changePercentage: this.changePercentage,
-          openMembership: this.openMembership,
           memberApprovalPercentage: this.memberApprovalPercentage,
           memberRemovalPercentage: this.memberRemovalPercentage,
           incomeProvided: this.incomeProvided,
@@ -147,7 +137,6 @@ export default {
       groupName: null,
       sharedValues: null,
       changePercentage: 0,
-      openMembership: false,
       memberApprovalPercentage: 0,
       memberRemovalPercentage: 0,
       incomeProvided: null,
