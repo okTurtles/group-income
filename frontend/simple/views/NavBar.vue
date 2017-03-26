@@ -93,7 +93,17 @@ export default {
   created: function () {
     Vue.events.$on('loginModal', this.toggleModal)
   },
+  mounted: function listenKeyUp () {
+    global.addEventListener('keyup', this.handleKeyUp)
+  },
   methods: {
+    handleKeyUp (event) {
+      if (this.$refs.modal.classList.contains('is-active')) {
+        if (event.keyCode === 27) {
+          this.toggleModal()
+        }
+      }
+    },
     login: async function () {
       try {
         // TODO Insert cryptography here
@@ -114,13 +124,15 @@ export default {
         this.logout()
         this.$router.push({path: '/'})
       } else {
-        document.getElementById('LoginName').focus()
         this.response = null
         this.name = null
         this.password = null
         this.errors.clear()
         // https://github.com/oneuijs/You-Dont-Need-jQuery#css--style
         this.$refs.modal.classList.toggle('is-active')
+        if (this.$refs.modal.classList.contains('is-active')) {
+          document.getElementById('LoginName').focus()
+        }
         if (this.$route.query.next) {
           this.$router.push({path: this.$route.query.next})
         }
