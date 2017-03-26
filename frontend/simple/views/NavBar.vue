@@ -33,7 +33,7 @@
         </div>
       </div>
     </nav>
-    <div class="modal" ref="modal" id="LoginModal">
+    <div class="modal" ref="modal" id="LoginModal" @keyup.esc="toggleModal">
       <div class="modal-background" v-on:click="toggleModal"></div>
       <div class="modal-content" style="width: 300px">
         <div class="card is-rounded">
@@ -104,13 +104,15 @@ export default {
         this.logout()
         this.$router.push({path: '/'})
       } else {
-        document.getElementById('LoginName').focus()
         this.response = null
         this.name = null
         this.password = null
         this.errors.clear()
         // https://github.com/oneuijs/You-Dont-Need-jQuery#css--style
         this.$refs.modal.classList.toggle('is-active')
+        if (this.$refs.modal.classList.contains('is-active')) {
+          document.getElementById('LoginName').focus()
+        }
         if (this.$route.query.next) {
           this.$router.push({path: this.$route.query.next})
         }
