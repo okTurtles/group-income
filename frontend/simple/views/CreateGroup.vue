@@ -62,7 +62,7 @@
               <div class="box" >
                 <p class="title is-5"><i18n>How transparent should your group be about who contributes?</i18n></p>
                 <p class="select">
-                  <select v-validate data-vv-rules="required" data-vv-as="Conrtibution Privacy" name="contributionPrivacy" v-model="contributionPrivacy">
+                  <select v-validate data-vv-rules="required" data-vv-as="Contribution Privacy" name="contributionPrivacy" v-model="contributionPrivacy">
                     <option value="">Select an option</option>
                     <option value="Very Private">Very Private</option>
                   </select>
