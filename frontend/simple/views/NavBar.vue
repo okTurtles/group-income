@@ -74,6 +74,16 @@
   </div>
 </template>
 
+<style lang="sass" scoped>
+div.nav-left
+  overflow: visible
+  z-index: 10
+  a
+    background-color: #fff
+div.nav-center
+  flex-shrink: inherit
+</style>
+
 <script>
 import Vue from 'vue'
 import {HapiNamespace} from '../js/backend/hapi'
