@@ -3,7 +3,7 @@
         <div class="columns">
             <div class="column is-1"></div>
             <div class="column is-10" >
-              <div style="text-align: center">
+              <div id="HomeLogo" style="text-align: center">
                     <img style="width: 160px; height: 160px" src="images/group-income-icon-transparent.png">
                     <br>
                     <div style="display: block; margin-top: 45px" class="title brand-font"><i18n>Welcome to GroupIncome</i18n></div>

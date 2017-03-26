@@ -15,7 +15,6 @@
           <!-- TODO: use v-for to dynamically generate these? -->
           <!--TODO figure out what needs to be done with active classe after upgrade  "{activeClass: 'is-active', path: '/new-group'}"-->
           <router-link class="nav-item is-tab" active-class ="is-active" to="new-group" id="CreateGroup"><i18n>Start a group</i18n></router-link>
-          <router-link class="nav-item is-tab" active-class ="is-active" to="signup" v-show="$store.state.loggedIn"><i18n>New User</i18n></router-link>
           <router-link class="nav-item is-tab" active-class ="is-active" to="user" v-show="$store.state.loggedIn"><i18n>Profile</i18n></router-link>
           <router-link class="nav-item is-tab" active-class ="is-active" to="user-group" v-show="$store.state.loggedIn"><i18n>Group</i18n></router-link>
           <router-link class="nav-item is-tab" active-class ="is-active" to="pay-group" v-show="$store.state.loggedIn"><i18n>Pay Group</i18n></router-link>
@@ -23,14 +22,14 @@
           <router-link class="nav-item is-tab" active-class ="is-active" to="event-log" v-show="dev"><i18n>Event Log test</i18n></router-link>
           <router-link v-if="$store.state.loggedIn" class="nav-item" active-class ="is-active" to="mailbox">
             <i18n>Mailbox</i18n>&nbsp;
-            <span class="icon" style="color: #ed6c63" v-if="$store.getters.unread">
+            <span id="AlertNotification" class="icon" style="color: #ed6c63" v-if="$store.getters.unread">
               <i class="fa fa-bell"></i>
             </span>
           </router-link>
         </div>
         <div class="nav-right">
           <span class="nav-item is-tab control">
-            <router-link v-show="!$store.state.loggedIn" class="button is-success" to="signup"><i18n>Sign Up</i18n></router-link>
+            <router-link id="SignupBtn" v-show="!$store.state.loggedIn" class="button is-success" to="signup"><i18n>Sign Up</i18n></router-link>
             <a href="#" id="LoginBtn" class="button"
                v-bind:class="$store.state.loggedIn  ? 'is-danger' : 'is-primary'"
               @click.prevent="toggleModal"

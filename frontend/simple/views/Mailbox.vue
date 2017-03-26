@@ -13,13 +13,13 @@
                 <span class="panel-icon">
                   <i class="fa fa-pencil"></i>
                 </span>
-                <a v-on:click="compose"><i18n>compose</i18n></a>
+                <a id="ComposeLink" v-on:click="compose"><i18n>compose</i18n></a>
               </div>
               <div class="panel-block">
                 <span class="panel-icon">
                   <i class="fa fa-envelope"></i>
                 </span>
-                <a v-on:click="inboxMode"><i18n>inbox</i18n> <span class="unread" v-if="$store.getters.unread">{{ $store.getters.unread }}</span></a>
+                <a id="InboxLink" v-on:click="inboxMode"><i18n>inbox</i18n> <span class="unread" v-if="$store.getters.unread">{{ $store.getters.unread }}</span></a>
               </div>
             </div>
           </div>
@@ -29,7 +29,7 @@
               <div class="panel-heading">
                 <div><strong><i18n>Type</i18n>:</strong>&nbsp;<i18n>Message</i18n></div>
                 <div><strong style="margin-top: auto"><i18n>To</i18n>:</strong>&nbsp;
-                  <input class="input is-small" type="text" style="width: 80%;" v-model="recipient" v-on:blur="addRecipient">
+                  <input id="AddRecipient" class="input is-small" type="text" style="width: 80%;" v-model="recipient" v-on:blur="addRecipient">
                   <a class="button is-small" v-on:click="addRecipient">
                     <span class="icon is-small">
                       <i class="fa fa-plus-circle"></i>
@@ -47,14 +47,14 @@
                 </table>
               </div>
               <div class="panel-block">
-                <textarea class="textarea" v-model="composedMessage"></textarea>
+                <textarea id="ComposedMessage" class="textarea" v-model="composedMessage"></textarea>
               </div>
               <div class="panel-block" >
-                <button class="button is-success" type="submit" v-on:click="send" :disabled="!composedMessage"  style="margin-left:auto; margin-right: 0"><i18n>Send</i18n></button>
+                <button id="SendButton" class="button is-success" type="submit" v-on:click="send" :disabled="!composedMessage"  style="margin-left:auto; margin-right: 0"><i18n>Send</i18n></button>
                 <button class="button is-danger" type="submit" v-on:click="cancel" style="margin-left:10px; margin-right: 0"><i18n>Cancel</i18n></button>
               </div>
             </div>
-            <div class="panel" v-show="mode === 'Read'">
+            <div id="CurrentMessage" class="panel" v-show="mode === 'Read'">
               <div class="panel-heading">
                 <div><strong>Type:</strong>&nbsp;{{ currentMessage.groupId ?  'Invite' : 'Message'}}</div>
                 <div><strong>Sent:</strong>&nbsp;{{formatDate(currentMessage.sentDate)}}</div>
@@ -67,7 +67,7 @@
                 <button class="button is-primary" type="submit" v-on:click="inboxMode" style="margin-left:10px; margin-right: 0"><i18n>Return</i18n></button>
               </div>
             </div>
-            <table class="table is-bordered is-striped is-narrow"  v-show="(mode === 'Inbox')" v-if="invites.length">
+            <table id="Invites" class="table is-bordered is-striped is-narrow"  v-show="(mode === 'Inbox')" v-if="invites.length">
               <thead>
               <tr>
                 <th><i18n>Invites</i18n></th>
@@ -82,7 +82,7 @@
                         <img src="http://bulma.io/images/placeholders/128x128.png">
                       </p>
                     </div>
-                    <div class="media-content" v-on:click="readInvite(index)">
+                    <div class="media-content invite-message" v-on:click="readInvite(index)">
                       <div><strong>Sent:</strong>&nbsp;{{formatDate(message.sentDate)}}</div>
                       <div><strong>From:</strong>&nbsp;{{message.groupId}}</div>
                     </div>
@@ -91,7 +91,7 @@
               </tr>
               </tbody>
             </table>
-            <table class="table is-bordered is-striped is-narrow" v-show="(mode === 'Inbox')">
+            <table id="Inbox" class="table is-bordered is-striped is-narrow" v-show="(mode === 'Inbox')">
               <thead>
               <tr>
                 <th><i18n>Inbox</i18n></th>
@@ -106,7 +106,7 @@
                         <img src="http://bulma.io/images/placeholders/128x128.png">
                       </p>
                     </div>
-                    <div class="media-content" v-on:click="read(index)">
+                    <div class="media-content inbox-message" v-on:click="read(index)">
                       <div><strong>Sent:</strong>&nbsp;{{formatDate(message.sentDate)}}</div>
                       <div><strong>From:</strong>&nbsp;{{message.from}}</div>
                       <span style="color: grey">{{message.message.substr(0,50)}}{{ message.message.length > 50 ? '...' : '' }} </span>

@@ -5,12 +5,16 @@
         <div class="column is-10" >
           <div class="columns is-gapless">
             <div class="column">
-              <p class="control has-addons">
-                <input id="searchUser" class="input" type="text" v-model="searchUser" placeholder="Find a member">
-                <a id="addButton" class="button is-info" v-on:click="add">
-                  <i18n>Add</i18n>
-                </a>
-              </p>
+              <div class="field has-addons">
+                <p class="control">
+                  <input id="searchUser" class="input" type="text" v-model="searchUser" placeholder="Find a member">
+                </p>
+                <p class="control">
+                  <a id="addButton" class="button is-info" v-on:click="add">
+                    <i18n>Add</i18n>
+                  </a>
+                </p>
+              </div>
               <i18n v-if="error" id="badUsername" class="help is-danger">Invalid Username</i18n>
               <i18n v-if="self" class="help is-danger">Cannot Invite Yourslf</i18n>
             </div>

@@ -70,6 +70,9 @@ export class HapiBackend extends Backend {
       .set('Authorization', `gi ${signature}`)
       .send({hash: entry.toHash(), entry: entry.toObject()})
   }
+  subscriptions () {
+    return Object.keys(store.state.contracts)
+  }
   async subscribe (contractId: string) {
     console.log('subscribing to:', contractId)
     // this mutation makes sure not to add duplicates
