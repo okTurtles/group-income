@@ -33,15 +33,6 @@
             <div class="column is-one-third has-text-centered create-group">
               <p class="title is-4"><i18n>Member relationships</i18n></p>
               <div class="box">
-                <p class="title is-5"><i18n>Is your group open to new members?</i18n></p>
-                <p class="title is-3" v-show="openMembership"><i18n>Yes</i18n></p>
-                <p class="title is-3" v-show="!openMembership"><i18n>No</i18n></p>
-                <label class="switch">
-                  <input type="checkbox" name="openMembership" v-model="openMembership">
-                  <div class="slider round"></div>
-                </label>
-              </div>
-              <div class="box">
                 <p class="title is-5"><i18n>How many members should it take to approve a new member?</i18n></p>
                 <p class="title is-3">{{memberApprovalPercentage}}%</p>
                 <input type="range" min="0" max="100" data-vv-as="Member Approval Percentage" v-validate data-vv-rules="between:1,100" name="memberApprovalPercentage" v-model="memberApprovalPercentage">
@@ -73,7 +64,7 @@
               <div class="box" >
                 <p class="title is-5"><i18n>How transparent should your group be about who contributes?</i18n></p>
                 <p class="select">
-                  <select v-validate data-vv-rules="required" data-vv-as="Conrtibution Privacy" name="contributionPrivacy" v-model="contributionPrivacy">
+                  <select v-validate data-vv-rules="required" data-vv-as="Contribution Privacy" name="contributionPrivacy" v-model="contributionPrivacy">
                     <option value="">Select an option</option>
                     <option value="Very Private">Very Private</option>
                   </select>
@@ -121,7 +112,6 @@ export default {
           groupName: this.groupName,
           sharedValue: this.sharedValues,
           changePercentage: this.changePercentage,
-          openMembership: this.openMembership,
           memberApprovalPercentage: this.memberApprovalPercentage,
           memberRemovalPercentage: this.memberRemovalPercentage,
           incomeProvided: this.incomeProvided,
@@ -147,12 +137,11 @@ export default {
     return {
       groupName: null,
       sharedValues: null,
-      changePercentage: 0,
-      openMembership: false,
-      memberApprovalPercentage: 0,
-      memberRemovalPercentage: 0,
+      changePercentage: 80,
+      memberApprovalPercentage: 80,
+      memberRemovalPercentage: 80,
       incomeProvided: null,
-      contributionPrivacy: '',
+      contributionPrivacy: 'Very Private',
       created: false,
       // this determines whether or not to render proxy components for nightmare
       dev: process.env.NODE_ENV === 'development'
