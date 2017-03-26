@@ -18,27 +18,10 @@
         <table class="table is-bordered is-striped is-narrow">
           <thead>
           <tr>
-            <th class="table-header"><i18n>Group Members</i18n></th>
+            <th class="table-header"><i18n>Initial Invitees</i18n></th>
           </tr>
           </thead>
           <tbody>
-          <tr class="member">
-            <td>
-              <div class="media">
-                <div class="media-left">
-                  <p class="image is-64x64">
-                    <!-- TODO: use responsive figure:
-                  http://bulma.io/documentation/elements/image/ -->
-                    <!-- TODO: ideally these would be loaded from cache -->
-                    <img src="http://bulma.io/images/placeholders/128x128.png">
-                  </p>
-                </div>
-                <div class="media-content">
-                  <strong>You</strong>
-                </div>
-              </div>
-            </td>
-          </tr>
           <tr v-for="(member, index) in members" class="member">
             <td>
               <div class="media">
