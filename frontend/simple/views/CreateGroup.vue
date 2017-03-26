@@ -140,7 +140,7 @@ export default {
       memberApprovalPercentage: 80,
       memberRemovalPercentage: 80,
       incomeProvided: null,
-      contributionPrivacy: '',
+      contributionPrivacy: 'Very Private',
       created: false,
       // this determines whether or not to render proxy components for nightmare
       dev: process.env.NODE_ENV === 'development'
