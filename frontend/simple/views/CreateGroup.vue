@@ -53,12 +53,25 @@
               <p class="title is-4"><i18n>Resource allocation</i18n></p>
               <div class="box">
                 <p class="title is-5"><i18n>How much income will your group seek to provide</i18n></p>
-                <p class="control has-icon">
-                  <input type="text" data-vv-as="Income Provided" v-validate data-vv-rules="decimal:2" name="incomeProvided" v-model="incomeProvided" class="input">
-                  <span class="icon">
-                    <i class="fa fa-usd" aria-hidden="true" ></i>
-                  </span>
-                </p>
+                <div class="field has-addons">
+                  <p class="control">
+                    <span class="select">
+                      <select>
+                        <option>USD</option>
+                        <option>BTC</option>
+                        <option>EUR</option>
+                      </select>
+                    </span>
+                  </p>
+                  <p class="control">
+                    <input class="input" type="text" name="incomeProvided"
+                      placeholder="Amount of money"
+                      data-vv-as="Income Provided"
+                      v-validate data-vv-rules="decimal:2"
+                      v-model="incomeProvided"
+                    >
+                  </p>
+                </div>
                 <i18n v-if="errors.has('incomeProvided')" data-control="incomeProvided" class="help is-danger">The Income Provided field must be a numeric currency amount and may contain 2 decimal points.</i18n>
               </div>
               <div class="box" >
