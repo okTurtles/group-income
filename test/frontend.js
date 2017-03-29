@@ -15,7 +15,7 @@ const exec = require('child_process').execFileSync
 const fs = require('fs')
 
 describe('Frontend', function () {
-  var n = Nightmare({ show: !!process.env.SHOW_BROWSER, height: 900 })
+  var n = Nightmare({ show: !process.env.SHOW_BROWSER, height: 900 })
   after(() => { n.end() })
 
   it('Should start the backend server if necessary', function () {
@@ -98,9 +98,9 @@ describe('Frontend', function () {
         .insert('#email', `test@testgroupincome.com`)
         .insert('#password', 'testtest')
         .click('button[type="submit"]')
-        .wait(() => !!document.getElementById('serverMsg').innerText)
-        .evaluate(() => document.getElementById('serverMsg').innerText)
-      should(signedup).equal('success')
+        .wait('#HomeLogo')
+        .evaluate(() => !!document.getElementById('HomeLogo'))
+      should(signedup).equal(true)
       /*
       await n.insert('#name')
         .insert('#email')
@@ -148,15 +148,17 @@ describe('Frontend', function () {
   })
 
   describe('Group Creation Test', function () {
-    before(async function () {
+    it('Create Additional User', async function () {
+      await n.click('#LoginBtn')
       await n.goto(page('signup'))
         .wait('#name')
-      await n.insert('#name', username + '2')
+      let signedup = await n.insert('#name', username + '2')
       .insert('#email', `test2@testgroupincome.com`)
       .insert('#password', 'testtest')
       .click('button[type="submit"]')
-      .wait(() => !!document.getElementById('serverMsg').innerText)
-      .evaluate(() => document.getElementById('serverMsg').innerText)
+      .wait('#HomeLogo')
+      .evaluate(() => !!document.getElementById('HomeLogo'))
+      should(signedup).equal(true)
     })
     it('Should create a group', async function () {
       this.timeout(4000)
