@@ -1,8 +1,6 @@
 <template>
   <section class="section full-screen">
-    <div class="columns">
-      <div class="column is-1" />
-      <div class="column is-10" >
+      <div class="centered" >
         <div class="field has-addons">
           <p class="control" style="width: 100%">
             <input id="searchUser" class="input" type="text" v-model="searchUser" placeholder="Add a new member by username">
@@ -45,13 +43,12 @@
           </tbody>
         </table>
         <div class="has-text-centered button-box">
+          <div id="errorMsg" v-if="errorMsg" class="help is-danger">{{errorMsg}}</div>
           <div id="successMsg" v-if="invited" class="created"><i18n>Success</i18n></div>
-          <button class="button is-success is-large" v-if="!invited" :disabled="!members.length" style="height: 120px" v-on:click="submit" type="submit"><i18n>Invite Members</i18n></button>
+          <button class="button is-success is-large" v-if="!invited" :disabled="!members.length" v-on:click="submit" type="submit"><i18n>Invite Members</i18n></button>
           <a class="button is-warning is-large" v-if="invited"><i18n>Next: ?</i18n></a>
         </div>
       </div>
-      <div class="column is-1"></div>
-    </div>
   </section>
 </template>
 
@@ -66,6 +63,8 @@
 import * as Events from '../../../shared/events'
 import backend from '../js/backend/'
 import {HapiNamespace} from '../js/backend/hapi'
+import {latestContractState} from '../js/state'
+import L from '../js/translations'
 var namespace = new HapiNamespace()
 
 export default {
@@ -76,7 +75,8 @@ export default {
       members: [],
       error: false,
       invited: false,
-      self: false
+      self: false,
+      errorMsg: null
     }
   },
   methods: {
@@ -104,26 +104,29 @@ export default {
       this.members.splice(index, 1)
     },
     submit: async function () {
-      for (let i = 0; i < this.members.length; i++) {
-        let member = this.members[i]
-        let events = await backend.eventsSince(member.contractId, member.contractId)
-        let [contract, ...actions] = events.map(e => {
-          return Events[e.entry.type].fromObject(e.entry, e.hash)
-        })
-        let state = contract.toVuexState()
-        actions.forEach(action => {
-          let type = action.constructor.name
-          contract.constructor.vuex.mutations[type](state, action.data)
-        })
-        let mailbox = await backend.latestHash(state.attributes.mailbox)
-        let date = new Date()
-        let invite = new Events.PostInvite({groupId: this.$store.state.currentGroupId, sentDate: date.toString()}, mailbox)
-        await backend.publishLogEntry(state.attributes.mailbox, invite)
-        let latest = await backend.latestHash(this.$store.state.currentGroupId)
-        let invited = new Events.RecordInvitation({ username: member.name, inviteHash: invite.toHash(), sentDate: date.toString() }, latest)
-        await backend.publishLogEntry(this.$store.state.currentGroupId, invited)
+      try {
+        this.errorMsg = null
+        // TODO: as members are successfully invited display in a seperate invitees grid and add them to some validation for duplicate invites
+        for (let i = 0; i < this.members.length; i++) {
+          let member = this.members[i]
+          // We need to have the latest mailbox attribute for the user
+          let state = await latestContractState(member.contractId)
+          let mailbox = await backend.latestHash(state.attributes.mailbox)
+          let date = new Date()
+          // We need to post the invite to the users' mailbox contract
+          let invite = new Events.PostMessage({message: this.$store.state.currentGroupId, messageType: Events.PostMessage.TypeInvite, sentDate: date.toString()}, mailbox)
+          await backend.publishLogEntry(state.attributes.mailbox, invite)
+          // We need to make a record of the invitation in the group's contract
+          let latest = await backend.latestHash(this.$store.state.currentGroupId)
+          let invited = new Events.RecordInvitation({ username: member.name, inviteHash: invite.toHash(), sentDate: date.toString() }, latest)
+          await backend.publishLogEntry(this.$store.state.currentGroupId, invited)
+        }
+        this.invited = true
+      } catch (ex) {
+        console.log(ex)
+        // TODO: Create More descriptive errors
+        this.errorMsg = L('Failed to Invite Users')
       }
-      this.invited = true
     }
   }
 }

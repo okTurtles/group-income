@@ -14,12 +14,12 @@
               <div class="box">
                 <p class="title is-5"><i18n>What is your Group's Name?</i18n></p>
                 <input type="text" v-validate data-vv-as="Group Name" data-vv-rules="required" name="groupName" v-model="groupName" class="input">
-                <i18n v-if="errors.has('groupName')" data-control='groupName' class="help is-danger">{{ errors.first('groupName') }}</i18n>
+                <i18n v-if="errors.has('groupName')" data-control='groupName' class="help is-danger">{{errors.first('groupName')}}</i18n>
               </div>
               <div class="box">
                 <p class="title is-5"><i18n>What are your shared values?</i18n></p>
                 <textarea class="textarea" v-validate data-vv-as="Shared Values" data-vv-rules="required" name="sharedValues" v-model="sharedValues"></textarea>
-                <i18n v-if="errors.has('sharedValues')" data-control='sharedValues' class="help is-danger">{{ errors.first('sharedValues') }}</i18n>
+                <i18n v-if="errors.has('sharedValues')" data-control='sharedValues' class="help is-danger">{{errors.first('sharedValues')}}</i18n>
               </div>
               <div class="box">
                 <p class="title is-5"><i18n>What percentage of members are required to change the rules?</i18n></p>
@@ -82,9 +82,10 @@
                     <option value="Very Private">Very Private</option>
                   </select>
                 </p>
-                <i18n v-if="errors.has('contributionPrivacy')" data-control="contributionPrivacy" class="help is-danger">{{ errors.first('contributionPrivacy') }}</i18n>
+                <i18n v-if="errors.has('contributionPrivacy')" data-control="contributionPrivacy" class="help is-danger">{{errors.first('contributionPrivacy')}}</i18n>
               </div>
               <div class="has-text-centered button-box">
+                <div id="errorMsg" v-if="errorMsg" class="help is-danger">{{errorMsg}}</div>
                 <div id="successMsg" v-if="created" class="created"><i18n>Success</i18n></div>
                 <button class="button is-success is-large" v-if="!created" type="submit"><i18n>Create Group</i18n></button>
                 <a class="button is-warning is-large" id="nextButton" v-if="created" v-on:click="next"><i18n>Next: Invite Group Members</i18n></a>
@@ -101,7 +102,7 @@
 import Vue from 'vue'
 import backend from '../js/backend'
 import * as Events from '../../../shared/events'
-
+import L from '../js/translations'
 export default {
   name: 'CreateGroupView',
   methods: {
@@ -120,26 +121,30 @@ export default {
         ctrlEl.scrollIntoView()
       }
       if (success) {
-        let entry = new Events.GroupContract({
-          authorizations: [Events.CanModifyAuths.dummyAuth()],
-          groupName: this.groupName,
-          sharedValues: this.sharedValues,
-          changePercentage: this.changePercentage,
-          memberApprovalPercentage: this.memberApprovalPercentage,
-          memberRemovalPercentage: this.memberRemovalPercentage,
-          incomeProvided: this.incomeProvided,
-          contributionPrivacy: this.contributionPrivacy,
-          founderUsername: this.$store.state.loggedIn
-        })
-        let hash = entry.toHash()
-        await backend.subscribe(hash)
-        Vue.events.$once(hash, (contractId, entry) => {
-          this.$store.commit('setCurrentGroupId', hash)
-        })
-        await backend.publishLogEntry(hash, entry)
-        let founder = new Events.AcknowledgeFounder({ username: this.$store.state.loggedIn }, hash)
-        await backend.publishLogEntry(hash, founder)
-        this.created = true
+        try {
+          this.errorMsg = null
+          let entry = new Events.GroupContract({
+            authorizations: [Events.CanModifyAuths.dummyAuth()],
+            groupName: this.groupName,
+            sharedValues: this.sharedValues,
+            changePercentage: this.changePercentage,
+            memberApprovalPercentage: this.memberApprovalPercentage,
+            memberRemovalPercentage: this.memberRemovalPercentage,
+            incomeProvided: this.incomeProvided,
+            contributionPrivacy: this.contributionPrivacy,
+            founderUsername: this.$store.state.loggedIn
+          })
+          let hash = entry.toHash()
+          await backend.subscribe(hash)
+          Vue.events.$once(hash, (contractId, entry) => {
+            this.$store.commit('setCurrentGroupId', hash)
+          })
+          await backend.publishLogEntry(hash, entry)
+          this.created = true
+        } catch (ex) {
+          console.log(ex)
+          this.errorMsg = L('Failed to Create Group')
+        }
       }
     }
   },
@@ -153,6 +158,7 @@ export default {
       incomeProvided: null,
       contributionPrivacy: 'Very Private',
       created: false,
+      errorMsg: null,
       // this determines whether or not to render proxy components for nightmare
       dev: process.env.NODE_ENV === 'development'
     }

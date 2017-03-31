@@ -75,7 +75,6 @@ export class HapiBackend extends Backend {
   }
   async subscribe (contractId: string) {
     console.log('subscribing to:', contractId)
-    // this mutation makes sure not to add duplicates
     store.commit('pending', contractId)
     // we don't need to check if we're already subscribed, server handles that
     var res = await primus.sub(contractId)
@@ -88,7 +87,6 @@ export class HapiBackend extends Backend {
     }
     var res = await primus.unsub(contractId)
     store.commit('removeContract', contractId)
-    store.dispatch('saveSettings')
     return res
   }
   // TODO add event strean method returning string.transform

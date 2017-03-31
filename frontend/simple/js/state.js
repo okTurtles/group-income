@@ -16,15 +16,6 @@ import debounce from 'lodash/debounce'
 Vue.use(Vuex)
 var store // this is set and made the default export at the bottom of the file.
           // we have it declared here to make it accessible in mutations
-// Used by the getters and mutations to find the mailbox contracts
-function getMailbox (state) {
-  for (let [key, value] of Object.entries(state.contracts)) {
-    if (value === 'MailboxContract') {
-      return key
-    }
-  }
-  return null
-}
 // 'state' is the Vuex state object
 // NOTE: THE STATE CAN ONLY STORE *SERIALIZABLE* OBJECTS! THAT MEANS IF YOU TRY
 //       TO STORE AN INSTANCE OF A CLASS (LIKE A CONTRACT), IT WILL NOT STORE
@@ -64,23 +55,15 @@ const mutations = {
       mutations.addContract(state, contract)
     }
   },
-  deleteMail (state, hash) {
-    let mailbox = getMailbox(state)
-    if (mailbox) {
-      let index = state[ mailbox ].messages.findIndex(msg => msg.hash === hash)
-      if (index > -1) {
-        state[ mailbox ].messages.splice(index, 1)
-      }
-    }
+  deleteMessage (state, hash) {
+    let mailboxContract = store.getters.mailboxContract
+    let index = mailboxContract && mailboxContract.messages.findIndex(msg => msg.hash === hash)
+    if (index > -1) { mailboxContract.messages.splice(index, 1) }
   },
-  readMail (state, hash) {
-    let mailbox = getMailbox(state)
-    if (mailbox) {
-      let index = state[ mailbox ].messages.findIndex(msg => msg.hash === hash)
-      if (index > -1) {
-        state[ mailbox ].messages[index].read = true
-      }
-    }
+  markMessageAsRead (state, hash) {
+    let mailboxContract = store.getters.mailboxContract
+    let index = mailboxContract && mailboxContract.messages.findIndex(msg => msg.hash === hash)
+    if (index > -1) { mailboxContract.messages[index].read = true }
   },
   setCurrentGroupId (state, currentGroupId) {
     state.currentGroupId = currentGroupId
@@ -90,8 +73,10 @@ const mutations = {
     state.position = position
   },
   pending (state, contractId) {
-    let index = state.pending.indexOf(contractId)
-    index === -1 && state.pending.push(contractId)
+    if (!state.contracts[contractId]) {
+      let index = state.pending.indexOf(contractId)
+      index === -1 && state.pending.push(contractId)
+    }
   }
 }
 // https://vuex.vuejs.org/en/getters.html
@@ -100,22 +85,35 @@ const getters = {
   currentGroup (state) {
     return state[state.currentGroupId]
   },
-  mailbox (state) {
-    return getMailbox(state)
+  mailboxContract (state) {
+    // TODO: If we a user is ever subscribed to multiple mailboxes, this will have to be rewritten
+    for (let [key, value] of Object.entries(state.contracts)) {
+      if (value === 'MailboxContract') {
+        return state[key]
+      }
+    }
+    return null
   },
-  unread (state) {
-    let mailbox = getMailbox(state)
-    return mailbox && state[ mailbox ].messages.filter((msg) => !msg.read).length
+  mailbox (state) {
+    let mailboxContract = store.getters.mailboxContract
+    return mailboxContract && mailboxContract.messages
+  },
+  unreadMessageCount (state) {
+    let mailboxContract = store.getters.mailboxContract
+    return mailboxContract && mailboxContract.messages.filter((msg) => !msg.read).length
   }
 }
 
 const actions = {
   // Used to update contracts to the current state that the server is aware of
-  async synchronize ({dispatch}: {dispathc: Function}, contractId: string) {
+  async syncContractWithServer ({dispatch}: {dispatch: Function}, contractId: string) {
     let latest = await backend.latestHash(contractId)
     let recent = await db.recentHash(contractId)
     if (latest !== recent) {
+      // TODO Do we need a since call that is inclusive? Since does not imply inclusion
       let events = await backend.eventsSince(contractId, recent || contractId)
+      // remove the first element in cases where we are not getting the contract for the first time
+      recent && events.shift()
       for (let i = 0; i < events.length; i++) {
         let event = events[i]
         event.contractId = contractId
@@ -130,9 +128,12 @@ const actions = {
     commit('login', user)
     await dispatch('loadSettings')
     await db.saveCurrentUser(user)
-    for (let key of Object.keys(state.contracts)) {
+    // This may seem unintuitive to use the state from the global store object
+    // but the state object in scope is a copy that becomes stale if something modifies it
+    // like an outside dispatch
+    for (let key of Object.keys(store.state.contracts)) {
       await backend.subscribe(key)
-      await dispatch('synchronize', key)
+      await dispatch('syncContractWithServer', key)
     }
     Vue.events.$emit('login', user)
   },
@@ -147,12 +148,12 @@ const actions = {
     commit('logout')
     Vue.events.$emit('logout')
   },
-  deleteMail ({dispatch, commit}, hash) {
-    commit('deleteMail', hash)
+  deleteMessage ({dispatch, commit}, hash) {
+    commit('deleteMessage', hash)
     debouncedSave(dispatch)
   },
-  readMail ({dispatch, commit}, hash) {
-    commit('readMail', hash)
+  markMessageAsRead ({dispatch, commit}, hash) {
+    commit('markMessageAsRead', hash)
     debouncedSave(dispatch)
   },
   // this function is called from ./pubsub.js and is the entry point
@@ -187,8 +188,10 @@ const actions = {
         return console.error(`bad action ${type} on ${contractType} (${contractId}):`, entry)
       }
       // TODO: verify each entry is signed by a group member
-      await db.addLogEntry(contractId, entry)
-      entry.data.hash = hash
+      let hash = await db.addLogEntry(contractId, entry)
+      // If this is a duplicate the hash will be null
+      // This may occur if we get duplicate events over the network
+      if (!hash) { return }
       commit(`${contractId}/${type}`, entry.data)
 
       // NOTE: this is to support EventLog.vue + TimeTravel.vue
@@ -239,3 +242,16 @@ const debouncedSave = debounce(dispatch => dispatch('saveSettings'), 500)
 
 store = new Vuex.Store({state, mutations, getters, actions})
 export default store
+// This will build the current contract state from applying all its actions
+export async function latestContractState (contractId) {
+  let events = await backend.eventsSince(contractId, contractId)
+  let [contract, ...actions] = events.map(e => {
+    return Events[e.entry.type].fromObject(e.entry, e.hash)
+  })
+  let state = contract.toVuexState()
+  actions.forEach(action => {
+    let type = action.constructor.name
+    contract.constructor.vuex.mutations[type](state, action.data)
+  })
+  return state
+}

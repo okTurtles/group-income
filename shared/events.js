@@ -269,9 +269,7 @@ export class GroupContract extends HashableContract {
       RecordInvitation (state, data) { state.invitees.push(data.username) },
       DeclineInvitation (state, data) {
         let index = state.invitees.findIndex(username => username === data.username)
-        if (index > -1) {
-          state.invitees.splice(index, 1)
-        }
+        if (index > -1) { state.invitees.splice(index, 1) }
       },
       AcceptInvitation (state, data) {
         let index = state.invitees.findIndex(username => username === data.username)
@@ -281,14 +279,18 @@ export class GroupContract extends HashableContract {
         }
       },
       AcknowledgeFounder (state, data) {
-        if (!state.members.find(username => username === data.username)) {
-          state.members.push(data.username)
-        }
+        if (!state.members.find(username => username === data.username)) { state.members.push(data.username) }
       }
     }
   })
   constructor (data: JSONObject, parentHash?: string) {
     super({...data, creationDate: new Date().toISOString()}, parentHash)
+  }
+  toVuexState () {
+    let state = super.toVuexState()
+    // Place founder in group members before returning the initial state
+    state.members.push(state.founderUsername)
+    return state
   }
 }
 
@@ -301,6 +303,28 @@ export class Payment extends HashableAction {
 export class Vote extends HashableAction {
   static fields = Vote.Fields([
     ['vote', 'string'] // TODO: make a real vote
+  ])
+}
+
+export class RecordInvitation extends HashableAction {
+  static fields = RecordInvitation.Fields([
+    ['username', 'string'],
+    ['inviteHash', 'string'],
+    ['sentDate', 'string']
+  ])
+}
+
+export class AcceptInvitation extends HashableAction {
+  static fields = AcceptInvitation.Fields([
+    ['username', 'string'],
+    ['acceptanceDate', 'string']
+  ])
+}
+
+export class DeclineInvitation extends HashableAction {
+  static fields = DeclineInvitation.Fields([
+    ['username', 'string'],
+    ['declinedDate', 'string']
   ])
 }
 
@@ -355,61 +379,29 @@ export class MailboxContract extends HashableContract {
   static vuex = MailboxContract.Vuex({
     state: { messages: [] },
     mutations: {
-      PostMessage (state, data) {
-        data.read = false
-        state.messages.push(data)
-      },
-      PostInvite (state, data) {
-        data.read = false
-        state.messages.push(data)
-      },
-      AuthorizeSender (state, data) {
-        state.authorizations[AuthorizeSender.authorization.name].data = data.sender
-      }
+      PostMessage (state, data) { state.messages.push(data) },
+      PostInvite (state, data) { state.messages.push(data) },
+      AuthorizeSender (state, data) { state.authorizations[AuthorizeSender.authorization.name].data = data.sender }
     }
   })
 }
 
 export class PostMessage extends HashableAction {
+  static TypeInvite = 'Invite'
+  static TypeMessage = 'Message'
   static fields = PostMessage.Fields([
     ['from', 'string'],
     ['headers', 'string', 'repeated'],
+    ['messageType', 'string'],
     ['message', 'string'],
-    ['sentDate', 'string']
+    ['sentDate', 'string'],
+    ['read', 'bool']
   ])
+  constructor (data: JSONObject, parentHash?: string) {
+    super({...data, read: false}, parentHash)
+  }
 }
-export class PostInvite extends HashableAction {
-  static fields = PostInvite.Fields([
-    ['groupId', 'string'],
-    ['sentDate', 'string']
-  ])
-}
-export class RecordInvitation extends HashableAction {
-  static fields = RecordInvitation.Fields([
-    ['username', 'string'],
-    ['inviteHash', 'string'],
-    ['sentDate', 'string']
-  ])
-}
-export class AcceptInvitation extends HashableAction {
-  static fields = AcceptInvitation.Fields([
-    ['username', 'string'],
-    ['inviteHash', 'string'],
-    ['acceptanceDate', 'string']
-  ])
-}
-export class DeclineInvitation extends HashableAction {
-  static fields = DeclineInvitation.Fields([
-    ['username', 'string'],
-    ['inviteHash', 'string'],
-    ['declinedDate', 'string']
-  ])
-}
-export class AcknowledgeFounder extends HashableAction {
-  static fields = AcknowledgeFounder.Fields([
-    ['username', 'string']
-  ])
-}
+
 export class AuthorizeSender extends HashableAction {
   static authorization = CanModifyAuths
   static fields = AuthorizeSender.Fields([

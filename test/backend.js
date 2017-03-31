@@ -226,10 +226,10 @@ describe('Full walkthrough', function () {
 
     it("Should invite Bob to Alice's group", function (done) {
       var mailbox = users.bob.mailbox
-      var invite = new Events.PostInvite({groupId: groups.group1.toHash()}, latestHash(mailbox))
+      var invite = new Events.PostMessage({messageType: Events.PostMessage.TypeInvite, message: groups.group1.toHash()}, latestHash(mailbox))
       events.$once(invite.toHash(), ({contractId, hash, entry}) => {
         console.log('Bob successfully got invite!', entry)
-        should(entry.data.groupId).equal(groups.group1.toHash())
+        should(entry.data.message).equal(groups.group1.toHash())
         done()
       })
       postEntry(invite, mailbox.toHash())

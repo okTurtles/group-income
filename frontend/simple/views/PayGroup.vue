@@ -12,10 +12,10 @@
 
         <div class="columns is-multiline">
           <div class="column is-half">
-            <p class="title is-4"><i18n>{{ msg }}</i18n></p>
+            <p class="title is-4"><i18n>{{msg}}</i18n></p>
             <div class="box">
-              <p>Mincome: <b>${{ minCome }}</b></p>
-              <p>Amount the group received this month: <b>${{ amountReceivedThisMonth }}</b></p>
+              <p>Mincome: <b>${{minCome}}</b></p>
+              <p>Amount the group received this month: <b>${{amountReceivedThisMonth}}</b></p>
             </div>
             <div class="box">
               <p>
