@@ -1,9 +1,22 @@
-/.idea/
+# Build artifacts
 /node_modules/
 /dist/
-/.imdone/
-/NOTES.md
-/frontend/simple/js/ignored
+
+# Database
 /sqlite.db
 /groupincome.db
 /test.db
+
+# Logs
+*.log
+
+# OS artificats
+.DS_Store
+
+# Editor artifacts
+/.idea/
+/.imdone/
+/NOTES.md
+
+# Application specific
+/frontend/simple/js/ignored
