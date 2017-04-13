@@ -257,7 +257,7 @@ If all went well you should be able to visit: [http://localhost:8000](http://loc
 
 #### What does `yarn install` do?
 
-It installs the dependencies that this project relies on and places them into the `node_modules/` folder. The list of dependencies is retrieved from the `package.json` file, and a list of the exact versions installed is stored in the []`yarn.lock` file](https://yarnpkg.com/en/docs/yarn-lock). We've set up `grunt` to verify you always have the latest dependencies installed, but you do need to run this command at least once.
+It installs the dependencies that this project relies on and places them into the `node_modules/` folder. The list of dependencies is retrieved from the `package.json` file, and a list of the exact versions installed is stored in the [`yarn.lock` file](https://yarnpkg.com/en/docs/yarn-lock). We've set up `grunt` to verify you always have the latest dependencies installed, but you do need to run this command at least once.
 
 ----
 
