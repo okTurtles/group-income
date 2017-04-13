@@ -257,14 +257,34 @@ export class GroupContract extends HashableContract {
     ['openMembership', 'bool'],
     ['memberApprovalPercentage', 'uint32'],
     ['memberRemovalPercentage', 'uint32'],
+    ['incomeProvided', 'float'],
     ['contributionPrivacy', 'string'],
     ['founderUsername', 'string']
   ])
   static vuex = GroupContract.Vuex({
-    state: { votes: [], payments: [] },
+    state: { votes: [], payments: [], members: [], invitees: [] },
     mutations: {
       Payment (state, data) { state.payments.push(data) },
-      Vote (state, data) { state.votes.push(data) }
+      Vote (state, data) { state.votes.push(data) },
+      RecordInvitation (state, data) { state.invitees.push(data.username) },
+      DeclineInvitation (state, data) {
+        let index = state.invitees.findIndex(username => username === data.username)
+        if (index > -1) {
+          state.invitees.splice(index, 1)
+        }
+      },
+      AcceptInvitation (state, data) {
+        let index = state.invitees.findIndex(username => username === data.username)
+        if (index > -1) {
+          state.invitees.splice(index, 1)
+          state.members.push(data.username)
+        }
+      },
+      AcknowledgeFounder (state, data) {
+        if (!state.members.find(username => username === data.username)) {
+          state.members.push(data.username)
+        }
+      }
     }
   })
   constructor (data: JSONObject, parentHash?: string) {
@@ -335,8 +355,14 @@ export class MailboxContract extends HashableContract {
   static vuex = MailboxContract.Vuex({
     state: { messages: [] },
     mutations: {
-      PostMessage (state, data) { state.messages.push(data) },
-      PostInvite (state, data) { state.messages.push(data) },
+      PostMessage (state, data) {
+        data.read = false
+        state.messages.push(data)
+      },
+      PostInvite (state, data) {
+        data.read = false
+        state.messages.push(data)
+      },
       AuthorizeSender (state, data) {
         state.authorizations[AuthorizeSender.authorization.name].data = data.sender
       }
@@ -348,16 +374,42 @@ export class PostMessage extends HashableAction {
   static fields = PostMessage.Fields([
     ['from', 'string'],
     ['headers', 'string', 'repeated'],
-    ['message', 'string']
+    ['message', 'string'],
+    ['sentDate', 'string']
   ])
 }
-
 export class PostInvite extends HashableAction {
   static fields = PostInvite.Fields([
-    ['groupId', 'string']
+    ['groupId', 'string'],
+    ['sentDate', 'string']
   ])
 }
-
+export class RecordInvitation extends HashableAction {
+  static fields = RecordInvitation.Fields([
+    ['username', 'string'],
+    ['inviteHash', 'string'],
+    ['sentDate', 'string']
+  ])
+}
+export class AcceptInvitation extends HashableAction {
+  static fields = AcceptInvitation.Fields([
+    ['username', 'string'],
+    ['inviteHash', 'string'],
+    ['acceptanceDate', 'string']
+  ])
+}
+export class DeclineInvitation extends HashableAction {
+  static fields = DeclineInvitation.Fields([
+    ['username', 'string'],
+    ['inviteHash', 'string'],
+    ['declinedDate', 'string']
+  ])
+}
+export class AcknowledgeFounder extends HashableAction {
+  static fields = AcknowledgeFounder.Fields([
+    ['username', 'string']
+  ])
+}
 export class AuthorizeSender extends HashableAction {
   static authorization = CanModifyAuths
   static fields = AuthorizeSender.Fields([

@@ -101,7 +101,7 @@
           memberApprovalPercentage: randInt(1, 100),
           memberRemovalPercentage: randInt(1, 100),
           contributionPrivacy: 'Very Private',
-          founderHashKey: 'alsdfjlskdfjaslkfjsldkfj'
+          founderUsername: 'alsdfjlskdfjaslkfjsldkfj'
         })
         let hash = entry.toHash()
         // always subscribe *BEFORE* publishing the entry!

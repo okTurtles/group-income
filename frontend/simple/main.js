@@ -8,8 +8,11 @@ import CreateGroup from './views/CreateGroup.vue'
 import UserProfileView from './views/UserProfileView.vue'
 import TestEventLog from './views/EventLog.vue'
 import Invite from './views/Invite.vue'
+import Mailbox from './views/Mailbox.vue'
+import Join from './views/Join.vue'
 import PayGroup from './views/PayGroup.vue'
 import NavBar from './views/NavBar.vue'
+import Home from './views/Home.vue'
 import { wrap, lazyLoadVue } from './js/utils'
 import store from './js/state'
 import './js/transitions'
@@ -28,10 +31,18 @@ var loginGuard = {
   guard: store => !store.state.loggedIn,
   redirect: (to, from) => ({ path: '/signup', query: { next: to.path } })
 }
+var signupGuard = {
+  guard: store => !!store.state.loggedIn,
+  redirect: (to, from) => ({ path: '/' })
+}
 // Check if user has a group to invite users to
 var inviteGuard = {
   guard: store => !store.state.currentGroupId,
   redirect: (to, from) => ({ path: '/new-group' })
+}
+var joinGuard = {
+  guard: (store, to, from) => from.name !== Mailbox.name,
+  redirect: (to, from) => ({ path: '/mailbox' })
 }
 function createEnterGuards (store, ...guards) {
   return function (to, from, next) {
@@ -52,9 +63,9 @@ var router = new Router({
   routes: [
     {
       path: '/',
-      component: SignUp,
+      component: Home,
       meta: {
-        title: 'Sign Up'  // page title. see issue #45
+        title: 'Group Income'  // page title. see issue #45
       }
     },
     {
@@ -63,7 +74,8 @@ var router = new Router({
       name: SignUp.name, // route name. important!
       meta: {
         title: 'Sign Up'  // page title. see issue #45
-      }
+      },
+      beforeEnter: createEnterGuards(store, signupGuard)
     },
     {
       path: '/new-group',
@@ -125,6 +137,24 @@ var router = new Router({
         title: 'Invite Group Members'
       },
       beforeEnter: createEnterGuards(store, loginGuard, inviteGuard)
+    },
+    {
+      path: '/mailbox',
+      name: Mailbox.name,
+      component: Mailbox,
+      meta: {
+        title: 'Mailbox'
+      },
+      beforeEnter: createEnterGuards(store, loginGuard)
+    },
+    {
+      path: '/join',
+      name: Join.name,
+      component: Join,
+      meta: {
+        title: 'Join a Group'
+      },
+      beforeEnter: createEnterGuards(store, loginGuard, joinGuard)
     },
     {
       path: '*',
