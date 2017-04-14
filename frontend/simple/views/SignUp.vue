@@ -25,7 +25,7 @@
         </div>
         <div class="field">
           <p class="control has-icon">
-            <input id="name" class="input" name="name" v-model="name" @keypress="checkName" v-validate data-vv-rules="required|regex:^\S+$" placeholder="username" required>
+            <input id="name" class="input" name="name" v-model="name" @keypress="checkName" v-validate data-vv-rules="required|regex:^\S+$" placeholder="username" required autofocus>
             <span class="icon is-small"><i class="fa fa-user"></i></span>
           </p>
           <p class="help is-danger" v-if="errors.has('name')" id="badUsername">
