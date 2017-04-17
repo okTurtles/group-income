@@ -37,83 +37,14 @@
     display: none;
   }
 }
-/* The slider */
-// .slider {
-//   position: absolute;
-//   cursor: pointer;
-//   top: 0;
-//   left: 0;
-//   right: 0;
-//   bottom: 0;
-//   background-color: #ccc;
-//   @include transition(.4s);
-//   &.round {
-//     border-radius: 34px;
-//     &::before {
-//       border-radius: 50%;
-//     }
-//   }
-//   &::before {
-//     position: absolute;
-//     content: "";
-//     height: 26px;
-//     width: 26px;
-//     left: 4px;
-//     bottom: 4px;
-//     background-color: white;
-//     @include transition(.4s);
-//   }
-// }
 
-// input:checked {
-//   & + .slider {
-//     background-color: #2196F3;
-//   }
-//   &:focus + .slider {
-//     box-shadow: 0 0 1px #2196F3;
-//   }
-//   & + .slider::before {
-//     @include transform(translateX(26px));
-//   }
-// }
-// /* rounded range controls */
-// input[type='range'] {
-//   @include appearance(none);
-//   background-color: #ccc;
-//   height: 2px;
-//   margin: 10px;
-//   &:focus {
-//     outline: none;
-//   }
-//   &::-webkit-slider-thumb {
-//     @include appearance(none);
-//     border-radius: 50%;
-//     height: 26px;
-//     width: 26px;
-//     background: #fff;
-//     border: solid #ccc 3px;
-//   }
-//   &::-moz-range-thumb {
-//     @include appearance(none);
-//     border-radius: 50%;
-//     height: 26px;
-//     width: 26px;
-//     background: #fff;
-//     border: solid #ccc 3px;
-//   }
-//   &::-moz-range-track {
-//     background: transparent;
-//     border-color: transparent;
-//     color: transparent;
-//   }
-// }
-.created {
-  color: #97cd76;
-  display: block;
-  font-size: 1rem;
-  margin-top: 5px;
-  text-align: center;
+.text-message {
+  margin: $size-5 0;
+  &.is-success {
+    color: $green;
+  }
 }
+
 .create-group {
   .select::after {
     border-color: #ccc;
