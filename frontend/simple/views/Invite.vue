@@ -1,21 +1,48 @@
 <template>
   <section class="section full-screen">
+
     <div class="columns">
-      <div class="column is-1" />
-      <div class="column is-10" >
-        <div class="field has-addons">
-          <p class="control" style="width: 100%">
-            <input id="searchUser" class="input" type="text" v-model="searchUser" placeholder="Add a new member by username">
-          </p>
-          <p class="control">
-            <a id="addButton" class="button is-info" v-on:click="add">
-              <i18n>Add new member</i18n>
-            </a>
-          </p>
-        </div>
+      <div class="column is-half is-offset-one-quarter" >
+        <form class='add-form' @submit.prevent="add">
+          <div class="field has-addons">
+              <p class="control" style="width: 100%">
+                <input
+                  autofocus
+                  class="input is-medium"
+                  id="searchUser"
+                  placeholder="Add a new member by username"
+                  type="text"
+                  v-model="searchUser"
+                >
+              </p>
+              <p class="control">
+                <a id="addButton" class="button is-info is-medium" @click="add">
+                  <i18n>Add member</i18n>
+                </a>
+              </p>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="columns">
+      <div class="column is-6 is-offset-3" >
+
+        <p
+          class="notification is-success has-text-centered"
+          v-if="invited"
+        >
+          <i class='notification-icon fa fa-check'></i>
+          <i18n>Members invited successfully!</i18n>
+        </p>
+
         <i18n v-if="error" id="badUsername" class="help is-danger">Invalid Username</i18n>
         <i18n v-if="self" class="help is-danger">Cannot Invite Yourself</i18n>
-        <table class="table is-bordered is-striped is-narrow">
+
+        <table
+          class="table is-bordered is-striped is-narrow"
+          v-if="members.length"
+        >
           <thead>
           <tr>
             <th class="table-header"><i18n>Initial Invitees</i18n></th>
@@ -44,13 +71,19 @@
           </tr>
           </tbody>
         </table>
-        <div class="has-text-centered button-box">
-          <div id="successMsg" v-if="invited" class="created"><i18n>Success</i18n></div>
-          <button class="button is-success is-large" v-if="!invited" :disabled="!members.length" style="height: 120px" v-on:click="submit" type="submit"><i18n>Invite Members</i18n></button>
-          <a class="button is-warning is-large" v-if="invited"><i18n>Next: ?</i18n></a>
+
+        <div class="has-text-centered">
+          <button
+            class="button is-success is-large"
+            type="submit"
+            v-if="members.length"
+            @click="submit"
+          >
+            <i18n>Send Invites</i18n>
+          </button>
         </div>
+
       </div>
-      <div class="column is-1"></div>
     </div>
   </section>
 </template>
@@ -60,13 +93,18 @@
   background-color: #fafafa
 .media
   align-items: center
+.add-form
+  margin-bottom: 2rem
+.notification-icon
+  margin-right: 1rem
 </style>
 
 <script>
 import * as Events from '../../../shared/events'
 import backend from '../js/backend/'
-import {HapiNamespace} from '../js/backend/hapi'
-var namespace = new HapiNamespace()
+import { HapiNamespace } from '../js/backend/hapi'
+
+const namespace = new HapiNamespace()
 
 export default {
   name: 'InviteView',
@@ -80,49 +118,64 @@ export default {
     }
   },
   methods: {
-    add: async function () {
-      if (this.searchUser) {
-        if (this.searchUser === this.$store.state.loggedIn) {
-          this.self = true
-          return
-        } else {
-          this.self = false
+    async add () {
+      if (!this.searchUser) return
+
+      if (this.searchUser === this.$store.state.loggedIn) {
+        this.self = true
+        return
+      } else {
+        this.self = false
+      }
+
+      try {
+        const contractId = await namespace.lookup(this.searchUser)
+        if (!this.members.find(member => member.name === this.searchUser)) {
+          this.members.push({ name: this.searchUser, contractId })
         }
-        try {
-          let contractId = await namespace.lookup(this.searchUser)
-          if (!this.members.find(member => member.name === this.searchUser)) {
-            this.members.push({name: this.searchUser, contractId: contractId})
-          }
-          this.searchUser = null
-          this.error = false
-        } catch (ex) {
-          this.error = true
-        }
+        this.searchUser = null
+        this.error = false
+      } catch (err) {
+        this.error = true
       }
     },
-    remove: function (index) {
+    remove (index) {
       this.members.splice(index, 1)
     },
-    submit: async function () {
-      for (let i = 0; i < this.members.length; i++) {
-        let member = this.members[i]
-        let events = await backend.eventsSince(member.contractId, member.contractId)
-        let [contract, ...actions] = events.map(e => {
+    async submit () {
+      this.members.forEach(async (member) => {
+        const { contractId } = member
+        const events = await backend.eventsSince(contractId, contractId)
+        const [ contract, ...actions ] = events.map(e => {
           return Events[e.entry.type].fromObject(e.entry, e.hash)
         })
-        let state = contract.toVuexState()
+        const state = contract.toVuexState()
         actions.forEach(action => {
-          let type = action.constructor.name
+          const type = action.constructor.name
           contract.constructor.vuex.mutations[type](state, action.data)
         })
-        let mailbox = await backend.latestHash(state.attributes.mailbox)
-        let date = new Date()
-        let invite = new Events.PostInvite({groupId: this.$store.state.currentGroupId, sentDate: date.toString()}, mailbox)
+        const mailbox = await backend.latestHash(state.attributes.mailbox)
+        const sentDate = new Date().toString()
+        const invite = new Events.PostInvite(
+          {
+            groupId: this.$store.state.currentGroupId,
+            sentDate
+          },
+          mailbox
+        )
         await backend.publishLogEntry(state.attributes.mailbox, invite)
-        let latest = await backend.latestHash(this.$store.state.currentGroupId)
-        let invited = new Events.RecordInvitation({ username: member.name, inviteHash: invite.toHash(), sentDate: date.toString() }, latest)
+        const latest = await backend.latestHash(this.$store.state.currentGroupId)
+        const invited = new Events.RecordInvitation(
+          {
+            username: member.name,
+            inviteHash: invite.toHash(),
+            sentDate
+          },
+          latest
+        )
         await backend.publishLogEntry(this.$store.state.currentGroupId, invited)
-      }
+      })
+
       this.invited = true
     }
   }
