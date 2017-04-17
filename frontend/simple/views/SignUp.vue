@@ -52,7 +52,7 @@
           <div class="level-left">
             <div class="level-item content is-small">
               <span id="serverMsg" class="help is-marginless" :class="[error ? 'is-danger' : 'is-success']">
-                {{ response }}
+                {{response}}
               </span>
             </div>
           </div>
@@ -106,16 +106,16 @@ export default {
         let attribute = new Events.SetAttribute({attribute: {name: 'mailbox', value: mailbox.toHash()}}, user.toHash())
         await backend.publishLogEntry(user.toHash(), attribute)
         await namespace.register(this.name, user.toHash())
-        // TODO Just add cryptographic magic
+        // TODO: Just add cryptographic magic
         this.response = 'success'
+        this.$store.dispatch('login', this.name)
         if (this.$route.query.next) {
           setTimeout(() => {
             this.$router.push({path: this.$route.query.next})
           }, 1000)
+        } else {
+          this.$router.push({path: '/'})
         }
-        this.$store.dispatch('login', this.name)
-        // await backend.subscribe(mailbox.toHash())
-        // await backend.subscribe(mailbox.toHash())
         this.error = false
       } catch (ex) {
         this.$store.commit('logout')
@@ -134,9 +134,14 @@ export default {
           await namespace.lookup(this.name)
           this.nameAvailable = false
         } catch (ex) {
-          // BUG: it could be catching a different error, not 404
-          // TODO: fix this
-          this.nameAvailable = true
+          if (ex.message === 'Not Found') {
+            this.nameAvailable = true
+          } else {
+            console.log(ex)
+            // TODO: Replace with w/e the ultimate global error notification solution is
+            this.response = ex.toString()
+            this.error = true
+          }
         }
       }
     }, 700, {maxWait: 2000})

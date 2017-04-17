@@ -62,7 +62,7 @@ export class HapiBackend extends Backend {
   }
   publishLogEntry (contractId: string, entry: HashableEntry) {
     console.log(`publishLogEntry to ${contractId}:`, entry)
-    // There used to be a permission check here buts its duplicated when a subcribed
+    // TODO: There used to be a permission check here buts its duplicated when a subcribed
     // contract received the events
     // in cases like send of messages the check information is not known so this check
     // is better left to the server and the subscribers to perform the check
@@ -75,7 +75,6 @@ export class HapiBackend extends Backend {
   }
   async subscribe (contractId: string) {
     console.log('subscribing to:', contractId)
-    // this mutation makes sure not to add duplicates
     store.commit('pending', contractId)
     // we don't need to check if we're already subscribed, server handles that
     var res = await primus.sub(contractId)
@@ -88,7 +87,6 @@ export class HapiBackend extends Backend {
     }
     var res = await primus.unsub(contractId)
     store.commit('removeContract', contractId)
-    store.dispatch('saveSettings')
     return res
   }
   // TODO add event strean method returning string.transform

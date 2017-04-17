@@ -5,27 +5,36 @@
       <div class="container">
         <div class="nav-left">
           <a href="/simple/" class="nav-item" @click="toggleTimeTravel">
-            <img src="images/groupincome-logo-black.png">
+            <img src="images/logo-transparent.png">
           </a>
         </div>
         <div class="nav-center">
           <!-- TODO: use v-for to dynamically generate these? -->
           <router-link class="nav-item is-tab" active-class="is-active" to="new-group" id="CreateGroup"><i18n>Start a group</i18n></router-link>
-          <router-link class="nav-item is-tab" active-class="is-active" to="user"><i18n>Profile</i18n></router-link>
-          <router-link class="nav-item is-tab" active-class="is-active" to="user-group"><i18n>Group</i18n></router-link>
-          <router-link class="nav-item is-tab" active-class="is-active" to="pay-group"><i18n>Pay Group</i18n></router-link>
-          <router-link class="nav-item is-tab" active-class="is-active" to="ejs-page" id="testEJS"><i18n>EJS test</i18n></router-link>
+          <!-- <router-link class="nav-item is-tab" active-class="is-active" to="user" v-show="$store.state.loggedIn"><i18n>Profile</i18n></router-link> -->
+          <!-- <router-link class="nav-item is-tab" active-class="is-active" to="user-group" v-show="$store.state.loggedIn"><i18n>Group</i18n></router-link> -->
+          <router-link class="nav-item is-tab" active-class="is-active" to="pay-group" v-show="$store.state.loggedIn"><i18n>Pay Group</i18n></router-link>
+          <!-- <router-link class="nav-item is-tab" active-class="is-active" to="ejs-page" id="testEJS"><i18n>EJS test</i18n></router-link> -->
           <router-link class="nav-item is-tab" active-class="is-active" to="event-log"><i18n>Event Log test</i18n></router-link>
+          <router-link id="MailboxLink" v-if="$store.state.loggedIn" class="nav-item" active-class ="is-active" to="mailbox">
+            <i18n>Mailbox</i18n>&nbsp;
+            <span id="AlertNotification" class="icon" style="color: #ed6c63" v-if="$store.getters.unreadMessageCount">
+              <i class="fa fa-bell"></i>
+            </span>
+          </router-link>
         </div>
         <div class="nav-right">
-          <span class="nav-item">
-            <router-link v-show="!$store.state.loggedIn" class="button is-success" to="/new-user"><i18n>Sign Up</i18n></router-link>
+          <span class="nav-item is-tab control">
+            <router-link id="SignupBtn" v-show="!$store.state.loggedIn" class="button is-success" to="signup"><i18n>Sign Up</i18n></router-link>
             <a href="#" id="LoginBtn" class="button"
                v-bind:class="$store.state.loggedIn  ? 'is-danger' : 'is-primary'"
               @click.prevent="toggleModal"
             >
-              {{ $store.state.loggedIn ? 'Sign Out' : 'Log In' }}
+              {{$store.state.loggedIn ? 'Sign Out' : 'Log In'}}
             </a>
+            <div class="button" style="border: 0" v-if="$store.state.loggedIn">
+              <img src="http://bulma.io/images/placeholders/16x16.png" data-pin-nopin="true">&nbsp;<strong><i18n>Welcome</i18n>, {{$store.state.loggedIn}}</strong>
+            </div>
           </span>
         </div>
       </div>
@@ -86,6 +95,7 @@ div.nav-center
 import Vue from 'vue'
 import TimeTravel from './TimeTravel.vue'
 import {HapiNamespace} from '../js/backend/hapi'
+import L from '../js/translations'
 var namespace = new HapiNamespace()
 export default {
   name: 'NavBar',
@@ -106,14 +116,14 @@ export default {
     },
     login: async function () {
       try {
-        // TODO Insert cryptography here
+        // TODO: Insert cryptography here
         let identity = await namespace.lookup(this.name)
         console.log(`Retrieved identity ${identity}`)
         await this.$store.dispatch('login', this.name)
         this.toggleModal()
       } catch (ex) {
-        this.response = 'Invalid username or password'
-        console.log('login failed')
+        this.response = L('Invalid username or password')
+        console.log(L('login failed'))
       }
     },
     logout: function () {
@@ -150,7 +160,7 @@ export default {
       name: null,
       password: null,
       response: null,
-      showTimeTravel: true
+      showTimeTravel: false
     }
   }
 }
