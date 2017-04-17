@@ -87,7 +87,6 @@
               <div class="has-text-centered button-box">
                 <div id="successMsg" v-if="created" class="created"><i18n>Success</i18n></div>
                 <button class="button is-success is-large" v-if="!created" type="submit"><i18n>Create Group</i18n></button>
-                <a class="button is-warning is-large" id="nextButton" v-if="created" v-on:click="next"><i18n>Next: Invite Group Members</i18n></a>
               </div>
             </div>
           </div>
@@ -105,45 +104,49 @@ import * as Events from '../../../shared/events'
 export default {
   name: 'CreateGroupView',
   methods: {
-    next: function () {
-      this.$router.push({path: '/invite'})
-    },
     submit: async function () {
-      let success
       try {
-        success = await this.$validator.validateAll()
-      } catch (ex) {
-        let firsErr = document.querySelector('span.help.is-danger')
-        let control = firsErr.dataset.control
-        let ctrlEl = document.querySelector(`input[name="${control}"], textarea[name="${control}"]`)
-        ctrlEl.focus()
-        ctrlEl.scrollIntoView()
+        await this.$validator.validateAll()
+      } catch (err) {
+        const { control } = document.querySelector('span.help.is-danger').dataset
+        document
+          .querySelector(`input[name="${control}"], textarea[name="${control}"]`)
+          .focus()
+          .scrollIntoView()
+        return
       }
-      if (success) {
-        let entry = new Events.GroupContract({
-          authorizations: [Events.CanModifyAuths.dummyAuth()],
-          groupName: this.groupName,
-          sharedValues: this.sharedValues,
-          changePercentage: this.changePercentage,
-          memberApprovalPercentage: this.memberApprovalPercentage,
-          memberRemovalPercentage: this.memberRemovalPercentage,
-          incomeProvided: this.incomeProvided,
-          contributionPrivacy: this.contributionPrivacy,
-          founderUsername: this.$store.state.loggedIn
-        })
-        let hash = entry.toHash()
-        await backend.subscribe(hash)
-        Vue.events.$once(hash, (contractId, entry) => {
-          this.$store.commit('setCurrentGroupId', hash)
-        })
-        await backend.publishLogEntry(hash, entry)
-        let founder = new Events.AcknowledgeFounder({ username: this.$store.state.loggedIn }, hash)
-        await backend.publishLogEntry(hash, founder)
-        this.created = true
-      }
+
+      const entry = new Events.GroupContract({
+        authorizations: [
+          Events.CanModifyAuths.dummyAuth()
+        ],
+        groupName: this.groupName,
+        sharedValues: this.sharedValues,
+        changePercentage: this.changePercentage,
+        memberApprovalPercentage: this.memberApprovalPercentage,
+        memberRemovalPercentage: this.memberRemovalPercentage,
+        incomeProvided: this.incomeProvided,
+        contributionPrivacy: this.contributionPrivacy,
+        founderUsername: this.$store.state.loggedIn
+      })
+
+      const hash = entry.toHash()
+      await backend.subscribe(hash)
+      Vue.events.$once(hash, (contractId, entry) => {
+        this.$store.commit('setCurrentGroupId', hash)
+      })
+      await backend.publishLogEntry(hash, entry)
+      const founder = new Events.AcknowledgeFounder(
+        { username: this.$store.state.loggedIn },
+        hash
+      )
+      await backend.publishLogEntry(hash, founder)
+
+      // Take them to the invite group members page.
+      this.$router.push({path: '/invite'})
     }
   },
-  data: function () {
+  data () {
     return {
       groupName: null,
       sharedValues: null,
