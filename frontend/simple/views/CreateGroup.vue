@@ -161,7 +161,7 @@
               </div>
               <div class="has-text-centered button-box">
                 <div id="errorMsg" v-if="errorMsg" class="help is-danger">{{errorMsg}}</div>
-                <div id="successMsg" v-if="created" class="created"><i18n>Success</i18n></div>
+                <div id="successMsg" v-if="created" class="text-message is-success"><i18n>Success</i18n></div>
                 <button
                   class="button is-success is-large"
                   v-if="!created"
@@ -173,7 +173,7 @@
                   class="button is-warning is-large"
                   id="nextButton"
                   v-if="created"
-                  v-on:click="next"
+                  @click="next"
                 >
                   <i18n>Next: Invite Group Members</i18n>
                 </a>
