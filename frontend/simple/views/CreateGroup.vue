@@ -85,7 +85,7 @@
                 <i18n v-if="errors.has('contributionPrivacy')" data-control="contributionPrivacy" class="help is-danger">{{ errors.first('contributionPrivacy') }}</i18n>
               </div>
               <div class="has-text-centered button-box">
-                <div id="successMsg" v-if="created" class="created"><i18n>Success</i18n></div>
+                <div id="successMsg" v-if="created" class="text-message is-success"><i18n>Success</i18n></div>
                 <button class="button is-success is-large" v-if="!created" type="submit"><i18n>Create Group</i18n></button>
                 <a class="button is-warning is-large" id="nextButton" v-if="created" v-on:click="next"><i18n>Next: Invite Group Members</i18n></a>
               </div>
