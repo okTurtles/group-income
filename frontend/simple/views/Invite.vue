@@ -149,10 +149,9 @@ export default {
       try {
         this.errorMsg = null
 
-        // TODO: as members are successfully invited display in a 
+        // TODO: as members are successfully invited display in a
         // seperate invitees grid and add them to some validation for duplicate invites
         await this.members.map(async (member) => {
-
           // We need to have the latest mailbox attribute for the user
           const state = await latestContractState(member.contractId)
           const mailbox = await backend.latestHash(state.attributes.mailbox)
