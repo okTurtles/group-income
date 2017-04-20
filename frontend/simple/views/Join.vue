@@ -1,6 +1,6 @@
 <template>
     <section class="section full-screen">
-      <div class="column is-10" >
+      <div class="centered" >
         <div class="columns" v-if="contract">
           <div class="column is-one-half">
             <div class="center ">
@@ -112,6 +112,7 @@ export default {
       let state = await latestContractState(this.$route.query.groupId)
       if (!state.invitees.find(invitee => invitee === this.$store.state.loggedIn)) {
         console.log(new Error('Invalid Invitation'))
+        await this.$store.dispatch('deleteMail', this.$route.query.inviteHash)
         this.$router.push({path: '/mailbox'})
       }
       this.contract = state
@@ -125,7 +126,8 @@ export default {
         let acceptance = new Events.AcceptInvitation({ username: this.$store.state.loggedIn, acceptanceDate: new Date() }, latest)
         this.$store.commit('setCurrentGroupId', this.$route.query.groupId)
         await backend.publishLogEntry(this.$route.query.groupId, acceptance)
-        this.$store.dispatch('deleteMail', this.$route.query.inviteHash)
+        this.$store.dispatch('deleteMessage', this.$route.query.inviteId)
+        this.$router.push({path: '/mailbox'})
       } catch (ex) {
         console.log(ex)
         this.errorMsg = L('Failed to Accept Invite')

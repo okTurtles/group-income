@@ -12,7 +12,6 @@ import backend from '../js/backend'
 // for diff between 'lodash/map' and 'lodash/fp/map'
 // see: https://github.com/lodash/lodash/wiki/FP-Guide
 import debounce from 'lodash/debounce'
-
 Vue.use(Vuex)
 var store // this is set and made the default export at the bottom of the file.
           // we have it declared here to make it accessible in mutations
@@ -55,14 +54,14 @@ const mutations = {
       mutations.addContract(state, contract)
     }
   },
-  deleteMessage (state, hash) {
+  deleteMessage (state, id) {
     let mailboxContract = store.getters.mailboxContract
-    let index = mailboxContract && mailboxContract.messages.findIndex(msg => msg.hash === hash)
+    let index = mailboxContract && mailboxContract.messages.findIndex(msg => msg.id === id)
     if (index > -1) { mailboxContract.messages.splice(index, 1) }
   },
-  markMessageAsRead (state, hash) {
+  markMessageAsRead (state, id) {
     let mailboxContract = store.getters.mailboxContract
-    let index = mailboxContract && mailboxContract.messages.findIndex(msg => msg.hash === hash)
+    let index = mailboxContract && mailboxContract.messages.findIndex(msg => msg.id === id)
     if (index > -1) { mailboxContract.messages[index].read = true }
   },
   setCurrentGroupId (state, currentGroupId) {
@@ -186,6 +185,13 @@ const actions = {
       if (!Events[contractType].isActionAllowed(state[contractType], entry)) {
         // TODO: implement isActionAllowed in all actions, and handle error better
         return console.error(`bad action ${type} on ${contractType} (${contractId}):`, entry)
+      }
+      // Subscribe to your fellow group member's identity contracts upon joining
+      // TODO right an opposite series of operations for when someone leaves a group
+      if (entry instanceof Events.AcceptInvitation && entry.data.username !== state.loggedIn) {
+        let identity = await backend.lookup(entry.data.username)
+        await backend.subscribe(identity)
+        await dispatch('synchronize', identity)
       }
       // TODO: verify each entry is signed by a group member
       let hash = await db.addLogEntry(contractId, entry)

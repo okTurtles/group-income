@@ -1,10 +1,10 @@
 'use strict'
-
 import multihash from 'multihashes'
 import protobuf from 'protobufjs/light'
 import {makeResponse} from './functions'
 import {RESPONSE_TYPE} from './constants'
 import type {JSONObject} from './types'
+import _ from 'lodash'
 
 const nacl = require('tweetnacl')
 const blake = require('blakejs')
@@ -157,7 +157,7 @@ export class HashableContract extends HashableEntry {
   }
   // returns .data converted to vuex state using transforms and any default state
   toVuexState () {
-    var state = {...this.constructor.vuex.state, ...this.data}
+    var state = _.cloneDeep({...this.constructor.vuex.state, ...this.data})
     for (let [param, fn] of Object.entries(this.constructor.transforms)) {
       fn.call(this, state, param)
     }
@@ -377,10 +377,10 @@ export class DeleteAttribute extends HashableAction {
 
 export class MailboxContract extends HashableContract {
   static vuex = MailboxContract.Vuex({
-    state: { messages: [] },
+    state: { messages: [], nextId: 0 },
     mutations: {
-      PostMessage (state, data) { state.messages.push(data) },
-      PostInvite (state, data) { state.messages.push(data) },
+      // TODO: verify the correctness of 'nextId' in more detail later
+      PostMessage (state, data) { state.messages.push({...data, id: state.nextId++}) },
       AuthorizeSender (state, data) { state.authorizations[AuthorizeSender.authorization.name].data = data.sender }
     }
   })
