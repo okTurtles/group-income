@@ -74,7 +74,7 @@ const mutations = {
   },
   pending (state, contractId) {
     if (!state.contracts[contractId] && !state.pending.includes(contractId)) {
-       state.pending.push(contractId)
+      state.pending.push(contractId)
     }
   }
 }
