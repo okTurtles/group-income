@@ -1,54 +1,90 @@
 <template>
   <section class="section full-screen">
-      <div class="centered" >
-        <div class="field has-addons">
-          <p class="control" style="width: 100%">
-            <input id="searchUser" class="input" type="text" v-model="searchUser" placeholder="Add a new member by username">
-          </p>
-          <p class="control">
-            <a id="addButton" class="button is-info" v-on:click="add">
-              <i18n>Add new member</i18n>
-            </a>
-          </p>
-        </div>
+
+    <div class="columns">
+      <div class="column is-half is-offset-one-quarter" >
+        <form class='add-form' @submit.prevent="add">
+          <div class="field has-addons">
+              <p class="control" style="width: 100%">
+                <input
+                  autofocus
+                  class="input is-medium"
+                  id="searchUser"
+                  placeholder="Add a new member by username"
+                  type="text"
+                  v-model="searchUser"
+                >
+              </p>
+              <p class="control">
+                <a id="addButton" class="button is-info is-medium" @click="add">
+                  <i18n>Add member</i18n>
+                </a>
+              </p>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="columns">
+      <div class="column is-6 is-offset-3" >
+
+        <p
+          class="notification is-success has-text-centered"
+          v-if="invited"
+        >
+          <i class='notification-icon fa fa-check'></i>
+          <i18n>Members invited successfully!</i18n>
+        </p>
+
         <i18n v-if="error" id="badUsername" class="help is-danger">Invalid Username</i18n>
         <i18n v-if="self" class="help is-danger">Cannot Invite Yourself</i18n>
-        <table class="table is-bordered is-striped is-narrow">
+
+        <table
+          class="table is-bordered is-striped is-narrow"
+          v-if="members.length"
+        >
           <thead>
           <tr>
             <th class="table-header"><i18n>Initial Invitees</i18n></th>
           </tr>
           </thead>
           <tbody>
-          <tr v-for="(member, index) in members" class="member">
-            <td>
-              <div class="media">
-                <div class="media-left">
-                  <p class="image is-64x64">
-                    <!-- TODO: use responsive figure:
-                  http://bulma.io/documentation/elements/image/ -->
-                    <!-- TODO: ideally these would be loaded from cache -->
-                    <img src="http://bulma.io/images/placeholders/128x128.png">
-                  </p>
+            <tr v-for="(member, index) in members" class="member">
+              <td>
+                <div class="media">
+                  <div class="media-left">
+                    <p class="image is-64x64">
+                      <!-- TODO: use responsive figure:
+                    http://bulma.io/documentation/elements/image/ -->
+                      <!-- TODO: ideally these would be loaded from cache -->
+                      <img src="http://bulma.io/images/placeholders/128x128.png">
+                    </p>
+                  </div>
+                  <div class="media-content">
+                    <strong>{{member.name}}</strong>
+                  </div>
+                  <div class="media-right">
+                    <button class="delete" @click="remove(index)"></button>
+                  </div>
                 </div>
-                <div class="media-content">
-                  <strong>{{member.name}}</strong>
-                </div>
-                <div class="media-right">
-                  <button class="delete" v-on:click="remove(index)"></button>
-                </div>
-              </div>
-            </td>
-          </tr>
+              </td>
+            </tr>
           </tbody>
         </table>
-        <div class="has-text-centered button-box">
-          <div id="errorMsg" v-if="errorMsg" class="help is-danger">{{errorMsg}}</div>
-          <div id="successMsg" v-if="invited" class="created"><i18n>Success</i18n></div>
-          <button class="button is-success is-large" v-if="!invited" :disabled="!members.length" v-on:click="submit" type="submit"><i18n>Invite Members</i18n></button>
-          <a class="button is-warning is-large" v-if="invited"><i18n>Next: ?</i18n></a>
+
+        <div class="has-text-centered">
+          <button
+            class="button is-success is-large"
+            type="submit"
+            v-if="members.length"
+            @click="submit"
+          >
+            <i18n>Send Invites</i18n>
+          </button>
         </div>
+
       </div>
+    </div>
   </section>
 </template>
 
@@ -57,15 +93,20 @@
   background-color: #fafafa
 .media
   align-items: center
+.add-form
+  margin-bottom: 2rem
+.notification-icon
+  margin-right: 1rem
 </style>
 
 <script>
 import * as Events from '../../../shared/events'
 import backend from '../js/backend/'
-import {HapiNamespace} from '../js/backend/hapi'
-import {latestContractState} from '../js/state'
+import { latestContractState } from '../js/state'
+import { HapiNamespace } from '../js/backend/hapi'
 import L from '../js/translations'
-var namespace = new HapiNamespace()
+
+const namespace = new HapiNamespace()
 
 export default {
   name: 'InviteView',
@@ -80,50 +121,70 @@ export default {
     }
   },
   methods: {
-    add: async function () {
-      if (this.searchUser) {
-        if (this.searchUser === this.$store.state.loggedIn) {
-          this.self = true
-          return
-        } else {
-          this.self = false
+    async add () {
+      if (!this.searchUser) return
+
+      if (this.searchUser === this.$store.state.loggedIn) {
+        this.self = true
+        return
+      } else {
+        this.self = false
+      }
+
+      try {
+        const contractId = await namespace.lookup(this.searchUser)
+        if (!this.members.find(member => member.name === this.searchUser)) {
+          this.members.push({ name: this.searchUser, contractId })
         }
-        try {
-          let contractId = await namespace.lookup(this.searchUser)
-          if (!this.members.find(member => member.name === this.searchUser)) {
-            this.members.push({name: this.searchUser, contractId: contractId})
-          }
-          this.searchUser = null
-          this.error = false
-        } catch (ex) {
-          this.error = true
-        }
+        this.searchUser = null
+        this.error = false
+      } catch (err) {
+        this.error = true
       }
     },
-    remove: function (index) {
+    remove (index) {
       this.members.splice(index, 1)
     },
-    submit: async function () {
+    async submit () {
       try {
         this.errorMsg = null
-        // TODO: as members are successfully invited display in a seperate invitees grid and add them to some validation for duplicate invites
-        for (let i = 0; i < this.members.length; i++) {
-          let member = this.members[i]
-          // We need to have the latest mailbox attribute for the user
-          let state = await latestContractState(member.contractId)
-          let mailbox = await backend.latestHash(state.attributes.mailbox)
-          let date = new Date()
-          // We need to post the invite to the users' mailbox contract
-          let invite = new Events.PostMessage({message: this.$store.state.currentGroupId, messageType: Events.PostMessage.TypeInvite, sentDate: date.toString()}, mailbox)
-          await backend.publishLogEntry(state.attributes.mailbox, invite)
-          // We need to make a record of the invitation in the group's contract
-          let latest = await backend.latestHash(this.$store.state.currentGroupId)
-          let invited = new Events.RecordInvitation({ username: member.name, inviteHash: invite.toHash(), sentDate: date.toString() }, latest)
-          await backend.publishLogEntry(this.$store.state.currentGroupId, invited)
-        }
+
+        // TODO: as members are successfully invited display in a
+        // seperate invitees grid and add them to some validation for duplicate invites
+        await Promise.all(
+          this.members.map(async (member) => {
+            // We need to have the latest mailbox attribute for the user
+            const state = await latestContractState(member.contractId)
+            const mailbox = await backend.latestHash(state.attributes.mailbox)
+            const sentDate = new Date().toString()
+
+            // We need to post the invite to the users' mailbox contract
+            const invite = new Events.PostMessage(
+              {
+                message: this.$store.state.currentGroupId,
+                messageType: Events.PostMessage.TypeInvite,
+                sentDate
+              },
+              mailbox
+            )
+            await backend.publishLogEntry(state.attributes.mailbox, invite)
+
+            // We need to make a record of the invitation in the group's contract
+            const latest = await backend.latestHash(this.$store.state.currentGroupId)
+            const invited = new Events.RecordInvitation(
+              {
+                username: member.name,
+                inviteHash: invite.toHash(),
+                sentDate
+              },
+              latest
+            )
+            await backend.publishLogEntry(this.$store.state.currentGroupId, invited)
+          })
+        )
         this.invited = true
-      } catch (ex) {
-        console.log(ex)
+      } catch (error) {
+        console.error(error)
         // TODO: Create More descriptive errors
         this.errorMsg = L('Failed to Invite Users')
       }

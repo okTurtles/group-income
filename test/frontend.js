@@ -15,7 +15,10 @@ const exec = require('child_process').execFileSync
 const fs = require('fs')
 
 describe('Frontend', function () {
-  var n = Nightmare({ show: !!process.env.SHOW_BROWSER, height: 900 })
+  const n = Nightmare({
+    show: !!process.env.SHOW_BROWSER,
+    height: 900
+  })
   after(() => { n.end() })
 
   it('Should start the backend server if necessary', function () {
@@ -178,25 +181,34 @@ describe('Frontend', function () {
         .evaluate(() => !!document.getElementById('successMsg'))
       should(created).equal(true)
     })
+
     it('Should invite members to group', async function () {
       this.timeout(4000)
-      await n.click('#nextButton')
-        .wait(() => !!document.getElementById('addButton'))
-      let count = await n.insert('#searchUser', username)
+
+      await n
+        .click('#nextButton')
+        .wait(() => Boolean(document.querySelector('#addButton')))
+
+      const count = await n
+        .wait(() => Boolean(document.querySelector('#addButton')))
+        .insert('#searchUser', username)
         .click('#addButton')
         .wait(() => document.querySelectorAll('.member').length > 0)
         .click('.delete')
         .wait(() => document.querySelectorAll('.member').length < 1)
         .evaluate(() => +document.querySelectorAll('.member').length)
       should(count).equal(0)
-      let created = await n.insert('#searchUser', username)
+
+      const created = await n
+        .insert('#searchUser', username)
         .click('#addButton')
         .wait(() => document.querySelectorAll('.member').length > 0)
         .click('button[type="submit"]')
-        .wait(() => !!document.getElementById('successMsg'))
-        .evaluate(() => !!document.getElementById('successMsg'))
+        .wait(() => !!document.querySelector('.notification.is-success'))
+        .evaluate(() => !!document.querySelector('.notification.is-success'))
       should(created).equal(true)
     })
+
     it('Should Receive Message and Invite', async function () {
       this.timeout(80000)
       await n.goto(page('mailbox'))

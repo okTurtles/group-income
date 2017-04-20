@@ -54,6 +54,7 @@
     "node-uuid": "1.4.8",
     "objection": "0.7.9",
     "poop": "2.0.2",
+    "prettier-standard": "^4.1.0",
     "primus": "6.1.0",
     "primus-responder": "1.0.4",
     "primus-rooms": "3.4.1",
