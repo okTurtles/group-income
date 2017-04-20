@@ -43,8 +43,8 @@ const mutations = {
     Vue.set(state.contracts, contractId, type)
     store.registerModule(contractId, {...Events[type].vuex, ...{state: data}})
     // we've successfully received it back, so remove it from expectation pending
-    let index = state.pending.indexOf(contractId)
-    index > -1 && state.pending.splice(index, 1)
+    const index = state.pending.indexOf(contractId)
+    state.pending.includes(contractId) && state.pending.splice(index, 1)
   },
   removeContract (state, contractId) {
     store.unregisterModule(contractId)
@@ -73,9 +73,8 @@ const mutations = {
     state.position = position
   },
   pending (state, contractId) {
-    if (!state.contracts[contractId]) {
-      let index = state.pending.indexOf(contractId)
-      index === -1 && state.pending.push(contractId)
+    if (!state.contracts[contractId] && !state.pending.includes(contractId)) {
+      state.pending.push(contractId)
     }
   }
 }
@@ -164,7 +163,7 @@ const actions = {
     {contractId, hash, entry}: {contractId: string, hash: string, entry: Object}
   ) {
     // verify we're expecting to hear from this contract
-    if (state.pending.indexOf(contractId) === -1 && !state.contracts[contractId]) {
+    if (!state.pending.includes(contractId) && !state.contracts[contractId]) {
       // TODO: use a global notification system to both display a notification
       //       and throw an exception and write a log message.
       return console.error(`NOT EXPECTING EVENT!`, contractId, entry)
