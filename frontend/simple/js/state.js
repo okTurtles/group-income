@@ -99,6 +99,27 @@ const getters = {
   unreadMessageCount (state) {
     let mailboxContract = store.getters.mailboxContract
     return mailboxContract && mailboxContract.messages.filter((msg) => !msg.read).length
+  },
+  identity (state) {
+    for (let [key, value] of Object.entries(state.contracts)) {
+      if (value === 'IdentityContract') {
+        return key
+      }
+    }
+    return null
+  },
+  picture (state) {
+    let identity = store.getters.identity
+    return identity && state[identity].attributes.picture
+  },
+  groupsByName (state) {
+    let groups = []
+    for (let [key, value] of Object.entries(state.contracts)) {
+      if (value === 'GroupContract') {
+        groups.push({groupName: state[key].groupName, contractId: key})
+      }
+    }
+    return groups
   }
 }
 

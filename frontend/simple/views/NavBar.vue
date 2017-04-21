@@ -11,7 +11,7 @@
         <div class="nav-center">
           <!-- TODO: use v-for to dynamically generate these? -->
           <router-link class="nav-item is-tab" active-class="is-active" to="new-group" id="CreateGroup"><i18n>Start a group</i18n></router-link>
-          <!-- <router-link class="nav-item is-tab" active-class="is-active" to="user" v-show="$store.state.loggedIn"><i18n>Profile</i18n></router-link> -->
+          <router-link class="nav-item is-tab" active-class="is-active" to="user" v-show="$store.state.loggedIn"><i18n>Profile</i18n></router-link>
           <!-- <router-link class="nav-item is-tab" active-class="is-active" to="user-group" v-show="$store.state.loggedIn"><i18n>Group</i18n></router-link> -->
           <router-link class="nav-item is-tab" active-class="is-active" to="pay-group" v-show="$store.state.loggedIn"><i18n>Pay Group</i18n></router-link>
           <!-- <router-link class="nav-item is-tab" active-class="is-active" to="ejs-page" id="testEJS"><i18n>EJS test</i18n></router-link> -->
@@ -33,7 +33,7 @@
               {{$store.state.loggedIn ? 'Sign Out' : 'Log In'}}
             </a>
             <div class="button" style="border: 0" v-if="$store.state.loggedIn">
-              <img src="http://bulma.io/images/placeholders/16x16.png" data-pin-nopin="true">&nbsp;<strong><i18n>Welcome</i18n>, {{$store.state.loggedIn}}</strong>
+              <img v-bind:src="$store.getters.picture" data-pin-nopin="true">&nbsp;<strong>Welcome, {{$store.state.loggedIn}}</strong>
             </div>
           </span>
         </div>

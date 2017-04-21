@@ -102,7 +102,6 @@
                 <div class="media">
                   <div class="media-left" v-on:click="read(index)">
                     <p class="image is-64x64">
-                      <img src="http://bulma.io/images/placeholders/128x128.png">
                     </p>
                   </div>
                   <div class="media-content inbox-message" v-on:click="read(index)">
@@ -141,9 +140,11 @@ import * as Events from '../../../shared/events'
 import {HapiNamespace} from '../js/backend/hapi'
 import {latestContractState} from '../js/state'
 import L from '../js/translations'
+import Picture from './ProfilePicture.vue'
 var namespace = new HapiNamespace()
 export default {
   name: 'Mailbox',
+  components: [Picture],
   mounted: function () {
     this.fetchData()
   },

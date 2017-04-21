@@ -105,6 +105,8 @@ export default {
         await backend.publishLogEntry(mailbox.toHash(), mailbox)
         let attribute = new Events.SetAttribute({attribute: {name: 'mailbox', value: mailbox.toHash()}}, user.toHash())
         await backend.publishLogEntry(user.toHash(), attribute)
+        let picture = new Events.SetAttribute({attribute: {name: 'picture', value: 'http://bulma.io/images/placeholders/16x16.png'}}, attribute.toHash())
+        await backend.publishLogEntry(user.toHash(), picture)
         await namespace.register(this.name, user.toHash())
         // TODO: Just add cryptographic magic
         this.response = 'success'

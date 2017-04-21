@@ -98,6 +98,7 @@ export class HashableEntry extends Hashable {
       parentHash: parentHash || '',
       data
     })
+    console.log(this._obj)
     this._obj.type = this.constructor.name
   }
   toResponse (contractId: string) {
@@ -262,7 +263,7 @@ export class GroupContract extends HashableContract {
     ['founderUsername', 'string']
   ])
   static vuex = GroupContract.Vuex({
-    state: { votes: [], payments: [], members: [], invitees: [] },
+    state: { votes: [], payments: [], members: [], invitees: [], profiles: {} },
     mutations: {
       Payment (state, data) { state.payments.push(data) },
       Vote (state, data) { state.votes.push(data) },
@@ -280,6 +281,13 @@ export class GroupContract extends HashableContract {
       },
       AcknowledgeFounder (state, data) {
         if (!state.members.find(username => username === data.username)) { state.members.push(data.username) }
+      },
+      // TODO: remove group profile when leave group is implemented
+      ProfileAdjustment (state, data) {
+        let profile = state.profiles[data.username]
+        if (!profile) { profile = state.profiles[data.username] = {} }
+        if (!data.value) { return delete profile[data.name] }
+        profile[data.name] = data.value
       }
     }
   })
@@ -327,9 +335,12 @@ export class DeclineInvitation extends HashableAction {
     ['declinedDate', 'string']
   ])
 }
-
 export class ProfileAdjustment extends HashableAction {
-  // TODO: this
+  static fields = ProfileAdjustment.Fields([
+    ['username', 'string'],
+    ['name', 'string'],
+    ['value', 'string']
+  ])
 }
 
 // =======================
@@ -379,7 +390,6 @@ export class MailboxContract extends HashableContract {
   static vuex = MailboxContract.Vuex({
     state: { messages: [], nextId: 0 },
     mutations: {
-      // TODO: verify the correctness of 'nextId' in more detail later
       PostMessage (state, data) { state.messages.push({...data, id: state.nextId++}) },
       AuthorizeSender (state, data) { state.authorizations[AuthorizeSender.authorization.name].data = data.sender }
     }

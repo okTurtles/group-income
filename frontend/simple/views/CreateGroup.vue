@@ -120,6 +120,7 @@
                 <p class="title is-5"><i18n>How much income will your group seek to provide</i18n></p>
                 <div class="field has-addons">
                   <p class="control">
+                    <!--- TODO: Make this a real field-->
                     <span class="select">
                       <select>
                         <option>USD</option>
