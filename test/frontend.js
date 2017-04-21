@@ -53,7 +53,7 @@ describe('Frontend', function () {
 
   describe('Event Log Test', function () {
     it('Should Append to the log', async function () {
-      this.timeout(4000) // this one takes a while for some reason
+      this.timeout(5000) // this one takes a while for some reason
       await n.goto(page('event-log'))
         .should.finally.containEql({ code: 200, url: page('event-log') })
       const result = await n.wait('#random').evaluate(() => ({
@@ -173,19 +173,20 @@ describe('Frontend', function () {
     })
 
     it('Should create a group', async function () {
-      this.timeout(6000)
+      this.timeout(10000)
       await n.click('#CreateGroup')
       const created = await n
         .insert('input[name="groupName"]', 'Test Group')
         .insert('textarea[name="sharedValues"]', 'Testing this software')
         .insert('input[name="groupName"]', 'Test Group')
-        .insert('input[name="incomeProvided"]', '200')
-        .insert('input[name="proxyChangePercentage"]', '75')
-        .insert('input[name="proxyMemberApprovalPercentage"]', '75')
-        .insert('input[name="proxyMemberRemovalPercentage"]', '75')
+        .insert('input[name="incomeProvided"]', 200)
+        // .insert('input[name="proxyChangePercentage"]', 75)
+        // .insert('input[name="proxyMemberApprovalPercentage"]', 75)
+        // .insert('input[name="proxyMemberRemovalPercentage"]', 75)
         .select('select[name="contributionPrivacy"]', 'Very Private')
         .click('button[type="submit"]')
         // Should get to invite page:
+        .wait(500)
         .wait(() => !!document.getElementById('addButton'))
         .evaluate(() => !!document.getElementById('addButton'))
       should(created).equal(true)
@@ -193,10 +194,6 @@ describe('Frontend', function () {
 
     it('Should invite members to group', async function () {
       this.timeout(4000)
-
-      await n
-        .click('#nextButton')
-        .wait(() => Boolean(document.querySelector('#addButton')))
 
       const count = await n
         .wait(() => Boolean(document.querySelector('#addButton')))
