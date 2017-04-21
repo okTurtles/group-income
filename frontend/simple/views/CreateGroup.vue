@@ -188,7 +188,7 @@ import L from '../js/translations'
 export default {
   name: 'CreateGroupView',
   methods: {
-    async submit () {
+    submit: async function () {
       try {
         await this.$validator.validateAll()
       } catch (ex) {

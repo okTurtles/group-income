@@ -185,8 +185,9 @@ describe('Frontend', function () {
         .insert('input[name="proxyMemberRemovalPercentage"]', '75')
         .select('select[name="contributionPrivacy"]', 'Very Private')
         .click('button[type="submit"]')
-        .wait(() => !!document.getElementById('successMsg'))
-        .evaluate(() => !!document.getElementById('successMsg'))
+        // Should get to invite page:
+        .wait(() => !!document.getElementById('addButton'))
+        .evaluate(() => !!document.getElementById('addButton'))
       should(created).equal(true)
     })
 
