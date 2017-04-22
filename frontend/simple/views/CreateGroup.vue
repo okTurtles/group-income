@@ -1,11 +1,12 @@
 <template>
-  <section class="section">
+  <section id="create-group-page" class="section">
     <!-- TODO: use Bulma's .field -->
     <!-- TODO: center using .centered like SignUp.vue -->
     <div class="columns">
       <div class="column is-1"></div>
       <div class="column is-10" >
-        <form ref="form"
+        <form
+          ref="form"
           name="CreateGroupForm"
           @submit.prevent="submit"
         >
@@ -43,7 +44,7 @@
               </div>
               <div class="box">
                 <p class="title is-5"><i18n>What percentage of members are required to change the rules?</i18n></p>
-                <p class="title is-3 percentage">{{changePercentage}}%</p>
+                <p class="title is-3 percentage">{{ changePercentage }}%</p>
                 <input
                   type="range"
                   v-validate
@@ -65,7 +66,7 @@
               <p class="title is-4"><i18n>Member relationships</i18n></p>
               <div class="box">
                 <p class="title is-5"><i18n>How many members should it take to approve a new member?</i18n></p>
-                <p class="title is-3">{{memberApprovalPercentage}}%</p>
+                <p class="title is-3">{{ memberApprovalPercentage }}%</p>
                 <input
                   type="range"
                   min="0"
@@ -90,7 +91,7 @@
               </div>
               <div class="box">
                 <p class="title is-5"><i18n>How many members should it take to remove a member?</i18n></p>
-                <p class="title is-3">{{memberRemovalPercentage}}%</p>
+                <p class="title is-3">{{ memberRemovalPercentage }}%</p>
                 <input
                   type="range"
                   min="0"
@@ -160,23 +161,14 @@
                 </i18n>
               </div>
               <div class="has-text-centered button-box">
-                <div id="errorMsg" v-if="errorMsg" class="help is-danger">{{errorMsg}}</div>
-                <div id="successMsg" v-if="created" class="text-message is-success"><i18n>Success</i18n></div>
+                <div id="errorMsg" v-if="errorMsg" class="help is-danger">{{ errorMsg }}</div>
                 <button
                   class="button is-success is-large"
-                  v-if="!created"
                   type="submit"
+                  @click="submit"
                 >
                   <i18n>Create Group</i18n>
                 </button>
-                <a
-                  class="button is-warning is-large"
-                  id="nextButton"
-                  v-if="created"
-                  @click="next"
-                >
-                  <i18n>Next: Invite Group Members</i18n>
-                </a>
               </div>
             </div>
           </div>
@@ -192,49 +184,47 @@ import Vue from 'vue'
 import backend from '../js/backend'
 import * as Events from '../../../shared/events'
 import L from '../js/translations'
+
 export default {
   name: 'CreateGroupView',
   methods: {
-    next () {
-      this.$router.push({path: '/invite'})
-    },
-    async submit () {
-      let success
+    submit: async function () {
       try {
-        success = await this.$validator.validateAll()
+        await this.$validator.validateAll()
       } catch (ex) {
-        const firsErr = document.querySelector('span.help.is-danger')
-        const control = firsErr.dataset.control
-        const ctrlEl = document.querySelector(`input[name="${control}"], textarea[name="${control}"]`)
-        ctrlEl.focus()
-        ctrlEl.scrollIntoView()
+        const { control } = document.querySelector('span.help.is-danger').dataset
+        document
+          .querySelector(`input[name="${control}"], textarea[name="${control}"]`)
+          .focus()
+          .scrollIntoView()
+        return
       }
 
-      if (success) {
-        try {
-          this.errorMsg = null
-          let entry = new Events.GroupContract({
-            authorizations: [Events.CanModifyAuths.dummyAuth()],
-            groupName: this.groupName,
-            sharedValues: this.sharedValues,
-            changePercentage: this.changePercentage,
-            memberApprovalPercentage: this.memberApprovalPercentage,
-            memberRemovalPercentage: this.memberRemovalPercentage,
-            incomeProvided: this.incomeProvided,
-            contributionPrivacy: this.contributionPrivacy,
-            founderUsername: this.$store.state.loggedIn
-          })
-          let hash = entry.toHash()
-          await backend.subscribe(hash)
-          Vue.events.$once(hash, (contractId, entry) => {
-            this.$store.commit('setCurrentGroupId', hash)
-          })
-          await backend.publishLogEntry(hash, entry)
-          this.created = true
-        } catch (ex) {
-          console.log(ex)
-          this.errorMsg = L('Failed to Create Group')
-        }
+      try {
+        this.errorMsg = null
+        const entry = new Events.GroupContract({
+          authorizations: [Events.CanModifyAuths.dummyAuth()],
+          groupName: this.groupName,
+          sharedValues: this.sharedValues,
+          changePercentage: this.changePercentage,
+          memberApprovalPercentage: this.memberApprovalPercentage,
+          memberRemovalPercentage: this.memberRemovalPercentage,
+          incomeProvided: this.incomeProvided,
+          contributionPrivacy: this.contributionPrivacy,
+          founderUsername: this.$store.state.loggedIn
+        })
+        const hash = entry.toHash()
+        await backend.subscribe(hash)
+        Vue.events.$once(hash, (contractId, entry) => {
+          this.$store.commit('setCurrentGroupId', hash)
+        })
+        await backend.publishLogEntry(hash, entry)
+
+        // Take them to the invite group members page.
+        this.$router.push({path: '/invite'})
+      } catch (error) {
+        console.error(error)
+        this.errorMsg = L('Failed to Create Group')
       }
     }
   },
@@ -247,7 +237,6 @@ export default {
       memberRemovalPercentage: 80,
       incomeProvided: null,
       contributionPrivacy: 'Very Private',
-      created: false,
       errorMsg: null,
       // this determines whether or not to render proxy components for nightmare
       dev: process.env.NODE_ENV === 'development'
