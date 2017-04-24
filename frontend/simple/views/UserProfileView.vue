@@ -3,10 +3,26 @@
     <div class="columns">
       <div class="column is-one-third"></div>
       <div class="column" >
-        <form ref="form"
+        <form ref="ProfileForm"
               name="ProfileForm"
               @submit.prevent="save"
+              data-vv-scope="ProfileForm"
         >
+          <p
+                  class="notification is-success has-text-centered"
+                  v-if="profileSaved"
+                  id="ProfileSaveSuccess"
+          >
+            <i class='notification-icon fa fa-check'></i>
+            <i18n>Profile saved successfully!</i18n>
+          </p>
+          <p
+                  class="notification is-danger has-text-centered"
+                  v-if="errorMsg"
+          >
+            <i class='notification-icon fa fa-exclamation-triangle'></i>
+            {{errorMsg}}
+          </p>
           <div class="panel">
             <p class="panel-heading">
               <i18n>Profile Attributes</i18n>
@@ -18,71 +34,53 @@
                 </p>
               </figure>
               <div class="media-content">
-                <strong><i18n>Profile Picture</i18n>:</strong> <input class="input" type="text" v-model="edited.picture" placeholder="http://">
+                <strong><i18n>Profile Picture</i18n>:</strong> <input class="input" type="text" v-validate data-vv-rules="url" name="profilePicture" v-model="edited.picture" placeholder="http://">
+                <i18n v-if="errors.has('ProfileForm.profilePicture')" class="help is-danger">
+                  The profile picture must be a valid url
+                </i18n>
               </div>
             </div>
             <div class="panel-block">
               <div class="media-content">
-                <strong><i18n>First Name</i18n>:</strong> <input class="input" type="text" v-model="edited.firstName" placeholder="First Name">
+                <strong><i18n>Display Name</i18n>:</strong> <input class="input" name="displayName" type="text" v-model="edited.displayName" placeholder="Name">
               </div>
             </div>
             <div class="panel-block">
               <div class="media-content">
-                <strong><i18n>Last Name</i18n>:</strong> <input class="input" type="text" v-model="edited.lastName" placeholder="Last Name">
+                <strong><i18n>Email</i18n>:</strong> <input class="input" name="profileEmail" type="text" v-validate data-vv-rules="email" v-model="edited.email" placeholder="Email">
+                <i18n v-if="errors.has('ProfileForm.profileEmail')" class="help is-danger">Not an email</i18n>
               </div>
             </div>
             <div class="panel-block">
               <div class="media-content">
-                <strong><i18n>Email</i18n>:</strong> <input class="input" type="text" v-validate data-vv-rules="email" v-model="edited.email" placeholder="Email">
-              </div>
-            </div>
-            <div class="panel-block">
-              <div class="media-content">
-                <strong><i18n>Bio</i18n>:</strong> <textarea type="text" class="textarea" v-model="edited.bio" placeholder="Bio"></textarea>
-              </div>
-            </div>
-            <div class="panel-block">
-              <div class="media-content">
-                <strong><i18n>Address Line 1</i18n>:</strong> <input class="input" type="text" v-model="edited.addressLn1" placeholder="Address Line 1">
-              </div>
-            </div>
-            <div class="panel-block">
-              <div class="media-content">
-                <strong><i18n>Address Line 2</i18n>:</strong> <input class="input" type="text" v-model="edited.addressLn2" placeholder="Address Line 2">
-              </div>
-            </div>
-            <div class="panel-block">
-              <div class="media-content">
-                <strong><i18n>Address Line 3</i18n>:</strong> <input class="input" type="text" v-model="edited.addressLn3" placeholder="Address Line 3">
-              </div>
-            </div>
-            <div class="panel-block">
-              <div class="media-content">
-                <strong><i18n>City</i18n>:</strong> <input class="input" type="text" v-model="edited.addressCity" placeholder="City">
-              </div>
-            </div>
-            <div class="panel-block">
-              <div class="media-content">
-                <strong><i18n>State/Province</i18n>:</strong> <input class="input" type="text" v-model="edited.addressStPr" placeholder="State/Province">
-              </div>
-            </div>
-            <div class="panel-block">
-              <div class="media-content">
-                <strong><i18n>Country</i18n>:</strong> <input class="input" type="text" v-model="edited.addressCountry" placeholder="Country">
+                <strong><i18n>Bio</i18n>:</strong> <textarea type="text" class="textarea" name="bio" v-model="edited.bio" placeholder="Bio"></textarea>
               </div>
             </div>
           </div>
           <div class="has-text-centered button-box">
-            <div id="errorMsg" v-if="errorMsg" class="help is-danger">{{errorMsg}}</div>
-            <div id="successMsg" v-if="profileSaved" class="created"><i18n>Success</i18n></div>
-            <button class="button is-success is-large" type="submit"><i18n>Save Profile</i18n></button>
+            <button class="button is-success is-large" id='SaveProfileButton' :disabled="errors.any('ProfileForm')" type="submit"><i18n>Save Profile</i18n></button>
           </div>
         </form>
         <br>
-        <form ref="form"
+        <form ref="GroupProfileForm"
               name="GroupProfileForm"
               @submit.prevent="saveGroupProfile"
+              data-vv-scope="GroupProfileForm"
         >
+          <p
+                  class="notification is-success has-text-centered"
+                  v-if="groupProfileSaved"
+          >
+            <i class='notification-icon fa fa-check'></i>
+            <i18n>Group Profile saved successfully!</i18n>
+          </p>
+          <p
+                  class="notification is-danger has-text-centered"
+                  v-if="groupErrorMsg"
+          >
+            <i class='notification-icon fa fa-exclamation-triangle'></i>
+            {{groupErrorMsg}}
+          </p>
           <div class="panel">
             <p class="panel-heading">
               <i18n> Group Profile Attributes</i18n>
@@ -106,7 +104,7 @@
                     <option>Bitcoin</option>
                     <option>Amex</option>
                     <option>Visa</option>
-                    <option>Blood</option>
+                    <option>Paypal</option>
                   </select>
                 </span>
               </div>
@@ -114,19 +112,62 @@
             <div class="panel-block" v-if="currentGroupContractId">
               <div class="media-content">
                 <strong><i18n>Contribution Amount</i18n>:</strong>
-                <input class="input" type="text" name="contributionAmount"
-                       placeholder="Contribution Amount"
-                       data-vv-as="Contribution Amount"
-                       v-validate data-vv-rules="decimal:2"
-                       v-model="editedGroupProfile.contributionAmount"
-                >
+                <div class="field has-addons">
+                  <p class="control">
+                    <!--- TODO: Make this a real field-->
+                    <span class="select">
+                      <select v-model="editedGroupProfile.contributionCurrency">
+                        <option>USD</option>
+                        <option>BTC</option>
+                        <option>EUR</option>
+                      </select>
+                    </span>
+                  </p>
+                  <p class="control">
+                    <input class="input" type="text" name="contributionAmount"
+                           placeholder="Contribution Amount"
+                           data-vv-as="Contribution Amount"
+                           v-validate data-vv-rules="decimal:2"
+                           v-model="editedGroupProfile.contributionAmount"
+                    >
+                  </p>
+                </div>
+                <i18n v-if="errors.has('GroupProfileForm.contributionAmount')" data-control="incomeProvided" class="help is-danger">
+                  The Contribution Amount must be a numeric currency amount and may contain 2 decimal points.
+                </i18n>
+              </div>
+            </div>
+            <div class="panel-block" v-if="currentGroupContractId">
+              <div class="media-content">
+                <strong><i18n>Receiving Limit</i18n>:</strong>
+                <div class="field has-addons">
+                  <p class="control">
+                    <!--- TODO: Make this a real field-->
+                    <span class="select">
+                      <select v-model="editedGroupProfile.receivingLimitCurrency">
+                        <option>USD</option>
+                        <option>BTC</option>
+                        <option>EUR</option>
+                      </select>
+                    </span>
+                  </p>
+                  <p class="control">
+                    <input class="input" type="text" name="receivingLimit"
+                           placeholder="Receiving Limit"
+                           data-vv-as="Receiving Limit"
+                           v-validate data-vv-rules="decimal:2"
+                           v-model="editedGroupProfile.receivingLimit"
+                    >
+                  </p>
+                </div>
+                <i18n v-if="errors.has('GroupProfileForm.receivingLimit')" data-control="incomeProvided" class="help is-danger">
+                  The Receiving Limit must be a numeric currency amount and may contain 2 decimal points.
+                </i18n>
               </div>
             </div>
           </div>
           <div class="has-text-centered button-box">
-            <div id="groupErrorMsg" v-if="groupErrorMsg" class="help is-danger">{{groupErrorMsg}}</div>
-            <div id="groupSuccessMsg" v-if="groupProfileSaved" class="created"><i18n>Success</i18n></div>
-            <button class="button is-success is-large" v-if="currentGroupContractId"><i18n>Save Group Profile</i18n></button>
+            <button class="button is-success is-large" :disabled="errors.any('GroupProfileForm')" v-if="currentGroupContractId"><i18n>Save Group Profile</i18n></button>
           </div>
         </form>
       </div>
@@ -150,19 +191,15 @@ export default {
       edited: {
         picture: this.$store.state[this.$store.getters.identity].attributes.picture,
         bio: this.$store.state[this.$store.getters.identity].attributes.bio,
-        firstName: this.$store.state[this.$store.getters.identity].attributes.firstName,
-        lastName: this.$store.state[this.$store.getters.identity].attributes.lastName,
-        email: this.$store.state[this.$store.getters.identity].attributes.email,
-        addressLn1: this.$store.state[this.$store.getters.identity].attributes.addressLn1,
-        addressLn2: this.$store.state[this.$store.getters.identity].attributes.addressLn2,
-        addressLn3: this.$store.state[this.$store.getters.identity].attributes.addressLn3,
-        addressStPr: this.$store.state[this.$store.getters.identity].attributes.addressStPr,
-        addressCity: this.$store.state[this.$store.getters.identity].attributes.addressCity,
-        addressCountry: this.$store.state[this.$store.getters.identity].attributes.addressCountry
+        displayName: this.$store.state[this.$store.getters.identity].attributes.displayName,
+        email: this.$store.state[this.$store.getters.identity].attributes.email
       },
       editedGroupProfile: {
         paymentMethod: null,
-        contributionAmount: null
+        contributionAmount: null,
+        contributionCurrency: null,
+        receivingLimit: null,
+        receivingLimitCurrency: null
       },
       currentGroupContractId: null,
       errorMsg: null,
@@ -207,7 +244,7 @@ export default {
         this.groupProfileSaved = true
       } catch (ex) {
         console.log(ex)
-        this.groupErrorMsg = 'Failed to Save Profile'
+        this.groupErrorMsg = 'Failed to Save Group Profile'
       }
     }
   }

@@ -80,14 +80,8 @@ var router = new Router({
       component: UserProfileView,
       meta: {
         title: 'User Profile'
-      }
-    },
-    {
-      path: '/user/:username',
-      component: UserProfileView,
-      meta: {
-        title: 'User Profile'
-      }
+      },
+      beforeEnter: createEnterGuards(store, loginGuard)
     },
     {
       path: '/user-group',

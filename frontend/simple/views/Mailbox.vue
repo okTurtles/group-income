@@ -102,6 +102,7 @@
                 <div class="media">
                   <div class="media-left" v-on:click="read(index)">
                     <p class="image is-64x64">
+                      <profile-picture :username="message.from" width="64" height="64"></profile-picture>
                     </p>
                   </div>
                   <div class="media-content inbox-message" v-on:click="read(index)">
@@ -140,11 +141,11 @@ import * as Events from '../../../shared/events'
 import {HapiNamespace} from '../js/backend/hapi'
 import {latestContractState} from '../js/state'
 import L from '../js/translations'
-import Picture from './ProfilePicture.vue'
+import ProfilePicture from '../components/ProfilePicture.vue'
 var namespace = new HapiNamespace()
 export default {
   name: 'Mailbox',
-  components: [Picture],
+  components: {ProfilePicture},
   mounted: function () {
     this.fetchData()
   },

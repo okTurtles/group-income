@@ -8,6 +8,8 @@ import Vuex from 'vuex'
 import * as db from './database'
 import * as Events from '../../../shared/events'
 import backend from '../js/backend'
+import {HapiNamespace} from '../js/backend/hapi'
+var namespace = new HapiNamespace()
 // babel transforms lodash imports: https://github.com/lodash/babel-plugin-lodash#faq
 // for diff between 'lodash/map' and 'lodash/fp/map'
 // see: https://github.com/lodash/lodash/wiki/FP-Guide
@@ -100,18 +102,21 @@ const getters = {
     let mailboxContract = store.getters.mailboxContract
     return mailboxContract && mailboxContract.messages.filter((msg) => !msg.read).length
   },
+  // Logged In user's identity contract
   identity (state) {
     for (let [key, value] of Object.entries(state.contracts)) {
-      if (value === 'IdentityContract') {
+      if (value === 'IdentityContract' && state[key].attributes.name === state.loggedIn) {
         return key
       }
     }
     return null
   },
+  // Logged In user's picture
   picture (state) {
     let identity = store.getters.identity
     return identity && state[identity].attributes.picture
   },
+  // list of group name and contractId
   groupsByName (state) {
     let groups = []
     for (let [key, value] of Object.entries(state.contracts)) {
@@ -209,7 +214,7 @@ const actions = {
       // Subscribe to your fellow group member's identity contracts upon joining
       // TODO right an opposite series of operations for when someone leaves a group
       if (entry instanceof Events.AcceptInvitation && entry.data.username !== state.loggedIn) {
-        let identity = await backend.lookup(entry.data.username)
+        let identity = await namespace.lookup(entry.data.username)
         await backend.subscribe(identity)
         await dispatch('synchronize', identity)
       }

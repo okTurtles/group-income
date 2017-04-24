@@ -98,7 +98,6 @@ export class HashableEntry extends Hashable {
       parentHash: parentHash || '',
       data
     })
-    console.log(this._obj)
     this._obj.type = this.constructor.name
   }
   toResponse (contractId: string) {

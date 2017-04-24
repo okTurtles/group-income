@@ -94,7 +94,7 @@ describe('Frontend', function () {
 
   describe('Sign up Test', function () {
     it('Should register User', async function () {
-      this.timeout(4000)
+      this.timeout(10000)
       await n.goto(page('signup'))
         .wait('#name')
       let signedup = await n.insert('#name', username)
@@ -112,6 +112,20 @@ describe('Frontend', function () {
         !document.getElementById('email').innerText &&
         !document.getElementById('password').innerText)
         */
+    })
+    it('Test Profile Change', async function () {
+      this.timeout(10000)
+      let success = await n.click('#ProfileLink')
+        .wait('input[name="profilePicture"]')
+        .insert('input[name="profilePicture"]', 'http://wwww.test.com/cat.jpg')
+        .insert('textarea[name="bio"]', 'Born in a test case')
+        .insert('input[name="displayName"]', 'Tester T Test')
+        .insert('textarea[name="bio"]', 'Born in a test case')
+        .click('#SaveProfileButton')
+        .wait(() => !!document.getElementById('ProfileSaveSuccess'))
+        .evaluate(() => !!document.getElementById('ProfileSaveSuccess'))
+      should(success).equal(true)
+      // TODO Make more complex. Unfortunately bugs in Nightmare prevent the clearing and re-entering of fields
     })
     it('Test Logout and Login', async function () {
       this.timeout(4000)

@@ -57,7 +57,7 @@
                       <!-- TODO: use responsive figure:
                     http://bulma.io/documentation/elements/image/ -->
                       <!-- TODO: ideally these would be loaded from cache -->
-                      <img src="http://bulma.io/images/placeholders/128x128.png">
+                      <profile-picture :username="member.name" width="64" height="64"></profile-picture>
                     </p>
                   </div>
                   <div class="media-content">
@@ -102,6 +102,7 @@
 <script>
 import * as Events from '../../../shared/events'
 import backend from '../js/backend/'
+import ProfilePicture from '../components/ProfilePicture.vue'
 import { latestContractState } from '../js/state'
 import { HapiNamespace } from '../js/backend/hapi'
 import L from '../js/translations'
@@ -109,7 +110,8 @@ import L from '../js/translations'
 const namespace = new HapiNamespace()
 
 export default {
-  name: 'InviteView',
+  name: 'Invite',
+  components: {ProfilePicture},
   data () {
     return {
       searchUser: null,
