@@ -19,6 +19,7 @@ describe('Frontend', function () {
     show: !!process.env.SHOW_BROWSER,
     height: 900
   })
+
   after(() => { n.end() })
 
   it('Should start the backend server if necessary', function () {
@@ -26,6 +27,7 @@ describe('Frontend', function () {
   })
   let randInt = (min, max) => Math.floor(Math.random() * (max - min)) + min
   let username = `testuser${randInt(0, 10000000)}${randInt(10000000, 20000000)}`
+
   describe.skip('New user page', function () {
     it('Should create user George', function () {
       this.timeout(5000)
@@ -48,18 +50,19 @@ describe('Frontend', function () {
         .wait(() => document.getElementById('serverMsg').className.indexOf('danger') !== -1)
     })
   })
+
   describe('Event Log Test', function () {
     it('Should Append to the log', async function () {
-      this.timeout(4000) // this one takes a while for some reason
+      this.timeout(5000) // this one takes a while for some reason
       await n.goto(page('event-log'))
         .should.finally.containEql({ code: 200, url: page('event-log') })
-      let result = await n.wait('#random').evaluate(() => ({
+      const result = await n.wait('#random').evaluate(() => ({
         current: document.getElementById('LogPosition').innerText,
         eventCount: document.querySelectorAll('.event').length
       }))
       await n.click('#random')
         .wait(() => +document.getElementById('count').innerText > 0)
-      let obj = await n.insert('textarea[name="payload"]', 'This is a test payment event')
+      const obj = await n.insert('textarea[name="payload"]', 'This is a test payment event')
         .select('select[name="type"]', 'Payment')
         .click('#submit')
         .wait(() => +document.getElementById('count').innerText > 1)
@@ -70,22 +73,23 @@ describe('Frontend', function () {
       should(obj.eventCount).equal(result.eventCount + 2)
       should(obj.current !== result.current).equal(true)
     })
+
     // TODO: restore this based on the new TimeTravel
     it.skip('Should Traverse Log', async function () {
       this.timeout(4000)
       await n.goto(page('event-log'))
-      let prior = await n.evaluate(() => document.getElementById('LogPosition').innerText)
-      let initial = await n.wait('textarea[name="payload"]')
+      const prior = await n.evaluate(() => document.getElementById('LogPosition').innerText)
+      const initial = await n.wait('textarea[name="payload"]')
         .insert('textarea[name="payload"]', 'This is a test Group Payment Event')
         .select('select[name="type"]', 'Payment')
         .click('#submit')
         .wait(prior => document.getElementById('LogPosition').innerText !== prior, prior)
         .evaluate(() => document.getElementById('LogPosition').innerText)
-      let secondary = await n.click('a.backward')
+      const secondary = await n.click('a.backward')
         .wait(initial => document.getElementById('LogPosition').innerText !== initial, initial)
         .evaluate(() => document.getElementById('LogPosition').innerText)
       should(initial !== secondary).equal(true)
-      let tertiary = await n.click('a.forward')
+      const tertiary = await n.click('a.forward')
         .wait(secondary => document.getElementById('LogPosition').innerText !== secondary, secondary)
         .evaluate(() => document.getElementById('LogPosition').innerText)
       should(initial).equal(tertiary)
@@ -97,7 +101,7 @@ describe('Frontend', function () {
       this.timeout(10000)
       await n.goto(page('signup'))
         .wait('#name')
-      let signedup = await n.insert('#name', username)
+      const signedup = await n.insert('#name', username)
         .insert('#email', `test@testgroupincome.com`)
         .insert('#password', 'testtest')
         .click('button[type="submit"]')
@@ -129,7 +133,7 @@ describe('Frontend', function () {
     })
     it('Test Logout and Login', async function () {
       this.timeout(4000)
-      let response = await n.click('#LoginBtn')
+      const response = await n.click('#LoginBtn')
         .wait(() => document.getElementById('LoginBtn').classList.contains('is-primary'))
         .click('#LoginBtn')
         .wait(() => document.getElementById('LoginModal').classList.contains('is-active'))
@@ -140,6 +144,7 @@ describe('Frontend', function () {
         .evaluate(() => document.getElementById('LoginResponse').innerText)
       should(response).not.equal('Invalid username or password')
     })
+
     /* There appears to be a bug in nightmare that causes the insert and type commands to enter old data into the field if the
     insert or type commands or used more than once on the same field. This concatenates the old values to the new.
      This occurs regardless of whether you clear the field or not. Until its fixed skip this validation test
@@ -147,19 +152,19 @@ describe('Frontend', function () {
     it.skip('Test Validation', async function () {
       this.timeout(4000)
       await n.goto(page('signup'))
-      let badUsername = 't e s t'
-      let badEmail = `@fail`
-      let badPassword = `789`// six is so afraid
-      let denied = await n.insert('#name', badUsername)
+      const badUsername = 't e s t'
+      const badEmail = `@fail`
+      const badPassword = `789`// six is so afraid
+      const denied = await n.insert('#name', badUsername)
         .insert('#email', badEmail)
         .insert('#password', badPassword)
         .evaluate(() => document.querySelector('button[type="submit"]').disabled)
       should(denied).equal(true)
-      let usernameMsg = await n.evaluate(() => !!document.getElementById('badUsername'))
+      const usernameMsg = await n.evaluate(() => !!document.getElementById('badUsername'))
       should(usernameMsg).equal(true)
-      let emailMsg = await n.evaluate(() => !!document.getElementById('badEmail'))
+      const emailMsg = await n.evaluate(() => !!document.getElementById('badEmail'))
       should(emailMsg).equal(true)
-      let passwordMsg = await n.evaluate(() => !!document.getElementById('badPassword'))
+      const passwordMsg = await n.evaluate(() => !!document.getElementById('badPassword'))
       should(passwordMsg).equal(true)
     })
   })
@@ -179,29 +184,29 @@ describe('Frontend', function () {
       .evaluate(() => !!document.getElementById('HomeLogo'))
       should(signedup).equal(true)
     })
+
     it('Should create a group', async function () {
-      this.timeout(4000)
+      this.timeout(10000)
       await n.click('#CreateGroup')
-      let created = await n.insert('input[name="groupName"]', 'Test Group')
+      const created = await n
+        .insert('input[name="groupName"]', 'Test Group')
         .insert('textarea[name="sharedValues"]', 'Testing this software')
         .insert('input[name="groupName"]', 'Test Group')
-        .insert('input[name="incomeProvided"]', '200')
-        .insert('input[name="proxyChangePercentage"]', '75')
-        .insert('input[name="proxyMemberApprovalPercentage"]', '75')
-        .insert('input[name="proxyMemberRemovalPercentage"]', '75')
+        .insert('input[name="incomeProvided"]', 200)
+        // .insert('input[name="proxyChangePercentage"]', 75)
+        // .insert('input[name="proxyMemberApprovalPercentage"]', 75)
+        // .insert('input[name="proxyMemberRemovalPercentage"]', 75)
         .select('select[name="contributionPrivacy"]', 'Very Private')
         .click('button[type="submit"]')
-        .wait(() => !!document.getElementById('successMsg'))
-        .evaluate(() => !!document.getElementById('successMsg'))
+        // Should get to invite page:
+        .wait(500)
+        .wait(() => !!document.getElementById('addButton'))
+        .evaluate(() => !!document.getElementById('addButton'))
       should(created).equal(true)
     })
 
     it('Should invite members to group', async function () {
       this.timeout(4000)
-
-      await n
-        .click('#nextButton')
-        .wait(() => Boolean(document.querySelector('#addButton')))
 
       const count = await n
         .wait(() => Boolean(document.querySelector('#addButton')))
@@ -244,24 +249,24 @@ describe('Frontend', function () {
         .wait('#MailboxLink')
         .click('#MailboxLink')
         .wait(300)
-      let alert = await n.evaluate(() => !!document.getElementById('AlertNotification'))
+      const alert = await n.evaluate(() => !!document.getElementById('AlertNotification'))
       should(alert).equal(true)
-      let unread = await n.evaluate(() => +document.querySelector('.unread').innerText)
+      const unread = await n.evaluate(() => +document.querySelector('.unread').innerText)
       should(unread).equal(2)
-      let hasInvite = await n.evaluate(() => !!document.getElementsByClassName('invite-message'))
+      const hasInvite = await n.evaluate(() => !!document.getElementsByClassName('invite-message'))
       should(hasInvite).equal(true)
-      let hasMessage = await n.evaluate(() => !!document.getElementsByClassName('inbox-message'))
+      const hasMessage = await n.evaluate(() => !!document.getElementsByClassName('inbox-message'))
       should(hasMessage).equal(true)
-      unread = await n.click('.invite-message')
+      const newUnread = await n.click('.invite-message')
         .wait(300)
         .evaluate(() => +document.querySelector('.unread').innerText)
-      should(unread).equal(1)
+      should(newUnread).equal(1)
     })
   })
 
   describe('Test Localization Gathering Function', function () {
     it('Verify output of transform functions', function () {
-      let script = `
+      const script = `
         <template>
             <i18n comment = "Amazing Test">A test of sorts</i18n>
             <i18n comment="Amazing Test2">A test of wit</i18n>
@@ -273,13 +278,13 @@ describe('Frontend', function () {
         </script>
 
          `
-      let path = 'script.vue'
+      const path = 'script.vue'
       fs.writeFileSync(path, script)
-      let output = 'translation.json'
-      let args = ['scripts/i18n.js', path, output]
+      const output = 'translation.json'
+      const args = ['scripts/i18n.js', path, output]
       exec('node', args)
-      let json = fs.readFileSync(output, 'utf8')
-      let localeObject = JSON.parse(json)
+      const json = fs.readFileSync(output, 'utf8')
+      const localeObject = JSON.parse(json)
       should(localeObject).have.property('A test of sorts')
       should(localeObject).have.property('A test of wit')
       should(localeObject).have.property('A test of strength')
@@ -314,12 +319,9 @@ function page (page) {
 
 // returns the size of the document
 Nightmare.action('size', function (done) {
-  this.evaluate_now(function () {
-    var w = Math.max(document.documentElement.clientWidth, window.innerWidth || 0)
-    var h = Math.max(document.documentElement.clientHeight, window.innerHeight || 0)
-    return {
-      height: h,
-      width: w
-    }
+  this.evaluate_now(() => {
+    const width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0)
+    const height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0)
+    return { height, width }
   }, done)
 })

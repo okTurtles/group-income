@@ -100,28 +100,19 @@
 import * as Events from '../../../shared/events'
 import backend from '../js/backend/'
 import * as db from '../js/database'
-import {latestContractState} from '../js/state'
 import L from '../js/translations'
 export default {
   name: 'Join',
-  mounted () {
-    this.fetchData()
+  async created () {
+    if (!this.$store.state[this.$route.query.groupId]) {
+      await backend.subscribeAndSync(this.$route.query.groupId, true)
+    }
   },
   methods: {
-    fetchData: async function () {
-      let state = await latestContractState(this.$route.query.groupId)
-      if (!state.invitees.find(invitee => invitee === this.$store.state.loggedIn)) {
-        console.log(new Error('Invalid Invitation'))
-        await this.$store.dispatch('deleteMail', this.$route.query.inviteHash)
-        this.$router.push({path: '/mailbox'})
-      }
-      this.contract = state
-    },
     accept: async function () {
       try {
         this.errorMsg = null
-        await backend.subscribe(this.$route.query.groupId)
-        await this.$store.dispatch('syncContractWithServer', this.$route.query.groupId)
+        await backend.subscribeAndSync(this.$route.query.groupId)
         let latest = await db.recentHash(this.$route.query.groupId)
         let acceptance = new Events.AcceptInvitation({ username: this.$store.state.loggedIn, acceptanceDate: new Date() }, latest)
         this.$store.commit('setCurrentGroupId', this.$route.query.groupId)
@@ -136,6 +127,7 @@ export default {
     decline: async function () {
       try {
         this.errorMsg = null
+        await backend.unsubscribe(this.$route.query.groupId)
         let latest = await backend.latestHash(this.$route.query.groupId)
         let declination = new Events.DeclineInvitation({ username: this.$store.state.loggedIn, declinedDate: new Date() }, latest)
         await backend.publishLogEntry(this.$route.query.groupId, declination)
@@ -153,10 +145,13 @@ export default {
       }
     }
   },
+  computed: {
+    contract () {
+      return this.$store.state[this.$route.query.groupId]
+    }
+  },
   data () {
     return {
-      contract: { members: [] },
-      inviteHash: null,
       errorMsg: null
     }
   }

@@ -73,8 +73,17 @@ export class HapiBackend extends Backend {
   subscriptions () {
     return Object.keys(store.state.contracts)
   }
-  async subscribe (contractId: string) {
+  async subscribeAndSync (contractId: string, ephemeral: bool) {
+    await this.subscribe(contractId, ephemeral)
+    await store.dispatch('syncContractWithServer', contractId)
+  }
+  async subscribe (contractId: string, ephemeral: bool) {
     console.log('subscribing to:', contractId)
+    if (store.state.ephemerals[contractId]) {
+      store.commit('removeEphemeral', contractId)
+      store.commit('removeContract', contractId)
+    }
+    ephemeral && store.commit('addEphemeral', contractId)
     store.commit('pending', contractId)
     // we don't need to check if we're already subscribed, server handles that
     var res = await primus.sub(contractId)
@@ -87,6 +96,7 @@ export class HapiBackend extends Backend {
     }
     var res = await primus.unsub(contractId)
     store.commit('removeContract', contractId)
+    store.state.ephemerals[contractId] && store.commit('removeEphemeral', contractId)
     return res
   }
   // TODO add event strean method returning string.transform
@@ -105,12 +115,15 @@ export class HapiNamespace extends TrustedNamespace {
   async register (name: string, value: string) {
     console.log(`registering name:`, name)
     let response = await request.post(`${process.env.API_URL}/name`).send({name, value})
+    store.commit('addUser', {username: name, identity: value})
     return response.body.data
   }
   async lookup (name: string) {
     console.log(`lookup name:`, name)
     // TODO: should `name` be encodeURI'd?
+    if (store.state.users[name]) { return store.state.users[name] }
     let response = await request.get(`${process.env.API_URL}/name/${name}`)
+    store.commit('addUser', {username: name, identity: response.body.data.value})
     return response.body.data.value
   }
 }

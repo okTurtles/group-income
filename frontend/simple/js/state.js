@@ -26,7 +26,9 @@ const state = {
   currentGroupId: null,
   contracts: {}, // contractIds => type (for contracts we've successfully subscribed to)
   pending: [], // contractIds we've just published but haven't received back yet
-  loggedIn: false // TODO: properly handle this
+  loggedIn: false, // TODO: properly handle this
+  users: {}, // contains a shortlist of a users commonly interacted with identity contracts
+  ephemerals: {}// contains a list of contracts who's data is not saved permanent;y but an up to date state is needed to be maintained
 }
 
 // Mutations must be synchronous! Never call these directly!
@@ -77,6 +79,40 @@ const mutations = {
     if (!state.contracts[contractId] && !state.pending.includes(contractId)) {
       state.pending.push(contractId)
     }
+  },
+  addEphemeral (state, contractId) {
+    if (!state.ephemerals[contractId]) {
+      Vue.set(state.ephemerals, contractId, contractId)
+    }
+  },
+  setEphemeralPosition (state, {contractId, hash}) {
+    if (!state.ephemerals[contractId]) {
+      Vue.set(state.ephemerals, contractId, hash)
+    }
+  },
+  setEphemerals (state, ephemerals) {
+    for (let key of Object.keys(ephemerals)) {
+      Vue.set(state.ephemerals, key, ephemerals[key])
+    }
+  },
+  removeEphemeral (state, contractId) {
+    Vue.delete(state.ephemerals, contractId)
+  },
+  addUser (state, {username, identity}) {
+    if (!state.users[username]) {
+      Vue.set(state.users, username, identity)
+    }
+  },
+  clearUsers (state) {
+    state.users = {}
+  },
+  setUsers (state, users) {
+    for (let key of Object.keys(users)) {
+      Vue.set(state.users, key, users[key])
+    }
+  },
+  removeUser (state, username) {
+    Vue.delete(state.users, username)
   }
 }
 // https://vuex.vuejs.org/en/getters.html
@@ -104,19 +140,14 @@ const getters = {
   },
   // Logged In user's identity contract
   identity (state) {
-    for (let [key, value] of Object.entries(state.contracts)) {
-      if (value === 'IdentityContract' && state[key].attributes.name === state.loggedIn) {
-        return key
-      }
-    }
-    return null
+    return state.users[state.loggedIn]
   },
   // Logged In user's picture
   picture (state) {
     let identity = store.getters.identity
     return identity && state[identity].attributes.picture
   },
-  // list of group name and contractId
+  // list of group names and contractIds
   groupsByName (state) {
     let groups = []
     for (let [key, value] of Object.entries(state.contracts)) {
@@ -132,7 +163,7 @@ const actions = {
   // Used to update contracts to the current state that the server is aware of
   async syncContractWithServer ({dispatch}: {dispatch: Function}, contractId: string) {
     let latest = await backend.latestHash(contractId)
-    let recent = await db.recentHash(contractId)
+    let recent = state.ephemerals[contractId] || await db.recentHash(contractId)
     if (latest !== recent) {
       // TODO Do we need a since call that is inclusive? Since does not imply inclusion
       let events = await backend.eventsSince(contractId, recent || contractId)
@@ -166,6 +197,7 @@ const actions = {
   ) {
     await dispatch('saveSettings')
     await db.clearCurrentUser()
+    commit('clearUsers')
     for (let key of Object.keys(state.contracts)) {
       await backend.unsubscribe(key)
     }
@@ -193,7 +225,7 @@ const actions = {
       //       and throw an exception and write a log message.
       return console.error(`NOT EXPECTING EVENT!`, contractId, entry)
     }
-
+    let isEphemeral = !!state.ephemerals[contractId]
     const type = entry.type
     entry = Events[type].fromObject(entry, hash)
     if (entry instanceof Events.HashableContract) {
@@ -202,7 +234,7 @@ const actions = {
         // TODO: use a global notification object to handle this and all other errors
         return console.error(`${type} has non-null parentHash!`, entry)
       }
-      await db.addLogEntry(contractId, entry)
+      !isEphemeral && await db.addLogEntry(contractId, entry)
       commit('addContract', {contractId, type, data: entry.toVuexState()})
     } else if (entry instanceof Events.HashableAction) {
       const contractType = state.contracts[contractId]
@@ -213,18 +245,20 @@ const actions = {
       }
       // Subscribe to your fellow group member's identity contracts upon joining
       // TODO right an opposite series of operations for when someone leaves a group
-      if (entry instanceof Events.AcceptInvitation && entry.data.username !== state.loggedIn) {
+      if (!isEphemeral && entry instanceof Events.AcceptInvitation && entry.data.username !== state.loggedIn) {
         let identity = await namespace.lookup(entry.data.username)
         await backend.subscribe(identity)
-        await dispatch('synchronize', identity)
+        await dispatch('syncContractWithServer', identity)
       }
-      // TODO: verify each entry is signed by a group member
-      let hash = await db.addLogEntry(contractId, entry)
-      // If this is a duplicate the hash will be null
-      // This may occur if we get duplicate events over the network
-      if (!hash) { return }
+      if (!isEphemeral) {
+        // TODO: verify each entry is signed by a group member
+        let hash = await db.addLogEntry(contractId, entry)
+        // If this is a duplicate the hash will be null
+        // This may occur if we get duplicate events over the network
+        if (!hash) { return }
+      }
       commit(`${contractId}/${type}`, entry.data)
-
+      isEphemeral && commit('setEphemeralPosition', {contractId: contractId, hash: entry.hash})
       // NOTE: this is to support EventLog.vue + TimeTravel.vue
       //       it's not super important and we'll probably get rid of it later
       if (contractId === state.currentGroupId) {
@@ -252,7 +286,9 @@ const actions = {
         contractId,
         type: state.contracts[contractId],
         data: state[contractId]
-      }))
+      })),
+      ephemerals: state.ephemerals,
+      users: state.users
     }
     await db.saveSettings(state.loggedIn, settings)
     console.log('saveSettings:', settings)
@@ -265,6 +301,8 @@ const actions = {
       console.log('loadSettings:', settings)
       commit('setCurrentGroupId', settings.currentGroupId)
       commit('setContracts', settings.contracts || [])
+      commit('setEphemerals', settings.ephemerals)
+      commit('setUsers', settings.users)
     }
   }
 }
