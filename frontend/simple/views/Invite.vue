@@ -148,40 +148,37 @@ export default {
     async submit () {
       try {
         this.errorMsg = null
-
         // TODO: as members are successfully invited display in a
         // seperate invitees grid and add them to some validation for duplicate invites
-        await Promise.all(
-          this.members.map(async (member) => {
-            // We need to have the latest mailbox attribute for the user
-            const state = await latestContractState(member.contractId)
-            const mailbox = await backend.latestHash(state.attributes.mailbox)
-            const sentDate = new Date().toString()
+        for (let member of this.members) {
+          // We need to have the latest mailbox attribute for the user
+          const state = await latestContractState(member.contractId)
+          const mailbox = await backend.latestHash(state.attributes.mailbox)
+          const sentDate = new Date().toString()
 
-            // We need to post the invite to the users' mailbox contract
-            const invite = new Events.PostMessage(
-              {
-                message: this.$store.state.currentGroupId,
-                messageType: Events.PostMessage.TypeInvite,
-                sentDate
-              },
-              mailbox
-            )
-            await backend.publishLogEntry(state.attributes.mailbox, invite)
+          // We need to post the invite to the users' mailbox contract
+          const invite = new Events.PostMessage(
+            {
+              message: this.$store.state.currentGroupId,
+              messageType: Events.PostMessage.TypeInvite,
+              sentDate
+            },
+            mailbox
+          )
+          await backend.publishLogEntry(state.attributes.mailbox, invite)
 
-            // We need to make a record of the invitation in the group's contract
-            const latest = await backend.latestHash(this.$store.state.currentGroupId)
-            const invited = new Events.RecordInvitation(
-              {
-                username: member.name,
-                inviteHash: invite.toHash(),
-                sentDate
-              },
-              latest
-            )
-            await backend.publishLogEntry(this.$store.state.currentGroupId, invited)
-          })
-        )
+          // We need to make a record of the invitation in the group's contract
+          const latest = await backend.latestHash(this.$store.state.currentGroupId)
+          const invited = new Events.RecordInvitation(
+            {
+              username: member.name,
+              inviteHash: invite.toHash(),
+              sentDate
+            },
+            latest
+          )
+          await backend.publishLogEntry(this.$store.state.currentGroupId, invited)
+        }
         this.invited = true
       } catch (error) {
         console.error(error)
