@@ -123,9 +123,11 @@ describe('Frontend', function () {
       const response = await n
         // Logout
         .click('#LogoutBtn')
+        .wait(1000)
 
         // Open login modal
         .wait(() => document.querySelector('#LoginBtn'))
+        .wait(1000)
         .click('#LoginBtn')
 
         // Login
