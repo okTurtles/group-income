@@ -119,16 +119,24 @@ describe('Frontend', function () {
     })
 
     it('Test Logout and Login', async function () {
-      this.timeout(4000)
-      const response = await n.click('#LoginBtn')
-        .wait(() => document.getElementById('LoginBtn').classList.contains('is-primary'))
+      this.timeout(6000)
+      const response = await n
+        // Logout
+        .click('#LogoutBtn')
+
+        // Open login modal
+        .wait(() => document.querySelector('#LoginBtn'))
         .click('#LoginBtn')
-        .wait(() => document.getElementById('LoginModal').classList.contains('is-active'))
+
+        // Login
+        .wait(() => document.querySelector('#LoginModal.is-active'))
         .insert('#LoginName', username)
         .insert('#LoginPassword', 'testtest')
+        .wait(1000)
         .click('#LoginButton')
-        .wait(() => !!document.getElementById('LoginResponse'))
-        .evaluate(() => document.getElementById('LoginResponse').innerText)
+        .wait(() => Boolean(document.querySelector('#LoginResponse')))
+        .wait(1000)
+        .evaluate(() => document.querySelector('#LoginResponse').innerText)
       should(response).not.equal('Invalid username or password')
     })
 
