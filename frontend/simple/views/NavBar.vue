@@ -46,7 +46,14 @@
         </div>
         <div class="nav-right">
           <span class="nav-item is-tab control">
-            <router-link id="SignupBtn" v-show="!$store.state.loggedIn" class="button is-success" to="signup"><i18n>Sign Up</i18n></router-link>
+            <router-link
+              class="button is-success"
+              id="SignupBtn"
+              to="signup"
+              v-if="!$store.state.loggedIn"
+            >
+              <i18n>Sign Up</i18n>
+            </router-link>
             <a
               class="button is-primary"
               href="#"

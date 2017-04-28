@@ -8,8 +8,10 @@
           <div class="field">
             <p class="control has-icon">
               <input
+                autofocus
                 class="input"
                 data-vv-rules="required|regex:^\S+$"
+                ref="username"
                 id="LoginName"
                 name="name"
                 placeholder="username"
@@ -71,6 +73,9 @@ const namespace = new HapiNamespace()
 
 export default {
   name: 'LoginModal',
+  inserted () {
+    this.$refs.username.focus()
+  },
   methods: {
     async login () {
       try {
@@ -86,7 +91,8 @@ export default {
     },
     close () {
       this.$emit('close')
-    },
+    }
+  },
   data () {
     return {
       name: null,
