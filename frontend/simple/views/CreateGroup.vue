@@ -218,11 +218,10 @@ export default {
         await backend.subscribe(hash)
         Vue.events.$once(hash, (contractId, entry) => {
           this.$store.commit('setCurrentGroupId', hash)
+          // Take them to the invite group members page.
+          this.$router.push({path: '/invite'})
         })
         await backend.publishLogEntry(hash, entry)
-
-        // Take them to the invite group members page.
-        this.$router.push({path: '/invite'})
       } catch (error) {
         console.error(error)
         this.errorMsg = L('Failed to Create Group')
