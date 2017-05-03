@@ -90,6 +90,21 @@ const getters = {
   currentGroup (state) {
     return state[state.currentGroupId]
   },
+  groups (state) {
+    const ids = Object.keys(state.contracts).reduce((result, id) => {
+      if (state.contracts[id] === 'GroupContract') result.push(id)
+      return result
+    }, [])
+
+    if (ids && ids.length) {
+      return Object.keys(state).reduce((groups, key) => {
+        if (ids.includes(key)) groups.push(state[key])
+        return groups
+      }, [])
+    }
+
+    return []
+  },
   mailboxContract (state) {
     return store.getters.currentUserIdentityContract && state[store.getters.currentUserIdentityContract.attributes.mailbox]
   },

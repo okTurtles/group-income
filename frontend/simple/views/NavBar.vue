@@ -53,6 +53,12 @@
             </span>
           </router-link>
         </div>
+        <div class="nav-item">
+          <group-switcher
+            :currentGroupId="currentGroupId"
+            :groups="groups"
+          />
+        </div>
         <div class="nav-right">
           <span class="nav-item is-tab control">
             <router-link
@@ -103,10 +109,12 @@ div.nav-left
   a
     background-color: #fff
 div.nav-center
-  flex-shrink: inherit </style>
+  flex-shrink: inherit
+</style>
 
 <script>
 import Vue from 'vue'
+import GroupSwitcher from '../components/group-switcher.vue'
 import TimeTravel from './TimeTravel.vue'
 import LoginModal from '../components/login-modal.vue'
 
@@ -114,13 +122,25 @@ export default {
   name: 'NavBar',
   components: {
     LoginModal,
+    GroupSwitcher,
     TimeTravel
+  },
+  created: function () {
+    Vue.events.$on('loginModal', this.toggleModal)
   },
   created () {
     Vue.events.$on('loginModal', this.showLoginModal)
   },
   mounted () {
     global.addEventListener('keyup', this.handleKeyUp)
+  },
+  computed: {
+    currentGroupId () {
+      return this.$store.state.currentGroupId
+    },
+    groups () {
+      return this.$store.getters.groups
+    }
   },
   methods: {
     handleKeyUp (event) {
