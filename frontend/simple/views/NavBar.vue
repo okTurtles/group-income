@@ -33,7 +33,7 @@
               {{$store.state.loggedIn ? 'Sign Out' : 'Log In'}}
             </a>
             <div class="button" style="border: 0" v-if="$store.state.loggedIn">
-              <img v-bind:src="$store.getters.picture" data-pin-nopin="true">&nbsp;<strong>Welcome, {{$store.state.loggedIn}}</strong>
+              <img v-if="$store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.picture" v-bind:src="$store.getters.currentUserIdentityContract.attributes.picture" data-pin-nopin="true">&nbsp;<strong>Welcome, {{ ($store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.displayName ? $store.getters.currentUserIdentityContract.attributes.displayName : null) || $store.state.loggedIn.name}}</strong>
             </div>
           </span>
         </div>
@@ -94,9 +94,8 @@ div.nav-center
 <script>
 import Vue from 'vue'
 import TimeTravel from './TimeTravel.vue'
-import {HapiNamespace} from '../js/backend/hapi'
+import {namespace} from '../js/backend/hapi'
 import L from '../js/translations'
-var namespace = new HapiNamespace()
 export default {
   name: 'NavBar',
   components: {TimeTravel},
@@ -117,11 +116,12 @@ export default {
     login: async function () {
       try {
         // TODO: Insert cryptography here
-        let identity = await namespace.lookup(this.name)
-        console.log(`Retrieved identity ${identity}`)
-        await this.$store.dispatch('login', this.name)
+        let identityContractId = await namespace.lookup(this.name)
+        console.log(`Retrieved identity contract id ${identityContractId}`)
+        await this.$store.dispatch('login', {name: this.name, identityContractId})
         this.toggleModal()
       } catch (ex) {
+        console.log(ex)
         this.response = L('Invalid username or password')
         console.log(L('login failed'))
       }

@@ -52,7 +52,7 @@ describe('Frontend', function () {
   })
 
   describe('Event Log Test', function () {
-    it('Should Append to the log', async function () {
+    it.skip('Should Append to the log', async function () {
       this.timeout(5000) // this one takes a while for some reason
       await n.goto(page('event-log'))
         .should.finally.containEql({ code: 200, url: page('event-log') })
@@ -98,7 +98,7 @@ describe('Frontend', function () {
 
   describe('Sign up Test', function () {
     it('Should register User', async function () {
-      this.timeout(10000)
+      this.timeout(4000)
       await n.goto(page('signup'))
         .wait('#name')
       const signedup = await n.insert('#name', username)
@@ -121,7 +121,6 @@ describe('Frontend', function () {
       this.timeout(10000)
       let success = await n.click('#ProfileLink')
         .wait('input[name="profilePicture"]')
-        .insert('input[name="profilePicture"]', 'http://wwww.test.com/cat.jpg')
         .insert('textarea[name="bio"]', 'Born in a test case')
         .insert('input[name="displayName"]', 'Tester T Test')
         .insert('textarea[name="bio"]', 'Born in a test case')
@@ -171,7 +170,7 @@ describe('Frontend', function () {
 
   describe('Group Creation Test', function () {
     it('Create Additional User', async function () {
-      this.timeout(4000)
+      this.timeout(6000)
       await n.click('#LoginBtn')
         .wait(250)
       await n.click('#SignupBtn')
@@ -185,7 +184,7 @@ describe('Frontend', function () {
       should(signedup).equal(true)
     })
     it('Create Additional User 2', async function () {
-      this.timeout(4000)
+      this.timeout(6000)
       await n.click('#LoginBtn')
         .wait(250)
       await n.click('#SignupBtn')
@@ -246,7 +245,7 @@ describe('Frontend', function () {
     })
 
     it('Should Receive Message and Invite', async function () {
-      this.timeout(80000)
+      this.timeout(10000)
       await n.goto(page('mailbox'))
         .wait('#Inbox')
         .click('#ComposeLink')
@@ -265,7 +264,7 @@ describe('Frontend', function () {
         .wait(() => !!document.getElementById('LoginResponse'))
         .wait('#MailboxLink')
         .click('#MailboxLink')
-        .wait(300)
+        .wait(1000)
       const alert = await n.evaluate(() => !!document.getElementById('AlertNotification'))
       should(alert).equal(true)
       const unread = await n.evaluate(() => +document.querySelector('.unread').innerText)

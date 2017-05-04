@@ -30,7 +30,7 @@
             <div class="panel-block">
               <figure class="media-left">
                 <p class="image is-64x64">
-                  <img v-bind:src="$store.getters.picture">
+                  <img v-bind:src="$store.getters.currentUserIdentityContract.attributes.picture">
                 </p>
               </figure>
               <div class="media-content">
@@ -179,20 +179,21 @@
 import backend from '../js/backend'
 import * as Events from '../../../shared/events'
 import {latestContractState} from '../js/state'
+import L from '../js/translations'
 export default {
   name: 'UserProfileView',
   computed: {
     attributes () {
-      return this.$store.state[this.$store.getters.identity].attributes
+      return this.$store.getters.currentUserIdentityContract.attributes
     }
   },
   data () {
     return {
       edited: {
-        picture: this.$store.state[this.$store.getters.identity].attributes.picture,
-        bio: this.$store.state[this.$store.getters.identity].attributes.bio,
-        displayName: this.$store.state[this.$store.getters.identity].attributes.displayName,
-        email: this.$store.state[this.$store.getters.identity].attributes.email
+        picture: this.$store.getters.currentUserIdentityContract.attributes.picture,
+        bio: this.$store.getters.currentUserIdentityContract.attributes.bio,
+        displayName: this.$store.getters.currentUserIdentityContract.attributes.displayName,
+        email: this.$store.getters.currentUserIdentityContract.attributes.email
       },
       editedGroupProfile: {
         paymentMethod: null,
@@ -214,37 +215,37 @@ export default {
         this.profileSaved = false
         for (let key of Object.keys(this.edited)) {
           if (this.edited[key] && this.edited[key] !== this.attributes[key]) {
-            let identity = await backend.latestHash(this.$store.getters.identity)
-            let attribute = new Events.SetAttribute({attribute: {name: key, value: this.edited[key]}}, identity)
-            await backend.publishLogEntry(this.$store.getters.identity, attribute)
+            let identityContractLatest = await backend.latestHash(this.$store.state.loggedIn.identityContractId)
+            let attribute = new Events.SetAttribute({attribute: {name: key, value: this.edited[key]}}, identityContractLatest)
+            await backend.publishLogEntry(this.$store.state.loggedIn.identityContractId, attribute)
           }
         }
         this.profileSaved = true
       } catch (ex) {
         console.log(ex)
-        this.errorMsg = 'Failed to Save Profile'
+        this.errorMsg = L('Failed to Save Profile')
       }
     },
     changeGroup () {
-      let groupProfile = this.$store.state[this.currentGroupContractId].profiles[this.$store.state.loggedIn] || {}
+      let groupProfile = this.$store.state[this.currentGroupContractId].profiles[this.$store.state.loggedIn.name] || {}
       for (let key of Object.keys(this.editedGroupProfile)) { this.editedGroupProfile[key] = groupProfile[key] }
     },
     async saveGroupProfile () {
       try {
         this.groupProfileSaved = false
         let state = await latestContractState(this.currentGroupContractId)
-        let attributes = state.profiles[this.$store.state.loggedIn] || {}
+        let attributes = state.profiles[this.$store.state.loggedIn.name] || {}
         for (let key of Object.keys(this.editedGroupProfile)) {
           if (this.editedGroupProfile[key] && this.editedGroupProfile[key] !== attributes[key]) {
-            let latest = await backend.latestHash(this.currentGroupContractId)
-            let adjustment = new Events.ProfileAdjustment({username: this.$store.state.loggedIn, name: key, value: this.editedGroupProfile[key]}, latest)
+            let groupContractLatest = await backend.latestHash(this.currentGroupContractId)
+            let adjustment = new Events.ProfileAdjustment({username: this.$store.state.loggedIn.name, name: key, value: this.editedGroupProfile[key]}, groupContractLatest)
             await backend.publishLogEntry(this.currentGroupContractId, adjustment)
           }
         }
         this.groupProfileSaved = true
       } catch (ex) {
         console.log(ex)
-        this.groupErrorMsg = 'Failed to Save Group Profile'
+        this.groupErrorMsg = L('Failed to Save Group Profile')
       }
     }
   }

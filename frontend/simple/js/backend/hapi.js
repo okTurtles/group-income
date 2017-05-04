@@ -73,17 +73,8 @@ export class HapiBackend extends Backend {
   subscriptions () {
     return Object.keys(store.state.contracts)
   }
-  async subscribeAndSync (contractId: string, ephemeral: bool) {
-    await this.subscribe(contractId, ephemeral)
-    await store.dispatch('syncContractWithServer', contractId)
-  }
-  async subscribe (contractId: string, ephemeral: bool) {
+  async subscribe (contractId: string) {
     console.log('subscribing to:', contractId)
-    if (store.state.ephemerals[contractId]) {
-      store.commit('removeEphemeral', contractId)
-      store.commit('removeContract', contractId)
-    }
-    ephemeral && store.commit('addEphemeral', contractId)
     store.commit('pending', contractId)
     // we don't need to check if we're already subscribed, server handles that
     var res = await primus.sub(contractId)
@@ -96,16 +87,19 @@ export class HapiBackend extends Backend {
     }
     var res = await primus.unsub(contractId)
     store.commit('removeContract', contractId)
-    store.state.ephemerals[contractId] && store.commit('removeEphemeral', contractId)
     return res
   }
-  // TODO add event strean method returning string.transform
+  // TODO add event stream method returning string.transform
   async latestHash (contractId: string) {
     let response = await fetch(`${process.env.API_URL}/latestHash/${contractId}`).then(r => r.json())
+    // fetch api does not throw errors for failed requests like superagent
+    if (response.error) { throw new Error(response.error) }
     return response.data.hash
   }
   async eventsSince (contractId: string, since: string) {
     let response = await fetch(`${process.env.API_URL}/events/${contractId}/${since}`).then(r => r.json())
+    // fetch api does not throw errors for failed requests like superagent
+    if (response.error) { throw new Error(response.error) }
     return response
   }
 }
@@ -115,15 +109,14 @@ export class HapiNamespace extends TrustedNamespace {
   async register (name: string, value: string) {
     console.log(`registering name:`, name)
     let response = await request.post(`${process.env.API_URL}/name`).send({name, value})
-    store.commit('addUser', {username: name, identity: value})
     return response.body.data
   }
   async lookup (name: string) {
     console.log(`lookup name:`, name)
     // TODO: should `name` be encodeURI'd?
-    if (store.state.users[name]) { return store.state.users[name] }
     let response = await request.get(`${process.env.API_URL}/name/${name}`)
-    store.commit('addUser', {username: name, identity: response.body.data.value})
     return response.body.data.value
   }
 }
+
+export const namespace = new HapiNamespace()

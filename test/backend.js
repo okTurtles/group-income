@@ -213,7 +213,7 @@ describe('Full walkthrough', function () {
       var state = contract.toVuexState()
       actions.forEach(action => {
         let type = action.constructor.name
-        contract.constructor.vuex.mutations[type](state, action.data)
+        contract.constructor.vuex.mutations[type](state, {data: action.data, hash: action.hash})
       })
       console.log(bold.red('FINAL STATE:'), state)
       // 3. get bob's mailbox contractId from his identity contract attributes

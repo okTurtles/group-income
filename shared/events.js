@@ -146,7 +146,7 @@ export class HashableContract extends HashableEntry {
     return {...(Object.getPrototypeOf(this).transforms || {}), ...transforms}
   }
   static Vuex (vuex) {
-    return {...(Object.getPrototypeOf(this).vuex || {}), ...vuex}
+    return _.merge(_.cloneDeep((Object.getPrototypeOf(this).vuex || {})), vuex)
   }
   // override this method to determine if the action can be posted to the
   // contract. Typically this is done by signature verification.
@@ -264,25 +264,22 @@ export class GroupContract extends HashableContract {
   static vuex = GroupContract.Vuex({
     state: { votes: [], payments: [], members: [], invitees: [], profiles: {} },
     mutations: {
-      Payment (state, data) { state.payments.push(data) },
-      Vote (state, data) { state.votes.push(data) },
-      RecordInvitation (state, data) { state.invitees.push(data.username) },
-      DeclineInvitation (state, data) {
+      Payment (state, {data}) { state.payments.push(data) },
+      Vote (state, {data}) { state.votes.push(data) },
+      RecordInvitation (state, {data}) { state.invitees.push(data.username) },
+      DeclineInvitation (state, {data}) {
         let index = state.invitees.findIndex(username => username === data.username)
         if (index > -1) { state.invitees.splice(index, 1) }
       },
-      AcceptInvitation (state, data) {
+      AcceptInvitation (state, {data}) {
         let index = state.invitees.findIndex(username => username === data.username)
         if (index > -1) {
           state.invitees.splice(index, 1)
           state.members.push(data.username)
         }
       },
-      AcknowledgeFounder (state, data) {
-        if (!state.members.find(username => username === data.username)) { state.members.push(data.username) }
-      },
       // TODO: remove group profile when leave group is implemented
-      ProfileAdjustment (state, data) {
+      ProfileAdjustment (state, {data}) {
         let profile = state.profiles[data.username]
         if (!profile) { profile = state.profiles[data.username] = {} }
         if (!data.value) { return delete profile[data.name] }
@@ -324,6 +321,7 @@ export class RecordInvitation extends HashableAction {
 export class AcceptInvitation extends HashableAction {
   static fields = AcceptInvitation.Fields([
     ['username', 'string'],
+    ['inviteHash', 'string'],
     ['acceptanceDate', 'string']
   ])
 }
@@ -331,6 +329,7 @@ export class AcceptInvitation extends HashableAction {
 export class DeclineInvitation extends HashableAction {
   static fields = DeclineInvitation.Fields([
     ['username', 'string'],
+    ['inviteHash', 'string'],
     ['declinedDate', 'string']
   ])
 }
@@ -362,8 +361,8 @@ export class IdentityContract extends HashableContract {
   })
   static vuex = IdentityContract.Vuex({
     mutations: {
-      SetAttribute (state, {attribute: {name, value}}) { Vue.set(state.attributes, name, value) },
-      DeleteAttribute (state, {name}) { Vue.delete(state.attributes, name) }
+      SetAttribute (state, {data: {attribute: {name, value}}}) { Vue.set(state.attributes, name, value) },
+      DeleteAttribute (state, {data: {attribute: {name}}}) { Vue.delete(state.attributes, name) }
     }
   })
 }
@@ -387,10 +386,10 @@ export class DeleteAttribute extends HashableAction {
 
 export class MailboxContract extends HashableContract {
   static vuex = MailboxContract.Vuex({
-    state: { messages: [], nextId: 0 },
+    state: { messages: [] },
     mutations: {
-      PostMessage (state, data) { state.messages.push({...data, id: state.nextId++}) },
-      AuthorizeSender (state, data) { state.authorizations[AuthorizeSender.authorization.name].data = data.sender }
+      PostMessage (state, {data, hash}) { state.messages.push({data, hash}) },
+      AuthorizeSender (state, {data}) { state.authorizations[AuthorizeSender.authorization.name].data = data.sender }
     }
   })
 }

@@ -166,7 +166,6 @@
                 <button
                   class="button is-success is-large"
                   type="submit"
-                  @click="submit"
                 >
                   <i18n>Create Group</i18n>
                 </button>
@@ -212,7 +211,7 @@ export default {
           memberRemovalPercentage: this.memberRemovalPercentage,
           incomeProvided: this.incomeProvided,
           contributionPrivacy: this.contributionPrivacy,
-          founderUsername: this.$store.state.loggedIn
+          founderUsername: this.$store.state.loggedIn.name
         })
         const hash = entry.toHash()
         await backend.subscribe(hash)
