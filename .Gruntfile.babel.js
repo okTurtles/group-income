@@ -7,17 +7,16 @@ http://www.sitepoint.com/setting-up-es6-project-using-babel-browserify/
 https://babeljs.io/docs/setup/#browserify
 */
 
-const fs = require('fs')
-const path = require('path')
-const url = require('url')
-const S = require('string')
-const vueify = require('vueify')
-const pathmodify = require('pathmodify')
-
 import _ from 'lodash'
+import fs from 'fs'
+import path from 'path'
+import pathmodify from 'pathmodify'
+import S from 'string'
+import vueify from 'vueify'
+import url from 'url'
 import {setupPrimus} from './shared/functions'
 
-var development = process.env.NODE_ENV === 'development'
+const development = process.env.NODE_ENV === 'development'
 
 setupPrimus(require('http').createServer(), true)
 
@@ -41,7 +40,7 @@ module.exports = (grunt) => {
       browserify: {
         options: { livereload: true }, // port 35729 by default
         files: ['frontend/*.html', 'frontend/simple/**/*.{vue,ejs,js}'],
-        tasks: ['exec:standard', 'copy', 'browserify']
+        tasks: ['exec:prettier', 'exec:standard', 'copy', 'browserify']
       },
       css: {
         options: { livereload: true },
@@ -55,16 +54,16 @@ module.exports = (grunt) => {
       },
       backend: {
         files: ['backend/**/*.js'],
-        tasks: ['exec:standard', 'backend:relaunch']
+        tasks: ['exec:prettier', 'exec:standard', 'backend:relaunch']
       },
       shared: {
         options: { livereload: true },
         files: ['shared/**/*.js'],
-        tasks: ['exec:standard', 'browserify', 'backend:relaunch']
+        tasks: ['exec:prettier', 'exec:standard', 'browserify', 'backend:relaunch']
       },
       gruntfile: {
         files: ['.Gruntfile.babel.js', 'Gruntfile.js'],
-        tasks: ['exec:standardgrunt']
+        tasks: ['exec:prettier', 'exec:standardgrunt']
       }
     },
 
@@ -114,7 +113,8 @@ module.exports = (grunt) => {
         cmd: './node_modules/.bin/mocha --require Gruntfile.js -R spec --bail',
         options: {env: {LOAD_NO_FILE: 'true', ...process.env}}
       },
-      standard: './node_modules/.bin/standard "**/*.{js,vue}"',
+      standard: './node_modules/.bin/standard --fix "**/*.{js,vue}"',
+      prettier: './node_modules/.bin/prettier $(cat prettier.opts) --write "{backend,frontend,shared,test}**/*.{js,vue}"',
       standardgrunt: './node_modules/.bin/standard .Gruntfile.babel.js Gruntfile.js',
       flow: './node_modules/.bin/flow'
     },
@@ -164,7 +164,7 @@ module.exports = (grunt) => {
   grunt.registerTask('default', ['dev'])
   grunt.registerTask('backend', ['backend:relaunch', 'watch'])
   grunt.registerTask('dev', ['checkDependencies', 'build', 'connect', 'backend'])
-  grunt.registerTask('build', ['exec:standard', 'copy', 'sass', 'browserify'])
+  grunt.registerTask('build', ['exec:prettier', 'exec:standard', 'copy', 'sass', 'browserify'])
   grunt.registerTask('dist', ['build'])
   grunt.registerTask('test', ['dist', 'connect', 'exec:test'])
   // TODO: add 'deploy' per:
