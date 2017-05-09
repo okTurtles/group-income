@@ -123,10 +123,10 @@ export default {
         await backend.subscribe(this.$route.query.groupId)
         await this.$store.dispatch('syncContractWithServer', this.$route.query.groupId)
         let latest = await db.recentHash(this.$route.query.groupId)
-        let acceptance = new Events.AcceptInvitation({ username: this.$store.state.loggedIn, acceptanceDate: new Date() }, latest)
+        let acceptance = new Events.AcceptInvitation({ username: this.$store.state.loggedIn, inviteHash: this.$route.query.inviteHash, acceptanceDate: new Date() }, latest)
         this.$store.commit('setCurrentGroupId', this.$route.query.groupId)
         await backend.publishLogEntry(this.$route.query.groupId, acceptance)
-        this.$store.dispatch('deleteMessage', this.$route.query.inviteId)
+        this.$store.dispatch('deleteMessage', this.$route.query.inviteHash)
         this.$router.push({path: '/mailbox'})
       } catch (ex) {
         console.log(ex)
@@ -137,7 +137,7 @@ export default {
       try {
         this.errorMsg = null
         let latest = await backend.latestHash(this.$route.query.groupId)
-        let declination = new Events.DeclineInvitation({ username: this.$store.state.loggedIn, declinedDate: new Date() }, latest)
+        let declination = new Events.DeclineInvitation({ username: this.$store.state.loggedIn, inviteHash: this.$route.query.inviteHash, declinedDate: new Date() }, latest)
         await backend.publishLogEntry(this.$route.query.groupId, declination)
         this.$store.dispatch('deleteMail', this.$route.query.inviteHash)
         this.$router.push({path: '/mailbox'})

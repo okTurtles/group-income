@@ -262,10 +262,24 @@ export class GroupContract extends HashableContract {
     ['founderUsername', 'string']
   ])
   static vuex = GroupContract.Vuex({
-    state: { votes: [], payments: [], members: [], invitees: [] },
+    state: { proposals: [], payments: [], members: [], invitees: [] },
     mutations: {
       Payment (state, data) { state.payments.push(data) },
-      Vote (state, data) { state.votes.push(data) },
+      Proposal (state, data, hash) { state.proposals.push({...data, for: [], against: [], hash}) },
+      VoteForProposal (state, data) {
+        let index = state.proposals.findIndex(proposal => proposal.hash === data.hash)
+        if (index > -1) {
+          state.proposals[index].for.push(data.username)
+          if (state.proposals[index].for.length > 1) { state.proposals.splice(index, 1) }
+        }
+      },
+      VoteAgainstProposal (state, data) {
+        let index = state.proposals.findIndex(proposal => proposal.hash === data.hash)
+        if (index > -1) {
+          state.proposals[index].against.push(data.username)
+          if (state.proposals[index].against.length > 1) { state.proposals.splice(index, 1) }
+        }
+      },
       RecordInvitation (state, data) { state.invitees.push(data.username) },
       DeclineInvitation (state, data) {
         let index = state.invitees.findIndex(username => username === data.username)
@@ -300,9 +314,26 @@ export class Payment extends HashableAction {
   ])
 }
 
-export class Vote extends HashableAction {
-  static fields = Vote.Fields([
-    ['vote', 'string'] // TODO: make a real vote
+export class Proposal extends HashableAction {
+  static fields = Proposal.Fields([
+    ['proposal', 'string'],
+    ['threshold', 'uint32'],
+    ['action', 'string']
+  ])
+  constructor (data: JSONObject, action: HashableAction, parentHash?: string) {
+    super({...data, action: JSON.stringify(action.toObject())}, parentHash)
+  }
+}
+
+export class VoteForMotion extends HashableAction {
+  static fields = VoteForMotion.Fields([
+    ['username', 'string']
+  ])
+}
+
+export class VoteAgainstMotion extends HashableAction {
+  static fields = VoteAgainstMotion.Fields([
+    ['username', 'string']
   ])
 }
 
@@ -317,6 +348,7 @@ export class RecordInvitation extends HashableAction {
 export class AcceptInvitation extends HashableAction {
   static fields = AcceptInvitation.Fields([
     ['username', 'string'],
+    ['inviteHash', 'string'],
     ['acceptanceDate', 'string']
   ])
 }
@@ -324,6 +356,7 @@ export class AcceptInvitation extends HashableAction {
 export class DeclineInvitation extends HashableAction {
   static fields = DeclineInvitation.Fields([
     ['username', 'string'],
+    ['inviteHash', 'string'],
     ['declinedDate', 'string']
   ])
 }
@@ -377,10 +410,9 @@ export class DeleteAttribute extends HashableAction {
 
 export class MailboxContract extends HashableContract {
   static vuex = MailboxContract.Vuex({
-    state: { messages: [], nextId: 0 },
+    state: { messages: [] },
     mutations: {
-      // TODO: verify the correctness of 'nextId' in more detail later
-      PostMessage (state, data) { state.messages.push({...data, id: state.nextId++}) },
+      PostMessage (state, data, hash) { state.messages.push({...data, hash: hash}) },
       AuthorizeSender (state, data) { state.authorizations[AuthorizeSender.authorization.name].data = data.sender }
     }
   })
@@ -389,6 +421,7 @@ export class MailboxContract extends HashableContract {
 export class PostMessage extends HashableAction {
   static TypeInvite = 'Invite'
   static TypeMessage = 'Message'
+  static TypeVote = 'Vote'
   static fields = PostMessage.Fields([
     ['from', 'string'],
     ['headers', 'string', 'repeated'],

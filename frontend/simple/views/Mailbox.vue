@@ -60,7 +60,7 @@
               <div><strong>From:</strong>&nbsp;{{currentMessage.messageType === 'Invite' ?  currentMessage.message : currentMessage.from}}</div>
             </div>
             <p class="panel-block" v-if="currentMessage.messageType === 'Message'" style="display: block; word-wrap: break-word;">{{currentMessage.message}}</p>
-            <p class="panel-block" v-if="currentMessage.messageType === 'Invite'"><router-link v-bind:to="{ path: '/join', query: { groupId: currentMessage.message, inviteId: currentMessage.id} }" ><i18n>Respond to Invite</i18n></router-link></p>
+            <p class="panel-block" v-if="currentMessage.messageType === 'Invite'"><router-link v-bind:to="{ path: '/join', query: { groupId: currentMessage.message, inviteHash: currentMessage.hash} }" ><i18n>Respond to Invite</i18n></router-link></p>
             <div class="panel-block" >
               <button class="button is-danger" v-if="currentMessage.messageType === 'Message'" type="submit" style="margin-left:auto; margin-right: 0" v-on:click="remove(index)"><i18n>Delete</i18n></button>
               <button class="button is-primary" type="submit" v-on:click="inboxMode" style="margin-left:10px; margin-right: 0"><i18n>Return</i18n></button>

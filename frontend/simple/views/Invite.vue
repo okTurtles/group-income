@@ -1,6 +1,73 @@
 <template>
   <section class="section full-screen">
-
+    <div class="columns">
+      <div class="column is-half is-offset-one-quarter" >
+        <div class="columns">
+          <div class="column">
+            <table
+                    class="table is-bordered is-striped is-narrow"
+                    v-if="contract.members.length"
+            >
+              <thead>
+              <tr>
+                <th class="table-header"><i18n>Current Members</i18n></th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr v-for="(member, index) in contract.members" class="member">
+                <td>
+                  <div class="media">
+                    <div class="media-left">
+                      <p class="image is-64x64">
+                        <!-- TODO: use responsive figure:
+                      http://bulma.io/documentation/elements/image/ -->
+                        <!-- TODO: ideally these would be loaded from cache -->
+                        <img src="http://bulma.io/images/placeholders/128x128.png">
+                      </p>
+                    </div>
+                    <div class="media-content">
+                      <strong>{{member}}</strong>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="column">
+            <table
+                    class="table is-bordered is-striped is-narrow"
+                    v-if="contract.invitees.length"
+            >
+              <thead>
+              <tr>
+                <th class="table-header"><i18n>Currently Invited</i18n></th>
+              </tr>
+              </thead>
+              <tbody>
+              <tr v-for="(invitee, index) in contract.invitees" class="member">
+                <td>
+                  <div class="media">
+                    <div class="media-left">
+                      <p class="image is-64x64">
+                        <!-- TODO: use responsive figure:
+                      http://bulma.io/documentation/elements/image/ -->
+                        <!-- TODO: ideally these would be loaded from cache -->
+                        <img src="http://bulma.io/images/placeholders/128x128.png">
+                      </p>
+                    </div>
+                    <div class="media-content">
+                      <strong>{{invitee}}</strong>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="columns">
       <div class="column is-half is-offset-one-quarter" >
         <form class='add-form' @submit.prevent="add">
@@ -21,6 +88,8 @@
                 </a>
               </p>
           </div>
+          <i18n v-if="error" id="badUsername" class="help is-danger">Invalid Username</i18n>
+          <i18n v-if="self" class="help is-danger">Cannot Invite Yourself</i18n>
         </form>
       </div>
     </div>
@@ -35,17 +104,13 @@
           <i class='notification-icon fa fa-check'></i>
           <i18n>Members invited successfully!</i18n>
         </p>
-
-        <i18n v-if="error" id="badUsername" class="help is-danger">Invalid Username</i18n>
-        <i18n v-if="self" class="help is-danger">Cannot Invite Yourself</i18n>
-
         <table
           class="table is-bordered is-striped is-narrow"
           v-if="members.length"
         >
           <thead>
           <tr>
-            <th class="table-header"><i18n>Initial Invitees</i18n></th>
+            <th class="table-header"><i18n>Invitees</i18n></th>
           </tr>
           </thead>
           <tbody>
@@ -104,16 +169,22 @@ import * as Events from '../../../shared/events'
 import backend from '../js/backend/'
 import { latestContractState } from '../js/state'
 import { HapiNamespace } from '../js/backend/hapi'
+import template from 'string-template'
 import L from '../js/translations'
 
 const namespace = new HapiNamespace()
 
 export default {
   name: 'InviteView',
+  async mounted () {
+    this.contract = await latestContractState(this.$store.state.currentGroupId)
+    console.log('contract', this.contract)
+  },
   data () {
     return {
       searchUser: null,
       members: [],
+      contract: {invitees: [], members: []},
       error: false,
       invited: false,
       self: false,
@@ -122,6 +193,8 @@ export default {
   },
   methods: {
     async add () {
+      this.error = false
+      this.self = false
       if (!this.searchUser) return
 
       if (this.searchUser === this.$store.state.loggedIn) {
@@ -129,6 +202,11 @@ export default {
         return
       } else {
         this.self = false
+      }
+      // Check if this user has been added already
+      if (this.contract.members.find(member => member === this.searchUser) || this.contract.invitees.find(invitee => invitee === this.searchUser)) {
+        this.error = true
+        return
       }
 
       try {
@@ -165,19 +243,46 @@ export default {
             },
             mailbox
           )
-          await backend.publishLogEntry(state.attributes.mailbox, invite)
 
-          // We need to make a record of the invitation in the group's contract
-          const latest = await backend.latestHash(this.$store.state.currentGroupId)
-          const invited = new Events.RecordInvitation(
-            {
-              username: member.name,
-              inviteHash: invite.toHash(),
-              sentDate
-            },
-            latest
-          )
-          await backend.publishLogEntry(this.$store.state.currentGroupId, invited)
+          // We need to determine if the invitation needs an invite
+          const groupState = await latestContractState(member.contractId)
+          const groupLatest = await backend.latestHash(this.$store.state.currentGroupId)
+          if (groupState.members.length > 2) {
+            const proposal = Events.VoteForProposal({
+              proposal: template(L('This is a Vote for {name} to become a member of {group}'), {name: member.name, group: groupState.groupName}),
+              threshold: Math.ceil(groupState.memberApprovalPercentage * 0.01 * groupState.members.length), // calculate the voting threshold form the group data
+              action: invite
+            }, groupLatest)
+            await backend.publishLogEntry(this.$store.state.currentGroupId, proposal)
+            for (let groupMember of groupState.members) {
+              const identity = await namespace.lookup(groupMember)
+              const identityState = await latestContractState(identity)
+              const latestMailbox = await backend.latestHash(identityState.attributes.mailbox)
+              const vote = new Events.PostMessage(
+                {
+                  message: this.$store.state.currentGroupId,
+                  messageType: Events.PostMessage.TypeVote,
+                  headers: [this.$store.state.currentGroupId, proposal.toHash()],
+                  sentDate
+                },
+                latestMailbox
+              )
+              await backend.publishLogEntry(identityState.attributes.mailbox, vote)
+            }
+          } else {
+            await backend.publishLogEntry(state.attributes.mailbox, invite)
+            // We need to make a record of the invitation in the group's contract
+            const latest = await backend.latestHash(this.$store.state.currentGroupId)
+            const invited = new Events.RecordInvitation(
+              {
+                username: member.name,
+                inviteHash: invite.toHash(),
+                sentDate
+              },
+              latest
+            )
+            await backend.publishLogEntry(this.$store.state.currentGroupId, invited)
+          }
         }
         this.invited = true
       } catch (error) {

@@ -63,6 +63,7 @@
     "sprint-js": "0.1.0",
     "sqlite3": "3.1.8",
     "string": "3.3.3",
+    "string-template": "1.0.0",
     "superagent": "3.5.1",
     "tweetnacl": "1.0.0-rc.1",
     "tweetnacl-util": "0.15.0",

@@ -54,14 +54,14 @@ const mutations = {
       mutations.addContract(state, contract)
     }
   },
-  deleteMessage (state, id) {
+  deleteMessage (state, hash) {
     let mailboxContract = store.getters.mailboxContract
-    let index = mailboxContract && mailboxContract.messages.findIndex(msg => msg.id === id)
+    let index = mailboxContract && mailboxContract.messages.findIndex(msg => msg.hash === hash)
     if (index > -1) { mailboxContract.messages.splice(index, 1) }
   },
-  markMessageAsRead (state, id) {
+  markMessageAsRead (state, hash) {
     let mailboxContract = store.getters.mailboxContract
-    let index = mailboxContract && mailboxContract.messages.findIndex(msg => msg.id === id)
+    let index = mailboxContract && mailboxContract.messages.findIndex(msg => msg.hash === hash)
     if (index > -1) { mailboxContract.messages[index].read = true }
   },
   setCurrentGroupId (state, currentGroupId) {
@@ -197,7 +197,7 @@ const actions = {
       // If this is a duplicate the hash will be null
       // This may occur if we get duplicate events over the network
       if (!hash) { return }
-      commit(`${contractId}/${type}`, entry.data)
+      commit(`${contractId}/${type}`, entry.data, entry.hash)
 
       // NOTE: this is to support EventLog.vue + TimeTravel.vue
       //       it's not super important and we'll probably get rid of it later
