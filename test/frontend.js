@@ -119,17 +119,26 @@ describe('Frontend', function () {
     })
 
     it('Test Logout and Login', async function () {
-      this.timeout(4000)
-      const response = await n.click('#LoginBtn')
-        .wait(() => document.getElementById('LoginBtn').classList.contains('is-primary'))
+      this.timeout(6000)
+      const loggedin = await n
+        // Logout
+        .click('#LogoutBtn')
+
+        // Open login modal
+        .wait(() => Boolean(document.querySelector('#LoginBtn')))
         .click('#LoginBtn')
-        .wait(() => document.getElementById('LoginModal').classList.contains('is-active'))
+
+        // Login
+        .wait(() => Boolean(document.querySelector('#LoginModal.is-active')))
+        .wait(1000)
         .insert('#LoginName', username)
         .insert('#LoginPassword', 'testtest')
+        .wait(1000)
         .click('#LoginButton')
-        .wait(() => !!document.getElementById('LoginResponse'))
-        .evaluate(() => document.getElementById('LoginResponse').innerText)
-      should(response).not.equal('Invalid username or password')
+        .wait(() => Boolean(document.querySelector('#LoginResponse')))
+        .wait(1000)
+        .evaluate(() => Boolean(document.querySelector('#LogoutBtn')))
+      should(loggedin).equal(true)
     })
 
     /* There appears to be a bug in nightmare that causes the insert and type commands to enter old data into the field if the
@@ -159,30 +168,33 @@ describe('Frontend', function () {
   describe('Group Creation Test', function () {
     it('Create Additional User', async function () {
       this.timeout(4000)
-      await n.click('#LoginBtn')
-        .wait(250)
-      await n.click('#SignupBtn')
+      const signedup = await n
+        .click('#LogoutBtn')
+        .wait('#SignupBtn')
+        .click('#SignupBtn')
         .wait('#name')
-      let signedup = await n.insert('#name', username + '2')
-      .insert('#email', `test2@testgroupincome.com`)
-      .insert('#password', 'testtest')
-      .click('button[type="submit"]')
-      .wait('#HomeLogo')
-      .evaluate(() => !!document.getElementById('HomeLogo'))
+        .insert('#name', username + '2')
+        .insert('#email', 'test2@testgroupincome.com')
+        .insert('#password', 'testtest')
+        .click('button[type="submit"]')
+        .wait('#HomeLogo')
+        .evaluate(() => Boolean(document.querySelector('#HomeLogo')))
       should(signedup).equal(true)
     })
+
     it('Create Additional User 2', async function () {
       this.timeout(4000)
-      await n.click('#LoginBtn')
-        .wait(250)
-      await n.click('#SignupBtn')
+      const signedup = await n
+        .click('#LogoutBtn')
+        .wait('#SignupBtn')
+        .click('#SignupBtn')
         .wait('#name')
-      let signedup = await n.insert('#name', username + '3')
+        .insert('#name', username + '3')
         .insert('#email', `test2@testgroupincome.com`)
         .insert('#password', 'testtest')
         .click('button[type="submit"]')
         .wait('#HomeLogo')
-        .evaluate(() => !!document.getElementById('HomeLogo'))
+        .evaluate(() => Boolean(document.querySelector('#HomeLogo')))
       should(signedup).equal(true)
     })
 
@@ -234,7 +246,8 @@ describe('Frontend', function () {
 
     it('Should Receive Message and Invite', async function () {
       this.timeout(80000)
-      await n.goto(page('mailbox'))
+      await n
+        .goto(page('mailbox'))
         .wait('#Inbox')
         .click('#ComposeLink')
         .wait('#AddRecipient')
@@ -242,14 +255,18 @@ describe('Frontend', function () {
         .insert('#ComposedMessage', 'Best test ever!!')
         .click('#SendButton')
         .wait('#Inbox')
+
+        // Logout
+        .click('#LogoutBtn')
+
+        // Login
+        .wait('#LoginBtn')
         .click('#LoginBtn')
-        .wait(500)
-        .click('#LoginBtn')
-        .wait(() => document.getElementById('LoginModal').classList.contains('is-active'))
+        .wait(() => Boolean(document.querySelector('#LoginModal')))
         .insert('#LoginName', username)
         .insert('#LoginPassword', 'testtest')
         .click('#LoginButton')
-        .wait(() => !!document.getElementById('LoginResponse'))
+        .wait(() => Boolean(document.querySelector('#LogoutBtn')))
         .wait('#MailboxLink')
         .click('#MailboxLink')
         .wait(300)
