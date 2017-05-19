@@ -14,14 +14,15 @@ Vue.use(VeeValidate)
 Vue.events = new Vue() // global event bus, use: https://vuejs.org/v2/api/#Instance-Methods-Events
 
 async function loadLastUser () {
-  let user = await db.loadCurrentUser()
-  if (user) {
-    await store.dispatch('login', user)
-  }
+  const user = await db.loadCurrentUser()
+  if (user) await store.dispatch('login', user)
+
   /* eslint-disable no-new */
   new Vue({
     router: router,
-    components: {NavBar},
+    components: {
+      NavBar
+    },
     store // make this and all child components aware of the new store
   }).$mount('#app')
 }
