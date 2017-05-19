@@ -238,7 +238,7 @@ export default {
         for (let key of Object.keys(this.editedGroupProfile)) {
           if (this.editedGroupProfile[key] && this.editedGroupProfile[key] !== attributes[key]) {
             let groupContractLatest = await backend.latestHash(this.currentGroupContractId)
-            let adjustment = new Events.ProfileAdjustment({username: this.$store.state.loggedIn.name, name: key, value: this.editedGroupProfile[key]}, groupContractLatest)
+            let adjustment = new Events.SetGroupProfile({username: this.$store.state.loggedIn.name, name: key, value: this.editedGroupProfile[key]}, groupContractLatest)
             await backend.publishLogEntry(this.currentGroupContractId, adjustment)
           }
         }

@@ -279,7 +279,7 @@ export class GroupContract extends HashableContract {
         }
       },
       // TODO: remove group profile when leave group is implemented
-      ProfileAdjustment (state, {data}) {
+      SetGroupProfile (state, {data}) {
         let profile = state.profiles[data.username]
         if (!profile) { profile = state.profiles[data.username] = {} }
         if (!data.value) { return delete profile[data.name] }
@@ -333,8 +333,8 @@ export class DeclineInvitation extends HashableAction {
     ['declinedDate', 'string']
   ])
 }
-export class ProfileAdjustment extends HashableAction {
-  static fields = ProfileAdjustment.Fields([
+export class SetGroupProfile extends HashableAction {
+  static fields = SetGroupProfile.Fields([
     ['username', 'string'],
     ['name', 'string'],
     ['value', 'string']

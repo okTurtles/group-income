@@ -74,3 +74,22 @@
   background-color: #1fc8db;
   border-radius: 20px;
 }
+
+//--------------------------------------
+// Modifiers
+//--------------------------------------
+.is-danger {
+  color: $red;
+}
+.is-success {
+  color: $green;
+}
+.is-warning {
+  color: $orange;
+}
+.is-light {
+  color: $grey;
+}
+.is-small {
+  font-size: $size-7;
+}
