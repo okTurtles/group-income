@@ -3,7 +3,7 @@
 import Knex from 'knex'
 import fs from 'fs'
 import {Model, transaction, ValidationError} from 'objection'
-import {HashableEntry, GroupContract} from '../shared/events'
+import {HashableEntry, HashableGroup} from '../shared/events'
 
 const Transform = require('stream').Transform
 const production = process.env.NODE_ENV === 'production'
@@ -215,12 +215,12 @@ if (testDatabaseJs && testDatabaseJs.indexOf('babel-node') !== -1) {
   (async function () {
     try {
       await loaded
-      var entry = new GroupContract({hello: 'world!', pubkey: 'foobarbaz'})
+      var entry = new HashableGroup({hello: 'world!', pubkey: 'foobarbaz'})
       var contractId = entry.toHash()
       console.log('creating group:', contractId)
       await createLog(contractId, entry)
 
-      entry = new GroupContract({crazy: 'lady'}, contractId)
+      entry = new HashableGroup({crazy: 'lady'}, contractId)
       var res = await appendLogEntry(contractId, entry)
       console.log(`added log entry ${entry.toJSON()} with result:`, res)
       res = await lastEntry(contractId)

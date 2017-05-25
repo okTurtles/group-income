@@ -156,10 +156,10 @@ export default {
           const sentDate = new Date().toString()
 
           // We need to post the invite to the users' mailbox contract
-          const invite = new Events.PostMessage(
+          const invite = new Events.HashableMailboxPostMessage(
             {
               message: this.$store.state.currentGroupId,
-              messageType: Events.PostMessage.TypeInvite,
+              messageType: Events.HashableMailboxPostMessage.TypeInvite,
               sentDate
             },
             mailbox
@@ -168,7 +168,7 @@ export default {
 
           // We need to make a record of the invitation in the group's contract
           const latest = await backend.latestHash(this.$store.state.currentGroupId)
-          const invited = new Events.RecordInvitation(
+          const invited = new Events.HashableGroupRecordInvitation(
             {
               username: member.state.attributes.name,
               inviteHash: invite.toHash(),

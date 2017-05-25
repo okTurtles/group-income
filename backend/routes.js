@@ -37,7 +37,7 @@ module.exports = function (server: Object) {
         //       in the database at all. (or an error if hash is invalid)
         var contractId = request.params.contractId
         var {hash, entry} = request.payload
-        var event = Events[entry.type].fromObject(entry, hash)
+        var event = Events[entry.type] ? Events[entry.type].fromObject(entry, hash) : Events.ConvertToBackendEntry(entry, hash)
         await server.handleEvent(contractId, event)
         reply(makeResponse(RESPONSE_TYPE.SUCCESS, {hash}))
       } catch (err) {
