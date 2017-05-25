@@ -53,6 +53,7 @@ var router = new Router({
     {
       path: '/',
       component: Home,
+      name: 'home',
       meta: {
         title: 'Group Income'  // page title. see issue #45
       }

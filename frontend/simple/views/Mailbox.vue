@@ -189,7 +189,12 @@ export default {
           let state = await latestContractState(recipient.contractId)
           let mailbox = await backend.latestHash(state.attributes.mailbox)
           let date = new Date()
-          let message = new Events.PostMessage({sentDate: date.toString(), messageType: Events.PostMessage.TypeMessage, from: this.$store.state.loggedIn.name, message: this.composedMessage}, mailbox)
+          let message = new Events.HashableMailboxPostMessage({
+            sentDate: date.toString(),
+            messageType: Events.HashableMailboxPostMessage.TypeMessage,
+            from: this.$store.state.loggedIn.name,
+            message: this.composedMessage
+          }, mailbox)
           await backend.publishLogEntry(state.attributes.mailbox, message)
         }
         this.inboxMode()
@@ -250,7 +255,8 @@ export default {
       recipient: null,
       recipients: [],
       composedMessage: '',
-      currentMessage: new Events.PostMessage({from: null, message: ''}, null),
+      // place an empty message here so that the rendered doesn't complain about missing fields or data
+      currentMessage: new Events.HashableMailboxPostMessage({from: null, message: ''}, null),
       currentIndex: null,
       error: null,
       errorMsg: null

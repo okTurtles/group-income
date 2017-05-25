@@ -9,7 +9,7 @@ import {RESPONSE_TYPE} from '../shared/constants'
 import {sign} from '../shared/functions'
 import * as Events from '../shared/events'
 import pubsub from '../frontend/simple/js/pubsub'
-
+import * as contracts from '../frontend/simple/js/events'
 const request = require('superagent')
 const fetch = require('node-fetch') // TODO: switch from request to fetch API fully, see NOTE below
 const should = require('should') // eslint-disable-line
@@ -73,7 +73,7 @@ describe('Full walkthrough', function () {
   }
 
   function createIdentity (name, email) {
-    return new Events.IdentityContract({
+    return new contracts.IdentityContract({
       authorizations: [Events.CanModifyAuths.dummyAuth(name)],
       attributes: [
         {name: 'name', value: name},
@@ -82,7 +82,7 @@ describe('Full walkthrough', function () {
     })
   }
   function createGroup (name, data) {
-    return new Events.GroupContract({
+    return new contracts.GroupContract({
       authorizations: [Events.CanModifyAuths.dummyAuth(name)],
       groupName: name,
       ...data
@@ -90,13 +90,13 @@ describe('Full walkthrough', function () {
   }
 
   async function createMailboxFor (user) {
-    var mailbox = new Events.MailboxContract({
+    var mailbox = new contracts.MailboxContract({
       authorizations: [Events.CanModifyAuths.dummyAuth(user.toHash())]
     })
     await user.socket.sub(mailbox.toHash())
     await postEntry(mailbox)
     await postEntry(
-      new Events.SetAttribute({attribute: {
+      new Events.HashableIdentitySetAttribute({attribute: {
         name: 'mailbox', value: mailbox.toHash()
       }}, latestHash(user)),
       user
@@ -208,7 +208,7 @@ describe('Full walkthrough', function () {
       // Illustraiting its importance: when converting the code below from
       // raw-objects to instances, the hash check failed and I caught several bugs!
       var [contract, ...actions] = events.map(e => {
-        return Events[e.entry.type].fromObject(e.entry, e.hash)
+        return (Events[e.entry.type] ? Events[e.entry.type].fromObject(e.entry, e.hash) : contracts[e.entry.type].fromObject(e.entry, e.hash))
       })
       var state = contract.toVuexState()
       actions.forEach(action => {
@@ -226,7 +226,7 @@ describe('Full walkthrough', function () {
 
     it("Should invite Bob to Alice's group", function (done) {
       var mailbox = users.bob.mailbox
-      var invite = new Events.PostMessage({messageType: Events.PostMessage.TypeInvite, message: groups.group1.toHash()}, latestHash(mailbox))
+      var invite = new Events.HashableMailboxPostMessage({messageType: Events.HashableMailboxPostMessage.TypeInvite, message: groups.group1.toHash()}, latestHash(mailbox))
       events.$once(invite.toHash(), ({contractId, hash, entry}) => {
         console.log('Bob successfully got invite!', entry)
         should(entry.data.message).equal(groups.group1.toHash())
@@ -237,14 +237,14 @@ describe('Full walkthrough', function () {
 
     it('Should post an event', function () {
       return postEntry(
-        new Events.Payment({payment: '123'}, latestHash(groups.group1)),
+        new Events.HashableGroupPayment({payment: '123'}, latestHash(groups.group1)),
         groups.group1
       )
     })
 
     it('Should fail with wrong parentHash', function () {
       return should(postEntry(
-        new Events.Payment({payment: 'abc'}, ''),
+        new Events.HashableGroupPayment({payment: 'abc'}, ''),
         groups.group1
       )).be.rejected()
     })
@@ -254,7 +254,7 @@ describe('Full walkthrough', function () {
     //       identity contract
     it('Should post another event', async function () {
       await postEntry(
-        new Events.Vote({vote: 'data2'}, latestHash(groups.group1)),
+        new Events.HashableGroupVote({vote: 'data2'}, latestHash(groups.group1)),
         groups.group1
       )
       // delay so that the sockets receive notification

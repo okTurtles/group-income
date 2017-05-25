@@ -24,5 +24,6 @@ async function loadLastUser () {
     components: {NavBar},
     store // make this and all child components aware of the new store
   }).$mount('#app')
+  Vue.events.$on('logout', () => router.push({path: '/'}))
 }
 loadLastUser()

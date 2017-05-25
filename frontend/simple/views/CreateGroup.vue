@@ -134,7 +134,7 @@
                     <input class="input" type="text" name="incomeProvided"
                       placeholder="Amount"
                       data-vv-as="Income Provided"
-                      v-validate data-vv-rules="decimal:2"
+                      v-validate data-vv-rules="required|decimal:2"
                       v-model="incomeProvided"
                     />
                   </p>
@@ -183,6 +183,7 @@
 import Vue from 'vue'
 import backend from '../js/backend'
 import * as Events from '../../../shared/events'
+import * as contracts from '../js/events'
 import L from '../js/translations'
 
 export default {
@@ -193,16 +194,14 @@ export default {
         await this.$validator.validateAll()
       } catch (ex) {
         const { control } = document.querySelector('span.help.is-danger').dataset
-        document
-          .querySelector(`input[name="${control}"], textarea[name="${control}"]`)
-          .focus()
-          .scrollIntoView()
+        document.querySelector(`input[name="${control}"], textarea[name="${control}"]`).focus()
+        document.querySelector(`input[name="${control}"], textarea[name="${control}"]`).scrollIntoView()
         return
       }
 
       try {
         this.errorMsg = null
-        const entry = new Events.GroupContract({
+        const entry = new contracts.GroupContract({
           authorizations: [Events.CanModifyAuths.dummyAuth()],
           groupName: this.groupName,
           sharedValues: this.sharedValues,

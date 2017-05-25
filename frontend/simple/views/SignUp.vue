@@ -79,6 +79,7 @@ import backend from '../js/backend'
 import Vue from 'vue'
 import _ from 'lodash'
 import * as Events from '../../../shared/events'
+import * as contracts from '../js/events'
 import {namespace} from '../js/backend/hapi'
 // TODO: fix all this
 export default {
@@ -88,22 +89,22 @@ export default {
       try {
         // Do this mutation first in order to have events correctly save
         this.$store.commit('login', this.name)
-        let user = new Events.IdentityContract({
+        let user = new contracts.IdentityContract({
           authorizations: [Events.CanModifyAuths.dummyAuth()],
           attributes: [
             {name: 'name', value: this.name},
             {name: 'email', value: this.email},
-            {name: 'picture', value: 'images/128x128.png'}
+            {name: 'picture', value: `${window.location.origin}/simple/images/128x128.png`}
           ]
         })
         await backend.subscribe(user.toHash())
         await backend.publishLogEntry(user.toHash(), user)
-        let mailbox = new Events.MailboxContract({
+        let mailbox = new contracts.MailboxContract({
           authorizations: [Events.CanModifyAuths.dummyAuth(user.toHash())]
         })
         await backend.subscribe(mailbox.toHash())
         await backend.publishLogEntry(mailbox.toHash(), mailbox)
-        let attribute = new Events.SetAttribute({attribute: {name: 'mailbox', value: mailbox.toHash()}}, user.toHash())
+        let attribute = new Events.HashableIdentitySetAttribute({attribute: {name: 'mailbox', value: mailbox.toHash()}}, user.toHash())
         await backend.publishLogEntry(user.toHash(), attribute)
         await namespace.register(this.name, user.toHash())
         // TODO: Just add cryptographic magic

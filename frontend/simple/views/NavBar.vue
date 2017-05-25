@@ -4,9 +4,9 @@
     <nav class="nav has-shadow">
       <div class="container">
         <div class="nav-left">
-          <a href="/simple/" class="nav-item" @click="toggleTimeTravel">
+          <router-link to="home" class="nav-item" @click="toggleTimeTravel">
             <img src="images/logo-transparent.png">
-          </a>
+          </router-link>
         </div>
         <div class="nav-center">
           <!-- TODO: use v-for to dynamically generate these? -->
@@ -82,7 +82,7 @@
               <i18n>Signout</i18n>
             </a>
             <div class="button" style="border: 0" v-if="$store.state.loggedIn">
-              <img v-if="$store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.picture" v-bind:src="$store.getters.currentUserIdentityContract.attributes.picture" data-pin-nopin="true">&nbsp;<strong>Welcome, {{ ($store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.displayName ? $store.getters.currentUserIdentityContract.attributes.displayName : null) || $store.state.loggedIn.name}}</strong>
+              <img v-if="$store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.picture" v-bind:src="$store.getters.currentUserIdentityContract.attributes.picture">&nbsp;<strong>Welcome, {{ ($store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.displayName ? $store.getters.currentUserIdentityContract.attributes.displayName : null) || $store.state.loggedIn.name}}</strong>
             </div>
           </span>
         </div>

@@ -1,7 +1,7 @@
 <template>
   <section class="section full-screen">
     <div class="columns">
-      <div class="column is-one-third"></div>
+      <div class="column is-1"></div>
       <div class="column" >
         <form ref="ProfileForm"
               name="ProfileForm"
@@ -171,7 +171,7 @@
           </div>
         </form>
       </div>
-      <div class="column is-one-third"></div>
+      <div class="column is-1"></div>
     </div>
   </section>
 </template>
@@ -216,7 +216,7 @@ export default {
         for (let key of Object.keys(this.edited)) {
           if (this.edited[key] && this.edited[key] !== this.attributes[key]) {
             let identityContractLatest = await backend.latestHash(this.$store.state.loggedIn.identityContractId)
-            let attribute = new Events.SetAttribute({attribute: {name: key, value: this.edited[key]}}, identityContractLatest)
+            let attribute = new Events.HashableIdentitySetAttribute({attribute: {name: key, value: this.edited[key]}}, identityContractLatest)
             await backend.publishLogEntry(this.$store.state.loggedIn.identityContractId, attribute)
           }
         }
@@ -238,7 +238,7 @@ export default {
         for (let key of Object.keys(this.editedGroupProfile)) {
           if (this.editedGroupProfile[key] && this.editedGroupProfile[key] !== attributes[key]) {
             let groupContractLatest = await backend.latestHash(this.currentGroupContractId)
-            let adjustment = new Events.SetGroupProfile({username: this.$store.state.loggedIn.name, name: key, value: this.editedGroupProfile[key]}, groupContractLatest)
+            let adjustment = new Events.HashableGroupSetGroupProfile({username: this.$store.state.loggedIn.name, name: key, value: this.editedGroupProfile[key]}, groupContractLatest)
             await backend.publishLogEntry(this.currentGroupContractId, adjustment)
           }
         }
