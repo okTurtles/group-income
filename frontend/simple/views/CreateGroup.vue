@@ -121,6 +121,7 @@
                 <p class="title is-5"><i18n>How much income will your group seek to provide</i18n></p>
                 <div class="field has-addons">
                   <p class="control">
+                    <!--- TODO: Make this a real field-->
                     <span class="select">
                       <select>
                         <option>USD</option>
@@ -165,7 +166,6 @@
                 <button
                   class="button is-success is-large"
                   type="submit"
-                  @click="submit"
                 >
                   <i18n>Create Group</i18n>
                 </button>
@@ -183,6 +183,7 @@
 import Vue from 'vue'
 import backend from '../js/backend'
 import * as Events from '../../../shared/events'
+import * as contracts from '../js/events'
 import L from '../js/translations'
 
 export default {
@@ -202,7 +203,7 @@ export default {
 
       try {
         this.errorMsg = null
-        const entry = new Events.GroupContract({
+        const entry = new contracts.GroupContract({
           authorizations: [Events.CanModifyAuths.dummyAuth()],
           groupName: this.groupName,
           sharedValues: this.sharedValues,
@@ -211,7 +212,7 @@ export default {
           memberRemovalPercentage: this.memberRemovalPercentage,
           incomeProvided: this.incomeProvided,
           contributionPrivacy: this.contributionPrivacy,
-          founderUsername: this.$store.state.loggedIn
+          founderUsername: this.$store.state.loggedIn.name
         })
         const hash = entry.toHash()
         await backend.subscribe(hash)

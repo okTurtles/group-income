@@ -52,7 +52,7 @@ describe('Frontend', function () {
   })
 
   describe('Event Log Test', function () {
-    it('Should Append to the log', async function () {
+    it.skip('Should Append to the log', async function () {
       this.timeout(5000) // this one takes a while for some reason
       await n.goto(page('event-log'))
         .should.finally.containEql({ code: 200, url: page('event-log') })
@@ -117,19 +117,40 @@ describe('Frontend', function () {
         !document.getElementById('password').innerText)
         */
     })
-
+    it('Test Profile Change', async function () {
+      this.timeout(10000)
+      let success = await n.click('#ProfileLink')
+        .wait('input[name="profilePicture"]')
+        .insert('textarea[name="bio"]', 'Born in a test case')
+        .insert('input[name="displayName"]', 'Tester T Test')
+        .insert('textarea[name="bio"]', 'Born in a test case')
+        .click('#SaveProfileButton')
+        .wait(() => !!document.getElementById('ProfileSaveSuccess'))
+        .evaluate(() => !!document.getElementById('ProfileSaveSuccess'))
+      should(success).equal(true)
+      // TODO Make more complex. Unfortunately bugs in Nightmare prevent the clearing and re-entering of fields
+    })
     it('Test Logout and Login', async function () {
-      this.timeout(4000)
-      const response = await n.click('#LoginBtn')
-        .wait(() => document.getElementById('LoginBtn').classList.contains('is-primary'))
+      this.timeout(6000)
+      const loggedin = await n
+        // Logout
+        .click('#LogoutBtn')
+
+        // Open login modal
+        .wait(() => Boolean(document.querySelector('#LoginBtn')))
         .click('#LoginBtn')
-        .wait(() => document.getElementById('LoginModal').classList.contains('is-active'))
+
+        // Login
+        .wait(() => Boolean(document.querySelector('#LoginModal.is-active')))
+        .wait(1000)
         .insert('#LoginName', username)
         .insert('#LoginPassword', 'testtest')
+        .wait(1000)
         .click('#LoginButton')
-        .wait(() => !!document.getElementById('LoginResponse'))
-        .evaluate(() => document.getElementById('LoginResponse').innerText)
-      should(response).not.equal('Invalid username or password')
+        .wait(() => Boolean(document.querySelector('#LoginResponse')))
+        .wait(1000)
+        .evaluate(() => Boolean(document.querySelector('#LogoutBtn')))
+      should(loggedin).equal(true)
     })
 
     /* There appears to be a bug in nightmare that causes the insert and type commands to enter old data into the field if the
@@ -158,31 +179,33 @@ describe('Frontend', function () {
 
   describe('Group Creation Test', function () {
     it('Create Additional User', async function () {
-      this.timeout(4000)
-      await n.click('#LoginBtn')
-        .wait(250)
-      await n.click('#SignupBtn')
+      this.timeout(6000)
+      const signedup = await n.click('#LogoutBtn')
+        .wait('#SignupBtn')
+        .click('#SignupBtn')
         .wait('#name')
-      let signedup = await n.insert('#name', username + '2')
-      .insert('#email', `test2@testgroupincome.com`)
-      .insert('#password', 'testtest')
-      .click('button[type="submit"]')
-      .wait('#HomeLogo')
-      .evaluate(() => !!document.getElementById('HomeLogo'))
+        .insert('#name', username + '2')
+        .insert('#email', 'test2@testgroupincome.com')
+        .insert('#password', 'testtest')
+        .click('button[type="submit"]')
+        .wait('#HomeLogo')
+        .evaluate(() => Boolean(document.querySelector('#HomeLogo')))
       should(signedup).equal(true)
     })
+
     it('Create Additional User 2', async function () {
       this.timeout(4000)
-      await n.click('#LoginBtn')
-        .wait(250)
-      await n.click('#SignupBtn')
+      const signedup = await n
+        .click('#LogoutBtn')
+        .wait('#SignupBtn')
+        .click('#SignupBtn')
         .wait('#name')
-      let signedup = await n.insert('#name', username + '3')
+        .insert('#name', username + '3')
         .insert('#email', `test2@testgroupincome.com`)
         .insert('#password', 'testtest')
         .click('button[type="submit"]')
         .wait('#HomeLogo')
-        .evaluate(() => !!document.getElementById('HomeLogo'))
+        .evaluate(() => Boolean(document.querySelector('#HomeLogo')))
       should(signedup).equal(true)
     })
 
@@ -233,7 +256,7 @@ describe('Frontend', function () {
     })
 
     it('Should Receive Message and Invite', async function () {
-      this.timeout(80000)
+      this.timeout(10000)
       await n.goto(page('mailbox'))
         .wait('#Inbox')
         .click('#ComposeLink')
@@ -242,17 +265,21 @@ describe('Frontend', function () {
         .insert('#ComposedMessage', 'Best test ever!!')
         .click('#SendButton')
         .wait('#Inbox')
+
+        // Logout
+        .click('#LogoutBtn')
+
+        // Login
+        .wait('#LoginBtn')
         .click('#LoginBtn')
-        .wait(500)
-        .click('#LoginBtn')
-        .wait(() => document.getElementById('LoginModal').classList.contains('is-active'))
+        .wait(() => Boolean(document.querySelector('#LoginModal')))
         .insert('#LoginName', username)
         .insert('#LoginPassword', 'testtest')
         .click('#LoginButton')
-        .wait(() => !!document.getElementById('LoginResponse'))
+        .wait(() => Boolean(document.querySelector('#LogoutBtn')))
         .wait('#MailboxLink')
         .click('#MailboxLink')
-        .wait(300)
+        .wait(1000)
       const alert = await n.evaluate(() => !!document.getElementById('AlertNotification'))
       should(alert).equal(true)
       const unread = await n.evaluate(() => +document.querySelector('.unread').innerText)

@@ -1,7 +1,7 @@
 <template>
     <section class="section full-screen">
       <div class="centered" >
-        <div class="columns" v-if="contract">
+        <div class="columns">
           <div class="column is-one-half">
             <div class="center ">
               <div class="subtitle is-3"><i18n>You have been Invited to join</i18n></div>
@@ -80,11 +80,11 @@
                 <div class="media">
                   <div class="media-left">
                     <p class="image is-64x64">
-                      <img src="http://bulma.io/images/placeholders/128x128.png">
+                      <img :src="member.attributes.picture">
                     </p>
                   </div>
                   <div class="media-content">
-                    <strong>{{member}}</strong>
+                    <strong>{{member.attributes.name}}</strong>
                   </div>
                 </div>
               </td>
@@ -97,36 +97,42 @@
     </section>
 </template>
 <script>
+import {namespace} from '../js/backend/hapi'
 import * as Events from '../../../shared/events'
 import backend from '../js/backend/'
-import * as db from '../js/database'
-import {latestContractState} from '../js/state'
+import { latestContractState } from '../js/state'
 import L from '../js/translations'
+
 export default {
   name: 'Join',
-  mounted () {
-    this.fetchData()
+  async mounted () {
+    let state = await latestContractState(this.$route.query.groupId)
+    console.log(state)
+    if (!state.invitees.find(invitee => invitee === this.$store.state.loggedIn.name)) {
+      // TODO: proper user-facing error
+      console.log(new Error('Invalid Invitation'))
+      this.$router.push({path: '/mailbox'})
+    }
+    for (var i = 0; i < state.members.length; i++) {
+      const contractId = await namespace.lookup(state.members[i])
+      state.members[i] = await latestContractState(contractId)
+    }
+    this.contract = state
   },
   methods: {
-    fetchData: async function () {
-      let state = await latestContractState(this.$route.query.groupId)
-      if (!state.invitees.find(invitee => invitee === this.$store.state.loggedIn)) {
-        console.log(new Error('Invalid Invitation'))
-        await this.$store.dispatch('deleteMail', this.$route.query.inviteHash)
-        this.$router.push({path: '/mailbox'})
-      }
-      this.contract = state
-    },
     accept: async function () {
       try {
         this.errorMsg = null
+        let latest = await backend.latestHash(this.$route.query.groupId)
+        let acceptance = new Events.HashableGroupAcceptInvitation({ username: this.$store.state.loggedIn.name, inviteHash: this.$route.query.inviteHash, acceptanceDate: new Date() }, latest)
+        this.$store.commit('setCurrentGroupId', this.$route.query.groupId)
         await backend.subscribe(this.$route.query.groupId)
         await this.$store.dispatch('syncContractWithServer', this.$route.query.groupId)
-        let latest = await db.recentHash(this.$route.query.groupId)
-        let acceptance = new Events.AcceptInvitation({ username: this.$store.state.loggedIn, inviteHash: this.$route.query.inviteHash, acceptanceDate: new Date() }, latest)
-        this.$store.commit('setCurrentGroupId', this.$route.query.groupId)
         await backend.publishLogEntry(this.$route.query.groupId, acceptance)
-        this.$store.dispatch('deleteMessage', this.$route.query.inviteHash)
+        let identityContractId = await namespace.lookup(this.contract.founderUsername)
+        await backend.subscribe(identityContractId)
+        await this.$store.dispatch('syncContractWithServer', identityContractId)
+        this.$store.commit('deleteMessage', this.$route.query.inviteHash)
         this.$router.push({path: '/mailbox'})
       } catch (ex) {
         console.log(ex)
@@ -137,9 +143,9 @@ export default {
       try {
         this.errorMsg = null
         let latest = await backend.latestHash(this.$route.query.groupId)
-        let declination = new Events.DeclineInvitation({ username: this.$store.state.loggedIn, inviteHash: this.$route.query.inviteHash, declinedDate: new Date() }, latest)
+        let declination = new Events.HashableGroupDeclineInvitation({ username: this.$store.state.loggedIn.name, inviteHash: this.$route.query.inviteHash, declinedDate: new Date() }, latest)
         await backend.publishLogEntry(this.$route.query.groupId, declination)
-        this.$store.dispatch('deleteMail', this.$route.query.inviteHash)
+        this.$store.commit('deleteMail', this.$route.query.inviteHash)
         this.$router.push({path: '/mailbox'})
       } catch (ex) {
         console.log(ex)
@@ -155,9 +161,8 @@ export default {
   },
   data () {
     return {
-      contract: { members: [] },
-      inviteHash: null,
-      errorMsg: null
+      errorMsg: null,
+      contract: { members: [] }
     }
   }
 }

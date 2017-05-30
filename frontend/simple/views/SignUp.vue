@@ -25,7 +25,7 @@
         </div>
         <div class="field">
           <p class="control has-icon">
-            <input id="name" class="input" name="name" v-model="name" @keypress="checkName" v-validate data-vv-rules="required|regex:^\S+$" placeholder="username" required autofocus>
+            <input id="name" class="input" name="name" v-model="name" @blur="checkName" @keypress="checkName" v-validate data-vv-rules="required|regex:^\S+$" placeholder="username" required autofocus>
             <span class="icon is-small"><i class="fa fa-user"></i></span>
           </p>
           <p class="help is-danger" v-if="errors.has('name')" id="badUsername">
@@ -79,8 +79,8 @@ import backend from '../js/backend'
 import Vue from 'vue'
 import _ from 'lodash'
 import * as Events from '../../../shared/events'
-import {HapiNamespace} from '../js/backend/hapi'
-var namespace = new HapiNamespace()
+import * as contracts from '../js/events'
+import {namespace} from '../js/backend/hapi'
 // TODO: fix all this
 export default {
   name: 'SignUp',
@@ -89,26 +89,27 @@ export default {
       try {
         // Do this mutation first in order to have events correctly save
         this.$store.commit('login', this.name)
-        let user = new Events.IdentityContract({
+        let user = new contracts.IdentityContract({
           authorizations: [Events.CanModifyAuths.dummyAuth()],
           attributes: [
             {name: 'name', value: this.name},
-            {name: 'email', value: this.email}
+            {name: 'email', value: this.email},
+            {name: 'picture', value: 'images/128x128.png'}
           ]
         })
         await backend.subscribe(user.toHash())
         await backend.publishLogEntry(user.toHash(), user)
-        let mailbox = new Events.MailboxContract({
+        let mailbox = new contracts.MailboxContract({
           authorizations: [Events.CanModifyAuths.dummyAuth(user.toHash())]
         })
         await backend.subscribe(mailbox.toHash())
         await backend.publishLogEntry(mailbox.toHash(), mailbox)
-        let attribute = new Events.SetAttribute({attribute: {name: 'mailbox', value: mailbox.toHash()}}, user.toHash())
+        let attribute = new Events.HashableIdentitySetAttribute({attribute: {name: 'mailbox', value: mailbox.toHash()}}, user.toHash())
         await backend.publishLogEntry(user.toHash(), attribute)
         await namespace.register(this.name, user.toHash())
         // TODO: Just add cryptographic magic
         this.response = 'success'
-        this.$store.dispatch('login', this.name)
+        this.$store.dispatch('login', {name: this.name, identityContractId: user.toHash()})
         if (this.$route.query.next) {
           setTimeout(() => {
             this.$router.push({path: this.$route.query.next})
@@ -144,7 +145,7 @@ export default {
           }
         }
       }
-    }, 700, {maxWait: 2000})
+    }, 700)
   },
   data () {
     return {
