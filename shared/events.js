@@ -272,9 +272,23 @@ export class HashableGroupPayment extends HashableAction {
   ])
 }
 
-export class HashableGroupVote extends HashableAction {
-  static fields = HashableGroupVote.Fields([
-    ['vote', 'string'] // TODO: make a real vote
+export class HashableGroupProposal extends HashableAction {
+  static fields = HashableGroupProposal.Fields([
+    ['proposal', 'string'],
+    ['threshold', 'uint32'],
+    ['action', 'string']
+  ])
+}
+
+export class HashableGroupVoteForMotion extends HashableAction {
+  static fields = HashableGroupVoteForMotion.Fields([
+    ['username', 'string']
+  ])
+}
+
+export class HashableGroupVoteAgainstMotion extends HashableAction {
+  static fields = HashableGroupVoteAgainstMotion.Fields([
+    ['username', 'string']
   ])
 }
 
