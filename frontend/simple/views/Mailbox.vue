@@ -55,14 +55,14 @@
           </div>
           <div id="CurrentMessage" class="panel" v-show="mode === 'Read'">
             <div class="panel-heading">
-              <div><strong>Type:</strong>&nbsp;{{currentMessage.messageType}}</div>
-              <div><strong>Sent:</strong>&nbsp;{{formatDate(currentMessage.sentDate)}}</div>
-              <div><strong>From:</strong>&nbsp;{{currentMessage.messageType === 'Invite' ?  currentMessage.message : currentMessage.from}}</div>
+              <div><strong>Type:</strong>&nbsp;{{currentMessage.data.messageType}}</div>
+              <div><strong>Sent:</strong>&nbsp;{{formatDate(currentMessage.data.sentDate)}}</div>
+              <div><strong>From:</strong>&nbsp;{{currentMessage.data.messageType === 'Invite' ?  currentMessage.data.message : currentMessage.data.from}}</div>
             </div>
-            <p class="panel-block" v-if="currentMessage.messageType === 'Message'" style="display: block; word-wrap: break-word;">{{currentMessage.message}}</p>
-            <p class="panel-block" v-if="currentMessage.messageType === 'Invite'"><router-link v-bind:to="{ path: '/join', query: { groupId: currentMessage.message, inviteId: currentMessage.id} }" ><i18n>Respond to Invite</i18n></router-link></p>
+            <p class="panel-block" v-if="currentMessage.data.messageType === 'Message'" style="display: block; word-wrap: break-word;">{{currentMessage.data.message}}</p>
+            <p class="panel-block" v-if="currentMessage.data.messageType === 'Invite'"><router-link v-bind:to="{ path: '/join', query: { groupId: currentMessage.data.message, inviteHash: currentMessage.hash} }" ><i18n>Respond to Invite</i18n></router-link></p>
             <div class="panel-block" >
-              <button class="button is-danger" v-if="currentMessage.messageType === 'Message'" type="submit" style="margin-left:auto; margin-right: 0" v-on:click="remove(index)"><i18n>Delete</i18n></button>
+              <button class="button is-danger" v-if="currentMessage.data.messageType === 'Message'" type="submit" style="margin-left:auto; margin-right: 0" v-on:click="remove(index)"><i18n>Delete</i18n></button>
               <button class="button is-primary" type="submit" v-on:click="inboxMode" style="margin-left:10px; margin-right: 0"><i18n>Return</i18n></button>
             </div>
           </div>
@@ -78,12 +78,13 @@
                 <div class="media">
                   <div class="media-left" v-on:click="readInvite(index)">
                     <p class="image is-64x64">
-                      <img src="http://bulma.io/images/placeholders/128x128.png">
+                      <!-- TODO: make this draw image from group contract -->
+                      <img src="images/128x128.png">
                     </p>
                   </div>
                   <div class="media-content invite-message" v-on:click="readInvite(index)">
-                    <div><strong>Sent:</strong>&nbsp;{{formatDate(message.sentDate)}}</div>
-                    <div><strong>From:</strong>&nbsp;{{message.message}}</div>
+                    <div><strong>Sent:</strong>&nbsp;{{formatDate(message.data.sentDate)}}</div>
+                    <div><strong>From:</strong>&nbsp;{{message.data.message}}</div>
                   </div>
                 </div>
               </td>
@@ -102,13 +103,13 @@
                 <div class="media">
                   <div class="media-left" v-on:click="read(index)">
                     <p class="image is-64x64">
-                      <img src="http://bulma.io/images/placeholders/128x128.png">
+                      <img src="images/128x128.png">
                     </p>
                   </div>
                   <div class="media-content inbox-message" v-on:click="read(index)">
-                    <div><strong>Sent:</strong>&nbsp;{{formatDate(message.sentDate)}}</div>
-                    <div><strong>From:</strong>&nbsp;{{message.from}}</div>
-                    <span style="color: grey">{{message.message.substr(0,50)}}{{message.message.length > 50 ? '...' : ''}} </span>
+                    <div><strong>Sent:</strong>&nbsp;{{formatDate(message.data.sentDate)}}</div>
+                    <div><strong>From:</strong>&nbsp;{{message.data.from}}</div>
+                    <span style="color: grey">{{message.data.message.substr(0,50)}}{{message.data.message.length > 50 ? '...' : ''}} </span>
                   </div>
                   <div type="submit"class="media-right" v-on:click="remove(index, 'inbox')">
                     <button  class="delete" ></button>
@@ -138,41 +139,21 @@
 import _ from 'lodash'
 import backend from '../js/backend'
 import * as Events from '../../../shared/events'
-import {HapiNamespace} from '../js/backend/hapi'
+import {namespace} from '../js/backend/hapi'
 import {latestContractState} from '../js/state'
 import L from '../js/translations'
-var namespace = new HapiNamespace()
+const criteria = [(msg) => new Date(msg.sentDate)]
 export default {
   name: 'Mailbox',
-  mounted: function () {
-    this.fetchData()
-  },
   computed: {
-    mail () {
-      return this.$store.getters.mailbox
-    }
-  },
-  watch: {
-    mail: function () {
-      this.fetchData()
+    inbox () {
+      return _.sortBy(_.filter(this.$store.getters.mailbox, msg => msg.data.messageType === 'Message'), criteria)
+    },
+    invites () {
+      return _.sortBy(_.filter(this.$store.getters.mailbox, msg => msg.data.messageType === 'Invite'), criteria)
     }
   },
   methods: {
-    fetchData: async function () {
-      this.inbox = []
-      this.invites = []
-      for (let i = this.mail.length - 1; i >= 0; i--) {
-        let msg = this.mail[i]
-        if (msg.messageType === 'Invite') {
-          this.invites.push(msg)
-        } else {
-          this.inbox.push(msg)
-        }
-      }
-      let criteria = [(msg) => new Date(msg.sentDate)]
-      _.sortBy(this.inbox, criteria)
-      _.sortBy(this.invites, criteria)
-    },
     formatDate: function (date) {
       if (date) {
         let formatString = new Date(date)
@@ -208,7 +189,12 @@ export default {
           let state = await latestContractState(recipient.contractId)
           let mailbox = await backend.latestHash(state.attributes.mailbox)
           let date = new Date()
-          let message = new Events.PostMessage({sentDate: date.toString(), messageType: Events.PostMessage.TypeMessage, from: this.$store.state.loggedIn, message: this.composedMessage}, mailbox)
+          let message = new Events.HashableMailboxPostMessage({
+            sentDate: date.toString(),
+            messageType: Events.HashableMailboxPostMessage.TypeMessage,
+            from: this.$store.state.loggedIn.name,
+            message: this.composedMessage
+          }, mailbox)
           await backend.publishLogEntry(state.attributes.mailbox, message)
         }
         this.inboxMode()
@@ -219,9 +205,9 @@ export default {
     },
     remove: function (index) {
       if (Number.isInteger(index)) {
-        this.$store.dispatch('deleteMessage', this.inbox[index].id)
+        this.$store.commit('deleteMessage', this.inbox[index].hash)
       } else {
-        this.$store.dispatch('deleteMessage', this.inbox[this.currentIndex].id)
+        this.$store.commit('deleteMessage', this.inbox[this.currentIndex].hash)
         this.currentIndex = null
         this.inboxMode()
       }
@@ -234,7 +220,7 @@ export default {
       if (Number.isInteger(index)) {
         this.currentMessage = this.inbox[index]
         this.currentIndex = index
-        this.$store.dispatch('markMessageAsRead', this.currentMessage.id)
+        this.$store.commit('markMessageAsRead', this.currentMessage.hash)
       }
     },
     readInvite: function (index) {
@@ -242,7 +228,7 @@ export default {
       if (Number.isInteger(index)) {
         this.currentMessage = this.invites[index]
         this.currentIndex = index
-        this.$store.dispatch('markMessageAsRead', this.currentMessage.id)
+        this.$store.commit('markMessageAsRead', this.currentMessage.hash)
       }
     },
     removeRecipient: function (index) {
@@ -268,10 +254,9 @@ export default {
       mode: 'Inbox',
       recipient: null,
       recipients: [],
-      inbox: [],
-      invites: [],
       composedMessage: '',
-      currentMessage: new Events.PostMessage({from: null, message: ''}, null),
+      // place an empty message here so that the rendered doesn't complain about missing fields or data
+      currentMessage: new Events.HashableMailboxPostMessage({from: null, message: ''}, null),
       currentIndex: null,
       error: null,
       errorMsg: null

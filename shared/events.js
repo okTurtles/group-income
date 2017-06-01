@@ -10,12 +10,6 @@ const nacl = require('tweetnacl')
 const blake = require('blakejs')
 const {Type, Field, Root} = protobuf
 const root = new Root({bytes: String}).define('groupincome')
-// import Vue for: https://vuejs.org/v2/guide/reactivity.html#Change-Detection-Caveats
-const Vue = typeof window !== 'undefined' ? require('vue') : {
-  // TODO: remove this when we switch to electron?
-  set: (o, k, v) => { o[k] = v },
-  delete: (o, k) => { delete o[k] }
-}
 
 // To ensure objects consistently hash across all platforms, we use protobufs
 // instead of hashing the JSON, since order of object keys is unspecified in JSON
@@ -138,15 +132,15 @@ export class HashableContract extends HashableEntry {
     // see details: https://vuex.vuejs.org/en/modules.html
     namespaced: true,
     // registerVuexState will copy the entry's .data is copied to this state
-    state: {},
+    state: {_async: []},
     // mutations must be named exactly the same as corresponding Actions
-    mutations: {}
+    mutations: {clearAsync (state) { state._async = [] }}
   })
   static Transforms (transforms) {
     return {...(Object.getPrototypeOf(this).transforms || {}), ...transforms}
   }
   static Vuex (vuex) {
-    return {...(Object.getPrototypeOf(this).vuex || {}), ...vuex}
+    return _.merge(_.cloneDeep((Object.getPrototypeOf(this).vuex || {})), vuex)
   }
   // override this method to determine if the action can be posted to the
   // contract. Typically this is done by signature verification.
@@ -244,11 +238,11 @@ export class CanModifyState extends Authorization {
 }
 
 // =======================
-// Group Contract
+// Group
 // =======================
 
-export class GroupContract extends HashableContract {
-  static fields = GroupContract.Fields([
+export class HashableGroup extends HashableContract {
+  static fields = HashableGroup.Fields([
     // TODO: add 'groupPubkey'
     ['creationDate', 'string'],
     ['groupName', 'string'],
@@ -261,28 +255,6 @@ export class GroupContract extends HashableContract {
     ['contributionPrivacy', 'string'],
     ['founderUsername', 'string']
   ])
-  static vuex = GroupContract.Vuex({
-    state: { votes: [], payments: [], members: [], invitees: [] },
-    mutations: {
-      Payment (state, data) { state.payments.push(data) },
-      Vote (state, data) { state.votes.push(data) },
-      RecordInvitation (state, data) { state.invitees.push(data.username) },
-      DeclineInvitation (state, data) {
-        let index = state.invitees.findIndex(username => username === data.username)
-        if (index > -1) { state.invitees.splice(index, 1) }
-      },
-      AcceptInvitation (state, data) {
-        let index = state.invitees.findIndex(username => username === data.username)
-        if (index > -1) {
-          state.invitees.splice(index, 1)
-          state.members.push(data.username)
-        }
-      },
-      AcknowledgeFounder (state, data) {
-        if (!state.members.find(username => username === data.username)) { state.members.push(data.username) }
-      }
-    }
-  })
   constructor (data: JSONObject, parentHash?: string) {
     super({...data, creationDate: new Date().toISOString()}, parentHash)
   }
@@ -294,42 +266,47 @@ export class GroupContract extends HashableContract {
   }
 }
 
-export class Payment extends HashableAction {
-  static fields = Payment.Fields([
+export class HashableGroupPayment extends HashableAction {
+  static fields = HashableGroupPayment.Fields([
     ['payment', 'string'] // TODO: change to 'double' and add other fields
   ])
 }
 
-export class Vote extends HashableAction {
-  static fields = Vote.Fields([
+export class HashableGroupVote extends HashableAction {
+  static fields = HashableGroupVote.Fields([
     ['vote', 'string'] // TODO: make a real vote
   ])
 }
 
-export class RecordInvitation extends HashableAction {
-  static fields = RecordInvitation.Fields([
+export class HashableGroupRecordInvitation extends HashableAction {
+  static fields = HashableGroupRecordInvitation.Fields([
     ['username', 'string'],
     ['inviteHash', 'string'],
     ['sentDate', 'string']
   ])
 }
 
-export class AcceptInvitation extends HashableAction {
-  static fields = AcceptInvitation.Fields([
+export class HashableGroupAcceptInvitation extends HashableAction {
+  static fields = HashableGroupAcceptInvitation.Fields([
     ['username', 'string'],
+    ['inviteHash', 'string'],
     ['acceptanceDate', 'string']
   ])
 }
 
-export class DeclineInvitation extends HashableAction {
-  static fields = DeclineInvitation.Fields([
+export class HashableGroupDeclineInvitation extends HashableAction {
+  static fields = HashableGroupDeclineInvitation.Fields([
     ['username', 'string'],
+    ['inviteHash', 'string'],
     ['declinedDate', 'string']
   ])
 }
-
-export class ProfileAdjustment extends HashableAction {
-  // TODO: this
+export class HashableGroupSetGroupProfile extends HashableAction {
+  static fields = HashableGroupSetGroupProfile.Fields([
+    ['username', 'string'],
+    ['name', 'string'],
+    ['value', 'string']
+  ])
 }
 
 // =======================
@@ -343,26 +320,20 @@ export class Attribute extends Hashable {
   ])
 }
 
-export class IdentityContract extends HashableContract {
-  static fields = IdentityContract.Fields([
+export class HashableIdentity extends HashableContract {
+  static fields = HashableIdentity.Fields([
     ['attributes', 'Attribute', 'repeated']
   ])
-  static transforms = IdentityContract.Transforms({
+  static transforms = HashableIdentity.Transforms({
     attributes: ArrayToMap('name', 'value')
-  })
-  static vuex = IdentityContract.Vuex({
-    mutations: {
-      SetAttribute (state, {attribute: {name, value}}) { Vue.set(state.attributes, name, value) },
-      DeleteAttribute (state, {name}) { Vue.delete(state.attributes, name) }
-    }
   })
 }
 
-export class SetAttribute extends HashableAction {
-  static fields = SetAttribute.Fields([['attribute', 'Attribute']])
+export class HashableIdentitySetAttribute extends HashableAction {
+  static fields = HashableIdentitySetAttribute.Fields([['attribute', 'Attribute']])
 }
-export class DeleteAttribute extends HashableAction {
-  static fields = DeleteAttribute.Fields([['name', 'string']])
+export class HashableIdentityDeleteAttribute extends HashableAction {
+  static fields = HashableIdentityDeleteAttribute.Fields([['name', 'string']])
 }
 
 // =======================
@@ -375,21 +346,12 @@ export class DeleteAttribute extends HashableAction {
 //       have been deleted by creating a new mailbox initialized with all of the
 //       messages that haven't been deleted, and deleting the old mailbox.
 
-export class MailboxContract extends HashableContract {
-  static vuex = MailboxContract.Vuex({
-    state: { messages: [], nextId: 0 },
-    mutations: {
-      // TODO: verify the correctness of 'nextId' in more detail later
-      PostMessage (state, data) { state.messages.push({...data, id: state.nextId++}) },
-      AuthorizeSender (state, data) { state.authorizations[AuthorizeSender.authorization.name].data = data.sender }
-    }
-  })
-}
+export class HashableMailbox extends HashableContract {}
 
-export class PostMessage extends HashableAction {
+export class HashableMailboxPostMessage extends HashableAction {
   static TypeInvite = 'Invite'
   static TypeMessage = 'Message'
-  static fields = PostMessage.Fields([
+  static fields = HashableMailboxPostMessage.Fields([
     ['from', 'string'],
     ['headers', 'string', 'repeated'],
     ['messageType', 'string'],
@@ -402,9 +364,22 @@ export class PostMessage extends HashableAction {
   }
 }
 
-export class AuthorizeSender extends HashableAction {
+export class HashableMailboxAuthorizeSender extends HashableAction {
   static authorization = CanModifyAuths
-  static fields = AuthorizeSender.Fields([
+  static fields = HashableMailboxAuthorizeSender.Fields([
     ['sender', 'string']
   ])
+}
+
+// Function for converting from Frontend Contracts
+// TODO: Write in a generic way without switch statement
+export function ConvertToBackendEntry (entry, hash) {
+  switch (entry.type) {
+    case 'IdentityContract':
+      return HashableIdentity.fromObject(entry, hash)
+    case 'GroupContract':
+      return HashableGroup.fromObject(entry, hash)
+    case 'MailboxContract':
+      return HashableMailbox.fromObject(entry, hash)
+  }
 }

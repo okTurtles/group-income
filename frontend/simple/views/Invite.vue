@@ -57,11 +57,11 @@
                       <!-- TODO: use responsive figure:
                     http://bulma.io/documentation/elements/image/ -->
                       <!-- TODO: ideally these would be loaded from cache -->
-                      <img src="http://bulma.io/images/placeholders/128x128.png">
+                      <img :src="member.state.attributes.picture" width="64" height="64">
                     </p>
                   </div>
                   <div class="media-content">
-                    <strong>{{member.name}}</strong>
+                    <strong>{{member.state.attributes.name}}</strong>
                   </div>
                   <div class="media-right">
                     <button class="delete" @click="remove(index)"></button>
@@ -103,13 +103,11 @@
 import * as Events from '../../../shared/events'
 import backend from '../js/backend/'
 import { latestContractState } from '../js/state'
-import { HapiNamespace } from '../js/backend/hapi'
+import { namespace } from '../js/backend/hapi'
 import L from '../js/translations'
 
-const namespace = new HapiNamespace()
-
 export default {
-  name: 'InviteView',
+  name: 'Invite',
   data () {
     return {
       searchUser: null,
@@ -124,7 +122,7 @@ export default {
     async add () {
       if (!this.searchUser) return
 
-      if (this.searchUser === this.$store.state.loggedIn) {
+      if (this.searchUser === this.$store.state.loggedIn.name) {
         this.self = true
         return
       } else {
@@ -133,12 +131,14 @@ export default {
 
       try {
         const contractId = await namespace.lookup(this.searchUser)
-        if (!this.members.find(member => member.name === this.searchUser)) {
-          this.members.push({ name: this.searchUser, contractId })
+        const state = await latestContractState(contractId)
+        if (!this.members.find(member => member.state.attributes.name === this.searchUser)) {
+          this.members.push({ state, contractId })
         }
         this.searchUser = null
         this.error = false
       } catch (err) {
+        console.log(err)
         this.error = true
       }
     },
@@ -152,26 +152,25 @@ export default {
         // seperate invitees grid and add them to some validation for duplicate invites
         for (let member of this.members) {
           // We need to have the latest mailbox attribute for the user
-          const state = await latestContractState(member.contractId)
-          const mailbox = await backend.latestHash(state.attributes.mailbox)
+          const mailbox = await backend.latestHash(member.state.attributes.mailbox)
           const sentDate = new Date().toString()
 
           // We need to post the invite to the users' mailbox contract
-          const invite = new Events.PostMessage(
+          const invite = new Events.HashableMailboxPostMessage(
             {
               message: this.$store.state.currentGroupId,
-              messageType: Events.PostMessage.TypeInvite,
+              messageType: Events.HashableMailboxPostMessage.TypeInvite,
               sentDate
             },
             mailbox
           )
-          await backend.publishLogEntry(state.attributes.mailbox, invite)
+          await backend.publishLogEntry(member.state.attributes.mailbox, invite)
 
           // We need to make a record of the invitation in the group's contract
           const latest = await backend.latestHash(this.$store.state.currentGroupId)
-          const invited = new Events.RecordInvitation(
+          const invited = new Events.HashableGroupRecordInvitation(
             {
-              username: member.name,
+              username: member.state.attributes.name,
               inviteHash: invite.toHash(),
               sentDate
             },

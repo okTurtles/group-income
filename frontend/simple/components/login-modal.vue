@@ -80,9 +80,9 @@ export default {
     async login () {
       try {
         // TODO: Insert cryptography here
-        const identity = await namespace.lookup(this.name)
-        console.log(`Retrieved identity ${identity}`)
-        await this.$store.dispatch('login', this.name)
+        const identityContractId = await namespace.lookup(this.name)
+        console.log(`Retrieved identity ${identityContractId}`)
+        await this.$store.dispatch('login', {name: this.name, identityContractId})
         this.close()
       } catch (error) {
         this.response = L('Invalid username or password')
