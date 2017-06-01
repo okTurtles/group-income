@@ -62,6 +62,7 @@
 
 <script>
   import * as Events from '../../../shared/events'
+  import * as contracts from '../js/events'
   import * as db from '../js/database'
   import backend from '../js/backend'
   import {mapGetters} from 'vuex'
@@ -92,7 +93,7 @@
         let randInt = (min, max) => Math.floor(Math.random() * (max - min)) + min
         // TODO: move this stuff somewhere else that makes sense.
         // subscribe first and so that handleEvent is automatically dispatched
-        let entry = new Events.GroupContract({
+        let entry = new contracts.GroupContract({
           authorizations: [Events.CanModifyAuths.dummyAuth()],
           groupName: `Group ${randInt(1, 100)}`,
           sharedValues: 'Testing this software',

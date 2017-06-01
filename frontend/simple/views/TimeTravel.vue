@@ -37,7 +37,7 @@ export default {
   created () {
     console.log('[TimeTravel] initial state:', this.history[this.position])
     store.subscribe((mutation, state) => {
-      console.log('[TimeTravel] spied mutation:', mutation)
+      // console.log('[TimeTravel] spied mutation:', mutation)
       this.history.push(_.cloneDeep(state))
       this.sliderConfig.max += 1
       this.position = this.sliderConfig.max

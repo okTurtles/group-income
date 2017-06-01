@@ -26,10 +26,6 @@ export async function getLogEntry (
   return Events[entry.type].fromObject(entry, hash)
 }
 
-export function recentHash (contractId: string): Promise<string> {
-  return getLog(contractId).getItem('HEAD')
-}
-
 export async function addLogEntry (
   contractId: string, event: HashableEntry
 ) {

@@ -89,13 +89,17 @@ export class HapiBackend extends Backend {
     store.commit('removeContract', contractId)
     return res
   }
-  // TODO add event strean method returning string.transform
+  // TODO add event stream method returning string.transform
   async latestHash (contractId: string) {
     let response = await fetch(`${process.env.API_URL}/latestHash/${contractId}`).then(r => r.json())
+    // fetch api does not throw errors for failed requests like superagent
+    if (response.error) { throw new Error(response.error) }
     return response.data.hash
   }
   async eventsSince (contractId: string, since: string) {
     let response = await fetch(`${process.env.API_URL}/events/${contractId}/${since}`).then(r => r.json())
+    // fetch api does not throw errors for failed requests like superagent
+    if (response.error) { throw new Error(response.error) }
     return response
   }
 }
@@ -114,3 +118,5 @@ export class HapiNamespace extends TrustedNamespace {
     return response.body.data.value
   }
 }
+
+export const namespace = new HapiNamespace()
