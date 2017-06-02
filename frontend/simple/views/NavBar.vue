@@ -55,6 +55,8 @@
         </div>
         <div class="nav-item">
           <group-switcher
+            style="margin-right: 1rem;"
+            v-if="$store.state.loggedIn"
             :currentGroupId="currentGroupId"
             :groups="groups"
           />
@@ -125,9 +127,6 @@ export default {
     GroupSwitcher,
     TimeTravel
   },
-  created: function () {
-    Vue.events.$on('loginModal', this.toggleModal)
-  },
   created () {
     Vue.events.$on('loginModal', this.showLoginModal)
   },
@@ -139,7 +138,7 @@ export default {
       return this.$store.state.currentGroupId
     },
     groups () {
-      return this.$store.getters.groups
+      return this.$store.getters.groupsByName
     }
   },
   methods: {
