@@ -56,7 +56,7 @@
         <div class="nav-item">
           <group-switcher
             style="margin-right: 1rem;"
-            v-if="$store.state.loggedIn"
+            v-if="$store.state.loggedIn && groups && groups.length"
             :currentGroupId="currentGroupId"
             :groups="groups"
           />
