@@ -33,6 +33,7 @@
             <i18n v-else-if="name && name.length > 0">cannot contain spaces</i18n>
           </p>
           <p v-else-if="nameAvailable" class="help is-success"><i18n>name is available</i18n></p>
+          <i18n v-if="(name && name.length > 0) && !this.nameAvailable" id="NameAvailable"  class="help is-danger">name is unavailable</i18n>
         </div>
         <div class="field">
           <p class="control has-icon">
@@ -58,7 +59,7 @@
           </div>
           <div class="level-right">
             <div class="level-item is-narrow">
-              <button class="button submit is-success" type="submit" :disabled="errors.any() || !fields.passed()">
+              <button class="button submit is-success" type="submit" :disabled="errors.any() || !fields.passed() || !nameAvailable">
                 <i18n>Sign Up</i18n>
               </button>
             </div>

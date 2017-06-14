@@ -199,8 +199,8 @@ const actions = {
       // machine sharing data storage
       commit(`${contractId}/${type}`, {data: entry.data, hash})
       if (store.state[contractId]._async.length) {
-        for (let asyncCall of store.state[contractId]._async) {
-          await dispatch(`${contractId}/${asyncCall.type}`, asyncCall.payload)
+        for (let asyncPayload of store.state[contractId]._async) {
+          await dispatch(`${contractId}/${asyncPayload.type}`, asyncPayload)
         }
         commit(`${contractId}/clearAsync`)
       }

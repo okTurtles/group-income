@@ -3,6 +3,7 @@ import * as Events from '../../../shared/events'
 import store from './state'
 import backend from '../js/backend'
 import {namespace} from '../js/backend/hapi'
+import _ from 'lodash'
 
 export class GroupContract extends Events.HashableGroup {
   static vuex = GroupContract.Vuex({
@@ -13,13 +14,21 @@ export class GroupContract extends Events.HashableGroup {
       HashableGroupVoteForProposal (state, {data}) {
         if (state.proposals[data.proposalHash]) {
           state.proposals[data.proposalHash].for.push(data.username)
-          if (state.proposals[data.proposalHash].for.length >= state.proposals[data.proposalHash].threshold) { Vue.delete(state.proposals, data.proposalHash) }
+          let threshold = Math.ceil(state.proposals[data.proposalHash].percentage * 0.01 * state.members.length)
+          if (state.proposals[data.proposalHash].for.length >= threshold) {
+            Vue.delete(state.proposals, data.proposalHash)
+            state._async.push({type: 'HashableGroupVoteForOrAgainstProposal', data})
+          }
         }
       },
       HashableGroupVoteAgainstProposal (state, {data}) {
         if (state.proposals[data.proposalHash]) {
           state.proposals[data.proposalHash].against.push(data.username)
-          if (state.proposals[data.proposalHash].against.length > state.members.length - state.proposals[data.proposalHash].threshold) { Vue.delete(state.proposals, data.proposalHash) }
+          let threshold = Math.ceil(state.proposals[data.proposalHash].percentage * 0.01 * state.members.length)
+          if (state.proposals[data.proposalHash].against.length > state.members.length - threshold) {
+            Vue.delete(state.proposals, data.proposalHash)
+            state._async.push({type: 'HashableGroupVoteForOrAgainstProposal', data})
+          }
         }
       },
       HashableGroupRecordInvitation (state, {data}) { state.invitees.push(data.username) },
@@ -32,7 +41,7 @@ export class GroupContract extends Events.HashableGroup {
         if (index > -1) {
           state.invitees.splice(index, 1)
           state.members.push(data.username)
-          state._async.push({type: 'HashableGroupAcceptInvitation', payload: data})
+          state._async.push({type: 'HashableGroupAcceptInvitation', data})
         }
       },
       // TODO: remove group profile when leave group is implemented
@@ -44,7 +53,7 @@ export class GroupContract extends Events.HashableGroup {
       }
     },
     actions: {
-      async HashableGroupAcceptInvitation ({state}, data) {
+      async HashableGroupAcceptInvitation ({state}, {data}) {
         // TODO: per #257 this will have to be encompassed in a recoverable transaction
         if (state.founderUsername !== store.state.loggedIn) {
           let identityContractId = await namespace.lookup(state.founderUsername)
@@ -56,6 +65,17 @@ export class GroupContract extends Events.HashableGroup {
           await backend.subscribe(identityContractId)
           await store.dispatch('syncContractWithServer', identityContractId)
         }
+      }, // Remove the message for users who have not voted in situations where the vote has already passed/failed
+      async  HashableGroupVoteForOrAgainstProposal ({state}, {data}) {
+        if (store.state.loggedIn !== data.username && !state.proposals[data.proposalHash]) {
+          let msg = store.getters.mailboxContract.messages.find(msg => (msg.data.headers && (msg.data.headers[1] === data.proposalHash)))
+          if (msg) { await store.commit('deleteMessage', msg.hash) }
+        }
+      }
+    },
+    getters: {
+      candidateMembers (state) {
+        return _.keysIn(state.proposals).filter(key => state.proposals[key].candidate).map(key => state.proposals[key].candidate)
       }
     }
   })

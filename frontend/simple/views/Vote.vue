@@ -31,14 +31,15 @@ import * as Events from '../../../shared/events'
 import backend from '../js/backend/'
 import template from 'string-template'
 import L from '../js/translations'
+import _ from 'lodash'
 export default {
   name: 'Vote',
   computed: {
     contract () {
-      return this.$store.state[this.$route.query.groupId] || {proposal: null}
+      return this.$store.state[this.$route.query.groupId] || {proposals: {}}
     },
     proposal () {
-      return this.contract.proposals[this.$route.query.proposalHash]
+      return this.contract.proposals[this.$route.query.proposalHash] || {proposal: null}
     }
   },
   methods: {
@@ -48,19 +49,20 @@ export default {
         // Create a vote for the proposal
         let latest = await backend.latestHash(this.$route.query.groupId)
         let vote = new Events.HashableGroupVoteForProposal({ username: this.$store.state.loggedIn.name, proposalHash: this.$route.query.proposalHash }, latest)
+        let proposal = _.cloneDeep(this.proposal)
+        let threshold = Math.ceil(proposal.percentage * 0.01 * this.contract.members.length)
+        await backend.publishLogEntry(this.$route.query.groupId, vote)
         // If the vote passes fulfill the action
-        if (this.proposal.for.length + 1 >= this.proposal.threshold) {
+        if (proposal.for.length + 1 >= threshold) {
           let lastActionHash = null
           const actionDate = new Date().toString()
-          for (let step of this.proposal.actions) {
+          for (let step of proposal.actions) {
             latest = await backend.latestHash(step.contractId)
             let actObj = JSON.parse(template(step.action, {lastActionHash, actionDate}))
             let entry = new Events[actObj.type](actObj.data, latest)
             lastActionHash = entry.toHash()
             await backend.publishLogEntry(step.contractId, entry)
           }
-        } else {
-          await backend.publishLogEntry(this.$route.query.groupId, vote)
         }
         // remove proposal and return to mailbox
         this.$store.commit('deleteMessage', this.$route.query.messageHash)

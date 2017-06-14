@@ -77,13 +77,13 @@
             <tr v-for="(message, index) in proposals">
               <td>
                 <div class="media">
-                  <div class="media-left" v-on:click="readProposal(index)">
+                  <div class="media-left" v-on:click="read({index, type: message.data.messageType})">
                     <p class="image is-64x64">
                       <!-- TODO: make this draw image from group contract -->
                       <img src="images/128x128.png">
                     </p>
                   </div>
-                  <div class="media-content proposal-message" v-on:click="readProposal(index)">
+                  <div class="media-content proposal-message" v-on:click="read({index, type: message.data.messageType})">
                     <div><strong>Sent:</strong>&nbsp;{{formatDate(message.data.sentDate)}}</div>
                     <div><strong>From:</strong>&nbsp;{{message.data.message}}</div>
                   </div>
@@ -102,13 +102,13 @@
             <tr v-for="(message, index) in invites">
               <td>
                 <div class="media">
-                  <div class="media-left" v-on:click="readInvite(index)">
+                  <div class="media-left" v-on:click="read({index, type: message.data.messageType})">
                     <p class="image is-64x64">
                       <!-- TODO: make this draw image from group contract -->
                       <img src="images/128x128.png">
                     </p>
                   </div>
-                  <div class="media-content invite-message" v-on:click="readInvite(index)">
+                  <div class="media-content invite-message" v-on:click="read({index, type: message.data.messageType})">
                     <div><strong>Sent:</strong>&nbsp;{{formatDate(message.data.sentDate)}}</div>
                     <div><strong>From:</strong>&nbsp;{{message.data.message}}</div>
                   </div>
@@ -127,12 +127,12 @@
             <tr v-for="(message, index) in inbox">
               <td>
                 <div class="media">
-                  <div class="media-left" v-on:click="read(index)">
+                  <div class="media-left" v-on:click="read({index, type: message.data.messageType})">
                     <p class="image is-64x64">
                       <img src="images/128x128.png">
                     </p>
                   </div>
-                  <div class="media-content inbox-message" v-on:click="read(index)">
+                  <div class="media-content inbox-message" v-on:click="read({index, type: message.data.messageType})">
                     <div><strong>Sent:</strong>&nbsp;{{formatDate(message.data.sentDate)}}</div>
                     <div><strong>From:</strong>&nbsp;{{message.data.from}}</div>
                     <span style="color: grey">{{message.data.message.substr(0,50)}}{{message.data.message.length > 50 ? '...' : ''}} </span>
@@ -245,26 +245,20 @@ export default {
       this.mode = 'Compose'
     },
     // TODO Deduplicate
-    read: function (index) {
+    read: function ({index, type}) {
       this.mode = 'Read'
       if (Number.isInteger(index)) {
-        this.currentMessage = this.inbox[index]
-        this.currentIndex = index
-        this.$store.commit('markMessageAsRead', this.currentMessage.hash)
-      }
-    },
-    readInvite: function (index) {
-      this.mode = 'Read'
-      if (Number.isInteger(index)) {
-        this.currentMessage = this.invites[index]
-        this.currentIndex = index
-        this.$store.commit('markMessageAsRead', this.currentMessage.hash)
-      }
-    },
-    readProposal: function (index) {
-      this.mode = 'Read'
-      if (Number.isInteger(index)) {
-        this.currentMessage = this.proposals[index]
+        switch (type) {
+          case Events.HashableMailboxPostMessage.TypeMessage:
+            this.currentMessage = this.inbox[index]
+            break
+          case Events.HashableMailboxPostMessage.TypeInvite:
+            this.currentMessage = this.invites[index]
+            break
+          case Events.HashableMailboxPostMessage.TypeProposal:
+            this.currentMessage = this.proposals[index]
+            break
+        }
         this.currentIndex = index
         this.$store.commit('markMessageAsRead', this.currentMessage.hash)
       }

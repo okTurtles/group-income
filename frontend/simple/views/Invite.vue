@@ -96,21 +96,42 @@
 
     <div class="columns">
       <div class="column is-6 is-offset-3" >
-
-        <p
-          class="notification is-success has-text-centered"
-          v-if="invited"
+        <table
+                class="table is-bordered is-striped is-narrow"
+                v-if="candidateMembers.length"
         >
-          <i class='notification-icon fa fa-check'></i>
-          <i18n>Members invited successfully!</i18n>
-        </p>
+          <thead>
+          <tr>
+            <th class="table-header"><i18n>Candidate Members</i18n></th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr v-for="(candidate, index) in candidateMembers" class="vote">
+            <td>
+              <div class="media">
+                <div class="media-left">
+                  <p class="image is-64x64">
+                    <!-- TODO: use responsive figure:
+                  http://bulma.io/documentation/elements/image/ -->
+                    <!-- TODO: ideally these would be loaded from cache -->
+                    <img src="http://bulma.io/images/placeholders/128x128.png">
+                  </p>
+                </div>
+                <div class="media-content">
+                  <strong>{{candidate}}</strong>
+                </div>
+              </div>
+            </td>
+          </tr>
+          </tbody>
+        </table>
         <table
           class="table is-bordered is-striped is-narrow"
           v-if="members.length"
         >
           <thead>
           <tr>
-            <th class="table-header"><i18n>Initial Invitees</i18n></th>
+            <th class="table-header"><i18n>Invitees</i18n></th>
           </tr>
           </thead>
           <tbody>
@@ -136,6 +157,13 @@
             </tr>
           </tbody>
         </table>
+        <p
+                class="notification is-success has-text-centered"
+                v-if="invited"
+        >
+          <i class='notification-icon fa fa-check'></i>
+          <i18n>Members invited successfully!</i18n>
+        </p>
 
         <div class="has-text-centered">
           <button
@@ -171,7 +199,6 @@ import { latestContractState } from '../js/state'
 import { namespace } from '../js/backend/hapi'
 import L from '../js/translations'
 import template from 'string-template'
-import _ from 'lodash'
 
 export default {
   name: 'Invite',
@@ -186,7 +213,10 @@ export default {
     }
   },
   computed: {
-    contract () { return this.$store.state[this.$store.state.currentGroupId] }
+    contract () { return this.$store.state[this.$store.state.currentGroupId] },
+    candidateMembers () {
+      return this.$store.getters[`${this.$store.state.currentGroupId}/candidateMembers`]
+    }
   },
   methods: {
     async add () {
@@ -200,8 +230,8 @@ export default {
       }
       // Check if this user has been added already
       if (this.contract.members.find(member => member === this.searchUser) ||
-      this.contract.invitees.find(invitee => invitee === this.searchUser) ||
-      _.keysIn(this.contract.proposals).some(hash => this.contract.proposals[hash].username === this.searchUser)) {
+        this.contract.invitees.find(invitee => invitee === this.searchUser) ||
+        this.candidateMembers.find(username => username === this.searchUser)) {
         this.error = true
         return
       }
@@ -242,8 +272,7 @@ export default {
             },
             mailbox
           )
-          const state = await latestContractState(member.contractId)
-          // We need to determine if the invitation needs an invite
+          // We need to determine if the invitation needs a vote
           const groupLatest = await backend.latestHash(this.$store.state.currentGroupId)
           if (this.contract.members.length >= 3) {
             // Create the Record for the group
@@ -261,8 +290,8 @@ export default {
                 {name: member.state.attributes.displayName || member.state.attributes.name, group: this.contract.groupName}
               ),
               // calculate the voting threshold from the group data
-              threshold: Math.ceil(this.contract.memberApprovalPercentage * 0.01 * this.contract.members.length),
-              username: member.state.attributes.name,
+              percentage: this.contract.memberApprovalPercentage,
+              candidate: member.state.attributes.name,
               actions: [
                { contractId: member.state.attributes.mailbox, action: JSON.stringify(invite.toObject()) },
                { contractId: this.$store.state.currentGroupId, action: JSON.stringify(invited.toObject()) }
@@ -293,7 +322,7 @@ export default {
               }
             }
           } else {
-            await backend.publishLogEntry(state.attributes.mailbox, invite)
+            await backend.publishLogEntry(member.state.attributes.mailbox, invite)
             // We need to make a record of the invitation in the group's contract
             const latest = await backend.latestHash(this.$store.state.currentGroupId)
             const invited = new Events.HashableGroupRecordInvitation(

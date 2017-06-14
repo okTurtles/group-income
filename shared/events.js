@@ -281,9 +281,9 @@ export class Action extends Hashable {
 export class HashableGroupProposal extends HashableAction {
   static fields = HashableGroupProposal.Fields([
     ['proposal', 'string'],
-    ['threshold', 'uint32'],
+    ['percentage', 'uint32'],
     ['actions', 'Action', 'repeated'],
-    ['username', 'string']
+    ['candidate', 'string']
   ])
 }
 
