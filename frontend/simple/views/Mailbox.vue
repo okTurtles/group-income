@@ -60,12 +60,38 @@
               <div><strong>From:</strong>&nbsp;{{currentMessage.data.messageType === 'Invite' ?  currentMessage.data.message : currentMessage.data.from}}</div>
             </div>
             <p class="panel-block" v-if="currentMessage.data.messageType === 'Message'" style="display: block; word-wrap: break-word;">{{currentMessage.data.message}}</p>
-            <p class="panel-block" v-if="currentMessage.data.messageType === 'Invite'"><router-link v-bind:to="{ path: '/join', query: { groupId: currentMessage.data.message, inviteHash: currentMessage.hash} }" ><i18n>Respond to Invite</i18n></router-link></p>
+            <p class="panel-block" v-if="currentMessage.data.messageType === 'Invite'"><router-link id="InviteLink" v-bind:to="{ path: '/join', query: { groupId: currentMessage.data.message, inviteHash: currentMessage.hash} }" ><i18n>Respond to Invite</i18n></router-link></p>
+            <p class="panel-block" v-if="currentMessage.data.messageType === 'Proposal'"><router-link id="ProposalLink"v-bind:to="{ path: '/vote', query: { groupId: currentMessage.data.headers[0], proposalHash: currentMessage.data.headers[1], messageHash: currentMessage.hash} }" ><i18n>Respond to Proposal</i18n></router-link></p>
             <div class="panel-block" >
               <button class="button is-danger" v-if="currentMessage.data.messageType === 'Message'" type="submit" style="margin-left:auto; margin-right: 0" v-on:click="remove(index)"><i18n>Delete</i18n></button>
               <button class="button is-primary" type="submit" v-on:click="inboxMode" style="margin-left:10px; margin-right: 0"><i18n>Return</i18n></button>
             </div>
           </div>
+          <table id="Proposals" class="table is-bordered is-striped is-narrow"  v-show="(mode === 'Inbox')" v-if="proposals.length">
+            <thead>
+            <tr>
+              <th><i18n>Proposals</i18n></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-for="(message, index) in proposals">
+              <td>
+                <div class="media">
+                  <div class="media-left" v-on:click="readProposal(index)">
+                    <p class="image is-64x64">
+                      <!-- TODO: make this draw image from group contract -->
+                      <img src="images/128x128.png">
+                    </p>
+                  </div>
+                  <div class="media-content proposal-message" v-on:click="readProposal(index)">
+                    <div><strong>Sent:</strong>&nbsp;{{formatDate(message.data.sentDate)}}</div>
+                    <div><strong>From:</strong>&nbsp;{{message.data.message}}</div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            </tbody>
+          </table>
           <table id="Invites" class="table is-bordered is-striped is-narrow"  v-show="(mode === 'Inbox')" v-if="invites.length">
             <thead>
             <tr>
@@ -147,10 +173,13 @@ export default {
   name: 'Mailbox',
   computed: {
     inbox () {
-      return _.sortBy(_.filter(this.$store.getters.mailbox, msg => msg.data.messageType === 'Message'), criteria)
+      return _.sortBy(_.filter(this.$store.getters.mailbox, msg => msg.data.messageType === Events.HashableMailboxPostMessage.TypeMessage), criteria)
     },
     invites () {
-      return _.sortBy(_.filter(this.$store.getters.mailbox, msg => msg.data.messageType === 'Invite'), criteria)
+      return _.sortBy(_.filter(this.$store.getters.mailbox, msg => msg.data.messageType === Events.HashableMailboxPostMessage.TypeInvite), criteria)
+    },
+    proposals () {
+      return _.sortBy(_.filter(this.$store.getters.mailbox, msg => msg.data.messageType === Events.HashableMailboxPostMessage.TypeProposal), criteria)
     }
   },
   methods: {
@@ -215,6 +244,7 @@ export default {
     compose: function () {
       this.mode = 'Compose'
     },
+    // TODO Deduplicate
     read: function (index) {
       this.mode = 'Read'
       if (Number.isInteger(index)) {
@@ -227,6 +257,14 @@ export default {
       this.mode = 'Read'
       if (Number.isInteger(index)) {
         this.currentMessage = this.invites[index]
+        this.currentIndex = index
+        this.$store.commit('markMessageAsRead', this.currentMessage.hash)
+      }
+    },
+    readProposal: function (index) {
+      this.mode = 'Read'
+      if (Number.isInteger(index)) {
+        this.currentMessage = this.proposals[index]
         this.currentIndex = index
         this.$store.commit('markMessageAsRead', this.currentMessage.hash)
       }

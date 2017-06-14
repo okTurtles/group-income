@@ -263,7 +263,6 @@ export async function latestContractState (contractId) {
     let type = action.constructor.name
     contract.constructor.vuex.mutations[type](state, {data: action.data, hash: action.hash})
   })
-  console.log(state)
   return state
 }
 store.subscribe((mutation) => debouncedSave(store.dispatch))

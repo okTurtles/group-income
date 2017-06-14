@@ -271,24 +271,33 @@ export class HashableGroupPayment extends HashableAction {
     ['payment', 'string'] // TODO: change to 'double' and add other fields
   ])
 }
+export class Action extends Hashable {
+  static fields = Action.Fields([
+    ['contractId', 'string'],
+    ['action', 'string']
+  ])
+}
 
 export class HashableGroupProposal extends HashableAction {
   static fields = HashableGroupProposal.Fields([
     ['proposal', 'string'],
     ['threshold', 'uint32'],
-    ['action', 'string']
-  ])
-}
-
-export class HashableGroupVoteForMotion extends HashableAction {
-  static fields = HashableGroupVoteForMotion.Fields([
+    ['actions', 'Action', 'repeated'],
     ['username', 'string']
   ])
 }
 
-export class HashableGroupVoteAgainstMotion extends HashableAction {
-  static fields = HashableGroupVoteAgainstMotion.Fields([
-    ['username', 'string']
+export class HashableGroupVoteForProposal extends HashableAction {
+  static fields = HashableGroupVoteForProposal.Fields([
+    ['username', 'string'],
+    ['proposalHash', 'string']
+  ])
+}
+
+export class HashableGroupVoteAgainstProposal extends HashableAction {
+  static fields = HashableGroupVoteAgainstProposal.Fields([
+    ['username', 'string'],
+    ['proposalHash', 'string']
   ])
 }
 
@@ -365,6 +374,7 @@ export class HashableMailbox extends HashableContract {}
 export class HashableMailboxPostMessage extends HashableAction {
   static TypeInvite = 'Invite'
   static TypeMessage = 'Message'
+  static TypeProposal = 'Proposal'
   static fields = HashableMailboxPostMessage.Fields([
     ['from', 'string'],
     ['headers', 'string', 'repeated'],

@@ -6,10 +6,22 @@ import {namespace} from '../js/backend/hapi'
 
 export class GroupContract extends Events.HashableGroup {
   static vuex = GroupContract.Vuex({
-    state: { votes: [], payments: [], members: [], invitees: [], profiles: {} },
+    state: { proposals: {}, payments: [], members: [], invitees: [], profiles: {} },
     mutations: {
       HashableGroupPayment (state, {data}) { state.payments.push(data) },
-      HashableGroupVote (state, {data}) { state.votes.push(data) },
+      HashableGroupProposal (state, {data, hash}) { state.proposals[hash] = {...data, for: [], against: []} },
+      HashableGroupVoteForProposal (state, {data}) {
+        if (state.proposals[data.proposalHash]) {
+          state.proposals[data.proposalHash].for.push(data.username)
+          if (state.proposals[data.proposalHash].for.length >= state.proposals[data.proposalHash].threshold) { Vue.delete(state.proposals, data.proposalHash) }
+        }
+      },
+      HashableGroupVoteAgainstProposal (state, {data}) {
+        if (state.proposals[data.proposalHash]) {
+          state.proposals[data.proposalHash].against.push(data.username)
+          if (state.proposals[data.proposalHash].against.length > state.members.length - state.proposals[data.proposalHash].threshold) { Vue.delete(state.proposals, data.proposalHash) }
+        }
+      },
       HashableGroupRecordInvitation (state, {data}) { state.invitees.push(data.username) },
       HashableGroupDeclineInvitation (state, {data}) {
         let index = state.invitees.findIndex(username => username === data.username)
@@ -27,7 +39,7 @@ export class GroupContract extends Events.HashableGroup {
       HashableGroupSetGroupProfile (state, {data}) {
         let profile = state.profiles[data.username]
         if (!profile) { profile = state.profiles[data.username] = {} }
-        if (!data.value) { return delete profile[data.name] }
+        if (!data.value) { return Vue.delete(state.profiles[data.username], data.name) }
         profile[data.name] = data.value
       }
     },

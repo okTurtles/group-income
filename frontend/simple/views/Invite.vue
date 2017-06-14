@@ -14,7 +14,7 @@
               </tr>
               </thead>
               <tbody>
-              <tr v-for="(member, index) in contract.members" class="member">
+              <tr v-for="(member, index) in contract.members" class="currentmember">
                 <td>
                   <div class="media">
                     <div class="media-left">
@@ -45,7 +45,7 @@
               </tr>
               </thead>
               <tbody>
-              <tr v-for="(invitee, index) in contract.invitees" class="member">
+              <tr v-for="(invitee, index) in contract.invitees" class="invitee">
                 <td>
                   <div class="media">
                     <div class="media-left">
@@ -171,6 +171,7 @@ import { latestContractState } from '../js/state'
 import { namespace } from '../js/backend/hapi'
 import L from '../js/translations'
 import template from 'string-template'
+import _ from 'lodash'
 
 export default {
   name: 'Invite',
@@ -198,7 +199,9 @@ export default {
         this.self = false
       }
       // Check if this user has been added already
-      if (this.contract.members.find(member => member === this.searchUser) || this.contract.invitees.find(invitee => invitee === this.searchUser)) {
+      if (this.contract.members.find(member => member === this.searchUser) ||
+      this.contract.invitees.find(invitee => invitee === this.searchUser) ||
+      _.keysIn(this.contract.proposals).some(hash => this.contract.proposals[hash].username === this.searchUser)) {
         this.error = true
         return
       }
@@ -239,35 +242,57 @@ export default {
             },
             mailbox
           )
-          console.log(invite)
+          const state = await latestContractState(member.contractId)
           // We need to determine if the invitation needs an invite
           const groupLatest = await backend.latestHash(this.$store.state.currentGroupId)
-          if (this.contract.members.length > 2) {
+          if (this.contract.members.length >= 3) {
+            // Create the Record for the group
+            const invited = new Events.HashableGroupRecordInvitation(
+              {
+                username: member.state.attributes.name,
+                inviteHash: '{lastActionHash}', // these are place holders to be added later
+                sentDate: '{actionDate}'
+              },
+              null
+            )
+            // Create the Proposal and add to it the record and invite actions
             const proposal = new Events.HashableGroupProposal({
               proposal: template(L('This is a Vote for {name} to become a member of {group}'),
-                {name: member.name, group: this.contract.groupName}
+                {name: member.state.attributes.displayName || member.state.attributes.name, group: this.contract.groupName}
               ),
               // calculate the voting threshold from the group data
               threshold: Math.ceil(this.contract.memberApprovalPercentage * 0.01 * this.contract.members.length),
-              action: JSON.stringify(invite.toObject())
+              username: member.state.attributes.name,
+              actions: [
+               { contractId: member.state.attributes.mailbox, action: JSON.stringify(invite.toObject()) },
+               { contractId: this.$store.state.currentGroupId, action: JSON.stringify(invited.toObject()) }
+              ]
             }, groupLatest)
             await backend.publishLogEntry(this.$store.state.currentGroupId, proposal)
+            // send a vote to all members
             for (let groupMember of this.contract.members) {
-              const identityContractId = await namespace.lookup(groupMember)
-              const identityContractState = await latestContractState(identityContractId)
-              const latestMailbox = await backend.latestHash(identityContractState.attributes.mailbox)
-              const notice = new Events.HashableMailboxPostMessage(
-                {
-                  messageType: Events.HashableMailboxPostMessage.TypeVote,
-                  headers: [this.$store.state.currentGroupId, proposal.toHash()],
-                  sentDate
-                },
-                latestMailbox
-              )
-              await backend.publishLogEntry(identityContractState.attributes.mailbox, notice)
+              // cast vote for the loggedIn user automatically
+              if (groupMember === this.$store.state.loggedIn.name) {
+                let latest = await backend.latestHash(this.$store.state.currentGroupId)
+                let vote = new Events.HashableGroupVoteForProposal({ username: this.$store.state.loggedIn.name, proposalHash: proposal.toHash() }, latest)
+                await backend.publishLogEntry(this.$store.state.currentGroupId, vote)
+              } else {
+                const identityContractId = await namespace.lookup(groupMember)
+                const identityContractState = await latestContractState(identityContractId)
+                const latestMailbox = await backend.latestHash(identityContractState.attributes.mailbox)
+                const notice = new Events.HashableMailboxPostMessage(
+                  {
+                    message: this.$store.state.currentGroupId,
+                    messageType: Events.HashableMailboxPostMessage.TypeProposal,
+                    headers: [this.$store.state.currentGroupId, proposal.toHash()],
+                    sentDate
+                  },
+                  latestMailbox
+                )
+                await backend.publishLogEntry(identityContractState.attributes.mailbox, notice)
+              }
             }
           } else {
-            const state = await latestContractState(member.contractId)
             await backend.publishLogEntry(state.attributes.mailbox, invite)
             // We need to make a record of the invitation in the group's contract
             const latest = await backend.latestHash(this.$store.state.currentGroupId)

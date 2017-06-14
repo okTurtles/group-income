@@ -87,8 +87,6 @@ export default {
   methods: {
     submit: async function () {
       try {
-        // Do this mutation first in order to have events correctly save
-        this.$store.commit('login', this.name)
         let user = new contracts.IdentityContract({
           authorizations: [Events.CanModifyAuths.dummyAuth()],
           attributes: [
@@ -97,6 +95,8 @@ export default {
             {name: 'picture', value: `${window.location.origin}/simple/images/128x128.png`}
           ]
         })
+        // Do this mutation first in order to have events correctly save
+        this.$store.commit('login', { name: this.name, identityContractId: user.toHash() })
         await backend.subscribe(user.toHash())
         await backend.publishLogEntry(user.toHash(), user)
         let mailbox = new contracts.MailboxContract({

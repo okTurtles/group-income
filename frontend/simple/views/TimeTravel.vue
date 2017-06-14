@@ -47,7 +47,7 @@ export default {
   methods: {
     timeTravel: function (position) {
       var state = this.history[position]
-      console.log(`Firing position ${position}:`, state)
+      // console.log(`Firing position ${position}:`, state)
       store.replaceState(state)
       Vue.events.$emit('replacedState')
     }

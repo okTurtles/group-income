@@ -7,6 +7,7 @@ import TestEventLog from '../views/EventLog.vue'
 import Invite from '../views/Invite.vue'
 import Mailbox from '../views/Mailbox.vue'
 import Join from '../views/Join.vue'
+import Vote from '../views/Vote.vue'
 import PayGroup from '../views/PayGroup.vue'
 import Home from '../views/Home.vue'
 import { wrap, lazyLoadVue } from './utils'
@@ -29,7 +30,7 @@ var inviteGuard = {
   guard: store => !store.state.currentGroupId,
   redirect: (to, from) => ({ path: '/new-group' })
 }
-var joinGuard = {
+var mailGuard = {
   guard: (store, to, from) => from.name !== Mailbox.name,
   redirect: (to, from) => ({ path: '/mailbox' })
 }
@@ -138,7 +139,16 @@ var router = new Router({
       meta: {
         title: 'Join a Group'
       },
-      beforeEnter: createEnterGuards(store, loginGuard, joinGuard)
+      beforeEnter: createEnterGuards(store, loginGuard, mailGuard)
+    },
+    {
+      path: '/vote',
+      name: Vote.name,
+      component: Vote,
+      meta: {
+        title: 'Vote on a Proposal'
+      },
+      beforeEnter: createEnterGuards(store, loginGuard, mailGuard)
     },
     {
       path: '*',
