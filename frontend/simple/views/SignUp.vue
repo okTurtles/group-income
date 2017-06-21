@@ -7,46 +7,57 @@
      .block      base/classes.sass (just adds 20px margin-bottom except for last)
      -->
     <form novalidate ref="form"
-      name="formData" class="container signup"
-      @submit.prevent="submit"
+          name="formData" class="container signup"
+          @submit.prevent="submit"
     >
       <div class="box centered" style="max-width:400px">
         <div class="level is-mobile">
           <div class="level-left">
             <div class="level-item">
-              <p class="subtitle"><i18n>Sign Up</i18n></p>
+              <p class="subtitle">
+                <i18n>Sign Up</i18n>
+              </p>
             </div>
           </div>
           <div class="level-right">
             <p class="level-item content is-small">
-              <a @click="forwardToLogin"><i18n>Have an account?</i18n></a>
+              <a @click="forwardToLogin">
+                <i18n>Have an account?</i18n>
+              </a>
             </p>
           </div>
         </div>
         <div class="field">
           <p class="control has-icon">
-            <input id="name" class="input" name="name" v-model="name" @blur="checkName" @keypress="checkName" v-validate data-vv-rules="required|regex:^\S+$" placeholder="username" required autofocus>
+            <input id="name" class="input" name="name" v-model="name" @blur="checkName" @keypress="checkName" v-validate
+                   data-vv-rules="required|regex:^\S+$" placeholder="username" required autofocus>
             <span class="icon is-small"><i class="fa fa-user"></i></span>
           </p>
           <p class="help is-danger" v-if="errors.has('name')" id="badUsername">
             <i18n v-if="nameAvailable === false">name is unavailable</i18n>
             <i18n v-else-if="name && name.length > 0">cannot contain spaces</i18n>
           </p>
-          <p v-else-if="nameAvailable" class="help is-success"><i18n>name is available</i18n></p>
+          <p v-else-if="nameAvailable" class="help is-success">
+            <i18n>name is available</i18n>
+          </p>
         </div>
         <div class="field">
           <p class="control has-icon">
-            <input class="input" id= "email" name="email" v-model="email" v-validate data-vv-rules="required|email" type="email" placeholder="email" required>
+            <input class="input" id="email" name="email" v-model="email" v-validate data-vv-rules="required|email"
+                   type="email" placeholder="email" required>
             <span class="icon is-small"><i class="fa fa-envelope"></i></span>
           </p>
           <i18n v-if="errors.has('email')" id="badEmail" class="help is-danger">Not an email</i18n>
         </div>
         <div class="field">
           <p class="control has-icon">
-            <input class="input" id="password" name="password" v-model="password" v-validate data-vv-rules="required|min:7" placeholder="password" type="password" required>
+            <input class="input" id="password" name="password" v-model="password" v-validate
+                   data-vv-rules="required|min:7" placeholder="password" type="password" required>
             <span class="icon is-small"><i class="fa fa-lock"></i></span>
           </p>
-          <i18n v-if="errors.has('password')" id="badPassword" class="help is-danger">Password must be at least 7 characters</i18n>
+          <i18n v-if="errors.has('password')" id="badPassword" class="help is-danger">Password must be at least 7
+            characters
+          </i18n>
         </div>
         <div class="level is-mobile">
           <div class="level-left">
@@ -72,44 +83,77 @@
 <style>
 .signup .level-item { margin-top: 10px; }
 .signup .level.top-align { align-items: flex-start; }
+
 </style>
 
 <script>
-import backend from '../js/backend'
 import Vue from 'vue'
 import _ from 'lodash'
 import * as Events from '../../../shared/events'
 import * as contracts from '../js/events'
+import {transactionQueue, createInternalStateTransaction, createExternalStateTransaction} from '../js/transactions'
+import * as invariants from '../js/invariants'
 import {namespace} from '../js/backend/hapi'
 // TODO: fix all this
 export default {
   name: 'SignUp',
   methods: {
     submit: async function () {
-      try {
-        // Do this mutation first in order to have events correctly save
-        this.$store.commit('login', this.name)
-        let user = new contracts.IdentityContract({
-          authorizations: [Events.CanModifyAuths.dummyAuth()],
-          attributes: [
-            {name: 'name', value: this.name},
-            {name: 'email', value: this.email},
-            {name: 'picture', value: `${window.location.origin}/simple/images/128x128.png`}
-          ]
-        })
-        await backend.subscribe(user.toHash())
-        await backend.publishLogEntry(user.toHash(), user)
-        let mailbox = new contracts.MailboxContract({
-          authorizations: [Events.CanModifyAuths.dummyAuth(user.toHash())]
-        })
-        await backend.subscribe(mailbox.toHash())
-        await backend.publishLogEntry(mailbox.toHash(), mailbox)
-        let attribute = new Events.HashableIdentitySetAttribute({attribute: {name: 'mailbox', value: mailbox.toHash()}}, user.toHash())
-        await backend.publishLogEntry(user.toHash(), attribute)
-        await namespace.register(this.name, user.toHash())
-        // TODO: Just add cryptographic magic
+      let user = new contracts.IdentityContract({
+        authorizations: [Events.CanModifyAuths.dummyAuth()],
+        attributes: [
+          {name: 'name', value: this.name},
+          {name: 'email', value: this.email},
+          {name: 'picture', value: `${window.location.origin}/simple/images/128x128.png`}
+        ]
+      })
+      let mailbox = new contracts.MailboxContract({
+        authorizations: [Events.CanModifyAuths.dummyAuth(user.toHash())]
+      })
+
+      let mailboxHash = mailbox.toHash()
+      let userHash = user.toHash()
+
+      // Do this mutation first in order to have events correctly save
+      this.$store.commit('login', {name: this.name, identityContractId: userHash})
+
+      // Create Transaction
+      let internalTransaction = createInternalStateTransaction('Subscribe to User\'s Contracts')
+      let externalTransaction = createExternalStateTransaction('Register a New User')
+
+      // add variables to transaction scope
+      internalTransaction.setInScope('userHash', userHash)
+      externalTransaction.setInScope('userHash', userHash)
+      externalTransaction.setInScope('user', user)
+      externalTransaction.setInScope('mailboxHash', mailboxHash)
+      internalTransaction.setInScope('mailboxHash', mailboxHash)
+      externalTransaction.setInScope('mailbox', mailbox)
+      // Internal Step
+      internalTransaction.addStep({ execute: invariants.backendSubscribe, description: 'Subscribe to User Identity Contract', args: { backend: 'backend', contractId: 'userHash' } })
+      internalTransaction.addStep({ execute: invariants.backendSubscribe, description: 'Subscribe to Mailbox Contract', args: { backend: 'backend', contractId: 'mailboxHash' } })
+      // External Step
+      externalTransaction.addStep({ execute: invariants.publishLogEntry, description: 'Create User Identity Contract', args: { backend: 'backend', contractId: 'userHash', entry: 'user' } })
+      externalTransaction.addStep({ execute: invariants.publishLogEntry, description: 'Create Mailbox Contract', args: { backend: 'backend', contractId: 'mailboxHash', entry: 'mailbox' } })
+      externalTransaction.setInScope('mailboxAttribute', 'mailbox')
+      externalTransaction.addStep({ execute: invariants.identitySetAttribute, description: 'Set Mailbox Attribute', args: { Events: 'Events', backend: 'backend', contractId: 'userHash', latestHash: 'userHash', name: 'mailboxAttribute', value: 'mailboxHash' } })
+      externalTransaction.setInScope('name', this.name)
+      externalTransaction.addStep({ execute: invariants.namespaceRegister, args: { namespace: 'namespace', name: 'name', value: 'userHash' } })
+
+      // handle errors the same way for both transactions
+      let onError = (ex) => {
+        this.$store.commit('logout')
+        console.log(ex)
+        this.response = ex.toString()
+        this.error = true
+      }
+      internalTransaction.once('error', onError)
+      externalTransaction.once('error', onError)
+      internalTransaction.once('complete', () => {
+        transactionQueue.run(externalTransaction)
+      })
+      externalTransaction.once('complete', () => {
         this.response = 'success'
-        this.$store.dispatch('login', {name: this.name, identityContractId: user.toHash()})
+        this.$store.dispatch('login', {name: this.name, identityContractId: userHash})
         if (this.$route.query.next) {
           setTimeout(() => {
             this.$router.push({path: this.$route.query.next})
@@ -118,12 +162,9 @@ export default {
           this.$router.push({path: '/'})
         }
         this.error = false
-      } catch (ex) {
-        this.$store.commit('logout')
-        console.log(ex)
-        this.response = ex.toString()
-        this.error = true
-      }
+      })
+
+      transactionQueue.run(internalTransaction)
     },
     forwardToLogin: function () {
       Vue.events.$emit('loginModal')
@@ -158,4 +199,5 @@ export default {
     }
   }
 }
+
 </script>
