@@ -23,7 +23,7 @@ export default {
         Invite members
       </a>
     </p>
-    <h1 class="title is-1 mb-none">{{ group.name }}</h1>
+    <h1 class="title is-1 mb-none">{{ group.groupName }}</h1>
     <p class="text-light mb-lg"><small>{{ group.id }}</small></p>
     <p class="mb-lg">{{ group.sharedValues }}</p>
     <h5 class="subtitle is-4">Members</h5>
