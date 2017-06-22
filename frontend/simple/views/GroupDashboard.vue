@@ -16,7 +16,7 @@ export default {
 </script>
 
 <template>
-  <section class="container">
+  <section class="container section">
     <p class='is-pulled-right'>
       <a class="button is-primary" @click.prevent="invite(group.id)">
         <i class='fa fa-plus mr-sm'></i>
