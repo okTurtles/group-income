@@ -7,18 +7,16 @@
      .block      base/classes.sass (just adds 20px margin-bottom except for last)
      -->
     <form novalidate ref="form"
-      name="formData" class="container signup"
+      name="formData" class="container"
       @submit.prevent="submit"
     >
-      <div class="box centered" style="max-width:400px">
+      <div class="box mx-auto" style="max-width: 400px">
         <div class="level is-mobile">
-          <div class="level-left">
-            <div class="level-item">
-              <p class="subtitle"><i18n>Sign Up</i18n></p>
-            </div>
+          <div class="level-left mt-md">
+            <p class="subtitle"><i18n>Sign Up</i18n></p>
           </div>
           <div class="level-right">
-            <p class="level-item content is-small">
+            <p class="mt-md content is-small">
               <a @click="forwardToLogin"><i18n>Have an account?</i18n></a>
             </p>
           </div>
@@ -50,14 +48,14 @@
         </div>
         <div class="level is-mobile">
           <div class="level-left">
-            <div class="level-item content is-small">
+            <div class="mt-md content is-small">
               <span id="serverMsg" class="help is-marginless" :class="[error ? 'is-danger' : 'is-success']">
                 {{response}}
               </span>
             </div>
           </div>
           <div class="level-right">
-            <div class="level-item is-narrow">
+            <div class="mt-md is-narrow">
               <button class="button submit is-success" type="submit" :disabled="errors.any() || !fields.passed()">
                 <i18n>Sign Up</i18n>
               </button>
@@ -68,11 +66,6 @@
     </form>
   </section>
 </template>
-
-<style>
-.signup .level-item { margin-top: 10px; }
-.signup .level.top-align { align-items: flex-start; }
-</style>
 
 <script>
 import backend from '../js/backend'

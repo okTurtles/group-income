@@ -1,7 +1,7 @@
 <template>
   <section id="create-group-page" class="section">
     <!-- TODO: use Bulma's .field -->
-    <!-- TODO: center using .centered like SignUp.vue -->
+    <!-- TODO: center using .mx-auto like SignUp.vue -->
     <div class="columns">
       <div class="column is-1"></div>
       <div class="column is-10" >
@@ -243,12 +243,17 @@ export default {
 }
 </script>
 
-<style scoped>
-.button-box {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 20%;
-  margin: 30px 0 0 0;
-}
+<style lang="sass" scoped>
+.button-box
+  display: flex
+  align-items: center
+  justify-content: center
+  height: 20%
+  margin: 30px 0 0 0
+.create-group
+  .select::after
+    border-color: #ccc
+  .box
+    margin-bottom: 0
+    border-radius: 0
 </style>

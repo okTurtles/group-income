@@ -1,6 +1,6 @@
 <template>
   <section class="section full-screen">
-    <div class="centered" >
+    <div class="mx-auto" >
       <div class="columns">
         <div class="column is-one-quarter">
           <div class="panel">
@@ -26,7 +26,7 @@
           <div id="compose" class="panel" v-show="mode === 'Compose'">
             <div class="panel-heading">
               <div><strong><i18n>Type</i18n>:</strong>&nbsp;<i18n>Message</i18n></div>
-              <div><strong style="margin-top: auto"><i18n>To</i18n>:</strong>&nbsp;
+              <div><strong class="mt-auto"><i18n>To</i18n>:</strong>&nbsp;
                 <input id="AddRecipient" class="input is-small" type="text" style="width: 80%;" v-model="recipient" v-on:blur="addRecipient">
                 <a class="button is-small" v-on:click="addRecipient">
                   <span class="icon is-small">
@@ -49,8 +49,8 @@
             </div>
             <div class="panel-block" >
               <div id="errorMsg" v-if="errorMsg" class="help is-danger">{{errorMsg}}</div>
-              <button id="SendButton" class="button is-success" type="submit" v-on:click="send" :disabled="!composedMessage"  style="margin-left:auto; margin-right: 0"><i18n>Send</i18n></button>
-              <button class="button is-danger" type="submit" v-on:click="cancel" style="margin-left:10px; margin-right: 0"><i18n>Cancel</i18n></button>
+              <button id="SendButton" class="button is-success ml-auto mr-none" type="submit" v-on:click="send" :disabled="!composedMessage"><i18n>Send</i18n></button>
+              <button class="button is-danger ml-md mr-none" type="submit" v-on:click="cancel"><i18n>Cancel</i18n></button>
             </div>
           </div>
           <div id="CurrentMessage" class="panel" v-show="mode === 'Read'">
@@ -59,11 +59,11 @@
               <div><strong>Sent:</strong>&nbsp;{{formatDate(currentMessage.data.sentDate)}}</div>
               <div><strong>From:</strong>&nbsp;{{currentMessage.data.messageType === 'Invite' ?  currentMessage.data.message : currentMessage.data.from}}</div>
             </div>
-            <p class="panel-block" v-if="currentMessage.data.messageType === 'Message'" style="display: block; word-wrap: break-word;">{{currentMessage.data.message}}</p>
+            <p class="panel-block display-block" v-if="currentMessage.data.messageType === 'Message'" style="word-wrap: break-word;">{{currentMessage.data.message}}</p>
             <p class="panel-block" v-if="currentMessage.data.messageType === 'Invite'"><router-link v-bind:to="{ path: '/join', query: { groupId: currentMessage.data.message, inviteHash: currentMessage.hash} }" ><i18n>Respond to Invite</i18n></router-link></p>
             <div class="panel-block" >
-              <button class="button is-danger" v-if="currentMessage.data.messageType === 'Message'" type="submit" style="margin-left:auto; margin-right: 0" v-on:click="remove(index)"><i18n>Delete</i18n></button>
-              <button class="button is-primary" type="submit" v-on:click="inboxMode" style="margin-left:10px; margin-right: 0"><i18n>Return</i18n></button>
+              <button class="button is-danger ml-auto mr-none" v-if="currentMessage.data.messageType === 'Message'" type="submit" v-on:click="remove(index)"><i18n>Delete</i18n></button>
+              <button class="button is-primary ml-md mr-none" type="submit" v-on:click="inboxMode"><i18n>Return</i18n></button>
             </div>
           </div>
           <table id="Invites" class="table is-bordered is-striped is-narrow"  v-show="(mode === 'Inbox')" v-if="invites.length">
@@ -109,9 +109,9 @@
                   <div class="media-content inbox-message" v-on:click="read(index)">
                     <div><strong>Sent:</strong>&nbsp;{{formatDate(message.data.sentDate)}}</div>
                     <div><strong>From:</strong>&nbsp;{{message.data.from}}</div>
-                    <span style="color: grey">{{message.data.message.substr(0,50)}}{{message.data.message.length > 50 ? '...' : ''}} </span>
+                    <span class="text-light">{{message.data.message.substr(0,50)}}{{message.data.message.length > 50 ? '...' : ''}} </span>
                   </div>
-                  <div type="submit"class="media-right" v-on:click="remove(index, 'inbox')">
+                  <div type="submit" class="media-right" v-on:click="remove(index, 'inbox')">
                     <button  class="delete" ></button>
                   </div>
                 </div>
@@ -129,11 +129,6 @@
     </div>
   </section>
 </template>
-
-<style>
-.signup .level-item { margin-top: 10px; }
-.signup .level.top-align { align-items: flex-start; }
-</style>
 
 <script>
 import _ from 'lodash'
@@ -264,3 +259,15 @@ export default {
   }
 }
 </script>
+
+<style lang="sass" scoped>
+.unread
+  display: inline-block
+  padding: 2px 5px
+  font-size: 12px
+  font-weight: 600
+  line-height: 1
+  color: white
+  background-color: #1fc8db
+  border-radius: 20px
+</style>

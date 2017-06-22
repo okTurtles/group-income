@@ -1,6 +1,6 @@
 <template>
     <section class="section full-screen">
-      <div class="centered" >
+      <div class="mx-auto" >
         <div class="columns">
           <div class="column is-one-half">
             <div class="center ">
@@ -9,16 +9,17 @@
             </div>
             <div class="panel">
               <div class="panel-block">
-                <div style="display: inline;">
+                <div class="display-inline">
                   <strong>Shared Values: </strong> {{contract.sharedValues}}
                 </div>
               </div>
               <table class="panel-block notification is-warning">
                 <strong>${{contract.incomeProvided}} <i18n>Monthly Income</i18n></strong>
               </table>
-              <div class="panel-block center" style="display: block; text-align: center">
+              <div class="panel-block center has-text-centered">
                 <div id="errorMsg" v-if="errorMsg" class="help is-danger">{{errorMsg}}</div>
-                <a class="button is-success is-large" v-on:click="accept" style="margin-left:auto; margin-right: 20px"><i18n>Accept</i18n></a><a class="button is-danger is-large" v-on:click="decline" style="margin-right:auto; margin-right: 20px"><i18n>Decline</i18n></a>
+                <a class="button is-success is-large ml-auto mr-lg" @click="accept"><i18n>Accept</i18n></a>
+                <a class="button is-danger is-large mr-lg" @click="decline"><i18n>Decline</i18n></a>
               </div>
             </div>
           </div>

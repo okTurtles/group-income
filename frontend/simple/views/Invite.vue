@@ -29,7 +29,7 @@
       <div class="column is-6 is-offset-3" >
 
         <p
-          class="notification is-success has-text-centered"
+          class="notification text-success has-text-centered"
           v-if="invited"
         >
           <i class='notification-icon fa fa-check'></i>
