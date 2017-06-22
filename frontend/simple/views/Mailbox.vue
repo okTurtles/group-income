@@ -260,13 +260,6 @@ export default {
 }
 </script>
 
-<style lang="sass">
-.signup .level-item
-  margin-top: 10px
-.signup .level.top-align
-  align-items: flex-start
-</style>
-
 <style lang="sass" scoped>
 .unread
   display: inline-block
