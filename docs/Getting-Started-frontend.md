@@ -470,7 +470,7 @@ So it is good for that style of programming, and it is therefore much more frien
 - Avoiding repetition by including some file using `<%- include file %>` ([example](https://github.com/okTurtles/group-income-simple/blob/ebafb48385c63d271eb6a210545efbcc8d43d99c/frontend/simple/views/test.ejs#L10))
 - Adding simple logic like "display this chunk of HTML `if` something, otherwise display this other thing"
 
-You can even use EJS syntax within within `.vue` files by setting the [template language](https://vuejs.org/guide/syntax.html) to `ejs`:
+You can even use EJS syntax within `.vue` files by setting the [template language](https://vuejs.org/guide/syntax.html) to `ejs`:
 
 ```vue
 <template lang="ejs">
