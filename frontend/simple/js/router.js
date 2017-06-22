@@ -73,18 +73,18 @@ var router = new Router({
       component: CreateGroup,
       name: CreateGroup.name,
       meta: {
-        title: 'Create Group',
+        title: 'Create Group'
       },
-      beforeEnter: createEnterGuards(store, loginGuard),
+      beforeEnter: createEnterGuards(store, loginGuard)
     },
     {
       path: '/dashboard',
       component: GroupDashboard,
       name: GroupDashboard.name,
       meta: {
-        title: 'Group Dashboard',
+        title: 'Group Dashboard'
       },
-      beforeEnter: createEnterGuards(store, loginGuard),
+      beforeEnter: createEnterGuards(store, loginGuard)
     },
     {
       path: '/user',
