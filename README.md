@@ -8,11 +8,10 @@ This semi-centralized "Simple Edition" of Group Income is our way to rapidly pro
 
 ## Installation
 
-1. Install [Node.js](https://nodejs.org) (version 6 or greater).
+1. Install [Node.js](https://nodejs.org) (version 8 or greater).
 2. Install [Grunt](https://github.com/gruntjs/grunt): `npm install -g grunt-cli`
-3. Install [Yarn](https://yarnpkg.com/en/docs/install).
-4. Clone this repo (or a fork of it if you plan on [contributing](#contributing)) and `cd` into it.
-5. Install dependencies: `yarn install`
+3. Clone this repo (or a fork of it if you plan on [contributing](#contributing)) and `cd` into it.
+4. Install dependencies: `npm install`
 
 Now try out the [dev workflow](#basic-workflow).
 
