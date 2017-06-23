@@ -17,17 +17,24 @@ export default {
 
 <template>
   <section class="container section">
-    <p class='is-pulled-right'>
-    </p>
-    <h1 class="title is-1">{{ group.groupName }}</h1>
-    <p>{{ group.sharedValues }}</p>
-    <h5 class="subtitle is-4"><i18n>Members</i18n></h5>
-    <ul>
-      <li v-for="member in group.members">{{ member }}</li>
-    </ul>
-    <a class="button invite-button" @click.prevent="invite(group.id)">
-      <span class="icon"><i class='fa fa-plus'></i></span>
-    </a>
+    <div class="columns">
+      <div class="column is-2">
+        <p>YOUR GROUPS</p>
+      </div>
+      <div class="column">
+        <p class='is-pulled-right'>
+        </p>
+        <h1 class="title is-1">{{ group.groupName }}</h1>
+        <p>{{ group.sharedValues }}</p>
+        <h5 class="subtitle is-4"><i18n>Members</i18n></h5>
+        <ul>
+          <li v-for="member in group.members">{{ member }}</li>
+        </ul>
+        <a class="button invite-button" @click.prevent="invite(group.id)">
+          <span class="icon"><i class='fa fa-plus'></i></span>
+        </a>
+      </div>
+    </div>
   </section>
 </template>
 
