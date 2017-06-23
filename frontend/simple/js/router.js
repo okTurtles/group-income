@@ -4,6 +4,7 @@ import VeeValidate from 'vee-validate'
 import store from './state'
 import SignUp from '../views/SignUp.vue'
 import CreateGroup from '../views/CreateGroup.vue'
+import GroupDashboard from '../views/group-dashboard.vue'
 import UserProfileView from '../views/UserProfileView.vue'
 import TestEventLog from '../views/EventLog.vue'
 import Invite from '../views/Invite.vue'
@@ -78,9 +79,18 @@ var router = new Router({
       component: CreateGroup,
       name: CreateGroup.name,
       meta: {
-        title: 'Create Group'
+        title: 'Create Group',
       },
-      beforeEnter: createEnterGuards(store, loginGuard)
+      beforeEnter: createEnterGuards(store, loginGuard),
+    },
+    {
+      path: '/dashboard',
+      component: GroupDashboard,
+      name: GroupDashboard.name,
+      meta: {
+        title: 'Group Dashboard',
+      },
+      beforeEnter: createEnterGuards(store, loginGuard),
     },
     {
       path: '/user',
