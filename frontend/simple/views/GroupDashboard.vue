@@ -1,4 +1,5 @@
 <script>
+import YourGroupsList from '../components/YourGroupsList.vue'
 import GroupMembers from '../components/GroupMembers.vue'
 import GroupSupportHistory from '../components/GroupSupportHistory.vue'
 import GroupSettings from '../components/GroupSettings.vue'
@@ -11,6 +12,7 @@ export default {
     }
   },
   components: {
+    YourGroupsList,
     GroupMembers,
     GroupSupportHistory,
     GroupSettings
@@ -21,9 +23,11 @@ export default {
 <template>
   <section class="container section">
     <div class="columns">
+
       <div class="column is-2">
-        <p>YOUR GROUPS</p>
+        <your-groups-list />
       </div>
+
       <div class="column">
         <div class='is-pulled-right has-text-right'>
           <p class="min-income-label">Min Income</p>
@@ -49,9 +53,6 @@ export default {
     font-family: HelveticaNeue-Bold
     font-size: 52px
     color: #616161
-
-  h3.title
-    margin-top: 30px
 
   .min-income-label
     font-family: HelveticaNeue-Light
