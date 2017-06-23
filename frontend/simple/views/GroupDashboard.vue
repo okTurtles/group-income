@@ -22,17 +22,31 @@ export default {
         <p>YOUR GROUPS</p>
       </div>
       <div class="column">
-        <p class='is-pulled-right'>
-        </p>
+        <div class='is-pulled-right'>
+          <p>Min Income</p>
+          <p>${{ group.incomeProvided}}</p>
+          <a href="">Propose change</a>
+        </div>
         <h1 class="title is-1">{{ group.groupName }}</h1>
         <p>{{ group.sharedValues }}</p>
-        <h5 class="subtitle is-4"><i18n>Members</i18n></h5>
+
+        <!-- Members List  -->
+        <h3 class="title is-3"><i18n>Members</i18n></h3>
         <ul>
           <li v-for="member in group.members">{{ member }}</li>
         </ul>
         <a class="button invite-button" @click.prevent="invite(group.id)">
           <span class="icon"><i class='fa fa-plus'></i></span>
         </a>
+
+        <!-- Support History -->
+        <h3 class="title is-3"><i18n>Support History</i18n></h3>
+        <a href="#">View full history</a>
+
+        <!-- Group Settings -->
+        <h3 class="title is-3"><i18n>Current Settings</i18n></h3>
+
+
       </div>
     </div>
   </section>
