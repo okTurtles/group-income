@@ -39,6 +39,7 @@ const mutations = {
   },
   logout (state) {
     state.loggedIn = false
+    state.currentGroupId = null
   },
   addContract (state, {contractId, recentHash, type, data}) {
     // "Mutations Follow Vue's Reactivity Rules" - important for modifying objects
@@ -108,7 +109,30 @@ const getters = {
   // list of group names and contractIds
   groupsByName (state) {
     return _.map(_.keys(_.pickBy(state.contracts, (value, key) => value.type === 'GroupContract')), key => ({groupName: state[key].groupName, contractId: key}))
+  },
+  proposals (state) {
+    let proposals = []
+    if (!state.currentGroupId) { return proposals }
+    for (let groupContractId of Object.keys(state.contracts)
+      .filter(key => state.contracts[key].type === 'GroupContract')
+    ) {
+      for (let proposal of Object.keys(state[groupContractId].proposals)) {
+        if (state[groupContractId].proposals[proposal].initatior !== state.loggedIn.name &&
+        !state[groupContractId].proposals[proposal].for.find(name => name === state.loggedIn.name) &&
+        !state[groupContractId].proposals[proposal].against.find(name => name === state.loggedIn.name)
+        ) {
+          proposals.push({
+            groupContractId,
+            groupName: state[groupContractId].groupName,
+            proposal,
+            initiationDate: state[ groupContractId ].proposals[ proposal ].initiationDate
+          })
+        }
+      }
+    }
+    return proposals
   }
+
 }
 
 const actions = {

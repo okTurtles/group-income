@@ -57,11 +57,11 @@
             <div class="panel-heading">
               <div><strong>Type:</strong>&nbsp;{{currentMessage.data.messageType}}</div>
               <div><strong>Sent:</strong>&nbsp;{{formatDate(currentMessage.data.sentDate)}}</div>
-              <div><strong>From:</strong>&nbsp;{{currentMessage.data.messageType === 'Invite' ?  currentMessage.data.message : currentMessage.data.from}}</div>
+              <div><strong>From:</strong>&nbsp;{{currentMessage.data.from}}</div>
             </div>
             <p class="panel-block" v-if="currentMessage.data.messageType === 'Message'" style="display: block; word-wrap: break-word;">{{currentMessage.data.message}}</p>
-            <p class="panel-block" v-if="currentMessage.data.messageType === 'Invite'"><router-link id="InviteLink" v-bind:to="{ path: '/join', query: { groupId: currentMessage.data.message, inviteHash: currentMessage.hash} }" ><i18n>Respond to Invite</i18n></router-link></p>
-            <p class="panel-block" v-if="currentMessage.data.messageType === 'Proposal'"><router-link id="ProposalLink"v-bind:to="{ path: '/vote', query: { groupId: currentMessage.data.headers[0], proposalHash: currentMessage.data.headers[1], messageHash: currentMessage.hash} }" ><i18n>Respond to Proposal</i18n></router-link></p>
+            <p class="panel-block" v-if="currentMessage.data.messageType === 'Invite'"><router-link id="InviteLink" v-bind:to="{ path: '/join', query: { groupId: currentMessage.data.headers[0], inviteHash: currentMessage.hash} }" ><i18n>Respond to Invite</i18n></router-link></p>
+
             <div class="panel-block" >
               <button class="button is-danger" v-if="currentMessage.data.messageType === 'Message'" type="submit" style="margin-left:auto; margin-right: 0" v-on:click="remove(index)"><i18n>Delete</i18n></button>
               <button class="button is-primary" type="submit" v-on:click="inboxMode" style="margin-left:10px; margin-right: 0"><i18n>Return</i18n></button>
@@ -74,18 +74,18 @@
             </tr>
             </thead>
             <tbody>
-            <tr v-for="(message, index) in proposals">
+            <tr v-for="(proposal, index) in proposals">
               <td>
                 <div class="media">
-                  <div class="media-left" v-on:click="read({index, type: message.data.messageType})">
+                  <div class="media-left" v-on:click="respondToProposal(index)">
                     <p class="image is-64x64">
                       <!-- TODO: make this draw image from group contract -->
                       <img src="images/128x128.png">
                     </p>
                   </div>
-                  <div class="media-content proposal-message" v-on:click="read({index, type: message.data.messageType})">
-                    <div><strong>Sent:</strong>&nbsp;{{formatDate(message.data.sentDate)}}</div>
-                    <div><strong>From:</strong>&nbsp;{{message.data.message}}</div>
+                  <div class="media-content proposal-message" v-on:click="respondToProposal(index)">
+                    <div><strong>Sent:</strong>&nbsp;{{formatDate(proposal.initiationDate)}}</div>
+                    <div><strong>From:</strong>&nbsp;{{proposal.groupName}}</div>
                   </div>
                 </div>
               </td>
@@ -110,7 +110,7 @@
                   </div>
                   <div class="media-content invite-message" v-on:click="read({index, type: message.data.messageType})">
                     <div><strong>Sent:</strong>&nbsp;{{formatDate(message.data.sentDate)}}</div>
-                    <div><strong>From:</strong>&nbsp;{{message.data.message}}</div>
+                    <div><strong>From:</strong>&nbsp;{{message.data.from}}</div>
                   </div>
                 </div>
               </td>
@@ -179,7 +179,7 @@ export default {
       return _.sortBy(_.filter(this.$store.getters.mailbox, msg => msg.data.messageType === Events.HashableMailboxPostMessage.TypeInvite), criteria)
     },
     proposals () {
-      return _.sortBy(_.filter(this.$store.getters.mailbox, msg => msg.data.messageType === Events.HashableMailboxPostMessage.TypeProposal), criteria)
+      return this.$store.getters.proposals
     }
   },
   methods: {
@@ -244,6 +244,9 @@ export default {
     compose: function () {
       this.mode = 'Compose'
     },
+    respondToProposal: function (index) {
+      this.$router.push({ path: '/vote', query: { groupId: this.proposals[index].groupContractId, proposalHash: this.proposals[index].proposal } })
+    },
     // TODO Deduplicate
     read: function ({index, type}) {
       this.mode = 'Read'
@@ -254,9 +257,6 @@ export default {
             break
           case Events.HashableMailboxPostMessage.TypeInvite:
             this.currentMessage = this.invites[index]
-            break
-          case Events.HashableMailboxPostMessage.TypeProposal:
-            this.currentMessage = this.proposals[index]
             break
         }
         this.currentIndex = index

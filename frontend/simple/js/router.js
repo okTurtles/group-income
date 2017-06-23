@@ -10,6 +10,7 @@ import Join from '../views/Join.vue'
 import Vote from '../views/Vote.vue'
 import PayGroup from '../views/PayGroup.vue'
 import Home from '../views/Home.vue'
+import ProposeMember from '../views/ProposeMember.vue'
 import { wrap, lazyLoadVue } from './utils'
 /*
  The following are reusable guard for routes
@@ -25,10 +26,18 @@ var signupGuard = {
   guard: store => !!store.state.loggedIn,
   redirect: (to, from) => ({ path: '/' })
 }
-// Check if user has a group to invite users to
-var inviteGuard = {
+// Check if user has a group
+var groupGuard = {
   guard: store => !store.state.currentGroupId,
   redirect: (to, from) => ({ path: '/new-group' })
+}
+var inviteGuard = {
+  guard: store => store.state.currentGroupId && store.state[store.state.currentGroupId].members.length >= 3,
+  redirect: (to, from) => ({ path: '/propose-member' })
+}
+var proposeMemberGuard = {
+  guard: store => store.state.currentGroupId && store.state[store.state.currentGroupId].members.length < 3,
+  redirect: (to, from) => ({ path: '/invite' })
 }
 var mailGuard = {
   guard: (store, to, from) => from.name !== Mailbox.name,
@@ -121,7 +130,16 @@ var router = new Router({
       meta: {
         title: 'Invite Group Members'
       },
-      beforeEnter: createEnterGuards(store, loginGuard, inviteGuard)
+      beforeEnter: createEnterGuards(store, loginGuard, groupGuard, inviteGuard)
+    },
+    {
+      path: '/propose-member',
+      name: ProposeMember.name,
+      component: ProposeMember,
+      meta: {
+        title: 'Propose Group Members'
+      },
+      beforeEnter: createEnterGuards(store, loginGuard, groupGuard, proposeMemberGuard)
     },
     {
       path: '/mailbox',

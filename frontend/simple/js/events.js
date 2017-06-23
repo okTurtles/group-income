@@ -10,24 +10,22 @@ export class GroupContract extends Events.HashableGroup {
     state: { proposals: {}, payments: [], members: [], invitees: [], profiles: {} },
     mutations: {
       HashableGroupPayment (state, {data}) { state.payments.push(data) },
-      HashableGroupProposal (state, {data, hash}) { state.proposals[hash] = {...data, for: [], against: []} },
+      HashableGroupProposal (state, {data, hash}) { state.proposals[hash] = {...data, for: [data.initiator], against: []} },
       HashableGroupVoteForProposal (state, {data}) {
         if (state.proposals[data.proposalHash]) {
           state.proposals[data.proposalHash].for.push(data.username)
-          let threshold = Math.ceil(state.proposals[data.proposalHash].percentage * 0.01 * state.members.length)
+          let threshold = Math.ceil(state.proposals[data.proposalHash].percentage * state.members.length)
           if (state.proposals[data.proposalHash].for.length >= threshold) {
             Vue.delete(state.proposals, data.proposalHash)
-            state._async.push({type: 'HashableGroupVoteForOrAgainstProposal', data})
           }
         }
       },
       HashableGroupVoteAgainstProposal (state, {data}) {
         if (state.proposals[data.proposalHash]) {
           state.proposals[data.proposalHash].against.push(data.username)
-          let threshold = Math.ceil(state.proposals[data.proposalHash].percentage * 0.01 * state.members.length)
+          let threshold = Math.ceil(state.proposals[data.proposalHash].percentage * state.members.length)
           if (state.proposals[data.proposalHash].against.length > state.members.length - threshold) {
             Vue.delete(state.proposals, data.proposalHash)
-            state._async.push({type: 'HashableGroupVoteForOrAgainstProposal', data})
           }
         }
       },
@@ -64,12 +62,6 @@ export class GroupContract extends Events.HashableGroup {
           let identityContractId = await namespace.lookup(data.username)
           await backend.subscribe(identityContractId)
           await store.dispatch('syncContractWithServer', identityContractId)
-        }
-      }, // Remove the message for users who have not voted in situations where the vote has already passed/failed
-      async  HashableGroupVoteForOrAgainstProposal ({state}, {data}) {
-        if (store.state.loggedIn !== data.username && !state.proposals[data.proposalHash]) {
-          let msg = store.getters.mailboxContract.messages.find(msg => (msg.data.headers && (msg.data.headers[1] === data.proposalHash)))
-          if (msg) { await store.commit('deleteMessage', msg.hash) }
         }
       }
     },

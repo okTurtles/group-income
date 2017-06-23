@@ -16,7 +16,7 @@ const fs = require('fs')
 
 describe('Frontend', function () {
   const n = Nightmare({
-    show: !!process.env.SHOW_BROWSER,
+    show: !process.env.SHOW_BROWSER,
     height: 900
   })
 
@@ -371,7 +371,10 @@ describe('Frontend', function () {
         .wait('#Inbox')
         .evaluate(() => !!document.getElementById('Inbox'))
       should(success).equal(true)
-      let memberCount = await n.click('#LogoutBtn')
+    })
+    it('Should Vote on Additional Members', async function () {
+      this.timeout(60000)
+      await n.click('#LogoutBtn')
       // Open login modal
         .wait(() => Boolean(document.querySelector('#LoginBtn')))
         .click('#LoginBtn')
@@ -384,21 +387,9 @@ describe('Frontend', function () {
         .click('#LoginButton')
         .wait('#MailboxLink')
         .goto(page('invite'))
-        .wait(() => Boolean(document.querySelector('#addButton')))
-        .evaluate(() => +document.querySelectorAll('.currentmember').length)
-      // Check if members successfully joined
-      should(memberCount).equal(3)
-    })
-    it('Should Vote on Additional Members', async function () {
-      this.timeout(60000)
-      let success = await n.wait(() => Boolean(document.querySelector('#addButton')))
+        .wait(() => Boolean(document.querySelector('#ProposeButton')))
         .insert('#searchUser', username + '3')
-        .click('#addButton')
-        .wait(() => document.querySelectorAll('.member').length > 0)
-        .insert('#searchUser', username + '4')
-        .click('#addButton')
-        .wait(() => document.querySelectorAll('.member').length > 1)
-        .click('button[type="submit"]')
+        .click('#ProposeButton')
         .wait(() => !!document.querySelector('.notification.is-success'))
         .evaluate(() => !!document.querySelector('.notification.is-success'))
         // Logout
@@ -407,7 +398,7 @@ describe('Frontend', function () {
         .wait(() => Boolean(document.querySelector('#LoginBtn')))
         .click('#LoginBtn')
       // Login
-      success = await n.wait(() => Boolean(document.querySelector('#LoginModal.is-active')))
+      let success = await n.wait(() => Boolean(document.querySelector('#LoginModal.is-active')))
         .wait(1000)
         .insert('#LoginName', username)
         .insert('#LoginPassword', 'testtest')
@@ -418,7 +409,6 @@ describe('Frontend', function () {
         .wait('.proposal-message')
         .click('.proposal-message')
         .wait(1000)
-        .click('#ProposalLink')
         .wait('#ForLink')
         .click('#ForLink')
         .wait('#Inbox')
@@ -441,7 +431,6 @@ describe('Frontend', function () {
         .wait('.proposal-message')
         .click('.proposal-message')
         .wait(240)
-        .click('#ProposalLink')
         .wait('#ForLink')
         .click('#ForLink')
         .wait('#Inbox')

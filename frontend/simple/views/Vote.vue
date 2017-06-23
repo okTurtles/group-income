@@ -50,7 +50,7 @@ export default {
         let latest = await backend.latestHash(this.$route.query.groupId)
         let vote = new Events.HashableGroupVoteForProposal({ username: this.$store.state.loggedIn.name, proposalHash: this.$route.query.proposalHash }, latest)
         let proposal = _.cloneDeep(this.proposal)
-        let threshold = Math.ceil(proposal.percentage * 0.01 * this.contract.members.length)
+        let threshold = Math.ceil(proposal.percentage * this.contract.members.length)
         await backend.publishLogEntry(this.$route.query.groupId, vote)
         // If the vote passes fulfill the action
         if (proposal.for.length + 1 >= threshold) {
@@ -64,8 +64,7 @@ export default {
             await backend.publishLogEntry(step.contractId, entry)
           }
         }
-        // remove proposal and return to mailbox
-        this.$store.commit('deleteMessage', this.$route.query.messageHash)
+        // return to mailbox
         this.$router.push({path: '/mailbox'})
       } catch (ex) {
         console.log(ex)
