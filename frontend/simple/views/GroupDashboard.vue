@@ -1,4 +1,6 @@
 <script>
+import GroupMembers from '../components/GroupMembers.vue'
+
 export default {
   name: 'GroupDashboard',
   computed: {
@@ -6,11 +8,8 @@ export default {
       return this.$store.getters.currentGroup
     }
   },
-  methods: {
-    invite (groupId) {
-      this.$store.commit('setCurrentGroupId', groupId)
-      this.$router.push({path: '/invite'})
-    }
+  components: {
+    GroupMembers
   }
 }
 </script>
@@ -30,14 +29,7 @@ export default {
         <h1 class="title is-1">{{ group.groupName }}</h1>
         <p>{{ group.sharedValues }}</p>
 
-        <!-- Members List  -->
-        <h3 class="title is-3"><i18n>Members</i18n></h3>
-        <ul>
-          <li v-for="member in group.members">{{ member }}</li>
-        </ul>
-        <a class="button invite-button" @click.prevent="invite(group.id)">
-          <span class="icon"><i class='fa fa-plus'></i></span>
-        </a>
+        <group-members :group="group" />
 
         <!-- Support History -->
         <h3 class="title is-3"><i18n>Support History</i18n></h3>
@@ -87,15 +79,6 @@ export default {
     font-size: 48px
     color: #616161
     line-height: 45px
-
-  .invite-button
-    border-radius: 999px
-    background-color: #ECECEC
-    color: #6CAD22
-    height: 63px
-    width: 63px
-    .icon i
-      font-size: 36px
 
   .settings-number
     font-family: HelveticaNeue-Bold
