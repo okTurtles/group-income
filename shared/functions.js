@@ -1,10 +1,10 @@
 'use strict'
 
-const Primus = require('primus')
-const nacl = require('tweetnacl')
-
 import {RESPONSE_TYPE} from './constants'
 import type {JSONType, Response, ResType} from './types'
+
+const Primus = require('primus')
+const nacl = require('tweetnacl')
 
 export function makeResponse (
   type: ResType,

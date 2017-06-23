@@ -28,9 +28,7 @@ module.exports = (grunt) => {
     pkg: grunt.file.readJSON('package.json'),
 
     checkDependencies: {this: {options: {
-      // Do not auto-install since we're using yarn now, and that doesn't (yet)
-      // See: https://github.com/mgol/grunt-check-dependencies/issues/14
-      install: false
+      install: true
     }}},
 
     watch: {

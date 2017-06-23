@@ -135,7 +135,7 @@ const actions = {
   },
   async login (
     {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object},
-    user: string
+    user: Object
   ) {
     commit('login', user)
     await dispatch('loadSettings')
@@ -150,7 +150,7 @@ const actions = {
     Vue.events.$emit('login', user)
   },
   async logout (
-    {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object},
+    {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object}
   ) {
     await dispatch('saveSettings')
     await db.clearCurrentUser()
@@ -256,7 +256,7 @@ const debouncedSave = debounce(dispatch => dispatch('saveSettings'), 500)
 store = new Vuex.Store({state, mutations, getters, actions})
 export default store
 // This will build the current contract state from applying all its actions
-export async function latestContractState (contractId) {
+export async function latestContractState (contractId: string) {
   let events = await backend.eventsSince(contractId, contractId)
   let [contract, ...actions] = events.map(e => {
     return (Events[e.entry.type] ? Events[e.entry.type].fromObject(e.entry, e.hash) : contracts[e.entry.type].fromObject(e.entry, e.hash))
