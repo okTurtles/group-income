@@ -23,16 +23,16 @@ Vue.use(VeeValidate)
  */
 // Check if user is logged in
 var loginGuard = {
-  guard: store => !store.state.loggedIn,
+  guard: (store, to, from) => !store.state.loggedIn,
   redirect: (to, from) => ({ path: '/signup', query: { next: to.path } })
 }
 var signupGuard = {
-  guard: store => !!store.state.loggedIn,
+  guard: (store, to, from) => !!store.state.loggedIn,
   redirect: (to, from) => ({ path: '/' })
 }
 // Check if user has a group to invite users to
 var inviteGuard = {
-  guard: store => !store.state.currentGroupId,
+  guard: (store, to, from) => !store.state.currentGroupId,
   redirect: (to, from) => ({ path: '/new-group' })
 }
 var joinGuard = {
