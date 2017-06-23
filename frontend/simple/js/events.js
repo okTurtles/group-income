@@ -87,7 +87,7 @@ export class MailboxContract extends Events.HashableMailbox {
     state: { messages: [] },
     mutations: {
       HashableMailboxPostMessage (state, {data, hash}) { state.messages.push({data, hash}) },
-      HashableMailboxAuthorizeSender (state, {data}) { state.authorizations[Events.HashableMailboxAuthorizeSender.authorization.name].data = data.sender }
+      HashableMailboxAuthorizeSender (state, {data}) { state.authorizations[Events.HashableMailboxAuthorizeSender.authorization].data = data.sender }
     }
   })
 }

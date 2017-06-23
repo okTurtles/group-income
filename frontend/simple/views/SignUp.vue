@@ -59,7 +59,7 @@
           </div>
           <div class="level-right">
             <div class="level-item is-narrow">
-              <button class="button submit is-success" type="submit" :disabled="errors.any() || !fields.passed() || !nameAvailable">
+              <button class="button submit is-success" type="submit" :disabled="errors.any() || !nameAvailable">
                 <i18n>Sign Up</i18n>
               </button>
             </div>

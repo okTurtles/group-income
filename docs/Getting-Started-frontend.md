@@ -242,12 +242,11 @@ Pre-reqs:
 
 1. Install [node.js](https://nodejs.org/) if you haven't already. On a Mac the recommended way to install Node is via [Homebrew](https://brew.sh/) via: `brew install node`
 2. Install the [`grunt`](https://gruntjs.com/) command line tool via: `npm install -g grunt-cli`
-3. Install [`Yarn`](https://yarnpkg.com/en/docs/install).
 
-Once you have `npm`, `grunt`, and `yarn`, clone this repo using `git`, and within the `group-income-simple` directory run these two commands:
+Once you have `npm`, and `grunt`, clone this repo using `git`, and within the `group-income-simple` directory run these two commands:
 
 ```
-yarn install
+npm install
 grunt dev
 ```
 
@@ -255,9 +254,9 @@ If all went well you should be able to visit: [http://localhost:8000](http://loc
 
 ----
 
-#### What does `yarn install` do?
+#### What does `npm install` do?
 
-It installs the dependencies that this project relies on and places them into the `node_modules/` folder. The list of dependencies is retrieved from the `package.json` file, and a list of the exact versions installed is stored in the [`yarn.lock` file](https://yarnpkg.com/en/docs/yarn-lock). We've set up `grunt` to verify you always have the latest dependencies installed, but you do need to run this command at least once.
+It installs the dependencies that this project relies on and places them into the `node_modules/` folder. The list of dependencies is retrieved from the `package.json` file, and a list of the exact versions installed is stored in the [`package-lock.json` file](http://jpospisil.com/2017/06/02/understanding-lock-files-in-npm-5.html). We've set up `grunt` to verify you always have the latest dependencies installed, but you do need to run this command at least once.
 
 ----
 
@@ -470,7 +469,7 @@ So it is good for that style of programming, and it is therefore much more frien
 - Avoiding repetition by including some file using `<%- include file %>` ([example](https://github.com/okTurtles/group-income-simple/blob/ebafb48385c63d271eb6a210545efbcc8d43d99c/frontend/simple/views/test.ejs#L10))
 - Adding simple logic like "display this chunk of HTML `if` something, otherwise display this other thing"
 
-You can even use EJS syntax within within `.vue` files by setting the [template language](https://vuejs.org/guide/syntax.html) to `ejs`:
+You can even use EJS syntax within `.vue` files by setting the [template language](https://vuejs.org/guide/syntax.html) to `ejs`:
 
 ```vue
 <template lang="ejs">

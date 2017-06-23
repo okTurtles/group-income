@@ -1,7 +1,5 @@
 /* eslint-env mocha */
 
-const Promise = global.Promise = require('bluebird')
-
 import Vue from 'vue'
 import chalk from 'chalk'
 import _ from 'lodash'
@@ -10,6 +8,8 @@ import {sign} from '../shared/functions'
 import * as Events from '../shared/events'
 import pubsub from '../frontend/simple/js/pubsub'
 import * as contracts from '../frontend/simple/js/events'
+
+const Promise = global.Promise = require('bluebird')
 const request = require('superagent')
 const fetch = require('node-fetch') // TODO: switch from request to fetch API fully, see NOTE below
 const should = require('should') // eslint-disable-line

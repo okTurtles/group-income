@@ -1,4 +1,6 @@
+import Vue from 'vue'
 import Router from 'vue-router'
+import VeeValidate from 'vee-validate'
 import store from './state'
 import SignUp from '../views/SignUp.vue'
 import CreateGroup from '../views/CreateGroup.vue'
@@ -12,6 +14,10 @@ import PayGroup from '../views/PayGroup.vue'
 import Home from '../views/Home.vue'
 import ProposeMember from '../views/ProposeMember.vue'
 import { wrap, lazyLoadVue } from './utils'
+
+Vue.use(Router)
+Vue.use(VeeValidate)
+
 /*
  The following are reusable guard for routes
  the 'guard' defines how the route is blocked and the redirect determines the redirect behavior
@@ -19,11 +25,11 @@ import { wrap, lazyLoadVue } from './utils'
  */
 // Check if user is logged in
 var loginGuard = {
-  guard: store => !store.state.loggedIn,
+  guard: (store, to, from) => !store.state.loggedIn,
   redirect: (to, from) => ({ path: '/signup', query: { next: to.path } })
 }
 var signupGuard = {
-  guard: store => !!store.state.loggedIn,
+  guard: (store, to, from) => !!store.state.loggedIn,
   redirect: (to, from) => ({ path: '/' })
 }
 // Check if user has a group
