@@ -1,5 +1,6 @@
 <script>
 import GroupMembers from '../components/GroupMembers.vue'
+import GroupSupportHistory from '../components/GroupSupportHistory.vue'
 import GroupSettings from '../components/GroupSettings.vue'
 
 export default {
@@ -11,6 +12,7 @@ export default {
   },
   components: {
     GroupMembers,
+    GroupSupportHistory,
     GroupSettings
   }
 }
@@ -33,9 +35,7 @@ export default {
 
         <group-members :group="group" />
 
-        <!-- Support History -->
-        <h3 class="title is-3"><i18n>Support History</i18n></h3>
-        <p>Your group is still in its first month.</p>
+        <group-support-history />
 
         <group-settings :group="group" />
 
