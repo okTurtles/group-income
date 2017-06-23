@@ -90,10 +90,8 @@ const getters = {
   currentGroup (state) {
     const id = state.currentGroupId
 
-    if (!state[id]) return null
-
-    // Decorate currentGroup with id: state.currentGroupId
-    return { ...state[id], id }
+    // Decorate currentGroup with { id: state.currentGroupId }
+    return state[id] ? { ...state[id], id } : null
   },
   mailboxContract (state) {
     return store.getters.currentUserIdentityContract && state[store.getters.currentUserIdentityContract.attributes.mailbox]
