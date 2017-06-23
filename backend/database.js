@@ -81,13 +81,13 @@ class Log extends Model {
       hash: {type: 'string'}
     }
   }
-  static table (name) {
+  static table (name, txn) {
     this.tableName = name
     // even though calling .table on the query is probably not necessary since
     // it copies it from this.tableName upon creation, we do it anyway just to
     // be absolutely certain that this query is associated with this table name
     // https://vincit.github.io/objection.js/#context
-    return this.query().context({onBuild: builder => builder.table(name)})
+    return this.query(txn).context({onBuild: builder => builder.table(name)})
   }
   $beforeInsert () {
     console.log(`[Log] ${Log.tableName} INSERT:`, this.toJSON())
@@ -130,9 +130,9 @@ export async function appendLogEntry (
   }
   const hash = entry.toHash()
   Log.tableName = contractId // just in case the call to `transaction` needs it...
-  await transaction(HashToData, Log, async function (HashToData, Log) {
-    await HashToData.query().insert({hash, value: entry.toJSON()})
-    await Log.table(contractId).insert({...entry.toObject(), hash})
+  await transaction(knex, async (trx) => {
+    await HashToData.query(trx).insert({hash, value: entry.toJSON()})
+    await Log.table(contractId, trx).insert({...entry.toObject(), hash})
   })
   console.log('appendLogEntry():', entry, hash)
   return hash

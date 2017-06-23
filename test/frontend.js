@@ -98,9 +98,8 @@ describe('Frontend', function () {
 
   describe('Sign up Test', function () {
     it('Should register User', async function () {
-      this.timeout(4000)
-      await n.goto(page('signup'))
-        .wait('#name')
+      this.timeout(10000)
+      await n.goto(page('signup')).wait('#name')
       const signedup = await n.insert('#name', username)
         .insert('#email', `test@testgroupincome.com`)
         .insert('#password', 'testtest')
@@ -295,7 +294,7 @@ describe('Frontend', function () {
     })
   })
 
-  describe('Test Localization Gathering Function', function () {
+  describe.skip('Test Localization Gathering Function', function () {
     it('Verify output of transform functions', function () {
       const script = `
         <template>
@@ -336,6 +335,7 @@ describe('Frontend', function () {
 
   describe('EJS test page', function () {
     it('List should have at least two items', function () {
+      this.timeout(5000)
       return n.goto(page('ejs-page'))
         .wait(() => typeof $ === 'function' && !!$().prevUntil)
         .evaluate(() => $('#todo').children().length)

@@ -50,7 +50,7 @@
               <button
                 class="button is-primary is-medium is-fullwidth"
                 @click="login"
-                :disabled="errors.any() || !fields.passed()"
+                :disabled="errors.any()"
                 id="LoginButton"
               >
                 <span class="icon"><i class="fa fa-user"></i></span>

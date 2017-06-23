@@ -1,16 +1,11 @@
 import Vue from 'vue'
-import Router from 'vue-router'
+import router from './js/router'
 import './js/translations'
 import * as db from './js/database'
 import NavBar from './views/NavBar.vue'
-import VeeValidate from 'vee-validate'
 import './js/transitions'
-import router from './js/router'
 import {namespace} from './js/backend/hapi'
 import store from './js/state'
-
-Vue.use(Router)
-Vue.use(VeeValidate)
 
 async function loadLastUser () {
   let user = await db.loadCurrentUser()

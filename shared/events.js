@@ -45,15 +45,17 @@ export class Hashable {
   }
   static fromProtobuf (buffer, hash) {
     var instance = new this()
-    instance._obj = this.fields.decode(buffer).toObject({bytes: String})
+    // see: https://github.com/dcodeIO/protobuf.js/issues/828#issuecomment-307877338
+    instance._obj = this.fields.toObject(this.fields.decode(buffer), {bytes: String})
     if (instance.toHash() !== hash) throw Error('fromProtobuf: corrupt hash!')
     return instance
   }
   constructor (obj?: Object) {
     // Unless we do this we'll get different hashes on the server and the frontend 'bytes'
-    this._obj = !obj ? {} : this.constructor.fields.fromObject(obj).toObject({
-      bytes: String // http://dcode.io/protobuf.js/global.html#ConversionOptions
-    })
+    this._obj = !obj ? {} : this.constructor.fields.toObject(
+      this.constructor.fields.fromObject(obj),
+      { bytes: String } // http://dcode.io/protobuf.js/global.html#ConversionOptions
+    )
   }
   toHash (): string {
     // no need to hash twice
@@ -62,7 +64,7 @@ export class Hashable {
     let uint8array = blake.blake2b(this.toProtobuf(), null, 32)
     // TODO: if we switch to webpack we may need: https://github.com/feross/buffer
     // https://github.com/feross/typedarray-to-buffer
-    var buf = new Buffer(uint8array.buffer)
+    var buf = Buffer.from(uint8array.buffer)
     this._hash = multihash.toB58String(multihash.encode(buf, 'blake2b-32', 32))
     return this._hash
   }
@@ -187,7 +189,7 @@ export class HashableContract extends HashableEntry {
 }
 
 export class HashableAction extends HashableEntry {
-  static authorization = CanModifyState // by default we assume CanModifyState
+  static authorization = 'CanModifyState' // by default we assume CanModifyState
 }
 
 // =======================
