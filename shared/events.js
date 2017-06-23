@@ -141,7 +141,7 @@ export class HashableContract extends HashableEntry {
   static Transforms (transforms) {
     return {...(Object.getPrototypeOf(this).transforms || {}), ...transforms}
   }
-  static Vuex (vuex) {
+  static Vuex (vuex: Object) {
     return _.merge(_.cloneDeep((Object.getPrototypeOf(this).vuex || {})), vuex)
   }
   // override this method to determine if the action can be posted to the
@@ -375,7 +375,7 @@ export class HashableMailboxAuthorizeSender extends HashableAction {
 
 // Function for converting from Frontend Contracts
 // TODO: Write in a generic way without switch statement
-export function ConvertToBackendEntry (entry, hash) {
+export function ConvertToBackendEntry (entry: Object, hash: string) {
   switch (entry.type) {
     case 'IdentityContract':
       return HashableIdentity.fromObject(entry, hash)
