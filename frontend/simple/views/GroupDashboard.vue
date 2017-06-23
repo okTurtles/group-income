@@ -18,10 +18,6 @@ export default {
 <template>
   <section class="container section">
     <p class='is-pulled-right'>
-      <a class="button is-primary" @click.prevent="invite(group.id)">
-        <span class="icon is-small"><i class='fa fa-plus'></i></span>
-        <span><i18n>Invite members</i18n></span>
-      </a>
     </p>
     <h1 class="title is-1">{{ group.groupName }}</h1>
     <p>{{ group.sharedValues }}</p>
@@ -29,6 +25,9 @@ export default {
     <ul>
       <li v-for="member in group.members">{{ member }}</li>
     </ul>
+    <a class="button invite-button" @click.prevent="invite(group.id)">
+      <span class="icon"><i class='fa fa-plus'></i></span>
+    </a>
   </section>
 </template>
 
@@ -37,4 +36,13 @@ export default {
     font-family: HelveticaNeue-Bold
     font-size: 52px
     color: #616161
+
+  .invite-button
+    border-radius: 999px
+    background-color: #ECECEC
+    color: #6CAD22
+    height: 63px
+    width: 63px
+    .icon i
+      font-size: 36px
 </style>
