@@ -41,7 +41,7 @@ export default {
 
         <!-- Support History -->
         <h3 class="title is-3"><i18n>Support History</i18n></h3>
-        <p>Your group was just started. This will update each month!</p>
+        <p>Your group is still in its first month.</p>
 
         <!-- Group Settings -->
         <h3 class="title is-3"><i18n>Current Settings</i18n></h3>
