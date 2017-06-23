@@ -2,9 +2,9 @@
 // https://hapijs.com/tutorials/auth
 // https://hapijs.com/tutorials/plugins
 
-const Boom = require('boom')
-
 import {verify} from '../shared/functions'
+
+const Boom = require('boom')
 
 exports.register = function (
   server: Object,

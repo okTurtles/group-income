@@ -1,6 +1,6 @@
 /* eslint no-undef: "off", no-unused-vars: "off" */
 
-// Run flow with: `yarn flow` OR `yarn run flow`
+// Run flow with: `npm run flow`
 
 // Start Here: https://flowtype.org/docs/syntax.html
 // From: https://flowtype.org/docs/builtins.html#mixed

@@ -1,15 +1,15 @@
-// wrap to prevent fragment instances:
-// http://vuejs.org/guide/components.html#Fragment-Instance
-export function wrap (s: string, tag: string = 'div') {
-  return `<${tag}>${s}</${tag}>`
-}
-
 // use VueScript2 to handle lazy-loading of routes in conjunction
 // with browserify-shim. See Gruntfile for details.
 import Vue from 'vue'
 import VS2 from 'vue-script2'
 // import VS2 from './ignored/Script2'
 Vue.use(VS2)
+
+// wrap to prevent fragment instances:
+// http://vuejs.org/guide/components.html#Fragment-Instance
+export function wrap (s: string, tag: string = 'div') {
+  return `<${tag}>${s}</${tag}>`
+}
 
 export function lazyLoadVue (component: string, base: string = '/simple/js') {
   // if we wanted to support vue-hot-reload-api in

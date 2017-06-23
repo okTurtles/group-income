@@ -147,7 +147,7 @@ const actions = {
     Vue.events.$emit('login', user)
   },
   async logout (
-    {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object},
+    {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object}
   ) {
     await dispatch('saveSettings')
     await db.clearCurrentUser()
