@@ -8,8 +8,14 @@ import GroupSettings from '../components/GroupSettings.vue'
 export default {
   name: 'GroupDashboard',
   computed: {
+    currentGroupId () {
+      return this.$store.state.currentGroupId
+    },
     group () {
       return this.$store.getters.currentGroup
+    },
+    groups () {
+      return this.$store.getters.groupsByName
     }
   },
   components: {
@@ -27,7 +33,10 @@ export default {
     <div class="columns">
 
       <div class="column is-2">
-        <your-groups-list />
+        <your-groups-list
+          :currentGroupId="currentGroupId"
+          :groups="groups"
+        />
       </div>
 
       <div class="column">
