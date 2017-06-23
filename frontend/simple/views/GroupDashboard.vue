@@ -1,5 +1,6 @@
 <script>
 import YourGroupsList from '../components/YourGroupsList.vue'
+import GroupsMinIncome from '../components/GroupsMinIncome.vue'
 import GroupMembers from '../components/GroupMembers.vue'
 import GroupSupportHistory from '../components/GroupSupportHistory.vue'
 import GroupSettings from '../components/GroupSettings.vue'
@@ -13,6 +14,7 @@ export default {
   },
   components: {
     YourGroupsList,
+    GroupsMinIncome,
     GroupMembers,
     GroupSupportHistory,
     GroupSettings
@@ -29,11 +31,10 @@ export default {
       </div>
 
       <div class="column">
-        <div class='is-pulled-right has-text-right'>
-          <p class="min-income-label">Min Income</p>
-          <p class="min-income">${{ group.incomeProvided}}</p>
-          <a href="">Propose change</a>
+        <div class='is-pulled-right'>
+          <groups-min-income :group="group" />
         </div>
+
         <h1 class="title is-1">{{ group.groupName }}</h1>
         <p>{{ group.sharedValues }}</p>
 
@@ -53,15 +54,4 @@ export default {
     font-family: HelveticaNeue-Bold
     font-size: 52px
     color: #616161
-
-  .min-income-label
-    font-family: HelveticaNeue-Light
-    font-size: 16px
-    color: #928E8E
-
-  .min-income
-    font-family: HelveticaNeue-Bold
-    font-size: 48px
-    color: #616161
-    line-height: 45px
 </style>
