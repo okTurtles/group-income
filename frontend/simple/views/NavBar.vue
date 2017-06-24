@@ -11,15 +11,6 @@
         <div class="nav-center">
           <!-- TODO: use v-for to dynamically generate these? -->
           <router-link
-            id="ProfileLink"
-            class="nav-item is-tab"
-            active-class="is-active"
-            to="user"
-            v-show="$store.state.loggedIn"
-          >
-            <i18n>Profile</i18n>
-          </router-link>
-          <router-link
             active-class="is-active"
             class="nav-item is-tab"
             to="pay-group"
@@ -65,22 +56,41 @@
             >
               <i18n>Login</i18n>
             </a>
-            <a
-              class="button is-danger"
-              href="#"
-              id="LogoutBtn"
-              v-if="$store.state.loggedIn"
-              @click.prevent="logout"
-            >
-              <i18n>Signout</i18n>
-            </a>
-            <div class="button" style="border: 0" v-if="$store.state.loggedIn">
-              <img v-if="$store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.picture" v-bind:src="$store.getters.currentUserIdentityContract.attributes.picture">&nbsp;<strong>Welcome, {{ ($store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.displayName ? $store.getters.currentUserIdentityContract.attributes.displayName : null) || $store.state.loggedIn.name}}</strong>
+
+            <div class="button profile-link" v-if="$store.state.loggedIn" @click="toggleDropdown">
+              <strong>{{ ($store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.displayName ? $store.getters.currentUserIdentityContract.attributes.displayName : null) || $store.state.loggedIn.name}}</strong>
+              <img v-if="$store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.picture" v-bind:src="$store.getters.currentUserIdentityContract.attributes.picture">
+              <i class="fa fa-caret-down" style="color: #D8D8D8" aria-hidden="true"></i>
             </div>
           </span>
         </div>
       </div>
     </nav>
+    <div class="menu-dropdown" v-if="dropdownVisible">
+      <div class="button profile-link" v-if="$store.state.loggedIn" @click="toggleDropdown">
+        <strong>{{ ($store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.displayName ? $store.getters.currentUserIdentityContract.attributes.displayName : null) || $store.state.loggedIn.name}}</strong>
+        <img v-if="$store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.picture" v-bind:src="$store.getters.currentUserIdentityContract.attributes.picture">
+        <i class="fa fa-caret-down" style="color: #D8D8D8" aria-hidden="true"></i>
+      </div>
+      <router-link
+        id="ProfileLink"
+        class="nav-item is-tab"
+        active-class="is-active"
+        to="user"
+        v-show="$store.state.loggedIn"
+      >
+        <i18n>Profile</i18n>
+      </router-link>
+      <a
+        class="is-danger"
+        href="#"
+        id="LogoutBtn"
+        v-if="$store.state.loggedIn"
+        @click.prevent="logout"
+      >
+        <i18n>Signout</i18n>
+      </a>
+    </div>
     <login-modal
       v-if="loginModalVisible"
       @close="closeLoginModal"
@@ -103,6 +113,37 @@ div.nav-left {
 div.nav-center {
   flex-shrink: inherit;
 }
+
+.profile-link {
+  border: 0;
+
+  &:active {
+    box-shadow: none;
+  }
+
+  img {
+    border-radius: 999px;
+    max-height: 43px;
+    margin-left: 15px;
+    margin-right: 8px;
+  }
+}
+
+.menu-dropdown {
+  background: whitesmoke;
+  border-radius: 6px;
+  padding: 14px 10px 15px;
+  position: absolute;
+  top: 9px;
+  right: 170px;
+  text-align: center;
+  z-index: 10;
+
+  .button {
+    background: none;
+  }
+}
+
 </style>
 
 <script>
@@ -149,12 +190,16 @@ export default {
       if (!event.altKey) return
       event.preventDefault()
       this.showTimeTravel = !this.showtimetravel
+    },
+    toggleDropdown () {
+      this.dropdownVisible = !this.dropdownVisible
     }
   },
   data () {
     return {
       showTimeTravel: false,
-      loginModalVisible: false
+      loginModalVisible: false,
+      dropdownVisible: false
     }
   }
 }
