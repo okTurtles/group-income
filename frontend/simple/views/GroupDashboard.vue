@@ -58,9 +58,10 @@ export default {
   </section>
 </template>
 
-<style lang="sass" scoped>
-  h1.title
-    font-family: HelveticaNeue-Bold
-    font-size: 52px
-    color: #616161
+<style lang="scss" scoped>
+h1.title {
+  font-family: HelveticaNeue-Bold;
+  font-size: 52px;
+  color: #616161;
+}
 </style>

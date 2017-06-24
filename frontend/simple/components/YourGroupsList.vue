@@ -27,36 +27,42 @@ export default {
   </div>
 </template>
 
-<style lang="sass" scoped>
-  .list-title
-    color: #9B9B9B
-    font-family: HelveticaNeue-Light
-    font-size: 14px
-    letter-spacing: 5px
-    margin-bottom: 13px
+<style lang="scss" scoped>
+.list-title {
+  color: #9B9B9B;
+  font-family: HelveticaNeue-Light;
+  font-size: 14px;
+  letter-spacing: 5px;
+  margin-bottom: 13px;
+}
 
-  .group-name
-    color: #616161
-    font-family: HelveticaNeue-Bold
-    font-size: 17px
-    overflow: hidden
-    padding: 5px 0
-    &:hover
-      color: #222324
-      cursor: pointer
-    &.is-active
-      background: #ECECEC
-      padding-left: 15px
-      margin-left: -15px
+.group-name {
+  color: #616161;
+  font-family: HelveticaNeue-Bold;
+  font-size: 17px;
+  overflow: hidden;
+  padding: 5px 0;
+}
+.group-name:hover {
+  color: #222324;
+  cursor: pointer;
+}
+.group-name.is-active {
+  background: #ECECEC;
+  padding-left: 15px;
+  margin-left: -15px;
+}
 
-  .create-new-link
-    color: #9B9B9B
-    display: block
-    font-family: HelveticaNeue-Bold
-    font-size: 12px
-    letter-spacing: 3.43px
-    margin-top: 13px
-    &:hover
-      color: #222324
+.create-new-link {
+  color: #9B9B9B;
+  display: block;
+  font-family: HelveticaNeue-Bold;
+  font-size: 12px;
+  letter-spacing: 3.43px;
+  margin-top: 13px;
+  &:hover {
+    color: #222324;
+  }
+}
 
 </style>

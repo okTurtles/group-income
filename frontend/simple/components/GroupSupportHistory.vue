@@ -36,25 +36,31 @@ export default {
   </section>
 </template>
 
-<style lang="sass" scoped>
-  h3.title
-    margin-top: 30px
+<style lang="scss" scoped>
+h3.title {
+  margin-top: 30px;
+}
 
-  .month-history
-    color: #FFFFFF
-    display: inline-block
-    height: 107px
-    margin-right: 10px
-    padding-top: 12px
-    text-align: center
-    width: 117px
-  .month-name
-    display: block
-    font-family: HelveticaNeue-Bold
-    font-size: 28px
-    letter-spacing: 4px
-  .percentage
-    display: block
-    font-family: HelveticaNeue
-    font-size: 24px
+.month-history {
+  color: #FFFFFF;
+  display: inline-block;
+  height: 107px;
+  margin-right: 10px;
+  padding-top: 12px;
+  text-align: center;
+  width: 117px;
+}
+
+.month-name {
+  display: block;
+  font-family: HelveticaNeue-Bold;
+  font-size: 28px;
+  letter-spacing: 4px;
+}
+
+.percentage {
+  display: block;
+  font-family: HelveticaNeue;
+  font-size: 24px;
+}
 </style>

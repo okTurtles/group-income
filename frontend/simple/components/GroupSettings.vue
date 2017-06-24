@@ -31,18 +31,21 @@ export default {
   </section>
 </template>
 
-<style lang="sass" scoped>
-  h3.title
-    margin-top: 30px
+<style lang="scss" scoped>
+h3.title {
+  margin-top: 30px;
+}
 
-  .settings-number
-    font-family: HelveticaNeue-Bold
-    font-size: 72px
-    color: #616161
-    line-height: 64px
+.settings-number {
+  font-family: HelveticaNeue-Bold;
+  font-size: 72px;
+  color: #616161;
+  line-height: 64px;
+}
 
-  .settings-label
-    font-family: HelveticaNeue-Light
-    font-size: 24px
-    color: #616161
+.settings-label {
+  font-family: HelveticaNeue-Light;
+  font-size: 24px;
+  color: #616161;
+}
 </style>

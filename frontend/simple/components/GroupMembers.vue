@@ -25,16 +25,19 @@ export default {
   </section>
 </template>
 
-<style lang="sass" scoped>
-  h3.title
-    margin-top: 30px
+<style lang="scss" scoped>
+h3.title {
+  margin-top: 30px;
+}
 
-  .invite-button
-    border-radius: 999px
-    background-color: #ECECEC
-    color: #6CAD22
-    height: 63px
-    width: 63px
-    .icon i
-      font-size: 36px
+.invite-button {
+  border-radius: 999px;
+  background-color: #ECECEC;
+  color: #6CAD22;
+  height: 63px;
+  width: 63px;
+}
+.invite-button .icon i {
+  font-size: 36px;
+}
 </style>
