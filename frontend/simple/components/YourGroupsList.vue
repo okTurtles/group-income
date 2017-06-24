@@ -23,7 +23,7 @@ export default {
     >
       {{ group.groupName }}
     </p>
-    <a class="create-new-link" href="/simple/new-group">+ CREATE NEW</a>
+    <router-link class="create-new-link" to="/new-group">+ CREATE NEW</router-link>
   </div>
 </template>
 
