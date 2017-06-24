@@ -69,7 +69,7 @@
           </div>
           <div class="level-right">
             <div class="level-item is-narrow">
-              <button class="button submit is-success" type="submit" :disabled="errors.any() || !fields.passed()">
+              <button class="button submit is-success" type="submit" :disabled="errors.any()">
                 <i18n>Sign Up</i18n>
               </button>
             </div>
@@ -199,5 +199,4 @@ export default {
     }
   }
 }
-
 </script>

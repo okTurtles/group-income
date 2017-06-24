@@ -98,9 +98,8 @@ describe('Frontend', function () {
 
   describe('Sign up Test', function () {
     it('Should register User', async function () {
-      this.timeout(4000)
-      await n.goto(page('signup'))
-        .wait('#name')
+      this.timeout(10000)
+      await n.goto(page('signup')).wait('#name')
       const signedup = await n.insert('#name', username)
         .insert('#email', `test@testgroupincome.com`)
         .insert('#password', 'testtest')
@@ -137,19 +136,19 @@ describe('Frontend', function () {
         .click('#LogoutBtn')
 
         // Open login modal
-        .wait(() => Boolean(document.querySelector('#LoginBtn')))
+        .wait(() => !!document.querySelector('#LoginBtn'))
         .click('#LoginBtn')
 
         // Login
-        .wait(() => Boolean(document.querySelector('#LoginModal.is-active')))
+        .wait(() => !!document.querySelector('#LoginModal.is-active'))
         .wait(1000)
         .insert('#LoginName', username)
         .insert('#LoginPassword', 'testtest')
         .wait(1000)
         .click('#LoginButton')
-        .wait(() => Boolean(document.querySelector('#LoginResponse')))
+        .wait(() => !!document.querySelector('#LoginResponse'))
         .wait(1000)
-        .evaluate(() => Boolean(document.querySelector('#LogoutBtn')))
+        .evaluate(() => !!document.querySelector('#LogoutBtn'))
       should(loggedin).equal(true)
     })
 
@@ -189,7 +188,7 @@ describe('Frontend', function () {
         .insert('#password', 'testtest')
         .click('button[type="submit"]')
         .wait('#HomeLogo')
-        .evaluate(() => Boolean(document.querySelector('#HomeLogo')))
+        .evaluate(() => !!document.querySelector('#HomeLogo'))
       should(signedup).equal(true)
     })
 
@@ -205,7 +204,7 @@ describe('Frontend', function () {
         .insert('#password', 'testtest')
         .click('button[type="submit"]')
         .wait('#HomeLogo')
-        .evaluate(() => Boolean(document.querySelector('#HomeLogo')))
+        .evaluate(() => !!document.querySelector('#HomeLogo'))
       should(signedup).equal(true)
     })
 
@@ -230,10 +229,10 @@ describe('Frontend', function () {
     })
 
     it('Should invite members to group', async function () {
-      this.timeout(4000)
+      this.timeout(8000)
 
       const count = await n
-        .wait(() => Boolean(document.querySelector('#addButton')))
+        .wait(() => !!document.querySelector('#addButton'))
         .insert('#searchUser', username)
         .click('#addButton')
         .wait(() => document.querySelectorAll('.member').length > 0)
@@ -272,11 +271,11 @@ describe('Frontend', function () {
         // Login
         .wait('#LoginBtn')
         .click('#LoginBtn')
-        .wait(() => Boolean(document.querySelector('#LoginModal')))
+        .wait(() => !!document.querySelector('#LoginModal'))
         .insert('#LoginName', username)
         .insert('#LoginPassword', 'testtest')
         .click('#LoginButton')
-        .wait(() => Boolean(document.querySelector('#LogoutBtn')))
+        .wait(() => !!document.querySelector('#LogoutBtn'))
         .wait('#MailboxLink')
         .click('#MailboxLink')
         .wait(1000)
@@ -295,7 +294,7 @@ describe('Frontend', function () {
     })
   })
 
-  describe('Test Localization Gathering Function', function () {
+  describe.skip('Test Localization Gathering Function', function () {
     it('Verify output of transform functions', function () {
       const script = `
         <template>
@@ -336,6 +335,7 @@ describe('Frontend', function () {
 
   describe('EJS test page', function () {
     it('List should have at least two items', function () {
+      this.timeout(5000)
       return n.goto(page('ejs-page'))
         .wait(() => typeof $ === 'function' && !!$().prevUntil)
         .evaluate(() => $('#todo').children().length)

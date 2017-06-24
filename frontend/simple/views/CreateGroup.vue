@@ -180,6 +180,7 @@
 </template>
 
 <script>
+/* @flow */
 import Vue from 'vue'
 import backend from '../js/backend'
 import * as Events from '../../../shared/events'
