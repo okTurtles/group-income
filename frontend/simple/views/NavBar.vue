@@ -104,14 +104,17 @@
   </div>
 </template>
 
-<style lang="sass" scoped>
-div.nav-left
-  overflow: visible
-  z-index: 10
-  a
-    background-color: #fff
-div.nav-center
-  flex-shrink: inherit
+<style lang="scss" scoped>
+div.nav-left {
+  overflow: visible;
+  z-index: 10;
+  a {
+    background-color: #fff;
+  }
+}
+div.nav-center {
+  flex-shrink: inherit;
+}
 </style>
 
 <script>

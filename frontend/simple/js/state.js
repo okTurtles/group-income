@@ -38,7 +38,8 @@ const mutations = {
     state.loggedIn = user
   },
   logout (state) {
-    state.loggedIn = null
+    // TODO: figure out why things break if this is set to null
+    state.loggedIn = false
   },
   addContract (state, {contractId, recentHash, type, data}) {
     // "Mutations Follow Vue's Reactivity Rules" - important for modifying objects
@@ -111,9 +112,13 @@ const getters = {
   },
   membersForGroup (state, getters) {
     // return _.reduce(state[groupId || state.currentGroupId].profiles,
-    return _.reduce(getters.currentGroup.profiles,
+    const group = getters.currentGroup
+    if (!group) return {}
+    return _.reduce(
+      group.profiles,
       (result, value, key) => {
         result[key] = state[value.contractId].attributes
+        return result
       },
       {}
     )
