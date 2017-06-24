@@ -217,7 +217,7 @@ function sassCfg () {
   return {
     sourceMap: development,
     // https://github.com/vuejs/vueify/issues/34#issuecomment-161722961
-    indentedSyntax: true,
+    // indentedSyntax: true,
     // sourceMapRoot: '/',
     outputStyle: development ? 'nested' : 'compressed',
     includePaths: ['./node_modules/bulma', './node_modules/font-awesome/scss']
