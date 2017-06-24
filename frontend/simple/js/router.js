@@ -12,6 +12,7 @@ import Mailbox from '../views/Mailbox.vue'
 import Join from '../views/Join.vue'
 import PayGroup from '../views/PayGroup.vue'
 import Home from '../views/Home.vue'
+import MembersCircle from '../components/MembersCircle.vue'
 import { wrap, lazyLoadVue } from './utils'
 
 Vue.use(Router)
@@ -155,6 +156,14 @@ var router = new Router({
         title: 'Join a Group'
       },
       beforeEnter: createEnterGuards(store, loginGuard, joinGuard)
+    },
+    {
+      // shouldn't be its own page but we have it here for testing
+      path: '/members-circle',
+      name: MembersCircle.name,
+      component: MembersCircle,
+      meta: {title: 'Members Circle'},
+      beforeEnter: createEnterGuards(store, loginGuard)
     },
     {
       path: '*',
