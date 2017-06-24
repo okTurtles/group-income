@@ -46,10 +46,11 @@
           </router-link>
         </div>
         <div class="nav-right">
-          <span class="nav-item is-tab control">
+          <span class="nav-item control">
             <router-link
               class="button is-success"
               id="SignupBtn"
+              style="margin-right: 15px"
               to="signup"
               v-if="!$store.state.loggedIn"
             >
