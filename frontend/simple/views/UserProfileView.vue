@@ -178,8 +178,9 @@
 <script>
 import backend from '../js/backend'
 import * as Events from '../../../shared/events'
-import {latestContractState} from '../js/state'
 import L from '../js/translations'
+import _ from 'lodash'
+
 export default {
   name: 'UserProfileView',
   computed: {
@@ -195,6 +196,7 @@ export default {
         displayName: this.$store.getters.currentUserIdentityContract.attributes.displayName,
         email: this.$store.getters.currentUserIdentityContract.attributes.email
       },
+      // TODO: populate this based on profile values in current group's profile vuex state
       editedGroupProfile: {
         paymentMethod: null,
         contributionAmount: null,
@@ -202,7 +204,7 @@ export default {
         receivingLimit: null,
         receivingLimitCurrency: null
       },
-      currentGroupContractId: null,
+      currentGroupContractId: this.$store.state.currentGroupId,
       errorMsg: null,
       groupErrorMsg: null,
       groupProfileSaved: false,
@@ -216,7 +218,12 @@ export default {
         for (let key of Object.keys(this.edited)) {
           if (this.edited[key] && this.edited[key] !== this.attributes[key]) {
             let identityContractLatest = await backend.latestHash(this.$store.state.loggedIn.identityContractId)
-            let attribute = new Events.HashableIdentitySetAttribute({attribute: {name: key, value: this.edited[key]}}, identityContractLatest)
+            let attribute = new Events.HashableIdentitySetAttribute(
+              {
+                attribute: {name: key, value: this.edited[key]}
+              },
+              identityContractLatest
+            )
             await backend.publishLogEntry(this.$store.state.loggedIn.identityContractId, attribute)
           }
         }
@@ -227,21 +234,24 @@ export default {
       }
     },
     changeGroup () {
-      let groupProfile = this.$store.state[this.currentGroupContractId].profiles[this.$store.state.loggedIn.name] || {}
-      for (let key of Object.keys(this.editedGroupProfile)) { this.editedGroupProfile[key] = groupProfile[key] }
+      this.editedGroupProfile = _.cloneDeep(
+        this.$store
+          .state[this.currentGroupContractId]
+          .profiles[this.$store.state.loggedIn.name] || {}
+      )
     },
     async saveGroupProfile () {
       try {
         this.groupProfileSaved = false
-        let state = await latestContractState(this.currentGroupContractId)
-        let attributes = state.profiles[this.$store.state.loggedIn.name] || {}
-        for (let key of Object.keys(this.editedGroupProfile)) {
-          if (this.editedGroupProfile[key] && this.editedGroupProfile[key] !== attributes[key]) {
-            let groupContractLatest = await backend.latestHash(this.currentGroupContractId)
-            let adjustment = new Events.HashableGroupSetGroupProfile({username: this.$store.state.loggedIn.name, name: key, value: this.editedGroupProfile[key]}, groupContractLatest)
-            await backend.publishLogEntry(this.currentGroupContractId, adjustment)
-          }
-        }
+        let groupContractLatest = await backend.latestHash(this.currentGroupContractId)
+        let updatedProfile = new Events.HashableGroupSetGroupProfile(
+          {
+            username: this.$store.state.loggedIn.name,
+            json: JSON.stringify(this.editedGroupProfile)
+          },
+          groupContractLatest
+        )
+        await backend.publishLogEntry(this.currentGroupContractId, updatedProfile)
         this.groupProfileSaved = true
       } catch (ex) {
         console.log(ex)
