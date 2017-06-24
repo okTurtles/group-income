@@ -113,10 +113,13 @@ export default {
         console.log(new Error('Invalid Invitation'))
         this.$router.push({path: '/mailbox'})
       }
-      for (var i = 0; i < state.members.length; i++) {
-        const contractId = await namespace.lookup(state.members[i])
-        state.members[i] = await latestContractState(contractId)
+      // TODO: use the state.profiles directly?
+      var members = []
+      for (const name of Object.keys(state.profiles)) {
+        const contractId = await namespace.lookup(name)
+        members.push(await latestContractState(contractId))
       }
+      state.members = members
       this.contract = state
     } catch (ex) {
       // TODO Add ui facing error notification
@@ -130,7 +133,14 @@ export default {
         // post acceptance event to the group contract
         this.errorMsg = null
         let latest = await backend.latestHash(this.$route.query.groupId)
-        let acceptance = new Events.HashableGroupAcceptInvitation({ username: this.$store.state.loggedIn.name, inviteHash: this.$route.query.inviteHash, acceptanceDate: new Date() }, latest)
+        let acceptance = new Events.HashableGroupAcceptInvitation(
+          {
+            username: this.$store.state.loggedIn.name,
+            inviteHash: this.$route.query.inviteHash,
+            acceptanceDate: new Date()
+          },
+          latest
+        )
         this.$store.commit('setCurrentGroupId', this.$route.query.groupId)
         await backend.subscribe(this.$route.query.groupId)
         await this.$store.dispatch('syncContractWithServer', this.$route.query.groupId)
@@ -154,7 +164,14 @@ export default {
         // post decline event
         this.errorMsg = null
         let latest = await backend.latestHash(this.$route.query.groupId)
-        let declination = new Events.HashableGroupDeclineInvitation({ username: this.$store.state.loggedIn.name, inviteHash: this.$route.query.inviteHash, declinedDate: new Date() }, latest)
+        let declination = new Events.HashableGroupDeclineInvitation(
+          {
+            username: this.$store.state.loggedIn.name,
+            inviteHash: this.$route.query.inviteHash,
+            declinedDate: new Date()
+          },
+          latest
+        )
         await backend.publishLogEntry(this.$route.query.groupId, declination)
 
         // remove invite and return to mailbox

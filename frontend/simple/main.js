@@ -10,6 +10,7 @@ import store from './js/state'
 async function loadLastUser () {
   let user = await db.loadCurrentUser()
   if (user) {
+    // TODO: handle error if we fail to find such a user
     let identityContractId = await namespace.lookup(user)
     await store.dispatch('login', {name: user, identityContractId})
   }
