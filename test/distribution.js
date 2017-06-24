@@ -105,4 +105,38 @@ describe('distributionTest', function () {
     ]
     should(incomeDistribution(members, 10)).eql(expected)
   })
+
+  it('should work with fractional numbers', function () {
+    let members = [
+      {name: 'a', amount: 10},
+      {name: 'b', amount: 10},
+      {name: 'c', amount: 10},
+      {name: 'd', amount: 40}
+    ]
+    let expected = [
+      {name: 'a', amount: 16.68},
+      {name: 'b', amount: 16.66},
+      {name: 'c', amount: 16.66},
+      {name: 'd', amount: 20.00}
+    ]
+    should(incomeDistribution(members, 20)).eql(expected)
+  })
+
+  it('should work with more complex fractional numbers', function () {
+    let members = [
+      {name: 'a', amount: 10},
+      {name: 'b', amount: 10},
+      {name: 'c', amount: 10},
+      {name: 'd', amount: 40},
+      {name: 'e', amount: 20.42}
+    ]
+    let expected = [
+      {name: 'a', amount: 15.5},
+      {name: 'b', amount: 15.5},
+      {name: 'c', amount: 15.5},
+      {name: 'd', amount: 23.5},
+      {name: 'e', amount: 20.42}
+    ]
+    should(incomeDistribution(members, 15.5)).eql(expected)
+  })
 })
