@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- see: http://bulma.io/documentation/components/nav/ -->
-    <nav class="nav has-shadow">
+    <nav class="nav">
       <div class="container">
         <div class="nav-left">
           <router-link to="home" class="nav-item" @click="toggleTimeTravel">
@@ -89,6 +89,9 @@
 </template>
 
 <style lang="scss" scoped>
+.nav {
+  margin: 15px 0;
+}
 div.nav-left {
   overflow: visible;
   z-index: 10;
