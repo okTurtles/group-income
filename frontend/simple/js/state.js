@@ -111,17 +111,18 @@ const getters = {
     return _.map(_.keys(_.pickBy(state.contracts, (value, key) => value.type === 'GroupContract')), key => ({groupName: state[key].groupName, contractId: key}))
   },
   membersForGroup (state, getters) {
-    // return _.reduce(state[groupId || state.currentGroupId].profiles,
-    const group = getters.currentGroup
-    if (!group) return {}
-    return _.reduce(
-      group.profiles,
-      (result, value, key) => {
-        result[key] = state[value.contractId].attributes
-        return result
-      },
-      {}
-    )
+    return groupId => {
+      groupId = groupId || state.currentGroupId
+      if (!groupId) return {}
+      return _.reduce(
+        state[groupId].profiles,
+        (result, value, key) => {
+          result[key] = state[value.contractId].attributes
+          return result
+        },
+        {}
+      )
+    }
   }
 }
 

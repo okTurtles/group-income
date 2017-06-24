@@ -24,7 +24,9 @@ export class GroupContract extends Events.HashableGroup {
       HashableGroupAcceptInvitation (state, {data}) {
         let index = state.invitees.findIndex(username => username === data.username)
         if (index > -1) {
+          const {identityContractId, name} = store.state.loggedIn
           state.invitees.splice(index, 1)
+          state.profiles[name] = {contractId: identityContractId}
           state._async.push({type: 'HashableGroupAcceptInvitation', data})
         }
       },
