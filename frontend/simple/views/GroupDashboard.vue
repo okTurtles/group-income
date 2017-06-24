@@ -49,7 +49,7 @@ export default {
 
         <group-members :group="group" />
 
-        <group-support-history />
+        <group-support-history :history="[1.2, 1, .85, .95, 1.05, .35]" />
 
         <group-settings :group="group" />
 
