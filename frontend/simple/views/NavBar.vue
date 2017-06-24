@@ -34,7 +34,7 @@
             to="mailbox"
             v-if="$store.state.loggedIn"
           >
-            <i18n>Mailbox</i18n>
+            <i18n>Inbox</i18n>
             <span
               id="AlertNotification"
               class="icon"
