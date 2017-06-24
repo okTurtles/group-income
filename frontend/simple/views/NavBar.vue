@@ -11,14 +11,6 @@
         <div class="nav-center">
           <!-- TODO: use v-for to dynamically generate these? -->
           <router-link
-            active-class="is-active"
-            class="nav-item is-tab"
-            id="CreateGroup"
-            to="new-group"
-          >
-            <i18n>Start a group</i18n>
-          </router-link>
-          <router-link
             id="ProfileLink"
             class="nav-item is-tab"
             active-class="is-active"
@@ -52,14 +44,6 @@
               <i class="fa fa-bell"></i>
             </span>
           </router-link>
-        </div>
-        <div class="nav-item">
-          <group-switcher
-            style="margin-right: 1rem;"
-            v-if="$store.state.loggedIn && groups && groups.length"
-            :currentGroupId="currentGroupId"
-            :groups="groups"
-          />
         </div>
         <div class="nav-right">
           <span class="nav-item is-tab control">
@@ -119,7 +103,6 @@ div.nav-center {
 
 <script>
 import Vue from 'vue'
-import GroupSwitcher from '../components/group-switcher.vue'
 import TimeTravel from './TimeTravel.vue'
 import LoginModal from '../components/login-modal.vue'
 
@@ -127,7 +110,6 @@ export default {
   name: 'NavBar',
   components: {
     LoginModal,
-    GroupSwitcher,
     TimeTravel
   },
   created () {
