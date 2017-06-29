@@ -40,6 +40,9 @@ export default {
     },
     proposal () {
       return this.contract.proposals[this.$route.query.proposalHash] || {proposal: null}
+    },
+    memberCount () {
+      return this.$store.getters[`${this.$route.query.groupId}/members`].length
     }
   },
   methods: {
@@ -50,7 +53,8 @@ export default {
         let latest = await backend.latestHash(this.$route.query.groupId)
         let vote = new Events.HashableGroupVoteForProposal({ username: this.$store.state.loggedIn.name, proposalHash: this.$route.query.proposalHash }, latest)
         let proposal = _.cloneDeep(this.proposal)
-        let threshold = Math.ceil(proposal.percentage * this.contract.members.length)
+        let threshold = Math.ceil(proposal.percentage * this.memberCount)
+
         await backend.publishLogEntry(this.$route.query.groupId, vote)
         // If the vote passes fulfill the action
         if (proposal.for.length + 1 >= threshold) {
@@ -78,8 +82,6 @@ export default {
         let latest = await backend.latestHash(this.$route.query.groupId)
         let vote = new Events.HashableGroupVoteAgainstProposal({ username: this.$store.state.loggedIn.name, proposalHash: this.$route.query.proposalHash }, latest)
         await backend.publishLogEntry(this.$route.query.groupId, vote)
-        // remove proposal and return to mailbox
-        this.$store.commit('deleteMessage', this.$route.query.messageHash)
         this.$router.push({path: '/mailbox'})
       } catch (ex) {
         console.log(ex)

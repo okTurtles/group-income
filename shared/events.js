@@ -142,6 +142,10 @@ export class HashableContract extends HashableEntry {
     return {...(Object.getPrototypeOf(this).transforms || {}), ...transforms}
   }
   static Vuex (vuex: Object) {
+    if (!vuex.mutations[this.name]) {
+      // default state initializer function
+      vuex.mutations[this.name] = function () {}
+    }
     return _.merge(_.cloneDeep((Object.getPrototypeOf(this).vuex || {})), vuex)
   }
   // override this method to determine if the action can be posted to the
@@ -255,16 +259,11 @@ export class HashableGroup extends HashableContract {
     ['memberRemovalPercentage', 'uint32'],
     ['incomeProvided', 'float'],
     ['contributionPrivacy', 'string'],
-    ['founderUsername', 'string']
+    ['founderUsername', 'string'],
+    ['founderIdentityContractId', 'string']
   ])
   constructor (data: JSONObject, parentHash?: string) {
     super({...data, creationDate: new Date().toISOString()}, parentHash)
-  }
-  toVuexState () {
-    let state = super.toVuexState()
-    // Place founder in group members before returning the initial state
-    state.members.push(state.founderUsername)
-    return state
   }
 }
 
@@ -317,6 +316,7 @@ export class HashableGroupRecordInvitation extends HashableAction {
 export class HashableGroupAcceptInvitation extends HashableAction {
   static fields = HashableGroupAcceptInvitation.Fields([
     ['username', 'string'],
+    ['identityContractId', 'string'],
     ['inviteHash', 'string'],
     ['acceptanceDate', 'string']
   ])
@@ -332,8 +332,7 @@ export class HashableGroupDeclineInvitation extends HashableAction {
 export class HashableGroupSetGroupProfile extends HashableAction {
   static fields = HashableGroupSetGroupProfile.Fields([
     ['username', 'string'],
-    ['name', 'string'],
-    ['value', 'string']
+    ['json', 'string'] // TODO: is there a special JSON type?
   ])
 }
 

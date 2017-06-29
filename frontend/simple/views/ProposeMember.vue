@@ -84,7 +84,7 @@ export default {
         this.self = ''
       }
       // Check if this user has been added already
-      if (this.contract.members.find(member => member === this.searchUser) ||
+      if (Object.keys(this.contract.profiles).find(member => member === this.searchUser) ||
         this.contract.invitees.find(invitee => invitee === this.searchUser) ||
         this.candidateMembers.find(username => username === this.searchUser)
       ) {

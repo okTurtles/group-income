@@ -28,7 +28,7 @@ const state = {
   currentGroupId: null,
   contracts: {}, // contractIds => { type:string, recentHash:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIds we've just published but haven't received back yet
-  loggedIn: false // TODO: properly handle this
+  loggedIn: false // false | { name: string, identityContractId: string }
 }
 
 // Mutations must be synchronous! Never call these directly!
@@ -91,15 +91,15 @@ const getters = {
   currentGroup (state) {
     return state[state.currentGroupId]
   },
-  mailboxContract (state) {
-    return store.getters.currentUserIdentityContract && state[store.getters.currentUserIdentityContract.attributes.mailbox]
+  mailboxContract (state, getters) {
+    return getters.currentUserIdentityContract && state[getters.currentUserIdentityContract.attributes.mailbox]
   },
-  mailbox (state) {
-    let mailboxContract = store.getters.mailboxContract
+  mailbox (state, getters) {
+    let mailboxContract = getters.mailboxContract
     return mailboxContract && mailboxContract.messages
   },
-  unreadMessageCount (state) {
-    let mailboxContract = store.getters.mailboxContract
+  unreadMessageCount (state, getters) {
+    let mailboxContract = getters.mailboxContract
     return mailboxContract && mailboxContract.messages.filter((msg) => !msg.read).length
   },
   // Logged In user's identity contract
@@ -116,7 +116,7 @@ const getters = {
     for (let groupContractId of Object.keys(state.contracts)
       .filter(key => state.contracts[key].type === 'GroupContract')
     ) {
-      for (let proposal of Object.keys(state[groupContractId].proposals)) {
+      for (let proposal of Object.keys(state[groupContractId].proposals || {})) {
         if (state[groupContractId].proposals[proposal].initatior !== state.loggedIn.name &&
         !state[groupContractId].proposals[proposal].for.find(name => name === state.loggedIn.name) &&
         !state[groupContractId].proposals[proposal].against.find(name => name === state.loggedIn.name)
@@ -131,16 +131,39 @@ const getters = {
       }
     }
     return proposals
+  },
+  membersForGroup (state, getters) {
+    return groupId => {
+      groupId = groupId || state.currentGroupId
+      if (!groupId) return {}
+      return _.reduce(
+        state[groupId].profiles,
+        (result, value, key) => {
+          result[key] = state[value.contractId].attributes
+          return result
+        },
+        {}
+      )
+    }
   }
-
 }
 
 const actions = {
   // Used to update contracts to the current state that the server is aware of
-  async syncContractWithServer ({dispatch, state}: {dispatch: Function, state: Object}, contractId: string) {
+  async syncContractWithServer (
+    {dispatch, commit, state}: {dispatch: Function, state: Object},
+    contractId: string
+  ) {
     let latest = await backend.latestHash(contractId)
     // there is a chance two users are logged in to the same machine and must check their contracts before syncing
-    let recent = state.contracts[contractId] ? state.contracts[contractId].recentHash : null
+    var recent
+    if (state.contracts[contractId]) {
+      recent = state.contracts[contractId].recentHash
+    } else {
+      // we're syncing a contract for the first time, make sure to add to pending
+      // so that handleEvents knows to expect events from this contract
+      commit('pending', contractId)
+    }
     if (latest !== recent) {
       console.log(`Now Synchronizing Contract: ${contractId} its most recent was ${recent} but the latest is ${latest}`)
       // TODO Do we need a since call that is inclusive? Since does not imply inclusion
@@ -195,47 +218,50 @@ const actions = {
       return console.error(`NOT EXPECTING EVENT!`, contractId, entry)
     }
     const type = entry.type
-    entry = Events[type] ? Events[type].fromObject(entry, hash) : contracts[type].fromObject(entry, hash)
+    entry = (Events[type] || contracts[type]).fromObject(entry, hash)
+
     if (Events.HashableContract.prototype.isPrototypeOf(entry)) {
       console.log(`handleEvent for new ${type}:`, entry)
       if (entry.toObject().parentHash) {
-        // TODO: use a global notification object to handle this and all other errors
+        // TODO: use a global notification object to handle this and all other errors,
+        //       and figure out if an exception should be thrown
         return console.error(`${type} has non-null parentHash!`, entry)
       }
-      await db.addLogEntry(contractId, entry)
-      commit('addContract', {contractId, type, data: entry.toVuexState()})
     } else if (Events.HashableAction.prototype.isPrototypeOf(entry)) {
       const contractType = state.contracts[contractId].type
       console.log(`handleEvent for ${type} on ${contractType}:`, entry)
       if (!contracts[contractType].isActionAllowed(state[contractType], entry)) {
         // TODO: implement isActionAllowed in all actions, and handle error better
+        // TODO: throw an exception?
         return console.error(`bad action ${type} on ${contractType} (${contractId}):`, entry)
-      }
-      // TODO: verify each entry is signed by a group member
-      try {
-        await db.addLogEntry(contractId, entry)
-      } catch (ex) {
-        console.log(ex)
-        return // exit the function early if you cannot add the log entry
-      }
-      commit('setRecentHash', { contractId, hash: entry.toHash() })
-      // If this is a duplicate the hash will be null but we must process further due to users who share the same
-      // machine sharing data storage
-      commit(`${contractId}/${type}`, {data: entry.data, hash})
-      if (store.state[contractId]._async.length) {
-        for (let asyncPayload of store.state[contractId]._async) {
-          await dispatch(`${contractId}/${asyncPayload.type}`, asyncPayload)
-        }
-        commit(`${contractId}/clearAsync`)
-      }
-      // NOTE: this is to support EventLog.vue + TimeTravel.vue
-      //       it's not super important and we'll probably get rid of it later
-      if (contractId === state.currentGroupId) {
-        commit('setPosition', hash)
       }
     } else {
       return console.error(`UNKNOWN EVENT TYPE!`, contractId, entry)
     }
+
+    // TODO: verify each entry is signed by a group member
+    // TODO: certainly we should have a larger try/catch block wrapping the entire function
+    await db.addLogEntry(contractId, entry)
+
+    if (contractId === hash) {
+      commit('addContract', {contractId, type, data: entry.toVuexState()})
+    }
+    commit('setRecentHash', {contractId, hash})
+
+    // TODO: all of these might throw an exception -- handle those appropriately!
+    commit(`${contractId}/${type}`, {data: entry.data, hash})
+    if (store.state[contractId]._async.length) {
+      for (let type of store.state[contractId]._async) {
+        await dispatch(`${contractId}/${type}`, {type, store, data: entry.data, hash})
+      }
+      commit(`${contractId}/clearAsync`)
+    }
+    if (contractId === state.currentGroupId) {
+      // this is to support EventLog.vue + TimeTravel.vue
+      // it's not super important and we'll probably get rid of it later
+      commit('setPosition', hash)
+    }
+
     // handleEvent might be called very frequently, so save only after a pause
     debouncedSave(dispatch)
     // let any listening components know that we've received, processed, and stored the event
@@ -283,6 +309,7 @@ export async function latestContractState (contractId: string) {
     return (Events[e.entry.type] ? Events[e.entry.type].fromObject(e.entry, e.hash) : contracts[e.entry.type].fromObject(e.entry, e.hash))
   })
   let state = contract.toVuexState()
+  contract.constructor.vuex.mutations[contract.constructor.name](state, {data: contract.data, hash: contractId})
   actions.forEach(action => {
     let type = action.constructor.name
     contract.constructor.vuex.mutations[type](state, {data: action.data, hash: action.hash})

@@ -1,20 +1,23 @@
 import Vue from 'vue'
 import * as Events from '../../../shared/events'
-import store from './state'
 import backend from '../js/backend'
-import {namespace} from '../js/backend/hapi'
 import _ from 'lodash'
 
 export class GroupContract extends Events.HashableGroup {
   static vuex = GroupContract.Vuex({
-    state: { proposals: {}, payments: [], members: [], invitees: [], profiles: {} },
+    state: { votes: [], payments: [], invitees: [], profiles: {}, proposals: {} },
+    // NOTICE: All mutations are to be atomic in their edits of the contract state. THEY ARE NOT to farm out
+    // any further mutations through the async actions
     mutations: {
+      GroupContract (state, {data}) {
+        Vue.set(state.profiles, data.founderUsername, {globalProfile: data.founderIdentityContractId, groupProfile: {}})
+      },
       HashableGroupPayment (state, {data}) { state.payments.push(data) },
       HashableGroupProposal (state, {data, hash}) { state.proposals[hash] = {...data, for: [data.initiator], against: []} },
       HashableGroupVoteForProposal (state, {data}) {
         if (state.proposals[data.proposalHash]) {
           state.proposals[data.proposalHash].for.push(data.username)
-          let threshold = Math.ceil(state.proposals[data.proposalHash].percentage * state.members.length)
+          let threshold = Math.ceil(state.proposals[data.proposalHash].percentage * Object.keys(state.profiles).length)
           if (state.proposals[data.proposalHash].for.length >= threshold) {
             Vue.delete(state.proposals, data.proposalHash)
           }
@@ -23,7 +26,7 @@ export class GroupContract extends Events.HashableGroup {
       HashableGroupVoteAgainstProposal (state, {data}) {
         if (state.proposals[data.proposalHash]) {
           state.proposals[data.proposalHash].against.push(data.username)
-          let threshold = Math.ceil(state.proposals[data.proposalHash].percentage * state.members.length)
+          let threshold = Math.ceil(state.proposals[data.proposalHash].percentage * Object.keys(state.profiles).length)
           if (state.proposals[data.proposalHash].against.length > state.members.length - threshold) {
             Vue.delete(state.proposals, data.proposalHash)
           }
@@ -38,36 +41,46 @@ export class GroupContract extends Events.HashableGroup {
         let index = state.invitees.findIndex(username => username === data.username)
         if (index > -1) {
           state.invitees.splice(index, 1)
-          state.members.push(data.username)
-          state._async.push({type: 'HashableGroupAcceptInvitation', data})
+          Vue.set(state.profiles, data.username, {globalProfile: data.identityContractId, groupProfile: {}})
+          state._async.push('HashableGroupAcceptInvitation')
         }
       },
       // TODO: remove group profile when leave group is implemented
       HashableGroupSetGroupProfile (state, {data}) {
-        let profile = state.profiles[data.username]
-        if (!profile) { profile = state.profiles[data.username] = {} }
-        if (!data.value) { return Vue.delete(state.profiles[data.username], data.name) }
-        profile[data.name] = data.value
+        Vue.set(state.profiles[data.username], 'groupProfile', _.merge(state.profiles[data.username].groupProfile, JSON.parse(data.json)))
       }
-    },
+    }, // NOTICE: Actions in this context are not for modifying this contract's state.
+    // This is critical to the function of that latest contract hash.
+    // They should only coordinate the actions of outside contracts.
     actions: {
-      async HashableGroupAcceptInvitation ({state}, {data}) {
+      async HashableGroupAcceptInvitation ({commit, state, rootState}, {data, store}) {
         // TODO: per #257 this will have to be encompassed in a recoverable transaction
-        if (state.founderUsername !== store.state.loggedIn) {
-          let identityContractId = await namespace.lookup(state.founderUsername)
-          await backend.subscribe(identityContractId)
-          await store.dispatch('syncContractWithServer', identityContractId)
-        }
-        if (data.username !== store.state.loggedIn) {
-          let identityContractId = await namespace.lookup(data.username)
-          await backend.subscribe(identityContractId)
-          await store.dispatch('syncContractWithServer', identityContractId)
+        if (data.username === rootState.loggedIn.name) {
+          // we're the person who just accepted the group invite
+          // so subscribe to founder's IdentityContract & everyone else's
+          for (const name of Object.keys(state.profiles)) {
+            if (name === rootState.loggedIn.name) continue
+            await backend.subscribe(state.profiles[name].globalProfile)
+            await store.dispatch('syncContractWithServer', state.profiles[name].globalProfile)
+            // NOTE: technically we don't need to call 'HashableGroupSetGroupProfile'
+            //       here because Join.vue already synced the contract.
+            //       verify that this is really true and that there's no conflict
+            //       with group private key changes
+          }
+        } else {
+          // we're an existing member of the group getting notified that a
+          // new member has joined, so subscribe to their identity contract
+          await backend.subscribe(data.identityContractId)
+          await store.dispatch('syncContractWithServer', data.identityContractId)
         }
       }
     },
     getters: {
       candidateMembers (state) {
         return _.keysIn(state.proposals).filter(key => state.proposals[key].candidate).map(key => state.proposals[key].candidate)
+      },
+      members (state) {
+        return Object.keys(state.profiles)
       }
     }
   })
@@ -76,8 +89,12 @@ export class GroupContract extends Events.HashableGroup {
 export class IdentityContract extends Events.HashableIdentity {
   static vuex = IdentityContract.Vuex({
     mutations: {
-      HashableIdentitySetAttribute (state, {data: {attribute: {name, value}}}) { Vue.set(state.attributes, name, value) },
-      HashableIdentityDeleteAttribute (state, {data: {attribute: {name}}}) { Vue.delete(state.attributes, name) }
+      HashableIdentitySetAttribute (state, {data: {attribute: {name, value}}}) {
+        Vue.set(state.attributes, name, value)
+      },
+      HashableIdentityDeleteAttribute (state, {data: {attribute: {name}}}) {
+        Vue.delete(state.attributes, name)
+      }
     }
   })
 }

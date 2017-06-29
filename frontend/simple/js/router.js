@@ -13,6 +13,7 @@ import Vote from '../views/Vote.vue'
 import PayGroup from '../views/PayGroup.vue'
 import Home from '../views/Home.vue'
 import ProposeMember from '../views/ProposeMember.vue'
+import MembersCircle from '../components/MembersCircle.vue'
 import { wrap, lazyLoadVue } from './utils'
 
 Vue.use(Router)
@@ -38,11 +39,11 @@ var groupGuard = {
   redirect: (to, from) => ({ path: '/new-group' })
 }
 var inviteGuard = {
-  guard: store => store.state.currentGroupId && store.state[store.state.currentGroupId].members.length >= 3,
+  guard: store => store.state.currentGroupId && Object.keys(store.state[store.state.currentGroupId].profiles).length >= 3,
   redirect: (to, from) => ({ path: '/propose-member' })
 }
 var proposeMemberGuard = {
-  guard: store => store.state.currentGroupId && store.state[store.state.currentGroupId].members.length < 3,
+  guard: store => store.state.currentGroupId && Object.keys(store.state[store.state.currentGroupId].profiles).length < 3,
   redirect: (to, from) => ({ path: '/invite' })
 }
 var mailGuard = {
@@ -173,6 +174,14 @@ var router = new Router({
         title: 'Vote on a Proposal'
       },
       beforeEnter: createEnterGuards(store, loginGuard, mailGuard)
+    },
+    {
+      // shouldn't be its own page but we have it here for testing
+      path: '/members-circle',
+      name: MembersCircle.name,
+      component: MembersCircle,
+      meta: {title: 'Members Circle'},
+      beforeEnter: createEnterGuards(store, loginGuard)
     },
     {
       path: '*',
