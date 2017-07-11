@@ -23,7 +23,7 @@
         </div>
         <div class="column"></div>
         <div class="column is-two-thirds">
-          <div id="compose" class="panel" v-show="mode === 'Compose'">
+          <div id="compose" class="panel" v-if="mode === 'Compose'">
             <div class="panel-heading">
               <div><strong><i18n>Type</i18n>:</strong>&nbsp;<i18n>Message</i18n></div>
               <div><strong style="margin-top: auto"><i18n>To</i18n>:</strong>&nbsp;
@@ -53,7 +53,7 @@
               <button class="button is-danger" type="submit" v-on:click="cancel" style="margin-left:10px; margin-right: 0"><i18n>Cancel</i18n></button>
             </div>
           </div>
-          <div id="CurrentMessage" class="panel" v-show="mode === 'Read'">
+          <div id="CurrentMessage" class="panel" v-if="mode === 'Read'">
             <div class="panel-heading">
               <div><strong>Type:</strong>&nbsp;{{currentMessage.data.messageType}}</div>
               <div><strong>Sent:</strong>&nbsp;{{formatDate(currentMessage.data.sentDate)}}</div>
@@ -67,7 +67,7 @@
               <button class="button is-primary" type="submit" v-on:click="inboxMode" style="margin-left:10px; margin-right: 0"><i18n>Return</i18n></button>
             </div>
           </div>
-          <table id="Proposals" class="table is-bordered is-striped is-narrow"  v-show="(mode === 'Inbox')" v-if="proposals.length">
+          <table id="Proposals" class="table is-bordered is-striped is-narrow"  v-if="(mode === 'Inbox') && proposals.length">
             <thead>
             <tr>
               <th><i18n>Proposals</i18n></th>
@@ -92,7 +92,7 @@
             </tr>
             </tbody>
           </table>
-          <table id="Invites" class="table is-bordered is-striped is-narrow"  v-show="(mode === 'Inbox')" v-if="invites.length">
+          <table id="Invites" class="table is-bordered is-striped is-narrow" v-if="(mode === 'Inbox') && invites.length">
             <thead>
             <tr>
               <th><i18n>Invites</i18n></th>
@@ -117,7 +117,7 @@
             </tr>
             </tbody>
           </table>
-          <table id="Inbox" class="table is-bordered is-striped is-narrow" v-show="(mode === 'Inbox')">
+          <table id="Inbox" class="table is-bordered is-striped is-narrow" v-if="(mode === 'Inbox')">
             <thead>
             <tr>
               <th><i18n>Inbox</i18n></th>

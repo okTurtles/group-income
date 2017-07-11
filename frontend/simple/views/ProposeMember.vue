@@ -38,15 +38,19 @@
   </section>
 </template>
 
-<style lang="sass" scoped>
-.table-header
-  background-color: #fafafa
-.media
-  align-items: center
-.add-form
-  margin-bottom: 2rem
-.notification-icon
-  margin-right: 1rem
+<style lang="scss" scoped>
+  .table-header {
+    background-color: #fafafa;
+  }
+  .media {
+    align-items: center;
+  }
+  .add-form {
+    margin-bottom: 2rem;
+  }
+  .notification-icon {
+    margin-right: 1rem;
+  }
 </style>
 
 <script>

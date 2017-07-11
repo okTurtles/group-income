@@ -87,7 +87,7 @@ export default {
         this.$router.push({path: '/'})
       } catch (error) {
         this.response = L('Invalid username or password')
-        console.error(L('login failed'))
+        console.error(error)
       }
     },
     close () {

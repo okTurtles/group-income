@@ -43,7 +43,7 @@ function findDecreaseAmount (incomeFrequencies, minCome) {
 function transferValue (incomes, indexAmount, transferAmount) {
   return incomes.map(function (income) {
     if (income.amount === indexAmount) {
-      income.amount = income.amount + transferAmount
+      income.amount += transferAmount
     }
     return income
   })
@@ -55,6 +55,10 @@ function incomeKeys (a, b) {
 
 function incomeAmounts (a, b) {
   return a.amount - b.amount
+}
+
+function floorTo (number) {
+  return number.toString().match(/^-?\d+(?:\.\d{0,2})?/)[0]
 }
 
 function incomeDistribution (incomes, minCome) {
@@ -94,8 +98,17 @@ function incomeDistribution (incomes, minCome) {
   let transferAmount = Math.min(totalRequired, totalAvailable)
 
   // --- transfer amounts from largest element(s) to smallest element(s)
-  incomes = transferValue(incomes, largestAmount, -(transferAmount / largestCount))
-  incomes = transferValue(incomes, smallestAmount, (transferAmount / smallestCount))
+  let decreasePerMember = -floorTo(transferAmount / largestCount)
+  let decreaseTotal = decreasePerMember * largestCount
+  let increasePerMember = -floorTo(decreaseTotal / smallestCount)
+  let increaseTotal = increasePerMember * smallestCount
+
+  incomes = transferValue(incomes, largestAmount, decreasePerMember)
+  incomes = transferValue(incomes, smallestAmount, increasePerMember)
+
+  // --- add the remainder for fractional transfers for the smallest on the left
+  let remainder = Math.ceil((-decreaseTotal - increaseTotal) * 100) / 100
+  incomes[0].amount += remainder
 
   return incomeDistribution(incomes, minCome)
 }

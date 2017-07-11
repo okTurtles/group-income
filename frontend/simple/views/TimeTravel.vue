@@ -8,21 +8,24 @@
   </div>
 </template>
 
-<style lang="sass" scoped>
-.time-travel
-  position: fixed
-  bottom: 10px
-  left: 10%
-  width: 80%
-  z-index: 99999
-  box-shadow: 0px 2px 30px rgba(10, 10, 10, 0.1), 0 0 0 1px rgba(10, 10, 10, 0.1)
+<style lang="scss" scoped>
+.time-travel {
+  position: fixed;
+  bottom: 10px;
+  left: 10%;
+  width: 80%;
+  z-index: 99999;
+  box-shadow: 0px 2px 30px rgba(10, 10, 10, 0.1), 0 0 0 1px rgba(10, 10, 10, 0.1);
+}
 
-.ticks
-  display: flex
-  justify-content: space-between
+.ticks {
+  display: flex;
+  justify-content: space-between;
+}
 
-.ticks li
-  display: inline-block
+.ticks li {
+  display: inline-block;
+}
 </style>
 
 <script>

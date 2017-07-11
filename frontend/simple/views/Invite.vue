@@ -86,15 +86,19 @@
   </section>
 </template>
 
-<style lang="sass" scoped>
-  .table-header
-    background-color: #fafafa
-  .media
-    align-items: center
-  .add-form
-    margin-bottom: 2rem
-  .notification-icon
-    margin-right: 1rem
+<style lang="scss" scoped>
+.table-header {
+  background-color: #fafafa;
+}
+.media {
+  align-items: center;
+}
+.add-form {
+  margin-bottom: 2rem;
+}
+.notification-icon {
+  margin-right: 1rem;
+}
 </style>
 
 <script>
@@ -112,7 +116,6 @@ export default {
       members: [],
       userErrorMsg: '',
       invited: false,
-      self: false,
       errorMsg: null
     }
   },
@@ -124,7 +127,7 @@ export default {
         this.userErrorMsg = L('Invalid User: Cannot Invite One\'s self')
         return
       } else {
-        this.self = ''
+        this.userErrorMsg = ''
       }
 
       try {

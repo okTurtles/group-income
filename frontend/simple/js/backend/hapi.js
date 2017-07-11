@@ -74,7 +74,6 @@ export class HapiBackend extends Backend {
     return Object.keys(store.state.contracts)
   }
   async subscribe (contractId: string) {
-    if (!contractId) throw new Error('wtf called this')
     console.log('subscribing to:', contractId)
     store.commit('pending', contractId)
     // we don't need to check if we're already subscribed, server handles that
