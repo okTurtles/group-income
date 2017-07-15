@@ -141,6 +141,9 @@ export default {
 
       // handle errors the same way for both transactions
       let onError = (ex) => {
+        // clean up invalid event listeners in case transaction is rerun external to this vue
+        internalTransaction.removeAllListeners('complete')
+        externalTransaction.removeAllListeners('complete')
         this.$store.commit('logout')
         console.log(ex)
         this.response = ex.toString()
@@ -152,6 +155,7 @@ export default {
         transactionQueue.run(externalTransaction)
       })
       externalTransaction.once('complete', () => {
+        console.log('totally fucking happened')
         this.response = 'success'
         this.$store.dispatch('login', {name: this.name, identityContractId: userHash})
         if (this.$route.query.next) {

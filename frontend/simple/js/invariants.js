@@ -22,6 +22,7 @@ export async function backendSubscribeV1 ({backend, contractId}) {
 
 export const identitySetAttribute = 'identitySetAttributeV1'
 export async function identitySetAttributeV1 ({backend, Events, contractId, latestHash, name, value}) {
+  if (window) throw new Error('Fuck this shite')
   let attribute = new Events.HashableIdentitySetAttribute({attribute: {name, value}}, latestHash)
   await backend.publishLogEntry(contractId, attribute)
 }

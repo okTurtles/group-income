@@ -88,6 +88,14 @@ export class HashableEntry extends Hashable {
     root.add(msg)
     return msg
   }
+  static isHashableEntry (obj) {
+    if (!obj) return false
+    if (!obj.version && typeof obj.version !== 'number') return false
+    if (!obj.parentHash && typeof obj.parentHash !== 'string') return false
+    if (!obj.data) return false
+    if (!obj.type && typeof obj.type !== 'string') return false
+    return true
+  }
   constructor (data: JSONObject = {}, parentHash?: string) {
     super({
       version: 0,
