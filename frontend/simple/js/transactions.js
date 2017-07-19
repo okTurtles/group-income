@@ -16,6 +16,17 @@ let _scope = new WeakMap()
 let _cursor = new WeakMap()
 let _description = new WeakMap()
 let _isRevertable = new WeakMap()
+// Why would need this?  to make our retries grow in common sense ways
+function fibSequence (num) {
+  let output = 0
+  let sequence = [ 0, 1 ]
+  for (var i = 0; i < num; i++) {
+    sequence.push(sequence[ 0 ] + sequence[ 1 ])
+    sequence.splice(0, 1)
+    output = sequence[ 1 ]
+  }
+  return output
+}
 
 let transactionDB = localforage.createInstance({ name: 'Transactions', storeName: 'Transactions' })
 class Transaction extends EventEmitter {
@@ -23,7 +34,7 @@ class Transaction extends EventEmitter {
     super()
     _description.set(this, description)
     _steps.set(this, [])
-    _scope.set(this, new Map())
+    _scope.set(this, {})
     _isRevertable.set(this, !!revertable)
   }
   addStep (step) {
@@ -32,7 +43,8 @@ class Transaction extends EventEmitter {
   }
   setInScope (name, value) {
     let scope = _scope.get(this)
-    scope.set(name, value)
+    scope[name] = value
+    _scope.set(this, scope)
   }
   async run (serviceRegistry) {
     let steps = _steps.get(this)
@@ -45,7 +57,7 @@ class Transaction extends EventEmitter {
       let currentStep = steps[ i ]
       // Build arguments from services and scoped data
       for (let argPair of Object.entries(currentStep.args)) {
-        args[argPair[0]] = scope.get(argPair[1]) || serviceRegistry.get(argPair[1])
+        args[argPair[0]] = scope[argPair[1]] || serviceRegistry.get(argPair[1])
       }
       // Attempt to run step
       try {
@@ -74,16 +86,28 @@ class Transaction extends EventEmitter {
     }
   }
   static isTransaction (obj) {
-    if (obj) return false
-    if (!obj.steps && !Array.isArray(obj.steps)) return false
-    if (!obj.scope && typeof obj.parentHash !== 'map') return false
-    if (!obj.data) return false
-    if (!obj.type && typeof obj.type !== 'string') return false
+    if (typeof obj !== 'object') return false
+    if (!Array.isArray(obj.steps)) return false
+    if (typeof obj.scope !== 'object') return false
+    if (typeof obj.cursor !== 'object') return false
+    if (typeof obj.isRevertable !== 'boolean') return false
+    if (typeof obj.description !== 'string') return false
+    return true
   }
   static fromJSON (json) {
     if (!Transaction.isTransaction(json)) {
       throw new TypeError('Invalid Transaction')
     }
+    for (let key of Object.keys(json.scope)) {
+      if (Events.HashableEntry.isHashableEntry(json.scope[key])) {
+        json.scope[key] = Events.HashableEntry.fromJSON(json.scope[key])
+      }
+    }
+    let transaction = new Transaction(json.description, json.isRevertable)
+    _scope.set(transaction, json.scope)
+    _cursor.set(transaction, json.cursor)
+    _steps.set(transaction, json.steps)
+    return transaction
   }
 }
 
@@ -113,21 +137,26 @@ class TransactionQueue {
 
   async load () {
     if (_isLoaded.get(this)) { return }
-    let transactionID = await transactionDB.getItem('nextID')
-    if (!transactionID) {
-      transactionID = 0
-      await transactionDB.setItem('nextID', transactionID)
-    } else {
-      await _transactionID.set(this, transactionID)
+    try {
+      let transactionID = await transactionDB.getItem('nextID')
+      if (!transactionID) {
+        transactionID = 0
+        await transactionDB.setItem('nextID', transactionID)
+      } else {
+        await _transactionID.set(this, transactionID)
+      }
+      let failures = await transactionDB.getItem('failures') || []
+      _failures.set(this, failures)
+      for (let failed of failures) {
+        let json = await transactionDB.getItem(`${failed.id}`)
+        let transaction = Transaction.fromJSON(json)
+        _transactionID.set(transaction, failed.id)
+        this.enqueue(transaction)
+      }
+      this.run()
+    } catch (ex) {
+      console.log(ex)
     }
-    let failures = await transactionDB.getItem('failures') || []
-    _failures.set(this, failures)
-    for (let failed of failures) {
-      let json = await transactionDB.getItem(`${failed}`)
-      let transaction = Transaction.fromJSON(json)
-      this.enqueue(transaction)
-    }
-    this.run()
   }
 
   enqueue (transaction) {
@@ -160,17 +189,34 @@ class TransactionQueue {
         }
         try {
           await next.run(serviceRegistry)
-          let backup = await transactionDB.getItem(_transactionQueue.get(next))
-          if (backup) { await transactionDB.setItem(_transactionQueue.get(next), null) }
+          let backup = await transactionDB.getItem(`${_transactionID.get(next)}`)
+          if (backup) {
+            let failures = _failures.get(this)
+            let index = failures.findIndex(failure => failure.id === _transactionID.get(next))
+            if (index > -1) {
+              failures.splice(index, 1)
+              await transactionDB.setItem('failures', failures)
+            }
+            await transactionDB.removeItem(`${_transactionID.get(next)}`)
+          }
         } catch (ex) {
           // Save a serialized version of the transaction
           let transactionID = _transactionID.get(next)
           let failures = _failures.get(this)
-          if (!failures.find(id => id === transactionID)) {
-            failures.push(transactionID)
+          let failure = failures.find(failure => failure.id === transactionID)
+          if (!failure) {
+            failure = { id: transactionID, retryCount: 0 }
+            failures.push(failure)
+            await transactionDB.setItem('failures', failures)
+          } else {
+            failure.retryCount++
             await transactionDB.setItem('failures', failures)
           }
-          await transactionDB.setItem(`${transactionID}`, next)
+          await transactionDB.setItem(`${transactionID}`, next.toJSON())
+          let retry = next
+          setTimeout(() => {
+            this.run(retry)
+          }, 500 * fibSequence(failure.retryCount))
         }
         next = transactionQueue.pop()
       }

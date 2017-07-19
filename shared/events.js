@@ -38,9 +38,13 @@ export class Hashable {
   }
   // https://flowtype.org/docs/classes.html#this-type
   static fromObject (obj, hash): this {
-    var instance = new this()
-    instance._obj = obj
+    var instance = this.fromJSON(obj)
     if (instance.toHash() !== hash) throw Error(`hash obj: ${instance.toHash()} != hash: ${hash}`)
+    return instance
+  }
+  static fromJSON (json): this {
+    var instance = new this()
+    instance._obj = json
     return instance
   }
   static fromProtobuf (buffer, hash) {
@@ -90,10 +94,10 @@ export class HashableEntry extends Hashable {
   }
   static isHashableEntry (obj) {
     if (!obj) return false
-    if (!obj.version && typeof obj.version !== 'number') return false
-    if (!obj.parentHash && typeof obj.parentHash !== 'string') return false
+    if (typeof obj.version !== 'number') return false
+    if (typeof obj.parentHash !== 'string') return false
     if (!obj.data) return false
-    if (!obj.type && typeof obj.type !== 'string') return false
+    if (typeof obj.type !== 'string') return false
     return true
   }
   constructor (data: JSONObject = {}, parentHash?: string) {
