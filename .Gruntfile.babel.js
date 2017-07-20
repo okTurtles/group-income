@@ -6,6 +6,8 @@ https://www.reddit.com/r/javascript/comments/352f83/using_browserify_babelify_wi
 http://www.sitepoint.com/setting-up-es6-project-using-babel-browserify/
 https://babeljs.io/docs/setup/#browserify
 */
+import _ from 'lodash'
+import {setupPrimus} from './shared/functions'
 
 const fs = require('fs')
 const path = require('path')
@@ -13,9 +15,6 @@ const url = require('url')
 const S = require('string')
 const vueify = require('vueify')
 const pathmodify = require('pathmodify')
-
-import _ from 'lodash'
-import {setupPrimus} from './shared/functions'
 
 var development = process.env.NODE_ENV === 'development'
 

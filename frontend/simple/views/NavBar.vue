@@ -101,7 +101,6 @@
       @close="closeLoginModal"
     />
     <time-travel v-show="showTimeTravel" :toggleVisibility="toggleTimeTravel" />
-    <div v-if="$store.state.handlingEvent" id="Processing" class="notification is-warning" style="display: none;">processing</div>
   </div>
 </template>
 
@@ -151,8 +150,8 @@ export default {
         this.closeLoginModal()
       }
     },
-    logout () {
-      this.$store.dispatch('logout')
+    async logout () {
+      await this.$queue.dispatch('logout')
     },
     showLoginModal () {
       this.loginModalVisible = true
