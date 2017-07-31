@@ -3,24 +3,25 @@
 
     <div class="columns">
       <div class="column is-half is-offset-one-quarter" >
-        <form class='add-form' @submit.prevent="add">
+        <form class='add-form'>
           <div class="field has-addons">
-              <p class="control" style="width: 100%">
-                <input
-                  autofocus
-                  class="input is-medium"
-                  id="searchUser"
-                  placeholder="Add a new member by username"
-                  type="text"
-                  v-model="searchUser"
-                >
-              </p>
-              <p class="control">
-                <a id="addButton" class="button is-info is-medium" @click="add">
-                  <i18n>Add member</i18n>
-                </a>
-              </p>
+            <p class="control" style="width: 100%">
+              <input
+                      autofocus
+                      class="input is-medium"
+                      id="searchUser"
+                      placeholder="Add a new member by username"
+                      type="text"
+                      v-model="searchUser"
+              >
+            </p>
+            <p class="control">
+              <a id="addButton" class="button is-info is-medium" @click="add">
+                <i18n>Add member</i18n>
+              </a>
+            </p>
           </div>
+          <i18n v-if="userErrorMsg" id="badUsername" class="help is-danger">{{userErrorMsg}}</i18n>
         </form>
       </div>
     </div>
@@ -29,19 +30,16 @@
       <div class="column is-6 is-offset-3" >
 
         <p
-          class="notification is-success has-text-centered"
-          v-if="invited"
+                class="notification is-success has-text-centered"
+                v-if="invited"
         >
           <i class='notification-icon fa fa-check'></i>
           <i18n>Members invited successfully!</i18n>
         </p>
 
-        <i18n v-if="error" id="badUsername" class="help is-danger">Invalid Username</i18n>
-        <i18n v-if="self" class="help is-danger">Cannot Invite Yourself</i18n>
-
         <table
-          class="table is-bordered is-striped is-narrow"
-          v-if="members.length"
+                class="table is-bordered is-striped is-narrow"
+                v-if="members.length"
         >
           <thead>
           <tr>
@@ -49,35 +47,35 @@
           </tr>
           </thead>
           <tbody>
-            <tr v-for="(member, index) in members" class="member">
-              <td>
-                <div class="media">
-                  <div class="media-left">
-                    <p class="image is-64x64">
-                      <!-- TODO: use responsive figure:
-                    http://bulma.io/documentation/elements/image/ -->
-                      <!-- TODO: ideally these would be loaded from cache -->
-                      <img :src="member.state.attributes.picture" width="64" height="64">
-                    </p>
-                  </div>
-                  <div class="media-content">
-                    <strong>{{member.state.attributes.name}}</strong>
-                  </div>
-                  <div class="media-right">
-                    <button class="delete" @click="remove(index)"></button>
-                  </div>
+          <tr v-for="(member, index) in members" class="member">
+            <td>
+              <div class="media">
+                <div class="media-left">
+                  <p class="image is-64x64">
+                    <!-- TODO: use responsive figure:
+                  http://bulma.io/documentation/elements/image/ -->
+                    <!-- TODO: ideally these would be loaded from cache -->
+                    <img :src="member.state.attributes.picture" width="64" height="64">
+                  </p>
                 </div>
-              </td>
-            </tr>
+                <div class="media-content">
+                  <strong>{{member.state.attributes.name}}</strong>
+                </div>
+                <div class="media-right">
+                  <button class="delete" @click="remove(index)"></button>
+                </div>
+              </div>
+            </td>
+          </tr>
           </tbody>
         </table>
 
         <div class="has-text-centered">
           <button
-            class="button is-success is-large"
-            type="submit"
-            v-if="members.length"
-            @click="submit"
+                  class="button is-success is-large"
+                  type="submit"
+                  v-if="members.length"
+                  @click="submit"
           >
             <i18n>Send Invites</i18n>
           </button>
@@ -88,15 +86,19 @@
   </section>
 </template>
 
-<style lang="sass" scoped>
-.table-header
-  background-color: #fafafa
-.media
-  align-items: center
-.add-form
-  margin-bottom: 2rem
-.notification-icon
-  margin-right: 1rem
+<style lang="scss" scoped>
+.table-header {
+  background-color: #fafafa;
+}
+.media {
+  align-items: center;
+}
+.add-form {
+  margin-bottom: 2rem;
+}
+.notification-icon {
+  margin-right: 1rem;
+}
 </style>
 
 <script>
@@ -112,9 +114,8 @@ export default {
     return {
       searchUser: null,
       members: [],
-      error: false,
+      userErrorMsg: '',
       invited: false,
-      self: false,
       errorMsg: null
     }
   },
@@ -123,10 +124,10 @@ export default {
       if (!this.searchUser) return
 
       if (this.searchUser === this.$store.state.loggedIn.name) {
-        this.self = true
+        this.userErrorMsg = L('Invalid User: Cannot Invite One\'s self')
         return
       } else {
-        this.self = false
+        this.userErrorMsg = ''
       }
 
       try {
@@ -136,10 +137,10 @@ export default {
           this.members.push({ state, contractId })
         }
         this.searchUser = null
-        this.error = false
+        this.userErrorMsg = ''
       } catch (err) {
         console.log(err)
-        this.error = true
+        this.userErrorMsg = L('Invalid User')
       }
     },
     remove (index) {
@@ -158,7 +159,8 @@ export default {
           // We need to post the invite to the users' mailbox contract
           const invite = new Events.HashableMailboxPostMessage(
             {
-              message: this.$store.state.currentGroupId,
+              from: this.$store.getters.currentGroup.groupName,
+              headers: [this.$store.state.currentGroupId],
               messageType: Events.HashableMailboxPostMessage.TypeInvite,
               sentDate
             },

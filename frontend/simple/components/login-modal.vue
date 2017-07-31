@@ -84,9 +84,10 @@ export default {
         console.log(`Retrieved identity ${identityContractId}`)
         await this.$store.dispatch('login', {name: this.name, identityContractId})
         this.close()
+        this.$router.push({path: '/'})
       } catch (error) {
         this.response = L('Invalid username or password')
-        console.error(L('login failed'))
+        console.error(error)
       }
     },
     close () {

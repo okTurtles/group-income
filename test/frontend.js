@@ -16,6 +16,7 @@ const fs = require('fs')
 
 describe('Frontend', function () {
   const n = Nightmare({
+    openDevTools: true,
     show: !!process.env.SHOW_BROWSER,
     height: 900
   })
@@ -38,6 +39,7 @@ describe('Frontend', function () {
             .insert('input[name="name"]', 'George')
             .insert('input[name="email"]', 'george@lasvegas.com')
             .insert('input[name="password"]', '$$111$$')
+            .wait(() => !document.querySelector('button[type="submit"]').disabled)
             .click('.signup button.submit')
             .wait(() => document.getElementById('serverMsg').innerText !== '')
             .evaluate(() => document.getElementById('serverMsg').className)
@@ -45,7 +47,7 @@ describe('Frontend', function () {
         })
     })
 
-    it('Should fail to create George again', function () {
+    it.skip('Should fail to create George again', function () {
       return n.click('.signup button.submit')
         .wait(() => document.getElementById('serverMsg').className.indexOf('danger') !== -1)
     })
@@ -103,6 +105,7 @@ describe('Frontend', function () {
       const signedup = await n.insert('#name', username)
         .insert('#email', `test@testgroupincome.com`)
         .insert('#password', 'testtest')
+        .wait(() => !document.querySelector('button[type="submit"]').disabled)
         .click('button[type="submit"]')
         .wait('#HomeLogo')
         .evaluate(() => !!document.getElementById('HomeLogo'))
@@ -136,19 +139,18 @@ describe('Frontend', function () {
         .click('#LogoutBtn')
 
         // Open login modal
-        .wait(() => !!document.querySelector('#LoginBtn'))
+        .wait(() => Boolean(document.querySelector('#LoginBtn')))
         .click('#LoginBtn')
 
         // Login
-        .wait(() => !!document.querySelector('#LoginModal.is-active'))
-        .wait(1000)
+        .wait(() => Boolean(document.querySelector('#LoginModal.is-active')))
+        .wait('#LoginName')
         .insert('#LoginName', username)
         .insert('#LoginPassword', 'testtest')
-        .wait(1000)
         .click('#LoginButton')
-        .wait(() => !!document.querySelector('#LoginResponse'))
-        .wait(1000)
-        .evaluate(() => !!document.querySelector('#LogoutBtn'))
+        .wait(() => Boolean(document.querySelector('#LoginResponse')))
+        .wait('#LogoutBtn')
+        .evaluate(() => Boolean(document.querySelector('#LogoutBtn')))
       should(loggedin).equal(true)
     })
 
@@ -165,7 +167,7 @@ describe('Frontend', function () {
       const denied = await n.insert('#name', badUsername)
         .insert('#email', badEmail)
         .insert('#password', badPassword)
-        .evaluate(() => document.querySelector('button[type="submit"]').disabled)
+        .evaluate(() => document.querySelector('button[type="submit"]') && document.querySelector('button[type="submit"]').disabled)
       should(denied).equal(true)
       const usernameMsg = await n.evaluate(() => !!document.getElementById('badUsername'))
       should(usernameMsg).equal(true)
@@ -177,23 +179,26 @@ describe('Frontend', function () {
   })
 
   describe('Group Creation Test', function () {
-    it('Create Additional User', async function () {
-      this.timeout(6000)
-      const signedup = await n.click('#LogoutBtn')
+    it('Create Additional User 2', async function () {
+      this.timeout(8000)
+      const signedup = await n.wait('#LogoutBtn')
+        .click('#LogoutBtn')
+        .wait(() => !document.querySelector('#LogoutBtn'))
         .wait('#SignupBtn')
         .click('#SignupBtn')
         .wait('#name')
         .insert('#name', username + '2')
         .insert('#email', 'test2@testgroupincome.com')
         .insert('#password', 'testtest')
+        .wait(() => document.querySelector('button[type="submit"]') && !document.querySelector('button[type="submit"]').disabled)
         .click('button[type="submit"]')
         .wait('#HomeLogo')
-        .evaluate(() => !!document.querySelector('#HomeLogo'))
+        .evaluate(() => Boolean(document.querySelector('#HomeLogo')))
       should(signedup).equal(true)
     })
 
-    it('Create Additional User 2', async function () {
-      this.timeout(4000)
+    it('Create Additional User 3', async function () {
+      this.timeout(8000)
       const signedup = await n
         .click('#LogoutBtn')
         .wait('#SignupBtn')
@@ -202,9 +207,44 @@ describe('Frontend', function () {
         .insert('#name', username + '3')
         .insert('#email', `test2@testgroupincome.com`)
         .insert('#password', 'testtest')
+        .wait(() => document.querySelector('button[type="submit"]') && !document.querySelector('button[type="submit"]').disabled)
         .click('button[type="submit"]')
         .wait('#HomeLogo')
-        .evaluate(() => !!document.querySelector('#HomeLogo'))
+        .evaluate(() => Boolean(document.querySelector('#HomeLogo')))
+      should(signedup).equal(true)
+    })
+
+    it('Create Additional User 4', async function () {
+      this.timeout(8000)
+      const signedup = await n
+        .click('#LogoutBtn')
+        .wait('#SignupBtn')
+        .click('#SignupBtn')
+        .wait('#name')
+        .insert('#name', username + '4')
+        .insert('#email', `test2@testgroupincome.com`)
+        .insert('#password', 'testtest')
+        .wait(() => document.querySelector('button[type="submit"]') && !document.querySelector('button[type="submit"]').disabled)
+        .click('button[type="submit"]')
+        .wait('#HomeLogo')
+        .evaluate(() => Boolean(document.querySelector('#HomeLogo')))
+      should(signedup).equal(true)
+    })
+
+    it('Create Additional User 5', async function () {
+      this.timeout(8000)
+      const signedup = await n
+        .click('#LogoutBtn')
+        .wait('#SignupBtn')
+        .click('#SignupBtn')
+        .wait('#name')
+        .insert('#name', username + '5')
+        .insert('#email', `test2@testgroupincome.com`)
+        .insert('#password', 'testtest')
+        .wait(() => document.querySelector('button[type="submit"]') && !document.querySelector('button[type="submit"]').disabled)
+        .click('button[type="submit"]')
+        .wait('#HomeLogo')
+        .evaluate(() => Boolean(document.querySelector('#HomeLogo')))
       should(signedup).equal(true)
     })
 
@@ -222,20 +262,20 @@ describe('Frontend', function () {
         .select('select[name="contributionPrivacy"]', 'Very Private')
         .click('button[type="submit"]')
         // Should get to invite page:
-        .wait(500)
         .wait(() => !!document.getElementById('addButton'))
         .evaluate(() => !!document.getElementById('addButton'))
       should(created).equal(true)
     })
 
     it('Should invite members to group', async function () {
-      this.timeout(8000)
+      this.timeout(4000)
 
       const count = await n
-        .wait(() => !!document.querySelector('#addButton'))
+        .wait(() => Boolean(document.querySelector('#addButton')))
         .insert('#searchUser', username)
         .click('#addButton')
         .wait(() => document.querySelectorAll('.member').length > 0)
+        .wait('.delete')
         .click('.delete')
         .wait(() => document.querySelectorAll('.member').length < 1)
         .evaluate(() => +document.querySelectorAll('.member').length)
@@ -255,7 +295,7 @@ describe('Frontend', function () {
     })
 
     it('Should Receive Message and Invite', async function () {
-      this.timeout(10000)
+      this.timeout(20000)
       await n.goto(page('mailbox'))
         .wait('#Inbox')
         .click('#ComposeLink')
@@ -271,26 +311,146 @@ describe('Frontend', function () {
         // Login
         .wait('#LoginBtn')
         .click('#LoginBtn')
-        .wait(() => !!document.querySelector('#LoginModal'))
+        .wait(() => Boolean(document.querySelector('#LoginModal')))
         .insert('#LoginName', username)
         .insert('#LoginPassword', 'testtest')
         .click('#LoginButton')
-        .wait(() => !!document.querySelector('#LogoutBtn'))
+        .wait(() => !document.querySelector('#LoginModal.is-active'))
         .wait('#MailboxLink')
         .click('#MailboxLink')
-        .wait(1000)
+        .wait('#Inbox')
+        .wait(() => !!document.getElementById('MailboxLink'))
+        .click('#MailboxLink')
+        .wait(() => !!document.getElementById('Inbox'))
+        .wait(() => !!document.querySelector('.unread'))
       const alert = await n.evaluate(() => !!document.getElementById('AlertNotification'))
       should(alert).equal(true)
-      const unread = await n.evaluate(() => +document.querySelector('.unread').innerText)
+      const unread = await n.evaluate(() => document.querySelector('.unread') && +document.querySelector('.unread').innerText)
       should(unread).equal(2)
       const hasInvite = await n.evaluate(() => !!document.getElementsByClassName('invite-message'))
       should(hasInvite).equal(true)
       const hasMessage = await n.evaluate(() => !!document.getElementsByClassName('inbox-message'))
       should(hasMessage).equal(true)
       const newUnread = await n.click('.invite-message')
-        .wait(300)
+        .wait('.unread')
         .evaluate(() => +document.querySelector('.unread').innerText)
       should(newUnread).equal(1)
+    })
+    it('Should Accept Invite', async function () {
+      this.timeout(30000)
+      // Accept invitation
+      let success = await n.click('#InboxLink')
+        .wait('.invite-message')
+        .click('.invite-message')
+        .wait('#InviteLink')
+        .click('#InviteLink')
+        .wait('#AcceptLink')
+        .click('#AcceptLink')
+        .wait('#Inbox')
+        .evaluate(() => !!document.getElementById('Inbox'))
+      should(success).equal(true)
+      // Logout
+      success = await n.click('#LogoutBtn')
+      // Open login modal
+        .wait(() => Boolean(document.querySelector('#LoginBtn')))
+        .click('#LoginBtn')
+        // Login
+        .wait(() => Boolean(document.querySelector('#LoginModal.is-active')))
+        .wait('#LoginName')
+        .insert('#LoginName', username + '2')
+        .insert('#LoginPassword', 'testtest')
+        .click('#LoginButton')
+        .wait(() => !document.querySelector('#LoginModal.is-active'))
+        .wait('#MailboxLink')
+      // Accept invitation
+      n.click('#MailboxLink')
+        .wait('.invite-message')
+        .click('.invite-message')
+        .wait('#InviteLink')
+        .click('#InviteLink')
+        .wait('#AcceptLink')
+        .click('#AcceptLink')
+        .wait(() => !!document.getElementById('Inbox'))
+        .evaluate(() => !!document.getElementById('Inbox'))
+      should(!success).equal(true)
+    })
+    it('Should Vote on Additional Members', async function () {
+      this.timeout(60000)
+      await n.click('#LogoutBtn')
+      // Open login modal
+        .wait(() => Boolean(document.querySelector('#LoginBtn')))
+        .click('#LoginBtn')
+        // Login
+        .wait(() => Boolean(document.querySelector('#LoginModal.is-active')))
+        .wait('#LoginName')
+        .insert('#LoginName', username + '5')
+        .insert('#LoginPassword', 'testtest')
+        .wait('#LoginButton')
+        .click('#LoginButton')
+        .wait(() => !document.querySelector('#LoginModal.is-active'))
+      n.wait('#MailboxLink')
+        .goto(page('invite'))
+        .wait(() => Boolean(document.querySelector('#ProposeButton')))
+        .insert('#searchUser', username + '3')
+        .click('#ProposeButton')
+        .wait(() => !!document.querySelector('.notification.is-success'))
+        .evaluate(() => !!document.querySelector('.notification.is-success'))
+        // Logout
+        .click('#LogoutBtn')
+        // Open login modal
+        .wait(() => Boolean(document.querySelector('#LoginBtn')))
+        .click('#LoginBtn')
+            // Login
+      await n.wait(() => Boolean(document.querySelector('#LoginModal.is-active')))
+        .insert('#LoginName', username)
+        .insert('#LoginPassword', 'testtest')
+        .click('#LoginButton')
+        .wait(() => !document.querySelector('#LoginModal.is-active'))
+      let success = await n.wait('#MailboxLink')
+        .click('#MailboxLink')
+        .wait('.proposal-message')
+        .click('.proposal-message')
+        .wait('#ForLink')
+        .click('#ForLink')
+        .wait('#Inbox')
+        .evaluate(() => !!document.getElementById('Inbox'))
+      should(success).equal(true)
+      success = await n.click('#LogoutBtn')
+      // Open login modal
+        .wait(() => Boolean(document.querySelector('#LoginBtn')))
+        .click('#LoginBtn')
+        // Login
+        .wait(() => Boolean(document.querySelector('#LoginModal.is-active')))
+        .insert('#LoginName', username + '2')
+        .insert('#LoginPassword', 'testtest')
+        .click('#LoginButton')
+        .wait(() => !document.querySelector('#LoginModal.is-active'))
+        .wait('#MailboxLink')
+        .click('#MailboxLink')
+        .wait('.proposal-message')
+        .click('.proposal-message')
+        .wait('#ForLink')
+        .click('#ForLink')
+        .wait('#Inbox')
+        .evaluate(() => !!document.getElementById('Inbox'))
+      should(success).equal(true)
+
+      success = await n.click('#LogoutBtn')
+      // Open login modal
+        .wait(() => Boolean(document.querySelector('#LoginBtn')))
+        .click('#LoginBtn')
+        // Login
+        .wait(() => Boolean(document.querySelector('#LoginModal.is-active')))
+        .insert('#LoginName', username + '3')
+        .insert('#LoginPassword', 'testtest')
+        .click('#LoginButton')
+        .wait(() => !document.querySelector('#LoginModal.is-active'))
+        .wait('#MailboxLink')
+        // Accept invitation
+        .click('#MailboxLink')
+        .wait('.invite-message')
+        .evaluate(() => !!document.querySelector('.invite-message'))
+      should(success).equal(true)
     })
   })
 

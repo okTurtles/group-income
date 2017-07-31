@@ -18,7 +18,7 @@
               </table>
               <div class="panel-block center" style="display: block; text-align: center">
                 <div id="errorMsg" v-if="errorMsg" class="help is-danger">{{errorMsg}}</div>
-                <a class="button is-success is-large" v-on:click="accept" style="margin-left:auto; margin-right: 20px"><i18n>Accept</i18n></a><a class="button is-danger is-large" v-on:click="decline" style="margin-right:auto; margin-right: 20px"><i18n>Decline</i18n></a>
+                <a id="AcceptLink" class="button is-success is-large" v-on:click="accept" style="margin-left:auto; margin-right: 20px"><i18n>Accept</i18n></a><a id="DeclineLink" class="button is-danger is-large" v-on:click="decline" style="margin-right:auto; margin-right: 20px"><i18n>Decline</i18n></a>
               </div>
             </div>
           </div>
@@ -97,7 +97,6 @@
     </section>
 </template>
 <script>
-import {namespace} from '../js/backend/hapi'
 import * as Events from '../../../shared/events'
 import backend from '../js/backend/'
 import { latestContractState } from '../js/state'
@@ -113,10 +112,12 @@ export default {
         console.log(new Error('Invalid Invitation'))
         this.$router.push({path: '/mailbox'})
       }
-      for (var i = 0; i < state.members.length; i++) {
-        const contractId = await namespace.lookup(state.members[i])
-        state.members[i] = await latestContractState(contractId)
+      // TODO: use the state.profiles directly?
+      var members = []
+      for (const name of Object.keys(state.profiles)) {
+        members.push(await latestContractState(state.profiles[name].globalProfile))
       }
+      state.members = members
       this.contract = state
     } catch (ex) {
       // TODO Add ui facing error notification
@@ -130,16 +131,19 @@ export default {
         // post acceptance event to the group contract
         this.errorMsg = null
         let latest = await backend.latestHash(this.$route.query.groupId)
-        let acceptance = new Events.HashableGroupAcceptInvitation({ username: this.$store.state.loggedIn.name, inviteHash: this.$route.query.inviteHash, acceptanceDate: new Date() }, latest)
+        let acceptance = new Events.HashableGroupAcceptInvitation(
+          {
+            username: this.$store.state.loggedIn.name,
+            identityContractId: this.$store.state.loggedIn.identityContractId,
+            inviteHash: this.$route.query.inviteHash,
+            acceptanceDate: new Date()
+          },
+          latest
+        )
         this.$store.commit('setCurrentGroupId', this.$route.query.groupId)
         await backend.subscribe(this.$route.query.groupId)
         await this.$store.dispatch('syncContractWithServer', this.$route.query.groupId)
         await backend.publishLogEntry(this.$route.query.groupId, acceptance)
-
-        // subscribe to the identity contract of the founder
-        let identityContractId = await namespace.lookup(this.contract.founderUsername)
-        await backend.subscribe(identityContractId)
-        await this.$store.dispatch('syncContractWithServer', identityContractId)
 
         // remove invite and return to mailbox
         this.$store.commit('deleteMessage', this.$route.query.inviteHash)
@@ -154,7 +158,14 @@ export default {
         // post decline event
         this.errorMsg = null
         let latest = await backend.latestHash(this.$route.query.groupId)
-        let declination = new Events.HashableGroupDeclineInvitation({ username: this.$store.state.loggedIn.name, inviteHash: this.$route.query.inviteHash, declinedDate: new Date() }, latest)
+        let declination = new Events.HashableGroupDeclineInvitation(
+          {
+            username: this.$store.state.loggedIn.name,
+            inviteHash: this.$route.query.inviteHash,
+            declinedDate: new Date()
+          },
+          latest
+        )
         await backend.publishLogEntry(this.$route.query.groupId, declination)
 
         // remove invite and return to mailbox

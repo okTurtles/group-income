@@ -47,7 +47,7 @@
               id="AlertNotification"
               class="icon"
               style="color: #ed6c63"
-              v-if="$store.getters.unreadMessageCount"
+              v-if="$store.getters.unreadMessageCount || $store.getters.proposals.length"
             >
               <i class="fa fa-bell"></i>
             </span>
@@ -104,14 +104,17 @@
   </div>
 </template>
 
-<style lang="sass" scoped>
-div.nav-left
-  overflow: visible
-  z-index: 10
-  a
-    background-color: #fff
-div.nav-center
-  flex-shrink: inherit
+<style lang="scss" scoped>
+div.nav-left {
+  overflow: visible;
+  z-index: 10;
+  a {
+    background-color: #fff;
+  }
+}
+div.nav-center {
+  flex-shrink: inherit;
+}
 </style>
 
 <script>
@@ -147,8 +150,8 @@ export default {
         this.closeLoginModal()
       }
     },
-    logout () {
-      this.$store.dispatch('logout')
+    async logout () {
+      await this.$queue.dispatch('logout')
     },
     showLoginModal () {
       this.loginModalVisible = true
