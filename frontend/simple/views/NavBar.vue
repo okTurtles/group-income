@@ -13,6 +13,13 @@
           <router-link
             active-class="is-active"
             class="nav-item is-tab"
+            id="CreateGroup"
+            to="new-group"
+          >
+          </router-link>
+          <router-link
+            active-class="is-active"
+            class="nav-item is-tab"
             to="pay-group"
             v-show="$store.state.loggedIn"
           >
@@ -57,7 +64,7 @@
               <i18n>Login</i18n>
             </a>
 
-            <div class="button profile-link" v-if="$store.state.loggedIn" @click="toggleDropdown">
+            <div class="button profile-link" id="OpenProfileDropDown" v-if="$store.state.loggedIn" @click="toggleDropdown">
               <strong>{{ ($store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.displayName ? $store.getters.currentUserIdentityContract.attributes.displayName : null) || $store.state.loggedIn.name}}</strong>
               <img v-if="$store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.picture" v-bind:src="$store.getters.currentUserIdentityContract.attributes.picture">
               <i class="fa fa-caret-down" style="color: #D8D8D8" aria-hidden="true"></i>
@@ -67,7 +74,7 @@
       </div>
     </nav>
     <div class="menu-dropdown" v-if="dropdownVisible">
-      <div class="button profile-link" v-if="$store.state.loggedIn" @click="toggleDropdown">
+      <div class="button profile-link" id="CloseProfileDropDown" v-if="$store.state.loggedIn" @click="toggleDropdown">
         <strong>{{ ($store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.displayName ? $store.getters.currentUserIdentityContract.attributes.displayName : null) || $store.state.loggedIn.name}}</strong>
         <img v-if="$store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.picture" v-bind:src="$store.getters.currentUserIdentityContract.attributes.picture">
         <i class="fa fa-caret-down" style="color: #D8D8D8" aria-hidden="true"></i>
