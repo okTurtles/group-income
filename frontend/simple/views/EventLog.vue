@@ -16,7 +16,7 @@
       <textarea class="textarea" name="payload" placeholder="payload" ref="payload"></textarea>
     </p>
     <p class="control">
-      Current Group: {{ currentGroup }}
+      Current Group: {{ currentGroupState }}
     </p>
     <!-- TODO: fix .level-item outside of .level -->
     <div class="level-item is-narrow">
@@ -59,7 +59,6 @@
     margin: 10px 0;
   }
 </style>
-
 <script>
   import * as Events from '../../../shared/events'
   import * as contracts from '../js/events'
@@ -80,7 +79,7 @@
       Vue.events.$on('replacedState', this.refresh)
     },
     computed: {
-      ...mapGetters(['currentGroup'])
+      ...mapGetters(['currentGroupState'])
     },
     methods: {
       refresh: async function () {

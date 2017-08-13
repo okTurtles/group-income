@@ -105,7 +105,6 @@
     <time-travel v-show="showTimeTravel" :toggleVisibility="toggleTimeTravel" />
   </div>
 </template>
-
 <style lang="scss" scoped>
 .nav {
   margin: 15px 0;
@@ -152,7 +151,6 @@ div.nav-center {
 }
 
 </style>
-
 <script>
 import Vue from 'vue'
 import TimeTravel from './TimeTravel.vue'

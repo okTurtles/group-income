@@ -1,28 +1,3 @@
-<script>
-export default {
-  name: 'GroupSupportHistory',
-  props: {
-    history: Array
-  },
-  data () {
-    return {
-      months: ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
-    }
-  },
-  methods: {
-    monthColor (percentage) {
-      if (typeof percentage !== 'number') {
-        throw new TypeError('monthColor(percentage) must take a number')
-      }
-
-      if (percentage < 0.6) return '#D0011B'
-      if (percentage < 1) return '#F6A623'
-      return '#9CD445'
-    }
-  }
-}
-</script>
-
 <template>
   <section>
     <h3 class="title is-3"><i18n>Support History</i18n></h3>
@@ -35,7 +10,6 @@ export default {
     </div>
   </section>
 </template>
-
 <style lang="scss" scoped>
 h3.title {
   margin-top: 30px;
@@ -64,3 +38,27 @@ h3.title {
   font-size: 24px;
 }
 </style>
+<script>
+  export default {
+    name: 'GroupSupportHistory',
+    props: {
+      history: Array
+    },
+    data () {
+      return {
+        months: ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+      }
+    },
+    methods: {
+      monthColor (percentage) {
+        if (typeof percentage !== 'number') {
+          throw new TypeError('monthColor(percentage) must take a number')
+        }
+
+        if (percentage < 0.6) return '#D0011B'
+        if (percentage < 1) return '#F6A623'
+        return '#9CD445'
+      }
+    }
+  }
+</script>

@@ -87,7 +87,6 @@
     </div>
   </section>
 </template>
-
 <style lang="scss" scoped>
 .table-header {
   background-color: #fafafa;
@@ -102,7 +101,6 @@
   margin-right: 1rem;
 }
 </style>
-
 <script>
 import * as Events from '../../../shared/events'
 import backend from '../js/backend/'

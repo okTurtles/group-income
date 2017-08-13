@@ -178,7 +178,15 @@
     </div>
   </section>
 </template>
-
+<style scoped>
+  .button-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 20%;
+    margin: 30px 0 0 0;
+  }
+</style>
 <script>
 /* @flow */
 import Vue from 'vue'
@@ -243,13 +251,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.button-box {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 20%;
-  margin: 30px 0 0 0;
-}
-</style>

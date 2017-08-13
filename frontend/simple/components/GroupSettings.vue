@@ -1,12 +1,3 @@
-<script>
-export default {
-  name: 'GroupSettings',
-  props: {
-    group: Object
-  }
-}
-</script>
-
 <template>
   <section>
     <!-- Group Settings -->
@@ -30,7 +21,6 @@ export default {
     </div>
   </section>
 </template>
-
 <style lang="scss" scoped>
 h3.title {
   margin-top: 30px;
@@ -49,3 +39,11 @@ h3.title {
   color: #616161;
 }
 </style>
+<script>
+  export default {
+    name: 'GroupSettings',
+    props: {
+      group: Object
+    }
+  }
+</script>

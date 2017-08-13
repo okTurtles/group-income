@@ -1,18 +1,3 @@
-<script>
-export default {
-  name: 'YourGroupsList',
-  props: {
-    groups: Array,
-    currentGroupId: String
-  },
-  methods: {
-    changeGroup (hash) {
-      this.$store.commit('setCurrentGroupId', hash)
-    }
-  }
-}
-</script>
-
 <template>
   <div>
     <h3 class="list-title">YOUR GROUPS</h3>
@@ -26,7 +11,6 @@ export default {
     <router-link class="create-new-link" to="/new-group">+ CREATE NEW</router-link>
   </div>
 </template>
-
 <style lang="scss" scoped>
 .list-title {
   color: #9B9B9B;
@@ -66,3 +50,18 @@ export default {
 }
 
 </style>
+<script>
+  export default {
+    name: 'YourGroupsList',
+    props: {
+      groups: Array,
+      currentGroupId: String
+    },
+    methods: {
+      changeGroup (hash) {
+        this.$store.commit('setCurrentGroupId', hash)
+      }
+    }
+  }
+</script>
+

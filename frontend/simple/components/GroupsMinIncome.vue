@@ -1,12 +1,3 @@
-<script>
-export default {
-  name: 'GroupsMinIncome',
-  props: {
-    group: Object
-  }
-}
-</script>
-
 <template>
   <section class="has-text-right">
     <p class="min-income-label">Min Income</p>
@@ -14,7 +5,6 @@ export default {
     <a href="#">Propose change</a>
   </section>
 </template>
-
 <style lang="scss" scoped>
 .min-income-label {
   font-family: HelveticaNeue-Light;
@@ -29,3 +19,11 @@ export default {
   line-height: 45px;
 }
 </style>
+<script>
+  export default {
+    name: 'GroupsMinIncome',
+    props: {
+      group: Object
+    }
+  }
+</script>

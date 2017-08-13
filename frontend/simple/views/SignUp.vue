@@ -68,12 +68,10 @@
     </form>
   </section>
 </template>
-
 <style>
 .signup .level-item { margin-top: 10px; }
 .signup .level.top-align { align-items: flex-start; }
 </style>
-
 <script>
 import backend from '../js/backend'
 import Vue from 'vue'
