@@ -91,7 +91,7 @@ export default {
           attributes: [
             {name: 'name', value: this.name},
             {name: 'email', value: this.email},
-            {name: 'picture', value: `${window.location.origin}/simple/images/128x128.png`}
+            {name: 'picture', value: `${window.location.origin}/simple/images/default-avatar.png`}
           ]
         })
         // Do this mutation first in order to have events correctly save

@@ -71,38 +71,38 @@
             </div>
           </span>
         </div>
+        <div class="menu-dropdown" v-if="dropdownVisible">
+          <div class="button profile-link" id="CloseProfileDropDown" v-if="$store.state.loggedIn" @click="toggleDropdown">
+            <strong>{{ ($store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.displayName ? $store.getters.currentUserIdentityContract.attributes.displayName : null) || $store.state.loggedIn.name}}</strong>
+            <img v-if="$store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.picture" v-bind:src="$store.getters.currentUserIdentityContract.attributes.picture">
+            <i class="fa fa-caret-down" style="color: #D8D8D8" aria-hidden="true"></i>
+          </div>
+          <router-link
+            id="ProfileLink"
+            class="nav-item is-tab"
+            active-class="is-active"
+            to="user"
+            v-show="$store.state.loggedIn"
+          >
+            <i18n>Profile</i18n>
+          </router-link>
+          <a
+            class="is-danger"
+            href="#"
+            id="LogoutBtn"
+            v-if="$store.state.loggedIn"
+            @click.prevent="logout"
+          >
+            <i18n>Signout</i18n>
+          </a>
+        </div>
+        <login-modal
+          v-if="loginModalVisible"
+          @close="closeLoginModal"
+        />
+        <time-travel v-show="showTimeTravel" :toggleVisibility="toggleTimeTravel" />
       </div>
     </nav>
-    <div class="menu-dropdown" v-if="dropdownVisible">
-      <div class="button profile-link" id="CloseProfileDropDown" v-if="$store.state.loggedIn" @click="toggleDropdown">
-        <strong>{{ ($store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.displayName ? $store.getters.currentUserIdentityContract.attributes.displayName : null) || $store.state.loggedIn.name}}</strong>
-        <img v-if="$store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.picture" v-bind:src="$store.getters.currentUserIdentityContract.attributes.picture">
-        <i class="fa fa-caret-down" style="color: #D8D8D8" aria-hidden="true"></i>
-      </div>
-      <router-link
-        id="ProfileLink"
-        class="nav-item is-tab"
-        active-class="is-active"
-        to="user"
-        v-show="$store.state.loggedIn"
-      >
-        <i18n>Profile</i18n>
-      </router-link>
-      <a
-        class="is-danger"
-        href="#"
-        id="LogoutBtn"
-        v-if="$store.state.loggedIn"
-        @click.prevent="logout"
-      >
-        <i18n>Signout</i18n>
-      </a>
-    </div>
-    <login-modal
-      v-if="loginModalVisible"
-      @close="closeLoginModal"
-    />
-    <time-travel v-show="showTimeTravel" :toggleVisibility="toggleTimeTravel" />
   </div>
 </template>
 <style lang="scss" scoped>
@@ -140,8 +140,8 @@ div.nav-center {
   border-radius: 6px;
   padding: 14px 10px 15px;
   position: absolute;
-  top: 9px;
-  right: 170px;
+  top: -6px;
+  right: 2px;
   text-align: center;
   z-index: 10;
 
@@ -183,6 +183,7 @@ export default {
       }
     },
     logout () {
+      this.dropdownVisible = false
       this.$store.dispatch('logout')
     },
     showLoginModal () {
