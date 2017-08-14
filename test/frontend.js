@@ -16,7 +16,7 @@ const fs = require('fs')
 
 describe('Frontend', function () {
   const n = Nightmare({
-    openDevTools: true,
+    // openDevTools: true,
     show: !!process.env.SHOW_BROWSER,
     height: 900
   })
@@ -175,7 +175,7 @@ describe('Frontend', function () {
   })
 
   describe('Group Creation Test', function () {
-    it('Create Additional User', async function () {
+    it('Create Additional User 2', async function () {
       this.timeout(8000)
       const signedup = await n
         .wait('#LogoutBtn')
@@ -214,6 +214,7 @@ describe('Frontend', function () {
     it('Create Additional User 4', async function () {
       this.timeout(8000)
       const signedup = await n
+        .click('#OpenProfileDropDown')
         .click('#LogoutBtn')
         .wait('#SignupBtn')
         .click('#SignupBtn')
@@ -231,6 +232,7 @@ describe('Frontend', function () {
     it('Create Additional User 5', async function () {
       this.timeout(8000)
       const signedup = await n
+        .click('#OpenProfileDropDown')
         .click('#LogoutBtn')
         .wait('#SignupBtn')
         .click('#SignupBtn')
@@ -341,12 +343,14 @@ describe('Frontend', function () {
         .evaluate(() => !!document.getElementById('Inbox'))
       should(success).equal(true)
       // Logout
-      success = await n.click('#LogoutBtn')
-      // Open login modal
-        .wait(() => Boolean(document.querySelector('#LoginBtn')))
+      success = await n
+        .click('#OpenProfileDropDown')
+        .click('#LogoutBtn')
+        // Open login modal
+        .wait('#LoginBtn')
         .click('#LoginBtn')
         // Login
-        .wait(() => Boolean(document.querySelector('#LoginModal.is-active')))
+        .wait('#LoginModal.is-active')
         .wait('#LoginName')
         .insert('#LoginName', username + '2')
         .insert('#LoginPassword', 'testtest')
@@ -368,7 +372,9 @@ describe('Frontend', function () {
     })
     it('Should Vote on Additional Members', async function () {
       this.timeout(10000)
-      await n.click('#LogoutBtn')
+      await n
+        .click('#OpenProfileDropDown')
+        .click('#LogoutBtn')
         // Open login modal
         .wait('#LoginBtn')
         .click('#LoginBtn')
@@ -389,9 +395,10 @@ describe('Frontend', function () {
         .wait(() => !!document.querySelector('.notification.is-success'))
         .evaluate(() => !!document.querySelector('.notification.is-success'))
         // Logout
+        .click('#OpenProfileDropDown')
         .click('#LogoutBtn')
         // Open login modal
-        .wait(() => Boolean(document.querySelector('#LoginBtn')))
+        .wait('#LoginBtn')
         .click('#LoginBtn')
             // Login
       await n.wait(() => Boolean(document.querySelector('#LoginModal.is-active')))
@@ -408,12 +415,14 @@ describe('Frontend', function () {
         .wait('#Inbox')
         .evaluate(() => !!document.getElementById('Inbox'))
       should(success).equal(true)
-      success = await n.click('#LogoutBtn')
-      // Open login modal
-        .wait(() => Boolean(document.querySelector('#LoginBtn')))
+      success = await n
+        .click('#OpenProfileDropDown')
+        .click('#LogoutBtn')
+        // Open login modal
+        .wait('#LoginBtn')
         .click('#LoginBtn')
         // Login
-        .wait(() => Boolean(document.querySelector('#LoginModal.is-active')))
+        .wait('#LoginModal.is-active')
         .insert('#LoginName', username + '2')
         .insert('#LoginPassword', 'testtest')
         .click('#LoginButton')
@@ -425,15 +434,17 @@ describe('Frontend', function () {
         .wait('#ForLink')
         .click('#ForLink')
         .wait('#Inbox')
-        .evaluate(() => !!document.getElementById('Inbox'))
+        .exists('#Inbox')
       should(success).equal(true)
 
-      success = await n.click('#LogoutBtn')
-      // Open login modal
-        .wait(() => Boolean(document.querySelector('#LoginBtn')))
+      success = await n
+        .click('#OpenProfileDropDown')
+        .click('#LogoutBtn')
+        // Open login modal
+        .wait('#LoginBtn')
         .click('#LoginBtn')
         // Login
-        .wait(() => Boolean(document.querySelector('#LoginModal.is-active')))
+        .wait('#LoginModal.is-active')
         .insert('#LoginName', username + '3')
         .insert('#LoginPassword', 'testtest')
         .click('#LoginButton')
