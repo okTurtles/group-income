@@ -242,6 +242,7 @@ function browserifyCfg ({straight, lazy}, cfg = {}) {
     var c = {
       options: {
         transform: [script2ify, 'vueify', 'babelify'],
+        cacheFile: './dist/browserify-cache.json',
         plugin: [[pathmodify, {
           mods: [
             // some libraries (like jquery-validity) require('jquery')
