@@ -183,6 +183,7 @@ export default {
       }
     },
     logout () {
+      this.toggleDropdown()
       this.$store.dispatch('logout')
     },
     showLoginModal () {
