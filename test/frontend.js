@@ -292,7 +292,8 @@ describe('Frontend', function () {
 
     it('Should Receive Message and Invite', async function () {
       this.timeout(20000)
-      await n.goto(page('mailbox'))
+      await n
+        .goto(page('mailbox'))
         .wait('#Inbox')
         .click('#ComposeLink')
         .wait('#AddRecipient')
@@ -358,9 +359,9 @@ describe('Frontend', function () {
         .click('#LoginButton')
         .wait(() => !document.querySelector('#LoginModal.is-active'))
         .wait('#MailboxLink')
-      // BUG: Why isn't there an await here?
       // Accept invitation
-      n.click('#MailboxLink')
+      await n
+        .click('#MailboxLink')
         .wait('.invite-message')
         .click('.invite-message')
         .wait('#InviteLink')
@@ -387,8 +388,7 @@ describe('Frontend', function () {
         .wait('#LoginButton')
         .click('#LoginButton')
         .wait(() => !document.querySelector('#LoginModal.is-active'))
-      // BUG: Why isn't there an await here?
-      n.wait('#MailboxLink')
+      await n.wait('#MailboxLink')
         .goto(page('invite'))
         .wait('#ProposeButton')
         .insert('#searchUser', username + '3')
