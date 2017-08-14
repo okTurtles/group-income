@@ -242,7 +242,6 @@ function browserifyCfg ({straight, lazy}, cfg = {}) {
     var c = {
       options: {
         transform: [script2ify, 'vueify', 'babelify'],
-        cacheFile: './dist/browserify-cache.json',
         plugin: [[pathmodify, {
           mods: [
             // some libraries (like jquery-validity) require('jquery')
@@ -258,6 +257,9 @@ function browserifyCfg ({straight, lazy}, cfg = {}) {
       },
       files: _.fromPairs([[out, paths]])
     }
+    // doing a different cache file for each out file is clearly faster as
+    // demonstrated by successive runs of `grunt test`
+    c.options.cacheFile = `./dist/${globalize(out)}-cache.json`
     if (isLazy) {
       c.options.browserifyOptions.standalone = globalize(out)
       c.options.exclude = ['vue', 'vue-hot-reload-api']
