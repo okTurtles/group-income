@@ -79,7 +79,7 @@
                   <div class="media-left" v-on:click="readInvite(index)">
                     <p class="image is-64x64">
                       <!-- TODO: make this draw image from group contract -->
-                      <img src="images/128x128.png">
+                      <img src="images/default-avatar.png">
                     </p>
                   </div>
                   <div class="media-content invite-message" v-on:click="readInvite(index)">
@@ -103,7 +103,7 @@
                 <div class="media">
                   <div class="media-left" v-on:click="read(index)">
                     <p class="image is-64x64">
-                      <img src="images/128x128.png">
+                      <img src="images/default-avatar.png">
                     </p>
                   </div>
                   <div class="media-content inbox-message" v-on:click="read(index)">
