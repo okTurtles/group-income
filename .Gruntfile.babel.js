@@ -6,6 +6,8 @@ https://www.reddit.com/r/javascript/comments/352f83/using_browserify_babelify_wi
 http://www.sitepoint.com/setting-up-es6-project-using-babel-browserify/
 https://babeljs.io/docs/setup/#browserify
 */
+import _ from 'lodash'
+import {setupPrimus} from './shared/functions'
 
 const fs = require('fs')
 const path = require('path')
@@ -14,12 +16,13 @@ const S = require('string')
 const vueify = require('vueify')
 const pathmodify = require('pathmodify')
 
-import _ from 'lodash'
-import {setupPrimus} from './shared/functions'
-
 var development = process.env.NODE_ENV === 'development'
 
 setupPrimus(require('http').createServer(), true)
+
+// per: https://github.com/vuejs/vueify#configuring-options
+//      https://github.com/vuejs/vue-loader/issues/197#issuecomment-205617193
+vueify.compiler.applyConfig({ sass: sassCfg() })
 
 module.exports = (grunt) => {
   require('load-grunt-tasks')(grunt)
@@ -38,7 +41,7 @@ module.exports = (grunt) => {
       // consider instead using the `watchify` option on browserify
       browserify: {
         options: { livereload: true }, // port 35729 by default
-        files: ['frontend/*.html', 'frontend/simple/**/*.{vue,ejs,js}'],
+        files: ['frontend/*.html', 'frontend/simple/**/*.{vue,js}'],
         tasks: ['exec:standard', 'copy', 'browserify']
       },
       css: {
@@ -128,7 +131,7 @@ module.exports = (grunt) => {
           middlewares.unshift((req, res, next) => {
             var f = url.parse(req.url).pathname
             f = path.join('dist', S(f).endsWith('/') ? f + 'index.html' : f)
-            if (/^dist\/(frontend|node_modules)\/.*\.(sass|scss|js|vue|ejs)$/.test(f)) {
+            if (/^dist\/(frontend|node_modules)\/.*\.(sass|scss|js|vue)$/.test(f)) {
               // handle serving source-maps
               res.end(fs.readFileSync(S(f).chompLeft('dist/').s))
             } else if (S(f).endsWith('.html') && fs.existsSync(f)) {
@@ -238,7 +241,8 @@ function browserifyCfg ({straight, lazy}, cfg = {}) {
   function gencfg (out, paths, isLazy) {
     var c = {
       options: {
-        transform: [script2ify, 'vueify', ejsify, 'babelify'],
+        transform: [script2ify, 'vueify', 'babelify'],
+        cacheFile: './dist/browserify-cache.json',
         plugin: [[pathmodify, {
           mods: [
             // some libraries (like jquery-validity) require('jquery')
@@ -280,43 +284,14 @@ function browserifyCfg ({straight, lazy}, cfg = {}) {
 // ----------------------------------------
 var through = require('through2')
 
-// per: https://github.com/vuejs/vueify#configuring-options
-//      https://github.com/vuejs/vue-loader/issues/197#issuecomment-205617193
-vueify.compiler.applyConfig({
-  sass: sassCfg(),
-  customCompilers: {
-    ejs: function (content, cb, compiler, filepath) {
-      cb(null, loadEJS(filepath, content)())
-    }
-  }
-})
-// TODO: see comment in simple/js/utils.js
-function loadEJS (path, str) {
-  return require('ejs').compile(str, {
-    filename: path,
-    compileDebug: development,
-    client: true // needed for generating the module.exports string in ejsify
-  })
-}
-// with inspiration from the ejsify package
-function ejsify (file) {
-  return !S(file).endsWith('.ejs')
-  ? through()
-  : through(function (buf, encoding, cb) {
-    // see comment in test.ejs for why waitForGlobal is no longer used
-    // cb(null, `module.exports = (${loadEJS(file, buf.toString('utf8'))})({waitForGlobal: ${waitForGlobal}})`)
-    cb(null, `module.exports = (${loadEJS(file, buf.toString('utf8'))})()`)
-  })
-}
-
-// This will replace <script> with <script2> in .html, .vue and .ejs files
+// This will replace <script> with <script2> in .html and .vue files
 // EXCEPT:
 // - within <!-- comments -->
 // - top-level <script> tags within .vue files
 // Additional exclusion per: http://www.rexegg.com/regex-best-trick.html
 // Excluding <pre> tags did not seem to work, however.
 function script2ify (file) {
-  return !/\.(vue|html|ejs)$/.test(file) // edit to support other file types
+  return !/\.(vue|html)$/.test(file) // edit to support other file types
   ? through()
   : through(function (buf, encoding, cb) {
     // avoid replacing top-level <script> tags in .vue files

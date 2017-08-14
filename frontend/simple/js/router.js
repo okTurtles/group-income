@@ -6,14 +6,15 @@ import SignUp from '../views/SignUp.vue'
 import CreateGroup from '../views/CreateGroup.vue'
 import GroupDashboard from '../views/GroupDashboard.vue'
 import UserProfileView from '../views/UserProfileView.vue'
-import TestEventLog from '../views/EventLog.vue'
 import Invite from '../views/Invite.vue'
 import Mailbox from '../views/Mailbox.vue'
 import Join from '../views/Join.vue'
+import Vote from '../views/Vote.vue'
 import PayGroup from '../views/PayGroup.vue'
 import Home from '../views/Home.vue'
+import ProposeMember from '../views/ProposeMember.vue'
 import MembersCircle from '../components/MembersCircle.vue'
-import { wrap, lazyLoadVue } from './utils'
+import {lazyLoadVue} from './utils'
 
 Vue.use(Router)
 Vue.use(VeeValidate)
@@ -32,12 +33,20 @@ var signupGuard = {
   guard: (store, to, from) => !!store.state.loggedIn,
   redirect: (to, from) => ({ path: '/' })
 }
-// Check if user has a group to invite users to
-var inviteGuard = {
-  guard: (store, to, from) => !store.state.currentGroupId,
+// Check if user has a group
+var groupGuard = {
+  guard: store => !store.state.currentGroupId,
   redirect: (to, from) => ({ path: '/new-group' })
 }
-var joinGuard = {
+var inviteGuard = {
+  guard: store => store.state.currentGroupId && Object.keys(store.state[store.state.currentGroupId].profiles).length >= 3,
+  redirect: (to, from) => ({ path: '/propose-member' })
+}
+var proposeMemberGuard = {
+  guard: store => store.state.currentGroupId && Object.keys(store.state[store.state.currentGroupId].profiles).length < 3,
+  redirect: (to, from) => ({ path: '/invite' })
+}
+var mailGuard = {
   guard: (store, to, from) => from.name !== Mailbox.name,
   redirect: (to, from) => ({ path: '/mailbox' })
 }
@@ -115,20 +124,14 @@ var router = new Router({
         title: 'Pay Group'
       }
     },
-    {
-      path: '/ejs-page',
-      component: { template: wrap(require('../views/test.ejs')) },
-      meta: {
-        title: 'EJS Test Page'
-      }
-    },
-    {
-      path: '/event-log',
-      component: TestEventLog,
-      meta: {
-        title: 'Event Log Test Page'
-      }
-    },
+    // NOTE: we no longer support ejs pages
+    // {
+    //   path: '/ejs-page',
+    //   component: { template: wrap(require('../views/test.ejs')) },
+    //   meta: {
+    //     title: 'EJS Test Page'
+    //   }
+    // },
     /* Guards need to be created for any route that should not be directly accessed by url */
     {
       path: '/invite',
@@ -137,7 +140,16 @@ var router = new Router({
       meta: {
         title: 'Invite Group Members'
       },
-      beforeEnter: createEnterGuards(store, loginGuard, inviteGuard)
+      beforeEnter: createEnterGuards(store, loginGuard, groupGuard, inviteGuard)
+    },
+    {
+      path: '/propose-member',
+      name: ProposeMember.name,
+      component: ProposeMember,
+      meta: {
+        title: 'Propose Group Members'
+      },
+      beforeEnter: createEnterGuards(store, loginGuard, groupGuard, proposeMemberGuard)
     },
     {
       path: '/mailbox',
@@ -155,7 +167,16 @@ var router = new Router({
       meta: {
         title: 'Join a Group'
       },
-      beforeEnter: createEnterGuards(store, loginGuard, joinGuard)
+      beforeEnter: createEnterGuards(store, loginGuard, mailGuard)
+    },
+    {
+      path: '/vote',
+      name: Vote.name,
+      component: Vote,
+      meta: {
+        title: 'Vote on a Proposal'
+      },
+      beforeEnter: createEnterGuards(store, loginGuard, mailGuard)
     },
     {
       // shouldn't be its own page but we have it here for testing
