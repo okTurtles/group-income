@@ -259,7 +259,8 @@ export class HashableGroup extends HashableContract {
     ['memberRemovalPercentage', 'uint32'],
     ['incomeProvided', 'float'],
     ['contributionPrivacy', 'string'],
-    ['founderUsername', 'string']
+    ['founderUsername', 'string'],
+    ['founderIdentityContractId', 'string']
   ])
   constructor (data: JSONObject, parentHash?: string) {
     super({...data, creationDate: new Date().toISOString()}, parentHash)
@@ -271,10 +272,36 @@ export class HashableGroupPayment extends HashableAction {
     ['payment', 'string'] // TODO: change to 'double' and add other fields
   ])
 }
+export class Action extends Hashable {
+  static fields = Action.Fields([
+    ['contractId', 'string'],
+    ['action', 'string']
+  ])
+}
 
-export class HashableGroupVote extends HashableAction {
-  static fields = HashableGroupVote.Fields([
-    ['vote', 'string'] // TODO: make a real vote
+export class HashableGroupProposal extends HashableAction {
+  static fields = HashableGroupProposal.Fields([
+    ['proposal', 'string'],
+    ['percentage', 'float'],
+    ['actions', 'Action', 'repeated'],
+    ['candidate', 'string'],
+    ['initiator', 'string'],
+    ['initiationDate', 'string'],
+    ['expirationDate', 'string']
+  ])
+}
+
+export class HashableGroupVoteForProposal extends HashableAction {
+  static fields = HashableGroupVoteForProposal.Fields([
+    ['username', 'string'],
+    ['proposalHash', 'string']
+  ])
+}
+
+export class HashableGroupVoteAgainstProposal extends HashableAction {
+  static fields = HashableGroupVoteAgainstProposal.Fields([
+    ['username', 'string'],
+    ['proposalHash', 'string']
   ])
 }
 
@@ -289,6 +316,7 @@ export class HashableGroupRecordInvitation extends HashableAction {
 export class HashableGroupAcceptInvitation extends HashableAction {
   static fields = HashableGroupAcceptInvitation.Fields([
     ['username', 'string'],
+    ['identityContractId', 'string'],
     ['inviteHash', 'string'],
     ['acceptanceDate', 'string']
   ])
@@ -350,6 +378,7 @@ export class HashableMailbox extends HashableContract {}
 export class HashableMailboxPostMessage extends HashableAction {
   static TypeInvite = 'Invite'
   static TypeMessage = 'Message'
+  static TypeProposal = 'Proposal'
   static fields = HashableMailboxPostMessage.Fields([
     ['from', 'string'],
     ['headers', 'string', 'repeated'],

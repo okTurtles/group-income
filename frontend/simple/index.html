@@ -21,10 +21,14 @@
     <div id="app">
       <nav-bar></nav-bar>
       <router-view></router-view>
-      <footer class="has-text-centered">
+      <footer id="debug-pages" class="has-text-centered">
+        <!-- Event Log test is hidden because we no longer do it.
+             I've left this here to serve as an example of how links
+             are added.
+             Delete this link once we have something else here. -->
         <router-link
           active-class="is-active"
-          class="is-light"
+          class="is-light is-hidden"
           to="event-log"
         >
           <i18n>Event Log test</i18n>

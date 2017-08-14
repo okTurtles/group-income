@@ -4,7 +4,7 @@
 
       <div class="column is-2">
         <your-groups-list
-          :currentGroupId="currentGroupId"
+          :currentGroupId="currentGroupState.currentGroupId"
           :groups="groupsByName"
         />
       </div>
@@ -45,9 +45,10 @@
   export default {
     name: 'GroupDashboard',
     computed: {
-      ...mapGetters(['currentGroupId']),
-      ...mapGetters(['currentGroupState']),
-      ...mapGetters(['groupsByName'])
+      ...mapGetters([
+        'currentGroupState',
+        'groupsByName'
+      ])
     },
     components: {
       YourGroupsList,

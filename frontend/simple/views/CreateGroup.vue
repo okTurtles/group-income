@@ -219,7 +219,8 @@ export default {
           memberRemovalPercentage: this.memberRemovalPercentage,
           incomeProvided: this.incomeProvided,
           contributionPrivacy: this.contributionPrivacy,
-          founderUsername: this.$store.state.loggedIn.name
+          founderUsername: this.$store.state.loggedIn.name,
+          founderIdentityContractId: this.$store.state.loggedIn.identityContractId
         })
         const hash = entry.toHash()
         await backend.subscribe(hash)
