@@ -53,8 +53,9 @@ describe('Frontend', function () {
     })
   })
 
-  describe('Event Log Test', function () {
-    it.skip('Should Append to the log', async function () {
+  // NOTE: we no longer do anything with the event log page
+  describe.skip('Event Log Test', function () {
+    it('Should Append to the log', async function () {
       this.timeout(5000) // this one takes a while for some reason
       await n.goto(page('event-log'))
         .should.finally.containEql({ code: 200, url: page('event-log') })
@@ -77,7 +78,7 @@ describe('Frontend', function () {
     })
 
     // TODO: restore this based on the new TimeTravel
-    it.skip('Should Traverse Log', async function () {
+    it('Should Traverse Log', async function () {
       this.timeout(4000)
       await n.goto(page('event-log'))
       const prior = await n.evaluate(() => document.getElementById('LogPosition').innerText)
@@ -227,7 +228,7 @@ describe('Frontend', function () {
         .wait(() => document.querySelector('button[type="submit"]') && !document.querySelector('button[type="submit"]').disabled)
         .click('button[type="submit"]')
         .wait('#HomeLogo')
-        .evaluate(() => Boolean(document.querySelector('#HomeLogo')))
+        .exists('#HomeLogo')
       should(signedup).equal(true)
     })
 
@@ -244,7 +245,7 @@ describe('Frontend', function () {
         .wait(() => document.querySelector('button[type="submit"]') && !document.querySelector('button[type="submit"]').disabled)
         .click('button[type="submit"]')
         .wait('#HomeLogo')
-        .evaluate(() => Boolean(document.querySelector('#HomeLogo')))
+        .exists('#HomeLogo')
       should(signedup).equal(true)
     })
 
@@ -271,7 +272,7 @@ describe('Frontend', function () {
       this.timeout(4000)
 
       const count = await n
-        .wait(() => Boolean(document.querySelector('#addButton')))
+        .wait('#addButton')
         .insert('#searchUser', username)
         .click('#addButton')
         .wait(() => document.querySelectorAll('.member').length > 0)
@@ -311,7 +312,7 @@ describe('Frontend', function () {
         // Login
         .wait('#LoginBtn')
         .click('#LoginBtn')
-        .wait(() => Boolean(document.querySelector('#LoginModal')))
+        .wait('#LoginModal')
         .insert('#LoginName', username)
         .insert('#LoginPassword', 'testtest')
         .click('#LoginButton')
@@ -493,7 +494,8 @@ describe('Frontend', function () {
     })
   })
 
-  describe('EJS test page', function () {
+  // NOTE: we no longer support EJS
+  describe.skip('EJS test page', function () {
     it('List should have at least two items', function () {
       this.timeout(5000)
       return n.goto(page('ejs-page'))

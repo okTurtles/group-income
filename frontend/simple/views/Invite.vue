@@ -111,6 +111,7 @@ import L from '../js/translations'
 export default {
   name: 'Invite',
   data () {
+    // TODO: https://github.com/okTurtles/group-income-simple/issues/297
     return {
       searchUser: null,
       members: [],

@@ -109,13 +109,18 @@ export default {
       let state = await latestContractState(this.$route.query.groupId)
       if (!state.invitees.find(invitee => invitee === this.$store.state.loggedIn.name)) {
         // TODO: proper user-facing error
+        // TODO: somehow I got this error... I created 4 accounts, and after inviting
+        //       the 4th one, there was an exception thrown by HashableGroupVoteAgainstProposal
+        //       when account 2 or 3 voted against the proposal. Yet the invite still appeared
+        //       in 4's inbox. But clicking it just resulted in this error when clicking
+        //       "Respond to Invite". Furthermore, the Invite wouldn't disappear from the Inbox
         console.log(new Error('Invalid Invitation'))
         this.$router.push({path: '/mailbox'})
       }
       // TODO: use the state.profiles directly?
       var members = []
       for (const name of Object.keys(state.profiles)) {
-        members.push(await latestContractState(state.profiles[name].globalProfile))
+        members.push(await latestContractState(state.profiles[name].contractId))
       }
       state.members = members
       this.contract = state
@@ -150,6 +155,7 @@ export default {
         this.$router.push({path: '/mailbox'})
       } catch (ex) {
         console.log(ex)
+        // TODO: post this to a global notification system instead of using this.errorMsg
         this.errorMsg = L('Failed to Accept Invite')
       }
     },

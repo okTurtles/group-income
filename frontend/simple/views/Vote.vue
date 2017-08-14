@@ -42,7 +42,7 @@ export default {
       return this.contract.proposals[this.$route.query.proposalHash] || {proposal: null}
     },
     memberCount () {
-      return this.$store.getters[`${this.$route.query.groupId}/members`].length
+      return this.$store.getters[`${this.$route.query.groupId}/memberUsernames`].length
     }
   },
   methods: {

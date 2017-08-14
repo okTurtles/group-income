@@ -5,12 +5,6 @@ import VS2 from 'vue-script2'
 // import VS2 from './ignored/Script2'
 Vue.use(VS2)
 
-// wrap to prevent fragment instances:
-// http://vuejs.org/guide/components.html#Fragment-Instance
-export function wrap (s: string, tag: string = 'div') {
-  return `<${tag}>${s}</${tag}>`
-}
-
 export function lazyLoadVue (component: string, base: string = '/simple/js') {
   // if we wanted to support vue-hot-reload-api in
   // lazy-loaded modules, then we could do something like this in main.js:
@@ -30,4 +24,11 @@ export function mapValues (obj: Object, fn: Function, o: Object = {}) {
   return o
 }
 
-export default { wrap, lazyLoadVue }
+// wrap to prevent fragment instances:
+// http://vuejs.org/guide/components.html#Fragment-Instance
+// NOTE: this was used for EJS files, which we no longer support
+// export function wrap (s: string, tag: string = 'div') {
+//   return `<${tag}>${s}</${tag}>`
+// }
+
+export default { lazyLoadVue }

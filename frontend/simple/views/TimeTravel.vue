@@ -1,10 +1,10 @@
 <template>
   <div class="box time-travel" @click="toggleVisibility">
     <vue-slider
-      v-bind="sliderConfig" v-model="position"
+      v-bind="config.sliderConfig" v-model="ephemeral.position"
       @callback="timeTravel"
     ></vue-slider>
-    <div>{{ this.history.length }}</div>
+    <div>{{ ephemeral.history.length }}</div>
   </div>
 </template>
 
@@ -38,18 +38,18 @@ export default {
   components: {VueSlider},
   props: {toggleVisibility: Function},
   created () {
-    console.log('[TimeTravel] initial state:', this.history[this.position])
+    console.log('[TimeTravel] initial state:', this.ephemeral.history[this.ephemeral.position])
     store.subscribe((mutation, state) => {
       // console.log('[TimeTravel] spied mutation:', mutation)
-      this.history.push(_.cloneDeep(state))
-      this.sliderConfig.max += 1
-      this.position = this.sliderConfig.max
-      this.timeTravel(this.position)
+      this.ephemeral.history.push(_.cloneDeep(state))
+      this.config.sliderConfig.max += 1
+      this.ephemeral.position = this.config.sliderConfig.max
+      this.timeTravel(this.ephemeral.position)
     })
   },
   methods: {
     timeTravel: function (position) {
-      var state = this.history[position]
+      var state = this.ephemeral.history[position]
       // console.log(`Firing position ${position}:`, state)
       store.replaceState(state)
       Vue.events.$emit('replacedState')
@@ -57,21 +57,25 @@ export default {
   },
   data () {
     return {
-      history: [_.cloneDeep(store.state)],
-      position: 0,
-      sliderConfig: {
-        piecewise: true,
-        tooltip: 'hover',
-        min: 0,
-        max: 0,
-        piecewiseStyle: {
-          backgroundColor: '#ccc',
-          visibility: 'visible',
-          width: '12px',
-          height: '12px'
-        },
-        piecewiseActiveStyle: {
-          backgroundColor: '#3498db'
+      ephemeral: {
+        history: [_.cloneDeep(store.state)],
+        position: 0
+      },
+      config: {
+        sliderConfig: {
+          piecewise: true,
+          tooltip: 'hover',
+          min: 0,
+          max: 0,
+          piecewiseStyle: {
+            backgroundColor: '#ccc',
+            visibility: 'visible',
+            width: '12px',
+            height: '12px'
+          },
+          piecewiseActiveStyle: {
+            backgroundColor: '#3498db'
+          }
         }
       }
     }

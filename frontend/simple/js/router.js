@@ -5,7 +5,6 @@ import store from './state'
 import SignUp from '../views/SignUp.vue'
 import CreateGroup from '../views/CreateGroup.vue'
 import UserProfileView from '../views/UserProfileView.vue'
-import TestEventLog from '../views/EventLog.vue'
 import Invite from '../views/Invite.vue'
 import Mailbox from '../views/Mailbox.vue'
 import Join from '../views/Join.vue'
@@ -14,7 +13,7 @@ import PayGroup from '../views/PayGroup.vue'
 import Home from '../views/Home.vue'
 import ProposeMember from '../views/ProposeMember.vue'
 import MembersCircle from '../components/MembersCircle.vue'
-import { wrap, lazyLoadVue } from './utils'
+import {lazyLoadVue} from './utils'
 
 Vue.use(Router)
 Vue.use(VeeValidate)
@@ -115,20 +114,14 @@ var router = new Router({
         title: 'Pay Group'
       }
     },
-    {
-      path: '/ejs-page',
-      component: { template: wrap(require('../views/test.ejs')) },
-      meta: {
-        title: 'EJS Test Page'
-      }
-    },
-    {
-      path: '/event-log',
-      component: TestEventLog,
-      meta: {
-        title: 'Event Log Test Page'
-      }
-    },
+    // NOTE: we no longer support ejs pages
+    // {
+    //   path: '/ejs-page',
+    //   component: { template: wrap(require('../views/test.ejs')) },
+    //   meta: {
+    //     title: 'EJS Test Page'
+    //   }
+    // },
     /* Guards need to be created for any route that should not be directly accessed by url */
     {
       path: '/invite',

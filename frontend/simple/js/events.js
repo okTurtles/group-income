@@ -5,15 +5,28 @@ import _ from 'lodash'
 
 export class GroupContract extends Events.HashableGroup {
   static vuex = GroupContract.Vuex({
-    state: { votes: [], payments: [], invitees: [], profiles: {}, proposals: {} },
+    state: {
+      payments: [],
+      invitees: [],
+      profiles: {}, // usernames => {contractId: string, groupProfile: Object}
+      proposals: {} // hashes => {} TODO: this, see related TODOs in HashableGroupProposal
+    },
     // NOTICE: All mutations are to be atomic in their edits of the contract state. THEY ARE NOT to farm out
     // any further mutations through the async actions
     mutations: {
       GroupContract (state, {data}) {
-        Vue.set(state.profiles, data.founderUsername, {globalProfile: data.founderIdentityContractId, groupProfile: {}})
+        Vue.set(state.profiles, data.founderUsername, {
+          contractId: data.founderIdentityContractId,
+          groupProfile: {}
+        })
       },
       HashableGroupPayment (state, {data}) { state.payments.push(data) },
-      HashableGroupProposal (state, {data, hash}) { state.proposals[hash] = {...data, for: [data.initiator], against: []} },
+      HashableGroupProposal (state, {data, hash}) {
+        // TODO: this should be data instead of ...data to avoid conflict with neighboring properties
+        // TODO: convert to votes instead of for/against for future-proofing
+        state.proposals[hash] = {...data, for: [data.initiator], against: []}
+      },
+      // TODO: rename this to just HashableGroupProposalVote, and switch off of the type of vote
       HashableGroupVoteForProposal (state, {data}) {
         if (state.proposals[data.proposalHash]) {
           state.proposals[data.proposalHash].for.push(data.username)
@@ -26,8 +39,9 @@ export class GroupContract extends Events.HashableGroup {
       HashableGroupVoteAgainstProposal (state, {data}) {
         if (state.proposals[data.proposalHash]) {
           state.proposals[data.proposalHash].against.push(data.username)
-          let threshold = Math.ceil(state.proposals[data.proposalHash].percentage * Object.keys(state.profiles).length)
-          if (state.proposals[data.proposalHash].against.length > state.members.length - threshold) {
+          let memberCount = Object.keys(state.profiles).length
+          let threshold = Math.ceil(state.proposals[data.proposalHash].percentage * memberCount)
+          if (state.proposals[data.proposalHash].against.length > memberCount - threshold) {
             Vue.delete(state.proposals, data.proposalHash)
           }
         }
@@ -41,17 +55,26 @@ export class GroupContract extends Events.HashableGroup {
         let index = state.invitees.findIndex(username => username === data.username)
         if (index > -1) {
           state.invitees.splice(index, 1)
-          Vue.set(state.profiles, data.username, {globalProfile: data.identityContractId, groupProfile: {}})
+          Vue.set(state.profiles, data.username, {
+            contractId: data.identityContractId,
+            groupProfile: {}
+          })
           state._async.push('HashableGroupAcceptInvitation')
         }
       },
       // TODO: remove group profile when leave group is implemented
       HashableGroupSetGroupProfile (state, {data}) {
-        Vue.set(state.profiles[data.username], 'groupProfile', _.merge(state.profiles[data.username].groupProfile, JSON.parse(data.json)))
+        data = JSON.parse(data.json) // TODO: data.json? why not just data? what else is in there?
+        var {groupProfile} = state.profiles[data.username]
+        state.profiles[data.username].groupProfile = _.merge(groupProfile, data)
       }
-    }, // NOTICE: Actions in this context are not for modifying this contract's state.
+    },
+    // !! IMPORANT!!
+    // Actions here MUST NOT modify contract state!
+    // They MUST NOT call 'commit'!
     // This is critical to the function of that latest contract hash.
     // They should only coordinate the actions of outside contracts.
+    // Otherwise `latestContractState` and `handleEvent` will not produce same state!
     actions: {
       async HashableGroupAcceptInvitation ({commit, state, rootState}, {data, store}) {
         // TODO: per #257 this will have to be encompassed in a recoverable transaction
@@ -60,8 +83,9 @@ export class GroupContract extends Events.HashableGroup {
           // so subscribe to founder's IdentityContract & everyone else's
           for (const name of Object.keys(state.profiles)) {
             if (name === rootState.loggedIn.name) continue
-            await backend.subscribe(state.profiles[name].globalProfile)
-            await store.dispatch('syncContractWithServer', state.profiles[name].globalProfile)
+            // TODO: this must be done automatically by the backend (See #298)
+            await backend.subscribe(state.profiles[name].contractId)
+            await store.dispatch('syncContractWithServer', state.profiles[name].contractId)
             // NOTE: technically we don't need to call 'HashableGroupSetGroupProfile'
             //       here because Join.vue already synced the contract.
             //       verify that this is really true and that there's no conflict
@@ -79,7 +103,7 @@ export class GroupContract extends Events.HashableGroup {
       candidateMembers (state) {
         return _.keysIn(state.proposals).filter(key => state.proposals[key].candidate).map(key => state.proposals[key].candidate)
       },
-      members (state) {
+      memberUsernames (state) {
         return Object.keys(state.profiles)
       }
     }

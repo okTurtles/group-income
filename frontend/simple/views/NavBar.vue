@@ -150,8 +150,8 @@ export default {
         this.closeLoginModal()
       }
     },
-    async logout () {
-      await this.$queue.dispatch('logout')
+    logout () {
+      this.$store.dispatch('logout')
     },
     showLoginModal () {
       this.loginModalVisible = true
