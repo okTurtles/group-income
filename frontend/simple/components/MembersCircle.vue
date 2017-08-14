@@ -72,7 +72,7 @@ export default {
         var mt = 10 * Math.sin(thetaIncr * idx) // r * sin(theta)
         var ml = 10 * Math.cos(thetaIncr * idx) // r * sin(theta)
         members[username] = {
-          attrs: members[username],
+          attrs: members[username].globalProfile,
           style: {
             marginTop: mt + 'em',
             marginLeft: ml + 'em'

@@ -33,6 +33,7 @@
             <i18n v-else-if="name && name.length > 0">cannot contain spaces</i18n>
           </p>
           <p v-else-if="nameAvailable" class="help is-success"><i18n>name is available</i18n></p>
+          <i18n v-if="(name && name.length > 0) && !this.nameAvailable" id="NameAvailable"  class="help is-danger">name is unavailable</i18n>
         </div>
         <div class="field">
           <p class="control has-icon">
@@ -58,7 +59,7 @@
           </div>
           <div class="level-right">
             <div class="level-item is-narrow">
-              <button class="button submit is-success" type="submit" :disabled="errors.any()">
+              <button class="button submit is-success" type="submit" :disabled="errors.any() || !nameAvailable">
                 <i18n>Sign Up</i18n>
               </button>
             </div>
@@ -85,8 +86,6 @@ export default {
   methods: {
     submit: async function () {
       try {
-        // Do this mutation first in order to have events correctly save
-        this.$store.commit('login', this.name)
         let user = new contracts.IdentityContract({
           authorizations: [Events.CanModifyAuths.dummyAuth()],
           attributes: [
@@ -95,6 +94,8 @@ export default {
             {name: 'picture', value: `${window.location.origin}/simple/images/128x128.png`}
           ]
         })
+        // Do this mutation first in order to have events correctly save
+        this.$store.commit('login', { name: this.name, identityContractId: user.toHash() })
         await backend.subscribe(user.toHash())
         await backend.publishLogEntry(user.toHash(), user)
         let mailbox = new contracts.MailboxContract({

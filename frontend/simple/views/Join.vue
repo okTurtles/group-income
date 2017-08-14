@@ -18,7 +18,7 @@
               </table>
               <div class="panel-block center" style="display: block; text-align: center">
                 <div id="errorMsg" v-if="errorMsg" class="help is-danger">{{errorMsg}}</div>
-                <a class="button is-success is-large" v-on:click="accept" style="margin-left:auto; margin-right: 20px"><i18n>Accept</i18n></a><a class="button is-danger is-large" v-on:click="decline" style="margin-right:auto; margin-right: 20px"><i18n>Decline</i18n></a>
+                <a id="AcceptLink" class="button is-success is-large" v-on:click="accept" style="margin-left:auto; margin-right: 20px"><i18n>Accept</i18n></a><a id="DeclineLink" class="button is-danger is-large" v-on:click="decline" style="margin-right:auto; margin-right: 20px"><i18n>Decline</i18n></a>
               </div>
             </div>
           </div>
@@ -97,7 +97,6 @@
     </section>
 </template>
 <script>
-import {namespace} from '../js/backend/hapi'
 import * as Events from '../../../shared/events'
 import backend from '../js/backend/'
 import { latestContractState } from '../js/state'
@@ -110,14 +109,18 @@ export default {
       let state = await latestContractState(this.$route.query.groupId)
       if (!state.invitees.find(invitee => invitee === this.$store.state.loggedIn.name)) {
         // TODO: proper user-facing error
+        // TODO: somehow I got this error... I created 4 accounts, and after inviting
+        //       the 4th one, there was an exception thrown by HashableGroupVoteAgainstProposal
+        //       when account 2 or 3 voted against the proposal. Yet the invite still appeared
+        //       in 4's inbox. But clicking it just resulted in this error when clicking
+        //       "Respond to Invite". Furthermore, the Invite wouldn't disappear from the Inbox
         console.log(new Error('Invalid Invitation'))
         this.$router.push({path: '/mailbox'})
       }
       // TODO: use the state.profiles directly?
       var members = []
       for (const name of Object.keys(state.profiles)) {
-        const contractId = await namespace.lookup(name)
-        members.push(await latestContractState(contractId))
+        members.push(await latestContractState(state.profiles[name].contractId))
       }
       state.members = members
       this.contract = state
@@ -136,6 +139,7 @@ export default {
         let acceptance = new Events.HashableGroupAcceptInvitation(
           {
             username: this.$store.state.loggedIn.name,
+            identityContractId: this.$store.state.loggedIn.identityContractId,
             inviteHash: this.$route.query.inviteHash,
             acceptanceDate: new Date()
           },
@@ -146,16 +150,12 @@ export default {
         await this.$store.dispatch('syncContractWithServer', this.$route.query.groupId)
         await backend.publishLogEntry(this.$route.query.groupId, acceptance)
 
-        // subscribe to the identity contract of the founder
-        let identityContractId = await namespace.lookup(this.contract.founderUsername)
-        await backend.subscribe(identityContractId)
-        await this.$store.dispatch('syncContractWithServer', identityContractId)
-
         // remove invite and return to mailbox
         this.$store.commit('deleteMessage', this.$route.query.inviteHash)
         this.$router.push({path: '/mailbox'})
       } catch (ex) {
         console.log(ex)
+        // TODO: post this to a global notification system instead of using this.errorMsg
         this.errorMsg = L('Failed to Accept Invite')
       }
     },
