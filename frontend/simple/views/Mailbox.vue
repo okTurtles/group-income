@@ -129,12 +129,10 @@
     </div>
   </section>
 </template>
-
 <style>
 .signup .level-item { margin-top: 10px; }
 .signup .level.top-align { align-items: flex-start; }
 </style>
-
 <script>
 import _ from 'lodash'
 import backend from '../js/backend'

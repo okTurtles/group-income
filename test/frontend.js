@@ -34,7 +34,8 @@ describe('Frontend', function () {
       return n.goto(page('signup'))
         .should.finally.containEql({ code: 200, url: page('signup') })
         .then(() => {
-          return n.wait('.signup')
+          return n
+            .wait('.signup')
             .insert('input[name="name"]', 'George')
             .insert('input[name="email"]', 'george@lasvegas.com')
             .insert('input[name="password"]', '$$111$$')
@@ -54,15 +55,18 @@ describe('Frontend', function () {
   describe('Event Log Test', function () {
     it.skip('Should Append to the log', async function () {
       this.timeout(5000) // this one takes a while for some reason
-      await n.goto(page('event-log'))
+      await n
+        .goto(page('event-log'))
         .should.finally.containEql({ code: 200, url: page('event-log') })
       const result = await n.wait('#random').evaluate(() => ({
         current: document.getElementById('LogPosition').innerText,
         eventCount: document.querySelectorAll('.event').length
       }))
-      await n.click('#random')
+      await n
+        .click('#random')
         .wait(() => +document.getElementById('count').innerText > 0)
-      const obj = await n.insert('textarea[name="payload"]', 'This is a test payment event')
+      const obj = await n
+        .insert('textarea[name="payload"]', 'This is a test payment event')
         .select('select[name="type"]', 'Payment')
         .click('#submit')
         .wait(() => +document.getElementById('count').innerText > 1)
@@ -79,7 +83,8 @@ describe('Frontend', function () {
       this.timeout(4000)
       await n.goto(page('event-log'))
       const prior = await n.evaluate(() => document.getElementById('LogPosition').innerText)
-      const initial = await n.wait('textarea[name="payload"]')
+      const initial = await n
+        .wait('textarea[name="payload"]')
         .insert('textarea[name="payload"]', 'This is a test Group Payment Event')
         .select('select[name="type"]', 'Payment')
         .click('#submit')
@@ -100,25 +105,20 @@ describe('Frontend', function () {
     it('Should register User', async function () {
       this.timeout(10000)
       await n.goto(page('signup')).wait('#name')
-      const signedup = await n.insert('#name', username)
+      const signedup = await n
+        .insert('#name', username)
         .insert('#email', `test@testgroupincome.com`)
         .insert('#password', 'testtest')
         .click('button[type="submit"]')
         .wait('#HomeLogo')
         .evaluate(() => !!document.getElementById('HomeLogo'))
       should(signedup).equal(true)
-      /*
-      await n.insert('#name')
-        .insert('#email')
-        .insert('#password')
-        .wait(() => !document.getElementById('name').innerText &&
-        !document.getElementById('email').innerText &&
-        !document.getElementById('password').innerText)
-        */
     })
     it('Test Profile Change', async function () {
       this.timeout(10000)
-      let success = await n.click('#ProfileLink')
+      let success = await n
+        .click('#OpenProfileDropDown')
+        .click('#ProfileLink')
         .wait('input[name="profilePicture"]')
         .insert('textarea[name="bio"]', 'Born in a test case')
         .insert('input[name="displayName"]', 'Tester T Test')
@@ -130,25 +130,20 @@ describe('Frontend', function () {
       // TODO Make more complex. Unfortunately bugs in Nightmare prevent the clearing and re-entering of fields
     })
     it('Test Logout and Login', async function () {
-      this.timeout(6000)
+      this.timeout(10000)
       const loggedin = await n
-        // Logout
         .click('#LogoutBtn')
-
-        // Open login modal
-        .wait(() => Boolean(document.querySelector('#LoginBtn')))
+        .wait('#LoginBtn')
         .click('#LoginBtn')
-
-        // Login
-        .wait(() => Boolean(document.querySelector('#LoginModal.is-active')))
+        .wait('#LoginModal.is-active')
         .wait(1000)
         .insert('#LoginName', username)
         .insert('#LoginPassword', 'testtest')
         .wait(1000)
         .click('#LoginButton')
-        .wait(() => Boolean(document.querySelector('#LoginResponse')))
+        .wait('#LoginResponse')
         .wait(1000)
-        .evaluate(() => Boolean(document.querySelector('#LogoutBtn')))
+        .exists('#LogoutBtn')
       should(loggedin).equal(true)
     })
 
@@ -179,7 +174,9 @@ describe('Frontend', function () {
   describe('Group Creation Test', function () {
     it('Create Additional User', async function () {
       this.timeout(6000)
-      const signedup = await n.click('#LogoutBtn')
+      const signedup = await n
+        .wait('#LogoutBtn')
+        .click('#LogoutBtn')
         .wait('#SignupBtn')
         .click('#SignupBtn')
         .wait('#name')
@@ -188,7 +185,7 @@ describe('Frontend', function () {
         .insert('#password', 'testtest')
         .click('button[type="submit"]')
         .wait('#HomeLogo')
-        .evaluate(() => Boolean(document.querySelector('#HomeLogo')))
+        .exists('#HomeLogo')
       should(signedup).equal(true)
     })
 
@@ -204,7 +201,7 @@ describe('Frontend', function () {
         .insert('#password', 'testtest')
         .click('button[type="submit"]')
         .wait('#HomeLogo')
-        .evaluate(() => Boolean(document.querySelector('#HomeLogo')))
+        .exists('#HomeLogo')
       should(signedup).equal(true)
     })
 
@@ -216,12 +213,8 @@ describe('Frontend', function () {
         .insert('textarea[name="sharedValues"]', 'Testing this software')
         .insert('input[name="groupName"]', 'Test Group')
         .insert('input[name="incomeProvided"]', 200)
-        // .insert('input[name="proxyChangePercentage"]', 75)
-        // .insert('input[name="proxyMemberApprovalPercentage"]', 75)
-        // .insert('input[name="proxyMemberRemovalPercentage"]', 75)
         .select('select[name="contributionPrivacy"]', 'Very Private')
         .click('button[type="submit"]')
-        // Should get to invite page:
         .wait(500)
         .wait(() => !!document.getElementById('addButton'))
         .evaluate(() => !!document.getElementById('addButton'))
@@ -232,7 +225,7 @@ describe('Frontend', function () {
       this.timeout(4000)
 
       const count = await n
-        .wait(() => Boolean(document.querySelector('#addButton')))
+        .wait('#addButton')
         .insert('#searchUser', username)
         .click('#addButton')
         .wait(() => document.querySelectorAll('.member').length > 0)
@@ -264,18 +257,15 @@ describe('Frontend', function () {
         .insert('#ComposedMessage', 'Best test ever!!')
         .click('#SendButton')
         .wait('#Inbox')
-
-        // Logout
+        .click('#OpenProfileDropDown')
         .click('#LogoutBtn')
-
-        // Login
         .wait('#LoginBtn')
         .click('#LoginBtn')
-        .wait(() => Boolean(document.querySelector('#LoginModal')))
+        .wait('#LoginModal')
         .insert('#LoginName', username)
         .insert('#LoginPassword', 'testtest')
         .click('#LoginButton')
-        .wait(() => Boolean(document.querySelector('#LogoutBtn')))
+        .wait('#LogoutBtn')
         .wait('#MailboxLink')
         .click('#MailboxLink')
         .wait(1000)

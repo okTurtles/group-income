@@ -7,7 +7,6 @@
     <div>{{ this.history.length }}</div>
   </div>
 </template>
-
 <style lang="scss" scoped>
 .time-travel {
   position: fixed;
@@ -27,7 +26,6 @@
   display: inline-block;
 }
 </style>
-
 <script>
 import Vue from 'vue'
 import VueSlider from 'vue-slider-component'

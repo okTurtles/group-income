@@ -88,7 +88,7 @@ const mutations = {
 // https://vuex.vuejs.org/en/getters.html
 // https://vuex.vuejs.org/en/modules.html
 const getters = {
-  currentGroup (state) {
+  currentGroupState (state) {
     return state[state.currentGroupId]
   },
   mailboxContract (state, getters) {

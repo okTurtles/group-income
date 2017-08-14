@@ -4,7 +4,6 @@
     <%- include included %>
   </div>
 </template>
-
 <script>
 export default {
   name: 'UserGroupView',
