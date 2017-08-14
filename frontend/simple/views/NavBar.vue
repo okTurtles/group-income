@@ -16,6 +16,7 @@
             id="CreateGroup"
             to="new-group"
           >
+            <i18n>Add Group</i18n>
           </router-link>
           <router-link
             active-class="is-active"

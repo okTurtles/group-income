@@ -15,7 +15,6 @@
   h3.title {
     margin-top: 30px;
   }
-
   .invite-button {
     border-radius: 999px;
     background-color: #ECECEC;
