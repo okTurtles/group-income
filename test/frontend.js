@@ -143,6 +143,7 @@ describe('Frontend', function () {
         .click('#LoginButton')
         .wait('#LoginResponse')
         .wait(1000)
+        .click('#OpenProfileDropDown')
         .exists('#LogoutBtn')
       should(loggedin).equal(true)
     })
@@ -192,6 +193,7 @@ describe('Frontend', function () {
     it('Create Additional User 2', async function () {
       this.timeout(4000)
       const signedup = await n
+        .click('#OpenProfileDropDown')
         .click('#LogoutBtn')
         .wait('#SignupBtn')
         .click('#SignupBtn')
@@ -265,7 +267,6 @@ describe('Frontend', function () {
         .insert('#LoginName', username)
         .insert('#LoginPassword', 'testtest')
         .click('#LoginButton')
-        .wait('#LogoutBtn')
         .wait('#MailboxLink')
         .click('#MailboxLink')
         .wait(1000)
