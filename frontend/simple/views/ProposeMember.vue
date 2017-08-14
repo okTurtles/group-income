@@ -115,7 +115,7 @@ export default {
         // We need to post the invite to the users' mailbox contract
         const invite = new Events.HashableMailboxPostMessage(
           {
-            from: this.$store.getters.currentGroup.groupName,
+            from: this.$store.getters.currentGroupState.groupName,
             headers: [this.$store.state.currentGroupId],
             messageType: Events.HashableMailboxPostMessage.TypeInvite,
             sentDate

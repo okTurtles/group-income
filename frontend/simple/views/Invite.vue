@@ -85,7 +85,6 @@
     </div>
   </section>
 </template>
-
 <style lang="scss" scoped>
 .table-header {
   background-color: #fafafa;
@@ -100,7 +99,6 @@
   margin-right: 1rem;
 }
 </style>
-
 <script>
 import * as Events from '../../../shared/events'
 import backend from '../js/backend/'
@@ -160,7 +158,7 @@ export default {
           // We need to post the invite to the users' mailbox contract
           const invite = new Events.HashableMailboxPostMessage(
             {
-              from: this.$store.getters.currentGroup.groupName,
+              from: this.$store.getters.currentGroupState.groupName,
               headers: [this.$store.state.currentGroupId],
               messageType: Events.HashableMailboxPostMessage.TypeInvite,
               sentDate

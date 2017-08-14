@@ -81,7 +81,7 @@ export default {
       })
       return members
     },
-    ...mapGetters(['currentGroup'])
+    ...mapGetters(['currentGroupState'])
   },
   data () {
     return {}

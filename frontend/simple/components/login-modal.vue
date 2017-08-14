@@ -64,7 +64,6 @@
     <div class="modal-close" @click="close"></div>
   </div>
 </template>
-
 <script>
 import {HapiNamespace} from '../js/backend/hapi'
 import L from '../js/translations'

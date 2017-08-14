@@ -83,7 +83,7 @@ const mutations = {
 // https://vuex.vuejs.org/en/getters.html
 // https://vuex.vuejs.org/en/modules.html
 const getters = {
-  currentGroup (state) {
+  currentGroupState (state) {
     return state[state.currentGroupId]
   },
   mailboxContract (state, getters) {
@@ -103,7 +103,10 @@ const getters = {
   },
   // list of group names and contractIds
   groupsByName (state) {
-    return _.map(_.keys(_.pickBy(state.contracts, (value, key) => value.type === 'GroupContract')), key => ({groupName: state[key].groupName, contractId: key}))
+    return _.map(
+      _.keys(_.pickBy(state.contracts, (value, key) => value.type === 'GroupContract')),
+      key => ({groupName: state[key].groupName, contractId: key})
+    )
   },
   proposals (state) {
     let proposals = []
