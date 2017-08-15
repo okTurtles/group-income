@@ -65,7 +65,7 @@ export default {
   },
   computed: {
     members () {
-      var members = this.$store.getters.membersForGroup()
+      var members = this.$store.getters.profilesForGroup()
       const usernames = Object.keys(members)
       const thetaIncr = Math.PI * 2.0 / usernames.length
       usernames.map(function (username, idx) {

@@ -109,6 +109,7 @@ const getters = {
     )
   },
   proposals (state) {
+    // TODO: clean this up
     let proposals = []
     if (!state.currentGroupId) { return proposals }
     for (let groupContractId of Object.keys(state.contracts)
@@ -139,7 +140,7 @@ const getters = {
       }
     }
   },
-  membersForGroup (state, getters) {
+  profilesForGroup (state, getters) {
     return groupId => {
       groupId = groupId || state.currentGroupId
       return groupId && _.reduce(
@@ -150,6 +151,13 @@ const getters = {
         },
         {}
       )
+    }
+  },
+  memberCount (state, getters) {
+    return groupId => {
+      if (!groupId) groupId = state.currentGroupId
+      if (!groupId) return 0
+      return Object.keys(state[groupId].profiles).length
     }
   }
 }
@@ -225,7 +233,6 @@ const actions = {
       // var stateCopy = _.cloneDeep(state) // don't think this is necessary
       // TODO: encrypt these
       const settings = {
-        position: state.position,
         currentGroupId: state.currentGroupId,
         contracts: Object.keys(state.contracts).map(contractId => ({
           contractId,
@@ -300,7 +307,8 @@ const actions = {
 const debouncedSave = debounce((dispatch, savedState) => dispatch('saveSettings', savedState), 500)
 
 store = new Vuex.Store({state, mutations, getters, actions})
-export default store
+store.subscribe(() => debouncedSave(store.dispatch))
+
 // This will build the current contract state from applying all its actions
 export async function latestContractState (contractId: string) {
   let events = await backend.eventsSince(contractId, contractId)
@@ -315,4 +323,5 @@ export async function latestContractState (contractId: string) {
   })
   return state
 }
-store.subscribe(() => debouncedSave(store.dispatch))
+
+export default store
