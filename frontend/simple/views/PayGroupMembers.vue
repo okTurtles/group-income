@@ -14,11 +14,20 @@
           <div class="column is-half">
             <p class="title is-4"><i18n>Needs Payment</i18n></p>
             <div class="box">
-              <!-- list members needs to be paid -->
+              <ul>
+                <li v-for="(member, username) in membersToPay">
+                  {{ username }}
+
+                </li>
+              </ul>
             </div>
             <p class="title is-4"><i18n>Paid</i18n></p>
             <div class="box">
-              <!-- list members paid -->
+              <ul>
+                <li v-for="(member, username) in paidMembers">
+                  {{ username }}
+                </li>
+              </ul>
             </div>
           </div>
         </div>
@@ -27,12 +36,37 @@
   </section>
 </template>
 <script>
+import {mapGetters} from 'vuex'
+const incomeDistribution = require('../js/distribution/mincome-proportional').default
 export default {
   name: 'PayGroupMembers',
-  props: {
-  },
+  props: {},
   data () {
-    return {
+    return {}
+  },
+  computed: {
+    ...mapGetters(['profilesForGroup']),
+    membersToPay () {
+      var members = this.profilesForGroup()
+      var membersDistribution = []
+      const usernames = Object.keys(members)
+      usernames.map(function (username) {
+        membersDistribution.push({
+          name: username,
+          amount: 200 // this should be the contribution which needs to be saved at 'set contribution' page
+        })
+        members[username] = {
+          attrs: members[username]
+        }
+      })
+      console.log('Members Distribution: ', membersDistribution)
+      var incomes = incomeDistribution(membersDistribution, 500) // should be equal with group income baseline
+      console.log('Distributed Incomes: ', incomes)
+      return members
+    },
+    paidMembers () {
+      var members = []
+      return members
     }
   }
 }
