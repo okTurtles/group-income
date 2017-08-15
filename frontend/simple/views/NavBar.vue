@@ -11,22 +11,6 @@
         <div class="nav-center">
           <!-- TODO: use v-for to dynamically generate these? -->
           <router-link
-            active-class="is-active"
-            class="nav-item is-tab"
-            id="CreateGroup"
-            to="new-group"
-          >
-            <i18n>New Group</i18n>
-          </router-link>
-          <router-link
-            active-class="is-active"
-            class="nav-item is-tab"
-            to="pay-group"
-            v-show="$store.state.loggedIn"
-          >
-            <i18n>Pay Group</i18n>
-          </router-link>
-          <router-link
             active-class ="is-active"
             class="nav-item"
             id="MailboxLink"

@@ -12,6 +12,16 @@
       <div class="column">
         <div class='is-pulled-right'>
           <groups-min-income :group="currentGroupState" />
+          <div>
+            <a class="button" @click.prevent="payGroupMembers">
+              <i18n>Pay Members</i18n>
+            </a>
+          </div>
+          <div>
+            <a class="button" @click.prevent="setContribution">
+              <i18n>Set Contribution</i18n>
+            </a>
+          </div>
         </div>
 
         <h1 class="title is-1">{{ groupsByName.groupName }}</h1>
@@ -60,6 +70,14 @@
       GroupMembers,
       GroupSupportHistory,
       GroupSettings
+    },
+    methods: {
+      setContribution () {
+        this.$router.push({path: '/set-contribution'})
+      },
+      payGroupMembers () {
+        this.$router.push({path: '/pay-group-members'})
+      }
     }
   }
 </script>
