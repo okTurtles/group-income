@@ -237,6 +237,7 @@ export default {
     }
   },
   data () {
+    // TODO: wrap this in a 'form' parameter (#297)
     return {
       groupName: null,
       sharedValues: null,

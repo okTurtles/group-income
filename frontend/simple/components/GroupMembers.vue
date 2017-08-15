@@ -2,11 +2,11 @@
   <section>
     <h3 class="title is-3"><i18n>Members</i18n></h3>
     <ul>
-      <li v-for="(member, username) in members">
+      <li v-for="(member, username) in profilesForGroup()">
         {{ username }}
       </li>
     </ul>
-    <a class="button invite-button" @click.prevent="invite(group.id)">
+    <a class="button invite-button" @click.prevent="invite">
       <span class="icon"><i class='fa fa-plus'></i></span>
     </a>
   </section>
@@ -27,28 +27,16 @@
   }
 </style>
 <script>
+  import {mapGetters} from 'vuex'
   export default {
     name: 'GroupMembers',
-    props: {
-      group: Object
-    },
     methods: {
-      invite (groupId) {
-        this.$store.commit('setCurrentGroupId', groupId)
+      invite () {
         this.$router.push({path: '/invite'})
       }
     },
     computed: {
-      members () {
-        var members = this.$store.getters.membersForGroup()
-        const usernames = Object.keys(members)
-        usernames.map(function (username, idx) {
-          members[username] = {
-            attrs: members[username]
-          }
-        })
-        return members
-      }
+      ...mapGetters(['profilesForGroup'])
     }
   }
 </script>
