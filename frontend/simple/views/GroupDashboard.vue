@@ -19,9 +19,13 @@
 
         <group-members />
 
-        <group-support-history :history="[1.2, 1, .85, .95, 1.05, .35]" />
+        <group-support-history
+          :history="[1.2, 1, .85, .95, 1.05, .35]"
+        />
 
-        <group-settings :group="currentGroupState" />
+        <group-settings
+          :group="currentGroupState"
+        />
 
       </div>
     </div>

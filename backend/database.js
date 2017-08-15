@@ -9,7 +9,8 @@ const Transform = require('stream').Transform
 const production = process.env.NODE_ENV === 'production'
 
 // delete the test database if it exists
-!production && fs.existsSync('test.db') && fs.unlinkSync('test.db')
+// !production && fs.existsSync('test.db') && fs.unlinkSync('test.db')
+fs.existsSync('test.db')
 
 // Initialize knex connection.
 const knex = Knex({
