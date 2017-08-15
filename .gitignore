@@ -2,6 +2,9 @@
 /node_modules/
 /dist/
 
+# prevent accidental addition of yarn.lock from making Travis builds longer
+/yarn.lock
+
 # Database
 /sqlite.db
 /groupincome.db

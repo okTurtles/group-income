@@ -17,7 +17,7 @@
         <h1 class="title is-1">{{ groupsByName.groupName }}</h1>
         <p>{{ currentGroupState.sharedValues }}</p>
 
-        <group-members :group="currentGroupState" />
+        <group-members />
 
         <group-support-history :history="[1.2, 1, .85, .95, 1.05, .35]" />
 

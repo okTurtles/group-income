@@ -24,36 +24,39 @@ Vue.use(VeeValidate)
  the 'guard' defines how the route is blocked and the redirect determines the redirect behavior
  when a route is blocked
  */
-// Check if user is logged in
+var homeGuard = {
+  guard: (to, from) => !!store.state.currentGroupId,
+  redirect: (to, from) => ({ path: '/dashboard' })
+}
 var loginGuard = {
-  guard: (store, to, from) => !store.state.loggedIn,
+  guard: (to, from) => !store.state.loggedIn,
   redirect: (to, from) => ({ path: '/signup', query: { next: to.path } })
 }
 var signupGuard = {
-  guard: (store, to, from) => !!store.state.loggedIn,
+  guard: (to, from) => !!store.state.loggedIn,
   redirect: (to, from) => ({ path: '/' })
 }
 // Check if user has a group
 var groupGuard = {
-  guard: store => !store.state.currentGroupId,
+  guard: (to, from) => !store.state.currentGroupId,
   redirect: (to, from) => ({ path: '/new-group' })
 }
 var inviteGuard = {
-  guard: store => store.state.currentGroupId && Object.keys(store.state[store.state.currentGroupId].profiles).length >= 3,
+  guard: (to, from) => store.getters.memberCount() >= 3,
   redirect: (to, from) => ({ path: '/propose-member' })
 }
 var proposeMemberGuard = {
-  guard: store => store.state.currentGroupId && Object.keys(store.state[store.state.currentGroupId].profiles).length < 3,
+  guard: (to, from) => store.getters.memberCount() < 3,
   redirect: (to, from) => ({ path: '/invite' })
 }
 var mailGuard = {
-  guard: (store, to, from) => from.name !== Mailbox.name,
+  guard: (to, from) => from.name !== Mailbox.name,
   redirect: (to, from) => ({ path: '/mailbox' })
 }
-function createEnterGuards (store, ...guards) {
+function createEnterGuards (...guards) {
   return function (to, from, next) {
     for (let current of guards) {
-      if (current.guard(store, to, from)) {
+      if (current.guard(to, from)) {
         return next(current.redirect(to, from))
       }
     }
@@ -73,7 +76,8 @@ var router = new Router({
       name: 'home',
       meta: {
         title: 'Group Income'  // page title. see issue #45
-      }
+      },
+      beforeEnter: createEnterGuards(homeGuard)
     },
     {
       path: '/signup',
@@ -82,7 +86,7 @@ var router = new Router({
       meta: {
         title: 'Sign Up'  // page title. see issue #45
       },
-      beforeEnter: createEnterGuards(store, signupGuard)
+      beforeEnter: createEnterGuards(signupGuard)
     },
     {
       path: '/new-group',
@@ -91,7 +95,7 @@ var router = new Router({
       meta: {
         title: 'Create Group'
       },
-      beforeEnter: createEnterGuards(store, loginGuard)
+      beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '/dashboard',
@@ -100,7 +104,7 @@ var router = new Router({
       meta: {
         title: 'Group Dashboard'
       },
-      beforeEnter: createEnterGuards(store, loginGuard)
+      beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '/user',
@@ -108,7 +112,7 @@ var router = new Router({
       meta: {
         title: 'User Profile'
       },
-      beforeEnter: createEnterGuards(store, loginGuard)
+      beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '/user-group',
@@ -140,7 +144,7 @@ var router = new Router({
       meta: {
         title: 'Invite Group Members'
       },
-      beforeEnter: createEnterGuards(store, loginGuard, groupGuard, inviteGuard)
+      beforeEnter: createEnterGuards(loginGuard, groupGuard, inviteGuard)
     },
     {
       path: '/propose-member',
@@ -149,7 +153,7 @@ var router = new Router({
       meta: {
         title: 'Propose Group Members'
       },
-      beforeEnter: createEnterGuards(store, loginGuard, groupGuard, proposeMemberGuard)
+      beforeEnter: createEnterGuards(loginGuard, groupGuard, proposeMemberGuard)
     },
     {
       path: '/mailbox',
@@ -158,7 +162,7 @@ var router = new Router({
       meta: {
         title: 'Mailbox'
       },
-      beforeEnter: createEnterGuards(store, loginGuard)
+      beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '/join',
@@ -167,7 +171,7 @@ var router = new Router({
       meta: {
         title: 'Join a Group'
       },
-      beforeEnter: createEnterGuards(store, loginGuard, mailGuard)
+      beforeEnter: createEnterGuards(loginGuard, mailGuard)
     },
     {
       path: '/vote',
@@ -176,7 +180,7 @@ var router = new Router({
       meta: {
         title: 'Vote on a Proposal'
       },
-      beforeEnter: createEnterGuards(store, loginGuard, mailGuard)
+      beforeEnter: createEnterGuards(loginGuard, mailGuard)
     },
     {
       // shouldn't be its own page but we have it here for testing
@@ -184,7 +188,7 @@ var router = new Router({
       name: MembersCircle.name,
       component: MembersCircle,
       meta: {title: 'Members Circle'},
-      beforeEnter: createEnterGuards(store, loginGuard)
+      beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '*',
