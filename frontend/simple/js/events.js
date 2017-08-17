@@ -1,6 +1,5 @@
 import Vue from 'vue'
 import * as Events from '../../../shared/events'
-import backend from '../js/backend'
 import _ from 'lodash'
 
 export class GroupContract extends Events.HashableGroup {
@@ -83,8 +82,6 @@ export class GroupContract extends Events.HashableGroup {
           // so subscribe to founder's IdentityContract & everyone else's
           for (const name of Object.keys(state.profiles)) {
             if (name === rootState.loggedIn.name) continue
-            // TODO: this must be done automatically by the backend (See #298)
-            await backend.subscribe(state.profiles[name].contractId)
             await store.dispatch('syncContractWithServer', state.profiles[name].contractId)
             // NOTE: technically we don't need to call 'HashableGroupSetGroupProfile'
             //       here because Join.vue already synced the contract.
@@ -94,7 +91,6 @@ export class GroupContract extends Events.HashableGroup {
         } else {
           // we're an existing member of the group getting notified that a
           // new member has joined, so subscribe to their identity contract
-          await backend.subscribe(data.identityContractId)
           await store.dispatch('syncContractWithServer', data.identityContractId)
         }
       }

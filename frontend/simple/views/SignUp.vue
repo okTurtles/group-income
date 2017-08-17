@@ -94,22 +94,33 @@ export default {
             {name: 'picture', value: `${window.location.origin}/simple/images/default-avatar.png`}
           ]
         })
-        // Do this mutation first in order to have events correctly save
-        this.$store.commit('login', { name: this.name, identityContractId: user.toHash() })
-        await backend.subscribe(user.toHash())
-        await backend.publishLogEntry(user.toHash(), user)
         let mailbox = new contracts.MailboxContract({
           authorizations: [Events.CanModifyAuths.dummyAuth(user.toHash())]
         })
-        await backend.subscribe(mailbox.toHash())
-        await backend.publishLogEntry(mailbox.toHash(), mailbox)
-        let attribute = new Events.HashableIdentitySetAttribute({attribute: {name: 'mailbox', value: mailbox.toHash()}}, user.toHash())
-        await backend.publishLogEntry(user.toHash(), attribute)
+        let attribute = new Events.HashableIdentitySetAttribute({
+          attribute: {name: 'mailbox', value: mailbox.toHash()}
+        }, user.toHash())
+        // create these contracts on the server by calling publishLogEntry
+        for (let event of [user, mailbox, attribute]) {
+          let hash = event.toObject().parentHash || event.toHash()
+          await backend.publishLogEntry(hash, event)
+        }
+        // register our username if contract creation worked out
         await namespace.register(this.name, user.toHash())
+        // call syncContractWithServer on all of these contracts to:
+        // 1. begin monitoring the contracts for updates via the pubsub system
+        // 2. add these contracts to our vuex state
+        for (let contract of [user, mailbox]) {
+          await this.$store.dispatch('syncContractWithServer', contract.toHash())
+        }
         // TODO: Just add cryptographic magic
-        this.response = 'success'
-        this.$store.dispatch('login', {name: this.name, identityContractId: user.toHash()})
+        await this.$store.dispatch('login', {
+          name: this.name,
+          identityContractId: user.toHash()
+        })
+        this.response = 'success' // TODO: get rid of this and fix/update tests accordingly
         if (this.$route.query.next) {
+          // TODO: get rid of this timeout and fix/update tests accordingly
           setTimeout(() => {
             this.$router.push({path: this.$route.query.next})
           }, 1000)
@@ -118,6 +129,7 @@ export default {
         }
         this.error = false
       } catch (ex) {
+        // TODO: this should be done via dispatch
         this.$store.commit('logout')
         console.log(ex)
         this.response = ex.toString()
@@ -147,6 +159,8 @@ export default {
     }, 700)
   },
   data () {
+    // TODO: wrap this in `form`
+    // see: https://github.com/okTurtles/group-income-simple/issues/297
     return {
       error: false,
       response: '',

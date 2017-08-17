@@ -29,7 +29,6 @@ const {SUCCESS} = RESPONSE_TYPE
 
 chalk.enabled = true // for some reason it's not detecting that terminal supports colors
 const {bold} = chalk
-console.log(bold('COLORS SUPPORTED?'), chalk.supportsColor)
 
 var buf2b64 = buf => Buffer.from(buf).toString('base64')
 var personas = _.times(3, () => nacl.sign.keyPair()).map(x => _.mapValues(x, buf2b64))

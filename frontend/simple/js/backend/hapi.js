@@ -8,6 +8,21 @@ import pubsub from '../pubsub'
 import {sign} from '../../../../shared/functions'
 import * as Events from '../../../../shared/events'
 import {RESPONSE_TYPE} from '../../../../shared/constants'
+import sbl from '../../../../shared/sbl'
+
+// NOTE: hapi.js is one of the first files to get run because of
+//       module load order, so we setup this global SBL filter here
+//       to get logging for all subsequent SBL calls.
+//       In the future we might move it elsewhere.
+
+console.log('NODE_ENV:', process.env.NODE_ENV)
+if (process.env.NODE_ENV !== 'production') {
+  sbl.addGlobalFilter((domain, sel, data) => {
+    console.log(`[sbl] CALL: ${domain}${sel}:`, data)
+  })
+}
+
+sbl.registerDomain('pubsub', sbl.COMMON_MIXINS.V1.EVENTS)
 
 const {HashableEntry} = Events
 // temporary identity for signing
@@ -36,7 +51,7 @@ const primus = pubsub({
     strategy: ['disconnect', 'online', 'timeout']
   },
   handlers: {
-    error: err => console.log('SOCKET ERR:', err.message),
+    error: err => console.log('SOCKET ERR:', err.message, err),
     open: () => console.log('websocket connection opened!'),
     data: msg => {
       if (msg.type === RESPONSE_TYPE.ENTRY) {
@@ -54,11 +69,30 @@ const primus = pubsub({
 export class HapiBackend extends Backend {
   constructor () {
     super()
+    this.subscriptions = []
     primus.on('reconnected', () => {
-      var subs = this.subscriptions()
+      var subs = this.subscriptions
       console.log('websocket connection re-established. re-joining:', subs)
       subs.forEach(contractId => primus.sub(contractId))
     })
+    // our event handler for 'contractsModified' events. Keeps the pubsub
+    // in sync (logged into the right "rooms") with store.state.contracts
+    var updateSubs = async ({data}) => {
+      var contractId = data.add || data.remove
+      var idx = this.subscriptions.indexOf(contractId)
+      var method = data.add ? 'sub' : 'unsub'
+      if ((data.add && idx > -1) || (data.remove && idx === -1)) {
+        return // if already subscribed or already unsubscribed
+      }
+      if (data.add) {
+        this.subscriptions.push(contractId)
+      } else {
+        this.subscriptions.splice(idx, 1)
+      }
+      var res = await primus[method](contractId)
+      console.log(`[HapiBackend] ${method}scribed ${contractId}:`, res)
+    }
+    sbl.ready('vuex/v1/events/on', 'contractsModified', updateSubs)
   }
   publishLogEntry (contractId: string, entry: HashableEntry) {
     console.log(`publishLogEntry to ${contractId}:`, entry)
@@ -69,25 +103,6 @@ export class HapiBackend extends Backend {
     return request.post(`${process.env.API_URL}/event/${contractId}`)
       .set('Authorization', `gi ${signature}`)
       .send({hash: entry.toHash(), entry: entry.toObject()})
-  }
-  subscriptions () {
-    return Object.keys(store.state.contracts)
-  }
-  async subscribe (contractId: string) {
-    console.log('subscribing to:', contractId)
-    store.commit('pending', contractId)
-    // we don't need to check if we're already subscribed, server handles that
-    var res = await primus.sub(contractId)
-    console.log('subscribed response:', res)
-    return res
-  }
-  async unsubscribe (contractId: string) {
-    if (this.subscriptions().indexOf(contractId) === -1) {
-      return console.error('HapiBackend.unsubscribe: not subscribed!', contractId)
-    }
-    var res = await primus.unsub(contractId)
-    store.commit('removeContract', contractId)
-    return res
   }
   // TODO add event stream method returning string.transform
   async latestHash (contractId: string) {
