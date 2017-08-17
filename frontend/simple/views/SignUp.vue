@@ -134,7 +134,7 @@ export default {
       externalTransaction.addStep({ execute: invariants.publishLogEntry, description: 'Create User Identity Contract', args: { backend: 'backend', contractId: 'userHash', entry: 'user' } })
       externalTransaction.addStep({ execute: invariants.publishLogEntry, description: 'Create Mailbox Contract', args: { backend: 'backend', contractId: 'mailboxHash', entry: 'mailbox' } })
       externalTransaction.setInScope('mailboxAttribute', 'mailbox')
-      externalTransaction.addStep({ execute: invariants.identitySetAttribute, description: 'Set Mailbox Attribute', args: { Events: 'Events', backend: 'backend', contractId: 'userHash', latestHash: 'userHash', name: 'mailboxAttribute', value: 'mailboxHash' } })
+      externalTransaction.addStep({ execute: invariants.identitySetAttribute, description: 'Set Mailbox Attribute', args: { Events: 'Events', backend: 'backend', contractId: 'userHash', name: 'mailboxAttribute', value: 'mailboxHash' } })
       externalTransaction.setInScope('name', this.name)
       externalTransaction.addStep({ execute: invariants.namespaceRegister, args: { namespace: 'namespace', name: 'name', value: 'userHash' } })
 
@@ -154,7 +154,6 @@ export default {
         transactionQueue.run(externalTransaction)
       })
       externalTransaction.once('complete', () => {
-        console.log('totally fucking happened')
         this.response = 'success'
         this.$store.dispatch('login', {name: this.name, identityContractId: userHash})
         if (this.$route.query.next) {

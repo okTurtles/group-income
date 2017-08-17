@@ -54,12 +54,12 @@
 </style>
 
 <script>
-import * as Events from '../../../shared/events'
-import backend from '../js/backend/'
 import { latestContractState } from '../js/state'
 import { namespace } from '../js/backend/hapi'
 import L from '../js/translations'
 import template from 'string-template'
+import {createExternalStateTransaction, transactionQueue} from '../js/transactions'
+import * as invariants from '../js/invariants'
 
 export default {
   name: 'ProposeMember',
@@ -67,8 +67,7 @@ export default {
     return {
       searchUser: null,
       userErrorMsg: '',
-      proposed: false,
-      self: false
+      proposed: false
     }
   },
   computed: {
@@ -84,8 +83,6 @@ export default {
       if (this.searchUser === this.$store.state.loggedIn.name) {
         this.userErrorMsg = L('Invalid User: Cannot Invite One\'s self')
         return
-      } else {
-        this.self = ''
       }
       // Check if this user has been added already
       if (Object.keys(this.contract.profiles).find(member => member === this.searchUser) ||
@@ -107,55 +104,69 @@ export default {
         console.log(err)
         this.userErrorMsg = L('Invalid Username')
       }
-      try {
-        // We need to have the latest mailbox attribute for the user
-        const mailbox = await backend.latestHash(member.state.attributes.mailbox)
-        const sentDate = new Date().toString()
+      let externalInviteTransaction = createExternalStateTransaction('Invite New Member')
+      externalInviteTransaction.setInScope(`groupName`, this.$store.getters.currentGroup.groupName)
+      externalInviteTransaction.setInScope(`groupId`, this.$store.state.currentGroupId)
+      externalInviteTransaction.setInScope(`${member.state.attributes.name}Mailbox`, member.state.attributes.mailbox)
+      externalInviteTransaction.setInScope(member.state.attributes.name, member.state.attributes.name)
+      externalInviteTransaction.addStep({
+        execute: invariants.postInvite,
+        description: `Send Invite to Mailbox for ${member.state.attributes.name}`,
+        args: {
+          Events: 'Events',
+          backend: 'backend',
+          mailboxId: `${member.state.attributes.name}Mailbox`,
+          sentDate: 'sentDate',
+          groupName: 'groupName',
+          groupId: 'groupId'
+        }
+      })
+      externalInviteTransaction.addStep({
+        execute: invariants.recordInvite,
+        description: `Record Invite Sent to ${member.state.attributes.name}`,
+        args: {
+          Events: 'Events',
+          backend: 'backend',
+          inviteHash: `lastInviteHash`,
+          sentDate: 'voteDate',
+          username: member.state.attributes.name,
+          groupId: 'groupId'
+        }
+      })
 
-        // We need to post the invite to the users' mailbox contract
-        const invite = new Events.HashableMailboxPostMessage(
-          {
-            from: this.$store.getters.currentGroup.groupName,
-            headers: [this.$store.state.currentGroupId],
-            messageType: Events.HashableMailboxPostMessage.TypeInvite,
-            sentDate
-          },
-          mailbox
-        )
-        // We need to determine if the invitation needs a vote
-        const groupLatest = await backend.latestHash(this.$store.state.currentGroupId)
-
-        // Create the Record for the group
-        const invited = new Events.HashableGroupRecordInvitation(
-          {
-            username: member.state.attributes.name,
-            inviteHash: '{lastActionHash}', // these are place holders to be added later
-            sentDate: '{actionDate}'
-          },
-          null
-        )
-        // Create the Proposal and add to it the record and invite actions
-        const proposal = new Events.HashableGroupProposal({
-          proposal: template(L('This is a Vote for {name} to become a member of {group}'),
-            {name: member.state.attributes.displayName || member.state.attributes.name, group: this.contract.groupName}
-          ),
-          // calculate the voting threshold from the group data
-          percentage: this.contract.memberApprovalPercentage * 0.01,
-          candidate: member.state.attributes.name,
-          actions: [
-           { contractId: member.state.attributes.mailbox, action: JSON.stringify(invite.toObject()) },
-           { contractId: this.$store.state.currentGroupId, action: JSON.stringify(invited.toObject()) }
-          ],
-          initiator: this.$store.state.loggedIn.name,
-          initiationDate: new Date().toString()
-        }, groupLatest)
-        await backend.publishLogEntry(this.$store.state.currentGroupId, proposal)
-        this.proposed = true
-      } catch (error) {
-        console.error(error)
+      let externalTransaction = createExternalStateTransaction('Propose New Member')
+      externalTransaction.setInScope('proposal', template(L('This is a Vote for {name} to become a member of {group}'),
+            {name: member.state.attributes.displayName || member.state.attributes.name, group: this.contract.groupName}))
+      externalTransaction.setInScope('percentage', this.contract.memberApprovalPercentage * 0.01)
+      externalTransaction.setInScope('candidate', member.state.attributes.name)
+      externalTransaction.setInScope('transaction', JSON.stringify(externalInviteTransaction.toJSON()))
+      externalTransaction.setInScope('initiator', this.$store.state.loggedIn.name)
+      externalTransaction.setInScope('initiationDate', new Date().toString())
+      externalTransaction.setInScope(`groupId`, this.$store.state.currentGroupId)
+      externalTransaction.addStep({
+        execute: invariants.sendGroupProposal,
+        description: `Propose Membership for ${member.state.attributes.name}`,
+        args: {
+          Events: 'Events',
+          backend: 'backend',
+          percentage: 'percentage',
+          candidate: 'candidate',
+          transaction: 'transaction',
+          groupId: 'groupId',
+          initiator: 'initiator',
+          initiationDate: 'initiationDate'
+        }
+      })
+      externalTransaction.once('error', (ex) => {
+        externalTransaction.removeAllListeners('complete')
+        console.error(ex)
         // TODO: Create More descriptive errors
         this.userErrorMsg = L('Failed to Propose Users')
-      }
+      })
+      externalTransaction.once('complete', () => {
+        this.proposed = true
+      })
+      transactionQueue.run(externalTransaction)
     },
     remove (index) {
       this.members.splice(index, 1)

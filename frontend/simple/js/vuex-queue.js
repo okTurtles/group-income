@@ -34,6 +34,7 @@ class VuexQueue {
           // release promise
           next.release()
         } catch (ex) {
+          console.log(ex)
           next.exception(ex)
         }
         next = queue.pop()

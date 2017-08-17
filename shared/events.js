@@ -284,18 +284,12 @@ export class HashableGroupPayment extends HashableAction {
     ['payment', 'string'] // TODO: change to 'double' and add other fields
   ])
 }
-export class Action extends Hashable {
-  static fields = Action.Fields([
-    ['contractId', 'string'],
-    ['action', 'string']
-  ])
-}
 
 export class HashableGroupProposal extends HashableAction {
   static fields = HashableGroupProposal.Fields([
     ['proposal', 'string'],
     ['percentage', 'float'],
-    ['actions', 'Action', 'repeated'],
+    ['transaction', 'string'],
     ['candidate', 'string'],
     ['initiator', 'string'],
     ['initiationDate', 'string'],

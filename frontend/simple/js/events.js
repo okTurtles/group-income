@@ -13,7 +13,13 @@ export class GroupContract extends Events.HashableGroup {
         Vue.set(state.profiles, data.founderUsername, {globalProfile: data.founderIdentityContractId, groupProfile: {}})
       },
       HashableGroupPayment (state, {data}) { state.payments.push(data) },
-      HashableGroupProposal (state, {data, hash}) { state.proposals[hash] = {...data, for: [data.initiator], against: []} },
+      HashableGroupProposal (state, {data, hash}) {
+        state.proposals[hash] = {...data, for: [data.initiator], against: []}
+        let threshold = Math.ceil(state.proposals[hash].percentage * Object.keys(state.profiles).length)
+        if (state.proposals[hash].for.length >= threshold) {
+          Vue.delete(state.proposals, hash)
+        }
+      },
       HashableGroupVoteForProposal (state, {data}) {
         if (state.proposals[data.proposalHash]) {
           state.proposals[data.proposalHash].for.push(data.username)
@@ -27,7 +33,7 @@ export class GroupContract extends Events.HashableGroup {
         if (state.proposals[data.proposalHash]) {
           state.proposals[data.proposalHash].against.push(data.username)
           let threshold = Math.ceil(state.proposals[data.proposalHash].percentage * Object.keys(state.profiles).length)
-          if (state.proposals[data.proposalHash].against.length > state.members.length - threshold) {
+          if (state.proposals[data.proposalHash].against.length > Object.keys(state.profiles).length - threshold) {
             Vue.delete(state.proposals, data.proposalHash)
           }
         }
@@ -53,7 +59,7 @@ export class GroupContract extends Events.HashableGroup {
     // This is critical to the function of that latest contract hash.
     // They should only coordinate the actions of outside contracts.
     actions: {
-      async HashableGroupAcceptInvitation ({commit, state, rootState}, {data, store}) {
+      async HashableGroupAcceptInvitation ({state, rootState}, {data, store}) {
         // TODO: per #257 this will have to be encompassed in a recoverable transaction
         if (data.username === rootState.loggedIn.name) {
           // we're the person who just accepted the group invite

@@ -181,11 +181,11 @@
 
 <script>
 /* @flow */
-import Vue from 'vue'
-import backend from '../js/backend'
 import * as Events from '../../../shared/events'
 import * as contracts from '../js/events'
 import L from '../js/translations'
+import * as invariants from '../js/invariants'
+import {transactionQueue, createInternalStateTransaction} from '../js/transactions'
 
 export default {
   name: 'CreateGroupView',
@@ -200,32 +200,38 @@ export default {
         return
       }
 
-      try {
-        this.errorMsg = null
-        const entry = new contracts.GroupContract({
-          authorizations: [Events.CanModifyAuths.dummyAuth()],
-          groupName: this.groupName,
-          sharedValues: this.sharedValues,
-          changePercentage: this.changePercentage,
-          memberApprovalPercentage: this.memberApprovalPercentage,
-          memberRemovalPercentage: this.memberRemovalPercentage,
-          incomeProvided: this.incomeProvided,
-          contributionPrivacy: this.contributionPrivacy,
-          founderUsername: this.$store.state.loggedIn.name,
-          founderIdentityContractId: this.$store.state.loggedIn.identityContractId
-        })
-        const hash = entry.toHash()
-        await backend.subscribe(hash)
-        Vue.events.$once(hash, (contractId, entry) => {
-          this.$store.commit('setCurrentGroupId', hash)
-          // Take them to the invite group members page.
-          this.$router.push({path: '/invite'})
-        })
-        await backend.publishLogEntry(hash, entry)
-      } catch (error) {
+      this.errorMsg = null
+      let internalTransaction = createInternalStateTransaction('Create a Group')
+      const entry = new contracts.GroupContract({
+        authorizations: [Events.CanModifyAuths.dummyAuth()],
+        groupName: this.groupName,
+        sharedValues: this.sharedValues,
+        changePercentage: this.changePercentage,
+        memberApprovalPercentage: this.memberApprovalPercentage,
+        memberRemovalPercentage: this.memberRemovalPercentage,
+        incomeProvided: this.incomeProvided,
+        contributionPrivacy: this.contributionPrivacy,
+        founderUsername: this.$store.state.loggedIn.name,
+        founderIdentityContractId: this.$store.state.loggedIn.identityContractId
+      })
+      const hash = entry.toHash()
+
+      internalTransaction.setInScope('contractId', hash)
+      internalTransaction.setInScope('entry', entry)
+      internalTransaction.addStep({ execute: invariants.backendSubscribe, description: 'Subscribe to Group Contract', args: { backend: 'backend', contractId: 'contractId' } })
+      internalTransaction.addStep({ execute: invariants.publishLogEntry, description: 'Publish Group Contract', args: { backend: 'backend', contractId: 'contractId', entry: 'entry' } })
+      internalTransaction.once('error', (error) => {
+        // clean up invalid event listeners in case transaction is rerun external to this vue
+        internalTransaction.removeAllListeners('complete')
         console.error(error)
         this.errorMsg = L('Failed to Create Group')
-      }
+      })
+      internalTransaction.once('complete', () => {
+        this.$store.commit('setCurrentGroupId', hash)
+        // Take them to the invite group members page.
+        this.$router.push({path: '/invite'})
+      })
+      transactionQueue.run(internalTransaction)
     }
   },
   data () {

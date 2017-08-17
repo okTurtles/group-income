@@ -27,9 +27,8 @@
   </section>
 </template>
 <script>
-import * as Events from '../../../shared/events'
-import backend from '../js/backend/'
-import template from 'string-template'
+import * as invariants from '../js/invariants'
+import {transactionQueue, createExternalStateTransaction, Transaction} from '../js/transactions'
 import L from '../js/translations'
 import _ from 'lodash'
 export default {
@@ -48,45 +47,82 @@ export default {
   methods: {
     async four () { // for is a reserved word so Vue doesn't like it
       this.errorMsg = null
-      try {
-        // Create a vote for the proposal
-        let latest = await backend.latestHash(this.$route.query.groupId)
-        let vote = new Events.HashableGroupVoteForProposal({ username: this.$store.state.loggedIn.name, proposalHash: this.$route.query.proposalHash }, latest)
-        let proposal = _.cloneDeep(this.proposal)
-        let threshold = Math.ceil(proposal.percentage * this.memberCount)
-
-        await backend.publishLogEntry(this.$route.query.groupId, vote)
-        // If the vote passes fulfill the action
-        if (proposal.for.length + 1 >= threshold) {
-          let lastActionHash = null
-          const actionDate = new Date().toString()
-          for (let step of proposal.actions) {
-            latest = await backend.latestHash(step.contractId)
-            let actObj = JSON.parse(template(step.action, {lastActionHash, actionDate}))
-            let entry = new Events[actObj.type](actObj.data, latest)
-            lastActionHash = entry.toHash()
-            await backend.publishLogEntry(step.contractId, entry)
-          }
+      console.log('happened')
+      let proposal = _.cloneDeep(this.proposal)
+      let threshold = Math.ceil(proposal.percentage * this.memberCount)
+      // Create a vote for the proposal
+      let externalTransaction = createExternalStateTransaction(`Vote For Proposal ${this.$route.query.proposalHash}`)
+      externalTransaction.setInScope('username', this.$store.state.loggedIn.name)
+      externalTransaction.setInScope('proposalHash', this.$route.query.proposalHash)
+      externalTransaction.setInScope('groupId', this.$route.query.groupId)
+      externalTransaction.addStep({
+        execute: invariants.voteForProposal,
+        description: `Vote For Proposal ${this.$route.query.proposalHash}`,
+        args: {
+          backend: 'backend',
+          Events: 'Events',
+          username: 'username',
+          proposalHash: 'proposalHash',
+          groupId: 'groupId'
         }
-        // return to mailbox
-        this.$router.push({path: '/mailbox'})
-      } catch (ex) {
-        console.log(ex)
+      })
+      let onError = (ex) => {
+        externalTransaction.removeAllListeners('complete')
+        console.error(ex)
+        // TODO: Create More descriptive errors
         this.errorMsg = L('Failed to Cast Vote')
       }
+      externalTransaction.once('error', onError)
+      externalTransaction.once('complete', () => {
+        if (proposal.for.length + 1 >= threshold) {
+          try {
+            console.log(JSON.parse(proposal.transaction))
+            console.log(Transaction.isTransaction(JSON.parse(proposal.transaction)))
+            let proposedTransaction = Transaction.fromJSON(JSON.parse(proposal.transaction))
+            proposedTransaction.setInScope('voteDate', new Date().toString())
+            proposedTransaction.once('error', onError)
+            // return to mailbox
+            proposedTransaction.once('complete', () => this.$router.push({path: '/mailbox'}))
+            transactionQueue.run(proposedTransaction)
+          } catch (ex) {
+            onError(ex)
+          }
+        } else {
+          // return to mailbox
+          this.$router.push({path: '/mailbox'})
+        }
+      })
+      transactionQueue.run(externalTransaction)
     },
     async against () {
       this.errorMsg = null
-      try {
-        // Create a against the proposal
-        let latest = await backend.latestHash(this.$route.query.groupId)
-        let vote = new Events.HashableGroupVoteAgainstProposal({ username: this.$store.state.loggedIn.name, proposalHash: this.$route.query.proposalHash }, latest)
-        await backend.publishLogEntry(this.$route.query.groupId, vote)
-        this.$router.push({path: '/mailbox'})
-      } catch (ex) {
-        console.log(ex)
+      // Create a vote for the proposal
+      let externalTransaction = createExternalStateTransaction(`Vote For Proposal ${this.$route.query.proposalHash}`)
+      externalTransaction.setInScope('username', this.$store.state.loggedIn.name)
+      externalTransaction.setInScope('proposalHash', this.$route.query.proposalHash)
+      externalTransaction.setInScope('groupId', this.$route.query.groupId)
+      externalTransaction.addStep({
+        execute: invariants.voteAgainstProposal,
+        description: `Vote Against Proposal ${this.$route.query.proposalHash}`,
+        args: {
+          backend: 'backend',
+          Events: 'Events',
+          username: 'username',
+          proposalHash: 'proposalHash',
+          groupId: 'groupId'
+        }
+      })
+      externalTransaction.once('error', (ex) => {
+        externalTransaction.removeAllListeners('complete')
+        console.error(ex)
+        // TODO: Create More descriptive errors
         this.errorMsg = L('Failed to Cast Vote')
-      }
+      })
+      externalTransaction.once('complete', () => {
+        // return to mailbox
+        this.$router.push({path: '/mailbox'})
+      })
+      transactionQueue.run(externalTransaction)
     }
   },
   data () {

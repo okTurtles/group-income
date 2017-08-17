@@ -9,6 +9,7 @@ import * as db from './database'
 import * as Events from '../../../shared/events'
 import * as contracts from '../js/events'
 import backend from '../js/backend'
+// import queue from './vuex-queue'
 import _ from 'lodash'
 // babel transforms lodash imports: https://github.com/lodash/babel-plugin-lodash#faq
 // for diff between 'lodash/map' and 'lodash/fp/map'

@@ -102,11 +102,11 @@
 </style>
 
 <script>
-import * as Events from '../../../shared/events'
-import backend from '../js/backend/'
 import { latestContractState } from '../js/state'
 import { namespace } from '../js/backend/hapi'
 import L from '../js/translations'
+import {transactionQueue, createExternalStateTransaction} from '../js/transactions'
+import * as invariants from '../js/invariants'
 
 export default {
   name: 'Invite',
@@ -147,45 +147,54 @@ export default {
       this.members.splice(index, 1)
     },
     async submit () {
-      try {
-        this.errorMsg = null
-        // TODO: as members are successfully invited display in a
-        // seperate invitees grid and add them to some validation for duplicate invites
-        for (let member of this.members) {
-          // We need to have the latest mailbox attribute for the user
-          const mailbox = await backend.latestHash(member.state.attributes.mailbox)
-          const sentDate = new Date().toString()
+      this.errorMsg = null
+      // TODO: as members are successfully invited display in a
+      // seperate invitees grid and add them to some validation for duplicate invites
 
-          // We need to post the invite to the users' mailbox contract
-          const invite = new Events.HashableMailboxPostMessage(
-            {
-              from: this.$store.getters.currentGroup.groupName,
-              headers: [this.$store.state.currentGroupId],
-              messageType: Events.HashableMailboxPostMessage.TypeInvite,
-              sentDate
-            },
-            mailbox
-          )
-          await backend.publishLogEntry(member.state.attributes.mailbox, invite)
-
-          // We need to make a record of the invitation in the group's contract
-          const latest = await backend.latestHash(this.$store.state.currentGroupId)
-          const invited = new Events.HashableGroupRecordInvitation(
-            {
-              username: member.state.attributes.name,
-              inviteHash: invite.toHash(),
-              sentDate
-            },
-            latest
-          )
-          await backend.publishLogEntry(this.$store.state.currentGroupId, invited)
-        }
-        this.invited = true
-      } catch (error) {
-        console.error(error)
+      let externalTransaction = createExternalStateTransaction('Invite New Members')
+      externalTransaction.setInScope(`groupName`, this.$store.getters.currentGroup.groupName)
+      externalTransaction.setInScope(`groupId`, this.$store.state.currentGroupId)
+      const sentDate = new Date().toString()
+      externalTransaction.setInScope(`sentDate`, sentDate)
+      for (let member of this.members) {
+        // We need to have the latest mailbox attribute for the user
+        externalTransaction.setInScope(`${member.state.attributes.name}Mailbox`, member.state.attributes.mailbox)
+        externalTransaction.setInScope(member.state.attributes.name, member.state.attributes.name)
+        externalTransaction.addStep({
+          execute: invariants.postInvite,
+          description: `Send Invite to Mailbox for ${member.state.attributes.name}`,
+          args: {
+            Events: 'Events',
+            backend: 'backend',
+            mailboxId: `${member.state.attributes.name}Mailbox`,
+            sentDate: 'sentDate',
+            groupName: 'groupName',
+            groupId: 'groupId'
+          }
+        })
+        externalTransaction.addStep({
+          execute: invariants.recordInvite,
+          description: `Record Invite Sent to ${member.state.attributes.name}`,
+          args: {
+            Events: 'Events',
+            backend: 'backend',
+            inviteHash: `lastInviteHash`,
+            sentDate: 'sentDate',
+            username: member.state.attributes.name,
+            groupId: 'groupId'
+          }
+        })
+      }
+      externalTransaction.once('error', (ex) => {
+        externalTransaction.removeAllListeners('complete')
+        console.error(ex)
         // TODO: Create More descriptive errors
         this.errorMsg = L('Failed to Invite Users')
-      }
+      })
+      externalTransaction.once('complete', () => {
+        this.invited = true
+      })
+      transactionQueue.run(externalTransaction)
     }
   }
 }

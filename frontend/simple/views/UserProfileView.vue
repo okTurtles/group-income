@@ -176,10 +176,10 @@
   </section>
 </template>
 <script>
-import backend from '../js/backend'
-import * as Events from '../../../shared/events'
 import L from '../js/translations'
 import _ from 'lodash'
+import {transactionQueue, createExternalStateTransaction} from '../js/transactions'
+import * as invariants from '../js/invariants'
 
 export default {
   name: 'UserProfileView',
@@ -213,25 +213,24 @@ export default {
   },
   methods: {
     async save () {
-      try {
-        this.profileSaved = false
-        for (let key of Object.keys(this.edited)) {
-          if (this.edited[key] && this.edited[key] !== this.attributes[key]) {
-            let identityContractLatest = await backend.latestHash(this.$store.state.loggedIn.identityContractId)
-            let attribute = new Events.HashableIdentitySetAttribute(
-              {
-                attribute: {name: key, value: this.edited[key]}
-              },
-              identityContractLatest
-            )
-            await backend.publishLogEntry(this.$store.state.loggedIn.identityContractId, attribute)
-          }
-        }
-        this.profileSaved = true
-      } catch (ex) {
+      let externalTransaction = createExternalStateTransaction('Set Profile Attributes')
+      externalTransaction.setInScope('identityContractId', this.$store.state.loggedIn.identityContractId)
+      this.profileSaved = false
+      for (let key of Object.keys(this.edited)) {
+        externalTransaction.setInScope(`${key}AttributeName`, key)
+        externalTransaction.setInScope(`${key}AttributeValue`, this.edited[key])
+        externalTransaction.addStep({ execute: invariants.identitySetAttribute, description: `Set ${key} attribute`, args: { Events: 'Events', backend: 'backend', contractId: 'identityContractId', name: `${key}AttributeName`, value: `${key}AttributeValue` } })
+      }
+      externalTransaction.once('error', (ex) => {
+        // clean up invalid event listeners in case transaction is rerun external to this vue
+        externalTransaction.removeAllListeners('complete')
         console.log(ex)
         this.errorMsg = L('Failed to Save Profile')
-      }
+      })
+      externalTransaction.once('complete', () => {
+        this.profileSaved = true
+      })
+      transactionQueue.run(externalTransaction)
     },
     changeGroup () {
       this.editedGroupProfile = _.cloneDeep(
@@ -241,22 +240,21 @@ export default {
       )
     },
     async saveGroupProfile () {
-      try {
-        this.groupProfileSaved = false
-        let groupContractLatest = await backend.latestHash(this.currentGroupContractId)
-        let updatedProfile = new Events.HashableGroupSetGroupProfile(
-          {
-            username: this.$store.state.loggedIn.name,
-            json: JSON.stringify(this.editedGroupProfile)
-          },
-          groupContractLatest
-        )
-        await backend.publishLogEntry(this.currentGroupContractId, updatedProfile)
-        this.groupProfileSaved = true
-      } catch (ex) {
+      let externalTransaction = createExternalStateTransaction('Save Group Profile')
+      externalTransaction.setInScope('username', this.$store.state.loggedIn.name)
+      externalTransaction.setInScope('profile', this.editedGroupProfile)
+      externalTransaction.setInScope('groupContractId', this.currentGroupContractId)
+      externalTransaction.addStep({ execute: invariants.saveGroupProfile, description: `Set ${this.$store.state.loggedIn.name}' Profile`, args: { Events: 'Events', backend: 'backend', contractId: 'groupContractId', username: 'username', profile: 'profile' } })
+      externalTransaction.once('error', (ex) => {
+        // clean up invalid event listeners in case transaction is rerun external to this vue
+        externalTransaction.removeAllListeners('complete')
         console.log(ex)
         this.groupErrorMsg = L('Failed to Save Group Profile')
-      }
+      })
+      externalTransaction.once('complete', () => {
+        this.groupProfileSaved = true
+      })
+      transactionQueue.run(externalTransaction)
     }
   }
 }

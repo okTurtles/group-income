@@ -97,10 +97,11 @@
     </section>
 </template>
 <script>
-import * as Events from '../../../shared/events'
-import backend from '../js/backend/'
 import { latestContractState } from '../js/state'
 import L from '../js/translations'
+import {transactionQueue, createInternalStateTransaction} from '../js/transactions'
+import backend from '../js/backend/'
+import * as invariants from '../js/invariants'
 
 export default {
   name: 'Join',
@@ -128,53 +129,76 @@ export default {
   methods: {
     accept: async function () {
       try {
-        // post acceptance event to the group contract
-        this.errorMsg = null
-        let latest = await backend.latestHash(this.$route.query.groupId)
-        let acceptance = new Events.HashableGroupAcceptInvitation(
-          {
-            username: this.$store.state.loggedIn.name,
-            identityContractId: this.$store.state.loggedIn.identityContractId,
-            inviteHash: this.$route.query.inviteHash,
-            acceptanceDate: new Date()
-          },
-          latest
-        )
         this.$store.commit('setCurrentGroupId', this.$route.query.groupId)
         await backend.subscribe(this.$route.query.groupId)
         await this.$store.dispatch('syncContractWithServer', this.$route.query.groupId)
-        await backend.publishLogEntry(this.$route.query.groupId, acceptance)
-
-        // remove invite and return to mailbox
-        this.$store.commit('deleteMessage', this.$route.query.inviteHash)
-        this.$router.push({path: '/mailbox'})
       } catch (ex) {
         console.log(ex)
         this.errorMsg = L('Failed to Accept Invite')
       }
+      let internalTransaction = createInternalStateTransaction('Join Group')
+      internalTransaction.setInScope('contractId', this.$route.query.groupId)
+      internalTransaction.setInScope('username', this.$store.state.loggedIn.name)
+      internalTransaction.setInScope('identityContractId', this.$store.state.loggedIn.identityContractId)
+      internalTransaction.setInScope('inviteHash', this.$route.query.inviteHash)
+      internalTransaction.setInScope('acceptanceDate', new Date().toString())
+
+      internalTransaction.addStep({
+        execute: invariants.acceptInvite,
+        description: 'Accept Invitation to Group',
+        args: {
+          backend: 'backend',
+          Events: 'Events',
+          contractId: 'contractId',
+          username: 'username',
+          identityContractId: 'identityContractId',
+          inviteHash: 'inviteHash',
+          acceptanceDate: 'acceptanceDate'
+        }
+      })
+      internalTransaction.once('error', (ex) => {
+        // clean up invalid event listeners in case transaction is rerun external to this vue
+        internalTransaction.removeAllListeners('complete')
+        console.log(ex)
+        this.errorMsg = L('Failed to Accept Invite')
+      })
+      internalTransaction.once('complete', () => {
+        // remove invite and return to mailbox
+        this.$store.commit('deleteMessage', this.$route.query.inviteHash)
+        this.$router.push({path: '/mailbox'})
+      })
+      transactionQueue.run(internalTransaction)
     },
     decline: async function () {
-      try {
-        // post decline event
-        this.errorMsg = null
-        let latest = await backend.latestHash(this.$route.query.groupId)
-        let declination = new Events.HashableGroupDeclineInvitation(
-          {
-            username: this.$store.state.loggedIn.name,
-            inviteHash: this.$route.query.inviteHash,
-            declinedDate: new Date()
-          },
-          latest
-        )
-        await backend.publishLogEntry(this.$route.query.groupId, declination)
-
-        // remove invite and return to mailbox
-        this.$store.commit('deleteMail', this.$route.query.inviteHash)
-        this.$router.push({path: '/mailbox'})
-      } catch (ex) {
+      let internalTransaction = createInternalStateTransaction('Reject Group')
+      internalTransaction.setInScope('contractId', this.$route.query.groupId)
+      internalTransaction.setInScope('username', this.$store.state.loggedIn.name)
+      internalTransaction.setInScope('inviteHash', this.$route.query.inviteHash)
+      internalTransaction.setInScope('declineDate', new Date().toString())
+      internalTransaction.addStep({
+        execute: invariants.declineInvite,
+        description: 'Decline Invitation to Group',
+        args: {
+          backend: 'backend',
+          Events: 'Events',
+          contractId: 'contractId',
+          username: 'username',
+          inviteHash: 'inviteHash',
+          declineDate: 'declineDate'
+        }
+      })
+      internalTransaction.once('error', (ex) => {
+        // clean up invalid event listeners in case transaction is rerun external to this vue
+        internalTransaction.removeAllListeners('complete')
         console.log(ex)
         this.errorMsg = L('Failed to Decline Invite')
-      }
+      })
+      internalTransaction.once('complete', () => {
+        // remove invite and return to mailbox
+        this.$store.commit('deleteMessage', this.$route.query.inviteHash)
+        this.$router.push({path: '/mailbox'})
+      })
+      transactionQueue.run(internalTransaction)
     },
     formatDate: function (date) {
       if (date) {

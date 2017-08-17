@@ -163,11 +163,12 @@
 
 <script>
 import _ from 'lodash'
-import backend from '../js/backend'
 import * as Events from '../../../shared/events'
 import {namespace} from '../js/backend/hapi'
 import {latestContractState} from '../js/state'
 import L from '../js/translations'
+import {transactionQueue, createExternalStateTransaction} from '../js/transactions'
+import * as invariants from '../js/invariants'
 const criteria = [(msg) => new Date(msg.sentDate)]
 export default {
   name: 'Mailbox',
@@ -212,25 +213,38 @@ export default {
       this.messages = this.invites
     },
     send: async function () {
-      try {
-        for (let i = 0; i < this.recipients.length; i++) {
-          let recipient = this.recipients[i]
-          let state = await latestContractState(recipient.contractId)
-          let mailbox = await backend.latestHash(state.attributes.mailbox)
-          let date = new Date()
-          let message = new Events.HashableMailboxPostMessage({
-            sentDate: date.toString(),
-            messageType: Events.HashableMailboxPostMessage.TypeMessage,
-            from: this.$store.state.loggedIn.name,
-            message: this.composedMessage
-          }, mailbox)
-          await backend.publishLogEntry(state.attributes.mailbox, message)
-        }
-        this.inboxMode()
-      } catch (ex) {
+      let externalTransaction = createExternalStateTransaction('Send Mail')
+      externalTransaction.setInScope('mailboxContractId', this.$store.state.loggedIn.identityContractId)
+      externalTransaction.setInScope(`date`, new Date().toString())
+      externalTransaction.setInScope(`from`, this.$store.state.loggedIn.name)
+      externalTransaction.setInScope(`message`, this.composedMessage)
+
+      for (let i = 0; i < this.recipients.length; i++) {
+        let recipient = this.recipients[i]
+        let state = await latestContractState(recipient.contractId)
+        externalTransaction.setInScope(`${recipient}ContractId`, state.attributes.mailbox)
+        externalTransaction.addStep({
+          execute: invariants.sendMail,
+          description: `Send Messagage to ${this.recipients[i]}`,
+          args: {
+            Events: 'Events',
+            backend: 'backend',
+            contractId: `${recipient}ContractId`,
+            data: 'date',
+            message: 'message',
+            from: 'from'
+          }
+        })
+      }
+      externalTransaction.once('error', (ex) => {
+        externalTransaction.removeAllListeners('complete')
         console.log(ex)
         this.errorMsg = L('Failed to Send Message')
-      }
+      })
+      externalTransaction.once('complete', () => {
+        this.inboxMode()
+      })
+      transactionQueue.run(externalTransaction)
     },
     remove: function (index) {
       if (Number.isInteger(index)) {

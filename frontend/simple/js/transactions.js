@@ -8,8 +8,6 @@ import * as Events from '../../../shared/events'
 import * as contracts from '../js/events'
 import {EventEmitter} from 'events'
 import * as invariants from './invariants'
-import store from './state'
-import _ from 'lodash'
 
 let _steps = new WeakMap()
 let _scope = new WeakMap()
@@ -29,13 +27,14 @@ function fibSequence (num) {
 }
 
 let transactionDB = localforage.createInstance({ name: 'Transactions', storeName: 'Transactions' })
-class Transaction extends EventEmitter {
+export class Transaction extends EventEmitter {
   constructor (description, revertable) {
     super()
     _description.set(this, description)
     _steps.set(this, [])
     _scope.set(this, {})
     _isRevertable.set(this, !!revertable)
+    _cursor.set(this, 0)
   }
   addStep (step) {
     let steps = _steps.get(this)
@@ -50,10 +49,10 @@ class Transaction extends EventEmitter {
     let steps = _steps.get(this)
     let scope = _scope.get(this)
     let args = {}
-    let cursor = _cursor.get(this) || {step: 0}
-    for (let i = cursor.step; i < steps.length; i++) {
+    let cursor = _cursor.get(this)
+    for (let i = cursor; i < steps.length; i++) {
       // Keep track of a cursor of what step in the transaction we are operating
-      _cursor.set(this, {step: i, state: (_isRevertable.get(this) ? _.cloneDeep(store.state) : null)})
+      _cursor.set(this, i)
       let currentStep = steps[ i ]
       // Build arguments from services and scoped data
       for (let argPair of Object.entries(currentStep.args)) {
@@ -65,13 +64,7 @@ class Transaction extends EventEmitter {
         this.emit('step complete', _cursor.get(this) + 1)
       } catch (ex) {
         this.emit('error', new Error(`Step - ${currentStep.description || ''} failed with error, \n ${ex}`))
-        // Revert state if possible
-        if (_isRevertable.get(this)) {
-          let cursor = _cursor.get(this)
-          store.replaceState(cursor.state)
-        } else {
-          throw ex
-        }
+        throw ex
       }
     }
     this.emit('complete')
@@ -89,7 +82,7 @@ class Transaction extends EventEmitter {
     if (typeof obj !== 'object') return false
     if (!Array.isArray(obj.steps)) return false
     if (typeof obj.scope !== 'object') return false
-    if (typeof obj.cursor !== 'object') return false
+    if (!Number.isInteger(obj.cursor)) return false
     if (typeof obj.isRevertable !== 'boolean') return false
     if (typeof obj.description !== 'string') return false
     return true

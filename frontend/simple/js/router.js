@@ -39,11 +39,11 @@ var groupGuard = {
   redirect: (to, from) => ({ path: '/new-group' })
 }
 var inviteGuard = {
-  guard: store => store.state.currentGroupId && Object.keys(store.state[store.state.currentGroupId].profiles).length >= 3,
+  guard: store => store.state.currentGroupId && Object.keys(store.state[store.state.currentGroupId].profiles).length >= 2,
   redirect: (to, from) => ({ path: '/propose-member' })
 }
 var proposeMemberGuard = {
-  guard: store => store.state.currentGroupId && Object.keys(store.state[store.state.currentGroupId].profiles).length < 3,
+  guard: store => store.state.currentGroupId && Object.keys(store.state[store.state.currentGroupId].profiles).length < 2,
   redirect: (to, from) => ({ path: '/invite' })
 }
 var mailGuard = {
