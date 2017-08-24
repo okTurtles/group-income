@@ -6,14 +6,14 @@ import { namespace } from '../js/backend/hapi'
 import * as db from './database'
 import * as Events from '../../../shared/events'
 import * as contracts from '../js/events'
-import {EventEmitter} from 'events'
 import * as invariants from './invariants'
 
 let _steps = new WeakMap()
 let _scope = new WeakMap()
 let _cursor = new WeakMap()
 let _description = new WeakMap()
-let _isRevertable = new WeakMap()
+let _isRecoverable = new WeakMap()
+let _wait = new WeakMap()
 // Why would need this?  to make our retries grow in common sense ways
 function fibSequence (num) {
   let output = 0
@@ -27,19 +27,30 @@ function fibSequence (num) {
 }
 
 let transactionDB = localforage.createInstance({ name: 'Transactions', storeName: 'Transactions' })
-export class Transaction extends EventEmitter {
-  constructor (description, revertable) {
-    super()
+export class Transaction {
+  constructor (description, recoverable) {
     _description.set(this, description)
     _steps.set(this, [])
     _scope.set(this, {})
-    _isRevertable.set(this, !!revertable)
+    _isRecoverable.set(this, !!recoverable)
     _cursor.set(this, 0)
+    let res
+    let rej
+    let promise = new Promise((resolve, reject) => (res = resolve) && (rej = reject))
+    _wait.set(this, {promise, resolve: res, reject: rej})
+  }
+  get isRecoverable (){
+    return _isRecoverable.get(this)
+  }
+  wait () {
+    let wait = _wait.get(this)
+    return wait.promise
   }
   addStep (step) {
     let steps = _steps.get(this)
     steps.push(step)
   }
+  // This function creates variables in the transaction's scope to be referenced by steps
   setInScope (name, value) {
     let scope = _scope.get(this)
     scope[name] = value
@@ -50,6 +61,7 @@ export class Transaction extends EventEmitter {
     let scope = _scope.get(this)
     let args = {}
     let cursor = _cursor.get(this)
+    let wait = _wait.get(this)
     for (let i = cursor; i < steps.length; i++) {
       // Keep track of a cursor of what step in the transaction we are operating
       _cursor.set(this, i)
@@ -61,20 +73,19 @@ export class Transaction extends EventEmitter {
       // Attempt to run step
       try {
         await invariants[currentStep.execute].call(this, args)
-        this.emit('step complete', _cursor.get(this) + 1)
       } catch (ex) {
-        this.emit('error', new Error(`Step - ${currentStep.description || ''} failed with error, \n ${ex}`))
+        wait.reject(new Error(`Step - ${currentStep.description || ''} failed with error, \n ${ex}`))
         throw ex
       }
     }
-    this.emit('complete')
+    wait.resolve()
   }
   toJSON () {
     return {
       steps: _steps.get(this),
       scope: _scope.get(this),
       cursor: _cursor.get(this),
-      isRevertable: _isRevertable.get(this),
+      isRecoverable: _isRecoverable.get(this),
       description: _description.get(this)
     }
   }
@@ -83,7 +94,7 @@ export class Transaction extends EventEmitter {
     if (!Array.isArray(obj.steps)) return false
     if (typeof obj.scope !== 'object') return false
     if (!Number.isInteger(obj.cursor)) return false
-    if (typeof obj.isRevertable !== 'boolean') return false
+    if (typeof obj.isRecoverable !== 'boolean') return false
     if (typeof obj.description !== 'string') return false
     return true
   }
@@ -96,7 +107,7 @@ export class Transaction extends EventEmitter {
         json.scope[key] = Events.HashableEntry.fromJSON(json.scope[key])
       }
     }
-    let transaction = new Transaction(json.description, json.isRevertable)
+    let transaction = new Transaction(json.description, json.isRecoverable)
     _scope.set(transaction, json.scope)
     _cursor.set(transaction, json.cursor)
     _steps.set(transaction, json.steps)
@@ -105,11 +116,11 @@ export class Transaction extends EventEmitter {
 }
 
 export function createInternalStateTransaction (description) {
-  return new Transaction(description, true)
+  return new Transaction(description, false)
 }
 
 export function createExternalStateTransaction (description) {
-  return new Transaction(description, false)
+  return new Transaction(description, true)
 }
 // Transaction Queue
 let _transactionQueue = new WeakMap()
@@ -127,7 +138,6 @@ class TransactionQueue {
     _isLoaded.set(this, false)
     _failures.set(this, [])
   }
-
   async load () {
     if (_isLoaded.get(this)) { return }
     try {
@@ -193,23 +203,25 @@ class TransactionQueue {
             await transactionDB.removeItem(`${_transactionID.get(next)}`)
           }
         } catch (ex) {
-          // Save a serialized version of the transaction
-          let transactionID = _transactionID.get(next)
-          let failures = _failures.get(this)
-          let failure = failures.find(failure => failure.id === transactionID)
-          if (!failure) {
-            failure = { id: transactionID, retryCount: 0 }
-            failures.push(failure)
-            await transactionDB.setItem('failures', failures)
-          } else {
-            failure.retryCount++
-            await transactionDB.setItem('failures', failures)
+          if (next.isRecoverable) {
+            // Save a serialized version of the transaction
+            let transactionID = _transactionID.get(next)
+            let failures = _failures.get(this)
+            let failure = failures.find(failure => failure.id === transactionID)
+            if (!failure) {
+              failure = { id: transactionID, retryCount: 0 }
+              failures.push(failure)
+              await transactionDB.setItem('failures', failures)
+            } else {
+              failure.retryCount++
+              await transactionDB.setItem('failures', failures)
+            }
+            await transactionDB.setItem(`${transactionID}`, next.toJSON())
+            let retry = next
+            setTimeout(() => {
+              this.run(retry)
+            }, 500 * fibSequence(failure.retryCount))
           }
-          await transactionDB.setItem(`${transactionID}`, next.toJSON())
-          let retry = next
-          setTimeout(() => {
-            this.run(retry)
-          }, 500 * fibSequence(failure.retryCount))
         }
         next = transactionQueue.pop()
       }

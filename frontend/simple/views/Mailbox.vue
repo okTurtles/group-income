@@ -105,7 +105,7 @@
                   <div class="media-left" v-on:click="read({index, type: message.data.messageType})">
                     <p class="image is-64x64">
                       <!-- TODO: make this draw image from group contract -->
-                      <img src="images/128x128.png">
+                      <img src="images/default-avatar.png">
                     </p>
                   </div>
                   <div class="media-content invite-message" v-on:click="read({index, type: message.data.messageType})">
@@ -129,7 +129,7 @@
                 <div class="media">
                   <div class="media-left" v-on:click="read({index, type: message.data.messageType})">
                     <p class="image is-64x64">
-                      <img src="images/128x128.png">
+                      <img src="images/default-avatar.png">
                     </p>
                   </div>
                   <div class="media-content inbox-message" v-on:click="read({index, type: message.data.messageType})">
@@ -155,12 +155,10 @@
     </div>
   </section>
 </template>
-
 <style>
 .signup .level-item { margin-top: 10px; }
 .signup .level.top-align { align-items: flex-start; }
 </style>
-
 <script>
 import _ from 'lodash'
 import * as Events from '../../../shared/events'
@@ -213,38 +211,38 @@ export default {
       this.messages = this.invites
     },
     send: async function () {
-      let externalTransaction = createExternalStateTransaction('Send Mail')
-      externalTransaction.setInScope('mailboxContractId', this.$store.state.loggedIn.identityContractId)
-      externalTransaction.setInScope(`date`, new Date().toString())
-      externalTransaction.setInScope(`from`, this.$store.state.loggedIn.name)
-      externalTransaction.setInScope(`message`, this.composedMessage)
+      try {
+        let externalTransaction = createExternalStateTransaction('Send Mail')
+        externalTransaction.setInScope('mailboxContractId', this.$store.state.loggedIn.identityContractId)
+        externalTransaction.setInScope(`date`, new Date().toString())
+        externalTransaction.setInScope(`from`, this.$store.state.loggedIn.name)
+        externalTransaction.setInScope(`message`, this.composedMessage)
 
-      for (let i = 0; i < this.recipients.length; i++) {
-        let recipient = this.recipients[i]
-        let state = await latestContractState(recipient.contractId)
-        externalTransaction.setInScope(`${recipient}ContractId`, state.attributes.mailbox)
-        externalTransaction.addStep({
-          execute: invariants.sendMail,
-          description: `Send Messagage to ${this.recipients[i]}`,
-          args: {
-            Events: 'Events',
-            backend: 'backend',
-            contractId: `${recipient}ContractId`,
-            data: 'date',
-            message: 'message',
-            from: 'from'
-          }
-        })
-      }
-      externalTransaction.once('error', (ex) => {
-        externalTransaction.removeAllListeners('complete')
+        for (let i = 0; i < this.recipients.length; i++) {
+          let recipient = this.recipients[i]
+          let state = await latestContractState(recipient.contractId)
+          externalTransaction.setInScope(`${recipient}ContractId`, state.attributes.mailbox)
+          externalTransaction.addStep({
+            execute: invariants.sendMail,
+            description: `Send Messagage to ${this.recipients[i]}`,
+            args: {
+              Events: 'Events',
+              backend: 'backend',
+              contractId: `${recipient}ContractId`,
+              data: 'date',
+              message: 'message',
+              from: 'from'
+            }
+          })
+        }
+
+        transactionQueue.run(externalTransaction)
+        await externalTransaction.wait()
+        this.inboxMode()
+      } catch (ex) {
         console.log(ex)
         this.errorMsg = L('Failed to Send Message')
-      })
-      externalTransaction.once('complete', () => {
-        this.inboxMode()
-      })
-      transactionQueue.run(externalTransaction)
+      }
     },
     remove: function (index) {
       if (Number.isInteger(index)) {

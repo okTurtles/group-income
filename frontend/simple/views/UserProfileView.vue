@@ -213,24 +213,22 @@ export default {
   },
   methods: {
     async save () {
-      let externalTransaction = createExternalStateTransaction('Set Profile Attributes')
-      externalTransaction.setInScope('identityContractId', this.$store.state.loggedIn.identityContractId)
-      this.profileSaved = false
-      for (let key of Object.keys(this.edited)) {
-        externalTransaction.setInScope(`${key}AttributeName`, key)
-        externalTransaction.setInScope(`${key}AttributeValue`, this.edited[key])
-        externalTransaction.addStep({ execute: invariants.identitySetAttribute, description: `Set ${key} attribute`, args: { Events: 'Events', backend: 'backend', contractId: 'identityContractId', name: `${key}AttributeName`, value: `${key}AttributeValue` } })
-      }
-      externalTransaction.once('error', (ex) => {
-        // clean up invalid event listeners in case transaction is rerun external to this vue
-        externalTransaction.removeAllListeners('complete')
+      try {
+        let externalTransaction = createExternalStateTransaction('Set Profile Attributes')
+        externalTransaction.setInScope('identityContractId', this.$store.state.loggedIn.identityContractId)
+        this.profileSaved = false
+        for (let key of Object.keys(this.edited)) {
+          externalTransaction.setInScope(`${key}AttributeName`, key)
+          externalTransaction.setInScope(`${key}AttributeValue`, this.edited[key])
+          externalTransaction.addStep({ execute: invariants.identitySetAttribute, description: `Set ${key} attribute`, args: { Events: 'Events', backend: 'backend', contractId: 'identityContractId', name: `${key}AttributeName`, value: `${key}AttributeValue` } })
+        }
+        transactionQueue.run(externalTransaction)
+        await externalTransaction.wait()
+        this.profileSaved = true
+      } catch (ex) {
         console.log(ex)
         this.errorMsg = L('Failed to Save Profile')
-      })
-      externalTransaction.once('complete', () => {
-        this.profileSaved = true
-      })
-      transactionQueue.run(externalTransaction)
+      }
     },
     changeGroup () {
       this.editedGroupProfile = _.cloneDeep(
@@ -240,21 +238,19 @@ export default {
       )
     },
     async saveGroupProfile () {
-      let externalTransaction = createExternalStateTransaction('Save Group Profile')
-      externalTransaction.setInScope('username', this.$store.state.loggedIn.name)
-      externalTransaction.setInScope('profile', this.editedGroupProfile)
-      externalTransaction.setInScope('groupContractId', this.currentGroupContractId)
-      externalTransaction.addStep({ execute: invariants.saveGroupProfile, description: `Set ${this.$store.state.loggedIn.name}' Profile`, args: { Events: 'Events', backend: 'backend', contractId: 'groupContractId', username: 'username', profile: 'profile' } })
-      externalTransaction.once('error', (ex) => {
-        // clean up invalid event listeners in case transaction is rerun external to this vue
-        externalTransaction.removeAllListeners('complete')
+      try {
+        let externalTransaction = createExternalStateTransaction('Save Group Profile')
+        externalTransaction.setInScope('username', this.$store.state.loggedIn.name)
+        externalTransaction.setInScope('profile', this.editedGroupProfile)
+        externalTransaction.setInScope('groupContractId', this.currentGroupContractId)
+        externalTransaction.addStep({ execute: invariants.saveGroupProfile, description: `Set ${this.$store.state.loggedIn.name}' Profile`, args: { Events: 'Events', backend: 'backend', contractId: 'groupContractId', username: 'username', profile: 'profile' } })
+        transactionQueue.run(externalTransaction)
+        await externalTransaction.wait()
+        this.groupProfileSaved = true
+      } catch (ex) {
         console.log(ex)
         this.groupErrorMsg = L('Failed to Save Group Profile')
-      })
-      externalTransaction.once('complete', () => {
-        this.groupProfileSaved = true
-      })
-      transactionQueue.run(externalTransaction)
+      }
     }
   }
 }

@@ -41,88 +41,74 @@ export default {
       return this.contract.proposals[this.$route.query.proposalHash] || {proposal: null}
     },
     memberCount () {
-      return this.$store.getters[`${this.$route.query.groupId}/members`].length
+      return this.$store.getters[`${this.$route.query.groupId}/memberUsernames`].length
     }
   },
   methods: {
     async four () { // for is a reserved word so Vue doesn't like it
-      this.errorMsg = null
-      console.log('happened')
-      let proposal = _.cloneDeep(this.proposal)
-      let threshold = Math.ceil(proposal.percentage * this.memberCount)
-      // Create a vote for the proposal
-      let externalTransaction = createExternalStateTransaction(`Vote For Proposal ${this.$route.query.proposalHash}`)
-      externalTransaction.setInScope('username', this.$store.state.loggedIn.name)
-      externalTransaction.setInScope('proposalHash', this.$route.query.proposalHash)
-      externalTransaction.setInScope('groupId', this.$route.query.groupId)
-      externalTransaction.addStep({
-        execute: invariants.voteForProposal,
-        description: `Vote For Proposal ${this.$route.query.proposalHash}`,
-        args: {
-          backend: 'backend',
-          Events: 'Events',
-          username: 'username',
-          proposalHash: 'proposalHash',
-          groupId: 'groupId'
+      try {
+        this.errorMsg = null
+        let proposal = _.cloneDeep(this.proposal)
+        let threshold = Math.ceil(proposal.percentage * this.memberCount)
+        // Create a vote for the proposal
+        let externalTransaction = createExternalStateTransaction(`Vote For Proposal ${this.$route.query.proposalHash}`)
+        externalTransaction.setInScope('username', this.$store.state.loggedIn.name)
+        externalTransaction.setInScope('proposalHash', this.$route.query.proposalHash)
+        externalTransaction.setInScope('groupId', this.$route.query.groupId)
+        externalTransaction.addStep({
+          execute: invariants.voteForProposal,
+          description: `Vote For Proposal ${this.$route.query.proposalHash}`,
+          args: {
+            backend: 'backend',
+            Events: 'Events',
+            username: 'username',
+            proposalHash: 'proposalHash',
+            groupId: 'groupId'
+          }
+        })
+        transactionQueue.run(externalTransaction)
+        await externalTransaction.wait()
+        if (proposal.for.length + 1 >= threshold) {
+          let proposedTransaction = Transaction.fromJSON(JSON.parse(proposal.transaction))
+          proposedTransaction.setInScope('voteDate', new Date().toString())
+          transactionQueue.run(proposedTransaction)
+          await proposedTransaction.wait()
         }
-      })
-      let onError = (ex) => {
-        externalTransaction.removeAllListeners('complete')
+        // return to mailbox
+        this.$router.push({path: '/mailbox'})
+      } catch (ex) {
+        console.log(ex)
+        // TODO: Create More descriptive errors
+        this.errorMsg = L('Failed to Cast Vote')
+      }
+    },
+    async against () {
+      try {
+        this.errorMsg = null
+        // Create a vote for the proposal
+        let externalTransaction = createExternalStateTransaction(`Vote For Proposal ${this.$route.query.proposalHash}`)
+        externalTransaction.setInScope('username', this.$store.state.loggedIn.name)
+        externalTransaction.setInScope('proposalHash', this.$route.query.proposalHash)
+        externalTransaction.setInScope('groupId', this.$route.query.groupId)
+        externalTransaction.addStep({
+          execute: invariants.voteAgainstProposal,
+          description: `Vote Against Proposal ${this.$route.query.proposalHash}`,
+          args: {
+            backend: 'backend',
+            Events: 'Events',
+            username: 'username',
+            proposalHash: 'proposalHash',
+            groupId: 'groupId'
+          }
+        })
+        transactionQueue.run(externalTransaction)
+        await externalTransaction.wait()
+        this.$router.push({path: '/mailbox'})
+      } catch (ex) {
         console.error(ex)
         // TODO: Create More descriptive errors
         this.errorMsg = L('Failed to Cast Vote')
       }
-      externalTransaction.once('error', onError)
-      externalTransaction.once('complete', () => {
-        if (proposal.for.length + 1 >= threshold) {
-          try {
-            console.log(JSON.parse(proposal.transaction))
-            console.log(Transaction.isTransaction(JSON.parse(proposal.transaction)))
-            let proposedTransaction = Transaction.fromJSON(JSON.parse(proposal.transaction))
-            proposedTransaction.setInScope('voteDate', new Date().toString())
-            proposedTransaction.once('error', onError)
-            // return to mailbox
-            proposedTransaction.once('complete', () => this.$router.push({path: '/mailbox'}))
-            transactionQueue.run(proposedTransaction)
-          } catch (ex) {
-            onError(ex)
-          }
-        } else {
-          // return to mailbox
-          this.$router.push({path: '/mailbox'})
-        }
-      })
-      transactionQueue.run(externalTransaction)
-    },
-    async against () {
-      this.errorMsg = null
-      // Create a vote for the proposal
-      let externalTransaction = createExternalStateTransaction(`Vote For Proposal ${this.$route.query.proposalHash}`)
-      externalTransaction.setInScope('username', this.$store.state.loggedIn.name)
-      externalTransaction.setInScope('proposalHash', this.$route.query.proposalHash)
-      externalTransaction.setInScope('groupId', this.$route.query.groupId)
-      externalTransaction.addStep({
-        execute: invariants.voteAgainstProposal,
-        description: `Vote Against Proposal ${this.$route.query.proposalHash}`,
-        args: {
-          backend: 'backend',
-          Events: 'Events',
-          username: 'username',
-          proposalHash: 'proposalHash',
-          groupId: 'groupId'
-        }
-      })
-      externalTransaction.once('error', (ex) => {
-        externalTransaction.removeAllListeners('complete')
-        console.error(ex)
-        // TODO: Create More descriptive errors
-        this.errorMsg = L('Failed to Cast Vote')
-      })
-      externalTransaction.once('complete', () => {
-        // return to mailbox
-        this.$router.push({path: '/mailbox'})
-      })
-      transactionQueue.run(externalTransaction)
     }
   },
   data () {

@@ -85,7 +85,6 @@
     </div>
   </section>
 </template>
-
 <style lang="scss" scoped>
 .table-header {
   background-color: #fafafa;
@@ -100,7 +99,6 @@
   margin-right: 1rem;
 }
 </style>
-
 <script>
 import { latestContractState } from '../js/state'
 import { namespace } from '../js/backend/hapi'
@@ -111,6 +109,7 @@ import * as invariants from '../js/invariants'
 export default {
   name: 'Invite',
   data () {
+    // TODO: https://github.com/okTurtles/group-income-simple/issues/297
     return {
       searchUser: null,
       members: [],
@@ -147,54 +146,53 @@ export default {
       this.members.splice(index, 1)
     },
     async submit () {
-      this.errorMsg = null
-      // TODO: as members are successfully invited display in a
-      // seperate invitees grid and add them to some validation for duplicate invites
+      try {
+        this.errorMsg = null
+        // TODO: as members are successfully invited display in a
+        // seperate invitees grid and add them to some validation for duplicate invites
 
-      let externalTransaction = createExternalStateTransaction('Invite New Members')
-      externalTransaction.setInScope(`groupName`, this.$store.getters.currentGroup.groupName)
-      externalTransaction.setInScope(`groupId`, this.$store.state.currentGroupId)
-      const sentDate = new Date().toString()
-      externalTransaction.setInScope(`sentDate`, sentDate)
-      for (let member of this.members) {
-        // We need to have the latest mailbox attribute for the user
-        externalTransaction.setInScope(`${member.state.attributes.name}Mailbox`, member.state.attributes.mailbox)
-        externalTransaction.setInScope(member.state.attributes.name, member.state.attributes.name)
-        externalTransaction.addStep({
-          execute: invariants.postInvite,
-          description: `Send Invite to Mailbox for ${member.state.attributes.name}`,
-          args: {
-            Events: 'Events',
-            backend: 'backend',
-            mailboxId: `${member.state.attributes.name}Mailbox`,
-            sentDate: 'sentDate',
-            groupName: 'groupName',
-            groupId: 'groupId'
-          }
-        })
-        externalTransaction.addStep({
-          execute: invariants.recordInvite,
-          description: `Record Invite Sent to ${member.state.attributes.name}`,
-          args: {
-            Events: 'Events',
-            backend: 'backend',
-            inviteHash: `lastInviteHash`,
-            sentDate: 'sentDate',
-            username: member.state.attributes.name,
-            groupId: 'groupId'
-          }
-        })
-      }
-      externalTransaction.once('error', (ex) => {
-        externalTransaction.removeAllListeners('complete')
+        let externalTransaction = createExternalStateTransaction('Invite New Members')
+        externalTransaction.setInScope(`groupName`, this.$store.getters.currentGroupState.groupName)
+        externalTransaction.setInScope(`groupId`, this.$store.state.currentGroupId)
+        const sentDate = new Date().toString()
+        externalTransaction.setInScope(`sentDate`, sentDate)
+        for (let member of this.members) {
+          // We need to have the latest mailbox attribute for the user
+          externalTransaction.setInScope(`${member.state.attributes.name}Mailbox`, member.state.attributes.mailbox)
+          externalTransaction.setInScope(member.state.attributes.name, member.state.attributes.name)
+          externalTransaction.addStep({
+            execute: invariants.postInvite,
+            description: `Send Invite to Mailbox for ${member.state.attributes.name}`,
+            args: {
+              Events: 'Events',
+              backend: 'backend',
+              mailboxId: `${member.state.attributes.name}Mailbox`,
+              sentDate: 'sentDate',
+              groupName: 'groupName',
+              groupId: 'groupId'
+            }
+          })
+          externalTransaction.addStep({
+            execute: invariants.recordInvite,
+            description: `Record Invite Sent to ${member.state.attributes.name}`,
+            args: {
+              Events: 'Events',
+              backend: 'backend',
+              inviteHash: `lastInviteHash`,
+              sentDate: 'sentDate',
+              username: member.state.attributes.name,
+              groupId: 'groupId'
+            }
+          })
+        }
+        transactionQueue.run(externalTransaction)
+        await externalTransaction.wait()
+        this.invited = true
+      } catch (ex) {
         console.error(ex)
         // TODO: Create More descriptive errors
         this.errorMsg = L('Failed to Invite Users')
-      })
-      externalTransaction.once('complete', () => {
-        this.invited = true
-      })
-      transactionQueue.run(externalTransaction)
+      }
     }
   }
 }

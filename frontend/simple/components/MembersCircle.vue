@@ -65,14 +65,14 @@ export default {
   },
   computed: {
     members () {
-      var members = this.$store.getters.membersForGroup()
+      var members = this.$store.getters.profilesForGroup()
       const usernames = Object.keys(members)
       const thetaIncr = Math.PI * 2.0 / usernames.length
       usernames.map(function (username, idx) {
         var mt = 10 * Math.sin(thetaIncr * idx) // r * sin(theta)
         var ml = 10 * Math.cos(thetaIncr * idx) // r * sin(theta)
         members[username] = {
-          attrs: members[username],
+          attrs: members[username].globalProfile,
           style: {
             marginTop: mt + 'em',
             marginLeft: ml + 'em'
@@ -81,7 +81,7 @@ export default {
       })
       return members
     },
-    ...mapGetters(['currentGroup'])
+    ...mapGetters(['currentGroupState'])
   },
   data () {
     return {}

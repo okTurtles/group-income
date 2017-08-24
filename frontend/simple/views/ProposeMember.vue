@@ -104,69 +104,68 @@ export default {
         console.log(err)
         this.userErrorMsg = L('Invalid Username')
       }
-      let externalInviteTransaction = createExternalStateTransaction('Invite New Member')
-      externalInviteTransaction.setInScope(`groupName`, this.$store.getters.currentGroup.groupName)
-      externalInviteTransaction.setInScope(`groupId`, this.$store.state.currentGroupId)
-      externalInviteTransaction.setInScope(`${member.state.attributes.name}Mailbox`, member.state.attributes.mailbox)
-      externalInviteTransaction.setInScope(member.state.attributes.name, member.state.attributes.name)
-      externalInviteTransaction.addStep({
-        execute: invariants.postInvite,
-        description: `Send Invite to Mailbox for ${member.state.attributes.name}`,
-        args: {
-          Events: 'Events',
-          backend: 'backend',
-          mailboxId: `${member.state.attributes.name}Mailbox`,
-          sentDate: 'sentDate',
-          groupName: 'groupName',
-          groupId: 'groupId'
-        }
-      })
-      externalInviteTransaction.addStep({
-        execute: invariants.recordInvite,
-        description: `Record Invite Sent to ${member.state.attributes.name}`,
-        args: {
-          Events: 'Events',
-          backend: 'backend',
-          inviteHash: `lastInviteHash`,
-          sentDate: 'voteDate',
-          username: member.state.attributes.name,
-          groupId: 'groupId'
-        }
-      })
+      try {
+        let externalInviteTransaction = createExternalStateTransaction('Invite New Member')
+        externalInviteTransaction.setInScope(`groupName`, this.$store.getters.currentGroupState.groupName)
+        externalInviteTransaction.setInScope(`groupId`, this.$store.state.currentGroupId)
+        externalInviteTransaction.setInScope(`${member.state.attributes.name}Mailbox`, member.state.attributes.mailbox)
+        externalInviteTransaction.setInScope(member.state.attributes.name, member.state.attributes.name)
+        externalInviteTransaction.addStep({
+          execute: invariants.postInvite,
+          description: `Send Invite to Mailbox for ${member.state.attributes.name}`,
+          args: {
+            Events: 'Events',
+            backend: 'backend',
+            mailboxId: `${member.state.attributes.name}Mailbox`,
+            sentDate: 'sentDate',
+            groupName: 'groupName',
+            groupId: 'groupId'
+          }
+        })
+        externalInviteTransaction.addStep({
+          execute: invariants.recordInvite,
+          description: `Record Invite Sent to ${member.state.attributes.name}`,
+          args: {
+            Events: 'Events',
+            backend: 'backend',
+            inviteHash: `lastInviteHash`,
+            sentDate: 'voteDate',
+            username: member.state.attributes.name,
+            groupId: 'groupId'
+          }
+        })
 
-      let externalTransaction = createExternalStateTransaction('Propose New Member')
-      externalTransaction.setInScope('proposal', template(L('This is a Vote for {name} to become a member of {group}'),
-            {name: member.state.attributes.displayName || member.state.attributes.name, group: this.contract.groupName}))
-      externalTransaction.setInScope('percentage', this.contract.memberApprovalPercentage * 0.01)
-      externalTransaction.setInScope('candidate', member.state.attributes.name)
-      externalTransaction.setInScope('transaction', JSON.stringify(externalInviteTransaction.toJSON()))
-      externalTransaction.setInScope('initiator', this.$store.state.loggedIn.name)
-      externalTransaction.setInScope('initiationDate', new Date().toString())
-      externalTransaction.setInScope(`groupId`, this.$store.state.currentGroupId)
-      externalTransaction.addStep({
-        execute: invariants.sendGroupProposal,
-        description: `Propose Membership for ${member.state.attributes.name}`,
-        args: {
-          Events: 'Events',
-          backend: 'backend',
-          percentage: 'percentage',
-          candidate: 'candidate',
-          transaction: 'transaction',
-          groupId: 'groupId',
-          initiator: 'initiator',
-          initiationDate: 'initiationDate'
-        }
-      })
-      externalTransaction.once('error', (ex) => {
-        externalTransaction.removeAllListeners('complete')
+        let externalTransaction = createExternalStateTransaction('Propose New Member')
+        externalTransaction.setInScope('proposal', template(L('This is a Vote for {name} to become a member of {group}'),
+              {name: member.state.attributes.displayName || member.state.attributes.name, group: this.contract.groupName}))
+        externalTransaction.setInScope('percentage', this.contract.memberApprovalPercentage * 0.01)
+        externalTransaction.setInScope('candidate', member.state.attributes.name)
+        externalTransaction.setInScope('transaction', JSON.stringify(externalInviteTransaction.toJSON()))
+        externalTransaction.setInScope('initiator', this.$store.state.loggedIn.name)
+        externalTransaction.setInScope('initiationDate', new Date().toString())
+        externalTransaction.setInScope(`groupId`, this.$store.state.currentGroupId)
+        externalTransaction.addStep({
+          execute: invariants.sendGroupProposal,
+          description: `Propose Membership for ${member.state.attributes.name}`,
+          args: {
+            Events: 'Events',
+            backend: 'backend',
+            percentage: 'percentage',
+            candidate: 'candidate',
+            transaction: 'transaction',
+            groupId: 'groupId',
+            initiator: 'initiator',
+            initiationDate: 'initiationDate'
+          }
+        })
+        transactionQueue.run(externalTransaction)
+        await externalTransaction.wait()
+        this.proposed = true
+      } catch (ex) {
         console.error(ex)
         // TODO: Create More descriptive errors
         this.userErrorMsg = L('Failed to Propose Users')
-      })
-      externalTransaction.once('complete', () => {
-        this.proposed = true
-      })
-      transactionQueue.run(externalTransaction)
+      }
     },
     remove (index) {
       this.members.splice(index, 1)

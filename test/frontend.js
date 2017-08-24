@@ -16,7 +16,7 @@ const fs = require('fs')
 
 describe('Frontend', function () {
   const n = Nightmare({
-    openDevTools: true,
+    // openDevTools: true,
     show: !!process.env.SHOW_BROWSER,
     height: 900
   })
@@ -35,7 +35,8 @@ describe('Frontend', function () {
       return n.goto(page('signup'))
         .should.finally.containEql({ code: 200, url: page('signup') })
         .then(() => {
-          return n.wait('.signup')
+          return n
+            .wait('.signup')
             .insert('input[name="name"]', 'George')
             .insert('input[name="email"]', 'george@lasvegas.com')
             .insert('input[name="password"]', '$$111$$')
@@ -53,18 +54,22 @@ describe('Frontend', function () {
     })
   })
 
-  describe('Event Log Test', function () {
-    it.skip('Should Append to the log', async function () {
+  // NOTE: we no longer do anything with the event log page
+  describe.skip('Event Log Test', function () {
+    it('Should Append to the log', async function () {
       this.timeout(5000) // this one takes a while for some reason
-      await n.goto(page('event-log'))
+      await n
+        .goto(page('event-log'))
         .should.finally.containEql({ code: 200, url: page('event-log') })
       const result = await n.wait('#random').evaluate(() => ({
         current: document.getElementById('LogPosition').innerText,
         eventCount: document.querySelectorAll('.event').length
       }))
-      await n.click('#random')
+      await n
+        .click('#random')
         .wait(() => +document.getElementById('count').innerText > 0)
-      const obj = await n.insert('textarea[name="payload"]', 'This is a test payment event')
+      const obj = await n
+        .insert('textarea[name="payload"]', 'This is a test payment event')
         .select('select[name="type"]', 'Payment')
         .click('#submit')
         .wait(() => +document.getElementById('count').innerText > 1)
@@ -77,11 +82,12 @@ describe('Frontend', function () {
     })
 
     // TODO: restore this based on the new TimeTravel
-    it.skip('Should Traverse Log', async function () {
+    it('Should Traverse Log', async function () {
       this.timeout(4000)
       await n.goto(page('event-log'))
       const prior = await n.evaluate(() => document.getElementById('LogPosition').innerText)
-      const initial = await n.wait('textarea[name="payload"]')
+      const initial = await n
+        .wait('textarea[name="payload"]')
         .insert('textarea[name="payload"]', 'This is a test Group Payment Event')
         .select('select[name="type"]', 'Payment')
         .click('#submit')
@@ -102,7 +108,8 @@ describe('Frontend', function () {
     it('Should register User', async function () {
       this.timeout(10000)
       await n.goto(page('signup')).wait('#name')
-      const signedup = await n.insert('#name', username)
+      const signedup = await n
+        .insert('#name', username)
         .insert('#email', `test@testgroupincome.com`)
         .insert('#password', 'testtest')
         .wait(() => !document.querySelector('button[type="submit"]').disabled)
@@ -110,47 +117,36 @@ describe('Frontend', function () {
         .wait('#HomeLogo')
         .evaluate(() => !!document.getElementById('HomeLogo'))
       should(signedup).equal(true)
-      /*
-      await n.insert('#name')
-        .insert('#email')
-        .insert('#password')
-        .wait(() => !document.getElementById('name').innerText &&
-        !document.getElementById('email').innerText &&
-        !document.getElementById('password').innerText)
-        */
     })
     it('Test Profile Change', async function () {
       this.timeout(10000)
-      let success = await n.click('#ProfileLink')
+      let success = await n
+        .click('#OpenProfileDropDown')
+        .click('#ProfileLink')
         .wait('input[name="profilePicture"]')
         .insert('textarea[name="bio"]', 'Born in a test case')
         .insert('input[name="displayName"]', 'Tester T Test')
         .insert('textarea[name="bio"]', 'Born in a test case')
         .click('#SaveProfileButton')
-        .wait(() => !!document.getElementById('ProfileSaveSuccess'))
-        .evaluate(() => !!document.getElementById('ProfileSaveSuccess'))
+        .wait('#ProfileSaveSuccess')
+        .exists('#ProfileSaveSuccess')
       should(success).equal(true)
       // TODO Make more complex. Unfortunately bugs in Nightmare prevent the clearing and re-entering of fields
     })
     it('Test Logout and Login', async function () {
-      this.timeout(6000)
+      this.timeout(10000)
       const loggedin = await n
-        // Logout
         .click('#LogoutBtn')
-
-        // Open login modal
-        .wait(() => Boolean(document.querySelector('#LoginBtn')))
+        .wait('#LoginBtn')
         .click('#LoginBtn')
-
-        // Login
-        .wait(() => Boolean(document.querySelector('#LoginModal.is-active')))
-        .wait('#LoginName')
+        .wait('#LoginModal.is-active')
         .insert('#LoginName', username)
         .insert('#LoginPassword', 'testtest')
         .click('#LoginButton')
-        .wait(() => Boolean(document.querySelector('#LoginResponse')))
-        .wait('#LogoutBtn')
-        .evaluate(() => Boolean(document.querySelector('#LogoutBtn')))
+        .wait('#LoginResponse')
+        .wait('#OpenProfileDropDown')
+        .click('#OpenProfileDropDown')
+        .exists('#LogoutBtn')
       should(loggedin).equal(true)
     })
 
@@ -179,11 +175,11 @@ describe('Frontend', function () {
   })
 
   describe('Group Creation Test', function () {
-    it('Create Additional User 2', async function () {
+    it('Create Additional User', async function () {
       this.timeout(8000)
-      const signedup = await n.wait('#LogoutBtn')
+      const signedup = await n
+        .wait('#LogoutBtn')
         .click('#LogoutBtn')
-        .wait(() => !document.querySelector('#LogoutBtn'))
         .wait('#SignupBtn')
         .click('#SignupBtn')
         .wait('#name')
@@ -193,13 +189,14 @@ describe('Frontend', function () {
         .wait(() => document.querySelector('button[type="submit"]') && !document.querySelector('button[type="submit"]').disabled)
         .click('button[type="submit"]')
         .wait('#HomeLogo')
-        .evaluate(() => Boolean(document.querySelector('#HomeLogo')))
+        .exists('#HomeLogo')
       should(signedup).equal(true)
     })
 
     it('Create Additional User 3', async function () {
       this.timeout(8000)
       const signedup = await n
+        .click('#OpenProfileDropDown')
         .click('#LogoutBtn')
         .wait('#SignupBtn')
         .click('#SignupBtn')
@@ -210,13 +207,14 @@ describe('Frontend', function () {
         .wait(() => document.querySelector('button[type="submit"]') && !document.querySelector('button[type="submit"]').disabled)
         .click('button[type="submit"]')
         .wait('#HomeLogo')
-        .evaluate(() => Boolean(document.querySelector('#HomeLogo')))
+        .exists('#HomeLogo')
       should(signedup).equal(true)
     })
 
     it('Create Additional User 4', async function () {
       this.timeout(8000)
       const signedup = await n
+        .click('#OpenProfileDropDown')
         .click('#LogoutBtn')
         .wait('#SignupBtn')
         .click('#SignupBtn')
@@ -227,13 +225,14 @@ describe('Frontend', function () {
         .wait(() => document.querySelector('button[type="submit"]') && !document.querySelector('button[type="submit"]').disabled)
         .click('button[type="submit"]')
         .wait('#HomeLogo')
-        .evaluate(() => Boolean(document.querySelector('#HomeLogo')))
+        .exists('#HomeLogo')
       should(signedup).equal(true)
     })
 
     it('Create Additional User 5', async function () {
       this.timeout(8000)
       const signedup = await n
+        .click('#OpenProfileDropDown')
         .click('#LogoutBtn')
         .wait('#SignupBtn')
         .click('#SignupBtn')
@@ -244,7 +243,7 @@ describe('Frontend', function () {
         .wait(() => document.querySelector('button[type="submit"]') && !document.querySelector('button[type="submit"]').disabled)
         .click('button[type="submit"]')
         .wait('#HomeLogo')
-        .evaluate(() => Boolean(document.querySelector('#HomeLogo')))
+        .exists('#HomeLogo')
       should(signedup).equal(true)
     })
 
@@ -256,14 +255,10 @@ describe('Frontend', function () {
         .insert('textarea[name="sharedValues"]', 'Testing this software')
         .insert('input[name="groupName"]', 'Test Group')
         .insert('input[name="incomeProvided"]', 200)
-        // .insert('input[name="proxyChangePercentage"]', 75)
-        // .insert('input[name="proxyMemberApprovalPercentage"]', 75)
-        // .insert('input[name="proxyMemberRemovalPercentage"]', 75)
         .select('select[name="contributionPrivacy"]', 'Very Private')
         .click('button[type="submit"]')
-        // Should get to invite page:
-        .wait(() => !!document.getElementById('addButton'))
-        .evaluate(() => !!document.getElementById('addButton'))
+        .wait('#addButton')
+        .exists('#addButton')
       should(created).equal(true)
     })
 
@@ -271,7 +266,7 @@ describe('Frontend', function () {
       this.timeout(4000)
 
       const count = await n
-        .wait(() => Boolean(document.querySelector('#addButton')))
+        .wait('#addButton')
         .insert('#searchUser', username)
         .click('#addButton')
         .wait(() => document.querySelectorAll('.member').length > 0)
@@ -295,8 +290,9 @@ describe('Frontend', function () {
     })
 
     it('Should Receive Message and Invite', async function () {
-      this.timeout(20000)
-      await n.goto(page('mailbox'))
+      this.timeout(10000)
+      await n
+        .goto(page('mailbox'))
         .wait('#Inbox')
         .click('#ComposeLink')
         .wait('#AddRecipient')
@@ -304,35 +300,27 @@ describe('Frontend', function () {
         .insert('#ComposedMessage', 'Best test ever!!')
         .click('#SendButton')
         .wait('#Inbox')
-
-        // Logout
+        .click('#OpenProfileDropDown')
         .click('#LogoutBtn')
-
-        // Login
         .wait('#LoginBtn')
         .click('#LoginBtn')
-        .wait(() => Boolean(document.querySelector('#LoginModal')))
+        .wait('#LoginModal')
         .insert('#LoginName', username)
         .insert('#LoginPassword', 'testtest')
         .click('#LoginButton')
-        .wait(() => !document.querySelector('#LoginModal.is-active'))
         .wait('#MailboxLink')
         .click('#MailboxLink')
-        .wait('#Inbox')
-        .wait(() => !!document.getElementById('MailboxLink'))
-        .click('#MailboxLink')
-        .wait(() => !!document.getElementById('Inbox'))
-        .wait(() => !!document.querySelector('.unread'))
-      const alert = await n.evaluate(() => !!document.getElementById('AlertNotification'))
+
+      const alert = await n.exists('#AlertNotification')
       should(alert).equal(true)
       const unread = await n.evaluate(() => document.querySelector('.unread') && +document.querySelector('.unread').innerText)
       should(unread).equal(2)
-      const hasInvite = await n.evaluate(() => !!document.getElementsByClassName('invite-message'))
+      const hasInvite = await n.exists('.invite-message')
       should(hasInvite).equal(true)
-      const hasMessage = await n.evaluate(() => !!document.getElementsByClassName('inbox-message'))
+      const hasMessage = await n.exists('.inbox-message')
       should(hasMessage).equal(true)
-      const newUnread = await n.click('.invite-message')
-        .wait('.unread')
+      const newUnread = await n
+        .click('.invite-message')
         .evaluate(() => +document.querySelector('.unread').innerText)
       should(newUnread).equal(1)
     })
@@ -347,21 +335,24 @@ describe('Frontend', function () {
         .wait('#AcceptLink')
         .click('#AcceptLink')
         .wait('#Inbox')
-        .evaluate(() => !!document.getElementById('Inbox'))
+        .exists('#Inbox')
       should(success).equal(true)
       // Logout
-      success = await n.click('#LogoutBtn')
-      // Open login modal
-        .wait(() => Boolean(document.querySelector('#LoginBtn')))
+      success = await n
+        .click('#OpenProfileDropDown')
+        .click('#LogoutBtn')
+        // Open login modal
+        .wait('#LoginBtn')
         .click('#LoginBtn')
         // Login
-        .wait(() => Boolean(document.querySelector('#LoginModal.is-active')))
+        .wait('#LoginModal.is-active')
         .wait('#LoginName')
         .insert('#LoginName', username + '2')
         .insert('#LoginPassword', 'testtest')
         .click('#LoginButton')
         .wait(() => !document.querySelector('#LoginModal.is-active'))
         .wait('#MailboxLink')
+      // BUG: Why isn't there an await here?
       // Accept invitation
       n.click('#MailboxLink')
         .wait('.invite-message')
@@ -370,57 +361,67 @@ describe('Frontend', function () {
         .click('#InviteLink')
         .wait('#AcceptLink')
         .click('#AcceptLink')
-        .wait(() => !!document.getElementById('Inbox'))
-        .evaluate(() => !!document.getElementById('Inbox'))
+        .wait('#Inbox')
+        .exists('#Inbox')
       should(!success).equal(true)
     })
     it('Should Vote on Additional Members', async function () {
-      this.timeout(60000)
-      await n.click('#LogoutBtn')
-      // Open login modal
-        .wait(() => Boolean(document.querySelector('#LoginBtn')))
+      this.timeout(10000)
+      await n
+        .click('#OpenProfileDropDown')
+        .click('#LogoutBtn')
+        // Open login modal
+        .wait('#LoginBtn')
         .click('#LoginBtn')
         // Login
-        .wait(() => Boolean(document.querySelector('#LoginModal.is-active')))
+        .wait('#LoginModal.is-active')
         .wait('#LoginName')
         .insert('#LoginName', username + '5')
         .insert('#LoginPassword', 'testtest')
         .wait('#LoginButton')
         .click('#LoginButton')
         .wait(() => !document.querySelector('#LoginModal.is-active'))
-      n.wait('#MailboxLink')
+      // BUG: Why isn't there an await here?
+      await n
+        .wait('#MailboxLink')
         .goto(page('invite'))
-        .wait(() => Boolean(document.querySelector('#ProposeButton')))
+        .wait('#ProposeButton')
         .insert('#searchUser', username + '3')
         .click('#ProposeButton')
-        .wait(() => !!document.querySelector('.notification.is-success'))
-        .evaluate(() => !!document.querySelector('.notification.is-success'))
+        .wait('.notification.is-success')
         // Logout
+        .click('#OpenProfileDropDown')
         .click('#LogoutBtn')
         // Open login modal
-        .wait(() => Boolean(document.querySelector('#LoginBtn')))
+        .wait('#LoginBtn')
         .click('#LoginBtn')
-            // Login
-      await n.wait(() => Boolean(document.querySelector('#LoginModal.is-active')))
+      // Login
+      await n
+        .wait('#LoginModal.is-active')
         .insert('#LoginName', username)
         .insert('#LoginPassword', 'testtest')
         .click('#LoginButton')
         .wait(() => !document.querySelector('#LoginModal.is-active'))
-      let success = await n.wait('#MailboxLink')
+
+      let success = await n
+        .wait('#MailboxLink')
         .click('#MailboxLink')
         .wait('.proposal-message')
         .click('.proposal-message')
         .wait('#ForLink')
         .click('#ForLink')
         .wait('#Inbox')
-        .evaluate(() => !!document.getElementById('Inbox'))
+        .exists('#Inbox')
       should(success).equal(true)
-      success = await n.click('#LogoutBtn')
-      // Open login modal
-        .wait(() => Boolean(document.querySelector('#LoginBtn')))
+
+      success = await n
+        .click('#OpenProfileDropDown')
+        .click('#LogoutBtn')
+        // Open login modal
+        .wait('#LoginBtn')
         .click('#LoginBtn')
         // Login
-        .wait(() => Boolean(document.querySelector('#LoginModal.is-active')))
+        .wait('#LoginModal.is-active')
         .insert('#LoginName', username + '2')
         .insert('#LoginPassword', 'testtest')
         .click('#LoginButton')
@@ -432,15 +433,17 @@ describe('Frontend', function () {
         .wait('#ForLink')
         .click('#ForLink')
         .wait('#Inbox')
-        .evaluate(() => !!document.getElementById('Inbox'))
+        .exists('#Inbox')
       should(success).equal(true)
 
-      success = await n.click('#LogoutBtn')
-      // Open login modal
-        .wait(() => Boolean(document.querySelector('#LoginBtn')))
+      success = await n
+        .click('#OpenProfileDropDown')
+        .click('#LogoutBtn')
+        // Open login modal
+        .wait('#LoginBtn')
         .click('#LoginBtn')
         // Login
-        .wait(() => Boolean(document.querySelector('#LoginModal.is-active')))
+        .wait('#LoginModal.is-active')
         .insert('#LoginName', username + '3')
         .insert('#LoginPassword', 'testtest')
         .click('#LoginButton')
@@ -449,7 +452,7 @@ describe('Frontend', function () {
         // Accept invitation
         .click('#MailboxLink')
         .wait('.invite-message')
-        .evaluate(() => !!document.querySelector('.invite-message'))
+        .exists('.invite-message')
       should(success).equal(true)
     })
   })
@@ -493,7 +496,8 @@ describe('Frontend', function () {
     })
   })
 
-  describe('EJS test page', function () {
+  // NOTE: we no longer support EJS
+  describe.skip('EJS test page', function () {
     it('List should have at least two items', function () {
       this.timeout(5000)
       return n.goto(page('ejs-page'))

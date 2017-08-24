@@ -25,7 +25,6 @@ var store // this is set and made the default export at the bottom of the file.
 
 Vue.events = new Vue() // global event bus, use: https://vuejs.org/v2/api/#Instance-Methods-Events
 const state = {
-  position: null, // TODO: get rid of this?
   currentGroupId: null,
   contracts: {}, // contractIds => { type:string, recentHash:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIds we've just published but haven't received back yet
@@ -75,10 +74,6 @@ const mutations = {
   },
   setCurrentGroupId (state, currentGroupId) {
     state.currentGroupId = currentGroupId
-    state.position = currentGroupId
-  },
-  setPosition (state, position) {
-    state.position = position
   },
   pending (state, contractId) {
     if (!state.contracts[contractId] && !state.pending.includes(contractId)) {
@@ -89,7 +84,7 @@ const mutations = {
 // https://vuex.vuejs.org/en/getters.html
 // https://vuex.vuejs.org/en/modules.html
 const getters = {
-  currentGroup (state) {
+  currentGroupState (state) {
     return state[state.currentGroupId]
   },
   mailboxContract (state, getters) {
@@ -109,9 +104,13 @@ const getters = {
   },
   // list of group names and contractIds
   groupsByName (state) {
-    return _.map(_.keys(_.pickBy(state.contracts, (value, key) => value.type === 'GroupContract')), key => ({groupName: state[key].groupName, contractId: key}))
+    return _.map(
+      _.keys(_.pickBy(state.contracts, (value, key) => value.type === 'GroupContract')),
+      key => ({groupName: state[key].groupName, contractId: key})
+    )
   },
   proposals (state) {
+    // TODO: clean this up
     let proposals = []
     if (!state.currentGroupId) { return proposals }
     for (let groupContractId of Object.keys(state.contracts)
@@ -126,25 +125,40 @@ const getters = {
             groupContractId,
             groupName: state[groupContractId].groupName,
             proposal,
-            initiationDate: state[ groupContractId ].proposals[ proposal ].initiationDate
+            initiationDate: state[groupContractId].proposals[proposal].initiationDate
           })
         }
       }
     }
     return proposals
   },
-  membersForGroup (state, getters) {
+  memberProfile (state, getters) {
+    return (username, groupId) => {
+      var profile = state[groupId || state.currentGroupId].profiles[username]
+      return profile && {
+        globalProfile: state[profile.contractId].attributes,
+        groupProfile: profile.groupProfile
+      }
+    }
+  },
+  profilesForGroup (state, getters) {
     return groupId => {
       groupId = groupId || state.currentGroupId
-      if (!groupId) return {}
-      return _.reduce(
-        state[groupId].profiles,
-        (result, value, key) => {
-          result[key] = state[value.contractId].attributes
+      return groupId && _.reduce(
+        Object.keys(state[groupId].profiles),
+        (result, username) => {
+          result[username] = getters.memberProfile(username, groupId)
           return result
         },
         {}
       )
+    }
+  },
+  memberCount (state, getters) {
+    return groupId => {
+      if (!groupId) groupId = state.currentGroupId
+      if (!groupId) return 0
+      return Object.keys(state[groupId].profiles).length
     }
   }
 }
@@ -182,16 +196,21 @@ const actions = {
     {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object},
     user: Object
   ) {
-    commit('login', user)
-    await dispatch('loadSettings')
+    const settings = await db.loadSettings(user.name)
+    if (settings) {
+      console.log('loadSettings:', settings)
+      commit('setCurrentGroupId', settings.currentGroupId)
+      commit('setContracts', settings.contracts || [])
+    }
     await db.saveCurrentUser(user.name)
     // This may seem unintuitive to use the state from the global store object
     // but the state object in scope is a copy that becomes stale if something modifies it
     // like an outside dispatch
     for (let key of Object.keys(store.state.contracts)) {
-      await backend.subscribe(key)
+      await backend.subscribe(key) // TODO: https://github.com/okTurtles/group-income-simple/issues/298
       await dispatch('syncContractWithServer', key)
     }
+    commit('login', user)
     Vue.events.$emit('login', user)
   },
   async logout (
@@ -201,10 +220,30 @@ const actions = {
     await dispatch('saveSettings', state)
     await db.clearCurrentUser()
     for (let key of Object.keys(state.contracts)) {
+      // TODO: https://github.com/okTurtles/group-income-simple/issues/298
       await backend.unsubscribe(key)
     }
     commit('logout')
     Vue.events.$emit('logout')
+  },
+  // persisting the state
+  async saveSettings (
+      {state}: {state: Object}
+  ) {
+    if (state.loggedIn) {
+      // var stateCopy = _.cloneDeep(state) // don't think this is necessary
+      // TODO: encrypt these
+      const settings = {
+        currentGroupId: state.currentGroupId,
+        contracts: Object.keys(state.contracts).map(contractId => ({
+          contractId,
+          ...state.contracts[contractId], // inserts `recentHash` and `type`
+          data: state[contractId]
+        }))
+      }
+      console.log('saveSettings:', settings)
+      await db.saveSettings(state.loggedIn.name, settings)
+    }
   },
   // this function is called from ./pubsub.js and is the entry point
   // for getting events into the log.
@@ -214,13 +253,13 @@ const actions = {
     {contractId, hash, entry}: {contractId: string, hash: string, entry: Object}
   ) {
     // verify we're expecting to hear from this contract
-    if (!state.pending.includes(contractId) && !state.contracts[ contractId ]) {
+    if (!state.pending.includes(contractId) && !state.contracts[contractId]) {
       // TODO: use a global notification system to both display a notification
       //       and throw an exception and write a log message.
       return console.error(`NOT EXPECTING EVENT!`, contractId, entry)
     }
     const type = entry.type
-    entry = (Events[ type ] || contracts[ type ]).fromObject(entry, hash)
+    entry = (Events[type] || contracts[type]).fromObject(entry, hash)
 
     if (Events.HashableContract.prototype.isPrototypeOf(entry)) {
       console.log(`handleEvent for new ${type}:`, entry)
@@ -230,9 +269,9 @@ const actions = {
         return console.error(`${type} has non-null parentHash!`, entry)
       }
     } else if (Events.HashableAction.prototype.isPrototypeOf(entry)) {
-      const contractType = state.contracts[ contractId ].type
+      const contractType = state.contracts[contractId].type
       console.log(`handleEvent for ${type} on ${contractType}:`, entry)
-      if (!contracts[ contractType ].isActionAllowed(state[ contractType ], entry)) {
+      if (!contracts[contractType].isActionAllowed(state[contractType], entry)) {
         // TODO: implement isActionAllowed in all actions, and handle error better
         // TODO: throw an exception?
         return console.error(`bad action ${type} on ${contractType} (${contractId}):`, entry)
@@ -246,76 +285,44 @@ const actions = {
     await db.addLogEntry(contractId, entry)
 
     if (contractId === hash) {
-      commit('addContract', { contractId, type, data: entry.toVuexState() })
+      commit('addContract', {contractId, type, data: entry.toVuexState()})
     }
-    commit('setRecentHash', { contractId, hash })
+    commit('setRecentHash', {contractId, hash})
 
     // TODO: all of these might throw an exception -- handle those appropriately!
     commit(`${contractId}/${type}`, { data: entry.data, hash })
-    if (store.state[ contractId ]._async.length) {
-      for (let type of store.state[ contractId ]._async) {
-        await dispatch(`${contractId}/${type}`, { type, store, data: entry.data, hash })
+    if (store.state[contractId]._async.length) {
+      for (let type of store.state[contractId]._async) {
+        await dispatch(`${contractId}/${type}`, {type, store, data: entry.data, hash})
       }
       commit(`${contractId}/clearAsync`)
     }
-    if (contractId === state.currentGroupId) {
-      // this is to support EventLog.vue + TimeTravel.vue
-      // it's not super important and we'll probably get rid of it later
-      commit('setPosition', hash)
-    }
 
     // handleEvent might be called very frequently, so save only after a pause
-    debouncedSave(dispatch, _.cloneDeep(store.state))
+    debouncedSave(dispatch)
     // let any listening components know that we've received, processed, and stored the event
     Vue.events.$emit(hash, contractId, entry)
     Vue.events.$emit('eventHandled', contractId, entry)
-  },
-  // persisting the state
-  async saveSettings (
-      {state}: {state: Object}
-  ) {
-    if (state.loggedIn) {
-      // TODO: encrypt these
-      const settings = {
-        position: state.position,
-        currentGroupId: state.currentGroupId,
-        contracts: Object.keys(state.contracts).map(contractId => ({
-          contractId,
-          ...state.contracts[ contractId ],
-          data: state[ contractId ]
-        }))
-      }
-      await db.saveSettings(state.loggedIn.name, settings)
-      console.log('saveSettings:', settings)
-    }
-  },
-  async loadSettings (
-    {commit, state}: {commit: Function, state: Object}
-  ) {
-    const settings = await db.loadSettings(state.loggedIn.name)
-    if (settings) {
-      console.log('loadSettings:', settings)
-      commit('setCurrentGroupId', settings.currentGroupId)
-      commit('setContracts', settings.contracts || [])
-    }
   }
 }
 const debouncedSave = debounce((dispatch, savedState) => dispatch('saveSettings', savedState), 500)
 
 store = new Vuex.Store({state, mutations, getters, actions})
-export default store
+store.subscribe(() => debouncedSave(store.dispatch))
+
 // This will build the current contract state from applying all its actions
 export async function latestContractState (contractId: string) {
   let events = await backend.eventsSince(contractId, contractId)
-  let [contract, ...actions] = events.map(e => {
-    return (Events[e.entry.type] ? Events[e.entry.type].fromObject(e.entry, e.hash) : contracts[e.entry.type].fromObject(e.entry, e.hash))
+  events = events.map(e => {
+    return (Events[e.entry.type] || contracts[e.entry.type]).fromObject(e.entry, e.hash)
   })
+  let contract = events[0]
   let state = contract.toVuexState()
-  contract.constructor.vuex.mutations[contract.constructor.name](state, {data: contract.data, hash: contractId})
-  actions.forEach(action => {
-    let type = action.constructor.name
-    contract.constructor.vuex.mutations[type](state, {data: action.data, hash: action.hash})
+  events.forEach(e => {
+    let type = e.constructor.name
+    contract.constructor.vuex.mutations[type](state, {data: e.data, hash: e.toHash()})
   })
   return state
 }
-store.subscribe((mutation, state) => debouncedSave(store.dispatch, state))
+
+export default store

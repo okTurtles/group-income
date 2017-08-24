@@ -178,7 +178,15 @@
     </div>
   </section>
 </template>
-
+<style scoped>
+  .button-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 20%;
+    margin: 30px 0 0 0;
+  }
+</style>
 <script>
 /* @flow */
 import * as Events from '../../../shared/events'
@@ -199,42 +207,41 @@ export default {
         document.querySelector(`input[name="${control}"], textarea[name="${control}"]`).scrollIntoView()
         return
       }
+      try {
+        this.errorMsg = null
+        let internalTransaction = createInternalStateTransaction('Create a Group')
+        const entry = new contracts.GroupContract({
+          authorizations: [Events.CanModifyAuths.dummyAuth()],
+          groupName: this.groupName,
+          sharedValues: this.sharedValues,
+          changePercentage: this.changePercentage,
+          memberApprovalPercentage: this.memberApprovalPercentage,
+          memberRemovalPercentage: this.memberRemovalPercentage,
+          incomeProvided: this.incomeProvided,
+          contributionPrivacy: this.contributionPrivacy,
+          founderUsername: this.$store.state.loggedIn.name,
+          founderIdentityContractId: this.$store.state.loggedIn.identityContractId
+        })
+        const hash = entry.toHash()
 
-      this.errorMsg = null
-      let internalTransaction = createInternalStateTransaction('Create a Group')
-      const entry = new contracts.GroupContract({
-        authorizations: [Events.CanModifyAuths.dummyAuth()],
-        groupName: this.groupName,
-        sharedValues: this.sharedValues,
-        changePercentage: this.changePercentage,
-        memberApprovalPercentage: this.memberApprovalPercentage,
-        memberRemovalPercentage: this.memberRemovalPercentage,
-        incomeProvided: this.incomeProvided,
-        contributionPrivacy: this.contributionPrivacy,
-        founderUsername: this.$store.state.loggedIn.name,
-        founderIdentityContractId: this.$store.state.loggedIn.identityContractId
-      })
-      const hash = entry.toHash()
+        internalTransaction.setInScope('contractId', hash)
+        internalTransaction.setInScope('entry', entry)
+        internalTransaction.addStep({ execute: invariants.backendSubscribe, description: 'Subscribe to Group Contract', args: { backend: 'backend', contractId: 'contractId' } })
+        internalTransaction.addStep({ execute: invariants.publishLogEntry, description: 'Publish Group Contract', args: { backend: 'backend', contractId: 'contractId', entry: 'entry' } })
 
-      internalTransaction.setInScope('contractId', hash)
-      internalTransaction.setInScope('entry', entry)
-      internalTransaction.addStep({ execute: invariants.backendSubscribe, description: 'Subscribe to Group Contract', args: { backend: 'backend', contractId: 'contractId' } })
-      internalTransaction.addStep({ execute: invariants.publishLogEntry, description: 'Publish Group Contract', args: { backend: 'backend', contractId: 'contractId', entry: 'entry' } })
-      internalTransaction.once('error', (error) => {
-        // clean up invalid event listeners in case transaction is rerun external to this vue
-        internalTransaction.removeAllListeners('complete')
-        console.error(error)
-        this.errorMsg = L('Failed to Create Group')
-      })
-      internalTransaction.once('complete', () => {
+        transactionQueue.run(internalTransaction)
+        await internalTransaction.wait()
         this.$store.commit('setCurrentGroupId', hash)
         // Take them to the invite group members page.
         this.$router.push({path: '/invite'})
-      })
-      transactionQueue.run(internalTransaction)
+      } catch (ex) {
+        console.error(ex)
+        this.errorMsg = L('Failed to Create Group')
+      }
     }
   },
   data () {
+    // TODO: wrap this in a 'form' parameter (#297)
     return {
       groupName: null,
       sharedValues: null,
@@ -250,13 +257,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.button-box {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 20%;
-  margin: 30px 0 0 0;
-}
-</style>

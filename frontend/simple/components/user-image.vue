@@ -1,24 +1,32 @@
 <template>
-    <img :src="url">
+    <img :src="pictureURL">
 </template>
 <script>
 import {namespace} from '../js/backend/hapi'
-import { latestContractState } from '../js/state'
+import {latestContractState} from '../js/state'
 export default {
   name: 'UserImage',
   props: ['username'],
   async mounted () {
-    let userContractId = await namespace.lookup(this.username)
-    if (this.$store.state[userContractId]) {
-      this.url = this.$store.state[userContractId].attributes.picture
-    } else {
+    if (!this.profile) {
+      let userContractId = await namespace.lookup(this.username)
       let state = await latestContractState(userContractId)
-      this.url = state.attributes.picture
+      this.ephemeral.url = state.attributes.picture
+    }
+  },
+  computed: {
+    profile () {
+      return this.$store.getters.memberProfile(this.username)
+    },
+    pictureURL () {
+      return this.profile ? this.profile.globalProfile.picture : this.ephemeral.url
     }
   },
   data () {
     return {
-      url: null
+      ephemeral: {
+        url: null
+      }
     }
   }
 }

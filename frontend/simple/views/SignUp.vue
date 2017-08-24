@@ -78,13 +78,11 @@
     </form>
   </section>
 </template>
-
 <style>
 .signup .level-item { margin-top: 10px; }
 .signup .level.top-align { align-items: flex-start; }
 
 </style>
-
 <script>
 import Vue from 'vue'
 import _ from 'lodash'
@@ -98,62 +96,52 @@ export default {
   name: 'SignUp',
   methods: {
     submit: async function () {
-      let user = new contracts.IdentityContract({
-        authorizations: [Events.CanModifyAuths.dummyAuth()],
-        attributes: [
-          {name: 'name', value: this.name},
-          {name: 'email', value: this.email},
-          {name: 'picture', value: `${window.location.origin}/simple/images/128x128.png`}
-        ]
-      })
-      let mailbox = new contracts.MailboxContract({
-        authorizations: [Events.CanModifyAuths.dummyAuth(user.toHash())]
-      })
+      try {
+        let user = new contracts.IdentityContract({
+          authorizations: [Events.CanModifyAuths.dummyAuth()],
+          attributes: [
+            {name: 'name', value: this.name},
+            {name: 'email', value: this.email},
+            {name: 'picture', value: `${window.location.origin}/simple/images/128x128.png`}
+          ]
+        })
+        let mailbox = new contracts.MailboxContract({
+          authorizations: [Events.CanModifyAuths.dummyAuth(user.toHash())]
+        })
 
-      let mailboxHash = mailbox.toHash()
-      let userHash = user.toHash()
+        let mailboxHash = mailbox.toHash()
+        let userHash = user.toHash()
 
-      // Do this mutation first in order to have events correctly save
-      this.$store.commit('login', {name: this.name, identityContractId: userHash})
+        // Do this mutation first in order to have events correctly save
+        this.$store.commit('login', {name: this.name, identityContractId: userHash})
 
-      // Create Transaction
-      let internalTransaction = createInternalStateTransaction('Subscribe to User\'s Contracts')
-      let externalTransaction = createExternalStateTransaction('Register a New User')
+        // Create Transaction
+        let internalTransaction = createInternalStateTransaction('Subscribe to User\'s Contracts')
+        let externalTransaction = createExternalStateTransaction('Register a New User')
 
-      // add variables to transaction scope
-      internalTransaction.setInScope('userHash', userHash)
-      externalTransaction.setInScope('userHash', userHash)
-      externalTransaction.setInScope('user', user)
-      externalTransaction.setInScope('mailboxHash', mailboxHash)
-      internalTransaction.setInScope('mailboxHash', mailboxHash)
-      externalTransaction.setInScope('mailbox', mailbox)
-      // Internal Step
-      internalTransaction.addStep({ execute: invariants.backendSubscribe, description: 'Subscribe to User Identity Contract', args: { backend: 'backend', contractId: 'userHash' } })
-      internalTransaction.addStep({ execute: invariants.backendSubscribe, description: 'Subscribe to Mailbox Contract', args: { backend: 'backend', contractId: 'mailboxHash' } })
-      // External Step
-      externalTransaction.addStep({ execute: invariants.publishLogEntry, description: 'Create User Identity Contract', args: { backend: 'backend', contractId: 'userHash', entry: 'user' } })
-      externalTransaction.addStep({ execute: invariants.publishLogEntry, description: 'Create Mailbox Contract', args: { backend: 'backend', contractId: 'mailboxHash', entry: 'mailbox' } })
-      externalTransaction.setInScope('mailboxAttribute', 'mailbox')
-      externalTransaction.addStep({ execute: invariants.identitySetAttribute, description: 'Set Mailbox Attribute', args: { Events: 'Events', backend: 'backend', contractId: 'userHash', name: 'mailboxAttribute', value: 'mailboxHash' } })
-      externalTransaction.setInScope('name', this.name)
-      externalTransaction.addStep({ execute: invariants.namespaceRegister, args: { namespace: 'namespace', name: 'name', value: 'userHash' } })
+        // add variables to transaction scope
+        internalTransaction.setInScope('userHash', userHash)
+        externalTransaction.setInScope('userHash', userHash)
+        externalTransaction.setInScope('user', user)
+        externalTransaction.setInScope('mailboxHash', mailboxHash)
+        internalTransaction.setInScope('mailboxHash', mailboxHash)
+        externalTransaction.setInScope('mailbox', mailbox)
+        // Internal Step
+        internalTransaction.addStep({ execute: invariants.backendSubscribe, description: 'Subscribe to User Identity Contract', args: { backend: 'backend', contractId: 'userHash' } })
+        internalTransaction.addStep({ execute: invariants.backendSubscribe, description: 'Subscribe to Mailbox Contract', args: { backend: 'backend', contractId: 'mailboxHash' } })
+        // External Step
+        externalTransaction.addStep({ execute: invariants.publishLogEntry, description: 'Create User Identity Contract', args: { backend: 'backend', contractId: 'userHash', entry: 'user' } })
+        externalTransaction.addStep({ execute: invariants.publishLogEntry, description: 'Create Mailbox Contract', args: { backend: 'backend', contractId: 'mailboxHash', entry: 'mailbox' } })
+        externalTransaction.setInScope('mailboxAttribute', 'mailbox')
+        externalTransaction.addStep({ execute: invariants.identitySetAttribute, description: 'Set Mailbox Attribute', args: { Events: 'Events', backend: 'backend', contractId: 'userHash', name: 'mailboxAttribute', value: 'mailboxHash' } })
+        externalTransaction.setInScope('name', this.name)
+        externalTransaction.addStep({ execute: invariants.namespaceRegister, args: { namespace: 'namespace', name: 'name', value: 'userHash' } })
 
-      // handle errors the same way for both transactions
-      let onError = (ex) => {
-        // clean up invalid event listeners in case transaction is rerun external to this vue
-        internalTransaction.removeAllListeners('complete')
-        externalTransaction.removeAllListeners('complete')
-        this.$store.commit('logout')
-        console.log(ex)
-        this.response = ex.toString()
-        this.error = true
-      }
-      internalTransaction.once('error', onError)
-      externalTransaction.once('error', onError)
-      internalTransaction.once('complete', () => {
+        transactionQueue.run(internalTransaction)
+        await internalTransaction.wait()
         transactionQueue.run(externalTransaction)
-      })
-      externalTransaction.once('complete', () => {
+        await externalTransaction.wait()
+
         this.response = 'success'
         this.$store.dispatch('login', {name: this.name, identityContractId: userHash})
         if (this.$route.query.next) {
@@ -164,9 +152,12 @@ export default {
           this.$router.push({path: '/'})
         }
         this.error = false
-      })
-
-      transactionQueue.run(internalTransaction)
+      } catch (ex) {
+        this.$store.commit('logout')
+        console.log(ex)
+        this.response = ex.toString()
+        this.error = true
+      }
     },
     forwardToLogin: function () {
       Vue.events.$emit('loginModal')

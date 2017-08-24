@@ -8,7 +8,6 @@ import pubsub from '../pubsub'
 import {sign} from '../../../../shared/functions'
 import * as Events from '../../../../shared/events'
 import {RESPONSE_TYPE} from '../../../../shared/constants'
-import queue from '../vuex-queue'
 
 const {HashableEntry} = Events
 // temporary identity for signing
@@ -43,7 +42,7 @@ const primus = pubsub({
       if (msg.type === RESPONSE_TYPE.ENTRY) {
         console.log('SOCKET GOT NEW LOG ENTRY:', msg)
         if (!msg.data) throw Error('malformed message: ' + JSON.stringify(msg))
-        queue.dispatch('handleEvent', msg.data)
+        store.dispatch('handleEvent', msg.data)
       } else {
         console.log('SOCKET UNHANDLED EVENT!', msg) // TODO: this
       }
