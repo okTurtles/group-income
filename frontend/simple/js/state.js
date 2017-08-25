@@ -7,7 +7,7 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import _ from 'lodash'
 import backend from '../js/backend'
-import sbl from '../../../shared/sbl'
+import sbp from '../../../shared/sbp'
 import * as db from './database'
 import * as Events from '../../../shared/events'
 import * as contracts from '../js/events'
@@ -16,7 +16,7 @@ import debounce from 'lodash/debounce'
 // for diff between 'lodash/map' and 'lodash/fp/map'
 // see: https://github.com/lodash/lodash/wiki/FP-Guide
 
-sbl.registerDomain('vuex', sbl.COMMON_MIXINS.V1.EVENTS)
+sbp.registerDomain('vuex', sbp.COMMON_MIXINS.V1.EVENTS)
 
 Vue.use(Vuex)
 var store // this is set and made the default export at the bottom of the file.
@@ -26,7 +26,7 @@ var store // this is set and made the default export at the bottom of the file.
 //       TO STORE AN INSTANCE OF A CLASS (LIKE A CONTRACT), IT WILL NOT STORE
 //       THE ACTUAL CONTRACT, BUT JSON.STRINGIFY(CONTRACT) INSTEAD!
 
-// TODO: use SBL instead of this
+// TODO: use SBP instead of this
 Vue.events = new Vue() // global event bus, use: https://vuejs.org/v2/api/#Instance-Methods-Events
 
 const state = {
@@ -57,7 +57,7 @@ const mutations = {
     const index = state.pending.indexOf(contractId)
     state.pending.includes(contractId) && state.pending.splice(index, 1)
     // calling this will make pubsub subscribe for events on `contractId`!
-    sbl('vuex/v1/events/emit', 'contractsModified', {add: contractId})
+    sbp('vuex/v1/events/emit', 'contractsModified', {add: contractId})
   },
   setRecentHash (state, {contractId, hash}) {
     state.contracts[contractId] && Vue.set(state.contracts[contractId], 'recentHash', hash)
@@ -66,7 +66,7 @@ const mutations = {
     store.unregisterModule(contractId)
     Vue.delete(state.contracts, contractId)
     // calling this will make pubsub unsubscribe for events on `contractId`!
-    sbl('vuex/v1/events/emit', 'contractsModified', {remove: contractId})
+    sbp('vuex/v1/events/emit', 'contractsModified', {remove: contractId})
   },
   setContracts (state, contracts) {
     for (let contractId of Object.keys(state.contracts)) {
