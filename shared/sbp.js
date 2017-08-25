@@ -10,11 +10,11 @@ type TypeDomain = {
 
 var domains: {[string]: TypeDomain} = {}
 var globalFilters: Array<TypeFilter> = []
-var pendingCalls = {} // allows sbl to be called regardless of module load order
+var pendingCalls = {} // allows sbp to be called regardless of module load order
 
 const DOMAIN_SELECTOR_REGEX = /^([^/]+)(.+)/
 
-function sbl (path: string, ...data?: Array<*>) {
+function sbp (path: string, ...data?: Array<*>) {
   var [, name, selector] = DOMAIN_SELECTOR_REGEX.exec(path)
   var domain = domains[name]
   // Filters can perform additional functions, and by returning `false` they
@@ -30,46 +30,46 @@ function sbl (path: string, ...data?: Array<*>) {
   return domain.selectors[selector].call(domain, ...data)
 }
 
-sbl.registerDomain = function (domain: string, selectors: {[string]: Function}) {
+sbp.registerDomain = function (domain: string, selectors: {[string]: Function}) {
   if (domains[domain]) throw new Error(`${domain} exists`)
   domains[domain] = {selectors, data: {}, domainFilters: [], selectorFilters: {}}
   // run any pendingCalls for this domain
   if (pendingCalls[domain]) {
     for (var [path, data] of pendingCalls[domain]) {
-      sbl(path, ...data)
+      sbp(path, ...data)
     }
     delete pendingCalls[domain]
   }
 }
 
-// During startup of app, use this instead of sbl function to call selectors
+// During startup of app, use this instead of sbp function to call selectors
 // on domains that haven't been registered yet. The selector gets run immediately
 // once the corresponding domain is registered via registerDomain.
-sbl.ready = function (path: string, ...data?: Array<*>) {
+sbp.ready = function (path: string, ...data?: Array<*>) {
   // a call might happen to a selector for domains that haven't been registered
   // yet, due to module load order. So we save them and run them later.
   var [, domain] = DOMAIN_SELECTOR_REGEX.exec(path)
-  if (domains[domain]) return sbl(path, ...data) // call if already available
+  if (domains[domain]) return sbp(path, ...data) // call if already available
   if (!pendingCalls[domain]) pendingCalls[domain] = []
   pendingCalls[domain].push([path, data])
 }
 
-sbl.addDomainFilter = function (domain: string, filter: TypeFilter) {
+sbp.addDomainFilter = function (domain: string, filter: TypeFilter) {
   domains[domain].domainFilters.push(filter)
 }
 
-sbl.setSelectorFilter = function (domain: string, selector: string, filter: TypeFilter) {
+sbp.setSelectorFilter = function (domain: string, selector: string, filter: TypeFilter) {
   if (domains[domain].selectorFilters[selector]) {
     throw new Error(`${domain}/${selector} filter exists`)
   }
   domains[domain].selectorFilters[selector] = filter
 }
 
-sbl.addGlobalFilter = function (filter: TypeFilter) {
+sbp.addGlobalFilter = function (filter: TypeFilter) {
   globalFilters.push(filter)
 }
 
-export default sbl
+export default sbp
 
 // =======================
 // Common selectors APIs
@@ -110,4 +110,4 @@ const COMMON_MIXINS = {
   }
 }
 
-sbl.COMMON_MIXINS = COMMON_MIXINS
+sbp.COMMON_MIXINS = COMMON_MIXINS
