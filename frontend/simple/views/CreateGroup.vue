@@ -223,13 +223,16 @@ export default {
           founderIdentityContractId: this.$store.state.loggedIn.identityContractId
         })
         const hash = entry.toHash()
-        await backend.subscribe(hash)
+        // TODO: convert this to SBL
         Vue.events.$once(hash, (contractId, entry) => {
           this.$store.commit('setCurrentGroupId', hash)
           // Take them to the invite group members page.
           this.$router.push({path: '/invite'})
         })
+        // TODO: convert this to SBL
         await backend.publishLogEntry(hash, entry)
+        // add to vuex and monitor this contract for updates
+        await this.$store.dispatch('syncContractWithServer', hash)
       } catch (error) {
         console.error(error)
         this.errorMsg = L('Failed to Create Group')

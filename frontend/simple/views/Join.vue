@@ -145,10 +145,12 @@ export default {
           },
           latest
         )
-        this.$store.commit('setCurrentGroupId', this.$route.query.groupId)
-        await backend.subscribe(this.$route.query.groupId)
-        await this.$store.dispatch('syncContractWithServer', this.$route.query.groupId)
+        // let the group know we've accepted their invite
         await backend.publishLogEntry(this.$route.query.groupId, acceptance)
+        // sync the group's contract state
+        await this.$store.dispatch('syncContractWithServer', this.$route.query.groupId)
+        // after syncing, we can set the current group
+        this.$store.commit('setCurrentGroupId', this.$route.query.groupId)
 
         // remove invite and return to mailbox
         this.$store.commit('deleteMessage', this.$route.query.inviteHash)
