@@ -163,11 +163,12 @@
 import _ from 'lodash'
 import * as Events from '../../../shared/events'
 import {namespace} from '../js/backend/hapi'
-import {latestContractState} from '../js/state'
 import L from '../js/translations'
-import {transactionQueue, createExternalStateTransaction} from '../js/transactions'
-import * as invariants from '../js/invariants'
+import {latestContractState} from '../js/state'
+import sbp from '../../../shared/sbp'
+
 const criteria = [(msg) => new Date(msg.sentDate)]
+
 export default {
   name: 'Mailbox',
   computed: {
@@ -212,22 +213,27 @@ export default {
     },
     send: async function () {
       try {
-        let externalTransaction = createExternalStateTransaction('Send Mail')
-        externalTransaction.setInScope('mailboxContractId', this.$store.state.loggedIn.identityContractId)
-        externalTransaction.setInScope(`date`, new Date().toString())
-        externalTransaction.setInScope(`from`, this.$store.state.loggedIn.name)
-        externalTransaction.setInScope(`message`, this.composedMessage)
+        let steps = [
+          { execute: 'setInScope',
+            args: {
+              mailboxContractId: this.$store.state.loggedIn.identityContractId,
+              date: new Date().toString(),
+              from: this.$store.state.loggedIn.name,
+              message: this.composedMessage
+            }
+          }
+        ]
 
         for (let i = 0; i < this.recipients.length; i++) {
           let recipient = this.recipients[i]
           let state = await latestContractState(recipient.contractId)
-          externalTransaction.setInScope(`${recipient}ContractId`, state.attributes.mailbox)
-          externalTransaction.addStep({
-            execute: invariants.sendMail,
+          let args = {}
+          args[`${recipient}ContractId`] = state.attributes.mailbox
+          steps.add({ execute: 'setInScope', args })
+          steps.push({
+            execute: 'contracts/mailbox/sendMail',
             description: `Send Messagage to ${this.recipients[i]}`,
             args: {
-              Events: 'Events',
-              backend: 'backend',
               contractId: `${recipient}ContractId`,
               data: 'date',
               message: 'message',
@@ -235,9 +241,7 @@ export default {
             }
           })
         }
-
-        transactionQueue.run(externalTransaction)
-        await externalTransaction.wait()
+        await sbp('transactions/run', 'Send Mail', true, steps)
         this.inboxMode()
       } catch (ex) {
         console.log(ex)

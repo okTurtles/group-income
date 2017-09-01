@@ -1,4 +1,4 @@
-<template>
+t<template>
   <section class="section full-screen">
 
     <div class="columns">
@@ -103,8 +103,7 @@
 import { latestContractState } from '../js/state'
 import { namespace } from '../js/backend/hapi'
 import L from '../js/translations'
-import {transactionQueue, createExternalStateTransaction} from '../js/transactions'
-import * as invariants from '../js/invariants'
+import sbp from '../../../shared/sbp'
 
 export default {
   name: 'Invite',
@@ -150,43 +149,45 @@ export default {
         this.errorMsg = null
         // TODO: as members are successfully invited display in a
         // seperate invitees grid and add them to some validation for duplicate invites
-
-        let externalTransaction = createExternalStateTransaction('Invite New Members')
-        externalTransaction.setInScope(`groupName`, this.$store.getters.currentGroupState.groupName)
-        externalTransaction.setInScope(`groupId`, this.$store.state.currentGroupId)
-        const sentDate = new Date().toString()
-        externalTransaction.setInScope(`sentDate`, sentDate)
+        let steps = [
+          { execute: 'setInScope',
+            args: {
+              groupName: this.$store.getters.currentGroupState.groupName,
+              groupId: this.$store.state.currentGroupId,
+              sentDate: new Date().toString()
+            }
+          }
+        ]
         for (let member of this.members) {
           // We need to have the latest mailbox attribute for the user
-          externalTransaction.setInScope(`${member.state.attributes.name}Mailbox`, member.state.attributes.mailbox)
-          externalTransaction.setInScope(member.state.attributes.name, member.state.attributes.name)
-          externalTransaction.addStep({
-            execute: invariants.postInvite,
+          let args = {}
+          console.log(member.state.attributes.name)
+          args[`${member.state.attributes.name}Mailbox`] = member.state.attributes.mailbox
+          args[member.state.attributes.name] = member.state.attributes.name
+          console.log(args)
+          steps.push({ execute: 'setInScope', args: args })
+          steps.push({
+            execute: 'contracts/mailbox/postInvite',
             description: `Send Invite to Mailbox for ${member.state.attributes.name}`,
             args: {
-              Events: 'Events',
-              backend: 'backend',
               mailboxId: `${member.state.attributes.name}Mailbox`,
               sentDate: 'sentDate',
               groupName: 'groupName',
               groupId: 'groupId'
             }
           })
-          externalTransaction.addStep({
-            execute: invariants.recordInvite,
+          steps.push({
+            execute: 'contracts/group/recordInvite',
             description: `Record Invite Sent to ${member.state.attributes.name}`,
             args: {
-              Events: 'Events',
-              backend: 'backend',
-              inviteHash: `lastInviteHash`,
+              inviteHash: 'lastInviteHash',
               sentDate: 'sentDate',
               username: member.state.attributes.name,
               groupId: 'groupId'
             }
           })
         }
-        transactionQueue.run(externalTransaction)
-        await externalTransaction.wait()
+        await sbp('transactions/run', 'Invite New Members', true, steps)
         this.invited = true
       } catch (ex) {
         console.error(ex)

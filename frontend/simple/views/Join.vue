@@ -99,9 +99,8 @@
 <script>
 import { latestContractState } from '../js/state'
 import L from '../js/translations'
-import {transactionQueue, createInternalStateTransaction} from '../js/transactions'
 import backend from '../js/backend/'
-import * as invariants from '../js/invariants'
+import sbp from '../../../shared/sbp'
 
 export default {
   name: 'Join',
@@ -138,28 +137,29 @@ export default {
         await backend.subscribe(this.$route.query.groupId)
         await this.$store.dispatch('syncContractWithServer', this.$route.query.groupId)
 
-        let internalTransaction = createInternalStateTransaction('Join Group')
-        internalTransaction.setInScope('contractId', this.$route.query.groupId)
-        internalTransaction.setInScope('username', this.$store.state.loggedIn.name)
-        internalTransaction.setInScope('identityContractId', this.$store.state.loggedIn.identityContractId)
-        internalTransaction.setInScope('inviteHash', this.$route.query.inviteHash)
-        internalTransaction.setInScope('acceptanceDate', new Date().toString())
-
-        internalTransaction.addStep({
-          execute: invariants.acceptInvite,
-          description: 'Accept Invitation to Group',
-          args: {
-            backend: 'backend',
-            Events: 'Events',
-            contractId: 'contractId',
-            username: 'username',
-            identityContractId: 'identityContractId',
-            inviteHash: 'inviteHash',
-            acceptanceDate: 'acceptanceDate'
+        await sbp('transactions/run', 'Join Group', true, [
+          { execute: 'setInScope',
+            args: {
+              contractId: this.$route.query.groupId,
+              username: this.$store.state.loggedIn.name,
+              identityContractId: this.$store.state.loggedIn.identityContractId,
+              inviteHash: this.$route.query.inviteHash,
+              acceptanceDate: new Date().toString()
+            }
+          },
+          {
+            execute: 'contracts/group/acceptInvite',
+            description: 'Accept Invitation to Group',
+            args: {
+              contractId: 'contractId',
+              username: 'username',
+              identityContractId: 'identityContractId',
+              inviteHash: 'inviteHash',
+              acceptanceDate: 'acceptanceDate'
+            }
           }
-        })
-        transactionQueue.run(internalTransaction)
-        await internalTransaction.wait()
+        ])
+        await this.$store.dispatch('syncContractWithServer', this.$route.query.groupId)
         // remove invite and return to mailbox
         this.$store.commit('deleteMessage', this.$route.query.inviteHash)
         this.$router.push({path: '/mailbox'})
@@ -171,25 +171,28 @@ export default {
     },
     decline: async function () {
       try {
-        let internalTransaction = createInternalStateTransaction('Reject Group')
-        internalTransaction.setInScope('contractId', this.$route.query.groupId)
-        internalTransaction.setInScope('username', this.$store.state.loggedIn.name)
-        internalTransaction.setInScope('inviteHash', this.$route.query.inviteHash)
-        internalTransaction.setInScope('declineDate', new Date().toString())
-        internalTransaction.addStep({
-          execute: invariants.declineInvite,
-          description: 'Decline Invitation to Group',
-          args: {
-            backend: 'backend',
-            Events: 'Events',
-            contractId: 'contractId',
-            username: 'username',
-            inviteHash: 'inviteHash',
-            declineDate: 'declineDate'
+        await sbp('transactions/run', 'Reject Group', true, [
+          {
+            execute: 'setInScope',
+            args: {
+              contractId: this.$route.query.groupId,
+              username: this.$store.state.loggedIn.name,
+              identityContractId: this.$store.state.loggedIn.identityContractId,
+              inviteHash: this.$route.query.inviteHash,
+              declineDate: new Date().toString()
+            }
+          },
+          {
+            execute: 'contracts/group/declineInvite',
+            description: 'Decline Invitation to Group',
+            args: {
+              contractId: 'contractId',
+              username: 'username',
+              inviteHash: 'inviteHash',
+              declineDate: 'declineDate'
+            }
           }
-        })
-        transactionQueue.run(internalTransaction)
-        await internalTransaction.wait()
+        ])
         // remove invite and return to mailbox
         this.$store.commit('deleteMessage', this.$route.query.inviteHash)
         this.$router.push({path: '/mailbox'})

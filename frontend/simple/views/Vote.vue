@@ -27,10 +27,10 @@
   </section>
 </template>
 <script>
-import * as invariants from '../js/invariants'
-import {transactionQueue, createExternalStateTransaction, Transaction} from '../js/transactions'
+import {transactionQueue, Transaction} from '../js/transactions'
 import L from '../js/translations'
 import _ from 'lodash'
+import sbp from '../../../shared/sbp'
 export default {
   name: 'Vote',
   computed: {
@@ -50,24 +50,18 @@ export default {
         this.errorMsg = null
         let proposal = _.cloneDeep(this.proposal)
         let threshold = Math.ceil(proposal.percentage * this.memberCount)
-        // Create a vote for the proposal
-        let externalTransaction = createExternalStateTransaction(`Vote For Proposal ${this.$route.query.proposalHash}`)
-        externalTransaction.setInScope('username', this.$store.state.loggedIn.name)
-        externalTransaction.setInScope('proposalHash', this.$route.query.proposalHash)
-        externalTransaction.setInScope('groupId', this.$route.query.groupId)
-        externalTransaction.addStep({
-          execute: invariants.voteForProposal,
-          description: `Vote For Proposal ${this.$route.query.proposalHash}`,
-          args: {
-            backend: 'backend',
-            Events: 'Events',
-            username: 'username',
-            proposalHash: 'proposalHash',
-            groupId: 'groupId'
+        await sbp('transactions/run', `Vote For Proposal ${this.$route.query.proposalHash}`, true, [
+          { execute: 'setInScope', args: { username: this.$store.state.loggedIn.name, proposalHash: this.$route.query.proposalHash, groupId: this.$route.query.groupId } },
+          {
+            execute: 'contracts/identity/voteForProposal',
+            description: `Vote For Proposal ${this.$route.query.proposalHash}`,
+            args: {
+              username: 'username',
+              proposalHash: 'proposalHash',
+              groupId: 'groupId'
+            }
           }
-        })
-        transactionQueue.run(externalTransaction)
-        await externalTransaction.wait()
+        ])
         if (proposal.for.length + 1 >= threshold) {
           let proposedTransaction = Transaction.fromJSON(JSON.parse(proposal.transaction))
           proposedTransaction.setInScope('voteDate', new Date().toString())
@@ -85,24 +79,18 @@ export default {
     async against () {
       try {
         this.errorMsg = null
-        // Create a vote for the proposal
-        let externalTransaction = createExternalStateTransaction(`Vote For Proposal ${this.$route.query.proposalHash}`)
-        externalTransaction.setInScope('username', this.$store.state.loggedIn.name)
-        externalTransaction.setInScope('proposalHash', this.$route.query.proposalHash)
-        externalTransaction.setInScope('groupId', this.$route.query.groupId)
-        externalTransaction.addStep({
-          execute: invariants.voteAgainstProposal,
-          description: `Vote Against Proposal ${this.$route.query.proposalHash}`,
-          args: {
-            backend: 'backend',
-            Events: 'Events',
-            username: 'username',
-            proposalHash: 'proposalHash',
-            groupId: 'groupId'
+        await sbp('transactions/run', `Vote Against Proposal ${this.$route.query.proposalHash}`, true, [
+          { execute: 'setInScope', args: { username: this.$store.state.loggedIn.name, proposalHash: this.$route.query.proposalHash, groupId: this.$route.query.groupId } },
+          {
+            execute: 'contracts/identity/voteAgainstProposal',
+            description: `Vote For Proposal ${this.$route.query.proposalHash}`,
+            args: {
+              username: 'username',
+              proposalHash: 'proposalHash',
+              groupId: 'groupId'
+            }
           }
-        })
-        transactionQueue.run(externalTransaction)
-        await externalTransaction.wait()
+        ])
         this.$router.push({path: '/mailbox'})
       } catch (ex) {
         console.error(ex)

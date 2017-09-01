@@ -6,7 +6,7 @@ import { namespace } from '../js/backend/hapi'
 import * as db from './database'
 import * as Events from '../../../shared/events'
 import * as contracts from '../js/events'
-import * as invariants from './invariants'
+import sbp from '../../../shared/sbp'
 
 let _steps = new WeakMap()
 let _scope = new WeakMap()
@@ -14,7 +14,7 @@ let _cursor = new WeakMap()
 let _description = new WeakMap()
 let _isRecoverable = new WeakMap()
 let _wait = new WeakMap()
-// Why would need this?  to make our retries grow in common sense ways
+// Why would need this?  to make our retries grow in a common sense ways
 function fibSequence (num) {
   let output = 0
   let sequence = [ 0, 1 ]
@@ -39,7 +39,7 @@ export class Transaction {
     let promise = new Promise((resolve, reject) => (res = resolve) && (rej = reject))
     _wait.set(this, {promise, resolve: res, reject: rej})
   }
-  get isRecoverable (){
+  get isRecoverable () {
     return _isRecoverable.get(this)
   }
   wait () {
@@ -59,20 +59,21 @@ export class Transaction {
   async run (serviceRegistry) {
     let steps = _steps.get(this)
     let scope = _scope.get(this)
-    let args = {}
     let cursor = _cursor.get(this)
     let wait = _wait.get(this)
     for (let i = cursor; i < steps.length; i++) {
+      let args = {}
       // Keep track of a cursor of what step in the transaction we are operating
       _cursor.set(this, i)
       let currentStep = steps[ i ]
       // Build arguments from services and scoped data
       for (let argPair of Object.entries(currentStep.args)) {
-        args[argPair[0]] = scope[argPair[1]] || serviceRegistry.get(argPair[1])
+        args[argPair[0]] = scope[argPair[1]]
       }
+      args.setInScope = this.setInScope
       // Attempt to run step
       try {
-        await invariants[currentStep.execute].call(this, args)
+        await sbp(currentStep.execute, args)
       } catch (ex) {
         wait.reject(new Error(`Step - ${currentStep.description || ''} failed with error, \n ${ex}`))
         throw ex
@@ -235,3 +236,42 @@ transactionQueue.registerService('namespace', namespace)
 transactionQueue.registerService('db', db)
 transactionQueue.registerService('Events', Events)
 transactionQueue.registerService('contracts', contracts)
+const api = {
+  '/run': function (description, recoverable, steps) {
+    // If there are arguments then they want to run a specific transaction
+    // Otherwise start the queue
+    if (arguments.length) {
+      let transaction = new Transaction(description, recoverable)
+      for (let step of steps) {
+        // You may set variables with an array of names/value or a single name/value
+        if (step.execute === 'setInScope') {
+          for (let key of Object.keys(step.args)) {
+            console.log(key, step.args[key])
+            transaction.setInScope(key, step.args[key])
+          }
+        } else {
+          transaction.addStep(step)
+        }
+      }
+      transactionQueue.run(transaction)
+      return transaction.wait()
+    } else {
+      transactionQueue.run()
+    }
+  },
+  '/enqueue': function (description, recoverable, steps) {
+    let transaction = new Transaction(description, recoverable)
+    for (let step of steps) {
+      // You may set variables with an array of names/value or a single name/value
+      if (step.execution === 'setInScope') {
+        for (let key of Object.keys(step.args)) {
+          transaction.setInScope(key, step.args[key])
+        }
+      } else {
+        transaction.addStep(step)
+      }
+    }
+    transactionQueue.enqueue(transaction)
+  }
+}
+sbp.registerDomain('transactions', api)

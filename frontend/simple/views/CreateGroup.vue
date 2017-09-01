@@ -192,8 +192,7 @@
 import * as Events from '../../../shared/events'
 import * as contracts from '../js/events'
 import L from '../js/translations'
-import * as invariants from '../js/invariants'
-import {transactionQueue, createInternalStateTransaction} from '../js/transactions'
+import sbp from '../../../shared/sbp'
 
 export default {
   name: 'CreateGroupView',
@@ -209,7 +208,6 @@ export default {
       }
       try {
         this.errorMsg = null
-        let internalTransaction = createInternalStateTransaction('Create a Group')
         const entry = new contracts.GroupContract({
           authorizations: [Events.CanModifyAuths.dummyAuth()],
           groupName: this.groupName,
@@ -224,13 +222,12 @@ export default {
         })
         const hash = entry.toHash()
 
-        internalTransaction.setInScope('contractId', hash)
-        internalTransaction.setInScope('entry', entry)
-        internalTransaction.addStep({ execute: invariants.backendSubscribe, description: 'Subscribe to Group Contract', args: { backend: 'backend', contractId: 'contractId' } })
-        internalTransaction.addStep({ execute: invariants.publishLogEntry, description: 'Publish Group Contract', args: { backend: 'backend', contractId: 'contractId', entry: 'entry' } })
+        await sbp('transactions/run', 'Create a Group', false, [
+          { execute: 'setInScope', args: { contractId: hash, entry } },
+          { execute: 'backend/publishLogEntry', description: 'Publish Group Contract', args: { contractId: 'contractId', entry: 'entry' } }
+        ])
 
-        transactionQueue.run(internalTransaction)
-        await internalTransaction.wait()
+        await this.$store.dispatch('syncContractWithServer', hash)
         this.$store.commit('setCurrentGroupId', hash)
         // Take them to the invite group members page.
         this.$router.push({path: '/invite'})

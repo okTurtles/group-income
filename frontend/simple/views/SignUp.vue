@@ -88,9 +88,9 @@ import Vue from 'vue'
 import _ from 'lodash'
 import * as Events from '../../../shared/events'
 import * as contracts from '../js/events'
-import {transactionQueue, createInternalStateTransaction, createExternalStateTransaction} from '../js/transactions'
-import * as invariants from '../js/invariants'
 import {namespace} from '../js/backend/hapi'
+import sbp from '../../../shared/sbp'
+
 // TODO: fix all this
 export default {
   name: 'SignUp',
@@ -114,36 +114,25 @@ export default {
 
         // Do this mutation first in order to have events correctly save
         this.$store.commit('login', {name: this.name, identityContractId: userHash})
-
-        // Create Transaction
-        let internalTransaction = createInternalStateTransaction('Subscribe to User\'s Contracts')
-        let externalTransaction = createExternalStateTransaction('Register a New User')
-
-        // add variables to transaction scope
-        internalTransaction.setInScope('userHash', userHash)
-        externalTransaction.setInScope('userHash', userHash)
-        externalTransaction.setInScope('user', user)
-        externalTransaction.setInScope('mailboxHash', mailboxHash)
-        internalTransaction.setInScope('mailboxHash', mailboxHash)
-        externalTransaction.setInScope('mailbox', mailbox)
-        // Internal Step
-        internalTransaction.addStep({ execute: invariants.backendSubscribe, description: 'Subscribe to User Identity Contract', args: { backend: 'backend', contractId: 'userHash' } })
-        internalTransaction.addStep({ execute: invariants.backendSubscribe, description: 'Subscribe to Mailbox Contract', args: { backend: 'backend', contractId: 'mailboxHash' } })
-        // External Step
-        externalTransaction.addStep({ execute: invariants.publishLogEntry, description: 'Create User Identity Contract', args: { backend: 'backend', contractId: 'userHash', entry: 'user' } })
-        externalTransaction.addStep({ execute: invariants.publishLogEntry, description: 'Create Mailbox Contract', args: { backend: 'backend', contractId: 'mailboxHash', entry: 'mailbox' } })
-        externalTransaction.setInScope('mailboxAttribute', 'mailbox')
-        externalTransaction.addStep({ execute: invariants.identitySetAttribute, description: 'Set Mailbox Attribute', args: { Events: 'Events', backend: 'backend', contractId: 'userHash', name: 'mailboxAttribute', value: 'mailboxHash' } })
-        externalTransaction.setInScope('name', this.name)
-        externalTransaction.addStep({ execute: invariants.namespaceRegister, args: { namespace: 'namespace', name: 'name', value: 'userHash' } })
-
-        transactionQueue.run(internalTransaction)
-        await internalTransaction.wait()
-        transactionQueue.run(externalTransaction)
-        await externalTransaction.wait()
-
-        this.response = 'success'
-        this.$store.dispatch('login', {name: this.name, identityContractId: userHash})
+        await sbp('transactions/run', 'Register a New User', true, [
+          { execute: 'setInScope', args: { mailbox, userHash, mailboxHash, user, name: this.name } },
+          { execute: 'backend/publishLogEntry', description: 'Create User Identity Contract', args: { contractId: 'userHash', entry: 'user' } },
+          { execute: 'backend/publishLogEntry', description: 'Create Mailbox Contract', args: { contractId: 'mailboxHash', entry: 'mailbox' } },
+          { execute: 'contracts/identity/setAttribute', description: 'Set Mailbox Attribute', args: { contractId: 'userHash', name: 'mailboxAttribute', value: 'mailboxHash' } },
+          { execute: 'namespace/register', args: { name: 'name', value: 'userHash' } }
+        ])
+        // call syncContractWithServer on all of these contracts to:
+        // 1. begin monitoring the contracts for updates via the pubsub system
+        // 2. add these contracts to our vuex state
+        for (let contract of [user, mailbox]) {
+          await this.$store.dispatch('syncContractWithServer', contract.toHash())
+        }
+        // TODO: Just add cryptographic magic
+        await this.$store.dispatch('login', {
+          name: this.name,
+          identityContractId: user.toHash()
+        })
+        this.response = 'success' // TODO: get rid of this and fix/update tests accordingly
         if (this.$route.query.next) {
           // TODO: get rid of this timeout and fix/update tests accordingly
           setTimeout(() => {

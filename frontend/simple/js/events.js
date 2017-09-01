@@ -1,6 +1,8 @@
 import Vue from 'vue'
+import backend from './backend'
 import * as Events from '../../../shared/events'
 import _ from 'lodash'
+import sbp from '../../../shared/sbp'
 
 export class GroupContract extends Events.HashableGroup {
   static vuex = GroupContract.Vuex({
@@ -129,3 +131,121 @@ export class MailboxContract extends Events.HashableMailbox {
     }
   })
 }
+
+const api = {
+  // TODO: add ability to unregister listeners
+  '/identity/setAttribute': async function ({contractId, name, value}) {
+    let latestHash = await backend.latestHash(contractId)
+    let attribute = new Events.HashableIdentitySetAttribute({attribute: {name, value}}, latestHash)
+    await backend.publishLogEntry(contractId, attribute)
+  },
+  '/group/saveGroupProfile ': async function ({contractId, username, profile}) {
+    let latestHash = await backend.latestHash(contractId)
+    let profileEntry = new Events.HashableGroupSetGroupProfile(
+      {
+        username: username,
+        json: JSON.stringify(profile)
+      },
+      latestHash
+    )
+    await backend.publishLogEntry(contractId, profileEntry)
+  },
+  '/group/saveGroupProfile': async function ({contractId, username, profile}) {
+    let latestHash = await backend.latestHash(contractId)
+    let profileEntry = new Events.HashableGroupSetGroupProfile(
+      {
+        username: username,
+        json: JSON.stringify(profile)
+      },
+      latestHash
+    )
+    await backend.publishLogEntry(contractId, profileEntry)
+  },
+  '/group/acceptInvite': async function ({contractId, username, profile}) {
+    let latestHash = await backend.latestHash(contractId)
+    let profileEntry = new Events.HashableGroupSetGroupProfile(
+      {
+        username: username,
+        json: JSON.stringify(profile)
+      },
+      latestHash
+    )
+    await backend.publishLogEntry(contractId, profileEntry)
+  },
+  '/group/declineInvite': async function ({contractId, username, inviteHash, declinedDate}) {
+    let latestHash = await backend.latestHash(contractId)
+    let declination = new Events.HashableGroupDeclineInvitation(
+      {
+        username,
+        inviteHash,
+        declinedDate
+      },
+      latestHash
+    )
+    await backend.publishLogEntry(contractId, declination)
+  },
+  '/group/recordInvite': async function ({groupId, username, inviteHash, sentDate}) {
+    let latestHash = await backend.latestHash(groupId)
+    const invited = new Events.HashableGroupRecordInvitation(
+      {
+        username,
+        inviteHash,
+        sentDate
+      },
+      latestHash
+    )
+    await backend.publishLogEntry(groupId, invited)
+  },
+  '/group/sendGroupProposal': async function ({proposal, percentage, candidate, transaction,
+    initiator, initiationDate, groupId}) {
+    let latestHash = await backend.latestHash(groupId)
+
+    const proposition = new Events.HashableGroupProposal({
+      proposal,
+      percentage,
+      candidate,
+      transaction,
+      initiator,
+      initiationDate
+    }, latestHash)
+    await backend.publishLogEntry(groupId, proposition)
+  },
+  '/group/voteForProposal': async function ({username, proposalHash, groupId}) {
+    let latestHash = await backend.latestHash(groupId)
+
+    let vote = new Events.HashableGroupVoteForProposal({ username, proposalHash }, latestHash)
+    await backend.publishLogEntry(groupId, vote)
+  },
+  '/group/voteAgainstProposal': async function ({username, proposalHash, groupId}) {
+    let latestHash = await backend.latestHash(groupId)
+
+    let vote = new Events.HashableGroupVoteAgainstProposal({ username, proposalHash }, latestHash)
+    await backend.publishLogEntry(groupId, vote)
+  },
+  '/mailbox/sendMail': async function ({contractId, date, from, message}) {
+    let latestHash = await backend.latestHash(contractId)
+    let mail = new Events.HashableMailboxPostMessage({
+      sentDate: date,
+      messageType: Events.HashableMailboxPostMessage.TypeMessage,
+      from: from,
+      message: message
+    }, latestHash)
+    await backend.publishLogEntry(contractId, mail)
+  },
+  '/mailbox/postInvite': async function ({mailboxId, sentDate, groupName, groupId, setInScope}) {
+    let latestHash = await backend.latestHash(mailboxId)
+    const invite = new Events.HashableMailboxPostMessage(
+      {
+        from: groupName,
+        headers: [groupId],
+        messageType: Events.HashableMailboxPostMessage.TypeInvite,
+        sentDate
+      },
+      latestHash
+    )
+    setInScope('lastInviteHash', invite.toHash())
+    await backend.publishLogEntry(mailboxId, invite)
+  }
+}
+
+sbp.registerDomain('contracts', api)

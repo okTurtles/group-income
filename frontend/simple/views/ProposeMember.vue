@@ -58,8 +58,8 @@ import { latestContractState } from '../js/state'
 import { namespace } from '../js/backend/hapi'
 import L from '../js/translations'
 import template from 'string-template'
-import {createExternalStateTransaction, transactionQueue} from '../js/transactions'
-import * as invariants from '../js/invariants'
+import {createExternalStateTransaction} from '../js/transactions'
+import sbp from '../../../shared/sbp'
 
 export default {
   name: 'ProposeMember',
@@ -105,13 +105,14 @@ export default {
         this.userErrorMsg = L('Invalid Username')
       }
       try {
-        let externalInviteTransaction = createExternalStateTransaction('Invite New Member')
-        externalInviteTransaction.setInScope(`groupName`, this.$store.getters.currentGroupState.groupName)
-        externalInviteTransaction.setInScope(`groupId`, this.$store.state.currentGroupId)
-        externalInviteTransaction.setInScope(`${member.state.attributes.name}Mailbox`, member.state.attributes.mailbox)
-        externalInviteTransaction.setInScope(member.state.attributes.name, member.state.attributes.name)
-        externalInviteTransaction.addStep({
-          execute: invariants.postInvite,
+        let proposedTransaction = createExternalStateTransaction('Invite New Member')
+        proposedTransaction.setInScope('groupName', this.$store.getters.currentGroupState.groupName)
+        proposedTransaction.setInScope('groupId', this.$store.state.currentGroupId)
+        proposedTransaction.setInScope(`${member.state.attributes.name}Mailbox`, member.state.attributes.mailbox)
+        proposedTransaction.setInScope(member.state.attributes.name, member.state.attributes.name)
+        proposedTransaction.setInScope('voteDate', null)
+        proposedTransaction.addStep({
+          execute: 'contracts/mailbox/postInvite',
           description: `Send Invite to Mailbox for ${member.state.attributes.name}`,
           args: {
             Events: 'Events',
@@ -122,8 +123,8 @@ export default {
             groupId: 'groupId'
           }
         })
-        externalInviteTransaction.addStep({
-          execute: invariants.recordInvite,
+        proposedTransaction.addStep({
+          execute: 'contracts/group/recordInvite',
           description: `Record Invite Sent to ${member.state.attributes.name}`,
           args: {
             Events: 'Events',
@@ -134,32 +135,32 @@ export default {
             groupId: 'groupId'
           }
         })
-
-        let externalTransaction = createExternalStateTransaction('Propose New Member')
-        externalTransaction.setInScope('proposal', template(L('This is a Vote for {name} to become a member of {group}'),
-              {name: member.state.attributes.displayName || member.state.attributes.name, group: this.contract.groupName}))
-        externalTransaction.setInScope('percentage', this.contract.memberApprovalPercentage * 0.01)
-        externalTransaction.setInScope('candidate', member.state.attributes.name)
-        externalTransaction.setInScope('transaction', JSON.stringify(externalInviteTransaction.toJSON()))
-        externalTransaction.setInScope('initiator', this.$store.state.loggedIn.name)
-        externalTransaction.setInScope('initiationDate', new Date().toString())
-        externalTransaction.setInScope(`groupId`, this.$store.state.currentGroupId)
-        externalTransaction.addStep({
-          execute: invariants.sendGroupProposal,
-          description: `Propose Membership for ${member.state.attributes.name}`,
-          args: {
-            Events: 'Events',
-            backend: 'backend',
-            percentage: 'percentage',
-            candidate: 'candidate',
-            transaction: 'transaction',
-            groupId: 'groupId',
-            initiator: 'initiator',
-            initiationDate: 'initiationDate'
+        await sbp('transactions/run', 'Propose New Member', true, [
+          { execute: 'setInScope',
+            args: {
+              proposal: template(L('This is a Vote for {name} to become a member of {group}'),
+              {name: member.state.attributes.displayName || member.state.attributes.name, group: this.contract.groupName}),
+              percentage: this.contract.memberApprovalPercentage * 0.01,
+              candidate: member.state.attributes.name,
+              transaction: JSON.stringify(proposedTransaction.toJSON()),
+              initiator: this.$store.state.loggedIn.name,
+              initiationDate: new Date().toString(),
+              groupId: this.$store.state.currentGroupId
+            }
+          },
+          {
+            execute: 'contracts/group/sendGroupProposal',
+            description: `Propose Membership for ${member.state.attributes.name}`,
+            args: {
+              percentage: 'percentage',
+              candidate: 'candidate',
+              transaction: 'transaction',
+              groupId: 'groupId',
+              initiator: 'initiator',
+              initiationDate: 'initiationDate'
+            }
           }
-        })
-        transactionQueue.run(externalTransaction)
-        await externalTransaction.wait()
+        ])
         this.proposed = true
       } catch (ex) {
         console.error(ex)

@@ -63,7 +63,6 @@ export async function acceptInviteV1 ({backend, Events, contractId, username, id
     },
     latestHash
   )
-  r
   await backend.publishLogEntry(contractId, acceptance)
 }
 export const declineInvite = 'declineInviteV1'
