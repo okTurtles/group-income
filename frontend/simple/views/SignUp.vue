@@ -145,6 +145,7 @@ export default {
         this.response = 'success'
         this.$store.dispatch('login', {name: this.name, identityContractId: userHash})
         if (this.$route.query.next) {
+          // TODO: get rid of this timeout and fix/update tests accordingly
           setTimeout(() => {
             this.$router.push({path: this.$route.query.next})
           }, 1000)
@@ -153,6 +154,7 @@ export default {
         }
         this.error = false
       } catch (ex) {
+        // TODO: this should be done via dispatch
         this.$store.commit('logout')
         console.log(ex)
         this.response = ex.toString()
@@ -182,6 +184,8 @@ export default {
     }, 700)
   },
   data () {
+    // TODO: wrap this in `form`
+    // see: https://github.com/okTurtles/group-income-simple/issues/297
     return {
       error: false,
       response: '',

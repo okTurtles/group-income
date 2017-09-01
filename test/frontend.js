@@ -7,6 +7,7 @@
  - https://github.com/segmentio/nightmare/blob/2771166/test/index.js#L43-L46
  */
 
+const chalk = require('chalk')
 const should = require('should')
 
 const Nightmare = require('nightmare')
@@ -20,14 +21,23 @@ describe('Frontend', function () {
     show: !!process.env.SHOW_BROWSER,
     height: 900
   })
+  n.on('page', (type, msg, stack) => {
+    if (type === 'error') {
+      console.log(chalk`{bold {red [NIGHTMARE]} {blue msg: ${msg}}}`, stack)
+    }
+  })
+  n.on('console', (type, args) => {
+    if (type === 'error') {
+      console.log(chalk`{bold {red [NIGHTMARE]} {blue console:}}`, args)
+    }
+  })
 
   after(() => { n.end() })
 
   it('Should start the backend server if necessary', function () {
     return require('../backend/index.js')
   })
-  let randInt = (min, max) => Math.floor(Math.random() * (max - min)) + min
-  let username = `testuser${randInt(0, 10000000)}${randInt(10000000, 20000000)}`
+  let username = `User`
 
   describe.skip('New user page', function () {
     it('Should create user George', function () {
@@ -197,6 +207,7 @@ describe('Frontend', function () {
       this.timeout(8000)
       const signedup = await n
         .click('#OpenProfileDropDown')
+        .wait('#LogoutBtn')
         .click('#LogoutBtn')
         .wait('#SignupBtn')
         .click('#SignupBtn')

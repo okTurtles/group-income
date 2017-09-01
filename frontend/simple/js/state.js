@@ -5,16 +5,19 @@
 
 import Vue from 'vue'
 import Vuex from 'vuex'
+import _ from 'lodash'
+import backend from '../js/backend'
+import sbp from '../../../shared/sbp'
 import * as db from './database'
 import * as Events from '../../../shared/events'
 import * as contracts from '../js/events'
-import backend from '../js/backend'
-// import queue from './vuex-queue'
-import _ from 'lodash'
+import debounce from 'lodash/debounce'
 // babel transforms lodash imports: https://github.com/lodash/babel-plugin-lodash#faq
 // for diff between 'lodash/map' and 'lodash/fp/map'
 // see: https://github.com/lodash/lodash/wiki/FP-Guide
-import debounce from 'lodash/debounce'
+
+sbp.registerDomain('vuex', sbp.COMMON_MIXINS.V1.EVENTS)
+
 Vue.use(Vuex)
 var store // this is set and made the default export at the bottom of the file.
           // we have it declared here to make it accessible in mutations
@@ -23,7 +26,9 @@ var store // this is set and made the default export at the bottom of the file.
 //       TO STORE AN INSTANCE OF A CLASS (LIKE A CONTRACT), IT WILL NOT STORE
 //       THE ACTUAL CONTRACT, BUT JSON.STRINGIFY(CONTRACT) INSTEAD!
 
+// TODO: use SBP instead of this
 Vue.events = new Vue() // global event bus, use: https://vuejs.org/v2/api/#Instance-Methods-Events
+
 const state = {
   currentGroupId: null,
   contracts: {}, // contractIds => { type:string, recentHash:string } (for contracts we've successfully subscribed to)
@@ -36,10 +41,12 @@ const state = {
 const mutations = {
   login (state, user) {
     state.loggedIn = user
+    Vue.events.$emit('login', user)
   },
   logout (state) {
     state.loggedIn = false
     state.currentGroupId = null
+    Vue.events.$emit('logout')
   },
   addContract (state, {contractId, recentHash, type, data}) {
     // "Mutations Follow Vue's Reactivity Rules" - important for modifying objects
@@ -49,6 +56,8 @@ const mutations = {
     // we've successfully received it back, so remove it from expectation pending
     const index = state.pending.indexOf(contractId)
     state.pending.includes(contractId) && state.pending.splice(index, 1)
+    // calling this will make pubsub subscribe for events on `contractId`!
+    sbp('vuex/v1/events/emit', 'contractsModified', {add: contractId})
   },
   setRecentHash (state, {contractId, hash}) {
     state.contracts[contractId] && Vue.set(state.contracts[contractId], 'recentHash', hash)
@@ -56,8 +65,13 @@ const mutations = {
   removeContract (state, contractId) {
     store.unregisterModule(contractId)
     Vue.delete(state.contracts, contractId)
+    // calling this will make pubsub unsubscribe for events on `contractId`!
+    sbp('vuex/v1/events/emit', 'contractsModified', {remove: contractId})
   },
   setContracts (state, contracts) {
+    for (let contractId of Object.keys(state.contracts)) {
+      mutations.removeContract(state, contractId)
+    }
     for (let contract of contracts) {
       mutations.addContract(state, contract)
     }
@@ -166,7 +180,7 @@ const getters = {
 const actions = {
   // Used to update contracts to the current state that the server is aware of
   async syncContractWithServer (
-    {dispatch, commit, state}: {dispatch: Function, state: Object},
+    {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object},
     contractId: string
   ) {
     let latest = await backend.latestHash(contractId)
@@ -207,11 +221,9 @@ const actions = {
     // but the state object in scope is a copy that becomes stale if something modifies it
     // like an outside dispatch
     for (let key of Object.keys(store.state.contracts)) {
-      await backend.subscribe(key) // TODO: https://github.com/okTurtles/group-income-simple/issues/298
       await dispatch('syncContractWithServer', key)
     }
     commit('login', user)
-    Vue.events.$emit('login', user)
   },
   async logout (
     {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object}
@@ -219,12 +231,10 @@ const actions = {
     debouncedSave.cancel()
     await dispatch('saveSettings', state)
     await db.clearCurrentUser()
-    for (let key of Object.keys(state.contracts)) {
-      // TODO: https://github.com/okTurtles/group-income-simple/issues/298
-      await backend.unsubscribe(key)
+    for (let contractId of Object.keys(state.contracts)) {
+      mutations.removeContract(state, contractId)
     }
     commit('logout')
-    Vue.events.$emit('logout')
   },
   // persisting the state
   async saveSettings (
