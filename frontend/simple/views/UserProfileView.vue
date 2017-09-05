@@ -178,8 +178,7 @@
 <script>
 import L from '../js/translations'
 import _ from 'lodash'
-import {transactionQueue, createExternalStateTransaction} from '../js/transactions'
-import * as invariants from '../js/invariants'
+import sbp from '../../../shared/sbp'
 
 export default {
   name: 'UserProfileView',
@@ -214,16 +213,19 @@ export default {
   methods: {
     async save () {
       try {
-        let externalTransaction = createExternalStateTransaction('Set Profile Attributes')
-        externalTransaction.setInScope('identityContractId', this.$store.state.loggedIn.identityContractId)
         this.profileSaved = false
+        let steps = [ { execute: 'setInScope', args: { identityContractId: this.$store.state.loggedIn.identityContractId } } ]
+
         for (let key of Object.keys(this.edited)) {
-          externalTransaction.setInScope(`${key}AttributeName`, key)
-          externalTransaction.setInScope(`${key}AttributeValue`, this.edited[key])
-          externalTransaction.addStep({ execute: invariants.identitySetAttribute, description: `Set ${key} attribute`, args: { Events: 'Events', backend: 'backend', contractId: 'identityContractId', name: `${key}AttributeName`, value: `${key}AttributeValue` } })
+          let args = {}
+          args[`${key}AttributeName`] = key
+          args[`${key}AttributeValue`] = this.edited[key]
+          steps.push({ execute: 'setInScope', args })
+          steps.push({ execute: 'contracts/v1/identity/setAttribute', description: `Set ${key} attribute`, args: { contractId: 'identityContractId', name: `${key}AttributeName`, value: `${key}AttributeValue` } })
         }
-        transactionQueue.run(externalTransaction)
-        await externalTransaction.wait()
+
+        await sbp('transactions/v1/run', 'Set Profile Attributes', true, steps)
+
         this.profileSaved = true
       } catch (ex) {
         console.log(ex)
@@ -239,13 +241,21 @@ export default {
     },
     async saveGroupProfile () {
       try {
-        let externalTransaction = createExternalStateTransaction('Save Group Profile')
-        externalTransaction.setInScope('username', this.$store.state.loggedIn.name)
-        externalTransaction.setInScope('profile', this.editedGroupProfile)
-        externalTransaction.setInScope('groupContractId', this.currentGroupContractId)
-        externalTransaction.addStep({ execute: invariants.saveGroupProfile, description: `Set ${this.$store.state.loggedIn.name}' Profile`, args: { Events: 'Events', backend: 'backend', contractId: 'groupContractId', username: 'username', profile: 'profile' } })
-        transactionQueue.run(externalTransaction)
-        await externalTransaction.wait()
+        this.groupProfileSaved = false
+        await sbp('transactions/v1/run', 'Save Group Profile', true, [
+          { execute: 'setInScope',
+            args: {
+              username: this.$store.state.loggedIn.name,
+              profile: this.editedGroupProfile,
+              groupContractId: this.currentGroupContractId
+            }
+          },
+          {
+            execute: 'contracts/v1/group/saveGroupProfile',
+            description: `Set ${this.$store.state.loggedIn.name}' Profile`,
+            args: { contractId: 'groupContractId', username: 'username', profile: 'profile' }
+          }
+        ])
         this.groupProfileSaved = true
       } catch (ex) {
         console.log(ex)

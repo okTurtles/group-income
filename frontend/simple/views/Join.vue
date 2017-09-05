@@ -99,7 +99,6 @@
 <script>
 import { latestContractState } from '../js/state'
 import L from '../js/translations'
-import backend from '../js/backend/'
 import sbp from '../../../shared/sbp'
 
 export default {
@@ -133,11 +132,7 @@ export default {
   methods: {
     accept: async function () {
       try {
-        this.$store.commit('setCurrentGroupId', this.$route.query.groupId)
-        await backend.subscribe(this.$route.query.groupId)
-        await this.$store.dispatch('syncContractWithServer', this.$route.query.groupId)
-
-        await sbp('transactions/run', 'Join Group', true, [
+        await sbp('transactions/v1/run', 'Join Group', true, [
           { execute: 'setInScope',
             args: {
               contractId: this.$route.query.groupId,
@@ -148,7 +143,7 @@ export default {
             }
           },
           {
-            execute: 'contracts/group/acceptInvite',
+            execute: 'contracts/v1/group/acceptInvite',
             description: 'Accept Invitation to Group',
             args: {
               contractId: 'contractId',
@@ -159,7 +154,10 @@ export default {
             }
           }
         ])
+        // sync the group's contract state
         await this.$store.dispatch('syncContractWithServer', this.$route.query.groupId)
+        // after syncing, we can set the current group
+        this.$store.commit('setCurrentGroupId', this.$route.query.groupId)
         // remove invite and return to mailbox
         this.$store.commit('deleteMessage', this.$route.query.inviteHash)
         this.$router.push({path: '/mailbox'})
@@ -171,7 +169,7 @@ export default {
     },
     decline: async function () {
       try {
-        await sbp('transactions/run', 'Reject Group', true, [
+        await sbp('transactions/v1/run', 'Reject Group', true, [
           {
             execute: 'setInScope',
             args: {
@@ -183,7 +181,7 @@ export default {
             }
           },
           {
-            execute: 'contracts/group/declineInvite',
+            execute: 'contracts/v1/group/declineInvite',
             description: 'Decline Invitation to Group',
             args: {
               contractId: 'contractId',

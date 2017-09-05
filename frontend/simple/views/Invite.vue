@@ -101,7 +101,6 @@ t<template>
 </style>
 <script>
 import { latestContractState } from '../js/state'
-import { namespace } from '../js/backend/hapi'
 import L from '../js/translations'
 import sbp from '../../../shared/sbp'
 
@@ -129,7 +128,7 @@ export default {
       }
 
       try {
-        const contractId = await namespace.lookup(this.searchUser)
+        const contractId = await sbp('namespace/v1/hapi/lookup', {name: this.searchUser})
         const state = await latestContractState(contractId)
         if (!this.members.find(member => member.state.attributes.name === this.searchUser)) {
           this.members.push({ state, contractId })
@@ -161,13 +160,11 @@ export default {
         for (let member of this.members) {
           // We need to have the latest mailbox attribute for the user
           let args = {}
-          console.log(member.state.attributes.name)
           args[`${member.state.attributes.name}Mailbox`] = member.state.attributes.mailbox
           args[member.state.attributes.name] = member.state.attributes.name
-          console.log(args)
           steps.push({ execute: 'setInScope', args: args })
           steps.push({
-            execute: 'contracts/mailbox/postInvite',
+            execute: 'contracts/v1/mailbox/postInvite',
             description: `Send Invite to Mailbox for ${member.state.attributes.name}`,
             args: {
               mailboxId: `${member.state.attributes.name}Mailbox`,
@@ -177,7 +174,7 @@ export default {
             }
           })
           steps.push({
-            execute: 'contracts/group/recordInvite',
+            execute: 'contracts/v1/group/recordInvite',
             description: `Record Invite Sent to ${member.state.attributes.name}`,
             args: {
               inviteHash: 'lastInviteHash',
@@ -187,7 +184,7 @@ export default {
             }
           })
         }
-        await sbp('transactions/run', 'Invite New Members', true, steps)
+        await sbp('transactions/v1/run', 'Invite New Members', true, steps)
         this.invited = true
       } catch (ex) {
         console.error(ex)

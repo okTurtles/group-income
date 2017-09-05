@@ -50,10 +50,10 @@ export default {
         this.errorMsg = null
         let proposal = _.cloneDeep(this.proposal)
         let threshold = Math.ceil(proposal.percentage * this.memberCount)
-        await sbp('transactions/run', `Vote For Proposal ${this.$route.query.proposalHash}`, true, [
+        await sbp('transactions/v1/run', `Vote For Proposal ${this.$route.query.proposalHash}`, true, [
           { execute: 'setInScope', args: { username: this.$store.state.loggedIn.name, proposalHash: this.$route.query.proposalHash, groupId: this.$route.query.groupId } },
           {
-            execute: 'contracts/identity/voteForProposal',
+            execute: 'contracts/v1/group/voteForProposal',
             description: `Vote For Proposal ${this.$route.query.proposalHash}`,
             args: {
               username: 'username',
@@ -79,10 +79,10 @@ export default {
     async against () {
       try {
         this.errorMsg = null
-        await sbp('transactions/run', `Vote Against Proposal ${this.$route.query.proposalHash}`, true, [
+        await sbp('transactions/v1/run', `Vote Against Proposal ${this.$route.query.proposalHash}`, true, [
           { execute: 'setInScope', args: { username: this.$store.state.loggedIn.name, proposalHash: this.$route.query.proposalHash, groupId: this.$route.query.groupId } },
           {
-            execute: 'contracts/identity/voteAgainstProposal',
+            execute: 'contracts/v1/identity/voteAgainstProposal',
             description: `Vote For Proposal ${this.$route.query.proposalHash}`,
             args: {
               username: 'username',

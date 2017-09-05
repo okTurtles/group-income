@@ -55,10 +55,9 @@
 
 <script>
 import { latestContractState } from '../js/state'
-import { namespace } from '../js/backend/hapi'
 import L from '../js/translations'
 import template from 'string-template'
-import {createExternalStateTransaction} from '../js/transactions'
+import {Transaction} from '../js/transactions'
 import sbp from '../../../shared/sbp'
 
 export default {
@@ -94,7 +93,7 @@ export default {
       }
       let member
       try {
-        const contractId = await namespace.lookup(this.searchUser)
+        const contractId = await sbp('namespace/v1/hapi/lookup', {name: this.searchUser})
         const state = await latestContractState(contractId)
         member = { state, contractId }
         this.searchUser = null
@@ -105,37 +104,33 @@ export default {
         this.userErrorMsg = L('Invalid Username')
       }
       try {
-        let proposedTransaction = createExternalStateTransaction('Invite New Member')
+        let proposedTransaction = new Transaction('Invite New Member', true)
         proposedTransaction.setInScope('groupName', this.$store.getters.currentGroupState.groupName)
         proposedTransaction.setInScope('groupId', this.$store.state.currentGroupId)
         proposedTransaction.setInScope(`${member.state.attributes.name}Mailbox`, member.state.attributes.mailbox)
         proposedTransaction.setInScope(member.state.attributes.name, member.state.attributes.name)
         proposedTransaction.setInScope('voteDate', null)
         proposedTransaction.addStep({
-          execute: 'contracts/mailbox/postInvite',
+          execute: 'contracts/v1/mailbox/postInvite',
           description: `Send Invite to Mailbox for ${member.state.attributes.name}`,
           args: {
-            Events: 'Events',
-            backend: 'backend',
             mailboxId: `${member.state.attributes.name}Mailbox`,
-            sentDate: 'sentDate',
+            sentDate: 'voteDate',
             groupName: 'groupName',
             groupId: 'groupId'
           }
         })
         proposedTransaction.addStep({
-          execute: 'contracts/group/recordInvite',
+          execute: 'contracts/v1/group/recordInvite',
           description: `Record Invite Sent to ${member.state.attributes.name}`,
           args: {
-            Events: 'Events',
-            backend: 'backend',
             inviteHash: `lastInviteHash`,
             sentDate: 'voteDate',
             username: member.state.attributes.name,
             groupId: 'groupId'
           }
         })
-        await sbp('transactions/run', 'Propose New Member', true, [
+        await sbp('transactions/v1/run', 'Propose New Member', true, [
           { execute: 'setInScope',
             args: {
               proposal: template(L('This is a Vote for {name} to become a member of {group}'),
@@ -149,7 +144,7 @@ export default {
             }
           },
           {
-            execute: 'contracts/group/sendGroupProposal',
+            execute: 'contracts/v1/group/sendGroupProposal',
             description: `Propose Membership for ${member.state.attributes.name}`,
             args: {
               percentage: 'percentage',

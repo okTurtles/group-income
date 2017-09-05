@@ -222,9 +222,9 @@ export default {
         })
         const hash = entry.toHash()
 
-        await sbp('transactions/run', 'Create a Group', false, [
+        await sbp('transactions/v1/run', 'Create a Group', false, [
           { execute: 'setInScope', args: { contractId: hash, entry } },
-          { execute: 'backend/publishLogEntry', description: 'Publish Group Contract', args: { contractId: 'contractId', entry: 'entry' } }
+          { execute: 'backend/v1/publishLogEntry', description: 'Publish Group Contract', args: { contractId: 'contractId', entry: 'entry' } }
         ])
 
         await this.$store.dispatch('syncContractWithServer', hash)

@@ -1,11 +1,7 @@
 'use strict'
 
 import localforage from 'localforage'
-import backend from '../js/backend'
-import { namespace } from '../js/backend/hapi'
-import * as db from './database'
 import * as Events from '../../../shared/events'
-import * as contracts from '../js/events'
 import sbp from '../../../shared/sbp'
 
 let _steps = new WeakMap()
@@ -70,7 +66,7 @@ export class Transaction {
       for (let argPair of Object.entries(currentStep.args)) {
         args[argPair[0]] = scope[argPair[1]]
       }
-      args.setInScope = this.setInScope
+      args.setInScope = this.setInScope.bind(this)
       // Attempt to run step
       try {
         await sbp(currentStep.execute, args)
@@ -168,18 +164,12 @@ class TransactionQueue {
     transactionQueue.push(transaction)
   }
 
-  registerService (name, service) {
-    let serviceRegistry = _serviceRegistry.get(this)
-    serviceRegistry.set(name, service)
-  }
-
   async run (transaction) {
     if (transaction) {
       this.enqueue(transaction)
     }
     if (!_isRunning.get(this)) {
       _isRunning.set(this, true)
-      let serviceRegistry = _serviceRegistry.get(this)
       let transactionQueue = _transactionQueue.get(this)
       let next = transactionQueue.pop()
       while (next) {
@@ -192,7 +182,7 @@ class TransactionQueue {
           await transactionDB.setItem('nextID', _transactionID.get(this))
         }
         try {
-          await next.run(serviceRegistry)
+          await next.run()
           let backup = await transactionDB.getItem(`${_transactionID.get(next)}`)
           if (backup) {
             let failures = _failures.get(this)
@@ -231,13 +221,9 @@ class TransactionQueue {
   }
 }
 export let transactionQueue = new TransactionQueue()
-transactionQueue.registerService('backend', backend)
-transactionQueue.registerService('namespace', namespace)
-transactionQueue.registerService('db', db)
-transactionQueue.registerService('Events', Events)
-transactionQueue.registerService('contracts', contracts)
+
 const api = {
-  '/run': function (description, recoverable, steps) {
+  '/v1/run': function (description, recoverable, steps) {
     // If there are arguments then they want to run a specific transaction
     // Otherwise start the queue
     if (arguments.length) {
@@ -259,7 +245,7 @@ const api = {
       transactionQueue.run()
     }
   },
-  '/enqueue': function (description, recoverable, steps) {
+  '/v1/enqueue': function (description, recoverable, steps) {
     let transaction = new Transaction(description, recoverable)
     for (let step of steps) {
       // You may set variables with an array of names/value or a single name/value

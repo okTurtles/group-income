@@ -46,7 +46,6 @@ const mutations = {
   logout (state) {
     state.loggedIn = false
     state.currentGroupId = null
-    Vue.events.$emit('logout')
   },
   addContract (state, {contractId, recentHash, type, data}) {
     // "Mutations Follow Vue's Reactivity Rules" - important for modifying objects
@@ -235,6 +234,7 @@ const actions = {
       mutations.removeContract(state, contractId)
     }
     commit('logout')
+    Vue.events.$emit('logout')
   },
   // persisting the state
   async saveSettings (

@@ -7,8 +7,8 @@
      .block      base/classes.sass (just adds 20px margin-bottom except for last)
      -->
     <form novalidate ref="form"
-          name="formData" class="container signup"
-          @submit.prevent="submit"
+      name="formData" class="container signup"
+      @submit.prevent="submit"
     >
       <div class="box centered" style="max-width:400px">
         <div class="level is-mobile">
@@ -88,7 +88,6 @@ import Vue from 'vue'
 import _ from 'lodash'
 import * as Events from '../../../shared/events'
 import * as contracts from '../js/events'
-import {namespace} from '../js/backend/hapi'
 import sbp from '../../../shared/sbp'
 
 // TODO: fix all this
@@ -102,7 +101,7 @@ export default {
           attributes: [
             {name: 'name', value: this.name},
             {name: 'email', value: this.email},
-            {name: 'picture', value: `${window.location.origin}/simple/images/128x128.png`}
+            {name: 'picture', value: `${window.location.origin}/simple/images/default-avatar.png`}
           ]
         })
         let mailbox = new contracts.MailboxContract({
@@ -112,14 +111,12 @@ export default {
         let mailboxHash = mailbox.toHash()
         let userHash = user.toHash()
 
-        // Do this mutation first in order to have events correctly save
-        this.$store.commit('login', {name: this.name, identityContractId: userHash})
-        await sbp('transactions/run', 'Register a New User', true, [
-          { execute: 'setInScope', args: { mailbox, userHash, mailboxHash, user, name: this.name } },
-          { execute: 'backend/publishLogEntry', description: 'Create User Identity Contract', args: { contractId: 'userHash', entry: 'user' } },
-          { execute: 'backend/publishLogEntry', description: 'Create Mailbox Contract', args: { contractId: 'mailboxHash', entry: 'mailbox' } },
-          { execute: 'contracts/identity/setAttribute', description: 'Set Mailbox Attribute', args: { contractId: 'userHash', name: 'mailboxAttribute', value: 'mailboxHash' } },
-          { execute: 'namespace/register', args: { name: 'name', value: 'userHash' } }
+        await sbp('transactions/v1/run', 'Register a New User', true, [
+          { execute: 'setInScope', args: { mailbox, userHash, mailboxHash, user, name: this.name, mailboxAttribute: 'mailbox' } },
+          { execute: 'backend/v1/publishLogEntry', description: 'Create User Identity Contract', args: { contractId: 'userHash', entry: 'user' } },
+          { execute: 'backend/v1/publishLogEntry', description: 'Create Mailbox Contract', args: { contractId: 'mailboxHash', entry: 'mailbox' } },
+          { execute: 'contracts/v1/identity/setAttribute', description: 'Set Mailbox Attribute', args: { contractId: 'userHash', name: 'mailboxAttribute', value: 'mailboxHash' } },
+          { execute: 'namespace/v1/hapi/register', args: { name: 'name', value: 'userHash' } }
         ])
         // call syncContractWithServer on all of these contracts to:
         // 1. begin monitoring the contracts for updates via the pubsub system
@@ -157,7 +154,7 @@ export default {
       this.nameAvailable = null
       if (this.name && !this.errors.has('name')) {
         try {
-          await namespace.lookup(this.name)
+          await sbp('namespace/v1/hapi/lookup', {name: this.name})
           this.nameAvailable = false
         } catch (ex) {
           if (ex.message === 'Not Found') {

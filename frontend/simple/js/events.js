@@ -1,5 +1,4 @@
 import Vue from 'vue'
-import backend from './backend'
 import * as Events from '../../../shared/events'
 import _ from 'lodash'
 import sbp from '../../../shared/sbp'
@@ -23,12 +22,15 @@ export class GroupContract extends Events.HashableGroup {
       },
       HashableGroupPayment (state, {data}) { state.payments.push(data) },
       HashableGroupProposal (state, {data, hash}) {
+        // TODO: this should be data instead of ...data to avoid conflict with neighboring properties
+        // TODO: convert to votes instead of for/against for future-proofing
         state.proposals[hash] = {...data, for: [data.initiator], against: []}
         let threshold = Math.ceil(state.proposals[hash].percentage * Object.keys(state.profiles).length)
         if (state.proposals[hash].for.length >= threshold) {
           Vue.delete(state.proposals, hash)
         }
       },
+      // TODO: rename this to just HashableGroupProposalVote, and switch off of the type of vote
       HashableGroupVoteForProposal (state, {data}) {
         if (state.proposals[data.proposalHash]) {
           state.proposals[data.proposalHash].for.push(data.username)
@@ -66,9 +68,9 @@ export class GroupContract extends Events.HashableGroup {
       },
       // TODO: remove group profile when leave group is implemented
       HashableGroupSetGroupProfile (state, {data}) {
-        data = JSON.parse(data.json) // TODO: data.json? why not just data? what else is in there?
+        let attributes = JSON.parse(data.json) // TODO: data.json? why not just data? what else is in there?
         var {groupProfile} = state.profiles[data.username]
-        state.profiles[data.username].groupProfile = _.merge(groupProfile, data)
+        state.profiles[data.username].groupProfile = _.merge(groupProfile, attributes)
       }
     },
     // !! IMPORANT!!
@@ -134,13 +136,13 @@ export class MailboxContract extends Events.HashableMailbox {
 
 const api = {
   // TODO: add ability to unregister listeners
-  '/identity/setAttribute': async function ({contractId, name, value}) {
-    let latestHash = await backend.latestHash(contractId)
+  '/v1/identity/setAttribute': async function ({contractId, name, value}) {
+    let latestHash = await sbp('backend/v1/latestHash', {contractId})
     let attribute = new Events.HashableIdentitySetAttribute({attribute: {name, value}}, latestHash)
-    await backend.publishLogEntry(contractId, attribute)
+    await sbp('backend/v1/publishLogEntry', {contractId, entry: attribute})
   },
-  '/group/saveGroupProfile ': async function ({contractId, username, profile}) {
-    let latestHash = await backend.latestHash(contractId)
+  '/v1/group/saveGroupProfile': async function ({contractId, username, profile}) {
+    let latestHash = await sbp('backend/v1/latestHash', {contractId})
     let profileEntry = new Events.HashableGroupSetGroupProfile(
       {
         username: username,
@@ -148,32 +150,23 @@ const api = {
       },
       latestHash
     )
-    await backend.publishLogEntry(contractId, profileEntry)
+    await sbp('backend/v1/publishLogEntry', {contractId, entry: profileEntry})
   },
-  '/group/saveGroupProfile': async function ({contractId, username, profile}) {
-    let latestHash = await backend.latestHash(contractId)
-    let profileEntry = new Events.HashableGroupSetGroupProfile(
+  '/v1/group/acceptInvite': async function ({contractId, identityContractId, inviteHash, username, acceptanceDate}) {
+    let latestHash = await sbp('backend/v1/latestHash', {contractId})
+    let acceptance = new Events.HashableGroupAcceptInvitation(
       {
-        username: username,
-        json: JSON.stringify(profile)
+        username,
+        identityContractId,
+        inviteHash,
+        acceptanceDate
       },
       latestHash
     )
-    await backend.publishLogEntry(contractId, profileEntry)
+    await sbp('backend/v1/publishLogEntry', {contractId, entry: acceptance})
   },
-  '/group/acceptInvite': async function ({contractId, username, profile}) {
-    let latestHash = await backend.latestHash(contractId)
-    let profileEntry = new Events.HashableGroupSetGroupProfile(
-      {
-        username: username,
-        json: JSON.stringify(profile)
-      },
-      latestHash
-    )
-    await backend.publishLogEntry(contractId, profileEntry)
-  },
-  '/group/declineInvite': async function ({contractId, username, inviteHash, declinedDate}) {
-    let latestHash = await backend.latestHash(contractId)
+  '/v1/group/declineInvite': async function ({contractId, username, inviteHash, declinedDate}) {
+    let latestHash = await sbp('backend/v1/latestHash', {contractId})
     let declination = new Events.HashableGroupDeclineInvitation(
       {
         username,
@@ -182,10 +175,10 @@ const api = {
       },
       latestHash
     )
-    await backend.publishLogEntry(contractId, declination)
+    await sbp('backend/v1/publishLogEntry', {contractId, entry: declination})
   },
-  '/group/recordInvite': async function ({groupId, username, inviteHash, sentDate}) {
-    let latestHash = await backend.latestHash(groupId)
+  '/v1/group/recordInvite': async function ({groupId, username, inviteHash, sentDate}) {
+    let latestHash = await sbp('backend/v1/latestHash', {contractId: groupId})
     const invited = new Events.HashableGroupRecordInvitation(
       {
         username,
@@ -194,11 +187,11 @@ const api = {
       },
       latestHash
     )
-    await backend.publishLogEntry(groupId, invited)
+    await sbp('backend/v1/publishLogEntry', {contractId: groupId, entry: invited})
   },
-  '/group/sendGroupProposal': async function ({proposal, percentage, candidate, transaction,
+  '/v1/group/sendGroupProposal': async function ({proposal, percentage, candidate, transaction,
     initiator, initiationDate, groupId}) {
-    let latestHash = await backend.latestHash(groupId)
+    let latestHash = await sbp('backend/v1/latestHash', {contractId: groupId})
 
     const proposition = new Events.HashableGroupProposal({
       proposal,
@@ -208,32 +201,32 @@ const api = {
       initiator,
       initiationDate
     }, latestHash)
-    await backend.publishLogEntry(groupId, proposition)
+    await sbp('backend/v1/publishLogEntry', {contractId: groupId, entry: proposition})
   },
-  '/group/voteForProposal': async function ({username, proposalHash, groupId}) {
-    let latestHash = await backend.latestHash(groupId)
+  '/v1/group/voteForProposal': async function ({username, proposalHash, groupId}) {
+    let latestHash = await sbp('backend/v1/latestHash', {contractId: groupId})
 
     let vote = new Events.HashableGroupVoteForProposal({ username, proposalHash }, latestHash)
-    await backend.publishLogEntry(groupId, vote)
+    await sbp('backend/v1/publishLogEntry', {contractId: groupId, entry: vote})
   },
-  '/group/voteAgainstProposal': async function ({username, proposalHash, groupId}) {
-    let latestHash = await backend.latestHash(groupId)
+  '/v1/group/voteAgainstProposal': async function ({username, proposalHash, groupId}) {
+    let latestHash = await sbp('backend/v1/latestHash', {contractId: groupId})
 
     let vote = new Events.HashableGroupVoteAgainstProposal({ username, proposalHash }, latestHash)
-    await backend.publishLogEntry(groupId, vote)
+    await sbp('backend/v1/publishLogEntry', {contractId: groupId, entry: vote})
   },
-  '/mailbox/sendMail': async function ({contractId, date, from, message}) {
-    let latestHash = await backend.latestHash(contractId)
+  '/v1/mailbox/sendMail': async function ({contractId, date, from, message}) {
+    let latestHash = await sbp('backend/v1/latestHash', {contractId})
     let mail = new Events.HashableMailboxPostMessage({
       sentDate: date,
       messageType: Events.HashableMailboxPostMessage.TypeMessage,
       from: from,
       message: message
     }, latestHash)
-    await backend.publishLogEntry(contractId, mail)
+    await sbp('backend/v1/publishLogEntry', {contractId, entry: mail})
   },
-  '/mailbox/postInvite': async function ({mailboxId, sentDate, groupName, groupId, setInScope}) {
-    let latestHash = await backend.latestHash(mailboxId)
+  '/v1/mailbox/postInvite': async function ({mailboxId, sentDate, groupName, groupId, setInScope}) {
+    let latestHash = await sbp('backend/v1/latestHash', {contractId: mailboxId})
     const invite = new Events.HashableMailboxPostMessage(
       {
         from: groupName,
@@ -244,7 +237,7 @@ const api = {
       latestHash
     )
     setInScope('lastInviteHash', invite.toHash())
-    await backend.publishLogEntry(mailboxId, invite)
+    await sbp('backend/v1/publishLogEntry', {contractId: mailboxId, entry: invite})
   }
 }
 

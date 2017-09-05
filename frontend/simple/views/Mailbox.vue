@@ -162,7 +162,6 @@
 <script>
 import _ from 'lodash'
 import * as Events from '../../../shared/events'
-import {namespace} from '../js/backend/hapi'
 import L from '../js/translations'
 import {latestContractState} from '../js/state'
 import sbp from '../../../shared/sbp'
@@ -229,9 +228,9 @@ export default {
           let state = await latestContractState(recipient.contractId)
           let args = {}
           args[`${recipient}ContractId`] = state.attributes.mailbox
-          steps.add({ execute: 'setInScope', args })
+          steps.push({ execute: 'setInScope', args })
           steps.push({
-            execute: 'contracts/mailbox/sendMail',
+            execute: 'contracts/v1/mailbox/sendMail',
             description: `Send Messagage to ${this.recipients[i]}`,
             args: {
               contractId: `${recipient}ContractId`,
@@ -241,7 +240,7 @@ export default {
             }
           })
         }
-        await sbp('transactions/run', 'Send Mail', true, steps)
+        await sbp('transactions/v1/run', 'Send Mail', true, steps)
         this.inboxMode()
       } catch (ex) {
         console.log(ex)
@@ -285,7 +284,7 @@ export default {
     addRecipient: async function () {
       if (this.recipient) {
         try {
-          let contractId = await namespace.lookup(this.recipient)
+          let contractId = await sbp('namespace/v1/hapi/lookup', {name: this.recipient})
           if (!this.recipients.find(recipient => recipient.name === this.recipient)) {
             this.recipients.push({name: this.recipient, contractId: contractId})
           }
