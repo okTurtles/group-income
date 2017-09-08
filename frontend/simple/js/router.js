@@ -104,7 +104,7 @@ var router = new Router({
       meta: {
         title: 'Group Dashboard'
       },
-      beforeEnter: createEnterGuards(loginGuard)
+      beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     {
       path: '/user',
@@ -126,7 +126,8 @@ var router = new Router({
       component: PayGroup,
       meta: {
         title: 'Pay Group'
-      }
+      },
+      beforeEnter: createEnterGuards(loginGuard, groupGuard, inviteGuard)
     },
     // NOTE: we no longer support ejs pages
     // {

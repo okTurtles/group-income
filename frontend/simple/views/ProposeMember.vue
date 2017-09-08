@@ -54,12 +54,11 @@
 </style>
 
 <script>
-import * as Events from '../../../shared/events'
-import backend from '../js/backend/'
 import { latestContractState } from '../js/state'
-import { namespace } from '../js/backend/hapi'
 import L from '../js/translations'
 import template from 'string-template'
+import {Transaction} from '../js/transactions'
+import sbp from '../../../shared/sbp'
 
 export default {
   name: 'ProposeMember',
@@ -67,8 +66,7 @@ export default {
     return {
       searchUser: null,
       userErrorMsg: '',
-      proposed: false,
-      self: false
+      proposed: false
     }
   },
   computed: {
@@ -84,8 +82,6 @@ export default {
       if (this.searchUser === this.$store.state.loggedIn.name) {
         this.userErrorMsg = L('Invalid User: Cannot Invite One\'s self')
         return
-      } else {
-        this.self = ''
       }
       // Check if this user has been added already
       if (Object.keys(this.contract.profiles).find(member => member === this.searchUser) ||
@@ -97,7 +93,7 @@ export default {
       }
       let member
       try {
-        const contractId = await namespace.lookup(this.searchUser)
+        const contractId = await sbp('namespace/v1/hapi/lookup', {name: this.searchUser})
         const state = await latestContractState(contractId)
         member = { state, contractId }
         this.searchUser = null
@@ -108,51 +104,61 @@ export default {
         this.userErrorMsg = L('Invalid Username')
       }
       try {
-        // We need to have the latest mailbox attribute for the user
-        const mailbox = await backend.latestHash(member.state.attributes.mailbox)
-        const sentDate = new Date().toString()
-
-        // We need to post the invite to the users' mailbox contract
-        const invite = new Events.HashableMailboxPostMessage(
-          {
-            from: this.$store.getters.currentGroupState.groupName,
-            headers: [this.$store.state.currentGroupId],
-            messageType: Events.HashableMailboxPostMessage.TypeInvite,
-            sentDate
-          },
-          mailbox
-        )
-        // We need to determine if the invitation needs a vote
-        const groupLatest = await backend.latestHash(this.$store.state.currentGroupId)
-
-        // Create the Record for the group
-        const invited = new Events.HashableGroupRecordInvitation(
-          {
+        let proposedTransaction = new Transaction('Invite New Member', true)
+        proposedTransaction.setInScope('groupName', this.$store.getters.currentGroupState.groupName)
+        proposedTransaction.setInScope('groupId', this.$store.state.currentGroupId)
+        proposedTransaction.setInScope(`${member.state.attributes.name}Mailbox`, member.state.attributes.mailbox)
+        proposedTransaction.setInScope(member.state.attributes.name, member.state.attributes.name)
+        proposedTransaction.setInScope('voteDate', null)
+        proposedTransaction.addStep({
+          execute: 'contracts/v1/mailbox/postInvite',
+          description: `Send Invite to Mailbox for ${member.state.attributes.name}`,
+          args: {
+            mailboxId: `${member.state.attributes.name}Mailbox`,
+            sentDate: 'voteDate',
+            groupName: 'groupName',
+            groupId: 'groupId'
+          }
+        })
+        proposedTransaction.addStep({
+          execute: 'contracts/v1/group/recordInvite',
+          description: `Record Invite Sent to ${member.state.attributes.name}`,
+          args: {
+            inviteHash: `lastInviteHash`,
+            sentDate: 'voteDate',
             username: member.state.attributes.name,
-            inviteHash: '{lastActionHash}', // these are place holders to be added later
-            sentDate: '{actionDate}'
+            groupId: 'groupId'
+          }
+        })
+        await sbp('transactions/v1/run', 'Propose New Member', true, [
+          { execute: 'setInScope',
+            args: {
+              proposal: template(L('This is a Vote for {name} to become a member of {group}'),
+              {name: member.state.attributes.displayName || member.state.attributes.name, group: this.contract.groupName}),
+              percentage: this.contract.memberApprovalPercentage * 0.01,
+              candidate: member.state.attributes.name,
+              transaction: JSON.stringify(proposedTransaction.toJSON()),
+              initiator: this.$store.state.loggedIn.name,
+              initiationDate: new Date().toString(),
+              groupId: this.$store.state.currentGroupId
+            }
           },
-          null
-        )
-        // Create the Proposal and add to it the record and invite actions
-        const proposal = new Events.HashableGroupProposal({
-          proposal: template(L('This is a Vote for {name} to become a member of {group}'),
-            {name: member.state.attributes.displayName || member.state.attributes.name, group: this.contract.groupName}
-          ),
-          // calculate the voting threshold from the group data
-          percentage: this.contract.memberApprovalPercentage * 0.01,
-          candidate: member.state.attributes.name,
-          actions: [
-           { contractId: member.state.attributes.mailbox, action: JSON.stringify(invite.toObject()) },
-           { contractId: this.$store.state.currentGroupId, action: JSON.stringify(invited.toObject()) }
-          ],
-          initiator: this.$store.state.loggedIn.name,
-          initiationDate: new Date().toString()
-        }, groupLatest)
-        await backend.publishLogEntry(this.$store.state.currentGroupId, proposal)
+          {
+            execute: 'contracts/v1/group/sendGroupProposal',
+            description: `Propose Membership for ${member.state.attributes.name}`,
+            args: {
+              percentage: 'percentage',
+              candidate: 'candidate',
+              transaction: 'transaction',
+              groupId: 'groupId',
+              initiator: 'initiator',
+              initiationDate: 'initiationDate'
+            }
+          }
+        ])
         this.proposed = true
-      } catch (error) {
-        console.error(error)
+      } catch (ex) {
+        console.error(ex)
         // TODO: Create More descriptive errors
         this.userErrorMsg = L('Failed to Propose Users')
       }

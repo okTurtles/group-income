@@ -1,4 +1,4 @@
-<template>
+t<template>
   <section class="section full-screen">
 
     <div class="columns">
@@ -100,11 +100,9 @@
 }
 </style>
 <script>
-import * as Events from '../../../shared/events'
-import backend from '../js/backend/'
 import { latestContractState } from '../js/state'
-import { namespace } from '../js/backend/hapi'
 import L from '../js/translations'
+import sbp from '../../../shared/sbp'
 
 export default {
   name: 'Invite',
@@ -130,7 +128,7 @@ export default {
       }
 
       try {
-        const contractId = await namespace.lookup(this.searchUser)
+        const contractId = await sbp('namespace/v1/hapi/lookup', {name: this.searchUser})
         const state = await latestContractState(contractId)
         if (!this.members.find(member => member.state.attributes.name === this.searchUser)) {
           this.members.push({ state, contractId })
@@ -150,38 +148,46 @@ export default {
         this.errorMsg = null
         // TODO: as members are successfully invited display in a
         // seperate invitees grid and add them to some validation for duplicate invites
+        let steps = [
+          { execute: 'setInScope',
+            args: {
+              groupName: this.$store.getters.currentGroupState.groupName,
+              groupId: this.$store.state.currentGroupId,
+              sentDate: new Date().toString()
+            }
+          }
+        ]
         for (let member of this.members) {
           // We need to have the latest mailbox attribute for the user
-          const mailbox = await backend.latestHash(member.state.attributes.mailbox)
-          const sentDate = new Date().toString()
-
-          // We need to post the invite to the users' mailbox contract
-          const invite = new Events.HashableMailboxPostMessage(
-            {
-              from: this.$store.getters.currentGroupState.groupName,
-              headers: [this.$store.state.currentGroupId],
-              messageType: Events.HashableMailboxPostMessage.TypeInvite,
-              sentDate
-            },
-            mailbox
-          )
-          await backend.publishLogEntry(member.state.attributes.mailbox, invite)
-
-          // We need to make a record of the invitation in the group's contract
-          const latest = await backend.latestHash(this.$store.state.currentGroupId)
-          const invited = new Events.HashableGroupRecordInvitation(
-            {
+          let args = {}
+          args[`${member.state.attributes.name}Mailbox`] = member.state.attributes.mailbox
+          args[member.state.attributes.name] = member.state.attributes.name
+          steps.push({ execute: 'setInScope', args: args })
+          steps.push({
+            execute: 'contracts/v1/mailbox/postInvite',
+            description: `Send Invite to Mailbox for ${member.state.attributes.name}`,
+            args: {
+              mailboxId: `${member.state.attributes.name}Mailbox`,
+              sentDate: 'sentDate',
+              groupName: 'groupName',
+              groupId: 'groupId'
+            }
+          })
+          steps.push({
+            execute: 'contracts/v1/group/recordInvite',
+            description: `Record Invite Sent to ${member.state.attributes.name}`,
+            args: {
+              inviteHash: 'lastInviteHash',
+              sentDate: 'sentDate',
               username: member.state.attributes.name,
-              inviteHash: invite.toHash(),
-              sentDate
-            },
-            latest
-          )
-          await backend.publishLogEntry(this.$store.state.currentGroupId, invited)
+              groupId: 'groupId'
+            }
+          })
         }
+        await sbp('transactions/v1/run', 'Invite New Members', true, steps)
         this.invited = true
-      } catch (error) {
-        console.error(error)
+      } catch (ex) {
+        console.error(ex)
         // TODO: Create More descriptive errors
         this.errorMsg = L('Failed to Invite Users')
       }

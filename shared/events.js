@@ -38,9 +38,13 @@ export class Hashable {
   }
   // https://flowtype.org/docs/classes.html#this-type
   static fromObject (obj, hash): this {
-    var instance = new this()
-    instance._obj = obj
+    var instance = this.fromJSON(obj)
     if (instance.toHash() !== hash) throw Error(`hash obj: ${instance.toHash()} != hash: ${hash}`)
+    return instance
+  }
+  static fromJSON (json): this {
+    var instance = new this()
+    instance._obj = json
     return instance
   }
   static fromProtobuf (buffer, hash) {
@@ -87,6 +91,14 @@ export class HashableEntry extends Hashable {
     msg.add(new Field('data', 4, msgData.name))
     root.add(msg)
     return msg
+  }
+  static isHashableEntry (obj) {
+    if (!obj) return false
+    if (typeof obj.version !== 'number') return false
+    if (typeof obj.parentHash !== 'string') return false
+    if (!obj.data) return false
+    if (typeof obj.type !== 'string') return false
+    return true
   }
   constructor (data: JSONObject = {}, parentHash?: string) {
     super({
@@ -272,18 +284,12 @@ export class HashableGroupPayment extends HashableAction {
     ['payment', 'string'] // TODO: change to 'double' and add other fields
   ])
 }
-export class Action extends Hashable {
-  static fields = Action.Fields([
-    ['contractId', 'string'],
-    ['action', 'string']
-  ])
-}
 
 export class HashableGroupProposal extends HashableAction {
   static fields = HashableGroupProposal.Fields([
     ['proposal', 'string'],
     ['percentage', 'float'],
-    ['actions', 'Action', 'repeated'],
+    ['transaction', 'string'],
     ['candidate', 'string'],
     ['initiator', 'string'],
     ['initiationDate', 'string'],

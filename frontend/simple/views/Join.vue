@@ -97,10 +97,9 @@
     </section>
 </template>
 <script>
-import * as Events from '../../../shared/events'
-import backend from '../js/backend/'
 import { latestContractState } from '../js/state'
 import L from '../js/translations'
+import sbp from '../../../shared/sbp'
 
 export default {
   name: 'Join',
@@ -133,25 +132,32 @@ export default {
   methods: {
     accept: async function () {
       try {
-        // post acceptance event to the group contract
-        this.errorMsg = null
-        let latest = await backend.latestHash(this.$route.query.groupId)
-        let acceptance = new Events.HashableGroupAcceptInvitation(
-          {
-            username: this.$store.state.loggedIn.name,
-            identityContractId: this.$store.state.loggedIn.identityContractId,
-            inviteHash: this.$route.query.inviteHash,
-            acceptanceDate: new Date()
+        await sbp('transactions/v1/run', 'Join Group', true, [
+          { execute: 'setInScope',
+            args: {
+              contractId: this.$route.query.groupId,
+              username: this.$store.state.loggedIn.name,
+              identityContractId: this.$store.state.loggedIn.identityContractId,
+              inviteHash: this.$route.query.inviteHash,
+              acceptanceDate: new Date().toString()
+            }
           },
-          latest
-        )
-        // let the group know we've accepted their invite
-        await backend.publishLogEntry(this.$route.query.groupId, acceptance)
+          {
+            execute: 'contracts/v1/group/acceptInvite',
+            description: 'Accept Invitation to Group',
+            args: {
+              contractId: 'contractId',
+              username: 'username',
+              identityContractId: 'identityContractId',
+              inviteHash: 'inviteHash',
+              acceptanceDate: 'acceptanceDate'
+            }
+          }
+        ])
         // sync the group's contract state
         await this.$store.dispatch('syncContractWithServer', this.$route.query.groupId)
         // after syncing, we can set the current group
         this.$store.commit('setCurrentGroupId', this.$route.query.groupId)
-
         // remove invite and return to mailbox
         this.$store.commit('deleteMessage', this.$route.query.inviteHash)
         this.$router.push({path: '/mailbox'})
@@ -163,21 +169,30 @@ export default {
     },
     decline: async function () {
       try {
-        // post decline event
-        this.errorMsg = null
-        let latest = await backend.latestHash(this.$route.query.groupId)
-        let declination = new Events.HashableGroupDeclineInvitation(
+        await sbp('transactions/v1/run', 'Reject Group', true, [
           {
-            username: this.$store.state.loggedIn.name,
-            inviteHash: this.$route.query.inviteHash,
-            declinedDate: new Date()
+            execute: 'setInScope',
+            args: {
+              contractId: this.$route.query.groupId,
+              username: this.$store.state.loggedIn.name,
+              identityContractId: this.$store.state.loggedIn.identityContractId,
+              inviteHash: this.$route.query.inviteHash,
+              declineDate: new Date().toString()
+            }
           },
-          latest
-        )
-        await backend.publishLogEntry(this.$route.query.groupId, declination)
-
+          {
+            execute: 'contracts/v1/group/declineInvite',
+            description: 'Decline Invitation to Group',
+            args: {
+              contractId: 'contractId',
+              username: 'username',
+              inviteHash: 'inviteHash',
+              declineDate: 'declineDate'
+            }
+          }
+        ])
         // remove invite and return to mailbox
-        this.$store.commit('deleteMail', this.$route.query.inviteHash)
+        this.$store.commit('deleteMessage', this.$route.query.inviteHash)
         this.$router.push({path: '/mailbox'})
       } catch (ex) {
         console.log(ex)

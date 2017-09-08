@@ -17,6 +17,7 @@ const DOMAIN_SELECTOR_REGEX = /^([^/]+)(.+)/
 function sbp (path: string, ...data?: Array<*>) {
   var [, name, selector] = DOMAIN_SELECTOR_REGEX.exec(path)
   var domain = domains[name]
+  if (!domain) throw new Error(`Domain ${name} not Found`)
   // Filters can perform additional functions, and by returning `false` they
   // can prevent the execution of a selector.
   for (let gf of globalFilters) {

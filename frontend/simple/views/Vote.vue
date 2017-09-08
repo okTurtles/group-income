@@ -27,11 +27,10 @@
   </section>
 </template>
 <script>
-import * as Events from '../../../shared/events'
-import backend from '../js/backend/'
-import template from 'string-template'
+import {transactionQueue, Transaction} from '../js/transactions'
 import L from '../js/translations'
 import _ from 'lodash'
+import sbp from '../../../shared/sbp'
 export default {
   name: 'Vote',
   computed: {
@@ -47,44 +46,55 @@ export default {
   },
   methods: {
     async four () { // for is a reserved word so Vue doesn't like it
-      this.errorMsg = null
       try {
-        // Create a vote for the proposal
-        let latest = await backend.latestHash(this.$route.query.groupId)
-        let vote = new Events.HashableGroupVoteForProposal({ username: this.$store.state.loggedIn.name, proposalHash: this.$route.query.proposalHash }, latest)
+        this.errorMsg = null
         let proposal = _.cloneDeep(this.proposal)
         let threshold = Math.ceil(proposal.percentage * this.memberCount)
-
-        await backend.publishLogEntry(this.$route.query.groupId, vote)
-        // If the vote passes fulfill the action
-        if (proposal.for.length + 1 >= threshold) {
-          let lastActionHash = null
-          const actionDate = new Date().toString()
-          for (let step of proposal.actions) {
-            latest = await backend.latestHash(step.contractId)
-            let actObj = JSON.parse(template(step.action, {lastActionHash, actionDate}))
-            let entry = new Events[actObj.type](actObj.data, latest)
-            lastActionHash = entry.toHash()
-            await backend.publishLogEntry(step.contractId, entry)
+        await sbp('transactions/v1/run', `Vote For Proposal ${this.$route.query.proposalHash}`, true, [
+          { execute: 'setInScope', args: { username: this.$store.state.loggedIn.name, proposalHash: this.$route.query.proposalHash, groupId: this.$route.query.groupId } },
+          {
+            execute: 'contracts/v1/group/voteForProposal',
+            description: `Vote For Proposal ${this.$route.query.proposalHash}`,
+            args: {
+              username: 'username',
+              proposalHash: 'proposalHash',
+              groupId: 'groupId'
+            }
           }
+        ])
+        if (proposal.for.length + 1 >= threshold) {
+          let proposedTransaction = Transaction.fromJSON(JSON.parse(proposal.transaction))
+          proposedTransaction.setInScope('voteDate', new Date().toString())
+          transactionQueue.run(proposedTransaction)
+          await proposedTransaction.wait()
         }
         // return to mailbox
         this.$router.push({path: '/mailbox'})
       } catch (ex) {
         console.log(ex)
+        // TODO: Create More descriptive errors
         this.errorMsg = L('Failed to Cast Vote')
       }
     },
     async against () {
-      this.errorMsg = null
       try {
-        // Create a against the proposal
-        let latest = await backend.latestHash(this.$route.query.groupId)
-        let vote = new Events.HashableGroupVoteAgainstProposal({ username: this.$store.state.loggedIn.name, proposalHash: this.$route.query.proposalHash }, latest)
-        await backend.publishLogEntry(this.$route.query.groupId, vote)
+        this.errorMsg = null
+        await sbp('transactions/v1/run', `Vote Against Proposal ${this.$route.query.proposalHash}`, true, [
+          { execute: 'setInScope', args: { username: this.$store.state.loggedIn.name, proposalHash: this.$route.query.proposalHash, groupId: this.$route.query.groupId } },
+          {
+            execute: 'contracts/v1/identity/voteAgainstProposal',
+            description: `Vote For Proposal ${this.$route.query.proposalHash}`,
+            args: {
+              username: 'username',
+              proposalHash: 'proposalHash',
+              groupId: 'groupId'
+            }
+          }
+        ])
         this.$router.push({path: '/mailbox'})
       } catch (ex) {
-        console.log(ex)
+        console.error(ex)
+        // TODO: Create More descriptive errors
         this.errorMsg = L('Failed to Cast Vote')
       }
     }

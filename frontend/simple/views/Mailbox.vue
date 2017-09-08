@@ -161,12 +161,13 @@
 </style>
 <script>
 import _ from 'lodash'
-import backend from '../js/backend'
 import * as Events from '../../../shared/events'
-import {namespace} from '../js/backend/hapi'
-import {latestContractState} from '../js/state'
 import L from '../js/translations'
+import {latestContractState} from '../js/state'
+import sbp from '../../../shared/sbp'
+
 const criteria = [(msg) => new Date(msg.sentDate)]
+
 export default {
   name: 'Mailbox',
   computed: {
@@ -211,19 +212,35 @@ export default {
     },
     send: async function () {
       try {
+        let steps = [
+          { execute: 'setInScope',
+            args: {
+              mailboxContractId: this.$store.state.loggedIn.identityContractId,
+              date: new Date().toString(),
+              from: this.$store.state.loggedIn.name,
+              message: this.composedMessage
+            }
+          }
+        ]
+
         for (let i = 0; i < this.recipients.length; i++) {
           let recipient = this.recipients[i]
           let state = await latestContractState(recipient.contractId)
-          let mailbox = await backend.latestHash(state.attributes.mailbox)
-          let date = new Date()
-          let message = new Events.HashableMailboxPostMessage({
-            sentDate: date.toString(),
-            messageType: Events.HashableMailboxPostMessage.TypeMessage,
-            from: this.$store.state.loggedIn.name,
-            message: this.composedMessage
-          }, mailbox)
-          await backend.publishLogEntry(state.attributes.mailbox, message)
+          let args = {}
+          args[`${recipient}ContractId`] = state.attributes.mailbox
+          steps.push({ execute: 'setInScope', args })
+          steps.push({
+            execute: 'contracts/v1/mailbox/sendMail',
+            description: `Send Messagage to ${this.recipients[i]}`,
+            args: {
+              contractId: `${recipient}ContractId`,
+              data: 'date',
+              message: 'message',
+              from: 'from'
+            }
+          })
         }
+        await sbp('transactions/v1/run', 'Send Mail', true, steps)
         this.inboxMode()
       } catch (ex) {
         console.log(ex)
@@ -267,7 +284,7 @@ export default {
     addRecipient: async function () {
       if (this.recipient) {
         try {
-          let contractId = await namespace.lookup(this.recipient)
+          let contractId = await sbp('namespace/v1/hapi/lookup', {name: this.recipient})
           if (!this.recipients.find(recipient => recipient.name === this.recipient)) {
             this.recipients.push({name: this.recipient, contractId: contractId})
           }

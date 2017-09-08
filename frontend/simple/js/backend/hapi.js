@@ -135,3 +135,12 @@ export class HapiNamespace extends TrustedNamespace {
 }
 
 export const namespace = new HapiNamespace()
+const api = {
+  '/v1/hapi/register': function ({name, value}) {
+    return namespace.register(name, value)
+  },
+  '/v1/hapi/lookup': function ({name}) {
+    return namespace.lookup(name)
+  }
+}
+sbp.registerDomain('namespace', api)

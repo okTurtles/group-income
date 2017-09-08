@@ -176,10 +176,9 @@
   </section>
 </template>
 <script>
-import backend from '../js/backend'
-import * as Events from '../../../shared/events'
 import L from '../js/translations'
 import _ from 'lodash'
+import sbp from '../../../shared/sbp'
 
 export default {
   name: 'UserProfileView',
@@ -215,18 +214,18 @@ export default {
     async save () {
       try {
         this.profileSaved = false
+        let steps = [ { execute: 'setInScope', args: { identityContractId: this.$store.state.loggedIn.identityContractId } } ]
+
         for (let key of Object.keys(this.edited)) {
-          if (this.edited[key] && this.edited[key] !== this.attributes[key]) {
-            let identityContractLatest = await backend.latestHash(this.$store.state.loggedIn.identityContractId)
-            let attribute = new Events.HashableIdentitySetAttribute(
-              {
-                attribute: {name: key, value: this.edited[key]}
-              },
-              identityContractLatest
-            )
-            await backend.publishLogEntry(this.$store.state.loggedIn.identityContractId, attribute)
-          }
+          let args = {}
+          args[`${key}AttributeName`] = key
+          args[`${key}AttributeValue`] = this.edited[key]
+          steps.push({ execute: 'setInScope', args })
+          steps.push({ execute: 'contracts/v1/identity/setAttribute', description: `Set ${key} attribute`, args: { contractId: 'identityContractId', name: `${key}AttributeName`, value: `${key}AttributeValue` } })
         }
+
+        await sbp('transactions/v1/run', 'Set Profile Attributes', true, steps)
+
         this.profileSaved = true
       } catch (ex) {
         console.log(ex)
@@ -243,15 +242,20 @@ export default {
     async saveGroupProfile () {
       try {
         this.groupProfileSaved = false
-        let groupContractLatest = await backend.latestHash(this.currentGroupContractId)
-        let updatedProfile = new Events.HashableGroupSetGroupProfile(
-          {
-            username: this.$store.state.loggedIn.name,
-            json: JSON.stringify(this.editedGroupProfile)
+        await sbp('transactions/v1/run', 'Save Group Profile', true, [
+          { execute: 'setInScope',
+            args: {
+              username: this.$store.state.loggedIn.name,
+              profile: this.editedGroupProfile,
+              groupContractId: this.currentGroupContractId
+            }
           },
-          groupContractLatest
-        )
-        await backend.publishLogEntry(this.currentGroupContractId, updatedProfile)
+          {
+            execute: 'contracts/v1/group/saveGroupProfile',
+            description: `Set ${this.$store.state.loggedIn.name}' Profile`,
+            args: { contractId: 'groupContractId', username: 'username', profile: 'profile' }
+          }
+        ])
         this.groupProfileSaved = true
       } catch (ex) {
         console.log(ex)

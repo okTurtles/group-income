@@ -16,6 +16,16 @@
             id="CreateGroup"
             to="new-group"
           >
+            <i18n>Start a group</i18n>
+          </router-link>
+          <router-link
+            active-class="is-active"
+            class="nav-item is-tab"
+            id="Dashboard"
+            to="dashboard"
+            v-if="$store.state.loggedIn"
+          >
+            <i18n>Dashboard</i18n>
           </router-link>
           <router-link
             active-class="is-active"
@@ -71,7 +81,7 @@
             </div>
           </span>
         </div>
-        <div class="menu-dropdown" v-if="dropdownVisible">
+        <div class="menu-dropdown" v-if="dropdownVisible" ref="menu">
           <div class="button profile-link" id="CloseProfileDropDown" v-if="$store.state.loggedIn" @click="toggleDropdown">
             <strong>{{ ($store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.displayName ? $store.getters.currentUserIdentityContract.attributes.displayName : null) || $store.state.loggedIn.name}}</strong>
             <img v-if="$store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.picture" v-bind:src="$store.getters.currentUserIdentityContract.attributes.picture">
@@ -197,8 +207,19 @@ export default {
       event.preventDefault()
       this.showTimeTravel = !this.showtimetravel
     },
-    toggleDropdown () {
-      this.dropdownVisible = !this.dropdownVisible
+    clickHandler (e) {
+      this.dropdownVisible = false
+      document.removeEventListener('click', this.clickHandler)
+    },
+    toggleDropdown (e) {
+      if (this.dropdownVisible) {
+        this.dropdownVisible = false
+        document.removeEventListener('click', this.clickHandler)
+      } else {
+        e.stopPropagation()
+        this.dropdownVisible = true
+        document.addEventListener('click', this.clickHandler)
+      }
     }
   },
   data () {

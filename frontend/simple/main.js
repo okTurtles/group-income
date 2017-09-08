@@ -6,6 +6,7 @@ import NavBar from './views/NavBar.vue'
 import './js/transitions'
 import {namespace} from './js/backend/hapi'
 import store from './js/state'
+import {transactionQueue} from './js/transactions'
 
 async function loadLastUser () {
   let user = await db.loadCurrentUser()
@@ -23,3 +24,4 @@ async function loadLastUser () {
   Vue.events.$on('logout', () => router.push({path: '/'}))
 }
 loadLastUser()
+transactionQueue.load()

@@ -189,11 +189,10 @@
 </style>
 <script>
 /* @flow */
-import Vue from 'vue'
-import backend from '../js/backend'
 import * as Events from '../../../shared/events'
 import * as contracts from '../js/events'
 import L from '../js/translations'
+import sbp from '../../../shared/sbp'
 
 export default {
   name: 'CreateGroupView',
@@ -207,7 +206,6 @@ export default {
         document.querySelector(`input[name="${control}"], textarea[name="${control}"]`).scrollIntoView()
         return
       }
-
       try {
         this.errorMsg = null
         const entry = new contracts.GroupContract({
@@ -223,18 +221,18 @@ export default {
           founderIdentityContractId: this.$store.state.loggedIn.identityContractId
         })
         const hash = entry.toHash()
-        // TODO: convert this to SBL
-        Vue.events.$once(hash, (contractId, entry) => {
-          this.$store.commit('setCurrentGroupId', hash)
-          // Take them to the invite group members page.
-          this.$router.push({path: '/invite'})
-        })
-        // TODO: convert this to SBL
-        await backend.publishLogEntry(hash, entry)
-        // add to vuex and monitor this contract for updates
+
+        await sbp('transactions/v1/run', 'Create a Group', false, [
+          { execute: 'setInScope', args: { contractId: hash, entry } },
+          { execute: 'backend/v1/publishLogEntry', description: 'Publish Group Contract', args: { contractId: 'contractId', entry: 'entry' } }
+        ])
+
         await this.$store.dispatch('syncContractWithServer', hash)
-      } catch (error) {
-        console.error(error)
+        this.$store.commit('setCurrentGroupId', hash)
+        // Take them to the invite group members page.
+        this.$router.push({path: '/invite'})
+      } catch (ex) {
+        console.error(ex)
         this.errorMsg = L('Failed to Create Group')
       }
     }
