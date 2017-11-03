@@ -26,7 +26,7 @@
         <div class="field">
           <p class="control has-icon">
             <input id="name" class="input" name="name" v-model="name" @blur="checkName" @keypress="checkName" v-validate data-vv-rules="required|regex:^\S+$" placeholder="username" required autofocus>
-            <span class="icon is-small"><i class="fa fa-user"></i></span>
+            <span class="icon"><i class="fa fa-user"></i></span>
           </p>
           <p class="help is-danger" v-if="errors.has('name')" id="badUsername">
             <i18n v-if="nameAvailable === false">name is unavailable</i18n>
@@ -38,14 +38,14 @@
         <div class="field">
           <p class="control has-icon">
             <input class="input" id= "email" name="email" v-model="email" v-validate data-vv-rules="required|email" type="email" placeholder="email" required>
-            <span class="icon is-small"><i class="fa fa-envelope"></i></span>
+            <span class="icon"><i class="fa fa-envelope"></i></span>
           </p>
           <i18n v-if="errors.has('email')" id="badEmail" class="help is-danger">Not an email</i18n>
         </div>
         <div class="field">
           <p class="control has-icon">
             <input class="input" id="password" name="password" v-model="password" v-validate data-vv-rules="required|min:7" placeholder="password" type="password" required>
-            <span class="icon is-small"><i class="fa fa-lock"></i></span>
+            <span class="icon"><i class="fa fa-lock"></i></span>
           </p>
           <i18n v-if="errors.has('password')" id="badPassword" class="help is-danger">Password must be at least 7 characters</i18n>
         </div>

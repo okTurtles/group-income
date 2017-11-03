@@ -40,7 +40,7 @@
                 v-validate
                 @keyup.enter="login"
               >
-              <span class="icon is-small"><i class="fa fa-lock"></i></span>
+              <span class="icon"><i class="fa fa-lock"></i></span>
             </p>
             <i18n v-show="errors.has('password')" class="help is-danger">Password must be at least 7 characters</i18n>
           </div>
