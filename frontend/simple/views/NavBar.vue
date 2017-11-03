@@ -23,7 +23,7 @@
             active-class="is-active"
             class="nav-item is-tab"
             to="pay-group"
-            v-show="$store.state.loggedIn"
+            v-if="$store.state.loggedIn"
           >
             <i18n>Pay Group</i18n>
           </router-link>
