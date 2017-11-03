@@ -15,7 +15,9 @@
             class="nav-item is-tab"
             id="CreateGroup"
             to="new-group"
+            v-if="$store.state.loggedIn"
           >
+            <i18n>Start a Group</i18n>
           </router-link>
           <router-link
             active-class="is-active"
