@@ -11,7 +11,11 @@
       class="input"
     >
     <p><i18n>This is some help text to give ideas on what kind of group you're creating</i18n></p>
-    <a href="#">Next</a>
+    <router-link
+      to="new-group-purpose"
+    >
+      <i18n>Next</i18n>
+    </router-link>
   </div>
 </template>
 <style scoped>
