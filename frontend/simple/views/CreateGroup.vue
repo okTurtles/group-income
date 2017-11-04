@@ -239,16 +239,39 @@ export default {
       }
     }
   },
+  computed: {
+    groupName: {
+      get () { return this.$store.state.group.groupName },
+      set (value) { this.$store.commit('updateGroupName', value) }
+    },
+    sharedValues: {
+      get () { return this.$store.state.group.sharedValues },
+      set (value) { this.$store.commit('updateSharedValues', value) }
+    },
+    changePercentage: {
+      get () { return this.$store.state.group.changePercentage },
+      set (value) { this.$store.commit('updateChangePercentage', value) }
+    },
+    memberApprovalPercentage: {
+      get () { return this.$store.state.group.memberApprovalPercentage },
+      set (value) { this.$store.commit('updateMemberApprovalPercentage', value) }
+    },
+    memberRemovalPercentage: {
+      get () { return this.$store.state.group.memberRemovalPercentage },
+      set (value) { this.$store.commit('updateMemberRemovalPercentage', value) }
+    },
+    incomeProvided: {
+      get () { return this.$store.state.group.incomeProvided },
+      set (value) { this.$store.commit('updateIncomeProvided', value) }
+    },
+    contributionPrivacy: {
+      get () { return this.$store.state.group.contributionPrivacy },
+      set (value) { this.$store.commit('updateContributionPrivacy', value) }
+    }
+  },
   data () {
     // TODO: wrap this in a 'form' parameter (#297)
     return {
-      groupName: null,
-      sharedValues: null,
-      changePercentage: 80,
-      memberApprovalPercentage: 80,
-      memberRemovalPercentage: 80,
-      incomeProvided: null,
-      contributionPrivacy: 'Very Private',
       errorMsg: null,
       // this determines whether or not to render proxy components for nightmare
       dev: process.env.NODE_ENV === 'development'
