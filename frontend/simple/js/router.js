@@ -6,6 +6,7 @@ import SignUp from '../views/SignUp.vue'
 import CreateGroup from '../views/CreateGroup.vue'
 import CreateGroupName from '../views/CreateGroup/CreateGroupName.vue'
 import CreateGroupPurpose from '../views/CreateGroup/CreateGroupPurpose.vue'
+import CreateGroupMincome from '../views/CreateGroup/CreateGroupMincome.vue'
 import GroupDashboard from '../views/GroupDashboard.vue'
 import UserProfileView from '../views/UserProfileView.vue'
 import Invite from '../views/Invite.vue'
@@ -114,6 +115,15 @@ var router = new Router({
       name: CreateGroupPurpose.name,
       meta: {
         title: 'Create Group: Group Purpose'
+      },
+      beforeEnter: createEnterGuards(loginGuard)
+    },
+    {
+      path: '/new-group-mincome',
+      component: CreateGroupMincome,
+      name: CreateGroupMincome.name,
+      meta: {
+        title: 'Create Group: Minimum Income'
       },
       beforeEnter: createEnterGuards(loginGuard)
     },
