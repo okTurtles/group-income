@@ -13,9 +13,8 @@
     </textarea>
     <p><i18n>How much income would you like your group to provide?</i18n></p>
     <router-link
-      to="new-group"
+      to="new-group-rules"
     >
-      <!-- TODO: to next step instead -->
       <i18n>Next</i18n>
     </router-link>
   </div>
@@ -24,7 +23,7 @@
 </style>
 <script>
 export default {
-  name: 'CreateGroupPurposeView',
+  name: 'CreateGroupMincomeView',
   computed: {
     incomeProvided: {
       get () { return this.$store.state.group.incomeProvided },
