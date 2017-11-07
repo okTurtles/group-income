@@ -35,16 +35,18 @@
     </div>
   </div>
 </template>
-<style lang="sass" scoped>
-@import "sass/utilities/variables"
+<style lang="scss" scoped>
+@import "sass/utilities/variables";
 // TODO: remove these styles or make them overridable. we should be styled by the parent component
-.foo
-  border-bottom: 3px solid $border
-  width: 20px
-  margin-right: 5px
+.foo {
+  border-bottom: 3px solid $border;
+  width: 20px;
+  margin-right: 5px;
+}
 
-.foo.is-active
-  border-bottom-color: $primary
+.foo.is-active {
+  border-bottom-color: $primary;
+}
 </style>
 <script>
 export default {
