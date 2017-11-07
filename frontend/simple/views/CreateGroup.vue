@@ -17,6 +17,30 @@
             comp2
           ]"
         >
+          <div slot="step">
+            <p class="title is-5"><i18n>What is your Group's Name?</i18n></p>
+            <input
+              type="text"
+              v-validate
+              data-vv-as="Group Name"
+              data-vv-rules="required"
+              name="form.groupName"
+              v-model="form.groupName"
+              class="input"
+            >
+          </div>
+        >
+          <div slot="step">
+            <p class="title is-5"><i18n>What are your shared values?</i18n></p>
+            <textarea
+              class="textarea"
+              v-validate
+              data-vv-as="Shared Values"
+              data-vv-rules="required"
+              name="form.sharedValues"
+              v-model="form.sharedValues">
+            </textarea>
+          </div>
         </vue-assistant>
 
         </form>

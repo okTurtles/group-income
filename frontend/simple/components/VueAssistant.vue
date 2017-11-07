@@ -16,6 +16,7 @@
         </li>
       </ul>
     </div>
+    <slot name="step"></slot>
     <!-- https://vuejs.org/v2/guide/components.html#keep-alive -->
     <keep-alive>
       <component
