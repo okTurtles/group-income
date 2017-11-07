@@ -12,7 +12,6 @@ import * as db from './database'
 import * as Events from '../../../shared/events'
 import * as contracts from '../js/events'
 import debounce from 'lodash/debounce'
-import group from './modules/group'
 // babel transforms lodash imports: https://github.com/lodash/babel-plugin-lodash#faq
 // for diff between 'lodash/map' and 'lodash/fp/map'
 // see: https://github.com/lodash/lodash/wiki/FP-Guide
@@ -318,15 +317,7 @@ const actions = {
 }
 const debouncedSave = debounce((dispatch, savedState) => dispatch('saveSettings', savedState), 500)
 
-store = new Vuex.Store({
-  state,
-  mutations,
-  getters,
-  actions,
-  modules: {
-    group
-  }
-})
+store = new Vuex.Store({state, mutations, getters, actions})
 store.subscribe(() => debouncedSave(store.dispatch))
 
 // This will build the current contract state from applying all its actions
