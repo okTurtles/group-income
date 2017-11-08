@@ -37,23 +37,9 @@ import * as Events from '../../../shared/events'
 import * as contracts from '../js/events'
 import L from '../js/translations'
 import VueAssistant from '../components/VueAssistant.vue'
+import CreateGroupName from '../components/CreateGroup/CreateGroupName.vue'
 
 // TODO remove this, only for testing out VueAssistant
-const comp1 = {
-  template: `<div><p>one</p><input
-    type="text"
-    v-validate
-    data-vv-as="Group Name"
-    data-vv-rules="required"
-    name="groupName"
-    class="input"
-    :value="value"
-    @keyup="(e) => $emit('input', e.target.value)"
-  >{{ value }}</div>`,
-  props: {
-    value: {type: String}
-  }
-}
 const comp2 = {
   template: '<p>2</p>'
 }
@@ -127,8 +113,8 @@ export default {
     views: function () {
       return [
         {
-          template: `<comp1 v-model="value"></comp1>`,
-          components: { comp1 },
+          template: `<create-group-name v-model="value"></create-group-name>`,
+          components: { CreateGroupName },
           computed: {
             value: {
               get: () => this.form.groupName,

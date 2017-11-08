@@ -7,27 +7,18 @@
       data-vv-as="Group Name"
       data-vv-rules="required"
       name="groupName"
-      v-model="groupName"
       class="input"
+      :value="value"
+      @keyup="(e) => $emit('input', e.target.value)"
     >
     <p><i18n>This is some help text to give ideas on what kind of group you're creating</i18n></p>
-    <router-link
-      to="new-group-purpose"
-    >
-      <i18n>Next</i18n>
-    </router-link>
   </div>
 </template>
-<style scoped>
-</style>
 <script>
 export default {
-  name: 'CreateGroupNameView',
-  computed: {
-    groupName: {
-      get () { return this.$store.state.group.groupName },
-      set (value) { this.$store.commit('updateGroupName', value) }
-    }
+  name: 'CreateGroupName',
+  props: {
+    value: {type: String}
   }
 }
 </script>
