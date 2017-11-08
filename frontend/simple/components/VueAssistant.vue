@@ -23,7 +23,7 @@
         :is="view"
         :transition="transition"
         @next="next"
-        @input="(v) => $emit('input', v)">
+      >
       </component>
     </keep-alive>
     <div class="container">

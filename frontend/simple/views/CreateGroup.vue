@@ -11,7 +11,7 @@
           @submit.prevent="submit"
         >
 
-        <vue-assistant :views="views"  @input="(v) => $emit('input', v)">
+        <vue-assistant :views="views">
         </vue-assistant>
 
         </form>
@@ -37,6 +37,8 @@ import * as Events from '../../../shared/events'
 import * as contracts from '../js/events'
 import L from '../js/translations'
 import VueAssistant from '../components/VueAssistant.vue'
+
+const createGroupEvents = new Vue()
 
 // TODO remove this, only for testing out VueAssistant
 const comp1 = {
@@ -64,7 +66,7 @@ export default {
     VueAssistant
   },
   created () {
-    this.$on('input', (payload) => {
+    this.events.$on('input', (payload) => {
       console.log('Event emitted - input', payload)
       this.form.groupName = payload
     })
@@ -126,7 +128,8 @@ export default {
       ephemeral: {
         // this determines whether or not to render proxy components for nightmare
         dev: process.env.NODE_ENV === 'development'
-      }
+      },
+      events: createGroupEvents
     }
   },
   computed: {
@@ -135,11 +138,11 @@ export default {
       var alma = this.form.groupName
       return [
         {
-          template: `<comp1 :value="value" @input="(v) => $emit('input', v)" ></comp1>`,
-          // TODO: event bus instead of manually propagating through 4 layers
+          template: `<comp1 :value="value" @input="(value) => events.$emit('input', value)" ></comp1>`,
           components: { comp1 },
           data: () => ({
             value: this.form.groupName,
+            events: createGroupEvents,
             alma
           })
         },
