@@ -38,8 +38,6 @@ import * as contracts from '../js/events'
 import L from '../js/translations'
 import VueAssistant from '../components/VueAssistant.vue'
 
-const createGroupEvents = new Vue()
-
 // TODO remove this, only for testing out VueAssistant
 const comp1 = {
   template: `<div><p>one</p><input
@@ -64,12 +62,6 @@ export default {
   name: 'CreateGroupView',
   components: {
     VueAssistant
-  },
-  created () {
-    this.events.$on('input', (payload) => {
-      console.log('Event emitted - input', payload)
-      this.form.groupName = payload
-    })
   },
   methods: {
     submit: async function () {
@@ -128,18 +120,21 @@ export default {
       ephemeral: {
         // this determines whether or not to render proxy components for nightmare
         dev: process.env.NODE_ENV === 'development'
-      },
-      events: createGroupEvents
+      }
     }
   },
   computed: {
     views: function () {
       return [
         {
-          template: `<comp1 :value="value" @input="(value) => events.$emit('input', value)" ></comp1>`,
+          template: `<comp1 v-model="value"></comp1>`,
           components: { comp1 },
-          data: () => ({ events: createGroupEvents }),
-          computed: { value: () => this.form.groupName }
+          computed: {
+            value: {
+              get: () => this.form.groupName,
+              set: (newVal) => { this.form.groupName = newVal }
+            }
+          }
         },
         comp2
       ]
