@@ -11,36 +11,7 @@
           @submit.prevent="submit"
         >
 
-        <vue-assistant
-          :views="[
-            comp1,
-            comp2
-          ]"
-        >
-          <div slot="step">
-            <p class="title is-5"><i18n>What is your Group's Name?</i18n></p>
-            <input
-              type="text"
-              v-validate
-              data-vv-as="Group Name"
-              data-vv-rules="required"
-              name="form.groupName"
-              v-model="form.groupName"
-              class="input"
-            >
-          </div>
-        >
-          <div slot="step">
-            <p class="title is-5"><i18n>What are your shared values?</i18n></p>
-            <textarea
-              class="textarea"
-              v-validate
-              data-vv-as="Shared Values"
-              data-vv-rules="required"
-              name="form.sharedValues"
-              v-model="form.sharedValues">
-            </textarea>
-          </div>
+        <vue-assistant :views="views"  @input="(v) => $emit('input', v)">
         </vue-assistant>
 
         </form>
@@ -69,7 +40,19 @@ import VueAssistant from '../components/VueAssistant.vue'
 
 // TODO remove this, only for testing out VueAssistant
 const comp1 = {
-  template: '<p>1</p>'
+  template: `<div><p>one</p><input
+    type="text"
+    v-validate
+    data-vv-as="Group Name"
+    data-vv-rules="required"
+    name="groupName"
+    class="input"
+    :value="value"
+    @change="(e) => $emit('input', e.target.value)"
+  >{{ value }}</div>`,
+  props: {
+    value: {type: String}
+  }
 }
 const comp2 = {
   template: '<p>2</p>'
@@ -78,7 +61,13 @@ const comp2 = {
 export default {
   name: 'CreateGroupView',
   components: {
-    'vue-assistant': VueAssistant
+    VueAssistant
+  },
+  created () {
+    this.$on('input', (payload) => {
+      console.log('Event emitted - input', payload)
+      this.form.groupName = payload
+    })
   },
   methods: {
     submit: async function () {
@@ -125,7 +114,7 @@ export default {
   data () {
     return {
       form: {
-        groupName: null,
+        groupName: 'alma',
         sharedValues: null,
         changePercentage: 80,
         memberApprovalPercentage: 80,
@@ -137,10 +126,25 @@ export default {
       ephemeral: {
         // this determines whether or not to render proxy components for nightmare
         dev: process.env.NODE_ENV === 'development'
-      },
-      // TODO remove this, only for testing out VueAssistant
-      comp1,
-      comp2
+      }
+    }
+  },
+  computed: {
+    views: function () {
+      // TODO: seems like a bad idea to recreate the views every time a value changes
+      var alma = this.form.groupName
+      return [
+        {
+          template: `<comp1 :value="value" @input="(v) => $emit('input', v)" ></comp1>`,
+          // TODO: event bus instead of manually propagating through 4 layers
+          components: { comp1 },
+          data: () => ({
+            value: this.form.groupName,
+            alma
+          })
+        },
+        comp2
+      ]
     }
   }
 }
