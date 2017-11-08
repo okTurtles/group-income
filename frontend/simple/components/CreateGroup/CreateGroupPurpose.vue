@@ -7,26 +7,18 @@
       data-vv-as="Shared Values"
       data-vv-rules="required"
       name="sharedValues"
-      v-model="sharedValues">
+      :value="value"
+      @keyup="(e) => $emit('input', e.target.value)"
+    >
     </textarea>
     <p><i18n>Why this group? What is your group about? What connects you?</i18n></p>
-    <router-link
-      to="new-group-mincome"
-    >
-      <i18n>Next</i18n>
-    </router-link>
   </div>
 </template>
-<style scoped>
-</style>
 <script>
 export default {
-  name: 'CreateGroupPurposeView',
-  computed: {
-    sharedValues: {
-      get () { return this.$store.state.group.sharedValues },
-      set (value) { this.$store.commit('updateSharedValues', value) }
-    }
+  name: 'CreateGroupPurpose',
+  props: {
+    value: {type: String}
   }
 }
 </script>

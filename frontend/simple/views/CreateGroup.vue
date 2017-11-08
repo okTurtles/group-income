@@ -38,11 +38,7 @@ import * as contracts from '../js/events'
 import L from '../js/translations'
 import VueAssistant from '../components/VueAssistant.vue'
 import CreateGroupName from '../components/CreateGroup/CreateGroupName.vue'
-
-// TODO remove this, only for testing out VueAssistant
-const comp2 = {
-  template: '<p>2</p>'
-}
+import CreateGroupPurpose from '../components/CreateGroup/CreateGroupPurpose.vue'
 
 export default {
   name: 'CreateGroupView',
@@ -122,7 +118,16 @@ export default {
             }
           }
         },
-        comp2
+        {
+          template: `<create-group-purpose v-model="value"></create-group-purpose>`,
+          components: { CreateGroupPurpose },
+          computed: {
+            value: {
+              get: () => this.form.sharedValues,
+              set: (newVal) => { this.form.sharedValues = newVal }
+            }
+          }
+        }
       ]
     }
   }
