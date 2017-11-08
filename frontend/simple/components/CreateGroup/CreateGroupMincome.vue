@@ -6,29 +6,21 @@
       type="text"
       name="incomeProvided"
       placeholder="Amount"
+      v-validate
       data-vv-as="Income Provided"
-      v-validate data-vv-rules="required|decimal:2"
-      v-model="incomeProvided"
+      data-vv-rules="required|decimal:2"
+      :value="value"
+      @keyup="(e) => $emit('input', e.target.value)"
     />
     </textarea>
     <p><i18n>How much income would you like your group to provide?</i18n></p>
-    <router-link
-      to="new-group-rules"
-    >
-      <i18n>Next</i18n>
-    </router-link>
   </div>
 </template>
-<style scoped>
-</style>
 <script>
 export default {
-  name: 'CreateGroupMincomeView',
-  computed: {
-    incomeProvided: {
-      get () { return this.$store.state.group.incomeProvided },
-      set (value) { this.$store.commit('updateIncomeProvided', value) }
-    }
+  name: 'CreateGroupMincome',
+  props: {
+    value: {type: String}
   }
 }
 </script>

@@ -39,6 +39,7 @@ import L from '../js/translations'
 import VueAssistant from '../components/VueAssistant.vue'
 import CreateGroupName from '../components/CreateGroup/CreateGroupName.vue'
 import CreateGroupPurpose from '../components/CreateGroup/CreateGroupPurpose.vue'
+import CreateGroupMincome from '../components/CreateGroup/CreateGroupMincome.vue'
 
 export default {
   name: 'CreateGroupView',
@@ -125,6 +126,16 @@ export default {
             value: {
               get: () => this.form.sharedValues,
               set: (newVal) => { this.form.sharedValues = newVal }
+            }
+          }
+        },
+        {
+          template: `<create-group-mincome v-model="value"></create-group-mincome>`,
+          components: { CreateGroupMincome },
+          computed: {
+            value: {
+              get: () => this.form.incomeProvided,
+              set: (newVal) => { this.form.incomeProvided = newVal }
             }
           }
         }
