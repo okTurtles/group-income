@@ -50,7 +50,7 @@ const comp1 = {
     name="groupName"
     class="input"
     :value="value"
-    @change="(e) => $emit('input', e.target.value)"
+    @keyup="(e) => $emit('input', e.target.value)"
   >{{ value }}</div>`,
   props: {
     value: {type: String}
@@ -134,17 +134,12 @@ export default {
   },
   computed: {
     views: function () {
-      // TODO: seems like a bad idea to recreate the views every time a value changes
-      var alma = this.form.groupName
       return [
         {
           template: `<comp1 :value="value" @input="(value) => events.$emit('input', value)" ></comp1>`,
           components: { comp1 },
-          data: () => ({
-            value: this.form.groupName,
-            events: createGroupEvents,
-            alma
-          })
+          data: () => ({ events: createGroupEvents }),
+          computed: { value: () => this.form.groupName }
         },
         comp2
       ]
