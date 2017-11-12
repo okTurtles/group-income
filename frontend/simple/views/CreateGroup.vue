@@ -40,6 +40,8 @@ import VueAssistant from '../components/VueAssistant.vue'
 import CreateGroupName from '../components/CreateGroup/CreateGroupName.vue'
 import CreateGroupPurpose from '../components/CreateGroup/CreateGroupPurpose.vue'
 import CreateGroupMincome from '../components/CreateGroup/CreateGroupMincome.vue'
+import CreateGroupRules from '../components/CreateGroup/CreateGroupRules.vue'
+import { connect } from '../js/utils'
 
 export default {
   name: 'CreateGroupView',
@@ -109,36 +111,9 @@ export default {
   computed: {
     views: function () {
       return [
-        {
-          template: `<create-group-name v-model="value"></create-group-name>`,
-          components: { CreateGroupName },
-          computed: {
-            value: {
-              get: () => this.form.groupName,
-              set: (newVal) => { this.form.groupName = newVal }
-            }
-          }
-        },
-        {
-          template: `<create-group-purpose v-model="value"></create-group-purpose>`,
-          components: { CreateGroupPurpose },
-          computed: {
-            value: {
-              get: () => this.form.sharedValues,
-              set: (newVal) => { this.form.sharedValues = newVal }
-            }
-          }
-        },
-        {
-          template: `<create-group-mincome v-model="value"></create-group-mincome>`,
-          components: { CreateGroupMincome },
-          computed: {
-            value: {
-              get: () => this.form.incomeProvided,
-              set: (newVal) => { this.form.incomeProvided = newVal }
-            }
-          }
-        }
+        connect(CreateGroupName, this, 'groupName'),
+        connect(CreateGroupPurpose, this, 'sharedValues'),
+        connect(CreateGroupMincome, this, 'incomeProvided')
       ]
     }
   }
