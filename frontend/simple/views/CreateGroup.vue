@@ -113,7 +113,21 @@ export default {
       return [
         connect(CreateGroupName, this, 'groupName'),
         connect(CreateGroupPurpose, this, 'sharedValues'),
-        connect(CreateGroupMincome, this, 'incomeProvided')
+        connect(CreateGroupMincome, this, 'incomeProvided'),
+        {
+          template: `<create-group-rules v-model="value"></create-group-rules>`,
+          components: { CreateGroupRules },
+          computed: {
+            value: {
+              get: () => ({
+                changePercentage: this.form.changePercentage,
+                memberApprovalPercentage: this.form.memberApprovalPercentage,
+                memberRemovalPercentage: this.form.memberRemovalPercentage
+              }),
+              set: (newVal) => { Object.assign(this.form, newVal) }
+            }
+          }
+        }
       ]
     }
   }

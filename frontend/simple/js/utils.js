@@ -27,6 +27,7 @@ export function mapValues (obj: Object, fn: Function, o: Object = {}) {
 // bind local properties to on-the-fly created vue components
 // .form key assumed because https://github.com/okTurtles/group-income-simple/issues/297
 // boundKey passed as string to be able to pass prop 'as reference'
+// TODO: it should work with more complex values, see CreateGroupRules comp
 export const connect = (component, thisArg, boundKey) => ({
   template: `<comp v-model="value"></comp>`,
   components: { comp: component },
