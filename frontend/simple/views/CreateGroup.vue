@@ -41,6 +41,7 @@ import CreateGroupName from '../components/CreateGroup/CreateGroupName.vue'
 import CreateGroupPurpose from '../components/CreateGroup/CreateGroupPurpose.vue'
 import CreateGroupMincome from '../components/CreateGroup/CreateGroupMincome.vue'
 import CreateGroupRules from '../components/CreateGroup/CreateGroupRules.vue'
+import CreateGroupInvitees from '../components/CreateGroup/CreateGroupInvitees.vue'
 import { connect } from '../js/utils'
 
 export default {
@@ -93,13 +94,14 @@ export default {
   data () {
     return {
       form: {
-        groupName: 'alma',
+        groupName: '',
         sharedValues: null,
         changePercentage: 80,
         memberApprovalPercentage: 80,
         memberRemovalPercentage: 80,
         incomeProvided: null,
         contributionPrivacy: 'Very Private',
+        invitees: [],
         errorMsg: null
       },
       ephemeral: {
@@ -127,7 +129,8 @@ export default {
               set: (newVal) => { Object.assign(this.form, newVal) }
             }
           }
-        }
+        },
+        connect(CreateGroupInvitees, this, 'invitees')
       ]
     }
   }
