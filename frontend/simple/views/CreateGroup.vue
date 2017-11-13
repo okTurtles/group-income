@@ -31,6 +31,7 @@ import {
   CreateGroupPurpose,
   CreateGroupMincome,
   CreateGroupRules,
+  CreateGroupPrivacy,
   CreateGroupInvitees,
   CreateGroupSummary
 } from '../components/CreateGroup'
@@ -62,7 +63,6 @@ export default {
           memberApprovalPercentage: this.form.memberApprovalPercentage,
           memberRemovalPercentage: this.form.memberRemovalPercentage,
           incomeProvided: this.form.incomeProvided,
-          contributionPrivacy: this.form.contributionPrivacy,
           founderUsername: this.$store.state.loggedIn.name,
           founderIdentityContractId: this.$store.state.loggedIn.identityContractId
         })
@@ -133,7 +133,6 @@ export default {
         memberApprovalPercentage: 80,
         memberRemovalPercentage: 80,
         incomeProvided: null,
-        contributionPrivacy: 'Very Private',
         invitees: [],
         errorMsg: null
       },
@@ -150,6 +149,7 @@ export default {
         connect(CreateGroupPurpose, this.form, 'sharedValues'),
         connect(CreateGroupMincome, this.form, 'incomeProvided'),
         connect(CreateGroupRules, this.form),
+        connect(CreateGroupPrivacy, this.form, 'privacy'),
         connect(CreateGroupInvitees, this.form, 'invitees'),
         connect(CreateGroupSummary, this.form)
       ]
