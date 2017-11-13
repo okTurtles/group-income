@@ -8,27 +8,16 @@
         <form
           ref="form"
           name="CreateGroupForm"
-          @submit.prevent="submit"
+          @submit.prevent
         >
-
-        <vue-assistant :views="views" @done="submit">
-        </vue-assistant>
-
+          <vue-assistant :views="views" @done="submit">
+          </vue-assistant>
         </form>
       </div>
       <div class="column is-1"></div>
     </div>
   </section>
 </template>
-<style scoped>
-  .button-box {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 20%;
-    margin: 30px 0 0 0;
-  }
-</style>
 <script>
 /* @flow */
 import Vue from 'vue'
