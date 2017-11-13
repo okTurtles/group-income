@@ -13,6 +13,7 @@
       name="changePercentage"
       :value="value.changePercentage"
       @input="(e) => $emit('input', {changePercentage: parseInt(e.target.value)})"
+      ref="changePercentage"
     >
     <p class="title is-3">{{ value.memberApprovalPercentage }}%</p>
     <input
@@ -46,6 +47,9 @@ export default {
   name: 'CreateGroupRules',
   props: {
     value: {type: Object}
+  },
+  mounted () {
+    this.$refs.changePercentage.focus()
   }
 }
 </script>

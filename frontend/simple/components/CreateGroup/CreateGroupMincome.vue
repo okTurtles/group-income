@@ -11,6 +11,7 @@
       data-vv-rules="required|decimal:2"
       :value="value"
       @keyup="(e) => $emit('input', e.target.value)"
+      ref="mincome"
     />
     </textarea>
     <p><i18n>How much income would you like your group to provide?</i18n></p>
@@ -21,6 +22,9 @@ export default {
   name: 'CreateGroupMincome',
   props: {
     value: {type: String}
+  },
+  mounted () {
+    this.$refs.mincome.focus()
   }
 }
 </script>

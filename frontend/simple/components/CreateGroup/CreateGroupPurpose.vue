@@ -9,6 +9,7 @@
       name="sharedValues"
       :value="value"
       @keyup="(e) => $emit('input', e.target.value)"
+      ref="purpose"
     >
     </textarea>
     <p><i18n>Why this group? What is your group about? What connects you?</i18n></p>
@@ -19,6 +20,9 @@ export default {
   name: 'CreateGroupPurpose',
   props: {
     value: {type: String}
+  },
+  mounted () {
+    this.$refs.purpose.focus()
   }
 }
 </script>

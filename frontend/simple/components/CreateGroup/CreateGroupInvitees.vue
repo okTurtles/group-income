@@ -6,6 +6,7 @@
       name="invitee"
       class="input"
       v-model="searchUser"
+      ref="searchUser"
     >
     <button
       @click.prevent="addInvitee()"
@@ -75,6 +76,9 @@ export default {
   name: 'CreateGroupInvitees',
   props: {
     value: {type: Array}
+  },
+  mounted () {
+    this.$refs.searchUser.focus()
   },
   data: function () {
     return {

@@ -29,13 +29,13 @@
     <div class="container">
       <slot name="back">
         <!-- default content goes here -->
-        <a class="button" @click="prev" :disabled="!this.currentStep"><i18n>Back</i18n></a>
+        <button class="button" @click.prevent="prev" :disabled="!this.currentStep"><i18n>Back</i18n></button>
       </slot>
       <slot name="next" v-if="currentStep + 1 < this.views.length">
-        <a class="button" @click="next"><i18n>Next</i18n></a>
+        <button class="button" @click.prevent="next"><i18n>Next</i18n></button>
       </slot>
       <slot name="finish" v-if="currentStep + 1 === this.views.length">
-        <a class="button" @click="finish"><i18n>Finish</i18n></a>
+        <button class="button" @click.prevent="finish"><i18n>Finish</i18n></button>
       </slot>
     </div>
   </div>
