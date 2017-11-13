@@ -42,6 +42,7 @@ import CreateGroupPurpose from '../components/CreateGroup/CreateGroupPurpose.vue
 import CreateGroupMincome from '../components/CreateGroup/CreateGroupMincome.vue'
 import CreateGroupRules from '../components/CreateGroup/CreateGroupRules.vue'
 import CreateGroupInvitees from '../components/CreateGroup/CreateGroupInvitees.vue'
+import CreateGroupSummary from '../components/CreateGroup/CreateGroupSummary.vue'
 import { connect } from '../js/utils'
 
 export default {
@@ -130,7 +131,14 @@ export default {
             }
           }
         },
-        connect(CreateGroupInvitees, this, 'invitees')
+        connect(CreateGroupInvitees, this, 'invitees'),
+        {
+          template: `<create-group-summary v-model="value"></create-group-summary>`,
+          components: { CreateGroupSummary },
+          data: () => ({
+            value: this.form
+          })
+        }
       ]
     }
   }
