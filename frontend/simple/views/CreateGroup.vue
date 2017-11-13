@@ -81,8 +81,8 @@ export default {
         // TODO: convert this to SBL
         Vue.events.$once(hash, (contractId, entry) => {
           this.$store.commit('setCurrentGroupId', hash)
-          // Take them to the invite group members page.
-          this.$router.push({path: '/invite'})
+          // Take them to the dashboard.
+          this.$router.push({path: '/dashboard'})
         })
         // TODO: convert this to SBL
         await backend.publishLogEntry(hash, entry)
