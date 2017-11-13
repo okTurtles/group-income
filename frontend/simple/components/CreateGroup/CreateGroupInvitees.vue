@@ -108,6 +108,9 @@ export default {
         console.log(err)
         this.userErrorMsg = L('Invalid User')
       }
+    },
+    remove (index) {
+      this.invitees.splice(index, 1)
     }
   }
 }
