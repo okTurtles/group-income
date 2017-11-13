@@ -116,31 +116,12 @@ export default {
   computed: {
     views: function () {
       return [
-        connect(CreateGroupName, this, 'groupName'),
-        connect(CreateGroupPurpose, this, 'sharedValues'),
-        connect(CreateGroupMincome, this, 'incomeProvided'),
-        {
-          template: `<create-group-rules v-model="value"></create-group-rules>`,
-          components: { CreateGroupRules },
-          computed: {
-            value: {
-              get: () => ({
-                changePercentage: this.form.changePercentage,
-                memberApprovalPercentage: this.form.memberApprovalPercentage,
-                memberRemovalPercentage: this.form.memberRemovalPercentage
-              }),
-              set: (newVal) => { Object.assign(this.form, newVal) }
-            }
-          }
-        },
-        connect(CreateGroupInvitees, this, 'invitees'),
-        {
-          template: `<create-group-summary v-model="value"></create-group-summary>`,
-          components: { CreateGroupSummary },
-          data: () => ({
-            value: this.form
-          })
-        }
+        connect(CreateGroupName, this.form, 'groupName'),
+        connect(CreateGroupPurpose, this.form, 'sharedValues'),
+        connect(CreateGroupMincome, this.form, 'incomeProvided'),
+        connect(CreateGroupRules, this.form),
+        connect(CreateGroupInvitees, this.form, 'invitees'),
+        connect(CreateGroupSummary, this.form)
       ]
     }
   }
