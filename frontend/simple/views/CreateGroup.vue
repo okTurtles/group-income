@@ -11,7 +11,7 @@
           @submit.prevent="submit"
         >
 
-        <vue-assistant :views="views">
+        <vue-assistant :views="views" @done="submit">
         </vue-assistant>
 
         </form>

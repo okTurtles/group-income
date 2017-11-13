@@ -31,8 +31,11 @@
         <!-- default content goes here -->
         <a class="button" @click="prev" :disabled="!this.currentStep">Back</a>
       </slot>
-      <slot name="next">
+      <slot name="next" v-if="currentStep + 1 < this.views.length">
         <a class="button" @click="next">Next</a>
+      </slot>
+      <slot name="finish" v-if="currentStep + 1 === this.views.length">
+        <a class="button" @click="finish">Finish</a>
       </slot>
     </div>
   </div>
@@ -66,9 +69,7 @@ export default {
   },
   methods: {
     next () {
-      if (this.currentStep + 1 === this.views.length) {
-        this.$emit('done')
-      } else {
+      if (this.currentStep + 1 < this.views.length) {
         this.currentStep += 1
       }
     },
@@ -76,6 +77,9 @@ export default {
       if (this.currentStep > 0) {
         this.currentStep -= 1
       }
+    },
+    finish () {
+      this.$emit('done')
     }
   },
   computed: {
