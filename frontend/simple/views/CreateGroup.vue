@@ -91,6 +91,47 @@ export default {
       } catch (error) {
         console.error(error)
         this.form.errorMsg = L('Failed to Create Group')
+        return
+      }
+
+      try {
+        this.errorMsg = null
+        // TODO: as invitees are successfully invited display in a
+        // seperate invitees grid and add them to some validation for duplicate invites
+        for (let invitee of this.form.invitees) {
+          // We need to have the latest mailbox attribute for the user
+          const mailbox = await backend.latestHash(invitee.state.attributes.mailbox)
+          const sentDate = new Date().toString()
+
+          // We need to post the invite to the users' mailbox contract
+          const invite = new Events.HashableMailboxPostMessage(
+            {
+              from: this.$store.getters.currentGroupState.groupName,
+              headers: [this.$store.state.currentGroupId],
+              messageType: Events.HashableMailboxPostMessage.TypeInvite,
+              sentDate
+            },
+            mailbox
+          )
+          await backend.publishLogEntry(invitee.state.attributes.mailbox, invite)
+
+          // We need to make a record of the invitation in the group's contract
+          const latest = await backend.latestHash(this.$store.state.currentGroupId)
+          const invited = new Events.HashableGroupRecordInvitation(
+            {
+              username: invitee.state.attributes.name,
+              inviteHash: invite.toHash(),
+              sentDate
+            },
+            latest
+          )
+          await backend.publishLogEntry(this.$store.state.currentGroupId, invited)
+        }
+        this.invited = true
+      } catch (error) {
+        console.error(error)
+        // TODO: Create More descriptive errors
+        this.errorMsg = L('Failed to Invite Users')
       }
     }
   },

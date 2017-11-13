@@ -10,7 +10,7 @@
       <li><i18n>Add Member:</i18n> {{ value.memberApprovalPercentage }}%</li>
       <li><i18n>Remove Member:</i18n> {{ value.memberRemovalPercentage }}%</li>
     </ul>
-    <p><i18n>Members to invite:</i18n> <span v-for="invitee in value.invitees"> {{ invitee }} </span></p>
+    <p><i18n>Members to invite:</i18n> <span v-for="invitee in value.invitees"> {{ invitee.state.attributes.name }} </span></p>
     </textarea>
   </div>
 </template>
