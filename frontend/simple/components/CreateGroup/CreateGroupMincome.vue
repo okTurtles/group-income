@@ -10,7 +10,7 @@
       placeholder="Amount"
       required
       :value="group.incomeProvided"
-      @keyup="update"
+      @input="update"
       ref="mincome"
     />
     </textarea>

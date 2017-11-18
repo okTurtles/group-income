@@ -261,22 +261,46 @@ describe('Frontend', function () {
     it('Should create a group', async function () {
       this.timeout(10000)
       await n.click('#CreateGroup')
+      const testName = 'Test Group'
+      const testValues = 'Testing this software'
+      const testIncome = 200
       const created = await n
-        .insert('input[name="groupName"]', 'Test Group')
-        .insert('textarea[name="sharedValues"]', 'Testing this software')
-        .insert('input[name="groupName"]', 'Test Group')
-        .insert('input[name="incomeProvided"]', 200)
-        .select('select[name="contributionPrivacy"]', 'Very Private')
-        .click('button[type="submit"]')
-        .wait('#addButton')
-        .exists('#addButton')
-      should(created).equal(true)
+        .wait('input[name="groupName"]')
+        .insert('input[name="groupName"]', testName)
+        .click('#nextBtn')
+        .wait('textarea[name="sharedValues"]')
+        .insert('textarea[name="sharedValues"]', testValues)
+        .click('#nextBtn')
+        .wait('input[name="incomeProvided"]')
+        .insert('input[name="incomeProvided"]', testIncome)
+        .click('#nextBtn')
+        .wait('input[name="changePercentage"]')
+        // TODO set value for settings inputs
+        .click('#nextBtn')
+        .wait('#privacyStep')
+        .click('#nextBtn')
+        .wait('input[name="invitee"]')
+        // TODO add user
+        .click('#nextBtn')
+        .wait('#summaryStep')
+        .click('#finishBtn')
+        .wait('#dashboard')
+        .evaluate(() => ({
+          groupName: document.querySelector('#groupName').innerText,
+          sharedValues: document.querySelector('#sharedValues').innerText,
+          incomeProvided: document.querySelector('.min-income').innerText
+        }))
+
+      should(created.groupName).equal(testName)
+      should(created.sharedValues).equal(testValues)
+      should(created.incomeProvided).equal('$' + testIncome)
     })
 
     it('Should invite members to group', async function () {
       this.timeout(4000)
 
       const count = await n
+        .click('.invite-button')
         .wait('#addButton')
         .insert('#searchUser', username)
         .click('#addButton')

@@ -6,7 +6,7 @@
       required
       name="sharedValues"
       :value="group.sharedValues"
-      @keyup="update"
+      @input="update"
       ref="purpose"
     >
     </textarea>

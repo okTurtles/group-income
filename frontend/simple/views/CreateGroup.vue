@@ -15,13 +15,28 @@
             </router-view>
           </transition>
 
-          <button class="button" @click.prevent="prev" :disabled="!this.currentStep"><i18n>Back</i18n></button>
-          <button class="button" @click.prevent="next" v-if="currentStep + 1 < config.steps.length"><i18n>Next</i18n></button>
+          <button
+            class="button"
+            @click.prevent="prev"
+            :disabled="!this.currentStep"
+            id="prevBtn"
+          >
+            <i18n>Back</i18n>
+          </button>
+          <button
+            class="button"
+            @click.prevent="next"
+            v-if="currentStep + 1 < config.steps.length"
+            id="nextBtn"
+          >
+            <i18n>Next</i18n>
+          </button>
           <button
             class="button"
             @click.prevent="submit"
             :disabled="Object.values(validity).some(field => !field)"
             v-if="currentStep + 1 === config.steps.length"
+            id="finishBtn"
           >
             <i18n>Finish</i18n>
           </button>

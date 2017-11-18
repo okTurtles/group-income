@@ -7,7 +7,7 @@
       name="groupName"
       class="input"
       :value="group.groupName"
-      @keyup="update"
+      @input="update"
       ref="name"
     >
     <p><i18n>This is some help text to give ideas on what kind of group you're creating</i18n></p>
