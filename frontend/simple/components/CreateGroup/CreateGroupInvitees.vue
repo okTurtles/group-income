@@ -75,14 +75,14 @@ import L from '../../js/translations'
 export default {
   name: 'CreateGroupInvitees',
   props: {
-    value: {type: Array}
+    group: {type: Object}
   },
   mounted () {
     this.$refs.searchUser.focus()
   },
   data: function () {
     return {
-      invitees: this.value,
+      invitees: this.group.invitees,
       searchUser: '',
       userErrorMsg: ''
     }
@@ -107,7 +107,7 @@ export default {
         }
         this.searchUser = null
         this.userErrorMsg = ''
-        this.$emit('input', this.invitees)
+        this.$emit('input', { invitees: this.invitees })
       } catch (err) {
         console.log(err)
         this.userErrorMsg = L('Invalid User')

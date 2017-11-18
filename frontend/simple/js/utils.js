@@ -24,21 +24,6 @@ export function mapValues (obj: Object, fn: Function, o: Object = {}) {
   return o
 }
 
-// bind local properties to on-the-fly created vue components
-// now it only works with either single values ('boundKey') or passing the whole form object
-// TODO: it should work with more complex but still filtered values, see CreateGroupRules comp
-export const connect = (component, boundData, boundKey) => ({
-  name: 'Connected' + component.name,
-  template: `<comp v-model="value"></comp>`,
-  components: { comp: component },
-  computed: {
-    value: {
-      get: () => boundKey ? boundData[boundKey] : boundData,
-      set: (newVal) => { Object.assign(boundData, boundKey ? {[boundKey]: newVal} : newVal) }
-    }
-  }
-})
-
 // wrap to prevent fragment instances:
 // http://vuejs.org/guide/components.html#Fragment-Instance
 // NOTE: this was used for EJS files, which we no longer support

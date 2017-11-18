@@ -7,8 +7,8 @@
       data-vv-as="Shared Values"
       data-vv-rules="required"
       name="sharedValues"
-      :value="value"
-      @keyup="(e) => $emit('input', e.target.value)"
+      :value="group.sharedValues"
+      @keyup="(e) => $emit('input', { sharedValues: e.target.value })"
       ref="purpose"
     >
     </textarea>
@@ -19,7 +19,7 @@
 export default {
   name: 'CreateGroupPurpose',
   props: {
-    value: {type: String}
+    group: {type: Object}
   },
   mounted () {
     this.$refs.purpose.focus()

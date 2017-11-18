@@ -8,8 +8,8 @@
       data-vv-rules="required"
       name="groupName"
       class="input"
-      :value="value"
-      @keyup="(e) => $emit('input', e.target.value)"
+      :value="group.groupName"
+      @keyup="(e) => $emit('input', { groupName: e.target.value })"
       ref="name"
     >
     <p><i18n>This is some help text to give ideas on what kind of group you're creating</i18n></p>
@@ -19,7 +19,7 @@
 export default {
   name: 'CreateGroupName',
   props: {
-    value: {type: String}
+    group: {type: Object}
   },
   mounted () {
     this.$refs.name.focus()

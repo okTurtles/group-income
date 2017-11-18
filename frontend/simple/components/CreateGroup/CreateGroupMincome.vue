@@ -9,8 +9,8 @@
       v-validate
       data-vv-as="Income Provided"
       data-vv-rules="required|decimal:2"
-      :value="value"
-      @keyup="(e) => $emit('input', e.target.value)"
+      :value="group.incomeProvided"
+      @keyup="(e) => $emit('input', { incomeProvided: e.target.value })"
       ref="mincome"
     />
     </textarea>
@@ -21,7 +21,7 @@
 export default {
   name: 'CreateGroupMincome',
   props: {
-    value: {type: String}
+    group: {type: Object}
   },
   mounted () {
     this.$refs.mincome.focus()

@@ -8,7 +8,7 @@
 export default {
   name: 'CreateGroupPrivacy',
   props: {
-    value: {type: String}
+    group: {type: Object}
   }
 }
 </script>

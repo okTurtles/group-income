@@ -10,14 +10,28 @@
           name="CreateGroupForm"
           @submit.prevent
         >
-          <vue-assistant :views="views" @done="submit">
-          </vue-assistant>
+          <transition name="fade" mode="out-in">
+            <router-view :group="form" @input="(payload) => updateGroupData(payload)">
+            </router-view>
+          </transition>
+
+          <button class="button" @click.prevent="prev" :disabled="!this.currentStep"><i18n>Back</i18n></button>
+          <button class="button" @click.prevent="next" v-if="currentStep + 1 < config.steps.length"><i18n>Next</i18n></button>
+          <button class="button" @click.prevent="submit" v-if="currentStep + 1 === config.steps.length"><i18n>Finish</i18n></button>
         </form>
       </div>
       <div class="column is-1"></div>
     </div>
   </section>
 </template>
+<style>
+  .fade-enter-active, .fade-leave-active {
+    transition: opacity .2s
+  }
+  .fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+    opacity: 0
+  }
+</style>
 <script>
 /* @flow */
 import Vue from 'vue'
@@ -25,24 +39,20 @@ import backend from '../js/backend'
 import * as Events from '../../../shared/events'
 import * as contracts from '../js/events'
 import L from '../js/translations'
-import VueAssistant from '../components/VueAssistant.vue'
-import {
-  CreateGroupName,
-  CreateGroupPurpose,
-  CreateGroupMincome,
-  CreateGroupRules,
-  CreateGroupPrivacy,
-  CreateGroupInvitees,
-  CreateGroupSummary
-} from '../components/CreateGroup'
-import { connect } from '../js/utils'
+import StepAssistant from '../components/StepAssistant'
+// until I can access child routes through $route
+// https://github.com/vuejs/vue-router/issues/1149
+import { CreateGroupSteps } from '../js/router'
 
 export default {
   name: 'CreateGroupView',
-  components: {
-    VueAssistant
-  },
+  mixins: [
+    StepAssistant
+  ],
   methods: {
+    updateGroupData (payload) {
+      Object.assign(this.form, payload)
+    },
     submit: async function () {
       try {
         await this.$validator.validateAll()
@@ -139,20 +149,10 @@ export default {
       ephemeral: {
         // this determines whether or not to render proxy components for nightmare
         dev: process.env.NODE_ENV === 'development'
+      },
+      config: {
+        steps: CreateGroupSteps
       }
-    }
-  },
-  computed: {
-    views: function () {
-      return [
-        connect(CreateGroupName, this.form, 'groupName'),
-        connect(CreateGroupPurpose, this.form, 'sharedValues'),
-        connect(CreateGroupMincome, this.form, 'incomeProvided'),
-        connect(CreateGroupRules, this.form),
-        connect(CreateGroupPrivacy, this.form, 'privacy'),
-        connect(CreateGroupInvitees, this.form, 'invitees'),
-        connect(CreateGroupSummary, this.form)
-      ]
     }
   }
 }
