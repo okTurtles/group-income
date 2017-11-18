@@ -3,12 +3,10 @@
     <h1><i18n>Group Purpose</i18n></h1>
     <textarea
       class="textarea"
-      v-validate
-      data-vv-as="Shared Values"
-      data-vv-rules="required"
+      required
       name="sharedValues"
       :value="group.sharedValues"
-      @keyup="(e) => $emit('input', { sharedValues: e.target.value })"
+      @keyup="update"
       ref="purpose"
     >
     </textarea>
@@ -23,6 +21,18 @@ export default {
   },
   mounted () {
     this.$refs.purpose.focus()
+  },
+  methods: {
+    update (e) {
+      this.$emit('input', {
+        data: {
+          sharedValues: e.target.value
+        },
+        validity: {
+          sharedValues: e.target.validity.valid
+        }
+      })
+    }
   }
 }
 </script>

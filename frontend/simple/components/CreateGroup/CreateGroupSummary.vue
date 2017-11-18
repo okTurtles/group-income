@@ -4,6 +4,7 @@
     <div>
       <h2><i18n>Group name:</i18n></h2>
       <p>{{ group.groupName }}</p>
+      <status-icon :success="validity.groupName" />
       <router-link :to="{name: 'CreateGroupName'}">
         <i18n>Edit</i18n>
       </router-link>
@@ -11,6 +12,7 @@
     <div>
       <h2><i18n>Group purpose:</i18n></h2>
       <p>{{ group.sharedValues }}</p>
+      <status-icon :success="validity.sharedValues" />
       <router-link :to="{name: 'CreateGroupPurpose'}">
         <i18n>Edit</i18n>
       </router-link>
@@ -18,6 +20,7 @@
     <div>
       <h2><i18n>Minimum income:</i18n></h2>
       <p>{{ group.incomeProvided }}</p>
+      <status-icon :success="validity.incomeProvided" />
       <router-link :to="{name: 'CreateGroupMincome'}">
         <i18n>Edit</i18n>
       </router-link>
@@ -44,10 +47,16 @@
   </div>
 </template>
 <script>
+import StatusIcon from '../StatusIcon.vue'
+
 export default {
   name: 'CreateGroupSummary',
   props: {
-    group: {type: Object}
+    group: {type: Object},
+    validity: {type: Object}
+  },
+  components: {
+    StatusIcon
   }
 }
 </script>

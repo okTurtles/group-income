@@ -11,13 +11,25 @@
           @submit.prevent
         >
           <transition name="fade" mode="out-in">
-            <router-view :group="form" @input="(payload) => updateGroupData(payload)">
+            <router-view :group="form" :validity="validity" @input="(payload) => updateGroupData(payload)">
             </router-view>
           </transition>
 
           <button class="button" @click.prevent="prev" :disabled="!this.currentStep"><i18n>Back</i18n></button>
           <button class="button" @click.prevent="next" v-if="currentStep + 1 < config.steps.length"><i18n>Next</i18n></button>
-          <button class="button" @click.prevent="submit" v-if="currentStep + 1 === config.steps.length"><i18n>Finish</i18n></button>
+          <button
+            class="button"
+            @click.prevent="submit"
+            :disabled="Object.values(validity).some(field => !field)"
+            v-if="currentStep + 1 === config.steps.length"
+          >
+            <i18n>Finish</i18n>
+          </button>
+          <article class="message is-danger" v-if="errorMsg">
+            <div class="message-body">
+              {{ errorMsg }}
+            </div>
+          </article>
         </form>
       </div>
       <div class="column is-1"></div>
@@ -51,15 +63,14 @@ export default {
   ],
   methods: {
     updateGroupData (payload) {
-      Object.assign(this.form, payload)
+      this.errorMsg = null
+      Object.assign(this.form, payload.data)
+      Object.assign(this.validity, payload.validity)
     },
     submit: async function () {
-      try {
-        await this.$validator.validateAll()
-      } catch (ex) {
-        const { control } = document.querySelector('span.help.is-danger').dataset
-        document.querySelector(`input[name="${control}"], textarea[name="${control}"]`).focus()
-        document.querySelector(`input[name="${control}"], textarea[name="${control}"]`).scrollIntoView()
+      if (Object.values(this.validity).some(field => !field)) {
+        // TODO: more descriptive error message, highlight erroneous step
+        this.errorMsg = L('We still need some info from you, please go back and fill missing fields')
         return
       }
 
@@ -89,7 +100,7 @@ export default {
         await this.$store.dispatch('syncContractWithServer', hash)
       } catch (error) {
         console.error(error)
-        this.form.errorMsg = L('Failed to Create Group')
+        this.errorMsg = L('Failed to Create Group')
         return
       }
 
@@ -126,7 +137,6 @@ export default {
           )
           await backend.publishLogEntry(this.$store.state.currentGroupId, invited)
         }
-        this.invited = true
       } catch (error) {
         console.error(error)
         // TODO: Create More descriptive errors
@@ -143,8 +153,14 @@ export default {
         memberApprovalPercentage: 80,
         memberRemovalPercentage: 80,
         incomeProvided: null,
-        invitees: [],
-        errorMsg: null
+        invitees: []
+      },
+      // todo: move these under appropriate key for #297
+      errorMsg: null,
+      validity: {
+        groupName: false,
+        sharedValues: false,
+        incomeProvided: false
       },
       ephemeral: {
         // this determines whether or not to render proxy components for nightmare

@@ -3,14 +3,14 @@
     <h1><i18n>Minimum Income</i18n></h1>
     <input
       class="input"
-      type="text"
+      type="number"
+      step="1"
+      min="0"
       name="incomeProvided"
       placeholder="Amount"
-      v-validate
-      data-vv-as="Income Provided"
-      data-vv-rules="required|decimal:2"
+      required
       :value="group.incomeProvided"
-      @keyup="(e) => $emit('input', { incomeProvided: e.target.value })"
+      @keyup="update"
       ref="mincome"
     />
     </textarea>
@@ -25,6 +25,18 @@ export default {
   },
   mounted () {
     this.$refs.mincome.focus()
+  },
+  methods: {
+    update (e) {
+      this.$emit('input', {
+        data: {
+          incomeProvided: e.target.value
+        },
+        validity: {
+          incomeProvided: e.target.validity.valid
+        }
+      })
+    }
   }
 }
 </script>

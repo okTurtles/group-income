@@ -5,39 +5,30 @@
     <p class="title is-3 percentage">{{ group.changePercentage }}%</p>
     <input
       type="range"
-      v-validate
-      data-vv-as="Percentage to change rules"
-      data-vv-rules="between:1,100"
-      min="0"
+      min="1"
       max="100"
       name="changePercentage"
       :value="group.changePercentage"
-      @input="(e) => $emit('input', { changePercentage: parseInt(e.target.value) })"
+      @input="update"
       ref="changePercentage"
     >
     <p class="title is-3">{{ group.memberApprovalPercentage }}%</p>
     <input
       type="range"
-      min="0"
+      min="1"
       max="100"
-      data-vv-as="Member Approval Percentage"
-      v-validate
-      data-vv-rules="between:1,100"
       name="memberApprovalPercentage"
       :value="group.memberApprovalPercentage"
-      @input="(e) => $emit('input', { memberApprovalPercentage: parseInt(e.target.value) })"
+      @input="update"
     >
     <p class="title is-3">{{ group.memberRemovalPercentage }}%</p>
     <input
       type="range"
-      min="0"
+      min="1"
       max="100"
-      data-vv-as="Member Removal Percentage"
-      v-validate
-      data-vv-rules="between:1,100"
       name="memberRemovalPercentage"
       :value="group.memberRemovalPercentage"
-      @input="(e) => $emit('input', { memberRemovalPercentage: parseInt(e.target.value) })"
+      @input="update"
     >
     </textarea>
   </div>
@@ -50,6 +41,18 @@ export default {
   },
   mounted () {
     this.$refs.changePercentage.focus()
+  },
+  methods: {
+    update (e) {
+      this.$emit('input', {
+        data: {
+          [e.target.name]: parseInt(e.target.value)
+        },
+        validity: {
+          [e.target.name]: e.target.validity.valid
+        }
+      })
+    }
   }
 }
 </script>

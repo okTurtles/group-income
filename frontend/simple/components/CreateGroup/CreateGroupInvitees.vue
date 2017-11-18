@@ -107,7 +107,7 @@ export default {
         }
         this.searchUser = null
         this.userErrorMsg = ''
-        this.$emit('input', { invitees: this.invitees })
+        this.$emit('input', { data: { invitees: this.invitees } })
       } catch (err) {
         console.log(err)
         this.userErrorMsg = L('Invalid User')
