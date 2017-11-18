@@ -5,7 +5,7 @@
       <div class="container">
         <div class="nav-left">
           <router-link to="home" class="nav-item" @click="toggleTimeTravel">
-            <img src="images/logo-transparent.png">
+            <img src="/simple/images/logo-transparent.png">
           </router-link>
         </div>
         <div class="nav-center">
