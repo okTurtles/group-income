@@ -57,7 +57,7 @@
 </template>
 <script>
 export default {
-  name: 'PayGroup',
+  name: 'SetContribution',
   props: {
     minCome: {type: Number, default: 1000},
     amountReceivedThisMonth: {type: Number, default: 852}
