@@ -263,7 +263,7 @@ describe('Frontend', function () {
       const testValues = 'Testing this software'
       const testIncome = 200
       const testSetting = 60
-      this.timeout(10000)
+      this.timeout(15000) // It just takes some time
       await n
         .click('#CreateGroup')
         // fill group data
