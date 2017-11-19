@@ -10,11 +10,10 @@
         </transition>
 
         <div class="field step-controls">
-          <p class="control">
+          <p class="control" v-if="currentStep + 1 < config.steps.length">
             <button
               class="button is-success is-large"
               @click.prevent="next"
-              v-if="currentStep + 1 < config.steps.length"
               id="nextBtn"
             >
               <i18n>Next</i18n>
@@ -23,12 +22,11 @@
               </span>
             </button>
           </p>
-          <p class="control">
+          <p class="control" v-if="currentStep + 1 === config.steps.length">
             <button
               class="button is-success is-large"
               @click.prevent="submit"
               :disabled="Object.values(validity).some(field => !field)"
-              v-if="currentStep + 1 === config.steps.length"
               id="finishBtn"
             >
               <i18n>Finish</i18n>
@@ -69,10 +67,14 @@
     flex-direction: row-reverse;
     align-items: flex-end;
     justify-content: flex-start;
-    margin-top: 1.5rem;
+    margin-top: 3rem;
   }
   .step-controls .control {
     margin-left: 0.25rem;
+  }
+  #create-group-page .title.is-1,
+  #create-group-page .title.is-2 {
+    margin-bottom: 3rem;
   }
 </style>
 <script>

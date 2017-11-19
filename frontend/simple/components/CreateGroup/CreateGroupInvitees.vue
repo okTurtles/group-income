@@ -31,40 +31,33 @@
       </div>
     </article>
 
-    <div class="box" v-if="invitees.length">
-      <div class="media" v-for="(invitee, index) in invitees">
-        <div class="media-left">
-          <p class="image is-64x64">
-            <!-- TODO: use responsive figure:
-          http://bulma.io/documentation/elements/image/ -->
-            <!-- TODO: ideally these would be loaded from cache -->
-            <img :src="invitee.state.attributes.picture" width="64" height="64">
-          </p>
-        </div>
-        <div class="media-content">
-          <strong>{{invitee.state.attributes.name}}</strong>
-        </div>
-        <div class="media-right">
-          <button class="delete" @click="remove(index)"></button>
+
+    <div class="tile is-ancestor">
+      <div class="tile is-4 is-parent" v-for="(invitee, index) in invitees">
+        <div class="card tile is-child">
+          <div class="card-image">
+            <figure class="image is-square">
+              <img :src="invitee.state.attributes.picture" :alt="invitee.state.attributes.name">
+            </figure>
+          </div>
+          <header class="card-header">
+            <p class="card-header-title">
+              {{invitee.state.attributes.name}}
+            </p>
+            <a class="card-header-icon">
+              <button class="delete" @click="remove(index)"></button>
+            </a>
+          </header>
         </div>
       </div>
     </div>
 
   </div>
 </template>
-<style lang="scss" scoped>
-.table-header {
-  background-color: #fafafa;
-}
-.media {
-  align-items: center;
-}
-.add-form {
-  margin-bottom: 2rem;
-}
-.notification-icon {
-  margin-right: 1rem;
-}
+<style>
+  .tile.is-ancestor {
+    flex-wrap: wrap;
+  }
 </style>
 <script>
 import { latestContractState } from '../../js/state'
