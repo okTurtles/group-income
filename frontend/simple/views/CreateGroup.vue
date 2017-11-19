@@ -3,60 +3,79 @@
     <!-- TODO: use Bulma's .field -->
     <!-- TODO: center using .centered like SignUp.vue -->
     <div class="columns">
-      <div class="column is-1"></div>
-      <div class="column is-10" >
-        <form
-          ref="form"
-          name="CreateGroupForm"
-          @submit.prevent
-        >
-          <transition name="fade" mode="out-in">
-            <router-view :group="form" :validity="validity" @input="(payload) => updateGroupData(payload)">
-            </router-view>
-          </transition>
+      <div class="column is-half is-offset-one-quarter" >
+        <transition name="fade" mode="out-in">
+          <router-view :group="form" :validity="validity" @input="(payload) => updateGroupData(payload)">
+          </router-view>
+        </transition>
 
-          <button
-            class="button"
-            @click.prevent="prev"
-            :disabled="!this.currentStep"
-            id="prevBtn"
-          >
-            <i18n>Back</i18n>
-          </button>
-          <button
-            class="button"
-            @click.prevent="next"
-            v-if="currentStep + 1 < config.steps.length"
-            id="nextBtn"
-          >
-            <i18n>Next</i18n>
-          </button>
-          <button
-            class="button"
-            @click.prevent="submit"
-            :disabled="Object.values(validity).some(field => !field)"
-            v-if="currentStep + 1 === config.steps.length"
-            id="finishBtn"
-          >
-            <i18n>Finish</i18n>
-          </button>
-          <article class="message is-danger" v-if="errorMsg">
-            <div class="message-body">
-              {{ errorMsg }}
-            </div>
-          </article>
-        </form>
+        <div class="field step-controls">
+          <p class="control">
+            <button
+              class="button is-success is-large"
+              @click.prevent="next"
+              v-if="currentStep + 1 < config.steps.length"
+              id="nextBtn"
+            >
+              <i18n>Next</i18n>
+              <span class="icon">
+                <i class="fa fa-arrow-right"></i>
+              </span>
+            </button>
+          </p>
+          <p class="control">
+            <button
+              class="button is-success is-large"
+              @click.prevent="submit"
+              :disabled="Object.values(validity).some(field => !field)"
+              v-if="currentStep + 1 === config.steps.length"
+              id="finishBtn"
+            >
+              <i18n>Finish</i18n>
+              <span class="icon">
+                <i class="fa fa-check-circle"></i>
+              </span>
+            </button>
+          </p>
+          <p class="control">
+            <button
+              class="button is-light is-medium"
+              @click.prevent="prev"
+              :disabled="!this.currentStep"
+              id="prevBtn"
+            >
+              <span class="icon is-small">
+                <i class="fa fa-arrow-left"></i>
+              </span>
+              <i18n>Back</i18n>
+            </button>
+          </p>
+        </div>
+        <article class="message is-danger" v-if="errorMsg">
+          <div class="message-body">
+            {{ errorMsg }}
+          </div>
+        </article>
       </div>
-      <div class="column is-1"></div>
     </div>
   </section>
 </template>
 <style>
   .fade-enter-active, .fade-leave-active {
-    transition: opacity .2s
+    transition: opacity .2s;
   }
   .fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
-    opacity: 0
+    opacity: 0;
+  }
+  .step-controls {
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: flex-end;
+    justify-content: flex-start;
+    margin-top: 1.5rem;
+  }
+  .step-controls .control {
+    margin-left: 0.25rem;
   }
 </style>
 <script>
