@@ -15,6 +15,7 @@
       </div>
       <div class="control">
         <button
+          id="addButton"
           class="button is-primary is-large"
           @click.prevent="addInvitee"
         >
@@ -31,9 +32,8 @@
       </div>
     </article>
 
-
     <div class="tile is-ancestor">
-      <div class="tile is-4 is-parent" v-for="(invitee, index) in invitees">
+      <div class="tile is-4 is-parent invitee" v-for="(invitee, index) in invitees">
         <div class="card tile is-child">
           <div class="card-image">
             <figure class="image is-square">

@@ -266,6 +266,7 @@ describe('Frontend', function () {
       this.timeout(10000)
       await n
         .click('#CreateGroup')
+        // fill group data
         .wait('input[name="groupName"]')
         .insert('input[name="groupName"]', testName)
         .click('#nextBtn')
@@ -292,25 +293,35 @@ describe('Frontend', function () {
         .click('#nextBtn')
         .wait('#privacyStep')
         .click('#nextBtn')
+        // invite members
         .wait('input[name="invitee"]')
-        // TODO add user
+        .insert('input[name="invitee"]', username + '4')
+        .click('#addButton')
+        .wait('.invitee')
+        .wait(10000)
+
+      const invited = await n.evaluate(() => document.querySelectorAll('.invitee').length)
+      should(invited).equal(1)
+
+      await n
         .click('#nextBtn')
         .wait('#summaryStep')
-
+      // summary page sees group as valid
       const valid = await n.exists('#finishBtn:not(:disabled)')
       should(valid).equal(true)
-
-      const created = await n
+      // submit group
+      await n
         .click('#finishBtn')
         .wait('#dashboard')
-        .evaluate(() => ({
-          groupName: document.querySelector('#groupName').innerText,
-          sharedValues: document.querySelector('#sharedValues').innerText,
-          incomeProvided: document.querySelector('.min-income').innerText,
-          changePercentage: document.querySelector('#changePercentage').innerText,
-          memberApprovalPercentage: document.querySelector('#approvePercentage').innerText,
-          memberRemovalPercentage: document.querySelector('#removePercentage').innerText
-        }))
+
+      const created = await n.evaluate(() => ({
+        groupName: document.querySelector('#groupName').innerText,
+        sharedValues: document.querySelector('#sharedValues').innerText,
+        incomeProvided: document.querySelector('.min-income').innerText,
+        changePercentage: document.querySelector('#changePercentage').innerText,
+        memberApprovalPercentage: document.querySelector('#approvePercentage').innerText,
+        memberRemovalPercentage: document.querySelector('#removePercentage').innerText
+      }))
       should(created.groupName).equal(testName)
       should(created.sharedValues).equal(testValues)
       should(created.incomeProvided).equal('$' + testIncome)
