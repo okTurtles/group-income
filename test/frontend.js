@@ -274,7 +274,7 @@ describe('Frontend', function () {
         .wait('input[name="incomeProvided"]')
         .insert('input[name="incomeProvided"]', testIncome)
         .click('#nextBtn')
-        .wait('input[name="changePercentage"]')
+        .wait('#rulesStep')
         // TODO set value for settings inputs
         .click('#nextBtn')
         .wait('#privacyStep')
