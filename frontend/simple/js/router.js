@@ -10,7 +10,8 @@ import Invite from '../views/Invite.vue'
 import Mailbox from '../views/Mailbox.vue'
 import Join from '../views/Join.vue'
 import Vote from '../views/Vote.vue'
-import PayGroup from '../views/PayGroup.vue'
+import SetContribution from '../views/SetContribution.vue'
+import PayGroupMembers from '../views/PayGroupMembers.vue'
 import Home from '../views/Home.vue'
 import ProposeMember from '../views/ProposeMember.vue'
 import MembersCircle from '../components/MembersCircle.vue'
@@ -122,10 +123,17 @@ var router = new Router({
       }
     },
     {
-      path: '/pay-group',
-      component: PayGroup,
+      path: '/set-contribution',
+      component: SetContribution,
       meta: {
-        title: 'Pay Group'
+        title: 'Set Contribution'
+      }
+    },
+    {
+      path: '/pay-group-members',
+      component: PayGroupMembers,
+      meta: {
+        title: 'Pay Group Members'
       }
     },
     // NOTE: we no longer support ejs pages
