@@ -259,12 +259,13 @@ describe('Frontend', function () {
     })
 
     it('Should create a group', async function () {
-      this.timeout(10000)
-      await n.click('#CreateGroup')
       const testName = 'Test Group'
       const testValues = 'Testing this software'
       const testIncome = 200
-      const created = await n
+      const testSetting = 60
+      this.timeout(10000)
+      await n
+        .click('#CreateGroup')
         .wait('input[name="groupName"]')
         .insert('input[name="groupName"]', testName)
         .click('#nextBtn')
@@ -275,7 +276,19 @@ describe('Frontend', function () {
         .insert('input[name="incomeProvided"]', testIncome)
         .click('#nextBtn')
         .wait('#rulesStep')
-        // TODO set value for settings inputs
+        // set rules
+        .click('#changeRulesToggle')
+        .wait('input[name="changePercentage"]')
+        .insert('input[name="changePercentage"]')
+        .insert('input[name="changePercentage"]', testSetting)
+        .click('#approveToggle')
+        .wait('input[name="memberApprovalPercentage"]')
+        .insert('input[name="memberApprovalPercentage"]')
+        .insert('input[name="memberApprovalPercentage"]', testSetting + 10)
+        .click('#removeToggle')
+        .wait('input[name="memberRemovalPercentage"]')
+        .insert('input[name="memberRemovalPercentage"]')
+        .insert('input[name="memberRemovalPercentage"]', testSetting - 10)
         .click('#nextBtn')
         .wait('#privacyStep')
         .click('#nextBtn')
@@ -283,17 +296,27 @@ describe('Frontend', function () {
         // TODO add user
         .click('#nextBtn')
         .wait('#summaryStep')
+
+      const valid = await n.exists('#finishBtn:not(:disabled)')
+      should(valid).equal(true)
+
+      const created = await n
         .click('#finishBtn')
         .wait('#dashboard')
         .evaluate(() => ({
           groupName: document.querySelector('#groupName').innerText,
           sharedValues: document.querySelector('#sharedValues').innerText,
-          incomeProvided: document.querySelector('.min-income').innerText
+          incomeProvided: document.querySelector('.min-income').innerText,
+          changePercentage: document.querySelector('#changePercentage').innerText,
+          memberApprovalPercentage: document.querySelector('#approvePercentage').innerText,
+          memberRemovalPercentage: document.querySelector('#removePercentage').innerText
         }))
-
       should(created.groupName).equal(testName)
       should(created.sharedValues).equal(testValues)
       should(created.incomeProvided).equal('$' + testIncome)
+      should(created.changePercentage).equal(testSetting + '%')
+      should(created.memberApprovalPercentage).equal(testSetting + 10 + '%')
+      should(created.memberRemovalPercentage).equal(testSetting - 10 + '%')
     })
 
     it('Should invite members to group', async function () {

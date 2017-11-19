@@ -19,7 +19,7 @@
           </div>
         </div>
         <p class="title is-5"><i18n>Change Rules</i18n></p>
-        <button class="button is-link is-6 subtitle" @click="() => toggle('editChange')"><i18n>Change</i18n></button>
+        <button id="changeRulesToggle" class="button is-link is-6 subtitle" @click="() => toggle('editChange')"><i18n>Change</i18n></button>
       </div>
       <div class="column">
         <p class="percent" v-if="!form.editApprove">{{ group.memberApprovalPercentage }}%</p>
@@ -37,7 +37,7 @@
           </div>
         </div>
         <p class="title is-5"><i18n>Add Member</i18n></p>
-        <button class="button is-link is-6 subtitle" @click="() => toggle('editApprove')"><i18n>Change</i18n></button>
+        <button id="approveToggle" class="button is-link is-6 subtitle" @click="() => toggle('editApprove')"><i18n>Change</i18n></button>
       </div>
       <div class="column">
         <p class="percent" v-if="!form.editRemove">{{ group.memberRemovalPercentage }}%</p>
@@ -55,7 +55,7 @@
           </div>
         </div>
         <p class="title is-5"><i18n>Remove Member</i18n></p>
-        <button class="button is-link is-6 subtitle" @click="() => toggle('editRemove')"><i18n>Change</i18n></button>
+        <button id="removeToggle" class="button is-link is-6 subtitle" @click="() => toggle('editRemove')"><i18n>Change</i18n></button>
       </div>
     </div>
   </div>
