@@ -4,10 +4,11 @@
     <div class="field">
       <div class="control">
         <input
+          class="input is-large is-primary"
+          placeholder="Group Name"
+          name="groupName"
           type="text"
           required
-          name="groupName"
-          class="input is-large is-primary"
           :value="group.groupName"
           @input="update"
           ref="name"

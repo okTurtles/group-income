@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h1 id="summaryStep"><i18n>Create Group</i18n></h1>
+    <h1 id="summaryStep" class="title is-2 has-text-centered"><i18n>Create Group</i18n></h1>
     <div>
       <h2><i18n>Group name:</i18n></h2>
       <p>{{ group.groupName }}</p>

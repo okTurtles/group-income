@@ -1,55 +1,54 @@
 <template>
   <div>
-    <h1><i18n>Invite Members</i18n></h1>
-    <input
-      type="text"
-      name="invitee"
-      class="input"
-      v-model="searchUser"
-      ref="searchUser"
-    >
-    <button
-      @click.prevent="addInvitee()"
-    >
-      <i18n>Add</i18n>
-    </button>
+    <h1 class="title is-2 has-text-centered"><i18n>Invite Members</i18n></h1>
+    <div class="field has-addons">
+      <div class="control is-expanded">
+        <input
+          class="input is-large is-primary"
+          placeholder="Username"
+          name="invitee"
+          type="text"
+          v-model="searchUser"
+          ref="searchUser"
+          @keyup.enter="addInvitee"
+        >
+      </div>
+      <div class="control">
+        <button
+          class="button is-primary is-large"
+          @click.prevent="addInvitee"
+        >
+          <i18n>Add</i18n>
+        </button>
+      </div>
+    </div>
 
-    <p><i18n>Who would you like to include in your group?</i18n></p>
+    <p class="content"><i18n>Who would you like to include in your group?</i18n></p>
 
-    <p v-if="userErrorMsg" class="help is-danger">{{ userErrorMsg }}</p>
+    <article class="message is-danger" v-if="userErrorMsg">
+      <div class="message-body">
+        {{ userErrorMsg }}
+      </div>
+    </article>
 
-    <table
-            class="table is-bordered is-striped is-narrow"
-            v-if="invitees.length"
-    >
-      <thead>
-      <tr>
-        <th class="table-header"><i18n>Initial Invitees</i18n></th>
-      </tr>
-      </thead>
-      <tbody>
-      <tr v-for="(invitee, index) in invitees" class="member">
-        <td>
-          <div class="media">
-            <div class="media-left">
-              <p class="image is-64x64">
-                <!-- TODO: use responsive figure:
-              http://bulma.io/documentation/elements/image/ -->
-                <!-- TODO: ideally these would be loaded from cache -->
-                <img :src="invitee.state.attributes.picture" width="64" height="64">
-              </p>
-            </div>
-            <div class="media-content">
-              <strong>{{invitee.state.attributes.name}}</strong>
-            </div>
-            <div class="media-right">
-              <button class="delete" @click="remove(index)"></button>
-            </div>
-          </div>
-        </td>
-      </tr>
-      </tbody>
-    </table>
+    <div class="box" v-if="invitees.length">
+      <div class="media" v-for="(invitee, index) in invitees">
+        <div class="media-left">
+          <p class="image is-64x64">
+            <!-- TODO: use responsive figure:
+          http://bulma.io/documentation/elements/image/ -->
+            <!-- TODO: ideally these would be loaded from cache -->
+            <img :src="invitee.state.attributes.picture" width="64" height="64">
+          </p>
+        </div>
+        <div class="media-content">
+          <strong>{{invitee.state.attributes.name}}</strong>
+        </div>
+        <div class="media-right">
+          <button class="delete" @click="remove(index)"></button>
+        </div>
+      </div>
+    </div>
 
   </div>
 </template>

@@ -44,9 +44,6 @@
               :disabled="!this.currentStep"
               id="prevBtn"
             >
-              <span class="icon is-small">
-                <i class="fa fa-arrow-left"></i>
-              </span>
               <i18n>Back</i18n>
             </button>
           </p>

@@ -1,7 +1,7 @@
 <template>
   <div>
-    <h1><i18n>Group Advanced Rules</i18n></h1>
-    <p><i18n>What percentage approval is necessary to adjust the group rules?</i18n></p>
+    <h1 class="title is-2 has-text-centered"><i18n>Group Advanced Rules</i18n></h1>
+    <p class="has-text-centered"><i18n>What percentage approval is necessary to adjust the group rules?</i18n></p>
     <p class="title is-3 percentage">{{ group.changePercentage }}%</p>
     <input
       type="range"
