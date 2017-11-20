@@ -37,6 +37,7 @@
 </template>
 <script>
   import {mapGetters} from 'vuex'
+
   const incomeDistribution = require('../js/distribution/mincome-proportional').default
   export default {
     name: 'PayGroupMembers',
@@ -47,24 +48,16 @@
     computed: {
       ...mapGetters(['profilesForGroup']),
       membersToPay () {
+        // TODO: in-progress
         var members = this.profilesForGroup()
         var membersDistribution = []
-        const usernames = Object.keys(members)
-        usernames.map(function (username) {
-          membersDistribution.push({
-            name: username,
-            amount: 200 // this should be the contribution which needs to be saved at 'set contribution' page
-          })
-          members[username] = {
-            attrs: members[username]
-          }
-        })
         console.log('Members Distribution: ', membersDistribution)
         var incomes = incomeDistribution(membersDistribution, 500) // should be equal with group income baseline
         console.log('Distributed Incomes: ', incomes)
         return members
       },
       paidMembers () {
+        // TODO: in-progress
         var members = []
         return members
       }

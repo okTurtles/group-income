@@ -23,12 +23,12 @@
 
         <group-settings :group="currentGroupState" />
         <div>
-          <a class="button" @click.prevent="payGroupMembers">
+          <a class="button" @click="payGroupMembers">
             <i18n>Pay Members</i18n>
           </a>
         </div>
         <div>
-          <a class="button" @click.prevent="setContribution">
+          <a class="button" @click="setContribution">
             <i18n>Set Contribution</i18n>
           </a>
         </div>

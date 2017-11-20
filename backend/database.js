@@ -159,8 +159,8 @@ export function streamEntriesSince (contractId: string, hash: string) {
   .orderBy('id')
   .pipe(new Transform({
     // NOTE: Hapi cannot handle object mode, but knex forces objectMode (and ignores
-    //       me if I try to pass options {objectMode: false}. So we transform the
-    //       the objects into JSON, and explicitely configure these paramters:
+    //       me if I try to pass options {objectMode: false}). So we transform the
+    //       the objects into JSON, and explicitly configure these parameters:
     readableObjectMode: false,
     writableObjectMode: true,
     transform: function (data, encoding, callback) {
