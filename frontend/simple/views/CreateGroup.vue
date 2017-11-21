@@ -85,9 +85,6 @@ import * as Events from '../../../shared/events'
 import * as contracts from '../js/events'
 import L from '../js/translations'
 import StepAssistant from '../components/StepAssistant'
-// until I can access child routes through $route
-// https://github.com/vuejs/vue-router/issues/1149
-import { CreateGroupSteps } from '../js/router'
 
 export default {
   name: 'CreateGroupView',
@@ -200,7 +197,15 @@ export default {
         dev: process.env.NODE_ENV === 'development'
       },
       config: {
-        steps: CreateGroupSteps
+        steps: [
+          'CreateGroupName',
+          'CreateGroupPurpose',
+          'CreateGroupMincome',
+          'CreateGroupRules',
+          'CreateGroupPrivacy',
+          'CreateGroupInvitees',
+          'CreateGroupSummary'
+        ]
       }
     }
   }

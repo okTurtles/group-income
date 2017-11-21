@@ -72,67 +72,6 @@ function createEnterGuards (...guards) {
     next()
   }
 }
-// until I can access child routes through $route,
-// I will need access to this in StepAssistant
-// https://github.com/vuejs/vue-router/issues/1149
-export const CreateGroupSteps = [
-  {
-    path: 'name',
-    name: CreateGroupName.name,
-    meta: {
-      title: 'Start A Group - Name Your Group'
-    },
-    component: CreateGroupName
-  },
-  {
-    path: 'purpose',
-    name: CreateGroupPurpose.name,
-    meta: {
-      title: 'Start A Group - Group Purpose'
-    },
-    component: CreateGroupPurpose
-  },
-  {
-    path: 'income',
-    name: CreateGroupMincome.name,
-    meta: {
-      title: 'Start A Group - Minimum Income'
-    },
-    component: CreateGroupMincome
-  },
-  {
-    path: 'rules',
-    name: CreateGroupRules.name,
-    meta: {
-      title: 'Start A Group - Rules'
-    },
-    component: CreateGroupRules
-  },
-  {
-    path: 'privacy',
-    name: CreateGroupPrivacy.name,
-    meta: {
-      title: 'Start A Group - Privacy'
-    },
-    component: CreateGroupPrivacy
-  },
-  {
-    path: 'invitees',
-    name: CreateGroupInvitees.name,
-    meta: {
-      title: 'Start A Group - Invite Members'
-    },
-    component: CreateGroupInvitees
-  },
-  {
-    path: 'create',
-    name: CreateGroupSummary.name,
-    meta: {
-      title: 'Start A Group - Launch Group'
-    },
-    component: CreateGroupSummary
-  }
-]
 var router = new Router({
   mode: 'history',
   base: '/simple',
@@ -166,7 +105,64 @@ var router = new Router({
         title: 'Start A Group'
       },
       beforeEnter: createEnterGuards(loginGuard),
-      children: CreateGroupSteps
+      children: [
+        {
+          path: 'name',
+          name: CreateGroupName.name,
+          meta: {
+            title: 'Start A Group - Name Your Group'
+          },
+          component: CreateGroupName
+        },
+        {
+          path: 'purpose',
+          name: CreateGroupPurpose.name,
+          meta: {
+            title: 'Start A Group - Group Purpose'
+          },
+          component: CreateGroupPurpose
+        },
+        {
+          path: 'income',
+          name: CreateGroupMincome.name,
+          meta: {
+            title: 'Start A Group - Minimum Income'
+          },
+          component: CreateGroupMincome
+        },
+        {
+          path: 'rules',
+          name: CreateGroupRules.name,
+          meta: {
+            title: 'Start A Group - Rules'
+          },
+          component: CreateGroupRules
+        },
+        {
+          path: 'privacy',
+          name: CreateGroupPrivacy.name,
+          meta: {
+            title: 'Start A Group - Privacy'
+          },
+          component: CreateGroupPrivacy
+        },
+        {
+          path: 'invitees',
+          name: CreateGroupInvitees.name,
+          meta: {
+            title: 'Start A Group - Invite Members'
+          },
+          component: CreateGroupInvitees
+        },
+        {
+          path: 'create',
+          name: CreateGroupSummary.name,
+          meta: {
+            title: 'Start A Group - Launch Group'
+          },
+          component: CreateGroupSummary
+        }
+      ]
     },
     {
       path: '/dashboard',

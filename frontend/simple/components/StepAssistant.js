@@ -19,18 +19,18 @@ export default {
   name: 'StepAssistant',
   mounted () {
     if (this.currentStep === 0) {
-      this.$router.push({ name: this.config.steps[this.currentStep].name })
+      this.$router.push({ name: this.config.steps[this.currentStep] })
     }
   },
   methods: {
     next () {
       if (this.currentStep + 1 < this.config.steps.length) {
-        this.$router.push({ name: this.config.steps[this.currentStep + 1].name })
+        this.$router.push({ name: this.config.steps[this.currentStep + 1] })
       }
     },
     prev () {
       if (this.currentStep > 0) {
-        this.$router.push({ name: this.config.steps[this.currentStep - 1].name })
+        this.$router.push({ name: this.config.steps[this.currentStep - 1] })
       }
     },
     finish () {
@@ -45,7 +45,7 @@ export default {
   computed: {
     currentStep () {
       // get current step index from current route
-      return Math.max(this.config.steps.findIndex(step => step.name === this.$route.name), 0)
+      return Math.max(this.config.steps.indexOf(this.$route.name), 0)
     }
   }
 }
