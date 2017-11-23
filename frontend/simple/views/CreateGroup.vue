@@ -13,7 +13,7 @@
           <p class="control" v-if="currentStep + 1 < config.steps.length">
             <button
               class="button is-success is-large"
-              @click.prevent="next"
+              @click="next"
               id="nextBtn"
             >
               <i18n>Next</i18n>
@@ -25,7 +25,7 @@
           <p class="control" v-if="currentStep + 1 === config.steps.length">
             <button
               class="button is-success is-large"
-              @click.prevent="submit"
+              @click="submit"
               :disabled="Object.values(validity).some(field => !field)"
               id="finishBtn"
             >
@@ -38,7 +38,7 @@
           <p class="control">
             <button
               class="button is-light is-medium"
-              @click.prevent="prev"
+              @click="prev"
               :disabled="!this.currentStep"
               id="prevBtn"
             >

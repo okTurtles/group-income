@@ -17,7 +17,7 @@
         <button
           id="addButton"
           class="button is-primary is-large"
-          @click.prevent="addInvitee"
+          @click="addInvitee"
         >
           <i18n>Add</i18n>
         </button>
