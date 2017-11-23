@@ -263,7 +263,7 @@ describe('Frontend', function () {
       const testValues = 'Testing this software'
       const testIncome = 200
       const testSetting = 60
-      this.timeout(15000) // It just takes some time
+      this.timeout(10000)
       await n
         .click('#CreateGroup')
         // fill group data
@@ -298,7 +298,6 @@ describe('Frontend', function () {
         .insert('input[name="invitee"]', username + '4')
         .click('#addButton')
         .wait('.invitee')
-        .wait(10000)
 
       const invited = await n.evaluate(() => document.querySelectorAll('.invitee').length)
       should(invited).equal(1)
