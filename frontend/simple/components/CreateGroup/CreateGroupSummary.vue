@@ -100,16 +100,11 @@
   }
 </style>
 <script>
-import StatusIcon from '../StatusIcon.vue'
-
 export default {
   name: 'CreateGroupSummary',
   props: {
     group: {type: Object},
     validity: {type: Object}
-  },
-  components: {
-    StatusIcon
   }
 }
 </script>
