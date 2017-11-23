@@ -16,8 +16,8 @@
               @input="update"
             />
           </div>
-          <p class="percent" v-else>{{ group.changePercentage }}%</p>
         </div>
+        <p class="percent" v-else>{{ group.changePercentage }}%</p>
         <p class="title is-5"><i18n>Change Rules</i18n></p>
         <button id="changeRulesToggle" class="button is-link is-6 subtitle" @click="toggle('editChange')"><i18n>Change</i18n></button>
       </div>
@@ -34,8 +34,8 @@
               @input="update"
             />
           </div>
-          <p class="percent" v-else>{{ group.memberApprovalPercentage }}%</p>
         </div>
+        <p class="percent" v-else>{{ group.memberApprovalPercentage }}%</p>
         <p class="title is-5"><i18n>Add Member</i18n></p>
         <button id="approveToggle" class="button is-link is-6 subtitle" @click="toggle('editApprove')"><i18n>Change</i18n></button>
       </div>
@@ -52,8 +52,8 @@
               @input="update"
             />
           </div>
-          <p class="percent" v-else>{{ group.memberRemovalPercentage }}%</p>
         </div>
+        <p class="percent" v-else>{{ group.memberRemovalPercentage }}%</p>
         <p class="title is-5"><i18n>Remove Member</i18n></p>
         <button id="removeToggle" class="button is-link is-6 subtitle" @click="toggle('editRemove')"><i18n>Change</i18n></button>
       </div>
