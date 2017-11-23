@@ -22,7 +22,7 @@
               </span>
             </button>
           </p>
-          <p class="control" v-if="currentStep + 1 === config.steps.length">
+          <p class="control" v-else>
             <button
               class="button is-success is-large"
               @click="submit"

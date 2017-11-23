@@ -4,7 +4,6 @@
     <p class="content"><i18n>What percentage approval is necessary to adjust the group rules?</i18n></p>
     <div class="columns">
       <div class="column">
-        <p class="percent" v-if="!form.editChange">{{ group.changePercentage }}%</p>
         <div class="field" v-if="form.editChange">
           <div class="control">
             <input
@@ -17,12 +16,12 @@
               @input="update"
             />
           </div>
+          <p class="percent" v-else>{{ group.changePercentage }}%</p>
         </div>
         <p class="title is-5"><i18n>Change Rules</i18n></p>
         <button id="changeRulesToggle" class="button is-link is-6 subtitle" @click="toggle('editChange')"><i18n>Change</i18n></button>
       </div>
       <div class="column">
-        <p class="percent" v-if="!form.editApprove">{{ group.memberApprovalPercentage }}%</p>
         <div class="field" v-if="form.editApprove">
           <div class="control">
             <input
@@ -35,12 +34,12 @@
               @input="update"
             />
           </div>
+          <p class="percent" v-else>{{ group.memberApprovalPercentage }}%</p>
         </div>
         <p class="title is-5"><i18n>Add Member</i18n></p>
         <button id="approveToggle" class="button is-link is-6 subtitle" @click="toggle('editApprove')"><i18n>Change</i18n></button>
       </div>
       <div class="column">
-        <p class="percent" v-if="!form.editRemove">{{ group.memberRemovalPercentage }}%</p>
         <div class="field" v-if="form.editRemove">
           <div class="control">
             <input
@@ -53,6 +52,7 @@
               @input="update"
             />
           </div>
+          <p class="percent" v-else>{{ group.memberRemovalPercentage }}%</p>
         </div>
         <p class="title is-5"><i18n>Remove Member</i18n></p>
         <button id="removeToggle" class="button is-link is-6 subtitle" @click="toggle('editRemove')"><i18n>Change</i18n></button>
