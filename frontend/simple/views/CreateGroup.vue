@@ -5,7 +5,7 @@
     <div class="columns">
       <div class="column is-half is-offset-one-quarter" >
         <transition name="fade" mode="out-in">
-          <router-view :group="form" :validity="validity" @input="(payload) => updateGroupData(payload)">
+          <router-view :group="form" :v="$v.form" @input="(payload) => updateGroupData(payload)">
           </router-view>
         </transition>
 
@@ -85,17 +85,19 @@ import * as Events from '../../../shared/events'
 import * as contracts from '../js/events'
 import L from '../js/translations'
 import StepAssistant from '../components/StepAssistant'
+import { validationMixin } from 'vuelidate'
+import { required } from 'vuelidate/lib/validators'
 
 export default {
   name: 'CreateGroupView',
   mixins: [
-    StepAssistant
+    StepAssistant,
+    validationMixin
   ],
   methods: {
     updateGroupData (payload) {
       this.errorMsg = null
       Object.assign(this.form, payload.data)
-      Object.assign(this.validity, payload.validity)
     },
     submit: async function () {
       if (Object.values(this.validity).some(field => !field)) {
@@ -187,11 +189,6 @@ export default {
       },
       // todo: move these under appropriate key for #297
       errorMsg: null,
-      validity: {
-        groupName: false,
-        sharedValues: false,
-        incomeProvided: false
-      },
       ephemeral: {
         // this determines whether or not to render proxy components for nightmare
         dev: process.env.NODE_ENV === 'development'
@@ -207,6 +204,16 @@ export default {
           'CreateGroupSummary'
         ]
       }
+    }
+  },
+  validations: {
+    form: {
+      groupName: { required },
+      sharedValues: { required },
+      changePercentage: { required },
+      memberApprovalPercentage: { required },
+      memberRemovalPercentage: { required },
+      incomeProvided: { required }
     }
   }
 }

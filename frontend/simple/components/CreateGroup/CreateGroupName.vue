@@ -8,10 +8,10 @@
           placeholder="Group Name"
           name="groupName"
           type="text"
-          required
           :value="group.groupName"
           @input="update"
           ref="name"
+          v-bind:class="{ 'is-danger': v.groupName.$invalid }"
         >
       </div>
     </div>
@@ -22,7 +22,8 @@
 export default {
   name: 'CreateGroupName',
   props: {
-    group: {type: Object}
+    group: {type: Object},
+    v: {type: Object}
   },
   mounted () {
     this.$refs.name.focus()
@@ -32,9 +33,6 @@ export default {
       this.$emit('input', {
         data: {
           groupName: e.target.value
-        },
-        validity: {
-          groupName: e.target.validity.valid
         }
       })
     }
