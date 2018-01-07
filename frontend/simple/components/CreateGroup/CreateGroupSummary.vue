@@ -3,7 +3,8 @@
     <h1 id="summaryStep" class="title is-1 has-text-centered"><i18n>Review & Finish</i18n></h1>
 
     <h2 class="title is-6"><i18n>Group name:</i18n></h2>
-    <p class="subtitle is-2" :class="!group.groupName && 'is-danger'">{{ group.groupName || 'No group name set' }}</p>
+    <p class="subtitle is-2" v-if="group.groupName">{{ group.groupName }}</p>
+    <p class="subtitle is-2 is-danger" v-else><i18n>No group name set</i18n></p>
     <p class="has-text-right">
       <router-link
         class="button is-primary"
@@ -15,7 +16,8 @@
     <hr>
 
     <h2 class="title is-6"><i18n>Group purpose:</i18n></h2>
-    <p class="subtitle is-2" :class="!group.sharedValues && 'is-danger'">{{ group.sharedValues || 'No group purpose set' }}</p>
+    <p class="title is-4" v-if="group.sharedValues">{{ group.sharedValues }}</p>
+    <p class="subtitle is-2 is-danger" v-else><i18n>No group purpose set</i18n></p>
     <p class="has-text-right">
       <router-link
         class="button is-primary"
@@ -27,7 +29,8 @@
     <hr>
 
     <h2 class="title is-6"><i18n>Minimum income:</i18n></h2>
-    <p class="subtitle is-2" :class="!group.incomeProvided && 'is-danger'">{{ group.incomeProvided || 'No income set' }}</p>
+    <p class="subtitle is-2" v-if="group.incomeProvided">{{ group.incomeProvided }}</p>
+    <p class="subtitle is-2 is-danger" v-else><i18n>No group income set</i18n></p>
     <p class="has-text-right">
       <router-link
         class="button is-primary"
