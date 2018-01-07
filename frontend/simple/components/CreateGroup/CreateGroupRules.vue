@@ -8,6 +8,7 @@
           <div class="control">
             <input
               class="input is-large"
+              :class="{ 'is-danger': v.changePercentage.$error }"
               type="number"
               min="1"
               max="100"
@@ -26,6 +27,7 @@
           <div class="control">
             <input
               class="input is-large"
+              :class="{ 'is-danger': v.memberApprovalPercentage.$error }"
               type="number"
               min="1"
               max="100"
@@ -44,6 +46,7 @@
           <div class="control">
             <input
               class="input is-large"
+              :class="{ 'is-danger': v.memberRemovalPercentage.$error }"
               type="number"
               min="1"
               max="100"
@@ -72,16 +75,15 @@
 export default {
   name: 'CreateGroupRules',
   props: {
-    group: {type: Object}
+    group: {type: Object},
+    v: {type: Object}
   },
   methods: {
     update (e) {
+      this.v[e.target.name].$touch()
       this.$emit('input', {
         data: {
           [e.target.name]: parseInt(e.target.value)
-        },
-        validity: {
-          [e.target.name]: e.target.validity.valid
         }
       })
     },

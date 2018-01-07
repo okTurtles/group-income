@@ -5,13 +5,13 @@
       <div class="control">
         <input
           class="input is-large is-primary"
+          :class="{ 'is-danger': v.groupName.$error }"
           placeholder="Group Name"
           name="groupName"
           type="text"
           :value="group.groupName"
           @input="update"
           ref="name"
-          v-bind:class="{ 'is-danger': v.groupName.$invalid }"
         >
       </div>
     </div>
@@ -30,6 +30,7 @@ export default {
   },
   methods: {
     update (e) {
+      this.v.groupName.$touch()
       this.$emit('input', {
         data: {
           groupName: e.target.value

@@ -5,6 +5,7 @@
       <div class="control">
         <input
           class="input is-large is-primary"
+          :class="{ 'is-danger': v.incomeProvided.$error }"
           placeholder="Amount"
           name="incomeProvided"
           type="number"
@@ -24,19 +25,18 @@
 export default {
   name: 'CreateGroupMincome',
   props: {
-    group: {type: Object}
+    group: {type: Object},
+    v: {type: Object}
   },
   mounted () {
     this.$refs.mincome.focus()
   },
   methods: {
     update (e) {
+      this.v.incomeProvided.$touch()
       this.$emit('input', {
         data: {
           incomeProvided: e.target.value
-        },
-        validity: {
-          incomeProvided: e.target.validity.valid
         }
       })
     }
