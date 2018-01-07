@@ -15,6 +15,7 @@
               class="button is-success is-large"
               @click="next"
               id="nextBtn"
+              :disabled="$v.steps[$route.name] && $v.steps[$route.name].$invalid"
             >
               <i18n>Next</i18n>
               <span class="icon">
@@ -26,7 +27,7 @@
             <button
               class="button is-success is-large"
               @click="submit"
-              :disabled="Object.values(validity).some(field => !field)"
+              :disabled="$v.form.$invalid"
               id="finishBtn"
             >
               <i18n>Finish</i18n>
@@ -100,7 +101,7 @@ export default {
       Object.assign(this.form, payload.data)
     },
     submit: async function () {
-      if (Object.values(this.validity).some(field => !field)) {
+      if (this.$v.form.$invalid) {
         // TODO: more descriptive error message, highlight erroneous step
         this.errorMsg = L('We still need some info from you, please go back and fill missing fields')
         return
@@ -214,6 +215,17 @@ export default {
       memberApprovalPercentage: { required },
       memberRemovalPercentage: { required },
       incomeProvided: { required }
+    },
+    // validation groups by route name for steps
+    steps: {
+      CreateGroupName: [ 'form.groupName' ],
+      CreateGroupPurpose: [ 'form.sharedValues' ],
+      CreateGroupMincome: [ 'form.incomeProvided' ],
+      CreateGroupRules: [
+        'form.changePercentage',
+        'form.memberApprovalPercentage',
+        'form.memberRemovalPercentage'
+      ]
     }
   }
 }

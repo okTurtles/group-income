@@ -103,8 +103,7 @@
 export default {
   name: 'CreateGroupSummary',
   props: {
-    group: {type: Object},
-    validity: {type: Object}
+    group: {type: Object}
   }
 }
 </script>
