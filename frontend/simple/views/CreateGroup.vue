@@ -87,7 +87,7 @@ import * as contracts from '../js/events'
 import L from '../js/translations'
 import StepAssistant from '../components/StepAssistant'
 import { validationMixin } from 'vuelidate'
-import { required } from 'vuelidate/lib/validators'
+import { required, between, numeric } from 'vuelidate/lib/validators'
 
 export default {
   name: 'CreateGroupView',
@@ -211,10 +211,25 @@ export default {
     form: {
       groupName: { required },
       sharedValues: { required },
-      changePercentage: { required },
-      memberApprovalPercentage: { required },
-      memberRemovalPercentage: { required },
-      incomeProvided: { required }
+      changePercentage: {
+        required,
+        numeric,
+        between: between(1, 100)
+      },
+      memberApprovalPercentage: {
+        required,
+        numeric,
+        between: between(1, 100)
+      },
+      memberRemovalPercentage: {
+        required,
+        numeric,
+        between: between(1, 100)
+      },
+      incomeProvided: {
+        required,
+        numeric
+      }
     },
     // validation groups by route name for steps
     steps: {
