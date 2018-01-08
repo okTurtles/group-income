@@ -1,7 +1,18 @@
 <template>
   <div>
     <h1 class="title is-2 has-text-centered"><i18n>Minimum Income</i18n></h1>
-    <div class="field">
+    <div class="field has-addons">
+      <div class="control">
+        <span
+          class="select is-large is-primary"
+          >
+          <select>
+            <option>$</option>
+            <option>€</option>
+            <option>Ƀ</option>
+          </select>
+        </span>
+      </div>
       <div class="control">
         <input
           class="input is-large is-primary"
