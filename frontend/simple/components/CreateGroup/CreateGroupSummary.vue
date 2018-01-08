@@ -29,7 +29,7 @@
     <hr>
 
     <h2 class="title is-6"><i18n>Minimum income:</i18n></h2>
-    <p class="subtitle is-2" v-if="group.incomeProvided">{{ group.incomeProvided }}</p>
+    <p class="subtitle is-2" v-if="group.incomeProvided">{{ group.incomeCurrency }}{{ group.incomeProvided }}</p>
     <p class="subtitle is-2 is-danger" v-else><i18n>No group income set</i18n></p>
     <p class="has-text-right">
       <router-link

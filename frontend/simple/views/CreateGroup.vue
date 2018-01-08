@@ -117,6 +117,7 @@ export default {
           memberApprovalPercentage: this.form.memberApprovalPercentage,
           memberRemovalPercentage: this.form.memberRemovalPercentage,
           incomeProvided: this.form.incomeProvided,
+          incomeCurrency: this.form.incomeCurrency,
           founderUsername: this.$store.state.loggedIn.name,
           founderIdentityContractId: this.$store.state.loggedIn.identityContractId
         })
@@ -186,6 +187,7 @@ export default {
         memberApprovalPercentage: 80,
         memberRemovalPercentage: 80,
         incomeProvided: null,
+        incomeCurrency: '$',
         invitees: []
       },
       // todo: move these under appropriate key for #297
@@ -229,13 +231,19 @@ export default {
       incomeProvided: {
         required,
         numeric
+      },
+      incomeCurrency: {
+        required
       }
     },
     // validation groups by route name for steps
     steps: {
       CreateGroupName: [ 'form.groupName' ],
       CreateGroupPurpose: [ 'form.sharedValues' ],
-      CreateGroupMincome: [ 'form.incomeProvided' ],
+      CreateGroupMincome: [
+        'form.incomeProvided',
+        'form.incomeCurrency'
+      ],
       CreateGroupRules: [
         'form.changePercentage',
         'form.memberApprovalPercentage',

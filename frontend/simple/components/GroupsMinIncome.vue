@@ -1,7 +1,7 @@
 <template>
   <section class="has-text-right">
     <p class="min-income-label">Min Income</p>
-    <p class="min-income">${{ group.incomeProvided}}</p>
+    <p class="min-income">{{ group.incomeCurrency }}{{ group.incomeProvided }}</p>
     <a href="#">Propose change</a>
   </section>
 </template>

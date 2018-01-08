@@ -3,10 +3,13 @@
     <h1 class="title is-2 has-text-centered"><i18n>Minimum Income</i18n></h1>
     <div class="field has-addons">
       <div class="control">
-        <span
-          class="select is-large is-primary"
+        <span class="select is-large is-primary">
+          <select
+            name="incomeCurrency"
+            required
+            :value="group.incomeCurrency"
+            @input="update"
           >
-          <select>
             <option>$</option>
             <option>€</option>
             <option>Ƀ</option>
@@ -44,10 +47,10 @@ export default {
   },
   methods: {
     update (e) {
-      this.v.incomeProvided.$touch()
+      this.v[e.target.name].$touch()
       this.$emit('input', {
         data: {
-          incomeProvided: e.target.value
+          [e.target.name]: e.target.value
         }
       })
     }
