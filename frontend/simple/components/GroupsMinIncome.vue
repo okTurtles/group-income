@@ -1,7 +1,7 @@
 <template>
   <section class="has-text-right">
     <p class="min-income-label">Min Income</p>
-    <p class="min-income">{{ group.incomeCurrency }}{{ group.incomeProvided }}</p>
+    <p class="min-income"><cyy>{{ group.incomeCurrency }}</cyy>{{ group.incomeProvided }}</p>
     <a href="#">Propose change</a>
   </section>
 </template>
@@ -20,10 +20,14 @@
 }
 </style>
 <script>
+  import cyy from '../views/cyy.vue'
   export default {
     name: 'GroupsMinIncome',
     props: {
       group: Object
+    },
+    components: {
+      cyy
     }
   }
 </script>

@@ -187,7 +187,7 @@ export default {
         memberApprovalPercentage: 80,
         memberRemovalPercentage: 80,
         incomeProvided: null,
-        incomeCurrency: '$',
+        incomeCurrency: 'USD',
         invitees: []
       },
       // todo: move these under appropriate key for #297

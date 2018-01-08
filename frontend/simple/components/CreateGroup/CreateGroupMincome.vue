@@ -10,9 +10,7 @@
             :value="group.incomeCurrency"
             @input="update"
           >
-            <option>$</option>
-            <option>€</option>
-            <option>Ƀ</option>
+            <option v-for="(symbol, code) in currencies" :value="code">{{ symbol }}</option>
           </select>
         </span>
       </div>
@@ -36,11 +34,18 @@
   </div>
 </template>
 <script>
+import currencies from '../../js/currencies'
+
 export default {
   name: 'CreateGroupMincome',
   props: {
     group: {type: Object},
     v: {type: Object}
+  },
+  data () {
+    return {
+      currencies
+    }
   },
   mounted () {
     this.$refs.mincome.focus()
