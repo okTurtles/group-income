@@ -262,7 +262,7 @@ describe('Frontend', function () {
       const testName = 'Test Group'
       const testValues = 'Testing this software'
       const testIncome = 200
-      const testSetting = 60
+      const testSetting = 80
       this.timeout(10000)
       await n
         .click('#CreateGroup')
@@ -277,19 +277,7 @@ describe('Frontend', function () {
         .insert('input[name="incomeProvided"]', testIncome)
         .click('#nextBtn')
         .wait('#rulesStep')
-        // set rules
-        .click('#changeRulesToggle')
-        .wait('input[name="changePercentage"]')
-        .insert('input[name="changePercentage"]')
-        .insert('input[name="changePercentage"]', testSetting)
-        .click('#approveToggle')
-        .wait('input[name="memberApprovalPercentage"]')
-        .insert('input[name="memberApprovalPercentage"]')
-        .insert('input[name="memberApprovalPercentage"]', testSetting + 10)
-        .click('#removeToggle')
-        .wait('input[name="memberRemovalPercentage"]')
-        .insert('input[name="memberRemovalPercentage"]')
-        .insert('input[name="memberRemovalPercentage"]', testSetting - 10)
+        // set rules step skipped for now
         .click('#nextBtn')
         .wait('#privacyStep')
         .click('#nextBtn')
@@ -325,8 +313,8 @@ describe('Frontend', function () {
       should(created.sharedValues).equal(testValues)
       should(created.incomeProvided).equal('$' + testIncome)
       should(created.changePercentage).equal(testSetting + '%')
-      should(created.memberApprovalPercentage).equal(testSetting + 10 + '%')
-      should(created.memberRemovalPercentage).equal(testSetting - 10 + '%')
+      should(created.memberApprovalPercentage).equal(testSetting + '%')
+      should(created.memberRemovalPercentage).equal(testSetting + '%')
     })
 
     it('Should invite members to group', async function () {
