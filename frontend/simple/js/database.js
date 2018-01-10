@@ -77,6 +77,9 @@ export function saveSettings (user: string, state: Object): Promise<*> {
 export function loadSettings (user: string): Promise<Object> {
   return appSettings.getItem(user)
 }
+export function clearUser (user: string): Promise<Object> {
+  return appSettings.removeItem(user)
+}
 export function saveCurrentUser (user: string): Promise<Object> {
   return appSettings.setItem('currentUser', user)
 }
