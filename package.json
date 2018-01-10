@@ -73,6 +73,7 @@
     "vee-validate": "2.0.0-rc.5",
     "velocity-animate": "1.5.0",
     "vue": "2.3.4",
+    "vue-circle-slider": "1.0.0",
     "vue-router": "2.6.0",
     "vue-script2": "2.0.0",
     "vue-slider-component": "2.3.1",
