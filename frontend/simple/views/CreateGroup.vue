@@ -38,7 +38,7 @@
           </p>
           <p class="control">
             <button
-              class="button is-light is-medium"
+              class="button is-light is-large"
               @click="prev"
               :disabled="!this.currentStep"
               id="prevBtn"
