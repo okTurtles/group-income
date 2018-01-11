@@ -127,8 +127,8 @@ export default {
         let user = new contracts.IdentityContract({
           authorizations: [Events.CanModifyAuths.dummyAuth()],
           attributes: [
-            {name: 'name', value: this.name},
-            {name: 'email', value: this.email},
+            {name: 'name', value: this.form.name},
+            {name: 'email', value: this.form.email},
             {name: 'picture', value: `${window.location.origin}/simple/images/default-avatar.png`}
           ]
         })
@@ -144,7 +144,7 @@ export default {
           await backend.publishLogEntry(hash, event)
         }
         // register our username if contract creation worked out
-        await namespace.register(this.name, user.toHash())
+        await namespace.register(this.form.name, user.toHash())
         // call syncContractWithServer on all of these contracts to:
         // 1. begin monitoring the contracts for updates via the pubsub system
         // 2. add these contracts to our vuex state
@@ -153,10 +153,10 @@ export default {
         }
         // TODO: Just add cryptographic magic
         await this.$store.dispatch('login', {
-          name: this.name,
+          name: this.form.name,
           identityContractId: user.toHash()
         })
-        this.response = 'success' // TODO: get rid of this and fix/update tests accordingly
+        this.form.response = 'success' // TODO: get rid of this and fix/update tests accordingly
         if (this.$route.query.next) {
           // TODO: get rid of this timeout and fix/update tests accordingly
           setTimeout(() => {
@@ -170,7 +170,7 @@ export default {
         // TODO: this should be done via dispatch
         this.$store.commit('logout')
         console.log(ex)
-        this.response = ex.toString()
+        this.form.response = ex.toString()
         this.error = true
       }
     },
