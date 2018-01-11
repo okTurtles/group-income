@@ -214,7 +214,14 @@ export default {
     form: {
       name: {
         required,
-        nonWhitespace: value => /^\S+$/.test(value)
+        nonWhitespace: value => /^\S+$/.test(value),
+        isAvailable (value) {
+          // standalone validator ideally should not assume a field is required
+          if (value === '' || !/^\S+$/.test(value)) return true
+          // async validator can return a promise
+          // TODO we need the exact opposite here
+          return namespace.lookup(value)
+        }
       },
       password: {
         required,
