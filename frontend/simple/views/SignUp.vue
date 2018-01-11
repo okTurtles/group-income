@@ -25,29 +25,60 @@
         </div>
         <div class="field">
           <p class="control has-icon">
-            <input id="name" class="input" name="name" v-model="name" @blur="checkName" @keypress="checkName" v-validate data-vv-rules="required|regex:^\S+$" placeholder="username" required autofocus>
+            <input
+              id="name"
+              class="input"
+              :class="{'is-danger': $v.form.name.$error}"
+              name="name"
+              v-model="form.name"
+              @blur="checkName"
+              @keypress="checkName"
+              @input="$v.form.name.$touch()"
+              placeholder="username"
+              autofocus
+            >
             <span class="icon"><i class="fa fa-user"></i></span>
           </p>
-          <p class="help is-danger" v-if="errors.has('name')" id="badUsername">
+          <p class="help is-danger" v-if="$v.form.name.$error" id="badUsername">
+            <!-- TODO available name validator -->
             <i18n v-if="nameAvailable === false">name is unavailable</i18n>
-            <i18n v-else-if="name && name.length > 0">cannot contain spaces</i18n>
+            <i18n v-else-if="form.name && form.name.length > 0">cannot contain spaces</i18n>
           </p>
           <p v-else-if="nameAvailable" class="help is-success"><i18n>name is available</i18n></p>
           <i18n v-if="(name && name.length > 0) && !this.nameAvailable" id="NameAvailable"  class="help is-danger">name is unavailable</i18n>
         </div>
         <div class="field">
           <p class="control has-icon">
-            <input class="input" id= "email" name="email" v-model="email" v-validate data-vv-rules="required|email" type="email" placeholder="email" required>
+            <input
+              class="input"
+              :class="{'is-danger': $v.form.email.$error}"
+              id="email"
+              name="email"
+              v-model="form.email"
+              @blur="$v.form.email.$touch()"
+              type="email"
+              placeholder="email"
+            >
             <span class="icon"><i class="fa fa-envelope"></i></span>
           </p>
-          <i18n v-if="errors.has('email')" id="badEmail" class="help is-danger">Not an email</i18n>
+          <i18n v-if="$v.form.email.$error" id="badEmail" class="help is-danger">Not an email</i18n>
         </div>
         <div class="field">
           <p class="control has-icon">
-            <input class="input" id="password" name="password" v-model="password" v-validate data-vv-rules="required|min:7" placeholder="password" type="password" required>
+            <input
+              class="input"
+              :class="{'is-danger': $v.form.password.$error}"
+              id="password"
+              name="password"
+              v-model="form.password"
+              @input="$v.form.password.$touch()"
+              v-validate
+              placeholder="password"
+              type="password"
+            >
             <span class="icon"><i class="fa fa-lock"></i></span>
           </p>
-          <i18n v-if="errors.has('password')" id="badPassword" class="help is-danger">Password must be at least 7 characters</i18n>
+          <i18n v-if="$v.form.password.$error" id="badPassword" class="help is-danger">Password must be at least 7 characters</i18n>
         </div>
         <div class="level is-mobile">
           <div class="level-left">
@@ -59,7 +90,11 @@
           </div>
           <div class="level-right">
             <div class="level-item is-narrow">
-              <button class="button submit is-success" type="submit" :disabled="errors.any() || !nameAvailable">
+              <button
+                class="button submit is-success"
+                type="submit"
+                :disabled="$v.form.$invalid"
+              >
                 <i18n>Sign Up</i18n>
               </button>
             </div>
@@ -80,9 +115,12 @@ import _ from 'lodash'
 import * as Events from '../../../shared/events'
 import * as contracts from '../js/events'
 import {namespace} from '../js/backend/hapi'
+import { validationMixin } from 'vuelidate'
+import { required, minLength, email } from 'vuelidate/lib/validators'
 // TODO: fix all this
 export default {
   name: 'SignUp',
+  mixins: [ validationMixin ],
   methods: {
     submit: async function () {
       try {
@@ -162,12 +200,30 @@ export default {
     // TODO: wrap this in `form`
     // see: https://github.com/okTurtles/group-income-simple/issues/297
     return {
-      error: false,
-      response: '',
-      nameAvailable: null,
-      name: null,
-      password: null,
-      email: null
+      form: {
+        name: null,
+        password: null,
+        email: null,
+        response: ''
+      }
+      // error: false,
+      // nameAvailable: null,
+    }
+  },
+  validations: {
+    form: {
+      name: {
+        required,
+        nonWhitespace: value => /^\S+$/.test(value)
+      },
+      password: {
+        required,
+        minLength: minLength(7)
+      },
+      email: {
+        required,
+        email
+      }
     }
   }
 }
