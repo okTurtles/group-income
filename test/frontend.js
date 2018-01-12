@@ -137,11 +137,16 @@ describe('Frontend', function () {
         .insert('textarea[name="bio"]', 'Born in a test case')
         .insert('input[name="displayName"]', 'Tester T Test')
         .insert('textarea[name="bio"]', 'Born in a test case')
+        .insert('input[name="profilePicture"]') // clear
+        .insert('input[name="profilePicture"]', 'http://testing.rocks')
+        .insert('input[name="profileEmail"]') // clear
+        .insert('input[name="profileEmail"]', 'email@testing.rocks')
         .click('#SaveProfileButton')
         .wait('#ProfileSaveSuccess')
         .exists('#ProfileSaveSuccess')
       should(success).equal(true)
       // TODO Make more complex. Unfortunately bugs in Nightmare prevent the clearing and re-entering of fields
+      // those Nightmare bugs seem to be gone now, so TODO it is
     })
     it('Test Logout and Login', async function () {
       this.timeout(10000)
