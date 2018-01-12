@@ -30,22 +30,16 @@
               class="input"
               :class="{'is-danger': $v.form.name.$error}"
               name="name"
-              v-model="form.name"
-              @blur="checkName"
-              @keypress="checkName"
-              @input="$v.form.name.$touch()"
+              @input="debounceName"
               placeholder="username"
               autofocus
             >
             <span class="icon"><i class="fa fa-user"></i></span>
           </p>
           <p class="help is-danger" v-if="$v.form.name.$error" id="badUsername">
-            <!-- TODO available name validator -->
-            <i18n v-if="nameAvailable === false">name is unavailable</i18n>
-            <i18n v-else-if="form.name && form.name.length > 0">cannot contain spaces</i18n>
+            <i18n v-if="!$v.form.name.isAvailable">name is unavailable</i18n>
+            <i18n v-if="!$v.form.name.nonWhitespace">cannot contain spaces</i18n>
           </p>
-          <p v-else-if="nameAvailable" class="help is-success"><i18n>name is available</i18n></p>
-          <i18n v-if="(name && name.length > 0) && !this.nameAvailable" id="NameAvailable"  class="help is-danger">name is unavailable</i18n>
         </div>
         <div class="field">
           <p class="control has-icon">
@@ -61,7 +55,7 @@
             >
             <span class="icon"><i class="fa fa-envelope"></i></span>
           </p>
-          <i18n v-if="$v.form.email.$error" id="badEmail" class="help is-danger">Not an email</i18n>
+          <i18n v-if="$v.form.email.$error" id="badEmail" class="help is-danger">not an email</i18n>
         </div>
         <div class="field">
           <p class="control has-icon">
@@ -78,13 +72,13 @@
             >
             <span class="icon"><i class="fa fa-lock"></i></span>
           </p>
-          <i18n v-if="$v.form.password.$error" id="badPassword" class="help is-danger">Password must be at least 7 characters</i18n>
+          <i18n v-if="$v.form.password.$error" id="badPassword" class="help is-danger">password must be at least 7 characters</i18n>
         </div>
         <div class="level is-mobile">
           <div class="level-left">
             <div class="level-item content is-small">
-              <span id="serverMsg" class="help is-marginless" :class="[error ? 'is-danger' : 'is-success']">
-                {{response}}
+              <span id="serverMsg" class="help is-marginless" :class="[form.error ? 'is-danger' : 'is-success']">
+                {{form.response}}
               </span>
             </div>
           </div>
@@ -122,6 +116,13 @@ export default {
   name: 'SignUp',
   mixins: [ validationMixin ],
   methods: {
+    debounceName: _.debounce(function (e) {
+      // "Validator is evaluated on every data change, as it is essentially a computed value.
+      // If you need to throttle an async call, do it on your data change event, not on the validator itself.
+      // You may end up with broken Vue observables otherwise."
+      this.form.name = e.target.value
+      this.$v.form.name.$touch()
+    }, 700),
     submit: async function () {
       try {
         let user = new contracts.IdentityContract({
@@ -165,49 +166,28 @@ export default {
         } else {
           this.$router.push({path: '/'})
         }
-        this.error = false
+        this.form.error = false
       } catch (ex) {
         // TODO: this should be done via dispatch
         this.$store.commit('logout')
         console.log(ex)
         this.form.response = ex.toString()
-        this.error = true
+        this.form.error = true
       }
     },
     forwardToLogin: function () {
       Vue.events.$emit('loginModal')
-    },
-    checkName: _.debounce(async function () {
-      this.nameAvailable = null
-      if (this.name && !this.errors.has('name')) {
-        try {
-          await namespace.lookup(this.name)
-          this.nameAvailable = false
-        } catch (ex) {
-          if (ex.message === 'Not Found') {
-            this.nameAvailable = true
-          } else {
-            console.log(ex)
-            // TODO: Replace with w/e the ultimate global error notification solution is
-            this.response = ex.toString()
-            this.error = true
-          }
-        }
-      }
-    }, 700)
+    }
   },
   data () {
-    // TODO: wrap this in `form`
-    // see: https://github.com/okTurtles/group-income-simple/issues/297
     return {
       form: {
         name: null,
         password: null,
         email: null,
-        response: ''
+        response: '',
+        error: false
       }
-      // error: false,
-      // nameAvailable: null,
     }
   },
   validations: {
@@ -219,8 +199,10 @@ export default {
           // standalone validator ideally should not assume a field is required
           if (value === '' || !/^\S+$/.test(value)) return true
           // async validator can return a promise
-          // TODO we need the exact opposite here
-          return namespace.lookup(value)
+          // we need the opposite of namespace.lookup(value) here
+          return new Promise((resolve, reject) => {
+            namespace.lookup(value).then(reject, resolve)
+          })
         }
       },
       password: {
