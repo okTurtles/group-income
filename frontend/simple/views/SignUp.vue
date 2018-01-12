@@ -66,7 +66,6 @@
               name="password"
               v-model="form.password"
               @input="$v.form.password.$touch()"
-              v-validate
               placeholder="password"
               type="password"
             >
