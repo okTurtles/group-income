@@ -1,6 +1,5 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import VeeValidate from 'vee-validate'
 import store from './state'
 import SignUp from '../views/SignUp.vue'
 import CreateGroup from '../views/CreateGroup.vue'
@@ -26,7 +25,6 @@ import MembersCircle from '../components/MembersCircle.vue'
 import {lazyLoadVue} from './utils'
 
 Vue.use(Router)
-Vue.use(VeeValidate)
 
 /*
  The following are reusable guard for routes

@@ -64,7 +64,6 @@ declare module 'superagent' { declare module.exports: any }
 declare module 'tweetnacl' { declare module.exports: any }
 declare module 'tweetnacl-util' { declare module.exports: any }
 declare module 'uws' { declare module.exports: any }
-declare module 'vee-validate' { declare module.exports: any }
 declare module 'velocity-animate' { declare module.exports: any }
 declare module 'vue' { declare module.exports: any }
 declare module 'vue-router' { declare module.exports: any }
