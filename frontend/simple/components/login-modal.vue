@@ -8,49 +8,47 @@
           <div class="field">
             <p class="control has-icon">
               <input
-                autofocus
-                class="input"
-                data-vv-rules="required|regex:^\S+$"
-                ref="username"
                 id="LoginName"
+                class="input"
+                :class="{'is-danger': $v.form.name.$error}"
                 name="name"
-                placeholder="username"
-                required
-                v-model="name"
-                v-validate
+                v-model="form.name"
                 @keyup.enter="login"
+                @input="$v.form.name.$touch()"
+                placeholder="username"
+                ref="username"
+                autofocus
               >
               <span class="icon">
                 <i class="fa fa-user"></i>
               </span>
             </p>
-            <i18n v-show="errors.has('name')" class="help is-danger">Username cannot contain spaces</i18n>
+            <i18n v-show="$v.form.name.$error" class="help is-danger">username cannot contain spaces</i18n>
           </div>
           <div class="field">
             <p class="control has-icon">
               <input
                 class="input"
-                data-vv-rules="required|min:7"
+                :class="{'is-danger': $v.form.password.$error}"
                 id="LoginPassword"
                 name="password"
-                placeholder="password"
-                required
-                type="password"
-                v-model="password"
-                v-validate
+                v-model="form.password"
                 @keyup.enter="login"
+                @input="$v.form.password.$touch()"
+                placeholder="password"
+                type="password"
               >
               <span class="icon"><i class="fa fa-lock"></i></span>
             </p>
-            <i18n v-show="errors.has('password')" class="help is-danger">Password must be at least 7 characters</i18n>
+            <i18n v-show="$v.form.password.$error" class="help is-danger">password must be at least 7 characters</i18n>
           </div>
-          <p class="help is-danger" id="LoginResponse" v-show="response">{{ response }}</p>
+          <p class="help is-danger" id="LoginResponse" v-show="form.response">{{ form.response }}</p>
           <div class="field">
             <p class="control">
               <button
                 class="button is-primary is-medium is-fullwidth"
                 @click="login"
-                :disabled="errors.any()"
+                :disabled="$v.form.$invalid"
                 id="LoginButton"
               >
                 <span class="icon"><i class="fa fa-user"></i></span>
@@ -67,11 +65,14 @@
 <script>
 import {HapiNamespace} from '../js/backend/hapi'
 import L from '../js/translations'
+import { validationMixin } from 'vuelidate'
+import { required, minLength } from 'vuelidate/lib/validators'
 
 const namespace = new HapiNamespace()
 
 export default {
   name: 'LoginModal',
+  mixins: [ validationMixin ],
   inserted () {
     this.$refs.username.focus()
   },
@@ -79,13 +80,13 @@ export default {
     async login () {
       try {
         // TODO: Insert cryptography here
-        const identityContractId = await namespace.lookup(this.name)
+        const identityContractId = await namespace.lookup(this.form.name)
         console.log(`Retrieved identity ${identityContractId}`)
-        await this.$store.dispatch('login', {name: this.name, identityContractId})
+        await this.$store.dispatch('login', {name: this.form.name, identityContractId})
         this.close()
         this.$router.push({path: '/'})
       } catch (error) {
-        this.response = L('Invalid username or password')
+        this.form.response = L('Invalid username or password')
         console.error(error)
       }
     },
@@ -95,9 +96,23 @@ export default {
   },
   data () {
     return {
-      name: null,
-      password: null,
-      response: null
+      form: {
+        name: null,
+        password: null,
+        response: null
+      }
+    }
+  },
+  validations: {
+    form: {
+      name: {
+        required,
+        nonWhitespace: value => /^\S+$/.test(value)
+      },
+      password: {
+        required,
+        minLength: minLength(7)
+      }
     }
   }
 }
