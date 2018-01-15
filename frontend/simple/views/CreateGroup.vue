@@ -1,9 +1,8 @@
 <template>
   <section id="create-group-page" class="section">
     <!-- TODO: use Bulma's .field -->
-    <!-- TODO: center using .centered like SignUp.vue -->
-    <div class="columns">
-      <div class="column is-half is-offset-one-quarter" >
+    <div class="columns is-centered">
+      <div class="column is-half">
         <transition name="fade" mode="out-in">
           <router-view :group="form" :v="$v.form" @input="(payload) => updateGroupData(payload)">
           </router-view>
