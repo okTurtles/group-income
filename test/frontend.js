@@ -259,24 +259,69 @@ describe('Frontend', function () {
     })
 
     it('Should create a group', async function () {
+      const testName = 'Test Group'
+      const testValues = 'Testing this software'
+      const testIncome = 200
+      const testSetting = 80
       this.timeout(10000)
-      await n.click('#CreateGroup')
-      const created = await n
-        .insert('input[name="groupName"]', 'Test Group')
-        .insert('textarea[name="sharedValues"]', 'Testing this software')
-        .insert('input[name="groupName"]', 'Test Group')
-        .insert('input[name="incomeProvided"]', 200)
-        .select('select[name="contributionPrivacy"]', 'Very Private')
-        .click('button[type="submit"]')
-        .wait('#addButton')
-        .exists('#addButton')
-      should(created).equal(true)
+      await n
+        .click('#CreateGroup')
+        // fill group data
+        .wait('input[name="groupName"]')
+        .insert('input[name="groupName"]', testName)
+        .click('#nextBtn')
+        .wait('textarea[name="sharedValues"]')
+        .insert('textarea[name="sharedValues"]', testValues)
+        .click('#nextBtn')
+        .wait('input[name="incomeProvided"]')
+        .insert('input[name="incomeProvided"]', testIncome)
+        .click('#nextBtn')
+        .wait('#rulesStep')
+        // set rules step skipped for now
+        .click('#nextBtn')
+        .wait('#privacyStep')
+        .click('#nextBtn')
+        // invite members
+        .wait('input[name="invitee"]')
+        .insert('input[name="invitee"]', username + '4')
+        .click('#addButton')
+        .wait('.invitee')
+
+      const invited = await n.evaluate(() => document.querySelectorAll('.invitee').length)
+      should(invited).equal(1)
+
+      await n
+        .click('#nextBtn')
+        .wait('#summaryStep')
+      // summary page sees group as valid
+      const valid = await n.exists('#finishBtn:not(:disabled)')
+      should(valid).equal(true)
+      // submit group
+      await n
+        .click('#finishBtn')
+        .wait('#dashboard')
+
+      const created = await n.evaluate(() => ({
+        groupName: document.querySelector('#groupName').innerText,
+        sharedValues: document.querySelector('#sharedValues').innerText,
+        incomeProvided: document.querySelector('.min-income').innerText,
+        changePercentage: document.querySelector('#changePercentage').innerText,
+        memberApprovalPercentage: document.querySelector('#approvePercentage').innerText,
+        memberRemovalPercentage: document.querySelector('#removePercentage').innerText
+      }))
+      should(created.groupName).equal(testName)
+      should(created.sharedValues).equal(testValues)
+      should(created.incomeProvided).equal('$' + testIncome)
+      should(created.changePercentage).equal(testSetting + '%')
+      should(created.memberApprovalPercentage).equal(testSetting + '%')
+      should(created.memberRemovalPercentage).equal(testSetting + '%')
     })
 
     it('Should invite members to group', async function () {
       this.timeout(4000)
 
       const count = await n
+        .click('.invite-button')
         .wait('#addButton')
         .insert('#searchUser', username)
         .click('#addButton')

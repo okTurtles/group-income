@@ -1,5 +1,5 @@
 <template>
-  <section class="container section">
+  <section id="dashboard" class="container section">
     <div class="columns">
 
       <div class="column is-2">
@@ -14,8 +14,8 @@
           <groups-min-income :group="currentGroupState" />
         </div>
 
-        <h1 class="title is-1">{{ groupsByName.groupName }}</h1>
-        <p>{{ currentGroupState.sharedValues }}</p>
+        <h1 id="groupName" class="title is-1">{{ currentGroupState.groupName }}</h1>
+        <p id="sharedValues">{{ currentGroupState.sharedValues }}</p>
 
         <group-members />
 

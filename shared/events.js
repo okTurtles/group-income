@@ -258,6 +258,7 @@ export class HashableGroup extends HashableContract {
     ['memberApprovalPercentage', 'uint32'],
     ['memberRemovalPercentage', 'uint32'],
     ['incomeProvided', 'float'],
+    ['incomeCurrency', 'string'],
     ['contributionPrivacy', 'string'],
     ['founderUsername', 'string'],
     ['founderIdentityContractId', 'string']
