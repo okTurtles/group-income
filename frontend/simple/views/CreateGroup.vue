@@ -88,6 +88,7 @@ import L from '../js/translations'
 import StepAssistant from '../components/StepAssistant'
 import { validationMixin } from 'vuelidate'
 import { required, between, numeric } from 'vuelidate/lib/validators'
+import { decimals } from '../js/customValidators'
 
 export default {
   name: 'CreateGroupView',
@@ -230,7 +231,7 @@ export default {
       },
       incomeProvided: {
         required,
-        numeric
+        decimals: decimals(2)
       },
       incomeCurrency: {
         required

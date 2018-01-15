@@ -204,6 +204,7 @@ import L from '../js/translations'
 import _ from 'lodash'
 import { validationMixin } from 'vuelidate'
 import { url, email } from 'vuelidate/lib/validators'
+import { decimals } from '../js/customValidators'
 
 export default {
   name: 'UserProfileView',
@@ -243,10 +244,10 @@ export default {
     },
     editedGroupProfile: {
       contributionAmount: {
-        decimals: (number) => Number.isInteger(number * 100)
+        decimals: decimals(2)
       },
       receivingLimit: {
-        decimals: (number) => Number.isInteger(number * 100)
+        decimals: decimals(2)
       }
     }
   },

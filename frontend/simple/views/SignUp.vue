@@ -110,6 +110,7 @@ import * as contracts from '../js/events'
 import {namespace} from '../js/backend/hapi'
 import { validationMixin } from 'vuelidate'
 import { required, minLength, email } from 'vuelidate/lib/validators'
+import { nonWhitespace } from '../js/customValidators'
 // TODO: fix all this
 export default {
   name: 'SignUp',
@@ -193,7 +194,7 @@ export default {
     form: {
       name: {
         required,
-        nonWhitespace: value => /^\S+$/.test(value),
+        nonWhitespace,
         isAvailable (value) {
           // standalone validator ideally should not assume a field is required
           if (value === '' || !/^\S+$/.test(value)) return true
