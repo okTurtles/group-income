@@ -67,7 +67,7 @@
     <hr>
 
     <h2 class="title is-6"><i18n>Members to invite:</i18n></h2>
-    <p v-if="!group.invitees.length" class="subtitle is-2 is-warning"><i18n>Noone here yet</i18n></p>
+    <p v-if="!group.invitees.length" class="subtitle is-2 is-warning"><i18n>No one invited</i18n></p>
     <div class="tile is-ancestor">
       <div class="tile is-4 is-parent" v-for="(invitee, index) in group.invitees">
         <div class="card tile is-child">
