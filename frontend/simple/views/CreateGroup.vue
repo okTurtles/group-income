@@ -1,9 +1,8 @@
 <template>
   <section id="create-group-page" class="section">
     <!-- TODO: use Bulma's .field -->
-    <!-- TODO: center using .centered like SignUp.vue -->
-    <div class="columns">
-      <div class="column is-half is-offset-one-quarter" >
+    <div class="columns is-centered">
+      <div class="column is-half">
         <transition name="fade" mode="out-in">
           <router-view :group="form" :v="$v.form" @input="(payload) => updateGroupData(payload)">
           </router-view>
@@ -88,6 +87,7 @@ import L from '../js/translations'
 import StepAssistant from '../components/StepAssistant'
 import { validationMixin } from 'vuelidate'
 import { required, between, numeric } from 'vuelidate/lib/validators'
+import { decimals } from '../js/customValidators'
 
 export default {
   name: 'CreateGroupView',
@@ -230,7 +230,7 @@ export default {
       },
       incomeProvided: {
         required,
-        numeric
+        decimals: decimals(2)
       },
       incomeCurrency: {
         required

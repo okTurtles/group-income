@@ -64,11 +64,11 @@
     <transition name="open">
       <div class="message is-warning" v-if="!superMajority">
         <div class="message-body">
-          The percentage value you are choosing is most likely too low
+          <i18n>The percentage value you are choosing is most likely too low
           for a decision that can have a potentially significant impact
-          on a person’s life. Please consider using a supermajority threshold.
+          on a person’s life. Please consider using a supermajority threshold.</i18n>
           <a href="https://groupincome.org/2016/09/deprecating-mays-theorem/#when-majority-rule-can-harm">
-            Read more on our blog about the dangers of majority rule.
+            <i18n>Read more on our blog about the dangers of majority rule.</i18n>
           </a>
         </div>
       </div>

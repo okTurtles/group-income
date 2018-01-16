@@ -6,19 +6,18 @@
         <form ref="ProfileForm"
               name="ProfileForm"
               @submit.prevent="save"
-              data-vv-scope="ProfileForm"
         >
           <p
-                  class="notification is-success has-text-centered"
-                  v-if="profileSaved"
-                  id="ProfileSaveSuccess"
+            class="notification is-success has-text-centered"
+            v-if="profileSaved"
+            id="ProfileSaveSuccess"
           >
             <i class='notification-icon fa fa-check'></i>
             <i18n>Profile saved successfully!</i18n>
           </p>
           <p
-                  class="notification is-danger has-text-centered"
-                  v-if="errorMsg"
+            class="notification is-danger has-text-centered"
+            v-if="errorMsg"
           >
             <i class='notification-icon fa fa-exclamation-triangle'></i>
             {{errorMsg}}
@@ -34,8 +33,17 @@
                 </p>
               </figure>
               <div class="media-content">
-                <strong><i18n>Profile Picture</i18n>:</strong> <input class="input" type="text" v-validate data-vv-rules="url" name="profilePicture" v-model="edited.picture" placeholder="http://">
-                <i18n v-if="errors.has('ProfileForm.profilePicture')" class="help is-danger">
+                <strong><i18n>Profile Picture</i18n>:</strong>
+                <input
+                  class="input"
+                  :class="{'is-danger': $v.edited.picture.$error}"
+                  type="text"
+                  name="profilePicture"
+                  v-model="edited.picture"
+                  @input="$v.edited.picture.$touch()"
+                  placeholder="http://"
+                >
+                <i18n v-if="$v.edited.picture.$error" class="help is-danger">
                   The profile picture must be a valid url
                 </i18n>
               </div>
@@ -47,8 +55,17 @@
             </div>
             <div class="panel-block">
               <div class="media-content">
-                <strong><i18n>Email</i18n>:</strong> <input class="input" name="profileEmail" type="text" v-validate data-vv-rules="email" v-model="edited.email" placeholder="Email">
-                <i18n v-if="errors.has('ProfileForm.profileEmail')" class="help is-danger">Not an email</i18n>
+                <strong><i18n>Email</i18n>:</strong>
+                <input
+                  class="input"
+                  :class="{'is-danger': $v.edited.email.$error}"
+                  name="profileEmail"
+                  type="text"
+                  v-model="edited.email"
+                  @input="$v.edited.email.$touch()"
+                  placeholder="Email"
+                >
+                <i18n v-if="$v.edited.email.$error" class="help is-danger">Not an email</i18n>
               </div>
             </div>
             <div class="panel-block">
@@ -58,32 +75,31 @@
             </div>
           </div>
           <div class="has-text-centered button-box">
-            <button class="button is-success is-large" id='SaveProfileButton' :disabled="errors.any('ProfileForm')" type="submit"><i18n>Save Profile</i18n></button>
+            <button class="button is-success is-large" id='SaveProfileButton' :disabled="$v.edited.$invalid" type="submit"><i18n>Save Profile</i18n></button>
           </div>
         </form>
         <br>
         <form ref="GroupProfileForm"
               name="GroupProfileForm"
               @submit.prevent="saveGroupProfile"
-              data-vv-scope="GroupProfileForm"
         >
           <p
-                  class="notification is-success has-text-centered"
-                  v-if="groupProfileSaved"
+            class="notification is-success has-text-centered"
+            v-if="groupProfileSaved"
           >
             <i class='notification-icon fa fa-check'></i>
             <i18n>Group Profile saved successfully!</i18n>
           </p>
           <p
-                  class="notification is-danger has-text-centered"
-                  v-if="groupErrorMsg"
+            class="notification is-danger has-text-centered"
+            v-if="groupErrorMsg"
           >
             <i class='notification-icon fa fa-exclamation-triangle'></i>
             {{groupErrorMsg}}
           </p>
           <div class="panel">
             <p class="panel-heading">
-              <i18n> Group Profile Attributes</i18n>
+              <i18n>Group Profile Attributes</i18n>
             </p>
             <div class="panel-block">
               <div class="media-content">
@@ -124,15 +140,18 @@
                     </span>
                   </p>
                   <p class="control">
-                    <input class="input" type="text" name="contributionAmount"
-                           placeholder="Contribution Amount"
-                           data-vv-as="Contribution Amount"
-                           v-validate data-vv-rules="decimal:2"
-                           v-model="editedGroupProfile.contributionAmount"
+                    <input
+                      class="input"
+                      :class="{'is-danger': $v.editedGroupProfile.contributionAmount.$error}"
+                      type="text"
+                      name="contributionAmount"
+                      placeholder="Contribution Amount"
+                      v-model="editedGroupProfile.contributionAmount"
+                      @input="$v.editedGroupProfile.contributionAmount.$touch()"
                     >
                   </p>
                 </div>
-                <i18n v-if="errors.has('GroupProfileForm.contributionAmount')" data-control="incomeProvided" class="help is-danger">
+                <i18n v-if="$v.editedGroupProfile.contributionAmount.$error" data-control="incomeProvided" class="help is-danger">
                   The Contribution Amount must be a numeric currency amount and may contain 2 decimal points.
                 </i18n>
               </div>
@@ -152,22 +171,25 @@
                     </span>
                   </p>
                   <p class="control">
-                    <input class="input" type="text" name="receivingLimit"
-                           placeholder="Receiving Limit"
-                           data-vv-as="Receiving Limit"
-                           v-validate data-vv-rules="decimal:2"
-                           v-model="editedGroupProfile.receivingLimit"
+                    <input
+                      class="input"
+                      :class="{'is-danger': $v.editedGroupProfile.receivingLimit.$error}"
+                      type="text"
+                      name="receivingLimit"
+                      placeholder="Receiving Limit"
+                      v-model="editedGroupProfile.receivingLimit"
+                      @input="$v.editedGroupProfile.receivingLimit.$touch()"
                     >
                   </p>
                 </div>
-                <i18n v-if="errors.has('GroupProfileForm.receivingLimit')" data-control="incomeProvided" class="help is-danger">
+                <i18n v-if="$v.editedGroupProfile.receivingLimit.$error" data-control="incomeProvided" class="help is-danger">
                   The Receiving Limit must be a numeric currency amount and may contain 2 decimal points.
                 </i18n>
               </div>
             </div>
           </div>
           <div class="has-text-centered button-box">
-            <button class="button is-success is-large" :disabled="errors.any('GroupProfileForm')" v-if="currentGroupContractId"><i18n>Save Group Profile</i18n></button>
+            <button class="button is-success is-large" :disabled="$v.editedGroupProfile.$invalid" v-if="currentGroupContractId"><i18n>Save Group Profile</i18n></button>
           </div>
         </form>
       </div>
@@ -180,9 +202,13 @@ import backend from '../js/backend'
 import * as Events from '../../../shared/events'
 import L from '../js/translations'
 import _ from 'lodash'
+import { validationMixin } from 'vuelidate'
+import { url, email } from 'vuelidate/lib/validators'
+import { decimals } from '../js/customValidators'
 
 export default {
   name: 'UserProfileView',
+  mixins: [ validationMixin ],
   computed: {
     attributes () {
       return this.$store.getters.currentUserIdentityContract.attributes
@@ -209,6 +235,20 @@ export default {
       groupErrorMsg: null,
       groupProfileSaved: false,
       profileSaved: false
+    }
+  },
+  validations: {
+    edited: {
+      picture: { url },
+      email: { email }
+    },
+    editedGroupProfile: {
+      contributionAmount: {
+        decimals: decimals(2)
+      },
+      receivingLimit: {
+        decimals: decimals(2)
+      }
     }
   },
   methods: {

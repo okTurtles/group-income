@@ -29,7 +29,7 @@
     <hr>
 
     <h2 class="title is-6"><i18n>Minimum income:</i18n></h2>
-    <p class="subtitle is-2" v-if="group.incomeProvided"><cyy>{{ group.incomeCurrency }}</cyy>{{ group.incomeProvided }}</p>
+    <p class="subtitle is-2" v-if="group.incomeProvided">{{ currency }}{{ group.incomeProvided }}</p>
     <p class="subtitle is-2 is-danger" v-else><i18n>No group income set</i18n></p>
     <p class="has-text-right">
       <router-link
@@ -67,7 +67,7 @@
     <hr>
 
     <h2 class="title is-6"><i18n>Members to invite:</i18n></h2>
-    <p v-if="!group.invitees.length" class="subtitle is-2 is-warning"><i18n>Noone here yet</i18n></p>
+    <p v-if="!group.invitees.length" class="subtitle is-2 is-warning"><i18n>No one invited</i18n></p>
     <div class="tile is-ancestor">
       <div class="tile is-4 is-parent" v-for="(invitee, index) in group.invitees">
         <div class="card tile is-child">
@@ -103,14 +103,16 @@
   }
 </style>
 <script>
-import cyy from '../../views/cyy.vue'
+import { symbol } from '../../js/currencies'
 export default {
   name: 'CreateGroupSummary',
   props: {
     group: {type: Object}
   },
-  components: {
-    cyy
+  computed: {
+    currency: function () {
+      return symbol(this.group.incomeCurrency)
+    }
   }
 }
 </script>
