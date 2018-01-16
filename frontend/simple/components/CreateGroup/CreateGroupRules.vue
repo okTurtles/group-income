@@ -1,6 +1,6 @@
 <template>
   <div id="rulesStep" class="has-text-centered">
-    <h1 class="title is-2"><i18n>Group Advanced Rules</i18n></h1>
+    <h1 class="title is-2"><i18n>Voting Rules</i18n></h1>
     <p class="content"><i18n>What percentage approval is necessary to adjust the group rules?</i18n></p>
     <div class="columns">
       <div class="column">
