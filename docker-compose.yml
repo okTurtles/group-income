@@ -1,0 +1,13 @@
+version: "3.3"
+services:
+  groupincome:
+    build: .
+    command: grunt dev
+    # TODO: don't forget to make these ports configurable and in sync with Gruntfile.js
+    #       See also related issue #71.
+    ports:
+      - "8000:8000"   # http server
+      - "3000:3000"   # api server
+      - "35729:35729" # livereload
+    volumes:
+      - .:/opt
