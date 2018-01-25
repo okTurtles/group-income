@@ -58,6 +58,10 @@ grunt test
 
 **Use [Daydream](https://github.com/segmentio/daydream) to create frontend tests. All new functionality must have corresponding tests!**
 
+#### Developing with Docker for extra security
+
+See: [`Docker.md`](docs/Docker.md)
+
 ## Troubleshooting
 
 If you run into any errors [during the setup](docs/Getting-Started-frontend.md#how-do-i-get-set-up--just-run-the-site), try the suggestions in [`Troubleshooting.md`](docs/Troubleshooting.md).
