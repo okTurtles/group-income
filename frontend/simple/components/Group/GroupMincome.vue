@@ -37,7 +37,7 @@
 import currencies from '../../js/currencies'
 
 export default {
-  name: 'CreateGroupMincome',
+  name: 'GroupMincome',
   props: {
     group: {type: Object},
     v: {type: Object}

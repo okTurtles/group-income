@@ -4,14 +4,14 @@ import store from './state'
 import SignUp from '../views/SignUp.vue'
 import CreateGroup from '../views/CreateGroup.vue'
 import {
-  CreateGroupName,
-  CreateGroupPurpose,
-  CreateGroupMincome,
-  CreateGroupRules,
-  CreateGroupPrivacy,
-  CreateGroupInvitees,
-  CreateGroupSummary
-} from '../components/CreateGroup'
+  GroupName,
+  GroupPurpose,
+  GroupMincome,
+  GroupRules,
+  GroupPrivacy,
+  GroupInvitees,
+  GroupSummary
+} from '../components/Group'
 import GroupDashboard from '../views/GroupDashboard.vue'
 import UserProfileView from '../views/UserProfileView.vue'
 import Invite from '../views/Invite.vue'
@@ -106,59 +106,59 @@ var router = new Router({
       children: [
         {
           path: 'name',
-          name: CreateGroupName.name,
+          name: GroupName.name,
           meta: {
             title: 'Start A Group - Name Your Group'
           },
-          component: CreateGroupName
+          component: GroupName
         },
         {
           path: 'purpose',
-          name: CreateGroupPurpose.name,
+          name: GroupPurpose.name,
           meta: {
             title: 'Start A Group - Group Purpose'
           },
-          component: CreateGroupPurpose
+          component: GroupPurpose
         },
         {
           path: 'income',
-          name: CreateGroupMincome.name,
+          name: GroupMincome.name,
           meta: {
             title: 'Start A Group - Minimum Income'
           },
-          component: CreateGroupMincome
+          component: GroupMincome
         },
         {
           path: 'rules',
-          name: CreateGroupRules.name,
+          name: GroupRules.name,
           meta: {
             title: 'Start A Group - Rules'
           },
-          component: CreateGroupRules
+          component: GroupRules
         },
         {
           path: 'privacy',
-          name: CreateGroupPrivacy.name,
+          name: GroupPrivacy.name,
           meta: {
             title: 'Start A Group - Privacy'
           },
-          component: CreateGroupPrivacy
+          component: GroupPrivacy
         },
         {
           path: 'invitees',
-          name: CreateGroupInvitees.name,
+          name: GroupInvitees.name,
           meta: {
             title: 'Start A Group - Invite Members'
           },
-          component: CreateGroupInvitees
+          component: GroupInvitees
         },
         {
           path: 'create',
-          name: CreateGroupSummary.name,
+          name: GroupSummary.name,
           meta: {
             title: 'Start A Group - Launch Group'
           },
-          component: CreateGroupSummary
+          component: GroupSummary
         }
       ]
     },

@@ -10,7 +10,7 @@
     <p class="has-text-right">
       <router-link
         class="button is-primary"
-        :to="{name: 'CreateGroupName'}"
+        :to="{name: 'GroupName'}"
       >
         <i18n>Edit</i18n>
       </router-link>
@@ -23,7 +23,7 @@
     <p class="has-text-right">
       <router-link
         class="button is-primary"
-        :to="{name: 'CreateGroupPurpose'}"
+        :to="{name: 'GroupPurpose'}"
       >
         <i18n>Edit</i18n>
       </router-link>
@@ -36,7 +36,7 @@
     <p class="has-text-right">
       <router-link
         class="button is-primary"
-        :to="{name: 'CreateGroupMincome'}"
+        :to="{name: 'GroupMincome'}"
       >
         <i18n>Edit</i18n>
       </router-link>
@@ -61,7 +61,7 @@
     <p class="has-text-right">
       <router-link
         class="button is-primary"
-        :to="{name: 'CreateGroupRules'}"
+        :to="{name: 'GroupRules'}"
       >
         <i18n>Edit</i18n>
       </router-link>
@@ -89,7 +89,7 @@
     <p class="has-text-right">
       <router-link
         class="button is-primary"
-        :to="{name: 'CreateGroupInvitees'}"
+        :to="{name: 'GroupInvitees'}"
       >
         <i18n>Edit</i18n>
       </router-link>
@@ -108,7 +108,7 @@
 <script>
 import { symbol } from '../../js/currencies'
 export default {
-  name: 'CreateGroupSummary',
+  name: 'GroupSummary',
   props: {
     group: {type: Object}
   },

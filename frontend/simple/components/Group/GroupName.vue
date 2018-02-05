@@ -21,7 +21,7 @@
 </template>
 <script>
 export default {
-  name: 'CreateGroupName',
+  name: 'GroupName',
   props: {
     group: {type: Object},
     v: {type: Object}
