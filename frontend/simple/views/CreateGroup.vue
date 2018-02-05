@@ -198,13 +198,13 @@ export default {
       },
       config: {
         steps: [
-          'CreateGroupName',
-          'CreateGroupPurpose',
-          'CreateGroupMincome',
-          'CreateGroupRules',
-          'CreateGroupPrivacy',
-          'CreateGroupInvitees',
-          'CreateGroupSummary'
+          'GroupName',
+          'GroupPurpose',
+          'GroupMincome',
+          'GroupRules',
+          'GroupPrivacy',
+          'GroupInvitees',
+          'GroupSummary'
         ]
       }
     }
@@ -238,13 +238,13 @@ export default {
     },
     // validation groups by route name for steps
     steps: {
-      CreateGroupName: [ 'form.groupName' ],
-      CreateGroupPurpose: [ 'form.sharedValues' ],
-      CreateGroupMincome: [
+      GroupName: [ 'form.groupName' ],
+      GroupPurpose: [ 'form.sharedValues' ],
+      GroupMincome: [
         'form.incomeProvided',
         'form.incomeCurrency'
       ],
-      CreateGroupRules: [
+      GroupRules: [
         'form.changePercentage',
         'form.memberApprovalPercentage',
         'form.memberRemovalPercentage'

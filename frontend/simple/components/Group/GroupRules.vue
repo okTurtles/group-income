@@ -117,7 +117,7 @@ const OKCOLOR = '#78c848'
 const WARNCOLOR = '#f68b39'
 
 export default {
-  name: 'CreateGroupRules',
+  name: 'GroupRules',
   props: {
     group: {type: Object},
     v: {type: Object}
