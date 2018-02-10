@@ -1,15 +1,14 @@
 # Style Guide
 
-This project follows four style + structure considerations:
-
-1. JavaScript code must conform to [`standard`](#js-standard).
-2. All Vue.js-related files and code should follow the [_Priority A_ and _Priority B_ Rules](#vuejs-style-guide) in the Vue.js Style Guide.
-3. You must understand and follow [Group Income's data organization model](#group-income-data-model-rules).
-4. [SBP](#SBP). (Soon.)
-
 Please read all the sections below before writing a single line of code.
 
-## JS Standard
+- **[JavaScript Style Guide](#javascript-style-guide)**
+- **[Vue.js Style Guide](#vuejs-style-guide)**
+- **[CSS/SASS Style Guide](#csssass-style-guide)**
+- **[Group Income Data Model Rules](#group-income-data-model-rules)**
+- **[SBP Paradigm](#sbp) (Soon!)**
+
+## JavaScript Style Guide
 
 While our build system should automatically detect most deviations from [JS Standard](https://github.com/standard/standard), it might not catch all (especially in `.vue` files).
 
@@ -20,6 +19,21 @@ _It is still on you to ensure your code conforms to the `standard` spec, whether
 ## Vue.js Style Guide
 
 Since this is a Vue.js project, any pull requests **must** follow *Priority A* rules mentioned in the [Vue.js Style Guide](https://vuejs.org/v2/style-guide/), and *should* follow the *Priority B* rules. Please take the time to read at least those two sections.
+
+## CSS/SASS Style Guide
+
+For styling, we use [Bulma](https://bulma.io/documentation/overview/start/).
+
+- Everything that can be solved by using Bulma’s classes should be solved with them
+- Theme overwrites that affect the whole application - for elements that could be found at the Bulma docs - should go to `/frontend/simple/sass` and be written in SCSS
+- Component specific styles should go to the component’s `<style>` tag, be written in SCSS, and be scoped to the component. Try to write as little of this as possible.
+
+#### Use correct Bulma documentation
+
+Bulma sometimes changes *significantly*. Therefore it's important:
+
+1. To access the correct documentation for the version of Bulma that we're using. (Check `package.json`, and then visit the version-specific docs, the earliest available of which is [0.4.4](https://versions.bulma.io/0.4.4/documentation/elements/box/))
+2. **Never update Bulma "just because"!** Always create an issue to update bulma first, and then create a single unique pull-request just for that issue. You will have to verify and fix any UI-differences that occur. Sometimes Bulma will remove or change CSS selector class names, etc. You must identify and fix all differences.
 
 ## Group Income Data Model Rules
 
