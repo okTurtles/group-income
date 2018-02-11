@@ -25,7 +25,7 @@ Everyone must follow the rules below (inspired by the [C4.1](http://hintjens.com
 
 1. **Always** work in your own fork and submit pull requests (PRs) to `master`.
 2. **Always** submit a _minimal and accurate answer_ to any issue. The simplest solution is the best solution.
-3. **Always** add/update tests for any new/modified functionality.
+3. **Always** add/update tests for any new/modified functionality. (:exclamation:)
 4. **Always** make sure your PR passes all tests (`grunt test`).
 5. **Always** ensure your PR adheres to the **[Contribution Policy](#contribution-policy)** described below.
 
@@ -39,13 +39,14 @@ This contribution policy will evolve over time. For now it is based on a mixture
 2. All patches are owned by their authors. There SHALL NOT be any copyright assignment process.
 3. Each Contributor SHALL be responsible for identifying themselves in the project Contributor list.
 
-#### Pull Request Requirements
+#### Pull Request Requirements (:exclamation:)
 
-1. A PR SHOULD be a minimal and accurate answer to exactly one identified and agreed problem.
-2. A PR SHALL NOT include non-trivial code from other projects unless the Contributor is the original author of that code.
-3. A PR MUST pass all tests on at least the principle target platform.
-4. A PR MUST include new tests for any new functionality introduced.
-5. A PR SHOULD avoid "callback-hell" style and instead prefer "async/await" style.
+1. A PR **SHOULD** be a minimal and accurate answer to exactly one identified and agreed problem.
+2. A PR **SHALL NOT** include non-trivial code from other projects unless the Contributor is the original author of that code.
+3. A PR **MUST** pass all tests on at least the principle target platform.
+4. A PR **MUST** include new tests for any new functionality introduced.
+5. A PR **SHOULD** avoid "callback-hell" style and instead prefer "async/await" style.
+6. A PR **MUST** follow the requirements spelled out in this project's [Style Guide](docs/Style-Guide.md).
 
 ## How to submit an issue
 
