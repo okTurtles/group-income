@@ -328,7 +328,7 @@ describe('Frontend', function () {
       const count = await n
         .click('.invite-button')
         .wait('#addButton')
-        .insert('#searchUser', username)
+        .insert('input[name="invitee"]', username)
         .click('#addButton')
         .wait(() => document.querySelectorAll('.member').length > 0)
         .wait('.delete')
@@ -338,10 +338,10 @@ describe('Frontend', function () {
       should(count).equal(0)
 
       const created = await n
-        .insert('#searchUser', username)
+        .insert('input[name="invitee"]', username)
         .click('#addButton')
         .wait(() => document.querySelectorAll('.member').length > 0)
-        .insert('#searchUser', username + '2')
+        .insert('input[name="invitee"]', username + '2')
         .click('#addButton')
         .wait(() => document.querySelectorAll('.member').length > 1)
         .click('button[type="submit"]')
