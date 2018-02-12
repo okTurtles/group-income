@@ -11,3 +11,4 @@ services:
       - "35729:35729" # livereload
     volumes:
       - .:/opt
+    tty: true
