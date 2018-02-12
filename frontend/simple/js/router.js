@@ -20,7 +20,6 @@ import Join from '../views/Join.vue'
 import Vote from '../views/Vote.vue'
 import PayGroup from '../views/PayGroup.vue'
 import Home from '../views/Home.vue'
-import ProposeMember from '../views/ProposeMember.vue'
 import MembersCircle from '../components/MembersCircle.vue'
 import {lazyLoadVue} from './utils'
 
@@ -47,14 +46,6 @@ var signupGuard = {
 var groupGuard = {
   guard: (to, from) => !store.state.currentGroupId,
   redirect: (to, from) => ({ path: '/new-group' })
-}
-var inviteGuard = {
-  guard: (to, from) => store.getters.memberCount() >= 3,
-  redirect: (to, from) => ({ path: '/propose-member' })
-}
-var proposeMemberGuard = {
-  guard: (to, from) => store.getters.memberCount() < 3,
-  redirect: (to, from) => ({ path: '/invite' })
 }
 var mailGuard = {
   guard: (to, from) => from.name !== Mailbox.name,
@@ -209,16 +200,7 @@ var router = new Router({
       meta: {
         title: 'Invite Group Members'
       },
-      beforeEnter: createEnterGuards(loginGuard, groupGuard, inviteGuard)
-    },
-    {
-      path: '/propose-member',
-      name: ProposeMember.name,
-      component: ProposeMember,
-      meta: {
-        title: 'Propose Group Members'
-      },
-      beforeEnter: createEnterGuards(loginGuard, groupGuard, proposeMemberGuard)
+      beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     {
       path: '/mailbox',
