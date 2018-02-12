@@ -443,24 +443,15 @@ describe('Frontend', function () {
       should(hasInvite).equal(true)
       const hasMessage = await n.exists(elT('inboxMessage'))
       should(hasMessage).equal(true)
-      const newUnread = await n
+      const accept = await n
         .click(elT('inviteMessage'))
-        .evaluate(
-          (el) => +document.querySelector(el).innerText,
-          elT('inboxUnread')
-        )
-      should(newUnread).equal(1)
+        .exists(elT('acceptLink'))
+      should(accept).equal(true)
     })
     it('Should Accept Invite', async function () {
       this.timeout(30000)
       // Accept invitation
-      let success = await n.click(elT('inboxLink'))
-        .wait(elT('inviteMessage'))
-        .click(elT('inviteMessage'))
-        .wait(elT('inviteLink'))
-        .click(elT('inviteLink'))
-        .wait(elT('acceptLink'))
-        .click(elT('acceptLink'))
+      let success = await n.click(elT('acceptLink'))
         .wait(elT('inbox'))
         .exists(elT('inbox'))
       should(success).equal(true)
@@ -487,8 +478,6 @@ describe('Frontend', function () {
       n.click(elT('mailboxLink'))
         .wait(elT('inviteMessage'))
         .click(elT('inviteMessage'))
-        .wait(elT('inviteLink'))
-        .click(elT('inviteLink'))
         .wait(elT('acceptLink'))
         .click(elT('acceptLink'))
         .wait(elT('inbox'))
@@ -518,10 +507,15 @@ describe('Frontend', function () {
       await n
         .wait(elT('mailboxLink'))
         .goto(page('invite'))
-        .wait(elT('proposeButton'))
+        .wait(elT('searchUser'))
         .insert(elT('searchUser'), username + '3')
-        .click(elT('proposeButton'))
-        .wait(elT('notifyProposedSuccess'))
+        .click(elT('addButton'))
+        .wait(
+          (el) => document.querySelectorAll(el).length > 0,
+          elT('member')
+        )
+        .click(elT('submit'))
+        .wait(elT('notifyInvitedSuccess'))
         // Logout
         .click(elT('openProfileDropDown'))
         .click(elT('logoutBtn'))

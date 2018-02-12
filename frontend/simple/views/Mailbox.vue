@@ -122,13 +122,10 @@
                       <img src="images/default-avatar.png">
                     </p>
                   </div>
-<<<<<<< HEAD
-                  <div class="media-content invite-message"
+                  <div
+                    class="media-content invite-message"
                     data-test="inviteMessage"
-                    v-on:click="read({index, type: message.data.messageType})">
-=======
-                  <div class="media-content invite-message">
->>>>>>> remove unnecessary step from invite inbox
+                  >
                     <div><strong>Sent:</strong>&nbsp;{{formatDate(message.data.sentDate)}}</div>
                     <div><strong>From:</strong>&nbsp;{{message.data.from}}</div>
                   </div>
@@ -283,6 +280,7 @@ export default {
       this.$router.push({ path: '/vote', query: { groupId: this.proposals[index].groupContractId, proposalHash: this.proposals[index].proposal } })
     },
     respondToInvite: function (index) {
+      this.$store.commit('markMessageAsRead', this.invites[index].hash)
       this.$router.push({ path: '/join', query: { groupId: this.invites[index].data.headers[0], inviteHash: this.invites[index].hash } })
     },
     read: function ({index, type}) {

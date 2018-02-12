@@ -116,8 +116,8 @@ export default {
               percentage: this.currentGroupState.memberApprovalPercentage * 0.01,
               candidate: memberName,
               actions: [
-               { contractId: mailbox, action: JSON.stringify(inviteToMailbox.toObject()) },
-               { contractId: groupId, action: JSON.stringify(inviteToGroup.toObject()) }
+                { contractId: mailbox, action: JSON.stringify(inviteToMailbox.toObject()) },
+                { contractId: groupId, action: JSON.stringify(inviteToGroup.toObject()) }
               ],
               initiator: this.loggedIn.name,
               initiationDate: new Date().toString()
