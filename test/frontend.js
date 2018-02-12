@@ -323,14 +323,14 @@ describe('Frontend', function () {
         .wait(elT('privacyStep'))
         .click(elT('nextBtn'))
         // invite members
-        .wait(elT('inputInvitee'))
-        .insert(elT('inputInvitee'), username + '4')
+        .wait(elT('searchUser'))
+        .insert(elT('searchUser'), username + '4')
         .click(elT('addButton'))
-        .wait(elT('inviteeContainer'))
+        .wait(elT('member'))
 
       const invited = await n.evaluate(
-        (el) => document.querySelectorAll('[data-test="inviteeContainer"]').length,
-        elT('inviteeContainer')
+        (el) => document.querySelectorAll(el).length,
+        elT('member')
       )
       should(invited).equal(1)
 
