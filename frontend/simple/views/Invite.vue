@@ -92,7 +92,7 @@ export default {
           let memberName = member.state.attributes.name
 
           if (this.isAlreadyInvited(member)) {
-            template(L('Failed to invite users: member {name} is already invited'),
+            this.form.errorMsg = template(L('Failed to invite users: member {name} is already invited'),
               { name: memberName })
             return
           }
