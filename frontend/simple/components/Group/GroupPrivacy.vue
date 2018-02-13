@@ -6,7 +6,7 @@
 </template>
 <script>
 export default {
-  name: 'CreateGroupPrivacy',
+  name: 'GroupPrivacy',
   props: {
     group: {type: Object}
   }

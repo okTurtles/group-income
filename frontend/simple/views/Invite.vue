@@ -1,83 +1,30 @@
 <template>
   <section class="section full-screen">
+    <div class="columns is-centered">
+      <div class="column is-half">
 
-    <div class="columns">
-      <div class="column is-half is-offset-one-quarter" >
-        <form class='add-form'>
-          <div class="field has-addons">
-            <p class="control" style="width: 100%">
-              <input
-                      autofocus
-                      class="input is-medium"
-                      id="searchUser"
-                      placeholder="Add a new member by username"
-                      type="text"
-                      v-model="searchUser"
-              >
-            </p>
-            <p class="control">
-              <a id="addButton" class="button is-info is-medium" @click="add">
-                <i18n>Add member</i18n>
-              </a>
-            </p>
-          </div>
-          <i18n v-if="userErrorMsg" id="badUsername" class="help is-danger">{{userErrorMsg}}</i18n>
-        </form>
-      </div>
-    </div>
-
-    <div class="columns">
-      <div class="column is-6 is-offset-3" >
-
-        <p
-                class="notification is-success has-text-centered"
-                v-if="invited"
-        >
-          <i class='notification-icon fa fa-check'></i>
-          <i18n>Members invited successfully!</i18n>
+        <p class="notification is-success has-text-centered" v-if="form.success">
+          <i class="notification-icon fa fa-check"></i>
+          <i18n v-if="isProposal">Members proposed successfully!</i18n>
+          <i18n v-else>Members invited successfully!</i18n>
         </p>
 
-        <table
-                class="table is-bordered is-striped is-narrow"
-                v-if="members.length"
+        <group-invitees
+          :group="form"
+          @input="(payload) => updateInvitees(payload)"
+          v-else
         >
-          <thead>
-          <tr>
-            <th class="table-header"><i18n>Initial Invitees</i18n></th>
-          </tr>
-          </thead>
-          <tbody>
-          <tr v-for="(member, index) in members" class="member">
-            <td>
-              <div class="media">
-                <div class="media-left">
-                  <p class="image is-64x64">
-                    <!-- TODO: use responsive figure:
-                  http://bulma.io/documentation/elements/image/ -->
-                    <!-- TODO: ideally these would be loaded from cache -->
-                    <img :src="member.state.attributes.picture" width="64" height="64">
-                  </p>
-                </div>
-                <div class="media-content">
-                  <strong>{{member.state.attributes.name}}</strong>
-                </div>
-                <div class="media-right">
-                  <button class="delete" @click="remove(index)"></button>
-                </div>
-              </div>
-            </td>
-          </tr>
-          </tbody>
-        </table>
+        </group-invitees>
 
         <div class="has-text-centered">
           <button
                   class="button is-success is-large"
                   type="submit"
-                  v-if="members.length"
+                  :disabled="!form.invitees.length"
                   @click="submit"
           >
-            <i18n>Send Invites</i18n>
+            <i18n v-if="isProposal">Propose Invites</i18n>
+            <i18n v-else>Send Invites</i18n>
           </button>
         </div>
 
@@ -86,15 +33,6 @@
   </section>
 </template>
 <style lang="scss" scoped>
-.table-header {
-  background-color: #fafafa;
-}
-.media {
-  align-items: center;
-}
-.add-form {
-  margin-bottom: 2rem;
-}
 .notification-icon {
   margin-right: 1rem;
 }
@@ -102,89 +40,102 @@
 <script>
 import * as Events from '../../../shared/events'
 import backend from '../js/backend/'
-import { latestContractState } from '../js/state'
-import { namespace } from '../js/backend/hapi'
 import L from '../js/translations'
+import template from 'string-template'
+import { GroupInvitees } from '../components/Group'
+import { mapState, mapGetters } from 'vuex'
+import {
+  createInviteMail,
+  createInviteToGroup
+} from '../js/invites'
 
 export default {
   name: 'Invite',
+  components: {
+    GroupInvitees
+  },
   data () {
-    // TODO: https://github.com/okTurtles/group-income-simple/issues/297
     return {
-      searchUser: null,
-      members: [],
-      userErrorMsg: '',
-      invited: false,
-      errorMsg: null
+      form: {
+        invitees: [],
+        success: false,
+        errorMsg: null
+      }
     }
   },
-  methods: {
-    async add () {
-      if (!this.searchUser) return
-
-      if (this.searchUser === this.$store.state.loggedIn.name) {
-        this.userErrorMsg = L('Invalid User: Cannot Invite One\'s self')
-        return
-      } else {
-        this.userErrorMsg = ''
-      }
-
-      try {
-        const contractId = await namespace.lookup(this.searchUser)
-        const state = await latestContractState(contractId)
-        if (!this.members.find(member => member.state.attributes.name === this.searchUser)) {
-          this.members.push({ state, contractId })
-        }
-        this.searchUser = null
-        this.userErrorMsg = ''
-      } catch (err) {
-        console.log(err)
-        this.userErrorMsg = L('Invalid User')
-      }
+  computed: {
+    isProposal () {
+      return this.memberCount() >= 3
     },
-    remove (index) {
-      this.members.splice(index, 1)
+    ...mapState([
+      'currentGroupId',
+      'loggedIn'
+    ]),
+    ...mapGetters([
+      'currentGroupState',
+      'memberCount'
+    ])
+  },
+  methods: {
+    updateInvitees (payload) {
+      this.form.errorMsg = null
+      Object.assign(this.form, payload.data)
     },
     async submit () {
       try {
-        this.errorMsg = null
-        // TODO: as members are successfully invited display in a
-        // seperate invitees grid and add them to some validation for duplicate invites
-        for (let member of this.members) {
-          // We need to have the latest mailbox attribute for the user
-          const mailbox = await backend.latestHash(member.state.attributes.mailbox)
-          const sentDate = new Date().toString()
+        this.form.errorMsg = null
+        const groupId = this.currentGroupId
+        const groupName = this.currentGroupState.groupName
 
-          // We need to post the invite to the users' mailbox contract
-          const invite = new Events.HashableMailboxPostMessage(
-            {
-              from: this.$store.getters.currentGroupState.groupName,
-              headers: [this.$store.state.currentGroupId],
-              messageType: Events.HashableMailboxPostMessage.TypeInvite,
-              sentDate
-            },
-            mailbox
-          )
-          await backend.publishLogEntry(member.state.attributes.mailbox, invite)
+        for (let member of this.form.invitees) {
+          let mailbox = member.state.attributes.mailbox
+          let memberName = member.state.attributes.name
 
-          // We need to make a record of the invitation in the group's contract
-          const latest = await backend.latestHash(this.$store.state.currentGroupId)
-          const invited = new Events.HashableGroupRecordInvitation(
-            {
-              username: member.state.attributes.name,
-              inviteHash: invite.toHash(),
-              sentDate
-            },
-            latest
-          )
-          await backend.publishLogEntry(this.$store.state.currentGroupId, invited)
+          if (this.isAlreadyInvited(member)) {
+            this.form.errorMsg = template(L('Failed to invite users: member {name} is already invited'),
+              { name: memberName })
+            return
+          }
+
+          let inviteToMailbox = await createInviteMail(mailbox, groupName, groupId)
+          let inviteToGroup = await createInviteToGroup(inviteToMailbox.toHash(), memberName, groupId)
+
+          if (this.isProposal) {
+            let latest = await backend.latestHash(groupId)
+            let proposal = new Events.HashableGroupProposal({
+              proposal: template(
+                L('This is a Vote for {name} to become a member of {group}'),
+                { name: memberName, group: groupName }
+              ),
+              // calculate the voting threshold from the group data
+              percentage: this.currentGroupState.memberApprovalPercentage * 0.01,
+              candidate: memberName,
+              actions: [
+               { contractId: mailbox, action: JSON.stringify(inviteToMailbox.toObject()) },
+               { contractId: groupId, action: JSON.stringify(inviteToGroup.toObject()) }
+              ],
+              initiator: this.loggedIn.name,
+              initiationDate: new Date().toString()
+            }, latest)
+            await backend.publishLogEntry(groupId, proposal)
+          } else {
+            await backend.publishLogEntry(mailbox, inviteToMailbox)
+            await backend.publishLogEntry(groupId, inviteToGroup)
+          }
         }
-        this.invited = true
+        // TODO: global success message (see #175) and redirect to previous page instead?
+        this.form.success = true
       } catch (error) {
         console.error(error)
         // TODO: Create More descriptive errors
-        this.errorMsg = L('Failed to Invite Users')
+        this.form.errorMsg = L('Failed to Invite Users')
       }
+    },
+    isAlreadyInvited (member) {
+      const candidateMembers = this.$store.getters[`${this.$store.state.currentGroupId}/candidateMembers`]
+      return Object.keys(this.currentGroupState.profiles).find(profile => profile === member) ||
+        this.currentGroupState.invitees.find(invitee => invitee === member) ||
+        candidateMembers.find(username => username === member)
     }
   }
 }

@@ -65,7 +65,7 @@ import { namespace } from '../../js/backend/hapi'
 import L from '../../js/translations'
 
 export default {
-  name: 'CreateGroupInvitees',
+  name: 'GroupInvitees',
   props: {
     group: {type: Object}
   },
