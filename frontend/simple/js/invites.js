@@ -1,6 +1,7 @@
 import * as Events from '../../../shared/events'
 import backend from './backend'
 
+// TODO: convert these to SBP
 export const createInviteMail = async function (mailbox, groupName, groupId) {
   const latestMailbox = await backend.latestHash(mailbox)
   const sentDate = new Date().toString()
@@ -16,6 +17,7 @@ export const createInviteMail = async function (mailbox, groupName, groupId) {
   )
 }
 
+// TODO: convert these to SBP
 export const createInviteToGroup = async function (inviteHash, memberName, groupId) {
   const latest = await backend.latestHash(groupId)
   const sentDate = new Date().toString()
