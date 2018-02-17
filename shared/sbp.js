@@ -1,5 +1,10 @@
 'use strict'
 
+import {
+  EVENTS,
+  DATA
+} from './domains'
+
 type TypeFilter = (domain: string, selector: string, data: Array<*>) => ?boolean
 type TypeDomain = {
   selectors: {[string]: Function},
@@ -27,6 +32,7 @@ function sbp (path: string, ...data: any) {
   }
   var sf = domain.selectorFilters[selector]
   if (sf && sf(name, selector, data) === false) return
+  console.log(domain.selectors)
   return domain.selectors[selector].call(domain, ...data)
 }
 
@@ -69,45 +75,14 @@ sbp.addGlobalFilter = function (filter: TypeFilter) {
   globalFilters.push(filter)
 }
 
+sbp.init = function (env) {
+  if (env !== 'production') {
+    sbp.addGlobalFilter((domain, sel, data) => {
+      console.log(`[sbp] CALL: ${domain}${sel}:`, data)
+    })
+  }
+  sbp.registerDomain('data', DATA)
+  sbp.registerDomain('events', EVENTS)
+}
+
 export default sbp
-
-// =======================
-// Common selectors APIs
-// TODO: move to a separate file
-// =======================
-
-function addListener (event: string, handler: Function, type: 'listeners' | 'listenOnce') {
-  if (!this.data.events) {
-    this.data.events = {}
-  }
-  if (!this.data.events[event]) {
-    this.data.events[event] = {listeners: [], listenOnce: []}
-  }
-  this.data.events[event][type].push(handler)
-}
-
-const COMMON_MIXINS = {
-  V1: {
-    EVENTS: {
-      // TODO: add ability to unregister listeners
-      '/v1/events/on': function (event, data) {
-        addListener.call(this, event, data, 'listeners')
-      },
-      '/v1/events/once': function (event, data) {
-        addListener.call(this, event, data, 'listenOnce')
-      },
-      '/v1/events/emit': function (event, data) {
-        if (!this.data.events) return
-        for (let listener of this.data.events[event].listeners) {
-          listener({event, data})
-        }
-        for (let listener of this.data.events[event].listenOnce) {
-          listener({event, data})
-        }
-        this.data.events[event].listenOnce = []
-      }
-    }
-  }
-}
-
-sbp.COMMON_MIXINS = COMMON_MIXINS
