@@ -6,19 +6,20 @@
 
 import _ from 'lodash'
 
+const _store = {}
+
 export default {
-  _store: {},
   '/get/v1': function (path) {
-    return _.get(this._store, path, [])
+    return _.get(_store, path, [])
   },
   '/set/v1': function (path, data) {
-    _.set(this._store, path, data)
+    _.set(_store, path, data)
   },
   '/add/v1': function (path, data) {
-    if (_.get(this._store, path)) {
-      _.get(this._store, path).push(data)
+    if (_.get(_store, path)) {
+      _.get(_store, path).push(data)
     } else {
-      _.set(this._store, path, [data])
+      _.set(_store, path, [data])
     }
   }
 }

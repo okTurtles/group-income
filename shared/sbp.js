@@ -1,11 +1,5 @@
 'use strict'
 
-import {
-  EVENTS,
-  DATA,
-  PROPOSALS
-} from './domains'
-
 type TypeFilter = (domain: string, selector: string, data: Array<*>) => ?boolean
 type TypeDomain = {
   selectors: {[string]: Function},
@@ -73,17 +67,6 @@ sbp.setSelectorFilter = function (domain: string, selector: string, filter: Type
 
 sbp.addGlobalFilter = function (filter: TypeFilter) {
   globalFilters.push(filter)
-}
-
-sbp.init = function (env) {
-  if (env !== 'production') {
-    sbp.addGlobalFilter((domain, sel, data) => {
-      console.log(`[sbp] CALL: ${domain}${sel}:`, data)
-    })
-  }
-  sbp.registerDomain('data', DATA)
-  sbp.registerDomain('events', EVENTS)
-  sbp.registerDomain('proposals', PROPOSALS)
 }
 
 export default sbp

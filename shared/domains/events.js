@@ -4,7 +4,7 @@
 // Domain: Event publish/subscribe
 // =======================
 
-import sbp from '../../sbp'
+import sbp from '../sbp'
 
 export default {
   // TODO: add ability to unregister listeners
@@ -12,7 +12,7 @@ export default {
     sbp('data/add/v1', `events/${event}/listeners`, handler)
   },
   '/once/v2': function (event, handler) {
-    sbp('data/add/v1', `events/${event}/listeners`, handler)
+    sbp('data/add/v1', `events/${event}/listenOnce`, handler)
   },
   '/emit/v2': function (event, data) {
     const listeners = sbp('data/get/v1', `events/${event}/listeners`)

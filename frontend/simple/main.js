@@ -7,15 +7,25 @@ import './js/transitions'
 import {namespace} from './js/backend/hapi'
 import store from './js/state'
 import sbp from '../../shared/sbp'
-
-// NOTE: hapi.js is one of the first files to get run because of
-//       module load order, so we setup this global SBP filter here
-//       to get logging for all subsequent SBP calls.
-//       In the future we might move it elsewhere.
+import {
+  EVENTS,
+  DATA,
+  PROPOSALS
+} from '../../shared/domains'
 
 console.log('NODE_ENV:', process.env.NODE_ENV)
 
-sbp.init(process.env.NODE_ENV)
+// NOTE: we setup this global SBP filter and domain regs here
+//       to get logging for all subsequent SBP calls.
+//       In the future we might move it elsewhere.
+if (process.env.NODE_ENV !== 'production') {
+  sbp.addGlobalFilter((domain, sel, data) => {
+    console.log(`[sbp] CALL: ${domain}${sel}:`, data)
+  })
+}
+sbp.registerDomain('data', DATA)
+sbp.registerDomain('events', EVENTS)
+sbp.registerDomain('proposals', PROPOSALS)
 
 async function loadLastUser () {
   let user = await db.loadCurrentUser()

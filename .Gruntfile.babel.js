@@ -111,7 +111,7 @@ module.exports = (grunt) => {
     exec: {
       // could replace w/https://github.com/pghalliday/grunt-mocha-test
       test: {
-        cmd: './node_modules/.bin/mocha --require Gruntfile.js -R spec --bail',
+        cmd: './node_modules/.bin/mocha --require Gruntfile.js -R spec --bail "{./{,!(node_modules)/**/}*.test.js,./test/*.js}"',
         options: {env: {LOAD_NO_FILE: 'true', ...process.env}}
       },
       standard: './node_modules/.bin/standard "**/*.{js,vue}"',
