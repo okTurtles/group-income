@@ -8,8 +8,8 @@ import _ from 'lodash'
 
 export default {
   _store: {},
-  '/get/v1': function (path, data) {
-    _.get(this._store, path, data)
+  '/get/v1': function (path) {
+    return _.get(this._store, path, [])
   },
   '/set/v1': function (path, data) {
     _.set(this._store, path, data)

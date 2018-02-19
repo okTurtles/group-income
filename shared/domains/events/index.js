@@ -16,10 +16,10 @@ export default {
   },
   '/emit/v2': function (event, data) {
     const listeners = sbp('data/get/v1', `events/${event}/listeners`)
-    listeners.each(listener => listener({event, data}))
+    listeners.forEach(listener => listener({event, data}))
     // TODO next up in SBP conversion: listener => sbp(listener, event, data)
     const listenOnce = sbp('data/get/v1', `events/${event}/listenOnce`)
-    listenOnce.each(listener => listener({event, data}))
+    listenOnce.forEach(listener => listener({event, data}))
     sbp('data/set/v1', `events/${event}/listenOnce`, [])
   }
 }

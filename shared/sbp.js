@@ -2,7 +2,8 @@
 
 import {
   EVENTS,
-  DATA
+  DATA,
+  PROPOSALS
 } from './domains'
 
 type TypeFilter = (domain: string, selector: string, data: Array<*>) => ?boolean
@@ -32,7 +33,6 @@ function sbp (path: string, ...data: any) {
   }
   var sf = domain.selectorFilters[selector]
   if (sf && sf(name, selector, data) === false) return
-  console.log(domain.selectors)
   return domain.selectors[selector].call(domain, ...data)
 }
 
@@ -83,6 +83,7 @@ sbp.init = function (env) {
   }
   sbp.registerDomain('data', DATA)
   sbp.registerDomain('events', EVENTS)
+  sbp.registerDomain('proposals', PROPOSALS)
 }
 
 export default sbp
