@@ -8,18 +8,18 @@ import sbp from '../sbp'
 
 export default {
   // TODO: add ability to unregister listeners
-  '/on/v2': function (event, handler) {
-    sbp('data/add/v1', `events/${event}/listeners`, handler)
+  '/on': function (event, handler) {
+    sbp('data/add', `events/${event}/listeners`, handler)
   },
-  '/once/v2': function (event, handler) {
-    sbp('data/add/v1', `events/${event}/listenOnce`, handler)
+  '/once': function (event, handler) {
+    sbp('data/add', `events/${event}/listenOnce`, handler)
   },
-  '/emit/v2': function (event, data) {
-    const listeners = sbp('data/get/v1', `events/${event}/listeners`)
+  '/emit': function (event, data) {
+    const listeners = sbp('data/get', `events/${event}/listeners`)
     listeners.forEach(listener => listener({event, data}))
     // TODO next up in SBP conversion: listener => sbp(listener, event, data)
-    const listenOnce = sbp('data/get/v1', `events/${event}/listenOnce`)
+    const listenOnce = sbp('data/get', `events/${event}/listenOnce`)
     listenOnce.forEach(listener => listener({event, data}))
-    sbp('data/set/v1', `events/${event}/listenOnce`, [])
+    sbp('data/set', `events/${event}/listenOnce`, [])
   }
 }

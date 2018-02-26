@@ -99,8 +99,8 @@ export default {
             return
           }
 
-          let inviteToMailbox = await sbp('proposals/invite/mailRecord/create/v1', mailbox, groupName, groupId)
-          let inviteToGroup = await sbp('proposals/invite/groupRecord/create/v1', inviteToMailbox.toHash(), memberName, groupId)
+          let inviteToMailbox = await sbp('proposals/invite/mailRecord/create', mailbox, groupName, groupId)
+          let inviteToGroup = await sbp('proposals/invite/groupRecord/create', inviteToMailbox.toHash(), memberName, groupId)
 
           if (this.isProposal) {
             let latest = await backend.latestHash(groupId)

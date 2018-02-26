@@ -9,7 +9,7 @@ import backend from '../../frontend/simple/js/backend'
 
 export default {
   // create the invite record to the users' mailbox contract
-  '/invite/mailRecord/create/v1': async function (mailbox, groupName, groupId) {
+  '/invite/mailRecord/create': async function (mailbox, groupName, groupId) {
     const latestMailbox = await backend.latestHash(mailbox)
     const sentDate = new Date().toString()
     return new Events.HashableMailboxPostMessage(
@@ -23,7 +23,7 @@ export default {
     )
   },
   // create record of the invitation in the group's contract
-  '/invite/groupRecord/create/v1': async function (inviteHash, memberName, groupId) {
+  '/invite/groupRecord/create': async function (inviteHash, memberName, groupId) {
     const latestGroup = await backend.latestHash(groupId)
     const sentDate = new Date().toString()
     return new Events.HashableGroupRecordInvitation(
