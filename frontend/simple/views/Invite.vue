@@ -121,8 +121,12 @@ export default {
             }, latest)
             await backend.publishLogEntry(groupId, proposal)
           } else {
-            await backend.publishLogEntry(mailbox, inviteToMailbox)
+         // TODO: place these in SBP calls, consider using ArchivedTransactionQueue
+         // NOTE: avoiding use of ArchivedTransactionQueue is better than using it. Here for example,
+         //       we could make it so that a user can be invited to a group multiple times, and the system
+         //       just accepts/cares about the most recent invite only and forgets the previous one
             await backend.publishLogEntry(groupId, inviteToGroup)
+            await backend.publishLogEntry(mailbox, inviteToMailbox)
           }
         }
         // TODO: global success message (see #175) and redirect to previous page instead?
