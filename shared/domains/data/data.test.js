@@ -2,7 +2,7 @@
 
 import should from 'should'
 import sinon from 'sinon'
-import { default as DATA } from './data'
+import { default as DATA } from './index.js'
 
 require('should-sinon')
 

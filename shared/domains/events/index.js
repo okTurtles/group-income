@@ -4,7 +4,7 @@
 // Domain: Event publish/subscribe
 // =======================
 
-import sbp from '../sbp'
+import sbp from '../../sbp'
 
 export default {
   // TODO: add ability to unregister listeners
