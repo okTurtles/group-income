@@ -110,6 +110,9 @@ module.exports = (grunt) => {
     // https://github.com/sindresorhus/grunt-shell is another nice alternative
     exec: {
       // could replace w/https://github.com/pghalliday/grunt-mocha-test
+      // test files:
+      //    - anything in /test folder, eg. integration tests
+      //    - anything that ends with .test.js, eg. unit tests for sbp domains kept in the domain folder
       test: {
         cmd: './node_modules/.bin/mocha --require Gruntfile.js -R spec --bail "{./{,!(node_modules)/**/}*.test.js,./test/*.js}"',
         options: {env: {LOAD_NO_FILE: 'true', ...process.env}}
