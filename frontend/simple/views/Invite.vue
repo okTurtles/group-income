@@ -105,12 +105,11 @@ export default {
           if (this.isProposal) {
             let latest = await backend.latestHash(groupId)
             let proposal = new Events.HashableGroupProposal({
-              proposal: template(
-                L('This is a Vote for {name} to become a member of {group}'),
-                { name: memberName, group: groupName }
-              ),
+              // for proposal template selection in Vote.vue
+              type: 'invitationProposal', // TODO: constants for different proposal types
               // calculate the voting threshold from the group data
-              percentage: this.currentGroupState.memberApprovalPercentage * 0.01,
+              // percentage: this.currentGroupState.memberApprovalPercentage * 0.01,
+              percentage: parseInt(this.currentGroupState.memberApprovalPercentage),
               candidate: memberName,
               actions: [
                 { contractId: mailbox, action: JSON.stringify(inviteToMailbox.toObject()) },

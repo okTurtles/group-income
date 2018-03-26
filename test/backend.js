@@ -253,7 +253,7 @@ describe('Full walkthrough', function () {
     //       identity contract
     it('Should post another event', async function () {
       await postEntry(
-        new Events.HashableGroupProposal({proposal: 'data2'}, latestHash(groups.group1)),
+        new Events.HashableGroupProposal({type: 'proposalType'}, latestHash(groups.group1)),
         groups.group1
       )
       // delay so that the sockets receive notification

@@ -9,9 +9,11 @@
         </div>
         <div class="panel">
           <div class="panel-block">
-            <div style="display: inline;">
-             {{proposal.proposal}}
-            </div>
+            <p>
+              <!-- TODO different templates for different invitation types -->
+              <i18n>This is an invitation proposal. The user to be invited: </i18n>
+              {{proposal.candidate}}
+            </p>
           </div>
           <div class="panel-block notification is-warning" style="text-align: center;">
             <strong style="margin: 0 auto;"><i18n>Your Decision?</i18n></strong>
@@ -66,7 +68,7 @@ export default {
         let latest = await backend.latestHash(this.$route.query.groupId)
         let vote = new Events.HashableGroupVoteForProposal({ username: this.$store.state.loggedIn.name, proposalHash: this.$route.query.proposalHash }, latest)
         let proposal = _.cloneDeep(this.proposal)
-        let threshold = Math.ceil(proposal.percentage * this.memberCount)
+        let threshold = Math.ceil(proposal.percentage * 0.01 * this.memberCount)
 
         await backend.publishLogEntry(this.$route.query.groupId, vote)
         // If the vote passes fulfill the action
