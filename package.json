@@ -8,7 +8,9 @@
     "start": "node backend/index.js",
     "test": "xvfb-maybe grunt test",
     "i18n": "node scripts/i18n.js",
-    "flow": "flow"
+    "flow": "flow",
+    "docker:first-time": "rm -rf node_modules && docker-compose build && docker-compose run groupincome npm install",
+    "docker": "docker-compose up"
   },
   "standard": {
     "ignore": [
