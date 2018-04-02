@@ -4,18 +4,18 @@
 // Domain: Data persistence
 // =======================
 
-const _store = {}
+const _store = new Map()
 
 const Data = {
   '/get': function (path) {
     const pathArray = path.split('/')
     const length = pathArray.length
-    let object = _store
+    let nested = _store
     let index = 0
-    while (object !== undefined && index < length) {
-      object = object[pathArray[index++]]
+    while (nested !== undefined && index < length) {
+      nested = nested.get(pathArray[index++])
     }
-    return (index && index === length) ? object : undefined
+    return (index && index === length) ? nested : undefined
   },
   '/set': function (path, data) {
     const pathArray = path.split('/')
@@ -23,13 +23,13 @@ const Data = {
     let nested = _store
     let index = -1
     while (++index < length - 1) {
-      let key = pathArray[index]
-      if (typeof nested[key] !== 'object') {
-        nested[key] = {}
+      const key = pathArray[index]
+      if (!(nested.get(key) instanceof Map)) {
+        nested.set(key, new Map())
       }
-      nested = nested[key]
+      nested = nested.get(key)
     }
-    nested[pathArray[index]] = data
+    nested.set(pathArray[index], data)
   },
   '/add': function (path, data) {
     const targetArray = Data['/get'](path)
