@@ -6,7 +6,7 @@
       <div v-for="(percentage, index) in history" class="column is-2">
         <div :class="['period', getResult(percentage)]">
           <p class="period-title">{{ months[index] }}</p>
-          <p class="period-txt">{{ Math.floor(percentage * 100) }}%</p>
+          <p class="period-txt">{{ percentage | toPercent }}</p>
           <span class="period-progress" :style="{height: getPercentage(percentage)}"></span>
         </div>
       </div>
@@ -81,6 +81,8 @@ $gapHistory: 0.5rem; // force reduced gap - modifier .is-n avaiable on new bulma
 
 </style>
 <script>
+import { toPercent } from '../filters'
+
 export default {
   name: 'GroupSupportHistory',
   props: {
@@ -102,6 +104,9 @@ export default {
       if (percentage < 1) return 'gi-has-background-warning'
       return 'has-background-success'
     }
+  },
+  filters: {
+    toPercent
   }
 }
 </script>

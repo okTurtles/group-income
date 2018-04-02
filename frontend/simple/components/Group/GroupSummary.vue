@@ -46,17 +46,17 @@
     <h2 class="subtitle is-6"><i18n>Group rules:</i18n></h2>
     <div class="columns is-mobile has-text-centered">
       <div class="column">
-        <p class="percent">{{ group.changePercentage }}%</p>
+        <p class="percent">{{ group.changeThreshold | toPercent }}</p>
         <p class="subtitle is-5"><i18n>Change Rules</i18n></p>
       </div>
       <div class="column">
-        <p class="percent">{{ group.memberApprovalPercentage }}%</p>
+        <p class="percent">{{ group.memberApprovalThreshold | toPercent }}</p>
         <p class="subtitle is-5"><i18n>Add Member</i18n></p>
       </div>
       <div class="column">
-        <p class="percent">{{ group.memberRemovalPercentage }}%</p>
+        <p class="percent">{{ group.memberRemovalThreshold | toPercent }}</p>
         <p class="subtitle is-5"><i18n>Remove Member</i18n></p>
-        </div>
+      </div>
     </div>
     <p class="has-text-right">
       <router-link
@@ -107,6 +107,7 @@
 </style>
 <script>
 import { symbol } from '../../js/currencies'
+import { toPercent } from '../../filters'
 export default {
   name: 'GroupSummary',
   props: {
@@ -116,6 +117,9 @@ export default {
     currency: function () {
       return symbol(this.group.incomeCurrency)
     }
+  },
+  filters: {
+    toPercent
   }
 }
 </script>

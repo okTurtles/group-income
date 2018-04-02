@@ -68,7 +68,7 @@ export default {
         let latest = await backend.latestHash(this.$route.query.groupId)
         let vote = new Events.HashableGroupVoteForProposal({ username: this.$store.state.loggedIn.name, proposalHash: this.$route.query.proposalHash }, latest)
         let proposal = _.cloneDeep(this.proposal)
-        let threshold = Math.ceil(proposal.percentage * 0.01 * this.memberCount)
+        let threshold = Math.ceil(proposal.threshold * this.memberCount)
 
         await backend.publishLogEntry(this.$route.query.groupId, vote)
         // If the vote passes fulfill the action

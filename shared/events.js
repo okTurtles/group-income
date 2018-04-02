@@ -253,10 +253,10 @@ export class HashableGroup extends HashableContract {
     ['creationDate', 'string'],
     ['groupName', 'string'],
     ['sharedValues', 'string'],
-    ['changePercentage', 'uint32'],
+    ['changeThreshold', 'float'],
     ['openMembership', 'bool'],
-    ['memberApprovalPercentage', 'uint32'],
-    ['memberRemovalPercentage', 'uint32'],
+    ['memberApprovalThreshold', 'float'],
+    ['memberRemovalThreshold', 'float'],
     ['incomeProvided', 'float'],
     ['incomeCurrency', 'string'],
     ['contributionPrivacy', 'string'],
@@ -283,7 +283,7 @@ export class Action extends Hashable {
 export class HashableGroupProposal extends HashableAction {
   static fields = HashableGroupProposal.Fields([
     ['type', 'string'],
-    ['percentage', 'uint32'],
+    ['threshold', 'float'],
     ['actions', 'Action', 'repeated'],
     ['candidate', 'string'],
     ['initiator', 'string'],

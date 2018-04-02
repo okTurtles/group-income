@@ -92,7 +92,7 @@ import * as contracts from '../js/events'
 import L from '../js/translations'
 import StepAssistant from '../components/StepAssistant'
 import { validationMixin } from 'vuelidate'
-import { required, between, numeric } from 'vuelidate/lib/validators'
+import { required, between } from 'vuelidate/lib/validators'
 import { decimals } from '../js/customValidators'
 
 export default {
@@ -119,9 +119,9 @@ export default {
           authorizations: [Events.CanModifyAuths.dummyAuth()],
           groupName: this.form.groupName,
           sharedValues: this.form.sharedValues,
-          changePercentage: this.form.changePercentage,
-          memberApprovalPercentage: this.form.memberApprovalPercentage,
-          memberRemovalPercentage: this.form.memberRemovalPercentage,
+          changeThreshold: this.form.changeThreshold,
+          memberApprovalThreshold: this.form.memberApprovalThreshold,
+          memberRemovalThreshold: this.form.memberRemovalThreshold,
           incomeProvided: this.form.incomeProvided,
           incomeCurrency: this.form.incomeCurrency,
           founderUsername: this.$store.state.loggedIn.name,
@@ -189,9 +189,9 @@ export default {
       form: {
         groupName: '',
         sharedValues: null,
-        changePercentage: 80,
-        memberApprovalPercentage: 80,
-        memberRemovalPercentage: 80,
+        changeThreshold: 0.8,
+        memberApprovalThreshold: 0.8,
+        memberRemovalThreshold: 0.8,
         incomeProvided: null,
         incomeCurrency: 'USD',
         invitees: []
@@ -219,20 +219,17 @@ export default {
     form: {
       groupName: { required },
       sharedValues: { required },
-      changePercentage: {
+      changeThreshold: {
         required,
-        numeric,
-        between: between(1, 100)
+        between: between(0.01, 1)
       },
-      memberApprovalPercentage: {
+      memberApprovalThreshold: {
         required,
-        numeric,
-        between: between(1, 100)
+        between: between(0.01, 1)
       },
-      memberRemovalPercentage: {
+      memberRemovalThreshold: {
         required,
-        numeric,
-        between: between(1, 100)
+        between: between(0.01, 1)
       },
       incomeProvided: {
         required,
@@ -251,9 +248,9 @@ export default {
         'form.incomeCurrency'
       ],
       GroupRules: [
-        'form.changePercentage',
-        'form.memberApprovalPercentage',
-        'form.memberRemovalPercentage'
+        'form.changeThreshold',
+        'form.memberApprovalThreshold',
+        'form.memberRemovalThreshold'
       ]
     }
   }

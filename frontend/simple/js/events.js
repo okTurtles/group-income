@@ -29,7 +29,7 @@ export class GroupContract extends Events.HashableGroup {
       HashableGroupVoteForProposal (state, {data}) {
         if (state.proposals[data.proposalHash]) {
           state.proposals[data.proposalHash].for.push(data.username)
-          let threshold = Math.ceil(state.proposals[data.proposalHash].percentage * 0.01 * Object.keys(state.profiles).length)
+          let threshold = Math.ceil(state.proposals[data.proposalHash].threshold * Object.keys(state.profiles).length)
           if (state.proposals[data.proposalHash].for.length >= threshold) {
             Vue.delete(state.proposals, data.proposalHash)
           }
@@ -39,7 +39,7 @@ export class GroupContract extends Events.HashableGroup {
         if (state.proposals[data.proposalHash]) {
           state.proposals[data.proposalHash].against.push(data.username)
           let memberCount = Object.keys(state.profiles).length
-          let threshold = Math.ceil(state.proposals[data.proposalHash].percentage * 0.01 * memberCount)
+          let threshold = Math.ceil(state.proposals[data.proposalHash].threshold * memberCount)
           if (state.proposals[data.proposalHash].against.length > memberCount - threshold) {
             Vue.delete(state.proposals, data.proposalHash)
           }

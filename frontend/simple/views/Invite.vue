@@ -108,8 +108,7 @@ export default {
               // for proposal template selection in Vote.vue
               type: 'invitationProposal', // TODO: constants for different proposal types
               // calculate the voting threshold from the group data
-              // percentage: this.currentGroupState.memberApprovalPercentage * 0.01,
-              percentage: parseInt(this.currentGroupState.memberApprovalPercentage),
+              threshold: this.currentGroupState.memberApprovalThreshold,
               candidate: memberName,
               actions: [
                 { contractId: mailbox, action: JSON.stringify(inviteToMailbox.toObject()) },
@@ -120,10 +119,10 @@ export default {
             }, latest)
             await backend.publishLogEntry(groupId, proposal)
           } else {
-         // TODO: place these in SBP calls, consider using ArchivedTransactionQueue
-         // NOTE: avoiding use of ArchivedTransactionQueue is better than using it. Here for example,
-         //       we could make it so that a user can be invited to a group multiple times, and the system
-         //       just accepts/cares about the most recent invite only and forgets the previous one
+            // TODO: place these in SBP calls, consider using ArchivedTransactionQueue
+            // NOTE: avoiding use of ArchivedTransactionQueue is better than using it. Here for example,
+            //       we could make it so that a user can be invited to a group multiple times, and the system
+            //       just accepts/cares about the most recent invite only and forgets the previous one
             await backend.publishLogEntry(groupId, inviteToGroup)
             await backend.publishLogEntry(mailbox, inviteToMailbox)
           }
