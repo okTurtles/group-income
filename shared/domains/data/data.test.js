@@ -29,8 +29,8 @@ describe('[SBP] DATA domain', () => {
     should(DATA['/get']('testCollection')).deepEqual([1, 2])
   })
 
-  it('should return empty list for unset path', () => {
-    should(DATA['/get']('testNothing')).deepEqual([])
+  it('should return undefined for unset path', () => {
+    should(DATA['/get']('testNothing')).deepEqual(undefined)
   })
 
   it('should add fn to collection', () => {
