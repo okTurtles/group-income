@@ -9,6 +9,7 @@ import store from './js/state'
 import sbp from '../../shared/sbp'
 import {
   EVENTS,
+  LODASH,
   DATA,
   PROPOSALS
 } from '../../shared/domains'
@@ -23,6 +24,7 @@ if (process.env.NODE_ENV !== 'production') {
     console.log(`[sbp] CALL: ${domain}${sel}:`, data)
   })
 }
+sbp.registerDomain('lodash', LODASH)
 sbp.registerDomain('data', DATA)
 sbp.registerDomain('events', EVENTS)
 sbp.registerDomain('proposals', PROPOSALS)

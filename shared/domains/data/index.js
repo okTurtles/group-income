@@ -4,39 +4,23 @@
 // Domain: Data persistence
 // =======================
 
+import sbp from '../../sbp'
+
 const _store = new Map()
 
 const Data = {
   '/get': function (path) {
-    const pathArray = path.split('/')
-    const length = pathArray.length
-    let nested = _store
-    let index = 0
-    while (nested !== undefined && index < length) {
-      nested = nested.get(pathArray[index++])
-    }
-    return (index && index === length) ? nested : undefined
+    return sbp('lodash/get', _store, path)
   },
   '/set': function (path, data) {
-    const pathArray = path.split('/')
-    const length = pathArray.length
-    let nested = _store
-    let index = -1
-    while (++index < length - 1) {
-      const key = pathArray[index]
-      if (!(nested.get(key) instanceof Map)) {
-        nested.set(key, new Map())
-      }
-      nested = nested.get(key)
-    }
-    nested.set(pathArray[index], data)
+    sbp('lodash/set', _store, path, data)
   },
   '/add': function (path, data) {
-    const targetArray = Data['/get'](path)
+    const targetArray = sbp('lodash/get', _store, path)
     if (targetArray instanceof Array) {
       targetArray.push(data)
     } else {
-      Data['/set'](path, [data])
+      sbp('lodash/set', _store, path, [data])
     }
   }
   // TODO: '/remove' method
