@@ -17,12 +17,15 @@
         <h1 id="groupName" class="title is-1">{{ currentGroupState.groupName }}</h1>
         <p id="sharedValues">{{ currentGroupState.sharedValues }}</p>
 
+        <voting-banner who="Sam" what="min income" change="$250" votesCount="3" />
+
         <group-members />
+
+        <progress-overview />
 
         <group-support-history :history="[1.2, 1, .85, .95, 1.05, .35]" />
 
         <group-settings :group="currentGroupState" />
-
       </div>
     </div>
   </section>
@@ -41,6 +44,8 @@
   import GroupMembers from '../components/GroupMembers.vue'
   import GroupSupportHistory from '../components/GroupSupportHistory.vue'
   import GroupSettings from '../components/GroupSettings.vue'
+  import VotingBanner from '../components/VotingBanner.vue'
+  import ProgressOverview from '../components/ProgressOverview.vue'
 
   export default {
     name: 'GroupDashboard',
@@ -55,7 +60,9 @@
       GroupsMinIncome,
       GroupMembers,
       GroupSupportHistory,
-      GroupSettings
+      GroupSettings,
+      VotingBanner,
+      ProgressOverview
     }
   }
 </script>
