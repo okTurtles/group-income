@@ -113,5 +113,11 @@
 // Have colors variants matching the background
 
 .is-opacity-1 {
-	opacity: 0.8;
+  opacity: 0.8;
+}
+
+// Elipsis text
+.is-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

@@ -29,7 +29,7 @@
       who: String,
       what: String,
       change: String,
-      votesCount: Number
+      votesCount: String
     }
   }
 </script>

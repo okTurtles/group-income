@@ -1,6 +1,6 @@
 .notification {
-	&.is-warning {
-		background-color: rgba($warning, 0.3);
-		border: 0.0625rem solid $warning;
-	}
+  &.is-warning {
+    background-color: rgba($warning, 0.3);
+    border: 0.0625rem solid $warning;
+  }
 }
