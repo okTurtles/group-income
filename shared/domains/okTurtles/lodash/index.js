@@ -1,10 +1,10 @@
 'use strict'
 
 // =======================
-// Domain: Data persistence
+// Domain: Lodash-like collection helpers
 // =======================
 
-const _ = {
+export default {
   '/get': function (tree, path) {
     const pathArray = path.split('/')
     const length = pathArray.length
@@ -31,5 +31,3 @@ const _ = {
   }
   // TODO: '/remove' method
 }
-
-export default _

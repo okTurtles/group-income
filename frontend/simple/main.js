@@ -7,12 +7,11 @@ import './js/transitions'
 import {namespace} from './js/backend/hapi'
 import store from './js/state'
 import sbp from '../../shared/sbp'
-import {
-  EVENTS,
-  LODASH,
-  DATA,
-  PROPOSALS
-} from '../../shared/domains'
+
+import EVENTS from '../../shared/domains/okTurtles/events'
+import LODASH from '../../shared/domains/okTurtles/lodash'
+import DATA from '../../shared/domains/okTurtles/data'
+import CONTRACTS from '../../shared/domains/groupIncome/contracts'
 
 console.log('NODE_ENV:', process.env.NODE_ENV)
 
@@ -24,10 +23,10 @@ if (process.env.NODE_ENV !== 'production') {
     console.log(`[sbp] CALL: ${domain}${sel}:`, data)
   })
 }
-sbp.registerDomain('lodash', LODASH)
-sbp.registerDomain('data', DATA)
-sbp.registerDomain('events', EVENTS)
-sbp.registerDomain('proposals', PROPOSALS)
+sbp.registerDomain('okTurtles.lodash', LODASH)
+sbp.registerDomain('okTurtles.data', DATA)
+sbp.registerDomain('okTurtles.events', EVENTS)
+sbp.registerDomain('groupIncome.contracts', CONTRACTS)
 
 async function loadLastUser () {
   let user = await db.loadCurrentUser()

@@ -4,8 +4,8 @@
 // Domain: Proposals
 // =======================
 
-import * as Events from '../../events'
-import backend from '../../../frontend/simple/js/backend'
+import * as Events from '../../../../events'
+import backend from '../../../../../frontend/simple/js/backend'
 
 export default {
   // create the invite record to the users' mailbox contract

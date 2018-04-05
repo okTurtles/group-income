@@ -4,14 +4,14 @@ import should from 'should'
 import sinon from 'sinon'
 import { default as LODASH } from '../lodash'
 import { default as DATA } from './index.js'
-import sbp from '../../sbp'
+import sbp from '../../../sbp'
 
 require('should-sinon')
 
 describe('[SBP] DATA domain', () => {
   before(() => {
     // TODO move this to data to make dependency more explicit
-    sbp.registerDomain('lodash', LODASH)
+    sbp.registerDomain('okTurtles.lodash', LODASH)
   })
 
   it('should store simple value', () => {

@@ -55,7 +55,7 @@ const mutations = {
     const index = state.pending.indexOf(contractId)
     state.pending.includes(contractId) && state.pending.splice(index, 1)
     // calling this will make pubsub subscribe for events on `contractId`!
-    sbp('events/emit', 'contractsModified', {add: contractId})
+    sbp('okTurtles.events/emit', 'contractsModified', {add: contractId})
   },
   setRecentHash (state, {contractId, hash}) {
     state.contracts[contractId] && Vue.set(state.contracts[contractId], 'recentHash', hash)
@@ -64,7 +64,7 @@ const mutations = {
     store.unregisterModule(contractId)
     Vue.delete(state.contracts, contractId)
     // calling this will make pubsub unsubscribe for events on `contractId`!
-    sbp('events/emit', 'contractsModified', {remove: contractId})
+    sbp('okTurtles.events/emit', 'contractsModified', {remove: contractId})
   },
   setContracts (state, contracts) {
     for (let contractId of Object.keys(state.contracts)) {
