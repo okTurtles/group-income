@@ -42,7 +42,7 @@ module.exports = (grunt) => {
       browserify: {
         options: { livereload: true }, // port 35729 by default
         files: ['frontend/*.html', 'frontend/simple/**/*.{vue,js}'],
-        tasks: ['exec:standard', 'copy', 'browserify']
+        tasks: ['exec:standard', 'exec:stylelint', 'copy', 'browserify']
       },
       css: {
         options: { livereload: true },
@@ -117,6 +117,7 @@ module.exports = (grunt) => {
       },
       standard: './node_modules/.bin/standard "**/*.{js,vue}"',
       standardgrunt: './node_modules/.bin/standard .Gruntfile.babel.js Gruntfile.js',
+      stylelint: './node_modules/.bin/stylelint "frontend/simple/**/*.{css,scss,vue}"',
       flow: './node_modules/.bin/flow'
     },
 
@@ -165,7 +166,7 @@ module.exports = (grunt) => {
   grunt.registerTask('default', ['dev'])
   grunt.registerTask('backend', ['backend:relaunch', 'watch'])
   grunt.registerTask('dev', ['checkDependencies', 'build', 'connect', 'backend'])
-  grunt.registerTask('build', ['exec:standard', 'copy', 'sass', 'browserify'])
+  grunt.registerTask('build', ['exec:standard', 'exec:stylelint', 'copy', 'sass', 'browserify'])
   grunt.registerTask('dist', ['build'])
   grunt.registerTask('test', ['dist', 'connect', 'exec:test'])
   // TODO: add 'deploy' per:

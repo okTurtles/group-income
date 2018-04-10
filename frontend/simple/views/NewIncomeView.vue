@@ -11,7 +11,7 @@
         <div class="column"></div>
         <div class="column is-10">
           <h2 class="subtitle">Sign Up</h2>
-      
+
           <div class="control is-horizontal">
             <div class="control is-grouped">
               <input class="input" name="name" placeholder="Name">
@@ -19,7 +19,7 @@
               <input class="input" name="password" placeholder="Password" type="password">
             </div>
           </div>
-      
+
           <p class="control">
             <input class="input" name="phone" placeholder="555-555-5555">
           </p>

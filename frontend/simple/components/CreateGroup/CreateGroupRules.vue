@@ -83,29 +83,37 @@
     margin: 0 auto;
     padding-top: 40px;
   }
+
   .percent {
     font-size: 3rem;
     font-weight: bold;
     line-height: 3.4rem;
   }
+
   .circle-slider {
     position: absolute;
     top: 0;
     left: 0;
   }
+
   .message {
     margin-top: 2rem;
   }
+
   #rulesStep .message-body {
     border-color: #f68b39;
   }
+
   /* message transition */
-  .open-enter-active, .open-leave-active {
-    transition: max-height .3s ease;
+  .open-enter-active,
+  .open-leave-active {
+    transition: max-height 0.3s ease;
     max-height: 150px;
     overflow: hidden;
   }
-  .open-enter, .open-leave-to {
+
+  .open-enter,
+  .open-leave-to {
     max-height: 0;
   }
 </style>

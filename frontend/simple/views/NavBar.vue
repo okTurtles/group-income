@@ -38,7 +38,7 @@
             <span
               id="AlertNotification"
               class="icon"
-              style="color: #ed6c63"
+              style="color: #ed6c63;"
               v-if="$store.getters.unreadMessageCount || $store.getters.proposals.length"
             >
               <i class="fa fa-bell"></i>
@@ -50,7 +50,7 @@
             <router-link
               class="button is-success"
               id="SignupBtn"
-              style="margin-right: 15px"
+              style="margin-right: 15px;"
               to="signup"
               v-if="!$store.state.loggedIn"
             >
@@ -69,7 +69,7 @@
             <div class="button profile-link" id="OpenProfileDropDown" v-if="$store.state.loggedIn" @click="toggleDropdown">
               <strong>{{ ($store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.displayName ? $store.getters.currentUserIdentityContract.attributes.displayName : null) || $store.state.loggedIn.name}}</strong>
               <img v-if="$store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.picture" v-bind:src="$store.getters.currentUserIdentityContract.attributes.picture">
-              <i class="fa fa-caret-down" style="color: #D8D8D8" aria-hidden="true"></i>
+              <i class="fa fa-caret-down" style="color: #d8d8d8;" aria-hidden="true"></i>
             </div>
           </span>
         </div>
@@ -77,7 +77,7 @@
           <div class="button profile-link" id="CloseProfileDropDown" v-if="$store.state.loggedIn" @click="toggleDropdown">
             <strong>{{ ($store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.displayName ? $store.getters.currentUserIdentityContract.attributes.displayName : null) || $store.state.loggedIn.name}}</strong>
             <img v-if="$store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.picture" v-bind:src="$store.getters.currentUserIdentityContract.attributes.picture">
-            <i class="fa fa-caret-down" style="color: #D8D8D8" aria-hidden="true"></i>
+            <i class="fa fa-caret-down" style="color: #d8d8d8;" aria-hidden="true"></i>
           </div>
           <router-link
             id="ProfileLink"
@@ -111,13 +111,16 @@
 .nav {
   margin: 15px 0;
 }
+
 div.nav-left {
   overflow: visible;
   z-index: 10;
+
   a {
     background-color: #fff;
   }
 }
+
 div.nav-center {
   flex-shrink: inherit;
 }

@@ -16,9 +16,9 @@
               <table class="panel-block notification is-warning">
                 <strong>${{contract.incomeProvided}} <i18n>Monthly Income</i18n></strong>
               </table>
-              <div class="panel-block center" style="display: block; text-align: center">
+              <div class="panel-block center" style="display: block; text-align: center;">
                 <div id="errorMsg" v-if="errorMsg" class="help is-danger">{{errorMsg}}</div>
-                <a id="AcceptLink" class="button is-success is-large" v-on:click="accept" style="margin-left:auto; margin-right: 20px"><i18n>Accept</i18n></a><a id="DeclineLink" class="button is-danger is-large" v-on:click="decline" style="margin-right:auto; margin-right: 20px"><i18n>Decline</i18n></a>
+                <a id="AcceptLink" class="button is-success is-large" v-on:click="accept" style="margin-left:auto; margin-right: 20px;"><i18n>Accept</i18n></a><a id="DeclineLink" class="button is-danger is-large" v-on:click="decline" style="margin-right:auto; margin-right: 20px;"><i18n>Decline</i18n></a>
               </div>
             </div>
           </div>

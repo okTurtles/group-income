@@ -26,7 +26,7 @@
           <div id="compose" class="panel" v-if="mode === 'Compose'">
             <div class="panel-heading">
               <div><strong><i18n>Type</i18n>:</strong>&nbsp;<i18n>Message</i18n></div>
-              <div><strong style="margin-top: auto"><i18n>To</i18n>:</strong>&nbsp;
+              <div><strong style="margin-top: auto;"><i18n>To</i18n>:</strong>&nbsp;
                 <input id="AddRecipient" class="input is-small" type="text" style="width: 80%;" v-model="recipient" v-on:blur="addRecipient">
                 <a class="button is-small" v-on:click="addRecipient">
                   <span class="icon is-small">
@@ -49,8 +49,8 @@
             </div>
             <div class="panel-block" >
               <div id="errorMsg" v-if="errorMsg" class="help is-danger">{{errorMsg}}</div>
-              <button id="SendButton" class="button is-success" type="submit" v-on:click="send" :disabled="!composedMessage"  style="margin-left:auto; margin-right: 0"><i18n>Send</i18n></button>
-              <button class="button is-danger" type="submit" v-on:click="cancel" style="margin-left:10px; margin-right: 0"><i18n>Cancel</i18n></button>
+              <button id="SendButton" class="button is-success" type="submit" v-on:click="send" :disabled="!composedMessage"  style="margin-left:auto; margin-right: 0;"><i18n>Send</i18n></button>
+              <button class="button is-danger" type="submit" v-on:click="cancel" style="margin-left:10px; margin-right: 0;"><i18n>Cancel</i18n></button>
             </div>
           </div>
           <div id="CurrentMessage" class="panel" v-if="mode === 'Read'">
@@ -63,8 +63,8 @@
             <p class="panel-block" v-if="currentMessage.data.messageType === 'Invite'"><router-link id="InviteLink" v-bind:to="{ path: '/join', query: { groupId: currentMessage.data.headers[0], inviteHash: currentMessage.hash} }" ><i18n>Respond to Invite</i18n></router-link></p>
 
             <div class="panel-block" >
-              <button class="button is-danger" v-if="currentMessage.data.messageType === 'Message'" type="submit" style="margin-left:auto; margin-right: 0" v-on:click="remove(index)"><i18n>Delete</i18n></button>
-              <button class="button is-primary" type="submit" v-on:click="inboxMode" style="margin-left:10px; margin-right: 0"><i18n>Return</i18n></button>
+              <button class="button is-danger" v-if="currentMessage.data.messageType === 'Message'" type="submit" style="margin-left:auto; margin-right: 0;" v-on:click="remove(index)"><i18n>Delete</i18n></button>
+              <button class="button is-primary" type="submit" v-on:click="inboxMode" style="margin-left:10px; margin-right: 0;"><i18n>Return</i18n></button>
             </div>
           </div>
           <table id="Proposals" class="table is-bordered is-striped is-narrow"  v-if="(mode === 'Inbox') && proposals.length">
@@ -135,7 +135,7 @@
                   <div class="media-content inbox-message" v-on:click="read({index, type: message.data.messageType})">
                     <div><strong>Sent:</strong>&nbsp;{{formatDate(message.data.sentDate)}}</div>
                     <div><strong>From:</strong>&nbsp;{{message.data.from}}</div>
-                    <span style="color: grey">{{message.data.message.substr(0,50)}}{{message.data.message.length > 50 ? '...' : ''}} </span>
+                    <span style="color: grey;">{{message.data.message.substr(0,50)}}{{message.data.message.length > 50 ? '...' : ''}} </span>
                   </div>
                   <div type="submit"class="media-right" v-on:click="remove(index, 'inbox')">
                     <button  class="delete" ></button>

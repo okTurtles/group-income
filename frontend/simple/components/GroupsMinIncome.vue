@@ -9,7 +9,7 @@
 .min-income-label {
   font-family: HelveticaNeue-Light;
   font-size: 16px;
-  color: #928E8E;
+  color: #928e8e;
 }
 
 .min-income {

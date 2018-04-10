@@ -56,12 +56,16 @@
   </section>
 </template>
 <style>
-  .fade-enter-active, .fade-leave-active {
-    transition: opacity .2s;
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: opacity 0.2s;
   }
-  .fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+
+  .fade-enter,
+  .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
     opacity: 0;
   }
+
   .step-controls {
     display: flex;
     flex-direction: row-reverse;
@@ -69,9 +73,11 @@
     justify-content: flex-start;
     margin-top: 3rem;
   }
+
   .step-controls .control {
     margin-left: 0.25rem;
   }
+
   #create-group-page .title.is-1,
   #create-group-page .title.is-2 {
     margin-bottom: 3rem;

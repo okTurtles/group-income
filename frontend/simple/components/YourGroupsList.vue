@@ -13,7 +13,7 @@
 </template>
 <style lang="scss" scoped>
 .list-title {
-  color: #9B9B9B;
+  color: #9b9b9b;
   font-family: HelveticaNeue-Light;
   font-size: 14px;
   letter-spacing: 5px;
@@ -27,23 +27,26 @@
   overflow: hidden;
   padding: 5px 0;
 }
+
 .group-name:hover {
   color: #222324;
   cursor: pointer;
 }
+
 .group-name.is-active {
-  background: #ECECEC;
+  background: #ececec;
   padding-left: 15px;
   margin-left: -15px;
 }
 
 .create-new-link {
-  color: #9B9B9B;
+  color: #9b9b9b;
   display: block;
   font-family: HelveticaNeue-Bold;
   font-size: 12px;
   letter-spacing: 3.43px;
   margin-top: 13px;
+
   &:hover {
     color: #222324;
   }

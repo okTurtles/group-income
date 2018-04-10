@@ -16,7 +16,7 @@ h3.title {
 }
 
 .month-history {
-  color: #FFFFFF;
+  color: #fff;
   display: inline-block;
   height: 107px;
   margin-right: 10px;
