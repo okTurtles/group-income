@@ -2,7 +2,7 @@
   <section class="section full-screen">
     <div class="columns">
       <div class="column"></div>
-      <div class="column" style="text-align: center" >
+      <div class="column" style="text-align: center;" >
         <div>
           <div class="subtitle is-3"><i18n>Your vote has been requested on a proposal for the group:</i18n></div>
           <div class="title is-1">{{contract.groupName}}</div>
@@ -13,12 +13,12 @@
              {{proposal.proposal}}
             </div>
           </div>
-          <div class="panel-block notification is-warning" style="text-align: center">
-            <strong style="margin: 0 auto"><i18n>Your Decision?</i18n></strong>
+          <div class="panel-block notification is-warning" style="text-align: center;">
+            <strong style="margin: 0 auto;"><i18n>Your Decision?</i18n></strong>
           </div>
-          <div class="panel-block center" style="display: block; text-align: center">
+          <div class="panel-block center" style="display: block; text-align: center;">
             <div id="errorMsg" v-if="errorMsg" class="help is-danger">{{errorMsg}}</div>
-            <a id="ForLink" class="button is-success is-large" v-on:click="four" style="margin-left:auto; margin-right: 20px"><i18n>For</i18n></a><a id="AgainstLink" class="button is-danger is-large" v-on:click="against" style="margin-right:auto; margin-right: 20px"><i18n>Against</i18n></a>
+            <a id="ForLink" class="button is-success is-large" v-on:click="four" style="margin-left:auto; margin-right: 20px;"><i18n>For</i18n></a><a id="AgainstLink" class="button is-danger is-large" v-on:click="against" style="margin-right:auto; margin-right: 20px;"><i18n>Against</i18n></a>
           </div>
         </div>
       </div>

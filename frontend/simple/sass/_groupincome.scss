@@ -1,6 +1,7 @@
 .centered {
   margin: 0 auto;
 }
+
 .percentage {
   height: 26px;
   color: inherit;
@@ -8,17 +9,20 @@
   outline: none;
   font-size: 28px;
 }
+
 @mixin appearance($value) {
   -webkit-appearance: $value;
   -moz-appearance: $value;
   -ms-appearance: $value;
 }
+
 @mixin transition($value) {
   -webkit-transition: $value;
   -moz-transition: $value;
   -ms-transition: $value;
   transition: $value;
 }
+
 @mixin transform($value) {
   -webkit-transform: $value;
   -moz-transform: $value;
@@ -27,12 +31,14 @@
 }
 
 /* Slider toggle Styles */
+
 /* The switch - the box around the slider */
 .switch {
   position: relative;
   display: inline-block;
   width: 60px;
   height: 34px;
+
   input {
     display: none;
   }
@@ -40,6 +46,7 @@
 
 .text-message {
   margin: $size-5 0;
+
   &.is-success {
     color: $green;
   }
@@ -49,21 +56,26 @@
   .select::after {
     border-color: #ccc;
   }
+
   .box {
     margin-bottom: 0;
     border-radius: 0;
   }
 }
+
 .centered-button {
   max-width: 50%;
 }
+
 @font-face {
   font-family: Foco;
   src: url(../fonts/FocoBold.ttf);
 }
+
 .foco-font {
   font-family: Foco;
 }
+
 .unread {
   display: inline-block;
   padding: 2px 5px;
@@ -81,15 +93,19 @@
 .is-danger {
   color: $red;
 }
+
 .is-success {
   color: $green;
 }
+
 .is-warning {
   color: $orange;
 }
+
 .is-light {
   color: $grey;
 }
+
 .is-small {
   font-size: $size-7;
 }

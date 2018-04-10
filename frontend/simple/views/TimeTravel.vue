@@ -14,7 +14,7 @@
   left: 10%;
   width: 80%;
   z-index: 99999;
-  box-shadow: 0px 2px 30px rgba(10, 10, 10, 0.1), 0 0 0 1px rgba(10, 10, 10, 0.1);
+  box-shadow: 0 2px 30px rgba(10, 10, 10, 0.1), 0 0 0 1px rgba(10, 10, 10, 0.1);
 }
 
 .ticks {

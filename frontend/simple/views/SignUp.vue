@@ -10,7 +10,7 @@
       name="formData" class="container signup"
       @submit.prevent="submit"
     >
-      <div class="box centered" style="max-width:400px">
+      <div class="box centered" style="max-width:400px;">
         <div class="level is-mobile">
           <div class="level-left">
             <div class="level-item">

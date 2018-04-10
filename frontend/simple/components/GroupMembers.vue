@@ -18,11 +18,12 @@
 
   .invite-button {
     border-radius: 999px;
-    background-color: #ECECEC;
-    color: #6CAD22;
+    background-color: #ececec;
+    color: #6cad22;
     height: 63px;
     width: 63px;
   }
+
   .invite-button .icon i {
     font-size: 36px;
   }

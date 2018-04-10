@@ -4,7 +4,7 @@
       <div class="column is-half is-offset-one-quarter" >
         <form class='add-form'>
           <div class="field has-addons">
-              <p class="control" style="width: 100%">
+              <p class="control" style="width: 100%;">
                 <input
                   autofocus
                   class="input is-medium"
@@ -42,12 +42,15 @@
   .table-header {
     background-color: #fafafa;
   }
+
   .media {
     align-items: center;
   }
+
   .add-form {
     margin-bottom: 2rem;
   }
+
   .notification-icon {
     margin-right: 1rem;
   }

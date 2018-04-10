@@ -98,6 +98,7 @@
   .tile.is-ancestor {
     flex-wrap: wrap;
   }
+
   .subtitle.is-2:not(.is-danger) {
     font-weight: bold;
   }

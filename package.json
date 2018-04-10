@@ -8,7 +8,8 @@
     "start": "node backend/index.js",
     "test": "xvfb-maybe grunt test",
     "i18n": "node scripts/i18n.js",
-    "flow": "flow"
+    "flow": "flow",
+    "stylelint": "./node_modules/.bin/stylelint 'frontend/simple/**/*.{css,scss,vue}' --fix"
   },
   "standard": {
     "ignore": [
@@ -28,6 +29,21 @@
     ],
     "rules": {
       "flowtype-errors/show-errors": 2
+    }
+  },
+  "stylelint": {
+    "extends": "stylelint-config-standard",
+    "rules": {
+      "at-rule-no-unknown": [
+        true,
+        {
+          "ignoreAtRules": [
+            "include",
+            "mixin"
+          ]
+        }
+      ],
+      "font-family-no-missing-generic-family-keyword": null
     }
   },
   "repository": {
@@ -118,6 +134,8 @@
     "pathmodify": "0.5.0",
     "should": "11.2.1",
     "standard": "10.0.2",
+    "stylelint": "9.2.0",
+    "stylelint-config-standard": "18.2.0",
     "through2": "2.0.3",
     "vue-hot-reload-api": "2.1.0",
     "vueify": "9.4.1",

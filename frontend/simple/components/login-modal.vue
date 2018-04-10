@@ -1,7 +1,7 @@
 <template>
   <div class="modal is-active" ref="modal" id="LoginModal">
     <div class="modal-background" @click="close"></div>
-    <div class="modal-content" style="width: 300px">
+    <div class="modal-content" style="width: 300px;">
       <div class="card is-rounded">
         <div class="card-content">
           <h1 class="title"><i18n>Log In</i18n></h1>

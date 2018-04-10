@@ -20,7 +20,7 @@
 /// [4] - Allows any type of direct children to be targeted
 .circle-container {
   position: relative; // 1
-  width:  20em;
+  width: 20em;
   height: 20em;
   padding: 0;
   border-radius: 50%;
@@ -32,9 +32,9 @@
   > * {
     display: block;
     position: absolute;
-    top:  50%;
+    top: 50%;
     left: 50%;
-    width:  6em;
+    width: 6em;
     height: 6em;
     margin: -3em; // half previous value
   }
