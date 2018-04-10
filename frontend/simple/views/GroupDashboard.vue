@@ -17,7 +17,7 @@
         <h1 id="groupName" class="title is-1">{{ currentGroupState.groupName }}</h1>
         <p id="sharedValues">{{ currentGroupState.sharedValues }}</p>
 
-        <voting-banner who="Sam" what="min income" change="$250" votesCount="3" />
+        <voting-banner who="Sam" propose="changing" what="min income" change="$250" votesCount="3" />
 
         <group-members />
 

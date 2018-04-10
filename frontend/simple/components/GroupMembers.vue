@@ -30,6 +30,8 @@
   </section>
 </template>
 <style lang="scss" scoped>
+  // @import "bulma/sass/utilities/mixins";
+
   $iconSize: 4.6rem;
   $marginVertical: 0.3rem;
 
@@ -76,8 +78,7 @@
       height: 2.25rem;
     }
 
-    // How to I import missins from Bulma to be available here?
-    // Bulma mixins are in SASS but this is SCSS... ._.
+    // @include tablet {
     @media (min-width: 769px) {
       margin-top: -0.75rem; // force h. alignment with .badge-img
     }
