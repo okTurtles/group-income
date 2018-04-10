@@ -9,26 +9,27 @@
             <i18n>Contributed</i18n>
           </dt>
           <dd class="summary-value">
-            $450
+            {{contributedFormatted}}
           </dd>
           <dt class="summary-key">
             <i18n>Pledged</i18n>
           </dt>
           <dd class="summary-value">
-            $800
+            {{pledgedFormatted}}
           </dd>
           <dt class="summary-key">
             <i18n>Goal</i18n>
           </dt>
           <dd class="summary-value">
-            $1,000
+            {{goalFormatted}}
           </dd>
         </dl>
     </div>
-    <div class="notification">
-      Progress bar on the way
+    <div class="bar" :style="{ backgroundColor: themeColor }">
+        <span class="bar-pledged" :style="{ width: barPercentage.pledged }"></span>
+        <span class="bar-contributed" :style="{ width: barPercentage.contributed }"></span>
     </div>
-	</div>
+  </div>
 </template>
 
 <style lang="scss" scoped>
@@ -58,6 +59,37 @@
       font-weight: 600;
     }
   }
+
+  .bar {
+    position: relative;
+    width: 100%;
+    height: 2.5rem;
+
+    &::before,
+    &-pledged,
+    &-contributed {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      background-color: inherit;
+    }
+
+    &::before {
+      content: '';
+      width: 100%;
+      opacity: 0.8;
+      background-color: #fff;
+    }
+
+    &-pledged {
+      opacity: 0.5;
+    }
+
+    &-contributed {
+      opacity: 0.9;
+    }
+  }
 </style>
 
 
@@ -66,7 +98,22 @@
     name: 'ProgressOverview',
     data () {
       return {
-        period: 'July'
+        period: 'July',
+        themeColor: '#319d2f', // The summary and bar color will adjust :D
+        contributed: 350,
+        pledged: 800,
+        goal: 1000,
+        contributedFormatted: '$350',
+        pledgedFormatted: '$800',
+        goalFormatted: '$1,000'
+      }
+    },
+    computed: {
+      barPercentage: function () {
+        return {
+          pledged: `${(this.pledged * 100 / this.goal).toFixed(2)}%`,
+          contributed: `${(this.contributed * 100 / this.goal).toFixed(2)}%`
+        }
       }
     }
   }
