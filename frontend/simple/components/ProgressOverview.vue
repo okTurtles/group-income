@@ -8,13 +8,13 @@
           <dt class="summary-key">
             <i18n>Contributed</i18n>
           </dt>
-          <dd class="summary-value">
+          <dd class="summary-value metric-primaryText" :style="{ color: themeColor }">
             {{contributedFormatted}}
           </dd>
           <dt class="summary-key">
             <i18n>Pledged</i18n>
           </dt>
-          <dd class="summary-value">
+          <dd class="summary-value metric-secondaryText" :style="{ color: themeColor }">
             {{pledgedFormatted}}
           </dd>
           <dt class="summary-key">
@@ -26,8 +26,8 @@
         </dl>
     </div>
     <div class="bar" :style="{ backgroundColor: themeColor }">
-        <span class="bar-pledged" :style="{ width: barPercentage.pledged }"></span>
-        <span class="bar-contributed" :style="{ width: barPercentage.contributed }"></span>
+        <span class="bar-progress metric-secondary" :style="{ width: barPercentage.pledged }"></span>
+        <span class="bar-progress metric-primary" :style="{ width: barPercentage.contributed }"></span>
     </div>
   </div>
 </template>
@@ -66,8 +66,7 @@
     height: 2.5rem;
 
     &::before,
-    &-pledged,
-    &-contributed {
+    &-progress {
       position: absolute;
       top: 0;
       left: 0;
@@ -81,13 +80,21 @@
       opacity: 0.8;
       background-color: #fff;
     }
+  }
 
-    &-pledged {
-      opacity: 0.5;
-    }
+  .metric-primary {
+    opacity: 0.8;
 
-    &-contributed {
+    &Text {
       opacity: 0.9;
+    }
+  }
+
+  .metric-secondary {
+    opacity: 0.5;
+
+    &Text {
+      opacity: 0.7;
     }
   }
 </style>
