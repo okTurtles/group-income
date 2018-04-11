@@ -118,8 +118,8 @@
     computed: {
       barPercentage: function () {
         return {
-          pledged: `${(this.pledged * 100 / this.goal).toFixed(2)}%`,
-          contributed: `${(this.contributed * 100 / this.goal).toFixed(2)}%`
+          pledged: `${Math.floor(this.pledged * 100 / this.goal)}%`,
+          contributed: `${Math.floor(this.contributed * 100 / this.goal)}%`
         }
       }
     }
