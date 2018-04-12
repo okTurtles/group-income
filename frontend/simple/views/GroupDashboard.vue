@@ -17,15 +17,22 @@
         <h1 id="groupName" class="title is-1">{{ currentGroupState.groupName }}</h1>
         <p id="sharedValues">{{ currentGroupState.sharedValues }}</p>
 
-        <voting-banner who="Sam" propose="changing" what="min income" change="$250" votesCount="3" />
+        <voting-banner class="widget"
+          who="Sam"
+          propose="changing"
+          what="min income"
+          change="$250"
+          votesCount="3" />
 
-        <group-members />
+        <group-members class="widget" />
 
-        <progress-overview />
+        <progress-overview class="widget" />
 
-        <group-support-history :history="[1.2, 1, .85, .95, 1.05, .35]" />
+        <group-support-history class="widget"
+          :history="[1.2, 1, .85, .95, 1.05, .35]" />
 
-        <group-settings :group="currentGroupState" />
+        <group-settings class="widget"
+          :group="currentGroupState" />
       </div>
     </div>
   </section>
@@ -35,6 +42,14 @@
     font-family: HelveticaNeue-Bold;
     font-size: 52px;
     color: #616161;
+  }
+
+  .widget {
+    margin: 4rem 0;
+  }
+
+  .container {
+    max-width: 960px; // force until rethink layout on larger screens
   }
 </style>
 <script>

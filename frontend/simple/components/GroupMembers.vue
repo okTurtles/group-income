@@ -1,5 +1,5 @@
 <template>
-  <section class="gm-container">
+  <section>
     <div class="level">
       <h3 class="title"><i18n>Group Members</i18n></h3>
     </div>
@@ -35,10 +35,6 @@
   $iconSize: 4.6rem;
   $marginVertical: 0.3rem;
 
-  .gm-container {
-    margin: 4rem 0; // find better way to handle margins between dashboard elements
-  }
-
   .title {
     margin-top: 30px;
   }
@@ -46,7 +42,7 @@
   .badge {
     width: 6.25rem;
     margin-right: 2rem;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
     padding: 0;
     text-align: center;
 

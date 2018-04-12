@@ -1,5 +1,5 @@
 <template>
-  <div class="notification columns is-multiline is-centered is-warning has-text-centered vb-container">
+  <div class="notification columns is-multiline is-centered is-warning has-text-centered">
     <p class="column is-12">
       <strong>{{who}}</strong> has proposed {{propose}} the <strong>{{what}}</strong> to <strong>{{change}}</strong>.
     </p>
@@ -21,11 +21,6 @@
     </p>
 	</div>
 </template>
-<style lang="scss" scoped>
-  .vb-container {
-    margin: 3rem 0;
-  }
-</style>
 <script>
   export default {
     name: 'VotingBanner',

@@ -3,17 +3,17 @@
     <!-- Group Settings -->
     <h3 class="title is-3"><i18n>Current Settings</i18n></h3>
     <div class="columns has-text-centered">
-      <div class="column is-3">
+      <div class="column is-4">
         <p id="changePercentage" class="settings-number">{{ group.changePercentage }}%</p>
         <p class="settings-label">Change Rules</p>
         <a href="#">Propose change</a>
       </div>
-      <div class="column is-3">
+      <div class="column is-4">
         <p id="approvePercentage" class="settings-number">{{ group.memberApprovalPercentage }}%</p>
         <p class="settings-label">Add Member</p>
         <a href="#">Propose change</a>
       </div>
-      <div class="column is-3">
+      <div class="column is-4">
         <p id="removePercentage" class="settings-number">{{ group.memberRemovalPercentage }}%</p>
         <p class="settings-label">Remove Member</p>
         <a href="#">Propose change</a>
@@ -22,10 +22,6 @@
   </section>
 </template>
 <style lang="scss" scoped>
-h3.title {
-  margin-top: 30px;
-}
-
 .settings-number {
   font-family: HelveticaNeue-Bold;
   font-size: 72px;
@@ -38,6 +34,7 @@ h3.title {
   font-size: 24px;
   color: #616161;
 }
+
 </style>
 <script>
   export default {

@@ -1,5 +1,5 @@
 <template>
-  <div class="po-container">
+  <section>
     <div class="level">
       <h3 class="title"><i18n>{{ period }} Overview</i18n></h3>
     </div>
