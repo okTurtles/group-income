@@ -29,14 +29,10 @@
         <span class="bar-progress metric-secondary" :style="{ width: barPercentage.pledged }"></span>
         <span class="bar-progress metric-primary" :style="{ width: barPercentage.contributed }"></span>
     </div>
-  </div>
+  </section>
 </template>
 
 <style lang="scss" scoped>
-  .po-container {
-    margin: 4rem 0;
-  }
-
   .summary {
     display: flex;
     flex-direction: column;
@@ -62,12 +58,14 @@
 
   .bar {
     position: relative;
+    overflow: hidden;
     width: 100%;
-    height: 2.5rem;
+    height: 2.2rem;
 
     &::before,
     &-progress {
       position: absolute;
+      display: block;
       top: 0;
       left: 0;
       height: 100%;
@@ -106,7 +104,7 @@
     data () {
       return {
         period: 'July',
-        themeColor: '#319d2f', // The summary and bar color will adjust :D
+        themeColor: '#7733b4', // The layout palette will adjust :D
         contributed: 350,
         pledged: 800,
         goal: 1000,
