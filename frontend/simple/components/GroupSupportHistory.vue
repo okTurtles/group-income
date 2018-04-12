@@ -1,42 +1,73 @@
 <template>
   <section>
-    <h3 class="title is-3"><i18n>Support History</i18n></h3>
+    <h3 class="title"><i18n>Support History</i18n></h3>
     <p v-if="history.length === 0">Your group is still in its first month.</p>
-    <div v-else>
-      <span v-for="(percentage, index) in history" class="month-history" :style="{ background: monthColor(percentage) }">
-        <span class="month-name">{{ months[index] }}</span>
-        <span class="percentage">{{ Math.floor(percentage * 100) }}%</span>
-      </span>
+    <div class="history" v-else>
+      <div v-for="(percentage, index) in history" class="period" :style="{ background: themeColor }">
+        <p class="period-title">{{ months[index] }}</p>
+        <p class="period-txt">{{ Math.floor(percentage * 100) }}%</p>
+        <span class="period-progress" :style="{height: getPercentage(percentage)}"></span>
+      </div>
     </div>
   </section>
 </template>
 <style lang="scss" scoped>
-h3.title {
-  margin-top: 30px;
-}
-
-.month-history {
-  color: #fff;
+.period {
+  position: relative;
   display: inline-block;
-  height: 107px;
-  margin-right: 10px;
-  padding-top: 12px;
+  width: 16.66%;
+  max-width: 10rem;
+  padding: 2rem 0;
+  color: #fff;
+  border: 5px solid white;
   text-align: center;
-  width: 117px;
+  font-size: 2rem;
+  line-height: 1.2;
+
+  &:first-child {
+    border-left: 0;
+  }
+
+  &:last-child {
+    border-right: 0;
+  }
+
+  &::before {
+    position: absolute;
+    top: 0;
+    left: 0;
+    content: '';
+    width: 100%;
+    height: 100%;
+    opacity: 0.5;
+    background-color: #fff;
+  }
+
+  &-title,
+  &-txt {
+    position: relative;
+    z-index: 2;
+  }
+
+  &-title {
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+  }
+
+  &-txt {
+    font-size: 0.7em;
+  }
+
+  &-progress {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    background-color: inherit;
+    opacity: 0.8;
+  }
 }
 
-.month-name {
-  display: block;
-  font-family: HelveticaNeue-Bold;
-  font-size: 28px;
-  letter-spacing: 4px;
-}
-
-.percentage {
-  display: block;
-  font-family: HelveticaNeue;
-  font-size: 24px;
-}
 </style>
 <script>
   export default {
@@ -46,18 +77,13 @@ h3.title {
     },
     data () {
       return {
+        themeColor: '#7733b4', // The layout palette will adjust :D
         months: ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
       }
     },
     methods: {
-      monthColor (percentage) {
-        if (typeof percentage !== 'number') {
-          throw new TypeError('monthColor(percentage) must take a number')
-        }
-
-        if (percentage < 0.6) return '#D0011B'
-        if (percentage < 1) return '#F6A623'
-        return '#9CD445'
+      getPercentage (percentage) {
+        return percentage >= 1 ? '100%' : `${Math.floor(percentage * 100)}%`
       }
     }
   }
