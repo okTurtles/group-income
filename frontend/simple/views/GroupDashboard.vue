@@ -28,7 +28,7 @@
 
         <progress-overview class="widget" />
 
-        <group-support-history class="widget"
+        <support-history class="widget"
           :history="[1.2, 1, .85, .95, 1.05, .35]" />
 
         <group-settings class="widget"
@@ -57,7 +57,7 @@
   import YourGroupsList from '../components/YourGroupsList.vue'
   import GroupsMinIncome from '../components/GroupsMinIncome.vue'
   import GroupMembers from '../components/GroupMembers.vue'
-  import GroupSupportHistory from '../components/GroupSupportHistory.vue'
+  import SupportHistory from '../components/SupportHistory.vue'
   import GroupSettings from '../components/GroupSettings.vue'
   import VotingBanner from '../components/VotingBanner.vue'
   import ProgressOverview from '../components/ProgressOverview.vue'
@@ -74,7 +74,7 @@
       YourGroupsList,
       GroupsMinIncome,
       GroupMembers,
-      GroupSupportHistory,
+      SupportHistory,
       GroupSettings,
       VotingBanner,
       ProgressOverview

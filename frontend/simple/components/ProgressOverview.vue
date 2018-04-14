@@ -4,17 +4,17 @@
       <h3 class="title"><i18n>{{ period }} Overview</i18n></h3>
     </div>
       <div class="level">
-        <dl class="level-left summary">
+        <dl class="level-left summary" :style="{ color: themeColor }">
           <dt class="summary-key">
             <i18n>Contributed</i18n>
           </dt>
-          <dd class="summary-value metric-primaryText" :style="{ color: themeColor }">
+          <dd class="summary-value metric-primaryText">
             {{contributedFormatted}}
           </dd>
           <dt class="summary-key">
             <i18n>Pledged</i18n>
           </dt>
-          <dd class="summary-value metric-secondaryText" :style="{ color: themeColor }">
+          <dd class="summary-value metric-secondaryText">
             {{pledgedFormatted}}
           </dd>
           <dt class="summary-key">
@@ -47,12 +47,14 @@
       text-transform: uppercase;
       min-width: 7.5rem;
       margin-right: 1rem;
+      color: #616161;
     }
 
     &-value {
       font-size: 1.7rem;
       line-height: 1;
       font-weight: 600;
+      color: #616161;
     }
   }
 
@@ -84,7 +86,8 @@
     opacity: 0.8;
 
     &Text {
-      opacity: 0.9;
+      color: inherit;
+      opacity: 1;
     }
   }
 
@@ -92,7 +95,8 @@
     opacity: 0.5;
 
     &Text {
-      opacity: 0.7;
+      color: inherit;
+      opacity: 0.8;
     }
   }
 </style>
@@ -104,7 +108,7 @@
     data () {
       return {
         period: 'July',
-        themeColor: '#7733b4', // The layout palette will adjust :D
+        themeColor: '#f89201', // The layout palette will adjust
         contributed: 350,
         pledged: 800,
         goal: 1000,

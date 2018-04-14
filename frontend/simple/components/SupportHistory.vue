@@ -2,24 +2,35 @@
   <section>
     <h3 class="title"><i18n>Support History</i18n></h3>
     <p v-if="history.length === 0">Your group is still in its first month.</p>
-    <div class="history" v-else>
-      <div v-for="(percentage, index) in history" class="period" :style="{ background: themeColor }">
-        <p class="period-title">{{ months[index] }}</p>
-        <p class="period-txt">{{ Math.floor(percentage * 100) }}%</p>
-        <span class="period-progress" :style="{height: getPercentage(percentage)}"></span>
+    <div class="history columns" v-else>
+      <div v-for="(percentage, index) in history" class="column is-2">
+        <div :class="['period', getResult(percentage)]">
+          <p class="period-title">{{ months[index] }}</p>
+          <p class="period-txt">{{ Math.floor(percentage * 100) }}%</p>
+          <span class="period-progress" :style="{height: getPercentage(percentage)}"></span>
+        </div>
       </div>
     </div>
   </section>
 </template>
 <style lang="scss" scoped>
+$gapHistory: 0.5rem; // force reduced gap - modifier .is-n avaiable on new bulma version
+.history .column {
+  padding: $gapHistory; // reduce gap
+}
+
+.history.columns {
+  margin-left: -$gapHistory;
+  margin-right: -$gapHistory;
+  margin-top: -$gapHistory;
+}
+
 .period {
   position: relative;
+  width: 100%;
   display: inline-block;
-  width: 16.66%;
-  max-width: 10rem;
   padding: 2rem 0;
   color: #fff;
-  border: 5px solid white;
   text-align: center;
   font-size: 2rem;
   line-height: 1.2;
@@ -77,13 +88,19 @@
     },
     data () {
       return {
-        themeColor: '#7733b4', // The layout palette will adjust :D
         months: ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
       }
+    },
+    computed: {
     },
     methods: {
       getPercentage (percentage) {
         return percentage >= 1 ? '100%' : `${Math.floor(percentage * 100)}%`
+      },
+      getResult (percentage) {
+        if (percentage < 0.6) return 'has-background-danger'
+        if (percentage < 1) return 'has-background-warning'
+        return 'has-background-success'
       }
     }
   }
