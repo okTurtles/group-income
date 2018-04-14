@@ -7,7 +7,9 @@
      .block      base/classes.sass (just adds 20px margin-bottom except for last)
      -->
     <form novalidate ref="form"
-      name="formData" class="container signup"
+      name="formData"
+      class="container signup"
+      data-test="signup"
       @submit.prevent="submit"
     >
       <div class="box centered" style="max-width:400px;">
@@ -33,10 +35,14 @@
               @input="debounceName"
               placeholder="username"
               autofocus
+              data-test="signName"
             >
             <span class="icon"><i class="fa fa-user"></i></span>
           </p>
-          <p class="help is-danger" v-if="$v.form.name.$error" id="badUsername">
+          <p class="help is-danger"
+            data-test="badUsername"
+            v-if="$v.form.name.$error"
+          >
             <i18n v-if="!$v.form.name.isAvailable">name is unavailable</i18n>
             <i18n v-if="!$v.form.name.nonWhitespace">cannot contain spaces</i18n>
           </p>
@@ -52,10 +58,11 @@
               @blur="$v.form.email.$touch()"
               type="email"
               placeholder="email"
+              data-test="signEmail"
             >
             <span class="icon"><i class="fa fa-envelope"></i></span>
           </p>
-          <i18n v-if="$v.form.email.$error" id="badEmail" class="help is-danger">not an email</i18n>
+          <i18n v-if="$v.form.email.$error" class="help is-danger" data-test="badEmail">not an email</i18n>
         </div>
         <div class="field">
           <p class="control has-icon">
@@ -68,15 +75,19 @@
               @input="$v.form.password.$touch()"
               placeholder="password"
               type="password"
+              data-test="signPassword"
             >
             <span class="icon"><i class="fa fa-lock"></i></span>
           </p>
-          <i18n v-if="$v.form.password.$error" id="badPassword" class="help is-danger">password must be at least 7 characters</i18n>
+          <i18n v-if="$v.form.password.$error" class="help is-danger" data-test="badPassword">password must be at least 7 characters</i18n>
         </div>
         <div class="level is-mobile">
           <div class="level-left">
             <div class="level-item content is-small">
-              <span id="serverMsg" class="help is-marginless" :class="[form.error ? 'is-danger' : 'is-success']">
+              <span class="help is-marginless"
+                :class="[form.error ? 'is-danger' : 'is-success']"
+                data-test="serverMsg"
+              >
                 {{form.response}}
               </span>
             </div>
@@ -87,6 +98,7 @@
                 class="button submit is-success"
                 type="submit"
                 :disabled="$v.form.$invalid"
+                data-test="signSubmit"
               >
                 <i18n>Sign Up</i18n>
               </button>

@@ -1,5 +1,8 @@
 <template>
-  <div class="modal is-active" ref="modal" id="LoginModal">
+  <div class="modal is-active"
+    ref="modal"
+    data-test="loginModal"
+  >
     <div class="modal-background" @click="close"></div>
     <div class="modal-content" style="width: 300px;">
       <div class="card is-rounded">
@@ -18,6 +21,7 @@
                 placeholder="username"
                 ref="username"
                 autofocus
+                data-test="loginName"
               >
               <span class="icon">
                 <i class="fa fa-user"></i>
@@ -37,19 +41,25 @@
                 @input="$v.form.password.$touch()"
                 placeholder="password"
                 type="password"
+                data-test="loginPassword"
               >
               <span class="icon"><i class="fa fa-lock"></i></span>
             </p>
             <i18n v-show="$v.form.password.$error" class="help is-danger">password must be at least 7 characters</i18n>
           </div>
-          <p class="help is-danger" id="LoginResponse" v-show="form.response">{{ form.response }}</p>
+          <p class="help is-danger"
+            v-show="form.response"
+            data-test="loginResponse"
+          >
+            {{ form.response }}
+          </p>
           <div class="field">
             <p class="control">
               <button
                 class="button is-primary is-medium is-fullwidth"
                 @click="login"
                 :disabled="$v.form.$invalid"
-                id="LoginButton"
+                data-test="loginSubmit"
               >
                 <span class="icon"><i class="fa fa-user"></i></span>
                 <i18n>Login</i18n>

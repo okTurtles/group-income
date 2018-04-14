@@ -13,9 +13,9 @@
           <router-link
             active-class="is-active"
             class="nav-item is-tab"
-            id="CreateGroup"
             to="new-group"
             v-if="$store.state.loggedIn"
+            data-test="createGroup"
           >
             <i18n>Start a Group</i18n>
           </router-link>
@@ -30,15 +30,15 @@
           <router-link
             active-class ="is-active"
             class="nav-item"
-            id="MailboxLink"
             to="mailbox"
+            data-test="mailboxLink"
             v-if="$store.state.loggedIn"
           >
             <i18n>Inbox</i18n>
             <span
-              id="AlertNotification"
               class="icon"
               style="color: #ed6c63;"
+              data-test="alertNotification"
               v-if="$store.getters.unreadMessageCount || $store.getters.proposals.length"
             >
               <i class="fa fa-bell"></i>
@@ -49,24 +49,26 @@
           <span class="nav-item control">
             <router-link
               class="button is-success"
-              id="SignupBtn"
               style="margin-right: 15px;"
               to="signup"
               v-if="!$store.state.loggedIn"
+              data-test="signupBtn"
             >
               <i18n>Sign Up</i18n>
             </router-link>
             <a
               class="button is-primary"
               href="#"
-              id="LoginBtn"
               v-if="!$store.state.loggedIn"
               @click.prevent="showLoginModal"
+              data-test="loginBtn"
             >
               <i18n>Login</i18n>
             </a>
 
-            <div class="button profile-link" id="OpenProfileDropDown" v-if="$store.state.loggedIn" @click="toggleDropdown">
+            <div class="button profile-link"
+              data-test="openProfileDropDown"
+              v-if="$store.state.loggedIn" @click="toggleDropdown">
               <strong>{{ ($store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.displayName ? $store.getters.currentUserIdentityContract.attributes.displayName : null) || $store.state.loggedIn.name}}</strong>
               <img v-if="$store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.picture" v-bind:src="$store.getters.currentUserIdentityContract.attributes.picture">
               <i class="fa fa-caret-down" style="color: #d8d8d8;" aria-hidden="true"></i>
@@ -80,10 +82,10 @@
             <i class="fa fa-caret-down" style="color: #d8d8d8;" aria-hidden="true"></i>
           </div>
           <router-link
-            id="ProfileLink"
             class="nav-item is-tab"
             active-class="is-active"
             to="user"
+            data-test="profileLink"
             v-show="$store.state.loggedIn"
           >
             <i18n>Profile</i18n>
@@ -91,9 +93,9 @@
           <a
             class="is-danger"
             href="#"
-            id="LogoutBtn"
             v-if="$store.state.loggedIn"
             @click.prevent="logout"
+            data-test="logoutBtn"
           >
             <i18n>Signout</i18n>
           </a>

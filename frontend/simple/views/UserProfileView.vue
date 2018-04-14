@@ -10,7 +10,7 @@
           <p
             class="notification is-success has-text-centered"
             v-if="profileSaved"
-            id="ProfileSaveSuccess"
+            data-test='profileSaveSuccess'
           >
             <i class='notification-icon fa fa-check'></i>
             <i18n>Profile saved successfully!</i18n>
@@ -42,6 +42,7 @@
                   v-model="edited.picture"
                   @input="$v.edited.picture.$touch()"
                   placeholder="http://"
+                  data-test="profilePicture"
                 >
                 <i18n v-if="$v.edited.picture.$error" class="help is-danger">
                   The profile picture must be a valid url
@@ -50,7 +51,14 @@
             </div>
             <div class="panel-block">
               <div class="media-content">
-                <strong><i18n>Display Name</i18n>:</strong> <input class="input" name="displayName" type="text" v-model="edited.displayName" placeholder="Name">
+                <strong><i18n>Display Name</i18n>:</strong>
+                <input class="input"
+                  name="displayName"
+                  type="text"
+                  v-model="edited.displayName"
+                  placeholder="Name"
+                  data-test="displayName"
+                >
               </div>
             </div>
             <div class="panel-block">
@@ -64,18 +72,31 @@
                   v-model="edited.email"
                   @input="$v.edited.email.$touch()"
                   placeholder="Email"
+                  data-test="profileEmail"
                 >
                 <i18n v-if="$v.edited.email.$error" class="help is-danger">Not an email</i18n>
               </div>
             </div>
             <div class="panel-block">
               <div class="media-content">
-                <strong><i18n>Bio</i18n>:</strong> <textarea type="text" class="textarea" name="bio" v-model="edited.bio" placeholder="Bio"></textarea>
+                <strong><i18n>Bio</i18n>:</strong>
+                <textarea type="text"
+                  class="textarea"
+                  name="bio"
+                  v-model="edited.bio"
+                  placeholder="Bio"
+                  data-test="bio"></textarea>
               </div>
             </div>
           </div>
           <div class="has-text-centered button-box">
-            <button class="button is-success is-large" id='SaveProfileButton' :disabled="$v.edited.$invalid" type="submit"><i18n>Save Profile</i18n></button>
+            <button class="button is-success is-large"
+              :disabled="$v.edited.$invalid"
+              type="submit"
+              data-test="submit"
+            >
+              <i18n>Save Profile</i18n>
+            </button>
           </div>
         </form>
         <br>

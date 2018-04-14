@@ -1,5 +1,5 @@
 <template>
-  <div id="rulesStep" class="has-text-centered">
+  <div class="rulesStep has-text-centered" data-test="rulesStep">
     <h1 class="title is-2"><i18n>Voting Rules</i18n></h1>
     <p class="content"><i18n>What percentage approval is necessary to adjust the group rules?</i18n></p>
     <div class="columns">
@@ -100,7 +100,7 @@
     margin-top: 2rem;
   }
 
-  #rulesStep .message-body {
+  .rulesStep .message-body {
     border-color: #f68b39;
   }
 

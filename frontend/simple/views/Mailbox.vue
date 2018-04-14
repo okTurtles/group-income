@@ -11,13 +11,20 @@
               <span class="panel-icon">
                 <i class="fa fa-pencil"></i>
               </span>
-              <a id="ComposeLink" v-on:click="compose"><i18n>compose</i18n></a>
+              <a data-test="composeLink" v-on:click="compose"><i18n>compose</i18n></a>
             </div>
             <div class="panel-block">
               <span class="panel-icon">
                 <i class="fa fa-envelope"></i>
               </span>
-              <a id="InboxLink" v-on:click="inboxMode"><i18n>inbox</i18n> <span class="unread" v-if="$store.getters.unreadMessageCount">{{$store.getters.unreadMessageCount}}</span></a>
+              <a data-test="inboxLink" v-on:click="inboxMode"><i18n>inbox</i18n>
+                <span class="unread"
+                  data-test="inboxUnread"
+                  v-if="$store.getters.unreadMessageCount"
+                >
+                  {{$store.getters.unreadMessageCount}}
+                </span>
+              </a>
             </div>
           </div>
         </div>
@@ -27,7 +34,13 @@
             <div class="panel-heading">
               <div><strong><i18n>Type</i18n>:</strong>&nbsp;<i18n>Message</i18n></div>
               <div><strong style="margin-top: auto;"><i18n>To</i18n>:</strong>&nbsp;
-                <input id="AddRecipient" class="input is-small" type="text" style="width: 80%;" v-model="recipient" v-on:blur="addRecipient">
+                <input id="AddRecipient"
+                  class="input is-small"
+                  type="text"
+                  style="width: 80%;"
+                  data-test="addRecipient"
+                  v-model="recipient"
+                  v-on:blur="addRecipient">
                 <a class="button is-small" v-on:click="addRecipient">
                   <span class="icon is-small">
                     <i class="fa fa-plus-circle"></i>
@@ -45,11 +58,11 @@
               </table>
             </div>
             <div class="panel-block">
-              <textarea id="ComposedMessage" class="textarea" v-model="composedMessage"></textarea>
+              <textarea class="textarea" data-test="composedMessage" v-model="composedMessage"></textarea>
             </div>
             <div class="panel-block" >
               <div id="errorMsg" v-if="errorMsg" class="help is-danger">{{errorMsg}}</div>
-              <button id="SendButton" class="button is-success" type="submit" v-on:click="send" :disabled="!composedMessage"  style="margin-left:auto; margin-right: 0;"><i18n>Send</i18n></button>
+              <button class="button is-success" type="submit" data-test="sendButton" v-on:click="send" :disabled="!composedMessage"  style="margin-left:auto; margin-right: 0;"><i18n>Send</i18n></button>
               <button class="button is-danger" type="submit" v-on:click="cancel" style="margin-left:10px; margin-right: 0;"><i18n>Cancel</i18n></button>
             </div>
           </div>
@@ -60,7 +73,13 @@
               <div><strong>From:</strong>&nbsp;{{currentMessage.data.from}}</div>
             </div>
             <p class="panel-block" v-if="currentMessage.data.messageType === 'Message'" style="display: block; word-wrap: break-word;">{{currentMessage.data.message}}</p>
-            <p class="panel-block" v-if="currentMessage.data.messageType === 'Invite'"><router-link id="InviteLink" v-bind:to="{ path: '/join', query: { groupId: currentMessage.data.headers[0], inviteHash: currentMessage.hash} }" ><i18n>Respond to Invite</i18n></router-link></p>
+            <p class="panel-block" v-if="currentMessage.data.messageType === 'Invite'">
+              <router-link data-test="inviteLink"
+                v-bind:to="{ path: '/join', query: { groupId: currentMessage.data.headers[0], inviteHash: currentMessage.hash} }"
+              >
+                <i18n>Respond to Invite</i18n>
+              </router-link>
+            </p>
 
             <div class="panel-block" >
               <button class="button is-danger" v-if="currentMessage.data.messageType === 'Message'" type="submit" style="margin-left:auto; margin-right: 0;" v-on:click="remove(index)"><i18n>Delete</i18n></button>
@@ -83,7 +102,9 @@
                       <img src="images/128x128.png">
                     </p>
                   </div>
-                  <div class="media-content proposal-message" v-on:click="respondToProposal(index)">
+                  <div class="media-content proposal-message"
+                    data-test="proposalMessage"
+                    v-on:click="respondToProposal(index)">
                     <div><strong>Sent:</strong>&nbsp;{{formatDate(proposal.initiationDate)}}</div>
                     <div><strong>From:</strong>&nbsp;{{proposal.groupName}}</div>
                   </div>
@@ -108,7 +129,9 @@
                       <img src="images/default-avatar.png">
                     </p>
                   </div>
-                  <div class="media-content invite-message" v-on:click="read({index, type: message.data.messageType})">
+                  <div class="media-content invite-message"
+                    data-test="inviteMessage"
+                    v-on:click="read({index, type: message.data.messageType})">
                     <div><strong>Sent:</strong>&nbsp;{{formatDate(message.data.sentDate)}}</div>
                     <div><strong>From:</strong>&nbsp;{{message.data.from}}</div>
                   </div>
@@ -117,7 +140,9 @@
             </tr>
             </tbody>
           </table>
-          <table id="Inbox" class="table is-bordered is-striped is-narrow" v-if="(mode === 'Inbox')">
+          <table class="table is-bordered is-striped is-narrow"
+            data-test="inbox"
+            v-if="(mode === 'Inbox')">
             <thead>
             <tr>
               <th><i18n>Inbox</i18n></th>
@@ -132,7 +157,10 @@
                       <img src="images/default-avatar.png">
                     </p>
                   </div>
-                  <div class="media-content inbox-message" v-on:click="read({index, type: message.data.messageType})">
+                  <div class="media-content inbox-message"
+                    data-test="inboxMessage"
+                    v-on:click="read({index, type: message.data.messageType})"
+                  >
                     <div><strong>Sent:</strong>&nbsp;{{formatDate(message.data.sentDate)}}</div>
                     <div><strong>From:</strong>&nbsp;{{message.data.from}}</div>
                     <span style="color: grey;">{{message.data.message.substr(0,50)}}{{message.data.message.length > 50 ? '...' : ''}} </span>

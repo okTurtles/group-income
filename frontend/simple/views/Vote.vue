@@ -18,7 +18,20 @@
           </div>
           <div class="panel-block center" style="display: block; text-align: center;">
             <div id="errorMsg" v-if="errorMsg" class="help is-danger">{{errorMsg}}</div>
-            <a id="ForLink" class="button is-success is-large" v-on:click="four" style="margin-left:auto; margin-right: 20px;"><i18n>For</i18n></a><a id="AgainstLink" class="button is-danger is-large" v-on:click="against" style="margin-right:auto; margin-right: 20px;"><i18n>Against</i18n></a>
+            <a class="button is-success is-large"
+              data-test="forLink"
+              v-on:click="four"
+              style="margin-left:auto; margin-right: 20px;"
+            >
+              <i18n>For</i18n>
+            </a>
+            <a class="button is-danger is-large"
+              id="AgainstLink"
+              v-on:click="against"
+              style="margin-right:auto; margin-right: 20px;"
+            >
+              <i18n>Against</i18n>
+            </a>
           </div>
         </div>
       </div>

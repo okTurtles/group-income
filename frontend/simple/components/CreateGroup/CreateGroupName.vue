@@ -12,6 +12,7 @@
           :value="group.groupName"
           @input="update"
           ref="name"
+          data-test="groupName"
         >
       </div>
     </div>

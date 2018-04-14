@@ -1,6 +1,6 @@
 <template>
     <section class="section full-screen">
-      <div id="HomeLogo" class="centered" style="text-align: center;">
+      <div class="centered" style="text-align: center;" data-test="homeLogo">
         <img style="width: 160px; height: 160px;" src="images/group-income-icon-transparent.png">
         <br>
         <div style="display: block; margin-top: 45px;" class="title foco-font"><i18n>Welcome to GroupIncome</i18n></div>
