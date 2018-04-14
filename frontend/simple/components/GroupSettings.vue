@@ -4,17 +4,17 @@
     <h3 class="title is-3"><i18n>Current Settings</i18n></h3>
     <div class="columns has-text-centered">
       <div class="column is-4">
-        <p id="changePercentage" class="settings-number">{{ group.changePercentage }}%</p>
+        <p class="settings-number" data-test="changePercentage">{{ group.changePercentage }}%</p>
         <p class="settings-label">Change Rules</p>
         <a href="#">Propose change</a>
       </div>
       <div class="column is-4">
-        <p id="approvePercentage" class="settings-number">{{ group.memberApprovalPercentage }}%</p>
+        <p class="settings-number" data-test="approvePercentage">{{ group.memberApprovalPercentage }}%</p>
         <p class="settings-label">Add Member</p>
         <a href="#">Propose change</a>
       </div>
       <div class="column is-4">
-        <p id="removePercentage" class="settings-number">{{ group.memberRemovalPercentage }}%</p>
+        <p class="settings-number" data-test="removePercentage">{{ group.memberRemovalPercentage }}%</p>
         <p class="settings-label">Remove Member</p>
         <a href="#">Propose change</a>
       </div>
@@ -37,10 +37,10 @@
 
 </style>
 <script>
-  export default {
-    name: 'GroupSettings',
-    props: {
-      group: Object
-    }
+export default {
+  name: 'GroupSettings',
+  props: {
+    group: Object
   }
+}
 </script>

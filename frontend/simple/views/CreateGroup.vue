@@ -13,8 +13,8 @@
             <button
               class="button is-success is-large"
               @click="next"
-              id="nextBtn"
               :disabled="$v.steps[$route.name] && $v.steps[$route.name].$invalid"
+              data-test="nextBtn"
             >
               <i18n>Next</i18n>
               <span class="icon">
@@ -27,7 +27,7 @@
               class="button is-success is-large"
               @click="submit"
               :disabled="$v.form.$invalid"
-              id="finishBtn"
+              data-test="finishBtn"
             >
               <i18n>Finish</i18n>
               <span class="icon">
@@ -40,7 +40,7 @@
               class="button is-light is-large"
               @click="prev"
               :disabled="!this.currentStep"
-              id="prevBtn"
+              data-test="prevBtn"
             >
               <i18n>Back</i18n>
             </button>

@@ -8,6 +8,7 @@
           placeholder="Username"
           name="invitee"
           type="text"
+          data-test="inputInvitee"
           v-model="searchUser"
           ref="searchUser"
           @keyup.enter="addInvitee"
@@ -15,8 +16,8 @@
       </div>
       <div class="control">
         <button
-          id="addButton"
           class="button is-primary is-large"
+          data-test="addButton"
           @click="addInvitee"
         >
           <i18n>Add</i18n>
@@ -33,7 +34,10 @@
     </article>
 
     <div class="tile is-ancestor">
-      <div class="tile is-4 is-parent invitee" v-for="(invitee, index) in invitees">
+      <div class="tile is-4 is-parent invitee"
+        data-test="inviteeContainer"
+        v-for="(invitee, index) in invitees"
+      >
         <div class="card tile is-child">
           <div class="card-image">
             <figure class="image is-square">

@@ -9,14 +9,17 @@
               <input
                       autofocus
                       class="input is-medium"
-                      id="searchUser"
                       placeholder="Add a new member by username"
                       type="text"
                       v-model="searchUser"
+                      data-test="searchUser"
               >
             </p>
             <p class="control">
-              <a id="addButton" class="button is-info is-medium" @click="add">
+              <a class="button is-info is-medium"
+                data-test="addButton"
+                @click="add"
+              >
                 <i18n>Add member</i18n>
               </a>
             </p>
@@ -29,9 +32,9 @@
     <div class="columns">
       <div class="column is-6 is-offset-3" >
 
-        <p
-                class="notification is-success has-text-centered"
-                v-if="invited"
+        <p  class="notification is-success has-text-centered"
+          data-test="notifyInvitedSuccess"
+          v-if="invited"
         >
           <i class='notification-icon fa fa-check'></i>
           <i18n>Members invited successfully!</i18n>
@@ -47,7 +50,9 @@
           </tr>
           </thead>
           <tbody>
-          <tr v-for="(member, index) in members" class="member">
+          <tr class="member"
+            data-test="member"
+            v-for="(member, index) in members">
             <td>
               <div class="media">
                 <div class="media-left">
@@ -62,7 +67,9 @@
                   <strong>{{member.state.attributes.name}}</strong>
                 </div>
                 <div class="media-right">
-                  <button class="delete" @click="remove(index)"></button>
+                  <button class="delete"
+                    @click="remove(index)"
+                    data-test="deleteMember"></button>
                 </div>
               </div>
             </td>
@@ -72,10 +79,11 @@
 
         <div class="has-text-centered">
           <button
-                  class="button is-success is-large"
-                  type="submit"
-                  v-if="members.length"
-                  @click="submit"
+            class="button is-success is-large"
+            type="submit"
+            v-if="members.length"
+            @click="submit"
+            data-test="submit"
           >
             <i18n>Send Invites</i18n>
           </button>

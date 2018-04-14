@@ -8,14 +8,16 @@
                 <input
                   autofocus
                   class="input is-medium"
-                  id="searchUser"
                   placeholder="Propose a new member by username"
                   type="text"
                   v-model="searchUser"
+                  data-test="searchUser"
                 >
               </p>
               <p class="control">
-                <a id="ProposeButton" class="button is-info is-medium" @click="submit">
+                <a class="button is-info is-medium"
+                  data-test="proposeButton"
+                  @click="submit">
                   <i18n>Propose Member</i18n>
                 </a>
               </p>
@@ -26,9 +28,9 @@
     </div>
     <div class="columns">
       <div class="column is-6 is-offset-3" >
-        <p
-                class="notification is-success has-text-centered"
-                v-if="proposed"
+        <p class="notification is-success has-text-centered"
+          data-test="notifyProposedSuccess"
+          v-if="proposed"
         >
           <i class='notification-icon fa fa-check'></i>
           <i18n>Member proposed successfully!</i18n>

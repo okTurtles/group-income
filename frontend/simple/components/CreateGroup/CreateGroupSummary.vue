@@ -1,6 +1,8 @@
 <template>
   <div>
-    <h1 id="summaryStep" class="title is-1 has-text-centered"><i18n>Review & Finish</i18n></h1>
+    <h1 class="title is-1 has-text-centered" data-test="summaryStep">
+      <i18n>Review & Finish</i18n>
+    </h1>
 
     <h2 class="title is-6"><i18n>Group name:</i18n></h2>
     <p class="subtitle is-2" v-if="group.groupName">{{ group.groupName }}</p>

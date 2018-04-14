@@ -122,33 +122,37 @@ describe('Frontend', function () {
   describe('Sign up Test', function () {
     it('Should register User', async function () {
       this.timeout(10000)
-      await n.goto(page('signup')).wait('#name')
+      await n.goto(page('signup')).wait(elT('signName'))
       const signedup = await n
-        .insert('#name', username)
-        .insert('#email', `test@testgroupincome.com`)
-        .insert('#password', 'testtest')
-        .wait(() => !document.querySelector('button[type="submit"]').disabled)
-        .click('button[type="submit"]')
-        .wait('#HomeLogo')
-        .evaluate(() => !!document.getElementById('HomeLogo'))
+        .insert(elT('signName'), username)
+        .insert(elT('signEmail'), `test@testgroupincome.com`)
+        .insert(elT('signPassword'), 'testtest')
+        .wait(
+          (el) => !document.querySelector(el).disabled,
+          elT('signSubmit')
+        )
+        .click(elT('signSubmit'))
+        .wait(elT('homeLogo'))
+        .evaluate(() => !!document.querySelector('[data-test="homeLogo"]'))
       should(signedup).equal(true)
     })
+
     it('Test Profile Change', async function () {
       this.timeout(10000)
       let success = await n
-        .click('#OpenProfileDropDown')
-        .click('#ProfileLink')
-        .wait('input[name="profilePicture"]')
-        .insert('textarea[name="bio"]', 'Born in a test case')
-        .insert('input[name="displayName"]', 'Tester T Test')
-        .insert('textarea[name="bio"]', 'Born in a test case')
-        .insert('input[name="profilePicture"]') // clear
-        .insert('input[name="profilePicture"]', 'http://testing.rocks')
-        .insert('input[name="profileEmail"]') // clear
-        .insert('input[name="profileEmail"]', 'email@testing.rocks')
-        .click('#SaveProfileButton')
-        .wait('#ProfileSaveSuccess')
-        .exists('#ProfileSaveSuccess')
+        .click(elT('openProfileDropDown'))
+        .click(elT('profileLink'))
+        .wait(elT('profilePicture'))
+        .insert(elT('bio'), 'Born in a test case')
+        .insert(elT('displayName'), 'Tester T Test')
+        .insert(elT('bio'), 'Born in a test case')
+        .insert(elT('profilePicture')) // clear
+        .insert(elT('profilePicture'), 'http://testing.rocks')
+        .insert(elT('profileEmail')) // clear
+        .insert(elT('profileEmail'), 'email@testing.rocks')
+        .click(elT('submit'))
+        .wait(elT('profileSaveSuccess'))
+        .exists(elT('profileSaveSuccess'))
       should(success).equal(true)
       // TODO Make more complex. Unfortunately bugs in Nightmare prevent the clearing and re-entering of fields
       // those Nightmare bugs seem to be gone now, so TODO it is
@@ -156,17 +160,17 @@ describe('Frontend', function () {
     it('Test Logout and Login', async function () {
       this.timeout(10000)
       const loggedin = await n
-        .click('#LogoutBtn')
-        .wait('#LoginBtn')
-        .click('#LoginBtn')
-        .wait('#LoginModal.is-active')
-        .insert('#LoginName', username)
-        .insert('#LoginPassword', 'testtest')
-        .click('#LoginButton')
-        .wait('#LoginResponse')
-        .wait('#OpenProfileDropDown')
-        .click('#OpenProfileDropDown')
-        .exists('#LogoutBtn')
+        .click(elT('logoutBtn'))
+        .wait(elT('loginBtn'))
+        .click(elT('loginBtn'))
+        .wait(elT('loginModal'))
+        .insert(elT('loginName'), username)
+        .insert(elT('loginPassword'), 'testtest')
+        .click(elT('loginSubmit'))
+        .wait(elT('loginResponse'))
+        .wait(elT('openProfileDropDown'))
+        .click(elT('openProfileDropDown'))
+        .exists(elT('logoutBtn'))
       should(loggedin).equal(true)
     })
 
@@ -180,16 +184,31 @@ describe('Frontend', function () {
       const badUsername = 't e s t'
       const badEmail = `@fail`
       const badPassword = `789`// six is so afraid
-      const denied = await n.insert('#name', badUsername)
-        .insert('#email', badEmail)
-        .insert('#password', badPassword)
-        .evaluate(() => document.querySelector('button[type="submit"]') && document.querySelector('button[type="submit"]').disabled)
+      const denied = await n.insert(elT('signName'), badUsername)
+        .insert(elT('signEmail'), badEmail)
+        .insert(elT('signPassword'), badPassword)
+        .evaluate(
+          (el) => document.querySelector(el) && document.querySelector(el).disabled,
+          elT('signSubmit')
+        )
       should(denied).equal(true)
-      const usernameMsg = await n.evaluate(() => !!document.getElementById('badUsername'))
+
+      const usernameMsg = await n.evaluate(
+        (el) => !!document.querySelector(el),
+        elT('badUsername')
+      )
       should(usernameMsg).equal(true)
-      const emailMsg = await n.evaluate(() => !!document.getElementById('badEmail'))
+
+      const emailMsg = await n.evaluate(
+        (el) => !!document.querySelector(el),
+        elT('badEmail')
+      )
       should(emailMsg).equal(true)
-      const passwordMsg = await n.evaluate(() => !!document.getElementById('badPassword'))
+
+      const passwordMsg = await n.evaluate(
+        (el) => !!document.querySelector(el),
+        elT('badPassword')
+      )
       should(passwordMsg).equal(true)
     })
   })
@@ -198,73 +217,85 @@ describe('Frontend', function () {
     it('Create Additional User', async function () {
       this.timeout(8000)
       const signedup = await n
-        .wait('#LogoutBtn')
-        .click('#LogoutBtn')
-        .wait('#SignupBtn')
-        .click('#SignupBtn')
-        .wait('#name')
-        .insert('#name', username + '2')
-        .insert('#email', 'test2@testgroupincome.com')
-        .insert('#password', 'testtest')
-        .wait(() => document.querySelector('button[type="submit"]') && !document.querySelector('button[type="submit"]').disabled)
-        .click('button[type="submit"]')
-        .wait('#HomeLogo')
-        .exists('#HomeLogo')
+        .wait(elT('logoutBtn'))
+        .click(elT('logoutBtn'))
+        .wait(elT('signupBtn'))
+        .click(elT('signupBtn'))
+        .wait(elT('signName'))
+        .insert(elT('signName'), username + '2')
+        .insert(elT('signEmail'), 'test2@testgroupincome.com')
+        .insert(elT('signPassword'), 'testtest')
+        .wait(
+          (el) => document.querySelector(el) && !document.querySelector(el).disabled,
+          elT('signSubmit')
+        )
+        .click(elT('signSubmit'))
+        .wait(elT('homeLogo'))
+        .exists(elT('homeLogo'))
       should(signedup).equal(true)
     })
 
     it('Create Additional User 3', async function () {
       this.timeout(8000)
       const signedup = await n
-        .click('#OpenProfileDropDown')
-        .wait('#LogoutBtn')
-        .click('#LogoutBtn')
-        .wait('#SignupBtn')
-        .click('#SignupBtn')
-        .wait('#name')
-        .insert('#name', username + '3')
-        .insert('#email', `test2@testgroupincome.com`)
-        .insert('#password', 'testtest')
-        .wait(() => document.querySelector('button[type="submit"]') && !document.querySelector('button[type="submit"]').disabled)
-        .click('button[type="submit"]')
-        .wait('#HomeLogo')
-        .exists('#HomeLogo')
+        .click(elT('openProfileDropDown'))
+        .wait(elT('logoutBtn'))
+        .click(elT('logoutBtn'))
+        .wait(elT('signupBtn'))
+        .click(elT('signupBtn'))
+        .wait(elT('signName'))
+        .insert(elT('signName'), username + '3')
+        .insert(elT('signEmail'), 'test3@testgroupincome.com')
+        .insert(elT('signPassword'), 'testtest')
+        .wait(
+          (el) => document.querySelector(el) && !document.querySelector(el).disabled,
+          elT('signSubmit')
+        )
+        .click(elT('signSubmit'))
+        .wait(elT('homeLogo'))
+        .exists(elT('homeLogo'))
       should(signedup).equal(true)
     })
 
     it('Create Additional User 4', async function () {
       this.timeout(8000)
       const signedup = await n
-        .click('#OpenProfileDropDown')
-        .click('#LogoutBtn')
-        .wait('#SignupBtn')
-        .click('#SignupBtn')
-        .wait('#name')
-        .insert('#name', username + '4')
-        .insert('#email', `test2@testgroupincome.com`)
-        .insert('#password', 'testtest')
-        .wait(() => document.querySelector('button[type="submit"]') && !document.querySelector('button[type="submit"]').disabled)
-        .click('button[type="submit"]')
-        .wait('#HomeLogo')
-        .exists('#HomeLogo')
+        .click(elT('openProfileDropDown'))
+        .click(elT('logoutBtn'))
+        .wait(elT('signupBtn'))
+        .click(elT('signupBtn'))
+        .wait(elT('signName'))
+        .insert(elT('signName'), username + '4')
+        .insert(elT('signEmail'), 'test4@testgroupincome.com')
+        .insert(elT('signPassword'), 'testtest')
+        .wait(
+          (el) => document.querySelector(el) && !document.querySelector(el).disabled,
+          elT('signSubmit')
+        )
+        .click(elT('signSubmit'))
+        .wait(elT('homeLogo'))
+        .exists(elT('homeLogo'))
       should(signedup).equal(true)
     })
 
     it('Create Additional User 5', async function () {
       this.timeout(8000)
       const signedup = await n
-        .click('#OpenProfileDropDown')
-        .click('#LogoutBtn')
-        .wait('#SignupBtn')
-        .click('#SignupBtn')
-        .wait('#name')
-        .insert('#name', username + '5')
-        .insert('#email', `test2@testgroupincome.com`)
-        .insert('#password', 'testtest')
-        .wait(() => document.querySelector('button[type="submit"]') && !document.querySelector('button[type="submit"]').disabled)
-        .click('button[type="submit"]')
-        .wait('#HomeLogo')
-        .exists('#HomeLogo')
+        .click(elT('openProfileDropDown'))
+        .click(elT('logoutBtn'))
+        .wait(elT('signupBtn'))
+        .click(elT('signupBtn'))
+        .wait(elT('signName'))
+        .insert(elT('signName'), username + '5')
+        .insert(elT('signEmail'), 'test5@testgroupincome.com')
+        .insert(elT('signPassword'), 'testtest')
+        .wait(
+          (el) => document.querySelector(el) && !document.querySelector(el).disabled,
+          elT('signSubmit')
+        )
+        .click(elT('signSubmit'))
+        .wait(elT('homeLogo'))
+        .exists(elT('homeLogo'))
       should(signedup).equal(true)
     })
 
@@ -275,49 +306,52 @@ describe('Frontend', function () {
       const testSetting = 80
       this.timeout(10000)
       await n
-        .click('#CreateGroup')
+        .click(elT('createGroup'))
         // fill group data
-        .wait('input[name="groupName"]')
-        .insert('input[name="groupName"]', testName)
-        .click('#nextBtn')
+        .wait(elT('groupName'))
+        .insert(elT('groupName'), testName)
+        .click(elT('nextBtn'))
         .wait('textarea[name="sharedValues"]')
         .insert('textarea[name="sharedValues"]', testValues)
-        .click('#nextBtn')
+        .click(elT('nextBtn'))
         .wait('input[name="incomeProvided"]')
         .insert('input[name="incomeProvided"]', testIncome)
-        .click('#nextBtn')
-        .wait('#rulesStep')
+        .click(elT('nextBtn'))
+        .wait(elT('rulesStep'))
         // set rules step skipped for now
-        .click('#nextBtn')
-        .wait('#privacyStep')
-        .click('#nextBtn')
+        .click(elT('nextBtn'))
+        .wait(elT('privacyStep'))
+        .click(elT('nextBtn'))
         // invite members
-        .wait('input[name="invitee"]')
-        .insert('input[name="invitee"]', username + '4')
-        .click('#addButton')
-        .wait('.invitee')
+        .wait(elT('inputInvitee'))
+        .insert(elT('inputInvitee'), username + '4')
+        .click(elT('addButton'))
+        .wait(elT('inviteeContainer'))
 
-      const invited = await n.evaluate(() => document.querySelectorAll('.invitee').length)
+      const invited = await n.evaluate(
+        (el) => document.querySelectorAll('[data-test="inviteeContainer"]').length,
+        elT('inviteeContainer')
+      )
       should(invited).equal(1)
 
       await n
-        .click('#nextBtn')
-        .wait('#summaryStep')
+        .click(elT('nextBtn'))
+        .wait(elT('summaryStep'))
       // summary page sees group as valid
-      const valid = await n.exists('#finishBtn:not(:disabled)')
+      const valid = await n.exists(`${elT('finishBtn')}:not(:disabled)`)
       should(valid).equal(true)
       // submit group
       await n
-        .click('#finishBtn')
-        .wait('#dashboard')
+        .click(elT('finishBtn'))
+        .wait(elT('dashboard'))
 
       const created = await n.evaluate(() => ({
-        groupName: document.querySelector('#groupName').innerText,
-        sharedValues: document.querySelector('#sharedValues').innerText,
-        incomeProvided: document.querySelector('.min-income').innerText,
-        changePercentage: document.querySelector('#changePercentage').innerText,
-        memberApprovalPercentage: document.querySelector('#approvePercentage').innerText,
-        memberRemovalPercentage: document.querySelector('#removePercentage').innerText
+        groupName: document.querySelector('[data-test="groupName"]').innerText,
+        sharedValues: document.querySelector('[data-test="sharedValues"]').innerText,
+        incomeProvided: document.querySelector('[data-test="minIncome"]').innerText,
+        changePercentage: document.querySelector('[data-test="changePercentage"]').innerText,
+        memberApprovalPercentage: document.querySelector('[data-test="approvePercentage"]').innerText,
+        memberRemovalPercentage: document.querySelector('[data-test="removePercentage"]').innerText
       }))
       should(created.groupName).equal(testName)
       should(created.sharedValues).equal(testValues)
@@ -332,26 +366,47 @@ describe('Frontend', function () {
 
       const count = await n
         .click(elT('inviteButton'))
-        .wait('#addButton')
-        .insert('#searchUser', username)
-        .click('#addButton')
-        .wait(() => document.querySelectorAll('.member').length > 0)
-        .wait('.delete')
-        .click('.delete')
-        .wait(() => document.querySelectorAll('.member').length < 1)
-        .evaluate(() => +document.querySelectorAll('.member').length)
+        .wait(elT('addButton'))
+        .insert(elT('searchUser'), username)
+        .click(elT('addButton'))
+        .wait(
+          (el) => document.querySelectorAll(el).length > 0,
+          elT('member')
+        )
+        .wait(elT('deleteMember'))
+        .click(elT('deleteMember'))
+        .wait(
+          (el) => document.querySelectorAll(el).length < 1,
+          elT('member')
+        )
+        .evaluate(
+          (el) => +document.querySelectorAll(el).length,
+          elT('member')
+        )
       should(count).equal(0)
 
       const created = await n
-        .insert('#searchUser', username)
-        .click('#addButton')
-        .wait(() => document.querySelectorAll('.member').length > 0)
-        .insert('#searchUser', username + '2')
-        .click('#addButton')
-        .wait(() => document.querySelectorAll('.member').length > 1)
-        .click('button[type="submit"]')
-        .wait(() => !!document.querySelector('.notification.is-success'))
-        .evaluate(() => !!document.querySelector('.notification.is-success'))
+        .insert(elT('searchUser'), username)
+        .click(elT('addButton'))
+        .wait(
+          (el) => document.querySelectorAll(el).length > 0,
+          elT('member')
+        )
+        .insert(elT('searchUser'), username + '2')
+        .click(elT('addButton'))
+        .wait(
+          (el) => document.querySelectorAll(el).length > 1,
+          elT('member')
+        )
+        .click(elT('submit'))
+        .wait(
+          (el) => !!document.querySelector(el),
+          elT('notifyInvitedSuccess')
+        )
+        .evaluate(
+          (el) => !!document.querySelector(el),
+          elT('notifyInvitedSuccess')
+        )
       should(created).equal(true)
     })
 
@@ -359,166 +414,187 @@ describe('Frontend', function () {
       this.timeout(10000)
       await n
         .goto(page('mailbox'))
-        .wait('#Inbox')
-        .click('#ComposeLink')
-        .wait('#AddRecipient')
-        .insert('#AddRecipient', username)
-        .insert('#ComposedMessage', 'Best test ever!!')
-        .click('#SendButton')
-        .wait('#Inbox')
-        .click('#OpenProfileDropDown')
-        .click('#LogoutBtn')
-        .wait('#LoginBtn')
-        .click('#LoginBtn')
-        .wait('#LoginModal')
-        .insert('#LoginName', username)
-        .insert('#LoginPassword', 'testtest')
-        .click('#LoginButton')
-        .wait('#MailboxLink')
-        .click('#MailboxLink')
+        .wait(elT('inbox'))
+        .click(elT('composeLink'))
+        .wait(elT('addRecipient'))
+        .insert(elT('addRecipient'), username)
+        .insert(elT('composedMessage'), 'Best test ever!!')
+        .click(elT('sendButton'))
+        .wait(elT('inbox'))
+        .click(elT('openProfileDropDown'))
+        .click(elT('logoutBtn'))
+        .wait(elT('loginBtn'))
+        .click(elT('loginBtn'))
+        .wait(elT('loginModal'))
+        .insert(elT('loginName'), username)
+        .insert(elT('loginPassword'), 'testtest')
+        .click(elT('loginSubmit'))
+        .wait(elT('mailboxLink'))
+        .click(elT('mailboxLink'))
 
-      const alert = await n.exists('#AlertNotification')
+      const alert = await n.exists(elT('alertNotification'))
       should(alert).equal(true)
-      const unread = await n.evaluate(() => document.querySelector('.unread') && +document.querySelector('.unread').innerText)
+      const unread = await n.evaluate(
+        (el) => document.querySelector(el) && +document.querySelector(el).innerText,
+        elT('inboxUnread')
+      )
       should(unread).equal(2)
-      const hasInvite = await n.exists('.invite-message')
+      const hasInvite = await n.exists(elT('inviteMessage'))
       should(hasInvite).equal(true)
-      const hasMessage = await n.exists('.inbox-message')
+      const hasMessage = await n.exists(elT('inboxMessage'))
       should(hasMessage).equal(true)
       const newUnread = await n
-        .click('.invite-message')
-        .evaluate(() => +document.querySelector('.unread').innerText)
+        .click(elT('inviteMessage'))
+        .evaluate(
+          (el) => +document.querySelector(el).innerText,
+          elT('inboxUnread')
+        )
       should(newUnread).equal(1)
     })
     it('Should Accept Invite', async function () {
       this.timeout(30000)
       // Accept invitation
-      let success = await n.click('#InboxLink')
-        .wait('.invite-message')
-        .click('.invite-message')
-        .wait('#InviteLink')
-        .click('#InviteLink')
-        .wait('#AcceptLink')
-        .click('#AcceptLink')
-        .wait('#Inbox')
-        .exists('#Inbox')
+      let success = await n.click(elT('inboxLink'))
+        .wait(elT('inviteMessage'))
+        .click(elT('inviteMessage'))
+        .wait(elT('inviteLink'))
+        .click(elT('inviteLink'))
+        .wait(elT('acceptLink'))
+        .click(elT('acceptLink'))
+        .wait(elT('inbox'))
+        .exists(elT('inbox'))
       should(success).equal(true)
       // Logout
       success = await n
-        .click('#OpenProfileDropDown')
-        .click('#LogoutBtn')
+        .click(elT('openProfileDropDown'))
+        .click(elT('logoutBtn'))
         // Open login modal
-        .wait('#LoginBtn')
-        .click('#LoginBtn')
+        .wait(elT('loginBtn'))
+        .click(elT('loginBtn'))
         // Login
-        .wait('#LoginModal.is-active')
-        .wait('#LoginName')
-        .insert('#LoginName', username + '2')
-        .insert('#LoginPassword', 'testtest')
-        .click('#LoginButton')
-        .wait(() => !document.querySelector('#LoginModal.is-active'))
-        .wait('#MailboxLink')
+        .wait(`${elT('loginModal')}.is-active`)
+        .wait(elT('loginName'))
+        .insert(elT('loginName'), username + '2')
+        .insert(elT('loginPassword'), 'testtest')
+        .click(elT('loginSubmit'))
+        .wait(
+          (el) => !document.querySelector(el),
+          `${elT('loginModal')}.is-active`
+        )
+        .wait(elT('mailboxLink'))
       // BUG: Why isn't there an await here?
       // Accept invitation
-      n.click('#MailboxLink')
-        .wait('.invite-message')
-        .click('.invite-message')
-        .wait('#InviteLink')
-        .click('#InviteLink')
-        .wait('#AcceptLink')
-        .click('#AcceptLink')
-        .wait('#Inbox')
-        .exists('#Inbox')
+      n.click(elT('mailboxLink'))
+        .wait(elT('inviteMessage'))
+        .click(elT('inviteMessage'))
+        .wait(elT('inviteLink'))
+        .click(elT('inviteLink'))
+        .wait(elT('acceptLink'))
+        .click(elT('acceptLink'))
+        .wait(elT('inbox'))
+        .exists(elT('inbox'))
       should(!success).equal(true)
     })
     it('Should Vote on Additional Members', async function () {
       this.timeout(10000)
       await n
-        .click('#OpenProfileDropDown')
-        .click('#LogoutBtn')
+        .click(elT('openProfileDropDown'))
+        .click(elT('logoutBtn'))
         // Open login modal
-        .wait('#LoginBtn')
-        .click('#LoginBtn')
+        .wait(elT('loginBtn'))
+        .click(elT('loginBtn'))
         // Login
-        .wait('#LoginModal.is-active')
-        .wait('#LoginName')
-        .insert('#LoginName', username + '5')
-        .insert('#LoginPassword', 'testtest')
-        .wait('#LoginButton')
-        .click('#LoginButton')
-        .wait(() => !document.querySelector('#LoginModal.is-active'))
+        .wait(`${elT('loginModal')}.is-active`)
+        .wait(elT('loginName'))
+        .insert(elT('loginName'), username + '5')
+        .insert(elT('loginPassword'), 'testtest')
+        .wait(elT('loginSubmit'))
+        .click(elT('loginSubmit'))
+        .wait(
+          (el) => !document.querySelector(el),
+          `${elT('loginModal')}.is-active`
+        )
       // BUG: Why isn't there an await here?
       await n
-        .wait('#MailboxLink')
+        .wait(elT('mailboxLink'))
         .goto(page('invite'))
-        .wait('#ProposeButton')
-        .insert('#searchUser', username + '3')
-        .click('#ProposeButton')
-        .wait('.notification.is-success')
+        .wait(elT('proposeButton'))
+        .insert(elT('searchUser'), username + '3')
+        .click(elT('proposeButton'))
+        .wait(elT('notifyProposedSuccess'))
         // Logout
-        .click('#OpenProfileDropDown')
-        .click('#LogoutBtn')
+        .click(elT('openProfileDropDown'))
+        .click(elT('logoutBtn'))
         // Open login modal
-        .wait('#LoginBtn')
-        .click('#LoginBtn')
+        .wait(elT('loginBtn'))
+        .click(elT('loginBtn'))
       // Login
       await n
-        .wait('#LoginModal.is-active')
-        .insert('#LoginName', username)
-        .insert('#LoginPassword', 'testtest')
-        .click('#LoginButton')
-        .wait(() => !document.querySelector('#LoginModal.is-active'))
+        .wait(`${elT('loginModal')}.is-active`)
+        .insert(elT('loginName'), username)
+        .insert(elT('loginPassword'), 'testtest')
+        .click(elT('loginSubmit'))
+        .wait(
+          (el) => !document.querySelector(el),
+          `${elT('loginModal')}.is-active`
+        )
 
       let success = await n
-        .wait('#MailboxLink')
-        .click('#MailboxLink')
-        .wait('.proposal-message')
-        .click('.proposal-message')
-        .wait('#ForLink')
-        .click('#ForLink')
-        .wait('#Inbox')
-        .exists('#Inbox')
+        .wait(elT('mailboxLink'))
+        .click(elT('mailboxLink'))
+        .wait(elT('proposalMessage'))
+        .click(elT('proposalMessage'))
+        .wait(elT('forLink'))
+        .click(elT('forLink'))
+        .wait(elT('inbox'))
+        .exists(elT('inbox'))
       should(success).equal(true)
 
       success = await n
-        .click('#OpenProfileDropDown')
-        .click('#LogoutBtn')
+        .click(elT('openProfileDropDown'))
+        .click(elT('logoutBtn'))
         // Open login modal
-        .wait('#LoginBtn')
-        .click('#LoginBtn')
+        .wait(elT('loginBtn'))
+        .click(elT('loginBtn'))
         // Login
-        .wait('#LoginModal.is-active')
-        .insert('#LoginName', username + '2')
-        .insert('#LoginPassword', 'testtest')
-        .click('#LoginButton')
-        .wait(() => !document.querySelector('#LoginModal.is-active'))
-        .wait('#MailboxLink')
-        .click('#MailboxLink')
-        .wait('.proposal-message')
-        .click('.proposal-message')
-        .wait('#ForLink')
-        .click('#ForLink')
-        .wait('#Inbox')
-        .exists('#Inbox')
+        .wait(`${elT('loginModal')}.is-active`)
+        .insert(elT('loginName'), username + '2')
+        .insert(elT('loginPassword'), 'testtest')
+        .click(elT('loginSubmit'))
+        .wait(
+          (el) => !document.querySelector(el),
+          `${elT('loginModal')}.is-active`
+        )
+        .wait(elT('mailboxLink'))
+        .click(elT('mailboxLink'))
+        .wait(elT('proposalMessage'))
+        .click(elT('proposalMessage'))
+        .wait(elT('forLink'))
+        .click(elT('forLink'))
+        .wait(elT('inbox'))
+        .exists(elT('inbox'))
       should(success).equal(true)
 
       success = await n
-        .click('#OpenProfileDropDown')
-        .click('#LogoutBtn')
+        .click(elT('openProfileDropDown'))
+        .click(elT('logoutBtn'))
         // Open login modal
-        .wait('#LoginBtn')
-        .click('#LoginBtn')
+        .wait(elT('loginBtn'))
+        .click(elT('loginBtn'))
         // Login
-        .wait('#LoginModal.is-active')
-        .insert('#LoginName', username + '3')
-        .insert('#LoginPassword', 'testtest')
-        .click('#LoginButton')
-        .wait(() => !document.querySelector('#LoginModal.is-active'))
-        .wait('#MailboxLink')
+        .wait(`${elT('loginModal')}.is-active`)
+        .insert(elT('loginName'), username + '3')
+        .insert(elT('loginPassword'), 'testtest')
+        .click(elT('loginSubmit'))
+        .wait(
+          (el) => !document.querySelector(el),
+          `${elT('loginModal')}.is-active`
+        )
+        .wait(elT('mailboxLink'))
         // Accept invitation
-        .click('#MailboxLink')
-        .wait('.invite-message')
-        .exists('.invite-message')
+        .click(elT('mailboxLink'))
+        .wait(elT('inviteMessage'))
+        .exists(elT('inviteMessage'))
       should(success).equal(true)
     })
   })
