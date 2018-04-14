@@ -117,6 +117,7 @@
                 <span class="select" type="text">
                   <select v-model="editedGroupProfile.paymentMethod">
                     <option></option>
+                    <option>Cash</option>
                     <option>Bitcoin</option>
                     <option>Amex</option>
                     <option>Visa</option>

@@ -63,12 +63,10 @@ export class GroupContract extends Events.HashableGroup {
       },
       // TODO: remove group profile when leave group is implemented
       HashableGroupSetGroupProfile (state, {data}) {
-        data = JSON.parse(data.json) // TODO: data.json? why not just data? what else is in there?
-        var {groupProfile} = state.profiles[data.username]
-        state.profiles[data.username].groupProfile = _.merge(groupProfile, data)
+        _.merge(state.profiles[data.username].groupProfile, JSON.parse(data.json))
       }
     },
-    // !! IMPORANT!!
+    // !! IMPORTANT!!
     // Actions here MUST NOT modify contract state!
     // They MUST NOT call 'commit'!
     // This is critical to the function of that latest contract hash.

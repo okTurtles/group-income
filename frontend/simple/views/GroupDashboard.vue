@@ -22,7 +22,16 @@
         <group-support-history :history="[1.2, 1, .85, .95, 1.05, .35]" />
 
         <group-settings :group="currentGroupState" />
-
+        <div>
+          <a class="button" @click="payGroupMembers">
+            <i18n>Pay Members</i18n>
+          </a>
+        </div>
+        <div>
+          <a class="button" @click="setContribution">
+            <i18n>Set Contribution</i18n>
+          </a>
+        </div>
       </div>
     </div>
   </section>
@@ -56,6 +65,14 @@
       GroupMembers,
       GroupSupportHistory,
       GroupSettings
+    },
+    methods: {
+      setContribution () {
+        this.$router.push({path: '/set-contribution'})
+      },
+      payGroupMembers () {
+        this.$router.push({path: '/pay-group-members'})
+      }
     }
   }
 </script>

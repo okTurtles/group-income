@@ -14,7 +14,7 @@
           <div class="column is-half">
             <p class="title is-4"><i18n>{{msg}}</i18n></p>
             <div class="box">
-              <p>Mincome: <b>${{minCome}}</b></p>
+              <p>Mincome: <b>${{ currentGroupState.incomeProvided}}</b></p>
               <p>Amount the group received this month: <b>${{amountReceivedThisMonth}}</b></p>
             </div>
             <div class="box">
@@ -56,8 +56,15 @@
   </section>
 </template>
 <script>
+import {mapGetters} from 'vuex'
+
 export default {
-  name: 'PayGroup',
+  name: 'SetContribution',
+  computed: {
+    ...mapGetters([
+      'currentGroupState'
+    ])
+  },
   props: {
     minCome: {type: Number, default: 1000},
     amountReceivedThisMonth: {type: Number, default: 852}
