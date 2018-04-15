@@ -1,113 +1,105 @@
 <template>
-  <div>
-    <!-- see: http://bulma.io/documentation/components/nav/ -->
-    <nav class="nav">
-      <div class="container">
-        <div class="nav-left">
-          <router-link to="home" class="nav-item" @click="toggleTimeTravel">
-            <img src="/simple/images/logo-transparent.png">
-          </router-link>
-        </div>
-        <div class="nav-center">
-          <!-- TODO: use v-for to dynamically generate these? -->
-          <router-link
-            active-class="is-active"
-            class="nav-item is-tab"
-            to="new-group"
-            v-if="$store.state.loggedIn"
-            data-test="createGroup"
+  <nav class="navbar container gi">
+    <div class="navbar-start">
+      <router-link to="home" class="navbar-item" @click="toggleTimeTravel">
+        <img src="/simple/images/logo-transparent.png">
+      </router-link>
+    </div>
+      <div class="navbar-center">
+        <!-- TODO: use v-for to dynamically generate these? -->
+        <router-link
+          active-class="is-active"
+          class="nav-item is-tab"
+          data-test="CreateGroup"
+          to="new-group"
+          v-if="$store.state.loggedIn"
+        >
+          <i18n>Start a Group</i18n>
+        </router-link>
+        <router-link
+          active-class="is-active"
+          class="nav-item is-tab"
+          to="pay-group"
+          v-if="$store.state.loggedIn"
+        >
+          <i18n>Pay Group</i18n>
+        </router-link>
+        <router-link
+          active-class ="is-active"
+          class="nav-item"
+          data-test="MailboxLink"
+          to="mailbox"
+          v-if="$store.state.loggedIn"
+        >
+          <i18n>Inbox</i18n>
+          <span
+            data-test="AlertNotification"
+            class="icon"
+            style="color: #ed6c63;"
+            v-if="$store.getters.unreadMessageCount || $store.getters.proposals.length"
           >
-            <i18n>Start a Group</i18n>
-          </router-link>
-          <router-link
-            active-class="is-active"
-            class="nav-item is-tab"
-            to="pay-group"
-            v-if="$store.state.loggedIn"
-          >
-            <i18n>Pay Group</i18n>
-          </router-link>
-          <router-link
-            active-class ="is-active"
-            class="nav-item"
-            to="mailbox"
-            data-test="mailboxLink"
-            v-if="$store.state.loggedIn"
-          >
-            <i18n>Inbox</i18n>
-            <span
-              class="icon"
-              style="color: #ed6c63;"
-              data-test="alertNotification"
-              v-if="$store.getters.unreadMessageCount || $store.getters.proposals.length"
-            >
-              <i class="fa fa-bell"></i>
-            </span>
-          </router-link>
-        </div>
-        <div class="nav-right">
-          <span class="nav-item control">
-            <router-link
-              class="button is-success"
-              style="margin-right: 15px;"
-              to="signup"
-              v-if="!$store.state.loggedIn"
-              data-test="signupBtn"
-            >
-              <i18n>Sign Up</i18n>
-            </router-link>
-            <a
-              class="button is-primary"
-              href="#"
-              v-if="!$store.state.loggedIn"
-              @click.prevent="showLoginModal"
-              data-test="loginBtn"
-            >
-              <i18n>Login</i18n>
-            </a>
-
-            <div class="button profile-link"
-              data-test="openProfileDropDown"
-              v-if="$store.state.loggedIn" @click="toggleDropdown">
-              <strong>{{ ($store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.displayName ? $store.getters.currentUserIdentityContract.attributes.displayName : null) || $store.state.loggedIn.name}}</strong>
-              <img v-if="$store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.picture" v-bind:src="$store.getters.currentUserIdentityContract.attributes.picture">
-              <i class="fa fa-caret-down" style="color: #d8d8d8;" aria-hidden="true"></i>
-            </div>
+            <i class="fa fa-bell"></i>
           </span>
-        </div>
-        <div class="menu-dropdown" v-if="dropdownVisible">
-          <div class="button profile-link" id="CloseProfileDropDown" v-if="$store.state.loggedIn" @click="toggleDropdown">
+        </router-link>
+      </div>
+      <div class="navbar-end">
+        <span class="navbar-item">
+          <router-link
+            class="button is-success"
+            data-test="SignupBtn"
+            style="margin-right: 15px;"
+            to="signup"
+            v-if="!$store.state.loggedIn"
+          >
+            <i18n>Sign Up</i18n>
+          </router-link>
+          <button class="button is-primary"
+            data-test="LoginBtn"
+            v-if="!$store.state.loggedIn"
+            @click="showLoginModal"
+          >
+            <i18n>Login</i18n>
+          </button>
+
+          <div class="button profile-link" data-test="OpenProfileDropDown" v-if="$store.state.loggedIn" @click="toggleDropdown">
             <strong>{{ ($store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.displayName ? $store.getters.currentUserIdentityContract.attributes.displayName : null) || $store.state.loggedIn.name}}</strong>
             <img v-if="$store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.picture" v-bind:src="$store.getters.currentUserIdentityContract.attributes.picture">
             <i class="fa fa-caret-down" style="color: #d8d8d8;" aria-hidden="true"></i>
           </div>
-          <router-link
-            class="nav-item is-tab"
-            active-class="is-active"
-            to="user"
-            data-test="profileLink"
-            v-show="$store.state.loggedIn"
-          >
-            <i18n>Profile</i18n>
-          </router-link>
-          <a
-            class="is-danger"
-            href="#"
-            v-if="$store.state.loggedIn"
-            @click.prevent="logout"
-            data-test="logoutBtn"
-          >
-            <i18n>Signout</i18n>
-          </a>
-        </div>
-        <login-modal
-          v-if="loginModalVisible"
-          @close="closeLoginModal"
-        />
-        <time-travel v-show="showTimeTravel" :toggleVisibility="toggleTimeTravel" />
+        </span>
       </div>
-    </nav>
-  </div>
+      <div class="menu-dropdown" v-if="dropdownVisible">
+        <div class="button profile-link" id="CloseProfileDropDown" v-if="$store.state.loggedIn" @click="toggleDropdown">
+          <strong>{{ ($store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.displayName ? $store.getters.currentUserIdentityContract.attributes.displayName : null) || $store.state.loggedIn.name}}</strong>
+          <img v-if="$store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.picture" v-bind:src="$store.getters.currentUserIdentityContract.attributes.picture">
+          <i class="fa fa-caret-down" style="color: #d8d8d8;" aria-hidden="true"></i>
+        </div>
+        <router-link
+          id="ProfileLink"
+          class="nav-item is-tab"
+          active-class="is-active"
+          to="user"
+          v-show="$store.state.loggedIn"
+        >
+          <i18n>Profile</i18n>
+        </router-link>
+        <a
+          class="is-danger"
+          href="#"
+          id="LogoutBtn"
+          v-if="$store.state.loggedIn"
+          @click.prevent="logout"
+        >
+          <i18n>Signout</i18n>
+        </a>
+      </div>
+      <login-modal
+        v-if="loginModalVisible"
+        @close="closeLoginModal"
+      />
+      <time-travel v-show="showTimeTravel" :toggleVisibility="toggleTimeTravel" />
+    </div>
+  </nav>
 </template>
 <style lang="scss" scoped>
 .nav {
