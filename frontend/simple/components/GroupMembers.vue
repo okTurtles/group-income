@@ -21,7 +21,10 @@
           </li>
         </ul>
         <div class="badge">
-          <a class="button action is-light" @click.prevent="invite">
+          <a class="button action is-light"
+            data-test="inviteButton"
+            @click.prevent="invite"
+          >
             <span class="icon"><i class="fa fa-plus has-text-success"></i></span>
           </a>
         </div>

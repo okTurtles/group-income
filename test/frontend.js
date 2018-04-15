@@ -15,6 +15,11 @@ const url = require('url')
 const exec = require('child_process').execFileSync
 const fs = require('fs')
 
+// Access any element by its data-test attribute
+function elT (el) {
+  return `[data-test=${el}]`
+}
+
 describe('Frontend', function () {
   const n = Nightmare({
     // openDevTools: true,
@@ -326,7 +331,7 @@ describe('Frontend', function () {
       this.timeout(4000)
 
       const count = await n
-        .click('.invite-button')
+        .click(elT('inviteButton'))
         .wait('#addButton')
         .insert('#searchUser', username)
         .click('#addButton')
