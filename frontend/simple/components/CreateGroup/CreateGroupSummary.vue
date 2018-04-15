@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h1 class="title is-1 has-text-centered" data-test="summaryStep">
+    <h1 class="subtitle is-1 has-text-centered" data-test="summaryStep">
       <i18n>Review & Finish</i18n>
     </h1>
 
@@ -18,7 +18,7 @@
     <hr>
 
     <h2 class="title is-6"><i18n>Group purpose:</i18n></h2>
-    <p class="title is-4" v-if="group.sharedValues">{{ group.sharedValues }}</p>
+    <p class="subtitle is-4" v-if="group.sharedValues">{{ group.sharedValues }}</p>
     <p class="subtitle is-2 is-danger" v-else><i18n>No group purpose set</i18n></p>
     <p class="has-text-right">
       <router-link
@@ -47,15 +47,15 @@
     <div class="columns has-text-centered">
       <div class="column">
         <p class="percent">{{ group.changePercentage }}%</p>
-        <p class="title is-5"><i18n>Change Rules</i18n></p>
+        <p class="subtitle is-5"><i18n>Change Rules</i18n></p>
       </div>
       <div class="column">
         <p class="percent">{{ group.memberApprovalPercentage }}%</p>
-        <p class="title is-5"><i18n>Add Member</i18n></p>
+        <p class="subtitle is-5"><i18n>Add Member</i18n></p>
       </div>
       <div class="column">
         <p class="percent">{{ group.memberRemovalPercentage }}%</p>
-        <p class="title is-5"><i18n>Remove Member</i18n></p>
+        <p class="subtitle is-5"><i18n>Remove Member</i18n></p>
         </div>
     </div>
     <p class="has-text-right">
@@ -96,14 +96,14 @@
     </p>
   </div>
 </template>
-<style>
+<style scoped>
   .tile.is-ancestor {
     flex-wrap: wrap;
   }
 
-  .subtitle.is-2:not(.is-danger) {
+  /* .subtitle.is-2:not(.is-danger) {
     font-weight: bold;
-  }
+  } */
 </style>
 <script>
 import { symbol } from '../../js/currencies'
