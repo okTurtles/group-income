@@ -40,7 +40,7 @@ module.exports = (grunt) => {
       options: {spawn: false},
       // consider instead using the `watchify` option on browserify
       browserify: {
-        options: { livereload: true }, // port 35729 by default
+        options: { livereload: 35729 + parseInt(process.env.PORT_SHIFT || 0) },
         files: ['frontend/*.html', 'frontend/simple/**/*.{vue,js}'],
         tasks: ['exec:standard', 'exec:stylelint', 'copy', 'browserify']
       },
