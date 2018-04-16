@@ -16,7 +16,8 @@ const S = require('string')
 const vueify = require('vueify')
 const pathmodify = require('pathmodify')
 
-var development = process.env.NODE_ENV === 'development'
+const development = process.env.NODE_ENV === 'development'
+const livereload = development && (parseInt(process.env.PORT_SHIFT || 0) + 35729)
 
 setupPrimus(require('http').createServer(), true)
 
@@ -30,9 +31,7 @@ module.exports = (grunt) => {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
 
-    checkDependencies: {this: {options: {
-      install: true
-    }}},
+    checkDependencies: {this: {options: { install: true }}},
 
     watch: {
       // prevent watch from spawning. if we don't do this, we won't be able
@@ -40,17 +39,17 @@ module.exports = (grunt) => {
       options: {spawn: false},
       // consider instead using the `watchify` option on browserify
       browserify: {
-        options: { livereload: 35729 + parseInt(process.env.PORT_SHIFT || 0) },
+        options: { livereload },
         files: ['frontend/*.html', 'frontend/simple/**/*.{vue,js}'],
         tasks: ['exec:standard', 'exec:stylelint', 'copy', 'browserify']
       },
       css: {
-        options: { livereload: true },
+        options: { livereload },
         files: ['frontend/simple/sass/**/*.{sass,scss}'],
         tasks: ['sass']
       },
       html: {
-        options: { livereload: true },
+        options: { livereload },
         files: ['frontend/simple/**/*.html'],
         tasks: ['copy']
       },
@@ -59,7 +58,7 @@ module.exports = (grunt) => {
         tasks: ['exec:standard', 'backend:relaunch']
       },
       shared: {
-        options: { livereload: true },
+        options: { livereload },
         files: ['shared/**/*.js'],
         tasks: ['exec:standard', 'browserify', 'backend:relaunch']
       },
@@ -117,7 +116,7 @@ module.exports = (grunt) => {
       },
       standard: './node_modules/.bin/standard "**/*.{js,vue}"',
       standardgrunt: './node_modules/.bin/standard .Gruntfile.babel.js Gruntfile.js',
-      stylelint: './node_modules/.bin/stylelint "frontend/simple/**/*.{css,scss,vue}, !frontend/simple/js/ignored/**"',
+      stylelint: './node_modules/.bin/stylelint "frontend/simple/**/*.{css,scss,vue}"',
       flow: './node_modules/.bin/flow'
     },
 
@@ -127,7 +126,7 @@ module.exports = (grunt) => {
       options: {
         port: process.env.FRONTEND_PORT,
         base: 'dist',
-        livereload: process.env.NODE_ENV === 'development',
+        livereload: livereload,
         middleware: (connect, opts, middlewares) => {
           middlewares.unshift((req, res, next) => {
             var f = url.parse(req.url).pathname
@@ -181,6 +180,19 @@ module.exports = (grunt) => {
   var fork = require('child_process').fork
   var child = null
 
+  process.on('exit', () => { // 'beforeExit' doesn't work
+    // In cases where 'watch' fails while child (server) is still running
+    // we will exit and child will continue running in the background.
+    // This can happen, for example, when running two GIS instances via
+    // the PORT_SHIFT envar. If grunt-contrib-watch livereload process
+    // cannot bind to the port for some reason, then the parent process
+    // will exit leaving a dangling child server process.
+    if (child) {
+      grunt.log.writeln('Quitting dangling child!')
+      child.send({})
+    }
+  })
+
   grunt.registerTask('backend:relaunch', '[internal]', function () {
     var done = this.async() // tell grunt we're async
     var fork2 = function () {
@@ -200,6 +212,7 @@ module.exports = (grunt) => {
           // ^C can cause c to be null, which is an OK error
           process.exit(c || 0)
         }
+        child = null
       })
       done()
     }

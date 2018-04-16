@@ -28,7 +28,7 @@ process.on('message', function () {
       process.send({}) // tell grunt we've successfully shutdown the server
       process.nextTick(() => process.exit(0)) // triple-check we quit :P
     } catch (err) {
-      console.error('Error shutting down:', err)
+      console.error('Error during shutdown:', err)
       process.exit(1)
     }
   })
