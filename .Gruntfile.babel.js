@@ -117,7 +117,7 @@ module.exports = (grunt) => {
       },
       standard: './node_modules/.bin/standard "**/*.{js,vue}"',
       standardgrunt: './node_modules/.bin/standard .Gruntfile.babel.js Gruntfile.js',
-      stylelint: './node_modules/.bin/stylelint "frontend/simple/**/*.{css,scss,vue}"',
+      stylelint: './node_modules/.bin/stylelint "frontend/simple/**/*.{css,scss,vue}, !frontend/simple/js/ignored/**"',
       flow: './node_modules/.bin/flow'
     },
 
@@ -137,6 +137,7 @@ module.exports = (grunt) => {
               res.end(fs.readFileSync(S(f).chompLeft('dist/').s))
             } else if (S(f).endsWith('.html') && fs.existsSync(f)) {
               // parse all HTML files for SSI
+              // TODO: delete this section?
               res.end(fs.readFileSync(f))
             } else if (S(f).startsWith('dist/simple/') && !/\.[a-z][a-z0-9]+(\?[^/]*)?$/.test(f)) {
               // if we are a vue-router route, send main index file
@@ -196,7 +197,8 @@ module.exports = (grunt) => {
       child.on('exit', (c) => {
         if (c !== 0) {
           grunt.log.error(`child exited with error code: ${c}`.bold)
-          process.exit(c || -1)
+          // ^C can cause c to be null, which is an OK error
+          process.exit(c || 0)
         }
       })
       done()
