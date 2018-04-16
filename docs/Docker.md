@@ -13,24 +13,24 @@ If running for the first time, do:
 
 ### From then on
 
-From then on simply prefix all commands with `npm start docker -- `.
+From then on simply prefix all commands with `npm run docker -- `.
 
 For example, the first command you should run is `npm install`. Let's run that using the Docker container:
 
 ```
-npm start docker -- npm install
+npm run docker -- npm install
 ```
 
 From then on, you can run `grunt dev` like so:
 
 ```
-npm start docker -- grunt dev
+npm run docker -- grunt dev
 ```
 
 Or simply:
 
 ```
-npm start docker
+npm run docker
 ```
 
 Which defaults to the same thing (`grunt dev`).
@@ -44,7 +44,7 @@ Note that the entire project directory is mounted as a volume within the contain
 Instead, update them from within the container, like so:
 
 ```
-npm start docker -- npm i vue@latest -S
+npm run docker -- npm i vue@latest -S
 ```
 
 ## Known Issues
