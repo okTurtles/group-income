@@ -41,7 +41,7 @@
           </span>
         </router-link>
       </div>
-      <div class="navbar-end">
+      <div class="navbar-end is-flex">
         <div class="navbar-item signUp-item" v-if="!$store.state.loggedIn">
           <router-link
             class="button is-success"
