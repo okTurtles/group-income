@@ -1,7 +1,7 @@
 <template>
   <nav class="navbar container gi">
     <div class="navbar-start">
-      <router-link to="home" class="navbar-item" @click="toggleTimeTravel">
+      <router-link to="home" class="navbar-item gi-item" @click="toggleTimeTravel">
         <img src="/simple/images/logo-transparent.png"  alt="Groupincome's logo">
       </router-link>
     </div>
@@ -9,7 +9,7 @@
         <!-- TODO: use v-for to dynamically generate these? -->
         <router-link
           active-class="is-active"
-          class="navbar-item"
+          class="navbar-item gi-item"
           data-test="CreateGroup"
           to="new-group"
         >
@@ -18,7 +18,7 @@
 
         <router-link
           active-class="is-active"
-          class="navbar-item"
+          class="navbar-item gi-item"
           to="pay-group"
         >
           <i18n>Pay Group</i18n>
@@ -26,7 +26,7 @@
 
         <router-link
           active-class ="is-active"
-          class="navbar-item"
+          class="navbar-item gi-item"
           data-test="MailboxLink"
           to="mailbox"
         >
@@ -59,8 +59,8 @@
             <i18n>Login</i18n>
           </button>
         </div>
-        <div class="navbar-item" v-if="$store.state.loggedIn">
-          <div class="navbar-item has-dropdown is-hoverable gi-dropdown">
+        <div class="navbar-item is-hoverable" v-if="$store.state.loggedIn">
+          <div class="navbar-item has-dropdown is-hoverable gi">
             <a class="navbar-link">
               <strong>
                 {{ ($store.getters.currentUserIdentityContract &&
@@ -108,14 +108,17 @@
   </nav>
 </template>
 <style lang="scss" scoped>
+// @import "../../node_modules/bulma/sass/utilities/all";
+
 .gi-center {
   &.level {
     margin-bottom: 0;
   }
+}
 
-  .navbar-item:hover {
-    background-color: transparent;
-  }
+.navbar-item.gi-item {
+  background-color: transparent;
+  // background-color: $primary;
 }
 
 .signUp-item {
