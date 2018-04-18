@@ -1,6 +1,6 @@
 <template>
     <section class="section full-screen">
-      <div class="centered" >
+      <div>
         <div class="columns">
           <div class="column is-one-half">
             <div class="center ">
