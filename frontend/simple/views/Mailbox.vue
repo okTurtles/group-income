@@ -185,7 +185,19 @@
 </template>
 <style>
 .signup .level-item { margin-top: 10px; }
+
 .signup .level.top-align { align-items: flex-start; }
+
+.unread {
+  display: inline-block;
+  padding: 2px 5px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  color: white;
+  background-color: #1fc8db;
+  border-radius: 20px;
+}
 </style>
 <script>
 import _ from 'lodash'
