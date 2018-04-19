@@ -11,8 +11,8 @@ export function lazyLoadVue (component: string, base: string = '/simple/js') {
   // window.HOTAPI = require('vue-hot-reload-api')
   return function (resolve: Function, reject: Function) {
     VS2.load(`${base}/${component}.js`)
-    .then(() => resolve(window[component]))
-    .catch((err) => reject(err))
+      .then(() => resolve(window[component]))
+      .catch((err) => reject(err))
   }
 }
 

@@ -82,7 +82,7 @@ var router = new Router({
       component: Home,
       name: 'home',
       meta: {
-        title: 'Group Income'  // page title. see issue #45
+        title: 'Group Income' // page title. see issue #45
       },
       beforeEnter: createEnterGuards(homeGuard)
     },
@@ -91,7 +91,7 @@ var router = new Router({
       component: SignUp,
       name: SignUp.name, // route name. important!
       meta: {
-        title: 'Sign Up'  // page title. see issue #45
+        title: 'Sign Up' // page title. see issue #45
       },
       beforeEnter: createEnterGuards(signupGuard)
     },

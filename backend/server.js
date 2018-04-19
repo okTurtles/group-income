@@ -3,7 +3,7 @@
 import * as db from './database'
 import Hapi from 'hapi'
 import GiAuth from './auth'
-import {HashableEntry} from '../shared/events'
+import typeof {HashableEntry} from '../shared/events'
 import {bold} from 'chalk'
 
 export var hapi = new Hapi.Server({

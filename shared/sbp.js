@@ -14,7 +14,7 @@ var pendingCalls = {} // allows sbp to be called regardless of module load order
 
 const DOMAIN_SELECTOR_REGEX = /^([^/]+)(.+)/
 
-function sbp (path: string, ...data?: Array<*>) {
+function sbp (path: string, ...data: any) {
   var [, name, selector] = DOMAIN_SELECTOR_REGEX.exec(path)
   var domain = domains[name]
   // Filters can perform additional functions, and by returning `false` they
@@ -45,7 +45,7 @@ sbp.registerDomain = function (domain: string, selectors: {[string]: Function}) 
 // During startup of app, use this instead of sbp function to call selectors
 // on domains that haven't been registered yet. The selector gets run immediately
 // once the corresponding domain is registered via registerDomain.
-sbp.ready = function (path: string, ...data?: Array<*>) {
+sbp.ready = function (path: string, ...data: any) {
   // a call might happen to a selector for domains that haven't been registered
   // yet, due to module load order. So we save them and run them later.
   var [, domain] = DOMAIN_SELECTOR_REGEX.exec(path)
