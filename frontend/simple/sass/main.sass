@@ -14,6 +14,8 @@ $grey: #aeb1b5
 $grey-light: #d3d6db
 $grey-lighter: #f5f7fa
 
+$success: #a0d10e
+
 $blue: #42afe3
 $green: #78c848
 $orange: #f68b39
@@ -26,8 +28,33 @@ $family-sans-serif: "Helvetica Neue", "Helvetica", "Arial", sans-serif
 @import "bulma"
 
 // -----------------------------
+// available on new Bulma version
+// -----------------------------
+
+.is-size-7
+  font-size: 0.75rem
+
+.is-italic
+  font-style: italic
+
+
+.has-background-success
+  background: $success
+
+
+.has-background-warning
+  background: #f89201
+
+
+.has-background-danger
+  background: $danger
+
+
+// -----------------------------
 // import our styles
 // -----------------------------
 
 @import "forgotten-resets"
 @import "groupincome"
+@import "bulma_overrides/index"
+@import "utils/index"

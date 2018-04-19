@@ -17,12 +17,22 @@
         <h1 id="groupName" class="title is-1">{{ currentGroupState.groupName }}</h1>
         <p id="sharedValues">{{ currentGroupState.sharedValues }}</p>
 
-        <group-members />
+        <voting-banner class="widget"
+          who="Sam"
+          propose="changing"
+          what="min income"
+          change="$250"
+          votesCount="3" />
 
-        <group-support-history :history="[1.2, 1, .85, .95, 1.05, .35]" />
+        <group-members class="widget" />
 
-        <group-settings :group="currentGroupState" />
+        <progress-overview class="widget" />
 
+        <support-history class="widget"
+          :history="[1.2, 1, .85, .95, 1.05, .35]" />
+
+        <group-settings class="widget"
+          :group="currentGroupState" />
       </div>
     </div>
   </section>
@@ -33,14 +43,24 @@
     font-size: 52px;
     color: #616161;
   }
+
+  .widget {
+    margin: 4rem 0;
+  }
+
+  .container {
+    max-width: 960px; // force until rethink layout on larger screens
+  }
 </style>
 <script>
   import {mapGetters} from 'vuex'
   import YourGroupsList from '../components/YourGroupsList.vue'
   import GroupsMinIncome from '../components/GroupsMinIncome.vue'
   import GroupMembers from '../components/GroupMembers.vue'
-  import GroupSupportHistory from '../components/GroupSupportHistory.vue'
+  import SupportHistory from '../components/SupportHistory.vue'
   import GroupSettings from '../components/GroupSettings.vue'
+  import VotingBanner from '../components/VotingBanner.vue'
+  import ProgressOverview from '../components/ProgressOverview.vue'
 
   export default {
     name: 'GroupDashboard',
@@ -54,8 +74,10 @@
       YourGroupsList,
       GroupsMinIncome,
       GroupMembers,
-      GroupSupportHistory,
-      GroupSettings
+      SupportHistory,
+      GroupSettings,
+      VotingBanner,
+      ProgressOverview
     }
   }
 </script>
