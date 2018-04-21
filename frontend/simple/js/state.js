@@ -20,7 +20,7 @@ sbp.registerDomain('vuex', sbp.COMMON_MIXINS.V1.EVENTS)
 
 Vue.use(Vuex)
 var store // this is set and made the default export at the bottom of the file.
-          // we have it declared here to make it accessible in mutations
+// we have it declared here to make it accessible in mutations
 // 'state' is the Vuex state object
 // NOTE: THE STATE CAN ONLY STORE *SERIALIZABLE* OBJECTS! THAT MEANS IF YOU TRY
 //       TO STORE AN INSTANCE OF A CLASS (LIKE A CONTRACT), IT WILL NOT STORE
@@ -238,7 +238,7 @@ const actions = {
   },
   // persisting the state
   async saveSettings (
-      {state}: {state: Object}
+    {state}: {state: Object}
   ) {
     if (state.loggedIn) {
       // var stateCopy = _.cloneDeep(state) // don't think this is necessary

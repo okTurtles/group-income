@@ -6,7 +6,7 @@ export class Key {
   constructor (privKey, pubKey, salt) {
     this.privKey = privKey
     this.pubKey = pubKey // optional
-    this.salt = salt  // optional
+    this.salt = salt // optional
   }
   encrypt (data) {}
   decrypt (data) {}

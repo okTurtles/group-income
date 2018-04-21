@@ -153,35 +153,35 @@ export function streamEntriesSince (contractId: string, hash: string) {
   console.log('streamEntriesSince():', contractId, hash)
   var isBeginning = true
   return knex(contractId).select('*')
-  .where(
-    'id', '>=', knex(contractId).select('id').where('hash', hash).limit(1)
-  )
-  .orderBy('id')
-  .pipe(new Transform({
+    .where(
+      'id', '>=', knex(contractId).select('id').where('hash', hash).limit(1)
+    )
+    .orderBy('id')
+    .pipe(new Transform({
     // NOTE: Hapi cannot handle object mode, but knex forces objectMode (and ignores
     //       me if I try to pass options {objectMode: false}. So we transform the
     //       the objects into JSON, and explicitely configure these paramters:
-    readableObjectMode: false,
-    writableObjectMode: true,
-    transform: function (data, encoding, callback) {
-      var obj = {hash: data.hash}
-      delete data['id']
-      delete data['hash']
-      data.data = JSON.parse(data.data)
-      obj.entry = data
-      var string = JSON.stringify(obj)
-      if (isBeginning) {
-        isBeginning = false
-        callback(null, '[' + string)
-      } else {
-        callback(null, ',' + string)
+      readableObjectMode: false,
+      writableObjectMode: true,
+      transform: function (data, encoding, callback) {
+        var obj = {hash: data.hash}
+        delete data['id']
+        delete data['hash']
+        data.data = JSON.parse(data.data)
+        obj.entry = data
+        var string = JSON.stringify(obj)
+        if (isBeginning) {
+          isBeginning = false
+          callback(null, '[' + string)
+        } else {
+          callback(null, ',' + string)
+        }
+      },
+      flush: function (callback) {
+        this.push(']')
+        callback()
       }
-    },
-    flush: function (callback) {
-      this.push(']')
-      callback()
-    }
-  }))
+    }))
 }
 
 // =======================

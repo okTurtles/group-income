@@ -146,8 +146,8 @@ export default {
           percentage: this.contract.memberApprovalPercentage * 0.01,
           candidate: member.state.attributes.name,
           actions: [
-           { contractId: member.state.attributes.mailbox, action: JSON.stringify(invite.toObject()) },
-           { contractId: this.$store.state.currentGroupId, action: JSON.stringify(invited.toObject()) }
+            { contractId: member.state.attributes.mailbox, action: JSON.stringify(invite.toObject()) },
+            { contractId: this.$store.state.currentGroupId, action: JSON.stringify(invited.toObject()) }
           ],
           initiator: this.$store.state.loggedIn.name,
           initiationDate: new Date().toString()

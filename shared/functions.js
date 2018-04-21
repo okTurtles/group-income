@@ -14,8 +14,8 @@ export function makeResponse (
   //   // This type wrangling voodoo comes courtesy of: https://github.com/facebook/flow/issues/3041#issuecomment-268027891
   if (type === RESPONSE_TYPE.ERROR) {
     return err
-    ? {type, data, err: typeof err === 'string' ? err : err.message}
-    : {type, err: String(data)}
+      ? {type, data, err: typeof err === 'string' ? err : err.message}
+      : {type, err: String(data)}
   }
   return {type, data}
 }
