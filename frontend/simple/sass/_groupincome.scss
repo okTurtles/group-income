@@ -1,6 +1,3 @@
-// Group Income's utilities have .gi- as prefix
-// to differentiate them from Bulma's utilities
-
 @font-face {
   font-family: Foco;
   src: url(../fonts/FocoBold.ttf);
@@ -12,8 +9,8 @@ $gi-brand-orange: #f89201;
 $gi-brand-green: #a0d10e;
 $gi-brand-blue: #5dc8f0;
 
-// ------ Utilities ------ //
 
+// ------ Utilities ------ //
 .gi- {
   &foco-font {
     font-family: Foco;

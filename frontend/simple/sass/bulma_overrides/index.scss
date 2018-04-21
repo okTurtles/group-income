@@ -1,32 +1,4 @@
-/**
-# How to work with Bulma override's with a module approach:
-
-1. Override variables related to that module
-2. Import the respective module
-3. Override Styles
-
-
-### Override Styles
-Add `.gi-` prefix when adding a new modifier to Bulma's Styles
-when variables are not availabe. Benetifs:
-- Easily understand if that code is Bulma's or ours.
-- Prevent Bulma's naming conflicts with our code on future updates.
-
-/* example on message component:
-
-Bulma's default `border-width` value is `0 0 0 3px` and we want a modifier to be just `1px`.
-
-```scss
-.message-body {
-	&.gis-is-box { border-width: 1px }
-}
-
-<div class="message-body gi-is-box">
-```
-
-*/
-
-// Note: Order of modules needs to be similar to bulma source so all CSS works correctly
+// Note: The order of the module needs to be the same to Bulma's so CSS works correctly
 @import 'utilities/index';
 @import 'base/index';
 @import 'elements/index';
