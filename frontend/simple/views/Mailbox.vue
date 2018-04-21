@@ -113,7 +113,7 @@
             </tr>
             </tbody>
           </table>
-          <table id="Invites" class="table is-bordered is-striped is-narrow" v-if="(mode === 'Inbox') && invites.length">
+          <table id="Invites" class="table is-bordered is-striped is-narrow is-fullwidth" v-if="(mode === 'Inbox') && invites.length">
             <thead>
             <tr>
               <th><i18n>Invites</i18n></th>
@@ -140,7 +140,7 @@
             </tr>
             </tbody>
           </table>
-          <table class="table is-bordered is-striped is-narrow"
+          <table class="table is-bordered is-striped is-narrow is-fullwidth"
             data-test="inbox"
             v-if="(mode === 'Inbox')">
             <thead>

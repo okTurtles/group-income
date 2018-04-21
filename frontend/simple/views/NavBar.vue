@@ -59,43 +59,40 @@
             <i18n>Login</i18n>
           </button>
         </div>
-        <div class="navbar-item is-hoverable" v-if="$store.state.loggedIn">
-          <div class="navbar-item has-dropdown is-hoverable gi">
-            <a class="navbar-link">
-              <strong>
-                {{ ($store.getters.currentUserIdentityContract &&
-                  $store.getters.currentUserIdentityContract.attributes &&
-                  $store.getters.currentUserIdentityContract.attributes.displayName ?
-                    $store.getters.currentUserIdentityContract.attributes.displayName :
-                    null) ||
-                  $store.state.loggedIn.name
-                }}
-              </strong>
-              <img class="avatar" v-if="$store.getters.currentUserIdentityContract &&
+        <div class="navbar-item has-dropdown is-hoverable gi"v-if="$store.state.loggedIn">
+          <a class="navbar-link">
+            <strong>
+              {{ ($store.getters.currentUserIdentityContract &&
                 $store.getters.currentUserIdentityContract.attributes &&
-                $store.getters.currentUserIdentityContract.attributes.picture"
-                v-bind:src="$store.getters.currentUserIdentityContract.attributes.picture"
-              >
+                $store.getters.currentUserIdentityContract.attributes.displayName ?
+                  $store.getters.currentUserIdentityContract.attributes.displayName :
+                  null) ||
+                $store.state.loggedIn.name
+              }}
+            </strong>
+            <img class="avatar" v-if="$store.getters.currentUserIdentityContract &&
+              $store.getters.currentUserIdentityContract.attributes &&
+              $store.getters.currentUserIdentityContract.attributes.picture"
+              v-bind:src="$store.getters.currentUserIdentityContract.attributes.picture"
+            >
+          </a>
+          <div class="navbar-dropdown is-right">
+            <router-link
+              class="navbar-item"
+              data-test="ProfileLink"
+              to="user"
+              v-show="$store.state.loggedIn"
+            >
+              <i18n>Profile</i18n>
+            </router-link>
+            <a class="navbar-item has-text-danger"
+              href="#"
+              data-test="LogoutBtn"
+              v-if="$store.state.loggedIn"
+              @click.prevent="logout"
+            >
+              <i18n>Signout</i18n>
             </a>
-
-            <div class="navbar-dropdown is-right">
-              <router-link
-                class="navbar-item"
-                data-test="ProfileLink"
-                to="user"
-                v-show="$store.state.loggedIn"
-              >
-                <i18n>Profile</i18n>
-              </router-link>
-              <a class="navbar-item has-text-danger"
-                href="#"
-                data-test="LogoutBtn"
-                v-if="$store.state.loggedIn"
-                @click.prevent="logout"
-              >
-                <i18n>Signout</i18n>
-              </a>
-            </div>
           </div>
         </div>
       </div>

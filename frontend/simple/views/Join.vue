@@ -80,7 +80,7 @@
             </div>
           </div>
           <div class="column is-one-quarter">
-            <table class="table is-bordered is-striped is-narrow">
+            <table class="table is-bordered is-striped is-narrow is-fullwidth">
             <thead>
             <tr>
               <th><i18n>Group Members</i18n></th>
