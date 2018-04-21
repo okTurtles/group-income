@@ -1,22 +1,18 @@
-// stylelint-disable at-rule-empty-line-before, max-empty-lines
+// stylelint-disable at-rule-empty-line-before
 
-
-// Group Income Overrides:
-// Styles that can't be override by Bulma's variables
-// Add a `.gi` modifier to avoid !important usage
+// Bulma overrides should be done before importing Bulma
 @import 'utilities/index';
 @import 'base/index';
+
+// Add `.gi` modifier to override Bulma's Styles
+// when variables are not availabe
+// avoiding the use of !important
+@import 'elements/index';
 @import 'components/index';
 
-
-// All Bulma modules.
+// All Bulma elements and components modules.
 // Those we don't use are commented.
 // Once we need them, just uncomment it.
-
-@import "../../node_modules/bulma/sass/utilities/all";
-
-@import "../../node_modules/bulma/sass/base/all";
-
 @import "../../node_modules/bulma/sass/elements/box";
 @import "../../node_modules/bulma/sass/elements/button";
 @import "../../node_modules/bulma/sass/elements/container";

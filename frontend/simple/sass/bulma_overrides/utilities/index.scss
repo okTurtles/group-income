@@ -1,1 +1,4 @@
 @import 'variables';
+
+// Import Bulma's utilities module to be available on further overrides
+@import "../../node_modules/bulma/sass/utilities/all";
