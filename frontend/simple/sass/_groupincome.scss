@@ -1,25 +1,28 @@
+// Group Income's utilities have .gi- as prefix
+// to differentiate them from Bulma's utilities
+
 @font-face {
   font-family: Foco;
   src: url(../fonts/FocoBold.ttf);
 }
 
-// All GroupIncome utilities have .gi- as prefix
-// to differentiate them from Bulma utilities
+// ------ Brand colors ------ //
+$gi-primary-orange: #f89201;
+$gi-primary-green: #a0d10e;
+$gi-primary-blue: #5dc8f0;
 
+// ------ Utilities ------ //
 .gi- {
   &foco-font {
     font-family: Foco;
   }
-}
 
-// Colors variants matching the background
+  &is-opacity-1 {
+    opacity: 0.8;
+  }
 
-.is-opacity-1 {
-  opacity: 0.8;
-}
-
-// Elipsis text
-.is-ellipsis {
-  overflow: hidden;
-  text-overflow: ellipsis;
+  &is-ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }

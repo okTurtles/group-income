@@ -8,14 +8,14 @@
         <ul class="columns is-mobile is-narrow is-multiline is-marginless">
           <li v-for="(member, i) in profilesForGroupMock"
             class="column is-narrow badge">
-            <h4 class="badge-name is-ellipsis is-size-7">
+            <h4 class="badge-name is-size-7 gi-is-ellipsis ">
               {{ member.username }}
             </h4>
 
             <img class="badge-img" :src="member.photo" alt="" />
 
             <!-- TODO: How to handle color / multiple tags logic? -->
-            <span class="tag badge-tag is-ellipsis">
+            <span class="tag badge-tag gi-is-ellipsis">
               {{ member.pledge }}
             </span>
           </li>
