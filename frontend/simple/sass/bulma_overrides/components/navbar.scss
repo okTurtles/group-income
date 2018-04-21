@@ -10,7 +10,7 @@
 // Copied Paste from Bulma's source
 // Force navbar-dropdown to show on mobile and tablet too.
 // Keep it here until we design navbar to be full responsive
-.has-dropdown.gi {
+.has-dropdown.gi-is-profile {
   .navbar-link {
     &::after {
       border: 3px solid $link;

@@ -59,7 +59,9 @@
             <i18n>Login</i18n>
           </button>
         </div>
-        <div class="navbar-item has-dropdown is-hoverable gi"v-if="$store.state.loggedIn">
+        <div id="OpenProfileDropDown"
+          class="navbar-item has-dropdown is-hoverable gi-is-profile"
+          v-if="$store.state.loggedIn">
           <a class="navbar-link">
             <strong>
               {{ ($store.getters.currentUserIdentityContract &&
