@@ -1,12 +1,12 @@
 <template>
-  <section class="section">
-    <form novalidate ref="form"
+  <section class="section level">
+    <form class="signup level-item"
+      novalidate ref="form"
       name="formData"
-      class="signup columns is-centered"
       data-test="signup"
       @submit.prevent="submit"
     >
-      <div class="box column is-narrow">
+      <div class="box gi-box">
         <div class="level is-mobile">
           <div class="level-left">
             <div class="level-item">
@@ -104,10 +104,7 @@
   </section>
 </template>
 <style scoped>
-.signup .level-item { margin-top: 10px; }
-.signup .level.top-align { align-items: flex-start; }
-
-.is-narrow {
+.gi-box {
   width: 25rem;
   max-width: 100%;
 }

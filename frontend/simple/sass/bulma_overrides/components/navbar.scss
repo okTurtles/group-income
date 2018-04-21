@@ -1,14 +1,15 @@
-@import "../../node_modules/bulma/sass/utilities/all";
+@import "../../node_modules/bulma/sass/components/navbar";
 
-.navbar.gi {
+.navbar {
   box-shadow: none;
   display: flex;
   justify-content: space-between;
-  padding-top: 0.5rem;
+  padding: 1rem 0;
 }
 
-// Force dropdown to show on tablet too.
-// Keep it here until navbar is full responsive
+// Copied Paste from Bulma's source
+// Force navbar-dropdown to show on mobile and tablet too.
+// Keep it here until we design navbar to be full responsive
 .has-dropdown.gi {
   .navbar-link {
     &::after {
