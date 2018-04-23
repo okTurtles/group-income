@@ -66,9 +66,7 @@
             <strong>
               {{ ($store.getters.currentUserIdentityContract &&
                 $store.getters.currentUserIdentityContract.attributes &&
-                $store.getters.currentUserIdentityContract.attributes.displayName ?
-                  $store.getters.currentUserIdentityContract.attributes.displayName :
-                  null) ||
+                $store.getters.currentUserIdentityContract.attributes.displayName) ||
                 $store.state.loggedIn.name
               }}
             </strong>
