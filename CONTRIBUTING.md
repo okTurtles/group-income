@@ -24,10 +24,9 @@ Then, [tell folks what you'll be working on](https://gitter.im/okTurtles/group-i
 Everyone must follow the rules below (inspired by the [C4.1](http://hintjens.com/blog:93) process) to submit _code_ (documentation may be edited directly by maintainers):
 
 1. **Always** work in your own fork and submit pull requests (PRs) to `master`.
-2. **Always** submit a _minimal and accurate answer_ to any issue. The simplest solution is the best solution.
-3. **Always** add/update tests for any new/modified functionality. (:exclamation:)
-4. **Always** make sure your PR passes all tests (`grunt test`).
-5. **Always** ensure your PR adheres to the **[Contribution Policy](#contribution-policy)** described below.
+2. **Always** add/update tests for any new/modified functionality. (:exclamation:)
+3. **Always** make sure your PR passes all tests (`grunt test`).
+4. **Always** ensure your PR adheres to the **[Contribution Policy](#contribution-policy)** described below.
 
 ### 3. Follow this Contribution Policy
 
@@ -42,11 +41,12 @@ This contribution policy will evolve over time. For now it is based on a mixture
 #### Pull Request Requirements (:exclamation:)
 
 1. A PR **SHOULD** be a minimal and accurate answer to exactly one identified and agreed problem.
-2. A PR **SHALL NOT** include non-trivial code from other projects unless the Contributor is the original author of that code.
-3. A PR **MUST** pass all tests on at least the principle target platform.
-4. A PR **MUST** include new tests for any new functionality introduced.
-5. A PR **SHOULD** avoid "callback-hell" style and instead prefer "async/await" style.
-6. A PR **MUST** follow the requirements spelled out in this project's [Style Guide](docs/Style-Guide.md).
+2. A PR **SHOULD** follow the scout rule: leave the code cleaner than you found it.
+3. A PR **SHALL NOT** include non-trivial code from other projects unless the Contributor is the original author of that code.
+4. A PR **MUST** pass all tests on at least the principle target platform.
+5. A PR **MUST** include new tests for any new functionality introduced.
+6. A PR **SHOULD** avoid "callback-hell" style and instead prefer "async/await" style.
+7. A PR **MUST** follow the requirements spelled out in this project's [Style Guide](docs/Style-Guide.md).
 
 ## How to submit an issue
 
