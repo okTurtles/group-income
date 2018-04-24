@@ -10,7 +10,7 @@
         <router-link
           active-class="is-active"
           class="navbar-item gi-item"
-          data-test="CreateGroup"
+          data-test="createGroup"
           to="new-group"
         >
           <i18n>Start a Group</i18n>
@@ -27,12 +27,12 @@
         <router-link
           active-class ="is-active"
           class="navbar-item gi-item"
-          data-test="MailboxLink"
+          data-test="mailboxLink"
           to="mailbox"
         >
           <i18n>Inbox</i18n>
           <span
-            data-test="AlertNotification"
+            data-test="alertNotification"
             class="icon"
             style="color: #ed6c63;"
             v-if="$store.getters.unreadMessageCount || $store.getters.proposals.length"
@@ -45,7 +45,7 @@
         <div class="navbar-item signUp-item" v-if="!$store.state.loggedIn">
           <router-link
             class="button is-success"
-            data-test="SignupBtn"
+            data-test="signupBtn"
             to="signup"
           >
             <i18n>Sign Up</i18n>
@@ -53,13 +53,13 @@
         </div>
         <div class="navbar-item" v-if="!$store.state.loggedIn">
           <button class="button is-primary"
-            data-test="LoginBtn"
+            data-test="loginBtn"
             @click="showLoginModal"
           >
             <i18n>Login</i18n>
           </button>
         </div>
-        <div id="OpenProfileDropDown"
+        <div data-test="openProfileDropDown"
           class="navbar-item has-dropdown is-hoverable gi-is-profile"
           v-if="$store.state.loggedIn">
           <a class="navbar-link">
@@ -79,7 +79,7 @@
           <div class="navbar-dropdown is-right">
             <router-link
               class="navbar-item"
-              data-test="ProfileLink"
+              data-test="profileLink"
               to="user"
               v-show="$store.state.loggedIn"
             >
@@ -87,7 +87,7 @@
             </router-link>
             <a class="navbar-item has-text-danger"
               href="#"
-              data-test="LogoutBtn"
+              data-test="logoutBtn"
               v-if="$store.state.loggedIn"
               @click.prevent="logout"
             >
