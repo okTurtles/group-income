@@ -41,7 +41,7 @@ This contribution policy will evolve over time. For now it is based on a mixture
 #### Pull Request Requirements (:exclamation:)
 
 1. A PR **SHOULD** be a minimal and accurate answer to exactly one identified and agreed problem.
-2. A PR **SHOULD** follow the scout rule: leave the code cleaner than you found it.
+2. A PR **SHOULD** follow [the boy scout rule](https://github.com/okTurtles/group-income-simple/issues/383#issuecomment-383381863): leave the code cleaner than you found it when the refactor effort is not too big.
 3. A PR **SHALL NOT** include non-trivial code from other projects unless the Contributor is the original author of that code.
 4. A PR **MUST** pass all tests on at least the principle target platform.
 5. A PR **MUST** include new tests for any new functionality introduced.
