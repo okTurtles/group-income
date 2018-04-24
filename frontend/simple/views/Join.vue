@@ -1,6 +1,6 @@
 <template>
     <section class="section full-screen">
-      <div class="centered" >
+      <div>
         <div class="columns">
           <div class="column is-one-half">
             <div class="center ">
@@ -80,7 +80,7 @@
             </div>
           </div>
           <div class="column is-one-quarter">
-            <table class="table is-bordered is-striped is-narrow">
+            <table class="table is-bordered is-striped is-narrow is-fullwidth">
             <thead>
             <tr>
               <th><i18n>Group Members</i18n></th>

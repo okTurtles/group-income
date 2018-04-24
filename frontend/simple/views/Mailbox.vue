@@ -1,6 +1,6 @@
 <template>
   <section class="section full-screen">
-    <div class="centered" >
+    <div>
       <div class="columns">
         <div class="column is-one-quarter">
           <div class="panel">
@@ -113,7 +113,7 @@
             </tr>
             </tbody>
           </table>
-          <table id="Invites" class="table is-bordered is-striped is-narrow" v-if="(mode === 'Inbox') && invites.length">
+          <table id="Invites" class="table is-bordered is-striped is-narrow is-fullwidth" v-if="(mode === 'Inbox') && invites.length">
             <thead>
             <tr>
               <th><i18n>Invites</i18n></th>
@@ -140,7 +140,7 @@
             </tr>
             </tbody>
           </table>
-          <table class="table is-bordered is-striped is-narrow"
+          <table class="table is-bordered is-striped is-narrow is-fullwidth"
             data-test="inbox"
             v-if="(mode === 'Inbox')">
             <thead>
@@ -185,7 +185,19 @@
 </template>
 <style>
 .signup .level-item { margin-top: 10px; }
+
 .signup .level.top-align { align-items: flex-start; }
+
+.unread {
+  display: inline-block;
+  padding: 2px 5px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  color: white;
+  background-color: #1fc8db;
+  border-radius: 20px;
+}
 </style>
 <script>
 import _ from 'lodash'

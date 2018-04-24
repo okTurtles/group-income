@@ -81,27 +81,27 @@ $gapHistory: 0.5rem; // force reduced gap - modifier .is-n avaiable on new bulma
 
 </style>
 <script>
-  export default {
-    name: 'GroupSupportHistory',
-    props: {
-      history: Array
+export default {
+  name: 'GroupSupportHistory',
+  props: {
+    history: Array
+  },
+  data () {
+    return {
+      months: ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+    }
+  },
+  computed: {
+  },
+  methods: {
+    getPercentage (percentage) {
+      return percentage >= 1 ? '100%' : `${Math.floor(percentage * 100)}%`
     },
-    data () {
-      return {
-        months: ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
-      }
-    },
-    computed: {
-    },
-    methods: {
-      getPercentage (percentage) {
-        return percentage >= 1 ? '100%' : `${Math.floor(percentage * 100)}%`
-      },
-      getResult (percentage) {
-        if (percentage < 0.6) return 'has-background-danger'
-        if (percentage < 1) return 'has-background-warning'
-        return 'has-background-success'
-      }
+    getResult (percentage) {
+      if (percentage < 0.6) return 'has-background-danger'
+      if (percentage < 1) return 'gi-has-background-warning'
+      return 'has-background-success'
     }
   }
+}
 </script>

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h1 class="title is-2 has-text-centered"><i18n>Group Purpose</i18n></h1>
+    <h1 class="subtitle is-2 has-text-centered"><i18n>Group Purpose</i18n></h1>
     <div class="field">
       <div class="control">
         <textarea

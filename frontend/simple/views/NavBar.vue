@@ -1,162 +1,132 @@
 <template>
-  <div>
-    <!-- see: http://bulma.io/documentation/components/nav/ -->
-    <nav class="nav">
-      <div class="container">
-        <div class="nav-left">
-          <router-link to="home" class="nav-item" @click="toggleTimeTravel">
-            <img src="/simple/images/logo-transparent.png">
-          </router-link>
-        </div>
-        <div class="nav-center">
-          <!-- TODO: use v-for to dynamically generate these? -->
-          <router-link
-            active-class="is-active"
-            class="nav-item is-tab"
-            to="new-group"
-            v-if="$store.state.loggedIn"
-            data-test="createGroup"
-          >
-            <i18n>Start a Group</i18n>
-          </router-link>
-          <router-link
-            active-class="is-active"
-            class="nav-item is-tab"
-            to="pay-group"
-            v-if="$store.state.loggedIn"
-          >
-            <i18n>Pay Group</i18n>
-          </router-link>
-          <router-link
-            active-class ="is-active"
-            class="nav-item"
-            to="mailbox"
-            data-test="mailboxLink"
-            v-if="$store.state.loggedIn"
-          >
-            <i18n>Inbox</i18n>
-            <span
-              class="icon"
-              style="color: #ed6c63;"
-              data-test="alertNotification"
-              v-if="$store.getters.unreadMessageCount || $store.getters.proposals.length"
-            >
-              <i class="fa fa-bell"></i>
-            </span>
-          </router-link>
-        </div>
-        <div class="nav-right">
-          <span class="nav-item control">
-            <router-link
-              class="button is-success"
-              style="margin-right: 15px;"
-              to="signup"
-              v-if="!$store.state.loggedIn"
-              data-test="signupBtn"
-            >
-              <i18n>Sign Up</i18n>
-            </router-link>
-            <a
-              class="button is-primary"
-              href="#"
-              v-if="!$store.state.loggedIn"
-              @click.prevent="showLoginModal"
-              data-test="loginBtn"
-            >
-              <i18n>Login</i18n>
-            </a>
+  <nav class="navbar container">
+    <div class="navbar-start">
+      <router-link to="home" class="navbar-item gi-item" @click="toggleTimeTravel">
+        <img src="/simple/images/logo-transparent.png"  alt="Groupincome's logo">
+      </router-link>
+    </div>
+      <div class="level gi-center" v-if="$store.state.loggedIn">
+        <!-- TODO: use v-for to dynamically generate these? -->
+        <router-link
+          active-class="is-active"
+          class="navbar-item gi-item"
+          data-test="createGroup"
+          to="new-group"
+        >
+          <i18n>Start a Group</i18n>
+        </router-link>
 
-            <div class="button profile-link"
-              data-test="openProfileDropDown"
-              v-if="$store.state.loggedIn" @click="toggleDropdown">
-              <strong>{{ ($store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.displayName ? $store.getters.currentUserIdentityContract.attributes.displayName : null) || $store.state.loggedIn.name}}</strong>
-              <img v-if="$store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.picture" v-bind:src="$store.getters.currentUserIdentityContract.attributes.picture">
-              <i class="fa fa-caret-down" style="color: #d8d8d8;" aria-hidden="true"></i>
-            </div>
+        <router-link
+          active-class="is-active"
+          class="navbar-item gi-item"
+          to="pay-group"
+        >
+          <i18n>Pay Group</i18n>
+        </router-link>
+
+        <router-link
+          active-class ="is-active"
+          class="navbar-item gi-item"
+          data-test="mailboxLink"
+          to="mailbox"
+        >
+          <i18n>Inbox</i18n>
+          <span
+            data-test="alertNotification"
+            class="icon"
+            style="color: #ed6c63;"
+            v-if="$store.getters.unreadMessageCount || $store.getters.proposals.length"
+          >
+            <i class="fa fa-bell"></i>
           </span>
-        </div>
-        <div class="menu-dropdown" v-if="dropdownVisible">
-          <div class="button profile-link" id="CloseProfileDropDown" v-if="$store.state.loggedIn" @click="toggleDropdown">
-            <strong>{{ ($store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.displayName ? $store.getters.currentUserIdentityContract.attributes.displayName : null) || $store.state.loggedIn.name}}</strong>
-            <img v-if="$store.getters.currentUserIdentityContract && $store.getters.currentUserIdentityContract.attributes && $store.getters.currentUserIdentityContract.attributes.picture" v-bind:src="$store.getters.currentUserIdentityContract.attributes.picture">
-            <i class="fa fa-caret-down" style="color: #d8d8d8;" aria-hidden="true"></i>
-          </div>
-          <router-link
-            class="nav-item is-tab"
-            active-class="is-active"
-            to="user"
-            data-test="profileLink"
-            v-show="$store.state.loggedIn"
-          >
-            <i18n>Profile</i18n>
-          </router-link>
-          <a
-            class="is-danger"
-            href="#"
-            v-if="$store.state.loggedIn"
-            @click.prevent="logout"
-            data-test="logoutBtn"
-          >
-            <i18n>Signout</i18n>
-          </a>
-        </div>
-        <login-modal
-          v-if="loginModalVisible"
-          @close="closeLoginModal"
-        />
-        <time-travel v-show="showTimeTravel" :toggleVisibility="toggleTimeTravel" />
+        </router-link>
       </div>
-    </nav>
-  </div>
+      <div class="navbar-end is-flex">
+        <div class="navbar-item signUp-item" v-if="!$store.state.loggedIn">
+          <router-link
+            class="button is-success"
+            data-test="signupBtn"
+            to="signup"
+          >
+            <i18n>Sign Up</i18n>
+          </router-link>
+        </div>
+        <div class="navbar-item" v-if="!$store.state.loggedIn">
+          <button class="button is-primary"
+            data-test="loginBtn"
+            @click="showLoginModal"
+          >
+            <i18n>Login</i18n>
+          </button>
+        </div>
+        <div data-test="openProfileDropDown"
+          class="navbar-item has-dropdown is-hoverable gi-is-profile"
+          v-if="$store.state.loggedIn">
+          <a class="navbar-link">
+            <strong>
+              {{ ($store.getters.currentUserIdentityContract &&
+                $store.getters.currentUserIdentityContract.attributes &&
+                $store.getters.currentUserIdentityContract.attributes.displayName) ||
+                $store.state.loggedIn.name
+              }}
+            </strong>
+            <img class="avatar" v-if="$store.getters.currentUserIdentityContract &&
+              $store.getters.currentUserIdentityContract.attributes &&
+              $store.getters.currentUserIdentityContract.attributes.picture"
+              v-bind:src="$store.getters.currentUserIdentityContract.attributes.picture"
+            >
+          </a>
+          <div class="navbar-dropdown is-right">
+            <router-link
+              class="navbar-item"
+              data-test="profileLink"
+              to="user"
+              v-show="$store.state.loggedIn"
+            >
+              <i18n>Profile</i18n>
+            </router-link>
+            <a class="navbar-item has-text-danger"
+              href="#"
+              data-test="logoutBtn"
+              v-if="$store.state.loggedIn"
+              @click.prevent="logout"
+            >
+              <i18n>Signout</i18n>
+            </a>
+          </div>
+        </div>
+      </div>
+      <login-modal
+        v-if="loginModalVisible"
+        @close="closeLoginModal"
+      />
+      <time-travel v-show="showTimeTravel" :toggleVisibility="toggleTimeTravel" />
+    </div>
+  </nav>
 </template>
 <style lang="scss" scoped>
-.nav {
-  margin: 15px 0;
-}
+// @import "../../node_modules/bulma/sass/utilities/all";
 
-div.nav-left {
-  overflow: visible;
-  z-index: 10;
-
-  a {
-    background-color: #fff;
+.gi-center {
+  &.level {
+    margin-bottom: 0;
   }
 }
 
-div.nav-center {
-  flex-shrink: inherit;
+.navbar-item.gi-item {
+  background-color: transparent;
+  // background-color: $primary;
 }
 
-.profile-link {
-  border: 0;
-
-  &:active {
-    box-shadow: none;
-  }
-
-  img {
-    border-radius: 999px;
-    max-height: 43px;
-    margin-left: 15px;
-    margin-right: 8px;
-  }
+.signUp-item {
+  padding-right: 0;
 }
 
-.menu-dropdown {
-  background: whitesmoke;
-  border-radius: 6px;
-  padding: 14px 10px 15px;
-  position: absolute;
-  top: -6px;
-  right: 2px;
-  text-align: center;
-  z-index: 10;
-
-  .button {
-    background: none;
-  }
+.avatar {
+  border-radius: 50%;
+  max-height: 2.5rem;
+  margin-left: 1rem;
 }
-
 </style>
 <script>
 import Vue from 'vue'
@@ -190,7 +160,6 @@ export default {
       }
     },
     logout () {
-      this.dropdownVisible = false
       this.$store.dispatch('logout')
     },
     showLoginModal () {
@@ -203,16 +172,12 @@ export default {
       if (!event.altKey) return
       event.preventDefault()
       this.showTimeTravel = !this.showtimetravel
-    },
-    toggleDropdown () {
-      this.dropdownVisible = !this.dropdownVisible
     }
   },
   data () {
     return {
       showTimeTravel: false,
-      loginModalVisible: false,
-      dropdownVisible: false
+      loginModalVisible: false
     }
   }
 }

@@ -1,0 +1,7 @@
+@import "../../node_modules/bulma/sass/elements/form";
+
+.input {
+  @include placeholder {
+    color: rgba($input-color, 0.4); // To improve A11Y
+  }
+}

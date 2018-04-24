@@ -1,6 +1,6 @@
 <template>
-  <div class="rulesStep has-text-centered" data-test="rulesStep">
-    <h1 class="title is-2"><i18n>Voting Rules</i18n></h1>
+  <div class="has-text-centered" data-test="rulesStep">
+    <h1 class="subtitle is-2"><i18n>Voting Rules</i18n></h1>
     <p class="content"><i18n>What percentage approval is necessary to adjust the group rules?</i18n></p>
     <div class="columns">
       <div class="column">
@@ -19,7 +19,7 @@
             circleColor="#69707a"
           >
           </circle-slider>
-          <p class="title is-6"><i18n>Change Rules</i18n></p>
+          <p class="subtitle is-6"><i18n>Change Rules</i18n></p>
         </div>
       </div>
       <div class="column">
@@ -38,7 +38,7 @@
             circleColor="#69707a"
           >
           </circle-slider>
-          <p class="title is-6"><i18n>Add Member</i18n></p>
+          <p class="subtitle is-6"><i18n>Add Member</i18n></p>
         </div>
       </div>
       <div class="column">
@@ -57,13 +57,13 @@
             circleColor="#69707a"
           >
           </circle-slider>
-          <p class="title is-6"><i18n>Remove Member</i18n></p>
+          <p class="subtitle is-6"><i18n>Remove Member</i18n></p>
         </div>
       </div>
     </div>
     <transition name="open">
-      <div class="message is-warning" v-if="!superMajority">
-        <div class="message-body">
+      <div class="message has-text-left is-warning" v-if="!superMajority">
+        <div class="message-body gi-box">
           <i18n>The percentage value you are choosing is most likely too low
           for a decision that can have a potentially significant impact
           on a person’s life. Please consider using a supermajority threshold.</i18n>

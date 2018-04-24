@@ -8,7 +8,17 @@
           </router-view>
         </transition>
 
-        <div class="field step-controls">
+        <div class="field is-grouped is-grouped-right form-actions">
+          <p class="control" v-if="currentStep !== 0">
+            <button
+              class="button is-light is-large"
+              @click="prev"
+              :disabled="!this.currentStep"
+              data-test="prevBtn"
+            >
+              <i18n>Back</i18n>
+            </button>
+          </p>
           <p class="control" v-if="currentStep + 1 < config.steps.length">
             <button
               class="button is-success is-large"
@@ -35,16 +45,6 @@
               </span>
             </button>
           </p>
-          <p class="control">
-            <button
-              class="button is-light is-large"
-              @click="prev"
-              :disabled="!this.currentStep"
-              data-test="prevBtn"
-            >
-              <i18n>Back</i18n>
-            </button>
-          </p>
         </div>
         <article class="message is-danger" v-if="errorMsg">
           <div class="message-body">
@@ -56,6 +56,18 @@
   </section>
 </template>
 <style>
+  /*
+  TODO: Steps layouts should have a template defined
+  so we don't need to repeat markup (titles in this case)
+  */
+  #create-group-page .title.is-1,
+  #create-group-page .title.is-2 {
+    margin-bottom: 3rem;
+  }
+
+  /*
+  TODO: avoid these global rules
+   */
   .fade-enter-active,
   .fade-leave-active {
     transition: opacity 0.2s;
@@ -65,22 +77,10 @@
   .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
     opacity: 0;
   }
-
-  .step-controls {
-    display: flex;
-    flex-direction: row-reverse;
-    align-items: flex-end;
-    justify-content: flex-start;
+</style>
+<style scoped>
+  .form-actions {
     margin-top: 3rem;
-  }
-
-  .step-controls .control {
-    margin-left: 0.25rem;
-  }
-
-  #create-group-page .title.is-1,
-  #create-group-page .title.is-2 {
-    margin-bottom: 3rem;
   }
 </style>
 <script>

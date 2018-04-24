@@ -1,0 +1,11 @@
+@import 'misc';
+@import 'resets';
+
+// Import Bulma's base module to be available on further overrides
+@import "../../node_modules/bulma/sass/base/all";
+
+.gi- {
+  &has-background-warning {
+    background-color: $gi-brand-orange;
+  }
+}

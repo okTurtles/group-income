@@ -7,7 +7,7 @@
     <div class="modal-content" style="width: 300px;">
       <div class="card is-rounded">
         <div class="card-content">
-          <h1 class="title"><i18n>Log In</i18n></h1>
+          <h1 class="title has-text-centered"><i18n>Log In</i18n></h1>
           <div class="field">
             <p class="control has-icon">
               <input

@@ -1,18 +1,12 @@
 <template>
-  <section class="section">
-    <!-- main containers:
-     .container  http://bulma.io/documentation/layout/container/
-     .content    http://bulma.io/documentation/elements/content/
-     .section    http://bulma.io/documentation/layout/section/
-     .block      base/classes.sass (just adds 20px margin-bottom except for last)
-     -->
-    <form novalidate ref="form"
+  <section class="section level">
+    <form class="signup level-item"
+      novalidate ref="form"
       name="formData"
-      class="container signup"
       data-test="signup"
       @submit.prevent="submit"
     >
-      <div class="box centered" style="max-width:400px;">
+      <div class="box gi-box">
         <div class="level is-mobile">
           <div class="level-left">
             <div class="level-item">
@@ -109,9 +103,11 @@
     </form>
   </section>
 </template>
-<style>
-.signup .level-item { margin-top: 10px; }
-.signup .level.top-align { align-items: flex-start; }
+<style scoped>
+.gi-box {
+  width: 25rem;
+  max-width: 100%;
+}
 </style>
 <script>
 import backend from '../js/backend'

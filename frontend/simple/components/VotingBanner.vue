@@ -16,20 +16,20 @@
       </button>
     </div>
 
-    <p class="column is-12 is-size-7 is-italic is-opacity-1">
+    <p class="column is-12 is-size-7 is-italic gi-is-opacity-1">
       {{votesCount}} votes received
     </p>
 	</div>
 </template>
 <script>
-  export default {
-    name: 'VotingBanner',
-    props: {
-      who: String,
-      what: String,
-      change: String,
-      votesCount: String,
-      propose: String
-    }
+export default {
+  name: 'VotingBanner',
+  props: {
+    who: String,
+    what: String,
+    change: String,
+    votesCount: String,
+    propose: String
   }
+}
 </script>
