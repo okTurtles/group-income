@@ -3,8 +3,6 @@
 import should from 'should'
 import { default as LODASH } from './index.js'
 
-require('should-sinon')
-
 describe('[SBP] LODASH domain', () => {
   it('should store simple value', () => {
     let testMap = new Map()
