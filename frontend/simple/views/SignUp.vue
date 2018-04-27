@@ -10,7 +10,7 @@
         <div class="level is-mobile">
           <div class="level-left">
             <div class="level-item">
-              <p class="subtitle"><i18n>Sign Up</i18n></p>
+              <p class="title is-5"><i18n>Sign Up</i18n></p>
             </div>
           </div>
           <div class="level-right">

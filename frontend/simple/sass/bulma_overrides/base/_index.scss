@@ -4,8 +4,6 @@
 // Import Bulma's base module to be available on further overrides
 @import "../../node_modules/bulma/sass/base/all";
 
-.gi- {
-  &has-background-warning {
-    background-color: $gi-brand-orange;
-  }
+.has-text-warning {
+  color: darken($warning, 10%) !important; // A11Y purposes
 }

@@ -1,3 +1,7 @@
+$title-color: $text;
+$title-line-height: 1.2;
+$title-weight: 700;
 $subtitle-weight: $weight-light;
+$subtitle-line-height: $title-line-height;
 
 @import "../../node_modules/bulma/sass/elements/title";

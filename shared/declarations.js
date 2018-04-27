@@ -111,7 +111,7 @@ declare module '../views/Mailbox.vue' { declare module.exports: Object }
 declare module '../views/Join.vue' { declare module.exports: Object }
 declare module '../views/Home.vue' { declare module.exports: Object }
 declare module '../components/MembersCircle.vue' { declare module.exports: Object }
-
+declare module '../views/DesignSystem.vue' { declare module.exports: Object }
 // special case for interface.js
 declare module './interface' { declare module.exports: any }
 

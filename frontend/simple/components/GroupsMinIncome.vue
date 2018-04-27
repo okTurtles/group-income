@@ -1,27 +1,13 @@
 <template>
   <section class="has-text-right">
-    <p class="min-income-label">Min Income</p>
-    <p class="min-income"
+    <p class="min-income-label has-text-grey">Min Income</p>
+    <p class="min-income title is-1 is-marginless"
       data-test="minIncome">
       {{ currency }}{{ group.incomeProvided }}
     </p>
     <a href="#">Propose change</a>
   </section>
 </template>
-<style lang="scss" scoped>
-.min-income-label {
-  font-family: HelveticaNeue-Light;
-  font-size: 16px;
-  color: #928e8e;
-}
-
-.min-income {
-  font-family: HelveticaNeue-Bold;
-  font-size: 48px;
-  color: #616161;
-  line-height: 45px;
-}
-</style>
 <script>
   import { symbol } from '../js/currencies'
   export default {

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h1 class="subtitle is-1 has-text-centered" data-test="summaryStep">
+    <h1 class="title is-1 has-text-centered" data-test="summaryStep">
       <i18n>Review & Finish</i18n>
     </h1>
 
