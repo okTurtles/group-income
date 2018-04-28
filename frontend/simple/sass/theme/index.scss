@@ -1,3 +1,4 @@
+// GI variables
 $gi-opacity-1: 0.75;
 $gi-opacity-2: 0.5;
 $gi-opacity-3: 0.25;
@@ -8,7 +9,7 @@ $gi-spacer-md: $gi-spacer;
 $gi-spacer-sm: $gi-spacer / 2;
 
 // NOTE: Find a way to generated different import themes
-@import 'default';
+@import 'kindergarten-professional';
 
 // Import Bulma's utilities module to be available on further overrides and vue components
 @import "../../node_modules/bulma/sass/utilities/all";
