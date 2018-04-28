@@ -2,32 +2,20 @@
 
 import should from 'should'
 import sinon from 'sinon'
-import { default as LODASH } from '../lodash'
 import { default as DATA } from './index.js'
-import sbp from '../../../sbp'
 
 require('should-sinon')
 
 describe('[SBP] DATA domain', () => {
-  before(() => {
-    // TODO move this to data to make dependency more explicit
-    sbp.registerDomain('okTurtles.lodash', LODASH)
-  })
-
   it('should store simple value', () => {
     DATA['/set']('test', 1)
     should(DATA['/get']('test')).equal(1)
   })
 
-  it('should store simple value in deeper path', () => {
-    DATA['/set']('test/deep', 1)
-    should(DATA['/get']('test/deep')).equal(1)
-  })
-
   it('should reset value', () => {
-    DATA['/set']('test/reset', 1)
-    DATA['/set']('test/reset', 2)
-    should(DATA['/get']('test/reset')).equal(2)
+    DATA['/set']('reset', 1)
+    DATA['/set']('reset', 2)
+    should(DATA['/get']('reset')).equal(2)
   })
 
   it('should add item to collection', () => {
@@ -45,6 +33,35 @@ describe('[SBP] DATA domain', () => {
     DATA['/add']('fnTestCollection', 1)
     DATA['/add']('fnTestCollection', testFn)
     DATA['/get']('fnTestCollection')[1]()
+    testFn.should.be.called()
+  })
+
+  it('should store simple value in deeper path', () => {
+    DATA['/deepSet']('test/deep', 1)
+    should(DATA['/deepGet']('test/deep')).equal(1)
+  })
+
+  it('should reset deep value', () => {
+    DATA['/deepSet']('test/reset', 1)
+    DATA['/deepSet']('test/reset', 2)
+    should(DATA['/deepGet']('test/reset')).equal(2)
+  })
+
+  it('should add item to deep collection', () => {
+    DATA['/deepAdd']('deep/testCollection', 1)
+    DATA['/deepAdd']('deep/testCollection', 2)
+    should(DATA['/deepGet']('deep/testCollection')).deepEqual([1, 2])
+  })
+
+  it('should return undefined for unset path', () => {
+    should(DATA['/deepGet']('deep/testNothing')).deepEqual(undefined)
+  })
+
+  it('should add fn to collection', () => {
+    const testFn = sinon.spy()
+    DATA['/deepAdd']('deep/fnTestCollection', 1)
+    DATA['/deepAdd']('deep/fnTestCollection', testFn)
+    DATA['/deepGet']('deep/fnTestCollection')[1]()
     testFn.should.be.called()
   })
 })
