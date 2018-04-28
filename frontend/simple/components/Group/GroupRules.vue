@@ -5,11 +5,14 @@
     <div class="columns">
       <div class="column">
         <div class="rule">
-          <p class="percent">{{ group.changePercentage }}%</p>
+          <p class="percent">{{ group.changeThreshold | toPercent }}</p>
           <circle-slider
             class="circle-slider"
-            :value="group.changePercentage"
-            @input="value => update('changePercentage', value)"
+            :value="group.changeThreshold"
+            @input="value => update('changeThreshold', value)"
+            :min="0.01"
+            :max="1"
+            :step-size="0.01"
             :side="160"
             :circleWidth="1"
             :progressWidth="2"
@@ -24,11 +27,14 @@
       </div>
       <div class="column">
         <div class="rule">
-          <p class="percent">{{ group.memberApprovalPercentage }}%</p>
+          <p class="percent">{{ group.memberApprovalThreshold | toPercent }}</p>
           <circle-slider
             class="circle-slider"
-            :value="group.memberApprovalPercentage"
-            @input="value => update('memberApprovalPercentage', value)"
+            :value="group.memberApprovalThreshold"
+            @input="value => update('memberApprovalThreshold', value)"
+            :min="0.01"
+            :max="1"
+            :step-size="0.01"
             :side="160"
             :circleWidth="1"
             :progressWidth="2"
@@ -43,11 +49,14 @@
       </div>
       <div class="column">
         <div class="rule">
-          <p class="percent">{{ group.memberRemovalPercentage }}%</p>
+          <p class="percent">{{ group.memberRemovalThreshold | toPercent }}</p>
           <circle-slider
             class="circle-slider"
-            :value="group.memberRemovalPercentage"
-            @input="value => update('memberRemovalPercentage', value)"
+            :value="group.memberRemovalThreshold"
+            @input="value => update('memberRemovalThreshold', value)"
+            :min="0.01"
+            :max="1"
+            :step-size="0.01"
             :side="160"
             :circleWidth="1"
             :progressWidth="2"
@@ -119,19 +128,23 @@
 </style>
 <script>
 import { CircleSlider } from 'vue-circle-slider'
+import { toPercent } from '../../filters'
 
-const SUPERMAJORITY = 67
+const SUPERMAJORITY = 0.67
 const OKCOLOR = '#78c848'
 const WARNCOLOR = '#f68b39'
 
 export default {
-  name: 'CreateGroupRules',
+  name: 'GroupRules',
   props: {
     group: {type: Object},
     v: {type: Object}
   },
   components: {
     CircleSlider
+  },
+  filters: {
+    toPercent
   },
   methods: {
     update (prop, value) {
@@ -145,18 +158,18 @@ export default {
   },
   computed: {
     changeColor: function () {
-      return this.group.changePercentage >= SUPERMAJORITY ? OKCOLOR : WARNCOLOR
+      return this.group.changeThreshold >= SUPERMAJORITY ? OKCOLOR : WARNCOLOR
     },
     approveColor: function () {
-      return this.group.memberApprovalPercentage >= SUPERMAJORITY ? OKCOLOR : WARNCOLOR
+      return this.group.memberApprovalThreshold >= SUPERMAJORITY ? OKCOLOR : WARNCOLOR
     },
     removeColor: function () {
-      return this.group.memberRemovalPercentage >= SUPERMAJORITY ? OKCOLOR : WARNCOLOR
+      return this.group.memberRemovalThreshold >= SUPERMAJORITY ? OKCOLOR : WARNCOLOR
     },
     superMajority: function () {
-      return this.group.changePercentage >= SUPERMAJORITY &&
-             this.group.memberApprovalPercentage >= SUPERMAJORITY &&
-             this.group.memberRemovalPercentage >= SUPERMAJORITY
+      return this.group.changeThreshold >= SUPERMAJORITY &&
+             this.group.memberApprovalThreshold >= SUPERMAJORITY &&
+             this.group.memberRemovalThreshold >= SUPERMAJORITY
     }
   }
 }

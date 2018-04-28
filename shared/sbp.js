@@ -42,6 +42,10 @@ sbp.registerDomain = function (domain: string, selectors: {[string]: Function}) 
   }
 }
 
+sbp.unregisterDomain = function (domain: string) {
+  delete domains[domain]
+}
+
 // During startup of app, use this instead of sbp function to call selectors
 // on domains that haven't been registered yet. The selector gets run immediately
 // once the corresponding domain is registered via registerDomain.
@@ -70,44 +74,3 @@ sbp.addGlobalFilter = function (filter: TypeFilter) {
 }
 
 export default sbp
-
-// =======================
-// Common selectors APIs
-// TODO: move to a separate file
-// =======================
-
-function addListener (event: string, handler: Function, type: 'listeners' | 'listenOnce') {
-  if (!this.data.events) {
-    this.data.events = {}
-  }
-  if (!this.data.events[event]) {
-    this.data.events[event] = {listeners: [], listenOnce: []}
-  }
-  this.data.events[event][type].push(handler)
-}
-
-const COMMON_MIXINS = {
-  V1: {
-    EVENTS: {
-      // TODO: add ability to unregister listeners
-      '/v1/events/on': function (event, data) {
-        addListener.call(this, event, data, 'listeners')
-      },
-      '/v1/events/once': function (event, data) {
-        addListener.call(this, event, data, 'listenOnce')
-      },
-      '/v1/events/emit': function (event, data) {
-        if (!this.data.events) return
-        for (let listener of this.data.events[event].listeners) {
-          listener({event, data})
-        }
-        for (let listener of this.data.events[event].listenOnce) {
-          listener({event, data})
-        }
-        this.data.events[event].listenOnce = []
-      }
-    }
-  }
-}
-
-sbp.COMMON_MIXINS = COMMON_MIXINS

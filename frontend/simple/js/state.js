@@ -16,8 +16,6 @@ import debounce from 'lodash/debounce'
 // for diff between 'lodash/map' and 'lodash/fp/map'
 // see: https://github.com/lodash/lodash/wiki/FP-Guide
 
-sbp.registerDomain('vuex', sbp.COMMON_MIXINS.V1.EVENTS)
-
 Vue.use(Vuex)
 var store // this is set and made the default export at the bottom of the file.
 // we have it declared here to make it accessible in mutations
@@ -57,7 +55,7 @@ const mutations = {
     const index = state.pending.indexOf(contractId)
     state.pending.includes(contractId) && state.pending.splice(index, 1)
     // calling this will make pubsub subscribe for events on `contractId`!
-    sbp('vuex/v1/events/emit', 'contractsModified', {add: contractId})
+    sbp('okTurtles.events/emit', 'contractsModified', {add: contractId})
   },
   setRecentHash (state, {contractId, hash}) {
     state.contracts[contractId] && Vue.set(state.contracts[contractId], 'recentHash', hash)
@@ -66,7 +64,7 @@ const mutations = {
     store.unregisterModule(contractId)
     Vue.delete(state.contracts, contractId)
     // calling this will make pubsub unsubscribe for events on `contractId`!
-    sbp('vuex/v1/events/emit', 'contractsModified', {remove: contractId})
+    sbp('okTurtles.events/emit', 'contractsModified', {remove: contractId})
   },
   setContracts (state, contracts) {
     for (let contractId of Object.keys(state.contracts)) {

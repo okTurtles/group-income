@@ -1,0 +1,7 @@
+export { default as GroupName } from './GroupName.vue'
+export { default as GroupPurpose } from './GroupPurpose.vue'
+export { default as GroupMincome } from './GroupMincome.vue'
+export { default as GroupRules } from './GroupRules.vue'
+export { default as GroupPrivacy } from './GroupPrivacy.vue'
+export { default as GroupInvitees } from './GroupInvitees.vue'
+export { default as GroupSummary } from './GroupSummary.vue'

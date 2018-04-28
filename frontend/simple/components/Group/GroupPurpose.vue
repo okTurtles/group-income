@@ -20,7 +20,7 @@
 </template>
 <script>
 export default {
-  name: 'CreateGroupPurpose',
+  name: 'GroupPurpose',
   props: {
     group: {type: Object},
     v: {type: Object}

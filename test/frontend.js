@@ -323,14 +323,14 @@ describe('Frontend', function () {
         .wait(elT('privacyStep'))
         .click(elT('nextBtn'))
         // invite members
-        .wait(elT('inputInvitee'))
-        .insert(elT('inputInvitee'), username + '4')
+        .wait(elT('searchUser'))
+        .insert(elT('searchUser'), username + '4')
         .click(elT('addButton'))
-        .wait(elT('inviteeContainer'))
+        .wait(elT('member'))
 
       const invited = await n.evaluate(
-        (el) => document.querySelectorAll('[data-test="inviteeContainer"]').length,
-        elT('inviteeContainer')
+        (el) => document.querySelectorAll(el).length,
+        elT('member')
       )
       should(invited).equal(1)
 
@@ -443,24 +443,15 @@ describe('Frontend', function () {
       should(hasInvite).equal(true)
       const hasMessage = await n.exists(elT('inboxMessage'))
       should(hasMessage).equal(true)
-      const newUnread = await n
+      const accept = await n
         .click(elT('inviteMessage'))
-        .evaluate(
-          (el) => +document.querySelector(el).innerText,
-          elT('inboxUnread')
-        )
-      should(newUnread).equal(1)
+        .exists(elT('acceptLink'))
+      should(accept).equal(true)
     })
     it('Should Accept Invite', async function () {
       this.timeout(30000)
       // Accept invitation
-      let success = await n.click(elT('inboxLink'))
-        .wait(elT('inviteMessage'))
-        .click(elT('inviteMessage'))
-        .wait(elT('inviteLink'))
-        .click(elT('inviteLink'))
-        .wait(elT('acceptLink'))
-        .click(elT('acceptLink'))
+      let success = await n.click(elT('acceptLink'))
         .wait(elT('inbox'))
         .exists(elT('inbox'))
       should(success).equal(true)
@@ -487,8 +478,6 @@ describe('Frontend', function () {
       n.click(elT('mailboxLink'))
         .wait(elT('inviteMessage'))
         .click(elT('inviteMessage'))
-        .wait(elT('inviteLink'))
-        .click(elT('inviteLink'))
         .wait(elT('acceptLink'))
         .click(elT('acceptLink'))
         .wait(elT('inbox'))
@@ -514,14 +503,18 @@ describe('Frontend', function () {
           (el) => !document.querySelector(el),
           `${elT('loginModal')}.is-active`
         )
-      // BUG: Why isn't there an await here?
+      // Propose user
       await n
-        .wait(elT('mailboxLink'))
         .goto(page('invite'))
-        .wait(elT('proposeButton'))
+        .wait(elT('searchUser'))
         .insert(elT('searchUser'), username + '3')
-        .click(elT('proposeButton'))
-        .wait(elT('notifyProposedSuccess'))
+        .click(elT('addButton'))
+        .wait(
+          (el) => document.querySelectorAll(el).length > 0,
+          elT('member')
+        )
+        .click(elT('submit'))
+        .wait(elT('notifyInvitedSuccess'))
         // Logout
         .click(elT('openProfileDropDown'))
         .click(elT('logoutBtn'))
@@ -538,12 +531,22 @@ describe('Frontend', function () {
           (el) => !document.querySelector(el),
           `${elT('loginModal')}.is-active`
         )
-
-      let success = await n
+      // Check mailbox
+      await n
         .wait(elT('mailboxLink'))
         .click(elT('mailboxLink'))
         .wait(elT('proposalMessage'))
         .click(elT('proposalMessage'))
+
+      let candidate = await n
+        .wait(elT('candidateName'))
+        .evaluate(
+          (el) => document.querySelector(el) && document.querySelector(el).innerText,
+          elT('candidateName')
+        )
+      should(candidate).equal(username + '3')
+
+      let success = await n
         .wait(elT('forLink'))
         .click(elT('forLink'))
         .wait(elT('inbox'))

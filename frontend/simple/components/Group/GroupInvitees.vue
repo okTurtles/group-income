@@ -8,8 +8,8 @@
           placeholder="Username"
           name="invitee"
           type="text"
-          data-test="inputInvitee"
           v-model="searchUser"
+          data-test="searchUser"
           ref="searchUser"
           @keyup.enter="addInvitee"
         >
@@ -35,7 +35,7 @@
 
     <div class="tile is-ancestor">
       <div class="tile is-4 is-parent invitee"
-        data-test="inviteeContainer"
+        data-test="member"
         v-for="(invitee, index) in invitees"
       >
         <div class="card tile is-child">
@@ -49,7 +49,7 @@
               {{invitee.state.attributes.name}}
             </p>
             <a class="card-header-icon">
-              <button class="delete" @click="remove(index)"></button>
+              <button class="delete" data-test="deleteMember" @click="remove(index)"></button>
             </a>
           </header>
         </div>
@@ -69,7 +69,7 @@ import { namespace } from '../../js/backend/hapi'
 import L from '../../js/translations'
 
 export default {
-  name: 'CreateGroupInvitees',
+  name: 'GroupInvitees',
   props: {
     group: {type: Object}
   },

@@ -4,17 +4,17 @@
     <h3 class="title is-3"><i18n>Current Settings</i18n></h3>
     <div class="columns has-text-centered">
       <div class="column is-4">
-        <p class="settings-number" data-test="changePercentage">{{ group.changePercentage }}%</p>
+        <p class="settings-number" data-test="changePercentage">{{ group.changeThreshold | toPercent }}</p>
         <p class="settings-label">Change Rules</p>
         <a href="#">Propose change</a>
       </div>
       <div class="column is-4">
-        <p class="settings-number" data-test="approvePercentage">{{ group.memberApprovalPercentage }}%</p>
+        <p class="settings-number" data-test="approvePercentage">{{ group.memberApprovalThreshold | toPercent }}</p>
         <p class="settings-label">Add Member</p>
         <a href="#">Propose change</a>
       </div>
       <div class="column is-4">
-        <p class="settings-number" data-test="removePercentage">{{ group.memberRemovalPercentage }}%</p>
+        <p class="settings-number" data-test="removePercentage">{{ group.memberRemovalThreshold | toPercent }}</p>
         <p class="settings-label">Remove Member</p>
         <a href="#">Propose change</a>
       </div>
@@ -37,10 +37,14 @@
 
 </style>
 <script>
+import { toPercent } from '../filters'
 export default {
   name: 'GroupSettings',
   props: {
     group: Object
+  },
+  filters: {
+    toPercent
   }
 }
 </script>

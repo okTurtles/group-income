@@ -72,14 +72,7 @@
               <div><strong>Sent:</strong>&nbsp;{{formatDate(currentMessage.data.sentDate)}}</div>
               <div><strong>From:</strong>&nbsp;{{currentMessage.data.from}}</div>
             </div>
-            <p class="panel-block" v-if="currentMessage.data.messageType === 'Message'" style="display: block; word-wrap: break-word;">{{currentMessage.data.message}}</p>
-            <p class="panel-block" v-if="currentMessage.data.messageType === 'Invite'">
-              <router-link data-test="inviteLink"
-                v-bind:to="{ path: '/join', query: { groupId: currentMessage.data.headers[0], inviteHash: currentMessage.hash} }"
-              >
-                <i18n>Respond to Invite</i18n>
-              </router-link>
-            </p>
+            <p class="panel-block" style="display: block; word-wrap: break-word;">{{currentMessage.data.message}}</p>
 
             <div class="panel-block" >
               <button class="button is-danger" v-if="currentMessage.data.messageType === 'Message'" type="submit" style="margin-left:auto; margin-right: 0;" v-on:click="remove(index)"><i18n>Delete</i18n></button>
@@ -122,16 +115,17 @@
             <tbody>
             <tr v-for="(message, index) in invites">
               <td>
-                <div class="media">
-                  <div class="media-left" v-on:click="read({index, type: message.data.messageType})">
+                <div class="media" v-on:click="respondToInvite(index)">
+                  <div class="media-left">
                     <p class="image is-64x64">
                       <!-- TODO: make this draw image from group contract -->
                       <img src="images/default-avatar.png">
                     </p>
                   </div>
-                  <div class="media-content invite-message"
+                  <div
+                    class="media-content invite-message"
                     data-test="inviteMessage"
-                    v-on:click="read({index, type: message.data.messageType})">
+                  >
                     <div><strong>Sent:</strong>&nbsp;{{formatDate(message.data.sentDate)}}</div>
                     <div><strong>From:</strong>&nbsp;{{message.data.from}}</div>
                   </div>
@@ -285,18 +279,14 @@ export default {
     respondToProposal: function (index) {
       this.$router.push({ path: '/vote', query: { groupId: this.proposals[index].groupContractId, proposalHash: this.proposals[index].proposal } })
     },
-    // TODO Deduplicate
+    respondToInvite: function (index) {
+      this.$store.commit('markMessageAsRead', this.invites[index].hash)
+      this.$router.push({ path: '/join', query: { groupId: this.invites[index].data.headers[0], inviteHash: this.invites[index].hash } })
+    },
     read: function ({index, type}) {
       this.mode = 'Read'
       if (Number.isInteger(index)) {
-        switch (type) {
-          case Events.HashableMailboxPostMessage.TypeMessage:
-            this.currentMessage = this.inbox[index]
-            break
-          case Events.HashableMailboxPostMessage.TypeInvite:
-            this.currentMessage = this.invites[index]
-            break
-        }
+        this.currentMessage = this.inbox[index]
         this.currentIndex = index
         this.$store.commit('markMessageAsRead', this.currentMessage.hash)
       }

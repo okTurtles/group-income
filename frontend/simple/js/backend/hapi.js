@@ -10,20 +10,6 @@ import * as Events from '../../../../shared/events'
 import {RESPONSE_TYPE} from '../../../../shared/constants'
 import sbp from '../../../../shared/sbp'
 
-// NOTE: hapi.js is one of the first files to get run because of
-//       module load order, so we setup this global SBP filter here
-//       to get logging for all subsequent SBP calls.
-//       In the future we might move it elsewhere.
-
-console.log('NODE_ENV:', process.env.NODE_ENV)
-if (process.env.NODE_ENV !== 'production') {
-  sbp.addGlobalFilter((domain, sel, data) => {
-    console.log(`[sbp] CALL: ${domain}${sel}:`, data)
-  })
-}
-
-sbp.registerDomain('pubsub', sbp.COMMON_MIXINS.V1.EVENTS)
-
 const {HashableEntry} = Events
 // temporary identity for signing
 const nacl = require('tweetnacl')
@@ -92,7 +78,7 @@ export class HapiBackend extends Backend {
       var res = await primus[method](contractId)
       console.log(`[HapiBackend] ${method}scribed ${contractId}:`, res)
     }
-    sbp.ready('vuex/v1/events/on', 'contractsModified', updateSubs)
+    sbp.ready('events/on', 'contractsModified', updateSubs)
   }
   publishLogEntry (contractId: string, entry: HashableEntry) {
     console.log(`publishLogEntry to ${contractId}:`, entry)

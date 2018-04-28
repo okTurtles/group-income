@@ -52,7 +52,7 @@
                 <div><strong><i18n>Percentage of members are required to change the rules</i18n></strong></div>
               </div>
               <div class="panel-block">
-                {{contract.changePercentage}}
+                {{contract.changeThreshold | toPercent}}
               </div>
               <div class="panel-block">
                 <strong><i18n>Open to New Members?</i18n></strong>
@@ -63,13 +63,13 @@
                 <strong><i18n>Percentage of members are required to approve a new members</i18n></strong>
               </div>
               <div class="panel-block">
-                {{contract.memberApprovalPercentage}}
+                {{contract.memberApprovalThreshold | toPercent}}
               </div>
               <div class="panel-block">
                 <strong><i18n>Percentage of members are required to remove a member</i18n></strong>
               </div>
               <div class="panel-block">
-                {{contract.memberRemovalPercentage}}
+                {{contract.memberRemovalThreshold | toPercent}}
               </div>
               <div class="panel-block">
                 <strong><i18n>Contribution Transparency</i18n></strong>
@@ -113,6 +113,7 @@ import * as Events from '../../../shared/events'
 import backend from '../js/backend/'
 import { latestContractState } from '../js/state'
 import L from '../js/translations'
+import { toPercent } from '../filters'
 
 export default {
   name: 'Join',
@@ -141,6 +142,9 @@ export default {
       console.log(ex)
       this.$router.push({path: '/mailbox'})
     }
+  },
+  filters: {
+    toPercent
   },
   methods: {
     accept: async function () {

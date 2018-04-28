@@ -133,6 +133,8 @@
     "nightmare": "2.10.0",
     "pathmodify": "0.5.0",
     "should": "11.2.1",
+    "should-sinon": "0.0.6",
+    "sinon": "4.5.0",
     "standard": "11.0.1",
     "stylelint": "9.2.0",
     "stylelint-config-standard": "18.2.0",
