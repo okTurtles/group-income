@@ -12,7 +12,7 @@
             <p>
               <!-- TODO different templates for different invitation types -->
               <i18n>This is an invitation proposal. The user to be invited: </i18n>
-              {{proposal.candidate}}
+              <strong data-test="candidateName">{{proposal.candidate}}</strong>
             </p>
           </div>
           <div class="panel-block notification is-warning" style="text-align: center;">

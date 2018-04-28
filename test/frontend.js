@@ -503,9 +503,8 @@ describe('Frontend', function () {
           (el) => !document.querySelector(el),
           `${elT('loginModal')}.is-active`
         )
-      // BUG: Why isn't there an await here?
+      // Propose user
       await n
-        .wait(elT('mailboxLink'))
         .goto(page('invite'))
         .wait(elT('searchUser'))
         .insert(elT('searchUser'), username + '3')
@@ -532,12 +531,22 @@ describe('Frontend', function () {
           (el) => !document.querySelector(el),
           `${elT('loginModal')}.is-active`
         )
-
-      let success = await n
+      // Check mailbox
+      await n
         .wait(elT('mailboxLink'))
         .click(elT('mailboxLink'))
         .wait(elT('proposalMessage'))
         .click(elT('proposalMessage'))
+
+      let candidate = await n
+        .wait(elT('candidateName'))
+        .evaluate(
+          (el) => document.querySelector(el) && document.querySelector(el).innerText,
+          elT('candidateName')
+        )
+      should(candidate).equal(username + '3')
+
+      let success = await n
         .wait(elT('forLink'))
         .click(elT('forLink'))
         .wait(elT('inbox'))
