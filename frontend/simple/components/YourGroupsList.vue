@@ -1,70 +1,62 @@
 <template>
   <div>
-    <h3 class="list-title">YOUR GROUPS</h3>
-    <p class="group-name"
-      v-for="group in groups"
-      :class='{"is-active": currentGroupId === group.contractId}'
-      @click.prevent="changeGroup(group.contractId)"
-    >
-      {{ group.groupName }}
-    </p>
-    <router-link class="create-new-link" to="/new-group">+ CREATE NEW</router-link>
+    <h3 class="title is-7 is-uppercase gi-title">
+      Your groups
+    </h3>
+    <ul class="list">
+      <li class="list-item"
+        :class='{"is-active": currentGroupId === group.contractId}'
+        tabindex="0"
+        v-for="group in groups"
+        @click.prevent="changeGroup(group.contractId)"
+      >
+        {{ group.groupName }}
+      </li>
+    </ul>
+    <router-link to="/new-group" class="cta">
+      Create new group
+    </router-link>
   </div>
 </template>
 <style lang="scss" scoped>
-.list-title {
-  color: #9b9b9b;
-  font-family: HelveticaNeue-Light;
-  font-size: 14px;
-  letter-spacing: 5px;
-  margin-bottom: 13px;
+$spacer: 2rem;
+
+.gi-title {
+  padding-top: 2.5rem;
+  padding-left: $spacer;
+  margin-bottom: 0.5rem;
 }
 
-.group-name {
-  color: #616161;
-  font-family: HelveticaNeue-Bold;
-  font-size: 17px;
-  overflow: hidden;
-  padding: 5px 0;
-}
+.list {
+  &-item {
+    padding: 0.4rem 0.4rem 0.4rem $spacer;
+    font-weight: 600;
 
-.group-name:hover {
-  color: #222324;
-  cursor: pointer;
-}
-
-.group-name.is-active {
-  background: #ececec;
-  padding-left: 15px;
-  margin-left: -15px;
-}
-
-.create-new-link {
-  color: #9b9b9b;
-  display: block;
-  font-family: HelveticaNeue-Bold;
-  font-size: 12px;
-  letter-spacing: 3.43px;
-  margin-top: 13px;
-
-  &:hover {
-    color: #222324;
+    &.is-active {
+      background: #ededed;
+      border-right: 3px solid orange;
+    }
   }
+}
+
+.cta {
+  display: block;
+  padding-top: 0.25rem;
+  padding-left: $spacer;
 }
 
 </style>
 <script>
-  export default {
-    name: 'YourGroupsList',
-    props: {
-      groups: Array,
-      currentGroupId: String
-    },
-    methods: {
-      changeGroup (hash) {
-        this.$store.commit('setCurrentGroupId', hash)
-      }
+export default {
+  name: 'YourGroupsList',
+  props: {
+    groups: Array,
+    currentGroupId: String
+  },
+  methods: {
+    changeGroup (hash) {
+      this.$store.commit('setCurrentGroupId', hash)
     }
   }
+}
 </script>
-

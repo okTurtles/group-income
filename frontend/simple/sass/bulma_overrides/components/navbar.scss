@@ -1,10 +1,29 @@
+$navbar-height: 4.5rem;
+
 @import "../../node_modules/bulma/sass/components/navbar";
 
 .navbar {
-  box-shadow: none;
   display: flex;
   justify-content: space-between;
-  padding: 1rem 0;
+
+  &-item {
+    display: flex;
+    align-items: center;
+  }
+
+  a#{&}-main-item {
+    background-color: transparent;
+    border-bottom: 3px solid transparent;
+    font-weight: 600;
+
+    &.is-active,
+    &:focus,
+    &:hover {
+      outline: none;
+      color: inherit;
+      border-color: $orange;
+    }
+  }
 }
 
 // Copied Paste from Bulma's source
@@ -12,6 +31,8 @@
 // Keep it here until we design navbar to be full responsive
 .has-dropdown.gi-is-profile {
   .navbar-link {
+    padding-right: 3.5rem;
+
     &::after {
       border: 3px solid $link;
       border-radius: 2px;
@@ -27,6 +48,7 @@
       transform: rotate(-45deg);
       transform-origin: center;
       width: 0.625em;
+      right: 2rem;
     }
   }
 
