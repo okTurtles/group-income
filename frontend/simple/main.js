@@ -9,7 +9,6 @@ import store from './js/state'
 import sbp from '../../shared/sbp'
 
 import EVENTS from '../../shared/domains/okTurtles/events'
-import LODASH from '../../shared/domains/okTurtles/lodash'
 import DATA from '../../shared/domains/okTurtles/data'
 import CONTRACTS from '../../shared/domains/groupIncome/contracts'
 
@@ -23,7 +22,6 @@ if (process.env.NODE_ENV !== 'production') {
     console.log(`[sbp] CALL: ${domain}${sel}:`, data)
   })
 }
-sbp.registerDomain('okTurtles.lodash', LODASH)
 sbp.registerDomain('okTurtles.data', DATA)
 sbp.registerDomain('okTurtles.events', EVENTS)
 sbp.registerDomain('groupIncome.contracts', CONTRACTS)
