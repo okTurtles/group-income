@@ -42,6 +42,10 @@ sbp.registerDomain = function (domain: string, selectors: {[string]: Function}) 
   }
 }
 
+sbp.unregisterDomain = function (domain: string) {
+  delete domains[domain]
+}
+
 // During startup of app, use this instead of sbp function to call selectors
 // on domains that haven't been registered yet. The selector gets run immediately
 // once the corresponding domain is registered via registerDomain.

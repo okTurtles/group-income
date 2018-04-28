@@ -3,65 +3,73 @@
 import should from 'should'
 import sinon from 'sinon'
 import { default as DATA } from './index.js'
+import sbp from '../../../sbp'
 
 require('should-sinon')
 
 describe('[SBP] DATA domain', () => {
+  before(() => {
+    sbp.registerDomain('okTurtles.data', DATA)
+  })
+  after(() => {
+    sbp.unregisterDomain('okTurtles.data')
+  })
+
   it('should store simple value', () => {
-    DATA['/set']('test', 1)
-    should(DATA['/get']('test')).equal(1)
+    sbp('okTurtles.data/set', 'test', 1)
+    should(sbp('okTurtles.data/get', 'test')).equal(1)
   })
 
   it('should reset value', () => {
-    DATA['/set']('reset', 1)
-    DATA['/set']('reset', 2)
-    should(DATA['/get']('reset')).equal(2)
+    sbp('okTurtles.data/set', 'reset', 1)
+    sbp('okTurtles.data/set', 'reset', 2)
+    should(sbp('okTurtles.data/get', 'reset')).equal(2)
   })
 
   it('should add item to collection', () => {
-    DATA['/add']('testCollection', 1)
-    DATA['/add']('testCollection', 2)
-    should(DATA['/get']('testCollection')).deepEqual([1, 2])
+    sbp('okTurtles.data/add', 'testCollection', 1)
+    sbp('okTurtles.data/add', 'testCollection', 2)
+    should(sbp('okTurtles.data/get', 'testCollection')).deepEqual([1, 2])
   })
 
   it('should return undefined for unset path', () => {
-    should(DATA['/get']('testNothing')).deepEqual(undefined)
+    should(sbp('okTurtles.data/get', 'testNothing')).deepEqual(undefined)
   })
 
   it('should add fn to collection', () => {
     const testFn = sinon.spy()
-    DATA['/add']('fnTestCollection', 1)
-    DATA['/add']('fnTestCollection', testFn)
-    DATA['/get']('fnTestCollection')[1]()
+    sbp('okTurtles.data/add', 'fnTestCollection', 1)
+    sbp('okTurtles.data/add', 'fnTestCollection', testFn)
+    sbp('okTurtles.data/get', 'fnTestCollection')[1]()
     testFn.should.be.called()
   })
 
   it('should store simple value in deeper path', () => {
-    DATA['/deepSet']('test/deep', 1)
-    should(DATA['/deepGet']('test/deep')).equal(1)
+    sbp('okTurtles.data/deepSet', 'test/deep', 1)
+    should(sbp('okTurtles.data/deepGet', 'test/deep')).equal(1)
   })
 
   it('should reset deep value', () => {
-    DATA['/deepSet']('test/reset', 1)
-    DATA['/deepSet']('test/reset', 2)
-    should(DATA['/deepGet']('test/reset')).equal(2)
+    sbp('okTurtles.data/deepSet', 'test/reset', 1)
+    sbp('okTurtles.data/deepSet', 'test/reset', 2)
+    should(sbp('okTurtles.data/deepGet', 'test/reset')).equal(2)
   })
 
   it('should add item to deep collection', () => {
-    DATA['/deepAdd']('deep/testCollection', 1)
-    DATA['/deepAdd']('deep/testCollection', 2)
-    should(DATA['/deepGet']('deep/testCollection')).deepEqual([1, 2])
+    sbp('okTurtles.data/deepAdd', 'deep/testCollection', 1)
+    sbp('okTurtles.data/deepAdd', 'deep/testCollection', 2)
+    should(sbp('okTurtles.data/deepGet', 'deep/testCollection')).deepEqual([1, 2])
   })
 
   it('should return undefined for unset path', () => {
-    should(DATA['/deepGet']('deep/testNothing')).deepEqual(undefined)
+    should(sbp('okTurtles.data/deepGet', 'deep/testNothing')).deepEqual(undefined)
   })
 
   it('should add fn to collection', () => {
     const testFn = sinon.spy()
-    DATA['/deepAdd']('deep/fnTestCollection', 1)
-    DATA['/deepAdd']('deep/fnTestCollection', testFn)
-    DATA['/deepGet']('deep/fnTestCollection')[1]()
+    sbp('okTurtles.data/deepAdd', 'deep/fnTestCollection', 1)
+    sbp('okTurtles.data/deepAdd', 'deep/fnTestCollection', testFn)
+    sbp('okTurtles.data/deepGet', 'deep/fnTestCollection')[1]()
     testFn.should.be.called()
   })
 })
