@@ -32,33 +32,3 @@ export function mapValues (obj: Object, fn: Function, o: Object = {}) {
 // }
 
 export default { lazyLoadVue }
-
-// get stuff from nested maps
-// without throwing errors for each level of undefined
-export function deepGet (tree, path) {
-  const pathArray = path.split('/')
-  const length = pathArray.length
-  let nested = tree
-  let index = 0
-  while (nested !== undefined && index < length) {
-    nested = nested.get(pathArray[index++])
-  }
-  return (index && index === length) ? nested : undefined
-}
-
-// set stuff in nested maps
-// without throwing errors for each level of undefined
-export function deepSet (tree, path, data) {
-  const pathArray = path.split('/')
-  const length = pathArray.length
-  let nested = tree
-  let index = -1
-  while (++index < length - 1) {
-    const key = pathArray[index]
-    if (!(nested.get(key) instanceof Map)) {
-      nested.set(key, new Map())
-    }
-    nested = nested.get(key)
-  }
-  nested.set(pathArray[index], data)
-}
