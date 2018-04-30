@@ -1,35 +1,61 @@
 <template>
   <div class="notification columns is-multiline is-centered is-warning has-text-centered">
     <p class="column is-12">
-      <strong>{{who}}</strong> has proposed {{propose}} the <strong>{{what}}</strong> to <strong>{{change}}</strong>.
+      <strong data-test="initiator">{{ initiator }}</strong>
+      <i18n>proposed to</i18n>
+      <strong>{{ proposalText }}</strong>
     </p>
 
     <div class="column is-3">
       <button class="button is-success is-fullwidth">
-        For
+        <i18n>For</i18n>
       </button>
     </div>
 
     <div class="column is-3">
       <button class="button is-danger is-fullwidth">
-        Against
+        <i18n>Against</i18n>
       </button>
     </div>
 
     <p class="column is-12 is-size-7 is-italic gi-is-opacity-1">
-      {{votesCount}} votes received
+      {{votesCount}} <i18n>votes received</i18n>
     </p>
 	</div>
 </template>
 <script>
+import L from '../js/translations'
+import template from 'string-template'
+
 export default {
   name: 'VotingBanner',
   props: {
-    who: String,
-    what: String,
-    change: String,
-    votesCount: String,
-    propose: String
+    proposal: Object
+  },
+  data () {
+    return {
+      initiator: this.proposal.initiator,
+      votesCount: this.proposal.for.length + this.proposal.against.length
+    }
+  },
+  computed: {
+    proposalText: function () {
+      switch (this.proposal.type) {
+        case 'invitationProposal': return template(L('invite {candidate} to the group.'),
+          {
+            candidate: this.proposal.candidate
+          })
+        case 'removalProposal': return template(L('remove {member} from the group.'),
+          {
+            member: this.proposal.candidate
+          })
+        case 'changeProposal': return template(L('change {property} to {value}.'),
+          {
+            property: this.proposal.property,
+            value: this.proposal.value
+          })
+      }
+    }
   }
 }
 </script>

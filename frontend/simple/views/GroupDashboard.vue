@@ -22,11 +22,9 @@
         </p>
 
         <voting-banner class="widget"
-          who="Sam"
-          propose="changing"
-          what="min income"
-          change="$250"
-          votesCount="3" />
+          v-for="proposal in Object.values(currentGroupState.proposals)"
+          :proposal="proposal"
+        />
 
         <group-members class="widget" />
 
