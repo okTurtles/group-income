@@ -3,7 +3,7 @@
     <p class="column is-12">
       <strong data-test="initiator">{{ initiator }}</strong>
       <i18n>proposed to</i18n>
-      <strong>{{ proposalText }}</strong>
+      <strong data-test="proposal">{{ proposalText }}</strong>
     </p>
 
     <div class="column is-3">

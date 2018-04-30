@@ -531,6 +531,26 @@ describe('Frontend', function () {
           (el) => !document.querySelector(el),
           `${elT('loginModal')}.is-active`
         )
+      // Check vote banner on dashboard
+      await n
+        .goto(page('dashboard'))
+        .wait(elT('proposal'))
+
+      let initiator = await n
+        .wait(elT('initiator'))
+        .evaluate(
+          (el) => document.querySelector(el) && document.querySelector(el).innerText,
+          elT('initiator')
+        )
+      should(initiator).equal(username + '5')
+
+      let candidate = await n
+        .wait(elT('proposal'))
+        .evaluate(
+          (el) => document.querySelector(el) && document.querySelector(el).innerText,
+          elT('proposal')
+        )
+      should(candidate).containEql(username + '3')
       // Check mailbox
       await n
         .wait(elT('mailboxLink'))
@@ -538,7 +558,7 @@ describe('Frontend', function () {
         .wait(elT('proposalMessage'))
         .click(elT('proposalMessage'))
 
-      let candidate = await n
+      candidate = await n
         .wait(elT('candidateName'))
         .evaluate(
           (el) => document.querySelector(el) && document.querySelector(el).innerText,
