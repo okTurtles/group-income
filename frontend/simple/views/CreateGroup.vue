@@ -8,7 +8,7 @@
           </router-view>
         </transition>
 
-        <div class="field is-grouped is-grouped-right form-actions">
+        <div class="field is-grouped is-grouped-right gi-is-grouped-reverse form-actions">
           <p class="control" v-if="currentStep !== 0">
             <button
               class="button is-light is-large"

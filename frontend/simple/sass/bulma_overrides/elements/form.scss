@@ -5,3 +5,18 @@
     color: rgba($input-color, 0.4); // To improve A11Y
   }
 }
+
+.gi- {
+  &is-grouped-reverse {
+    flex-direction: row-reverse;
+
+    &.field.is-grouped-right {
+      justify-content: flex-start;
+    }
+
+    &.field.is-grouped > .control:not(:last-child) {
+      margin-left: 0.75rem;
+      margin-right: 0;
+    }
+  }
+}
