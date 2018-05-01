@@ -13,9 +13,9 @@
 
       <div class="column is-4">
         <h2 class="title is-4 gi-title">Text</h2>
-        <p>In an ideal world this website wouldn’t exist, a client would acknowledge the importance of having web copy before the design starts. Needless to say it’s very important, content is king and people are beginning to understand that. </p>
-        <p class="has-text-grey">However, back over in reality some project schedules and budgets don’t allow for web copy to be written before the design phase. - has-text-grey</p>
-        <p class="is-size-7 has-text-weight-bold">This is sad but true. - is-size-7 has-text-weight-bold</p>
+        <p>Cat ipsum dolor sit amet, you have cat to be kitten me right meow cat snacks. Love eat grass, throw it back up or try to jump onto window and fall while scratching at wall so scratch the postman wake up lick paw wake up owner meow meow with tail in the air and litter kitter kitty litty little kitten big roar roar feed me cats go for world domination.</p>
+        <p class="has-text-grey"> Hide at bottom of staircase to trip human sit on human they not getting up ever under the bed, and have secret plans ask for petting or shove bum in owner's face.  - has-text-grey</p>
+        <p class="is-size-7 has-text-weight-bold">Like imaginary bugs - is-size-7 has-text-weight-bold</p>
       </div>
 
       <div class="column is-4">
