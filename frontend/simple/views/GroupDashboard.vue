@@ -8,7 +8,7 @@
         />
       </div>
 
-      <div class="column gi-main">
+      <div class="column container gi-main">
         <div class="gi-header">
           <div class='is-pulled-right'>
             <groups-min-income :group="currentGroupState" />
