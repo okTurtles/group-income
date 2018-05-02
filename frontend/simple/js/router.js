@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import store from './state'
+import DesignSystem from '../views/DesignSystem.vue'
 import SignUp from '../views/SignUp.vue'
 import CreateGroup from '../views/CreateGroup.vue'
 import {
@@ -76,6 +77,15 @@ var router = new Router({
         title: 'Group Income' // page title. see issue #45
       },
       beforeEnter: createEnterGuards(homeGuard)
+    },
+    {
+      path: '/design-system',
+      component: DesignSystem,
+      name: DesignSystem.name,
+      meta: {
+        title: 'Design System'
+      }
+      // beforeEnter: createEnterGuards(designGuard)
     },
     {
       path: '/signup',

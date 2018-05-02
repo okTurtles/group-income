@@ -3,22 +3,15 @@
   src: url(../fonts/FocoBold.ttf);
 }
 
-// ------ Brand colors ------ //
-
-$gi-brand-orange: #f89201;
-$gi-brand-green: #a0d10e;
-$gi-brand-blue: #5dc8f0;
-$gi-brand-blue-dark: #1fc8db;
-
 // ------ Utilities ------ //
 .gi- {
   &foco-font {
     font-family: Foco;
   }
 
-  &is-opacity-1 {
-    opacity: 0.8;
-  }
+  &is-opacity-1 { opacity: $gi-opacity-1; }
+  &is-opacity-2 { opacity: $gi-opacity-2; }
+  &is-opacity-3 { opacity: $gi-opacity-3; }
 
   &is-ellipsis {
     overflow: hidden;

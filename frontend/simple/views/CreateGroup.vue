@@ -13,7 +13,6 @@
             <button
               class="button is-light is-large"
               @click="prev"
-              :disabled="!this.currentStep"
               data-test="prevBtn"
             >
               <i18n>Back</i18n>
@@ -62,7 +61,7 @@
   */
   #create-group-page .title.is-1,
   #create-group-page .title.is-2 {
-    margin-bottom: 3rem;
+    margin-bottom: 2rem;
   }
 
   /*

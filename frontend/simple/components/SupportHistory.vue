@@ -101,7 +101,7 @@ export default {
     },
     getResult (percentage) {
       if (percentage < 0.6) return 'has-background-danger'
-      if (percentage < 1) return 'gi-has-background-warning'
+      if (percentage < 1) return 'has-background-warning'
       return 'has-background-success'
     }
   },

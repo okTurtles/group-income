@@ -2,8 +2,8 @@
 
 // load font awesome *before* bulma since
 // bulma customizes .fa and some other stuff
-@import "font-awesome"
+@import "font-awesome";
+@import "bulma_overrides/index";
 
-@import "groupincome"
-
-@import "bulma_overrides/index"
+// Load group income utilities
+@import "groupincome";

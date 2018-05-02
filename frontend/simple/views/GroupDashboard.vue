@@ -42,12 +42,6 @@
   </section>
 </template>
 <style lang="scss" scoped>
-  h1.title {
-    font-family: HelveticaNeue-Bold;
-    font-size: 52px;
-    color: #616161;
-  }
-
   .widget {
     margin: 4rem 0;
   }

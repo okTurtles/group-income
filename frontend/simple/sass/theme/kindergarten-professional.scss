@@ -1,0 +1,38 @@
+@import "../../node_modules/bulma/sass/utilities/initial-variables";
+@import "../../node_modules/bulma/sass/utilities/functions";
+
+$primary: #5dc8f0;
+$secondary: #a0d10e;
+$tertiary: #f89201;
+
+$success: saturate($secondary, 10%);
+$warning: lighten(adjust-hue($tertiary, 15%), 0%);
+$danger: lighten(adjust-hue($tertiary, -30%), 20%);
+$info: $primary;
+
+$grey: lighten(#000, 60%);
+
+// $purple: #847bb9;
+// $red: #ed6c63;
+// $turquoise: $blue-dark;
+// $yellow: #fce473;
+
+@import "../../node_modules/bulma/sass/utilities/derived-variables";
+
+$addColors: (
+  "secondary":($secondary, #fff),
+  "tertiary": ($tertiary, #fff),
+);
+
+$colors: map-merge($colors, $addColors);
+
+// Typography
+
+$link: $primary;
+$text: $grey-darker;
+
+$family-sans-serif: "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+$family-monospace: #{monospace};
+
+$body-background-color: #fff;
+$text: $grey-darker;
