@@ -19,30 +19,32 @@
   </div>
 </template>
 <style lang="scss" scoped>
-$spacer: 2rem;
+@import "../sass/theme/index";
 
 .gi-title {
-  padding-top: 2.5rem;
-  padding-left: $spacer;
-  margin-bottom: 0.5rem;
+  padding-top: $gi-spacer-lg;
+  padding-left: $gi-spacer-lg;
+  margin-bottom: $gi-spacer-sm;
 }
 
 .list {
   &-item {
-    padding: 0.4rem 0.4rem 0.4rem $spacer;
+    padding: 0.4rem 0.4rem 0.4rem $gi-spacer-lg;
     font-weight: 600;
 
+    &:focus,
     &.is-active {
       background: #ededed;
       border-right: 3px solid orange;
+      outline: none;
     }
   }
 }
 
 .cta {
   display: block;
-  padding-top: 0.25rem;
-  padding-left: $spacer;
+  padding-top: $gi-spacer-xs;
+  padding-left: $gi-spacer-lg;
 }
 
 </style>

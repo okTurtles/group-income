@@ -3,7 +3,7 @@
     <div class="columns">
       <div class="column is-narrow gi-sidebar">
         <your-groups-list
-          :currentGroupId="currentGroupState.currentGroupId"
+          :currentGroupId="currentGroupId"
           :groups="groupsByName"
         />
       </div>
@@ -63,7 +63,7 @@
 }
 </style>
 <script>
-import {mapGetters} from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import YourGroupsList from '../components/YourGroupsList.vue'
 import GroupsMinIncome from '../components/GroupsMinIncome.vue'
 import GroupMembers from '../components/GroupMembers.vue'
@@ -75,6 +75,9 @@ import ProgressOverview from '../components/ProgressOverview.vue'
 export default {
   name: 'GroupDashboard',
   computed: {
+    ...mapState([
+      'currentGroupId'
+    ]),
     ...mapGetters([
       'currentGroupState',
       'groupsByName'
