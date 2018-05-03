@@ -1,46 +1,10 @@
 <template>
-  <nav class="navbar container">
-    <div class="navbar-start">
-      <router-link to="home" class="navbar-item gi-item" @click="toggleTimeTravel">
+  <nav class="navbar">
+    <div class="navbar-start is-flex">
+      <router-link to="home" class="navbar-item gi-logo" @click="toggleTimeTravel">
         <img src="/simple/images/logo-transparent.png"  alt="Groupincome's logo">
       </router-link>
     </div>
-      <div class="level gi-center" v-if="$store.state.loggedIn">
-        <!-- TODO: use v-for to dynamically generate these? -->
-        <router-link
-          active-class="is-active"
-          class="navbar-item gi-item"
-          data-test="createGroup"
-          to="new-group"
-        >
-          <i18n>Start a Group</i18n>
-        </router-link>
-
-        <router-link
-          active-class="is-active"
-          class="navbar-item gi-item"
-          to="pay-group"
-        >
-          <i18n>Pay Group</i18n>
-        </router-link>
-
-        <router-link
-          active-class ="is-active"
-          class="navbar-item gi-item"
-          data-test="mailboxLink"
-          to="mailbox"
-        >
-          <i18n>Inbox</i18n>
-          <span
-            data-test="alertNotification"
-            class="icon"
-            style="color: #ed6c63;"
-            v-if="$store.getters.unreadMessageCount || $store.getters.proposals.length"
-          >
-            <i class="fa fa-bell"></i>
-          </span>
-        </router-link>
-      </div>
       <div class="navbar-end is-flex">
         <div class="navbar-item signUp-item" v-if="!$store.state.loggedIn">
           <router-link
@@ -59,22 +23,52 @@
             <i18n>Login</i18n>
           </button>
         </div>
+        <router-link v-if="$store.state.loggedIn"
+          active-class="is-active"
+          class="navbar-item navbar-main-item"
+          to="pay-group"
+        >
+          <i18n>Pay Group</i18n>
+        </router-link>
+        <router-link v-if="$store.state.loggedIn"
+          active-class="is-active"
+          class="navbar-item navbar-main-item"
+          to="dashboard"
+        >
+          <i18n>Groups</i18n>
+        </router-link>
+        <router-link v-if="$store.state.loggedIn"
+          active-class ="is-active"
+          class="navbar-item navbar-main-item"
+          data-test="mailboxLink"
+          to="mailbox"
+        >
+          <i18n>Inbox</i18n>
+          <span
+            data-test="alertNotification"
+            class="icon"
+            style="color: #ed6c63;"
+            v-if="$store.getters.unreadMessageCount || $store.getters.proposals.length"
+          >
+            <i class="fa fa-bell"></i>
+          </span>
+        </router-link>
         <div data-test="openProfileDropDown"
           class="navbar-item has-dropdown is-hoverable gi-is-profile"
           v-if="$store.state.loggedIn">
           <a class="navbar-link">
-            <strong>
-              {{ ($store.getters.currentUserIdentityContract &&
-                $store.getters.currentUserIdentityContract.attributes &&
-                $store.getters.currentUserIdentityContract.attributes.displayName) ||
-                $store.state.loggedIn.name
-              }}
-            </strong>
             <img class="avatar" v-if="$store.getters.currentUserIdentityContract &&
               $store.getters.currentUserIdentityContract.attributes &&
               $store.getters.currentUserIdentityContract.attributes.picture"
               v-bind:src="$store.getters.currentUserIdentityContract.attributes.picture"
             >
+            <span>
+              {{ ($store.getters.currentUserIdentityContract &&
+                $store.getters.currentUserIdentityContract.attributes &&
+                $store.getters.currentUserIdentityContract.attributes.displayName) ||
+                $store.state.loggedIn.name
+              }}
+            </span>
           </a>
           <div class="navbar-dropdown is-right">
             <router-link
@@ -105,17 +99,8 @@
   </nav>
 </template>
 <style lang="scss" scoped>
-// @import "../../node_modules/bulma/sass/utilities/all";
-
-.gi-center {
-  &.level {
-    margin-bottom: 0;
-  }
-}
-
-.navbar-item.gi-item {
-  background-color: transparent;
-  // background-color: $primary;
+.gi-logo {
+  padding-left: 2rem;
 }
 
 .signUp-item {
@@ -125,7 +110,7 @@
 .avatar {
   border-radius: 50%;
   max-height: 2.5rem;
-  margin-left: 1rem;
+  margin: 0 0.5rem;
 }
 </style>
 <script>

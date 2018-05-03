@@ -7,6 +7,7 @@ $gi-spacer: 1rem; // same as gap but in rem
 $gi-spacer-lg: $gi-spacer * 2;
 $gi-spacer-md: $gi-spacer;
 $gi-spacer-sm: $gi-spacer / 2;
+$gi-spacer-xs: $gi-spacer / 4;
 
 // NOTE: Find a way to generated different import themes
 @import 'kindergarten-professional';
