@@ -4,18 +4,18 @@
     <h3 class="title is-3"><i18n>Current Settings</i18n></h3>
     <div class="columns has-text-centered">
       <div class="column is-4">
-        <p class="settings-number" data-test="changePercentage">{{ group.changeThreshold | toPercent }}</p>
-        <p class="settings-label">Change Rules</p>
+        <p class="has-text-weight-bold settings-number" data-test="changePercentage">{{ group.changeThreshold | toPercent }}</p>
+        <p class="is-size-5">Change Rules</p>
         <a href="#">Propose change</a>
       </div>
       <div class="column is-4">
-        <p class="settings-number" data-test="approvePercentage">{{ group.memberApprovalThreshold | toPercent }}</p>
-        <p class="settings-label">Add Member</p>
+        <p class="has-text-weight-bold settings-number" data-test="approvePercentage">{{ group.memberApprovalThreshold | toPercent }}</p>
+        <p class="is-size-5">Add Member</p>
         <a href="#">Propose change</a>
       </div>
       <div class="column is-4">
-        <p class="settings-number" data-test="removePercentage">{{ group.memberRemovalThreshold | toPercent }}</p>
-        <p class="settings-label">Remove Member</p>
+        <p class="has-text-weight-bold settings-number" data-test="removePercentage">{{ group.memberRemovalThreshold | toPercent }}</p>
+        <p class="is-size-5">Remove Member</p>
         <a href="#">Propose change</a>
       </div>
     </div>
@@ -23,18 +23,9 @@
 </template>
 <style lang="scss" scoped>
 .settings-number {
-  font-family: HelveticaNeue-Bold;
-  font-size: 72px;
-  color: #616161;
-  line-height: 64px;
+  font-size: 4rem;
+  line-height: 1.1;
 }
-
-.settings-label {
-  font-family: HelveticaNeue-Light;
-  font-size: 24px;
-  color: #616161;
-}
-
 </style>
 <script>
 import { toPercent } from '../filters'
