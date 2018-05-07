@@ -31,8 +31,9 @@ $colors: map-merge($colors, $addColors);
 $link: $primary;
 $text: $grey-darker;
 
-$family-sans-serif: "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+$family-sans-serif: #{'Source Sans Pro', "Helvetica Neue", sans-serif};
 $family-monospace: #{monospace};
+$body-family: $family-sans-serif;
 
 $body-background-color: #fff;
 $text: $grey-darker;

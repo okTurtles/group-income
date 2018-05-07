@@ -1,14 +1,24 @@
 @font-face {
-  font-family: Foco;
-  src: url(../fonts/FocoBold.ttf);
+  src: url(../fonts/Source_Sans_Pro/SourceSansPro-Light.ttf);
+  font-family: 'Source Sans Pro';
+  font-weight: 300;
+}
+
+@font-face {
+  src: url(../fonts/Source_Sans_Pro/SourceSansPro-Regular.ttf);
+  font-family: 'Source Sans Pro';
+  font-weight: 400;
+}
+
+@font-face {
+  src: url(../fonts/Source_Sans_Pro/SourceSansPro-Bold.ttf);
+  font-family: 'Source Sans Pro';
+  font-weight: 700;
 }
 
 // ------ Utilities ------ //
-.gi- {
-  &foco-font {
-    font-family: Foco;
-  }
 
+.gi- {
   &is-opacity-1 { opacity: $gi-opacity-1; }
   &is-opacity-2 { opacity: $gi-opacity-2; }
   &is-opacity-3 { opacity: $gi-opacity-3; }
