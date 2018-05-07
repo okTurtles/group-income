@@ -281,6 +281,9 @@ export class Action extends Hashable {
 }
 
 export class HashableGroupProposal extends HashableAction {
+  static TypeInvitation = 'invitationProposal'
+  static TypeRemoval = 'removalProposal'
+  static TypeChange = 'changeProposal'
   static fields = HashableGroupProposal.Fields([
     ['type', 'string'],
     ['threshold', 'float'],

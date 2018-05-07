@@ -106,7 +106,7 @@ export default {
             let latest = await backend.latestHash(groupId)
             let proposal = new Events.HashableGroupProposal({
               // for proposal template selection in Vote.vue
-              type: 'invitationProposal', // TODO: constants for different proposal types
+              type: Events.HashableGroupProposal.TypeInvitation,
               // calculate the voting threshold from the group data
               threshold: this.currentGroupState.memberApprovalThreshold,
               candidate: memberName,
