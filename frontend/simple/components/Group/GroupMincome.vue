@@ -14,7 +14,7 @@
           </select>
         </span>
       </div>
-      <div class="control">
+      <div class="control is-expanded">
         <input
           class="input is-large is-primary"
           :class="{ 'is-danger': v.incomeProvided.$error }"
