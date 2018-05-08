@@ -148,6 +148,7 @@ const getters = {
     return (username, groupId) => {
       var profile = state[groupId || state.currentGroupId].profiles[username]
       return profile && {
+        username: username,
         globalProfile: state[profile.contractId].attributes,
         groupProfile: profile.groupProfile
       }
@@ -163,6 +164,18 @@ const getters = {
           return result
         },
         {}
+      )
+    }
+  },
+  profilesListForGroup (state, getters) {
+    return groupId => {
+      groupId = groupId || state.currentGroupId
+      return groupId && Object.keys(state[groupId].profiles).reduce(
+        (result, username) => {
+          result.push(getters.memberProfile(username, groupId))
+          return result
+        },
+        []
       )
     }
   },
