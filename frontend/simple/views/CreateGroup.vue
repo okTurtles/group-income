@@ -9,15 +9,6 @@
         </transition>
 
         <div class="field is-grouped is-grouped-right gi-is-grouped-reverse form-actions">
-          <p class="control" v-if="currentStep !== 0">
-            <button
-              class="button is-light is-large"
-              @click="prev"
-              data-test="prevBtn"
-            >
-              <i18n>Back</i18n>
-            </button>
-          </p>
           <p class="control" v-if="currentStep + 1 < config.steps.length">
             <button
               class="button is-success is-large"
@@ -42,6 +33,15 @@
               <span class="icon">
                 <i class="fa fa-check-circle"></i>
               </span>
+            </button>
+          </p>
+          <p class="control" v-if="currentStep !== 0">
+            <button
+              class="button is-light is-large"
+              @click="prev"
+              data-test="prevBtn"
+            >
+              <i18n>Back</i18n>
             </button>
           </p>
         </div>
