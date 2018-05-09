@@ -1,5 +1,5 @@
 <template>
-    <img :src="pictureURL">
+    <img :src="pictureURL" :alt="username">
 </template>
 <script>
 import {namespace} from '../js/backend/hapi'

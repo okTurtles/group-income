@@ -620,6 +620,46 @@ describe('Frontend', function () {
         .exists(elT('inviteMessage'))
       should(success).equal(true)
     })
+    it('Should See Member List on Dashboard', async function () {
+      // login
+      await n
+        .click(elT('openProfileDropDown'))
+        .click(elT('logoutBtn'))
+        // Open login modal
+        .wait(elT('loginBtn'))
+        .click(elT('loginBtn'))
+        // Login
+        .wait(`${elT('loginModal')}.is-active`)
+        .insert(elT('loginName'), username + '5')
+        .insert(elT('loginPassword'), 'testtest')
+        .click(elT('loginSubmit'))
+        .wait(
+          (el) => !document.querySelector(el),
+          `${elT('loginModal')}.is-active`
+        )
+      // dashboard
+      await n
+        .goto(page('dashboard'))
+        .wait(elT('groupMembers'))
+
+      const memberCount = await n
+        .wait(elT('member'))
+        .evaluate(
+          (el) => +document.querySelectorAll(el).length,
+          elT('member')
+        )
+      should(memberCount).equal(3)
+
+      const memberNames = await n
+        .wait(elT('username'))
+        .evaluate(
+          (el) => Array.prototype.map.call(document.querySelectorAll(el), (item) => item.innerText),
+          elT('username')
+        )
+      should(memberNames[0]).equal(username + '5')
+      should(memberNames[1]).equal(username)
+      should(memberNames[2]).equal(username + '2')
+    })
   })
 
   describe.skip('Test Localization Gathering Function', function () {

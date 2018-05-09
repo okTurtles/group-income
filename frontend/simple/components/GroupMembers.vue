@@ -1,5 +1,5 @@
 <template>
-  <section>
+  <section data-test="groupMembers">
     <div class="level">
       <h3 class="title"><i18n>Group Members</i18n></h3>
     </div>
@@ -7,12 +7,17 @@
       <div class="level-left">
         <ul class="columns is-mobile is-narrow is-multiline is-marginless">
           <li v-for="(member, i) in profiles"
-            class="column is-narrow badge">
-            <h4 class="badge-name is-size-7 gi-is-ellipsis ">
+            class="column is-narrow badge"
+            data-test="member"
+          >
+            <h4
+              class="badge-name is-size-7 gi-is-ellipsis"
+              data-test="username"
+            >
               {{ member.username }}
             </h4>
 
-            <user-image class="badge-img" :username="member.username" :alt="member.username" />
+            <user-image class="badge-img" :username="member.username" />
 
             <!-- TODO: How to handle color / multiple tags logic? -->
             <span class="tag badge-tag gi-is-ellipsis" v-if="member.pledge">
