@@ -621,6 +621,7 @@ describe('Frontend', function () {
       should(success).equal(true)
     })
     it('Should See Member List on Dashboard', async function () {
+      this.timeout(4000)
       // login
       await n
         .click(elT('openProfileDropDown'))
