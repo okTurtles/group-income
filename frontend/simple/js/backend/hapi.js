@@ -78,7 +78,7 @@ export class HapiBackend extends Backend {
       var res = await primus[method](contractId)
       console.log(`[HapiBackend] ${method}scribed ${contractId}:`, res)
     }
-    sbp.ready('events/on', 'contractsModified', updateSubs)
+    sbp('okTurtles.events/on', 'contractsModified', updateSubs)
   }
   publishLogEntry (contractId: string, entry: HashableEntry) {
     console.log(`publishLogEntry to ${contractId}:`, entry)

@@ -21,7 +21,7 @@ export class Hashable {
   // `fields` represents the *initial* fields/data that the contract is created with
   // set `fields` in subclasses using: static fields = Class.Fields([...])
   static fields: any // https://developers.google.com/protocol-buffers/docs/proto3
-  static Fields (fields) {
+  static Fields (fields: Array<Array<string>>) {
     var t = new Type(this.name)
     var idx = 0
     var addFields = ([name, type, rule]) => {
@@ -37,13 +37,13 @@ export class Hashable {
     return t
   }
   // https://flowtype.org/docs/classes.html#this-type
-  static fromObject (obj, hash): this {
+  static fromObject (obj: Object, hash: string): this {
     var instance = new this()
     instance._obj = obj
     if (instance.toHash() !== hash) throw Error(`hash obj: ${instance.toHash()} != hash: ${hash}`)
     return instance
   }
-  static fromProtobuf (buffer, hash) {
+  static fromProtobuf (buffer: Buffer, hash: string) {
     var instance = new this()
     // see: https://github.com/dcodeIO/protobuf.js/issues/828#issuecomment-307877338
     instance._obj = this.fields.toObject(this.fields.decode(buffer), {bytes: String})
@@ -78,7 +78,10 @@ export class Hashable {
 }
 
 export class HashableEntry extends Hashable {
-  static Fields (fields) {
+  // add these here to make FlowType happy
+  static transforms = {}
+  static vuex = {}
+  static Fields (fields: Array<Array<string>>) {
     var msgData = super.Fields(fields)
     var msg = new Type(this.name + 'Entry')
     msg.add(new Field('version', 1, 'uint32'))
@@ -114,7 +117,7 @@ export class HashableEntry extends Hashable {
 // into a different format in the vuex state.
 function ArrayToMap (keyPicker, valuePicker) {
   // 'this' will be bound to the contract instance in case it's needed
-  return function (state, param) {
+  return function (state: Object, param: string) {
     state[param] = state[param].reduce((accum, v) => {
       accum[v[keyPicker]] = valuePicker ? v[valuePicker] : v
       return accum
@@ -138,15 +141,15 @@ export class HashableContract extends HashableEntry {
     // mutations must be named exactly the same as corresponding Actions
     mutations: {clearAsync (state) { state._async = [] }}
   })
-  static Transforms (transforms) {
-    return {...(Object.getPrototypeOf(this).transforms || {}), ...transforms}
+  static Transforms (transforms: Object) {
+    return {...Object.getPrototypeOf(this).transforms, ...transforms}
   }
   static Vuex (vuex: Object) {
     if (!vuex.mutations[this.name]) {
       // default state initializer function
       vuex.mutations[this.name] = function () {}
     }
-    return _.merge(_.cloneDeep((Object.getPrototypeOf(this).vuex || {})), vuex)
+    return _.merge(_.cloneDeep(Object.getPrototypeOf(this).vuex), vuex)
   }
   // override this method to determine if the action can be posted to the
   // contract. Typically this is done by signature verification.
@@ -226,7 +229,7 @@ export class Authorization extends Hashable {
     })
   }
   // TODO: delete this
-  static dummyAuth (data = '') {
+  static dummyAuth (data: any = '') {
     return {name: this.name, data, auths: [{keys: [Buffer.from('1')], n: 1}]}
   }
 }

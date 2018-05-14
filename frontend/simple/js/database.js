@@ -86,6 +86,6 @@ export function saveCurrentUser (user: string): Promise<Object> {
 export function clearCurrentUser (): Promise<Object> {
   return appSettings.setItem('currentUser', null)
 }
-export function loadCurrentUser (): Promise<Object> {
+export function loadCurrentUser (): Promise<string> {
   return appSettings.getItem('currentUser')
 }

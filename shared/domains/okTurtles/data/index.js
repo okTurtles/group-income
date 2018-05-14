@@ -4,22 +4,28 @@
 // Domain: Data persistence
 // =======================
 
+import sbp from '../../../sbp'
+
 const _store = new Map()
 
-export default {
-  '/get': function (key) {
-    return _store[key]
+const SELECTORS = {
+  'okTurtles.data/get': function (key: any) {
+    return _store.get(key)
   },
-  '/set': function (key, data) {
-    _store[key] = data
+  'okTurtles.data/set': function (key: any, data: any) {
+    _store.set(key, data)
   },
-  '/add': function (key, data) {
-    const targetArray = _store[key]
+  'okTurtles.data/add': function (key: any, data: any) {
+    const targetArray = _store.get(key)
     if (targetArray instanceof Array) {
       targetArray.push(data)
     } else {
-      _store[key] = [data]
+      _store.set(key, [data])
     }
   }
   // TODO: '/remove' method
 }
+
+sbp('sbp/selectors/register', SELECTORS)
+
+export default SELECTORS

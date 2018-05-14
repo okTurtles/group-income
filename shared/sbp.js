@@ -1,76 +1,57 @@
 'use strict'
 
-type TypeFilter = (domain: string, selector: string, data: Array<*>) => ?boolean
-type TypeDomain = {
-  selectors: {[string]: Function},
-  domainFilters: Array<TypeFilter>,
-  selectorFilters: {[string]: TypeFilter},
-  data: Object
-}
+type TypeFilter = (domain: string, selector: string, data: any) => ?boolean
 
-var domains: {[string]: TypeDomain} = {}
+var selectors: {[string]: Function} = {}
 var globalFilters: Array<TypeFilter> = []
-var pendingCalls = {} // allows sbp to be called regardless of module load order
+var domainFilters: {[string]: Array<TypeFilter>} = {}
+var selectorFilters: {[string]: Array<TypeFilter>} = {}
 
-const DOMAIN_SELECTOR_REGEX = /^([^/]+)(.+)/
+const DOMAIN_REGEX = /^[^/]+/
 
-function sbp (path: string, ...data: any) {
-  var [, name, selector] = DOMAIN_SELECTOR_REGEX.exec(path)
-  var domain = domains[name]
+function sbp (selector: string, ...data: any) {
+  const domain = DOMAIN_REGEX.exec(selector)[0]
   // Filters can perform additional functions, and by returning `false` they
   // can prevent the execution of a selector.
-  for (let gf of globalFilters) {
-    if (gf(name, selector, data) === false) return
-  }
-  for (let df of domain.domainFilters) {
-    if (df(name, selector, data) === false) return
-  }
-  var sf = domain.selectorFilters[selector]
-  if (sf && sf(name, selector, data) === false) return
-  return domain.selectors[selector].call(domain, ...data)
-}
-
-sbp.registerDomain = function (domain: string, selectors: {[string]: Function}) {
-  if (domains[domain]) throw new Error(`${domain} exists`)
-  domains[domain] = {selectors, data: {}, domainFilters: [], selectorFilters: {}}
-  // run any pendingCalls for this domain
-  if (pendingCalls[domain]) {
-    for (var [path, data] of pendingCalls[domain]) {
-      sbp(path, ...data)
+  // TODO: decide whether the order of filter calls should be reversed
+  //       e.g. call the most specific filter before the more general filter
+  for (let filters of [globalFilters, domainFilters[domain], selectorFilters[selector]]) {
+    if (filters) {
+      for (let filter of filters) {
+        if (filter(domain, selector, data) === false) return
+      }
     }
-    delete pendingCalls[domain]
+  }
+  return selectors[selector](...data)
+}
+
+const SBP_BASE_SELECTORS = {
+  'sbp/selectors/register': function (sels: {[string]: Function}) {
+    for (const selector in sels) {
+      // TODO: debug log (using an SBP logging facility) if we're already registered
+      if (!selectors[selector]) {
+        selectors[selector] = sels[selector]
+      }
+    }
+  },
+  'sbp/selectors/unregister': function (sels: [string]) {
+    for (const selector of sels) {
+      delete selectors[selector]
+    }
+  },
+  'sbp/filters/global/add': function (filter: TypeFilter) {
+    globalFilters.push(filter)
+  },
+  'sbp/filters/domain/add': function (domain: string, filter: TypeFilter) {
+    if (!domainFilters[domain]) domainFilters[domain] = []
+    domainFilters[domain].push(filter)
+  },
+  'sbp/filters/selector/add': function (selector: string, filter: TypeFilter) {
+    if (!selectorFilters[selector]) selectorFilters[selector] = []
+    selectorFilters[selector].push(filter)
   }
 }
 
-sbp.unregisterDomain = function (domain: string) {
-  delete domains[domain]
-}
-
-// During startup of app, use this instead of sbp function to call selectors
-// on domains that haven't been registered yet. The selector gets run immediately
-// once the corresponding domain is registered via registerDomain.
-sbp.ready = function (path: string, ...data: any) {
-  // a call might happen to a selector for domains that haven't been registered
-  // yet, due to module load order. So we save them and run them later.
-  var [, domain] = DOMAIN_SELECTOR_REGEX.exec(path)
-  if (domains[domain]) return sbp(path, ...data) // call if already available
-  if (!pendingCalls[domain]) pendingCalls[domain] = []
-  pendingCalls[domain].push([path, data])
-}
-
-sbp.addDomainFilter = function (domain: string, filter: TypeFilter) {
-  domains[domain].domainFilters.push(filter)
-}
-
-sbp.setSelectorFilter = function (domain: string, selector: string, filter: TypeFilter) {
-  if (domains[domain].selectorFilters[selector]) {
-    throw new Error(`${domain}/${selector} filter exists`)
-  }
-  domains[domain].selectorFilters[selector] = filter
-}
-
-sbp.addGlobalFilter = function (filter: TypeFilter) {
-  globalFilters.push(filter)
-}
+SBP_BASE_SELECTORS['sbp/selectors/register'](SBP_BASE_SELECTORS)
 
 export default sbp

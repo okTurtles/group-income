@@ -2,19 +2,12 @@
 
 import should from 'should'
 import sinon from 'sinon'
-import { default as DATA } from './index.js'
 import sbp from '../../../sbp'
+import './index.js'
 
 require('should-sinon')
 
 describe('[SBP] DATA domain', () => {
-  before(() => {
-    sbp.registerDomain('okTurtles.data', DATA)
-  })
-  after(() => {
-    sbp.unregisterDomain('okTurtles.data')
-  })
-
   it('should store simple value', () => {
     sbp('okTurtles.data/set', 'test', 1)
     should(sbp('okTurtles.data/get', 'test')).equal(1)

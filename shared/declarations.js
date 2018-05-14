@@ -80,6 +80,8 @@ declare module 'mocha' { declare module.exports: any }
 declare module 'nightmare' { declare module.exports: any }
 declare module 'pathmodify' { declare module.exports: any }
 declare module 'should' { declare module.exports: any }
+declare module 'should-sinon' { declare module.exports: any }
+declare module 'sinon' { declare module.exports: any }
 declare module 'standard' { declare module.exports: any }
 declare module 'through2' { declare module.exports: any }
 declare module 'vue-hot-reload-api' { declare module.exports: any }
@@ -91,6 +93,13 @@ declare module 'protobufjs/light' { declare module.exports: any }
 declare module 'node-fetch' { declare module.exports: any }
 
 // .vue and .ejs files
+declare module './GroupName.vue' { declare module.exports: Object }
+declare module './GroupPurpose.vue' { declare module.exports: Object }
+declare module './GroupMincome.vue' { declare module.exports: Object }
+declare module './GroupRules.vue' { declare module.exports: Object }
+declare module './GroupPrivacy.vue' { declare module.exports: Object }
+declare module './GroupInvitees.vue' { declare module.exports: Object }
+declare module './GroupSummary.vue' { declare module.exports: Object }
 declare module './views/NavBar.vue' { declare module.exports: Object }
 declare module '../views/i18n.vue' { declare module.exports: Object }
 declare module '../views/CreateGroup.vue' { declare module.exports: Object }

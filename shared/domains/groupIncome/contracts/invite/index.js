@@ -5,11 +5,17 @@
 // =======================
 
 import * as Events from '../../../../events'
+// TODO: this should be accessed via an SBP call, not via an import
 import backend from '../../../../../frontend/simple/js/backend'
 
 export default {
   // create the invite record to the users' mailbox contract
-  '/mailContract/createPostMessage': async function (mailbox, groupName, groupId, messageType) {
+  'groupIncome.contracts/mailContract/createPostMessage': async function (
+    mailbox: string,
+    groupName: string,
+    groupId: string,
+    messageType: string
+  ) {
     const latestMailbox = await backend.latestHash(mailbox)
     const sentDate = new Date().toString()
     return new Events.HashableMailboxPostMessage(
@@ -23,7 +29,11 @@ export default {
     )
   },
   // create record of the invitation in the group's contract
-  '/groupContract/createInvitation': async function (inviteHash, memberName, groupId) {
+  'groupIncome.contracts/groupContract/createInvitation': async function (
+    inviteHash: string,
+    memberName: string,
+    groupId: string
+  ) {
     const latestGroup = await backend.latestHash(groupId)
     const sentDate = new Date().toString()
     return new Events.HashableGroupRecordInvitation(
