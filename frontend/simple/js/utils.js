@@ -2,7 +2,7 @@
 // with browserify-shim. See Gruntfile for details.
 import Vue from 'vue'
 import VS2 from 'vue-script2'
-// import VS2 from './ignored/Script2'
+// import VS2 from '../../../ignored/Script2'
 Vue.use(VS2)
 
 export function lazyLoadVue (component: string, base: string = '/simple/js') {

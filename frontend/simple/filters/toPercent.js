@@ -1,1 +1,1 @@
-export default decimal => Math.floor(decimal * 100) + '%'
+export default (decimal: number) => Math.floor(decimal * 100) + '%'

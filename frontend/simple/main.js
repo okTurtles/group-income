@@ -18,13 +18,13 @@ console.log('NODE_ENV:', process.env.NODE_ENV)
 //       to get logging for all subsequent SBP calls.
 //       In the future we might move it elsewhere.
 if (process.env.NODE_ENV !== 'production') {
-  sbp.addGlobalFilter((domain, sel, data) => {
-    console.log(`[sbp] CALL: ${domain}${sel}:`, data)
+  sbp('sbp/filters/global/add', (domain, selector, data) => {
+    console.log(`[sbp] CALL: ${selector}:`, data)
   })
 }
-sbp.registerDomain('okTurtles.data', DATA)
-sbp.registerDomain('okTurtles.events', EVENTS)
-sbp.registerDomain('groupIncome.contracts', CONTRACTS)
+sbp('sbp/selectors/register', DATA)
+sbp('sbp/selectors/register', EVENTS)
+sbp('sbp/selectors/register', CONTRACTS)
 
 async function loadLastUser () {
   let user = await db.loadCurrentUser()

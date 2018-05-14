@@ -1,21 +1,22 @@
 /* eslint-env mocha */
 
 import sinon from 'sinon'
-import { default as DATA } from '../data'
-import { default as EVENTS } from './index.js'
+import DATA from '../data'
+import EVENTS from './index.js'
 import sbp from '../../../sbp'
 
 require('should-sinon')
 
 describe('[SBP] EVENTS domain', () => {
+  after(() => sbp('sbp/selectors/unregister', Object.keys(DATA)))
   before(() => {
-    // TODO move this to events to make dependency more explicit
-    sbp.registerDomain('okTurtles.data', DATA)
-    sbp.registerDomain('okTurtles.events', EVENTS)
+    // TODO: move this to events to make dependency more explicit
+    sbp('sbp/selectors/register', DATA)
+    sbp('sbp/selectors/register', EVENTS)
   })
   after(() => {
-    sbp.unregisterDomain('okTurtles.data')
-    sbp.unregisterDomain('okTurtles.events')
+    sbp('sbp/selectors/unregister', Object.keys(DATA))
+    sbp('sbp/selectors/unregister', Object.keys(EVENTS))
   })
 
   it('should register event listener', () => {

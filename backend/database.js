@@ -103,7 +103,7 @@ export async function createLog (
   entry: HashableEntry
 ): Promise<string> {
   // TODO: add proper debugging events using Good
-  if (entry.parentHash) throw new Error('parentHash must be null!')
+  if (entry.toObject().parentHash) throw new Error('parentHash must be null!')
   await HashToData.query().insert({hash: contractId, value: entry.toJSON()})
   await knex.schema.createTableIfNotExists(contractId, function (table) {
     table.increments()
@@ -164,7 +164,7 @@ export function streamEntriesSince (contractId: string, hash: string) {
       readableObjectMode: false,
       writableObjectMode: true,
       transform: function (data, encoding, callback) {
-        var obj = {hash: data.hash}
+        var obj = {hash: data.hash, entry: null}
         delete data['id']
         delete data['hash']
         data.data = JSON.parse(data.data)
