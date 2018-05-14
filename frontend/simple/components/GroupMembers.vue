@@ -6,7 +6,7 @@
     <div class="level">
       <div class="level-left">
         <ul class="columns is-mobile is-narrow is-multiline is-marginless">
-          <li v-for="(member, i) in profiles"
+          <li v-for="(member, username) in profiles"
             class="column is-narrow badge"
             data-test="member"
           >
@@ -14,10 +14,10 @@
               class="badge-name is-size-7 gi-is-ellipsis"
               data-test="username"
             >
-              {{ member.username }}
+              {{ username }}
             </h4>
 
-            <user-image class="badge-img" :username="member.username" />
+            <user-image class="badge-img" :username="username" />
 
             <!-- TODO: How to handle color / multiple tags logic? -->
             <span class="tag badge-tag gi-is-ellipsis" v-if="member.pledge">
@@ -102,7 +102,7 @@
     },
     computed: {
       profiles () {
-        return this.$store.getters.profilesListForGroup()
+        return this.$store.getters.profilesForGroup()
       }
     }
   }
