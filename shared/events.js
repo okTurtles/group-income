@@ -142,14 +142,14 @@ export class HashableContract extends HashableEntry {
     mutations: {clearAsync (state) { state._async = [] }}
   })
   static Transforms (transforms: Object) {
-    return {...(Object.getPrototypeOf(this).transforms), ...transforms}
+    return {...Object.getPrototypeOf(this).transforms, ...transforms}
   }
   static Vuex (vuex: Object) {
     if (!vuex.mutations[this.name]) {
       // default state initializer function
       vuex.mutations[this.name] = function () {}
     }
-    return _.merge(_.cloneDeep((Object.getPrototypeOf(this).vuex)), vuex)
+    return _.merge(_.cloneDeep(Object.getPrototypeOf(this).vuex), vuex)
   }
   // override this method to determine if the action can be posted to the
   // contract. Typically this is done by signature verification.

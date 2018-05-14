@@ -6,7 +6,7 @@
 
 import sbp from '../../../sbp'
 
-export default {
+const SELECTORS = {
   // TODO: add ability to unregister listeners
   'okTurtles.events/on': function (event: string, handler: Function) {
     sbp('okTurtles.data/add', `events/${event}/listeners`, handler)
@@ -23,3 +23,7 @@ export default {
     sbp('okTurtles.data/set', `events/${event}/listenOnce`, [])
   }
 }
+
+sbp('sbp/selectors/register', SELECTORS)
+
+export default SELECTORS

@@ -1,24 +1,13 @@
 /* eslint-env mocha */
 
 import sinon from 'sinon'
-import DATA from '../data'
-import EVENTS from './index.js'
 import sbp from '../../../sbp'
+import '../data'
+import './index.js'
 
 require('should-sinon')
 
 describe('[SBP] EVENTS domain', () => {
-  after(() => sbp('sbp/selectors/unregister', Object.keys(DATA)))
-  before(() => {
-    // TODO: move this to events to make dependency more explicit
-    sbp('sbp/selectors/register', DATA)
-    sbp('sbp/selectors/register', EVENTS)
-  })
-  after(() => {
-    sbp('sbp/selectors/unregister', Object.keys(DATA))
-    sbp('sbp/selectors/unregister', Object.keys(EVENTS))
-  })
-
   it('should register event listener', () => {
     const testListener = sinon.spy()
     sbp('okTurtles.events/on', 'testEvent', testListener)

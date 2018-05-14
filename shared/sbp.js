@@ -6,7 +6,6 @@ var selectors: {[string]: Function} = {}
 var globalFilters: Array<TypeFilter> = []
 var domainFilters: {[string]: Array<TypeFilter>} = {}
 var selectorFilters: {[string]: Array<TypeFilter>} = {}
-var pendingCalls: {[string]: Array<*>} = {} // allows sbp to be called regardless of module load order
 
 const DOMAIN_REGEX = /^[^/]+/
 
@@ -23,32 +22,15 @@ function sbp (selector: string, ...data: any) {
       }
     }
   }
-  return selectors[selector].call(domain, ...data)
+  return selectors[selector](...data)
 }
 
 const SBP_BASE_SELECTORS = {
-  // During startup of app, use this instead of sbp function to call selectors
-  // that haven't been registered yet. The selector gets run immediately
-  // once it is registered via 'sbp/selectors/register'
-  'sbp/ready': function (selector: string, ...data: any) {
-    if (selectors[selector]) {
-      return sbp(selector, ...data)
-    }
-    if (!pendingCalls[selector]) pendingCalls[selector] = []
-    pendingCalls[selector].push(data)
-  },
   'sbp/selectors/register': function (sels: {[string]: Function}) {
     for (const selector in sels) {
-      if (selectors[selector]) {
-        throw new Error(`already registered: ${selector}`)
-      }
-      selectors[selector] = sels[selector]
-      // run any pendingCalls for this selector
-      if (pendingCalls[selector]) {
-        for (const data of pendingCalls[selector]) {
-          sbp(selector, ...data)
-        }
-        delete pendingCalls[selector]
+      // TODO: debug log (using an SBP logging facility) if we're already registered
+      if (!selectors[selector]) {
+        selectors[selector] = sels[selector]
       }
     }
   },

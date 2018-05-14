@@ -4,9 +4,11 @@
 // Domain: Data persistence
 // =======================
 
+import sbp from '../../../sbp'
+
 const _store = new Map()
 
-export default {
+const SELECTORS = {
   'okTurtles.data/get': function (key: any) {
     return _store.get(key)
   },
@@ -23,3 +25,7 @@ export default {
   }
   // TODO: '/remove' method
 }
+
+sbp('sbp/selectors/register', SELECTORS)
+
+export default SELECTORS
