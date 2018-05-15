@@ -81,7 +81,7 @@ $gapHistory: 0.5rem; // force reduced gap - modifier .is-n avaiable on new bulma
 
 </style>
 <script>
-import { toPercent } from '../filters'
+import { toPercent } from '../../filters'
 
 export default {
   name: 'GroupSupportHistory',

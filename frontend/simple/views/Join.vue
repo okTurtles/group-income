@@ -1,122 +1,85 @@
 <template>
-    <section class="section full-screen">
-      <div>
-        <div class="columns">
-          <div class="column is-one-half">
-            <div class="center ">
-              <div class="subtitle is-3"><i18n>You have been Invited to join</i18n></div>
-              <div class="title is-1">{{contract.groupName}}</div>
-            </div>
-            <div class="panel">
-              <div class="panel-block">
-                <div style="display: inline;">
-                  <strong>Shared Values: </strong> {{contract.sharedValues}}
-                </div>
-              </div>
-              <table class="panel-block notification is-warning">
-                <strong>${{contract.incomeProvided}} <i18n>Monthly Income</i18n></strong>
-              </table>
-              <div class="panel-block center" style="display: block; text-align: center;">
-                <div id="errorMsg" v-if="errorMsg" class="help is-danger">{{errorMsg}}</div>
-                <a data-test="acceptLink"
-                  class="button is-success is-large"
-                  v-on:click="accept"
-                  style="margin-left:auto; margin-right: 20px;"
-                >
-                  <i18n>Accept</i18n>
-                </a>
-                <a id="DeclineLink"
-                  class="button is-danger is-large"
-                  v-on:click="decline"
-                  style="margin-right:auto; margin-right: 20px;">
-                  <i18n>Decline</i18n>
-                </a>
-              </div>
-            </div>
-          </div>
-          <div class="column id-one-quarter">
-            <div class="panel">
-              <div class="panel-block">
-                <strong><i18n>Founder</i18n></strong>
-              </div>
-              <div class="panel-block">
-                {{contract.founderUsername}}
-              </div>
-              <div class="panel-block">
-                <div><strong><i18n>Group Info</i18n></strong></div>
-              </div>
-              <div class="panel-block">
-                <span>{{contract.groupName}} <i18n>is a group that was founded</i18n> {{formatDate(contract.creationDate)}}. <i18n>The Group currently has</i18n> {{contract.members.length}} <i18n>active members with</i18n> # <i18n>financial contributors</i18n>.</span>
-              </div>
-              <div class="panel-block">
-                <div><strong><i18n>Percentage of members are required to change the rules</i18n></strong></div>
-              </div>
-              <div class="panel-block">
-                {{contract.changeThreshold | toPercent}}
-              </div>
-              <div class="panel-block">
-                <strong><i18n>Open to New Members?</i18n></strong>
-              </div>
-              <div class="panel-block" v-show="openMembership"><i18n>Yes</i18n></div>
-              <div class="panel-block" v-show="!openMembership"><i18n>No</i18n></div>
-              <div class="panel-block">
-                <strong><i18n>Percentage of members are required to approve a new members</i18n></strong>
-              </div>
-              <div class="panel-block">
-                {{contract.memberApprovalThreshold | toPercent}}
-              </div>
-              <div class="panel-block">
-                <strong><i18n>Percentage of members are required to remove a member</i18n></strong>
-              </div>
-              <div class="panel-block">
-                {{contract.memberRemovalThreshold | toPercent}}
-              </div>
-              <div class="panel-block">
-                <strong><i18n>Contribution Transparency</i18n></strong>
-              </div>
-              <div class="panel-block">
-                {{contract.contributionPrivacy}}
-              </div>
-            </div>
-          </div>
-          <div class="column is-one-quarter">
-            <table class="table is-bordered is-striped is-narrow is-fullwidth">
-            <thead>
-            <tr>
-              <th><i18n>Group Members</i18n></th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr v-for="member in contract.members" class="member">
-              <td>
-                <div class="media">
-                  <div class="media-left">
-                    <p class="image is-64x64">
-                      <img :src="member.attributes.picture">
-                    </p>
-                  </div>
-                  <div class="media-content">
-                    <strong>{{member.attributes.name}}</strong>
-                  </div>
-                </div>
-              </td>
-            </tr>
-            </tbody>
-          </table>
-          </div>
-        </div>
+  <main class="section full-screen is-flex gi-join-container">
+    <div class="column is-flex gi-join-section">
+      <h1 class="has-text-grey">
+        You’ve been invited to join a group!
+      </h1>
+      <h2 class="title is-1 is-marginless gi-groupName">{{contract.groupName}}</h2>
+      <h3 class="is-size-5">{{contract.sharedValues}}</h3>
+      <div class="buttons">
+        <button
+          class="button is-large is-primary"
+          data-test="acceptLink"
+          v-on:click="accept">
+          Join Group
+        </button>
+        <button
+          class="button is-large is-outlined"
+          data-test="declineLink"
+          v-on:click="decline">
+          No, thanks
+        </button>
       </div>
-    </section>
+    </div>
+    <div class="column is-flex gi-join-section has-graphic" v-if="contract.members.length">
+      <members-circle :members="contract.members">
+        <bars
+          :currency="contract.incomeCurrencySign"
+          :history="contract.history"
+          :mincome="contract.incomeProvided" />
+      </members-circle>
+    </div>
+  </div>
+  </main>
 </template>
+<style lang="scss" scoped>
+@import "../sass/theme/index";
+@import "../sass/bulma_overrides/components/navbar";
+
+.gi-join {
+  &-container {
+    min-height: calc(100vh - #{$navbar-height});
+  }
+
+  &-section {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+
+    &.has-graphic {
+      align-items: center;
+    }
+  }
+}
+
+.gi-groupName {
+  padding: $gi-spacer-xs 0;
+}
+
+.buttons {
+  margin: $gi-spacer-xl 0 $gi-spacer;
+
+  .button:not(:last-child) {
+    margin-right: $gi-spacer;
+  }
+}
+
+</style>
 <script>
 import * as Events from '../../../shared/events'
 import backend from '../js/backend/'
 import { latestContractState } from '../js/state'
 import L from '../js/translations'
 import { toPercent } from '../filters'
+import MembersCircle from '../components/MembersCircle.vue'
+import Bars from '../components/Graphs/Bars.vue'
 
 export default {
   name: 'Join',
+  components: {
+    MembersCircle,
+    Bars
+  },
   async mounted () {
     try {
       let state = await latestContractState(this.$route.query.groupId)
@@ -135,7 +98,13 @@ export default {
       for (const name of Object.keys(state.profiles)) {
         members.push(await latestContractState(state.profiles[name].contractId))
       }
+
       state.members = members
+
+      // Mocked histoy to show on members-circle
+      state.incomeCurrencySign = '$'
+      state.history = [1.1, 1.3, 0.7, 1.05, 1, 1.3]
+
       this.contract = state
     } catch (ex) {
       // TODO Add ui facing error notification
