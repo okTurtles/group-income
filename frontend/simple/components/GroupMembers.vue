@@ -1,21 +1,26 @@
 <template>
-  <section>
+  <section data-test="groupMembers">
     <div class="level">
       <h3 class="title"><i18n>Group Members</i18n></h3>
     </div>
     <div class="level">
       <div class="level-left">
         <ul class="columns is-mobile is-narrow is-multiline is-marginless">
-          <li v-for="(member, i) in profilesForGroupMock"
-            class="column is-narrow badge">
-            <h4 class="badge-name is-size-7 gi-is-ellipsis ">
-              {{ member.username }}
+          <li v-for="(member, username) in profiles"
+            class="column is-narrow badge"
+            data-test="member"
+          >
+            <h4
+              class="badge-name is-size-7 gi-is-ellipsis"
+              data-test="username"
+            >
+              {{ username }}
             </h4>
 
-            <img class="badge-img" :src="member.photo" alt="" />
+            <user-image class="badge-img" :username="username" />
 
             <!-- TODO: How to handle color / multiple tags logic? -->
-            <span class="tag badge-tag gi-is-ellipsis">
+            <span class="tag badge-tag gi-is-ellipsis" v-if="member.pledge">
               {{ member.pledge }}
             </span>
           </li>
@@ -33,7 +38,7 @@
   </section>
 </template>
 <style lang="scss" scoped>
-  // @import "bulma/sass/utilities/mixins";
+  @import "../sass/theme/index";
 
   $iconSize: 4.6rem;
   $marginVertical: 0.3rem;
@@ -77,32 +82,18 @@
       height: 2.25rem;
     }
 
-    // @include tablet {
-    @media (min-width: 769px) {
-      margin-top: -0.75rem; // force h. alignment with .badge-img
+    @include tablet {
+      margin-top: $size-7 + $marginVertical; // force h. alignment with .badge-img
     }
   }
 </style>
 <script>
-  import {mapGetters} from 'vuex'
+  import UserImage from './user-image.vue'
+
   export default {
     name: 'GroupMembers',
-    data () {
-      return {
-        profilesForGroupMock: [{
-          username: 'You',
-          photo: '/simple/images/default-avatar.png',
-          pledge: '€200'
-        }, {
-          username: 'Sam',
-          photo: '/simple/images/default-avatar.png',
-          pledge: '€150'
-        }, {
-          username: 'Zoe',
-          photo: '/simple/images/default-avatar.png',
-          pledge: 'Cuteness'
-        }]
-      }
+    components: {
+      UserImage
     },
     methods: {
       invite () {
@@ -110,7 +101,9 @@
       }
     },
     computed: {
-      ...mapGetters(['profilesForGroup'])
+      profiles () {
+        return this.$store.getters.profilesForGroup()
+      }
     }
   }
 </script>

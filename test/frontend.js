@@ -20,6 +20,27 @@ function elT (el) {
   return `[data-test=${el}]`
 }
 
+function login (username) {
+  return function (n) {
+    n
+      // Logout
+      .click(elT('openProfileDropDown'))
+      .click(elT('logoutBtn'))
+      // Open login modal
+      .wait(elT('loginBtn'))
+      .click(elT('loginBtn'))
+      // Login
+      .wait(`${elT('loginModal')}.is-active`)
+      .insert(elT('loginName'), username)
+      .insert(elT('loginPassword'), 'testtest')
+      .click(elT('loginSubmit'))
+      .wait(
+        (el) => !document.querySelector(el),
+        `${elT('loginModal')}.is-active`
+      )
+  }
+}
+
 describe('Frontend', function () {
   const n = Nightmare({
     // openDevTools: true,
@@ -160,14 +181,7 @@ describe('Frontend', function () {
     it('Test Logout and Login', async function () {
       this.timeout(10000)
       const loggedin = await n
-        .click(elT('logoutBtn'))
-        .wait(elT('loginBtn'))
-        .click(elT('loginBtn'))
-        .wait(elT('loginModal'))
-        .insert(elT('loginName'), username)
-        .insert(elT('loginPassword'), 'testtest')
-        .click(elT('loginSubmit'))
-        .wait(elT('loginResponse'))
+        .use(login(username))
         .wait(elT('openProfileDropDown'))
         .click(elT('openProfileDropDown'))
         .exists(elT('logoutBtn'))
@@ -421,14 +435,7 @@ describe('Frontend', function () {
         .insert(elT('composedMessage'), 'Best test ever!!')
         .click(elT('sendButton'))
         .wait(elT('inbox'))
-        .click(elT('openProfileDropDown'))
-        .click(elT('logoutBtn'))
-        .wait(elT('loginBtn'))
-        .click(elT('loginBtn'))
-        .wait(elT('loginModal'))
-        .insert(elT('loginName'), username)
-        .insert(elT('loginPassword'), 'testtest')
-        .click(elT('loginSubmit'))
+        .use(login(username))
         .wait(elT('mailboxLink'))
         .click(elT('mailboxLink'))
 
@@ -457,54 +464,23 @@ describe('Frontend', function () {
       should(success).equal(true)
       // Logout
       success = await n
-        .click(elT('openProfileDropDown'))
-        .click(elT('logoutBtn'))
-        // Open login modal
-        .wait(elT('loginBtn'))
-        .click(elT('loginBtn'))
-        // Login
-        .wait(`${elT('loginModal')}.is-active`)
-        .wait(elT('loginName'))
-        .insert(elT('loginName'), username + '2')
-        .insert(elT('loginPassword'), 'testtest')
-        .click(elT('loginSubmit'))
-        .wait(
-          (el) => !document.querySelector(el),
-          `${elT('loginModal')}.is-active`
-        )
+        .use(login(username + '2'))
         .wait(elT('mailboxLink'))
-      // BUG: Why isn't there an await here?
-      // Accept invitation
-      n.click(elT('mailboxLink'))
+        // Accept invitation
+        .click(elT('mailboxLink'))
         .wait(elT('inviteMessage'))
         .click(elT('inviteMessage'))
         .wait(elT('acceptLink'))
         .click(elT('acceptLink'))
         .wait(elT('inbox'))
         .exists(elT('inbox'))
-      should(!success).equal(true)
+      should(success).equal(true)
     })
     it('Should Vote on Additional Members', async function () {
       this.timeout(10000)
       await n
-        .click(elT('openProfileDropDown'))
-        .click(elT('logoutBtn'))
-        // Open login modal
-        .wait(elT('loginBtn'))
-        .click(elT('loginBtn'))
-        // Login
-        .wait(`${elT('loginModal')}.is-active`)
-        .wait(elT('loginName'))
-        .insert(elT('loginName'), username + '5')
-        .insert(elT('loginPassword'), 'testtest')
-        .wait(elT('loginSubmit'))
-        .click(elT('loginSubmit'))
-        .wait(
-          (el) => !document.querySelector(el),
-          `${elT('loginModal')}.is-active`
-        )
       // Propose user
-      await n
+        .use(login(username + '5'))
         .goto(page('invite'))
         .wait(elT('searchUser'))
         .insert(elT('searchUser'), username + '3')
@@ -515,24 +491,9 @@ describe('Frontend', function () {
         )
         .click(elT('submit'))
         .wait(elT('notifyInvitedSuccess'))
-        // Logout
-        .click(elT('openProfileDropDown'))
-        .click(elT('logoutBtn'))
-        // Open login modal
-        .wait(elT('loginBtn'))
-        .click(elT('loginBtn'))
-      // Login
-      await n
-        .wait(`${elT('loginModal')}.is-active`)
-        .insert(elT('loginName'), username)
-        .insert(elT('loginPassword'), 'testtest')
-        .click(elT('loginSubmit'))
-        .wait(
-          (el) => !document.querySelector(el),
-          `${elT('loginModal')}.is-active`
-        )
       // Check vote banner on dashboard
       await n
+        .use(login(username))
         .goto(page('dashboard'))
         .wait(elT('proposal'))
 
@@ -574,20 +535,7 @@ describe('Frontend', function () {
       should(success).equal(true)
 
       success = await n
-        .click(elT('openProfileDropDown'))
-        .click(elT('logoutBtn'))
-        // Open login modal
-        .wait(elT('loginBtn'))
-        .click(elT('loginBtn'))
-        // Login
-        .wait(`${elT('loginModal')}.is-active`)
-        .insert(elT('loginName'), username + '2')
-        .insert(elT('loginPassword'), 'testtest')
-        .click(elT('loginSubmit'))
-        .wait(
-          (el) => !document.querySelector(el),
-          `${elT('loginModal')}.is-active`
-        )
+        .use(login(username + '2'))
         .wait(elT('mailboxLink'))
         .click(elT('mailboxLink'))
         .wait(elT('proposalMessage'))
@@ -599,26 +547,39 @@ describe('Frontend', function () {
       should(success).equal(true)
 
       success = await n
-        .click(elT('openProfileDropDown'))
-        .click(elT('logoutBtn'))
-        // Open login modal
-        .wait(elT('loginBtn'))
-        .click(elT('loginBtn'))
-        // Login
-        .wait(`${elT('loginModal')}.is-active`)
-        .insert(elT('loginName'), username + '3')
-        .insert(elT('loginPassword'), 'testtest')
-        .click(elT('loginSubmit'))
-        .wait(
-          (el) => !document.querySelector(el),
-          `${elT('loginModal')}.is-active`
-        )
+        .use(login(username + '3'))
         .wait(elT('mailboxLink'))
         // Accept invitation
         .click(elT('mailboxLink'))
         .wait(elT('inviteMessage'))
         .exists(elT('inviteMessage'))
       should(success).equal(true)
+    })
+    it('Should See Member List on Dashboard', async function () {
+      this.timeout(4000)
+
+      await n
+        .use(login(username + '5'))
+        .goto(page('dashboard'))
+        .wait(elT('groupMembers'))
+
+      const memberCount = await n
+        .wait(elT('member'))
+        .evaluate(
+          (el) => +document.querySelectorAll(el).length,
+          elT('member')
+        )
+      should(memberCount).equal(3)
+
+      const memberNames = await n
+        .wait(elT('username'))
+        .evaluate(
+          (el) => Array.prototype.map.call(document.querySelectorAll(el), (item) => item.innerText),
+          elT('username')
+        )
+      should(memberNames[0]).equal(username + '5')
+      should(memberNames[1]).equal(username)
+      should(memberNames[2]).equal(username + '2')
     })
   })
 
