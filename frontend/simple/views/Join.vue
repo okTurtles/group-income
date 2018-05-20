@@ -1,5 +1,5 @@
 <template>
-  <main class="section full-screen is-flex gi-join-container">
+  <main class="section full-screen is-flex-tablet gi-join-container">
     <div class="column is-flex gi-join-section">
       <h1 class="has-text-grey">
         You’ve been invited to join a group!
@@ -46,8 +46,15 @@
     align-items: flex-start;
     justify-content: center;
 
-    &.has-graphic {
-      align-items: center;
+    @include mobile {
+      padding-left: 0;
+      padding-right: 0;
+    }
+
+    @include tablet {
+      &.has-graphic {
+        align-items: center;
+      }
     }
   }
 }
@@ -61,6 +68,14 @@
 
   .button:not(:last-child) {
     margin-right: $gi-spacer;
+  }
+
+  @include mobile {
+    margin-top: $gi-spacer;
+
+    .button {
+      font-size: $size-6; // force to be default size on mobile
+    }
   }
 }
 

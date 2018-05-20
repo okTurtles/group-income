@@ -8,7 +8,6 @@
       <li v-for="(member, username) in membersWithStyle.slice(0, 6)" class="gi-item">
         <div class="gi-item-box"
           :style="member.style"
-          v-on:click="toggleMemberActive(member)"
           v-on:mouseenter="toggleMemberActive(member, true)"
           v-on:mouseleave="toggleMemberActive(member, false)"
           >
@@ -21,7 +20,6 @@
       <li v-if="members.length > maxMembers" class="gi-item">
         <div class="gi-item-box"
           :style="membersWithStyle[maxMembers].style"
-          v-on:click="toggleMemberActive('other')"
           v-on:mouseenter="toggleMemberActive('other', true)"
           v-on:mouseleave="toggleMemberActive('other', false)"
           >
@@ -60,8 +58,10 @@
 <style lang="scss" scoped>
 @import "../sass/theme/index";
 
-$mainCircle-size: 20rem; // same as <svg> viewBox
-$itemCircle-size: 6rem;
+$mainCircle-size: 16rem;
+$mainCircle-size-tablet: 20rem; // same as <svg> viewBox
+$itemCircle-size: 2rem;
+$itemCircle-size-tablet: 6rem;
 $border-width: 2px;
 
 @mixin itemRound {
@@ -83,6 +83,11 @@ $border-width: 2px;
   position: relative;
   width: $mainCircle-size;
   height: $mainCircle-size;
+
+  @include tablet {
+    width: $mainCircle-size-tablet;
+    height: $mainCircle-size-tablet;
+  }
 }
 
 .gi-svg {
@@ -101,6 +106,11 @@ $border-width: 2px;
   width: $itemCircle-size;
   height: $itemCircle-size;
   @include centerXY;
+
+  @include tablet {
+    width: $itemCircle-size-tablet;
+    height: $itemCircle-size-tablet;
+  }
 
   &-box {
     position: relative;
@@ -173,13 +183,15 @@ export default {
   computed: {
     membersWithStyle () {
       const { members } = this
+      const isTablet = window.innerWidth >= 768 // should be a utility like SCSS variables
       const thetaIncr = Math.PI * 2.0 / members.length
       let mt = 0
       let ml = 0
+      const sizeRadius = isTablet ? 10 : 8
 
       members.forEach((member, i) => {
-        mt = 9.5 * Math.sin(thetaIncr * i) // r * sin(theta)
-        ml = 9.5 * Math.cos(thetaIncr * i) // r * sin(theta)
+        mt = sizeRadius * Math.sin(thetaIncr * i) // r * sin(theta)
+        ml = sizeRadius * Math.cos(thetaIncr * i) // r * sin(theta)
 
         members[i] = {
           attributes: members[i].attributes,
