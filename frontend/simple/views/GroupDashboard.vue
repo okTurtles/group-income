@@ -27,24 +27,18 @@
           :proposal="proposal"
         />
 
-        <group-members class="widget" />
+        <group-members />
 
-        <progress-overview class="widget" />
+        <progress-overview />
 
-        <support-history class="widget"
-          :history="[1.2, 1, .85, .95, 1.05, .35]" />
+        <support-history :history="[1.2, 1, .85, .95, 1.05, .35]" />
 
-        <group-settings class="widget"
-          :group="currentGroupState" />
+        <group-settings :group="currentGroupState" />
       </div>
     </div>
   </main>
 </template>
 <style lang="scss" scoped>
-.widget {
-  margin: 4rem 0;
-}
-
 .gi-sidebar {
   width: 15rem;
   padding-right: 0;

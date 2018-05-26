@@ -1,7 +1,5 @@
 <template>
-  <section>
-    <!-- Group Settings -->
-    <h3 class="title is-3"><i18n>Current Settings</i18n></h3>
+  <dashboard-section title="Current Settings">
     <div class="columns has-text-centered">
       <div class="column is-4">
         <p class="has-text-weight-bold settings-number" data-test="changePercentage">{{ group.changeThreshold | toPercent }}</p>
@@ -19,7 +17,7 @@
         <a href="#">Propose change</a>
       </div>
     </div>
-  </section>
+  </dashboard-section>
 </template>
 <style lang="scss" scoped>
 .settings-number {
@@ -28,9 +26,14 @@
 }
 </style>
 <script>
+import DashboardSection from './DashboardSection.vue'
 import { toPercent } from '../utils/filters'
+
 export default {
   name: 'GroupSettings',
+  components: {
+    DashboardSection
+  },
   props: {
     group: Object
   },

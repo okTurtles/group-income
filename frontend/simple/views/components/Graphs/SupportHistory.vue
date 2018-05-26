@@ -1,6 +1,5 @@
 <template>
-  <section>
-    <h3 class="title"><i18n>Support History</i18n></h3>
+  <dashboard-section title="Support History">
     <p v-if="history.length === 0">Your group is still in its first month.</p>
     <div class="history columns" v-else>
       <div v-for="(percentage, index) in history" class="column is-2">
@@ -11,7 +10,7 @@
         </div>
       </div>
     </div>
-  </section>
+  </dashboard-section>
 </template>
 <style lang="scss" scoped>
 $gapHistory: 0.5rem; // force reduced gap - modifier .is-n avaiable on new bulma version
@@ -81,10 +80,14 @@ $gapHistory: 0.5rem; // force reduced gap - modifier .is-n avaiable on new bulma
 
 </style>
 <script>
+import DashboardSection from '../DashboardSection.vue'
 import { toPercent } from '../../utils/filters'
 
 export default {
   name: 'GroupSupportHistory',
+  components: {
+    DashboardSection
+  },
   props: {
     history: Array
   },
