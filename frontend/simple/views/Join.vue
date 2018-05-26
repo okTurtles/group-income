@@ -6,19 +6,22 @@
       </h1>
       <h2 class="title is-1 is-marginless gi-groupName">{{contract.groupName}}</h2>
       <h3 class="is-size-5">{{contract.sharedValues}}</h3>
-      <div class="buttons">
-        <button
-          class="button is-large is-primary"
-          data-test="acceptLink"
-          v-on:click="accept">
-          Join Group
-        </button>
-        <button
-          class="button is-large is-outlined"
-          data-test="declineLink"
-          v-on:click="decline">
-          No, thanks
-        </button>
+      <div class="gi-ctas" v-if="!isMobile">
+        <div class="buttons">
+          <button
+            class="button is-large is-primary"
+            data-test="acceptLink"
+            v-on:click="accept">
+            Join Group
+          </button>
+          <button
+            class="button is-large is-outlined"
+            data-test="declineLink"
+            v-on:click="decline">
+            No, thanks
+          </button>
+        </div>
+        <p v-if="errorMsg" class="has-text-danger has-text-centered-mobile">{{errorMsg}}</p>
       </div>
     </div>
     <div class="column is-flex gi-join-section has-graphic" v-if="contract.members.length">
@@ -28,6 +31,23 @@
           :history="contract.history"
           :mincome="contract.incomeProvided" />
       </members-circle>
+      <div class="gi-ctas" v-if="isMobile">
+        <div class="buttons">
+          <button
+            class="button is-large is-primary"
+            data-test="acceptLink"
+            v-on:click="accept">
+            Join Group
+          </button>
+          <button
+            class="button is-large is-outlined"
+            data-test="declineLink"
+            v-on:click="decline">
+            No, thanks
+          </button>
+        </div>
+        <p v-if="errorMsg" class="has-text-danger has-text-centered-mobile">{{errorMsg}}</p>
+      </div>
     </div>
   </div>
   </main>
@@ -43,15 +63,20 @@
 
   &-section {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
 
     @include mobile {
-      padding-left: 0;
-      padding-right: 0;
+      padding: 0;
+
+      &.has-graphic {
+        padding-top: $gi-spacer-lg;
+      }
     }
 
     @include tablet {
+      align-items: flex-start;
+
       &.has-graphic {
         align-items: center;
       }
@@ -60,32 +85,38 @@
 }
 
 .gi-groupName {
-  padding: $gi-spacer-xs 0;
+  padding-top: $gi-spacer-xs;
+}
+
+.gi-ctas {
+  margin-top: $gi-spacer-lg;
+
+  @include tablet {
+    margin: $gi-spacer-xl 0 $gi-spacer;
+  }
 }
 
 .buttons {
-  margin: $gi-spacer-xl 0 $gi-spacer;
+  &:not(:last-child) {
+    margin-bottom: 0;
+  }
 
   .button:not(:last-child) {
     margin-right: $gi-spacer;
   }
 
   @include mobile {
-    margin-top: $gi-spacer;
-
     .button {
       font-size: $size-6; // force to be default size on mobile
     }
   }
 }
-
 </style>
 <script>
 import * as Events from '../../../shared/events'
 import backend from '../js/backend/'
 import { latestContractState } from '../js/state'
 import L from '../js/translations'
-import { toPercent } from '../filters'
 import MembersCircle from '../components/MembersCircle.vue'
 import Bars from '../components/Graphs/Bars.vue'
 
@@ -126,9 +157,6 @@ export default {
       console.log(ex)
       this.$router.push({path: '/mailbox'})
     }
-  },
-  filters: {
-    toPercent
   },
   methods: {
     accept: async function () {
@@ -183,13 +211,10 @@ export default {
         console.log(ex)
         this.errorMsg = L('Failed to Decline Invite')
       }
-    },
-    formatDate: function (date) {
-      if (date) {
-        let formatString = new Date(date)
-        return formatString.toDateString()
-      }
     }
+  },
+  computed: {
+    isMobile () { return window.innerWidth < 768 }
   },
   data () {
     return {

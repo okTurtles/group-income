@@ -59,8 +59,10 @@
 @import "../sass/theme/index";
 
 $mainCircle-size: 16rem;
-$mainCircle-size-tablet: 20rem; // same as <svg> viewBox
+$mainCircle-size-tablet: 18rem;
+$mainCircle-size-desktop: 22rem;
 $itemCircle-size: 2rem;
+$itemCircle-size-tablet: 3rem;
 $itemCircle-size-tablet: 6rem;
 $border-width: 2px;
 
@@ -87,6 +89,11 @@ $border-width: 2px;
   @include tablet {
     width: $mainCircle-size-tablet;
     height: $mainCircle-size-tablet;
+  }
+
+  @include desktop {
+    width: $mainCircle-size-desktop;
+    height: $mainCircle-size-desktop;
   }
 }
 
@@ -183,11 +190,10 @@ export default {
   computed: {
     membersWithStyle () {
       const { members } = this
-      const isTablet = window.innerWidth >= 768 // should be a utility like SCSS variables
       const thetaIncr = Math.PI * 2.0 / members.length
       let mt = 0
       let ml = 0
-      const sizeRadius = isTablet ? 10 : 8
+      const sizeRadius = this.getSizeRadius
 
       members.forEach((member, i) => {
         mt = sizeRadius * Math.sin(thetaIncr * i) // r * sin(theta)
@@ -203,6 +209,20 @@ export default {
       })
 
       return members
+    },
+    getSizeRadius () {
+      // should be a utility like SCSS variables
+      const width = window.innerWidth
+      const isDesktop = width >= 1088
+      const isTablet = width >= 768
+
+      if (isDesktop) {
+        return 11
+      } else if (isTablet) {
+        return 9
+      } else {
+        return 8
+      }
     }
   }
 }
