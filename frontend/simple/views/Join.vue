@@ -1,5 +1,5 @@
 <template>
-  <main class="gi-join-grid">
+  <main class="gi-join-grid" v-if="contract.groupName">
     <div class="gi-join-grid-header">
       <h1 class="has-text-grey">
         <i18n>You’ve been invited to join a group!</i18n>
