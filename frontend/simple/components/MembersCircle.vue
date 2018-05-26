@@ -69,7 +69,7 @@ $itemCircle-size: 2rem;
 $itemCircle-size-tablet: 3rem;
 $itemCircle-size-desktop: 4rem;
 
-$border-width: 1.5px;
+$border-width: 1px;
 
 @mixin itemRound {
   width: 100%;
