@@ -1,53 +1,36 @@
 <template>
-  <main class="section full-screen is-flex-tablet gi-join-container">
-    <div class="column is-flex gi-join-section">
+  <main class="gi-join-grid">
+    <div class="gi-join-grid-header">
       <h1 class="has-text-grey">
         You’ve been invited to join a group!
       </h1>
-      <h2 class="title is-1 is-marginless gi-groupName">{{contract.groupName}}</h2>
+      <h2 class="title is-1 is-marginless">{{contract.groupName}}</h2>
       <h3 class="is-size-5">{{contract.sharedValues}}</h3>
-      <div class="gi-ctas" v-if="!isMobile">
-        <div class="buttons">
-          <button
-            class="button is-large is-primary"
-            data-test="acceptLink"
-            v-on:click="accept">
-            Join Group
-          </button>
-          <button
-            class="button is-large is-outlined"
-            data-test="declineLink"
-            v-on:click="decline">
-            No, thanks
-          </button>
-        </div>
-        <p v-if="errorMsg" class="has-text-danger has-text-centered-mobile">{{errorMsg}}</p>
-      </div>
     </div>
-    <div class="column is-flex gi-join-section has-graphic" v-if="contract.members.length">
+    <div class="gi-join-grid-ctas">
+      <div class="buttons">
+        <button
+          class="button is-large is-primary"
+          data-test="acceptLink"
+          v-on:click="accept">
+          Join Group
+        </button>
+        <button
+          class="button is-large is-outlined"
+          data-test="declineLink"
+          v-on:click="decline">
+          No, thanks
+        </button>
+      </div>
+      <p v-if="errorMsg" class="has-text-danger has-text-centered-mobile">{{errorMsg}}</p>
+    </div>
+    <div class="gi-join-grid-graphic" v-if="contract.members.length">
       <members-circle :members="contract.members">
         <bars
           :currency="contract.incomeCurrencySign"
           :history="contract.history"
           :mincome="contract.incomeProvided" />
       </members-circle>
-      <div class="gi-ctas" v-if="isMobile">
-        <div class="buttons">
-          <button
-            class="button is-large is-primary"
-            data-test="acceptLink"
-            v-on:click="accept">
-            Join Group
-          </button>
-          <button
-            class="button is-large is-outlined"
-            data-test="declineLink"
-            v-on:click="decline">
-            No, thanks
-          </button>
-        </div>
-        <p v-if="errorMsg" class="has-text-danger has-text-centered-mobile">{{errorMsg}}</p>
-      </div>
     </div>
   </div>
   </main>
@@ -57,42 +40,46 @@
 @import "../sass/bulma_overrides/components/navbar";
 
 .gi-join {
-  &-container {
+  &-grid {
+    display: grid;
+    grid-template-areas: "header" "graphic" "ctas";
+    grid-gap: $gi-spacer-lg;
+    padding: $gi-spacer-lg $gi-spacer;
+    max-width: $widescreen;
     min-height: calc(100vh - #{$navbar-height});
-  }
+    margin: auto;
 
-  &-section {
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    &-header {
+      grid-area: header;
+      align-self: self-end;
+    }
+
+    &-ctas {
+      grid-area: ctas;
+    }
+
+    &-graphic {
+      grid-area: graphic;
+      justify-self: center;
+      align-self: center;
+    }
 
     @include mobile {
-      padding: 0;
+      justify-items: center;
 
-      &.has-graphic {
-        padding-top: $gi-spacer-lg;
+      &-header,
+      &-graphic {
+        text-align: center;
       }
     }
 
     @include tablet {
-      align-items: flex-start;
-
-      &.has-graphic {
-        align-items: center;
-      }
+      grid-gap: $gi-spacer-xl $gi-spacer;
+      grid-template-columns: 50% 50%;
+      grid-template-rows: auto;
+      grid-template-areas: "header graphic" "ctas graphic";
+      padding: $gi-spacer-lg;
     }
-  }
-}
-
-.gi-groupName {
-  padding-top: $gi-spacer-xs;
-}
-
-.gi-ctas {
-  margin-top: $gi-spacer-lg;
-
-  @include tablet {
-    margin: $gi-spacer-xl 0 $gi-spacer;
   }
 }
 
@@ -212,9 +199,6 @@ export default {
         this.errorMsg = L('Failed to Decline Invite')
       }
     }
-  },
-  computed: {
-    isMobile () { return window.innerWidth < 768 }
   },
   data () {
     return {

@@ -1,29 +1,29 @@
 <template>
   <div class="gi-memberCircle-container">
-    <svg viewBox="0 0 320 320" version="1.1" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="gi-svg">
-      <circle cx="160" cy="160" r="158" class="gi-svg-circle"/>
+    <svg viewBox="0 0 256 256" version="1.1" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="gi-svg">
+      <circle cx="128" cy="128" r="126" class="gi-svg-circle"/>
     </svg>
 
-    <ul class="gi-circle-list">
-      <li v-for="(member, username) in membersWithStyle.slice(0, 6)" class="gi-item">
-        <div class="gi-item-box"
+    <ul class="gi-list">
+      <li v-for="(member, username) in membersWithStyle.slice(0, 6)" class="gi-list-item">
+        <div class="gi-list-item-box"
           :style="member.style"
           v-on:mouseenter="toggleMemberActive(member, true)"
           v-on:mouseleave="toggleMemberActive(member, false)"
           >
-          <img class="gi-item-img"
+          <img class="gi-list-item-img"
             :src='member.attributes.picture'
             :alt="`${member.attributes.name}'s avatar`">
         </div>
       </li>
 
-      <li v-if="members.length > maxMembers" class="gi-item">
-        <div class="gi-item-box"
+      <li v-if="members.length > maxMembers" class="gi-list-item">
+        <div class="gi-list-item-box"
           :style="membersWithStyle[maxMembers].style"
           v-on:mouseenter="toggleMemberActive('other', true)"
           v-on:mouseleave="toggleMemberActive('other', false)"
           >
-          <div class="gi-item-others is-flex">
+          <div class="gi-list-item-others is-flex">
             <i class="fa fa-plus is-size-4"></i>
           </div>
         </div>
@@ -58,13 +58,18 @@
 <style lang="scss" scoped>
 @import "../sass/theme/index";
 
+$scale-tablet: 1.25;
+$scale-desktop: 1.5;
+
 $mainCircle-size: 16rem;
-$mainCircle-size-tablet: 18rem;
-$mainCircle-size-desktop: 22rem;
+$mainCircle-size-tablet: $mainCircle-size * $scale-tablet;
+$mainCircle-size-desktop: $mainCircle-size * $scale-desktop;
+
 $itemCircle-size: 2rem;
 $itemCircle-size-tablet: 3rem;
-$itemCircle-size-tablet: 6rem;
-$border-width: 2px;
+$itemCircle-size-desktop: 4rem;
+
+$border-width: 1.5px;
 
 @mixin itemRound {
   width: 100%;
@@ -79,9 +84,17 @@ $border-width: 2px;
   transform: translate(-50%, -50%);
 }
 
-.gi-memberCircle-container,
-.gi-svg,
-.gi-circle-list {
+%circleScale {
+  @include tablet {
+    transform: scale($scale-tablet);
+  }
+
+  @include desktop {
+    transform: scale($scale-desktop);
+  }
+}
+
+%circleSize {
   position: relative;
   width: $mainCircle-size;
   height: $mainCircle-size;
@@ -97,8 +110,15 @@ $border-width: 2px;
   }
 }
 
+.gi-memberCircle-container {
+  @extend %circleSize;
+}
+
 .gi-svg {
   position: absolute;
+  left: 0;
+  top: 0;
+  @extend %circleSize;
 
   &-circle {
     stroke: $primary;
@@ -109,49 +129,59 @@ $border-width: 2px;
   }
 }
 
-.gi-item {
-  width: $itemCircle-size;
-  height: $itemCircle-size;
-  @include centerXY;
+.gi-list {
+  @extend %circleSize;
+  @extend %circleScale;
 
-  @include tablet {
-    width: $itemCircle-size-tablet;
-    height: $itemCircle-size-tablet;
-  }
+  &-item {
+    width: $itemCircle-size;
+    height: $itemCircle-size;
+    @include centerXY;
 
-  &-box {
-    position: relative;
-    width: 100%;
-    height: 100%;
+    @include tablet {
+      width: $itemCircle-size-tablet;
+      height: $itemCircle-size-tablet;
+    }
 
-    &::before {
-      position: absolute;
-      content: '';
-      box-shadow: 0 0 0 $border-width $primary;
-      opacity: 0;
-      transition: opacity 150ms;
+    @include desktop {
+      width: $itemCircle-size-desktop;
+      height: $itemCircle-size-desktop;
+    }
+
+    &-box {
+      position: relative;
+      width: 100%;
+      height: 100%;
+
+      &::before {
+        position: absolute;
+        content: '';
+        box-shadow: 0 0 0 $border-width $primary;
+        opacity: 0;
+        transition: opacity 150ms;
+        @include itemRound;
+      }
+
+      &.is-active::before,
+      &:hover::before {
+        opacity: 1;
+      }
+    }
+
+    &-img {
+      border: $border-width solid $body-background-color;
       @include itemRound;
     }
 
-    &.is-active::before,
-    &:hover::before {
-      opacity: 1;
+    &-others {
+      width: 100%;
+      height: 100%;
+      justify-content: center;
+      align-items: center;
+      border-radius: 50%;
+      background: $white-ter;
+      color: $primary;
     }
-  }
-
-  &-img {
-    border: $border-width solid $body-background-color;
-    @include itemRound;
-  }
-
-  &-others {
-    width: 100%;
-    height: 100%;
-    justify-content: center;
-    align-items: center;
-    border-radius: 50%;
-    background: $white-ter;
-    color: $primary;
   }
 }
 
@@ -193,7 +223,7 @@ export default {
       const thetaIncr = Math.PI * 2.0 / members.length
       let mt = 0
       let ml = 0
-      const sizeRadius = this.getSizeRadius
+      const sizeRadius = 8 // half $mainCircle-size
 
       members.forEach((member, i) => {
         mt = sizeRadius * Math.sin(thetaIncr * i) // r * sin(theta)
@@ -209,20 +239,6 @@ export default {
       })
 
       return members
-    },
-    getSizeRadius () {
-      // should be a utility like SCSS variables
-      const width = window.innerWidth
-      const isDesktop = width >= 1088
-      const isTablet = width >= 768
-
-      if (isDesktop) {
-        return 11
-      } else if (isTablet) {
-        return 9
-      } else {
-        return 8
-      }
     }
   }
 }
