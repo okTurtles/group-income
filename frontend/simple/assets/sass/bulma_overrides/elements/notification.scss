@@ -5,4 +5,10 @@
     background-color: rgba($warning, 0.3);
     border: 0.0625rem solid $warning;
   }
+
+  // used on Proposals.vue
+  &.gi-is-banner {
+    padding: $gi-spacer;
+    border-width: 0 0 0 1rem;
+  }
 }

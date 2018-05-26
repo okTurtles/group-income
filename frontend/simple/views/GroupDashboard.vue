@@ -22,10 +22,7 @@
           </p>
         </div>
 
-        <voting-banner class="widget"
-          v-for="proposal in Object.values(currentGroupState.proposals)"
-          :proposal="proposal"
-        />
+        <proposals :proposals="currentGroupState.proposals" />
 
         <group-members />
 
@@ -56,12 +53,13 @@
 </style>
 <script>
 import { mapGetters, mapState } from 'vuex'
+
 import YourGroupsList from './containers/YourGroupsList.vue'
 import GroupsMinIncome from './components/GroupsMinIncome.vue'
+import Proposals from './containers/Proposals.vue'
 import GroupMembers from './containers/GroupMembers.vue'
 import SupportHistory from './components/Graphs/SupportHistory.vue'
 import GroupSettings from './components/GroupSettings.vue'
-import VotingBanner from './containers/VotingBanner.vue'
 import ProgressOverview from './components/ProgressOverview.vue'
 
 export default {
@@ -78,10 +76,10 @@ export default {
   components: {
     YourGroupsList,
     GroupsMinIncome,
+    Proposals,
     GroupMembers,
     SupportHistory,
     GroupSettings,
-    VotingBanner,
     ProgressOverview
   }
 }

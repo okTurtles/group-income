@@ -1,6 +1,6 @@
 <template>
   <dashboard-section title="Support History">
-    <p v-if="history.length === 0">Your group is still in its first month.</p>
+    <p v-if="history.length === 0"><i18n>Your group is still in its first month.</i18n></p>
     <div class="history columns" v-else>
       <div v-for="(percentage, index) in history" class="column is-2">
         <div :class="['period', getResult(percentage)]">

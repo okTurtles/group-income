@@ -40,13 +40,8 @@
           "ignoreAtRules": ["include", "mixin", "extend"]
         }
       ],
-      "at-rule-empty-line-before": [
-        "always",
-        {
-          "ignore": ["after-comment"],
-          "ignoreAtRules": ["import", "include", "mixin", "extend"]
-        }
-      ],
+      "declaration-empty-line-before": ["never"],
+      "at-rule-empty-line-before": null,
       "font-family-no-missing-generic-family-keyword": null
     }
   },
