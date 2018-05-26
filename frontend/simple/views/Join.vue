@@ -2,7 +2,7 @@
   <main class="gi-join-grid">
     <div class="gi-join-grid-header">
       <h1 class="has-text-grey">
-        You’ve been invited to join a group!
+        <i18n>You’ve been invited to join a group!</i18n>
       </h1>
       <h2 class="title is-1 is-marginless">{{contract.groupName}}</h2>
       <h3 class="is-size-5">{{contract.sharedValues}}</h3>
