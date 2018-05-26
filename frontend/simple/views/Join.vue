@@ -34,6 +34,7 @@
     </div>
   </div>
   </main>
+  <loading v-else theme="fullView" />
 </template>
 <style lang="scss" scoped>
 @import "../sass/theme/index";
@@ -104,14 +105,16 @@ import * as Events from '../../../shared/events'
 import backend from '../js/backend/'
 import { latestContractState } from '../js/state'
 import L from '../js/translations'
-import MembersCircle from '../components/MembersCircle.vue'
 import Bars from '../components/Graphs/Bars.vue'
+import Loading from '../components/Loading.vue'
+import MembersCircle from '../components/MembersCircle.vue'
 
 export default {
   name: 'Join',
   components: {
-    MembersCircle,
-    Bars
+    Bars,
+    Loading,
+    MembersCircle
   },
   async mounted () {
     try {
