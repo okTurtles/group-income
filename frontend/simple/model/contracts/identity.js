@@ -1,7 +1,7 @@
 'use strict'
 
-import {verify} from '../../../shared/functions'
-import {HashableContract, HashableAction} from '../../../shared/events'
+import {verify} from '../../../../shared/functions'
+import {HashableContract, HashableAction} from '../../../../shared/events'
 
 // =======================
 // NOTE: this file is not used and will be deleted soon.

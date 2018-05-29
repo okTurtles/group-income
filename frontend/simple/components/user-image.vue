@@ -3,7 +3,7 @@
 </template>
 <script>
 import {namespace} from '../controller/backend/hapi'
-import {latestContractState} from '../js/state'
+import {latestContractState} from '../model/state'
 export default {
   name: 'UserImage',
   props: ['username'],

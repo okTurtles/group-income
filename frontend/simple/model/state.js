@@ -10,7 +10,7 @@ import backend from '../controller/backend'
 import sbp from '../../../shared/sbp'
 import * as db from './database'
 import * as Events from '../../../shared/events'
-import * as contracts from '../js/events'
+import * as contracts from './contracts/events'
 import debounce from 'lodash/debounce'
 // babel transforms lodash imports: https://github.com/lodash/babel-plugin-lodash#faq
 // for diff between 'lodash/map' and 'lodash/fp/map'

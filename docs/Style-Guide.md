@@ -134,7 +134,7 @@ Since every contract represents a _log of events_, you can run through the _acti
 
 In Group Income, the client runs chains through [Vuex](https://vuex.vuejs.org/en/) to build up the application state via the `handleEvent()` function in `frontend/simple/state.js`.
 
-There is a direct 1-to-1 mapping between the contract event logs, and Vuex mutations and actions. The contracts are defined in `shared/events.js`, and their Vuex mappings are defined in `frontend/simple/js/events.js`.
+There is a direct 1-to-1 mapping between the contract event logs, and Vuex mutations and actions. The contracts are defined in `shared/events.js`, and their Vuex mappings are defined in `frontend/simple/model/contracts/events.js`.
 
 ### Persistent State vs. Ephemeral State
 

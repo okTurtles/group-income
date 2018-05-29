@@ -1,5 +1,5 @@
 import Vue from 'vue'
-import * as Events from '../../../shared/events'
+import * as Events from '../../../../shared/events'
 import _ from 'lodash'
 
 export class GroupContract extends Events.HashableGroup {

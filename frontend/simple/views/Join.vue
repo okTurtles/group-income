@@ -103,7 +103,7 @@
 <script>
 import * as Events from '../../../shared/events'
 import backend from '../controller/backend/'
-import { latestContractState } from '../js/state'
+import { latestContractState } from '../model/state'
 import L from '../js/translations'
 import Bars from '../components/Graphs/Bars.vue'
 import Loading from '../components/Loading.vue'

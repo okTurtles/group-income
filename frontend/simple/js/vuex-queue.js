@@ -1,4 +1,4 @@
-import store from './state'
+import store from '../model/state'
 import Vue from 'vue'
 // Private Members
 var _queue = new WeakMap()

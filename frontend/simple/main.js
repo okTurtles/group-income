@@ -6,11 +6,11 @@ import '../../shared/domains/groupIncome/contracts'
 import Vue from 'vue'
 import router from './controller/router'
 import './js/translations'
-import * as db from './js/database'
+import * as db from './model/database'
 import NavBar from './views/NavBar.vue'
 import './js/transitions'
 import {namespace} from './controller/backend/hapi'
-import store from './js/state'
+import store from './model/state'
 
 console.log('NODE_ENV:', process.env.NODE_ENV)
 

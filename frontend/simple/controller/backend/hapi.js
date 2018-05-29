@@ -2,7 +2,7 @@
 'use strict'
 
 import request from 'superagent'
-import store from '../../js/state'
+import store from '../../model/state'
 import {Backend, TrustedNamespace} from './interface'
 import pubsub from '../../js/pubsub'
 import {sign} from '../../../../shared/functions'
