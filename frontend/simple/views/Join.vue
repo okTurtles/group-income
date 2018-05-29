@@ -1,5 +1,6 @@
 <template>
-  <main class="gi-join-grid" v-if="contract.groupName">
+  <loading theme="fullView" v-if="!contract.groupName" />
+  <main class="gi-join-grid" v-else>
     <div class="gi-join-grid-header">
       <h1 class="has-text-grey">
         <i18n>You’ve been invited to join a group!</i18n>
@@ -34,7 +35,6 @@
     </div>
   </div>
   </main>
-  <loading v-else theme="fullView" />
 </template>
 <style lang="scss" scoped>
 @import "../sass/theme/index";
