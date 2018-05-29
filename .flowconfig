@@ -12,7 +12,7 @@
 .*/frontend/_static/.*
 .*/frontend/simple/assets/.*
 .*/backend/discard/.*
-.*/frontend/simple/js/backend/interface.js
+.*/frontend/simple/controller/backend/interface.js
 .*/frontend/simple/js/crypto.js
 .*/frontend/simple/js/identity.js
 .*/frontend/simple/js/vuex-queue.js

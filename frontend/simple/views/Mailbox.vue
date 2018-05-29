@@ -195,9 +195,9 @@
 </style>
 <script>
 import _ from 'lodash'
-import backend from '../js/backend'
+import backend from '../controller/backend'
 import * as Events from '../../../shared/events'
-import {namespace} from '../js/backend/hapi'
+import {namespace} from '../controller/backend/hapi'
 import {latestContractState} from '../js/state'
 import L from '../js/translations'
 const criteria = [(msg) => new Date(msg.sentDate)]

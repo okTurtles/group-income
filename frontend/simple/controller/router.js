@@ -1,7 +1,12 @@
 import Vue from 'vue'
 import Router from 'vue-router'
+<<<<<<< HEAD:frontend/simple/js/router.js
 import store from './state'
 import lazyLoadVue from '../controller/utils/lazyLoadVue'
+=======
+import store from '../js/state'
+import lazyLoadVue from './helpers/lazyLoadVue'
+>>>>>>> 16688b2... Move js/router.js -> controller/:frontend/simple/controller/router.js
 
 import DesignSystem from '../views/DesignSystem.vue'
 import SignUp from '../views/SignUp.vue'

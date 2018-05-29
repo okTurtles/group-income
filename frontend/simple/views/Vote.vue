@@ -43,7 +43,7 @@
 </template>
 <script>
 import * as Events from '../../../shared/events'
-import backend from '../js/backend/'
+import backend from '../controller/backend/'
 import template from 'string-template'
 import L from '../js/translations'
 import _ from 'lodash'

@@ -6,7 +6,7 @@
 
 import * as Events from '../../../../events'
 // TODO: this should be accessed via an SBP call, not via an import
-import backend from '../../../../../frontend/simple/js/backend'
+import backend from '../../../../../frontend/simple/controller/backend'
 
 export default {
   // create the invite record to the users' mailbox contract

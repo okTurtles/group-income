@@ -110,12 +110,12 @@
 }
 </style>
 <script>
-import backend from '../js/backend'
+import backend from '../controller/backend'
 import Vue from 'vue'
 import _ from 'lodash'
 import * as Events from '../../../shared/events'
 import * as contracts from '../js/events'
-import {namespace} from '../js/backend/hapi'
+import {namespace} from '../controller/backend/hapi'
 import { validationMixin } from 'vuelidate'
 import { required, minLength, email } from 'vuelidate/lib/validators'
 import { nonWhitespace } from '../js/customValidators'

@@ -65,7 +65,7 @@
 </style>
 <script>
 import { latestContractState } from '../../js/state'
-import { namespace } from '../../js/backend/hapi'
+import { namespace } from '../../controller/backend/hapi'
 import L from '../../js/translations'
 
 export default {

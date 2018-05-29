@@ -85,7 +85,7 @@
 <script>
 /* @flow */
 import Vue from 'vue'
-import backend from '../js/backend'
+import backend from '../controller/backend'
 import * as Events from '../../../shared/events'
 import * as contracts from '../js/events'
 import L from '../js/translations'

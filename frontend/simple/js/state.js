@@ -6,7 +6,7 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import _ from 'lodash'
-import backend from '../js/backend'
+import backend from '../controller/backend'
 import sbp from '../../../shared/sbp'
 import * as db from './database'
 import * as Events from '../../../shared/events'

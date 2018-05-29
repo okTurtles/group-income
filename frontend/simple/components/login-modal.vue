@@ -73,7 +73,7 @@
   </div>
 </template>
 <script>
-import {HapiNamespace} from '../js/backend/hapi'
+import {HapiNamespace} from '../controller/backend/hapi'
 import L from '../js/translations'
 import { validationMixin } from 'vuelidate'
 import { required, minLength } from 'vuelidate/lib/validators'

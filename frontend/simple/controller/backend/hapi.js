@@ -2,9 +2,9 @@
 'use strict'
 
 import request from 'superagent'
-import store from '../state'
+import store from '../../js/state'
 import {Backend, TrustedNamespace} from './interface'
-import pubsub from '../pubsub'
+import pubsub from '../../js/pubsub'
 import {sign} from '../../../../shared/functions'
 import * as Events from '../../../../shared/events'
 import {RESPONSE_TYPE} from '../../../../shared/constants'
