@@ -9,7 +9,7 @@
   </section>
 </template>
 <script>
-  import { symbol } from '../js/currencies'
+  import { symbol } from '../utils/currencies'
   export default {
     name: 'GroupsMinIncome',
     props: {

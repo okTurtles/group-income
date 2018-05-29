@@ -104,10 +104,10 @@
 import * as Events from '../../../../shared/events'
 import backend from '../../controller/backend/'
 import { latestContractState } from '../../model/state'
-import L from '../../js/translations'
-import Bars from '../../components/Graphs/Bars.vue'
-import Loading from '../../components/Loading.vue'
-import MembersCircle from '../../components/MembersCircle.vue'
+import L from '../utils/translations'
+import Bars from '../components/Graphs/Bars.vue'
+import Loading from '../components/Loading.vue'
+import MembersCircle from '../components/MembersCircle.vue'
 
 export default {
   name: 'Join',

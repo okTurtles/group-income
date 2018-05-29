@@ -24,9 +24,9 @@
 	</div>
 </template>
 <script>
-import L from '../js/translations'
+import L from '../utils/translations'
 import template from 'string-template'
-import { HashableGroupProposal } from '../../../shared/events'
+import { HashableGroupProposal } from '../../../../shared/events'
 
 export default {
   name: 'VotingBanner',

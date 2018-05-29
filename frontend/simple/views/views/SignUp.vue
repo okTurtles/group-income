@@ -118,7 +118,7 @@ import * as contracts from '../../model/contracts/events'
 import {namespace} from '../../controller/backend/hapi'
 import { validationMixin } from 'vuelidate'
 import { required, minLength, email } from 'vuelidate/lib/validators'
-import { nonWhitespace } from '../../js/customValidators'
+import { nonWhitespace } from '../utils/validators'
 // TODO: fix all this
 export default {
   name: 'SignUp',

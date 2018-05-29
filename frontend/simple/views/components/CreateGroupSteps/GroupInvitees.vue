@@ -66,7 +66,7 @@
 <script>
 import { latestContractState } from '../../../model/state'
 import { namespace } from '../../../controller/backend/hapi'
-import L from '../../../js/translations'
+import L from '../../utils/translations'
 
 export default {
   name: 'GroupInvitees',

@@ -199,7 +199,7 @@ import backend from '../../controller/backend'
 import * as Events from '../../../../shared/events'
 import {namespace} from '../../controller/backend/hapi'
 import {latestContractState} from '../../model/state'
-import L from '../../js/translations'
+import L from '../utils/translations'
 const criteria = [(msg) => new Date(msg.sentDate)]
 export default {
   name: 'Mailbox',

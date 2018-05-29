@@ -221,11 +221,11 @@
 <script>
 import backend from '../../controller/backend'
 import * as Events from '../../../../shared/events'
-import L from '../../js/translations'
+import L from '../utils/translations'
 import _ from 'lodash'
 import { validationMixin } from 'vuelidate'
 import { url, email } from 'vuelidate/lib/validators'
-import { decimals } from '../../js/customValidators'
+import { decimals } from '../utils/validators'
 
 export default {
   name: 'UserProfile',

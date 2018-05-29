@@ -56,7 +56,7 @@
   </div>
 </template>
 <style lang="scss" scoped>
-@import "../assets/sass/theme/index";
+@import "../../assets/sass/theme/index";
 
 $scale-tablet: 1.25;
 $scale-desktop: 1.5;

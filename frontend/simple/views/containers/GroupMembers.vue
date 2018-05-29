@@ -38,7 +38,7 @@
   </section>
 </template>
 <style lang="scss" scoped>
-  @import "../assets/sass/theme/index";
+  @import "../../assets/sass/theme/index";
 
   $iconSize: 4.6rem;
   $marginVertical: 0.3rem;
@@ -88,7 +88,7 @@
   }
 </style>
 <script>
-  import UserImage from './user-image.vue'
+  import UserImage from './UserImage.vue'
 
   export default {
     name: 'GroupMembers',

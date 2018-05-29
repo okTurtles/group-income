@@ -6,8 +6,8 @@
   </div>
 </template>
 <style lang="scss" scoped>
-@import "../assets/sass/theme/index";
-@import "../assets/sass/bulma_overrides/components/navbar";
+@import "../../assets/sass/theme/index";
+@import "../../assets/sass/bulma_overrides/components/navbar";
 
 .gi-loading {
   opacity: 0;

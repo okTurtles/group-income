@@ -28,7 +28,7 @@
 }
 </style>
 <script>
-import { toPercent } from '../filters'
+import { toPercent } from '../utils/filters'
 export default {
   name: 'GroupSettings',
   props: {

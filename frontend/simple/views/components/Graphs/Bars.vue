@@ -23,7 +23,7 @@
   </div>
 </template>
 <style lang="scss" scoped>
-@import "../../assets/sass/theme/index";
+@import "../../../assets/sass/theme/index";
 
 $barHeight: $gi-spacer*2.5;
 $barMarginBottom: $gi-spacer-sm;

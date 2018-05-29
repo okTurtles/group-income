@@ -2,8 +2,8 @@
     <img :src="pictureURL" :alt="username">
 </template>
 <script>
-import {namespace} from '../controller/backend/hapi'
-import {latestContractState} from '../model/state'
+import {namespace} from '../../controller/backend/hapi'
+import {latestContractState} from '../../model/state'
 export default {
   name: 'UserImage',
   props: ['username'],

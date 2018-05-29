@@ -5,10 +5,10 @@ import '../../shared/domains/groupIncome/contracts'
 // import SBP stuff before anything else so that domains register themselves before called
 import Vue from 'vue'
 import router from './controller/router'
-import './js/translations'
+import './views/utils/translations'
 import * as db from './model/database'
 import NavBar from './views/containers/NavBar.vue'
-import './js/transitions'
+import './views/utils/transitions'
 import {namespace} from './controller/backend/hapi'
 import store from './model/state'
 
