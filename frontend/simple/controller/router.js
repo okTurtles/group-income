@@ -12,7 +12,7 @@ import {
   GroupPrivacy,
   GroupInvitees,
   GroupSummary
-} from '../components/Group'
+} from '../views/components/CreateGroupSteps'
 import DesignSystem from '../views/views/DesignSystem.vue'
 import GroupDashboard from '../views/views/GroupDashboard.vue'
 import Home from '../views/views/Home.vue'

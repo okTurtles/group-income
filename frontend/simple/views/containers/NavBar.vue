@@ -116,7 +116,7 @@
 <script>
 import Vue from 'vue'
 import TimeTravel from './TimeTravel.vue'
-import LoginModal from '../components/login-modal.vue'
+import LoginModal from '../../components/login-modal.vue'
 
 export default {
   name: 'NavBar',

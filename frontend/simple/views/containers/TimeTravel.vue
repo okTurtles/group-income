@@ -29,7 +29,7 @@
 <script>
 import Vue from 'vue'
 import VueSlider from 'vue-slider-component'
-import store from '../model/state.js'
+import store from '../../model/state'
 import _ from 'lodash'
 export default {
   name: 'TimeTravel',

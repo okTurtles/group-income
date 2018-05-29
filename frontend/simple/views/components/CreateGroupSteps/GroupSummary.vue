@@ -106,8 +106,8 @@
   } */
 </style>
 <script>
-import { symbol } from '../../js/currencies'
-import { toPercent } from '../../filters'
+import { symbol } from '../../../js/currencies'
+import { toPercent } from '../../../filters'
 export default {
   name: 'GroupSummary',
   props: {

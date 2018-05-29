@@ -34,7 +34,7 @@
   </div>
 </template>
 <script>
-import currencies from '../../js/currencies'
+import currencies from '../../../js/currencies'
 
 export default {
   name: 'GroupMincome',

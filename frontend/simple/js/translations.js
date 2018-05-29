@@ -1,7 +1,7 @@
 import i18next from 'i18next'
 import XHR from 'i18next-xhr-backend'
 import Vue from 'vue'
-import I18n from '../views/i18n.vue'
+import I18n from '../views/components/i18n.vue'
 
 i18next.use(XHR)
 // Initialize language to browser language
