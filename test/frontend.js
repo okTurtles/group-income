@@ -452,6 +452,7 @@ describe('Frontend', function () {
       should(hasMessage).equal(true)
       const accept = await n
         .click(elT('inviteMessage'))
+        .wait(elT('acceptLink'))
         .exists(elT('acceptLink'))
       should(accept).equal(true)
     })
