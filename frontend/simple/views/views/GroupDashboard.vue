@@ -62,13 +62,13 @@
 </style>
 <script>
 import { mapGetters, mapState } from 'vuex'
-import YourGroupsList from '../components/YourGroupsList.vue'
-import GroupsMinIncome from '../components/GroupsMinIncome.vue'
-import GroupMembers from '../components/GroupMembers.vue'
-import SupportHistory from '../components/Graphs/SupportHistory.vue'
-import GroupSettings from '../components/GroupSettings.vue'
-import VotingBanner from '../components/VotingBanner.vue'
-import ProgressOverview from '../components/ProgressOverview.vue'
+import YourGroupsList from '../../components/YourGroupsList.vue'
+import GroupsMinIncome from '../../components/GroupsMinIncome.vue'
+import GroupMembers from '../../components/GroupMembers.vue'
+import SupportHistory from '../../components/Graphs/SupportHistory.vue'
+import GroupSettings from '../../components/GroupSettings.vue'
+import VotingBanner from '../../components/VotingBanner.vue'
+import ProgressOverview from '../../components/ProgressOverview.vue'
 
 export default {
   name: 'GroupDashboard',

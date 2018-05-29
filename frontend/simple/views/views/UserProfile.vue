@@ -219,16 +219,16 @@
   </section>
 </template>
 <script>
-import backend from '../controller/backend'
-import * as Events from '../../../shared/events'
-import L from '../js/translations'
+import backend from '../../controller/backend'
+import * as Events from '../../../../shared/events'
+import L from '../../js/translations'
 import _ from 'lodash'
 import { validationMixin } from 'vuelidate'
 import { url, email } from 'vuelidate/lib/validators'
-import { decimals } from '../js/customValidators'
+import { decimals } from '../../js/customValidators'
 
 export default {
-  name: 'UserProfileView',
+  name: 'UserProfile',
   mixins: [ validationMixin ],
   computed: {
     attributes () {

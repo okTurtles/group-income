@@ -3,9 +3,7 @@ import Router from 'vue-router'
 import store from '../model/state'
 import lazyLoadVue from './utils/lazyLoadVue'
 
-import DesignSystem from '../views/DesignSystem.vue'
-import SignUp from '../views/SignUp.vue'
-import CreateGroup from '../views/CreateGroup.vue'
+import CreateGroup from '../views/views/CreateGroup.vue'
 import {
   GroupName,
   GroupPurpose,
@@ -15,15 +13,16 @@ import {
   GroupInvitees,
   GroupSummary
 } from '../components/Group'
-import GroupDashboard from '../views/GroupDashboard.vue'
-import UserProfileView from '../views/UserProfileView.vue'
-import Invite from '../views/Invite.vue'
-import Mailbox from '../views/Mailbox.vue'
-import Join from '../views/Join.vue'
-import Vote from '../views/Vote.vue'
-import PayGroup from '../views/PayGroup.vue'
-import Home from '../views/Home.vue'
-import MembersCircle from '../components/MembersCircle.vue'
+import DesignSystem from '../views/views/DesignSystem.vue'
+import GroupDashboard from '../views/views/GroupDashboard.vue'
+import Home from '../views/views/Home.vue'
+import Invite from '../views/views/Invite.vue'
+import Join from '../views/views/Join.vue'
+import Mailbox from '../views/views/Mailbox.vue'
+import SignUp from '../views/views/SignUp.vue'
+import PayGroup from '../views/views/PayGroup.vue'
+import UserProfile from '../views/views/UserProfile.vue'
+import Vote from '../views/views/Vote.vue'
 
 Vue.use(Router)
 
@@ -175,7 +174,7 @@ var router = new Router({
     },
     {
       path: '/user',
-      component: UserProfileView,
+      component: UserProfile,
       meta: {
         title: 'User Profile'
       },
@@ -195,14 +194,6 @@ var router = new Router({
         title: 'Pay Group'
       }
     },
-    // NOTE: we no longer support ejs pages
-    // {
-    //   path: '/ejs-page',
-    //   component: { template: wrap(require('../views/test.ejs')) },
-    //   meta: {
-    //     title: 'EJS Test Page'
-    //   }
-    // },
     /* Guards need to be created for any route that should not be directly accessed by url */
     {
       path: '/invite',
@@ -239,14 +230,6 @@ var router = new Router({
         title: 'Vote on a Proposal'
       },
       beforeEnter: createEnterGuards(loginGuard, mailGuard)
-    },
-    {
-      // shouldn't be its own page but we have it here for testing
-      path: '/members-circle',
-      name: MembersCircle.name,
-      component: MembersCircle,
-      meta: {title: 'Members Circle'},
-      beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '*',

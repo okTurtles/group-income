@@ -37,8 +37,8 @@
   </main>
 </template>
 <style lang="scss" scoped>
-@import "../sass/theme/index";
-@import "../sass/bulma_overrides/components/navbar";
+@import "../../assets/sass/theme/index";
+@import "../../assets/sass/bulma_overrides/components/navbar";
 
 .gi-join {
   &-grid {
@@ -101,13 +101,13 @@
 }
 </style>
 <script>
-import * as Events from '../../../shared/events'
-import backend from '../controller/backend/'
-import { latestContractState } from '../model/state'
-import L from '../js/translations'
-import Bars from '../components/Graphs/Bars.vue'
-import Loading from '../components/Loading.vue'
-import MembersCircle from '../components/MembersCircle.vue'
+import * as Events from '../../../../shared/events'
+import backend from '../../controller/backend/'
+import { latestContractState } from '../../model/state'
+import L from '../../js/translations'
+import Bars from '../../components/Graphs/Bars.vue'
+import Loading from '../../components/Loading.vue'
+import MembersCircle from '../../components/MembersCircle.vue'
 
 export default {
   name: 'Join',
