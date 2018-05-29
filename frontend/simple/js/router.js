@@ -1,6 +1,8 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import store from './state'
+import lazyLoadVue from '../controller/utils/lazyLoadVue'
+
 import DesignSystem from '../views/DesignSystem.vue'
 import SignUp from '../views/SignUp.vue'
 import CreateGroup from '../views/CreateGroup.vue'
@@ -22,7 +24,6 @@ import Vote from '../views/Vote.vue'
 import PayGroup from '../views/PayGroup.vue'
 import Home from '../views/Home.vue'
 import MembersCircle from '../components/MembersCircle.vue'
-import {lazyLoadVue} from './utils'
 
 Vue.use(Router)
 
