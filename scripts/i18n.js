@@ -87,7 +87,7 @@ function traversePath (path, cb) {
 }
 
 const source = process.argv[ 2 ] || '../frontend/simple/'
-const output = process.argv[ 3 ] || '../frontend/simple/locales/en/translation.json'
+const output = process.argv[ 3 ] || '../frontend/simple/assets/locales/en/translation.json'
 traversePath(source, (err) => {
   if (err) {
     throw err

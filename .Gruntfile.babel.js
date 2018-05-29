@@ -98,12 +98,6 @@ module.exports = (grunt) => {
         src: ['**/*'],
         dest: 'dist/simple',
         expand: true
-      },
-      translations: {
-        cwd: 'frontend/simple/locales',
-        src: ['**/*'],
-        dest: 'dist/simple/locales',
-        expand: true
       }
     },
 

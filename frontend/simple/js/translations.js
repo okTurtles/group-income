@@ -11,7 +11,7 @@ i18next.init(i18next.init({
   defaultValue: 'en',
   fallbackLng: 'en',
   backend: {
-    loadPath: '/simple/locales/{{lng}}/{{ns}}.json',
+    loadPath: '/simple/assets/locales/{{lng}}/{{ns}}.json',
     allowMultiLoading: false
   }
 }))
