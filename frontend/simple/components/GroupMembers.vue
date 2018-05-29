@@ -38,7 +38,7 @@
   </section>
 </template>
 <style lang="scss" scoped>
-  @import "../sass/theme/index";
+  @import "../assets/sass/theme/index";
 
   $iconSize: 4.6rem;
   $marginVertical: 0.3rem;

@@ -19,7 +19,7 @@
   </div>
 </template>
 <style lang="scss" scoped>
-@import "../sass/theme/index";
+@import "../assets/sass/theme/index";
 
 .gi-title {
   padding-top: $gi-spacer-lg;

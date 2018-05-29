@@ -45,7 +45,7 @@ module.exports = (grunt) => {
       },
       css: {
         options: { livereload },
-        files: ['frontend/simple/sass/**/*.{sass,scss}'],
+        files: ['frontend/simple/assets/sass/**/*.{sass,scss}'],
         tasks: ['sass']
       },
       html: {
@@ -78,7 +78,7 @@ module.exports = (grunt) => {
       dev: {
         files: [{
           expand: true,
-          cwd: 'frontend/simple/sass',
+          cwd: 'frontend/simple/assets/sass',
           src: ['*.{sass,scss}', '!_*/**'],
           dest: 'dist/simple/css/',
           ext: '.css'
