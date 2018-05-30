@@ -6,7 +6,7 @@ import _ from 'lodash'
 import {RESPONSE_TYPE} from '../shared/constants'
 import {sign} from '../shared/functions'
 import * as Events from '../shared/events'
-import pubsub from '../frontend/simple/js/pubsub'
+import pubsub from '../frontend/simple/controller/utils/pubsub'
 import * as contracts from '../frontend/simple/model/contracts/events'
 
 const Promise = global.Promise = require('bluebird')

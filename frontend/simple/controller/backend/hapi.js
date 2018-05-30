@@ -4,7 +4,7 @@
 import request from 'superagent'
 import store from '../../model/state'
 import {Backend, TrustedNamespace} from './interface'
-import pubsub from '../../js/pubsub'
+import pubsub from '../utils/pubsub'
 import {sign} from '../../../../shared/functions'
 import * as Events from '../../../../shared/events'
 import {RESPONSE_TYPE} from '../../../../shared/constants'

@@ -1,8 +1,8 @@
 'use strict'
 
-import Primus from '../assets/vendor/primus'
-import {RESPONSE_TYPE} from '../../../shared/constants'
-import {makeResponse as request} from '../../../shared/functions'
+import Primus from '../../assets/vendor/primus'
+import {RESPONSE_TYPE} from '../../../../shared/constants'
+import {makeResponse as request} from '../../../../shared/functions'
 const {ERROR, PUB, SUB, UNSUB} = RESPONSE_TYPE
 
 // see commentary in ./backend/hapi.js for more info about this file

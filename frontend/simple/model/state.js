@@ -253,7 +253,7 @@ const actions = {
       await db.saveSettings(state.loggedIn.name, settings)
     }
   },
-  // this function is called from ./pubsub.js and is the entry point
+  // this function is called from ../controller/utils/pubsub.js and is the entry point
   // for getting events into the log.
   // mirrors `handleEvent` in backend/server.js
   async handleEvent (
