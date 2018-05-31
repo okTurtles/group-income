@@ -307,13 +307,13 @@ var through = require('through2')
 // Excluding <pre> tags did not seem to work, however.
 function script2ify (file) {
   return !/\.(vue|html)$/.test(file) // edit to support other file types
-  ? through()
-  : through(function (buf, encoding, cb) {
-    // avoid replacing top-level <script> tags in .vue files
-    var regex = /\.vue$/.test(file)
-    ? /<!--.*?-->|^<script>|^<\/script>|(?:<(\/)?script([ >]))/gm
-    : /<!--.*?-->|(?:<(\/)?script([ >]))/gm
-    var replacement = (m, p1, p2) => p2 ? `<${p1 || ''}script2${p2}` : m
-    cb(null, buf.toString('utf8').replace(regex, replacement))
-  })
+    ? through()
+    : through(function (buf, encoding, cb) {
+      // avoid replacing top-level <script> tags in .vue files
+      var regex = /\.vue$/.test(file)
+        ? /<!--.*?-->|^<script>|^<\/script>|(?:<(\/)?script([ >]))/gm
+        : /<!--.*?-->|(?:<(\/)?script([ >]))/gm
+      var replacement = (m, p1, p2) => p2 ? `<${p1 || ''}script2${p2}` : m
+      cb(null, buf.toString('utf8').replace(regex, replacement))
+    })
 }
