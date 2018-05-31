@@ -3,7 +3,7 @@ import Router from 'vue-router'
 import store from '../model/state'
 import lazyLoadVue from './utils/lazyLoadVue'
 
-import CreateGroup from '../views/views/CreateGroup.vue'
+import CreateGroup from '../views/CreateGroup.vue'
 import {
   GroupName,
   GroupPurpose,
@@ -13,16 +13,16 @@ import {
   GroupInvitees,
   GroupSummary
 } from '../views/components/CreateGroupSteps'
-import DesignSystem from '../views/views/DesignSystem.vue'
-import GroupDashboard from '../views/views/GroupDashboard.vue'
-import Home from '../views/views/Home.vue'
-import Invite from '../views/views/Invite.vue'
-import Join from '../views/views/Join.vue'
-import Mailbox from '../views/views/Mailbox.vue'
-import SignUp from '../views/views/SignUp.vue'
-import PayGroup from '../views/views/PayGroup.vue'
-import UserProfile from '../views/views/UserProfile.vue'
-import Vote from '../views/views/Vote.vue'
+import DesignSystem from '../views/DesignSystem.vue'
+import GroupDashboard from '../views/GroupDashboard.vue'
+import Home from '../views/Home.vue'
+import Invite from '../views/Invite.vue'
+import Join from '../views/Join.vue'
+import Mailbox from '../views/Mailbox.vue'
+import SignUp from '../views/SignUp.vue'
+import PayGroup from '../views/PayGroup.vue'
+import UserProfile from '../views/UserProfile.vue'
+import Vote from '../views/Vote.vue'
 
 Vue.use(Router)
 

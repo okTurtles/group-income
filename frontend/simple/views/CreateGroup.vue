@@ -85,14 +85,14 @@
 <script>
 /* @flow */
 import Vue from 'vue'
-import backend from '../../controller/backend'
-import * as Events from '../../../../shared/events'
-import * as contracts from '../../model/contracts/events'
-import L from '../utils/translations'
-import StepAssistant from '../utils/StepAssistant'
+import backend from '../controller/backend'
+import * as Events from '../../../shared/events'
+import * as contracts from '../model/contracts/events'
+import L from './utils/translations'
+import StepAssistant from './utils/StepAssistant'
 import { validationMixin } from 'vuelidate'
 import { required, between } from 'vuelidate/lib/validators'
-import { decimals } from '../utils/validators'
+import { decimals } from './utils/validators'
 
 export default {
   name: 'CreateGroupView',

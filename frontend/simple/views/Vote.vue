@@ -42,10 +42,10 @@
   </section>
 </template>
 <script>
-import * as Events from '../../../../shared/events'
-import backend from '../../controller/backend/'
+import * as Events from '../../../shared/events'
+import backend from '../controller/backend/'
 import template from 'string-template'
-import L from '../utils/translations'
+import L from './utils/translations'
 import _ from 'lodash'
 export default {
   name: 'Vote',

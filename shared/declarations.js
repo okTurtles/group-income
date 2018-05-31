@@ -102,21 +102,21 @@ declare module './GroupInvitees.vue' { declare module.exports: Object }
 declare module './GroupSummary.vue' { declare module.exports: Object }
 declare module '../views/components/i18n.vue' { declare module.exports: Object }
 declare module './views/containers/NavBar.vue' { declare module.exports: Object }
-declare module '../views/views/CreateGroup.vue' { declare module.exports: Object }
-declare module '../views/views/PayGroup.vue' { declare module.exports: Object }
-declare module '../views/views/SignUp.vue' { declare module.exports: Object }
-declare module '../views/views/UserGroup.vue' { declare module.exports: Object }
-declare module '../views/views/UserProfile.vue' { declare module.exports: Object }
-declare module '../views/views/VueAssistant.vue' { declare module.exports: Object }
-declare module '../views/views/GroupDashboard.vue' { declare module.exports: Object }
-declare module '../views/views/ProposeMember.vue' { declare module.exports: Object }
-declare module '../views/views/Vote.vue' { declare module.exports: Object }
-declare module '../views/views/Invite.vue' { declare module.exports: Object }
-declare module '../views/views/Mailbox.vue' { declare module.exports: Object }
-declare module '../views/views/Join.vue' { declare module.exports: Object }
-declare module '../views/views/Home.vue' { declare module.exports: Object }
+declare module '../views/CreateGroup.vue' { declare module.exports: Object }
+declare module '../views/PayGroup.vue' { declare module.exports: Object }
+declare module '../views/SignUp.vue' { declare module.exports: Object }
+declare module '../views/UserGroup.vue' { declare module.exports: Object }
+declare module '../views/UserProfile.vue' { declare module.exports: Object }
+declare module '../views/VueAssistant.vue' { declare module.exports: Object }
+declare module '../views/GroupDashboard.vue' { declare module.exports: Object }
+declare module '../views/ProposeMember.vue' { declare module.exports: Object }
+declare module '../views/Vote.vue' { declare module.exports: Object }
+declare module '../views/Invite.vue' { declare module.exports: Object }
+declare module '../views/Mailbox.vue' { declare module.exports: Object }
+declare module '../views/Join.vue' { declare module.exports: Object }
+declare module '../views/Home.vue' { declare module.exports: Object }
 declare module '../components/MembersCircle.vue' { declare module.exports: Object }
-declare module '../views/views/DesignSystem.vue' { declare module.exports: Object }
+declare module '../views/DesignSystem.vue' { declare module.exports: Object }
 // special case for interface.js
 declare module './interface' { declare module.exports: any }
 

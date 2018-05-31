@@ -70,7 +70,7 @@ module.exports = (grunt) => {
 
     browserify: browserifyCfg({
       straight: [{ 'dist/simple/app.js': ['frontend/simple/main.js'] }],
-      lazy: [{ 'dist/simple/views/views/UserGroup.js': ['frontend/simple/views/views/UserGroup.vue'] }]
+      lazy: [{ 'dist/simple/views/UserGroup.js': ['frontend/simple/views/UserGroup.vue'] }]
     }),
 
     sass: {

@@ -46,7 +46,7 @@
   </div>
 </template>
 <style lang="scss" scoped>
-@import "../../assets/sass/theme/index";
+@import "../assets/sass/theme/index";
 
 .gi-title {
   border-top: 1px solid $primary;
