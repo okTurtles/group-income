@@ -1,7 +1,7 @@
 <template>
     <section class="section full-screen has-text-centered">
       <div data-test="homeLogo">
-        <img class="logo" src="images/group-income-icon-transparent.png">
+        <img class="logo" src="assets/images/group-income-icon-transparent.png">
         <br>
         <h1 class="title is-3"><i18n>Welcome to GroupIncome</i18n></h1>
         <div v-if="!$store.state.loggedIn">

@@ -45,7 +45,7 @@ module.exports = (grunt) => {
       },
       css: {
         options: { livereload },
-        files: ['frontend/simple/sass/**/*.{sass,scss}'],
+        files: ['frontend/simple/assets/sass/**/*.{sass,scss}'],
         tasks: ['sass']
       },
       html: {
@@ -70,7 +70,7 @@ module.exports = (grunt) => {
 
     browserify: browserifyCfg({
       straight: [{ 'dist/simple/app.js': ['frontend/simple/main.js'] }],
-      lazy: [{ 'dist/simple/js/UserGroupView.js': ['frontend/simple/views/UserGroupView.vue'] }]
+      lazy: [{ 'dist/simple/views/UserGroup.js': ['frontend/simple/views/UserGroup.vue'] }]
     }),
 
     sass: {
@@ -78,9 +78,9 @@ module.exports = (grunt) => {
       dev: {
         files: [{
           expand: true,
-          cwd: 'frontend/simple/sass',
+          cwd: 'frontend/simple/assets/sass',
           src: ['*.{sass,scss}', '!_*/**'],
-          dest: 'dist/simple/css/',
+          dest: 'dist/simple/assets/css/',
           ext: '.css'
         }]
       }
@@ -95,14 +95,8 @@ module.exports = (grunt) => {
       },
       assets: {
         cwd: 'frontend/simple/assets',
-        src: ['**/*'],
-        dest: 'dist/simple',
-        expand: true
-      },
-      translations: {
-        cwd: 'frontend/simple/locales',
-        src: ['**/*'],
-        dest: 'dist/simple/locales',
+        src: ['**/*', '!sass/**'],
+        dest: 'dist/simple/assets',
         expand: true
       }
     },
@@ -264,8 +258,8 @@ function browserifyCfg ({straight, lazy}, cfg = {}) {
         plugin: [[pathmodify, {
           mods: [
             // some libraries (like jquery-validity) require('jquery')
-            pathmodify.mod.re(/^jquery$/i, 'sprint-js'),
-            pathmodify.mod.dir('vendor', p`${__dirname}/frontend/simple/assets/vendor`),
+            // pathmodify.mod.re(/^jquery$/i, 'sprint-js'),
+            // pathmodify.mod.dir('vendor', p`${__dirname}/frontend/simple/assets/vendor`),
             // https://vuejs.org/v2/guide/installation.html#Standalone-vs-Runtime-only-Build
             pathmodify.mod.id('vue', p`${__dirname}/node_modules/vue/dist/vue.common.js`)
           ]
@@ -313,13 +307,13 @@ var through = require('through2')
 // Excluding <pre> tags did not seem to work, however.
 function script2ify (file) {
   return !/\.(vue|html)$/.test(file) // edit to support other file types
-  ? through()
-  : through(function (buf, encoding, cb) {
-    // avoid replacing top-level <script> tags in .vue files
-    var regex = /\.vue$/.test(file)
-    ? /<!--.*?-->|^<script>|^<\/script>|(?:<(\/)?script([ >]))/gm
-    : /<!--.*?-->|(?:<(\/)?script([ >]))/gm
-    var replacement = (m, p1, p2) => p2 ? `<${p1 || ''}script2${p2}` : m
-    cb(null, buf.toString('utf8').replace(regex, replacement))
-  })
+    ? through()
+    : through(function (buf, encoding, cb) {
+      // avoid replacing top-level <script> tags in .vue files
+      var regex = /\.vue$/.test(file)
+        ? /<!--.*?-->|^<script>|^<\/script>|(?:<(\/)?script([ >]))/gm
+        : /<!--.*?-->|(?:<(\/)?script([ >]))/gm
+      var replacement = (m, p1, p2) => p2 ? `<${p1 || ''}script2${p2}` : m
+      cb(null, buf.toString('utf8').replace(regex, replacement))
+    })
 }

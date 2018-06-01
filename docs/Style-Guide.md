@@ -134,7 +134,7 @@ Since every contract represents a _log of events_, you can run through the _acti
 
 In Group Income, the client runs chains through [Vuex](https://vuex.vuejs.org/en/) to build up the application state via the `handleEvent()` function in `frontend/simple/state.js`.
 
-There is a direct 1-to-1 mapping between the contract event logs, and Vuex mutations and actions. The contracts are defined in `shared/events.js`, and their Vuex mappings are defined in `frontend/simple/js/events.js`.
+There is a direct 1-to-1 mapping between the contract event logs, and Vuex mutations and actions. The contracts are defined in `shared/events.js`, and their Vuex mappings are defined in `frontend/simple/model/contracts/events.js`.
 
 ### Persistent State vs. Ephemeral State
 
@@ -160,7 +160,7 @@ There are **three exceptions**, and all of them have to do with different types 
 **The object returned by `data ()` should have only these keys:**
 
 1. **`form`** — form validation metadata for [`vuelidate`](https://github.com/okTurtles/group-income-simple/issues/334).
-2. **`config`** — some Vue.js components require bindings to config data (for example, the `sliderConfig` for `<vue-slider>` in `TimeTravel.vue` and `steps` for `components/StepAssistant.js` in `CreateGroup.vue`).
+2. **`config`** — some Vue.js components require bindings to config data (for example, the `sliderConfig` for `<vue-slider>` in `TimeTravel.vue` and `steps` for `helpers/StepAssistant.js` in `CreateGroup.vue`).
 3. **`ephemeral`** — any data we might not care to save beyond the life of the view (unless some other action is performed) should be placed here. There shouldn't be much that fits in this category (as, for example, most error handling stuff should be handled by `form` and in the `<template>` section). However, it might be useful to cache some data temporarily (like a profile picture or URL) here.
 
 Remember: if you can use a computed property based on the vuex store, it means you probably should.

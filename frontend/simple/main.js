@@ -4,13 +4,13 @@ import '../../shared/domains/okTurtles/data'
 import '../../shared/domains/groupIncome/contracts'
 // import SBP stuff before anything else so that domains register themselves before called
 import Vue from 'vue'
-import router from './js/router'
-import './js/translations'
-import * as db from './js/database'
-import NavBar from './views/NavBar.vue'
-import './js/transitions'
-import {namespace} from './js/backend/hapi'
-import store from './js/state'
+import router from './controller/router'
+import './views/utils/translations'
+import * as db from './model/database'
+import NavBar from './views/containers/NavBar.vue'
+import './views/utils/transitions'
+import {namespace} from './controller/backend/hapi'
+import store from './model/state'
 
 console.log('NODE_ENV:', process.env.NODE_ENV)
 

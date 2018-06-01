@@ -44,10 +44,10 @@
 </style>
 <script>
 import * as Events from '../../../shared/events'
-import backend from '../js/backend/'
-import L from '../js/translations'
+import backend from '../controller/backend/'
+import L from './utils/translations'
 import template from 'string-template'
-import { GroupInvitees } from '../components/Group'
+import { GroupInvitees } from './components/CreateGroupSteps'
 import { mapState, mapGetters } from 'vuex'
 import sbp from '../../../shared/sbp'
 

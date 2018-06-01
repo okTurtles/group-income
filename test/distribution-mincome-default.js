@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 
 const should = require('should')
-const incomeDistribution = require('../frontend/simple/js/distribution/mincome-default').default
+const incomeDistribution = require('../frontend/simple/utils/distribution/mincome-default').default
 
 describe('defaultMincomeDistributionTest', function () {
   it('should not change anything when there is only one member', function () {
