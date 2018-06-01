@@ -258,8 +258,8 @@ function browserifyCfg ({straight, lazy}, cfg = {}) {
         plugin: [[pathmodify, {
           mods: [
             // some libraries (like jquery-validity) require('jquery')
-            pathmodify.mod.re(/^jquery$/i, 'sprint-js'),
-            pathmodify.mod.dir('vendor', p`${__dirname}/frontend/simple/assets/vendor`),
+            // pathmodify.mod.re(/^jquery$/i, 'sprint-js'),
+            // pathmodify.mod.dir('vendor', p`${__dirname}/frontend/simple/assets/vendor`),
             // https://vuejs.org/v2/guide/installation.html#Standalone-vs-Runtime-only-Build
             pathmodify.mod.id('vue', p`${__dirname}/node_modules/vue/dist/vue.common.js`)
           ]
