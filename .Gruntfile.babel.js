@@ -80,7 +80,7 @@ module.exports = (grunt) => {
           expand: true,
           cwd: 'frontend/simple/assets/sass',
           src: ['*.{sass,scss}', '!_*/**'],
-          dest: 'dist/simple/css/',
+          dest: 'dist/simple/assets/css/',
           ext: '.css'
         }]
       }
@@ -95,8 +95,8 @@ module.exports = (grunt) => {
       },
       assets: {
         cwd: 'frontend/simple/assets',
-        src: ['**/*'],
-        dest: 'dist/simple',
+        src: ['**/*', '!sass/**'],
+        dest: 'dist/simple/assets',
         expand: true
       }
     },

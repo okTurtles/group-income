@@ -350,7 +350,7 @@ See [the Appendix](#appendix) for important notes on using EJS with Vue.js and v
 
 Just place them into the appropriate folder(s) within `simple/assets`. You might need to re-run `grunt dev` and refresh the page (our gruntfile currently doesn't watch for asset changes). Grunt will copy them into `dist/`.
 
-Then load them like normal (so `dist/images/bitcoin.png` is loaded as `<img src="/images/bitcoin.png">`).
+Then load them like normal (so `dist/assets/images/bitcoin.png` is loaded as `<img src="/images/bitcoin.png">`).
 
 *If they're someone else's (e.g. a CSS framework):*
 

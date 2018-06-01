@@ -138,7 +138,7 @@ export default {
           attributes: [
             {name: 'name', value: this.form.name},
             {name: 'email', value: this.form.email},
-            {name: 'picture', value: `${window.location.origin}/simple/images/default-avatar.png`}
+            {name: 'picture', value: `${window.location.origin}/simple/assets/images/default-avatar.png`}
           ]
         })
         let mailbox = new contracts.MailboxContract({

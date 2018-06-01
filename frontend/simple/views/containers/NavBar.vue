@@ -2,7 +2,7 @@
   <nav class="navbar">
     <div class="navbar-start is-flex">
       <router-link to="home" class="navbar-item gi-logo" @click="toggleTimeTravel">
-        <img src="/simple/images/logo-transparent.png"  alt="Groupincome's logo">
+        <img src="/simple/assets/images/logo-transparent.png"  alt="Groupincome's logo">
       </router-link>
     </div>
       <div class="navbar-end is-flex">

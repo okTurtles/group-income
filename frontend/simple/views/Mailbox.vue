@@ -92,7 +92,7 @@
                   <div class="media-left" v-on:click="respondToProposal(index)">
                     <p class="image is-64x64">
                       <!-- TODO: make this draw image from group contract -->
-                      <img src="images/128x128.png">
+                      <img src="assets/images/128x128.png">
                     </p>
                   </div>
                   <div class="media-content proposal-message"
@@ -119,7 +119,7 @@
                   <div class="media-left">
                     <p class="image is-64x64">
                       <!-- TODO: make this draw image from group contract -->
-                      <img src="images/default-avatar.png">
+                      <img src="assets/images/default-avatar.png">
                     </p>
                   </div>
                   <div
@@ -148,7 +148,7 @@
                 <div class="media">
                   <div class="media-left" v-on:click="read({index, type: message.data.messageType})">
                     <p class="image is-64x64">
-                      <img src="images/default-avatar.png">
+                      <img src="assets/images/default-avatar.png">
                     </p>
                   </div>
                   <div class="media-content inbox-message"
