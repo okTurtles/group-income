@@ -168,7 +168,7 @@
 </style>
 <script>
 import ButtonCountdown, { countdownStates } from './ButtonCountdown'
-import Lang from '../utils/translations'
+import L from '../utils/translations'
 import template from 'string-template'
 import { toPercent } from '../utils/filters'
 
@@ -229,37 +229,37 @@ export default {
     },
     closeProposalBtnText () {
       return this.closeProposalState.state === countdownStates.COUNTING
-        ? Lang('No, wait')
-        : Lang('Close Proposal')
+        ? L('No, wait')
+        : L('Close Proposal')
     },
     helperText () {
       switch (this.closeProposalState.state) {
         case countdownStates.COUNTING:
           return template(
-            Lang('Proposal closed in {countdown}...'), {
+            L('Proposal closed in {countdown}...'), {
               countdown: this.closeProposalState.countdown
             })
         case countdownStates.CANCELLED:
-          return Lang("Let's pretend that never happened")
+          return L("Let's pretend that never happened")
         case countdownStates.SUCCESS:
-          return Lang('Proposal cancelled')
+          return L('Proposal cancelled')
         default:
           break
       }
 
       if (!this.proposal.votes) {
         return this.proposal.ownProposal
-          ? Lang('Nobody voted yet')
-          : Lang('Be the first to vote!')
+          ? L('Nobody voted yet')
+          : L('Be the first to vote!')
       }
 
       if (!this.proposal.ownProposal && this.proposal.votes === 1) {
-        return Lang('Your were the first to vote')
+        return L('Your were the first to vote')
       }
 
       if (this.proposal.votes > 1) {
-        return template(Lang('{youAnd} {votesCount} of {members} members voted'), {
-          youAnd: this.hasVoted ? Lang('You and') : '',
+        return template(L('{youAnd} {votesCount} of {members} members voted'), {
+          youAnd: this.hasVoted ? L('You and') : '',
           votesCount: this.hasVoted ? this.proposal.votes - 1 : this.proposal.votes,
           members: this.proposal.members
         })
