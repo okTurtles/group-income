@@ -15,6 +15,8 @@
     <voting
       v-for="proposal in groupProposals.notVoted"
       :proposal="proposal"
+      :onVoteAgainst="handleVoteAgainst"
+      :onVotedFor="handleVoteFor"
     />
 
 
@@ -24,6 +26,7 @@
     <voting
       v-for="proposal in groupProposals.own"
       :proposal="proposal"
+      :handleCloseProposal="onCloseProposal"
     />
 
     <i18n class="notification gi-is-banner gi-notify"
@@ -46,6 +49,8 @@
       v-if="showOtherProposals"
       v-for="proposal in groupProposals.alreadyVoted"
       :proposal="proposal"
+      :onVoteAgainst="handleVoteAgainst"
+      :onVotedFor="handleVoteFor"
     />
   </dashboard-section>
 </template>
@@ -174,6 +179,17 @@ export default {
       const { notVoted, alreadyVoted } = this.groupProposals
 
       return alreadyVoted.length && notVoted.length === 0
+    }
+  },
+  methods: {
+    handleVoteAgainst () {
+      console.log('TODO Logic - The user voted against')
+    },
+    handleVoteFor () {
+      console.log('TODO Logic - The user voted for')
+    },
+    handleCloseProposal () {
+      console.log('TODO Logic - The proposal was closed')
     }
   }
 }

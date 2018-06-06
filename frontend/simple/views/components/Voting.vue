@@ -178,7 +178,10 @@ import { toPercent } from '../utils/filters'
 export default {
   name: 'Voting',
   props: {
-    proposal: Object
+    proposal: Object,
+    onVoteAgainst: Function,
+    onVotedFor: Function,
+    onCloseProposal: Function
   },
   components: {
     ButtonCountdown
@@ -273,24 +276,24 @@ export default {
     handleCloseProposalStateChange (state, opts = {}) {
       this.closeProposalState = { state, ...opts }
 
-      console.log('state', state, opts)
-
       state === 'success' && this.closeProposal()
     },
     handleVoteAgainst () {
       if (this.hasVotedAgainst) {
         return false
       }
-      console.log('TODO Logic - The user voted against')
+
+      this.onVoteAgainst && this.onVoteAgainst()
     },
     handleVoteFor () {
       if (this.hasVotedFor) {
         return false
       }
-      console.log('TODO Logic - The user voted for')
+
+      this.onVotedFor && this.onVotedFor()
     },
     closeProposal () {
-      console.log('TODO Logic - The proposal was closed')
+      this.onCloseProposal && this.onCloseProposal()
     }
   }
 }
