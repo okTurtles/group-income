@@ -8,7 +8,12 @@
 @import "../../assets/sass/theme/index";
 
 .gi-section {
+  position: relative;
   margin: $gi-spacer-lg*3 0;
+
+  &:first-of-type {
+    margin-top: $gi-spacer-lg;
+  }
 }
 </style>
 <script>

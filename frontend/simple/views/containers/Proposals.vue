@@ -1,5 +1,5 @@
 <template>
-  <dashboard-section title="Active Proposals">
+  <dashboard-section title="Proposals">
 
     <!--  Start Original Voting Banner to delete soon -->
     <voting-banner v-for="proposal in Object.values(proposals)"
@@ -7,11 +7,25 @@
     />
     <!--  End Original Voting Banner to delete soon -->
 
+    <a class="gi-showAll"
+      v-if="groupProposals.alreadyVoted.length"
+      @click.prevent="showOtherProposals = true"
+    >
+      <i18n>Show all</i18n>
+    </a>
+
+    <!-- REVIEW: Not sure about these banners. -->
+
+    <!--
     <h4 class="title is-size-5 notification is-warning gi-is-banner gi-notify"
       v-if="groupProposals.notVoted.length"
     >
       <i18n>These are waiting for your vote!</i18n>
     </h4>
+    -->
+
+    <i18n class="notification gi-is-banner gi-notify" v-if="allVoted">Cool, you already voted on all proposals.</i18n>
+
     <voting
       v-for="proposal in groupProposals.notVoted"
       :proposal="proposal"
@@ -19,39 +33,30 @@
       :onVotedFor="handleVoteFor"
     />
 
-
-    <h4 class="title is-size-5" v-if="groupProposals.own.length">
-      <i18n>Your own proposals</i18n>
-    </h4>
     <voting
       v-for="proposal in groupProposals.own"
       :proposal="proposal"
       :handleCloseProposal="onCloseProposal"
     />
 
-    <i18n class="notification gi-is-banner gi-notify"
-      v-if="!showOtherProposals && allVoted"
+    <div class="modal"
+      :class="{ 'is-active': showOtherProposals }"
+      v-if="groupProposals.alreadyVoted.length"
     >
-      Cool, you already voted on all active proposals.
-    </i18n>
+      <div class="modal-background"></div>
+      <div class="modal-content gi-is-large">
+        <h4 class="title is-3"><i18n>All Proposals</i18n></h4>
+        <voting
+          v-if="showOtherProposals"
+          v-for="proposal in groupProposals.alreadyVoted"
+          :proposal="proposal"
+          :onVoteAgainst="handleVoteAgainst"
+          :onVotedFor="handleVoteFor"
+        />
+      </div>
+      <button class="modal-close is-large" aria-label="close" @click="showOtherProposals = false"></button>
+    </div>
 
-    <a class="gi-showOther has-text-weight-bold"
-      v-if="!showOtherProposals && groupProposals.alreadyVoted.length"
-      @click.prevent="showOtherProposals = true"
-    >
-      <i18n>Show</i18n> {{groupProposals.alreadyVoted.length}} <i18n>voted proposals</i18n>
-    </a>
-
-    <h4 class="title is-size-5" v-if="showOtherProposals">
-      <i18n>Voted proposals</i18n>
-    </h4>
-    <voting
-      v-if="showOtherProposals"
-      v-for="proposal in groupProposals.alreadyVoted"
-      :proposal="proposal"
-      :onVoteAgainst="handleVoteAgainst"
-      :onVotedFor="handleVoteFor"
-    />
   </dashboard-section>
 </template>
 <style lang="scss" scoped>
@@ -62,12 +67,16 @@
   margin-top: $gi-spacer-lg;
 }
 
+.gi-showAll {
+  position: absolute;
+  top: $gi-spacer;
+  right: 0;
+}
 </style>
 <script>
 import DashboardSection from '../components/DashboardSection.vue'
 import Voting from '../components/Voting.vue'
 import VotingBanner from './VotingBanner.vue'
-// import ShowProposals from './ShowProposals.vue'
 
 export default {
   name: 'Proposals',

@@ -88,7 +88,7 @@
 .gi-voting {
   flex-wrap: wrap;
   justify-content: flex-end;
-  margin: $gi-spacer-xl 0;
+  margin: $gi-spacer+$gi-spacer-lg 0;
 
   &-body {
     margin-bottom: $gi-spacer;
