@@ -28,14 +28,16 @@
 
     <voting
       v-for="proposal in groupProposals.notVoted"
-      :proposal="proposal"
+      :type="proposal.type"
+      :proposal="proposal.data"
       :onVoteAgainst="handleVoteAgainst"
       :onVotedFor="handleVoteFor"
     />
 
     <voting
       v-for="proposal in groupProposals.own"
-      :proposal="proposal"
+      :type="proposal.type"
+      :proposal="proposal.data"
       :handleCloseProposal="onCloseProposal"
     />
 
@@ -47,9 +49,9 @@
       <div class="modal-content gi-is-large">
         <h4 class="title is-3"><i18n>All Proposals</i18n></h4>
         <voting
-          v-if="showOtherProposals"
           v-for="proposal in groupProposals.alreadyVoted"
-          :proposal="proposal"
+          :type="proposal.type"
+          :proposal="proposal.data"
           :onVoteAgainst="handleVoteAgainst"
           :onVotedFor="handleVoteFor"
         />
@@ -75,7 +77,7 @@
 </style>
 <script>
 import DashboardSection from '../components/DashboardSection.vue'
-import Voting from '../components/Voting.vue'
+import Voting from '../components/Voting'
 import VotingBanner from './VotingBanner.vue'
 
 export default {
@@ -84,7 +86,6 @@ export default {
     DashboardSection,
     Voting,
     VotingBanner
-    // ShowProposals
   },
   props: {
     proposals: Object
@@ -95,72 +96,82 @@ export default {
       mockProposals: [
         {
           type: 'member',
-          member: {
-            picture: 'assets/images/default-avatar.png',
-            name: 'Gil'
-          },
-          title: 'Remove Member',
-          text: 'Sam had proposed to <strong>remove Gil</strong> from the group.',
-          ctas: {
-            for: 'Remove Gil',
-            against: 'Keep Gil'
-          },
-          members: 7,
-          votes: 4,
-          userVote: null
+          data: {
+            member: {
+              picture: 'assets/images/default-avatar.png',
+              name: 'Gil'
+            },
+            title: 'Remove Member',
+            text: 'Sam had proposed to <strong>remove Gil</strong> from the group.',
+            ctas: {
+              for: 'Remove Gil',
+              against: 'Keep Gil'
+            },
+            members: 7,
+            votes: 4,
+            userVote: null
+          }
         },
         {
           type: 'rule',
-          value: 0.6,
-          title: 'Rule: Add Memmber',
-          text: 'Karl had proposed to change <strong>Add Member Rule from 80% to 60% </strong>.',
-          textDetails: 'Instead of 6, now at least 5 of 8 members need to approve a new member.',
-          ctas: {
-            for: 'Change to 60%',
-            against: 'Keep 80%'
-          },
-          members: 7,
-          votes: 0,
-          userVote: null
+          data: {
+            value: 0.6,
+            title: 'Rule: Add Memmber',
+            text: 'Karl had proposed to change <strong>Add Member Rule from 80% to 60% </strong>.',
+            textDetails: 'Instead of 6, now at least 5 of 8 members need to approve a new member.',
+            ctas: {
+              for: 'Change to 60%',
+              against: 'Keep 80%'
+            },
+            members: 7,
+            votes: 0,
+            userVote: null
+          }
         },
         {
           type: 'rule',
-          value: 0.92,
-          title: 'Rule: Change Mincome',
-          text: 'Karl had proposed to change <strong>Mincome Rule from 87% to 92%</strong>.',
-          textDetails: 'Instead of 6, now at least 5 of 7 members need to approve a new member.',
-          ctas: {
-            for: 'Change to 92%',
-            against: 'Keep 87%'
-          },
-          members: 7,
-          votes: 1,
-          userVote: false
+          data: {
+            value: 0.92,
+            title: 'Rule: Change Mincome',
+            text: 'Karl had proposed to change <strong>Mincome Rule from 87% to 92%</strong>.',
+            textDetails: 'Instead of 6, now at least 5 of 7 members need to approve a new member.',
+            ctas: {
+              for: 'Change to 92%',
+              against: 'Keep 87%'
+            },
+            members: 7,
+            votes: 1,
+            userVote: false
+          }
         },
         {
           type: 'member',
-          member: {
-            picture: 'assets/images/default-avatar.png',
-            name: 'Kim'
-          },
-          title: 'Add Member',
-          text: 'Rachel had proposed to <strong>add Kim</strong> to the group.',
-          ctas: {
-            for: 'Invite Kim',
-            against: 'Don\'t invite'
-          },
-          members: 7,
-          votes: 3,
-          userVote: true
+          data: {
+            member: {
+              picture: 'assets/images/default-avatar.png',
+              name: 'Kim'
+            },
+            title: 'Add Member',
+            text: 'Rachel had proposed to <strong>add Kim</strong> to the group.',
+            ctas: {
+              for: 'Invite Kim',
+              against: 'Don\'t invite'
+            },
+            members: 7,
+            votes: 3,
+            userVote: true
+          }
         },
         {
           type: 'mincome',
-          value: '$150',
-          title: 'Min Income',
-          text: 'You had proposed to change <strong>mincome from $200 to $150</strong>',
-          members: 7,
-          votes: 0,
-          ownProposal: true
+          data: {
+            value: '$150',
+            title: 'Min Income',
+            text: 'You had proposed to change <strong>mincome from $200 to $150</strong>',
+            members: 7,
+            votes: 0,
+            ownProposal: true
+          }
         }
       ]
     }
@@ -173,11 +184,11 @@ export default {
 
       for (var i = 0, l = this.mockProposals.length; i < l; i++) {
         const proposal = this.mockProposals[i]
-        if (proposal.ownProposal) {
+        if (proposal.data.ownProposal) {
           own.push(proposal)
-        } else if (proposal.userVote === null) {
+        } else if (proposal.data.userVote === null) {
           notVoted.push(proposal)
-        } else if (proposal.userVote !== null) {
+        } else if (proposal.data.userVote !== null) {
           alreadyVoted.push(proposal)
         }
       }

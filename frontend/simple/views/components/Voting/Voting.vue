@@ -1,33 +1,11 @@
 <template>
   <div class="is-flex gi-voting">
     <div class="gi-voting-body is-flex">
-      <div class="gi-voting-sign">
-        <svg class="gi-voting-sign-svg"
-          v-if="isTypeRule"
-        >
-          <circle cx="36" cy="36" r="35"
-            class="gi-voting-sign-svg-circle"
-            :style="svgCircle.style"
-            :class="svgCircle.class"
-          />
-        </svg>
-
-        <p class="gi-voting-sign-value title is-size-4 has-text-centered"
-          :class="{
-            'gi-is-mincome': isTypeMincome,
-            'gi-is-rule': isTypeRule
-          }"
-          v-if="isTypeRuleOrMincome"
-        >
-          {{proposalValue}}
-        </p>
-
-        <img class="gi-voting-sign-avatar"
-          :src="proposal.member.picture"
-          :alt="`${proposal.member.name}'s avatar`"
-          v-if="isTypeMember"
-        />
-      </div>
+      <sign
+        :type="type"
+        :value="proposal.value"
+        :member="proposal.member"
+      />
 
       <!-- TODO: fix the i18n stuff here -->
       <div class="gi-voting-info">
@@ -40,7 +18,7 @@
     <div class="gi-voting-ctas">
       <div class="buttons">
         <template v-if="!proposal.ownProposal">
-          <button class="button gi-btn-against"
+          <button class="button"
             :class="{
               'is-outlined': !hasVotedAgainst,
               'is-danger': !hasVotedFor
@@ -50,7 +28,7 @@
             {{proposal.ctas.against}}
           </button>
 
-          <button class="button gi-btn-for"
+          <button class="button"
             :class="{
               'is-outlined': !hasVotedFor,
               'is-success': !hasVotedAgainst
@@ -62,8 +40,8 @@
         </template>
 
         <button-countdown
+          v-else-if="!isProposalClosed"
           :onStateChange="handleCloseProposalStateChange"
-          v-if="proposal.ownProposal && !isProposalClosed"
         >
           {{closeProposalBtnText}}
         </button-countdown>
@@ -78,7 +56,7 @@
   </div>
 </template>
 <style lang="scss" scoped>
-@import "../../assets/sass/theme/index";
+@import "../../../assets/sass/theme/index";
 
 %avatarSize {
   width: 4.5rem;
@@ -93,47 +71,6 @@
   &-body {
     margin-bottom: $gi-spacer;
     flex-grow: 1;
-  }
-
-  &-sign {
-    position: relative;
-    flex-shrink: 0;
-
-    &-avatar,
-    &-value {
-      @extend %avatarSize;
-      border-radius: 50%;
-      line-height: 4.5rem;
-      white-space: nowrap;
-
-      &.gi-is-mincome {
-        line-height: 2;
-      }
-
-      &.gi-is-rule {
-        border: 1px solid $grey-lighter;
-      }
-    }
-
-    &-svg {
-      @extend %avatarSize;
-      position: absolute;
-      top: 0;
-      left: 0;
-
-      &-circle {
-        stroke: $success;
-        stroke-width: 2px;
-        stroke-linecap: round;
-        fill: transparent;
-        transform-origin: 50%;
-        transform: rotate(-90deg);
-
-        &.has-stroke-warning {
-          stroke: $tertiary;
-        }
-      }
-    }
   }
 
   &-info {
@@ -170,54 +107,36 @@
 }
 </style>
 <script>
-import ButtonCountdown, { countdownStates } from './ButtonCountdown'
-import L from '../utils/translations'
+import ButtonCountdown, { countdownStates } from '../ButtonCountdown'
+import Sign from './Sign.vue'
+import L from '../../utils/translations'
+import { votingType } from '../../utils/validators'
 import template from 'string-template'
-import { toPercent } from '../utils/filters'
 
 export default {
   name: 'Voting',
   props: {
+    type: {
+      validator: votingType
+    },
     proposal: Object,
     onVoteAgainst: Function,
     onVotedFor: Function,
     onCloseProposal: Function
   },
   components: {
-    ButtonCountdown
+    ButtonCountdown,
+    Sign
   },
   data () {
     return {
       closeProposalState: {
-        // opts from ButtonCountdown
+        state: null,
+        countdown: null
       }
     }
   },
   computed: {
-    svgCircle () {
-      const svgCircleP = 220 // 35*2 * 3.14
-      const ruleVal = this.proposal.value
-      const ruleWarning = 0.7
-
-      return {
-        style: {
-          strokeDasharray: `${svgCircleP * ruleVal} ${svgCircleP}`
-        },
-        class: ruleVal < ruleWarning && 'has-stroke-warning'
-      }
-    },
-    isTypeMember () {
-      return this.proposal.type === 'member'
-    },
-    isTypeRule () {
-      return this.proposal.type === 'rule'
-    },
-    isTypeMincome () {
-      return this.proposal.type === 'mincome'
-    },
-    isTypeRuleOrMincome () {
-      return ['rule', 'mincome'].includes(this.proposal.type)
-    },
     hasVoted () {
       return this.proposal.userVote !== null
     },
@@ -226,9 +145,6 @@ export default {
     },
     hasVotedAgainst () {
       return this.proposal.userVote === false
-    },
-    proposalValue () {
-      return this.isTypeRule ? toPercent(this.proposal.value) : this.proposal.value
     },
     isProposalClosed () {
       return this.closeProposalState.state === countdownStates.SUCCESS
