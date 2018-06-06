@@ -96,6 +96,7 @@
   }
 
   &-sign {
+    position: relative;
     flex-shrink: 0;
 
     &-avatar,
@@ -117,6 +118,8 @@
     &-svg {
       @extend %avatarSize;
       position: absolute;
+      top: 0;
+      left: 0;
 
       &-circle {
         stroke: $success;
