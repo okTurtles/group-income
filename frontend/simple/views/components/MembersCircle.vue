@@ -155,7 +155,7 @@ $border-width: 1px;
 
       &::before {
         position: absolute;
-        content: '';
+        content: "";
         box-shadow: 0 0 0 $border-width $primary;
         opacity: 0;
         transition: opacity 150ms;

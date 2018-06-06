@@ -42,7 +42,7 @@ $barMarginBottom: $gi-spacer-sm;
   margin: $gi-spacer 0 $barMarginBottom;
 
   &::after {
-    content: '';
+    content: "";
     position: absolute;
     bottom: $barHeight;
     left: 0;

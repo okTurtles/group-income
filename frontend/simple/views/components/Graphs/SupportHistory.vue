@@ -46,7 +46,7 @@ $gapHistory: 0.5rem; // force reduced gap - modifier .is-n avaiable on new bulma
     position: absolute;
     top: 0;
     left: 0;
-    content: '';
+    content: "";
     width: 100%;
     height: 100%;
     opacity: 0.5;

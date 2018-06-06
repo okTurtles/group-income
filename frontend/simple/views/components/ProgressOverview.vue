@@ -72,7 +72,7 @@
     }
 
     &::before {
-      content: '';
+      content: "";
       width: 100%;
       opacity: 0.8;
       background-color: #fff;
@@ -98,32 +98,32 @@
   }
 </style>
 <script>
-  import DashboardSection from './DashboardSection.vue'
+import DashboardSection from './DashboardSection.vue'
 
-  export default {
-    name: 'ProgressOverview',
-    components: {
-      DashboardSection
-    },
-    data () {
+export default {
+  name: 'ProgressOverview',
+  components: {
+    DashboardSection
+  },
+  data () {
+    return {
+      period: 'July',
+      themeColor: '#f89201', // The layout palette will adjust
+      contributed: 350,
+      pledged: 800,
+      goal: 1000,
+      contributedFormatted: '$350',
+      pledgedFormatted: '$800',
+      goalFormatted: '$1,000'
+    }
+  },
+  computed: {
+    barPercentage: function () {
       return {
-        period: 'July',
-        themeColor: '#f89201', // The layout palette will adjust
-        contributed: 350,
-        pledged: 800,
-        goal: 1000,
-        contributedFormatted: '$350',
-        pledgedFormatted: '$800',
-        goalFormatted: '$1,000'
-      }
-    },
-    computed: {
-      barPercentage: function () {
-        return {
-          pledged: `${Math.floor(this.pledged * 100 / this.goal)}%`,
-          contributed: `${Math.floor(this.contributed * 100 / this.goal)}%`
-        }
+        pledged: `${Math.floor(this.pledged * 100 / this.goal)}%`,
+        contributed: `${Math.floor(this.contributed * 100 / this.goal)}%`
       }
     }
   }
+}
 </script>
