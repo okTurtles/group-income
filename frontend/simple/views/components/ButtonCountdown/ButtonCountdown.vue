@@ -4,10 +4,7 @@
   </button>
 </template>
 <script>
-const STATE_COUNTING = 'STATE_COUNTING'
-const STATE_CANCELLED = 'STATE_CANCELLED'
-const STATE_SUCCESS = 'STATE_SUCCESS'
-const STATE_DONE = 'STATE_DONE'
+import countdownStates from './countdownStates'
 
 export default {
   name: 'ButtonCountdown',
@@ -40,7 +37,7 @@ export default {
       this.intervalCountdown = setInterval(() => {
         if (this.currentCountdown === 0) {
           this.clearCountdown()
-          return this.onStateChange(STATE_SUCCESS)
+          return this.onStateChange(countdownStates.SUCCESS)
         }
 
         this.currentCountdown -= 1
@@ -50,10 +47,10 @@ export default {
     },
     cancelCountdown () {
       this.clearCountdown()
-      this.onStateChange(STATE_CANCELLED)
+      this.onStateChange(countdownStates.CANCELLED)
 
       this.timeoutCancel = setTimeout(() => {
-        this.onStateChange(STATE_DONE)
+        this.onStateChange(countdownStates.DONE)
       }, 3000)
     },
     clearCountdown () {
@@ -63,7 +60,7 @@ export default {
       clearTimeout(this.timeoutCancel)
     },
     onStateChangeCounting () {
-      this.onStateChange(STATE_COUNTING, {
+      this.onStateChange(countdownStates.COUNTING, {
         countdown: this.currentCountdown
       })
     }

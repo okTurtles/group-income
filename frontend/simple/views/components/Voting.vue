@@ -167,7 +167,7 @@
 }
 </style>
 <script>
-import ButtonCountdown from './ButtonCountdown.vue'
+import ButtonCountdown, { countdownStates } from './ButtonCountdown'
 import Lang from '../utils/translations'
 import template from 'string-template'
 import { toPercent } from '../utils/filters'
@@ -225,23 +225,23 @@ export default {
       return this.isTypeRule ? toPercent(this.proposal.value) : this.proposal.value
     },
     isProposalClosed () {
-      return this.closeProposalState.state === 'success'
+      return this.closeProposalState.state === countdownStates.SUCCESS
     },
     closeProposalBtnText () {
-      return this.closeProposalState.state === 'counting'
+      return this.closeProposalState.state === countdownStates.COUNTING
         ? Lang('No, wait')
         : Lang('Close Proposal')
     },
     helperText () {
       switch (this.closeProposalState.state) {
-        case 'counting':
+        case countdownStates.COUNTING:
           return template(
             Lang('Proposal closed in {countdown}...'), {
               countdown: this.closeProposalState.countdown
             })
-        case 'cancelled':
+        case countdownStates.CANCELLED:
           return Lang("Let's pretend that never happened")
-        case 'success':
+        case countdownStates.SUCCESS:
           return Lang('Proposal cancelled')
         default:
           break
@@ -269,6 +269,8 @@ export default {
   methods: {
     handleCloseProposalStateChange (state, opts = {}) {
       this.closeProposalState = { state, ...opts }
+
+      console.log('state', state, opts)
 
       state === 'success' && this.closeProposal()
     },

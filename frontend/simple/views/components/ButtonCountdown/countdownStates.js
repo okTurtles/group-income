@@ -1,0 +1,6 @@
+export default {
+  COUNTING: 'COUNTING',
+  CANCELLED: 'CANCELLED',
+  SUCCESS: 'SUCCESS',
+  DONE: 'DONE'
+}
