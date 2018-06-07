@@ -31,7 +31,7 @@
       :type="proposal.type"
       :proposal="proposal.data"
       :onVoteAgainst="handleVoteAgainst"
-      :onVotedFor="handleVoteFor"
+      :onVoteFor="handleVoteFor"
     />
 
     <voting
@@ -53,7 +53,7 @@
           :type="proposal.type"
           :proposal="proposal.data"
           :onVoteAgainst="handleVoteAgainst"
-          :onVotedFor="handleVoteFor"
+          :onVoteFor="handleVoteFor"
         />
       </div>
       <button class="modal-close is-large" aria-label="close" @click="showOtherProposals = false"></button>

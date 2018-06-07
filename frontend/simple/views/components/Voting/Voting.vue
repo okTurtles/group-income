@@ -121,7 +121,7 @@ export default {
     },
     proposal: Object,
     onVoteAgainst: Function,
-    onVotedFor: Function,
+    onVoteFor: Function,
     onCloseProposal: Function
   },
   components: {
@@ -206,7 +206,7 @@ export default {
         return false
       }
 
-      this.onVotedFor && this.onVotedFor()
+      this.onVoteFor && this.onVoteFor()
     },
     closeProposal () {
       this.onCloseProposal && this.onCloseProposal()
