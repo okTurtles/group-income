@@ -1,6 +1,5 @@
 <template>
-  <dashboard-section title="Proposals">
-
+  <div>
     <!--  Start Original Voting Banner to delete soon -->
     <voting-banner v-for="proposal in Object.values(proposals)"
       :proposal="proposal"
@@ -41,13 +40,12 @@
       :handleCloseProposal="onCloseProposal"
     />
 
-    <div class="modal"
-      :class="{ 'is-active': showOtherProposals }"
-      v-if="groupProposals.alreadyVoted.length"
+    <div class="modal is-active"
+      v-if="showOtherProposals && groupProposals.alreadyVoted.length"
     >
       <div class="modal-background"></div>
       <div class="modal-content gi-is-large">
-        <h4 class="title is-3"><i18n>All Proposals</i18n></h4>
+        <h4 class="title is-3"><i18n>Already Voted Proposals</i18n></h4>
         <voting
           v-for="proposal in groupProposals.alreadyVoted"
           :type="proposal.type"
@@ -58,8 +56,7 @@
       </div>
       <button class="modal-close is-large" aria-label="close" @click="showOtherProposals = false"></button>
     </div>
-
-  </dashboard-section>
+  </div>
 </template>
 <style lang="scss" scoped>
 @import "../../assets/sass/theme/index";
@@ -76,14 +73,12 @@
 }
 </style>
 <script>
-import DashboardSection from '../components/DashboardSection.vue'
 import Voting from '../components/Voting'
 import VotingBanner from './VotingBanner.vue'
 
 export default {
   name: 'Proposals',
   components: {
-    DashboardSection,
     Voting,
     VotingBanner
   },

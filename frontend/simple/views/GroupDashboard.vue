@@ -22,15 +22,25 @@
           </p>
         </div>
 
-        <proposals :proposals="currentGroupState.proposals" />
+        <dashboard-section title="Proposals">
+          <proposals :proposals="currentGroupState.proposals" />
+        </dashboard-section>
 
-        <group-members />
+        <dashboard-section title="Members" data-test="groupMembers">
+          <group-members />
+        </dashboard-section>
 
-        <progress-overview />
+        <dashboard-section title="July Overview">
+          <progress-overview />
+        </dashboard-section>
 
-        <support-history :history="[1.2, 1, .85, .95, 1.05, .35]" />
+        <dashboard-section title="Support History">
+          <support-history :history="[1.2, 1, .85, .95, 1.05, .35]" />
+        </dashboard-section>
 
-        <group-settings :group="currentGroupState" />
+        <dashboard-section title="Group Settings">
+          <group-settings :group="currentGroupState" />
+        </dashboard-section>
       </div>
     </div>
   </main>
@@ -54,6 +64,7 @@
 <script>
 import { mapGetters, mapState } from 'vuex'
 
+import DashboardSection from './components/DashboardSection.vue'
 import YourGroupsList from './containers/YourGroupsList.vue'
 import GroupsMinIncome from './components/GroupsMinIncome.vue'
 import Proposals from './containers/Proposals.vue'
@@ -74,6 +85,7 @@ export default {
     ])
   },
   components: {
+    DashboardSection,
     YourGroupsList,
     GroupsMinIncome,
     Proposals,

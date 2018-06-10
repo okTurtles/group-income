@@ -1,38 +1,36 @@
 <template>
-  <dashboard-section data-test="groupMembers" title="Group Members">
-    <div class="level">
-      <div class="level-left">
-        <ul class="columns is-mobile is-narrow is-multiline is-marginless">
-          <li v-for="(member, username) in profiles"
-            class="column is-narrow badge"
-            data-test="member"
+  <div class="level">
+    <div class="level-left">
+      <ul class="columns is-mobile is-narrow is-multiline is-marginless">
+        <li v-for="(member, username) in profiles"
+          class="column is-narrow badge"
+          data-test="member"
+        >
+          <h4
+            class="badge-name is-size-7 gi-is-ellipsis"
+            data-test="username"
           >
-            <h4
-              class="badge-name is-size-7 gi-is-ellipsis"
-              data-test="username"
-            >
-              {{ username }}
-            </h4>
+            {{ username }}
+          </h4>
 
-            <user-image class="badge-img" :username="username" />
+          <user-image class="badge-img" :username="username" />
 
-            <!-- TODO: How to handle color / multiple tags logic? -->
-            <span class="tag badge-tag gi-is-ellipsis" v-if="member.pledge">
-              {{ member.pledge }}
-            </span>
-          </li>
-        </ul>
-        <div class="badge">
-          <a class="button action is-light"
-            data-test="inviteButton"
-            @click.prevent="invite"
-          >
-            <span class="icon"><i class="fa fa-plus has-text-success"></i></span>
-          </a>
-        </div>
+          <!-- TODO: How to handle color / multiple tags logic? -->
+          <span class="tag badge-tag gi-is-ellipsis" v-if="member.pledge">
+            {{ member.pledge }}
+          </span>
+        </li>
+      </ul>
+      <div class="badge">
+        <a class="button action is-light"
+          data-test="inviteButton"
+          @click.prevent="invite"
+        >
+          <span class="icon"><i class="fa fa-plus has-text-success"></i></span>
+        </a>
       </div>
     </div>
-  </dashboard-section>
+  </div>
 </template>
 <style lang="scss" scoped>
 @import "../../assets/sass/theme/index";
@@ -85,13 +83,11 @@ $marginVertical: 0.3rem;
 }
 </style>
 <script>
-import DashboardSection from '../components/DashboardSection.vue'
 import UserImage from './UserImage.vue'
 
 export default {
   name: 'GroupMembers',
   components: {
-    DashboardSection,
     UserImage
   },
   methods: {

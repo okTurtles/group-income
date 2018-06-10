@@ -1,5 +1,5 @@
 <template>
-  <dashboard-section :title="`${period} Overview`">
+  <div>
     <div class="level">
       <dl class="level-left summary" :style="{ color: themeColor }">
         <dt class="summary-key">
@@ -21,12 +21,12 @@
           {{goalFormatted}}
         </dd>
       </dl>
+    </div>
+    <div class="bar" :style="{ backgroundColor: themeColor }">
+        <span class="bar-progress metric-secondary" :style="{ width: barPercentage.pledged }"></span>
+        <span class="bar-progress metric-primary" :style="{ width: barPercentage.contributed }"></span>
+    </div>
   </div>
-  <div class="bar" :style="{ backgroundColor: themeColor }">
-      <span class="bar-progress metric-secondary" :style="{ width: barPercentage.pledged }"></span>
-      <span class="bar-progress metric-primary" :style="{ width: barPercentage.contributed }"></span>
-  </div>
-  </dashboard-section>
 </template>
 
 <style lang="scss" scoped>
@@ -98,13 +98,8 @@
   }
 </style>
 <script>
-import DashboardSection from './DashboardSection.vue'
-
 export default {
   name: 'ProgressOverview',
-  components: {
-    DashboardSection
-  },
   data () {
     return {
       period: 'July',
