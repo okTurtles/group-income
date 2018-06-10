@@ -60,14 +60,14 @@
     position: absolute;
     top: 0;
     left: 0;
+    transform-origin: 50%;
+    transform: rotate(-90deg);
 
     &-circle {
       stroke: $success;
       stroke-width: 2px;
       stroke-linecap: round;
       fill: transparent;
-      transform-origin: 50%;
-      transform: rotate(-90deg);
 
       &.has-stroke-warning {
         stroke: $tertiary;
