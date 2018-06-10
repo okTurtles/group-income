@@ -1,7 +1,6 @@
 <template>
-  <section>
-    <h3 class="title"><i18n>Support History</i18n></h3>
-    <p v-if="history.length === 0">Your group is still in its first month.</p>
+  <div>
+    <p v-if="history.length === 0"><i18n>Your group is still in its first month.</i18n></p>
     <div class="history columns" v-else>
       <div v-for="(percentage, index) in history" class="column is-2">
         <div :class="['period', getResult(percentage)]">
@@ -11,7 +10,7 @@
         </div>
       </div>
     </div>
-  </section>
+  </div>
 </template>
 <style lang="scss" scoped>
 $gapHistory: 0.5rem; // force reduced gap - modifier .is-n avaiable on new bulma version
@@ -47,7 +46,7 @@ $gapHistory: 0.5rem; // force reduced gap - modifier .is-n avaiable on new bulma
     position: absolute;
     top: 0;
     left: 0;
-    content: '';
+    content: "";
     width: 100%;
     height: 100%;
     opacity: 0.5;

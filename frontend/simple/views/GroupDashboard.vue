@@ -22,29 +22,30 @@
           </p>
         </div>
 
-        <voting-banner class="widget"
-          v-for="proposal in Object.values(currentGroupState.proposals)"
-          :proposal="proposal"
-        />
+        <dashboard-section title="Proposals">
+          <proposals :proposals="currentGroupState.proposals" />
+        </dashboard-section>
 
-        <group-members class="widget" />
+        <dashboard-section title="Members" data-test="groupMembers">
+          <group-members />
+        </dashboard-section>
 
-        <progress-overview class="widget" />
+        <dashboard-section title="July Overview">
+          <progress-overview />
+        </dashboard-section>
 
-        <support-history class="widget"
-          :history="[1.2, 1, .85, .95, 1.05, .35]" />
+        <dashboard-section title="Support History">
+          <support-history :history="[1.2, 1, .85, .95, 1.05, .35]" />
+        </dashboard-section>
 
-        <group-settings class="widget"
-          :group="currentGroupState" />
+        <dashboard-section title="Group Settings">
+          <group-settings :group="currentGroupState" />
+        </dashboard-section>
       </div>
     </div>
   </main>
 </template>
 <style lang="scss" scoped>
-.widget {
-  margin: 4rem 0;
-}
-
 .gi-sidebar {
   width: 15rem;
   padding-right: 0;
@@ -62,12 +63,14 @@
 </style>
 <script>
 import { mapGetters, mapState } from 'vuex'
+
+import DashboardSection from './components/DashboardSection.vue'
 import YourGroupsList from './containers/YourGroupsList.vue'
 import GroupsMinIncome from './components/GroupsMinIncome.vue'
+import Proposals from './containers/Proposals.vue'
 import GroupMembers from './containers/GroupMembers.vue'
 import SupportHistory from './components/Graphs/SupportHistory.vue'
 import GroupSettings from './components/GroupSettings.vue'
-import VotingBanner from './containers/VotingBanner.vue'
 import ProgressOverview from './components/ProgressOverview.vue'
 
 export default {
@@ -82,12 +85,13 @@ export default {
     ])
   },
   components: {
+    DashboardSection,
     YourGroupsList,
     GroupsMinIncome,
+    Proposals,
     GroupMembers,
     SupportHistory,
     GroupSettings,
-    VotingBanner,
     ProgressOverview
   }
 }
