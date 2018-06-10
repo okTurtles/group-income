@@ -6,13 +6,6 @@
     />
     <!--  End Original Voting Banner to delete soon -->
 
-    <a class="gi-showAll"
-      v-if="groupProposals.alreadyVoted.length"
-      @click.prevent="showOtherProposals = true"
-    >
-      <i18n>Show all</i18n>
-    </a>
-
     <!-- REVIEW: Not sure about these banners. -->
 
     <!--
@@ -40,22 +33,13 @@
       :handleCloseProposal="onCloseProposal"
     />
 
-    <div class="modal is-active"
-      v-if="showOtherProposals && groupProposals.alreadyVoted.length"
-    >
-      <div class="modal-background"></div>
-      <div class="modal-content gi-is-large">
-        <h4 class="title is-3"><i18n>Already Voted Proposals</i18n></h4>
-        <voting
-          v-for="proposal in groupProposals.alreadyVoted"
-          :type="proposal.type"
-          :proposal="proposal.data"
-          :onVoteAgainst="handleVoteAgainst"
-          :onVoteFor="handleVoteFor"
-        />
-      </div>
-      <button class="modal-close is-large" aria-label="close" @click="showOtherProposals = false"></button>
-    </div>
+    <voting
+      v-for="proposal in groupProposals.alreadyVoted"
+      :type="proposal.type"
+      :proposal="proposal.data"
+      :onVoteAgainst="handleVoteAgainst"
+      :onVoteFor="handleVoteFor"
+    />
   </div>
 </template>
 <style lang="scss" scoped>
@@ -67,9 +51,7 @@
 }
 
 .gi-showAll {
-  position: absolute;
-  top: $gi-spacer;
-  right: 0;
+  margin-top: -$gi-spacer;
 }
 </style>
 <script>
