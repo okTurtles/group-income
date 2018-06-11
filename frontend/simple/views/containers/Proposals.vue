@@ -55,6 +55,8 @@
 }
 </style>
 <script>
+import { mapGetters } from 'vuex'
+
 import Voting from '../components/Voting'
 import VotingBanner from './VotingBanner.vue'
 
@@ -64,6 +66,7 @@ export default {
     Voting,
     VotingBanner
   },
+  // TODO: remove prop, get stuff from store instead
   props: {
     proposals: Object
   },
@@ -154,13 +157,30 @@ export default {
     }
   },
   computed: {
+    ...mapGetters([
+      'currentGroupState'
+    ]),
     groupProposals () {
       const notVoted = []
       const alreadyVoted = []
       const own = []
+      // TODO: get proposal list from store, format for voting comp
+      const proposals = this.currentGroupState.proposals
+      // TODO: proposal data needed for voting comp:
+      // type: 'mincome', 'rule', 'member'
+      // action: addMember, removeMember, addThreshold, removeThreshold, changeThreshold
+      // votes: { total, received, threshold }
+      // value: Number,
+      // member: { name, picture },
+      // original: Number,
+      // vote: Boolean,
+      // ownProposal: Boolean
 
-      for (var i = 0, l = this.mockProposals.length; i < l; i++) {
-        const proposal = this.mockProposals[i]
+      console.log('PROPOSALS:', proposals)
+
+      // proposal in Object.values(proposals)
+      for (var i = 0, l = proposals.length; i < l; i++) {
+        const proposal = proposals[i]
         if (proposal.data.ownProposal) {
           own.push(proposal)
         } else if (proposal.data.userVote === null) {
@@ -179,6 +199,8 @@ export default {
     }
   },
   methods: {
+    // TODO: voteFor, voteAgainst functions to be called by voting comp
+    // for actual vote casting
     handleVoteAgainst () {
       console.log('TODO Logic - The user voted against')
     },

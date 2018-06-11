@@ -3,21 +3,21 @@
     <div class="gi-voting-body is-flex">
       <sign
         :type="type"
-        :value="proposal.value"
-        :member="proposal.member"
+        :value="value"
+        :member="member"
       />
 
       <!-- TODO: fix the i18n stuff here -->
       <div class="gi-voting-info">
-        <h5 class="has-text-weight-bold is-uppercase gi-voting-info-title">{{proposal.title}}</h5>
-        <p v-html="proposal.text"></p>
-        <p class="is-size-7 has-text-grey" v-if="proposal.textDetails" v-html="proposal.textDetails"></p>
+        <h5 class="has-text-weight-bold is-uppercase gi-voting-info-title">{{title}}</h5>
+        <p v-html="text"></p>
+        <p class="is-size-7 has-text-grey" v-if="details" v-html="details"></p>
       </div>
     </div>
 
     <div class="gi-voting-ctas">
       <div class="buttons">
-        <template v-if="!proposal.ownProposal">
+        <template v-if="!ownProposal">
           <button class="button"
             :class="{
               'is-outlined': !hasVotedAgainst,
@@ -25,7 +25,7 @@
             }"
             @click="handleVoteAgainst"
           >
-            {{proposal.ctas.against}}
+            {{ctas.against}}
           </button>
 
           <button class="button"
@@ -35,13 +35,13 @@
             }"
             @click="handleVoteFor"
           >
-            {{proposal.ctas.for}}
+            {{ctas.for}}
           </button>
         </template>
 
         <button-countdown
           v-else-if="!isProposalClosed"
-          :onStateChange="handleCloseProposalStateChange"
+          :onStateChange="handleProposalStateChange"
         >
           {{closeProposalBtnText}}
         </button-countdown>
@@ -119,10 +119,39 @@ import { votingType } from '../../utils/validators'
 export default {
   name: 'Voting',
   props: {
+    // proposal: Object,
+    // type: String - ‘mincome' || ‘rule' || ‘member'
+    // ctas: Object { for: String, against: String }
+    // title: String
+    // text: String
+    // detailed: String
+    // votes: Object { total: Number, received: Number }
+    // hasVoted: Bool
+    // ownProposal: Bool
+    // value: Number (if type is ‘mincome’ or ‘rule’)
+    // picture: String (if type is ‘member’)
     type: {
-      validator: votingType
+      validator: votingType,
+      required: true
     },
-    proposal: Object,
+    action: {
+      validator: actionType // TODO: addMember, removeMember, addThreshold, removeThreshold, changeThreshold
+    },
+    votes: {
+      validator: votesType, // TODO: validator: total, received, threshold
+      required: true
+    },
+    value: Number,
+    member: {
+      validator: memberType // TODO: validator: name, picture
+    },
+    original: Number,
+    vote: Boolean,
+    ownProposal: {
+      type: Boolean,
+      required: true
+    },
+    // Actions:
     onVoteAgainst: Function,
     onVoteFor: Function,
     onCloseProposal: Function
@@ -133,35 +162,47 @@ export default {
   },
   data () {
     return {
-      closeProposalState: {
+      ephemeral: {
         state: null,
         countdown: null
       }
     }
   },
   computed: {
+    ctas () {
+      // TODO return { L for, against }
+    },
+    title () {
+      // TODO return L string
+    },
+    text () {
+      // TODO return L string
+    },
+    detailed () {
+      // TODO return L string
+    },
     hasVoted () {
-      return this.proposal.userVote !== null
+      return this.vote !== null
     },
     hasVotedFor () {
-      return this.proposal.userVote
+      return this.vote
     },
     hasVotedAgainst () {
-      return this.proposal.userVote === false
+      return this.vote === false
     },
     isProposalClosed () {
-      return this.closeProposalState.state === countdownStates.SUCCESS
+      return this.ephemeral.state === countdownStates.SUCCESS
     },
     closeProposalBtnText () {
-      return this.closeProposalState.state === countdownStates.COUNTING
+      return this.ephemeral.state === countdownStates.COUNTING
         ? L('No, wait')
         : L('Close Proposal')
     },
     helperText () {
-      switch (this.closeProposalState.state) {
+      switch (this.ephemeral.state) {
         case countdownStates.COUNTING:
           return L('Proposal closed in {countdown}...', {
-            countdown: this.closeProposalState.countdown
+            countdown: this.ephemeral.countdown
           })
         case countdownStates.CANCELLED:
           return L("Let's pretend that never happened")
@@ -171,28 +212,28 @@ export default {
           break
       }
 
-      if (!this.proposal.votes) {
-        return this.proposal.ownProposal
+      if (!this.votes.received) {
+        return this.ownProposal
           ? L('Nobody voted yet')
           : L('Be the first to vote!')
       }
 
-      if (!this.proposal.ownProposal && this.proposal.votes === 1) {
+      if (!this.ownProposal && this.votes.received === 1) {
         return L('Your were the first to vote')
       }
 
-      if (this.proposal.votes > 1) {
+      if (this.votes.received > 1) {
         return L('{youAnd} {votesCount} of {members} members voted', {
           youAnd: this.hasVoted ? L('You and') : '',
-          votesCount: this.hasVoted ? this.proposal.votes - 1 : this.proposal.votes,
-          members: this.proposal.members
+          votesCount: this.hasVoted ? this.votes.received - 1 : this.votes.received,
+          members: this.votes.total
         })
       }
     }
   },
   methods: {
-    handleCloseProposalStateChange (state, opts = {}) {
-      this.closeProposalState = { state, ...opts }
+    handleProposalStateChange (state, opts = {}) {
+      this.ephemeral = { state, ...opts }
 
       state === 'success' && this.closeProposal()
     },
