@@ -1,7 +1,7 @@
 <template>
   <div>
     <!--  Start Original Voting Banner to delete soon -->
-    <voting-banner v-for="proposal in Object.values(proposals)"
+    <voting-banner v-for="proposal in Object.values(currentGroupState.proposals)"
       :proposal="proposal"
     />
     <!--  End Original Voting Banner to delete soon -->
@@ -10,7 +10,7 @@
 
     <!--
     <h4 class="title is-size-5 notification is-warning gi-is-banner gi-notify"
-      v-if="groupProposals.notVoted.length"
+      v-if="proposals.notVoted.length"
     >
       <i18n>These are waiting for your vote!</i18n>
     </h4>
@@ -19,24 +19,39 @@
     <i18n class="notification gi-is-banner gi-notify" v-if="allVoted">Cool, you already voted on all proposals.</i18n>
 
     <voting
-      v-for="proposal in groupProposals.notVoted"
+      v-for="proposal in proposalList.notVoted"
       :type="proposal.type"
-      :proposal="proposal.data"
+      :votes="proposal.votes"
+      :value="proposal.value"
+      :member="proposal.member"
+      :originalValue="proposal.originalValue"
+      :ownVote="proposal.ownVote"
+      :isOwnProposal="proposal.isOwnProposal"
       :onVoteAgainst="handleVoteAgainst"
       :onVoteFor="handleVoteFor"
     />
 
     <voting
-      v-for="proposal in groupProposals.own"
+      v-for="proposal in proposalList.own"
       :type="proposal.type"
-      :proposal="proposal.data"
+      :votes="proposal.votes"
+      :value="proposal.value"
+      :member="proposal.member"
+      :originalValue="proposal.originalValue"
+      :ownVote="proposal.ownVote"
+      :isOwnProposal="proposal.isOwnProposal"
       :handleCloseProposal="onCloseProposal"
     />
 
     <voting
-      v-for="proposal in groupProposals.alreadyVoted"
+      v-for="proposal in proposalList.alreadyVoted"
       :type="proposal.type"
-      :proposal="proposal.data"
+      :votes="proposal.votes"
+      :value="proposal.value"
+      :member="proposal.member"
+      :originalValue="proposal.originalValue"
+      :ownVote="proposal.ownVote"
+      :isOwnProposal="proposal.isOwnProposal"
       :onVoteAgainst="handleVoteAgainst"
       :onVoteFor="handleVoteFor"
     />
@@ -66,134 +81,49 @@ export default {
     Voting,
     VotingBanner
   },
-  // TODO: remove prop, get stuff from store instead
-  props: {
-    proposals: Object
-  },
-  data () {
-    return {
-      showOtherProposals: false,
-      mockProposals: [
-        {
-          type: 'member',
-          data: {
-            member: {
-              picture: 'assets/images/default-avatar.png',
-              name: 'Gil'
-            },
-            title: 'Remove Member',
-            text: 'Sam had proposed to <strong>remove Gil</strong> from the group.',
-            ctas: {
-              for: 'Remove Gil',
-              against: 'Keep Gil'
-            },
-            members: 7,
-            votes: 4,
-            userVote: null
-          }
-        },
-        {
-          type: 'rule',
-          data: {
-            value: 0.6,
-            title: 'Rule: Add Member',
-            text: 'Karl had proposed to change <strong>Add Member Rule from 80% to 60% </strong>.',
-            textDetails: 'Instead of 6, now at least 5 of 8 members need to approve a new member.',
-            ctas: {
-              for: 'Change to 60%',
-              against: 'Keep 80%'
-            },
-            members: 7,
-            votes: 0,
-            userVote: null
-          }
-        },
-        {
-          type: 'rule',
-          data: {
-            value: 0.92,
-            title: 'Rule: Change Mincome',
-            text: 'Karl had proposed to change <strong>Mincome Rule from 87% to 92%</strong>.',
-            textDetails: 'Instead of 6, now at least 5 of 7 members need to approve a new member.',
-            ctas: {
-              for: 'Change to 92%',
-              against: 'Keep 87%'
-            },
-            members: 7,
-            votes: 1,
-            userVote: false
-          }
-        },
-        {
-          type: 'member',
-          data: {
-            member: {
-              picture: 'assets/images/default-avatar.png',
-              name: 'Kim'
-            },
-            title: 'Add Member',
-            text: 'Rachel had proposed to <strong>add Kim</strong> to the group.',
-            ctas: {
-              for: 'Invite Kim',
-              against: 'Don\'t invite'
-            },
-            members: 7,
-            votes: 3,
-            userVote: true
-          }
-        },
-        {
-          type: 'mincome',
-          data: {
-            value: '$150',
-            title: 'Min Income',
-            text: 'You had proposed to change <strong>mincome from $200 to $150</strong>',
-            members: 7,
-            votes: 0,
-            ownProposal: true
-          }
-        }
-      ]
-    }
-  },
   computed: {
     ...mapGetters([
+      'currentUserIdentityContract',
       'currentGroupState'
     ]),
-    groupProposals () {
+    proposalList () {
       const notVoted = []
       const alreadyVoted = []
       const own = []
-      // TODO: get proposal list from store, format for voting comp
-      const proposals = this.currentGroupState.proposals
-      // TODO: proposal data needed for voting comp:
-      // type: 'mincome', 'rule', 'member'
-      // action: addMember, removeMember, addThreshold, removeThreshold, changeThreshold
-      // votes: { total, received, threshold }
-      // value: Number,
-      // member: { name, picture },
-      // original: Number,
-      // vote: Boolean,
-      // ownProposal: Boolean
 
-      console.log('PROPOSALS:', proposals)
+      const groupData = this.currentGroupState
+      const proposals = groupData.proposals
+      const userData = this.currentUserIdentityContract.attributes
 
-      // proposal in Object.values(proposals)
-      for (var i = 0, l = proposals.length; i < l; i++) {
-        const proposal = proposals[i]
-        if (proposal.data.ownProposal) {
-          own.push(proposal)
-        } else if (proposal.data.userVote === null) {
-          notVoted.push(proposal)
-        } else if (proposal.data.userVote !== null) {
-          alreadyVoted.push(proposal)
+      for (let proposal of Object.values(proposals)) {
+        const proposalData = {
+          type: proposal.type, // 'invitation' or 'removal' for member, field name for rule/mincome
+          votes: {
+            total: Object.entries(groupData.profiles).length,
+            received: proposal.for.length + proposal.against.length,
+            threshold: proposal.threshold
+          },
+          value: proposal.value || proposal.candidate || null,
+          originalValue: groupData[proposal.type] || null,
+          ownVote: proposal.for.includes(userData.name) || proposal.against.includes(userData.name)
+            ? proposal.for.includes(userData.name)
+            : null,
+          isOwnProposal: proposal.initiator === userData.name
+        }
+
+        if (proposalData.isOwnProposal) {
+          own.push(proposalData)
+        } else if (proposalData.ownVote === null) {
+          notVoted.push(proposalData)
+        } else if (proposalData.ownVote !== null) {
+          alreadyVoted.push(proposalData)
         }
       }
 
       return { notVoted, alreadyVoted, own }
     },
     allVoted () {
-      const { notVoted, alreadyVoted } = this.groupProposals
+      const { notVoted, alreadyVoted } = this.proposalList
 
       return alreadyVoted.length && notVoted.length === 0
     }

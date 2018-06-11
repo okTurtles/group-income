@@ -17,7 +17,7 @@
 
     <div class="gi-voting-ctas">
       <div class="buttons">
-        <template v-if="!ownProposal">
+        <template v-if="!isOwnProposal">
           <button class="button"
             :class="{
               'is-outlined': !hasVotedAgainst,
@@ -114,40 +114,26 @@
 import ButtonCountdown, { countdownStates } from '../ButtonCountdown'
 import Sign from './Sign.vue'
 import L from '../../utils/translations'
-import { votingType } from '../../utils/validators'
+import { votingType, votesObj, memberObj } from '../../utils/validators'
 
 export default {
   name: 'Voting',
   props: {
-    // proposal: Object,
-    // type: String - ‘mincome' || ‘rule' || ‘member'
-    // ctas: Object { for: String, against: String }
-    // title: String
-    // text: String
-    // detailed: String
-    // votes: Object { total: Number, received: Number }
-    // hasVoted: Bool
-    // ownProposal: Bool
-    // value: Number (if type is ‘mincome’ or ‘rule’)
-    // picture: String (if type is ‘member’)
     type: {
       validator: votingType,
       required: true
     },
-    action: {
-      validator: actionType // TODO: addMember, removeMember, addThreshold, removeThreshold, changeThreshold
-    },
     votes: {
-      validator: votesType, // TODO: validator: total, received, threshold
+      validator: votesObj,
       required: true
     },
-    value: Number,
-    member: {
-      validator: memberType // TODO: validator: name, picture
+    value: {
+      type: [String, Number], // string for add member, remove member, number for rule, mincome
+      required: true
     },
-    original: Number,
-    vote: Boolean,
-    ownProposal: {
+    originalValue: Number, // for rule, mincome proposals
+    ownVote: Boolean,
+    isOwnProposal: {
       type: Boolean,
       required: true
     },
@@ -171,24 +157,31 @@ export default {
   computed: {
     ctas () {
       // TODO return { L for, against }
+      return {
+        for: 'for placeholder',
+        against: 'against placeholder'
+      }
     },
     title () {
       // TODO return L string
+      return 'title placeholder'
     },
     text () {
       // TODO return L string
+      return 'text placeholder'
     },
     detailed () {
       // TODO return L string
+      return 'detailed description placeholder'
     },
     hasVoted () {
-      return this.vote !== null
+      return this.ownVote !== null
     },
     hasVotedFor () {
-      return this.vote
+      return this.ownVote
     },
     hasVotedAgainst () {
-      return this.vote === false
+      return this.ownVote === false
     },
     isProposalClosed () {
       return this.ephemeral.state === countdownStates.SUCCESS
@@ -213,12 +206,12 @@ export default {
       }
 
       if (!this.votes.received) {
-        return this.ownProposal
+        return this.isOwnProposal
           ? L('Nobody voted yet')
           : L('Be the first to vote!')
       }
 
-      if (!this.ownProposal && this.votes.received === 1) {
+      if (!this.isOwnProposal && this.votes.received === 1) {
         return L('Your were the first to vote')
       }
 

@@ -111,7 +111,10 @@ export default DefineContract({
     constants: {
       TypeInvitation: 'invitationProposal',
       TypeRemoval: 'removalProposal',
-      TypeChange: 'changeProposal'
+      TypeIncome: 'incomeProvided',
+      TypeChangeThreshold: 'changeThreshold',
+      TypeApprovalThreshold: 'memberApprovalThreshold',
+      TypeRemovalThreshold: 'memberRemovalThreshold'
     },
     validate: objectOf({
       type: string,

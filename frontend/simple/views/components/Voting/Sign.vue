@@ -20,9 +20,8 @@
       {{valuePerc}}
     </p>
 
-    <img class="gi-voting-sign-avatar"
-      :src="member.picture"
-      :alt="`${member.name}'s avatar`"
+    <user-image class="gi-voting-sign-avatar"
+      :username="value"
       v-if="isTypeMember"
     />
   </div>
@@ -79,6 +78,7 @@
 <script>
 import { votingType } from '../../utils/validators'
 import { toPercent } from '../../utils/filters'
+import UserImage from '../../containers/UserImage.vue'
 
 export default {
   name: 'Sign',
@@ -88,6 +88,9 @@ export default {
     },
     value: [Number, String],
     member: Object // picture, name
+  },
+  components: {
+    UserImage
   },
   computed: {
     svgCircle () {
@@ -103,16 +106,16 @@ export default {
       }
     },
     isTypeMember () {
-      return this.type === 'member'
+      return ['invitation', 'removal'].includes(this.type)
     },
     isTypeRule () {
-      return this.type === 'rule'
+      return ['changeThreshold', 'memberApprovalThreshold', 'memberRemovalThreshold'].includes(this.type)
     },
     isTypeMincome () {
-      return this.type === 'mincome'
+      return this.type === 'incomeProvided'
     },
     isTypeRuleOrMincome () {
-      return ['rule', 'mincome'].includes(this.type)
+      return ['changeThreshold', 'memberApprovalThreshold', 'memberRemovalThreshold', 'incomeProvided'].includes(this.type)
     },
     valuePerc () {
       return this.isTypeRule ? toPercent(this.value) : this.value
