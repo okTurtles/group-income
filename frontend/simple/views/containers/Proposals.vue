@@ -1,20 +1,5 @@
 <template>
   <div>
-    <!--  Start Original Voting Banner to delete soon -->
-    <voting-banner v-for="proposal in Object.values(currentGroupState.proposals)"
-      :proposal="proposal"
-    />
-    <!--  End Original Voting Banner to delete soon -->
-
-    <!-- REVIEW: Not sure about these banners. -->
-
-    <!--
-    <h4 class="title is-size-5 notification is-warning gi-is-banner gi-notify"
-      v-if="proposals.notVoted.length"
-    >
-      <i18n>These are waiting for your vote!</i18n>
-    </h4>
-    -->
 
     <i18n class="notification gi-is-banner gi-notify" v-if="allVoted">Cool, you already voted on all proposals.</i18n>
 
@@ -74,15 +59,12 @@
 </style>
 <script>
 import { mapGetters } from 'vuex'
-
 import Voting from '../components/Voting'
-import VotingBanner from './VotingBanner.vue'
 
 export default {
   name: 'Proposals',
   components: {
-    Voting,
-    VotingBanner
+    Voting
   },
   computed: {
     ...mapGetters([
