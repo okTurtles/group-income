@@ -7,7 +7,6 @@
         :member="member"
       />
 
-      <!-- TODO: fix the i18n stuff here -->
       <div class="gi-voting-info">
         <h5 class="has-text-weight-bold is-uppercase gi-voting-info-title">{{title}}</h5>
         <p v-html="text"></p>
@@ -114,7 +113,7 @@
 import ButtonCountdown, { countdownStates } from '../ButtonCountdown'
 import Sign from './Sign.vue'
 import L from '../../utils/translations'
-import { votingType, votesObj, memberObj } from '../../utils/validators'
+import { votingType, votesObj } from '../../utils/validators'
 
 export default {
   name: 'Voting',
@@ -137,6 +136,10 @@ export default {
       type: Boolean,
       required: true
     },
+    initiator: {
+      type: String,
+      required: true
+    },
     // Actions:
     onVoteAgainst: Function,
     onVoteFor: Function,
@@ -156,23 +159,95 @@ export default {
   },
   computed: {
     ctas () {
-      // TODO return { L for, against }
-      return {
-        for: 'for placeholder',
-        against: 'against placeholder'
+      const { value, originalValue } = this
+      if (this.type === 'invitation') {
+        return {
+          for: template(
+            L('Invite {value}'), { value }
+          ),
+          against: template(
+            L('Don\'t invite'), { value }
+          )
+        }
+      } else if (this.type === 'removal') {
+        return {
+          for: template(
+            L('Remove {value}'), { value }
+          ),
+          against: template(
+            L('Keep {value}'), { value }
+          )
+        }
+      } else {
+        return {
+          for: template(
+            L('Change to {value}'), { value }
+          ),
+          against: template(
+            L('Keep {originalValue}'), { originalValue }
+          )
+        }
       }
     },
     title () {
-      // TODO return L string
-      return 'title placeholder'
+      // TODO use constants (from HashableGroupProposal?)
+      const titleMap = {
+        'invitation': L('Invite Member'),
+        'removal': L('Remove Member'),
+        'incomeProvided': L('Change Mincome'),
+        'changeThreshold': L('Update Rule: Change Threshold'),
+        'memberApprovalThreshold': L('Update Rule: Invite Threshold'),
+        'memberRemovalThreshold': L('Update Rule: Member Removal Threshold')
+      }
+      return titleMap[this.type]
     },
     text () {
-      // TODO return L string
-      return 'text placeholder'
+      const { initiator, value, originalValue } = this
+      const textMap = {
+        'invitation': template(
+          L('{initiator} proposed to <strong>invite {value}</strong> to the group'), {
+            initiator, value }
+        ),
+        'removal': template(
+          L('{initiator} proposed to <strong>remove {value}</strong> from the group'), {
+            initiator, value }
+        ),
+        'incomeProvided': template(
+          L('{initiator} proposed to change the <strong>mincome from {originalValue} to {value}</strong>'), {
+            initiator, value, originalValue }
+        ),
+        'changeThreshold': template(
+          L('{initiator} proposed to change the <strong>rule changing threshold from {originalValue} to {value}</strong>'), {
+            initiator, value, originalValue }
+        ),
+        'memberApprovalThreshold': template(
+          L('{initiator} proposed to change the <strong>member invite threshold from {originalValue} to {value}</strong>'), {
+            initiator, value, originalValue }
+        ),
+        'memberRemovalThreshold': template(
+          L('{initiator} proposed to change the <strong>member removal threshold from {originalValue} to {value}</strong>'), {
+            initiator, value, originalValue }
+        )
+      }
+      return textMap[this.type]
     },
     detailed () {
-      // TODO return L string
-      return 'detailed description placeholder'
+      if (['changeThreshold', 'memberApprovalThreshold', 'memberRemovalThreshold'].includes(this.type)) {
+        const originalCount = Math.ceil(this.votes.total * this.votes.originalValue)
+        const newCount = Math.ceil(this.votes.total * this.value)
+        const groupCount = this.votes.total
+        const actionMap = {
+          'changeThreshold': L('change a rule'),
+          'memberApprovalThreshold': L('approve a new member'),
+          'memberRemovalThreshold': L('remove a member')
+        }
+        return template(
+          L('Instead of {originalCount}, at least {newCount} of {groupCount} members will be needed to {action}.'), {
+            originalCount, newCount, groupCount, action: actionMap[this.type] }
+        )
+      } else {
+        return ''
+      }
     },
     hasVoted () {
       return this.ownVote !== null
@@ -205,17 +280,17 @@ export default {
           break
       }
 
-      if (!this.votes.received) {
+      if (this.votes.received < 2) {
         return this.isOwnProposal
           ? L('Nobody voted yet')
           : L('Be the first to vote!')
       }
 
-      if (!this.isOwnProposal && this.votes.received === 1) {
+      if (!this.isOwnProposal && this.votes.received === 2) {
         return L('Your were the first to vote')
       }
 
-      if (this.votes.received > 1) {
+      if (this.votes.received > 2) {
         return L('{youAnd} {votesCount} of {members} members voted', {
           youAnd: this.hasVoted ? L('You and') : '',
           votesCount: this.hasVoted ? this.votes.received - 1 : this.votes.received,

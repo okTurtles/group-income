@@ -27,6 +27,7 @@
       :originalValue="proposal.originalValue"
       :ownVote="proposal.ownVote"
       :isOwnProposal="proposal.isOwnProposal"
+      :initiator="proposal.initiator"
       :onVoteAgainst="handleVoteAgainst"
       :onVoteFor="handleVoteFor"
     />
@@ -40,6 +41,7 @@
       :originalValue="proposal.originalValue"
       :ownVote="proposal.ownVote"
       :isOwnProposal="proposal.isOwnProposal"
+      :initiator="proposal.initiator"
       :handleCloseProposal="onCloseProposal"
     />
 
@@ -52,6 +54,7 @@
       :originalValue="proposal.originalValue"
       :ownVote="proposal.ownVote"
       :isOwnProposal="proposal.isOwnProposal"
+      :initiator="proposal.initiator"
       :onVoteAgainst="handleVoteAgainst"
       :onVoteFor="handleVoteFor"
     />
@@ -108,7 +111,8 @@ export default {
           ownVote: proposal.for.includes(userData.name) || proposal.against.includes(userData.name)
             ? proposal.for.includes(userData.name)
             : null,
-          isOwnProposal: proposal.initiator === userData.name
+          isOwnProposal: proposal.initiator === userData.name,
+          initiator: proposal.initiator
         }
 
         if (proposalData.isOwnProposal) {

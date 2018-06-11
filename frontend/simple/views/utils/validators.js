@@ -12,7 +12,3 @@ export const votesObj = (votes: String) => ( // total, received, threshold
   votes.received && Number.isInteger(votes.received) &&
   votes.threshold && !isNaN(votes.received)
 )
-export const memberObj = (member: String) => ( // name, picture
-  member.name && typeof member.name === 'string' &&
-  member.picture && typeof member.picture === 'string'
-)
