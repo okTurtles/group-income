@@ -114,6 +114,8 @@ import ButtonCountdown, { countdownStates } from '../ButtonCountdown'
 import Sign from './Sign.vue'
 import L from '../../utils/translations'
 import { votingType, votesObj } from '../../utils/validators'
+import template from 'string-template'
+import { HashableGroupProposal } from '../../../../shared/events'
 
 export default {
   name: 'Voting',
@@ -160,7 +162,8 @@ export default {
   computed: {
     ctas () {
       const { value, originalValue } = this
-      if (this.type === 'invitation') {
+      const { TypeInvitation, TypeRemoval } = HashableGroupProposal
+      if (this.type === TypeInvitation) {
         return {
           for: template(
             L('Invite {value}'), { value }
@@ -169,7 +172,7 @@ export default {
             L('Don\'t invite'), { value }
           )
         }
-      } else if (this.type === 'removal') {
+      } else if (this.type === TypeRemoval) {
         return {
           for: template(
             L('Remove {value}'), { value }
@@ -190,41 +193,42 @@ export default {
       }
     },
     title () {
-      // TODO use constants (from HashableGroupProposal?)
+      const { TypeInvitation, TypeRemoval, TypeIncome, TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold } = HashableGroupProposal
       const titleMap = {
-        'invitation': L('Invite Member'),
-        'removal': L('Remove Member'),
-        'incomeProvided': L('Change Mincome'),
-        'changeThreshold': L('Update Rule: Change Threshold'),
-        'memberApprovalThreshold': L('Update Rule: Invite Threshold'),
-        'memberRemovalThreshold': L('Update Rule: Member Removal Threshold')
+        [TypeInvitation]: L('Invite Member'),
+        [TypeRemoval]: L('Remove Member'),
+        [TypeIncome]: L('Change Mincome'),
+        [TypeChangeThreshold]: L('Update Rule: Change Threshold'),
+        [TypeApprovalThreshold]: L('Update Rule: Invite Threshold'),
+        [TypeRemovalThreshold]: L('Update Rule: Member Removal Threshold')
       }
       return titleMap[this.type]
     },
     text () {
       const { initiator, value, originalValue } = this
+      const { TypeInvitation, TypeRemoval, TypeIncome, TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold } = HashableGroupProposal
       const textMap = {
-        'invitation': template(
+        [TypeInvitation]: template(
           L('{initiator} proposed to <strong>invite {value}</strong> to the group'), {
             initiator, value }
         ),
-        'removal': template(
+        [TypeRemoval]: template(
           L('{initiator} proposed to <strong>remove {value}</strong> from the group'), {
             initiator, value }
         ),
-        'incomeProvided': template(
+        [TypeIncome]: template(
           L('{initiator} proposed to change the <strong>mincome from {originalValue} to {value}</strong>'), {
             initiator, value, originalValue }
         ),
-        'changeThreshold': template(
+        [TypeChangeThreshold]: template(
           L('{initiator} proposed to change the <strong>rule changing threshold from {originalValue} to {value}</strong>'), {
             initiator, value, originalValue }
         ),
-        'memberApprovalThreshold': template(
+        [TypeApprovalThreshold]: template(
           L('{initiator} proposed to change the <strong>member invite threshold from {originalValue} to {value}</strong>'), {
             initiator, value, originalValue }
         ),
-        'memberRemovalThreshold': template(
+        [TypeRemovalThreshold]: template(
           L('{initiator} proposed to change the <strong>member removal threshold from {originalValue} to {value}</strong>'), {
             initiator, value, originalValue }
         )
@@ -232,14 +236,15 @@ export default {
       return textMap[this.type]
     },
     detailed () {
-      if (['changeThreshold', 'memberApprovalThreshold', 'memberRemovalThreshold'].includes(this.type)) {
+      const { TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold } = HashableGroupProposal
+      if ([TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold].includes(this.type)) {
         const originalCount = Math.ceil(this.votes.total * this.votes.originalValue)
         const newCount = Math.ceil(this.votes.total * this.value)
         const groupCount = this.votes.total
         const actionMap = {
-          'changeThreshold': L('change a rule'),
-          'memberApprovalThreshold': L('approve a new member'),
-          'memberRemovalThreshold': L('remove a member')
+          TypeChangeThreshold: L('change a rule'),
+          TypeApprovalThreshold: L('approve a new member'),
+          TypeRemovalThreshold: L('remove a member')
         }
         return template(
           L('Instead of {originalCount}, at least {newCount} of {groupCount} members will be needed to {action}.'), {
