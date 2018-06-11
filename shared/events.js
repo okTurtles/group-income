@@ -284,6 +284,7 @@ export class Action extends Hashable {
 }
 
 export class HashableGroupProposal extends HashableAction {
+  // type: 'invitation' or 'removal' for member, field name for rule/mincome
   static TypeInvitation = 'invitation'
   static TypeRemoval = 'removal'
   static TypeIncome = 'incomeProvided'
