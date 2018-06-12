@@ -194,6 +194,13 @@ const getters = {
       if (!groupId) return 0
       return Object.keys(state[groupId].profiles).length
     }
+  },
+  proposalData (state, getters) {
+    return (proposalHash, groupId) => {
+      if (!groupId) groupId = state.currentGroupId
+      if (!groupId) return 0
+      return state[groupId].proposals[proposalHash]
+    }
   }
 }
 

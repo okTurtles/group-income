@@ -62,6 +62,7 @@
 </style>
 <script>
 import { mapGetters } from 'vuex'
+import template from 'string-template'
 import Voting from '../components/Voting'
 import * as Events from '../../../../shared/events'
 import backend from '../../controller/backend/'
@@ -137,8 +138,37 @@ export default {
         console.log(ex)
       }
     },
-    handleVoteFor (hash) {
-      console.log('TODO Logic - The user voted for')
+    async handleVoteFor (hash) {
+      try {
+        // Create a vote for the proposal
+        const groupId = this.$store.state.currentGroupId
+        let latest = await backend.latestHash(groupId)
+        const vote = new Events.HashableGroupVoteForProposal({
+          username: this.currentUserIdentityContract.attributes.name,
+          proposalHash: hash
+        }, latest)
+        await backend.publishLogEntry(groupId, vote)
+
+        // If the vote passes fulfill the action
+        const proposal = this.$store.getters.proposalData(hash)
+        const memberCount = Object.entries(this.currentGroupState.profiles).length
+        const threshold = Math.ceil(proposal.threshold * memberCount)
+        if (proposal.for.length + 1 >= threshold) {
+          let lastActionHash = null
+          const actionDate = new Date().toString()
+          for (let step of proposal.actions) {
+            latest = await backend.latestHash(step.contractId)
+            let actObj = JSON.parse(template(step.action, {lastActionHash, actionDate}))
+            let entry = new Events[actObj.type](actObj.data, latest)
+            lastActionHash = entry.toHash()
+            await backend.publishLogEntry(step.contractId, entry)
+          }
+        }
+      } catch (ex) {
+        // TODO: diplay error to user
+        console.error('Failed to cast vote:')
+        console.log(ex)
+      }
     },
     handleCloseProposal (hash) {
       console.log('TODO Logic - The proposal was closed')
