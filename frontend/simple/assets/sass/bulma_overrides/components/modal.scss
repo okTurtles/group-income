@@ -1,24 +1,43 @@
+$modal-content-margin-mobile: 0;
+$modal-content-margin-mobile: $gi-spacer-lg;
+
+$modal-card-head-background-color: $body-background-color;
+$modal-card-head-border-bottom: none;
+$modal-card-head-padding: $gi-spacer-lg $gi-spacer;
+$modal-card-title-line-height: inherit;
+$modal-card-foot-border-top: $modal-card-head-border-bottom;
+$modal-card-body-padding: 0;
+
 @import "../../node_modules/bulma/sass/components/modal";
 
-.modal-content {
-  &.gi-is-large {
-    background: white;
-    width: 980px;
-    max-width: 100%;
-    padding: $gi-spacer;
-    border-radius: $radius;
+// Bulma customization variables are not enough
+
+.modal-card {
+  .delete {
+    position: absolute;
+    top: $gi-spacer;
+    right: $gi-spacer;
+    z-index: 1;
   }
 
-  @include mobile {
-    &.gi-is-large {
-      margin: 0;
-    }
+  &-head {
+    display: block;
+  }
+
+  &-body,
+  &-foot {
+    flex-direction: column;
+    justify-content: center;
   }
 
   @include tablet {
-    &.gi-is-large {
-      padding: $gi-spacer-lg;
-      max-width: calc(100vw - #{$gi-spacer*2});
+    width: auto;
+
+    &-head,
+    &-body,
+    &-foot {
+      padding-left: $gi-spacer-xl;
+      padding-right: $gi-spacer-xl;
     }
   }
 }

@@ -3,17 +3,17 @@
     <div class="column is-4">
       <p class="has-text-weight-bold settings-number" data-test="changePercentage">{{ group.changeThreshold | toPercent }}</p>
       <p class="is-size-5"><i18n>Change Rules</i18n></p>
-      <a href="#"><i18n>Propose change</i18n></a>
+      <a @click.prevent="openProposal('RuleChangeRule')"><i18n>Propose change</i18n></a>
     </div>
     <div class="column is-4">
       <p class="has-text-weight-bold settings-number" data-test="approvePercentage">{{ group.memberApprovalThreshold | toPercent }}</p>
       <p class="is-size-5"><i18n>Add Member</i18n></p>
-      <a href="#"><i18n>Propose change</i18n></a>
+      <a @click.prevent="openProposal('RuleAddMember')"><i18n>Propose change</i18n></a>
     </div>
     <div class="column is-4">
       <p class="has-text-weight-bold settings-number" data-test="removePercentage">{{ group.memberRemovalThreshold | toPercent }}</p>
       <p class="is-size-5"><i18n>Remove Member</i18n></p>
-      <a href="#"><i18n>Propose change</i18n></a>
+      <a @click.prevent="openProposal('RuleRemoveMember')"><i18n>Propose change</i18n></a>
     </div>
   </div>
 </template>
@@ -24,7 +24,18 @@
 }
 </style>
 <script>
-import { toPercent } from '../utils/filters'
+import sbp from '../../../../shared/sbp.js'
+import { toPercent } from '../utils/filters.js'
+import { OPEN_MODAL } from '../../utils/events.js'
+import RuleChangeRule from '../containers/proposals-form/RuleChangeRule.vue'
+import RuleAddMember from '../containers/proposals-form/RuleAddMember.vue'
+import RuleRemoveMember from '../containers/proposals-form/RuleRemoveMember.vue'
+
+const forms = {
+  RuleChangeRule,
+  RuleAddMember,
+  RuleRemoveMember
+}
 
 export default {
   name: 'GroupSettings',
@@ -33,6 +44,11 @@ export default {
   },
   filters: {
     toPercent
+  },
+  methods: {
+    openProposal (component) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, forms[component])
+    }
   }
 }
 </script>
