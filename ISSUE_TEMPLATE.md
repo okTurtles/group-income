@@ -1,11 +1,5 @@
 ### Instructions
 
-##### To submit a milepost
-
-Delete all this text and replace it with the [milepost template](https://github.com/taoeffect/mileposts#milepost-template).
-
-##### To submit an issue
-
 All issues, except `documentation` tagged issues, must be in problem-solution format.
 
 - **Bad:** _"Problem: we need feature X. Solution: make it."_
@@ -15,7 +9,7 @@ Per [C4.1](https://rfc.zeromq.org/spec:42/C4/), "seek consensus on the accuracy 
 
 Before submitting, search for existing issues and read [`Troubleshooting.md`](docs/Troubleshooting.md).
 
-***Delete this line and everything above before submitting!***
+***! Delete this line and everything above before submitting !***
 
 ### Problem
 
