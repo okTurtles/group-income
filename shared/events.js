@@ -316,6 +316,13 @@ export class HashableGroupVoteAgainstProposal extends HashableAction {
   ])
 }
 
+export class HashableGroupCloseProposal extends HashableAction {
+  static fields = HashableGroupCloseProposal.Fields([
+    ['username', 'string'],
+    ['proposalHash', 'string']
+  ])
+}
+
 export class HashableGroupRecordInvitation extends HashableAction {
   static fields = HashableGroupRecordInvitation.Fields([
     ['username', 'string'],

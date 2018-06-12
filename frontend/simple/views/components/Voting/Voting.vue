@@ -312,7 +312,7 @@ export default {
     handleProposalStateChange (state, opts = {}) {
       this.ephemeral = { state, ...opts }
 
-      state === 'success' && this.closeProposal()
+      state === countdownStates.SUCCESS && this.closeProposal()
     },
     handleVoteAgainst () {
       if (this.hasVotedAgainst) {

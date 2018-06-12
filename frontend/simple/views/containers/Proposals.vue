@@ -29,7 +29,7 @@
       :isOwnProposal="proposal.isOwnProposal"
       :initiator="proposal.initiator"
       :hash="proposal.hash"
-      :handleCloseProposal="onCloseProposal"
+      :onCloseProposal="handleCloseProposal"
     />
 
     <voting
@@ -170,8 +170,21 @@ export default {
         console.log(ex)
       }
     },
-    handleCloseProposal (hash) {
-      console.log('TODO Logic - The proposal was closed')
+    async handleCloseProposal (hash) {
+      try {
+        // Create proposal close event
+        const groupId = this.$store.state.currentGroupId
+        const latest = await backend.latestHash(groupId)
+        const close = new Events.HashableGroupCloseProposal({
+          username: this.currentUserIdentityContract.attributes.name,
+          proposalHash: hash
+        }, latest)
+        await backend.publishLogEntry(groupId, close)
+      } catch (ex) {
+        // TODO: diplay error to user
+        console.error('Failed to close proposal:')
+        console.log(ex)
+      }
     }
   }
 }

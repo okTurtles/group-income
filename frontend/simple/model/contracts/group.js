@@ -149,6 +149,7 @@ export default DefineContract({
           state.proposals[data.proposalHash].for.push(data.username)
           let threshold = Math.ceil(state.proposals[data.proposalHash].threshold * Object.keys(state.profiles).length)
           if (state.proposals[data.proposalHash].for.length >= threshold) {
+            // TODO: flag instead of delete to make proposal history easier? #426
             Vue.delete(state.proposals, data.proposalHash)
           }
         }
@@ -167,9 +168,21 @@ export default DefineContract({
           let memberCount = Object.keys(state.profiles).length
           let threshold = Math.ceil(state.proposals[data.proposalHash].threshold * memberCount)
           if (state.proposals[data.proposalHash].against.length > memberCount - threshold) {
+            // TODO: flag instead of delete to make proposal history easier? #426
             Vue.delete(state.proposals, data.proposalHash)
           }
         }
+      }
+    }
+  },
+  'GroupCloseProposal': {
+    validate: function (data) {
+      // ['proposalHash', 'string']
+    },
+    mutation: (state, {data}) => {
+      if (state.proposals[data.proposalHash]) {
+        // TODO: flag instead of delete to make proposal history easier?
+        Vue.delete(state.proposals, data.proposalHash)
       }
     }
   },
