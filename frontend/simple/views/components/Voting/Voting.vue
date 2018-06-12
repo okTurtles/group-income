@@ -115,7 +115,7 @@ import Sign from './Sign.vue'
 import L from '../../utils/translations'
 import { votingType, votesObj } from '../../utils/validators'
 import template from 'string-template'
-import { HashableGroupProposal } from '../../../../shared/events'
+import { HashableGroupProposal } from '../../../../../shared/events'
 
 export default {
   name: 'Voting',
@@ -139,6 +139,10 @@ export default {
       required: true
     },
     initiator: {
+      type: String,
+      required: true
+    },
+    hash: {
       type: String,
       required: true
     },
@@ -315,17 +319,17 @@ export default {
         return false
       }
 
-      this.onVoteAgainst && this.onVoteAgainst()
+      this.onVoteAgainst && this.onVoteAgainst(this.hash)
     },
     handleVoteFor () {
       if (this.hasVotedFor) {
         return false
       }
 
-      this.onVoteFor && this.onVoteFor()
+      this.onVoteFor && this.onVoteFor(this.hash)
     },
     closeProposal () {
-      this.onCloseProposal && this.onCloseProposal()
+      this.onCloseProposal && this.onCloseProposal(this.hash)
     }
   }
 }

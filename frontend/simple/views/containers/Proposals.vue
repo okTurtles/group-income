@@ -13,6 +13,7 @@
       :ownVote="proposal.ownVote"
       :isOwnProposal="proposal.isOwnProposal"
       :initiator="proposal.initiator"
+      :hash="proposal.hash"
       :onVoteAgainst="handleVoteAgainst"
       :onVoteFor="handleVoteFor"
     />
@@ -27,6 +28,7 @@
       :ownVote="proposal.ownVote"
       :isOwnProposal="proposal.isOwnProposal"
       :initiator="proposal.initiator"
+      :hash="proposal.hash"
       :handleCloseProposal="onCloseProposal"
     />
 
@@ -40,6 +42,7 @@
       :ownVote="proposal.ownVote"
       :isOwnProposal="proposal.isOwnProposal"
       :initiator="proposal.initiator"
+      :hash="proposal.hash"
       :onVoteAgainst="handleVoteAgainst"
       :onVoteFor="handleVoteFor"
     />
@@ -60,6 +63,8 @@
 <script>
 import { mapGetters } from 'vuex'
 import Voting from '../components/Voting'
+import * as Events from '../../../../shared/events'
+import backend from '../../controller/backend/'
 
 export default {
   name: 'Proposals',
@@ -80,21 +85,22 @@ export default {
       const proposals = groupData.proposals
       const userData = this.currentUserIdentityContract.attributes
 
-      for (let proposal of Object.values(proposals)) {
+      for (let hash in proposals) {
         const proposalData = {
-          type: proposal.type, // 'invitation' or 'removal' for member, field name for rule/mincome
+          type: proposals[hash].type, // 'invitation' or 'removal' for member, field name for rule/mincome
           votes: {
             total: Object.entries(groupData.profiles).length,
-            received: proposal.for.length + proposal.against.length,
-            threshold: proposal.threshold
+            received: proposals[hash].for.length + proposals[hash].against.length,
+            threshold: proposals[hash].threshold
           },
-          value: proposal.value || proposal.candidate || null,
-          originalValue: groupData[proposal.type] || null,
-          ownVote: proposal.for.includes(userData.name) || proposal.against.includes(userData.name)
-            ? proposal.for.includes(userData.name)
+          value: proposals[hash].value || proposals[hash].candidate || null,
+          originalValue: groupData[proposals[hash].type] || null,
+          ownVote: proposals[hash].for.includes(userData.name) || proposals[hash].against.includes(userData.name)
+            ? proposals[hash].for.includes(userData.name)
             : null,
-          isOwnProposal: proposal.initiator === userData.name,
-          initiator: proposal.initiator
+          isOwnProposal: proposals[hash].initiator === userData.name,
+          initiator: proposals[hash].initiator,
+          hash: hash
         }
 
         if (proposalData.isOwnProposal) {
@@ -115,15 +121,26 @@ export default {
     }
   },
   methods: {
-    // TODO: voteFor, voteAgainst functions to be called by voting comp
-    // for actual vote casting
-    handleVoteAgainst () {
-      console.log('TODO Logic - The user voted against')
+    async handleVoteAgainst (hash) {
+      try {
+        // Create a vote against the proposal
+        const groupId = this.$store.state.currentGroupId
+        const latest = await backend.latestHash(groupId)
+        const vote = new Events.HashableGroupVoteAgainstProposal({
+          username: this.currentUserIdentityContract.attributes.name,
+          proposalHash: hash
+        }, latest)
+        await backend.publishLogEntry(groupId, vote)
+      } catch (ex) {
+        // TODO: diplay error to user
+        console.error('Failed to cast vote:')
+        console.log(ex)
+      }
     },
-    handleVoteFor () {
+    handleVoteFor (hash) {
       console.log('TODO Logic - The user voted for')
     },
-    handleCloseProposal () {
+    handleCloseProposal (hash) {
       console.log('TODO Logic - The proposal was closed')
     }
   }
