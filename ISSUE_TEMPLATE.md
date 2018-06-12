@@ -1,6 +1,6 @@
 ### Instructions
 
-All issues, except `documentation` tagged issues, must be in problem-solution format.
+All issues must be in problem-solution format.
 
 - **Bad:** _"Problem: we need feature X. Solution: make it."_
 - **Better:** _"Problem: user cannot do common tasks A or B except by using a complex workaround. Solution: make feature X."_
