@@ -84,7 +84,7 @@ export default {
           own.push(proposalData)
         } else if (proposalData.ownVote === null) {
           notVoted.push(proposalData)
-        } else if (proposalData.ownVote !== null) {
+        } else {
           alreadyVoted.push(proposalData)
         }
       }
