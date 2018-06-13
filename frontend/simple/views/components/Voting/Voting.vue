@@ -133,7 +133,7 @@ export default {
       required: true
     },
     originalValue: Number, // for rule, mincome proposals
-    ownVote: Boolean,
+    ownVote: [Boolean, null], // for (true), against (false) or not voted yet (null)
     isOwnProposal: {
       type: Boolean,
       required: true
