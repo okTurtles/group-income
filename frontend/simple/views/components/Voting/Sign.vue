@@ -118,7 +118,7 @@ export default {
       return this.type === TypeIncome
     },
     isTypeRuleOrMincome () {
-      return this.isTypeRule() || this.isTypeMincome()
+      return this.isTypeRule || this.isTypeMincome
     },
     valuePerc () {
       return this.isTypeRule ? toPercent(this.value) : this.value

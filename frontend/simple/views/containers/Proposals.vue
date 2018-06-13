@@ -5,44 +5,20 @@
 
     <voting
       v-for="proposal in proposalList.notVoted"
-      :type="proposal.type"
-      :votes="proposal.votes"
-      :value="proposal.value"
-      :member="proposal.member"
-      :originalValue="proposal.originalValue"
-      :ownVote="proposal.ownVote"
-      :isOwnProposal="proposal.isOwnProposal"
-      :initiator="proposal.initiator"
-      :hash="proposal.hash"
+      v-bind="proposal"
       :onVoteAgainst="handleVoteAgainst"
       :onVoteFor="handleVoteFor"
     />
 
     <voting
       v-for="proposal in proposalList.own"
-      :type="proposal.type"
-      :votes="proposal.votes"
-      :value="proposal.value"
-      :member="proposal.member"
-      :originalValue="proposal.originalValue"
-      :ownVote="proposal.ownVote"
-      :isOwnProposal="proposal.isOwnProposal"
-      :initiator="proposal.initiator"
-      :hash="proposal.hash"
+      v-bind="proposal"
       :onCloseProposal="handleCloseProposal"
     />
 
     <voting
       v-for="proposal in proposalList.alreadyVoted"
-      :type="proposal.type"
-      :votes="proposal.votes"
-      :value="proposal.value"
-      :member="proposal.member"
-      :originalValue="proposal.originalValue"
-      :ownVote="proposal.ownVote"
-      :isOwnProposal="proposal.isOwnProposal"
-      :initiator="proposal.initiator"
-      :hash="proposal.hash"
+      v-bind="proposal"
       :onVoteAgainst="handleVoteAgainst"
       :onVoteFor="handleVoteFor"
     />
@@ -87,20 +63,21 @@ export default {
       const userData = this.currentUserIdentityContract.attributes
 
       for (let hash in proposals) {
+        const proposal = proposals[hash]
         const proposalData = {
-          type: proposals[hash].type, // 'invitation' or 'removal' for member, field name for rule/mincome
+          type: proposal.type, // 'invitation' or 'removal' for member, field name for rule/mincome
           votes: {
             total: Object.entries(groupData.profiles).length,
-            received: proposals[hash].for.length + proposals[hash].against.length,
-            threshold: proposals[hash].threshold
+            received: proposal.for.length + proposal.against.length,
+            threshold: proposal.threshold
           },
-          value: proposals[hash].value || proposals[hash].candidate || null,
-          originalValue: groupData[proposals[hash].type] || null,
-          ownVote: proposals[hash].for.includes(userData.name) || proposals[hash].against.includes(userData.name)
-            ? proposals[hash].for.includes(userData.name)
+          value: proposal.value || proposal.candidate || null,
+          originalValue: groupData[proposal.type] || null,
+          ownVote: proposal.for.includes(userData.name) || proposal.against.includes(userData.name)
+            ? proposal.for.includes(userData.name)
             : null,
-          isOwnProposal: proposals[hash].initiator === userData.name,
-          initiator: proposals[hash].initiator,
+          isOwnProposal: proposal.initiator === userData.name,
+          initiator: proposal.initiator,
           hash: hash
         }
 
