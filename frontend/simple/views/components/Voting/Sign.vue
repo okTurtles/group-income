@@ -79,6 +79,9 @@
 import { votingType } from '../../utils/validators'
 import { toPercent } from '../../utils/filters'
 import UserImage from '../../containers/UserImage.vue'
+import { HashableGroupProposal } from '../../../../../shared/events'
+
+const { TypeInvitation, TypeRemoval, TypeIncome, TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold } = HashableGroupProposal
 
 export default {
   name: 'Sign',
@@ -106,16 +109,16 @@ export default {
       }
     },
     isTypeMember () {
-      return ['invitation', 'removal'].includes(this.type)
+      return [TypeInvitation, TypeRemoval].includes(this.type)
     },
     isTypeRule () {
-      return ['changeThreshold', 'memberApprovalThreshold', 'memberRemovalThreshold'].includes(this.type)
+      return [TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold].includes(this.type)
     },
     isTypeMincome () {
-      return this.type === 'incomeProvided'
+      return this.type === TypeIncome
     },
     isTypeRuleOrMincome () {
-      return ['changeThreshold', 'memberApprovalThreshold', 'memberRemovalThreshold', 'incomeProvided'].includes(this.type)
+      return this.isTypeRule() || this.isTypeMincome()
     },
     valuePerc () {
       return this.isTypeRule ? toPercent(this.value) : this.value

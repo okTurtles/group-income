@@ -113,9 +113,11 @@
 import ButtonCountdown, { countdownStates } from '../ButtonCountdown'
 import Sign from './Sign.vue'
 import L from '../../utils/translations'
-import { votingType, votesObj } from '../../utils/validators'
+import { votingType, votesObj } from './validators'
 import template from 'string-template'
 import { HashableGroupProposal } from '../../../../../shared/events'
+
+const { TypeInvitation, TypeRemoval, TypeIncome, TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold } = HashableGroupProposal
 
 export default {
   name: 'Voting',
@@ -166,7 +168,6 @@ export default {
   computed: {
     ctas () {
       const { value, originalValue } = this
-      const { TypeInvitation, TypeRemoval } = HashableGroupProposal
       if (this.type === TypeInvitation) {
         return {
           for: template(
@@ -197,7 +198,6 @@ export default {
       }
     },
     title () {
-      const { TypeInvitation, TypeRemoval, TypeIncome, TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold } = HashableGroupProposal
       const titleMap = {
         [TypeInvitation]: L('Invite Member'),
         [TypeRemoval]: L('Remove Member'),
@@ -210,7 +210,6 @@ export default {
     },
     text () {
       const { initiator, value, originalValue } = this
-      const { TypeInvitation, TypeRemoval, TypeIncome, TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold } = HashableGroupProposal
       const textMap = {
         [TypeInvitation]: template(
           L('{initiator} proposed to <strong>invite {value}</strong> to the group'), {
@@ -240,15 +239,14 @@ export default {
       return textMap[this.type]
     },
     detailed () {
-      const { TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold } = HashableGroupProposal
       if ([TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold].includes(this.type)) {
         const originalCount = Math.ceil(this.votes.total * this.votes.originalValue)
         const newCount = Math.ceil(this.votes.total * this.value)
         const groupCount = this.votes.total
         const actionMap = {
-          TypeChangeThreshold: L('change a rule'),
-          TypeApprovalThreshold: L('approve a new member'),
-          TypeRemovalThreshold: L('remove a member')
+          [TypeChangeThreshold]: L('change a rule'),
+          [TypeApprovalThreshold]: L('approve a new member'),
+          [TypeRemovalThreshold]: L('remove a member')
         }
         return template(
           L('Instead of {originalCount}, at least {newCount} of {groupCount} members will be needed to {action}.'), {
