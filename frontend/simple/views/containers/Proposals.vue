@@ -118,7 +118,7 @@ export default {
       try {
         // Create a vote for the proposal
         const groupId = this.$store.state.currentGroupId
-        let latest = await backend.latestHash(groupId)
+        const latest = await backend.latestHash(groupId)
         const vote = new Events.HashableGroupVoteForProposal({
           username: this.currentUserIdentityContract.attributes.name,
           proposalHash: hash
@@ -130,19 +130,29 @@ export default {
         const memberCount = Object.entries(this.currentGroupState.profiles).length
         const threshold = Math.ceil(proposal.threshold * memberCount)
         if (proposal.for.length + 1 >= threshold) {
-          let lastActionHash = null
-          const actionDate = new Date().toString()
-          for (let step of proposal.actions) {
-            latest = await backend.latestHash(step.contractId)
-            let actObj = JSON.parse(template(step.action, {lastActionHash, actionDate}))
-            let entry = new Events[actObj.type](actObj.data, latest)
-            lastActionHash = entry.toHash()
-            await backend.publishLogEntry(step.contractId, entry)
-          }
+          await this.handleVotePassed(proposal)
         }
       } catch (ex) {
         // TODO: diplay error to user
         console.error('Failed to cast vote:')
+        console.log(ex)
+      }
+    },
+    async handleVotePassed (proposal) {
+      try {
+        // If the vote passes fulfill the action
+        let lastActionHash = null
+        const actionDate = new Date().toString()
+        for (let step of proposal.actions) {
+          let latest = await backend.latestHash(step.contractId)
+          let actObj = JSON.parse(template(step.action, {lastActionHash, actionDate}))
+          let entry = new Events[actObj.type](actObj.data, latest)
+          lastActionHash = entry.toHash()
+          await backend.publishLogEntry(step.contractId, entry)
+        }
+      } catch (ex) {
+        // TODO: diplay error to user
+        console.error('Failed to close proposal when threshold reached:')
         console.log(ex)
       }
     },
