@@ -287,18 +287,18 @@ export default {
           break
       }
 
-      if (this.votes.received < 2) {
+      if (this.votes.received === 0) {
         return this.isOwnProposal
           ? L('Nobody voted yet')
           : L('Be the first to vote!')
       }
 
-      if (!this.isOwnProposal && this.votes.received === 2) {
+      if (!this.isOwnProposal && this.votes.received === 1) {
         return L('Your were the first to vote')
       }
 
-      if (this.votes.received > 2) {
-        return L('{youAnd} {votesCount} of {members} members voted', {
+      if (this.votes.received > 1) {
+        return template(L('{youAnd} {votesCount} of {members} members voted'), {
           youAnd: this.hasVoted ? L('You and') : '',
           votesCount: this.hasVoted ? this.votes.received - 1 : this.votes.received,
           members: this.votes.total

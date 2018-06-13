@@ -68,8 +68,7 @@ export default {
           type: proposal.type, // 'invitation' or 'removal' for member, field name for rule/mincome
           votes: {
             total: Object.entries(groupData.profiles).length,
-            received: proposal.for.length + proposal.against.length,
-            threshold: proposal.threshold
+            received: proposal.for.length + proposal.against.length - 1 // initiator's for vote doesn't count here
           },
           value: proposal.value || proposal.candidate || null,
           originalValue: groupData[proposal.type] || null,
