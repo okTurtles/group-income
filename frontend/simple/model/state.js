@@ -198,7 +198,7 @@ const getters = {
   proposalData (state, getters) {
     return (proposalHash, groupId) => {
       if (!groupId) groupId = state.currentGroupId
-      if (!groupId) return 0
+      if (!groupId) return null
       return state[groupId].proposals[proposalHash]
     }
   }
