@@ -24,7 +24,7 @@
             }"
             @click="handleVoteAgainst"
           >
-            {{ctas.against}}
+            {{buttonText.against}}
           </button>
 
           <button class="button"
@@ -34,7 +34,7 @@
             }"
             @click="handleVoteFor"
           >
-            {{ctas.for}}
+            {{buttonText.for}}
           </button>
         </template>
 
@@ -166,34 +166,22 @@ export default {
     }
   },
   computed: {
-    ctas () {
+    buttonText () {
       const { value, originalValue } = this
       if (this.type === TypeInvitation) {
         return {
-          for: template(
-            L('Invite {value}'), { value }
-          ),
-          against: template(
-            L('Don\'t invite'), { value }
-          )
+          for: template(L('Invite {value}'), { value }),
+          against: L('Don\'t invite')
         }
       } else if (this.type === TypeRemoval) {
         return {
-          for: template(
-            L('Remove {value}'), { value }
-          ),
-          against: template(
-            L('Keep {value}'), { value }
-          )
+          for: template(L('Remove {value}'), { value }),
+          against: template(L('Keep {value}'), { value })
         }
       } else {
         return {
-          for: template(
-            L('Change to {value}'), { value }
-          ),
-          against: template(
-            L('Keep {originalValue}'), { originalValue }
-          )
+          for: template(L('Change to {value}'), { value }),
+          against: template(L('Keep {originalValue}'), { originalValue })
         }
       }
     },
@@ -313,16 +301,12 @@ export default {
       state === countdownStates.SUCCESS && this.closeProposal()
     },
     handleVoteAgainst () {
-      if (this.hasVotedAgainst) {
-        return false
-      }
+      if (this.hasVotedAgainst) return false
 
       this.onVoteAgainst && this.onVoteAgainst(this.hash)
     },
     handleVoteFor () {
-      if (this.hasVotedFor) {
-        return false
-      }
+      if (this.hasVotedFor) return false
 
       this.onVoteFor && this.onVoteFor(this.hash)
     },
