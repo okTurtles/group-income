@@ -308,34 +308,25 @@ export default {
 
       state === countdownStates.SUCCESS && this.closeProposal()
     },
-    async handleVoteAgainst () {
-      this.ephemeral.errorState = null
-      if (this.hasVotedAgainst) return false
-
-      try {
-        this.onVoteAgainst && await this.onVoteAgainst(this.hash)
-      } catch (e) {
-        this.ephemeral.errorState = L('Something went wrong with your vote')
-      }
-    },
-    async handleVoteFor () {
-      this.ephemeral.errorState = null
-      if (this.hasVotedFor) return false
-
-      try {
-        this.onVoteFor && await this.onVoteFor(this.hash)
-      } catch (e) {
-        this.ephemeral.errorState = L('Something went wrong with your vote')
-      }
-    },
-    async closeProposal () {
+    async checkErrors (method) {
       this.ephemeral.errorState = null
       try {
-        this.onCloseProposal && await this.onCloseProposal(this.hash)
+        await method()
       } catch (e) {
         this.ephemeral.closeCountdown.state = null
-        this.ephemeral.errorState = L('Something went wrong when closing your proposal')
+        this.ephemeral.errorState = L('Something went wrong!')
       }
+    },
+    handleVoteAgainst () {
+      if (this.hasVotedAgainst) return false
+      this.onVoteAgainst && this.checkErrors(() => this.onVoteAgainst(this.hash))
+    },
+    handleVoteFor () {
+      if (this.hasVotedFor) return false
+      this.onVoteFor && this.checkErrors(() => this.onVoteFor(this.hash))
+    },
+    closeProposal () {
+      this.onCloseProposal && this.checkErrors(() => this.onCloseProposal(this.hash))
     }
   }
 }
