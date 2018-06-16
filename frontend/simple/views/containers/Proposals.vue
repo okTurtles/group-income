@@ -42,6 +42,7 @@ import template from 'string-template'
 import Voting from '../components/Voting'
 import * as Events from '../../../../shared/events'
 import backend from '../../controller/backend/'
+import { CastError, TresholdError, CloseError } from '../components/Voting/errors'
 
 export default {
   name: 'Proposals',
@@ -109,9 +110,9 @@ export default {
         }, latest)
         await backend.publishLogEntry(groupId, vote)
       } catch (ex) {
-        // TODO: diplay error to user
-        console.error('Failed to cast vote:')
+        // TODO: save to error log
         console.log(ex)
+        throw new Error(CastError)
       }
     },
     async handleVoteFor (hash) {
@@ -133,9 +134,9 @@ export default {
           await this.handleVotePassed(proposal)
         }
       } catch (ex) {
-        // TODO: diplay error to user
-        console.error('Failed to cast vote:')
+        // TODO: save to error log
         console.log(ex)
+        throw new Error(CastError)
       }
     },
     async handleVotePassed (proposal) {
@@ -151,9 +152,9 @@ export default {
           await backend.publishLogEntry(step.contractId, entry)
         }
       } catch (ex) {
-        // TODO: diplay error to user
-        console.error('Failed to close proposal when threshold reached:')
+        // TODO: save to error log
         console.log(ex)
+        throw new Error(TresholdError)
       }
     },
     async handleCloseProposal (hash) {
@@ -167,9 +168,9 @@ export default {
         }, latest)
         await backend.publishLogEntry(groupId, close)
       } catch (ex) {
-        // TODO: diplay error to user
-        console.error('Failed to close proposal:')
+        // TODO: save to error log
         console.log(ex)
+        throw new Error(CloseError)
       }
     }
   }
