@@ -42,7 +42,6 @@ import template from 'string-template'
 import Voting from '../components/Voting'
 import * as Events from '../../../../shared/events'
 import backend from '../../controller/backend/'
-import { CastError, TresholdError, CloseError } from '../components/Voting/errors'
 
 export default {
   name: 'Proposals',
@@ -136,7 +135,7 @@ export default {
       } catch (ex) {
         // TODO: save to error log
         console.log(ex)
-        throw new Error(CastError)
+        throw new Error()
       }
     },
     async handleVotePassed (proposal) {
@@ -154,7 +153,7 @@ export default {
       } catch (ex) {
         // TODO: save to error log
         console.log(ex)
-        throw new Error(TresholdError)
+        throw new Error()
       }
     },
     async handleCloseProposal (hash) {
@@ -170,7 +169,7 @@ export default {
       } catch (ex) {
         // TODO: save to error log
         console.log(ex)
-        throw new Error(CloseError)
+        throw new Error()
       }
     }
   }
