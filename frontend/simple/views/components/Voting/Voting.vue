@@ -1,6 +1,6 @@
 <template>
 <transition name="gi-fade">
-  <div class="is-flex gi-voting">
+  <div class="is-flex gi-voting" data-test="proposal">
     <div class="gi-voting-body is-flex">
       <sign
         :type="type"
@@ -10,7 +10,7 @@
 
       <div class="gi-voting-info">
         <h5 class="has-text-weight-bold is-uppercase gi-voting-info-title">{{title}}</h5>
-        <p v-html="text"></p>
+        <p v-html="text" data-test="voteText"></p>
         <p class="is-size-7 has-text-grey" v-if="details" v-html="details"></p>
       </div>
     </div>
@@ -34,6 +34,7 @@
               'is-success': !hasVotedAgainst
             }"
             @click="handleVoteFor"
+            data-test="forButton"
           >
             {{buttonText.for}}
           </button>

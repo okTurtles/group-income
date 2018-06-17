@@ -386,21 +386,14 @@ describe('Frontend', function () {
         .goto(page('dashboard'))
         .wait(elT('proposal'))
 
-      let initiator = await n
-        .wait(elT('initiator'))
-        .evaluate(el => {
-          var it = document.querySelector(el)
-          return it && it.innerText
-        }, elT('initiator'))
-      should(initiator).equal(username + '5')
-
-      let candidate = await n
-        .wait(elT('proposal'))
-        .evaluate(el => {
-          var it = document.querySelector(el)
-          return it && it.innerText
-        }, elT('proposal'))
-      should(candidate).containEql(username + '3')
+      let proposalText = await n
+        .wait(elT('voteText'))
+        .evaluate(
+          (el) => document.querySelector(el) && document.querySelector(el).innerText,
+          elT('voteText')
+        )
+      should(proposalText).containEql(username + '5')
+      should(proposalText).containEql(username + '3')
       // Check mailbox
       await n
         .wait(elT('mailboxLink'))
@@ -408,7 +401,7 @@ describe('Frontend', function () {
         .wait(elT('proposalMessage'))
         .click(elT('proposalMessage'))
 
-      candidate = await n
+      let candidate = await n
         .wait(elT('candidateName'))
         .evaluate(el => {
           var it = document.querySelector(el)
@@ -416,14 +409,14 @@ describe('Frontend', function () {
         }, elT('candidateName'))
       should(candidate).equal(username + '3')
 
-      let success = await n
-        .wait(elT('forLink'))
-        .click(elT('forLink'))
-        .wait(elT('inbox'))
-        .exists(elT('inbox'))
-      should(success).equal(true)
+      // cast votes on dashboard
+      await n
+        .goto(page('dashboard'))
+        .wait(elT('forButton'))
+        .click(elT('forButton'))
 
-      success = await n
+      // cast votes in mailbox
+      let success = await n
         .use(logout())
         .use(login(username + '2'))
         .wait(elT('mailboxLink'))
@@ -436,11 +429,11 @@ describe('Frontend', function () {
         .exists(elT('inbox'))
       should(success).equal(true)
 
+      // Accept invitation
       success = await n
         .use(logout())
         .use(login(username + '3'))
         .wait(elT('mailboxLink'))
-        // Accept invitation
         .click(elT('mailboxLink'))
         .wait(elT('inviteMessage'))
         .exists(elT('inviteMessage'))
