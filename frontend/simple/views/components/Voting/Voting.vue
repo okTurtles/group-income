@@ -1,4 +1,5 @@
 <template>
+<transition name="gi-fade">
   <div class="is-flex gi-voting">
     <div class="gi-voting-body is-flex">
       <sign
@@ -53,6 +54,7 @@
       </p>
     </div>
   </div>
+</transition>
 </template>
 <style lang="scss" scoped>
 @import "../../../assets/sass/theme/index";
