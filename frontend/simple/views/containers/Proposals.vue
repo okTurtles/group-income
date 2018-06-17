@@ -111,7 +111,7 @@ export default {
       } catch (ex) {
         // TODO: save to error log
         console.log(ex)
-        throw new Error(CastError)
+        throw new Error()
       }
     },
     async handleVoteFor (hash) {
