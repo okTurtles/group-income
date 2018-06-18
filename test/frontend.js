@@ -379,7 +379,6 @@ describe('Frontend', function () {
         .use(login(username))
         .goto(page('dashboard'))
         .wait(elT('proposal'))
-
       let proposalText = await n
         .wait(elT('voteText'))
         .evaluate(
@@ -388,43 +387,30 @@ describe('Frontend', function () {
         )
       should(proposalText).containEql(username + '5')
       should(proposalText).containEql(username + '3')
-      // Check mailbox
-      await n
-        .wait(elT('mailboxLink'))
-        .click(elT('mailboxLink'))
-        .wait(elT('proposalMessage'))
-        .click(elT('proposalMessage'))
-
-      let candidate = await n
-        .wait(elT('candidateName'))
-        .evaluate(el => {
-          var it = document.querySelector(el)
-          return it && it.innerText
-        }, elT('candidateName'))
-      should(candidate).equal(username + '3')
-
       // cast votes on dashboard
       await n
         .goto(page('dashboard'))
         .wait(elT('forButton'))
         .click(elT('forButton'))
-
-      // cast votes in mailbox
-      let success = await n
+      let proposals = await n
         .use(logout())
         .use(login(username + '2'))
-        .wait(elT('mailboxLink'))
-        .click(elT('mailboxLink'))
-        .wait(elT('proposalMessage'))
-        .click(elT('proposalMessage'))
-        .wait(elT('forLink'))
-        .click(elT('forLink'))
-        .wait(elT('inbox'))
-        .exists(elT('inbox'))
-      should(success).equal(true)
-
+        .goto(page('dashboard'))
+        .wait(elT('proposal'))
+        .evaluate(
+          (el) => document.querySelectorAll(el) && document.querySelectorAll(el).length,
+          elT('proposal')
+        )
+      should(proposals).equal(1)
+      await n
+        .wait(elT('forButton'))
+        .click(elT('forButton'))
+        .wait(
+          (el) => !document.querySelector(el),
+          elT('proposal')
+        )
       // Accept invitation
-      success = await n
+      let success = await n
         .use(logout())
         .use(login(username + '3'))
         .wait(elT('mailboxLink'))
