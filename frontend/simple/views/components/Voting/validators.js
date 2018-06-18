@@ -1,4 +1,4 @@
-import contracts from '../../model/contracts.js'
+import contracts from '../../../model/contracts.js'
 const { TypeInvitation, TypeRemoval, TypeIncome, TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold } = contracts.GroupProposal
 
 export const votingType = (type: String) => [TypeInvitation, TypeRemoval, TypeIncome, TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold].includes(type)

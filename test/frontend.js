@@ -1,5 +1,4 @@
 /* eslint-env mocha */
-/* globals $ */
 /*
  To see how Nightmare does its server stuff see:
 
@@ -36,7 +35,9 @@ function login (name) {
     n.wait(elT('loginBtn'))
       .click(elT('loginBtn'))
       .wait(elT('modal'))
+      .insert(elT('loginName')) // clear
       .insert(elT('loginName'), name)
+      .insert(elT('loginPassword')) // clear
       .insert(elT('loginPassword'), 'testtest')
       .click(elT('loginSubmit'))
       // we don't check the specific name because the display name could have been modified
@@ -68,16 +69,6 @@ function note (message) {
     n.wait(msg => { console.error('[NIGHTMARE NOTE]: ' + msg); return true }, message)
   }
 }
-
-// example of how to extend nightmare with custom functions, see
-// https://github.com/segmentio/nightmare#nightmareactionname-electronactionelectronnamespace-actionnamespace
-Nightmare.action('size', function (done) {
-  this.evaluate_now(() => {
-    const width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0)
-    const height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0)
-    return { height, width }
-  }, done)
-})
 
 describe('Frontend', function () {
   const n = Nightmare({
@@ -129,9 +120,12 @@ describe('Frontend', function () {
   })
 
   describe('Sign up Test', function () {
-    it('Should register User', function () {
+    it('Should register User', async function () {
       this.timeout(10000)
-      return n.use(signup(username, 'test@testgroupincome.com', 'testtest'))
+      const signedup = await n
+        .use(signup(username, 'test@testgroupincome.com', 'testtest'))
+        .evaluate((el) => !!document.querySelector(el), elT('homeLogo'))
+      should(signedup).equal(true)
     })
 
     it('Test Global Profile Change', function () {
@@ -150,25 +144,36 @@ describe('Frontend', function () {
         .wait(elT('profileSaveSuccess'))
         .exists(elT('profileSaveSuccess'))
     })
-
-    it('Test Logout and Login', function () {
+    it('Test Logout and Login', async function () {
       this.timeout(10000)
-      return n.use(logout()).use(note('logout -> login to: ' + username)).use(login(username))
+      const loggedin = await n
+        .use(logout())
+        .use(note('logout -> login to: ' + username))
+        .use(login(username))
+        .wait(elT('openProfileDropDown'))
+        .click(elT('openProfileDropDown'))
+        .exists(elT('logoutBtn'))
+      should(loggedin).equal(true)
+      const loggedOut = await n
+        .use(logout(username))
+        .wait(elT('loginBtn'))
+        .exists(elT('loginBtn'))
+      should(loggedOut).equal(true)
     })
 
-    /* There appears to be a bug in nightmare that causes the insert and type commands to enter old data into the field if the
-    insert or type commands or used more than once on the same field. This concatenates the old values to the new.
-    This occurs regardless of whether you clear the field or not. Until its fixed skip this validation test
-    */
-    // TODO: implement this now that we're using `type` instead of `insert`
-    it.skip('Test Validation', async function () {
+    it('Test Validation', async function () {
       this.timeout(4000)
-      await n.goto(page('/'))
       const badUsername = 't e s t'
-      const badEmail = `@fail`
-      const badPassword = `789`// six is so afraid
-      const denied = await n.insert(elT('signName'), badUsername)
+      const badEmail = '@fail'
+      const badPassword = '789'// six is so afraid
+      const denied = await n
+        .goto(page('signup'))
+        .wait(elT('signName'))
+        .insert(elT('signName')) // clear
+        .insert(elT('signName'), badUsername)
+        .insert(elT('signEmail')) // clear
         .insert(elT('signEmail'), badEmail)
+        .insert(elT('signPassword')) // clear
         .insert(elT('signPassword'), badPassword)
         .evaluate(
           (el) => document.querySelector(el) && document.querySelector(el).disabled,
@@ -176,45 +181,34 @@ describe('Frontend', function () {
         )
       should(denied).equal(true)
 
-      const usernameMsg = await n.evaluate(
-        (el) => !!document.querySelector(el),
-        elT('badUsername')
-      )
+      const usernameMsg = await n
+        .wait(elT('badUsername'))
+        .exists(elT('badUsername'))
       should(usernameMsg).equal(true)
 
-      const emailMsg = await n.evaluate(
-        (el) => !!document.querySelector(el),
-        elT('badEmail')
-      )
+      const emailMsg = await n
+        .wait(elT('badEmail'))
+        .exists(elT('badEmail'))
       should(emailMsg).equal(true)
 
-      const passwordMsg = await n.evaluate(
-        (el) => !!document.querySelector(el),
-        elT('badPassword')
-      )
+      const passwordMsg = await n
+        .wait(elT('badPassword'))
+        .exists(elT('badPassword'))
       should(passwordMsg).equal(true)
     })
   })
 
   describe('Group Creation Test', function () {
-    it('Create Additional User', function () {
-      this.timeout(8000)
-      return n.use(logout()).use(signup(username + '2', 'test2@testgroupincome.com', 'testtest'))
-    })
-
-    it('Create Additional User 3', function () {
-      this.timeout(8000)
-      return n.use(logout()).use(signup(username + '3', 'test3@testgroupincome.com', 'testtest'))
-    })
-
-    it('Create Additional User 4', function () {
-      this.timeout(8000)
-      return n.use(logout()).use(signup(username + '4', 'test4@testgroupincome.com', 'testtest'))
-    })
-
-    it('Create Additional User 5', function () {
-      this.timeout(8000)
-      return n.use(logout()).use(signup(username + '5', 'test5@testgroupincome.com', 'testtest'))
+    it('Create Users for new group', async function () {
+      this.timeout(4 * 8000)
+      await n
+        .use(signup(username + '2'))
+        .use(logout())
+        .use(signup(username + '3'))
+        .use(logout())
+        .use(signup(username + '4'))
+        .use(logout())
+        .use(signup(username + '5'))
     })
 
     it('Should create a group', async function () {
@@ -524,17 +518,6 @@ describe('Frontend', function () {
       should(localeObject['A test of strength']).have.property('text', 'A test of strength')
       fs.unlinkSync(path)
       fs.unlinkSync(output)
-    })
-  })
-
-  // NOTE: we no longer support EJS
-  describe.skip('EJS test page', function () {
-    it('List should have at least two items', function () {
-      this.timeout(5000)
-      return n.goto(page('ejs-page'))
-        .wait(() => typeof $ === 'function' && !!$().prevUntil)
-        .evaluate(() => $('#todo').children().length)
-        .should.finally.greaterThan(1)
     })
   })
 })
