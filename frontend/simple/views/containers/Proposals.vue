@@ -110,7 +110,7 @@ export default {
         await backend.publishLogEntry(groupId, vote)
       } catch (ex) {
         // TODO: save to error log
-        console.log(ex)
+        console.error(ex)
         throw new Error()
       }
     },
@@ -134,7 +134,7 @@ export default {
         }
       } catch (ex) {
         // TODO: save to error log
-        console.log(ex)
+        console.error(ex)
         throw new Error()
       }
     },
@@ -151,8 +151,8 @@ export default {
           await backend.publishLogEntry(step.contractId, entry)
         }
       } catch (ex) {
-        // TODO: save to error log
-        console.log(ex)
+        // TODO: save to error error
+        console.error(ex)
         throw new Error()
       }
     },
@@ -168,7 +168,7 @@ export default {
         await backend.publishLogEntry(groupId, close)
       } catch (ex) {
         // TODO: save to error log
-        console.log(ex)
+        console.error(ex)
         throw new Error()
       }
     }

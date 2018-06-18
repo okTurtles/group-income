@@ -102,10 +102,11 @@ describe('Frontend', function () {
 
   after(() => { n.end() })
 
-  it('Should start the backend server if necessary', function () {
+  before(() => {
     return require('../backend/index.js')
   })
-  let username = `User`
+
+  let username = `User${(new Date()).getTime()}`
 
   describe.skip('New user page', function () {
     it('Should create user George', function () {
@@ -410,14 +411,16 @@ describe('Frontend', function () {
           elT('proposal')
         )
       // Accept invitation
-      let success = await n
+      let accept = await n
         .use(logout())
         .use(login(username + '3'))
         .wait(elT('mailboxLink'))
         .click(elT('mailboxLink'))
         .wait(elT('inviteMessage'))
-        .exists(elT('inviteMessage'))
-      should(success).equal(true)
+        .click(elT('inviteMessage'))
+        .wait(elT('acceptLink'))
+        .exists(elT('acceptLink'))
+      should(accept).equal(true)
     })
 
     it('Should See Member List on Dashboard', async function () {
