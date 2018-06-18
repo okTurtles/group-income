@@ -48,7 +48,7 @@
             data-test="alertNotification"
             class="icon"
             style="color: #ed6c63;"
-            v-if="$store.getters.unreadMessageCount || $store.getters.proposals.length"
+            v-if="$store.getters.unreadMessageCount"
           >
             <i class="fa fa-bell"></i>
           </span>

@@ -115,7 +115,6 @@ declare module '../views/UserProfile.vue' { declare module.exports: Object }
 declare module '../views/VueAssistant.vue' { declare module.exports: Object }
 declare module '../views/GroupDashboard.vue' { declare module.exports: Object }
 declare module '../views/ProposeMember.vue' { declare module.exports: Object }
-declare module '../views/Vote.vue' { declare module.exports: Object }
 declare module '../views/Invite.vue' { declare module.exports: Object }
 declare module '../views/Mailbox.vue' { declare module.exports: Object }
 declare module '../views/Join.vue' { declare module.exports: Object }

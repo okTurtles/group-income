@@ -21,7 +21,6 @@ import Join from '../views/Join.vue'
 import Mailbox from '../views/Mailbox.vue'
 import PayGroup from '../views/PayGroup.vue'
 import UserProfile from '../views/UserProfile.vue'
-import Vote from '../views/Vote.vue'
 
 Vue.use(Router)
 
@@ -206,15 +205,6 @@ var router = new Router({
       component: Join,
       meta: {
         title: 'Join a Group'
-      },
-      beforeEnter: createEnterGuards(loginGuard, mailGuard)
-    },
-    {
-      path: '/vote',
-      name: Vote.name,
-      component: Vote,
-      meta: {
-        title: 'Vote on a Proposal'
       },
       beforeEnter: createEnterGuards(loginGuard, mailGuard)
     },

@@ -144,29 +144,6 @@ const getters = {
       .filter(([key, value]) => value.type === 'GroupContract')
       .map(([key]) => ({groupName: state[key].groupName, contractID: key}))
   },
-  proposals (state) {
-    // TODO: clean this up
-    let proposals = []
-    if (!state.currentGroupId) { return proposals }
-    for (let groupContractId of Object.keys(state.contracts)
-      .filter(key => state.contracts[key].type === 'GroupContract')
-    ) {
-      for (let proposal of Object.keys(state[groupContractId].proposals || {})) {
-        if (state[groupContractId].proposals[proposal].initatior !== state.loggedIn.name &&
-        !state[groupContractId].proposals[proposal].for.find(name => name === state.loggedIn.name) &&
-        !state[groupContractId].proposals[proposal].against.find(name => name === state.loggedIn.name)
-        ) {
-          proposals.push({
-            groupContractId,
-            groupName: state[groupContractId].groupName,
-            proposal,
-            initiationDate: state[groupContractId].proposals[proposal].initiationDate
-          })
-        }
-      }
-    }
-    return proposals
-  },
   memberProfile (state, getters) {
     return (username, groupId) => {
       var profile = state[groupId || state.currentGroupId].profiles[username]

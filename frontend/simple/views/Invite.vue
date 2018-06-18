@@ -117,7 +117,6 @@ export default {
           if (this.isProposal) {
             let proposal = await sbp('gi/contract/create-action', 'GroupProposal',
               {
-                // for proposal template selection in Vote.vue
                 type: contracts.GroupProposal.TypeInvitation,
                 // calculate the voting threshold from the group data
                 threshold: this.currentGroupState.memberApprovalThreshold,
@@ -125,20 +124,16 @@ export default {
                 // TODO: this is bad, do not turn the messages into actions like this.
                 //       put only the minimal data necessary.
                 actions: [
-                  { contractID: mailbox, type: inviteToMailbox.type(), action: JSON.stringify(inviteToMailbox.data()) },
-                  { contractID: groupId, type: inviteToGroup.type(), action: JSON.stringify(inviteToGroup.data()) }
+                  { contractId: mailbox, action: JSON.stringify(inviteToMailbox.toObject()) },
+                  { contractId: groupId, action: JSON.stringify(inviteToGroup.toObject()) }
                 ],
                 initiator: this.loggedIn.name,
-                initiationDate: new Date().toISOString()
+                initiationDate: new Date().toString()
               },
               groupId
             )
             await sbp('backend/publishLogEntry', proposal)
           } else {
-            // TODO: place these in SBP calls, consider using ArchivedTransactionQueue
-            // NOTE: avoiding use of ArchivedTransactionQueue is better than using it. Here for example,
-            //       we could make it so that a user can be invited to a group multiple times, and the system
-            //       just accepts/cares about the most recent invite only and forgets the previous one
             await sbp('backend/publishLogEntry', inviteToGroup)
             await sbp('backend/publishLogEntry', inviteToMailbox)
           }

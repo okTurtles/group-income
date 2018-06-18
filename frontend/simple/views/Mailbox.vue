@@ -79,33 +79,6 @@
               <button class="button is-primary" type="submit" v-on:click="inboxMode" style="margin-left:10px; margin-right: 0;"><i18n>Return</i18n></button>
             </div>
           </div>
-          <table id="Proposals" class="table is-bordered is-striped is-narrow"  v-if="(mode === 'Inbox') && proposals.length">
-            <thead>
-            <tr>
-              <th><i18n>Proposals</i18n></th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr v-for="(proposal, index) in proposals">
-              <td>
-                <div class="media">
-                  <div class="media-left" v-on:click="respondToProposal(index)">
-                    <p class="image is-64x64">
-                      <!-- TODO: make this draw image from group contract -->
-                      <img src="assets/images/128x128.png">
-                    </p>
-                  </div>
-                  <div class="media-content proposal-message"
-                    data-test="proposalMessage"
-                    v-on:click="respondToProposal(index)">
-                    <div><strong>Sent:</strong>&nbsp;{{formatDate(proposal.initiationDate)}}</div>
-                    <div><strong>From:</strong>&nbsp;{{proposal.groupName}}</div>
-                  </div>
-                </div>
-              </td>
-            </tr>
-            </tbody>
-          </table>
           <table id="Invites" class="table is-bordered is-striped is-narrow is-fullwidth" v-if="(mode === 'Inbox') && invites.length">
             <thead>
             <tr>
@@ -210,9 +183,6 @@ export default {
     },
     invites () {
       return this.$store.getters.mailbox.filter(msg => msg.data.messageType === contracts.MailboxPostMessage.TypeInvite).sort(criteria)
-    },
-    proposals () {
-      return this.$store.getters.proposals
     }
   },
   methods: {
@@ -275,9 +245,6 @@ export default {
     },
     compose: function () {
       this.mode = 'Compose'
-    },
-    respondToProposal: function (index) {
-      this.$router.push({ path: '/vote', query: { groupId: this.proposals[index].groupContractId, proposalHash: this.proposals[index].proposal } })
     },
     respondToInvite: function (index) {
       this.$store.commit('markMessageAsRead', this.invites[index].hash)
