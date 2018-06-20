@@ -110,15 +110,11 @@
 }
 </style>
 <script>
-import backend from '../controller/backend'
-import Vue from 'vue'
+import sbp from '../../../shared/sbp.js'
 import _ from 'lodash'
-import * as Events from '../../../shared/events'
-import * as contracts from '../model/contracts/events'
-import {namespace} from '../controller/backend/hapi'
 import { validationMixin } from 'vuelidate'
 import { required, minLength, email } from 'vuelidate/lib/validators'
-import { nonWhitespace } from './utils/validators'
+import { nonWhitespace } from './utils/validators.js'
 // TODO: fix all this
 export default {
   name: 'SignUp',
@@ -133,37 +129,37 @@ export default {
     }, 700),
     submit: async function () {
       try {
-        let user = new contracts.IdentityContract({
-          authorizations: [Events.CanModifyAuths.dummyAuth()],
-          attributes: [
-            {name: 'name', value: this.form.name},
-            {name: 'email', value: this.form.email},
-            {name: 'picture', value: `${window.location.origin}/simple/assets/images/default-avatar.png`}
-          ]
+        let user = sbp('gi/contract/create', 'IdentityContract', {
+          // authorizations: [Events.CanModifyAuths.dummyAuth()],
+          attributes: {
+            name: this.form.name,
+            email: this.form.email,
+            picture: `${window.location.origin}/simple/assets/images/default-avatar.png`
+          }
         })
-        let mailbox = new contracts.MailboxContract({
-          authorizations: [Events.CanModifyAuths.dummyAuth(user.toHash())]
+        let mailbox = sbp('gi/contract/create', 'MailboxContract', {
+          // authorizations: [Events.CanModifyAuths.dummyAuth(user.hash())]
         })
-        let attribute = new Events.HashableIdentitySetAttribute({
-          attribute: {name: 'mailbox', value: mailbox.toHash()}
-        }, user.toHash())
-        // create these contracts on the server by calling publishLogEntry
-        for (let event of [user, mailbox, attribute]) {
-          let hash = event.toObject().parentHash || event.toHash()
-          await backend.publishLogEntry(hash, event)
-        }
+        await sbp('backend/publishLogEntry', user)
+        await sbp('backend/publishLogEntry', mailbox)
+
+        // set the attribute *after* publishing the identity contract
+        let attribute = await sbp('gi/contract/create-action', 'IdentitySetAttributes', {
+          'mailbox': mailbox.hash()
+        }, user.hash())
+        await sbp('backend/publishLogEntry', attribute)
         // register our username if contract creation worked out
-        await namespace.register(this.form.name, user.toHash())
+        await sbp('namespace/register', this.form.name, user.hash())
         // call syncContractWithServer on all of these contracts to:
         // 1. begin monitoring the contracts for updates via the pubsub system
         // 2. add these contracts to our vuex state
         for (let contract of [user, mailbox]) {
-          await this.$store.dispatch('syncContractWithServer', contract.toHash())
+          await this.$store.dispatch('syncContractWithServer', contract.hash())
         }
         // TODO: Just add cryptographic magic
         await this.$store.dispatch('login', {
           name: this.form.name,
-          identityContractId: user.toHash()
+          identityContractId: user.hash()
         })
         this.form.response = 'success' // TODO: get rid of this and fix/update tests accordingly
         if (this.$route.query.next) {
@@ -184,7 +180,7 @@ export default {
       }
     },
     forwardToLogin: function () {
-      Vue.events.$emit('loginModal')
+      sbp('okTurtles.events/emit', 'loginModal')
     }
   },
   data () {
@@ -207,9 +203,9 @@ export default {
           // standalone validator ideally should not assume a field is required
           if (value === '' || !/^\S+$/.test(value)) return true
           // async validator can return a promise
-          // we need the opposite of namespace.lookup(value) here
           return new Promise((resolve, reject) => {
-            namespace.lookup(value).then(reject, resolve)
+            // we need the opposite of sbp('namespace/lookup', value) here
+            sbp('namespace/lookup', value).then(reject, resolve)
           })
         }
       },

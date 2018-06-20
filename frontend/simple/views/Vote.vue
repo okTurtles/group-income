@@ -42,7 +42,7 @@
   </section>
 </template>
 <script>
-import * as Events from '../../../shared/events'
+import sbp from '../../../shared/sbp.js'
 import backend from '../controller/backend/'
 import template from 'string-template'
 import L from './utils/translations'
@@ -65,22 +65,27 @@ export default {
       this.errorMsg = null
       try {
         // Create a vote for the proposal
-        let latest = await backend.latestHash(this.$route.query.groupId)
-        let vote = new Events.HashableGroupVoteForProposal({ username: this.$store.state.loggedIn.name, proposalHash: this.$route.query.proposalHash }, latest)
+        let vote = await sbp('gi/contract/create-action', 'GroupVoteForProposal',
+          {
+            username: this.$store.state.loggedIn.name,
+            proposalHash: this.$route.query.proposalHash
+          },
+          this.$route.query.groupId
+        )
         let proposal = _.cloneDeep(this.proposal)
         let threshold = Math.ceil(proposal.threshold * this.memberCount)
 
-        await backend.publishLogEntry(this.$route.query.groupId, vote)
+        await sbp('backend/publishLogEntry', vote)
         // If the vote passes fulfill the action
         if (proposal.for.length + 1 >= threshold) {
           let lastActionHash = null
           const actionDate = new Date().toString()
           for (let step of proposal.actions) {
-            latest = await backend.latestHash(step.contractId)
+            let latest = await sbp('backend/latestHash', step.contractID)
             let actObj = JSON.parse(template(step.action, {lastActionHash, actionDate}))
             let entry = new Events[actObj.type](actObj.data, latest)
-            lastActionHash = entry.toHash()
-            await backend.publishLogEntry(step.contractId, entry)
+            lastActionHash = entry.hash()
+            await sbp('backend/publishLogEntry', entry)
           }
         }
         // return to mailbox
@@ -94,9 +99,14 @@ export default {
       this.errorMsg = null
       try {
         // Create a against the proposal
-        let latest = await backend.latestHash(this.$route.query.groupId)
-        let vote = new Events.HashableGroupVoteAgainstProposal({ username: this.$store.state.loggedIn.name, proposalHash: this.$route.query.proposalHash }, latest)
-        await backend.publishLogEntry(this.$route.query.groupId, vote)
+        let vote = await sbp('gi/contract/create-action', 'GroupVoteAgainstProposal',
+          {
+            username: this.$store.state.loggedIn.name,
+            proposalHash: this.$route.query.proposalHash
+          },
+          this.$route.query.groupId
+        )
+        await sbp('backend/publishLogEntry', vote)
         this.$router.push({path: '/mailbox'})
       } catch (ex) {
         console.log(ex)

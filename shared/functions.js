@@ -1,10 +1,12 @@
 'use strict'
 
+import multihash from 'multihashes'
 import {RESPONSE_TYPE} from './constants'
 import type {JSONType, Response, ResType} from './types'
 
 const Primus = require('primus')
 const nacl = require('tweetnacl')
+const blake = require('blakejs')
 
 export function makeResponse (
   type: ResType,
@@ -39,6 +41,15 @@ export function setupPrimus (server: Object, saveAndDestroy: boolean = false) {
   return primus
 }
 
+export function blake32Hash (data: string) {
+  // TODO: for node/electron, switch to: https://github.com/ludios/node-blake2
+  let uint8array = blake.blake2b(data, null, 32)
+  // TODO: if we switch to webpack we may need: https://github.com/feross/buffer
+  // https://github.com/feross/typedarray-to-buffer
+  var buf = Buffer.from(uint8array.buffer)
+  return multihash.toB58String(multihash.encode(buf, 'blake2b-32', 32))
+}
+
 var b642buf = b64 => Buffer.from(b64, 'base64')
 // var b642str = b64 => b642buf(b64).toString('utf8')
 // var buf2b64 = buf => Buffer.from(buf).toString('base64')
@@ -48,8 +59,8 @@ var ary2b64 = ary => Buffer.from(ary).toString('base64')
 
 export function sign (
   {publicKey, secretKey}: {publicKey: string, secretKey: string},
-  futz: string = '',
-  msg: string = 'hello!'
+  msg: string = 'hello!',
+  futz: string = ''
 ) {
   return str2b64(JSON.stringify({
     msg: msg + futz,

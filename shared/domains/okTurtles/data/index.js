@@ -4,7 +4,7 @@
 // Domain: Data persistence
 // =======================
 
-import sbp from '../../../sbp'
+import sbp from '../../../sbp.js'
 
 const _store = new Map()
 

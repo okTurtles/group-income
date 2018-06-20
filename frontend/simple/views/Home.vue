@@ -30,11 +30,11 @@
   }
 </style>
 <script>
-import Vue from 'vue'
+import sbp from '../../../shared/sbp.js'
 export default {
   methods: {
     forwardToLogin: function () {
-      Vue.events.$emit('loginModal')
+      sbp('okTurtles.events/emit', 'loginModal')
     }
   }
 }

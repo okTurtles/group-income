@@ -4,7 +4,7 @@
 // Domain: Event publish/subscribe
 // =======================
 
-import sbp from '../../../sbp'
+import sbp from '../../../sbp.js'
 
 const SELECTORS = {
   // TODO: add ability to unregister listeners
@@ -14,12 +14,12 @@ const SELECTORS = {
   'okTurtles.events/once': function (event: string, handler: Function) {
     sbp('okTurtles.data/add', `events/${event}/listenOnce`, handler)
   },
-  'okTurtles.events/emit': function (event: string, data: any) {
+  'okTurtles.events/emit': function (event: string, ...data: any) {
     const listeners = sbp('okTurtles.data/get', `events/${event}/listeners`) || []
-    listeners.forEach(listener => listener({event, data}))
+    listeners.forEach(listener => listener(...data))
     // TODO next up in SBP conversion: listener => sbp(listener, event, data)
     const listenOnce = sbp('okTurtles.data/get', `events/${event}/listenOnce`) || []
-    listenOnce.forEach(listener => listener({event, data}))
+    listenOnce.forEach(listener => listener(...data))
     sbp('okTurtles.data/set', `events/${event}/listenOnce`, [])
   }
 }

@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 
 import sinon from 'sinon'
-import sbp from '../../../sbp'
+import sbp from '../../../sbp.js'
 import '../data'
 import './index.js'
 
@@ -20,7 +20,7 @@ describe('[SBP] EVENTS domain', () => {
     const testData = 1
     sbp('okTurtles.events/on', 'testEvent', testListener)
     sbp('okTurtles.events/emit', 'testEvent', testData)
-    testListener.should.be.calledWith({event: 'testEvent', data: testData})
+    testListener.should.be.calledWith(testData)
   })
   it('should call "once" listener once', () => {
     const testListener = sinon.spy()

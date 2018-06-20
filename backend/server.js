@@ -1,9 +1,9 @@
 'use strict'
 
-import * as db from './database'
+import * as db from './database.js'
 import Hapi from 'hapi'
-import GiAuth from './auth'
-import {HashableEntry} from '../shared/events'
+import GiAuth from './auth.js'
+import {GIMessage} from '../shared/events.js'
 import {bold} from 'chalk'
 
 export var hapi = new Hapi.Server({
@@ -18,18 +18,14 @@ hapi.connection({
   routes: { cors: { origin: [process.env.FRONTEND_URL] } }
 })
 
-hapi.decorate('server', 'handleEvent', async function (
-  contractId: string, entry: HashableEntry
-) {
-  console.log(bold('[server] handleEvent:'), entry)
-  if (!entry.toObject().parentHash) {
-    await db.createLog(contractId, entry)
-  } else {
-    await db.appendLogEntry(contractId, entry)
-  }
-  var response = entry.toResponse(contractId)
-  console.log(bold.blue(`broadcasting to room ${contractId}:`), response)
-  hapi.primus.room(contractId).write(response)
+hapi.decorate('server', 'handleEntry', function (entry: GIMessage) {
+  console.log(bold('[server] handleEntry:'), entry)
+  const contractID = entry.isFirstMessage() ? entry.data.contractID : entry.hash()
+  db.addLogEntry(entry)
+  var response = entry.toResponse()
+  console.log(bold.blue(`broadcasting to room ${contractID}:`), response)
+  // TODO: see if this all can be moved into routes.js
+  hapi.primus.room(contractID).write(response)
 })
 
 // https://hapijs.com/tutorials/plugins

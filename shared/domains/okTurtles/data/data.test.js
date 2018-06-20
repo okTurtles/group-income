@@ -2,7 +2,7 @@
 
 import should from 'should'
 import sinon from 'sinon'
-import sbp from '../../../sbp'
+import sbp from '../../../sbp.js'
 import './index.js'
 
 require('should-sinon')

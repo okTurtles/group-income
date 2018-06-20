@@ -1,114 +1,86 @@
 'use strict'
-import multihash from 'multihashes'
-import protobuf from 'protobufjs/light'
-import {makeResponse} from './functions'
-import {RESPONSE_TYPE} from './constants'
-import type {JSONObject} from './types'
-import _ from 'lodash'
+// import sbp from '../shared/sbp.js'
+import {makeResponse, blake32Hash} from './functions.js'
+import {RESPONSE_TYPE} from './constants.js'
+import type {JSONObject} from './types.js'
 
-const nacl = require('tweetnacl')
-const blake = require('blakejs')
-const {Type, Field, Root} = protobuf
-const root = new Root({bytes: String}).define('groupincome')
+function defaultSignatureFn (data: string) {
+  return blake32Hash(data)
+}
 
-// To ensure objects consistently hash across all platforms, we use protobufs
-// instead of hashing the JSON, since order of object keys is unspecified in JSON
-export class Hashable {
-  // Type annotations to make Flow happy
-  _hash: string
-  _obj: Object
-  _sig: Buffer // TODO: implement
-  // `fields` represents the *initial* fields/data that the contract is created with
-  // set `fields` in subclasses using: static fields = Class.Fields([...])
-  static fields: any // https://developers.google.com/protocol-buffers/docs/proto3
-  static Fields (fields: Array<Array<string>>) {
-    var t = new Type(this.name)
-    var idx = 0
-    var addFields = ([name, type, rule]) => {
-      t.add(new Field(name, ++idx, type, rule))
+export class GIMessage {
+  // NOTE: the JSON string generated here must be preserved forever.
+  //       do not ever regenerate this message using the contructor.
+  //       instead store it using serialize() and restore it using
+  //       deserialize().
+  static create (
+    contractID: string = null,
+    previousHEAD: string = null,
+    signatureFn: Function = defaultSignatureFn,
+    selector: string,
+    selectorData: JSONObject
+  ) {
+    var instance = new this()
+    instance._data = JSON.stringify({
+      version: 1,
+      previousHEAD,
+      contractID,
+      selector,
+      selectorData
+    })
+    instance._sig = signatureFn(instance._data)
+    const value = JSON.stringify({
+      data: instance._data,
+      sig: instance._sig
+    })
+    instance._message = {
+      HEAD: blake32Hash(value),
+      value
     }
-    // we make sure subclasses inherit the fields defined in the superclass
-    // note that this doesn't work: super.fields && super.fields.forEach(addFields)
-    var pf = root.lookup(Object.getPrototypeOf(this).name)
-    pf && pf.fieldsArray && pf.fieldsArray.forEach(f => addFields([f.name, f.type, f.rule]))
-    // now add our fields
-    fields.forEach(addFields)
-    root.add(t)
-    return t
-  }
-  // https://flowtype.org/docs/classes.html#this-type
-  static fromObject (obj: Object, hash: string): this {
-    var instance = new this()
-    instance._obj = obj
-    if (instance.toHash() !== hash) throw Error(`hash obj: ${instance.toHash()} != hash: ${hash}`)
     return instance
   }
-  static fromProtobuf (buffer: Buffer, hash: string) {
+
+  static deserialize (value: string) {
+    if (!value) throw new Error(`deserialize bad value: ${value}`)
     var instance = new this()
-    // see: https://github.com/dcodeIO/protobuf.js/issues/828#issuecomment-307877338
-    instance._obj = this.fields.toObject(this.fields.decode(buffer), {bytes: String})
-    if (instance.toHash() !== hash) throw Error('fromProtobuf: corrupt hash!')
+    instance._message = {HEAD: blake32Hash(value), value}
+    value = JSON.parse(value)
+    instance._sig = value.sig
+    instance._data = JSON.parse(value.data)
     return instance
   }
-  constructor (obj?: Object) {
-    // Unless we do this we'll get different hashes on the server and the frontend 'bytes'
-    this._obj = !obj ? {} : this.constructor.fields.toObject(
-      this.constructor.fields.fromObject(obj),
-      { bytes: String } // http://dcode.io/protobuf.js/global.html#ConversionOptions
-    )
+
+  static fromResponse ({data}: {data: Object}) {
+    return this.deserialize(data)
   }
-  toHash (): string {
-    // no need to hash twice
-    if (this._hash) return this._hash
-    // TODO: for node/electron, switch to: https://github.com/ludios/node-blake2
-    let uint8array = blake.blake2b(this.toProtobuf(), null, 32)
-    // TODO: if we switch to webpack we may need: https://github.com/feross/buffer
-    // https://github.com/feross/typedarray-to-buffer
-    var buf = Buffer.from(uint8array.buffer)
-    this._hash = multihash.toB58String(multihash.encode(buf, 'blake2b-32', 32))
-    return this._hash
+
+  get data () {
+    return this._data
   }
-  toProtobuf (): Buffer { return this.constructor.fields.encode(this._obj).finish() }
-  toJSON () { return JSON.stringify(this._obj) }
-  toObject () { return this._obj } // NOTE: NEVER MODIFY THE RETURNED OBJECT!
-  // signature related
-  signWithKey (key: Uint8Array) { this._sig = nacl.sign.detached(this.toProtobuf(), key) }
-  get signature (): Buffer { return this._sig }
-  set signature (sig: Buffer) { this._sig = sig }
+
+  isFirstMessage () {
+    return !this.data.previousHEAD
+  }
+
+  serialize () {
+    return this._message.value
+  }
+
+  hash (): string {
+    return this._message.HEAD
+  }
+
+  toResponse () {
+    return makeResponse(RESPONSE_TYPE.ENTRY, this.serialize())
+  }
+  // signWithKey (key: Uint8Array) { this._sig = nacl.sign.detached(this.toProtobuf(), key) }
+  // get signature (): Buffer { return this._sig }
+  // set signature (sig: Buffer) { this._sig = sig }
 }
 
-export class HashableEntry extends Hashable {
-  // add these here to make FlowType happy
-  static transforms = {}
-  static vuex = {}
-  static Fields (fields: Array<Array<string>>) {
-    var msgData = super.Fields(fields)
-    var msg = new Type(this.name + 'Entry')
-    msg.add(new Field('version', 1, 'uint32'))
-    msg.add(new Field('type', 2, 'string'))
-    msg.add(new Field('parentHash', 3, 'string'))
-    msg.add(new Field('data', 4, msgData.name))
-    root.add(msg)
-    return msg
-  }
-  constructor (data: JSONObject = {}, parentHash?: string) {
-    super({
-      version: 0,
-      parentHash: parentHash || '',
-      data
-    })
-    this._obj.type = this.constructor.name
-  }
-  toResponse (contractId: string) {
-    return makeResponse(RESPONSE_TYPE.ENTRY, {
-      contractId,
-      hash: this.toHash(),
-      entry: this.toObject()
-    })
-  }
-  get data (): Object { return this.toObject().data }
-}
-
+// TODO: delete everything below after creating runtime validations over the data types
+//       in the files under: frontend/simple/model/contracts/*.js
+/*
 // =======================
 // Base contract class
 // =======================
@@ -125,7 +97,7 @@ function ArrayToMap (keyPicker, valuePicker) {
   }
 }
 
-export class HashableContract extends HashableEntry {
+export class HashableContract extends GIMessage {
   static fields = HashableContract.Fields([
     ['authorizations', 'Authorization', 'repeated']
   ])
@@ -176,7 +148,7 @@ export class HashableContract extends HashableEntry {
   // 3. subscribed to (to get the list of txns that have been sent to it)
   // 4. read from (the reduction of txns produces the current state)
   //
-  // In our implementation, each method invocation (txn) is a HashableEntry
+  // In our implementation, each method invocation (txn) is a GIMessage
   //
   // NOTE: Each contract represents its own log of events. If a user
   //       is in multiple groups and changes their profile's contribution
@@ -195,7 +167,7 @@ export class HashableContract extends HashableEntry {
   //       on the GroupContract.
 }
 
-export class HashableAction extends HashableEntry {
+export class HashableAction extends GIMessage {
   static authorization = 'CanModifyState' // by default we assume CanModifyState
 }
 
@@ -278,7 +250,7 @@ export class HashableGroupPayment extends HashableAction {
 }
 export class Action extends Hashable {
   static fields = Action.Fields([
-    ['contractId', 'string'],
+    ['contractID', 'string'],
     ['action', 'string']
   ])
 }
@@ -418,3 +390,4 @@ export function ConvertToBackendEntry (entry: Object, hash: string) {
       return HashableMailbox.fromObject(entry, hash)
   }
 }
+*/

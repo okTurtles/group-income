@@ -4,7 +4,7 @@
     <div class="columns is-centered">
       <div class="column is-half">
         <transition name="fade" mode="out-in">
-          <router-view :group="form" :v="$v.form" @input="(payload) => updateGroupData(payload)">
+          <router-view :group="form" :v="$v.form" @input="payload => updateGroupData(payload)">
           </router-view>
         </transition>
 
@@ -83,16 +83,13 @@
   }
 </style>
 <script>
-/* @flow */
-import Vue from 'vue'
-import backend from '../controller/backend'
-import * as Events from '../../../shared/events'
-import * as contracts from '../model/contracts/events'
-import L from './utils/translations'
-import StepAssistant from './utils/StepAssistant'
+import sbp from '../../../shared/sbp.js'
+import contracts from '../model/contracts.js'
+import L from './utils/translations.js'
+import StepAssistant from './utils/StepAssistant.js'
 import { validationMixin } from 'vuelidate'
 import { required, between } from 'vuelidate/lib/validators'
-import { decimals } from './utils/validators'
+import { decimals } from './utils/validators.js'
 
 export default {
   name: 'CreateGroupView',
@@ -114,8 +111,8 @@ export default {
 
       try {
         this.errorMsg = null
-        const entry = new contracts.GroupContract({
-          authorizations: [Events.CanModifyAuths.dummyAuth()],
+        const entry = sbp('gi/contract/create', 'GroupContract', {
+          // authorizations: [contracts.CanModifyAuths.dummyAuth()], // TODO: this
           groupName: this.form.groupName,
           sharedValues: this.form.sharedValues,
           changeThreshold: this.form.changeThreshold,
@@ -126,15 +123,15 @@ export default {
           founderUsername: this.$store.state.loggedIn.name,
           founderIdentityContractId: this.$store.state.loggedIn.identityContractId
         })
-        const hash = entry.toHash()
+        const hash = entry.hash()
         // TODO: convert this to SBL
-        Vue.events.$once(hash, (contractId, entry) => {
+        sbp('okTurtles.events/once', hash, (contractID, entry) => {
           this.$store.commit('setCurrentGroupId', hash)
           // Take them to the dashboard.
           this.$router.push({path: '/dashboard'})
         })
         // TODO: convert this to SBL
-        await backend.publishLogEntry(hash, entry)
+        await sbp('backend/publishLogEntry', entry)
         // add to vuex and monitor this contract for updates
         await this.$store.dispatch('syncContractWithServer', hash)
       } catch (error) {
@@ -149,32 +146,29 @@ export default {
         // seperate invitees grid and add them to some validation for duplicate invites
         for (let invitee of this.form.invitees) {
           // We need to have the latest mailbox attribute for the user
-          const mailbox = await backend.latestHash(invitee.state.attributes.mailbox)
-          const sentDate = new Date().toString()
-
+          const sentDate = new Date().toISOString()
           // We need to post the invite to the users' mailbox contract
-          const invite = new Events.HashableMailboxPostMessage(
+          const invite = await sbp('gi/contract/create-action', 'MailboxPostMessage',
             {
               from: this.$store.getters.currentGroupState.groupName,
               headers: [this.$store.state.currentGroupId],
-              messageType: Events.HashableMailboxPostMessage.TypeInvite,
+              messageType: contracts.MailboxPostMessage.TypeInvite,
               sentDate
             },
-            mailbox
+            invitee.state.attributes.mailbox
           )
-          await backend.publishLogEntry(invitee.state.attributes.mailbox, invite)
+          await sbp('backend/publishLogEntry', invite)
 
           // We need to make a record of the invitation in the group's contract
-          const latest = await backend.latestHash(this.$store.state.currentGroupId)
-          const invited = new Events.HashableGroupRecordInvitation(
+          const invited = await sbp('gi/contract/create-action', 'GroupRecordInvitation',
             {
               username: invitee.state.attributes.name,
-              inviteHash: invite.toHash(),
+              inviteHash: invite.hash(),
               sentDate
             },
-            latest
+            this.$store.state.currentGroupId
           )
-          await backend.publishLogEntry(this.$store.state.currentGroupId, invited)
+          await sbp('backend/publishLogEntry', invited)
         }
       } catch (error) {
         console.error(error)

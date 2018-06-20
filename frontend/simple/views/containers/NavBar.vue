@@ -114,7 +114,7 @@
 }
 </style>
 <script>
-import Vue from 'vue'
+import sbp from '../../../shared/sbp.js'
 import TimeTravel from './TimeTravel.vue'
 import LoginModal from '../containers/LoginModal.vue'
 
@@ -125,7 +125,7 @@ export default {
     TimeTravel
   },
   created () {
-    Vue.events.$on('loginModal', this.showLoginModal)
+    sbp('okTurtles.events/on', 'loginModal', this.showLoginModal)
   },
   mounted () {
     global.addEventListener('keyup', this.handleKeyUp)

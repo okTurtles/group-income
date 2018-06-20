@@ -1,38 +1,19 @@
 /* eslint-env mocha */
 
-import Vue from 'vue'
+import sbp from '../shared/sbp.js'
+import '../shared/domains/okTurtles/events/index.js'
 import chalk from 'chalk'
-import _ from 'lodash'
-import {RESPONSE_TYPE} from '../shared/constants'
-import {sign} from '../shared/functions'
-import * as Events from '../shared/events'
-import pubsub from '../frontend/simple/controller/utils/pubsub'
-import * as contracts from '../frontend/simple/model/contracts/events'
+import {GIMessage} from '../shared/events.js'
+import contracts from '../frontend/simple/model/contracts.js'
+import {createWebSocket} from '../frontend/simple/controller/backend.js'
 
 const Promise = global.Promise = require('bluebird')
-const request = require('superagent')
-const fetch = require('node-fetch') // TODO: switch from request to fetch API fully, see NOTE below
+global.fetch = require('node-fetch')
 const should = require('should') // eslint-disable-line
-const nacl = require('tweetnacl')
-const stream = require('stream')
-
-// NOTE: fetch API docs:
-// https://github.com/bitinn/node-fetch
-// https://jakearchibald.com/2015/thats-so-fetch/
-// https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch
-// https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API
-// https://github.com/github/fetch
-
-const {HashableEntry} = Events
-const {API_URL: API} = process.env
-const {SUCCESS} = RESPONSE_TYPE
 
 chalk.enabled = true // for some reason it's not detecting that terminal supports colors
 const {bold} = chalk
 
-var buf2b64 = buf => Buffer.from(buf).toString('base64')
-var personas = _.times(3, () => nacl.sign.keyPair()).map(x => _.mapValues(x, buf2b64))
-var signatures = personas.map(x => sign(x))
 // var unsignedMsg = sign(personas[0], 'futz')
 
 // TODO: replay attacks? (need server-provided challenge for `msg`?)
@@ -45,77 +26,58 @@ var signatures = personas.map(x => sign(x))
 //       member's key to all the groups that they're in (that's unweildy
 //       and compromises privacy).
 
+sbp('sbp/selectors/register', {
+  // intercept 'handleEvent' from backend.js
+  'state/vuex/dispatch': function (action, arg) {
+    switch (action) {
+      case 'handleEvent':
+        sbp('okTurtles.events/emit', arg.hash(), arg)
+        break
+      default: throw new Error(`unknown dispatch: ${action}`)
+    }
+  }
+})
+
 describe('Full walkthrough', function () {
-  const events = new Vue()
   var users = {}
   var groups = {}
-  var recentHash = {}
 
-  function latestHash (contract) {
-    return recentHash[contract.toHash()]
-  }
   function createSocket () {
-    return new Promise((resolve, reject) => {
-      var primus = pubsub({
-        url: API,
-        options: {timeout: 3000, strategy: false},
-        handlers: {
-          open: () => resolve(primus),
-          error: err => reject(err),
-          data: msg => {
-            console.log(bold(`[test] ONDATA msg:`), msg)
-            events.$emit(msg.data.hash, msg.data)
-          }
-        }
-      })
-    })
+    return createWebSocket(process.env.API_URL, {timeout: 3000, strategy: false})
   }
 
   function createIdentity (name, email) {
-    return new contracts.IdentityContract({
-      authorizations: [Events.CanModifyAuths.dummyAuth(name)],
-      attributes: [
-        {name: 'name', value: name},
-        {name: 'email', value: email}
-      ]
+    return sbp('gi/contract/create', 'IdentityContract', {
+      // authorizations: [Events.CanModifyAuths.dummyAuth(name)],
+      attributes: {name, email}
     })
   }
   function createGroup (name, data) {
-    return new contracts.GroupContract({
-      authorizations: [Events.CanModifyAuths.dummyAuth(name)],
+    return sbp('gi/contract/create', 'GroupContract', {
+      // authorizations: [Events.CanModifyAuths.dummyAuth(name)],
       groupName: name,
       ...data
     })
   }
 
   async function createMailboxFor (user) {
-    var mailbox = new contracts.MailboxContract({
-      authorizations: [Events.CanModifyAuths.dummyAuth(user.toHash())]
+    var mailbox = sbp('gi/contract/create', 'MailboxContract', {
+      // authorizations: [Events.CanModifyAuths.dummyAuth(user.hash())]
     })
-    await user.socket.sub(mailbox.toHash())
+    await user.socket.sub(mailbox.hash())
     await postEntry(mailbox)
     await postEntry(
-      new Events.HashableIdentitySetAttribute({attribute: {
-        name: 'mailbox', value: mailbox.toHash()
-      }}, latestHash(user)),
-      user
+      await sbp('gi/contract/create-action', 'IdentitySetAttribute', {
+        mailbox: mailbox.hash()
+      }, user.hash())
     )
     user.mailbox = mailbox
   }
 
-  async function postEntry (entry, contractId) {
-    if (!contractId) {
-      contractId = entry.toHash()
-    } else if (contractId instanceof HashableEntry) {
-      contractId = contractId.toHash()
-    }
-    console.log(bold.yellow('sending entry with hash:'), entry.toHash())
-    var res = await request.post(`${API}/event/${contractId}`)
-      .set('Authorization', `gi ${signatures[0]}`)
-      .send({hash: entry.toHash(), entry: entry.toObject()})
-    res.body.type.should.equal(SUCCESS)
-    res.body.data.hash.should.equal(entry.toHash())
-    recentHash[contractId] = entry.toHash()
+  async function postEntry (entry) {
+    console.log(bold.yellow('sending entry with hash:'), entry.hash())
+    var res = await sbp('backend/publishLogEntry', entry)
+    should(res).equal(entry.hash())
     return res
   }
 
@@ -136,32 +98,30 @@ describe('Full walkthrough', function () {
       users.alice = createIdentity('Alice', 'alice@okturtles.org')
       const {alice, bob} = users
       // verify attribute creation and state initialization
-      bob.data.attributes[0].value.should.equal('Bob')
-      bob.data.attributes[1].value.should.equal('bob@okturtles.com')
+      bob.data.attributes.name.should.equal('Bob')
+      bob.data.attributes.email.should.equal('bob@okturtles.com')
       // send them off!
       var res = await postEntry(alice)
-      res.body.data.hash.should.equal(alice.toHash())
+      res.body.data.hash.should.equal(alice.hash())
       res = await postEntry(bob)
-      res.body.data.hash.should.equal(bob.toHash())
+      res.body.data.hash.should.equal(bob.hash())
     })
 
     it('Should register Alice and Bob in the namespace', async function () {
       const {alice, bob} = users
-      var res = await request.post(`${API}/name`)
-        .send({name: alice.data.attributes[0].value, value: alice.toHash()})
-      res.body.type.should.equal(SUCCESS)
-      res = await request.post(`${API}/name`)
-        .send({name: bob.data.attributes[0].value, value: bob.toHash()})
-      res.body.type.should.equal(SUCCESS)
+      var res = await sbp('namespace/register', alice.data.attributes[0].value, alice.hash())
+      res.value.should.equal(alice.hash())
+      res = await sbp('namespace/register', bob.data.attributes[0].value, bob.hash())
+      res.value.should.equal(bob.hash())
       alice.socket = 'hello'
       should(alice.socket).equal('hello')
     })
 
     it('Should verify namespace lookups work', async function () {
       const {alice} = users
-      var res = await request.get(`${API}/name/${alice.data.attributes[0].value}`)
-      res.body.data.value.should.equal(alice.toHash())
-      request.get(`${API}/name/susan`).should.be.rejected()
+      var res = await sbp('namespace/lookup', alice.data.attributes[0].value)
+      res.should.equal(alice.hash())
+      sbp('namespace/lookup', 'susan').should.be.rejected()
     })
 
     it('Should open sockets for Alice and Bob', async function () {
@@ -180,7 +140,7 @@ describe('Full walkthrough', function () {
   describe('Group tests', function () {
     it('Should create a group & subscribe Alice', async function () {
       groups.group1 = createGroup('group1')
-      await users.alice.socket.sub(groups.group1.toHash())
+      await users.alice.socket.sub(groups.group1.hash())
       await postEntry(groups.group1)
     })
 
@@ -192,13 +152,11 @@ describe('Full walkthrough', function () {
       // 1. look up bob's username to get his identity contract
       const {bob} = users
       const bobsName = bob.data.attributes[0].value
-      var res = await request.get(`${API}/name/${bobsName}`)
-      const bobsContractId = res.body.data.value
-      should(bobsContractId).equal(bob.toHash())
+      const bobsContractId = await sbp('namespace/lookup', bobsName)
+      should(bobsContractId).equal(bob.hash())
       // 2. fetch all events for his identity contract to get latest state for it
-      res = await fetch(`${API}/events/${bobsContractId}/${bobsContractId}`)
-      should(res.body).be.an.instanceof(stream.Transform)
-      var events = await res.json()
+      var events = await sbp('backend/eventsSince', bobsContractId, bobsContractId)
+      should(events).be.an.instanceof(Array)
       console.log(bold.red('EVENTS:'), events)
       // NOTE: even though we could avoid creating instances out of these events,
       //       we do it anyways even in these tests just to remind the reader
@@ -206,46 +164,56 @@ describe('Full walkthrough', function () {
       //       hash-based ingrity check is done.
       // Illustraiting its importance: when converting the code below from
       // raw-objects to instances, the hash check failed and I caught several bugs!
-      var [contract, ...actions] = events.map(e => {
-        return (Events[e.entry.type] ? Events[e.entry.type].fromObject(e.entry, e.hash) : contracts[e.entry.type].fromObject(e.entry, e.hash))
-      })
-      var state = contract.toVuexState()
-      actions.forEach(action => {
-        let type = action.constructor.name
-        contract.constructor.vuex.mutations[type](state, {data: action.data, hash: action.hash})
+      events = events.map(GIMessage.deserialize)
+      var state = {}
+      let contract = contracts[events[0].data.selector]
+      events.forEach(e => {
+        contract.vuexModule.mutations[e.data.selector](state, {
+          data: e.data,
+          hash: e.hash()
+        })
       })
       console.log(bold.red('FINAL STATE:'), state)
-      // 3. get bob's mailbox contractId from his identity contract attributes
-      should(state.attributes.mailbox).equal(bob.mailbox.toHash())
+      // 3. get bob's mailbox contractID from his identity contract attributes
+      should(state.attributes.mailbox).equal(bob.mailbox.hash())
       // 4. fetch the latest hash for bob's mailbox.
       //    we don't need latest state for it just latest hash
-      res = await fetch(`${API}/latestHash/${state.attributes.mailbox}`).then(r => r.json())
-      should(res.data.hash).equal(latestHash(bob.mailbox))
+      const res = await sbp('backend/latestHash', state.attributes.mailbox)
+      should(res).equal(bob.mailbox.hash())
     })
 
-    it("Should invite Bob to Alice's group", function (done) {
+    it("Should invite Bob to Alice's group", async function () {
       var mailbox = users.bob.mailbox
-      var invite = new Events.HashableMailboxPostMessage({messageType: Events.HashableMailboxPostMessage.TypeInvite, message: groups.group1.toHash()}, latestHash(mailbox))
-      events.$once(invite.toHash(), ({contractId, hash, entry}) => {
-        console.log('Bob successfully got invite!', entry)
-        should(entry.data.message).equal(groups.group1.toHash())
-        done()
+      var invite = await sbp('gi/contract/create-action', 'MailboxPostMessage', {
+        messageType: contracts.MailboxPostMessage.TypeInvite,
+        message: groups.group1.hash()
+      }, mailbox.hash())
+      await new Promise((resolve, reject) => {
+        sbp('okTurtles.events/once', invite.hash(), (entry: GIMessage) => {
+          console.log('Bob successfully got invite!')
+          should(entry.data.message).equal(groups.group1.hash())
+          resolve()
+        })
       })
-      postEntry(invite, mailbox.toHash())
+      await postEntry(invite, mailbox.hash())
     })
 
-    it('Should post an event', function () {
-      return postEntry(
-        new Events.HashableGroupPayment({payment: '123'}, latestHash(groups.group1)),
-        groups.group1
+    it('Should post an event', async function () {
+      await postEntry(
+        await sbp('gi/contract/create-action', 'GroupPayment', {
+          payment: '123'
+        }, groups.group1)
       )
     })
 
-    it('Should fail with wrong parentHash', function () {
-      return should(postEntry(
-        new Events.HashableGroupPayment({payment: 'abc'}, ''),
-        groups.group1
-      )).be.rejected()
+    it('Should fail with wrong parentHash', async function () {
+      try {
+        var p = await sbp('gi/contract/create-action', 'GroupPayment', {payment: 'abc'}, '')
+        await postEntry(p)
+        return Promise.reject(new Error("shouldn't get here!"))
+      } catch (e) {
+        return Promise.resolve()
+      }
     })
 
     // TODO: these events, as well as all messages sent over the sockets
@@ -253,8 +221,9 @@ describe('Full walkthrough', function () {
     //       identity contract
     it('Should post another event', async function () {
       await postEntry(
-        new Events.HashableGroupProposal({type: 'proposalType'}, latestHash(groups.group1)),
-        groups.group1
+        await sbp('gi/contract/create-action', 'GroupProposal', {
+          type: contracts.GroupProposal.TypeInvitation
+        }, groups.group1)
       )
       // delay so that the sockets receive notification
       return Promise.delay(200)

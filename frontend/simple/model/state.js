@@ -3,15 +3,14 @@
 // This file handles application-level state (as opposed to component-level
 // state) per: http://vuex.vuejs.org/en/intro.html
 
+import sbp from '../../../shared/sbp.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import _ from 'lodash'
-import backend from '../controller/backend'
-import sbp from '../../../shared/sbp'
-import * as db from './database'
-import * as Events from '../../../shared/events'
-import * as contracts from './contracts/events'
+import {GIMessage} from '../../../shared/events.js'
 import debounce from 'lodash/debounce'
+import contracts from './contracts.js'
+import * as db from './database.js'
 // babel transforms lodash imports: https://github.com/lodash/babel-plugin-lodash#faq
 // for diff between 'lodash/map' and 'lodash/fp/map'
 // see: https://github.com/lodash/lodash/wiki/FP-Guide
@@ -24,13 +23,30 @@ var store // this is set and made the default export at the bottom of the file.
 //       TO STORE AN INSTANCE OF A CLASS (LIKE A CONTRACT), IT WILL NOT STORE
 //       THE ACTUAL CONTRACT, BUT JSON.STRINGIFY(CONTRACT) INSTEAD!
 
-// TODO: use SBP instead of this
-Vue.events = new Vue() // global event bus, use: https://vuejs.org/v2/api/#Instance-Methods-Events
+sbp('sbp/selectors/register', {
+  'state/vuex/dispatch': (...args) => {
+    return store.dispatch(...args)
+  },
+  // This will build the current contract state from applying all its actions
+  'state/latestContractState': async (contractID: string) => {
+    let events = await sbp('backend/eventsSince', contractID, contractID)
+    events = events.map(GIMessage.deserialize)
+    let contract = contracts[events[0].data.selector]
+    let state = {}
+    events.forEach(e => {
+      contract.vuexModule.mutations[e.data.selector](state, {
+        data: e.data,
+        hash: e.hash()
+      })
+    })
+    return state
+  }
+})
 
 const state = {
   currentGroupId: null,
-  contracts: {}, // contractIds => { type:string, recentHash:string } (for contracts we've successfully subscribed to)
-  pending: [], // contractIds we've just published but haven't received back yet
+  contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
+  pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false // false | { name: string, identityContractId: string }
 }
 
@@ -39,36 +55,36 @@ const state = {
 const mutations = {
   login (state, user) {
     state.loggedIn = user
-    Vue.events.$emit('login', user)
+    sbp('okTurtles.events/emit', 'login', user)
   },
   logout (state) {
     state.loggedIn = false
     state.currentGroupId = null
-    Vue.events.$emit('logout')
+    sbp('okTurtles.events/emit', 'logout')
   },
-  addContract (state, {contractId, recentHash, type, data}) {
+  addContract (state, {contractID, type, HEAD}) {
     // "Mutations Follow Vue's Reactivity Rules" - important for modifying objects
     // See: https://vuex.vuejs.org/en/mutations.html
-    Vue.set(state.contracts, contractId, { type, recentHash })
-    store.registerModule(contractId, {...(Events[type] ? Events[type] : contracts[type]).vuex, ...{state: data}})
+    Vue.set(state.contracts, contractID, { type, HEAD })
+    store.registerModule(contractID, contracts[type].vuexModule)
     // we've successfully received it back, so remove it from expectation pending
-    const index = state.pending.indexOf(contractId)
-    state.pending.includes(contractId) && state.pending.splice(index, 1)
-    // calling this will make pubsub subscribe for events on `contractId`!
-    sbp('okTurtles.events/emit', 'contractsModified', {add: contractId})
+    const index = state.pending.indexOf(contractID)
+    state.pending.includes(contractID) && state.pending.splice(index, 1)
+    // calling this will make pubsub subscribe for events on `contractID`!
+    sbp('okTurtles.events/emit', 'contractsModified', {add: contractID})
   },
-  setRecentHash (state, {contractId, hash}) {
-    state.contracts[contractId] && Vue.set(state.contracts[contractId], 'recentHash', hash)
+  setRecentHash (state, {contractID, hash}) {
+    state.contracts[contractID] && Vue.set(state.contracts[contractID], 'HEAD', hash)
   },
-  removeContract (state, contractId) {
-    store.unregisterModule(contractId)
-    Vue.delete(state.contracts, contractId)
-    // calling this will make pubsub unsubscribe for events on `contractId`!
-    sbp('okTurtles.events/emit', 'contractsModified', {remove: contractId})
+  removeContract (state, contractID) {
+    store.unregisterModule(contractID)
+    Vue.delete(state.contracts, contractID)
+    // calling this will make pubsub unsubscribe for events on `contractID`!
+    sbp('okTurtles.events/emit', 'contractsModified', {remove: contractID})
   },
   setContracts (state, contracts) {
-    for (let contractId of Object.keys(state.contracts)) {
-      mutations.removeContract(state, contractId)
+    for (let contractID of Object.keys(state.contracts)) {
+      mutations.removeContract(state, contractID)
     }
     for (let contract of contracts) {
       mutations.addContract(state, contract)
@@ -87,9 +103,9 @@ const mutations = {
   setCurrentGroupId (state, currentGroupId) {
     state.currentGroupId = currentGroupId
   },
-  pending (state, contractId) {
-    if (!state.contracts[contractId] && !state.pending.includes(contractId)) {
-      state.pending.push(contractId)
+  pending (state, contractID) {
+    if (!state.contracts[contractID] && !state.pending.includes(contractID)) {
+      state.pending.push(contractID)
     }
   }
 }
@@ -114,11 +130,11 @@ const getters = {
   currentUserIdentityContract (state) {
     return state[state.loggedIn.identityContractId]
   },
-  // list of group names and contractIds
+  // list of group names and contractIDs
   groupsByName (state) {
     return _.map(
       _.keys(_.pickBy(state.contracts, (value, key) => value.type === 'GroupContract')),
-      key => ({groupName: state[key].groupName, contractId: key})
+      key => ({groupName: state[key].groupName, contractID: key})
     )
   },
   proposals (state) {
@@ -148,7 +164,7 @@ const getters = {
     return (username, groupId) => {
       var profile = state[groupId || state.currentGroupId].profiles[username]
       return profile && {
-        globalProfile: state[profile.contractId].attributes,
+        globalProfile: state[profile.contractID].attributes,
         groupProfile: profile.groupProfile
       }
     }
@@ -179,28 +195,26 @@ const actions = {
   // Used to update contracts to the current state that the server is aware of
   async syncContractWithServer (
     {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object},
-    contractId: string
+    contractID: string
   ) {
-    let latest = await backend.latestHash(contractId)
+    let latest = await sbp('backend/latestHash', contractID)
     // there is a chance two users are logged in to the same machine and must check their contracts before syncing
     var recent
-    if (state.contracts[contractId]) {
-      recent = state.contracts[contractId].recentHash
+    if (state.contracts[contractID]) {
+      recent = state.contracts[contractID].HEAD
     } else {
       // we're syncing a contract for the first time, make sure to add to pending
       // so that handleEvents knows to expect events from this contract
-      commit('pending', contractId)
+      commit('pending', contractID)
     }
     if (latest !== recent) {
-      console.log(`Now Synchronizing Contract: ${contractId} its most recent was ${recent} but the latest is ${latest}`)
+      console.log(`Now Synchronizing Contract: ${contractID} its most recent was ${recent} but the latest is ${latest}`)
       // TODO Do we need a since call that is inclusive? Since does not imply inclusion
-      let events = await backend.eventsSince(contractId, recent || contractId)
+      let events = await sbp('backend/eventsSince', contractID, recent || contractID)
       // remove the first element in cases where we are not getting the contract for the first time
-      state.contracts[contractId] && events.shift()
+      state.contracts[contractID] && events.shift()
       for (let i = 0; i < events.length; i++) {
-        let event = events[i]
-        event.contractId = contractId
-        await dispatch('handleEvent', event)
+        await dispatch('handleEvent', GIMessage.deserialize(events[i]))
       }
     }
   },
@@ -229,8 +243,8 @@ const actions = {
     debouncedSave.cancel()
     await dispatch('saveSettings', state)
     await db.clearCurrentUser()
-    for (let contractId of Object.keys(state.contracts)) {
-      mutations.removeContract(state, contractId)
+    for (let contractID of Object.keys(state.contracts)) {
+      mutations.removeContract(state, contractID)
     }
     commit('logout')
   },
@@ -243,10 +257,10 @@ const actions = {
       // TODO: encrypt these
       const settings = {
         currentGroupId: state.currentGroupId,
-        contracts: Object.keys(state.contracts).map(contractId => ({
-          contractId,
-          ...state.contracts[contractId], // inserts `recentHash` and `type`
-          data: state[contractId]
+        contracts: Object.keys(state.contracts).map(contractID => ({
+          contractID,
+          ...state.contracts[contractID], // inserts `HEAD` and `type`
+          data: state[contractID]
         }))
       }
       console.log('saveSettings:', settings)
@@ -258,79 +272,41 @@ const actions = {
   // mirrors `handleEvent` in backend/server.js
   async handleEvent (
     {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object},
-    {contractId, hash, entry}: {contractId: string, hash: string, entry: Object}
+    {message}: {message: GIMessage}
   ) {
+    // TODO: put a try/catch around this whole thing and integrate with notification center!
+    const {contractID, selector: type} = message.data
+    const hash = message.hash()
     // verify we're expecting to hear from this contract
-    if (!state.pending.includes(contractId) && !state.contracts[contractId]) {
+    if (!state.pending.includes(contractID) && !state.contracts[contractID]) {
       // TODO: use a global notification system to both display a notification
       //       and throw an exception and write a log message.
-      return console.error(`NOT EXPECTING EVENT!`, contractId, entry)
-    }
-    const type = entry.type
-    entry = (Events[type] || contracts[type]).fromObject(entry, hash)
-
-    if (Events.HashableContract.prototype.isPrototypeOf(entry)) {
-      console.log(`handleEvent for new ${type}:`, entry)
-      if (entry.toObject().parentHash) {
-        // TODO: use a global notification object to handle this and all other errors,
-        //       and figure out if an exception should be thrown
-        return console.error(`${type} has non-null parentHash!`, entry)
-      }
-    } else if (Events.HashableAction.prototype.isPrototypeOf(entry)) {
-      const contractType = state.contracts[contractId].type
-      console.log(`handleEvent for ${type} on ${contractType}:`, entry)
-      if (!contracts[contractType].isActionAllowed(state[contractType], entry)) {
-        // TODO: implement isActionAllowed in all actions, and handle error better
-        // TODO: throw an exception?
-        return console.error(`bad action ${type} on ${contractType} (${contractId}):`, entry)
-      }
-    } else {
-      return console.error(`UNKNOWN EVENT TYPE!`, contractId, entry)
+      return console.error(`NOT EXPECTING EVENT!`, contractID, message)
     }
 
-    // TODO: verify each entry is signed by a group member
-    // TODO: certainly we should have a larger try/catch block wrapping the entire function
-    await db.addLogEntry(contractId, entry)
+    // TODO: verify each message is signed by a group member
+    await db.addLogEntry(message)
 
-    if (contractId === hash) {
-      commit('addContract', {contractId, type, data: entry.toVuexState()})
+    if (message.isFirstMessage()) {
+      commit('addContract', {contractID, type, HEAD: hash})
     }
-    commit('setRecentHash', {contractId, hash})
+    commit('setRecentHash', {contractID, hash})
 
     // TODO: all of these might throw an exception -- handle those appropriately!
-    commit(`${contractId}/${type}`, { data: entry.data, hash })
-    if (store.state[contractId]._async.length) {
-      for (let type of store.state[contractId]._async) {
-        await dispatch(`${contractId}/${type}`, {type, store, data: entry.data, hash})
-      }
-      commit(`${contractId}/clearAsync`)
-    }
+    commit(`${contractID}/${type}`, { data: message.data, hash })
+    // if this mutation has a corresponding action, perform it after thet mutation
+    await dispatch(`${contractID}/${type}`, {type, store, data: message.data, hash})
 
     // handleEvent might be called very frequently, so save only after a pause
     debouncedSave(dispatch)
     // let any listening components know that we've received, processed, and stored the event
-    Vue.events.$emit(hash, contractId, entry)
-    Vue.events.$emit('eventHandled', contractId, entry)
+    sbp('okTurtles.events/emit', hash, contractID, message)
+    sbp('okTurtles.events/emit', 'eventHandled', contractID, message)
   }
 }
 const debouncedSave = debounce((dispatch, savedState) => dispatch('saveSettings', savedState), 500)
 
 store = new Vuex.Store({state, mutations, getters, actions})
 store.subscribe(() => debouncedSave(store.dispatch))
-
-// This will build the current contract state from applying all its actions
-export async function latestContractState (contractId: string) {
-  let events = await backend.eventsSince(contractId, contractId)
-  events = events.map(e => {
-    return (Events[e.entry.type] || contracts[e.entry.type]).fromObject(e.entry, e.hash)
-  })
-  let contract = events[0]
-  let state = contract.toVuexState()
-  events.forEach(e => {
-    let type = e.constructor.name
-    contract.constructor.vuex.mutations[type](state, {data: e.data, hash: e.toHash()})
-  })
-  return state
-}
 
 export default store

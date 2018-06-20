@@ -194,21 +194,23 @@
 }
 </style>
 <script>
+import sbp from '../../../shared/sbp.js'
+import contracts from '../model/contracts.js'
 import _ from 'lodash'
-import backend from '../controller/backend'
-import * as Events from '../../../shared/events'
-import {namespace} from '../controller/backend/hapi'
-import {latestContractState} from '../model/state'
-import L from './utils/translations'
+import L from './utils/translations.js'
+
 const criteria = [(msg) => new Date(msg.sentDate)]
+
+// TODO: this whole file needs to be improved/rewritten
+
 export default {
   name: 'Mailbox',
   computed: {
     inbox () {
-      return _.sortBy(_.filter(this.$store.getters.mailbox, msg => msg.data.messageType === Events.HashableMailboxPostMessage.TypeMessage), criteria)
+      return _.sortBy(_.filter(this.$store.getters.mailbox, msg => msg.data.messageType === contracts.MailboxPostMessage.TypeMessage), criteria)
     },
     invites () {
-      return _.sortBy(_.filter(this.$store.getters.mailbox, msg => msg.data.messageType === Events.HashableMailboxPostMessage.TypeInvite), criteria)
+      return _.sortBy(_.filter(this.$store.getters.mailbox, msg => msg.data.messageType === contracts.MailboxPostMessage.TypeInvite), criteria)
     },
     proposals () {
       return this.$store.getters.proposals
@@ -247,16 +249,15 @@ export default {
       try {
         for (let i = 0; i < this.recipients.length; i++) {
           let recipient = this.recipients[i]
-          let state = await latestContractState(recipient.contractId)
-          let mailbox = await backend.latestHash(state.attributes.mailbox)
-          let date = new Date()
-          let message = new Events.HashableMailboxPostMessage({
-            sentDate: date.toString(),
-            messageType: Events.HashableMailboxPostMessage.TypeMessage,
+          // TODO:: latestContractState is inefficient
+          let state = await sbp('state/latestContractState', recipient.contractID)
+          let message = await sbp('gi/contract/create-action', 'MailboxPostMessage', {
+            sentDate: new Date().toISOString(),
+            messageType: contracts.MailboxPostMessage.TypeMessage,
             from: this.$store.state.loggedIn.name,
             message: this.composedMessage
-          }, mailbox)
-          await backend.publishLogEntry(state.attributes.mailbox, message)
+          }, state.attributes.mailbox)
+          await sbp('backend/publishLogEntry', message)
         }
         this.inboxMode()
       } catch (ex) {
@@ -297,9 +298,9 @@ export default {
     addRecipient: async function () {
       if (this.recipient) {
         try {
-          let contractId = await namespace.lookup(this.recipient)
+          let contractID = await sbp('namespace/lookup', this.recipient)
           if (!this.recipients.find(recipient => recipient.name === this.recipient)) {
-            this.recipients.push({name: this.recipient, contractId: contractId})
+            this.recipients.push({name: this.recipient, contractID: contractID})
           }
           this.recipient = null
           this.error = false
@@ -315,8 +316,9 @@ export default {
       recipient: null,
       recipients: [],
       composedMessage: '',
+      // TODO: this is ugly, make it nicer
       // place an empty message here so that the rendered doesn't complain about missing fields or data
-      currentMessage: new Events.HashableMailboxPostMessage({from: null, message: ''}, null),
+      currentMessage: {data: {}},
       currentIndex: null,
       error: null,
       errorMsg: null

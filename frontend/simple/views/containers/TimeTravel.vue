@@ -27,7 +27,7 @@
 }
 </style>
 <script>
-import Vue from 'vue'
+import sbp from '../../../shared/sbp.js'
 import VueSlider from 'vue-slider-component'
 import store from '../../model/state'
 import _ from 'lodash'
@@ -50,7 +50,7 @@ export default {
       var state = this.ephemeral.history[position]
       // console.log(`Firing position ${position}:`, state)
       store.replaceState(state)
-      Vue.events.$emit('replacedState')
+      sbp('okTurtles.events/emit', 'replacedState')
     }
   },
   data () {

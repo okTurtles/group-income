@@ -60,7 +60,6 @@ declare module 'sha.js' { declare module.exports: any }
 declare module 'sprint-js' { declare module.exports: any }
 declare module 'sqlite3' { declare module.exports: any }
 declare module 'string' { declare module.exports: any }
-declare module 'superagent' { declare module.exports: any }
 declare module 'tweetnacl' { declare module.exports: any }
 declare module 'tweetnacl-util' { declare module.exports: any }
 declare module 'uws' { declare module.exports: any }

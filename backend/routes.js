@@ -1,9 +1,7 @@
 /* globals logger */
 
-import {RESPONSE_TYPE} from '../shared/constants'
-import {makeResponse} from '../shared/functions'
-import * as Events from '../shared/events'
-import * as db from './database'
+import {GIMessage} from '../shared/events.js'
+import * as db from './database.js'
 const Boom = require('boom')
 const Joi = require('joi')
 
@@ -12,34 +10,17 @@ const Joi = require('joi')
 //       See related TODO in pubsub.js and the reddit discussion link.
 module.exports = function (server: Object) {
   server.route({
-    path: '/event/{contractId}',
+    path: '/event',
     method: ['PUT', 'POST'],
     config: {
-      auth: 'gi-auth',
-      validate: { payload: {
-        hash: Joi.string().required(),
-        // must match db.Log.jsonSchema.properties (except for separated hash)
-        entry: Joi.object({
-          version: Joi.number().integer().required(),
-          type: Joi.string().required(),
-          parentHash: Joi.string().allow([null, '']),
-          data: Joi.object()
-        })
-      } }
+      auth: 'gi-auth', // TODO: implement real group-based auth
+      validate: { payload: Joi.string().required() }
     },
-    // TODO: we have to prevent spam. can't have someone flooding the server.
-    //       do group signature based authentication here to prevent spam
-    handler: async function (request, reply) {
+    handler: function (request, reply) {
       try {
-        // TODO: echo back the entry if it's the latest, or send with a different
-        //       status code the entries that the client is missing
-        //       or, send back an error if the parentHash doesn't exist
-        //       in the database at all. (or an error if hash is invalid)
-        var contractId = request.params.contractId
-        var {hash, entry} = request.payload
-        var event = Events[entry.type] ? Events[entry.type].fromObject(entry, hash) : Events.ConvertToBackendEntry(entry, hash)
-        await server.handleEvent(contractId, event)
-        reply(makeResponse(RESPONSE_TYPE.SUCCESS, {hash}))
+        const entry = GIMessage.deserialize(request.payload)
+        server.handleEntry(entry)
+        reply(entry.hash())
       } catch (err) {
         logger(err)
         reply(err)
@@ -47,17 +28,22 @@ module.exports = function (server: Object) {
     }
   })
   server.route({
-    path: '/events/{contractId}/{since}',
+    path: '/events/{contractID}/{since}',
     method: ['GET'],
     handler: async function (request, reply) {
       try {
-        const {contractId, since} = request.params
-        var stream = await db.streamEntriesSince(contractId, since)
+        const {contractID, since} = request.params
+        var stream = db.streamEntriesSince(contractID, since)
         // "On an HTTP server, make sure to manually close your streams if a request is aborted."
         // From: http://knexjs.org/#Interfaces-Streams
         //       https://github.com/tgriesser/knex/wiki/Manually-Closing-Streams
         // Plus: https://hapijs.com/api#request-events
-        request.on('disconnect', stream.end.bind(stream))
+        // request.on('disconnect', stream.end.bind(stream))
+        // NOTE: since rewriting database.js to remove objection.js and knex,
+        //       we're currently returning a Readable stream, which doesn't have
+        //       '.end'. If there are any issues we can try switching to returning a
+        //       Writable stream. Both types however do have .destroy.
+        request.on('disconnect', stream.destroy.bind(stream))
         reply(stream)
       } catch (err) {
         logger(err)
@@ -72,14 +58,14 @@ module.exports = function (server: Object) {
       name: Joi.string().required(),
       value: Joi.string().required()
     } } },
-    handler: async function (request, reply) {
+    handler: function (request, reply) {
       try {
         const {name, value} = request.payload
-        if (await db.lookupName(name)) {
+        if (db.lookupName(name)) {
           reply(Boom.conflict('exists'))
         } else {
-          await db.registerName(name, value)
-          reply(makeResponse(RESPONSE_TYPE.SUCCESS, {name}))
+          db.registerName(name, value)
+          reply({name, value})
         }
       } catch (err) {
         logger(err)
@@ -90,10 +76,9 @@ module.exports = function (server: Object) {
   server.route({
     path: '/name/{name}',
     method: ['GET'],
-    handler: async function (request, reply) {
+    handler: function (request, reply) {
       try {
-        var value = await db.lookupName(request.params.name)
-        reply(value ? makeResponse(RESPONSE_TYPE.SUCCESS, {value}) : Boom.notFound())
+        reply(db.lookupName(request.params.name) || Boom.notFound())
       } catch (err) {
         logger(err)
         reply(err)
@@ -101,12 +86,12 @@ module.exports = function (server: Object) {
     }
   })
   server.route({
-    path: '/latestHash/{contractId}',
+    path: '/latestHash/{contractID}',
     method: ['GET'],
-    handler: async function (request, reply) {
+    handler: function (request, reply) {
       try {
-        var entry = await db.lastEntry(request.params.contractId)
-        reply(entry ? makeResponse(RESPONSE_TYPE.SUCCESS, {hash: entry.hash}) : Boom.notFound())
+        var entry = db.lastEntry(request.params.contractID)
+        reply(entry ? entry.hash() : Boom.notFound())
       } catch (err) {
         logger(err)
         reply(err)
