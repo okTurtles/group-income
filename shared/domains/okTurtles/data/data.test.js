@@ -20,8 +20,8 @@ describe('[SBP] DATA domain', () => {
   })
 
   it('should add item to collection', () => {
-    sbp('okTurtles.data/pushValue', 'testCollection', 1)
-    sbp('okTurtles.data/pushValue', 'testCollection', 2)
+    sbp('okTurtles.data/add', 'testCollection', 1)
+    sbp('okTurtles.data/add', 'testCollection', 2)
     should(sbp('okTurtles.data/get', 'testCollection')).deepEqual([1, 2])
   })
 
@@ -33,11 +33,11 @@ describe('[SBP] DATA domain', () => {
 
   it('should add and remove fn from collection', () => {
     const testFn = sinon.spy()
-    sbp('okTurtles.data/pushValue', 'fnTestCollection', 1)
-    sbp('okTurtles.data/pushValue', 'fnTestCollection', testFn)
+    sbp('okTurtles.data/add', 'fnTestCollection', 1)
+    sbp('okTurtles.data/add', 'fnTestCollection', testFn)
     sbp('okTurtles.data/get', 'fnTestCollection')[1]()
     testFn.should.be.called()
-    sbp('okTurtles.data/popValue', 'fnTestCollection', testFn)
+    sbp('okTurtles.data/remove', 'fnTestCollection', testFn)
     should(sbp('okTurtles.data/get', 'fnTestCollection').length).equal(1)
   })
 })

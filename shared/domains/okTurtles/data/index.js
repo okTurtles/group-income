@@ -18,7 +18,7 @@ export default sbp('sbp/selectors/register', {
   'okTurtles.data/delete': function (key: any) {
     return _store.delete(key)
   },
-  'okTurtles.data/pushValue': function (key: any, data: any) {
+  'okTurtles.data/add': function (key: any, data: any) {
     const array = _store.get(key)
     if (array) {
       array.push(data)
@@ -26,16 +26,8 @@ export default sbp('sbp/selectors/register', {
       _store.set(key, [data])
     }
   },
-  'okTurtles.data/popValue': function (key: any, data: any) {
+  'okTurtles.data/remove': function (key: any, data: any) {
     const array = _store.get(key)
-    var value
-    if (array) {
-      const idx = array.indexOf(data)
-      if (idx !== -1) {
-        value = array[idx]
-        array.splice(idx, 1)
-      }
-    }
-    return value
+    _store.set(key, array.filter(v => v !== data))
   }
 })

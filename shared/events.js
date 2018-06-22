@@ -1,7 +1,7 @@
 'use strict'
 // import sbp from '../shared/sbp.js'
 import {blake32Hash} from './functions.js'
-import type {JSONObject} from './types.js'
+import type {JSONType, JSONObject} from './types.js'
 
 function defaultSignatureFn (data: string) {
   return blake32Hash(data)
@@ -13,11 +13,11 @@ export class GIMessage {
   //       instead store it using serialize() and restore it using
   //       deserialize().
   static create (
-    contractID: string = null,
-    previousHEAD: string = null,
-    signatureFn: Function = defaultSignatureFn,
+    contractID: ?string = null,
+    previousHEAD: ?string = null,
+    signatureFn: ?Function = defaultSignatureFn,
     actionType: string,
-    actionData: JSONObject
+    actionData: JSONType
   ) {
     var instance = new this()
     instance._message = {
@@ -55,7 +55,7 @@ export class GIMessage {
 
   type (): string { return this.message().action.type }
 
-  data (): JSONObject { return this.message().action.data }
+  data (): JSONType { return this.message().action.data }
 
   isFirstMessage (): boolean { return !this.message().previousHEAD }
 
