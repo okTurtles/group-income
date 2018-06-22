@@ -45,7 +45,7 @@
 import sbp from '../../../shared/sbp.js'
 import template from 'string-template'
 import L from './utils/translations.js'
-import _ from 'lodash'
+import * as _ from '../utils/giLodash.js'
 export default {
   name: 'Vote',
   computed: {

@@ -5,6 +5,7 @@ import '../shared/domains/okTurtles/events/index.js'
 import chalk from 'chalk'
 import {GIMessage} from '../shared/events.js'
 import contracts from '../frontend/simple/model/contracts.js'
+import * as _ from '../frontend/simple/utils/giLodash.js'
 import {createWebSocket} from '../frontend/simple/controller/backend.js'
 import '../frontend/simple/controller/namespace.js'
 
@@ -169,8 +170,8 @@ describe('Full walkthrough', function () {
       // Illustraiting its importance: when converting the code below from
       // raw-objects to instances, the hash check failed and I caught several bugs!
       events = events.map(e => GIMessage.deserialize(e))
-      var state = {}
       let contract = contracts[events[0].type()]
+      var state = _.cloneDeep(contract.vuexModule.state)
       for (let e of events) {
         contract.vuexModule.mutations[e.type()](state, {
           data: e.data(),

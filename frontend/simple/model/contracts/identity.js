@@ -11,8 +11,9 @@ export default DefineContract({
       // ['attributes', 'Attribute', 'repeated']
     },
     vuex: {
+      initialState: {attributes: {}},
       mutation: (state, {data}) => {
-        Object.assign(state, {attributes: {}}, data)
+        state.attributes = data.attributes
       }
     }
   },

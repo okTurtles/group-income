@@ -5,13 +5,10 @@ import {DefineContract} from '../utils.js'
 export default DefineContract({
   'MailboxContract': {
     constructor: true,
-    validate: function (data) {
-
-    },
+    validate: function (data) {},
     vuex: {
-      mutation: (state, {data}) => {
-        Object.assign(state, {messages: []}, data)
-      }
+      initialState: {messages: []},
+      mutation: function (state, {data}) {}
     }
   },
   'MailboxPostMessage': {

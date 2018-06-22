@@ -30,15 +30,17 @@ export function DefineContract (contract) {
         throw new Error(`one constructor per contract! ${contractName} vs ${name}`)
       }
       contractName = name
+      // constructors are allowed to have an initialState key on the vuex object
+      if (vuex.initialState) {
+        vuexModule.state = vuex.initialState
+      }
     }
-
     // if any constants are defined make them easily accessible via exported object
     if (constants) {
       for (let constant in constants) {
         exportedObject[name][constant] = constants[constant]
       }
     }
-
     // validation is performed both when creating a GIMessage
     // and when that GIMessage is received and is applied as a mutation
     vuexModule.mutations[name] = function (state, data) {

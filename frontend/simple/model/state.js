@@ -6,10 +6,10 @@
 import sbp from '../../../shared/sbp.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
-import _ from 'lodash'
 import {GIMessage} from '../../../shared/events.js'
 import debounce from 'lodash/debounce'
 import contracts from './contracts.js'
+import * as _ from '../utils/giLodash.js'
 import * as db from './database.js'
 // babel transforms lodash imports: https://github.com/lodash/babel-plugin-lodash#faq
 // for diff between 'lodash/map' and 'lodash/fp/map'
@@ -32,7 +32,7 @@ sbp('sbp/selectors/register', {
     let events = await sbp('backend/eventsSince', contractID, contractID)
     events = events.map(e => GIMessage.deserialize(e))
     let contract = contracts[events[0].type()]
-    let state = {}
+    let state = _.cloneDeep(contract.vuexModule.state)
     for (let e of events) {
       contract.vuexModule.mutations[e.type()](state, {
         data: e.data(),
@@ -62,15 +62,19 @@ const mutations = {
     state.currentGroupId = null
     sbp('okTurtles.events/emit', 'logout')
   },
-  // we pass in 'data' so that it's restored to what it was upon login
   addContract (state, {contractID, type, HEAD, data}) {
     // "Mutations Follow Vue's Reactivity Rules" - important for modifying objects
     // See: https://vuex.vuejs.org/en/mutations.html
     Vue.set(state.contracts, contractID, { type, HEAD })
-    store.registerModule(contractID, {...{state: data}, ...contracts[type].vuexModule})
+    // copy over the initial state, making sure *not* to use cloneDeep on
+    // the entire vuexModule object (because cloneDeep doesn't clone functions)
+    var vuexModule = Object.assign({}, contracts[type].vuexModule)
+    // make sure we restore any previously saved state (e.g. after login)
+    vuexModule.state = Object.assign(_.cloneDeep(vuexModule.state), data)
+    store.registerModule(contractID, vuexModule)
     // we've successfully received it back, so remove it from expectation pending
     const index = state.pending.indexOf(contractID)
-    state.pending.includes(contractID) && state.pending.splice(index, 1)
+    index !== -1 && state.pending.splice(index, 1)
     // calling this will make pubsub subscribe for events on `contractID`!
     sbp('okTurtles.events/emit', 'contractsModified', {add: contractID})
   },
@@ -118,7 +122,6 @@ const getters = {
   },
   mailboxContract (state, getters) {
     return getters.currentUserIdentityContract &&
-      getters.currentUserIdentityContract.attributes &&
       state[getters.currentUserIdentityContract.attributes.mailbox]
   },
   mailbox (state, getters) {
@@ -126,19 +129,18 @@ const getters = {
     return mailboxContract && mailboxContract.messages
   },
   unreadMessageCount (state, getters) {
-    let mailboxContract = getters.mailboxContract
-    return mailboxContract && mailboxContract.messages.filter((msg) => !msg.read).length
+    let messages = getters.mailbox
+    return messages && messages.filter(msg => !msg.read).length
   },
   // Logged In user's identity contract
   currentUserIdentityContract (state) {
-    return state[state.loggedIn.identityContractId]
+    return state.loggedIn && state[state.loggedIn.identityContractId]
   },
   // list of group names and contractIDs
   groupsByName (state) {
-    return _.map(
-      _.keys(_.pickBy(state.contracts, (value, key) => value.type === 'GroupContract')),
-      key => ({groupName: state[key].groupName, contractID: key})
-    )
+    return Object.entries(store.state.contracts)
+      .filter(([key, value]) => value.type === 'GroupContract')
+      .map(([key]) => ({groupName: state[key].groupName, contractID: key}))
   },
   proposals (state) {
     // TODO: clean this up
@@ -175,8 +177,7 @@ const getters = {
   profilesForGroup (state, getters) {
     return groupId => {
       groupId = groupId || state.currentGroupId
-      return groupId && _.reduce(
-        Object.keys(state[groupId].profiles || {}),
+      return groupId && Object.keys(state[groupId].profiles).reduce(
         (result, username) => {
           result[username] = getters.memberProfile(username, groupId)
           return result
@@ -189,7 +190,7 @@ const getters = {
     return groupId => {
       if (!groupId) groupId = state.currentGroupId
       if (!groupId) return 0
-      return Object.keys(state[groupId].profiles || {}).length
+      return Object.keys(state[groupId].profiles).length
     }
   }
 }
@@ -209,7 +210,6 @@ const actions = {
     } else {
       // we're syncing a contract for the first time, make sure to add to pending
       // so that handleEvents knows to expect events from this contract
-      console.log(`commit('pending', '${contractID}')`)
       commit('pending', contractID)
     }
     if (latest !== recent) {
@@ -279,36 +279,40 @@ const actions = {
     {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object},
     message: GIMessage
   ) {
-    // TODO: put a try/catch around this whole thing and integrate with notification center!
-    const contractID = message.isFirstMessage() ? message.hash() : message.message().contractID
-    const type = message.type()
-    const HEAD = message.hash()
-    const data = message.data()
-    // verify we're expecting to hear from this contract
-    if (!state.pending.includes(contractID) && !state.contracts[contractID]) {
-      // TODO: use a global notification system to both display a notification
-      //       and throw an exception and write a log message.
-      return console.error(`NOT EXPECTING EVENT!`, contractID, message)
+    try {
+      const contractID = message.isFirstMessage() ? message.hash() : message.message().contractID
+      const type = message.type()
+      const HEAD = message.hash()
+      const data = message.data()
+      // verify we're expecting to hear from this contract
+      if (!state.pending.includes(contractID) && !state.contracts[contractID]) {
+        // TODO: use a global notification system to both display a notification
+        //       and throw an exception and write a log message.
+        return console.error(`NOT EXPECTING EVENT!`, contractID, message)
+      }
+
+      // TODO: verify each message is signed by a group member
+      await db.addLogEntry(message)
+
+      if (message.isFirstMessage()) {
+        commit('addContract', {contractID, type, HEAD, data})
+      }
+      commit('setContractHEAD', {contractID, HEAD})
+
+      const mutation = { data, hash: HEAD }
+      commit(`${contractID}/${type}`, mutation)
+      // if this mutation has a corresponding action, perform it after thet mutation
+      await dispatch(`${contractID}/${type}`, mutation)
+
+      // handleEvent might be called very frequently, so save only after a pause
+      debouncedSave(dispatch)
+      // let any listening components know that we've received, processed, and stored the event
+      sbp('okTurtles.events/emit', HEAD, contractID, message)
+      sbp('okTurtles.events/emit', 'eventHandled', contractID, message)
+    } catch (e) {
+      console.log('[ERROR] exception in handleEvent!', e.message, e)
+      throw e // TODO: handle this better
     }
-
-    // TODO: verify each message is signed by a group member
-    await db.addLogEntry(message)
-
-    if (message.isFirstMessage()) {
-      commit('addContract', {contractID, type, HEAD, data})
-    }
-    commit('setContractHEAD', {contractID, HEAD})
-
-    const mutation = { data, hash: HEAD }
-    commit(`${contractID}/${type}`, mutation)
-    // if this mutation has a corresponding action, perform it after thet mutation
-    await dispatch(`${contractID}/${type}`, mutation)
-
-    // handleEvent might be called very frequently, so save only after a pause
-    debouncedSave(dispatch)
-    // let any listening components know that we've received, processed, and stored the event
-    sbp('okTurtles.events/emit', HEAD, contractID, message)
-    sbp('okTurtles.events/emit', 'eventHandled', contractID, message)
   }
 }
 const debouncedSave = debounce((dispatch, savedState) => dispatch('saveSettings', savedState), 500)

@@ -28,25 +28,28 @@ export default DefineContract({
       // ['founderIdentityContractId', 'string']
     },
     vuex: {
+      initialState: { // may be specified in the constructor only
+        payments: [],
+        invitees: [],
+        profiles: {}, // usernames => {contractId: string, groupProfile: Object}
+        proposals: {} // hashes => {} TODO: this, see related TODOs in GroupProposal
+      },
       mutation: (state, {data}) => {
         Object.assign(state, {
-          payments: [],
-          invitees: [],
           profiles: {
             [data.founderUsername]: {
               contractID: data.founderIdentityContractId,
               groupProfile: {}
             }
-          },
-          proposals: {} // hashes => {} TODO: this, see related TODOs in GroupProposal
+          }
         }, data)
       },
       getters: {
         candidateMembers (state) {
-          return Object.keys(state.proposals || {}).filter(key => state.proposals[key].candidate).map(key => state.proposals[key].candidate)
+          return Object.keys(state.proposals).filter(key => state.proposals[key].candidate).map(key => state.proposals[key].candidate)
         },
         memberUsernames (state) {
-          return Object.keys(state.profiles || {})
+          return Object.keys(state.profiles)
         }
       }
     }
@@ -194,7 +197,7 @@ export default DefineContract({
     validate: function (data) {
       // ['username', 'string'],
       // // NOTE: now this 'json' is 'profile' and is an object
-      // ['json', 'string'] // TODO: is there a special JSON type?
+      // ['json', 'string']
     },
     vuex: {
       mutation: (state, {data}) => {
