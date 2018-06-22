@@ -27,12 +27,15 @@ function sbp (selector: string, ...data: any) {
 
 const SBP_BASE_SELECTORS = {
   'sbp/selectors/register': function (sels: {[string]: Function}) {
+    var registered = []
     for (const selector in sels) {
       // TODO: debug log (using an SBP logging facility) if we're already registered
       if (!selectors[selector]) {
         selectors[selector] = sels[selector]
+        registered.push(selector)
       }
     }
+    return registered
   },
   'sbp/selectors/unregister': function (sels: [string]) {
     for (const selector of sels) {

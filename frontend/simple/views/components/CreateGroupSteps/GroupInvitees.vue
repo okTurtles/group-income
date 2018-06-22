@@ -64,6 +64,7 @@
   }
 </style>
 <script>
+import sbp from '../../../../../shared/sbp.js'
 import L from '../../utils/translations.js'
 
 export default {

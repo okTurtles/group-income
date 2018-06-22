@@ -30,15 +30,15 @@ sbp('sbp/selectors/register', {
   // This will build the current contract state from applying all its actions
   'state/latestContractState': async (contractID: string) => {
     let events = await sbp('backend/eventsSince', contractID, contractID)
-    events = events.map(GIMessage.deserialize)
-    let contract = contracts[events[0].data.selector]
+    events = events.map(e => GIMessage.deserialize(e))
+    let contract = contracts[events[0].type()]
     let state = {}
-    events.forEach(e => {
-      contract.vuexModule.mutations[e.data.selector](state, {
-        data: e.data,
+    for (let e of events) {
+      contract.vuexModule.mutations[e.type()](state, {
+        data: e.data(),
         hash: e.hash()
       })
-    })
+    }
     return state
   }
 })
@@ -62,19 +62,20 @@ const mutations = {
     state.currentGroupId = null
     sbp('okTurtles.events/emit', 'logout')
   },
-  addContract (state, {contractID, type, HEAD}) {
+  // we pass in 'data' so that it's restored to what it was upon login
+  addContract (state, {contractID, type, HEAD, data}) {
     // "Mutations Follow Vue's Reactivity Rules" - important for modifying objects
     // See: https://vuex.vuejs.org/en/mutations.html
     Vue.set(state.contracts, contractID, { type, HEAD })
-    store.registerModule(contractID, contracts[type].vuexModule)
+    store.registerModule(contractID, {...{state: data}, ...contracts[type].vuexModule})
     // we've successfully received it back, so remove it from expectation pending
     const index = state.pending.indexOf(contractID)
     state.pending.includes(contractID) && state.pending.splice(index, 1)
     // calling this will make pubsub subscribe for events on `contractID`!
     sbp('okTurtles.events/emit', 'contractsModified', {add: contractID})
   },
-  setRecentHash (state, {contractID, hash}) {
-    state.contracts[contractID] && Vue.set(state.contracts[contractID], 'HEAD', hash)
+  setContractHEAD (state, {contractID, HEAD}) {
+    state.contracts[contractID] && Vue.set(state.contracts[contractID], 'HEAD', HEAD)
   },
   removeContract (state, contractID) {
     store.unregisterModule(contractID)
@@ -116,7 +117,9 @@ const getters = {
     return state[state.currentGroupId]
   },
   mailboxContract (state, getters) {
-    return getters.currentUserIdentityContract && state[getters.currentUserIdentityContract.attributes.mailbox]
+    return getters.currentUserIdentityContract &&
+      getters.currentUserIdentityContract.attributes &&
+      state[getters.currentUserIdentityContract.attributes.mailbox]
   },
   mailbox (state, getters) {
     let mailboxContract = getters.mailboxContract
@@ -173,7 +176,7 @@ const getters = {
     return groupId => {
       groupId = groupId || state.currentGroupId
       return groupId && _.reduce(
-        Object.keys(state[groupId].profiles),
+        Object.keys(state[groupId].profiles || {}),
         (result, username) => {
           result[username] = getters.memberProfile(username, groupId)
           return result
@@ -186,11 +189,12 @@ const getters = {
     return groupId => {
       if (!groupId) groupId = state.currentGroupId
       if (!groupId) return 0
-      return Object.keys(state[groupId].profiles).length
+      return Object.keys(state[groupId].profiles || {}).length
     }
   }
 }
 
+// TODO: convert all these to SBP... and/or call dispatch through SBP only!
 const actions = {
   // Used to update contracts to the current state that the server is aware of
   async syncContractWithServer (
@@ -205,6 +209,7 @@ const actions = {
     } else {
       // we're syncing a contract for the first time, make sure to add to pending
       // so that handleEvents knows to expect events from this contract
+      console.log(`commit('pending', '${contractID}')`)
       commit('pending', contractID)
     }
     if (latest !== recent) {
@@ -272,11 +277,13 @@ const actions = {
   // mirrors `handleEvent` in backend/server.js
   async handleEvent (
     {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object},
-    {message}: {message: GIMessage}
+    message: GIMessage
   ) {
     // TODO: put a try/catch around this whole thing and integrate with notification center!
-    const {contractID, selector: type} = message.data
-    const hash = message.hash()
+    const contractID = message.isFirstMessage() ? message.hash() : message.message().contractID
+    const type = message.type()
+    const HEAD = message.hash()
+    const data = message.data()
     // verify we're expecting to hear from this contract
     if (!state.pending.includes(contractID) && !state.contracts[contractID]) {
       // TODO: use a global notification system to both display a notification
@@ -288,19 +295,19 @@ const actions = {
     await db.addLogEntry(message)
 
     if (message.isFirstMessage()) {
-      commit('addContract', {contractID, type, HEAD: hash})
+      commit('addContract', {contractID, type, HEAD, data})
     }
-    commit('setRecentHash', {contractID, hash})
+    commit('setContractHEAD', {contractID, HEAD})
 
-    // TODO: all of these might throw an exception -- handle those appropriately!
-    commit(`${contractID}/${type}`, { data: message.data, hash })
+    const mutation = { data, hash: HEAD }
+    commit(`${contractID}/${type}`, mutation)
     // if this mutation has a corresponding action, perform it after thet mutation
-    await dispatch(`${contractID}/${type}`, {type, store, data: message.data, hash})
+    await dispatch(`${contractID}/${type}`, mutation)
 
     // handleEvent might be called very frequently, so save only after a pause
     debouncedSave(dispatch)
     // let any listening components know that we've received, processed, and stored the event
-    sbp('okTurtles.events/emit', hash, contractID, message)
+    sbp('okTurtles.events/emit', HEAD, contractID, message)
     sbp('okTurtles.events/emit', 'eventHandled', contractID, message)
   }
 }

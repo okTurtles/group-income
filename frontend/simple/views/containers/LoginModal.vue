@@ -73,6 +73,7 @@
   </div>
 </template>
 <script>
+import sbp from '../../../../shared/sbp.js'
 import L from '../utils/translations.js'
 import { validationMixin } from 'vuelidate'
 import { required, minLength } from 'vuelidate/lib/validators'

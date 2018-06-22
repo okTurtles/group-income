@@ -29,4 +29,12 @@ describe('[SBP] EVENTS domain', () => {
     sbp('okTurtles.events/emit', 'testEvent')
     testListener.should.be.calledOnce()
   })
+  it('should disable listener correctly', () => {
+    const testListener = sinon.spy()
+    sbp('okTurtles.events/on', 'testEvent2', testListener)
+    sbp('okTurtles.events/emit', 'testEvent2')
+    sbp('okTurtles.events/off', 'testEvent2')
+    sbp('okTurtles.events/emit', 'testEvent2')
+    testListener.should.be.calledOnce()
+  })
 })

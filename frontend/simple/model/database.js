@@ -22,9 +22,9 @@ export async function getLogEntry (hash: string): Promise<GIMessage> {
 }
 
 export async function addLogEntry (entry: GIMessage): Promise<string> {
-  console.log('addLogEntry():', entry.hash(), entry.data)
-  const {previousHEAD} = entry.data
-  var contractID = previousHEAD ? entry.data.contractID : entry.hash()
+  console.log('addLogEntry():', entry.hash(), entry.message())
+  const {previousHEAD} = entry.message()
+  var contractID = previousHEAD ? entry.message().contractID : entry.hash()
   if (await get(entry.hash())) {
     throw new Error(`entry exists: ${entry.hash()}`)
   }
@@ -45,7 +45,7 @@ export async function collect (contractID: string, hash: string): Promise<Array<
     let entry = await getLogEntry(cursor)
     collection.unshift(entry)
     if (entry.hash() === hash) break
-    cursor = entry.data.previousHEAD
+    cursor = entry.message().previousHEAD
   }
   return collection
 }

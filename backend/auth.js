@@ -21,7 +21,7 @@ exports.register = function (
         if (scheme !== 'gi') return reply(Boom.badRequest('Bad authentication'))
 
         try {
-          json = JSON.parse(b642str(json))
+          json = JSON.parse(b64ToStr(json))
         } catch (e) {
           return reply(Boom.badRequest('Invalid token format'))
         }
@@ -36,8 +36,8 @@ exports.register = function (
     }
   })
 
-  var b642buf = b64 => Buffer.from(b64, 'base64')
-  var b642str = b64 => b642buf(b64).toString('utf8')
+  var b64ToBuf = b64 => Buffer.from(b64, 'base64')
+  var b64ToStr = b64 => b64ToBuf(b64).toString('utf8')
   server.auth.strategy('gi-auth', 'gi-auth', {
     verify: function (req, json, cb) {
       var result = verify(json.msg, json.key, json.sig)

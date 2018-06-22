@@ -4,6 +4,8 @@ import * as db from './database.js'
 import Hapi from 'hapi'
 import GiAuth from './auth.js'
 import {GIMessage} from '../shared/events.js'
+import {makeResponse} from '../shared/functions.js'
+import {RESPONSE_TYPE} from '../shared/constants.js'
 import {bold} from 'chalk'
 
 export var hapi = new Hapi.Server({
@@ -19,11 +21,11 @@ hapi.connection({
 })
 
 hapi.decorate('server', 'handleEntry', function (entry: GIMessage) {
-  console.log(bold('[server] handleEntry:'), entry)
-  const contractID = entry.isFirstMessage() ? entry.data.contractID : entry.hash()
+  console.log(bold('[server] handleEntry:'), entry.hash(), entry)
+  const contractID = entry.isFirstMessage() ? entry.hash() : entry.message().contractID
   db.addLogEntry(entry)
-  var response = entry.toResponse()
-  console.log(bold.blue(`broadcasting to room ${contractID}:`), response)
+  var response = makeResponse(RESPONSE_TYPE.ENTRY, entry.serialize())
+  console.log(bold.blue(`broadcasting to room ${contractID}:`), entry.hash(), entry.type())
   // TODO: see if this all can be moved into routes.js
   hapi.primus.room(contractID).write(response)
 })

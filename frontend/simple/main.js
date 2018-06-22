@@ -1,6 +1,6 @@
 import sbp from '../../shared/sbp.js'
-import '../../shared/domains/okTurtles/events.js'
-import '../../shared/domains/okTurtles/data.js'
+import '../../shared/domains/okTurtles/events/index.js'
+import '../../shared/domains/okTurtles/data/index.js'
 import './controller/namespace.js'
 import {createWebSocket} from './controller/backend.js'
 // import SBP stuff before anything else so that domains register themselves before called
@@ -19,7 +19,9 @@ console.log('NODE_ENV:', process.env.NODE_ENV)
 //       In the future we might move it elsewhere.
 if (process.env.NODE_ENV !== 'production') {
   sbp('sbp/filters/global/add', (domain, selector, data) => {
-    console.log(`[sbp] CALL: ${selector}:`, data)
+    if (domain !== 'okTurtles.data') {
+      console.log(`[sbp] ${selector}`, data)
+    }
   })
 }
 

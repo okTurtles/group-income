@@ -1,5 +1,6 @@
 'use strict'
 
+import sbp from '../../../../shared/sbp.js'
 import Vue from 'vue'
 import _ from 'lodash'
 import {DefineContract} from '../utils.js'
@@ -11,7 +12,21 @@ export default DefineContract({
   // 'gi/contracts/group': {
   'GroupContract': {
     constructor: true,
-    validate: function (data) {},
+    validate: function (data) {
+      // // TODO: add 'groupPubkey'
+      // ['creationDate', 'string'],
+      // ['groupName', 'string'],
+      // ['sharedValues', 'string'],
+      // ['changeThreshold', 'float'],
+      // ['openMembership', 'bool'],
+      // ['memberApprovalThreshold', 'float'],
+      // ['memberRemovalThreshold', 'float'],
+      // ['incomeProvided', 'float'],
+      // ['incomeCurrency', 'string'],
+      // ['contributionPrivacy', 'string'],
+      // ['founderUsername', 'string'],
+      // ['founderIdentityContractId', 'string']
+    },
     vuex: {
       mutation: (state, {data}) => {
         Object.assign(state, {
@@ -28,16 +43,18 @@ export default DefineContract({
       },
       getters: {
         candidateMembers (state) {
-          return _.keysIn(state.proposals).filter(key => state.proposals[key].candidate).map(key => state.proposals[key].candidate)
+          return Object.keys(state.proposals || {}).filter(key => state.proposals[key].candidate).map(key => state.proposals[key].candidate)
         },
         memberUsernames (state) {
-          return Object.keys(state.profiles)
+          return Object.keys(state.profiles || {})
         }
       }
     }
   },
   'GroupPayment': {
-    validate: function (data) {},
+    validate: function (data) {
+      // ['payment', 'string'] // TODO: change to 'double' and add other fields
+    },
     vuex: {
       mutation: (state, {data}) => { state.payments.push(data) }
     }
@@ -48,7 +65,18 @@ export default DefineContract({
       TypeRemoval: 'removalProposal',
       TypeChange: 'changeProposal'
     },
-    validate: function (data) {},
+    validate: function (data) {
+      // ['type', 'string'],
+      // ['threshold', 'float'],
+      // ['actions', 'Action', 'repeated'],
+      //   // array of objects of type:
+      //   ['contractID', 'string'],
+      //   ['action', 'string']
+      // ['candidate', 'string'],
+      // ['initiator', 'string'],
+      // ['initiationDate', 'string'],
+      // ['expirationDate', 'string']
+    },
     vuex: {
       mutation: (state, {data, hash}) => {
         // TODO: this should be data instead of ...data to avoid conflict with neighboring properties
@@ -59,7 +87,10 @@ export default DefineContract({
   },
   // TODO: rename this to just GroupProposalVote, and switch off of the type of vote
   'GroupVoteForProposal': {
-    validate: function (data) {},
+    validate: function (data) {
+      // ['username', 'string'],
+      // ['proposalHash', 'string']
+    },
     vuex: {
       mutation: (state, {data}) => {
         if (state.proposals[data.proposalHash]) {
@@ -73,7 +104,10 @@ export default DefineContract({
     }
   },
   'GroupVoteAgainstProposal': {
-    validate: function (data) {},
+    validate: function (data) {
+      // ['username', 'string'],
+      // ['proposalHash', 'string']
+    },
     vuex: {
       mutation: (state, {data}) => {
         if (state.proposals[data.proposalHash]) {
@@ -88,13 +122,21 @@ export default DefineContract({
     }
   },
   'GroupRecordInvitation': {
-    validate: function (data) {},
+    validate: function (data) {
+      // ['username', 'string'],
+      // ['inviteHash', 'string'],
+      // ['sentDate', 'string']
+    },
     vuex: {
       mutation: (state, {data}) => { state.invitees.push(data.username) }
     }
   },
   'GroupDeclineInvitation': {
-    validate: function (data) {},
+    validate: function (data) {
+      // ['username', 'string'],
+      // ['inviteHash', 'string'],
+      // ['declinedDate', 'string']
+    },
     vuex: {
       mutation: (state, {data}) => {
         let index = state.invitees.findIndex(username => username === data.username)
@@ -103,7 +145,12 @@ export default DefineContract({
     }
   },
   'GroupAcceptInvitation': {
-    validate: function (data) {},
+    validate: function (data) {
+      // ['username', 'string'],
+      // ['identityContractId', 'string'],
+      // ['inviteHash', 'string'],
+      // ['acceptanceDate', 'string']
+    },
     vuex: {
       mutation: (state, {data}) => {
         let index = state.invitees.findIndex(username => username === data.username)
@@ -121,14 +168,14 @@ export default DefineContract({
       // This is critical to the function of that latest contract hash.
       // They should only coordinate the actions of outside contracts.
       // Otherwise `latestContractState` and `handleEvent` will not produce same state!
-      action: async ({commit, state, rootState}, {data, store}) => {
+      action: async ({commit, state, rootState}, {data}) => {
         // TODO: per #257 this will have to be encompassed in a recoverable transaction
         if (data.username === rootState.loggedIn.name) {
           // we're the person who just accepted the group invite
           // so subscribe to founder's IdentityContract & everyone else's
           for (const name of Object.keys(state.profiles)) {
             if (name === rootState.loggedIn.name) continue
-            await store.dispatch('syncContractWithServer', state.profiles[name].contractID)
+            await sbp('state/vuex/dispatch', 'syncContractWithServer', state.profiles[name].contractID)
             // NOTE: technically we don't need to call 'GroupSetGroupProfile'
             //       here because Join.vue already synced the contract.
             //       verify that this is really true and that there's no conflict
@@ -137,14 +184,18 @@ export default DefineContract({
         } else {
           // we're an existing member of the group getting notified that a
           // new member has joined, so subscribe to their identity contract
-          await store.dispatch('syncContractWithServer', data.identityContractId)
+          await sbp('state/vuex/dispatch', 'syncContractWithServer', data.identityContractId)
         }
       }
     }
   },
   // TODO: remove group profile when leave group is implemented
   'GroupSetGroupProfile': {
-    validate: function (data) {},
+    validate: function (data) {
+      // ['username', 'string'],
+      // // NOTE: now this 'json' is 'profile' and is an object
+      // ['json', 'string'] // TODO: is there a special JSON type?
+    },
     vuex: {
       mutation: (state, {data}) => {
         var {groupProfile} = state.profiles[data.username]

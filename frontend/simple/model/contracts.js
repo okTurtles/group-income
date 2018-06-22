@@ -18,7 +18,7 @@ sbp('sbp/selectors/register', {
   'gi/contract/create-action': async function (name, data, contractID) {
     contracts[name].validate(data)
     const previousHEAD = await sbp('backend/latestHash', contractID)
-    return GIMessage.create(null, previousHEAD, undefined, name, data)
+    return GIMessage.create(contractID, previousHEAD, undefined, name, data)
   }
 })
 

@@ -144,9 +144,10 @@ export default {
         await sbp('backend/publishLogEntry', mailbox)
 
         // set the attribute *after* publishing the identity contract
-        let attribute = await sbp('gi/contract/create-action', 'IdentitySetAttributes', {
-          'mailbox': mailbox.hash()
-        }, user.hash())
+        let attribute = await sbp('gi/contract/create-action', 'IdentitySetAttributes',
+          {mailbox: mailbox.hash()},
+          user.hash()
+        )
         await sbp('backend/publishLogEntry', attribute)
         // register our username if contract creation worked out
         await sbp('namespace/register', this.form.name, user.hash())
@@ -157,6 +158,7 @@ export default {
           await this.$store.dispatch('syncContractWithServer', contract.hash())
         }
         // TODO: Just add cryptographic magic
+        // TODO: login also calls 'syncContractWithServer', this is duplication!
         await this.$store.dispatch('login', {
           name: this.form.name,
           identityContractId: user.hash()

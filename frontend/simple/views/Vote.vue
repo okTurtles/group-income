@@ -22,14 +22,14 @@
             <div id="errorMsg" v-if="errorMsg" class="help is-danger">{{errorMsg}}</div>
             <a class="button is-success is-large"
               data-test="forLink"
-              v-on:click="four"
+              v-on:click="voteFor"
               style="margin-left:auto; margin-right: 20px;"
             >
               <i18n>For</i18n>
             </a>
             <a class="button is-danger is-large"
               id="AgainstLink"
-              v-on:click="against"
+              v-on:click="voteAgainst"
               style="margin-right:auto; margin-right: 20px;"
             >
               <i18n>Against</i18n>
@@ -43,9 +43,8 @@
 </template>
 <script>
 import sbp from '../../../shared/sbp.js'
-import backend from '../controller/backend/'
 import template from 'string-template'
-import L from './utils/translations'
+import L from './utils/translations.js'
 import _ from 'lodash'
 export default {
   name: 'Vote',
@@ -61,10 +60,11 @@ export default {
     }
   },
   methods: {
-    async four () { // for is a reserved word so Vue doesn't like it
+    async voteFor () {
       this.errorMsg = null
       try {
-        // Create a vote for the proposal
+        // TODO: this section is unclear and it's not clear what's going on at all.
+        //       rewrite and make it nicer.
         let vote = await sbp('gi/contract/create-action', 'GroupVoteForProposal',
           {
             username: this.$store.state.loggedIn.name,
@@ -79,11 +79,11 @@ export default {
         // If the vote passes fulfill the action
         if (proposal.for.length + 1 >= threshold) {
           let lastActionHash = null
-          const actionDate = new Date().toString()
+          const actionDate = new Date().toISOString()
+          // TODO: this is poorly implementated. do not create poposals in this manner.
           for (let step of proposal.actions) {
-            let latest = await sbp('backend/latestHash', step.contractID)
             let actObj = JSON.parse(template(step.action, {lastActionHash, actionDate}))
-            let entry = new Events[actObj.type](actObj.data, latest)
+            let entry = await sbp('gi/contract/create-action', actObj.type, actObj.data, step.contractID)
             lastActionHash = entry.hash()
             await sbp('backend/publishLogEntry', entry)
           }
@@ -95,7 +95,7 @@ export default {
         this.errorMsg = L('Failed to Cast Vote')
       }
     },
-    async against () {
+    async voteAgainst () {
       this.errorMsg = null
       try {
         // Create a against the proposal

@@ -6,15 +6,20 @@ import {DefineContract} from '../utils.js'
 export default DefineContract({
   'IdentityContract': {
     constructor: true,
-    validate: function (data) {},
+    validate: function (data) {
+      // NOTE: now this is just an object of key/values
+      // ['attributes', 'Attribute', 'repeated']
+    },
     vuex: {
       mutation: (state, {data}) => {
-        Object.assign(state, data)
+        Object.assign(state, {attributes: {}}, data)
       }
     }
   },
   'IdentitySetAttributes': {
-    validate: function (data) {},
+    validate: function (data) {
+      // now just an object of key/values
+    },
     vuex: {
       mutation: (state, {data}) => {
         for (var key in data) {
@@ -24,11 +29,13 @@ export default DefineContract({
     }
   },
   'IdentityDeleteAttributes': {
-    validate: function (data) {},
+    validate: function (data) {
+      // now an array of keys
+    },
     vuex: {
       mutation: (state, {data}) => {
-        for (var key of data) {
-          Vue.delete(state.attributes, key)
+        for (var attribute of data) {
+          Vue.delete(state.attributes, attribute)
         }
       }
     }

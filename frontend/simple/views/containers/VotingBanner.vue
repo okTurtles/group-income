@@ -24,9 +24,9 @@
 	</div>
 </template>
 <script>
-import L from '../utils/translations'
+import L from '../utils/translations.js'
 import template from 'string-template'
-import { HashableGroupProposal } from '../../../../shared/events'
+import { GroupProposal } from '../../model/contracts.js'
 
 export default {
   name: 'VotingBanner',
@@ -42,15 +42,15 @@ export default {
   computed: {
     proposalText: function () {
       switch (this.proposal.type) {
-        case HashableGroupProposal.TypeInvitation: return template(L('invite {candidate} to the group.'),
+        case GroupProposal.TypeInvitation: return template(L('invite {candidate} to the group.'),
           {
             candidate: this.proposal.candidate
           })
-        case HashableGroupProposal.TypeRemoval: return template(L('remove {member} from the group.'),
+        case GroupProposal.TypeRemoval: return template(L('remove {member} from the group.'),
           {
             member: this.proposal.candidate
           })
-        case HashableGroupProposal.TypeChange: return template(L('change {property} to {value}.'),
+        case GroupProposal.TypeChange: return template(L('change {property} to {value}.'),
           {
             property: this.proposal.property,
             value: this.proposal.value

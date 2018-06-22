@@ -27,23 +27,28 @@
 }
 </style>
 <script>
-import sbp from '../../../shared/sbp.js'
+import sbp from '../../../../shared/sbp.js'
 import VueSlider from 'vue-slider-component'
-import store from '../../model/state'
+import store from '../../model/state.js'
 import _ from 'lodash'
+const disableTimeTravel = true
 export default {
   name: 'TimeTravel',
   components: {VueSlider},
   props: {toggleVisibility: Function},
   created () {
-    console.log('[TimeTravel] initial state:', this.ephemeral.history[this.ephemeral.position])
-    store.subscribe((mutation, state) => {
-      // console.log('[TimeTravel] spied mutation:', mutation)
-      this.ephemeral.history.push(_.cloneDeep(state))
-      this.config.sliderConfig.max += 1
-      this.ephemeral.position = this.config.sliderConfig.max
-      this.timeTravel(this.ephemeral.position)
-    })
+    if (disableTimeTravel) {
+      console.log("[TimeTravel] this feature is disabled for now because it's causing problems...")
+    } else {
+      console.log('[TimeTravel] initial state:', this.ephemeral.history[this.ephemeral.position])
+      store.subscribe((mutation, state) => {
+        // console.log('[TimeTravel] spied mutation:', mutation)
+        this.ephemeral.history.push(_.cloneDeep(state))
+        this.config.sliderConfig.max += 1
+        this.ephemeral.position = this.config.sliderConfig.max
+        this.timeTravel(this.ephemeral.position)
+      })
+    }
   },
   methods: {
     timeTravel: function (position) {

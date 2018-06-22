@@ -6,6 +6,7 @@ import chalk from 'chalk'
 import {GIMessage} from '../shared/events.js'
 import contracts from '../frontend/simple/model/contracts.js'
 import {createWebSocket} from '../frontend/simple/controller/backend.js'
+import '../frontend/simple/controller/namespace.js'
 
 const Promise = global.Promise = require('bluebird')
 global.fetch = require('node-fetch')
@@ -38,6 +39,11 @@ sbp('sbp/selectors/register', {
   }
 })
 
+// uncomment this to help with debugging:
+// sbp('sbp/filters/global/add', (domain, selector, data) => {
+//   console.log(`[sbp] ${selector}:`, data)
+// })
+
 describe('Full walkthrough', function () {
   var users = {}
   var groups = {}
@@ -67,7 +73,7 @@ describe('Full walkthrough', function () {
     await user.socket.sub(mailbox.hash())
     await postEntry(mailbox)
     await postEntry(
-      await sbp('gi/contract/create-action', 'IdentitySetAttribute', {
+      await sbp('gi/contract/create-action', 'IdentitySetAttributes', {
         mailbox: mailbox.hash()
       }, user.hash())
     )
@@ -98,20 +104,18 @@ describe('Full walkthrough', function () {
       users.alice = createIdentity('Alice', 'alice@okturtles.org')
       const {alice, bob} = users
       // verify attribute creation and state initialization
-      bob.data.attributes.name.should.equal('Bob')
-      bob.data.attributes.email.should.equal('bob@okturtles.com')
+      bob.data().attributes.name.should.equal('Bob')
+      bob.data().attributes.email.should.equal('bob@okturtles.com')
       // send them off!
-      var res = await postEntry(alice)
-      res.body.data.hash.should.equal(alice.hash())
-      res = await postEntry(bob)
-      res.body.data.hash.should.equal(bob.hash())
+      await postEntry(alice)
+      await postEntry(bob)
     })
 
     it('Should register Alice and Bob in the namespace', async function () {
       const {alice, bob} = users
-      var res = await sbp('namespace/register', alice.data.attributes[0].value, alice.hash())
+      var res = await sbp('namespace/register', alice.data().attributes.name, alice.hash())
       res.value.should.equal(alice.hash())
-      res = await sbp('namespace/register', bob.data.attributes[0].value, bob.hash())
+      res = await sbp('namespace/register', bob.data().attributes.name, bob.hash())
       res.value.should.equal(bob.hash())
       alice.socket = 'hello'
       should(alice.socket).equal('hello')
@@ -119,7 +123,7 @@ describe('Full walkthrough', function () {
 
     it('Should verify namespace lookups work', async function () {
       const {alice} = users
-      var res = await sbp('namespace/lookup', alice.data.attributes[0].value)
+      var res = await sbp('namespace/lookup', alice.data().attributes.name)
       res.should.equal(alice.hash())
       sbp('namespace/lookup', 'susan').should.be.rejected()
     })
@@ -151,7 +155,7 @@ describe('Full walkthrough', function () {
     it('Should get mailbox info for Bob', async function () {
       // 1. look up bob's username to get his identity contract
       const {bob} = users
-      const bobsName = bob.data.attributes[0].value
+      const bobsName = bob.data().attributes.name
       const bobsContractId = await sbp('namespace/lookup', bobsName)
       should(bobsContractId).equal(bob.hash())
       // 2. fetch all events for his identity contract to get latest state for it
@@ -164,15 +168,15 @@ describe('Full walkthrough', function () {
       //       hash-based ingrity check is done.
       // Illustraiting its importance: when converting the code below from
       // raw-objects to instances, the hash check failed and I caught several bugs!
-      events = events.map(GIMessage.deserialize)
+      events = events.map(e => GIMessage.deserialize(e))
       var state = {}
-      let contract = contracts[events[0].data.selector]
-      events.forEach(e => {
-        contract.vuexModule.mutations[e.data.selector](state, {
-          data: e.data,
+      let contract = contracts[events[0].type()]
+      for (let e of events) {
+        contract.vuexModule.mutations[e.type()](state, {
+          data: e.data(),
           hash: e.hash()
         })
-      })
+      }
       console.log(bold.red('FINAL STATE:'), state)
       // 3. get bob's mailbox contractID from his identity contract attributes
       should(state.attributes.mailbox).equal(bob.mailbox.hash())
@@ -182,27 +186,30 @@ describe('Full walkthrough', function () {
       should(res).equal(bob.mailbox.hash())
     })
 
-    it("Should invite Bob to Alice's group", async function () {
+    it("Should invite Bob to Alice's group", function (done) {
       var mailbox = users.bob.mailbox
-      var invite = await sbp('gi/contract/create-action', 'MailboxPostMessage', {
-        messageType: contracts.MailboxPostMessage.TypeInvite,
-        message: groups.group1.hash()
-      }, mailbox.hash())
-      await new Promise((resolve, reject) => {
+      sbp('gi/contract/create-action', 'MailboxPostMessage',
+        {
+          messageType: contracts.MailboxPostMessage.TypeInvite,
+          message: groups.group1.hash()
+        },
+        mailbox.hash()
+      ).then(invite => {
         sbp('okTurtles.events/once', invite.hash(), (entry: GIMessage) => {
           console.log('Bob successfully got invite!')
-          should(entry.data.message).equal(groups.group1.hash())
-          resolve()
+          should(entry.data().message).equal(groups.group1.hash())
+          done()
         })
+        postEntry(invite)
       })
-      await postEntry(invite, mailbox.hash())
     })
 
     it('Should post an event', async function () {
       await postEntry(
-        await sbp('gi/contract/create-action', 'GroupPayment', {
-          payment: '123'
-        }, groups.group1)
+        await sbp('gi/contract/create-action', 'GroupPayment',
+          {payment: '123'},
+          groups.group1.hash()
+        )
       )
     })
 
@@ -221,9 +228,10 @@ describe('Full walkthrough', function () {
     //       identity contract
     it('Should post another event', async function () {
       await postEntry(
-        await sbp('gi/contract/create-action', 'GroupProposal', {
-          type: contracts.GroupProposal.TypeInvitation
-        }, groups.group1)
+        await sbp('gi/contract/create-action', 'GroupProposal',
+          {type: contracts.GroupProposal.TypeInvitation},
+          groups.group1.hash()
+        )
       )
       // delay so that the sockets receive notification
       return Promise.delay(200)

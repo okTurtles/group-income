@@ -4,7 +4,8 @@
 import {Readable} from 'stream'
 import {GIMessage} from '../shared/events.js'
 import sbp from '../shared/sbp.js'
-import '../shared/domains/okTurtles/data'
+import '../shared/domains/okTurtles/data/index.js'
+import {strToB64} from '../shared/functions.js'
 
 // TODO: use some fast key/value store
 // delete the test database if it exists
@@ -16,28 +17,32 @@ const get = key => sbp('okTurtles.data/get', key)
 const set = (key, value) => sbp('okTurtles.data/set', key, value)
 
 export function addLogEntry (entry: GIMessage): string {
-  console.log('addLogEntry():', entry.hash(), entry.data)
-  const {previousHEAD} = entry.data
-  var contractID = previousHEAD ? entry.data.contractID : entry.hash()
+  const {previousHEAD} = entry.message()
+  var contractID = previousHEAD ? entry.message().contractID : entry.hash()
   if (get(entry.hash())) {
     throw new Error(`entry exists: ${entry.hash()}`)
   }
   const HEAD = get(logHEAD(contractID))
   if (!entry.isFirstMessage() && previousHEAD !== HEAD) {
-    console.error(`bad previousHEAD: ${previousHEAD}! Expected: ${HEAD}`)
+    console.error(`[server] bad previousHEAD: ${previousHEAD}! Expected: ${HEAD} for contractID: ${contractID}`)
     throw new Error(`bad previousHEAD: ${previousHEAD}`)
   }
   set(logHEAD(contractID), entry.hash())
+  console.log(`[server] HEAD for ${contractID} updated to:`, entry.hash())
   set(entry.hash(), entry.serialize())
   return entry.hash()
 }
 
 export function getLogEntry (hash: string): GIMessage {
-  return GIMessage.deserialize(get(hash))
+  const value = get(hash)
+  if (!value) throw new Error(`no entry for ${hash}!`)
+  return GIMessage.deserialize(value)
 }
 
 export function lastEntry (contractID: string): GIMessage {
-  return getLogEntry(get(logHEAD(contractID)))
+  const hash = get(logHEAD(contractID))
+  if (!hash) throw new Error(`contract ${contractID} hash no latest hash!`)
+  return getLogEntry(hash)
 }
 
 // "On an HTTP server, make sure to manually close your streams if a request is aborted."
@@ -52,13 +57,13 @@ export function streamEntriesSince (contractID: string, hash: string) {
   return new Readable({
     read () {
       const entry = getLogEntry(currentHEAD)
-      const json = entry.serialize()
+      const json = `"${strToB64(entry.serialize())}"`
       if (currentHEAD !== hash) {
         this.push(prefix + json)
-        currentHEAD = entry.data.previousHEAD
+        currentHEAD = entry.message().previousHEAD
         prefix = ','
       } else {
-        this.push(json + ']')
+        this.push(prefix + json + ']')
         this.push(null)
       }
     }
@@ -74,6 +79,6 @@ export function registerName (name: string, value: string) {
   set(`namespace/${name}`, value)
 }
 
-export async function lookupName (name: string) {
+export function lookupName (name: string) {
   return get(`namespace/${name}`)
 }

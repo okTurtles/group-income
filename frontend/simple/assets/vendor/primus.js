@@ -3333,7 +3333,7 @@ module.exports = Primus;
 
 },{"demolish":1,"emits":2,"eventemitter3":3,"inherits":4,"querystringify":7,"recovery":8,"tick-tock":11,"url-parse":12,"yeast":13}]},{},[14])(14)
 ;
-Primus.prototype.ark["responder"] = function (){};
+Primus.prototype.ark["responder"] = function(){};
   return Primus;
 },
 [

@@ -114,7 +114,7 @@
 }
 </style>
 <script>
-import sbp from '../../../shared/sbp.js'
+import sbp from '../../../../shared/sbp.js'
 import TimeTravel from './TimeTravel.vue'
 import LoginModal from '../containers/LoginModal.vue'
 

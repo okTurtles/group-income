@@ -2,7 +2,7 @@
 'use strict'
 
 import sbp from '../../../shared/sbp.js'
-import {handleFetchResult} from 'utils/misc.js'
+import {handleFetchResult} from './utils/misc.js'
 
 // NOTE: prefix groups with `group/` and users with `user/` ?
 sbp('sbp/selectors/register', {
@@ -17,6 +17,6 @@ sbp('sbp/selectors/register', {
   },
   'namespace/lookup': (name: string) => {
     // TODO: should `name` be encodeURI'd?
-    return fetch(`${process.env.API_URL}/name/${name}`).then(handleFetchResult('json'))
+    return fetch(`${process.env.API_URL}/name/${name}`).then(handleFetchResult('text'))
   }
 })

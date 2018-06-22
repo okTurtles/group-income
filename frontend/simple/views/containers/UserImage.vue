@@ -2,6 +2,7 @@
     <img :src="pictureURL" :alt="username">
 </template>
 <script>
+import sbp from '../../../../shared/sbp.js'
 export default {
   name: 'UserImage',
   props: ['username'],

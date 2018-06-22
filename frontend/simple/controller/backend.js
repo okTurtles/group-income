@@ -2,22 +2,21 @@
 'use strict'
 
 import sbp from '../../../shared/sbp.js'
-import {sign} from '../../../shared/functions.js'
+import {sign, bufToB64, b64ToStr} from '../../../shared/functions.js'
 import {GIMessage} from '../../../shared/events.js'
 import {RESPONSE_TYPE} from '../../../shared/constants.js'
-import pubsub from 'utils/pubsub.js'
-import {handleFetchResult} from 'utils/misc.js'
+import pubsub from './utils/pubsub.js'
+import {handleFetchResult} from './utils/misc.js'
 
 // temporary identity for signing
 const nacl = require('tweetnacl')
-var buf2b64 = buf => Buffer.from(buf).toString('base64')
 var persona = nacl.sign.keyPair()
 var signature = signJSON('', persona)
 
 function signJSON (json, keypair) {
   return sign({
-    publicKey: buf2b64(keypair.publicKey),
-    secretKey: buf2b64(keypair.secretKey)
+    publicKey: bufToB64(keypair.publicKey),
+    secretKey: bufToB64(keypair.secretKey)
   }, json)
 }
 
@@ -44,7 +43,7 @@ export function createWebSocket (url, options) {
           switch (msg.type) {
             case RESPONSE_TYPE.ENTRY:
               // calling dispatch via SBP makes it simple to implement 'test/backend.js'
-              sbp('state/vuex/dispatch', 'handleEvent', GIMessage.fromResponse(msg.data))
+              sbp('state/vuex/dispatch', 'handleEvent', GIMessage.deserialize(msg.data))
               break
             default:
               console.log('SOCKET UNHANDLED EVENT!', msg) // TODO: this
@@ -61,7 +60,7 @@ export function createWebSocket (url, options) {
 }
 
 // Keep pubsub in sync (logged into the right "rooms") with store.state.contracts
-sbp('okTurtles.events/on', 'contractsModified', async ({data}) => {
+sbp('okTurtles.events/on', 'contractsModified', async (data) => {
   var contractID = data.add || data.remove
   var idx = subscriptions.indexOf(contractID)
   var method = data.add ? 'sub' : 'unsub'
@@ -83,10 +82,10 @@ sbp('sbp/selectors/register', {
       method: 'POST',
       body: entry.serialize(),
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'text/plain',
         'Authorization': `gi ${signature}`
       }
-    }).then(handleFetchResult('json'))
+    }).then(handleFetchResult('text'))
   },
   // TODO: r.body is a stream.Transform, should we use a callback to process
   //       the events one-by-one instead of converting to giant json object?
@@ -94,10 +93,10 @@ sbp('sbp/selectors/register', {
   'backend/eventsSince': async (contractID: string, since: string) => {
     var events = await fetch(`${process.env.API_URL}/events/${contractID}/${since}`)
       .then(handleFetchResult('json'))
-    return events.reverse()
+    return events.reverse().map(e => b64ToStr(e))
   },
   'backend/latestHash': (contractID: string) => {
     return fetch(`${process.env.API_URL}/latestHash/${contractID}`)
-      .then(handleFetchResult('json'))
+      .then(handleFetchResult('text'))
   }
 })

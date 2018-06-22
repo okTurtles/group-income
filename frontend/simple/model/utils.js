@@ -16,13 +16,18 @@ export function DefineContract (contract) {
   var contractName
 
   for (let name in contract) {
-    var {constructor, validate, constants, vuex} = contract[name]
+    // NOTE: very important that we use 'let' here instead of 'var'!
+    //       if we use 'var' then 'vuex.mutation' below will not be properly set
+    //       for the different mutation functions!
+    let {constructor, validate, constants, vuex} = contract[name]
 
     exportedObject[name] = {validate}
 
-    if (constructor) {
+    // NOTE: must check explicitely if 'constructor' is true
+    //       because that key is defined by default on objects as some function...
+    if (constructor === true) {
       if (contractName) {
-        throw new Error('only one constructor per contract!')
+        throw new Error(`one constructor per contract! ${contractName} vs ${name}`)
       }
       contractName = name
     }
@@ -56,7 +61,7 @@ export function DefineContract (contract) {
     }
     // set any getters
     if (vuex.getters) {
-      for (let getterName of vuex.getters) {
+      for (let getterName in vuex.getters) {
         vuexModule.getters[getterName] = vuex.getters[getterName]
       }
     }
@@ -64,7 +69,6 @@ export function DefineContract (contract) {
   if (!contractName) {
     throw new Error('contract constructor is missing!')
   }
-  // attach vuexModule to constructor function
   exportedObject[contractName].vuexModule = vuexModule
   return exportedObject
 }

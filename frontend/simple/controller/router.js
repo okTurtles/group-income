@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import store from '../model/state'
-import lazyLoadVue from './utils/lazyLoadVue'
+import store from '../model/state.js'
+import lazyLoadVue from './utils/lazyLoadVue.js'
 
 import CreateGroup from '../views/CreateGroup.vue'
 import {
