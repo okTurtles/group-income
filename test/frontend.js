@@ -411,16 +411,21 @@ describe('Frontend', function () {
           elT('proposal')
         )
       // Accept invitation
-      let accept = await n
+      let invite = await n
         .use(logout())
         .use(login(username + '3'))
         .wait(elT('mailboxLink'))
         .click(elT('mailboxLink'))
-        .wait(elT('inviteMessage'))
+        .exists(elT('inviteMessage'))
+      should(invite).equal(true)
+
+      let success = await n
         .click(elT('inviteMessage'))
         .wait(elT('acceptLink'))
-        .exists(elT('acceptLink'))
-      should(accept).equal(true)
+        .click(elT('acceptLink'))
+        .wait(elT('inbox'))
+        .exists(elT('inbox'))
+      should(success).equal(true)
     })
 
     it('Should See Member List on Dashboard', async function () {
