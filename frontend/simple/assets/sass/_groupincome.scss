@@ -16,6 +16,26 @@
   font-weight: 700;
 }
 
+body {
+  font-size: $size-6; // Bulma doesnt have a variable
+}
+
+// ------ index.html ------ //
+
+.gi-routerView {
+  position: relative;
+  min-height: 100vh;
+  padding: $gi-spacer-xl $gi-spacer $gi-spacer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  @include tablet {
+    padding: $gi-spacer-lg $gi-spacer*1.5;
+    margin-left: $gi-navbarWidth;
+  }
+}
+
 // ------ Utilities ------ //
 
 .gi- {
@@ -26,5 +46,28 @@
   &is-ellipsis {
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  // gi utilites
+  &is-justify-between {
+    justify-content: space-between;
+  }
+
+  // Used on buttons and links
+  &is-unstyled {
+    background: none;
+    border: none;
+    font-size: inherit;
+    color: inherit;
+    text-align: inherit;
+    width: 100%;
+    padding: 0;
+
+    &:focus,
+    &:hover {
+      outline: none;
+      border: none;
+      color: inherit;
+    }
   }
 }

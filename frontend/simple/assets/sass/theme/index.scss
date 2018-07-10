@@ -10,7 +10,9 @@ $gi-spacer-md: $gi-spacer;
 $gi-spacer-sm: $gi-spacer / 2;
 $gi-spacer-xs: $gi-spacer / 4;
 
-// NOTE: Find a way to generated different import themes
+$gi-navbarWidth: 15rem;
+
+// TODO: Find a way to generated different import themes
 @import "kindergarten-professional";
 
 // Import Bulma's utilities module to be available on further overrides and vue components

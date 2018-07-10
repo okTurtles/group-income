@@ -66,7 +66,11 @@
 .gi-voting {
   flex-wrap: wrap;
   justify-content: flex-end;
-  margin: $gi-spacer+$gi-spacer-lg 0;
+  margin: $gi-spacer*3 0;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 
   &-body {
     margin-bottom: $gi-spacer;

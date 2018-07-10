@@ -9,7 +9,7 @@ import './views/utils/translations.js'
 import './views/utils/transitions.js'
 import router from './controller/router.js'
 import * as db from './model/database.js'
-import NavBar from './views/containers/NavBar.vue'
+import NavBar from './views/containers/NavBar/NavBar.vue'
 import store from './model/state.js'
 import { LOGOUT } from './utils/events'
 import Modal from './views/components/Modal/Modal.vue'
@@ -52,7 +52,15 @@ async function startApp () {
   /* eslint-disable no-new */
   new Vue({
     router: router,
-    components: {NavBar, Modal},
+    components: {
+      NavBar,
+      Modal
+    },
+    computed: {
+      showSideBar () {
+        return this.$store.state.loggedIn
+      }
+    },
     store // make this and all child components aware of the new store
   }).$mount('#app')
   sbp('okTurtles.events/on', LOGOUT, () => router.push({path: '/'}))

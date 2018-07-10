@@ -1,8 +1,8 @@
 <template>
-  <section id="create-group-page" class="section">
+  <main id="create-group-page">
     <!-- TODO: use Bulma's .field -->
-    <div class="columns is-centered">
-      <div class="column is-half">
+    <div class="section columns is-centered">
+      <div class="column is-two-thirds">
         <transition name="fade" mode="out-in">
           <router-view :group="form" :v="$v.form" @input="payload => updateGroupData(payload)">
           </router-view>
@@ -52,7 +52,7 @@
         </article>
       </div>
     </div>
-  </section>
+  </main>
 </template>
 <style>
   /*

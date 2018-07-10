@@ -2,20 +2,21 @@
 @import "../../node_modules/bulma/sass/utilities/functions";
 
 $primary: #5dc8f0;
+$primary-text: darken($primary, 15%); // blue is too light - A11Y purposes
+
+// both colors are indentical on white bg: one is solid and another is transparent
+$primary-bg-s: lighten($primary, 28%);
+$primary-bg-a: rgba($primary, 0.2);
+
 $secondary: #a0d10e;
 $tertiary: #f89201;
 
 $success: saturate($secondary, 10%);
 $warning: lighten(adjust-hue($tertiary, 15%), 0%);
 $danger: lighten(adjust-hue($tertiary, -30%), 20%);
-$info: $primary;
+$info: $primary-text;
 
 $grey: lighten(#000, 60%);
-
-// $purple: #847bb9;
-// $red: #ed6c63;
-// $turquoise: $blue-dark;
-// $yellow: #fce473;
 
 @import "../../node_modules/bulma/sass/utilities/derived-variables";
 
@@ -37,3 +38,6 @@ $body-family: $family-sans-serif;
 
 $body-background-color: #fff;
 $text: $grey-darker;
+
+$size-6: 0.875rem; // 14px
+$size-5: 1.125rem; // 18px

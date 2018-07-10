@@ -1,3 +1,4 @@
+<!-- TODO: Transform this view into a Modal, for layout consistence -->
 <template>
   <form class="is-small"
     novalidate ref="form"
@@ -85,12 +86,6 @@
     </modal-footer>
   </form>
 </template>
-<style scoped>
-.gi-box {
-  width: 25rem;
-  max-width: 100%;
-}
-</style>
 <script>
 import _ from 'lodash'
 import { validationMixin } from 'vuelidate'

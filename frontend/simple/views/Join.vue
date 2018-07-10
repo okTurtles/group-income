@@ -1,28 +1,29 @@
 <template>
   <loading theme="fullView" v-if="!contract.groupName" />
-  <main class="gi-join-grid" v-else>
-    <div class="gi-join-grid-header">
-      <h1 class="has-text-grey">
-        <i18n>You’ve been invited to join a group!</i18n>
-      </h1>
-      <h2 class="title is-1 is-marginless">{{contract.groupName}}</h2>
-      <h3 class="is-size-5">{{contract.sharedValues}}</h3>
-    </div>
-    <div class="gi-join-grid-ctas">
-      <div class="buttons">
-        <button
-          class="button is-large is-primary"
-          data-test="acceptLink"
-          v-on:click="accept">
-          Join Group
-        </button>
-        <button
-          class="button is-large is-outlined"
-          data-test="declineLink"
-          v-on:click="decline">
-          No, thanks
-        </button>
+  <main v-else>
+    <div class="gi-join-grid">
+      <div class="gi-join-grid-header">
+        <h1 class="has-text-grey">
+          <i18n>You’ve been invited to join a group!</i18n>
+        </h1>
+        <h2 class="title is-1 is-marginless">{{contract.groupName}}</h2>
+        <h3 class="is-size-5">{{contract.sharedValues}}</h3>
       </div>
+      <div class="gi-join-grid-ctas">
+        <div class="buttons">
+          <button
+            class="button is-large is-primary"
+            data-test="acceptLink"
+            v-on:click="accept">
+            Join Group
+          </button>
+          <button
+            class="button is-large is-outlined"
+            data-test="declineLink"
+            v-on:click="decline">
+            No, thanks
+          </button>
+        </div>
       <p v-if="errorMsg" class="has-text-danger has-text-centered-mobile">{{errorMsg}}</p>
     </div>
     <div class="gi-join-grid-graphic" v-if="contract.members.length">
@@ -45,7 +46,6 @@
     display: grid;
     grid-template-areas: "header" "graphic" "ctas";
     grid-gap: $gi-spacer-lg;
-    padding: $gi-spacer-lg $gi-spacer;
     max-width: $widescreen;
     min-height: calc(100vh - #{$navbar-height});
     margin: auto;
@@ -79,7 +79,6 @@
       grid-template-columns: 50% 50%;
       grid-template-rows: auto;
       grid-template-areas: "header graphic" "ctas graphic";
-      padding: $gi-spacer-lg;
     }
   }
 }

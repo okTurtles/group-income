@@ -1,8 +1,7 @@
 <template>
-  <section class="section full-screen">
-    <div class="columns is-centered">
-      <div class="column is-half">
-
+  <main>
+    <section class="section columns is-centered">
+      <div class="column is-two-thirds">
         <p
           class="notification is-success has-text-centered"
           data-test="notifyInvitedSuccess"
@@ -34,8 +33,8 @@
         </div>
 
       </div>
-    </div>
-  </section>
+    </section>
+  </main>
 </template>
 <style lang="scss" scoped>
 .notification-icon {
