@@ -1,7 +1,7 @@
 'use strict'
 
 import localforage from 'localforage'
-import {GIMessage} from '../../../shared/events.js'
+import {GIMessage} from '../../../shared/GIMessage.js'
 
 const log = localforage.createInstance({
   name: 'Group Income',

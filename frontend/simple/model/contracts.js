@@ -1,5 +1,5 @@
 import sbp from '../../../shared/sbp.js'
-import {GIMessage} from '../../../shared/events.js'
+import {GIMessage} from '../../../shared/GIMessage.js'
 import GroupContract from './contracts/group.js'
 import IdentityContract from './contracts/identity.js'
 import MailboxContract from './contracts/mailbox.js'

@@ -3,7 +3,7 @@
 
 import sbp from '../../../shared/sbp.js'
 import {sign, bufToB64, b64ToStr} from '../../../shared/functions.js'
-import {GIMessage} from '../../../shared/events.js'
+import {GIMessage} from '../../../shared/GIMessage.js'
 import {RESPONSE_TYPE} from '../../../shared/constants.js'
 import pubsub from './utils/pubsub.js'
 import {handleFetchResult} from './utils/misc.js'
@@ -20,18 +20,18 @@ function signJSON (json, keypair) {
   }, json)
 }
 
-var subscriptions = []
-var primus
+var contractSubscriptions = []
+var serverSocket
 
 export function createWebSocket (url, options) {
   return new Promise((resolve, reject) => {
-    primus = pubsub({
+    serverSocket = pubsub({
       url,
       options,
       handlers: {
         open: () => {
           console.log('websocket connection opened!')
-          resolve(primus)
+          resolve(serverSocket)
         },
         error: err => {
           console.log('websocket error:', err.message, err)
@@ -52,9 +52,9 @@ export function createWebSocket (url, options) {
       }
       // TODO: handle going offline event
     })
-    primus.on('reconnected', () => {
-      console.log('websocket connection re-established. re-joining:', subscriptions)
-      subscriptions.forEach(contractID => primus.sub(contractID))
+    serverSocket.on('reconnected', () => {
+      console.log('websocket connection re-established. re-joining:', contractSubscriptions)
+      contractSubscriptions.forEach(contractID => serverSocket.sub(contractID))
     })
   })
 }
@@ -62,17 +62,18 @@ export function createWebSocket (url, options) {
 // Keep pubsub in sync (logged into the right "rooms") with store.state.contracts
 sbp('okTurtles.events/on', 'contractsModified', async (data) => {
   var contractID = data.add || data.remove
-  var idx = subscriptions.indexOf(contractID)
+  var idx = contractSubscriptions.indexOf(contractID)
   var method = data.add ? 'sub' : 'unsub'
   if ((data.add && idx > -1) || (data.remove && idx === -1)) {
     return // if already subscribed or already unsubscribed
   }
+  // TODO: handle any exceptions!
+  var res = await serverSocket[method](contractID)
   if (data.add) {
-    subscriptions.push(contractID)
+    contractSubscriptions.push(contractID)
   } else {
-    subscriptions.splice(idx, 1)
+    contractSubscriptions.splice(idx, 1)
   }
-  var res = await primus[method](contractID)
   console.log(`[Backend] ${method}scribed ${contractID}:`, res)
 })
 

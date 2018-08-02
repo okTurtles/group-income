@@ -427,7 +427,13 @@ describe('Frontend', function () {
     it('Should Receive Message and Invite', async function () {
       this.timeout(10000)
       await n
-        .goto(page('mailbox'))
+        // .goto(page('mailbox'))
+        // TODO: navigation gets redirected on login guard but nav click doesn't?
+        // we might have logged in state problems
+        // Tracking here:
+        // https://github.com/okTurtles/group-income-simple/issues/440
+        .wait(elT('mailboxLink'))
+        .click(elT('mailboxLink'))
         .wait(elT('inbox'))
         .click(elT('composeLink'))
         .wait(elT('addRecipient'))

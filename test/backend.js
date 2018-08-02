@@ -3,7 +3,7 @@
 import sbp from '../shared/sbp.js'
 import '../shared/domains/okTurtles/events/index.js'
 import chalk from 'chalk'
-import {GIMessage} from '../shared/events.js'
+import {GIMessage} from '../shared/GIMessage.js'
 import contracts from '../frontend/simple/model/contracts.js'
 import * as _ from '../frontend/simple/utils/giLodash.js'
 import {createWebSocket} from '../frontend/simple/controller/backend.js'

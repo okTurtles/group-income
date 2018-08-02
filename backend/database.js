@@ -2,12 +2,14 @@
 
 // import fs from 'fs'
 import {Readable} from 'stream'
-import {GIMessage} from '../shared/events.js'
+import {GIMessage} from '../shared/GIMessage.js'
 import sbp from '../shared/sbp.js'
 import '../shared/domains/okTurtles/data/index.js'
 import {strToB64} from '../shared/functions.js'
 
 // TODO: use some fast key/value store
+// TODO: just use the file system! store the json of each message to disk as a file with its hash as the file name
+
 // delete the test database if it exists
 // const production = process.env.NODE_ENV === 'production'
 // !production && fs.existsSync('test.db') && fs.unlinkSync('test.db')

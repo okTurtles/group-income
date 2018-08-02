@@ -6,7 +6,7 @@
 import sbp from '../../../shared/sbp.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
-import {GIMessage} from '../../../shared/events.js'
+import {GIMessage} from '../../../shared/GIMessage.js'
 import debounce from 'lodash/debounce'
 import contracts from './contracts.js'
 import * as _ from '../utils/giLodash.js'
@@ -274,7 +274,6 @@ const actions = {
   },
   // this function is called from ../controller/utils/pubsub.js and is the entry point
   // for getting events into the log.
-  // mirrors `handleEvent` in backend/server.js
   async handleEvent (
     {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object},
     message: GIMessage

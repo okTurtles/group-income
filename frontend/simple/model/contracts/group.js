@@ -11,8 +11,9 @@ export default DefineContract({
   // 'gi_contracts_group_create': {
   // 'gi/contracts/group': {
   'GroupContract': {
-    constructor: true,
+    isConstructor: true,
     validate: function (data) {
+      // TODO: use https://www.npmjs.com/package/flow-typer-js
       // // TODO: add 'groupPubkey'
       // ['creationDate', 'string'],
       // ['groupName', 'string'],
@@ -27,7 +28,9 @@ export default DefineContract({
       // ['founderUsername', 'string'],
       // ['founderIdentityContractId', 'string']
     },
-    vuex: {
+    vuexModuleConfig: {
+      // defining an initialState makes writing getters easier because
+      // you don't have to write, e.g. `state.proposals || {}` all the time
       initialState: { // may be specified in the constructor only
         payments: [],
         invitees: [],
@@ -58,7 +61,7 @@ export default DefineContract({
     validate: function (data) {
       // ['payment', 'string'] // TODO: change to 'double' and add other fields
     },
-    vuex: {
+    vuexModuleConfig: {
       mutation: (state, {data}) => { state.payments.push(data) }
     }
   },
@@ -80,7 +83,7 @@ export default DefineContract({
       // ['initiationDate', 'string'],
       // ['expirationDate', 'string']
     },
-    vuex: {
+    vuexModuleConfig: {
       mutation: (state, {data, hash}) => {
         // TODO: this should be data instead of ...data to avoid conflict with neighboring properties
         // TODO: convert to votes instead of for/against for future-proofing
@@ -94,7 +97,7 @@ export default DefineContract({
       // ['username', 'string'],
       // ['proposalHash', 'string']
     },
-    vuex: {
+    vuexModuleConfig: {
       mutation: (state, {data}) => {
         if (state.proposals[data.proposalHash]) {
           state.proposals[data.proposalHash].for.push(data.username)
@@ -111,7 +114,7 @@ export default DefineContract({
       // ['username', 'string'],
       // ['proposalHash', 'string']
     },
-    vuex: {
+    vuexModuleConfig: {
       mutation: (state, {data}) => {
         if (state.proposals[data.proposalHash]) {
           state.proposals[data.proposalHash].against.push(data.username)
@@ -130,7 +133,7 @@ export default DefineContract({
       // ['inviteHash', 'string'],
       // ['sentDate', 'string']
     },
-    vuex: {
+    vuexModuleConfig: {
       mutation: (state, {data}) => { state.invitees.push(data.username) }
     }
   },
@@ -140,7 +143,7 @@ export default DefineContract({
       // ['inviteHash', 'string'],
       // ['declinedDate', 'string']
     },
-    vuex: {
+    vuexModuleConfig: {
       mutation: (state, {data}) => {
         let index = state.invitees.findIndex(username => username === data.username)
         if (index > -1) { state.invitees.splice(index, 1) }
@@ -154,7 +157,7 @@ export default DefineContract({
       // ['inviteHash', 'string'],
       // ['acceptanceDate', 'string']
     },
-    vuex: {
+    vuexModuleConfig: {
       mutation: (state, {data}) => {
         let index = state.invitees.findIndex(username => username === data.username)
         if (index > -1) {
@@ -199,7 +202,7 @@ export default DefineContract({
       // // NOTE: now this 'json' is 'profile' and is an object
       // ['json', 'string']
     },
-    vuex: {
+    vuexModuleConfig: {
       mutation: (state, {data}) => {
         var {groupProfile} = state.profiles[data.username]
         state.profiles[data.username].groupProfile = _.merge(groupProfile, data.profile)

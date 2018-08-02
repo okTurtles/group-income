@@ -33,6 +33,8 @@ const SBP_BASE_SELECTORS = {
       if (!selectors[selector]) {
         selectors[selector] = sels[selector]
         registered.push(selector)
+      } else {
+        (console.warn || console.log)(`[SBP WARN]: not registering already registered selector: ${selector}`)
       }
     }
     return registered

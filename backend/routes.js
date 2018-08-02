@@ -1,6 +1,6 @@
 /* globals logger */
 
-import {GIMessage} from '../shared/events.js'
+import {GIMessage} from '../shared/GIMessage.js'
 import * as db from './database.js'
 const Boom = require('boom')
 const Joi = require('joi')

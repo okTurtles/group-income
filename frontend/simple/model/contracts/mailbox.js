@@ -4,9 +4,9 @@ import {DefineContract} from '../utils.js'
 
 export default DefineContract({
   'MailboxContract': {
-    constructor: true,
+    isConstructor: true,
     validate: function (data) {},
-    vuex: {
+    vuexModuleConfig: {
       initialState: {messages: []},
       mutation: function (state, {data}) {}
     }
@@ -25,7 +25,7 @@ export default DefineContract({
       // ['sentDate', 'string'],
       // ['read', 'bool']
     },
-    vuex: {
+    vuexModuleConfig: {
       mutation: (state, {data, hash}) => {
         state.messages.push({data, hash})
       }
@@ -35,7 +35,7 @@ export default DefineContract({
     validate: function (data) {
       // ['sender', 'string']
     },
-    vuex: {
+    vuexModuleConfig: {
       mutation: (state, {data}) => {
         throw new Error('unimplemented!')
         // state.authorizations[contracts.MailboxAuthorizeSender.authorization].data = data.sender
