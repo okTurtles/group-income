@@ -87,8 +87,8 @@ describe('Frontend', function () {
     // in order to get useful debugging information
     // NOTE: you can change the wait and execution timeouts to higher numbers
     //       like 60000 to facility with SHOW_BROWSER based debugging
-    // waitTimeout: 1000,
-    waitTimeout: 60000,
+    // waitTimeout: 60000,
+    waitTimeout: 2000,
     executionTimeout: 1000,
     height: 900
   })
@@ -268,6 +268,8 @@ describe('Frontend', function () {
       }))
       should(created.groupName).equal(testName)
       should(created.sharedValues).equal(testValues)
+      // BUG: TODO: this field should not include the currency
+      //      TODO: the currency should be checked separately via data-test="incomeCurrency"
       should(created.incomeProvided).equal('$' + testIncome)
       should(created.changePercentage).equal(testSetting + '%')
       should(created.memberApprovalPercentage).equal(testSetting + '%')

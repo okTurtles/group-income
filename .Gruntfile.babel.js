@@ -108,7 +108,7 @@ module.exports = (grunt) => {
       //    - anything in /test folder, eg. integration tests
       //    - anything that ends with .test.js, eg. unit tests for sbp domains kept in the domain folder
       test: {
-        cmd: './node_modules/.bin/mocha --require Gruntfile.js -R spec --bail "{./{,!(node_modules)/**/}*.test.js,./test/*.js}"',
+        cmd: './node_modules/.bin/mocha --require Gruntfile.js --exit -R spec --bail "{./{,!(node_modules)/**/}*.test.js,./test/*.js}"',
         options: {env: {LOAD_NO_FILE: 'true', ...process.env}}
       },
       standard: './node_modules/.bin/standard "**/*.{js,vue}"',

@@ -1,6 +1,10 @@
 {
   "presets": [["env", {
-    "exclude": ["transform-es2015-classes"]
+    "targets": {
+      "browsers": [
+        "last 2 versions"
+      ]
+    }
   }]],
   "plugins": ["lodash", "transform-flow-strip-types", "transform-inline-environment-variables", "transform-runtime", "transform-class-properties", "transform-object-rest-spread"]
 }

@@ -4,15 +4,14 @@ import sbp from '../../../../shared/sbp.js'
 import Vue from 'vue'
 import _ from 'lodash'
 import {DefineContract} from '../utils.js'
+// https://github.com/gmazovec/flow-typer
 import {
   objectOf,
-  // arrayOf,
-  // tupleOf,
-  // unionOf,
-  // literalOf,
+  arrayOf,
+  optional,
   string,
   number,
-  boolean
+  object
 } from 'flow-typer-js'
 
 // NOTE: All mutations must be atomic in their edits of the contract state.
@@ -22,16 +21,13 @@ export default DefineContract({
     isConstructor: true,
     validate: objectOf({
       // TODO: add 'groupPubkey'
-      creationDate: string,
       groupName: string,
       sharedValues: string,
       changeThreshold: number,
-      openMembership: boolean,
       memberApprovalThreshold: number,
       memberRemovalThreshold: number,
       incomeProvided: number,
       incomeCurrency: string,
-      contributionPrivacy: string,
       founderUsername: string,
       founderIdentityContractId: string
     }),
@@ -78,18 +74,19 @@ export default DefineContract({
       TypeRemoval: 'removalProposal',
       TypeChange: 'changeProposal'
     },
-    validate: function (data) {
-      // ['type', 'string'],
-      // ['threshold', 'float'],
-      // ['actions', 'Action', 'repeated'],
-      //   // array of objects of type:
-      //   ['contractID', 'string'],
-      //   ['action', 'string']
-      // ['candidate', 'string'],
-      // ['initiator', 'string'],
-      // ['initiationDate', 'string'],
-      // ['expirationDate', 'string']
-    },
+    validate: objectOf({
+      type: string,
+      threshold: number,
+      candidate: string,
+      actions: arrayOf(objectOf({
+        contractID: string,
+        type: string,
+        action: string
+      })),
+      initiator: string,
+      initiationDate: string,
+      expirationDate: optional(string)
+    }),
     vuexModuleConfig: {
       mutation: (state, {data, hash}) => {
         // TODO: this should be data instead of ...data to avoid conflict with neighboring properties
@@ -100,10 +97,10 @@ export default DefineContract({
   },
   // TODO: rename this to just GroupProposalVote, and switch off of the type of vote
   'GroupVoteForProposal': {
-    validate: function (data) {
-      // ['username', 'string'],
-      // ['proposalHash', 'string']
-    },
+    validate: objectOf({
+      username: string,
+      proposalHash: string
+    }),
     vuexModuleConfig: {
       mutation: (state, {data}) => {
         if (state.proposals[data.proposalHash]) {
@@ -117,10 +114,10 @@ export default DefineContract({
     }
   },
   'GroupVoteAgainstProposal': {
-    validate: function (data) {
-      // ['username', 'string'],
-      // ['proposalHash', 'string']
-    },
+    validate: objectOf({
+      username: string,
+      proposalHash: string
+    }),
     vuexModuleConfig: {
       mutation: (state, {data}) => {
         if (state.proposals[data.proposalHash]) {
@@ -135,21 +132,21 @@ export default DefineContract({
     }
   },
   'GroupRecordInvitation': {
-    validate: function (data) {
-      // ['username', 'string'],
-      // ['inviteHash', 'string'],
-      // ['sentDate', 'string']
-    },
+    validate: objectOf({
+      username: string,
+      inviteHash: string,
+      sentDate: string
+    }),
     vuexModuleConfig: {
       mutation: (state, {data}) => { state.invitees.push(data.username) }
     }
   },
   'GroupDeclineInvitation': {
-    validate: function (data) {
-      // ['username', 'string'],
-      // ['inviteHash', 'string'],
-      // ['declinedDate', 'string']
-    },
+    validate: objectOf({
+      username: string,
+      inviteHash: string,
+      declinedDate: string
+    }),
     vuexModuleConfig: {
       mutation: (state, {data}) => {
         let index = state.invitees.findIndex(username => username === data.username)
@@ -158,12 +155,12 @@ export default DefineContract({
     }
   },
   'GroupAcceptInvitation': {
-    validate: function (data) {
-      // ['username', 'string'],
-      // ['identityContractId', 'string'],
-      // ['inviteHash', 'string'],
-      // ['acceptanceDate', 'string']
-    },
+    validate: objectOf({
+      username: string,
+      identityContractId: string,
+      inviteHash: string,
+      acceptanceDate: string
+    }),
     vuexModuleConfig: {
       mutation: (state, {data}) => {
         let index = state.invitees.findIndex(username => username === data.username)
@@ -204,11 +201,10 @@ export default DefineContract({
   },
   // TODO: remove group profile when leave group is implemented
   'GroupSetGroupProfile': {
-    validate: function (data) {
-      // ['username', 'string'],
-      // // NOTE: now this 'json' is 'profile' and is an object
-      // ['json', 'string']
-    },
+    validate: objectOf({
+      username: string,
+      profile: object
+    }),
     vuexModuleConfig: {
       mutation: (state, {data}) => {
         var {groupProfile} = state.profiles[data.username]
