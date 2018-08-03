@@ -85,7 +85,10 @@ describe.only('Frontend', function () {
     show: !!process.env.SHOW_BROWSER,
     // these need to be short, definitely much shorter than mocha timeouts
     // in order to get useful debugging information
-    waitTimeout: 1000,
+    // NOTE: you can change the wait and execution timeouts to higher numbers
+    //       like 60000 to facility with SHOW_BROWSER based debugging
+    // waitTimeout: 1000,
+    waitTimeout: 60000,
     executionTimeout: 1000,
     height: 900
   })
@@ -96,7 +99,8 @@ describe.only('Frontend', function () {
   })
   n.on('console', (type, args) => {
     if (type === 'error') {
-      var idx = args.indexOf('[NIGHTMARE NOTE]: ')
+      var idx = -1
+      if (args.indexOf) idx = args.indexOf('[NIGHTMARE NOTE]: ')
       if (idx !== -1) {
         console.log('!! ' + args.slice(idx))
       } else {

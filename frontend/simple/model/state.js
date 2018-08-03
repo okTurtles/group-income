@@ -203,6 +203,7 @@ const actions = {
     contractID: string
   ) {
     let latest = await sbp('backend/latestHash', contractID)
+    console.log(`syncContractWithServer(): ${contractID} latestHash is: ${latest}`)
     // there is a chance two users are logged in to the same machine and must check their contracts before syncing
     var recent
     if (state.contracts[contractID]) {
@@ -309,7 +310,7 @@ const actions = {
       sbp('okTurtles.events/emit', HEAD, contractID, message)
       sbp('okTurtles.events/emit', 'eventHandled', contractID, message)
     } catch (e) {
-      console.log('[ERROR] exception in handleEvent!', e.message, e)
+      console.error('[ERROR] exception in handleEvent!', e.message, e)
       throw e // TODO: handle this better
     }
   }

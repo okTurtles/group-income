@@ -22,7 +22,8 @@ export function addLogEntry (entry: GIMessage): string {
   const {previousHEAD} = entry.message()
   var contractID = previousHEAD ? entry.message().contractID : entry.hash()
   if (get(entry.hash())) {
-    throw new Error(`entry exists: ${entry.hash()}`)
+    console.warn(`entry exists: ${entry.hash()}`)
+    return entry.hash()
   }
   const HEAD = get(logHEAD(contractID))
   if (!entry.isFirstMessage() && previousHEAD !== HEAD) {
