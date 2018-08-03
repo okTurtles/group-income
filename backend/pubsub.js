@@ -23,7 +23,6 @@ module.exports = function (hapi: Object) {
   var primus = setupPrimus(hapi.listener)
   // make it possible to access primus via: hapi.primus
   hapi.decorate('server', 'primus', primus)
-
   primus.on('roomserror', function (error, spark) {
     console.log(bold.red('Rooms error from ' + spark.id), error)
   })
@@ -47,13 +46,6 @@ module.exports = function (hapi: Object) {
           case SUB:
             if (spark.rooms().indexOf(contractID) === -1) {
               spark.join(contractID, function () {
-                spark.on('leaveallrooms', (rooms) => {
-                  console.log(bold.yellow(`[pubsub] ${id} leaveallrooms`))
-                  // this gets called on spark.leaveAll and 'disconnection'
-                  rooms.forEach(contractID => {
-                    primus.room(contractID).write(reply(UNSUB, {contractID, id}))
-                  })
-                })
                 spark.room(contractID).except(id).write(req)
                 done(success)
               })
@@ -79,6 +71,13 @@ module.exports = function (hapi: Object) {
         logger(err)
         done(reply(ERROR, err))
       }
+    })
+    spark.on('leaveallrooms', (rooms) => {
+      console.log(bold.yellow(`[pubsub] ${id} leaveallrooms`))
+      // this gets called on spark.leaveAll and 'disconnection'
+      rooms.forEach(contractID => {
+        primus.room(contractID).write(reply(UNSUB, {contractID, id}))
+      })
     })
 
     spark.on('data', function (data) {
