@@ -43,13 +43,12 @@
 }
 </style>
 <script>
-import * as Events from '../../../shared/events'
-import backend from '../controller/backend/'
-import L from './utils/translations'
+import sbp from '../../../shared/sbp.js'
+import contracts from '../model/contracts.js'
+import L from './utils/translations.js'
 import template from 'string-template'
-import { GroupInvitees } from './components/CreateGroupSteps'
+import { GroupInvitees } from './components/CreateGroupSteps/index.js'
 import { mapState, mapGetters } from 'vuex'
-import sbp from '../../../shared/sbp'
 
 export default {
   name: 'Invite',
@@ -99,32 +98,51 @@ export default {
             return
           }
 
-          let inviteToMailbox = await sbp('groupIncome.contracts/mailContract/createPostMessage', mailbox, groupName, groupId, 'TypeInvite')
-          let inviteToGroup = await sbp('groupIncome.contracts/groupContract/createInvitation', inviteToMailbox.toHash(), memberName, groupId)
+          let inviteToMailbox = await sbp('gi/contract/create-action', 'MailboxPostMessage',
+            {
+              from: groupName,
+              headers: [groupId],
+              messageType: contracts.MailboxPostMessage.TypeInvite,
+              sentDate: new Date().toISOString()
+            },
+            mailbox
+          )
+          let inviteToGroup = await sbp('gi/contract/create-action', 'GroupRecordInvitation',
+            {
+              username: memberName,
+              inviteHash: inviteToMailbox.hash(),
+              sentDate: new Date().toISOString()
+            },
+            groupId
+          )
 
           if (this.isProposal) {
-            let latest = await backend.latestHash(groupId)
-            let proposal = new Events.HashableGroupProposal({
-              // for proposal template selection in Vote.vue
-              type: Events.HashableGroupProposal.TypeInvitation,
-              // calculate the voting threshold from the group data
-              threshold: this.currentGroupState.memberApprovalThreshold,
-              candidate: memberName,
-              actions: [
-                { contractId: mailbox, action: JSON.stringify(inviteToMailbox.toObject()) },
-                { contractId: groupId, action: JSON.stringify(inviteToGroup.toObject()) }
-              ],
-              initiator: this.loggedIn.name,
-              initiationDate: new Date().toString()
-            }, latest)
-            await backend.publishLogEntry(groupId, proposal)
+            let proposal = await sbp('gi/contract/create-action', 'GroupProposal',
+              {
+                // for proposal template selection in Vote.vue
+                type: contracts.GroupProposal.TypeInvitation,
+                // calculate the voting threshold from the group data
+                threshold: this.currentGroupState.memberApprovalThreshold,
+                candidate: memberName,
+                // TODO: this is bad, do not turn the messages into actions like this.
+                //       put only the minimal data necessary.
+                actions: [
+                  { contractID: mailbox, type: inviteToMailbox.type(), action: JSON.stringify(inviteToMailbox.data()) },
+                  { contractID: groupId, type: inviteToGroup.type(), action: JSON.stringify(inviteToGroup.data()) }
+                ],
+                initiator: this.loggedIn.name,
+                initiationDate: new Date().toISOString()
+              },
+              groupId
+            )
+            await sbp('backend/publishLogEntry', proposal)
           } else {
             // TODO: place these in SBP calls, consider using ArchivedTransactionQueue
             // NOTE: avoiding use of ArchivedTransactionQueue is better than using it. Here for example,
             //       we could make it so that a user can be invited to a group multiple times, and the system
             //       just accepts/cares about the most recent invite only and forgets the previous one
-            await backend.publishLogEntry(groupId, inviteToGroup)
-            await backend.publishLogEntry(mailbox, inviteToMailbox)
+            await sbp('backend/publishLogEntry', inviteToGroup)
+            await sbp('backend/publishLogEntry', inviteToMailbox)
           }
         }
         // TODO: global success message (see #175) and redirect to previous page instead?

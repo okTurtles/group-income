@@ -127,7 +127,7 @@
                 <strong><i18n>Select Group</i18n>:</strong>
                 <span class="select">
                   <select v-model="currentGroupContractId" v-on:change="changeGroup">
-                    <option v-for="group in $store.getters.groupsByName" v-bind:value="group.contractId">{{group.groupName}}</option>
+                    <option v-for="group in $store.getters.groupsByName" v-bind:value="group.contractID">{{group.groupName}}</option>
                   </select>
                 </span>
               </div>
@@ -219,13 +219,12 @@
   </section>
 </template>
 <script>
-import backend from '../controller/backend'
-import * as Events from '../../../shared/events'
-import L from './utils/translations'
+import sbp from '../../../shared/sbp.js'
 import _ from 'lodash'
 import { validationMixin } from 'vuelidate'
 import { url, email } from 'vuelidate/lib/validators'
-import { decimals } from './utils/validators'
+import { decimals } from './utils/validators.js'
+import L from './utils/translations.js'
 
 export default {
   name: 'UserProfile',
@@ -276,18 +275,17 @@ export default {
     async save () {
       try {
         this.profileSaved = false
+        var attrs = {}
         for (let key of Object.keys(this.edited)) {
           if (this.edited[key] && this.edited[key] !== this.attributes[key]) {
-            let identityContractLatest = await backend.latestHash(this.$store.state.loggedIn.identityContractId)
-            let attribute = new Events.HashableIdentitySetAttribute(
-              {
-                attribute: {name: key, value: this.edited[key]}
-              },
-              identityContractLatest
-            )
-            await backend.publishLogEntry(this.$store.state.loggedIn.identityContractId, attribute)
+            attrs[key] = this.edited[key]
           }
         }
+        let attributes = await sbp('gi/contract/create-action', 'IdentitySetAttributes',
+          attrs,
+          this.$store.state.loggedIn.identityContractId
+        )
+        await sbp('backend/publishLogEntry', attributes)
         this.profileSaved = true
       } catch (ex) {
         console.log(ex)
@@ -304,15 +302,14 @@ export default {
     async saveGroupProfile () {
       try {
         this.groupProfileSaved = false
-        let groupContractLatest = await backend.latestHash(this.currentGroupContractId)
-        let updatedProfile = new Events.HashableGroupSetGroupProfile(
+        let updatedProfile = await sbp('gi/contract/create-action', 'GroupSetGroupProfile',
           {
             username: this.$store.state.loggedIn.name,
-            json: JSON.stringify(this.editedGroupProfile)
+            profile: this.editedGroupProfile
           },
-          groupContractLatest
+          this.currentGroupContractId
         )
-        await backend.publishLogEntry(this.currentGroupContractId, updatedProfile)
+        await sbp('backend/publishLogEntry', updatedProfile)
         this.groupProfileSaved = true
       } catch (ex) {
         console.log(ex)

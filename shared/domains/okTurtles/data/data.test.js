@@ -2,7 +2,7 @@
 
 import should from 'should'
 import sinon from 'sinon'
-import sbp from '../../../sbp'
+import sbp from '../../../sbp.js'
 import './index.js'
 
 require('should-sinon')
@@ -27,13 +27,17 @@ describe('[SBP] DATA domain', () => {
 
   it('should return undefined for unset path', () => {
     should(sbp('okTurtles.data/get', 'testNothing')).deepEqual(undefined)
+    sbp('okTurtles.data/delete', 'testCollection')
+    should(sbp('okTurtles.data/get', 'testCollection')).deepEqual(undefined)
   })
 
-  it('should add fn to collection', () => {
+  it('should add and remove fn from collection', () => {
     const testFn = sinon.spy()
     sbp('okTurtles.data/add', 'fnTestCollection', 1)
     sbp('okTurtles.data/add', 'fnTestCollection', testFn)
     sbp('okTurtles.data/get', 'fnTestCollection')[1]()
     testFn.should.be.called()
+    sbp('okTurtles.data/remove', 'fnTestCollection', testFn)
+    should(sbp('okTurtles.data/get', 'fnTestCollection').length).equal(1)
   })
 })

@@ -4,26 +4,31 @@
 // Domain: Event publish/subscribe
 // =======================
 
-import sbp from '../../../sbp'
+import sbp from '../../../sbp.js'
 
-const SELECTORS = {
-  // TODO: add ability to unregister listeners
+const listenKey = evt => `events/${evt}/listeners`
+
+export default sbp('sbp/selectors/register', {
   'okTurtles.events/on': function (event: string, handler: Function) {
-    sbp('okTurtles.data/add', `events/${event}/listeners`, handler)
+    sbp('okTurtles.data/add', listenKey(event), handler)
   },
   'okTurtles.events/once': function (event: string, handler: Function) {
-    sbp('okTurtles.data/add', `events/${event}/listenOnce`, handler)
+    const cbWithOff = (...args) => {
+      handler(...args)
+      sbp('okTurtles.events/off', event, cbWithOff)
+    }
+    sbp('okTurtles.events/on', event, cbWithOff)
   },
-  'okTurtles.events/emit': function (event: string, data: any) {
-    const listeners = sbp('okTurtles.data/get', `events/${event}/listeners`) || []
-    listeners.forEach(listener => listener({event, data}))
-    // TODO next up in SBP conversion: listener => sbp(listener, event, data)
-    const listenOnce = sbp('okTurtles.data/get', `events/${event}/listenOnce`) || []
-    listenOnce.forEach(listener => listener({event, data}))
-    sbp('okTurtles.data/set', `events/${event}/listenOnce`, [])
+  'okTurtles.events/emit': function (event: string, ...data: any) {
+    const listeners = sbp('okTurtles.data/get', listenKey(event)) || []
+    listeners.forEach(listener => listener(...data))
+  },
+  // almost identical to Vue.prototype.$off, except we require `event` argument
+  'okTurtles.events/off': function (event: string, handler: ?Function) {
+    if (handler) {
+      sbp('okTurtles.data/remove', listenKey(event), handler)
+    } else {
+      sbp('okTurtles.data/delete', listenKey(event))
+    }
   }
-}
-
-sbp('sbp/selectors/register', SELECTORS)
-
-export default SELECTORS
+})

@@ -101,10 +101,8 @@
 }
 </style>
 <script>
-import * as Events from '../../../shared/events'
-import backend from '../controller/backend/'
-import { latestContractState } from '../model/state'
-import L from './utils/translations'
+import sbp from '../../../shared/sbp.js'
+import L from './utils/translations.js'
 import Bars from './components/Graphs/Bars.vue'
 import Loading from './components/Loading.vue'
 import MembersCircle from './components/MembersCircle.vue'
@@ -118,7 +116,7 @@ export default {
   },
   async mounted () {
     try {
-      let state = await latestContractState(this.$route.query.groupId)
+      let state = await sbp('state/latestContractState', this.$route.query.groupId)
       if (!state.invitees.find(invitee => invitee === this.$store.state.loggedIn.name)) {
         // TODO: proper user-facing error
         // TODO: somehow I got this error... I created 4 accounts, and after inviting
@@ -132,7 +130,7 @@ export default {
       // TODO: use the state.profiles directly?
       var members = []
       for (const name of Object.keys(state.profiles)) {
-        members.push(await latestContractState(state.profiles[name].contractId))
+        members.push(await sbp('state/latestContractState', state.profiles[name].contractID))
       }
 
       state.members = members
@@ -153,18 +151,17 @@ export default {
       try {
         // post acceptance event to the group contract
         this.errorMsg = null
-        let latest = await backend.latestHash(this.$route.query.groupId)
-        let acceptance = new Events.HashableGroupAcceptInvitation(
+        let acceptance = await sbp('gi/contract/create-action', 'GroupAcceptInvitation',
           {
             username: this.$store.state.loggedIn.name,
             identityContractId: this.$store.state.loggedIn.identityContractId,
             inviteHash: this.$route.query.inviteHash,
-            acceptanceDate: new Date()
+            acceptanceDate: new Date().toISOString()
           },
-          latest
+          this.$route.query.groupId
         )
         // let the group know we've accepted their invite
-        await backend.publishLogEntry(this.$route.query.groupId, acceptance)
+        await sbp('backend/publishLogEntry', acceptance)
         // sync the group's contract state
         await this.$store.dispatch('syncContractWithServer', this.$route.query.groupId)
         // after syncing, we can set the current group
@@ -183,16 +180,15 @@ export default {
       try {
         // post decline event
         this.errorMsg = null
-        let latest = await backend.latestHash(this.$route.query.groupId)
-        let declination = new Events.HashableGroupDeclineInvitation(
+        let declination = await sbp('gi/contract/create-action', 'GroupDeclineInvitation',
           {
             username: this.$store.state.loggedIn.name,
             inviteHash: this.$route.query.inviteHash,
-            declinedDate: new Date()
+            declinedDate: new Date().toISOString()
           },
-          latest
+          this.$route.query.groupId
         )
-        await backend.publishLogEntry(this.$route.query.groupId, declination)
+        await sbp('backend/publishLogEntry', declination)
 
         // remove invite and return to mailbox
         this.$store.commit('deleteMail', this.$route.query.inviteHash)

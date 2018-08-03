@@ -64,9 +64,8 @@
   }
 </style>
 <script>
-import { latestContractState } from '../../../model/state'
-import { namespace } from '../../../controller/backend/hapi'
-import L from '../../utils/translations'
+import sbp from '../../../../../shared/sbp.js'
+import L from '../../utils/translations.js'
 
 export default {
   name: 'GroupInvitees',
@@ -95,11 +94,11 @@ export default {
       }
 
       try {
-        const contractId = await namespace.lookup(this.searchUser)
-        console.log('contractId:', contractId)
-        const state = await latestContractState(contractId)
+        const contractID = await sbp('namespace/lookup', this.searchUser)
+        console.log('contractID:', contractID)
+        const state = await sbp('state/latestContractState', contractID)
         if (!this.invitees.find(invitee => invitee.state.attributes.name === this.searchUser)) {
-          this.invitees.push({ state, contractId })
+          this.invitees.push({ state, contractID })
         }
         this.searchUser = null
         this.userErrorMsg = ''

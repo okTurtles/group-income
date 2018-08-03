@@ -1,8 +1,8 @@
 'use strict'
 
-import Primus from '../../assets/vendor/primus'
-import {RESPONSE_TYPE} from '../../../../shared/constants'
-import {makeResponse as request} from '../../../../shared/functions'
+import Primus from '../../assets/vendor/primus.js'
+import {RESPONSE_TYPE} from '../../../../shared/constants.js'
+import {makeResponse as request} from '../../../../shared/functions.js'
 const {ERROR, PUB, SUB, UNSUB} = RESPONSE_TYPE
 
 // see commentary in ./backend/hapi.js for more info about this file
@@ -14,26 +14,26 @@ export default function (
   return primus
 }
 
-Primus.prototype.sub = function (contractId: string) {
+Primus.prototype.sub = function (contractID: string) {
   return new Promise((resolve, reject) => {
-    this.writeAndWait(request(SUB, {contractId}), function (response) {
+    this.writeAndWait(request(SUB, {contractID}), function (response) {
       (response.type === ERROR ? reject : resolve)(response)
     })
   })
 }
 
-Primus.prototype.unsub = function (contractId: string) {
+Primus.prototype.unsub = function (contractID: string) {
   return new Promise((resolve, reject) => {
-    this.writeAndWait(request(UNSUB, {contractId}), function (response) {
+    this.writeAndWait(request(UNSUB, {contractID}), function (response) {
       (response.type === ERROR ? reject : resolve)(response)
     })
   })
 }
 
-Primus.prototype.pub = function (contractId: string, data: Object) {
+Primus.prototype.pub = function (contractID: string, data: Object) {
   // TODO: do not send message, return error immediately if connection is down
   return new Promise((resolve, reject) => {
-    this.writeAndWait(request(PUB, {contractId, data}), function (response) {
+    this.writeAndWait(request(PUB, {contractID, data}), function (response) {
       (response.type === ERROR ? reject : resolve)(response)
     })
   })

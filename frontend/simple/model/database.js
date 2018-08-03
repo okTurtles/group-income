@@ -1,17 +1,15 @@
 'use strict'
 
 import localforage from 'localforage'
-import * as Events from '../../../shared/events'
+import {GIMessage} from '../../../shared/GIMessage.js'
 
-const {HashableEntry} = Events
-
-const _logs = new Map()
-function getLog (storeName: string): Object {
-  if (!_logs.has(storeName)) {
-    _logs.set(storeName, localforage.createInstance({name: 'GILog', storeName}))
-  }
-  return _logs.get(storeName) || {} // to make flow stop complaining
-}
+const log = localforage.createInstance({
+  name: 'Group Income',
+  storeName: 'Contracts'
+})
+const logHEAD = contractID => `${contractID}/HEAD`
+const get = key => log.getItem(key)
+const set = (key, value) => log.setItem(key, value)
 
 // These functions should only interact with `db`!
 // They SHOULD NOT:
@@ -19,43 +17,36 @@ function getLog (storeName: string): Object {
 // - Call out to asynchronous APIs via superagent
 // They SHOULD:
 // - Mirror what's in backend/database.js
-export async function getLogEntry (
-  contractId: string, hash: string
-): Promise<HashableEntry> {
-  var entry = await getLog(contractId).getItem(hash)
-  return Events[entry.type].fromObject(entry, hash)
+export async function getLogEntry (hash: string): Promise<GIMessage> {
+  return GIMessage.deserialize(await get(hash))
 }
 
-export async function addLogEntry (
-  contractId: string, event: HashableEntry
-) {
-  let hash = event.toHash()
-  let log = getLog(contractId)
-  let last = await log.getItem('HEAD')
-  let exists = await log.getItem(hash)
-  let entry = event.toObject()
-  if (exists) {
-    return console.log('addLogEntry: disregarding already existing entry:', entry)
+export async function addLogEntry (entry: GIMessage): Promise<string> {
+  console.log('addLogEntry():', entry.hash(), entry.message())
+  const {previousHEAD} = entry.message()
+  var contractID = previousHEAD ? entry.message().contractID : entry.hash()
+  if (await get(entry.hash())) {
+    console.warn(`entry exists: ${entry.hash()}`)
+    return entry.hash()
   }
-  if (entry.parentHash && last !== entry.parentHash) {
-    console.error(`addLogEntry: new entry has bad parentHash: ${entry.parentHash}. Should be: ${last}. Entry:`, entry)
-    throw new Error('incorrect previousHash for entry!')
+  const HEAD = await get(logHEAD(contractID))
+  if (!entry.isFirstMessage() && previousHEAD !== HEAD) {
+    console.error(`bad previousHEAD: ${previousHEAD}! Expected: ${HEAD}`)
+    throw new Error(`bad previousHEAD: ${previousHEAD}`)
   }
-  // save object instead of protobuf because it takes less space (see #172)
-  await log.setItem('HEAD', hash)
-  await log.setItem(hash, entry)
-  return hash
+  await set(logHEAD(contractID), entry.hash())
+  await set(entry.hash(), entry.serialize())
+  return entry.hash()
 }
 // collect returns a collection of events
-export async function collect (
-  contractId: string, from: string
-): Promise<Array<HashableEntry>> {
+export async function collect (contractID: string, hash: string): Promise<Array<GIMessage>> {
   let collection = []
-  let cursor = from
-  while (cursor) {
-    let entry = await getLogEntry(contractId, cursor)
+  let cursor = hash
+  while (true) {
+    let entry = await getLogEntry(cursor)
     collection.unshift(entry)
-    cursor = entry.toObject().parentHash
+    if (entry.hash() === hash) break
+    cursor = entry.message().previousHEAD
   }
   return collection
 }

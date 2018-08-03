@@ -73,12 +73,10 @@
   </div>
 </template>
 <script>
-import {HapiNamespace} from '../../controller/backend/hapi'
-import L from '../utils/translations'
+import sbp from '../../../../shared/sbp.js'
+import L from '../utils/translations.js'
 import { validationMixin } from 'vuelidate'
 import { required, minLength } from 'vuelidate/lib/validators'
-
-const namespace = new HapiNamespace()
 
 export default {
   name: 'LoginModal',
@@ -90,7 +88,7 @@ export default {
     async login () {
       try {
         // TODO: Insert cryptography here
-        const identityContractId = await namespace.lookup(this.form.name)
+        const identityContractId = await sbp('namespace/lookup', this.form.name)
         console.log(`Retrieved identity ${identityContractId}`)
         await this.$store.dispatch('login', {name: this.form.name, identityContractId})
         this.close()

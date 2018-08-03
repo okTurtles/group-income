@@ -5,10 +5,10 @@
     </h3>
     <ul class="list">
       <li class="list-item"
-        :class='{"is-active": currentGroupId === group.contractId}'
+        :class='{"is-active": currentGroupId === group.contractID}'
         tabindex="0"
         v-for="group in groups"
-        @click.prevent="changeGroup(group.contractId)"
+        @click.prevent="changeGroup(group.contractID)"
       >
         {{ group.groupName }}
       </li>
