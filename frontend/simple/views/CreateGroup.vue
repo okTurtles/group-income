@@ -1,257 +1,250 @@
 <template>
   <section id="create-group-page" class="section">
     <!-- TODO: use Bulma's .field -->
-    <!-- TODO: center using .centered like SignUp.vue -->
-    <div class="columns">
-      <div class="column is-1"></div>
-      <div class="column is-10" >
-        <form
-          ref="form"
-          name="CreateGroupForm"
-          @submit.prevent="submit"
-        >
-          <div class="columns is-multiline">
-            <div class="column is-one-third has-text-centered create-group">
-              <p class="title is-4"><i18n>Describe your group</i18n></p>
-              <div class="box">
-                <p class="title is-5"><i18n>What is your Group's Name?</i18n></p>
-                <input
-                  type="text"
-                  v-validate
-                  data-vv-as="Group Name"
-                  data-vv-rules="required"
-                  name="groupName"
-                  v-model="groupName"
-                  class="input"
-                >
-                <i18n v-if="errors.has('groupName')" data-control='groupName' class="help is-danger">
-                  {{ errors.first('groupName') }}
-                </i18n>
-              </div>
-              <div class="box">
-                <p class="title is-5"><i18n>What are your shared values?</i18n></p>
-                <textarea
-                  class="textarea"
-                  v-validate
-                  data-vv-as="Shared Values"
-                  data-vv-rules="required"
-                  name="sharedValues"
-                  v-model="sharedValues">
-                </textarea>
-                <i18n v-if="errors.has('sharedValues')" data-control='sharedValues' class="help is-danger">
-                  {{ errors.first('sharedValues') }}
-                </i18n>
-              </div>
-              <div class="box">
-                <p class="title is-5"><i18n>What percentage of members are required to change the rules?</i18n></p>
-                <p class="title is-3 percentage">{{ changePercentage }}%</p>
-                <input
-                  type="range"
-                  v-validate
-                  data-vv-as="Percentage to change rules"
-                  data-vv-rules="between:1,100"
-                  min="0"
-                  max="100"
-                  name="changePercentage"
-                  v-model="changePercentage"
-                >
-                <i18n v-if="errors.has('changePercentage')" data-control='changePercentage' class="help is-danger">
-                  The Percentage to change rules field must be between 1% and 100%
-                </i18n>
-                <!-- this is used for nightmare and only rendered in 'development' mode. Without this nightmare has trouble triggering the events for vue that updates the model when values are set -->
-                <input v-if="dev" type="text" v-model="changePercentage" name="proxyChangePercentage" style="opacity:0; position: absolute;">
-              </div>
-            </div>
-            <div class="column is-one-third has-text-centered create-group">
-              <p class="title is-4"><i18n>Member relationships</i18n></p>
-              <div class="box">
-                <p class="title is-5"><i18n>How many members should it take to approve a new member?</i18n></p>
-                <p class="title is-3">{{ memberApprovalPercentage }}%</p>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  data-vv-as="Member Approval Percentage"
-                  v-validate
-                  data-vv-rules="between:1,100"
-                  name="memberApprovalPercentage"
-                  v-model="memberApprovalPercentage"
-                >
-                <i18n v-if="errors.has('memberApprovalPercentage')" data-control='memberApprovalPercentage' class="help is-danger">
-                  The Member Approval Percentage field must be between 1% and 100%.
-                </i18n>
-                <!-- this is used for nightmare and only rendered in 'development' mode. Without this nightmare has trouble triggering the events for vue that updates the model when values are set -->
-                <input
-                  v-if="dev"
-                  type="text"
-                  v-model="memberApprovalPercentage"
-                  name="proxyMemberApprovalPercentage"
-                  style="opacity:0; position: absolute;"
-                >
-              </div>
-              <div class="box">
-                <p class="title is-5"><i18n>How many members should it take to remove a member?</i18n></p>
-                <p class="title is-3">{{ memberRemovalPercentage }}%</p>
-                <input
-                  type="range"
-                  min="0"
-                  max="100"
-                  data-vv-as="Member Removal Percentage"
-                  v-validate
-                  data-vv-rules="between:1,100"
-                  name="memberRemovalPercentage"
-                  v-model="memberRemovalPercentage"
-                >
-                <i18n v-if="errors.has('memberRemovalPercentage')" data-control='memberRemovalPercentage' class="help is-danger">
-                  The Member Removal Percentage field must be between 1% and 100%.
-                </i18n>
-                <!-- this is used for nightmare and only rendered in 'development' mode. Without this nightmare has trouble triggering the events for vue that updates the model when values are set -->
-                <input
-                  v-if="dev"
-                  type="text"
-                  v-model="memberRemovalPercentage"
-                  name="proxyMemberRemovalPercentage"
-                  style="opacity:0; position: absolute;"
-                >
-              </div>
-            </div>
-            <div class="column is-one-third has-text-centered create-group">
-              <p class="title is-4"><i18n>Resource allocation</i18n></p>
-              <div class="box">
-                <p class="title is-5"><i18n>How much income will your group seek to provide</i18n></p>
-                <div class="field has-addons">
-                  <p class="control">
-                    <!--- TODO: Make this a real field-->
-                    <span class="select">
-                      <select>
-                        <option>USD</option>
-                        <option>BTC</option>
-                        <option>EUR</option>
-                      </select>
-                    </span>
-                  </p>
-                  <p class="control">
-                    <input class="input" type="text" name="incomeProvided"
-                      placeholder="Amount"
-                      data-vv-as="Income Provided"
-                      v-validate data-vv-rules="required|decimal:2"
-                      v-model="incomeProvided"
-                    />
-                  </p>
-                </div>
-                <i18n v-if="errors.has('incomeProvided')" data-control="incomeProvided" class="help is-danger">
-                  The Income Provided field must be a numeric currency amount and may contain 2 decimal points.
-                </i18n>
-              </div>
-              <div class="box" >
-                <p class="title is-5"><i18n>How transparent should your group be about who contributes?</i18n></p>
-                <p class="select">
-                  <select
-                    v-validate
-                    data-vv-rules="required"
-                    data-vv-as="Contribution Privacy"
-                    name="contributionPrivacy"
-                    v-model="contributionPrivacy"
-                  >
-                    <option value="">Select an option</option>
-                    <option value="Very Private">Very Private</option>
-                  </select>
-                </p>
-                <i18n v-if="errors.has('contributionPrivacy')" data-control="contributionPrivacy" class="help is-danger">
-                  {{ errors.first('contributionPrivacy') }}
-                </i18n>
-              </div>
-              <div class="has-text-centered button-box">
-                <div id="errorMsg" v-if="errorMsg" class="help is-danger">{{ errorMsg }}</div>
-                <button
-                  class="button is-success is-large"
-                  type="submit"
-                >
-                  <i18n>Create Group</i18n>
-                </button>
-              </div>
-            </div>
+    <div class="columns is-centered">
+      <div class="column is-half">
+        <transition name="fade" mode="out-in">
+          <router-view :group="form" :v="$v.form" @input="payload => updateGroupData(payload)">
+          </router-view>
+        </transition>
+
+        <div class="field is-grouped is-grouped-right gi-is-grouped-reverse form-actions">
+          <p class="control" v-if="currentStep + 1 < config.steps.length">
+            <button
+              class="button is-success is-large"
+              @click="next"
+              :disabled="$v.steps[$route.name] && $v.steps[$route.name].$invalid"
+              data-test="nextBtn"
+            >
+              <i18n>Next</i18n>
+              <span class="icon">
+                <i class="fa fa-arrow-right"></i>
+              </span>
+            </button>
+          </p>
+          <p class="control" v-else>
+            <button
+              class="button is-success is-large"
+              @click="submit"
+              :disabled="$v.form.$invalid"
+              data-test="finishBtn"
+            >
+              <i18n>Finish</i18n>
+              <span class="icon">
+                <i class="fa fa-check-circle"></i>
+              </span>
+            </button>
+          </p>
+          <p class="control" v-if="currentStep !== 0">
+            <button
+              class="button is-light is-large"
+              @click="prev"
+              data-test="prevBtn"
+            >
+              <i18n>Back</i18n>
+            </button>
+          </p>
+        </div>
+        <article class="message is-danger" v-if="errorMsg">
+          <div class="message-body">
+            {{ errorMsg }}
           </div>
-        </form>
+        </article>
       </div>
-      <div class="column is-1"></div>
     </div>
   </section>
 </template>
+<style>
+  /*
+  TODO: Steps layouts should have a template defined
+  so we don't need to repeat markup (titles in this case)
+  */
+  #create-group-page .title.is-1,
+  #create-group-page .title.is-2 {
+    margin-bottom: 2rem;
+  }
+
+  /*
+  TODO: avoid these global rules
+   */
+  .fade-enter-active,
+  .fade-leave-active {
+    transition: opacity 0.2s;
+  }
+
+  .fade-enter,
+  .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+    opacity: 0;
+  }
+</style>
 <style scoped>
-  .button-box {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 20%;
-    margin: 30px 0 0 0;
+  .form-actions {
+    margin-top: 3rem;
   }
 </style>
 <script>
-/* @flow */
-import Vue from 'vue'
-import backend from '../js/backend'
-import * as Events from '../../../shared/events'
-import * as contracts from '../js/events'
-import L from '../js/translations'
+import sbp from '../../../shared/sbp.js'
+import contracts from '../model/contracts.js'
+import L from './utils/translations.js'
+import StepAssistant from './utils/StepAssistant.js'
+import { validationMixin } from 'vuelidate'
+import { required, between } from 'vuelidate/lib/validators'
+import { decimals } from './utils/validators.js'
 
 export default {
   name: 'CreateGroupView',
+  mixins: [
+    StepAssistant,
+    validationMixin
+  ],
   methods: {
+    updateGroupData (payload) {
+      this.errorMsg = null
+      Object.assign(this.form, payload.data)
+    },
     submit: async function () {
-      try {
-        await this.$validator.validateAll()
-      } catch (ex) {
-        const { control } = document.querySelector('span.help.is-danger').dataset
-        document.querySelector(`input[name="${control}"], textarea[name="${control}"]`).focus()
-        document.querySelector(`input[name="${control}"], textarea[name="${control}"]`).scrollIntoView()
+      if (this.$v.form.$invalid) {
+        // TODO: more descriptive error message, highlight erroneous step
+        this.errorMsg = L('We still need some info from you, please go back and fill missing fields')
         return
       }
 
       try {
         this.errorMsg = null
-        const entry = new contracts.GroupContract({
-          authorizations: [Events.CanModifyAuths.dummyAuth()],
-          groupName: this.groupName,
-          sharedValues: this.sharedValues,
-          changePercentage: this.changePercentage,
-          memberApprovalPercentage: this.memberApprovalPercentage,
-          memberRemovalPercentage: this.memberRemovalPercentage,
-          incomeProvided: this.incomeProvided,
-          contributionPrivacy: this.contributionPrivacy,
+        const entry = sbp('gi/contract/create', 'GroupContract', {
+          // authorizations: [contracts.CanModifyAuths.dummyAuth()], // TODO: this
+          groupName: this.form.groupName,
+          sharedValues: this.form.sharedValues,
+          changeThreshold: this.form.changeThreshold,
+          memberApprovalThreshold: this.form.memberApprovalThreshold,
+          memberRemovalThreshold: this.form.memberRemovalThreshold,
+          incomeProvided: this.form.incomeProvided,
+          incomeCurrency: this.form.incomeCurrency,
           founderUsername: this.$store.state.loggedIn.name,
           founderIdentityContractId: this.$store.state.loggedIn.identityContractId
         })
-        const hash = entry.toHash()
+        const hash = entry.hash()
         // TODO: convert this to SBL
-        Vue.events.$once(hash, (contractId, entry) => {
+        sbp('okTurtles.events/once', hash, (contractID, entry) => {
           this.$store.commit('setCurrentGroupId', hash)
-          // Take them to the invite group members page.
-          this.$router.push({path: '/invite'})
+          // Take them to the dashboard.
+          this.$router.push({path: '/dashboard'})
         })
         // TODO: convert this to SBL
-        await backend.publishLogEntry(hash, entry)
+        await sbp('backend/publishLogEntry', entry)
         // add to vuex and monitor this contract for updates
         await this.$store.dispatch('syncContractWithServer', hash)
       } catch (error) {
         console.error(error)
         this.errorMsg = L('Failed to Create Group')
+        return
+      }
+
+      try {
+        this.errorMsg = null
+        // TODO: as invitees are successfully invited display in a
+        // seperate invitees grid and add them to some validation for duplicate invites
+        for (let invitee of this.form.invitees) {
+          // We need to have the latest mailbox attribute for the user
+          const sentDate = new Date().toISOString()
+          // We need to post the invite to the users' mailbox contract
+          const invite = await sbp('gi/contract/create-action', 'MailboxPostMessage',
+            {
+              from: this.$store.getters.currentGroupState.groupName,
+              headers: [this.$store.state.currentGroupId],
+              messageType: contracts.MailboxPostMessage.TypeInvite,
+              sentDate
+            },
+            invitee.state.attributes.mailbox
+          )
+          await sbp('backend/publishLogEntry', invite)
+
+          // We need to make a record of the invitation in the group's contract
+          const invited = await sbp('gi/contract/create-action', 'GroupRecordInvitation',
+            {
+              username: invitee.state.attributes.name,
+              inviteHash: invite.hash(),
+              sentDate
+            },
+            this.$store.state.currentGroupId
+          )
+          await sbp('backend/publishLogEntry', invited)
+        }
+      } catch (error) {
+        console.error(error)
+        // TODO: Create More descriptive errors
+        this.errorMsg = L('Failed to Invite Users')
       }
     }
   },
   data () {
-    // TODO: wrap this in a 'form' parameter (#297)
     return {
-      groupName: null,
-      sharedValues: null,
-      changePercentage: 80,
-      memberApprovalPercentage: 80,
-      memberRemovalPercentage: 80,
-      incomeProvided: null,
-      contributionPrivacy: 'Very Private',
+      form: {
+        groupName: '',
+        sharedValues: null,
+        changeThreshold: 0.8,
+        memberApprovalThreshold: 0.8,
+        memberRemovalThreshold: 0.8,
+        incomeProvided: null,
+        incomeCurrency: 'USD',
+        invitees: []
+      },
+      // todo: move these under appropriate key for #297
       errorMsg: null,
-      // this determines whether or not to render proxy components for nightmare
-      dev: process.env.NODE_ENV === 'development'
+      ephemeral: {
+        // this determines whether or not to render proxy components for nightmare
+        dev: process.env.NODE_ENV === 'development'
+      },
+      config: {
+        steps: [
+          'GroupName',
+          'GroupPurpose',
+          'GroupMincome',
+          'GroupRules',
+          'GroupPrivacy',
+          'GroupInvitees',
+          'GroupSummary'
+        ]
+      }
+    }
+  },
+  validations: {
+    form: {
+      groupName: { required },
+      sharedValues: { required },
+      changeThreshold: {
+        required,
+        between: between(0.01, 1)
+      },
+      memberApprovalThreshold: {
+        required,
+        between: between(0.01, 1)
+      },
+      memberRemovalThreshold: {
+        required,
+        between: between(0.01, 1)
+      },
+      incomeProvided: {
+        required,
+        decimals: decimals(2)
+      },
+      incomeCurrency: {
+        required
+      }
+    },
+    // validation groups by route name for steps
+    steps: {
+      GroupName: [ 'form.groupName' ],
+      GroupPurpose: [ 'form.sharedValues' ],
+      GroupMincome: [
+        'form.incomeProvided',
+        'form.incomeCurrency'
+      ],
+      GroupRules: [
+        'form.changeThreshold',
+        'form.memberApprovalThreshold',
+        'form.memberRemovalThreshold'
+      ]
     }
   }
 }

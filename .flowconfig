@@ -12,15 +12,16 @@
 .*/frontend/_static/.*
 .*/frontend/simple/assets/.*
 .*/backend/discard/.*
-.*/frontend/simple/js/backend/interface.js
-.*/frontend/simple/js/crypto.js
-.*/frontend/simple/js/identity.js
+.*/frontend/simple/controller/backend/interface.js
+.*/frontend/simple/utils/crypto.js
+.*/frontend/simple/model/contracts/identity.js
+.*/frontend/simple/utils/vuex-queue.js
 # .*/test/frontend.js
+.*.test.js
 
 [libs]
 shared/declarations.js
 
 [options]
-unsafe.enable_getters_and_setters=true
 module.ignore_non_literal_requires=true
 all=true

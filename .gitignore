@@ -20,6 +20,7 @@
 /.idea/
 /.imdone/
 /NOTES.md
+.editorconfig
 
-# Application specific
-/frontend/simple/js/ignored
+# Misc
+/ignored

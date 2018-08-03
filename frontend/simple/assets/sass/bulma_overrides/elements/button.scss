@@ -1,0 +1,28 @@
+@import "../../node_modules/bulma/sass/elements/button";
+
+.button {
+  min-height: 2.5rem; // A11Y purposes
+  color: $grey;
+
+  &.is-outlined {
+    font-weight: 600; // A11Y purposes
+  }
+}
+
+.button.is-success.is-outlined {
+  color: darken($success, 5%); // A11Y purposes
+}
+
+.buttons {
+  &:not(:last-child) {
+    margin-bottom: $gi-spacer-sm; // overrides bulma huge margin
+  }
+
+  .button {
+    &,
+    &:last-child {
+      // .buttons already has margin-bottom, this doesn't need too.
+      margin-bottom: 0;
+    }
+  }
+}

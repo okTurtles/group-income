@@ -1,19 +1,40 @@
 <template>
-    <section class="section full-screen">
-      <div id="HomeLogo" class="centered" style="text-align: center">
-        <img style="width: 160px; height: 160px" src="images/group-income-icon-transparent.png">
+    <section class="section full-screen has-text-centered">
+      <div data-test="homeLogo">
+        <img class="logo" src="assets/images/group-income-icon-transparent.png">
         <br>
-        <div style="display: block; margin-top: 45px" class="title foco-font"><i18n>Welcome to GroupIncome</i18n></div>
-        <div v-if="!$store.state.loggedIn"><a v-on:click="forwardToLogin"><i18n>Login</i18n></a> or  <router-link to="signup"><i18n>Sign Up</i18n></router-link> <i18n>to continue</i18n></div>
+        <h1 class="title is-3"><i18n>Welcome to GroupIncome</i18n></h1>
+        <div v-if="!$store.state.loggedIn">
+          <a v-on:click="forwardToLogin"><i18n>Login</i18n></a> or <router-link to="signup"><i18n>Sign Up</i18n></router-link> <i18n>to continue</i18n>
+        </div>
+        <div v-else>
+          <router-link
+            class="button is-success"
+            data-test="createGroup"
+            to="new-group"
+          >
+            <i18n>Start a Group</i18n>
+          </router-link>
+        </div>
       </div>
     </section>
 </template>
+<style scoped>
+  .logo,
+  .title {
+    margin-top: 3rem;
+  }
+
+  .logo {
+    width: 160px;
+  }
+</style>
 <script>
-import Vue from 'vue'
+import sbp from '../../../shared/sbp.js'
 export default {
   methods: {
     forwardToLogin: function () {
-      Vue.events.$emit('loginModal')
+      sbp('okTurtles.events/emit', 'loginModal')
     }
   }
 }

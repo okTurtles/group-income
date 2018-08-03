@@ -1,112 +1,122 @@
 <template>
-    <section class="section full-screen">
-      <div class="centered" >
-        <div class="columns">
-          <div class="column is-one-half">
-            <div class="center ">
-              <div class="subtitle is-3"><i18n>You have been Invited to join</i18n></div>
-              <div class="title is-1">{{contract.groupName}}</div>
-            </div>
-            <div class="panel">
-              <div class="panel-block">
-                <div style="display: inline;">
-                  <strong>Shared Values: </strong> {{contract.sharedValues}}
-                </div>
-              </div>
-              <table class="panel-block notification is-warning">
-                <strong>${{contract.incomeProvided}} <i18n>Monthly Income</i18n></strong>
-              </table>
-              <div class="panel-block center" style="display: block; text-align: center">
-                <div id="errorMsg" v-if="errorMsg" class="help is-danger">{{errorMsg}}</div>
-                <a id="AcceptLink" class="button is-success is-large" v-on:click="accept" style="margin-left:auto; margin-right: 20px"><i18n>Accept</i18n></a><a id="DeclineLink" class="button is-danger is-large" v-on:click="decline" style="margin-right:auto; margin-right: 20px"><i18n>Decline</i18n></a>
-              </div>
-            </div>
-          </div>
-          <div class="column id-one-quarter">
-            <div class="panel">
-              <div class="panel-block">
-                <strong><i18n>Founder</i18n></strong>
-              </div>
-              <div class="panel-block">
-                {{contract.founderUsername}}
-              </div>
-              <div class="panel-block">
-                <div><strong><i18n>Group Info</i18n></strong></div>
-              </div>
-              <div class="panel-block">
-                <span>{{contract.groupName}} <i18n>is a group that was founded</i18n> {{formatDate(contract.creationDate)}}. <i18n>The Group currently has</i18n> {{contract.members.length}} <i18n>active members with</i18n> # <i18n>financial contributors</i18n>.</span>
-              </div>
-              <div class="panel-block">
-                <div><strong><i18n>Percentage of members are required to change the rules</i18n></strong></div>
-              </div>
-              <div class="panel-block">
-                {{contract.changePercentage}}
-              </div>
-              <div class="panel-block">
-                <strong><i18n>Open to New Members?</i18n></strong>
-              </div>
-              <div class="panel-block" v-show="openMembership"><i18n>Yes</i18n></div>
-              <div class="panel-block" v-show="!openMembership"><i18n>No</i18n></div>
-              <div class="panel-block">
-                <strong><i18n>Percentage of members are required to approve a new members</i18n></strong>
-              </div>
-              <div class="panel-block">
-                {{contract.memberApprovalPercentage}}
-              </div>
-              <div class="panel-block">
-                <strong><i18n>Percentage of members are required to remove a member</i18n></strong>
-              </div>
-              <div class="panel-block">
-                {{contract.memberRemovalPercentage}}
-              </div>
-              <div class="panel-block">
-                <strong><i18n>Contribution Transparency</i18n></strong>
-              </div>
-              <div class="panel-block">
-                {{contract.contributionPrivacy}}
-              </div>
-            </div>
-          </div>
-          <div class="column is-one-quarter">
-            <table class="table is-bordered is-striped is-narrow">
-            <thead>
-            <tr>
-              <th><i18n>Group Members</i18n></th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr v-for="member in contract.members" class="member">
-              <td>
-                <div class="media">
-                  <div class="media-left">
-                    <p class="image is-64x64">
-                      <img :src="member.attributes.picture">
-                    </p>
-                  </div>
-                  <div class="media-content">
-                    <strong>{{member.attributes.name}}</strong>
-                  </div>
-                </div>
-              </td>
-            </tr>
-            </tbody>
-          </table>
-          </div>
-        </div>
+  <loading theme="fullView" v-if="!contract.groupName" />
+  <main class="gi-join-grid" v-else>
+    <div class="gi-join-grid-header">
+      <h1 class="has-text-grey">
+        <i18n>You’ve been invited to join a group!</i18n>
+      </h1>
+      <h2 class="title is-1 is-marginless">{{contract.groupName}}</h2>
+      <h3 class="is-size-5">{{contract.sharedValues}}</h3>
+    </div>
+    <div class="gi-join-grid-ctas">
+      <div class="buttons">
+        <button
+          class="button is-large is-primary"
+          data-test="acceptLink"
+          v-on:click="accept">
+          Join Group
+        </button>
+        <button
+          class="button is-large is-outlined"
+          data-test="declineLink"
+          v-on:click="decline">
+          No, thanks
+        </button>
       </div>
-    </section>
+      <p v-if="errorMsg" class="has-text-danger has-text-centered-mobile">{{errorMsg}}</p>
+    </div>
+    <div class="gi-join-grid-graphic" v-if="contract.members.length">
+      <members-circle :members="contract.members">
+        <bars
+          :currency="contract.incomeCurrencySign"
+          :history="contract.history"
+          :mincome="contract.incomeProvided" />
+      </members-circle>
+    </div>
+  </div>
+  </main>
 </template>
+<style lang="scss" scoped>
+@import "../assets/sass/theme/index";
+@import "../assets/sass/bulma_overrides/components/navbar";
+
+.gi-join {
+  &-grid {
+    display: grid;
+    grid-template-areas: "header" "graphic" "ctas";
+    grid-gap: $gi-spacer-lg;
+    padding: $gi-spacer-lg $gi-spacer;
+    max-width: $widescreen;
+    min-height: calc(100vh - #{$navbar-height});
+    margin: auto;
+
+    &-header {
+      grid-area: header;
+      align-self: self-end;
+    }
+
+    &-ctas {
+      grid-area: ctas;
+    }
+
+    &-graphic {
+      grid-area: graphic;
+      justify-self: center;
+      align-self: center;
+    }
+
+    @include mobile {
+      justify-items: center;
+
+      &-header,
+      &-graphic {
+        text-align: center;
+      }
+    }
+
+    @include tablet {
+      grid-gap: $gi-spacer-xl $gi-spacer;
+      grid-template-columns: 50% 50%;
+      grid-template-rows: auto;
+      grid-template-areas: "header graphic" "ctas graphic";
+      padding: $gi-spacer-lg;
+    }
+  }
+}
+
+.buttons {
+  &:not(:last-child) {
+    margin-bottom: 0;
+  }
+
+  .button:not(:last-child) {
+    margin-right: $gi-spacer;
+  }
+
+  @include mobile {
+    .button {
+      font-size: $size-6; // force to be default size on mobile
+    }
+  }
+}
+</style>
 <script>
-import * as Events from '../../../shared/events'
-import backend from '../js/backend/'
-import { latestContractState } from '../js/state'
-import L from '../js/translations'
+import sbp from '../../../shared/sbp.js'
+import L from './utils/translations.js'
+import Bars from './components/Graphs/Bars.vue'
+import Loading from './components/Loading.vue'
+import MembersCircle from './components/MembersCircle.vue'
 
 export default {
   name: 'Join',
+  components: {
+    Bars,
+    Loading,
+    MembersCircle
+  },
   async mounted () {
     try {
-      let state = await latestContractState(this.$route.query.groupId)
+      let state = await sbp('state/latestContractState', this.$route.query.groupId)
       if (!state.invitees.find(invitee => invitee === this.$store.state.loggedIn.name)) {
         // TODO: proper user-facing error
         // TODO: somehow I got this error... I created 4 accounts, and after inviting
@@ -120,9 +130,15 @@ export default {
       // TODO: use the state.profiles directly?
       var members = []
       for (const name of Object.keys(state.profiles)) {
-        members.push(await latestContractState(state.profiles[name].contractId))
+        members.push(await sbp('state/latestContractState', state.profiles[name].contractID))
       }
+
       state.members = members
+
+      // Mocked histoy to show on members-circle
+      state.incomeCurrencySign = '$'
+      state.history = [1.1, 1.3, 0.7, 1.05, 1, 1.3]
+
       this.contract = state
     } catch (ex) {
       // TODO Add ui facing error notification
@@ -135,18 +151,17 @@ export default {
       try {
         // post acceptance event to the group contract
         this.errorMsg = null
-        let latest = await backend.latestHash(this.$route.query.groupId)
-        let acceptance = new Events.HashableGroupAcceptInvitation(
+        let acceptance = await sbp('gi/contract/create-action', 'GroupAcceptInvitation',
           {
             username: this.$store.state.loggedIn.name,
             identityContractId: this.$store.state.loggedIn.identityContractId,
             inviteHash: this.$route.query.inviteHash,
-            acceptanceDate: new Date()
+            acceptanceDate: new Date().toISOString()
           },
-          latest
+          this.$route.query.groupId
         )
         // let the group know we've accepted their invite
-        await backend.publishLogEntry(this.$route.query.groupId, acceptance)
+        await sbp('backend/publishLogEntry', acceptance)
         // sync the group's contract state
         await this.$store.dispatch('syncContractWithServer', this.$route.query.groupId)
         // after syncing, we can set the current group
@@ -165,16 +180,15 @@ export default {
       try {
         // post decline event
         this.errorMsg = null
-        let latest = await backend.latestHash(this.$route.query.groupId)
-        let declination = new Events.HashableGroupDeclineInvitation(
+        let declination = await sbp('gi/contract/create-action', 'GroupDeclineInvitation',
           {
             username: this.$store.state.loggedIn.name,
             inviteHash: this.$route.query.inviteHash,
-            declinedDate: new Date()
+            declinedDate: new Date().toISOString()
           },
-          latest
+          this.$route.query.groupId
         )
-        await backend.publishLogEntry(this.$route.query.groupId, declination)
+        await sbp('backend/publishLogEntry', declination)
 
         // remove invite and return to mailbox
         this.$store.commit('deleteMail', this.$route.query.inviteHash)
@@ -182,12 +196,6 @@ export default {
       } catch (ex) {
         console.log(ex)
         this.errorMsg = L('Failed to Decline Invite')
-      }
-    },
-    formatDate: function (date) {
-      if (date) {
-        let formatString = new Date(date)
-        return formatString.toDateString()
       }
     }
   },

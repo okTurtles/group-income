@@ -40,34 +40,34 @@ module.exports = function (hapi: Object) {
     // https://github.com/swissmanu/primus-responder
     spark.on('request', async function (req, done) {
       try {
-        var {type, data: {contractId}} = req
+        var {type, data: {contractID}} = req
         var success = reply(SUCCESS, {type, id})
         console.log(bold(`[pubsub] REQUEST '${type}' from '${id}'`), req)
         switch (type) {
           case SUB:
-            if (spark.rooms().indexOf(contractId) === -1) {
-              spark.join(contractId, function () {
+            if (spark.rooms().indexOf(contractID) === -1) {
+              spark.join(contractID, function () {
                 spark.on('leaveallrooms', (rooms) => {
                   console.log(bold.yellow(`[pubsub] ${id} leaveallrooms`))
                   // this gets called on spark.leaveAll and 'disconnection'
-                  rooms.forEach(contractId => {
-                    primus.room(contractId).write(reply(UNSUB, {contractId, id}))
+                  rooms.forEach(contractID => {
+                    primus.room(contractID).write(reply(UNSUB, {contractID, id}))
                   })
                 })
-                spark.room(contractId).except(id).write(req)
+                spark.room(contractID).except(id).write(req)
                 done(success)
               })
             } else {
-              console.log(`[pubsub] ${id} already subscribed to: ${contractId}`)
+              console.log(`[pubsub] ${id} already subscribed to: ${contractID}`)
               done(success)
             }
             break
           case UNSUB:
-            spark.room(contractId).except(id).write(req)
-            spark.leave(contractId, () => done(success))
+            spark.room(contractID).except(id).write(req)
+            spark.leave(contractID, () => done(success))
             break
           case PUB:
-            spark.room(contractId).except(id).write(req)
+            spark.room(contractID).except(id).write(req)
             break
           default:
             console.error(bold.red(`[pubsub] client ${id} didn't give us a valid type!`), req)

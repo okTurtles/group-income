@@ -1,5 +1,7 @@
 # Troubleshooting
 
+## Miscellaneous
+
 Make sure:
 
 - You have at least Node version 8 installed

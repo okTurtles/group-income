@@ -1,10 +1,12 @@
 'use strict'
 
-import {RESPONSE_TYPE} from './constants'
-import type {JSONType, Response, ResType} from './types'
+import multihash from 'multihashes'
+import {RESPONSE_TYPE} from './constants.js'
+import type {JSONType, Response, ResType} from './types.js'
 
 const Primus = require('primus')
 const nacl = require('tweetnacl')
+const blake = require('blakejs')
 
 export function makeResponse (
   type: ResType,
@@ -14,8 +16,8 @@ export function makeResponse (
   //   // This type wrangling voodoo comes courtesy of: https://github.com/facebook/flow/issues/3041#issuecomment-268027891
   if (type === RESPONSE_TYPE.ERROR) {
     return err
-    ? {type, data, err: typeof err === 'string' ? err : err.message}
-    : {type, err: String(data)}
+      ? {type, data, err: typeof err === 'string' ? err : err.message}
+      : {type, err: String(data)}
   }
   return {type, data}
 }
@@ -39,27 +41,36 @@ export function setupPrimus (server: Object, saveAndDestroy: boolean = false) {
   return primus
 }
 
-var b642buf = b64 => Buffer.from(b64, 'base64')
-// var b642str = b64 => b642buf(b64).toString('utf8')
-// var buf2b64 = buf => Buffer.from(buf).toString('base64')
-var str2buf = str => Buffer.from(str, 'utf8')
-var str2b64 = str => str2buf(str).toString('base64')
-var ary2b64 = ary => Buffer.from(ary).toString('base64')
+export function blake32Hash (data: string) {
+  // TODO: for node/electron, switch to: https://github.com/ludios/node-blake2
+  let uint8array = blake.blake2b(data, null, 32)
+  // TODO: if we switch to webpack we may need: https://github.com/feross/buffer
+  // https://github.com/feross/typedarray-to-buffer
+  var buf = Buffer.from(uint8array.buffer)
+  return multihash.toB58String(multihash.encode(buf, 'blake2b-32', 32))
+}
+
+export const b64ToBuf = b64 => Buffer.from(b64, 'base64')
+export const b64ToStr = b64 => b64ToBuf(b64).toString('utf8')
+export const bufToB64 = buf => Buffer.from(buf).toString('base64')
+export const strToBuf = str => Buffer.from(str, 'utf8')
+export const strToB64 = str => strToBuf(str).toString('base64')
+export const bytesToB64 = ary => Buffer.from(ary).toString('base64')
 
 export function sign (
   {publicKey, secretKey}: {publicKey: string, secretKey: string},
-  futz: string = '',
-  msg: string = 'hello!'
+  msg: string = 'hello!',
+  futz: string = ''
 ) {
-  return str2b64(JSON.stringify({
+  return strToB64(JSON.stringify({
     msg: msg + futz,
     key: publicKey,
-    sig: ary2b64(nacl.sign.detached(str2buf(msg), b642buf(secretKey)))
+    sig: bytesToB64(nacl.sign.detached(strToBuf(msg), b64ToBuf(secretKey)))
   }))
 }
 
 export function verify (
   msg: string, key: string, sig: string
 ) {
-  return nacl.sign.detached.verify(str2buf(msg), b642buf(sig), b642buf(key))
+  return nacl.sign.detached.verify(strToBuf(msg), b64ToBuf(sig), b64ToBuf(key))
 }

@@ -1,0 +1,24 @@
+@import "../../node_modules/bulma/sass/components/modal";
+
+.modal-content {
+  &.gi-is-large {
+    background: white;
+    width: 980px;
+    max-width: 100%;
+    padding: $gi-spacer;
+    border-radius: $radius;
+  }
+
+  @include mobile {
+    &.gi-is-large {
+      margin: 0;
+    }
+  }
+
+  @include tablet {
+    &.gi-is-large {
+      padding: $gi-spacer-lg;
+      max-width: calc(100vw - #{$gi-spacer*2});
+    }
+  }
+}

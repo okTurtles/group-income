@@ -2,23 +2,38 @@
   <section class="section full-screen">
     <div class="columns">
       <div class="column"></div>
-      <div class="column" style="text-align: center" >
+      <div class="column" style="text-align: center;" >
         <div>
           <div class="subtitle is-3"><i18n>Your vote has been requested on a proposal for the group:</i18n></div>
           <div class="title is-1">{{contract.groupName}}</div>
         </div>
         <div class="panel">
           <div class="panel-block">
-            <div style="display: inline;">
-             {{proposal.proposal}}
-            </div>
+            <p>
+              <!-- TODO different templates for different invitation types -->
+              <i18n>This is an invitation proposal. The user to be invited: </i18n>
+              <strong data-test="candidateName">{{proposal.candidate}}</strong>
+            </p>
           </div>
-          <div class="panel-block notification is-warning" style="text-align: center">
-            <strong style="margin: 0 auto"><i18n>Your Decision?</i18n></strong>
+          <div class="panel-block notification is-warning" style="text-align: center;">
+            <strong style="margin: 0 auto;"><i18n>Your Decision?</i18n></strong>
           </div>
-          <div class="panel-block center" style="display: block; text-align: center">
+          <div class="panel-block center" style="display: block; text-align: center;">
             <div id="errorMsg" v-if="errorMsg" class="help is-danger">{{errorMsg}}</div>
-            <a id="ForLink" class="button is-success is-large" v-on:click="four" style="margin-left:auto; margin-right: 20px"><i18n>For</i18n></a><a id="AgainstLink" class="button is-danger is-large" v-on:click="against" style="margin-right:auto; margin-right: 20px"><i18n>Against</i18n></a>
+            <a class="button is-success is-large"
+              data-test="forLink"
+              v-on:click="voteFor"
+              style="margin-left:auto; margin-right: 20px;"
+            >
+              <i18n>For</i18n>
+            </a>
+            <a class="button is-danger is-large"
+              id="AgainstLink"
+              v-on:click="voteAgainst"
+              style="margin-right:auto; margin-right: 20px;"
+            >
+              <i18n>Against</i18n>
+            </a>
           </div>
         </div>
       </div>
@@ -27,11 +42,9 @@
   </section>
 </template>
 <script>
-import * as Events from '../../../shared/events'
-import backend from '../js/backend/'
-import template from 'string-template'
-import L from '../js/translations'
-import _ from 'lodash'
+import sbp from '../../../shared/sbp.js'
+import L from './utils/translations.js'
+import * as _ from '../utils/giLodash.js'
 export default {
   name: 'Vote',
   computed: {
@@ -46,26 +59,30 @@ export default {
     }
   },
   methods: {
-    async four () { // for is a reserved word so Vue doesn't like it
+    async voteFor () {
       this.errorMsg = null
       try {
-        // Create a vote for the proposal
-        let latest = await backend.latestHash(this.$route.query.groupId)
-        let vote = new Events.HashableGroupVoteForProposal({ username: this.$store.state.loggedIn.name, proposalHash: this.$route.query.proposalHash }, latest)
+        // TODO: this section is unclear and it's not clear what's going on at all.
+        //       rewrite and make it nicer.
+        let vote = await sbp('gi/contract/create-action', 'GroupVoteForProposal',
+          {
+            username: this.$store.state.loggedIn.name,
+            proposalHash: this.$route.query.proposalHash
+          },
+          this.$route.query.groupId
+        )
         let proposal = _.cloneDeep(this.proposal)
-        let threshold = Math.ceil(proposal.percentage * this.memberCount)
+        let threshold = Math.ceil(proposal.threshold * this.memberCount)
 
-        await backend.publishLogEntry(this.$route.query.groupId, vote)
+        await sbp('backend/publishLogEntry', vote)
         // If the vote passes fulfill the action
         if (proposal.for.length + 1 >= threshold) {
-          let lastActionHash = null
-          const actionDate = new Date().toString()
+          // TODO: this is poorly implementated. do not create poposals in this manner.
+          console.error('proposal actions:', proposal.actions)
           for (let step of proposal.actions) {
-            latest = await backend.latestHash(step.contractId)
-            let actObj = JSON.parse(template(step.action, {lastActionHash, actionDate}))
-            let entry = new Events[actObj.type](actObj.data, latest)
-            lastActionHash = entry.toHash()
-            await backend.publishLogEntry(step.contractId, entry)
+            let actData = JSON.parse(step.action)
+            let entry = await sbp('gi/contract/create-action', step.type, actData, step.contractID)
+            await sbp('backend/publishLogEntry', entry)
           }
         }
         // return to mailbox
@@ -75,13 +92,18 @@ export default {
         this.errorMsg = L('Failed to Cast Vote')
       }
     },
-    async against () {
+    async voteAgainst () {
       this.errorMsg = null
       try {
         // Create a against the proposal
-        let latest = await backend.latestHash(this.$route.query.groupId)
-        let vote = new Events.HashableGroupVoteAgainstProposal({ username: this.$store.state.loggedIn.name, proposalHash: this.$route.query.proposalHash }, latest)
-        await backend.publishLogEntry(this.$route.query.groupId, vote)
+        let vote = await sbp('gi/contract/create-action', 'GroupVoteAgainstProposal',
+          {
+            username: this.$store.state.loggedIn.name,
+            proposalHash: this.$route.query.proposalHash
+          },
+          this.$route.query.groupId
+        )
+        await sbp('backend/publishLogEntry', vote)
         this.$router.push({path: '/mailbox'})
       } catch (ex) {
         console.log(ex)

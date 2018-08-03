@@ -60,11 +60,9 @@ declare module 'sha.js' { declare module.exports: any }
 declare module 'sprint-js' { declare module.exports: any }
 declare module 'sqlite3' { declare module.exports: any }
 declare module 'string' { declare module.exports: any }
-declare module 'superagent' { declare module.exports: any }
 declare module 'tweetnacl' { declare module.exports: any }
 declare module 'tweetnacl-util' { declare module.exports: any }
 declare module 'uws' { declare module.exports: any }
-declare module 'vee-validate' { declare module.exports: any }
 declare module 'velocity-animate' { declare module.exports: any }
 declare module 'vue' { declare module.exports: any }
 declare module 'vue-router' { declare module.exports: any }
@@ -81,6 +79,8 @@ declare module 'mocha' { declare module.exports: any }
 declare module 'nightmare' { declare module.exports: any }
 declare module 'pathmodify' { declare module.exports: any }
 declare module 'should' { declare module.exports: any }
+declare module 'should-sinon' { declare module.exports: any }
+declare module 'sinon' { declare module.exports: any }
 declare module 'standard' { declare module.exports: any }
 declare module 'through2' { declare module.exports: any }
 declare module 'vue-hot-reload-api' { declare module.exports: any }
@@ -92,27 +92,30 @@ declare module 'protobufjs/light' { declare module.exports: any }
 declare module 'node-fetch' { declare module.exports: any }
 
 // .vue and .ejs files
-declare module './views/NavBar.vue' { declare module.exports: Object }
-declare module '../views/i18n.vue' { declare module.exports: Object }
+declare module './GroupName.vue' { declare module.exports: Object }
+declare module './GroupPurpose.vue' { declare module.exports: Object }
+declare module './GroupMincome.vue' { declare module.exports: Object }
+declare module './GroupRules.vue' { declare module.exports: Object }
+declare module './GroupPrivacy.vue' { declare module.exports: Object }
+declare module './GroupInvitees.vue' { declare module.exports: Object }
+declare module './GroupSummary.vue' { declare module.exports: Object }
+declare module '../views/components/i18n.vue' { declare module.exports: Object }
+declare module './views/containers/NavBar.vue' { declare module.exports: Object }
 declare module '../views/CreateGroup.vue' { declare module.exports: Object }
-declare module '../views/i18n.vue' { declare module.exports: Object }
-declare module '../views/NewIncomeView.vue' { declare module.exports: Object }
 declare module '../views/PayGroup.vue' { declare module.exports: Object }
 declare module '../views/SignUp.vue' { declare module.exports: Object }
-declare module '../views/UserGroupView.vue' { declare module.exports: Object }
-declare module '../views/UserProfileView.vue' { declare module.exports: Object }
+declare module '../views/UserGroup.vue' { declare module.exports: Object }
+declare module '../views/UserProfile.vue' { declare module.exports: Object }
 declare module '../views/VueAssistant.vue' { declare module.exports: Object }
 declare module '../views/GroupDashboard.vue' { declare module.exports: Object }
 declare module '../views/ProposeMember.vue' { declare module.exports: Object }
 declare module '../views/Vote.vue' { declare module.exports: Object }
-declare module '../views/test.ejs' { declare module.exports: string }
-declare module '../views/EventLog.vue' { declare module.exports: Object }
 declare module '../views/Invite.vue' { declare module.exports: Object }
 declare module '../views/Mailbox.vue' { declare module.exports: Object }
 declare module '../views/Join.vue' { declare module.exports: Object }
 declare module '../views/Home.vue' { declare module.exports: Object }
 declare module '../components/MembersCircle.vue' { declare module.exports: Object }
-
+declare module '../views/DesignSystem.vue' { declare module.exports: Object }
 // special case for interface.js
 declare module './interface' { declare module.exports: any }
 

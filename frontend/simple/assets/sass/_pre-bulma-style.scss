@@ -1,0 +1,401 @@
+// stylelint-disable
+// ---------------
+// Stuff moved out of _groupincome.scss on March 22, 2017
+// Used only on frontend/_static
+// ---------------
+
+.new-user-container {
+  width: 30rem;
+  background-color: rgba(255, 255, 255, 1);
+  padding: 5rem;
+  border-radius: 0.3rem;
+  -webkit-box-shadow: 0 10px 19px -6px rgba(64, 92, 97, 0.24);
+  -moz-box-shadow: 0 10px 19px -6px rgba(64, 92, 97, 0.24);
+  box-shadow: 0 10px 19px -6px rgba(64, 92, 97, 0.24);
+  margin: 0 auto;
+}
+
+.new-user-container h2 {
+  text-align: center;
+}
+
+.contribution-limits {
+  margin-top: 4rem;
+}
+
+.add-income h3, .pay-group h3 {
+  text-align: center;
+  font-size: 3.6rem;
+  font-weight: 300;
+}
+
+.new-user-container.collapsed {
+  width: 15rem;
+  border-radius: 15rem;
+}
+
+.btn {
+  background-color: rgba(161, 206, 41, 1);
+  color: rgba(255, 255, 255, 1);
+  border-radius: 0.5rem;
+  font-size: 1.8rem;
+  font-weight: 700;
+  border: none;
+  padding: 1.8rem;
+}
+
+.text-input {
+  border: none;
+  padding: 1.5rem 1.5rem 0.5rem 0;
+  border-bottom: 0.2rem dashed rgba(204, 204, 204, 1);
+  font-size: 1.8rem;
+}
+
+.text-input.contribution-limit {
+  padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+}
+
+img.venmo {
+  height: 1rem;
+  position: relative;
+  top: -0.2rem;
+}
+
+.dollar-label {
+  position: absolute;
+  left: 0;
+  top: -3.4rem;
+  font-size: 1.8rem;
+}
+
+.text-input {
+  width: 27rem;
+}
+
+// This causes problems with input text fields and bulma
+// input:focus {
+//   border-bottom: 2px solid rgba(161, 206, 41, 1);
+//   outline: none;
+// }
+
+.payment-options {
+  display: inline-block; float: right;
+}
+
+.group-member {
+  list-style: none;
+  background-color: rgba(250, 250, 250, 1);
+  padding: 2rem;
+  border-radius: 0.3rem;
+  margin: 0.5rem;
+  text-align: left;
+}
+
+.payment-information .date {
+  color: rgba(200, 200, 200, 1);
+  display: block;
+  text-align: left;
+}
+
+.payment-information table {
+  width: 100%;
+}
+
+.payment-information .amount {
+  display: block;
+  text-align: right;
+  font-weight: 700;
+}
+
+.payment-information .total .amount {
+  font-size: 2.4rem;
+}
+
+.group-member .member-name {
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.group-member.paid .payment-options {
+  display: none;
+}
+
+.dashboard-item ul {
+  width: 75%;
+  float: right;
+}
+
+.dashboard-item .payment-information {
+  width: 20%;
+  float: left;
+  text-align: center;
+  padding-top: 5rem;
+}
+
+.group-member.unpaid {
+  background: rgba(255, 248, 241, 1);
+  border-left: 1rem solid rgba(249, 147, 0, 1);
+
+}
+
+.total.needs td {
+  padding-bottom: 1rem;
+}
+
+tr.paid td span {
+  text-decoration: line-through;
+}
+
+.payment-information td span .paid {
+  display: none;
+}
+
+.payment-information tr {
+  border-bottom: 0.2rem dashed rgba(251, 251, 251, 1);
+}
+
+tr.paid td .date span.paid {
+  display: block;
+  font-size: 1.2rem;
+  text-decoration: none;
+}
+
+.new-user-container .btn {
+  margin: 1rem;
+  width: 10rem;
+  display: block;
+  margin: 1rem auto 0 auto;
+}
+
+.dashboard {
+  width: 80%;
+  background-color: rgba(255, 255, 255, 1);
+  margin: 0 auto;
+  border-radius: 0.3rem;
+  -webkit-box-shadow: 0 10px 19px -6px rgba(64, 92, 97, 0.24);
+  -moz-box-shadow: 0 10px 19px -6px rgba(64, 92, 97, 0.24);
+  box-shadow: 0 10px 19px -6px rgba(64, 92, 97, 0.24);
+}
+
+.my-dashboard {
+  width: 40%;
+  float: left;
+}
+
+.group-dashboard {
+  width: 40%;
+  float: right;
+  text-align: right;
+}
+
+.dashboard-top {
+  padding: 5rem;
+  background-color: rgba(248, 248, 248, 1);
+  padding-bottom: 2.5rem;
+}
+
+.dashboard-labels span {
+  display: block;
+  font-size: 24px;
+  font-weight: bold;
+  padding-bottom: 2.5rem;
+}
+
+.dashboard-labels .your-income {
+  width: 20%;
+  float: left;
+  text-align: center;
+}
+
+.dashboard-labels .your-group-payments {
+  width: 75%;
+  float: right;
+  text-align: center;
+}
+
+.dashboard-bottom {
+  padding: 2.5rem;
+}
+
+.group-dashboard h2 {
+}
+
+.group-dashboard span {
+  display: block;
+}
+
+.payment-information td {
+  padding: 0 1.25rem;
+}
+
+.payment-disbursal {
+}
+
+.payment-disbursal li .paid, .payment-disbursal li .unpaid, .payment-disbursal li .user-payment-date {
+  display: none;
+}
+
+.payment-disbursal li.paid .user-payment-date {
+  display: inline-block;
+  font-size: 1.8rem;
+  text-align: center;
+  padding-top: 0.5rem;
+  float: right;
+}
+
+.payment-disbursal li.paid {
+  opacity: 0.7;
+}
+
+.payment-disbursal li.paid .paid {
+  display: inline;
+}
+
+.payment-disbursal li.unpaid .unpaid {
+  display: inline;
+}
+
+.payment-options .btn {
+  padding: 0.3rem 0.8rem 0.6rem 0.8rem;
+}
+
+.payment-options img {
+  height: 0.9rem;
+}
+
+.income-received-item {
+  display: block;
+  text-align: center;
+}
+
+.amount .add-income.btn {
+  padding: 0 0.5rem;
+  font-size: 1.2rem
+}
+
+.total.contributions.contributed {
+  border-top: 0.5rem solid rgba(240, 240, 240, 1);
+}
+
+.total.contributions.contributed .amount {
+  color: rgba(161, 209, 12, 1);
+}
+
+.total.contributions.remaining .amount {
+  color: rgba(249, 147, 0, 1);
+}
+
+.total.contributions td {
+  padding: 1rem 1.25rem;
+  background-color: rgba(251, 251, 251, 1);
+}
+
+// ---------------
+
+label {
+  display: block;
+  position: relative;
+  text-transform: uppercase;
+  font-size: 1.2rem;
+  margin-top: 0.5rem;
+  margin-bottom: 1.5rem;
+  font-weight: bold;
+}
+
+// ----------------------------------
+// stuff that we definitely do not
+// need now that we're using bulma
+// and SASS
+// ----------------------------------
+html {
+  height: 100%;
+  font-size: 62.5%; // TODO: ???
+}
+
+body {
+  background-color: rgba(243, 254, 243, 1);
+  color: rgba(90, 94, 93, 1);
+  font-family: "Lato", "HelveticaNeue", "Helvetica Neue", Helvetica, sans-serif;
+  font-size: 1.6rem;
+  height: 100%;
+}
+
+// TODO: this DXImageTransform insanity & other browser-specific
+//       stuff needs to be replaced with either SASS specific
+//       stuff or autoprefixer (like bulma does it)
+body .wrapper {
+  background: #fcfffb; // Old browsers
+  background: -moz-linear-gradient(top,  #fcfffb 0%, #edfef8 50%, #caf9fd 100%); // FF3.6-15
+  background: -webkit-linear-gradient(top,  #fcfffb 0%,#edfef8 50%,#caf9fd 100%); // Chrome10-25,Safari5.1-6
+  background: linear-gradient(to bottom,  #fcfffb 0%,#edfef8 50%,#caf9fd 100%); // W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#fcfffb', endColorstr='#caf9fd',GradientType=0 ); // IE6-9
+  padding-bottom: 5rem;
+  height: 100%;
+}
+
+body.new-user .wrapper {
+  height: auto;
+}
+
+// TODO: ??
+// body * {
+//   transition: all .25s;
+// }
+
+p {
+  font-weight: 300;
+}
+
+b, h1, h2, h3, h4 {
+  font-weight: 700;
+}
+
+// .groupincome-logo, nav {
+//   display: inline-block;
+// }
+
+// .groupincome-logo {
+//   padding: 2rem;
+// }
+
+// TODO: bulmize!
+// nav ul {
+//   margin: 0;
+//   padding-right: 2rem;
+// }
+
+// nav {
+//   float: right;
+// }
+
+// nav li {
+//   font-size: 1.8rem;
+//   list-style: none;
+//   margin: 0;
+//   display: inline-block;
+// }
+//
+// nav li a {
+//   text-decoration: none;
+//   color: rgba(90, 94, 92, 1);
+//   display: block;
+//   padding: 4rem 1.5rem 1.5rem 1.5rem;
+//   color: rgba(83, 83, 83, 1);
+//   border-top: .5rem solid rgba(99, 201, 240, 0);
+// }
+
+// nav li a:hover {
+//   border-top: .5rem solid rgba(99, 201, 240, 1);
+//   color: rgba(99, 201, 240, 1);
+// }
+
+
+.groupincome-logo .white {
+  display: none;
+}
+
+
+.container {
+  width: 100%;
+  height: auto;
+}

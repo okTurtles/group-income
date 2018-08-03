@@ -58,6 +58,19 @@ grunt test
 
 **Use [Daydream](https://github.com/segmentio/daydream) to create frontend tests. All new functionality must have corresponding tests!**
 
+#### Using Docker for extra security
+
+You can run commands in a Docker container by using `npm run docker -- <cmd>` instead.
+
+For example:
+
+```
+$ npm run docker -- npm install
+$ npm run docker -- grunt dev
+```
+
+For details, see: **[`Docker.md`](docs/Docker.md)**
+
 ## Troubleshooting
 
 If you run into any errors [during the setup](docs/Getting-Started-frontend.md#how-do-i-get-set-up--just-run-the-site), try the suggestions in [`Troubleshooting.md`](docs/Troubleshooting.md).
