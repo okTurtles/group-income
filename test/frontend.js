@@ -45,14 +45,16 @@ function login (name) {
   }
 }
 
-function signup (name, email, password) {
+function signup (name, email = 'test@test.com', password = '1234567') {
   return function (n) {
     n.goto(page('/'))
       .wait(elT('signupBtn'))
       .click(elT('signupBtn'))
       .wait(elT('modal'))
       .insert(elT('signName'), name)
+      .insert(elT('signEmail')) // clear
       .insert(elT('signEmail'), email)
+      .insert(elT('signPassword')) // clear
       .insert(elT('signPassword'), password)
       .wait(el => !document.querySelector(el).disabled, elT('signSubmit'))
       .click(elT('signSubmit'))

@@ -179,10 +179,12 @@ export default DefineContract({
     validate: function (data) {
       // ['proposalHash', 'string']
     },
-    mutation: (state, {data}) => {
-      if (state.proposals[data.proposalHash]) {
-        // TODO: flag instead of delete to make proposal history easier?
-        Vue.delete(state.proposals, data.proposalHash)
+    vuexModuleConfig: {
+      mutation: (state, {data}) => {
+        if (state.proposals[data.proposalHash]) {
+          // TODO: flag instead of delete to make proposal history easier?
+          Vue.delete(state.proposals, data.proposalHash)
+        }
       }
     }
   },

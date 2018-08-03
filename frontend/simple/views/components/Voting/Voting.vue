@@ -118,9 +118,8 @@ import Sign from './Sign.vue'
 import L from '../../utils/translations'
 import { votingType, votesObj } from './validators'
 import template from 'string-template'
-import { HashableGroupProposal } from '../../../../../shared/events'
-
-const { TypeInvitation, TypeRemoval, TypeIncome, TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold } = HashableGroupProposal
+import contracts from '../../../model/contracts.js'
+const { TypeInvitation, TypeRemoval, TypeIncome, TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold } = contracts.GroupProposal
 
 export default {
   name: 'Voting',

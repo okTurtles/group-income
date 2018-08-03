@@ -38,10 +38,8 @@
 </style>
 <script>
 import { mapGetters } from 'vuex'
-import template from 'string-template'
+import sbp from '../../../../shared/sbp.js'
 import Voting from '../components/Voting'
-import * as Events from '../../../../shared/events'
-import backend from '../../controller/backend/'
 
 export default {
   name: 'Proposals',
@@ -102,12 +100,11 @@ export default {
       try {
         // Create a vote against the proposal
         const groupId = this.$store.state.currentGroupId
-        const latest = await backend.latestHash(groupId)
-        const vote = new Events.HashableGroupVoteAgainstProposal({
+        const vote = await sbp('gi/contract/create-action', 'GroupVoteAgainstProposal', {
           username: this.currentUserIdentityContract.attributes.name,
           proposalHash: hash
-        }, latest)
-        await backend.publishLogEntry(groupId, vote)
+        }, groupId)
+        await sbp('backend/publishLogEntry', vote)
       } catch (ex) {
         // TODO: save to error log
         console.error(ex)
@@ -118,12 +115,11 @@ export default {
       try {
         // Create a vote for the proposal
         const groupId = this.$store.state.currentGroupId
-        const latest = await backend.latestHash(groupId)
-        const vote = new Events.HashableGroupVoteForProposal({
+        const vote = await sbp('gi/contract/create-action', 'GroupVoteForProposal', {
           username: this.currentUserIdentityContract.attributes.name,
           proposalHash: hash
-        }, latest)
-        await backend.publishLogEntry(groupId, vote)
+        }, groupId)
+        await sbp('backend/publishLogEntry', vote)
 
         // If the vote passes fulfill the action
         const proposal = this.$store.getters.proposalData(hash)
@@ -141,14 +137,8 @@ export default {
     async handleVotePassed (proposal) {
       try {
         // If the vote passes fulfill the action
-        let lastActionHash = null
-        const actionDate = new Date().toString()
         for (let step of proposal.actions) {
-          let latest = await backend.latestHash(step.contractId)
-          let actObj = JSON.parse(template(step.action, {lastActionHash, actionDate}))
-          let entry = new Events[actObj.type](actObj.data, latest)
-          lastActionHash = entry.toHash()
-          await backend.publishLogEntry(step.contractId, entry)
+          await sbp('backend/publishLogEntry', step.action)
         }
       } catch (ex) {
         // TODO: save to error error
@@ -160,12 +150,11 @@ export default {
       try {
         // Create proposal close event
         const groupId = this.$store.state.currentGroupId
-        const latest = await backend.latestHash(groupId)
-        const close = new Events.HashableGroupCloseProposal({
+        const close = await sbp('gi/contract/create-action', 'GroupCloseProposal', {
           username: this.currentUserIdentityContract.attributes.name,
           proposalHash: hash
-        }, latest)
-        await backend.publishLogEntry(groupId, close)
+        }, groupId)
+        await sbp('backend/publishLogEntry', close)
       } catch (ex) {
         // TODO: save to error log
         console.error(ex)

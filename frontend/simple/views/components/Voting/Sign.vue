@@ -79,9 +79,8 @@
 import { votingType } from '../../utils/validators'
 import { toPercent } from '../../utils/filters'
 import UserImage from '../../containers/UserImage.vue'
-import { HashableGroupProposal } from '../../../../../shared/events'
-
-const { TypeInvitation, TypeRemoval, TypeIncome, TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold } = HashableGroupProposal
+import contracts from '../../../model/contracts.js'
+const { TypeInvitation, TypeRemoval, TypeIncome, TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold } = contracts.GroupProposal
 
 export default {
   name: 'Sign',
