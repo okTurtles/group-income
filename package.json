@@ -135,6 +135,7 @@
     "should-sinon": "0.0.6",
     "sinon": "4.5.0",
     "standard": "11.0.1",
+    "string": "3.3.3",
     "stylelint": "9.4.0",
     "stylelint-config-standard": "18.2.0",
     "through2": "2.0.3",
