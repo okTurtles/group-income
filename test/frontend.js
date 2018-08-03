@@ -79,7 +79,7 @@ Nightmare.action('size', function (done) {
   }, done)
 })
 
-describe.only('Frontend', function () {
+describe('Frontend', function () {
   const n = Nightmare({
     openDevTools: { mode: 'detach' },
     show: !!process.env.SHOW_BROWSER,
@@ -372,10 +372,7 @@ describe.only('Frontend', function () {
         .wait(elT('searchUser'))
         .insert(elT('searchUser'), username + '3')
         .click(elT('addButton'))
-        .wait(
-          (el) => document.querySelectorAll(el).length > 0,
-          elT('member')
-        )
+        .wait(el => document.querySelectorAll(el).length > 0, elT('member'))
         .click(elT('submit'))
         .wait(elT('notifyInvitedSuccess'))
       // Check vote banner on dashboard
@@ -387,18 +384,18 @@ describe.only('Frontend', function () {
 
       let initiator = await n
         .wait(elT('initiator'))
-        .evaluate(
-          (el) => document.querySelector(el) && document.querySelector(el).innerText,
-          elT('initiator')
-        )
+        .evaluate(el => {
+          var it = document.querySelector(el)
+          return it && it.innerText
+        }, elT('initiator'))
       should(initiator).equal(username + '5')
 
       let candidate = await n
         .wait(elT('proposal'))
-        .evaluate(
-          (el) => document.querySelector(el) && document.querySelector(el).innerText,
-          elT('proposal')
-        )
+        .evaluate(el => {
+          var it = document.querySelector(el)
+          return it && it.innerText
+        }, elT('proposal'))
       should(candidate).containEql(username + '3')
       // Check mailbox
       await n
@@ -409,10 +406,10 @@ describe.only('Frontend', function () {
 
       candidate = await n
         .wait(elT('candidateName'))
-        .evaluate(
-          (el) => document.querySelector(el) && document.querySelector(el).innerText,
-          elT('candidateName')
-        )
+        .evaluate(el => {
+          var it = document.querySelector(el)
+          return it && it.innerText
+        }, elT('candidateName'))
       should(candidate).equal(username + '3')
 
       let success = await n

@@ -43,7 +43,6 @@
 </template>
 <script>
 import sbp from '../../../shared/sbp.js'
-import template from 'string-template'
 import L from './utils/translations.js'
 import * as _ from '../utils/giLodash.js'
 export default {
@@ -78,13 +77,11 @@ export default {
         await sbp('backend/publishLogEntry', vote)
         // If the vote passes fulfill the action
         if (proposal.for.length + 1 >= threshold) {
-          let lastActionHash = null
-          const actionDate = new Date().toISOString()
           // TODO: this is poorly implementated. do not create poposals in this manner.
+          console.error('proposal actions:', proposal.actions)
           for (let step of proposal.actions) {
-            let actObj = JSON.parse(template(step.action, {lastActionHash, actionDate}))
-            let entry = await sbp('gi/contract/create-action', actObj.type, actObj.data, step.contractID)
-            lastActionHash = entry.hash()
+            let actData = JSON.parse(step.action)
+            let entry = await sbp('gi/contract/create-action', step.type, actData, step.contractID)
             await sbp('backend/publishLogEntry', entry)
           }
         }
