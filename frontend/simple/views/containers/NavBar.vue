@@ -62,7 +62,7 @@
               $store.getters.currentUserIdentityContract.attributes.picture"
               v-bind:src="$store.getters.currentUserIdentityContract.attributes.picture"
             >
-            <span>
+            <span data-test="profileDisplayName">
               {{ ($store.getters.currentUserIdentityContract &&
                 $store.getters.currentUserIdentityContract.attributes &&
                 $store.getters.currentUserIdentityContract.attributes.displayName) ||

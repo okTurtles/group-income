@@ -7,9 +7,7 @@
  - https://github.com/segmentio/nightmare/blob/2771166/test/index.js#L43-L46
  */
 
-const chalk = require('chalk')
 const should = require('should')
-
 const Nightmare = require('nightmare')
 const url = require('url')
 const exec = require('child_process').execFileSync
@@ -17,44 +15,89 @@ const fs = require('fs')
 
 // Access any element by its data-test attribute
 function elT (el) {
-  return `[data-test=${el}]`
+  return `[data-test="${el}"]`
 }
 
-function login (username) {
+function page (page) {
+  return url.resolve(process.env.FRONTEND_URL, `simple/${page}`)
+}
+
+// TODO: consider converting these to Nightmare actions that check if we're
+//       logged in/logged out and then act appropriately (e.g. instead of
+//       `n.use(logout())` we do `n.logoutIfLoggedIn()`)
+function logout () {
   return function (n) {
-    n
-      // Logout
+    n.wait(elT('openProfileDropDown'))
       .click(elT('openProfileDropDown'))
       .click(elT('logoutBtn'))
-      // Open login modal
-      .wait(elT('loginBtn'))
-      .click(elT('loginBtn'))
-      // Login
-      .wait(`${elT('loginModal')}.is-active`)
-      .insert(elT('loginName'), username)
-      .insert(elT('loginPassword'), 'testtest')
-      .click(elT('loginSubmit'))
-      .wait(
-        (el) => !document.querySelector(el),
-        `${elT('loginModal')}.is-active`
-      )
   }
 }
 
-describe('Frontend', function () {
+function login (name) {
+  return function (n) {
+    n.wait(elT('loginBtn'))
+      .click(elT('loginBtn'))
+      .wait(`${elT('loginModal')}.is-active`)
+      .insert(elT('loginName'), name)
+      .insert(elT('loginPassword'), 'testtest')
+      .click(elT('loginSubmit'))
+      // we don't check the specific name because the display name could have been modified
+      .wait(elT('profileDisplayName'))
+  }
+}
+
+function signup (name, email, password) {
+  return function (n) {
+    n.goto(page('signup'))
+      .wait(elT('signName'))
+      .insert(elT('signName'), name)
+      .insert(elT('signEmail'), email)
+      .insert(elT('signPassword'), password)
+      .wait(el => !document.querySelector(el).disabled, elT('signSubmit'))
+      .click(elT('signSubmit'))
+      .wait((el, name) => {
+        var it = document.querySelector(el)
+        return it && it.innerText === name
+      }, elT('profileDisplayName'), name)
+  }
+}
+
+// .use() this during debugging to track down which Nightmare action is failing`
+function note (message) {
+  return function (n) {
+    n.wait(msg => { console.error('[NIGHTMARE NOTE]: ' + msg); return true }, message)
+  }
+}
+
+// example of how to extend nightmare with custom functions, see
+// https://github.com/segmentio/nightmare#nightmareactionname-electronactionelectronnamespace-actionnamespace
+Nightmare.action('size', function (done) {
+  this.evaluate_now(() => {
+    const width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0)
+    const height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0)
+    return { height, width }
+  }, done)
+})
+
+describe.only('Frontend', function () {
   const n = Nightmare({
-    // openDevTools: true,
+    openDevTools: { mode: 'detach' },
     show: !!process.env.SHOW_BROWSER,
     height: 900
   })
   n.on('page', (type, msg, stack) => {
     if (type === 'error') {
-      console.log(chalk`{bold {red [NIGHTMARE]} {blue msg: ${msg}}}`, stack)
+      console.log('!! [NIGHTMARE] page error:', msg, 'stack:', stack)
     }
   })
   n.on('console', (type, args) => {
     if (type === 'error') {
-      console.log(chalk`{bold {red [NIGHTMARE]} {blue console:}}`, args)
+      var idx = args.indexOf('[NIGHTMARE NOTE]: ')
+      if (idx !== -1) {
+        console.log('!! ' + args.slice(idx))
+      } else {
+        console.log('!! [NIGHTMARE] console error:', args)
+      }
     }
   })
 
@@ -68,20 +111,7 @@ describe('Frontend', function () {
   describe.skip('New user page', function () {
     it('Should create user George', function () {
       this.timeout(5000)
-      return n.goto(page('signup'))
-        .should.finally.containEql({ code: 200, url: page('signup') })
-        .then(() => {
-          return n
-            .wait('.signup')
-            .insert('input[name="name"]', 'George')
-            .insert('input[name="email"]', 'george@lasvegas.com')
-            .insert('input[name="password"]', '$$111$$')
-            .wait(() => !document.querySelector('button[type="submit"]').disabled)
-            .click('.signup button.submit')
-            .wait(() => document.getElementById('serverMsg').innerText !== '')
-            .evaluate(() => document.getElementById('serverMsg').className)
-            .should.finally.containEql('success')
-        })
+      return n.use(signup('George', 'george@lasvegas.com', '$$111$$'))
     })
 
     it.skip('Should fail to create George again', function () {
@@ -90,77 +120,15 @@ describe('Frontend', function () {
     })
   })
 
-  // NOTE: we no longer do anything with the event log page
-  describe.skip('Event Log Test', function () {
-    it('Should Append to the log', async function () {
-      this.timeout(5000) // this one takes a while for some reason
-      await n
-        .goto(page('event-log'))
-        .should.finally.containEql({ code: 200, url: page('event-log') })
-      const result = await n.wait('#random').evaluate(() => ({
-        current: document.getElementById('LogPosition').innerText,
-        eventCount: document.querySelectorAll('.event').length
-      }))
-      await n
-        .click('#random')
-        .wait(() => +document.getElementById('count').innerText > 0)
-      const obj = await n
-        .insert('textarea[name="payload"]', 'This is a test payment event')
-        .select('select[name="type"]', 'Payment')
-        .click('#submit')
-        .wait(() => +document.getElementById('count').innerText > 1)
-        .evaluate(() => ({
-          current: document.getElementById('LogPosition').innerText,
-          eventCount: document.querySelectorAll('.event').length
-        }))
-      should(obj.eventCount).equal(result.eventCount + 2)
-      should(obj.current !== result.current).equal(true)
-    })
-
-    // TODO: restore this based on the new TimeTravel
-    it('Should Traverse Log', async function () {
-      this.timeout(4000)
-      await n.goto(page('event-log'))
-      const prior = await n.evaluate(() => document.getElementById('LogPosition').innerText)
-      const initial = await n
-        .wait('textarea[name="payload"]')
-        .insert('textarea[name="payload"]', 'This is a test Group Payment Event')
-        .select('select[name="type"]', 'Payment')
-        .click('#submit')
-        .wait(prior => document.getElementById('LogPosition').innerText !== prior, prior)
-        .evaluate(() => document.getElementById('LogPosition').innerText)
-      const secondary = await n.click('a.backward')
-        .wait(initial => document.getElementById('LogPosition').innerText !== initial, initial)
-        .evaluate(() => document.getElementById('LogPosition').innerText)
-      should(initial !== secondary).equal(true)
-      const tertiary = await n.click('a.forward')
-        .wait(secondary => document.getElementById('LogPosition').innerText !== secondary, secondary)
-        .evaluate(() => document.getElementById('LogPosition').innerText)
-      should(initial).equal(tertiary)
-    })
-  })
-
   describe('Sign up Test', function () {
-    it('Should register User', async function () {
+    it('Should register User', function () {
       this.timeout(10000)
-      await n.goto(page('signup')).wait(elT('signName'))
-      const signedup = await n
-        .insert(elT('signName'), username)
-        .insert(elT('signEmail'), `test@testgroupincome.com`)
-        .insert(elT('signPassword'), 'testtest')
-        .wait(
-          (el) => !document.querySelector(el).disabled,
-          elT('signSubmit')
-        )
-        .click(elT('signSubmit'))
-        .wait(elT('homeLogo'))
-        .evaluate(() => !!document.querySelector('[data-test="homeLogo"]'))
-      should(signedup).equal(true)
+      return n.use(signup(username, 'test@testgroupincome.com', 'testtest'))
     })
 
-    it('Test Profile Change', async function () {
+    it('Test Profile Change', function () {
       this.timeout(10000)
-      let success = await n
+      return n
         .click(elT('openProfileDropDown'))
         .click(elT('profileLink'))
         .wait(elT('profilePicture'))
@@ -174,24 +142,19 @@ describe('Frontend', function () {
         .click(elT('submit'))
         .wait(elT('profileSaveSuccess'))
         .exists(elT('profileSaveSuccess'))
-      should(success).equal(true)
       // TODO Make more complex. Unfortunately bugs in Nightmare prevent the clearing and re-entering of fields
       // those Nightmare bugs seem to be gone now, so TODO it is
     })
-    it('Test Logout and Login', async function () {
-      this.timeout(10000)
-      const loggedin = await n
-        .use(login(username))
-        .wait(elT('openProfileDropDown'))
-        .click(elT('openProfileDropDown'))
-        .exists(elT('logoutBtn'))
-      should(loggedin).equal(true)
+    it('Test Logout and Login', function () {
+      this.timeout(100000)
+      return n.use(logout()).use(note('logout -> login to: ' + username)).use(login(username))
     })
 
     /* There appears to be a bug in nightmare that causes the insert and type commands to enter old data into the field if the
     insert or type commands or used more than once on the same field. This concatenates the old values to the new.
-     This occurs regardless of whether you clear the field or not. Until its fixed skip this validation test
-     */
+    This occurs regardless of whether you clear the field or not. Until its fixed skip this validation test
+    */
+    // TODO: implement this now that we're using `type` instead of `insert`
     it.skip('Test Validation', async function () {
       this.timeout(4000)
       await n.goto(page('signup'))
@@ -228,89 +191,24 @@ describe('Frontend', function () {
   })
 
   describe('Group Creation Test', function () {
-    it('Create Additional User', async function () {
+    it('Create Additional User', function () {
       this.timeout(8000)
-      const signedup = await n
-        .wait(elT('logoutBtn'))
-        .click(elT('logoutBtn'))
-        .wait(elT('signupBtn'))
-        .click(elT('signupBtn'))
-        .wait(elT('signName'))
-        .insert(elT('signName'), username + '2')
-        .insert(elT('signEmail'), 'test2@testgroupincome.com')
-        .insert(elT('signPassword'), 'testtest')
-        .wait(
-          (el) => document.querySelector(el) && !document.querySelector(el).disabled,
-          elT('signSubmit')
-        )
-        .click(elT('signSubmit'))
-        .wait(elT('homeLogo'))
-        .exists(elT('homeLogo'))
-      should(signedup).equal(true)
+      return n.use(logout()).use(signup(username + '2', 'test2@testgroupincome.com', 'testtest'))
     })
 
-    it('Create Additional User 3', async function () {
+    it('Create Additional User 3', function () {
       this.timeout(8000)
-      const signedup = await n
-        .click(elT('openProfileDropDown'))
-        .wait(elT('logoutBtn'))
-        .click(elT('logoutBtn'))
-        .wait(elT('signupBtn'))
-        .click(elT('signupBtn'))
-        .wait(elT('signName'))
-        .insert(elT('signName'), username + '3')
-        .insert(elT('signEmail'), 'test3@testgroupincome.com')
-        .insert(elT('signPassword'), 'testtest')
-        .wait(
-          (el) => document.querySelector(el) && !document.querySelector(el).disabled,
-          elT('signSubmit')
-        )
-        .click(elT('signSubmit'))
-        .wait(elT('homeLogo'))
-        .exists(elT('homeLogo'))
-      should(signedup).equal(true)
+      return n.use(logout()).use(signup(username + '3', 'test3@testgroupincome.com', 'testtest'))
     })
 
-    it('Create Additional User 4', async function () {
+    it('Create Additional User 4', function () {
       this.timeout(8000)
-      const signedup = await n
-        .click(elT('openProfileDropDown'))
-        .click(elT('logoutBtn'))
-        .wait(elT('signupBtn'))
-        .click(elT('signupBtn'))
-        .wait(elT('signName'))
-        .insert(elT('signName'), username + '4')
-        .insert(elT('signEmail'), 'test4@testgroupincome.com')
-        .insert(elT('signPassword'), 'testtest')
-        .wait(
-          (el) => document.querySelector(el) && !document.querySelector(el).disabled,
-          elT('signSubmit')
-        )
-        .click(elT('signSubmit'))
-        .wait(elT('homeLogo'))
-        .exists(elT('homeLogo'))
-      should(signedup).equal(true)
+      return n.use(logout()).use(signup(username + '4', 'test4@testgroupincome.com', 'testtest'))
     })
 
-    it('Create Additional User 5', async function () {
+    it('Create Additional User 5', function () {
       this.timeout(8000)
-      const signedup = await n
-        .click(elT('openProfileDropDown'))
-        .click(elT('logoutBtn'))
-        .wait(elT('signupBtn'))
-        .click(elT('signupBtn'))
-        .wait(elT('signName'))
-        .insert(elT('signName'), username + '5')
-        .insert(elT('signEmail'), 'test5@testgroupincome.com')
-        .insert(elT('signPassword'), 'testtest')
-        .wait(
-          (el) => document.querySelector(el) && !document.querySelector(el).disabled,
-          elT('signSubmit')
-        )
-        .click(elT('signSubmit'))
-        .wait(elT('homeLogo'))
-        .exists(elT('homeLogo'))
-      should(signedup).equal(true)
+      return n.use(logout()).use(signup(username + '5', 'test5@testgroupincome.com', 'testtest'))
     })
 
     it('Should create a group', async function () {
@@ -342,22 +240,15 @@ describe('Frontend', function () {
         .click(elT('addButton'))
         .wait(elT('member'))
 
-      const invited = await n.evaluate(
-        (el) => document.querySelectorAll(el).length,
-        elT('member')
-      )
+      const invited = await n.evaluate(el => document.querySelectorAll(el).length, elT('member'))
       should(invited).equal(1)
 
-      await n
-        .click(elT('nextBtn'))
-        .wait(elT('summaryStep'))
+      await n.click(elT('nextBtn')).wait(elT('summaryStep'))
       // summary page sees group as valid
       const valid = await n.exists(`${elT('finishBtn')}:not(:disabled)`)
       should(valid).equal(true)
       // submit group
-      await n
-        .click(elT('finishBtn'))
-        .wait(elT('dashboard'))
+      await n.click(elT('finishBtn')).wait(elT('dashboard'))
 
       const created = await n.evaluate(() => ({
         groupName: document.querySelector('[data-test="groupName"]').innerText,
@@ -383,44 +274,23 @@ describe('Frontend', function () {
         .wait(elT('addButton'))
         .insert(elT('searchUser'), username)
         .click(elT('addButton'))
-        .wait(
-          (el) => document.querySelectorAll(el).length > 0,
-          elT('member')
-        )
+        .wait(el => document.querySelectorAll(el).length > 0, elT('member'))
         .wait(elT('deleteMember'))
         .click(elT('deleteMember'))
-        .wait(
-          (el) => document.querySelectorAll(el).length < 1,
-          elT('member')
-        )
-        .evaluate(
-          (el) => +document.querySelectorAll(el).length,
-          elT('member')
-        )
+        .wait(el => document.querySelectorAll(el).length < 1, elT('member'))
+        .evaluate(el => +document.querySelectorAll(el).length, elT('member'))
       should(count).equal(0)
 
       const created = await n
         .insert(elT('searchUser'), username)
         .click(elT('addButton'))
-        .wait(
-          (el) => document.querySelectorAll(el).length > 0,
-          elT('member')
-        )
+        .wait(el => document.querySelectorAll(el).length > 0, elT('member'))
         .insert(elT('searchUser'), username + '2')
         .click(elT('addButton'))
-        .wait(
-          (el) => document.querySelectorAll(el).length > 1,
-          elT('member')
-        )
+        .wait(el => document.querySelectorAll(el).length > 1, elT('member'))
         .click(elT('submit'))
-        .wait(
-          (el) => !!document.querySelector(el),
-          elT('notifyInvitedSuccess')
-        )
-        .evaluate(
-          (el) => !!document.querySelector(el),
-          elT('notifyInvitedSuccess')
-        )
+        .wait(el => !!document.querySelector(el), elT('notifyInvitedSuccess'))
+        .evaluate(el => !!document.querySelector(el), elT('notifyInvitedSuccess'))
       should(created).equal(true)
     })
 
@@ -434,21 +304,26 @@ describe('Frontend', function () {
         // https://github.com/okTurtles/group-income-simple/issues/440
         .wait(elT('mailboxLink'))
         .click(elT('mailboxLink'))
+        .use(note('point-1'))
         .wait(elT('inbox'))
         .click(elT('composeLink'))
+        .use(note('point-2'))
         .wait(elT('addRecipient'))
         .insert(elT('addRecipient'), username)
         .insert(elT('composedMessage'), 'Best test ever!!')
         .click(elT('sendButton'))
+        .use(note('point-3'))
         .wait(elT('inbox'))
         .use(login(username))
+        .use(note('point-4'))
         .wait(elT('mailboxLink'))
         .click(elT('mailboxLink'))
+        .use(note('point-5'))
 
       const alert = await n.exists(elT('alertNotification'))
       should(alert).equal(true)
       const unread = await n.evaluate(
-        (el) => document.querySelector(el) && +document.querySelector(el).innerText,
+        el => document.querySelector(el) && +document.querySelector(el).innerText,
         elT('inboxUnread')
       )
       should(unread).equal(2)
@@ -458,6 +333,7 @@ describe('Frontend', function () {
       should(hasMessage).equal(true)
       const accept = await n
         .click(elT('inviteMessage'))
+        .use(note('point-6'))
         .wait(elT('acceptLink'))
         .exists(elT('acceptLink'))
       should(accept).equal(true)
@@ -639,17 +515,4 @@ describe('Frontend', function () {
         .should.finally.greaterThan(1)
     })
   })
-})
-
-function page (page) {
-  return url.resolve(process.env.FRONTEND_URL, `simple/${page}`)
-}
-
-// returns the size of the document
-Nightmare.action('size', function (done) {
-  this.evaluate_now(() => {
-    const width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0)
-    const height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0)
-    return { height, width }
-  }, done)
 })
