@@ -124,8 +124,8 @@ export default {
                 // TODO: this is bad, do not turn the messages into actions like this.
                 //       put only the minimal data necessary.
                 actions: [
-                  { contractId: mailbox, action: JSON.stringify(inviteToMailbox.toObject()) },
-                  { contractId: groupId, action: JSON.stringify(inviteToGroup.toObject()) }
+                  { contractID: mailbox, type: inviteToMailbox.type(), action: JSON.stringify(inviteToMailbox.data()) },
+                  { contractID: groupId, type: inviteToGroup.type(), action: JSON.stringify(inviteToGroup.data()) }
                 ],
                 initiator: this.loggedIn.name,
                 initiationDate: new Date().toString()

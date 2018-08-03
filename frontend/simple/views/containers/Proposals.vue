@@ -137,8 +137,11 @@ export default {
     async handleVotePassed (proposal) {
       try {
         // If the vote passes fulfill the action
+        // TODO: this is poorly implementated. do not create poposals in this manner.
         for (let step of proposal.actions) {
-          await sbp('backend/publishLogEntry', step.action)
+          let actData = JSON.parse(step.action)
+          let entry = await sbp('gi/contract/create-action', step.type, actData, step.contractID)
+          await sbp('backend/publishLogEntry', entry)
         }
       } catch (ex) {
         // TODO: save to error error

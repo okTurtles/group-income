@@ -72,7 +72,7 @@ function note (message) {
   }
 }
 
-describe('Frontend', function () {
+describe.only('Frontend', function () {
   const n = Nightmare({
     openDevTools: { mode: 'detach' },
     show: !!process.env.SHOW_BROWSER,
@@ -87,7 +87,7 @@ describe('Frontend', function () {
   })
   n.on('page', (type, msg, stack) => {
     if (type === 'error') {
-      console.log('!! [NIGHTMARE] page error:', msg, 'stack:', stack)
+      console.error('\x1b[31m', '!! [NIGHTMARE] page error:', msg, 'stack:', stack, '\x1b[0m')
     }
   })
   n.on('console', (type, args) => {
@@ -95,9 +95,9 @@ describe('Frontend', function () {
       var idx = -1
       if (args.indexOf) idx = args.indexOf('[NIGHTMARE NOTE]: ')
       if (idx !== -1) {
-        console.log('!! ' + args.slice(idx))
+        console.warn('\x1b[34m', '!! ' + args.slice(idx), '\x1b[0m')
       } else {
-        console.log('!! [NIGHTMARE] console error:', args)
+        console.error('\x1b[31m', '!! [NIGHTMARE] console error:', args, '\x1b[0m')
       }
     }
   })
@@ -108,7 +108,7 @@ describe('Frontend', function () {
     return require('../backend/index.js')
   })
 
-  let username = `User${(new Date()).getTime()}`
+  let username = `User`
 
   describe.skip('New user page', function () {
     it('Should create user George', function () {
@@ -404,7 +404,7 @@ describe('Frontend', function () {
           (el) => document.querySelectorAll(el) && document.querySelectorAll(el).length,
           elT('proposal')
         )
-      should(proposals).equal(1)
+      should(proposals).equal(1, 'no. of proposal msgs on dashboard')
       await n
         .wait(elT('forButton'))
         .click(elT('forButton'))
@@ -418,8 +418,9 @@ describe('Frontend', function () {
         .use(login(username + '3'))
         .wait(elT('mailboxLink'))
         .click(elT('mailboxLink'))
+        .wait(elT('inviteMessage'))
         .exists(elT('inviteMessage'))
-      should(invite).equal(true)
+      should(invite).equal(true, 'invite message exists')
 
       let success = await n
         .click(elT('inviteMessage'))
@@ -427,7 +428,7 @@ describe('Frontend', function () {
         .click(elT('acceptLink'))
         .wait(elT('inbox'))
         .exists(elT('inbox'))
-      should(success).equal(true)
+      should(success).equal(true, 'redirect to inbox after invite accept')
     })
 
     it('Should See Member List on Dashboard', async function () {
@@ -445,7 +446,7 @@ describe('Frontend', function () {
           (el) => +document.querySelectorAll(el).length,
           elT('member')
         )
-      should(memberCount).equal(3)
+      should(memberCount).equal(4)
 
       const memberNames = await n
         .wait(elT('username'))
