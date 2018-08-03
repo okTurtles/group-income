@@ -4,30 +4,37 @@ import sbp from '../../../../shared/sbp.js'
 import Vue from 'vue'
 import _ from 'lodash'
 import {DefineContract} from '../utils.js'
+import {
+  objectOf,
+  // arrayOf,
+  // tupleOf,
+  // unionOf,
+  // literalOf,
+  string,
+  number,
+  boolean
+} from 'flow-typer-js'
 
 // NOTE: All mutations must be atomic in their edits of the contract state.
 //       THEY ARE NOT to farm out any further mutations through the async actions!
 export default DefineContract({
-  // 'gi_contracts_group_create': {
-  // 'gi/contracts/group': {
   'GroupContract': {
     isConstructor: true,
-    validate: function (data) {
-      // TODO: use https://www.npmjs.com/package/flow-typer-js
-      // // TODO: add 'groupPubkey'
-      // ['creationDate', 'string'],
-      // ['groupName', 'string'],
-      // ['sharedValues', 'string'],
-      // ['changeThreshold', 'float'],
-      // ['openMembership', 'bool'],
-      // ['memberApprovalThreshold', 'float'],
-      // ['memberRemovalThreshold', 'float'],
-      // ['incomeProvided', 'float'],
-      // ['incomeCurrency', 'string'],
-      // ['contributionPrivacy', 'string'],
-      // ['founderUsername', 'string'],
-      // ['founderIdentityContractId', 'string']
-    },
+    validate: objectOf({
+      // TODO: add 'groupPubkey'
+      creationDate: string,
+      groupName: string,
+      sharedValues: string,
+      changeThreshold: number,
+      openMembership: boolean,
+      memberApprovalThreshold: number,
+      memberRemovalThreshold: number,
+      incomeProvided: number,
+      incomeCurrency: string,
+      contributionPrivacy: string,
+      founderUsername: string,
+      founderIdentityContractId: string
+    }),
     vuexModuleConfig: {
       // defining an initialState makes writing getters easier because
       // you don't have to write, e.g. `state.proposals || {}` all the time
@@ -58,9 +65,9 @@ export default DefineContract({
     }
   },
   'GroupPayment': {
-    validate: function (data) {
-      // ['payment', 'string'] // TODO: change to 'double' and add other fields
-    },
+    validate: objectOf({
+      payment: string // TODO: change to 'double' and add other fields
+    }),
     vuexModuleConfig: {
       mutation: (state, {data}) => { state.payments.push(data) }
     }
