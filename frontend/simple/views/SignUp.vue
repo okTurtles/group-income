@@ -115,6 +115,8 @@ import _ from 'lodash'
 import { validationMixin } from 'vuelidate'
 import { required, minLength, email } from 'vuelidate/lib/validators'
 import { nonWhitespace } from './utils/validators.js'
+import { LOGIN_MODAL } from '../utils/events.js'
+
 // TODO: fix all this
 export default {
   name: 'SignUp',
@@ -182,7 +184,7 @@ export default {
       }
     },
     forwardToLogin: function () {
-      sbp('okTurtles.events/emit', 'loginModal')
+      sbp('okTurtles.events/emit', LOGIN_MODAL)
     }
   },
   data () {
