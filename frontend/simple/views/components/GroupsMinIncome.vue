@@ -1,15 +1,13 @@
 <template>
-  <div>
-    <div class="has-text-right">
-      <p class="min-income-label has-text-grey">Min Income</p>
-      <p class="min-income title is-1 is-marginless"
-        data-test="minIncome">
-        {{ currency }}{{ group.incomeProvided }}
-      </p>
-      <a href="#" @click="openProposal">
-        <i18n>Propose change</i18n>
-      </a>
-    </div>
+  <div class="has-text-right">
+    <p class="min-income-label has-text-grey">Min Income</p>
+    <p class="min-income title is-1 is-marginless"
+      data-test="minIncome">
+      {{ currency }}{{ group.incomeProvided }}
+    </p>
+    <a href="#" @click="openProposal">
+      <i18n>Propose change</i18n>
+    </a>
   </div>
 </template>
 <script>

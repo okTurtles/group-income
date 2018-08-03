@@ -22,7 +22,7 @@ export default {
     }
   },
   created () {
-    sbp('okTurtles.events/on', OPEN_MODAL, ({ data }) => this.setModal(data))
+    sbp('okTurtles.events/on', OPEN_MODAL, component => this.setModal(component))
   },
   methods: {
     setModal (component) {

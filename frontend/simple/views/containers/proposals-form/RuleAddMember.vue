@@ -4,7 +4,6 @@
     :onSubmit="handleSubmit">
     I step to change rule of add member it's on the way.
   </proposal-template>
-  </div>
 </template>
 <script>
 import ProposalTemplate from './ProposalTemplate.vue'
