@@ -83,6 +83,10 @@ describe.only('Frontend', function () {
   const n = Nightmare({
     openDevTools: { mode: 'detach' },
     show: !!process.env.SHOW_BROWSER,
+    // these need to be short, definitely much shorter than mocha timeouts
+    // in order to get useful debugging information
+    waitTimeout: 1000,
+    executionTimeout: 1000,
     height: 900
   })
   n.on('page', (type, msg, stack) => {
@@ -146,7 +150,7 @@ describe.only('Frontend', function () {
       // those Nightmare bugs seem to be gone now, so TODO it is
     })
     it('Test Logout and Login', function () {
-      this.timeout(100000)
+      this.timeout(10000)
       return n.use(logout()).use(note('logout -> login to: ' + username)).use(login(username))
     })
 
@@ -304,21 +308,17 @@ describe.only('Frontend', function () {
         // https://github.com/okTurtles/group-income-simple/issues/440
         .wait(elT('mailboxLink'))
         .click(elT('mailboxLink'))
-        .use(note('point-1'))
         .wait(elT('inbox'))
         .click(elT('composeLink'))
-        .use(note('point-2'))
         .wait(elT('addRecipient'))
         .insert(elT('addRecipient'), username)
         .insert(elT('composedMessage'), 'Best test ever!!')
         .click(elT('sendButton'))
-        .use(note('point-3'))
         .wait(elT('inbox'))
+        .use(logout())
         .use(login(username))
-        .use(note('point-4'))
         .wait(elT('mailboxLink'))
         .click(elT('mailboxLink'))
-        .use(note('point-5'))
 
       const alert = await n.exists(elT('alertNotification'))
       should(alert).equal(true)
@@ -333,7 +333,6 @@ describe.only('Frontend', function () {
       should(hasMessage).equal(true)
       const accept = await n
         .click(elT('inviteMessage'))
-        .use(note('point-6'))
         .wait(elT('acceptLink'))
         .exists(elT('acceptLink'))
       should(accept).equal(true)
