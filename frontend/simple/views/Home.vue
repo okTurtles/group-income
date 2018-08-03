@@ -31,12 +31,13 @@
 </style>
 <script>
 import sbp from '../../../shared/sbp.js'
-import { LOGIN_MODAL } from '../utils/events'
+import LoginModal from './containers/LoginModal.vue'
+import { OPEN_MODAL } from '../utils/events'
 
 export default {
   methods: {
     forwardToLogin: function () {
-      sbp('okTurtles.events/emit', LOGIN_MODAL)
+      sbp('okTurtles.events/emit', OPEN_MODAL, LoginModal)
     }
   }
 }

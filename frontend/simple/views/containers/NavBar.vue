@@ -90,10 +90,6 @@
           </div>
         </div>
       </div>
-      <login-modal
-        v-if="loginModalVisible"
-        @close="closeLoginModal"
-      />
       <time-travel v-show="showTimeTravel" :toggleVisibility="toggleTimeTravel" />
     </div>
   </nav>
@@ -116,20 +112,13 @@
 <script>
 import sbp from '../../../../shared/sbp.js'
 import TimeTravel from './TimeTravel.vue'
-import LoginModal from '../containers/LoginModal.vue'
-import { LOGIN_MODAL } from '../../utils/events.js'
+import LoginModal from './LoginModal.vue'
+import { OPEN_MODAL } from '../../utils/events.js'
 
 export default {
   name: 'NavBar',
   components: {
-    LoginModal,
     TimeTravel
-  },
-  created () {
-    sbp('okTurtles.events/on', LOGIN_MODAL, this.showLoginModal)
-  },
-  mounted () {
-    global.addEventListener('keyup', this.handleKeyUp)
   },
   computed: {
     currentGroupId () {
@@ -140,19 +129,11 @@ export default {
     }
   },
   methods: {
-    handleKeyUp (event) {
-      if (this.visible && event.keyCode === 27) {
-        this.closeLoginModal()
-      }
-    },
     logout () {
       this.$store.dispatch('logout')
     },
     showLoginModal () {
-      this.loginModalVisible = true
-    },
-    closeLoginModal () {
-      this.loginModalVisible = false
+      sbp('okTurtles.events/emit', OPEN_MODAL, LoginModal)
     },
     toggleTimeTravel (event) {
       if (!event.altKey) return
@@ -162,8 +143,7 @@ export default {
   },
   data () {
     return {
-      showTimeTravel: false,
-      loginModalVisible: false
+      showTimeTravel: false
     }
   }
 }

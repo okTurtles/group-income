@@ -1,86 +1,82 @@
 <template>
-  <div class="modal is-active"
-    ref="modal"
-    data-test="loginModal"
-  >
-    <div class="modal-background" @click="close"></div>
-    <div class="modal-content" style="width: 300px;">
-      <div class="card is-rounded">
-        <div class="card-content">
-          <h1 class="title has-text-centered"><i18n>Log In</i18n></h1>
-          <div class="field">
-            <p class="control has-icon">
-              <input
-                id="LoginName"
-                class="input"
-                :class="{'is-danger': $v.form.name.$error}"
-                name="name"
-                v-model="form.name"
-                @keyup.enter="login"
-                @input="$v.form.name.$touch()"
-                placeholder="username"
-                ref="username"
-                autofocus
-                data-test="loginName"
-              >
-              <span class="icon">
-                <i class="fa fa-user"></i>
-              </span>
-            </p>
-            <i18n v-show="$v.form.name.$error" class="help is-danger">username cannot contain spaces</i18n>
-          </div>
-          <div class="field">
-            <p class="control has-icon">
-              <input
-                class="input"
-                :class="{'is-danger': $v.form.password.$error}"
-                id="LoginPassword"
-                name="password"
-                v-model="form.password"
-                @keyup.enter="login"
-                @input="$v.form.password.$touch()"
-                placeholder="password"
-                type="password"
-                data-test="loginPassword"
-              >
-              <span class="icon"><i class="fa fa-lock"></i></span>
-            </p>
-            <i18n v-show="$v.form.password.$error" class="help is-danger">password must be at least 7 characters</i18n>
-          </div>
-          <p class="help is-danger"
-            v-show="form.response"
-            data-test="loginResponse"
+  <div class="is-small">
+    <modal-header>
+      <i18n>Log In</i18n>
+    </modal-header>
+
+    <modal-body>
+      <div class="field">
+        <p class="control has-icon">
+          <input
+            id="LoginName"
+            class="input"
+            :class="{'is-danger': $v.form.name.$error}"
+            name="name"
+            v-model="form.name"
+            @keyup.enter="login"
+            @input="$v.form.name.$touch()"
+            placeholder="username"
+            ref="username"
+            autofocus
+            data-test="loginName"
           >
-            {{ form.response }}
-          </p>
-          <div class="field">
-            <p class="control">
-              <button
-                class="button is-primary is-medium is-fullwidth"
-                @click="login"
-                :disabled="$v.form.$invalid"
-                data-test="loginSubmit"
-              >
-                <span class="icon"><i class="fa fa-user"></i></span>
-                <i18n>Login</i18n>
-              </button>
-            </p>
-          </div>
-        </div>
+          <span class="icon">
+            <i class="fa fa-user"></i>
+          </span>
+        </p>
+        <i18n v-show="$v.form.name.$error" class="help is-danger">username cannot contain spaces</i18n>
       </div>
-    </div>
-    <div class="modal-close" @click="close"></div>
+      <div class="field">
+        <p class="control has-icon">
+          <input
+            class="input"
+            :class="{'is-danger': $v.form.password.$error}"
+            id="LoginPassword"
+            name="password"
+            v-model="form.password"
+            @keyup.enter="login"
+            @input="$v.form.password.$touch()"
+            placeholder="password"
+            type="password"
+            data-test="loginPassword"
+          >
+          <span class="icon"><i class="fa fa-lock"></i></span>
+        </p>
+        <i18n v-show="$v.form.password.$error" class="help is-danger">password must be at least 7 characters</i18n>
+      </div>
+    </modal-body>
+
+    <modal-footer :submitError="form.response">
+      <button
+        class="button is-primary"
+        :disabled="$v.form.$invalid"
+        data-test="loginSubmit"
+        @click="login"
+      >
+        <span class="icon"><i class="fa fa-user"></i></span>
+        <i18n>Login</i18n>
+      </button>
+    </modal-footer>
   </div>
 </template>
 <script>
-import sbp from '../../../../shared/sbp.js'
-import L from '../utils/translations.js'
 import { validationMixin } from 'vuelidate'
 import { required, minLength } from 'vuelidate/lib/validators'
+import sbp from '../../../../shared/sbp.js'
+import L from '../utils/translations.js'
+import { CLOSE_MODAL } from '../../utils/events.js'
+import ModalHeader from '../components/Modal/ModalHeader.vue'
+import ModalBody from '../components/Modal/ModalBody.vue'
+import ModalFooter from '../components/Modal/ModalFooter.vue'
 
 export default {
   name: 'LoginModal',
   mixins: [ validationMixin ],
+  components: {
+    ModalHeader,
+    ModalBody,
+    ModalFooter
+  },
   inserted () {
     this.$refs.username.focus()
   },
@@ -99,7 +95,7 @@ export default {
       }
     },
     close () {
-      this.$emit('close')
+      sbp('okTurtles.events/emit', CLOSE_MODAL)
     }
   },
   data () {
