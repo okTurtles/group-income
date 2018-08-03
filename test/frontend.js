@@ -24,7 +24,7 @@ function page (page) {
 
 // TODO: consider converting these to Nightmare actions that check if we're
 //       logged in/logged out and then act appropriately (e.g. instead of
-//       `n.use(logout())` we do `n.logoutIfLoggedIn()`)
+//       `n.use(logout())` we do `n.logoutIfLoggedIn()` or `n.logoutAndLogin()`?)
 function logout () {
   return function (n) {
     n.wait(elT('openProfileDropDown'))
@@ -346,6 +346,7 @@ describe.only('Frontend', function () {
       should(success).equal(true)
       // Logout
       success = await n
+        .use(logout())
         .use(login(username + '2'))
         .wait(elT('mailboxLink'))
         // Accept invitation
@@ -361,7 +362,7 @@ describe.only('Frontend', function () {
     it('Should Vote on Additional Members', async function () {
       this.timeout(10000)
       await n
-      // Propose user
+        .use(logout())
         .use(login(username + '5'))
         .goto(page('invite'))
         .wait(elT('searchUser'))
@@ -375,6 +376,7 @@ describe.only('Frontend', function () {
         .wait(elT('notifyInvitedSuccess'))
       // Check vote banner on dashboard
       await n
+        .use(logout())
         .use(login(username))
         .goto(page('dashboard'))
         .wait(elT('proposal'))
@@ -417,6 +419,7 @@ describe.only('Frontend', function () {
       should(success).equal(true)
 
       success = await n
+        .use(logout())
         .use(login(username + '2'))
         .wait(elT('mailboxLink'))
         .click(elT('mailboxLink'))
@@ -429,6 +432,7 @@ describe.only('Frontend', function () {
       should(success).equal(true)
 
       success = await n
+        .use(logout())
         .use(login(username + '3'))
         .wait(elT('mailboxLink'))
         // Accept invitation
@@ -441,6 +445,7 @@ describe.only('Frontend', function () {
       this.timeout(4000)
 
       await n
+        .use(logout())
         .use(login(username + '5'))
         .goto(page('dashboard'))
         .wait(elT('groupMembers'))
