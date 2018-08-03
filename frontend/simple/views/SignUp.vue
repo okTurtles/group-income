@@ -115,7 +115,8 @@ import _ from 'lodash'
 import { validationMixin } from 'vuelidate'
 import { required, minLength, email } from 'vuelidate/lib/validators'
 import { nonWhitespace } from './utils/validators.js'
-import { LOGIN_MODAL } from '../utils/events.js'
+import { OPEN_MODAL } from '../utils/events.js'
+import LoginModal from './containers/LoginModal.vue'
 
 // TODO: fix all this
 export default {
@@ -183,8 +184,8 @@ export default {
         this.form.error = true
       }
     },
-    forwardToLogin: function () {
-      sbp('okTurtles.events/emit', LOGIN_MODAL)
+    forwardToLogin () {
+      sbp('okTurtles.events/emit', OPEN_MODAL, LoginModal)
     }
   },
   data () {

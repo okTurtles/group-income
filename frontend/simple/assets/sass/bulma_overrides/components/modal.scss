@@ -38,6 +38,12 @@ $modal-card-body-padding: 0;
     &-foot {
       padding-left: $gi-spacer-xl;
       padding-right: $gi-spacer-xl;
+
+      .is-small & {
+        width: 20rem;
+        padding-left: $gi-spacer-lg;
+        padding-right: $gi-spacer-lg;
+      }
     }
   }
 }

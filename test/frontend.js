@@ -37,7 +37,7 @@ function login (name) {
   return function (n) {
     n.wait(elT('loginBtn'))
       .click(elT('loginBtn'))
-      .wait(`${elT('loginModal')}.is-active`)
+      .wait(elT('modal'))
       .insert(elT('loginName'), name)
       .insert(elT('loginPassword'), 'testtest')
       .click(elT('loginSubmit'))

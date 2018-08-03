@@ -1,31 +1,33 @@
 <template>
   <div>
-    <header class="modal-card-head has-text-centered">
-      <h1 class="modal-card-title title is-size-5 is-marginless has-text-grey">
-        <i18n>New Proposal</i18n>
-      </h1>
-      <h2 class="title is-size-3">
-        {{ subTitle }}
-      </h2>
-    </header>
+    <modal-header>
+      <i18n>New Proposal</i18n>
+      <template slot="subTitle">{{ subTitle }}</template>
+    </modal-header>
 
-    <section class="modal-card-body">
+    <modal-body>
       <slot></slot>
-    </section>
+    </modal-body>
 
-    <footer class="modal-card-foot">
-      <div class="buttons">
-        <button class="button is-primary" @click="onSubmit">
-          <i18n>Submit Proposal</i18n>
-        </button>
-      </div>
-      <span v-if="submitError" class="has-text-danger">{{ submitError }}</span>
-    </footer>
+    <modal-footer :submitError="submitError">
+      <button class="button is-primary" @click="onSubmit">
+        <i18n>Submit Proposal</i18n>
+      </button>
+    </modal-footer>
   </div>
 </template>
 <script>
+import ModalHeader from '../../components/Modal/ModalHeader.vue'
+import ModalBody from '../../components/Modal/ModalBody.vue'
+import ModalFooter from '../../components/Modal/ModalFooter.vue'
+
 export default {
   name: 'ModalForm',
+  components: {
+    ModalHeader,
+    ModalBody,
+    ModalFooter
+  },
   props: {
     subTitle: String,
     submitError: String,
