@@ -134,19 +134,19 @@ $speed: 300ms;
 }
 </style>
 <script>
-import { List, ListItem } from '../../components/Lists/index.js'
+import Activity from './Activity.vue'
 import GroupsList from './GroupsList.vue'
 import Profile from './Profile.vue'
-import Activity from './Activity.vue'
+import { List, ListItem } from '../../components/Lists/index.js'
 
 export default {
   name: 'NavBar',
   components: {
     Activity,
     GroupsList,
+    Profile,
     List,
-    ListItem,
-    Profile
+    ListItem
   },
   data () {
     return {
@@ -155,7 +155,7 @@ export default {
   },
   computed: {
     activityCount () {
-      // TODO: activityCount should not count unreadMessageCount...
+      // TODO: activityCount should really count unreadMessageCount?
       return this.$store.getters.unreadMessageCount || this.$store.getters.proposals.length
     },
     unreadMessagesCount () {
