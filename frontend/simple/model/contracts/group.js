@@ -133,7 +133,7 @@ export default DefineContract({
       mutation: (state, {data, hash}) => {
         // TODO: this should be data instead of ...data to avoid conflict with neighboring properties
         // TODO: convert to votes instead of for/against for future-proofing
-        state.proposals[hash] = {...data, for: [data.initiator], against: []}
+        Vue.set(state.proposals, hash, {...data, for: [data.initiator], against: []})
       }
     }
   },
@@ -146,7 +146,7 @@ export default DefineContract({
     vuexModuleConfig: {
       mutation: (state, {data}) => {
         if (state.proposals[data.proposalHash]) {
-          state.proposals[data.proposalHash].for.push(data.username)
+          Vue.set(state.proposals[data.proposalHash].for, state.proposals[data.proposalHash].for.length, data.username)
           let threshold = Math.ceil(state.proposals[data.proposalHash].threshold * Object.keys(state.profiles).length)
           if (state.proposals[data.proposalHash].for.length >= threshold) {
             // TODO: flag instead of delete to make proposal history easier? #426
@@ -164,7 +164,7 @@ export default DefineContract({
     vuexModuleConfig: {
       mutation: (state, {data}) => {
         if (state.proposals[data.proposalHash]) {
-          state.proposals[data.proposalHash].against.push(data.username)
+          Vue.set(state.proposals[data.proposalHash].against, state.proposals[data.proposalHash].against.length, data.username)
           let memberCount = Object.keys(state.profiles).length
           let threshold = Math.ceil(state.proposals[data.proposalHash].threshold * memberCount)
           if (state.proposals[data.proposalHash].against.length > memberCount - threshold) {
