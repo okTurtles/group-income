@@ -11,6 +11,8 @@ import router from './controller/router.js'
 import * as db from './model/database.js'
 import NavBar from './views/containers/NavBar.vue'
 import store from './model/state.js'
+import { LOGOUT } from './utils/events'
+import Modal from './views/components/Modal/Modal.vue'
 
 console.log('NODE_ENV:', process.env.NODE_ENV)
 
@@ -50,10 +52,10 @@ async function startApp () {
   /* eslint-disable no-new */
   new Vue({
     router: router,
-    components: {NavBar},
+    components: {NavBar, Modal},
     store // make this and all child components aware of the new store
   }).$mount('#app')
-  sbp('okTurtles.events/on', 'logout', () => router.push({path: '/'}))
+  sbp('okTurtles.events/on', LOGOUT, () => router.push({path: '/'}))
 }
 
 startApp()

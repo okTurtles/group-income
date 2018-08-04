@@ -11,7 +11,7 @@ import {bold} from 'chalk'
 export var hapi = new Hapi.Server({
   // TODO: improve logging and base it on process.env.NODE_ENV
   //       https://github.com/okTurtles/group-income-simple/issues/32
-  debug: { request: ['error'], log: ['error'] }
+  debug: false
 })
 
 hapi.connection({

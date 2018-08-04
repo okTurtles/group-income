@@ -93,7 +93,7 @@ export default {
           type: 'rule',
           data: {
             value: 0.6,
-            title: 'Rule: Add Memmber',
+            title: 'Rule: Add Member',
             text: 'Karl had proposed to change <strong>Add Member Rule from 80% to 60% </strong>.',
             textDetails: 'Instead of 6, now at least 5 of 8 members need to approve a new member.',
             ctas: {

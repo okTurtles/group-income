@@ -3,10 +3,7 @@
 .button {
   min-height: 2.5rem; // A11Y purposes
   color: $grey;
-
-  &.is-outlined {
-    font-weight: 600; // A11Y purposes
-  }
+  font-weight: 600; // A11Y purposes
 }
 
 .button.is-success.is-outlined {
@@ -14,6 +11,10 @@
 }
 
 .buttons {
+  &:last-child {
+    margin-bottom: 0; // overrides bulma layout bug
+  }
+
   &:not(:last-child) {
     margin-bottom: $gi-spacer-sm; // overrides bulma huge margin
   }

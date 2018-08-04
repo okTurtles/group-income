@@ -31,6 +31,8 @@ import sbp from '../../../../shared/sbp.js'
 import VueSlider from 'vue-slider-component'
 import store from '../../model/state.js'
 import _ from 'lodash'
+import { REPLACED_STATE } from '../../utils/events.js'
+
 const disableTimeTravel = true
 export default {
   name: 'TimeTravel',
@@ -55,7 +57,7 @@ export default {
       var state = this.ephemeral.history[position]
       // console.log(`Firing position ${position}:`, state)
       store.replaceState(state)
-      sbp('okTurtles.events/emit', 'replacedState')
+      sbp('okTurtles.events/emit', REPLACED_STATE)
     }
   },
   data () {

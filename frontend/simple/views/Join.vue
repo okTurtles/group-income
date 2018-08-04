@@ -30,7 +30,7 @@
         <bars
           :currency="contract.incomeCurrencySign"
           :history="contract.history"
-          :mincome="contract.incomeProvided" />
+          :mincome="+contract.incomeProvided" />
       </members-circle>
     </div>
   </div>

@@ -1,11 +1,18 @@
 'use strict'
 
 import {DefineContract} from '../utils.js'
+import {
+  objectOf,
+  arrayOf,
+  string,
+  object,
+  optional
+} from 'flow-typer-js'
 
 export default DefineContract({
   'MailboxContract': {
     isConstructor: true,
-    validate: function (data) {},
+    validate: object,
     vuexModuleConfig: {
       initialState: {messages: []},
       mutation: function (state, {data}) {}
@@ -17,14 +24,13 @@ export default DefineContract({
       TypeMessage: 'Message',
       TypeProposal: 'Proposal'
     },
-    validate: function (data) {
-      // ['from', 'string'],
-      // ['headers', 'string', 'repeated'],
-      // ['messageType', 'string'],
-      // ['message', 'string'],
-      // ['sentDate', 'string'],
-      // ['read', 'bool']
-    },
+    validate: objectOf({
+      messageType: string,
+      from: string,
+      sentDate: string,
+      message: optional(string),
+      headers: optional(arrayOf(string))
+    }),
     vuexModuleConfig: {
       mutation: (state, {data, hash}) => {
         state.messages.push({data, hash})
@@ -32,9 +38,9 @@ export default DefineContract({
     }
   },
   'MailboxAuthorizeSender': {
-    validate: function (data) {
-      // ['sender', 'string']
-    },
+    validate: objectOf({
+      sender: string
+    }),
     vuexModuleConfig: {
       mutation: (state, {data}) => {
         throw new Error('unimplemented!')

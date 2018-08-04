@@ -11,6 +11,8 @@ import debounce from 'lodash/debounce'
 import contracts from './contracts.js'
 import * as _ from '../utils/giLodash.js'
 import * as db from './database.js'
+import { LOGIN, LOGOUT, EVENT_HANDLED } from '../utils/events.js'
+
 // babel transforms lodash imports: https://github.com/lodash/babel-plugin-lodash#faq
 // for diff between 'lodash/map' and 'lodash/fp/map'
 // see: https://github.com/lodash/lodash/wiki/FP-Guide
@@ -55,12 +57,12 @@ const state = {
 const mutations = {
   login (state, user) {
     state.loggedIn = user
-    sbp('okTurtles.events/emit', 'login', user)
+    sbp('okTurtles.events/emit', LOGIN, user)
   },
   logout (state) {
     state.loggedIn = false
     state.currentGroupId = null
-    sbp('okTurtles.events/emit', 'logout')
+    sbp('okTurtles.events/emit', LOGOUT)
   },
   addContract (state, {contractID, type, HEAD, data}) {
     // "Mutations Follow Vue's Reactivity Rules" - important for modifying objects
@@ -214,7 +216,7 @@ const actions = {
       commit('pending', contractID)
     }
     if (latest !== recent) {
-      console.log(`Now Synchronizing Contract: ${contractID} its most recent was ${recent} but the latest is ${latest}`)
+      console.log(`Now Synchronizing Contract: ${contractID} its most recent was ${recent || 'undefined'} but the latest is ${latest}`)
       // TODO Do we need a since call that is inclusive? Since does not imply inclusion
       let events = await sbp('backend/eventsSince', contractID, recent || contractID)
       // remove the first element in cases where we are not getting the contract for the first time
@@ -308,7 +310,7 @@ const actions = {
       debouncedSave(dispatch)
       // let any listening components know that we've received, processed, and stored the event
       sbp('okTurtles.events/emit', HEAD, contractID, message)
-      sbp('okTurtles.events/emit', 'eventHandled', contractID, message)
+      sbp('okTurtles.events/emit', EVENT_HANDLED, contractID, message)
     } catch (e) {
       console.error('[ERROR] exception in handleEvent!', e.message, e)
       throw e // TODO: handle this better
