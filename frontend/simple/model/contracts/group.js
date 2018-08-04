@@ -195,7 +195,9 @@ export default DefineContract({
       sentDate: string
     }),
     vuexModuleConfig: {
-      mutation: (state, {data}) => { state.invitees.push(data.username) }
+      mutation: (state, {data}) => {
+        state.invitees.splice(0, 0, data.username)
+      }
     }
   },
   'GroupDeclineInvitation': {

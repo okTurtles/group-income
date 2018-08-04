@@ -416,7 +416,6 @@ describe.only('Frontend', function () {
         )
       // Accept invitation
       let invite = await n
-        .wait(5000)
         .use(logout())
         .use(login(username + '3'))
         .wait(elT('mailboxLink'))
