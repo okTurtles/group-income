@@ -13,8 +13,8 @@
 ### 1. Decide what to work on
 
 - Check the [open issues](https://github.com/okTurtles/group-income-simple/issues).
-- View the [open mileposts](https://github.com/okTurtles/group-income-simple/labels/milepost). *(see: [Milepost Methodology](https://github.com/taoeffect/mileposts))*
-- Check especially what's [`up for grabs`](labels/Note%3AUp-for-grabs), [`high priority`](labels/Priority%3AHigh), or [`level: starter`](labels/Level%3AStarter).
+- View the [project board](https://github.com/okTurtles/group-income-simple/projects). 
+- Check especially what's [`up for grabs`](../../labels/Note%3AUp-for-grabs), [`high priority`](../../labels/Priority%3AHigh), or [`level: starter`](../../labels/Level%3AStarter).
 - Read some docs, like: __[:book: Frontend: Getting Started](docs/Getting-Started-frontend.md)__
 
 Then, [tell folks what you'll be working on](https://gitter.im/okTurtles/group-income), and:
@@ -30,7 +30,7 @@ Everyone must follow the rules below (inspired by the [C4.1](http://hintjens.com
 
 ### 3. Follow this Contribution Policy
 
-This contribution policy will evolve over time. For now it is based on a mixture of the [Mileposts Methodology](https://github.com/taoeffect/mileposts) and a slightly modified subset of [C4.1](https://rfc.zeromq.org/spec:42/C4/).
+This contribution policy will evolve over time. For now it is based on a slightly modified subset of [C4.1](https://rfc.zeromq.org/spec:42/C4/).
 
 #### Licensing and Ownership
 
@@ -52,4 +52,4 @@ This contribution policy will evolve over time. For now it is based on a mixture
 
 - Check if there's an open/closed issue that answers your question.
 - Read [troubleshooting docs](docs/Troubleshooting.md).
-- **Create an issue in the required [problem-solution](ISSUE_TEMPLATE.md) or [milepost](https://github.com/taoeffect/mileposts) format.**
+- **Create an issue in the required [problem-solution](ISSUE_TEMPLATE.md) format.**
