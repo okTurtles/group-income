@@ -388,6 +388,7 @@ describe.only('Frontend', function () {
           (el) => document.querySelector(el) && document.querySelector(el).innerText,
           elT('voteText')
         )
+      // TODO: make usernames more explicit
       should(proposalText).containEql(username + '5')
       should(proposalText).containEql(username + '3')
       // cast votes on dashboard
@@ -395,6 +396,7 @@ describe.only('Frontend', function () {
         .goto(page('dashboard'))
         .wait(elT('forButton'))
         .click(elT('forButton'))
+        // todo check if 1st vote got through
       let proposals = await n
         .use(logout())
         .use(login(username + '2'))
@@ -414,6 +416,7 @@ describe.only('Frontend', function () {
         )
       // Accept invitation
       let invite = await n
+        .wait(5000)
         .use(logout())
         .use(login(username + '3'))
         .wait(elT('mailboxLink'))
