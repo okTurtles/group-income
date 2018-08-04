@@ -72,7 +72,7 @@ function note (message) {
   }
 }
 
-describe.only('Frontend', function () {
+describe('Frontend', function () {
   const n = Nightmare({
     openDevTools: { mode: 'detach' },
     show: !!process.env.SHOW_BROWSER,
@@ -396,7 +396,8 @@ describe.only('Frontend', function () {
         .goto(page('dashboard'))
         .wait(elT('forButton'))
         .click(elT('forButton'))
-        // todo check if 1st vote got through
+        .use(note('first vote clicked'))
+        .wait(elT('allVoted'))
       let proposals = await n
         .use(logout())
         .use(login(username + '2'))
@@ -410,6 +411,7 @@ describe.only('Frontend', function () {
       await n
         .wait(elT('forButton'))
         .click(elT('forButton'))
+        .use(note('second vote clicked'))
         .wait(
           (el) => !document.querySelector(el),
           elT('proposal')
@@ -420,6 +422,7 @@ describe.only('Frontend', function () {
         .use(login(username + '3'))
         .wait(elT('mailboxLink'))
         .click(elT('mailboxLink'))
+        .use(note('in mailbox'))
         .wait(elT('inviteMessage'))
         .exists(elT('inviteMessage'))
       should(invite).equal(true, 'invite message exists')
@@ -427,6 +430,7 @@ describe.only('Frontend', function () {
       let success = await n
         .click(elT('inviteMessage'))
         .wait(elT('acceptLink'))
+        .use(note('in invite message'))
         .click(elT('acceptLink'))
         .wait(elT('inbox'))
         .exists(elT('inbox'))

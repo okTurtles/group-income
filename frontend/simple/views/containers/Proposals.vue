@@ -1,7 +1,7 @@
 <template>
   <div>
 
-    <i18n class="notification gi-is-banner gi-notify" v-if="allVoted">Cool, you already voted on all proposals.</i18n>
+    <i18n class="notification gi-is-banner gi-notify" v-if="allVoted" data-test="allVoted">Cool, you already voted on all proposals.</i18n>
 
     <voting
       v-for="proposal in proposalList.notVoted"
