@@ -56,6 +56,9 @@
         <span class="icon"><i class="fa fa-user"></i></span>
         <i18n>Login</i18n>
       </button>
+      <template slot="footer">
+        <a @click="showSignUpModal"><i18n>Don't have an account?</i18n></a>
+      </template>
     </modal-footer>
   </div>
 </template>
@@ -64,10 +67,11 @@ import { validationMixin } from 'vuelidate'
 import { required, minLength } from 'vuelidate/lib/validators'
 import sbp from '../../../../shared/sbp.js'
 import L from '../utils/translations.js'
-import { CLOSE_MODAL } from '../../utils/events.js'
+import { OPEN_MODAL, CLOSE_MODAL } from '../../utils/events.js'
 import ModalHeader from '../components/Modal/ModalHeader.vue'
 import ModalBody from '../components/Modal/ModalBody.vue'
 import ModalFooter from '../components/Modal/ModalFooter.vue'
+import SignUp from './SignUp.vue'
 
 export default {
   name: 'LoginModal',
@@ -96,6 +100,9 @@ export default {
     },
     close () {
       sbp('okTurtles.events/emit', CLOSE_MODAL)
+    },
+    showSignUpModal () {
+      sbp('okTurtles.events/emit', OPEN_MODAL, SignUp)
     }
   },
   data () {

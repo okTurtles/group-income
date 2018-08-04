@@ -4,6 +4,7 @@
       <slot></slot>
     </div>
     <p v-if="submitError" class="has-text-danger" data-test="submitError">{{ submitError }}</p>
+    <slot name="footer"></slot>
   </footer>
 </template>
 <script>
