@@ -128,7 +128,7 @@ export default {
                   { contractID: groupId, type: inviteToGroup.type(), action: JSON.stringify(inviteToGroup.data()) }
                 ],
                 initiator: this.loggedIn.name,
-                initiationDate: new Date().toString()
+                initiationDate: new Date().toISOString()
               },
               groupId
             )
