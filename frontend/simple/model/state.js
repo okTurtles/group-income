@@ -216,7 +216,7 @@ const actions = {
       commit('pending', contractID)
     }
     if (latest !== recent) {
-      console.log(`Now Synchronizing Contract: ${contractID} its most recent was ${recent} but the latest is ${latest}`)
+      console.log(`Now Synchronizing Contract: ${contractID} its most recent was ${recent || 'undefined'} but the latest is ${latest}`)
       // TODO Do we need a since call that is inclusive? Since does not imply inclusion
       let events = await sbp('backend/eventsSince', contractID, recent || contractID)
       // remove the first element in cases where we are not getting the contract for the first time

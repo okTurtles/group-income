@@ -2,14 +2,19 @@
 
 import Vue from 'vue'
 import {DefineContract} from '../utils.js'
+import {
+  objectOf,
+  arrayOf,
+  string,
+  object
+} from 'flow-typer-js'
 
 export default DefineContract({
   'IdentityContract': {
     isConstructor: true,
-    validate: function (data) {
-      // NOTE: now this is just an object of key/values
-      // ['attributes', 'Attribute', 'repeated']
-    },
+    validate: objectOf({
+      attributes: object
+    }),
     vuexModuleConfig: {
       initialState: {attributes: {}},
       mutation: (state, {data}) => {
@@ -18,9 +23,7 @@ export default DefineContract({
     }
   },
   'IdentitySetAttributes': {
-    validate: function (data) {
-      // now just an object of key/values
-    },
+    validate: object,
     vuexModuleConfig: {
       mutation: (state, {data}) => {
         for (var key in data) {
@@ -30,9 +33,7 @@ export default DefineContract({
     }
   },
   'IdentityDeleteAttributes': {
-    validate: function (data) {
-      // now an array of keys
-    },
+    validate: arrayOf(string),
     vuexModuleConfig: {
       mutation: (state, {data}) => {
         for (var attribute of data) {

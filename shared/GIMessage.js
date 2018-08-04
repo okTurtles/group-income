@@ -1,13 +1,17 @@
 'use strict'
 // import sbp from '../shared/sbp.js'
 import {blake32Hash} from './functions.js'
-import type {JSONType, JSONObject} from './types.js'
+import type {JSONType} from './types.js'
 
 function defaultSignatureFn (data: string) {
   return blake32Hash(data)
 }
 
 export class GIMessage {
+  // flow type annoations to make flow happy
+  _message: Object
+  _mapping: Object
+
   // NOTE: the JSON string generated here must be preserved forever.
   //       do not ever regenerate this message using the contructor.
   //       instead store it using serialize() and restore it using
@@ -15,7 +19,7 @@ export class GIMessage {
   static create (
     contractID: ?string = null,
     previousHEAD: ?string = null,
-    signatureFn: ?Function = defaultSignatureFn,
+    signatureFn: Function = defaultSignatureFn,
     actionType: string,
     actionData: JSONType
   ) {
@@ -51,11 +55,11 @@ export class GIMessage {
     return instance
   }
 
-  message (): JSONObject { return this._message }
+  message (): Object { return this._message }
 
   type (): string { return this.message().action.type }
 
-  data (): JSONType { return this.message().action.data }
+  data (): Object { return this.message().action.data }
 
   isFirstMessage (): boolean { return !this.message().previousHEAD }
 

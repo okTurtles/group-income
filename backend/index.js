@@ -1,17 +1,16 @@
 import chalk from 'chalk'
-import * as db from './database'
-import * as server from './server'
+import * as server from './server.js'
 
-// TODO: use Bluebird to handle swallowed errors (combine with Good logging?)
+// TODO: should we use Bluebird to handle swallowed errors (combine with Good logging)?
 //       http://jamesknelson.com/are-es6-promises-swallowing-your-errors/
-global.Promise = require('bluebird')
+// global.Promise = require('bluebird')
 // TODO: improve logging: https://github.com/okTurtles/group-income-simple/issues/32
 global.logger = function (err) {
   console.error(err)
   console.error(err.stack)
 }
 
-module.exports = Promise.all([db.loaded, server.loaded]).then(() => {
+module.exports = server.loaded.then(() => {
   console.log(chalk.bold('backend startup sequence complete.'))
 })
 

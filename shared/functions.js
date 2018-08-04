@@ -50,12 +50,12 @@ export function blake32Hash (data: string) {
   return multihash.toB58String(multihash.encode(buf, 'blake2b-32', 32))
 }
 
-export const b64ToBuf = b64 => Buffer.from(b64, 'base64')
-export const b64ToStr = b64 => b64ToBuf(b64).toString('utf8')
-export const bufToB64 = buf => Buffer.from(buf).toString('base64')
-export const strToBuf = str => Buffer.from(str, 'utf8')
-export const strToB64 = str => strToBuf(str).toString('base64')
-export const bytesToB64 = ary => Buffer.from(ary).toString('base64')
+export const b64ToBuf = (b64: string) => Buffer.from(b64, 'base64')
+export const b64ToStr = (b64: string) => b64ToBuf(b64).toString('utf8')
+export const bufToB64 = (buf: Buffer) => Buffer.from(buf).toString('base64')
+export const strToBuf = (str: string) => Buffer.from(str, 'utf8')
+export const strToB64 = (str: string) => strToBuf(str).toString('base64')
+export const bytesToB64 = (ary: Uint8Array) => Buffer.from(ary).toString('base64')
 
 export function sign (
   {publicKey, secretKey}: {publicKey: string, secretKey: string},

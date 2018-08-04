@@ -14,7 +14,6 @@
 .*/backend/discard/.*
 .*/frontend/simple/controller/backend/interface.js
 .*/frontend/simple/utils/crypto.js
-.*/frontend/simple/model/contracts/identity.js
 .*/frontend/simple/utils/vuex-queue.js
 # .*/test/frontend.js
 .*.test.js

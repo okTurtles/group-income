@@ -23,7 +23,7 @@ function signJSON (json, keypair) {
 var contractSubscriptions = []
 var serverSocket
 
-export function createWebSocket (url, options) {
+export function createWebSocket (url: string, options: Object) {
   return new Promise((resolve, reject) => {
     serverSocket = pubsub({
       url,

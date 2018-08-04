@@ -9,7 +9,7 @@ var selectorFilters: {[string]: Array<TypeFilter>} = {}
 
 const DOMAIN_REGEX = /^[^/]+/
 
-function sbp (selector: string, ...data: any) {
+function sbp (selector: string, ...data: any): any {
   const domain = DOMAIN_REGEX.exec(selector)[0]
   // Filters can perform additional functions, and by returning `false` they
   // can prevent the execution of a selector.

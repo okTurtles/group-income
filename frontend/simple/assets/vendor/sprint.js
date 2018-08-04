@@ -1,1 +1,0 @@
-../../../../node_modules/sprint-js/sprint.js

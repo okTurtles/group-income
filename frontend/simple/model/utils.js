@@ -2,7 +2,7 @@
 
 // returns an object containing any constants, and, in the case of the
 // constructor mutation, the vuex submodule under the vuexModule key.
-export function DefineContract (contract) {
+export function DefineContract (contract: Object) {
   var vuexModule = {
     // vuex module namespaced under this contract's hash
     // see details: https://vuex.vuejs.org/en/modules.html

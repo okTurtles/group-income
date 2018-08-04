@@ -4,7 +4,7 @@ import GroupContract from './contracts/group.js'
 import IdentityContract from './contracts/identity.js'
 import MailboxContract from './contracts/mailbox.js'
 
-const contracts = {
+const contracts: Object = {
   ...GroupContract,
   ...IdentityContract,
   ...MailboxContract

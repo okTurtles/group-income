@@ -118,7 +118,7 @@ export default {
           changeThreshold: this.form.changeThreshold,
           memberApprovalThreshold: this.form.memberApprovalThreshold,
           memberRemovalThreshold: this.form.memberRemovalThreshold,
-          incomeProvided: this.form.incomeProvided,
+          incomeProvided: +this.form.incomeProvided, // ensure this is a number
           incomeCurrency: this.form.incomeCurrency,
           founderUsername: this.$store.state.loggedIn.name,
           founderIdentityContractId: this.$store.state.loggedIn.identityContractId
@@ -186,7 +186,7 @@ export default {
         memberApprovalThreshold: 0.8,
         memberRemovalThreshold: 0.8,
         incomeProvided: null,
-        incomeCurrency: 'USD',
+        incomeCurrency: 'USD', // TODO: grab this as a constant from currencies.js
         invitees: []
       },
       // todo: move these under appropriate key for #297
