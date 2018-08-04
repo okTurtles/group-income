@@ -235,20 +235,6 @@ describe('Full walkthrough', function () {
     // TODO: these events, as well as all messages sent over the sockets
     //       should all be authenticated and identified by the user's
     //       identity contract
-    it.skip('Should post another event', async function () {
-      await postEntry(
-        await sbp('gi/contract/create-action', 'GroupProposal',
-          {
-            type: contracts.GroupProposal.TypeInvitation
-          },
-          groups.group1.hash()
-        )
-      )
-      // delay so that the sockets receive notification
-      return new Promise((resolve) => {
-        setTimeout(resolve, 400)
-      })
-    })
   })
 })
 
