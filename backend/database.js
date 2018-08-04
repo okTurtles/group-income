@@ -14,13 +14,13 @@ import {strToB64} from '../shared/functions.js'
 // const production = process.env.NODE_ENV === 'production'
 // !production && fs.existsSync('test.db') && fs.unlinkSync('test.db')
 
-const logHEAD = contractID => `${contractID}/HEAD`
-const get = key => sbp('okTurtles.data/get', key)
-const set = (key, value) => sbp('okTurtles.data/set', key, value)
+const logHEAD = (contractID: string) => `${contractID}/HEAD`
+const get = (key: string) => sbp('okTurtles.data/get', key)
+const set = (key: string, value: string) => sbp('okTurtles.data/set', key, value)
 
 export function addLogEntry (entry: GIMessage): string {
   const {previousHEAD} = entry.message()
-  var contractID = previousHEAD ? entry.message().contractID : entry.hash()
+  var contractID: string = previousHEAD ? entry.message().contractID : entry.hash()
   if (get(entry.hash())) {
     console.warn(`entry exists: ${entry.hash()}`)
     return entry.hash()

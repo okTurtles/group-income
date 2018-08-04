@@ -9,7 +9,6 @@ import * as _ from '../frontend/simple/utils/giLodash.js'
 import {createWebSocket} from '../frontend/simple/controller/backend.js'
 import '../frontend/simple/controller/namespace.js'
 
-const Promise = global.Promise = require('bluebird')
 global.fetch = require('node-fetch')
 const should = require('should') // eslint-disable-line
 
@@ -246,7 +245,9 @@ describe('Full walkthrough', function () {
         )
       )
       // delay so that the sockets receive notification
-      return Promise.delay(200)
+      return new Promise((resolve) => {
+        setTimeout(resolve, 400)
+      })
     })
   })
 })

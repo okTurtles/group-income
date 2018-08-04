@@ -25,7 +25,7 @@ Vue.use(translation)
 
 export default function (
   key: string,
-  comments: string | Object,
+  comments: ?Object,
   options: ?Object
 ) {
   if (typeof comments === 'object') {

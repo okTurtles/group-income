@@ -48,7 +48,7 @@ declare module 'knex' { declare module.exports: any }
 declare module 'localforage' { declare module.exports: any }
 declare module 'lodash' { declare module.exports: any }
 declare module 'lodash/debounce' { declare module.exports: any }
-declare module 'moment' { declare module.exports: any }
+declare module 'flow-typer-js' { declare module.exports: any }
 declare module 'multihashes' { declare module.exports: any }
 declare module 'node-uuid' { declare module.exports: any }
 declare module 'objection' { declare module.exports: any }
@@ -90,6 +90,7 @@ declare module 'xvfb-maybe' { declare module.exports: any }
 declare module 'blakejs' { declare module.exports: any }
 declare module 'protobufjs/light' { declare module.exports: any }
 declare module 'node-fetch' { declare module.exports: any }
+declare module 'string-template' { declare module.exports: any }
 
 // .vue and .ejs files
 declare module './GroupName.vue' { declare module.exports: Object }
@@ -99,7 +100,8 @@ declare module './GroupRules.vue' { declare module.exports: Object }
 declare module './GroupPrivacy.vue' { declare module.exports: Object }
 declare module './GroupInvitees.vue' { declare module.exports: Object }
 declare module './GroupSummary.vue' { declare module.exports: Object }
-declare module '../views/components/i18n.vue' { declare module.exports: Object }
+declare module './Voting.vue' { declare module.exports: Object }
+declare module './ButtonCountdown.vue' { declare module.exports: Object }
 declare module './views/containers/NavBar.vue' { declare module.exports: Object }
 declare module '../views/CreateGroup.vue' { declare module.exports: Object }
 declare module '../views/PayGroup.vue' { declare module.exports: Object }
@@ -115,10 +117,11 @@ declare module '../views/Mailbox.vue' { declare module.exports: Object }
 declare module '../views/Join.vue' { declare module.exports: Object }
 declare module '../views/Home.vue' { declare module.exports: Object }
 declare module '../components/MembersCircle.vue' { declare module.exports: Object }
+declare module '../components/i18n.vue' { declare module.exports: Object }
 declare module '../views/DesignSystem.vue' { declare module.exports: Object }
-// special case for interface.js
-declare module './interface' { declare module.exports: any }
+declare module './views/components/Modal/Modal.vue' { declare module.exports: Object }
+declare module './interface.js' { declare module.exports: any }
 
 // we ignored everything in assets/, so...
-declare module '../frontend/simple/assets/vendor/primus' { declare module.exports: Function }
-declare module '../assets/vendor/primus' { declare module.exports: Function }
+declare module '../frontend/simple/assets/vendor/primus.js' { declare module.exports: Function }
+declare module '../../assets/vendor/primus.js' { declare module.exports: Function }
