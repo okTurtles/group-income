@@ -13,8 +13,8 @@
       </p>
     </div>
 
-    <dashboard-section title="Proposals">
-      <proposals :proposals="currentGroupState.proposals" />
+    <dashboard-section title="Proposals" v-if="Object.keys(currentGroupState.proposals).length > 0">
+      <proposals />
     </dashboard-section>
 
     <dashboard-section title="Members" data-test="groupMembers">
