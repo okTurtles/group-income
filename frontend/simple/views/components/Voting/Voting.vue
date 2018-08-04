@@ -23,6 +23,7 @@
               'is-outlined': !hasVotedAgainst,
               'is-danger': !hasVotedFor
             }"
+            :disabled="hasVoted"
             @click="handleVoteAgainst"
           >
             {{buttonText.against}}
@@ -33,6 +34,7 @@
               'is-outlined': !hasVotedFor,
               'is-success': !hasVotedAgainst
             }"
+            :disabled="hasVoted"
             @click="handleVoteFor"
             data-test="forButton"
           >

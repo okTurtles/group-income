@@ -19,8 +19,6 @@
     <voting
       v-for="proposal in proposalList.alreadyVoted"
       v-bind="proposal"
-      :onVoteAgainst="handleVoteAgainst"
-      :onVoteFor="handleVoteFor"
     />
   </div>
 </template>
