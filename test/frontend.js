@@ -48,8 +48,10 @@ function login (name) {
 
 function signup (name, email, password) {
   return function (n) {
-    n.goto(page('signup'))
-      .wait(elT('signName'))
+    n.goto(page('/'))
+      .wait(elT('signupBtn'))
+      .click(elT('signupBtn'))
+      .wait(elT('modal'))
       .insert(elT('signName'), name)
       .insert(elT('signEmail'), email)
       .insert(elT('signPassword'), password)
@@ -165,7 +167,7 @@ describe('Frontend', function () {
     // TODO: implement this now that we're using `type` instead of `insert`
     it.skip('Test Validation', async function () {
       this.timeout(4000)
-      await n.goto(page('signup'))
+      await n.goto(page('/'))
       const badUsername = 't e s t'
       const badEmail = `@fail`
       const badPassword = `789`// six is so afraid

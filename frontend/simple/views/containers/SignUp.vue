@@ -1,64 +1,56 @@
 <template>
-  <section class="section level">
-    <form class="signup level-item"
-      novalidate ref="form"
-      name="formData"
-      data-test="signup"
-      @submit.prevent="submit"
-    >
-      <div class="box gi-box">
-        <div class="level is-mobile">
-          <div class="level-left">
-            <div class="level-item">
-              <p class="title is-5"><i18n>Sign Up</i18n></p>
-            </div>
-          </div>
-          <div class="level-right">
-            <p class="level-item content is-small">
-              <a @click="forwardToLogin"><i18n>Have an account?</i18n></a>
-            </p>
-          </div>
-        </div>
-        <div class="field">
-          <p class="control has-icon">
-            <input
-              id="name"
-              class="input"
-              :class="{'is-danger': $v.form.name.$error}"
-              name="name"
-              @input="debounceName"
-              placeholder="username"
-              autofocus
-              data-test="signName"
-            >
-            <span class="icon"><i class="fa fa-user"></i></span>
-          </p>
-          <p class="help is-danger"
-            data-test="badUsername"
-            v-if="$v.form.name.$error"
+  <form class="is-small"
+    novalidate ref="form"
+    name="formData"
+    data-test="signup"
+    @submit.prevent="submit">
+
+    <modal-header>
+      <i18n>Sign Up</i18n>
+    </modal-header>
+
+    <modal-body>
+      <div class="field">
+        <p class="control has-icon">
+          <input
+            id="name"
+            class="input"
+            :class="{'is-danger': $v.form.name.$error}"
+            name="name"
+            @input="debounceName"
+            placeholder="username"
+            ref="username"
+            autofocus
+            data-test="signName"
           >
-            <i18n v-if="!$v.form.name.isAvailable">name is unavailable</i18n>
-            <i18n v-if="!$v.form.name.nonWhitespace">cannot contain spaces</i18n>
-          </p>
-        </div>
-        <div class="field">
-          <p class="control has-icon">
-            <input
-              class="input"
-              :class="{'is-danger': $v.form.email.$error}"
-              id="email"
-              name="email"
-              v-model="form.email"
-              @blur="$v.form.email.$touch()"
-              type="email"
-              placeholder="email"
-              data-test="signEmail"
-            >
-            <span class="icon"><i class="fa fa-envelope"></i></span>
-          </p>
-          <i18n v-if="$v.form.email.$error" class="help is-danger" data-test="badEmail">not an email</i18n>
-        </div>
-        <div class="field">
+          <span class="icon"><i class="fa fa-user"></i></span>
+        </p>
+        <p class="help is-danger"
+          data-test="badUsername"
+          v-if="$v.form.name.$error"
+        >
+          <i18n v-if="!$v.form.name.isAvailable">name is unavailable</i18n>
+          <i18n v-if="!$v.form.name.nonWhitespace">cannot contain spaces</i18n>
+        </p>
+      </div>
+      <div class="field">
+        <p class="control has-icon">
+          <input
+            class="input"
+            :class="{'is-danger': $v.form.email.$error}"
+            id="email"
+            name="email"
+            v-model="form.email"
+            @blur="$v.form.email.$touch()"
+            type="email"
+            placeholder="email"
+            data-test="signEmail"
+          >
+          <span class="icon"><i class="fa fa-envelope"></i></span>
+        </p>
+        <i18n v-if="$v.form.email.$error" class="help is-danger" data-test="badEmail">not an email</i18n>
+      </div>
+      <div class="field">
           <p class="control has-icon">
             <input
               class="input"
@@ -75,33 +67,23 @@
           </p>
           <i18n v-if="$v.form.password.$error" class="help is-danger" data-test="badPassword">password must be at least 7 characters</i18n>
         </div>
-        <div class="level is-mobile">
-          <div class="level-left">
-            <div class="level-item content is-small">
-              <span class="help is-marginless"
-                :class="[form.error ? 'is-danger' : 'is-success']"
-                data-test="serverMsg"
-              >
-                {{form.response}}
-              </span>
-            </div>
-          </div>
-          <div class="level-right">
-            <div class="level-item is-narrow">
-              <button
-                class="button submit is-success"
-                type="submit"
-                :disabled="$v.form.$invalid"
-                data-test="signSubmit"
-              >
-                <i18n>Sign Up</i18n>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </form>
-  </section>
+    </modal-body>
+
+    <modal-footer :submitError="form.response">
+      <button
+        class="button is-primary"
+        type="submit"
+        :disabled="$v.form.$invalid"
+        data-test="signSubmit"
+      >
+        <i18n>Sign Up</i18n>
+      </button>
+
+      <template slot="footer">
+        <a @click="showLoginModal"><i18n>Have an account?</i18n></a>
+      </template>
+    </modal-footer>
+  </form>
 </template>
 <style scoped>
 .gi-box {
@@ -110,18 +92,29 @@
 }
 </style>
 <script>
-import sbp from '../../../shared/sbp.js'
 import _ from 'lodash'
 import { validationMixin } from 'vuelidate'
 import { required, minLength, email } from 'vuelidate/lib/validators'
-import { nonWhitespace } from './utils/validators.js'
-import { OPEN_MODAL } from '../utils/events.js'
-import LoginModal from './containers/LoginModal.vue'
+import sbp from '../../../../shared/sbp.js'
+import { nonWhitespace } from '../utils/validators.js'
+import { OPEN_MODAL, CLOSE_MODAL } from '../../utils/events.js'
+import LoginModal from './LoginModal.vue'
+import ModalHeader from '../components/Modal/ModalHeader.vue'
+import ModalBody from '../components/Modal/ModalBody.vue'
+import ModalFooter from '../components/Modal/ModalFooter.vue'
 
 // TODO: fix all this
 export default {
   name: 'SignUp',
   mixins: [ validationMixin ],
+  components: {
+    ModalHeader,
+    ModalBody,
+    ModalFooter
+  },
+  inserted () {
+    this.$refs.username.focus()
+  },
   methods: {
     debounceName: _.debounce(function (e) {
       // "Validator is evaluated on every data change, as it is essentially a computed value.
@@ -166,6 +159,7 @@ export default {
           name: this.form.name,
           identityContractId: user.hash()
         })
+        sbp('okTurtles.events/emit', CLOSE_MODAL)
         this.form.response = 'success' // TODO: get rid of this and fix/update tests accordingly
         if (this.$route.query.next) {
           // TODO: get rid of this timeout and fix/update tests accordingly
@@ -184,7 +178,7 @@ export default {
         this.form.error = true
       }
     },
-    forwardToLogin () {
+    showLoginModal () {
       sbp('okTurtles.events/emit', OPEN_MODAL, LoginModal)
     }
   },
