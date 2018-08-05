@@ -134,6 +134,8 @@ export default {
             )
             await sbp('backend/publishLogEntry', proposal)
           } else {
+          // NOTE: Here we could make it so that a user can be invited to a group multiple times, and the system
+          //       just accepts/cares about the most recent invite only and forgets the previous one
             await sbp('backend/publishLogEntry', inviteToGroup)
             await sbp('backend/publishLogEntry', inviteToMailbox)
           }
