@@ -1,9 +1,6 @@
 'use strict'
 
-type IncomeObject = {
-  name: string,
-  amount: number
-}
+import type {IncomeObject} from '../../../../shared/types'
 
 function incomeDistribution (incomes: Array<IncomeObject>, minCome: number) {
   let membersBelow = []
