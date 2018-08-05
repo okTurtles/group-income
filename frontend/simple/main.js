@@ -9,7 +9,7 @@ import './views/utils/translations.js'
 import './views/utils/transitions.js'
 import router from './controller/router.js'
 import * as db from './model/database.js'
-import NavBar from './views/containers/NavBar/NavBar.vue'
+import Sidebar from './views/containers/Sidebar/Sidebar.vue'
 import store from './model/state.js'
 import { LOGOUT } from './utils/events'
 import Modal from './views/components/Modal/Modal.vue'
@@ -53,11 +53,11 @@ async function startApp () {
   new Vue({
     router: router,
     components: {
-      NavBar,
+      Sidebar,
       Modal
     },
     computed: {
-      showSideBar () {
+      showSidebar () {
         return this.$store.state.loggedIn
       }
     },

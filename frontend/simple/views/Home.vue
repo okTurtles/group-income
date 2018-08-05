@@ -4,7 +4,7 @@
         <img class="logo" src="assets/images/group-income-icon-transparent.png">
         <br>
         <h1 class="title is-3"><i18n>Welcome to GroupIncome</i18n></h1>
-        <div v-if="!$store.state.loggedIn">
+        <div v-if="!$store.state.loggedIn" class="gi-cta">
           <button @click="showLoginModal" class="button" data-test="loginBtn">
             <i18n>Login</i18n>
           </button>
@@ -30,15 +30,27 @@
       />
     </main>
 </template>
-<style scoped>
-  .logo,
-  .title {
-    margin-top: 3rem;
-  }
+<style scoped lang="scss">
+@import "../assets/sass/theme/index";
 
-  .logo {
-    width: 160px;
-  }
+.container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.title {
+  margin-top: 3rem;
+}
+
+.logo {
+  width: 10rem;
+}
+
+.gi-cta {
+  margin-bottom: $gi-spacer-lg;
+}
 </style>
 <script>
 import '../controller/router.js'

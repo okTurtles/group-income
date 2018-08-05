@@ -19,8 +19,8 @@
     </div>
     <![endif]-->
     <div id="app">
-      <nav-bar v-if="showSideBar"></nav-bar>
-      <router-view :class="{ 'gi-routerView': showSideBar }"></router-view>
+      <sidebar v-if="showSidebar"></sidebar>
+      <router-view :class="{ 'gi-routerView': showSidebar }"></router-view>
       <modal></modal>
       <footer id="debug-pages" class="has-text-centered">
         <!-- Event Log test is hidden because we no longer do it.

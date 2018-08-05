@@ -32,8 +32,12 @@ body {
 
   @include tablet {
     padding: $gi-spacer-lg $gi-spacer*1.5;
-    margin-left: $gi-navbarWidth;
+    margin-left: $gi-sidebarWidth;
   }
+}
+
+.gi-logo {
+  width: 8rem;
 }
 
 // ------ Utilities ------ //

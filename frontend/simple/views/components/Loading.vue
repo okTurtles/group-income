@@ -7,7 +7,6 @@
 </template>
 <style lang="scss" scoped>
 @import "../../assets/sass/theme/index";
-@import "../../assets/sass/bulma_overrides/components/navbar";
 
 .gi-loading {
   opacity: 0;
@@ -15,7 +14,7 @@
   animation: show 200ms 500ms forwards;
 
   &.fullView {
-    min-height: calc(100vh - #{$navbar-height});
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
     justify-content: center;

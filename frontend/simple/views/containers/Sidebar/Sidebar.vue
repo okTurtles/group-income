@@ -1,19 +1,19 @@
 <template>
-  <header class="c-navbar is-flex" :class="{ 'is-active': isActive }">
+  <header class="c-sidebar is-flex" :class="{ 'is-active': isActive }">
     <button class="gi-is-unstyled c-toggle" @click="toggleMenu">
       <i class="fa fa-bars"></i>
-      <img src="/simple/assets/images/logo-transparent.png" alt="GroupIncome's logo" class="c-logo">
+      <img src="/simple/assets/images/logo-transparent.png" alt="GroupIncome's logo" class="gi-logo">
     </button>
     <div class="level is-mobile c-header">
       <h1 class="sr-only">Main Menu</h1>
       <router-link to="home">
-        <img src="/simple/assets/images/logo-transparent.png" alt="GroupIncome's logo" class="c-logo level-left">
+        <img src="/simple/assets/images/logo-transparent.png" alt="GroupIncome's logo" class="gi-logo level-left">
       </router-link>
       <activity :activityCount="activityCount"></activity>
     </div>
 
-    <div class="c-navbar-body is-flex is-flex gi-is-justify-between">
-      <div class="c-navbar-body-top">
+    <div class="c-sidebar-body is-flex is-flex gi-is-justify-between">
+      <div class="c-sidebar-body-top">
         <list class="c-toplinks">
           <list-item tag="router-link" to="/mailbox"
             icon="envelope-o"
@@ -26,7 +26,7 @@
         <groups-list></groups-list>
       </div>
 
-      <div class="c-navbar-body-bottom">
+      <div class="c-sidebar-body-bottom">
         <list>
           <list-item tag="a" icon="external-link-square" variant="secondary" href="https://groupincome.org/blog/" target="_blank">
               <i18n>Blog</i18n>
@@ -49,11 +49,11 @@
 
 $speed: 300ms;
 
-.c-navbar {
+.c-sidebar {
   position: fixed;
   top: 0;
   left: 0;
-  width: $gi-navbarWidth;
+  width: $gi-sidebarWidth;
   height: 100vh;
   z-index: 100;
   padding: $gi-spacer*1.5 $gi-spacer $gi-spacer;
@@ -72,7 +72,7 @@ $speed: 300ms;
   }
 
   @include tablet {
-    width: $gi-navbarWidth;
+    width: $gi-sidebarWidth;
   }
 
   &-body {
@@ -86,10 +86,6 @@ $speed: 300ms;
   }
 }
 
-.c-logo {
-  width: 8rem;
-}
-
 .c-toggle {
   @include mobile {
     position: absolute;
@@ -100,11 +96,11 @@ $speed: 300ms;
     background-color: transparent;
     transition: height 1ms $speed;
 
-    .c-logo {
+    .gi-logo {
       margin-left: $gi-spacer-sm;
     }
 
-    .c-logo,
+    .gi-logo,
     .fa-bars {
       transition: opacity $speed/5 $speed*1.1;
     }
@@ -116,7 +112,7 @@ $speed: 300ms;
       left: 100%;
       transition: height 1ms 1ms;
 
-      .c-logo,
+      .gi-logo,
       .fa-bars {
         transition: opacity 1ms 1ms;
         opacity: 0;
@@ -140,7 +136,7 @@ import Profile from './Profile.vue'
 import { List, ListItem } from '../../components/Lists/index.js'
 
 export default {
-  name: 'NavBar',
+  name: 'SideBar',
   components: {
     Activity,
     GroupsList,

@@ -39,7 +39,6 @@
 </template>
 <style lang="scss" scoped>
 @import "../assets/sass/theme/index";
-@import "../assets/sass/bulma_overrides/components/navbar";
 
 .gi-join {
   &-grid {
@@ -47,7 +46,7 @@
     grid-template-areas: "header" "graphic" "ctas";
     grid-gap: $gi-spacer-lg;
     max-width: $widescreen;
-    min-height: calc(100vh - #{$navbar-height});
+    min-height: 100vh;
     margin: auto;
 
     &-header {

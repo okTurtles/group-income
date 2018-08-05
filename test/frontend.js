@@ -130,7 +130,7 @@ describe('Frontend', function () {
 
   describe('Sign up Test', function () {
     it('Should register User', function () {
-      this.timeout(100000)
+      this.timeout(10000)
       return n.use(signup(username, 'test@testgroupincome.com', 'testtest'))
     })
 
@@ -327,10 +327,7 @@ describe('Frontend', function () {
 
       const alert = await n.exists(elT('alertNotification'))
 
-      console.log('alert:::::::', alert)
-
       should(alert).equal(true)
-      console.log('unred:::::::')
 
       const unread = await n.evaluate(
         el => document.querySelector(el) && +document.querySelector(el).innerText,
