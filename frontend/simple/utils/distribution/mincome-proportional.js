@@ -1,6 +1,11 @@
 'use strict'
 
-function incomeDistribution (incomes, minCome) {
+type IncomeObject = {
+  name: string,
+  amount: number
+}
+
+function incomeDistribution (incomes: Array<IncomeObject>, minCome: number) {
   let membersBelow = []
   let belowMincomeTotalAmount = 0
   let membersAbove = []
