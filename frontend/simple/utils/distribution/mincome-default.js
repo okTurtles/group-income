@@ -1,6 +1,11 @@
 'use strict'
 
-let frequencies = function (incomes) {
+type IncomeObject = {
+  name: string,
+  amount: number
+}
+
+let frequencies = function (incomes: Array<IncomeObject>) {
   let freqs = {}
   incomes.map(function (a) {
     let amount = a.amount
@@ -14,12 +19,13 @@ let frequencies = function (incomes) {
   return freqs
 }
 
-function findIncomeFrequencyByKey (incomeFrequencies, amount) {
+function findIncomeFrequencyByKey (incomeFrequencies, amount: number): number {
   for (let incomeFrequencyAmount in incomeFrequencies) {
     if (parseInt(incomeFrequencyAmount) === amount) {
       return incomeFrequencies[amount]
     }
   }
+  return 0
 }
 
 function getSortedIncomeFrequencyAmounts (incomeFrequencies) {
@@ -30,17 +36,17 @@ function getSortedIncomeFrequencyAmounts (incomeFrequencies) {
   return frequencyAmounts
 }
 
-function findIncreaseAmount (incomeFrequencies, minCome) {
+function findIncreaseAmount (incomeFrequencies, minCome: number): number {
   let sortedIncomeFrequencyAmounts = getSortedIncomeFrequencyAmounts(incomeFrequencies)
-  return Math.min(sortedIncomeFrequencyAmounts[1], minCome)
+  return Math.min(parseInt(sortedIncomeFrequencyAmounts[1]), minCome)
 }
 
-function findDecreaseAmount (incomeFrequencies, minCome) {
+function findDecreaseAmount (incomeFrequencies, minCome: number): number {
   let sortedIncomeFrequencyAmounts = getSortedIncomeFrequencyAmounts(incomeFrequencies)
-  return Math.max(sortedIncomeFrequencyAmounts[sortedIncomeFrequencyAmounts.length - 2], minCome)
+  return Math.max(parseInt(sortedIncomeFrequencyAmounts[sortedIncomeFrequencyAmounts.length - 2]), minCome)
 }
 
-function transferValue (incomes, indexAmount, transferAmount) {
+function transferValue (incomes: Array<IncomeObject>, indexAmount: number, transferAmount: number): Array<Object> {
   return incomes.map(function (income) {
     if (income.amount === indexAmount) {
       income.amount += transferAmount
@@ -49,20 +55,30 @@ function transferValue (incomes, indexAmount, transferAmount) {
   })
 }
 
-function incomeKeys (a, b) {
-  return a.name > b.name
+function incomeKeys (a: IncomeObject, b: IncomeObject): number {
+  if (a.name > b.name) {
+    return 1
+  }
+  if (a.name < b.name) {
+    return -1
+  }
+  return 0
 }
 
-function incomeAmounts (a, b) {
+function incomeAmounts (a: IncomeObject, b: IncomeObject): number {
   return a.amount - b.amount
 }
 
-function floorTo (number) {
-  return number.toString().match(/^-?\d+(?:\.\d{0,2})?/)[0]
+function floorTo (number): number {
+  const numberMatch = number.toString().match(/^-?\d+(?:\.\d{0,2})?/)
+  if (numberMatch) {
+    return parseFloat(numberMatch[0])
+  }
+  throw new TypeError('Not a valid number.')
 }
 
-function incomeDistribution (incomes, minCome) {
-  let incomeLength = Object.keys(incomes).length
+function incomeDistribution (incomes: Array<IncomeObject>, minCome: number) {
+  let incomeLength = incomes.length
 
   if (incomeLength === 1) {
     incomes.sort(incomeKeys)
