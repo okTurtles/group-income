@@ -205,30 +205,31 @@ export default {
     },
     text () {
       const { initiator, value, originalValue } = this
+      const proposer = this.isOwnProposal ? L('You') : initiator
       const textMap = {
         [TypeInvitation]: template(
-          L('{initiator} proposed to <strong>invite {value}</strong> to the group'), {
-            initiator, value }
+          L('{proposer} proposed to <strong>invite {value}</strong> to the group'), {
+            proposer, value }
         ),
         [TypeRemoval]: template(
-          L('{initiator} proposed to <strong>remove {value}</strong> from the group'), {
-            initiator, value }
+          L('{proposer} proposed to <strong>remove {value}</strong> from the group'), {
+            proposer, value }
         ),
         [TypeIncome]: template(
-          L('{initiator} proposed to change the <strong>mincome from {originalValue} to {value}</strong>'), {
-            initiator, value, originalValue }
+          L('{proposer} proposed to change the <strong>mincome from {originalValue} to {value}</strong>'), {
+            proposer, value, originalValue }
         ),
         [TypeChangeThreshold]: template(
-          L('{initiator} proposed to change the <strong>rule changing threshold from {originalValue} to {value}</strong>'), {
-            initiator, value, originalValue }
+          L('{proposer} proposed to change the <strong>rule changing threshold from {originalValue} to {value}</strong>'), {
+            proposer, value, originalValue }
         ),
         [TypeApprovalThreshold]: template(
-          L('{initiator} proposed to change the <strong>member invite threshold from {originalValue} to {value}</strong>'), {
-            initiator, value, originalValue }
+          L('{proposer} proposed to change the <strong>member invite threshold from {originalValue} to {value}</strong>'), {
+            proposer, value, originalValue }
         ),
         [TypeRemovalThreshold]: template(
-          L('{initiator} proposed to change the <strong>member removal threshold from {originalValue} to {value}</strong>'), {
-            initiator, value, originalValue }
+          L('{proposer} proposed to change the <strong>member removal threshold from {originalValue} to {value}</strong>'), {
+            proposer, value, originalValue }
         )
       }
       return textMap[this.type]
