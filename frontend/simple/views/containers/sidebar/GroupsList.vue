@@ -60,7 +60,7 @@
 @import "../../../assets/sass/theme/index";
 
 .c-trigger-icon {
-  color: $grey;
+  color: inherit;
 }
 
 .c-trigger {
@@ -71,15 +71,10 @@
   &:hover,
   &:focus {
     background-color: $primary-bg-a;
-
-    .c-trigger-icon {
-      color: inherit;
-    }
   }
 }
 
 .c-content {
-  // background-color: $primary-bg-s;
   width: 100%;
 }
 </style>

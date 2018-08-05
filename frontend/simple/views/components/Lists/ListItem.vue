@@ -65,7 +65,7 @@
 
 .c-item-badge {
   display: inline-block;
-  padding: 1px 6px; // a rounded square
+  padding: 1px 5px; // a rounded square
   color: $body-background-color;
   line-height: 1.1;
   border-radius: $radius;

@@ -4,7 +4,7 @@
       <i class="fa fa-bars"></i>
       <img src="/simple/assets/images/logo-transparent.png" alt="GroupIncome's logo" class="gi-logo">
     </button>
-    <div class="level is-mobile c-header">
+    <div class="c-sidebar-header level is-mobile">
       <h1 class="sr-only">Main Menu</h1>
       <router-link to="home">
         <img src="/simple/assets/images/logo-transparent.png" alt="GroupIncome's logo" class="gi-logo level-left">
@@ -56,11 +56,10 @@ $speed: 300ms;
   width: $gi-sidebarWidth;
   height: 100vh;
   z-index: 100;
-  padding: $gi-spacer*1.5 $gi-spacer $gi-spacer;
   flex-direction: column;
   // background: linear-gradient(210deg, rgba($primary, 0.15), $body-background-color 20rem); // diagonal gradient
-  background: linear-gradient(-90deg, $primary-bg-s, $body-background-color 15rem); // 90deg linear gradient
-  // background: $primary-bg-s; // solid
+  // background: linear-gradient(-90deg, $primary-bg-s, $body-background-color 15rem); // 90deg linear gradient
+  background: $primary-bg-s; // solid
 
   @include mobile {
     transform: translateX(-100%);
@@ -75,7 +74,12 @@ $speed: 300ms;
     width: $gi-sidebarWidth;
   }
 
+  &-header {
+    padding: $gi-spacer*1.5 $gi-spacer 0;
+  }
+
   &-body {
+    padding: 0 $gi-spacer $gi-spacer;
     overflow: auto;
     flex-direction: column;
     flex-grow: 1;

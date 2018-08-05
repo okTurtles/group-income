@@ -16,8 +16,6 @@ $warning: lighten(adjust-hue($tertiary, 15%), 0%);
 $danger: lighten(adjust-hue($tertiary, -30%), 20%);
 $info: $primary-text;
 
-$grey: lighten(#000, 60%);
-
 @import "../../node_modules/bulma/sass/utilities/derived-variables";
 
 $addColors: (

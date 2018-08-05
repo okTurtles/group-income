@@ -26,10 +26,10 @@
 @import "../../../assets/sass/theme/index";
 
 .c-profile {
-  background: $primary-bg-a;
+  background: $body-background-color;
   padding: $gi-spacer-sm;
   border-radius: $radius;
-  margin-top: $gi-spacer-lg;
+  margin-top: $gi-spacer;
 }
 
 .c-picture {

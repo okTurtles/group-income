@@ -10,6 +10,7 @@
   position: absolute;
   top: 0;
   left: 0;
+  z-index: 2;
   border-radius: $radius;
   background-color: $body-background-color;
   box-shadow: 0 0.125rem 0.25rem $grey;
