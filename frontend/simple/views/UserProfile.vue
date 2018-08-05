@@ -220,7 +220,7 @@
 </template>
 <script>
 import sbp from '../../../shared/sbp.js'
-import _ from 'lodash'
+import {cloneDeep} from '../utils/giLodash'
 import { validationMixin } from 'vuelidate'
 import { url, email } from 'vuelidate/lib/validators'
 import { decimals } from './utils/validators.js'
@@ -293,7 +293,7 @@ export default {
       }
     },
     changeGroup () {
-      this.editedGroupProfile = _.cloneDeep(
+      this.editedGroupProfile = cloneDeep(
         this.$store
           .state[this.currentGroupContractId]
           .profiles[this.$store.state.loggedIn.name] || {}

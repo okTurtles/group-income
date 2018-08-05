@@ -2,7 +2,7 @@
 
 import sbp from '../../../../shared/sbp.js'
 import Vue from 'vue'
-import _ from 'lodash'
+import _ from '../../utils/giLodash'
 import {DefineContract} from '../utils.js'
 // https://github.com/gmazovec/flow-typer
 import {

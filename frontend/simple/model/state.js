@@ -7,7 +7,6 @@ import sbp from '../../../shared/sbp.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import {GIMessage} from '../../../shared/GIMessage.js'
-import debounce from 'lodash/debounce'
 import contracts from './contracts.js'
 import * as _ from '../utils/giLodash.js'
 import * as db from './database.js'
@@ -317,7 +316,7 @@ const actions = {
     }
   }
 }
-const debouncedSave = debounce((dispatch, savedState) => dispatch('saveSettings', savedState), 500)
+const debouncedSave = _.debounce((dispatch, savedState) => dispatch('saveSettings', savedState), 500)
 
 store = new Vuex.Store({state, mutations, getters, actions})
 store.subscribe(() => debouncedSave(store.dispatch))
