@@ -35,9 +35,7 @@ function login (name) {
     n.wait(elT('loginBtn'))
       .click(elT('loginBtn'))
       .wait(elT('modal'))
-      .insert(elT('loginName')) // clear
       .insert(elT('loginName'), name)
-      .insert(elT('loginPassword')) // clear
       .insert(elT('loginPassword'), 'testtest')
       .click(elT('loginSubmit'))
       // we don't check the specific name because the display name could have been modified
@@ -52,9 +50,7 @@ function signup (name, email = 'test@test.com', password = '1234567') {
       .click(elT('signupBtn'))
       .wait(elT('modal'))
       .insert(elT('signName'), name)
-      .insert(elT('signEmail')) // clear
       .insert(elT('signEmail'), email)
-      .insert(elT('signPassword')) // clear
       .insert(elT('signPassword'), password)
       .wait(el => !document.querySelector(el).disabled, elT('signSubmit'))
       .click(elT('signSubmit'))
@@ -110,18 +106,6 @@ describe('Frontend', function () {
 
   let username = `User`
 
-  describe.skip('New user page', function () {
-    it('Should create user George', function () {
-      this.timeout(5000)
-      return n.use(signup('George', 'george@lasvegas.com', '$$111$$'))
-    })
-
-    it.skip('Should fail to create George again', function () {
-      return n.click('.signup button.submit')
-        .wait(() => document.getElementById('serverMsg').className.indexOf('danger') !== -1)
-    })
-  })
-
   describe('Sign up Test', function () {
     it('Should register User', async function () {
       this.timeout(10000)
@@ -149,19 +133,7 @@ describe('Frontend', function () {
     })
     it('Test Logout and Login', async function () {
       this.timeout(10000)
-      const loggedin = await n
-        .use(logout())
-        .use(note('logout -> login to: ' + username))
-        .use(login(username))
-        .wait(elT('openProfileDropDown'))
-        .click(elT('openProfileDropDown'))
-        .exists(elT('logoutBtn'))
-      should(loggedin).equal(true)
-      const loggedOut = await n
-        .use(logout(username))
-        .wait(elT('loginBtn'))
-        .exists(elT('loginBtn'))
-      should(loggedOut).equal(true)
+      await n.use(logout()).use(note('logout -> login to: ' + username)).use(login(username))
     })
 
     it('Test Validation', async function () {
@@ -170,13 +142,11 @@ describe('Frontend', function () {
       const badEmail = '@fail'
       const badPassword = '789'// six is so afraid
       const denied = await n
+        .use(logout())
         .goto(page('signup'))
         .wait(elT('signName'))
-        .insert(elT('signName')) // clear
         .insert(elT('signName'), badUsername)
-        .insert(elT('signEmail')) // clear
         .insert(elT('signEmail'), badEmail)
-        .insert(elT('signPassword')) // clear
         .insert(elT('signPassword'), badPassword)
         .evaluate(
           (el) => document.querySelector(el) && document.querySelector(el).disabled,
@@ -198,6 +168,8 @@ describe('Frontend', function () {
         .wait(elT('badPassword'))
         .exists(elT('badPassword'))
       should(passwordMsg).equal(true)
+      // clear inputs
+      n.insert(elT('signName')).insert(elT('signEmail')).insert(elT('signPassword'))
     })
   })
 
@@ -205,12 +177,10 @@ describe('Frontend', function () {
     it('Create Users for new group', async function () {
       this.timeout(4 * 8000)
       await n
-        .use(signup(username + '2'))
-        .use(logout())
-        .use(signup(username + '3'))
-        .use(logout())
-        .use(signup(username + '4'))
-        .use(logout())
+        .goto(page('signup'))
+        .use(signup(username + '2')).use(logout())
+        .use(signup(username + '3')).use(logout())
+        .use(signup(username + '4')).use(logout())
         .use(signup(username + '5'))
     })
 
