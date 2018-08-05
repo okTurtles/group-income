@@ -286,15 +286,15 @@ export default {
           break
       }
 
-      if (this.votes.received === 0) {
-        return this.isOwnProposal
-          ? L('Nobody voted yet')
-          : L('Be the first to vote!')
-      }
-
-      if (!this.isOwnProposal && this.votes.received === 1) {
-        return L('Your were the first to vote')
-      }
+      // "first to vote" is confusing, so hiding these for now:
+      // if (this.votes.received === 0) {
+      //   return this.isOwnProposal
+      //     ? L('Nobody voted yet')
+      //     : L('Be the first to vote!')
+      // }
+      // if (!this.isOwnProposal && this.votes.received === 1) {
+      //   return L('Your were the first to vote')
+      // }
 
       if (this.votes.received > 1) {
         return template(L('{youAnd} {votesCount} of {members} members voted'), {
