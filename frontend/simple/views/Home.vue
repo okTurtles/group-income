@@ -5,7 +5,7 @@
         <br>
         <h1 class="title is-3"><i18n>Welcome to GroupIncome</i18n></h1>
         <div v-if="!$store.state.loggedIn">
-          <a v-on:click="forwardToLogin"><i18n>Login</i18n></a> or <router-link to="signup"><i18n>Sign Up</i18n></router-link> <i18n>to continue</i18n>
+          <a v-on:click="showLoginModal"><i18n>Login</i18n></a> or <a @click="showSignUpModal"><i18n>Sign Up</i18n></a> <i18n>to continue</i18n>
         </div>
         <div v-else>
           <router-link
@@ -30,14 +30,25 @@
   }
 </style>
 <script>
+import '../controller/router.js'
 import sbp from '../../../shared/sbp.js'
 import LoginModal from './containers/LoginModal.vue'
+import SignUp from './containers/SignUp.vue'
 import { OPEN_MODAL } from '../utils/events'
 
 export default {
+  name: 'Home',
+  mounted () {
+    if (this.$route.query.next) {
+      this.showLoginModal()
+    }
+  },
   methods: {
-    forwardToLogin: function () {
+    showLoginModal () {
       sbp('okTurtles.events/emit', OPEN_MODAL, LoginModal)
+    },
+    showSignUpModal () {
+      sbp('okTurtles.events/emit', OPEN_MODAL, SignUp)
     }
   }
 }

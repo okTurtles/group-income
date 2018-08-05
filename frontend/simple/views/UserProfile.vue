@@ -220,7 +220,7 @@
 </template>
 <script>
 import sbp from '../../../shared/sbp.js'
-import {cloneDeep} from '../utils/giLodash'
+import {cloneDeep} from '../utils/giLodash.js'
 import { validationMixin } from 'vuelidate'
 import { url, email } from 'vuelidate/lib/validators'
 import { decimals } from './utils/validators.js'

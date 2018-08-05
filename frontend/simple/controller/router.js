@@ -19,7 +19,6 @@ import Home from '../views/Home.vue'
 import Invite from '../views/Invite.vue'
 import Join from '../views/Join.vue'
 import Mailbox from '../views/Mailbox.vue'
-import SignUp from '../views/SignUp.vue'
 import PayGroup from '../views/PayGroup.vue'
 import UserProfile from '../views/UserProfile.vue'
 import Vote from '../views/Vote.vue'
@@ -37,11 +36,7 @@ var homeGuard = {
 }
 var loginGuard = {
   guard: (to, from) => !store.state.loggedIn,
-  redirect: (to, from) => ({ path: '/signup', query: { next: to.path } })
-}
-var signupGuard = {
-  guard: (to, from) => !!store.state.loggedIn,
-  redirect: (to, from) => ({ path: '/' })
+  redirect: (to, from) => ({ path: '/', query: { next: to.path } })
 }
 // Check if user has a group
 var groupGuard = {
@@ -86,15 +81,6 @@ var router = new Router({
         title: 'Design System'
       }
       // beforeEnter: createEnterGuards(designGuard)
-    },
-    {
-      path: '/signup',
-      component: SignUp,
-      name: SignUp.name, // route name. important!
-      meta: {
-        title: 'Sign Up' // page title. see issue #45
-      },
-      beforeEnter: createEnterGuards(signupGuard)
     },
     {
       path: '/new-group',
@@ -192,7 +178,8 @@ var router = new Router({
       component: PayGroup,
       meta: {
         title: 'Pay Group'
-      }
+      },
+      beforeEnter: createEnterGuards(loginGuard)
     },
     /* Guards need to be created for any route that should not be directly accessed by url */
     {
