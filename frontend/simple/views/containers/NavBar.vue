@@ -7,13 +7,13 @@
     </div>
       <div class="navbar-end is-flex">
         <div class="navbar-item signUp-item" v-if="!$store.state.loggedIn">
-          <router-link
+          <button
             class="button is-success"
             data-test="signupBtn"
-            to="signup"
+            @click="showSignUpModal"
           >
             <i18n>Sign Up</i18n>
-          </router-link>
+          </button>
         </div>
         <div class="navbar-item" v-if="!$store.state.loggedIn">
           <button class="button is-primary"
@@ -113,6 +113,7 @@
 import sbp from '../../../../shared/sbp.js'
 import TimeTravel from './TimeTravel.vue'
 import LoginModal from './LoginModal.vue'
+import SignUp from './SignUp.vue'
 import { OPEN_MODAL } from '../../utils/events.js'
 
 export default {
@@ -134,6 +135,9 @@ export default {
     },
     showLoginModal () {
       sbp('okTurtles.events/emit', OPEN_MODAL, LoginModal)
+    },
+    showSignUpModal () {
+      sbp('okTurtles.events/emit', OPEN_MODAL, SignUp)
     },
     toggleTimeTravel (event) {
       if (!event.altKey) return
