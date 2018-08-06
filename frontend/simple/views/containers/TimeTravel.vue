@@ -30,9 +30,8 @@
 import sbp from '../../../../shared/sbp.js'
 import VueSlider from 'vue-slider-component'
 import store from '../../model/state.js'
-import _ from 'lodash'
 import { REPLACED_STATE } from '../../utils/events.js'
-
+import {cloneDeep} from '../../utils/giLodash.js'
 const disableTimeTravel = true
 export default {
   name: 'TimeTravel',
@@ -45,7 +44,7 @@ export default {
       console.log('[TimeTravel] initial state:', this.ephemeral.history[this.ephemeral.position])
       store.subscribe((mutation, state) => {
         // console.log('[TimeTravel] spied mutation:', mutation)
-        this.ephemeral.history.push(_.cloneDeep(state))
+        this.ephemeral.history.push(cloneDeep(state))
         this.config.sliderConfig.max += 1
         this.ephemeral.position = this.config.sliderConfig.max
         this.timeTravel(this.ephemeral.position)
@@ -63,7 +62,7 @@ export default {
   data () {
     return {
       ephemeral: {
-        history: [_.cloneDeep(store.state)],
+        history: [cloneDeep(store.state)],
         position: 0
       },
       config: {

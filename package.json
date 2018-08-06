@@ -87,6 +87,7 @@
     "velocity-animate": "1.5.0",
     "vue": "2.5.17",
     "vue-circle-slider": "1.0.0",
+    "vue-clickaway": "2.2.2",
     "vue-router": "2.6.0",
     "vue-script2": "2.0.0",
     "vue-slider-component": "2.3.1",

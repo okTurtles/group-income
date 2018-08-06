@@ -1,6 +1,6 @@
 <template>
-  <section class="section full-screen">
-    <div>
+  <main>
+    <div class="section">
       <div class="columns">
         <div class="column is-one-quarter">
           <div class="panel">
@@ -175,7 +175,7 @@
         </div>
       </div>
     </div>
-  </section>
+  </main>
 </template>
 <style>
 .signup .level-item { margin-top: 10px; }
@@ -196,10 +196,9 @@
 <script>
 import sbp from '../../../shared/sbp.js'
 import contracts from '../model/contracts.js'
-import _ from 'lodash'
 import L from './utils/translations.js'
 
-const criteria = [(msg) => new Date(msg.sentDate)]
+const criteria = (msg) => new Date(msg.sentDate)
 
 // TODO: this whole file needs to be improved/rewritten
 
@@ -207,10 +206,10 @@ export default {
   name: 'Mailbox',
   computed: {
     inbox () {
-      return _.sortBy(_.filter(this.$store.getters.mailbox, msg => msg.data.messageType === contracts.MailboxPostMessage.TypeMessage), criteria)
+      return this.$store.getters.mailbox.filter(msg => msg.data.messageType === contracts.MailboxPostMessage.TypeMessage).sort(criteria)
     },
     invites () {
-      return _.sortBy(_.filter(this.$store.getters.mailbox, msg => msg.data.messageType === contracts.MailboxPostMessage.TypeInvite), criteria)
+      return this.$store.getters.mailbox.filter(msg => msg.data.messageType === contracts.MailboxPostMessage.TypeInvite).sort(criteria)
     },
     proposals () {
       return this.$store.getters.proposals

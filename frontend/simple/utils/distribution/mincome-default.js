@@ -1,9 +1,6 @@
 'use strict'
 
-type IncomeObject = {
-  name: string,
-  amount: number
-}
+import type {IncomeObject} from '../../../../shared/types.js'
 
 let frequencies = function (incomes: Array<IncomeObject>) {
   let freqs = {}

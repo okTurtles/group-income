@@ -102,7 +102,6 @@ declare module './GroupInvitees.vue' { declare module.exports: Object }
 declare module './GroupSummary.vue' { declare module.exports: Object }
 declare module './Voting.vue' { declare module.exports: Object }
 declare module './ButtonCountdown.vue' { declare module.exports: Object }
-declare module './views/containers/NavBar.vue' { declare module.exports: Object }
 declare module '../views/CreateGroup.vue' { declare module.exports: Object }
 declare module '../views/PayGroup.vue' { declare module.exports: Object }
 declare module '../views/SignUp.vue' { declare module.exports: Object }
