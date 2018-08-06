@@ -86,7 +86,7 @@
   </form>
 </template>
 <script>
-import _ from 'lodash'
+import {debounce} from '../../utils/giLodash.js'
 import { validationMixin } from 'vuelidate'
 import { required, minLength, email } from 'vuelidate/lib/validators'
 import sbp from '../../../../shared/sbp.js'
@@ -110,7 +110,7 @@ export default {
     this.$refs.username.focus()
   },
   methods: {
-    debounceName: _.debounce(function (e) {
+    debounceName: debounce(function (e) {
       // "Validator is evaluated on every data change, as it is essentially a computed value.
       // If you need to throttle an async call, do it on your data change event, not on the validator itself.
       // You may end up with broken Vue observables otherwise."

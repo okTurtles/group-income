@@ -2,7 +2,7 @@
 
 import sbp from '../../../../shared/sbp.js'
 import Vue from 'vue'
-import _ from 'lodash'
+import {merge} from '../../utils/giLodash.js'
 import {DefineContract} from '../utils.js'
 // https://github.com/gmazovec/flow-typer
 import {
@@ -208,7 +208,7 @@ export default DefineContract({
     vuexModuleConfig: {
       mutation: (state, {data}) => {
         var {groupProfile} = state.profiles[data.username]
-        state.profiles[data.username].groupProfile = _.merge(groupProfile, data.profile)
+        state.profiles[data.username].groupProfile = merge(groupProfile, data.profile)
       }
     }
   }
