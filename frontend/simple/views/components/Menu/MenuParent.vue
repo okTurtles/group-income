@@ -42,7 +42,6 @@ export default {
   methods: {
     handleTrigger () {
       this.Menu.isActive = true
-      this.$emit('open')
     },
     handleSelect (itemId) {
       this.closeMenu()

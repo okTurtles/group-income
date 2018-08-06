@@ -1,4 +1,3 @@
-<!-- TODO: Transform this view into a Modal, for layout consistence -->
 <template>
   <form class="is-small"
     novalidate ref="form"
