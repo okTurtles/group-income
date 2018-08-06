@@ -1,5 +1,5 @@
 /* eslint-env mocha */
-import * as _ from './giLodash'
+import * as _ from './giLodash.js'
 import sinon from 'sinon'
 require('should-sinon')
 const should = require('should')
@@ -47,7 +47,7 @@ describe('Test giLodash', function () {
     should(a[2][1]).equal(undefined)
     should(a[2][2]).equal(null)
   })
-  it(' Test fromPairs', function () {
+  it('Test fromPairs', function () {
     let a = _.fromPairs([['a', 1], ['b', 2]])
     should(a.a).equal(1)
     should(a.b).equal(2)
