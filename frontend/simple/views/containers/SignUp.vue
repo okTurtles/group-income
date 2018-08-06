@@ -85,12 +85,6 @@
     </modal-footer>
   </form>
 </template>
-<style scoped>
-.gi-box {
-  width: 25rem;
-  max-width: 100%;
-}
-</style>
 <script>
 import _ from 'lodash'
 import { validationMixin } from 'vuelidate'

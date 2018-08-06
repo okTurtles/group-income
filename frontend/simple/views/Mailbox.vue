@@ -1,6 +1,6 @@
 <template>
-  <section class="section full-screen">
-    <div>
+  <main>
+    <div class="section">
       <div class="columns">
         <div class="column is-one-quarter">
           <div class="panel">
@@ -175,7 +175,7 @@
         </div>
       </div>
     </div>
-  </section>
+  </main>
 </template>
 <style>
 .signup .level-item { margin-top: 10px; }

@@ -1,9 +1,31 @@
 @import "../../node_modules/bulma/sass/elements/button";
 
 .button {
+  height: auto; // Usability purposes
   min-height: 2.5rem; // A11Y purposes
   color: $grey;
   font-weight: 600; // A11Y purposes
+
+  // with an icon only, without text
+  &.is-icon {
+    background-color: transparent;
+    border: none;
+    color: $grey;
+    padding: 0;
+    min-height: auto;
+    width: $gi-spacer-lg;
+    height: $gi-spacer-lg;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background 150ms, color 150ms;
+
+    &:focus,
+    &:hover {
+      background-color: $primary-bg-a;
+      color: $text;
+    }
+  }
 }
 
 .button.is-success.is-outlined {
@@ -17,13 +39,5 @@
 
   &:not(:last-child) {
     margin-bottom: $gi-spacer-sm; // overrides bulma huge margin
-  }
-
-  .button {
-    &,
-    &:last-child {
-      // .buttons already has margin-bottom, this doesn't need too.
-      margin-bottom: 0;
-    }
   }
 }
