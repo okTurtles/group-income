@@ -29,10 +29,11 @@ const {bold} = chalk
 
 sbp('sbp/selectors/register', {
   // intercept 'handleEvent' from backend.js
-  'state/vuex/dispatch': function (action, arg) {
+  'state/vuex/dispatch': function (action, event) {
     switch (action) {
       case 'handleEvent':
-        sbp('okTurtles.events/emit', arg.hash(), arg)
+        contracts[event.type()].validate(event.data())
+        sbp('okTurtles.events/emit', event.hash(), event)
         break
       default: throw new Error(`unknown dispatch: ${action}`)
     }
@@ -71,6 +72,21 @@ describe('Full walkthrough', function () {
       founderUsername: founder.data().attributes.name,
       founderIdentityContractId: founder.hash()
     })
+  }
+  function createPayment (from, to, amount, parentHash, currency = 'USD') {
+    return sbp('gi/contract/create-action', 'GroupPayment',
+      {
+        fromUser: from.data().attributes.name,
+        toUser: to.data().attributes.name,
+        date: new Date().toISOString(),
+        amount: amount,
+        currency: currency,
+        txid: String(parseInt(Math.random() * 10000000)),
+        status: contracts.GroupPayment.StatusPending,
+        paymentType: contracts.GroupPayment.TypeManual
+      },
+      parentHash
+    )
   }
 
   async function createMailboxFor (user) {
@@ -214,17 +230,12 @@ describe('Full walkthrough', function () {
     })
 
     it('Should post an event', async function () {
-      await postEntry(
-        await sbp('gi/contract/create-action', 'GroupPayment',
-          {payment: '123'},
-          groups.group1.hash()
-        )
-      )
+      await postEntry(await createPayment(users.bob, users.alice, 100, groups.group1.hash()))
     })
 
     it('Should fail with wrong parentHash', async function () {
       try {
-        var p = await sbp('gi/contract/create-action', 'GroupPayment', {payment: 'abc'}, '')
+        var p = await createPayment(users.alice, users.bob, 100, '')
         await postEntry(p)
         return Promise.reject(new Error("shouldn't get here!"))
       } catch (e) {

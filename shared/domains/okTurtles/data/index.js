@@ -28,6 +28,11 @@ export default sbp('sbp/selectors/register', {
   },
   'okTurtles.data/remove': function (key: any, data: any) {
     const array = _store.get(key)
-    _store.set(key, array.filter(v => v !== data))
+    if (array) {
+      const aLen = array.length
+      const filtered = array.filter(v => v !== data)
+      _store.set(key, filtered)
+      return aLen - filtered.length
+    }
   }
 })
