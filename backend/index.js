@@ -33,3 +33,13 @@ process.on('message', function () {
   })
   primus.destroy({timeout: 1000}) // TODO: close: false ?
 })
+
+process.on('uncaughtException', (err) => {
+  console.error('[server] Unhandled exception:', err, err.stack)
+  process.exit(1)
+})
+
+process.on('unhandledRejection', (reason, p) => {
+  console.error('[server] Unhandled promise rejection:', p, 'reason:', reason)
+  process.exit(1)
+})

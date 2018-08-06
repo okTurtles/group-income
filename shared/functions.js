@@ -26,7 +26,7 @@ export function makeResponse (
 // https://github.com/primus/primus#client-library
 export function setupPrimus (server: Object, saveAndDestroy: boolean = false) {
   var primus = new Primus(server, {
-    transformer: 'uws',
+    transformer: 'websockets',
     rooms: {wildcard: false}
   })
   // these 'requires' are placed inline instead of at the top to prevent
