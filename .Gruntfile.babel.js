@@ -6,7 +6,7 @@ https://www.reddit.com/r/javascript/comments/352f83/using_browserify_babelify_wi
 http://www.sitepoint.com/setting-up-es6-project-using-babel-browserify/
 https://babeljs.io/docs/setup/#browserify
 */
-import _ from 'lodash'
+import * as _ from './frontend/simple/utils/giLodash.js'
 import {setupPrimus} from './shared/functions'
 
 const fs = require('fs')
