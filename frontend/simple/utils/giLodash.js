@@ -27,18 +27,19 @@ export function merge (obj: Object, src: Object) {
     }
     obj[ key ] = clone || src[ key ]
   }
+  return obj
 }
 
-export function debounce (func: Function, wait: Number, options: Object) {
+export function debounce (func: Function, wait: number, options?: Object) {
   if (typeof func !== 'function') {
     throw new TypeError('Invalid Function')
   }
-  let lastArgs
+  let lastArgs: Array<mixed> | typeof undefined
   let lastThis
-  let maxWait
+  let maxWait: number = 0
   let result
   let timerId
-  let lastCallTime
+  let lastCallTime: number | typeof undefined
   let lastInvokeTime = 0
   let leading = false
   let trailing = true
@@ -55,18 +56,18 @@ export function debounce (func: Function, wait: Number, options: Object) {
     trailing = 'trailing' in options ? !!options.trailing : trailing
   }
 
-  function invokeFunc (time) {
-    const args = lastArgs
+  function invokeFunc (time: number) {
+    const args: Array<mixed> | typeof undefined = lastArgs
     const thisArg = lastThis
 
     lastArgs = lastThis = undefined
     lastInvokeTime = time
-    result = func.apply(thisArg, args)
+    result = func.apply(thisArg, args || [])
     return result
   }
 
   function shouldInvoke (time) {
-    const timeSinceLastCall = time - lastCallTime
+    const timeSinceLastCall = time - Number(lastCallTime)
     const timeSinceLastInvoke = time - lastInvokeTime
 
     // Either this is the first call, activity has stopped and we're at the
@@ -87,7 +88,7 @@ export function debounce (func: Function, wait: Number, options: Object) {
       return result
     }
     // Restart the timer.
-    const timeSinceLastCall = time - lastCallTime
+    const timeSinceLastCall = time - Number(lastCallTime)
     const timeSinceLastInvoke = time - lastInvokeTime
     const timeWaiting = wait - timeSinceLastCall
     let remainingWait = maxing ? Math.min(timeWaiting, maxWait - timeSinceLastInvoke) : timeWaiting
@@ -109,7 +110,7 @@ export function debounce (func: Function, wait: Number, options: Object) {
     return timerId !== undefined
   }
 
-  function debounced (...args) {
+  function debounced (...args: any) {
     const time = Date.now()
     const isInvoking = shouldInvoke(time)
 
@@ -139,4 +140,37 @@ export function debounce (func: Function, wait: Number, options: Object) {
   debounced.flush = flush
   debounced.pending = pending
   return debounced
+}
+
+export function flatten (arr: Array<*>) {
+  let flat: Array<*> = []
+  for (let i = 0; i < arr.length; i++) {
+    if (Array.isArray(arr[ i ])) {
+      flat = flat.concat(arr[i])
+    } else {
+      flat.push(arr[i])
+    }
+  }
+  return flat
+}
+
+export function zip () {
+  let arr = Array.prototype.slice.call(arguments)
+  let zipped = []
+  let max = arr.reduce((max, current) => +max > current.length ? max : current.length)
+  for (let current of arr) {
+    for (let i = 0; i < max; i++) {
+      zipped[ i ] = zipped[ i ] || []
+      zipped[ i ].push(current[ i ])
+    }
+  }
+  return zipped
+}
+
+export function fromPairs (arr: Array<*>) {
+  let obj = {}
+  for (let [key, value] of arr) {
+    obj[key] = value
+  }
+  return obj
 }
