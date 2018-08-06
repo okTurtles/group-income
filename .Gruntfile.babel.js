@@ -7,12 +7,19 @@ http://www.sitepoint.com/setting-up-es6-project-using-babel-browserify/
 https://babeljs.io/docs/setup/#browserify
 */
 import * as _ from './frontend/simple/utils/giLodash.js'
-import {setupPrimus} from './shared/functions'
+import {setupPrimus} from './shared/functions.js'
+import {
+  dasherize,
+  capitalize,
+  camelize,
+  startsWith,
+  endsWith,
+  chompLeft
+} from './shared/string.js'
 
 const fs = require('fs')
 const path = require('path')
 const url = require('url')
-const S = require('string')
 const vueify = require('vueify')
 const pathmodify = require('pathmodify')
 
@@ -127,15 +134,15 @@ module.exports = (grunt) => {
         middleware: (connect, opts, middlewares) => {
           middlewares.unshift((req, res, next) => {
             var f = url.parse(req.url).pathname
-            f = path.join('dist', S(f).endsWith('/') ? f + 'index.html' : f)
+            f = path.join('dist', endsWith(f, '/') ? f + 'index.html' : f)
             if (/^dist\/(frontend|node_modules)\/.*\.(sass|scss|js|vue)$/.test(f)) {
               // handle serving source-maps
-              res.end(fs.readFileSync(S(f).chompLeft('dist/').s))
-            } else if (S(f).endsWith('.html') && fs.existsSync(f)) {
+              res.end(fs.readFileSync(chompLeft(f, 'dist/')))
+            } else if (endsWith(f, '.html') && fs.existsSync(f)) {
               // parse all HTML files for SSI
               // TODO: delete this section?
               res.end(fs.readFileSync(f))
-            } else if (S(f).startsWith('dist/simple/') && !/\.[a-z][a-z0-9]+(\?[^/]*)?$/.test(f)) {
+            } else if (startsWith(f, 'dist/simple/') && !/\.[a-z][a-z0-9]+(\?[^/]*)?$/.test(f)) {
               // if we are a vue-router route, send main index file
               console.log(`Req: ${req.url}, sending index.html for: ${f}`)
               res.end(fs.readFileSync('dist/simple/index.html'))
@@ -231,6 +238,7 @@ module.exports = (grunt) => {
 // This is used by grunt-sass and vueify
 function sassCfg () {
   return {
+    implementation: require('node-sass'),
     sourceMap: development,
     // https://github.com/vuejs/vueify/issues/34#issuecomment-161722961
     // indentedSyntax: true,
@@ -246,10 +254,10 @@ function sassCfg () {
 
 function browserifyCfg ({straight, lazy}, cfg = {}) {
   var globalize = x => // views/UserGroupView.vue -> UserGroupView
-    S(path.parse(x).name).dasherize().capitalize().camelize().s
+    camelize(capitalize(dasherize(path.parse(x).name)))
   var keyify = x => // views/UserGroupView.vue -> userGroupView
-    S(path.parse(x).name).dasherize().chompLeft('-').camelize().s
-  var p = (s, ...v) => _.flatten(_.zip(s, v)).join('').replace('/', path.sep)
+    camelize(chompLeft(dasherize(path.parse(x).name), '-'))
+  // var p = (s, ...v) => _.flatten(_.zip(s, v)).join('').replace('/', path.sep)
 
   function gencfg (out, paths, isLazy) {
     var c = {
@@ -261,7 +269,7 @@ function browserifyCfg ({straight, lazy}, cfg = {}) {
             // pathmodify.mod.re(/^jquery$/i, 'sprint-js'),
             // pathmodify.mod.dir('vendor', p`${__dirname}/frontend/simple/assets/vendor`),
             // https://vuejs.org/v2/guide/installation.html#Standalone-vs-Runtime-only-Build
-            pathmodify.mod.id('vue', p`${__dirname}/node_modules/vue/dist/vue.common.js`)
+            pathmodify.mod.id('vue', `${__dirname}/node_modules/vue/dist/vue.common.js`)
           ]
         }]],
         browserifyOptions: {

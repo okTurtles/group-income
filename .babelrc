@@ -6,5 +6,5 @@
       ]
     }
   }]],
-  "plugins": ["lodash", "transform-flow-strip-types", "transform-inline-environment-variables", "transform-runtime", "transform-class-properties", "transform-object-rest-spread"]
+  "plugins": ["transform-flow-strip-types", "transform-inline-environment-variables", "transform-runtime", "transform-class-properties", "transform-object-rest-spread"]
 }
