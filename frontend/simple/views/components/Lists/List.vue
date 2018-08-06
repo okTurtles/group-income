@@ -15,6 +15,7 @@
 export default {
   name: 'List',
   props: {
+    /** When true a top and bottom margin is added to the list */
     hasMargin: Boolean
   }
 }

@@ -79,6 +79,7 @@ export default {
     itemId: String,
     icon: String,
     badgeCount: Number,
+    /** When true a 1px border is added to the bottom of the list item. */
     hasDivider: Boolean,
     disableRadius: Boolean,
     isActive: Boolean,
