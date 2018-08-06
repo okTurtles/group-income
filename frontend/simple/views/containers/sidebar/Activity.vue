@@ -49,7 +49,7 @@
 }
 </style>
 <script>
-import { List } from '../../components/Lists'
+import { List } from '../../components/Lists/index.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuHeader, MenuItem } from '../../components/Menu/index.js'
 
 export default {
