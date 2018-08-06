@@ -20,21 +20,12 @@ function isMergeableObject (val) {
 
 export function merge (obj: Object, src: Object) {
   for (let key in src) {
-    if (isMergeableObject(obj[key])) {
-      if (isMergeableObject(src[key])) {
-        let clone = cloneDeep(src[key])
-        merge(obj[key], clone)
-      } else {
-        obj[key] = src[key]
-      }
-    } else {
-      if (isMergeableObject(src[key])) {
-        let clone = cloneDeep(src[key])
-        obj[key] = clone
-      } else {
-        obj[key] = src[key]
-      }
+    let clone = isMergeableObject(src[ key ]) ? cloneDeep(src[ key ]) : undefined
+    if (clone && isMergeableObject(obj[ key ])) {
+      merge(obj[ key ], clone)
+      continue
     }
+    obj[ key ] = clone || src[ key ]
   }
 }
 
@@ -74,23 +65,6 @@ export function debounce (func: Function, wait: Number, options: Object) {
     return result
   }
 
-  function startTimer (pendingFunc, wait) {
-    return setTimeout(pendingFunc, wait)
-  }
-
-  function cancelTimer (id) {
-    clearTimeout(id)
-  }
-
-  function leadingEdge (time) {
-    // Reset any `maxWait` timer.
-    lastInvokeTime = time
-    // Start the timer for the trailing edge.
-    timerId = startTimer(timerExpired, wait)
-    // Invoke the leading edge.
-    return leading ? invokeFunc(time) : result
-  }
-
   function shouldInvoke (time) {
     const timeSinceLastCall = time - lastCallTime
     const timeSinceLastInvoke = time - lastInvokeTime
@@ -105,44 +79,30 @@ export function debounce (func: Function, wait: Number, options: Object) {
   function timerExpired () {
     const time = Date.now()
     if (shouldInvoke(time)) {
-      return trailingEdge(time)
+      timerId = undefined
+      if (trailing && lastArgs) {
+        return invokeFunc(time)
+      }
+      lastArgs = lastThis = undefined
+      return result
     }
     // Restart the timer.
-    timerId = startTimer(timerExpired, remainingWait(time))
-  }
-
-  function remainingWait (time) {
     const timeSinceLastCall = time - lastCallTime
     const timeSinceLastInvoke = time - lastInvokeTime
     const timeWaiting = wait - timeSinceLastCall
-
-    return maxing
-      ? Math.min(timeWaiting, maxWait - timeSinceLastInvoke)
-      : timeWaiting
+    let remainingWait = maxing ? Math.min(timeWaiting, maxWait - timeSinceLastInvoke) : timeWaiting
+    timerId = setTimeout(timerExpired, remainingWait)
   }
-
-  function trailingEdge (time) {
-    timerId = undefined
-
-    // Only invoke if we have `lastArgs` which means `func` has been
-    // debounced at least once.
-    if (trailing && lastArgs) {
-      return invokeFunc(time)
-    }
-    lastArgs = lastThis = undefined
-    return result
-  }
-
   function cancel () {
     if (timerId !== undefined) {
-      cancelTimer(timerId)
+      clearTimeout(timerId)
     }
     lastInvokeTime = 0
     lastArgs = lastCallTime = lastThis = timerId = undefined
   }
 
   function flush () {
-    return timerId === undefined ? result : trailingEdge(Date.now())
+    return timerId === undefined ? result : timerExpired()
   }
 
   function pending () {
@@ -159,16 +119,18 @@ export function debounce (func: Function, wait: Number, options: Object) {
 
     if (isInvoking) {
       if (timerId === undefined) {
-        return leadingEdge(lastCallTime)
+        lastInvokeTime = lastCallTime
+        timerId = setTimeout(timerExpired, wait)
+        return leading ? invokeFunc(lastCallTime) : result
       }
       if (maxing) {
         // Handle invocations in a tight loop.
-        timerId = startTimer(timerExpired, wait)
+        timerId = setTimeout(timerExpired, wait)
         return invokeFunc(lastCallTime)
       }
     }
     if (timerId === undefined) {
-      timerId = startTimer(timerExpired, wait)
+      timerId = setTimeout(timerExpired, wait)
     }
     return result
   }
