@@ -1,7 +1,7 @@
 <template>
   <loading theme="fullView" v-if="!contract.groupName" />
   <main v-else>
-    <div class="gi-join-grid">
+    <div class="gi-join-grid section">
       <div class="gi-join-grid-header">
         <h1 class="has-text-grey">
           <i18n>You’ve been invited to join a group!</i18n>
@@ -45,7 +45,6 @@
     display: grid;
     grid-template-areas: "header" "graphic" "ctas";
     grid-gap: $gi-spacer-lg;
-    max-width: $widescreen;
     min-height: 100vh;
     margin: auto;
 
