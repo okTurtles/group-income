@@ -85,12 +85,6 @@
     </modal-footer>
   </form>
 </template>
-<style scoped>
-.gi-box {
-  width: 25rem;
-  max-width: 100%;
-}
-</style>
 <script>
 import {debounce} from '../../utils/giLodash.js'
 import { validationMixin } from 'vuelidate'

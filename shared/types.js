@@ -31,3 +31,9 @@ export type Response = {
   err?: string;
   data?: JSONType
 }
+
+export type IncomeObject = {
+  name: string,
+  amount: number
+}
+

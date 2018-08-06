@@ -58,10 +58,10 @@
 <style lang="scss" scoped>
 @import "../../assets/sass/theme/index";
 
-$scale-tablet: 1.25;
+$scale-tablet: 1.1;
 $scale-desktop: 1.5;
 
-$mainCircle-size: 16rem;
+$mainCircle-size: 14rem;
 $mainCircle-size-tablet: $mainCircle-size * $scale-tablet;
 $mainCircle-size-desktop: $mainCircle-size * $scale-desktop;
 

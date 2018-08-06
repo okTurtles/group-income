@@ -27,9 +27,7 @@ function page (page) {
 //       `n.use(logout())` we do `n.logoutIfLoggedIn()` or `n.logoutAndLogin()`?)
 function logout () {
   return function (n) {
-    n.wait(elT('openProfileDropDown'))
-      .click(elT('openProfileDropDown'))
-      .click(elT('logoutBtn'))
+    n.click(elT('logoutBtn'))
   }
 }
 
@@ -139,7 +137,6 @@ describe('Frontend', function () {
     it('Test Profile Change', function () {
       this.timeout(10000)
       return n
-        .click(elT('openProfileDropDown'))
         .click(elT('profileLink'))
         .wait(elT('profilePicture'))
         .insert(elT('bio'), 'Born in a test case')
@@ -329,7 +326,9 @@ describe('Frontend', function () {
         .click(elT('mailboxLink'))
 
       const alert = await n.exists(elT('alertNotification'))
+
       should(alert).equal(true)
+
       const unread = await n.evaluate(
         el => document.querySelector(el) && +document.querySelector(el).innerText,
         elT('inboxUnread')

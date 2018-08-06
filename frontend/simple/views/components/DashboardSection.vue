@@ -1,6 +1,6 @@
 <template>
-  <section class="gi-section">
-    <h3 class="title"><i18n>{{title}}</i18n></h3>
+  <section class="section gi-section">
+    <h3 class="title" v-if="title"><i18n>{{title}}</i18n></h3>
     <slot></slot>
   </section>
 </template>
@@ -9,10 +9,14 @@
 
 .gi-section {
   position: relative;
-  margin: $gi-spacer-lg*3 0;
+  margin-bottom: $gi-spacer-lg*2;
 
   &:first-of-type {
     margin-top: $gi-spacer-lg;
+  }
+
+  @include tablet {
+    margin-bottom: $gi-spacer-lg*3;
   }
 }
 </style>
