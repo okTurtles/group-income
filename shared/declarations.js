@@ -52,7 +52,6 @@ declare module 'flow-typer-js' { declare module.exports: any }
 declare module 'multihashes' { declare module.exports: any }
 declare module 'node-uuid' { declare module.exports: any }
 declare module 'objection' { declare module.exports: any }
-declare module 'poop' { declare module.exports: any }
 declare module 'primus' { declare module.exports: any }
 declare module 'primus-responder' { declare module.exports: any }
 declare module 'primus-rooms' { declare module.exports: any }
@@ -62,7 +61,6 @@ declare module 'sqlite3' { declare module.exports: any }
 declare module 'string' { declare module.exports: any }
 declare module 'tweetnacl' { declare module.exports: any }
 declare module 'tweetnacl-util' { declare module.exports: any }
-declare module 'uws' { declare module.exports: any }
 declare module 'velocity-animate' { declare module.exports: any }
 declare module 'vue' { declare module.exports: any }
 declare module 'vue-router' { declare module.exports: any }
@@ -102,6 +100,13 @@ declare module './GroupInvitees.vue' { declare module.exports: Object }
 declare module './GroupSummary.vue' { declare module.exports: Object }
 declare module './Voting.vue' { declare module.exports: Object }
 declare module './ButtonCountdown.vue' { declare module.exports: Object }
+declare module './MenuItem.vue' { declare module.exports: Object }
+declare module './MenuHeader.vue' { declare module.exports: Object }
+declare module './MenuContent.vue' { declare module.exports: Object }
+declare module './MenuTrigger.vue' { declare module.exports: Object }
+declare module './MenuParent.vue' { declare module.exports: Object }
+declare module './ListItem.vue' { declare module.exports: Object }
+declare module './List.vue' { declare module.exports: Object }
 declare module '../views/CreateGroup.vue' { declare module.exports: Object }
 declare module '../views/PayGroup.vue' { declare module.exports: Object }
 declare module '../views/SignUp.vue' { declare module.exports: Object }
@@ -120,6 +125,7 @@ declare module '../components/i18n.vue' { declare module.exports: Object }
 declare module '../views/DesignSystem.vue' { declare module.exports: Object }
 declare module './views/components/Modal/Modal.vue' { declare module.exports: Object }
 declare module './interface.js' { declare module.exports: any }
+declare module './views/containers/sidebar/Sidebar.vue' { declare module.exports: Object }
 
 // we ignored everything in assets/, so...
 declare module '../frontend/simple/assets/vendor/primus.js' { declare module.exports: Function }

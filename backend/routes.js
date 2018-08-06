@@ -12,25 +12,26 @@ module.exports = function (server: Object) {
   server.route({
     path: '/event',
     method: ['PUT', 'POST'],
-    config: {
+    options: {
       auth: 'gi-auth', // TODO: implement real group-based auth
       validate: { payload: Joi.string().required() }
     },
-    handler: function (request, reply) {
+    handler: function (request, h) {
       try {
+        console.log('/event handler')
         const entry = GIMessage.deserialize(request.payload)
         server.handleEntry(entry)
-        reply(entry.hash())
+        return entry.hash()
       } catch (err) {
         logger(err)
-        reply(err)
+        return err
       }
     }
   })
   server.route({
     path: '/events/{contractID}/{since}',
     method: ['GET'],
-    handler: async function (request, reply) {
+    handler: async function (request, h) {
       try {
         const {contractID, since} = request.params
         var stream = db.streamEntriesSince(contractID, since)
@@ -43,58 +44,60 @@ module.exports = function (server: Object) {
         //       we're currently returning a Readable stream, which doesn't have
         //       '.end'. If there are any issues we can try switching to returning a
         //       Writable stream. Both types however do have .destroy.
-        request.on('disconnect', stream.destroy.bind(stream))
-        reply(stream)
+        request.events.once('disconnect', () => {
+          stream.destroy.bind(stream)
+        })
+        return stream
       } catch (err) {
         logger(err)
-        reply(err)
+        return err
       }
     }
   })
   server.route({
     path: '/name',
     method: ['POST'],
-    config: { validate: { payload: {
+    options: { validate: { payload: {
       name: Joi.string().required(),
       value: Joi.string().required()
     } } },
-    handler: function (request, reply) {
+    handler: function (request, h) {
       try {
         const {name, value} = request.payload
         if (db.lookupName(name)) {
-          reply(Boom.conflict('exists'))
+          return Boom.conflict('exists')
         } else {
           db.registerName(name, value)
-          reply({name, value})
+          return {name, value}
         }
       } catch (err) {
         logger(err)
-        reply(err)
+        return err
       }
     }
   })
   server.route({
     path: '/name/{name}',
     method: ['GET'],
-    handler: function (request, reply) {
+    handler: function (request, h) {
       try {
-        reply(db.lookupName(request.params.name) || Boom.notFound())
+        return db.lookupName(request.params.name) || Boom.notFound()
       } catch (err) {
         logger(err)
-        reply(err)
+        return err
       }
     }
   })
   server.route({
     path: '/latestHash/{contractID}',
     method: ['GET'],
-    handler: function (request, reply) {
+    handler: function (request, h) {
       try {
         var entry = db.lastEntry(request.params.contractID)
-        reply(entry ? entry.hash() : Boom.notFound())
+        return entry ? entry.hash() : Boom.notFound()
       } catch (err) {
         logger(err)
-        reply(err)
+        return err
       }
     }
   })

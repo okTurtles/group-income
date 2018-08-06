@@ -32,10 +32,7 @@ describe('Test giLodash', function () {
   it('Test flatten', function () {
     let a = [1, [2, [3, 4]], 5]
     let b = _.flatten(a)
-    should(a).not.equal(b)
-    should(Array.isArray(b[1])).equal(false)
-    should(Array.isArray(b[2])).equal(true)
-    should(b.length).equal(4)
+    should(b).deepEqual([1, 2, [3, 4], 5]) // important: use deepEqual not equal
   })
   it('Test zip', function () {
     let a = _.zip([1, 2], ['a', 'b'], [true, false, null])
