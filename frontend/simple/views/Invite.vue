@@ -45,7 +45,6 @@
 import sbp from '../../../shared/sbp.js'
 import contracts from '../model/contracts.js'
 import L from './utils/translations.js'
-import template from 'string-template'
 import { GroupInvitees } from './components/CreateGroupSteps/index.js'
 import { mapState, mapGetters } from 'vuex'
 
@@ -92,7 +91,7 @@ export default {
           let memberName = member.state.attributes.name
 
           if (this.isAlreadyInvited(member)) {
-            this.form.errorMsg = template(L('Failed to invite users: member {name} is already invited'),
+            this.form.errorMsg = L('Failed to invite users: member {name} is already invited',
               { name: memberName })
             return
           }

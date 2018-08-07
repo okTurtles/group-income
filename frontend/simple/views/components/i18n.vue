@@ -2,10 +2,10 @@
     <span><slot></slot></span>
 </template>
 <script>
-import L from '../utils/translations'
 export default{
+  props: {args: [Object, Array]},
   beforeMount: function () {
-    this.$slots.default[0].text = L(`${this.$slots.default[0].text}.text`, {defaultValue: this.$slots.default[0].text})
+    this.$slots.default[0].text = this.L(`${this.$slots.default[0].text}.text`, this.args || [], {defaultValue: this.$slots.default[0].text})
   }
 }
 </script>

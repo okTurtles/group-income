@@ -2,6 +2,7 @@ import i18next from 'i18next'
 import XHR from 'i18next-xhr-backend'
 import Vue from 'vue'
 import I18n from '../components/i18n.vue'
+import template from '../../utils/string-template.js'
 
 i18next.use(XHR)
 // Initialize language to browser language
@@ -20,16 +21,22 @@ i18next.init(i18next.init({
 var translation = {}
 translation.install = function (Vue, options) {
   Vue.component('i18n', I18n)
+  Vue.prototype.L = L
 }
 Vue.use(translation)
 
-export default function (
+export default function L (
   key: string,
+  args: Array<*> | Object,
   comments: ?Object,
   options: ?Object
 ) {
+  if (typeof args === 'string') {
+    comments = args
+    args = []
+  }
   if (typeof comments === 'object') {
     options = comments
   }
-  return i18next.t(key, options)
+  return template(i18next.t(key, options), args)
 }
