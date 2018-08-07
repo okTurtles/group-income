@@ -30,7 +30,7 @@ describe('defaultMincomeDistributionTest', function () {
     should(incomeDistribution(members, 5)).eql(expected)
   })
 
-  it('should not change anything but sot when all members are below mincome', function () {
+  it('should not change anything but sort when all members are below mincome', function () {
     let members = [
       {name: 'a', amount: 30},
       {name: 'b', amount: 10},

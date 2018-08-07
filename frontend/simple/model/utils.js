@@ -34,6 +34,8 @@ export function DefineContract (contract: Object) {
       if (vuexModuleConfig.initialState) {
         vuexModule.state = vuexModuleConfig.initialState
       }
+    } else if (vuexModuleConfig.initialState) {
+      throw new Error(`initialState cannot be defined in non-constructor: ${name}`)
     }
     // if any constants are defined make them easily accessible via exported object
     if (constants) {
