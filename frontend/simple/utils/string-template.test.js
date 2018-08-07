@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 import template from './string-template.js'
 const should = require('should')
-describe('Test String', function () {
+describe('Test string-template', function () {
   it('Named arguments are replaced', function () {
     let result = template('Hello {name}, how are you?', { name: 'Mark' })
     should(result).equal('Hello Mark, how are you?')
