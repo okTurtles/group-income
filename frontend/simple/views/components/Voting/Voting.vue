@@ -115,7 +115,6 @@ import ButtonCountdown, { countdownStates } from '../ButtonCountdown'
 import Sign from './Sign.vue'
 import L from '../../utils/translations'
 import { votingType } from '../../utils/validators'
-import template from 'string-template'
 
 export default {
   name: 'Voting',
@@ -161,10 +160,9 @@ export default {
     helperText () {
       switch (this.closeProposalState.state) {
         case countdownStates.COUNTING:
-          return template(
-            L('Proposal closed in {countdown}...'), {
-              countdown: this.closeProposalState.countdown
-            })
+          return L('Proposal closed in {countdown}...', {
+            countdown: this.closeProposalState.countdown
+          })
         case countdownStates.CANCELLED:
           return L("Let's pretend that never happened")
         case countdownStates.SUCCESS:
@@ -184,7 +182,7 @@ export default {
       }
 
       if (this.proposal.votes > 1) {
-        return template(L('{youAnd} {votesCount} of {members} members voted'), {
+        return L('{youAnd} {votesCount} of {members} members voted', {
           youAnd: this.hasVoted ? L('You and') : '',
           votesCount: this.hasVoted ? this.proposal.votes - 1 : this.proposal.votes,
           members: this.proposal.members
