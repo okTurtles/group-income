@@ -25,7 +25,7 @@
             :disabled="hasVoted"
             @click="handleVoteAgainst"
           >
-            {{buttonText.against}}
+            {{buttonAgainst}}
           </button>
 
           <button class="button"
@@ -37,7 +37,7 @@
             @click="handleVoteFor"
             data-test="forButton"
           >
-            {{buttonText.for}}
+            {{buttonFor}}
           </button>
         </template>
 
@@ -117,9 +117,7 @@
 import ButtonCountdown, { countdownStates } from '../ButtonCountdown'
 import Sign from './Sign.vue'
 import L from '../../utils/translations'
-import template from 'string-template'
-import contracts from '../../../model/contracts.js'
-const { TypeInvitation, TypeRemoval, TypeIncome, TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold } = contracts.GroupProposal
+import proposalText from './proposalText.js'
 
 export default {
   name: 'ProposalBox',
@@ -149,84 +147,29 @@ export default {
     }
   },
   computed: {
-    buttonText () {
+    buttonFor () {
       const { proposalType, proposalData, originalData } = this.proposal
-      if (proposalType === TypeInvitation) {
-        return {
-          for: template(L('Invite {proposalData}'), { proposalData }),
-          against: L('Don\'t invite')
-        }
-      } else if (proposalType === TypeRemoval) {
-        return {
-          for: template(L('Remove {proposalData}'), { proposalData }),
-          against: template(L('Keep {proposalData}'), { proposalData })
-        }
-      } else {
-        return {
-          for: template(L('Change to {proposalData}'), { proposalData }),
-          against: template(L('Keep {originalData}'), { originalData })
-        }
-      }
+      return proposalText[proposalType].button.for({ proposalData, originalData })
+    },
+    buttonAgainst () {
+      const { proposalType, proposalData, originalData } = this.proposal
+      return proposalText[proposalType].button.against({ proposalData, originalData })
     },
     title () {
-      const titleMap = {
-        [TypeInvitation]: L('Invite Member'),
-        [TypeRemoval]: L('Remove Member'),
-        [TypeIncome]: L('Change Mincome'),
-        [TypeChangeThreshold]: L('Update Rule: Change Threshold'),
-        [TypeApprovalThreshold]: L('Update Rule: Invite Threshold'),
-        [TypeRemovalThreshold]: L('Update Rule: Member Removal Threshold')
-      }
-      return titleMap[this.proposal.proposalType]
+      return proposalText[this.proposal.proposalType].title()
     },
     text () {
       const { proposalCreator, proposalType, proposalData, originalData } = this.proposal
       const proposer = this.isOwnProposal ? L('You') : proposalCreator
-      const textMap = {
-        [TypeInvitation]: template(
-          L('{proposer} proposed to <strong>invite {proposalData}</strong> to the group'), {
-            proposer, proposalData }
-        ),
-        [TypeRemoval]: template(
-          L('{proposer} proposed to <strong>remove {proposalData}</strong> from the group'), {
-            proposer, proposalData }
-        ),
-        [TypeIncome]: template(
-          L('{proposer} proposed to change the <strong>mincome from {originalData} to {proposalData}</strong>'), {
-            proposer, proposalData, originalData }
-        ),
-        [TypeChangeThreshold]: template(
-          L('{proposer} proposed to change the <strong>rule changing threshold from {originalData} to {proposalData}</strong>'), {
-            proposer, proposalData, originalData }
-        ),
-        [TypeApprovalThreshold]: template(
-          L('{proposer} proposed to change the <strong>member invite threshold from {originalData} to {proposalData}</strong>'), {
-            proposer, proposalData, originalData }
-        ),
-        [TypeRemovalThreshold]: template(
-          L('{proposer} proposed to change the <strong>member removal threshold from {originalData} to {proposalData}</strong>'), {
-            proposer, proposalData, originalData }
-        )
-      }
-      return textMap[proposalType]
+      return proposalText[proposalType].text({ proposer, proposalData, originalData })
     },
     detailed () {
       const { proposalType, originalData, voterCount } = this.proposal
-      if ([TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold].includes(proposalType)) {
-        const originalVotesNeeded = Math.ceil(voterCount * originalData)
-        const newVotesNeeded = Math.ceil(voterCount * this.proposalData)
-        const actionMap = {
-          [TypeChangeThreshold]: L('change a rule'),
-          [TypeApprovalThreshold]: L('approve a new member'),
-          [TypeRemovalThreshold]: L('remove a member')
-        }
-        return template(
-          L('Instead of {originalVotesNeeded}, at least {newVotesNeeded} of {voterCount} members will be needed to {action}.'), {
-            originalVotesNeeded, newVotesNeeded, voterCount, action: actionMap[proposalType] }
-        )
-      } else {
-        return ''
-      }
+      const originalVotesNeeded = Math.ceil(voterCount * originalData)
+      const newVotesNeeded = Math.ceil(voterCount * this.proposalData)
+      const action = proposalText[proposalType].action
+      return action ? L('Instead of {originalVotesNeeded}, at least {newVotesNeeded} of {voterCount} members will be needed to {action}.', {
+        originalVotesNeeded, newVotesNeeded, voterCount, action: action() }) : ''
     },
     hasVoted () {
       return !!this.proposal.myVote
@@ -264,9 +207,9 @@ export default {
       }
 
       if (Object.values(this.proposal.votes).length > 1) {
-        return template(L('{youAnd} {votesCount} of {members} members voted'), {
+        return L('{youAnd} {votesCount} of {members} members voted', {
           youAnd: this.hasVoted ? L('You and') : '',
-          votesCount: this.hasVoted ? Object.values(this.proposal.votes).length - 1 : Object.values(this.proposal.votes).length,
+          votesCount: this.hasVoted ? Object.values(this.proposal.votes).length - 1 : this.proposal.votes.length,
           members: this.proposal.voterCount
         })
       }
