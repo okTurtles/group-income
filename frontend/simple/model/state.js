@@ -176,7 +176,17 @@ const getters = {
     return (proposalHash, groupId) => {
       if (!groupId) groupId = state.currentGroupId
       if (!groupId) return null
-      return state[groupId].proposals[proposalHash]
+      const groupData = getters.currentGroupState
+      const userData = getters.currentUserIdentityContract.attributes
+      const proposal = state[groupId].proposals[proposalHash]
+      return {
+        ...proposal,
+        hash: proposalHash,
+        voterCount: Object.entries(groupData.profiles).length,
+        fromWhat: groupData[proposal.doWhat] || null,
+        myVote: proposal.votes.find(vote => vote.username === userData.name) || 0,
+        isMyProposal: proposal.whoProposed === userData.name
+      }
     }
   }
 }

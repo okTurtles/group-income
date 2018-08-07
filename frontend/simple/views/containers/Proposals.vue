@@ -1,24 +1,21 @@
 <template>
   <div>
-
-    <i18n class="notification gi-is-banner gi-notify" v-if="allVoted" data-test="allVoted">Cool, you already voted on all proposals.</i18n>
-
-    <voting
+    <proposal-box
       v-for="proposal in proposalList.notVoted"
-      v-bind="proposal"
+      :proposal="proposal"
       :onVoteAgainst="handleVoteAgainst"
       :onVoteFor="handleVoteFor"
+      data-test="proposalsNotVoted"
     />
-
-    <voting
+    <proposal-box
       v-for="proposal in proposalList.own"
-      v-bind="proposal"
+      :proposal="proposal"
       :onCloseProposal="handleCloseProposal"
     />
-
-    <voting
+    <proposal-box
       v-for="proposal in proposalList.alreadyVoted"
-      v-bind="proposal"
+      :proposal="proposal"
+      data-test="proposalsAlreadyVoted"
     />
   </div>
 </template>
@@ -37,15 +34,16 @@
 <script>
 import { mapGetters } from 'vuex'
 import sbp from '../../../../shared/sbp.js'
-import Voting from '../components/Voting'
+import ProposalBox from '../components/ProposalBox/ProposalBox.vue'
 
 export default {
   name: 'Proposals',
   components: {
-    Voting
+    ProposalBox
   },
   computed: {
     ...mapGetters([
+      'proposalData',
       'currentUserIdentityContract',
       'currentGroupState'
     ]),
@@ -53,83 +51,50 @@ export default {
       const notVoted = []
       const alreadyVoted = []
       const own = []
-
       const groupData = this.currentGroupState
       const proposals = groupData.proposals
-      const userData = this.currentUserIdentityContract.attributes
-
       for (let hash in proposals) {
-        const proposal = proposals[hash]
-        const proposalData = {
-          type: proposal.type, // 'invitation' or 'removal' for member, field name for rule/mincome
-          votes: {
-            total: Object.entries(groupData.profiles).length,
-            received: proposal.for.length + proposal.against.length - 1 // initiator's for vote doesn't count here
-          },
-          value: proposal.value || proposal.candidate || null,
-          originalValue: groupData[proposal.type] || null,
-          ownVote: proposal.for.includes(userData.name) || proposal.against.includes(userData.name)
-            ? proposal.for.includes(userData.name)
-            : null,
-          isOwnProposal: proposal.initiator === userData.name,
-          initiator: proposal.initiator,
-          hash: hash
-        }
-
-        if (proposalData.isOwnProposal) {
-          own.push(proposalData)
-        } else if (proposalData.ownVote === null) {
-          notVoted.push(proposalData)
+        const proposal = this.proposalData(hash)
+        if (proposal.isMyProposal) {
+          own.push(proposal)
+        } else if (proposal.myVote) {
+          alreadyVoted.push(proposal)
         } else {
-          alreadyVoted.push(proposalData)
+          notVoted.push(proposal)
         }
       }
-
       return { notVoted, alreadyVoted, own }
-    },
-    allVoted () {
-      const { notVoted, alreadyVoted } = this.proposalList
-
-      return alreadyVoted.length && notVoted.length === 0
     }
   },
   methods: {
-    async handleVoteAgainst (hash) {
+    async handleVote (hash, vote) {
       try {
         // Create a vote against the proposal
         const groupId = this.$store.state.currentGroupId
-        const vote = await sbp('gi/contract/create-action', 'GroupVoteAgainstProposal', {
+        const voteAction = await sbp('gi/contract/create-action', 'GroupProposalVote', {
           username: this.currentUserIdentityContract.attributes.name,
-          proposalHash: hash
+          proposalHash: hash,
+          vote
         }, groupId)
-        await sbp('backend/publishLogEntry', vote)
+        await sbp('backend/publishLogEntry', voteAction)
       } catch (ex) {
         // TODO: save to error log
         console.error(ex)
         throw new Error()
       }
     },
+    handleVoteAgainst (hash) {
+      this.handleVote(hash, -1)
+    },
     async handleVoteFor (hash) {
-      try {
-        // Create a vote for the proposal
-        const groupId = this.$store.state.currentGroupId
-        const vote = await sbp('gi/contract/create-action', 'GroupVoteForProposal', {
-          username: this.currentUserIdentityContract.attributes.name,
-          proposalHash: hash
-        }, groupId)
-        await sbp('backend/publishLogEntry', vote)
-
-        // If the vote passes fulfill the action
-        const proposal = this.$store.getters.proposalData(hash)
-        const memberCount = Object.entries(this.currentGroupState.profiles).length
-        const threshold = Math.ceil(proposal.threshold * memberCount)
-        if (proposal.for.length + 1 >= threshold) {
-          await this.handleVotePassed(proposal)
-        }
-      } catch (ex) {
-        // TODO: save to error log
-        console.error(ex)
-        throw new Error()
+      this.handleVote(hash, 1)
+      // If the vote passes fulfill the action
+      // TODO better place for this?
+      const proposal = this.$store.getters.proposalData(hash)
+      const memberCount = Object.entries(this.currentGroupState.profiles).length
+      const threshold = Math.ceil(proposal.voteRule.threshold * memberCount)
+      if (proposal.votes.filter(vote => vote.vote === 1).length + 1 >= threshold) {
+        await this.handleVotePassed(proposal)
       }
     },
     async handleVotePassed (proposal) {

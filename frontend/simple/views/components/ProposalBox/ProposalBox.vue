@@ -1,11 +1,10 @@
 <template>
 <transition name="gi-fade">
-  <div class="is-flex gi-voting" data-test="proposal">
-    <div class="gi-voting-body is-flex">
+  <div class="is-flex gi-voting">
+    <div class="gi-voting-body is-flex" data-test="proposal">
       <sign
-        :type="type"
-        :value="value"
-        :member="member"
+        :doWhat="proposal.doWhat"
+        :toWhat="proposal.toWhat"
       />
 
       <div class="gi-voting-info">
@@ -118,38 +117,15 @@
 import ButtonCountdown, { countdownStates } from '../ButtonCountdown'
 import Sign from './Sign.vue'
 import L from '../../utils/translations'
-import { votingType, votesObj } from './validators'
 import template from 'string-template'
 import contracts from '../../../model/contracts.js'
-const { TypeInvitation, TypeRemoval, TypeIncome, TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold } = contracts.GroupProposal
+const { DoInvitation, DoRemoval, DoIncome, DoChangeThreshold, DoApprovalThreshold, DoRemovalThreshold } = contracts.GroupProposal
 
 export default {
-  name: 'Voting',
+  name: 'ProposalBox',
   props: {
-    type: {
-      validator: votingType,
-      required: true
-    },
-    votes: {
-      validator: votesObj,
-      required: true
-    },
-    value: {
-      type: [String, Number], // string for add member, remove member, number for rule, mincome
-      required: true
-    },
-    originalValue: Number, // for rule, mincome proposals
-    ownVote: [Boolean, null], // for (true), against (false) or not voted yet (null)
-    isOwnProposal: {
-      type: Boolean,
-      required: true
-    },
-    initiator: {
-      type: String,
-      required: true
-    },
-    hash: {
-      type: String,
+    proposal: {
+      type: [Object],
       required: true
     },
     // Actions:
@@ -174,92 +150,92 @@ export default {
   },
   computed: {
     buttonText () {
-      const { value, originalValue } = this
-      if (this.type === TypeInvitation) {
+      const { doWhat, toWhat, fromWhat } = this.proposal
+      if (doWhat === DoInvitation) {
         return {
-          for: template(L('Invite {value}'), { value }),
+          for: template(L('Invite {toWhat}'), { toWhat }),
           against: L('Don\'t invite')
         }
-      } else if (this.type === TypeRemoval) {
+      } else if (doWhat === DoRemoval) {
         return {
-          for: template(L('Remove {value}'), { value }),
-          against: template(L('Keep {value}'), { value })
+          for: template(L('Remove {toWhat}'), { toWhat }),
+          against: template(L('Keep {toWhat}'), { toWhat })
         }
       } else {
         return {
-          for: template(L('Change to {value}'), { value }),
-          against: template(L('Keep {originalValue}'), { originalValue })
+          for: template(L('Change to {toWhat}'), { toWhat }),
+          against: template(L('Keep {fromWhat}'), { fromWhat })
         }
       }
     },
     title () {
       const titleMap = {
-        [TypeInvitation]: L('Invite Member'),
-        [TypeRemoval]: L('Remove Member'),
-        [TypeIncome]: L('Change Mincome'),
-        [TypeChangeThreshold]: L('Update Rule: Change Threshold'),
-        [TypeApprovalThreshold]: L('Update Rule: Invite Threshold'),
-        [TypeRemovalThreshold]: L('Update Rule: Member Removal Threshold')
+        [DoInvitation]: L('Invite Member'),
+        [DoRemoval]: L('Remove Member'),
+        [DoIncome]: L('Change Mincome'),
+        [DoChangeThreshold]: L('Update Rule: Change Threshold'),
+        [DoApprovalThreshold]: L('Update Rule: Invite Threshold'),
+        [DoRemovalThreshold]: L('Update Rule: Member Removal Threshold')
       }
-      return titleMap[this.type]
+      return titleMap[this.proposal.doWhat]
     },
     text () {
-      const { initiator, value, originalValue } = this
-      const proposer = this.isOwnProposal ? L('You') : initiator
+      const { whoProposed, doWhat, toWhat, fromWhat } = this.proposal
+      const proposer = this.isOwnProposal ? L('You') : whoProposed
       const textMap = {
-        [TypeInvitation]: template(
-          L('{proposer} proposed to <strong>invite {value}</strong> to the group'), {
-            proposer, value }
+        [DoInvitation]: template(
+          L('{proposer} proposed to <strong>invite {toWhat}</strong> to the group'), {
+            proposer, toWhat }
         ),
-        [TypeRemoval]: template(
-          L('{proposer} proposed to <strong>remove {value}</strong> from the group'), {
-            proposer, value }
+        [DoRemoval]: template(
+          L('{proposer} proposed to <strong>remove {toWhat}</strong> from the group'), {
+            proposer, toWhat }
         ),
-        [TypeIncome]: template(
-          L('{proposer} proposed to change the <strong>mincome from {originalValue} to {value}</strong>'), {
-            proposer, value, originalValue }
+        [DoIncome]: template(
+          L('{proposer} proposed to change the <strong>mincome from {fromWhat} to {toWhat}</strong>'), {
+            proposer, toWhat, fromWhat }
         ),
-        [TypeChangeThreshold]: template(
-          L('{proposer} proposed to change the <strong>rule changing threshold from {originalValue} to {value}</strong>'), {
-            proposer, value, originalValue }
+        [DoChangeThreshold]: template(
+          L('{proposer} proposed to change the <strong>rule changing threshold from {fromWhat} to {toWhat}</strong>'), {
+            proposer, toWhat, fromWhat }
         ),
-        [TypeApprovalThreshold]: template(
-          L('{proposer} proposed to change the <strong>member invite threshold from {originalValue} to {value}</strong>'), {
-            proposer, value, originalValue }
+        [DoApprovalThreshold]: template(
+          L('{proposer} proposed to change the <strong>member invite threshold from {fromWhat} to {toWhat}</strong>'), {
+            proposer, toWhat, fromWhat }
         ),
-        [TypeRemovalThreshold]: template(
-          L('{proposer} proposed to change the <strong>member removal threshold from {originalValue} to {value}</strong>'), {
-            proposer, value, originalValue }
+        [DoRemovalThreshold]: template(
+          L('{proposer} proposed to change the <strong>member removal threshold from {fromWhat} to {toWhat}</strong>'), {
+            proposer, toWhat, fromWhat }
         )
       }
-      return textMap[this.type]
+      return textMap[doWhat]
     },
     detailed () {
-      if ([TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold].includes(this.type)) {
-        const originalCount = Math.ceil(this.votes.total * this.votes.originalValue)
-        const newCount = Math.ceil(this.votes.total * this.value)
-        const groupCount = this.votes.total
+      const { doWhat, fromWhat, voterCount } = this.proposal
+      if ([DoChangeThreshold, DoApprovalThreshold, DoRemovalThreshold].includes(doWhat)) {
+        const originalVotesNeeded = Math.ceil(voterCount * fromWhat)
+        const newVotesNeeded = Math.ceil(this.votes.total * this.toWhat)
         const actionMap = {
-          [TypeChangeThreshold]: L('change a rule'),
-          [TypeApprovalThreshold]: L('approve a new member'),
-          [TypeRemovalThreshold]: L('remove a member')
+          [DoChangeThreshold]: L('change a rule'),
+          [DoApprovalThreshold]: L('approve a new member'),
+          [DoRemovalThreshold]: L('remove a member')
         }
         return template(
-          L('Instead of {originalCount}, at least {newCount} of {groupCount} members will be needed to {action}.'), {
-            originalCount, newCount, groupCount, action: actionMap[this.type] }
+          L('Instead of {originalVotesNeeded}, at least {newVotesNeeded} of {voterCount} members will be needed to {action}.'), {
+            originalVotesNeeded, newVotesNeeded, voterCount, action: actionMap[doWhat] }
         )
       } else {
         return ''
       }
     },
     hasVoted () {
-      return this.ownVote !== null
+      return !!this.proposal.myVote
     },
     hasVotedFor () {
-      return this.ownVote
+      return this.proposal.myVote === 1
     },
     hasVotedAgainst () {
-      return this.ownVote === false
+      return this.proposal.myVote === -1
     },
     isProposalClosed () {
       return this.ephemeral.closeCountdown.state === countdownStates.SUCCESS
@@ -287,21 +263,11 @@ export default {
           break
       }
 
-      // "first to vote" is confusing, so hiding these for now:
-      // if (this.votes.received === 0) {
-      //   return this.isOwnProposal
-      //     ? L('Nobody voted yet')
-      //     : L('Be the first to vote!')
-      // }
-      // if (!this.isOwnProposal && this.votes.received === 1) {
-      //   return L('Your were the first to vote')
-      // }
-
-      if (this.votes.received > 1) {
+      if (this.proposal.votes.length > 1) {
         return template(L('{youAnd} {votesCount} of {members} members voted'), {
           youAnd: this.hasVoted ? L('You and') : '',
-          votesCount: this.hasVoted ? this.votes.received - 1 : this.votes.received,
-          members: this.votes.total
+          votesCount: this.hasVoted ? this.proposal.votes.length - 1 : this.proposal.votes.length,
+          members: this.proposal.voterCount
         })
       }
     }
@@ -324,14 +290,14 @@ export default {
     },
     handleVoteAgainst () {
       if (this.hasVotedAgainst) return false
-      this.onVoteAgainst && this.checkErrors(() => this.onVoteAgainst(this.hash))
+      this.onVoteAgainst && this.checkErrors(() => this.onVoteAgainst(this.proposal.hash))
     },
     handleVoteFor () {
       if (this.hasVotedFor) return false
-      this.onVoteFor && this.checkErrors(() => this.onVoteFor(this.hash))
+      this.onVoteFor && this.checkErrors(() => this.onVoteFor(this.proposal.hash))
     },
     closeProposal () {
-      this.onCloseProposal && this.checkErrors(() => this.onCloseProposal(this.hash))
+      this.onCloseProposal && this.checkErrors(() => this.onCloseProposal(this.proposal.hash))
     }
   }
 }

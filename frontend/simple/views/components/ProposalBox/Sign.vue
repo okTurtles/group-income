@@ -1,7 +1,7 @@
 <template>
   <div class="gi-voting-sign">
     <svg class="gi-voting-sign-svg"
-      v-if="isTypeRule"
+      v-if="isRule"
     >
       <circle cx="36" cy="36" r="35"
         class="gi-voting-sign-svg-circle"
@@ -12,17 +12,17 @@
 
     <p class="gi-voting-sign-value title is-size-4 has-text-centered"
       :class="{
-        'gi-is-mincome': isTypeMincome,
-        'gi-is-rule': isTypeRule
+        'gi-is-mincome': isMincome,
+        'gi-is-rule': isRule
       }"
-      v-if="isTypeRuleOrMincome"
+      v-if="isRuleOrMincome"
     >
-      {{valuePerc}}
+      {{percent}}
     </p>
 
     <user-image class="gi-voting-sign-avatar"
-      :username="value"
-      v-if="isTypeMember"
+      :username="toWhat"
+      v-if="isMember"
     />
   </div>
 </template>
@@ -76,20 +76,16 @@
 }
 </style>
 <script>
-import { votingType } from '../../utils/validators'
 import { toPercent } from '../../utils/filters'
 import UserImage from '../../containers/UserImage.vue'
 import contracts from '../../../model/contracts.js'
-const { TypeInvitation, TypeRemoval, TypeIncome, TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold } = contracts.GroupProposal
+const { DoInvitation, DoRemoval, DoIncome, DoChangeThreshold, DoApprovalThreshold, DoRemovalThreshold } = contracts.GroupProposal
 
 export default {
   name: 'Sign',
   props: {
-    type: {
-      validator: votingType
-    },
-    value: [Number, String],
-    member: Object // picture, name
+    doWhat: String,
+    toWhat: [Number, String]
   },
   components: {
     UserImage
@@ -97,7 +93,7 @@ export default {
   computed: {
     svgCircle () {
       const svgCircleP = 220 // 35*2 * 3.14
-      const ruleVal = this.value
+      const ruleVal = this.toWhat
       const ruleWarning = 0.7
 
       return {
@@ -107,20 +103,20 @@ export default {
         class: ruleVal < ruleWarning && 'has-stroke-warning'
       }
     },
-    isTypeMember () {
-      return [TypeInvitation, TypeRemoval].includes(this.type)
+    isMember () {
+      return [DoInvitation, DoRemoval].includes(this.doWhat)
     },
-    isTypeRule () {
-      return [TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold].includes(this.type)
+    isRule () {
+      return [DoChangeThreshold, DoApprovalThreshold, DoRemovalThreshold].includes(this.doWhat)
     },
-    isTypeMincome () {
-      return this.type === TypeIncome
+    isMincome () {
+      return this.doWhat === DoIncome
     },
-    isTypeRuleOrMincome () {
-      return this.isTypeRule || this.isTypeMincome
+    isRuleOrMincome () {
+      return this.isRule || this.isMincome
     },
-    valuePerc () {
-      return this.isTypeRule ? toPercent(this.value) : this.value
+    percent () {
+      return this.isRule ? toPercent(this.toWhat) : this.toWhat
     }
   }
 }

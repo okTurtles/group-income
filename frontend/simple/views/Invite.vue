@@ -117,18 +117,26 @@ export default {
           if (this.isProposal) {
             let proposal = await sbp('gi/contract/create-action', 'GroupProposal',
               {
-                type: contracts.GroupProposal.TypeInvitation,
-                // calculate the voting threshold from the group data
-                threshold: this.currentGroupState.memberApprovalThreshold,
-                candidate: memberName,
+                whoProposed: this.loggedIn.name,
+                doWhat: contracts.GroupProposal.DoInvitation,
+                toWhat: memberName,
+                voteRule: {
+                  voteRuleType: contracts.GroupProposal.RuleTypeThreshold,
+                  threshold: this.currentGroupState.memberApprovalThreshold
+                },
+                whenProposed: new Date().toISOString(),
+                votes: [
+                  {
+                    username: this.loggedIn.name,
+                    vote: 1
+                  }
+                ],
                 // TODO: this is bad, do not turn the messages into actions like this.
                 //       put only the minimal data necessary.
                 actions: [
                   { contractID: mailbox, type: inviteToMailbox.type(), action: JSON.stringify(inviteToMailbox.data()) },
                   { contractID: groupId, type: inviteToGroup.type(), action: JSON.stringify(inviteToGroup.data()) }
-                ],
-                initiator: this.loggedIn.name,
-                initiationDate: new Date().toISOString()
+                ]
               },
               groupId
             )

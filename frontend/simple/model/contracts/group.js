@@ -8,7 +8,6 @@ import {NEW_PAYMENT, PAYMENT_UPDATE} from '../../utils/events.js'
 import {
   objectOf,
   arrayOf,
-  optional,
   string,
   number,
   object
@@ -109,65 +108,64 @@ export default DefineContract({
   },
   'GroupProposal': {
     constants: {
-      TypeInvitation: 'invitationProposal',
-      TypeRemoval: 'removalProposal',
-      TypeIncome: 'incomeProvided',
-      TypeChangeThreshold: 'changeThreshold',
-      TypeApprovalThreshold: 'memberApprovalThreshold',
-      TypeRemovalThreshold: 'memberRemovalThreshold'
+      // what the proposal does
+      // if updating group field, this should be the field name to update
+      DoInvitation: 'invitation',
+      DoRemoval: 'removal',
+      DoIncome: 'incomeProvided',
+      DoChangeThreshold: 'changeThreshold',
+      DoApprovalThreshold: 'memberApprovalThreshold',
+      DoRemovalThreshold: 'memberRemovalThreshold',
+      // how the proposal vote gets decided
+      // TODO better place for these? + other types?
+      RuleTypeThreshold: 'ruleTypeThreshold'
     },
     validate: objectOf({
-      type: string,
-      threshold: number,
-      candidate: string,
+      whoProposed: string,
+      doWhat: string,
+      toWhat: string,
+      whenProposed: string,
+      voteRule: objectOf({
+        voteRuleType: string,
+        threshold: number
+      }),
+      votes: arrayOf(objectOf({
+        username: string,
+        vote: number
+      })),
       actions: arrayOf(objectOf({
         contractID: string,
         type: string,
         action: string
-      })),
-      initiator: string,
-      initiationDate: string,
-      expirationDate: optional(string)
+      }))
     }),
     vuexModuleConfig: {
       mutation: (state, {data, hash}) => {
-        // TODO: this should be data instead of ...data to avoid conflict with neighboring properties
-        // TODO: convert to votes instead of for/against for future-proofing
-        Vue.set(state.proposals, hash, {...data, for: [data.initiator], against: []})
+        Vue.set(state.proposals, hash, data)
       }
     }
   },
   // TODO: rename this to just GroupProposalVote, and switch off of the type of vote
-  'GroupVoteForProposal': {
+  'GroupProposalVote': {
     validate: objectOf({
       username: string,
-      proposalHash: string
+      proposalHash: string,
+      vote: number
     }),
     vuexModuleConfig: {
       mutation: (state, {data}) => {
         if (state.proposals[data.proposalHash]) {
-          state.proposals[data.proposalHash].for.push(data.username)
-          let threshold = Math.ceil(state.proposals[data.proposalHash].threshold * Object.keys(state.profiles).length)
-          if (state.proposals[data.proposalHash].for.length >= threshold) {
-            // TODO: flag instead of delete to make proposal history easier? #426
-            Vue.delete(state.proposals, data.proposalHash)
-          }
-        }
-      }
-    }
-  },
-  'GroupVoteAgainstProposal': {
-    validate: objectOf({
-      username: string,
-      proposalHash: string
-    }),
-    vuexModuleConfig: {
-      mutation: (state, {data}) => {
-        if (state.proposals[data.proposalHash]) {
-          state.proposals[data.proposalHash].against.push(data.username)
+          state.proposals[data.proposalHash].votes.push({
+            username: data.username,
+            vote: data.vote
+          })
+          // TODO: make decision mechanism more generic
           let memberCount = Object.keys(state.profiles).length
-          let threshold = Math.ceil(state.proposals[data.proposalHash].threshold * memberCount)
-          if (state.proposals[data.proposalHash].against.length > memberCount - threshold) {
+          let threshold = Math.ceil(state.proposals[data.proposalHash].voteRule.threshold * Object.keys(state.profiles).length)
+          if (state.proposals[data.proposalHash].votes.filter(vote => vote.vote === 1).length >= threshold) {
+            // TODO: flag instead of delete to make proposal history easier? #426
+            Vue.delete(state.proposals, data.proposalHash)
+          } else if (state.proposals[data.proposalHash].votes.filter(vote => vote.vote === -1).length > memberCount - threshold) {
             // TODO: flag instead of delete to make proposal history easier? #426
             Vue.delete(state.proposals, data.proposalHash)
           }
@@ -175,6 +173,7 @@ export default DefineContract({
       }
     }
   },
+  // TODO: change & revoke votes
   'GroupCloseProposal': {
     validate: function (data) {
       // ['proposalHash', 'string']

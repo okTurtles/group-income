@@ -133,7 +133,7 @@ describe('Frontend', function () {
     })
     it('Test Logout and Login', async function () {
       this.timeout(10000)
-      await n.use(logout()).use(note('logout -> login to: ' + username)).use(login(username))
+      return n.use(logout()).use(note('logout -> login to: ' + username)).use(login(username))
     })
 
     it('Test Validation', async function () {
@@ -367,7 +367,7 @@ describe('Frontend', function () {
         .wait(elT('forButton'))
         .click(elT('forButton'))
         .use(note('first vote clicked'))
-        .wait(elT('allVoted'))
+        .wait(elT('proposalsAlreadyVoted'))
       let proposals = await n
         .use(logout())
         .use(login(username + '2'))
