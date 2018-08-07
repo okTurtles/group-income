@@ -35,6 +35,7 @@ sbp('sbp/selectors/register', {
     let contract = contracts[events[0].type()]
     let state = _.cloneDeep(contract.vuexModule.state)
     for (let e of events) {
+      contracts[e.type()].validate(e.data())
       contract.vuexModule.mutations[e.type()](state, {
         data: e.data(),
         hash: e.hash()
@@ -285,6 +286,9 @@ const actions = {
       const type = message.type()
       const HEAD = message.hash()
       const data = message.data()
+      // ensure valid message
+      // TODO: verify each message is signed by a group member
+      contracts[type].validate(data)
       // verify we're expecting to hear from this contract
       if (!state.pending.includes(contractID) && !state.contracts[contractID]) {
         // TODO: use a global notification system to both display a notification
@@ -292,7 +296,6 @@ const actions = {
         return console.error(`NOT EXPECTING EVENT!`, contractID, message)
       }
 
-      // TODO: verify each message is signed by a group member
       await db.addLogEntry(message)
 
       if (message.isFirstMessage()) {

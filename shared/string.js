@@ -1,6 +1,6 @@
 'use strict'
 
-export function dasherize (s) {
+export function dasherize (s: string) {
   return s
     .trim()
     .replace(/[_\s]+/g, '-')
@@ -9,29 +9,29 @@ export function dasherize (s) {
     .toLowerCase()
 }
 
-export function capitalize (s) {
+export function capitalize (s: string) {
   return s.substr(0, 1).toUpperCase() + s.substring(1).toLowerCase()
 }
 
-export function camelize (s) {
+export function camelize (s: string) {
   return s.trim().replace(/(-|_|\s)+(.)?/g, (mathc, sep, c) => {
     return c ? c.toUpperCase() : ''
   })
 }
 
-export function startsWith (s, what) {
+export function startsWith (s: string, what: string) {
   return s.indexOf(what) === 0
 }
 
-export function endsWith (s, what) {
+export function endsWith (s: string, what: string) {
   const len = s.length - what.length
   return len >= 0 && s.indexOf(what, len) === len
 }
 
-export function chompLeft (s, what) {
+export function chompLeft (s: string, what: string) {
   return s.indexOf(what) === 0 ? s.slice(what.length) : s
 }
 
-export function chompRight (s, what) {
+export function chompRight (s: string, what: string) {
   return endsWith(s, what) ? s.slice(0, s.length - what.length) : s
 }
