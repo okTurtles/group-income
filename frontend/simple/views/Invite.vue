@@ -117,14 +117,13 @@ export default {
           if (this.isProposal) {
             let proposal = await sbp('gi/contract/create-action', 'GroupProposal',
               {
-                whoProposed: this.loggedIn.name,
-                doWhat: contracts.GroupProposal.DoInvitation,
-                toWhat: memberName,
-                voteRule: {
-                  voteRuleType: contracts.GroupProposal.RuleTypeThreshold,
-                  threshold: this.currentGroupState.memberApprovalThreshold
-                },
-                whenProposed: new Date().toISOString(),
+                proposalCreator: this.loggedIn.name,
+                proposalType: contracts.GroupProposal.TypeInvitation,
+                proposalData: memberName,
+                proposalDate: new Date().toISOString(),
+                voteRuleType: contracts.GroupProposal.RuleTypeThreshold,
+                // TODO: remove and check on eval
+                threshold: this.currentGroupState.memberApprovalThreshold,
                 votes: [
                   {
                     username: this.loggedIn.name,

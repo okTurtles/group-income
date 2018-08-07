@@ -3,8 +3,8 @@
   <div class="is-flex gi-voting">
     <div class="gi-voting-body is-flex" data-test="proposal">
       <sign
-        :doWhat="proposal.doWhat"
-        :toWhat="proposal.toWhat"
+        :proposalType="proposal.proposalType"
+        :proposalData="proposal.proposalData"
       />
 
       <div class="gi-voting-info">
@@ -119,7 +119,7 @@ import Sign from './Sign.vue'
 import L from '../../utils/translations'
 import template from 'string-template'
 import contracts from '../../../model/contracts.js'
-const { DoInvitation, DoRemoval, DoIncome, DoChangeThreshold, DoApprovalThreshold, DoRemovalThreshold } = contracts.GroupProposal
+const { TypeInvitation, TypeRemoval, TypeIncome, TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold } = contracts.GroupProposal
 
 export default {
   name: 'ProposalBox',
@@ -150,79 +150,79 @@ export default {
   },
   computed: {
     buttonText () {
-      const { doWhat, toWhat, fromWhat } = this.proposal
-      if (doWhat === DoInvitation) {
+      const { proposalType, proposalData, originalData } = this.proposal
+      if (proposalType === TypeInvitation) {
         return {
-          for: template(L('Invite {toWhat}'), { toWhat }),
+          for: template(L('Invite {proposalData}'), { proposalData }),
           against: L('Don\'t invite')
         }
-      } else if (doWhat === DoRemoval) {
+      } else if (proposalType === TypeRemoval) {
         return {
-          for: template(L('Remove {toWhat}'), { toWhat }),
-          against: template(L('Keep {toWhat}'), { toWhat })
+          for: template(L('Remove {proposalData}'), { proposalData }),
+          against: template(L('Keep {proposalData}'), { proposalData })
         }
       } else {
         return {
-          for: template(L('Change to {toWhat}'), { toWhat }),
-          against: template(L('Keep {fromWhat}'), { fromWhat })
+          for: template(L('Change to {proposalData}'), { proposalData }),
+          against: template(L('Keep {originalData}'), { originalData })
         }
       }
     },
     title () {
       const titleMap = {
-        [DoInvitation]: L('Invite Member'),
-        [DoRemoval]: L('Remove Member'),
-        [DoIncome]: L('Change Mincome'),
-        [DoChangeThreshold]: L('Update Rule: Change Threshold'),
-        [DoApprovalThreshold]: L('Update Rule: Invite Threshold'),
-        [DoRemovalThreshold]: L('Update Rule: Member Removal Threshold')
+        [TypeInvitation]: L('Invite Member'),
+        [TypeRemoval]: L('Remove Member'),
+        [TypeIncome]: L('Change Mincome'),
+        [TypeChangeThreshold]: L('Update Rule: Change Threshold'),
+        [TypeApprovalThreshold]: L('Update Rule: Invite Threshold'),
+        [TypeRemovalThreshold]: L('Update Rule: Member Removal Threshold')
       }
-      return titleMap[this.proposal.doWhat]
+      return titleMap[this.proposal.proposalType]
     },
     text () {
-      const { whoProposed, doWhat, toWhat, fromWhat } = this.proposal
-      const proposer = this.isOwnProposal ? L('You') : whoProposed
+      const { proposalCreator, proposalType, proposalData, originalData } = this.proposal
+      const proposer = this.isOwnProposal ? L('You') : proposalCreator
       const textMap = {
-        [DoInvitation]: template(
-          L('{proposer} proposed to <strong>invite {toWhat}</strong> to the group'), {
-            proposer, toWhat }
+        [TypeInvitation]: template(
+          L('{proposer} proposed to <strong>invite {proposalData}</strong> to the group'), {
+            proposer, proposalData }
         ),
-        [DoRemoval]: template(
-          L('{proposer} proposed to <strong>remove {toWhat}</strong> from the group'), {
-            proposer, toWhat }
+        [TypeRemoval]: template(
+          L('{proposer} proposed to <strong>remove {proposalData}</strong> from the group'), {
+            proposer, proposalData }
         ),
-        [DoIncome]: template(
-          L('{proposer} proposed to change the <strong>mincome from {fromWhat} to {toWhat}</strong>'), {
-            proposer, toWhat, fromWhat }
+        [TypeIncome]: template(
+          L('{proposer} proposed to change the <strong>mincome from {originalData} to {proposalData}</strong>'), {
+            proposer, proposalData, originalData }
         ),
-        [DoChangeThreshold]: template(
-          L('{proposer} proposed to change the <strong>rule changing threshold from {fromWhat} to {toWhat}</strong>'), {
-            proposer, toWhat, fromWhat }
+        [TypeChangeThreshold]: template(
+          L('{proposer} proposed to change the <strong>rule changing threshold from {originalData} to {proposalData}</strong>'), {
+            proposer, proposalData, originalData }
         ),
-        [DoApprovalThreshold]: template(
-          L('{proposer} proposed to change the <strong>member invite threshold from {fromWhat} to {toWhat}</strong>'), {
-            proposer, toWhat, fromWhat }
+        [TypeApprovalThreshold]: template(
+          L('{proposer} proposed to change the <strong>member invite threshold from {originalData} to {proposalData}</strong>'), {
+            proposer, proposalData, originalData }
         ),
-        [DoRemovalThreshold]: template(
-          L('{proposer} proposed to change the <strong>member removal threshold from {fromWhat} to {toWhat}</strong>'), {
-            proposer, toWhat, fromWhat }
+        [TypeRemovalThreshold]: template(
+          L('{proposer} proposed to change the <strong>member removal threshold from {originalData} to {proposalData}</strong>'), {
+            proposer, proposalData, originalData }
         )
       }
-      return textMap[doWhat]
+      return textMap[proposalType]
     },
     detailed () {
-      const { doWhat, fromWhat, voterCount } = this.proposal
-      if ([DoChangeThreshold, DoApprovalThreshold, DoRemovalThreshold].includes(doWhat)) {
-        const originalVotesNeeded = Math.ceil(voterCount * fromWhat)
-        const newVotesNeeded = Math.ceil(this.votes.total * this.toWhat)
+      const { proposalType, originalData, voterCount } = this.proposal
+      if ([TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold].includes(proposalType)) {
+        const originalVotesNeeded = Math.ceil(voterCount * originalData)
+        const newVotesNeeded = Math.ceil(this.votes.total * this.proposalData)
         const actionMap = {
-          [DoChangeThreshold]: L('change a rule'),
-          [DoApprovalThreshold]: L('approve a new member'),
-          [DoRemovalThreshold]: L('remove a member')
+          [TypeChangeThreshold]: L('change a rule'),
+          [TypeApprovalThreshold]: L('approve a new member'),
+          [TypeRemovalThreshold]: L('remove a member')
         }
         return template(
           L('Instead of {originalVotesNeeded}, at least {newVotesNeeded} of {voterCount} members will be needed to {action}.'), {
-            originalVotesNeeded, newVotesNeeded, voterCount, action: actionMap[doWhat] }
+            originalVotesNeeded, newVotesNeeded, voterCount, action: actionMap[proposalType] }
         )
       } else {
         return ''

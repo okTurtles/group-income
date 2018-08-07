@@ -111,25 +111,24 @@ export default DefineContract({
     constants: {
       // what the proposal does
       // if updating group field, this should be the field name to update
-      DoInvitation: 'invitation',
-      DoRemoval: 'removal',
-      DoIncome: 'incomeProvided',
-      DoChangeThreshold: 'changeThreshold',
-      DoApprovalThreshold: 'memberApprovalThreshold',
-      DoRemovalThreshold: 'memberRemovalThreshold',
+      TypeInvitation: 'invitation',
+      TypeRemoval: 'removal',
+      TypeIncome: 'incomeProvided',
+      TypeChangeThreshold: 'changeThreshold',
+      TypeApprovalThreshold: 'memberApprovalThreshold',
+      TypeRemovalThreshold: 'memberRemovalThreshold',
       // how the proposal vote gets decided
       // TODO better place for these? + other types?
       RuleTypeThreshold: 'ruleTypeThreshold'
     },
     validate: objectOf({
-      whoProposed: string,
-      doWhat: string,
-      toWhat: string,
-      whenProposed: string,
-      voteRule: objectOf({
-        voteRuleType: string,
-        threshold: number
-      }),
+      proposalCreator: string,
+      proposalType: string,
+      proposalData: string,
+      proposalDate: string,
+      voteRuleType: string,
+      // TODO: remove
+      threshold: number,
       votes: arrayOf(objectOf({
         username: string,
         vote: number
@@ -162,7 +161,7 @@ export default DefineContract({
           })
           // TODO: make decision mechanism more generic
           let memberCount = Object.keys(state.profiles).length
-          let threshold = Math.ceil(state.proposals[data.proposalHash].voteRule.threshold * Object.keys(state.profiles).length)
+          let threshold = Math.ceil(state.proposals[data.proposalHash].threshold * Object.keys(state.profiles).length)
           if (state.proposals[data.proposalHash].votes.filter(vote => vote.vote === 1).length >= threshold) {
             // TODO: flag instead of delete to make proposal history easier? #426
             Vue.delete(state.proposals, data.proposalHash)

@@ -92,7 +92,7 @@ export default {
       // TODO better place for this?
       const proposal = this.$store.getters.proposalData(hash)
       const memberCount = Object.entries(this.currentGroupState.profiles).length
-      const threshold = Math.ceil(proposal.voteRule.threshold * memberCount)
+      const threshold = Math.ceil(proposal.threshold * memberCount)
       if (proposal.votes.filter(vote => vote.vote === 1).length + 1 >= threshold) {
         await this.handleVotePassed(proposal)
       }

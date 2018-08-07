@@ -21,7 +21,7 @@
     </p>
 
     <user-image class="gi-voting-sign-avatar"
-      :username="toWhat"
+      :username="proposalData"
       v-if="isMember"
     />
   </div>
@@ -79,13 +79,13 @@
 import { toPercent } from '../../utils/filters'
 import UserImage from '../../containers/UserImage.vue'
 import contracts from '../../../model/contracts.js'
-const { DoInvitation, DoRemoval, DoIncome, DoChangeThreshold, DoApprovalThreshold, DoRemovalThreshold } = contracts.GroupProposal
+const { TypeInvitation, TypeRemoval, TypeIncome, TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold } = contracts.GroupProposal
 
 export default {
   name: 'Sign',
   props: {
-    doWhat: String,
-    toWhat: [Number, String]
+    proposalType: String,
+    proposalData: [Number, String]
   },
   components: {
     UserImage
@@ -93,7 +93,7 @@ export default {
   computed: {
     svgCircle () {
       const svgCircleP = 220 // 35*2 * 3.14
-      const ruleVal = this.toWhat
+      const ruleVal = this.proposalData
       const ruleWarning = 0.7
 
       return {
@@ -104,19 +104,19 @@ export default {
       }
     },
     isMember () {
-      return [DoInvitation, DoRemoval].includes(this.doWhat)
+      return [TypeInvitation, TypeRemoval].includes(this.proposalType)
     },
     isRule () {
-      return [DoChangeThreshold, DoApprovalThreshold, DoRemovalThreshold].includes(this.doWhat)
+      return [TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold].includes(this.proposalType)
     },
     isMincome () {
-      return this.doWhat === DoIncome
+      return this.proposalType === TypeIncome
     },
     isRuleOrMincome () {
       return this.isRule || this.isMincome
     },
     percent () {
-      return this.isRule ? toPercent(this.toWhat) : this.toWhat
+      return this.isRule ? toPercent(this.proposalData) : this.proposalData
     }
   }
 }
