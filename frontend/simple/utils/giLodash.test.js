@@ -4,8 +4,8 @@ import sinon from 'sinon'
 require('should-sinon')
 const should = require('should')
 
-describe.only('Test giLodash', function () {
-  it.only('Test debounce', function () {
+describe('Test giLodash', function () {
+  it('Test debounce', function () {
     let clock = sinon.useFakeTimers()
     let callback = sinon.spy()
     let callback2 = sinon.spy()
