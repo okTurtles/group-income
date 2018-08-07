@@ -4,30 +4,41 @@ import sinon from 'sinon'
 require('should-sinon')
 const should = require('should')
 
-describe('Test giLodash', function () {
-  it('Test debounce', function () {
+describe.only('Test giLodash', function () {
+  it.only('Test debounce', function () {
     let clock = sinon.useFakeTimers()
     let callback = sinon.spy()
+    let callback2 = sinon.spy()
     let debounced = _.debounce(callback, 500)
+    let debounced2 = _.debounce(callback2, 500)
     debounced()
     clock.tick(400)
     callback.should.be.not.called()
     debounced()
-    clock.tick(100)
+    clock.tick(400)
     callback.should.be.not.called()
-    clock.tick(500)
+    clock.tick(400)
     callback.should.be.called()
+    debounced()
+    clock.tick(200)
+    callback.should.be.not.calledTwice()
+    clock.tick(300)
+    callback.should.be.calledTwice()
+    debounced2()
+    debounced2()
+    debounced2.flush()
+    callback2.should.be.calledOnce()
+    debounced2()
+    clock.tick(450)
+    debounced2.cancel()
+    callback2.should.be.calledOnce()
     clock.restore()
   })
   it('Test merge', function () {
     let a = {a: 'taco', b: {a: 'burrito', b: 'combo'}, c: [20]}
     let b = {a: 'churro', b: {c: 'platter'}}
     let c = _.merge(a, b)
-    should(a).equal(c)
-    should(c.a).equal('churro')
-    should.exist(c.c)
-    should(Array.isArray(c.c)).equal(true)
-    should(c.b.c).equal('platter')
+    should(c).deepEqual({a: 'churro', b: {a: 'burrito', b: 'combo', c: 'platter'}, c: [20]})
   })
   it('Test flatten', function () {
     let a = [1, [2, [3, 4]], 5]
@@ -36,13 +47,12 @@ describe('Test giLodash', function () {
   })
   it('Test zip', function () {
     let a = _.zip([1, 2], ['a', 'b'], [true, false, null])
-    should(a.length).equal(3)
-    should(a[0][0]).equal(1)
-    should(a[0][1]).equal('a')
-    should(a[0][2]).equal(true)
-    should(a[2][0]).equal(undefined)
-    should(a[2][1]).equal(undefined)
-    should(a[2][2]).equal(null)
+    let b = _.zip([ '/foo/bar/node_modules/vue/dist/vue.common.js' ])
+    let c = _.zip([ '/foo/bar/node_modules/vue/dist/vue.common.js' ], [])
+    should(a).deepEqual([[1, 'a', true], [2, 'b', false], [undefined, undefined, null]])
+    should(b).deepEqual([[ '/foo/bar/node_modules/vue/dist/vue.common.js' ]])
+    should(b).deepEqual([[ '/foo/bar/node_modules/vue/dist/vue.common.js' ]])
+    should(c).deepEqual([ [ '/foo/bar/node_modules/vue/dist/vue.common.js', undefined ] ])
   })
   it('Test fromPairs', function () {
     let a = _.fromPairs([['a', 1], ['b', 2]])

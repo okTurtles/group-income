@@ -94,6 +94,18 @@ export function debounce (func: Function, wait: number, options?: Object) {
     let remainingWait = maxing ? Math.min(timeWaiting, maxWait - timeSinceLastInvoke) : timeWaiting
     timerId = setTimeout(timerExpired, remainingWait)
   }
+  function trailingEdge (time) {
+    timerId = undefined
+
+    // Only invoke if we have `lastArgs` which means `func` has been
+    // debounced at least once.
+    if (trailing && lastArgs) {
+      return invokeFunc(time)
+    }
+    lastArgs = lastThis = undefined
+    return result
+  }
+
   function cancel () {
     if (timerId !== undefined) {
       clearTimeout(timerId)
@@ -103,7 +115,7 @@ export function debounce (func: Function, wait: number, options?: Object) {
   }
 
   function flush () {
-    return timerId === undefined ? result : timerExpired()
+    return timerId === undefined ? result : trailingEdge(Date.now())
   }
 
   function pending () {
@@ -157,7 +169,8 @@ export function flatten (arr: Array<*>) {
 export function zip () {
   let arr = Array.prototype.slice.call(arguments)
   let zipped = []
-  let max = arr.reduce((max, current) => +max > current.length ? max : current.length)
+  let max = 0
+  arr.forEach((current) => (max = Math.max(max, current.length)))
   for (let current of arr) {
     for (let i = 0; i < max; i++) {
       zipped[ i ] = zipped[ i ] || []
