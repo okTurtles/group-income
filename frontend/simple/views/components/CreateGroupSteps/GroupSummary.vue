@@ -113,6 +113,12 @@ export default {
   props: {
     group: {type: Object}
   },
+  mounted () {
+    document.addEventListener('keyup', this.finish)
+  },
+  beforeDestroy () {
+    document.removeEventListener('keyup', this.next)
+  },
   computed: {
     currency: function () {
       return symbol(this.group.incomeCurrency)
@@ -120,6 +126,13 @@ export default {
   },
   filters: {
     toPercent
+  },
+  methods: {
+    finish (e) {
+      if (e.keyCode === 13) {
+        this.$emit('finish')
+      }
+    }
   }
 }
 </script>

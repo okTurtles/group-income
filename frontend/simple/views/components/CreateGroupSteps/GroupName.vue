@@ -13,6 +13,7 @@
           @input="update"
           ref="name"
           data-test="groupName"
+          @keyup.enter="next"
         >
       </div>
     </div>
@@ -37,6 +38,11 @@ export default {
           groupName: e.target.value
         }
       })
+    },
+    next (e) {
+      if (e.target.value) {
+        this.$emit('next')
+      }
     }
   }
 }

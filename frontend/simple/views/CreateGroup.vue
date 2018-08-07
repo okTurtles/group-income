@@ -4,7 +4,7 @@
     <div class="section columns is-centered">
       <div class="column is-two-thirds">
         <transition name="fade" mode="out-in">
-          <router-view :group="form" :v="$v.form" @input="payload => updateGroupData(payload)">
+          <router-view :group="form" :v="$v.form" v-on:next="next" v-on:finish="submit" @input="payload => updateGroupData(payload)">
           </router-view>
         </transition>
 

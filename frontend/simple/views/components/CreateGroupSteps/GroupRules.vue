@@ -154,6 +154,11 @@ export default {
           [prop]: value
         }
       })
+    },
+    next (e) {
+      if (e.keyCode === 13) {
+        this.$emit('next')
+      }
     }
   },
   computed: {
@@ -171,6 +176,12 @@ export default {
              this.group.memberApprovalThreshold >= SUPERMAJORITY &&
              this.group.memberRemovalThreshold >= SUPERMAJORITY
     }
+  },
+  mounted () {
+    document.addEventListener('keyup', this.next)
+  },
+  beforeDestroy () {
+    document.removeEventListener('keyup', this.next)
   }
 }
 </script>

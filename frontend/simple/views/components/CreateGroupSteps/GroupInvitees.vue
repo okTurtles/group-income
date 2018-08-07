@@ -19,6 +19,7 @@
           class="button is-primary is-large"
           data-test="addButton"
           @click="addInvitee"
+          @keyup="ignore"
         >
           <i18n>Add</i18n>
         </button>
@@ -74,6 +75,10 @@ export default {
   },
   mounted () {
     this.$refs.searchUser.focus()
+    document.addEventListener('keyup', this.next)
+  },
+  beforeDestroy () {
+    document.removeEventListener('keyup', this.next)
   },
   data: function () {
     return {
@@ -83,7 +88,9 @@ export default {
     }
   },
   methods: {
-    async addInvitee () {
+    async addInvitee (e) {
+      e.preventDefault()
+      e.stopImmediatePropagation()
       if (!this.searchUser) return
 
       if (this.searchUser === this.$store.state.loggedIn.name) {
@@ -108,8 +115,17 @@ export default {
         this.userErrorMsg = L('Invalid User')
       }
     },
+    ignore (e) {
+      e.preventDefault()
+      e.stopImmediatePropagation()
+    },
     remove (index) {
       this.invitees.splice(index, 1)
+    },
+    next (e) {
+      if (e.keyCode === 13) {
+        this.$emit('next')
+      }
     }
   }
 }

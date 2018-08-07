@@ -27,6 +27,7 @@
           :value="group.incomeProvided"
           @input="update"
           ref="mincome"
+          @keyup.enter="next"
         />
       </div>
     </div>
@@ -58,6 +59,11 @@ export default {
           [e.target.name]: e.target.value
         }
       })
+    },
+    next (e) {
+      if (e.target.value) {
+        this.$emit('next')
+      }
     }
   }
 }

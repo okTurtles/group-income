@@ -11,6 +11,19 @@ export default {
   name: 'GroupPrivacy',
   props: {
     group: {type: Object}
+  },
+  mounted () {
+    window.document.addEventListener('keyup', this.next)
+  },
+  beforeDestroy () {
+    document.removeEventListener('keyup', this.next)
+  },
+  methods: {
+    next (e) {
+      if (e.keyCode === 13) {
+        this.$emit('next')
+      }
+    }
   }
 }
 </script>
