@@ -4,7 +4,7 @@ import sbp from '../../../../shared/sbp.js'
 import Vue from 'vue'
 import {merge} from '../../utils/giLodash.js'
 import {DefineContract} from '../utils.js'
-// https://github.com/gmazovec/flow-typer
+import {NEW_PAYMENT, PAYMENT_UPDATE} from '../../utils/events.js'
 import {
   objectOf,
   arrayOf,
@@ -35,7 +35,7 @@ export default DefineContract({
       // defining an initialState makes writing getters easier because
       // you don't have to write, e.g. `state.proposals || {}` all the time
       initialState: { // may be specified in the constructor only
-        payments: [],
+        payments: {},
         invitees: [],
         profiles: {}, // usernames => {contractId: string, groupProfile: Object}
         proposals: {} // hashes => {} TODO: this, see related TODOs in GroupProposal
@@ -62,10 +62,49 @@ export default DefineContract({
   },
   'GroupPayment': {
     validate: objectOf({
-      payment: string // TODO: change to 'double' and add other fields
+      fromUser: string,
+      toUser: string,
+      date: string,
+      amount: number,
+      currency: string,
+      txid: string,
+      status: string,
+      paymentType: string,
+      details: optional(object),
+      memo: optional(string)
+    }),
+    constants: {
+      StatusPending: 'pending',
+      StatusCancelled: 'cancelled',
+      StatusError: 'error',
+      StatusCompleted: 'completed',
+      TypeManual: 'manual',
+      TypeBitcoin: 'bitcoin',
+      TypePayPal: 'paypal'
+    },
+    vuexModuleConfig: {
+      mutation: (state, {data, hash}) => {
+        state.payments[hash] = {data, updates: []}
+        Vue.nextTick(() => sbp('okTurtles.events/emit', NEW_PAYMENT, hash))
+      }
+    }
+  },
+  'GroupPaymentUpdate': {
+    validate: objectOf({
+      referencePaymentHash: string,
+      txid: string,
+      newStatus: string,
+      date: string,
+      details: optional(object)
     }),
     vuexModuleConfig: {
-      mutation: (state, {data}) => { state.payments.push(data) }
+      mutation: (state, {data, hash}) => {
+        const updateIdx = state.payments[hash].updates.length
+        // TODO: we don't want to keep a history of all payments in memory all the time
+        //       https://github.com/okTurtles/group-income-simple/issues/426
+        state.payments[data.referencePaymentHash].updates.push({hash, data})
+        Vue.nextTick(() => sbp('okTurtles.events/emit', PAYMENT_UPDATE, hash, updateIdx))
+      }
     }
   },
   'GroupProposal': {
@@ -186,10 +225,6 @@ export default DefineContract({
           for (const name of Object.keys(state.profiles)) {
             if (name === rootState.loggedIn.name) continue
             await sbp('state/vuex/dispatch', 'syncContractWithServer', state.profiles[name].contractID)
-            // NOTE: technically we don't need to call 'GroupSetGroupProfile'
-            //       here because Join.vue already synced the contract.
-            //       verify that this is really true and that there's no conflict
-            //       with group private key changes
           }
         } else {
           // we're an existing member of the group getting notified that a

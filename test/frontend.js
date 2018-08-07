@@ -134,7 +134,7 @@ describe('Frontend', function () {
       return n.use(signup(username, 'test@testgroupincome.com', 'testtest'))
     })
 
-    it('Test Profile Change', function () {
+    it('Test Global Profile Change', function () {
       this.timeout(10000)
       return n
         .click(elT('profileLink'))
@@ -149,9 +149,8 @@ describe('Frontend', function () {
         .click(elT('submit'))
         .wait(elT('profileSaveSuccess'))
         .exists(elT('profileSaveSuccess'))
-      // TODO Make more complex. Unfortunately bugs in Nightmare prevent the clearing and re-entering of fields
-      // those Nightmare bugs seem to be gone now, so TODO it is
     })
+
     it('Test Logout and Login', function () {
       this.timeout(10000)
       return n.use(logout()).use(note('logout -> login to: ' + username)).use(login(username))
@@ -344,6 +343,7 @@ describe('Frontend', function () {
         .exists(elT('acceptLink'))
       should(accept).equal(true)
     })
+
     it('Should Accept Invite', async function () {
       this.timeout(30000)
       // Accept invitation
@@ -366,6 +366,7 @@ describe('Frontend', function () {
         .exists(elT('inbox'))
       should(success).equal(true)
     })
+
     it('Should Vote on Additional Members', async function () {
       this.timeout(10000)
       await n
@@ -445,6 +446,7 @@ describe('Frontend', function () {
         .exists(elT('inviteMessage'))
       should(success).equal(true)
     })
+
     it('Should See Member List on Dashboard', async function () {
       this.timeout(4000)
 
@@ -471,6 +473,25 @@ describe('Frontend', function () {
       should(memberNames[0]).equal(username + '5')
       should(memberNames[1]).equal(username)
       should(memberNames[2]).equal(username + '2')
+    })
+  })
+
+  describe('Test Local Group Related Functions', function () {
+    it('Test Group Profile Attributes Change', async function () {
+      this.timeout(4000)
+
+      await n
+        .use(logout())
+        .use(login(username))
+        .click(elT('profileLink'))
+        .wait(elT('profilePicture'))
+        .wait(elT('GroupProfileContributionAmount'))
+        .insert(elT('GroupProfileContributionAmount'), 100)
+        .wait(elT('GroupProfileReceivingAmount'))
+        .insert(elT('GroupProfileReceivingAmount'), 50)
+        .click(elT('GroupProfileSubmitBtn'))
+        .wait(elT('GroupProfileSaved'))
+        .exists(elT('GroupProfileSaved'))
     })
   })
 
