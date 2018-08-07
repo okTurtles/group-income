@@ -105,6 +105,7 @@
         <p
           class="notification is-success has-text-centered"
           v-if="groupProfileSaved"
+          data-test="GroupProfileSaved"
         >
           <i class='notification-icon fa fa-check'></i>
           <i18n>Group Profile saved successfully!</i18n>
@@ -124,7 +125,7 @@
             <div class="media-content">
               <strong><i18n>Select Group</i18n>:</strong>
               <span class="select">
-                <select v-model="currentGroupContractId" v-on:change="changeGroup">
+                <select v-model="currentGroupContractId" v-on:change="changeGroup" data-test="GroupProfileId">
                   <option v-for="group in $store.getters.groupsByName" v-bind:value="group.contractID">{{group.groupName}}</option>
                 </select>
               </span>
@@ -134,7 +135,7 @@
             <div class="media-content">
               <strong><i18n>PaymentType</i18n>: </strong>
               <span class="select" type="text">
-                <select v-model="editedGroupProfile.paymentMethod">
+                <select v-model="editedGroupProfile.paymentMethod" data-test="GroupProfilePaymentMethod">
                   <option></option>
                   <option>Bitcoin</option>
                   <option>Amex</option>
@@ -151,7 +152,7 @@
                 <p class="control">
                   <!--- TODO: Make this a real field-->
                   <span class="select">
-                    <select v-model="editedGroupProfile.contributionCurrency">
+                    <select v-model="editedGroupProfile.contributionCurrency" data-test="GroupProfileContributionCurrency">
                       <option>USD</option>
                       <option>BTC</option>
                       <option>EUR</option>
@@ -167,6 +168,7 @@
                     placeholder="Contribution Amount"
                     v-model="editedGroupProfile.contributionAmount"
                     @input="$v.editedGroupProfile.contributionAmount.$touch()"
+                    data-test="GroupProfileContributionAmount"
                   >
                 </p>
               </div>
@@ -182,7 +184,7 @@
                 <p class="control">
                   <!--- TODO: Make this a real field-->
                   <span class="select">
-                    <select v-model="editedGroupProfile.receivingLimitCurrency">
+                    <select v-model="editedGroupProfile.receivingLimitCurrency" data-test="GroupProfileReceivingCurrency">
                       <option>USD</option>
                       <option>BTC</option>
                       <option>EUR</option>
@@ -198,6 +200,7 @@
                     placeholder="Receiving Limit"
                     v-model="editedGroupProfile.receivingLimit"
                     @input="$v.editedGroupProfile.receivingLimit.$touch()"
+                    data-test="GroupProfileReceivingAmount"
                   >
                 </p>
               </div>
@@ -208,7 +211,13 @@
           </div>
         </div>
         <div class="has-text-centered button-box">
-          <button class="button is-success is-large" :disabled="$v.editedGroupProfile.$invalid" v-if="currentGroupContractId"><i18n>Save Group Profile</i18n></button>
+          <button
+            class="button is-success is-large"
+            :disabled="$v.editedGroupProfile.$invalid"
+            v-if="currentGroupContractId"
+            data-test="GroupProfileSubmitBtn">
+              <i18n>Save Group Profile</i18n>
+          </button>
         </div>
       </form>
     </div>
