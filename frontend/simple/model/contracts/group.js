@@ -10,7 +10,8 @@ import {
   arrayOf,
   string,
   number,
-  object
+  object,
+  optional
 } from 'flow-typer-js'
 
 // NOTE: All mutations must be atomic in their edits of the contract state.

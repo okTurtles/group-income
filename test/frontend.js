@@ -143,7 +143,10 @@ describe('Frontend', function () {
       const badPassword = '789'// six is so afraid
       const denied = await n
         .use(logout())
-        .goto(page('signup'))
+        .goto(page('/'))
+        .wait(elT('signupBtn'))
+        .click(elT('signupBtn'))
+        .wait(elT('modal'))
         .wait(elT('signName'))
         .insert(elT('signName'), badUsername)
         .insert(elT('signEmail'), badEmail)
