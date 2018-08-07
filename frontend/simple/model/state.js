@@ -184,7 +184,7 @@ const getters = {
         hash: proposalHash,
         voterCount: Object.entries(groupData.profiles).length,
         originalData: groupData[proposal.proposalType] || null,
-        myVote: proposal.votes.find(vote => vote.username === userData.name) || 0,
+        myVote: proposal.votes[userData.name] || 0,
         isMyProposal: proposal.proposalCreator === userData.name
       }
     }

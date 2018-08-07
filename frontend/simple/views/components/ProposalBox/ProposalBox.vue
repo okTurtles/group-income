@@ -214,7 +214,7 @@ export default {
       const { proposalType, originalData, voterCount } = this.proposal
       if ([TypeChangeThreshold, TypeApprovalThreshold, TypeRemovalThreshold].includes(proposalType)) {
         const originalVotesNeeded = Math.ceil(voterCount * originalData)
-        const newVotesNeeded = Math.ceil(this.votes.total * this.proposalData)
+        const newVotesNeeded = Math.ceil(voterCount * this.proposalData)
         const actionMap = {
           [TypeChangeThreshold]: L('change a rule'),
           [TypeApprovalThreshold]: L('approve a new member'),
@@ -263,10 +263,10 @@ export default {
           break
       }
 
-      if (this.proposal.votes.length > 1) {
+      if (Object.values(this.proposal.votes).length > 1) {
         return template(L('{youAnd} {votesCount} of {members} members voted'), {
           youAnd: this.hasVoted ? L('You and') : '',
-          votesCount: this.hasVoted ? this.proposal.votes.length - 1 : this.proposal.votes.length,
+          votesCount: this.hasVoted ? Object.values(this.proposal.votes).length - 1 : Object.values(this.proposal.votes).length,
           members: this.proposal.voterCount
         })
       }

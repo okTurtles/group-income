@@ -129,10 +129,7 @@ export default DefineContract({
       voteRuleType: string,
       // TODO: remove
       threshold: number,
-      votes: arrayOf(objectOf({
-        username: string,
-        vote: number
-      })),
+      votes: object,
       actions: arrayOf(objectOf({
         contractID: string,
         type: string,
@@ -155,17 +152,17 @@ export default DefineContract({
     vuexModuleConfig: {
       mutation: (state, {data}) => {
         if (state.proposals[data.proposalHash]) {
-          state.proposals[data.proposalHash].votes.push({
-            username: data.username,
-            vote: data.vote
+          Vue.set(state.proposals[data.proposalHash].votes, data.username, {
+            vote: data.vote,
+            timestamp: new Date().toISOString()
           })
           // TODO: make decision mechanism more generic
           let memberCount = Object.keys(state.profiles).length
           let threshold = Math.ceil(state.proposals[data.proposalHash].threshold * Object.keys(state.profiles).length)
-          if (state.proposals[data.proposalHash].votes.filter(vote => vote.vote === 1).length >= threshold) {
+          if (Object.values(state.proposals[data.proposalHash].votes).filter(vote => vote.vote === 1).length >= threshold) {
             // TODO: flag instead of delete to make proposal history easier? #426
             Vue.delete(state.proposals, data.proposalHash)
-          } else if (state.proposals[data.proposalHash].votes.filter(vote => vote.vote === -1).length > memberCount - threshold) {
+          } else if (Object.values(state.proposals[data.proposalHash].votes).filter(vote => vote.vote === -1).length > memberCount - threshold) {
             // TODO: flag instead of delete to make proposal history easier? #426
             Vue.delete(state.proposals, data.proposalHash)
           }

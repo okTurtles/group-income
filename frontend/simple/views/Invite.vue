@@ -115,21 +115,22 @@ export default {
           )
 
           if (this.isProposal) {
+            const now = new Date().toISOString()
             let proposal = await sbp('gi/contract/create-action', 'GroupProposal',
               {
                 proposalCreator: this.loggedIn.name,
                 proposalType: contracts.GroupProposal.TypeInvitation,
                 proposalData: memberName,
-                proposalDate: new Date().toISOString(),
+                proposalDate: now,
                 voteRuleType: contracts.GroupProposal.RuleTypeThreshold,
                 // TODO: remove and check on eval
                 threshold: this.currentGroupState.memberApprovalThreshold,
-                votes: [
-                  {
-                    username: this.loggedIn.name,
-                    vote: 1
+                votes: {
+                  [this.loggedIn.name]: {
+                    vote: 1,
+                    timestamp: now
                   }
-                ],
+                },
                 // TODO: this is bad, do not turn the messages into actions like this.
                 //       put only the minimal data necessary.
                 actions: [
