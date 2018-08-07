@@ -7,13 +7,9 @@
 </template>
 <script>
 import ProposalTemplate from './ProposalTemplate.vue'
-import { mixinL } from '../../utils/mixins.js'
 
 export default {
   name: 'Mincome',
-  mixins: [
-    mixinL
-  ],
   components: { ProposalTemplate },
   methods: {
     handleSubmit () {
