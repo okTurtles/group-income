@@ -171,6 +171,9 @@ export default {
              this.group.memberApprovalThreshold >= SUPERMAJORITY &&
              this.group.memberRemovalThreshold >= SUPERMAJORITY
     }
+  },
+  mounted () {
+    this.$emit('focusref', 'next')
   }
 }
 </script>

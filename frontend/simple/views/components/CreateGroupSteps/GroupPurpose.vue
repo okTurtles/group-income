@@ -11,6 +11,7 @@
           :value="group.sharedValues"
           @input="update"
           ref="purpose"
+          maxlength="500"
         >
         </textarea>
       </div>

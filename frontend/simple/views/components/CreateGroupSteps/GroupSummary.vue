@@ -113,6 +113,9 @@ export default {
   props: {
     group: {type: Object}
   },
+  mounted () {
+    this.$emit('focusref', 'finish')
+  },
   computed: {
     currency: function () {
       return symbol(this.group.incomeCurrency)

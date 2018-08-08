@@ -11,6 +11,9 @@ export default {
   name: 'GroupPrivacy',
   props: {
     group: {type: Object}
+  },
+  mounted () {
+    this.$emit('focusref', 'next')
   }
 }
 </script>
