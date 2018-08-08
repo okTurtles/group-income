@@ -114,10 +114,7 @@ export default {
     group: {type: Object}
   },
   mounted () {
-    document.addEventListener('keyup', this.finish)
-  },
-  beforeDestroy () {
-    document.removeEventListener('keyup', this.next)
+    this.$emit('focusfinish')
   },
   computed: {
     currency: function () {
@@ -126,13 +123,6 @@ export default {
   },
   filters: {
     toPercent
-  },
-  methods: {
-    finish (e) {
-      if (e.keyCode === 13) {
-        this.$emit('finish')
-      }
-    }
   }
 }
 </script>

@@ -11,7 +11,6 @@
           :value="group.sharedValues"
           @input="update"
           ref="purpose"
-          @keyup="ignore"
           maxlength="500"
         >
         </textarea>
@@ -29,10 +28,7 @@ export default {
   },
   mounted () {
     this.$refs.purpose.focus()
-    document.addEventListener('keyup', this.next)
-  },
-  beforeDestroy () {
-    document.removeEventListener('keyup', this.next)
+    this.$emit('focusnext')
   },
   methods: {
     update (e) {
@@ -42,15 +38,6 @@ export default {
           sharedValues: e.target.value
         }
       })
-    },
-    ignore (e) {
-      e.preventDefault()
-      e.stopImmediatePropagation()
-    },
-    next (e) {
-      if (this.group.sharedValues && e.keyCode === 13) {
-        this.$emit('next')
-      }
     }
   }
 }

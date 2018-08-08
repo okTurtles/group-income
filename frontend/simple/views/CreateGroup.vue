@@ -4,13 +4,14 @@
     <div class="section columns is-centered">
       <div class="column is-two-thirds">
         <transition name="fade" mode="out-in">
-          <router-view :group="form" :v="$v.form" v-on:next="next" v-on:finish="submit" @input="payload => updateGroupData(payload)">
+          <router-view :group="form" :v="$v.form" v-on:next="next" v-on:focusnext="focusNext" v-on:focusfinish="focusFinish" v-on:finish="submit" @input="payload => updateGroupData(payload)">
           </router-view>
         </transition>
 
         <div class="field is-grouped is-grouped-right gi-is-grouped-reverse form-actions">
           <p class="control" v-if="currentStep + 1 < config.steps.length">
             <button
+              ref="next"
               class="button is-success is-large"
               @click="next"
               :disabled="$v.steps[$route.name] && $v.steps[$route.name].$invalid"
@@ -24,6 +25,7 @@
           </p>
           <p class="control" v-else>
             <button
+              ref="finish"
               class="button is-success is-large"
               @click="submit"
               :disabled="$v.form.$invalid"
@@ -98,6 +100,12 @@ export default {
     validationMixin
   ],
   methods: {
+    focusNext () {
+      this.$refs.next.focus()
+    },
+    focusFinish () {
+      this.$refs.finish.focus()
+    },
     updateGroupData (payload) {
       this.errorMsg = null
       Object.assign(this.form, payload.data)

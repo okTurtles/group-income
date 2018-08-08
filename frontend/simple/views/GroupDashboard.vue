@@ -1,5 +1,5 @@
 <template>
-  <main data-test="dashboard">
+  <main data-test="dashboard" v-if="currentGroupState">
     <div class="section gi-header">
       <div class='is-pulled-right'>
         <groups-min-income :group="currentGroupState" />

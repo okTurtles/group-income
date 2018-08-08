@@ -154,11 +154,6 @@ export default {
           [prop]: value
         }
       })
-    },
-    next (e) {
-      if (e.keyCode === 13) {
-        this.$emit('next')
-      }
     }
   },
   computed: {
@@ -178,10 +173,7 @@ export default {
     }
   },
   mounted () {
-    document.addEventListener('keyup', this.next)
-  },
-  beforeDestroy () {
-    document.removeEventListener('keyup', this.next)
+    this.$emit('focusnext')
   }
 }
 </script>
