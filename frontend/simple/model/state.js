@@ -171,23 +171,6 @@ const getters = {
       if (!groupId) return 0
       return Object.keys(state[groupId].profiles).length
     }
-  },
-  proposalData (state, getters) {
-    return (proposalHash, groupId) => {
-      if (!groupId) groupId = state.currentGroupId
-      if (!groupId) return null
-      const groupData = getters.currentGroupState
-      const userData = getters.currentUserIdentityContract.attributes
-      const proposal = state[groupId].proposals[proposalHash]
-      return {
-        ...proposal,
-        hash: proposalHash,
-        voterCount: Object.entries(groupData.profiles).length,
-        originalData: groupData[proposal.proposalType] || null,
-        myVote: proposal.votes[userData.name] || 0,
-        isMyProposal: proposal.proposalCreator === userData.name
-      }
-    }
   }
 }
 

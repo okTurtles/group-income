@@ -16,7 +16,7 @@
 
     <div class="gi-voting-ctas">
       <div class="buttons">
-        <template v-if="!isOwnProposal">
+        <template v-if="!isMyProposal">
           <button class="button"
             :class="{
               'is-outlined': !hasVotedAgainst,
@@ -114,6 +114,7 @@
 }
 </style>
 <script>
+import { mapGetters } from 'vuex'
 import ButtonCountdown, { countdownStates } from '../ButtonCountdown'
 import Sign from './Sign.vue'
 import L from '../../utils/translations'
@@ -147,24 +148,40 @@ export default {
     }
   },
   computed: {
+    ...mapGetters([
+      'currentUserIdentityContract',
+      'currentGroupState'
+    ]),
+    voterCount () {
+      return Object.entries(this.currentGroupState.profiles).length
+    },
+    originalData () {
+      return this.currentGroupState[this.proposal.proposalType] || null
+    },
+    myVote () {
+      return this.proposal.votes[this.currentUserIdentityContract.attributes.name] || 0
+    },
+    isMyProposal () {
+      return this.proposal.proposalCreator === this.currentUserIdentityContract.attributes.name
+    },
     buttonFor () {
-      const { proposalType, proposalData, originalData } = this.proposal
+      const { proposal: { proposalType, proposalData }, originalData } = this
       return proposalText[proposalType].button.for({ proposalData, originalData })
     },
     buttonAgainst () {
-      const { proposalType, proposalData, originalData } = this.proposal
+      const { proposal: { proposalType, proposalData }, originalData } = this
       return proposalText[proposalType].button.against({ proposalData, originalData })
     },
     title () {
       return proposalText[this.proposal.proposalType].title()
     },
     text () {
-      const { proposalCreator, proposalType, proposalData, originalData } = this.proposal
-      const proposer = this.isOwnProposal ? L('You') : proposalCreator
+      const { proposal: { proposalCreator, proposalType, proposalData }, originalData } = this
+      const proposer = this.isMyProposal ? L('You') : proposalCreator
       return proposalText[proposalType].text({ proposer, proposalData, originalData })
     },
     detailed () {
-      const { proposalType, originalData, voterCount } = this.proposal
+      const { proposal: { proposalType }, originalData, voterCount } = this.proposal
       const originalVotesNeeded = Math.ceil(voterCount * originalData)
       const newVotesNeeded = Math.ceil(voterCount * this.proposalData)
       const action = proposalText[proposalType].action
@@ -172,13 +189,13 @@ export default {
         originalVotesNeeded, newVotesNeeded, voterCount, action: action() }) : ''
     },
     hasVoted () {
-      return !!this.proposal.myVote
+      return !!this.myVote
     },
     hasVotedFor () {
-      return this.proposal.myVote === 1
+      return this.myVote === 1
     },
     hasVotedAgainst () {
-      return this.proposal.myVote === -1
+      return this.myVote === -1
     },
     isProposalClosed () {
       return this.ephemeral.closeCountdown.state === countdownStates.SUCCESS
@@ -210,7 +227,7 @@ export default {
         return L('{youAnd} {votesCount} of {members} members voted', {
           youAnd: this.hasVoted ? L('You and') : '',
           votesCount: this.hasVoted ? Object.values(this.proposal.votes).length - 1 : this.proposal.votes.length,
-          members: this.proposal.voterCount
+          members: this.voterCount
         })
       }
     }

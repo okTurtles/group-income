@@ -43,7 +43,6 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'proposalData',
       'currentUserIdentityContract',
       'currentGroupState'
     ]),
@@ -54,10 +53,13 @@ export default {
       const groupData = this.currentGroupState
       const proposals = groupData.proposals
       for (let hash in proposals) {
-        const proposal = this.proposalData(hash)
-        if (proposal.isMyProposal) {
+        const proposal = {
+          ...proposals[hash],
+          hash
+        }
+        if (proposal.proposalCreator === this.currentUserIdentityContract.attributes.name) {
           own.push(proposal)
-        } else if (proposal.myVote) {
+        } else if (proposal.votes[this.currentUserIdentityContract.attributes.name]) {
           alreadyVoted.push(proposal)
         } else {
           notVoted.push(proposal)
@@ -90,7 +92,7 @@ export default {
       this.handleVote(hash, 1)
       // If the vote passes fulfill the action
       // TODO better place for this?
-      const proposal = this.$store.getters.proposalData(hash)
+      const proposal = this.currentGroupState.proposals[hash]
       const memberCount = Object.entries(this.currentGroupState.profiles).length
       const threshold = Math.ceil(proposal.threshold * memberCount)
       if (Object.values(proposal.votes).filter(vote => vote.vote === 1).length + 1 >= threshold) {
