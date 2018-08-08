@@ -28,7 +28,6 @@ export default {
   },
   mounted () {
     this.$refs.purpose.focus()
-    this.$emit('focusref', 'next')
   },
   methods: {
     update (e) {

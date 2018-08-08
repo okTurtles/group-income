@@ -13,7 +13,7 @@ export default {
     group: {type: Object}
   },
   mounted () {
-    this.$emit('focusnext')
+    this.$emit('focusref', 'next')
   }
 }
 </script>

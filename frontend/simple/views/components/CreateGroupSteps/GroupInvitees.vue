@@ -72,6 +72,9 @@ export default {
   props: {
     group: {type: Object}
   },
+  mounted () {
+    this.$refs.searchUser.focus()
+  },
   data: function () {
     return {
       invitees: this.group.invitees,
@@ -80,9 +83,7 @@ export default {
     }
   },
   methods: {
-    async addInvitee (e) {
-      e.preventDefault()
-      e.stopImmediatePropagation()
+    async addInvitee () {
       if (!this.searchUser) return
 
       if (this.searchUser === this.$store.state.loggedIn.name) {

@@ -61,7 +61,8 @@ export default {
       })
     },
     next (e) {
-      if (e.target.value) {
+      this.v[e.target.name].$touch()
+      if (!this.v[e.target.name].$invalid) {
         this.$emit('next')
       }
     }
