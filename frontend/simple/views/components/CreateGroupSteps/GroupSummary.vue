@@ -114,7 +114,7 @@ export default {
     group: {type: Object}
   },
   mounted () {
-    this.$emit('focusfinish')
+    this.$emit('focusref', 'finish')
   },
   computed: {
     currency: function () {

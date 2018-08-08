@@ -173,7 +173,7 @@ export default {
     }
   },
   mounted () {
-    this.$emit('focusnext')
+    this.$emit('focusref', 'next')
   }
 }
 </script>
