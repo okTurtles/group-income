@@ -227,9 +227,10 @@
 import sbp from '../../../shared/sbp.js'
 import {cloneDeep} from '../utils/giLodash.js'
 import { validationMixin } from 'vuelidate'
-import { url, email } from 'vuelidate/lib/validators'
+import { email, helpers } from 'vuelidate/lib/validators'
 import { decimals } from './utils/validators.js'
 import L from './utils/translations.js'
+const url = helpers.regex('url', /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i)
 
 export default {
   name: 'UserProfile',
