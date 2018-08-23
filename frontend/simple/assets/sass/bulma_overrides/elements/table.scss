@@ -1,7 +1,33 @@
+$table-cell-padding: $gi-spacer-sm;
+
 @import "../../node_modules/bulma/sass/elements/table";
 
 .table {
+  td {
+    &.is-numeric {
+      text-align: right;
+    }
+  }
+}
+
+.table,
+.thead,
+.tfoot,
+.tbody {
+  tfoot td,
+  tfoot th {
+    border-top-width: 1px;
+  }
+
   &.is-borderless {
-    color: red;
+    td {
+      border: none;
+    }
+  }
+
+  &.is-vertical-middle {
+    td {
+      vertical-align: middle;
+    }
   }
 }

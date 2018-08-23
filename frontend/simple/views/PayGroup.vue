@@ -26,36 +26,37 @@
         </span>
       </header>
 
-      <div class="box column is-paddingless">
-        TODO styles
-        <table class="table is-fullwidth is-borderless">
+      <div class="box column c-tableBox">
+        <table class="table is-fullwidth is-vertical-middle">
           <thead class="sr-only">
             <tr>
               <th><i18n>Name</i18n></th>
               <th><i18n>Payment Status</i18n></th>
-              <th><i18n>Price</i18n></th>
+              <th><i18n>Amount</i18n></th>
             </tr>
           </thead>
+
           <tfoot>
             <tr>
-              <td cl="2">
-                <i18n class="is-size-5">Total</i18n>
+              <td colspan="2">
+                <i18n class="is-size-5 c-tableBox-cell">Total</i18n>
               </td>
-              <td class="is-size-5 has-text-weight-bold">
+              <td class="is-size-5 has-text-weight-bold is-numeric">
                 $100
               </td>
             </tr>
           </tfoot>
-          <tbody>
+
+          <tbody class="tbody is-borderless">
             <tr v-for="user in users">
               <td>
                 <avatar :alt="`${user.name}s avatar`" :src="user.avatar"></avatar>
-                <span>{{user.name}}</span>
+                <span class="c-tableBox-cell">{{user.name}}</span>
               </td>
               <td>
-                <button class="button is-primary is-compact"><i18n>Mark as payed</i18n></button>
+                <button class="button is-primary is-compact c-tableBox-cell"><i18n>Mark as payed</i18n></button>
               </td>
-              <td class="is-size-5">
+              <td class="is-size-5 is-numeric">
                 {{user.value}}
               </td>
             </tr>
@@ -115,6 +116,36 @@
   align-items: flex-start;
 }
 
+.c-tableBox {
+  padding-top: 0;
+  padding-bottom: 0;
+
+  &-cell {
+    display: inline-block;
+    margin-right: $gi-spacer;
+  }
+
+  td {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  tfoot td,
+  tfoot th {
+    padding: $gi-spacer 0;
+  }
+
+  tbody tr {
+    &:first-child td {
+      padding-top: $gi-spacer;
+    }
+
+    &:last-child td {
+      padding-top: $gi-spacer;
+    }
+  }
+}
+
 .c-summary {
   position: relative;
   border-bottom-width: 0;
@@ -125,7 +156,7 @@
     &:last-of-type {
       margin-bottom: $gi-spacer-xs; // makeup progress bar height
 
-      @include mobile {
+      @include tablet {
         margin-right: 0;
         text-align: right;
       }
