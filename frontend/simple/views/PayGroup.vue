@@ -7,22 +7,22 @@
       <p><i18n>What’s this page about, so the user understands the context.</i18n></p>
     </div>
 
-    <section class="section columns is-multiline c-invoice">
-      <header class="box column is-narrow is-flex-mobile gi-is-justify-between c-summary">
+    <section class="section columns is-desktop is-multiline c-invoice">
+      <header class="box column is-narrow is-flex-touch gi-is-justify-between c-summary">
         <div class="c-summary-item">
           <h2 class="is-size-7 has-text-grey is-uppercase"><i18n>Payments Sent</i18n></h2>
-          <p class="title is-5">0 of 4</p>
+          <p class="title is-5">{{paymentSummary.sent}} <i18n>of</i18n> {{users.length}}</p>
         </div>
         <div class="c-summary-item">
           <h2 class="is-size-7 has-text-grey is-uppercase"><i18n>Payments Confirmed</i18n></h2>
-          <p class="title is-5">0 of 4</p>
+          <p class="title is-5">{{paymentSummary.confirmed}} <i18n>of</i18n> {{users.length}}</p>
         </div>
         <div class="c-summary-item">
           <h2 class="is-size-7 has-text-grey is-uppercase"><i18n>Amount Payed</i18n></h2>
-          <p class="title is-5">$0 of $100</p>
+          <p class="title is-5">{{currency}}{{paymentSummary.amoutPayed}} <i18n>of</i18n> {{currency}}{{paymentSummary.amountTotal}}</p>
         </div>
         <span class="c-summary-progress">
-          <span class="c-summary-progress-filled" style="width: 10%;"></span>
+          <span class="c-summary-progress-filled" :style="paymentProgress"></span>
         </span>
       </header>
 
@@ -42,7 +42,7 @@
                 <i18n class="is-size-5 c-tableBox-cell">Total</i18n>
               </td>
               <td class="is-size-5 has-text-weight-bold is-numeric">
-                $100
+                {{currency}}{{paymentSummary.amountTotal}}
               </td>
             </tr>
           </tfoot>
@@ -54,59 +54,45 @@
                 <span class="c-tableBox-cell">{{user.name}}</span>
               </td>
               <td>
-                <button class="button is-primary is-compact c-tableBox-cell"><i18n>Mark as payed</i18n></button>
+                <div class="is-flex c-status"
+                  v-if="user.status === 'todo' || user.status === 'rejected'">
+                  <button class="button is-primary is-compact c-tableBox-cell" todo-click>
+                    <i18n>Mark as payed</i18n>
+                  </button>
+
+                  <i class="fa fa-exclamation-triangle has-text-warning c-status-tip"
+                    v-if="user.status === 'rejected'"></i>
+                </div>
+
+                <div class="is-flex c-status"
+                  v-else-if="user.status === 'pending'">
+                  <i class="fa fa-paper-plane c-status-icon"></i>
+                  <p>
+                    <i18n>Awesome! Waiting for [user] confirmation.</i18n>
+                    <button class="gi-is-unstyled gi-is-link" todo-click>
+                      <i18n>Cancel payment</i18n>
+                    </button>
+                  </p>
+                </div>
+
+                <div class="is-flex has-text-success has-text-weight-bold c-status"
+                  v-else-if="user.status === 'completed'">
+                  <i class="fa fa-check-circle is-size-5 c-status-icon"></i>
+                  <i18n>Payment sent!</i18n>
+                </div>
+
+                <div v-else>
+                  TODO
+                </div>
               </td>
               <td class="is-size-5 is-numeric">
-                {{user.value}}
+                {{currency}}{{user.value}}
               </td>
             </tr>
           </tbody>
         </table>
       </div>
     </section>
-
-    <section class="section" style="display: none;">
-      <div class="columns is-multiline">
-        <div class="column is-half">
-          <p class="title is-4"><i18n>Set Monthly Contribution</i18n></p>
-          <div class="box">
-            <p>Mincome: <b>${{minCome}}</b></p>
-            <p>Amount the group received this month: <b>${{amountReceivedThisMonth}}</b></p>
-          </div>
-          <div class="box">
-            <p>
-              Contribution Amount:
-              <input id="contributionAmount" class="input" type="text" placeholder="0">
-            </p>
-            <p class="select">
-              <select data-vv-rules="required" name="contributionCurrency">
-                <option value="usd" selected>USD</option>
-                <option value="btc">BTC</option>
-              </select>
-            </p>
-          </div>
-        </div>
-
-        <div class="column is-half">
-          <p class="title is-4"><i18n>Optional Contribution Info</i18n></p>
-          <div class="box">
-            <p>
-              Monthly Income:
-              <input id="monthlyIncome" class="input" type="text" placeholder="0">
-            </p>
-            <p>
-              Other info:
-              <textarea id="otherInfo" class="textarea"></textarea>
-            </p>
-          </div>
-
-          <div class="has-text-centered button-box">
-            <button class="button is-success is-large" type="submit"><i18n>Set Contribution</i18n></button>
-          </div>
-        </div>
-      </div>
-    </section>
-
   </main>
 </template>
 <style lang="scss" scoped>
@@ -114,36 +100,6 @@
 
 .c-invoice {
   align-items: flex-start;
-}
-
-.c-tableBox {
-  padding-top: 0;
-  padding-bottom: 0;
-
-  &-cell {
-    display: inline-block;
-    margin-right: $gi-spacer;
-  }
-
-  td {
-    padding-left: 0;
-    padding-right: 0;
-  }
-
-  tfoot td,
-  tfoot th {
-    padding: $gi-spacer 0;
-  }
-
-  tbody tr {
-    &:first-child td {
-      padding-top: $gi-spacer;
-    }
-
-    &:last-child td {
-      padding-top: $gi-spacer;
-    }
-  }
 }
 
 .c-summary {
@@ -156,7 +112,7 @@
     &:last-of-type {
       margin-bottom: $gi-spacer-xs; // makeup progress bar height
 
-      @include tablet {
+      @include touch {
         margin-right: 0;
         text-align: right;
       }
@@ -181,7 +137,7 @@
     }
   }
 
-  @include tablet {
+  @include desktop {
     display: block;
     margin-left: $gi-spacer-lg;
     width: 12rem;
@@ -192,9 +148,57 @@
     }
   }
 }
+
+.c-tableBox {
+  padding-top: 0;
+  padding-bottom: 0;
+
+  td {
+    padding-left: 0;
+    padding-right: 0;
+
+    // REVIEW: wild selector, avoid it
+    > *:last-child {
+      margin-right: $gi-spacer;
+    }
+  }
+
+  tfoot td,
+  tfoot th {
+    padding: $gi-spacer 0;
+  }
+
+  // user name
+  td:first-child {
+    width: 12rem;
+  }
+
+  tbody tr {
+    &:first-child td {
+      padding-top: $gi-spacer;
+    }
+
+    &:last-child td {
+      padding-bottom: $gi-spacer;
+    }
+  }
+}
+
+.c-status {
+  align-items: center;
+
+  &-icon {
+    margin-right: $gi-spacer;
+  }
+
+  &-tip {
+    margin-left: $gi-spacer;
+  }
+}
 </style>
 <script>
 import Avatar from './components/Avatar.vue'
+import { toPercent } from './utils/filters.js'
 
 export default {
   name: 'PayGroup',
@@ -211,28 +215,53 @@ export default {
         {
           name: 'Lilia Bouvet',
           avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
-          status: 0,
-          value: '$10'
+          status: 'todo',
+          value: 10
         },
         {
           name: 'Charlotte Doherty',
           avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
-          status: 0,
-          value: '$20'
+          status: 'todo',
+          value: 20
+        },
+        {
+          name: 'Kim Kr',
+          avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
+          status: 'rejected',
+          value: 25
         },
         {
           name: 'Zoe Kim',
           avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
-          status: 0,
-          value: '$30'
+          status: 'pending',
+          value: 30
         },
         {
           name: 'Hugo Lil',
           avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
-          status: 0,
-          value: '$50'
+          status: 'completed',
+          value: 50
         }
-      ]
+      ],
+      currency: '$'
+    }
+  },
+  computed: {
+    paymentSummary () {
+      return {
+        sent: this.users.reduce((acc, user) =>
+          ['completed', 'pending'].includes(user.status) ? acc + 1 : acc, 0),
+        confirmed: this.users.reduce((acc, user) =>
+          ['completed'].includes(user.status) ? acc + 1 : acc, 0),
+        amoutPayed: this.users.reduce((acc, user) =>
+          ['completed', 'pending'].includes(user.status) ? acc + user.value : acc, 0),
+        amountTotal: this.users.reduce((acc, user) => acc + user.value, 0)
+      }
+    },
+    paymentProgress () {
+      return {
+        width: toPercent(this.paymentSummary.confirmed / this.users.length)
+      }
     }
   }
 }

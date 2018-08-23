@@ -64,7 +64,6 @@ body {
     font-size: inherit;
     color: inherit;
     text-align: inherit;
-    width: 100%;
     padding: 0;
 
     &:focus,
@@ -72,6 +71,16 @@ body {
       outline: none;
       border: none;
       color: inherit;
+    }
+  }
+
+  &is-link {
+    color: $link;
+    cursor: pointer;
+
+    &:hover,
+    &:focus {
+      color: $link-hover;
     }
   }
 }
