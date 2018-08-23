@@ -7,7 +7,7 @@
       <p><i18n>What’s this page about, so the user understands the context.</i18n></p>
     </div>
 
-    <div class="section columns is-multiline">
+    <section class="section columns is-multiline c-invoice">
       <header class="box column is-narrow is-flex-mobile gi-is-justify-between c-summary">
         <div class="c-summary-item">
           <h2 class="is-size-7 has-text-grey is-uppercase"><i18n>Payments Sent</i18n></h2>
@@ -26,20 +26,43 @@
         </span>
       </header>
 
-      <section class="box column">
-        <list-item>
-          <avatar alt="x" src="" size="sm"></avatar>
-          <span>Lilia Bouvet</span>
-          <button class="primary"><i18n>Mark as payed</i18n></button>
-          <span>$10</span>
-        </list-item>
-
-        <div class="level gi-is-justify-between">
-          <i18n class="is-5">Total</i18n>
-          <strong class="is-5 has-text-weight-bold">$100</strong>
-        </div>
-      </section>
-    </div>
+      <div class="box column is-paddingless">
+        TODO styles
+        <table class="table is-fullwidth is-borderless">
+          <thead class="sr-only">
+            <tr>
+              <th><i18n>Name</i18n></th>
+              <th><i18n>Payment Status</i18n></th>
+              <th><i18n>Price</i18n></th>
+            </tr>
+          </thead>
+          <tfoot>
+            <tr>
+              <td cl="2">
+                <i18n class="is-size-5">Total</i18n>
+              </td>
+              <td class="is-size-5 has-text-weight-bold">
+                $100
+              </td>
+            </tr>
+          </tfoot>
+          <tbody>
+            <tr v-for="user in users">
+              <td>
+                <avatar :alt="`${user.name}s avatar`" :src="user.avatar"></avatar>
+                <span>{{user.name}}</span>
+              </td>
+              <td>
+                <button class="button is-primary is-compact"><i18n>Mark as payed</i18n></button>
+              </td>
+              <td class="is-size-5">
+                {{user.value}}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
 
     <section class="section" style="display: none;">
       <div class="columns is-multiline">
@@ -87,6 +110,10 @@
 </template>
 <style lang="scss" scoped>
 @import "../assets/sass/theme/index";
+
+.c-invoice {
+  align-items: flex-start;
+}
 
 .c-summary {
   position: relative;
@@ -136,14 +163,46 @@
 }
 </style>
 <script>
+import Avatar from './components/Avatar.vue'
+
 export default {
   name: 'PayGroup',
   props: {
     minCome: {type: Number, default: 1000},
     amountReceivedThisMonth: {type: Number, default: 852}
   },
+  components: {
+    Avatar
+  },
   data () {
-    return {}
+    return {
+      users: [
+        {
+          name: 'Lilia Bouvet',
+          avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
+          status: 0,
+          value: '$10'
+        },
+        {
+          name: 'Charlotte Doherty',
+          avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
+          status: 0,
+          value: '$20'
+        },
+        {
+          name: 'Zoe Kim',
+          avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
+          status: 0,
+          value: '$30'
+        },
+        {
+          name: 'Hugo Lil',
+          avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
+          status: 0,
+          value: '$50'
+        }
+      ]
+    }
   }
 }
 </script>

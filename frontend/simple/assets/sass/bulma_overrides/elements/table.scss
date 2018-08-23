@@ -1,0 +1,7 @@
+@import "../../node_modules/bulma/sass/elements/table";
+
+.table {
+  &.is-borderless {
+    color: red;
+  }
+}

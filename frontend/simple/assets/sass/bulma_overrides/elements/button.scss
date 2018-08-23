@@ -26,6 +26,11 @@
       color: $text;
     }
   }
+
+  &.is-compact {
+    min-height: auto;
+    padding: $gi-spacer-xs/2 $gi-spacer-sm;
+  }
 }
 
 .button.is-success.is-outlined {
