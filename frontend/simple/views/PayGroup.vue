@@ -32,10 +32,7 @@
             </template>
           </p>
         </div>
-        <span class="c-summary-progress">
-          <span class="c-summary-progress-sent" :style="paymentProgressStyles.sent"></span>
-          <span class="c-summary-progress-confirmed" :style="paymentProgressStyles.confirmed"></span>
-        </span>
+        <progress-bar :primary="paymentProgress.sent" :secondary="paymentProgress.confirmed"></progress-bar>
       </header>
 
       <div class="box column c-tableBox">
@@ -135,40 +132,6 @@
     margin-left: $gi-spacer-sm;
   }
 
-  &-progress {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: $gi-spacer-xs;
-    background-color: $primary-bg-a;
-    box-shadow: inset 0 0 1px $primary;
-
-    &-sent,
-    &-confirmed {
-      position: absolute;
-      top: 0;
-      left: 0;
-      height: 100%;
-      background-color: $primary;
-      // Animation to scale up the progress bars
-      transition: width 250ms ease-in-out;
-      transform: scaleX(0);
-      transform-origin: 0 0;
-    }
-
-    &-sent {
-      background-color: $primary;
-      // this one is slowers: starts sooner and ends later.
-      animation: progress 700ms ease-in-out 450ms forwards;
-    }
-
-    &-confirmed {
-      background-color: $success;
-      animation: progress 500ms ease-in-out 550ms forwards;
-    }
-  }
-
   @include desktop {
     display: block;
     margin-left: $gi-spacer-lg;
@@ -178,13 +141,6 @@
     &-item {
       margin: 0 0 $gi-spacer;
     }
-  }
-}
-
-@keyframes progress {
-  to {
-    transform: scaleX(1);
-    opacity: 1;
   }
 }
 
@@ -237,6 +193,7 @@
 </style>
 <script>
 import Avatar from './components/Avatar.vue'
+import ProgressBar from './components/Graphs/Progress.vue'
 import { toPercent } from './utils/filters.js'
 
 export default {
@@ -246,7 +203,8 @@ export default {
     amountReceivedThisMonth: {type: Number, default: 852}
   },
   components: {
-    Avatar
+    Avatar,
+    ProgressBar
   },
   data () {
     return {
@@ -298,13 +256,13 @@ export default {
         amountTotal: this.users.reduce((acc, user) => acc + user.value, 0)
       }
     },
-    paymentProgressStyles () {
+    paymentProgress () {
       const { sent, confirmed } = this.paymentSummary
       const usersLength = this.users.length
 
       return {
-        sent: { width: toPercent(sent / usersLength) },
-        confirmed: { width: toPercent(confirmed / usersLength) }
+        sent: toPercent(sent / usersLength),
+        confirmed: toPercent(confirmed / usersLength)
       }
     },
     paymentAllDone () {
