@@ -13,8 +13,15 @@
           <h2 class="is-size-7 has-text-grey is-uppercase"><i18n>Payments Sent</i18n></h2>
           <p class="title is-5">
             {{paymentSummary.sent}} <i18n>of</i18n> {{users.length}}
-            <i class="fa fa-exclamation-triangle has-text-warning is-size-6 c-summary-tip"
-              v-if="paymentSummary.hasWarning"></i>
+
+            <tooltip v-if="paymentSummary.hasWarning">
+              <i class="fa fa-exclamation-triangle has-text-warning is-size-6 c-icon-badge"></i>
+
+              <template slot="tooltip">
+                <strong class="has-text-weight-bold">Payment Declined</strong>
+                <p class="has-text-weight-normal">{{warningMessage()}}</p>
+              </template>
+            </tooltip>
           </p>
         </div>
         <div class="c-summary-item">
@@ -72,16 +79,22 @@
                     <i18n>Mark as payed</i18n>
                   </button>
 
-                  <i class="fa fa-exclamation-triangle has-text-warning is-size-6 c-status-tip"
-                    v-if="user.status === 'rejected'"></i>
+                  <tooltip direction="right-start" v-if="user.status === 'rejected'">
+                    <i class="fa fa-exclamation-triangle has-text-warning is-size-6 c-icon-badge"></i>
+
+                    <template slot="tooltip">
+                      <strong class="has-text-weight-bold">Payment Declined</strong>
+                      <p class="has-text-weight-normal">{{warningMessage(user.name)}}</p>
+                    </template>
+                  </tooltip>
                 </div>
 
                 <div class="is-flex c-status"
                   v-else-if="user.status === 'pending'">
                   <i class="fa fa-paper-plane c-status-icon"></i>
                   <p>
-                    <i18n>Awesome! Waiting for [user] confirmation.</i18n>
-                    <button class="gi-is-unstyled gi-is-link" @click="revertPayment(user)">
+                    {{ pendingMessage(user.name) }}
+                    <button class="gi-is-unstyled gi-is-link" @click="cancelPayment(user)">
                       <i18n>Cancel payment</i18n>
                     </button>
                   </p>
@@ -95,7 +108,7 @@
                 </div>
               </td>
               <td class="is-size-5 is-numeric">
-                {{currency}}{{user.value}}
+                {{currency}}{{user.amount}}
               </td>
             </tr>
           </tbody>
@@ -128,10 +141,6 @@
     }
   }
 
-  &-tip {
-    margin-left: $gi-spacer-sm;
-  }
-
   @include desktop {
     display: block;
     margin-left: $gi-spacer-lg;
@@ -152,7 +161,7 @@
     padding-left: 0;
     padding-right: 0;
 
-    // REVIEW: wild selector, avoid it
+    // OPTIMIZE: wild selector, watch out its usage
     > *:last-child {
       margin-right: $gi-spacer;
     }
@@ -185,26 +194,28 @@
   &-icon {
     margin-right: $gi-spacer;
   }
-
-  &-tip {
-    margin-left: $gi-spacer;
-  }
 }
+
+.c-icon-badge {
+  margin-left: $gi-spacer;
+}
+
 </style>
 <script>
 import Avatar from './components/Avatar.vue'
 import ProgressBar from './components/Graphs/Progress.vue'
 import { toPercent } from './utils/filters.js'
+import { symbol } from './utils/currencies.js'
+import L from './utils/translations.js'
+import tooltipDirective from './components/Tooltip/directive.js'
+import Tooltip from './components/Tooltip.vue'
 
 export default {
   name: 'PayGroup',
-  props: {
-    minCome: {type: Number, default: 1000},
-    amountReceivedThisMonth: {type: Number, default: 852}
-  },
   components: {
     Avatar,
-    ProgressBar
+    ProgressBar,
+    Tooltip
   },
   data () {
     return {
@@ -213,47 +224,53 @@ export default {
           name: 'Lilia Bouvet',
           avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
           status: 'todo',
-          value: 10
+          amount: 10
         },
         {
           name: 'Charlotte Doherty',
           avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
           status: 'todo',
-          value: 20
+          amount: 20
         },
         {
           name: 'Kim Kr',
           avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
           status: 'rejected',
-          value: 25
+          amount: 25
         },
         {
           name: 'Zoe Kim',
           avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
           status: 'pending',
-          value: 30
+          amount: 30
         },
         {
           name: 'Hugo Lil',
           avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
           status: 'completed',
-          value: 50
+          amount: 50
         }
       ],
-      currency: '$'
+      currency: symbol('USD')
     }
+  },
+  directives: {
+    tooltip: tooltipDirective,
+    Tooltip
   },
   computed: {
     paymentSummary () {
       return {
         sent: this.users.reduce((acc, user) =>
           ['completed', 'pending'].includes(user.status) ? acc + 1 : acc, 0),
-        hasWarning: this.users.filter(user => user.status === 'rejected').length > 0,
         confirmed: this.users.reduce((acc, user) =>
-          ['completed'].includes(user.status) ? acc + 1 : acc, 0),
+          user.status === 'completed' ? acc + 1 : acc, 0),
         amoutPayed: this.users.reduce((acc, user) =>
-          ['completed', 'pending'].includes(user.status) ? acc + user.value : acc, 0),
-        amountTotal: this.users.reduce((acc, user) => acc + user.value, 0)
+          ['completed', 'pending'].includes(user.status) ? acc + user.amount : acc, 0),
+        amountTotal: this.users.reduce((acc, user) =>
+          acc + user.amount, 0),
+        hasWarning: this.users.filter(user =>
+          user.status === 'rejected').length > 0
       }
     },
     paymentProgress () {
@@ -270,12 +287,25 @@ export default {
     }
   },
   methods: {
+    getUserFirstName (name) {
+      return name.split(' ')[0]
+    },
+    pendingMessage (name) {
+      return L('Awesome! Waiting for {name} confirmation.',
+        { name: this.getUserFirstName(name) }
+      )
+    },
+    warningMessage (name = 'Someone') {
+      return L('{name} didn’t confirm your payment. Please mark as payed only when it’s done.',
+        { name: this.getUserFirstName(name) }
+      )
+    },
     markAsPayed (user) {
       console.log('TODO - mark as payed')
       // Raw Logic
       user.status = 'pending'
     },
-    revertPayment (user) {
+    cancelPayment (user) {
       console.log('TODO - cancel payment')
       // Raw Logic
       user.status = 'todo'

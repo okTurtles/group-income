@@ -23,6 +23,7 @@
 }
 
 .c-item-link {
+  width: 100%;
   padding: $gi-spacer-sm;
   color: $text;
   cursor: pointer;
@@ -100,7 +101,7 @@ export default {
   computed: {
     itemLinkClasses () {
       return {
-        'c-item-link level is-flex gi-is-justify-between gi-is-unstyled': true,
+        'c-item-link level gi-is-justify-between gi-is-unstyled': true,
         'secondary': this.variant === 'secondary',
         'no-radius': this.disableRadius,
         'is-active': this.isActive

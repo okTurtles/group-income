@@ -23,8 +23,9 @@
   top: 0;
   left: 0;
   height: 100%;
-  // Animation to speed up the progress bars
-  transition: width 250ms ease-in-out;
+  // Animation to modify the bar
+  transition: width 450ms ease-in-out;
+  // Animation to show up the bar
   transform: scaleX(0);
   transform-origin: 0 0;
 }
@@ -51,8 +52,8 @@
 export default {
   name: 'ProgressBar',
   props: {
-    primary: Number,
-    secondary: Number
+    primary: String,
+    secondary: String
   }
 }
 </script>
