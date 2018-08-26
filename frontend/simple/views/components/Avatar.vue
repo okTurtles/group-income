@@ -13,6 +13,7 @@
 }
 </style>
 <script>
+// TODO: Replace all avatars for this component
 export default {
   name: 'Avatar',
   props: {

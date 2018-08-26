@@ -54,9 +54,9 @@
 
           <tfoot>
             <tr>
-              <td colspan="2">
+              <th colspan="2">
                 <i18n class="is-size-5 c-tableBox-cell">Total</i18n>
-              </td>
+              </th>
               <td class="is-size-5 has-text-weight-bold is-numeric">
                 {{currency}}{{paymentSummary.amountTotal}}
               </td>
@@ -65,21 +65,19 @@
 
           <tbody class="tbody is-borderless">
             <tr v-for="user in users">
-              <td>
+              <th class="has-text-weight-normal">
                 <avatar :alt="`${user.name}s avatar`" :src="user.avatar"></avatar>
                 <span class="c-tableBox-cell">{{user.name}}</span>
-              </td>
+              </th>
               <td>
-                <div class="is-flex c-status"
-                  v-if="['todo', 'rejected'].includes(user.status)"
-                >
+                <div class="is-flex c-status" v-if="statusIsToPay(user)">
                   <button class="button is-primary is-compact c-tableBox-cell"
                     @click="markAsPayed(user)"
                   >
                     <i18n>Mark as payed</i18n>
                   </button>
 
-                  <tooltip direction="right-start" v-if="user.status === 'rejected'">
+                  <tooltip direction="right-start" v-if="statusIsRejected(user)">
                     <i class="fa fa-exclamation-triangle has-text-warning is-size-6 c-icon-badge"></i>
 
                     <template slot="tooltip">
@@ -89,8 +87,7 @@
                   </tooltip>
                 </div>
 
-                <div class="is-flex c-status"
-                  v-else-if="user.status === 'pending'">
+                <div class="is-flex c-status" v-else-if="statusIsPending(user)">
                   <i class="fa fa-paper-plane c-status-icon"></i>
                   <p>
                     {{ pendingMessage(user.name) }}
@@ -100,9 +97,7 @@
                   </p>
                 </div>
 
-                <div class="is-flex has-text-success has-text-weight-bold c-status"
-                  v-else-if="user.status === 'completed'"
-                >
+                <div class="is-flex has-text-success has-text-weight-bold c-status" v-else-if="statusIsCompleted(user)">
                   <i class="fa fa-check-circle is-size-5 c-status-icon"></i>
                   <i18n>Payment sent!</i18n>
                 </div>
@@ -173,7 +168,7 @@
   }
 
   // user name
-  td:first-child {
+  th:first-child {
     width: 12rem;
   }
 
@@ -207,7 +202,6 @@ import ProgressBar from './components/Graphs/Progress.vue'
 import { toPercent } from './utils/filters.js'
 import { symbol } from './utils/currencies.js'
 import L from './utils/translations.js'
-import tooltipDirective from './components/Tooltip/directive.js'
 import Tooltip from './components/Tooltip.vue'
 
 export default {
@@ -254,23 +248,14 @@ export default {
       currency: symbol('USD')
     }
   },
-  directives: {
-    tooltip: tooltipDirective,
-    Tooltip
-  },
   computed: {
     paymentSummary () {
       return {
-        sent: this.users.reduce((acc, user) =>
-          ['completed', 'pending'].includes(user.status) ? acc + 1 : acc, 0),
-        confirmed: this.users.reduce((acc, user) =>
-          user.status === 'completed' ? acc + 1 : acc, 0),
-        amoutPayed: this.users.reduce((acc, user) =>
-          ['completed', 'pending'].includes(user.status) ? acc + user.amount : acc, 0),
-        amountTotal: this.users.reduce((acc, user) =>
-          acc + user.amount, 0),
-        hasWarning: this.users.filter(user =>
-          user.status === 'rejected').length > 0
+        sent: this.users.reduce((acc, user) => this.statusIsPayed(user) ? acc + 1 : acc, 0),
+        confirmed: this.users.reduce((acc, user) => this.statusIsCompleted(user) ? acc + 1 : acc, 0),
+        amoutPayed: this.users.reduce((acc, user) => this.statusIsPayed(user) ? acc + user.amount : acc, 0),
+        amountTotal: this.users.reduce((acc, user) => acc + user.amount, 0),
+        hasWarning: this.users.filter(user => this.statusIsRejected(user)).length > 0
       }
     },
     paymentProgress () {
@@ -287,6 +272,21 @@ export default {
     }
   },
   methods: {
+    statusIsToPay (user) {
+      return ['todo', 'rejected'].includes(user.status)
+    },
+    statusIsPayed (user) {
+      return ['completed', 'pending'].includes(user.status)
+    },
+    statusIsPending (user) {
+      return user.status === 'pending'
+    },
+    statusIsRejected (user) {
+      return user.status === 'rejected'
+    },
+    statusIsCompleted (user) {
+      return user.status === 'completed'
+    },
     getUserFirstName (name) {
       return name.split(' ')[0]
     },

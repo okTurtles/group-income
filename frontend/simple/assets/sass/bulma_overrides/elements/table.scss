@@ -20,12 +20,14 @@ $table-cell-padding: $gi-spacer-sm;
   }
 
   &.is-borderless {
+    th,
     td {
       border: none;
     }
   }
 
   &.is-vertical-middle {
+    th,
     td {
       vertical-align: middle;
     }

@@ -3,9 +3,7 @@
     <slot></slot>
     <div
       class="has-background-dark has-text-grey-lighter is-bottom is-size-7 c-tooltip"
-      :class="this.setDirection"
       :style="stylesPosition"
-      ref="tooltip"
       v-if="isActive"
       v-append-to-body
     >
@@ -14,7 +12,7 @@
   </span>
 </template>
 <style lang="scss" scoped>
-@import "../../../assets/sass/theme/index";
+@import "../../assets/sass/theme/index";
 
 .c-wrapper {
   display: inline-block;
@@ -27,11 +25,20 @@
   border-radius: $radius;
   padding: $gi-spacer-sm;
   opacity: 0.95;
-  z-index: 9999999999;
+  // TODO create SCSS variables with possible z-index (hover,modals, header, etc...)
+  // So we don't end up with 99999999 values
+  z-index: 50;
   max-width: 12rem;
 }
 </style>
 <script>
+/*
+NOTE: when needed, this component can be improved with more options:
+- Click instead of hover
+- More directions
+- Controlled tooltip from outside
+For now I've just did the needed API for this particular task but I think it's pretty easy to scale it.
+*/
 export default {
   name: 'Tooltip',
   props: {
@@ -46,11 +53,6 @@ export default {
     isActive: false,
     stylesPosition: null
   }),
-  computed: {
-    setDirection () {
-      return `is-${this.direction}`
-    }
-  },
   methods: {
     show () {
       this.isActive = true
@@ -65,8 +67,7 @@ export default {
       let x
       let y
 
-      // NOTE: As the directions options increase, the ifs can be completed too
-      // TODO: If the tooltip transpasses the window edges, nothing happens.
+      // TODO/BUG: If the tooltip transpasses the window edges, it get's cutted.
       // In the future it must be smart enough to adjust its position.
       if (this.direction === 'right') {
         x = scrollX + left + width + spacing
