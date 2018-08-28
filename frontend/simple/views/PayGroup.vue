@@ -12,14 +12,20 @@
         <div class="c-summary-item">
           <h2 class="is-size-7 has-text-grey is-uppercase"><i18n>Payments Sent</i18n></h2>
           <p class="title is-5">
-            {{paymentSummary.sent}} <i18n>of</i18n> {{users.length}}
+            <i18n :args="{ sent: paymentSummary.sent, total: users.length }">
+              {sent} of {total}
+            </i18n>
 
             <tooltip v-if="paymentSummary.hasWarning">
               <i class="fa fa-exclamation-triangle has-text-warning is-size-6 c-icon-badge"></i>
 
               <template slot="tooltip">
                 <strong class="has-text-weight-bold">Payment Declined</strong>
-                <p class="has-text-weight-normal">{{warningMessage()}}</p>
+                <p class="has-text-weight-normal">
+                  <i18n>
+                    Someone didn’t confirm your payment. Please mark as payed only when it’s done.
+                  </i18n>
+                </p>
               </template>
             </tooltip>
           </p>
@@ -74,7 +80,7 @@
                   <button class="button is-primary is-compact c-tableBox-cell"
                     @click="markAsPayed(user)"
                   >
-                    <i18n>Mark as payed</i18n>
+                    <i18n>Mark as paid</i18n>
                   </button>
 
                   <tooltip direction="right-start" v-if="statusIsRejected(user)">
@@ -82,7 +88,11 @@
 
                     <template slot="tooltip">
                       <strong class="has-text-weight-bold">Payment Declined</strong>
-                      <p class="has-text-weight-normal">{{warningMessage(user.name)}}</p>
+                      <p class="has-text-weight-normal">
+                        <i18n :args="{ name: getUserFirstName(user.name) }">
+                          {name} didn’t confirm your payment. Please mark as payed only when it’s done.
+                        </i18n>
+                      </p>
                     </template>
                   </tooltip>
                 </div>
@@ -90,7 +100,9 @@
                 <div class="is-flex c-status" v-else-if="statusIsPending(user)">
                   <i class="fa fa-paper-plane c-status-icon"></i>
                   <p>
-                    {{ pendingMessage(user.name) }}
+                    <i18n :args="{ name: getUserFirstName(user.name) }">
+                      Awesome! Waiting for {name} confirmation.
+                    </i18n>
                     <button class="gi-is-unstyled gi-is-link" @click="cancelPayment(user)">
                       <i18n>Cancel payment</i18n>
                     </button>
@@ -192,7 +204,7 @@
 }
 
 .c-icon-badge {
-  margin-left: $gi-spacer;
+  margin-left: $gi-spacer/2;
 }
 
 </style>
@@ -201,7 +213,6 @@ import Avatar from './components/Avatar.vue'
 import ProgressBar from './components/Graphs/Progress.vue'
 import { toPercent } from './utils/filters.js'
 import { symbol } from './utils/currencies.js'
-import L from './utils/translations.js'
 import Tooltip from './components/Tooltip.vue'
 
 export default {
@@ -289,16 +300,6 @@ export default {
     },
     getUserFirstName (name) {
       return name.split(' ')[0]
-    },
-    pendingMessage (name) {
-      return L('Awesome! Waiting for {name} confirmation.',
-        { name: this.getUserFirstName(name) }
-      )
-    },
-    warningMessage (name = 'Someone') {
-      return L('{name} didn’t confirm your payment. Please mark as payed only when it’s done.',
-        { name: this.getUserFirstName(name) }
-      )
     },
     markAsPayed (user) {
       console.log('TODO - mark as payed')
