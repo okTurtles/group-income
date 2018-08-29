@@ -1,6 +1,6 @@
 <template>
-    <component :is="tag">
-      {{transformText}}
+    <component :is="tag" v-on="$listeners">
+      {{translatedText}}
     </component>
 </template>
 <script>
@@ -13,7 +13,7 @@ export default {
     }
   },
   computed: {
-    transformText () {
+    translatedText () {
       const text = this.L(
         this.$slots.default[0].text,
         this.args || {},
