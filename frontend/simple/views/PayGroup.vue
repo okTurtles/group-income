@@ -40,7 +40,7 @@
             <i18n v-if="paymentAllDone" :args="{ currency, amountTotal: paymentSummary.amountTotal }">
               All {currency}{amountTotal}
             </i18n>
-            <i18n v-else :args="{ currency, amoutPayed:paymentSummary.amoutPayed, amountTotal: paymentSummary.amoutPayed }">
+            <i18n v-else :args="{ currency, amoutPayed:paymentSummary.amoutPayed, amountTotal: paymentSummary.amountTotal }">
               {currency}{amoutPayed} of {currency}{amountTotal}
             </i18n>
           </p>
