@@ -70,7 +70,7 @@
           </tfoot>
 
           <tbody class="tbody is-borderless">
-            <tr v-for="user in users">
+            <tr v-for="user, index in users">
               <th class="has-text-weight-normal">
                 <avatar :alt="`${user.name}s avatar`" :src="user.avatar"></avatar>
                 <span class="c-tableBox-cell">{{user.name}}</span>
@@ -98,8 +98,8 @@
                 <div class="is-flex c-status" v-else-if="statusIsPending(user)">
                   <i class="fa fa-paper-plane c-status-icon"></i>
                   <p>
-                    <i18n :args="{ name: getUserFirstName(user.name) }">
-                      Awesome! Waiting for {name} confirmation.
+                    <i18n :args="{ name: getUserFirstName(user.name), admiration: getCustomAdmiration(index) }">
+                      {admiration}! Waiting for {name} confirmation.
                     </i18n>
                     <i18n tag="button" class="gi-is-unstyled gi-is-link" @click="cancelPayment(user)">
                       Cancel payment
@@ -254,7 +254,11 @@ export default {
           amount: 50
         }
       ],
-      currency: symbol('USD')
+      currency: symbol('USD'),
+      admirations: {
+        types: [this.L('Awesome'), this.L('Cool'), this.L('Great'), this.L('Nice'), this.L('Super'), this.L('Sweet')],
+        users: { /* index: 'admiration' */ }
+      }
     }
   },
   computed: {
@@ -298,6 +302,12 @@ export default {
     },
     getUserFirstName (name) {
       return name.split(' ')[0]
+    },
+    getCustomAdmiration (index) {
+      if (!this.admirations.users[index]) {
+        this.admirations.users[index] = this.admirations.types[Math.floor(Math.random() * this.admirations.types.length)]
+      }
+      return this.admirations.users[index]
     },
     markAsPayed (user) {
       console.log('TODO - mark as payed')
