@@ -13,6 +13,7 @@ import {
   GroupInvitees,
   GroupSummary
 } from '../views/components/CreateGroupSteps'
+import Contributions from '../views/Contributions.vue'
 import DesignSystem from '../views/DesignSystem.vue'
 import GroupDashboard from '../views/GroupDashboard.vue'
 import Home from '../views/Home.vue'
@@ -172,6 +173,14 @@ var router = new Router({
       meta: {
         title: 'Your Group'
       }
+    },
+    {
+      path: '/contributions',
+      component: Contributions,
+      meta: {
+        title: 'Contributions'
+      },
+      beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '/pay-group',

@@ -1,12 +1,13 @@
 <template>
-  <li class="c-item" :class="{ 'has-divider': hasDivider }">
+  <li class="c-item" :class="itemClasses">
     <component :is="tag"
-      :class="itemLinkClasses"
+      :class="contentClasses"
       :active-class="tag === 'router-link' && 'is-active'"
       v-bind="$attrs" v-on="$listeners"
     >
-      <i class="fa" :class="{ [`fa-${icon}`]: icon }" v-if="icon"></i>
-      <span class="c-item-text"><slot></slot></span>
+      <i class="fa c-item-icon" :class="{ [`fa-${icon}`]: icon }" v-if="icon"></i>
+      <span class="c-item-slot"><slot></slot></span>
+      <slot name="actions"></slot>
       <span class="c-item-badge" v-if="badgeCount">{{badgeCount}}</span>
     </component>
   </li>
@@ -20,13 +21,21 @@
     padding-bottom: $gi-spacer-sm;
     border-bottom: 1px solid $grey-lighter;
   }
+
+  &.has-margin {
+    margin: $gi-spacer-sm 0;
+  }
 }
 
-.c-item-link {
+.c-item-icon {
+  color: $grey;
+  margin-right: $gi-spacer;
+}
+
+.c-item-content {
   width: 100%;
   padding: $gi-spacer-sm;
   color: $text;
-  cursor: pointer;
   border-radius: $radius;
 
   &.no-radius {
@@ -37,30 +46,56 @@
     color: $grey;
   }
 
-  .fa {
-    color: $grey;
-    margin-right: $gi-spacer;
+  &.solid,
+  &.unfilled {
+    padding: $gi-spacer * 0.75 $gi-spacer;
   }
 
-  &:hover,
-  &:focus {
-    background-color: $primary-bg-a;
+  &.solid {
+    background-color: $white-ter;
 
-    .fa {
-      color: inherit;
+    &.has-interaction {
+      background-color: $primary-bg-s;
     }
+  }
+
+  &.unfilled {
+    border: 1px dashed $primary;
+
+    .c-item-icon {
+      color: $primary;
+    }
+  }
+
+  &.has-actions {
+    background-color: $primary-bg-a;
+    // To makeup for action square buttons height
+    padding: $gi-spacer-sm $gi-spacer-sm $gi-spacer-sm $gi-spacer;
   }
 
   &.is-active {
     font-weight: 600;
 
-    .fa {
+    .c-item-icon {
       color: $primary;
+    }
+  }
+
+  &.has-interaction {
+    cursor: pointer;
+
+    &:hover,
+    &:focus {
+      background-color: $primary-bg-a;
+
+      .c-item-icon {
+        color: inherit;
+      }
     }
   }
 }
 
-.c-item-text {
+.c-item-slot {
   flex-grow: 1;
 }
 
@@ -86,25 +121,36 @@ export default {
     isActive: Boolean,
     tag: {
       validator (value) {
-        return ['router-link', 'a', 'button', 'div'].indexOf(value) > -1
+        return ['router-link', 'a', 'button', 'div'].includes(value)
       },
       default: 'div',
-      required: true
+      required: false
     },
     variant: {
       validator (value) {
-        return ['secondary'].indexOf(value) > -1
-      }
+        return ['secondary', 'solid', 'unfilled'].includes(value)
+      },
+      required: false
     }
   },
   inheritAttrs: false,
   computed: {
-    itemLinkClasses () {
+    itemClasses () {
       return {
-        'c-item-link level gi-is-justify-between gi-is-unstyled': true,
+        'has-divider': this.hasDivider,
+        'has-margin': this.variant === 'solid' || this.variant === 'unfilled'
+      }
+    },
+    contentClasses () {
+      return {
+        'c-item-content level is-flex gi-is-justify-between gi-is-unstyled': true,
         'secondary': this.variant === 'secondary',
+        'solid': this.variant === 'solid',
+        'unfilled': this.variant === 'unfilled',
         'no-radius': this.disableRadius,
-        'is-active': this.isActive
+        'has-interaction': ['router-link', 'a', 'button'].includes(this.tag),
+        'is-active': this.isActive,
+        'has-actions': !!this.$slots.actions
       }
     }
   }
