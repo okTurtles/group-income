@@ -1,6 +1,6 @@
 var nargs = /\{([0-9a-zA-Z_]+)\}/g
 
-export default function template (string) {
+export default function template (string = '') {
   var args
 
   if (arguments.length === 2 && typeof arguments[ 1 ] === 'object') {

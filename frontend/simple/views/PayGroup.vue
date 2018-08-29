@@ -1,10 +1,10 @@
 <template>
   <main>
     <div class="section is-hero">
-      <h1 class="title is-1 is-marginless">
-        <i18n>Pay Group</i18n>
-      </h1>
-      <p><i18n>What’s this page about, so the user understands the context.</i18n></p>
+      <i18n tag="h1" class="title is-1 is-marginless">
+        Pay Group
+      </i18n>
+      <i18n tag="p">What’s this page about, so the user understands the context.</i18n>
     </div>
 
     <section class="section columns is-desktop is-multiline c-invoice">
@@ -21,28 +21,28 @@
 
               <template slot="tooltip">
                 <strong class="has-text-weight-bold">Payment Declined</strong>
-                <p class="has-text-weight-normal">
-                  <i18n>
-                    Someone didn’t confirm your payment. Please mark as payed only when it’s done.
-                  </i18n>
-                </p>
+                <i18n tag="p" class="has-text-weight-normal">
+                  Someone didn’t confirm your payment. Please mark as payed only when it’s done.
+                </i18n>
               </template>
             </tooltip>
           </p>
         </div>
         <div class="c-summary-item">
-          <h2 class="is-size-7 has-text-grey is-uppercase"><i18n>Payments Confirmed</i18n></h2>
-          <p class="title is-5">{{paymentSummary.confirmed}} <i18n>of</i18n> {{users.length}}</p>
+          <i18n  tag="h2" class="is-size-7 has-text-grey is-uppercase">Payments Confirmed</i18n>
+          <i18n tag="p" class="title is-5" :args="{ sent: paymentSummary.confirmed, total: users.length }">
+            {sent} of {total}
+          </i18n>
         </div>
         <div class="c-summary-item">
-          <h2 class="is-size-7 has-text-grey is-uppercase"><i18n>Amount Sent</i18n></h2>
+          <i18n tag="h2" class="is-size-7 has-text-grey is-uppercase">Amount Sent</i18n>
           <p class="title is-5" :class="{'has-text-success': paymentAllDone}">
-            <template v-if="paymentAllDone">
-              All {{currency}}{{paymentSummary.amountTotal}}
-            </template>
-            <template v-else>
-              {{currency}}{{paymentSummary.amoutPayed}} <i18n>of</i18n> {{currency}}{{paymentSummary.amountTotal}}
-            </template>
+            <i18n v-if="paymentAllDone" :args="{ currency, amountTotal: paymentSummary.amountTotal }">
+              All {currency}{amountTotal}
+            </i18n>
+            <i18n v-else :args="{ currency, amoutPayed:paymentSummary.amoutPayed, amountTotal: paymentSummary.amoutPayed }">
+              {currency}{amoutPayed} of {currency}{amountTotal}
+            </i18n>
           </p>
         </div>
         <progress-bar :primary="paymentProgress.sent" :secondary="paymentProgress.confirmed"></progress-bar>
@@ -52,17 +52,17 @@
         <table class="table is-fullwidth is-vertical-middle">
           <thead class="sr-only">
             <tr>
-              <th><i18n>Name</i18n></th>
-              <th><i18n>Payment Status</i18n></th>
-              <th><i18n>Amount</i18n></th>
+              <i18n tag="th">Name</i18n>
+              <i18n tag="th">Payment Status</i18n>
+              <i18n tag="th">Amount</i18n>
             </tr>
           </thead>
 
           <tfoot>
             <tr>
-              <th colspan="2">
-                <i18n class="is-size-5 c-tableBox-cell">Total</i18n>
-              </th>
+              <i18n tag="th" colspan="2" class="is-size-5 c-tableBox-cell">
+                Total
+              </i18n>
               <td class="is-size-5 has-text-weight-bold is-numeric">
                 {{currency}}{{paymentSummary.amountTotal}}
               </td>
@@ -77,22 +77,20 @@
               </th>
               <td>
                 <div class="is-flex c-status" v-if="statusIsToPay(user)">
-                  <button class="button is-primary is-compact c-tableBox-cell"
+                  <i18n tag="button" class="button is-primary is-compact c-tableBox-cell"
                     @click="markAsPayed(user)"
                   >
-                    <i18n>Mark as paid</i18n>
-                  </button>
+                    Mark as paid
+                  </i18n>
 
                   <tooltip direction="right-start" v-if="statusIsRejected(user)">
                     <i class="fa fa-exclamation-triangle has-text-warning is-size-6 c-icon-badge"></i>
 
                     <template slot="tooltip">
                       <strong class="has-text-weight-bold">Payment Declined</strong>
-                      <p class="has-text-weight-normal">
-                        <i18n :args="{ name: getUserFirstName(user.name) }">
-                          {name} didn’t confirm your payment. Please mark as payed only when it’s done.
-                        </i18n>
-                      </p>
+                      <i18n tag="p" class="has-text-weight-normal" :args="{ name: 'bob' }">
+                        {name} didn’t confirm your payment. Please mark as payed only when it’s done.
+                      </i18n>
                     </template>
                   </tooltip>
                 </div>
@@ -103,9 +101,9 @@
                     <i18n :args="{ name: getUserFirstName(user.name) }">
                       Awesome! Waiting for {name} confirmation.
                     </i18n>
-                    <button class="gi-is-unstyled gi-is-link" @click="cancelPayment(user)">
-                      <i18n>Cancel payment</i18n>
-                    </button>
+                    <i18n tag="button" class="gi-is-unstyled gi-is-link" @click="cancelPayment(user)">
+                      Cancel payment
+                    </i18n>
                   </p>
                 </div>
 
