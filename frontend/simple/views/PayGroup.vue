@@ -98,7 +98,7 @@
                 <div class="is-flex c-status" v-else-if="statusIsPending(user)">
                   <i class="fa fa-paper-plane c-status-icon"></i>
                   <p>
-                    <i18n :args="{ name: getUserFirstName(user.name), admiration: getCustomAdmiration(index) }">
+                    <i18n :args="{ name: getUserFirstName(user.name), admiration: getCustomAdmiration(index) }" class="has-text-grey">
                       {admiration}! Waiting for {name} confirmation.
                     </i18n>
                     <i18n tag="button" class="gi-is-unstyled gi-is-link" @click="cancelPayment(user)">
