@@ -88,7 +88,7 @@ export default {
     // it's appended to the DOM, away from every other elements
     // so no element CSS can influence tooltip styles (position, size)
     appendToBody: {
-      inserted: function (el, bindings, vnode) {
+      inserted (el, bindings, vnode) {
         document.body.appendChild(el)
 
         const $this = vnode.context // Vue component instance
@@ -100,6 +100,11 @@ export default {
         // That way the adjustPosition() method can have the same logic
         // applied in every tooltip as expected
         $this.adjustPosition()
+      },
+      unbind (el) {
+        if (el.parentNode) {
+          el.parentNode.removeChild(el)
+        }
       }
     }
   }
