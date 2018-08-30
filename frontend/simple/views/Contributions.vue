@@ -11,53 +11,63 @@
       <section class="column">
         <i18n tag="h2" class="title is-3">Receiving</i18n>
 
-        <list>
-          <list-item v-for="item in receiving" variant="solid">
-            <strong v-if="isMonetary(item.type)">{{currency}}{{item.what}} <i18n>for mincome</i18n></strong>
-            <strong v-else>{{item.what}}</strong>
-            <i18n>from</i18n>
-            {{getWho(item.who)}}
-            <template v-if="hasWhoElse(item.who)">
-              <i18n>and</i18n>
-              <button class="gi-is-unstyled is-link" @click="showHowElse">{{item.who.length - 1}} <i18n>others</i18n></button>
-            </template>
-
-            <button v-if="isMonetary(item.type)"
-              slot="actions"
-              class="button is-icon"
-              aria-label="[Edit Receiving mincome settings]"
-              @click="showReceivingSettings"
+        <ul>
+          <li>
+            <div v-for="contribution in receiving"
+              class="box is-compact has-controls c-contribution"
+              :class="{ 'is-editable': isMonetary(contribution.type) }"
             >
-              <i class="fa fa-edit"></i>
-            </button>
-        </list-item>
-        </list>
+              <p class="box-body">
+                <strong v-if="isMonetary(contribution.type)">{{currency}}{{contribution.what}} <i18n>for mincome</i18n></strong>
+                <strong v-else>{{contribution.what}}</strong>
+                <i18n>from</i18n>
+                {{getWho(contribution.who)}}
+                <template v-if="hasWhoElse(contribution.who)">
+                  <i18n>and</i18n>
+                  <button class="gi-is-unstyled is-link" @click="showHowElse">{{contribution.who.length - 1}} <i18n>others</i18n></button>
+                </template>
+              </p>
+              <div class="box-controls">
+                <button v-if="isMonetary(contribution.type)"
+                  slot="actions"
+                  class="button is-icon"
+                  aria-label="[Edit Receiving mincome settings]"
+                  @click="showReceivingSettings"
+                >
+                  <i class="fa fa-edit"></i>
+                </button>
+              </div>
+            </div>
+          </li>
+        </ul>
       </section>
 
       <section class="column">
         <i18n tag="h2" class="title is-3">Giving</i18n>
 
         <list v-if="givesNonMonetary || givesMonetary">
-          <!-- TEMPLATE v-for input or list item - should this be a list?!? -->
-          <list-item variant="solid" v-for="item in giving.nonMonetary">
-            <strong>{{item}}</strong>
-            <button slot="actions"
-              class="button is-icon"
-              aria-label="[Edit NonMonetary item]"
-              @click="editNonMonetary"
-            >
-              <i class="fa fa-edit"></i>
-            </button>
-          </list-item>
-
-          <div class="field has-addons c-form" v-if="isCreatingNonMonetaryMethod">
-            <p class="control is-expanded">
-              <input ref="newNonMonetaryValue" class="input" type="text" placeholder="Ex: Portuguese classes">
-            </p>
-            <p class="control">
-              <button class="button" @click="createNonMonetaryMethod">Add</button>
-            </p>
-          </div>
+          <template v-for="contribution in giving.nonMonetary">
+            <list-item variant="solid" v-if="true">
+              <strong>{{contribution}}</strong>
+              <button slot="actions"
+                class="button is-icon"
+                aria-label="[Edit NonMonetary contribution]"
+                @click="editNonMonetary"
+              >
+                <i class="fa fa-edit"></i>
+              </button>
+            </list-item>
+            <list-item variant="solid" v-if="isEditing(contribution)">
+              <div class="field has-addons c-form" v-if="isCreatingNonMonetaryMethod">
+                <p class="control is-expanded">
+                  <input ref="newNonMonetaryValue" class="input" type="text" placeholder="Ex: Portuguese classes">
+                </p>
+                <p class="control">
+                  <button class="button" @click="createNonMonetaryMethod">Add</button>
+                </p>
+              </div>
+            </list-item>
+          </template>
 
           <list-item variant="solid" v-if="givesMonetary">
             <strong>{{currency}}{{giving.monetary}}</strong> <i18n>to other's mincome</i18n>
@@ -94,8 +104,17 @@
 <style lang="scss" scoped>
 @import "../assets/sass/theme/index";
 
+.c-contribution {
+  border: none;
+  background-color: $white-ter;
+
+  &.is-editable {
+    background-color: $primary-bg-a;
+  }
+}
+
 .c-form {
-  height: 44px; // item list height - hardcoded
+  height: 44px; // contribution list height - hardcoded
 
   .input,
   .button {
@@ -167,7 +186,7 @@ export default {
     hasWhoElse (who) {
       return Array.isArray(who) && who.length > 3
     },
-    showHowElse (item) {
+    showHowElse (contribution) {
       console.log('TODO - Show Who else')
     },
     showReceivingSettings () {
@@ -176,7 +195,7 @@ export default {
     showGivingSettings () {
       console.log('TODO - Show Giving Mincome Settings')
     },
-    editNonMonetary (item) {
+    editNonMonetary (contribution) {
       console.log('TODO - Edit NonMonetary Item')
     },
     addNoMonetaryMethod () {
