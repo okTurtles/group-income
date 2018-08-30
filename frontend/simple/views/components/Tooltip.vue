@@ -61,8 +61,9 @@ export default {
       this.isActive = false
     },
     adjustPosition () {
+      this.trigger = this.trigger || this.$el.getBoundingClientRect()
       const { scrollX, scrollY } = window
-      const { width, height, left, top } = this.trigger || this.$el.getBoundingClientRect()
+      const { width, height, left, top } = this.trigger
       const spacing = 5
       let x
       let y
