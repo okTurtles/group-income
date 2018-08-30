@@ -1,3 +1,8 @@
+$input-border-color: $grey-light;
+$input-shadow: none;
+$input-hover-border-color: $grey;
+$input-focus-border-color: $text;
+
 @import "../../node_modules/bulma/sass/elements/form";
 
 .input {

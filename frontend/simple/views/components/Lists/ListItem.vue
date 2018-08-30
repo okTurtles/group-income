@@ -15,6 +15,8 @@
 <style lang="scss" scoped>
 @import "../../../assets/sass/theme/index";
 
+$list-spacer: $gi-spacer * 0.75;
+
 .c-item {
   &.has-divider {
     margin-bottom: $gi-spacer-sm;
@@ -23,7 +25,7 @@
   }
 
   &.has-margin {
-    margin: $gi-spacer-sm 0;
+    margin-bottom: $list-spacer;
   }
 }
 
@@ -48,7 +50,7 @@
 
   &.solid,
   &.unfilled {
-    padding: $gi-spacer * 0.75 $gi-spacer;
+    padding: $list-spacer $gi-spacer;
   }
 
   &.solid {
@@ -70,7 +72,7 @@
   &.has-actions {
     background-color: $primary-bg-a;
     // To makeup for action square buttons height
-    padding: $gi-spacer-sm $gi-spacer-sm $gi-spacer-sm $gi-spacer;
+    padding: 0 $gi-spacer-sm 0 0;
   }
 
   &.is-active {
@@ -97,6 +99,11 @@
 
 .c-item-slot {
   flex-grow: 1;
+
+  .has-actions & {
+    // To makeup for action square buttons height
+    padding: $list-spacer $gi-spacer;
+  }
 }
 
 .c-item-badge {
