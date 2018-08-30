@@ -20,10 +20,6 @@ export default {
         { defaultValue: this.$slots.default[0].text }
       )
 
-      // BUG: Sometimes text is not returned correctly
-      // Could not understand why. You can see it happen on
-      // 'Pay Group' link on side bar and at /pay-group page - Title: "Pay Group"
-      // When that happens, just return the default text.
       if (text) {
         return text
       }
