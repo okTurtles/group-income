@@ -14,6 +14,10 @@ $gi-compact-spacer: $gi-spacer*0.75;
     margin-bottom: $gi-compact-spacer;
   }
 
+  &.is-unfilled {
+    border: 1px dashed $primary;
+  }
+
   &.has-controls {
     display: flex;
     justify-content: space-between;

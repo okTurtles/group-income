@@ -1,7 +1,7 @@
 $input-border-color: $grey-light;
+$input-hover-border-color: $grey;
 $input-shadow: none;
 $input-focus-box-shadow-size: 0 0 0 0.1em inset;
-$input-hover-border-color: $grey;
 // $input-focus-border-color: $text;
 
 @import "../../node_modules/bulma/sass/elements/form";
@@ -9,6 +9,50 @@ $input-hover-border-color: $grey;
 .input {
   @include placeholder {
     color: rgba($input-color, 0.4); // To improve A11Y
+  }
+}
+
+.field.gi-has-addons {
+  .button {
+    border-color: $input-border-color;
+    border-left: 0;
+    border-radius: 0;
+    padding: 0 $gi-spacer;
+
+    &:first-of-type {
+      position: relative;
+
+      // Hide box-shadow between input and first button during :focus
+      &::before {
+        content: "";
+        position: absolute;
+        width: 6px;
+        background-color: $input-background-color;
+        top: 2px;
+        left: -3px;
+        height: calc(100% - 4px);
+      }
+    }
+
+    &:last-of-type {
+      border-radius: 0 $radius $radius 0;
+    }
+  }
+
+  .input {
+    border-right: 0;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    height: 100%;
+
+    &:hover ~ .button {
+      border-color: $input-hover-border-color;
+    }
+
+    &:focus ~ .button {
+      border-color: $primary;
+      box-shadow: $input-focus-box-shadow-size $input-focus-box-shadow-color;
+    }
   }
 }
 
