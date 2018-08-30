@@ -1,0 +1,8 @@
+$box-radius: $radius;
+$box-padding: $gi-spacer;
+$box-shadow: none;
+@import "../../node_modules/bulma/sass/elements/box";
+
+.box {
+  border: 1px solid $grey-lighter;
+}

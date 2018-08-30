@@ -7,3 +7,7 @@
 .has-text-warning {
   color: darken($warning, 10%) !important; // A11Y purposes
 }
+
+.has-text-success {
+  color: darken($success, 3%) !important; // A11Y purposes
+}

@@ -55,7 +55,7 @@ $speed: 300ms;
   left: 0;
   width: $gi-sidebarWidth;
   height: 100vh;
-  z-index: 100;
+  z-index: 10;
   flex-direction: column;
   // background: linear-gradient(210deg, rgba($primary, 0.15), $body-background-color 20rem); // diagonal gradient
   // background: linear-gradient(-90deg, $primary-bg-s, $body-background-color 15rem); // 90deg linear gradient

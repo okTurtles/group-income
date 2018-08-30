@@ -4,4 +4,8 @@
   width: 100%;
   max-width: 50rem;
   padding: 0;
+
+  &.is-hero {
+    padding-bottom: $gi-spacer-lg;
+  }
 }

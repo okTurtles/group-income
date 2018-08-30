@@ -12,7 +12,7 @@ $secondary: #a0d10e;
 $tertiary: #f89201;
 
 $success: saturate($secondary, 10%);
-$warning: lighten(adjust-hue($tertiary, 15%), 0%);
+$warning: lighten(adjust-hue($tertiary, 0%), 10%);
 $danger: lighten(adjust-hue($tertiary, -30%), 20%);
 $info: $primary-text;
 

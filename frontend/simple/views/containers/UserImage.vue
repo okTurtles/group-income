@@ -1,10 +1,13 @@
 <template>
-    <img :src="pictureURL" :alt="username">
+    <avatar :src="pictureURL" :alt="username"></avatar>
 </template>
 <script>
 import sbp from '../../../../shared/sbp.js'
+import Avatar from '../components/Avatar.vue'
+
 export default {
   name: 'UserImage',
+  components: { Avatar },
   props: ['username'],
   async mounted () {
     if (!this.profile) {
