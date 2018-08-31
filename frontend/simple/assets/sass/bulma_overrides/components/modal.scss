@@ -1,18 +1,21 @@
 $modal-content-margin-mobile: 0;
-$modal-content-margin-mobile: $gi-spacer-lg;
+$modal-content-margin-mobile: $gi-spacer-sm;
 
 $modal-card-head-background-color: $body-background-color;
 $modal-card-head-border-bottom: none;
 $modal-card-head-padding: $gi-spacer-lg $gi-spacer;
 $modal-card-title-line-height: inherit;
 $modal-card-foot-border-top: $modal-card-head-border-bottom;
-$modal-card-body-padding: 0;
+$modal-card-body-padding: $gi-spacer $gi-spacer-lg;
+$modal-z: $gi-zindex-modal;
 
 @import "../../node_modules/bulma/sass/components/modal";
 
 // Bulma customization variables are not enough
 
 .modal-card {
+  width: auto;
+
   .delete {
     position: absolute;
     top: $gi-spacer;
@@ -31,8 +34,6 @@ $modal-card-body-padding: 0;
   }
 
   @include tablet {
-    width: auto;
-
     &-head,
     &-body,
     &-foot {

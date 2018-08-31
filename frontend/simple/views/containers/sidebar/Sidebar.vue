@@ -53,9 +53,9 @@ $speed: 300ms;
   position: fixed;
   top: 0;
   left: 0;
-  width: $gi-sidebarWidth;
+  width: $gi-sidebar-width;
   height: 100vh;
-  z-index: 10;
+  z-index: $gi-zindex-header;
   flex-direction: column;
   // background: linear-gradient(210deg, rgba($primary, 0.15), $body-background-color 20rem); // diagonal gradient
   // background: linear-gradient(-90deg, $primary-bg-s, $body-background-color 15rem); // 90deg linear gradient
@@ -71,7 +71,7 @@ $speed: 300ms;
   }
 
   @include tablet {
-    width: $gi-sidebarWidth;
+    width: $gi-sidebar-width;
   }
 
   &-header {

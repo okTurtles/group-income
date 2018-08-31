@@ -32,7 +32,7 @@ body {
 
   @include tablet {
     padding: $gi-spacer-lg $gi-spacer*1.5;
-    margin-left: $gi-sidebarWidth;
+    margin-left: $gi-sidebar-width;
   }
 }
 

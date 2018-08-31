@@ -13,7 +13,7 @@
   bottom: 10px;
   left: 10%;
   width: 80%;
-  z-index: 99999;
+  z-index: $gi-zindex-tooltip;
   box-shadow: 0 2px 30px rgba(10, 10, 10, 0.1), 0 0 0 1px rgba(10, 10, 10, 0.1);
 }
 
