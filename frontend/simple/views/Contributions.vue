@@ -7,11 +7,12 @@
       <i18n tag="p">See everyone’s contributions to the group and manage yours.</i18n>
     </div>
 
-    <div class="section columns is-desktop is-multiline">
+    <div class="section columns is-desktop is-multiline c-grid">
       <section class="column">
         <i18n tag="h2" class="title is-3">Receiving</i18n>
 
-        <ul>
+        <!-- TODO: Think about isolating <contribution/> and <input /> -->
+        <ul class="c-ul">
           <li v-for="contribution in receiving"
             class="box is-compact has-controls c-contribution is-readonly"
             :class="{ 'is-editable': isMonetary(contribution.type) }"
@@ -23,12 +24,16 @@
               {{getWho(contribution.who)}}
               <template v-if="hasWhoElse(contribution.who)">
                 <i18n>and</i18n>
-                <button class="gi-is-unstyled gi-is-link-inherit" @click="showHowElse">{{contribution.who.length - 1}} <i18n>others</i18n></button>
+                <tooltip>
+                  <button class="gi-is-unstyled gi-is-link-inherit">{{contribution.who.length - 1}} <i18n>others</i18n></button>
+                  <template slot="tooltip">
+                    <p v-for="name, index in contribution.who" v-if="index > 1">{{name}}</p>
+                  </template>
+                </tooltip>
               </template>
             </p>
             <div class="box-controls">
               <button v-if="isMonetary(contribution.type)"
-                slot="actions"
                 class="button is-icon"
                 aria-label="[Edit Receiving mincome settings]"
                 @click="showReceivingSettings"
@@ -43,64 +48,69 @@
       <section class="column">
         <i18n tag="h2" class="title is-3">Giving</i18n>
 
-        <ul v-if="givesNonMonetary || givesMonetary">
-          <li v-for="contribution in giving.nonMonetary">
+        <ul class="c-ul" v-if="givesNonMonetary || givesMonetary">
+          <template v-for="contribution, index in giving.nonMonetary">
             <template v-if="givesNonMonetary">
-              <div class="box is-compact has-controls is-editable c-contribution"
-                v-if="true"
-              >
+              <li v-if="editingNonMonetaryIndex === index" class="field has-addons gi-has-addons c-form">
+                <input ref="inputEditNonMonetary"
+                  class="input"
+                  type="text"
+                  placeholder="Ex: Portuguese classes"
+                  maxlength="20"
+                  v-focus="contribution"
+                  @keyup="verifySave"
+                  @keyup.esc="cancelNonMonetary"
+                  @keyup.enter="isFilled ? submitEditNonMonetary(index) : deleteEditNonMonetary(index)"
+                >
+                <button class="button" @click="cancelNonMonetary">Cancel</button>
+                <button class="button has-text-primary" v-if="isFilled" @click="submitEditNonMonetary(index)">Save</button>
+                <button class="button has-text-primary" v-else @click="deleteEditNonMonetary(index)">Delete</button>
+              </li>
+
+              <li v-else class="box is-compact has-controls is-editable c-contribution">
                 <p class="box-body has-text-weight-bold">{{contribution}}</p>
                 <div class="box-controls">
-                  <button slot="actions"
-                    class="button is-icon"
-                    aria-label="[Edit NonMonetary contribution]"
-                    @click="editNonMonetary"
-                  >
+                  <button class="button is-icon" :aria-label="`Edit ${giving.monetary}`" @click="startEditNonMonetary(index)">
                     <i class="fa fa-edit"></i>
                   </button>
                 </div>
-              </div>
-
-              <div v-else class="box is-compact">
-                <div class="field has-addons c-form">
-                  <p class="control is-expanded">
-                    <input ref="newNonMonetaryValue" class="input" type="text" placeholder="Ex: Portuguese classes">
-                  </p>
-                  <p class="control">
-                    <button class="button" @click="createNonMonetaryMethod">Add</button>
-                  </p>
-                </div>
-              </div>
+              </li>
             </template>
 
-            <div v-if="givesMonetary" class="box is-compact has-controls is-editable c-contribution">
+            <li v-else-if="givesMonetary" class="box is-compact has-controls is-editable c-contribution">
               <p class="box-body has-text-weight-bold">
                 <strong>{{currency}}{{giving.monetary}}</strong> <i18n>to other's mincome</i18n>
               </p>
               <div class="box-controls">
-                <button slot="actions"
-                  class="button is-icon"
-                  aria-label="[Edit Giving mincome settings]"
-                  @click="showGivingMincomeSettings"
-                >
+                <button class="button is-icon" :aria-label="`Edit ${giving.monetary}`" @click="showGivingMincomeSettings">
                   <i class="fa fa-edit"></i>
                 </button>
               </div>
-            </div>
-          </li>
+            </li>
+          </template>
         </ul>
 
-        <ul>
-          <li v-if="!isCreatingNonMonetaryMethod">
-            <button class="box is-compact is-unfilled is-size-6 c-contribution" @click="addNoMonetaryMethod">
+        <ul class="c-ul">
+          <li v-if="!isCreatingNonMonetary">
+            <button class="box is-compact is-unfilled is-size-6 c-contribution" @click="startAddNonMonetary">
               <i class="fa fa-heart c-contribution-icon"></i>
               <i18n>Add a non-monetary method</i18n>
             </button>
           </li>
 
           <li v-else class="field has-addons gi-has-addons c-form">
-            <input ref="newNonMonetaryValue" class="input" type="text" placeholder="Ex: Portuguese classes">
-            <button class="button" @click="createNonMonetaryMethod">Add</button>
+            <input ref="inputNewNonMonetary"
+              class="input"
+              type="text"
+              placeholder="Ex: Portuguese classes"
+              maxlength="20"
+              v-focus
+              @keyup="verifySave"
+              @keyup.esc="cancelNonMonetary"
+              @keyup.enter="submitAddNonMonetary"
+            >
+            <button class="button" @click="cancelNonMonetary">Cancel</button>
+            <button class="button has-text-primary" v-if="isFilled" @click="submitAddNonMonetary">Add</button>
           </li>
 
           <li v-if="!givesMonetary">
@@ -116,6 +126,32 @@
 </template>
 <style lang="scss" scoped>
 @import "../assets/sass/theme/index";
+
+.c-grid .column {
+  @include touch {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  @include desktop {
+    &:first-child {
+      padding-left: 0;
+    }
+
+    &:last-child {
+      padding-right: 0;
+    }
+  }
+}
+
+.c-ul {
+  margin: $gi-spacer*0.75 0;
+}
+
+.c-contribution,
+.c-form {
+  min-height: 45px;
+}
 
 .c-contribution {
   width: 100%;
@@ -146,19 +182,15 @@
   }
 }
 
-.c-form {
-  height: 45px; // contribution list height - hardcoded
-}
 </style>
 <script>
 import { symbol } from './utils/currencies.js'
-import { List, ListItem } from './components/Lists'
+import Tooltip from './components/Tooltip.vue'
 
 export default {
   name: 'Contributions',
   components: {
-    List,
-    ListItem
+    Tooltip
   },
   data () {
     return {
@@ -189,7 +221,9 @@ export default {
         nonMonetary: [], // ArrayOf(String)
         monetary: null // Number
       },
-      isCreatingNonMonetaryMethod: false
+      isFilled: null,
+      isCreatingNonMonetary: false,
+      editingNonMonetaryIndex: null
     }
   },
   computed: {
@@ -201,44 +235,71 @@ export default {
     }
   },
   methods: {
+    // Receiving
     isMonetary (type) {
       return type === 'monetary'
     },
     getWho (who) {
-      if (Array.isArray(who)) {
-        return who.length > 3 ? who[0] : `${who[0]} and ${who[1]}`
+      if (!Array.isArray(who)) {
+        return who
       }
 
-      return who
+      return who.length > 3 ? who[0] : `${who[0]} and ${who[1]}`
     },
     hasWhoElse (who) {
       return Array.isArray(who) && who.length > 3
     },
-    showHowElse (contribution) {
-      console.log('TODO - Show Who else')
+    showGivingMincomeSettings () {
+      console.log('TODO UI - Show Giving Mincome Setting')
     },
     showReceivingSettings () {
-      console.log('TODO - Show Receiving Mincome Settings')
+      console.log('TODO UI - Show Receiving Setting')
     },
-    showGivingSettings () {
-      console.log('TODO - Show Giving Mincome Settings')
+
+    // Giving NonMonetary Methods:
+    startAddNonMonetary () {
+      this.cancelNonMonetary()
+      this.isFilled = false
+      this.isCreatingNonMonetary = true
     },
-    editNonMonetary (contribution) {
-      console.log('TODO - Edit NonMonetary Item')
+    startEditNonMonetary (contributionIndex) {
+      this.cancelNonMonetary()
+      this.isFilled = true
+      this.editingNonMonetaryIndex = contributionIndex
     },
-    addNoMonetaryMethod () {
-      this.isCreatingNonMonetaryMethod = true
+    cancelNonMonetary () {
+      this.isCreatingNonMonetary = false
+      this.editingNonMonetaryIndex = null
     },
+    submitAddNonMonetary () {
+      console.log('TODO BE - submitAddNonMonetary')
+      this.giving.nonMonetary.push(this.$refs.inputNewNonMonetary.value)
+      this.cancelNonMonetary()
+    },
+    submitEditNonMonetary (index) {
+      console.log('TODO BE - submitEditNonMonetary')
+      this.giving.nonMonetary[index] = this.$refs.inputEditNonMonetary[0].value
+      this.cancelNonMonetary()
+    },
+    deleteEditNonMonetary (index) {
+      console.log('TODO BE - deleteEditNonMonetary')
+      this.giving.nonMonetary.splice(index, 1)
+      this.cancelNonMonetary()
+    },
+
+    // Giving Monetary Methods:
     addMonetaryMethod () {
-      console.log('TODO - Show Monetary Settings')
+      console.log('TODO UI & BE - Show Monetary Settings')
     },
-    createNonMonetaryMethod () {
-      console.log('TODO - createNonMonetaryMethod')
-      if (!this.$refs.newNonMonetaryValue.value) {
-        console.warn('Write something!')
-      } else {
-        this.giving.nonMonetary.push(this.$refs.newNonMonetaryValue.value)
-        this.isCreatingNonMonetaryMethod = false
+    verifySave (event) {
+      this.isFilled = !!event.target.value
+    }
+  },
+  directives: {
+    focus: {
+      inserted (el, binding) {
+        if (binding.value) { el.value = binding.value } // set "contribution" as default.value
+        el.focus()
       }
     }
   }
