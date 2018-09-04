@@ -1,13 +1,12 @@
 <template>
-  <li class="c-item" :class="itemClasses">
+  <li class="c-item" :class="{ 'has-divider': hasDivider }">
     <component :is="tag"
-      :class="contentClasses"
+      :class="itemLinkClasses"
       :active-class="tag === 'router-link' && 'is-active'"
       v-bind="$attrs" v-on="$listeners"
     >
-      <i class="fa c-item-icon" :class="{ [`fa-${icon}`]: icon }" v-if="icon"></i>
-      <span class="c-item-slot"><slot></slot></span>
-      <slot name="actions"></slot>
+      <i class="fa" :class="{ [`fa-${icon}`]: icon }" v-if="icon"></i>
+      <span class="c-item-text"><slot></slot></span>
       <span class="c-item-badge" v-if="badgeCount">{{badgeCount}}</span>
     </component>
   </li>
@@ -15,29 +14,19 @@
 <style lang="scss" scoped>
 @import "../../../assets/sass/theme/index";
 
-$list-spacer: $gi-spacer * 0.75;
-
 .c-item {
   &.has-divider {
     margin-bottom: $gi-spacer-sm;
     padding-bottom: $gi-spacer-sm;
     border-bottom: 1px solid $grey-lighter;
   }
-
-  &.has-margin {
-    margin-bottom: $list-spacer;
-  }
 }
 
-.c-item-icon {
-  color: $grey;
-  margin-right: $gi-spacer;
-}
-
-.c-item-content {
+.c-item-link {
   width: 100%;
   padding: $gi-spacer-sm;
   color: $text;
+  cursor: pointer;
   border-radius: $radius;
 
   &.no-radius {
@@ -48,62 +37,31 @@ $list-spacer: $gi-spacer * 0.75;
     color: $grey;
   }
 
-  &.solid,
-  &.unfilled {
-    padding: $list-spacer $gi-spacer;
+  .fa {
+    color: $grey;
+    margin-right: $gi-spacer;
   }
 
-  &.solid {
-    background-color: $white-ter;
-
-    &.has-interaction {
-      background-color: $primary-bg-s;
-    }
-  }
-
-  &.unfilled {
-    border: 1px dashed $primary;
-
-    .c-item-icon {
-      color: $primary;
-    }
-  }
-
-  &.has-actions {
+  &:hover,
+  &:focus {
     background-color: $primary-bg-a;
-    // To makeup for action square buttons height
-    padding: 0 $gi-spacer-sm 0 0;
+
+    .fa {
+      color: inherit;
+    }
   }
 
   &.is-active {
     font-weight: 600;
 
-    .c-item-icon {
+    .fa {
       color: $primary;
-    }
-  }
-
-  &.has-interaction {
-    cursor: pointer;
-
-    &:hover,
-    &:focus {
-      background-color: $primary-bg-a;
-
-      .c-item-icon {
-        color: inherit;
-      }
     }
   }
 }
 
-.c-item-slot {
+.c-item-text {
   flex-grow: 1;
-
-  .has-actions & {
-    // To makeup for action square buttons height
-    padding: $list-spacer $gi-spacer;
-  }
 }
 
 .c-item-badge {
@@ -128,36 +86,25 @@ export default {
     isActive: Boolean,
     tag: {
       validator (value) {
-        return ['router-link', 'a', 'button', 'div'].includes(value)
+        return ['router-link', 'a', 'button', 'div'].indexOf(value) > -1
       },
       default: 'div',
-      required: false
+      required: true
     },
     variant: {
       validator (value) {
-        return ['secondary', 'solid', 'unfilled'].includes(value)
-      },
-      required: false
+        return ['secondary'].indexOf(value) > -1
+      }
     }
   },
   inheritAttrs: false,
   computed: {
-    itemClasses () {
+    itemLinkClasses () {
       return {
-        'has-divider': this.hasDivider,
-        'has-margin': this.variant === 'solid' || this.variant === 'unfilled'
-      }
-    },
-    contentClasses () {
-      return {
-        'c-item-content level is-flex gi-is-justify-between gi-is-unstyled': true,
+        'c-item-link level gi-is-justify-between gi-is-unstyled': true,
         'secondary': this.variant === 'secondary',
-        'solid': this.variant === 'solid',
-        'unfilled': this.variant === 'unfilled',
         'no-radius': this.disableRadius,
-        'has-interaction': ['router-link', 'a', 'button'].includes(this.tag),
-        'is-active': this.isActive,
-        'has-actions': !!this.$slots.actions
+        'is-active': this.isActive
       }
     }
   }
