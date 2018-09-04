@@ -11,37 +11,28 @@
       <section class="column">
         <i18n tag="h2" class="title is-3">Receiving</i18n>
 
-        <!-- TODO: Think about isolating <contribution/> and <input /> -->
         <ul class="c-ul">
-          <li v-for="contribution in receiving"
-            class="box is-compact has-controls c-contribution is-readonly"
-            :class="{ 'is-editable': isMonetary(contribution.type) }"
+          <contribution
+            v-for="contribution in receiving"
+            :variant="isMonetary(contribution.type) ? 'editable' : 'readonly'"
+            @edit-click="isMonetary(contribution.type) && showReceivingSettings"
+            :editAriaLabel="isMonetary(contribution.type) ? '[Edit Receiving mincome settings]' : ''"
           >
-            <p class="box-body">
-              <strong v-if="isMonetary(contribution.type)">{{currency}}{{contribution.what}} <i18n>for mincome</i18n></strong>
-              <strong v-else>{{contribution.what}}</strong>
-              <i18n>from</i18n>
-              {{getWho(contribution.who)}}
-              <template v-if="hasWhoElse(contribution.who)">
-                <i18n>and</i18n>
-                <tooltip>
-                  <button class="gi-is-unstyled gi-is-link-inherit">{{contribution.who.length - 1}} <i18n>others</i18n></button>
-                  <template slot="tooltip">
-                    <p v-for="name, index in contribution.who" v-if="index > 1">{{name}}</p>
-                  </template>
-                </tooltip>
-              </template>
-            </p>
-            <div class="box-controls">
-              <button v-if="isMonetary(contribution.type)"
-                class="button is-icon"
-                aria-label="[Edit Receiving mincome settings]"
-                @click="showReceivingSettings"
-              >
-                <i class="fa fa-edit"></i>
-              </button>
-            </div>
-          </li>
+            <!-- TODO: dry this copy... so hard to read -->
+            <strong v-if="isMonetary(contribution.type)">{{currency}}{{contribution.what}} <i18n>for mincome</i18n></strong>
+            <strong v-else>{{contribution.what}}</strong>
+            <i18n>from</i18n>
+            {{getWho(contribution.who)}}
+            <template v-if="hasWhoElse(contribution.who)">
+              <i18n>and</i18n>
+              <tooltip>
+                <button class="gi-is-unstyled gi-is-link-inherit">{{contribution.who.length - 1}}<i18n>others</i18n></button>
+                <template slot="tooltip">
+                  <p v-for="name, index in contribution.who" v-if="index > 1">{{name}}</p>
+                </template>
+              </tooltip>
+            </template>
+          </contribution>
         </ul>
       </section>
 
@@ -51,51 +42,55 @@
         <ul class="c-ul" v-if="givesNonMonetary || givesMonetary">
           <template v-for="contribution, index in giving.nonMonetary">
             <template v-if="givesNonMonetary">
-              <li v-if="editingNonMonetaryIndex === index" class="field has-addons gi-has-addons c-form">
+              <li v-if="editingNonMonetaryIndex === index"
+                class="field has-addons gi-has-addons c-form"
+              >
+              <!-- TODO: Think about isolating this input - maybe part of contribution state. -->
+
                 <input ref="inputEditNonMonetary"
                   class="input"
                   type="text"
                   placeholder="Ex: Portuguese classes"
                   maxlength="20"
                   v-focus="contribution"
-                  @keyup="verifySave"
+                  @keyup="verifyValue"
                   @keyup.esc="cancelNonMonetary"
                   @keyup.enter="isFilled ? submitEditNonMonetary(index) : deleteEditNonMonetary(index)"
                 >
                 <button class="button" @click="cancelNonMonetary">Cancel</button>
                 <button class="button has-text-primary" v-if="isFilled" @click="submitEditNonMonetary(index)">Save</button>
-                <button class="button has-text-primary" v-else @click="deleteEditNonMonetary(index)">Delete</button>
+                <button class="button has-text-danger" v-else @click="deleteEditNonMonetary(index)">Delete</button>
               </li>
 
-              <li v-else class="box is-compact has-controls is-editable c-contribution">
-                <p class="box-body has-text-weight-bold">{{contribution}}</p>
-                <div class="box-controls">
-                  <button class="button is-icon" :aria-label="`Edit ${giving.monetary}`" @click="startEditNonMonetary(index)">
-                    <i class="fa fa-edit"></i>
-                  </button>
-                </div>
-              </li>
+              <!-- @new-value="handleNonMonetaryValue(value, index)" -->
+              <!-- TODO REVIEW - should we isolate the edit ui logic and not being here in this page...
+              contrainers/views should only have business logic, not ui logic -->
+              <contribution v-else
+                variant="editable"
+                @edit-click="startEditNonMonetary(index)"
+                editAriaLabel="Edit"
+                class="has-text-weight-bold"
+              >
+                {{contribution}}
+              </contribution>
             </template>
 
-            <li v-else-if="givesMonetary" class="box is-compact has-controls is-editable c-contribution">
-              <p class="box-body has-text-weight-bold">
-                <strong>{{currency}}{{giving.monetary}}</strong> <i18n>to other's mincome</i18n>
-              </p>
-              <div class="box-controls">
-                <button class="button is-icon" :aria-label="`Edit ${giving.monetary}`" @click="showGivingMincomeSettings">
-                  <i class="fa fa-edit"></i>
-                </button>
-              </div>
-            </li>
+            <contribution v-else-if="givesMonetary"
+              variant="editable"
+              @edit-click="showGivingMincomeSettings"
+              editAriaLabel="Edit giving monetary method settings"
+            >
+              <span class="has-text-weight-bold">{{currency}}{{giving.monetary}}</span> <i18n>to other's mincome</i18n>
+            </contribution>
           </template>
         </ul>
 
         <ul class="c-ul">
           <li v-if="!isCreatingNonMonetary">
-            <button class="box is-compact is-unfilled is-size-6 c-contribution" @click="startAddNonMonetary">
+            <contribution tag="button" variant="unfilled" @click="startAddNonMonetary">
               <i class="fa fa-heart c-contribution-icon"></i>
               <i18n>Add a non-monetary method</i18n>
-            </button>
+            </contribution>
           </li>
 
           <li v-else class="field has-addons gi-has-addons c-form">
@@ -105,19 +100,20 @@
               placeholder="Ex: Portuguese classes"
               maxlength="20"
               v-focus
-              @keyup="verifySave"
+              @keyup="verifyValue"
               @keyup.esc="cancelNonMonetary"
               @keyup.enter="submitAddNonMonetary"
             >
+            <!-- TODO I18N tags -->
             <button class="button" @click="cancelNonMonetary">Cancel</button>
             <button class="button has-text-primary" v-if="isFilled" @click="submitAddNonMonetary">Add</button>
           </li>
 
           <li v-if="!givesMonetary">
-            <button class="box is-compact is-unfilled is-size-6 c-contribution" @click="addMonetaryMethod">
+            <contribution tag="button" variant="unfilled" @click="addMonetaryMethod">
               <i class="fa fa-money c-contribution-icon"></i>
               <i18n>Add a monetary method</i18n>
-            </button>
+            </contribution>
           </li>
         </ul>
       </section>
@@ -148,48 +144,20 @@
   margin: $gi-spacer*0.75 0;
 }
 
-.c-contribution,
 .c-form {
-  min-height: 45px;
-}
-
-.c-contribution {
-  width: 100%;
-
-  &.is-readonly {
-    border: none;
-    background-color: $white-ter;
-  }
-
-  &.is-editable {
-    border: none;
-    background-color: $primary-bg-a;
-  }
-
-  &.is-unfilled {
-    cursor: pointer;
-    text-align: left;
-
-    &:hover,
-    &:focus {
-      background-color: $primary-bg-a;
-    }
-  }
-
-  &-icon {
-    color: $primary;
-    margin-right: $gi-spacer-sm;
-  }
+  min-height: 45px; // TODO REVIEW hardcoded value
 }
 
 </style>
 <script>
 import { symbol } from './utils/currencies.js'
+import Contribution from './components/Contribution/Contribution.vue'
 import Tooltip from './components/Tooltip.vue'
 
 export default {
   name: 'Contributions',
   components: {
+    Contribution,
     Tooltip
   },
   data () {
@@ -291,7 +259,7 @@ export default {
     addMonetaryMethod () {
       console.log('TODO UI & BE - Show Monetary Settings')
     },
-    verifySave (event) {
+    verifyValue (event) {
       this.isFilled = !!event.target.value
     }
   },
