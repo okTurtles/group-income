@@ -14,9 +14,8 @@
         <ul class="c-ul">
           <contribution
             v-for="contribution in receiving"
-            :variant="isMonetary(contribution.type) ? 'editable' : 'readonly'"
-            @edit-click="isMonetary(contribution.type) && showReceivingSettings"
-            :editAriaLabel="isMonetary(contribution.type) ? '[Edit Receiving mincome settings]' : ''"
+            :variant="isMonetary(contribution.type) ? 'editable' : undefined"
+            v-on="isMonetary(contribution.type) ? { click: showReceivingSettings } : {}"
           >
             <!-- TODO: dry this copy... so hard to read -->
             <strong v-if="isMonetary(contribution.type)">{{currency}}{{contribution.what}} <i18n>for mincome</i18n></strong>
@@ -40,81 +39,31 @@
         <i18n tag="h2" class="title is-3">Giving</i18n>
 
         <ul class="c-ul" v-if="givesNonMonetary || givesMonetary">
-          <template v-for="contribution, index in giving.nonMonetary">
-            <template v-if="givesNonMonetary">
-              <li v-if="editingNonMonetaryIndex === index"
-                class="field has-addons gi-has-addons c-form"
-              >
-              <!-- TODO: Think about isolating this input - maybe part of contribution state. -->
+          <contribution
+            v-for="contribution, index in giving.nonMonetary"
+            class="has-text-weight-bold"
+            variant="editable"
+            @new-value="(value) => handleEditNonMonetary(value, index)"
+          >{{contribution}}</contribution>
 
-                <input ref="inputEditNonMonetary"
-                  class="input"
-                  type="text"
-                  placeholder="Ex: Portuguese classes"
-                  maxlength="20"
-                  v-focus="contribution"
-                  @keyup="verifyValue"
-                  @keyup.esc="cancelNonMonetary"
-                  @keyup.enter="isFilled ? submitEditNonMonetary(index) : deleteEditNonMonetary(index)"
-                >
-                <button class="button" @click="cancelNonMonetary">Cancel</button>
-                <button class="button has-text-primary" v-if="isFilled" @click="submitEditNonMonetary(index)">Save</button>
-                <button class="button has-text-danger" v-else @click="deleteEditNonMonetary(index)">Delete</button>
-              </li>
-
-              <!-- @new-value="handleNonMonetaryValue(value, index)" -->
-              <!-- TODO REVIEW - should we isolate the edit ui logic and not being here in this page...
-              contrainers/views should only have business logic, not ui logic -->
-              <contribution v-else
-                variant="editable"
-                @edit-click="startEditNonMonetary(index)"
-                editAriaLabel="Edit"
-                class="has-text-weight-bold"
-              >
-                {{contribution}}
-              </contribution>
-            </template>
-
-            <contribution v-else-if="givesMonetary"
-              variant="editable"
-              @edit-click="showGivingMincomeSettings"
-              editAriaLabel="Edit giving monetary method settings"
-            >
-              <span class="has-text-weight-bold">{{currency}}{{giving.monetary}}</span> <i18n>to other's mincome</i18n>
-            </contribution>
-          </template>
+          <contribution v-if="givesMonetary"
+            variant="editable"
+            @click="showGivingMincomeSettings"
+          >
+            <span class="has-text-weight-bold">{{currency}}{{giving.monetary}}</span> <i18n>to other's mincome</i18n>
+          </contribution>
         </ul>
 
         <ul class="c-ul">
-          <li v-if="!isCreatingNonMonetary">
-            <contribution tag="button" variant="unfilled" @click="startAddNonMonetary">
-              <i class="fa fa-heart c-contribution-icon"></i>
-              <i18n>Add a non-monetary method</i18n>
-            </contribution>
-          </li>
+          <contribution variant="unfilled" @new-value="submitAddNonMonetary">
+            <i class="fa fa-heart c-contribution-icon"></i>
+            <i18n>Add a non-monetary method</i18n>
+          </contribution>
 
-          <li v-else class="field has-addons gi-has-addons c-form">
-            <input ref="inputNewNonMonetary"
-              class="input"
-              type="text"
-              placeholder="Ex: Portuguese classes"
-              maxlength="20"
-              v-focus
-              @keyup="verifyValue"
-              @keyup.esc="cancelNonMonetary"
-              @keyup.enter="submitAddNonMonetary"
-            >
-            <!-- TODO I18N tags -->
-            <button class="button" @click="cancelNonMonetary">Cancel</button>
-            <button class="button has-text-primary" v-if="isFilled" @click="submitAddNonMonetary">Add</button>
-          </li>
-
-          <li v-if="!givesMonetary">
-            <contribution tag="button" variant="unfilled" @click="addMonetaryMethod">
-              <i class="fa fa-money c-contribution-icon"></i>
-              <i18n>Add a monetary method</i18n>
-            </contribution>
-          </li>
+          <contribution v-if="!givesMonetary" variant="unfilled" @click="addMonetaryMethod">
+            <i class="fa fa-money c-contribution-icon" aria-hidden="true"></i>
+            <i18n>Add a monetary method</i18n>
+          </contribution>
         </ul>
       </section>
     </div>
@@ -143,11 +92,6 @@
 .c-ul {
   margin: $gi-spacer*0.75 0;
 }
-
-.c-form {
-  min-height: 45px; // TODO REVIEW hardcoded value
-}
-
 </style>
 <script>
 import { symbol } from './utils/currencies.js'
@@ -188,10 +132,7 @@ export default {
       giving: {
         nonMonetary: [], // ArrayOf(String)
         monetary: null // Number
-      },
-      isFilled: null,
-      isCreatingNonMonetary: false,
-      editingNonMonetaryIndex: null
+      }
     }
   },
   computed: {
@@ -224,51 +165,25 @@ export default {
       console.log('TODO UI - Show Receiving Setting')
     },
 
-    // Giving NonMonetary Methods:
-    startAddNonMonetary () {
-      this.cancelNonMonetary()
-      this.isFilled = false
-      this.isCreatingNonMonetary = true
-    },
-    startEditNonMonetary (contributionIndex) {
-      this.cancelNonMonetary()
-      this.isFilled = true
-      this.editingNonMonetaryIndex = contributionIndex
-    },
-    cancelNonMonetary () {
-      this.isCreatingNonMonetary = false
-      this.editingNonMonetaryIndex = null
-    },
-    submitAddNonMonetary () {
+    // Giving
+    submitAddNonMonetary (value) {
       console.log('TODO BE - submitAddNonMonetary')
-      this.giving.nonMonetary.push(this.$refs.inputNewNonMonetary.value)
-      this.cancelNonMonetary()
+      this.giving.nonMonetary.push(value)
     },
-    submitEditNonMonetary (index) {
-      console.log('TODO BE - submitEditNonMonetary')
-      this.giving.nonMonetary[index] = this.$refs.inputEditNonMonetary[0].value
-      this.cancelNonMonetary()
-    },
-    deleteEditNonMonetary (index) {
-      console.log('TODO BE - deleteEditNonMonetary')
-      this.giving.nonMonetary.splice(index, 1)
-      this.cancelNonMonetary()
+    handleEditNonMonetary (value, index) {
+      if (!value) {
+        console.log('TODO BE - deleteNonMonetary')
+        this.giving.nonMonetary.splice(index, 1)
+      } else {
+        console.log('TODO BE - editNonMonetary')
+        // https://vuejs.org/v2/guide/list.html#Caveats
+        this.$set(this.giving.nonMonetary, index, value)
+      }
     },
 
     // Giving Monetary Methods:
     addMonetaryMethod () {
       console.log('TODO UI & BE - Show Monetary Settings')
-    },
-    verifyValue (event) {
-      this.isFilled = !!event.target.value
-    }
-  },
-  directives: {
-    focus: {
-      inserted (el, binding) {
-        if (binding.value) { el.value = binding.value } // set "contribution" as default.value
-        el.focus()
-      }
     }
   }
 }
