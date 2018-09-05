@@ -28,7 +28,7 @@
         :aria-label="editAriaLabel"
         @click="handleEditClick"
       >
-        <i class="fa fa-edit" aria-hidden="true"></i>
+        <i class="fa" :class="iconClass" aria-hidden="true"></i>
       </button>
     </div>
   </li>
@@ -87,6 +87,13 @@ export default {
   props: {
     variant: {
       type: String,
+      validator (value) {
+        return [
+          'default', // grey box just to read the content
+          'unfilled', // dashed box interactive to add a new contribution
+          'editable' // blue box to edit a contribution
+        ].indexOf(value) > -1
+      },
       default: 'default'
     }
   },
@@ -94,8 +101,8 @@ export default {
     return {
       isAdding: false,
       isEditing: false,
-      editingIndex: null,
-      isFilled: null
+      isFilled: null, // when true, show add/save button.
+      placeholders: [this.L('Portuguese classes'), this.L('Programming'), this.L('Cooking'), this.L('Parties'), this.L('Free cinema tickets')]
     }
   },
   computed: {
@@ -116,8 +123,10 @@ export default {
       return this.L('Edit contribution settings')
     },
     randomPlaceholder () {
-      // TODO random placeholder
-      return 'Portuguese classes'
+      return this.placeholders[Math.floor(Math.random() * this.placeholders.length)]
+    },
+    iconClass () {
+      return this.$listeners.click ? 'fa-ellipsis-v' : 'fa-edit'
     }
   },
   methods: {
@@ -136,7 +145,6 @@ export default {
         this.isFilled = true
       }
     },
-
     verifyValue (event) {
       this.isFilled = !!event.target.value
     },

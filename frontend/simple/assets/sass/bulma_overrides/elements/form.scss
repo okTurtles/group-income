@@ -35,6 +35,11 @@ $input-focus-box-shadow-size: 0 0 0 0.1em inset;
       border-right-width: 1px;
       padding-right: $gi-spacer;
     }
+
+    &:hover,
+    &:focus {
+      color: $text !important; // overide has-text-* class
+    }
   }
 
   .input {

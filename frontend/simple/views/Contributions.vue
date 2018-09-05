@@ -13,12 +13,11 @@
 
         <ul class="c-ul">
           <contribution
-            v-for="contribution in receiving"
+            v-for="contribution, index in receiving"
             :variant="isMonetary(contribution.type) ? 'editable' : undefined"
             v-on="isMonetary(contribution.type) ? { click: showReceivingSettings } : {}"
           >
-            <!-- TODO: dry this copy... so hard to read -->
-            <strong v-if="isMonetary(contribution.type)">{{currency}}{{contribution.what}} <i18n>for mincome</i18n></strong>
+            <strong v-if="isMonetary(contribution.type)">{{textGivingMonetary(index)}}</strong>
             <strong v-else>{{contribution.what}}</strong>
             <i18n>from</i18n>
             {{getWho(contribution.who)}}
@@ -27,7 +26,7 @@
               <tooltip>
                 <button class="gi-is-unstyled gi-is-link-inherit">{{contribution.who.length - 1}}<i18n>others</i18n></button>
                 <template slot="tooltip">
-                  <p v-for="name, index in contribution.who" v-if="index > 1">{{name}}</p>
+                  <p v-for="name, index in contribution.who" v-if="index > 0">{{name}}</p>
                 </template>
               </tooltip>
             </template>
@@ -56,7 +55,7 @@
 
         <ul class="c-ul">
           <contribution variant="unfilled" @new-value="submitAddNonMonetary">
-            <i class="fa fa-heart c-contribution-icon"></i>
+            <i class="fa fa-heart c-contribution-icon" aria-hidden="true"></i>
             <i18n>Add a non-monetary method</i18n>
           </contribution>
 
@@ -158,11 +157,17 @@ export default {
     hasWhoElse (who) {
       return Array.isArray(who) && who.length > 3
     },
+    textGivingMonetary (index) {
+      return this.L('{currency}{amount} for mincome', {
+        currency: this.currency,
+        amount: this.receiving[index].what
+      })
+    },
     showGivingMincomeSettings () {
-      console.log('TODO UI - Show Giving Mincome Setting')
+      console.log('TODO UI - Show Giving Mincome Setting - next PR')
     },
     showReceivingSettings () {
-      console.log('TODO UI - Show Receiving Setting')
+      console.log('TODO UI - Show Receiving Setting - next PR')
     },
 
     // Giving
@@ -183,7 +188,7 @@ export default {
 
     // Giving Monetary Methods:
     addMonetaryMethod () {
-      console.log('TODO UI & BE - Show Monetary Settings')
+      console.log('TODO UI - Show Monetary Settings Modal - next PR')
     }
   }
 }
