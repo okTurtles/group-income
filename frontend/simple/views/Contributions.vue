@@ -94,7 +94,7 @@
 }
 </style>
 <script>
-import { symbol } from './utils/currencies.js'
+import currencies from './utils/currencies.js'
 import Contribution from './components/Contribution.vue'
 import Tooltip from './components/Tooltip.vue'
 
@@ -106,7 +106,7 @@ export default {
   },
   data () {
     return {
-      currency: symbol('USD'),
+      currency: currencies['USD'],
       receiving: [
         {
           type: 'no-monetary',
