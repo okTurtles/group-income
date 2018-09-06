@@ -15,9 +15,11 @@
           <contribution
             v-for="contribution, index in receiving"
             :variant="isMonetary(contribution.type) ? 'editable' : undefined"
-            v-on="isMonetary(contribution.type) ? { click: showReceivingSettings } : {}"
+            v-on="isMonetary(contribution.type) ? { 'control-click': showReceivingSettings } : {}"
           >
-            <strong v-if="isMonetary(contribution.type)">{{textGivingMonetary(index)}}</strong>
+            <i18n tag="strong"v-if="isMonetary(contribution.type)"
+              :args="{ currency, amount: receiving[index].what}"
+            >{currency}{amount} for mincome</i18n>
             <strong v-else>{{contribution.what}}</strong>
             <i18n>from</i18n>
             {{getWho(contribution.who)}}
@@ -38,8 +40,7 @@
         <i18n tag="h2" class="title is-3">Giving</i18n>
 
         <ul class="c-ul" v-if="givesNonMonetary || givesMonetary">
-          <contribution
-            v-for="contribution, index in giving.nonMonetary"
+          <contribution v-for="contribution, index in giving.nonMonetary"
             class="has-text-weight-bold"
             variant="editable"
             @new-value="(value) => handleEditNonMonetary(value, index)"
@@ -47,7 +48,7 @@
 
           <contribution v-if="givesMonetary"
             variant="editable"
-            @click="showGivingMincomeSettings"
+            @control-click="showGivingMincomeSettings"
           >
             <span class="has-text-weight-bold">{{currency}}{{giving.monetary}}</span> <i18n>to other's mincome</i18n>
           </contribution>
@@ -59,7 +60,7 @@
             <i18n>Add a non-monetary method</i18n>
           </contribution>
 
-          <contribution v-if="!givesMonetary" variant="unfilled" @click="addMonetaryMethod">
+          <contribution v-if="!givesMonetary" variant="unfilled" @control-click="addMonetaryMethod">
             <i class="fa fa-money c-contribution-icon" aria-hidden="true"></i>
             <i18n>Add a monetary method</i18n>
           </contribution>
@@ -94,7 +95,7 @@
 </style>
 <script>
 import { symbol } from './utils/currencies.js'
-import Contribution from './components/Contribution/Contribution.vue'
+import Contribution from './components/Contribution.vue'
 import Tooltip from './components/Tooltip.vue'
 
 export default {
@@ -156,12 +157,6 @@ export default {
     },
     hasWhoElse (who) {
       return Array.isArray(who) && who.length > 3
-    },
-    textGivingMonetary (index) {
-      return this.L('{currency}{amount} for mincome', {
-        currency: this.currency,
-        amount: this.receiving[index].what
-      })
     },
     showGivingMincomeSettings () {
       console.log('TODO UI - Show Giving Mincome Setting - next PR')

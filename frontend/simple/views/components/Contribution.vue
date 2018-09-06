@@ -1,21 +1,24 @@
 <template>
-  <li class="field has-addons gi-has-addons c-form"
-    v-if="isEditing || isAdding"
-  >
-    <input ref="input" type="text"
-      class="input"
-      :placeholder="randomPlaceholder"
-      maxlength="20"
-      v-focus="isEditing && $slots.default[0].text"
-      @keyup="verifyValue"
-      @keyup.esc="cancel"
-      @keyup.enter="handleSubmit"
-    >
+  <li v-if="isEditing || isAdding" class="c-item">
+    <p class="field has-addons gi-has-addons c-form">
+      <input ref="input" type="text"
+        class="input"
+        :placeholder="randomPlaceholder"
+        maxlength="20"
+        :aria-label="L('Your contribution')"
+        :aria-invalid="hasError"
+        v-focus="isEditing && $slots.default[0].text"
+        @keyup="verifyValue"
+        @keyup.esc="cancel"
+        @keyup.enter="handleEnter"
+      >
 
-    <i18n tag="button" class="button" @click="cancel">Cancel</i18n>
-    <i18n tag="button" class="button has-text-primary" v-if="isAdding && isFilled" @click="handleSubmit">Add</i18n>
-    <i18n tag="button" class="button has-text-primary" v-if="isEditing && isFilled" @click="handleSubmit">Save</i18n>
-    <i18n tag="button" class="button has-text-danger" v-if="isEditing && !isFilled" @click="handleSubmit">Delete</i18n>
+      <i18n tag="button" class="button" @click="cancel">Cancel</i18n>
+      <i18n tag="button" class="button has-text-primary" v-if="isAdding && isFilled" @click="handleSubmit">Add</i18n>
+      <i18n tag="button" class="button has-text-primary" v-if="isEditing && isFilled" @click="handleSubmit">Save</i18n>
+      <i18n tag="button" class="button has-text-danger" v-if="isEditing && !isFilled" @click="handleDelete">Delete</i18n>
+    </p>
+    <p v-if="hasError" class="is-size-7 has-text-weight-normal has-text-danger c-error" role="alert">{{this.hasError}}</p>
   </li>
 
   <li v-else-if="isEditable" :class="itemClasses">
@@ -44,11 +47,19 @@
   </li>
 </template>
 <style lang="scss" scoped>
-@import "../../../assets/sass/theme/index";
+@import "../../assets/sass/theme/index";
+
+.c-item {
+  margin-bottom: $gi-spacer * 0.75;
+}
 
 .c-contribution,
 .c-form {
-  min-height: 45px;
+  min-height: 2.8125rem; // 45px - input and box are aligned to the pixel
+}
+
+.c-error {
+  margin-top: -$gi-spacer-sm; // reduce the spacing between error and input
 }
 
 .c-contribution {
@@ -102,6 +113,7 @@ export default {
       isAdding: false,
       isEditing: false,
       isFilled: null, // when true, show add/save button.
+      hasError: false,
       placeholders: [this.L('Portuguese classes'), this.L('Programming'), this.L('Cooking'), this.L('Parties'), this.L('Free cinema tickets')]
     }
   },
@@ -119,6 +131,9 @@ export default {
     isUnfilled () {
       return this.variant === 'unfilled'
     },
+    hasControlClickListener () {
+      return !!this.$listeners['control-click']
+    },
     editAriaLabel () {
       return this.L('Edit contribution settings')
     },
@@ -126,41 +141,55 @@ export default {
       return this.placeholders[Math.floor(Math.random() * this.placeholders.length)]
     },
     iconClass () {
-      return this.$listeners.click ? 'fa-ellipsis-v' : 'fa-edit'
+      return this.hasControlClickListener ? 'fa-ellipsis-v' : 'fa-edit'
     }
   },
   methods: {
     handleClick () {
-      if (this.$listeners.click) {
-        this.$listeners.click()
+      if (this.hasControlClickListener) {
+        this.$emit('control-click')
       } else {
         this.isAdding = true
       }
     },
-    handleEditClick () {
-      if (this.$listeners.click) {
-        this.$listeners.click()
+    handleEditClick (e) {
+      if (this.hasControlClickListener) {
+        this.$emit('control-click')
       } else {
         this.isEditing = true
         this.isFilled = true
       }
     },
     verifyValue (event) {
-      this.isFilled = !!event.target.value
+      this.isFilled = !!event.target.value.trim()
     },
     cancel () {
       this.isAdding = false
       this.isEditing = false
       this.isFilled = false
+      this.hasError = false
     },
-    handleSubmit () {
+    handleEnter () {
+      return this.isFilled ? this.handleSubmit() : this.handleDelete()
+    },
+    handleDelete () {
       this.$emit('new-value', this.$refs.input.value)
       this.cancel()
+    },
+    handleSubmit () {
+      const text = this.$refs.input.value
+
+      if (text.trim() === '') {
+        this.hasError = this.L(`Whitespaces characters aren't a really contribution`)
+      } else {
+        this.$emit('new-value', text)
+        this.cancel()
+      }
     }
   },
   directives: {
     focus: {
-      inserted (el, binding) {
+      inserted (el, binding, vnode) {
         // This was the only working way I've found to set "contribution" as defaultValue
         if (binding.value) { el.value = binding.value }
         el.focus()
