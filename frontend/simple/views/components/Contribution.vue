@@ -161,7 +161,7 @@ export default {
       }
     },
     verifyValue (event) {
-      this.isFilled = !!event.target.value.trim()
+      this.isFilled = !!event.target.value
     },
     cancel () {
       this.isAdding = false
@@ -169,8 +169,11 @@ export default {
       this.isFilled = false
       this.hasError = false
     },
-    handleEnter () {
-      return this.isFilled ? this.handleSubmit() : this.handleDelete()
+    handleEnter (e) {
+      // BUG: when press  Enter on edit button,
+      // it also triggers the Enter key on input calling this event
+      // somethin about directive, focus or stopPropagation... still need to check it
+      this.isFilled ? this.handleSubmit() : this.handleDelete()
     },
     handleDelete () {
       this.$emit('new-value', this.$refs.input.value)
@@ -180,7 +183,7 @@ export default {
       const text = this.$refs.input.value
 
       if (text.trim() === '') {
-        this.hasError = this.L(`Whitespaces characters aren't a really contribution`)
+        this.hasError = this.L(`Whitespace characters aren't really a contribution`)
       } else {
         this.$emit('new-value', text)
         this.cancel()

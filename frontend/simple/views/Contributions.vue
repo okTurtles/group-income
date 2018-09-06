@@ -153,7 +153,7 @@ export default {
         return who
       }
 
-      return who.length > 3 ? who[0] : `${who[0]} and ${who[1]}`
+      return who.length > 3 ? who[0] : this.L('{who0} and {who1}', { who0: who[0], who1: who[1] })
     },
     hasWhoElse (who) {
       return Array.isArray(who) && who.length > 3
