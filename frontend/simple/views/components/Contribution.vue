@@ -9,8 +9,8 @@
         :aria-invalid="hasError"
         v-focus="isEditing && $slots.default[0].text"
         @keyup="verifyValue"
-        @keyup.esc="cancel"
-        @keyup.enter="handleEnter"
+        @keydown.esc="cancel"
+        @keydown.enter="handleEnter"
       >
 
       <i18n tag="button" class="button" @click="cancel">Cancel</i18n>
@@ -170,10 +170,12 @@ export default {
       this.hasError = false
     },
     handleEnter (e) {
-      // BUG: when press  Enter on edit button,
-      // it also triggers the Enter key on input calling this event
-      // somethin about directive, focus or stopPropagation... still need to check it
-      this.isFilled ? this.handleSubmit() : this.handleDelete()
+      if (this.isAdding && !this.isFilled) {
+        this.setError()
+        return false
+      }
+
+      return this.isFilled ? this.handleSubmit() : this.handleDelete()
     },
     handleDelete () {
       this.$emit('new-value', this.$refs.input.value)
@@ -183,11 +185,14 @@ export default {
       const text = this.$refs.input.value
 
       if (text.trim() === '') {
-        this.hasError = this.L(`Whitespace characters aren't really a contribution`)
+        this.setError()
       } else {
         this.$emit('new-value', text)
         this.cancel()
       }
+    },
+    setError () {
+      this.hasError = this.L(`Whitespace characters aren't really a contribution`)
     }
   },
   directives: {
