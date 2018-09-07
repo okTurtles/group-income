@@ -1,3 +1,6 @@
+$size-6: 0.875rem; // 14px
+$size-5: 1.125rem; // 18px
+
 @import "../../node_modules/bulma/sass/utilities/initial-variables";
 @import "../../node_modules/bulma/sass/utilities/functions";
 
@@ -36,6 +39,3 @@ $body-family: $family-sans-serif;
 
 $body-background-color: #fff;
 $text: $grey-darker;
-
-$size-6: 0.875rem; // 14px
-$size-5: 1.125rem; // 18px

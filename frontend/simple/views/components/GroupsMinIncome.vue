@@ -13,7 +13,7 @@
 <script>
 import sbp from '../../../../shared/sbp.js'
 import { OPEN_MODAL } from '../../utils/events.js'
-import { symbol } from '../utils/currencies.js'
+import currencies from '../utils/currencies.js'
 import Mincome from '../containers/proposals-form/Mincome.vue'
 
 export default {
@@ -23,7 +23,7 @@ export default {
   },
   computed: {
     currency: function () {
-      return symbol(this.group.incomeCurrency)
+      return currencies[this.group.incomeCurrency]
     }
   },
   methods: {

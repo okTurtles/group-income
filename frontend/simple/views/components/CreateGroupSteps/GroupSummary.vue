@@ -106,7 +106,7 @@
   } */
 </style>
 <script>
-import { symbol } from '../../utils/currencies'
+import currencies from '../../utils/currencies'
 import { toPercent } from '../../utils/filters'
 export default {
   name: 'GroupSummary',
@@ -118,7 +118,7 @@ export default {
   },
   computed: {
     currency: function () {
-      return symbol(this.group.incomeCurrency)
+      return currencies[this.group.incomeCurrency]
     }
   },
   filters: {

@@ -210,7 +210,7 @@
 import Avatar from './components/Avatar.vue'
 import ProgressBar from './components/Graphs/Progress.vue'
 import { toPercent } from './utils/filters.js'
-import { symbol } from './utils/currencies.js'
+import currencies from './utils/currencies.js'
 import Tooltip from './components/Tooltip.vue'
 
 export default {
@@ -254,7 +254,7 @@ export default {
           amount: 50
         }
       ],
-      currency: symbol('USD'),
+      currency: currencies['USD'],
       admirations: {
         types: [this.L('Awesome'), this.L('Cool'), this.L('Great'), this.L('Nice'), this.L('Super'), this.L('Sweet')],
         users: { /* index: 'admiration' */ }

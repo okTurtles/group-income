@@ -83,4 +83,15 @@ body {
       color: $link-hover;
     }
   }
+
+  &is-link-inherit {
+    color: inherit;
+    cursor: pointer;
+    text-decoration: underline;
+
+    &:hover,
+    &:focus {
+      color: $link;
+    }
+  }
 }

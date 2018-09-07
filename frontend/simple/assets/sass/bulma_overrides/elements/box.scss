@@ -1,8 +1,32 @@
+$box-shadow: none;
 $box-radius: $radius;
 $box-padding: $gi-spacer;
-$box-shadow: none;
+
 @import "../../node_modules/bulma/sass/elements/box";
+
+$gi-compact-spacer: $gi-spacer*0.75;
 
 .box {
   border: 1px solid $grey-lighter;
+
+  &.is-compact {
+    padding: $gi-compact-spacer $gi-spacer;
+    margin-bottom: $gi-compact-spacer;
+  }
+
+  &.is-unfilled {
+    border: 1px dashed $primary;
+  }
+
+  &.has-controls {
+    display: flex;
+    justify-content: space-between;
+    // To makeup for the square buttons height inside
+    padding: 0 $gi-spacer-sm 0 0;
+    align-items: center;
+
+    .box-body {
+      padding: $gi-compact-spacer $gi-spacer;
+    }
+  }
 }
