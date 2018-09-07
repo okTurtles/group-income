@@ -18,12 +18,7 @@
             :isMonetary="isMonetary(contribution.type)"
             @interaction="showReceivingSettings"
           >
-            <i18n tag="strong"v-if="isMonetary(contribution.type)"
-              :args="{ currency, amount: receiving[index].what}"
-            >{currency}{amount} for mincome</i18n>
-            <strong v-else>{{contribution.what}}</strong>
-            <i18n>from</i18n>
-            {{getWho(contribution.who)}}
+            <span v-html="textReceivingContribution(contribution, index)"></span>
             <template v-if="hasWhoElse(contribution.who)">
               <i18n>and</i18n>
               <tooltip>
@@ -156,6 +151,18 @@ export default {
       }
 
       return who.length > 3 ? who[0] : this.L('{who0} and {who1}', { who0: who[0], who1: who[1] })
+    },
+    textReceivingContribution (contribution, index) {
+      const who = this.getWho(contribution.who)
+
+      if (this.isMonetary(contribution.type)) {
+        return this.L('<strong>{what} from mincome</strong> from {who}', {
+          what: `${this.currency}${this.receiving[index].what}`,
+          who
+        })
+      } else {
+        return this.L('<strong>{what}</strong> from {who}', { what: contribution.what, who })
+      }
     },
     hasWhoElse (who) {
       return Array.isArray(who) && who.length > 3
