@@ -15,7 +15,8 @@
           <contribution
             v-for="contribution, index in receiving"
             :variant="isMonetary(contribution.type) ? 'editable' : undefined"
-            v-on="isMonetary(contribution.type) ? { 'control-click': showReceivingSettings } : {}"
+            :isMonetary="isMonetary(contribution.type)"
+            @interaction="showReceivingSettings"
           >
             <i18n tag="strong"v-if="isMonetary(contribution.type)"
               :args="{ currency, amount: receiving[index].what}"
@@ -48,7 +49,8 @@
 
           <contribution v-if="givesMonetary"
             variant="editable"
-            @control-click="showGivingMincomeSettings"
+            isMonetary
+            @interaction="showGivingMincomeSettings"
           >
             <span class="has-text-weight-bold">{{currency}}{{giving.monetary}}</span> <i18n>to other's mincome</i18n>
           </contribution>
@@ -60,7 +62,7 @@
             <i18n>Add a non-monetary method</i18n>
           </contribution>
 
-          <contribution v-if="!givesMonetary" variant="unfilled" @control-click="addMonetaryMethod">
+          <contribution v-if="!givesMonetary" variant="unfilled" isMonetary @interaction="addMonetaryMethod">
             <i class="fa fa-money c-contribution-icon" aria-hidden="true"></i>
             <i18n>Add a monetary method</i18n>
           </contribution>

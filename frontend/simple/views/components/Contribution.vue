@@ -106,13 +106,16 @@ export default {
         ].indexOf(value) > -1
       },
       default: 'default'
-    }
+    },
+    // When true doesn't show the input to edit the contribution text.
+    // Let the parent decide what to do using @interaction
+    isMonetary: Boolean
   },
   data () {
     return {
       isAdding: false,
       isEditing: false,
-      isFilled: null, // when true, show add/save button.
+      isFilled: null, // decide what input buttons to show
       hasError: false,
       placeholders: [this.L('Portuguese classes'), this.L('Programming'), this.L('Cooking'), this.L('Parties'), this.L('Free cinema tickets')]
     }
@@ -131,9 +134,6 @@ export default {
     isUnfilled () {
       return this.variant === 'unfilled'
     },
-    hasControlClickListener () {
-      return !!this.$listeners['control-click']
-    },
     editAriaLabel () {
       return this.L('Edit contribution settings')
     },
@@ -141,20 +141,20 @@ export default {
       return this.placeholders[Math.floor(Math.random() * this.placeholders.length)]
     },
     iconClass () {
-      return this.hasControlClickListener ? 'fa-ellipsis-v' : 'fa-edit'
+      return this.isMonetary ? 'fa-ellipsis-v' : 'fa-edit'
     }
   },
   methods: {
     handleClick () {
-      if (this.hasControlClickListener) {
-        this.$emit('control-click')
+      if (this.isMonetary) {
+        this.$emit('interaction')
       } else {
         this.isAdding = true
       }
     },
     handleEditClick (e) {
-      if (this.hasControlClickListener) {
-        this.$emit('control-click')
+      if (this.isMonetary) {
+        this.$emit('interaction')
       } else {
         this.isEditing = true
         this.isFilled = true
