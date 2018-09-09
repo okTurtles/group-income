@@ -2,7 +2,6 @@
   <ul class="field has-addons c-options" :aria-label="L('Payment Methods')">
     <li class="control" v-for="method in methodsAvailable">
       <button v-if="method.available"
-        type="button"
         class="button is-outlined"
         :class="{ 'is-primary': active === method.name }"
         :aria-pressed="active === method.name"
@@ -12,7 +11,7 @@
         <template v-else>{{method.name}}</template>
       </button>
       <tooltip v-else :text="L('Available soon')">
-        <button type="button" class="button is-outlined" disabled>
+        <button class="button is-outlined" disabled>
           <img :alt="method.name" :src="method.logo" class="c-options-logo" :class="`is-${method.name}`">
         </button>
       </tooltip>
@@ -25,11 +24,23 @@
 .c-options {
   display: flex;
   justify-content: center;
+  text-transform: capitalize;
 
   &-logo {
     &.is-bitcoin { width: 4.3rem; }
     &.is-paypal { width: 5.3rem; }
     &.is-visa { width: 2.2rem; }
+  }
+
+  .button {
+    &.is-primary {
+      z-index: 2; // Show all border
+
+      &:focus {
+        background-color: transparent;
+        color: $text;
+      }
+    }
   }
 }
 </style>

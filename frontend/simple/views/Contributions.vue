@@ -193,8 +193,6 @@ export default {
         this.$set(this.giving.nonMonetary, index, value)
       }
     },
-
-    // Giving Monetary Methods:
     showMonetaryGiving () {
       sbp('okTurtles.events/emit', OPEN_MODAL, MonetaryGiving)
     }

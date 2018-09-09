@@ -5,11 +5,16 @@
     </modal-header>
 
     <modal-body class="c-body">
+      <payment-methods
+        :active="methodActive"
+        @change="(method) => $emit('method-change', method)"
+      ></payment-methods>
+
       <slot></slot>
     </modal-body>
 
     <modal-footer :submitError="submitError">
-      <button class="button is-primary is-large" @click="onSubmit">
+      <button class="button is-primary is-large" @click="$emit('submit')">
         <i18n>{{submitText}}</i18n>
       </button>
     </modal-footer>
@@ -27,18 +32,24 @@
 import ModalHeader from '../../../../components/Modal/ModalHeader.vue'
 import ModalBody from '../../../../components/Modal/ModalBody.vue'
 import ModalFooter from '../../../../components/Modal/ModalFooter.vue'
+import PaymentMethods from './PaymentMethods.vue'
 
 export default {
   name: 'ModalForm',
   components: {
     ModalHeader,
     ModalBody,
-    ModalFooter
+    ModalFooter,
+    PaymentMethods
   },
   props: {
     title: String,
     submitText: String,
     submitError: String,
+    methodActive: {
+      type: String,
+      required: true
+    },
     onSubmit: Function
   }
 }
