@@ -16,7 +16,7 @@
             v-for="contribution, index in receiving"
             :variant="isMonetary(contribution.type) ? 'editable' : undefined"
             :isMonetary="isMonetary(contribution.type)"
-            @interaction="showReceivingSettings"
+            @interaction="showMonetaryReceiving"
           >
             <span v-html="textReceivingContribution(contribution, index)"></span>
             <template v-if="hasWhoElse(contribution.who)">
@@ -57,7 +57,7 @@
             <i18n>Add a non-monetary method</i18n>
           </contribution>
 
-          <contribution v-if="!givesMonetary" variant="unfilled" isMonetary @interaction="addMonetaryMethod">
+          <contribution v-if="!givesMonetary" variant="unfilled" isMonetary @interaction="showMonetaryGiving">
             <i class="fa fa-money c-contribution-icon" aria-hidden="true"></i>
             <i18n>Add a monetary method</i18n>
           </contribution>
@@ -91,9 +91,13 @@
 }
 </style>
 <script>
+import sbp from '../../../shared/sbp.js'
+import { OPEN_MODAL } from '../utils/events'
 import currencies from './utils/currencies.js'
 import Contribution from './components/Contribution.vue'
 import Tooltip from './components/Tooltip.vue'
+import MonetaryReceiving from './containers/contributions/monetary-method-form/Receiving.vue'
+import MonetaryGiving from './containers/contributions/monetary-method-form/Giving.vue'
 
 export default {
   name: 'Contributions',
@@ -170,8 +174,8 @@ export default {
     showGivingMincomeSettings () {
       console.log('TODO UI - Show Giving Mincome Setting - next PR')
     },
-    showReceivingSettings () {
-      console.log('TODO UI - Show Receiving Setting - next PR')
+    showMonetaryReceiving () {
+      sbp('okTurtles.events/emit', OPEN_MODAL, MonetaryReceiving)
     },
 
     // Giving
@@ -191,8 +195,8 @@ export default {
     },
 
     // Giving Monetary Methods:
-    addMonetaryMethod () {
-      console.log('TODO UI - Show Monetary Settings Modal - next PR')
+    showMonetaryGiving () {
+      sbp('okTurtles.events/emit', OPEN_MODAL, MonetaryGiving)
     }
   }
 }

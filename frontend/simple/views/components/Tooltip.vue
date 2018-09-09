@@ -1,5 +1,5 @@
 <template>
-  <span @mouseenter="show" @mouseleave="hide">
+  <span @mouseenter="show" @mouseleave="hide" class="c-wrapper">
     <slot></slot>
     <div
       class="has-background-dark has-text-grey-lighter is-bottom is-size-7 c-tooltip"
@@ -7,7 +7,8 @@
       v-if="isActive"
       v-append-to-body
     >
-      <slot name="tooltip"></slot>
+      <template v-if="text">{{text}}</template>
+      <slot v-else name="tooltip"></slot>
     </div>
   </span>
 </template>
@@ -25,9 +26,7 @@
   border-radius: $radius;
   padding: $gi-spacer-sm;
   opacity: 0.95;
-  // TODO create SCSS variables with possible z-index (hover,modals, header, etc...)
-  // So we don't end up with 99999999 values
-  z-index: 50;
+  z-index: $gi-zindex-tooltip;
   max-width: 12rem;
 }
 </style>
@@ -42,6 +41,7 @@ For now I've just did the needed API for this particular task but I think it's p
 export default {
   name: 'Tooltip',
   props: {
+    text: String,
     direction: {
       type: String,
       default: 'bottom'
