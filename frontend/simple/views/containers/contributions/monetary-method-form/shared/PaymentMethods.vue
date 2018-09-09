@@ -24,7 +24,6 @@
 .c-options {
   display: flex;
   justify-content: center;
-  text-transform: capitalize;
 
   &-logo {
     &.is-bitcoin { width: 4.3rem; }
@@ -33,6 +32,8 @@
   }
 
   .button {
+    text-transform: capitalize;
+
     &.is-primary {
       z-index: 2; // Show all border
 
