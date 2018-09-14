@@ -1,8 +1,6 @@
 # Group Income (Simple Edition)
 
-[![Gitter](https://badges.gitter.im/okTurtles/group-income.svg)](https://gitter.im/okTurtles/group-income) [![Build Status](https://img.shields.io/travis/okTurtles/group-income-simple/master.svg)](https://travis-ci.org/okTurtles/group-income-simple) [![Deps](https://david-dm.org/okTurtles/group-income-simple.svg)](https://david-dm.org/okTurtles/group-income-simple/#info=dependencies) [![Dev Deps](https://david-dm.org/okTurtles/group-income-simple/dev-status.svg)](https://david-dm.org/okTurtles/group-income-simple/#info=devDependencies)
-
-[![Bitcoin](https://img.shields.io/badge/donate-BTC-blue.svg)](https://okturtles.org/donate/) [![ETH](https://img.shields.io/badge/donate-ETH-blue.svg)](https://okturtles.org/donate/) [![Litecoin](https://img.shields.io/badge/donate-LTC-blue.svg)](https://okturtles.org/donate/) [![XMR](https://img.shields.io/badge/donate-XMR-blue.svg)](https://okturtles.org/donate/) [![Fiat](https://img.shields.io/badge/donate-%24%20%C2%A3%20%E2%82%AC%20%C2%A5-blue.svg)](https://okturtles.org/donate/)
+[![Gitter](https://badges.gitter.im/okTurtles/group-income.svg)](https://gitter.im/okTurtles/group-income) [![Build Status](https://img.shields.io/travis/okTurtles/group-income-simple/master.svg)](https://travis-ci.org/okTurtles/group-income-simple) [![Deps](https://david-dm.org/okTurtles/group-income-simple.svg)](https://david-dm.org/okTurtles/group-income-simple/#info=dependencies) [![Dev Deps](https://david-dm.org/okTurtles/group-income-simple/dev-status.svg)](https://david-dm.org/okTurtles/group-income-simple/#info=devDependencies) [![Donate](https://img.shields.io/badge/donate%20-%3D%E2%9D%A4%EF%B8%8F-blue.svg)](https://okturtles.org/donate/)
 
 [Group Income](https://groupincome.org/) is a fair income sharing mechanism that allows groups to provide their members a minimum income.
 
@@ -79,7 +77,7 @@ If you run into any errors [during the setup](docs/Getting-Started-frontend.md#h
 
 ## Donating
 
-Donations to [support development on Group Income](https://groupincome.org/donate/) and the [other work of the okTurtles Foundation](https://okturtles.org/donate/) are greatly appreciated.
+[Donations to the okTurtles Foundation](https://okturtles.org/donate/) support the development of Group Income and related projects.
 
 ## License
 
