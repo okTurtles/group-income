@@ -31,6 +31,10 @@
     min-height: auto;
     padding: $gi-spacer-xs/2 $gi-spacer-sm;
   }
+
+  .field.has-addons & {
+    min-height: auto; // is an input's addon
+  }
 }
 
 .button.is-success.is-outlined {

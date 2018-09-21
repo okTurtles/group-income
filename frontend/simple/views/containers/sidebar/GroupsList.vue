@@ -30,7 +30,7 @@
         to="/dashboard">
           <i18n>Dashboard</i18n>
       </list-item>
-      <list-item tag="router-link" icon="bar-chart"
+      <list-item tag="router-link" icon="pie-chart"
         to="/contributions">
           <i18n>Contributions</i18n>
       </list-item>
