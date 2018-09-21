@@ -15,7 +15,7 @@
     </div>
   </div>
 
-  <form class="box c-form" v-else>
+  <div role="form" class="box c-form" v-else>
     <i18n tag="h2" class="title is-5 is-marginless">Income Details</i18n>
     <i18n tag="p" class="c-info">{{info}}</i18n>
 
@@ -23,14 +23,29 @@
 
     <div class="columns is-desktop is-multiline c-grid">
       <div class="column">
-        <fieldset>
+        <fieldset class="c-form-fieldset">
           <i18n tag="legend" class="sr-only">Income details</i18n>
+
+          <!-- TODO - pretty custom radio buttons -->
+          <div class="field is-narrow c-form-field">
+            <i18n tag="p" class="label">Do you make at least {{income}} per month?</i18n>
+            <div class="control">
+              <label class="radio">
+                <input type="radio" name="enoughMincome" value="no">
+                No, I don't
+              </label>
+              <label class="radio">
+                <input type="radio" name="enoughMincome" value="yes">
+                Yes, I do
+              </label>
+            </div>
+          </div>
 
           <div class="field c-form-field">
             <i18n tag="p" class="label">What's your monthly income?</i18n>
             <div class="field has-addons">
               <p class="control">
-                <span class="button is-static">
+                <span class="button is-static c-currency">
                   {{groupCurrency}}
                 </span>
               </p>
@@ -44,25 +59,11 @@
             </p>
           </div>
 
-          <!-- TODO - pretty custom radio buttons -->
-          <div class="field is-narrow c-form-field">
-            <i18n tag="p" class="label">Do you make at least {income} per month?</i18n>
-            <div class="control">
-              <label class="radio">
-                <input type="radio" name="enoughMincome" value="no">
-                No, I don't
-              </label>
-              <label class="radio">
-                <input type="radio" name="enoughMincome" value="yes">
-                Yes, I do
-              </label>
-            </div>
-          </div>
+          <p> [TODO - yes option] </p>
         </fieldset>
 
-        <fieldset>
-          <i18n tag="legend" class="sr-only">Payment method</i18n>
-
+        <fieldset class="c-form-fieldset">
+          <i18n tag="legend" class="label">Payment method</i18n>
           <payment-methods></payment-methods>
         </fieldset>
       </div>
@@ -73,13 +74,13 @@
 
     <div class="field is-grouped is-grouped-right">
       <p class="control">
-        <i18n tag="button" class="button is-primary">Save income details</i18n>
+        <i18n tag="button" class="button is-primary" type="button">Save income details</i18n>
       </p>
       <p class="control">
-        <i18n tag="button" class="button"@click="isFilling = false">Cancel</i18n>
+        <i18n tag="button" class="button" type="button" @click="isFilling = false">Cancel</i18n>
       </p>
     </div>
-  </form>
+</div>
 </template>
 <style lang="scss" scoped>
 @import "../../../assets/sass/theme/index";
@@ -120,9 +121,26 @@
     margin: $gi-spacer-sm 0 $gi-spacer;
   }
 
+  &-fieldset {
+    border: none;
+    margin-bottom: $gi-spacer-lg;
+  }
+
   &-field {
     margin-bottom: $gi-spacer*1.5;
   }
+
+  &-fieldset:last-child,
+  &-field:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.c-currency {
+  padding-left: $gi-spacer;
+  padding-right: $gi-spacer;
+  color: $text;
+  border-color: $grey-light;
 }
 
 .c-textWho {
@@ -144,7 +162,8 @@ export default {
   },
   data () {
     return {
-      isFilling: true
+      isFilling: true,
+      income: '$500'
     }
   },
   computed: {

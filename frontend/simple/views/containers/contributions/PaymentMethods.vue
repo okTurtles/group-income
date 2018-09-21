@@ -18,7 +18,7 @@
         </tooltip>
       </li>
     </ul>
-    [ TODO TEext ]
+    <i18n tag="p" class="c-info">A short but clear text explaining how “Manual” payment works, so the user understands well the process.</i18n>
   </div>
 </template>
 <style lang="scss" scoped>
@@ -26,16 +26,14 @@
 
 .c-options {
   display: flex;
-  justify-content: center;
 
   &-logo {
     &.is-bitcoin { width: 4.3rem; }
-    &.is-paypal { width: 5.3rem; }
-    &.is-visa { width: 2.2rem; }
   }
 
   .button {
     text-transform: capitalize;
+    height: $gi-spacer-lg;
 
     &.is-primary {
       z-index: 2; // Show all border
@@ -46,6 +44,10 @@
       }
     }
   }
+}
+
+.c-info {
+  margin: $gi-spacer 0;
 }
 </style>
 <script>
@@ -59,7 +61,7 @@ export default {
   props: {
     active: {
       type: String,
-      default: true
+      default: 'manual'
     }
   },
   computed: {
@@ -73,7 +75,7 @@ export default {
         },
         {
           name: 'bitcoin',
-          available: true, // Force just for UI purposes
+          available: false,
           logo: '/simple/assets/images/bitcoin.png'
         }
       ]

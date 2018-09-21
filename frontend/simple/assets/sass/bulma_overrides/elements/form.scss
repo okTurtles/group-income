@@ -6,6 +6,8 @@ $input-focus-box-shadow-size: 0 0 0 0.1em inset;
 @import "../../node_modules/bulma/sass/elements/form";
 
 .input {
+  padding-left: $gi-spacer;
+
   @include placeholder {
     color: rgba($input-color, 0.4); // To improve A11Y
   }
