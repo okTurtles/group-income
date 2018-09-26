@@ -24,7 +24,7 @@ export default {
     Tooltip
   },
   props: {
-    who: String || Array // TODO - condition
+    who: [String, Array]
   },
   computed: {
     firstWho () {
