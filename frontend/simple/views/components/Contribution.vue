@@ -31,7 +31,7 @@
         :aria-label="editAriaLabel"
         @click="handleEditClick"
       >
-        <i class="fa" :class="iconClass" aria-hidden="true"></i>
+        <i class="fa fa-edit" aria-hidden="true"></i>
       </button>
     </div>
   </li>
@@ -139,9 +139,6 @@ export default {
     },
     randomPlaceholder () {
       return this.placeholders[Math.floor(Math.random() * this.placeholders.length)]
-    },
-    iconClass () {
-      return this.isMonetary ? 'fa-ellipsis-v' : 'fa-edit'
     }
   },
   methods: {

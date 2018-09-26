@@ -1,54 +1,53 @@
 <template>
   <div class="box is-unfilled c-reminder"
     role="button"
-    v-if="!isFilling"
+    v-if="isFirstTime && !isFilling"
     @click="isFilling = true"
   >
-    <div class="is-flex c-header">
-      <i class="fa fa-plus is-flex c-header-icon"></i>
+    <div class="is-flex c-reminder-header">
+      <i class="fa fa-plus is-flex c-reminder-header-icon"></i>
       <i18n tag="h2" class="title is-5">Add Income Details</i18n>
     </div>
-    <i18n tag="p" class="c-info">{{info}}</i18n>
-    <div class="has-text-danger">
+    <p class="c-info">{{info}}</p>
+    <div class="has-text-danger is-flex c-reminder-attention">
       <i class="fa fa-exclamation-triangle"></i>
-      <i18n tag="strong">{{infoRequired}}</i18n>
+      <strong>{{infoRequired}}</strong>
     </div>
   </div>
 
   <form class="box c-form"
     @submit.prevent="verifyForm"
     novalidate="true"
-    v-else
+    v-else-if="isFilling || isEditing"
   >
     <i18n tag="h2" class="title is-5 is-marginless">Income Details</i18n>
-    <i18n tag="p" class="c-info">{{info}}</i18n>
+    <p class="c-info">{{info}}</p>
 
-    <hr>
+    <hr class="c-form-hr">
 
     <div class="columns is-desktop is-multiline c-grid">
       <div class="column">
         <fieldset class="c-form-fieldset">
           <i18n tag="legend" class="sr-only">Income details</i18n>
 
-          <!-- TODO - pretty custom radio buttons -->
           <div class="field is-narrow c-form-field">
             <i18n tag="p" class="label">Do you make at least {{income}} per month?</i18n>
-            <i18n tag="strong" v-if="$v.form.option.required">{{infoRequired}}</i18n>
             <div class="control">
+              <!-- TODO - pretty custom radio buttons -->
               <label class="radio">
-                <input type="radio" value="no" v-model="form.option">
+                <input type="radio" value="no" v-model="form.option" @change="resetFormVerify">
                 No, I don't
               </label>
               <label class="radio">
-                <input type="radio" value="yes" v-model="form.option">
+                <input type="radio" value="yes" v-model="form.option" @change="resetFormVerify">
                 Yes, I do
               </label>
             </div>
+            <i18n tag="strong" class="help has-text-danger has-text-weight-normal" v-if="formVerified && $v.form.option.$invalid">{{infoRequired}}</i18n>
           </div>
 
-          <div class="field c-form-field" v-if="$v.form.option.$model === 'no'">
+          <div class="field c-form-field" v-if="hasLessIncome">
             <i18n tag="p" class="label">What's your monthly income?</i18n>
-            <i18n tag="strong" v-if="$v.form.income.$error">{{infoRequired}}</i18n>
             <div class="field has-addons">
               <p class="control">
                 <span class="button is-static c-currency">
@@ -57,7 +56,7 @@
               </p>
               <p class="control">
                 <input class="input"
-                  :class="{'is-danger': $v.form.income.$error}"
+                  :class="{'is-danger': formVerified && $v.form.income.$invalid}"
                   type="number"
                   v-model="form.income"
                   :placeholder="L('amout')"
@@ -68,11 +67,11 @@
               <TextWho :who="['Rick', 'Carl', 'Kim']"></TextWho>
               <i18n>will ensure you meet the mincome</i18n>
             </p>
+            <i18n tag="strong" class="help has-text-danger has-text-weight-normal" v-if="formVerified && $v.form.income.$invalid">{{infoRequired}}</i18n>
           </div>
 
-          <div class="field c-form-field" v-if="$v.form.option.$model === 'yes'">
+          <div class="field c-form-field" v-if="hasMinIncome">
             <i18n tag="p" class="label">Pledge amount</i18n>
-            <i18n tag="strong" v-if="$v.form.pledge.$error">{{infoRequired}}</i18n>
             <div class="field has-addons">
               <p class="control">
                 <span class="button is-static c-currency">
@@ -81,7 +80,7 @@
               </p>
               <p class="control">
                 <input class="input"
-                  :class="{'is-danger': $v.form.pledge.$error}"
+                  :class="{'is-danger': formVerified && $v.form.pledge.$invalid}"
                   type="number"
                   v-model="form.pledge"
                   :placeholder="L('amout')"
@@ -89,6 +88,7 @@
               </p>
             </div>
             <i18n tag="p" class="c-textHelp">Define up to how much you pledge to contribute to the group each month. You can pledge any amount (even $1 million!) Only the minimum needed amount will be given.</i18n>
+            <i18n tag="strong" class="help has-text-danger has-text-weight-normal" v-if="formVerified && $v.form.pledge.$invalid">{{infoRequired}}</i18n>
           </div>
         </fieldset>
 
@@ -120,39 +120,43 @@
 @import "../../../assets/sass/theme/index";
 
 .c-reminder {
-  cursor: pointer;
-  transition: background 100ms;
+  &-header {
+    align-items: center;
 
-  // TODO: make this global to all unfilled boxes
-  &:hover {
-    border: 1px solid $primary;
-    background: $primary-bg-a;
-    box-shadow: 0 1px 1px $grey-lighter;
+    &-icon {
+      background: $primary-bg-a;
+      width: 2rem;
+      height: 2rem;
+      margin-right: $gi-spacer-sm;
+      justify-content: center;
+      align-items: center;
+      border-radius: 50%;
+      color: $primary;
+    }
   }
 
-  .c-info {
-    margin: $gi-spacer 0;
+  &-attention {
+    align-items: center;
+
+    .fa {
+      margin-right: $gi-spacer-sm;
+    }
   }
 }
 
-.c-header {
-  align-items: center;
-
-  &-icon {
-    background: $primary-bg-a;
-    width: 2rem;
-    height: 2rem;
-    margin-right: $gi-spacer-sm;
-    justify-content: center;
-    align-items: center;
-    border-radius: 50%;
-    color: $primary;
-  }
+.c-info {
+  margin: $gi-spacer 0;
 }
 
 .c-form {
+  border-color: $primary;
+
   .c-info {
-    margin: $gi-spacer-sm 0 $gi-spacer;
+    margin-top: $gi-spacer-sm;
+  }
+
+  &-hr {
+    margin: $gi-spacer 0;
   }
 
   &-fieldset {
@@ -167,6 +171,10 @@
   &-fieldset:last-child,
   &-field:last-child {
     margin-bottom: 0;
+  }
+
+  .input {
+    width: 6rem;
   }
 }
 
@@ -185,7 +193,12 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 20rem;
+  width: 10rem;
+  height: 10rem;
+  background: $grey-lighter;
+  border-radius: 50%;
+  margin: auto;
+  margin-bottom: $gi-spacer-lg;
 }
 
 </style>
@@ -203,16 +216,21 @@ export default {
     TextWho
   },
   props: {
+    isFirstTime: Boolean,
+    isEditing: Boolean
   },
   data () {
     return {
-      isFilling: true,
+      optionLess: 'no',
+      optionAtLeast: 'yes',
       income: '$500',
+      isFilling: false,
       form: {
         option: null,
         income: null,
         pledge: null
-      }
+      },
+      formVerified: false
     }
   },
   computed: {
@@ -222,23 +240,40 @@ export default {
     infoRequired () {
       return this.L('This information is required for you to be able to be part of the group.')
     },
+    hasLessIncome () {
+      return this.$v.form.option.$model === 'no'
+    },
+    hasMinIncome () {
+      return this.$v.form.option.$model === 'yes'
+    },
     groupCurrency () {
       return '$ USD'
     },
     saveButtonText () {
-      console.log('or')
-      if (!this.$v.form.option.$model) { return this.L('Save details') }
-      if (this.$v.form.option.$model === 'yes') { return this.L('Save pledged details') }
-      if (this.$v.form.option.$model === 'no') { return this.L('Save income details') }
+      const verb = this.isFirstTime ? 'Add' : 'Save'
+
+      if (!this.$v.form.option.$model) { return this.L('{verb} details', { verb }) }
+      if (this.hasMinIncome) { return this.L('{verb} pledged details', { verb }) }
+      if (this.hasLessIncome) { return this.L('{verb} income details', { verb }) }
     }
   },
   methods: {
     verifyForm () {
-      if (this.$v.form.$invalid) {
-        console.log('invalid!')
-      } else {
-        console.log('TODO SUBMIT')
+      this.formVerified = true
+
+      if (!this.$v.form.$invalid) {
+        const makeIncome = this.$v.form.option.$model === 'yes'
+
+        this.$emit('save', {
+          makeIncome,
+          amount: makeIncome ? this.$v.form.pledge.$model : this.$v.form.income.$model
+        })
+
+        this.isFilling = false
       }
+    },
+    resetFormVerify () {
+      this.formVerified = false
     }
   },
   validations: {

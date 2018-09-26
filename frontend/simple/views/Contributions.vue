@@ -1,5 +1,5 @@
 <template>
-  <main>
+  <main class="c-main">
     <div class="section is-hero">
       <i18n tag="h1" class="title is-1 is-marginless">
         Contributions
@@ -12,14 +12,18 @@
         <i18n tag="h2" class="title is-3">Receiving</i18n>
 
         <ul class="c-ul">
-          <contribution
-            v-for="contribution, index in receiving"
-            :variant="isMonetary(contribution.type) ? 'editable' : undefined"
-            :isMonetary="isMonetary(contribution.type)"
-            @interaction="showMonetaryReceiving"
-          >
-            <span v-html="textReceivingContribution(contribution, index)"></span>
+          <contribution v-for="contribution in receiving.nonMonetary">
+            <span v-html="textReceivingNonMonetary(contribution)"></span>
             <TextWho :who="contribution.who"></TextWho>
+          </contribution>
+
+          <contribution v-if="doesReceiveMonetary"
+            variant="editable" isMonetary
+            @interaction="editIncomeDetails"
+          >
+            <span v-html="textReceivingMonetary(receiving.monetary)"></span>
+            <TextWho :who="groupMembersPledging"></TextWho>
+            <i18n>each month</i18n>
           </contribution>
         </ul>
       </div>
@@ -27,43 +31,41 @@
       <div class="column">
         <i18n tag="h2" class="title is-3">Giving</i18n>
 
-        <ul class="c-ul" v-if="givesNonMonetary || givesMonetary">
+        <ul class="c-ul">
           <contribution v-for="contribution, index in giving.nonMonetary"
             class="has-text-weight-bold"
             variant="editable"
             @new-value="(value) => handleEditNonMonetary(value, index)"
           >{{contribution}}</contribution>
 
-          <contribution v-if="givesMonetary"
-            variant="editable"
-            isMonetary
-            @interaction="showGivingMincomeSettings"
-          >
-            <span class="has-text-weight-bold">{{currency}}{{giving.monetary}}</span> <i18n>to other's mincome</i18n>
-          </contribution>
-        </ul>
-
-        <ul class="c-ul">
           <contribution variant="unfilled" @new-value="submitAddNonMonetary">
             <i class="fa fa-heart c-contribution-icon" aria-hidden="true"></i>
             <i18n>Add a non-monetary method</i18n>
           </contribution>
-          <!--
-          <contribution v-if="!givesMonetary" variant="unfilled" isMonetary @interaction="showMonetaryGiving">
-            <i class="fa fa-money c-contribution-icon" aria-hidden="true"></i>
-            <i18n>Add a monetary method</i18n>
-          </contribution> -->
+
+          <contribution v-if="doesGiveMonetary" variant="editable" isMonetary @interaction="editIncomeDetails">
+            <!-- TODO - different text if is pledging $0 -->
+            <i18n class="has-text-weight-bold" :args="{amount:`${currency}${giving.monetary}`}">Pledge up to {amount}</i18n><i18n>to other's mincome</i18n>
+          </contribution>
         </ul>
       </div>
     </section>
 
     <section class="section">
-      <income-form></income-form>
+      <income-form
+        :isFirstTime="isFirstTime"
+        :isEditing="isEditingIncome"
+        @save="handleIncomeSave"
+      ></income-form>
     </section>
   </main>
 </template>
 <style lang="scss" scoped>
 @import "../assets/sass/theme/index";
+
+.c-main {
+  padding-bottom: 4rem;
+}
 
 .c-grid .column {
   @include touch {
@@ -101,65 +103,45 @@ export default {
   },
   data () {
     return {
+      isEditingIncome: false,
+      // -- Hardcoded Data just for layout purpose:
       currency: currencies['USD'],
-      receiving: [
-        {
-          type: 'no-monetary',
-          what: 'Cooking',
-          who: 'Lilia Bouvet'
-        },
-        {
-          type: 'no-monetary',
-          what: 'Cuteness',
-          who: ['Zoe Kim', 'Laurence E']
-        }
-        // {
-        //   type: 'monetary',
-        //   what: 500,
-        //   who: [
-        //     'Jack Fisher',
-        //     'Charlotte Doherty',
-        //     'Thomas Baker',
-        //     'Francisco Scott'
-        //   ]
-        // }
-      ],
+      isFirstTime: true, // true when user doesn't have any income details. It displays the 'Add Income Details' box
+      mincome: 500,
+      receiving: {
+        nonMonetary: [
+          {
+            what: 'Cooking',
+            who: 'Lilia Bouvet'
+          },
+          {
+            what: 'Cuteness',
+            who: ['Zoe Kim', 'Laurence E']
+          }
+        ],
+        monetary: null
+      },
       giving: {
         nonMonetary: [], // ArrayOf(String)
-        monetary: null // Number
-      }
+        monetary: null // Number - Edit to see the giving monetary contribution box
+      },
+      groupMembersPledging: [
+        'Jack Fisher',
+        'Charlotte Doherty',
+        'Thomas Baker',
+        'Francisco Scott'
+      ]
     }
   },
   computed: {
-    givesMonetary () {
-      return !!this.giving.monetary
+    doesReceiveMonetary () {
+      return !!this.receiving.monetary && !this.isEditingIncome
     },
-    givesNonMonetary () {
-      return this.giving.nonMonetary.length > 0
+    doesGiveMonetary () {
+      return !!this.giving.monetary && !this.isEditingIncome
     }
   },
   methods: {
-    // Receiving
-    isMonetary (type) {
-      return type === 'monetary'
-    },
-    textReceivingContribution (contribution) {
-      if (this.isMonetary(contribution.type)) {
-        return this.L('<strong>Up to {what} for mincome</strong> from', {
-          what: `${this.currency}${contribution.what}`
-        })
-      } else {
-        return this.L('<strong>{what}</strong> from', { what: contribution.what })
-      }
-    },
-    showGivingMincomeSettings () {
-      console.log('TODO UI - Show Giving Mincome Setting - next PR')
-    },
-    showMonetaryReceiving () {
-      // sbp('okTurtles.events/emit', OPEN_MODAL, MonetaryReceiving)
-    },
-
-    // Giving
     submitAddNonMonetary (value) {
       console.log('TODO BE - submitAddNonMonetary')
       this.giving.nonMonetary.push(value)
@@ -170,12 +152,26 @@ export default {
         this.giving.nonMonetary.splice(index, 1)
       } else {
         console.log('TODO BE - editNonMonetary')
-        // https://vuejs.org/v2/guide/list.html#Caveats
         this.$set(this.giving.nonMonetary, index, value)
       }
     },
-    showMonetaryGiving () {
-      // sbp('okTurtles.events/emit', OPEN_MODAL, MonetaryGiving)
+    textReceivingNonMonetary (contribution) {
+      return this.L('<strong>{what}</strong> from', { what: contribution.what })
+    },
+    textReceivingMonetary (contribution) {
+      return this.L('<strong>Up to {amount} for mincome</strong> from', {
+        amount: `${this.currency}${contribution}`
+      })
+    },
+    editIncomeDetails () {
+      this.isEditingIncome = true
+    },
+    handleIncomeSave ({ makeIncome, amount }) {
+      this.isEditingIncome = false
+      this.isFirstTime = false
+      console.log('TODO BE - Save Income Details')
+      this.receiving.monetary = makeIncome ? null : this.mincome - amount
+      this.giving.monetary = makeIncome ? amount : null
     }
   }
 }
