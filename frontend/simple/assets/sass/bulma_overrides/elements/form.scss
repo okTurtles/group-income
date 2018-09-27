@@ -5,6 +5,9 @@ $input-focus-box-shadow-size: 0 0 0 0.1em inset;
 
 @import "../../node_modules/bulma/sass/elements/form";
 
+$gi-input-tickly-size: 1rem;
+$gi-input-checked-size: 0.4rem;
+
 .input {
   padding-left: $gi-spacer;
 
@@ -59,6 +62,49 @@ $input-focus-box-shadow-size: 0 0 0 0.1em inset;
     &:focus ~ .button {
       border-color: $primary;
       box-shadow: $input-focus-box-shadow-size $input-focus-box-shadow-color;
+    }
+  }
+}
+
+.gi-tick-input {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  -moz-appearance: none;
+  -webkit-appearance: none;
+}
+
+.gi-tick-custom {
+  cursor: pointer;
+  width: 0.875rem;
+  height: 0.875rem;
+  margin-right: $gi-spacer-xs;
+  display: inline-block;
+  border-radius: 50%;
+  border: 1px solid $grey;
+  transform: translateY(2px); // align with text
+
+  &::after {
+    content: "";
+    width: 0.4rem;
+    height: 0.4rem;
+    background-color: $primary;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0);
+    transform-origin: 50% 50%;
+    transition: transform 150ms;
+  }
+
+  .gi-tick-input:focus + &,
+  .gi-tick-input:checked + & {
+    outline: none;
+    border-color: $text;
+
+    &::after {
+      transform: translate(-50%, -50%) scale(1);
     }
   }
 }
