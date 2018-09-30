@@ -1,11 +1,13 @@
 <template>
-  <transition @before-enter="transBefEnter" @enter="transEnter" @leave="transLeave">
+  <transition @enter="transEnter" @leave="transLeave">
     <div class="modal is-active" v-if="isEditing">
       <div class="modal-background" @click="cancelForm"></div>
       <div class="modal-card c-card" ref="card">
         <button class="delete" aria-label="close" @click="cancelForm"></button>
         <div class="c-form">
-          [ HEADER HERE ]
+          <i18n tag="h2" class="title is-3">Income Details</i18n>
+
+          <hr class="c-hr">
 
           <form @submit.prevent="verifyForm" novalidate="true" ref="form">
             <div class="columns is-desktop is-multiline c-grid">
@@ -116,6 +118,10 @@
   max-width: 50rem;
 }
 
+.c-hr {
+  margin: $gi-spacer 0;
+}
+
 .c-form {
   // TODO - analyse if this can be global to every form/field
   &-fieldset {
@@ -187,7 +193,6 @@ export default {
   },
   props: {
     isEditing: Boolean,
-    transBefEnter: Function,
     transEnter: Function,
     transLeave: Function
   },

@@ -17,14 +17,13 @@
             <TextWho :who="contribution.who"></TextWho>
           </contribution>
 
-          <contribution v-if="doesReceiveMonetary"
-            variant="editable" isMonetary
-            @interaction="editIncomeDetails"
-          >
-            <span v-html="textReceivingMonetary(receiving.monetary)"></span>
-            <TextWho :who="groupMembersPledging"></TextWho>
-            <i18n>each month</i18n>
-          </contribution>
+          <transition @enter="transTriggerEnter" @leave="transTriggerLeave">
+            <contribution ref="contReceiving" v-if="doesReceiveMonetary" variant="editable" isMonetary @interaction="handleFormTriggerClick">
+              <span v-html="textReceivingMonetary(receiving.monetary)"></span>
+              <TextWho :who="groupMembersPledging"></TextWho>
+              <i18n>each month</i18n>
+            </contribution>
+          </transition>
         </ul>
       </div>
 
@@ -43,32 +42,30 @@
             <i18n>Add a non-monetary method</i18n>
           </contribution>
 
-          <transition @before-enter="transContrBefEnter" @enter="transContrEnter" @leave="transContrLeave">
-            <contribution ref="contPledged" v-if="doesGiveMonetary" variant="editable" isMonetary @interaction="editIncomeDetails"
-            :class="{ 'isEditing': this.isEditingIncome }">
+          <transition @enter="transTriggerEnter" @leave="transTriggerLeave">
+            <contribution ref="triggerPledged" v-if="doesGiveMonetary" variant="editable" isMonetary @interaction="handleFormTriggerClick">
               <!-- REVIEW - have different text if the user is pledging $0 -->
               <i18n class="has-text-weight-bold" :args="{amount:`${currency}${giving.monetary}`}">Pledge up to {amount}</i18n><i18n>to other's mincome</i18n>
             </contribution>
           </transition>
         </ul>
       </div>
-      <transition @before-enter="transTriggerBefEnter" @enter="transTriggerEnter" @leave="transTriggerLeave">
-        <message-missing-income ref="messageIncome" v-if="isFirstTime && !isEditingIncome" @click="handleMessageClick"></message-missing-income>
+      <transition @enter="transTriggerEnter" @leave="transTriggerLeave">
+        <message-missing-income ref="triggerMissing" v-if="isFirstTime && !isEditingIncome" @click="handleFormTriggerClick"></message-missing-income>
       </transition>
     </section>
 
     <income-form ref="incomeForm"
       :isEditing="isEditingIncome"
-      :transBefEnter="transFormBefEnter"
       :transEnter="transFormEnter"
       :transLeave="transFormLeave"
       @save="handleIncomeSave"
       @cancel="handleIncomeCancel"
     ></income-form>
 
-    <!-- TODO - isolar mask logic as much as possible. -->
-    <transition @appear="transMaskAppear" @before-enter="transMaskBefEnter" @enter="transMaskEnter" @before-leave="transMaskBefLeave" @leave="transMaskLeave" @after-leave="transMaskAfterLeave">
-      <div v-if="!isEditingIncome" class="c-mask">MASK</div>
+    <!-- TODO - isolate mask logic as much as possible. -->
+    <transition @enter="transMaskEnter" @leave="transMaskLeave">
+      <div v-if="isEditingIncome" class="c-mask"></div>
     </transition>
   </main>
 </template>
@@ -103,8 +100,8 @@
 .c-mask {
   pointer-events: none;
   position: fixed;
+  opacity: 0.01;
   background: $primary-bg-s;
-  border: 1px solid $primary;
   border-radius: $radius;
   z-index: 50;
 }
@@ -126,8 +123,8 @@ export default {
   },
   data () {
     return {
-      elIncomeForm: {},
-      elFormTrigger: {}, // a contribution or missing message
+      triggerDimensions: null, // a contribution or missing message
+      targetDimensions: null, // the income form
       isEditingIncome: false,
       // -- Hardcoded Data just for layout purpose:
       currency: currencies['USD'],
@@ -173,15 +170,15 @@ export default {
   methods: {
     submitAddNonMonetary (value) {
       console.log('TODO BE - submitAddNonMonetary')
-      this.giving.nonMonetary.push(value)
+      this.giving.nonMonetary.push(value) // Hardcoded Solution
     },
     handleEditNonMonetary (value, index) {
       if (!value) {
         console.log('TODO BE - deleteNonMonetary')
-        this.giving.nonMonetary.splice(index, 1)
+        this.giving.nonMonetary.splice(index, 1) // Hardcoded Solution
       } else {
         console.log('TODO BE - editNonMonetary')
-        this.$set(this.giving.nonMonetary, index, value)
+        this.$set(this.giving.nonMonetary, index, value) // Hardcoded Solution
       }
     },
     textReceivingNonMonetary (contribution) {
@@ -192,25 +189,12 @@ export default {
         amount: `${this.currency}${contribution}`
       })
     },
-    handleMessageClick () {
-      console.log('handleMessageClick')
-      const { width, height, top, left } = this.$refs.messageIncome.$el.getBoundingClientRect()
-
-      this.elFormTrigger = { offsetWidth: width, offsetHeight: height, offsetTop: top, offsetLeft: left }
-
-      this.isEditingIncome = true
-    },
-    editIncomeDetails () {
-      console.log('editIncomeDetails')
-      const { width, height, top, left } = this.$refs.contPledged.$el.getBoundingClientRect()
-
-      this.elFormTrigger = { offsetWidth: width, offsetHeight: height, offsetTop: top, offsetLeft: left }
-
+    handleFormTriggerClick () {
       this.isEditingIncome = true
     },
     handleIncomeSave ({ makeIncome, amount }) {
       console.log('TODO BE - Save Income Details')
-      // Hardcoded Solution
+      // -- Hardcoded Solution
       this.receiving.monetary = makeIncome ? null : this.mincome - amount
       this.giving.monetary = makeIncome ? amount : null
       this.isFirstTime = false
@@ -222,98 +206,73 @@ export default {
     },
     closeIncome () {
       console.log('closeIncome')
-      const { offsetWidth, offsetHeight, offsetTop, offsetLeft } = this.$refs.incomeForm.$refs.card
-      this.elIncomeForm = { offsetWidth, offsetHeight, offsetTop, offsetLeft }
       this.isEditingIncome = false
     },
 
-    // IncomeForm to Contribution Animations:
+    // ---- IncomeForm Mask Animations:
 
-    transContrBefEnter (el) {
-      el.style.opacity = 0.2
-    },
-    transContrEnter (el, complete) {
-      Velocity(el, { opacity: 1 }, { duration: 300, delay: 300, complete })
-    },
-    transContrLeave (el, complete) {
-      Velocity(el, { opacity: 0.2 }, { duration: 300, complete })
-    },
-
-    transTriggerBefEnter (el) {
-      el.style.opacity = 0
-    },
     transTriggerEnter (el, complete) {
-      Velocity(el, 'fadeIn', { duration: 200, delay: 350, display: '', complete })
+      console.log('transTriggerEnter')
+
+      this.updateDimensions(el, 'triggerDimensions')
+
+      Velocity(el, { opacity: 0 }, { duration: 0 })
+      Velocity(el, { opacity: 1 }, { duration: 150, delay: 350, complete })
     },
     transTriggerLeave (el, complete) {
-      Velocity(el, 'fadeOut', { duration: 200, display: '', complete })
+      console.log('transTriggerLeave')
+
+      this.updateDimensions(el, 'triggerDimensions')
+
+      Velocity(el, { opacity: 0 }, { duration: 150, complete })
     },
 
-    transFormBefEnter (el) {
-      el.style.opacity = 0
-      this.$refs.incomeForm.$refs.card.style.opacity = 0
-    },
     transFormEnter (el, complete) {
-      Velocity(el, 'fadeIn', { duration: 150, delay: 150, display: '' })
-      Velocity(this.$refs.incomeForm.$refs.card, 'fadeIn', { duration: 150, delay: 350, complete })
+      console.log('transFormEnter')
+      const formInner = this.$refs.incomeForm.$refs.card
+      Velocity(el, { opacity: 0 }, { duration: 0 })
+      Velocity(formInner, { opacity: 0 }, { duration: 0 })
+
+      this.updateDimensions(formInner, 'targetDimensions')
+
+      Velocity(el, { opacity: 1 }, { duration: 150, delay: 150 })
+      Velocity(formInner, 'fadeIn', { duration: 150, delay: 350, complete })
     },
     transFormLeave (el, complete) {
-      Velocity(this.$refs.incomeForm.$refs.card, { opacity: 0 }, { duration: 50 })
-      Velocity(el, 'fadeOut', { duration: 150, delay: 250, display: '', complete })
+      console.log('transFormLeave')
+      const formInner = this.$refs.incomeForm.$refs.card
+
+      this.updateDimensions(formInner, 'targetDimensions')
+
+      Velocity(formInner, { opacity: 0 }, { duration: 50 })
+      Velocity(el, { opacity: 0 }, { duration: 150, delay: 250, complete })
     },
 
-    transMaskAppear (el, complete) {
-      console.log('transMaskAppear')
-      if (this.isFirstTime) {
-        const { width, height, top, left } = this.$refs.messageIncome.$el.getBoundingClientRect()
-
-        Velocity(el, { opacity: 0.2, width, height, top, left }, { duration: 1, complete })
-      } else {
-        // TODO - adapt to contribution: receiving or pledging.
-      }
-    },
-
-    // to contr/message
-    transMaskBefEnter (el) {
-      console.log('transMaskBefEnter')
-    },
-    transMaskEnter (el, done) {
-      console.log('transMaskEnter')
-      Velocity(el, { opacity: 0.2, width: this.elIncomeForm.offsetWidth, height: this.elIncomeForm.offsetHeight, top: this.elIncomeForm.offsetTop, left: this.elIncomeForm.offsetLeft }, { duration: 1 })
-
-      console.log('wual é o elemento agora paah')
-      if (!this.isFirstTime) {
-        // TODO verify when it's receiving contr. - is this the correct place?
-        const { offsetWidth, offsetHeight, offsetTop, offsetLeft } = this.$refs.contPledged.$el
-        this.elFormTrigger = { offsetWidth, offsetHeight, offsetTop, offsetLeft }
-      }
-
-      const { offsetWidth, offsetHeight, offsetTop, offsetLeft } = this.elFormTrigger
-
-      Velocity(el, { opacity: 1 }, { duration: 50 })
-      Velocity(el, { width: offsetWidth, height: offsetHeight, top: offsetTop, left: offsetLeft },
-        { duration: 250, delay: 50, easing: 'ease-out' }
-      )
-      Velocity(el, { opacity: 0.2 }, { duration: 150, complete: done })
-    },
-
-    // to form
-    transMaskBefLeave (el) {
-      console.log('transMaskBefLeave')
-    },
-    transMaskLeave (el, complete) {
+    // to form income
+    transMaskEnter (el, complete) {
       console.log('transMaskLeave')
 
-      Velocity(el, { opacity: 0.2, width: this.elFormTrigger.offsetWidth, height: this.elFormTrigger.offsetHeight, top: this.elFormTrigger.offsetTop, left: this.elFormTrigger.offsetLeft }, { duration: 1 })
+      Velocity(el, { opacity: 0.1, ...this.triggerDimensions }, { duration: 0 })
 
-      const { offsetWidth, offsetHeight, offsetTop, offsetLeft } = this.elIncomeForm.offsetWidth ? this.elIncomeForm : this.$refs.incomeForm.$refs.card
       Velocity(el, { opacity: 1 }, { duration: 150 })
-      Velocity(el, { width: offsetWidth, height: offsetHeight, top: offsetTop, left: offsetLeft },
-        { duration: 250, easing: 'ease-out' }
-      )
-      Velocity(el, { opacity: 0.2 }, { duration: 150, complete })
+      Velocity(el, { ...this.targetDimensions }, { duration: 250, easing: 'ease-out' })
+      Velocity(el, { opacity: 0.01 }, { duration: 150, complete })
     },
-    transMaskAfterLeave () {
+
+    // to contribution / missing message
+    transMaskLeave (el, complete) {
+      console.log('transMaskEnter')
+      Velocity(el, { opacity: 0.1, ...this.targetDimensions }, { duration: 0 })
+
+      Velocity(el, { opacity: 1 }, { duration: 50 })
+      Velocity(el, { ...this.triggerDimensions }, { duration: 250, delay: 50, easing: 'ease-out' })
+      Velocity(el, { opacity: 0.01 }, { duration: 150, complete })
+    },
+
+    // animation UTILS:
+    updateDimensions (el, objectKey) {
+      const { width, height, top, left } = el.getBoundingClientRect()
+      this[objectKey] = { width, height, top, left }
     }
   }
 }
