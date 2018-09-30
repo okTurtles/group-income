@@ -52,23 +52,23 @@
           </transition>
         </ul>
       </div>
+      <transition @before-enter="transTriggerBefEnter" @enter="transTriggerEnter" @leave="transTriggerLeave">
+        <message-missing-income ref="messageIncome" v-if="isFirstTime && !isEditingIncome" @click="handleMessageClick"></message-missing-income>
+      </transition>
     </section>
 
-    <section class="section">
-      <income-form
-        ref="incomeForm"
-        :isFirstTime="isFirstTime"
-        :isEditing="isEditingIncome"
-        @save="handleIncomeSave"
-        @cancel="handleIncomeCancel"
-        :transBeforeEnter="transFormBefEnter"
-        :transEnter="transFormEnter"
-        :transLeave="transFormLeave"
-      ></income-form>
-    </section>
+    <income-form ref="incomeForm"
+      :isEditing="isEditingIncome"
+      :transBefEnter="transFormBefEnter"
+      :transEnter="transFormEnter"
+      :transLeave="transFormLeave"
+      @save="handleIncomeSave"
+      @cancel="handleIncomeCancel"
+    ></income-form>
 
+    <!-- TODO - isolar mask logic as much as possible. -->
     <transition @appear="transMaskAppear" @before-enter="transMaskBefEnter" @enter="transMaskEnter" @before-leave="transMaskBefLeave" @leave="transMaskLeave" @after-leave="transMaskAfterLeave">
-      <div v-if="isFirstTime || isEditingIncome" class="c-mask"></div>
+      <div v-if="!isEditingIncome" class="c-mask">MASK</div>
     </transition>
   </main>
 </template>
@@ -102,9 +102,11 @@
 
 .c-mask {
   pointer-events: none;
-  position: absolute;
+  position: fixed;
   background: $primary-bg-s;
+  border: 1px solid $primary;
   border-radius: $radius;
+  z-index: 50;
 }
 </style>
 <script>
@@ -112,19 +114,20 @@ import Velocity from 'velocity-animate'
 import currencies from './utils/currencies.js'
 import Contribution from './components/Contribution.vue'
 import TextWho from './components/TextWho.vue'
+import MessageMissingIncome from './containers/contributions/MessageMissingIncome.vue'
 import IncomeForm from './containers/contributions/IncomeForm.vue'
-
 export default {
   name: 'Contributions',
   components: {
     Contribution,
     TextWho,
-    IncomeForm
+    IncomeForm,
+    MessageMissingIncome
   },
   data () {
     return {
       elIncomeForm: {},
-      elContr: {},
+      elFormTrigger: {}, // a contribution or missing message
       isEditingIncome: false,
       // -- Hardcoded Data just for layout purpose:
       currency: currencies['USD'],
@@ -152,7 +155,11 @@ export default {
         'Charlotte Doherty',
         'Thomas Baker',
         'Francisco Scott'
-      ]
+      ],
+      timings: {
+        move: 350,
+        fade: 200
+      }
     }
   },
   computed: {
@@ -185,11 +192,20 @@ export default {
         amount: `${this.currency}${contribution}`
       })
     },
+    handleMessageClick () {
+      console.log('handleMessageClick')
+      const { width, height, top, left } = this.$refs.messageIncome.$el.getBoundingClientRect()
+
+      this.elFormTrigger = { offsetWidth: width, offsetHeight: height, offsetTop: top, offsetLeft: left }
+
+      this.isEditingIncome = true
+    },
     editIncomeDetails () {
       console.log('editIncomeDetails')
-      const { offsetWidth, offsetHeight, offsetTop, offsetLeft } = this.$refs.contPledged.$el
+      const { width, height, top, left } = this.$refs.contPledged.$el.getBoundingClientRect()
 
-      this.elContr = { offsetWidth, offsetHeight, offsetTop, offsetLeft }
+      this.elFormTrigger = { offsetWidth: width, offsetHeight: height, offsetTop: top, offsetLeft: left }
+
       this.isEditingIncome = true
     },
     handleIncomeSave ({ makeIncome, amount }) {
@@ -205,9 +221,8 @@ export default {
       this.closeIncome()
     },
     closeIncome () {
-      console.log('aqui')
-      const { offsetWidth, offsetHeight, offsetTop, offsetLeft } = this.$refs.incomeForm.$el
-
+      console.log('closeIncome')
+      const { offsetWidth, offsetHeight, offsetTop, offsetLeft } = this.$refs.incomeForm.$refs.card
       this.elIncomeForm = { offsetWidth, offsetHeight, offsetTop, offsetLeft }
       this.isEditingIncome = false
     },
@@ -215,60 +230,88 @@ export default {
     // IncomeForm to Contribution Animations:
 
     transContrBefEnter (el) {
-      el.style.opacity = 0
-      // TRICK: sheaper 'slideDown' effect by using negative marginBottom
-      // when the element is not visible (has the mask above)
-      el.style.marginBottom = `-${el.offsetHeight}px`
+      el.style.opacity = 0.2
     },
     transContrEnter (el, complete) {
-      Velocity(el, { opacity: 1, marginBottom: 8 }, { duration: 300, delay: 300, complete })
+      Velocity(el, { opacity: 1 }, { duration: 300, delay: 300, complete })
     },
     transContrLeave (el, complete) {
-      Velocity(el, { opacity: 0 }, { duration: 300, complete })
+      Velocity(el, { opacity: 0.2 }, { duration: 300, complete })
+    },
+
+    transTriggerBefEnter (el) {
+      el.style.opacity = 0
+    },
+    transTriggerEnter (el, complete) {
+      Velocity(el, 'fadeIn', { duration: 200, delay: 350, display: '', complete })
+    },
+    transTriggerLeave (el, complete) {
+      Velocity(el, 'fadeOut', { duration: 200, display: '', complete })
     },
 
     transFormBefEnter (el) {
       el.style.opacity = 0
+      this.$refs.incomeForm.$refs.card.style.opacity = 0
     },
-    transFormEnter (el, done) {
-      Velocity(el, { opacity: 1 }, { duration: 150, delay: 600, complete: done })
+    transFormEnter (el, complete) {
+      Velocity(el, 'fadeIn', { duration: 150, delay: 150, display: '' })
+      Velocity(this.$refs.incomeForm.$refs.card, 'fadeIn', { duration: 150, delay: 350, complete })
     },
-    transFormLeave (el, done) {
-      Velocity(el, { opacity: 0 }, { duration: 150 })
-      Velocity(el, 'slideUp', { duration: 450, delay: 150, complete: done })
+    transFormLeave (el, complete) {
+      Velocity(this.$refs.incomeForm.$refs.card, { opacity: 0 }, { duration: 50 })
+      Velocity(el, 'fadeOut', { duration: 150, delay: 250, display: '', complete })
     },
 
-    transMaskAppear (el, done) {
+    transMaskAppear (el, complete) {
       console.log('transMaskAppear')
-      Velocity(el, { opacity: 0, width: this.$refs.incomeForm.$el.offsetWidth, height: this.$refs.incomeForm.$el.offsetHeight, top: this.$refs.incomeForm.$el.offsetTop, left: this.$refs.incomeForm.$el.offsetLeft }, { duration: 1, complete: done })
+      if (this.isFirstTime) {
+        const { width, height, top, left } = this.$refs.messageIncome.$el.getBoundingClientRect()
+
+        Velocity(el, { opacity: 0.2, width, height, top, left }, { duration: 1, complete })
+      } else {
+        // TODO - adapt to contribution: receiving or pledging.
+      }
     },
-    // from contr to form
+
+    // to contr/message
     transMaskBefEnter (el) {
       console.log('transMaskBefEnter')
     },
     transMaskEnter (el, done) {
       console.log('transMaskEnter')
-      Velocity(el, { opacity: 0, width: this.elContr.offsetWidth, height: this.elContr.offsetHeight, top: this.elContr.offsetTop, left: this.elContr.offsetLeft }, { duration: 1 })
+      Velocity(el, { opacity: 0.2, width: this.elIncomeForm.offsetWidth, height: this.elIncomeForm.offsetHeight, top: this.elIncomeForm.offsetTop, left: this.elIncomeForm.offsetLeft }, { duration: 1 })
 
-      const { offsetWidth, offsetHeight, offsetTop, offsetLeft } = this.elIncomeForm
+      console.log('wual é o elemento agora paah')
+      if (!this.isFirstTime) {
+        // TODO verify when it's receiving contr. - is this the correct place?
+        const { offsetWidth, offsetHeight, offsetTop, offsetLeft } = this.$refs.contPledged.$el
+        this.elFormTrigger = { offsetWidth, offsetHeight, offsetTop, offsetLeft }
+      }
 
-      Velocity(el, { opacity: 1 }, { duration: 250 })
-      Velocity(el, { width: offsetWidth, height: offsetHeight, top: offsetTop, left: offsetLeft }, { duration: 350, easing: 'ease-out' })
-      Velocity(el, { opacity: 0 }, { duration: 250, complete: done })
+      const { offsetWidth, offsetHeight, offsetTop, offsetLeft } = this.elFormTrigger
+
+      Velocity(el, { opacity: 1 }, { duration: 50 })
+      Velocity(el, { width: offsetWidth, height: offsetHeight, top: offsetTop, left: offsetLeft },
+        { duration: 250, delay: 50, easing: 'ease-out' }
+      )
+      Velocity(el, { opacity: 0.2 }, { duration: 150, complete: done })
     },
 
-    // from form to contr
+    // to form
     transMaskBefLeave (el) {
       console.log('transMaskBefLeave')
     },
-    transMaskLeave (el, done) {
+    transMaskLeave (el, complete) {
       console.log('transMaskLeave')
-      Velocity(el, { opacity: 0, width: this.elIncomeForm.offsetWidth, height: this.elIncomeForm.offsetHeight, top: this.elIncomeForm.offsetTop, left: this.elIncomeForm.offsetLeft }, { duration: 1 })
 
-      const { offsetWidth, offsetHeight, offsetTop, offsetLeft } = this.elContr.offsetWidth ? this.elContr : this.$refs.contPledged.$el
+      Velocity(el, { opacity: 0.2, width: this.elFormTrigger.offsetWidth, height: this.elFormTrigger.offsetHeight, top: this.elFormTrigger.offsetTop, left: this.elFormTrigger.offsetLeft }, { duration: 1 })
+
+      const { offsetWidth, offsetHeight, offsetTop, offsetLeft } = this.elIncomeForm.offsetWidth ? this.elIncomeForm : this.$refs.incomeForm.$refs.card
       Velocity(el, { opacity: 1 }, { duration: 150 })
-      Velocity(el, { width: offsetWidth, height: offsetHeight, top: offsetTop, left: offsetLeft }, { duration: 350, easing: 'ease-in' })
-      Velocity(el, { opacity: 0 }, { duration: 150, complete: done })
+      Velocity(el, { width: offsetWidth, height: offsetHeight, top: offsetTop, left: offsetLeft },
+        { duration: 250, easing: 'ease-out' }
+      )
+      Velocity(el, { opacity: 0.2 }, { duration: 150, complete })
     },
     transMaskAfterLeave () {
     }

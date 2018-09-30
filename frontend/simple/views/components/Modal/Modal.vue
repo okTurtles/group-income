@@ -1,5 +1,5 @@
 <template>
-  <article class="modal is-active"
+  <div class="modal is-active"
     data-test="modal"
     v-if="isActive"
   >
@@ -8,7 +8,7 @@
       <button class="delete" aria-label="close" @click="handleCloseClick"></button>
       <component :is="activeModal"></component>
     </div>
-  </article>
+  </div>
 </template>
 <script>
 import sbp from '../../../../../shared/sbp.js'
