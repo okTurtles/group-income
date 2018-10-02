@@ -51,7 +51,11 @@
         </ul>
       </div>
       <transition @enter="transTriggerEnter" @leave="transTriggerLeave">
-        <message-missing-income ref="triggerMissing" v-if="isFirstTime && !isEditingIncome" @click="handleFormTriggerClick"></message-missing-income>
+        <message-missing-income ref="triggerMissing"
+            class="column is-12"
+            v-if="isFirstTime && !isEditingIncome"
+            @click="handleFormTriggerClick"
+        ></message-missing-income>
       </transition>
     </section>
 
@@ -87,7 +91,7 @@
       padding-left: 0;
     }
 
-    &:last-child {
+    &:nth-child(2) {
       padding-right: 0;
     }
   }
@@ -103,7 +107,7 @@
   opacity: 0.01;
   background: $primary-bg-s;
   border-radius: $radius;
-  z-index: 50;
+  z-index: $gi-zindex-mask;
 }
 </style>
 <script>
@@ -229,7 +233,7 @@ export default {
 
     transFormEnter (el, complete) {
       console.log('transFormEnter')
-      const formInner = this.$refs.incomeForm.$refs.card
+      const formInner = this.$refs.incomeForm.$refs.form
       Velocity(el, { opacity: 0 }, { duration: 0 })
       Velocity(formInner, { opacity: 0 }, { duration: 0 })
 
@@ -240,7 +244,7 @@ export default {
     },
     transFormLeave (el, complete) {
       console.log('transFormLeave')
-      const formInner = this.$refs.incomeForm.$refs.card
+      const formInner = this.$refs.incomeForm.$refs.form
 
       this.updateDimensions(formInner, 'targetDimensions')
 

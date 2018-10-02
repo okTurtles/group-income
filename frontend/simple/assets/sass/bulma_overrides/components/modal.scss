@@ -15,6 +15,13 @@ $modal-z: $gi-zindex-modal;
 
 .modal-card {
   width: auto;
+  max-width: 100%;
+
+  &-content {
+    background: $body-background-color;
+    border-radius: $radius;
+    padding: $gi-spacer;
+  }
 
   .delete {
     position: absolute;
@@ -34,6 +41,10 @@ $modal-z: $gi-zindex-modal;
   }
 
   @include tablet {
+    &-content {
+      padding: $gi-spacer-lg;
+    }
+
     &-head,
     &-body,
     &-foot {
@@ -44,6 +55,10 @@ $modal-z: $gi-zindex-modal;
         width: 20rem;
         padding-left: $gi-spacer-lg;
         padding-right: $gi-spacer-lg;
+      }
+
+      .is-medium & {
+        width: 50rem;
       }
     }
   }

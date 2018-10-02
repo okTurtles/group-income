@@ -21,7 +21,7 @@
     <div id="app">
       <sidebar v-if="showSidebar"></sidebar>
       <router-view :class="{ 'gi-routerView': showSidebar }"></router-view>
-      <modal></modal>
+      <modal-dynamic></modal-dynamic>
       <footer id="debug-pages" class="has-text-centered">
         <!-- Event Log test is hidden because we no longer do it.
              I've left this here to serve as an example of how links

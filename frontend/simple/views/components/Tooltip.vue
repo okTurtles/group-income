@@ -23,11 +23,12 @@
   position: absolute;
   top: 0;
   left: 0;
+  min-width: 3rem;
+  max-width: 12rem;
   border-radius: $radius;
   padding: $gi-spacer-sm;
   opacity: 0.95;
   z-index: $gi-zindex-tooltip;
-  max-width: 12rem;
 }
 </style>
 <script>

@@ -1,149 +1,117 @@
 <template>
   <transition @enter="transEnter" @leave="transLeave">
-    <div class="modal is-active" v-if="isEditing">
-      <div class="modal-background" @click="cancelForm"></div>
-      <div class="modal-card c-card" ref="card">
-        <button class="delete" aria-label="close" @click="cancelForm"></button>
-        <div class="c-form">
-          <i18n tag="h2" class="title is-3">Income Details</i18n>
+    <modal :isActive="isEditing" v-if="isEditing" @close="cancelForm">
+      <form class="modal-card-content c-form" @submit.prevent="verifyForm" novalidate="true" ref="form">
+        <i18n tag="h2" class="title is-3">Income Details</i18n>
+        <div class="columns is-desktop is-multiline c-grid">
+          <div class="column">
+            <fieldset class="fieldset">
+              <i18n tag="legend" class="sr-only">Income details</i18n>
 
-          <hr class="c-hr">
-
-          <form @submit.prevent="verifyForm" novalidate="true" ref="form">
-            <div class="columns is-desktop is-multiline c-grid">
-              <div class="column">
-                <fieldset class="c-form-fieldset">
-                  <i18n tag="legend" class="sr-only">Income details</i18n>
-
-                  <div class="field is-narrow c-form-field">
-                    <i18n tag="p" class="label">Do you make at least {{income}} per month?</i18n>
-                    <i18n tag="strong" class="help has-text-danger has-text-weight-normal" v-if="formVerified && $v.form.option.$invalid">{{infoRequired}}</i18n>
-                    <div class="control">
-                      <!-- REVIEW - radio should it be a component? -->
-                      <label class="c-form-tick">
-                        <input class="gi-tick-input" type="radio" value="no" v-model="form.option" @change="resetFormVerify">
-                        <span class="gi-tick-custom"></span>
-                        <i18n>No, I don't</i18n>
-                      </label>
-                      <label class="c-form-tick">
-                        <input class="gi-tick-input" type="radio" value="yes" v-model="form.option" @change="resetFormVerify">
-                        <span class="gi-tick-custom"></span>
-                        <i18n>Yes, I do</i18n>
-                      </label>
-                    </div>
-                  </div>
-
-                  <label class="field c-form-field" v-if="hasLessIncome">
-                    <i18n class="label">What's your monthly income?</i18n>
-                    <i18n tag="strong" class="help has-text-danger has-text-weight-normal" v-if="formVerified && $v.form.income.$invalid">{{infoRequired}}</i18n>
-                    <div class="field has-addons">
-                      <span class="control">
-                        <span class="button is-static c-currency">
-                          {{groupCurrency}}
-                        </span>
-                      </span>
-                      <span class="control">
-                        <input class="input"
-                          :class="{'is-danger': formVerified && $v.form.income.$invalid}"
-                          type="number"
-                          v-model="form.income"
-                          :placeholder="L('amout')"
-                        >
-                      </span>
-                    </div>
-                    <span class="c-textHelp">
-                      <TextWho :who="['Rick', 'Carl', 'Kim']"></TextWho>
-                      <i18n>will ensure you meet the mincome</i18n>
-                    </span>
+              <div class="field is-narrow c-form-field">
+                <i18n tag="p" class="label">Do you make at least {{income}} per month?</i18n>
+                <i18n tag="strong" class="help has-text-danger has-text-weight-normal" v-if="formVerified && $v.form.option.$invalid">{{infoRequired}}</i18n>
+                <div class="control">
+                  <!-- REVIEW - radio should it be a component? -->
+                  <label class="gi-tick">
+                    <input class="gi-tick-input" type="radio" value="no" v-model="form.option" @change="resetFormVerify">
+                    <span class="gi-tick-custom"></span>
+                    <i18n>No, I don't</i18n>
                   </label>
-
-                  <label class="field c-form-field" v-if="hasMinIncome">
-                    <i18n class="label">Pledge amount</i18n>
-                    <i18n tag="strong" class="help has-text-danger has-text-weight-normal" v-if="formVerified && $v.form.pledge.$invalid">{{infoRequired}}</i18n>
-                    <div class="field has-addons">
-                      <span class="control">
-                        <span class="button is-static c-currency">
-                          {{groupCurrency}}
-                        </span>
-                      </span>
-                      <span class="control">
-                        <input class="input"
-                          :class="{'is-danger': formVerified && $v.form.pledge.$invalid}"
-                          type="number"
-                          v-model="form.pledge"
-                          :placeholder="L('amout')"
-                        >
-                      </span>
-                    </div>
-                    <i18n lass="c-textHelp">Define up to how much you pledge to contribute to the group each month. You can pledge any amount (even $1 million!) Only the minimum needed amount will be given.</i18n>
+                  <label class="gi-tick">
+                    <input class="gi-tick-input" type="radio" value="yes" v-model="form.option" @change="resetFormVerify">
+                    <span class="gi-tick-custom"></span>
+                    <i18n>Yes, I do</i18n>
                   </label>
-                </fieldset>
-
-                <fieldset class="c-form-fieldset" v-if="!!$v.form.option.$model">
-                  <i18n tag="legend" class="label">Payment method</i18n>
-                  <payment-methods></payment-methods>
-                </fieldset>
-              </div>
-
-              <div class="column">
-                <div class="c-graph">
-                  [group income chart soon]
                 </div>
               </div>
 
-            </div>
+              <label class="field c-form-field" v-if="hasLessIncome">
+                <i18n class="label">What's your monthly income?</i18n>
+                <i18n tag="strong" class="help has-text-danger has-text-weight-normal" v-if="formVerified && $v.form.income.$invalid">{{infoRequired}}</i18n>
+                <div class="field has-addons">
+                  <span class="control">
+                    <span class="button is-static">
+                      {{groupCurrency}}
+                    </span>
+                  </span>
+                  <span class="control">
+                    <input class="input"
+                      :class="{'is-danger': formVerified && $v.form.income.$invalid}"
+                      type="number"
+                      v-model="form.income"
+                      :placeholder="L('amout')"
+                    >
+                  </span>
+                </div>
+                <p class="help is-size-6">
+                  <TextWho :who="['Rick', 'Carl', 'Kim']"></TextWho>
+                  <i18n>will ensure you meet the mincome</i18n>
+                </p>
+              </label>
 
-            <div class="field is-grouped">
-              <p class="control">
-                <i18n tag="button" class="button is-primary" type="submit">{{saveButtonText}}</i18n>
-              </p>
-              <p class="control">
-                <i18n tag="button" class="button" type="button" @click="cancelForm">Cancel</i18n>
-              </p>
+              <label class="field c-form-field" v-if="hasMinIncome">
+                <i18n class="label">Pledge amount</i18n>
+                <i18n tag="strong" class="help has-text-danger has-text-weight-normal" v-if="formVerified && $v.form.pledge.$invalid">{{infoRequired}}</i18n>
+                <div class="field has-addons">
+                  <span class="control">
+                    <span class="button is-static">
+                      {{groupCurrency}}
+                    </span>
+                  </span>
+                  <span class="control">
+                    <input class="input"
+                      :class="{'is-danger': formVerified && $v.form.pledge.$invalid}"
+                      type="number"
+                      v-model="form.pledge"
+                      :placeholder="L('amout')"
+                    >
+                  </span>
+                </div>
+                <i18n tag="p" class="help is-size-6">Define up to how much you pledge to contribute to the group each month. You can pledge any amount (even $1 million!) Only the minimum needed amount will be given.</i18n>
+              </label>
+            </fieldset>
+
+            <fieldset class="fieldset" v-if="!!$v.form.option.$model">
+              <i18n tag="legend" class="label">Payment method</i18n>
+              <payment-methods></payment-methods>
+            </fieldset>
+          </div>
+
+          <div class="column">
+            <div class="c-graph">
+              [group income chart soon]
             </div>
-          </form>
+          </div>
+
         </div>
-      </div>
-    </div>
+
+        <div class="field is-grouped">
+          <p class="control">
+            <i18n tag="button" class="button is-primary" type="submit">{{saveButtonText}}</i18n>
+          </p>
+          <p class="control">
+            <i18n tag="button" class="button" type="button" @click="cancelForm">Cancel</i18n>
+          </p>
+        </div>
+        </form>
+    </modal>
   </transition>
 </template>
 <style lang="scss" scoped>
 @import "../../../assets/sass/theme/index";
 
-.c-card {
-  background: $body-background-color;
-  border-radius: $radius;
-  padding: $gi-spacer-lg;
-  width: 100%;
-  max-width: 50rem;
-}
-
-.c-hr {
-  margin: $gi-spacer 0;
-}
-
 .c-form {
-  // TODO - analyse if this can be global to every form/field
-  &-fieldset {
-    border: none;
-    margin-bottom: $gi-spacer-lg;
-  }
+  width: 50rem;
 
+  // REVIEW - analyse if this can be global to every form/field
+  // TODO - review all forms to be consistent
   &-field {
     margin-bottom: $gi-spacer*1.5;
 
-    .help {
-      margin: -$gi-spacer-sm 0 $gi-spacer-sm;
+    &:last-child {
+      margin-bottom: 0;
     }
-  }
-
-  &-fieldset:last-child,
-  &-field:last-child {
-    margin-bottom: 0;
-  }
-
-  &-tick {
-    margin-right: $gi-spacer;
   }
 
   .input {
@@ -151,16 +119,8 @@
   }
 }
 
-.c-currency {
-  // TODO - make this global to every static input addon
-  padding-left: $gi-spacer;
-  padding-right: $gi-spacer;
-  color: $text;
-  border-color: $grey-light;
-}
-
-.c-textHelp {
-  margin-top: -$gi-spacer-sm;
+.help {
+  margin: -$gi-spacer-sm 0 $gi-spacer-sm;
 }
 
 .c-graph {
@@ -179,6 +139,7 @@
 
 </style>
 <script>
+import Modal from '../../components/Modal/ModalBasic.vue'
 import PaymentMethods from './PaymentMethods.vue'
 import TextWho from '../../components/TextWho.vue'
 import { validationMixin } from 'vuelidate'
@@ -188,6 +149,7 @@ export default {
   name: 'IncomeForm',
   mixins: [ validationMixin ],
   components: {
+    Modal,
     PaymentMethods,
     TextWho
   },

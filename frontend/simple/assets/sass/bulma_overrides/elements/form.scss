@@ -8,6 +8,26 @@ $input-focus-box-shadow-size: 0 0 0 0.1em inset;
 $gi-input-tickly-size: 1rem;
 $gi-input-checked-size: 0.4rem;
 
+.fieldset {
+  border: none;
+  margin-bottom: $gi-spacer-lg;
+
+  &:last-of-type {
+    margin-bottom: 0;
+  }
+}
+
+.field {
+  display: inline-block;
+
+  &.has-addons .control:first-child .button.is-static {
+    padding-left: $gi-spacer;
+    padding-right: $gi-spacer;
+    color: $text;
+    border-color: $grey-light;
+  }
+}
+
 .input {
   padding-left: $gi-spacer;
 
@@ -16,6 +36,8 @@ $gi-input-checked-size: 0.4rem;
   }
 }
 
+// Flat inputs like in "Contributions" page
+// TODO - review all forms consistence
 .field.gi-has-addons {
   .button {
     position: relative;
@@ -66,45 +88,49 @@ $gi-input-checked-size: 0.4rem;
   }
 }
 
-.gi-tick-input {
-  position: absolute;
-  top: 1px;
-  left: 1px;
-  -moz-appearance: none;
-  -webkit-appearance: none;
-}
+.gi-tick {
+  margin-right: $gi-spacer;
 
-.gi-tick-custom {
-  cursor: pointer;
-  width: 0.875rem;
-  height: 0.875rem;
-  margin-right: $gi-spacer-xs;
-  display: inline-block;
-  border-radius: 50%;
-  border: 1px solid $grey;
-  transform: translateY(2px); // align with text
-
-  &::after {
-    content: "";
-    width: 0.4rem;
-    height: 0.4rem;
-    background-color: $primary;
-    border-radius: 50%;
+  &-input {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%) scale(0);
-    transform-origin: 50% 50%;
-    transition: transform 150ms;
+    top: 1px;
+    left: 1px;
+    -moz-appearance: none;
+    -webkit-appearance: none;
   }
 
-  .gi-tick-input:focus + &,
-  .gi-tick-input:checked + & {
-    outline: none;
-    border-color: $text;
+  &-custom {
+    cursor: pointer;
+    width: 0.875rem;
+    height: 0.875rem;
+    margin-right: $gi-spacer-xs;
+    display: inline-block;
+    border-radius: 50%;
+    border: 1px solid $grey;
+    transform: translateY(2px); // align with text
 
     &::after {
-      transform: translate(-50%, -50%) scale(1);
+      content: "";
+      width: 0.4rem;
+      height: 0.4rem;
+      background-color: $primary;
+      border-radius: 50%;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      transform-origin: 50% 50%;
+      transition: transform 150ms;
+    }
+
+    .gi-tick-input:focus + &,
+    .gi-tick-input:checked + & {
+      outline: none;
+      border-color: $text;
+
+      &::after {
+        transform: translate(-50%, -50%) scale(1);
+      }
     }
   }
 }
