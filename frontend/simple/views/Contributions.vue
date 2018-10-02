@@ -17,13 +17,13 @@
             <TextWho :who="contribution.who"></TextWho>
           </contribution>
 
-          <transition @enter="transTriggerEnter" @leave="transTriggerLeave">
+          <trigger @animate="updateSize">
             <contribution v-if="doesReceiveMonetary" variant="editable" isMonetary @interaction="handleFormTriggerClick">
               <span v-html="textReceivingMonetary(receiving.monetary)"></span>
               <TextWho :who="groupMembersPledging"></TextWho>
               <i18n>each month</i18n>
             </contribution>
-          </transition>
+          </trigger>
         </ul>
       </div>
 
@@ -42,36 +42,32 @@
             <i18n>Add a non-monetary method</i18n>
           </contribution>
 
-          <transition @enter="transTriggerEnter" @leave="transTriggerLeave">
+          <trigger @animate="updateSize">
             <contribution v-if="doesGiveMonetary" variant="editable" isMonetary @interaction="handleFormTriggerClick">
               <!-- REVIEW - have different text if the user is pledging $0 -->
               <i18n class="has-text-weight-bold" :args="{amount:`${currency}${giving.monetary}`}">Pledge up to {amount}</i18n><i18n>to other's mincome</i18n>
             </contribution>
-          </transition>
+          </trigger>
         </ul>
       </div>
     </section>
 
-    <transition @enter="transTriggerEnter" @leave="transTriggerLeave">
+    <trigger @animate="updateSize">
       <message-missing-income class="section"
-          v-if="isFirstTime && !isEditingIncome"
-          @click="handleFormTriggerClick"
+        v-if="isFirstTime && !isEditingIncome"
+        @click="handleFormTriggerClick"
       ></message-missing-income>
-    </transition>
+    </trigger>
 
-    <income-form ref="incomeForm"
-      :isEditing="isEditingIncome"
-      :transEnter="transFormEnter"
-      :transAfterEnter="transFormAfterEnter"
-      :transLeave="transFormLeave"
-      @save="handleIncomeSave"
-      @cancel="handleIncomeCancel"
-    ></income-form>
+    <target :targetCard="$refs.incomeForm" @animate="updateSize">
+      <income-form ref="incomeForm" class="c-incomeForm"
+        v-if="isEditingIncome"
+        @save="handleIncomeSave"
+        @cancel="handleIncomeCancel"
+      ></income-form>
+    </target>
 
-    <!-- TODO - isolate mask logic as much as possible. -->
-    <transition @enter="transMaskEnter" @leave="transMaskLeave">
-      <div v-if="isEditingIncome" class="c-mask"></div>
-    </transition>
+    <masker :isActive="isEditingIncome" :elementsSize="maskerElementsSize"></masker>
   </main>
 </template>
 <style lang="scss" scoped>
@@ -110,9 +106,17 @@
   border-radius: $radius;
   z-index: $gi-zindex-mask;
 }
+
+.c-incomeForm {
+  // - REVIEW needed on MaskToModal,
+  // but dunno how to make it without being here...
+  // - TODO review trigger elements too.
+  // this fixes a bug on safari with a flickering first frame when entering.
+  opacity: 0;
+}
 </style>
 <script>
-import Velocity from 'velocity-animate'
+import { Trigger, Target, Masker } from './components/Transitions/MaskToModal/index.js'
 import currencies from './utils/currencies.js'
 import Contribution from './components/Contribution.vue'
 import TextWho from './components/TextWho.vue'
@@ -124,13 +128,16 @@ export default {
     Contribution,
     TextWho,
     IncomeForm,
-    MessageMissingIncome
+    MessageMissingIncome,
+    Trigger,
+    Target,
+    Masker
   },
   data () {
     return {
-      triggerDimensions: null, // a contribution or missing message
-      targetDimensions: null, // the income form
+      maskerElementsSize: {}, // a trigger or target
       isEditingIncome: false,
+
       // -- Hardcoded Data just for layout purpose:
       currency: currencies['USD'],
       isFirstTime: true, // true when user doesn't have any income details. It displays the 'Add Income Details' box
@@ -173,6 +180,13 @@ export default {
     }
   },
   methods: {
+    // REVIEW - how can we pass the element sizes from trigger/target to masker
+    // without using the parent that contains them?
+    // maybe using provide / inject pattern?
+    updateSize ({ name, size }) {
+      this.maskerElementsSize[name] = size
+    },
+
     submitAddNonMonetary (value) {
       console.log('TODO BE - submitAddNonMonetary')
       this.giving.nonMonetary.push(value) // Hardcoded Solution
@@ -210,80 +224,7 @@ export default {
       this.closeIncome()
     },
     closeIncome () {
-      console.log('closeIncome')
       this.isEditingIncome = false
-    },
-
-    // ---- IncomeForm Mask Animations:
-
-    transTriggerEnter (el, complete) {
-      console.log('transTriggerEnter')
-
-      this.updateDimensions(el, 'triggerDimensions')
-
-      Velocity(el, { opacity: 0 }, { duration: 0 })
-      Velocity(el, { opacity: 1 }, { duration: 150, delay: 350, complete })
-    },
-    transTriggerLeave (el, complete) {
-      console.log('transTriggerLeave')
-
-      this.updateDimensions(el, 'triggerDimensions')
-
-      Velocity(el, { opacity: 0 }, { duration: 150, complete })
-    },
-    transFormEnter (el, complete) {
-      console.log('transFormEnter')
-      const formInner = this.$refs.incomeForm.$refs.modal.$refs.card
-
-      this.updateDimensions(formInner, 'targetDimensions')
-
-      Velocity(el, { opacity: 0 }, { duration: 0 })
-      Velocity(formInner, { opacity: 0 }, { duration: 0 })
-
-      this.updateDimensions(formInner, 'targetDimensions')
-
-      Velocity(el, { opacity: 1 }, { duration: 150, delay: 150 })
-      Velocity(formInner, 'fadeIn', { duration: 150, delay: 350, complete })
-    },
-    transFormAfterEnter (el) {
-      console.log('transFormAfterEnter')
-      Velocity(el, { opacity: 1 }, { duration: 0 })
-    },
-    transFormLeave (el, complete) {
-      console.log('transFormLeave')
-      const formInner = this.$refs.incomeForm.$refs.modal.$refs.card
-
-      this.updateDimensions(formInner, 'targetDimensions')
-
-      Velocity(formInner, { opacity: 0 }, { duration: 50 })
-      Velocity(el, { opacity: 0 }, { duration: 150, delay: 250, complete })
-    },
-
-    // to form income
-    transMaskEnter (el, complete) {
-      console.log('transMaskLeave')
-
-      Velocity(el, { opacity: 0.1, ...this.triggerDimensions }, { duration: 0 })
-
-      Velocity(el, { opacity: 1 }, { duration: 150 })
-      Velocity(el, { ...this.targetDimensions }, { duration: 250, easing: 'ease-out' })
-      Velocity(el, { opacity: 0.01 }, { duration: 150, complete })
-    },
-
-    // to contribution / missing message
-    transMaskLeave (el, complete) {
-      console.log('transMaskEnter')
-      Velocity(el, { opacity: 0.1, ...this.targetDimensions }, { duration: 0 })
-
-      Velocity(el, { opacity: 1 }, { duration: 50 })
-      Velocity(el, { ...this.triggerDimensions }, { duration: 250, delay: 50, easing: 'ease-out' })
-      Velocity(el, { opacity: 0.01 }, { duration: 150, complete })
-    },
-
-    // animation utils:
-    updateDimensions (el, objectKey) {
-      const { width, height, top, left } = el.getBoundingClientRect()
-      this[objectKey] = { width, height, top, left }
     }
   }
 }
