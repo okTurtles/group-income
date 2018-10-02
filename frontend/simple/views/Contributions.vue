@@ -18,7 +18,7 @@
           </contribution>
 
           <transition @enter="transTriggerEnter" @leave="transTriggerLeave">
-            <contribution ref="contReceiving" v-if="doesReceiveMonetary" variant="editable" isMonetary @interaction="handleFormTriggerClick">
+            <contribution v-if="doesReceiveMonetary" variant="editable" isMonetary @interaction="handleFormTriggerClick">
               <span v-html="textReceivingMonetary(receiving.monetary)"></span>
               <TextWho :who="groupMembersPledging"></TextWho>
               <i18n>each month</i18n>
@@ -43,25 +43,26 @@
           </contribution>
 
           <transition @enter="transTriggerEnter" @leave="transTriggerLeave">
-            <contribution ref="triggerPledged" v-if="doesGiveMonetary" variant="editable" isMonetary @interaction="handleFormTriggerClick">
+            <contribution v-if="doesGiveMonetary" variant="editable" isMonetary @interaction="handleFormTriggerClick">
               <!-- REVIEW - have different text if the user is pledging $0 -->
               <i18n class="has-text-weight-bold" :args="{amount:`${currency}${giving.monetary}`}">Pledge up to {amount}</i18n><i18n>to other's mincome</i18n>
             </contribution>
           </transition>
         </ul>
       </div>
-      <transition @enter="transTriggerEnter" @leave="transTriggerLeave">
-        <message-missing-income ref="triggerMissing"
-            class="column is-12"
-            v-if="isFirstTime && !isEditingIncome"
-            @click="handleFormTriggerClick"
-        ></message-missing-income>
-      </transition>
     </section>
+
+    <transition @enter="transTriggerEnter" @leave="transTriggerLeave">
+      <message-missing-income class="section"
+          v-if="isFirstTime && !isEditingIncome"
+          @click="handleFormTriggerClick"
+      ></message-missing-income>
+    </transition>
 
     <income-form ref="incomeForm"
       :isEditing="isEditingIncome"
       :transEnter="transFormEnter"
+      :transAfterEnter="transFormAfterEnter"
       :transLeave="transFormLeave"
       @save="handleIncomeSave"
       @cancel="handleIncomeCancel"
@@ -230,10 +231,12 @@ export default {
 
       Velocity(el, { opacity: 0 }, { duration: 150, complete })
     },
-
     transFormEnter (el, complete) {
       console.log('transFormEnter')
-      const formInner = this.$refs.incomeForm.$refs.form
+      const formInner = this.$refs.incomeForm.$refs.modal.$refs.card
+
+      this.updateDimensions(formInner, 'targetDimensions')
+
       Velocity(el, { opacity: 0 }, { duration: 0 })
       Velocity(formInner, { opacity: 0 }, { duration: 0 })
 
@@ -242,9 +245,13 @@ export default {
       Velocity(el, { opacity: 1 }, { duration: 150, delay: 150 })
       Velocity(formInner, 'fadeIn', { duration: 150, delay: 350, complete })
     },
+    transFormAfterEnter (el) {
+      console.log('transFormAfterEnter')
+      Velocity(el, { opacity: 1 }, { duration: 0 })
+    },
     transFormLeave (el, complete) {
       console.log('transFormLeave')
-      const formInner = this.$refs.incomeForm.$refs.form
+      const formInner = this.$refs.incomeForm.$refs.modal.$refs.card
 
       this.updateDimensions(formInner, 'targetDimensions')
 
@@ -273,7 +280,7 @@ export default {
       Velocity(el, { opacity: 0.01 }, { duration: 150, complete })
     },
 
-    // animation UTILS:
+    // animation utils:
     updateDimensions (el, objectKey) {
       const { width, height, top, left } = el.getBoundingClientRect()
       this[objectKey] = { width, height, top, left }

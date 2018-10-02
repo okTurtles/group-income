@@ -1,5 +1,5 @@
 <template>
-  <div class="box is-unfilled" v-on="$listeners">
+  <div class="box is-unfilled c-box" v-on="$listeners">
     <div class="is-flex c-header">
       <i class="fa fa-plus is-flex c-icon"></i>
       <i18n tag="h2" class="title is-5">Add Income Details</i18n>
@@ -14,6 +14,10 @@
 </template>
 <style lang="scss" scoped>
 @import "../../../assets/sass/theme/index";
+
+.c-box {
+  padding: $gi-spacer;
+}
 
 .c-header {
   align-items: center;

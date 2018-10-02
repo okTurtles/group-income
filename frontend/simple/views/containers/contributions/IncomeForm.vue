@@ -1,7 +1,7 @@
 <template>
-  <transition @enter="transEnter" @leave="transLeave">
-    <modal :isActive="isEditing" v-if="isEditing" @close="cancelForm">
-      <form class="modal-card-content c-form" @submit.prevent="verifyForm" novalidate="true" ref="form">
+  <transition @enter="transEnter" @after-enter="transAfterEnter" @leave="transLeave">
+    <modal :isActive="isEditing" v-if="isEditing" @close="cancelForm" class="c-modal" ref="modal">
+      <form class="modal-card-content c-form" @submit.prevent="verifyForm" novalidate="true">
         <i18n tag="h2" class="title is-3">Income Details</i18n>
         <div class="columns is-desktop is-multiline c-grid">
           <div class="column">
@@ -12,7 +12,6 @@
                 <i18n tag="p" class="label">Do you make at least {{income}} per month?</i18n>
                 <i18n tag="strong" class="help has-text-danger has-text-weight-normal" v-if="formVerified && $v.form.option.$invalid">{{infoRequired}}</i18n>
                 <div class="control">
-                  <!-- REVIEW - radio should it be a component? -->
                   <label class="gi-tick">
                     <input class="gi-tick-input" type="radio" value="no" v-model="form.option" @change="resetFormVerify">
                     <span class="gi-tick-custom"></span>
@@ -26,6 +25,8 @@
                 </div>
               </div>
 
+              <!--  BUGGG FORM FIELD orientation! -->
+              <!-- TODO - MAKE THIS A is: COMPONENT -->
               <label class="field c-form-field" v-if="hasLessIncome">
                 <i18n class="label">What's your monthly income?</i18n>
                 <i18n tag="strong" class="help has-text-danger has-text-weight-normal" v-if="formVerified && $v.form.income.$invalid">{{infoRequired}}</i18n>
@@ -101,8 +102,14 @@
 <style lang="scss" scoped>
 @import "../../../assets/sass/theme/index";
 
+.c-modal {
+  opacity: 0; // - TODO make this generic to all elements inside a fade transition.
+}
+
 .c-form {
   width: 50rem;
+  height: 100%;
+  overflow: auto;
 
   // REVIEW - analyse if this can be global to every form/field
   // TODO - review all forms to be consistent
@@ -156,6 +163,7 @@ export default {
   props: {
     isEditing: Boolean,
     transEnter: Function,
+    transAfterEnter: Function,
     transLeave: Function
   },
   data () {

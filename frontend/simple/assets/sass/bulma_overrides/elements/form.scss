@@ -18,7 +18,7 @@ $gi-input-checked-size: 0.4rem;
 }
 
 .field {
-  display: inline-block;
+  display: block;
 
   &.has-addons .control:first-child .button.is-static {
     padding-left: $gi-spacer;
@@ -138,6 +138,10 @@ $gi-input-checked-size: 0.4rem;
 .gi- {
   &is-grouped-reverse {
     flex-direction: row-reverse;
+
+    &.field.is-grouped-right {
+      justify-content: flex-start;
+    }
 
     &.field.is-grouped > .control:not(:last-child) {
       margin-left: 0.75rem;

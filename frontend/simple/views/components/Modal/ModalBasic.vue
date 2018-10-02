@@ -1,7 +1,7 @@
 <template>
   <div class="modal is-active" v-if="isActive">
     <div class="modal-background" @click="handleCloseClick"></div>
-    <div class="modal-card">
+    <div class="modal-card" ref="card">
       <button class="delete" aria-label="close" @click="handleCloseClick"></button>
       <slot></slot>
     </div>
