@@ -45,7 +45,7 @@
 <script>
 export default {
   // NOTE: When something similar to this box is needed again
-  // consider adding props, move to components/ and reuse it.
+  // consider adding props, move to components/ and reuse this componet.
   name: 'MessageMissingIncome'
 }
 </script>

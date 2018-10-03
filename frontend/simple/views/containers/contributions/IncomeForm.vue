@@ -28,6 +28,8 @@
               label="What's your monthly income?"
               :error="formVerified && $v.form.income.$invalid ? infoRequired : null"
             >
+              <!-- REVIEW: How do I pass a v-model to a input inside a children component?
+              That is preventing me of using :is component here -->
               <input class="input"
                 :class="{'is-danger': formVerified && $v.form.income.$invalid }"
                 type="number"

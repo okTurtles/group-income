@@ -19,7 +19,6 @@ $gi-compact-spacer: $gi-spacer*0.75;
     border: 1px dashed $primary;
     transition: background 100ms;
 
-    // TODO: make this global to all unfilled boxes
     &:hover {
       background: $primary-bg-a;
     }

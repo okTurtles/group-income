@@ -4,11 +4,11 @@ const animationMixins = {
   // TODO - some variables are welcomed!
 
   methods: {
-    // Trigger animations
+    // Trigger transitions
     transTriggerEnter (el, complete) {
       console.log('transTriggerEnter')
 
-      this.updateDimensions(el, 'trigger')
+      this.updateSize(el, 'trigger')
 
       Velocity(el, { opacity: 0 }, { duration: 0 })
       Velocity(el, { opacity: 1 }, { duration: 150, delay: 350, complete })
@@ -16,21 +16,21 @@ const animationMixins = {
     transTriggerLeave (el, complete) {
       console.log('transTriggerLeave')
 
-      this.updateDimensions(el, 'trigger')
+      this.updateSize(el, 'trigger')
 
       Velocity(el, { opacity: 0 }, { duration: 150, complete })
     },
 
-    // Target animations
+    // Target transitions
     transTargetEnter (el, complete) {
       console.log('transTargetEnter')
       const targetInner = this.getTargetInnerWhen('enter')
-      this.updateDimensions(targetInner, 'target')
+      this.updateSize(targetInner, 'target')
 
       Velocity(el, { opacity: 0 }, { duration: 0 })
       Velocity(targetInner, { opacity: 0 }, { duration: 0 })
 
-      this.updateDimensions(targetInner, 'target')
+      this.updateSize(targetInner, 'target')
 
       Velocity(el, { opacity: 1 }, { duration: 150, delay: 150 })
       Velocity(targetInner, 'fadeIn', { duration: 150, delay: 350, complete })
@@ -42,13 +42,13 @@ const animationMixins = {
     transTargetLeave (el, complete) {
       console.log('transTargetLeave')
       const targetInner = this.getTargetInnerWhen('leave')
-      this.updateDimensions(targetInner, 'target')
+      this.updateSize(targetInner, 'target')
 
       Velocity(targetInner, { opacity: 0 }, { duration: 50 })
       Velocity(el, { opacity: 0 }, { duration: 150, delay: 250, complete })
     },
 
-    // Mask animations
+    // Mask transitions
     // when animates to target (form)
     transMaskEnter (el, complete) {
       console.log('transMaskLeave')
@@ -71,7 +71,7 @@ const animationMixins = {
     },
 
     // animation utils:
-    updateDimensions (el, name) {
+    updateSize (el, name) {
       const { width, height, top, left } = el.getBoundingClientRect()
 
       // REVIEW - how can we pass the element sizes from trigger/target to masker
@@ -80,6 +80,9 @@ const animationMixins = {
       this.$emit('animate', { name, size: { width, height, top, left } })
     },
     getTargetInnerWhen (scenario) {
+      // we want the entire modal to fade in/out, (modal-card + modal-background)
+      // but we want the Masker to take the .modal-card shape only instead
+
       // - REVIEW: If you know a easier way to get the modal's .card element,
       // please let me know how to do it!
       if (scenario === 'enter') {

@@ -100,10 +100,10 @@
 }
 
 .c-incomeForm {
-  // - REVIEW needed on MaskToModal,
-  // but dunno how to make it without being here...
-  // - TODO review trigger elements too.
+  // - REVIEW
+  // income form needs to be invisible at the first frame
   // this fixes a bug on safari with a flickering first frame when entering.
+  // I'd like to make this inside <Target> but I don't know how.
   opacity: 0;
 }
 </style>
@@ -149,22 +149,18 @@ export default {
             who: ['Zoe Kim', 'Laurence E']
           }
         ],
-        monetary: null
+        monetary: null // Number - You can edit to see the receiving monetary contribution box (change isFirstTime to false too).
       },
       giving: {
         nonMonetary: [], // ArrayOf(String)
-        monetary: null // Number - Edit to see the giving monetary contribution box
+        monetary: null // Number - You can eddit to see the giving monetary contribution box (change isFirstTime to false too).
       },
       groupMembersPledging: [
         'Jack Fisher',
         'Charlotte Doherty',
         'Thomas Baker',
         'Francisco Scott'
-      ],
-      timings: {
-        move: 350,
-        fade: 200
-      }
+      ]
     }
   },
   computed: {
@@ -222,7 +218,7 @@ export default {
 
     // REVIEW - how can we pass the element sizes from trigger/target to masker
     // without using the parent that contains them?
-    // maybe using provide / inject pattern?
+    // maybe using provide / inject Vue feature?
     updateSize ({ name, size }) {
       this.maskerElementsSize[name] = size
     }

@@ -54,15 +54,9 @@
 import Tooltip from '../../components/Tooltip.vue'
 
 export default {
-  name: 'Receiving',
+  name: 'PaymentsMethod',
   components: {
     Tooltip
-  },
-  props: {
-    active: {
-      type: String,
-      default: 'manual'
-    }
   },
   computed: {
     methodsAvailable () {

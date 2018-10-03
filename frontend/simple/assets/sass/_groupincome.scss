@@ -40,17 +40,6 @@ body {
   width: 8rem;
 }
 
-.fade-enter-active,
-.fade-leave-active {
-  transform: scale(1);
-}
-
-.fade-enter,
-.fade-leave-to {
-  opacity: 0;
-  transform: scale(0);
-}
-
 // ------ Utilities ------ //
 
 .gi- {

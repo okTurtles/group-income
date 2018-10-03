@@ -1,5 +1,5 @@
 <template>
-  <div class="modal is-active" v-if="isActive">
+  <div class="modal is-active" data-test="modal" v-if="isActive">
     <div class="modal-background" @click="handleCloseClick"></div>
     <div class="modal-card" ref="card">
       <button class="delete" aria-label="close" @click="handleCloseClick"></button>
