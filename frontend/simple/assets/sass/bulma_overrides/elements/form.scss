@@ -136,6 +136,22 @@ $gi-input-checked-size: 0.4rem;
 }
 
 .gi- {
+  &fieldGroup {
+    display: block;
+
+    &:not(:last-child) {
+      margin-bottom: $gi-spacer;
+    }
+  }
+
+  &help {
+    margin: -$gi-spacer-sm 0 $gi-spacer-sm;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
   &is-grouped-reverse {
     flex-direction: row-reverse;
 

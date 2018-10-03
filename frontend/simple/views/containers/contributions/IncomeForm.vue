@@ -7,9 +7,9 @@
           <fieldset class="fieldset">
             <i18n tag="legend" class="sr-only">Income details</i18n>
 
-            <div class="field is-narrow c-form-field">
+            <div class="field is-narrow gi-fieldGroup">
               <i18n tag="p" class="label">Do you make at least {{income}} per month?</i18n>
-              <i18n tag="strong" class="help has-text-danger has-text-weight-normal" v-if="formVerified && $v.form.option.$invalid">{{infoRequired}}</i18n>
+              <i18n tag="strong" class="help has-text-danger has-text-weight-normal gi-help" v-if="formVerified && $v.form.option.$invalid">{{infoRequired}}</i18n>
               <div class="control">
                 <label class="gi-tick">
                   <input class="gi-tick-input" type="radio" value="no" v-model="form.option" @change="resetFormVerify">
@@ -24,51 +24,37 @@
               </div>
             </div>
 
-            <!-- TODO - MAKE THIS A is: COMPONENT -->
-            <label class="field c-form-field" v-if="hasLessIncome">
-              <i18n class="label">What's your monthly income?</i18n>
-              <i18n tag="strong" class="help has-text-danger has-text-weight-normal" v-if="formVerified && $v.form.income.$invalid">{{infoRequired}}</i18n>
-              <div class="field has-addons">
-                <span class="control">
-                  <span class="button is-static">
-                    {{groupCurrency}}
-                  </span>
-                </span>
-                <span class="control">
-                  <input class="input"
-                    :class="{'is-danger': formVerified && $v.form.income.$invalid}"
-                    type="number"
-                    v-model="form.income"
-                    :placeholder="L('amout')"
-                  >
-                </span>
-              </div>
-              <p class="help is-size-6">
+            <field-input v-if="hasLessIncome"
+              label="What's your monthly income?"
+              :error="formVerified && $v.form.income.$invalid ? infoRequired : null"
+            >
+              <input class="input"
+                :class="{'is-danger': formVerified && $v.form.income.$invalid }"
+                type="number"
+                v-model="form.income"
+                :placeholder="L('amout')"
+              >
+              <template slot="help">
                 <TextWho :who="['Rick', 'Carl', 'Kim']"></TextWho>
                 <i18n>will ensure you meet the mincome</i18n>
-              </p>
-            </label>
+              </template>
+            </field-input>
 
-            <label class="field c-form-field" v-if="hasMinIncome">
-              <i18n class="label">Pledge amount</i18n>
-              <i18n tag="strong" class="help has-text-danger has-text-weight-normal" v-if="formVerified && $v.form.pledge.$invalid">{{infoRequired}}</i18n>
-              <div class="field has-addons">
-                <span class="control">
-                  <span class="button is-static">
-                    {{groupCurrency}}
-                  </span>
-                </span>
-                <span class="control">
-                  <input class="input"
-                    :class="{'is-danger': formVerified && $v.form.pledge.$invalid}"
-                    type="number"
-                    v-model="form.pledge"
-                    :placeholder="L('amout')"
-                  >
-                </span>
-              </div>
-              <i18n tag="p" class="help is-size-6">Define up to how much you pledge to contribute to the group each month. You can pledge any amount (even $1 million!) Only the minimum needed amount will be given.</i18n>
-            </label>
+            <field-input v-if="hasMinIncome"
+              label="Pledge amount"
+              :error="formVerified && $v.form.pledge.$invalid ? infoRequired : null"
+            >
+              <input class="input"
+                :class="{'is-danger': formVerified && $v.form.pledge.$invalid }"
+                type="number"
+                v-model="form.pledge"
+                :placeholder="L('amout')"
+                value="100"
+              >
+              <template slot="help">
+                <i18n>Define up to how much you pledge to contribute to the group each month. You can pledge any amount (even $1 million!) Only the minimum needed amount will be given.</i18n>
+              </template>
+            </field-input>
           </fieldset>
 
           <fieldset class="fieldset" v-if="!!$v.form.option.$model">
@@ -103,24 +89,6 @@
   width: 50rem;
   height: 100%;
   overflow: auto;
-
-  // REVIEW - analyse if this can be global to every form/field
-  // TODO - review all forms to be consistent
-  &-field {
-    margin-bottom: $gi-spacer*1.5;
-
-    &:last-child {
-      margin-bottom: 0;
-    }
-  }
-
-  .input {
-    width: 6rem;
-  }
-}
-
-.help {
-  margin: -$gi-spacer-sm 0 $gi-spacer-sm;
 }
 
 .c-graph {
@@ -140,6 +108,7 @@
 </style>
 <script>
 import Modal from '../../components/Modal/ModalBasic.vue'
+import FieldInput from './FieldInput.vue'
 import PaymentMethods from './PaymentMethods.vue'
 import TextWho from '../../components/TextWho.vue'
 import { validationMixin } from 'vuelidate'
@@ -150,6 +119,7 @@ export default {
   mixins: [ validationMixin ],
   components: {
     Modal,
+    FieldInput,
     PaymentMethods,
     TextWho
   },

@@ -1,10 +1,15 @@
 <template>
-  <main class="c-main">
-    <div class="section is-hero">
-      <i18n tag="h1" class="title is-1 is-marginless">
-        Contributions
-      </i18n>
-      <i18n tag="p">See everyone’s contributions to the group and manage yours.</i18n>
+  <main>
+    <div class="section is-hero level">
+      <div>
+        <i18n tag="h1" class="title is-1 is-marginless">
+          Contributions
+        </i18n>
+        <i18n tag="p">See everyone’s contributions to the group and manage yours.</i18n>
+      </div>
+      <div>
+        <groups-min-income :group="currentGroupState" />
+      </div>
     </div>
 
     <section class="section columns is-desktop is-multiline c-grid">
@@ -73,10 +78,6 @@
 <style lang="scss" scoped>
 @import "../assets/sass/theme/index";
 
-.c-main {
-  padding-bottom: 4rem;
-}
-
 .c-grid .column {
   @include touch {
     padding-left: 0;
@@ -98,15 +99,6 @@
   margin: $gi-spacer*0.75 0;
 }
 
-.c-mask {
-  pointer-events: none;
-  position: fixed;
-  opacity: 0.01;
-  background: $primary-bg-s;
-  border-radius: $radius;
-  z-index: $gi-zindex-mask;
-}
-
 .c-incomeForm {
   // - REVIEW needed on MaskToModal,
   // but dunno how to make it without being here...
@@ -116,15 +108,19 @@
 }
 </style>
 <script>
-import { Trigger, Target, Masker } from './components/Transitions/MaskToModal/index.js'
+import { mapGetters } from 'vuex'
 import currencies from './utils/currencies.js'
-import Contribution from './components/Contribution.vue'
-import TextWho from './components/TextWho.vue'
 import MessageMissingIncome from './containers/contributions/MessageMissingIncome.vue'
 import IncomeForm from './containers/contributions/IncomeForm.vue'
+import GroupsMinIncome from './components/GroupsMinIncome.vue'
+import Contribution from './components/Contribution.vue'
+import TextWho from './components/TextWho.vue'
+import { Trigger, Target, Masker } from './components/Transitions/MaskToModal/index.js'
+
 export default {
   name: 'Contributions',
   components: {
+    GroupsMinIncome,
     Contribution,
     TextWho,
     IncomeForm,
@@ -172,6 +168,9 @@ export default {
     }
   },
   computed: {
+    ...mapGetters([
+      'currentGroupState'
+    ]),
     doesReceiveMonetary () {
       return !!this.receiving.monetary && !this.isEditingIncome
     },
@@ -180,11 +179,13 @@ export default {
     }
   },
   methods: {
-    // REVIEW - how can we pass the element sizes from trigger/target to masker
-    // without using the parent that contains them?
-    // maybe using provide / inject pattern?
-    updateSize ({ name, size }) {
-      this.maskerElementsSize[name] = size
+    textReceivingNonMonetary (contribution) {
+      return this.L('<strong>{what}</strong> from', { what: contribution.what })
+    },
+    textReceivingMonetary (contribution) {
+      return this.L('<strong>Up to {amount} for mincome</strong> from', {
+        amount: `${this.currency}${contribution}`
+      })
     },
 
     submitAddNonMonetary (value) {
@@ -199,14 +200,6 @@ export default {
         console.log('TODO BE - editNonMonetary')
         this.$set(this.giving.nonMonetary, index, value) // Hardcoded Solution
       }
-    },
-    textReceivingNonMonetary (contribution) {
-      return this.L('<strong>{what}</strong> from', { what: contribution.what })
-    },
-    textReceivingMonetary (contribution) {
-      return this.L('<strong>Up to {amount} for mincome</strong> from', {
-        amount: `${this.currency}${contribution}`
-      })
     },
     handleFormTriggerClick () {
       this.isEditingIncome = true
@@ -225,6 +218,13 @@ export default {
     },
     closeIncome () {
       this.isEditingIncome = false
+    },
+
+    // REVIEW - how can we pass the element sizes from trigger/target to masker
+    // without using the parent that contains them?
+    // maybe using provide / inject pattern?
+    updateSize ({ name, size }) {
+      this.maskerElementsSize[name] = size
     }
   }
 }

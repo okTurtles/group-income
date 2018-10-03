@@ -6,8 +6,8 @@
     </div>
     <i18n tag="p" class="c-info">A clear text explaining why this information is needed, so the user understands and feels comfortable about providing this information.</i18n>
 
-    <div class="has-text-danger has-text-weight-bold is-flex c-attention">
-      <i class="fa fa-exclamation-triangle"></i>
+    <div class="has-text-danger has-text-weight-bold">
+      <i class="c-icon-attention fa fa-exclamation-triangle"></i>
       <i18n>This information is required for you to be able to be part of the group.</i18n>
     </div>
   </div>
@@ -34,16 +34,12 @@
   color: $primary;
 }
 
-.c-attention {
-  align-items: center;
-
-  .fa {
-    margin-right: $gi-spacer-sm;
-  }
-}
-
 .c-info {
   margin: $gi-spacer 0;
+}
+
+.c-icon-attention {
+  margin-right: $gi-spacer-sm;
 }
 </style>
 <script>
