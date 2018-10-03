@@ -1,76 +1,137 @@
 import Velocity from 'velocity-animate'
 
+/**
+There are 3 elements that composes this transitions:
+- the `Trigger` - a contribution or the warning message to add income details
+- the `Target` - Income Details modal
+- the `Masker` - A simple blue empty box
+
+The secret of this animation is the `<masker>`:  It's responsible for the major
+part of the animation.
+Here's what happens when the user clicks on a Trigger:
+  1. `Trigger` fades out.
+  2. the `Target`, is added to the DOM _invisible_.
+  3. `Masker` fadesIn at the exactly same time that Trigger is fading out and
+  takes its size (updateSize).
+  4. `Masker` animates to take the `Target` dimensions/position
+  5. Once that animation is finished `Masker` fades out and `Target` fades in at the same time.
+
+When closing the Target the same animation happens in the inverted order but slightly faster.
+
+Entrance animations are designed to be smoother than exits so the user better
+understands the context of the new content easier (less cognitive process).
+The exit time is faster than the entrance time because the user already knows
+the original context.
+If both entrance/exit animations take the same time the user will percive the exit animation
+as being slower that the entrance, this is a way to trick his/her mind.
+This time is cutted at the Trigger fadeOut moment.
+*/
+
 const animationMixins = {
-  // TODO - some variables are welcomed!
-
+  data () {
+    return {
+      // Masker time to fadeIn
+      fadeMask: 150,
+      // Trigger/Target time to fadeIn/Out - give a delay, so the Masker starts first.
+      fade: 75,
+      fadeDelay: 50,
+      // Target/Masker time to fade back to original position - slightly faster
+      fadeBack: 50,
+      // Masker time to animate between the Target and a Trigger (and vice versa)
+      maskerTime: 250,
+      // Time for Target/Trigger to fadeIn - fadeMask'1/3 + maskerTime
+      delay: 300
+    }
+  },
   methods: {
-    // Trigger transitions
-    transTriggerEnter (el, complete) {
-      console.log('transTriggerEnter')
-
+    // -- Trigger animations
+    triggerEnter (el, complete) {
+      console.log('triggerEnter')
       this.updateSize(el, 'trigger')
 
-      Velocity(el, { opacity: 0 }, { duration: 0 })
-      Velocity(el, { opacity: 1 }, { duration: 150, delay: 350, complete })
+      this.elementStartsInvisible(el)
+      // Fades In only after the masker animation is completed.
+      Velocity(el, { opacity: 1 }, { duration: this.fade, delay: this.delay, complete })
     },
-    transTriggerLeave (el, complete) {
-      console.log('transTriggerLeave')
-
+    triggerLeave (el, complete) {
+      console.log('triggerLeave')
       this.updateSize(el, 'trigger')
 
-      Velocity(el, { opacity: 0 }, { duration: 150, complete })
+      // Fade out the targetInner after the user interaction...
+      Velocity(el, { opacity: 0 }, { duration: this.fade, delay: this.fadeDelay, complete })
     },
 
-    // Target transitions
-    transTargetEnter (el, complete) {
-      console.log('transTargetEnter')
+    // -- Target animations
+    targetEnter (el, complete) {
+      console.log('targetEnter')
       const targetInner = this.getTargetInnerWhen('enter')
       this.updateSize(targetInner, 'target')
 
-      Velocity(el, { opacity: 0 }, { duration: 0 })
-      Velocity(targetInner, { opacity: 0 }, { duration: 0 })
+      this.elementStartsInvisible(el)
+      this.elementStartsInvisible(targetInner)
 
-      this.updateSize(targetInner, 'target')
-
-      Velocity(el, { opacity: 1 }, { duration: 150, delay: 150 })
-      Velocity(targetInner, 'fadeIn', { duration: 150, delay: 350, complete })
+      // Fade in the Target after the Trigger has fade out...
+      Velocity(el, { opacity: 1 }, { duration: this.fade, delay: this.fade })
+      // And Fade in the targetInner only after the Masker has completed its transition animation
+      Velocity(targetInner, { opacity: 1 }, { duration: this.fade, delay: this.delay, complete })
     },
-    transTargetAfterEnter (el) {
-      console.log('transTargetAfterEnter')
+    targetAfterEnter (el) {
+      console.log('targetAfterEnter')
+      // Target has opacity: 0 by default, so let's force to stay 1 after the animation finishes.
       Velocity(el, { opacity: 1 }, { duration: 0 })
     },
-    transTargetLeave (el, complete) {
-      console.log('transTargetLeave')
+    targetLeave (el, complete) {
+      console.log('targetLeave')
       const targetInner = this.getTargetInnerWhen('leave')
       this.updateSize(targetInner, 'target')
 
-      Velocity(targetInner, { opacity: 0 }, { duration: 50 })
-      Velocity(el, { opacity: 0 }, { duration: 150, delay: 250, complete })
+      // Fade out the targetInner after the user interaction...
+      Velocity(targetInner, { opacity: 0 }, { duration: this.fadeBack / 2, delay: this.fadeBack / 2 })
+
+      // But only fades out complety the Target (that has the dark background)
+      // after Masker goes back to the initial position
+      Velocity(el, { opacity: 0 }, { duration: this.fade, delay: this.maskerTime, complete })
+    },
+    elementStartsInvisible (el) {
+      // Use only opacity to fadeIn/Out because it's faster than
+      // Velocity's 'fadeIn' feature (it doesn't use display)
+      Velocity(el, { opacity: 0 }, { duration: 0 })
     },
 
-    // Mask transitions
-    // when animates to target (form)
-    transMaskEnter (el, complete) {
-      console.log('transMaskLeave')
+    // -- Masker animations
+    // when animates to Target
+    maskEnter (el, complete) {
+      console.log('maskLeave')
 
-      Velocity(el, { opacity: 0, ...this.elementsSize.trigger }, { duration: 0 })
-
-      Velocity(el, { opacity: 1 }, { duration: 150 })
-      Velocity(el, { ...this.elementsSize.target }, { duration: 250, easing: 'ease-out' })
-      Velocity(el, { opacity: 0 }, { duration: 150, complete })
+      this.maskerTakesImediatelyTheShapeOf(el, 'trigger', this.fade)
+      this.maskerAnimatesToTheShapeOf(el, 'target', complete)
     },
 
-    // when animates back to trigger (contribution / missing message)
-    transMaskLeave (el, complete) {
-      console.log('transMaskEnter')
-      Velocity(el, { opacity: 0, ...this.elementsSize.target }, { duration: 0 })
+    // when animates back to a Trigger
+    maskLeave (el, complete) {
+      console.log('maskEnter')
 
-      Velocity(el, { opacity: 1 }, { duration: 50 })
-      Velocity(el, { ...this.elementsSize.trigger }, { duration: 250, delay: 50, easing: 'ease-out' })
-      Velocity(el, { opacity: 0 }, { duration: 150, complete })
+      this.maskerTakesImediatelyTheShapeOf(el, 'target', this.fadeBack)
+      this.maskerAnimatesToTheShapeOf(el, 'trigger', complete)
     },
 
-    // animation utils:
+    maskerTakesImediatelyTheShapeOf (el, originalEmenet, duration) {
+      // Masker takes imediately the size (dimensions and position)
+      // of the originalEmenet (Trigger or Target) size...
+      Velocity(el, { opacity: 0, ...this.elementsSize[originalEmenet] }, { duration: 0 })
+
+      // And fadesIn at the same time as the originalEmenet (trigger or target) is fading Out
+      Velocity(el, { opacity: 1 }, { duration })
+    },
+
+    maskerAnimatesToTheShapeOf (el, originalEmenet, complete) {
+      // Then it animates to the the originalEmenet size creating the "growing effect"
+      Velocity(el, { ...this.elementsSize[originalEmenet] }, { duration: this.maskerTime, easing: 'ease-out' })
+      // And finally it fades out at the same time Target is fading in.
+      Velocity(el, { opacity: 0 }, { duration: this.fade, complete })
+    },
+
+    // -- Animation utils:
     updateSize (el, name) {
       const { width, height, top, left } = el.getBoundingClientRect()
 
@@ -80,8 +141,9 @@ const animationMixins = {
       this.$emit('animate', { name, size: { width, height, top, left } })
     },
     getTargetInnerWhen (scenario) {
-      // we want the entire modal to fade in/out, (modal-card + modal-background)
-      // but we want the Masker to take the .modal-card shape only instead
+      // Why targetInner is .modal-card:
+      // We want the whole Target (modal) to fade, (modal-card + modal-background)
+      // but we want the Masker to take just the .modal-card shape instead
 
       // - REVIEW: If you know a easier way to get the modal's .card element,
       // please let me know how to do it!

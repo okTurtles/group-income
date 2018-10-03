@@ -1,5 +1,5 @@
 <template>
-  <transition @enter="transTriggerEnter" @leave="transTriggerLeave">
+  <transition @enter="triggerEnter" @leave="triggerLeave">
     <slot></slot>
   </transition>
 </template>

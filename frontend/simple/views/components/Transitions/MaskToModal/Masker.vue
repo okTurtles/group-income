@@ -1,5 +1,5 @@
 <template>
-  <transition @enter="transMaskEnter" @leave="transMaskLeave">
+  <transition @enter="maskEnter" @leave="maskLeave">
     <div v-if="isActive" class="c-mask"></div>
   </transition>
 </template>
