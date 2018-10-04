@@ -37,7 +37,7 @@
                 :placeholder="L('amout')"
               >
               <template slot="help">
-                <TextWho :who="['Rick', 'Carl', 'Kim']"></TextWho>
+                <text-who :who="['Rick', 'Carl', 'Kim']"></text-who>
                 <i18n>will ensure you meet the mincome</i18n>
               </template>
             </field-input>

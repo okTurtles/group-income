@@ -19,13 +19,13 @@
         <ul class="c-ul">
           <contribution v-for="contribution in receiving.nonMonetary">
             <span v-html="textReceivingNonMonetary(contribution)"></span>
-            <TextWho :who="contribution.who"></TextWho>
+            <text-who :who="contribution.who"></text-who>
           </contribution>
 
           <trigger @animate="updateSize">
             <contribution v-if="doesReceiveMonetary" variant="editable" isMonetary @interaction="handleFormTriggerClick">
               <span v-html="textReceivingMonetary(receiving.monetary)"></span>
-              <TextWho :who="groupMembersPledging"></TextWho>
+              <text-who :who="groupMembersPledging"></text-who>
               <i18n>each month</i18n>
             </contribution>
           </trigger>
