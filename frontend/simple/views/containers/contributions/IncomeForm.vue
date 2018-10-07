@@ -1,14 +1,14 @@
 <template>
   <modal ref="modal" :isActive="true" @close="cancelForm">
-    <form class="modal-card-content c-form" @submit.prevent="verifyForm" novalidate="true">
+    <form class="modal-card-content c-wrapper" @submit.prevent="verifyForm" novalidate="true">
       <i18n tag="h2" class="title is-3">Income Details</i18n>
-      <div class="columns is-desktop is-multiline c-grid">
-        <div class="column">
+      <div class="columns is-mobile c-wrapper-columns">
+        <div class="column c-form">
           <fieldset class="fieldset">
             <i18n tag="legend" class="sr-only">Income details</i18n>
 
             <div class="field is-narrow gi-fieldGroup">
-              <i18n tag="p" class="label">Do you make at least {{fakeStore.mincome}} per month?</i18n>
+              <i18n tag="p" class="label">Do you make at least {{fakeStore.mincomeFormatted}} per month?</i18n>
               <i18n tag="strong" class="help has-text-danger has-text-weight-normal gi-help" v-if="formVerified && $v.form.option.$invalid">{{infoRequired}}</i18n>
               <div class="control">
                 <label class="gi-tick">
@@ -24,66 +24,41 @@
               </div>
             </div>
 
-            <field-input v-if="hasLessIncome"
+            <input-amount v-if="hasLessIncome" key="income"
               label="What's your monthly income?"
               :error="hasLessIncomeError"
+              @input="verifyInputIncome"
+              :value="this.form.income"
+              :placeholder="L('amout')"
             >
-              <!-- REVIEW: How do I pass a v-model to a input inside a children component?
-              That is preventing me of using :is component here -->
-              <input class="input"
-                :class="{'is-danger': hasLessIncomeError }"
-                type="number"
-                v-model="form.income"
-                :placeholder="L('amout')"
-              >
               <template slot="help">
                 <text-who :who="['Rick', 'Carl', 'Kim']"></text-who>
                 <i18n>will ensure you meet the mincome</i18n>
               </template>
-            </field-input>
+            </input-amount>
 
-            <field-input v-if="hasMinIncome"
-              label="Pledge amount"
+            <input-amount v-else-if="hasMinIncome" key="pledge"
+              label="How much do you want to pledge?"
               :error="hasMinIncomeError"
+              @input="verifyInputPledge"
+              :value="this.form.pledge"
+              :placeholder="L('amout')"
             >
-              <input class="input"
-                :class="{'is-danger': hasMinIncomeError }"
-                type="number"
-                v-model="form.pledge"
-                :placeholder="L('amout')"
-                value="100"
-              >
               <template slot="help">
                 <i18n tag="p">Define up to how much you pledge to contribute to the group each month.</i18n>
                 <i18n tag="p" class="c-help-extra">You can pledge any amount (even $1 million!) Only the minimum needed amount will be given.</i18n>
               </template>
-            </field-input>
+            </input-amount>
           </fieldset>
-
           <fieldset class="fieldset" v-if="!!$v.form.option.$model">
-            <i18n tag="legend" class="label">Payment method</i18n>
-            <payment-methods></payment-methods>
+            <payment-methods />
           </fieldset>
         </div>
 
-        <!-- TODO - move to container/GroupPledgeStatus to reuse on Dashboard.
-          - this IncomeForm is becoming massive! -->
-        <div class="column is-flex c-graph">
-          <pie-chart :slices="groupPledgingSlices" class="c-graphPieChart">
-            <i18n tag="p" class="is-uppercase has-text-grey is-size-7">Group Pledge Goal</i18n>
-            <span class="has-text-weight-bold">{{fakeStore.currency}}{{graphPledgeData.goal}}</span>
-          </pie-chart>
-          <graph-legend-group class="columns c-graphLegend" :aria-label="L('Group\'s Pledge Summary')">
-            <graph-legend-item
-              v-for="item in groupPledgingLegend"
-              class="column is-half c-graphLegendItem"
-              :label="item.label"
-              :color="item.color"
-            >
-              {{item.value}}
-            </graph-legend-item>
-          </graph-legend-group>
-        </div>
+        <group-pledges-graph class="column c-pledgesGraph"
+          :userPledgeAmount="userPledgeAmount"
+          :userIncomeAmount="userIncomeAmount"
+        />
       </div>
 
       <div class="field is-grouped">
@@ -100,60 +75,70 @@
 <style lang="scss" scoped>
 @import "../../../assets/sass/theme/index";
 
-.c-form {
+.c-wrapper {
   width: 50rem;
+  max-width: 100%;
   height: 100%;
   overflow: auto;
+
+  @include mobile {
+    height: 100vh;
+  }
+
+  &-columns {
+    @include mobile {
+      flex-direction: column;
+    }
+  }
 }
 
 .c-help-extra {
   margin-top: $gi-spacer-sm;
 }
 
-.c-graph {
-  flex-direction: column;
-  align-items: center;
-  padding-left: $gi-spacer-lg;
-
-  &Legend {
-    margin-top: $gi-spacer-sm;
-
-    &Item {
-      padding-bottom: 0;
-    }
-  }
+.c-form,
+.c-pledgesGraph {
+  flex-basis: 50%;
 }
 
-// TODO - dont forget mobile/tablet layout
+.c-pledgesGraph {
+  align-items: flex-start;
+  flex-grow: 1;
+
+  @include mobile {
+    order: -1;
+    padding: $gi-spacer $gi-spacer-sm;
+  }
+
+  @include tablet {
+    justify-content: center;
+    margin-top: -$gi-spacer-lg;
+  }
+}
 
 </style>
 <script>
 import { validationMixin } from 'vuelidate'
 import { requiredIf, required, maxValue } from 'vuelidate/lib/validators'
-import FieldInput from './FieldInput.vue'
+import InputAmount from './InputAmount.vue'
 import PaymentMethods from './PaymentMethods.vue'
 import Modal from '../../components/Modal/ModalBasic.vue'
 import TextWho from '../../components/TextWho.vue'
-import { PieChart, GraphLegendGroup, GraphLegendItem } from '../../components/Graphs/index.js'
-import currencies from '../../utils/currencies.js'
+import { debounce } from '../../../utils/giLodash.js'
+import GroupPledgesGraph from '../GroupPledgesGraph.vue'
 
 export default {
   name: 'IncomeForm',
   mixins: [ validationMixin ],
   components: {
     Modal,
-    FieldInput,
-    PaymentMethods,
+    InputAmount,
     TextWho,
-    PieChart,
-    GraphLegendGroup,
-    GraphLegendItem
+    PaymentMethods,
+    GroupPledgesGraph
   },
   props: {
-    isEditing: Boolean,
-    transEnter: Function,
-    transAfterEnter: Function,
-    transLeave: Function
+    isEditing: Boolean
   },
   data () {
     return {
@@ -163,17 +148,20 @@ export default {
         pledge: null
       },
       formVerified: false,
-      // -- Hardcoded Data just for layout purpose:
+      // -- Hardcoded Data just for layout purposes:
       fakeStore: {
-        currency: currencies['USD'],
-        groupMembersTotal: 7,
-        groupPledgeGoal: 800,
         mincome: 500,
-        othersPledges: [180, 130, 200]
+        mincomeFormatted: '$500'
       }
     }
   },
   computed: {
+    userPledgeAmount () {
+      return this.hasMinIncome & !!this.form.pledge ? Number(this.form.pledge) : null
+    },
+    userIncomeAmount () {
+      return this.hasLessIncome & !!this.form.income ? Number(this.form.income) : null
+    },
     maxIncome () {
       return this.fakeStore.mincome - 1
     },
@@ -206,120 +194,17 @@ export default {
       if (!this.$v.form.option.$model) { return this.L('{verb} details', { verb }) }
       if (this.hasMinIncome) { return this.L('{verb} pledged details', { verb }) }
       if (this.hasLessIncome) { return this.L('{verb} income details', { verb }) }
-    },
-
-    // -- Pledge data
-    graphPledgeData () {
-      const { groupMembersTotal, groupPledgeGoal, mincome, othersPledges } = this.fakeStore
-      const othersAmount = othersPledges.reduce((acc, cur) => acc + cur, 0)
-      const userAmount = this.hasMinIncome ? Number(this.$v.form.pledge.$model) : 0
-      const userIncome = this.hasLessIncome ? Number(this.$v.form.income.$model) : 0
-      const userIncomeNeeded = userIncome && userIncome < mincome ? mincome - userIncome : 0
-      const totalAmount = othersAmount + userAmount
-      const goal = groupPledgeGoal + userIncomeNeeded
-      const members = othersPledges.length + (userAmount ? 1 : 0)
-      const neededPledges = goal - totalAmount
-      const surplus = totalAmount - groupPledgeGoal
-      const membersNeedingPledges = groupMembersTotal - othersPledges.length
-      const userToReceive = userIncomeNeeded ? userIncomeNeeded - (neededPledges / (membersNeedingPledges)) : 0 // Dumb algorithm just for layout purposes.
-
-      return {
-        members,
-        othersAmount,
-        userAmount,
-        userToReceive,
-        totalAmount,
-        goal: groupPledgeGoal + userIncomeNeeded,
-        avg: totalAmount / members,
-        neededPledges: neededPledges > 0 ? neededPledges : false,
-        surplus: surplus > 0 ? surplus : false
-      }
-    },
-    groupPledgingSlices () {
-      const { goal, othersAmount, userAmount, totalAmount, neededPledges, surplus } = this.graphPledgeData
-      const circleCompleteAmount = Math.max(totalAmount + surplus, goal) // When bigger than goal, take in account the surplus slice
-      const decimalSlice = (amount) => amount / circleCompleteAmount
-
-      const slices = [
-        {
-          id: 'othersAmount',
-          percent: decimalSlice(othersAmount),
-          color: 'primary-light'
-        }
-      ]
-
-      if (userAmount) {
-        slices.push({
-          name: 'userAmount',
-          percent: decimalSlice(userAmount),
-          color: 'primary-light'
-        })
-      }
-
-      if (neededPledges) {
-        slices.push({
-          id: 'neededPledges',
-          percent: decimalSlice(neededPledges),
-          color: 'light'
-        })
-      } else if (surplus) {
-        slices.push({
-          id: 'surplus',
-          percent: decimalSlice(surplus),
-          color: 'secondary'
-        })
-      }
-
-      console.log('slicesToRender', slices)
-      return slices
-    },
-    groupPledgingLegend () {
-      const { L } = this
-      const { currency, groupMembersTotal } = this.fakeStore
-      const { members, avg, totalAmount, neededPledges, surplus, userToReceive } = this.graphPledgeData
-
-      const legend = [
-        {
-          label: L('Members Pledging'),
-          value: L('{n} of {total}', { n: members, total: groupMembersTotal })
-        },
-        {
-          label: L('Average Pledged'),
-          value: `${currency}${avg}`
-        },
-        {
-          label: L('Total Pledged'),
-          value: `${currency}${totalAmount}`,
-          color: 'primary-light'
-        }
-      ]
-
-      if (neededPledges) {
-        legend.push({
-          label: L('Needed Pledges'),
-          value: `${currency}${neededPledges}`,
-          color: 'light'
-        })
-      } else if (surplus) {
-        legend.push({
-          label: L('Surplus (not needed)'),
-          value: `${currency}${surplus}`,
-          color: 'secondary'
-        })
-      }
-
-      if (userToReceive) {
-        legend.push({
-          label: L('Pledge to receive'),
-          value: `${currency}${userToReceive}`,
-          color: 'tertiary'
-        })
-      }
-
-      return legend
     }
   },
   methods: {
+    verifyInputIncome: debounce(function (e) {
+      this.form.income = e.target.value
+      this.$v.form.income.$touch()
+    }, 0),
+    verifyInputPledge: debounce(function (e) {
+      this.form.pledge = e.target.value
+      this.$v.form.pledge.$touch()
+    }, 0),
     verifyForm () {
       this.formVerified = true
 
@@ -346,7 +231,7 @@ export default {
       },
       income: {
         requiredIf: requiredIf(model => model.option === 'no'),
-        // REVIEW - how do it do this value dynamic?! this.mincome doesn't work
+        // REVIEW - how to do this value dynamic?! this.mincome doesn't work
         maxValue: maxValue(499)
       },
       pledge: {

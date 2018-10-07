@@ -9,7 +9,12 @@
         </span>
       </span>
       <span class="control">
-        <slot></slot>
+        <input class="input"
+          :class="{'is-danger': error }"
+          type="number"
+          v-bind="$attrs"
+          v-on="$listeners"
+        >
       </span>
     </div>
     <p class="is-size-6 gi-help" v-if="$slots.help">
@@ -24,7 +29,7 @@
 </style>
 <script>
 export default {
-  name: 'InputField',
+  name: 'InputAmount',
   props: {
     label: String,
     error: String

@@ -45,6 +45,7 @@ export default {
     text: String,
     direction: {
       type: String,
+      validator: (value) => ['bottom', 'right', 'right-start'].includes(value),
       default: 'bottom'
     }
   },

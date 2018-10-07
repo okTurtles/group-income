@@ -11,8 +11,14 @@
         :d="missingSlice"
         :class="`c-slice gi-has-fill-${lastSliceColor}`"
       ></path>
-      <circle r="30%" class="c-pie-donut"></circle>
-      <!-- TODO - inner pie chart -->
+      <circle r="33%" class="c-pie-donut"></circle>
+
+      <path v-for="(slice, index) in innerSlices"
+        :data-id="slice.id"
+        :d="sliceData(slice, index)"
+        :class="`c-slice c-inner gi-has-fill-${slice.color}`"
+      ></path>
+      <circle r="29%" class="c-pie-donut"></circle>
     </svg>
     <div class="c-title">
       <slot></slot>
@@ -24,6 +30,9 @@
 
 .c-container {
   position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .c-piechart {
@@ -34,6 +43,10 @@
   // Simulate a gap between each slice
   stroke: $body-background-color;
   stroke-width: 0.03; // small unit because this SVG is a 1x1 grid system
+
+  &.c-inner {
+    transform: scale(0.64);
+  }
 }
 
 .c-pie-donut {
@@ -42,7 +55,7 @@
 
 .c-title {
   position: absolute;
-  width: 60%; // 2x .c-pie-donut radius
+  width: 53%; // almost 2x inner .c-pie-donut radius
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -57,18 +70,26 @@
 export default {
   name: 'PieChart',
   props: {
-    slices: Array, // [{ id, percent, color }]
+    slices: {
+      type: Array, // [{ id, percent, color }]
+      default: []
+    },
+    innerSlices: {
+      type: Array, // [{ id, percent, color }]
+      default: []
+    },
     lastSliceColor: {
       type: String,
       default: 'light'
     },
     size: {
       type: String,
-      default: '12rem'
+      default: '13rem'
     }
   },
   computed: {
     missingSlice () {
+      // When all slices together don't reach 100%, add a last light slice to complete the circle
       const index = this.slices.length
       const totalPercent = this.getStartPercent(index)
 
@@ -81,6 +102,8 @@ export default {
     }
   },
   methods: {
+    // Apply the same method to build any kind of slice.
+    // Then use CSS scale() to decrease the innerSlices's size.
     sliceData (slice, index) {
       const startPoint = this.getStartPercent(index)
       const [ startX, startY ] = this.getCoordinatesForPercent(startPoint)

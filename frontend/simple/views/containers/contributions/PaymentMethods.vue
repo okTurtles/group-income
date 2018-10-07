@@ -1,5 +1,6 @@
 <template>
   <div>
+    <i18n tag="legend" class="label">Payment method</i18n>
     <ul class="field has-addons c-options" :aria-label="L('Payment Methods')">
       <li class="control" v-for="method in methodsAvailable">
         <button v-if="method.available"

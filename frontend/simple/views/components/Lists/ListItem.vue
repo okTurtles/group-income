@@ -23,6 +23,7 @@
 }
 
 .c-item-link {
+  display: block;
   width: 100%;
   padding: $gi-spacer-sm;
   color: $text;

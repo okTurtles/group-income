@@ -50,7 +50,7 @@
           <trigger @animate="updateSize">
             <contribution v-if="doesGiveMonetary" variant="editable" isMonetary @interaction="handleFormTriggerClick">
               <i18n class="has-text-weight-bold" :args="{amount:`${currency}${giving.monetary}`}">Pledging up to {amount}</i18n><i18n>to other's mincome</i18n>
-              <i18n tag="p" class="is-size-7" v-if="giving.monetary == 0" :args="{amount: `${currency}${300}`}">(The group's average pledge is {amount})</i18n>
+              <i18n tag="p" class="is-size-7" v-if="giving.monetary == 0" :args="{amount: '[$170]'}">(The group's average pledge is {amount})</i18n>
             </contribution>
           </trigger>
         </ul>
