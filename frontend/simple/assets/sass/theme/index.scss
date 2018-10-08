@@ -20,6 +20,14 @@ $gi-zindex-modal: 40;
 $gi-zindex-header: 30;
 // $gi-zindex-something: **; create when needed
 
+// BreakpointS - Bulma doesn't have a smaller breakpoint
+// https://github.com/jgthms/bulma/issues/1677
+@mixin phone {
+  @media screen and (max-width: 479px) {
+    @content;
+  }
+}
+
 // TODO: Find a way to generated different import themes
 @import "kindergarten-professional";
 

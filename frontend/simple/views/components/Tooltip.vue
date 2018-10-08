@@ -1,5 +1,5 @@
 <template>
-  <span @mouseenter="show" @mouseleave="hide" class="c-wrapper">
+  <span class="c-wrapper" @mouseenter="show" @mouseleave="hide">
     <slot></slot>
     <div
       class="has-background-dark has-text-grey-lighter is-bottom is-size-7 c-tooltip"

@@ -58,13 +58,6 @@
 <style lang="scss" scoped>
 @import "../../assets/sass/theme/index";
 
-// TODO - make this global - bulma_overrides
-@mixin phone {
-  @media screen and (max-width: 479px) {
-    @content;
-  }
-}
-
 .c-graph {
   position: relative;
   flex-wrap: wrap;

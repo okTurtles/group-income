@@ -22,8 +22,8 @@
     </dashboard-section>
 
     <dashboard-section title="July Overview">
-      <group-pledges-graph />
-      <!-- <progress-overview /> -->
+      <!-- <group-pledges-graph /> -->
+      <progress-overview />
     </dashboard-section>
 
     <dashboard-section title="Support History">
@@ -44,8 +44,8 @@ import Proposals from './containers/Proposals.vue'
 import GroupMembers from './containers/GroupMembers.vue'
 import SupportHistory from './components/Graphs/SupportHistory.vue'
 import GroupSettings from './components/GroupSettings.vue'
-// import ProgressOverview from './components/ProgressOverview.vue'
-import GroupPledgesGraph from './containers/GroupPledgesGraph.vue'
+import ProgressOverview from './components/ProgressOverview.vue'
+// import GroupPledgesGraph from './containers/GroupPledgesGraph.vue'
 
 export default {
   name: 'GroupDashboard',
@@ -65,8 +65,8 @@ export default {
     GroupMembers,
     SupportHistory,
     GroupSettings,
-    // ProgressOverview,
-    GroupPledgesGraph
+    ProgressOverview
+    // GroupPledgesGraph
   }
 }
 </script>

@@ -96,10 +96,17 @@ body {
   }
 }
 
-// Create Global Classes for SVG fills - TODO SCSS map
-.gi-has-fill-primary { fill: $primary; }
-.gi-has-fill-primary-light { fill: $primary-light; }
-.gi-has-fill-secondary { fill: $secondary; }
-.gi-has-fill-tertiary { fill: $tertiary; }
-.gi-has-fill-light { fill: $light; }
-.gi-has-fill-body-bg-color { fill: $body-background-color; }
+// Global Classes for SVG fills
+$fills: (
+  primary: $primary,
+  primary-light: $primary-light,
+  secondary: $secondary,
+  tertiary: $tertiary,
+  light: $light
+);
+
+@each $class, $color in $fills {
+  .gi-has-fill-#{$class} {
+    fill: $color;
+  }
+}

@@ -1,7 +1,7 @@
 import Velocity from 'velocity-animate'
 
 /**
-There are 3 elements that composes this transitions:
+There are 3 elements that composes these transitions:
 - the `Trigger` - a contribution or the warning message to add income details
 - the `Target` - Income Details modal
 - the `Masker` - A simple blue empty box
