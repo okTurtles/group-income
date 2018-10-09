@@ -66,7 +66,7 @@ export default {
     SupportHistory,
     GroupSettings,
     ProgressOverview
-    // GroupPledgesGraph
+    // GroupPledgesGraph // TODO - user can personalize what graph to display
   }
 }
 </script>

@@ -185,7 +185,7 @@ export default {
 
       if (userAmount) {
         slices.push({
-          name: 'userAmount',
+          id: 'userAmount',
           percent: this.decimalSlice(userAmount),
           color: 'primary-light'
         })
