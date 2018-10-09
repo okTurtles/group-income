@@ -43,6 +43,13 @@ const animationMixins = {
       delay: 300
     }
   },
+  beforeMount () {
+    // Triggers & Target need to be invisible at the first frame
+    // Safari has a flickering bug on the first frame when entering.
+    // That happens right before elementStartsInvisible() is called.
+    // so we need to force it to be invisible before it enters the DOM.
+    this.$vnode.data.style = { opacity: 0 }
+  },
   methods: {
     // -- Trigger animations
     triggerEnter (el, complete) {
@@ -75,9 +82,9 @@ const animationMixins = {
       // And Fade in the targetInner only after the Masker has completed its transition animation
       Velocity(targetInner, { opacity: 1 }, { duration: this.fade, delay: this.delay, complete })
     },
-    targetAfterEnter (el) {
-      console.log('targetAfterEnter')
-      // Target has opacity: 0 by default, so let's force to stay 1 after the animation finishes.
+    transitionAfterEnter (el) {
+      console.log('transitionAfterEnter')
+      // Trigger/Target has opacity: 0 by default, so let's force to stay 1 after the animation finishes.
       Velocity(el, { opacity: 1 }, { duration: 0 })
     },
     targetLeave (el, complete) {

@@ -65,7 +65,7 @@
     </trigger>
 
     <target :targetCard="$refs.incomeForm" @animate="updateSize">
-      <income-form ref="incomeForm" class="c-incomeForm"
+      <income-form ref="incomeForm"
         v-if="isEditingIncome"
         @save="handleIncomeSave"
         @cancel="handleIncomeCancel"
@@ -97,14 +97,6 @@
 
 .c-ul {
   margin: $gi-spacer*0.75 0;
-}
-
-.c-incomeForm {
-  // - REVIEW
-  // income form needs to be invisible at the first frame
-  // this fixes a bug on safari with a flickering first frame when entering.
-  // I'd like to make this inside <Target> but I don't know how.
-  opacity: 0;
 }
 </style>
 <script>
