@@ -129,7 +129,6 @@ export default {
     }
   },
   mounted: function () {
-    console.log('entra?')
     window.addEventListener('resize', this.handleResize)
   },
   beforeDestroy: function () {

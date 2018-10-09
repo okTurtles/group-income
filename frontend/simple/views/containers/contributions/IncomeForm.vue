@@ -106,7 +106,7 @@
   flex-grow: 1;
 
   @include mobile {
-    order: -1;
+    order: -1; // display on the top for better understanding on small screens
     padding: $gi-spacer $gi-spacer-sm;
   }
 

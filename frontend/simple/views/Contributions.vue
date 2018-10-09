@@ -1,5 +1,5 @@
 <template>
-  <main>
+  <mask-to-modal tag="main">
     <div class="section is-hero level">
       <div>
         <i18n tag="h1" class="title is-1 is-marginless">
@@ -22,7 +22,7 @@
             <text-who :who="contribution.who"></text-who>
           </contribution>
 
-          <trigger @animate="updateSize">
+          <trigger>
             <contribution v-if="doesReceiveMonetary" variant="editable" isMonetary @interaction="handleFormTriggerClick">
               <span v-html="textReceivingMonetary(receiving.monetary)"></span>
               <text-who :who="groupMembersPledging"></text-who>
@@ -47,7 +47,7 @@
             <i18n>Add a non-monetary method</i18n>
           </contribution>
 
-          <trigger @animate="updateSize">
+          <trigger>
             <contribution v-if="doesGiveMonetary" variant="editable" isMonetary @interaction="handleFormTriggerClick">
               <i18n class="has-text-weight-bold" :args="{amount:`${currency}${giving.monetary}`}">Pledging up to {amount}</i18n><i18n>to other's mincome</i18n>
               <i18n tag="p" class="is-size-7" v-if="giving.monetary == 0" :args="{amount: '[$170]'}">(The group's average pledge is {amount})</i18n>
@@ -57,14 +57,14 @@
       </div>
     </section>
 
-    <trigger @animate="updateSize">
+    <trigger>
       <message-missing-income class="section"
         v-if="isFirstTime && !isEditingIncome"
         @click="handleFormTriggerClick"
       ></message-missing-income>
     </trigger>
 
-    <target :targetCard="$refs.incomeForm" @animate="updateSize">
+    <target :targetCard="$refs.incomeForm">
       <income-form ref="incomeForm"
         v-if="isEditingIncome"
         @save="handleIncomeSave"
@@ -72,8 +72,8 @@
       ></income-form>
     </target>
 
-    <masker :isActive="isEditingIncome" :elementsSize="maskerElementsSize"></masker>
-  </main>
+    <masker :isActive="isEditingIncome"></masker>
+  </mask-to-modal>
 </template>
 <style lang="scss" scoped>
 @import "../assets/sass/theme/index";
@@ -107,7 +107,7 @@ import IncomeForm from './containers/contributions/IncomeForm.vue'
 import GroupsMinIncome from './components/GroupsMinIncome.vue'
 import Contribution from './components/Contribution.vue'
 import TextWho from './components/TextWho.vue'
-import { Trigger, Target, Masker } from './components/Transitions/MaskToModal/index.js'
+import { MaskToModal, Trigger, Target, Masker } from './components/Transitions/MaskToModal/index.js'
 
 export default {
   name: 'Contributions',
@@ -117,13 +117,13 @@ export default {
     TextWho,
     IncomeForm,
     MessageMissingIncome,
+    MaskToModal,
     Trigger,
     Target,
     Masker
   },
   data () {
     return {
-      maskerElementsSize: {}, // a trigger or target
       isEditingIncome: false,
 
       // -- Hardcoded Data just for layout purpose:
@@ -206,13 +206,6 @@ export default {
     },
     closeIncome () {
       this.isEditingIncome = false
-    },
-
-    // REVIEW - how can we pass the element sizes from trigger/target to masker
-    // without using the parent that contains them?
-    // maybe using provide / inject Vue feature?
-    updateSize ({ name, size }) {
-      this.maskerElementsSize[name] = size
     }
   }
 }

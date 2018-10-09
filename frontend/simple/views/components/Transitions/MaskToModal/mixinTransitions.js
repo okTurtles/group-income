@@ -1,7 +1,8 @@
 import Velocity from 'velocity-animate'
 
 /**
-There are 3 elements that composes these transitions:
+There are 4 components that composes these transitions:
+- the `MaskToModal` - a wrapper around all the other components that keeps the elementsSpecs
 - the `Trigger` - a contribution or the warning message to add income details
 - the `Target` - Income Details modal
 - the `Masker` - A simple blue empty box
@@ -12,7 +13,7 @@ Here's what happens when the user clicks on a Trigger:
   1. `Trigger` fades out.
   2. the `Target`, is added to the DOM _invisible_.
   3. `Masker` fadesIn at the exactly same time that Trigger is fading out and
-  takes its size (updateSize).
+  takes its specs (updateSpecsOf).
   4. `Masker` animates to take the `Target` dimensions/position
   5. Once that animation is finished `Masker` fades out and `Target` fades in at the same time.
 
@@ -43,6 +44,7 @@ const animationMixins = {
       delay: 300
     }
   },
+  inject: ['MaskToModal'],
   beforeMount () {
     // Triggers & Target need to be invisible at the first frame
     // Safari has a flickering bug on the first frame when entering.
@@ -54,7 +56,7 @@ const animationMixins = {
     // -- Trigger animations
     triggerEnter (el, complete) {
       console.log('triggerEnter')
-      this.updateSize(el, 'trigger')
+      this.updateSpecsOf(el, 'trigger')
 
       this.elementStartsInvisible(el)
       // Fades In only after the masker animation is completed.
@@ -62,7 +64,7 @@ const animationMixins = {
     },
     triggerLeave (el, complete) {
       console.log('triggerLeave')
-      this.updateSize(el, 'trigger')
+      this.updateSpecsOf(el, 'trigger')
 
       // Fade out the targetInner after the user interaction...
       Velocity(el, { opacity: 0 }, { duration: this.fade, delay: this.fadeDelay, complete })
@@ -72,7 +74,7 @@ const animationMixins = {
     targetEnter (el, complete) {
       console.log('targetEnter')
       const targetInner = this.getTargetInnerWhen('enter')
-      this.updateSize(targetInner, 'target')
+      this.updateSpecsOf(targetInner, 'target')
 
       this.elementStartsInvisible(el)
       this.elementStartsInvisible(targetInner)
@@ -90,7 +92,7 @@ const animationMixins = {
     targetLeave (el, complete) {
       console.log('targetLeave')
       const targetInner = this.getTargetInnerWhen('leave')
-      this.updateSize(targetInner, 'target')
+      this.updateSpecsOf(targetInner, 'target')
 
       // Fade out the targetInner after the user interaction...
       Velocity(targetInner, { opacity: 0 }, { duration: this.fadeBack / 2, delay: this.fadeBack / 2 })
@@ -122,30 +124,26 @@ const animationMixins = {
       this.maskerAnimatesToTheShapeOf(el, 'trigger', complete)
     },
 
-    maskerTakesImediatelyTheShapeOf (el, originalEmenet, duration) {
-      // Masker takes imediately the size (dimensions and position)
-      // of the originalEmenet (Trigger or Target) size...
-      Velocity(el, { opacity: 0, ...this.elementsSize[originalEmenet] }, { duration: 0 })
+    // -- Animation utils
+    maskerTakesImediatelyTheShapeOf (maskerEl, originalElement, duration) {
+      // Masker takes imediately the specs (dimensions and position)
+      // of the originalElement (Trigger or Target) size...
+      Velocity(maskerEl, { opacity: 0, ...this.getSpecsOf(originalElement) }, { duration: 0 })
 
-      // And fadesIn at the same time as the originalEmenet (trigger or target) is fading Out
-      Velocity(el, { opacity: 1 }, { duration })
+      // And fadesIn at the same time as the originalElement (trigger or target) is fading Out
+      Velocity(maskerEl, { opacity: 1 }, { duration })
     },
-
-    maskerAnimatesToTheShapeOf (el, originalEmenet, complete) {
-      // Then it animates to the the originalEmenet size creating the "growing effect"
-      Velocity(el, { ...this.elementsSize[originalEmenet] }, { duration: this.maskerTime, easing: 'ease-out' })
+    maskerAnimatesToTheShapeOf (el, originalElement, complete) {
+      // Then it animates to the the originalElement specs creating the "growing effect"
+      Velocity(el, { ...this.getSpecsOf(originalElement) }, { duration: this.maskerTime, easing: 'ease-out' })
       // And finally it fades out at the same time Target is fading in.
       Velocity(el, { opacity: 0 }, { duration: this.fade, complete })
     },
-
-    // -- Animation utils:
-    updateSize (el, name) {
-      const { width, height, top, left } = el.getBoundingClientRect()
-
-      // REVIEW - how can we pass the element sizes from trigger/target to masker
-      // without using the parent that contains them?
-      // maybe using provide / inject pattern?
-      this.$emit('animate', { name, size: { width, height, top, left } })
+    updateSpecsOf (el, elementId) {
+      this.MaskToModal.updateSpecsOf(el, elementId)
+    },
+    getSpecsOf (elementId) {
+      return this.MaskToModal.elementsSpecs[elementId]
     },
     getTargetInnerWhen (scenario) {
       // Why targetInner is .modal-card:
@@ -156,10 +154,10 @@ const animationMixins = {
       // please let me know how to do it!
       if (scenario === 'enter') {
         // this.targetCard is not available yet,
-        // so we need to access it accessing $slots
+        // so we need to access by using $slots.default
         return this.$slots.default[0].componentInstance.$refs.modal.$refs.card
       } else if (scenario === 'leave') {
-        // here the $slot doesn't exist, so we use this.targetCard prop provided
+        // here the $slot doesn't exist, so we use the provided prop.targetCard
         return this.targetCard.$refs.modal.$refs.card
       }
     }
