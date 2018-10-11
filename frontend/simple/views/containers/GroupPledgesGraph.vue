@@ -117,6 +117,7 @@ export default {
   },
   data () {
     return {
+      // REVIEW - make this a watcher
       isMobile: this.verifyIsMobile(),
       // -- Hardcoded Data just for layout purpose:
       fakeStore: {

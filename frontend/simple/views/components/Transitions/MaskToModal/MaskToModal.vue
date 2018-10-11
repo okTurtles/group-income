@@ -14,21 +14,23 @@ export default {
   },
   data () {
     return {
-      MaskToModal: {
-        // Store the dimensions and position of an element (Trigger or Target)
-        // so that Masker can access them when it needs to transform
-        elementsSpecs: {}, // a Trigger or Target
-        updateSpecsOf (el, elementId) {
-          const { width, height, top, left } = el.getBoundingClientRect()
+      config: {
+        MaskToModal: {
+          // Store the dimensions and position of an element (Trigger or Target)
+          // so that Masker can access them when it needs to transform
+          elementsSpecs: {}, // a Trigger or Target
+          updateSpecsOf (el, elementId) {
+            const { width, height, top, left } = el.getBoundingClientRect()
 
-          this.elementsSpecs[elementId] = { width, height, top, left }
+            this.elementsSpecs[elementId] = { width, height, top, left }
+          }
         }
       }
     }
   },
   provide () {
     return {
-      MaskToModal: this.MaskToModal
+      MaskToModal: this.config.MaskToModal
     }
   }
 }

@@ -17,15 +17,15 @@
         <i18n tag="h2" class="title is-3">Receiving</i18n>
 
         <ul class="c-ul">
-          <contribution v-for="contribution in receiving.nonMonetary">
+          <contribution v-for="contribution in fakeStore.receiving.nonMonetary">
             <span v-html="textReceivingNonMonetary(contribution)"></span>
             <text-who :who="contribution.who"></text-who>
           </contribution>
 
           <trigger>
             <contribution v-if="doesReceiveMonetary" variant="editable" isMonetary @interaction="handleFormTriggerClick">
-              <span v-html="textReceivingMonetary(receiving.monetary)"></span>
-              <text-who :who="groupMembersPledging"></text-who>
+              <span v-html="textReceivingMonetary(fakeStore.receiving.monetary)"></span>
+              <text-who :who="fakeStore.groupMembersPledging"></text-who>
               <i18n>each month</i18n>
             </contribution>
           </trigger>
@@ -36,7 +36,7 @@
         <i18n tag="h2" class="title is-3">Giving</i18n>
 
         <ul class="c-ul">
-          <contribution v-for="contribution, index in giving.nonMonetary"
+          <contribution v-for="contribution, index in fakeStore.giving.nonMonetary"
             class="has-text-weight-bold"
             variant="editable"
             @new-value="(value) => handleEditNonMonetary(value, index)"
@@ -49,8 +49,8 @@
 
           <trigger>
             <contribution v-if="doesGiveMonetary" variant="editable" isMonetary @interaction="handleFormTriggerClick">
-              <i18n class="has-text-weight-bold" :args="{amount:`${currency}${giving.monetary}`}">Pledging up to {amount}</i18n><i18n>to other's mincome</i18n>
-              <i18n tag="p" class="is-size-7" v-if="giving.monetary == 0" :args="{amount: '[$170]'}">(The group's average pledge is {amount})</i18n>
+              <i18n class="has-text-weight-bold" :args="{amount:`${fakeStore.currency}${fakeStore.giving.monetary}`}">Pledging up to {amount}</i18n><i18n>to other's mincome</i18n>
+              <i18n tag="p" class="is-size-7" v-if="fakeStore.giving.monetary == 0" :args="{amount: '[$170]'}">(The group's average pledge is {amount})</i18n>
             </contribution>
           </trigger>
         </ul>
@@ -59,20 +59,20 @@
 
     <trigger>
       <message-missing-income class="section"
-        v-if="isFirstTime && !isEditingIncome"
+        v-if="fakeStore.isFirstTime && !ephemeral.isEditingIncome"
         @click="handleFormTriggerClick"
       ></message-missing-income>
     </trigger>
 
     <target :targetCard="$refs.incomeForm">
       <income-form ref="incomeForm"
-        v-if="isEditingIncome"
+        v-if="ephemeral.isEditingIncome"
         @save="handleIncomeSave"
         @cancel="handleIncomeCancel"
       ></income-form>
     </target>
 
-    <masker :isActive="isEditingIncome"></masker>
+    <masker :isActive="ephemeral.isEditingIncome"></masker>
   </mask-to-modal>
 </template>
 <style lang="scss" scoped>
@@ -124,35 +124,38 @@ export default {
   },
   data () {
     return {
-      isEditingIncome: false,
-
-      // -- Hardcoded Data just for layout purpose:
-      currency: currencies['USD'],
-      isFirstTime: true, // true when user doesn't have any income details. It displays the 'Add Income Details' box
-      mincome: 500,
-      receiving: {
-        nonMonetary: [
-          {
-            what: 'Cooking',
-            who: 'Lilia Bouvet'
-          },
-          {
-            what: 'Cuteness',
-            who: ['Zoe Kim', 'Laurence E']
-          }
-        ],
-        monetary: null // Number - You can edit to see the receiving monetary contribution box (change isFirstTime to false too).
+      ephemeral: {
+        isEditingIncome: false
       },
-      giving: {
-        nonMonetary: [], // ArrayOf(String)
-        monetary: null // Number - You can eddit to see the giving monetary contribution box (change isFirstTime to false too).
-      },
-      groupMembersPledging: [
-        'Jack Fisher',
-        'Charlotte Doherty',
-        'Thomas Baker',
-        'Francisco Scott'
-      ]
+      // -- Hardcoded Data just for layout purposes:
+      fakeStore: {
+        currency: currencies['USD'],
+        isFirstTime: true, // true when user doesn't have any income details. It displays the 'Add Income Details' box
+        mincome: 500,
+        receiving: {
+          nonMonetary: [
+            {
+              what: 'Cooking',
+              who: 'Lilia Bouvet'
+            },
+            {
+              what: 'Cuteness',
+              who: ['Zoe Kim', 'Laurence E']
+            }
+          ],
+          monetary: null // Number - You can edit to see the receiving monetary contribution box (change isFirstTime to false too).
+        },
+        giving: {
+          nonMonetary: [], // ArrayOf(String)
+          monetary: null // Number - You can eddit to see the giving monetary contribution box (change isFirstTime to false too).
+        },
+        groupMembersPledging: [
+          'Jack Fisher',
+          'Charlotte Doherty',
+          'Thomas Baker',
+          'Francisco Scott'
+        ]
+      }
     }
   },
   computed: {
@@ -160,10 +163,10 @@ export default {
       'currentGroupState'
     ]),
     doesReceiveMonetary () {
-      return !!this.receiving.monetary && !this.isEditingIncome
+      return !!this.fakeStore.receiving.monetary && !this.ephemeral.isEditingIncome
     },
     doesGiveMonetary () {
-      return !!this.giving.monetary && !this.isEditingIncome
+      return !!this.fakeStore.giving.monetary && !this.ephemeral.isEditingIncome
     }
   },
   methods: {
@@ -172,32 +175,32 @@ export default {
     },
     textReceivingMonetary (contribution) {
       return this.L('<strong>Up to {amount} for mincome</strong> from', {
-        amount: `${this.currency}${contribution}`
+        amount: `${this.fakeStore.currency}${contribution}`
       })
     },
 
     submitAddNonMonetary (value) {
       console.log('TODO BE - submitAddNonMonetary')
-      this.giving.nonMonetary.push(value) // Hardcoded Solution
+      this.fakeStore.giving.nonMonetary.push(value) // Hardcoded Solution
     },
     handleEditNonMonetary (value, index) {
       if (!value) {
         console.log('TODO BE - deleteNonMonetary')
-        this.giving.nonMonetary.splice(index, 1) // Hardcoded Solution
+        this.fakeStore.giving.nonMonetary.splice(index, 1) // Hardcoded Solution
       } else {
         console.log('TODO BE - editNonMonetary')
-        this.$set(this.giving.nonMonetary, index, value) // Hardcoded Solution
+        this.$set(this.fakeStore.giving.nonMonetary, index, value) // Hardcoded Solution
       }
     },
     handleFormTriggerClick () {
-      this.isEditingIncome = true
+      this.ephemeral.isEditingIncome = true
     },
     handleIncomeSave ({ makeIncome, amount }) {
       console.log('TODO BE - Save Income Details')
       // -- Hardcoded Solution
-      this.receiving.monetary = makeIncome ? null : this.mincome - amount
-      this.giving.monetary = makeIncome ? amount : null
-      this.isFirstTime = false
+      this.fakeStore.receiving.monetary = makeIncome ? null : this.fakeStore.mincome - amount
+      this.fakeStore.giving.monetary = makeIncome ? amount : null
+      this.fakeStore.isFirstTime = false
 
       this.closeIncome()
     },
@@ -205,7 +208,7 @@ export default {
       this.closeIncome()
     },
     closeIncome () {
-      this.isEditingIncome = false
+      this.ephemeral.isEditingIncome = false
     }
   }
 }

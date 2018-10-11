@@ -9,7 +9,7 @@
 
             <div class="field is-narrow gi-fieldGroup">
               <i18n tag="p" class="label">Do you make at least {{fakeStore.mincomeFormatted}} per month?</i18n>
-              <i18n tag="strong" class="help has-text-danger has-text-weight-normal gi-help" v-if="formVerified && $v.form.option.$invalid">{{infoRequired}}</i18n>
+              <i18n tag="strong" class="help has-text-danger has-text-weight-normal gi-help" v-if="ephemeral.formVerified && $v.form.option.$invalid">{{infoRequired}}</i18n>
               <div class="control">
                 <label class="gi-tick">
                   <input class="gi-tick-input" type="radio" value="no" v-model="form.option" @change="resetFormVerify">
@@ -142,12 +142,14 @@ export default {
   },
   data () {
     return {
+      ephemeral: {
+        formVerified: false
+      },
       form: {
         option: null,
         income: null,
         pledge: null
       },
-      formVerified: false,
       // -- Hardcoded Data just for layout purposes:
       fakeStore: {
         mincome: 500,
@@ -175,7 +177,7 @@ export default {
       return this.$v.form.option.$model === 'yes'
     },
     hasLessIncomeError () {
-      if (!this.formVerified && this.$v.form.income.maxValue) {
+      if (!this.ephemeral.formVerified && this.$v.form.income.maxValue) {
         return null
       }
 
@@ -186,7 +188,7 @@ export default {
       }
     },
     hasMinIncomeError () {
-      return this.formVerified && this.$v.form.pledge.$invalid ? this.infoRequired : null
+      return this.ephemeral.formVerified && this.$v.form.pledge.$invalid ? this.infoRequired : null
     },
     saveButtonText () {
       const verb = this.isFirstTime ? 'Add' : 'Save'
@@ -206,7 +208,7 @@ export default {
       this.$v.form.pledge.$touch()
     }, 0),
     verifyForm () {
-      this.formVerified = true
+      this.ephemeral.formVerified = true
 
       if (!this.$v.form.$invalid) {
         const makeIncome = this.$v.form.option.$model === 'yes'
@@ -221,7 +223,7 @@ export default {
       this.$emit('cancel')
     },
     resetFormVerify () {
-      this.formVerified = false
+      this.ephemeral.formVerified = false
     }
   },
   validations: {

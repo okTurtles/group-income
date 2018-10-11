@@ -31,17 +31,17 @@ This time is cutted at the Trigger fadeOut moment.
 const animationMixins = {
   data () {
     return {
-      // Masker time to fadeIn
-      fadeMask: 150,
-      // Trigger/Target time to fadeIn/Out - give a delay, so the Masker starts first.
-      fade: 75,
-      fadeDelay: 50,
-      // Target/Masker time to fade back to original position - slightly faster
-      fadeBack: 50,
-      // Masker time to animate between the Target and a Trigger (and vice versa)
-      maskerTime: 250,
-      // Time for Target/Trigger to fadeIn - fadeMask'1/3 + maskerTime
-      delay: 300
+      config: {
+        // Trigger/Target time to fadeIn/Out - give a delay, so the Masker starts first.
+        fade: 75,
+        fadeDelay: 50,
+        // Target/Masker time to fade back to original position - slightly faster
+        fadeBack: 50,
+        // Masker time to animate between the Target and a Trigger (and vice versa)
+        maskerTime: 250,
+        // The time for Target/Trigger to fadeIn + maskerTime
+        delay: 300
+      }
     }
   },
   inject: ['MaskToModal'],
@@ -60,14 +60,14 @@ const animationMixins = {
 
       this.elementStartsInvisible(el)
       // Fades In only after the masker animation is completed.
-      Velocity(el, { opacity: 1 }, { duration: this.fade, delay: this.delay, complete })
+      Velocity(el, { opacity: 1 }, { duration: this.config.fade, delay: this.config.delay, complete })
     },
     triggerLeave (el, complete) {
       console.log('triggerLeave')
       this.updateSpecsOf(el, 'trigger')
 
       // Fade out the targetInner after the user interaction...
-      Velocity(el, { opacity: 0 }, { duration: this.fade, delay: this.fadeDelay, complete })
+      Velocity(el, { opacity: 0 }, { duration: this.config.fade, delay: this.config.fadeDelay, complete })
     },
 
     // -- Target animations
@@ -80,9 +80,9 @@ const animationMixins = {
       this.elementStartsInvisible(targetInner)
 
       // Fade in the Target after the Trigger has fade out...
-      Velocity(el, { opacity: 1 }, { duration: this.fade, delay: this.fade })
+      Velocity(el, { opacity: 1 }, { duration: this.config.fade, delay: this.config.fade })
       // And Fade in the targetInner only after the Masker has completed its transition animation
-      Velocity(targetInner, { opacity: 1 }, { duration: this.fade, delay: this.delay, complete })
+      Velocity(targetInner, { opacity: 1 }, { duration: this.config.fade, delay: this.config.delay, complete })
     },
     transitionAfterEnter (el) {
       console.log('transitionAfterEnter')
@@ -95,11 +95,11 @@ const animationMixins = {
       this.updateSpecsOf(targetInner, 'target')
 
       // Fade out the targetInner after the user interaction...
-      Velocity(targetInner, { opacity: 0 }, { duration: this.fadeBack / 2, delay: this.fadeBack / 2 })
+      Velocity(targetInner, { opacity: 0 }, { duration: this.config.fadeBack / 2, delay: this.config.fadeBack / 2 })
 
       // But only fades out complety the Target (that has the dark background)
       // after Masker goes back to the initial position
-      Velocity(el, { opacity: 0 }, { duration: this.fade, delay: this.maskerTime, complete })
+      Velocity(el, { opacity: 0 }, { duration: this.config.fade, delay: this.config.maskerTime, complete })
     },
     elementStartsInvisible (el) {
       // Use only opacity to fadeIn/Out because it's faster than
@@ -112,7 +112,7 @@ const animationMixins = {
     maskEnter (el, complete) {
       console.log('maskLeave')
 
-      this.maskerTakesImediatelyTheShapeOf(el, 'trigger', this.fade)
+      this.maskerTakesImediatelyTheShapeOf(el, 'trigger', this.config.fade)
       this.maskerAnimatesToTheShapeOf(el, 'target', complete)
     },
 
@@ -120,7 +120,7 @@ const animationMixins = {
     maskLeave (el, complete) {
       console.log('maskEnter')
 
-      this.maskerTakesImediatelyTheShapeOf(el, 'target', this.fadeBack)
+      this.maskerTakesImediatelyTheShapeOf(el, 'target', this.config.fadeBack)
       this.maskerAnimatesToTheShapeOf(el, 'trigger', complete)
     },
 
@@ -135,9 +135,9 @@ const animationMixins = {
     },
     maskerAnimatesToTheShapeOf (el, originalElement, complete) {
       // Then it animates to the the originalElement specs creating the "growing effect"
-      Velocity(el, { ...this.getSpecsOf(originalElement) }, { duration: this.maskerTime, easing: 'ease-out' })
+      Velocity(el, { ...this.getSpecsOf(originalElement) }, { duration: this.config.maskerTime, easing: 'ease-out' })
       // And finally it fades out at the same time Target is fading in.
-      Velocity(el, { opacity: 0 }, { duration: this.fade, complete })
+      Velocity(el, { opacity: 0 }, { duration: this.config.fade, complete })
     },
     updateSpecsOf (el, elementId) {
       this.MaskToModal.updateSpecsOf(el, elementId)

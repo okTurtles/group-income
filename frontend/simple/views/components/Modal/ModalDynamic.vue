@@ -1,22 +1,24 @@
 <template>
-  <modal :isActive="isActive" @close="closeModal">
-    <component :is="activeModal"></component>
-  </modal>
+  <modal-basic :isActive="ephemeral.isActive" @close="closeModal">
+    <component :is="ephemeral.activeModal"></component>
+  </modal-basic>
 </template>
 <script>
-import Modal from './ModalBasic.vue'
+import ModalBasic from './ModalBasic.vue'
 import sbp from '../../../../../shared/sbp.js'
 import { OPEN_MODAL, CLOSE_MODAL } from '../../../utils/events.js'
 
 export default {
   name: 'ModalDynamic',
   components: {
-    Modal
+    ModalBasic
   },
   data () {
     return {
-      isActive: null,
-      activeModal: null
+      ephemeral: {
+        activeModal: null,
+        isActive: null
+      }
     }
   },
   created () {
@@ -25,11 +27,11 @@ export default {
   },
   methods: {
     openModal (component) {
-      this.activeModal = component
-      this.isActive = true
+      this.ephemeral.activeModal = component
+      this.ephemeral.isActive = true
     },
     closeModal () {
-      this.isActive = false
+      this.ephemeral.isActive = false
     }
   }
 }
