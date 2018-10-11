@@ -1,6 +1,6 @@
 <template>
-  <div class="gi-loading has-text-centered"
-    :class="{ fullView: theme === 'fullView' }">
+  <div class="c-loading has-text-centered"
+    :class="{ 'c-fullView': theme === 'fullView' }">
     <h1 class="title is-3 is-marginless"><i18n>{{title}}</i18n></h1>
     <p><i18n>{{text}}</i18n></p>
   </div>
@@ -8,12 +8,12 @@
 <style lang="scss" scoped>
 @import "../../assets/sass/theme/index";
 
-.gi-loading {
+.c-loading {
   opacity: 0;
   padding: $gi-spacer-lg 0;
-  animation: show 200ms 500ms forwards;
+  animation: showLoading 200ms 500ms forwards;
 
-  &.fullView {
+  &.c-fullView {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -21,7 +21,7 @@
   }
 }
 
-@keyframes show {
+@keyframes showLoading {
   from { opacity: 0; }
   to { opacity: 1; }
 }

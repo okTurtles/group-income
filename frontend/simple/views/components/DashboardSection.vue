@@ -1,5 +1,5 @@
 <template>
-  <section class="section gi-section">
+  <section class="section c-dashboard-section">
     <h3 class="title" v-if="title"><i18n>{{title}}</i18n></h3>
     <slot></slot>
   </section>
@@ -7,7 +7,7 @@
 <style lang="scss" scoped>
 @import "../../assets/sass/theme/index";
 
-.gi-section {
+.c-dashboard-section {
   position: relative;
   margin-bottom: $gi-spacer-lg*2;
 

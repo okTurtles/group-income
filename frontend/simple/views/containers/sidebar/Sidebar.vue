@@ -2,12 +2,12 @@
   <header class="c-sidebar is-flex" :class="{ 'is-active': ephemeral.isActive }">
     <button class="gi-is-unstyled c-toggle" @click="toggleMenu">
       <i class="fa fa-bars"></i>
-      <img src="/simple/assets/images/logo-transparent.png" alt="GroupIncome's logo" class="gi-logo">
+      <img src="/simple/assets/images/logo-transparent.png" alt="GroupIncome's logo" class="gi-logo c-logo">
     </button>
     <div class="c-sidebar-header level is-mobile">
       <h1 class="sr-only">Main Menu</h1>
       <router-link to="home">
-        <img src="/simple/assets/images/logo-transparent.png" alt="GroupIncome's logo" class="gi-logo level-left">
+        <img src="/simple/assets/images/logo-transparent.png" alt="GroupIncome's logo" class="gi-logo c-logo level-left">
       </router-link>
       <activity :activityCount="activityCount"></activity>
     </div>
@@ -100,11 +100,11 @@ $speed: 300ms;
     background-color: transparent;
     transition: height 1ms $speed;
 
-    .gi-logo {
+    .c-logo {
       margin-left: $gi-spacer-sm;
     }
 
-    .gi-logo,
+    .c-logo,
     .fa-bars {
       transition: opacity $speed/5 $speed*1.1;
     }
@@ -116,7 +116,7 @@ $speed: 300ms;
       left: 100%;
       transition: height 1ms 1ms;
 
-      .gi-logo,
+      .c-logo,
       .fa-bars {
         transition: opacity 1ms 1ms;
         opacity: 0;

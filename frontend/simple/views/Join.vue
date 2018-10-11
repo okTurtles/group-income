@@ -1,15 +1,15 @@
 <template>
   <loading theme="fullView" v-if="!ephemeral.contract.groupName" />
-  <main v-else>
-    <div class="gi-join-grid section">
-      <div class="gi-join-grid-header">
+  <main v-else class="c-join">
+    <div class="c-join-grid section">
+      <div class="c-join-grid-header">
         <h1 class="has-text-grey">
           <i18n>You’ve been invited to join a group!</i18n>
         </h1>
         <h2 class="title is-1 is-marginless">{{ephemeral.contract.groupName}}</h2>
         <h3 class="is-size-5">{{ephemeral.contract.sharedValues}}</h3>
       </div>
-      <div class="gi-join-grid-ctas">
+      <div class="c-join-grid-ctas">
         <div class="buttons">
           <button
             class="button is-large is-primary"
@@ -26,7 +26,7 @@
         </div>
       <p v-if="ephemeral.errorMsg" class="has-text-danger has-text-centered-mobile">{{ephemeral.errorMsg}}</p>
     </div>
-    <div class="gi-join-grid-graphic" v-if="ephemeral.contract.members.length">
+    <div class="c-join-grid-graphic" v-if="ephemeral.contract.members.length">
       <members-circle :members="ephemeral.contract.members">
         <bars
           :currency="ephemeral.contract.incomeCurrencySign"
@@ -40,7 +40,7 @@
 <style lang="scss" scoped>
 @import "../assets/sass/theme/index";
 
-.gi-join {
+.c-join {
   &-grid {
     display: grid;
     grid-template-areas: "header" "graphic" "ctas";
@@ -79,20 +79,20 @@
       grid-template-areas: "header graphic" "ctas graphic";
     }
   }
-}
 
-.buttons {
-  &:not(:last-child) {
-    margin-bottom: 0;
-  }
+  .buttons {
+    &:not(:last-child) {
+      margin-bottom: 0;
+    }
 
-  .button:not(:last-child) {
-    margin-right: $gi-spacer;
-  }
+    .button:not(:last-child) {
+      margin-right: $gi-spacer;
+    }
 
-  @include mobile {
-    .button {
-      font-size: $size-6; // force to be default size on mobile
+    @include mobile {
+      .button {
+        font-size: $size-6; // force to be default size on mobile
+      }
     }
   }
 }

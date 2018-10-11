@@ -9,14 +9,14 @@
     <!-- REVIEW: Not sure about these banners. -->
 
     <!--
-    <h4 class="title is-size-5 notification is-warning gi-is-banner gi-notify"
+    <h4 class="title is-size-5 notification is-warning gi-is-banner c-notify"
       v-if="groupProposals.notVoted.length"
     >
       <i18n>These are waiting for your vote!</i18n>
     </h4>
     -->
 
-    <i18n class="notification gi-is-banner gi-notify" v-if="allVoted">Cool, you already voted on all proposals.</i18n>
+    <i18n class="notification gi-is-banner c-notify" v-if="allVoted">Cool, you already voted on all proposals.</i18n>
 
     <voting
       v-for="proposal in groupProposals.notVoted"
@@ -45,13 +45,9 @@
 <style lang="scss" scoped>
 @import "../../assets/sass/theme/index";
 
-.gi-notify {
+.c-notify {
   display: block;
   margin-top: $gi-spacer-lg;
-}
-
-.gi-showAll {
-  margin-top: -$gi-spacer;
 }
 </style>
 <script>

@@ -1,12 +1,12 @@
 <template>
-  <ul :class="{'gi-list': hasMargin}">
+  <ul :class="{'c-margin': hasMargin}">
     <slot></slot>
   </ul>
 </template>
 <style lang="scss" scoped>
 @import "../../../assets/sass/theme/index";
 
-.gi-list {
+.c-margin {
   margin: $gi-spacer-sm 0;
 }
 

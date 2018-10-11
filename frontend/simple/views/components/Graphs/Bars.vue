@@ -1,21 +1,21 @@
 <template>
   <div class="has-text-centered">
-    <p class="gi-desc">
-      <strong class="is-size-5 is-block gi-nowrap">{{currency}} {{mincome}}</strong>
+    <p class="c-description">
+      <strong class="is-size-5 is-block c-nowrap">{{currency}} {{mincome}}</strong>
       <i18n>min income</i18n>
     </p>
     <div v-if="history.length">
-      <div class="gi-graph is-flex">
+      <div class="c-graph is-flex">
         <span v-for="(percentage, index) in history"
-          class="gi-graph-item"
+          class="c-graph-item"
           :style="{
             transform: `scaleY(${getHeight(percentage)})`,
             opacity: getOpacity(percentage)
           }">
         </span>
       </div>
-      <p class="gi-desc">
-        <strong class="is-block gi-nowrap">+ {{getTotal()}} <i18n>distributed</i18n></strong>
+      <p class="c-description">
+        <strong class="is-block c-nowrap">+ {{getTotal()}} <i18n>distributed</i18n></strong>
         <i18n>on the last</i18n> {{history.length}} <i18n>months</i18n>
       </p>
     </div>
@@ -28,16 +28,17 @@
 $barHeight: $gi-spacer*2.5;
 $barMarginBottom: $gi-spacer-sm;
 
-.gi-desc {
+.c-description {
   line-height: 1.2;
   margin-bottom: $gi-spacer;
 }
 
-.gi-nowrap {
+// REVIEW - make this a gi- class?
+.c-nowrap {
   white-space: nowrap;
 }
 
-.gi-graph {
+.c-graph {
   position: relative;
   margin: $gi-spacer 0 $barMarginBottom;
 
