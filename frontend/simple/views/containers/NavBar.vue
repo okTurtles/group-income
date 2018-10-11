@@ -90,7 +90,7 @@
           </div>
         </div>
       </div>
-      <time-travel v-show="showTimeTravel" :toggleVisibility="toggleTimeTravel" />
+      <time-travel v-show="ephemeral.showTimeTravel" :toggleVisibility="toggleTimeTravel" />
     </div>
   </nav>
 </template>
@@ -142,12 +142,14 @@ export default {
     toggleTimeTravel (event) {
       if (!event.altKey) return
       event.preventDefault()
-      this.showTimeTravel = !this.showtimetravel
+      this.ephemeral.showTimeTravel = !this.ephemeral.showtimetravel
     }
   },
   data () {
     return {
-      showTimeTravel: false
+      ephemeral: {
+        showTimeTravel: false
+      }
     }
   }
 }

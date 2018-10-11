@@ -13,42 +13,44 @@ export default {
   name: 'MenuSelect',
   data () {
     return {
-      Menu: {
-        isActive: this.isActive,
-        handleSelect: this.handleSelect,
-        handleTrigger: this.handleTrigger,
-        closeMenu: this.closeMenu
+      config: {
+        Menu: {
+          isActive: this.isActive,
+          handleSelect: this.handleSelect,
+          handleTrigger: this.handleTrigger,
+          closeMenu: this.closeMenu
+        }
       }
     }
   },
   provide () {
     return {
-      Menu: this.Menu
+      Menu: this.config.Menu
     }
   },
   watch: {
     isActive: {
       immediate: true,
       handler (isActive) {
-        this.Menu.isActive = isActive
+        this.config.Menu.isActive = isActive
       }
     }
   },
   computed: {
     isActive () {
-      return this.Menu.isActive
+      return this.config.Menu.isActive
     }
   },
   methods: {
     handleTrigger () {
-      this.Menu.isActive = true
+      this.config.Menu.isActive = true
     },
     handleSelect (itemId) {
       this.closeMenu()
       this.$emit('select', itemId)
     },
     closeMenu () {
-      this.Menu.isActive = false
+      this.config.Menu.isActive = false
     }
   }
 }

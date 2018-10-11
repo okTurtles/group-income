@@ -30,7 +30,7 @@
         </div>
         <div class="column"></div>
         <div class="column is-two-thirds">
-          <div id="compose" class="panel" v-if="mode === 'Compose'">
+          <div id="compose" class="panel" v-if="ephemeral.mode === 'Compose'">
             <div class="panel-heading">
               <div><strong><i18n>Type</i18n>:</strong>&nbsp;<i18n>Message</i18n></div>
               <div><strong style="margin-top: auto;"><i18n>To</i18n>:</strong>&nbsp;
@@ -47,9 +47,9 @@
                   </span>
                 </a>
               </div>
-              <span v-if="error" id="badUsername" class="help is-danger"><i18n>Invalid Username</i18n></span>
+              <span v-if="ephemeral.error" id="badUsername" class="help is-danger"><i18n>Invalid Username</i18n></span>
               <table>
-                <tr v-for="(recipient, index) in recipients">
+                <tr v-for="(recipient, index) in ephemeral.recipients">
                   <td>
                     {{recipient.name}}
                     <i class="fa fa-minus-circle icon is-small" v-on:click="removeRecipient(index)" ></i>
@@ -58,28 +58,28 @@
               </table>
             </div>
             <div class="panel-block">
-              <textarea class="textarea" data-test="composedMessage" v-model="composedMessage"></textarea>
+              <textarea class="textarea" data-test="composedMessage" v-model="ephemeral.composedMessage"></textarea>
             </div>
             <div class="panel-block" >
-              <div id="errorMsg" v-if="errorMsg" class="help is-danger">{{errorMsg}}</div>
-              <button class="button is-success" type="submit" data-test="sendButton" v-on:click="send" :disabled="!composedMessage"  style="margin-left:auto; margin-right: 0;"><i18n>Send</i18n></button>
+              <div id="errorMsg" v-if="ephemeral.errorMsg" class="help is-danger">{{ephemeral.errorMsg}}</div>
+              <button class="button is-success" type="submit" data-test="sendButton" v-on:click="send" :disabled="!ephemeral.composedMessage"  style="margin-left:auto; margin-right: 0;"><i18n>Send</i18n></button>
               <button class="button is-danger" type="submit" v-on:click="cancel" style="margin-left:10px; margin-right: 0;"><i18n>Cancel</i18n></button>
             </div>
           </div>
-          <div id="CurrentMessage" class="panel" v-if="mode === 'Read'">
+          <div id="CurrentMessage" class="panel" v-if="ephemeral.mode === 'Read'">
             <div class="panel-heading">
-              <div><strong>Type:</strong>&nbsp;{{currentMessage.data.messageType}}</div>
-              <div><strong>Sent:</strong>&nbsp;{{formatDate(currentMessage.data.sentDate)}}</div>
-              <div><strong>From:</strong>&nbsp;{{currentMessage.data.from}}</div>
+              <div><strong>Type:</strong>&nbsp;{{ephemeral.currentMessage.data.messageType}}</div>
+              <div><strong>Sent:</strong>&nbsp;{{formatDate(ephemeral.currentMessage.data.sentDate)}}</div>
+              <div><strong>From:</strong>&nbsp;{{ephemeral.currentMessage.data.from}}</div>
             </div>
-            <p class="panel-block" style="display: block; word-wrap: break-word;">{{currentMessage.data.message}}</p>
+            <p class="panel-block" style="display: block; word-wrap: break-word;">{{ephemeral.currentMessage.data.message}}</p>
 
             <div class="panel-block" >
-              <button class="button is-danger" v-if="currentMessage.data.messageType === 'Message'" type="submit" style="margin-left:auto; margin-right: 0;" v-on:click="remove(index)"><i18n>Delete</i18n></button>
+              <button class="button is-danger" v-if="ephemeral.currentMessage.data.messageType === 'Message'" type="submit" style="margin-left:auto; margin-right: 0;" v-on:click="remove(index)"><i18n>Delete</i18n></button>
               <button class="button is-primary" type="submit" v-on:click="inboxMode" style="margin-left:10px; margin-right: 0;"><i18n>Return</i18n></button>
             </div>
           </div>
-          <table id="Proposals" class="table is-bordered is-striped is-narrow"  v-if="(mode === 'Inbox') && proposals.length">
+          <table id="Proposals" class="table is-bordered is-striped is-narrow"  v-if="ephemeral.mode === 'Inbox' && proposals.length">
             <thead>
             <tr>
               <th><i18n>Proposals</i18n></th>
@@ -106,7 +106,7 @@
             </tr>
             </tbody>
           </table>
-          <table id="Invites" class="table is-bordered is-striped is-narrow is-fullwidth" v-if="(mode === 'Inbox') && invites.length">
+          <table id="Invites" class="table is-bordered is-striped is-narrow is-fullwidth" v-if="ephemeral.mode === 'Inbox' && invites.length">
             <thead>
             <tr>
               <th><i18n>Invites</i18n></th>
@@ -136,7 +136,7 @@
           </table>
           <table class="table is-bordered is-striped is-narrow is-fullwidth"
             data-test="inbox"
-            v-if="(mode === 'Inbox')">
+            v-if="ephemeral.mode === 'Inbox'">
             <thead>
             <tr>
               <th><i18n>Inbox</i18n></th>
@@ -204,6 +204,21 @@ const criteria = (msg) => new Date(msg.sentDate)
 
 export default {
   name: 'Mailbox',
+  data () {
+    return {
+      ephemeral: {
+        mode: 'Inbox',
+        recipients: [],
+        error: null,
+        errorMsg: null,
+        composedMessage: '',
+        // TODO: this is ugly, make it nicer
+        // place an empty message here so that the rendered doesn't complain about missing fields or data
+        currentMessage: {data: {}},
+        currentIndex: null
+      }
+    }
+  },
   computed: {
     inbox () {
       return this.$store.getters.mailbox.filter(msg => msg.data.messageType === contracts.MailboxPostMessage.TypeMessage).sort(criteria)
@@ -226,55 +241,55 @@ export default {
       this.inboxMode()
     },
     clearCompose: function () {
-      this.composedMessage = ''
-      this.recipients = []
+      this.ephemeral.composedMessage = ''
+      this.ephemeral.recipients = []
     },
     inboxMode: function () {
       this.clearCompose()
-      this.mode = 'Inbox'
+      this.ephemeral.mode = 'Inbox'
       this.messages = this.inbox
     },
     deletedMode: function () {
       this.clearCompose()
-      this.mode = 'Deleted'
+      this.ephemeral.mode = 'Deleted'
       this.messages = this.deleted
     },
     invitesMode: function () {
       this.clearCompose()
-      this.mode = 'Invites'
+      this.ephemeral.mode = 'Invites'
       this.messages = this.invites
     },
     send: async function () {
       try {
-        for (let i = 0; i < this.recipients.length; i++) {
-          let recipient = this.recipients[i]
+        for (let i = 0; i < this.ephemeral.recipients.length; i++) {
+          let recipient = this.ephemeral.recipients[i]
           // TODO:: latestContractState is inefficient
           let state = await sbp('state/latestContractState', recipient.contractID)
           let message = await sbp('gi/contract/create-action', 'MailboxPostMessage', {
             sentDate: new Date().toISOString(),
             messageType: contracts.MailboxPostMessage.TypeMessage,
             from: this.$store.state.loggedIn.name,
-            message: this.composedMessage
+            message: this.ephemeral.composedMessage
           }, state.attributes.mailbox)
           await sbp('backend/publishLogEntry', message)
         }
         this.inboxMode()
       } catch (ex) {
         console.log(ex)
-        this.errorMsg = L('Failed to Send Message')
+        this.ephemeral.errorMsg = L('Failed to Send Message')
       }
     },
     remove: function (index) {
       if (Number.isInteger(index)) {
         this.$store.commit('deleteMessage', this.inbox[index].hash)
       } else {
-        this.$store.commit('deleteMessage', this.inbox[this.currentIndex].hash)
-        this.currentIndex = null
+        this.$store.commit('deleteMessage', this.inbox[this.ephemeral.currentIndex].hash)
+        this.ephemeral.currentIndex = null
         this.inboxMode()
       }
     },
     compose: function () {
-      this.mode = 'Compose'
+      this.ephemeral.mode = 'Compose'
     },
     respondToProposal: function (index) {
       this.$router.push({ path: '/vote', query: { groupId: this.proposals[index].groupContractId, proposalHash: this.proposals[index].proposal } })
@@ -284,43 +299,29 @@ export default {
       this.$router.push({ path: '/join', query: { groupId: this.invites[index].data.headers[0], inviteHash: this.invites[index].hash } })
     },
     read: function ({index, type}) {
-      this.mode = 'Read'
+      this.ephemeral.mode = 'Read'
       if (Number.isInteger(index)) {
-        this.currentMessage = this.inbox[index]
-        this.currentIndex = index
-        this.$store.commit('markMessageAsRead', this.currentMessage.hash)
+        this.ephemeral.currentMessage = this.inbox[index]
+        this.ephemeral.currentIndex = index
+        this.$store.commit('markMessageAsRead', this.ephemeral.currentMessage.hash)
       }
     },
     removeRecipient: function (index) {
-      this.recipients.splice(index, 1)
+      this.ephemeral.recipients.splice(index, 1)
     },
     addRecipient: async function () {
       if (this.recipient) {
         try {
           let contractID = await sbp('namespace/lookup', this.recipient)
-          if (!this.recipients.find(recipient => recipient.name === this.recipient)) {
-            this.recipients.push({name: this.recipient, contractID: contractID})
+          if (!this.ephemeral.recipients.find(recipient => recipient.name === this.recipient)) {
+            this.ephemeral.recipients.push({name: this.recipient, contractID: contractID})
           }
           this.recipient = null
-          this.error = false
+          this.ephemeral.error = false
         } catch (ex) {
-          this.error = true
+          this.ephemeral.error = true
         }
       }
-    }
-  },
-  data () {
-    return {
-      mode: 'Inbox',
-      recipient: null,
-      recipients: [],
-      composedMessage: '',
-      // TODO: this is ugly, make it nicer
-      // place an empty message here so that the rendered doesn't complain about missing fields or data
-      currentMessage: {data: {}},
-      currentIndex: null,
-      error: null,
-      errorMsg: null
     }
   }
 }

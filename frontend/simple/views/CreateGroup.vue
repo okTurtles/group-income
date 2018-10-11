@@ -47,9 +47,9 @@
             </button>
           </p>
         </div>
-        <article class="message is-danger" v-if="errorMsg">
+        <article class="message is-danger" v-if="ephemeral.errorMsg">
           <div class="message-body">
-            {{ errorMsg }}
+            {{ ephemeral.errorMsg }}
           </div>
         </article>
       </div>
@@ -104,18 +104,18 @@ export default {
       this.$refs[ref].focus()
     },
     updateGroupData (payload) {
-      this.errorMsg = null
+      this.ephemeral.errorMsg = null
       Object.assign(this.form, payload.data)
     },
     submit: async function () {
       if (this.$v.form.$invalid) {
         // TODO: more descriptive error message, highlight erroneous step
-        this.errorMsg = L('We still need some info from you, please go back and fill missing fields')
+        this.ephemeral.errorMsg = L('We still need some info from you, please go back and fill missing fields')
         return
       }
 
       try {
-        this.errorMsg = null
+        this.ephemeral.errorMsg = null
         const entry = sbp('gi/contract/create', 'GroupContract', {
           // authorizations: [contracts.CanModifyAuths.dummyAuth()], // TODO: this
           groupName: this.form.groupName,
@@ -141,12 +141,12 @@ export default {
         await this.$store.dispatch('syncContractWithServer', hash)
       } catch (error) {
         console.error(error)
-        this.errorMsg = L('Failed to Create Group')
+        this.ephemeral.errorMsg = L('Failed to Create Group')
         return
       }
 
       try {
-        this.errorMsg = null
+        this.ephemeral.errorMsg = null
         // TODO: as invitees are successfully invited display in a
         // seperate invitees grid and add them to some validation for duplicate invites
         for (let invitee of this.form.invitees) {
@@ -178,7 +178,7 @@ export default {
       } catch (error) {
         console.error(error)
         // TODO: Create More descriptive errors
-        this.errorMsg = L('Failed to Invite Users')
+        this.ephemeral.errorMsg = L('Failed to Invite Users')
       }
     }
   },
@@ -194,9 +194,8 @@ export default {
         incomeCurrency: 'USD', // TODO: grab this as a constant from currencies.js
         invitees: []
       },
-      // todo: move these under appropriate key for #297
-      errorMsg: null,
       ephemeral: {
+        errorMsg: null,
         // this determines whether or not to render proxy components for nightmare
         dev: process.env.NODE_ENV === 'development'
       },

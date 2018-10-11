@@ -1,28 +1,28 @@
 <template>
   <div>
     <div class="level">
-      <dl class="level-left summary" :style="{ color: themeColor }">
+      <dl class="level-left summary" :style="{ color: fakeStore.themeColor }">
         <dt class="summary-key">
           <i18n>Contributed</i18n>
         </dt>
         <dd class="summary-value metric-primaryText">
-          {{contributedFormatted}}
+          {{fakeStore.contributedFormatted}}
         </dd>
         <dt class="summary-key">
           <i18n>Pledged</i18n>
         </dt>
         <dd class="summary-value metric-secondaryText">
-          {{pledgedFormatted}}
+          {{fakeStore.pledgedFormatted}}
         </dd>
         <dt class="summary-key">
           <i18n>Goal</i18n>
         </dt>
         <dd class="summary-value">
-          {{goalFormatted}}
+          {{fakeStore.goalFormatted}}
         </dd>
       </dl>
     </div>
-    <div class="bar" :style="{ backgroundColor: themeColor }">
+    <div class="bar" :style="{ backgroundColor: fakeStore.themeColor }">
         <span class="bar-progress metric-secondary" :style="{ width: barPercentage.pledged }"></span>
         <span class="bar-progress metric-primary" :style="{ width: barPercentage.contributed }"></span>
     </div>
@@ -102,21 +102,23 @@ export default {
   name: 'ProgressOverview',
   data () {
     return {
-      period: 'July',
-      themeColor: '#f89201', // The layout palette will adjust
-      contributed: 350,
-      pledged: 800,
-      goal: 1000,
-      contributedFormatted: '$350',
-      pledgedFormatted: '$800',
-      goalFormatted: '$1,000'
+      fakeStore: {
+        period: 'July',
+        themeColor: '#5dc8f0', // The layout palette will adjust
+        contributed: 350,
+        pledged: 800,
+        goal: 1000,
+        contributedFormatted: '$350',
+        pledgedFormatted: '$800',
+        goalFormatted: '$1,000'
+      }
     }
   },
   computed: {
     barPercentage: function () {
       return {
-        pledged: `${Math.floor(this.pledged * 100 / this.goal)}%`,
-        contributed: `${Math.floor(this.contributed * 100 / this.goal)}%`
+        pledged: `${Math.floor(this.fakeStore.pledged * 100 / this.fakeStore.goal)}%`,
+        contributed: `${Math.floor(this.fakeStore.contributed * 100 / this.fakeStore.goal)}%`
       }
     }
   }
