@@ -16,11 +16,13 @@ import {
 import Contributions from '../views/Contributions.vue'
 import DesignSystem from '../views/DesignSystem.vue'
 import GroupDashboard from '../views/GroupDashboard.vue'
+import GroupChat from '../views/GroupChat.vue'
 import Home from '../views/Home.vue'
 import Invite from '../views/Invite.vue'
 import Join from '../views/Join.vue'
 import Mailbox from '../views/Mailbox.vue'
 import PayGroup from '../views/PayGroup.vue'
+import Messages from '../views/Messages.vue'
 import UserProfile from '../views/UserProfile.vue'
 import Vote from '../views/Vote.vue'
 
@@ -160,6 +162,16 @@ var router = new Router({
       beforeEnter: createEnterGuards(loginGuard)
     },
     {
+      path: '/group-chat',
+      component: GroupChat,
+      name: GroupChat.name,
+      meta: {
+        title: 'Group Chat'
+      },
+      beforeEnter: createEnterGuards(loginGuard)
+      // TODO nested routes - https://router.vuejs.org/guide/essentials/nested-routes.html
+    },
+    {
       path: '/user',
       component: UserProfile,
       meta: {
@@ -208,6 +220,16 @@ var router = new Router({
         title: 'Mailbox'
       },
       beforeEnter: createEnterGuards(loginGuard)
+    },
+    {
+      path: '/messages',
+      name: Messages.name,
+      component: Messages,
+      meta: {
+        title: 'Messages'
+      },
+      beforeEnter: createEnterGuards(loginGuard)
+      // TODO nested routes - https://router.vuejs.org/guide/essentials/nested-routes.html
     },
     {
       path: '/join',

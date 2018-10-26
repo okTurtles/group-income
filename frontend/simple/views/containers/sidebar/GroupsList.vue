@@ -38,8 +38,8 @@
         to="/pay-group">
           <i18n>Pay Group</i18n>
       </list-item>
-      <list-item tag="router-link" icon="comments"
-        to="/soon" :badgeCount="2">
+      <list-item tag="router-link" icon="comment"
+        to="/group-chat" :badgeCount="2">
           <i18n>Chat</i18n>
       </list-item>
 

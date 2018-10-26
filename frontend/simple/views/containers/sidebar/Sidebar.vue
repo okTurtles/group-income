@@ -15,11 +15,16 @@
     <div class="c-sidebar-body is-flex is-flex gi-is-justify-between">
       <div class="c-sidebar-body-top">
         <list class="c-toplinks">
+          <list-item tag="router-link" to="/messages"
+            icon="comments"
+            :badgeCount="1">
+              <i18n>Messages</i18n>
+          </list-item>
           <list-item tag="router-link" to="/mailbox"
             icon="envelope-o"
             data-test="mailboxLink"
             :badgeCount="unreadMessagesCount || activityCount">
-              <i18n>Inbox</i18n>
+              <i18n>Inbox (deprecated)</i18n>
           </list-item>
         </list>
 
