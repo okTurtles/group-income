@@ -1,5 +1,6 @@
 <template>
   <div class="c-chatnav">
+    <h1 class="title is-4">{{title}}</h1>
     <slot></slot>
   </div>
 </template>
@@ -7,7 +8,8 @@
 @import "../../../assets/sass/theme/index";
 
 .c-chatnav {
-  flex-basis: 13rem;
+  padding: $gi-spacer $gi-spacer-sm;
+  width: 14rem;
   border-right: 1px solid $grey-lighter;
 }
 </style>
@@ -15,6 +17,9 @@
 export default {
   name: 'ChatNav',
   components: {},
+  props: {
+    title: String
+  },
   data () {
     return {}
   },

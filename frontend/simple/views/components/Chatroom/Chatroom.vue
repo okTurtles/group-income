@@ -1,14 +1,10 @@
 <template>
   <main class="c-chatroom">
-    <chat-nav>
-      <h1>Messages</h1>
+    <chat-nav :title="title">
       <slot></slot>
     </chat-nav>
-    <chat-main>
-      Main here....
-      <!-- TODO If no chatType exist, show last one and redirect -->
-      <!-- <component :is="chatType" /> -->
-    </chat-main>
+    <router-view>
+    </router-view>
   </main>
 </template>
 <style lang="scss" scoped>
@@ -30,6 +26,9 @@ export default {
   components: {
     ChatMain,
     ChatNav
+  },
+  props: {
+    title: String
   },
   data () {
     return {}

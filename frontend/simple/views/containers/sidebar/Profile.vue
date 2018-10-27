@@ -3,7 +3,7 @@
     <div class="level-left">
       <img class="c-picture" v-if="userPicture" :src="userPicture" />
       <div class="c-user">
-        <p class="c-is-ellipsis has-text-weight-bold">{{userDisplayName}}</p>
+        <p class="gi-is-ellipsis has-text-weight-bold">{{userDisplayName}}</p>
         <span class="gi-is-ellipsis is-size-7" data-test="profileDisplayName">{{userName}}</span>
       </div>
     </div>

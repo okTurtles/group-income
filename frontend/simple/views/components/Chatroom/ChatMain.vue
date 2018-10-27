@@ -1,6 +1,9 @@
 <template>
   <div class="c-chatmain">
     <p>ChatMain on the way</p>
+    <hr>
+    <p><b>{{ $route.params.username }}</b> private chat on the way</p>
+    <slot></slot>
   </div>
 </template>
 <style lang="scss" scoped>

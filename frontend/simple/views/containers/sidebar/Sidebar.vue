@@ -6,7 +6,7 @@
     </button>
     <div class="c-sidebar-header level is-mobile">
       <h1 class="sr-only">Main Menu</h1>
-      <router-link to="home">
+      <router-link to="/home">
         <img src="/simple/assets/images/logo-transparent.png" alt="GroupIncome's logo" class="gi-logo c-logo level-left">
       </router-link>
       <activity :activityCount="activityCount"></activity>
