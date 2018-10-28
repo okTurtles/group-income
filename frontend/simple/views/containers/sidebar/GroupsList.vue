@@ -43,17 +43,17 @@
           <i18n>Chat</i18n>
       </list-item>
 
-      <list-item v-if="this.isCollapseOpen" tag="router-link" variant="secondary" icon="gear" to="/group-settings">
+      <list-item v-if="ephemeral.isCollapseOpen" tag="router-link" variant="secondary" icon="gear" to="/group-settings">
           <i18n>Settings</i18n>
       </list-item>
-      <list-item v-if="this.isCollapseOpen" tag="button" variant="secondary" icon="times" class="has-text-danger">
+      <list-item v-if="ephemeral.isCollapseOpen" tag="button" variant="secondary" icon="times" class="has-text-danger">
           <i18n>Leave Group</i18n>
       </list-item>
 
       <list-item tag="button" variant="secondary"
-        :icon="this.isCollapseOpen ? 'angle-up' : 'angle-down'"
+        :icon="ephemeral.isCollapseOpen ? 'angle-up' : 'angle-down'"
         @click="toggleShowMore">
-          <i18n v-if="this.isCollapseOpen">Show less</i18n>
+          <i18n v-if="ephemeral.isCollapseOpen">Show less</i18n>
           <i18n v-else>Show more</i18n>
       </list-item>
 
@@ -100,8 +100,9 @@ export default {
   },
   data () {
     return {
-      isCollapseOpen: false,
-      isMenuOpen: false
+      ephemeral: {
+        isCollapseOpen: false
+      }
     }
   },
   computed: {
@@ -121,7 +122,7 @@ export default {
       this.$store.commit('setCurrentGroupId', hash)
     },
     toggleShowMore () {
-      this.isCollapseOpen = !this.isCollapseOpen
+      this.ephemeral.isCollapseOpen = !this.ephemeral.isCollapseOpen
     }
   }
 }

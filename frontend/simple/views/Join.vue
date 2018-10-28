@@ -1,13 +1,13 @@
 <template>
-  <loading theme="fullView" v-if="!contract.groupName" />
+  <loading theme="fullView" v-if="!ephemeral.contract.groupName" />
   <main v-else>
     <div class="gi-join-grid section">
       <div class="gi-join-grid-header">
         <h1 class="has-text-grey">
           <i18n>You’ve been invited to join a group!</i18n>
         </h1>
-        <h2 class="title is-1 is-marginless">{{contract.groupName}}</h2>
-        <h3 class="is-size-5">{{contract.sharedValues}}</h3>
+        <h2 class="title is-1 is-marginless">{{ephemeral.contract.groupName}}</h2>
+        <h3 class="is-size-5">{{ephemeral.contract.sharedValues}}</h3>
       </div>
       <div class="gi-join-grid-ctas">
         <div class="buttons">
@@ -24,14 +24,14 @@
             No, thanks
           </button>
         </div>
-      <p v-if="errorMsg" class="has-text-danger has-text-centered-mobile">{{errorMsg}}</p>
+      <p v-if="ephemeral.errorMsg" class="has-text-danger has-text-centered-mobile">{{ephemeral.errorMsg}}</p>
     </div>
-    <div class="gi-join-grid-graphic" v-if="contract.members.length">
-      <members-circle :members="contract.members">
+    <div class="gi-join-grid-graphic" v-if="ephemeral.contract.members.length">
+      <members-circle :members="ephemeral.contract.members">
         <bars
-          :currency="contract.incomeCurrencySign"
-          :history="contract.history"
-          :mincome="+contract.incomeProvided" />
+          :currency="ephemeral.contract.incomeCurrencySign"
+          :history="ephemeral.contract.history"
+          :mincome="+ephemeral.contract.incomeProvided" />
       </members-circle>
     </div>
   </div>
@@ -111,6 +111,14 @@ export default {
     Loading,
     MembersCircle
   },
+  data () {
+    return {
+      ephemeral: {
+        contract: { members: [] },
+        errorMsg: null
+      }
+    }
+  },
   async mounted () {
     try {
       let state = await sbp('state/latestContractState', this.$route.query.groupId)
@@ -136,7 +144,7 @@ export default {
       state.incomeCurrencySign = '$'
       state.history = [1.1, 1.3, 0.7, 1.05, 1, 1.3]
 
-      this.contract = state
+      this.ephemeral.contract = state
     } catch (ex) {
       // TODO Add ui facing error notification
       console.log(ex)
@@ -147,7 +155,7 @@ export default {
     accept: async function () {
       try {
         // post acceptance event to the group contract
-        this.errorMsg = null
+        this.ephemeral.errorMsg = null
         let acceptance = await sbp('gi/contract/create-action', 'GroupAcceptInvitation',
           {
             username: this.$store.state.loggedIn.name,
@@ -169,14 +177,14 @@ export default {
         this.$router.push({path: '/mailbox'})
       } catch (ex) {
         console.log(ex)
-        // TODO: post this to a global notification system instead of using this.errorMsg
-        this.errorMsg = L('Failed to Accept Invite')
+        // TODO: post this to a global notification system instead of using this.ephemeral.errorMsg
+        this.ephemeral.errorMsg = L('Failed to Accept Invite')
       }
     },
     decline: async function () {
       try {
         // post decline event
-        this.errorMsg = null
+        this.ephemeral.errorMsg = null
         let declination = await sbp('gi/contract/create-action', 'GroupDeclineInvitation',
           {
             username: this.$store.state.loggedIn.name,
@@ -192,14 +200,8 @@ export default {
         this.$router.push({path: '/mailbox'})
       } catch (ex) {
         console.log(ex)
-        this.errorMsg = L('Failed to Decline Invite')
+        this.ephemeral.errorMsg = L('Failed to Decline Invite')
       }
-    }
-  },
-  data () {
-    return {
-      errorMsg: null,
-      contract: { members: [] }
     }
   }
 }

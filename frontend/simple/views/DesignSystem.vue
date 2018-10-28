@@ -21,7 +21,7 @@
       <div class="column is-4">
         <h2 class="title is-4 gi-title">Spacing</h2>
         <div class="level"
-          v-for="spacer in spacings" :key="spacer.name"
+          v-for="spacer in config.spacings" :key="spacer.name"
         >
           <div class="level level-left">
             <div class="level-item">
@@ -35,7 +35,7 @@
       <div class="column is-12">
         <h2 class="title is-4 gi-title">Color</h2>
         <div class="columns is-gapless has-text-centered">
-          <div class="column" v-for="color in colors" :key="color.name">
+          <div class="column" v-for="color in config.colors" :key="color.name">
             <span class="gi-palette" :class="`has-background-${color.name}`"></span>
             <p class="gi-code">${{ color.name }}</p>
           </div>
@@ -89,30 +89,32 @@ export default {
   name: 'DesignSystemView',
   data () {
     return {
-      colors: [
-        {
-          name: 'primary'
-        }, {
-          name: 'secondary'
-        }, {
-          name: 'success'
-        }, {
-          name: 'warning'
-        }, {
-          name: 'tertiary'
-        }, {
-          name: 'danger'
-        }
-      ],
-      spacings: [
-        {
-          name: 'lg'
-        }, {
-          name: 'md'
-        }, {
-          name: 'sm'
-        }
-      ]
+      config: {
+        colors: [
+          {
+            name: 'primary'
+          }, {
+            name: 'secondary'
+          }, {
+            name: 'success'
+          }, {
+            name: 'warning'
+          }, {
+            name: 'tertiary'
+          }, {
+            name: 'danger'
+          }
+        ],
+        spacings: [
+          {
+            name: 'lg'
+          }, {
+            name: 'md'
+          }, {
+            name: 'sm'
+          }
+        ]
+      }
     }
   }
 }

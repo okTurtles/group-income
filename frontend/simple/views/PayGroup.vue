@@ -12,7 +12,7 @@
         <div class="c-summary-item">
           <h2 class="is-size-7 has-text-grey is-uppercase"><i18n>Payments Sent</i18n></h2>
           <p class="title is-5">
-            <i18n :args="{ sent: paymentSummary.sent, total: users.length }">
+            <i18n :args="{ sent: paymentSummary.sent, total: fakeStore.users.length }">
               {sent} of {total}
             </i18n>
 
@@ -30,17 +30,17 @@
         </div>
         <div class="c-summary-item">
           <i18n  tag="h2" class="is-size-7 has-text-grey is-uppercase">Payments Confirmed</i18n>
-          <i18n tag="p" class="title is-5" :args="{ sent: paymentSummary.confirmed, total: users.length }">
+          <i18n tag="p" class="title is-5" :args="{ sent: paymentSummary.confirmed, total: fakeStore.users.length }">
             {sent} of {total}
           </i18n>
         </div>
         <div class="c-summary-item">
           <i18n tag="h2" class="is-size-7 has-text-grey is-uppercase">Amount Sent</i18n>
           <p class="title is-5" :class="{'has-text-success': paymentAllDone}">
-            <i18n v-if="paymentAllDone" :args="{ currency, amountTotal: paymentSummary.amountTotal }">
+            <i18n v-if="paymentAllDone" :args="{ currency: fakeStore.currency, amountTotal: paymentSummary.amountTotal }">
               All {currency}{amountTotal}
             </i18n>
-            <i18n v-else :args="{ currency, amoutPayed:paymentSummary.amoutPayed, amountTotal: paymentSummary.amountTotal }">
+            <i18n v-else :args="{ currency: fakeStore.currency, amoutPayed:paymentSummary.amoutPayed, amountTotal: paymentSummary.amountTotal }">
               {currency}{amoutPayed} of {currency}{amountTotal}
             </i18n>
           </p>
@@ -64,13 +64,13 @@
                 Total
               </i18n>
               <td class="is-size-5 has-text-weight-bold is-numeric">
-                {{currency}}{{paymentSummary.amountTotal}}
+                {{fakeStore.currency}}{{paymentSummary.amountTotal}}
               </td>
             </tr>
           </tfoot>
 
           <tbody class="tbody is-borderless">
-            <tr v-for="user, index in users">
+            <tr v-for="user, index in fakeStore.users">
               <th class="has-text-weight-normal">
                 <avatar :alt="`${user.name}s avatar`" :src="user.avatar"></avatar>
                 <span class="c-tableBox-cell">{{user.name}}</span>
@@ -113,7 +113,7 @@
                 </div>
               </td>
               <td class="is-size-5 is-numeric">
-                {{currency}}{{user.amount}}
+                {{fakeStore.currency}}{{user.amount}}
               </td>
             </tr>
           </tbody>
@@ -222,58 +222,63 @@ export default {
   },
   data () {
     return {
-      users: [
-        {
-          name: 'Lilia Bouvet',
-          avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
-          status: 'todo',
-          amount: 10
-        },
-        {
-          name: 'Charlotte Doherty',
-          avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
-          status: 'todo',
-          amount: 20
-        },
-        {
-          name: 'Kim Kr',
-          avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
-          status: 'rejected',
-          amount: 25
-        },
-        {
-          name: 'Zoe Kim',
-          avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
-          status: 'pending',
-          amount: 30
-        },
-        {
-          name: 'Hugo Lil',
-          avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
-          status: 'completed',
-          amount: 50
+      ephemeral: {
+        admirations: {
+          types: [this.L('Awesome'), this.L('Cool'), this.L('Great'), this.L('Nice'), this.L('Super'), this.L('Sweet')],
+          users: [] /* ['admiration'] */
         }
-      ],
-      currency: currencies['USD'],
-      admirations: {
-        types: [this.L('Awesome'), this.L('Cool'), this.L('Great'), this.L('Nice'), this.L('Super'), this.L('Sweet')],
-        users: { /* index: 'admiration' */ }
+      },
+      fakeStore: {
+        users: [
+          {
+            name: 'Lilia Bouvet',
+            avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
+            status: 'todo',
+            amount: 10
+          },
+          {
+            name: 'Charlotte Doherty',
+            avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
+            status: 'todo',
+            amount: 20
+          },
+          {
+            name: 'Kim Kr',
+            avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
+            status: 'rejected',
+            amount: 25
+          },
+          {
+            name: 'Zoe Kim',
+            avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
+            status: 'pending',
+            amount: 30
+          },
+          {
+            name: 'Hugo Lil',
+            avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
+            status: 'completed',
+            amount: 50
+          }
+        ],
+        currency: currencies['USD']
       }
     }
   },
   computed: {
     paymentSummary () {
+      const { users } = this.fakeStore
       return {
-        sent: this.users.reduce((acc, user) => this.statusIsPayed(user) ? acc + 1 : acc, 0),
-        confirmed: this.users.reduce((acc, user) => this.statusIsCompleted(user) ? acc + 1 : acc, 0),
-        amoutPayed: this.users.reduce((acc, user) => this.statusIsPayed(user) ? acc + user.amount : acc, 0),
-        amountTotal: this.users.reduce((acc, user) => acc + user.amount, 0),
-        hasWarning: this.users.filter(user => this.statusIsRejected(user)).length > 0
+        sent: users.reduce((acc, user) => this.statusIsPayed(user) ? acc + 1 : acc, 0),
+        confirmed: users.reduce((acc, user) => this.statusIsCompleted(user) ? acc + 1 : acc, 0),
+        amoutPayed: users.reduce((acc, user) => this.statusIsPayed(user) ? acc + user.amount : acc, 0),
+        amountTotal: users.reduce((acc, user) => acc + user.amount, 0),
+        hasWarning: users.filter(user => this.statusIsRejected(user)).length > 0
       }
     },
     paymentProgress () {
       const { sent, confirmed } = this.paymentSummary
-      const usersLength = this.users.length
+      const usersLength = this.fakeStore.users.length
 
       return {
         sent: toPercent(sent / usersLength),
@@ -281,7 +286,7 @@ export default {
       }
     },
     paymentAllDone () {
-      return this.paymentSummary.confirmed === this.users.length
+      return this.paymentSummary.confirmed === this.fakeStore.users.length
     }
   },
   methods: {
@@ -304,10 +309,12 @@ export default {
       return name.split(' ')[0]
     },
     getCustomAdmiration (index) {
-      if (!this.admirations.users[index]) {
-        this.admirations.users[index] = this.admirations.types[Math.floor(Math.random() * this.admirations.types.length)]
+      const { admirations } = this.ephemeral
+
+      if (!admirations.users[index]) {
+        admirations.users[index] = admirations.types[Math.floor(Math.random() * admirations.types.length)]
       }
-      return this.admirations.users[index]
+      return admirations.users[index]
     },
     markAsPayed (user) {
       console.log('TODO - mark as payed')
