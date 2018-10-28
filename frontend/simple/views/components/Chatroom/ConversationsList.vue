@@ -55,6 +55,7 @@ export default {
       type: String,
       required: true
     },
+    routePath: String,
     type: {
       type: String,
       required: true,
@@ -68,10 +69,19 @@ export default {
   },
   computed: {},
   methods: {
+    // REVIEW - Maybe the url should be a prop
     buildUrl (conversationId) {
       const { type, list, routeName } = this
       const { name } = list.conversations[conversationId] || {}
 
+      // NOTE/TODO - when getting messageConversation from $store is built,
+      // this should be the most correct way of handling the router-link...
+
+      /* return {
+        path: `${routePath}${name}`
+      } */
+
+      // NOTE: ...until then let's use $route params as a "store"...
       return {
         name: routeName,
         params: {

@@ -3,6 +3,7 @@
     <chat-nav :title="title">
       <slot></slot>
     </chat-nav>
+    <!-- TODO/REVIEW - design loading state when conversation is being loaded  -->
     <!-- TODO/REVIEW - design empty state when no conversation is selected?  -->
     <chat-main :info="chatData.info" :conversation="chatData.conversation" />
   </main>
@@ -38,13 +39,17 @@ export default {
   },
   computed: {
     chatData () {
-      // BUG: populate with currentConversation when $route.params are empty
+      // TODO: populate view with currentConversation when $route.params are empty
+      // REVIEW - This should be $store responsability but for now (layout purposes) let's keep it on the $route
+
       const { type, id } = this.$route.params.currentConversation || {}
 
       console.log('currentConversationId', { id, type })
 
       if (type === 'messages') {
-        document.title = users[id].name
+        // REVIEW/BUG - How do I do this with vue-router? There's a small time interval
+        // between changing the route (title undefined) and update with the actual title
+        document.title = users[id].displayName || users[id].name
 
         return {
           info: {
@@ -54,7 +59,7 @@ export default {
             participants: {
               [id]: users[id]
             }
-            // TODO - conversation top right corner actions
+            // TODO - what are the conversation's actions at top right corner?
           },
           conversation: messageConversations[id]
         }
@@ -62,6 +67,8 @@ export default {
 
       // TODO group chat
       return {}
+
+      // REVIEW/TODO - where should the conversation unread state be updated?
     }
   },
   methods: {}

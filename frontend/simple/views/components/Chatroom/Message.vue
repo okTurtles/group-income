@@ -1,33 +1,74 @@
 <template>
-  <div class="c-message" :class="variant">
-    <avatar :src="avatar" hasMargin v-if="variant === 'received'" />
-    <span class="c-who has-text-grey" v-if="hasWho">{{who}}</span>
-    <p class="c-slot">
-      <slot></slot>
-    </p>
+  <div class="c-message is-flex" :class="[variant, isSameSender && 'sameSender']">
+    <avatar :src="avatar"
+      hasMargin
+      class="c-avatar level-left"
+      :class="{ isHidden: hideAvatar }"
+      aria-hidden="true"
+    />
+    <div>
+      <span class="has-text-grey is-size-7 c-who" :class="{ 'sr-only': hideWho || isSameSender }">
+        {{who}}
+      </span>
+
+      <p class="c-slot">
+        <slot></slot>
+      </p>
+    </div>
   </div>
 </template>
 <style lang="scss" scoped>
 @import "../../../assets/sass/theme/index";
 
 .c-message {
-  margin: $gi-spacer;
+  margin: $gi-spacer $gi-spacer 0;
+  align-items: flex-end;
 
   &.sent {
+    margin-left: $gi-spacer-xl;
+    flex-direction: row-reverse;
     text-align: right;
+  }
+
+  &.sameSender {
+    margin-top: $gi-spacer-xs;
+  }
+}
+
+.c-avatar {
+  .sent & {
+    margin: 0 0 0 $gi-spacer-sm;
+  }
+
+  .isHidden &,
+  .sameSender & {
+    visibility: hidden;
+    height: 0;
+  }
+}
+
+.c-who {
+  display: block;
+
+  .sent & {
+    margin-right: $gi-spacer-xs;
+    margin-bottom: $gi-spacer-xs;
   }
 }
 
 .c-slot {
-  padding: $gi-spacer-xs 0;
-  display: inline-block;
+  max-width: 30rem;
 
   .sent & {
-    background-color: $primary;
+    background-color: $primary-text;
     color: $body-background-color;
     border-radius: $radius-large;
-    padding-right: $gi-spacer-sm;
-    padding-left: $gi-spacer-sm;
+    padding: $gi-spacer-xs $gi-spacer-sm;
+  }
+
+  // When .c-shot is the only element (when .c-who isn't rendered)
+  &:first-child:last-child {
+    padding-bottom: $gi-spacer-sm;
   }
 }
 </style>
@@ -40,7 +81,6 @@ export default {
     Avatar
   },
   props: {
-    hasWho: Boolean,
     who: String,
     avatar: String,
     variant: {
@@ -48,12 +88,19 @@ export default {
       validator (value) {
         return ['sent', 'received', 'failed'].indexOf(value) !== -1
       }
-    }
+    },
+    isSameSender: Boolean,
+    hideWho: Boolean
   },
   data () {
     return {}
   },
-  computed: {},
+  computed: {
+    hideAvatar () {
+      return false
+      /* return this.variant === 'received' */
+    }
+  },
   methods: {}
 }
 </script>

@@ -4,6 +4,7 @@
 // Messages - private 1:1 messages
 export const privateMessagesSortedByTime = [333, 444, 555, 111, 222]
 
+// Just for static layout purposes, the currentUserId is '000'
 export const currentUserId = '000'
 
 export const users = {
@@ -49,7 +50,7 @@ export const messageConversations = {
   333: [
     {
       from: '333',
-      text: 'Hello:',
+      text: 'Hello',
       sent: '2018-10-27T14:51:00.256Z',
       unread: true
     }
@@ -89,6 +90,12 @@ export const messageConversations = {
       from: '444',
       text: 'this is great!',
       sent: '2018-10-27T14:59:55.256Z',
+      unread: true
+    },
+    {
+      from: currentUserId,
+      text: 'indeed',
+      sent: '2018-10-27T15:01:05.256Z',
       unread: true
     }
   ],

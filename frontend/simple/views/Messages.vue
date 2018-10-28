@@ -3,11 +3,12 @@
     :title="L('Messages')"
   >
     <input class="input" type="text" placeholder="Search for a conversation">
-    <groups-shortcut class="c-message-list"
+    <groups-shortcut class="c-list"
       :groups="groupsByName"
       @select="handleGroupSelect"
     />
-    <conversations-list class="c-message-list"
+    <conversations-list class="c-list"
+      routePath="/messages/"
       routeName="messagesConversation"
       type="messages"
       :list="privateMessages"
@@ -17,7 +18,7 @@
 <style lang="scss" scoped>
 @import "../assets/sass/theme/index";
 
-.c-message-list {
+.c-list {
   margin: $gi-spacer*1.5 0;
 }
 
@@ -54,6 +55,7 @@ export default {
     handleGroupSelect (hash) {
       this.$store.commit('setCurrentGroupId', hash)
     }
+    // TODO BE - update the store with the current conversationId when that happens
   }
 }
 </script>
