@@ -23,7 +23,6 @@ import Join from '../views/Join.vue'
 import Mailbox from '../views/Mailbox.vue'
 import PayGroup from '../views/PayGroup.vue'
 import Messages from '../views/Messages.vue'
-import ChatMain from '../views/components/Chatroom/ChatMain.vue'
 import UserProfile from '../views/UserProfile.vue'
 import Vote from '../views/Vote.vue'
 
@@ -225,28 +224,20 @@ var router = new Router({
       path: '/messages',
       name: Messages.name,
       component: Messages,
+      props: true,
       meta: {
         title: 'Messages'
       },
       beforeEnter: createEnterGuards(loginGuard)
     },
     {
-      path: '/messages/:username',
+      path: '/messages/:name',
+      name: 'messagesConversation',
       component: Messages,
-      beforeEnter: createEnterGuards(loginGuard),
-      children: [
-        // BUG "CANNOT GET /:username" when username has "." in it
-        // ex: messages/joe.kim doesnt work but messages/joekim works fine.
-        // Possible Solution: https://router.vuejs.org/guide/essentials/history-mode.html#example-server-configurations
-        {
-          path: '',
-          name: ChatMain.name,
-          meta: {
-            title: '[username]' // TODO get real username here
-          },
-          component: ChatMain
-        }
-      ]
+      beforeEnter: createEnterGuards(loginGuard)
+      // BUG "CANNOT GET /:username" when username has "." in it
+      // ex: messages/joe.kim doesnt work but messages/joekim works fine.
+      // Possible Solution: https://router.vuejs.org/guide/essentials/history-mode.html#example-server-configurations
     },
     {
       path: '/join',

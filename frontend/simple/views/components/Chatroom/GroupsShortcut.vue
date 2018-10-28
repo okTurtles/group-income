@@ -1,11 +1,11 @@
 <template>
-  <div class="c-wrapper" v-if="groupsByName.length > 0">
-    <!-- REVIEW - This kind of title should be the style for .subtitle maybe ? -->
-    <i18n tag="h2" class="has-text-grey is-size-7 is-uppercase c-subtitle">Groups chat shortcut</i18n>
+  <div class="c-wrapper" v-if="groups.length > 0">
+    <!-- REVIEW - maybe this kind of text should be the style for .subtitle -->
+    <i18n tag="h2" class="has-text-grey is-size-6 is-uppercase c-subtitle">Groups chat shortcut</i18n>
     <ul class="c-ul">
-      <li v-for="(group, index) in groupsByName" class="c-ul-li">
+      <li v-for="(group, index) in groups" class="c-ul-li">
         <router-link to="/group-chat"
-          @click.native="handleLinkClick(group.contractID)"
+          @click.native="$emit('select', group.contractID)"
           class="c-router"
         >
           <avatar class="c-avatar"
@@ -27,7 +27,7 @@
   position: relative;
   padding-left: $gi-spacer-sm;
 
-  // maskScroll: a gradient mask to indicate there are more groups by scrolling to the right.
+  // fadeInRight: a gradient mask to indicate there are more groups by scrolling to the right.
   &::after {
     content: "";
     position: absolute;
@@ -54,7 +54,7 @@
     margin-right: $gi-spacer;
 
     &:last-child {
-      margin-right: $gi-spacer*3; // To not be under maskScroll
+      margin-right: $gi-spacer*3; // To not be under fadeInRight
     }
 
     &:hover,
@@ -87,9 +87,8 @@
 }
 </style>
 <script>
-import { mapGetters } from 'vuex'
-import Avatar from '../../components/Avatar.vue'
-import Badge from '../../components/Badge.vue'
+import Avatar from '../Avatar.vue'
+import Badge from '../Badge.vue'
 
 export default {
   name: 'Chatroom',
@@ -97,19 +96,15 @@ export default {
     Avatar,
     Badge
   },
+  props: {
+    groups: Array
+  },
   data () {
     return {
     }
   },
-  computed: {
-    ...mapGetters([
-      'groupsByName'
-    ])
-  },
+  computed: {},
   methods: {
-    handleLinkClick (hash) {
-      this.$store.commit('setCurrentGroupId', hash)
-    },
     fallbackBg (index) {
       // TODO BE - implement colors/avatars for groups
       return ['#958cfd', '#fd978c', '#62d27d'][index] || ''

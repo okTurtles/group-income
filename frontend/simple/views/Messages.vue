@@ -1,8 +1,17 @@
 <template>
-  <chatroom title="Messages">
+  <chatroom
+    :title="L('Messages')"
+  >
     <input class="input" type="text" placeholder="Search for a conversation">
-    <groups-shortcut class="c-message-list" />
-    <private-messages :list="privateMessages" class="c-message-list" />
+    <groups-shortcut class="c-message-list"
+      :groups="groupsByName"
+      @select="handleGroupSelect"
+    />
+    <conversations-list class="c-message-list"
+      routeName="messagesConversation"
+      type="messages"
+      :list="privateMessages"
+    />
   </chatroom>
 </template>
 <style lang="scss" scoped>
@@ -14,34 +23,37 @@
 
 </style>
 <script>
-import Chatroom from './components/Chatroom/Chatroom.vue'
-import GroupsShortcut from './containers/Chatroom/GroupsShortcut.vue'
-import PrivateMessages from './components/Chatroom/PrivateMessages.vue'
+import { mapGetters } from 'vuex'
+import { privateMessagesSortedByTime, users } from './containers/Chatroom/fakeStore.js'
+import Chatroom from './containers/Chatroom/Chatroom.vue'
+import GroupsShortcut from './components/Chatroom/GroupsShortcut.vue'
+import ConversationsList from './components/Chatroom/ConversationsList.vue'
 
 export default {
   name: 'Messages',
   components: {
     Chatroom,
     GroupsShortcut,
-    PrivateMessages
+    ConversationsList
   },
   data () {
     return {}
   },
   computed: {
+    ...mapGetters([
+      'groupsByName'
+    ]),
     privateMessages () {
       return {
-        timeOrder: [555, 333, 444, 111, 222],
-        users: {
-          111: { username: 'johnn', name: 'John Mars', avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png', unreadCount: 0 },
-          222: { username: 'hlenon', name: 'Hugo Lenon', avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png', unreadCount: 0 },
-          333: { username: 'liliabt', name: 'Lilia Bouvet', avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png', unreadCount: 2 },
-          444: { username: 'rickyricky', name: 'Rick Eggs', avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png', unreadCount: 0 },
-          555: { username: 'ericrock', name: 'Eric Rock', avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png', unreadCount: 1 }
-        }
+        order: privateMessagesSortedByTime,
+        conversations: users
       }
     }
   },
-  methods: {}
+  methods: {
+    handleGroupSelect (hash) {
+      this.$store.commit('setCurrentGroupId', hash)
+    }
+  }
 }
 </script>
