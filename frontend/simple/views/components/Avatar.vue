@@ -18,7 +18,7 @@
 }
 
 .c-avatar {
-  background-color: $primary;
+  background-color: $light;
   border-radius: 50%;
 
   &.hasMargin {

@@ -17,8 +17,10 @@
       </div>
     </header>
     <div class="c-body is-flex">
-      <template v-for="(message, index) in conversation">
-        <message
+      <div class="c-body-conversation">
+        <conversation-greetings />
+
+        <message v-for="(message, index) in conversation"
           :who="who(message.from)"
           :avatar="avatar(message.from)"
           :variant="variant(message.from)"
@@ -28,12 +30,11 @@
           {{message.text}}
         </message>
 
-        <!-- TODO message Interactive -->
+        <!-- TODO message "failed" -->
 
-        <!-- TODO message from GIBot -->
-
-        <!-- TODO message not sent -->
-      </template>
+        <!-- TODO messageInteractive -->
+        <!-- TODO messageNotification -->
+      </div>
     </div>
     <div class="c-footer">
       <!-- TODO - reuse Contribution's input markup here when #482 is merged -->
@@ -59,19 +60,50 @@
 }
 
 .c-header {
+  position: relative;
   padding: $gi-spacer;
   border-bottom: 1px solid $grey-lighter;
   min-height: 4.5rem;
+  z-index: 2;
+
+  // fadeOutTop: a gradient mask to fadeout nav on scroll.
+  // TODO - apply the same effect on sidebar
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: -$gi-spacer-lg;
+    left: 0;
+    height: $gi-spacer-lg;
+    width: 100%;
+    background: linear-gradient($body-background-color, rgba($body-background-color, 0));
+  }
 }
 
 .c-body {
   flex-grow: 1;
   flex-direction: column;
   justify-content: flex-end;
+
+  &-conversation {
+    max-height: 100%;
+    overflow: auto;
+    padding: $gi-spacer-lg 0 $gi-spacer-sm;
+  }
 }
 
 .c-footer {
-  padding: $gi-spacer;
+  position: relative;
+  padding: $gi-spacer-sm $gi-spacer $gi-spacer;
+
+  &::before {
+    content: "";
+    position: absolute;
+    top: -$gi-spacer-sm;
+    left: 0;
+    height: $gi-spacer-sm;
+    width: 100%;
+    background: linear-gradient(to top, $body-background-color, rgba($body-background-color, 0));
+  }
 
   .input {
     height: 40px;
@@ -81,12 +113,18 @@
 </style>
 <script>
 import Message from './Message.vue'
+import MessageInteractive from './MessageInteractive.vue'
+import MessageNotification from './MessageNotification.vue'
+import ConversationGreetings from '../../containers/Chatroom/ConversationGreetings.vue'
 import { currentUserId } from '../../containers/Chatroom/fakeStore.js'
 
 export default {
   name: 'ChatMain',
   components: {
-    Message
+    ConversationGreetings,
+    Message,
+    MessageInteractive,
+    MessageNotification
   },
   props: {
     info: Object,
@@ -102,7 +140,6 @@ export default {
   computed: {
     isSameSender () {
       return this.conversation.map((message, key) => {
-        /* const sameAsNext = message.from === (this.conversation[key + 1] && this.conversation[key + 1].from) */
         const sameAsPrev = message.from === (this.conversation[key - 1] && this.conversation[key - 1].from)
 
         return sameAsPrev

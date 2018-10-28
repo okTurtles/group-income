@@ -55,7 +55,7 @@ export default {
     handleGroupSelect (hash) {
       this.$store.commit('setCurrentGroupId', hash)
     }
-    // TODO BE - update the store with the current conversationId when that happens
+    // OPTIMIZE/TODO - update the store with the current conversationId when that happens
   }
 }
 </script>

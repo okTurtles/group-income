@@ -3,6 +3,9 @@
     <!-- REVIEW - maybe this kind of text should be the style for .subtitle -->
     <i18n tag="h2" class="has-text-grey is-uppercase c-subtitle">Private Messages</i18n>
     <list hasMargin>
+
+      <!-- TODO - build GIBot item -->
+
       <list-item tag="router-link" variant="solid"
         v-for="id in list.order"
         :badgeCount="list.conversations[id].unreadCount"
@@ -74,7 +77,7 @@ export default {
       const { type, list, routeName } = this
       const { name } = list.conversations[conversationId] || {}
 
-      // NOTE/TODO - when getting messageConversation from $store is built,
+      // OPTIMIZE/NOTE -get messageConversation from $store.
       // this should be the most correct way of handling the router-link...
 
       /* return {
@@ -85,8 +88,8 @@ export default {
       return {
         name: routeName,
         params: {
-          name, // :/name
-          currentConversation: { type, id: conversationId } // messageConversation's prop
+          name, // /:name
+          currentConversation: { type, id: conversationId }
         }
       }
     }

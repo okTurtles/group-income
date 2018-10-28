@@ -224,7 +224,6 @@ var router = new Router({
       path: '/messages',
       name: Messages.name,
       component: Messages,
-      props: true,
       meta: {
         title: 'Messages'
       },

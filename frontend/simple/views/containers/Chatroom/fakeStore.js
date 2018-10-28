@@ -1,5 +1,4 @@
 // NOTE: This fakeStore is just for layout purposes
-// The data structure for each message was based on public Messenger, Slack and Discord APIs
 
 // Messages - private 1:1 messages
 export const privateMessagesSortedByTime = [333, 444, 555, 111, 222]
@@ -9,6 +8,7 @@ export const currentUserId = '000'
 
 export const users = {
   111: {
+    id: '111',
     name: 'johnn',
     displayName: 'John Mars',
     picture: 'http://localhost:8000/simple/assets/images/default-avatar.png',
@@ -16,6 +16,7 @@ export const users = {
     description: 'You and John are both part of Dreamers group'
   },
   222: {
+    id: '222',
     name: 'hlenon',
     displayName: 'Hugo Lenon',
     picture: 'http://localhost:8000/simple/assets/images/default-avatar.png',
@@ -23,6 +24,7 @@ export const users = {
     description: null
   },
   333: {
+    id: '333',
     name: 'liliabt',
     displayName: 'Lilia Bouvet',
     picture: 'http://localhost:8000/simple/assets/images/default-avatar.png',
@@ -30,6 +32,7 @@ export const users = {
     description: null
   },
   444: {
+    id: '444',
     name: 'rickyricky',
     displayName: 'Rick Eggs',
     picture: 'http://localhost:8000/simple/assets/images/default-avatar.png',
@@ -37,6 +40,7 @@ export const users = {
     description: null
   },
   555: {
+    id: '555',
     name: 'ericrock',
     displayName: 'Eric Rock',
     picture: 'http://localhost:8000/simple/assets/images/default-avatar.png',
@@ -50,85 +54,87 @@ export const messageConversations = {
   333: [
     {
       from: '333',
-      text: 'Hello',
-      sent: '2018-10-27T14:51:00.256Z',
-      unread: true
+      text: 'Hello'
     }
   ],
   444: [
     {
       from: '444',
-      text: 'check this out:',
-      sent: '2018-10-27T14:51:00.256Z',
-      unread: false
+      text: 'check this out:'
     },
     {
       from: '444',
-      text: 'https://motherfuckingwebsite.com/',
-      sent: '2018-10-27T14:58:14.256Z',
-      unread: false
+      text: 'https://motherfuckingwebsite.com/'
     },
     {
       from: currentUserId,
-      text: 'ahahah there is one even better',
-      sent: '2018-10-27T14:59:00.256Z',
-      unread: false
+      text: 'ahahah there is one even better'
     },
     {
       from: currentUserId,
-      text: 'http://bettermotherfuckingwebsite.com/',
-      sent: '2018-10-27T14:59:20.256Z',
-      unread: false
+      text: 'http://bettermotherfuckingwebsite.com/'
     },
     {
       from: '444',
-      text: 'Epic! 💥 Actually there a lot of them',
-      sent: '2018-10-27T14:59:55.256Z',
-      unread: true
+      text: 'Epic! 💥 Actually there a lot of them'
     },
     {
       from: '444',
-      text: 'this is great!',
-      sent: '2018-10-27T14:59:55.256Z',
-      unread: true
+      text: 'this is great!'
     },
     {
       from: currentUserId,
-      text: 'indeed',
-      sent: '2018-10-27T15:01:05.256Z',
-      unread: true
+      text: 'indeed'
+    },
+    {
+      from: '444',
+      text: 'I wonder who did it...'
+    },
+    {
+      from: currentUserId,
+      text: 'Hum...'
+    },
+    {
+      from: currentUserId,
+      text: 'Maybe looking into the source'
+    },
+    {
+      from: '444',
+      text: 'Good idea, lets check...'
+    },
+    {
+      from: '444',
+      text: '<!-- FOR THE CURIOUS: This site was made by @thebarrytone. Don\'t tell my mom. -->'
+    },
+    {
+      from: currentUserId,
+      text: 'smart guy'
+    },
+    {
+      from: '444',
+      text: 'this is genial!'
     }
   ],
   555: [
     {
       from: '555',
-      text: 'Hi!',
-      sent: '2018-10-27T14:51:00.256Z',
-      unread: false
+      text: 'Hi!'
     },
     {
       from: currentUserId,
-      text: 'Hey Eric!',
-      sent: '2018-10-27T14:58:14.256Z',
-      unread: false
+      text: 'Hey Eric!'
     },
     {
       from: '555',
-      text: 'I added you to my group',
-      sent: '2018-10-27T14:59:00.256Z',
-      unread: false
+      text: 'I added you to my group'
     },
     {
       from: '555',
-      text: 'It\'s called Dreamas',
-      sent: '2018-10-27T14:59:20.256Z',
-      unread: false
+      text: 'It\'s called Dreamas'
     },
     {
       from: currentUserId,
-      text: 'Cool!',
-      sent: '2018-10-27T14:59:55.256Z',
-      unread: false
+      text: 'Cool!'
     }
   ]
 }
@@ -153,23 +159,17 @@ export const channelConversations = {
   c0: [
     {
       from: '444',
-      text: 'Hi everyone 👋',
-      sent: '2018-10-27T14:51:00.256Z',
-      unread: false
+      text: 'Hi everyone 👋'
     }
   ],
   c1: [
     {
       from: '444',
-      text: 'Hi guys',
-      sent: '2018-10-27T14:51:00.256Z',
-      unread: true
+      text: 'Hi guys'
     },
     {
       from: '444',
-      text: 'lets know where do you wanna go this summer: 🏕 or 🏂?',
-      sent: '2018-10-27T14:51:00.256Z',
-      unread: true
+      text: 'lets know where do you wanna go this summer: 🏕 or 🏂?'
     }
   ]
 }

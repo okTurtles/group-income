@@ -2,6 +2,7 @@
   <div class="c-message is-flex" :class="[variant, isSameSender && 'sameSender']">
     <avatar :src="avatar"
       hasMargin
+      size="sm"
       class="c-avatar level-left"
       :class="{ isHidden: hideAvatar }"
       aria-hidden="true"
@@ -37,7 +38,7 @@
 
 .c-avatar {
   .sent & {
-    margin: 0 0 0 $gi-spacer-sm;
+    margin: 0 0 0.2rem $gi-spacer-sm; // 0.2 to visually align with buble text
   }
 
   .isHidden &,
@@ -57,7 +58,7 @@
 }
 
 .c-slot {
-  max-width: 30rem;
+  max-width: 32rem;
 
   .sent & {
     background-color: $primary-text;

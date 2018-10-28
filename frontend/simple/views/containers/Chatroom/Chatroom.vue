@@ -3,8 +3,7 @@
     <chat-nav :title="title">
       <slot></slot>
     </chat-nav>
-    <!-- TODO/REVIEW - design loading state when conversation is being loaded  -->
-    <!-- TODO/REVIEW - design empty state when no conversation is selected?  -->
+    <!-- TODO - design loading state when conversation is being loaded  -->
     <chat-main :info="chatData.info" :conversation="chatData.conversation" />
   </main>
 </template>
@@ -31,24 +30,32 @@ export default {
     ChatNav
   },
   props: {
-    title: String,
-    currentConversation: Object
+    title: String
   },
   data () {
     return {}
   },
   computed: {
+    currentConversation () {
+      // OPTIMIZE/REVIEW - This should be $store responsability but for now
+      // I've used the $route just for static mocked layout purposes
+      if (!this.$route.params.name) { return {} }
+
+      if (!this.$route.params.currentConversation) {
+        this.$route.params.currentConversation = {
+          type: 'messages',
+          id: Object.keys(users).find(user => users[user].name === this.$route.params.name)
+        }
+      }
+
+      return this.$route.params.currentConversation
+    },
     chatData () {
-      // TODO: populate view with currentConversation when $route.params are empty
-      // REVIEW - This should be $store responsability but for now (layout purposes) let's keep it on the $route
-
-      const { type, id } = this.$route.params.currentConversation || {}
-
-      console.log('currentConversationId', { id, type })
+      const { type, id } = this.currentConversation
 
       if (type === 'messages') {
         // REVIEW/BUG - How do I do this with vue-router? There's a small time interval
-        // between changing the route (title undefined) and update with the actual title
+        // between when the route changes (title undefined) and update it with the actual title
         document.title = users[id].displayName || users[id].name
 
         return {
@@ -59,7 +66,7 @@ export default {
             participants: {
               [id]: users[id]
             }
-            // TODO - what are the conversation's actions at top right corner?
+            // TODO - Also send the conversation's actions at top right corner?
           },
           conversation: messageConversations[id]
         }

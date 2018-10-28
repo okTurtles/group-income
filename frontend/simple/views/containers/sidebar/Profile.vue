@@ -15,7 +15,7 @@
       </button>
       <router-link class="button is-icon"
         tag="button"
-        to="user"
+        to="/user"
         data-test="profileLink">
         <i class="fa fa-ellipsis-v"></i>
       </router-link>
