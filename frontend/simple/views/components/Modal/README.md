@@ -48,7 +48,7 @@ closeModal () {
 
 ### The `<modal-dynamic />`
 
-The `<modal-dynamic />` is importaed at `simple/index.html` at the bottom of the DOM.
+The `<modal-dynamic />` is imported at `simple/index.html` at the bottom of the DOM.
 
 Its only responsability is to import `<modal-basic />`, add its content as a dynamic component [(Know more about Vue Dynamic Components)](https://vuejs.org/v2/api/#is) and listen for `sbp` events `OPEN_MODAL` and `CLOSE_MODAL`.
 
