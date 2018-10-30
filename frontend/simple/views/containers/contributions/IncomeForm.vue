@@ -124,7 +124,6 @@ import InputAmount from './InputAmount.vue'
 import PaymentMethods from './PaymentMethods.vue'
 import Modal from '../../components/Modal/ModalBasic.vue'
 import TextWho from '../../components/TextWho.vue'
-import { debounce } from '../../../utils/giLodash.js'
 import GroupPledgesGraph from '../GroupPledgesGraph.vue'
 
 export default {
@@ -199,14 +198,14 @@ export default {
     }
   },
   methods: {
-    verifyInputIncome: debounce(function (e) {
+    verifyInputIncome (e) {
       this.form.income = e.target.value
       this.$v.form.income.$touch()
-    }, 0),
-    verifyInputPledge: debounce(function (e) {
+    },
+    verifyInputPledge (e) {
       this.form.pledge = e.target.value
       this.$v.form.pledge.$touch()
-    }, 0),
+    },
     verifyForm () {
       this.ephemeral.formVerified = true
 
