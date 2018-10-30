@@ -143,14 +143,13 @@ export default {
       return 'column c-legend-item'
     },
     graphData () {
+      const { userPledgeAmount, userIncomeAmount } = this
       const { groupMembersTotal, groupPledgeGoal, mincome, othersPledges } = this.fakeStore
       const othersAmount = othersPledges.reduce((acc, cur) => acc + cur, 0)
-      const userAmount = this.userPledgeAmount // TODO - delete this consts
-      const userIncome = this.userIncomeAmount // TODO - delete this consts
-      const userIncomeNeeded = userIncome !== null && userIncome < mincome ? mincome - userIncome : null
-      const totalAmount = othersAmount + userAmount
+      const userIncomeNeeded = userIncomeAmount !== null && userIncomeAmount < mincome ? mincome - userIncomeAmount : null
+      const totalAmount = othersAmount + userPledgeAmount
       const goal = groupPledgeGoal + userIncomeNeeded
-      const members = othersPledges.length + (userAmount ? 1 : 0)
+      const members = othersPledges.length + (userPledgeAmount ? 1 : 0)
       const neededPledges = goal - totalAmount
       const surplus = totalAmount - groupPledgeGoal
       const membersNeedingPledges = groupMembersTotal - othersPledges.length
@@ -163,7 +162,7 @@ export default {
       return {
         members,
         othersAmount,
-        userAmount,
+        userPledgeAmount,
         userIncomeNeeded,
         userIncomeToReceive,
         totalAmount,
@@ -174,7 +173,7 @@ export default {
       }
     },
     groupPledgingSlices () {
-      const { othersAmount, userAmount, neededPledges, surplus } = this.graphData
+      const { othersAmount, userPledgeAmount, neededPledges, surplus } = this.graphData
 
       const slices = [
         {

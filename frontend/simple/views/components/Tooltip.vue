@@ -4,7 +4,7 @@
     <div
       class="has-background-dark has-text-grey-lighter is-bottom is-size-7 c-tooltip"
       :style="stylesPosition"
-      v-if="isActive"
+      v-if="isActive || shouldShow"
       v-append-to-body
     >
       <template v-if="text">{{text}}</template>
@@ -29,6 +29,7 @@
   padding: $gi-spacer-sm;
   opacity: 0.95;
   z-index: $gi-zindex-tooltip;
+  pointer-events: none;
 }
 </style>
 <script>
@@ -43,6 +44,8 @@ export default {
   name: 'Tooltip',
   props: {
     text: String,
+    // Force to show tooltip manually
+    shouldShow: Boolean,
     direction: {
       type: String,
       validator: (value) => ['bottom', 'right', 'right-start'].includes(value),
@@ -63,7 +66,7 @@ export default {
       this.isActive = false
     },
     adjustPosition () {
-      this.trigger = this.trigger || this.$el.getBoundingClientRect()
+      this.trigger = this.$el.getBoundingClientRect()
       const { scrollX, scrollY } = window
       const { width, height, left, top } = this.trigger
       const spacing = 5

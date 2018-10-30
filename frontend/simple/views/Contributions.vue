@@ -195,11 +195,11 @@ export default {
     handleFormTriggerClick () {
       this.ephemeral.isEditingIncome = true
     },
-    handleIncomeSave ({ makeIncome, amount }) {
+    handleIncomeSave ({ canPledge, amount }) {
       console.log('TODO $store - Save Income Details')
       // -- Hardcoded Solution
-      this.fakeStore.receiving.monetary = makeIncome ? null : this.fakeStore.mincome - amount
-      this.fakeStore.giving.monetary = makeIncome ? amount : null
+      this.fakeStore.receiving.monetary = canPledge ? null : this.fakeStore.mincome - amount
+      this.fakeStore.giving.monetary = canPledge ? amount : null
       this.fakeStore.isFirstTime = false
 
       this.closeIncome()

@@ -39,7 +39,7 @@
 
             <input-amount v-else-if="canPledge" key="pledge"
               label="How much do you want to pledge?"
-              :error="inputPledgeError"
+              :error="$v.form.pledge.$error ? this.infoRequired : null"
               @input="verifyInputPledge"
               :value="form.pledge"
               :placeholder="L('amout')"
@@ -56,8 +56,8 @@
         </div>
 
         <group-pledges-graph class="column c-pledgesGraph"
-          :userPledgeAmount="userPledgeAmount"
-          :userIncomeAmount="userIncomeAmount"
+          :userPledgeAmount="canPledge && !!form.pledge ? Number(form.pledge) : null"
+          :userIncomeAmount="needsIncome && !!form.income ? Number(form.income) : null"
         />
       </div>
 
@@ -164,10 +164,10 @@ export default {
       return this.L('This information is required.')
     },
     needsIncome () {
-      return this.$v.form.option.$model === 'no'
+      return this.form.option === 'no'
     },
     canPledge () {
-      return this.$v.form.option.$model === 'yes'
+      return this.form.option === 'yes'
     },
     inputIncomeError () {
       if (!this.$v.form.income.hasLowIncome) {
@@ -176,19 +176,10 @@ export default {
         return this.infoRequired
       }
     },
-    inputPledgeError () {
-      return this.$v.form.pledge.$error ? this.infoRequired : null
-    },
-    userPledgeAmount () {
-      return this.canPledge & !!this.form.pledge ? Number(this.form.pledge) : null
-    },
-    userIncomeAmount () {
-      return this.needsIncome & !!this.form.income ? Number(this.form.income) : null
-    },
     saveButtonText () {
       const verb = this.isFirstTime ? 'Add' : 'Save'
 
-      if (!this.$v.form.option.$model) { return this.L('{verb} details', { verb }) }
+      if (!this.form.option) { return this.L('{verb} details', { verb }) }
       if (this.canPledge) { return this.L('{verb} pledged details', { verb }) }
       if (this.needsIncome) { return this.L('{verb} income details', { verb }) }
     }
@@ -206,11 +197,11 @@ export default {
       this.$v.form.$touch()
 
       if (!this.$v.form.$invalid) {
-        const makeIncome = this.canPledge
+        const canPledge = this.canPledge
 
         this.$emit('save', {
-          makeIncome,
-          amount: makeIncome ? this.$v.form.pledge.$model : this.$v.form.income.$model
+          canPledge,
+          amount: canPledge ? this.$v.form.pledge.$model : this.$v.form.income.$model
         })
       }
     },
