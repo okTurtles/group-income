@@ -19,7 +19,7 @@
 .c-greetings {
   align-self: center;
   text-align: center;
-  margin-bottom: $gi-spacer;
+  margin-bottom: $gi-spacer-lg;
 }
 
 .c-avatar {

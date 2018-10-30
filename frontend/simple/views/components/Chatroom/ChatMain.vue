@@ -17,7 +17,7 @@
       </div>
     </header>
     <div class="c-body is-flex">
-      <div class="c-body-conversation">
+      <div class="c-body-conversation" ref="conversation">
         <conversation-greetings />
 
         <message v-for="(message, index) in conversation"
@@ -86,24 +86,14 @@
 
   &-conversation {
     max-height: 100%;
-    overflow: auto;
-    padding: $gi-spacer-lg 0 $gi-spacer-sm;
+    overflow: scroll;
+    padding: $gi-spacer-lg 0 $gi-spacer;
   }
 }
 
 .c-footer {
   position: relative;
-  padding: $gi-spacer-sm $gi-spacer $gi-spacer;
-
-  &::before {
-    content: "";
-    position: absolute;
-    top: -$gi-spacer-sm;
-    left: 0;
-    height: $gi-spacer-sm;
-    width: 100%;
-    background: linear-gradient(to top, $body-background-color, rgba($body-background-color, 0));
-  }
+  padding: 0 $gi-spacer $gi-spacer;
 
   .input {
     height: 40px;
@@ -136,6 +126,10 @@ export default {
         sendPlaceholder: [this.L('Be nice to'), this.L('Be cool to'), this.L('Have fun with')]
       }
     }
+  },
+  updated () {
+    // force conversation viewport to be at the most recent messages
+    this.$refs.conversation.scroll(0, this.$refs.conversation.scrollHeight)
   },
   computed: {
     isSameSender () {
