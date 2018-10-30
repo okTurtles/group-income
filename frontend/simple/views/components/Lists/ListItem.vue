@@ -109,7 +109,7 @@ export default {
   computed: {
     itemLinkClasses () {
       return {
-        'c-item-link level gi-is-justify-between gi-is-unstyled': true,
+        'c-item-link level is-flex gi-is-justify-between gi-is-unstyled': true,
         [this.variant]: this.variant,
         'no-radius': this.disableRadius,
         'is-active': this.isActive

@@ -2,7 +2,9 @@
   <chatroom
     :title="L('Messages')"
   >
+    <!-- TODO design search results -->
     <input class="input" type="text" placeholder="Search for a conversation">
+
     <groups-shortcut class="c-list"
       :groups="groupsByName"
       @select="handleGroupSelect"

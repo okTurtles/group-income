@@ -1,5 +1,6 @@
 <template>
   <div class="c-chatmain is-flex" v-if="info">
+    <!-- TODO ChatHeader - props: title, description, icons[], actions[] -->
     <header class="level is-marginless c-header">
       <div class="level-left">
         <div>
@@ -11,9 +12,26 @@
         <button class="button is-icon">
           <i class="fa fa-user-plus"></i>
         </button>
-        <button class="button is-icon">
-          <i class="fa fa-ellipsis-v"></i>
-        </button>
+        <menu-parent class="level-right">
+          <menu-trigger class="is-icon">
+            <i class="fa fa-ellipsis-v"></i>
+          </menu-trigger>
+
+          <!-- TODO be a drawer on mobile -->
+          <menu-content class="c-actions-content">
+            <list hasMargin>
+              <menu-item tag="button" itemId="hash-1" icon="heart">
+                Option 1
+              </menu-item>
+              <menu-item tag="button" itemId="hash-2" icon="heart">
+                Option 2
+              </menu-item>
+              <menu-item tag="button" itemId="hash-3" icon="heart">
+                Option 3
+              </menu-item>
+            </list>
+          </menu-content>
+        </menu-parent>
       </div>
     </header>
     <div class="c-body is-flex">
@@ -77,6 +95,13 @@
     width: 100%;
     background: linear-gradient($body-background-color, rgba($body-background-color, 0));
   }
+
+  .c-actions-content {
+    top: $gi-spacer-lg;
+    right: 0;
+    left: auto;
+    width: 10rem;
+  }
 }
 
 .c-body {
@@ -102,6 +127,8 @@
 
 </style>
 <script>
+import { List } from '../Lists/index.js'
+import { MenuParent, MenuTrigger, MenuContent, MenuHeader, MenuItem } from '../Menu/index.js'
 import Message from './Message.vue'
 import MessageInteractive from './MessageInteractive.vue'
 import MessageNotification from './MessageNotification.vue'
@@ -111,6 +138,12 @@ import { currentUserId } from '../../containers/Chatroom/fakeStore.js'
 export default {
   name: 'ChatMain',
   components: {
+    List,
+    MenuParent,
+    MenuTrigger,
+    MenuContent,
+    MenuHeader,
+    MenuItem,
     ConversationGreetings,
     Message,
     MessageInteractive,
