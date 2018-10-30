@@ -1,7 +1,7 @@
 <template>
   <label class="gi-fieldGroup">
     <p class="label">{{label}}</p>
-    <strong class="help has-text-danger has-text-weight-normal gi-help" v-if="error">{{error}}</strong>
+    <span class="help has-text-danger gi-help" v-if="error">{{error}}</span>
     <div class="field has-addons">
       <span class="control">
         <span class="button is-static">

@@ -9,7 +9,7 @@
 
             <div class="field is-narrow gi-fieldGroup">
               <i18n tag="p" class="label">Do you make at least {{fakeStore.mincomeFormatted}} per month?</i18n>
-              <i18n tag="strong" class="help has-text-danger has-text-weight-normal gi-help" v-if="ephemeral.formVerified && $v.form.option.$invalid">{{infoRequired}}</i18n>
+              <i18n tag="span" class="help has-text-danger gi-help" v-if="$v.form.option.$error">{{infoRequired}}</i18n>
               <div class="control">
                 <label class="gi-tick">
                   <input class="gi-tick-input" type="radio" value="no" v-model="form.option" @change="resetFormVerify">
@@ -24,11 +24,11 @@
               </div>
             </div>
 
-            <input-amount v-if="hasLessIncome" key="income"
+            <input-amount v-if="needsIncome" key="income"
               label="What's your monthly income?"
-              :error="hasLessIncomeError"
+              :error="inputIncomeError"
               @input="verifyInputIncome"
-              :value="this.form.income"
+              :value="form.income"
               :placeholder="L('amout')"
             >
               <template slot="help">
@@ -37,11 +37,11 @@
               </template>
             </input-amount>
 
-            <input-amount v-else-if="hasMinIncome" key="pledge"
+            <input-amount v-else-if="canPledge" key="pledge"
               label="How much do you want to pledge?"
-              :error="hasMinIncomeError"
+              :error="inputPledgeError"
               @input="verifyInputPledge"
-              :value="this.form.pledge"
+              :value="form.pledge"
               :placeholder="L('amout')"
             >
               <template slot="help">
@@ -119,12 +119,15 @@
 </style>
 <script>
 import { validationMixin } from 'vuelidate'
-import { requiredIf, required, maxValue } from 'vuelidate/lib/validators'
+import { requiredIf, required } from 'vuelidate/lib/validators'
 import InputAmount from './InputAmount.vue'
 import PaymentMethods from './PaymentMethods.vue'
 import Modal from '../../components/Modal/ModalBasic.vue'
 import TextWho from '../../components/TextWho.vue'
 import GroupPledgesGraph from '../GroupPledgesGraph.vue'
+const fakeStoreMincome = 500
+
+const hasLowIncome = (value) => value < fakeStoreMincome - 1
 
 export default {
   name: 'IncomeForm',
@@ -142,7 +145,7 @@ export default {
   data () {
     return {
       ephemeral: {
-        formVerified: false
+        /* formVerified: false */
       },
       form: {
         option: null,
@@ -151,50 +154,43 @@ export default {
       },
       // -- Hardcoded Data just for layout purposes:
       fakeStore: {
-        mincome: 500,
+        mincome: fakeStoreMincome,
         mincomeFormatted: '$500'
       }
     }
   },
   computed: {
-    userPledgeAmount () {
-      return this.hasMinIncome & !!this.form.pledge ? Number(this.form.pledge) : null
-    },
-    userIncomeAmount () {
-      return this.hasLessIncome & !!this.form.income ? Number(this.form.income) : null
-    },
-    maxIncome () {
-      return this.fakeStore.mincome - 1
-    },
     infoRequired () {
       return this.L('This information is required.')
     },
-    hasLessIncome () {
+    needsIncome () {
       return this.$v.form.option.$model === 'no'
     },
-    hasMinIncome () {
+    canPledge () {
       return this.$v.form.option.$model === 'yes'
     },
-    hasLessIncomeError () {
-      if (!this.ephemeral.formVerified && this.$v.form.income.maxValue) {
-        return null
-      }
-
-      if (!this.$v.form.income.requiredIf) {
-        return this.infoRequired
-      } else if (!this.$v.form.income.maxValue) {
+    inputIncomeError () {
+      if (!this.$v.form.income.hasLowIncome) {
         return this.L('If your income is the same or higher than the group\'s mincome change your answer to "Yes, I do"')
+      } else if (this.$v.form.income.$error) {
+        return this.infoRequired
       }
     },
-    hasMinIncomeError () {
-      return this.ephemeral.formVerified && this.$v.form.pledge.$invalid ? this.infoRequired : null
+    inputPledgeError () {
+      return this.$v.form.pledge.$error ? this.infoRequired : null
+    },
+    userPledgeAmount () {
+      return this.canPledge & !!this.form.pledge ? Number(this.form.pledge) : null
+    },
+    userIncomeAmount () {
+      return this.needsIncome & !!this.form.income ? Number(this.form.income) : null
     },
     saveButtonText () {
       const verb = this.isFirstTime ? 'Add' : 'Save'
 
       if (!this.$v.form.option.$model) { return this.L('{verb} details', { verb }) }
-      if (this.hasMinIncome) { return this.L('{verb} pledged details', { verb }) }
-      if (this.hasLessIncome) { return this.L('{verb} income details', { verb }) }
+      if (this.canPledge) { return this.L('{verb} pledged details', { verb }) }
+      if (this.needsIncome) { return this.L('{verb} income details', { verb }) }
     }
   },
   methods: {
@@ -207,10 +203,10 @@ export default {
       this.$v.form.pledge.$touch()
     },
     verifyForm () {
-      this.ephemeral.formVerified = true
+      this.$v.form.$touch()
 
       if (!this.$v.form.$invalid) {
-        const makeIncome = this.$v.form.option.$model === 'yes'
+        const makeIncome = this.canPledge
 
         this.$emit('save', {
           makeIncome,
@@ -222,7 +218,7 @@ export default {
       this.$emit('cancel')
     },
     resetFormVerify () {
-      this.ephemeral.formVerified = false
+      this.$v.form.$reset()
     }
   },
   validations: {
@@ -231,12 +227,15 @@ export default {
         required
       },
       income: {
-        requiredIf: requiredIf(model => model.option === 'no'),
-        // REVIEW - how to do this value dynamic?! this.mincome doesn't work
-        maxValue: maxValue(499)
+        required: requiredIf(function (model) {
+          return this.needsIncome
+        }),
+        hasLowIncome
       },
       pledge: {
-        requiredIf: requiredIf(model => model.option === 'yes')
+        required: requiredIf(function (model) {
+          return this.canPledge
+        })
       }
     }
   }
