@@ -174,20 +174,23 @@ export default {
     },
     groupPledgingSlices () {
       const { othersAmount, userPledgeAmount, neededPledges, surplus } = this.graphData
+      const currency = this.fakeStore.currency
 
       const slices = [
         {
           id: 'othersAmount',
           percent: this.decimalSlice(othersAmount),
-          color: 'primary-light'
+          color: 'primary-light',
+          label: this.L('{amount} pledged by other members', { amount: currency + othersAmount })
         }
       ]
 
-      if (userAmount) {
+      if (userPledgeAmount) {
         slices.push({
-          id: 'userAmount',
-          percent: this.decimalSlice(userAmount),
-          color: 'primary-light'
+          id: 'userPledgeAmount',
+          percent: this.decimalSlice(userPledgeAmount),
+          color: 'primary-light',
+          label: this.L('{amount} pledged by you', { amount: currency + userPledgeAmount })
         })
       }
 
@@ -195,13 +198,15 @@ export default {
         slices.push({
           id: 'neededPledges',
           percent: this.decimalSlice(neededPledges),
-          color: 'light'
+          color: 'light',
+          label: this.L('{amount} needed pledge', { amount: currency + neededPledges })
         })
       } else if (surplus) {
         slices.push({
           id: 'surplus',
           percent: this.decimalSlice(surplus),
-          color: 'secondary'
+          color: 'secondary',
+          label: this.L('{amount} extra pledge', { amount: currency + surplus })
         })
       }
 

@@ -5,6 +5,8 @@
         :data-id="slice.id"
         :d="sliceData(slice, index)"
         :class="`c-slice gi-has-fill-${slice.color}`"
+        @mouseenter="(e) => showLabel(e, index)"
+        @mouseleave="(e) => hideLabel(e, index)"
       ></path>
       <path v-if="!!missingSlice"
         data-id="_missingSlice_"
@@ -23,6 +25,11 @@
     <div class="c-title">
       <slot></slot>
     </div>
+    <tooltip
+      :text="slices[ephemeral.labelActiveIndex].label"
+      :style="ephemeral.labelStyle"
+      :shouldShow="ephemeral.isLabelVisible"
+    />
   </div>
 </template>
 <style lang="scss" scoped>
@@ -67,8 +74,12 @@
 // Learn more about SVG & PieCharts
 // -> https://hackernoon.com/a-simple-pie-chart-in-svg-dbdd653b6936
 
+import Tooltip from '../Tooltip.vue'
+import { debounce } from '../../../utils/giLodash.js'
+
 export default {
   name: 'PieChart',
+  components: { Tooltip },
   props: {
     slices: {
       type: Array, // [{ id, percent, color }]
@@ -87,6 +98,13 @@ export default {
       default: '13rem'
     }
   },
+  data: () => ({
+    ephemeral: {
+      labelActiveIndex: 0,
+      labelStyle: {},
+      isLabelVisible: false
+    }
+  }),
   computed: {
     missingSlice () {
       // When all slices together don't reach 100%, add a last light slice to complete the circle
@@ -130,6 +148,14 @@ export default {
         Math.cos(2 * Math.PI * percent), // x coordinate
         Math.sin(2 * Math.PI * percent) // y coordinate
       ]
+    },
+    showLabel: debounce(function (e, index) {
+      this.ephemeral.labelActiveIndex = index
+      this.ephemeral.labelStyle = { position: 'fixed', top: `${e.clientY}px`, left: `${e.clientX}px` }
+      this.ephemeral.isLabelVisible = true
+    }, 100),
+    hideLabel (event) {
+      this.ephemeral.isLabelVisible = false
     }
   }
 }
