@@ -61,7 +61,7 @@ export default {
   },
   computed: {
     methodsAvailable () {
-      // REVIEW - should it be static or from BE?
+      // REVIEW - should it be static or from $store?
       return [
         {
           name: 'manual',

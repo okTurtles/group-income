@@ -180,15 +180,15 @@ export default {
     },
 
     submitAddNonMonetary (value) {
-      console.log('TODO BE - submitAddNonMonetary')
+      console.log('TODO $store - submitAddNonMonetary')
       this.fakeStore.giving.nonMonetary.push(value) // Hardcoded Solution
     },
     handleEditNonMonetary (value, index) {
       if (!value) {
-        console.log('TODO BE - deleteNonMonetary')
+        console.log('TODO $store - deleteNonMonetary')
         this.fakeStore.giving.nonMonetary.splice(index, 1) // Hardcoded Solution
       } else {
-        console.log('TODO BE - editNonMonetary')
+        console.log('TODO $store - editNonMonetary')
         this.$set(this.fakeStore.giving.nonMonetary, index, value) // Hardcoded Solution
       }
     },
@@ -196,7 +196,7 @@ export default {
       this.ephemeral.isEditingIncome = true
     },
     handleIncomeSave ({ makeIncome, amount }) {
-      console.log('TODO BE - Save Income Details')
+      console.log('TODO $store - Save Income Details')
       // -- Hardcoded Solution
       this.fakeStore.receiving.monetary = makeIncome ? null : this.fakeStore.mincome - amount
       this.fakeStore.giving.monetary = makeIncome ? amount : null
