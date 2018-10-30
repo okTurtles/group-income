@@ -19,7 +19,23 @@
         </tooltip>
       </li>
     </ul>
-    <i18n tag="p" class="c-info">A short but clear text explaining how “Manual” payment works, so the user understands well the process.</i18n>
+
+    <template v-if="userIsGiver">
+      <i18n tag="p" class="c-info">
+        Each month, after the group's mincome and pledges are finalized, you'll receive a notification that it's time to send your pledged contribution to other group members.
+      </i18n>
+      <i18n tag="p" class="c-info">
+        With manual payments, you can manually send your pledge using any method that works for you and and the recipient(s). Once you send the pledge, be sure to click "Mark as paid" under "Pay Group" so the recipient knows to expect it. After receiving the pledge, the recipient will be sure to mark it as "Received", so you'll know it went through.
+      </i18n>
+    </template>
+    <template v-else>
+      <i18n tag="p" class="c-info">
+        Each month, after the group's mincome and pledges are finalized, members will receive a notification that it's time to send their contributions to other group members.
+      </i18n>
+      <i18n tag="p" class="c-info">
+        With manual payments, members can manually send pledges using any method that works for the giving and the receiving group member(s). Once the pledge is sent, you will receive a notification so you know to expect the pledge. After receiving the pledge, be sure to mark it as "Received" so the sender will know it went through.
+      </i18n>
+    </template>
   </div>
 </template>
 <style lang="scss" scoped>
@@ -58,6 +74,9 @@ export default {
   name: 'PaymentsMethod',
   components: {
     Tooltip
+  },
+  props: {
+    userIsGiver: Boolean
   },
   computed: {
     methodsAvailable () {

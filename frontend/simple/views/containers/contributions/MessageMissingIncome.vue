@@ -4,7 +4,7 @@
       <i class="fa fa-plus is-flex c-icon"></i>
       <i18n tag="h2" class="title is-5">Add Income Details</i18n>
     </div>
-    <i18n tag="p" class="c-info">A clear text explaining why this information is needed, so the user understands and feels comfortable about providing this information.</i18n>
+    <i18n tag="p" class="c-info">Sharing a few income details helps ensure all group members meet the mincome.</i18n>
 
     <div class="has-text-danger has-text-weight-bold">
       <i class="c-icon-attention fa fa-exclamation-triangle"></i>

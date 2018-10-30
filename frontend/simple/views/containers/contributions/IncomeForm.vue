@@ -51,7 +51,7 @@
             </input-amount>
           </fieldset>
           <fieldset class="fieldset" v-if="!!$v.form.option.$model">
-            <payment-methods />
+            <payment-methods :userIsGiver="canPledge" />
           </fieldset>
         </div>
 
@@ -79,7 +79,19 @@
   width: 50rem;
   max-width: 100%;
   height: 100%;
-  overflow: auto;
+  overflow: auto; // TODO - maybe the overflow logic should be modal's responsability ?
+
+  // NOTE: A fadeOut make at the modals' bottom
+  // to help the user perceive when there's more content bellow.
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: $gi-spacer;
+    width: calc(100% - #{$gi-spacer-lg});
+    height: $gi-spacer-lg;
+    background: linear-gradient(rgba($body-background-color, 0), $body-background-color);
+  }
 
   @include mobile {
     height: 100vh;
