@@ -26,6 +26,7 @@
     </menu-parent>
 
     <list>
+      <!-- TODO/BUG: Hide navbar after going to a page -->
       <list-item tag="router-link" icon="columns"
         to="/dashboard">
           <i18n>Dashboard</i18n>

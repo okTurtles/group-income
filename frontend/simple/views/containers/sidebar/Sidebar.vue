@@ -1,6 +1,6 @@
 <template>
   <header class="c-sidebar is-flex" :class="{ 'is-active': ephemeral.isActive }">
-    <button class="gi-is-unstyled c-toggle" @click="toggleMenu">
+    <button class="gi-is-unstyled c-toggle is-flex" @click="toggleMenu">
       <i class="fa fa-bars"></i>
       <img src="/simple/assets/images/logo-transparent.png" alt="GroupIncome's logo" class="gi-logo c-logo">
     </button>
@@ -60,27 +60,15 @@ $speed: 300ms;
   left: 0;
   width: $gi-sidebar-width;
   height: 100vh;
+  max-height: 100%;
   z-index: $gi-zindex-header;
   flex-direction: column;
   // background: linear-gradient(210deg, rgba($primary, 0.15), $body-background-color 20rem); // diagonal gradient
   // background: linear-gradient(-90deg, $primary-bg-s, $body-background-color 15rem); // 90deg linear gradient
   background: $primary-bg-s; // solid
 
-  @include mobile {
-    transform: translateX(-100%);
-    transition: transform $speed;
-
-    &.is-active {
-      transform: translateX(0);
-    }
-  }
-
-  @include tablet {
-    width: $gi-sidebar-width;
-  }
-
   &-header {
-    padding: $gi-spacer*1.5 $gi-spacer 0;
+    padding: $gi-spacer $gi-spacer 0;
   }
 
   &-body {
@@ -93,17 +81,41 @@ $speed: 300ms;
       padding-top: $gi-spacer-lg;
     }
   }
+
+  @include mobile {
+    transform: translateX(-100%);
+    transition: transform $speed;
+
+    &.is-active {
+      transform: translateX(0);
+    }
+  }
+
+  @include tablet {
+    width: $gi-sidebar-width;
+
+    &-header {
+      padding-top: $gi-spacer*1.5;
+    }
+  }
 }
 
 .c-toggle {
   @include mobile {
     position: absolute;
-    top: $gi-spacer*1.5;
-    left: calc(100% + #{$gi-spacer});
-    width: 100vw;
+    top: 0;
+    left: 100%;
+    padding: $gi-spacer*1.1 0 $gi-spacer;
+    width: 2.8rem;
     text-align: left;
     background-color: transparent;
-    transition: height 1ms $speed;
+    transition: height 1ms $speed, width 1ms 1ms;
+    overflow: hidden;
+
+    .fa {
+      margin-top: $gi-spacer-sm;
+      margin-left: -$gi-spacer-sm;
+    }
 
     .c-logo {
       margin-left: $gi-spacer-sm;
@@ -111,15 +123,16 @@ $speed: 300ms;
 
     .c-logo,
     .fa-bars {
-      transition: opacity $speed/5 $speed*1.1;
+      transition: opacity $speed/5 $speed;
     }
 
     .is-active & {
       background-color: rgba(0, 0, 0, 0.7);
       height: 100%;
+      width: 100%;
       top: 0;
       left: 100%;
-      transition: height 1ms 1ms;
+      transition: height 1ms 1ms width 1ms 1ms;
 
       .c-logo,
       .fa-bars {

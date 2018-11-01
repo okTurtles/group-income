@@ -1,6 +1,7 @@
 <template>
+  <!-- TODO is this component real needed?! -->
   <main class="c-chatroom">
-    <chat-nav :title="title">
+    <chat-nav :title="title" :searchPlaceholder="searchPlaceholder" @search="$emit('search')">
       <slot></slot>
     </chat-nav>
     <!-- TODO - design loading state when conversation is being loaded  -->
@@ -12,10 +13,14 @@
 
 .c-chatroom {
   padding: 0;
-  display: flex;
-  flex-direction: row;
-  align-items: stretch;
-  height: 100vh;
+  display: block;
+
+  @include tablet {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    height: 100vh;
+  }
 }
 </style>
 <script>
@@ -30,7 +35,8 @@ export default {
     ChatNav
   },
   props: {
-    title: String
+    title: String,
+    searchPlaceholder: String
   },
   data () {
     return {}
@@ -58,6 +64,7 @@ export default {
         // between when the route changes (title undefined) and update it with the actual title
         document.title = users[id].displayName || users[id].name
 
+        console.log('retorna?')
         return {
           info: {
             type,
@@ -71,6 +78,8 @@ export default {
           conversation: messageConversations[id]
         }
       }
+
+      console.log('retorna:', type)
 
       // TODO group chat
       return {}

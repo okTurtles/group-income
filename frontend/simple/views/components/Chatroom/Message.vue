@@ -22,7 +22,7 @@
 @import "../../../assets/sass/theme/index";
 
 .c-message {
-  margin: $gi-spacer $gi-spacer 0;
+  margin: $gi-spacer $gi-spacer-sm 0;
   align-items: flex-end;
 
   &.sent {
@@ -33,6 +33,10 @@
 
   &.sameSender {
     margin-top: $gi-spacer-xs;
+  }
+
+  @include tablet {
+    margin: $gi-spacer $gi-spacer 0;
   }
 }
 

@@ -1,10 +1,9 @@
 <template>
   <chatroom
     :title="L('Messages')"
+    :searchPlaceholder="L('Search in a conversation')"
+    @search="handleSearch"
   >
-    <!-- TODO design search results -->
-    <input class="input" type="text" placeholder="Search for a conversation">
-
     <groups-shortcut class="c-list"
       :groups="groupsByName"
       @select="handleGroupSelect"
@@ -20,7 +19,7 @@
 <style lang="scss" scoped>
 @import "../assets/sass/theme/index";
 
-.c-list {
+.c-list:not(:first-of-type) {
   margin: $gi-spacer*1.5 0;
 }
 
@@ -54,6 +53,9 @@ export default {
     }
   },
   methods: {
+    handleSearch (event) {
+      console.log(event.target.value)
+    },
     handleGroupSelect (hash) {
       this.$store.commit('setCurrentGroupId', hash)
     }

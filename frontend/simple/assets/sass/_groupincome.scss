@@ -37,6 +37,7 @@ body {
 }
 
 .gi-logo {
+  min-width: 8rem;
   width: 8rem;
 }
 
@@ -48,6 +49,7 @@ body {
   &is-opacity-3 { opacity: $gi-opacity-3; }
 
   &is-ellipsis {
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
