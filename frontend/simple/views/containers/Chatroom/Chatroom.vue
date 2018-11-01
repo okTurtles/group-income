@@ -15,6 +15,10 @@
   padding: 0;
   display: block;
 
+  @include mobile {
+    min-height: auto;
+  }
+
   @include tablet {
     display: flex;
     flex-direction: row;

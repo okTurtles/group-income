@@ -7,7 +7,7 @@
       :class="{ isHidden: hideAvatar }"
       aria-hidden="true"
     />
-    <div>
+    <div class="c-body">
       <span class="has-text-grey is-size-7 c-who" :class="{ 'sr-only': hideWho || isSameSender }">
         {{who}}
       </span>
@@ -52,6 +52,10 @@
   }
 }
 
+.c-body {
+  max-width: 100%;
+}
+
 .c-who {
   display: block;
 
@@ -63,6 +67,7 @@
 
 .c-slot {
   max-width: 32rem;
+  word-wrap: break-word;
 
   .sent & {
     background-color: $primary-text;

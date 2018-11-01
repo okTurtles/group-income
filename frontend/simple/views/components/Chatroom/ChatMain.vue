@@ -1,18 +1,11 @@
 <template>
-  <div class="is-flex c-chatmain" :class="{ isActive: info.title }">
+  <div class="c-chatmain is-flex-tablet" :class="{ isActive: info.title }">
     <template v-if="info.title">
-      <!-- TODO ChatHeader - props: title, description, icons[], actions[] -->
-      <header class="level is-mobile is-marginless c-header">
-        <div class="level-left c-header-text">
-          <button class="button is-icon" @click="goBack">
-            <i class="fa fa-angle-left"></i>
-          </button>
-          <div class="gi-is-ellipsis">
-            <h2 class="title is-size-5 is-marginless gi-is-ellipsis">{{ info.title }}</h2>
-            <p class="is-size-7 has-text-grey gi-is-ellipsis" v-inf="info.description">{{ info.description }}</p>
-          </div>
-        </div>
-        <div class="level-right">
+      <chat-header
+        :title="info.title"
+        :description="info.description"
+        routerBack="/messages"
+      >
         <button class="button is-icon">
           <!-- TODO design workflow to add a member to the conversation -->
           <i class="fa fa-user-plus"></i>
@@ -22,8 +15,7 @@
             <i class="fa fa-ellipsis-v"></i>
           </menu-trigger>
 
-          <!-- TODO be a drawer on mobile -->
-          <!-- TODO this needs to be dynamic... -->
+          <!-- TODO later - be a drawer on mobile -->
           <menu-content class="c-actions-content">
             <list hasMargin>
               <menu-item tag="button" itemId="hash-1" icon="heart">
@@ -38,8 +30,8 @@
             </list>
           </menu-content>
         </menu-parent>
-      </div>
-      </header>
+      </chat-header>
+
       <div class="c-body is-flex">
         <loading v-if="loading" />
         <template v-else>
@@ -83,39 +75,10 @@
 @import "../../../assets/sass/theme/index";
 
 .c-chatmain {
+  position: relative;
   flex-grow: 1;
   flex-direction: column;
-}
-
-.c-header {
-  position: relative;
-  padding: $gi-spacer $gi-spacer-sm;
-  border-bottom: 1px solid $grey-lighter;
-  min-height: 4.5rem;
-  z-index: $gi-zindex-header;
-
-  // fadeOutTop: a gradient mask to fadeout nav on scroll.
-  // TODO - apply the same effect on sidebar
-  &::after {
-    content: "";
-    position: absolute;
-    bottom: -$gi-spacer-lg;
-    left: 0;
-    height: $gi-spacer-lg;
-    width: 100%;
-    background: linear-gradient($body-background-color, rgba($body-background-color, 0));
-  }
-
-  &-text {
-    max-width: 70%;
-  }
-
-  .c-actions-content {
-    top: $gi-spacer-lg;
-    right: 0;
-    left: auto;
-    width: 10rem;
-  }
+  background-color: $body-background-color;
 }
 
 .c-body {
@@ -144,21 +107,49 @@
   $speed: 300ms;
 
   .c-chatmain {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    max-height: 100vh;
+    width: 100vw;
+    min-height: 100vh;
     z-index: $gi-zindex-header;
     background: $body-background-color;
-    transform: translate3d(100vw, 0, 0);
-    transition: transform $speed;
-    box-shadow: -1px 0 1px rgba($text, 0.07);
+    // transition: transform $speed;
+
+    /* A - MVP static way
+    - show / hide conversation */
+    display: none;
 
     &.isActive {
-      transform: translate3d(0, 0, 0);
+      display: block;
     }
+
+    /* B - NEXT dynamic way
+    - slideIn from right - more complex - needs tricky work
+    - TODO - If there's time at the end, I'll do this.
+    */
+    // box-shadow: -1px 0 1px rgba($text, 0.07);
+    // transform: translate3d(100vw, 0, 0);
+
+    // &.isActive {
+    //   transform: translate3d(0, 0, 0);
+    //
+    //   &.isSet {
+    //     // NOTE: position:fixed cant be mixed with transform
+    //     transform: none;
+    //   }
+    // }
+  }
+
+  .c-body {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+    min-height: 100vh;
+  }
+
+  .c-footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100vw;
+    background-color: $body-background-color;
   }
 }
 
@@ -174,6 +165,7 @@
 
 </style>
 <script>
+import ChatHeader from './ChatHeader.vue'
 import { List } from '../Lists/index.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuHeader, MenuItem } from '../Menu/index.js'
 import Message from './Message.vue'
@@ -185,16 +177,17 @@ import { currentUserId } from '../../containers/Chatroom/fakeStore.js'
 export default {
   name: 'ChatMain',
   components: {
+    ChatHeader,
     List,
     MenuParent,
     MenuTrigger,
     MenuContent,
     MenuHeader,
     MenuItem,
-    ConversationGreetings,
     Message,
     MessageInteractive,
-    MessageNotification
+    MessageNotification,
+    ConversationGreetings
   },
   props: {
     info: {
@@ -214,7 +207,16 @@ export default {
     }
   },
   updated () {
+    console.log('updated!')
+    // CONTINUE HEREEEE
     // force conversation viewport to be at the most recent messages
+
+    // when is on mobile
+    document.body.scroll(0, document.body.offsetHeight)
+
+    console.log('chamou?')
+
+    // when is on tablet/desktop
     this.$refs.conversation && this.$refs.conversation.scroll(0, this.$refs.conversation.scrollHeight)
   },
   computed: {
@@ -236,9 +238,6 @@ export default {
     }
   },
   methods: {
-    goBack () {
-      this.$router.go(-1)
-    },
     who (fromId) {
       if (this.currentUserAttr.id === fromId) {
         return this.currentUserAttr.displayName || this.currentUserAttr.name
