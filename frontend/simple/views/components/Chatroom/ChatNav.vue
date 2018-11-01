@@ -1,38 +1,39 @@
 <template>
   <div class="c-chatnav is-flex-tablet">
     <chat-header :title="title">
-      <button class="button is-icon is-hidden-tablet">
-        <!-- TODO design search results mobile -->
-        <i class="fa fa-search"></i>
-      </button>
-      <menu-parent class="level-right">
-        <menu-trigger class="is-icon">
-          <i class="fa fa-ellipsis-v"></i>
-        </menu-trigger>
+      <template slot="actions">
+        <!-- TODO design search results on mobile - MVP be same as desktop -->
+        <!-- <button class="button is-icon is-hidden-tablet">
+          <i class="fa fa-search"></i>
+        </button> -->
+        <menu-parent class="level-right">
+          <menu-trigger class="is-icon">
+            <i class="fa fa-ellipsis-v"></i>
+          </menu-trigger>
 
-        <!-- TODO be a drawer on mobile -->
-        <menu-content class="c-actions-content">
-          <list hasMargin>
-            <menu-item tag="button" itemId="hash-1" icon="heart">
-              Settings
-            </menu-item>
-            <menu-item tag="button" itemId="hash-2" icon="heart" hasDivider>
-              Mute chat
-            </menu-item>
-            <menu-item tag="button" itemId="hash-3" icon="heart">
-              Report a problem
-            </menu-item>
-          </list>
-        </menu-content>
-      </menu-parent>
-    </chat-header>
-    <div class="c-chatnav-body">
-      <!-- TODO design better search results -->
-      <input class="input is-hidden-mobile" type="text"
+          <!-- TODO be a drawer on mobile -->
+          <menu-content class="c-actions-content">
+            <list hasMargin>
+              <menu-item tag="button" itemId="hash-1" icon="heart">
+                Settings
+              </menu-item>
+              <menu-item tag="button" itemId="hash-2" icon="heart" hasDivider>
+                Mute chat
+              </menu-item>
+              <menu-item tag="button" itemId="hash-3" icon="heart">
+                Report a problem
+              </menu-item>
+            </list>
+          </menu-content>
+        </menu-parent>
+      </template>
+
+      <input class="input c-chatnav-search" type="text"
         v-if="searchPlaceholder"
         :placeholder="searchPlaceholder"
-        @change="$emit('search')">
-
+        @keyup="(e) => $emit('search', e.target.value)" />
+    </chat-header>
+    <div class="c-chatnav-body">
       <slot><!-- Content for each chatNav is up to the parent --></slot>
     </div>
   </div>
@@ -46,6 +47,11 @@
     right: 0;
     left: auto;
     width: 10rem;
+  }
+
+  &-search {
+    margin: $gi-spacer $gi-spacer-sm 0;
+    width: calc(100% - #{$gi-spacer});
   }
 
   &-body {
@@ -63,7 +69,7 @@
     overflow: auto;
 
     &-body {
-      padding-top: 5rem;
+      padding-top: 8rem;
       padding-bottom: $gi-spacer-lg;
     }
   }

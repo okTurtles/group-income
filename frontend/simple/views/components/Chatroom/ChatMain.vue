@@ -6,30 +6,34 @@
         :description="info.description"
         routerBack="/messages"
       >
-        <button class="button is-icon">
-          <!-- TODO design workflow to add a member to the conversation -->
-          <i class="fa fa-user-plus"></i>
-        </button>
-        <menu-parent class="level-right">
-          <menu-trigger class="is-icon">
-            <i class="fa fa-ellipsis-v"></i>
-          </menu-trigger>
+        <template slot="actions">
+          <button class="button is-icon">
+            <i class="fa fa-user-plus"></i>
+          </button>
+          <button class="button is-icon">
+            <i class="fa fa-bell"></i>
+          </button>
+          <menu-parent class="level-right">
+            <menu-trigger class="is-icon">
+              <i class="fa fa-ellipsis-v"></i>
+            </menu-trigger>
 
-          <!-- TODO later - be a drawer on mobile -->
-          <menu-content class="c-actions-content">
-            <list hasMargin>
-              <menu-item tag="button" itemId="hash-1" icon="heart">
-                Option 1
-              </menu-item>
-              <menu-item tag="button" itemId="hash-2" icon="heart">
-                Option 2
-              </menu-item>
-              <menu-item tag="button" itemId="hash-3" icon="heart">
-                Option 3
-              </menu-item>
-            </list>
-          </menu-content>
-        </menu-parent>
+            <!-- TODO later - be a drawer on mobile -->
+            <menu-content class="c-actions-content">
+              <list hasMargin>
+                <menu-item tag="button" itemId="hash-1" icon="heart">
+                  Option 1
+                </menu-item>
+                <menu-item tag="button" itemId="hash-2" icon="heart">
+                  Option 2
+                </menu-item>
+                <menu-item tag="button" itemId="hash-3" icon="heart">
+                  Option 3
+                </menu-item>
+              </list>
+            </menu-content>
+          </menu-parent>
+        </template>
       </chat-header>
 
       <div class="c-body is-flex">
@@ -48,7 +52,15 @@
               {{message.text}}
             </message>
 
-            <!-- TODO message "failed" -->
+            <message v-for="(message, index) in ephemeral.pendingMessages"
+              :who="who(message.from)"
+              :avatar="avatar(message.from)"
+              :variant="message.hasFailed ? 'failed' : 'sent'"
+              :isSameSender="index > 0"
+              @retry="handleMessageRetry(index)"
+            >
+              {{message.text}}
+            </message>
 
             <!-- TODO messageInteractive -->
             <!-- TODO messageNotification -->
@@ -57,15 +69,15 @@
       </div>
       <div class="c-footer">
         <!-- TODO - reuse Contribution's input markup here when #482 is merged -->
-        <div class="field has-addons is-fullwidth">
-          <p class="control is-expanded">
-            <input class="input c-input" :disabled="loading" type="text" :placeholder="customSendPlaceholder">
-          </p>
-          <p class="control">
-            <button class="button">
-              Send
-            </button>
-          </p>
+        <div class="c-send">
+          <textarea class="c-send-textarea"textAreaStyles
+            ref="sendInput"
+            :disabled="loading"
+            :placeholder="customSendPlaceholder"
+            :syle="textAreaStyles"
+          ></textarea>
+          <i18n tag="button" class="c-send-btn" ref="sendBtn" @click="handleSendClick">Send</i18n>
+          <div class="c-send-mask" ref="sendMask"></div>
         </div>
       </div>
     </template>
@@ -79,6 +91,13 @@
   flex-grow: 1;
   flex-direction: column;
   background-color: $body-background-color;
+
+  .c-actions-content {
+    top: $gi-spacer-lg;
+    right: 0;
+    left: auto;
+    width: 10rem;
+  }
 }
 
 .c-body {
@@ -97,45 +116,60 @@
 .c-footer {
   position: relative;
   padding: 0 $gi-spacer-sm $gi-spacer;
+}
 
-  .input {
-    height: 40px;
+$initialHeight: 2.5rem;
+
+.c-send {
+  position: relative;
+
+  &-textarea,
+  &-mask {
+    display: block;
+    width: 100%;
+    border: 1px solid $grey;
+    border-radius: $radius;
+    padding: $gi-spacer-sm $gi-spacer-lg $gi-spacer-xs $gi-spacer-sm;
+    line-height: 1.3;
+    height: $initialHeight;
+    font-size: 1rem;
+  }
+
+  &-btn {
+    position: absolute;
+    top: 0;
+    right: $gi-spacer-sm;
+    padding: $gi-spacer-sm;
+    height: 100%;
+  }
+
+  &-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    pointer-events: none;
   }
 }
 
 @include mobile {
-  $speed: 300ms;
-
   .c-chatmain {
     width: 100vw;
     min-height: 100vh;
     z-index: $gi-zindex-header;
     background: $body-background-color;
-    // transition: transform $speed;
 
-    /* A - MVP static way
-    - show / hide conversation */
+    /* A - MVP static way - show / hide conversation */
     display: none;
 
     &.isActive {
       display: block;
     }
 
-    /* B - NEXT dynamic way
-    - slideIn from right - more complex - needs tricky work
-    - TODO - If there's time at the end, I'll do this.
+    /* B - dynamic way
+    - slideIn from right to left - more complex - needs tricky work
+    - TODO - If there's time, I'll build this alternative.
     */
-    // box-shadow: -1px 0 1px rgba($text, 0.07);
-    // transform: translate3d(100vw, 0, 0);
-
-    // &.isActive {
-    //   transform: translate3d(0, 0, 0);
-    //
-    //   &.isSet {
-    //     // NOTE: position:fixed cant be mixed with transform
-    //     transform: none;
-    //   }
-    // }
   }
 
   .c-body {
@@ -199,25 +233,32 @@ export default {
   data () {
     return {
       config: {
-        sendPlaceholder: [this.L('Be nice to'), this.L('Be cool to'), this.L('Have fun with')]
+        sendPlaceholder: [this.L('Be nice to'), this.L('Be cool to'), this.L('Have fun with')],
+        sendBtnWidth: null,
+        sendInputHeight: null
       },
       ephemeral: {
-        conversationIsLoading: false
+        conversationIsLoading: false,
+        pendingMessages: []
       }
     }
   },
+  created () {
+    this.config.sendBtnWidth = this.$refs.sendBtn.offsetWidth
+    this.config.sendInputHeight = this.$refs.sendInput.offsetHeight
+  },
   updated () {
-    console.log('updated!')
-    // CONTINUE HEREEEE
-    // force conversation viewport to be at the most recent messages
+    if (this.info.title) {
+      // force conversation viewport to be at the bottom (most recent messages)
 
-    // when is on mobile
-    document.body.scroll(0, document.body.offsetHeight)
+      // ...when is on mobile
+      setTimeout(function () {
+        window.scroll(0, document.body.offsetHeight)
+      }, 0) // REVIEW: without timeout it scrolls before the DOM is ready... why?
 
-    console.log('chamou?')
-
-    // when is on tablet/desktop
-    this.$refs.conversation && this.$refs.conversation.scroll(0, this.$refs.conversation.scrollHeight)
+      // ...when is on tablet/desktop
+      this.$refs.conversation && this.$refs.conversation.scroll(0, this.$refs.conversation.scrollHeight)
+    }
   },
   computed: {
     isSameSender () {
@@ -235,10 +276,24 @@ export default {
     },
     customSendPlaceholder () {
       return `${this.config.sendPlaceholder[Math.floor(Math.random() * this.config.sendPlaceholder.length)]} ${this.info.title}`
+    },
+    textAreaStyles () {
+      // TODO CONTINUE HERE...
+      return {
+        paddingRight: '100px',
+        height: '80px'
+      }
+      //
+      // const initialHeight = this.ephemeral.initialSendInputHeight
+      // const rows = Number.round(this.$refs.sendMask.offsetHeigth / initialHeight)
+      // return {
+      //   paddingRight: this.$refs.sendButton.offsetWidth,
+      //   height: initialHeight * rows
+      // }
     }
   },
   methods: {
-    who (fromId) {
+    who (fromId = this.currentUserAttr.id) {
       if (this.currentUserAttr.id === fromId) {
         return this.currentUserAttr.displayName || this.currentUserAttr.name
       }
@@ -247,13 +302,37 @@ export default {
 
       return user.displayName || user.name
     },
-    variant (fromId) {
+    variant (fromId = this.currentUserAttr.id) {
       return this.currentUserAttr.id === fromId ? 'sent' : 'received'
     },
-    avatar (fromId) {
+    avatar (fromId = this.currentUserAttr.id) {
       return this.currentUserAttr.id === fromId
         ? this.currentUserAttr.picture
         : this.info.participants[fromId].picture
+    },
+    handleMessageRetry (index) {
+      this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', false)
+
+      setTimeout(() => {
+        console.log('TODO $store send message')
+        this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', true)
+      }, 2000)
+      console.log('TODO $store - retry sending a message')
+    },
+    handleSendClick () {
+      console.log('sending...')
+      const index = this.ephemeral.pendingMessages.length
+      this.ephemeral.pendingMessages.push({
+        from: this.currentUserAttr.id,
+        text: this.$refs.sendInput.value
+      })
+
+      this.$refs.sendInput.value = ''
+
+      setTimeout(() => {
+        console.log('TODO $store send message')
+        this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', true)
+      }, 2000)
     }
   }
 }

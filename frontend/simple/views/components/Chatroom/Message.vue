@@ -4,7 +4,6 @@
       hasMargin
       size="sm"
       class="c-avatar level-left"
-      :class="{ isHidden: hideAvatar }"
       aria-hidden="true"
     />
     <div class="c-body">
@@ -16,6 +15,9 @@
         <slot></slot>
       </p>
     </div>
+    <button class="button is-icon has-text-danger" v-if="variant === 'failed'" @click="$emit('retry')">
+      <i class="fa fa-undo"></i>
+    </button>
   </div>
 </template>
 <style lang="scss" scoped>
@@ -25,7 +27,8 @@
   margin: $gi-spacer $gi-spacer-sm 0;
   align-items: flex-end;
 
-  &.sent {
+  &.sent,
+  &.failed {
     margin-left: $gi-spacer-xl;
     flex-direction: row-reverse;
     text-align: right;
@@ -35,13 +38,18 @@
     margin-top: $gi-spacer-xs;
   }
 
+  .button {
+    flex-shrink: 0;
+  }
+
   @include tablet {
     margin: $gi-spacer $gi-spacer 0;
   }
 }
 
 .c-avatar {
-  .sent & {
+  .sent &,
+  .failed & {
     margin: 0 0 0.2rem $gi-spacer-sm; // 0.2 to visually align with buble text
   }
 
@@ -59,7 +67,8 @@
 .c-who {
   display: block;
 
-  .sent & {
+  .sent &,
+  .failed & {
     margin-right: $gi-spacer-xs;
     margin-bottom: $gi-spacer-xs;
   }
@@ -72,6 +81,14 @@
   .sent & {
     background-color: $primary-text;
     color: $body-background-color;
+    border: 1px solid;
+    border-radius: $radius-large;
+    padding: $gi-spacer-xs $gi-spacer-sm;
+  }
+
+  .failed & {
+    color: $text-light; // REVIEW/OPTIMIZE Verify why $text-light is ligther than $text (correct) and .has-text-light is white (incorrect)... Bulma bug?
+    border: 1px dashed $danger;
     border-radius: $radius-large;
     padding: $gi-spacer-xs $gi-spacer-sm;
   }
@@ -101,16 +118,6 @@ export default {
     },
     isSameSender: Boolean,
     hideWho: Boolean
-  },
-  data () {
-    return {}
-  },
-  computed: {
-    hideAvatar () {
-      return false
-      /* return this.variant === 'received' */
-    }
-  },
-  methods: {}
+  }
 }
 </script>

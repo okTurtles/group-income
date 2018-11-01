@@ -1,25 +1,28 @@
 <template>
-  <header class="level is-mobile is-marginless c-header">
-    <div class="level-left c-header-text">
-      <router-link
-        class="button is-icon is-size-5 has-text-primary is-hidden-tablet c-back"
-        v-if="routerBack"
-        :to="routerBack"
-      >
-        <i class="fa fa-angle-left"></i>
-      </router-link>
-      <div class="gi-is-ellipsis" :class="{ 'c-is-mainPage': !routerBack }">
-        <h2 class="title is-4 is-marginless gi-is-ellipsis" :class="{ 'is-5': routerBack }">
-          {{ title }}
-        </h2>
-        <p class="is-size-7 has-text-grey gi-is-ellipsis is-hidden-mobile" v-if="description">
-          {{ description }}
-        </p>
+  <header class="c-header">
+    <div class="level is-mobile is-marginless c-header-top">
+      <div class="level-left c-header-text">
+        <router-link
+          class="button is-icon is-size-5 has-text-primary is-hidden-tablet c-back"
+          v-if="routerBack"
+          :to="routerBack"
+        >
+          <i class="fa fa-angle-left"></i>
+        </router-link>
+        <div class="gi-is-ellipsis" :class="{ 'c-is-mainPage': !routerBack }">
+          <h2 class="title is-4 is-marginless gi-is-ellipsis" :class="{ 'is-5': routerBack }">
+            {{ title }}
+          </h2>
+          <p class="is-size-7 has-text-grey gi-is-ellipsis is-hidden-mobile" v-if="description">
+            {{ description }}
+          </p>
+        </div>
+      </div>
+      <div class="level-right">
+        <slot name="actions"></slot>
       </div>
     </div>
-    <div class="level-right">
-      <slot></slot>
-    </div>
+    <slot> <!-- in case parent wants to add more stuff (ex: search )--></slot>
   </header>
 </template>
 <style lang="scss" scoped>
@@ -54,7 +57,10 @@ $headerHeight: 4rem;
     left: 0;
     width: 100vw;
     top: 0;
-    padding-left: 0;
+
+    .c-header-top {
+      padding-left: 0;
+    }
 
     .c-is-mainPage {
       padding-left: $gi-spacer-lg + $gi-spacer; // Space for menu toggle
