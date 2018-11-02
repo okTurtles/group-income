@@ -1,12 +1,12 @@
 <template>
   <nav class="navbar">
     <div class="navbar-start is-flex">
-      <router-link to="home" class="navbar-item gi-logo" @click="toggleTimeTravel">
+      <router-link to="home" class="navbar-item gi-logo c-logo" @click="toggleTimeTravel">
         <img src="/simple/assets/images/logo-transparent.png"  alt="Groupincome's logo">
       </router-link>
     </div>
       <div class="navbar-end is-flex">
-        <div class="navbar-item signUp-item" v-if="!$store.state.loggedIn">
+        <div class="navbar-item c-signup" v-if="!$store.state.loggedIn">
           <button
             class="button is-success"
             data-test="signupBtn"
@@ -57,7 +57,7 @@
           class="navbar-item has-dropdown is-hoverable gi-is-profile"
           v-if="$store.state.loggedIn">
           <a class="navbar-link">
-            <img class="avatar" v-if="$store.getters.currentUserIdentityContract &&
+            <img class="c-avatar" v-if="$store.getters.currentUserIdentityContract &&
               $store.getters.currentUserIdentityContract.attributes &&
               $store.getters.currentUserIdentityContract.attributes.picture"
               v-bind:src="$store.getters.currentUserIdentityContract.attributes.picture"
@@ -95,15 +95,15 @@
   </nav>
 </template>
 <style lang="scss" scoped>
-.gi-logo {
-  padding-left: 2rem;
+.c-logo {
+  padding-left: $gi-spacer-lg;
 }
 
-.signUp-item {
+.c-signup {
   padding-right: 0;
 }
 
-.avatar {
+.c-avatar {
   border-radius: 50%;
   max-height: 2.5rem;
   margin: 0 0.5rem;

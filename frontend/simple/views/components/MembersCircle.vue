@@ -1,56 +1,56 @@
 <template>
-  <div class="gi-memberCircle-container">
-    <svg viewBox="0 0 256 256" version="1.1" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="gi-svg">
-      <circle cx="128" cy="128" r="126" class="gi-svg-circle"/>
+  <div class="c-memberCircle-container">
+    <svg viewBox="0 0 256 256" version="1.1" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="c-svg">
+      <circle cx="128" cy="128" r="126" class="c-svg-circle"/>
     </svg>
 
-    <ul class="gi-list">
-      <li v-for="(member, username) in membersWithStyle.slice(0, 6)" class="gi-list-item">
-        <div class="gi-list-item-box"
+    <ul class="c-list">
+      <li v-for="(member, username) in membersWithStyle.slice(0, 6)" class="c-list-item">
+        <div class="c-list-item-box"
           :style="member.style"
           v-on:mouseenter="toggleMemberActive(member, true)"
           v-on:mouseleave="toggleMemberActive(member, false)"
           >
-          <img class="gi-list-item-img"
+          <img class="c-list-item-img"
             :src='member.attributes.picture'
             :alt="`${member.attributes.name}'s avatar`">
         </div>
       </li>
 
-      <li v-if="members.length > maxMembers" class="gi-list-item">
-        <div class="gi-list-item-box"
+      <li v-if="members.length > maxMembers" class="c-list-item">
+        <div class="c-list-item-box"
           :style="membersWithStyle[maxMembers].style"
           v-on:mouseenter="toggleMemberActive('other', true)"
           v-on:mouseleave="toggleMemberActive('other', false)"
           >
-          <div class="gi-list-item-others is-flex">
+          <div class="c-list-item-others is-flex">
             <i class="fa fa-plus is-size-4"></i>
           </div>
         </div>
       </li>
     </ul>
 
-    <div class="gi-center has-text-centered"
+    <div class="c-member has-text-centered"
       v-if="memberActive">
       <strong class="is-size-5 has-text-font-weight-bold"
         v-if="memberActive.attributes">
         {{memberActive.attributes.name}}
       </strong>
-      <p class="gi-memberInfo-desc"
+      <p class="c-memberInfo-desc"
         v-if="memberActive.attributes">
         Member since {2018}
       </p>
-      <p class="gi-memberInfo-desc"
+      <p class="c-memberInfo-desc"
         v-if="!memberActive.attributes">
         Plus <strong>{{members.length - maxMembers}} members</strong> since {2018}
       </p>
-      <span class="tag gi-memberInfo-tag"
+      <span class="tag c-memberInfo-tag"
         v-if="memberActive.attributes">
         ${100}
       </span>
     </div>
 
-    <div class="gi-center" v-else>
+    <div class="c-member" v-else>
       <slot></slot>
     </div>
   </div>
@@ -110,11 +110,11 @@ $border-width: 1px;
   }
 }
 
-.gi-memberCircle-container {
+.c-memberCircle-container {
   @extend %circleSize;
 }
 
-.gi-svg {
+.c-svg {
   position: absolute;
   left: 0;
   top: 0;
@@ -129,7 +129,7 @@ $border-width: 1px;
   }
 }
 
-.gi-list {
+.c-list {
   @extend %circleSize;
   @extend %circleScale;
 
@@ -185,12 +185,12 @@ $border-width: 1px;
   }
 }
 
-.gi-center {
+.c-member {
   max-width: $mainCircle-size - $itemCircle-size - $gi-spacer-lg;
   @include centerXY;
 }
 
-.gi-memberInfo {
+.c-memberInfo {
   &-desc {
     margin: $gi-spacer-xs 0 $gi-spacer-sm;
   }

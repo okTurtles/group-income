@@ -5,6 +5,8 @@ Please read all the sections below before writing a single line of code.
 - **[JavaScript Style Guide](#javascript-style-guide)**
 - **[Vue.js Style Guide](#vuejs-style-guide)**
 - **[CSS Style Guide](#css-style-guide)**
+    - [CSS Conventions](#css-conventions)
+    - [How we use Bulma](#how-we-use-bulma)
 - **[Group Income Data Model Rules](#group-income-data-model-rules)**
 - **[SBP Paradigm](#sbp) (Soon!)**
 
@@ -21,13 +23,47 @@ _It is still on you to ensure your code conforms to the `standard` spec, whether
 Since this is a Vue.js project, any pull requests **must** follow *Priority A* rules mentioned in the [Vue.js Style Guide](https://vuejs.org/v2/style-guide/), and *should* follow the *Priority B* rules. Please take the time to read at least those two sections.
 
 ## CSS Style Guide
-For styling, we use [Bulma](https://bulma.io/documentation/overview/start/).
+We use [Bulma](https://bulma.io/documentation/overview/start/) framework and `SCSS`.
 
-- Everything that can be solved by using Bulma’s classes should be solved with them.
-- Bulma's overwrites should go to `/frontend/simple/sass/bulma_overrides` and be written in SCSS
-- Component specific styles should go to the component’s `<style>` tag, be written in SCSS and be scoped to the component. Keep this part as simple/little as possible.
+### CSS conventions
+- Everything that can be solved with Bulma’s classes should be solved with them.
 
-### How to override Bulma
+```html
+<!-- These are Bulma classes -->
+<h1 class="title is-2">Hello world</h1>
+```
+
+- Component specific classes should have `.c-` prefix and be written in the component’s `<style>` tag scoped. Keep this part as simple/little as possible.
+- Any property that is part of Bulma's variables or [Group Income Theme](../frontend/simple/assets/sass/theme) (colors, spacings, breakpoints, typography, etc...) should be used as SCSS variable instead of a raw value.
+
+```html
+<template>
+    <!-- We can easily distinguish Bulma classes from component's classes -->
+    <h1 class="title is-2 has-text-centered c-title">Hello world</h1>
+</template>
+
+<style lang="scss" scoped>
+.c-title {
+    margin-bottom: $gi-spacer;
+
+    @include tablet {
+        margin-bottom: $gi-spacer-lg;
+    }
+}
+</style>
+```
+
+- Global classes that aren't from Bulma should have `.gi-` prefix and be written in a global file like `assets/sass/_groupincome.scss`.
+
+```html
+<!-- We can easily distinguish Bulma classes from GI classes -->
+<p class="is-size-5 gi-is-ellipsis">James Williams</h1>
+```
+
+- New Bulma modifiers classes should also have `.gi-` prefix. Know more by reading [How to override Bulma](#how-to-override-bulma).
+
+### How we use Bulma
+#### Understanding Bulma structure
 We import Bulma by modules following [its folder structure](https://github.com/jgthms/bulma/tree/master/sass). Note that the order of the modules needs to be the same to Bulma's so all CSS works correctly
 
 
@@ -62,6 +98,8 @@ Each folder has an `_index.scss` with all its modules imports, even those that a
 @import 'title';
 ```
 
+#### How to override Bulma
+
 There are two ways of overriding Bulma:
 - **SCSS Variables** - provided by Bulma's framework.
 - **Classes** - Directly access Bulma's classes.
@@ -76,13 +114,11 @@ $message-radius: 1px;
 
 If there isn't a SCSS variable for that, the solution is to override directly the classes. Do that **after** the module import. When overriding a class, ask yourself if that should be modified everywhere by default or if it should be a new modifier.
 
-If it's a new modifier, add `.gi-` prefix. That brings at least 2 main benetifs:
+If it's a new modifier, add `.gi-` prefix. That brings at least 2 main benefits:
 - Easily understand if that code is Bulma's or ours.
 - Prevent Bulma's naming conflicts with our code on future updates.
 
 Let's see an example:
-
-Bulma's `.message` default `border-width` value is `0 0 0 3px`. We want it to be just `1px` on a particular view, so let's add a new modifier.
 
 ```scss
 $message-radius: 1px;
@@ -90,16 +126,21 @@ $message-radius: 1px;
 @import "../../node_modules/bulma/sass/components/message";
 
 .message-body {
-  &.gi-is-box {
-    border-width: 1px;
+  // The default `border-width` value is `0 0 0 3px`.
+  // We want it to be `1px` everywhere, so we add a new modifier:
+  border-width: 1px;
+
+  // The default border-style is solid,
+  // We want to dashed it just on a particular view, so we add a new modifier:
+  &.gi-is-unfilled {
+    border-style: dashed
   }
 }
 ```
 
-When's used it's painless to differentiate our code from Bulma's!
-
 ```html
-<div class="message-body gi-is-box"> ... </div>
+<!-- We can easily distinguish our code from Bulma's -->
+<div class="message-body gi-is-unfilled"> ... </div>
 ```
 
 #### Bulma's documentation
@@ -174,3 +215,7 @@ Details about SBP will be written in a blog post soon. In the meantime, you are 
 Search the project for `sbp(` for examples, and speak with @taoeffect about it before diving in (at least until the docs for SBP are still waiting to be written).
 
 _SBP is the greatest thing to happen to programming since computers were invented! :D->-<_
+
+---
+
+Caught a mistake or want to contribute to the documentation? Edit this page on GitHub!

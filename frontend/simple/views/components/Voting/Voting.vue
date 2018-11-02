@@ -1,6 +1,6 @@
 <template>
-  <div class="is-flex gi-voting">
-    <div class="gi-voting-body is-flex">
+  <div class="is-flex c-voting">
+    <div class="c-voting-body is-flex">
       <sign
         :type="type"
         :value="proposal.value"
@@ -8,14 +8,14 @@
       />
 
       <!-- TODO: fix the i18n stuff here -->
-      <div class="gi-voting-info">
-        <h5 class="has-text-weight-bold is-uppercase gi-voting-info-title">{{proposal.title}}</h5>
+      <div class="c-voting-info">
+        <h5 class="has-text-weight-bold is-uppercase c-voting-info-title">{{proposal.title}}</h5>
         <p v-html="proposal.text"></p>
         <p class="is-size-7 has-text-grey" v-if="proposal.textDetails" v-html="proposal.textDetails"></p>
       </div>
     </div>
 
-    <div class="gi-voting-ctas">
+    <div class="c-voting-ctas">
       <div class="buttons">
         <template v-if="!proposal.ownProposal">
           <button class="button"
@@ -48,7 +48,7 @@
       </div>
 
       <p class="has-text-grey has-text-right"
-        :class="{ 'gi-feedback has-text-weight-bold': isProposalClosed }"
+        :class="{ 'c-feedback has-text-weight-bold': isProposalClosed }"
       >
         {{helperText}}
       </p>
@@ -63,7 +63,7 @@
   height: 4.5rem;
 }
 
-.gi-voting {
+.c-voting {
   flex-wrap: wrap;
   justify-content: flex-end;
   margin: $gi-spacer*3 0;
@@ -101,7 +101,7 @@
   }
 }
 
-.gi-feedback {
+.c-feedback {
   margin-top: $gi-spacer;
 }
 

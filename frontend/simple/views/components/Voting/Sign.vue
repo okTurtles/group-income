@@ -1,26 +1,26 @@
 <template>
-  <div class="gi-voting-sign">
-    <svg class="gi-voting-sign-svg"
+  <div class="c-voting-sign">
+    <svg class="c-voting-sign-svg"
       v-if="isTypeRule"
     >
       <circle cx="36" cy="36" r="35"
-        class="gi-voting-sign-svg-circle"
+        class="c-voting-sign-svg-circle"
         :style="svgCircle.style"
         :class="svgCircle.class"
       />
     </svg>
 
-    <p class="gi-voting-sign-value title is-size-4 has-text-centered"
+    <p class="c-voting-sign-value title is-size-4 has-text-centered"
       :class="{
-        'gi-is-mincome': isTypeMincome,
-        'gi-is-rule': isTypeRule
+        'c-is-mincome': isTypeMincome,
+        'c-is-rule': isTypeRule
       }"
       v-if="isTypeRuleOrMincome"
     >
       {{valuePerc}}
     </p>
 
-    <img class="gi-voting-sign-avatar"
+    <img class="c-voting-sign-avatar"
       :src="member.picture"
       :alt="`${member.name}'s avatar`"
       v-if="isTypeMember"
@@ -35,7 +35,7 @@
   height: 4.5rem;
 }
 
-.gi-voting-sign {
+.c-voting-sign {
   position: relative;
   flex-shrink: 0;
 
@@ -46,11 +46,11 @@
     line-height: 4.5rem;
     white-space: nowrap;
 
-    &.gi-is-mincome {
+    &.c-is-mincome {
       line-height: 2;
     }
 
-    &.gi-is-rule {
+    &.c-is-rule {
       border: 1px solid $grey-lighter;
     }
   }
