@@ -1,6 +1,6 @@
 <template>
   <header class="c-sidebar is-flex" :class="{ 'is-active': ephemeral.isActive }">
-    <button class="gi-is-unstyled c-toggle is-flex" @click="toggleMenu">
+    <button class="gi-is-unstyled is-flex is-hidden-desktop c-toggle" @click="toggleMenu">
       <i class="fa fa-bars"></i>
       <img src="/simple/assets/images/logo-transparent.png" alt="GroupIncome's logo" class="gi-logo c-logo">
     </button>

@@ -68,17 +68,7 @@
         </template>
       </div>
       <div class="c-footer">
-        <!-- TODO - reuse Contribution's input markup here when #482 is merged -->
-        <div class="c-send">
-          <textarea class="c-send-textarea"textAreaStyles
-            ref="sendInput"
-            :disabled="loading"
-            :placeholder="customSendPlaceholder"
-            :syle="textAreaStyles"
-          ></textarea>
-          <i18n tag="button" class="c-send-btn" ref="sendBtn" @click="handleSendClick">Send</i18n>
-          <div class="c-send-mask" ref="sendMask"></div>
-        </div>
+        <send-area @send="handleSendClick" />
       </div>
     </template>
   </div>
@@ -116,40 +106,6 @@
 .c-footer {
   position: relative;
   padding: 0 $gi-spacer-sm $gi-spacer;
-}
-
-$initialHeight: 2.5rem;
-
-.c-send {
-  position: relative;
-
-  &-textarea,
-  &-mask {
-    display: block;
-    width: 100%;
-    border: 1px solid $grey;
-    border-radius: $radius;
-    padding: $gi-spacer-sm $gi-spacer-lg $gi-spacer-xs $gi-spacer-sm;
-    line-height: 1.3;
-    height: $initialHeight;
-    font-size: 1rem;
-  }
-
-  &-btn {
-    position: absolute;
-    top: 0;
-    right: $gi-spacer-sm;
-    padding: $gi-spacer-sm;
-    height: 100%;
-  }
-
-  &-mask {
-    position: absolute;
-    top: 0;
-    left: 0;
-    opacity: 0;
-    pointer-events: none;
-  }
 }
 
 @include mobile {
@@ -206,6 +162,7 @@ import Message from './Message.vue'
 import MessageInteractive from './MessageInteractive.vue'
 import MessageNotification from './MessageNotification.vue'
 import ConversationGreetings from '../../containers/Chatroom/ConversationGreetings.vue'
+import SendArea from './SendArea.vue'
 import { currentUserId } from '../../containers/Chatroom/fakeStore.js'
 
 export default {
@@ -221,7 +178,8 @@ export default {
     Message,
     MessageInteractive,
     MessageNotification,
-    ConversationGreetings
+    ConversationGreetings,
+    SendArea
   },
   props: {
     info: {
@@ -233,19 +191,13 @@ export default {
   data () {
     return {
       config: {
-        sendPlaceholder: [this.L('Be nice to'), this.L('Be cool to'), this.L('Have fun with')],
-        sendBtnWidth: null,
-        sendInputHeight: null
+        sendPlaceholder: [this.L('Be nice to'), this.L('Be cool to'), this.L('Have fun with')]
       },
       ephemeral: {
         conversationIsLoading: false,
         pendingMessages: []
       }
     }
-  },
-  created () {
-    this.config.sendBtnWidth = this.$refs.sendBtn.offsetWidth
-    this.config.sendInputHeight = this.$refs.sendInput.offsetHeight
   },
   updated () {
     if (this.info.title) {
@@ -276,20 +228,6 @@ export default {
     },
     customSendPlaceholder () {
       return `${this.config.sendPlaceholder[Math.floor(Math.random() * this.config.sendPlaceholder.length)]} ${this.info.title}`
-    },
-    textAreaStyles () {
-      // TODO CONTINUE HERE...
-      return {
-        paddingRight: '100px',
-        height: '80px'
-      }
-      //
-      // const initialHeight = this.ephemeral.initialSendInputHeight
-      // const rows = Number.round(this.$refs.sendMask.offsetHeigth / initialHeight)
-      // return {
-      //   paddingRight: this.$refs.sendButton.offsetWidth,
-      //   height: initialHeight * rows
-      // }
     }
   },
   methods: {
@@ -319,15 +257,14 @@ export default {
       }, 2000)
       console.log('TODO $store - retry sending a message')
     },
-    handleSendClick () {
+    handleSendClick (message) {
       console.log('sending...')
       const index = this.ephemeral.pendingMessages.length
+
       this.ephemeral.pendingMessages.push({
         from: this.currentUserAttr.id,
-        text: this.$refs.sendInput.value
+        text: message
       })
-
-      this.$refs.sendInput.value = ''
 
       setTimeout(() => {
         console.log('TODO $store send message')
