@@ -7,7 +7,7 @@ There are 4 components that composes these transitions:
 - the `Target` - Income Details modal
 - the `Masker` - A simple blue empty box
 
-The secret of this animation is the `<masker>`:  It's responsible for the major
+The secret of this animation is the `<masker>` - it's responsible for the major
 part of the animation.
 Here's what happens when the user clicks on a Trigger:
   1. `Trigger` fades out.
@@ -17,13 +17,13 @@ Here's what happens when the user clicks on a Trigger:
   4. `Masker` animates to take the `Target` dimensions/position
   5. Once that animation is finished `Masker` fades out and `Target` fades in at the same time.
 
-When closing the Target the same animation happens in the inverted order but slightly faster.
+When closing the Target, the same animation happens in the inverted order but slightly faster.
 
 Entrance animations are designed to be smoother than exits so the user better
 understands the context of the new content easier (less cognitive process).
 The exit time is faster than the entrance time because the user already knows
 the original context.
-If both entrance/exit animations take the same time the user will percive the exit animation
+If both entrance/exit animations take the same time the user will perceive the exit animation
 as being slower that the entrance, this is a way to trick his/her mind.
 This time is cutted at the Trigger fadeOut moment.
 */
@@ -39,7 +39,7 @@ const animationMixins = {
         fadeBack: 50,
         // Masker time to animate between the Target and a Trigger (and vice versa)
         maskerTime: 250,
-        // The time for Target/Trigger to fadeIn + maskerTime
+        // A little big less than the time for Target/Trigger to fadeIn + maskerTime (adjust to the eye perception)
         delay: 300
       }
     }

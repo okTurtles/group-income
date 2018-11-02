@@ -9,7 +9,7 @@
 .c-mask {
   pointer-events: none;
   position: fixed;
-  opacity: 0.01;
+  opacity: 0;
   background: $primary-bg-s;
   border-radius: $radius;
   z-index: $gi-zindex-mask;

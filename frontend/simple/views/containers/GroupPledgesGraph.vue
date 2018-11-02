@@ -41,7 +41,7 @@
           <i class="fa fa-info-circle is-size-6 has-text-tertiary c-legendItem-icon"></i>
 
           <template slot="tooltip">
-            <strong class="has-text-weight-bold">Income Incomplete</strong>
+            <i18n tag="strong" class="has-text-weight-bold">Income Incomplete</i18n>
             <i18n tag="p" class="has-text-weight-normal" :args="{ amount: `${fakeStore.currency}${graphData.userIncomeNeeded}` }">
               The group at the moment is not pledging enough to cover everyone's mincome.
               So you'll receive only a part instead of the {amount} you need.
