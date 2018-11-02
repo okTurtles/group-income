@@ -14,7 +14,10 @@ export default {
     isActive: Boolean
   },
   mounted () {
-    global.addEventListener('keyup', this.handleKeyUp)
+    window.addEventListener('keyup', this.handleKeyUp)
+  },
+  beforeDestroy () {
+    window.removeEventListener('keyup', this.handleKeyUp)
   },
   methods: {
     handleCloseClick () {
