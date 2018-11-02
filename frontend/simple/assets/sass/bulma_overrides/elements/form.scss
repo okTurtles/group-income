@@ -40,6 +40,20 @@ $gi-input-checked-size: 0.4rem;
   }
 }
 
+.textarea {
+  padding: $gi-spacer-sm;
+  line-height: 1.3;
+
+  &:hover {
+    border-color: $grey;
+  }
+
+  &:focus {
+    border-color: $primary;
+    outline: $input-focus-box-shadow-size;
+  }
+}
+
 // Flat inputs like in "Contributions" page
 // TODO - review forms consistence in a future PR
 .field.gi-has-addons {

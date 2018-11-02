@@ -36,7 +36,7 @@
         </template>
       </chat-header>
 
-      <div class="c-body is-flex">
+      <div class="c-body is-flex" :style="bodyStyles">
         <loading v-if="loading" />
         <template v-else>
           <div class="c-body-conversation" ref="conversation">
@@ -68,7 +68,7 @@
         </template>
       </div>
       <div class="c-footer">
-        <send-area @send="handleSendClick" />
+        <send-area @send="handleSendClick" @heightUpdate="handleUpdateSendAreaHeight" />
       </div>
     </template>
   </div>
@@ -98,7 +98,7 @@
   &-conversation {
     max-height: 100%;
     overflow: scroll;
-    padding: $gi-spacer-lg 0 $gi-spacer;
+    padding: $gi-spacer-lg 0;
     -webkit-overflow-scrolling: touch;
   }
 }
@@ -148,6 +148,10 @@
     padding: $gi-spacer;
   }
 
+  .c-body {
+    padding-bottom: 0;
+  }
+
   .c-footer {
     padding: 0 $gi-spacer $gi-spacer;
   }
@@ -194,6 +198,7 @@ export default {
         sendPlaceholder: [this.L('Be nice to'), this.L('Be cool to'), this.L('Have fun with')]
       },
       ephemeral: {
+        bodyPaddingBottom: '',
         conversationIsLoading: false,
         pendingMessages: []
       }
@@ -213,6 +218,15 @@ export default {
     }
   },
   computed: {
+    bodyStyles () {
+      // if (mobile) {
+      //   return {}
+      // }
+
+      return {
+        paddingBottom: this.ephemeral.bodyPaddingBottom + 'px'
+      }
+    },
     isSameSender () {
       return this.conversation.map((message, key) => {
         const sameAsPrev = message.from === (this.conversation[key - 1] && this.conversation[key - 1].from)
@@ -248,14 +262,9 @@ export default {
         ? this.currentUserAttr.picture
         : this.info.participants[fromId].picture
     },
-    handleMessageRetry (index) {
-      this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', false)
-
-      setTimeout(() => {
-        console.log('TODO $store send message')
-        this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', true)
-      }, 2000)
-      console.log('TODO $store - retry sending a message')
+    handleUpdateSendAreaHeight (height) {
+      // So conversation is always above the footer.
+      this.ephemeral.bodyPaddingBottom = height
     },
     handleSendClick (message) {
       console.log('sending...')
@@ -270,6 +279,15 @@ export default {
         console.log('TODO $store send message')
         this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', true)
       }, 2000)
+    },
+    handleMessageRetry (index) {
+      this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', false)
+
+      setTimeout(() => {
+        console.log('TODO $store send message')
+        this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', true)
+      }, 2000)
+      console.log('TODO $store - retry sending a message')
     }
   }
 }

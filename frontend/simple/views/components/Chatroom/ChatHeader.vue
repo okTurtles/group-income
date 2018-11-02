@@ -57,10 +57,7 @@ $headerHeight: 4rem;
     left: 0;
     width: 100vw;
     top: 0;
-
-    .c-header-top {
-      padding-left: 0;
-    }
+    padding-left: 0;
 
     .c-is-mainPage {
       padding-left: $gi-spacer-lg + $gi-spacer; // Space for menu toggle
