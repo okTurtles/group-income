@@ -112,7 +112,7 @@ const animationMixins = {
     maskEnter (el, complete) {
       console.log('maskLeave')
 
-      this.maskerTakesImediatelyTheShapeOf(el, 'trigger', this.config.fade)
+      this.maskerTakesImmediatelyTheShapeOf(el, 'trigger', this.config.fade)
       this.maskerAnimatesToTheShapeOf(el, 'target', complete)
     },
 
@@ -120,12 +120,12 @@ const animationMixins = {
     maskLeave (el, complete) {
       console.log('maskEnter')
 
-      this.maskerTakesImediatelyTheShapeOf(el, 'target', this.config.fadeBack)
+      this.maskerTakesImmediatelyTheShapeOf(el, 'target', this.config.fadeBack)
       this.maskerAnimatesToTheShapeOf(el, 'trigger', complete)
     },
 
     // -- Animation utils
-    maskerTakesImediatelyTheShapeOf (maskerEl, originalElement, duration) {
+    maskerTakesImmediatelyTheShapeOf (maskerEl, originalElement, duration) {
       // Masker takes imediately the specs (dimensions and position)
       // of the originalElement (Trigger or Target) size...
       Velocity(maskerEl, { opacity: 0, ...this.getSpecsOf(originalElement) }, { duration: 0 })
