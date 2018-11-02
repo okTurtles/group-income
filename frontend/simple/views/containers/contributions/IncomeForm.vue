@@ -24,7 +24,7 @@
               </div>
             </div>
 
-            <input-amount v-if="needsIncome" key="income"
+            <input-amount v-if="needsIncome"
               label="What's your monthly income?"
               :error="inputIncomeError"
               @input="verifyInputIncome"
@@ -37,7 +37,7 @@
               </template>
             </input-amount>
 
-            <input-amount v-else-if="canPledge" key="pledge"
+            <input-amount v-else-if="canPledge"
               label="How much do you want to pledge?"
               :error="$v.form.pledge.$error ? this.infoRequired : null"
               @input="verifyInputPledge"
