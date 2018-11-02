@@ -4,7 +4,7 @@
       ref="textarea"
       :disabled="loading"
       :placeholder="customSendPlaceholder"
-      :style="textAreaStyles"
+      :style="textareaStyles"
       @keyup="handleKeyup"
       v-bind="$attrs"
     ></textarea>
@@ -14,7 +14,7 @@
         @click="handleSendClick"
       >Send</i18n>
     </div>
-    <div class="c-send-mask" ref="mask"></div>
+    <div class="c-send-mask" ref="mask" :style="maskStyles"></div>
   </div>
 </template>
 <style lang="scss" scoped>
@@ -33,20 +33,12 @@ $initialHeight: 2.5rem;
     border-radius: $radius;
     padding: $gi-spacer-sm $gi-spacer-lg $gi-spacer-xs $gi-spacer-sm;
     line-height: 1.3;
-    height: $initialHeight;
+    min-height: $initialHeight;
     font-size: 1rem;
   }
 
-  &-actions {
-    position: absolute;
-    top: 0;
-    right: $gi-spacer-sm;
-    height: 100%;
-  }
-
-  &-btn {
-    padding: $gi-spacer-sm;
-    height: 100%;
+  &-textarea {
+    height: $initialHeight;
   }
 
   &-mask {
@@ -56,6 +48,19 @@ $initialHeight: 2.5rem;
     opacity: 0;
     pointer-events: none;
     height: auto;
+  }
+
+  &-actions {
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: 100%;
+  }
+
+  &-btn {
+    padding: $gi-spacer-sm;
+    padding-right: $gi-spacer;
+    height: 100%;
   }
 }
 </style>
@@ -76,21 +81,20 @@ export default {
     }
   },
   mounted () {
-  //   console.log('...')
-  //   this.config.actionsWidth = this.$refs.actions.offsetWidth
-  //   this.config.textareaInitialHeight = this.$refs.textarea.offsetHeight
-  //
     this.$refs.mask.textContent = this.$refs.textarea.value
     this.ephemeral.maskHeight = this.$refs.mask.offsetHeight
     this.ephemeral.actionsWidth = this.$refs.actions.offsetWidth
   },
   computed: {
-    textAreaStyles () {
-      console.log('calculate textarea')
-      // alMOST. add padding to mask and same font size
+    textareaStyles () {
       return {
         paddingRight: this.ephemeral.actionsWidth + 'px',
         height: this.ephemeral.maskHeight + 'px'
+      }
+    },
+    maskStyles () {
+      return {
+        paddingRight: this.ephemeral.actionsWidth + 'px'
       }
     }
   },
