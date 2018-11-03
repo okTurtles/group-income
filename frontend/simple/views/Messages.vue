@@ -1,4 +1,11 @@
 <template>
+  <!--
+    TODO LIST
+    - Interactive messages (ex: voting in a proposal)
+    - Loading screen while a conversation is loading MVP "loading..."
+      - nice to have: conversation skeletons
+    - open recent message as default (no unread)
+  -->
   <chatroom
     :title="L('Messages')"
     :searchPlaceholder="L('Search for a person')"

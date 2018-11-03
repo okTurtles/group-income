@@ -37,7 +37,6 @@ $headerHeight: 4rem;
   background-color: $body-background-color;
 
   // fadeOutTop: a gradient mask to fadeout nav on scroll.
-  // TODO - apply the same effect on sidebar
   &::after {
     content: "";
     position: absolute;
@@ -49,18 +48,31 @@ $headerHeight: 4rem;
   }
 
   &-text {
-    max-width: 70%;
+    min-width: 0; // so truncate works correctly
+    flex-shrink: 1;
   }
 
-  @include mobile {
+  .c-is-mainPage {
+    padding-left: $gi-spacer-lg + $gi-spacer;
+
+    @include mobile {
+      padding-left: $gi-spacer-lg + $gi-spacer-sm;
+    }
+  }
+
+  @include phone {
     position: fixed;
     left: 0;
-    width: 100vw;
     top: 0;
+    width: 100vw;
     padding-left: 0;
+  }
+
+  @include tablet {
+    padding-left: $gi-spacer;
 
     .c-is-mainPage {
-      padding-left: $gi-spacer-lg + $gi-spacer; // Space for menu toggle
+      padding-left: $gi-spacer-sm;
     }
   }
 }

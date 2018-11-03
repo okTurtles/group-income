@@ -42,7 +42,7 @@
     flex-shrink: 0;
   }
 
-  @include tablet {
+  @include phablet {
     margin: $gi-spacer $gi-spacer 0;
   }
 }

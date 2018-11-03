@@ -1,5 +1,5 @@
 <template>
-  <div class="c-chatmain is-flex-tablet" :class="{ isActive: info.title }">
+  <div class="c-chatmain" :class="{ isActive: info.title }">
     <template v-if="info.title">
       <chat-header
         :title="info.title"
@@ -78,9 +78,10 @@
 
 .c-chatmain {
   position: relative;
-  flex-grow: 1;
-  flex-direction: column;
+  width: 100vw;
+  min-height: 100vh;
   background-color: $body-background-color;
+  z-index: $gi-zindex-sidebar;
 
   .c-actions-content {
     top: $gi-spacer-lg;
@@ -96,28 +97,16 @@
   justify-content: flex-end;
 
   &-conversation {
-    max-height: 100%;
-    overflow: scroll;
     padding: $gi-spacer-lg 0;
-    -webkit-overflow-scrolling: touch;
   }
 }
 
 .c-footer {
-  position: relative;
   padding: 0 $gi-spacer-sm $gi-spacer;
 }
 
-// TODO Media querie phone instead of mobile
-// TODO -- CONTINUE HERE.... verify everything for tablet/desktop
-
-@include mobile {
+@include phone {
   .c-chatmain {
-    width: 100vw;
-    min-height: 100vh;
-    z-index: $gi-zindex-header;
-    background: $body-background-color;
-
     /* A - MVP static way - show / hide conversation */
     display: none;
 
@@ -131,6 +120,8 @@
     */
   }
 
+  // NOTE: Prefer to fix the header & footer on mobile instead of using flexbox
+  // So the body scroll is the mobile browser's default instead of overflow::scroll inside flexbox
   .c-body {
     padding-top: 4rem;
     min-height: 100vh;
@@ -145,17 +136,32 @@
   }
 }
 
-@include tablet {
+@include phablet {
+  .c-chatmain {
+    width: auto;
+    display: flex;
+    flex-grow: 1;
+    flex-direction: column;
+  }
+
   .c-header {
     padding: $gi-spacer;
   }
 
-  .c-body-conversation {
-    padding-bottom: $gi-spacer;
+  .c-body {
+    &-conversation {
+      position: relative;
+      padding-bottom: $gi-spacer;
+      max-height: 100%;
+      overflow: scroll;
+      -webkit-overflow-scrolling: touch;
+    }
   }
 
   .c-footer {
-    padding: 0 $gi-spacer $gi-spacer;
+    position: relative;
+    padding-left: $gi-spacer;
+    padding-right: $gi-spacer;
   }
 }
 
@@ -197,7 +203,7 @@ export default {
   data () {
     return {
       config: {
-        isMobile: null,
+        isPhone: null,
         sendPlaceholder: [this.L('Be nice to'), this.L('Be cool to'), this.L('Have fun with')]
       },
       ephemeral: {
@@ -209,27 +215,26 @@ export default {
   },
   created () {
     // TODO create a global Vue Responsive just for media queries.
-    var mediaIsMobile = window.matchMedia('screen and (max-width: 768px)')
-    console.log('creating media...')
-    this.config.isMobile = mediaIsMobile.matches
-    mediaIsMobile.onchange = (e) => { this.config.isMobile = e.matches }
+    var mediaIsPhone = window.matchMedia('screen and (max-width: 639px)')
+    this.config.isPhone = mediaIsPhone.matches
+    mediaIsPhone.onchange = (e) => { this.config.isPhone = e.matches }
   },
   updated () {
     if (this.info.title) {
       // force conversation viewport to be at the bottom (most recent messages)
 
-      // ...when is on mobile
-      setTimeout(function () {
-        window.scroll(0, document.body.offsetHeight)
-      }, 0) // REVIEW: without timeout it scrolls before the DOM is ready... why?
-
-      // ...when is on tablet/desktop
-      this.$refs.conversation && this.$refs.conversation.scroll(0, this.$refs.conversation.scrollHeight)
+      if (this.config.isPhone) {
+        setTimeout(function () {
+          window.scroll(0, document.body.offsetHeight)
+        }, 0) // REVIEW: without timeout it scrolls before the DOM is ready... why?
+      } else {
+        this.$refs.conversation && this.$refs.conversation.scroll(0, this.$refs.conversation.scrollHeight)
+      }
     }
   },
   computed: {
     bodyStyles () {
-      if (!this.config.isMobile) { return {} }
+      if (!this.config.isPhone) { return {} }
 
       return {
         paddingBottom: this.ephemeral.bodyPaddingBottom

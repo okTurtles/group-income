@@ -1,5 +1,5 @@
 <template>
-  <div class="c-chatnav is-flex-tablet">
+  <div class="c-chatnav">
     <chat-header :title="title">
       <template slot="actions">
         <!-- TODO design search results on mobile - MVP be same as desktop -->
@@ -42,6 +42,17 @@
 @import "../../../assets/sass/theme/index";
 
 .c-chatnav {
+  display: flex;
+  flex-direction: column;
+  width: 14rem;
+  min-width: 14rem;
+  border-right: 1px solid $grey-lighter;
+
+  &-body {
+    overflow: auto;
+    padding: $gi-spacer-sm;
+  }
+
   .c-actions-content {
     top: $gi-spacer-lg;
     right: 0;
@@ -53,13 +64,9 @@
     margin: $gi-spacer $gi-spacer-sm 0;
     width: calc(100% - #{$gi-spacer});
   }
-
-  &-body {
-    padding: $gi-spacer-sm;
-  }
 }
 
-@include mobile {
+@include phone {
   .c-chatnav {
     position: fixed;
     top: 0;
@@ -69,22 +76,8 @@
     overflow: auto;
 
     &-body {
-      padding-top: 8rem;
+      padding-top: 8rem; // header + search
       padding-bottom: $gi-spacer-lg;
-    }
-  }
-}
-
-@include tablet {
-  .c-chatnav {
-    position: relative;
-    flex-direction: column;
-    width: 14rem;
-    min-width: 14rem;
-    border-right: 1px solid $grey-lighter;
-
-    &-body {
-      overflow: auto;
     }
   }
 }

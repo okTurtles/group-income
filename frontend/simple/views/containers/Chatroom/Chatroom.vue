@@ -13,14 +13,13 @@
 
 .c-chatroom {
   padding: 0;
-  display: block;
 
-  @include mobile {
+  @include phone {
+    display: block;
     min-height: auto;
   }
 
-  @include tablet {
-    display: flex;
+  @include phablet {
     flex-direction: row;
     align-items: stretch;
     height: 100vh;
