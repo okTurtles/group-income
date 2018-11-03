@@ -1,5 +1,5 @@
 <template>
-  <transition appear @enter="triggerEnter" @after-enter="transitionAfterEnter" @leave="triggerLeave">
+  <transition appear @enter="triggerEnter" @after-enter="transitionAfterEnter" @leave="triggerLeave" :css="false">
     <slot></slot>
   </transition>
 </template>
