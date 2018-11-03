@@ -50,7 +50,7 @@
               </template>
             </input-amount>
           </fieldset>
-          <fieldset class="fieldset" v-if="!!$v.form.option.$model">
+          <fieldset class="fieldset" v-if="!!form.option">
             <payment-methods :userIsGiver="canPledge" />
           </fieldset>
         </div>
@@ -213,7 +213,7 @@ export default {
 
         this.$emit('save', {
           canPledge,
-          amount: canPledge ? this.$v.form.pledge.$model : this.$v.form.income.$model
+          amount: canPledge ? this.form.pledge : this.form.income
         })
       }
     },
