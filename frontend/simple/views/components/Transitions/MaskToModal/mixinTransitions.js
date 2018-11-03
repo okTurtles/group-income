@@ -73,7 +73,7 @@ const animationMixins = {
     // -- Target animations
     targetEnter (el, complete) {
       console.log('targetEnter')
-      const targetInner = this.getTargetInnerWhen('enter')
+      const targetInner = this.getTargetCard()
       this.updateSpecsOf(targetInner, 'target')
 
       this.elementStartsInvisible(el)
@@ -92,7 +92,7 @@ const animationMixins = {
     },
     targetLeave (el, complete) {
       console.log('targetLeave')
-      const targetInner = this.getTargetInnerWhen('leave')
+      const targetInner = this.getTargetCard()
       this.updateSpecsOf(targetInner, 'target')
 
       // Fade out the targetInner after the user interaction...
@@ -147,21 +147,8 @@ const animationMixins = {
     getSpecsOf (elementId) {
       return this.MaskToModal.elementsSpecs[elementId]
     },
-    getTargetInnerWhen (scenario) {
-      // Why targetInner is .modal-card:
-      // We want the whole Target (modal) to fade, (modal-card + modal-background)
-      // but we want the Masker to take just the .modal-card shape instead
-
-      // - REVIEW: If you know a easier way to get the modal's .card element,
-      // please let me know how to do it!
-      if (scenario === 'enter') {
-        // this.targetCard is not available yet,
-        // so we need to access by using $slots.default
-        return this.$slots.default[0].componentInstance.$refs.modal.$refs.card
-      } else if (scenario === 'leave') {
-        // here the $slot doesn't exist, so we use the provided prop.targetCard
-        return this.targetCard.$refs.modal.$refs.card
-      }
+    getTargetCard () {
+      return this.$children[0].$refs.modal.$refs.card
     }
   }
 }

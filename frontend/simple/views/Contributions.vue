@@ -64,7 +64,7 @@
       ></message-missing-income>
     </trigger>
 
-    <target :targetCard="$refs.incomeForm">
+    <target>
       <income-form ref="incomeForm"
         v-if="ephemeral.isEditingIncome"
         @save="handleIncomeSave"
