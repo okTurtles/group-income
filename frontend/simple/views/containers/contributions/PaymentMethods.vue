@@ -76,7 +76,11 @@ export default {
     Tooltip
   },
   props: {
-    userIsGiver: Boolean
+    userIsGiver: Boolean,
+    active: {
+      type: String,
+      default: 'manual'
+    }
   },
   computed: {
     methodsAvailable () {
