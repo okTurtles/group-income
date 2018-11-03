@@ -44,7 +44,7 @@ $headerHeight: 4rem;
     bottom: -$gi-spacer;
     left: 0;
     height: $gi-spacer;
-    width: 100%;
+    width: calc(100% - #{$gi-spacer}); // so it doesn't get above scrollbar
     background: linear-gradient($body-background-color, rgba($body-background-color, 0));
   }
 

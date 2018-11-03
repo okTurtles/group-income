@@ -5,14 +5,15 @@
       :disabled="loading"
       :placeholder="customSendPlaceholder"
       :style="textareaStyles"
-      @keyup="handleKeyup"
+      @keydown="handleKeydown"
+      @keydown.enter.prevent
       v-bind="$attrs"
     ></textarea>
     <div class="level is-mobile is-marginless c-send-actions" ref="actions">
       <i18n tag="button"
         :class="{ isVisible }"
         class="button gi-is-unstyled has-text-weight-bold c-send-btn"
-        @click="handleSendClick"
+        @click="sendMessage"
       >Send</i18n>
     </div>
     <div class="textarea c-send-mask" ref="mask" :style="maskStyles"></div>
@@ -93,7 +94,7 @@ export default {
       ephemeral: {
         actionsWidth: '',
         maskHeight: '',
-        text: ''
+        textWithLines: ''
       }
     }
   },
@@ -101,7 +102,7 @@ export default {
     // Get actionsWidth to add a dynamic padding to textarea,
     // so those actions don't be above the textarea's value
     this.ephemeral.actionsWidth = this.$refs.actions.offsetWidth
-    this.updateTextareaHeight()
+    this.updateTextArea()
   },
   computed: {
     textareaStyles () {
@@ -116,31 +117,55 @@ export default {
       }
     },
     isVisible () {
-      return !!this.ephemeral.text
+      // REVIEW - should it always be visible or only when it has text?
+      return true || !!this.ephemeral.textWithLines
     }
   },
+  // TODO - MODAL USE keydown.esc
   methods: {
-    handleSendClick () {
-      this.$emit('send', this.$refs.textarea.value)
-      this.$refs.textarea.value = ''
-      this.updateText()
-      this.updateTextareaHeight()
+    handleKeydown (e) {
+      const enterKey = e.keyCode === 13
+
+      if ((e.shiftKey || e.altKey || e.ctrlKey) && enterKey) {
+        return this.createNewLine()
+      } else if (enterKey) {
+        return this.sendMessage()
+      } else {
+        this.updateTextArea()
+      }
     },
-    handleKeyup (e) {
-      this.updateText()
-      this.updateTextareaHeight()
+    updateTextWithLines () {
+      this.ephemeral.textWithLines = this.$refs.textarea.value.replace(/\n/g, '<br>')
     },
-    updateText () {
-      this.ephemeral.text = this.$refs.textarea.value
-    },
-    updateTextareaHeight () {
-      // TRICK: Use a invisible element (.mask) as placeholder to know the
-      // amount of space the user message takes. Then apply the maks's height
-      // to the textarea so it "dynamically" grows as she/he types
-      this.$refs.mask.textContent = this.$refs.textarea.value
+    updateTextArea () {
+      this.updateTextWithLines()
+
+      const length = this.ephemeral.textWithLines.length
+      const isLastLineEmpty = this.ephemeral.textWithLines.substring(length - 4, length) === '<br>'
+
+      // TRICK: Use an invisible element (.mask) as placeholder to know the
+      // amount of space the user message takes... (taking in account new lines)
+      this.$refs.mask.innerHTML = this.ephemeral.textWithLines + (isLastLineEmpty ? '.' : '')
+
+      // ...and apply the maks's height to the textarea so it dynamically grows as the user types
       this.ephemeral.maskHeight = this.$refs.mask.offsetHeight
 
-      this.$emit('heightUpdate', this.ephemeral.maskHeight)
+      // ... finaly inform the parent about the new height to adjust the layout
+      this.$emit('heightUpdate', this.ephemeral.maskHeight + 'px')
+    },
+    createNewLine () {
+      this.$refs.textarea.value += '\n'
+      this.updateTextArea()
+    },
+    sendMessage () {
+      if (!this.ephemeral.textWithLines) {
+        return false
+      }
+
+      this.updateTextWithLines()
+      this.$emit('send', this.ephemeral.textWithLines) // TODO remove first / last lines when empty
+      this.$refs.textarea.value = ''
+      this.updateTextArea()
     }
   }
 }

@@ -49,7 +49,7 @@
               :isSameSender="isSameSender[index]"
               :hideWho="false && info.type !== 'messages'"
             >
-              {{message.text}}
+              <span v-html="message.text" />
             </message>
 
             <message v-for="(message, index) in ephemeral.pendingMessages"
@@ -59,7 +59,7 @@
               :isSameSender="index > 0"
               @retry="handleMessageRetry(index)"
             >
-              {{message.text}}
+              <span v-html="message.text" />
             </message>
 
             <!-- TODO messageInteractive -->
@@ -108,6 +108,9 @@
   padding: 0 $gi-spacer-sm $gi-spacer;
 }
 
+// TODO Media querie phone instead of mobile
+// TODO -- CONTINUE HERE.... verify everything for tablet/desktop
+
 @include mobile {
   .c-chatmain {
     width: 100vw;
@@ -130,7 +133,6 @@
 
   .c-body {
     padding-top: 4rem;
-    padding-bottom: 4rem;
     min-height: 100vh;
   }
 
@@ -148,8 +150,8 @@
     padding: $gi-spacer;
   }
 
-  .c-body {
-    padding-bottom: 0;
+  .c-body-conversation {
+    padding-bottom: $gi-spacer;
   }
 
   .c-footer {
@@ -195,6 +197,7 @@ export default {
   data () {
     return {
       config: {
+        isMobile: null,
         sendPlaceholder: [this.L('Be nice to'), this.L('Be cool to'), this.L('Have fun with')]
       },
       ephemeral: {
@@ -203,6 +206,13 @@ export default {
         pendingMessages: []
       }
     }
+  },
+  created () {
+    // TODO create a global Vue Responsive just for media queries.
+    var mediaIsMobile = window.matchMedia('screen and (max-width: 768px)')
+    console.log('creating media...')
+    this.config.isMobile = mediaIsMobile.matches
+    mediaIsMobile.onchange = (e) => { this.config.isMobile = e.matches }
   },
   updated () {
     if (this.info.title) {
@@ -219,12 +229,10 @@ export default {
   },
   computed: {
     bodyStyles () {
-      // if (mobile) {
-      //   return {}
-      // }
+      if (!this.config.isMobile) { return {} }
 
       return {
-        paddingBottom: this.ephemeral.bodyPaddingBottom + 'px'
+        paddingBottom: this.ephemeral.bodyPaddingBottom
       }
     },
     isSameSender () {
