@@ -1,15 +1,22 @@
 <template>
   <div class="has-text-right">
-    <p class="min-income-label has-text-grey">Min Income</p>
-    <p class="min-income title is-1 is-marginless"
-      data-test="minIncome">
+    <p class="has-text-grey c-text">Min Income</p>
+    <p class="title is-2 is-marginless" data-test="minIncome">
       {{ currency }}{{ group.incomeProvided }}
     </p>
-    <a href="#" @click="openProposal">
+    <button class="gi-is-unstyled gi-is-link" @click="openProposal">
       <i18n>Propose change</i18n>
-    </a>
+    </button>
   </div>
 </template>
+<style lang="scss" scoped>
+@import "../../assets/sass/theme/index";
+
+.c-text {
+  margin-top: -$gi-spacer-sm*1.5;
+  margin-bottom: -$gi-spacer-sm;
+}
+</style>
 <script>
 import sbp from '../../../../shared/sbp.js'
 import { OPEN_MODAL } from '../../utils/events.js'

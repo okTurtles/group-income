@@ -95,3 +95,18 @@ body {
     }
   }
 }
+
+// Global Classes for SVG fills
+$fills: (
+  primary: $primary,
+  primary-light: $primary-light,
+  secondary: $secondary,
+  tertiary: $tertiary,
+  light: $light
+);
+
+@each $class, $color in $fills {
+  .gi-has-fill-#{$class} {
+    fill: $color;
+  }
+}

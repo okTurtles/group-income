@@ -1,70 +1,79 @@
 <template>
-  <main>
-    <div class="section is-hero">
-      <i18n tag="h1" class="title is-1 is-marginless">
-        Contributions
-      </i18n>
-      <i18n tag="p">See everyone’s contributions to the group and manage yours.</i18n>
+  <mask-to-modal tag="main">
+    <div class="section is-hero level">
+      <div>
+        <i18n tag="h1" class="title is-1 is-marginless">
+          Contributions
+        </i18n>
+        <i18n tag="p">See everyone’s contributions to the group and manage yours.</i18n>
+      </div>
+      <div>
+        <groups-min-income :group="currentGroupState" />
+      </div>
     </div>
 
-    <div class="section columns is-desktop is-multiline c-grid">
-      <section class="column">
+    <section class="section columns is-desktop is-multiline c-grid">
+      <div class="column">
         <i18n tag="h2" class="title is-3">Receiving</i18n>
 
         <ul class="c-ul">
-          <contribution
-            v-for="contribution, index in receiving"
-            :variant="isMonetary(contribution.type) ? 'editable' : undefined"
-            :isMonetary="isMonetary(contribution.type)"
-            @interaction="showReceivingSettings"
-          >
-            <span v-html="textReceivingContribution(contribution, index)"></span>
-            <template v-if="hasWhoElse(contribution.who)">
-              <i18n>and</i18n>
-              <tooltip>
-                <button class="gi-is-unstyled gi-is-link-inherit">{{contribution.who.length - 1}}<i18n>others</i18n></button>
-                <template slot="tooltip">
-                  <p v-for="name, index in contribution.who" v-if="index > 0">{{name}}</p>
-                </template>
-              </tooltip>
-            </template>
+          <contribution v-for="contribution in fakeStore.receiving.nonMonetary">
+            <span v-html="textReceivingNonMonetary(contribution)"></span>
+            <text-who :who="contribution.who"></text-who>
           </contribution>
-        </ul>
-      </section>
 
-      <section class="column">
+          <trigger>
+            <contribution v-if="doesReceiveMonetary" variant="editable" isMonetary @interaction="handleFormTriggerClick">
+              <span v-html="textReceivingMonetary(fakeStore.receiving.monetary)"></span>
+              <text-who :who="fakeStore.groupMembersPledging"></text-who>
+              <i18n>each month</i18n>
+            </contribution>
+          </trigger>
+        </ul>
+      </div>
+
+      <div class="column">
         <i18n tag="h2" class="title is-3">Giving</i18n>
 
-        <ul class="c-ul" v-if="givesNonMonetary || givesMonetary">
-          <contribution v-for="contribution, index in giving.nonMonetary"
+        <ul class="c-ul">
+          <contribution v-for="contribution, index in fakeStore.giving.nonMonetary"
             class="has-text-weight-bold"
             variant="editable"
             @new-value="(value) => handleEditNonMonetary(value, index)"
           >{{contribution}}</contribution>
 
-          <contribution v-if="givesMonetary"
-            variant="editable"
-            isMonetary
-            @interaction="showGivingMincomeSettings"
-          >
-            <span class="has-text-weight-bold">{{currency}}{{giving.monetary}}</span> <i18n>to other's mincome</i18n>
-          </contribution>
-        </ul>
-
-        <ul class="c-ul">
           <contribution variant="unfilled" @new-value="submitAddNonMonetary">
             <i class="fa fa-heart c-contribution-icon" aria-hidden="true"></i>
             <i18n>Add a non-monetary method</i18n>
           </contribution>
 
-          <contribution v-if="!givesMonetary" variant="unfilled" isMonetary @interaction="addMonetaryMethod">
-            <i class="fa fa-money c-contribution-icon" aria-hidden="true"></i>
-            <i18n>Add a monetary method</i18n>
-          </contribution>
+          <trigger>
+            <contribution v-if="doesGiveMonetary" variant="editable" isMonetary @interaction="handleFormTriggerClick">
+              <i18n class="has-text-weight-bold" :args="{amount:`${fakeStore.currency}${fakeStore.giving.monetary}`}">Pledging up to {amount}</i18n><i18n>to other's mincome</i18n>
+              <i18n tag="p" class="is-size-7" v-if="fakeStore.giving.monetary == 0" :args="{amount: '[$170]'}">(The group's average pledge is {amount})</i18n>
+            </contribution>
+          </trigger>
         </ul>
-      </section>
-    </div>
-  </main>
+      </div>
+    </section>
+
+    <trigger>
+      <message-missing-income class="section"
+        v-if="fakeStore.isFirstTime && !ephemeral.isEditingIncome"
+        @click="handleFormTriggerClick"
+      ></message-missing-income>
+    </trigger>
+
+    <target>
+      <income-form ref="incomeForm"
+        v-if="ephemeral.isEditingIncome"
+        @save="handleIncomeSave"
+        @cancel="handleIncomeCancel"
+      ></income-form>
+    </target>
+
+    <masker :isActive="ephemeral.isEditingIncome"></masker>
+  </mask-to-modal>
 </template>
 <style lang="scss" scoped>
 @import "../assets/sass/theme/index";
@@ -80,7 +89,7 @@
       padding-left: 0;
     }
 
-    &:last-child {
+    &:nth-child(2) {
       padding-right: 0;
     }
   }
@@ -91,108 +100,115 @@
 }
 </style>
 <script>
+import { mapGetters } from 'vuex'
 import currencies from './utils/currencies.js'
+import MessageMissingIncome from './containers/contributions/MessageMissingIncome.vue'
+import IncomeForm from './containers/contributions/IncomeForm.vue'
+import GroupsMinIncome from './components/GroupsMinIncome.vue'
 import Contribution from './components/Contribution.vue'
-import Tooltip from './components/Tooltip.vue'
+import TextWho from './components/TextWho.vue'
+import { MaskToModal, Trigger, Target, Masker } from './components/Transitions/MaskToModal/index.js'
 
 export default {
   name: 'Contributions',
   components: {
+    GroupsMinIncome,
     Contribution,
-    Tooltip
+    TextWho,
+    IncomeForm,
+    MessageMissingIncome,
+    MaskToModal,
+    Trigger,
+    Target,
+    Masker
   },
   data () {
     return {
-      currency: currencies['USD'],
-      receiving: [
-        {
-          type: 'no-monetary',
-          what: 'Cooking',
-          who: 'Lilia Bouvet'
+      ephemeral: {
+        isEditingIncome: false
+      },
+      // -- Hardcoded Data just for layout purposes:
+      fakeStore: {
+        currency: currencies['USD'],
+        isFirstTime: true, // true when user doesn't have any income details. It displays the 'Add Income Details' box
+        mincome: 500,
+        receiving: {
+          nonMonetary: [
+            {
+              what: 'Cooking',
+              who: 'Lilia Bouvet'
+            },
+            {
+              what: 'Cuteness',
+              who: ['Zoe Kim', 'Laurence E']
+            }
+          ],
+          monetary: null // Number - You can edit to see the receiving monetary contribution box (change isFirstTime to false too).
         },
-        {
-          type: 'no-monetary',
-          what: 'Cuteness',
-          who: ['Zoe Kim', 'Laurence E']
+        giving: {
+          nonMonetary: [], // ArrayOf(String)
+          monetary: null // Number - You can eddit to see the giving monetary contribution box (change isFirstTime to false too).
         },
-        {
-          type: 'monetary',
-          what: 500,
-          who: [
-            'Jack Fisher',
-            'Charlotte Doherty',
-            'Thomas Baker',
-            'Francisco Scott'
-          ]
-        }
-      ],
-      giving: {
-        nonMonetary: [], // ArrayOf(String)
-        monetary: null // Number
+        groupMembersPledging: [
+          'Jack Fisher',
+          'Charlotte Doherty',
+          'Thomas Baker',
+          'Francisco Scott'
+        ]
       }
     }
   },
   computed: {
-    givesMonetary () {
-      return !!this.giving.monetary
+    ...mapGetters([
+      'currentGroupState'
+    ]),
+    doesReceiveMonetary () {
+      return !!this.fakeStore.receiving.monetary && !this.ephemeral.isEditingIncome
     },
-    givesNonMonetary () {
-      return this.giving.nonMonetary.length > 0
+    doesGiveMonetary () {
+      return !!this.fakeStore.giving.monetary && !this.ephemeral.isEditingIncome
     }
   },
   methods: {
-    // Receiving
-    isMonetary (type) {
-      return type === 'monetary'
+    textReceivingNonMonetary (contribution) {
+      return this.L('<strong>{what}</strong> from', { what: contribution.what })
     },
-    getWho (who) {
-      if (!Array.isArray(who)) {
-        return who
-      }
-
-      return who.length > 3 ? who[0] : this.L('{who0} and {who1}', { who0: who[0], who1: who[1] })
-    },
-    textReceivingContribution (contribution, index) {
-      const who = this.getWho(contribution.who)
-
-      if (this.isMonetary(contribution.type)) {
-        return this.L('<strong>{what} from mincome</strong> from {who}', {
-          what: `${this.currency}${this.receiving[index].what}`,
-          who
-        })
-      } else {
-        return this.L('<strong>{what}</strong> from {who}', { what: contribution.what, who })
-      }
-    },
-    hasWhoElse (who) {
-      return Array.isArray(who) && who.length > 3
-    },
-    showGivingMincomeSettings () {
-      console.log('TODO UI - Show Giving Mincome Setting - next PR')
-    },
-    showReceivingSettings () {
-      console.log('TODO UI - Show Receiving Setting - next PR')
+    textReceivingMonetary (contribution) {
+      return this.L('<strong>Up to {amount} for mincome</strong> from', {
+        amount: `${this.fakeStore.currency}${contribution}`
+      })
     },
 
-    // Giving
     submitAddNonMonetary (value) {
-      console.log('TODO BE - submitAddNonMonetary')
-      this.giving.nonMonetary.push(value)
+      console.log('TODO $store - submitAddNonMonetary')
+      this.fakeStore.giving.nonMonetary.push(value) // Hardcoded Solution
     },
     handleEditNonMonetary (value, index) {
       if (!value) {
-        console.log('TODO BE - deleteNonMonetary')
-        this.giving.nonMonetary.splice(index, 1)
+        console.log('TODO $store - deleteNonMonetary')
+        this.fakeStore.giving.nonMonetary.splice(index, 1) // Hardcoded Solution
       } else {
-        console.log('TODO BE - editNonMonetary')
-        // https://vuejs.org/v2/guide/list.html#Caveats
-        this.$set(this.giving.nonMonetary, index, value)
+        console.log('TODO $store - editNonMonetary')
+        this.$set(this.fakeStore.giving.nonMonetary, index, value) // Hardcoded Solution
       }
     },
+    handleFormTriggerClick () {
+      this.ephemeral.isEditingIncome = true
+    },
+    handleIncomeSave ({ canPledge, amount }) {
+      console.log('TODO $store - Save Income Details')
+      // -- Hardcoded Solution
+      this.fakeStore.receiving.monetary = canPledge ? null : this.fakeStore.mincome - amount
+      this.fakeStore.giving.monetary = canPledge ? amount : null
+      this.fakeStore.isFirstTime = false
 
-    // Giving Monetary Methods:
-    addMonetaryMethod () {
-      console.log('TODO UI - Show Monetary Settings Modal - next PR')
+      this.closeIncome()
+    },
+    handleIncomeCancel () {
+      this.closeIncome()
+    },
+    closeIncome () {
+      this.ephemeral.isEditingIncome = false
     }
   }
 }

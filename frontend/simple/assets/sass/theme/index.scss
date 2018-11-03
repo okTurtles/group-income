@@ -14,10 +14,19 @@ $gi-sidebar-width: 15rem;
 
 // z-index constants
 // Why: https://css-tricks.com/handling-z-index/
+$gi-zindex-mask: 60;
 $gi-zindex-tooltip: 50;
 $gi-zindex-modal: 40;
 $gi-zindex-header: 30;
 // $gi-zindex-something: **; create when needed
+
+// Breakpoints - Bulma doesn't have a smaller breakpoint
+// https://github.com/jgthms/bulma/issues/1677
+@mixin phone {
+  @media screen and (max-width: 479px) {
+    @content;
+  }
+}
 
 // TODO: Find a way to generated different import themes
 @import "kindergarten-professional";

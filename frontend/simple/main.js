@@ -12,7 +12,7 @@ import * as db from './model/database.js'
 import Sidebar from './views/containers/sidebar/Sidebar.vue'
 import store from './model/state.js'
 import { LOGOUT } from './utils/events'
-import Modal from './views/components/Modal/Modal.vue'
+import ModalDynamic from './views/components/Modal/ModalDynamic.vue'
 
 console.log('NODE_ENV:', process.env.NODE_ENV)
 
@@ -54,7 +54,7 @@ async function startApp () {
     router: router,
     components: {
       Sidebar,
-      Modal
+      ModalDynamic
     },
     computed: {
       showSidebar () {

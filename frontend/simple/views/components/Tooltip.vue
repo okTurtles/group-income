@@ -1,13 +1,14 @@
 <template>
-  <span @mouseenter="show" @mouseleave="hide">
+  <span class="c-wrapper" @mouseenter="show" @mouseleave="hide">
     <slot></slot>
     <div
       class="has-background-dark has-text-grey-lighter is-bottom is-size-7 c-tooltip"
       :style="stylesPosition"
-      v-if="isActive"
+      v-if="isActive || shouldShow"
       v-append-to-body
     >
-      <slot name="tooltip"></slot>
+      <template v-if="text">{{text}}</template>
+      <slot v-else name="tooltip"></slot>
     </div>
   </span>
 </template>
@@ -22,13 +23,13 @@
   position: absolute;
   top: 0;
   left: 0;
+  min-width: 3rem;
+  max-width: 12rem;
   border-radius: $radius;
   padding: $gi-spacer-sm;
   opacity: 0.95;
-  // TODO create SCSS variables with possible z-index (hover,modals, header, etc...)
-  // So we don't end up with 99999999 values
-  z-index: 50;
-  max-width: 12rem;
+  z-index: $gi-zindex-tooltip;
+  pointer-events: none;
 }
 </style>
 <script>
@@ -42,8 +43,12 @@ For now I've just did the needed API for this particular task but I think it's p
 export default {
   name: 'Tooltip',
   props: {
+    text: String,
+    // Force to show tooltip manually
+    shouldShow: Boolean,
     direction: {
       type: String,
+      validator: (value) => ['bottom', 'right', 'right-start'].includes(value),
       default: 'bottom'
     }
   },
@@ -61,7 +66,7 @@ export default {
       this.isActive = false
     },
     adjustPosition () {
-      this.trigger = this.trigger || this.$el.getBoundingClientRect()
+      this.trigger = this.$el.getBoundingClientRect()
       const { scrollX, scrollY } = window
       const { width, height, left, top } = this.trigger
       const spacing = 5

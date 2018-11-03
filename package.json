@@ -40,7 +40,9 @@
           "ignoreAtRules": [
             "include",
             "mixin",
-            "extend"
+            "extend",
+            "content",
+            "each"
           ]
         }
       ],
