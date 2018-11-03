@@ -61,7 +61,7 @@ $speed: 300ms;
   width: $gi-sidebar-width;
   height: 100vh;
   max-height: 100%;
-  z-index: $gi-zindex-header;
+  z-index: $gi-zindex-sidebar;
   flex-direction: column;
   // background: linear-gradient(210deg, rgba($primary, 0.15), $body-background-color 20rem); // diagonal gradient
   // background: linear-gradient(-90deg, $primary-bg-s, $body-background-color 15rem); // 90deg linear gradient
@@ -107,9 +107,10 @@ $speed: 300ms;
     left: 100%;
     padding: $gi-spacer*1.1 0 $gi-spacer;
     width: 2.8rem;
+    height: 60px;
     text-align: left;
     background-color: transparent;
-    transition: height 1ms $speed, width 1ms 1ms;
+    transition: height 1ms $speed, width 1ms $speed, background $speed/2;
     overflow: hidden;
 
     .fa {
@@ -128,11 +129,11 @@ $speed: 300ms;
 
     .is-active & {
       background-color: rgba(0, 0, 0, 0.7);
-      height: 100%;
-      width: 100%;
+      height: 100vh;
+      width: 200vh;
       top: 0;
       left: 100%;
-      transition: height 1ms 1ms width 1ms 1ms;
+      transition: height 1ms 1ms, width 1ms 1ms, background $speed/2;
 
       .c-logo,
       .fa-bars {
