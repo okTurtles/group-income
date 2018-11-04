@@ -58,7 +58,7 @@ async function startApp () {
     },
     computed: {
       showSidebar () {
-        return this.$store.state.loggedIn || true // NOTE UNDO THIS
+        return this.$store.state.loggedIn // NOTE return true to test on a iPhone
       }
     },
     store // make this and all child components aware of the new store

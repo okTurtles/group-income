@@ -38,18 +38,15 @@
 
       <div class="c-body is-flex" :style="bodyStyles">
         <div v-if="details.isLoading">
-          LOADING...
-          <!-- - TODO loading - nice to have: conversation skeletons -->
+          LOADING... <!-- TODO Design a cool skeleton loading -->
         </div>
         <template v-else>
           <div class="c-body-conversation" ref="conversation">
             <conversation-greetings />
-
             <component
               v-for="(message, index) in details.conversation"
               v-bind="getMessageAt[index]"
             />
-
             <message
               v-for="(message, index) in ephemeral.pendingMessages"
               v-bind="getPendingAt[index]"
@@ -115,8 +112,9 @@
     */
   }
 
-  // NOTE: Prefer to fix the header & footer on mobile instead of using flexbox
+  // NOTE: Mobile - prefer to fix the header & footer instead of using flexbox
   // So the body scroll is the mobile browser's default instead of overflow::scroll inside flexbox
+  // It's much more smooth, so better for the user experience
   .c-body {
     padding-top: 4rem;
     min-height: 100vh;
@@ -212,7 +210,7 @@ export default {
     }
   },
   created () {
-    // TODO create a global Vue Responsive just for media queries.
+    // TODO #492 create a global Vue Responsive just for media queries.
     var mediaIsPhone = window.matchMedia('screen and (max-width: 639px)')
     this.config.isPhone = mediaIsPhone.matches
     mediaIsPhone.onchange = (e) => { this.config.isPhone = e.matches }
@@ -220,7 +218,6 @@ export default {
   updated () {
     if (this.summary.title) {
       // force conversation viewport to be at the bottom (most recent messages)
-
       if (this.config.isPhone) {
         setTimeout(function () {
           window.scroll(0, document.body.offsetHeight)

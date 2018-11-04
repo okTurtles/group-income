@@ -57,13 +57,6 @@ export default {
   methods: {
     handleGroupSelect (hash) {
       this.$store.commit('setCurrentGroupId', hash)
-    },
-    handleMessageSelect (hash) {
-      console.log('TODO $store - update currentConversation')
-
-      // NOTE: ...until then I've used the $route as $store
-      // just for static mocked layout purposes
-      // maybe it could be sbp(), so this is not here... instead of $emit()
     }
   }
 }

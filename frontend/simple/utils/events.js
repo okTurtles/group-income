@@ -9,5 +9,3 @@ export const CLOSE_MODAL = 'close-modal'
 
 export const NEW_PAYMENT = 'new-payment'
 export const PAYMENT_UPDATE = 'payment-update'
-
-export const SET_CHAT_CONVERSATION = 'set-chat-conversation'

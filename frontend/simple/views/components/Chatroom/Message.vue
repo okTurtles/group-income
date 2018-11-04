@@ -84,7 +84,7 @@
   }
 
   .failed & {
-    color: $text-light; // REVIEW/OPTIMIZE Verify why $text-light is ligther than $text (correct) and .has-text-light is white (incorrect)... Bulma bug?
+    color: $text-light; // REVIEW/OPTIMIZE Verify why $text-light is ligther than $text color (dark grey - correct) and .has-text-light is white (incorrect)... Bulma bug?
     border: 1px dashed $danger;
     border-radius: $radius-large;
     padding: $gi-spacer-xs $gi-spacer-sm;

@@ -50,7 +50,7 @@ export default {
     }
   },
   created () {
-    // TODO create a global Vue Responsive just for media queries.
+    // TODO #492 create a global Vue Responsive just for media queries.
     var mediaIsPhone = window.matchMedia('screen and (max-width: 639px)')
     this.config.isPhone = mediaIsPhone.matches
     mediaIsPhone.onchange = (e) => { this.config.isPhone = e.matches }
@@ -93,7 +93,7 @@ export default {
         return {}
       }
 
-      // BUG - Can I set the title with vue-router? There's a small time interval
+      // BUG/REVIEW - Can I set the title with vue-router? There's a small time interval
       // between when the route changes (title undefined) and update it with the actual title
       document.title = users[id].displayName || users[id].name
 

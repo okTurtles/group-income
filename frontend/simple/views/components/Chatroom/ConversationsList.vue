@@ -1,6 +1,6 @@
 <template>
   <div class="c-list">
-    <!-- TODO/REVIEW - maybe this kind of text should be the style for .subtitle -->
+    <!-- REVIEW/TODO - make this kind of text should be the style for .subtitle -->
     <h2 class="has-text-grey is-uppercase c-subtitle">{{title}}</h2>
     <list hasMargin>
       <list-item v-for="id in list.order"

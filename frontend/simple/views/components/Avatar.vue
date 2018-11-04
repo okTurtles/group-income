@@ -1,4 +1,5 @@
 <template>
+  <!-- TODO replace all profile images around to use Avatar.vue -->
   <div v-if="showFallback" class="c-avatar" :class="{ [size]: size, hasMargin }" v-on="$listeners"
     :style="{ backgroundColor: fallbackBg }"
   />
@@ -22,7 +23,7 @@
   border-radius: 50%;
 
   &.hasMargin {
-    margin-right: $gi-spacer-sm; // TODO Review all avatar margins
+    margin-right: $gi-spacer-sm;
   }
 
   &.xs { @include size($gi-spacer); }

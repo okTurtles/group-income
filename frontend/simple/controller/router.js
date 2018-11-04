@@ -226,14 +226,14 @@ var router = new Router({
       component: Messages,
       meta: {
         title: 'Messages'
-      }
-      // beforeEnter: createEnterGuards(loginGuard) // NOTE UNDO THIS - is needed to test on a iPhone
+      },
+      beforeEnter: createEnterGuards(loginGuard) // NOTE comment this to test on a iPhone
     },
     {
       path: '/messages/:name',
       name: 'MessagesConversation',
-      component: Messages
-      // beforeEnter: createEnterGuards(loginGuard) // NOTE UNDO THIS - is needed to test on a iPhone
+      component: Messages,
+      beforeEnter: createEnterGuards(loginGuard) // NOTE comment this to test on a iPhone
       // BUG/REVIEW "CANNOT GET /:username" when username has "." in it
       // ex: messages/joe.kim doesnt work but messages/joekim works fine.
       // Possible Solution: https://router.vuejs.org/guide/essentials/history-mode.html#example-server-configurations
