@@ -1,34 +1,24 @@
 <template>
-  <!--
-    TODO LIST
-    - Interactive messages (ex: voting in a proposal)
-    - Loading screen while a conversation is loading MVP "loading..."
-      - nice to have: conversation skeletons
-    - open recent message as default (no unread)
-  -->
   <chatroom
     :title="L('Messages')"
     :searchPlaceholder="L('Search for a person')"
-    @search="handleSearch"
   >
-    <groups-shortcut class="c-list"
-      :groups="groupsByName"
-      @select="handleGroupSelect"
-    />
-    <conversations-list class="c-list"
-      routePath="/messages/"
-      routeName="messagesConversation"
-      type="messages"
-      :list="privateMessages"
-    />
+    <template slot="nav">
+      <groups-shortcut class="c-list"
+        :groups="groupsByName"
+        @select="handleGroupSelect"
+      />
+      <conversations-list
+        :title="L('Private Messages')"
+        routePath="/messages/"
+        :list="privateMessages"
+        @select="handleMessageSelect"
+      />
+    </template>
   </chatroom>
 </template>
 <style lang="scss" scoped>
 @import "../assets/sass/theme/index";
-
-.c-list:not(:first-child) {
-  margin: $gi-spacer*1.5 0;
-}
 
 </style>
 <script>
@@ -46,7 +36,12 @@ export default {
     ConversationsList
   },
   data () {
-    return {}
+    return {
+      ephemeral: {
+        summary: null,
+        details: null
+      }
+    }
   },
   computed: {
     ...mapGetters([
@@ -60,13 +55,15 @@ export default {
     }
   },
   methods: {
-    handleSearch (searchTerm) {
-      console.log('TODO search results with:', searchTerm)
-    },
     handleGroupSelect (hash) {
       this.$store.commit('setCurrentGroupId', hash)
+    },
+    handleMessageSelect (hash) {
+      console.log('TODO $store - update currentConversation')
+
+      // NOTE: ...until then I've used the $route as $store
+      // just for static mocked layout purposes
     }
-    // OPTIMIZE/TODO - update the store with the current conversationId when that happens
   }
 }
 </script>

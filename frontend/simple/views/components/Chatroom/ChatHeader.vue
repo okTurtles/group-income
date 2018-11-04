@@ -1,7 +1,7 @@
 <template>
-  <header class="c-header">
+  <header class="c-header" :class="[routerBack ? 'subPage': 'mainPage']">
     <div class="level is-mobile is-marginless c-header-top">
-      <div class="level-left c-header-text">
+      <div class="level-left c-header-left">
         <router-link
           class="button is-icon is-size-5 has-text-primary is-hidden-tablet c-back"
           v-if="routerBack"
@@ -9,7 +9,7 @@
         >
           <i class="fa fa-angle-left"></i>
         </router-link>
-        <div class="gi-is-ellipsis" :class="{ 'c-is-mainPage': !routerBack }">
+        <div class="gi-is-ellipsis c-header-text">
           <h2 class="title is-4 is-marginless gi-is-ellipsis" :class="{ 'is-5': routerBack }">
             {{ title }}
           </h2>
@@ -27,12 +27,10 @@
 </template>
 <style lang="scss" scoped>
 @import "../../../assets/sass/theme/index";
-$headerHeight: 4rem;
 
 .c-header {
   position: relative;
   padding: $gi-spacer $gi-spacer-sm;
-  min-height: $headerHeight;
   z-index: $gi-zindex-header;
   background-color: $body-background-color;
 
@@ -47,32 +45,32 @@ $headerHeight: 4rem;
     background: linear-gradient($body-background-color, rgba($body-background-color, 0));
   }
 
-  &-text {
+  &-left {
     min-width: 0; // so truncate works correctly
     flex-shrink: 1;
   }
 
-  .c-is-mainPage {
-    padding-left: $gi-spacer-lg + $gi-spacer;
+  &.mainPage {
+    .c-header-text {
+      padding-left: $gi-spacer-lg + $gi-spacer;
 
-    @include mobile {
-      padding-left: $gi-spacer-lg + $gi-spacer-sm;
+      @include mobile {
+        padding-left: $gi-spacer-lg + $gi-spacer-sm;
+      }
+
+      @include tablet {
+        padding-left: 0;
+      }
     }
   }
 
-  @include phone {
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 100vw;
-    padding-left: 0;
-  }
+  &.subPage {
+    .c-header-top {
+      align-items: flex-start;
+    }
 
-  @include tablet {
-    padding-left: $gi-spacer;
-
-    .c-is-mainPage {
-      padding-left: $gi-spacer-sm;
+    .c-header-text {
+      margin-top: $gi-spacer-xs;
     }
   }
 }
@@ -81,6 +79,23 @@ $headerHeight: 4rem;
   flex-shrink: 0;
   margin-right: $gi-spacer-sm;
 }
+
+@include phone {
+  .c-header {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    padding-left: 0;
+  }
+}
+
+@include tablet {
+  .c-header-top {
+    padding-left: $gi-spacer-sm;
+  }
+}
+
 </style>
 <script>
 export default {

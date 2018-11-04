@@ -10,10 +10,7 @@
       <span class="has-text-grey is-size-7 c-who" :class="{ 'sr-only': hideWho || isSameSender }">
         {{who}}
       </span>
-
-      <p class="c-slot">
-        <slot></slot>
-      </p>
+      <p class="c-text" v-html="text" />
     </div>
     <button class="button is-icon has-text-danger" v-if="variant === 'failed'" @click="$emit('retry')">
       <i class="fa fa-undo"></i>
@@ -74,7 +71,7 @@
   }
 }
 
-.c-slot {
+.c-text {
   max-width: 32rem;
   word-wrap: break-word;
 
@@ -108,6 +105,7 @@ export default {
     Avatar
   },
   props: {
+    text: String,
     who: String,
     avatar: String,
     variant: {

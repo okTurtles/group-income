@@ -7,9 +7,7 @@
       :alt="user.displayName || user.name"
     />
     <div>
-      <message-notification>
-        {{text}}
-      </message-notification>
+      <message-notification :text="text" />
     </div>
   </div>
 </template>

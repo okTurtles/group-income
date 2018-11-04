@@ -126,50 +126,19 @@ export const messageConversations = {
     },
     {
       from: '555',
-      text: 'I added you to my group'
+      text: 'I\'m adding you to my group'
     },
     {
       from: '555',
-      text: 'It\'s called Dreamas'
+      text: 'It\'s called Dreamears'
+    },
+    {
+      from: 'interactive',
+      id: 'invite123'
     },
     {
       from: currentUserId,
       text: 'Cool!'
-    }
-  ]
-}
-// ----------- GROUP CHAT --------- //
-
-// Group Chat - channels basic info
-export const groupChannels = {
-  c0: {
-    displayName: 'Lounge',
-    private: true,
-    description: 'The main channel where everyone can chat'
-  },
-  c1: {
-    displayName: 'Lounge',
-    private: true,
-    description: 'Lets plan our next summer road trip'
-  }
-}
-
-// Group Chat - each channel conversations
-export const channelConversations = {
-  c0: [
-    {
-      from: '444',
-      text: 'Hi everyone 👋'
-    }
-  ],
-  c1: [
-    {
-      from: '444',
-      text: 'Hi guys'
-    },
-    {
-      from: '444',
-      text: 'lets know where do you wanna go this summer: 🏕 or 🏂?'
     }
   ]
 }

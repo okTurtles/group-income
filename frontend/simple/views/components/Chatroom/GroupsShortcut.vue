@@ -91,7 +91,7 @@ import Avatar from '../Avatar.vue'
 import Badge from '../Badge.vue'
 
 export default {
-  name: 'Chatroom',
+  name: 'GroupsShortcut',
   components: {
     Avatar,
     Badge
@@ -106,7 +106,7 @@ export default {
   computed: {},
   methods: {
     fallbackBg (index) {
-      // TODO BE - implement colors/avatars for groups
+      // TODO $store - implement colors/avatars for groups
       return ['#958cfd', '#fd978c', '#62d27d'][index] || ''
     }
   }

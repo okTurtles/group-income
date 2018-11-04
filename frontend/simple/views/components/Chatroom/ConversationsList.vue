@@ -1,19 +1,20 @@
 <template>
-  <div>
-    <!-- REVIEW - maybe this kind of text should be the style for .subtitle -->
-    <i18n tag="h2" class="has-text-grey is-uppercase c-subtitle">Private Messages</i18n>
+  <div class="c-list">
+    <!-- TODO/REVIEW - maybe this kind of text should be the style for .subtitle -->
+    <h2 class="has-text-grey is-uppercase c-subtitle">{{title}}</h2>
     <list hasMargin>
 
       <!-- TODO - build GIBot item -->
-
-      <list-item tag="router-link" variant="solid"
-        v-for="id in list.order"
+      <list-item v-for="id in list.order"
+        tag="router-link"
+        variant="solid"
         :badgeCount="list.conversations[id].unreadCount"
-        :to="buildUrl(id)" append
+        :to="buildUrl(id)"
+        @click.native="$emit('select', id)"
       >
-        <!-- REVIEW - Create UserAvatarNamed.vue - places with this: SideBar Profile, Pay Group -->
         <div class="c-userAvatarNamed">
-          <avatar hasMargin size="sm"
+          <avatar hasMargin
+            size="sm"
             v-if="list.conversations[id].picture"
             :src="list.conversations[id].picture"
           />
@@ -25,6 +26,10 @@
 </template>
 <style lang="scss" scoped>
 @import "../../../assets/sass/theme/index";
+
+.c-list:not(:first-child) {
+  margin: $gi-spacer*1.5 0;
+}
 
 .c-subtitle {
   padding-left: $gi-spacer-sm;
@@ -47,51 +52,25 @@ export default {
     Avatar
   },
   props: {
+    title: String,
     /** List of conversations - shape: {
       order: [] - see fakeStore.js - privateMessagesSortedByTime,
       conversations: - see fakeStore.js - users or groupChannels
     }
     */
     list: Object,
-    /** Relative conversation's route - ex: '/messages/' */
-    routeName: {
-      type: String,
-      required: true
-    },
-    routePath: String,
-    type: {
-      type: String,
-      required: true,
-      validator (value) {
-        return ['messages', 'channel'].indexOf(value) !== -1
-      }
-    }
+    routePath: String
   },
   data () {
     return {}
   },
   computed: {},
   methods: {
-    // REVIEW - Maybe the url should be a prop
     buildUrl (conversationId) {
-      const { type, list, routeName } = this
+      const { list, routePath } = this
       const { name } = list.conversations[conversationId] || {}
 
-      // OPTIMIZE/NOTE -get messageConversation from $store.
-      // this should be the most correct way of handling the router-link...
-
-      /* return {
-        path: `${routePath}${name}`
-      } */
-
-      // NOTE: ...until then let's use $route params as a "store"...
-      return {
-        name: routeName,
-        params: {
-          name, // /:name
-          currentConversation: { type, id: conversationId }
-        }
-      }
+      return { path: `${routePath}${name}` }
     }
   }
 }

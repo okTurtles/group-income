@@ -1,9 +1,9 @@
 <template>
-  <div class="c-chatmain" :class="{ isActive: info.title }">
-    <template v-if="info.title">
+  <div class="c-chatmain" :class="{ isActive: summary.title }">
+    <template v-if="summary.title">
       <chat-header
-        :title="info.title"
-        :description="info.description"
+        :title="summary.title"
+        :description="summary.description"
         routerBack="/messages"
       >
         <template slot="actions">
@@ -37,38 +37,29 @@
       </chat-header>
 
       <div class="c-body is-flex" :style="bodyStyles">
-        <loading v-if="loading" />
+        <div v-if="details.isLoading">
+          LOADING...
+          <!-- - TODO "loading... - nice to have: conversation skeletons -->
+        </div>
         <template v-else>
           <div class="c-body-conversation" ref="conversation">
             <conversation-greetings />
 
-            <message v-for="(message, index) in conversation"
-              :who="who(message.from)"
-              :avatar="avatar(message.from)"
-              :variant="variant(message.from)"
-              :isSameSender="isSameSender[index]"
-              :hideWho="false && info.type !== 'messages'"
-            >
-              <span v-html="message.text" />
-            </message>
+            <component
+              v-for="(message, index) in details.conversation"
+              v-bind="getMessageAt[index]"
+            />
 
-            <message v-for="(message, index) in ephemeral.pendingMessages"
-              :who="who(message.from)"
-              :avatar="avatar(message.from)"
-              :variant="message.hasFailed ? 'failed' : 'sent'"
-              :isSameSender="index > 0"
-              @retry="handleMessageRetry(index)"
-            >
-              <span v-html="message.text" />
-            </message>
-
-            <!-- TODO messageInteractive -->
-            <!-- TODO messageNotification -->
+            <message
+              v-for="(message, index) in ephemeral.pendingMessages"
+              v-bind="getPendingAt[index]"
+              @retry="retryMessage(index)"
+            />
           </div>
         </template>
       </div>
       <div class="c-footer">
-        <send-area @send="handleSendClick" @heightUpdate="handleUpdateSendAreaHeight" />
+        <send-area @send="sendMessage" @heightUpdate="updateSendAreaHeight" />
       </div>
     </template>
   </div>
@@ -79,6 +70,7 @@
 .c-chatmain {
   position: relative;
   width: 100vw;
+  min-width: 0;
   min-height: 100vh;
   background-color: $body-background-color;
   z-index: $gi-zindex-sidebar;
@@ -140,8 +132,9 @@
   .c-chatmain {
     width: auto;
     display: flex;
-    flex-grow: 1;
     flex-direction: column;
+    flex-basis: 25rem;
+    flex-grow: 1;
   }
 
   .c-header {
@@ -194,11 +187,14 @@ export default {
     SendArea
   },
   props: {
-    info: {
+    summary: {
       type: Object,
       default: {}
     },
-    conversation: Array
+    details: {
+      type: Object,
+      default: {}
+    }
   },
   data () {
     return {
@@ -220,7 +216,7 @@ export default {
     mediaIsPhone.onchange = (e) => { this.config.isPhone = e.matches }
   },
   updated () {
-    if (this.info.title) {
+    if (this.summary.title) {
       // force conversation viewport to be at the bottom (most recent messages)
 
       if (this.config.isPhone) {
@@ -234,18 +230,46 @@ export default {
   },
   computed: {
     bodyStyles () {
-      if (!this.config.isPhone) { return {} }
-
-      return {
-        paddingBottom: this.ephemeral.bodyPaddingBottom
-      }
+      return this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
     },
-    isSameSender () {
-      return this.conversation.map((message, key) => {
-        const sameAsPrev = message.from === (this.conversation[key - 1] && this.conversation[key - 1].from)
+    getMessageAt () {
+      let isCurrentUser
 
-        return sameAsPrev
+      return this.details.conversation.map((message, index) => {
+        isCurrentUser = this.currentUserAttr.id === message.from
+
+        if (message.from === 'interactive') {
+          return {
+            is: MessageInteractive,
+            id: message.id
+          }
+        }
+        if (message.from === 'notification') {
+          return {
+            is: MessageNotification,
+            text: message.text
+          }
+        }
+
+        return {
+          is: Message,
+          text: message.text,
+          who: this.who(isCurrentUser, message.from),
+          avatar: this.avatar(isCurrentUser, message.from),
+          variant: this.variant(isCurrentUser),
+          // hideWho: this.summary.type !== 'messages',
+          isSameSender: this.isSameSender(index)
+        }
       })
+    },
+    getPendingAt () {
+      return this.ephemeral.pendingMessages.map((message, index) => ({
+        text: message.text,
+        who: this.who(true),
+        avatar: this.avatar(true),
+        variant: message.hasFailed ? 'failed' : 'sent',
+        isSameSender: index > 0
+      }))
     },
     currentUserAttr () {
       return {
@@ -253,33 +277,35 @@ export default {
         id: currentUserId
       }
     },
+    // TODO put back this placeholder
     customSendPlaceholder () {
-      return `${this.config.sendPlaceholder[Math.floor(Math.random() * this.config.sendPlaceholder.length)]} ${this.info.title}`
+      return `${this.config.sendPlaceholder[Math.floor(Math.random() * this.config.sendPlaceholder.length)]} ${this.summary.title}`
     }
   },
   methods: {
-    who (fromId = this.currentUserAttr.id) {
-      if (this.currentUserAttr.id === fromId) {
-        return this.currentUserAttr.displayName || this.currentUserAttr.name
-      }
-
-      const user = this.info.participants[fromId]
+    isCurrentUser (fromId) {
+      return this.currentUserAttr.id === fromId
+    },
+    who (isCurrentUser, fromId) {
+      const user = isCurrentUser ? this.currentUserAttr : this.details.participants[fromId]
 
       return user.displayName || user.name
     },
-    variant (fromId = this.currentUserAttr.id) {
-      return this.currentUserAttr.id === fromId ? 'sent' : 'received'
+    variant (isCurrentUser) {
+      return isCurrentUser ? 'sent' : 'received'
     },
-    avatar (fromId = this.currentUserAttr.id) {
-      return this.currentUserAttr.id === fromId
-        ? this.currentUserAttr.picture
-        : this.info.participants[fromId].picture
+    avatar (isCurrentUser, fromId) {
+      return isCurrentUser ? this.currentUserAttr.picture : this.details.participants[fromId].picture
     },
-    handleUpdateSendAreaHeight (height) {
-      // So conversation is always above the footer.
+    isSameSender (index) {
+      if (!this.details.conversation[index - 1]) { return false }
+      return this.details.conversation[index].from === this.details.conversation[index - 1].from
+    },
+
+    updateSendAreaHeight (height) {
       this.ephemeral.bodyPaddingBottom = height
     },
-    handleSendClick (message) {
+    sendMessage (message) {
       console.log('sending...')
       const index = this.ephemeral.pendingMessages.length
 
@@ -293,7 +319,7 @@ export default {
         this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', true)
       }, 2000)
     },
-    handleMessageRetry (index) {
+    retryMessage (index) {
       this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', false)
 
       setTimeout(() => {

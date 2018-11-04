@@ -24,7 +24,6 @@ $gi-zindex-header: 30;
 // Breakpoints - Bulma doesn't have a smaller breakpoint
 // https://github.com/jgthms/bulma/issues/1677
 @mixin phone {
-  // @media screen and (max-width: 479px) {
   @media screen and (max-width: 639px) {
     @content;
   }

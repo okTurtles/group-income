@@ -31,10 +31,13 @@
       <input class="input c-chatnav-search" type="text"
         v-if="searchPlaceholder"
         :placeholder="searchPlaceholder"
-        @keyup="(e) => $emit('search', e.target.value)" />
+        @keyup="handleSearch" />
     </chat-header>
     <div class="c-chatnav-body">
-      <slot><!-- Content for each chatNav is up to the parent --></slot>
+      <template v-if="ephemeral.isSearching">
+        Search results for "{{ ephemeral.searchTerm }}" to be done...
+      </template>
+      <slot v-else><!-- Content for each chatNav is up to the parent --></slot>
     </div>
   </div>
 </template>
@@ -44,14 +47,8 @@
 .c-chatnav {
   display: flex;
   flex-direction: column;
-  width: 14rem;
-  min-width: 14rem;
+  width: 15rem;
   border-right: 1px solid $grey-lighter;
-
-  &-body {
-    overflow: auto;
-    padding: $gi-spacer-sm;
-  }
 
   .c-actions-content {
     top: $gi-spacer-lg;
@@ -61,8 +58,12 @@
   }
 
   &-search {
-    margin: $gi-spacer $gi-spacer-sm 0;
-    width: calc(100% - #{$gi-spacer});
+    margin-top: $gi-spacer;
+  }
+
+  &-body {
+    overflow: auto;
+    padding: $gi-spacer-sm;
   }
 }
 
@@ -74,6 +75,11 @@
     width: 100vw;
     max-height: 100vh;
     overflow: auto;
+
+    &-search {
+      margin: $gi-spacer $gi-spacer-sm 0;
+      width: calc(100% - #{$gi-spacer});
+    }
 
     &-body {
       padding-top: 8rem; // header + search
@@ -103,9 +109,24 @@ export default {
     searchPlaceholder: String
   },
   data () {
-    return {}
+    return {
+      ephemeral: {
+        isSearching: false,
+        searchTerm: null
+      }
+    }
   },
   computed: {},
-  methods: {}
+  methods: {
+    handleSearch (e) {
+      if (!e.target.value) {
+        this.ephemeral.isSearching = false
+      } else {
+        console.log('TODO $store - search results...')
+        this.ephemeral.isSearching = true
+      }
+      this.ephemeral.searchTerm = e.target.value
+    }
+  }
 }
 </script>

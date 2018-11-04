@@ -1,26 +1,30 @@
 <template>
-  <div class="c-message">
-    <slot></slot>
-  </div>
+  <div class="c-message" v-html="text" />
 </template>
 <style lang="scss" scoped>
 @import "../../../assets/sass/theme/index";
 
 .c-message {
   display: inline-block;
-  margin: $gi-spacer auto 0;
+  margin: $gi-spacer $gi-spacer 0;
+  padding: $gi-spacer-xs $gi-spacer-sm;
   text-align: center;
-  max-width: 20rem;
+  max-width: 32rem;
   background-color: $light;
   border-radius: $radius-large;
-  padding: $gi-spacer-xs $gi-spacer-sm;
+
+  @include phablet {
+    margin: $gi-spacer $gi-spacer 0;
+  }
 }
 </style>
 <script>
 export default {
   name: 'MessageNotification',
   components: {},
-  props: {},
+  props: {
+    text: String
+  },
   data () {
     return {}
   },
