@@ -54,7 +54,7 @@
     background-color: $primary-bg-a;
 
     &.solid {
-      background-color: $light;
+      background-color: $lighter;
     }
 
     .fa {

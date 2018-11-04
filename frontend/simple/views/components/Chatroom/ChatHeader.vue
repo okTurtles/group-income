@@ -54,7 +54,7 @@
     .c-header-text {
       padding-left: $gi-spacer-lg + $gi-spacer;
 
-      @include mobile {
+      @include phablet {
         padding-left: $gi-spacer-lg + $gi-spacer-sm;
       }
 

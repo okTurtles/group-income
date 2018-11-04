@@ -39,7 +39,7 @@
       <div class="c-body is-flex" :style="bodyStyles">
         <div v-if="details.isLoading">
           LOADING...
-          <!-- - TODO "loading... - nice to have: conversation skeletons -->
+          <!-- - TODO loading - nice to have: conversation skeletons -->
         </div>
         <template v-else>
           <div class="c-body-conversation" ref="conversation">
@@ -59,7 +59,10 @@
         </template>
       </div>
       <div class="c-footer">
-        <send-area @send="sendMessage" @heightUpdate="updateSendAreaHeight" />
+        <send-area :title="summary.title"
+          @send="sendMessage"
+          @heightUpdate="updateSendAreaHeight"
+        />
       </div>
     </template>
   </div>
@@ -199,8 +202,7 @@ export default {
   data () {
     return {
       config: {
-        isPhone: null,
-        sendPlaceholder: [this.L('Be nice to'), this.L('Be cool to'), this.L('Have fun with')]
+        isPhone: null
       },
       ephemeral: {
         bodyPaddingBottom: '',
@@ -276,10 +278,6 @@ export default {
         ...this.$store.getters.currentUserIdentityContract.attributes,
         id: currentUserId
       }
-    },
-    // TODO put back this placeholder
-    customSendPlaceholder () {
-      return `${this.config.sendPlaceholder[Math.floor(Math.random() * this.config.sendPlaceholder.length)]} ${this.summary.title}`
     }
   },
   methods: {

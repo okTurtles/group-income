@@ -112,7 +112,11 @@ export const messageConversations = {
     },
     {
       from: '444',
-      text: 'this is genial!'
+      text: 'wow'
+    },
+    {
+      from: '444',
+      text: 'this is funny!'
     }
   ],
   555: [
@@ -139,6 +143,16 @@ export const messageConversations = {
     {
       from: currentUserId,
       text: 'Cool!'
+    }
+  ],
+  111: [
+    {
+      from: currentUserId,
+      text: 'Hey there'
+    },
+    {
+      from: currentUserId,
+      text: 'Cool you joined GI too 🙌'
     }
   ]
 }

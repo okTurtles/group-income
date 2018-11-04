@@ -10,7 +10,7 @@
   padding: $gi-spacer-xs $gi-spacer-sm;
   text-align: center;
   max-width: 32rem;
-  background-color: $light;
+  background-color: $lighter;
   border-radius: $radius-large;
 
   @include phablet {

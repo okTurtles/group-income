@@ -91,6 +91,9 @@ export default {
   },
   data () {
     return {
+      config: {
+        sendPlaceholder: [this.L('Be nice to'), this.L('Be cool to'), this.L('Have fun with')]
+      },
       ephemeral: {
         actionsWidth: '',
         maskHeight: '',
@@ -118,7 +121,10 @@ export default {
     },
     isVisible () {
       // REVIEW - should it always be visible or only when it has text?
-      return true || !!this.ephemeral.textWithLines
+      return true // !!this.ephemeral.textWithLines
+    },
+    customSendPlaceholder () {
+      return `${this.config.sendPlaceholder[Math.floor(Math.random() * this.config.sendPlaceholder.length)]} ${this.title}`
     }
   },
   // TODO - MODAL USE keydown.esc

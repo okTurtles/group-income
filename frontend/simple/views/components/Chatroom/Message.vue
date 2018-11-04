@@ -67,7 +67,6 @@
   .sent &,
   .failed & {
     margin-right: $gi-spacer-xs;
-    margin-bottom: $gi-spacer-xs;
   }
 }
 

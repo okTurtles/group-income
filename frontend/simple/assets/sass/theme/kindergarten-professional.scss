@@ -22,6 +22,7 @@ $danger: lighten(adjust-hue($tertiary, -30%), 20%);
 $info: $primary-text;
 
 $light: $grey-lighter;
+$lighter: $white-ter;
 
 @import "../../node_modules/bulma/sass/utilities/derived-variables";
 

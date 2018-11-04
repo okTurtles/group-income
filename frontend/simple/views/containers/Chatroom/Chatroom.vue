@@ -42,10 +42,19 @@ export default {
   },
   data () {
     return {
+      config: {
+        isPhone: null
+      },
       ephemeral: {
         isLoading: true
       }
     }
+  },
+  created () {
+    // TODO create a global Vue Responsive just for media queries.
+    var mediaIsPhone = window.matchMedia('screen and (max-width: 639px)')
+    this.config.isPhone = mediaIsPhone.matches
+    mediaIsPhone.onchange = (e) => { this.config.isPhone = e.matches }
   },
   computed: {
     currentConversation () {
@@ -54,7 +63,7 @@ export default {
 
       let currentId
 
-      if (this.$route.name === 'Messages') {
+      if (this.$route.name === 'Messages' && !this.config.isPhone) {
         // Open my default the first conversation without unread messages
         for (var i = 0, l = privateMessagesSortedByTime.length; i < l; i++) {
           if (users[privateMessagesSortedByTime[i]].unreadCount === 0) {
@@ -74,12 +83,16 @@ export default {
 
       this.$route.params.currentConversation = { type: 'messages', id: currentId }
 
-      return this.$route.params.currentConversation
+      return this.$route.params.currentConversation || {}
 
       // TODO when name is 'groupChat'
     },
     summary () {
       const { type, id } = this.currentConversation
+
+      if (!id) {
+        return {}
+      }
 
       // BUG - Can I set the title with vue-router? There's a small time interval
       // between when the route changes (title undefined) and update it with the actual title
