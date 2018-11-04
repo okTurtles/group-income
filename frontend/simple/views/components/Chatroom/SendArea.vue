@@ -127,7 +127,6 @@ export default {
       return `${this.config.sendPlaceholder[Math.floor(Math.random() * this.config.sendPlaceholder.length)]} ${this.title}`
     }
   },
-  // TODO - MODAL USE keydown.esc
   methods: {
     handleKeydown (e) {
       const enterKey = e.keyCode === 13

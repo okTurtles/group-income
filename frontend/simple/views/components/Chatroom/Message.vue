@@ -10,6 +10,7 @@
       <span class="has-text-grey is-size-7 c-who" :class="{ 'sr-only': hideWho || isSameSender }">
         {{who}}
       </span>
+      <!-- NOTE: Use v-html to have messages with multiple lines -->
       <p class="c-text" v-html="text" />
     </div>
     <button class="button is-icon has-text-danger" v-if="variant === 'failed'" @click="$emit('retry')">

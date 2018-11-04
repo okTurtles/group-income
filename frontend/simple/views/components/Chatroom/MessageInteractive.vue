@@ -2,7 +2,7 @@
   <div class="c-message">
     <!--
       TODO the idea would be to use <component :is="type">
-      to get the type and state interaction based on a id and its current state
+      to get the interaction's type and each state based on a id
       Do it another PR, since is not critical to Chatroom's and still needs to
       studied: all interaction types and each one state.
     -->

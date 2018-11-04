@@ -3,7 +3,7 @@
     <div class="level is-mobile is-marginless c-header-top">
       <div class="level-left c-header-left">
         <router-link
-          class="button is-icon is-size-5 has-text-primary is-hidden-tablet c-back"
+          class="button is-icon is-size-5 has-text-primary c-back"
           v-if="routerBack"
           :to="routerBack"
         >
@@ -87,6 +87,12 @@
     top: 0;
     width: 100vw;
     padding-left: 0;
+  }
+}
+
+@include phablet {
+  .c-back {
+    display: none;
   }
 }
 

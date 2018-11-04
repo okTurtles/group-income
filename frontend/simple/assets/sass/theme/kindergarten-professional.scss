@@ -38,7 +38,7 @@ $colors: map-merge($colors, $addColors);
 
 $link: $primary;
 $text: $grey-darker;
-// $text-light: $grey; // for secondary/lighter texts... ?
+// $text-light: $grey; // REVIEW - create a variable for lighter texts... ?
 
 $family-sans-serif: #{"Source Sans Pro", "Helvetica Neue", sans-serif};
 $family-monospace: #{monospace};

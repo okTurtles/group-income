@@ -3,7 +3,6 @@
     <chat-nav :title="title" :searchPlaceholder="searchPlaceholder">
       <slot name="nav"></slot>
     </chat-nav>
-    <!-- TODO - design loading state when conversation is being loaded  -->
     <chat-main :summary="summary" :details="details" />
   </main>
 </template>

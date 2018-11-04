@@ -52,7 +52,7 @@ export default {
       }
     },
     fallbackBg: String,
-    /** When true a right margin is added - useful when there's next on the side */
+    /** When true a right margin is added - useful when there's text on the side */
     hasMargin: Boolean
   },
   data () {

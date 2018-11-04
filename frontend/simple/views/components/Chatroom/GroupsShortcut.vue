@@ -1,6 +1,6 @@
 <template>
   <div class="c-wrapper" v-if="groups.length > 0">
-    <!-- REVIEW - maybe this kind of text should be the style for .subtitle -->
+    <!-- REVIEW/TODO - make this kind of text should be the style for .subtitle -->
     <i18n tag="h2" class="has-text-grey is-size-6 is-uppercase c-subtitle">Groups chat shortcut</i18n>
     <ul class="c-ul">
       <li v-for="(group, index) in groups" class="c-ul-li">
@@ -13,7 +13,8 @@
             :alt="group.groupName"
             :fallbackBg="fallbackBg(index)"
           />
-          <badge class="c-badge" :number="group.groupChatUnread || index" />
+          <!-- NOTE: mocked just for layout purposes -->
+          <badge class="c-badge" :number="index === 0 ? 2 : 0" />
           <span aria-hidden="true" class="c-ul-li-char has-text-weight-bold has-text-white is-size-5">{{ group.groupName.charAt(0) }}</span>
         </router-link>
       </li>
@@ -106,7 +107,7 @@ export default {
   computed: {},
   methods: {
     fallbackBg (index) {
-      // TODO $store - implement colors/avatars for groups
+      // TODO/REVIEW $store - implement colors/avatars for groups
       return ['#958cfd', '#fd978c', '#62d27d'][index] || ''
     }
   }

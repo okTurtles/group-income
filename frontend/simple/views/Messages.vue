@@ -12,7 +12,6 @@
         :title="L('Private Messages')"
         routePath="/messages/"
         :list="privateMessages"
-        @select="handleMessageSelect"
       />
     </template>
   </chatroom>
@@ -48,6 +47,7 @@ export default {
       'groupsByName'
     ]),
     privateMessages () {
+      // TODO - add GIBot item to list
       return {
         order: privateMessagesSortedByTime,
         conversations: users
@@ -63,6 +63,7 @@ export default {
 
       // NOTE: ...until then I've used the $route as $store
       // just for static mocked layout purposes
+      // maybe it could be sbp(), so this is not here... instead of $emit()
     }
   }
 }

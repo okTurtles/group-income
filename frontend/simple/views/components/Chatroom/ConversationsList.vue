@@ -3,14 +3,11 @@
     <!-- TODO/REVIEW - maybe this kind of text should be the style for .subtitle -->
     <h2 class="has-text-grey is-uppercase c-subtitle">{{title}}</h2>
     <list hasMargin>
-
-      <!-- TODO - build GIBot item -->
       <list-item v-for="id in list.order"
         tag="router-link"
         variant="solid"
         :badgeCount="list.conversations[id].unreadCount"
         :to="buildUrl(id)"
-        @click.native="$emit('select', id)"
       >
         <div class="c-userAvatarNamed">
           <avatar hasMargin
