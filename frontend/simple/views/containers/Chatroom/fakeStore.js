@@ -156,3 +156,64 @@ export const messageConversations = {
     }
   ]
 }
+
+// ----------- GROUP CHAT --------- //
+
+export const groupA = {
+  channelsOrder: ['c0', 'c1'],
+  channels: {
+    c0: {
+      id: 'c0',
+      name: 'lounge',
+      displayName: 'lounge',
+      unreadCount: 0,
+      private: false,
+      description: 'A place for everyone at {channel} to chat'
+    },
+    c1: {
+      id: 'c1',
+      name: 'summer-trip',
+      displayName: 'summer-trip',
+      unreadCount: 2,
+      private: true,
+      description: 'Lets plan our next summer road trip'
+    }
+  },
+  founders: [333, 444],
+  members: [333, 444, 222],
+  conversations: {
+    c0: [
+      {
+        from: '444',
+        text: 'Hi everyone 👋'
+      }
+    ],
+    c1: [
+      {
+        from: '444',
+        text: 'Hi guys'
+      },
+      {
+        from: '444',
+        text: 'Lets know where we\'ll go this summer: 🏕 or 🏂?'
+      }
+    ]
+  }
+}
+
+export const groupB = {
+  channelsOrder: ['c0'],
+  channels: {
+    c0: {
+      id: 'c0',
+      name: 'lounge',
+      unreadCount: 0,
+      private: true,
+      description: 'A place for everyone at {channel} to chat'
+    }
+  },
+  members: [555],
+  conversations: {
+    c0: []
+  }
+}

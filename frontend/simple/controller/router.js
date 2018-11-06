@@ -162,15 +162,6 @@ var router = new Router({
       beforeEnter: createEnterGuards(loginGuard)
     },
     {
-      path: '/group-chat',
-      component: GroupChat,
-      name: GroupChat.name,
-      meta: {
-        title: 'Group Chat'
-      },
-      beforeEnter: createEnterGuards(loginGuard)
-    },
-    {
       path: '/user',
       component: UserProfile,
       meta: {
@@ -237,6 +228,21 @@ var router = new Router({
       // BUG/REVIEW "CANNOT GET /:username" when username has "." in it
       // ex: messages/joe.kim doesnt work but messages/joekim works fine.
       // Possible Solution: https://router.vuejs.org/guide/essentials/history-mode.html#example-server-configurations
+    },
+    {
+      path: '/group-chat',
+      component: GroupChat,
+      name: GroupChat.name,
+      meta: {
+        title: 'Group Chat'
+      },
+      beforeEnter: createEnterGuards(loginGuard)
+    },
+    {
+      path: '/group-chat/:name',
+      component: GroupChat,
+      name: 'GroupChatConversation',
+      beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '/join',

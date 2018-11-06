@@ -27,7 +27,7 @@
 }
 </style>
 <script>
-import { users } from './fakeStore.js'
+import { groupA, users } from './fakeStore.js'
 import MessageNotification from '../../components/Chatroom/MessageNotification.vue'
 import Avatar from '../../components/Avatar.vue'
 
@@ -37,30 +37,37 @@ export default {
     MessageNotification,
     Avatar
   },
-  data () {
-    return {}
-  },
   computed: {
+    // REVIEW... I dont like this....
+    map () {
+      return {
+        greeting: {
+          messages: 'You and {name} can chat in private here.',
+          groupChat: 'This is the very beginning of this {name} channel.'
+        },
+        summary: {
+          messages: users[this.$route.params.currentConversation.id],
+          groupChat: groupA.channels[this.$route.params.currentConversation.id]
+        },
+        founders: {
+          messages: [
+            this.$store.getters.currentUserIdentityContract.attributes,
+            users[this.$route.params.currentConversation.id]
+          ],
+          groupChat: [
+            ...groupA.founders.map(founder => users[founder])
+          ]
+        }
+      }
+    },
     founders () {
-      return [
-        this.$store.getters.currentUserIdentityContract.attributes,
-        users[this.$route.params.currentConversation.id]
-      ]
+      return this.map.founders[this.type]
     },
     text () {
-      const { type } = this.$route.params.currentConversation
-
-      // OPTIMIZE/TODO - a more customized greeting message
-
-      if (type === 'messages') {
-        return this.L('You guys can chat in private here.')
-      }
-
-      if (type === 'channel') {
-        return this.L('This is the very beginning of this channel.')
-      }
-
-      return 'hum....'
+      return this.L(this.map.greeting[this.type], { name: this.map.summary[this.type].displayName })
+    },
+    type () {
+      return this.$route.params.currentConversation.type
     }
   },
   methods: {}

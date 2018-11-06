@@ -25,7 +25,7 @@
 }
 </style>
 <script>
-import { privateMessagesSortedByTime, users, messageConversations } from './fakeStore.js'
+import { groupA, privateMessagesSortedByTime, users, messageConversations } from './fakeStore.js'
 import ChatMain from '../../components/Chatroom/ChatMain.vue'
 import ChatNav from '../../components/Chatroom/ChatNav.vue'
 
@@ -62,9 +62,11 @@ export default {
 
       let currentId
 
+      // TODO ALL OF THIS...
+
       if (this.$route.name === 'Messages' && !this.config.isPhone) {
-        // Open my default the first conversation without unread messages
-        for (var i = 0, l = privateMessagesSortedByTime.length; i < l; i++) {
+        // Open by default the first conversation without unread messages
+        for (let i = 0, l = privateMessagesSortedByTime.length; i < l; i++) {
           if (users[privateMessagesSortedByTime[i]].unreadCount === 0) {
             currentId = privateMessagesSortedByTime[i]
             break
@@ -72,22 +74,40 @@ export default {
         }
 
         this.$router.push({ path: `/messages/${users[currentId].name}` })
+        this.$route.params.currentConversation = { type: 'messages', id: currentId }
       } else if (this.$route.name === 'MessagesConversation') {
         if (this.$route.params.currentConversation) {
           return this.$route.params.currentConversation
         }
 
         currentId = Object.keys(users).find(user => users[user].name === this.$route.params.name)
+        this.$route.params.currentConversation = { type: 'messages', id: currentId }
+      } else if (this.$route.name === 'GroupChat' && !this.config.isPhone) {
+        // Open by default the lounge channel
+        const currentId = 'c0'
+
+        this.$router.push({ path: `/group-chat/${groupA.channels[currentId].name}` })
+        this.$route.params.currentConversation = { type: 'groupChat', id: currentId }
+      } else if (this.$route.name === 'GroupChatConversation') {
+        if (this.$route.params.currentConversation) {
+          return this.$route.params.currentConversation
+        }
+
+        currentId = Object.keys(groupA.channels).find(user => groupA.channels[user].name === this.$route.params.name)
+
+        if (!currentId) {
+          currentId = Object.keys(users).find(user => users[user].name === this.$route.params.name)
+          this.$route.params.currentConversation = { type: 'messages', id: currentId }
+        } else {
+          this.$route.params.currentConversation = { type: 'groupChat', id: currentId }
+        }
       }
 
-      this.$route.params.currentConversation = { type: 'messages', id: currentId }
-
       return this.$route.params.currentConversation || {}
-
-      // TODO when name is 'groupChat'
     },
     summary () {
       const { type, id } = this.currentConversation
+      const list = type === 'messages' ? users : groupA.channels
 
       if (!id) {
         return {}
@@ -95,23 +115,25 @@ export default {
 
       // BUG/REVIEW - Can I set the title with vue-router? There's a small time interval
       // between when the route changes (title undefined) and update it with the actual title
-      document.title = users[id].displayName || users[id].name
+      document.title = list[id].displayName || list[id].name
 
       return {
         type,
-        title: users[id].displayName || users[id].name,
-        description: users[id].description
+        title: list[id].displayName || list[id].name,
+        description: list[id].description
       }
     },
     details () {
-      const { id } = this.currentConversation
+      const { id, type } = this.currentConversation
+      const conversation = type === 'messages' ? messageConversations : groupA.conversations
+      const participants = type === 'messages'
+        ? { [id]: users[id] }
+        : { 333: users['333'], 444: users['444'], 111: users['111'] } // TODO dynamic
 
       return {
         isLoading: false,
-        conversation: messageConversations[id],
-        participants: {
-          [id]: users[id]
-        }
+        conversation: conversation[id],
+        participants
       }
     }
   }

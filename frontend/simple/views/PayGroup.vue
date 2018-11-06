@@ -72,7 +72,7 @@
           <tbody class="tbody is-borderless">
             <tr v-for="user, index in fakeStore.users">
               <th class="has-text-weight-normal">
-                <avatar :alt="`${user.name}s avatar`" :src="user.avatar"></avatar>
+                <avatar :alt="`${user.name}s avatar`" :src="user.avatar" size="lg" hasMargin></avatar>
                 <span class="c-tableBox-cell">{{user.name}}</span>
               </th>
               <td>
@@ -183,12 +183,18 @@
   }
 
   tbody tr {
-    &:first-child td {
-      padding-top: $gi-spacer;
+    &:first-child {
+      th,
+      td {
+        padding-top: $gi-spacer;
+      }
     }
 
-    &:last-child td {
-      padding-bottom: $gi-spacer;
+    &:last-child {
+      th,
+      td {
+        padding-bottom: $gi-spacer;
+      }
     }
   }
 }
