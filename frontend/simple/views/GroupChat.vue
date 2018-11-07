@@ -4,6 +4,7 @@
     :searchPlaceholder="L('Search for a channel')"
   >
     <template slot="nav">
+      <!-- TODO add lock/world icon before -->
       <conversations-list
         :title="L('Channels')"
         routePath="/group-chat/"
@@ -24,7 +25,7 @@
 </style>
 <script>
 import { mapGetters } from 'vuex'
-import { groupA, groupB, users } from './containers/Chatroom/fakeStore.js'
+import { groupA, users } from './containers/Chatroom/fakeStore.js'
 import Chatroom from './containers/Chatroom/Chatroom.vue'
 import ConversationsList from './components/Chatroom/ConversationsList.vue'
 
@@ -39,8 +40,6 @@ export default {
       'groupsByName'
     ]),
     channels () {
-      console.log(groupB.members)
-
       return {
         order: groupA.channelsOrder,
         conversations: groupA.channels

@@ -40,20 +40,18 @@
         <div v-if="details.isLoading">
           LOADING... <!-- TODO Design a cool skeleton loading -->
         </div>
-        <template v-else>
-          <div class="c-body-conversation" ref="conversation">
-            <conversation-greetings />
-            <component
-              v-for="(message, index) in details.conversation"
-              v-bind="getMessageAt[index]"
-            />
-            <message
-              v-for="(message, index) in ephemeral.pendingMessages"
-              v-bind="getPendingAt[index]"
-              @retry="retryMessage(index)"
-            />
-          </div>
-        </template>
+        <div class="c-body-conversation" ref="conversation" v-else>
+          <conversation-greetings />
+          <component
+            v-for="(message, index) in details.conversation"
+            v-bind="getMessageAt[index]"
+          />
+          <message
+            v-for="(message, index) in ephemeral.pendingMessages"
+            v-bind="getPendingAt[index]"
+            @retry="retryMessage(index)"
+          />
+        </div>
       </div>
       <div class="c-footer">
         <send-area :title="summary.title"

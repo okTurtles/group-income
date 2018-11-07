@@ -9,7 +9,7 @@
           class="c-router"
         >
           <avatar class="c-avatar"
-            src="todo.jpg"
+            src=""
             :alt="group.groupName"
             :fallbackBg="fallbackBg(index)"
           />

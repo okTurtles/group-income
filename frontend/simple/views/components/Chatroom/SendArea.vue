@@ -7,11 +7,12 @@
       :style="textareaStyles"
       @keydown="handleKeydown"
       @keydown.enter.prevent
+      @keyup="handleKeyup"
       v-bind="$attrs"
     ></textarea>
     <div class="level is-mobile is-marginless c-send-actions" ref="actions">
       <i18n tag="button"
-        :class="{ isVisible }"
+        :class="{ isActive }"
         class="button gi-is-unstyled has-text-weight-bold c-send-btn"
         @click="sendMessage"
       >Send</i18n>
@@ -64,19 +65,16 @@ $initialHeight: 2.5rem;
   &-btn {
     padding: $gi-spacer-sm;
     padding-right: $gi-spacer;
-    color: $primary;
+    color: $light; // TODO - verify the proper use of these variables
     height: 100%;
-    opacity: 0;
-    pointer-events: none;
 
     &:focus {
       box-shadow: none;
-      color: $text;
+      color: $text-light; // TODO - verify the proper use of these variables
     }
 
-    &.isVisible {
-      opacity: 1;
-      pointer-events: initial;
+    &.isActive {
+      color: $primary;
     }
   }
 }
@@ -119,9 +117,8 @@ export default {
         paddingRight: this.ephemeral.actionsWidth + 'px'
       }
     },
-    isVisible () {
-      // REVIEW - should it always be visible or only when it has text?
-      return true // !!this.ephemeral.textWithLines
+    isActive () {
+      return this.ephemeral.textWithLines
     },
     customSendPlaceholder () {
       return `${this.config.sendPlaceholder[Math.floor(Math.random() * this.config.sendPlaceholder.length)]} ${this.title}`
@@ -130,20 +127,29 @@ export default {
   methods: {
     handleKeydown (e) {
       const enterKey = e.keyCode === 13
-
       if ((e.shiftKey || e.altKey || e.ctrlKey) && enterKey) {
         return this.createNewLine()
       } else if (enterKey) {
         return this.sendMessage()
-      } else {
-        this.updateTextArea()
       }
     },
+    handleKeyup () {
+      this.updateTextArea()
+    },
     updateTextWithLines () {
-      this.ephemeral.textWithLines = this.$refs.textarea.value.replace(/\n/g, '<br>')
+      const newValue = this.$refs.textarea.value.replace(/\n/g, '<br>')
+      if (this.ephemeral.textWithLines === newValue) {
+        return false
+      }
+
+      this.ephemeral.textWithLines = newValue
+      return true
     },
     updateTextArea () {
-      this.updateTextWithLines()
+      if (!this.updateTextWithLines()) {
+        // dont calculate again when the value is the same (ex: happens on shift+enter)
+        return false
+      }
 
       const length = this.ephemeral.textWithLines.length
       const isLastLineEmpty = this.ephemeral.textWithLines.substring(length - 4, length) === '<br>'
@@ -167,8 +173,7 @@ export default {
         return false
       }
 
-      this.updateTextWithLines()
-      this.$emit('send', this.ephemeral.textWithLines) // TODO remove first / last lines when empty
+      this.$emit('send', this.ephemeral.textWithLines) // TODO remove first / last empty lines
       this.$refs.textarea.value = ''
       this.updateTextArea()
     }

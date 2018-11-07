@@ -38,38 +38,36 @@ export default {
     Avatar
   },
   computed: {
-    // REVIEW... I dont like this....
-    map () {
+    greetingMap () {
       return {
-        greeting: {
-          messages: 'You and {name} can chat in private here.',
-          groupChat: 'This is the very beginning of this {name} channel.'
-        },
-        summary: {
-          messages: users[this.$route.params.currentConversation.id],
-          groupChat: groupA.channels[this.$route.params.currentConversation.id]
-        },
-        founders: {
-          messages: [
-            this.$store.getters.currentUserIdentityContract.attributes,
-            users[this.$route.params.currentConversation.id]
-          ],
-          groupChat: [
-            ...groupA.founders.map(founder => users[founder])
-          ]
-        }
+        messages: 'You and {name} can chat in private here.',
+        groupChat: 'This is the very beginning of {name} channel.'
       }
     },
     founders () {
-      return this.map.founders[this.type]
+      const foundersMap = {
+        messages: [
+          this.$store.getters.currentUserIdentityContract.attributes,
+          users[this.$route.params.currentConversation.id]
+        ],
+        groupChat: [
+          ...groupA.founders.map(founder => users[founder])
+        ]
+      }
+
+      return foundersMap[this.type]
     },
     text () {
-      return this.L(this.map.greeting[this.type], { name: this.map.summary[this.type].displayName })
+      const conversationSummaryMap = {
+        messages: users[this.$route.params.currentConversation.id],
+        groupChat: groupA.channels[this.$route.params.currentConversation.id]
+      }
+
+      return this.L(this.greetingMap[this.type], { name: conversationSummaryMap[this.type].displayName })
     },
     type () {
       return this.$route.params.currentConversation.type
     }
-  },
-  methods: {}
+  }
 }
 </script>

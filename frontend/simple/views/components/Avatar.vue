@@ -1,5 +1,4 @@
 <template>
-  <!-- TODO replace all profile images around to use Avatar.vue -->
   <div v-if="showFallback" class="c-avatar" :class="{ [size]: size, hasMargin }" v-on="$listeners"
     :style="{ backgroundColor: fallbackBg }"
   />

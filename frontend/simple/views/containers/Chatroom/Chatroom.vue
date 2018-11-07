@@ -62,7 +62,7 @@ export default {
 
       let currentId
 
-      // TODO ALL OF THIS...
+      // TODO DRY ALL OF THIS...
 
       if (this.$route.name === 'Messages' && !this.config.isPhone) {
         // Open by default the first conversation without unread messages
