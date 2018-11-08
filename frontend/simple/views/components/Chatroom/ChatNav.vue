@@ -1,6 +1,6 @@
 <template>
   <div class="c-chatnav">
-    <chat-header :title="title">
+    <main-header :title="title">
       <template slot="actions">
         <!-- TODO design search results on mobile - MVP be same as desktop -->
         <!-- <button class="button is-icon is-hidden-tablet">
@@ -15,13 +15,13 @@
           <menu-content class="c-actions-content">
             <list hasMargin>
               <menu-item tag="button" itemId="hash-1" icon="heart">
-                Settings
+                <i18n>Settings</i18n>
               </menu-item>
               <menu-item tag="button" itemId="hash-2" icon="heart" hasDivider>
-                Mute chat
+                <i18n>Mute chat</i18n>
               </menu-item>
               <menu-item tag="button" itemId="hash-3" icon="heart">
-                Report a problem
+                <i18n>Report a problem</i18n>
               </menu-item>
             </list>
           </menu-content>
@@ -32,7 +32,7 @@
         v-if="searchPlaceholder"
         :placeholder="searchPlaceholder"
         @keyup="handleSearch" />
-    </chat-header>
+    </main-header>
     <div class="c-chatnav-body">
       <template v-if="ephemeral.isSearching">
         Search results for "{{ ephemeral.searchTerm }}" to be done...
@@ -89,14 +89,14 @@
 }
 </style>
 <script>
-import ChatHeader from './ChatHeader.vue'
+import MainHeader from '../MainHeader.vue'
 import { List } from '../Lists/index.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuHeader, MenuItem } from '../Menu/index.js'
 
 export default {
   name: 'ChatNav',
   components: {
-    ChatHeader,
+    MainHeader,
     List,
     MenuParent,
     MenuTrigger,

@@ -1,7 +1,7 @@
 <template>
   <div class="c-chatmain" :class="{ isActive: summary.title }">
     <template v-if="summary.title">
-      <chat-header
+      <main-header
         :title="summary.title"
         :description="summary.description"
         routerBack="/messages"
@@ -22,19 +22,19 @@
             <menu-content class="c-actions-content">
               <list hasMargin>
                 <menu-item tag="button" itemId="hash-1" icon="heart">
-                  Option 1
+                  <i18n>Option 1</i18n>
                 </menu-item>
                 <menu-item tag="button" itemId="hash-2" icon="heart">
-                  Option 2
+                  <i18n>Option 2</i18n>
                 </menu-item>
                 <menu-item tag="button" itemId="hash-3" icon="heart">
-                  Option 3
+                  <i18n>Option 3</i18n>
                 </menu-item>
               </list>
             </menu-content>
           </menu-parent>
         </template>
-      </chat-header>
+      </main-header>
 
       <div class="c-body is-flex" :style="bodyStyles">
         <div v-if="details.isLoading">
@@ -71,7 +71,6 @@
   min-width: 0;
   min-height: 100vh;
   background-color: $body-background-color;
-  z-index: $gi-zindex-sidebar;
 
   .c-actions-content {
     top: $gi-spacer-lg;
@@ -99,6 +98,7 @@
   .c-chatmain {
     /* A - MVP static way - show / hide conversation */
     display: none;
+    z-index: $gi-zindex-sidebar;
 
     &.isActive {
       display: block;
@@ -159,7 +159,7 @@
 
 </style>
 <script>
-import ChatHeader from './ChatHeader.vue'
+import MainHeader from '../MainHeader.vue'
 import { List } from '../Lists/index.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuHeader, MenuItem } from '../Menu/index.js'
 import Message from './Message.vue'
@@ -172,7 +172,7 @@ import { currentUserId } from '../../containers/Chatroom/fakeStore.js'
 export default {
   name: 'ChatMain',
   components: {
-    ChatHeader,
+    MainHeader,
     List,
     MenuParent,
     MenuTrigger,

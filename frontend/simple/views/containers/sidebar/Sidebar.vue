@@ -1,8 +1,7 @@
 <template>
   <header class="c-sidebar is-flex" :class="{ 'is-active': ephemeral.isActive }">
     <button class="gi-is-unstyled is-flex is-hidden-tablet c-toggle" @click="toggleMenu">
-      <i class="fa fa-bars"></i>
-      <img src="/simple/assets/images/logo-transparent.png" alt="GroupIncome's logo" class="gi-logo c-logo">
+      <i class="fa fa-bars" aria-label="Navigation - Popup button"></i>
     </button>
     <div class="c-sidebar-header level is-mobile">
       <h1 class="sr-only">Main Menu</h1>
@@ -114,17 +113,12 @@ $speed: 300ms;
     overflow: hidden;
 
     .fa {
-      margin-top: $gi-spacer-sm;
-      margin-left: -$gi-spacer-sm;
+      margin-left: $gi-spacer;
     }
 
-    .c-logo {
-      margin-left: $gi-spacer-sm;
-    }
-
-    .c-logo,
     .fa-bars {
       transition: opacity $speed/5 $speed;
+      // TODO/OPTIMIZE review this toogle appearance
     }
 
     .is-active & {
@@ -135,7 +129,6 @@ $speed: 300ms;
       left: 100%;
       transition: height 1ms 1ms, width 1ms 1ms, background $speed/2;
 
-      .c-logo,
       .fa-bars {
         transition: opacity 1ms 1ms;
         opacity: 0;
