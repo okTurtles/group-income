@@ -4,7 +4,7 @@
       <main-header
         :title="summary.title"
         :description="summary.description"
-        routerBack="/messages"
+        :routerBack="routerBack"
       >
         <template slot="actions">
           <button class="button is-icon">
@@ -116,6 +116,10 @@
   .c-body {
     padding-top: 4rem;
     min-height: 100vh;
+
+    &-conversation {
+      padding-bottom: 5rem; // fixed footer height
+    }
   }
 
   .c-footer {
@@ -187,11 +191,11 @@ export default {
   },
   props: {
     summary: {
-      type: Object,
+      type: Object, // { type: String, title: String, description: String, routerBack: String }
       default: {}
     },
     details: {
-      type: Object,
+      type: Object, // { isLoading: Bool, conversation: Array, participants: Object }
       default: {}
     }
   },

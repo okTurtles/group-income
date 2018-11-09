@@ -1,10 +1,15 @@
 // NOTE: This fakeStore is just for layout purposes
 
-// Messages - private 1:1 messages
-export const privateMessagesSortedByTime = [333, 444, 555, 111, 222]
+export const chatTypes = {
+  INDIVIDUAL: 'INDIVIDUAL',
+  GROUP: 'GROUP'
+}
 
 // Just for static layout purposes, the currentUserId is '000'
 export const currentUserId = '000'
+
+// Messages - private 1:1 messages
+export const individualMessagesSorted = [333, 444, 555, 111, 222]
 
 export const users = {
   111: {
@@ -50,7 +55,7 @@ export const users = {
 }
 
 // Private Messages Conversations
-export const messageConversations = {
+export const individualConversations = {
   333: [
     {
       from: '333',
@@ -160,7 +165,7 @@ export const messageConversations = {
 // ----------- GROUP CHAT --------- //
 
 export const groupA = {
-  channelsOrder: ['c0', 'c1'],
+  channelsSorted: ['c0', 'c1'],
   channels: {
     c0: {
       id: 'c0',
@@ -198,22 +203,5 @@ export const groupA = {
         text: 'Lets know where we\'ll go this summer: 🏕 or 🏂?'
       }
     ]
-  }
-}
-
-export const groupB = {
-  channelsOrder: ['c0'],
-  channels: {
-    c0: {
-      id: 'c0',
-      name: 'lounge',
-      unreadCount: 0,
-      private: true,
-      description: 'A place for everyone at {channel} to chat'
-    }
-  },
-  members: [555],
-  conversations: {
-    c0: []
   }
 }

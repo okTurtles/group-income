@@ -27,7 +27,7 @@
 }
 </style>
 <script>
-import { groupA, users } from './fakeStore.js'
+import { chatTypes, users, groupA } from './fakeStore.js'
 import MessageNotification from '../../components/Chatroom/MessageNotification.vue'
 import Avatar from '../../components/Avatar.vue'
 
@@ -40,17 +40,17 @@ export default {
   computed: {
     greetingMap () {
       return {
-        messages: 'You and {name} can chat in private here.',
-        groupChat: 'This is the very beginning of {name} channel.'
+        [chatTypes.INDIVIDUAL]: 'You and {name} can chat in private here.',
+        [chatTypes.GROUP]: 'This is the very beginning of {name} channel.'
       }
     },
     founders () {
       const foundersMap = {
-        messages: [
+        [chatTypes.INDIVIDUAL]: [
           this.$store.getters.currentUserIdentityContract.attributes,
           users[this.$route.params.currentConversation.id]
         ],
-        groupChat: [
+        [chatTypes.GROUP]: [
           ...groupA.founders.map(founder => users[founder])
         ]
       }
@@ -59,8 +59,8 @@ export default {
     },
     text () {
       const conversationSummaryMap = {
-        messages: users[this.$route.params.currentConversation.id],
-        groupChat: groupA.channels[this.$route.params.currentConversation.id]
+        [chatTypes.INDIVIDUAL]: users[this.$route.params.currentConversation.id],
+        [chatTypes.GROUP]: groupA.channels[this.$route.params.currentConversation.id]
       }
 
       return this.L(this.greetingMap[this.type], { name: conversationSummaryMap[this.type].displayName })

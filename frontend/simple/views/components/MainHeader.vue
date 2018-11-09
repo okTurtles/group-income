@@ -87,6 +87,7 @@
   position: absolute;
   clip: rect(0, 25px, 25px, 0);
   width: 7rem;
+  min-width: 7rem;
   top: 50%;
   left: 0;
   transform: translateY(-50%);

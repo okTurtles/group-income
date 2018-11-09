@@ -9,9 +9,10 @@
         @select="handleGroupSelect"
       />
       <conversations-list
-        :title="L('Private Messages')"
-        routePath="/messages/"
-        :list="privateMessages"
+        :title="L('Messages')"
+        :list="messages"
+        routeName="MessagesConversation"
+        :type="type"
       />
     </template>
   </chatroom>
@@ -22,7 +23,7 @@
 </style>
 <script>
 import { mapGetters } from 'vuex'
-import { privateMessagesSortedByTime, users } from './containers/Chatroom/fakeStore.js'
+import { chatTypes, individualMessagesSorted, users } from './containers/Chatroom/fakeStore.js'
 import Chatroom from './containers/Chatroom/Chatroom.vue'
 import GroupsShortcut from './components/Chatroom/GroupsShortcut.vue'
 import ConversationsList from './components/Chatroom/ConversationsList.vue'
@@ -46,12 +47,15 @@ export default {
     ...mapGetters([
       'groupsByName'
     ]),
-    privateMessages () {
+    messages () {
       // TODO - add GIBot item to list
       return {
-        order: privateMessagesSortedByTime,
+        order: individualMessagesSorted,
         conversations: users
       }
+    },
+    type () {
+      return chatTypes.INDIVIDUAL
     }
   },
   methods: {

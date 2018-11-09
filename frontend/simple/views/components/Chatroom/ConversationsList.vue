@@ -56,18 +56,30 @@ export default {
     }
     */
     list: Object,
-    routePath: String
+    routeName: String,
+    type: String
   },
   data () {
     return {}
   },
   computed: {},
   methods: {
-    buildUrl (conversationId) {
-      const { list, routePath } = this
-      const { name } = list.conversations[conversationId] || {}
+    buildUrl (id) {
+      const { list, routeName, type } = this
+      const { name } = list.conversations[id] || {}
 
-      return { path: `${routePath}${name}` }
+      // NOTE - This should be $store responsability
+      // ...but for now I've used the $route params just for static mocked layout purposes for messages
+      return {
+        name: routeName,
+        params: {
+          chatName: name,
+          currentConversation: { type, id }
+        }
+      }
+
+      // ... once $store is implement, we can just pass the following:
+      // return { path: `${routePath}${name}` }
     }
   }
 }

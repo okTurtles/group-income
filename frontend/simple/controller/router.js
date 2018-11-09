@@ -221,7 +221,7 @@ var router = new Router({
       beforeEnter: createEnterGuards(loginGuard) // NOTE comment this to test on a iPhone
     },
     {
-      path: '/messages/:name',
+      path: '/messages/:chatName',
       name: 'MessagesConversation',
       component: Messages,
       beforeEnter: createEnterGuards(loginGuard) // NOTE comment this to test on a iPhone
@@ -232,14 +232,14 @@ var router = new Router({
     {
       path: '/group-chat',
       component: GroupChat,
-      name: GroupChat.name,
+      name: 'GroupChat',
       meta: {
         title: 'Group Chat'
       },
       beforeEnter: createEnterGuards(loginGuard)
     },
     {
-      path: '/group-chat/:name',
+      path: '/group-chat/:chatName',
       component: GroupChat,
       name: 'GroupChatConversation',
       beforeEnter: createEnterGuards(loginGuard)

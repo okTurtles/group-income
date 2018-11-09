@@ -9,12 +9,15 @@
         :title="L('Channels')"
         routePath="/group-chat/"
         :list="channels"
+        routeName="GroupChatConversation"
+        :type="type.groups"
       />
 
       <conversations-list
         :title="L('Members')"
-        routePath="/group-chat/"
         :list="members"
+        routeName="GroupChatConversation"
+        :type="type.members"
       />
     </template>
   </chatroom>
@@ -25,7 +28,7 @@
 </style>
 <script>
 import { mapGetters } from 'vuex'
-import { groupA, users } from './containers/Chatroom/fakeStore.js'
+import { chatTypes, users, groupA } from './containers/Chatroom/fakeStore.js'
 import Chatroom from './containers/Chatroom/Chatroom.vue'
 import ConversationsList from './components/Chatroom/ConversationsList.vue'
 
@@ -41,7 +44,7 @@ export default {
     ]),
     channels () {
       return {
-        order: groupA.channelsOrder,
+        order: groupA.channelsSorted,
         conversations: groupA.channels
       }
     },
@@ -49,6 +52,12 @@ export default {
       return {
         order: groupA.members,
         conversations: users
+      }
+    },
+    type () {
+      return {
+        members: chatTypes.INDIVIDUAL,
+        groups: chatTypes.GROUP
       }
     }
   }
