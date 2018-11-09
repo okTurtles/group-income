@@ -115,14 +115,21 @@ export default {
       if (!type || !id) { return {} }
 
       const chatList = type === chatTypes.INDIVIDUAL ? users : groupA.channels
-      const routerBack = type === chatTypes.INDIVIDUAL ? 'messages' : 'group-chat'
+      const routerBack = type === chatTypes.INDIVIDUAL ? '/messages' : '/group-chat'
       const title = chatList[id].displayName || chatList[id].name
 
       // BUG/REVIEW - Can I set the title with vue-router? There's a small time interval
       // between when the route changes (title undefined) and update it with the actual title
       document.title = title
 
-      return { type, title, description: chatList[id].description, routerBack }
+      return {
+        type,
+        title,
+        description: chatList[id].description,
+        routerBack,
+        private: chatList[id].private,
+        picture: chatList[id].picture
+      }
     },
     details () {
       const { id, type } = this.currentConversation

@@ -15,7 +15,8 @@
             class="c-logo is-hidden-tablet"
             :class="{'is-hidden': routerBack }"
           >
-          {{ title }}
+          <template v-if="title">{{ title }}</template>
+          <slot name="title" v-else></slot>
         </h2>
         <p class="is-size-7 has-text-grey gi-is-ellipsis is-hidden-mobile" v-if="description">
           {{ description }}
@@ -49,7 +50,7 @@
   }
 
   &-top {
-    align-items: baseline;
+    align-items: center;
   }
 
   &-text {
@@ -57,10 +58,14 @@
     flex: 1; // so truncate works
   }
 
+  &-title {
+    line-height: 1.5rem;
+  }
+
   .level-item.c-header-back {
     flex-grow: 0;
     flex-shrink: 0;
-    margin-right: $gi-spacer-sm;
+    margin: 0 $gi-spacer-sm;
   }
 
   &.mainPage {
@@ -71,14 +76,13 @@
     .c-header-title {
       position: relative;
       padding-left: $gi-spacer-lg; // space for absolute logo
-      line-height: 1.5;
+      line-height: 1.5; // TODO verify header global alignments
     }
   }
 
   &.subPage {
     .c-header-text {
       justify-content: flex-start;
-      margin-top: $gi-spacer-xs;
     }
   }
 }
@@ -113,6 +117,10 @@
       .c-header-text {
         margin-left: $gi-spacer-lg + $gi-spacer-sm;
       }
+    }
+
+    &.subPage {
+      padding-left: $gi-spacer;
     }
   }
 }

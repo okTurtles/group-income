@@ -2,10 +2,21 @@
   <div class="c-chatmain" :class="{ isActive: summary.title }">
     <template v-if="summary.title">
       <main-header
-        :title="summary.title"
         :description="summary.description"
-        :routerBack="routerBack"
+        :routerBack="summary.routerBack"
       >
+        <template slot="title">
+          <avatar :src="summary.picture" alt=""
+            class="c-header-avatar"
+            size="sm"
+            hasMargin
+          />
+          <i class="fa is-size-6 c-header-private" :class="{
+            'fa-globe': summary.private === false,
+            'fa-lock': summary.private === true,
+          }" v-if="summary.private !== undefined"></i>
+          {{summary.title}}
+        </template>
         <template slot="actions">
           <button class="button is-icon">
             <i class="fa fa-user-plus"></i>
@@ -55,7 +66,7 @@
       </div>
       <div class="c-footer">
         <send-area :title="summary.title"
-          @send="sendMessage"
+          @send="handleSendMessage"
           @heightUpdate="updateSendAreaHeight"
         />
       </div>
@@ -77,6 +88,17 @@
     right: 0;
     left: auto;
     width: 10rem;
+  }
+}
+
+.c-header-private {
+  margin-right: $gi-spacer-xs;
+}
+
+.c-header-private,
+.c-header-avatar {
+  @include phablet {
+    display: none;
   }
 }
 
@@ -164,6 +186,7 @@
 </style>
 <script>
 import MainHeader from '../MainHeader.vue'
+import Avatar from '../Avatar.vue'
 import { List } from '../Lists/index.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuHeader, MenuItem } from '../Menu/index.js'
 import Message from './Message.vue'
@@ -177,6 +200,7 @@ export default {
   name: 'ChatMain',
   components: {
     MainHeader,
+    Avatar,
     List,
     MenuParent,
     MenuTrigger,
@@ -302,7 +326,7 @@ export default {
     updateSendAreaHeight (height) {
       this.ephemeral.bodyPaddingBottom = height
     },
-    sendMessage (message) {
+    handleSendMessage (message) {
       console.log('sending...')
       const index = this.ephemeral.pendingMessages.length
 
@@ -311,19 +335,19 @@ export default {
         text: message
       })
 
-      setTimeout(() => {
-        console.log('TODO $store send message')
-        this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', true)
-      }, 2000)
+      this.sendMessage(index)
     },
     retryMessage (index) {
       this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', false)
 
+      this.sendMessage(index)
+      console.log('TODO $store - retry sending a message')
+    },
+    sendMessage (index) {
       setTimeout(() => {
         console.log('TODO $store send message')
         this.$set(this.ephemeral.pendingMessages[index], 'hasFailed', true)
       }, 2000)
-      console.log('TODO $store - retry sending a message')
     }
   }
 }

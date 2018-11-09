@@ -4,7 +4,6 @@
     :searchPlaceholder="L('Search for a channel')"
   >
     <template slot="nav">
-      <!-- TODO add lock/world icon before -->
       <conversations-list
         :title="L('Channels')"
         routePath="/group-chat/"

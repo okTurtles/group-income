@@ -6,7 +6,6 @@
         <i class="fa fa-angle-down c-fa c-trigger-icon"></i>
       </menu-trigger>
 
-      <!-- test margarida -->
       <menu-content class="c-content">
         <menu-header>
           <i18n>Your Groups</i18n>

@@ -6,6 +6,7 @@
       <list-item v-for="id in list.order"
         tag="router-link"
         variant="solid"
+        :icon="getIcon(id)"
         :badgeCount="list.conversations[id].unreadCount"
         :to="buildUrl(id)"
       >
@@ -51,7 +52,7 @@ export default {
   props: {
     title: String,
     /** List of conversations - shape: {
-      order: [] - see fakeStore.js - privateMessagesSortedByTime,
+      order: [] - see fakeStore.js - individualMessagesSorted,
       conversations: - see fakeStore.js - users or groupChannels
     }
     */
@@ -64,12 +65,16 @@ export default {
   },
   computed: {},
   methods: {
+    getIcon (id) {
+      const isPrivate = this.list.conversations[id].private
+      return isPrivate === undefined ? '' : (isPrivate ? 'lock' : 'globe')
+    },
     buildUrl (id) {
       const { list, routeName, type } = this
       const { name } = list.conversations[id] || {}
 
       // NOTE - This should be $store responsability
-      // ...but for now I've used the $route params just for static mocked layout purposes for messages
+      // ...but for now I've used the $route params just for mocked layout purposes
       return {
         name: routeName,
         params: {
