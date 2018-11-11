@@ -15,10 +15,10 @@
   max-width: $value;
   height: $value;
   max-height: $value;
+  background-color: $body-background-color;
 }
 
 .c-avatar {
-  background-color: $light;
   border-radius: 50%;
 
   &.hasMargin {

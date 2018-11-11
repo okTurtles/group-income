@@ -10,11 +10,12 @@
       </router-link>
       <div class="level-item c-header-text">
         <h2 class="title is-5 is-marginless gi-is-ellipsis c-header-title">
-          <img src="/simple/assets/images/logo-transparent.png"
+          <avatar src="/simple/assets/images/group-income-icon-transparent-circle.png"
             alt="GroupIncome's logo"
-            class="c-logo is-hidden-tablet"
-            :class="{'is-hidden': routerBack }"
-          >
+            class="is-hidden-tablet"
+            size="sm"
+            v-if="!routerBack"
+          />
           <template v-if="title">{{ title }}</template>
           <slot name="title" v-else></slot>
         </h2>
@@ -58,10 +59,6 @@
     flex: 1; // so truncate works
   }
 
-  &-title {
-    line-height: 1.5rem;
-  }
-
   .level-item.c-header-back {
     flex-grow: 0;
     flex-shrink: 0;
@@ -72,12 +69,6 @@
     .c-header-text {
       margin-left: $gi-spacer-lg + $gi-spacer;
     }
-
-    .c-header-title {
-      position: relative;
-      padding-left: $gi-spacer-lg; // space for absolute logo
-      line-height: 1.5; // TODO verify header global alignments
-    }
   }
 
   &.subPage {
@@ -85,16 +76,6 @@
       justify-content: flex-start;
     }
   }
-}
-
-.c-logo {
-  position: absolute;
-  clip: rect(0, 25px, 25px, 0);
-  width: 7rem;
-  min-width: 7rem;
-  top: 50%;
-  left: 0;
-  transform: translateY(-50%);
 }
 
 @include phone {
@@ -146,14 +127,26 @@
         padding-left: 0;
       }
     }
+
+    &.subPage {
+      .c-header-top {
+        align-items: flex-start; // so actions are top aligned
+      }
+    }
   }
 }
 
 </style>
 <script>
+import Avatar from './Avatar.vue'
+
 export default {
   // TODO later - apply & adapt this MainHeader to all other pages
+  // - maybe create ChatHeader that consumes MainHeader
   name: 'MainHeader',
+  components: {
+    Avatar
+  },
   props: {
     title: String,
     description: String,

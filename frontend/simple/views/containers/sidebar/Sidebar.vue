@@ -16,7 +16,7 @@
         <list class="c-toplinks">
           <list-item tag="router-link" to="/messages"
             icon="comments"
-            :badgeCount="1">
+            :badgeCount="2">
               <i18n>Messages</i18n>
           </list-item>
           <list-item tag="router-link" to="/mailbox"

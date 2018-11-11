@@ -9,14 +9,22 @@ export const chatTypes = {
 export const currentUserId = '000'
 
 // Messages - private 1:1 messages
-export const individualMessagesSorted = [333, 444, 555, 111, 222]
+export const individualMessagesSorted = ['GIBot', 555, 333, 444, 111, 222]
 
 export const users = {
+  'GIBot': {
+    id: 'GIBot',
+    name: 'gibot',
+    displayName: 'GIBot',
+    picture: '/simple/assets/images/group-income-icon-transparent-circle.png',
+    unreadCount: 1,
+    description: 'I’m here to keep you update while you are away'
+  },
   111: {
     id: '111',
     name: 'johnn',
     displayName: 'John Mars',
-    picture: 'http://localhost:8000/simple/assets/images/default-avatar.png',
+    picture: '/simple/assets/images/default-avatar.png',
     unreadCount: 0,
     description: 'You and John are both part of Dreamers group'
   },
@@ -24,7 +32,7 @@ export const users = {
     id: '222',
     name: 'hlenon',
     displayName: 'Hugo Lenon',
-    picture: 'http://localhost:8000/simple/assets/images/default-avatar.png',
+    picture: '/simple/assets/images/default-avatar.png',
     unreadCount: 0,
     description: null
   },
@@ -32,30 +40,49 @@ export const users = {
     id: '333',
     name: 'liliabt',
     displayName: 'Lilia Bouvet',
-    picture: 'http://localhost:8000/simple/assets/images/default-avatar.png',
-    unreadCount: 1,
+    picture: '/simple/assets/images/default-avatar.png',
+    unreadCount: 0,
     description: null
   },
   444: {
     id: '444',
     name: 'rickyricky',
     displayName: 'Rick Eggs',
-    picture: 'http://localhost:8000/simple/assets/images/default-avatar.png',
-    unreadCount: 2,
+    picture: '/simple/assets/images/default-avatar.png',
+    unreadCount: 0,
     description: null
   },
   555: {
     id: '555',
     name: 'ericrock',
     displayName: 'Eric Rock',
-    picture: 'http://localhost:8000/simple/assets/images/default-avatar.png',
-    unreadCount: 0,
+    picture: '/simple/assets/images/default-avatar.png',
+    unreadCount: 1,
     description: 'You and Eric are both part of Dreamers group'
   }
 }
 
 // Private Messages Conversations
 export const individualConversations = {
+  'GIBot': [
+    {
+      from: 'GIBot',
+      text: 'I\'ve noticed you still didn’t <a href="/profile">add a picture to your profile</a>.\nLet other knows who you are'
+    },
+    {
+      from: 'GIBot',
+      text: 'You were invited to join <a href="/join-group">The Dreamers group</a>.'
+    },
+    {
+      from: 'GIBot',
+      text: 'There\'s <a href="/dashboard">a new member proposal</a> to the Dreamers.'
+    },
+    {
+      from: 'GIBot',
+      text: 'I’ve noticed you still have to <a href="/contributions">add your Income Details at Dreamers</a>.\nIt’s a mandatory information for you to be fully part of the group',
+      unread: true
+    }
+  ],
   333: [
     {
       from: '333',
@@ -148,6 +175,11 @@ export const individualConversations = {
     {
       from: currentUserId,
       text: 'Cool!'
+    },
+    {
+      from: '555',
+      text: 'You\'re welcome 😃',
+      unread: true
     }
   ],
   111: [
@@ -200,7 +232,8 @@ export const groupA = {
       },
       {
         from: '444',
-        text: 'Lets know where we\'ll go this summer: 🏕 or 🏂?'
+        text: 'Lets know where we\'ll go this summer: 🏕 or 🏂?',
+        unread: true
       }
     ]
   }

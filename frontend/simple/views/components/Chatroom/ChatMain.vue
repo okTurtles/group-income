@@ -53,10 +53,10 @@
         </div>
         <div class="c-body-conversation" ref="conversation" v-else>
           <conversation-greetings />
-          <component
-            v-for="(message, index) in details.conversation"
-            v-bind="getMessageAt[index]"
-          />
+          <template v-for="(message, index) in details.conversation">
+            <i18n class="subtitle c-divider" v-if="startedUnreadIndex === index">New messages</i18n>
+            <component v-bind="getMessageAt[index]"/>
+          </template>
           <message
             v-for="(message, index) in ephemeral.pendingMessages"
             v-bind="getPendingAt[index]"
@@ -116,6 +116,28 @@
   padding: 0 $gi-spacer-sm $gi-spacer;
 }
 
+.c-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: $gi-spacer 0;
+
+  &::before,
+  &::after {
+    content: "";
+    flex-grow: 1;
+    border-bottom: 1px solid $warning;
+  }
+
+  &::before {
+    margin-right: $gi-spacer-sm;
+  }
+
+  &::after {
+    margin-left: $gi-spacer-sm;
+  }
+}
+
 @include phone {
   .c-chatmain {
     /* A - MVP static way - show / hide conversation */
@@ -137,11 +159,8 @@
   // It's much more smooth, so better for the user experience
   .c-body {
     padding-top: 4rem;
+    padding-bottom: 2.5rem; // initial fixed footer height
     min-height: 100vh;
-
-    &-conversation {
-      padding-bottom: 5rem; // fixed footer height
-    }
   }
 
   .c-footer {
@@ -257,6 +276,13 @@ export default {
     bodyStyles () {
       return this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
     },
+    shouldHideWho () {
+      if (this.isFromGIBot && this.details.participants['GIBot']) { return true }
+      return false
+    },
+    startedUnreadIndex () {
+      return this.details.conversation.findIndex(message => message.unread === true)
+    },
     getMessageAt () {
       let isCurrentUser
 
@@ -282,7 +308,7 @@ export default {
           who: this.who(isCurrentUser, message.from),
           avatar: this.avatar(isCurrentUser, message.from),
           variant: this.variant(isCurrentUser),
-          // hideWho: this.summary.type !== 'messages',
+          hideWho: this.shouldHideWho,
           isSameSender: this.isSameSender(index)
         }
       })
@@ -307,6 +333,9 @@ export default {
     isCurrentUser (fromId) {
       return this.currentUserAttr.id === fromId
     },
+    isFromGIBot (index) {
+      return this.details.conversation[index].from === 'GIBot'
+    },
     who (isCurrentUser, fromId) {
       const user = isCurrentUser ? this.currentUserAttr : this.details.participants[fromId]
 
@@ -320,6 +349,7 @@ export default {
     },
     isSameSender (index) {
       if (!this.details.conversation[index - 1]) { return false }
+      if (this.isFromGIBot(index)) { return false }
       return this.details.conversation[index].from === this.details.conversation[index - 1].from
     },
 

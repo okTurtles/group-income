@@ -169,11 +169,11 @@ export default {
       this.updateTextArea()
     },
     sendMessage () {
-      if (!this.ephemeral.textWithLines) {
+      if (!this.$refs.textarea.value) {
         return false
       }
 
-      this.$emit('send', this.ephemeral.textWithLines) // TODO remove first / last empty lines
+      this.$emit('send', this.$refs.textarea.value) // TODO remove first / last empty lines
       this.$refs.textarea.value = ''
       this.updateTextArea()
     }

@@ -4,16 +4,22 @@
       hasMargin
       size="sm"
       class="c-avatar level-left"
+      :class="{ 'alignToText': !hasWhoInvisible }"
       aria-hidden="true"
     />
     <div class="c-body">
-      <span class="has-text-grey is-size-7 c-who" :class="{ 'sr-only': hideWho || isSameSender }">
+      <span class="has-text-grey is-size-7 c-who" :class="{ 'sr-only': hasWhoInvisible }">
         {{who}}
       </span>
-      <!-- NOTE: Use v-html to have messages with multiple lines -->
-      <p class="c-text" v-html="text" />
+      <!-- NOTE: Use v-html to have messages formatted (links and so on) -->
+      <p class="c-text" v-html="text" v-if="text" />
+      <slot v-else></slot>
     </div>
-    <button class="button is-icon has-text-danger" v-if="variant === 'failed'" @click="$emit('retry')">
+    <button class="button is-icon has-text-danger c-retry"
+      :class="{ 'alignToText': !hasWhoInvisible }"
+      v-if="variant === 'failed'"
+      @click="$emit('retry')"
+    >
       <i class="fa fa-undo"></i>
     </button>
   </div>
@@ -23,7 +29,7 @@
 
 .c-message {
   margin: $gi-spacer $gi-spacer-sm 0;
-  align-items: flex-end;
+  align-items: flex-start;
 
   &.sent,
   &.failed {
@@ -45,10 +51,22 @@
   }
 }
 
+.c-avatar,
+.c-retry {
+  &.alignToText {
+    color: red;
+    margin-top: $gi-spacer; // visually center align to text
+  }
+}
+
 .c-avatar {
   .sent &,
   .failed & {
-    margin: 0 0 0.2rem $gi-spacer-sm; // 0.2 to visually align with buble text
+    margin: 0 0 0 $gi-spacer-sm;
+
+    &.alignToText {
+      margin-top: 1.4rem; // visually center align to bubble text
+    }
   }
 
   .isHidden &,
@@ -73,7 +91,8 @@
 
 .c-text {
   max-width: 32rem;
-  word-wrap: break-word;
+  word-wrap: break-word; // too much long words will break
+  white-space: pre-line; // \n will break
 
   .sent & {
     background-color: $primary-text;
@@ -92,7 +111,7 @@
 
   // When .c-shot is the only element (when .c-who isn't rendered)
   &:first-child:last-child {
-    padding-bottom: $gi-spacer-sm;
+    margin-bottom: $gi-spacer-sm;
   }
 }
 </style>
@@ -116,6 +135,11 @@ export default {
     },
     isSameSender: Boolean,
     hideWho: Boolean
+  },
+  computed: {
+    hasWhoInvisible () {
+      return this.hideWho || this.isSameSender
+    }
   }
 }
 </script>

@@ -40,6 +40,7 @@ export default {
   computed: {
     greetingMap () {
       return {
+        GIBot: 'I’m here to keep you update while you are away.',
         [chatTypes.INDIVIDUAL]: 'You and {name} can chat in private here.',
         [chatTypes.GROUP]: 'This is the very beginning of {name} channel.'
       }
@@ -58,6 +59,10 @@ export default {
       return foundersMap[this.type]
     },
     text () {
+      if (this.$route.params.currentConversation.id === 'GIBot') {
+        return this.L(this.greetingMap.GIBot)
+      }
+
       const conversationSummaryMap = {
         [chatTypes.INDIVIDUAL]: users[this.$route.params.currentConversation.id],
         [chatTypes.GROUP]: groupA.channels[this.$route.params.currentConversation.id]
