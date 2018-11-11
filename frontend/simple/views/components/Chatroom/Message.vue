@@ -8,7 +8,7 @@
       aria-hidden="true"
     />
     <div class="c-body">
-      <span class="has-text-grey is-size-7 c-who" :class="{ 'sr-only': hasWhoInvisible }">
+      <span class="has-text-text-light is-size-7 c-who" :class="{ 'sr-only': hasWhoInvisible }">
         {{who}}
       </span>
       <!-- NOTE: Use v-html to have messages formatted (links and so on) -->
@@ -103,7 +103,7 @@
   }
 
   .failed & {
-    color: $text-light; // REVIEW/OPTIMIZE Verify why $text-light is ligther than $text color (dark grey - correct) and .has-text-light is white (incorrect)... Bulma bug?
+    color: $text-light;
     border: 1px dashed $danger;
     border-radius: $radius-large;
     padding: $gi-spacer-xs $gi-spacer-sm;

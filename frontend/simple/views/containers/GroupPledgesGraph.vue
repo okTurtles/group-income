@@ -5,7 +5,7 @@
       :innerSlices="groupPledgingInnerSlices"
       :size="chartSize"
     >
-      <i18n tag="p" class="is-uppercase has-text-grey is-size-7">Group Pledge Goal</i18n>
+      <i18n tag="p" class="is-uppercase has-text-text-light is-size-7">Group Pledge Goal</i18n>
       <span class="has-text-weight-bold">{{fakeStore.currency}}{{graphData.goal}}</span>
     </pie-chart>
     <graph-legend-group class="columns c-legend" :aria-label="L('Group\'s Pledge Summary')">
@@ -198,7 +198,7 @@ export default {
         slices.push({
           id: 'neededPledges',
           percent: this.decimalSlice(neededPledges),
-          color: 'light',
+          color: 'light', // TODO later - review this color, too light
           label: this.L('{amount} needed pledge', { amount: currency + neededPledges })
         })
       } else if (surplus) {

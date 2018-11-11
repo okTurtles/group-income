@@ -32,10 +32,11 @@
   &.md { @include size($gi-spacer*2); }
 
   &.lg { @include size($gi-spacer*3); }
+
+  &.xl { @include size($gi-spacer*4); }
 }
 </style>
 <script>
-// TODO: Replace all avatars for this component
 export default {
   name: 'Avatar',
   props: {

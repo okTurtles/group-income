@@ -11,7 +11,7 @@
       <div class="c-voting-info">
         <h5 class="has-text-weight-bold is-uppercase c-voting-info-title">{{proposal.title}}</h5>
         <p v-html="proposal.text"></p>
-        <p class="is-size-7 has-text-grey" v-if="proposal.textDetails" v-html="proposal.textDetails"></p>
+        <p class="is-size-7 has-text-text-light" v-if="proposal.textDetails" v-html="proposal.textDetails"></p>
       </div>
     </div>
 
@@ -47,7 +47,7 @@
         </button-countdown>
       </div>
 
-      <p class="has-text-grey has-text-right"
+      <p class="has-text-text-light has-text-right"
         :class="{ 'c-feedback has-text-weight-bold': isProposalClosed }"
       >
         {{helperText}}

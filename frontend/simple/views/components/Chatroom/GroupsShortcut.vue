@@ -91,6 +91,7 @@ import Avatar from '../Avatar.vue'
 import Badge from '../Badge.vue'
 
 export default {
+  // NOTE - maybe this approach should be used in the sidebar to switch between groups instead of a dropdown...
   name: 'GroupsShortcut',
   components: {
     Avatar,

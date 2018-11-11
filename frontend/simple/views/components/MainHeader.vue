@@ -19,7 +19,7 @@
           <template v-if="title">{{ title }}</template>
           <slot name="title" v-else></slot>
         </h2>
-        <p class="is-size-7 has-text-grey gi-is-ellipsis is-hidden-mobile" v-if="description">
+        <p class="has-text-text-light is-size-7 gi-is-ellipsis is-hidden-mobile" v-if="description">
           {{ description }}
         </p>
       </div>

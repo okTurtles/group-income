@@ -22,6 +22,7 @@
             <i class="fa fa-user-plus"></i>
           </button>
           <button class="button is-icon">
+            <!-- TODO later - show a tooltip on notifications snooze -->
             <i class="fa fa-bell"></i>
           </button>
           <menu-parent class="level-right">
@@ -129,7 +130,7 @@
   &::after {
     content: "";
     flex-grow: 1;
-    border-bottom: 1px solid $warning;
+    border-bottom: 1px solid $tertiary;
   }
 
   &::before {

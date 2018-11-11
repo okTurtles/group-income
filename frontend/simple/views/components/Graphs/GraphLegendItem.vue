@@ -1,6 +1,6 @@
 <template>
   <li>
-    <div class="is-size-7 is-uppercase has-text-grey has-text-weight-normal c-label">
+    <div class="subtitle c-label">
       <span class="c-visual" v-if="color" :class="`has-background-${color}`"></span>
       {{label}}
     </div>

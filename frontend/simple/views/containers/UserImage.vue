@@ -1,5 +1,5 @@
 <template>
-    <avatar :src="pictureURL" :alt="username"></avatar>
+    <avatar :src="pictureURL" :alt="username" size="xl"></avatar>
 </template>
 <script>
 import sbp from '../../../../shared/sbp.js'

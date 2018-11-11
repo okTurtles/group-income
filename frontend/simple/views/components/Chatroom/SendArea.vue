@@ -65,12 +65,12 @@ $initialHeight: 2.5rem;
   &-btn {
     padding: $gi-spacer-sm;
     padding-right: $gi-spacer;
-    color: $light; // TODO - verify the proper use of these variables
+    color: $light;
     height: 100%;
 
     &:focus {
       box-shadow: none;
-      color: $text-light; // TODO - verify the proper use of these variables
+      color: $text-light;
     }
 
     &.isActive {

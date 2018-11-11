@@ -68,7 +68,7 @@
 
   &.is-default {
     border: none;
-    background-color: $white-ter;
+    background-color: $light;
   }
 
   &.is-editable {
@@ -100,7 +100,7 @@ export default {
       type: String,
       validator (value) {
         return [
-          'default', // grey box just to read the content
+          'default', // light box just to read the content
           'unfilled', // dashed box interactive to add a new contribution
           'editable' // blue box to edit a contribution
         ].indexOf(value) > -1
