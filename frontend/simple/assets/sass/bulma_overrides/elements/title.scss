@@ -1,7 +1,19 @@
 $title-color: $text;
 $title-line-height: 1.2;
 $title-weight: 700;
-$subtitle-weight: $weight-light;
+$subtitle-weight: $weight-normal;
+$subtitle-size: $size-6;
+$subtitle-color: $grey; // $text-secondary;
 $subtitle-line-height: $title-line-height;
+$subtitle-negative-margin: 0;
 
 @import "../../node_modules/bulma/sass/elements/title";
+
+.subtitle {
+  text-transform: uppercase;
+  letter-spacing: 0.2px;
+
+  &:not(:last-child) {
+    margin-bottom: 0;
+  }
+}

@@ -1,7 +1,6 @@
 <template>
   <div class="c-list">
-    <!-- REVIEW/TODO - make this kind of text should be the style for .subtitle -->
-    <h2 class="has-text-grey is-uppercase c-subtitle">{{title}}</h2>
+    <h2 class="subtitle c-subtitle">{{title}}</h2>
     <list hasMargin>
       <list-item v-for="id in list.order"
         tag="router-link"

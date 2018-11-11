@@ -10,7 +10,7 @@
     <section class="section columns is-desktop is-multiline c-invoice">
       <header class="box column is-narrow is-flex-touch gi-is-justify-between c-summary">
         <div class="c-summary-item">
-          <h2 class="is-size-7 has-text-grey is-uppercase"><i18n>Payments Sent</i18n></h2>
+          <h2 class="subtitle"><i18n>Payments Sent</i18n></h2>
           <p class="title is-5">
             <i18n :args="{ sent: paymentSummary.sent, total: fakeStore.users.length }">
               {sent} of {total}
@@ -29,13 +29,13 @@
           </p>
         </div>
         <div class="c-summary-item">
-          <i18n  tag="h2" class="is-size-7 has-text-grey is-uppercase">Payments Confirmed</i18n>
+          <i18n  tag="h2" class="subtitle">Payments Confirmed</i18n>
           <i18n tag="p" class="title is-5" :args="{ sent: paymentSummary.confirmed, total: fakeStore.users.length }">
             {sent} of {total}
           </i18n>
         </div>
         <div class="c-summary-item">
-          <i18n tag="h2" class="is-size-7 has-text-grey is-uppercase">Amount Sent</i18n>
+          <i18n tag="h2" class="subtitle">Amount Sent</i18n>
           <p class="title is-5" :class="{'has-text-success': paymentAllDone}">
             <i18n v-if="paymentAllDone" :args="{ currency: fakeStore.currency, amountTotal: paymentSummary.amountTotal }">
               All {currency}{amountTotal}
@@ -238,31 +238,31 @@ export default {
         users: [
           {
             name: 'Lilia Bouvet',
-            avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
+            avatar: '/simple/assets/images/default-avatar.png',
             status: 'todo',
             amount: 10
           },
           {
             name: 'Charlotte Doherty',
-            avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
+            avatar: '/simple/assets/images/default-avatar.png',
             status: 'todo',
             amount: 20
           },
           {
             name: 'Kim Kr',
-            avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
+            avatar: '/simple/assets/images/default-avatar.png',
             status: 'rejected',
             amount: 25
           },
           {
             name: 'Zoe Kim',
-            avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
+            avatar: '/simple/assets/images/default-avatar.png',
             status: 'pending',
             amount: 30
           },
           {
             name: 'Hugo Lil',
-            avatar: 'http://localhost:8000/simple/assets/images/default-avatar.png',
+            avatar: '/simple/assets/images/default-avatar.png',
             status: 'completed',
             amount: 50
           }

@@ -1,7 +1,6 @@
 <template>
   <div class="c-wrapper" v-if="groups.length > 0">
-    <!-- REVIEW/TODO - make this kind of text should be the style for .subtitle -->
-    <i18n tag="h2" class="has-text-grey is-size-6 is-uppercase c-subtitle">Groups chat shortcut</i18n>
+    <i18n tag="h2" class="subtitle c-subtitle">Groups chat shortcut</i18n>
     <ul class="c-ul">
       <li v-for="(group, index) in groups" class="c-ul-li">
         <router-link to="/group-chat"
