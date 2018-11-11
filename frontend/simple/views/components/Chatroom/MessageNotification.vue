@@ -1,20 +1,26 @@
 <template>
-  <div class="c-message" v-html="text" />
+  <div class="c-notification">
+    <p class="c-notification-bubble" v-html="text" />
+  </div>
 </template>
 <style lang="scss" scoped>
 @import "../../../assets/sass/theme/index";
 
-.c-message {
-  display: inline-block;
-  margin: $gi-spacer $gi-spacer 0;
-  padding: $gi-spacer-xs $gi-spacer-sm;
+.c-notification {
   text-align: center;
-  max-width: 32rem;
-  background-color: $lighter;
-  border-radius: $radius-large;
 
-  @include phablet {
+  &-bubble {
+    display: inline-block;
     margin: $gi-spacer $gi-spacer 0;
+    padding: $gi-spacer-xs $gi-spacer-sm;
+    text-align: center;
+    max-width: 32rem;
+    background-color: $lighter;
+    border-radius: $radius-large;
+
+    @include phablet {
+      margin: $gi-spacer $gi-spacer 0;
+    }
   }
 }
 </style>

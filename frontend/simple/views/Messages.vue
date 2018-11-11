@@ -48,7 +48,6 @@ export default {
       'groupsByName'
     ]),
     messages () {
-      // TODO - add GIBot item to list
       return {
         order: individualMessagesSorted,
         conversations: users

@@ -216,13 +216,37 @@ export const groupA = {
       description: 'Lets plan our next summer road trip'
     }
   },
-  founders: [333, 444],
-  members: [333, 444, 222],
+  founders: [333, 555],
+  members: [333, 555, 222],
   conversations: {
     c0: [
       {
+        from: '555',
+        text: 'Hi 👋'
+      },
+      {
         from: '444',
-        text: 'Hi everyone 👋'
+        text: 'It’s missing Sandy'
+      },
+      {
+        from: '555',
+        text: 'Yeah, looking for her username, one second'
+      },
+      {
+        from: 'notification',
+        text: 'You are now part of The Dreamers group.'
+      },
+      {
+        from: '555',
+        text: 'Guys, should we add Katty to the group?'
+      },
+      {
+        from: '000',
+        text: 'There’s no problem to me'
+      },
+      {
+        from: 'interactive',
+        id: 'inviteKattyId'
       }
     ],
     c1: [

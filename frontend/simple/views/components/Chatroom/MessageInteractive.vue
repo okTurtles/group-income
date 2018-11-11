@@ -6,15 +6,9 @@
       Do it another PR, since is not critical to Chatroom's and still needs to
       studied: all interaction types and each one state.
     -->
-    <template v-if="!accepted">
-      Eric invited you to join his group Dreamears
-      <br>
-      [ Join ] [ See invite ]
-    </template>
-    <template v-else>
-      Eric invited you to join his group Dreamears
-      <br>
-      You accepted the invite
+    <template>
+      An interactive action would be here...
+      <br /> Accept an invite or vote on a proposal
     </template>
   </div>
 </template>

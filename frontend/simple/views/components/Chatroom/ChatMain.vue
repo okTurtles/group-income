@@ -49,13 +49,16 @@
 
       <div class="c-body is-flex" :style="bodyStyles">
         <div v-if="details.isLoading">
-          LOADING... <!-- TODO Design a cool skeleton loading -->
+          <loading />
+          <!-- TODO later - Design a cool skeleton loading
+            - this should be done only after knowing exactly how server gets each conversation data -->
         </div>
         <div class="c-body-conversation" ref="conversation" v-else>
           <conversation-greetings />
           <template v-for="(message, index) in details.conversation">
             <i18n class="subtitle c-divider" v-if="startedUnreadIndex === index">New messages</i18n>
-            <component v-bind="getMessageAt[index]"/>
+            <message-notification :text="message.text" v-if="message.from === 'notification'" />
+            <component v-else v-bind="getMessageAt[index]"/>
           </template>
           <message
             v-for="(message, index) in ephemeral.pendingMessages"
@@ -206,6 +209,7 @@
 <script>
 import MainHeader from '../MainHeader.vue'
 import Avatar from '../Avatar.vue'
+import Loading from '../Loading.vue'
 import { List } from '../Lists/index.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuHeader, MenuItem } from '../Menu/index.js'
 import Message from './Message.vue'
@@ -220,6 +224,7 @@ export default {
   components: {
     MainHeader,
     Avatar,
+    Loading,
     List,
     MenuParent,
     MenuTrigger,
@@ -276,10 +281,6 @@ export default {
     bodyStyles () {
       return this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
     },
-    shouldHideWho () {
-      if (this.isFromGIBot && this.details.participants['GIBot']) { return true }
-      return false
-    },
     startedUnreadIndex () {
       return this.details.conversation.findIndex(message => message.unread === true)
     },
@@ -308,7 +309,7 @@ export default {
           who: this.who(isCurrentUser, message.from),
           avatar: this.avatar(isCurrentUser, message.from),
           variant: this.variant(isCurrentUser),
-          hideWho: this.shouldHideWho,
+          hideWho: this.shouldHideWho(index),
           isSameSender: this.isSameSender(index)
         }
       })
@@ -332,6 +333,10 @@ export default {
   methods: {
     isCurrentUser (fromId) {
       return this.currentUserAttr.id === fromId
+    },
+    shouldHideWho (index) {
+      if (this.isFromGIBot(index)) { return true }
+      return false
     },
     isFromGIBot (index) {
       return this.details.conversation[index].from === 'GIBot'

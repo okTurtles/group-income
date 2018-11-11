@@ -92,7 +92,7 @@
 .c-text {
   max-width: 32rem;
   word-wrap: break-word; // too much long words will break
-  white-space: pre-line; // \n will break
+  white-space: pre-line; // break \n to a new line
 
   .sent & {
     background-color: $primary-text;

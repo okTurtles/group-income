@@ -136,7 +136,7 @@ export default {
       const conversation = type === chatTypes.INDIVIDUAL ? individualConversations : groupA.conversations
       const participants = type === chatTypes.INDIVIDUAL
         ? { [id]: users[id] }
-        : users // NOTE/TODO - only users of this group
+        : users // NOTE/TODO - filter by users of this group only
 
       return {
         isLoading: false,

@@ -48,6 +48,7 @@
     height: $gi-spacer;
     width: calc(100% - #{$gi-spacer}); // so it doesn't get above scrollbar
     background: linear-gradient($body-background-color, rgba($body-background-color, 0));
+    pointer-events: none;
   }
 
   &-top {

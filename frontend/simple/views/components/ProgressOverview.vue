@@ -39,12 +39,8 @@
     margin-top: 0.5rem;
 
     &-key {
-      // font-size: 0.75rem;
-      // font-weight: 500;
-      // text-transform: uppercase;
       min-width: 7.5rem;
       margin-right: 1rem;
-      // color: #616161;
     }
 
     &-value {
