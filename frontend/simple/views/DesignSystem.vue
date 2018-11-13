@@ -42,8 +42,8 @@
           <td>A basic income, also called basic income guarantee, universal basic income (UBI), basic living stipend (BLS), or universal demogrant, is a type of program in which citizens (or permanent residents) of a country may receive a regular sum of money from a source such as the government. A pure or unconditional basic income has no means test, but unlike Social Security in the United States it is distributed automatically to all citizens without a requirement to notify changes in the citizen's financial status. Basic income can be implemented nationally, regionally or locally. The World Bank's World Development Report 2019 on the future of work describes the existing schemes around the world.</td>
         </tr>
         <tr>
-          <td class="is-narrow"><code>.has-text-light<br> $text-light</code></td>
-          <td class="has-text-light">Use this color on non critical texts.</td>
+          <td class="is-narrow"><code>$text-light<br />.has-text-text-light</code></td>
+          <td class="has-text-text-light">Use this color on non critical texts.</td>
         </tr>
         <tr>
           <td class="is-narrow"><code>$link</code></td>
@@ -165,6 +165,10 @@ export default {
       config: {
         colors: {
           brand: [
+            {
+              name: 'dark',
+              usage: 'Used on texts by. No need to use <code>$dark</code>, is <code>body</code>\'s default color value.'
+            },
             {
               name: 'primary',
               usage: 'Used on main decorative / interactive elements. Note that text with $primary color (example a <a href="#">a link</a>) is slightly darker for A11Y reasons'
