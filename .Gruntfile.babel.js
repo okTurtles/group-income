@@ -118,7 +118,7 @@ module.exports = (grunt) => {
         cmd: './node_modules/.bin/mocha --require Gruntfile.js --exit -R spec --bail "{./{,!(node_modules)/**/}*.test.js,./test/*.js}"',
         options: {env: {LOAD_NO_FILE: 'true', ...process.env}}
       },
-      standard: './node_modules/.bin/standard "**/*.{js,vue}" --fix', // TODO don't forget to remove --fix
+      standard: './node_modules/.bin/standard "**/*.{js,vue}"',
       standardgrunt: './node_modules/.bin/standard .Gruntfile.babel.js Gruntfile.js',
       stylelint: './node_modules/.bin/stylelint "frontend/simple/**/*.{css,scss,vue}"',
       flow: './node_modules/.bin/flow'
