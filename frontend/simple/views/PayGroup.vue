@@ -72,7 +72,11 @@
           <tbody class="tbody is-borderless">
             <tr v-for="user, index in fakeStore.users">
               <th class="has-text-weight-normal">
-                <avatar :alt="`${user.name}s avatar`" :src="user.avatar" size="lg" hasMargin></avatar>
+                <avatar :src="user.avatar"
+                    :alt="L('{username}\'s avatar', { username: user.name} )"
+                    size="lg"
+                    hasMargin
+                ></avatar>
                 <span class="c-tableBox-cell">{{user.name}}</span>
               </th>
               <td>

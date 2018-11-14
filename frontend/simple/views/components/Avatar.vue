@@ -49,7 +49,7 @@ export default {
       type: String,
       default: 'md',
       validator (value) {
-        return ['xs', 'sm', 'md', 'lg'].indexOf(value) !== -1
+        return ['xs', 'sm', 'md', 'lg', 'xl'].indexOf(value) !== -1
       }
     },
     fallbackBg: String,
