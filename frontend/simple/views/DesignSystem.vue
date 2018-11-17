@@ -193,17 +193,17 @@ export default {
             },
             {
               name: 'tertiary',
-              usage: 'Used as another auxiliar on decorative elements'
+              usage: 'Used as another auxiliar color on decorative elements'
             }
           ],
           support: [
             {
               name: 'success',
-              usage: 'Used on elements to show something good happened - Do not mix its usage with $secondary (similar colors in this theme but different meanings)'
+              usage: 'Used on elements to show something good happened - Do not mix its usage with $secondary (same color in this theme but with  different meanings)'
             },
             {
               name: 'warning',
-              usage: 'Used on elements to show something not that good happened - Do not mix its usage with $tertiary (similar colors in this theme but different meanings)'
+              usage: 'Used on elements to show something not that good happened - Do not mix its usage with $tertiary (same color in this theme but with different meanings)'
             },
             {
               name: 'danger',
