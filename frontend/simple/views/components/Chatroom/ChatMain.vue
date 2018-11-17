@@ -218,7 +218,7 @@ import MessageInteractive from './MessageInteractive.vue'
 import MessageNotification from './MessageNotification.vue'
 import ConversationGreetings from '../../containers/Chatroom/ConversationGreetings.vue'
 import SendArea from './SendArea.vue'
-import { currentUserId } from '../../containers/Chatroom/fakeStore.js'
+import { currentUserId, messageTypes } from '../../containers/Chatroom/fakeStore.js'
 
 export default {
   name: 'ChatMain',
@@ -291,13 +291,13 @@ export default {
       return this.details.conversation.map((message, index) => {
         isCurrentUser = this.currentUserAttr.id === message.from
 
-        if (message.from === 'interactive') {
+        if (message.from === messageTypes.INTERACTIVE) {
           return {
             is: MessageInteractive,
             id: message.id
           }
         }
-        if (message.from === 'notification') {
+        if (message.from === messageTypes.NOTIFICATION) {
           return {
             is: MessageNotification,
             text: message.text

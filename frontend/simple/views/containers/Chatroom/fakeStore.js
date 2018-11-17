@@ -5,6 +5,11 @@ export const chatTypes = {
   GROUP: 'GROUP'
 }
 
+export const messageTypes = {
+  INTERACTIVE: 'INTERACTIVE',
+  NOTIFICATION: 'NOTIFICATION'
+}
+
 // Just for static layout purposes, the currentUserId is '000'
 export const currentUserId = '000'
 
@@ -169,7 +174,7 @@ export const individualConversations = {
       text: 'It\'s called Dreamears'
     },
     {
-      from: 'interactive',
+      from: messageTypes.INTERACTIVE,
       id: 'invite123'
     },
     {
@@ -233,7 +238,7 @@ export const groupA = {
         text: 'Yeah, looking for her username, one second'
       },
       {
-        from: 'notification',
+        from: messageTypes.NOTIFICATION,
         text: 'You are now part of The Dreamers group.'
       },
       {
@@ -245,7 +250,7 @@ export const groupA = {
         text: 'There’s no problem to me'
       },
       {
-        from: 'interactive',
+        from: messageTypes.INTERACTIVE,
         id: 'inviteKattyId'
       }
     ],
