@@ -8,6 +8,7 @@
       <router-link to="/home">
         <img src="/simple/assets/images/logo-transparent.png" alt="GroupIncome's logo" class="gi-logo c-logo level-left">
       </router-link>
+      <!--  NOTE/REVIEW: If we follow Messages GIBot approach, the bell icon wont be needed -->
       <activity :activityCount="activityCount"></activity>
     </div>
 

@@ -15,7 +15,7 @@ export default {
     return {
       config: {
         Menu: {
-          isActive: this.isActive,
+          isActive: false,
           handleSelect: this.handleSelect,
           handleTrigger: this.handleTrigger,
           closeMenu: this.closeMenu
@@ -26,19 +26,6 @@ export default {
   provide () {
     return {
       Menu: this.config.Menu
-    }
-  },
-  watch: {
-    isActive: {
-      immediate: true,
-      handler (isActive) {
-        this.config.Menu.isActive = isActive
-      }
-    }
-  },
-  computed: {
-    isActive () {
-      return this.config.Menu.isActive
     }
   },
   methods: {
