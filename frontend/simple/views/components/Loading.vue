@@ -1,8 +1,8 @@
 <template>
   <div class="c-loading has-text-centered"
     :class="{ 'c-fullView': theme === 'fullView' }">
-    <h1 class="title is-3 is-marginless"><i18n>{{title}}</i18n></h1>
-    <p><i18n>{{text}}</i18n></p>
+    <h1 class="title is-3 is-marginless">{{title}}></h1>
+    <p>{{text}}</p>
   </div>
 </template>
 <style lang="scss" scoped>
@@ -31,11 +31,11 @@ export default {
   name: 'Loading',
   props: {
     title: {
-      default: 'Hang in there',
+      default: this.L('Hang in there'),
       type: String
     },
     text: {
-      default: 'Magic is happening...',
+      default: this.L('Magic is happening...'),
       type: [String, Number]
     },
     theme: {
