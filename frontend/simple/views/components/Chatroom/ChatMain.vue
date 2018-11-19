@@ -271,9 +271,9 @@ export default {
     if (this.summary.title) {
       // force conversation viewport to be at the bottom (most recent messages)
       if (this.config.isPhone) {
-        setTimeout(function () {
+        this.$nextTick(() => {
           window.scroll(0, document.body.offsetHeight)
-        }, 0) // REVIEW: without timeout it scrolls before the DOM is ready... why?
+        })
       } else {
         this.$refs.conversation && this.$refs.conversation.scroll(0, this.$refs.conversation.scrollHeight)
       }
