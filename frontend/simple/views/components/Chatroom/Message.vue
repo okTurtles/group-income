@@ -117,6 +117,7 @@
 </style>
 <script>
 import Avatar from '../Avatar.vue'
+import messageVariantTypes from './messageVariantTypes.js'
 
 export default {
   name: 'Message',
@@ -130,7 +131,7 @@ export default {
     variant: {
       type: String,
       validator (value) {
-        return ['sent', 'received', 'failed'].indexOf(value) !== -1
+        return [messageVariantTypes.SENT, messageVariantTypes.RECEIVED, messageVariantTypes.FAILED].indexOf(value) !== -1
       }
     },
     isSameSender: Boolean,
