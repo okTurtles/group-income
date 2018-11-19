@@ -11,8 +11,8 @@
       <span class="has-text-text-light is-size-7 c-who" :class="{ 'sr-only': hasWhoInvisible }">
         {{who}}
       </span>
-      <!-- NOTE: Use v-html to have messages formatted (links and so on) -->
-      <p class="c-text" v-html="text" v-if="text" />
+      <!-- TODO: #502 - Chat: Add support to markdown formatted text -->
+      <p class="c-text" v-if="text">{{text}}</p>
       <slot v-else></slot>
     </div>
     <button class="button is-icon has-text-danger c-retry"

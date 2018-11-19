@@ -141,7 +141,7 @@ export const individualConversations = {
     },
     {
       from: '444',
-      text: '&lt;!-- FOR THE CURIOUS: This site was made by @thebarrytone. Don\'t tell my mom. -->'
+      text: '<!-- FOR THE CURIOUS: This site was made by @thebarrytone. Don\'t tell my mom. -->'
     },
     {
       from: currentUserId,

@@ -6,7 +6,7 @@
       :src="user.picture"
       :alt="user.displayName || user.name"
     />
-    <message-notification :text="text" />
+    <message-notification>{{text}}</message-notification>
   </div>
 </template>
 <style lang="scss" scoped>

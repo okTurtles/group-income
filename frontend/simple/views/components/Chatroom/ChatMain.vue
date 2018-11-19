@@ -58,7 +58,9 @@
           <conversation-greetings />
           <template v-for="(message, index) in details.conversation">
             <i18n class="subtitle c-divider" v-if="startedUnreadIndex === index">New messages</i18n>
-            <message-notification :text="message.text" v-if="message.from === 'notification'" />
+            <message-notification v-if="message.from === 'notification'">
+              {{message.text}}
+            </message-notification>
             <component v-else v-bind="getMessageAt[index]"/>
           </template>
           <message

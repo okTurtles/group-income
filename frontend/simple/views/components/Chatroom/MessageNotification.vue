@@ -1,6 +1,9 @@
 <template>
   <div class="c-notification">
-    <p class="c-notification-bubble" v-html="text" />
+    <p class="c-notification-bubble">
+      <!-- TODO: #502 - Chat: Add support to markdown formatted text -->
+      <slot></slot>
+    </p>
   </div>
 </template>
 <style lang="scss" scoped>
@@ -26,15 +29,6 @@
 </style>
 <script>
 export default {
-  name: 'MessageNotification',
-  components: {},
-  props: {
-    text: String
-  },
-  data () {
-    return {}
-  },
-  computed: {},
-  methods: {}
+  name: 'MessageNotification'
 }
 </script>
