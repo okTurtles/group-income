@@ -114,7 +114,7 @@
   justify-content: flex-end;
 
   &-conversation {
-    padding: $gi-spacer-lg 0;
+    padding: $gi-spacer 0;
   }
 }
 
@@ -192,9 +192,11 @@
   }
 
   .c-body {
+    overflow: scroll;
+
     &-conversation {
       position: relative;
-      padding-bottom: $gi-spacer;
+      padding-bottom: 0;
       max-height: 100%;
       overflow: scroll;
       -webkit-overflow-scrolling: touch;

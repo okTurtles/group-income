@@ -42,6 +42,10 @@
     margin-top: $gi-spacer-xs;
   }
 
+  &:last-of-type {
+    margin-bottom: $gi-spacer;
+  }
+
   .button {
     flex-shrink: 0;
   }
