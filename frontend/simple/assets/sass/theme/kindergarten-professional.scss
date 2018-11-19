@@ -21,7 +21,7 @@ $warning: $tertiary;
 $danger: lighten(adjust-hue($tertiary, -30%), 20%);
 $info: $primary-text;
 $link: $primary-text;
-$light: $grey-lighter;
+$light: $white-ter;
 
 @import "../../node_modules/bulma/sass/utilities/derived-variables";
 
