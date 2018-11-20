@@ -218,7 +218,6 @@ import Loading from '../Loading.vue'
 import { List } from '../Lists/index.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuHeader, MenuItem } from '../Menu/index.js'
 import Message from './Message.vue'
-import messageVariantTypes from './messageVariantTypes.js'
 import MessageInteractive from './MessageInteractive.vue'
 import MessageNotification from './MessageNotification.vue'
 import ConversationGreetings from '../../containers/Chatroom/ConversationGreetings.vue'
@@ -284,6 +283,9 @@ export default {
     }
   },
   computed: {
+    messageVariants () {
+      return Message.constants.variants
+    },
     bodyStyles () {
       return this.config.isPhone ? { paddingBottom: this.ephemeral.bodyPaddingBottom } : {}
     },
@@ -325,7 +327,7 @@ export default {
         text: message.text,
         who: this.who(true),
         avatar: this.avatar(true),
-        variant: message.hasFailed ? messageVariantTypes.FAILED : messageVariantTypes.SENT,
+        variant: message.hasFailed ? this.messageVariants.FAILED : this.messageVariants.SENT,
         isSameSender: index > 0
       }))
     },
@@ -353,7 +355,7 @@ export default {
       return user.displayName || user.name
     },
     variant (isCurrentUser) {
-      return isCurrentUser ? messageVariantTypes.SENT : messageVariantTypes.RECEIVED
+      return isCurrentUser ? this.messageVariants.SENT : this.messageVariants.RECEIVED
     },
     avatar (isCurrentUser, fromId) {
       return isCurrentUser ? this.currentUserAttr.picture : this.details.participants[fromId].picture

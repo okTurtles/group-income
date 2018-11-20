@@ -121,7 +121,12 @@
 </style>
 <script>
 import Avatar from '../Avatar.vue'
-import messageVariantTypes from './messageVariantTypes.js'
+
+const variants = {
+  SENT: 'sent',
+  RECEIVED: 'received',
+  FAILED: 'failed'
+}
 
 export default {
   name: 'Message',
@@ -135,12 +140,15 @@ export default {
     variant: {
       type: String,
       validator (value) {
-        return [messageVariantTypes.SENT, messageVariantTypes.RECEIVED, messageVariantTypes.FAILED].indexOf(value) !== -1
+        return [variants.SENT, variants.RECEIVED, variants.FAILED].indexOf(value) !== -1
       }
     },
     isSameSender: Boolean,
     hideWho: Boolean
   },
+  constants: Object.freeze({
+    variants
+  }),
   computed: {
     hasWhoInvisible () {
       return this.hideWho || this.isSameSender

@@ -23,6 +23,10 @@
   border-radius: $radius-large;
   padding: $gi-spacer $gi-spacer-sm;
 
+  &:last-of-type {
+    margin-bottom: $gi-spacer;
+  }
+
   @include phablet {
     padding: $gi-spacer;
     margin: $gi-spacer $gi-spacer 0;
