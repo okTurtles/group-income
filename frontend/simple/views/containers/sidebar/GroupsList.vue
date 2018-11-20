@@ -26,9 +26,14 @@
     </menu-parent>
 
     <list>
+      <!-- TODO/BUG: Mobile - hide navbar after going to a page -->
       <list-item tag="router-link" icon="columns"
         to="/dashboard">
           <i18n>Dashboard</i18n>
+      </list-item>
+      <list-item tag="router-link" icon="comment"
+        to="/group-chat" :badgeCount="3">
+        <i18n>Chat</i18n>
       </list-item>
       <list-item tag="router-link" icon="pie-chart"
         to="/contributions">
@@ -37,10 +42,6 @@
       <list-item tag="router-link" icon="tag"
         to="/pay-group">
           <i18n>Pay Group</i18n>
-      </list-item>
-      <list-item tag="router-link" icon="comments"
-        to="/soon" :badgeCount="2">
-          <i18n>Chat</i18n>
       </list-item>
 
       <list-item v-if="ephemeral.isCollapseOpen" tag="router-link" variant="secondary" icon="gear" to="/group-settings">

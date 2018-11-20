@@ -3,7 +3,7 @@
   <main v-else class="c-join">
     <div class="c-join-grid section">
       <div class="c-join-grid-header">
-        <h1 class="has-text-grey">
+        <h1 class="has-text-text-light">
           <i18n>You’ve been invited to join a group!</i18n>
         </h1>
         <h2 class="title is-1 is-marginless">{{ephemeral.contract.groupName}}</h2>

@@ -1,6 +1,6 @@
 <template>
   <header class="modal-card-head has-text-centered">
-    <h1 class="modal-card-title title is-size-5 is-marginless has-text-grey" v-if="$slots.subTitle">
+    <h1 class="modal-card-title title is-size-5 is-marginless has-text-text-light" v-if="$slots.subTitle">
       <slot></slot>
     </h1>
     <h2 class="title is-size-3">

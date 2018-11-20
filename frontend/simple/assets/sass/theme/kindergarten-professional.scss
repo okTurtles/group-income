@@ -6,8 +6,8 @@ $size-large: $size-5;
 @import "../../node_modules/bulma/sass/utilities/functions";
 
 $primary: #5dc8f0;
-$primary-light: lighten($primary, 10%);
-$primary-text: darken($primary, 15%); // blue is too light - A11Y purposes
+$primary-light: lighten($primary, 10%); // used on backgrounds
+$primary-text: darken($primary, 15%); // $primary is too light for texts - A11Y purposes
 
 // both colors are indentical on white bg: one is solid and another is transparent
 $primary-bg-s: lighten($primary, 28%);
@@ -16,31 +16,28 @@ $primary-bg-a: rgba($primary, 0.2);
 $secondary: #a0d10e;
 $tertiary: #f89201;
 
-$success: saturate($secondary, 10%);
-$warning: lighten(adjust-hue($tertiary, 0%), 10%);
+$success: $secondary;
+$warning: $tertiary;
 $danger: lighten(adjust-hue($tertiary, -30%), 20%);
 $info: $primary-text;
-
-$light: $grey-lighter;
+$link: $primary-text;
+$light: $white-ter;
 
 @import "../../node_modules/bulma/sass/utilities/derived-variables";
 
-$addColors: (
-  "primary-light": ($primary-light, #fff),
-  "secondary": ($secondary, #fff),
-  "tertiary": ($tertiary, #fff),
-);
-
-$colors: map-merge($colors, $addColors);
-
 // Typography
-
-$link: $primary;
 $text: $grey-darker;
+$body-background-color: #fff;
 
 $family-sans-serif: #{"Source Sans Pro", "Helvetica Neue", sans-serif};
 $family-monospace: #{monospace};
 $body-family: $family-sans-serif;
 
-$body-background-color: #fff;
-$text: $grey-darker;
+$addColors: (
+  "primary-light": ($primary-light, #fff),
+  "text-light": ($text-light, #fff),
+  "secondary": ($secondary, #fff),
+  "tertiary": ($tertiary, #fff)
+);
+
+$colors: map-merge($colors, $addColors);

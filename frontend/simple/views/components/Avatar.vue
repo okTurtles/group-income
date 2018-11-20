@@ -1,24 +1,70 @@
 <template>
-  <img :src="src" :alt="alt" class="c-avatar"/>
+  <div v-if="showFallback" class="c-avatar" :class="{ [size]: size, hasMargin }" v-on="$listeners"
+    :style="{ backgroundColor: fallbackBg }"
+  />
+  <img v-else :src="src" :alt="alt" class="c-avatar" :class="{ [size]: size, hasMargin }"
+    @error="handleFallback"
+    v-on="$listeners"
+  />
 </template>
 <style lang="scss" scoped>
 @import "../../assets/sass/theme/index";
 
+@mixin size($value) {
+  width: $value;
+  max-width: $value;
+  height: $value;
+  max-height: $value;
+  background-color: $body-background-color;
+}
+
 .c-avatar {
-  width: $gi-spacer*3;
-  max-width: $gi-spacer*3;
-  height: $gi-spacer*3;
   border-radius: 50%;
-  margin-right: 0.5rem;
+
+  &.hasMargin {
+    margin-right: $gi-spacer-sm;
+  }
+
+  &.xs { @include size($gi-spacer); }
+
+  &.sm { @include size($gi-spacer*1.5); }
+
+  &.md { @include size($gi-spacer*2); }
+
+  &.lg { @include size($gi-spacer*3); }
+
+  &.xl { @include size($gi-spacer*4); }
 }
 </style>
 <script>
-// TODO: Replace all avatars for this component
 export default {
   name: 'Avatar',
   props: {
     src: String,
-    alt: String
+    alt: {
+      type: String,
+      default: ''
+    },
+    size: {
+      type: String,
+      default: 'md',
+      validator (value) {
+        return ['xs', 'sm', 'md', 'lg', 'xl'].indexOf(value) !== -1
+      }
+    },
+    fallbackBg: String,
+    /** When true a right margin is added - useful when there's text on the side */
+    hasMargin: Boolean
+  },
+  data () {
+    return {
+      showFallback: false
+    }
+  },
+  methods: {
+    handleFallback () {
+      this.showFallback = true
+    }
   }
 }
 </script>

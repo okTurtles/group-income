@@ -171,6 +171,7 @@ export default {
   },
   methods: {
     textReceivingNonMonetary (contribution) {
+      // REVIEW - Is it safe to use v-html here? Related #502
       return this.L('<strong>{what}</strong> from', { what: contribution.what })
     },
     textReceivingMonetary (contribution) {

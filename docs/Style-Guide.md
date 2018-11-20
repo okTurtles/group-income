@@ -26,7 +26,7 @@ Since this is a Vue.js project, any pull requests **must** follow *Priority A* r
 We use [Bulma](https://bulma.io/documentation/overview/start/) framework and `SCSS`.
 
 ### CSS conventions
-- Everything that can be solved with Bulma’s classes should be solved with them.
+- Everything that can be solved with Bulma’s classes should be solved with it.
 
 ```html
 <!-- These are Bulma classes -->

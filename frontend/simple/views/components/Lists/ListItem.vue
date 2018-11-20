@@ -6,8 +6,8 @@
       v-bind="$attrs" v-on="$listeners"
     >
       <i class="fa" :class="{ [`fa-${icon}`]: icon }" v-if="icon"></i>
-      <span class="c-item-text"><slot></slot></span>
-      <span class="c-item-badge" v-if="badgeCount">{{badgeCount}}</span>
+      <span class="c-item-slot"><slot></slot></span>
+      <badge :number="badgeCount" />
     </component>
   </li>
 </template>
@@ -19,6 +19,12 @@
     margin-bottom: $gi-spacer-sm;
     padding-bottom: $gi-spacer-sm;
     border-bottom: 1px solid $grey-lighter;
+  }
+
+  &-slot {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
   }
 }
 
@@ -47,36 +53,37 @@
   &:focus {
     background-color: $primary-bg-a;
 
+    &.solid {
+      background-color: $light;
+    }
+
     .fa {
       color: inherit;
     }
   }
 
   &.is-active {
-    font-weight: 600;
+    &,
+    &:hover,
+    &:focus {
+      background-color: $primary-bg-s;
+      font-weight: 600;
+    }
 
     .fa {
       color: $primary;
     }
   }
 }
-
-.c-item-text {
-  flex-grow: 1;
-}
-
-.c-item-badge {
-  display: inline-block;
-  padding: 1px 5px; // a rounded square
-  color: $body-background-color;
-  line-height: 1.1;
-  border-radius: $radius;
-  background-color: $danger;
-}
 </style>
 <script>
+import Badge from '../Badge.vue'
+
 export default {
   name: 'ListItem',
+  components: {
+    Badge
+  },
   props: {
     itemId: String,
     icon: String,
@@ -94,7 +101,7 @@ export default {
     },
     variant: {
       validator (value) {
-        return ['secondary'].indexOf(value) > -1
+        return ['secondary', 'solid'].indexOf(value) > -1
       }
     }
   },
@@ -102,8 +109,8 @@ export default {
   computed: {
     itemLinkClasses () {
       return {
-        'c-item-link level gi-is-justify-between gi-is-unstyled': true,
-        'secondary': this.variant === 'secondary',
+        'c-item-link level is-flex gi-is-justify-between gi-is-unstyled': true,
+        [this.variant]: this.variant,
         'no-radius': this.disableRadius,
         'is-active': this.isActive
       }

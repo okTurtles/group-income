@@ -1,9 +1,9 @@
 <template>
   <div class="level is-mobile c-profile" v-if="$store.state.loggedIn">
     <div class="level-left">
-      <img class="c-picture" v-if="userPicture" :src="userPicture" />
+      <avatar :src="userPicture" hasMargin />
       <div class="c-user">
-        <p class="c-is-ellipsis has-text-weight-bold">{{userDisplayName}}</p>
+        <p class="gi-is-ellipsis has-text-weight-bold">{{userDisplayName}}</p>
         <span class="gi-is-ellipsis is-size-7" data-test="profileDisplayName">{{userName}}</span>
       </div>
     </div>
@@ -15,7 +15,7 @@
       </button>
       <router-link class="button is-icon"
         tag="button"
-        to="user"
+        to="/user"
         data-test="profileLink">
         <i class="fa fa-ellipsis-v"></i>
       </router-link>
@@ -32,12 +32,6 @@
   margin-top: $gi-spacer;
 }
 
-.c-picture {
-  border-radius: 50%;
-  height: 2rem;
-  margin-right: $gi-spacer-sm;
-}
-
 .c-user {
   max-width: 5rem;
   white-space: nowrap;
@@ -45,8 +39,13 @@
 }
 </style>
 <script>
+import Avatar from '../../components/Avatar.vue'
+
 export default {
   name: 'Profile',
+  components: {
+    Avatar
+  },
   computed: {
     userPicture () {
       return this.$store.getters.currentUserIdentityContract &&

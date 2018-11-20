@@ -1,6 +1,6 @@
 <template>
   <div class="has-text-right">
-    <p class="has-text-grey c-text">Min Income</p>
+    <p class="has-text-text-light c-text">Min Income</p>
     <p class="title is-2 is-marginless" data-test="minIncome">
       {{ currency }}{{ group.incomeProvided }}
     </p>

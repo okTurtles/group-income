@@ -1,36 +1,36 @@
 <template>
   <div>
     <div class="level">
-      <dl class="level-left summary" :style="{ color: fakeStore.themeColor }">
-        <dt class="summary-key">
+      <dl class="level-left c-summary" :style="{ color: fakeStore.themeColor }">
+        <dt class="subtitle c-summary-key">
           <i18n>Contributed</i18n>
         </dt>
-        <dd class="summary-value metric-primaryText">
+        <dd class="c-summary-value c-metric-primaryText">
           {{fakeStore.contributedFormatted}}
         </dd>
-        <dt class="summary-key">
+        <dt class="subtitle c-summary-key">
           <i18n>Pledged</i18n>
         </dt>
-        <dd class="summary-value metric-secondaryText">
+        <dd class="c-summary-value c-metric-secondaryText">
           {{fakeStore.pledgedFormatted}}
         </dd>
-        <dt class="summary-key">
+        <dt class="subtitle c-summary-key">
           <i18n>Goal</i18n>
         </dt>
-        <dd class="summary-value">
+        <dd class="c-summary-value">
           {{fakeStore.goalFormatted}}
         </dd>
       </dl>
     </div>
-    <div class="bar" :style="{ backgroundColor: fakeStore.themeColor }">
-        <span class="bar-progress metric-secondary" :style="{ width: barPercentage.pledged }"></span>
-        <span class="bar-progress metric-primary" :style="{ width: barPercentage.contributed }"></span>
+    <div class="c-bar" :style="{ backgroundColor: fakeStore.themeColor }">
+        <span class="c-bar-progress c-metric-secondary" :style="{ width: barPercentage.pledged }"></span>
+        <span class="c-bar-progress c-metric-primary" :style="{ width: barPercentage.contributed }"></span>
     </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
-  .summary {
+  .c-summary {
     display: flex;
     flex-direction: column;
     flex-wrap: wrap;
@@ -39,12 +39,8 @@
     margin-top: 0.5rem;
 
     &-key {
-      font-size: 0.75rem;
-      font-weight: 500;
-      text-transform: uppercase;
       min-width: 7.5rem;
       margin-right: 1rem;
-      color: #616161;
     }
 
     &-value {
@@ -55,7 +51,7 @@
     }
   }
 
-  .bar {
+  .c-bar {
     position: relative;
     overflow: hidden;
     width: 100%;
@@ -79,7 +75,7 @@
     }
   }
 
-  .metric-primary {
+  .c-metric-primary {
     opacity: 0.8;
 
     &Text {
@@ -88,7 +84,7 @@
     }
   }
 
-  .metric-secondary {
+  .c-metric-secondary {
     opacity: 0.5;
 
     &Text {

@@ -31,8 +31,26 @@ $gi-input-checked-size: 0.4rem;
 .input {
   padding-left: $gi-spacer;
 
+  @include mobile {
+    font-size: 1rem; /* A11Y purposes on mobile https://stackoverflow.com/a/6394497/4737729 */
+  }
+
   @include placeholder {
     color: rgba($input-color, 0.4); // To improve A11Y
+  }
+}
+
+.textarea {
+  padding: $gi-spacer-sm;
+  line-height: 1.3;
+
+  &:hover {
+    border-color: $grey;
+  }
+
+  &:focus {
+    border-color: $primary;
+    outline: $input-focus-box-shadow-size;
   }
 }
 

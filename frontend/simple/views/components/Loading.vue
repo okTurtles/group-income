@@ -1,8 +1,8 @@
 <template>
   <div class="c-loading has-text-centered"
     :class="{ 'c-fullView': theme === 'fullView' }">
-    <h1 class="title is-3 is-marginless"><i18n>{{title}}</i18n></h1>
-    <p><i18n>{{text}}</i18n></p>
+    <h1 class="title is-3 is-marginless">{{Ltitle}}></h1>
+    <p>{{Ltext}}</p>
   </div>
 </template>
 <style lang="scss" scoped>
@@ -42,6 +42,14 @@ export default {
       validator (value) {
         return ['fullView', ''].indexOf(value) !== -1
       }
+    }
+  },
+  computed: {
+    Ltitle () {
+      return this.L(this.title)
+    },
+    Ltext () {
+      return this.L(this.text)
     }
   }
 }

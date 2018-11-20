@@ -3,7 +3,7 @@
     <svg class="c-voting-sign-svg"
       v-if="isTypeRule"
     >
-      <circle cx="36" cy="36" r="35"
+      <circle cx="32" cy="32" r="31"
         class="c-voting-sign-svg-circle"
         :style="svgCircle.style"
         :class="svgCircle.class"
@@ -20,9 +20,10 @@
       {{valuePerc}}
     </p>
 
-    <img class="c-voting-sign-avatar"
+    <avatar class="c-voting-sign-avatar"
       :src="member.picture"
       :alt="`${member.name}'s avatar`"
+      size="xl"
       v-if="isTypeMember"
     />
   </div>
@@ -31,8 +32,8 @@
 @import "../../../assets/sass/theme/index";
 
 %avatarSize {
-  width: 4.5rem;
-  height: 4.5rem;
+  width: $gi-spacer-xl;
+  height: $gi-spacer-xl;
 }
 
 .c-voting-sign {
@@ -43,7 +44,7 @@
   &-value {
     @extend %avatarSize;
     border-radius: 50%;
-    line-height: 4.5rem;
+    line-height: $gi-spacer-xl;
     white-space: nowrap;
 
     &.c-is-mincome {
@@ -77,11 +78,13 @@
 }
 </style>
 <script>
+import Avatar from '../Avatar.vue'
 import { votingType } from '../../utils/validators'
 import { toPercent } from '../../utils/filters'
 
 export default {
   name: 'Sign',
+  components: { Avatar },
   props: {
     type: {
       validator: votingType
@@ -91,7 +94,7 @@ export default {
   },
   computed: {
     svgCircle () {
-      const svgCircleP = 220 // 35*2 * 3.14
+      const svgCircleP = 32 * 2 * 3.14
       const ruleVal = this.value
       const ruleWarning = 0.7
 
