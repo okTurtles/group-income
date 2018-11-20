@@ -50,7 +50,7 @@
 
       <div class="box column c-tableBox">
         <table class="table is-fullwidth is-vertical-middle">
-          <thead class="sr-only">
+          <thead class="gi-sr-only">
             <tr>
               <i18n tag="th">Name</i18n>
               <i18n tag="th">Payment Status</i18n>

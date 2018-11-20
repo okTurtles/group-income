@@ -5,7 +5,7 @@
       <div class="columns is-mobile c-wrapper-columns">
         <div class="column c-form">
           <fieldset class="fieldset">
-            <i18n tag="legend" class="sr-only">Income details</i18n>
+            <i18n tag="legend" class="gi-sr-only">Income details</i18n>
 
             <div class="field is-narrow gi-fieldGroup">
               <i18n tag="p" class="label">Do you make at least {{fakeStore.mincomeFormatted}} per month?</i18n>

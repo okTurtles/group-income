@@ -8,7 +8,7 @@
       aria-hidden="true"
     />
     <div class="c-body">
-      <span class="has-text-text-light is-size-7 c-who" :class="{ 'sr-only': hasWhoInvisible }">
+      <span class="has-text-text-light is-size-7 c-who" :class="{ 'gi-sr-only': hasWhoInvisible }">
         {{who}}
       </span>
       <!-- TODO: #502 - Chat: Add support to markdown formatted text -->
