@@ -1,8 +1,12 @@
 // see: http://bulma.io/documentation/overview/start/
 
+
 // load font awesome *before* bulma since
 // bulma customizes .fa and some other stuff
-@import "font-awesome";
+$fa-font-path: "../fonts/"; // Point to our own local fonts.
+@import "fontawesome";
+@import "regular"; // Font awesome "regular" icons.
+@import "solid"; // Font awesome "solid" icons.
 @import "bulma_overrides/index";
 
 // Load group income utilities
