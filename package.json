@@ -61,11 +61,11 @@
   "author": "okTurtles Foundation",
   "license": "GPL-3.0",
   "dependencies": {
+    "@fortawesome/fontawesome-free": "5.5.0",
     "blakejs": "1.1.0",
     "boom": "7.2.0",
     "bulma": "0.7.0",
     "flow-typer-js": "0.6.0",
-    "font-awesome": "4.7.0",
     "hapi": "17.5.3",
     "i18next": "11.5.0",
     "i18next-xhr-backend": "1.5.1",
