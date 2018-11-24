@@ -35,7 +35,7 @@
         to="/group-chat" :badgeCount="3">
         <i18n>Chat</i18n>
       </list-item>
-      <list-item tag="router-link" icon="pie-chart"
+      <list-item tag="router-link" icon="chart-pie"
         to="/contributions">
           <i18n>Contributions</i18n>
       </list-item>
