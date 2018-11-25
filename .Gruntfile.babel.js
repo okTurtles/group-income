@@ -105,6 +105,12 @@ module.exports = (grunt) => {
         src: ['**/*', '!sass/**'],
         dest: 'dist/simple/assets',
         expand: true
+      },
+      fontawesome: {
+        cwd: 'node_modules/@fortawesome/fontawesome-free/webfonts/',
+        src: ['fa-solid*'],
+        dest: 'dist/simple/assets/fonts',
+        expand: true
       }
     },
 
