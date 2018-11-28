@@ -21,7 +21,7 @@
               <i18n>Messages</i18n>
           </list-item>
           <list-item tag="router-link" to="/mailbox"
-            icon="envelope-o"
+            icon="envelope"
             data-test="mailboxLink"
             :badgeCount="unreadMessagesCount || activityCount">
               <i18n>Inbox (deprecated)</i18n>
@@ -33,7 +33,7 @@
 
       <div class="c-sidebar-body-bottom">
         <list>
-          <list-item tag="a" icon="external-link-square" variant="secondary" href="https://groupincome.org/blog/" target="_blank">
+          <list-item tag="a" icon="external-link-square-alt" variant="secondary" href="https://groupincome.org/blog/" target="_blank">
               <i18n>Blog</i18n>
           </list-item>
           <list-item tag="a" icon="question-circle" variant="secondary" href="https://groupincome.org/faq/" target="_blank">

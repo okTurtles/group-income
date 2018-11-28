@@ -9,7 +9,7 @@
             </div>
             <div class="panel-block">
               <span class="panel-icon">
-                <i class="fa fa-pencil"></i>
+                <i class="fa fa-pencil-alt"></i>
               </span>
               <a data-test="composeLink" v-on:click="compose"><i18n>compose</i18n></a>
             </div>

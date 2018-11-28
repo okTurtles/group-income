@@ -105,6 +105,12 @@ module.exports = (grunt) => {
         src: ['**/*', '!sass/**'],
         dest: 'dist/simple/assets',
         expand: true
+      },
+      fontawesome: {
+        cwd: 'node_modules/@fortawesome/fontawesome-free/webfonts/',
+        src: ['fa-solid*'],
+        dest: 'dist/simple/assets/fonts',
+        expand: true
       }
     },
 
@@ -244,7 +250,9 @@ function sassCfg () {
     // indentedSyntax: true,
     // sourceMapRoot: '/',
     outputStyle: development ? 'nested' : 'compressed',
-    includePaths: ['./node_modules/bulma', './node_modules/font-awesome/scss']
+    includePaths: [
+      './node_modules/bulma',
+      './node_modules/@fortawesome/fontawesome-free/scss']
   }
 }
 

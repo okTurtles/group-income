@@ -11,7 +11,7 @@
       <button class="button is-icon"
         data-test="logoutBtn"
         @click.prevent="logout">
-        <i class="fa fa-sign-out"></i>
+        <i class="fa fa-sign-out-alt"></i>
       </button>
       <router-link class="button is-icon"
         tag="button"

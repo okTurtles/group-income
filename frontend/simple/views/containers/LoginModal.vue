@@ -40,7 +40,7 @@
             type="password"
             data-test="loginPassword"
           >
-          <span class="icon"><i class="fa fa-lock"></i></span>
+          <span class="icon"><i class="fas fa-lock"></i></span>
         </p>
         <i18n v-show="$v.form.password.$error" class="help is-danger">password must be at least 7 characters</i18n>
       </div>
