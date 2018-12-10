@@ -1,5 +1,5 @@
 <template>
-    <main class="gi-splash has-text-centered">
+    <main class="c-splash has-text-centered">
       <div data-test="homeLogo">
         <img class="logo" src="assets/images/group-income-icon-transparent.png">
         <br>
