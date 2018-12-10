@@ -33,7 +33,7 @@
 <style scoped lang="scss">
 @import "../assets/sass/theme/index";
 
-.gi-splash {
+.c-splash {
   justify-content: center;
   min-height: 100vh;
   display: flex;
