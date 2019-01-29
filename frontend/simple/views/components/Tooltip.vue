@@ -2,7 +2,7 @@
   <span class="c-wrapper" @mouseenter="show" @mouseleave="hide">
     <slot></slot>
     <div
-      class="has-background-dark has-text-lighter is-bottom is-size-7 c-tooltip"
+      class="has-background-dark has-text-white is-bottom is-size-7 c-tooltip"
       :style="stylesPosition"
       v-if="isActive || shouldShow"
       v-append-to-body
