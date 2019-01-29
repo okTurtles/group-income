@@ -5,7 +5,7 @@
     </button>
     <div class="c-sidebar-header level is-mobile">
       <h1 class="gi-sr-only">Main Menu</h1>
-      <router-link to="/home">
+      <router-link to="/home" class="no-border">
         <img src="/simple/assets/images/logo-transparent.png" alt="GroupIncome's logo" class="gi-logo c-logo level-left">
       </router-link>
       <!--  NOTE/REVIEW: If we follow Messages GIBot approach, the bell icon wont be needed -->

@@ -177,7 +177,7 @@
     </div>
   </main>
 </template>
-<style>
+<style scoped>
 .signup .level-item { margin-top: 10px; }
 
 .signup .level.top-align { align-items: flex-start; }
@@ -192,6 +192,8 @@
   background-color: #1fc8db;
   border-radius: 20px;
 }
+
+.panel-block a { border-bottom: none; }
 </style>
 <script>
 import sbp from '../../../shared/sbp.js'
