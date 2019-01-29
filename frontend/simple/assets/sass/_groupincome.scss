@@ -25,25 +25,6 @@ body {
   }
 }
 
-a {
-  border-bottom: 1px solid $link;
-  transition: padding-bottom ease-out .05s, color ease-out .15s;
-
-  &:hover {
-    color: $link-hover;
-    border-bottom-color: $link-hover;
-    padding-bottom: 2px;
-  }
-
-  &.no-border {
-    border-bottom: none;
-
-    &:hover {
-      padding-bottom: initial;
-    }
-  }
-}
-
 // ------ index.html ------ //
 
 .gi-routerView {
