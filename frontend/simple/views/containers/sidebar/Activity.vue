@@ -1,7 +1,7 @@
 <template>
     <menu-parent class="level-right">
       <menu-trigger class="is-icon">
-        <i class="fa" :class="activityCount ? 'fa-bell' : 'fa-bell-o'"></i>
+        <i class="fa-bell" :class="activityCount ? 'far' : 'fas'"></i>
         <span class="c-badge" v-if="activityCount" data-test="alertNotification">{{ activityCount }}</span>
       </menu-trigger>
 
