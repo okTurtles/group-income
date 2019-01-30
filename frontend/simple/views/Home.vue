@@ -1,5 +1,5 @@
 <template>
-    <main class="container has-text-centered">
+    <main class="c-splash has-text-centered">
       <div data-test="homeLogo">
         <img class="logo" src="assets/images/group-income-icon-transparent.png">
         <br>
@@ -33,7 +33,7 @@
 <style scoped lang="scss">
 @import "../assets/sass/theme/index";
 
-.container {
+.c-splash {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
