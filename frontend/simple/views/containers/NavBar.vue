@@ -1,7 +1,7 @@
 <template>
   <nav class="navbar">
     <div class="navbar-start is-flex">
-      <router-link to="home" class="navbar-item gi-logo c-logo" @click="toggleTimeTravel">
+      <router-link to="home" class="navbar-item gi-logo c-logo no-border" @click="toggleTimeTravel">
         <img src="/simple/assets/images/logo-transparent.png"  alt="Groupincome's logo">
       </router-link>
     </div>

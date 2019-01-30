@@ -11,13 +11,13 @@
               <span class="panel-icon">
                 <i class="fa fa-pencil-alt"></i>
               </span>
-              <a data-test="composeLink" v-on:click="compose"><i18n>compose</i18n></a>
+              <a data-test="composeLink" v-on:click="compose" class="no-border"><i18n>compose</i18n></a>
             </div>
             <div class="panel-block">
               <span class="panel-icon">
                 <i class="fa fa-envelope"></i>
               </span>
-              <a data-test="inboxLink" v-on:click="inboxMode"><i18n>inbox</i18n>
+              <a data-test="inboxLink" v-on:click="inboxMode" class="no-border"><i18n>inbox</i18n>
                 <span class="unread"
                   data-test="inboxUnread"
                   v-if="$store.getters.unreadMessageCount"
@@ -177,7 +177,8 @@
     </div>
   </main>
 </template>
-<style>
+
+<style scoped>
 .signup .level-item { margin-top: 10px; }
 
 .signup .level.top-align { align-items: flex-start; }

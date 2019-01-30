@@ -5,7 +5,7 @@
       <li v-for="(group, index) in groups" class="c-ul-li">
         <router-link to="/group-chat"
           @click.native="$emit('select', group.contractID)"
-          class="c-router"
+          class="c-router no-border"
         >
           <avatar class="c-avatar"
             src=""
