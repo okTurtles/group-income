@@ -71,16 +71,16 @@
       </div>
     </div>
     <transition name="open">
-      <div class="message has-text-left is-warning" v-if="!superMajority">
-        <div class="message-body gi-box">
-          <i18n>The percentage value you are choosing is most likely too low
+      <Message severity="warning" v-if="!superMajority">
+        <i18n>
+          The percentage value you are choosing is most likely too low
           for a decision that can have a potentially significant impact
-          on a person’s life. Please consider using a supermajority threshold.</i18n>
-          <a href="https://groupincome.org/2016/09/deprecating-mays-theorem/#when-majority-rule-can-harm" target="_blank">
-            <i18n>Read more on our blog about the dangers of majority rule.</i18n>
-          </a>
-        </div>
-      </div>
+          on a person’s life. Please consider using a supermajority threshold.
+        </i18n>
+        <a href="https://groupincome.org/2016/09/deprecating-mays-theorem/#when-majority-rule-can-harm" target="_blank">
+          <i18n>Read more on our blog about the dangers of majority rule.</i18n>
+        </a>
+      </Message>
     </transition>
   </div>
 </template>
@@ -128,6 +128,7 @@
 </style>
 <script>
 import { CircleSlider } from 'vue-circle-slider'
+import Message from '../Message.vue'
 import { toPercent } from '../../utils/filters'
 
 const SUPERMAJORITY = 0.67
@@ -141,7 +142,8 @@ export default {
     v: {type: Object}
   },
   components: {
-    CircleSlider
+    CircleSlider,
+    Message
   },
   filters: {
     toPercent

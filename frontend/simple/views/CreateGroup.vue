@@ -47,11 +47,10 @@
             </button>
           </p>
         </div>
-        <article class="message is-danger" v-if="ephemeral.errorMsg">
-          <div class="message-body">
-            {{ ephemeral.errorMsg }}
-          </div>
-        </article>
+
+        <Message severity='danger' v-if="ephemeral.errorMsg">
+          {{ ephemeral.errorMsg }}
+        </Message>
       </div>
     </div>
   </main>
@@ -85,6 +84,7 @@
   }
 </style>
 <script>
+import Message from './components/Message'
 import sbp from '../../../shared/sbp.js'
 import contracts from '../model/contracts.js'
 import L from './utils/translations.js'
@@ -93,12 +93,16 @@ import { validationMixin } from 'vuelidate'
 import { required, between } from 'vuelidate/lib/validators'
 import { decimals } from './utils/validators.js'
 
+
 export default {
   name: 'CreateGroupView',
   mixins: [
     StepAssistant,
     validationMixin
   ],
+  components: {
+    Message
+  },
   methods: {
     focusRef (ref) {
       this.$refs[ref].focus()
