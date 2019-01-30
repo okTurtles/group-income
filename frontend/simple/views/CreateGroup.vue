@@ -84,7 +84,7 @@
   }
 </style>
 <script>
-import Message from './components/Message'
+import Message from './components/Message.vue'
 import sbp from '../../../shared/sbp.js'
 import contracts from '../model/contracts.js'
 import L from './utils/translations.js'
@@ -92,7 +92,6 @@ import StepAssistant from './utils/StepAssistant.js'
 import { validationMixin } from 'vuelidate'
 import { required, between } from 'vuelidate/lib/validators'
 import { decimals } from './utils/validators.js'
-
 
 export default {
   name: 'CreateGroupView',
