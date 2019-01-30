@@ -1,6 +1,6 @@
 /* globals logger */
 
-import {GIMessage} from '../shared/GIMessage.js'
+import { GIMessage } from '../shared/GIMessage.js'
 import * as db from './database.js'
 const Boom = require('boom')
 const Joi = require('joi')
@@ -33,7 +33,7 @@ module.exports = function (server: Object) {
     method: ['GET'],
     handler: async function (request, h) {
       try {
-        const {contractID, since} = request.params
+        const { contractID, since } = request.params
         var stream = db.streamEntriesSince(contractID, since)
         // "On an HTTP server, make sure to manually close your streams if a request is aborted."
         // From: http://knexjs.org/#Interfaces-Streams
@@ -63,12 +63,12 @@ module.exports = function (server: Object) {
     } } },
     handler: function (request, h) {
       try {
-        const {name, value} = request.payload
+        const { name, value } = request.payload
         if (db.lookupName(name)) {
           return Boom.conflict('exists')
         } else {
           db.registerName(name, value)
-          return {name, value}
+          return { name, value }
         }
       } catch (err) {
         logger(err)

@@ -2,14 +2,14 @@
 'use strict'
 
 import sbp from '../../../shared/sbp.js'
-import {handleFetchResult} from './utils/misc.js'
+import { handleFetchResult } from './utils/misc.js'
 
 // NOTE: prefix groups with `group/` and users with `user/` ?
 sbp('sbp/selectors/register', {
   'namespace/register': (name: string, value: string) => {
     return fetch(`${process.env.API_URL}/name`, {
       method: 'POST',
-      body: JSON.stringify({name, value}),
+      body: JSON.stringify({ name, value }),
       headers: {
         'Content-Type': 'application/json'
       }

@@ -53,7 +53,6 @@
 }
 </style>
 <script>
-import '../controller/router.js'
 import sbp from '../../../shared/sbp.js'
 import LoginModal from './containers/LoginModal.vue'
 import SignUp from './containers/SignUp.vue'

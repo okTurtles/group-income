@@ -2,7 +2,7 @@
 // https://hapijs.com/tutorials/auth
 // https://hapijs.com/tutorials/plugins
 
-import {verify, b64ToStr} from '../shared/functions.js'
+import { verify, b64ToStr } from '../shared/functions.js'
 
 const Boom = require('boom')
 
@@ -12,7 +12,7 @@ exports.plugin = {
     server.auth.scheme('gi-auth', function (server, options) {
       return {
         authenticate: function (request, h) {
-          const {authorization} = request.headers
+          const { authorization } = request.headers
           if (!authorization) h.unauthenticated(Boom.unauthorized('Missing authorization'))
 
           var [scheme, json] = authorization.split(/\s+/)

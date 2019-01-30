@@ -1,4 +1,4 @@
-import type {ResType} from './types'
+import type { ResType } from './types'
 
 // https://flowtype.org/docs/objects.html
 

@@ -19,9 +19,9 @@ export function DefineContract (contract: Object) {
     // NOTE: very important that we use 'let' here instead of 'var'!
     //       if we use 'var' then 'vuexModuleConfig.mutation' below will not be properly set
     //       for the different mutation functions!
-    let {isConstructor, validate, constants, vuexModuleConfig} = contract[name]
+    let { isConstructor, validate, constants, vuexModuleConfig } = contract[name]
 
-    exportedObject[name] = {validate}
+    exportedObject[name] = { validate }
 
     // NOTE: must check explicitely if 'isConstructor' is true
     //       because that key is defined by default on objects as some function...

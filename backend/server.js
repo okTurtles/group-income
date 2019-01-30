@@ -3,10 +3,10 @@
 import * as db from './database.js'
 import Hapi from 'hapi'
 import GiAuth from './auth.js'
-import {GIMessage} from '../shared/GIMessage.js'
-import {makeResponse} from '../shared/functions.js'
-import {RESPONSE_TYPE} from '../shared/constants.js'
-import {bold} from 'chalk'
+import { GIMessage } from '../shared/GIMessage.js'
+import { makeResponse } from '../shared/functions.js'
+import { RESPONSE_TYPE } from '../shared/constants.js'
+import { bold } from 'chalk'
 
 // NOTE: migration guides for Hapi v16 -> v17:
 //       https://github.com/hapijs/hapi/issues/3658

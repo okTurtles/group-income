@@ -6,7 +6,7 @@
 import sbp from '../../../shared/sbp.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
-import {GIMessage} from '../../../shared/GIMessage.js'
+import { GIMessage } from '../../../shared/GIMessage.js'
 import contracts from './contracts.js'
 import * as _ from '../utils/giLodash.js'
 import * as db from './database.js'
@@ -64,7 +64,7 @@ const mutations = {
     state.currentGroupId = null
     sbp('okTurtles.events/emit', LOGOUT)
   },
-  addContract (state, {contractID, type, HEAD, data}) {
+  addContract (state, { contractID, type, HEAD, data }) {
     // "Mutations Follow Vue's Reactivity Rules" - important for modifying objects
     // See: https://vuex.vuejs.org/en/mutations.html
     Vue.set(state.contracts, contractID, { type, HEAD })
@@ -78,16 +78,16 @@ const mutations = {
     const index = state.pending.indexOf(contractID)
     index !== -1 && state.pending.splice(index, 1)
     // calling this will make pubsub subscribe for events on `contractID`!
-    sbp('okTurtles.events/emit', 'contractsModified', {add: contractID})
+    sbp('okTurtles.events/emit', 'contractsModified', { add: contractID })
   },
-  setContractHEAD (state, {contractID, HEAD}) {
+  setContractHEAD (state, { contractID, HEAD }) {
     state.contracts[contractID] && Vue.set(state.contracts[contractID], 'HEAD', HEAD)
   },
   removeContract (state, contractID) {
     store.unregisterModule(contractID)
     Vue.delete(state.contracts, contractID)
     // calling this will make pubsub unsubscribe for events on `contractID`!
-    sbp('okTurtles.events/emit', 'contractsModified', {remove: contractID})
+    sbp('okTurtles.events/emit', 'contractsModified', { remove: contractID })
   },
   setContracts (state, contracts) {
     for (let contractID of Object.keys(state.contracts)) {
@@ -142,7 +142,7 @@ const getters = {
   groupsByName (state) {
     return Object.entries(store.state.contracts)
       .filter(([key, value]) => value.type === 'GroupContract')
-      .map(([key]) => ({groupName: state[key].groupName, contractID: key}))
+      .map(([key]) => ({ groupName: state[key].groupName, contractID: key }))
   },
   proposals (state) {
     // TODO: clean this up
@@ -201,7 +201,7 @@ const getters = {
 const actions = {
   // Used to update contracts to the current state that the server is aware of
   async syncContractWithServer (
-    {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object},
+    { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object},
     contractID: string
   ) {
     let latest = await sbp('backend/latestHash', contractID)
@@ -227,7 +227,7 @@ const actions = {
     }
   },
   async login (
-    {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object},
+    { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object},
     user: Object
   ) {
     const settings = await db.loadSettings(user.name)
@@ -246,7 +246,7 @@ const actions = {
     commit('login', user)
   },
   async logout (
-    {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object}
+    { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object}
   ) {
     debouncedSave.cancel()
     await dispatch('saveSettings', state)
@@ -258,7 +258,7 @@ const actions = {
   },
   // persisting the state
   async saveSettings (
-    {state}: {state: Object}
+    { state }: {state: Object}
   ) {
     if (state.loggedIn) {
       // var stateCopy = _.cloneDeep(state) // don't think this is necessary
@@ -278,7 +278,7 @@ const actions = {
   // this function is called from ../controller/utils/pubsub.js and is the entry point
   // for getting events into the log.
   async handleEvent (
-    {dispatch, commit, state}: {dispatch: Function, commit: Function, state: Object},
+    { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object},
     message: GIMessage
   ) {
     try {
@@ -299,9 +299,9 @@ const actions = {
       await db.addLogEntry(message)
 
       if (message.isFirstMessage()) {
-        commit('addContract', {contractID, type, HEAD, data})
+        commit('addContract', { contractID, type, HEAD, data })
       }
-      commit('setContractHEAD', {contractID, HEAD})
+      commit('setContractHEAD', { contractID, HEAD })
 
       const mutation = { data, hash: HEAD }
       commit(`${contractID}/${type}`, mutation)
@@ -321,7 +321,7 @@ const actions = {
 }
 const debouncedSave = _.debounce((dispatch, savedState) => dispatch('saveSettings', savedState), 500)
 
-store = new Vuex.Store({state, mutations, getters, actions})
+store = new Vuex.Store({ state, mutations, getters, actions })
 store.subscribe(() => debouncedSave(store.dispatch))
 
 export default store

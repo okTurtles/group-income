@@ -2,7 +2,7 @@ import sbp from '../../shared/sbp.js'
 import '../../shared/domains/okTurtles/events/index.js'
 import '../../shared/domains/okTurtles/data/index.js'
 import './controller/namespace.js'
-import {createWebSocket} from './controller/backend.js'
+import { createWebSocket } from './controller/backend.js'
 // import SBP stuff before anything else so that domains register themselves before called
 import Vue from 'vue'
 import './views/utils/translations.js'
@@ -39,7 +39,7 @@ async function startApp () {
   if (user) {
     try {
       let identityContractId = await sbp('namespace/lookup', user)
-      await store.dispatch('login', {name: user, identityContractId})
+      await store.dispatch('login', { name: user, identityContractId })
     } catch (err) {
       console.log('lookup failed!')
       store.dispatch('logout')
@@ -63,7 +63,7 @@ async function startApp () {
     },
     store // make this and all child components aware of the new store
   }).$mount('#app')
-  sbp('okTurtles.events/on', LOGOUT, () => router.push({path: '/'}))
+  sbp('okTurtles.events/on', LOGOUT, () => router.push({ path: '/' }))
 }
 
 startApp()

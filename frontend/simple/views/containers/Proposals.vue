@@ -51,7 +51,7 @@
 }
 </style>
 <script>
-import Voting from '../components/Voting'
+import Voting from '../components/Voting/index.js'
 import VotingBanner from './VotingBanner.vue'
 
 export default {

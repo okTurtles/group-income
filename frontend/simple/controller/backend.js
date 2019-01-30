@@ -2,11 +2,11 @@
 'use strict'
 
 import sbp from '../../../shared/sbp.js'
-import {sign, bufToB64, b64ToStr} from '../../../shared/functions.js'
-import {GIMessage} from '../../../shared/GIMessage.js'
-import {RESPONSE_TYPE} from '../../../shared/constants.js'
+import { sign, bufToB64, b64ToStr } from '../../../shared/functions.js'
+import { GIMessage } from '../../../shared/GIMessage.js'
+import { RESPONSE_TYPE } from '../../../shared/constants.js'
 import pubsub from './utils/pubsub.js'
-import {handleFetchResult} from './utils/misc.js'
+import { handleFetchResult } from './utils/misc.js'
 
 // temporary identity for signing
 const nacl = require('tweetnacl')

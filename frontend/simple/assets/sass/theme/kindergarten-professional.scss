@@ -2,8 +2,9 @@ $size-6: 0.875rem; // 14px
 $size-5: 1.125rem; // 18px
 $size-large: $size-5;
 
-@import "../../node_modules/bulma/sass/utilities/initial-variables";
-@import "../../node_modules/bulma/sass/utilities/functions";
+// @import "../../node_modules/bulma/sass/utilities/initial-variables";
+@import "node_modules/bulma/sass/utilities/initial-variables";
+@import "node_modules/bulma/sass/utilities/functions";
 
 $primary: #5dc8f0;
 $primary-light: lighten($primary, 10%); // used on backgrounds
@@ -23,7 +24,7 @@ $info: $primary-text;
 $link: $primary-text;
 $light: $white-ter;
 
-@import "../../node_modules/bulma/sass/utilities/derived-variables";
+@import "node_modules/bulma/sass/utilities/derived-variables";
 
 // Typography
 $text: $grey-darker;

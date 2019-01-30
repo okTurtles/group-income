@@ -2,9 +2,9 @@
 
 import sbp from '../../../../shared/sbp.js'
 import Vue from 'vue'
-import {merge} from '../../utils/giLodash.js'
-import {DefineContract} from '../utils.js'
-import {NEW_PAYMENT, PAYMENT_UPDATE} from '../../utils/events.js'
+import { merge } from '../../utils/giLodash.js'
+import { DefineContract } from '../utils.js'
+import { NEW_PAYMENT, PAYMENT_UPDATE } from '../../utils/events.js'
 import {
   objectOf,
   arrayOf,
@@ -40,7 +40,7 @@ export default DefineContract({
         profiles: {}, // usernames => {contractId: string, groupProfile: Object}
         proposals: {} // hashes => {} TODO: this, see related TODOs in GroupProposal
       },
-      mutation: (state, {data}) => {
+      mutation: (state, { data }) => {
         Object.assign(state, {
           profiles: {
             [data.founderUsername]: {
@@ -83,8 +83,8 @@ export default DefineContract({
       TypePayPal: 'paypal'
     },
     vuexModuleConfig: {
-      mutation: (state, {data, hash}) => {
-        state.payments[hash] = {data, updates: []}
+      mutation: (state, { data, hash }) => {
+        state.payments[hash] = { data, updates: [] }
         Vue.nextTick(() => sbp('okTurtles.events/emit', NEW_PAYMENT, hash))
       }
     }
@@ -98,11 +98,11 @@ export default DefineContract({
       details: optional(object)
     }),
     vuexModuleConfig: {
-      mutation: (state, {data, hash}) => {
+      mutation: (state, { data, hash }) => {
         const updateIdx = state.payments[hash].updates.length
         // TODO: we don't want to keep a history of all payments in memory all the time
         //       https://github.com/okTurtles/group-income-simple/issues/426
-        state.payments[data.referencePaymentHash].updates.push({hash, data})
+        state.payments[data.referencePaymentHash].updates.push({ hash, data })
         Vue.nextTick(() => sbp('okTurtles.events/emit', PAYMENT_UPDATE, hash, updateIdx))
       }
     }
@@ -127,10 +127,10 @@ export default DefineContract({
       expirationDate: optional(string)
     }),
     vuexModuleConfig: {
-      mutation: (state, {data, hash}) => {
+      mutation: (state, { data, hash }) => {
         // TODO: this should be data instead of ...data to avoid conflict with neighboring properties
         // TODO: convert to votes instead of for/against for future-proofing
-        state.proposals[hash] = {...data, for: [data.initiator], against: []}
+        state.proposals[hash] = { ...data, for: [data.initiator], against: [] }
       }
     }
   },
@@ -141,7 +141,7 @@ export default DefineContract({
       proposalHash: string
     }),
     vuexModuleConfig: {
-      mutation: (state, {data}) => {
+      mutation: (state, { data }) => {
         if (state.proposals[data.proposalHash]) {
           state.proposals[data.proposalHash].for.push(data.username)
           let threshold = Math.ceil(state.proposals[data.proposalHash].threshold * Object.keys(state.profiles).length)
@@ -158,7 +158,7 @@ export default DefineContract({
       proposalHash: string
     }),
     vuexModuleConfig: {
-      mutation: (state, {data}) => {
+      mutation: (state, { data }) => {
         if (state.proposals[data.proposalHash]) {
           state.proposals[data.proposalHash].against.push(data.username)
           let memberCount = Object.keys(state.profiles).length
@@ -177,7 +177,7 @@ export default DefineContract({
       sentDate: string
     }),
     vuexModuleConfig: {
-      mutation: (state, {data}) => { state.invitees.push(data.username) }
+      mutation: (state, { data }) => { state.invitees.push(data.username) }
     }
   },
   'GroupDeclineInvitation': {
@@ -187,7 +187,7 @@ export default DefineContract({
       declinedDate: string
     }),
     vuexModuleConfig: {
-      mutation: (state, {data}) => {
+      mutation: (state, { data }) => {
         let index = state.invitees.findIndex(username => username === data.username)
         if (index > -1) { state.invitees.splice(index, 1) }
       }
@@ -201,7 +201,7 @@ export default DefineContract({
       acceptanceDate: string
     }),
     vuexModuleConfig: {
-      mutation: (state, {data}) => {
+      mutation: (state, { data }) => {
         let index = state.invitees.findIndex(username => username === data.username)
         if (index > -1) {
           state.invitees.splice(index, 1)
@@ -217,7 +217,7 @@ export default DefineContract({
       // This is critical to the function of that latest contract hash.
       // They should only coordinate the actions of outside contracts.
       // Otherwise `latestContractState` and `handleEvent` will not produce same state!
-      action: async ({commit, state, rootState}, {data}) => {
+      action: async ({ commit, state, rootState }, { data }) => {
         // TODO: per #257 this will have to be encompassed in a recoverable transaction
         if (data.username === rootState.loggedIn.name) {
           // we're the person who just accepted the group invite
@@ -241,8 +241,8 @@ export default DefineContract({
       profile: object
     }),
     vuexModuleConfig: {
-      mutation: (state, {data}) => {
-        var {groupProfile} = state.profiles[data.username]
+      mutation: (state, { data }) => {
+        var { groupProfile } = state.profiles[data.username]
         state.profiles[data.username].groupProfile = merge(groupProfile, data.profile)
       }
     }

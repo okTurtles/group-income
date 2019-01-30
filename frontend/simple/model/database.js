@@ -1,7 +1,7 @@
 'use strict'
 
 import localforage from 'localforage'
-import {GIMessage} from '../../../shared/GIMessage.js'
+import { GIMessage } from '../../../shared/GIMessage.js'
 
 const log = localforage.createInstance({
   name: 'Group Income',
@@ -23,7 +23,7 @@ export async function getLogEntry (hash: string): Promise<GIMessage> {
 
 export async function addLogEntry (entry: GIMessage): Promise<string> {
   console.log('addLogEntry():', entry.hash(), entry.message())
-  const {previousHEAD} = entry.message()
+  const { previousHEAD } = entry.message()
   var contractID = previousHEAD ? entry.message().contractID : entry.hash()
   if (await get(entry.hash())) {
     console.warn(`entry exists: ${entry.hash()}`)

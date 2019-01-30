@@ -5,11 +5,11 @@
 // primus events: https://github.com/primus/primus#events
 // https://github.com/primus/primus-emit (better than primus-emitter)
 
-import {bold} from 'chalk'
-import {RESPONSE_TYPE} from '../shared/constants'
-import {makeResponse as reply, setupPrimus} from '../shared/functions'
+import { bold } from 'chalk'
+import { RESPONSE_TYPE } from '../shared/constants'
+import { makeResponse as reply, setupPrimus } from '../shared/functions'
 
-const {ERROR, SUCCESS, SUB, UNSUB, PUB} = RESPONSE_TYPE
+const { ERROR, SUCCESS, SUB, UNSUB, PUB } = RESPONSE_TYPE
 
 // TODO: decide whether it's better to switch to HTTP2 intead of using websockets
 // https://www.reddit.com/r/rust/comments/5p6a8z/a_hyper_update_v010_last_week_tokio_soon/
@@ -32,15 +32,15 @@ module.exports = function (hapi: Object) {
 
   primus.on('connection', function (spark) {
     // spark is the new connection. https://github.com/primus/primus#sparkheaders
-    const {id, address} = spark
+    const { id, address } = spark
     // console.log('connection has the following headers', headers)
     console.log(bold(`[pubsub] ${id} connected from:`), address)
 
     // https://github.com/swissmanu/primus-responder
     spark.on('request', async function (req, done) {
       try {
-        var {type, data: {contractID}} = req
-        var success = reply(SUCCESS, {type, id})
+        var { type, data: { contractID } } = req
+        var success = reply(SUCCESS, { type, id })
         console.log(bold(`[pubsub] REQUEST '${type}' from '${id}'`), req)
         switch (type) {
           case SUB:
@@ -76,7 +76,7 @@ module.exports = function (hapi: Object) {
       console.log(bold.yellow(`[pubsub] ${id} leaveallrooms`))
       // this gets called on spark.leaveAll and 'disconnection'
       rooms.forEach(contractID => {
-        primus.room(contractID).write(reply(UNSUB, {contractID, id}))
+        primus.room(contractID).write(reply(UNSUB, { contractID, id }))
       })
     })
 

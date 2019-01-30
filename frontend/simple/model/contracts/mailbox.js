@@ -1,6 +1,6 @@
 'use strict'
 
-import {DefineContract} from '../utils.js'
+import { DefineContract } from '../utils.js'
 import {
   objectOf,
   arrayOf,
@@ -14,8 +14,8 @@ export default DefineContract({
     isConstructor: true,
     validate: object,
     vuexModuleConfig: {
-      initialState: {messages: []},
-      mutation: function (state, {data}) {}
+      initialState: { messages: [] },
+      mutation: function (state, { data }) {}
     }
   },
   'MailboxPostMessage': {
@@ -32,8 +32,8 @@ export default DefineContract({
       headers: optional(arrayOf(string))
     }),
     vuexModuleConfig: {
-      mutation: (state, {data, hash}) => {
-        state.messages.push({data, hash})
+      mutation: (state, { data, hash }) => {
+        state.messages.push({ data, hash })
       }
     }
   },
@@ -42,7 +42,7 @@ export default DefineContract({
       sender: string
     }),
     vuexModuleConfig: {
-      mutation: (state, {data}) => {
+      mutation: (state, { data }) => {
         throw new Error('unimplemented!')
         // state.authorizations[contracts.MailboxAuthorizeSender.authorization].data = data.sender
       }

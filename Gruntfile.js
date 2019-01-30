@@ -13,7 +13,8 @@
 // =======================
 
 // https://babeljs.io/docs/setup/#babel_register
-require('babel-register')({
+// https://babeljs.io/docs/en/next/babel-register
+require('@babel/register')({
   // if we do not set cache: false, then the ports on process.env.(API_URL, etc)
   // won't get updated correctly. There's a hack that seems to work, which is to
   // simply console.log those values in backend/server.js and elsewhere,

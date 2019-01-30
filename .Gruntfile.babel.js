@@ -7,7 +7,7 @@ http://www.sitepoint.com/setting-up-es6-project-using-babel-browserify/
 https://babeljs.io/docs/setup/#browserify
 */
 import * as _ from './frontend/simple/utils/giLodash.js'
-import {setupPrimus} from './shared/functions.js'
+import { setupPrimus } from './shared/functions.js'
 import {
   dasherize,
   capitalize,
@@ -38,12 +38,12 @@ module.exports = (grunt) => {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
 
-    checkDependencies: {this: {options: { install: true }}},
+    checkDependencies: { this: { options: { install: true } } },
 
     watch: {
       // prevent watch from spawning. if we don't do this, we won't be able
       // to kill the child when files change.
-      options: {spawn: false},
+      options: { spawn: false },
       // consider instead using the `watchify` option on browserify
       browserify: {
         options: { livereload },
@@ -122,9 +122,11 @@ module.exports = (grunt) => {
       //    - anything that ends with .test.js, eg. unit tests for sbp domains kept in the domain folder
       test: {
         cmd: './node_modules/.bin/mocha --require Gruntfile.js --exit -R spec --bail "{./{,!(node_modules)/**/}*.test.js,./test/*.js}"',
-        options: {env: {LOAD_NO_FILE: 'true', ...process.env}}
+        options: { env: { LOAD_NO_FILE: 'true', ...process.env } }
       },
-      standard: './node_modules/.bin/standard "**/*.{js,vue}"',
+      // TODO: re-add *.vue support, see: https://github.com/standard/standard/issues/750#issuecomment-379294276
+      // standard: './node_modules/.bin/standard "**/*.{js,vue}"',
+      standard: './node_modules/.bin/standard "**/*.js"',
       standardgrunt: './node_modules/.bin/standard .Gruntfile.babel.js Gruntfile.js',
       stylelint: './node_modules/.bin/stylelint "frontend/simple/**/*.{css,scss,vue}"',
       flow: './node_modules/.bin/flow'
@@ -135,6 +137,7 @@ module.exports = (grunt) => {
     connect: {
       options: {
         port: process.env.FRONTEND_PORT,
+        useAvailablePort: true,
         base: 'dist',
         livereload: livereload,
         middleware: (connect, opts, middlewares) => {
@@ -208,7 +211,7 @@ module.exports = (grunt) => {
     var fork2 = function () {
       grunt.log.writeln('backend: forking...')
       child = fork('Gruntfile.js', process.argv, {
-        env: {LOAD_TARGET_FILE: './backend/index.js', ...process.env}
+        env: { LOAD_TARGET_FILE: './backend/index.js', ...process.env }
       })
       child.on('error', (err) => {
         if (err) {
@@ -252,7 +255,8 @@ function sassCfg () {
     outputStyle: development ? 'nested' : 'compressed',
     includePaths: [
       './node_modules/bulma',
-      './node_modules/@fortawesome/fontawesome-free/scss']
+      './node_modules/@fortawesome/fontawesome-free/scss'
+    ]
   }
 }
 
@@ -260,7 +264,7 @@ function sassCfg () {
 // For generating lazy-loaded components
 // ----------------------------------------
 
-function browserifyCfg ({straight, lazy}, cfg = {}) {
+function browserifyCfg ({ straight, lazy }, cfg = {}) {
   var globalize = x => // views/UserGroupView.vue -> UserGroupView
     camelize(capitalize(dasherize(path.parse(x).name)))
   var keyify = x => // views/UserGroupView.vue -> userGroupView

@@ -3,17 +3,17 @@
 import sbp from '../shared/sbp.js'
 import '../shared/domains/okTurtles/events/index.js'
 import chalk from 'chalk'
-import {GIMessage} from '../shared/GIMessage.js'
+import { GIMessage } from '../shared/GIMessage.js'
 import contracts from '../frontend/simple/model/contracts.js'
 import * as _ from '../frontend/simple/utils/giLodash.js'
-import {createWebSocket} from '../frontend/simple/controller/backend.js'
+import { createWebSocket } from '../frontend/simple/controller/backend.js'
 import '../frontend/simple/controller/namespace.js'
 
 global.fetch = require('node-fetch')
 const should = require('should') // eslint-disable-line
 
 chalk.enabled = true // for some reason it's not detecting that terminal supports colors
-const {bold} = chalk
+const { bold } = chalk
 
 // var unsignedMsg = sign(personas[0], 'futz')
 
@@ -50,13 +50,13 @@ describe('Full walkthrough', function () {
   var groups = {}
 
   function createSocket () {
-    return createWebSocket(process.env.API_URL, {timeout: 3000, strategy: false})
+    return createWebSocket(process.env.API_URL, { timeout: 3000, strategy: false })
   }
 
   function createIdentity (name, email) {
     return sbp('gi/contract/create', 'IdentityContract', {
       // authorizations: [Events.CanModifyAuths.dummyAuth(name)],
-      attributes: {name, email}
+      attributes: { name, email }
     })
   }
   function createGroup (name, founder) {
@@ -117,7 +117,7 @@ describe('Full walkthrough', function () {
 
   after(function () {
     for (let user of Object.values(users)) {
-      user.socket && user.socket.destroy({timeout: 500})
+      user.socket && user.socket.destroy({ timeout: 500 })
     }
   })
 
@@ -125,7 +125,7 @@ describe('Full walkthrough', function () {
     it('Should create identity contracts for Alice and Bob', async function () {
       users.bob = createIdentity('Bob', 'bob@okturtles.com')
       users.alice = createIdentity('Alice', 'alice@okturtles.org')
-      const {alice, bob} = users
+      const { alice, bob } = users
       // verify attribute creation and state initialization
       bob.data().attributes.name.should.equal('Bob')
       bob.data().attributes.email.should.equal('bob@okturtles.com')
@@ -135,7 +135,7 @@ describe('Full walkthrough', function () {
     })
 
     it('Should register Alice and Bob in the namespace', async function () {
-      const {alice, bob} = users
+      const { alice, bob } = users
       var res = await sbp('namespace/register', alice.data().attributes.name, alice.hash())
       res.value.should.equal(alice.hash())
       res = await sbp('namespace/register', bob.data().attributes.name, bob.hash())
@@ -145,7 +145,7 @@ describe('Full walkthrough', function () {
     })
 
     it('Should verify namespace lookups work', async function () {
-      const {alice} = users
+      const { alice } = users
       var res = await sbp('namespace/lookup', alice.data().attributes.name)
       res.should.equal(alice.hash())
       sbp('namespace/lookup', 'susan').should.be.rejected()
@@ -177,7 +177,7 @@ describe('Full walkthrough', function () {
     //       everything we need. Use fetch from now on.
     it('Should get mailbox info for Bob', async function () {
       // 1. look up bob's username to get his identity contract
-      const {bob} = users
+      const { bob } = users
       const bobsName = bob.data().attributes.name
       const bobsContractId = await sbp('namespace/lookup', bobsName)
       should(bobsContractId).equal(bob.hash())

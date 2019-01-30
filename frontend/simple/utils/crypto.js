@@ -37,7 +37,7 @@ export class Crypto {
   static keyFromPassword (password) {
     var salt = Crypto.randomSalt()
     // TODO: use proper parameters. https://github.com/dchest/scrypt-async-js
-    var opts = {N: 16384, r: 8, p: 1}
+    var opts = { N: 16384, r: 8, p: 1 }
     return new Promise(resolve => scrypt(password, salt, opts, resolve))
   }
 }

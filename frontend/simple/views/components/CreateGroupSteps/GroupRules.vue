@@ -127,8 +127,9 @@
   }
 </style>
 <script>
-import { CircleSlider } from 'vue-circle-slider'
-import { toPercent } from '../../utils/filters'
+// import { CircleSlider } from 'vue-circle-slider'
+import 'vue-circle-slider'
+import { toPercent } from '../../utils/filters.js'
 
 const SUPERMAJORITY = 0.67
 const OKCOLOR = '#78c848'
@@ -140,9 +141,9 @@ export default {
     group: {type: Object},
     v: {type: Object}
   },
-  components: {
-    CircleSlider
-  },
+  // components: {
+  //   CircleSlider
+  // },
   filters: {
     toPercent
   },

@@ -46,7 +46,7 @@ class VuexQueue {
     let release
     let exception
     let promise = new Promise((resolve, reject) => (release = resolve) && (exception = reject))
-    queue.push({type, id, payload, release, exception})
+    queue.push({ type, id, payload, release, exception })
     this.run()
     return promise
   }

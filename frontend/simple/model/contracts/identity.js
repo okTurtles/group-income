@@ -1,7 +1,7 @@
 'use strict'
 
 import Vue from 'vue'
-import {DefineContract} from '../utils.js'
+import { DefineContract } from '../utils.js'
 import {
   objectOf,
   arrayOf,
@@ -16,8 +16,8 @@ export default DefineContract({
       attributes: object
     }),
     vuexModuleConfig: {
-      initialState: {attributes: {}},
-      mutation: (state, {data}) => {
+      initialState: { attributes: {} },
+      mutation: (state, { data }) => {
         state.attributes = data.attributes
       }
     }
@@ -25,7 +25,7 @@ export default DefineContract({
   'IdentitySetAttributes': {
     validate: object,
     vuexModuleConfig: {
-      mutation: (state, {data}) => {
+      mutation: (state, { data }) => {
         for (var key in data) {
           Vue.set(state.attributes, key, data[key])
         }
@@ -35,7 +35,7 @@ export default DefineContract({
   'IdentityDeleteAttributes': {
     validate: arrayOf(string),
     vuexModuleConfig: {
-      mutation: (state, {data}) => {
+      mutation: (state, { data }) => {
         for (var attribute of data) {
           Vue.delete(state.attributes, attribute)
         }

@@ -1,8 +1,8 @@
 'use strict'
 
 import multihash from 'multihashes'
-import {RESPONSE_TYPE} from './constants.js'
-import type {JSONType, Response, ResType} from './types.js'
+import { RESPONSE_TYPE } from './constants.js'
+import type { JSONType, Response, ResType } from './types.js'
 
 const Primus = require('primus')
 const nacl = require('tweetnacl')
@@ -16,10 +16,10 @@ export function makeResponse (
   //   // This type wrangling voodoo comes courtesy of: https://github.com/facebook/flow/issues/3041#issuecomment-268027891
   if (type === RESPONSE_TYPE.ERROR) {
     return err
-      ? {type, data, err: typeof err === 'string' ? err : err.message}
-      : {type, err: String(data)}
+      ? { type, data, err: typeof err === 'string' ? err : err.message }
+      : { type, err: String(data) }
   }
-  return {type, data}
+  return { type, data }
 }
 
 // generate and save primus client file
@@ -27,7 +27,7 @@ export function makeResponse (
 export function setupPrimus (server: Object, saveAndDestroy: boolean = false) {
   var primus = new Primus(server, {
     transformer: 'websockets',
-    rooms: {wildcard: false}
+    rooms: { wildcard: false }
   })
   // these 'requires' are placed inline instead of at the top to prevent
   // their contents from being inlined to the app bundle on the frontend
@@ -58,7 +58,7 @@ export const strToB64 = (str: string) => strToBuf(str).toString('base64')
 export const bytesToB64 = (ary: Uint8Array) => Buffer.from(ary).toString('base64')
 
 export function sign (
-  {publicKey, secretKey}: {publicKey: string, secretKey: string},
+  { publicKey, secretKey }: {publicKey: string, secretKey: string},
   msg: string = 'hello!',
   futz: string = ''
 ) {

@@ -111,10 +111,10 @@
 }
 </style>
 <script>
-import ButtonCountdown, { countdownStates } from '../ButtonCountdown'
+import ButtonCountdown, { countdownStates } from '../ButtonCountdown/index.js'
 import Sign from './Sign.vue'
-import L from '../../utils/translations'
-import { votingType } from '../../utils/validators'
+import L from '../../utils/translations.js'
+import { votingType } from '../../utils/validators.js'
 
 export default {
   name: 'Voting',

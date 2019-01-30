@@ -35,10 +35,10 @@ describe('Test giLodash', function () {
     clock.restore()
   })
   it('Test merge', function () {
-    let a = {a: 'taco', b: {a: 'burrito', b: 'combo'}, c: [20]}
-    let b = {a: 'churro', b: {c: 'platter'}}
+    let a = { a: 'taco', b: { a: 'burrito', b: 'combo' }, c: [20] }
+    let b = { a: 'churro', b: { c: 'platter' } }
     let c = _.merge(a, b)
-    should(c).deepEqual({a: 'churro', b: {a: 'burrito', b: 'combo', c: 'platter'}, c: [20]})
+    should(c).deepEqual({ a: 'churro', b: { a: 'burrito', b: 'combo', c: 'platter' }, c: [20] })
   })
   it('Test flatten', function () {
     let a = [1, [2, [3, 4]], 5]
