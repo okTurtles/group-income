@@ -59,11 +59,11 @@ module.exports = (grunt) => {
       // to kill the child when files change.
       options: { spawn: false },
       // consider instead using the `watchify` option on browserify
-      browserify: {
-        options: { livereload },
-        files: ['frontend/*.html', 'frontend/simple/**/*.{vue,js}'],
-        tasks: ['exec:standard', 'exec:stylelint', 'copy', bundler]
-      },
+      // browserify: {
+      //   options: { livereload },
+      //   files: ['frontend/*.html', 'frontend/simple/**/*.{vue,js}'],
+      //   tasks: ['exec:standard', 'exec:stylelint', 'copy', bundler]
+      // },
       css: {
         options: { livereload },
         files: ['frontend/simple/assets/sass/**/*.{sass,scss}'],
@@ -78,11 +78,11 @@ module.exports = (grunt) => {
         files: ['backend/**/*.js'],
         tasks: ['exec:standard', 'backend:relaunch']
       },
-      shared: {
-        options: { livereload },
-        files: ['shared/**/*.js'],
-        tasks: ['exec:standard', bundler, 'backend:relaunch']
-      },
+      // shared: {
+      //   options: { livereload },
+      //   files: ['shared/**/*.js'],
+      //   tasks: ['exec:standard', bundler, 'backend:relaunch']
+      // },
       gruntfile: {
         files: ['.Gruntfile.babel.js', 'Gruntfile.js'],
         tasks: ['exec:standardgrunt']
@@ -133,7 +133,8 @@ module.exports = (grunt) => {
           commonjs({
             // include: 'node_modules/**'
             namedExports: {
-              'node_modules/vuelidate/lib/validators/index.js': [ 'required', 'between', 'email', 'minLength', 'requiredIf' ]
+              'node_modules/vuelidate/lib/validators/index.js': [ 'required', 'between', 'email', 'minLength', 'requiredIf' ],
+              'node_modules/vue-circle-slider/dist/vue-circle-slider.common.js': [ 'CircleSlider' ]
             }
             // ignore: ['vue-circle-slider']
           }),
@@ -246,7 +247,8 @@ module.exports = (grunt) => {
   grunt.registerTask('default', ['dev'])
   grunt.registerTask('backend', ['backend:relaunch', 'watch'])
   grunt.registerTask('dev', ['checkDependencies', 'build', 'connect', 'backend'])
-  grunt.registerTask('build', ['exec:standard', 'exec:stylelint', 'copy', 'sass', bundler])
+  // grunt.registerTask('build', ['exec:standard', 'exec:stylelint', 'copy', 'sass', bundler])
+  grunt.registerTask('build', ['exec:standard', 'exec:stylelint', 'copy', 'sass', 'rollup:watch'])
   grunt.registerTask('dist', ['build'])
   grunt.registerTask('test', ['dist', 'connect', 'exec:test'])
   // TODO: add 'deploy' per:
@@ -306,9 +308,89 @@ module.exports = (grunt) => {
     }
   })
 
+  grunt.registerTask('rollup:watch', function () {
+    const done = this.async()
+    const watchOpts = {
+      clearScreen: false,
+      input: 'frontend/simple/main.js',
+      output: {
+        file: 'dist/simple/main.js',
+        format: 'iife',
+        // format: 'esm',
+        // dir: 'dist/simple',
+        sourcemap: development
+      },
+      external: ['crypto'],
+      moduleContext: {
+        'frontend/simple/controller/utils/primus.js': 'window'
+      },
+      plugins: [
+        alias({
+          // https://vuejs.org/v2/guide/installation.html#Standalone-vs-Runtime-only-Build
+          vue: path.resolve('./node_modules/vue/dist/vue.common.js')
+        }),
+        resolve({
+          // we set `preferBuiltins` to prevent rollup from erroring with
+          // [!] (commonjs plugin) TypeError: Cannot read property 'warn' of undefined
+          // TypeError: Cannot read property 'warn' of undefined
+          preferBuiltins: false
+        }),
+        json(),
+        // css(),
+        // for some reason only the vue plugin cannot be directly
+        // included in the config here. If we directly include
+        // it then we'll get this error:
+        // Error running plugin hook transform for VuePlugin, expected a function hook.
+        // So we treat it specially in the rollup multitask
+        // VuePlugin({ css: false })
+        VuePlugin(),
+        flow({ all: true }),
+        commonjs({
+          // include: 'node_modules/**'
+          namedExports: {
+            'node_modules/vuelidate/lib/validators/index.js': [ 'required', 'between', 'email', 'minLength', 'requiredIf' ],
+            'node_modules/vue-circle-slider/dist/vue-circle-slider.common.js': [ 'CircleSlider' ]
+          }
+          // ignore: ['vue-circle-slider']
+        }),
+        babel({
+          runtimeHelpers: true,
+          exclude: 'node_modules/**' // only transpile our source code
+        }),
+        globals()
+      ]
+    }
+    const watcher = rollup.watch(watchOpts)
+    watcher.on('event', event => {
+      switch (event.code) {
+        case 'START':
+        case 'BUNDLE_START':
+        case 'END':
+          grunt.log.writeln('rollup:watch', event.code)
+          break
+        case 'BUNDLE_END':
+          const outputName = watchOpts.output.file || watchOpts.output.dir
+          grunt.log.writeln(chalk`{green created} {bold ${outputName}} {green in} {bold ${(event.duration / 1000).toFixed(1)}s}`)
+          done()
+          break
+        // case 'END':
+        //   grunt.log.writeln('rollup:watch', event)
+        //   watcher.close()
+        //   done()
+        //   break
+        case 'FATAL':
+        case 'ERROR':
+          grunt.log.error('rollup:watch', event)
+          watcher.close()
+          done(false)
+          break
+      }
+    })
+  })
+
   var rollupCache = {}
   grunt.registerMultiTask('rollup', async function () {
-    var done = this.async()
+    const done = this.async()
     try {
       // this is a hack to fix a bizarre error due to some conflict
       // between grunt and VuePlugin. See detailed comment in the

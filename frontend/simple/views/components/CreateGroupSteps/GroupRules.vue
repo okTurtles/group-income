@@ -133,7 +133,7 @@ import { toPercent } from '../../utils/filters.js'
 // but then the browser complains about "require is not defined"
 // see: https://github.com/rollup/rollup/issues/2671
 // const { CircleSlider } = require('vue-circle-slider')
-// import { CircleSlider } from 'vue-circle-slider'
+import { CircleSlider } from 'vue-circle-slider'
 
 const SUPERMAJORITY = 0.67
 const OKCOLOR = '#78c848'
@@ -145,9 +145,9 @@ export default {
     group: {type: Object},
     v: {type: Object}
   },
-  // components: {
-  //   CircleSlider
-  // },
+  components: {
+    CircleSlider
+  },
   filters: {
     toPercent
   },
