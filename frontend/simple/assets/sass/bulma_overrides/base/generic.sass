@@ -64,21 +64,43 @@ a
   border-bottom: 1px solid $link
   cursor: pointer
   text-decoration: none
-  transition: padding-bottom ease-out 0.05s, color ease-out .15s
+  position: relative
+  transition: border-color .3s, color ease-out .3s
+
+  &:after
+    content: ''
+    position: absolute
+    bottom: -3px
+    right: 0
+    width: 0
+    height: 3px
+    background-color: $link
+    transition: width ease-out .15s
+    border-radius: 1px
 
   strong
     color: currentColor
 
   &:hover
     color: $link-hover
-    border-bottom-color: $link-hover
-    padding-bottom: 2px;
+    border-color: transparent
+    transition: none
+
+    &:after
+      width: 100%
+      left: 0
 
   &.no-border
     border-bottom: none
 
+    &:after
+      content: none
+
+  &.has-no-animation
+    &::after
+      content: none
     &:hover
-      padding-bottom: initial
+      border-color: initial
 
 code
   background-color: $code-background
