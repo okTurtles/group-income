@@ -8,7 +8,7 @@ const Joi = require('joi')
 // NOTE: We could get rid of this RESTful API and just rely on pubsub.js to do this
 //       —BUT HTTP2 might be better than websockets and so we keep this around.
 //       See related TODO in pubsub.js and the reddit discussion link.
-module.exports = function (server: Object) {
+export default function (server: Object) {
   server.route({
     path: '/event',
     method: ['PUT', 'POST'],

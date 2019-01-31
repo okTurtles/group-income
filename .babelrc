@@ -1,4 +1,4 @@
 {
   "presets": ["@babel/preset-flow", "@babel/preset-env"],
-  "plugins": ["transform-inline-environment-variables", "@babel/plugin-transform-runtime", "@babel/plugin-proposal-class-properties", "@babel/plugin-proposal-object-rest-spread"]
+  "plugins": ["transform-inline-environment-variables", "@babel/plugin-transform-runtime", "@babel/plugin-proposal-class-properties", "@babel/plugin-proposal-object-rest-spread", "@babel/plugin-syntax-dynamic-import"]
 }

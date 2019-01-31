@@ -63,15 +63,15 @@
   </div>
 </template>
 <script>
+import sbp from '../../../../shared/sbp.js'
 import { validationMixin } from 'vuelidate'
 import { required, minLength } from 'vuelidate/lib/validators'
-import sbp from '../../../../shared/sbp.js'
-import L from '../utils/translations.js'
 import { OPEN_MODAL, CLOSE_MODAL } from '../../utils/events.js'
 import ModalHeader from '../components/Modal/ModalHeader.vue'
 import ModalBody from '../components/Modal/ModalBody.vue'
 import ModalFooter from '../components/Modal/ModalFooter.vue'
 import SignUp from './SignUp.vue'
+import L from '../utils/translations.js'
 
 export default {
   name: 'LoginModal',

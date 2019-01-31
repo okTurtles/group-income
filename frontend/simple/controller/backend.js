@@ -9,7 +9,9 @@ import pubsub from './utils/pubsub.js'
 import { handleFetchResult } from './utils/misc.js'
 
 // temporary identity for signing
-const nacl = require('tweetnacl')
+// const nacl = require('tweetnacl')
+import nacl from 'tweetnacl'
+
 var persona = nacl.sign.keyPair()
 var signature = signJSON('', persona)
 

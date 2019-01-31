@@ -12,7 +12,8 @@ import {
   string,
   number,
   object
-} from 'flow-typer-js'
+} from '../../utils/flow-typer.js'
+// } from 'flow-typer-js'
 
 // NOTE: All mutations must be atomic in their edits of the contract state.
 //       THEY ARE NOT to farm out any further mutations through the async actions!

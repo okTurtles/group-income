@@ -2,7 +2,9 @@
 
 import { RESPONSE_TYPE } from '../../../../shared/constants.js'
 import { makeResponse as request } from '../../../../shared/functions.js'
-const Primus = require('../../assets/vendor/primus.js')
+import Primus from './primus.js'
+// const Primus = require('./primus.js')
+
 const { ERROR, PUB, SUB, UNSUB } = RESPONSE_TYPE
 
 // see commentary in ./backend/hapi.js for more info about this file

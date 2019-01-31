@@ -137,8 +137,8 @@ import PaymentMethods from './PaymentMethods.vue'
 import Modal from '../../components/Modal/ModalBasic.vue'
 import TextWho from '../../components/TextWho.vue'
 import GroupPledgesGraph from '../GroupPledgesGraph.vue'
-const fakeStoreMincome = 500
 
+const fakeStoreMincome = 500
 const hasLowIncome = (value) => value < fakeStoreMincome - 1
 
 export default {

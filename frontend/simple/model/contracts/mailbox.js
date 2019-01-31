@@ -7,7 +7,8 @@ import {
   string,
   object,
   optional
-} from 'flow-typer-js'
+} from '../../utils/flow-typer.js'
+// } from 'flow-typer-js'
 
 export default DefineContract({
   'MailboxContract': {

@@ -90,8 +90,12 @@ import contracts from '../model/contracts.js'
 import L from './utils/translations.js'
 import StepAssistant from './utils/StepAssistant.js'
 import { validationMixin } from 'vuelidate'
-import { required, between } from 'vuelidate/lib/validators'
 import { decimals } from './utils/validators.js'
+
+// we use require instead of import with this file to make rollup happy
+// or not... using require only makes rollup happy during compilation
+// but then the browser complains about "require is not defined"
+import { required, between } from 'vuelidate/lib/validators'
 
 export default {
   name: 'CreateGroupView',

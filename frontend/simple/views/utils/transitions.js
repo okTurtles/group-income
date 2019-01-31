@@ -1,8 +1,7 @@
 'use strict'
 
 import Vue from 'vue'
-
-const Velocity = require('velocity-animate')
+import Velocity from 'velocity-animate'
 
 // http://vuejs.org/guide/transitions.html#JavaScript-Transitions
 

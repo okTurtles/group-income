@@ -9,6 +9,12 @@ export function mapValues (obj: Object, fn: Function, o: Object = {}) {
   return o
 }
 
+export function pick (o: Object, props: Array) {
+  var x = {}
+  for (let k of props) { x[k] = o[k] }
+  return x
+}
+
 export function cloneDeep (obj: JSONObject) {
   return JSON.parse(JSON.stringify(obj))
 }

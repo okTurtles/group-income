@@ -1,4 +1,4 @@
-<template>
+<!-- <template> -->
   <div class="has-text-centered" data-test="rulesStep">
     <h1 class="title is-2"><i18n>Voting Rules</i18n></h1>
     <p class="content"><i18n>What percentage approval is necessary to adjust the group rules?</i18n></p>
@@ -127,9 +127,13 @@
   }
 </style>
 <script>
-// import { CircleSlider } from 'vue-circle-slider'
-import 'vue-circle-slider'
 import { toPercent } from '../../utils/filters.js'
+// we use require instead of import with this file to make rollup happy
+// or not... using require only makes rollup happy during compilation
+// but then the browser complains about "require is not defined"
+// see: https://github.com/rollup/rollup/issues/2671
+// const { CircleSlider } = require('vue-circle-slider')
+// import { CircleSlider } from 'vue-circle-slider'
 
 const SUPERMAJORITY = 0.67
 const OKCOLOR = '#78c848'

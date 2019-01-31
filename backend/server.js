@@ -36,8 +36,8 @@ hapi.decorate('server', 'handleEntry', function (entry: GIMessage) {
 
 // https://hapijs.com/tutorials/plugins
 export const loaded = hapi.register(GiAuth).then(() => {
-  require('./routes')(hapi)
-  require('./pubsub')(hapi)
+  require('./routes.js').default(hapi)
+  require('./pubsub.js').default(hapi)
   return hapi.start().then(() => {
     console.log('API server running at:', hapi.info.uri)
   })

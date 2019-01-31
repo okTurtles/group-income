@@ -7,7 +7,8 @@ import {
   arrayOf,
   string,
   object
-} from 'flow-typer-js'
+} from '../../utils/flow-typer.js'
+// } from 'flow-typer-js'
 
 export default DefineContract({
   'IdentityContract': {

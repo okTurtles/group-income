@@ -7,7 +7,7 @@ http://www.sitepoint.com/setting-up-es6-project-using-babel-browserify/
 https://babeljs.io/docs/setup/#browserify
 */
 import * as _ from './frontend/simple/utils/giLodash.js'
-import { setupPrimus } from './shared/functions.js'
+import { setupPrimus } from './backend/pubsub.js'
 import {
   dasherize,
   capitalize,
@@ -17,6 +17,19 @@ import {
   chompLeft
 } from './shared/string.js'
 
+import resolve from 'rollup-plugin-node-resolve'
+import commonjs from 'rollup-plugin-commonjs'
+import alias from 'rollup-plugin-alias'
+import babel from 'rollup-plugin-babel'
+import VuePlugin from 'rollup-plugin-vue'
+import flow from 'rollup-plugin-flow'
+import json from 'rollup-plugin-json'
+import globals from 'rollup-plugin-node-globals'
+// import css from 'rollup-plugin-css-only'
+
+// import rollup from 'rollup'
+const rollup = require('rollup')
+const chalk = require('chalk')
 const fs = require('fs')
 const path = require('path')
 const url = require('url')
@@ -25,6 +38,7 @@ const pathmodify = require('pathmodify')
 
 const development = process.env.NODE_ENV === 'development'
 const livereload = development && (parseInt(process.env.PORT_SHIFT || 0) + 35729)
+const bundler = ['browserify', 'rollup'][1]
 
 setupPrimus(require('http').createServer(), true)
 
@@ -48,7 +62,7 @@ module.exports = (grunt) => {
       browserify: {
         options: { livereload },
         files: ['frontend/*.html', 'frontend/simple/**/*.{vue,js}'],
-        tasks: ['exec:standard', 'exec:stylelint', 'copy', 'browserify']
+        tasks: ['exec:standard', 'exec:stylelint', 'copy', bundler]
       },
       css: {
         options: { livereload },
@@ -67,7 +81,7 @@ module.exports = (grunt) => {
       shared: {
         options: { livereload },
         files: ['shared/**/*.js'],
-        tasks: ['exec:standard', 'browserify', 'backend:relaunch']
+        tasks: ['exec:standard', bundler, 'backend:relaunch']
       },
       gruntfile: {
         files: ['.Gruntfile.babel.js', 'Gruntfile.js'],
@@ -76,9 +90,61 @@ module.exports = (grunt) => {
     },
 
     browserify: browserifyCfg({
-      straight: [{ 'dist/simple/app.js': ['frontend/simple/main.js'] }],
+      straight: [{ 'dist/simple/main.js': ['frontend/simple/main.js'] }],
       lazy: [{ 'dist/simple/views/UserGroup.js': ['frontend/simple/views/UserGroup.vue'] }]
     }),
+
+    rollup: {
+      bundle: {
+        input: 'frontend/simple/main.js',
+        output: {
+          file: 'dist/simple/main.js',
+          format: 'iife',
+          // format: 'esm',
+          // dir: 'dist/simple',
+          sourcemap: development
+        },
+        plugins: [
+          alias({
+            // https://vuejs.org/v2/guide/installation.html#Standalone-vs-Runtime-only-Build
+            vue: path.resolve('./node_modules/vue/dist/vue.common.js')
+          }),
+          resolve({
+            // we set `preferBuiltins` to prevent rollup from erroring with
+            // [!] (commonjs plugin) TypeError: Cannot read property 'warn' of undefined
+            // TypeError: Cannot read property 'warn' of undefined
+            preferBuiltins: false
+          }),
+          json(),
+          // css(),
+          // for some reason only the vue plugin cannot be directly
+          // included in the config here. If we directly include
+          // it then we'll get this error:
+          // Error running plugin hook transform for VuePlugin, expected a function hook.
+          // So we treat it specially in the rollup multitask
+          {
+            name: 'VuePlugin',
+            _cfg: {
+              // this is where you'd put the config
+              // { css: false }
+            }
+          },
+          flow({ all: true }),
+          commonjs({
+            // include: 'node_modules/**'
+            namedExports: {
+              'node_modules/vuelidate/lib/validators/index.js': [ 'required', 'between', 'email', 'minLength', 'requiredIf' ]
+            }
+            // ignore: ['vue-circle-slider']
+          }),
+          babel({
+            runtimeHelpers: true,
+            exclude: 'node_modules/**' // only transpile our source code
+          }),
+          globals()
+        ]
+      }
+    },
 
     sass: {
       options: sassCfg(),
@@ -179,7 +245,7 @@ module.exports = (grunt) => {
   grunt.registerTask('default', ['dev'])
   grunt.registerTask('backend', ['backend:relaunch', 'watch'])
   grunt.registerTask('dev', ['checkDependencies', 'build', 'connect', 'backend'])
-  grunt.registerTask('build', ['exec:standard', 'exec:stylelint', 'copy', 'sass', 'browserify'])
+  grunt.registerTask('build', ['exec:standard', 'exec:stylelint', 'copy', 'sass', bundler])
   grunt.registerTask('dist', ['build'])
   grunt.registerTask('test', ['dist', 'connect', 'exec:test'])
   // TODO: add 'deploy' per:
@@ -207,8 +273,8 @@ module.exports = (grunt) => {
   })
 
   grunt.registerTask('backend:relaunch', '[internal]', function () {
-    var done = this.async() // tell grunt we're async
-    var fork2 = function () {
+    const done = this.async() // tell grunt we're async
+    const fork2 = function () {
       grunt.log.writeln('backend: forking...')
       child = fork('Gruntfile.js', process.argv, {
         env: { LOAD_TARGET_FILE: './backend/index.js', ...process.env }
@@ -236,6 +302,79 @@ module.exports = (grunt) => {
       child.send({})
     } else {
       fork2()
+    }
+  })
+
+  var rollupCache = {}
+  grunt.registerMultiTask('rollup', async function () {
+    var done = this.async()
+    try {
+      // this is a hack to fix a bizarre error due to some conflict
+      // between grunt and VuePlugin. See detailed comment in the
+      // rollup configuration section above.
+      for (var i = this.data.plugins.length - 1; i >= 0; i--) {
+        if (this.data.plugins[i].name === 'VuePlugin') {
+          if (this.data.plugins[i]._cfg) {
+            this.data.plugins[i] = VuePlugin(this.data.plugins[i]._cfg)
+          }
+          break // break out of the loop (nothing else to do)
+        }
+      }
+      // https://rollupjs.org/guide/en#javascript-api
+      const timeStart = new Date().getTime()
+      const bundle = await rollup.rollup({
+        cache: rollupCache[this.target],
+        input: this.data.input,
+        external: ['crypto'],
+        moduleContext: {
+          'frontend/simple/controller/utils/primus.js': 'window'
+        },
+        plugins: this.data.plugins
+        // NOTE: temporarily while testing I'm copying
+        //       this.data.plugins directly into here so that
+        //       I can be sure that when things break, it's not
+        //       because of Grunt+rollup incompatibility.
+        //       Later, if I ever get this to work, it will be
+        //       moved up to the rollup grunt config and then
+        //       this will just be `this.data.plugins` here
+        /*
+        plugins: [
+          alias({
+            vue: path.resolve('./node_modules/vue/dist/vue.common.js')
+          }),
+          resolve({
+            preferBuiltins: false
+          }),
+          json(),
+          // css(),
+          // VuePlugin({ css: false }),
+          VuePlugin(),
+          flow({ all: true }),
+          commonjs({
+            // include: 'node_modules/**'
+            namedExports: {
+              'node_modules/vuelidate/lib/validators/index.js': [ 'required', 'between', 'email', 'minLength', 'requiredIf' ]
+            }
+            // ignore: ['vue-circle-slider']
+          }),
+          babel({
+            runtimeHelpers: true,
+            exclude: 'node_modules/**' // only transpile our source code
+          }),
+          globals()
+        ]
+        */
+      })
+      // https://rollupjs.org/guide/en#advanced-functionality
+      rollupCache[this.target] = bundle.cache
+      await bundle.write(this.data.output)
+      const timeTotal = (new Date().getTime() - timeStart) / 1000
+      const outputName = this.data.output.file || this.data.output.dir
+      grunt.log.writeln(chalk`{green created} {bold ${outputName}} {green in} {bold ${timeTotal.toFixed(1)}s}`)
+      done()
+    } catch (e) {
+      grunt.log.error(e.stack)
+      done(false)
     }
   })
 }

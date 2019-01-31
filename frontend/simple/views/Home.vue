@@ -24,10 +24,10 @@
       </div>
 
       <!-- TODO: Let's leave login-modal here Until we decide how to approach Modals logic -->
-      <login-modal
+      <!-- <login-modal
         v-if="loginModalVisible"
         @close="closeLoginModal"
-      />
+      /> -->
     </main>
 </template>
 <style scoped lang="scss">
