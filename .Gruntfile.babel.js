@@ -38,7 +38,7 @@ const pathmodify = require('pathmodify')
 
 const development = process.env.NODE_ENV === 'development'
 const livereload = development && (parseInt(process.env.PORT_SHIFT || 0) + 35729)
-const bundler = ['browserify', 'rollup'][1]
+const bundler = ['browserify', 'rollup'][0]
 
 setupPrimus(require('http').createServer(), true)
 
@@ -217,7 +217,8 @@ module.exports = (grunt) => {
               // parse all HTML files for SSI
               // TODO: delete this section?
               res.end(fs.readFileSync(f))
-            } else if (startsWith(f, 'dist/simple/') && !/\.[a-z][a-z0-9]+(\?[^/]*)?$/.test(f)) {
+            // } else if (startsWith(f, 'dist/simple') && !/\.[a-z][a-z0-9]+(\?[^/]*)?$/.test(f)) {
+            } else if (startsWith(f, 'dist/simple/app')) {
               // if we are a vue-router route, send main index file
               console.log(`Req: ${req.url}, sending index.html for: ${f}`)
               res.end(fs.readFileSync('dist/simple/index.html'))

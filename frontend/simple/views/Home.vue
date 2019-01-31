@@ -1,7 +1,7 @@
 <template>
     <main class="c-splash has-text-centered">
       <div data-test="homeLogo">
-        <img class="logo" src="assets/images/group-income-icon-transparent.png">
+        <img class="logo" src="/simple/assets/images/group-income-icon-transparent.png">
         <br>
         <h1 class="title is-3"><i18n>Welcome to GroupIncome</i18n></h1>
         <div v-if="!$store.state.loggedIn" class="c-actions">

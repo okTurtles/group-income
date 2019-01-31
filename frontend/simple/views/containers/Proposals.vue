@@ -71,7 +71,7 @@ export default {
           type: 'member',
           data: {
             member: {
-              picture: 'assets/images/default-avatar.png',
+              picture: '/simple/assets/images/default-avatar.png',
               name: 'Gil'
             },
             title: 'Remove Member',
@@ -121,7 +121,7 @@ export default {
           type: 'member',
           data: {
             member: {
-              picture: 'assets/images/default-avatar.png',
+              picture: '/simple/assets/images/default-avatar.png',
               name: 'Kim'
             },
             title: 'Add Member',

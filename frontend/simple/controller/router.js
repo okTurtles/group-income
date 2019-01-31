@@ -62,7 +62,7 @@ function createEnterGuards (...guards) {
 }
 var router = new Router({
   mode: 'history',
-  base: '/simple',
+  base: '/simple/app',
   scrollBehavior (to, from, savedPosition) {
     return { x: 0, y: 0 }
   },
