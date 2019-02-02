@@ -27,6 +27,7 @@ const rollup = require('rollup')
 const chalk = require('chalk')
 const fs = require('fs')
 const path = require('path')
+const url = require('url')
 
 const development = process.env.NODE_ENV === 'development'
 const livereload = development && (parseInt(process.env.PORT_SHIFT || 0) + 35729)
@@ -148,9 +149,8 @@ module.exports = (grunt) => {
         livereload: livereload,
         middleware: (connect, opts, middlewares) => {
           middlewares.unshift((req, res, next) => {
-            // var f = new URL(req.url).pathname
-            // f = path.join('dist', endsWith(f, '/') ? f + 'index.html' : f)
-            var f = path.join('dist', endsWith(req.url, '/') ? req.url + 'index.html' : req.url)
+            var f = url.parse(req.url).pathname // eslint-disable-line
+            f = path.join('dist', endsWith(f, '/') ? f + 'index.html' : f)
             if (/^dist\/(frontend|node_modules)\/.*\.(sass|scss|js|vue)$/.test(f)) {
               // handle serving source-maps
               res.end(fs.readFileSync(chompLeft(f, 'dist/')))
