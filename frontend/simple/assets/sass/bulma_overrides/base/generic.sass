@@ -61,24 +61,47 @@ body
 
 a
   color: $link
-  border-bottom: 1px solid $link
+  border-bottom: 1px solid $primary-light
   cursor: pointer
   text-decoration: none
-  transition: padding-bottom ease-out 0.05s, color ease-out .15s
+  position: relative
+  transition: border-color 1s .2s, color ease-in .2s
+
+  &:after
+    content: ''
+    position: absolute
+    bottom: -1px
+    right: 0
+    width: 0
+    height: 1px
+    background-color: $primary-light
+    transition: width cubic-bezier(0, 0, .5, 0) 0.2s
 
   strong
     color: currentColor
 
   &:hover
     color: $link-hover
-    border-bottom-color: $link-hover
-    padding-bottom: 2px;
+    border-color: transparent
+    transition: none
+
+    &:after
+      transition: width cubic-bezier(0, 0, 0, .3) .2s
+      width: 100%
+      left: 0
 
   &.no-border
     border-bottom: none
 
+    &:after
+      content: none
+
+  &.has-no-animation
+    &::after
+      content: none
+
     &:hover
-      padding-bottom: initial
+      border-color: initial
 
 code
   background-color: $code-background
