@@ -70,7 +70,7 @@ import L from '../../utils/translations.js'
 export default {
   name: 'GroupInvitees',
   props: {
-    group: {type: Object}
+    group: { type: Object }
   },
   mounted () {
     this.$refs.searchUser.focus()

@@ -111,7 +111,7 @@ import { toPercent } from '../../utils/filters'
 export default {
   name: 'GroupSummary',
   props: {
-    group: {type: Object}
+    group: { type: Object }
   },
   mounted () {
     this.$emit('focusref', 'finish')

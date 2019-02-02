@@ -1,17 +1,5 @@
-/*
-Reading material:
-
-http://chris.house/blog/grunt-configuration-for-react-browserify-babelify/
-https://www.reddit.com/r/javascript/comments/352f83/using_browserify_babelify_with_es6_modules_anyway/
-http://www.sitepoint.com/setting-up-es6-project-using-babel-browserify/
-https://babeljs.io/docs/setup/#browserify
-*/
-import * as _ from './frontend/simple/utils/giLodash.js'
 import { setupPrimus } from './backend/pubsub.js'
 import {
-  dasherize,
-  capitalize,
-  camelize,
   startsWith,
   endsWith,
   chompLeft
@@ -25,26 +13,25 @@ import VuePlugin from 'rollup-plugin-vue'
 import flow from 'rollup-plugin-flow'
 import json from 'rollup-plugin-json'
 import globals from 'rollup-plugin-node-globals'
-// import css from 'rollup-plugin-css-only'
+import { eslint } from 'rollup-plugin-eslint'
+import css from 'rollup-plugin-css-only'
+import scssVariable from 'rollup-plugin-sass-variables'
+// import collectSass from 'rollup-plugin-collect-sass'
+// import sass from 'rollup-plugin-sass'
+// import scss from 'rollup-plugin-scss'
+// import browserifyPlugin from 'rollup-plugin-browserify-transform'
+// https://github.com/4lejandrito/rollup-plugin-browsersync
 
 // import rollup from 'rollup'
 const rollup = require('rollup')
 const chalk = require('chalk')
 const fs = require('fs')
 const path = require('path')
-const url = require('url')
-const vueify = require('vueify')
-const pathmodify = require('pathmodify')
 
 const development = process.env.NODE_ENV === 'development'
 const livereload = development && (parseInt(process.env.PORT_SHIFT || 0) + 35729)
-const bundler = ['browserify', 'rollup'][0]
 
 setupPrimus(require('http').createServer(), true)
-
-// per: https://github.com/vuejs/vueify#configuring-options
-//      https://github.com/vuejs/vue-loader/issues/197#issuecomment-205617193
-vueify.compiler.applyConfig({ sass: sassCfg() })
 
 module.exports = (grunt) => {
   require('load-grunt-tasks')(grunt)
@@ -58,12 +45,10 @@ module.exports = (grunt) => {
       // prevent watch from spawning. if we don't do this, we won't be able
       // to kill the child when files change.
       options: { spawn: false },
-      // consider instead using the `watchify` option on browserify
-      // browserify: {
-      //   options: { livereload },
-      //   files: ['frontend/*.html', 'frontend/simple/**/*.{vue,js}'],
-      //   tasks: ['exec:standard', 'exec:stylelint', 'copy', bundler]
-      // },
+      rollup: {
+        options: { livereload },
+        files: ['dist/simple/main.js']
+      },
       css: {
         options: { livereload },
         files: ['frontend/simple/assets/sass/**/*.{sass,scss}'],
@@ -75,80 +60,28 @@ module.exports = (grunt) => {
         tasks: ['copy']
       },
       backend: {
-        files: ['backend/**/*.js'],
-        tasks: ['exec:standard', 'backend:relaunch']
+        files: ['backend/**/*.js', 'shared/**/*.js'],
+        tasks: ['exec:eslint', 'backend:relaunch']
       },
-      // shared: {
-      //   options: { livereload },
-      //   files: ['shared/**/*.js'],
-      //   tasks: ['exec:standard', bundler, 'backend:relaunch']
-      // },
       gruntfile: {
         files: ['.Gruntfile.babel.js', 'Gruntfile.js'],
-        tasks: ['exec:standardgrunt']
-      }
-    },
-
-    browserify: browserifyCfg({
-      straight: [{ 'dist/simple/main.js': ['frontend/simple/main.js'] }],
-      lazy: [{ 'dist/simple/views/UserGroup.js': ['frontend/simple/views/UserGroup.vue'] }]
-    }),
-
-    rollup: {
-      bundle: {
-        input: 'frontend/simple/main.js',
-        output: {
-          file: 'dist/simple/main.js',
-          format: 'iife',
-          // format: 'esm',
-          // dir: 'dist/simple',
-          sourcemap: development
-        },
-        plugins: [
-          alias({
-            // https://vuejs.org/v2/guide/installation.html#Standalone-vs-Runtime-only-Build
-            vue: path.resolve('./node_modules/vue/dist/vue.common.js')
-          }),
-          resolve({
-            // we set `preferBuiltins` to prevent rollup from erroring with
-            // [!] (commonjs plugin) TypeError: Cannot read property 'warn' of undefined
-            // TypeError: Cannot read property 'warn' of undefined
-            preferBuiltins: false
-          }),
-          json(),
-          // css(),
-          // for some reason only the vue plugin cannot be directly
-          // included in the config here. If we directly include
-          // it then we'll get this error:
-          // Error running plugin hook transform for VuePlugin, expected a function hook.
-          // So we treat it specially in the rollup multitask
-          {
-            name: 'VuePlugin',
-            _cfg: {
-              // this is where you'd put the config
-              // { css: false }
-            }
-          },
-          flow({ all: true }),
-          commonjs({
-            // include: 'node_modules/**'
-            namedExports: {
-              'node_modules/vuelidate/lib/validators/index.js': [ 'required', 'between', 'email', 'minLength', 'requiredIf' ],
-              'node_modules/vue-circle-slider/dist/vue-circle-slider.common.js': [ 'CircleSlider' ]
-            }
-            // ignore: ['vue-circle-slider']
-          }),
-          babel({
-            runtimeHelpers: true,
-            exclude: 'node_modules/**' // only transpile our source code
-          }),
-          globals()
-        ]
+        tasks: ['exec:eslintgrunt']
       }
     },
 
     sass: {
-      options: sassCfg(),
+      options: {
+        implementation: require('node-sass'),
+        sourceMap: development,
+        // https://github.com/vuejs/vueify/issues/34#issuecomment-161722961
+        // indentedSyntax: true,
+        // sourceMapRoot: '/',
+        outputStyle: development ? 'nested' : 'compressed',
+        includePaths: [
+          './node_modules/bulma',
+          './node_modules/@fortawesome/fontawesome-free/scss'
+        ]
+      },
       dev: {
         files: [{
           expand: true,
@@ -161,6 +94,13 @@ module.exports = (grunt) => {
     },
 
     copy: {
+      node_modules: {
+        cwd: 'node_modules',
+        src: ['systemjs/dist/*.{js,map}'],
+        dest: 'dist/simple',
+        expand: true,
+        flatten: true
+      },
       html_files: {
         cwd: 'frontend/',
         src: ['**/*.html', '!_*/**'], // folders with _ don't get copied
@@ -191,15 +131,14 @@ module.exports = (grunt) => {
         cmd: './node_modules/.bin/mocha --require Gruntfile.js --exit -R spec --bail "{./{,!(node_modules)/**/}*.test.js,./test/*.js}"',
         options: { env: { LOAD_NO_FILE: 'true', ...process.env } }
       },
-      // TODO: re-add *.vue support, see: https://github.com/standard/standard/issues/750#issuecomment-379294276
-      // standard: './node_modules/.bin/standard "**/*.{js,vue}"',
-      standard: './node_modules/.bin/standard "**/*.js"',
-      standardgrunt: './node_modules/.bin/standard .Gruntfile.babel.js Gruntfile.js',
+      // https://github.com/standard/standard/issues/750#issuecomment-379294276
+      eslint: './node_modules/.bin/eslint "**/*.{js,vue}"',
+      eslintgrunt: "./node_modules/.bin/eslint --ignore-pattern '!.*.js' .Gruntfile.babel.js Gruntfile.js",
       stylelint: './node_modules/.bin/stylelint "frontend/simple/**/*.{css,scss,vue}"',
       flow: './node_modules/.bin/flow'
     },
 
-    clean: { dist: ['dist/*', './sqlite.db'] },
+    clean: { dist: ['dist/*'] },
 
     connect: {
       options: {
@@ -209,8 +148,9 @@ module.exports = (grunt) => {
         livereload: livereload,
         middleware: (connect, opts, middlewares) => {
           middlewares.unshift((req, res, next) => {
-            var f = url.parse(req.url).pathname
-            f = path.join('dist', endsWith(f, '/') ? f + 'index.html' : f)
+            // var f = new URL(req.url).pathname
+            // f = path.join('dist', endsWith(f, '/') ? f + 'index.html' : f)
+            var f = path.join('dist', endsWith(req.url, '/') ? req.url + 'index.html' : req.url)
             if (/^dist\/(frontend|node_modules)\/.*\.(sass|scss|js|vue)$/.test(f)) {
               // handle serving source-maps
               res.end(fs.readFileSync(chompLeft(f, 'dist/')))
@@ -220,6 +160,12 @@ module.exports = (grunt) => {
               res.end(fs.readFileSync(f))
             // } else if (startsWith(f, 'dist/simple') && !/\.[a-z][a-z0-9]+(\?[^/]*)?$/.test(f)) {
             } else if (startsWith(f, 'dist/simple/app')) {
+              // NOTE: if you change the URL from /simple/app you must modify it here,
+              //       and also:
+              //       - page() function in `frontend/test.js`
+              //       - base property in `frontend/simple/controller/router.js`
+              //       - and search the project for the previous base URL
+              //         for references in .vue and .scss files!
               // if we are a vue-router route, send main index file
               console.log(`Req: ${req.url}, sending index.html for: ${f}`)
               res.end(fs.readFileSync('dist/simple/index.html'))
@@ -234,10 +180,7 @@ module.exports = (grunt) => {
     }
     // see also:
     // https://github.com/lud2k/grunt-serve
-    // https://github.com/substack/watchify
-    // https://github.com/AgentME/browserify-hmr
     // https://medium.com/@dan_abramov/the-death-of-react-hot-loader-765fa791d7c4
-
   })
 
   // -------------------------------------------------------------------------
@@ -246,19 +189,22 @@ module.exports = (grunt) => {
 
   grunt.registerTask('default', ['dev'])
   grunt.registerTask('backend', ['backend:relaunch', 'watch'])
-  grunt.registerTask('dev', ['checkDependencies', 'build', 'connect', 'backend'])
-  // grunt.registerTask('build', ['exec:standard', 'exec:stylelint', 'copy', 'sass', bundler])
-  grunt.registerTask('build', ['exec:standard', 'exec:stylelint', 'copy', 'sass', 'rollup:watch'])
+  grunt.registerTask('dev', ['checkDependencies', 'build:watch', 'connect', 'backend'])
   grunt.registerTask('dist', ['build'])
   grunt.registerTask('test', ['dist', 'connect', 'exec:test'])
   // TODO: add 'deploy' per:
   //       https://github.com/okTurtles/group-income-simple/issues/10
 
+  grunt.registerTask('build', function () {
+    const rollup = this.flags.watch ? 'rollup:watch' : 'rollup'
+    // grunt.task.run(['exec:eslint', 'exec:stylelint', 'copy', 'sass', rollup])
+    grunt.task.run(['exec:stylelint', 'copy', 'sass', rollup])
+  })
+
   // -------------------------------------------------------------------------
   //  Code for running backend server at the same time as frontend server
   // -------------------------------------------------------------------------
 
-  // var node6 = process.versions.node.split('.')[0] >= 6
   var fork = require('child_process').fork
   var child = null
 
@@ -308,17 +254,29 @@ module.exports = (grunt) => {
     }
   })
 
-  grunt.registerTask('rollup:watch', function () {
+  // -----------------------
+  // - Our rollup command
+  // -----------------------
+
+  grunt.registerTask('rollup', function () {
     const done = this.async()
+    const watchFlag = this.flags.watch
     const watchOpts = {
       clearScreen: false,
       input: 'frontend/simple/main.js',
       output: {
-        file: 'dist/simple/main.js',
-        format: 'iife',
+        // file: 'dist/simple/main.js',
+        // format: 'iife',
+        // for details see: https://rollupjs.org/guide/en#code-splitting
+        //                  https://github.com/rollup/rollup-starter-code-splitting
         // format: 'esm',
         // dir: 'dist/simple',
+        format: 'system',
+        dir: 'dist/simple',
+        // currently bad sourcemaps are being generated due to a bug in rollup or a plugin:
+        // https://github.com/rollup/rollup/issues/2011#issuecomment-459929269
         sourcemap: development
+        // sourcemap: false
       },
       external: ['crypto'],
       moduleContext: {
@@ -336,28 +294,32 @@ module.exports = (grunt) => {
           preferBuiltins: false
         }),
         json(),
-        // css(),
-        // for some reason only the vue plugin cannot be directly
-        // included in the config here. If we directly include
-        // it then we'll get this error:
-        // Error running plugin hook transform for VuePlugin, expected a function hook.
-        // So we treat it specially in the rollup multitask
-        // VuePlugin({ css: false })
-        VuePlugin(),
+        // TODO: probably don't need browserifyPlugin, just implement ourselves here as a raw object
+        //       per: https://rollupjs.org/guide/en#plugins-overview
+        // browserifyPlugin(script2ify, { include: '*.{vue,html}' }),
+        scssVariable(),
+        css({ output: 'dist/simple/assets/css/component.css' }), // SUCCESS - spits out what's in .vue <style> tags
+        // collectSass({ importOnce: true, extract: 'dist/simple/collectSass.css' }), // FAIL - flowtypes conflict
+        // sass({ output: 'dist/simple/sass.css' }), // FAIL - flowtypes conflict
+        // scss({ output: 'dist/simple/scss.css' }), // FAIL - produces empty bundle, probably only
+        //                                              useful in the <script> section, i.e.
+        //                                              <script>import 'foo.scss' ...
+        eslint({ throwOnError: false, throwOnWarning: false }), // TODO: switch these to true
+        VuePlugin({ css: false }), // TODO: switch to false and uncomment `css()`
         flow({ all: true }),
         commonjs({
           // include: 'node_modules/**'
           namedExports: {
             'node_modules/vuelidate/lib/validators/index.js': [ 'required', 'between', 'email', 'minLength', 'requiredIf' ],
             'node_modules/vue-circle-slider/dist/vue-circle-slider.common.js': [ 'CircleSlider' ]
-          }
-          // ignore: ['vue-circle-slider']
+          },
+          ignore: ['crypto']
         }),
         babel({
           runtimeHelpers: true,
           exclude: 'node_modules/**' // only transpile our source code
         }),
-        globals()
+        globals() // for Buffer support
       ]
     }
     const watcher = rollup.watch(watchOpts)
@@ -366,172 +328,24 @@ module.exports = (grunt) => {
         case 'START':
         case 'BUNDLE_START':
         case 'END':
-          grunt.log.writeln('rollup:watch', event.code)
+          grunt.verbose.debug(this.nameArgs, event.code)
           break
         case 'BUNDLE_END':
+          grunt.verbose.debug(this.nameArgs, event.code)
           const outputName = watchOpts.output.file || watchOpts.output.dir
           grunt.log.writeln(chalk`{green created} {bold ${outputName}} {green in} {bold ${(event.duration / 1000).toFixed(1)}s}`)
+          watchFlag || watcher.close() // stop watcher (only build once) if 'rollup:watch' isn't called
           done()
           break
-        // case 'END':
-        //   grunt.log.writeln('rollup:watch', event)
-        //   watcher.close()
-        //   done()
-        //   break
         case 'FATAL':
         case 'ERROR':
-          grunt.log.error('rollup:watch', event)
+          grunt.log.error(this.nameArgs, event)
           watcher.close()
           done(false)
           break
       }
     })
   })
-
-  var rollupCache = {}
-  grunt.registerMultiTask('rollup', async function () {
-    const done = this.async()
-    try {
-      // this is a hack to fix a bizarre error due to some conflict
-      // between grunt and VuePlugin. See detailed comment in the
-      // rollup configuration section above.
-      for (var i = this.data.plugins.length - 1; i >= 0; i--) {
-        if (this.data.plugins[i].name === 'VuePlugin') {
-          if (this.data.plugins[i]._cfg) {
-            this.data.plugins[i] = VuePlugin(this.data.plugins[i]._cfg)
-          }
-          break // break out of the loop (nothing else to do)
-        }
-      }
-      // https://rollupjs.org/guide/en#javascript-api
-      const timeStart = new Date().getTime()
-      const bundle = await rollup.rollup({
-        cache: rollupCache[this.target],
-        input: this.data.input,
-        external: ['crypto'],
-        moduleContext: {
-          'frontend/simple/controller/utils/primus.js': 'window'
-        },
-        plugins: this.data.plugins
-        // NOTE: temporarily while testing I'm copying
-        //       this.data.plugins directly into here so that
-        //       I can be sure that when things break, it's not
-        //       because of Grunt+rollup incompatibility.
-        //       Later, if I ever get this to work, it will be
-        //       moved up to the rollup grunt config and then
-        //       this will just be `this.data.plugins` here
-        /*
-        plugins: [
-          alias({
-            vue: path.resolve('./node_modules/vue/dist/vue.common.js')
-          }),
-          resolve({
-            preferBuiltins: false
-          }),
-          json(),
-          // css(),
-          // VuePlugin({ css: false }),
-          VuePlugin(),
-          flow({ all: true }),
-          commonjs({
-            // include: 'node_modules/**'
-            namedExports: {
-              'node_modules/vuelidate/lib/validators/index.js': [ 'required', 'between', 'email', 'minLength', 'requiredIf' ]
-            }
-            // ignore: ['vue-circle-slider']
-          }),
-          babel({
-            runtimeHelpers: true,
-            exclude: 'node_modules/**' // only transpile our source code
-          }),
-          globals()
-        ]
-        */
-      })
-      // https://rollupjs.org/guide/en#advanced-functionality
-      rollupCache[this.target] = bundle.cache
-      await bundle.write(this.data.output)
-      const timeTotal = (new Date().getTime() - timeStart) / 1000
-      const outputName = this.data.output.file || this.data.output.dir
-      grunt.log.writeln(chalk`{green created} {bold ${outputName}} {green in} {bold ${timeTotal.toFixed(1)}s}`)
-      done()
-    } catch (e) {
-      grunt.log.error(e.stack)
-      done(false)
-    }
-  })
-}
-
-// ----------------------------------------
-// SASS specific stuff
-// ----------------------------------------
-
-// This is used by grunt-sass and vueify
-function sassCfg () {
-  return {
-    implementation: require('node-sass'),
-    sourceMap: development,
-    // https://github.com/vuejs/vueify/issues/34#issuecomment-161722961
-    // indentedSyntax: true,
-    // sourceMapRoot: '/',
-    outputStyle: development ? 'nested' : 'compressed',
-    includePaths: [
-      './node_modules/bulma',
-      './node_modules/@fortawesome/fontawesome-free/scss'
-    ]
-  }
-}
-
-// ----------------------------------------
-// For generating lazy-loaded components
-// ----------------------------------------
-
-function browserifyCfg ({ straight, lazy }, cfg = {}) {
-  var globalize = x => // views/UserGroupView.vue -> UserGroupView
-    camelize(capitalize(dasherize(path.parse(x).name)))
-  var keyify = x => // views/UserGroupView.vue -> userGroupView
-    camelize(chompLeft(dasherize(path.parse(x).name), '-'))
-  // var p = (s, ...v) => _.flatten(_.zip(s, v)).join('').replace('/', path.sep)
-
-  function gencfg (out, paths, isLazy) {
-    var c = {
-      options: {
-        transform: [script2ify, 'vueify', 'babelify'],
-        plugin: [[pathmodify, {
-          mods: [
-            // some libraries (like jquery-validity) require('jquery')
-            // pathmodify.mod.re(/^jquery$/i, 'sprint-js'),
-            // pathmodify.mod.dir('vendor', p`${__dirname}/frontend/simple/assets/vendor`),
-            // https://vuejs.org/v2/guide/installation.html#Standalone-vs-Runtime-only-Build
-            pathmodify.mod.id('vue', `${__dirname}/node_modules/vue/dist/vue.common.js`)
-          ]
-        }]],
-        browserifyOptions: {
-          debug: development // enables source maps
-        }
-      },
-      files: _.fromPairs([[out, paths]])
-    }
-    // doing a different cache file for each out file is clearly faster as
-    // demonstrated by successive runs of `grunt test`
-    c.options.cacheFile = `./dist/${globalize(out)}-cache.json`
-    if (isLazy) {
-      c.options.browserifyOptions.standalone = globalize(out)
-      c.options.exclude = ['vue', 'vue-hot-reload-api']
-    }
-    return c
-  }
-  for (let map of straight) {
-    for (let out in map) {
-      cfg[keyify(out)] = gencfg(out, map[out], false)
-    }
-  }
-  for (let map of lazy) {
-    for (let out in map) {
-      cfg[keyify(out)] = gencfg(out, map[out], true)
-    }
-  }
-  return cfg
 }
 
 // ----------------------------------------

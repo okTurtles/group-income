@@ -10,7 +10,7 @@
 export default {
   name: 'GroupPrivacy',
   props: {
-    group: {type: Object}
+    group: { type: Object }
   },
   mounted () {
     this.$emit('focusref', 'next')

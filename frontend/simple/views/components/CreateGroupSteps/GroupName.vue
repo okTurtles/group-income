@@ -24,8 +24,8 @@
 export default {
   name: 'GroupName',
   props: {
-    group: {type: Object},
-    v: {type: Object}
+    group: { type: Object },
+    v: { type: Object }
   },
   mounted () {
     this.$refs.name.focus()

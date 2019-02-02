@@ -78,8 +78,7 @@
   .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
     opacity: 0;
   }
-</style>
-<style scoped>
+
   .form-actions {
     margin-top: 3rem;
   }
@@ -137,7 +136,7 @@ export default {
         sbp('okTurtles.events/once', hash, (contractID, entry) => {
           this.$store.commit('setCurrentGroupId', hash)
           // Take them to the dashboard.
-          this.$router.push({path: '/dashboard'})
+          this.$router.push({ path: '/dashboard' })
         })
         // TODO: convert this to SBL
         await sbp('backend/publishLogEntry', entry)

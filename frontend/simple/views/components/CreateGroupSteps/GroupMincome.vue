@@ -40,8 +40,8 @@ import currencies from '../../utils/currencies'
 export default {
   name: 'GroupMincome',
   props: {
-    group: {type: Object},
-    v: {type: Object}
+    group: { type: Object },
+    v: { type: Object }
   },
   data () {
     return {

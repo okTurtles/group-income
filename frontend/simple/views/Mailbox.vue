@@ -159,7 +159,7 @@
                     <div><strong>From:</strong>&nbsp;{{message.data.from}}</div>
                     <span style="color: grey;">{{message.data.message.substr(0,50)}}{{message.data.message.length > 50 ? '...' : ''}} </span>
                   </div>
-                  <div type="submit"class="media-right" v-on:click="remove(index, 'inbox')">
+                  <div type="submit" class="media-right" v-on:click="remove(index, 'inbox')">
                     <button  class="delete" ></button>
                   </div>
                 </div>
@@ -215,7 +215,7 @@ export default {
         composedMessage: '',
         // TODO: this is ugly, make it nicer
         // place an empty message here so that the rendered doesn't complain about missing fields or data
-        currentMessage: {data: {}},
+        currentMessage: { data: {} },
         currentIndex: null
       }
     }
@@ -299,7 +299,7 @@ export default {
       this.$store.commit('markMessageAsRead', this.invites[index].hash)
       this.$router.push({ path: '/join', query: { groupId: this.invites[index].data.headers[0], inviteHash: this.invites[index].hash } })
     },
-    read: function ({index, type}) {
+    read: function ({ index, type }) {
       this.ephemeral.mode = 'Read'
       if (Number.isInteger(index)) {
         this.ephemeral.currentMessage = this.inbox[index]
@@ -315,7 +315,7 @@ export default {
         try {
           let contractID = await sbp('namespace/lookup', this.recipient)
           if (!this.ephemeral.recipients.find(recipient => recipient.name === this.recipient)) {
-            this.ephemeral.recipients.push({name: this.recipient, contractID: contractID})
+            this.ephemeral.recipients.push({ name: this.recipient, contractID: contractID })
           }
           this.recipient = null
           this.ephemeral.error = false

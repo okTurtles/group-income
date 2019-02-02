@@ -19,7 +19,7 @@ function elT (el) {
 }
 
 function page (page) {
-  return url.resolve(process.env.FRONTEND_URL, `simple/${page}`)
+  return url.resolve(process.env.FRONTEND_URL, `simple/app/${page}`)
 }
 
 // TODO: consider converting these to Nightmare actions that check if we're

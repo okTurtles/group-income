@@ -86,7 +86,7 @@
   </form>
 </template>
 <script>
-import {debounce} from '../../utils/giLodash.js'
+import { debounce } from '../../utils/giLodash.js'
 import { validationMixin } from 'vuelidate'
 import sbp from '../../../../shared/sbp.js'
 import { nonWhitespace } from '../utils/validators.js'
@@ -135,7 +135,7 @@ export default {
 
         // set the attribute *after* publishing the identity contract
         let attribute = await sbp('gi/contract/create-action', 'IdentitySetAttributes',
-          {mailbox: mailbox.hash()},
+          { mailbox: mailbox.hash() },
           user.hash()
         )
         await sbp('backend/publishLogEntry', attribute)
@@ -158,10 +158,10 @@ export default {
         if (this.$route.query.next) {
           // TODO: get rid of this timeout and fix/update tests accordingly
           setTimeout(() => {
-            this.$router.push({path: this.$route.query.next})
+            this.$router.push({ path: this.$route.query.next })
           }, 1000)
         } else {
-          this.$router.push({path: '/'})
+          this.$router.push({ path: '/' })
         }
         this.form.error = false
       } catch (ex) {

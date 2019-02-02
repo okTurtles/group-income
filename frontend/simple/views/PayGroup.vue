@@ -70,7 +70,7 @@
           </tfoot>
 
           <tbody class="tbody is-borderless">
-            <tr v-for="user, index in fakeStore.users">
+            <tr v-for="(user, index) in fakeStore.users" :key="user.name">
               <th class="has-text-weight-normal">
                 <avatar :src="user.avatar"
                     :alt="L('{username}\'s avatar', { username: user.name} )"

@@ -21,7 +21,7 @@
     <p class="column is-12 is-size-7 is-italic gi-is-opacity-1">
       {{votesCount}} <i18n>votes received</i18n>
     </p>
-	</div>
+  </div>
 </template>
 <script>
 import L from '../utils/translations.js'

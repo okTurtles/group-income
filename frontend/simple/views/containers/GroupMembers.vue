@@ -92,7 +92,7 @@ export default {
   },
   methods: {
     invite () {
-      this.$router.push({path: '/invite'})
+      this.$router.push({ path: '/invite' })
     }
   },
   computed: {

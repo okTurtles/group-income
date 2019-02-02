@@ -90,9 +90,9 @@ export default {
         // TODO: Insert cryptography here
         const identityContractId = await sbp('namespace/lookup', this.form.name)
         console.log(`Retrieved identity ${identityContractId}`)
-        await this.$store.dispatch('login', {name: this.form.name, identityContractId})
+        await this.$store.dispatch('login', { name: this.form.name, identityContractId })
         this.close()
-        this.$router.push({path: '/'})
+        this.$router.push({ path: '/' })
       } catch (error) {
         this.form.response = L('Invalid username or password')
         console.error(error)

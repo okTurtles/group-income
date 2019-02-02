@@ -31,12 +31,12 @@ import sbp from '../../../../shared/sbp.js'
 import VueSlider from 'vue-slider-component'
 import store from '../../model/state.js'
 import { REPLACED_STATE } from '../../utils/events.js'
-import {cloneDeep} from '../../utils/giLodash.js'
+import { cloneDeep } from '../../utils/giLodash.js'
 const disableTimeTravel = true
 export default {
   name: 'TimeTravel',
-  components: {VueSlider},
-  props: {toggleVisibility: Function},
+  components: { VueSlider },
+  props: { toggleVisibility: Function },
   created () {
     if (disableTimeTravel) {
       console.log("[TimeTravel] this feature is disabled for now because it's causing problems...")

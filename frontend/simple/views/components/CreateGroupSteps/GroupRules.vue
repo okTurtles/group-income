@@ -128,11 +128,6 @@
 </style>
 <script>
 import { toPercent } from '../../utils/filters.js'
-// we use require instead of import with this file to make rollup happy
-// or not... using require only makes rollup happy during compilation
-// but then the browser complains about "require is not defined"
-// see: https://github.com/rollup/rollup/issues/2671
-// const { CircleSlider } = require('vue-circle-slider')
 import { CircleSlider } from 'vue-circle-slider'
 
 const SUPERMAJORITY = 0.67
@@ -142,8 +137,8 @@ const WARNCOLOR = '#f68b39'
 export default {
   name: 'GroupRules',
   props: {
-    group: {type: Object},
-    v: {type: Object}
+    group: { type: Object },
+    v: { type: Object }
   },
   components: {
     CircleSlider

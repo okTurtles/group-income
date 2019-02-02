@@ -130,7 +130,7 @@ export default {
         //       in 4's inbox. But clicking it just resulted in this error when clicking
         //       "Respond to Invite". Furthermore, the Invite wouldn't disappear from the Inbox
         console.log(new Error('Invalid Invitation'))
-        this.$router.push({path: '/mailbox'})
+        this.$router.push({ path: '/mailbox' })
       }
       // TODO: use the state.profiles directly?
       var members = []
@@ -148,7 +148,7 @@ export default {
     } catch (ex) {
       // TODO Add ui facing error notification
       console.log(ex)
-      this.$router.push({path: '/mailbox'})
+      this.$router.push({ path: '/mailbox' })
     }
   },
   methods: {
@@ -174,7 +174,7 @@ export default {
 
         // remove invite and return to mailbox
         this.$store.commit('deleteMessage', this.$route.query.inviteHash)
-        this.$router.push({path: '/mailbox'})
+        this.$router.push({ path: '/mailbox' })
       } catch (ex) {
         console.log(ex)
         // TODO: post this to a global notification system instead of using this.ephemeral.errorMsg
@@ -197,7 +197,7 @@ export default {
 
         // remove invite and return to mailbox
         this.$store.commit('deleteMail', this.$route.query.inviteHash)
-        this.$router.push({path: '/mailbox'})
+        this.$router.push({ path: '/mailbox' })
       } catch (ex) {
         console.log(ex)
         this.ephemeral.errorMsg = L('Failed to Decline Invite')

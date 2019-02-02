@@ -1,7 +1,0 @@
-{
-  "public": "dist",
-  "directoryListing": false,
-  "rewrites": [
-    { "source": "/simple/app/**", "destination": "/simple/index.html" }
-  ]
-}

@@ -23,8 +23,8 @@
 export default {
   name: 'GroupPurpose',
   props: {
-    group: {type: Object},
-    v: {type: Object}
+    group: { type: Object },
+    v: { type: Object }
   },
   mounted () {
     this.$refs.purpose.focus()

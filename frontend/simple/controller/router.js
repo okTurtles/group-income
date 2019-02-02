@@ -1,7 +1,6 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import store from '../model/state.js'
-import lazyLoadVue from './utils/lazyLoadVue.js'
 
 import CreateGroup from '../views/CreateGroup.vue'
 import {
@@ -171,7 +170,7 @@ var router = new Router({
     },
     {
       path: '/user-group',
-      component: lazyLoadVue('UserGroupView'),
+      component: () => import('../views/UserGroup.vue'),
       meta: {
         title: 'Your Group'
       }

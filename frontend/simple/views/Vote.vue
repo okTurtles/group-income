@@ -49,10 +49,10 @@ export default {
   name: 'Vote',
   computed: {
     contract () {
-      return this.$store.state[this.$route.query.groupId] || {proposals: {}}
+      return this.$store.state[this.$route.query.groupId] || { proposals: {} }
     },
     proposal () {
-      return this.contract.proposals[this.$route.query.proposalHash] || {proposal: null}
+      return this.contract.proposals[this.$route.query.proposalHash] || { proposal: null }
     },
     memberCount () {
       return this.$store.getters[`${this.$route.query.groupId}/memberUsernames`].length
@@ -86,7 +86,7 @@ export default {
           }
         }
         // return to mailbox
-        this.$router.push({path: '/mailbox'})
+        this.$router.push({ path: '/mailbox' })
       } catch (ex) {
         console.log(ex)
         this.errorMsg = L('Failed to Cast Vote')
@@ -104,7 +104,7 @@ export default {
           this.$route.query.groupId
         )
         await sbp('backend/publishLogEntry', vote)
-        this.$router.push({path: '/mailbox'})
+        this.$router.push({ path: '/mailbox' })
       } catch (ex) {
         console.log(ex)
         this.errorMsg = L('Failed to Cast Vote')
