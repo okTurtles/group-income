@@ -52,11 +52,7 @@
     "ignored/*",
     "test/*"
   ],
-  "browserslist": [
-    "> 1%",
-    "last 2 versions",
-    "not ie <= 9"
-  ],
+  "browserslist": "> 1% and since 2018 and not dead",
   "stylelint": {
     "extends": "stylelint-config-standard",
     "rules": {

@@ -9,12 +9,12 @@
 .*/node_modules/.*
 .*/dist/.*
 .*/ignored/.*
-.*/frontend/_static/.*
-.*/frontend/simple/assets/.*
+.*/historical/.*
 .*/backend/discard/.*
-.*/frontend/simple/controller/backend/interface.js
-.*/frontend/simple/utils/crypto.js
-.*/frontend/simple/utils/vuex-queue.js
+.*/frontend/assets/.*
+.*/frontend/controller/backend/interface.js
+.*/frontend/utils/crypto.js
+.*/frontend/utils/vuex-queue.js
 # .*/test/frontend.js
 .*.test.js
 
