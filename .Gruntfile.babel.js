@@ -1,10 +1,4 @@
 import { setupPrimus } from './backend/pubsub.js'
-import {
-  startsWith,
-  endsWith,
-  chompLeft
-} from './shared/string.js'
-
 import resolve from 'rollup-plugin-node-resolve'
 import commonjs from 'rollup-plugin-commonjs'
 import alias from 'rollup-plugin-alias'
@@ -34,6 +28,11 @@ const livereload = development && (parseInt(process.env.PORT_SHIFT || 0) + 35729
 
 setupPrimus(require('http').createServer(), true)
 
+const distDir = 'dist'
+const distAssets = `${distDir}/assets`
+const distJS = `${distAssets}/js`
+const distCSS = `${distAssets}/css`
+
 module.exports = (grunt) => {
   require('load-grunt-tasks')(grunt)
 
@@ -48,16 +47,16 @@ module.exports = (grunt) => {
       options: { spawn: false },
       rollup: {
         options: { livereload },
-        files: ['dist/simple/main.js']
+        files: [`${distJS}/main.js`]
       },
       css: {
         options: { livereload },
-        files: ['frontend/simple/assets/sass/**/*.{sass,scss}'],
+        files: ['frontend/assets/sass/**/*.{sass,scss}'],
         tasks: ['sass']
       },
       html: {
         options: { livereload },
-        files: ['frontend/simple/**/*.html'],
+        files: ['frontend/**/*.html'],
         tasks: ['copy']
       },
       backend: {
@@ -86,9 +85,9 @@ module.exports = (grunt) => {
       dev: {
         files: [{
           expand: true,
-          cwd: 'frontend/simple/assets/sass',
+          cwd: 'frontend/assets/sass',
           src: ['*.{sass,scss}', '!_*/**'],
-          dest: 'dist/simple/assets/css/',
+          dest: distCSS,
           ext: '.css'
         }]
       }
@@ -98,26 +97,24 @@ module.exports = (grunt) => {
       node_modules: {
         cwd: 'node_modules',
         src: ['systemjs/dist/*.{js,map}'],
-        dest: 'dist/simple',
+        dest: distJS,
         expand: true,
         flatten: true
       },
       html_files: {
-        cwd: 'frontend/',
-        src: ['**/*.html', '!_*/**'], // folders with _ don't get copied
-        dest: 'dist',
-        expand: true
+        src: 'frontend/index.html',
+        dest: `${distDir}/index.html`
       },
       assets: {
-        cwd: 'frontend/simple/assets',
+        cwd: 'frontend/assets',
         src: ['**/*', '!sass/**'],
-        dest: 'dist/simple/assets',
+        dest: distAssets,
         expand: true
       },
       fontawesome: {
         cwd: 'node_modules/@fortawesome/fontawesome-free/webfonts/',
         src: ['fa-regular*', 'fa-solid*'],
-        dest: 'dist/simple/assets/fonts',
+        dest: `${distAssets}/fonts`,
         expand: true
       }
     },
@@ -135,11 +132,11 @@ module.exports = (grunt) => {
       // https://github.com/standard/standard/issues/750#issuecomment-379294276
       eslint: './node_modules/.bin/eslint "**/*.{js,vue}"',
       eslintgrunt: "./node_modules/.bin/eslint --ignore-pattern '!.*.js' .Gruntfile.babel.js Gruntfile.js",
-      stylelint: './node_modules/.bin/stylelint "frontend/simple/**/*.{css,scss,vue}"',
+      stylelint: './node_modules/.bin/stylelint "frontend/**/*.{css,scss,vue}"',
       flow: './node_modules/.bin/flow'
     },
 
-    clean: { dist: ['dist/*'] },
+    clean: { dist: [`${distDir}/*`] },
 
     connect: {
       options: {
@@ -150,25 +147,13 @@ module.exports = (grunt) => {
         middleware: (connect, opts, middlewares) => {
           middlewares.unshift((req, res, next) => {
             var f = url.parse(req.url).pathname // eslint-disable-line
-            f = path.join('dist', endsWith(f, '/') ? f + 'index.html' : f)
-            if (/^dist\/(frontend|node_modules)\/.*\.(sass|scss|js|vue)$/.test(f)) {
-              // handle serving source-maps
-              res.end(fs.readFileSync(chompLeft(f, 'dist/')))
-            } else if (endsWith(f, '.html') && fs.existsSync(f)) {
-              // parse all HTML files for SSI
-              // TODO: delete this section?
-              res.end(fs.readFileSync(f))
-            // } else if (startsWith(f, 'dist/simple') && !/\.[a-z][a-z0-9]+(\?[^/]*)?$/.test(f)) {
-            } else if (startsWith(f, 'dist/simple/app')) {
-              // NOTE: if you change the URL from /simple/app you must modify it here,
+            if (/^\/app(\/|$)/.test(f)) {
+              // NOTE: if you change the URL from /app you must modify it here,
               //       and also:
               //       - page() function in `frontend/test.js`
               //       - base property in `frontend/simple/controller/router.js`
-              //       - and search the project for the previous base URL
-              //         for references in .vue and .scss files!
-              // if we are a vue-router route, send main index file
               console.log(`Req: ${req.url}, sending index.html for: ${f}`)
-              res.end(fs.readFileSync('dist/simple/index.html'))
+              res.end(fs.readFileSync(`${distDir}/index.html`))
             } else {
               next() // otherwise send the resource itself, whatever it is
             }
@@ -263,24 +248,17 @@ module.exports = (grunt) => {
     const watchFlag = this.flags.watch
     const watchOpts = {
       clearScreen: false,
-      input: 'frontend/simple/main.js',
+      input: 'frontend/main.js',
       output: {
-        // file: 'dist/simple/main.js',
-        // format: 'iife',
-        // for details see: https://rollupjs.org/guide/en#code-splitting
-        //                  https://github.com/rollup/rollup-starter-code-splitting
-        // format: 'esm',
-        // dir: 'dist/simple',
         format: 'system',
-        dir: 'dist/simple',
+        dir: distJS,
         // currently bad sourcemaps are being generated due to a bug in rollup or a plugin:
         // https://github.com/rollup/rollup/issues/2011#issuecomment-459929269
         sourcemap: development
-        // sourcemap: false
       },
       external: ['crypto'],
       moduleContext: {
-        'frontend/simple/controller/utils/primus.js': 'window'
+        'frontend/controller/utils/primus.js': 'window'
       },
       plugins: [
         alias({
@@ -298,10 +276,10 @@ module.exports = (grunt) => {
         //       per: https://rollupjs.org/guide/en#plugins-overview
         // browserifyPlugin(script2ify, { include: '*.{vue,html}' }),
         scssVariable(),
-        css({ output: 'dist/simple/assets/css/component.css' }), // SUCCESS - spits out what's in .vue <style> tags
-        // collectSass({ importOnce: true, extract: 'dist/simple/collectSass.css' }), // FAIL - flowtypes conflict
-        // sass({ output: 'dist/simple/sass.css' }), // FAIL - flowtypes conflict
-        // scss({ output: 'dist/simple/scss.css' }), // FAIL - produces empty bundle, probably only
+        css({ output: `${distCSS}/component.css` }), // SUCCESS - spits out what's in .vue <style> tags
+        // collectSass({ importOnce: true, extract: `${distCSS}/collectSass.css` }), // FAIL - flowtypes conflict
+        // sass({ output: `${distCSS}/sass.css` }), // FAIL - flowtypes conflict
+        // scss({ output: `${distCSS}/scss.css` }), // FAIL - produces empty bundle, probably only
         //                                              useful in the <script> section, i.e.
         //                                              <script>import 'foo.scss' ...
         eslint({ throwOnError: false, throwOnWarning: false }), // TODO: switch these to true
@@ -347,11 +325,9 @@ module.exports = (grunt) => {
     })
   })
 }
-
+/*
 // ----------------------------------------
-// EJS support for .vue files + via require
-// TODO: move this to some nicer place. A grunt folder
-//       would also allow us to move this entire file.
+// TODO: convert this to a pure rollup plugin
 // ----------------------------------------
 var through = require('through2')
 
@@ -373,3 +349,4 @@ function script2ify (file) {
       cb(null, buf.toString('utf8').replace(regex, replacement))
     })
 }
+*/

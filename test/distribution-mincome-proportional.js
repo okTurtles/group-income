@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 
 const should = require('should')
-const incomeDistribution = require('../frontend/simple/utils/distribution/mincome-proportional').default
+const incomeDistribution = require('../frontend/utils/distribution/mincome-proportional').default
 
 describe('proportionalMincomeDistributionTest', function () {
   it('distribute income above mincome proportionally', function () {

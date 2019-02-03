@@ -128,5 +128,5 @@ declare module './interface.js' { declare module.exports: any }
 declare module './views/containers/sidebar/Sidebar.vue' { declare module.exports: Object }
 
 // we ignored everything in assets/, so...
-declare module '../frontend/simple/assets/vendor/primus.js' { declare module.exports: Function }
+declare module '../frontend/assets/vendor/primus.js' { declare module.exports: Function }
 declare module '../../assets/vendor/primus.js' { declare module.exports: Function }

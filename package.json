@@ -7,8 +7,8 @@
     "backend": "cross-env LOAD_TARGET_FILE=./backend/index.js nodemon --ignore backend/discard/ --watch backend/ Gruntfile.js",
     "rollup": "rollup -c",
     "rollup-dev": "rollup -c -w",
-    "sass-dev": "node-sass --include-path ./node_modules/bulma --include-path ./node_modules/@fortawesome/fontawesome-free/scss --output-style nested --source-map true -w -r -o ./dist/simple/assets/css ./frontend/simple/assets/sass",
-    "sass-dist": "node-sass --include-path ./node_modules/bulma --include-path ./node_modules/@fortawesome/fontawesome-free/scss --output-style compressed -o ./dist/simple/assets/css ./frontend/simple/assets/sass",
+    "sass-dev": "node-sass --include-path ./node_modules/bulma --include-path ./node_modules/@fortawesome/fontawesome-free/scss --output-style nested --source-map true -w -r -o ./dist/assets/css ./frontend/assets/sass",
+    "sass-dist": "node-sass --include-path ./node_modules/bulma --include-path ./node_modules/@fortawesome/fontawesome-free/scss --output-style compressed -o ./dist/assets/css ./frontend/assets/sass",
     "server": "serve -p 8000",
     "dev": "npm-run-all --parallel backend sass-dev rollup-dev server",
     "test": "xvfb-maybe grunt test",
@@ -16,7 +16,7 @@
     "i18n": "node scripts/i18n.js",
     "flow": "flow",
     "double": "PORT_SHIFT=1 grunt dev",
-    "stylelint": "stylelint 'frontend/simple/**/*.{css,scss,vue}' --fix",
+    "stylelint": "stylelint 'frontend/**/*.{css,scss,vue}' --fix",
     "docker": "./scripts/docker.sh"
   },
   "eslintConfig": {
@@ -42,9 +42,9 @@
     "!.Gruntfile.babel.js",
     "**/vue2-slider.vue",
     "frontend/_static/*",
-    "frontend/simple/assets/*",
-    "frontend/simple/controller/utils/primus.js",
-    "frontend/simple/utils/flow-typer.js",
+    "frontend/assets/*",
+    "frontend/controller/utils/primus.js",
+    "frontend/utils/flow-typer.js",
     "backend/discard/*",
     "historical/*",
     "shared/types.js",
@@ -155,7 +155,6 @@
     "rollup": "1.1.2",
     "rollup-plugin-alias": "1.5.1",
     "rollup-plugin-babel": "4.3.2",
-    "rollup-plugin-browserify-transform": "1.0.1",
     "rollup-plugin-commonjs": "9.2.0",
     "rollup-plugin-css-only": "1.0.0",
     "rollup-plugin-eslint": "5.0.0",
@@ -170,7 +169,6 @@
     "sinon": "7.2.3",
     "stylelint": "9.10.1",
     "stylelint-config-standard": "18.2.0",
-    "through2": "3.0.0",
     "vue-template-compiler": "2.5.22",
     "xvfb-maybe": "0.2.1"
   }

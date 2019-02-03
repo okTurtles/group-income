@@ -24,7 +24,7 @@ export function setupPrimus (server: Object, saveAndDestroy: boolean = false) {
   primus.plugin('rooms', require('primus-rooms'))
   primus.plugin('responder', require('primus-responder'))
   if (saveAndDestroy) {
-    primus.save(require('path').join(__dirname, '../frontend/simple/controller/utils/primus.js'))
+    primus.save(require('path').join(__dirname, '../frontend/controller/utils/primus.js'))
     primus.destroy()
   }
   return primus
