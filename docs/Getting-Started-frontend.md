@@ -208,7 +208,7 @@ In the section [What Vue.js is good for (and not)](#what-vuejs-is-good-for-and-n
 
 ###### __[EJS](http://ejs.co/)__ - _Like PHP, but JavaScript_
 
-This project supports using it in `.vue` files and by itself in standalone `.ejs` files. Lets you do things like:
+This ~~project supports using it in `.vue` files~~ *(UPDATE: this is no longer true! We only support .vue files now.)* and by itself in standalone `.ejs` files. Lets you do things like:
 
 ```html
 <% if (true) { %>
