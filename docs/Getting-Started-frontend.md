@@ -20,7 +20,7 @@ If you already fully grok modern web dev and want to get started immediately, sk
     + [NPM](#npm---node-package-manager)
     + [Grunt](#grunt---task-runner)
     + [Hapi.js](#hapijs---nodejs-powered-https-server)
-    + [Browserify](#browserify---module-system--bundler)
+    + [Rollup](#browserify---module-system--bundler)
     + [Babel](#babel---tomorrows-javascript-featurestoday)
     + [Vue.js](#vuejs---modern-frontend-component-framework)
     + [EJS](#ejs---like-php-but-javascript)
@@ -122,7 +122,7 @@ When links are clicked, or a new "page" is visited, a piece of JavaScript called
 Two main reasons:
 
 1. Managing web servers is a PITA.
-2. Web apps can become huge, and bundlers like browserify/webpack can make it simpler to manage dependencies. At the same time, many of these tools and frameworks (especially webpack and anything more complicated than Vue.js), add lots of totally unnecessary complexity that 95% of front-end developers *[don't need](https://slack-files.com/T03JT4FC2-F151AAF7A-13fe6f98da)*, especially in an [HTTP2 world](https://blog.cloudflare.com/http-2-for-web-developers/).
+2. Web apps can become huge, and bundlers like rollup/browserify/webpack can make it simpler to manage dependencies. At the same time, many of these tools and frameworks (especially webpack and anything more complicated than Vue.js), add lots of totally unnecessary complexity that 95% of front-end developers *[don't need](https://slack-files.com/T03JT4FC2-F151AAF7A-13fe6f98da)*, especially in an [HTTP2 world](https://blog.cloudflare.com/http-2-for-web-developers/).
 
 It used to be that servers would render HTML (using a server-side templating language and/or programming language like PHP) for each page that is visited. Everyone remembers putting this in their HTML (right?):
 
@@ -177,7 +177,9 @@ For doing things like:
 
 Powers the backend API that the frontend talks to. It's responsible for managing the database of groups and users, and together with the frontend it uses cookies to authenticate users.
 
-###### __[Browserify](http://browserify.org/)__ - _Module System + Bundler_
+###### __[Rollup](https://rollupjs.org)__ - _Tree-Shaking Bundler_
+
+*Note: previously we used [browserify](http://browserify.org/), but have since switched to Rollup because vueify is no longer being supported, and rollup is a far more advanced bundler that uses [tree-shaking](https://rollupjs.org/guide/en#tree-shaking) to reduce the size of bundles. What follows below is the previous text that applied to browserify, but note that even browserify transforms are supported by rollup if you use the [`rollup-plugin-browserify-transform`](https://github.com/lautis/rollup-plugin-browserify-transform).*
 
 Makes it possible to write front-end code in the same way Node.js backend code is written. Instead of including a library like jQuery using a `<script>` tag, you `npm install jquery --save`  it, and then `var $ = require('jquery')` it. Browserify is much more than that however, it also:
 
@@ -293,7 +295,7 @@ Here are the important files and folders within `frontend/simple/`:
     + __Designer note:__ Generally as a designer you can ignore this folder. Most of the JavaScript that designers need can either be `require`'d (see the next section) or created directly within `.vue` or `.ejs` files.
 - `sass/` - These are used (along with the Bulma framework) to generate the css files for the site. Can contain either `.sass` or `.scss` files.
 - `assets/` - Grunt simply copies the folders within here to the output directory: `dist/`. This is where you drop in CSS files, images, and any other static assets.
-    + __Developer note:__ Currently we do not [translate](https://github.com/gruntjs/grunt-contrib-sass), optimize, minify, or [fingerprint](http://guides.rubyonrails.org/asset_pipeline.html#what-is-fingerprinting-and-why-should-i-care-questionmark) any of these assets, but we will (using grunt). We won't, however, be "bundling" these assets via Webpack or browserify. "Bundling" refers to the practice of concatenating js, css (sometimes [even images!](https://github.com/webpack/file-loader)) and putting into a single `.js` file. This might have [made sense in the HTTP/1.0 days](https://jakearchibald.com/2016/link-in-body), however HTTP/2.0 makes this bizarro practice [totally unnecessary](https://blog.cloudflare.com/http-2-for-web-developers/).
+    + __Developer note:__ Currently we do not [translate](https://github.com/gruntjs/grunt-contrib-sass), optimize, minify, or [fingerprint](http://guides.rubyonrails.org/asset_pipeline.html#what-is-fingerprinting-and-why-should-i-care-questionmark) any of these assets, but we will (using grunt). We won't, however, be "bundling" these assets via Webpack or rollup. "Bundling" refers to the practice of concatenating js, css (sometimes [even images!](https://github.com/webpack/file-loader)) and putting into a single `.js` file. This might have [made sense in the HTTP/1.0 days](https://jakearchibald.com/2016/link-in-body), however HTTP/2.0 makes this bizarro practice [totally unnecessary](https://blog.cloudflare.com/http-2-for-web-developers/).
 
 ----
 
