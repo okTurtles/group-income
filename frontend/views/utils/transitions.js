@@ -2,10 +2,14 @@
 
 import Vue from 'vue'
 import Velocity from 'velocity-animate'
+// TODO: investigate:
+//       https://github.com/juliangarnier/anime
+//       https://github.com/bendc/animateplus
 
-// http://vuejs.org/guide/transitions.html#JavaScript-Transitions
+// https://vuejs.org/guide/transitions.html#JavaScript-Transitions
 
 Vue.component('fade', {
+  // TODO: this template looks wrong? what is it doing here?
   template: `<transition name="fade" v-on:enter="enter" v-on:enter-cancelled="enterCancelled" v-on:leave="leave"
   v-on:leave-cancelled="leaveCancelled"></transition>
 `,

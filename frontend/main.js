@@ -6,13 +6,15 @@ import { createWebSocket } from './controller/backend.js'
 // import SBP stuff before anything else so that domains register themselves before called
 import Vue from 'vue'
 import './views/utils/translations.js'
-import './views/utils/transitions.js'
 import router from './controller/router.js'
 import * as db from './model/database.js'
 import store from './model/state.js'
 import { LOGOUT } from './utils/events'
 import Sidebar from './views/containers/sidebar/Sidebar.vue'
 import ModalDynamic from './views/components/Modal/ModalDynamic.vue'
+
+// TODO: uncomment this and improve implementation?
+// import './views/utils/transitions.js'
 
 console.log('NODE_ENV:', process.env.NODE_ENV)
 
@@ -53,8 +55,6 @@ async function startApp () {
   new Vue({
     router: router,
     components: {
-      // Sidebar: await import('./views/containers/sidebar/Sidebar.vue'),
-      // ModalDynamic: await import('./views/components/Modal/ModalDynamic.vue')
       Sidebar,
       ModalDynamic
     },

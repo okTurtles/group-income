@@ -56,7 +56,7 @@
     </div>
   </main>
 </template>
-<style>
+<style scoped>
   /*
   TODO: Steps layouts should have a template defined
   so we don't need to repeat markup (titles in this case)
@@ -68,6 +68,8 @@
 
   /*
   TODO: avoid these global rules
+        see also notes about using transitions.js (and
+        improving its implementation)
    */
   .fade-enter-active,
   .fade-leave-active {
