@@ -141,10 +141,10 @@ const animationMixins = {
       // And finally it fades out at the same time Target is fading in.
       Velocity(el, { opacity: 0 }, { duration: this.config.fade, complete })
     },
-    updateSpecsOf (el, elementId) {
+    updateSpecsOf (el, elementId: string) {
       this.MaskToModal.updateSpecsOf(el, elementId)
     },
-    getSpecsOf (elementId) {
+    getSpecsOf (elementId: string) {
       return this.MaskToModal.elementsSpecs[elementId]
     },
     getTargetCard () {

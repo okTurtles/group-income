@@ -13,9 +13,12 @@
 .*/backend/discard/.*
 .*/frontend/assets/.*
 .*/frontend/controller/backend/interface.js
+.*/frontend/controller/utils/primus.js
 .*/frontend/utils/crypto.js
 .*/frontend/utils/vuex-queue.js
-# .*/test/frontend.js
+.*/frontend/utils/flow-typer.js
+# .*/test/backend.js
+.*/test/frontend.js
 .*.test.js
 
 [libs]

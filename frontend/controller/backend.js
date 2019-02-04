@@ -25,7 +25,7 @@ function signJSON (json, keypair) {
 var contractSubscriptions = []
 var serverSocket
 
-export function createWebSocket (url: string, options: Object) {
+export function createWebSocket (url: string, options: Object): Promise<Object> {
   return new Promise((resolve, reject) => {
     serverSocket = pubsub({
       url,
