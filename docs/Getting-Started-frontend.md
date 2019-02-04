@@ -230,7 +230,7 @@ We've chosen (for now at least) to use Browserify over Webpack, Grunt over Gulp,
 - The reasons for choosing Vue.js over React are mentioned [above](#vuejs---modern-frontend-component-framework).
 - Grunt and Gulp appear to be about evenly matched, and although Gulp seems to be hip and has a nifty design, Grunt is also perfectly well designed too and works just as well. We were already experienced with Grunt so we went with it. Plus, we like its emphasis on configuration over code and its native support for template strings. Either tool will serve you well.
 - Riot.js is very similar to Vue.js, perhaps even more minimalist. I might have used it instead had I come across it first. Both are great!
-- Rollup is an extremely efficient bundler that takes advantage of ES6 modules to bundle only the functions you use and their dependencies (instead of entire modules). Because of this it produces smaller bundles than either Browserify or Webpack (currently). Webpack 2 plans to also implement the tooling necessary to do this, and you can use Rollup with Browserify via the [rollupify](https://github.com/nolanlawson/rollupify) transform.
+- *(Update: we've now switched to Rollup! 😂)* Rollup is an extremely efficient bundler that takes advantage of ES6 modules to bundle only the functions you use and their dependencies (instead of entire modules). Because of this it produces smaller bundles than either Browserify or Webpack (currently). Webpack 2 plans to also implement the tooling necessary to do this, and you can use Rollup with Browserify via the [rollupify](https://github.com/nolanlawson/rollupify) transform.
 
 ## Frontend Workflow
 
