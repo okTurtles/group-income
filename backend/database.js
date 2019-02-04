@@ -1,11 +1,11 @@
 'use strict'
 
 // import fs from 'fs'
-import {Readable} from 'stream'
-import {GIMessage} from '../shared/GIMessage.js'
+import { Readable } from 'stream'
+import { GIMessage } from '../shared/GIMessage.js'
 import sbp from '../shared/sbp.js'
 import '../shared/domains/okTurtles/data/index.js'
-import {strToB64} from '../shared/functions.js'
+import { strToB64 } from '../shared/functions.js'
 
 // TODO: use some fast key/value store
 // TODO: just use the file system! store the json of each message to disk as a file with its hash as the file name
@@ -19,7 +19,7 @@ const get = (key: string) => sbp('okTurtles.data/get', key)
 const set = (key: string, value: string) => sbp('okTurtles.data/set', key, value)
 
 export function addLogEntry (entry: GIMessage): string {
-  const {previousHEAD} = entry.message()
+  const { previousHEAD } = entry.message()
   var contractID: string = previousHEAD ? entry.message().contractID : entry.hash()
   if (get(entry.hash())) {
     console.warn(`entry exists: ${entry.hash()}`)

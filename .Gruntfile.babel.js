@@ -1,36 +1,37 @@
-/*
-Reading material:
+import { setupPrimus } from './backend/pubsub.js'
+import resolve from 'rollup-plugin-node-resolve'
+import commonjs from 'rollup-plugin-commonjs'
+import alias from 'rollup-plugin-alias'
+import babel from 'rollup-plugin-babel'
+import VuePlugin from 'rollup-plugin-vue'
+import flow from 'rollup-plugin-flow'
+import json from 'rollup-plugin-json'
+import globals from 'rollup-plugin-node-globals'
+import { eslint } from 'rollup-plugin-eslint'
+import css from 'rollup-plugin-css-only'
+import scssVariable from 'rollup-plugin-sass-variables'
+// import collectSass from 'rollup-plugin-collect-sass'
+// import sass from 'rollup-plugin-sass'
+// import scss from 'rollup-plugin-scss'
+// import browserifyPlugin from 'rollup-plugin-browserify-transform'
+// https://github.com/4lejandrito/rollup-plugin-browsersync
 
-http://chris.house/blog/grunt-configuration-for-react-browserify-babelify/
-https://www.reddit.com/r/javascript/comments/352f83/using_browserify_babelify_with_es6_modules_anyway/
-http://www.sitepoint.com/setting-up-es6-project-using-babel-browserify/
-https://babeljs.io/docs/setup/#browserify
-*/
-import * as _ from './frontend/simple/utils/giLodash.js'
-import {setupPrimus} from './shared/functions.js'
-import {
-  dasherize,
-  capitalize,
-  camelize,
-  startsWith,
-  endsWith,
-  chompLeft
-} from './shared/string.js'
-
+// import rollup from 'rollup'
+const rollup = require('rollup')
+const chalk = require('chalk')
 const fs = require('fs')
 const path = require('path')
 const url = require('url')
-const vueify = require('vueify')
-const pathmodify = require('pathmodify')
 
 const development = process.env.NODE_ENV === 'development'
 const livereload = development && (parseInt(process.env.PORT_SHIFT || 0) + 35729)
 
 setupPrimus(require('http').createServer(), true)
 
-// per: https://github.com/vuejs/vueify#configuring-options
-//      https://github.com/vuejs/vue-loader/issues/197#issuecomment-205617193
-vueify.compiler.applyConfig({ sass: sassCfg() })
+const distDir = 'dist'
+const distAssets = `${distDir}/assets`
+const distJS = `${distAssets}/js`
+const distCSS = `${distAssets}/css`
 
 module.exports = (grunt) => {
   require('load-grunt-tasks')(grunt)
@@ -38,78 +39,82 @@ module.exports = (grunt) => {
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
 
-    checkDependencies: {this: {options: { install: true }}},
+    checkDependencies: { this: { options: { install: true } } },
 
     watch: {
       // prevent watch from spawning. if we don't do this, we won't be able
       // to kill the child when files change.
-      options: {spawn: false},
-      // consider instead using the `watchify` option on browserify
-      browserify: {
+      options: { spawn: false },
+      rollup: {
         options: { livereload },
-        files: ['frontend/*.html', 'frontend/simple/**/*.{vue,js}'],
-        tasks: ['exec:standard', 'exec:stylelint', 'copy', 'browserify']
+        files: [`${distJS}/main.js`]
       },
       css: {
         options: { livereload },
-        files: ['frontend/simple/assets/sass/**/*.{sass,scss}'],
+        files: ['frontend/assets/sass/**/*.{sass,scss}'],
         tasks: ['sass']
       },
       html: {
         options: { livereload },
-        files: ['frontend/simple/**/*.html'],
+        files: ['frontend/**/*.html'],
         tasks: ['copy']
       },
       backend: {
-        files: ['backend/**/*.js'],
-        tasks: ['exec:standard', 'backend:relaunch']
-      },
-      shared: {
-        options: { livereload },
-        files: ['shared/**/*.js'],
-        tasks: ['exec:standard', 'browserify', 'backend:relaunch']
+        files: ['backend/**/*.js', 'shared/**/*.js'],
+        tasks: ['exec:eslint', 'backend:relaunch']
       },
       gruntfile: {
         files: ['.Gruntfile.babel.js', 'Gruntfile.js'],
-        tasks: ['exec:standardgrunt']
+        tasks: ['exec:eslintgrunt']
       }
     },
 
-    browserify: browserifyCfg({
-      straight: [{ 'dist/simple/app.js': ['frontend/simple/main.js'] }],
-      lazy: [{ 'dist/simple/views/UserGroup.js': ['frontend/simple/views/UserGroup.vue'] }]
-    }),
-
     sass: {
-      options: sassCfg(),
+      options: {
+        implementation: require('node-sass'),
+        sourceMap: development,
+        // https://github.com/vuejs/vueify/issues/34#issuecomment-161722961
+        // indentedSyntax: true,
+        // sourceMapRoot: '/',
+        outputStyle: development ? 'nested' : 'compressed',
+        includePaths: [
+          './node_modules/bulma',
+          './node_modules/@fortawesome/fontawesome-free/scss'
+        ]
+      },
       dev: {
         files: [{
           expand: true,
-          cwd: 'frontend/simple/assets/sass',
+          cwd: 'frontend/assets/sass',
           src: ['*.{sass,scss}', '!_*/**'],
-          dest: 'dist/simple/assets/css/',
+          dest: distCSS,
           ext: '.css'
         }]
       }
     },
 
     copy: {
+      node_modules: {
+        cwd: 'node_modules',
+        src: ['systemjs/dist/*.{js,map}'],
+        dest: distJS,
+        expand: true,
+        flatten: true
+      },
       html_files: {
-        cwd: 'frontend/',
-        src: ['**/*.html', '!_*/**'], // folders with _ don't get copied
-        dest: 'dist',
-        expand: true
+        src: 'frontend/index.html',
+        dest: `${distDir}/index.html`
       },
       assets: {
-        cwd: 'frontend/simple/assets',
+        cwd: 'frontend/assets',
         src: ['**/*', '!sass/**'],
-        dest: 'dist/simple/assets',
+        dest: distAssets,
         expand: true
       },
       fontawesome: {
         cwd: 'node_modules/@fortawesome/fontawesome-free/webfonts/',
         src: ['fa-regular*', 'fa-solid*'],
-        dest: 'dist/simple/assets/fonts',
+        dest: `${distAssets}/fonts`,
         expand: true
       }
     },
@@ -122,36 +127,33 @@ module.exports = (grunt) => {
       //    - anything that ends with .test.js, eg. unit tests for sbp domains kept in the domain folder
       test: {
         cmd: './node_modules/.bin/mocha --require Gruntfile.js --exit -R spec --bail "{./{,!(node_modules)/**/}*.test.js,./test/*.js}"',
-        options: {env: {LOAD_NO_FILE: 'true', ...process.env}}
+        options: { env: { LOAD_NO_FILE: 'true', ...process.env } }
       },
-      standard: './node_modules/.bin/standard "**/*.{js,vue}"',
-      standardgrunt: './node_modules/.bin/standard .Gruntfile.babel.js Gruntfile.js',
-      stylelint: './node_modules/.bin/stylelint "frontend/simple/**/*.{css,scss,vue}"',
+      // https://github.com/standard/standard/issues/750#issuecomment-379294276
+      eslint: './node_modules/.bin/eslint "**/*.{js,vue}"',
+      eslintgrunt: "./node_modules/.bin/eslint --ignore-pattern '!.*.js' .Gruntfile.babel.js Gruntfile.js",
+      stylelint: './node_modules/.bin/stylelint "frontend/**/*.{css,scss,vue}"',
       flow: './node_modules/.bin/flow'
     },
 
-    clean: { dist: ['dist/*', './sqlite.db'] },
+    clean: { dist: [`${distDir}/*`] },
 
     connect: {
       options: {
         port: process.env.FRONTEND_PORT,
+        useAvailablePort: true,
         base: 'dist',
         livereload: livereload,
         middleware: (connect, opts, middlewares) => {
           middlewares.unshift((req, res, next) => {
-            var f = url.parse(req.url).pathname
-            f = path.join('dist', endsWith(f, '/') ? f + 'index.html' : f)
-            if (/^dist\/(frontend|node_modules)\/.*\.(sass|scss|js|vue)$/.test(f)) {
-              // handle serving source-maps
-              res.end(fs.readFileSync(chompLeft(f, 'dist/')))
-            } else if (endsWith(f, '.html') && fs.existsSync(f)) {
-              // parse all HTML files for SSI
-              // TODO: delete this section?
-              res.end(fs.readFileSync(f))
-            } else if (startsWith(f, 'dist/simple/') && !/\.[a-z][a-z0-9]+(\?[^/]*)?$/.test(f)) {
-              // if we are a vue-router route, send main index file
+            var f = url.parse(req.url).pathname // eslint-disable-line
+            if (/^\/app(\/|$)/.test(f)) {
+              // NOTE: if you change the URL from /app you must modify it here,
+              //       and also:
+              //       - page() function in `frontend/test.js`
+              //       - base property in `frontend/simple/controller/router.js`
               console.log(`Req: ${req.url}, sending index.html for: ${f}`)
-              res.end(fs.readFileSync('dist/simple/index.html'))
+              res.end(fs.readFileSync(`${distDir}/index.html`))
             } else {
               next() // otherwise send the resource itself, whatever it is
             }
@@ -163,10 +165,7 @@ module.exports = (grunt) => {
     }
     // see also:
     // https://github.com/lud2k/grunt-serve
-    // https://github.com/substack/watchify
-    // https://github.com/AgentME/browserify-hmr
     // https://medium.com/@dan_abramov/the-death-of-react-hot-loader-765fa791d7c4
-
   })
 
   // -------------------------------------------------------------------------
@@ -175,18 +174,22 @@ module.exports = (grunt) => {
 
   grunt.registerTask('default', ['dev'])
   grunt.registerTask('backend', ['backend:relaunch', 'watch'])
-  grunt.registerTask('dev', ['checkDependencies', 'build', 'connect', 'backend'])
-  grunt.registerTask('build', ['exec:standard', 'exec:stylelint', 'copy', 'sass', 'browserify'])
+  grunt.registerTask('dev', ['checkDependencies', 'build:watch', 'connect', 'backend'])
   grunt.registerTask('dist', ['build'])
   grunt.registerTask('test', ['dist', 'connect', 'exec:test'])
   // TODO: add 'deploy' per:
   //       https://github.com/okTurtles/group-income-simple/issues/10
 
+  grunt.registerTask('build', function () {
+    const rollup = this.flags.watch ? 'rollup:watch' : 'rollup'
+    // grunt.task.run(['exec:eslint', 'exec:stylelint', 'copy', 'sass', rollup])
+    grunt.task.run(['exec:stylelint', 'copy', 'sass', rollup])
+  })
+
   // -------------------------------------------------------------------------
   //  Code for running backend server at the same time as frontend server
   // -------------------------------------------------------------------------
 
-  // var node6 = process.versions.node.split('.')[0] >= 6
   var fork = require('child_process').fork
   var child = null
 
@@ -204,11 +207,11 @@ module.exports = (grunt) => {
   })
 
   grunt.registerTask('backend:relaunch', '[internal]', function () {
-    var done = this.async() // tell grunt we're async
-    var fork2 = function () {
+    const done = this.async() // tell grunt we're async
+    const fork2 = function () {
       grunt.log.writeln('backend: forking...')
       child = fork('Gruntfile.js', process.argv, {
-        env: {LOAD_TARGET_FILE: './backend/index.js', ...process.env}
+        env: { LOAD_TARGET_FILE: './backend/index.js', ...process.env }
       })
       child.on('error', (err) => {
         if (err) {
@@ -235,83 +238,96 @@ module.exports = (grunt) => {
       fork2()
     }
   })
-}
 
-// ----------------------------------------
-// SASS specific stuff
-// ----------------------------------------
+  // -----------------------
+  // - Our rollup command
+  // -----------------------
 
-// This is used by grunt-sass and vueify
-function sassCfg () {
-  return {
-    implementation: require('node-sass'),
-    sourceMap: development,
-    // https://github.com/vuejs/vueify/issues/34#issuecomment-161722961
-    // indentedSyntax: true,
-    // sourceMapRoot: '/',
-    outputStyle: development ? 'nested' : 'compressed',
-    includePaths: [
-      './node_modules/bulma',
-      './node_modules/@fortawesome/fontawesome-free/scss']
-  }
-}
-
-// ----------------------------------------
-// For generating lazy-loaded components
-// ----------------------------------------
-
-function browserifyCfg ({straight, lazy}, cfg = {}) {
-  var globalize = x => // views/UserGroupView.vue -> UserGroupView
-    camelize(capitalize(dasherize(path.parse(x).name)))
-  var keyify = x => // views/UserGroupView.vue -> userGroupView
-    camelize(chompLeft(dasherize(path.parse(x).name), '-'))
-  // var p = (s, ...v) => _.flatten(_.zip(s, v)).join('').replace('/', path.sep)
-
-  function gencfg (out, paths, isLazy) {
-    var c = {
-      options: {
-        transform: [script2ify, 'vueify', 'babelify'],
-        plugin: [[pathmodify, {
-          mods: [
-            // some libraries (like jquery-validity) require('jquery')
-            // pathmodify.mod.re(/^jquery$/i, 'sprint-js'),
-            // pathmodify.mod.dir('vendor', p`${__dirname}/frontend/simple/assets/vendor`),
-            // https://vuejs.org/v2/guide/installation.html#Standalone-vs-Runtime-only-Build
-            pathmodify.mod.id('vue', `${__dirname}/node_modules/vue/dist/vue.common.js`)
-          ]
-        }]],
-        browserifyOptions: {
-          debug: development // enables source maps
-        }
+  grunt.registerTask('rollup', function () {
+    const done = this.async()
+    const watchFlag = this.flags.watch
+    const watchOpts = {
+      clearScreen: false,
+      input: 'frontend/main.js',
+      output: {
+        format: 'system',
+        dir: distJS,
+        // currently bad sourcemaps are being generated due to a bug in rollup or a plugin:
+        // https://github.com/rollup/rollup/issues/2011#issuecomment-459929269
+        sourcemap: development
       },
-      files: _.fromPairs([[out, paths]])
+      external: ['crypto'],
+      moduleContext: {
+        'frontend/controller/utils/primus.js': 'window'
+      },
+      plugins: [
+        alias({
+          // https://vuejs.org/v2/guide/installation.html#Standalone-vs-Runtime-only-Build
+          vue: path.resolve('./node_modules/vue/dist/vue.common.js')
+        }),
+        resolve({
+          // we set `preferBuiltins` to prevent rollup from erroring with
+          // [!] (commonjs plugin) TypeError: Cannot read property 'warn' of undefined
+          // TypeError: Cannot read property 'warn' of undefined
+          preferBuiltins: false
+        }),
+        json(),
+        // TODO: probably don't need browserifyPlugin, just implement ourselves here as a raw object
+        //       per: https://rollupjs.org/guide/en#plugins-overview
+        // browserifyPlugin(script2ify, { include: '*.{vue,html}' }),
+        scssVariable(),
+        css({ output: `${distCSS}/component.css` }), // SUCCESS - spits out what's in .vue <style> tags
+        // collectSass({ importOnce: true, extract: `${distCSS}/collectSass.css` }), // FAIL - flowtypes conflict
+        // sass({ output: `${distCSS}/sass.css` }), // FAIL - flowtypes conflict
+        // scss({ output: `${distCSS}/scss.css` }), // FAIL - produces empty bundle, probably only
+        //                                              useful in the <script> section, i.e.
+        //                                              <script>import 'foo.scss' ...
+        eslint({ throwOnError: false, throwOnWarning: false }), // TODO: switch these to true
+        VuePlugin({ css: false }), // TODO: switch to false and uncomment `css()`
+        flow({ all: true }),
+        commonjs({
+          // include: 'node_modules/**'
+          namedExports: {
+            'node_modules/vuelidate/lib/validators/index.js': [ 'required', 'between', 'email', 'minLength', 'requiredIf' ],
+            'node_modules/vue-circle-slider/dist/vue-circle-slider.common.js': [ 'CircleSlider' ]
+          },
+          ignore: ['crypto']
+        }),
+        babel({
+          runtimeHelpers: true,
+          exclude: 'node_modules/**' // only transpile our source code
+        }),
+        globals() // for Buffer support
+      ]
     }
-    // doing a different cache file for each out file is clearly faster as
-    // demonstrated by successive runs of `grunt test`
-    c.options.cacheFile = `./dist/${globalize(out)}-cache.json`
-    if (isLazy) {
-      c.options.browserifyOptions.standalone = globalize(out)
-      c.options.exclude = ['vue', 'vue-hot-reload-api']
-    }
-    return c
-  }
-  for (let map of straight) {
-    for (let out in map) {
-      cfg[keyify(out)] = gencfg(out, map[out], false)
-    }
-  }
-  for (let map of lazy) {
-    for (let out in map) {
-      cfg[keyify(out)] = gencfg(out, map[out], true)
-    }
-  }
-  return cfg
+    const watcher = rollup.watch(watchOpts)
+    watcher.on('event', event => {
+      switch (event.code) {
+        case 'START':
+        case 'BUNDLE_START':
+        case 'END':
+          grunt.verbose.debug(this.nameArgs, event.code)
+          break
+        case 'BUNDLE_END':
+          grunt.verbose.debug(this.nameArgs, event.code)
+          const outputName = watchOpts.output.file || watchOpts.output.dir
+          grunt.log.writeln(chalk`{green created} {bold ${outputName}} {green in} {bold ${(event.duration / 1000).toFixed(1)}s}`)
+          watchFlag || watcher.close() // stop watcher (only build once) if 'rollup:watch' isn't called
+          done()
+          break
+        case 'FATAL':
+        case 'ERROR':
+          grunt.log.error(this.nameArgs, event)
+          watcher.close()
+          done(false)
+          break
+      }
+    })
+  })
 }
-
+/*
 // ----------------------------------------
-// EJS support for .vue files + via require
-// TODO: move this to some nicer place. A grunt folder
-//       would also allow us to move this entire file.
+// TODO: convert this to a pure rollup plugin
 // ----------------------------------------
 var through = require('through2')
 
@@ -333,3 +349,4 @@ function script2ify (file) {
       cb(null, buf.toString('utf8').replace(regex, replacement))
     })
 }
+*/
