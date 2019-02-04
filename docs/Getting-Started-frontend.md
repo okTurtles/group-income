@@ -20,7 +20,7 @@ If you already fully grok modern web dev and want to get started immediately, sk
     + [NPM](#npm---node-package-manager)
     + [Grunt](#grunt---task-runner)
     + [Hapi.js](#hapijs---nodejs-powered-https-server)
-    + [Rollup](#browserify---module-system--bundler)
+    + [Rollup](#rollup---tree-shaking-bundler)
     + [Babel](#babel---tomorrows-javascript-featurestoday)
     + [Vue.js](#vuejs---modern-frontend-component-framework)
     + [EJS](#ejs---like-php-but-javascript)
