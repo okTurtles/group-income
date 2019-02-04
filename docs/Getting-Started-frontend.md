@@ -71,7 +71,7 @@ With this came radical shifts in how web development was done. Now it was necess
 
 React and Vue.js are examples of frameworks that support the creation of such components.
 
-Browserify and Webpack are module systems and bundlers for efficiently organizing and loading the various resources these New Apps need.
+Rollup, Browserify, and Webpack are module systems and bundlers for efficiently organizing and loading the various resources these New Apps need.
 
 ### The rise of the "single page app" (SPA)
 
