@@ -19,7 +19,7 @@
 </style>
 <script>
 import sbp from '../../../shared/sbp.js'
-import { OPEN_MODAL } from '../../utils/events.js'
+import { LOAD_MODAL } from '../../utils/events.js'
 import currencies from '../utils/currencies.js'
 
 export default {
@@ -34,7 +34,7 @@ export default {
   },
   methods: {
     openProposal () {
-      sbp('okTurtles.events/emit', OPEN_MODAL, {
+      sbp('okTurtles.events/emit', LOAD_MODAL, {
         name: 'Mincome',
         subfolder: 'proposals-form'
       })

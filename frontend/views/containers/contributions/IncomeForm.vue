@@ -134,7 +134,7 @@ import { validationMixin } from 'vuelidate'
 import { requiredIf, required } from 'vuelidate/lib/validators'
 import InputAmount from './InputAmount.vue'
 import PaymentMethods from './PaymentMethods.vue'
-import Modal from '../../components/Modal/ModalBasic.vue'
+import Modal from '../../components/Modal/Modal.vue'
 import TextWho from '../../components/TextWho.vue'
 import GroupPledgesGraph from '../GroupPledgesGraph.vue'
 

@@ -4,7 +4,6 @@
       <i18n>Log In</i18n>
     </template>
 
-    
     <div class="field">
       <p class="control has-icon">
         <input
@@ -71,7 +70,7 @@
 import sbp from '../../../shared/sbp.js'
 import { validationMixin } from 'vuelidate'
 import { required, minLength } from 'vuelidate/lib/validators'
-import { OPEN_MODAL, CLOSE_MODAL } from '../../utils/events.js'
+import { LOAD_MODAL, CLOSE_MODAL } from '../../utils/events.js'
 import Modal from '../components/Modal/Modal.vue'
 import L from '../utils/translations.js'
 
@@ -102,7 +101,7 @@ export default {
       sbp('okTurtles.events/emit', CLOSE_MODAL)
     },
     showSignUpModal () {
-      sbp('okTurtles.events/emit', OPEN_MODAL, 'SignUp')
+      sbp('okTurtles.events/emit', LOAD_MODAL, 'SignUp')
     }
   },
   data () {

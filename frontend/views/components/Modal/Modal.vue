@@ -1,5 +1,5 @@
 <template>
-  <div class="modal is-active" data-test="modal" v-if="isActive">
+  <div class="modal is-active" data-test="modal" v-if="isActive" role='dialog'>
     <div class="modal-background" @click="closeModal"></div>
 
     <div class="modal-card" ref="card">
@@ -35,13 +35,21 @@
 </template>
 
 <script>
+import sbp from '../../../../shared/sbp.js'
+import { OPEN_MODAL, CLOSE_MODAL } from '../../../utils/events.js'
+
 export default {
   name: 'Modal',
-  props: {
-    isActive: Boolean
-  }
+  data () {
+    return {
+      isActive: false
+    }
+  },
   mounted () {
     window.addEventListener('keyup', this.handleKeyUp)
+    this.isActive = true
+    sbp('okTurtles.events/on', OPEN_MODAL, this.openModal)
+    sbp('okTurtles.events/on', CLOSE_MODAL, this.closeModal)
   },
   beforeDestroy () {
     window.removeEventListener('keyup', this.handleKeyUp)
@@ -52,8 +60,11 @@ export default {
         this.closeModal()
       }
     },
+    openModal () {
+      this.isActive = true
+    },
     closeModal () {
-      this.$emit('close')
+      this.isActive = false
     }
   }
 }

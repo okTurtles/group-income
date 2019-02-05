@@ -26,7 +26,7 @@
 <script>
 import sbp from '../../../shared/sbp.js'
 import { toPercent } from '../utils/filters.js'
-import { OPEN_MODAL } from '../../utils/events.js'
+import { LOAD_MODAL } from '../../utils/events.js'
 
 export default {
   name: 'GroupSettings',
@@ -38,7 +38,7 @@ export default {
   },
   methods: {
     openProposal (component) {
-      sbp('okTurtles.events/emit', OPEN_MODAL, {
+      sbp('okTurtles.events/emit', LOAD_MODAL, {
         name: component,
         subfolder: 'proposals-form'
       })

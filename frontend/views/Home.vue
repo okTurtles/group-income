@@ -54,7 +54,7 @@
 </style>
 <script>
 import sbp from '../../shared/sbp.js'
-import { OPEN_MODAL } from '../utils/events'
+import { LOAD_MODAL } from '../utils/events'
 
 export default {
   name: 'Home',
@@ -65,10 +65,10 @@ export default {
   },
   methods: {
     showLoginModal () {
-      sbp('okTurtles.events/emit', OPEN_MODAL, 'LoginModal')
+      sbp('okTurtles.events/emit', LOAD_MODAL, 'LoginModal')
     },
     showSignUpModal () {
-      sbp('okTurtles.events/emit', OPEN_MODAL, 'SignUp')
+      sbp('okTurtles.events/emit', LOAD_MODAL, 'SignUp')
     }
   }
 }

@@ -112,7 +112,7 @@
 <script>
 import sbp from '../../../shared/sbp.js'
 import TimeTravel from './TimeTravel.vue'
-import { OPEN_MODAL } from '../../utils/events.js'
+import { LOAD_MODAL } from '../../utils/events.js'
 
 export default {
   name: 'NavBar',
@@ -132,10 +132,10 @@ export default {
       this.$store.dispatch('logout')
     },
     showLoginModal () {
-      sbp('okTurtles.events/emit', OPEN_MODAL, 'LoginModal')
+      sbp('okTurtles.events/emit', LOAD_MODAL, 'LoginModal')
     },
     showSignUpModal () {
-      sbp('okTurtles.events/emit', OPEN_MODAL, 'SignUp')
+      sbp('okTurtles.events/emit', LOAD_MODAL, 'SignUp')
     },
     toggleTimeTravel (event) {
       if (!event.altKey) return

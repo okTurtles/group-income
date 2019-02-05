@@ -1,28 +1,27 @@
 <template>
-  <modal-basic :isActive="isActive" @close="closeModal">
-    <component :is="content"></component>
-  </modal-basic>
+  <component :is="content"></component>
 </template>
 <script>
 import Vue from 'vue'
-import ModalBasic from './ModalBasic.vue'
+import Modal from './Modal.vue'
 import sbp from '../../../../shared/sbp.js'
-import { OPEN_MODAL, CLOSE_MODAL } from '../../../utils/events.js'
+import { OPEN_MODAL, LOAD_MODAL } from '../../../utils/events.js'
+
+// @greg To test:
+import LoginModal from '../../containers/LoginModal.vue'
 
 export default {
   name: 'ModalDynamic',
   components: {
-    ModalBasic
+    Modal
   },
   data () {
     return {
-      content: null,
-      isActive: null
+      content: null
     }
   },
   created () {
-    sbp('okTurtles.events/on', OPEN_MODAL, component => this.openModal(component))
-    sbp('okTurtles.events/on', CLOSE_MODAL, this.closeModal)
+    sbp('okTurtles.events/on', LOAD_MODAL, component => this.openModal(component))
   },
   methods: {
     openModal (component) {
@@ -31,11 +30,10 @@ export default {
       const path = `../../containers/${subFolder}${componentName}.vue`
       console.log(`Trying to load ${componentName} (${path})`)
       Vue.component(componentName, () => import(path))
-      this.content = componentName
-      this.isActive = true
-    },
-    closeModal () {
-      this.isActive = false
+      // @greg: this is not working
+      // this.content = componentName
+      this.content = LoginModal
+      sbp('okTurtles.events/emit', OPEN_MODAL)
     }
   }
 }

@@ -72,7 +72,7 @@
         {{ form.response }}
       </template>
 
-      <template slot="buttons">
+      <template #buttons>
         <button
           class="button is-primary"
           type="submit"
@@ -83,7 +83,7 @@
         </button>
       </template>
 
-      <template slot="footer">
+      <template #footer>
         <a @click="showLoginModal"><i18n>Have an account?</i18n></a>
       </template>
     </form>
@@ -94,7 +94,7 @@ import { debounce } from '../../utils/giLodash.js'
 import { validationMixin } from 'vuelidate'
 import sbp from '../../../shared/sbp.js'
 import { nonWhitespace } from '../utils/validators.js'
-import { OPEN_MODAL, CLOSE_MODAL } from '../../utils/events.js'
+import { LOAD_MODAL, CLOSE_MODAL } from '../../utils/events.js'
 import { required, minLength, email } from 'vuelidate/lib/validators'
 import Modal from '../components/Modal/Modal.vue'
 
@@ -172,7 +172,7 @@ export default {
       }
     },
     showLoginModal () {
-      sbp('okTurtles.events/emit', OPEN_MODAL, 'LoginModal')
+      sbp('okTurtles.events/emit', LOAD_MODAL, 'LoginModal')
     }
   },
   data () {
