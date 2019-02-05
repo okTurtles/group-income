@@ -2,7 +2,7 @@
   <div>
     <i18n tag="legend" class="label">Payment method</i18n>
     <ul class="field has-addons c-options" :aria-label="L('Payment Methods')">
-      <li class="control" v-for="method in methodsAvailable">
+      <li class="control" v-for="(method, index) in methodsAvailable" :key="index">
         <button v-if="method.available"
           class="button is-outlined"
           :class="{ 'is-primary': active === method.name }"

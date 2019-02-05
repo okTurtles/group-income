@@ -10,7 +10,7 @@
             :value="group.incomeCurrency"
             @input="update"
           >
-            <option v-for="(symbol, code) in currencies" :value="code">{{ symbol }}</option>
+            <option v-for="(symbol, code) in currencies" :value="code" :key="code">{{ symbol }}</option>
           </select>
         </span>
       </div>

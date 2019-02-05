@@ -3,6 +3,7 @@
     <h2 class="subtitle c-subtitle">{{title}}</h2>
     <list hasMargin>
       <list-item v-for="id in list.order"
+        :key="id"
         tag="router-link"
         variant="solid"
         :icon="getIcon(id)"

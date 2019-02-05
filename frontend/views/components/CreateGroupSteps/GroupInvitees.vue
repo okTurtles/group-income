@@ -35,8 +35,9 @@
 
     <div class="tile is-ancestor">
       <div class="tile is-4 is-parent invitee"
-        data-test="member"
         v-for="(invitee, index) in invitees"
+        :key="index"
+        data-test="member"
       >
         <div class="card tile is-child">
           <div class="card-image">

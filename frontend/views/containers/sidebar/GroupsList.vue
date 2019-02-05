@@ -12,6 +12,7 @@
         </menu-header>
         <list hasMargin>
           <menu-item v-for="(group, index) in groupsByName"
+            :key="index"
             tag="button"
             :itemId="group.contractID"
             :isActive="currentGroupId === group.contractID"

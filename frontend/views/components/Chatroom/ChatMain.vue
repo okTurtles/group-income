@@ -57,14 +57,25 @@
         <div class="c-body-conversation" ref="conversation" v-else>
           <conversation-greetings />
           <template v-for="(message, index) in details.conversation">
-            <i18n class="subtitle c-divider" v-if="startedUnreadIndex === index">New messages</i18n>
-            <message-notification v-if="message.from === 'notification'">
+            <i18n class="subtitle c-divider"
+              :key="`subtitle-${index}`"
+              v-if="startedUnreadIndex === index">
+              New messages
+            </i18n>
+            <message-notification
+              :key="`notification-${index}`"
+              v-if="message.from === 'notification'">
               {{message.text}}
             </message-notification>
-            <component v-else v-bind="getMessageAt[index]"/>
+            <!-- cf: https://github.com/vuejs/eslint-plugin-vue/issues/462 -->
+            <!-- eslint-disable-next-line vue/require-component-is -->
+            <component v-else
+              v-bind="getMessageAt(index)"
+              :key="`message-${index}`"/>
           </template>
           <message
             v-for="(message, index) in ephemeral.pendingMessages"
+            :key="index"
             v-bind="getPendingAt[index]"
             @retry="retryMessage(index)"
           />
@@ -216,7 +227,7 @@ import MainHeader from '../MainHeader.vue'
 import Avatar from '../Avatar.vue'
 import Loading from '../Loading.vue'
 import { List } from '../Lists/index.js'
-import { MenuParent, MenuTrigger, MenuContent, MenuHeader, MenuItem } from '../Menu/index.js'
+import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '../Menu/index.js'
 import Message from './Message.vue'
 import MessageInteractive from './MessageInteractive.vue'
 import MessageNotification from './MessageNotification.vue'
@@ -234,10 +245,8 @@ export default {
     MenuParent,
     MenuTrigger,
     MenuContent,
-    MenuHeader,
     MenuItem,
     Message,
-    MessageInteractive,
     MessageNotification,
     ConversationGreetings,
     SendArea
@@ -245,11 +254,11 @@ export default {
   props: {
     summary: {
       type: Object, // { type: String, title: String, description: String, routerBack: String }
-      default: {}
+      default () { return {} }
     },
     details: {
       type: Object, // { isLoading: Bool, conversation: Array, participants: Object }
-      default: {}
+      default () { return {} }
     }
   },
   data () {

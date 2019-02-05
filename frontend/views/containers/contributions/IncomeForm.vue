@@ -182,18 +182,27 @@ export default {
       return this.form.option === 'yes'
     },
     inputIncomeError () {
+      let error = ''
       if (!this.$v.form.income.hasLowIncome) {
-        return this.L('If your income is the same or higher than the group\'s mincome change your answer to "Yes, I do"')
+        error = this.L('If your income is the same or higher than the group\'s mincome change your answer to "Yes, I do"')
       } else if (this.$v.form.income.$error) {
-        return this.infoRequired
+        error = this.infoRequired
       }
+      return error
     },
     saveButtonText () {
       const verb = this.isFirstTime ? 'Add' : 'Save'
-
-      if (!this.form.option) { return this.L('{verb} details', { verb }) }
-      if (this.canPledge) { return this.L('{verb} pledged details', { verb }) }
-      if (this.needsIncome) { return this.L('{verb} income details', { verb }) }
+      let text = ''
+      if (!this.form.option) {
+        text = this.L('{verb} details', { verb })
+      } else {
+        if (this.canPledge) {
+          text = this.L('{verb} pledged details', { verb })
+        } else {
+          if (this.needsIncome) { text = this.L('{verb} income details', { verb }) }
+        }
+      }
+      return text
     }
   },
   methods: {

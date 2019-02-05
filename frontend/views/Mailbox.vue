@@ -49,7 +49,7 @@
               </div>
               <span v-if="ephemeral.error" id="badUsername" class="help is-danger"><i18n>Invalid Username</i18n></span>
               <table>
-                <tr v-for="(recipient, index) in ephemeral.recipients">
+                <tr v-for="(recipient, index) in ephemeral.recipients" :key="index">
                   <td>
                     {{recipient.name}}
                     <i class="fa fa-minus-circle icon is-small" v-on:click="removeRecipient(index)" ></i>
@@ -86,7 +86,7 @@
             </tr>
             </thead>
             <tbody>
-            <tr v-for="(proposal, index) in proposals">
+            <tr v-for="(proposal, index) in proposals" :key="index">
               <td>
                 <div class="media">
                   <div class="media-left" v-on:click="respondToProposal(index)">
@@ -113,7 +113,7 @@
             </tr>
             </thead>
             <tbody>
-            <tr v-for="(message, index) in invites">
+            <tr v-for="(message, index) in invites" :key="index">
               <td>
                 <div class="media" v-on:click="respondToInvite(index)">
                   <div class="media-left">
@@ -143,7 +143,7 @@
             </tr>
             </thead>
             <tbody>
-            <tr v-for="(message, index) in inbox">
+            <tr v-for="(message, index) in inbox" :key="index">
               <td>
                 <div class="media">
                   <div class="media-left" v-on:click="read({index, type: message.data.messageType})">

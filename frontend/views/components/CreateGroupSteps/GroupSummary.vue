@@ -71,7 +71,7 @@
     <h2 class="subtitle"><i18n>Members to invite:</i18n></h2>
     <p v-if="!group.invitees.length" class="subtitle is-5 has-text-warning"><i18n>No one invited</i18n></p>
     <div class="tile is-ancestor">
-      <div class="tile is-4 is-parent" v-for="(invitee, index) in group.invitees">
+      <div class="tile is-4 is-parent" v-for="(invitee, index) in group.invitees" :key="index">
         <div class="card tile is-child">
           <div class="card-image">
             <figure class="image is-square">

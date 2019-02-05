@@ -5,7 +5,7 @@
     </svg>
 
     <ul class="c-list">
-      <li v-for="(member, username) in membersWithStyle.slice(0, 6)" class="c-list-item">
+      <li v-for="(member, username) in membersWithStyle.slice(0, 6)" class="c-list-item" :key="username">
         <div class="c-list-item-box"
           :style="member.style"
           v-on:mouseenter="toggleMemberActive(member, true)"

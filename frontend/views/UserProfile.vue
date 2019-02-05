@@ -126,7 +126,7 @@
               <strong><i18n>Select Group</i18n>:</strong>
               <span class="select">
                 <select v-model="currentGroupContractId" v-on:change="changeGroup" data-test="GroupProfileId">
-                  <option v-for="group in $store.getters.groupsByName" v-bind:value="group.contractID">{{group.groupName}}</option>
+                  <option v-for="(group, index) in $store.getters.groupsByName" v-bind:value="group.contractID" :key="index">{{group.groupName}}</option>
                 </select>
               </span>
             </div>

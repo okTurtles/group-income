@@ -6,7 +6,7 @@
       <tooltip>
         <button type="button" class="gi-is-unstyled gi-is-link-inherit">{{who.length - 1}}<i18n>others</i18n></button>
         <template slot="tooltip">
-          <p v-for="(name, index) in who" v-if="index > 0">{{name}}</p>
+          <p v-for="(name, index) in who.shift()" :key="index">{{name}}</p>
         </template>
       </tooltip>
     </template>
