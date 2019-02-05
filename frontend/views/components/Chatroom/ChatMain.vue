@@ -70,7 +70,7 @@
             <!-- cf: https://github.com/vuejs/eslint-plugin-vue/issues/462 -->
             <!-- eslint-disable-next-line vue/require-component-is -->
             <component v-else
-              v-bind="getMessageAt(index)"
+              v-bind="getMessageAt[index]"
               :key="`message-${index}`"/>
           </template>
           <message
