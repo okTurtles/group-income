@@ -19,12 +19,14 @@
         <slot></slot>
       </section>
 
-      <footer class="modal-card-foot" v-if="$slots.buttons || $slots.footer || submitError">
+      <footer class="modal-card-foot" v-if="$slots.buttons || $slots.footer || $slots.errors">
         <div class="buttons" v-if="$slots.buttons">
           <slot name="buttons"></slot>
         </div>
 
-        <p v-if="submitError" class="has-text-danger" data-test="submitError">{{ submitError }}</p>
+        <p class="has-text-danger" data-test="submitError" v-if="$slots.errors" >
+          <slot name="errors"></slot>
+        </p>
 
         <slot name="footer"></slot>
       </footer>
@@ -36,7 +38,6 @@
 export default {
   name: 'Modal',
   props: {
-    submitError: String,
     isActive: Boolean
   }
   mounted () {

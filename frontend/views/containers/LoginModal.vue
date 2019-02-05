@@ -1,5 +1,5 @@
 <template>
-  <modal class="is-small" :submitError="form.response">
+  <modal class="is-small">
     <template #subtitle>
       <i18n>Log In</i18n>
     </template>
@@ -55,6 +55,10 @@
         <span class="icon"><i class="fa fa-user"></i></span>
         <i18n>Login</i18n>
       </button>
+    </template>
+
+    <template #errors>
+      {{ form.response }}
     </template>
 
     <template #footer>

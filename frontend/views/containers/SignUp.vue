@@ -1,5 +1,5 @@
 <template>
-  <modal :submitError="form.response">
+  <modal>
     <form class="is-small"
       novalidate ref="form"
       name="formData"
@@ -67,6 +67,10 @@
         </p>
         <i18n v-if="$v.form.password.$error" class="help is-danger" data-test="badPassword">password must be at least 7 characters</i18n>
       </div>
+
+      <template #errors>
+        {{ form.response }}
+      </template>
 
       <template slot="buttons">
         <button

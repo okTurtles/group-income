@@ -1,5 +1,5 @@
 <template>
-  <modal :submitError="submitError">
+  <modal>
     <template #title>
       <i18n>New Proposal</i18n>
     </template>
@@ -9,6 +9,10 @@
     </template>
     
     <slot></slot>
+
+    <template #errors>
+      {{ submitError }}
+    </template>
 
     <template #buttons>
       <button class="button is-primary" @click="onSubmit">
