@@ -282,7 +282,7 @@ module.exports = (grunt) => {
         // scss({ output: `${distCSS}/scss.css` }), // FAIL - produces empty bundle, probably only
         //                                              useful in the <script> section, i.e.
         //                                              <script>import 'foo.scss' ...
-        eslint({ throwOnError: false, throwOnWarning: false }), // TODO: switch these to true
+        eslint({ throwOnError: true, throwOnWarning: true }), // TODO: switch these to true
         VuePlugin({ css: false }), // TODO: switch to false and uncomment `css()`
         flow({ all: true }),
         commonjs({
