@@ -1,32 +1,29 @@
 <template>
-  <div>
-    <modal-header>
+  <modal :submitError="submitError">
+    <template #title>
       <i18n>New Proposal</i18n>
-      <template slot="subTitle">{{ subTitle }}</template>
-    </modal-header>
+    </template>
+    
+    <template #subTitle>
+      {{ subTitle }}
+    </template>
+    
+    <slot></slot>
 
-    <modal-body>
-      <slot></slot>
-    </modal-body>
-
-    <modal-footer :submitError="submitError">
+    <template #buttons>
       <button class="button is-primary" @click="onSubmit">
         <i18n>Submit Proposal</i18n>
       </button>
-    </modal-footer>
-  </div>
+    </template>
+  </modal>
 </template>
 <script>
-import ModalHeader from '../../components/Modal/ModalHeader.vue'
-import ModalBody from '../../components/Modal/ModalBody.vue'
-import ModalFooter from '../../components/Modal/ModalFooter.vue'
+import Modal from '../../components/Modal/Modal.vue'
 
 export default {
   name: 'ModalForm',
   components: {
-    ModalHeader,
-    ModalBody,
-    ModalFooter
+    Modal
   },
   props: {
     subTitle: String,

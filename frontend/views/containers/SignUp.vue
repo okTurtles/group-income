@@ -1,15 +1,15 @@
 <template>
-  <form class="is-small"
-    novalidate ref="form"
-    name="formData"
-    data-test="signup"
-    @submit.prevent="submit">
+  <modal :submitError="form.response">
+    <form class="is-small"
+      novalidate ref="form"
+      name="formData"
+      data-test="signup"
+      @submit.prevent="submit">
 
-    <modal-header>
-      <i18n>Sign Up</i18n>
-    </modal-header>
+      <template #subTitle>
+        <i18n>Sign Up</i18n>
+      </template>
 
-    <modal-body>
       <div class="field">
         <p class="control has-icon">
           <input
@@ -51,39 +51,39 @@
         <i18n v-if="$v.form.email.$error" class="help is-danger" data-test="badEmail">not an email</i18n>
       </div>
       <div class="field">
-          <p class="control has-icon">
-            <input
-              class="input"
-              :class="{'is-danger': $v.form.password.$error}"
-              id="password"
-              name="password"
-              v-model="form.password"
-              @input="$v.form.password.$touch()"
-              placeholder="password"
-              type="password"
-              data-test="signPassword"
-            >
-            <span class="icon"><i class="fa fa-lock"></i></span>
-          </p>
-          <i18n v-if="$v.form.password.$error" class="help is-danger" data-test="badPassword">password must be at least 7 characters</i18n>
-        </div>
-    </modal-body>
+        <p class="control has-icon">
+          <input
+            class="input"
+            :class="{'is-danger': $v.form.password.$error}"
+            id="password"
+            name="password"
+            v-model="form.password"
+            @input="$v.form.password.$touch()"
+            placeholder="password"
+            type="password"
+            data-test="signPassword"
+          >
+          <span class="icon"><i class="fa fa-lock"></i></span>
+        </p>
+        <i18n v-if="$v.form.password.$error" class="help is-danger" data-test="badPassword">password must be at least 7 characters</i18n>
+      </div>
 
-    <modal-footer :submitError="form.response">
-      <button
-        class="button is-primary"
-        type="submit"
-        :disabled="$v.form.$invalid"
-        data-test="signSubmit"
-      >
-        <i18n>Sign Up</i18n>
-      </button>
+      <template slot="buttons">
+        <button
+          class="button is-primary"
+          type="submit"
+          :disabled="$v.form.$invalid"
+          data-test="signSubmit"
+        >
+          <i18n>Sign Up</i18n>
+        </button>
+      </template>
 
       <template slot="footer">
         <a @click="showLoginModal"><i18n>Have an account?</i18n></a>
       </template>
-    </modal-footer>
-  </form>
+    </form>
+  </modal>
 </template>
 <script>
 import { debounce } from '../../utils/giLodash.js'
@@ -92,18 +92,14 @@ import sbp from '../../../shared/sbp.js'
 import { nonWhitespace } from '../utils/validators.js'
 import { OPEN_MODAL, CLOSE_MODAL } from '../../utils/events.js'
 import { required, minLength, email } from 'vuelidate/lib/validators'
-import ModalHeader from '../components/Modal/ModalHeader.vue'
-import ModalBody from '../components/Modal/ModalBody.vue'
-import ModalFooter from '../components/Modal/ModalFooter.vue'
+import Modal from '../components/Modal/Modal.vue'
 
 // TODO: fix all this
 export default {
   name: 'SignUp',
   mixins: [ validationMixin ],
   components: {
-    ModalHeader,
-    ModalBody,
-    ModalFooter
+    Modal
   },
   inserted () {
     this.$refs.username.focus()

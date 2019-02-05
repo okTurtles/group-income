@@ -26,9 +26,9 @@ export default {
   },
   methods: {
     openModal (component) {
-      const componentName = component.name ? component : component.name
+      const componentName = component.name ? component.name : component
       const subFolder = component.subFolder ? `${component.subFolder}/` : ''
-      const path = `../../containers/${subFolder}${componentName}.vue/`
+      const path = `../../containers/${subFolder}${componentName}.vue`
       console.log(`Trying to load ${componentName} (${path})`)
       Vue.component(componentName, () => import(path))
       this.content = componentName

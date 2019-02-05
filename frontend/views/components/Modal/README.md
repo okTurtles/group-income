@@ -6,15 +6,6 @@ Then we can easily open/close any modal from anywhere in the app using `sbp()`.
 
 Let's see a real example working: **the Login modal**:
 
-### The Modal content
-Each modal should be composed by the following components so we keep consistence in the spacers and text across the different modals.
-
-- `<modal-header>`
-- `<modal-body>`
-- `<modal-footer>`
-
-You can check how Login is done at `containers/LoginModal.vue`.
-
 ### How to open a modal
 
 From anywhere in the App we can open any modal by using the `sbp` event `OPEN_MODAL` with the Vue Component that contains the modal Content
