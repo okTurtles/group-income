@@ -27,15 +27,6 @@
 import sbp from '../../../shared/sbp.js'
 import { toPercent } from '../utils/filters.js'
 import { OPEN_MODAL } from '../../utils/events.js'
-import RuleChangeRule from '../containers/proposals-form/RuleChangeRule.vue'
-import RuleAddMember from '../containers/proposals-form/RuleAddMember.vue'
-import RuleRemoveMember from '../containers/proposals-form/RuleRemoveMember.vue'
-
-const forms = {
-  RuleChangeRule,
-  RuleAddMember,
-  RuleRemoveMember
-}
 
 export default {
   name: 'GroupSettings',
@@ -47,7 +38,10 @@ export default {
   },
   methods: {
     openProposal (component) {
-      sbp('okTurtles.events/emit', OPEN_MODAL, forms[component])
+      sbp('okTurtles.events/emit', OPEN_MODAL, {
+        name: component,
+        subfolder: 'proposals-form'
+      })
     }
   }
 }

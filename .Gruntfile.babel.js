@@ -256,6 +256,8 @@ module.exports = (grunt) => {
         // https://github.com/rollup/rollup/issues/2011#issuecomment-459929269
         sourcemap: development
       },
+      experimentalCodeSpliting: true,
+      experimentalDynamicImport: true,
       external: ['crypto'],
       moduleContext: {
         'frontend/controller/utils/primus.js': 'window'

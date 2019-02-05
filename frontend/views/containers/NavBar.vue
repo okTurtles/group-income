@@ -112,8 +112,6 @@
 <script>
 import sbp from '../../../shared/sbp.js'
 import TimeTravel from './TimeTravel.vue'
-import LoginModal from './LoginModal.vue'
-import SignUp from './SignUp.vue'
 import { OPEN_MODAL } from '../../utils/events.js'
 
 export default {
@@ -134,10 +132,10 @@ export default {
       this.$store.dispatch('logout')
     },
     showLoginModal () {
-      sbp('okTurtles.events/emit', OPEN_MODAL, LoginModal)
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'LoginModal')
     },
     showSignUpModal () {
-      sbp('okTurtles.events/emit', OPEN_MODAL, SignUp)
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'SignUp')
     },
     toggleTimeTravel (event) {
       if (!event.altKey) return

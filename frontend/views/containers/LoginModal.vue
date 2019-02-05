@@ -70,7 +70,6 @@ import { OPEN_MODAL, CLOSE_MODAL } from '../../utils/events.js'
 import ModalHeader from '../components/Modal/ModalHeader.vue'
 import ModalBody from '../components/Modal/ModalBody.vue'
 import ModalFooter from '../components/Modal/ModalFooter.vue'
-import SignUp from './SignUp.vue'
 import L from '../utils/translations.js'
 
 export default {
@@ -102,7 +101,7 @@ export default {
       sbp('okTurtles.events/emit', CLOSE_MODAL)
     },
     showSignUpModal () {
-      sbp('okTurtles.events/emit', OPEN_MODAL, SignUp)
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'SignUp')
     }
   },
   data () {

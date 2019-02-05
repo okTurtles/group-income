@@ -26,12 +26,12 @@ From anywhere in the App we can open any modal by using the `sbp` event `OPEN_MO
 </template>
 
 <script>
-import LoginModal from './LoginModal.vue'
 import sbp from '../../../../shared/sbp.js'
 import { OPEN_MODAL } from '../../utils/events.js'
 
 openLoginModal () {
-  sbp('okTurtles.events/emit', OPEN_MODAL, LoginModal)
+  sbp('okTurtles.events/emit', OPEN_MODAL, 'LoginModal')
+  // or pass an object with 'name' and 'subfolder' properties relative to containers folder
 }
 </script>
 ```

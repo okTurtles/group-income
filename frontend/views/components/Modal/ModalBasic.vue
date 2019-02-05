@@ -1,8 +1,8 @@
 <template>
   <div class="modal is-active" data-test="modal" v-if="isActive">
-    <div class="modal-background" @click="handleCloseClick"></div>
+    <div class="modal-background" @click="closeModal"></div>
     <div class="modal-card" ref="card">
-      <button class="delete" aria-label="close" @click="handleCloseClick"></button>
+      <button class="delete" aria-label="close" @click="closeModal"></button>
       <slot></slot>
     </div>
   </div>
@@ -20,11 +20,8 @@ export default {
     window.removeEventListener('keyup', this.handleKeyUp)
   },
   methods: {
-    handleCloseClick () {
-      this.closeModal()
-    },
     handleKeyUp (event) {
-      if (this.isActive && event.keyCode === 27) { // esc key
+      if (event.key === 'Escape' && this.isActive) {
         this.closeModal()
       }
     },

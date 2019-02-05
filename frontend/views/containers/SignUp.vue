@@ -92,7 +92,6 @@ import sbp from '../../../shared/sbp.js'
 import { nonWhitespace } from '../utils/validators.js'
 import { OPEN_MODAL, CLOSE_MODAL } from '../../utils/events.js'
 import { required, minLength, email } from 'vuelidate/lib/validators'
-import LoginModal from './LoginModal.vue'
 import ModalHeader from '../components/Modal/ModalHeader.vue'
 import ModalBody from '../components/Modal/ModalBody.vue'
 import ModalFooter from '../components/Modal/ModalFooter.vue'
@@ -173,7 +172,7 @@ export default {
       }
     },
     showLoginModal () {
-      sbp('okTurtles.events/emit', OPEN_MODAL, LoginModal)
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'LoginModal')
     }
   },
   data () {
