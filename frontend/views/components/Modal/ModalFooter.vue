@@ -9,7 +9,7 @@
 </template>
 <script>
 export default {
-  name: 'ModalHeader',
+  name: 'ModalFooter',
   props: {
     submitError: String
   }
