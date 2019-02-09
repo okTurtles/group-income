@@ -1,14 +1,15 @@
 <template>
   <modal>
+
+    <template #subTitle>
+      <i18n>Sign Up</i18n>
+    </template>
+
     <form class="is-small"
       novalidate ref="form"
       name="formData"
       data-test="signup"
       @submit.prevent="submit">
-
-      <template #subTitle>
-        <i18n>Sign Up</i18n>
-      </template>
 
       <div class="field">
         <p class="control has-icon">
@@ -67,26 +68,26 @@
         </p>
         <i18n v-if="$v.form.password.$error" class="help is-danger" data-test="badPassword">password must be at least 7 characters</i18n>
       </div>
-
-      <template #errors>
-        {{ form.response }}
-      </template>
-
-      <template #buttons>
-        <button
-          class="button is-primary"
-          type="submit"
-          :disabled="$v.form.$invalid"
-          data-test="signSubmit"
-        >
-          <i18n>Sign Up</i18n>
-        </button>
-      </template>
-
-      <template #footer>
-        <a @click="showLoginModal"><i18n>Have an account?</i18n></a>
-      </template>
     </form>
+
+    <template #errors>
+      {{ form.response }}
+    </template>
+
+    <template #buttons>
+      <button
+        class="button is-primary"
+        type="submit"
+        :disabled="$v.form.$invalid"
+        data-test="signSubmit"
+      >
+        <i18n>Sign Up</i18n>
+      </button>
+    </template>
+
+    <template #footer>
+      <a @click="showLoginModal"><i18n>Have an account?</i18n></a>
+    </template>
   </modal>
 </template>
 <script>
@@ -96,15 +97,11 @@ import sbp from '../../../shared/sbp.js'
 import { nonWhitespace } from '../utils/validators.js'
 import { LOAD_MODAL, CLOSE_MODAL } from '../../utils/events.js'
 import { required, minLength, email } from 'vuelidate/lib/validators'
-import Modal from '../components/Modal/Modal.vue'
 
 // TODO: fix all this
 export default {
   name: 'SignUp',
   mixins: [ validationMixin ],
-  components: {
-    Modal
-  },
   inserted () {
     this.$refs.username.focus()
   },

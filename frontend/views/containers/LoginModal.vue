@@ -1,6 +1,6 @@
 <template>
   <modal class="is-small">
-    <template #subtitle>
+    <template #subTitle>
       <i18n>Log In</i18n>
     </template>
 
@@ -71,15 +71,11 @@ import sbp from '../../../shared/sbp.js'
 import { validationMixin } from 'vuelidate'
 import { required, minLength } from 'vuelidate/lib/validators'
 import { LOAD_MODAL, CLOSE_MODAL } from '../../utils/events.js'
-import Modal from '../components/Modal/Modal.vue'
 import L from '../utils/translations.js'
 
 export default {
   name: 'LoginModal',
   mixins: [ validationMixin ],
-  components: {
-    Modal
-  },
   inserted () {
     this.$refs.username.focus()
   },
