@@ -244,7 +244,7 @@ module.exports = (grunt) => {
   // -----------------------
 
   grunt.registerTask('rollup', function () {
-    const done = this.async()
+    let done = this.async()
     const watchFlag = this.flags.watch
     const watchOpts = {
       clearScreen: false,
@@ -256,8 +256,6 @@ module.exports = (grunt) => {
         // https://github.com/rollup/rollup/issues/2011#issuecomment-459929269
         sourcemap: development
       },
-      experimentalCodeSpliting: true,
-      experimentalDynamicImport: true,
       external: ['crypto'],
       moduleContext: {
         'frontend/controller/utils/primus.js': 'window'
@@ -284,7 +282,7 @@ module.exports = (grunt) => {
         // scss({ output: `${distCSS}/scss.css` }), // FAIL - produces empty bundle, probably only
         //                                              useful in the <script> section, i.e.
         //                                              <script>import 'foo.scss' ...
-        eslint({ throwOnError: true, throwOnWarning: true }), // TODO: switch these to true
+        eslint({ throwOnError: true, throwOnWarning: true }),
         VuePlugin({ css: false }), // TODO: switch to false and uncomment `css()`
         flow({ all: true }),
         commonjs({
@@ -305,23 +303,29 @@ module.exports = (grunt) => {
     const watcher = rollup.watch(watchOpts)
     watcher.on('event', event => {
       switch (event.code) {
-        case 'START':
         case 'BUNDLE_START':
+          grunt.log.writeln(chalk`{green rollup:} ${event.input}`)
+          break
+        case 'START':
         case 'END':
-          grunt.verbose.debug(this.nameArgs, event.code)
+          grunt.verbose.debug(this.nameArgs, event.code, event)
           break
         case 'BUNDLE_END':
           grunt.verbose.debug(this.nameArgs, event.code)
           const outputName = watchOpts.output.file || watchOpts.output.dir
           grunt.log.writeln(chalk`{green created} {bold ${outputName}} {green in} {bold ${(event.duration / 1000).toFixed(1)}s}`)
           watchFlag || watcher.close() // stop watcher (only build once) if 'rollup:watch' isn't called
-          done()
+          done && done()
+          // set done to undefined so that if we get an 'ERROR' event later
+          // while in watch mode, it doesn't tell grunt that we're done twice
+          done = undefined
           break
         case 'FATAL':
         case 'ERROR':
           grunt.log.error(this.nameArgs, event)
-          watcher.close()
-          done(false)
+          watchFlag || watcher.close()
+          done && done(false)
+          done = undefined
           break
       }
     })
