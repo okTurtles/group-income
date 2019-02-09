@@ -5,12 +5,12 @@
     <div class="modal-card" ref="card">
       <button class="delete" aria-label="close" @click="closeModal"></button>
 
-      <header class="modal-card-head has-text-centered" v-if="$slots.title || $slots.subTitle">
-        <h1 class="modal-card-title title is-size-5 is-marginless has-text-text-light"  v-if="$slots.title">
+      <header class="modal-card-head has-text-centered" v-if="$scopedSlots.title || $scopedSlots.subTitle">
+        <h1 class="modal-card-title title is-size-5 is-marginless has-text-text-light"  v-if="$scopedSlots.title">
           <slot name="title"></slot>
         </h1>
 
-        <h2 class="title is-size-3" v-if="$slots.subTitle">
+        <h2 class="title is-size-3" v-if="$scopedSlots.subTitle">
           <slot name="subTitle" ></slot>
         </h2>
       </header>
@@ -19,12 +19,12 @@
         <slot></slot>
       </section>
 
-      <footer class="modal-card-foot" v-if="$slots.buttons || $slots.footer || $slots.errors">
-        <div class="buttons" v-if="$slots.buttons">
+      <footer class="modal-card-foot" v-if="$scopedSlots.buttons || $scopedSlots.footer || $scopedSlots.errors">
+        <div class="buttons" v-if="$scopedSlots.buttons">
           <slot name="buttons"></slot>
         </div>
 
-        <p class="has-text-danger" data-test="submitError" v-if="$slots.errors" >
+        <p class="has-text-danger" data-test="submitError" v-if="$scopedSlots.errors" >
           <slot name="errors"></slot>
         </p>
 
