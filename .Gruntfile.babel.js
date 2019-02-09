@@ -25,7 +25,6 @@ const url = require('url')
 
 const development = process.env.NODE_ENV === 'development'
 const livereload = development && (parseInt(process.env.PORT_SHIFT || 0) + 35729)
-const isWin = process.platform === 'win32' // require('os').platform() returns the same value
 
 setupPrimus(require('http').createServer(), true)
 
@@ -127,16 +126,14 @@ module.exports = (grunt) => {
       //    - anything in /test folder, eg. integration tests
       //    - anything that ends with .test.js, eg. unit tests for sbp domains kept in the domain folder
       test: {
-        cmd: (isWin)? 'node node_modules/mocha/bin/mocha --require Gruntfile.js --exit -R spec --bail "{./{,!(node_modules)/**/}*.test.js,./test/*.js}"' :
-                      './node_modules/.bin/mocha --require Gruntfile.js --exit -R spec --bail "{./{,!(node_modules)/**/}*.test.js,./test/*.js}"',
+        cmd: 'node node_modules/mocha/bin/mocha --require Gruntfile.js --exit -R spec --bail "{./{,!(node_modules)/**/}*.test.js,./test/*.js}"',
         options: { env: { LOAD_NO_FILE: 'true', ...process.env } }
       },
+
       // https://github.com/standard/standard/issues/750#issuecomment-379294276
-      eslint: (isWin)? 'node ./node_modules/eslint/bin/eslint.js "**/*.{js,vue}"' : 
-                       './node_modules/.bin/eslint "**/*.{js,vue}"',
+      eslint: 'node ./node_modules/eslint/bin/eslint.js "**/*.{js,vue}"',
       eslintgrunt: "./node_modules/.bin/eslint --ignore-pattern '!.*.js' .Gruntfile.babel.js Gruntfile.js",
-      stylelint: (isWin)? 'node ./node_modules/stylelint/bin/stylelint.js "frontend/**/*.{css,scss,vue}"' :
-                          './node_modules/.bin/stylelint "frontend/**/*.{css,scss,vue}"',
+      stylelint: 'node ./node_modules/stylelint/bin/stylelint.js "frontend/**/*.{css,scss,vue}"',
       
 
       flow: './node_modules/.bin/flow'
