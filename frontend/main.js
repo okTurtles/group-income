@@ -12,6 +12,7 @@ import store from './model/state.js'
 import { LOGOUT } from './utils/events'
 import Sidebar from './views/containers/sidebar/Sidebar.vue'
 import ModalDynamic from './views/components/Modal/ModalDynamic.vue'
+import './lazyLoadedView.js'
 
 // TODO: uncomment this and improve implementation?
 // import './views/utils/transitions.js'
