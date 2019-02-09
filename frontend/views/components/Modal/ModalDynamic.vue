@@ -23,8 +23,6 @@ export default {
   methods: {
     openModal (component) {
       const componentName = component.name ? component.name : component
-      const subFolder = component.subFolder ? `${component.subFolder}/` : ''
-      const path = `./${subFolder}${componentName}.js`
       this.content = componentName
       sbp('okTurtles.events/emit', OPEN_MODAL)
     }
