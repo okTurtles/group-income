@@ -2,16 +2,11 @@
   <component :is="content"></component>
 </template>
 <script>
-// import Vue from 'vue'
-import Modal from './Modal.vue'
 import sbp from '../../../../shared/sbp.js'
 import { OPEN_MODAL, LOAD_MODAL } from '../../../utils/events.js'
 
 export default {
   name: 'ModalDynamic',
-  components: {
-    Modal
-  },
   data () {
     return {
       content: null
