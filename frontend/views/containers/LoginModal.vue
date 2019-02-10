@@ -1,70 +1,74 @@
 <template>
-  <modal class="is-small">
-    <template #subTitle>
-      <i18n>Log In</i18n>
-    </template>
+  <form novalidate ref="form"
+    name="formData"
+    @submit.prevent="login">
+    <modal class="is-small">
+      <template #subTitle>
+        <i18n>Log In</i18n>
+      </template>
 
-    <div class="field">
-      <p class="control has-icon">
-        <input
-          id="LoginName"
-          class="input"
-          :class="{'is-danger': $v.form.name.$error}"
-          name="name"
-          v-model="form.name"
-          @keyup.enter="login"
-          @input="$v.form.name.$touch()"
-          placeholder="username"
-          ref="username"
-          autofocus
-          data-test="loginName"
+      <div class="field">
+        <p class="control has-icon">
+          <input
+            id="LoginName"
+            class="input"
+            :class="{'is-danger': $v.form.name.$error}"
+            name="name"
+            v-model="form.name"
+            @keyup.enter="login"
+            @input="$v.form.name.$touch()"
+            placeholder="username"
+            ref="username"
+            autofocus
+            data-test="loginName"
+          >
+          <span class="icon">
+            <i class="fa fa-user"></i>
+          </span>
+        </p>
+        <i18n v-show="$v.form.name.$error" class="help is-danger">username cannot contain spaces</i18n>
+      </div>
+      <div class="field">
+        <p class="control has-icon">
+          <input
+            class="input"
+            :class="{'is-danger': $v.form.password.$error}"
+            id="LoginPassword"
+            name="password"
+            v-model="form.password"
+            @keyup.enter="login"
+            @input="$v.form.password.$touch()"
+            placeholder="password"
+            type="password"
+            data-test="loginPassword"
+          >
+          <span class="icon"><i class="fas fa-lock"></i></span>
+        </p>
+        <i18n v-show="$v.form.password.$error" class="help is-danger">password must be at least 7 characters</i18n>
+      </div>
+
+      <template #buttons>
+        <button
+          class="button is-primary"
+          :disabled="$v.form.$invalid"
+          data-test="loginSubmit"
+          type="submit"
         >
-        <span class="icon">
-          <i class="fa fa-user"></i>
-        </span>
-      </p>
-      <i18n v-show="$v.form.name.$error" class="help is-danger">username cannot contain spaces</i18n>
-    </div>
-    <div class="field">
-      <p class="control has-icon">
-        <input
-          class="input"
-          :class="{'is-danger': $v.form.password.$error}"
-          id="LoginPassword"
-          name="password"
-          v-model="form.password"
-          @keyup.enter="login"
-          @input="$v.form.password.$touch()"
-          placeholder="password"
-          type="password"
-          data-test="loginPassword"
-        >
-        <span class="icon"><i class="fas fa-lock"></i></span>
-      </p>
-      <i18n v-show="$v.form.password.$error" class="help is-danger">password must be at least 7 characters</i18n>
-    </div>
+          <span class="icon"><i class="fa fa-user"></i></span>
+          <i18n>Login</i18n>
+        </button>
+      </template>
 
-    <template #buttons>
-      <button
-        class="button is-primary"
-        :disabled="$v.form.$invalid"
-        data-test="loginSubmit"
-        @click="login"
-      >
-        <span class="icon"><i class="fa fa-user"></i></span>
-        <i18n>Login</i18n>
-      </button>
-    </template>
+      <template #errors>
+        {{ form.response }}
+      </template>
 
-    <template #errors>
-      {{ form.response }}
-    </template>
+      <template #footer>
+        <a @click="showSignUpModal"><i18n>Don't have an account?</i18n></a>
+      </template>
 
-    <template #footer>
-      <a @click="showSignUpModal"><i18n>Don't have an account?</i18n></a>
-    </template>
-
-  </modal>
+    </modal>
+  </form>
 </template>
 <script>
 import sbp from '../../../shared/sbp.js'
