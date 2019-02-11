@@ -85,7 +85,11 @@ export default {
   components: {},
   props: {
     title: String,
-    searchPlaceholder: String
+    searchPlaceholder: String,
+    loading: {
+      type: Boolean,
+      default: false
+    }
   },
   data () {
     return {
