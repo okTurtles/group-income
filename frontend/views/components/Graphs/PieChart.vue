@@ -2,7 +2,7 @@
   <div class="c-container">
     <svg viewBox="-1 -1 2 2" class="c-piechart" :style="{ height: size }">
       <path v-for="(slice, index) in slices"
-        :key="index"
+        :key="`slice-${index}`"
         :data-id="slice.id"
         :d="sliceData(slice, index)"
         :class="`c-slice gi-has-fill-${slice.color}`"
@@ -17,7 +17,7 @@
       <circle r="33%" class="c-pie-donut"></circle>
 
       <path v-for="(slice, index) in innerSlices"
-        :key="index"
+        :key="`inner-slice-${index}`"
         :data-id="slice.id"
         :d="sliceData(slice, index)"
         :class="`c-slice c-inner gi-has-fill-${slice.color}`"

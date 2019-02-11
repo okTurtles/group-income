@@ -2,7 +2,7 @@
   <div>
     <!--  Start Original Voting Banner to delete soon -->
     <voting-banner v-for="(proposal, index) in Object.values(proposals)"
-      :key="index"
+      :key="`proposal-${index}`"
       :proposal="proposal"
     />
     <!--  End Original Voting Banner to delete soon -->
@@ -21,7 +21,7 @@
 
     <voting
       v-for="(proposal, index) in groupProposals.notVoted"
-      :key="index"
+      :key="`not-voted-${index}`"
       :type="proposal.type"
       :proposal="proposal.data"
       :onVoteAgainst="handleVoteAgainst"
@@ -30,15 +30,15 @@
 
     <voting
       v-for="(proposal, index) in groupProposals.own"
-      :key="index"
+      :key="`own-${index}`"
       :type="proposal.type"
       :proposal="proposal.data"
-      :handleCloseProposal="onCloseProposal"
+      :handleCloseProposal="handleCloseProposal"
     />
 
     <voting
       v-for="(proposal, index) in groupProposals.alreadyVoted"
-      :key="index"
+      :key="`already-voted-${index}`"
       :type="proposal.type"
       :proposal="proposal.data"
       :onVoteAgainst="handleVoteAgainst"

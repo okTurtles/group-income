@@ -75,7 +75,7 @@
           </template>
           <message
             v-for="(message, index) in ephemeral.pendingMessages"
-            :key="index"
+            :key="`pending-messages-${index}`"
             v-bind="getPendingAt[index]"
             @retry="retryMessage(index)"
           />
@@ -85,6 +85,7 @@
         <send-area :title="summary.title"
           @send="handleSendMessage"
           @heightUpdate="updateSendAreaHeight"
+          :loading="details.isLoading"
         />
       </div>
     </template>

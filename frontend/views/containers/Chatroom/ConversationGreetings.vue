@@ -3,7 +3,7 @@
     <avatar v-for="(user, index) in founders"
       size="sm"
       class="c-avatar"
-      :key="index"
+      :key="`user-${index}`"
       :src="user.picture"
       :alt="user.displayName || user.name"
     />

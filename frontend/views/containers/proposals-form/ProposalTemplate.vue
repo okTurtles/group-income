@@ -3,11 +3,11 @@
     <template #title>
       <i18n>New Proposal</i18n>
     </template>
-    
+
     <template #subTitle>
       {{ subTitle }}
     </template>
-    
+
     <slot></slot>
 
     <template #errors>
