@@ -34,10 +34,7 @@ export default {
   },
   methods: {
     openProposal () {
-      sbp('okTurtles.events/emit', LOAD_MODAL, {
-        name: 'Mincome',
-        subfolder: 'proposals-form'
-      })
+      sbp('okTurtles.events/emit', LOAD_MODAL, 'Mincome')
     }
   }
 }

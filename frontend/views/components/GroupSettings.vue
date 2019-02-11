@@ -38,10 +38,7 @@ export default {
   },
   methods: {
     openProposal (component) {
-      sbp('okTurtles.events/emit', LOAD_MODAL, {
-        name: component,
-        subfolder: 'proposals-form'
-      })
+      sbp('okTurtles.events/emit', LOAD_MODAL, component)
     }
   }
 }

@@ -16,8 +16,7 @@ export default {
     sbp('okTurtles.events/on', LOAD_MODAL, component => this.openModal(component))
   },
   methods: {
-    openModal (component) {
-      const componentName = component.name ? component.name : component
+    openModal (componentName) {
       this.content = componentName
       sbp('okTurtles.events/emit', OPEN_MODAL)
     }
