@@ -27,9 +27,6 @@ export default {
     who: [String, Array]
   },
   computed: {
-    notFirstWho () {
-      return who.shift()
-    },
     firstWho () {
       const who = this.who
 
@@ -38,6 +35,9 @@ export default {
       }
 
       return who.length === 2 ? this.L('{who0} and {who1}', { who0: who[0], who1: who[1] }) : who[0]
+    },
+    notFirstWho () {
+      return who.slice(1)
     },
     hasWhoElse () {
       return Array.isArray(this.who) && this.who.length > 2
