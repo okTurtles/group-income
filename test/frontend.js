@@ -36,6 +36,8 @@ function login (name) {
     n.wait(elT('loginBtn'))
       .click(elT('loginBtn'))
       .wait(elT('modal'))
+      // Clear the input
+      .insert(elT('loginName'))
       .insert(elT('loginName'), name)
       .insert(elT('loginPassword'), 'testtest')
       .click(elT('loginSubmit'))
