@@ -96,6 +96,10 @@ import sbp from '../../../shared/sbp.js'
 import { nonWhitespace } from '../utils/validators.js'
 import { LOAD_MODAL, CLOSE_MODAL } from '../../utils/events.js'
 import { required, minLength, email } from 'vuelidate/lib/validators'
+// eslint-disable-next-line import/no-webpack-loader-syntax
+import variables from 'sass-variable-loader!../../assets/sass/colors.scss'
+
+console.log(variables)
 
 // TODO: fix all this
 export default {
