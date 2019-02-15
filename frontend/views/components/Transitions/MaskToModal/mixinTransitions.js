@@ -137,7 +137,7 @@ const animationMixins = {
       Velocity(maskerEl, { opacity: 1 }, { duration })
     },
     maskerAnimatesToTheShapeOf (el, originalElement, complete) {
-      // The animation need to wai for the element to be loaded in the dom
+      // The animation need to wait for the element to be loaded in the dom
       Vue.nextTick(() => {
         // Then it animates to the the originalElement specs creating the "growing effect"
         Velocity(el, { ...this.getSpecsOf(originalElement) }, { duration: this.config.maskerTime, easing: 'ease-out' })
