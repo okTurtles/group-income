@@ -52,6 +52,8 @@ export default {
     sbp('okTurtles.events/on', CLOSE_MODAL, this.closeModal)
   },
   beforeDestroy () {
+    sbp('okTurtles.events/off', OPEN_MODAL, this.openModal)
+    sbp('okTurtles.events/off', CLOSE_MODAL, this.closeModal)
     window.removeEventListener('keyup', this.handleKeyUp)
   },
   methods: {
