@@ -3,7 +3,7 @@
     name="formData"
     data-test="signup"
     @submit.prevent="submit">
-    <modal class="is-small">
+    <modal-template class="is-small">
       <!-- https://vuejs.org/v2/guide/components-slots.html#Named-Slots-Shorthand -->
       <template #subTitle>
         <i18n>Sign Up</i18n>
@@ -85,11 +85,11 @@
       <template #footer>
         <a @click="showLoginModal"><i18n>Have an account?</i18n></a>
       </template>
-    </modal>
+    </modal-template>
   </form>
 </template>
 <script>
-import Modal from '../components/Modal/Modal.vue'
+import ModalTemplate from '../components/Modal/ModalTemplate.vue'
 import { debounce } from '../../utils/giLodash.js'
 import { validationMixin } from 'vuelidate'
 import sbp from '../../../shared/sbp.js'
@@ -102,7 +102,7 @@ export default {
   name: 'SignUp',
   mixins: [ validationMixin ],
   components: {
-    Modal
+    ModalTemplate
   },
   inserted () {
     this.$refs.username.focus()

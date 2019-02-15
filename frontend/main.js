@@ -11,7 +11,7 @@ import * as db from './model/database.js'
 import store from './model/state.js'
 import { LOGOUT } from './utils/events'
 import Sidebar from './views/containers/sidebar/Sidebar.vue'
-import ModalDynamic from './views/components/Modal/ModalDynamic.vue'
+import Modal from './views/components/Modal/Modal.vue'
 import './lazyLoadedView.js'
 
 // TODO: uncomment this and improve implementation?
@@ -57,7 +57,7 @@ async function startApp () {
     router: router,
     components: {
       Sidebar,
-      ModalDynamic
+      Modal
     },
     computed: {
       showSidebar () {

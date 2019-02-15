@@ -2,7 +2,7 @@
   <form novalidate ref="form"
     name="formData"
     @submit.prevent="login">
-    <modal class="is-small">
+    <modal-template class="is-small">
       <!-- https://vuejs.org/v2/guide/components-slots.html#Named-Slots-Shorthand -->
       <template #subTitle>
         <i18n>Log In</i18n>
@@ -68,7 +68,7 @@
         <a @click="showSignUpModal"><i18n>Don't have an account?</i18n></a>
       </template>
 
-    </modal>
+    </modal-template>
   </form>
 </template>
 <script>
@@ -77,13 +77,13 @@ import { validationMixin } from 'vuelidate'
 import { required, minLength } from 'vuelidate/lib/validators'
 import { LOAD_MODAL, CLOSE_MODAL } from '../../utils/events.js'
 import L from '../utils/translations.js'
-import Modal from '../components/Modal/Modal.vue'
+import ModalTemplate from '../components/Modal/ModalTemplate.vue'
 
 export default {
   name: 'LoginModal',
   mixins: [ validationMixin ],
   components: {
-    Modal
+    ModalTemplate
   },
   inserted () {
     this.$refs.username.focus()

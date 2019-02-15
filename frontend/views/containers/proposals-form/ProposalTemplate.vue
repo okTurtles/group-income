@@ -1,5 +1,5 @@
 <template>
-  <modal>
+  <modal-template>
     <template #title>
       <i18n>New Proposal</i18n>
     </template>
@@ -19,15 +19,15 @@
         <i18n>Submit Proposal</i18n>
       </button>
     </template>
-  </modal>
+  </modal-template>
 </template>
 <script>
-import Modal from '../../components/Modal/Modal.vue'
+import ModalTemplate from '../../components/Modal/ModalTemplate.vue'
 
 export default {
   name: 'ModalForm',
   components: {
-    Modal
+    ModalTemplate
   },
   props: {
     subTitle: String,
