@@ -96,7 +96,7 @@
     </p>
   </div>
 </template>
-<style scoped>
+<style lang="scss" scoped>
   .tile.is-ancestor {
     flex-wrap: wrap;
   }
