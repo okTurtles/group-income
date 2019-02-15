@@ -4,9 +4,9 @@
     <template v-if="hasWhoElse">
       <i18n>and</i18n>
       <tooltip>
-        <button type="button" class="gi-is-unstyled gi-is-link-inherit">{{who.length - 1}}<i18n>others</i18n></button>
+        <button type="button" class="gi-is-unstyled gi-is-link-inherit">{{notFirstWho.length}}<i18n>others</i18n></button>
         <template slot="tooltip">
-          <p v-for="(name, index) in who.shift()" :key="`name-${index}`">{{name}}</p>
+          <p v-for="(name, index) in notFirstWho" :key="`name-${index}`">{{name}}</p>
         </template>
       </tooltip>
     </template>
@@ -27,6 +27,9 @@ export default {
     who: [String, Array]
   },
   computed: {
+    notFirstWho () {
+      return who.shift()
+    },
     firstWho () {
       const who = this.who
 
