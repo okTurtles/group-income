@@ -91,7 +91,7 @@
 <script>
 import MainHeader from '../MainHeader.vue'
 import { List } from '../Lists/index.js'
-import { MenuParent, MenuTrigger, MenuContent, MenuHeader, MenuItem } from '../Menu/index.js'
+import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '../Menu/index.js'
 
 export default {
   name: 'ChatNav',
@@ -101,7 +101,6 @@ export default {
     MenuParent,
     MenuTrigger,
     MenuContent,
-    MenuHeader,
     MenuItem
   },
   props: {

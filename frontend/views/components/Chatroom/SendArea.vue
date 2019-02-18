@@ -5,8 +5,8 @@
       :disabled="loading"
       :placeholder="customSendPlaceholder"
       :style="textareaStyles"
-      @keydown="handleKeydown"
-      @keydown.enter.prevent
+      @keydown.exact="sendMessage"
+      @keydown.ctrl="isNextLine"
       @keyup="handleKeyup"
       v-bind="$attrs"
     ></textarea>
@@ -85,7 +85,11 @@ export default {
   components: {},
   props: {
     title: String,
-    searchPlaceholder: String
+    searchPlaceholder: String,
+    loading: {
+      type: Boolean,
+      default: false
+    }
   },
   data () {
     return {
@@ -125,12 +129,10 @@ export default {
     }
   },
   methods: {
-    handleKeydown (e) {
+    isNextLine (e) {
       const enterKey = e.keyCode === 13
       if ((e.shiftKey || e.altKey || e.ctrlKey) && enterKey) {
         return this.createNewLine()
-      } else if (enterKey) {
-        return this.sendMessage()
       }
     },
     handleKeyup () {

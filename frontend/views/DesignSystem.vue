@@ -21,7 +21,7 @@
           <th>code</th>
           <th>demo</th>
         </thead>
-        <tr v-for="scale in [1, 2, 3, 4, 5, 6, 7]">
+        <tr v-for="(scale, index) in [1, 2, 3, 4, 5, 6, 7]" :key="index">
           <td class="is-narrow"><code>.title .is-{{scale}}</code></td>
           <td class="title" :class="`is-${scale}`">Good morning everyone</td>
         </tr>
@@ -57,9 +57,9 @@
           <th>code</th>
           <th>demo</th>
         </thead>
-        <tr v-for="spacer in ['xs', 'sm', '', 'lg']">
+        <tr v-for="(spacer, index) in ['xs', 'sm', '', 'lg']" :key="index">
           <td class="is-narrow" v-if="spacer"><code>$gi-spacer-{{spacer}}</code></td>
-          <td class="is-narrow" v-else="spacer"><code>$gi-spacer</code></td>
+          <td class="is-narrow" v-else><code>$gi-spacer</code></td>
           <td><span class="c-spacer" :class="spacer"></span></td>
         </tr>
       </table>
@@ -77,7 +77,7 @@
           <th>code</th>
           <th>usage</th>
         </thead>
-        <tr v-for="color in config.colors.brand">
+        <tr v-for="(color, index) in config.colors.brand" :key="`brand-color-${index}`">
           <td class="is-narrow"><span class="c-palette" :class="`has-background-${color.name}`"></span></td>
           <td class="is-narrow"><code>${{color.name}} <template v-if="!color.noClass"><br/>.has-background-{{color.name}}</template></code></td>
           <td v-html="color.usage"></td>
@@ -91,7 +91,7 @@
           <th>code</th>
           <th>usage</th>
         </thead>
-        <tr v-for="color in config.colors.support">
+        <tr v-for="(color, index) in config.colors.support" :key="`support-color-${index}`">
           <td class="is-narrow"><span class="c-palette" :class="`has-background-${color.name}`"></span></td>
           <td class="is-narrow"><code>${{color.name}} <template v-if="!color.noClass"><br/>.has-background-{{color.name}}</template></code></td>
           <td v-html="color.usage"></td>

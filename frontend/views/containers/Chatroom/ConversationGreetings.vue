@@ -1,8 +1,9 @@
 <template>
   <div class="c-greetings">
-    <avatar v-for="user in founders"
+    <avatar v-for="(user, index) in founders"
       size="sm"
       class="c-avatar"
+      :key="`user-${index}`"
       :src="user.picture"
       :alt="user.displayName || user.name"
     />

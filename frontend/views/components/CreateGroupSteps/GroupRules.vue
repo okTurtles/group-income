@@ -84,7 +84,7 @@
     </transition>
   </div>
 </template>
-<style>
+<style lang="scss" scoped>
   .rule {
     position: relative;
     width: 160px;

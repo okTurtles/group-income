@@ -17,7 +17,7 @@
         <i18n tag="h2" class="title is-3">Receiving</i18n>
 
         <ul class="c-ul">
-          <contribution v-for="contribution in fakeStore.receiving.nonMonetary">
+          <contribution v-for="(contribution, index) in fakeStore.receiving.nonMonetary" :key="`contribution-${index}`">
             <span v-html="textReceivingNonMonetary(contribution)"></span>
             <text-who :who="contribution.who"></text-who>
           </contribution>
@@ -36,7 +36,7 @@
         <i18n tag="h2" class="title is-3">Giving</i18n>
 
         <ul class="c-ul">
-          <contribution v-for="(contribution, index) in fakeStore.giving.nonMonetary"
+          <contribution v-for="(contribution, index) in fakeStore.giving.nonMonetary" :key="`contribution-${index}`"
             class="has-text-weight-bold"
             variant="editable"
             @new-value="(value) => handleEditNonMonetary(value, index)"

@@ -7,6 +7,7 @@
     <div v-if="history.length">
       <div class="c-graph is-flex">
         <span v-for="(percentage, index) in history"
+          :key="`percentage-${index}`"
           class="c-graph-item"
           :style="{
             transform: `scaleY(${getHeight(percentage)})`,

@@ -4,9 +4,9 @@
     <template v-if="hasWhoElse">
       <i18n>and</i18n>
       <tooltip>
-        <button type="button" class="gi-is-unstyled gi-is-link-inherit">{{who.length - 1}}<i18n>others</i18n></button>
+        <button type="button" class="gi-is-unstyled gi-is-link-inherit">{{notFirstWho.length}}<i18n>others</i18n></button>
         <template slot="tooltip">
-          <p v-for="(name, index) in who" v-if="index > 0">{{name}}</p>
+          <p v-for="(name, index) in notFirstWho" :key="`name-${index}`">{{name}}</p>
         </template>
       </tooltip>
     </template>
@@ -35,6 +35,9 @@ export default {
       }
 
       return who.length === 2 ? this.L('{who0} and {who1}', { who0: who[0], who1: who[1] }) : who[0]
+    },
+    notFirstWho () {
+      return this.who.slice(1)
     },
     hasWhoElse () {
       return Array.isArray(this.who) && this.who.length > 2

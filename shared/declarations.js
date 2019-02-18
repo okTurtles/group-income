@@ -129,7 +129,7 @@ declare module '../views/Contributions.vue' { declare module.exports: Object }
 declare module './views/components/Modal/Modal.vue' { declare module.exports: Object }
 declare module './interface.js' { declare module.exports: any }
 declare module './views/containers/sidebar/Sidebar.vue' { declare module.exports: Object }
-declare module './views/components/Modal/ModalDynamic.vue' { declare module.exports: Object }
+declare module './views/components/Modal/Modal.vue' { declare module.exports: Object }
 declare module './MaskToModal.vue' { declare module.exports: Object }
 declare module './Trigger.vue' { declare module.exports: Object }
 declare module './Target.vue' { declare module.exports: Object }

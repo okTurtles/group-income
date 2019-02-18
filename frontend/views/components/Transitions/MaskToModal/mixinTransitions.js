@@ -1,4 +1,5 @@
 import Velocity from 'velocity-animate'
+import Vue from 'vue'
 
 /**
 There are 4 components that composes these transitions:
@@ -136,10 +137,13 @@ const animationMixins = {
       Velocity(maskerEl, { opacity: 1 }, { duration })
     },
     maskerAnimatesToTheShapeOf (el, originalElement, complete) {
-      // Then it animates to the the originalElement specs creating the "growing effect"
-      Velocity(el, { ...this.getSpecsOf(originalElement) }, { duration: this.config.maskerTime, easing: 'ease-out' })
-      // And finally it fades out at the same time Target is fading in.
-      Velocity(el, { opacity: 0 }, { duration: this.config.fade, complete })
+      // The animation need to wait for the element to be loaded in the dom
+      Vue.nextTick(() => {
+        // Then it animates to the the originalElement specs creating the "growing effect"
+        Velocity(el, { ...this.getSpecsOf(originalElement) }, { duration: this.config.maskerTime, easing: 'ease-out' })
+        // And finally it fades out at the same time Target is fading in.
+        Velocity(el, { opacity: 0 }, { duration: this.config.fade, complete })
+      })
     },
     updateSpecsOf (el, elementId: string) {
       this.MaskToModal.updateSpecsOf(el, elementId)

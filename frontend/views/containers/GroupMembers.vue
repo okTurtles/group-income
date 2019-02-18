@@ -3,6 +3,7 @@
     <div class="level-left">
       <ul class="columns is-mobile is-narrow is-multiline is-marginless">
         <li v-for="(member, username) in profiles"
+          :key="username"
           class="column is-narrow badge"
           data-test="member"
         >

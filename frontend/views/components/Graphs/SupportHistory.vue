@@ -2,7 +2,7 @@
   <div>
     <p v-if="history.length === 0"><i18n>Your group is still in its first month.</i18n></p>
     <div class="history columns" v-else>
-      <div v-for="(percentage, index) in history" class="column is-2">
+      <div v-for="(percentage, index) in history" class="column is-2" :key="`percentage-${index}`">
         <div :class="['period', getResult(percentage)]">
           <p class="period-title">{{ months[index] }}</p>
           <p class="period-txt">{{ percentage | toPercent }}</p>

@@ -5,6 +5,7 @@ export const EVENT_HANDLED = 'event-handled'
 export const REPLACED_STATE = 'replaced-state'
 
 export const OPEN_MODAL = 'open-modal'
+export const LOAD_MODAL = 'load-modal'
 export const CLOSE_MODAL = 'close-modal'
 
 export const NEW_PAYMENT = 'new-payment'

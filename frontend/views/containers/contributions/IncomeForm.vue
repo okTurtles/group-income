@@ -1,5 +1,5 @@
 <template>
-  <modal ref="modal" :isActive="true" @close="cancelForm">
+  <modal-template ref="modal" :isActive="true" @close="cancelForm">
     <form class="modal-card-content c-wrapper" @submit.prevent="verifyForm" novalidate="true">
       <i18n tag="h2" class="title is-3">Income Details</i18n>
       <div class="columns is-mobile c-wrapper-columns">
@@ -70,7 +70,7 @@
         </p>
       </div>
       </form>
-  </modal>
+  </modal-template>
 </template>
 <style lang="scss" scoped>
 @import "../../../assets/sass/theme/index";
@@ -134,7 +134,7 @@ import { validationMixin } from 'vuelidate'
 import { requiredIf, required } from 'vuelidate/lib/validators'
 import InputAmount from './InputAmount.vue'
 import PaymentMethods from './PaymentMethods.vue'
-import Modal from '../../components/Modal/ModalBasic.vue'
+import ModalTemplate from '../../components/Modal/ModalTemplate.vue'
 import TextWho from '../../components/TextWho.vue'
 import GroupPledgesGraph from '../GroupPledgesGraph.vue'
 
@@ -145,7 +145,7 @@ export default {
   name: 'IncomeForm',
   mixins: [ validationMixin ],
   components: {
-    Modal,
+    ModalTemplate,
     InputAmount,
     TextWho,
     PaymentMethods,
@@ -182,18 +182,22 @@ export default {
       return this.form.option === 'yes'
     },
     inputIncomeError () {
+      let error = ''
       if (!this.$v.form.income.hasLowIncome) {
-        return this.L('If your income is the same or higher than the group\'s mincome change your answer to "Yes, I do"')
+        error = this.L('If your income is the same or higher than the group\'s mincome change your answer to "Yes, I do"')
       } else if (this.$v.form.income.$error) {
-        return this.infoRequired
+        error = this.infoRequired
       }
+      return error
     },
     saveButtonText () {
       const verb = this.isFirstTime ? 'Add' : 'Save'
+      const kind = this.form.option ? {
+        yes: ' pledged',
+        no: ' income'
+      }[this.form.option] : ''
 
-      if (!this.form.option) { return this.L('{verb} details', { verb }) }
-      if (this.canPledge) { return this.L('{verb} pledged details', { verb }) }
-      if (this.needsIncome) { return this.L('{verb} income details', { verb }) }
+      return this.L(`${verb}${kind} details`)
     }
   },
   methods: {

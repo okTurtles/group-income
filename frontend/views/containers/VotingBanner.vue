@@ -40,21 +40,32 @@ export default {
   },
   computed: {
     proposalText: function () {
+      let proposal = ''
       switch (this.proposal.type) {
-        case contracts.GroupProposal.TypeInvitation: return L('invite {candidate} to the group.',
-          {
-            candidate: this.proposal.candidate
-          })
-        case contracts.GroupProposal.TypeRemoval: return L('remove {member} from the group.',
-          {
-            member: this.proposal.candidate
-          })
-        case contracts.GroupProposal.TypeChange: return L('change {property} to {value}.',
-          {
-            property: this.proposal.property,
-            value: this.proposal.value
-          })
+        case contracts.GroupProposal.TypeInvitation: {
+          proposal = L('invite {candidate} to the group.',
+            {
+              candidate: this.proposal.candidate
+            })
+          break
+        }
+        case contracts.GroupProposal.TypeRemoval: {
+          proposal = L('remove {member} from the group.',
+            {
+              member: this.proposal.candidate
+            })
+          break
+        }
+        case contracts.GroupProposal.TypeChange: {
+          proposal = L('change {property} to {value}.',
+            {
+              property: this.proposal.property,
+              value: this.proposal.value
+            })
+          break
+        }
       }
+      return proposal
     }
   }
 }

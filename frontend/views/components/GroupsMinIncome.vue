@@ -19,9 +19,8 @@
 </style>
 <script>
 import sbp from '../../../shared/sbp.js'
-import { OPEN_MODAL } from '../../utils/events.js'
+import { LOAD_MODAL } from '../../utils/events.js'
 import currencies from '../utils/currencies.js'
-import Mincome from '../containers/proposals-form/Mincome.vue'
 
 export default {
   name: 'GroupsMinIncome',
@@ -35,7 +34,7 @@ export default {
   },
   methods: {
     openProposal () {
-      sbp('okTurtles.events/emit', OPEN_MODAL, Mincome)
+      sbp('okTurtles.events/emit', LOAD_MODAL, 'Mincome')
     }
   }
 }

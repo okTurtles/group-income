@@ -158,36 +158,45 @@ export default {
         : L('Close Proposal')
     },
     helperText () {
+      let text = ''
       switch (this.closeProposalState.state) {
-        case countdownStates.COUNTING:
-          return L('Proposal closed in {countdown}...', {
+        case countdownStates.COUNTING: {
+          text = L('Proposal closed in {countdown}...', {
             countdown: this.closeProposalState.countdown
           })
-        case countdownStates.CANCELLED:
-          return L("Let's pretend that never happened")
-        case countdownStates.SUCCESS:
-          return L('Proposal cancelled')
+          break
+        }
+
+        case countdownStates.CANCELLED: {
+          text = L("Let's pretend that never happened")
+          break
+        }
+        case countdownStates.SUCCESS: {
+          text = L('Proposal cancelled')
+          break
+        }
         default:
           break
       }
 
       if (!this.proposal.votes) {
-        return this.proposal.ownProposal
+        text = this.proposal.ownProposal
           ? L('Nobody voted yet')
           : L('Be the first to vote!')
       }
 
       if (!this.proposal.ownProposal && this.proposal.votes === 1) {
-        return L('Your were the first to vote')
+        text = L('Your were the first to vote')
       }
 
       if (this.proposal.votes > 1) {
-        return L('{youAnd} {votesCount} of {members} members voted', {
+        text = L('{youAnd} {votesCount} of {members} members voted', {
           youAnd: this.hasVoted ? L('You and') : '',
           votesCount: this.hasVoted ? this.proposal.votes - 1 : this.proposal.votes,
           members: this.proposal.members
         })
       }
+      return text
     }
   },
   methods: {

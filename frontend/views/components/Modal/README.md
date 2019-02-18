@@ -6,18 +6,9 @@ Then we can easily open/close any modal from anywhere in the app using `sbp()`.
 
 Let's see a real example working: **the Login modal**:
 
-### The Modal content
-Each modal should be composed by the following components so we keep consistence in the spacers and text across the different modals.
-
-- `<modal-header>`
-- `<modal-body>`
-- `<modal-footer>`
-
-You can check how Login is done at `containers/LoginModal.vue`.
-
 ### How to open a modal
 
-From anywhere in the App we can open any modal by using the `sbp` event `OPEN_MODAL` with the Vue Component that contains the modal Content
+From anywhere in the App we can open any modal by using the `sbp` event `LOAD_MODAL` with the Vue Component that contains the modal Content
 
 ```html
 <!-- NavBar.vue -->
@@ -26,12 +17,12 @@ From anywhere in the App we can open any modal by using the `sbp` event `OPEN_MO
 </template>
 
 <script>
-import LoginModal from './LoginModal.vue'
 import sbp from '../../../../shared/sbp.js'
-import { OPEN_MODAL } from '../../utils/events.js'
+import { LOAD_MODAL } from '../../utils/events.js'
 
 openLoginModal () {
-  sbp('okTurtles.events/emit', OPEN_MODAL, LoginModal)
+  sbp('okTurtles.events/emit', LOAD_MODAL, 'LoginModal')
+  // or pass an object with 'name' and 'subfolder' properties relative to containers folder
 }
 </script>
 ```
@@ -47,11 +38,11 @@ closeModal () {
 }
 ```
 
-### The `<modal-dynamic />`
+### The `<modal />`
 
-The `<modal-dynamic />` is imported at `simple/index.html` at the bottom of the DOM.
+The `<modal />` is imported at `simple/index.html` at the bottom of the DOM.
 
-Its only responsability is to import `<modal-basic />`, add its content as a dynamic component [(Know more about Vue Dynamic Components)](https://vuejs.org/v2/api/#is) and listen for `sbp` events `OPEN_MODAL` and `CLOSE_MODAL`.
+Its content use <modal-template /> and is dynamically loaded [(Know more about Vue Dynamic Components)](https://vuejs.org/v2/api/#is). The modal use `sbp` events `LOAD_MODAL` and `CLOSE_MODAL`.
 
 ---
 

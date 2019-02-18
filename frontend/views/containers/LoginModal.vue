@@ -1,10 +1,13 @@
 <template>
-  <div class="is-small">
-    <modal-header>
-      <i18n>Log In</i18n>
-    </modal-header>
+  <form novalidate ref="form"
+    name="formData"
+    @submit.prevent="login">
+    <modal-template class="is-small">
+      <!-- https://vuejs.org/v2/guide/components-slots.html#Named-Slots-Shorthand -->
+      <template #subTitle>
+        <i18n>Log In</i18n>
+      </template>
 
-    <modal-body>
       <div class="field">
         <p class="control has-icon">
           <input
@@ -44,42 +47,43 @@
         </p>
         <i18n v-show="$v.form.password.$error" class="help is-danger">password must be at least 7 characters</i18n>
       </div>
-    </modal-body>
 
-    <modal-footer :submitError="form.response">
-      <button
-        class="button is-primary"
-        :disabled="$v.form.$invalid"
-        data-test="loginSubmit"
-        @click="login"
-      >
-        <span class="icon"><i class="fa fa-user"></i></span>
-        <i18n>Login</i18n>
-      </button>
-      <template slot="footer">
+      <template #buttons>
+        <button
+          class="button is-primary"
+          :disabled="$v.form.$invalid"
+          data-test="loginSubmit"
+          type="submit"
+        >
+          <span class="icon"><i class="fa fa-user"></i></span>
+          <i18n>Login</i18n>
+        </button>
+      </template>
+
+      <template #errors>
+        {{ form.response }}
+      </template>
+
+      <template #footer>
         <a @click="showSignUpModal"><i18n>Don't have an account?</i18n></a>
       </template>
-    </modal-footer>
-  </div>
+
+    </modal-template>
+  </form>
 </template>
 <script>
 import sbp from '../../../shared/sbp.js'
 import { validationMixin } from 'vuelidate'
 import { required, minLength } from 'vuelidate/lib/validators'
-import { OPEN_MODAL, CLOSE_MODAL } from '../../utils/events.js'
-import ModalHeader from '../components/Modal/ModalHeader.vue'
-import ModalBody from '../components/Modal/ModalBody.vue'
-import ModalFooter from '../components/Modal/ModalFooter.vue'
-import SignUp from './SignUp.vue'
+import { LOAD_MODAL, CLOSE_MODAL } from '../../utils/events.js'
 import L from '../utils/translations.js'
+import ModalTemplate from '../components/Modal/ModalTemplate.vue'
 
 export default {
   name: 'LoginModal',
   mixins: [ validationMixin ],
   components: {
-    ModalHeader,
-    ModalBody,
-    ModalFooter
+    ModalTemplate
   },
   inserted () {
     this.$refs.username.focus()
@@ -102,7 +106,7 @@ export default {
       sbp('okTurtles.events/emit', CLOSE_MODAL)
     },
     showSignUpModal () {
-      sbp('okTurtles.events/emit', OPEN_MODAL, SignUp)
+      sbp('okTurtles.events/emit', LOAD_MODAL, 'SignUp')
     }
   },
   data () {

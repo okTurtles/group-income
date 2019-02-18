@@ -2,7 +2,7 @@
   <div class="c-wrapper" v-if="groups.length > 0">
     <i18n tag="h2" class="subtitle c-subtitle">Groups chat shortcut</i18n>
     <ul class="c-ul">
-      <li v-for="(group, index) in groups" class="c-ul-li">
+      <li v-for="(group, index) in groups" class="c-ul-li" :key="`group-${index}`">
         <router-link to="/group-chat"
           @click.native="$emit('select', group.contractID)"
           class="c-router no-border"

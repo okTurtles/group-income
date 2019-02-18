@@ -1,7 +1,8 @@
 <template>
   <div>
     <!--  Start Original Voting Banner to delete soon -->
-    <voting-banner v-for="proposal in Object.values(proposals)"
+    <voting-banner v-for="(proposal, index) in Object.values(proposals)"
+      :key="`proposal-${index}`"
       :proposal="proposal"
     />
     <!--  End Original Voting Banner to delete soon -->
@@ -19,7 +20,8 @@
     <i18n class="notification gi-is-banner c-notify" v-if="allVoted">Cool, you already voted on all proposals.</i18n>
 
     <voting
-      v-for="proposal in groupProposals.notVoted"
+      v-for="(proposal, index) in groupProposals.notVoted"
+      :key="`not-voted-${index}`"
       :type="proposal.type"
       :proposal="proposal.data"
       :onVoteAgainst="handleVoteAgainst"
@@ -27,14 +29,16 @@
     />
 
     <voting
-      v-for="proposal in groupProposals.own"
+      v-for="(proposal, index) in groupProposals.own"
+      :key="`own-${index}`"
       :type="proposal.type"
       :proposal="proposal.data"
-      :handleCloseProposal="onCloseProposal"
+      :handleCloseProposal="handleCloseProposal"
     />
 
     <voting
-      v-for="proposal in groupProposals.alreadyVoted"
+      v-for="(proposal, index) in groupProposals.alreadyVoted"
+      :key="`already-voted-${index}`"
       :type="proposal.type"
       :proposal="proposal.data"
       :onVoteAgainst="handleVoteAgainst"
