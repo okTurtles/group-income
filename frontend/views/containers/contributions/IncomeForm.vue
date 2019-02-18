@@ -192,17 +192,12 @@ export default {
     },
     saveButtonText () {
       const verb = this.isFirstTime ? 'Add' : 'Save'
-      let text = ''
-      if (!this.form.option) {
-        text = this.L('{verb} details', { verb })
-      } else {
-        if (this.canPledge) {
-          text = this.L('{verb} pledged details', { verb })
-        } else {
-          if (this.needsIncome) { text = this.L('{verb} income details', { verb }) }
-        }
-      }
-      return text
+      const kind = this.form.option ? {
+        yes: ' pledged',
+        no: ' income'
+      }[this.form.option] : ''
+
+      return this.L(`${verb}${kind} details`)
     }
   },
   methods: {
