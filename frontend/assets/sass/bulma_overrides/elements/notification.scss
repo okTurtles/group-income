@@ -1,6 +1,16 @@
 @import "../../node_modules/bulma/sass/elements/notification";
 
 .notification {
+  &.is-info {
+    background-color: rgba($info, 0.3);
+    border: 0.0625rem solid $info;
+  }
+
+  &.is-danger {
+    background-color: rgba($danger, 0.3);
+    border: 0.0625rem solid $danger;
+  }
+
   &.is-warning {
     background-color: rgba($warning, 0.3);
     border: 0.0625rem solid $warning;

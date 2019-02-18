@@ -1,5 +1,5 @@
 <template>
-  <main>
+  <main class="c-design-system">
     <section class="section">
       <h1 class="title is-1">Design System</h1>
 
@@ -103,10 +103,50 @@
       <h3 class="title is-3">Help</h3>
       <p class="is-size-5">If you have suggestions or contributions feel free to reach us on [Slack] or open an issue or PR in [Github].</p>
     </section>
+    <section class="section">
+      <h2 class="title is-3 c-title">User Feedback</h2>
+
+      <h3 class="title is-4">Simple</h3>
+
+      <message severity="warning">
+        This is a <strong>warning message</strong> with a <a href="/">link</a>. This message can grow in width or height, as needed.
+      </message>
+
+      <message severity="danger">
+        This is a <strong>danger / error message</strong> with a <a href="/">link</a>. This message can grow in width or height, as needed.
+      </message>
+
+      <message severity="info">
+        This is an <strong>infromation message</strong> with a <a href="/">link</a>. This message can grow in width or height, as needed.
+      </message>
+
+      <h3 class="title is-4">With title</h3>
+
+      <message severity="warning">
+        <div slot="header">
+          A title that gives context to the message
+        </div>
+        <slot>
+          This is a <strong>warning message</strong> with a <a href="/">link</a>. This message can grow in width or height, as needed.
+        </slot>
+      </message>
+
+      <h3 class="title is-4">Tooltips</h3>
+      <tooltip>
+        TODO: update tooltip to be visible
+        <template slot="tooltip">
+          This is a tooltip. It has a maximum width of <strong>14rem</strong> (224px).
+        </template>
+      </tooltip>
+    </section>
   </main>
 </template>
 <style lang="scss" scoped>
 @import "../assets/sass/theme/index";
+
+.c-design-system {
+  padding-bottom: 3rem;
+}
 
 .c-title {
   margin-top: $gi-spacer-xl;
@@ -158,6 +198,9 @@
 }
 </style>
 <script>
+import Message from './components/Message.vue'
+import Tooltip from './components/Tooltip.vue'
+
 export default {
   name: 'DesignSystemView',
   data () {
@@ -217,6 +260,10 @@ export default {
         }
       }
     }
+  },
+  components: {
+    Message,
+    Tooltip
   }
 }
 </script>

@@ -47,11 +47,10 @@
             </button>
           </p>
         </div>
-        <article class="message is-danger" v-if="ephemeral.errorMsg">
-          <div class="message-body">
-            {{ ephemeral.errorMsg }}
-          </div>
-        </article>
+
+        <message severity='danger' v-if="ephemeral.errorMsg">
+          {{ ephemeral.errorMsg }}
+        </message>
       </div>
     </div>
   </main>
@@ -89,6 +88,7 @@
 import sbp from '../../shared/sbp.js'
 import contracts from '../model/contracts.js'
 import L from './utils/translations.js'
+import Message from './components/Message.vue'
 import StepAssistant from './utils/StepAssistant.js'
 import { validationMixin } from 'vuelidate'
 import { decimals } from './utils/validators.js'
@@ -104,6 +104,9 @@ export default {
     StepAssistant,
     validationMixin
   ],
+  components: {
+    Message
+  },
   methods: {
     focusRef (ref) {
       this.$refs[ref].focus()
