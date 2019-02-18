@@ -14,8 +14,7 @@ module.exports = server.loaded.then(() => {
   console.log(chalk.bold('backend startup sequence complete.'))
 })
 
-// when spawned via grunt, listen for message to cleanly shutdown and relinquish port
-process.on('message', function () {
+const shutdownFn = function () {
   console.log('message received in child, shutting down...')
   var primus = server.hapi.primus
   primus.on('close', async function () {
@@ -31,8 +30,14 @@ process.on('message', function () {
       process.exit(1)
     }
   })
-  primus.destroy({timeout: 1000}) // TODO: close: false ?
-})
+  primus.destroy({ timeout: 1000 }) // TODO: close: false ?
+}
+
+// sent by nodemon
+process.on('SIGUSR2', shutdownFn)
+
+// when spawned via grunt, listen for message to cleanly shutdown and relinquish port
+process.on('message', shutdownFn)
 
 process.on('uncaughtException', (err) => {
   console.error('[server] Unhandled exception:', err, err.stack)

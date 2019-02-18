@@ -1,7 +1,7 @@
 'use strict'
 // import sbp from '../shared/sbp.js'
-import {blake32Hash} from './functions.js'
-import type {JSONType} from './types.js'
+import { blake32Hash } from './functions.js'
+import type { JSONType } from './types.js'
 
 function defaultSignatureFn (data: string) {
   return blake32Hash(data)
@@ -50,7 +50,7 @@ export class GIMessage {
   static deserialize (value: string) {
     if (!value) throw new Error(`deserialize bad value: ${value}`)
     var instance = new this()
-    instance._mapping = {key: blake32Hash(value), value}
+    instance._mapping = { key: blake32Hash(value), value }
     instance._message = JSON.parse(JSON.parse(value).message)
     return instance
   }

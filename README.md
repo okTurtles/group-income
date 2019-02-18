@@ -81,4 +81,4 @@ If you run into any errors [during the setup](docs/Getting-Started-frontend.md#h
 
 ## License
 
-GPLv3. See [`LICENSE`](docs/LICENSE) for license details and [`CONTRIBUTING.md`](CONTRIBUTING.md) for contributing policy.
+AGPLv3. See [`LICENSE`](docs/LICENSE) for license details and [`CONTRIBUTING.md`](CONTRIBUTING.md) for contributing policy.

@@ -1,6 +1,6 @@
 /* globals logger */
 
-import {GIMessage} from '../shared/GIMessage.js'
+import { GIMessage } from '../shared/GIMessage.js'
 import * as db from './database.js'
 const Boom = require('boom')
 const Joi = require('joi')
@@ -8,7 +8,7 @@ const Joi = require('joi')
 // NOTE: We could get rid of this RESTful API and just rely on pubsub.js to do this
 //       —BUT HTTP2 might be better than websockets and so we keep this around.
 //       See related TODO in pubsub.js and the reddit discussion link.
-module.exports = function (server: Object) {
+export default function (server: Object) {
   server.route({
     path: '/event',
     method: ['PUT', 'POST'],
@@ -33,7 +33,7 @@ module.exports = function (server: Object) {
     method: ['GET'],
     handler: async function (request, h) {
       try {
-        const {contractID, since} = request.params
+        const { contractID, since } = request.params
         var stream = db.streamEntriesSince(contractID, since)
         // "On an HTTP server, make sure to manually close your streams if a request is aborted."
         // From: http://knexjs.org/#Interfaces-Streams
@@ -63,12 +63,12 @@ module.exports = function (server: Object) {
     } } },
     handler: function (request, h) {
       try {
-        const {name, value} = request.payload
+        const { name, value } = request.payload
         if (db.lookupName(name)) {
           return Boom.conflict('exists')
         } else {
           db.registerName(name, value)
-          return {name, value}
+          return { name, value }
         }
       } catch (err) {
         logger(err)

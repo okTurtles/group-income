@@ -1,0 +1,42 @@
+// GI variables
+$gi-opacity-1: 0.75;
+$gi-opacity-2: 0.5;
+$gi-opacity-3: 0.25;
+
+$gi-spacer: 1rem; // same as Gulp $gap but using rem
+$gi-spacer-xl: $gi-spacer * 4;
+$gi-spacer-lg: $gi-spacer * 2;
+$gi-spacer-md: $gi-spacer;
+$gi-spacer-sm: $gi-spacer / 2;
+$gi-spacer-xs: $gi-spacer / 4;
+
+$gi-sidebar-width: 15rem;
+
+// z-index constants
+// Why: https://css-tricks.com/handling-z-index/
+$gi-zindex-mask: 60;
+$gi-zindex-tooltip: 50;
+$gi-zindex-modal: 40;
+$gi-zindex-sidebar: 40;
+$gi-zindex-header: 30;
+// $gi-zindex-something: **; create when needed
+
+// Breakpoints - Bulma doesn't have a smaller breakpoint
+// https://github.com/jgthms/bulma/issues/1677
+@mixin phone {
+  @media screen and (max-width: 639px) {
+    @content;
+  }
+}
+
+@mixin phablet {
+  @media screen and (min-width: 640px) {
+    @content;
+  }
+}
+
+// TODO: Find a way to generated different import themes
+@import "kindergarten-professional";
+
+// Import Bulma's utilities module to be available on further overrides and vue components
+@import "node_modules/bulma/sass/utilities/all";

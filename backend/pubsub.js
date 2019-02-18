@@ -5,13 +5,32 @@
 // primus events: https://github.com/primus/primus#events
 // https://github.com/primus/primus-emit (better than primus-emitter)
 
-import {bold} from 'chalk'
-import {RESPONSE_TYPE} from '../shared/constants'
-import {makeResponse as reply, setupPrimus} from '../shared/functions'
+import { bold } from 'chalk'
+import { RESPONSE_TYPE } from '../shared/constants.js'
+import { makeResponse as reply } from '../shared/functions.js'
+import Primus from 'primus'
 
-const {ERROR, SUCCESS, SUB, UNSUB, PUB} = RESPONSE_TYPE
+const { ERROR, SUCCESS, SUB, UNSUB, PUB } = RESPONSE_TYPE
 
-// TODO: decide whether it's better to switch to HTTP2 intead of using websockets
+// generate and save primus client file
+// https://github.com/primus/primus#client-library
+// this function is also used in .Grunfile.babel.js
+// to save the corresponding frontend version of the primus.js file
+export function setupPrimus (server: Object, saveAndDestroy: boolean = false) {
+  var primus = new Primus(server, {
+    transformer: 'websockets',
+    rooms: { wildcard: false }
+  })
+  primus.plugin('rooms', require('primus-rooms'))
+  primus.plugin('responder', require('primus-responder'))
+  if (saveAndDestroy) {
+    primus.save(require('path').join(__dirname, '../frontend/controller/utils/primus.js'))
+    primus.destroy()
+  }
+  return primus
+}
+
+// TODO: decide whether it's better to switch to HTTP2 intead of using websockets — NOTE: it probably is (makes it easier to self-host? also more sbp-friendly single-api-endpoint design?)
 // https://www.reddit.com/r/rust/comments/5p6a8z/a_hyper_update_v010_last_week_tokio_soon/
 //
 // NOTE: primus-rooms can be used with primus-multiplex
@@ -19,7 +38,7 @@ const {ERROR, SUCCESS, SUB, UNSUB, PUB} = RESPONSE_TYPE
 //       multiple channels, and each channel then can have multiple rooms.
 // https://github.com/cayasso/primus-multiplex/blob/master/examples/node/rooms/index.js
 
-module.exports = function (hapi: Object) {
+export default function (hapi: Object) {
   var primus = setupPrimus(hapi.listener)
   // make it possible to access primus via: hapi.primus
   hapi.decorate('server', 'primus', primus)
@@ -32,15 +51,15 @@ module.exports = function (hapi: Object) {
 
   primus.on('connection', function (spark) {
     // spark is the new connection. https://github.com/primus/primus#sparkheaders
-    const {id, address} = spark
+    const { id, address } = spark
     // console.log('connection has the following headers', headers)
     console.log(bold(`[pubsub] ${id} connected from:`), address)
 
     // https://github.com/swissmanu/primus-responder
     spark.on('request', async function (req, done) {
       try {
-        var {type, data: {contractID}} = req
-        var success = reply(SUCCESS, {type, id})
+        var { type, data: { contractID } } = req
+        var success = reply(SUCCESS, { type, id })
         console.log(bold(`[pubsub] REQUEST '${type}' from '${id}'`), req)
         switch (type) {
           case SUB:
@@ -76,7 +95,7 @@ module.exports = function (hapi: Object) {
       console.log(bold.yellow(`[pubsub] ${id} leaveallrooms`))
       // this gets called on spark.leaveAll and 'disconnection'
       rooms.forEach(contractID => {
-        primus.room(contractID).write(reply(UNSUB, {contractID, id}))
+        primus.room(contractID).write(reply(UNSUB, { contractID, id }))
       })
     })
 

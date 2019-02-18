@@ -67,7 +67,7 @@ declare module 'vue-router' { declare module.exports: any }
 declare module 'vue-script2' { declare module.exports: any }
 declare module 'vuex' { declare module.exports: any }
 declare module 'ws' { declare module.exports: any }
-declare module 'babel-register' { declare module.exports: any }
+declare module '@babel/register' { declare module.exports: any }
 declare module 'babelify' { declare module.exports: any }
 declare module 'chalk' { declare module.exports: any }
 declare module 'cheerio' { declare module.exports: any }
@@ -123,10 +123,24 @@ declare module '../views/Home.vue' { declare module.exports: Object }
 declare module '../components/MembersCircle.vue' { declare module.exports: Object }
 declare module '../components/i18n.vue' { declare module.exports: Object }
 declare module '../views/DesignSystem.vue' { declare module.exports: Object }
+declare module '../views/GroupChat.vue' { declare module.exports: Object }
+declare module '../views/Messages.vue' { declare module.exports: Object }
+declare module '../views/Contributions.vue' { declare module.exports: Object }
 declare module './views/components/Modal/Modal.vue' { declare module.exports: Object }
 declare module './interface.js' { declare module.exports: any }
 declare module './views/containers/sidebar/Sidebar.vue' { declare module.exports: Object }
+declare module './views/components/Modal/Modal.vue' { declare module.exports: Object }
+declare module './MaskToModal.vue' { declare module.exports: Object }
+declare module './Trigger.vue' { declare module.exports: Object }
+declare module './Target.vue' { declare module.exports: Object }
+declare module './Masker.vue' { declare module.exports: Object }
+declare module './PieChart.vue' { declare module.exports: Object }
+declare module './GraphLegendItem.vue' { declare module.exports: Object }
+declare module './GraphLegendGroup.vue' { declare module.exports: Object }
+declare module './Bars.vue' { declare module.exports: Object }
+declare module './SupportHistory.vue' { declare module.exports: Object }
+declare module '../../utils/flow-typer.js' { declare module.exports: Object }
 
 // we ignored everything in assets/, so...
-declare module '../frontend/simple/assets/vendor/primus.js' { declare module.exports: Function }
-declare module '../../assets/vendor/primus.js' { declare module.exports: Function }
+declare module '../frontend/controller/utils/primus.js' { declare module.exports: Function }
+declare module './primus.js' { declare module.exports: Function }
