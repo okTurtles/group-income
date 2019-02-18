@@ -13,13 +13,13 @@
     </div>
   </div>
 </template>
-<script>
 
+<script>
 export default {
   name: 'Message',
   props: {
     severity: String,
-    default: 'info'
+    default () { return 'info' }
   },
   validator: function (value) {
     // The value must match one of these strings

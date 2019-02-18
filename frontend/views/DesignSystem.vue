@@ -108,28 +108,28 @@
 
       <h3 class="title is-4">Simple</h3>
 
-      <Message severity="warning">
+      <message severity="warning">
         This is a <strong>warning message</strong> with a <a href="/">link</a>. This message can grow in width or height, as needed.
-      </Message>
+      </message>
 
-      <Message severity="danger">
+      <message severity="danger">
         This is a <strong>danger / error message</strong> with a <a href="/">link</a>. This message can grow in width or height, as needed.
-      </Message>
+      </message>
 
-      <Message severity="info">
+      <message severity="info">
         This is an <strong>infromation message</strong> with a <a href="/">link</a>. This message can grow in width or height, as needed.
-      </Message>
+      </message>
 
       <h3 class="title is-4">With title</h3>
 
-      <Message severity="warning">
+      <message severity="warning">
         <div slot="header">
           A title that gives context to the message
         </div>
         <slot>
           This is a <strong>warning message</strong> with a <a href="/">link</a>. This message can grow in width or height, as needed.
         </slot>
-      </Message>
+      </message>
 
       <h3 class="title is-4">Tooltips</h3>
       <tooltip>
