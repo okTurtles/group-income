@@ -4,20 +4,20 @@
       <avatar :src="userPicture" hasMargin />
       <div class="c-user">
         <p class="gi-is-ellipsis has-text-weight-bold">{{userDisplayName}}</p>
-        <span class="gi-is-ellipsis is-size-7" data-test="profileDisplayName">{{userName}}</span>
+        <span class="gi-is-ellipsis is-size-6" data-test="profileDisplayName">{{userName}}</span>
       </div>
     </div>
     <div class="level-right">
-      <button class="button is-icon"
+      <!-- <button class="button is-icon"
         data-test="logoutBtn"
         @click.prevent="logout">
         <i class="fa fa-sign-out-alt"></i>
-      </button>
+      </button> -->
       <router-link class="button is-icon"
         tag="button"
         to="/user"
         data-test="profileLink">
-        <i class="fa fa-ellipsis-v"></i>
+        <i class="fa fa-cog"></i>
       </router-link>
     </div>
   </div>
@@ -26,16 +26,23 @@
 @import "../../../assets/sass/theme/index";
 
 .c-profile {
-  background: $body-background-color;
+  background-color: $primary-bg-a;
   padding: $gi-spacer-sm;
-  border-radius: $radius;
-  margin-top: $gi-spacer;
+  margin-top: .75rem;
 }
 
 .c-user {
   max-width: 5rem;
   white-space: nowrap;
-  line-height: 1;
+  line-height: 1.15rem;
+
+  span {
+    color: $text-light;
+  }
+
+  .fa-cog {
+    font-size: 0.7rem;
+  }
 }
 </style>
 <script>

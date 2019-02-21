@@ -1,7 +1,14 @@
 <template>
   <div v-if="groupsByName.length">
     <menu-parent @select="handleMenuSelect">
-      <menu-trigger hideWhenActive class="c-trigger is-fullwidth has-text-black has-text-weight-bold is-size-5 gi-is-justify-between gi-is-unstyled">
+      <menu-trigger hideWhenActive class="c-trigger is-fullwidth has-text-black has-text-weight-bold is-size-6 gi-is-unstyled">
+        <!-- TODO: Once the groupPicture is implemented :src="groupPicture" :alt="group.groupName"-->
+        <avatar class="c-avatar"
+          size="sm"
+          src=""
+          alt=""
+          hasMargin
+        />
         {{this.currentGroupState && this.currentGroupState.groupName}}
         <i class="fa fa-angle-down c-fa c-trigger-icon"></i>
       </menu-trigger>
@@ -26,15 +33,11 @@
       </menu-content>
     </menu-parent>
 
-    <list>
+    <list class="c-menu-list">
       <!-- TODO/BUG: Mobile - hide navbar after going to a page -->
       <list-item tag="router-link" icon="columns"
         to="/dashboard">
           <i18n>Dashboard</i18n>
-      </list-item>
-      <list-item tag="router-link" icon="comment"
-        to="/group-chat" :badgeCount="3">
-        <i18n>Chat</i18n>
       </list-item>
       <list-item tag="router-link" icon="chart-pie"
         to="/contributions">
@@ -44,39 +47,50 @@
         to="/pay-group">
           <i18n>Pay Group</i18n>
       </list-item>
-
-      <list-item v-if="ephemeral.isCollapseOpen" tag="router-link" variant="secondary" icon="gear" to="/group-settings">
-          <i18n>Settings</i18n>
+      <list-item tag="router-link" icon="comment"
+        to="/group-chat" :badgeCount="3">
+        <i18n>Group Chat</i18n>
       </list-item>
-      <list-item v-if="ephemeral.isCollapseOpen" tag="button" variant="secondary" icon="times" class="has-text-danger">
-          <i18n>Leave Group</i18n>
+      <list-item tag="router-link" icon="cog"
+        to="/group-settings">
+          <i18n>Group Settings</i18n>
       </list-item>
-
-      <list-item tag="button" variant="secondary"
-        :icon="ephemeral.isCollapseOpen ? 'angle-up' : 'angle-down'"
-        @click="toggleShowMore">
-          <i18n v-if="ephemeral.isCollapseOpen">Show less</i18n>
-          <i18n v-else>Show more</i18n>
-      </list-item>
-
     </list>
   </div>
 </template>
 <style lang="scss" scoped>
 @import "../../../assets/sass/theme/index";
 
+.c-menu-list {
+  li {
+    margin-bottom: 0.125rem;
+  }
+
+  & /deep/ .c-item-link{
+    &.is-active:hover,
+    &:hover{
+      background-color: $primary-bg-a;
+    }
+  }
+}
+
 .c-trigger-icon {
   color: inherit;
+  margin-left: auto;
+  margin-right: 0.5rem;
 }
 
 .c-trigger {
-  padding: $gi-spacer $gi-spacer-sm;
+  padding: 0 $gi-spacer-sm;
+  margin: 0 $gi-spacer-sm $gi-spacer-sm $gi-spacer-sm;
+  width: calc(100% - 1rem);
   line-height: 1;
   overflow: hidden;
+  background-color: $primary-bg-s;
 
   &:hover,
   &:focus {
-    background-color: $primary-bg-a;
+    background-color: $body-background-color;
   }
 }
 
@@ -88,6 +102,7 @@
 import { mapGetters, mapState } from 'vuex'
 import { List, ListItem } from '../../components/Lists/index.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuHeader, MenuItem } from '../../components/Menu/index.js'
+import Avatar from '../../components/Avatar.vue'
 
 export default {
   name: 'YourGroupsList',
@@ -98,14 +113,8 @@ export default {
     MenuTrigger,
     MenuItem,
     List,
-    ListItem
-  },
-  data () {
-    return {
-      ephemeral: {
-        isCollapseOpen: false
-      }
-    }
+    ListItem,
+    Avatar
   },
   computed: {
     ...mapState([
@@ -122,9 +131,6 @@ export default {
     },
     changeGroup (hash) {
       this.$store.commit('setCurrentGroupId', hash)
-    },
-    toggleShowMore () {
-      this.ephemeral.isCollapseOpen = !this.ephemeral.isCollapseOpen
     }
   }
 }

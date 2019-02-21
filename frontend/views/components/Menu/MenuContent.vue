@@ -9,7 +9,9 @@
 .c-content {
   position: absolute;
   top: 0;
-  left: 0;
+  left: $gi-spacer-sm;
+  right: $gi-spacer-sm;
+  width: auto;
   z-index: 2;
   border-radius: $radius;
   background-color: $body-background-color;

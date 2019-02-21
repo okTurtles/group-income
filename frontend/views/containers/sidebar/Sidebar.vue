@@ -14,32 +14,33 @@
 
     <div class="c-sidebar-body is-flex is-flex gi-is-justify-between">
       <div class="c-sidebar-body-top">
-        <list class="c-toplinks">
+        <list class="c-top-links">
           <list-item tag="router-link" to="/messages"
-            icon="comments"
+            icon="envelope"
             :badgeCount="2">
               <i18n>Messages</i18n>
           </list-item>
-          <list-item tag="router-link" to="/mailbox"
+          <!-- Keep it here atm until we remove completly the mailbox -->
+          <!-- <list-item tag="router-link" to="/mailbox"
             icon="envelope"
             data-test="mailboxLink"
             :badgeCount="unreadMessagesCount || activityCount">
               <i18n>Inbox (deprecated)</i18n>
-          </list-item>
+          </list-item> -->
         </list>
 
-        <groups-list></groups-list>
+        <groups-list class="c-group-list"></groups-list>
       </div>
 
       <div class="c-sidebar-body-bottom">
         <list>
-          <list-item tag="a" icon="external-link-square-alt" variant="secondary" href="https://groupincome.org/blog/" target="_blank">
+          <list-item tag="a" variant="secondary" href="https://groupincome.org/blog/" target="_blank">
               <i18n>Blog</i18n>
           </list-item>
-          <list-item tag="a" icon="question-circle" variant="secondary" href="https://groupincome.org/faq/" target="_blank">
+          <list-item tag="a" variant="secondary" href="https://groupincome.org/faq/" target="_blank">
               <i18n>Help & Feedback</i18n>
           </list-item>
-          <list-item tag="a" icon="heart" variant="secondary" href="https://groupincome.org/donate/" target="_blank">
+          <list-item tag="a" variant="secondary" href="https://groupincome.org/donate/" target="_blank">
               <i18n>Donate</i18n>
           </list-item>
         </list>
@@ -68,11 +69,11 @@ $speed: 300ms;
   background: $primary-bg-s; // solid
 
   &-header {
-    padding: $gi-spacer $gi-spacer 0;
+    padding: $gi-spacer $gi-spacer-sm $gi-spacer $gi-spacer;
+    margin-bottom: 0;
   }
 
   &-body {
-    padding: 0 $gi-spacer $gi-spacer;
     overflow: auto;
     flex-direction: column;
     flex-grow: 1;
@@ -93,11 +94,13 @@ $speed: 300ms;
 
   @include tablet {
     width: $gi-sidebar-width;
-
-    &-header {
-      padding-top: $gi-spacer*1.5;
-    }
   }
+}
+
+.c-group-list {
+  padding-top: 1rem;
+  padding-bottom: 0.8rem;
+  background-color: $primary-bg-a;
 }
 
 .c-toggle {
@@ -142,8 +145,8 @@ $speed: 300ms;
   }
 }
 
-.c-toplinks {
-  margin-bottom: $gi-spacer;
+.c-top-links {
+  margin-bottom: $gi-spacer-sm;
 }
 </style>
 <script>

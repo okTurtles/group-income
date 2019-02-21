@@ -10,7 +10,6 @@
   &.is-icon {
     background-color: transparent;
     border: none;
-    color: $grey;
     padding: 0;
     min-height: auto;
     width: $gi-spacer-lg;
@@ -35,10 +34,14 @@
   .field.has-addons & {
     min-height: auto; // is an input's addon
   }
-}
 
-.button.is-success.is-outlined {
-  color: darken($success, 5%); // A11Y purposes
+  &.is-success.is-outlined {
+    color: darken($success, 5%); // A11Y purposes
+  }
+
+  &.has-background {
+    color: $light-grey;
+  }
 }
 
 .buttons {

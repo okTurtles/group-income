@@ -1,6 +1,7 @@
 <template>
   <li class="c-item" :class="{ 'has-divider': hasDivider }">
     <component :is="tag"
+      class="no-border"
       :class="itemLinkClasses"
       :active-class="tag === 'router-link' && 'is-active'"
       v-bind="$attrs" v-on="$listeners"
@@ -15,6 +16,8 @@
 @import "../../../assets/sass/theme/index";
 
 .c-item {
+  padding: 0 $gi-spacer-sm;
+
   &.has-divider {
     margin-bottom: $gi-spacer-sm;
     padding-bottom: $gi-spacer-sm;
@@ -31,23 +34,10 @@
 .c-item-link {
   display: flex;
   width: 100%;
-  padding: $gi-spacer-sm;
+  padding: 0.375rem $gi-spacer-sm 0.3125rem $gi-spacer-sm;
   color: $text;
   cursor: pointer;
   border-radius: $radius;
-
-  &.no-radius {
-    border-radius: 0;
-  }
-
-  &.secondary {
-    color: $grey;
-  }
-
-  .fa {
-    color: $grey;
-    margin-right: $gi-spacer;
-  }
 
   &:hover,
   &:focus {
@@ -62,12 +52,40 @@
     }
   }
 
-  &.is-active {
-    &,
+  &.no-radius {
+    border-radius: 0;
+  }
+
+  &.secondary {
+    color: $grey;
+    padding: $gi-spacer-xs $gi-spacer-sm;
+    letter-spacing: -0.01rem;
+
     &:hover,
     &:focus {
-      background-color: $primary-bg-s;
-      font-weight: 600;
+      background-color: transparent;
+      color: $text;
+    }
+  }
+
+  .fa {
+    color: $grey;
+    margin-right: $gi-spacer;
+    font-size: 0.77rem;
+  }
+
+  &.is-active {
+    font-weight: 600;
+
+    .fa {
+      color: $primary;
+    }
+  }
+
+  &.is-active {
+    &:hover,
+    &:focus {
+      background-color: $primary-bg-a;
     }
 
     .fa {

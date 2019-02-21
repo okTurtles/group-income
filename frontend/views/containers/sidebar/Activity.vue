@@ -39,6 +39,10 @@
   font-weight: 600;
 }
 
+.fa-bell {
+  font-size: 0.7rem;
+}
+
 .c-content {
   left: 2rem;
   width: 15rem;
