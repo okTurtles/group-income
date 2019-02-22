@@ -1,7 +1,7 @@
 <template>
   <div v-if="groupsByName.length">
     <menu-parent @select="handleMenuSelect">
-      <menu-trigger hideWhenActive class="c-trigger is-fullwidth has-text-black has-text-weight-bold is-size-6 gi-is-unstyled">
+      <menu-trigger class="c-trigger is-fullwidth has-text-black has-text-weight-bold is-size-6 gi-is-unstyled">
         <!-- TODO: Once the groupPicture is implemented :src="groupPicture" :alt="group.groupName"-->
         <avatar class="c-avatar"
           size="sm"
@@ -13,7 +13,7 @@
         <i class="fa fa-angle-down c-fa c-trigger-icon"></i>
       </menu-trigger>
 
-      <menu-content class="c-content">
+      <menu-content>
         <menu-header>
           <i18n>Your Groups</i18n>
         </menu-header>
@@ -94,8 +94,8 @@
   }
 }
 
-.c-content {
-  width: 100%;
+/deep/ .c-content {
+  width: auto;
 }
 </style>
 <script>

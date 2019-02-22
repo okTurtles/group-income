@@ -39,9 +39,14 @@
   span {
     color: $text-light;
   }
-
+}
+/deep/ .button {
   .fa-cog {
     font-size: 0.7rem;
+    transition: transform ease-out .3s;
+  }
+  &:hover .fa-cog {
+    transform: rotate(180deg);
   }
 }
 </style>

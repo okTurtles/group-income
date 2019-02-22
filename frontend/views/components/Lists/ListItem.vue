@@ -38,9 +38,15 @@
   color: $text;
   cursor: pointer;
   border-radius: $radius;
+  transition: background-color ease-out .3s;
+
+  .fa {
+    transition: transform cubic-bezier(0.18, 0.89, 0.32, 1.28) .3s;
+  }
 
   &:hover,
   &:focus {
+    transition: none;
     background-color: $primary-bg-a;
 
     &.solid {
@@ -49,6 +55,7 @@
 
     .fa {
       color: inherit;
+      transform: scale(1.1)
     }
   }
 

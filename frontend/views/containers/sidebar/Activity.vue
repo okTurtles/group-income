@@ -39,8 +39,24 @@
   font-weight: 600;
 }
 
-.fa-bell {
-  font-size: 0.7rem;
+/deep/ {
+  .fa-bell {
+    font-size: 0.7rem;
+  }
+
+  .button:hover {
+    .fa-bell {
+      font-size: 0.7rem;
+      animation: bell 750ms forwards;
+    }
+  }
+}
+
+@keyframes bell {
+  10% { transform: rotate(15deg); }
+  20% { transform: rotate(-15deg); }
+  35% { transform: rotate(15deg); }
+  50% { transform: rotate(-15deg); }
 }
 
 .c-content {

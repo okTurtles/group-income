@@ -7,7 +7,7 @@
 @import "../../../assets/sass/theme/index";
 
 .c-header {
-  padding: $gi-spacer $gi-spacer-sm 0;
+  padding: $gi-spacer $gi-spacer 0;
 }
 </style>
 <script>
