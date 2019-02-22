@@ -42,6 +42,7 @@
 /deep/ {
   .fa-bell {
     font-size: 0.7rem;
+    transform-origin: center 2px;
   }
 
   .button:hover {
@@ -56,7 +57,8 @@
   10% { transform: rotate(15deg); }
   20% { transform: rotate(-15deg); }
   35% { transform: rotate(15deg); }
-  50% { transform: rotate(-15deg); }
+  60% { transform: rotate(-10deg); }
+  80% { transform: rotate(5deg); }
 }
 
 .c-content {

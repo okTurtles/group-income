@@ -41,7 +41,7 @@
   transition: background-color ease-out .3s;
 
   .fa {
-    transition: transform cubic-bezier(0.18, 0.89, 0.32, 1.28) .3s;
+    transition: transform cubic-bezier(0.18, 0.89, 0.32, 1.28) .3s, color ease-in .3s;
   }
 
   &:hover,
