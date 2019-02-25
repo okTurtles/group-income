@@ -20,16 +20,18 @@
             :badgeCount="2">
               <i18n>Messages</i18n>
           </list-item>
-          <!-- Keep it here atm until we remove completly the mailbox -->
-          <!-- <list-item tag="router-link" to="/mailbox"
-            icon="envelope"
-            data-test="mailboxLink"
-            :badgeCount="unreadMessagesCount || activityCount">
-              <i18n>Inbox (deprecated)</i18n>
-          </list-item> -->
         </list>
 
         <groups-list class="c-group-list"></groups-list>
+
+        <!-- Keep it here atm until we remove completly the mailbox -->
+        <list-item tag="router-link" to="/mailbox"
+          style="opacity: 0; cursor: default;"
+          icon="envelope"
+          data-test="mailboxLink"
+          :badgeCount="unreadMessagesCount || activityCount">
+            <i18n>Inbox (deprecated)</i18n>
+        </list-item>
       </div>
 
       <div class="c-sidebar-body-bottom">

@@ -97,6 +97,15 @@
           </button>
         </div>
       </form>
+      <!-- TODO: Integrate with better design -->
+      <br>
+      <div class="has-text-centered button-box">
+        <button class="button is-danger is-large"
+          data-test="logoutBtn"
+          @click.prevent="logout">
+          <i18n>Log Out</i18n>
+        </button>
+      </div>
       <br>
       <form ref="GroupProfileForm"
             name="GroupProfileForm"
@@ -324,6 +333,9 @@ export default {
         console.log(ex)
         this.groupErrorMsg = L('Failed to Save Group Profile')
       }
+    },
+    logout () {
+      this.$store.dispatch('logout')
     }
   }
 }

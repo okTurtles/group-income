@@ -74,11 +74,11 @@ export default {
     userName () {
       return this.$store.state.loggedIn.name
     }
-  },
-  methods: {
-    logout () {
-      this.$store.dispatch('logout')
-    }
+  // },
+  // methods: {
+  //   logout () {
+  //     this.$store.dispatch('logout')
+  //   }
   }
 }
 </script>
