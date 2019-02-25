@@ -38,10 +38,13 @@
   color: $text;
   cursor: pointer;
   border-radius: $radius;
-  transition: background-color ease-out .3s;
+  transition: background-color ease-out 0.3s;
 
   .fa {
-    transition: transform cubic-bezier(0.18, 0.89, 0.32, 1.28) .3s, color ease-in .3s;
+    margin-right: $gi-spacer;
+    font-size: 0.77rem;
+    color: $grey;
+    transition: transform cubic-bezier(0.18, 0.89, 0.32, 1.28) 0.3s, color ease-in 0.3s;
   }
 
   &:hover,
@@ -55,7 +58,7 @@
 
     .fa {
       color: inherit;
-      transform: scale(1.1)
+      transform: scale(1.1);
     }
   }
 
@@ -75,28 +78,16 @@
     }
   }
 
-  .fa {
-    color: $grey;
-    margin-right: $gi-spacer;
-    font-size: 0.77rem;
-  }
-
   &.is-active {
     font-weight: 600;
 
     .fa {
       color: $primary;
     }
-  }
 
-  &.is-active {
     &:hover,
     &:focus {
       background-color: $primary-bg-a;
-    }
-
-    .fa {
-      color: $primary;
     }
   }
 }

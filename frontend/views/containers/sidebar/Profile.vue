@@ -28,7 +28,7 @@
 .c-profile {
   background-color: $primary-bg-a;
   padding: $gi-spacer-sm;
-  margin-top: .75rem;
+  margin-top: 0.75rem;
 }
 
 .c-user {
@@ -40,11 +40,13 @@
     color: $text-light;
   }
 }
+
 /deep/ .button {
   .fa-cog {
     font-size: 0.7rem;
-    transition: transform ease-out .3s;
+    transition: transform ease-out 0.3s;
   }
+
   &:hover .fa-cog {
     transform: rotate(180deg);
   }

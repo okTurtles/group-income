@@ -66,9 +66,9 @@
     margin-bottom: 0.125rem;
   }
 
-  & /deep/ .c-item-link{
+  & /deep/ .c-item-link {
     &.is-active:hover,
-    &:hover{
+    &:hover {
       background-color: $primary-bg-a;
     }
   }
@@ -89,17 +89,18 @@
   background-color: $primary-bg-s;
   transition: background-color ease-in 0.3s;
 
+  /deep/ .c-avatar {
+    transition: transform cubic-bezier(0.18, 0.89, 0.32, 1.28) 0.3s;
+  }
+
   &:hover,
   &:focus {
     transition: none;
     background-color: $body-background-color;
+
     /deep/ .c-avatar {
       transform: scale(1.05);
     }
-  }
-
-  /deep/ .c-avatar {
-    transition: transform cubic-bezier(0.18, 0.89, 0.32, 1.28) 0.3s;
   }
 }
 
