@@ -6,7 +6,7 @@
     <div class="c-sidebar-header level is-mobile">
       <h1 class="gi-sr-only">Main Menu</h1>
       <router-link to="/home" class="no-border">
-        <img src="/assets/images/logo-transparent.png" alt="GroupIncome's logo" class="gi-logo c-logo level-left">
+        <img :src="logo" alt="GroupIncome's logo" class="gi-logo c-logo level-left">
       </router-link>
       <!--  NOTE/REVIEW: If we follow Messages GIBot approach, the bell icon wont be needed -->
       <activity :activityCount="activityCount"></activity>
@@ -17,6 +17,7 @@
         <list class="c-top-links">
           <list-item tag="router-link" to="/messages"
             icon="envelope"
+            :class="`has-text-${isDarkTheme ? 'white' : 'dark'}`"
             :badgeCount="2">
               <i18n>Messages</i18n>
           </list-item>
@@ -66,8 +67,8 @@ $speed: 300ms;
   max-height: 100%;
   z-index: $gi-zindex-sidebar;
   flex-direction: column;
-  // background: linear-gradient(210deg, rgba($primary, 0.15), $body-background-color 20rem); // diagonal gradient
-  // background: linear-gradient(-90deg, $primary-bg-s, $body-background-color 15rem); // 90deg linear gradient
+  color: $primary-text;
+  background: $primary-bg-test;
   background: $primary-bg-s; // solid
 
   &-header {
@@ -156,6 +157,7 @@ import Activity from './Activity.vue'
 import GroupsList from './GroupsList.vue'
 import Profile from './Profile.vue'
 import { List, ListItem } from '../../components/Lists/index.js'
+import { mapGetters } from 'vuex'
 
 export default {
   name: 'SideBar',
@@ -174,12 +176,19 @@ export default {
     }
   },
   computed: {
+    ...mapGetters([
+      'isDarkTheme'
+    ]),
     activityCount () {
       // TODO: activityCount should really count unreadMessageCount?
       return this.$store.getters.unreadMessageCount || this.$store.getters.proposals.length
     },
     unreadMessagesCount () {
       return this.$store.getters.unreadMessageCount
+    },
+    logo () {
+      const name = this.$store.getters.colors.theme === 'dark' ? '-white' : ''
+      return `/assets/images/logo-transparent${name}.png`
     }
   },
   methods: {

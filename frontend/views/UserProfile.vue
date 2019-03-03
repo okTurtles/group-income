@@ -87,6 +87,16 @@
             </div>
           </div>
         </div>
+        <div class="panel">
+          <p class="panel-heading">
+            <i18n>Set theme</i18n>
+          </p>
+          <div class="panel-block">
+            <select name="" id="" @change="setTheme($event)">
+              <option :value="color.name" v-for="color in colors" v-bind:key="color.name">{{color.name}}</option>
+            </select>
+          </div>
+        </div>
         <div class="has-text-centered button-box">
           <button class="button is-success is-large"
             :disabled="$v.edited.$invalid"
@@ -241,6 +251,7 @@ import { validationMixin } from 'vuelidate'
 import { decimals } from './utils/validators.js'
 import { email, helpers } from 'vuelidate/lib/validators'
 import L from './utils/translations.js'
+import Colors from '../model/colors.js'
 
 const url = helpers.regex('url', /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i)
 
@@ -272,7 +283,8 @@ export default {
       errorMsg: null,
       groupErrorMsg: null,
       groupProfileSaved: false,
-      profileSaved: false
+      profileSaved: false,
+      colors: Colors
     }
   },
   validations: {
@@ -336,6 +348,9 @@ export default {
     },
     logout () {
       this.$store.dispatch('logout')
+    },
+    setTheme (event) {
+      this.$store.dispatch('setTheme', event.target.value)
     }
   }
 }

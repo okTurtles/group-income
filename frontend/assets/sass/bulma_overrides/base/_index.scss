@@ -6,12 +6,12 @@
 // Import Bulma's base module to be available on further overrides
 @import "../../node_modules/bulma/sass/base/minireset.sass";
 @import "generic.sass";
-@import "../../node_modules/bulma/sass/base/helpers.sass";
+@import "helpers.sass";
 
 .has-text-warning {
-  color: darken($warning, 10%) !important; // A11Y purposes
+  color: var(--warning) !important; // A11Y purposes
 }
 
 .has-text-success {
-  color: darken($success, 3%) !important; // A11Y purposes
+  color: var(--success) !important; // A11Y purposes
 }

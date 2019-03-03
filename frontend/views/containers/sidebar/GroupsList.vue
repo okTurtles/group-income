@@ -1,7 +1,7 @@
 <template>
   <div v-if="groupsByName.length">
     <menu-parent @select="handleMenuSelect">
-      <menu-trigger class="c-trigger is-fullwidth has-text-black has-text-weight-bold is-size-6 gi-is-unstyled">
+      <menu-trigger class="c-trigger is-fullwidth has-text-weight-bold is-size-6 gi-is-unstyled"  :class="`has-text-${isDarkTheme ? 'white' : 'dark'}`">
         <!-- TODO: Once the groupPicture is implemented :src="groupPicture" :alt="group.groupName"-->
         <avatar class="c-avatar"
           size="sm"
@@ -33,7 +33,7 @@
       </menu-content>
     </menu-parent>
 
-    <list class="c-menu-list">
+    <list class="c-menu-list" :class="`has-text-${isDarkTheme ? 'white' : 'dark'}`">
       <!-- TODO/BUG: Mobile - hide navbar after going to a page -->
       <list-item tag="router-link" icon="columns"
         to="/dashboard">
@@ -97,9 +97,17 @@
   &:focus {
     transition: none;
     background-color: $body-background-color;
+    color: var(--primary-text-hover);
 
     /deep/ .c-avatar {
       transform: scale(1.05);
+    }
+  }
+
+  &.has-text-white{
+    &:hover,
+    &:focus {
+      color: var(--primary-text-hover) !important;
     }
   }
 }
@@ -132,7 +140,8 @@ export default {
     ]),
     ...mapGetters([
       'currentGroupState',
-      'groupsByName'
+      'groupsByName',
+      'isDarkTheme'
     ])
   },
   methods: {

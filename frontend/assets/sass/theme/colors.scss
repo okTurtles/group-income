@@ -6,20 +6,22 @@ $size-large: $size-5;
 @import "node_modules/bulma/sass/utilities/initial-variables";
 @import "node_modules/bulma/sass/utilities/functions";
 
-$primary: #5dc8f0;
-$primary-light: lighten($primary, 10%); // used on backgrounds
-$primary-text: darken($primary, 15%); // $primary is too light for texts - A11Y purposes
+$primary: var(--primary);
+$primarySaturated: var(--primarySaturated);
+$primary-light: var(--primary-light); // used on backgrounds
+$primary-text: var(--primary-text); // $primary is too light for texts - A11Y purposes
 
 // both colors are indentical on white bg: one is solid and another is transparent
-$primary-bg-s: lighten($primary, 28%);
-$primary-bg-a: rgba($primary, 0.2);
+$primary-bg-test: lighten(#5dc8f0, 28%);
+$primary-bg-s: var(--primary-bg-s);
+$primary-bg-a: var(--primary-bg-a);
 
-$secondary: #a0d10e;
-$tertiary: #f89201;
+$secondary: var(--secondary);
+$tertiary: var(--tertiary);
 
 $success: $secondary;
 $warning: $tertiary;
-$danger: lighten(adjust-hue($tertiary, -30%), 20%);
+$danger: var(--danger);
 $info: $primary-text;
 $link: $primary-text;
 $light: $white-ter;

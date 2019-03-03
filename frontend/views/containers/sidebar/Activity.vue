@@ -1,6 +1,6 @@
 <template>
     <menu-parent class="level-right">
-      <menu-trigger class="is-icon">
+      <menu-trigger class="is-icon" :class="{ 'has-text-white': isDarkTheme }">
         <i class="fa-bell" :class="activityCount ? 'far' : 'fas'"></i>
         <span class="c-badge" v-if="activityCount" data-test="alertNotification">{{ activityCount }}</span>
       </menu-trigger>
@@ -71,6 +71,7 @@
 }
 </style>
 <script>
+import { mapGetters } from 'vuex'
 import { List } from '../../components/Lists/index.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuHeader, MenuItem } from '../../components/Menu/index.js'
 
@@ -78,6 +79,11 @@ export default {
   name: 'Activity',
   props: {
     activityCount: Number
+  },
+  computed: {
+    ...mapGetters([
+      'isDarkTheme'
+    ])
   },
   components: {
     List,

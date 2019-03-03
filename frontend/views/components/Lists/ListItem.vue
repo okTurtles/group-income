@@ -35,7 +35,6 @@
   display: flex;
   width: 100%;
   padding: 0.375rem $gi-spacer-sm 0.3125rem $gi-spacer-sm;
-  color: $text;
   cursor: pointer;
   border-radius: $radius;
   transition: background-color ease-out 0.3s;
@@ -74,7 +73,6 @@
     &:hover,
     &:focus {
       background-color: transparent;
-      color: $text;
     }
   }
 
@@ -82,7 +80,7 @@
     font-weight: 600;
 
     .fa {
-      color: $primary;
+      color: var(--primary-saturated);
     }
 
     &:hover,

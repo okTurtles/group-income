@@ -35,8 +35,7 @@ $gi-zindex-header: 30;
   }
 }
 
-// TODO: Find a way to generated different import themes
-@import "kindergarten-professional";
+@import "colors";
 
 // Import Bulma's utilities module to be available on further overrides and vue components
 @import "node_modules/bulma/sass/utilities/all";
