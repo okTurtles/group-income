@@ -39,6 +39,7 @@
   font-weight: 600;
 }
 
+// https://vue-loader.vuejs.org/guide/scoped-css.html#deep-selectors
 /deep/ {
   .fa-bell {
     font-size: 0.7rem;

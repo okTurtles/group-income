@@ -41,6 +41,7 @@
   }
 }
 
+// https://vue-loader.vuejs.org/guide/scoped-css.html#deep-selectors
 /deep/ .button {
   .fa-cog {
     font-size: 0.7rem;
