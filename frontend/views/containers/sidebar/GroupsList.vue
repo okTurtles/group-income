@@ -104,7 +104,7 @@
     }
   }
 
-  &.has-text-white{
+  &.has-text-white {
     &:hover,
     &:focus {
       color: var(--primary-text-hover) !important;

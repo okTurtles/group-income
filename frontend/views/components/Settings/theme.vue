@@ -74,26 +74,26 @@ label {
   text-transform: capitalize;
 }
 
+svg {
+  transition: all 250ms cubic-bezier(0.4, 0.25, 0.3, 1);
+}
+
 .theme {
   position: relative;
   margin: 0 23px 18px 0;
   padding: 0;
   border: 0;
+
   &:hover {
     svg {
       transform: scale(1.05);
     }
     @each $i in from 1 through 20 {
       &:nth-child(#{$i}) {
-        animation: blink-animation .3s ($i * 100ms) steps(5, start)
+        animation: blink-animation 0.3s ($i * 100ms) steps(5, start);
       }
-
     }
   }
-}
-
-svg {
-  transition: all 250ms cubic-bezier(0.4, 0.25, 0.3, 1);
 }
 
 .placeholder:hover {
@@ -107,6 +107,7 @@ svg {
 
 .radio {
   display: none;
+
   + label {
     -webkit-tap-highlight-color: transparent;
     cursor: pointer;
@@ -115,7 +116,7 @@ svg {
 
     &::before,
     &::after {
-      content: '';
+      content: "";
       position: absolute;
       bottom: 17px;
       left: 3px;
@@ -137,22 +138,25 @@ svg {
       width: 12px;
       height: 12px;
       bottom: 14px;
-      left: 0px;
+      left: 0;
       background-color: transparent;
       border-width: 1px;
       transition: all 250ms cubic-bezier(0.4, 0.25, 0.3, 1);
     }
   }
+
   &:checked + label {
     .label-text {
       font-weight: bold;
     }
-    &:before {
+
+    &::before {
       background-color: #5dc8f0;
       border-color: transparent;
       transform: scale(1);
     }
-    &:after {
+
+    &::after {
       border-color: #000;
     }
   }
@@ -163,5 +167,4 @@ svg {
     opacity: 0;
   }
 }
-
 </style>
