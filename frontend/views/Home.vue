@@ -8,7 +8,9 @@
           <button @click="showLoginModal" class="button" data-test="loginBtn">
             <i18n>Login</i18n>
           </button>
-          <button @click="showSignUpModal" class="button is-primary" data-test="signupBtn">
+          <button class="button is-primary" data-test="signupBtn" autofocus
+            @click="showSignUpModal"
+            @keyup.enter="showSignUpModal">
             <i18n>Signup</i18n>
           </button>
         </div>
