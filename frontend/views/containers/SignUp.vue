@@ -19,7 +19,7 @@
             @input="debounceName"
             placeholder="username"
             ref="username"
-            autofocus
+            v-focus
             data-test="signName"
           >
           <span class="icon"><i class="fa fa-user"></i></span>
@@ -104,8 +104,16 @@ export default {
   components: {
     ModalTemplate
   },
-  inserted () {
-    this.$refs.username.focus()
+  data () {
+    return {
+      form: {
+        name: null,
+        password: null,
+        email: null,
+        response: '',
+        error: false
+      }
+    }
   },
   methods: {
     debounceName: debounce(function (e) {
@@ -116,73 +124,65 @@ export default {
       this.$v.form.name.$touch()
     }, 700),
     submit: async function () {
-      try {
-        let user = sbp('gi/contract/create', 'IdentityContract', {
-          // authorizations: [Events.CanModifyAuths.dummyAuth()],
-          attributes: {
-            name: this.form.name,
-            email: this.form.email,
-            picture: `${window.location.origin}/assets/images/default-avatar.png`
-          }
-        })
-        let mailbox = sbp('gi/contract/create', 'MailboxContract', {
-          // authorizations: [Events.CanModifyAuths.dummyAuth(user.hash())]
-        })
-        await sbp('backend/publishLogEntry', user)
-        await sbp('backend/publishLogEntry', mailbox)
+      // Prevent autocomplete submission when empty field
+      if (this.form.name !== null && this.form.email !== null) {
+        try {
+          let user = sbp('gi/contract/create', 'IdentityContract', {
+            // authorizations: [Events.CanModifyAuths.dummyAuth()],
+            attributes: {
+              name: this.form.name,
+              email: this.form.email,
+              picture: `${window.location.origin}/assets/images/default-avatar.png`
+            }
+          })
+          let mailbox = sbp('gi/contract/create', 'MailboxContract', {
+            // authorizations: [Events.CanModifyAuths.dummyAuth(user.hash())]
+          })
+          await sbp('backend/publishLogEntry', user)
+          await sbp('backend/publishLogEntry', mailbox)
 
-        // set the attribute *after* publishing the identity contract
-        let attribute = await sbp('gi/contract/create-action', 'IdentitySetAttributes',
-          { mailbox: mailbox.hash() },
-          user.hash()
-        )
-        await sbp('backend/publishLogEntry', attribute)
-        // register our username if contract creation worked out
-        await sbp('namespace/register', this.form.name, user.hash())
-        // call syncContractWithServer on all of these contracts to:
-        // 1. begin monitoring the contracts for updates via the pubsub system
-        // 2. add these contracts to our vuex state
-        for (let contract of [user, mailbox]) {
-          await this.$store.dispatch('syncContractWithServer', contract.hash())
+          // set the attribute *after* publishing the identity contract
+          let attribute = await sbp('gi/contract/create-action', 'IdentitySetAttributes',
+            { mailbox: mailbox.hash() },
+            user.hash()
+          )
+          await sbp('backend/publishLogEntry', attribute)
+          // register our username if contract creation worked out
+          await sbp('namespace/register', this.form.name, user.hash())
+          // call syncContractWithServer on all of these contracts to:
+          // 1. begin monitoring the contracts for updates via the pubsub system
+          // 2. add these contracts to our vuex state
+          for (let contract of [user, mailbox]) {
+            await this.$store.dispatch('syncContractWithServer', contract.hash())
+          }
+          // TODO: Just add cryptographic magic
+          // TODO: login also calls 'syncContractWithServer', this is duplication!
+          await this.$store.dispatch('login', {
+            name: this.form.name,
+            identityContractId: user.hash()
+          })
+          sbp('okTurtles.events/emit', CLOSE_MODAL)
+          this.form.response = 'success' // TODO: get rid of this and fix/update tests accordingly
+          if (this.$route.query.next) {
+            // TODO: get rid of this timeout and fix/update tests accordingly
+            setTimeout(() => {
+              this.$router.push({ path: this.$route.query.next })
+            }, 1000)
+          } else {
+            this.$router.push({ path: '/' })
+          }
+          this.form.error = false
+        } catch (ex) {
+          // TODO: this should be done via dispatch
+          this.$store.commit('logout')
+          console.log(ex)
+          this.form.response = ex.toString()
+          this.form.error = true
         }
-        // TODO: Just add cryptographic magic
-        // TODO: login also calls 'syncContractWithServer', this is duplication!
-        await this.$store.dispatch('login', {
-          name: this.form.name,
-          identityContractId: user.hash()
-        })
-        sbp('okTurtles.events/emit', CLOSE_MODAL)
-        this.form.response = 'success' // TODO: get rid of this and fix/update tests accordingly
-        if (this.$route.query.next) {
-          // TODO: get rid of this timeout and fix/update tests accordingly
-          setTimeout(() => {
-            this.$router.push({ path: this.$route.query.next })
-          }, 1000)
-        } else {
-          this.$router.push({ path: '/' })
-        }
-        this.form.error = false
-      } catch (ex) {
-        // TODO: this should be done via dispatch
-        this.$store.commit('logout')
-        console.log(ex)
-        this.form.response = ex.toString()
-        this.form.error = true
       }
     },
     showLoginModal () {
       sbp('okTurtles.events/emit', LOAD_MODAL, 'LoginModal')
-    }
-  },
-  data () {
-    return {
-      form: {
-        name: null,
-        password: null,
-        email: null,
-        response: '',
-        error: false
-      }
     }
   },
   validations: {

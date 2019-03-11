@@ -5,12 +5,16 @@
         <br>
         <h1 class="title is-3"><i18n>Welcome to GroupIncome</i18n></h1>
         <div v-if="!$store.state.loggedIn" class="c-actions">
-          <button @click="showLoginModal" class="button" data-test="loginBtn">
+          <button  class="button" data-test="loginBtn"
+            ref="loginBtn"
+            @click="openModal('LoginModal')"
+            :disabled="isModalOpen">
             <i18n>Login</i18n>
           </button>
-          <button class="button is-primary" data-test="signupBtn" autofocus
-            @click="showSignUpModal"
-            @keyup.enter="showSignUpModal">
+          <button class="button is-primary" data-test="signupBtn"
+            ref="signupBtn"
+            @click="openModal('SignUp')"
+            @keyup.enter="openModal('SignUp')" :disabled="isModalOpen">
             <i18n>Signup</i18n>
           </button>
         </div>
@@ -24,12 +28,6 @@
           </router-link>
         </div>
       </div>
-
-      <!-- TODO: Let's leave login-modal here Until we decide how to approach Modals logic -->
-      <!-- <login-modal
-        v-if="loginModalVisible"
-        @close="closeLoginModal"
-      /> -->
     </main>
 </template>
 <style scoped lang="scss">
@@ -54,23 +52,43 @@
   margin-bottom: $gi-spacer-lg;
 }
 </style>
+
 <script>
 import sbp from '../../shared/sbp.js'
-import { LOAD_MODAL } from '../utils/events'
+import { LOAD_MODAL, CLOSE_MODAL } from '../utils/events'
 
 export default {
   name: 'Home',
-  mounted () {
-    if (this.$route.query.next) {
-      this.showLoginModal()
+  data () {
+    return {
+      isModalOpen: false,
+      lastFocus: 'signupBtn'
     }
   },
+  mounted () {
+    sbp('okTurtles.events/on', CLOSE_MODAL, this.enableSubmit)
+    if (this.$route.query.next) {
+      this.openModal('LoginModal')
+    } else {
+      this.enableSubmit()
+      // Fix firefox autofocus
+      process.nextTick(() => this.$refs[this.lastFocus].focus())
+    }
+  },
+  beforeDestroy () {
+    sbp('okTurtles.events/off', CLOSE_MODAL, this.enableSubmit)
+  },
   methods: {
-    showLoginModal () {
-      sbp('okTurtles.events/emit', LOAD_MODAL, 'LoginModal')
+    openModal (mode) {
+      this.isModalOpen = true
+      // Keep track of user last action
+      this.lastFocus = mode === 'SignUp' ? 'signupBtn' : 'loginBtn'
+      sbp('okTurtles.events/emit', LOAD_MODAL, mode)
     },
-    showSignUpModal () {
-      sbp('okTurtles.events/emit', LOAD_MODAL, 'SignUp')
+    enableSubmit () {
+      this.isModalOpen = false
+      // Enable focus on button and fix for firefox
+      this.$nextTick(() => this.$refs[this.lastFocus].focus())
     }
   }
 }
