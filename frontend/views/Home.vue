@@ -66,13 +66,15 @@ export default {
     }
   },
   mounted () {
-    sbp('okTurtles.events/on', CLOSE_MODAL, this.enableSubmit)
     if (this.$route.query.next) {
       this.openModal('LoginModal')
     } else {
-      this.enableSubmit()
-      // Fix firefox autofocus
-      process.nextTick(() => this.$refs[this.lastFocus].focus())
+      if (!this.$store.state.loggedIn) {
+        sbp('okTurtles.events/on', CLOSE_MODAL, this.enableSubmit)
+        this.enableSubmit()
+        // Fix firefox autofocus
+        process.nextTick(() => this.$refs[this.lastFocus].focus())
+      }
     }
   },
   beforeDestroy () {
@@ -87,8 +89,10 @@ export default {
     },
     enableSubmit () {
       this.isModalOpen = false
-      // Enable focus on button and fix for firefox
-      this.$nextTick(() => this.$refs[this.lastFocus].focus())
+      if (!this.$store.state.loggedIn) {
+        // Enable focus on button and fix for firefox
+        this.$nextTick(() => this.$refs[this.lastFocus].focus())
+      }
     }
   }
 }

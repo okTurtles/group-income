@@ -161,7 +161,6 @@ export default {
             name: this.form.name,
             identityContractId: user.hash()
           })
-          sbp('okTurtles.events/emit', CLOSE_MODAL)
           this.form.response = 'success' // TODO: get rid of this and fix/update tests accordingly
           if (this.$route.query.next) {
             // TODO: get rid of this timeout and fix/update tests accordingly
@@ -171,10 +170,9 @@ export default {
           } else {
             this.$router.push({ path: '/' })
           }
-          this.form.error = false
+          sbp('okTurtles.events/emit', CLOSE_MODAL)
         } catch (ex) {
-          // TODO: this should be done via dispatch
-          this.$store.commit('logout')
+          this.$store.dispatch('logout')
           console.log(ex)
           this.form.response = ex.toString()
           this.form.error = true
