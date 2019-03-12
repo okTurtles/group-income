@@ -92,7 +92,7 @@
             <i18n>Set theme</i18n>
           </p>
           <div class="panel-block">
-            <select name="" id="" @change="setTheme($event)">
+            <select name="" id="" @change="setTheme($event)" v-model='theme'>
               <option :value="color.name" v-for="color in colors" v-bind:key="color.name">{{color.name}}</option>
             </select>
           </div>
@@ -280,6 +280,7 @@ export default {
         receivingLimitCurrency: null
       },
       currentGroupContractId: this.$store.state.currentGroupId,
+      theme: this.$store.state.theme,
       errorMsg: null,
       groupErrorMsg: null,
       groupProfileSaved: false,
