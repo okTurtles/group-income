@@ -335,7 +335,6 @@ const actions = {
     { commit }: {commit: Function},
     colors: String
   ) {
-    console.log(colors)
     commit('setTheme', colors)
   }
 }
