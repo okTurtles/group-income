@@ -43,8 +43,8 @@ export default {
     'tertiary': '#f89201',
     'danger': '#FC6F6F'
   },
-  'dark': {
-    'name': 'dark',
+  'black & white': {
+    'name': 'black & white',
     'theme': 'dark',
     'primary': '#5dc8f0',
     'primaryBG': '#363636',
