@@ -173,7 +173,6 @@ export default {
           sbp('okTurtles.events/emit', CLOSE_MODAL)
         } catch (ex) {
           this.$store.dispatch('logout')
-          console.log(ex)
           this.form.response = ex.toString()
           this.form.error = true
         }
