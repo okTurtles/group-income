@@ -1,9 +1,9 @@
 <template>
-  <div class="modal is-active" data-test="modal" v-if="isActive" role='dialog'>
-    <div class="modal-background" @click="closeModal"></div>
+  <div class="modal is-active" data-test="modal" v-if="isActive" role='dialog' @keyup.esc="close">
+    <div class="modal-background" @click="close"></div>
 
     <div class="modal-card" ref="card">
-      <button class="delete" aria-label="close" @click="closeModal"></button>
+      <button class="delete" @click.self="close"></button>
 
       <header class="modal-card-head has-text-centered" v-if="$scopedSlots.title || $scopedSlots.subTitle">
         <h1 class="modal-card-title title is-size-5 is-marginless has-text-text-light"  v-if="$scopedSlots.title">
@@ -46,7 +46,6 @@ export default {
     }
   },
   mounted () {
-    window.addEventListener('keyup', this.handleKeyUp)
     this.isActive = true
     sbp('okTurtles.events/on', OPEN_MODAL, this.openModal)
     sbp('okTurtles.events/on', CLOSE_MODAL, this.closeModal)
@@ -54,12 +53,15 @@ export default {
   beforeDestroy () {
     sbp('okTurtles.events/off', OPEN_MODAL, this.openModal)
     sbp('okTurtles.events/off', CLOSE_MODAL, this.closeModal)
-    window.removeEventListener('keyup', this.handleKeyUp)
   },
   methods: {
-    handleKeyUp (event) {
-      if (event.key === 'Escape' && this.isActive) {
-        this.closeModal()
+    close (e) {
+      // To remove when @keyup.esc Vue bug is fixed
+      const isEscapeKey = e.key === 'Escape'
+      // Fix the bug where keyboard event trigger click type event
+      const isCloseButtonClick = e.type === 'click' && e.screenX !== 0
+      if (isEscapeKey || isCloseButtonClick) {
+        sbp('okTurtles.events/emit', 'close-modal')
       }
     },
     openModal () {
@@ -67,7 +69,6 @@ export default {
     },
     closeModal () {
       this.isActive = false
-      this.$emit('close')
     }
   }
 }

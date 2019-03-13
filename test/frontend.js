@@ -27,7 +27,9 @@ function page (page) {
 //       `n.use(logout())` we do `n.logoutIfLoggedIn()` or `n.logoutAndLogin()`?)
 function logout () {
   return function (n) {
-    n.click(elT('logoutBtn'))
+    n.click(elT('profileLink'))
+     .wait(elT('profilePicture'))
+     .click(elT('logoutBtn'))
   }
 }
 

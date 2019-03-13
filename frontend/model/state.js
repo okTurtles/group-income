@@ -11,6 +11,7 @@ import contracts from './contracts.js'
 import * as _ from '../utils/giLodash.js'
 import * as db from './database.js'
 import { LOGIN, LOGOUT, EVENT_HANDLED } from '../utils/events.js'
+import Colors from './colors.js'
 
 // babel transforms lodash imports: https://github.com/lodash/babel-plugin-lodash#faq
 // for diff between 'lodash/map' and 'lodash/fp/map'
@@ -49,7 +50,8 @@ const state = {
   currentGroupId: null,
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
-  loggedIn: false // false | { name: string, identityContractId: string }
+  loggedIn: false, // false | { name: string, identityContractId: string }
+  theme: 'blue'
 }
 
 // Mutations must be synchronous! Never call these directly!
@@ -65,7 +67,7 @@ const mutations = {
     sbp('okTurtles.events/emit', LOGOUT)
   },
   addContract (state, { contractID, type, HEAD, data }) {
-    // "Mutations Follow Vue's Reactivity Rules" - important for modifying objects
+    // 'Mutations Follow Vue's Reactivity Rules' - important for modifying objects
     // See: https://vuex.vuejs.org/en/mutations.html
     Vue.set(state.contracts, contractID, { type, HEAD })
     // copy over the initial state, making sure *not* to use cloneDeep on
@@ -114,6 +116,9 @@ const mutations = {
     if (!state.contracts[contractID] && !state.pending.includes(contractID)) {
       state.pending.push(contractID)
     }
+  },
+  setTheme (state, colors) {
+    state.theme = colors
   }
 }
 // https://vuex.vuejs.org/en/getters.html
@@ -194,6 +199,12 @@ const getters = {
       if (!groupId) return 0
       return Object.keys(state[groupId].profiles).length
     }
+  },
+  colors (state) {
+    return Colors[state.theme]
+  },
+  isDarkTheme () {
+    return Colors[state.theme].theme === 'dark'
   }
 }
 
@@ -235,6 +246,7 @@ const actions = {
       console.log('loadSettings:', settings)
       commit('setCurrentGroupId', settings.currentGroupId)
       commit('setContracts', settings.contracts || [])
+      commit('setTheme', settings.theme || 'dark')
     }
     await db.saveCurrentUser(user.name)
     // This may seem unintuitive to use the state from the global store object
@@ -269,7 +281,8 @@ const actions = {
           contractID,
           ...state.contracts[contractID], // inserts `HEAD` and `type`
           data: state[contractID]
-        }))
+        })),
+        theme: state.theme
       }
       console.log('saveSettings:', settings)
       await db.saveSettings(state.loggedIn.name, settings)
@@ -317,6 +330,12 @@ const actions = {
       console.error('[ERROR] exception in handleEvent!', e.message, e)
       throw e // TODO: handle this better
     }
+  },
+  async setTheme (
+    { commit }: {commit: Function},
+    colors: String
+  ) {
+    commit('setTheme', colors)
   }
 }
 const debouncedSave = _.debounce((dispatch, savedState) => dispatch('saveSettings', savedState), 500)

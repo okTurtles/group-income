@@ -6,7 +6,7 @@
     <div class="c-sidebar-header level is-mobile">
       <h1 class="gi-sr-only">Main Menu</h1>
       <router-link to="/home" class="no-border">
-        <img src="/assets/images/logo-transparent.png" alt="GroupIncome's logo" class="gi-logo c-logo level-left">
+        <img :src="logo" alt="GroupIncome's logo" class="gi-logo c-logo level-left">
       </router-link>
       <!--  NOTE/REVIEW: If we follow Messages GIBot approach, the bell icon wont be needed -->
       <activity :activityCount="activityCount"></activity>
@@ -14,32 +14,36 @@
 
     <div class="c-sidebar-body is-flex is-flex gi-is-justify-between">
       <div class="c-sidebar-body-top">
-        <list class="c-toplinks">
+        <list class="c-top-links">
           <list-item tag="router-link" to="/messages"
-            icon="comments"
+            icon="envelope"
+            :class="`has-text-${isDarkTheme ? 'white' : 'dark'}`"
             :badgeCount="2">
               <i18n>Messages</i18n>
           </list-item>
-          <list-item tag="router-link" to="/mailbox"
-            icon="envelope"
-            data-test="mailboxLink"
-            :badgeCount="unreadMessagesCount || activityCount">
-              <i18n>Inbox (deprecated)</i18n>
-          </list-item>
         </list>
 
-        <groups-list></groups-list>
+        <groups-list class="c-group-list"></groups-list>
+
+        <!-- Keep it here atm until we remove completly the mailbox -->
+        <list-item tag="router-link" to="/mailbox"
+          style="opacity: 0; cursor: default;"
+          icon="envelope"
+          data-test="mailboxLink"
+          :badgeCount="unreadMessagesCount || activityCount">
+            <i18n>Inbox (deprecated)</i18n>
+        </list-item>
       </div>
 
       <div class="c-sidebar-body-bottom">
         <list>
-          <list-item tag="a" icon="external-link-square-alt" variant="secondary" href="https://groupincome.org/blog/" target="_blank">
+          <list-item tag="a" variant="secondary" href="https://groupincome.org/blog/" target="_blank">
               <i18n>Blog</i18n>
           </list-item>
-          <list-item tag="a" icon="question-circle" variant="secondary" href="https://groupincome.org/faq/" target="_blank">
+          <list-item tag="a" variant="secondary" href="https://groupincome.org/faq/" target="_blank">
               <i18n>Help & Feedback</i18n>
           </list-item>
-          <list-item tag="a" icon="heart" variant="secondary" href="https://groupincome.org/donate/" target="_blank">
+          <list-item tag="a" variant="secondary" href="https://groupincome.org/donate/" target="_blank">
               <i18n>Donate</i18n>
           </list-item>
         </list>
@@ -63,16 +67,16 @@ $speed: 300ms;
   max-height: 100%;
   z-index: $gi-zindex-sidebar;
   flex-direction: column;
-  // background: linear-gradient(210deg, rgba($primary, 0.15), $body-background-color 20rem); // diagonal gradient
-  // background: linear-gradient(-90deg, $primary-bg-s, $body-background-color 15rem); // 90deg linear gradient
+  color: $primary-text;
+  background: $primary-bg-test;
   background: $primary-bg-s; // solid
 
   &-header {
-    padding: $gi-spacer $gi-spacer 0;
+    padding: $gi-spacer $gi-spacer-sm $gi-spacer $gi-spacer;
+    margin-bottom: 0;
   }
 
   &-body {
-    padding: 0 $gi-spacer $gi-spacer;
     overflow: auto;
     flex-direction: column;
     flex-grow: 1;
@@ -93,11 +97,13 @@ $speed: 300ms;
 
   @include tablet {
     width: $gi-sidebar-width;
-
-    &-header {
-      padding-top: $gi-spacer*1.5;
-    }
   }
+}
+
+.c-group-list {
+  padding-top: 1rem;
+  padding-bottom: 0.8rem;
+  background-color: $primary-bg-a;
 }
 
 .c-toggle {
@@ -142,8 +148,8 @@ $speed: 300ms;
   }
 }
 
-.c-toplinks {
-  margin-bottom: $gi-spacer;
+.c-top-links {
+  margin-bottom: $gi-spacer-sm;
 }
 </style>
 <script>
@@ -151,6 +157,7 @@ import Activity from './Activity.vue'
 import GroupsList from './GroupsList.vue'
 import Profile from './Profile.vue'
 import { List, ListItem } from '../../components/Lists/index.js'
+import { mapGetters } from 'vuex'
 
 export default {
   name: 'SideBar',
@@ -169,12 +176,19 @@ export default {
     }
   },
   computed: {
+    ...mapGetters([
+      'isDarkTheme'
+    ]),
     activityCount () {
       // TODO: activityCount should really count unreadMessageCount?
       return this.$store.getters.unreadMessageCount || this.$store.getters.proposals.length
     },
     unreadMessagesCount () {
       return this.$store.getters.unreadMessageCount
+    },
+    logo () {
+      const name = this.$store.getters.colors.theme === 'dark' ? '-white' : ''
+      return `/assets/images/logo-transparent${name}.png`
     }
   },
   methods: {

@@ -10,7 +10,7 @@ $gi-spacer-md: $gi-spacer;
 $gi-spacer-sm: $gi-spacer / 2;
 $gi-spacer-xs: $gi-spacer / 4;
 
-$gi-sidebar-width: 15rem;
+$gi-sidebar-width: 14.375rem;
 
 // z-index constants
 // Why: https://css-tricks.com/handling-z-index/
@@ -35,8 +35,7 @@ $gi-zindex-header: 30;
   }
 }
 
-// TODO: Find a way to generated different import themes
-@import "kindergarten-professional";
+@import "colors";
 
 // Import Bulma's utilities module to be available on further overrides and vue components
 @import "node_modules/bulma/sass/utilities/all";

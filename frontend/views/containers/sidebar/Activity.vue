@@ -1,6 +1,6 @@
 <template>
     <menu-parent class="level-right">
-      <menu-trigger class="is-icon">
+      <menu-trigger class="is-icon" :class="{ 'has-text-white': isDarkTheme }">
         <i class="fa-bell" :class="activityCount ? 'far' : 'fas'"></i>
         <span class="c-badge" v-if="activityCount" data-test="alertNotification">{{ activityCount }}</span>
       </menu-trigger>
@@ -39,6 +39,29 @@
   font-weight: 600;
 }
 
+// https://vue-loader.vuejs.org/guide/scoped-css.html#deep-selectors
+/deep/ {
+  .fa-bell {
+    font-size: 0.7rem;
+    transform-origin: center 2px;
+  }
+
+  .button:hover {
+    .fa-bell {
+      font-size: 0.7rem;
+      animation: bell 750ms forwards;
+    }
+  }
+}
+
+@keyframes bell {
+  10% { transform: rotate(15deg); }
+  20% { transform: rotate(-15deg); }
+  35% { transform: rotate(15deg); }
+  60% { transform: rotate(-10deg); }
+  80% { transform: rotate(5deg); }
+}
+
 .c-content {
   left: 2rem;
   width: 15rem;
@@ -49,6 +72,7 @@
 }
 </style>
 <script>
+import { mapGetters } from 'vuex'
 import { List } from '../../components/Lists/index.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuHeader, MenuItem } from '../../components/Menu/index.js'
 
@@ -56,6 +80,11 @@ export default {
   name: 'Activity',
   props: {
     activityCount: Number
+  },
+  computed: {
+    ...mapGetters([
+      'isDarkTheme'
+    ])
   },
   components: {
     List,

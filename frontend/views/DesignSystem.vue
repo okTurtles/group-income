@@ -77,6 +77,7 @@
           <th>code</th>
           <th>usage</th>
         </thead>
+
         <tr v-for="(color, index) in config.colors.brand" :key="`brand-color-${index}`">
           <td class="is-narrow"><span class="c-palette" :class="`has-background-${color.name}`"></span></td>
           <td class="is-narrow"><code>${{color.name}} <template v-if="!color.noClass"><br/>.has-background-{{color.name}}</template></code></td>
