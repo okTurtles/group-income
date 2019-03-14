@@ -51,7 +51,7 @@ const state = {
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { name: string, identityContractId: string }
-  theme: 'dark'
+  theme: 'blue'
 }
 
 // Mutations must be synchronous! Never call these directly!
@@ -335,7 +335,6 @@ const actions = {
     { commit }: {commit: Function},
     colors: String
   ) {
-    console.log(colors)
     commit('setTheme', colors)
   }
 }

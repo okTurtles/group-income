@@ -3,7 +3,11 @@
     <div class="level-left">
       <avatar :src="userPicture" hasMargin />
       <div class="c-user">
-        <p class="gi-is-ellipsis has-text-weight-bold" :class="`has-text-${isDarkTheme ? 'white' : 'dark'}`">{{userDisplayName ? userDisplayName : userName}}</p>
+        <p class="gi-is-ellipsis has-text-weight-bold"
+          :data-test="userDisplayName ? 'profileName' : 'profileDisplayName'"
+          :class="`has-text-${isDarkTheme ? 'white' : 'dark'}`">
+          {{userDisplayName ? userDisplayName : userName}}
+        </p>
         <span class="gi-is-ellipsis is-size-6" data-test="profileDisplayName" v-if="userDisplayName">{{userName}}</span>
       </div>
     </div>

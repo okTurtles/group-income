@@ -31,6 +31,7 @@ export default {
     lightenDarkenColor (col, amt) {
       return this.HSLToHex(...this.hexToHSLDarken(col, amt))
     },
+    // Modified version of https://stackoverflow.com/questions/21646738/convert-hex-to-rgba
     hexToRgbA (hex, alpha) {
       let c
       if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
@@ -43,6 +44,7 @@ export default {
       }
       throw new Error('Bad Hexa')
     },
+    // Modified version of https://gist.github.com/mjackson/5311256
     HSLToHex (h, s, l) {
       let r, g, b
       if (s === 0) {
@@ -68,6 +70,7 @@ export default {
       }
       return `#${toHex(r)}${toHex(g)}${toHex(b)}`
     },
+    // Modified version of https://gist.github.com/mjackson/5311256
     hexToHSLDarken (hex, increase) {
       const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
       let r = parseInt(result[1], 16)

@@ -13,6 +13,7 @@ import { LOGOUT } from './utils/events'
 import Sidebar from './views/containers/sidebar/Sidebar.vue'
 import Modal from './views/components/Modal/Modal.vue'
 import AppStyles from './views/components/AppStyles.vue'
+import './utils/autofocus.js'
 import './views/utils/v-style.js'
 import './lazyLoadedView.js'
 
