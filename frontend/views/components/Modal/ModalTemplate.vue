@@ -1,7 +1,8 @@
 <template>
   <div class="modal is-active" data-test="modal" v-if="isActive" role='dialog' @keyup.esc="close">
-    <div class="modal-background" @click="close"></div>
-
+    <transition name="fade" v-if="isActive" appear>
+      <div class="modal-background" @click="close"></div>
+    </transition>
     <div class="modal-card" ref="card">
 
       <header class="modal-card-head has-text-centered"
@@ -286,5 +287,4 @@ export default {
     }
   }
 }
-
 </style>
