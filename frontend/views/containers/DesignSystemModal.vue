@@ -109,6 +109,7 @@ input {
     font-size: 10px;
     letter-spacing: 0.1px;
   }
+
   &.fa-plus {
     font-size: 10px;
     margin-right: 3px;
