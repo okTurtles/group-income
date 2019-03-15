@@ -6,3 +6,6 @@ Vue.component('Mincome', () => import('./views/containers/proposals-form/Mincome
 Vue.component('RuleChangeRule', () => import('./views/containers/proposals-form/RuleChangeRule.vue'))
 Vue.component('RuleAddMember', () => import('./views/containers/proposals-form/RuleAddMember.vue'))
 Vue.component('RuleRemoveMember', () => import('./views/containers/proposals-form/RuleRemoveMember.vue'))
+
+// TODO Remove after design test period
+Vue.component('DesignSystemModal', () => import('./views/containers/DesignSystemModal.vue'))

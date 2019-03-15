@@ -4,7 +4,7 @@
     @submit.prevent="login">
     <modal-template class="is-small">
       <!-- https://vuejs.org/v2/guide/components-slots.html#Named-Slots-Shorthand -->
-      <template #subTitle>
+      <template #title>
         <i18n>Log In</i18n>
       </template>
 

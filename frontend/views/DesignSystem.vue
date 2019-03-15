@@ -22,11 +22,11 @@
           <th>demo</th>
         </thead>
         <tr v-for="(scale, index) in [1, 2, 3, 4, 5, 6, 7]" :key="index">
-          <td class="is-narrow"><code>.title .is-{{scale}}</code></td>
+          <td><code>.title .is-{{scale}}</code></td>
           <td class="title" :class="`is-${scale}`">Good morning everyone</td>
         </tr>
         <tr>
-          <td class="is-narrow"><code>.subtitle</code></td>
+          <td><code>.subtitle</code></td>
           <td class="subtitle">Good morning everyone</td>
         </tr>
       </table>
@@ -38,15 +38,15 @@
           <th>demo</th>
         </thead>
         <tr>
-          <td class="is-narrow">(default)</td>
+          <td>(default)</td>
           <td>A basic income, also called basic income guarantee, universal basic income (UBI), basic living stipend (BLS), or universal demogrant, is a type of program in which citizens (or permanent residents) of a country may receive a regular sum of money from a source such as the government. A pure or unconditional basic income has no means test, but unlike Social Security in the United States it is distributed automatically to all citizens without a requirement to notify changes in the citizen's financial status. Basic income can be implemented nationally, regionally or locally. The World Bank's World Development Report 2019 on the future of work describes the existing schemes around the world.</td>
         </tr>
         <tr>
-          <td class="is-narrow"><code>$text-light<br />.has-text-text-light</code></td>
+          <td><code>$text-light<br />.has-text-text-light</code></td>
           <td class="has-text-text-light">Use this color on non critical texts.</td>
         </tr>
         <tr>
-          <td class="is-narrow"><code>$link</code></td>
+          <td><code>$link</code></td>
           <td>Make sure <a href="#">the link is readable</a> for everyone, this is, accessible.</td>
         </tr>
       </table>
@@ -58,8 +58,8 @@
           <th>demo</th>
         </thead>
         <tr v-for="(spacer, index) in ['xs', 'sm', '', 'lg']" :key="index">
-          <td class="is-narrow" v-if="spacer"><code>$gi-spacer-{{spacer}}</code></td>
-          <td class="is-narrow" v-else><code>$gi-spacer</code></td>
+          <td v-if="spacer"><code>$gi-spacer-{{spacer}}</code></td>
+          <td v-else><code>$gi-spacer</code></td>
           <td><span class="c-spacer" :class="spacer"></span></td>
         </tr>
       </table>
@@ -79,8 +79,8 @@
         </thead>
 
         <tr v-for="(color, index) in config.colors.brand" :key="`brand-color-${index}`">
-          <td class="is-narrow"><span class="c-palette" :class="`has-background-${color.name}`"></span></td>
-          <td class="is-narrow"><code>${{color.name}} <template v-if="!color.noClass"><br/>.has-background-{{color.name}}</template></code></td>
+          <td><span class="c-palette" :class="`has-background-${color.name}`"></span></td>
+          <td><code>${{color.name}} <template v-if="!color.noClass"><br/>.has-background-{{color.name}}</template></code></td>
           <td v-html="color.usage"></td>
         </tr>
       </table>
@@ -93,8 +93,8 @@
           <th>usage</th>
         </thead>
         <tr v-for="(color, index) in config.colors.support" :key="`support-color-${index}`">
-          <td class="is-narrow"><span class="c-palette" :class="`has-background-${color.name}`"></span></td>
-          <td class="is-narrow"><code>${{color.name}} <template v-if="!color.noClass"><br/>.has-background-{{color.name}}</template></code></td>
+          <td><span class="c-palette" :class="`has-background-${color.name}`"></span></td>
+          <td><code>${{color.name}} <template v-if="!color.noClass"><br/>.has-background-{{color.name}}</template></code></td>
           <td v-html="color.usage"></td>
         </tr>
       </table>
@@ -132,13 +132,21 @@
         </slot>
       </message>
 
-      <h3 class="title is-4">Tooltips</h3>
+      <h2 class="title is-3 c-title">Tooltips</h2>
       <tooltip>
         TODO: update tooltip to be visible
         <template slot="tooltip">
           This is a tooltip. It has a maximum width of <strong>14rem</strong> (224px).
         </template>
       </tooltip>
+
+      <h2 class="title is-3 c-title">Modal</h2>
+
+      <div class="buttons">
+        <button class="button is-primary" @click="openModal('DesignSystemModal')">
+          <i18n>Open Modal</i18n>
+        </button>
+      </div>
     </section>
   </main>
 </template>
@@ -146,7 +154,9 @@
 @import "../assets/sass/theme/index";
 
 .c-design-system {
-  padding-bottom: 3rem;
+  max-width: 840px;
+  margin: 100px auto;
+  padding: 0 20px;
 }
 
 .c-title {
@@ -199,8 +209,10 @@
 }
 </style>
 <script>
+import sbp from '../../shared/sbp.js'
 import Message from './components/Message.vue'
 import Tooltip from './components/Tooltip.vue'
+import { LOAD_MODAL } from '../utils/events.js'
 
 export default {
   name: 'DesignSystemView',
@@ -265,6 +277,11 @@ export default {
   components: {
     Message,
     Tooltip
+  },
+  methods: {
+    openModal (mode) {
+      sbp('okTurtles.events/emit', LOAD_MODAL, mode)
+    }
   }
 }
 </script>

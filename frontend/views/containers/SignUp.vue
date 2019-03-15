@@ -3,9 +3,9 @@
     name="formData"
     data-test="signup"
     @submit.prevent="submit">
-    <modal-template class="is-small">
+    <modal-template>
       <!-- https://vuejs.org/v2/guide/components-slots.html#Named-Slots-Shorthand -->
-      <template #subTitle>
+      <template #title>
         <i18n>Sign Up</i18n>
       </template>
 
