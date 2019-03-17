@@ -1,5 +1,5 @@
 <template>
-  <div class="modal is-active" data-test="modal" v-if="isActive" role='dialog' @keyup.esc="close">
+  <div class="modal is-active" data-test="modal" v-if="isActive" role='dialog'>
     <transition name="fade" v-if="isActive" appear>
       <div class="modal-background" @click="close"></div>
     </transition>
@@ -51,6 +51,11 @@ export default {
     this.isActive = true
     sbp('okTurtles.events/on', OPEN_MODAL, this.openModal)
     sbp('okTurtles.events/on', CLOSE_MODAL, this.closeModal)
+    window.addEventListener('keyup', (e) => {
+      if (e.key === 'Escape') {
+        this.close()
+      }
+    })
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', OPEN_MODAL, this.openModal)
@@ -58,19 +63,17 @@ export default {
   },
   methods: {
     close (e) {
-      // To remove when @keyup.esc Vue bug is fixed
-      const isEscapeKey = e.key === 'Escape'
-      // Fix the bug where keyboard event trigger click type event
-      const isCloseButtonClick = e.type === 'click' && e.screenX !== 0
-      if (isEscapeKey || isCloseButtonClick) {
-        sbp('okTurtles.events/emit', 'close-modal')
-      }
+      sbp('okTurtles.events/emit', 'close-modal')
     },
     openModal () {
       this.isActive = true
     },
     closeModal () {
       this.isActive = false
+      if (location.href.indexOf('?modal') > 0) {
+        history.pushState(null, null, location.href.split('?modal=')[0])
+      }
+      window.removeEventListener('keyup', null)
     }
   }
 }
