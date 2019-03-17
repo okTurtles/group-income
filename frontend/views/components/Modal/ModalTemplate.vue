@@ -267,6 +267,7 @@ export default {
     @include desktop {
       min-height: 580px;
       padding-bottom: 53px;
+
       &-foot {
         min-height: 53px;
         position: absolute;
