@@ -267,14 +267,13 @@ export default {
     @include desktop {
       min-height: 580px;
       padding-bottom: 53px;
-    }
-
-    &-foot {
-      min-height: 53px;
-      position: absolute;
-      bottom: 0;
-      width: 100%;
-      padding-bottom: $gi-spacer;
+      &-foot {
+        min-height: 53px;
+        position: absolute;
+        bottom: 0;
+        width: 100%;
+        padding-bottom: $gi-spacer;
+      }
     }
   }
 }
