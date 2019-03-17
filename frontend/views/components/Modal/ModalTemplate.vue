@@ -167,12 +167,12 @@ export default {
   width: 100%;
   height: 100%;
   margin: 0 auto;
-  max-width: 640px;
   background: #fff;
 
   @include desktop {
     position: relative;
     border-radius: 6px;
+    max-width: 640px;
     height: auto;
   }
 
@@ -216,6 +216,10 @@ export default {
   &-body {
     width: 100%;
     padding: $gi-spacer-lg $gi-spacer;
+
+    > * {
+      align-self: stretch;
+    }
 
     @include tablet {
       max-width: calc(400px + 2rem);
