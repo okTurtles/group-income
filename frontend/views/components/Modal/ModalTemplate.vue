@@ -58,6 +58,7 @@ export default {
     })
   },
   beforeDestroy () {
+    window.removeEventListener('keyup', null)
     sbp('okTurtles.events/off', OPEN_MODAL, this.openModal)
     sbp('okTurtles.events/off', CLOSE_MODAL, this.closeModal)
   },
@@ -73,7 +74,6 @@ export default {
       if (location.href.indexOf('?modal') > 0) {
         history.pushState(null, null, location.href.split('?modal=')[0])
       }
-      window.removeEventListener('keyup', null)
     }
   }
 }
