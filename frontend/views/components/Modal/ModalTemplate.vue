@@ -15,14 +15,13 @@
 
       section.modal-card-body
         slot
-
-      footer.modal-card-foot(v-if='$scopedSlots.buttons || $scopedSlots.footer || $scopedSlots.errors')
         .buttons(v-if='$scopedSlots.buttons')
           slot(name='buttons')
 
         p.has-text-danger(data-test='submitError' v-if='$scopedSlots.errors')
           slot(name='errors')
 
+      footer.modal-card-foot(v-if='$scopedSlots.buttons || $scopedSlots.footer || $scopedSlots.errors')
         slot(name='footer')
 
 </template>
@@ -166,23 +165,6 @@ export default {
 }
 
 // Mofifiers
-.has-sticky-footer {
-  .modal-card {
-    @include desktop {
-      min-height: 580px;
-      padding-bottom: 53px;
-
-      &-foot {
-        min-height: 53px;
-        position: absolute;
-        bottom: 0;
-        width: 100%;
-        padding-bottom: $gi-spacer;
-      }
-    }
-  }
-}
-
 .has-background {
   .modal-close {
     background-color: #fff;
@@ -192,6 +174,16 @@ export default {
     &-head,
     &-foot {
       background-color: #f5f5f5;
+    }
+
+    &-foot {
+      margin: $gi-spacer;
+
+      @include desktop {
+        align-items: flex-start;
+        margin: 0;
+        padding-bottom: $gi-spacer;
+      }
     }
   }
 }
