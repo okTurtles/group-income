@@ -1,5 +1,5 @@
 <template>
-  <modal-template :class="{ 'has-sticky-footer': stickyFooter, 'has-background': background }">
+  <modal-template :class="{ 'has-background': background }">
     <template #title>
       Title
     </template>
@@ -38,9 +38,6 @@
       <button class="button is-primary" @click='toggleBackground'>
         Toggle background
       </button>
-      <button class="button is-primary" @click='toggleStickyFooter'>
-        Toggle sticky footer
-      </button>
     </template>
 
     <template #footer>
@@ -59,8 +56,7 @@ export default {
     return {
       type: '',
       subtitle: false,
-      background: false,
-      stickyFooter: false
+      background: false
     }
   },
   components: {
@@ -72,9 +68,6 @@ export default {
     },
     toggleBackground () {
       this.background = !this.background
-    },
-    toggleStickyFooter () {
-      this.stickyFooter = !this.stickyFooter
     }
   }
 }

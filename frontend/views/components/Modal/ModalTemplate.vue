@@ -264,23 +264,6 @@ export default {
 }
 
 // Mofifiers
-.has-sticky-footer {
-  .modal-card {
-    @include desktop {
-      min-height: 580px;
-      padding-bottom: 53px;
-
-      &-foot {
-        min-height: 53px;
-        position: absolute;
-        bottom: 0;
-        width: 100%;
-        padding-bottom: $gi-spacer;
-      }
-    }
-  }
-}
-
 .has-background {
   .modal-close {
     background-color: #fff;
@@ -294,6 +277,12 @@ export default {
 
     &-foot {
       margin: $gi-spacer;
+
+      @include desktop {
+        align-items: flex-start;
+        margin: 0;
+        padding-bottom: $gi-spacer;
+      }
     }
   }
 }
