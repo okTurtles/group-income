@@ -5,7 +5,7 @@
     <modal-template class="is-small">
       <!-- https://vuejs.org/v2/guide/components-slots.html#Named-Slots-Shorthand -->
       <template #title>
-        <i18n>Log In</i18n>
+        <i18n>Login</i18n>
       </template>
 
       <div class="field">
