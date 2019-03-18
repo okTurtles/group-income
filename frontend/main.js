@@ -17,9 +17,6 @@ import './utils/autofocus.js'
 import './views/utils/v-style.js'
 import './lazyLoadedView.js'
 
-// TODO: uncomment this and improve implementation?
-// import './views/utils/transitions.js'
-
 console.log('NODE_ENV:', process.env.NODE_ENV)
 
 // NOTE: we setup this global SBP filter and domain regs here

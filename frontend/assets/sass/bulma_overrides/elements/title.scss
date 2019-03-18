@@ -12,6 +12,7 @@ $subtitle-negative-margin: 0;
 .subtitle {
   text-transform: uppercase;
   letter-spacing: 0.1px;
+  font-size: 0.75rem;
 
   &:not(:last-child) {
     margin-bottom: 0;

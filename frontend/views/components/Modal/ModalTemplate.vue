@@ -248,8 +248,6 @@ export default {
 
 .subtitle {
   color: #7a7a7a;
-  font-size: 0.75rem;
-  text-transform: uppercase;
 }
 
 .title {
