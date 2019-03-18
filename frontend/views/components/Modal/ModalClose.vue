@@ -4,7 +4,7 @@
 
 <script>
 export default {
-  name: 'modal-close'
+  name: 'ModalClose'
 }
 </script>
 
