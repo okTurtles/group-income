@@ -292,6 +292,10 @@ export default {
     &-foot {
       background-color: #f5f5f5;
     }
+
+    &-foot {
+      margin: $gi-spacer;
+    }
   }
 }
 </style>
