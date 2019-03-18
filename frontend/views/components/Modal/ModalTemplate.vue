@@ -19,9 +19,6 @@
 
       <section class="modal-card-body">
         <slot></slot>
-      </section>
-
-      <footer class="modal-card-foot" v-if="$scopedSlots.buttons || $scopedSlots.footer || $scopedSlots.errors">
         <div class="buttons" v-if="$scopedSlots.buttons">
           <slot name="buttons"></slot>
         </div>
@@ -29,7 +26,9 @@
         <p class="has-text-danger" data-test="submitError" v-if="$scopedSlots.errors" >
           <slot name="errors"></slot>
         </p>
+      </section>
 
+      <footer class="modal-card-foot" v-if="$scopedSlots.buttons || $scopedSlots.footer || $scopedSlots.errors">
         <slot name="footer"></slot>
       </footer>
     </div>
