@@ -1,47 +1,42 @@
-<template>
-  <div class="modal is-active" data-test="modal" v-if="isActive" role='dialog'>
-    <transition name="fade" v-if="isActive" appear>
-      <div class="modal-background" @click="close"></div>
-    </transition>
-    <div class="modal-card" ref="card">
+<template lang='pug'>
+  .modal.is-active(data-test='modal' v-if='isActive' role='dialog')
+    transition(name='fade' v-if='isActive' appear)
+      .modal-background(@click='close')
+    .modal-card(ref='card')
+      header.modal-card-head.has-text-centered(
+        :class='{ "has-subtitle": $scopedSlots.subTitle }'
+        v-if='$scopedSlots.title || $scopedSlots.subTitle'
+      )
+        modal-close(@close='close')
+        h2.modal-card-title.subtitle.is-marginless.has-text-text-light(v-if='$scopedSlots.subTitle')
+          slot(name='subTitle')
+        h1.title(v-if='$scopedSlots.title')
+          slot(name='title')
 
-      <header class="modal-card-head has-text-centered"
-              :class="{ 'has-subtitle': $scopedSlots.subTitle }"
-              v-if="$scopedSlots.title || $scopedSlots.subTitle" >
-        <button class="modal-close" @click.self="close"></button>
-        <h2 class="modal-card-title subtitle is-marginless has-text-text-light"  v-if="$scopedSlots.subTitle">
-          <slot name="subTitle" ></slot>
-        </h2>
-        <h1 class="title" v-if="$scopedSlots.title">
-          <slot name="title"></slot>
-        </h1>
-      </header>
+      section.modal-card-body
+        slot
 
-      <section class="modal-card-body">
-        <slot></slot>
-      </section>
+      footer.modal-card-foot(v-if='$scopedSlots.buttons || $scopedSlots.footer || $scopedSlots.errors')
+        .buttons(v-if='$scopedSlots.buttons')
+          slot(name='buttons')
 
-      <footer class="modal-card-foot" v-if="$scopedSlots.buttons || $scopedSlots.footer || $scopedSlots.errors">
-        <div class="buttons" v-if="$scopedSlots.buttons">
-          <slot name="buttons"></slot>
-        </div>
+        p.has-text-danger(data-test='submitError' v-if='$scopedSlots.errors')
+          slot(name='errors')
 
-        <p class="has-text-danger" data-test="submitError" v-if="$scopedSlots.errors" >
-          <slot name="errors"></slot>
-        </p>
+        slot(name='footer')
 
-        <slot name="footer"></slot>
-      </footer>
-    </div>
-  </div>
 </template>
 
 <script>
 import sbp from '../../../../shared/sbp.js'
 import { OPEN_MODAL, CLOSE_MODAL } from '../../../utils/events.js'
+import ModalClose from './ModalClose.vue'
 
 export default {
   name: 'Modal',
+  components: {
+    ModalClose
+  },
   data () {
     return {
       isActive: false
@@ -106,60 +101,6 @@ export default {
   right: 0;
   top: 0;
   background-color: rgba(10, 10, 10, 0.86);
-}
-
-.modal-close {
-  position: absolute;
-  z-index: 1;
-  right: 1rem;
-  height: 40px;
-  width: 40px;
-  border: none;
-  border-radius: 50%;
-  @extend %unselectable;
-  -moz-appearance: none;
-  -webkit-appearance: none;
-  cursor: pointer;
-  background-color: #f1f1f1;
-
-  @include tablet {
-    top: 24px;
-    right: 24px;
-  }
-
-  @include desktop {
-    top: 1rem;
-    right: 1rem;
-  }
-
-  &::before,
-  &::after {
-    background-color: #363636;
-    content: "";
-    display: block;
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 12px;
-    height: 2px;
-    transition: transform 0.15s ease-in;
-    transform: translateX(-50%) translateY(-50%) rotate(45deg);
-    transform-origin: center center;
-  }
-
-  &::after {
-    transform: translateX(-50%) translateY(-50%) rotate(-45deg);
-  }
-
-  &:hover {
-    &::before {
-      transform: translateX(-50%) translateY(-50%) rotate(0);
-    }
-
-    &::after {
-      transform: translateX(-50%) translateY(-50%) rotate(0);
-    }
-  }
 }
 
 .modal-card {

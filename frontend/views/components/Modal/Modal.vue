@@ -1,5 +1,5 @@
-<template>
-  <component :is="content"></component>
+<template lang='pug'>
+  component(:is='content')
 </template>
 <script>
 import sbp from '../../../../shared/sbp.js'
