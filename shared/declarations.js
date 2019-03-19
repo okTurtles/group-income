@@ -89,6 +89,22 @@ declare module 'blakejs' { declare module.exports: any }
 declare module 'protobufjs/light' { declare module.exports: any }
 declare module 'node-fetch' { declare module.exports: any }
 declare module 'string-template' { declare module.exports: any }
+<<<<<<< HEAD
+=======
+declare module 'node-sass' { declare module.exports: any }
+declare module 'rollup-plugin-node-resolve' { declare module.exports: any }
+declare module 'rollup-plugin-node-globals' { declare module.exports: any }
+declare module 'rollup-plugin-commonjs' { declare module.exports: any }
+declare module 'rollup-plugin-alias' { declare module.exports: any }
+declare module 'rollup-plugin-babel' { declare module.exports: any }
+declare module 'rollup-plugin-vue' { declare module.exports: any }
+declare module 'rollup-plugin-flow' { declare module.exports: any }
+declare module 'rollup-plugin-json' { declare module.exports: any }
+declare module 'rollup-plugin-eslint' { declare module.exports: any }
+declare module 'rollup-plugin-css-only' { declare module.exports: any }
+declare module 'rollup-plugin-sass-variables' { declare module.exports: any }
+declare module 'rollup' { declare module.exports: any }
+>>>>>>> ffc2813... missing libdefs added
 
 // .vue and .ejs files
 declare module './GroupName.vue' { declare module.exports: Object }
@@ -109,7 +125,6 @@ declare module './ListItem.vue' { declare module.exports: Object }
 declare module './List.vue' { declare module.exports: Object }
 declare module '../views/CreateGroup.vue' { declare module.exports: Object }
 declare module '../views/PayGroup.vue' { declare module.exports: Object }
-declare module '../views/SignUp.vue' { declare module.exports: Object }
 declare module '../views/UserGroup.vue' { declare module.exports: Object }
 declare module '../views/UserProfile.vue' { declare module.exports: Object }
 declare module '../views/VueAssistant.vue' { declare module.exports: Object }
@@ -139,7 +154,75 @@ declare module './GraphLegendItem.vue' { declare module.exports: Object }
 declare module './GraphLegendGroup.vue' { declare module.exports: Object }
 declare module './Bars.vue' { declare module.exports: Object }
 declare module './SupportHistory.vue' { declare module.exports: Object }
+declare module './Progress.vue' { declare module.exports: Object }
+declare module './views/containers/SignUp.vue' { declare module.exports: Object }
+declare module './views/containers/LoginModal.vue' { declare module.exports: Object }
+declare module './views/containers/proposals-form/Mincome.vue' { declare module.exports: Object }
+declare module './views/containers/proposals-form/RuleChangeRule.vue' { declare module.exports: Object }
+declare module './views/containers/proposals-form/RuleAddMember.vue' { declare module.exports: Object }
+declare module './views/containers/proposals-form/RuleRemoveMember.vue' { declare module.exports: Object }
+
 declare module '../../utils/flow-typer.js' { declare module.exports: Object }
+<<<<<<< HEAD
+=======
+declare module './backend/pubsub.js' { declare module.exports: Function }
+declare module './pubsub.js' { declare module.exports: Function }
+declare module './functions.js' { declare module.exports: Function }
+declare module '../shared/functions.js' { declare module.exports: Function }
+declare module '../../shared/functions.js' { declare module.exports: Function }
+declare module '../../../shared/functions.js' { declare module.exports: Function }
+declare module '../../../sbp.js' { declare module.exports: Function }
+declare module '../shared/sbp.js' { declare module.exports: Function }
+declare module '../../shared/sbp.js' { declare module.exports: Function }
+declare module '../../../shared/sbp.js' { declare module.exports: Function }
+declare module '../shared/domains/okTurtles/data/index.js' { declare module.exports: Object }
+declare module  '../shared/GIMessage.js' { declare module.exports: Object }
+declare module  '../../shared/GIMessage.js' { declare module.exports: Object }
+declare module './server.js' { declare module.exports: any }
+declare module './constants.js' { declare module.exports: Object }
+declare module '../shared/constants.js' { declare module.exports: Object }
+declare module '../../shared/constants.js' { declare module.exports: Object }
+declare module '../../../shared/constants.js' { declare module.exports: Object }
+declare module './database.js' { declare module.exports: Function }
+declare module './auth.js' { declare module.exports: Object }
+declare module './routes.js' { declare module.exports: Function }
+declare module './utils/pubsub.js' { declare module.exports: Function }
+declare module './utils/misc.js' { declare module.exports: Function }
+declare module '../model/state.js' { declare module.exports: Object }
+declare module './model/state.js' { declare module.exports: Object }
+declare module '../views/components/CreateGroupSteps/index.js' { declare module.exports: Object }
+declare module './countdownStates' { declare module.exports: Object }
+declare module './types' { declare module.exports: any }
+declare module './types.js' { declare module.exports: any }
+declare module '../../shared/types.js' { declare module.exports: any }
+declare module '../../../shared/types.js' { declare module.exports: any }
+declare module './utils/events' { declare module.exports: any }
+declare module '../utils/events.js' { declare module.exports: any }
+declare module '../../utils/events.js' { declare module.exports: any }
+declare module '../utils/giLodash.js' { declare module.exports: Function }
+declare module '../../utils/giLodash.js' { declare module.exports: Function }
+declare module '../frontend/utils/giLodash.js' { declare module.exports: Function }
+declare module './contracts.js' { declare module.exports: Object }
+declare module '../frontend/model/contracts.js' { declare module.exports: Object }
+declare module '../utils.js' { declare module.exports: Function }
+declare module './contracts/mailbox.js' { declare module.exports: Object }
+declare module './contracts/identity.js' { declare module.exports: Object }
+declare module './contracts/group.js' { declare module.exports: Object }
+declare module './model/database.js' { declare module.exports: Function }
+declare module './controller/router.js' { declare module.exports: Object }
+declare module './controller/backend.js' { declare module.exports: Function }
+declare module '../frontend/controller/backend.js' { declare module.exports: Function }
+declare module '../../utils/string-template.js' { declare module.exports: Function }
+declare module '../frontend/utils/distribution/mincome-default' { declare module.exports: Function }
+declare module '../frontend/utils/distribution/mincome-proportional' { declare module.exports: Function }
+declare module './controller/namespace.js' { declare module.exports: any }
+declare module '../frontend/controller/namespace.js' { declare module.exports: any }
+declare module './views/utils/translations.js' { declare module.exports: any }
+declare module '../shared/domains/okTurtles/events/index.js' { declare module.exports: any }
+declare module './lazyLoadedView.js' { declare module.exports: any }
+declare module '../shared/domains/okTurtles/events/index.js' { declare module.exports: any }
+declare module '../backend/index.js' { declare module.exports: any }
+>>>>>>> ffc2813... missing libdefs added
 
 // we ignored everything in assets/, so...
 declare module '../frontend/controller/utils/primus.js' { declare module.exports: Function }
