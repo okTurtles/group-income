@@ -89,8 +89,6 @@ declare module 'blakejs' { declare module.exports: any }
 declare module 'protobufjs/light' { declare module.exports: any }
 declare module 'node-fetch' { declare module.exports: any }
 declare module 'string-template' { declare module.exports: any }
-<<<<<<< HEAD
-=======
 declare module 'node-sass' { declare module.exports: any }
 declare module 'rollup-plugin-node-resolve' { declare module.exports: any }
 declare module 'rollup-plugin-node-globals' { declare module.exports: any }
@@ -104,7 +102,6 @@ declare module 'rollup-plugin-eslint' { declare module.exports: any }
 declare module 'rollup-plugin-css-only' { declare module.exports: any }
 declare module 'rollup-plugin-sass-variables' { declare module.exports: any }
 declare module 'rollup' { declare module.exports: any }
->>>>>>> ffc2813... missing libdefs added
 
 // .vue and .ejs files
 declare module './GroupName.vue' { declare module.exports: Object }
@@ -163,8 +160,6 @@ declare module './views/containers/proposals-form/RuleAddMember.vue' { declare m
 declare module './views/containers/proposals-form/RuleRemoveMember.vue' { declare module.exports: Object }
 
 declare module '../../utils/flow-typer.js' { declare module.exports: Object }
-<<<<<<< HEAD
-=======
 declare module './backend/pubsub.js' { declare module.exports: Function }
 declare module './pubsub.js' { declare module.exports: Function }
 declare module './functions.js' { declare module.exports: Function }
@@ -222,7 +217,6 @@ declare module '../shared/domains/okTurtles/events/index.js' { declare module.ex
 declare module './lazyLoadedView.js' { declare module.exports: any }
 declare module '../shared/domains/okTurtles/events/index.js' { declare module.exports: any }
 declare module '../backend/index.js' { declare module.exports: any }
->>>>>>> ffc2813... missing libdefs added
 
 // we ignored everything in assets/, so...
 declare module '../frontend/controller/utils/primus.js' { declare module.exports: Function }
