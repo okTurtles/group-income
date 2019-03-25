@@ -116,9 +116,9 @@ describe('Full walkthrough', function () {
   })
 
   after(function () {
-    for (let user of Object.values(users)) {
-      user.socket && user.socket.destroy({ timeout: 500 })
-    }
+    Object.keys(users).forEach((userKey) => {
+      users[userKey].socket && users[userKey].socket.destroy({ timeout: 500 })
+    });
   })
 
   describe('Identity tests', function () {
@@ -152,7 +152,8 @@ describe('Full walkthrough', function () {
     })
 
     it('Should open sockets for Alice and Bob', async function () {
-      for (let user of Object.values(users)) {
+      const userList = Object.keys(users).map((userKey) => users[userKey])
+      for (let user of userList) {
         user.socket = await createSocket()
       }
     })

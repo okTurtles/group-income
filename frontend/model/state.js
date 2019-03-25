@@ -145,9 +145,10 @@ const getters = {
   },
   // list of group names and contractIDs
   groupsByName (state) {
-    return Object.entries(store.state.contracts)
-      .filter(([key, value]) => value.type === 'GroupContract')
-      .map(([key]) => ({ groupName: state[key].groupName, contractID: key }))
+    const { contracts } = store.state.contracts
+    return Object.keys(contracts)
+      .filter((key) => contracts[key].type === 'GroupContract')
+      .map((key) => ({ groupName: state[key].groupName, contractID: key }))
   },
   proposals (state) {
     // TODO: clean this up

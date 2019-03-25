@@ -25,7 +25,7 @@ export const users = {
     unreadCount: 1,
     description: 'I’m here to keep you update while you are away'
   },
-  111: {
+  '111': {
     id: '111',
     name: 'johnn',
     displayName: 'John Mars',
@@ -33,7 +33,7 @@ export const users = {
     unreadCount: 0,
     description: 'You and John are both part of Dreamers group'
   },
-  222: {
+  '222': {
     id: '222',
     name: 'hlenon',
     displayName: 'Hugo Lenon',
@@ -41,7 +41,7 @@ export const users = {
     unreadCount: 0,
     description: null
   },
-  333: {
+  '333': {
     id: '333',
     name: 'liliabt',
     displayName: 'Lilia Bouvet',
@@ -49,7 +49,7 @@ export const users = {
     unreadCount: 0,
     description: null
   },
-  444: {
+  '444': {
     id: '444',
     name: 'rickyricky',
     displayName: 'Rick Eggs',
@@ -57,7 +57,7 @@ export const users = {
     unreadCount: 0,
     description: null
   },
-  555: {
+  '555': {
     id: '555',
     name: 'ericrock',
     displayName: 'Eric Rock',
@@ -88,13 +88,13 @@ export const individualConversations = {
       unread: true
     }
   ],
-  333: [
+  '333': [
     {
       from: '333',
       text: 'Hello'
     }
   ],
-  444: [
+  '444': [
     {
       from: '444',
       text: 'check this out:'
@@ -156,7 +156,7 @@ export const individualConversations = {
       text: 'this is funny!'
     }
   ],
-  555: [
+  '555': [
     {
       from: '555',
       text: 'Hi!'
@@ -187,7 +187,7 @@ export const individualConversations = {
       unread: true
     }
   ],
-  111: [
+  '111': [
     {
       from: currentUserId,
       text: 'Hey there'

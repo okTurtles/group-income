@@ -150,7 +150,7 @@ module.exports = (grunt) => {
         middleware: (connect, opts, middlewares) => {
           middlewares.unshift((req, res, next) => {
             var f = url.parse(req.url).pathname // eslint-disable-line
-            if (/^\/app(\/|$)/.test(f)) {
+            if (f !== undefined && /^\/app(\/|$)/.test(f)) {
               // NOTE: if you change the URL from /app you must modify it here,
               //       and also:
               //       - page() function in `frontend/test.js`
@@ -315,7 +315,7 @@ module.exports = (grunt) => {
           break
         case 'BUNDLE_END':
           grunt.verbose.debug(this.nameArgs, event.code)
-          const outputName = watchOpts.output.file || watchOpts.output.dir
+          const outputName = watchOpts.output.dir;
           grunt.log.writeln(chalk`{green created} {bold ${outputName}} {green in} {bold ${(event.duration / 1000).toFixed(1)}s}`)
           watchFlag || watcher.close() // stop watcher (only build once) if 'rollup:watch' isn't called
           done && done()
