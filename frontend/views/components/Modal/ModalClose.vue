@@ -55,7 +55,7 @@ export default {
   }
 
   &:focus {
-    outline: none
+    outline: none;
   }
 
   &:hover {

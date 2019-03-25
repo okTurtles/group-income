@@ -51,7 +51,8 @@ const state = {
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { name: string, identityContractId: string }
-  theme: 'blue'
+  theme: 'blue',
+  fontSize: 1
 }
 
 // Mutations must be synchronous! Never call these directly!
@@ -117,8 +118,11 @@ const mutations = {
       state.pending.push(contractID)
     }
   },
-  setTheme (state, colors) {
-    state.theme = colors
+  setTheme (state, color) {
+    state.theme = color
+  },
+  setFontSize (state, fontSize) {
+    state.fontSize = fontSize
   }
 }
 // https://vuex.vuejs.org/en/getters.html
@@ -205,6 +209,9 @@ const getters = {
   },
   isDarkTheme () {
     return Colors[state.theme].theme === 'dark'
+  },
+  fontSize (state) {
+    return state.fontSize
   }
 }
 
@@ -247,6 +254,7 @@ const actions = {
       commit('setCurrentGroupId', settings.currentGroupId)
       commit('setContracts', settings.contracts || [])
       commit('setTheme', settings.theme || 'dark')
+      commit('setFontSize', settings.fontSize || 1)
     }
     await db.saveCurrentUser(user.name)
     // This may seem unintuitive to use the state from the global store object
@@ -336,6 +344,12 @@ const actions = {
     colors: String
   ) {
     commit('setTheme', colors)
+  },
+  async setFontSize (
+    { commit }: {commit: Function},
+    colors: String
+  ) {
+    commit('setFontSize', colors)
   }
 }
 const debouncedSave = _.debounce((dispatch, savedState) => dispatch('saveSettings', savedState), 500)

@@ -6,8 +6,8 @@
         legend.tab-legend(v-if='tabItem.legend') {{ tabItem.legend }}
         hr.tab-nav-separator(v-else)
 
-        a.tab-link(
-          :class="{ 'tab-active': activeTab === tabItem.index}"
+        a.tab-link.no-border(
+          :class="{ 'tab-active': activeTab === tabItem.index, 'has-text-white': isDarkTheme}"
           v-for='(tabItem) in tabItem.links'
           @click='tabClick(tabItem.index)'
           :key='tabItem.index'
@@ -19,6 +19,8 @@
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
+
 export default {
   name: 'TabWrapper',
 
@@ -35,21 +37,27 @@ export default {
     }
   },
 
+  computed: {
+    ...mapGetters([
+      'isDarkTheme'
+    ])
+  },
+
   watch: {
-      /**
-       * When v-model is changed set the new active tab.
-       */
-      value(value) {
-        this.changeTab(value)
-      },
-      /**
-       * When tab-items are updated, set active one.
-       */
-      tabItems() {
-        if (this.tabItems.length) {
-          this.tabItems[this.activeTab].isActive = true
-        }
+    /**
+     * When v-model is changed set the new active tab.
+     */
+    value (value) {
+      this.changeTab(value)
+    },
+    /**
+     * When tab-items are updated, set active one.
+     */
+    tabItems () {
+      if (this.tabItems.length) {
+        this.tabItems[this.activeTab].isActive = true
       }
+    }
   },
 
   methods: {
@@ -66,7 +74,7 @@ export default {
     /**
      * Tab click listener, emit input event and change active tab.
      */
-    tabClick(value) {
+    tabClick (value) {
       this.$emit('input', value)
       this.changeTab(value)
     }
@@ -83,19 +91,19 @@ export default {
 <style lang='scss' scoped>
 @import "../../../assets/sass/theme/index";
 
-$separatorColor: #B2C3CA;
-$legendColor: #7B7B7B;
+$separatorColor: #b2c3ca;
+$legendColor: #7b7b7b;
 $activeColor: #fff;
 $closeMobileBgColor: #000;
-$closeMobileBarBgColor: #3C3C3C;
+$closeMobileBarBgColor: #3c3c3c;
 
-.tab-nav{
+.tab-nav {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   width: 35%;
   min-width: 190px;
-  background-color: var(--nav-color);
+  background-color: var(--primary-bg-s);
 }
 
 .tab-wrapper {
@@ -107,23 +115,14 @@ $closeMobileBarBgColor: #3C3C3C;
   }
 }
 
-.tab-nav-list {
-  display: flex;
-  flex-direction: column;
-  width: 175px;
-  padding-right: 7px;
-  font-size: 1.4rem;
-
-  &:first-child .tab-legend {
-    margin-top: 2px;
-    margin-bottom: 0;
-  }
-}
-
 .tab-legend {
   text-transform: uppercase;
-  letter-spacing: .1px;
+  letter-spacing: 0.1px;
   color: $legendColor;
+}
+
+.tab-link {
+  color: #363636;
 }
 
 .tab-legend,
@@ -134,24 +133,39 @@ $closeMobileBarBgColor: #3C3C3C;
   transition: padding-left 150ms cubic-bezier(0.4, 0.25, 0.3, 1), background-color 150ms cubic-bezier(0.4, 0.25, 0.3, 1);
 }
 
-.tab-link:hover,
+.tab-nav-list {
+  display: flex;
+  flex-direction: column;
+  width: 175px;
+  padding-right: 7px;
+
+  &:first-child .tab-legend {
+    margin-top: 2px;
+    margin-bottom: 0;
+  }
+}
+
 .tab-active {
-  border-radius: 2px;
-  background-color: var(--main-color);
+  background-color: $primary;
   font-weight: bold;
   color: $activeColor;
 }
 
+.tab-link:hover,
+.tab-active {
+  border-radius: 2px;
+}
+
 .tab-link:hover {
   padding-left: 15px;
-  background-color: var(--main-hexa);
+  background-color: $primary-bg-a;
 }
 
 .tab-nav-separator {
   margin: -1px 24px 15px 8px;
   padding: 0;
-  border-top: 1px solid $separatorColor;
-  border-bottom: 0;
+  background: #b2c3ca;
+  height: 1px;
 }
 
 .tab-item {
@@ -161,15 +175,15 @@ $closeMobileBarBgColor: #3C3C3C;
 
 .tab-section {
   width: 65%;
+  background-color: #fff;
 }
 
-@include tablet {
+@include phone {
   .title {
     margin: 14px 0 24px 40px;
   }
 
   .tab-nav-toggle {
-
     position: absolute;
     top: 25px;
     left: 12px;
@@ -183,14 +197,14 @@ $closeMobileBarBgColor: #3C3C3C;
 
     &::before,
     &::after {
-      content: '';
+      content: "";
       position: absolute;
       top: 15px;
       left: 14px;
       width: 12px;
       height: 2.5px;
       background: var(--action-color);
-      transition: all .3s ease-out;
+      transition: all 0.3s ease-out;
       transform-origin: 50%;
     }
 
@@ -237,6 +251,7 @@ $closeMobileBarBgColor: #3C3C3C;
       transform: translateX(0);
     }
   }
+
   .tab-section {
     width: 100%;
   }

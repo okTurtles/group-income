@@ -17,14 +17,14 @@ export default {
 
   methods: {
     // Activate tab, alter animation name based on the index.
-    activate(oldIndex, index) {
+    activate (oldIndex, index) {
       this.transitionName = index < oldIndex
         ? 'slide-next'
         : 'slide-prev'
       this.isActive = true
     },
     // Deactivate tab, alter animation name based on the index.
-    deactivate(oldIndex, index) {
+    deactivate (oldIndex, index) {
       this.transitionName = index < oldIndex
         ? 'slide-next'
         : 'slide-prev'
