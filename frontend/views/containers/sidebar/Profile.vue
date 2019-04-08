@@ -12,17 +12,10 @@
       </div>
     </div>
     <div class="level-right">
-      <!-- <button class="button is-icon"
-        data-test="logoutBtn"
-        @click.prevent="logout">
-        <i class="fa fa-sign-out-alt"></i>
-      </button> -->
-      <router-link class="button is-icon"
-        tag="button"
-        to="/user"
-        data-test="profileLink">
+      <button class="button is-icon" data-test="settingsBtn"
+        @click="openModal('Settings')">
         <i class="fa fa-cog"></i>
-      </router-link>
+      </button>
     </div>
   </div>
 </template>
@@ -59,6 +52,8 @@
 </style>
 <script>
 import Avatar from '../../components/Avatar.vue'
+import sbp from '../../../../shared/sbp.js'
+import { LOAD_MODAL } from '../../../utils/events.js'
 import { mapGetters } from 'vuex'
 
 export default {
@@ -83,11 +78,11 @@ export default {
     userName () {
       return this.$store.state.loggedIn.name
     }
-  // },
-  // methods: {
-  //   logout () {
-  //     this.$store.dispatch('logout')
-  //   }
+  },
+  methods: {
+    openModal (mode) {
+      sbp('okTurtles.events/emit', LOAD_MODAL, mode)
+    }
   }
 }
 </script>

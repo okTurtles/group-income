@@ -1,122 +1,6 @@
 <template>
   <main>
     <div class="section">
-      <form ref="ProfileForm"
-            name="ProfileForm"
-            @submit.prevent="save"
-      >
-        <p
-          class="notification is-success has-text-centered"
-          v-if="profileSaved"
-          data-test='profileSaveSuccess'
-        >
-          <i class='notification-icon fa fa-check'></i>
-          <i18n>Profile saved successfully!</i18n>
-        </p>
-        <p
-          class="notification is-danger has-text-centered"
-          v-if="errorMsg"
-        >
-          <i class='notification-icon fa fa-exclamation-triangle'></i>
-          {{errorMsg}}
-        </p>
-        <div class="panel">
-          <p class="panel-heading">
-            <i18n>Profile Attributes</i18n>
-          </p>
-          <div class="panel-block">
-            <figure class="media-left">
-              <p class="image is-64x64">
-                <img v-bind:src="$store.getters.currentUserIdentityContract.attributes.picture">
-              </p>
-            </figure>
-            <div class="media-content">
-              <strong><i18n>Profile Picture</i18n>:</strong>
-              <input
-                class="input"
-                :class="{'is-danger': $v.edited.picture.$error}"
-                type="text"
-                name="profilePicture"
-                v-model="edited.picture"
-                @input="$v.edited.picture.$touch()"
-                placeholder="http://"
-                data-test="profilePicture"
-              >
-              <i18n v-if="$v.edited.picture.$error" class="help is-danger">
-                The profile picture must be a valid url
-              </i18n>
-            </div>
-          </div>
-          <div class="panel-block">
-            <div class="media-content">
-              <strong><i18n>Display Name</i18n>:</strong>
-              <input class="input"
-                name="displayName"
-                type="text"
-                v-model="edited.displayName"
-                placeholder="Name"
-                data-test="displayName"
-              >
-            </div>
-          </div>
-          <div class="panel-block">
-            <div class="media-content">
-              <strong><i18n>Email</i18n>:</strong>
-              <input
-                class="input"
-                :class="{'is-danger': $v.edited.email.$error}"
-                name="profileEmail"
-                type="text"
-                v-model="edited.email"
-                @input="$v.edited.email.$touch()"
-                placeholder="Email"
-                data-test="profileEmail"
-              >
-              <i18n v-if="$v.edited.email.$error" class="help is-danger">Not an email</i18n>
-            </div>
-          </div>
-          <div class="panel-block">
-            <div class="media-content">
-              <strong><i18n>Bio</i18n>:</strong>
-              <textarea type="text"
-                class="textarea"
-                name="bio"
-                v-model="edited.bio"
-                placeholder="Bio"
-                data-test="bio"></textarea>
-            </div>
-          </div>
-        </div>
-        <div class="panel">
-          <p class="panel-heading">
-            <i18n>Set theme</i18n>
-          </p>
-          <div class="panel-block">
-            <select name="" id="" @change="setTheme($event)" v-model='theme'>
-              <option :value="color.name" v-for="color in colors" v-bind:key="color.name">{{color.name}}</option>
-            </select>
-          </div>
-        </div>
-        <div class="has-text-centered button-box">
-          <button class="button is-success is-large"
-            :disabled="$v.edited.$invalid"
-            type="submit"
-            data-test="submit"
-          >
-            <i18n>Save Profile</i18n>
-          </button>
-        </div>
-      </form>
-      <!-- TODO: Integrate with better design -->
-      <br>
-      <div class="has-text-centered button-box">
-        <button class="button is-danger is-large"
-          data-test="logoutBtn"
-          @click.prevent="logout">
-          <i18n>Log Out</i18n>
-        </button>
-      </div>
-      <br>
       <form ref="GroupProfileForm"
             name="GroupProfileForm"
             @submit.prevent="saveGroupProfile"
@@ -251,7 +135,6 @@ import { validationMixin } from 'vuelidate'
 import { decimals } from './utils/validators.js'
 import { email, helpers } from 'vuelidate/lib/validators'
 import L from './utils/translations.js'
-import Colors from '../model/colors.js'
 
 const url = helpers.regex('url', /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i)
 
@@ -280,12 +163,10 @@ export default {
         receivingLimitCurrency: null
       },
       currentGroupContractId: this.$store.state.currentGroupId,
-      theme: this.$store.state.theme,
       errorMsg: null,
       groupErrorMsg: null,
       groupProfileSaved: false,
-      profileSaved: false,
-      colors: Colors
+      profileSaved: false
     }
   },
   validations: {
@@ -346,12 +227,6 @@ export default {
         console.log(ex)
         this.groupErrorMsg = L('Failed to Save Group Profile')
       }
-    },
-    logout () {
-      this.$store.dispatch('logout')
-    },
-    setTheme (event) {
-      this.$store.dispatch('setTheme', event.target.value)
     }
   }
 }

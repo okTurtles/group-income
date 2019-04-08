@@ -417,6 +417,7 @@ $help-size: $size-small !default
   display: block
   font-size: $help-size
   margin-top: 0.25rem
+  color: #7A7A7A
   @each $name, $pair in $colors
     $color: nth($pair, 1)
     &.is-#{$name}
@@ -425,8 +426,10 @@ $help-size: $size-small !default
 // Containers
 
 .field
+  .help
+    margin-top: 0.5rem
   &:not(:last-child)
-    margin-bottom: 0.75rem
+    margin-bottom: 1.5rem
   // Modifiers
   &.has-addons
     display: flex

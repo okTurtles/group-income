@@ -1,5 +1,5 @@
 <template>
-  <nav class="navbar">
+  <nav class="navbar" role="navigation">
     <div class="navbar-start is-flex">
       <router-link to="home" class="navbar-item gi-logo c-logo no-border" @click="toggleTimeTravel">
         <img src="/assets/images/logo-transparent.png"  alt="Groupincome's logo">

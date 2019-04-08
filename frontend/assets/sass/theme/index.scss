@@ -38,4 +38,9 @@ $gi-zindex-header: 30;
 @import "colors";
 
 // Import Bulma's utilities module to be available on further overrides and vue components
-@import "node_modules/bulma/sass/utilities/all";
+@import "../../../../node_modules/bulma/sass/utilities/initial-variables.sass";
+@import "../../../../node_modules/bulma/sass/utilities/functions.sass";
+@import "../../../../node_modules/bulma/sass/utilities/derived-variables.sass";
+@import "../../../../node_modules/bulma/sass/utilities/animations.sass";
+@import "../../../../node_modules/bulma/sass/utilities/mixins.sass";
+@import "../../../assets/sass/bulma_overrides/utilities/controls.sass"

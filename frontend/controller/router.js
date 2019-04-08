@@ -22,7 +22,6 @@ import Join from '../views/Join.vue'
 import Mailbox from '../views/Mailbox.vue'
 import PayGroup from '../views/PayGroup.vue'
 import Messages from '../views/Messages.vue'
-import UserProfile from '../views/UserProfile.vue'
 import Vote from '../views/Vote.vue'
 
 Vue.use(Router)
@@ -157,14 +156,6 @@ var router = new Router({
       name: GroupDashboard.name,
       meta: {
         title: 'Group Dashboard'
-      },
-      beforeEnter: createEnterGuards(loginGuard)
-    },
-    {
-      path: '/user',
-      component: UserProfile,
-      meta: {
-        title: 'User Profile'
       },
       beforeEnter: createEnterGuards(loginGuard)
     },

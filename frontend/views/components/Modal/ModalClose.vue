@@ -1,5 +1,5 @@
 <template lang='pug'>
-  button.modal-close(@click.self="$emit('close')")
+  button.modal-close(@click.self="$emit('close')" aria-label="close")
 </template>
 
 <script>

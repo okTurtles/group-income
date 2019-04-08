@@ -90,6 +90,7 @@ svg {
     svg {
       transform: scale(1.05);
     }
+
     .main-color,
     .action {
       @for $i from 1 through 20 {

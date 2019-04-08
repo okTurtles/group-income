@@ -8,10 +8,10 @@
 
         a.tab-link.no-border(
           :class="{ 'tab-active': activeTab === tabItem.index, 'has-text-white': isDarkTheme}"
-          v-for='(tabItem) in tabItem.links'
-          @click='tabClick(tabItem.index)'
-          :key='tabItem.index'
-        ) {{ tabItem.title }}
+          v-for='(links, index) in tabItem.links'
+          @click='tabClick(links)'
+          :key='index'
+        ) {{ links.title }}
 
     section.tab-section
       slot
@@ -20,6 +20,8 @@
 
 <script>
 import { mapGetters } from 'vuex'
+import sbp from '../../../../shared/sbp.js'
+import { CLOSE_MODAL } from '../../../utils/events.js'
 
 export default {
   name: 'TabWrapper',
@@ -72,11 +74,15 @@ export default {
       this.$emit('change', newIndex)
     },
     /**
-     * Tab click listener, emit input event and change active tab.
+     * Tab click listener change active tab.
      */
-    tabClick (value) {
-      this.$emit('input', value)
-      this.changeTab(value)
+    tabClick (tabItem) {
+      if (tabItem.index !== undefined) {
+        this.changeTab(tabItem.index)
+      } else {
+        this.$store.dispatch(tabItem.action)
+        sbp('okTurtles.events/emit', CLOSE_MODAL)
+      }
     }
   },
 

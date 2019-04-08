@@ -1,5 +1,5 @@
 <template lang='pug'>
-  transition(name='slide-fade')
+  transition(name='zoom')
     .modal.is-active(data-test='modal' v-if='isActive' role='dialog')
       modal-close(@close='close')
       slot

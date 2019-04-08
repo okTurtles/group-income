@@ -1,9 +1,9 @@
 <template lang='pug'>
 modal-base-template
   .wrapper-container
-    tab-wrapper(:tabNav='settings' v-model='activeTab')
+    tab-wrapper(:tabNav='settings')
       tab-item
-        tab-placeholder(name='My account')
+        settings-user-profile
       tab-item
         tab-placeholder(name='Privacy & Safety')
       tab-item
@@ -12,8 +12,6 @@ modal-base-template
         settings-appearence
       tab-item
         tab-placeholder(name='Changelog')
-      tab-item
-        tab-placeholder(name='Log Out')
 
 </template>
 
@@ -23,6 +21,7 @@ import TabItem from '../../components/Tabs/TabItems.vue'
 import TabWrapper from '../../components/Tabs/TabWrapper.vue'
 import TabPlaceholder from './placeholder.vue'
 import SettingsAppearence from './Appearence.vue'
+import SettingsUserProfile from './UserProfile.vue'
 import Settings from '../../../model/settings.js'
 
 export default {
@@ -33,6 +32,7 @@ export default {
     TabWrapper,
     TabItem,
     SettingsAppearence,
+    SettingsUserProfile,
     TabPlaceholder
   },
 
@@ -66,6 +66,8 @@ export default {
 }
 
 .settings-container {
-  padding-left: 26px;
+  position: relative;
+  margin: 0 26px;
+  max-width: 456px;
 }
 </style>
