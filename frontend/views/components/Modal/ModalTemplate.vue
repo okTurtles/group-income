@@ -70,9 +70,7 @@ export default {
     },
     closeModal () {
       this.isActive = false
-      if (location.href.indexOf('?modal') > 0) {
-        history.pushState(null, null, location.href.split('?modal=')[0])
-      }
+      this.$router.push({ query: { modal: undefined } })
     }
   }
 }
