@@ -51,7 +51,8 @@ const state = {
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { name: string, identityContractId: string }
-  theme: 'blue'
+  theme: 'blue',
+  modal: ''
 }
 
 // Mutations must be synchronous! Never call these directly!
@@ -119,6 +120,9 @@ const mutations = {
   },
   setTheme (state, colors) {
     state.theme = colors
+  },
+  setModal (state, modal) {
+    state.modal = modal
   }
 }
 // https://vuex.vuejs.org/en/getters.html
@@ -205,6 +209,9 @@ const getters = {
   },
   isDarkTheme () {
     return Colors[state.theme].theme === 'dark'
+  },
+  modal (state) {
+    return state.modal
   }
 }
 
@@ -336,6 +343,12 @@ const actions = {
     colors: String
   ) {
     commit('setTheme', colors)
+  },
+  async setModal (
+    { commit }: {commit: Function},
+    modal: String
+  ) {
+    commit('setModal', modal)
   }
 }
 const debouncedSave = _.debounce((dispatch, savedState) => dispatch('saveSettings', savedState), 500)

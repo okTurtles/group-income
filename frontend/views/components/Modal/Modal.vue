@@ -3,6 +3,7 @@
 </template>
 <script>
 import sbp from '../../../../shared/sbp.js'
+import { mapGetters } from 'vuex'
 import { OPEN_MODAL, LOAD_MODAL, CLOSE_MODAL } from '../../../utils/events.js'
 
 export default {
@@ -24,6 +25,11 @@ export default {
     sbp('okTurtles.events/off', LOAD_MODAL, this.openModal)
     sbp('okTurtles.events/off', CLOSE_MODAL, this.closeModal)
   },
+  computed: {
+    ...mapGetters([
+      'modal'
+    ])
+  },
   methods: {
     openModal (componentName, pushState = true) {
       this.content = componentName
@@ -31,12 +37,12 @@ export default {
       if (pushState) {
         history.pushState(null, null, location.href + '?modal=' + componentName)
       }
-      window.localStorage.setItem('modal', true)
+      this.$store.dispatch('setModal', componentName)
 
       // Update the URL to allow back button to close the popup
       window.addEventListener('popstate', (event) => {
-        if (window.localStorage.getItem('modal')) {
-          window.localStorage.setItem('modal', false)
+        if (this.modal) {
+          this.$store.dispatch('setModal', false)
           sbp('okTurtles.events/emit', CLOSE_MODAL)
         }
         window.removeEventListener('popstate', null, null)
