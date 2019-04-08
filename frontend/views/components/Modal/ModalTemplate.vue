@@ -63,7 +63,7 @@ export default {
   },
   methods: {
     close (e) {
-      sbp('okTurtles.events/emit', 'close-modal')
+      sbp('okTurtles.events/emit', CLOSE_MODAL)
     },
     openModal () {
       this.isActive = true
