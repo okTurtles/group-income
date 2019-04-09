@@ -7,6 +7,7 @@ $fa-font-path: "../fonts/"; // Point to our own local fonts.
 @import "solid"; // Font awesome "solid" icons.
 @import "regular";
 @import "bulma_overrides/index";
+@import "transitions";
 
 // Load group income utilities
 @import "groupincome";
