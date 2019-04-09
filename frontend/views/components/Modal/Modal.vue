@@ -26,8 +26,7 @@ export default {
   },
   watch: {
     '$route' (to, from) {
-      if (from.query.modal) {
-        this.$store.dispatch('setModal', false)
+      if (from.query.modal && !to.query.modal) {
         sbp('okTurtles.events/emit', CLOSE_MODAL)
       }
     }
@@ -37,7 +36,6 @@ export default {
       this.content = componentName
       sbp('okTurtles.events/emit', OPEN_MODAL)
       this.$router.push({ query: { modal: componentName } })
-      this.$store.dispatch('setModal', componentName)
     },
     closeModal () {
       // Avoid event problem
