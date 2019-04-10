@@ -89,7 +89,8 @@ const animationMixins = {
       console.log('transitionAfterEnter')
       // Trigger/Target has opacity: 0 by default, so let's force to stay 1 after the animation finishes.
       // Velocity(el, { opacity: 1 }, { duration: 0 })
-      el.style.opacity = '1'
+      const elStyle: Object = el.style
+      elStyle.opacity = 1
     },
     targetLeave (el: HTMLElement, complete: Function) {
       console.log('targetLeave')
@@ -107,7 +108,8 @@ const animationMixins = {
       // Use only opacity to fadeIn/Out because it's faster than
       // Velocity's 'fadeIn' feature (it doesn't use display)
       // Velocity(el, { opacity: 0 }, { duration: 0 })
-      el.style.opacity = '0'
+      const elStyle: Object = el.style
+      elStyle.opacity = 0
     },
 
     // -- Masker animations

@@ -315,7 +315,7 @@ module.exports = (grunt) => {
           break
         case 'BUNDLE_END':
           grunt.verbose.debug(this.nameArgs, event.code)
-          const outputName = watchOpts.output.dir;
+          const outputName = watchOpts.output.file || watchOpts.output.dir
           grunt.log.writeln(chalk`{green created} {bold ${outputName}} {green in} {bold ${(event.duration / 1000).toFixed(1)}s}`)
           watchFlag || watcher.close() // stop watcher (only build once) if 'rollup:watch' isn't called
           done && done()
