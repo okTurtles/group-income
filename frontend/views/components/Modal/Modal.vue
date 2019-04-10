@@ -15,32 +15,27 @@ export default {
   created () {
     sbp('okTurtles.events/on', LOAD_MODAL, component => this.openModal(component))
     sbp('okTurtles.events/on', CLOSE_MODAL, component => this.closeModal(component))
-    if (location.href.indexOf('?modal') > 0) {
-      const url = new URL(location.href)
-      this.openModal(url.searchParams.get('modal'), false)
-    }
+  },
+  mounted () {
+    const modal = this.$route.query.modal
+    if (modal) this.openModal(modal)
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', LOAD_MODAL, this.openModal)
     sbp('okTurtles.events/off', CLOSE_MODAL, this.closeModal)
   },
+  watch: {
+    '$route' (to, from) {
+      if (from.query.modal && !to.query.modal) {
+        sbp('okTurtles.events/emit', CLOSE_MODAL)
+      }
+    }
+  },
   methods: {
-    openModal (componentName, pushState = true) {
+    openModal (componentName) {
       this.content = componentName
       sbp('okTurtles.events/emit', OPEN_MODAL)
-      if (pushState) {
-        history.pushState(null, null, location.href + '?modal=' + componentName)
-      }
-      window.localStorage.setItem('modal', true)
-
-      // Update the URL to allow back button to close the popup
-      window.addEventListener('popstate', (event) => {
-        if (window.localStorage.getItem('modal')) {
-          window.localStorage.setItem('modal', false)
-          sbp('okTurtles.events/emit', CLOSE_MODAL)
-        }
-        window.removeEventListener('popstate', null, null)
-      })
+      this.$router.push({ query: { modal: componentName } })
     },
     closeModal () {
       // Avoid event problem

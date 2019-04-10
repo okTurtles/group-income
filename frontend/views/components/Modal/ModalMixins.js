@@ -28,16 +28,14 @@ const modaMixins = {
   },
   methods: {
     close (e) {
-      sbp('okTurtles.events/emit', 'close-modal')
+      sbp('okTurtles.events/emit', CLOSE_MODAL)
     },
     openModal () {
       this.isActive = true
     },
     closeModal () {
       this.isActive = false
-      if (location.href.indexOf('?modal') > 0) {
-        history.pushState(null, null, location.href.split('?modal=')[0])
-      }
+      this.$router.push({ query: { modal: undefined } })
     }
   }
 }
