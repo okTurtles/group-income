@@ -116,7 +116,7 @@ describe('Full walkthrough', function () {
   })
 
   after(function () {
-    // The code below was originally Object.values(...) but changed to .keys() 
+    // The code below was originally Object.values(...) but changed to .keys()
     // due to a similar flow issue to https://github.com/facebook/flow/issues/2221
     Object.keys(users).forEach((userKey) => {
       users[userKey].socket && users[userKey].socket.destroy({ timeout: 500 })
