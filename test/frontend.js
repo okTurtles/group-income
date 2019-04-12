@@ -41,7 +41,7 @@ function login (name) {
       // Clear the input
       .insert(elT('loginName'))
       .insert(elT('loginName'), name)
-      .insert(elT('loginPassword'), 'testtest')
+      .insert(elT('password'), 'testtest')
       .click(elT('loginSubmit'))
       // we don't check the specific name because the display name could have been modified
       .wait(elT('profileDisplayName'))
@@ -56,7 +56,7 @@ function signup (name, email, password) {
       .wait(elT('modal'))
       .insert(elT('signName'), name)
       .insert(elT('signEmail'), email)
-      .insert(elT('signPassword'), password)
+      .insert(elT('password'), password)
       .wait(el => !document.querySelector(el).disabled, elT('signSubmit'))
       .click(elT('signSubmit'))
       .wait((el, name) => {
@@ -173,7 +173,7 @@ describe('Frontend', function () {
       const badPassword = `789`// six is so afraid
       const denied = await n.insert(elT('signName'), badUsername)
         .insert(elT('signEmail'), badEmail)
-        .insert(elT('signPassword'), badPassword)
+        .insert(elT('password'), badPassword)
         .evaluate(
           (el) => document.querySelector(el) && document.querySelector(el).disabled,
           elT('signSubmit')
