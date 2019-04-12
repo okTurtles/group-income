@@ -17,8 +17,8 @@ From anywhere in the App we can open any modal by using the `sbp` event `LOAD_MO
 </template>
 
 <script>
-import sbp from '../../../../shared/sbp.js'
-import { LOAD_MODAL } from '../../utils/events.js'
+import sbp from '~/shared/sbp.js'
+import { LOAD_MODAL } from '@utils/events.js'
 
 openLoginModal () {
   sbp('okTurtles.events/emit', LOAD_MODAL, 'LoginModal')
