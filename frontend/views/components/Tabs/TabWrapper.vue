@@ -20,8 +20,8 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import sbp from '../../../../shared/sbp.js'
-import { CLOSE_MODAL } from '../../../utils/events.js'
+import sbp from '~/shared/sbp.js'
+import { CLOSE_MODAL } from '~/frontend/utils/events.js'
 
 export default {
   name: 'TabWrapper',
