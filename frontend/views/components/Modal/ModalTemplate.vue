@@ -79,6 +79,7 @@ export default {
     border-radius: 6px;
     max-width: 640px;
     height: auto;
+    max-height: calc(100% - 20px);
   }
 
   &-head,
@@ -116,11 +117,16 @@ export default {
         min-height: 124px;
       }
     }
+
+    @media screen and (max-height: 500px) {
+      min-height: 50px;
+    }
   }
 
   &-body {
     width: 100%;
     padding: $gi-spacer-lg $gi-spacer;
+    overflow: scroll;
 
     > * {
       align-self: stretch;
@@ -130,6 +136,10 @@ export default {
       max-width: calc(400px + 2rem);
       align-self: center;
     }
+
+    @media screen and (max-height: 500px) {
+      overflow: scroll;
+    }
   }
 
   &-foot {
@@ -138,6 +148,10 @@ export default {
 
     @include desktop {
       padding-bottom: $gi-spacer-xl;
+    }
+
+    @media screen and (max-height: 500px) {
+      padding-bottom: $gi-spacer;
     }
 
     .button {
