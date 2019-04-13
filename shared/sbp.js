@@ -10,7 +10,9 @@ var selectorFilters: {[string]: Array<TypeFilter>} = {}
 const DOMAIN_REGEX = /^[^/]+/
 
 function sbp (selector: string, ...data: any): any {
-  const domain = DOMAIN_REGEX.exec(selector)[0]
+  const domainLookup = DOMAIN_REGEX.exec(selector)
+  if (domainLookup === null) return
+  const domain = domainLookup[0]
   // Filters can perform additional functions, and by returning `false` they
   // can prevent the execution of a selector.
   // TODO: decide whether the order of filter calls should be reversed

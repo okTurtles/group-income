@@ -158,6 +158,7 @@ declare module './views/containers/proposals-form/Mincome.vue' { declare module.
 declare module './views/containers/proposals-form/RuleChangeRule.vue' { declare module.exports: Object }
 declare module './views/containers/proposals-form/RuleAddMember.vue' { declare module.exports: Object }
 declare module './views/containers/proposals-form/RuleRemoveMember.vue' { declare module.exports: Object }
+declare module './views/components/AppStyles.vue' { declare module.exports: Object }
 
 declare module '../../utils/flow-typer.js' { declare module.exports: Object }
 declare module './backend/pubsub.js' { declare module.exports: Function }
@@ -217,6 +218,9 @@ declare module '../shared/domains/okTurtles/events/index.js' { declare module.ex
 declare module './lazyLoadedView.js' { declare module.exports: any }
 declare module '../shared/domains/okTurtles/events/index.js' { declare module.exports: any }
 declare module '../backend/index.js' { declare module.exports: any }
+declare module './utils/autofocus.js' { declare module.exports: any }
+declare module './views/utils/v-style.js' { declare module.exports: any }
+declare module './colors.js' { declare module.exports: any }
 
 // we ignored everything in assets/, so...
 declare module '../frontend/controller/utils/primus.js' { declare module.exports: Function }

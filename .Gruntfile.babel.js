@@ -150,7 +150,7 @@ module.exports = (grunt) => {
         middleware: (connect, opts, middlewares) => {
           middlewares.unshift((req, res, next) => {
             var f = url.parse(req.url).pathname // eslint-disable-line
-            if (/^\/app(\/|$)/.test(f)) {
+            if (f !== undefined && /^\/app(\/|$)/.test(f)) {
               // NOTE: if you change the URL from /app you must modify it here,
               //       and also:
               //       - page() function in `frontend/test.js`
