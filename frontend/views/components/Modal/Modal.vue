@@ -1,15 +1,18 @@
 <template lang='pug'>
-  component(:is='content')
+  div
+    component(:is='content')
+    component(:is='subcontent[subcontent.length-1]')
 </template>
 <script>
-import sbp from '../../../../shared/sbp.js'
-import { OPEN_MODAL, LOAD_MODAL, CLOSE_MODAL } from '../../../utils/events.js'
+import sbp from '~/shared/sbp.js'
+import { OPEN_MODAL, LOAD_MODAL, CLOSE_MODAL } from '@utils/events.js'
 
 export default {
   name: 'Modal',
   data () {
     return {
-      content: null
+      content: null,
+      subcontent: []
     }
   },
   created () {
@@ -33,13 +36,28 @@ export default {
   },
   methods: {
     openModal (componentName) {
-      this.content = componentName
-      sbp('okTurtles.events/emit', OPEN_MODAL)
-      this.$router.push({ query: { modal: componentName } })
+      if (this.content) {
+        this.subcontent.push(componentName)
+        sbp('okTurtles.events/emit', OPEN_MODAL)
+      } else {
+        this.content = componentName
+        sbp('okTurtles.events/emit', OPEN_MODAL)
+      }
+      this.$router.push({ query: { modal: this.content, subcontent: this.subcontent[this.subcontent.length - 1] } })
     },
     closeModal () {
-      // Avoid event problem
-      this.content = null
+      let query = {}
+      // Avoid event problem by removing completly the component
+      if (this.subcontent.length) {
+        this.subcontent.pop()
+        query = {
+          subcontent: this.subcontent[this.subcontent.length - 1],
+          modal: this.content
+        }
+      } else {
+        this.content = undefined
+      }
+      this.$router.push({ query: query })
     }
   }
 }

@@ -1,6 +1,6 @@
 <template lang='pug'>
   transition(name='zoom')
-    .modal.is-active(data-test='modal' v-if='isActive' role='dialog')
+    .modal(data-test='modal' role='dialog')
       modal-close(@close='close')
       slot
 </template>
@@ -16,19 +16,15 @@ export default {
 
 <style lang='scss' scoped>
 .modal {
-  display: none;
+  display: flex;
   position: fixed;
+  z-index: 9998;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 9998;
+  bottom: 0;
+  right: 0;
   background: var(--primary);
   overflow: auto;
-
-  &.is-active {
-    display: flex;
-  }
 }
 
 .modal-body {

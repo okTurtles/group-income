@@ -1,28 +1,30 @@
 <template lang='pug'>
-  .modal.is-active(data-test='modal' v-if='isActive' role='dialog')
-    transition(name='fade' v-if='isActive' appear)
+  .modal(data-test='modal' role='dialog')
+    transition(name='fade' appear)
       .modal-background(@click='close')
-    .modal-card(ref='card')
-      header.modal-card-head.has-text-centered(
-        :class='{ "has-subtitle": $scopedSlots.subTitle }'
-        v-if='$scopedSlots.title || $scopedSlots.subTitle'
-      )
-        modal-close(@close='close')
-        h2.modal-card-title.subtitle.is-marginless.has-text-text-light(v-if='$scopedSlots.subTitle')
-          slot(name='subTitle')
-        h1.title(v-if='$scopedSlots.title')
-          slot(name='title')
 
-      section.modal-card-body
-        slot
-        .buttons(v-if='$scopedSlots.buttons')
-          slot(name='buttons')
+    transition(name='slide-left' appear)
+      .modal-card(ref='card')
+        header.modal-card-head.has-text-centered(
+          :class='{ "has-subtitle": $scopedSlots.subTitle }'
+          v-if='$scopedSlots.title || $scopedSlots.subTitle'
+        )
+          modal-close(@close='close')
+          h2.modal-card-title.subtitle.is-marginless.has-text-text-light(v-if='$scopedSlots.subTitle')
+            slot(name='subTitle')
+          h1.title(v-if='$scopedSlots.title')
+            slot(name='title')
 
-        p.has-text-danger(data-test='submitError' v-if='$scopedSlots.errors')
-          slot(name='errors')
+        section.modal-card-body
+          slot
+          .buttons(v-if='$scopedSlots.buttons')
+            slot(name='buttons')
 
-      footer.modal-card-foot(v-if='$scopedSlots.buttons || $scopedSlots.footer || $scopedSlots.errors')
-        slot(name='footer')
+          p.has-text-danger(data-test='submitError' v-if='$scopedSlots.errors')
+            slot(name='errors')
+
+        footer.modal-card-foot(v-if='$scopedSlots.buttons || $scopedSlots.footer || $scopedSlots.errors')
+          slot(name='footer')
 
 </template>
 
@@ -39,29 +41,28 @@ export default {
 @import "../../../assets/sass/theme/index";
 
 .modal {
+  display: flex;
+  position: fixed;
+  z-index: 9998;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
   justify-content: center;
   align-items: center;
-  position: fixed;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: none;
-  z-index: 40;
   max-width: 100vw;
-
-  &.is-active {
-    display: flex;
-  }
+  overflow: auto;
 }
 
-.modal-background {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  top: 0;
-  background-color: rgba(10, 10, 10, 0.86);
+@include desktop {
+  .modal-background {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: 0;
+    background-color: rgba(10, 10, 10, 0.86);
+  }
 }
 
 .modal-card {
@@ -80,6 +81,7 @@ export default {
     max-width: 640px;
     height: auto;
     max-height: calc(100% - 20px);
+    transition: none !important;
   }
 
   &-head,

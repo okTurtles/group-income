@@ -90,6 +90,12 @@
               | Not an email
 
         .has-text-centered.button-box
+          button.button(
+            data-test="passwordBtn"
+            @click.prevent="openModal('PasswordModal')"
+          )
+            i18n Update Password
+
           button.button.is-success.is-large(
             :disabled='$v.edited.$invalid'
             type='submit'
@@ -102,6 +108,7 @@
 <script>
 import { validationMixin } from 'vuelidate'
 import { email, helpers } from 'vuelidate/lib/validators'
+import { LOAD_MODAL } from '../../../utils/events.js'
 import Avatar from '../../components/Avatar.vue'
 import sbp from '../../../../shared/sbp.js'
 import L from '../../utils/translations.js'
@@ -146,6 +153,10 @@ export default {
     }
   },
   methods: {
+    openModal (mode) {
+      sbp('okTurtles.events/emit', LOAD_MODAL, mode)
+      return false
+    },
     async save () {
       try {
         this.profileSaved = false

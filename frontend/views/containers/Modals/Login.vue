@@ -28,21 +28,12 @@
           v-show='$v.form.name.$error'
         ) username cannot contain spaces
 
-      .field
-        p.control.has-icon
-          form-password(
-            :value='form'
-            :v='$v.form'
-            @enter='login'
-            @input='(newPassword) => {password = newPassword}'
-          )
-          span.icon
-            i.fas.fa-lock
-
-        i18n.help.is-danger(
-          v-show='$v.form.password.$error'
-          data-test='badPassword'
-        ) password must be at least 7 characters
+      form-password(
+        :value='form'
+        :v='$v.form'
+        @enter='login'
+        @input='(newPassword) => {password = newPassword}'
+      )
 
       template(slot='buttons')
         button.button.is-primary(
