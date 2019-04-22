@@ -1,6 +1,13 @@
 <template lang='pug'>
   .tab-wrapper
-    .tab-nav-toggle(:class="{'open': open}" @click="open = !open")
+    .tab-nav-header
+      button.button.is-icon.tab-back(
+        :aria-label='back'
+        :class="{'open': open}"
+        @click='open = !open'
+      )
+        i.fa.fa-chevron-left(aria-hidden='true')
+
     nav.tab-nav(:class="{'open': open}" @click="open = false")
       .tab-nav-list(v-for='(tabItem, index) in tabNav' :key='index')
         legend.tab-legend(v-if='tabItem.legend') {{ tabItem.legend }}
@@ -11,7 +18,9 @@
           v-for='(links, index) in tabItem.links'
           @click='tabClick(links)'
           :key='index'
-        ) {{ links.title }}
+        )
+          | {{ links.title }}
+          i.fa.fa-chevron-right(aria-hidden='true')
 
     section.tab-section
       slot
@@ -35,7 +44,7 @@ export default {
     return {
       activeTab: this.value || 0,
       tabItems: [],
-      open: false
+      open: true
     }
   },
 
@@ -103,18 +112,74 @@ $activeColor: #fff;
 $closeMobileBgColor: #000;
 $closeMobileBarBgColor: #3c3c3c;
 
+.tab-nav-header {
+  position: relative;
+  z-index: 3;
+  height: 65px;
+  width: 100%;
+  background-color: var(--primary-bg-s);
+
+  @include tablet {
+    display: none;
+  }
+}
+
 .tab-nav {
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  width: 35%;
-  min-width: 190px;
-  background-color: var(--primary-bg-s);
+  align-items: center;
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  padding-top: 62px;
+  transition: transform 150ms cubic-bezier(0.4, 0.25, 0.3, 1);
+  transform: translateX(-100%);
+  z-index: 2;
+  background-color: #fff;
+
+  &.open {
+    transform: translateX(0);
+  }
+
+  @include tablet {
+    min-width: 190px;
+    width: 35%;
+    background-color: var(--primary-bg-s);
+    position: relative;
+    align-items: flex-end;
+    padding-top: 0;
+    transform: translateX(0);
+  }
+}
+
+.tab-back {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 1;
+  height: 32px;
+  width: 32px;
+
+  &:focus,
+  &:hover {
+    background: transparent;
+  }
+
+  &.open {
+    opacity: 0;
+  }
 }
 
 .tab-wrapper {
   display: flex;
+  flex-direction: column;
   min-height: 100%;
+
+  @include tablet {
+    flex-direction: row;
+  }
 
   > * div {
     padding-top: 15px;
@@ -129,6 +194,16 @@ $closeMobileBarBgColor: #3c3c3c;
 
 .tab-link {
   color: #363636;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  @include tablet {
+    .fa {
+      display: none;
+      color: #DBDBDB;
+    }
+  }
 }
 
 .tab-legend,
@@ -142,12 +217,16 @@ $closeMobileBarBgColor: #3c3c3c;
 .tab-nav-list {
   display: flex;
   flex-direction: column;
-  width: 175px;
   padding-right: 7px;
+  width: 456px;
 
   &:first-child .tab-legend {
     margin-top: 2px;
     margin-bottom: 0;
+  }
+
+  @include tablet {
+    width: 175px;
   }
 }
 
@@ -170,96 +249,34 @@ $closeMobileBarBgColor: #3c3c3c;
 .tab-nav-separator {
   margin: -1px 24px 15px 8px;
   padding: 0;
-  background: #b2c3ca;
   height: 1px;
+  background: #b2c3ca;
+  opacity: 0;
+
+  @include tablet {
+    opacity: 1;
+  }
 }
 
 .tab-item {
   box-sizing: border-box;
   height: 100%;
+  display: flex;
+  justify-content: center;
+
+  @include tablet {
+    justify-content: start;
+  }
 }
 
 .tab-section {
-  width: 65%;
+  width: 100%;
   background-color: #fff;
-}
+  flex: 1;
 
-@include phone {
-  .title {
-    margin: 14px 0 24px 40px;
-  }
-
-  .tab-nav-toggle {
-    position: absolute;
-    top: 25px;
-    left: 12px;
-    z-index: 30;
-    height: 40px;
-    width: 40px;
-    background-color: var(--bg-color);
-    border-radius: 50%;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-
-    &::before,
-    &::after {
-      content: "";
-      position: absolute;
-      top: 15px;
-      left: 14px;
-      width: 12px;
-      height: 2.5px;
-      background: var(--action-color);
-      transition: all 0.3s ease-out;
-      transform-origin: 50%;
-    }
-
-    &::after {
-      top: 22px;
-    }
-
-    &:hover {
-      &::before,
-      &::after {
-        transform: rotate(180deg);
-      }
-    }
-
-    &.open {
-      background-color: $closeMobileBgColor;
-
-      &::before,
-      &::after {
-        background-color: $closeMobileBarBgColor;
-        transform: rotate(90deg);
-      }
-    }
-  }
-
-  .tab-wrapper {
-    display: block;
-  }
-
-  .tab-nav {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    z-index: 20;
-    width: 100%;
-    padding-top: 62px;
-    padding-left: 24px;
-    align-items: flex-start;
-    transition: transform 150ms cubic-bezier(0.4, 0.25, 0.3, 1);
-    transform: translateX(-100%);
-
-    &.open {
-      transform: translateX(0);
-    }
-  }
-
-  .tab-section {
-    width: 100%;
+  @include tablet {
+    width: 65%;
   }
 }
+
 </style>

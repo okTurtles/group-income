@@ -13,21 +13,25 @@ export default {
 
 .modal-close {
   position: absolute;
-  z-index: 1;
+  top: 1rem;
   right: 1rem;
-  height: 40px;
-  width: 40px;
+  z-index: 4;
+  height: 32px;
+  width: 32px;
   border: none;
   border-radius: 50%;
   @extend %unselectable;
   -moz-appearance: none;
   -webkit-appearance: none;
   cursor: pointer;
-  background-color: #f1f1f1;
+  background-color: transparent;
 
   @include tablet {
+    background-color: #f1f1f1;
     top: 24px;
     right: 24px;
+    height: 40px;
+    width: 40px;
   }
 
   @include desktop {
@@ -37,7 +41,7 @@ export default {
 
   &::before,
   &::after {
-    background-color: #363636;
+    background-color: $text-light;
     content: "";
     display: block;
     position: absolute;
@@ -48,6 +52,10 @@ export default {
     transition: transform 0.15s ease-in;
     transform: translateX(-50%) translateY(-50%) rotate(45deg);
     transform-origin: center center;
+
+    @include desktop {
+      background-color: #363636;
+    }
   }
 
   &::after {
@@ -66,6 +74,11 @@ export default {
     &::after {
       transform: translateX(-50%) translateY(-50%) rotate(0);
     }
+  }
+
+  .slide-left-enter-active,
+  .slide-left-leave-active {
+    transition: transform 0.6s;
   }
 }
 </style>
