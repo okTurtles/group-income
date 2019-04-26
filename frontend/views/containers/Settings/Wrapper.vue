@@ -16,13 +16,13 @@ modal-base-template
 </template>
 
 <script>
-import ModalBaseTemplate from '../../components/Modal/ModalBaseTemplate.vue'
-import TabItem from '../../components/Tabs/TabItems.vue'
-import TabWrapper from '../../components/Tabs/TabWrapper.vue'
+import Settings from '~/frontend/model/settings.js'
+import ModalBaseTemplate from '@components/Modal/ModalBaseTemplate.vue'
+import TabItem from '@components/Tabs/TabItems.vue'
+import TabWrapper from '@components/Tabs/TabWrapper.vue'
 import TabPlaceholder from './placeholder.vue'
 import SettingsAppearence from './Appearence.vue'
 import SettingsUserProfile from './UserProfile.vue'
-import Settings from '../../../model/settings.js'
 
 export default {
   name: 'SettingsWrapper',
@@ -49,15 +49,6 @@ export default {
   height: 100%;
   width: 100%;
   opacity: 1;
-
-  /deep/ .settings-title {
-    margin: 9px 0 24px 0;
-    font-weight: bold;
-
-    @include phone {
-      margin: 14px 0 24px 28px;
-    }
-  }
 
   /deep/ .settings-subtitle {
     margin-bottom: 24px;

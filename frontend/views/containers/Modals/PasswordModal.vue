@@ -1,39 +1,62 @@
 <template lang='pug'>
-  modal-template
-    template(slot='title') Change password
+  form(
+    novalidate
+    ref='form'
+    name='formData'
+    @submit.prevent='changePassword'
+  )
+    modal-template(class="has-no-background")
+      template(slot='title') Change password
 
-    form-password(
-      name='current'
-      :label='L("Current Password")'
-      :value='form'
-      :v='$v.form'
-      @enter='changePassword'
-      @input='(password) => { newPassword = password }'
-    )
+      form-password(
+        name='current'
+        :label='L("Current Password")'
+        :value='form'
+        :v='$v.form'
+        @enter='changePassword'
+        @input='(password) => { newPassword = password }'
+        :hasIconRight='true'
+        :showPlaceholder='true'
+        :showPassword='true'
+        size='is-large'
+      )
 
-    form-password(
-      name='newPassword'
-      :label='L("New Password")'
-      :value='form'
-      :v='$v.form'
-      @enter='changePassword'
-      @input='(password) => { newPassword = password }'
-    )
+      form-password(
+        name='newPassword'
+        :label='L("New Password")'
+        :value='form'
+        :v='$v.form'
+        @enter='changePassword'
+        @input='(password) => { newPassword = password }'
+        :hasIconRight='true'
+        :showPlaceholder='true'
+        :showPassword='true'
+        size='is-large'
+      )
 
-    form-password(
-      name='confirm'
-      :label='L("Confirm new Password")'
-      :value='form'
-      :v='$v.form'
-      @enter='changePassword'
-      @input='(password) => { newPassword = password }'
-    )
+      form-password(
+        name='confirm'
+        :label='L("Confirm new Password")'
+        :value='form'
+        :v='$v.form'
+        @enter='changePassword'
+        @input='(password) => { newPassword = password }'
+        :hasIconRight='true'
+        :showPlaceholder='true'
+        :showPassword='true'
+        size='is-large'
+      )
 
-    template(slot='errors') {{ form.response }}
+      template(slot='errors') {{ form.response }}
 
-    template(slot='buttons')
-      button.button.is-primary(@click='close') Cancel
-      button.button.is-primary(@click='changePassword') Change password
+      template(slot='buttons')
+        button.button.is-outlined(
+          @click='close'
+        ) Cancel
+        button.button(
+          @click='changePassword'
+          :disabled='$v.form.$invalid'
+        ) Change password
 
 </template>
 <script>
@@ -61,6 +84,7 @@ export default {
   validations: {
     form: {
       current: {
+        required,
         checkOldPassword: value => {
           // TODO
           console.log('Todo: check password')
@@ -80,6 +104,7 @@ export default {
         minLength: minLength(7)
       },
       confirm: {
+        required,
         sameAsPassword: sameAs('newPassword')
       }
     }
@@ -104,3 +129,9 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+.modal-card-body {
+  padding-top: 0;
+}
+</style>

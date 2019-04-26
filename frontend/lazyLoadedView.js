@@ -10,4 +10,4 @@ Vue.component('RuleRemoveMember', () => import('./views/containers/proposals-for
 Vue.component('PasswordModal', () => import('./views/containers/Modals/PasswordModal.vue'))
 
 // TODO Remove after design test period
-Vue.component('DesignSystemModal', () => import('./views/containers/Modals/DesignSystemModal.vue'))
+Vue.component('DesignSystemModal', () => import('./views/containers/Modals/DesignSystem.vue'))

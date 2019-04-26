@@ -1,7 +1,5 @@
 <template lang='pug'>
   .settings-container
-    h1.settings-title.is-size-4 Appearance
-
     section
       h2.settings-subtitle.is-size-5 Theme
 

@@ -3,19 +3,21 @@
   label.label(v-if='label')
     i18n {{ label }}
 
-  .control.has-icon
+  .control.has-icon(:class="{'has-icon-right': hasIconRight}")
     input.input(
-      type='password'
+      :type="isLock ? 'password' : 'text'"
       :id='name'
-      :class="{'is-danger': v[name].$error}"
+      :class="[{'is-danger': v[name].$error}, size]"
       :name='name'
-      :placeholder='name'
+      :placeholder="showPlaceholder ? name : ''"
       :data-test='name'
       v-model='value[name]'
       @input="v[name].$touch()"
     )
-    span.icon
-      i.fas.fa-lock
+    span.icon(@click.stop="isLock = !isLock")
+      i.fas(
+        :class="isLock ? 'fa-lock' : 'fa-eye'"
+      )
 
   i18n.help.is-danger(
     v-show='v[name].$error'
@@ -27,6 +29,11 @@
 <script>
 export default {
   name: 'FormPassword',
+  data () {
+    return {
+      isLock: true
+    }
+  },
   props: {
     name: {
       type: String,
@@ -44,7 +51,26 @@ export default {
     v: {
       type: Object,
       required: true
+    },
+    hasIconRight: {
+      type: Boolean,
+      default: false
+    },
+    showPlaceholder: {
+      type: Boolean,
+      default: false
+    },
+    showPassword: {
+      type: Boolean,
+      default: false
+    },
+    size: {
+      type: String,
+      required: false
     }
+  },
+  created () {
+    this.isLock = !this.showPassword
   },
   watch: {
     value () {
@@ -53,3 +79,10 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+  .icon {
+    cursor: pointer;
+    pointer-events: initial !important;
+  }
+</style>

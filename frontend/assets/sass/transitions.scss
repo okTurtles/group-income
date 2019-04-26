@@ -1,3 +1,5 @@
+@import "./theme/index";
+
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s;
@@ -58,18 +60,55 @@
   transform: translateX(-100%);
 }
 
+.zoom-enter-active {
+  animation: enterFromBottom 500ms both cubic-bezier(0.165, 0.84, 0.44, 1);
+
+  @include tablet {
+    animation: zoom 0.3s;
+  }
+}
+
+.zoom-leave-active {
+  animation: enterFromBottom 500ms both cubic-bezier(0.165, 0.84, 0.44, 1) reverse;
+
+  @include tablet {
+    animation: zoom 0.3s reverse;
+  }
+}
+
+.slide-left-enter-active,
+.slide-left-leave-active {
+  transition: transform 0.3s;
+}
+
+.slide-left-enter,
+.slide-left-leave-to {
+  transform: translate3d(100%, 0, 0);
+}
+
+
 @keyframes blink-animation {
   to {
     opacity: 0;
   }
 }
 
-.zoom-enter-active {
-  animation: zoom 0.3s;
+@keyframes enterFromLeft {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
-.zoom-leave-active {
-  animation: zoom 0.3s reverse;
+@keyframes enterFromBottom {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
 @keyframes zoom {
@@ -82,14 +121,4 @@
     opacity: 1;
     transform: scale3d(1, 1, 1);
   }
-}
-
-.slide-left-enter-active,
-.slide-left-leave-active {
-  transition: transform 0.3s;
-}
-
-.slide-left-enter,
-.slide-left-leave-to {
-  transform: translate3d(100%, 0, 0);
 }

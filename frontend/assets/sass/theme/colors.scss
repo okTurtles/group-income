@@ -44,3 +44,8 @@ $addColors: (
 );
 
 $colors: map-merge($colors, $addColors);
+
+.is-danger {
+  color: $danger;
+  font-weight: bold;
+}

@@ -23,7 +23,7 @@
           p.has-text-danger(data-test='submitError' v-if='$scopedSlots.errors')
             slot(name='errors')
 
-        footer.modal-card-foot(v-if='$scopedSlots.buttons || $scopedSlots.footer || $scopedSlots.errors')
+        footer.modal-card-foot(v-if='$scopedSlots.footer')
           slot(name='footer')
 
 </template>
@@ -181,6 +181,20 @@ export default {
 }
 
 // Mofifiers
+.has-no-background {
+  .modal-close {
+    top: 24px;
+    right: 16px;
+    background-color: #f1f1f1;
+    width: 40px;
+    height: 40px;
+  }
+
+  .modal-card-body {
+    padding-top: 1.1rem;
+  }
+}
+
 .has-background {
   .modal-close {
     background-color: #fff;

@@ -1,23 +1,25 @@
-<template>
-  <div class="level is-mobile c-profile" v-if="$store.state.loggedIn">
-    <div class="level-left">
-      <avatar :src="userPicture" hasMargin />
-      <div class="c-user">
-        <p class="gi-is-ellipsis has-text-weight-bold"
+<template lang='pug'>
+  .level.is-mobile.c-profile(v-if='$store.state.loggedIn')
+    .level-left
+      avatar(:src='userPicture' hasMargin size='md')
+      .c-user
+        p.gi-is-ellipsis.has-text-weight-bold(
           :data-test="userDisplayName ? 'profileName' : 'profileDisplayName'"
-          :class="`has-text-${isDarkTheme ? 'white' : 'dark'}`">
-          {{userDisplayName ? userDisplayName : userName}}
-        </p>
-        <span class="gi-is-ellipsis is-size-6" data-test="profileDisplayName" v-if="userDisplayName">{{userName}}</span>
-      </div>
-    </div>
-    <div class="level-right">
-      <button class="button is-icon" data-test="settingsBtn"
-        @click="openModal('Settings')">
-        <i class="fa fa-cog"></i>
-      </button>
-    </div>
-  </div>
+          :class="`has-text-${isDarkTheme ? 'white' : 'dark'}`"
+        ) {{userDisplayName ? userDisplayName : userName}}
+
+        span.gi-is-ellipsis.is-size-6(
+          data-test='profileDisplayName'
+          v-if='userDisplayName'
+        ) {{userName}}
+
+    .level-right
+      button.button.is-icon(
+        data-test='settingsBtn'
+        @click="openModal('Settings')"
+      )
+        i.fa.fa-cog
+
 </template>
 <style lang="scss" scoped>
 @import "../../../assets/sass/theme/index";

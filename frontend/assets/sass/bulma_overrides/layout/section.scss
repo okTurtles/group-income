@@ -1,9 +1,14 @@
 @import "../../node_modules/bulma/sass/layout/section";
 
 .section {
-  width: 100%;
-  max-width: 50rem;
+  width: 50rem;
   padding: 0;
+  margin: 0 auto;
+  max-width: calc(100% - 2rem);
+
+  @include tablet {
+    max-width: 100%;
+  }
 
   &.is-hero {
     padding-bottom: $gi-spacer-lg;

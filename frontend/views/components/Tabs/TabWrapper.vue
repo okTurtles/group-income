@@ -1,23 +1,32 @@
 <template lang='pug'>
-  .tab-wrapper
+  .tab-wrapper(:class="{'open': open}")
     .tab-nav-header
       button.button.is-icon.tab-back(
-        :aria-label='back'
-        :class="{'open': open}"
+        aria-label='back'
         @click='open = !open'
       )
         i.fa.fa-chevron-left(aria-hidden='true')
 
-    nav.tab-nav(:class="{'open': open}" @click="open = false")
-      .tab-nav-list(v-for='(tabItem, index) in tabNav' :key='index')
+      h1.tab-title
+        i18n.menu-title Settings
+        i18n.main-title {{ title }}
+
+    nav.tab-nav-sidebar(
+      aria-label='navigation'
+      @click='open = false'
+    )
+      .tab-nav-list(
+        v-for='(tabItem, index) in tabNav'
+        :key='index'
+      )
         legend.tab-legend(v-if='tabItem.legend') {{ tabItem.legend }}
         hr.tab-nav-separator(v-else)
 
         a.tab-link.no-border(
-          :class="{ 'tab-active': activeTab === tabItem.index, 'has-text-white': isDarkTheme}"
           v-for='(links, index) in tabItem.links'
-          @click='tabClick(links)'
           :key='index'
+          :class="{ 'tab-active': activeTab === tabItem.index, 'has-text-white': isDarkTheme}"
+          @click='tabClick(links)'
         )
           | {{ links.title }}
           i.fa.fa-chevron-right(aria-hidden='true')
@@ -44,7 +53,8 @@ export default {
     return {
       activeTab: this.value || 0,
       tabItems: [],
-      open: true
+      open: true,
+      title: this.tabNav[0].links[0].title || ''
     }
   },
 
@@ -86,6 +96,7 @@ export default {
      * Tab click listener change active tab.
      */
     tabClick (tabItem) {
+      this.title = tabItem.title
       if (tabItem.index !== undefined) {
         this.changeTab(tabItem.index)
       } else {
@@ -112,45 +123,52 @@ $activeColor: #fff;
 $closeMobileBgColor: #000;
 $closeMobileBarBgColor: #3c3c3c;
 
-.tab-nav-header {
-  position: relative;
-  z-index: 3;
-  height: 65px;
-  width: 100%;
-  background-color: var(--primary-bg-s);
+// Page wrapper
+.tab-wrapper {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 64px 1fr;
+  grid-template-areas:
+    "header header"
+    "main main";
+  min-height: 100%;
+  background-color: #fff;
 
   @include tablet {
-    display: none;
+    grid-template-columns: 35% auto;
+    grid-template-areas:
+      "sidebar header"
+      "sidebar main";
   }
 }
 
-.tab-nav {
+// Header
+.tab-nav-header {
+  grid-area: header;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 100%;
-  padding-top: 62px;
-  transition: transform 150ms cubic-bezier(0.4, 0.25, 0.3, 1);
-  transform: translateX(-100%);
-  z-index: 2;
-  background-color: #fff;
-
-  &.open {
-    transform: translateX(0);
-  }
+  position: relative;
+  z-index: 3;
+  background-color: var(--primary-bg-s);
 
   @include tablet {
-    min-width: 190px;
-    width: 35%;
-    background-color: var(--primary-bg-s);
-    position: relative;
-    align-items: flex-end;
-    padding-top: 0;
-    transform: translateX(0);
+    justify-content: start;
+    background-color: transparent;
+  }
+}
+
+.menu-title {
+  display: none;
+}
+
+.tab-title {
+  font-weight: bold;
+  font-size: 0.875rem;
+
+  @include tablet {
+    margin: 16px 0 0 27px;
+    font-size: 1.5rem;
   }
 }
 
@@ -159,74 +177,101 @@ $closeMobileBarBgColor: #3c3c3c;
   top: 1rem;
   left: 1rem;
   z-index: 1;
-  height: 32px;
-  width: 32px;
+  height: 2rem;
+  width: 2rem;
 
   &:focus,
   &:hover {
     background: transparent;
   }
 
-  &.open {
-    opacity: 0;
+  @include tablet {
+    display: none;
   }
 }
 
-.tab-wrapper {
+// Sidebar
+.tab-nav-sidebar {
+  grid-area: main;
   display: flex;
   flex-direction: column;
-  min-height: 100%;
+  align-items: center;
+  width: 100%;
+  transition: transform 500ms cubic-bezier(0.165, 0.84, 0.44, 1);
+  transform: translateX(-100%);
+  z-index: 2;
+  background-color: #fff;
 
   @include tablet {
-    flex-direction: row;
-  }
-
-  > * div {
-    padding-top: 15px;
+    grid-area: sidebar;
+    background-color: var(--primary-bg-s);
+    position: relative;
+    align-items: flex-end;
+    padding-top: 0;
+    transform: translateX(0);
   }
 }
 
 .tab-legend {
-  text-transform: uppercase;
-  letter-spacing: 0.1px;
+  height: 2rem;
   color: $legendColor;
+  font-size: 12px;
+  letter-spacing: 0.2px;
+  text-transform: uppercase;
+
+  @include tablet {
+    height: 38px;
+    letter-spacing: 0.1px;
+  }
 }
 
 .tab-link {
   color: #363636;
   display: flex;
   justify-content: space-between;
-  align-items: center;
-
+  letter-spacing: -0.4px;
+  height: 44px;
   @include tablet {
-    .fa {
+    height: 32px;
+  }
+
+  .fa {
+    color: #DBDBDB;
+    font-size: 15px;
+    margin-top: -2px;
+
+    @include tablet {
       display: none;
-      color: #DBDBDB;
     }
   }
 }
 
 .tab-legend,
 .tab-link {
-  padding: 7px 8px 7px 8px;
-  margin-bottom: 2px;
+  display: flex;
+  align-items: center;
+  padding-left: 8px;
+  padding-right: 8px;
+  border-radius: 2px;
   cursor: pointer;
   transition: padding-left 150ms cubic-bezier(0.4, 0.25, 0.3, 1), background-color 150ms cubic-bezier(0.4, 0.25, 0.3, 1);
+
+  @include tablet {
+    margin-right: 4px;
+  }
 }
 
 .tab-nav-list {
   display: flex;
   flex-direction: column;
-  padding-right: 7px;
   width: 456px;
-
-  &:first-child .tab-legend {
-    margin-top: 2px;
-    margin-bottom: 0;
-  }
+  max-width: calc(100% - 1rem);
+  padding: 16px 4px 6px 0;
 
   @include tablet {
-    width: 175px;
+    width: 183px;
+    padding-top: 14px;
+    padding-bottom: 0px;
   }
 }
 
@@ -236,25 +281,21 @@ $closeMobileBarBgColor: #3c3c3c;
   color: $activeColor;
 }
 
-.tab-link:hover,
-.tab-active {
-  border-radius: 2px;
-}
-
 .tab-link:hover {
   padding-left: 15px;
   background-color: $primary-bg-a;
 }
 
 .tab-nav-separator {
-  margin: -1px 24px 15px 8px;
-  padding: 0;
   height: 1px;
+  margin: 4px auto;
   background: #b2c3ca;
   opacity: 0;
 
   @include tablet {
     opacity: 1;
+    margin: 3px 28px 9px 8px;
+    margin-bottom: 1rem;
   }
 }
 
@@ -269,13 +310,46 @@ $closeMobileBarBgColor: #3c3c3c;
   }
 }
 
+// Main content
 .tab-section {
-  width: 100%;
-  background-color: #fff;
-  flex: 1;
+  grid-area: main;
 
-  @include tablet {
-    width: 65%;
+  transition: transform 500ms cubic-bezier(0.165, 0.84, 0.44, 1);
+  transform: translateX(0%);
+}
+
+// Open state
+.open {
+  .tab-nav-sidebar {
+    transform: translateX(0);
+  }
+
+  .tab-back  {
+    opacity: 0;
+  }
+
+  .menu-title {
+    display: block;
+
+    @include tablet {
+      display: none;
+    }
+  }
+
+  .main-title {
+    display: none;
+
+    @include tablet {
+      display: block;
+    }
+  }
+
+  .tab-section {
+    transform: translateX(10%);
+
+    @include tablet {
+      transform: translateX(0);
+    }
   }
 }
 

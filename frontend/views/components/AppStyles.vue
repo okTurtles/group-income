@@ -13,6 +13,7 @@ v-style.
     --danger: {{colors.danger}};
     --warning: {{lightenDarkenColor(colors.tertiary, 0.1)}};
     --success: {{lightenDarkenColor(colors.secondary, 0.03)}};
+    --placeholder: {{colors.placeholder}}
   }
 
 </template>
