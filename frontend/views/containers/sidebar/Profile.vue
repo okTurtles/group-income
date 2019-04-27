@@ -1,7 +1,7 @@
 <template lang='pug'>
   .level.is-mobile.c-profile(v-if='$store.state.loggedIn')
     .level-left
-      avatar(:src='userPicture' hasMargin size='md')
+      avatar(:src='userPicture' size='md')
       .c-user
         p.gi-is-ellipsis.has-text-weight-bold(
           :data-test="userDisplayName ? 'profileName' : 'profileDisplayName'"
