@@ -86,7 +86,6 @@
   transform: translate3d(100%, 0, 0);
 }
 
-
 @keyframes blink-animation {
   to {
     opacity: 0;
@@ -97,6 +96,7 @@
   from {
     transform: translateX(100%);
   }
+
   to {
     transform: translateX(0);
   }
@@ -106,6 +106,7 @@
   from {
     transform: translateY(100%);
   }
+
   to {
     transform: translateX(0);
   }

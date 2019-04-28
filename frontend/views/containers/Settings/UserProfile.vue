@@ -227,9 +227,10 @@ export default {
   .link {
     display: inline-block;
     margin-top: 7px;
+
     @include tablet {
       display: block;
-      margin-top: 0px;
+      margin-top: 0;
     }
   }
 

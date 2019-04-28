@@ -236,7 +236,7 @@ $closeMobileBarBgColor: #3c3c3c;
   }
 
   .fa {
-    color: #DBDBDB;
+    color: #dbdbdb;
     font-size: 15px;
     margin-top: -2px;
 
@@ -271,7 +271,7 @@ $closeMobileBarBgColor: #3c3c3c;
   @include tablet {
     width: 183px;
     padding-top: 14px;
-    padding-bottom: 0px;
+    padding-bottom: 0;
   }
 }
 
@@ -313,7 +313,6 @@ $closeMobileBarBgColor: #3c3c3c;
 // Main content
 .tab-section {
   grid-area: main;
-
   transition: transform 500ms cubic-bezier(0.165, 0.84, 0.44, 1);
   transform: translateX(0%);
 }
@@ -324,7 +323,7 @@ $closeMobileBarBgColor: #3c3c3c;
     transform: translateX(0);
   }
 
-  .tab-back  {
+  .tab-back {
     opacity: 0;
   }
 
