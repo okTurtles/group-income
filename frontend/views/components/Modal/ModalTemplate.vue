@@ -1,10 +1,10 @@
 <template lang='pug'>
   .modal(data-test='modal' role='dialog')
     transition(name='fade' appear)
-      .modal-background(@click='close')
+      .modal-background(@click='close'  v-if='isActive')
 
     transition(name='slide-left' appear)
-      .modal-card(ref='card')
+      .modal-card(ref='card' v-if='isActive')
         header.modal-card-head.has-text-centered(
           :class='{ "has-subtitle": $scopedSlots.subTitle }'
           v-if='$scopedSlots.title || $scopedSlots.subTitle'

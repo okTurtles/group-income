@@ -3,6 +3,11 @@ import { CLOSE_MODAL } from '~/frontend/utils/events.js'
 import ModalClose from './ModalClose.vue'
 
 const modaMixins = {
+  data () {
+    return {
+      isActive: true
+    }
+  },
   components: {
     ModalClose
   },
@@ -19,6 +24,9 @@ const modaMixins = {
   methods: {
     close (e) {
       sbp('okTurtles.events/emit', CLOSE_MODAL)
+    },
+    hide () {
+      this.isActive = false
     }
   }
 }
