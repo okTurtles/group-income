@@ -55,7 +55,7 @@ const animationMixins = {
   },
   methods: {
     // -- Trigger animations
-    triggerEnter (el, complete) {
+    triggerEnter (el: HTMLElement, complete: Function) {
       console.log('triggerEnter')
       this.updateSpecsOf(el, 'trigger')
 
@@ -63,7 +63,7 @@ const animationMixins = {
       // Fades In only after the masker animation is completed.
       Velocity(el, { opacity: 1 }, { duration: this.config.fade, delay: this.config.delay, complete })
     },
-    triggerLeave (el, complete) {
+    triggerLeave (el: HTMLElement, complete: Function) {
       console.log('triggerLeave')
       this.updateSpecsOf(el, 'trigger')
 
@@ -72,7 +72,7 @@ const animationMixins = {
     },
 
     // -- Target animations
-    targetEnter (el, complete) {
+    targetEnter (el: HTMLElement, complete: Function) {
       console.log('targetEnter')
       const targetInner = this.getTargetCard()
       this.updateSpecsOf(targetInner, 'target')
@@ -85,13 +85,14 @@ const animationMixins = {
       // And Fade in the targetInner only after the Masker has completed its transition animation
       Velocity(targetInner, { opacity: 1 }, { duration: this.config.fade, delay: this.config.delay, complete })
     },
-    transitionAfterEnter (el) {
+    transitionAfterEnter (el: HTMLElement) {
       console.log('transitionAfterEnter')
       // Trigger/Target has opacity: 0 by default, so let's force to stay 1 after the animation finishes.
       // Velocity(el, { opacity: 1 }, { duration: 0 })
-      el.style.opacity = 1
+      const elStyle: Object = el.style
+      elStyle.opacity = 1
     },
-    targetLeave (el, complete) {
+    targetLeave (el: HTMLElement, complete: Function) {
       console.log('targetLeave')
       const targetInner = this.getTargetCard()
       this.updateSpecsOf(targetInner, 'target')
@@ -103,16 +104,17 @@ const animationMixins = {
       // after Masker goes back to the initial position
       Velocity(el, { opacity: 0 }, { duration: this.config.fade, delay: this.config.maskerTime, complete })
     },
-    elementStartsInvisible (el) {
+    elementStartsInvisible (el: HTMLElement) {
       // Use only opacity to fadeIn/Out because it's faster than
       // Velocity's 'fadeIn' feature (it doesn't use display)
       // Velocity(el, { opacity: 0 }, { duration: 0 })
-      el.style.opacity = 0
+      const elStyle: Object = el.style
+      elStyle.opacity = 0
     },
 
     // -- Masker animations
     // when animates to Target
-    maskEnter (el, complete) {
+    maskEnter (el: HTMLElement, complete: Function) {
       console.log('maskLeave')
 
       this.maskerTakesImmediatelyTheShapeOf(el, 'trigger', this.config.fade)
@@ -120,7 +122,7 @@ const animationMixins = {
     },
 
     // when animates back to a Trigger
-    maskLeave (el, complete) {
+    maskLeave (el: HTMLElement, complete: Function) {
       console.log('maskEnter')
 
       this.maskerTakesImmediatelyTheShapeOf(el, 'target', this.config.fadeBack)
@@ -128,7 +130,7 @@ const animationMixins = {
     },
 
     // -- Animation utils
-    maskerTakesImmediatelyTheShapeOf (maskerEl, originalElement, duration) {
+    maskerTakesImmediatelyTheShapeOf (maskerEl: HTMLElement, originalElement: HTMLElement, duration: number) {
       // Masker takes imediately the specs (dimensions and position)
       // of the originalElement (Trigger or Target) size...
       Velocity(maskerEl, { opacity: 0, ...this.getSpecsOf(originalElement) }, { duration: 0 })
@@ -136,7 +138,7 @@ const animationMixins = {
       // And fadesIn at the same time as the originalElement (trigger or target) is fading Out
       Velocity(maskerEl, { opacity: 1 }, { duration })
     },
-    maskerAnimatesToTheShapeOf (el, originalElement, complete) {
+    maskerAnimatesToTheShapeOf (el: HTMLElement, originalElement: HTMLElement, complete: Function) {
       // The animation need to wait for the element to be loaded in the dom
       Vue.nextTick(() => {
         // Then it animates to the the originalElement specs creating the "growing effect"
@@ -145,7 +147,7 @@ const animationMixins = {
         Velocity(el, { opacity: 0 }, { duration: this.config.fade, complete })
       })
     },
-    updateSpecsOf (el, elementId: string) {
+    updateSpecsOf (el: HTMLElement, elementId: string) {
       this.MaskToModal.updateSpecsOf(el, elementId)
     },
     getSpecsOf (elementId: string) {

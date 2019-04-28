@@ -7,7 +7,7 @@ let localeObject = {}
 function parseJS (text) {
   let functionEx = /\bL\(\s*['"](.*?)['"]\s*(?:,\s*['"](.*?)['"]\s*)?\)/mg
   let matches
-  while ((matches = functionEx.exec(text)) !== null) {
+  while (matches = functionEx.exec(text)) {
     let text = matches[ 1 ]
     let comment = matches[ 2 ]
     localeObject[ text ] = { text: text, comment: comment || '' }

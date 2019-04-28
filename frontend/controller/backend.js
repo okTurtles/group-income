@@ -96,7 +96,9 @@ sbp('sbp/selectors/register', {
   'backend/eventsSince': async (contractID: string, since: string) => {
     var events = await fetch(`${process.env.API_URL}/events/${contractID}/${since}`)
       .then(handleFetchResult('json'))
-    return events.reverse().map(e => b64ToStr(e))
+    if (Array.isArray(events)) {
+      return events.reverse().map(e => b64ToStr(e))
+    }
   },
   'backend/latestHash': (contractID: string) => {
     return fetch(`${process.env.API_URL}/latestHash/${contractID}`)
