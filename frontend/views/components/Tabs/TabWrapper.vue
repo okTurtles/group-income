@@ -98,6 +98,11 @@ export default {
     tabClick (tabItem) {
       this.title = tabItem.title
       if (tabItem.index !== undefined) {
+        const query = {
+          ...this.$route.query,
+          section: tabItem.url
+        }
+        this.$router.push({ query: query })
         this.changeTab(tabItem.index)
       } else {
         this.$store.dispatch(tabItem.action)
@@ -107,6 +112,17 @@ export default {
   },
 
   mounted () {
+    if (this.$route.query.section) {
+      this.tabNav.forEach(item => {
+        item.links.forEach(link => {
+          if (this.$route.query.section === link.url) {
+            this.activeTab = link.index
+            this.title = link.title
+          }
+        })
+      })
+    }
+
     if (this.tabItems.length) {
       this.tabItems[this.activeTab].isActive = true
     }
@@ -139,6 +155,10 @@ $closeMobileBarBgColor: #3c3c3c;
     grid-template-areas:
       "sidebar header"
       "sidebar main";
+  }
+
+  @media screen and (min-width: 769px) and (max-width: 900px) {
+    grid-template-columns: 200px 1fr;
   }
 }
 

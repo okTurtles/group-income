@@ -1,11 +1,11 @@
 <template lang='pug'>
   .settings-container
-    section
+    section.section
       h2.settings-subtitle.is-size-5 Theme
 
       SelectorTheme
 
-    section
+    section.section
       h2.settings-subtitle.is-size-5 Text settings
 
       //- TODO in separate tickets
@@ -33,6 +33,10 @@ export default {
 
 <style lang='scss' scoped>
 @import "../../../assets/sass/theme/index";
+
+.settings-container {
+  padding-top: 2rem;
+}
 
 .preview {
   padding-top: 2px;

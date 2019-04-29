@@ -127,8 +127,12 @@ export default {
 
   &-body {
     width: 100%;
-    padding: $gi-spacer-lg $gi-spacer;
+    padding: $gi-spacer-lg $gi-spacer 0 $gi-spacer;
     overflow: scroll;
+
+    &:last-child {
+      padding-bottom: $gi-spacer-lg;
+    }
 
     > * {
       align-self: stretch;

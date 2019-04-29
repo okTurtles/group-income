@@ -30,20 +30,33 @@
 .slide-next-leave-active,
 .slide-prev-enter-active,
 .slide-prev-leave-active {
-  position: absolute;
-  transition: max-height 0.3s cubic-bezier(0.785, 0.135, 0.15, 0.86);
+  @include tablet {
+    position: absolute;
+    transition: transform 0.3s cubic-bezier(0.785, 0.135, 0.15, 0.86), opacity 0.3s cubic-bezier(0.785, 0.135, 0.15, 0.86) 0.1s;
+  }
+}
+
+.slide-next-leave-active,
+.slide-prev-leave-active {
+  @include tablet {
+    transition: transform 0.3s cubic-bezier(0.785, 0.135, 0.15, 0.86), opacity 0.2s cubic-bezier(0.785, 0.135, 0.15, 0.86);
+  }
 }
 
 .slide-prev-leave-to,
 .slide-next-enter {
-  opacity: 0;
-  transform: translate3d(0, -100%, 0);
+  @include tablet {
+    opacity: 0;
+    transform: translate3d(0, -100%, 0);
+  }
 }
 
 .slide-prev-enter,
 .slide-next-leave-to {
-  opacity: 0;
-  transform: translate3d(0, 100%, 0);
+  @include tablet {
+    opacity: 0;
+    transform: translate3d(0, 100%, 0);
+  }
 }
 
 .slide-fade-enter-active {
@@ -79,6 +92,10 @@
 .slide-left-enter-active,
 .slide-left-leave-active {
   transition: transform 0.3s;
+
+  @include tablet {
+    transition: 0;
+  }
 }
 
 .slide-left-enter,

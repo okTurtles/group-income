@@ -34,6 +34,7 @@
   max-width: 5rem;
   white-space: nowrap;
   line-height: 1.15rem;
+  margin-left: 1rem;
 
   span {
     color: $text-light;

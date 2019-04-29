@@ -54,16 +54,18 @@
       template(slot='errors') {{ form.response }}
 
       template(slot='buttons')
-        button.button.is-primary(
+        button.button.is-primary.is-centered(
           type='submit'
           :disabled='$v.form.$invalid'
           data-test='signSubmit'
         )
-          i18n Sign Up
+          i18n Create account
 
       template(slot='footer')
-        a(@click='showLoginModal')
-          i18n Have an account?
+        p
+          i18n Already have an account?
+          a(@click='showLoginModal')
+            i18n Login
 </template>
 <script>
 import { required, minLength, email } from 'vuelidate/lib/validators'

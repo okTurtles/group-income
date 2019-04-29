@@ -58,8 +58,12 @@ $button-static-border-color: $grey-lighter !default
   white-space nowrap
   height: auto // Usability purposes
   min-height: 2.5rem // A11Y purposes
-  color: $grey
   font-weight: 600 // A11Y purposes
+  color: $grey
+
+  &:not(.is-icon)
+    min-width: 6.75rem
+
   strong
     color: inherit
   .icon
@@ -237,6 +241,10 @@ $button-static-border-color: $grey-lighter !default
   &.is-compact
     min-height: auto
     padding: $gi-spacer-xs/2 $gi-spacer-sm
+  
+  &.is-centered
+    margin-left: auto
+    margin-right: auto
 
   .field.has-addons &
     min-height: auto; // is an input's addon
@@ -256,39 +264,19 @@ $button-static-border-color: $grey-lighter !default
 
   .button
     margin-bottom: 0.5rem
+
     &:not(:last-child)
       margin-right: 0.5rem
+
   &:last-child
     margin-bottom: -0.5rem
 
   &:not(:last-child)
     margin-bottom: 1rem
-  &.has-addons
-    .button
-      &:not(:first-child)
-        border-bottom-left-radius: 0
-        border-top-left-radius: 0
-      &:not(:last-child)
-        border-bottom-right-radius: 0
-        border-top-right-radius: 0
-        margin-right: -1px
-      &:last-child
-        margin-right: 0
-      &:hover,
-      &.is-hovered
-        z-index: 2
-      &:focus,
-      &.is-focused,
-      &:active,
-      &.is-active,
-      &.is-selected
-        z-index: 3
-        &:hover
-          z-index: 4
-      &.is-expanded
-        flex-grow: 1
+
   &.is-centered
     justify-content: center
+
   &.is-right
     justify-content: flex-end
 

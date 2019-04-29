@@ -36,20 +36,21 @@
       )
 
       template(slot='buttons')
-        button.button.is-primary(
+        button.button.is-primary.is-centered(
           :disabled='$v.form.$invalid'
           data-test='loginSubmit'
           type='submit'
         )
-          span.icon
-            i.fa.fa-user
           i18n Login
 
-      template(slot='errors') {{ form.response }}
+      template(slot='errors')
+        .has-text-centered {{ form.response }}
 
       template(slot='footer')
-        a(@click='showSignUpModal')
-          i18n Don't have an account?
+        p
+          i18n Not on Group Income yet?
+          a(@click='showSignUpModal')
+            i18n Create an account
 </template>
 
 <script>
