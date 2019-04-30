@@ -27,9 +27,9 @@ function page (page) {
 //       `n.use(logout())` we do `n.logoutIfLoggedIn()` or `n.logoutAndLogin()`?)
 function logout () {
   return function (n) {
-    n.click(elT('profileLink'))
-     .wait(elT('profilePicture'))
-     .click(elT('logoutBtn'))
+    n.click(elT('settingsBtn'))
+     .wait(elT('link-logout'))
+     .click(elT('link-logout'))
   }
 }
 
@@ -39,6 +39,7 @@ function login (name) {
       .click(elT('loginBtn'))
       .wait(elT('modal'))
       // Clear the input
+      .wait(elT('loginName'))
       .insert(elT('loginName'))
       .insert(elT('loginName'), name)
       .insert(elT('password'), 'testtest')
@@ -141,7 +142,7 @@ describe('Frontend', function () {
     it('Test Global Profile Change', function () {
       this.timeout(10000)
       return n
-        .click(elT('profileLink'))
+        .click(elT('settingsBtn'))
         .wait(elT('profilePicture'))
         .insert(elT('bio'), 'Born in a test case')
         .insert(elT('displayName'), 'Tester T Test')
@@ -480,24 +481,26 @@ describe('Frontend', function () {
     })
   })
 
-  describe('Test Local Group Related Functions', function () {
-    it('Test Group Profile Attributes Change', async function () {
-      this.timeout(4000)
+  // TODO: implement test on the new group settings page once it will be implemented
+  // describe('Test Local Group Related Functions', function () {
+  //   it('Test Group Profile Attributes Change', async function () {
+  //     this.timeout(4000)
 
-      await n
-        .use(logout())
-        .use(login(username))
-        .click(elT('profileLink'))
-        .wait(elT('profilePicture'))
-        .wait(elT('GroupProfileContributionAmount'))
-        .insert(elT('GroupProfileContributionAmount'), 100)
-        .wait(elT('GroupProfileReceivingAmount'))
-        .insert(elT('GroupProfileReceivingAmount'), 50)
-        .click(elT('GroupProfileSubmitBtn'))
-        .wait(elT('GroupProfileSaved'))
-        .exists(elT('GroupProfileSaved'))
-    })
-  })
+  //     await n
+  //       .use(logout())
+  //       .use(login(username))
+  //       .goto(page('dashboard'))
+  //       .click(elT('/group-settings'))
+  //       .wait(elT('profilePicture'))
+  //       .wait(elT('GroupProfileContributionAmount'))
+  //       .insert(elT('GroupProfileContributionAmount'), 100)
+  //       .wait(elT('GroupProfileReceivingAmount'))
+  //       .insert(elT('GroupProfileReceivingAmount'), 50)
+  //       .click(elT('GroupProfileSubmitBtn'))
+  //       .wait(elT('GroupProfileSaved'))
+  //       .exists(elT('GroupProfileSaved'))
+  //   })
+  // })
 
   describe.skip('Test Localization Gathering Function', function () {
     it('Verify output of transform functions', function () {

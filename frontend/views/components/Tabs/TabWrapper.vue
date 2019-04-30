@@ -26,6 +26,7 @@
           v-for='(links, index) in tabItem.links'
           :key='index'
           :class="{ 'tab-active': activeTab === tabItem.index, 'has-text-white': isDarkTheme}"
+          :data-test='`link-${links.url}`'
           @click='tabClick(links)'
         )
           | {{ links.title }}

@@ -4,6 +4,7 @@
       <form ref="GroupProfileForm"
             name="GroupProfileForm"
             @submit.prevent="saveGroupProfile"
+            data-test="GroupProfileForm"
       >
         <p
           class="notification is-success has-text-centered"

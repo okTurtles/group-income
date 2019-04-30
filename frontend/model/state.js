@@ -256,7 +256,7 @@ const actions = {
       console.log('loadSettings:', settings)
       commit('setCurrentGroupId', settings.currentGroupId)
       commit('setContracts', settings.contracts || [])
-      commit('setTheme', settings.theme || 'dark')
+      commit('setTheme', settings.theme || 'blue')
       commit('setFontSize', settings.fontSize || 1)
     }
     await db.saveCurrentUser(user.name)
