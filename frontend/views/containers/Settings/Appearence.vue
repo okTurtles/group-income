@@ -18,8 +18,8 @@
 </template>
 
 <script>
-import SelectorTheme from '../../components/Settings/Theme.vue'
-// import SelectorFontSize from '../../components/Settings/FontSize.vue'
+import SelectorTheme from '@components/Settings/Theme.vue'
+// import SelectorFontSize from '@components/Settings/FontSize.vue'
 
 export default {
   name: 'SettingsAppearence',
