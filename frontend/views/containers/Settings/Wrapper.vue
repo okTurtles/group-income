@@ -20,7 +20,7 @@ import Settings from '~/frontend/model/settings.js'
 import ModalBaseTemplate from '@components/Modal/ModalBaseTemplate.vue'
 import TabItem from '@components/Tabs/TabItems.vue'
 import TabWrapper from '@components/Tabs/TabWrapper.vue'
-import TabPlaceholder from './placeholder.vue'
+import TabPlaceholder from './Placeholder.vue'
 import SettingsAppearence from './Appearence.vue'
 import SettingsUserProfile from './UserProfile.vue'
 
