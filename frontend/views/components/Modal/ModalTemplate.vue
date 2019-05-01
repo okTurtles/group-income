@@ -141,6 +141,7 @@ export default {
     @include tablet {
       max-width: calc(400px + 2rem);
       align-self: center;
+      text-align: center;
     }
 
     @media screen and (max-height: 500px) {

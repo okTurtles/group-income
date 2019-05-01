@@ -12,19 +12,7 @@ const modaMixins = {
     ModalClose
   },
   mounted () {
-    sbp('okTurtles.events/on', CLOSE_MODAL, ($event) => {
-      const el = this.$parent.$options._componentTag
-      let modal = this.$route.query.modal
-      if (this.$route.query.subcontent) {
-        modal = this.$route.query.subcontent
-      } else {
-        sbp('okTurtles.events/off', CLOSE_MODAL)
-      }
-
-      if (el === modal) {
-        this.isActive = false
-      }
-    })
+    sbp('okTurtles.events/on', CLOSE_MODAL, this.hide)
     window.addEventListener('keyup', (e) => {
       if (e.key === 'Escape') {
         this.close()
@@ -40,6 +28,21 @@ const modaMixins = {
       sbp('okTurtles.events/emit', CLOSE_MODAL)
     },
     hide () {
+      // Only the last open modal should close
+      // TODO: find a more eleguant way to identify the current instance
+      // Maybe saving the name in the modal ?
+      const instance = this.$parent.$options._componentTag
+      const query = this.$route.query
+      if (query) {
+        const subcontent = query.subcontent
+        if (subcontent) {
+          if (subcontent === instance) this.isActive = false
+          // Don't do anything if it's not the last modal
+          return false
+        }
+      }
+      // Remove event only if it's the last modal
+      sbp('okTurtles.events/off', CLOSE_MODAL)
       this.isActive = false
     }
   }
