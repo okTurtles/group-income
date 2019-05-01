@@ -1,6 +1,6 @@
 <template lang='pug'>
   .settings-container
-    p.username.is-size-6 {{ userName }}
+    p.username.is-size-6 @{{ userName }}
 
     section.section
       form(
@@ -213,6 +213,7 @@ export default {
 .username {
   display: none;
   margin-bottom: $gi-spacer-lg;
+  color: #7a7a7a;
 
   @include tablet {
     display: block;
