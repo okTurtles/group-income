@@ -243,8 +243,9 @@ $button-static-border-color: $grey-lighter !default
     padding: $gi-spacer-xs/2 $gi-spacer-sm
   
   &.is-centered
-    margin-left: auto
-    margin-right: auto
+    +tablet
+      margin-left: auto
+      margin-right: auto
 
   .field.has-addons &
     min-height: auto; // is an input's addon

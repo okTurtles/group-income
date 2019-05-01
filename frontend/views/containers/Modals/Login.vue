@@ -3,6 +3,7 @@
     novalidate
     ref='form'
     name='formData'
+    data-test='login'
     @submit.prevent='login'
   )
     modal-template.is-small
@@ -11,7 +12,7 @@
 
       .field
         p.control.has-icon
-          input#LoginName.input(
+          input#loginName.input(
             :class="{'is-danger': $v.form.name.$error}"
             name='name'
             v-model='form.name'
@@ -43,8 +44,7 @@
         )
           i18n Login
 
-      template(slot='errors')
-        .has-text-centered {{ form.response }}
+      template(slot='errors') {{ form.response }}
 
       template(slot='footer')
         p

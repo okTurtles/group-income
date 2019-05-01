@@ -1,11 +1,12 @@
 <template lang='pug'>
   form(
-    novalidate ref='form'
+    novalidate
+    ref='form'
     name='formData'
     data-test='signup'
     @submit.prevent='signup'
   )
-    modal-template
+    modal-template.is-small
       template(slot='title')
         i18n Sign Up
 

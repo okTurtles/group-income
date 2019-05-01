@@ -92,16 +92,26 @@
 .slide-left-enter-active,
 .slide-left-leave-active {
   transition: transform 0.3s;
-
-  @include tablet {
-    transition: 0;
-  }
 }
 
 .slide-left-enter,
 .slide-left-leave-to {
   transform: translate3d(100%, 0, 0);
+
+  @include desktop {
+    transform: none;
+  }
 }
+
+@include desktop {
+  .slide-left-enter {
+    animation: zoom 0.3s;
+  }
+  .slide-left-leave-to {
+    animation: zoom 0.3s reverse;
+  }
+}
+
 
 @keyframes blink-animation {
   to {

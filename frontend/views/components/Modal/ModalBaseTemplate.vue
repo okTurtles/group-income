@@ -1,6 +1,6 @@
 <template lang='pug'>
-  transition(name='zoom')
-    .modal(data-test='modal' role='dialog')
+  transition(name='zoom' appear @after-leave='$destroy()')
+    .modal(data-test='modal' role='dialog' v-if='isActive')
       modal-close(@close='close')
       slot
 </template>

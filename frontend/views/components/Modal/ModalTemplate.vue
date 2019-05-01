@@ -1,9 +1,9 @@
 <template lang='pug'>
   .modal(data-test='modal' role='dialog')
     transition(name='fade' appear)
-      .modal-background(@click='close'  v-if='isActive')
+      .modal-background(@click='close' v-if='isActive')
 
-    transition(name='slide-left' appear)
+    transition(name='slide-left' appear @after-leave='$destroy()')
       .modal-card(ref='card' v-if='isActive')
         header.modal-card-head.has-text-centered(
           :class='{ "has-subtitle": $scopedSlots.subTitle }'

@@ -55,7 +55,7 @@
 
 <script>
 import sbp from '../../shared/sbp.js'
-import { LOAD_MODAL, CLOSE_MODAL } from '../utils/events'
+import { LOAD_MODAL, UNLOAD_MODAL } from '../utils/events'
 
 export default {
   name: 'Home',
@@ -70,7 +70,7 @@ export default {
       this.openModal('LoginModal')
     } else {
       if (!this.$store.state.loggedIn) {
-        sbp('okTurtles.events/on', CLOSE_MODAL, this.enableSubmit)
+        sbp('okTurtles.events/on', UNLOAD_MODAL, this.enableSubmit)
         this.enableSubmit()
         // Fix firefox autofocus
         process.nextTick(() => this.$refs[this.lastFocus].focus())
@@ -78,7 +78,7 @@ export default {
     }
   },
   beforeDestroy () {
-    sbp('okTurtles.events/off', CLOSE_MODAL, this.enableSubmit)
+    sbp('okTurtles.events/off', UNLOAD_MODAL, this.enableSubmit)
   },
   methods: {
     openModal (mode) {

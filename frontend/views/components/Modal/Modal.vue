@@ -1,11 +1,11 @@
 <template lang='pug'>
   div
     component(:is='content')
-    component(:is='subcontent[subcontent.length-1]' ref='current')
+    component(:is='subcontent[subcontent.length-1]')
 </template>
 <script>
 import sbp from '~/shared/sbp.js'
-import { OPEN_MODAL, LOAD_MODAL, CLOSE_MODAL } from '@utils/events.js'
+import { OPEN_MODAL, LOAD_MODAL, UNLOAD_MODAL, CLOSE_MODAL } from '@utils/events.js'
 
 export default {
   name: 'Modal',
@@ -17,7 +17,7 @@ export default {
   },
   created () {
     sbp('okTurtles.events/on', LOAD_MODAL, component => this.openModal(component))
-    sbp('okTurtles.events/on', CLOSE_MODAL, component => this.closeModal(component))
+    sbp('okTurtles.events/on', UNLOAD_MODAL, component => this.closeModal(component))
   },
   mounted () {
     const modal = this.$route.query.modal
@@ -25,7 +25,7 @@ export default {
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', LOAD_MODAL, this.openModal)
-    sbp('okTurtles.events/off', CLOSE_MODAL, this.closeModal)
+    sbp('okTurtles.events/off', UNLOAD_MODAL, this.closeModal)
   },
   watch: {
     '$route' (to, from) {
@@ -48,13 +48,7 @@ export default {
     closeModal () {
       let query = {}
       if (this.subcontent.length) {
-        // All the modal has a hide method.
-        // This is the best way I found to target a particular instance atm
-        // TODO: find way (event) that can target a specific instance
-        this.$refs.current.$children[0].hide()
-        setTimeout(() => {
-          this.subcontent.pop()
-        }, 600) // This hardcoded value make the code considerably shorter but alos need to be improve with event change
+        this.subcontent.pop()
         query = {
           subcontent: this.subcontent[this.subcontent.length - 1],
           modal: this.content

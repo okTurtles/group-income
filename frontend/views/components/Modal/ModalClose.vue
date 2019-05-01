@@ -78,10 +78,5 @@ export default {
       transform: translateX(-50%) translateY(-50%) rotate(0);
     }
   }
-
-  .slide-left-enter-active,
-  .slide-left-leave-active {
-    transition: transform 0.6s;
-  }
 }
 </style>
