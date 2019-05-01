@@ -107,11 +107,11 @@
   .slide-left-enter {
     animation: zoom 0.3s;
   }
+
   .slide-left-leave-to {
     animation: zoom 0.3s reverse;
   }
 }
-
 
 @keyframes blink-animation {
   to {
