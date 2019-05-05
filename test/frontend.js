@@ -12,6 +12,7 @@ const Nightmare = require('nightmare')
 const url = require('url')
 const exec = require('child_process').execFileSync
 const fs = require('fs')
+const transitionDelay = 500
 
 // Access any element by its data-test attribute
 function elT (el) {
@@ -30,6 +31,7 @@ function logout () {
     n.click(elT('settingsBtn'))
      .wait(elT('link-logout'))
      .click(elT('link-logout'))
+     .wait(100)
   }
 }
 
@@ -46,6 +48,13 @@ function login (name) {
       .click(elT('loginSubmit'))
       // we don't check the specific name because the display name could have been modified
       .wait(elT('profileDisplayName'))
+  }
+}
+
+function relogin (name) {
+  return function (n) {
+    n.use(logout())
+      .use(login(name))
   }
 }
 
@@ -140,8 +149,8 @@ describe('Frontend', function () {
     })
 
     it('Test Global Profile Change', function () {
-      this.timeout(10000)
       return n
+        .wait(transitionDelay)
         .click(elT('settingsBtn'))
         .wait(elT('profilePicture'))
         .insert(elT('bio'), 'Born in a test case')
@@ -158,7 +167,11 @@ describe('Frontend', function () {
 
     it('Test Logout and Login', function () {
       this.timeout(10000)
-      return n.use(logout()).use(note('logout -> login to: ' + username)).use(login(username))
+      return n
+        .click(elT('link-logout'))
+        .wait(transitionDelay)
+        .use(note('logout -> login to: ' + username))
+        .use(login(username))
     })
 
     /* There appears to be a bug in nightmare that causes the insert and type commands to enter old data into the field if the
@@ -204,22 +217,30 @@ describe('Frontend', function () {
   describe('Group Creation Test', function () {
     it('Create Additional User', function () {
       this.timeout(8000)
-      return n.use(logout()).use(signup(username + '2', 'test2@testgroupincome.com', 'testtest'))
+      return n
+        .use(logout())
+        .use(signup(username + '2', 'test2@testgroupincome.com', 'testtest'))
     })
 
     it('Create Additional User 3', function () {
       this.timeout(8000)
-      return n.use(logout()).use(signup(username + '3', 'test3@testgroupincome.com', 'testtest'))
+      return n
+        .use(logout())
+        .use(signup(username + '3', 'test3@testgroupincome.com', 'testtest'))
     })
 
     it('Create Additional User 4', function () {
       this.timeout(8000)
-      return n.use(logout()).use(signup(username + '4', 'test4@testgroupincome.com', 'testtest'))
+      return n
+        .use(logout())
+        .use(signup(username + '4', 'test4@testgroupincome.com', 'testtest'))
     })
 
     it('Create Additional User 5', function () {
       this.timeout(8000)
-      return n.use(logout()).use(signup(username + '5', 'test5@testgroupincome.com', 'testtest'))
+      return n
+        .use(logout())
+        .use(signup(username + '5', 'test5@testgroupincome.com', 'testtest'))
     })
 
     it('Should create a group', async function () {
@@ -352,14 +373,14 @@ describe('Frontend', function () {
     it('Should Accept Invite', async function () {
       this.timeout(30000)
       // Accept invitation
-      let success = await n.click(elT('acceptLink'))
+      let success = await n
+        .click(elT('acceptLink'))
         .wait(elT('inbox'))
         .exists(elT('inbox'))
       should(success).equal(true)
       // Logout
       success = await n
-        .use(logout())
-        .use(login(username + '2'))
+        .use(relogin(username + '2'))
         .wait(elT('mailboxLink'))
         // Accept invitation
         .click(elT('mailboxLink'))
@@ -375,8 +396,7 @@ describe('Frontend', function () {
     it('Should Vote on Additional Members', async function () {
       this.timeout(10000)
       await n
-        .use(logout())
-        .use(login(username + '5'))
+        .use(relogin(username + '5'))
         .goto(page('invite'))
         .wait(elT('searchUser'))
         .insert(elT('searchUser'), username + '3')
@@ -386,8 +406,7 @@ describe('Frontend', function () {
         .wait(elT('notifyInvitedSuccess'))
       // Check vote banner on dashboard
       await n
-        .use(logout())
-        .use(login(username))
+        .use(relogin(username))
         .goto(page('dashboard'))
         .wait(elT('proposal'))
 
@@ -429,8 +448,7 @@ describe('Frontend', function () {
       should(success).equal(true)
 
       success = await n
-        .use(logout())
-        .use(login(username + '2'))
+        .use(relogin(username + '2'))
         .wait(elT('mailboxLink'))
         .click(elT('mailboxLink'))
         .wait(elT('proposalMessage'))
@@ -442,8 +460,7 @@ describe('Frontend', function () {
       should(success).equal(true)
 
       success = await n
-        .use(logout())
-        .use(login(username + '3'))
+        .use(relogin(username + '3'))
         .wait(elT('mailboxLink'))
         // Accept invitation
         .click(elT('mailboxLink'))
@@ -456,8 +473,7 @@ describe('Frontend', function () {
       this.timeout(4000)
 
       await n
-        .use(logout())
-        .use(login(username + '5'))
+        .use(relogin(username + '5'))
         .goto(page('dashboard'))
         .wait(elT('groupMembers'))
 
@@ -487,8 +503,7 @@ describe('Frontend', function () {
   //     this.timeout(4000)
 
   //     await n
-  //       .use(logout())
-  //       .use(login(username))
+  //       .use(relogin(username))
   //       .goto(page('dashboard'))
   //       .click(elT('/group-settings'))
   //       .wait(elT('profilePicture'))
@@ -515,7 +530,7 @@ describe('Frontend', function () {
             L('this text lacks a comment')
         </script>
 
-         `
+      `
       const path = 'script.vue'
       fs.writeFileSync(path, script)
       const output = 'translation.json'
