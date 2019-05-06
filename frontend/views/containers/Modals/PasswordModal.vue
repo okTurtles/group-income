@@ -16,8 +16,8 @@
         @enter='changePassword'
         @input='(password) => { newPassword = password }'
         :hasIconRight='true'
-        :showPlaceholder='true'
-        :showPassword='true'
+        :showPlaceholder='false'
+        :showPassword='false'
         size='is-large'
       )
 
@@ -29,8 +29,8 @@
         @enter='changePassword'
         @input='(password) => { newPassword = password }'
         :hasIconRight='true'
-        :showPlaceholder='true'
-        :showPassword='true'
+        :showPlaceholder='false'
+        :showPassword='false'
         size='is-large'
       )
 
@@ -42,8 +42,8 @@
         @enter='changePassword'
         @input='(password) => { newPassword = password }'
         :hasIconRight='true'
-        :showPlaceholder='true'
-        :showPassword='true'
+        :showPlaceholder='false'
+        :showPassword='false'
         size='is-large'
       )
 
