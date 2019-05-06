@@ -1,6 +1,7 @@
 import sbp from '~/shared/sbp.js'
 import { CLOSE_MODAL, UNLOAD_MODAL } from '~/frontend/utils/events.js'
 import ModalClose from './ModalClose.vue'
+let keyboardEvent = Event
 
 const modaMixins = {
   data () {
@@ -13,7 +14,7 @@ const modaMixins = {
   },
   mounted () {
     sbp('okTurtles.events/on', CLOSE_MODAL, this.hide)
-    window.addEventListener('keyup', (e) => {
+    keyboardEvent = window.addEventListener('keyup', (e) => {
       if (e.key === 'Escape') {
         this.close()
       }
@@ -21,7 +22,7 @@ const modaMixins = {
   },
   beforeDestroy () {
     sbp('okTurtles.events/emit', UNLOAD_MODAL)
-    window.removeEventListener('keyup', null)
+    window.removeEventListener('keyup', keyboardEvent)
   },
   methods: {
     close (e) {
