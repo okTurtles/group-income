@@ -393,7 +393,7 @@ describe('Frontend', function () {
     })
 
     it('Should Vote on Additional Members', async function () {
-      this.timeout(10000)
+      this.timeout(30000)
       await n
         .use(relogin(username + '5'))
         .goto(page('invite'))
