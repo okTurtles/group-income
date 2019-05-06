@@ -54,8 +54,8 @@
 </style>
 
 <script>
-import sbp from '../../shared/sbp.js'
-import { LOAD_MODAL, UNLOAD_MODAL } from '../utils/events'
+import sbp from '~/shared/sbp.js'
+import { LOAD_MODAL, UNLOAD_MODAL } from '@utils/events.js'
 
 export default {
   name: 'Home',
