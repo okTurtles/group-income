@@ -220,6 +220,12 @@ form
     +control-medium
   &.is-large
     +control-large
+    select
+      margin-top: 0.45rem
+      height: 2.7rem
+    &.select:not(.is-multiple):not(.is-loading):hover::after 
+      margin-top: 0px
+      right: 1rem
   // Modifiers
   &.is-disabled
     &::after
@@ -434,6 +440,7 @@ form
   font-size: $help-size
   margin-top: 0.25rem
   color: #7A7A7A
+  text-align: left
 
   @each $name, $pair in $colors
     $color: nth($pair, 1)

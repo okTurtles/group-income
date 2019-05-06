@@ -22,14 +22,14 @@ $button-text-color: $text !default
 $button-text-hover-background-color: $background !default
 $button-text-hover-color: $text-strong !default
 
-$button-disabled-background-color: $white !default
-$button-disabled-border-color: $grey-lighter !default
+$button-disabled-background-color: #EDEDED
+$button-disabled-border-color: #EDEDED
 $button-disabled-shadow: none !default
 $button-disabled-opacity: 0.5 !default
 
 $button-static-color: $grey !default
 $button-static-background-color: $white-ter !default
-$button-static-border-color: $grey-lighter !default
+$button-static-border-color: #EDEDED
 
 // The button sizes use mixins so they can be used at different breakpoints
 =button-small
@@ -194,12 +194,14 @@ $button-static-border-color: $grey-lighter !default
     +button-medium
   &.is-large
     +button-large
+    margin-top: 0.45rem;
+    height: 2.7rem;
+
   // Modifiers
   &[disabled]
-    background-color: $button-disabled-background-color
+    background-color: $button-disabled-background-color !important
     border-color: $button-disabled-border-color
-    box-shadow: $button-disabled-shadow
-    opacity: $button-disabled-opacity
+
   &.is-fullwidth
     display: flex
     width: 100%

@@ -281,7 +281,7 @@ $closeMobileBarBgColor: #3c3c3c;
   padding-right: 8px;
   border-radius: 2px;
   cursor: pointer;
-  transition: padding-left 150ms cubic-bezier(0.4, 0.25, 0.3, 1), background-color 150ms cubic-bezier(0.4, 0.25, 0.3, 1);
+  transition: background-color 150ms cubic-bezier(0.4, 0.25, 0.3, 1);
 
   @include tablet {
     margin-right: 4px;
@@ -302,15 +302,14 @@ $closeMobileBarBgColor: #3c3c3c;
   }
 }
 
-.tab-active {
-  background-color: $primary;
-  font-weight: bold;
-  color: $activeColor;
+.tab-link:hover {
+  background-color: $primary-bg-a;
 }
 
-.tab-link:hover {
-  padding-left: 15px;
-  background-color: $primary-bg-a;
+.tab-active {
+  background-color: $primary !important;
+  font-weight: bold;
+  color: $activeColor;
 }
 
 .tab-nav-separator {

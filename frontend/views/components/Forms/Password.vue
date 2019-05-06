@@ -16,7 +16,7 @@
     )
     span.icon(@click.stop="isLock = !isLock")
       i.fas(
-        :class="isLock ? 'fa-lock' : 'fa-eye'"
+        :class="isLock ? 'fa-eye' : 'fa-eye-slash'"
       )
 
   i18n.help.is-danger(

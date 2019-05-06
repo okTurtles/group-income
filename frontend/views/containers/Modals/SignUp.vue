@@ -6,7 +6,7 @@
     data-test='signup'
     @submit.prevent='signup'
   )
-    modal-template.is-small
+    modal-template(class="is-centered")
       template(slot='title')
         i18n Sign Up
 

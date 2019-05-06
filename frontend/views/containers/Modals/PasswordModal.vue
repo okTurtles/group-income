@@ -5,7 +5,7 @@
     name='formData'
     @submit.prevent='changePassword'
   )
-    modal-template(class="has-submodal-background")
+    modal-template(class="has-submodal-background is-centered")
       template(slot='title') Change password
 
       form-password(
@@ -53,7 +53,7 @@
         button.button.is-outlined(
           @click='close'
         ) Cancel
-        button.button(
+        button.button.is-success(
           @click='changePassword'
           :disabled='$v.form.$invalid'
         ) Change password

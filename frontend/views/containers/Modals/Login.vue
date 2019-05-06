@@ -6,7 +6,7 @@
     data-test='login'
     @submit.prevent='login'
   )
-    modal-template.is-small
+    modal-template(class="is-centered")
       template(slot='title')
         i18n Login
 
@@ -116,12 +116,3 @@ export default {
   }
 }
 </script>
-
-<style lang="scss" scoped>
-  form {
-    position: fixed;
-    height: 100%;
-    width: 100%;
-    z-index: 9998;
-  }
-</style>

@@ -137,12 +137,6 @@ export default {
       align-self: stretch;
     }
 
-    @include tablet {
-      max-width: calc(400px + 2rem);
-      align-self: center;
-      text-align: center;
-    }
-
     @media screen and (max-height: 500px) {
       overflow: scroll;
     }
@@ -269,6 +263,20 @@ export default {
         height: auto;
         font-size: 0.875rem;
         transform: none !important;
+      }
+    }
+  }
+}
+
+.is-centered {
+  .modal-card {
+    &-body {
+      width: 100%;
+      max-width: calc(400px + 2rem);
+      align-self: center;
+
+      @include tablet {
+        text-align: center;
       }
     }
   }
