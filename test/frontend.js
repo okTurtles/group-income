@@ -31,7 +31,7 @@ function logout () {
     n.click(elT('settingsBtn'))
      .wait(elT('link-logout'))
      .click(elT('link-logout'))
-     .wait(100)
+     .wait(transitionDelay)
   }
 }
 
@@ -230,7 +230,7 @@ describe('Frontend', function () {
     })
 
     it('Create Additional User 4', function () {
-      this.timeout(8000)
+      this.timeout(12000)
       return n
         .use(logout())
         .use(signup(username + '4', 'test4@testgroupincome.com', 'testtest'))
@@ -329,7 +329,7 @@ describe('Frontend', function () {
     })
 
     it('Should Receive Message and Invite', async function () {
-      this.timeout(10000)
+      this.timeout(30000)
       await n
         // .goto(page('mailbox'))
         // TODO: navigation gets redirected on login guard but nav click doesn't?
@@ -393,7 +393,7 @@ describe('Frontend', function () {
     })
 
     it('Should Vote on Additional Members', async function () {
-      this.timeout(30000)
+      this.timeout(50000)
       await n
         .use(relogin(username + '5'))
         .goto(page('invite'))
