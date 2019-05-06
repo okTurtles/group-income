@@ -226,7 +226,7 @@ export default {
         position: relative;
         z-index: 3;
         background-color: var(--primary-bg-s);
-        min-height: 64px
+        min-height: 64px;
       }
     }
 
@@ -238,11 +238,11 @@ export default {
     .modal-close {
       right: auto;
       left: 1rem;
-      font-family: 'Font Awesome 5 Free';
+      font-family: "Font Awesome 5 Free";
       font-weight: 900;
       height: 2rem;
       width: 2rem;
-      color: #999999;
+      color: #999;
       background: transparent;
       top: 1rem;
 
@@ -253,6 +253,7 @@ export default {
       &::after {
         content: none;
       }
+
       &::before {
         content: "\f053";
         background-color: transparent;
