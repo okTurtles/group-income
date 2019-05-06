@@ -46,13 +46,12 @@ export default {
       this.$router.push({ query: { modal: this.content, subcontent: this.subcontent[this.subcontent.length - 1] } })
     },
     closeModal () {
-      let query = {}
+      let query = this.$route.query || {}
+
       if (this.subcontent.length) {
         this.subcontent.pop()
-        query = {
-          subcontent: this.subcontent[this.subcontent.length - 1],
-          modal: this.content
-        }
+        query.subcontent = this.subcontent[this.subcontent.length - 1]
+        query.modal = this.content
       } else {
         this.content = undefined
       }

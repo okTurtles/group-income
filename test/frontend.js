@@ -345,8 +345,7 @@ describe('Frontend', function () {
         .insert(elT('composedMessage'), 'Best test ever!!')
         .click(elT('sendButton'))
         .wait(elT('inbox'))
-        .use(logout())
-        .use(login(username))
+        .use(relogin(username))
         .wait(elT('mailboxLink'))
         .click(elT('mailboxLink'))
 
