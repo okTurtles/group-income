@@ -151,7 +151,6 @@
     "node-sass": "4.11.0",
     "rollup": "1.1.2",
     "rollup-plugin-alias": "1.5.1",
-    "rollup-plugin-alias-module-specifiers": "0.1.7",
     "rollup-plugin-babel": "4.3.2",
     "rollup-plugin-commonjs": "9.2.0",
     "rollup-plugin-css-only": "1.0.0",

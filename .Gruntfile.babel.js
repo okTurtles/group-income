@@ -2,7 +2,6 @@ import { setupPrimus } from './backend/pubsub.js'
 import resolve from 'rollup-plugin-node-resolve'
 import commonjs from 'rollup-plugin-commonjs'
 import alias from 'rollup-plugin-alias'
-import aliasModuleSpecifiers from 'rollup-plugin-alias-module-specifiers'
 import babel from 'rollup-plugin-babel'
 import VuePlugin from 'rollup-plugin-vue'
 import flow from 'rollup-plugin-flow'
@@ -265,15 +264,14 @@ module.exports = (grunt) => {
       plugins: [
         alias({
           // https://vuejs.org/v2/guide/installation.html#Standalone-vs-Runtime-only-Build
+          resolve: ['.vue', '.js'],
           vue: path.resolve('./node_modules/vue/dist/vue.common.js'),
-          '~': path.resolve('./')
-        }),
-        aliasModuleSpecifiers({
-          '@views': './frontend/views',
-          '@components': './frontend/views/components',
-          '@containers': './frontend/views/containers',
-          '@utils': './frontend/utils',
-          '@assets': './frontend/assets'
+          '~': path.resolve('./'),
+          '@views': path.resolve('./frontend/views'),
+          '@components': path.resolve('./frontend/views/components'),
+          '@containers': path.resolve('./frontend/views/containers'),
+          '@utils': path.resolve('./frontend/utils'),
+          '@assets': path.resolve('./frontend/assets')
         }),
         resolve({
           // we set `preferBuiltins` to prevent rollup from erroring with
