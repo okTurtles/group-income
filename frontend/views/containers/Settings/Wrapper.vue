@@ -54,6 +54,17 @@ export default {
     margin-bottom: 24px;
     font-weight: bold;
   }
+
+  /deep/ .settings-title {
+    display: none;
+    font-weight: bold;
+
+    @include tablet {
+      display: block;
+      top: -2.6rem;
+      position: absolute;
+    }
+  }
 }
 
 .settings-container {

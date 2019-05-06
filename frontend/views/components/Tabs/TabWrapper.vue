@@ -183,6 +183,12 @@ $closeMobileBarBgColor: #3c3c3c;
   display: none;
 }
 
+.main-title {
+  @include tablet {
+    display: none;
+  }
+}
+
 .tab-title {
   font-weight: bold;
   font-size: 0.875rem;
@@ -358,10 +364,6 @@ $closeMobileBarBgColor: #3c3c3c;
 
   .main-title {
     display: none;
-
-    @include tablet {
-      display: block;
-    }
   }
 
   .tab-section {

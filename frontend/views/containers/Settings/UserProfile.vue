@@ -1,5 +1,8 @@
 <template lang='pug'>
   .settings-container
+    h1.settings-title.is-size-4
+      i18n My account
+
     p.username.is-size-6 @{{ userName }}
 
     section.section
