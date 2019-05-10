@@ -172,8 +172,8 @@ declare module '../shared/sbp.js' { declare module.exports: Function }
 declare module '../../shared/sbp.js' { declare module.exports: Function }
 declare module '../../../shared/sbp.js' { declare module.exports: Function }
 declare module '../shared/domains/okTurtles/data/index.js' { declare module.exports: Object }
-declare module  '../shared/GIMessage.js' { declare module.exports: Object }
-declare module  '../../shared/GIMessage.js' { declare module.exports: Object }
+declare module '../shared/GIMessage.js' { declare module.exports: Object }
+declare module '../../shared/GIMessage.js' { declare module.exports: Object }
 declare module './server.js' { declare module.exports: any }
 declare module './constants.js' { declare module.exports: Object }
 declare module '../shared/constants.js' { declare module.exports: Object }
