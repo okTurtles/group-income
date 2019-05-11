@@ -65,8 +65,8 @@
   }
 </style>
 <script>
-import sbp from '../../../../shared/sbp.js'
-import L from '../../utils/translations.js'
+import sbp from '~/shared/sbp.js'
+import L from '~/frontend/views/utils/translations.js'
 
 export default {
   name: 'GroupInvitees',

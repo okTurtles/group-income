@@ -1,30 +1,25 @@
-<template>
-  <div class="level is-mobile c-profile" v-if="$store.state.loggedIn">
-    <div class="level-left">
-      <avatar :src="userPicture" hasMargin />
-      <div class="c-user">
-        <p class="gi-is-ellipsis has-text-weight-bold"
+<template lang='pug'>
+  .level.is-mobile.c-profile(v-if='$store.state.loggedIn')
+    .level-left
+      avatar(:src='userPicture' size='md')
+      .c-user
+        p.gi-is-ellipsis.has-text-weight-bold(
           :data-test="userDisplayName ? 'profileName' : 'profileDisplayName'"
-          :class="`has-text-${isDarkTheme ? 'white' : 'dark'}`">
-          {{userDisplayName ? userDisplayName : userName}}
-        </p>
-        <span class="gi-is-ellipsis is-size-6" data-test="profileDisplayName" v-if="userDisplayName">{{userName}}</span>
-      </div>
-    </div>
-    <div class="level-right">
-      <!-- <button class="button is-icon"
-        data-test="logoutBtn"
-        @click.prevent="logout">
-        <i class="fa fa-sign-out-alt"></i>
-      </button> -->
-      <router-link class="button is-icon"
-        tag="button"
-        to="/user"
-        data-test="profileLink">
-        <i class="fa fa-cog"></i>
-      </router-link>
-    </div>
-  </div>
+          :class="`has-text-${isDarkTheme ? 'white' : 'dark'}`"
+        ) {{userDisplayName ? userDisplayName : userName}}
+
+        span.gi-is-ellipsis.is-size-6(
+          data-test='profileDisplayName'
+          v-if='userDisplayName'
+        ) {{userName}}
+
+    .level-right
+      button.button.is-icon(
+        data-test='settingsBtn'
+        @click="openModal('Settings')"
+      )
+        i.fa.fa-cog
+
 </template>
 <style lang="scss" scoped>
 @import "../../../assets/sass/theme/index";
@@ -39,6 +34,7 @@
   max-width: 5rem;
   white-space: nowrap;
   line-height: 1.15rem;
+  margin-left: 1rem;
 
   span {
     color: $text-light;
@@ -59,6 +55,8 @@
 </style>
 <script>
 import Avatar from '../../components/Avatar.vue'
+import sbp from '../../../../shared/sbp.js'
+import { LOAD_MODAL } from '../../../utils/events.js'
 import { mapGetters } from 'vuex'
 
 export default {
@@ -83,11 +81,11 @@ export default {
     userName () {
       return this.$store.state.loggedIn.name
     }
-  // },
-  // methods: {
-  //   logout () {
-  //     this.$store.dispatch('logout')
-  //   }
+  },
+  methods: {
+    openModal (mode) {
+      sbp('okTurtles.events/emit', LOAD_MODAL, mode)
+    }
   }
 }
 </script>

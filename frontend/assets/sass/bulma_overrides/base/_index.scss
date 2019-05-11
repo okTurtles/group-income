@@ -15,3 +15,10 @@
 .has-text-success {
   color: var(--success) !important; // A11Y purposes
 }
+
+body,
+html {
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+}

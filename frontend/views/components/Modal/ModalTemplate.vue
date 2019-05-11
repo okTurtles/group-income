@@ -1,78 +1,39 @@
-<template>
-  <div class="modal is-active" data-test="modal" v-if="isActive" role='dialog'>
-    <transition name="fade" v-if="isActive" appear>
-      <div class="modal-background" @click="close"></div>
-    </transition>
-    <div class="modal-card" ref="card">
+<template lang='pug'>
+  .modal(data-test='modal' role='dialog')
+    transition(name='fade' appear)
+      .modal-background(@click='close' v-if='isActive')
 
-      <header class="modal-card-head has-text-centered"
-              :class="{ 'has-subtitle': $scopedSlots.subTitle }"
-              v-if="$scopedSlots.title || $scopedSlots.subTitle" >
-        <button class="modal-close" @click.self="close"></button>
-        <h2 class="modal-card-title subtitle is-marginless has-text-text-light"  v-if="$scopedSlots.subTitle">
-          <slot name="subTitle" ></slot>
-        </h2>
-        <h1 class="title" v-if="$scopedSlots.title">
-          <slot name="title"></slot>
-        </h1>
-      </header>
+    transition(name='slide-left' appear @after-leave='$destroy()')
+      .modal-card(ref='card' v-if='isActive')
+        header.modal-card-head.has-text-centered(
+          :class='{ "has-subtitle": $scopedSlots.subTitle }'
+          v-if='$scopedSlots.title || $scopedSlots.subTitle'
+        )
+          modal-close(@close='close')
+          h2.modal-card-title.subtitle.is-marginless.has-text-text-light(v-if='$scopedSlots.subTitle')
+            slot(name='subTitle')
+          h1.title(v-if='$scopedSlots.title')
+            slot(name='title')
 
-      <section class="modal-card-body">
-        <slot></slot>
-        <div class="buttons" v-if="$scopedSlots.buttons">
-          <slot name="buttons"></slot>
-        </div>
+        section.modal-card-body
+          slot
+          .buttons(v-if='$scopedSlots.buttons')
+            slot(name='buttons')
 
-        <p class="has-text-danger" data-test="submitError" v-if="$scopedSlots.errors" >
-          <slot name="errors"></slot>
-        </p>
-      </section>
+          p.has-text-danger(data-test='submitError' v-if='$scopedSlots.errors')
+            slot(name='errors')
 
-      <footer class="modal-card-foot" v-if="$scopedSlots.buttons || $scopedSlots.footer || $scopedSlots.errors">
-        <slot name="footer"></slot>
-      </footer>
-    </div>
-  </div>
+        footer.modal-card-foot(v-if='$scopedSlots.footer')
+          slot(name='footer')
+
 </template>
 
 <script>
-import sbp from '../../../../shared/sbp.js'
-import { OPEN_MODAL, CLOSE_MODAL } from '../../../utils/events.js'
+import modalMixins from './ModalMixins.js'
 
 export default {
-  name: 'Modal',
-  data () {
-    return {
-      isActive: false
-    }
-  },
-  mounted () {
-    this.isActive = true
-    sbp('okTurtles.events/on', OPEN_MODAL, this.openModal)
-    sbp('okTurtles.events/on', CLOSE_MODAL, this.closeModal)
-    window.addEventListener('keyup', (e) => {
-      if (e.key === 'Escape') {
-        this.close()
-      }
-    })
-  },
-  beforeDestroy () {
-    window.removeEventListener('keyup', null)
-    sbp('okTurtles.events/off', OPEN_MODAL, this.openModal)
-    sbp('okTurtles.events/off', CLOSE_MODAL, this.closeModal)
-  },
-  methods: {
-    close (e) {
-      sbp('okTurtles.events/emit', CLOSE_MODAL)
-    },
-    openModal () {
-      this.isActive = true
-    },
-    closeModal () {
-      this.isActive = false
-      this.$router.push({ query: { modal: undefined } })
-    }
-  }
+  name: 'ModalTemplate',
+  mixins: [modalMixins]
 }
 </script>
 
@@ -80,82 +41,27 @@ export default {
 @import "../../../assets/sass/theme/index";
 
 .modal {
+  display: flex;
+  position: fixed;
+  z-index: 9998;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
   justify-content: center;
   align-items: center;
-  position: fixed;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: none;
-  z-index: 40;
   max-width: 100vw;
-
-  &.is-active {
-    display: flex;
-  }
+  overflow: auto;
 }
 
-.modal-background {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  top: 0;
-  background-color: rgba(10, 10, 10, 0.86);
-}
-
-.modal-close {
-  position: absolute;
-  z-index: 1;
-  right: 1rem;
-  height: 40px;
-  width: 40px;
-  border: none;
-  border-radius: 50%;
-  @extend %unselectable;
-  -moz-appearance: none;
-  -webkit-appearance: none;
-  cursor: pointer;
-  background-color: #f1f1f1;
-
-  @include tablet {
-    top: 24px;
-    right: 24px;
-  }
-
-  @include desktop {
-    top: 1rem;
-    right: 1rem;
-  }
-
-  &::before,
-  &::after {
-    background-color: #363636;
-    content: "";
-    display: block;
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 12px;
-    height: 2px;
-    transition: transform 0.15s ease-in;
-    transform: translateX(-50%) translateY(-50%) rotate(45deg);
-    transform-origin: center center;
-  }
-
-  &::after {
-    transform: translateX(-50%) translateY(-50%) rotate(-45deg);
-  }
-
-  &:hover {
-    &::before {
-      transform: translateX(-50%) translateY(-50%) rotate(0);
-    }
-
-    &::after {
-      transform: translateX(-50%) translateY(-50%) rotate(0);
-    }
+@include desktop {
+  .modal-background {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: 0;
+    background-color: rgba(10, 10, 10, 0.86);
   }
 }
 
@@ -174,6 +80,8 @@ export default {
     border-radius: 6px;
     max-width: 640px;
     height: auto;
+    max-height: calc(100% - 20px);
+    transition: none !important;
   }
 
   &-head,
@@ -211,19 +119,26 @@ export default {
         min-height: 124px;
       }
     }
+
+    @media screen and (max-height: 500px) {
+      min-height: 50px;
+    }
   }
 
   &-body {
     width: 100%;
-    padding: $gi-spacer-lg $gi-spacer;
+    padding: $gi-spacer-lg $gi-spacer 0 $gi-spacer;
+
+    &:last-child {
+      padding-bottom: $gi-spacer-lg;
+    }
 
     > * {
       align-self: stretch;
     }
 
-    @include tablet {
-      max-width: calc(400px + 2rem);
-      align-self: center;
+    @media screen and (max-height: 500px) {
+      overflow: scroll;
     }
   }
 
@@ -233,6 +148,10 @@ export default {
 
     @include desktop {
       padding-bottom: $gi-spacer-xl;
+    }
+
+    @media screen and (max-height: 500px) {
+      padding-bottom: $gi-spacer;
     }
 
     .button {
@@ -245,8 +164,6 @@ export default {
 
 .subtitle {
   color: #7a7a7a;
-  font-size: 0.75rem;
-  text-transform: uppercase;
 }
 
 .title {
@@ -262,6 +179,20 @@ export default {
 }
 
 // Mofifiers
+.has-no-background {
+  .modal-close {
+    top: 24px;
+    right: 16px;
+    background-color: #f1f1f1;
+    width: 40px;
+    height: 40px;
+  }
+
+  .modal-card-body {
+    padding-top: 1.1rem;
+  }
+}
+
 .has-background {
   .modal-close {
     background-color: #fff;
@@ -280,6 +211,73 @@ export default {
         align-items: flex-start;
         margin: 0;
         padding-bottom: $gi-spacer;
+      }
+    }
+  }
+}
+
+.has-submodal-background {
+  @include touch {
+    .modal-card {
+      &-head {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        z-index: 3;
+        background-color: var(--primary-bg-s);
+        min-height: 64px;
+      }
+    }
+
+    .title {
+      font-weight: bold;
+      font-size: 0.875rem;
+    }
+
+    .modal-close {
+      right: auto;
+      left: 1rem;
+      font-family: "Font Awesome 5 Free";
+      font-weight: 900;
+      height: 2rem;
+      width: 2rem;
+      color: #999;
+      background: transparent;
+      top: 1rem;
+
+      &:hover {
+        color: #363636;
+      }
+
+      &::after {
+        content: none;
+      }
+
+      &::before {
+        content: "\f053";
+        background-color: transparent;
+        position: relative;
+        left: 3px;
+        top: 0;
+        width: 12px;
+        height: auto;
+        font-size: 0.875rem;
+        transform: none !important;
+      }
+    }
+  }
+}
+
+.is-centered {
+  .modal-card {
+    &-body {
+      width: 100%;
+      max-width: calc(400px + 2rem);
+      align-self: center;
+
+      @include tablet {
+        text-align: center;
       }
     }
   }

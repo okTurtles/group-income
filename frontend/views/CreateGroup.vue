@@ -65,21 +65,6 @@
     margin-bottom: 2rem;
   }
 
-  /*
-  TODO: avoid these global rules
-        see also notes about using transitions.js (and
-        improving its implementation)
-   */
-  .fade-enter-active,
-  .fade-leave-active {
-    transition: opacity 0.2s;
-  }
-
-  .fade-enter,
-  .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
-    opacity: 0;
-  }
-
   .form-actions {
     margin-top: 3rem;
   }

@@ -70,7 +70,7 @@
         </div>
       </div>
     </div>
-    <transition name="open">
+    <transition name="slidedown">
       <message severity="warning" v-if="!superMajority">
         <i18n>
           The percentage value you are choosing is most likely too low
@@ -85,46 +85,33 @@
   </div>
 </template>
 <style lang="scss" scoped>
-  .rule {
-    position: relative;
-    width: 160px;
-    height: 140px;
-    margin: 0 auto;
-    padding-top: 40px;
-  }
+.rule {
+  position: relative;
+  width: 160px;
+  height: 140px;
+  margin: 0 auto;
+  padding-top: 40px;
+}
 
-  .percent {
-    font-size: 3rem;
-    font-weight: bold;
-    line-height: 3.4rem;
-  }
+.percent {
+  font-size: 3rem;
+  font-weight: bold;
+  line-height: 3.4rem;
+}
 
-  .circle-slider {
-    position: absolute;
-    top: 0;
-    left: 0;
-  }
+.circle-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
 
-  .message {
-    margin-top: 2rem;
-  }
+.message {
+  margin-top: 2rem;
+}
 
-  .rulesStep .message-body {
-    border-color: #f68b39;
-  }
-
-  /* message transition */
-  .open-enter-active,
-  .open-leave-active {
-    transition: max-height 0.3s ease;
-    max-height: 150px;
-    overflow: hidden;
-  }
-
-  .open-enter,
-  .open-leave-to {
-    max-height: 0;
-  }
+.rulesStep .message-body {
+  border-color: #f68b39;
+}
 </style>
 <script>
 import { toPercent } from '../../utils/filters.js'

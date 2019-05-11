@@ -25,6 +25,11 @@ body {
   }
 }
 
+#app {
+  height: 100vh;
+  overflow: auto;
+}
+
 // ------ index.html ------ //
 
 .gi-routerView {

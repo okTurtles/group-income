@@ -64,7 +64,8 @@
             "mixin",
             "extend",
             "content",
-            "each"
+            "each",
+            "for"
           ]
         }
       ],

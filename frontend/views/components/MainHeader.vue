@@ -1,5 +1,5 @@
 <template>
-  <header class="c-header" :class="[routerBack ? 'subPage': 'mainPage']">
+  <header class="c-header" :class="[routerBack ? 'subPage': 'mainPage']" role="banner">
     <div class="level is-mobile is-marginless c-header-top">
       <router-link
         class="level-item button is-icon is-size-5 has-text-primary c-header-back"

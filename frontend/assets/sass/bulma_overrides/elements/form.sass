@@ -69,6 +69,9 @@ $help-size: $size-small !default
     +placeholder
       color: rgba($input-disabled-color, 0.3)
 
+form
+  width: 100%
+
 .input,
 .textarea
   +input
@@ -102,7 +105,16 @@ $help-size: $size-small !default
     display: inline
     width: auto
 
+.input,
+.textarea
+  border: 1px solid var(--placeholder)
+
 .input
+  height: 1.8rem
+  &.is-large
+    margin-top: 0.45rem;
+    height: 2.7rem;
+    width: 100%;
   &.is-rounded
     border-radius: $radius-rounded
     padding-left: 1em
@@ -208,6 +220,12 @@ $help-size: $size-small !default
     +control-medium
   &.is-large
     +control-large
+    select
+      margin-top: 0.45rem
+      height: 2.7rem
+    &.select:not(.is-multiple):not(.is-loading):hover::after 
+      margin-top: 0px
+      right: 1rem
   // Modifiers
   &.is-disabled
     &::after
@@ -403,8 +421,12 @@ $help-size: $size-small !default
   display: block
   font-size: $size-normal
   font-weight: $label-weight
+  letter-spacing: -0.2px
+  text-align: left
+
   &:not(:last-child)
-    margin-bottom: 0.5em
+    margin-bottom: 0.2rem
+
   // Sizes
   &.is-small
     font-size: $size-small
@@ -417,6 +439,9 @@ $help-size: $size-small !default
   display: block
   font-size: $help-size
   margin-top: 0.25rem
+  color: #7A7A7A
+  text-align: left
+
   @each $name, $pair in $colors
     $color: nth($pair, 1)
     &.is-#{$name}
@@ -425,8 +450,10 @@ $help-size: $size-small !default
 // Containers
 
 .field
+  .help
+    margin-top: 0.6rem
   &:not(:last-child)
-    margin-bottom: 0.75rem
+    margin-bottom: 1.6rem
   // Modifiers
   &.has-addons
     display: flex
@@ -580,6 +607,10 @@ $help-size: $size-small !default
     &.has-icon-right
       .icon
         right: 0
+        top: 0.45rem
+        height: calc(100% - 0.45rem)
+        border-left: 1px solid var(--placeholder)
+        z-index: 1
       .input
         padding-right: 2.25em
   &.has-icons-left,
@@ -642,6 +673,7 @@ $gi-input-checked-size: 0.4rem
 
 .field
   display: block
+  width: 100%
 
   &.has-addons .control:first-child .button.is-static
     padding-left: $gi-spacer
@@ -776,3 +808,6 @@ $gi-input-checked-size: 0.4rem
     &.field.is-grouped > .control:not(:last-child)
       margin-left: 0.75rem
       margin-right: 0
+
+fieldset
+  border: none

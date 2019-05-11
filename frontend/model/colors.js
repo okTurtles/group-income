@@ -8,7 +8,11 @@ export default {
     'primaryTextHover': '#fff',
     'secondary': '#a0d10e',
     'tertiary': '#f89201',
-    'danger': '#FC6F6F'
+    'danger': '#FC6F6F',
+    'placeholder': '#dbdbdb',
+    'border': '#5DC8F0',
+    'bg': '#fff',
+    'action': '#FE6E61'
   },
   'green': {
     'name': 'green',
@@ -19,7 +23,11 @@ export default {
     'primaryTextHover': '#363636',
     'secondary': '#a0d10e',
     'tertiary': '#f89201',
-    'danger': '#FC6F6F'
+    'danger': '#FC6F6F',
+    'placeholder': '#dbdbdb',
+    'border': '#90BD0D',
+    'bg': '#fff',
+    'action': '#FE6E61'
   },
   'orange': {
     'name': 'orange',
@@ -30,7 +38,11 @@ export default {
     'primaryTextHover': '#fff',
     'secondary': '#a0d10e',
     'tertiary': '#f89201',
-    'danger': '#FC6F6F'
+    'danger': '#FC6F6F',
+    'placeholder': '#dbdbdb',
+    'border': '#F89302',
+    'bg': '#fff',
+    'action': '#FE6E61'
   },
   'silver': {
     'name': 'silver',
@@ -41,7 +53,11 @@ export default {
     'primaryTextHover': '#fff',
     'secondary': '#a0d10e',
     'tertiary': '#f89201',
-    'danger': '#FC6F6F'
+    'danger': '#FC6F6F',
+    'placeholder': '#dbdbdb',
+    'border': '#999999',
+    'bg': '#fff',
+    'action': '#FE6E61'
   },
   'black & white': {
     'name': 'black & white',
@@ -54,6 +70,10 @@ export default {
     'primaryTextHover': '#363636',
     'secondary': '#a0d10e',
     'tertiary': '#f89201',
-    'danger': '#FC6F6F'
+    'danger': '#FC6F6F',
+    'placeholder': '#fff',
+    'border': 'black',
+    'bg': 'rgba(78, 78, 78, 0.7)',
+    'action': '#FE6E61'
   }
 }

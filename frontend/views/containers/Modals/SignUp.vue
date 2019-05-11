@@ -1,108 +1,90 @@
-<template>
-  <form novalidate ref="form"
-    name="formData"
-    data-test="signup"
-    @submit.prevent="submit">
-    <modal-template>
-      <!-- https://vuejs.org/v2/guide/components-slots.html#Named-Slots-Shorthand -->
-      <template #title>
-        <i18n>Sign Up</i18n>
-      </template>
+<template lang='pug'>
+  form(
+    novalidate
+    ref='form'
+    name='formData'
+    data-test='signup'
+    @submit.prevent='signup'
+  )
+    modal-template(class="is-centered")
+      template(slot='title')
+        i18n Sign Up
 
-      <div class="field">
-        <p class="control has-icon">
-          <input
-            id="name"
-            class="input"
+      .field
+        p.control.has-icon
+          input#name.input(
             :class="{'is-danger': $v.form.name.$error}"
-            name="name"
-            @input="debounceName"
-            placeholder="username"
-            ref="username"
-            v-focus
-            data-test="signName"
-          >
-          <span class="icon"><i class="fa fa-user"></i></span>
-        </p>
-        <p class="help is-danger"
-          data-test="badUsername"
-          v-if="$v.form.name.$error"
-        >
-          <i18n v-if="!$v.form.name.isAvailable">name is unavailable</i18n>
-          <i18n v-if="!$v.form.name.nonWhitespace">cannot contain spaces</i18n>
-        </p>
-      </div>
-      <div class="field">
-        <p class="control has-icon">
-          <input
-            class="input"
+            name='name'
+            @input='debounceName'
+            placeholder='username'
+            ref='username'
+            v-focus=''
+            data-test='signName'
+          )
+          span.icon
+            i.fa.fa-user
+
+        p.help.is-danger(
+          v-if='$v.form.name.$error'
+          data-test='badUsername'
+        )
+          i18n(v-if='!$v.form.name.isAvailable') name is unavailable
+          i18n(v-if='!$v.form.name.nonWhitespace') cannot contain spaces
+
+      .field
+        p.control.has-icon
+          input#email.input(
             :class="{'is-danger': $v.form.email.$error}"
-            id="email"
-            name="email"
-            v-model="form.email"
-            @blur="$v.form.email.$touch()"
-            type="email"
-            placeholder="email"
-            data-test="signEmail"
-          >
-          <span class="icon"><i class="fa fa-envelope"></i></span>
-        </p>
-        <i18n v-if="$v.form.email.$error" class="help is-danger" data-test="badEmail">not an email</i18n>
-      </div>
-      <div class="field">
-        <p class="control has-icon">
-          <input
-            class="input"
-            :class="{'is-danger': $v.form.password.$error}"
-            id="password"
-            name="password"
-            v-model="form.password"
-            @input="$v.form.password.$touch()"
-            placeholder="password"
-            type="password"
-            data-test="signPassword"
-          >
-          <span class="icon"><i class="fa fa-lock"></i></span>
-        </p>
-        <i18n v-if="$v.form.password.$error" class="help is-danger" data-test="badPassword">password must be at least 7 characters</i18n>
-      </div>
+            name='email'
+            v-model='form.email'
+            @blur='$v.form.email.$touch()'
+            type='email'
+            placeholder='email'
+            data-test='signEmail'
+          )
+          span.icon
+            i.fa.fa-envelope
+        i18n.help.is-danger(v-if='$v.form.email.$error' data-test='badEmail') not an email
 
-      <template #errors>
-        {{ form.response }}
-      </template>
+      form-password(
+        :value='form'
+        :v='$v.form'
+        @input='(newPassword) => {password = newPassword}'
+      )
 
-      <template #buttons>
-        <button
-          class="button is-primary"
-          type="submit"
-          :disabled="$v.form.$invalid"
-          data-test="signSubmit"
-        >
-          <i18n>Sign Up</i18n>
-        </button>
-      </template>
+      template(slot='errors') {{ form.response }}
 
-      <template #footer>
-        <a @click="showLoginModal"><i18n>Have an account?</i18n></a>
-      </template>
-    </modal-template>
-  </form>
+      template(slot='buttons')
+        button.button.is-primary.is-centered(
+          type='submit'
+          :disabled='$v.form.$invalid'
+          data-test='signSubmit'
+        )
+          i18n Create account
+
+      template(slot='footer')
+        p
+          i18n Already have an account?
+          a(@click='showLoginModal')
+            i18n Login
 </template>
 <script>
-import ModalTemplate from '../components/Modal/ModalTemplate.vue'
-import { debounce } from '../../utils/giLodash.js'
-import { validationMixin } from 'vuelidate'
-import sbp from '../../../shared/sbp.js'
-import { nonWhitespace } from '../utils/validators.js'
-import { LOAD_MODAL, CLOSE_MODAL } from '../../utils/events.js'
 import { required, minLength, email } from 'vuelidate/lib/validators'
+import { validationMixin } from 'vuelidate'
+import { debounce } from '@utils/giLodash.js'
+import { LOAD_MODAL, CLOSE_MODAL } from '@utils/events.js'
+import sbp from '~/shared/sbp.js'
+import { nonWhitespace } from '@views/utils/validators.js'
+import ModalTemplate from '@components/Modal/ModalTemplate.vue'
+import FormPassword from '@components/Forms/Password.vue'
 
 // TODO: fix all this
 export default {
-  name: 'SignUp',
+  name: 'SignUpModal',
   mixins: [ validationMixin ],
   components: {
-    ModalTemplate
+    ModalTemplate,
+    FormPassword
   },
   data () {
     return {
@@ -123,7 +105,7 @@ export default {
       this.form.name = e.target.value
       this.$v.form.name.$touch()
     }, 700),
-    submit: async function () {
+    signup: async function () {
       // Prevent autocomplete submission when empty field
       if (this.form.name !== null && this.form.email !== null) {
         try {

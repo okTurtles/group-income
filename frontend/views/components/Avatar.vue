@@ -20,6 +20,7 @@
 
 .c-avatar {
   border-radius: 50%;
+  width: 100%;
 
   &.hasMargin {
     margin-right: $gi-spacer-sm;
@@ -47,10 +48,7 @@ export default {
     },
     size: {
       type: String,
-      default: 'md',
-      validator (value) {
-        return ['xs', 'sm', 'md', 'lg', 'xl'].indexOf(value) !== -1
-      }
+      default: ''
     },
     fallbackBg: String,
     /** When true a right margin is added - useful when there's text on the side */

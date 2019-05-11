@@ -134,7 +134,6 @@ module.exports = (grunt) => {
       eslint: 'node ./node_modules/eslint/bin/eslint.js "**/*.{js,vue}"',
       eslintgrunt: "./node_modules/.bin/eslint --ignore-pattern '!.*.js' .Gruntfile.babel.js Gruntfile.js",
       stylelint: 'node ./node_modules/stylelint/bin/stylelint.js "frontend/**/*.{css,scss,vue}"',
-
       flow: './node_modules/.bin/flow'
     },
 
@@ -265,7 +264,14 @@ module.exports = (grunt) => {
       plugins: [
         alias({
           // https://vuejs.org/v2/guide/installation.html#Standalone-vs-Runtime-only-Build
-          vue: path.resolve('./node_modules/vue/dist/vue.common.js')
+          resolve: ['.vue', '.js'],
+          vue: path.resolve('./node_modules/vue/dist/vue.common.js'),
+          '~': path.resolve('./'),
+          '@views': path.resolve('./frontend/views'),
+          '@components': path.resolve('./frontend/views/components'),
+          '@containers': path.resolve('./frontend/views/containers'),
+          '@utils': path.resolve('./frontend/utils'),
+          '@assets': path.resolve('./frontend/assets')
         }),
         resolve({
           // we set `preferBuiltins` to prevent rollup from erroring with
