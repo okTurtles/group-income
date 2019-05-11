@@ -306,10 +306,12 @@ $closeMobileBarBgColor: #3c3c3c;
   background-color: $primary-bg-a;
 }
 
-.tab-active {
-  background-color: $primary !important;
-  font-weight: bold;
-  color: $activeColor;
+@include tablet {
+  .tab-active {
+    background-color: $primary !important;
+    font-weight: bold;
+    color: $activeColor;
+  }
 }
 
 .tab-nav-separator {
