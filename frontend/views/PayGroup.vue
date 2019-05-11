@@ -4,7 +4,6 @@
       <i18n tag="h1" class="title is-1 is-marginless">
         Pay Group
       </i18n>
-      <i18n tag="p">What’s this page about, so the user understands the context.</i18n>
     </div>
 
     <section class="section columns is-desktop is-multiline c-invoice">

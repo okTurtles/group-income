@@ -91,7 +91,6 @@
         </div>
       </div>
       <time-travel v-show="ephemeral.showTimeTravel" :toggleVisibility="toggleTimeTravel" />
-    </div>
   </nav>
 </template>
 <style lang="scss" scoped>

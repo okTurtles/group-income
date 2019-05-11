@@ -6,11 +6,12 @@ const pth = require('path')
 let localeObject = {}
 function parseJS (text) {
   let functionEx = /\bL\(\s*['"](.*?)['"]\s*(?:,\s*['"](.*?)['"]\s*)?\)/mg
-  let matches
-  while (matches = functionEx.exec(text)) {
+  let matches = functionEx.exec(text)
+  while (matches) {
     let text = matches[ 1 ]
     let comment = matches[ 2 ]
     localeObject[ text ] = { text: text, comment: comment || '' }
+    matches = functionEx.exec(text)
   }
 }
 function parseHtml (text) {

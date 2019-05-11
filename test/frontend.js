@@ -284,14 +284,12 @@ describe('Frontend', function () {
 
       const created = await n.evaluate(() => ({
         groupName: document.querySelector('[data-test="groupName"]').innerText,
-        sharedValues: document.querySelector('[data-test="sharedValues"]').innerText,
         incomeProvided: document.querySelector('[data-test="minIncome"]').innerText,
         changePercentage: document.querySelector('[data-test="changePercentage"]').innerText,
         memberApprovalPercentage: document.querySelector('[data-test="approvePercentage"]').innerText,
         memberRemovalPercentage: document.querySelector('[data-test="removePercentage"]').innerText
       }))
       should(created.groupName).equal(testName)
-      should(created.sharedValues).equal(testValues)
       // BUG: TODO: this field should not include the currency
       //      TODO: the currency should be checked separately via data-test="incomeCurrency"
       should(created.incomeProvided).equal('$' + testIncome)

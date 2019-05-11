@@ -8,9 +8,6 @@
       <h1 class="title is-1 is-marginless" data-test="groupName">
         {{ currentGroupState.groupName }}
       </h1>
-      <p data-test="sharedValues">
-        {{ currentGroupState.sharedValues }}
-      </p>
     </div>
 
     <dashboard-section title="Proposals">

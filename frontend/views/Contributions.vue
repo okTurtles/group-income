@@ -5,7 +5,6 @@
         <i18n tag="h1" class="title is-1 is-marginless">
           Contributions
         </i18n>
-        <i18n tag="p">See everyone’s contributions to the group and manage yours.</i18n>
       </div>
       <div>
         <groups-min-income :group="currentGroupState" />
