@@ -134,7 +134,6 @@ module.exports = (grunt) => {
       eslint: 'node ./node_modules/eslint/bin/eslint.js "**/*.{js,vue}"',
       eslintgrunt: "./node_modules/.bin/eslint --ignore-pattern '!.*.js' .Gruntfile.babel.js Gruntfile.js",
       stylelint: 'node ./node_modules/stylelint/bin/stylelint.js "frontend/**/*.{css,scss,vue}"',
-      
 
       flow: './node_modules/.bin/flow'
     },

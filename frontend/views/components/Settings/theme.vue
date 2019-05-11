@@ -34,7 +34,7 @@ import Themes from '../../data/colors.json'
 
 export default {
   name: 'SelectorTheme',
-  
+
   data () {
     return {
       themes: Themes
@@ -50,8 +50,8 @@ export default {
   computed: {
     ...mapGetters([
       'colors'
-    ]),
-  },
+    ])
+  }
 }
 </script>
 
