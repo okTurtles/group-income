@@ -1,0 +1,27 @@
+.media {
+  align-items: flex-start;
+  display: flex;
+  text-align: left;
+}
+
+.media-left,
+.media-right {
+  flex-basis: auto;
+  flex-grow: 0;
+  flex-shrink: 0;
+}
+
+.media-left {
+  margin-right: 1rem;
+}
+
+.media-right {
+  margin-left: 1rem;
+}
+
+.media-content {
+  flex-basis: auto;
+  flex-grow: 1;
+  flex-shrink: 1;
+  text-align: left;
+}

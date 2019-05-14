@@ -1,0 +1,58 @@
+$message-background-color: $background !default;
+$message-radius: 4px;
+
+$message-header-color: #7a7a7a;
+$message-info-color: #e0f4fc;
+$message-danger-color: #ffe2df;
+$message-warning-color: #fef4e6;
+
+$message-body-color: $text !default;
+$message-padding: 1rem;
+$message-box-padding: $message-padding 1.5rem $message-padding $message-padding;
+
+.message {
+  @extend %block;
+  padding: $message-box-padding;
+  border-radius: $message-radius;
+  letter-spacing: 0.1px;
+  display: flex;
+  strong {
+    color: currentColor;
+  }
+  a:not(.button):not(.tag) {
+    color: currentColor;
+  }
+  i {
+    font-size: 1.389rem;
+    padding-right: $message-padding;
+  }
+  &.is-info {
+    background-color: $message-info-color;
+    i {
+      color: $info;
+    }
+  }
+  &.is-danger {
+    background-color: $message-danger-color;
+    i {
+      color: $danger;
+    }
+  }
+  &.is-warning {
+    background-color: $message-warning-color;
+    i {
+      color: $warning;
+    }
+  }
+}
+
+.message-header {
+  color: $message-header-color;
+  display: flex;
+  padding-bottom: 0, 25rem;
+  position: relative;
+}
+
+.message-body {
+  color: $message-body-color;
+}
