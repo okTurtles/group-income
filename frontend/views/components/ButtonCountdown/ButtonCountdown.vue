@@ -1,8 +1,8 @@
-<template>
-  <button class="button is-outlined" @click="onClick">
-    <slot></slot>
-  </button>
+<template lang="pug">
+  button.is-outlined(@click='onClick')
+    slot
 </template>
+
 <script>
 import countdownStates from './countdownStates'
 

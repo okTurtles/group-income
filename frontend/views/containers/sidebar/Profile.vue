@@ -1,62 +1,30 @@
 <template lang='pug'>
-  .level.is-mobile.c-profile(v-if='$store.state.loggedIn')
-    .level-left
-      avatar(:src='userPicture' size='md')
+  .c-profile(v-if='$store.state.loggedIn')
+    .c-avatar-user
+      avatar(:src='userPicture')
       .c-user
-        p.gi-is-ellipsis.has-text-weight-bold(
+        strong(
           :data-test="userDisplayName ? 'profileName' : 'profileDisplayName'"
           :class="`has-text-${isDarkTheme ? 'white' : 'dark'}`"
         ) {{userDisplayName ? userDisplayName : userName}}
 
-        span.gi-is-ellipsis.is-size-6(
+        span.is-size-6(
           data-test='profileDisplayName'
           v-if='userDisplayName'
         ) {{userName}}
 
-    .level-right
-      button.button.is-icon(
-        data-test='settingsBtn'
-        @click="openModal('Settings')"
-      )
-        i.fa.fa-cog
+    button.is-icon(
+      data-test='settingsBtn'
+      @click="openModal('Settings')"
+    )
+      i.icon-cog
 
 </template>
-<style lang="scss" scoped>
-@import "../../../assets/sass/theme/index";
 
-.c-profile {
-  background-color: $primary-bg-a;
-  padding: $gi-spacer-sm;
-  margin-top: 0.75rem;
-}
-
-.c-user {
-  max-width: 5rem;
-  white-space: nowrap;
-  line-height: 1.15rem;
-  margin-left: 1rem;
-
-  span {
-    color: $text-light;
-  }
-}
-
-// https://vue-loader.vuejs.org/guide/scoped-css.html#deep-selectors
-/deep/ .button {
-  .fa-cog {
-    font-size: 0.7rem;
-    transition: transform ease-out 0.3s;
-  }
-
-  &:hover .fa-cog {
-    transform: rotate(180deg);
-  }
-}
-</style>
 <script>
-import Avatar from '../../components/Avatar.vue'
-import sbp from '../../../../shared/sbp.js'
-import { LOAD_MODAL } from '../../../utils/events.js'
+import Avatar from '@components/Avatar.vue'
+import sbp from '~/shared/sbp.js'
+import { LOAD_MODAL } from '@utils/events.js'
 import { mapGetters } from 'vuex'
 
 export default {
@@ -89,3 +57,52 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+@import "../../../assets/style/_variables.scss";
+
+.c-profile {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 52px;
+  padding: 0 $spacer-sm;
+  margin-top: 0.75rem;
+  background-color: $primary-bg-a;
+}
+
+.c-avatar-user {
+  display: flex;
+  align-items: center;
+}
+
+.c-avatar {
+  width: $spacer-lg;
+  height: $spacer-lg;
+}
+
+.c-user {
+  display: flex;
+  flex-direction: column;
+  margin-left: 1rem;
+  max-width: 5rem;
+  white-space: nowrap;
+  line-height: 1.15rem;
+
+  span {
+    color: $text-light;
+  }
+}
+
+button {
+  .icon-cog {
+    font-size: 0.75rem;
+    transition: transform ease-out 0.3s;
+    margin-left: 0;
+  }
+
+  &:hover .icon-cog {
+    transform: rotate(180deg);
+  }
+}
+</style>

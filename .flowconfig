@@ -15,8 +15,8 @@
 .*/frontend/controller/backend/interface.js
 .*/frontend/controller/utils/primus.js
 .*/frontend/utils/crypto.js
-.*/frontend/utils/vuex-queue.js
-.*/frontend/utils/flow-typer.js
+.*/frontend/utils/vuexQueue.js
+.*/frontend/utils/flowTyper.js
 # .*/test/backend.js
 .*/test/frontend.js
 .*.test.js

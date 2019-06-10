@@ -1,95 +1,19 @@
-<template>
-  <li class="c-item" :class="{ 'has-divider': hasDivider }">
-    <component :is="tag"
-      class="no-border"
-      :class="itemLinkClasses"
-      :active-class="tag === 'router-link' && 'is-active'"
-      v-bind="$attrs" v-on="$listeners"
-    >
-      <i class="fa" :class="{ [`fa-${icon}`]: icon }" v-if="icon"></i>
-      <span class="c-item-slot"><slot></slot></span>
-      <badge :number="badgeCount" />
-    </component>
-  </li>
+<template lang="pug">
+li.c-item(:class="{ 'has-divider': hasDivider }")
+  component.c-item-link.is-unstyled(
+    :is='tag'
+    :class='itemLinkClasses'
+    :active-class="tag === 'router-link' && 'is-active'" v-bind='$attrs' v-on='$listeners'
+  )
+    i(
+      v-if='icon'
+      :class='{ [`icon-${icon}`]: icon }'
+    )
+    span.c-item-slot
+      slot
+    badge(:number='badgeCount')
 </template>
-<style lang="scss" scoped>
-@import "../../../assets/sass/theme/index";
 
-.c-item {
-  padding: 0 $gi-spacer-sm;
-
-  &.has-divider {
-    margin-bottom: $gi-spacer-sm;
-    padding-bottom: $gi-spacer-sm;
-    border-bottom: 1px solid $grey-lighter;
-  }
-
-  &-slot {
-    display: flex;
-    align-items: center;
-    flex-grow: 1;
-  }
-}
-
-.c-item-link {
-  display: flex;
-  width: 100%;
-  padding: 0.375rem $gi-spacer-sm 0.3125rem $gi-spacer-sm;
-  cursor: pointer;
-  border-radius: $radius;
-  transition: background-color ease-out 0.3s;
-
-  .fa {
-    margin-right: $gi-spacer;
-    font-size: 0.77rem;
-    color: $grey;
-    transition: transform cubic-bezier(0.18, 0.89, 0.32, 1.28) 0.3s, color ease-in 0.3s;
-  }
-
-  &:hover,
-  &:focus {
-    transition: none;
-    background-color: $primary-bg-a;
-
-    &.solid {
-      background-color: $light;
-    }
-
-    .fa {
-      color: inherit;
-      transform: scale(1.1);
-    }
-  }
-
-  &.no-radius {
-    border-radius: 0;
-  }
-
-  &.secondary {
-    color: $grey;
-    padding: $gi-spacer-xs $gi-spacer-sm;
-    letter-spacing: -0.01rem;
-
-    &:hover,
-    &:focus {
-      background-color: transparent;
-    }
-  }
-
-  &.is-active {
-    font-weight: 600;
-
-    .fa {
-      color: var(--primary-saturated);
-    }
-
-    &:hover,
-    &:focus {
-      background-color: $primary-bg-a;
-    }
-  }
-}
-</style>
 <script>
 import Badge from '../Badge.vue'
 
@@ -123,7 +47,6 @@ export default {
   computed: {
     itemLinkClasses () {
       return {
-        'c-item-link level is-flex gi-is-justify-between gi-is-unstyled': true,
         [this.variant]: this.variant,
         'no-radius': this.disableRadius,
         'is-active': this.isActive
@@ -132,3 +55,81 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+@import "../../../assets/style/_variables.scss";
+
+.c-item {
+  padding: 0 $spacer-sm;
+
+  &.has-divider {
+    margin-bottom: $spacer-sm;
+    padding-bottom: $spacer-sm;
+    border-bottom: 1px solid $border;
+  }
+
+  &-slot {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+  }
+}
+
+.c-item-link {
+  display: flex;
+  align-items: center;
+  padding: 0 $spacer;
+  height: $spacer-lg;
+  cursor: pointer;
+  transition: background-color ease-out 0.3s;
+
+  i {
+    margin-right: $spacer;
+    font-size: 0.77rem;
+    color: $text-light;
+    transition: transform cubic-bezier(0.18, 0.89, 0.32, 1.28) 0.3s, color ease-in 0.3s;
+  }
+
+  &:hover,
+  &:focus {
+    transition: none;
+    background-color: $primary-bg-a;
+
+    &.solid {
+      background-color: $light;
+    }
+
+    .i {
+      color: inherit;
+      transform: scale(1.1);
+    }
+  }
+
+  &.no-radius {
+    border-radius: 0;
+  }
+
+  &.secondary {
+    color: $text-light;
+    letter-spacing: -0.01rem;
+
+    &:hover,
+    &:focus {
+      background-color: transparent;
+    }
+  }
+
+  &.is-active {
+    font-weight: 600;
+
+    i {
+      color: var(--primary-saturated);
+    }
+
+    &:hover,
+    &:focus {
+      background-color: $primary-bg-a;
+    }
+  }
+}
+</style>

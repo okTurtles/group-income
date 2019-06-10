@@ -1,39 +1,42 @@
-<template>
-  <div>
-    <h1 class="title is-2 has-text-centered"><i18n>Minimum Income</i18n></h1>
-    <div class="field has-addons">
-      <div class="control">
-        <span class="select is-large is-primary">
-          <select
-            name="incomeCurrency"
-            required
-            :value="group.incomeCurrency"
-            @input="update"
-          >
-            <option v-for="(symbol, code) in currencies" :value="code" :key="code">{{ symbol }}</option>
-          </select>
-        </span>
-      </div>
-      <div class="control is-expanded">
-        <input
-          class="input is-large is-primary"
-          :class="{ 'is-danger': v.incomeProvided.$error }"
-          placeholder="Amount"
-          name="incomeProvided"
-          type="number"
-          step="1"
-          min="0"
-          required
-          :value="group.incomeProvided"
-          @input="update"
-          ref="mincome"
-          @keyup.enter="next"
-        />
-      </div>
-    </div>
-    <p><i18n>How much income would you like your group to provide?</i18n></p>
-  </div>
+<template lang="pug">
+div
+  p.steps-title
+    | 3.&nbsp;
+    i18n  Minimum Income
+
+  label.label
+    i18n What is the minimum each individual in your group should receive monthly?
+
+  .select-wrapper
+    input.input(
+      ref='mincome'
+      type='number'
+      placeholder='Amount'
+      name='incomeProvided'
+      step='1'
+      min='0'
+      required=''
+      :class="{ 'error': v.incomeProvided.$error }"
+      :value='group.incomeProvided'
+      @input='update'
+      @keyup.enter='next'
+    )
+
+    select(
+      name='incomeCurrency'
+      required=''
+      :value='group.incomeCurrency'
+      @input='update'
+    )
+      option(
+        v-for='(symbol, code) in currencies'
+        :value='code'
+        :key='code'
+      ) {{ symbol }}
+
+  p.has-text-light This value can be adjusted in the future.
 </template>
+
 <script>
 import currencies from '../../utils/currencies'
 

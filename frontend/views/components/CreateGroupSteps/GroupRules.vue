@@ -1,125 +1,101 @@
-<template>
-  <div class="has-text-centered" data-test="rulesStep">
-    <h1 class="title is-2"><i18n>Voting Rules</i18n></h1>
-    <p class="content"><i18n>What percentage approval is necessary to adjust the group rules?</i18n></p>
-    <div class="columns">
-      <div class="column">
-        <div class="rule">
-          <p class="percent">{{ group.changeThreshold | toPercent }}</p>
-          <circle-slider
-            class="circle-slider"
-            :value="group.changeThreshold"
-            @input="value => update('changeThreshold', value)"
-            :min="0.01"
-            :max="1"
-            :step-size="0.01"
-            :side="160"
-            :circleWidth="1"
-            :progressWidth="2"
-            :knobRadius="5"
-            :progressColor="changeColor"
-            :knobColor="changeColor"
-            circleColor="#69707a"
-          >
-          </circle-slider>
-          <p class="subtitle is-6"><i18n>Change Rules</i18n></p>
-        </div>
-      </div>
-      <div class="column">
-        <div class="rule">
-          <p class="percent">{{ group.memberApprovalThreshold | toPercent }}</p>
-          <circle-slider
-            class="circle-slider"
-            :value="group.memberApprovalThreshold"
-            @input="value => update('memberApprovalThreshold', value)"
-            :min="0.01"
-            :max="1"
-            :step-size="0.01"
-            :side="160"
-            :circleWidth="1"
-            :progressWidth="2"
-            :knobRadius="5"
-            :progressColor="approveColor"
-            :knobColor="approveColor"
-            circleColor="#69707a"
-          >
-          </circle-slider>
-          <p class="subtitle is-6"><i18n>Add Member</i18n></p>
-        </div>
-      </div>
-      <div class="column">
-        <div class="rule">
-          <p class="percent">{{ group.memberRemovalThreshold | toPercent }}</p>
-          <circle-slider
-            class="circle-slider"
-            :value="group.memberRemovalThreshold"
-            @input="value => update('memberRemovalThreshold', value)"
-            :min="0.01"
-            :max="1"
-            :step-size="0.01"
-            :side="160"
-            :circleWidth="1"
-            :progressWidth="2"
-            :knobRadius="5"
-            :progressColor="removeColor"
-            :knobColor="removeColor"
-            circleColor="#69707a"
-          >
-          </circle-slider>
-          <p class="subtitle is-6"><i18n>Remove Member</i18n></p>
-        </div>
-      </div>
-    </div>
-    <transition name="slidedown">
-      <message severity="warning" v-if="!superMajority">
-        <i18n>
-          The percentage value you are choosing is most likely too low
-          for a decision that can have a potentially significant impact
-          on a person’s life. Please consider using a supermajority threshold.
-        </i18n>
-        <a href="https://groupincome.org/2016/09/deprecating-mays-theorem/#when-majority-rule-can-harm" target="_blank">
-          <i18n>Read more on our blog about the dangers of majority rule.</i18n>
-        </a>
-      </message>
-    </transition>
-  </div>
+<template lang="pug">
+.c-group-rules(data-test='rulesStep')
+  p.steps-title
+    | 3.&nbsp;
+    i18n  Voting Rules
+
+  label.label
+    i18n What percentage approval is necessary to adjust the group rules?
+
+  .c-rules
+    .c-rule
+      p.c-percent
+        span.c-pourcent-number {{ group.changeThreshold | toPercent }}
+        | %
+      circle-slider.circle-slider(
+        :value='group.changeThreshold'
+        @input="value => update('changeThreshold', value)"
+        :min='0.01'
+        :max='1'
+        :step-size='0.01'
+        :side='175'
+        :circleWidth='4'
+        :progressWidth='4'
+        :knobRadius='12'
+        :progressColor="changeColor"
+        :knobColor="changeColor"
+        circleColor='#F4F8E7'
+      )
+      p.subtitle
+        i18n Change Rules
+
+    .c-rule
+      p.c-percent
+        span.c-pourcent-number {{ group.memberApprovalThreshold | toPercent }}
+        | %
+      circle-slider.circle-slider(
+        :value='group.memberApprovalThreshold'
+        @input="value => update('memberApprovalThreshold', value)"
+        :min='0.01'
+        :max='1'
+        :step-size='0.01'
+        :side='175'
+        :circleWidth='4'
+        :progressWidth='4'
+        :knobRadius='12'
+        :progressColor="approveColor"
+        :knobColor="approveColor"
+        circleColor='#F4F8E7'
+      )
+      p.subtitle
+        i18n Add Member
+
+    .c-rule
+      p.c-percent
+        span.c-pourcent-number {{ group.memberRemovalThreshold | toPercent }}
+        | %
+      circle-slider.circle-slider(
+        :value='group.memberRemovalThreshold'
+        @input="value => update('memberRemovalThreshold', value)"
+        :min='0.01'
+        :max='1'
+        :step-size='0.01'
+        :side='175'
+        :circleWidth='4'
+        :progressWidth='4'
+        :knobRadius='12'
+        :progressColor="removeColor"
+        :knobColor="removeColor"
+        circleColor='#F4F8E7'
+      )
+      p.subtitle
+        i18n Remove Member
+
+  transition(name='slidedown')
+    message(
+      v-if='!superMajority'
+      severity='warning'
+    )
+      i18n
+        | The percentage value you are choosing is most likely too low
+        | for a decision that can have a potentially significant impact
+        | on a person&rsquo;s life. Please consider using a supermajority 175.
+      | &nbsp;
+      a.link(
+        href='https://groupincome.org/2016/09/deprecating-mays-theorem/#when-majority-rule-can-harm'
+        target='_blank'
+      )
+        i18n Read more on our blog about the dangers of majority rule.
+
 </template>
-<style lang="scss" scoped>
-.rule {
-  position: relative;
-  width: 160px;
-  height: 140px;
-  margin: 0 auto;
-  padding-top: 40px;
-}
 
-.percent {
-  font-size: 3rem;
-  font-weight: bold;
-  line-height: 3.4rem;
-}
-
-.circle-slider {
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-
-.message {
-  margin-top: 2rem;
-}
-
-.rulesStep .message-body {
-  border-color: #f68b39;
-}
-</style>
 <script>
-import { toPercent } from '../../utils/filters.js'
-import { CircleSlider } from 'vue-circle-slider'
+import { toPercent } from '@view-utils/filters.js'
+import { CircleSlider } from '@components/CircularSlider/index.js'
 import Message from '../Message.vue'
 
 const SUPERMAJORITY = 0.67
-const OKCOLOR = '#78c848'
+const OKCOLOR = '#A0D10E'
 const WARNCOLOR = '#f68b39'
 
 export default {
@@ -162,7 +138,53 @@ export default {
     }
   },
   mounted () {
-    this.$emit('focusref', 'next')
+    this.$emit('focusref', 'finish')
   }
 }
 </script>
+
+<style lang="scss" scoped>
+.c-rules {
+  display: flex;
+}
+
+.c-rule {
+  position: relative;
+  width: 175px;
+  height: 160px;
+  margin: 40px auto;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.c-percent {
+  font-size: size-extra-large;
+  font-weight: bold;
+  margin: 0;
+}
+
+.c-pourcent-number {
+  display: inline-block;
+  padding-bottom: 5px;
+  border-bottom: 2px solid grey;
+  min-width: 57px;
+  margin-bottom: 8px;
+  margin-top: 3px;
+}
+
+.subtitle {
+  margin: 0;
+}
+
+.circle-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.rulesStep .message-body {
+  border-color: #f68b39;
+}
+</style>

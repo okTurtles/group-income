@@ -1,34 +1,34 @@
-<template>
-  <div class="c-notification">
-    <p class="c-notification-bubble">
-      <!-- TODO: #502 - Chat: Add support to markdown formatted text -->
-      <slot></slot>
-    </p>
-  </div>
+<template lang="pug">
+.c-notification
+  p.c-notification-bubble
+    // TODO: #502 - Chat: Add support to markdown formatted text
+    slot
 </template>
+
+<script>
+export default {
+  name: 'MessageNotification'
+}
+</script>
+
 <style lang="scss" scoped>
-@import "../../../assets/sass/theme/index";
+@import "../../../assets/style/_variables.scss";
 
 .c-notification {
   text-align: center;
 
   &-bubble {
     display: inline-block;
-    margin: $gi-spacer $gi-spacer 0;
-    padding: $gi-spacer-xs $gi-spacer-sm;
+    margin: $spacer $spacer 0;
+    padding: $spacer-xs $spacer-sm;
     text-align: center;
     max-width: 32rem;
     background-color: $light;
     border-radius: $radius-large;
 
     @include phablet {
-      margin: $gi-spacer $gi-spacer 0;
+      margin: $spacer $spacer 0;
     }
   }
 }
 </style>
-<script>
-export default {
-  name: 'MessageNotification'
-}
-</script>

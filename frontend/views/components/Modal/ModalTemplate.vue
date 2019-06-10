@@ -1,29 +1,24 @@
 <template lang='pug'>
-  .modal(data-test='modal' role='dialog')
+  .c-modal(data-test='modal' role='dialog')
     transition(name='fade' appear)
-      .modal-background(@click='close' v-if='isActive')
+      .c-modal-background(@click='close' v-if='isActive')
 
     transition(name='slide-left' appear @after-leave='$destroy()')
-      .modal-card(ref='card' v-if='isActive')
-        header.modal-card-head.has-text-centered(
-          :class='{ "has-subtitle": $scopedSlots.subTitle }'
+      .c-modal-content(ref='card' v-if='isActive')
+        header.c-modal-header(
+          :class='{ "has-subtitle": $scopedSlots.subtitle }'
           v-if='$scopedSlots.title || $scopedSlots.subTitle'
         )
           modal-close(@close='close')
-          h2.modal-card-title.subtitle.is-marginless.has-text-text-light(v-if='$scopedSlots.subTitle')
-            slot(name='subTitle')
+          h2.subtitle(v-if='$scopedSlots.subtitle')
+            slot(name='subtitle')
           h1.title(v-if='$scopedSlots.title')
             slot(name='title')
 
-        section.modal-card-body
+        section.c-modal-body
           slot
-          .buttons(v-if='$scopedSlots.buttons')
-            slot(name='buttons')
 
-          p.has-text-danger(data-test='submitError' v-if='$scopedSlots.errors')
-            slot(name='errors')
-
-        footer.modal-card-foot(v-if='$scopedSlots.footer')
+        footer.c-modal-footer(v-if='$scopedSlots.footer')
           slot(name='footer')
 
 </template>
@@ -38,9 +33,9 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "../../../assets/sass/theme/index";
+@import "../../../assets/style/_variables.scss";
 
-.modal {
+.c-modal {
   display: flex;
   position: fixed;
   z-index: 9998;
@@ -55,7 +50,7 @@ export default {
 }
 
 @include desktop {
-  .modal-background {
+  .c-modal-background {
     position: fixed;
     bottom: 0;
     left: 0;
@@ -65,7 +60,7 @@ export default {
   }
 }
 
-.modal-card {
+.c-modal-content {
   position: absolute;
   display: flex;
   flex-direction: column;
@@ -80,145 +75,155 @@ export default {
     border-radius: 6px;
     max-width: 640px;
     height: auto;
-    max-height: calc(100% - 20px);
+    margin: 20px auto;
     transition: none !important;
   }
+}
 
-  &-head,
-  &-body,
-  &-foot {
-    flex-direction: column;
-    justify-content: center;
-    align-items: flex-start;
-    display: flex;
-    @include tablet {
-      align-items: center;
-    }
-  }
-
-  &-head {
-    position: relative;
-    align-items: flex-start;
-    padding: 0 $gi-spacer;
-    min-height: 88px;
-
-    @include tablet {
-      min-height: 95px;
-      align-items: center;
-    }
-
-    @include tablet {
-      min-height: 105px;
-    }
-
-    &.has-subtitle {
-      @include tablet {
-        min-height: 114px;
-      }
-      @include tablet {
-        min-height: 124px;
-      }
-    }
-
-    @media screen and (max-height: 500px) {
-      min-height: 50px;
-    }
-  }
-
-  &-body {
-    width: 100%;
-    padding: $gi-spacer-lg $gi-spacer 0 $gi-spacer;
-
-    &:last-child {
-      padding-bottom: $gi-spacer-lg;
-    }
-
-    > * {
-      align-self: stretch;
-    }
-
-    @media screen and (max-height: 500px) {
-      overflow: scroll;
-    }
-  }
-
-  &-foot {
-    min-height: 53px;
-    padding: $gi-spacer;
-
-    @include desktop {
-      padding-bottom: $gi-spacer-xl;
-    }
-
-    @media screen and (max-height: 500px) {
-      padding-bottom: $gi-spacer;
-    }
-
-    .button {
-      &:not(:last-child) {
-        margin-right: 10px;
-      }
-    }
+.c-modal-header,
+.c-modal-body,
+.c-modal-footer {
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  display: flex;
+  @include tablet {
+    align-items: center;
   }
 }
 
-.subtitle {
-  color: #7a7a7a;
-}
-
-.title {
-  font-size: 1.125rem;
+.c-modal-body,
+.c-modal-footer {
+  align-self: center;
+  width: 100%;
+  max-width: calc(100% - 2rem);
 
   @include tablet {
-    font-size: 1.5rem;
+    max-width: 534px;
   }
 
   @include desktop {
-    font-size: 2rem;
+    max-width: 400px;
   }
+}
+
+.c-modal-header {
+  position: relative;
+  align-items: flex-start;
+  padding: 0 $spacer;
+  min-height: 88px;
+
+  @include tablet {
+    min-height: 95px;
+    align-items: center;
+  }
+
+  @include tablet {
+    min-height: 105px;
+  }
+
+  &.has-subtitle {
+    @include tablet {
+      min-height: 114px;
+    }
+    @include desktop {
+      min-height: 124px;
+    }
+  }
+
+  @media screen and (max-height: 500px) {
+    min-height: 50px;
+  }
+}
+
+.c-modal-body {
+  margin: $spacer $spacer 2.5rem $spacer;
+
+  &:last-child {
+    padding-bottom: $spacer-lg;
+  }
+
+  > * {
+    align-self: stretch;
+  }
+
+  @media screen and (max-height: 500px) {
+    justify-content: normal;
+    overflow: auto;
+  }
+}
+
+.c-modal-footer {
+  min-height: 53px;
+
+  @include desktop {
+    padding-bottom: $spacer-xl;
+    max-width: 100%;
+    align-self: normal;
+  }
+
+  @media screen and (max-height: 500px) {
+    padding-bottom: $spacer;
+  }
+
+  .button {
+    &:not(:last-child) {
+      margin-right: 10px;
+    }
+  }
+}
+
+// TODO: check if that's generic
+.title {
+  font-size: $size-3;
+
+  @include tablet {
+    font-size: $size-2;
+  }
+
+  @include desktop {
+    font-size: $size-1;
+  }
+}
+
+.subtitle,
+.title {
+  margin: 0;
 }
 
 // Mofifiers
-.has-no-background {
-  .modal-close {
-    top: 24px;
-    right: 16px;
-    background-color: #f1f1f1;
-    width: 40px;
-    height: 40px;
-  }
-
-  .modal-card-body {
-    padding-top: 1.1rem;
-  }
-}
-
 .has-background {
-  .modal-close {
+  .c-modal-close {
     background-color: #fff;
   }
 
-  .modal-card {
-    &-head,
-    &-foot {
-      background-color: #f5f5f5;
-    }
+  .c-modal-header{
+    background-color: #f5f5f5;
+  }
 
-    &-foot {
-      margin: $gi-spacer;
+  .c-modal-body {
+    margin-top: $spacer-lg;
+  }
+}
 
-      @include desktop {
-        align-items: flex-start;
-        margin: 0;
-        padding-bottom: $gi-spacer;
-      }
+.has-background,
+.has-background-footer {
+  .c-modal-footer {
+    background-color: #f5f5f5;
+    margin: $spacer;
+    padding: 0 1rem;
+
+    @include desktop {
+      align-items: flex-start;
+      margin: 0;
+      padding: 0 1.5rem;
     }
   }
 }
 
 .has-submodal-background {
   @include touch {
-    .modal-card {
+    .c-modal-content {
       &-head {
         display: flex;
         justify-content: center;
@@ -235,19 +240,19 @@ export default {
       font-size: 0.875rem;
     }
 
-    .modal-close {
+    .c-modal-close {
       right: auto;
-      left: 1rem;
+      left: $spacer;
       font-family: "Font Awesome 5 Free";
       font-weight: 900;
-      height: 2rem;
-      width: 2rem;
+      height: $spacer-lg;
+      width: $spacer-lg;
       color: #999;
       background: transparent;
-      top: 1rem;
+      top: $spacer;
 
       &:hover {
-        color: #363636;
+        color: $text-strong;
       }
 
       &::after {
@@ -264,20 +269,6 @@ export default {
         height: auto;
         font-size: 0.875rem;
         transform: none !important;
-      }
-    }
-  }
-}
-
-.is-centered {
-  .modal-card {
-    &-body {
-      width: 100%;
-      max-width: calc(400px + 2rem);
-      align-self: center;
-
-      @include tablet {
-        text-align: center;
       }
     }
   }

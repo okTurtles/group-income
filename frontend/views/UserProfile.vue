@@ -1,141 +1,142 @@
-<template>
-  <main>
-    <div class="section">
-      <form ref="GroupProfileForm"
-            name="GroupProfileForm"
-            @submit.prevent="saveGroupProfile"
-            data-test="GroupProfileForm"
-      >
-        <p
-          class="notification is-success has-text-centered"
-          v-if="groupProfileSaved"
-          data-test="GroupProfileSaved"
-        >
-          <i class='notification-icon fa fa-check'></i>
-          <i18n>Group Profile saved successfully!</i18n>
-        </p>
-        <p
-          class="notification is-danger has-text-centered"
-          v-if="groupErrorMsg"
-        >
-          <i class='notification-icon fa fa-exclamation-triangle'></i>
-          {{groupErrorMsg}}
-        </p>
-        <div class="panel">
-          <p class="panel-heading">
-            <i18n>Group Profile Attributes</i18n>
-          </p>
-          <div class="panel-block">
-            <div class="media-content">
-              <strong><i18n>Select Group</i18n>:</strong>
-              <span class="select">
-                <select v-model="currentGroupContractId" v-on:change="changeGroup" data-test="GroupProfileId">
-                  <option v-for="(group, index) in $store.getters.groupsByName" v-bind:value="group.contractID" :key="`group-${index}`">
-                    {{group.groupName}}
-                    </option>
-                </select>
-              </span>
-            </div>
-          </div>
-          <div class="panel-block" v-if="currentGroupContractId">
-            <div class="media-content">
-              <strong><i18n>PaymentType</i18n>: </strong>
-              <span class="select" type="text">
-                <select v-model="editedGroupProfile.paymentMethod" data-test="GroupProfilePaymentMethod">
-                  <option></option>
-                  <option>Bitcoin</option>
-                  <option>Amex</option>
-                  <option>Visa</option>
-                  <option>Paypal</option>
-                </select>
-              </span>
-            </div>
-          </div>
-          <div class="panel-block" v-if="currentGroupContractId">
-            <div class="media-content">
-              <strong><i18n>Contribution Amount</i18n>:</strong>
-              <div class="field has-addons">
-                <p class="control">
-                  <!--- TODO: Make this a real field-->
-                  <span class="select">
-                    <select v-model="editedGroupProfile.contributionCurrency" data-test="GroupProfileContributionCurrency">
-                      <option>USD</option>
-                      <option>BTC</option>
-                      <option>EUR</option>
-                    </select>
-                  </span>
-                </p>
-                <p class="control">
-                  <input
-                    class="input"
-                    :class="{'is-danger': $v.editedGroupProfile.contributionAmount.$error}"
-                    type="text"
-                    name="contributionAmount"
-                    placeholder="Contribution Amount"
-                    v-model="editedGroupProfile.contributionAmount"
-                    @input="$v.editedGroupProfile.contributionAmount.$touch()"
-                    data-test="GroupProfileContributionAmount"
-                  >
-                </p>
-              </div>
-              <i18n v-if="$v.editedGroupProfile.contributionAmount.$error" data-control="incomeProvided" class="help is-danger">
-                The Contribution Amount must be a numeric currency amount and may contain 2 decimal points.
-              </i18n>
-            </div>
-          </div>
-          <div class="panel-block" v-if="currentGroupContractId">
-            <div class="media-content">
-              <strong><i18n>Receiving Limit</i18n>:</strong>
-              <div class="field has-addons">
-                <p class="control">
-                  <!--- TODO: Make this a real field-->
-                  <span class="select">
-                    <select v-model="editedGroupProfile.receivingLimitCurrency" data-test="GroupProfileReceivingCurrency">
-                      <option>USD</option>
-                      <option>BTC</option>
-                      <option>EUR</option>
-                    </select>
-                  </span>
-                </p>
-                <p class="control">
-                  <input
-                    class="input"
-                    :class="{'is-danger': $v.editedGroupProfile.receivingLimit.$error}"
-                    type="text"
-                    name="receivingLimit"
-                    placeholder="Receiving Limit"
-                    v-model="editedGroupProfile.receivingLimit"
-                    @input="$v.editedGroupProfile.receivingLimit.$touch()"
-                    data-test="GroupProfileReceivingAmount"
-                  >
-                </p>
-              </div>
-              <i18n v-if="$v.editedGroupProfile.receivingLimit.$error" data-control="incomeProvided" class="help is-danger">
-                The Receiving Limit must be a numeric currency amount and may contain 2 decimal points.
-              </i18n>
-            </div>
-          </div>
-        </div>
-        <div class="has-text-centered button-box">
-          <button
-            class="button is-success is-large"
-            :disabled="$v.editedGroupProfile.$invalid"
-            v-if="currentGroupContractId"
-            data-test="GroupProfileSubmitBtn">
-              <i18n>Save Group Profile</i18n>
-          </button>
-        </div>
-      </form>
-    </div>
-  </main>
+<template lang="pug">
+main
+  .section
+    form(
+      ref='GroupProfileForm'
+      name='GroupProfileForm'
+      @submit.prevent='saveGroupProfile'
+      data-test='GroupProfileForm'
+    )
+      p.notification.is-success.has-text-centered(
+        v-if='groupProfileSaved'
+        data-test='GroupProfileSaved'
+      )
+        i.notification-icon.icon-check
+        i18n Group Profile saved successfully!
+
+      p.notification.is-danger.has-text-centered(v-if='groupErrorMsg')
+        i.notification-icon.icon-exclamation-triangle {{groupErrorMsg}}
+
+      .panel
+        p.panel-heading
+          i18n Group Profile Attributes
+
+        .panel-block
+          .media-content
+            strong
+              i18n Select Group
+              | :
+
+            span.select
+              select(
+                v-model='currentGroupContractId'
+                v-on:change='changeGroup'
+                data-test='GroupProfileId'
+              )
+                option(
+                  v-for='(group, index) in $store.getters.groupsByName'
+                  v-bind:value='group.contractID'
+                  :key='`group-${index}`'
+                ) {{group.groupName}}
+
+        .panel-block(v-if='currentGroupContractId')
+          .media-content
+            strong
+              i18n PaymentType
+              | :
+
+            span.select(type='text')
+              select(
+                v-model='editedGroupProfile.paymentMethod'
+                data-test='GroupProfilePaymentMethod'
+              )
+                option
+                option Bitcoin
+                option Amex
+                option Visa
+                option Paypal
+
+        .panel-block(v-if='currentGroupContractId')
+          .media-content
+            strong
+              i18n Contribution Amount
+              | :
+
+            .field.has-addons
+              p.control
+                // - TODO: Make this a real field
+                span.select
+                  select(
+                    v-model='editedGroupProfile.contributionCurrency'
+                    data-test='GroupProfileContributionCurrency'
+                  )
+                    option USD
+                    option BTC
+                    option EUR
+              p.control
+                input.input(
+                  :class="{'is-danger': $v.editedGroupProfile.contributionAmount.$error}"
+                  type='text'
+                  name='contributionAmount'
+                  placeholder='Contribution Amount'
+                  v-model='editedGroupProfile.contributionAmount'
+                  @input='$v.editedGroupProfile.contributionAmount.$touch()'
+                  data-test='GroupProfileContributionAmount'
+                )
+
+            i18n.help.is-danger(
+              v-if='$v.editedGroupProfile.contributionAmount.$error'
+              data-control='incomeProvided'
+            )
+              | The Contribution Amount must be a numeric currency amount and may contain 2 decimal points.
+
+        .panel-block(v-if='currentGroupContractId')
+          .media-content
+            strong
+              i18n Receiving Limit
+              | :
+
+            .field.has-addons
+              p.control
+                // - TODO: Make this a real field
+                span.select
+                  select(
+                    v-model='editedGroupProfile.receivingLimitCurrency'
+                    data-test='GroupProfileReceivingCurrency'
+                  )
+                    option USD
+                    option BTC
+                    option EUR
+              p.control
+                input.input(
+                  :class="{'is-danger': $v.editedGroupProfile.receivingLimit.$error}"
+                  type='text'
+                  name='receivingLimit'
+                  placeholder='Receiving Limit'
+                  v-model='editedGroupProfile.receivingLimit'
+                  @input='$v.editedGroupProfile.receivingLimit.$touch()'
+                  data-test='GroupProfileReceivingAmount'
+                )
+
+            i18n.help.is-danger(v-if='$v.editedGroupProfile.receivingLimit.$error' data-control='incomeProvided')
+              | The Receiving Limit must be a numeric currency amount and may contain 2 decimal points.
+
+      .has-text-centered.button-box
+        button.is-success(
+          v-if='currentGroupContractId'
+          :disabled='$v.editedGroupProfile.$invalid'
+          data-test='GroupProfileSubmitBtn'
+        )
+          i18n Save Group Profile
+
 </template>
 <script>
-import sbp from '../../shared/sbp.js'
-import { cloneDeep } from '../utils/giLodash.js'
 import { validationMixin } from 'vuelidate'
-import { decimals } from './utils/validators.js'
 import { email, helpers } from 'vuelidate/lib/validators'
-import L from './utils/translations.js'
+import { cloneDeep } from '@utils/giLodash.js'
+import { decimals } from '@view-utils/validators.js'
+import L from '@view-utils/translations.js'
+import sbp from '~/shared/sbp.js'
 
 const url = helpers.regex('url', /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i)
 

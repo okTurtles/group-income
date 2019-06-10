@@ -63,6 +63,7 @@ describe('Full walkthrough', function () {
     return sbp('gi/contract/create', 'GroupContract', {
       // authorizations: [Events.CanModifyAuths.dummyAuth(name)],
       groupName: name,
+      groupPicture: '',
       sharedValues: 'our values',
       changeThreshold: 0.8,
       memberApprovalThreshold: 0.8,

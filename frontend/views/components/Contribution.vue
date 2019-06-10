@@ -1,97 +1,53 @@
-<template>
-  <li v-if="isEditing || isAdding" class="c-item">
-    <p class="field has-addons gi-has-addons c-form">
-      <input ref="input" type="text"
-        class="input"
-        :placeholder="randomPlaceholder"
-        maxlength="20"
-        :aria-label="L('Your contribution')"
-        :aria-invalid="hasError"
-        v-focus="isEditing && $slots.default[0].text"
-        @keyup="verifyValue"
-        @keydown.esc="cancel"
-        @keydown.enter="handleEnter"
-      >
+<template lang="pug">
+li.c-item(v-if='isEditing || isAdding')
+  input.input(
+    type='text'
+    ref='input'
+    :placeholder='randomPlaceholder'
+    maxlength='20'
+    :aria-label="L('Your contribution')"
+    :aria-invalid='hasError'
+    v-focus='isEditing && $slots.default[0].text'
+    @keyup='verifyValue'
+    @keydown.esc='cancel'
+    @keydown.enter='handleEnter'
+  )
+  i18n.button(
+    tag='button'
+    @click='cancel'
+  ) Cancel
+  i18n.button.is-outlined(
+    v-if='isAdding && isFilled'
+    tag='button'
+    @click='handleSubmit'
+  ) Add
+  i18n.button.is-outlined(
+    v-if='isEditing && isFilled'
+    tag='button'
+    @click='handleSubmit'
+  ) Save
+  i18n.button.is-danger.is-outlined(
+    v-if='isEditing && !isFilled'
+    tag='button'
+    @click='handleDelete'
+  ) Delete
+  p.error(v-if='hasError' role='alert') {{this.hasError}}
 
-      <i18n tag="button" class="button" @click="cancel">Cancel</i18n>
-      <i18n tag="button" class="button has-text-primary" v-if="isAdding && isFilled" @click="handleSubmit">Add</i18n>
-      <i18n tag="button" class="button has-text-primary" v-if="isEditing && isFilled" @click="handleSubmit">Save</i18n>
-      <i18n tag="button" class="button has-text-danger" v-if="isEditing && !isFilled" @click="handleDelete">Delete</i18n>
-    </p>
-    <p v-if="hasError" class="is-size-7 has-text-weight-normal has-text-danger c-error" role="alert">{{this.hasError}}</p>
-  </li>
+li(v-else-if='isEditable' :class='itemClasses')
+  slot
 
-  <li v-else-if="isEditable" :class="itemClasses">
-    <p class="box-body">
-      <slot></slot>
-    </p>
-    <div class="box-controls">
-      <button
-        class="button is-icon"
-        :aria-label="editAriaLabel"
-        @click="handleEditClick"
-      >
-        <i class="fa fa-edit" aria-hidden="true"></i>
-      </button>
-    </div>
-  </li>
+  button.is-icon(:aria-label='editAriaLabel' @click='handleEditClick')
+    i.icon-edit(aria-hidden='true')
 
-  <li v-else-if="isUnfilled">
-    <button :class="itemClasses" @click="handleClick">
-      <slot></slot>
-    </button>
-  </li>
+li(v-else-if='isUnfilled')
+  button(:class='itemClasses' @click='handleClick')
+    slot
 
-  <li v-else :class="itemClasses">
-    <slot></slot>
-  </li>
+li(v-else='' :class='itemClasses')
+  slot
+
 </template>
-<style lang="scss" scoped>
-@import "../../assets/sass/theme/index";
 
-.c-item {
-  margin-bottom: $gi-spacer * 0.75;
-}
-
-.c-contribution,
-.c-form {
-  min-height: 2.8125rem; // 45px - input and box are aligned to the pixel
-}
-
-.c-error {
-  margin-top: -$gi-spacer-sm; // reduce the spacing between error and input
-}
-
-.c-contribution {
-  width: 100%;
-  font-size: inherit;
-
-  &.is-default {
-    border: none;
-    background-color: $light;
-  }
-
-  &.is-editable {
-    border: none;
-    background-color: $primary-bg-a;
-  }
-
-  &.is-unfilled {
-    cursor: pointer;
-    text-align: left;
-
-    &:hover,
-    &:focus {
-      background-color: $primary-bg-a;
-    }
-  }
-
-  &-icon {
-    color: $primary;
-    margin-right: $gi-spacer-sm;
-  }
-}
-</style>
 <script>
 export default {
   name: 'Contribution',
@@ -123,7 +79,6 @@ export default {
   computed: {
     itemClasses () {
       return [
-        'box is-compact c-contribution',
         `is-${this.variant}`,
         { 'has-controls': this.isEditable }
       ]
@@ -203,3 +158,7 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+@import "../../assets/style/_variables.scss";
+</style>

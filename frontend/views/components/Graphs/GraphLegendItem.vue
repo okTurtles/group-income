@@ -1,28 +1,13 @@
-<template>
-  <li>
-    <div class="subtitle c-label">
-      <span class="c-visual" v-if="color" :class="`has-background-${color}`"></span>
-      {{label}}
-    </div>
-    <span class="is-size-5 has-text-weight-bold">
-      <slot></slot>
-    </span>
-  </li>
+<template lang="pug">
+li
+  .subtitle.c-label
+    span.c-visual(v-if='color' :class='`has-background-${color}`')
+    |       {{label}}
+
+  span.is-size-5.has-text-weight-bold
+    slot
 </template>
-<style lang="scss" scoped>
-@import "../../../assets/sass/theme/index";
 
-.c-label {
-  line-height: 1;
-}
-
-.c-visual {
-  display: inline-block;
-  width: $gi-spacer-sm;
-  height: $gi-spacer-sm;
-  margin-right: $gi-spacer-xs;
-}
-</style>
 <script>
 export default {
   name: 'GraphLegendItem',
@@ -35,3 +20,18 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+@import "../../../assets/style/_variables.scss";
+
+.c-label {
+  line-height: 1;
+}
+
+.c-visual {
+  display: inline-block;
+  width: $spacer-sm;
+  height: $spacer-sm;
+  margin-right: $spacer-xs;
+}
+</style>

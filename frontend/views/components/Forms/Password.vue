@@ -3,26 +3,27 @@
   label.label(v-if='label')
     i18n {{ label }}
 
-  .control.has-icon(:class="{'has-icon-right': hasIconRight}")
+  .input-combo
     input.input(
       :type="isLock ? 'password' : 'text'"
       :id='name'
-      :class="[{'is-danger': v[name].$error}, size]"
+      :class="[{'error': v[name].$error}, size]"
       :name='name'
       :placeholder="showPlaceholder ? name : ''"
       :data-test='name'
       v-model='value[name]'
       @input="v[name].$touch()"
     )
-    span.icon(@click.stop="isLock = !isLock")
-      i.fas(
-        :class="isLock ? 'fa-eye' : 'fa-eye-slash'"
+    button.is-icon(@click.stop="isLock = !isLock" v-if='hasIconRight')
+      i(
+        :class="isLock ? 'icon-eye' : 'icon-eye-slash'"
       )
 
-  i18n.help.is-danger(
+  p.error(
     v-show='v[name].$error'
     data-test='badPassword'
-  ) {{ v[name].$error }}
+  )
+    i18n {{ v[name].$error }}
 </div>
 </template>
 
@@ -54,7 +55,7 @@ export default {
     },
     hasIconRight: {
       type: Boolean,
-      default: false
+      default: true
     },
     showPlaceholder: {
       type: Boolean,

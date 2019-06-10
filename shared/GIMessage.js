@@ -1,5 +1,5 @@
 'use strict'
-// import sbp from '../shared/sbp.js'
+// import sbp from '~/shared/sbp.js'
 import { blake32Hash } from './functions.js'
 import type { JSONType } from './types.js'
 

@@ -1,34 +1,19 @@
-<template>
-  <div class="c-greetings">
-    <avatar v-for="(user, index) in founders"
-      size="sm"
-      class="c-avatar"
-      :key="`user-${index}`"
-      :src="user.picture"
-      :alt="user.displayName || user.name"
-    />
-    <message-notification>{{text}}</message-notification>
-  </div>
+<template lang="pug">
+.c-greetings
+  avatar.c-avatar(
+    v-for='(user, index) in founders'
+    :key='`user-${index}`'
+    :src='user.picture'
+    :alt='user.displayName || user.name'
+  )
+    message-notification {{text}}
+
 </template>
-<style lang="scss" scoped>
-@import "../../../assets/sass/theme/index";
 
-.c-greetings {
-  align-self: center;
-  text-align: center;
-  margin-bottom: $gi-spacer-lg;
-}
-
-.c-avatar {
-  margin-left: -$gi-spacer-xs;
-  margin-right: -$gi-spacer-xs;
-  box-shadow: 0 0 0 1px $body-background-color;
-}
-</style>
 <script>
 import { chatTypes, users, groupA } from './fakeStore.js'
-import MessageNotification from '../../components/Chatroom/MessageNotification.vue'
-import Avatar from '../../components/Avatar.vue'
+import MessageNotification from '@components/chatroom/MessageNotification.vue'
+import Avatar from '@components/Avatar.vue'
 
 export default {
   name: 'ConversationGreetings',
@@ -75,3 +60,19 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+@import "../../../assets/style/_variables.scss";
+
+.c-greetings {
+  align-self: center;
+  text-align: center;
+  margin-bottom: $spacer-lg;
+}
+
+.c-avatar {
+  margin-left: -$spacer-xs;
+  margin-right: -$spacer-xs;
+  box-shadow: 0 0 0 1px $body-background-color;
+}
+</style>

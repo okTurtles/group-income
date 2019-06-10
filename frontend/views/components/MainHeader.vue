@@ -1,52 +1,69 @@
-<template>
-  <header class="c-header" :class="[routerBack ? 'subPage': 'mainPage']" role="banner">
-    <div class="level is-mobile is-marginless c-header-top">
-      <router-link
-        class="level-item button is-icon is-size-5 has-text-primary c-header-back"
-         v-if="routerBack"
-        :to="routerBack"
-      >
-        <i class="fa fa-angle-left"></i>
-      </router-link>
-      <div class="level-item c-header-text">
-        <h2 class="title is-5 is-marginless gi-is-ellipsis c-header-title">
-          <avatar src="/assets/images/group-income-icon-transparent-circle.png"
-            alt="GroupIncome's logo"
-            class="is-hidden-tablet"
-            size="sm"
-            v-if="!routerBack"
-          />
-          <template v-if="title">{{ title }}</template>
-          <slot name="title" v-else></slot>
-        </h2>
-        <p class="has-text-text-light is-size-7 gi-is-ellipsis is-hidden-mobile" v-if="description">
-          {{ description }}
-        </p>
-      </div>
-      <div class="level-right">
-        <slot name="actions"></slot>
-      </div>
-    </div>
-    <slot> <!-- in case parent wants to add more stuff (ex: search )--></slot>
-  </header>
+<template lang="pug">
+header.c-header(
+  :class="[routerBack ? 'subPage': 'mainPage']"
+  role='banner'
+)
+  .level.is-mobile.is-marginless.c-header-top
+    router-link.level-item.button.is-icon.is-size-5.has-text-primary.c-header-back(
+      v-if='routerBack'
+      :to='routerBack'
+    )
+      i.icon-angle-left
+
+    .level-item.c-header-text
+      h2.is-5.c-header-title
+        avatar.is-hidden-tablet(
+          v-if='!routerBack'
+          src='/assets/images/group-income-icon-transparent-circle.png'
+          alt="GroupIncome's logo"
+        )
+          template(v-if='title') {{ title }}
+          slot(v-else='' name='title')
+
+      p.is-size-7.is-hidden-mobile(v-if='description')
+        | {{ description }}
+
+    .level-right
+      slot(name='actions')
+  slot
+    // in case parent wants to add more stuff (ex: search )
 </template>
+
+<script>
+import Avatar from './Avatar.vue'
+
+export default {
+  // TODO later - apply & adapt this MainHeader to all other pages
+  // - maybe create ChatHeader that consumes MainHeader
+  name: 'MainHeader',
+  components: {
+    Avatar
+  },
+  props: {
+    title: String,
+    description: String,
+    routerBack: String
+  }
+}
+</script>
+
 <style lang="scss" scoped>
-@import "../../assets/sass/theme/index";
+@import "../../assets/style/_variables.scss";
 
 .c-header {
   position: relative;
-  padding: $gi-spacer $gi-spacer-sm;
-  z-index: $gi-zindex-header;
+  padding: $spacer $spacer-sm;
+  z-index: $zindex-header;
   background-color: $body-background-color;
 
   // fadeOutTop: a gradient mask to fadeout nav on scroll.
   &::after {
     content: "";
     position: absolute;
-    bottom: -$gi-spacer;
+    bottom: -$spacer;
     left: 0;
-    height: $gi-spacer;
-    width: calc(100% - #{$gi-spacer}); // so it doesn't get above scrollbar
+    height: $spacer;
+    width: calc(100% - #{$spacer}); // so it doesn't get above scrollbar
     background: linear-gradient($body-background-color, rgba($body-background-color, 0));
     pointer-events: none;
   }
@@ -63,12 +80,12 @@
   .level-item.c-header-back {
     flex-grow: 0;
     flex-shrink: 0;
-    margin: 0 $gi-spacer-sm;
+    margin: 0 $spacer-sm;
   }
 
   &.mainPage {
     .c-header-text {
-      margin-left: $gi-spacer-lg + $gi-spacer;
+      margin-left: $spacer-lg + $spacer;
     }
   }
 
@@ -97,12 +114,12 @@
   .c-header {
     &.mainPage {
       .c-header-text {
-        margin-left: $gi-spacer-lg + $gi-spacer-sm;
+        margin-left: $spacer-lg + $spacer-sm;
       }
     }
 
     &.subPage {
-      padding-left: $gi-spacer;
+      padding-left: $spacer;
     }
   }
 }
@@ -110,7 +127,7 @@
 @include tablet {
   .c-header {
     &-top {
-      padding-left: $gi-spacer-sm;
+      padding-left: $spacer-sm;
     }
 
     &-text {
@@ -138,20 +155,3 @@
 }
 
 </style>
-<script>
-import Avatar from './Avatar.vue'
-
-export default {
-  // TODO later - apply & adapt this MainHeader to all other pages
-  // - maybe create ChatHeader that consumes MainHeader
-  name: 'MainHeader',
-  components: {
-    Avatar
-  },
-  props: {
-    title: String,
-    description: String,
-    routerBack: String
-  }
-}
-</script>

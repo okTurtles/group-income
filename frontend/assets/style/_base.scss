@@ -1,0 +1,58 @@
+html {
+  background-color: white;
+  min-width: 300px;
+}
+
+body,
+html {
+  height: 100vh;
+  max-height: 100vh;
+  overflow: hidden;
+  margin: 0;
+}
+
+article,
+aside,
+figure,
+footer,
+header,
+hgroup,
+section {
+  display: block;
+}
+
+hr {
+  background-color: $hr-background-color;
+  border: none;
+  display: block;
+  height: 2px;
+  margin: 1.5rem;
+}
+
+img {
+  height: auto;
+  max-width: 100%;
+  display: block;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  vertical-align: baseline;
+}
+
+span {
+  font-style: inherit;
+  font-weight: inherit;
+}
+
+td,
+th {
+  padding: 0 0 1rem 0;
+  text-align: left;
+  vertical-align: top;
+}

@@ -138,8 +138,8 @@ export default {
 
   methods: {
     bindEvents () {
-      document.addEventListener('touchmove', this.moving, {passive: false})
-      document.addEventListener('touchend', this.moveEnd, {passive: false})
+      document.addEventListener('touchmove', this.moving, { passive: false })
+      document.addEventListener('touchend', this.moveEnd, { passive: false })
       document.addEventListener('mousemove', this.moving)
       document.addEventListener('mouseup', this.moveEnd)
       document.addEventListener('mouseleave', this.moveEnd)
@@ -315,7 +315,6 @@ $barColor: #c4c4c4;
 .slide-bar-component {
   position: relative;
   padding-top: 6px;
-  box-sizing: border-box;
   width: 450px;
   min-height: 70px;
   user-select: none;

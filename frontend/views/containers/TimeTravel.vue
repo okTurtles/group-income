@@ -1,37 +1,20 @@
-<template>
-  <div class="box time-travel" @click="toggleVisibility">
-    <vue-slider
-      v-bind="config.sliderConfig" v-model="ephemeral.position"
-      @callback="timeTravel"
-    ></vue-slider>
-    <div>{{ ephemeral.history.length }}</div>
-  </div>
+<template lang="pug">
+.box.time-travel(@click='toggleVisibility')
+  vue-slider(
+    v-bind='config.sliderConfig'
+    v-model='ephemeral.position'
+    @callback='timeTravel'
+  )
+  div {{ ephemeral.history.length }}
+
 </template>
-<style lang="scss" scoped>
-.time-travel {
-  position: fixed;
-  bottom: 10px;
-  left: 10%;
-  width: 80%;
-  z-index: $gi-zindex-tooltip;
-  box-shadow: 0 2px 30px rgba(10, 10, 10, 0.1), 0 0 0 1px rgba(10, 10, 10, 0.1);
-}
 
-.ticks {
-  display: flex;
-  justify-content: space-between;
-}
-
-.ticks li {
-  display: inline-block;
-}
-</style>
 <script>
-import sbp from '../../../shared/sbp.js'
+import sbp from '~/shared/sbp.js'
 import VueSlider from 'vue-slider-component'
 import store from '../../model/state.js'
-import { REPLACED_STATE } from '../../utils/events.js'
-import { cloneDeep } from '../../utils/giLodash.js'
+import { REPLACED_STATE } from '@utils/events.js'
+import { cloneDeep } from '@utils/giLodash.js'
 const disableTimeTravel = true
 export default {
   name: 'TimeTravel',
@@ -86,3 +69,23 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+.time-travel {
+  position: fixed;
+  bottom: 10px;
+  left: 10%;
+  width: 80%;
+  z-index: $zindex-tooltip;
+  box-shadow: 0 2px 30px rgba(10, 10, 10, 0.1), 0 0 0 1px rgba(10, 10, 10, 0.1);
+}
+
+.ticks {
+  display: flex;
+  justify-content: space-between;
+}
+
+.ticks li {
+  display: inline-block;
+}
+</style>

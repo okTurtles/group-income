@@ -1,5 +1,5 @@
 <template lang='pug'>
-  button.modal-close(
+  button.c-modal-close(
     @click.self="$emit('close')"
     aria-label='close'
   )
@@ -12,22 +12,23 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "../../../assets/sass/theme/index";
+@import "../../../assets/style/_variables.scss";
 
-.modal-close {
+.c-modal-close {
   position: absolute;
-  top: 1rem;
   right: 1rem;
   z-index: 4;
   height: 32px;
+  min-height: 32px;
   width: 32px;
   border: none;
   border-radius: 50%;
+  padding: 0;
   @extend %unselectable;
   -moz-appearance: none;
   -webkit-appearance: none;
   cursor: pointer;
-  background-color: transparent;
+  background-color: #F5F5F5;
 
   @include tablet {
     background-color: #f1f1f1;
@@ -57,7 +58,7 @@ export default {
     transform-origin: center center;
 
     @include desktop {
-      background-color: #363636;
+      background-color: $text-strong;
     }
   }
 

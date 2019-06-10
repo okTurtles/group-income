@@ -1,0 +1,240 @@
+$inputHeight: 43px;
+
+form {
+  width: 100%;
+}
+
+@mixin placeholder {
+  $placeholders: ':-moz' ':-webkit-input' '-moz' '-ms-input';
+  @each $placeholder in $placeholders {
+    &:#{$placeholder}-placeholder {
+      @content;
+    }
+  }
+}
+
+.field {
+  max-width: 100%;
+  margin-bottom: 38px; // TODO: Is this used?
+  margin-bottom: 1rem;
+}
+
+textarea,
+.textarea,
+select,
+.select,
+.input {
+  display: flex;
+  justify-content: center;
+  height: $inputHeight;
+  width: 100%;
+  border-radius: $radius;
+  padding: 0 10px;
+  background-color: #fff;
+  border: 1px solid $border;
+  letter-spacing: -0.6px;
+  font-size: 1rem;
+  line-height: 23px;
+  outline: none;
+
+  @mixin placeholder {
+    color: $text-light;
+  }
+
+  &:focus {
+    border-color: $primary;
+  }
+
+  &.error {
+    border-color: $danger;
+    color: initial;
+  }
+}
+
+.label {
+  display: block;
+  font-weight: bold;
+  line-height: 24px;
+  margin-bottom: $spacer-sm;
+}
+
+.select-wrapper {
+  .select,
+  select {
+    -webkit-appearance: none; 
+    -moz-appearance: none;
+    appearance: none;
+    background-color: transparent;
+    padding-right: 38px;
+    padding-left: 16px;
+    min-width: 98px;
+    border: 0;
+  }
+
+  &:before,
+  &:after {
+    content: '';
+    background-color: $primary;
+    width: 9px;
+    height: 2px;
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    margin-top: -1px;
+    transform-origin: center;
+    transform: rotate(45deg);
+  }
+
+  &:after {
+    transform: rotate(-45deg);
+    right: 13px;
+  }
+}
+
+.input + select {
+  width: auto;
+}
+
+.select-wrapper,
+.input-combo {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border: 1px solid $border;
+  border-radius: $radius;
+
+  select,
+  .input {
+    border: 0;
+
+    &:focus {
+      outline: 1px solid $primary;
+      outline-offset: 0px;
+      border-color: transparent;      
+
+      + label{
+        background-color: $primary;
+        color: #fff;
+        line-height: $inputHeight;
+        outline: 1px solid var(--primary);
+      }
+    }
+  }
+
+  .input {
+    border-radius: $radius 0 0 $radius;
+    border-right: 1px solid $border;
+  }
+
+  * + .input {
+    border: 0;
+  }
+
+  label {
+    padding: 0 1rem;
+    font-weight: normal;
+    font-size: 1rem;
+  }
+
+  .is-icon {
+    min-width: 40px;
+    text-align: center;
+    color: $border;
+
+    &:first-child {
+      position: absolute;
+    }
+
+    + .input {
+      padding-left: 40px;
+      border-radius: $radius;
+    }
+
+    &:focus {
+      color: $primary;
+    }
+  }
+}
+
+textarea,
+.textarea {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  height: auto;
+}
+
+.error {
+  color: $danger;
+}
+
+p.error {
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+
+  &:before {
+    content: "\f057";
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    margin-right: 0.25rem;
+  }
+}
+
+.radio-wrapper {
+  min-width: 10rem;
+  margin-right: $spacer-md;
+  position: relative;
+  display: inline-block;
+  .radio {
+    cursor: pointer;
+    outline: none;
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    -moz-appearance: none;
+    -webkit-appearance: none;
+  }
+
+  span {
+    outline: none;
+    cursor: pointer;
+
+    &::before {
+      content: '';
+      width: 14px;
+      height: 14px;
+      margin-right: $spacer-sm;
+      display: inline-block;
+      border-radius: 50%;
+      border: 1px solid $border;
+      transform: translateY(2px);
+    }
+
+    &::after {
+      content: '';
+      width: 7px;
+      height: 7px;
+      background-color: $primary;
+      border-radius: 50%;
+      position: absolute;
+      top: calc(50% - 1px);
+      left: 7px;
+      transform: translate(-50%, -50%) scale(0);
+      transform-origin: 50% 50%;
+      transition: transform 150ms;
+    }
+  }
+
+  .radio:focus + span,
+  .radio:checked + span {
+    font-weight: bold;
+    margin-right: -1px;
+
+    &::before {
+      border-color: $text;
+    }
+
+    &::after {
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+}

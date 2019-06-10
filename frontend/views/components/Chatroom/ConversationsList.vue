@@ -1,51 +1,33 @@
-<template>
-  <div class="c-list">
-    <h2 class="subtitle c-subtitle">{{title}}</h2>
-    <list hasMargin>
-      <list-item v-for="id in list.order"
-        :key="id"
-        tag="router-link"
-        variant="solid"
-        :icon="getIcon(id)"
-        :badgeCount="list.conversations[id].unreadCount"
-        :to="buildUrl(id)"
-      >
-        <div class="c-userAvatarNamed">
-          <avatar hasMargin
-            size="sm"
-            v-if="list.conversations[id].picture"
-            :src="list.conversations[id].picture"
-          />
-          <span class="gi-is-ellipsis">{{list.conversations[id].displayName || list.conversations[id].name}}</span>
-        </div>
-      </list-item>
-    </list>
-  </div>
+<template lang="pug">
+.c-conversation-list
+  h2.subtitle {{title}}
+
+  ul
+    list-item(
+      v-for='id in list.order'
+      :key='id'
+      tag='router-link'
+      variant='solid'
+      :icon='getIcon(id)'
+      :badgecount='list.conversations[id].unreadCount'
+      :to='buildUrl(id)'
+    )
+      .c-userAvatarNamed
+        avatar(
+          v-if='list.conversations[id].picture'
+          :src='list.conversations[id].picture'
+        )
+          span {{list.conversations[id].displayName || list.conversations[id].name}}
+
 </template>
-<style lang="scss" scoped>
-@import "../../../assets/sass/theme/index";
 
-.c-list:not(:first-child) {
-  margin: $gi-spacer*1.5 0;
-}
-
-.c-subtitle {
-  padding-left: $gi-spacer-sm;
-}
-
-.c-userAvatarNamed {
-  display: flex;
-  align-items: center;
-}
-</style>
 <script>
-import { List, ListItem } from '../../components/Lists/index.js'
-import Avatar from '../../components/Avatar.vue'
+import { ListItem } from '@components/Lists/index.js'
+import Avatar from '@components/Avatar.vue'
 
 export default {
   name: 'ConversationsList',
   components: {
-    List,
     ListItem,
     Avatar
   },
@@ -89,3 +71,20 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+@import "../../../assets/style/_variables.scss";
+
+.c-list:not(:first-child) {
+  margin: $spacer*1.5 0;
+}
+
+.subtitle {
+  padding-left: $spacer-sm;
+}
+
+.c-userAvatarNamed {
+  display: flex;
+  align-items: center;
+}
+</style>

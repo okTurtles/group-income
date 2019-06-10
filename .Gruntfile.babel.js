@@ -51,7 +51,7 @@ module.exports = (grunt) => {
       },
       css: {
         options: { livereload },
-        files: ['frontend/assets/sass/**/*.{sass,scss}'],
+        files: ['frontend/assets/**/*.{sass,scss}'],
         tasks: ['sass']
       },
       html: {
@@ -78,14 +78,13 @@ module.exports = (grunt) => {
         // sourceMapRoot: '/',
         outputStyle: development ? 'nested' : 'compressed',
         includePaths: [
-          './node_modules/bulma',
           './node_modules/@fortawesome/fontawesome-free/scss'
         ]
       },
       dev: {
         files: [{
           expand: true,
-          cwd: 'frontend/assets/sass',
+          cwd: 'frontend/assets/style',
           src: ['*.{sass,scss}', '!_*/**'],
           dest: distCSS,
           ext: '.css'
@@ -107,14 +106,8 @@ module.exports = (grunt) => {
       },
       assets: {
         cwd: 'frontend/assets',
-        src: ['**/*', '!sass/**'],
+        src: ['**/*', '!style/**'],
         dest: distAssets,
-        expand: true
-      },
-      fontawesome: {
-        cwd: 'node_modules/@fortawesome/fontawesome-free/webfonts/',
-        src: ['fa-regular*', 'fa-solid*'],
-        dest: `${distAssets}/fonts`,
         expand: true
       }
     },
@@ -133,7 +126,7 @@ module.exports = (grunt) => {
       // https://github.com/standard/standard/issues/750#issuecomment-379294276
       eslint: 'node ./node_modules/eslint/bin/eslint.js "**/*.{js,vue}"',
       eslintgrunt: "./node_modules/.bin/eslint --ignore-pattern '!.*.js' .Gruntfile.babel.js Gruntfile.js",
-      stylelint: 'node ./node_modules/stylelint/bin/stylelint.js "frontend/**/*.{css,scss,vue}"',
+      stylelint: 'node ./node_modules/stylelint/bin/stylelint.js "frontend/style/**/*.{css,scss,vue}"',
       flow: './node_modules/.bin/flow'
     },
 
@@ -267,10 +260,13 @@ module.exports = (grunt) => {
           resolve: ['.vue', '.js'],
           vue: path.resolve('./node_modules/vue/dist/vue.common.js'),
           '~': path.resolve('./'),
+          '@model': path.resolve('./frontend/model'),
+          '@utils': path.resolve('./frontend/utils'),
           '@views': path.resolve('./frontend/views'),
+          '@pages': path.resolve('./frontend/views/pages'),
           '@components': path.resolve('./frontend/views/components'),
           '@containers': path.resolve('./frontend/views/containers'),
-          '@utils': path.resolve('./frontend/utils'),
+          '@view-utils': path.resolve('./frontend/views/utils'),
           '@assets': path.resolve('./frontend/assets')
         }),
         resolve({

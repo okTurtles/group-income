@@ -1,8 +1,10 @@
-<template>
-    <component :is="tag" v-on="$listeners">
-      {{translatedText()}}
-    </component>
+<template lang="pug">
+component(
+  :is='tag'
+  v-on='$listeners'
+) {{ translatedText() }}
 </template>
+
 <script>
 export default {
   props: {

@@ -1,7 +1,7 @@
 /* global fetch */
 'use strict'
 
-import sbp from '../../shared/sbp.js'
+import sbp from '~/shared/sbp.js'
 import { handleFetchResult } from './utils/misc.js'
 
 // NOTE: prefix groups with `group/` and users with `user/` ?

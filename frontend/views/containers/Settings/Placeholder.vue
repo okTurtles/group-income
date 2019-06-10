@@ -18,7 +18,7 @@ export default {
 </script>
 
 <style lang='scss' scoped>
-@import "../../../assets/sass/theme/index";
+@import "../../../assets/style/_variables.scss";
 
 .container {
   padding-left: 25px;

@@ -1,30 +1,30 @@
 <template lang='pug'>
-  form(
-    novalidate
-    ref='form'
-    name='formData'
-    data-test='signup'
-    @submit.prevent='signup'
-  )
-    modal-template(class="is-centered")
-      template(slot='title')
-        i18n Sign Up
+  modal-template(class='has-background-footer')
+    template(slot='title')
+      i18n Sign Up
 
+    form(
+      novalidate
+      ref='form'
+      name='formData'
+      data-test='signup'
+      @submit.prevent='signup'
+    )
       .field
-        p.control.has-icon
-          input#name.input(
-            :class="{'is-danger': $v.form.name.$error}"
-            name='name'
-            @input='debounceName'
-            placeholder='username'
-            ref='username'
-            v-focus=''
-            data-test='signName'
-          )
-          span.icon
-            i.fa.fa-user
+        label.label
+          i18n Username
 
-        p.help.is-danger(
+        input#name.input(
+          :class="{'error': $v.form.name.$error}"
+          name='name'
+          @input='debounceName'
+          placeholder='username'
+          ref='username'
+          v-focus=''
+          data-test='signName'
+        )
+
+        p.error(
           v-if='$v.form.name.$error'
           data-test='badUsername'
         )
@@ -32,47 +32,52 @@
           i18n(v-if='!$v.form.name.nonWhitespace') cannot contain spaces
 
       .field
-        p.control.has-icon
-          input#email.input(
-            :class="{'is-danger': $v.form.email.$error}"
-            name='email'
-            v-model='form.email'
-            @blur='$v.form.email.$touch()'
-            type='email'
-            placeholder='email'
-            data-test='signEmail'
-          )
-          span.icon
-            i.fa.fa-envelope
-        i18n.help.is-danger(v-if='$v.form.email.$error' data-test='badEmail') not an email
+        label.label
+          i18n Email
+
+        input#email.input(
+          :class="{'is-danger': $v.form.email.$error}"
+          name='email'
+          v-model='form.email'
+          @blur='$v.form.email.$touch()'
+          type='email'
+          placeholder='email'
+          data-test='signEmail'
+        )
+
+        p.error(v-if='$v.form.email.$error' data-test='badEmail')
+          i18n not an email
 
       form-password(
+        :label='L("Password")'
         :value='form'
         :v='$v.form'
         @input='(newPassword) => {password = newPassword}'
       )
 
-      template(slot='errors') {{ form.response }}
+      p.error(v-if='form.response') {{ form.response }}
 
-      template(slot='buttons')
-        button.button.is-primary.is-centered(
+      .buttons.is-centered
+        button.is-primary.is-centered(
           type='submit'
           :disabled='$v.form.$invalid'
           data-test='signSubmit'
         )
           i18n Create account
 
-      template(slot='footer')
-        p
-          i18n Already have an account?
-          a(@click='showLoginModal')
-            i18n Login
+    template(slot='footer')
+      p
+        i18n Already have an account?&nbsp;
+        a.link(@click='showLoginModal')
+          i18n Login
+
 </template>
+
 <script>
 import { required, minLength, email } from 'vuelidate/lib/validators'
 import { validationMixin } from 'vuelidate'
 import { debounce } from '@utils/giLodash.js'
-import { LOAD_MODAL, CLOSE_MODAL } from '@utils/events.js'
+import { REPLACE_MODAL, CLOSE_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
 import { nonWhitespace } from '@views/utils/validators.js'
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
@@ -161,7 +166,7 @@ export default {
       }
     },
     showLoginModal () {
-      sbp('okTurtles.events/emit', LOAD_MODAL, 'LoginModal')
+      sbp('okTurtles.events/emit', REPLACE_MODAL, 'LoginModal')
     }
   },
   validations: {

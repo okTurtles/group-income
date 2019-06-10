@@ -21,8 +21,8 @@
 </template>
 
 <script>
-import SelectorTheme from '@components/Settings/Theme.vue'
-// import SelectorFontSize from '@components/Settings/FontSize.vue'
+import SelectorTheme from '@components/settings/Theme.vue'
+// import SelectorFontSize from '@components/settings/FontSize.vue'
 
 export default {
   name: 'SettingsAppearence',
@@ -35,7 +35,7 @@ export default {
 </script>
 
 <style lang='scss' scoped>
-@import "../../../assets/sass/theme/index";
+@import "../../../assets/style/_variables.scss";
 
 .settings-container {
   padding-top: 2rem;

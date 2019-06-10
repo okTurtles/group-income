@@ -1,11 +1,11 @@
 <template lang='pug'>
   .tab-wrapper(:class="{'open': open}")
     .tab-nav-header
-      button.button.is-icon.tab-back(
+      button.is-icon.tab-back(
         aria-label='back'
         @click='open = !open'
       )
-        i.fa.fa-chevron-left(aria-hidden='true')
+        i.icon-chevron-left(aria-hidden='true')
 
       h1.tab-title
         i18n.menu-title Settings
@@ -30,7 +30,7 @@
           @click='tabClick(links)'
         )
           | {{ links.title }}
-          i.fa.fa-chevron-right(aria-hidden='true')
+          i.icon-chevron-right(aria-hidden='true')
 
     section.tab-section
       slot
@@ -132,7 +132,7 @@ export default {
 </script>
 
 <style lang='scss' scoped>
-@import "../../../assets/sass/theme/index";
+@import "../../../assets/style/_variables.scss";
 
 $separatorColor: #b2c3ca;
 $legendColor: #7b7b7b;
@@ -253,7 +253,7 @@ $closeMobileBarBgColor: #3c3c3c;
 }
 
 .tab-link {
-  color: #363636;
+  color: $text-strong;
   display: flex;
   justify-content: space-between;
   letter-spacing: -0.4px;
@@ -326,7 +326,6 @@ $closeMobileBarBgColor: #3c3c3c;
 }
 
 .tab-item {
-  box-sizing: border-box;
   height: 100%;
   display: flex;
   justify-content: center;

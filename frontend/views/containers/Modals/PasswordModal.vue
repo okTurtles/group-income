@@ -50,10 +50,10 @@
       template(slot='errors') {{ form.response }}
 
       template(slot='buttons')
-        button.button.is-outlined(
+        button.is-outlined(
           @click='close'
         ) Cancel
-        button.button.is-success(
+        button.is-success(
           @click='changePassword'
           :disabled='$v.form.$invalid'
         ) Change password
@@ -67,7 +67,7 @@ import { required, minLength } from 'vuelidate/lib/validators'
 import sameAs from 'vuelidate/lib/validators/sameAs.js'
 import { CLOSE_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
-import L from '@views/utils/translations.js'
+import L from '@view-utils/translations.js'
 
 export default {
   name: 'PasswordModal',

@@ -1,240 +1,86 @@
-<template>
-  <div class="c-chatmain" :class="{ isActive: summary.title }">
-    <template v-if="summary.title">
-      <main-header
-        :description="summary.description"
-        :routerBack="summary.routerBack"
-      >
-        <template slot="title">
-          <avatar :src="summary.picture" alt=""
-            class="c-header-avatar"
-            size="sm"
-            hasMargin
-          />
-          <i class="fa is-size-6 c-header-private" :class="{
-            'fa-globe': summary.private === false,
-            'fa-lock': summary.private === true,
-          }" v-if="summary.private !== undefined"></i>
-          {{summary.title}}
-        </template>
-        <template slot="actions">
-          <button class="button is-icon">
-            <i class="fa fa-user-plus"></i>
-          </button>
-          <button class="button is-icon">
-            <!-- TODO later - show a tooltip on notifications snooze -->
-            <i class="fa fa-bell"></i>
-          </button>
-          <menu-parent class="level-right">
-            <menu-trigger class="is-icon">
-              <i class="fa fa-ellipsis-v"></i>
-            </menu-trigger>
+<template lang="pug">
+.c-chatmain(:class='{ isActive: summary.title }')
+  template(v-if='summary.title')
+    main-header(:description='summary.description' :routerback='summary.routerBack')
 
-            <!-- TODO later - be a drawer on mobile -->
-            <menu-content class="c-actions-content">
-              <list hasMargin>
-                <menu-item tag="button" itemId="hash-1" icon="heart">
-                  <i18n>Option 1</i18n>
-                </menu-item>
-                <menu-item tag="button" itemId="hash-2" icon="heart">
-                  <i18n>Option 2</i18n>
-                </menu-item>
-                <menu-item tag="button" itemId="hash-3" icon="heart">
-                  <i18n>Option 3</i18n>
-                </menu-item>
-              </list>
-            </menu-content>
-          </menu-parent>
-        </template>
-      </main-header>
+      template(slot='title')
+        avatar.c-header-avatar(:src='summary.picture' alt='')
+          i.c-header-private(:class="{\
+          'icon-globe': summary.private === false,\
+          'icon-lock': summary.private === true,\
+          }" v-if='summary.private !== undefined')
+          | {{summary.title}}
 
-      <div class="c-body is-flex" :style="bodyStyles">
-        <div v-if="details.isLoading">
-          <loading />
-          <!-- TODO later - Design a cool skeleton loading
-            - this should be done only after knowing exactly how server gets each conversation data -->
-        </div>
-        <div class="c-body-conversation" ref="conversation" v-else>
-          <conversation-greetings />
-          <template v-for="(message, index) in details.conversation">
-            <i18n class="subtitle c-divider"
-              :key="`subtitle-${index}`"
-              v-if="startedUnreadIndex === index">
-              New messages
-            </i18n>
-            <message-notification
-              :key="`notification-${index}`"
-              v-if="message.from === 'notification'">
-              {{message.text}}
-            </message-notification>
-            <!-- cf: https://github.com/vuejs/eslint-plugin-vue/issues/462 -->
-            <!-- eslint-disable-next-line vue/require-component-is -->
-            <component v-else
-              v-bind="getMessageAt[index]"
-              :key="`message-${index}`"/>
-          </template>
-          <message
-            v-for="(message, index) in ephemeral.pendingMessages"
-            :key="`pending-messages-${index}`"
-            v-bind="getPendingAt[index]"
-            @retry="retryMessage(index)"
-          />
-        </div>
-      </div>
-      <div class="c-footer">
-        <send-area :title="summary.title"
-          @send="handleSendMessage"
-          @heightUpdate="updateSendAreaHeight"
-          :loading="details.isLoading"
-        />
-      </div>
-    </template>
-  </div>
+      template(slot='actions')
+        button.is-icon
+          i.icon-user-plus
+        button.is-icon
+          // TODO later - show a tooltip on notifications snooze
+          i.icon-bell
+
+        menu-parent
+          menu-trigger.is-icon
+            i.icon-ellipsis-v
+
+          // TODO later - be a drawer on mobile
+          menu-content.c-actions-content
+            ul
+              menu-item(tag='button' itemid='hash-1' icon='heart')
+                i18n Option 1
+              menu-item(tag='button' itemid='hash-2' icon='heart')
+                i18n Option 2
+              menu-item(tag='button' itemid='hash-3' icon='heart')
+                i18n Option 3
+
+    .c-body(:style='bodyStyles')
+      .c-body-loading(v-if='details.isLoading')
+        loading
+          //
+            TODO later - Design a cool skeleton loading
+            - this should be done only after knowing exactly how server gets each conversation data
+
+      .c-body-conversation(ref='conversation' v-else='')
+        conversation-greetings
+          template(v-for='(message, index) in details.conversation')
+            i18n.subtitle.c-divider(
+              v-if='startedUnreadIndex === index'
+              :key='`subtitle-${index}`'
+            ) New messages
+
+            message-notification(:key='`notification-${index}`' v-if="message.from === 'notification'")
+              | {{message.text}}
+
+            // cf: https://github.com/vuejs/eslint-plugin-vue/issues/462
+            // eslint-disable-next-line vue/require-component-is
+            component(
+              v-else=''
+              :key='`message-${index}`'
+              v-bind='getMessageAt[index]'
+            )
+
+          message(
+            v-for='(message, index) in ephemeral.pendingMessages'
+            :key='`pending-messages-${index}`'
+            v-bind='getPendingAt[index]'
+            @retry='retryMessage(index)'
+          )
+
+    .c-footer
+      send-area(:title='summary.title' @send='handleSendMessage' @heightupdate='updateSendAreaHeight' :loading='details.isLoading')
+
 </template>
-<style lang="scss" scoped>
-@import "../../../assets/sass/theme/index";
 
-.c-chatmain {
-  position: relative;
-  width: 100vw;
-  min-width: 0;
-  min-height: 100vh;
-  background-color: $body-background-color;
-
-  .c-actions-content {
-    top: $gi-spacer-lg;
-    right: 0;
-    left: auto;
-    width: 10rem;
-  }
-}
-
-.c-header-private {
-  margin-right: $gi-spacer-xs;
-}
-
-.c-header-private,
-.c-header-avatar {
-  @include phablet {
-    display: none;
-  }
-}
-
-.c-body {
-  flex-grow: 1;
-  flex-direction: column;
-  justify-content: flex-end;
-
-  &-conversation {
-    padding: $gi-spacer 0;
-  }
-}
-
-.c-footer {
-  padding: 0 $gi-spacer-sm $gi-spacer;
-}
-
-.c-divider {
-  display: flex;
-  align-items: center;
-  text-align: center;
-  margin: $gi-spacer 0;
-
-  &::before,
-  &::after {
-    content: "";
-    flex-grow: 1;
-    border-bottom: 1px solid $tertiary;
-  }
-
-  &::before {
-    margin-right: $gi-spacer-sm;
-  }
-
-  &::after {
-    margin-left: $gi-spacer-sm;
-  }
-}
-
-@include phone {
-  .c-chatmain {
-    /* A - MVP static way - show / hide conversation */
-    display: none;
-    z-index: $gi-zindex-sidebar;
-
-    &.isActive {
-      display: block;
-    }
-
-    /* B - dynamic way
-    - slideIn from right to left - more complex - needs tricky work
-    - TODO - If there's time, I'll build this alternative.
-    */
-  }
-
-  // NOTE: Mobile - prefer to fix the header & footer instead of using flexbox
-  // So the body scroll is the mobile browser's default instead of overflow::scroll inside flexbox
-  // It's much more smooth, so better for the user experience
-  .c-body {
-    padding-top: 4rem;
-    padding-bottom: 2.5rem; // initial fixed footer height
-    min-height: 100vh;
-  }
-
-  .c-footer {
-    position: fixed;
-    left: 0;
-    bottom: 0;
-    width: 100vw;
-    background-color: $body-background-color;
-  }
-}
-
-@include phablet {
-  .c-chatmain {
-    width: auto;
-    display: flex;
-    flex-direction: column;
-    flex-basis: 25rem;
-    flex-grow: 1;
-  }
-
-  .c-header {
-    padding: $gi-spacer;
-  }
-
-  .c-body {
-    overflow: scroll;
-
-    &-conversation {
-      position: relative;
-      padding-bottom: 0;
-      max-height: 100%;
-      overflow: scroll;
-      -webkit-overflow-scrolling: touch;
-    }
-  }
-
-  .c-footer {
-    position: relative;
-    padding-left: $gi-spacer;
-    padding-right: $gi-spacer;
-  }
-}
-
-</style>
 <script>
 import MainHeader from '../MainHeader.vue'
 import Avatar from '../Avatar.vue'
 import Loading from '../Loading.vue'
-import { List } from '../Lists/index.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '../Menu/index.js'
 import Message from './Message.vue'
 import MessageInteractive from './MessageInteractive.vue'
 import MessageNotification from './MessageNotification.vue'
-import ConversationGreetings from '../../containers/Chatroom/ConversationGreetings.vue'
+import ConversationGreetings from '@containers/chatroom/ConversationGreetings.vue'
 import SendArea from './SendArea.vue'
-import { currentUserId, messageTypes } from '../../containers/Chatroom/fakeStore.js'
+import { currentUserId, messageTypes } from '@containers/chatroom/fakeStore.js'
 
 export default {
   name: 'ChatMain',
@@ -242,7 +88,6 @@ export default {
     MainHeader,
     Avatar,
     Loading,
-    List,
     MenuParent,
     MenuTrigger,
     MenuContent,
@@ -405,3 +250,137 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+@import "../../../assets/style/_variables.scss";
+
+.c-chatmain {
+  position: relative;
+  width: 100vw;
+  min-width: 0;
+  min-height: 100vh;
+  background-color: $body-background-color;
+
+  .c-actions-content {
+    top: $spacer-lg;
+    right: 0;
+    left: auto;
+    width: 10rem;
+  }
+}
+
+.c-header-private {
+  margin-right: $spacer-xs;
+}
+
+.c-header-private,
+.c-header-avatar {
+  @include phablet {
+    display: none;
+  }
+}
+
+.c-body {
+  display: flex;
+  flex-grow: 1;
+  flex-direction: column;
+  justify-content: flex-end;
+
+  &-conversation {
+    padding: $spacer 0;
+  }
+}
+
+.c-footer {
+  padding: 0 $spacer-sm $spacer;
+}
+
+.c-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: $spacer 0;
+
+  &::before,
+  &::after {
+    content: "";
+    flex-grow: 1;
+    border-bottom: 1px solid $tertiary;
+  }
+
+  &::before {
+    margin-right: $spacer-sm;
+  }
+
+  &::after {
+    margin-left: $spacer-sm;
+  }
+}
+
+@include phone {
+  .c-chatmain {
+    /* A - MVP static way - show / hide conversation */
+    display: none;
+    z-index: $zindex-tooltip;
+
+    &.isActive {
+      display: block;
+    }
+
+    /* B - dynamic way
+    - slideIn from right to left - more complex - needs tricky work
+    - TODO - If there's time, I'll build this alternative.
+    */
+  }
+
+  // NOTE: Mobile - prefer to fix the header & footer instead of using flexbox
+  // So the body scroll is the mobile browser's default instead of overflow::scroll inside flexbox
+  // It's much more smooth, so better for the user experience
+  .c-body {
+    padding-top: $spacer-xl;
+    padding-bottom: 2.5rem; // initial fixed footer height
+    min-height: 100vh;
+  }
+
+  .c-footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100vw;
+    background-color: $body-background-color;
+  }
+}
+
+@include phablet {
+  .c-chatmain {
+    width: auto;
+    display: flex;
+    flex-direction: column;
+    flex-basis: 25rem;
+    flex-grow: 1;
+  }
+
+  .c-header {
+    padding: $spacer;
+  }
+
+  .c-body {
+    overflow: scroll;
+
+    &-conversation {
+      position: relative;
+      padding-bottom: 0;
+      max-height: 100%;
+      overflow: scroll;
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+
+  .c-footer {
+    position: relative;
+    padding-left: $spacer;
+    padding-right: $spacer;
+  }
+}
+
+</style>

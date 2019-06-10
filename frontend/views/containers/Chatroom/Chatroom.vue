@@ -1,33 +1,22 @@
-<template>
-  <main class="c-chatroom">
-    <chat-nav :title="title" :searchPlaceholder="searchPlaceholder">
-      <slot name="nav"></slot>
-    </chat-nav>
-    <chat-main :summary="summary" :details="details" />
-  </main>
+<template lang="pug">
+main.c-chatroom
+  chat-nav(
+    :title='title'
+    :searchplaceholder='searchPlaceholder'
+  )
+    slot(name='nav')
+
+  chat-main(
+    :summary='summary'
+    :details='details'
+  )
+
 </template>
-<style lang="scss" scoped>
-@import "../../../assets/sass/theme/index";
 
-.c-chatroom {
-  padding: 0;
-
-  @include phone {
-    display: block;
-    min-height: auto;
-  }
-
-  @include phablet {
-    flex-direction: row;
-    align-items: stretch;
-    height: 100vh;
-  }
-}
-</style>
 <script>
 import { chatTypes, individualMessagesSorted, users, individualConversations, groupA } from './fakeStore.js'
-import ChatMain from '../../components/Chatroom/ChatMain.vue'
-import ChatNav from '../../components/Chatroom/ChatNav.vue'
+import ChatMain from '@components/chatroom/ChatMain.vue'
+import ChatNav from '@components/chatroom/ChatNav.vue'
 
 export default {
   name: 'Chatroom',
@@ -170,3 +159,22 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+@import "../../../assets/style/_variables.scss";
+
+.c-chatroom {
+  padding: 0;
+
+  @include phone {
+    display: block;
+    min-height: auto;
+  }
+
+  @include phablet {
+    flex-direction: row;
+    align-items: stretch;
+    height: 100vh;
+  }
+}
+</style>

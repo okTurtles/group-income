@@ -1,8 +1,8 @@
-<template>
-  <component :is="tag">
-    <slot></slot>
-  </component>
+<template lang="pug">
+  component(:is="tag")
+    slot
 </template>
+
 <script>
 export default {
   name: 'MaskToModal',

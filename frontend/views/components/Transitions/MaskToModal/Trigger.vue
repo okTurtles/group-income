@@ -1,8 +1,14 @@
-<template>
-  <transition appear @enter="triggerEnter" @after-enter="transitionAfterEnter" @leave="triggerLeave" :css="false">
-    <slot></slot>
-  </transition>
+<template lang="pug">
+transition(
+  appear=''
+  @enter='triggerEnter'
+  @after-enter='transitionAfterEnter'
+  @leave='triggerLeave'
+  :css='false'
+)
+  slot
 </template>
+
 <script>
 import mixinTransitions from './mixinTransitions.js'
 

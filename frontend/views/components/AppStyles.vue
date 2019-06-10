@@ -19,7 +19,7 @@ v-style.
 </template>
 
 <script>
-import colorsMixins from '../utils/colorsManipulation.js'
+import colorsMixins from '@view-utils/colorsManipulation.js'
 
 export default {
   name: 'AppStyles',

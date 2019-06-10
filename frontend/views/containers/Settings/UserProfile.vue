@@ -16,16 +16,16 @@
             v-if='profileSaved'
             data-test='profileSaveSuccess'
           )
-            i.notification-icon.fa.fa-check
+            i.notification-icon.icon-check
             i18n Profile saved successfully!
 
           p.notification.is-danger(
             v-if='errorMsg'
           )
-            i.notification-icon.fa.fa-exclamation-triangle
+            i.notification-icon.icon-exclamation-triangle
             | {{errorMsg}}
 
-          .avatar(:class="{'is-danger': $v.edited.picture.$error}")
+          .avatar(:class="{'error': $v.edited.picture.$error}")
             label(for='profilePicture')
               avatar(:src='userPicture')
               i18n.link Change avatar
@@ -40,7 +40,7 @@
               data-test='profilePicture'
             )
 
-            p.help.is-danger
+            p.error
               i18n(v-if='$v.edited.picture.$error')
                 | The profile picture must be a valid url
 
@@ -102,7 +102,7 @@
             i18n Update Password
 
         .button-box
-          button.button.is-success(
+          button.is-success(
             :disabled='$v.edited.$invalid'
             type='submit'
             data-test='submit'
@@ -121,7 +121,7 @@
           i18n.is-danger This action cannot be undone.
 
         .button-box
-          button.button.is-danger.is-outlined(
+          button.is-danger.is-outlined(
             type='submit'
             data-test='submit'
           )
@@ -135,7 +135,7 @@ import { email, helpers } from 'vuelidate/lib/validators'
 import { LOAD_MODAL } from '@utils/events.js'
 import Avatar from '@components/Avatar.vue'
 import sbp from '~/shared/sbp.js'
-import L from '~/frontend/views/utils/translations.js'
+import L from '@view-utils/translations.js'
 
 const url = helpers.regex('url', /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i)
 
@@ -211,12 +211,12 @@ export default {
 </script>
 
 <style lang='scss' scoped>
-@import "../../../assets/sass/theme/index";
+@import "../../../assets/style/_variables.scss";
 
 .username {
   display: none;
-  margin-bottom: $gi-spacer-lg;
-  color: #7a7a7a;
+  margin-bottom: $spacer-lg;
+  color: $text-light;
 
   @include tablet {
     display: block;
@@ -271,7 +271,7 @@ export default {
 }
 
 .legend {
-  font-size: 18px;
+  font-size: $size-5;
   font-weight: bold;
   padding-top: 5px;
   padding-bottom: 5px;

@@ -1,21 +1,17 @@
-<template>
-  <span>
-    {{firstWho}}
-    <template v-if="hasWhoElse">
-      <i18n>and</i18n>
-      <tooltip>
-        <button type="button" class="gi-is-unstyled gi-is-link-inherit">{{notFirstWho.length}}<i18n>others</i18n></button>
-        <template slot="tooltip">
-          <p v-for="(name, index) in notFirstWho" :key="`name-${index}`">{{name}}</p>
-        </template>
-      </tooltip>
-    </template>
-  </span>
-</template>
-<style lang="scss" scoped>
-@import "../../assets/sass/theme/index";
+<template lang="pug">
+span
+  | {{firstWho}}
+  template(v-if='hasWhoElse')
+    i18n and
+    tooltip
+      button.is-unstyled.is-link-inherit(type='button')
+        | {{notFirstWho.length}}
+        i18n others
+      template(slot='tooltip')
+        p(v-for='(name, index) in notFirstWho' :key='`name-${index}`') {{name}}
 
-</style>
+</template>
+
 <script>
 import Tooltip from './Tooltip.vue'
 export default {
@@ -45,3 +41,8 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+@import "../../assets/style/_variables.scss";
+
+</style>

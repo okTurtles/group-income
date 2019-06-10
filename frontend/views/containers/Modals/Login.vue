@@ -1,66 +1,71 @@
 <template lang='pug'>
-  form(
-    novalidate
-    ref='form'
-    name='formData'
-    data-test='login'
-    @submit.prevent='login'
-  )
-    modal-template(class="is-centered")
-      template(slot='title')
-        i18n Login
+  modal-template(class='has-background-footer')
+    template(slot='title')
+      i18n Log in
 
+    form(
+      novalidate
+      ref='form'
+      name='formData'
+      data-test='login'
+      @submit.prevent='login'
+    )
       .field
-        p.control.has-icon
-          input#loginName.input(
-            :class="{'is-danger': $v.form.name.$error}"
-            name='name'
-            v-model='form.name'
-            @keyup.enter='login'
-            @input='$v.form.name.$touch()'
-            placeholder='username'
-            ref='username'
-            autofocus
-            data-test='loginName'
-          )
-          span.icon
-            i.fa.fa-user
-        i18n.help.is-danger(
+        label.label
+          i18n Username
+
+        input#loginName.input(
+          :class="{'error': $v.form.name.$error}"
+          name='name'
+          v-model='form.name'
+          @keyup.enter='login'
+          @input='$v.form.name.$touch()'
+          placeholder='username'
+          ref='username'
+          autofocus
+          data-test='loginName'
+        )
+        p.error(
           v-show='$v.form.name.$error'
-        ) username cannot contain spaces
+        )
+          i18n username cannot contain spaces
 
       form-password(
+        :label='L("Password")'
         :value='form'
         :v='$v.form'
         @enter='login'
         @input='(newPassword) => {password = newPassword}'
       )
 
-      template(slot='buttons')
-        button.button.is-primary.is-centered(
+      a.link(@click='forgotPassword')
+        i18n Forgot your password?
+
+      p.error(v-if='form.response') {{ form.response }}
+
+      .buttons.is-centered
+        button(
           :disabled='$v.form.$invalid'
           data-test='loginSubmit'
           type='submit'
         )
           i18n Login
 
-      template(slot='errors') {{ form.response }}
-
-      template(slot='footer')
-        p
-          i18n Not on Group Income yet?
-          a(@click='showSignUpModal')
-            i18n Create an account
+    template(slot='footer')
+      p
+        i18n Not on Group Income yet?&nbsp;
+        a.link(@click='showSignUpModal')
+          i18n Create an account
 </template>
 
 <script>
 import { validationMixin } from 'vuelidate'
 import sbp from '~/shared/sbp.js'
 import { required, minLength } from 'vuelidate/lib/validators'
-import { LOAD_MODAL, CLOSE_MODAL } from '@utils/events.js'
+import { REPLACE_MODAL, CLOSE_MODAL } from '@utils/events.js'
 import FormPassword from '@components/Forms/Password.vue'
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
-import L from '@views/utils/translations.js'
+import L from '@view-utils/translations.js'
 
 export default {
   name: 'LoginModal',
@@ -90,7 +95,11 @@ export default {
       sbp('okTurtles.events/emit', CLOSE_MODAL)
     },
     showSignUpModal () {
-      sbp('okTurtles.events/emit', LOAD_MODAL, 'SignUp')
+      sbp('okTurtles.events/emit', REPLACE_MODAL, 'SignUp')
+    },
+    forgotPassword () {
+      // TODO: implement forgot password
+      console.log('Coming soon')
     }
   },
   data () {

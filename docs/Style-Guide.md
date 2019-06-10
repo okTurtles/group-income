@@ -6,7 +6,6 @@ Please read all the sections below before writing a single line of code.
 - **[Vue.js Style Guide](#vuejs-style-guide)**
 - **[CSS Style Guide](#css-style-guide)**
     - [CSS Conventions](#css-conventions)
-    - [How we use Bulma](#how-we-use-bulma)
 - **[Group Income Data Model Rules](#group-income-data-model-rules)**
 - **[SBP Paradigm](#sbp) (Soon!)**
 
@@ -23,132 +22,14 @@ _It is still on you to ensure your code conforms to the `standard` spec, whether
 Since this is a Vue.js project, any pull requests **must** follow *Priority A* rules mentioned in the [Vue.js Style Guide](https://vuejs.org/v2/style-guide/), and *should* follow the *Priority B* rules. Please take the time to read at least those two sections.
 
 ## CSS Style Guide
-We use [Bulma](https://bulma.io/documentation/overview/start/) framework and `SCSS`.
+TODO: complete style guide
 
-### CSS conventions
-- Everything that can be solved with Bulma’s classes should be solved with it.
+Use l- for layout components and c- for anything inside a component. It's just easier to understand where to fine the code and inderstand the dependencies.
+All other classes are globals and should be kept to a minimum for simplicity and avoid interdependencies problems.
 
-```html
-<!-- These are Bulma classes -->
-<h1 class="title is-2">Hello world</h1>
-```
-
-- Component specific classes should have `.c-` prefix and be written in the component’s `<style>` tag scoped. Keep this part as simple/little as possible.
-- Any property that is part of Bulma's variables or [Group Income Theme](../frontend/simple/assets/sass/theme) (colors, spacings, breakpoints, typography, etc...) should be used as SCSS variable instead of a raw value.
-
-```html
-<template>
-    <!-- We can easily distinguish Bulma classes from component's classes -->
-    <h1 class="title is-2 has-text-centered c-title">Hello world</h1>
-</template>
-
-<style lang="scss" scoped>
-.c-title {
-    margin-bottom: $gi-spacer;
-
-    @include tablet {
-        margin-bottom: $gi-spacer-lg;
-    }
-}
-</style>
-```
-
-- Global classes that aren't from Bulma should have `.gi-` prefix and be written in a global file like `assets/sass/_groupincome.scss`.
-
-```html
-<!-- We can easily distinguish Bulma classes from GI classes -->
-<p class="is-size-5 gi-is-ellipsis">James Williams</h1>
-```
-
-- New Bulma modifiers classes should also have `.gi-` prefix. Know more by reading [How to override Bulma](#how-to-override-bulma).
-
-### How we use Bulma
-#### Understanding Bulma structure
-We import Bulma by modules following [its folder structure](https://github.com/jgthms/bulma/tree/master/sass). Note that the order of the modules needs to be the same to Bulma's so all CSS works correctly
-
-
-```scss
-// bulma_overrides/_index.scss
-
-@import 'utilities/index';
-@import 'base/index';
-@import 'elements/index';
-@import 'components/index';
-@import 'grid/index';
-@import 'layout/index';
-```
-
-Each folder has an `_index.scss` with all its modules imports, even those that are not being used. Those modules are commented to better understand what we use and what we don't. When a module needs to be overridden, a unique file `[moduleName].scss` is created with the needed changes and imported at `_index.scss` file. Take as example the `title` import.
-
-```scss
-// bulma_overrides/elements/_index.scss
-
-@import "../../node_modules/bulma/sass/elements/box";
-@import "../../node_modules/bulma/sass/elements/button";
-@import "../../node_modules/bulma/sass/elements/container";
-@import "../../node_modules/bulma/sass/elements/content";
-@import 'form';
-@import "../../node_modules/bulma/sass/elements/icon";
-@import "../../node_modules/bulma/sass/elements/image";
-@import 'notification';
-@import "../../node_modules/bulma/sass/elements/other";
-// @import "../../node_modules/bulma/sass/elements/progress";
-@import "../../node_modules/bulma/sass/elements/table";
-@import "../../node_modules/bulma/sass/elements/tag";
-@import 'title';
-```
-
-#### How to override Bulma
-
-There are two ways of overriding Bulma:
-- **SCSS Variables** - provided by Bulma's framework.
-- **Classes** - Directly access Bulma's classes.
-
-When overriding a module, start by checking the module's documentation and see if there's a SCSS variable that does the job. Add the variables **before** the module import.
-
-```scss
-$message-radius: 1px;
-
-@import "../../node_modules/bulma/sass/components/message";
-```
-
-If there isn't a SCSS variable for that, the solution is to override directly the classes. Do that **after** the module import. When overriding a class, ask yourself if that should be modified everywhere by default or if it should be a new modifier.
-
-If it's a new modifier, add `.gi-` prefix. That brings at least 2 main benefits:
-- Easily understand if that code is Bulma's or ours.
-- Prevent Bulma's naming conflicts with our code on future updates.
-
-Let's see an example:
-
-```scss
-$message-radius: 1px;
-
-@import "../../node_modules/bulma/sass/components/message";
-
-.message-body {
-  // The default `border-width` value is `0 0 0 3px`.
-  // We want it to be `1px` everywhere, so we add a new modifier:
-  border-width: 1px;
-
-  // The default border-style is solid,
-  // We want to dashed it just on a particular view, so we add a new modifier:
-  &.gi-is-unfilled {
-    border-style: dashed
-  }
-}
-```
-
-```html
-<!-- We can easily distinguish our code from Bulma's -->
-<div class="message-body gi-is-unfilled"> ... </div>
-```
-
-#### Bulma's documentation
-
-Bulma sometimes changes *significantly*. Therefore it's important:
-
-- To access the correct documentation for the version of Bulma that we're using. (Check `package.json`, and then visit the version-specific docs.
-- **Never update Bulma "just because"!** Always create an issue to update Bulma first, and then create a single unique Pull Request only for that issue. You will have to verify and fix any UI-differences that might occur. Sometimes Bulma will change its API (remove/change classes, styles, variables, etc..). You must identify and fix all differences.
+In general, think simplicity and don't over ingenior.
+It's easier to add style in a component and add few lines of code than trying to create the most generic css that create increasing complexity.
+With design refinement the process should slowly reverse and we should see common pattern emerging naturally.
 
 ## Group Income Data Model Rules
 

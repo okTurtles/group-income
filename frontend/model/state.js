@@ -3,14 +3,14 @@
 // This file handles application-level state (as opposed to component-level
 // state) per: http://vuex.vuejs.org/en/intro.html
 
-import sbp from '../../shared/sbp.js'
+import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
-import { GIMessage } from '../../shared/GIMessage.js'
+import { GIMessage } from '~/shared/GIMessage.js'
 import contracts from './contracts.js'
-import * as _ from '../utils/giLodash.js'
+import * as _ from '@utils/giLodash.js'
 import * as db from './database.js'
-import { LOGIN, LOGOUT, EVENT_HANDLED } from '../utils/events.js'
+import { LOGIN, LOGOUT, EVENT_HANDLED } from '@utils/events.js'
 import Colors from './colors.js'
 
 // babel transforms lodash imports: https://github.com/lodash/babel-plugin-lodash#faq

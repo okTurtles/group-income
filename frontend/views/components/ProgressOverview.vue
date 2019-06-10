@@ -1,33 +1,58 @@
-<template>
-  <div>
-    <div class="level">
-      <dl class="level-left c-summary" :style="{ color: fakeStore.themeColor }">
-        <dt class="subtitle c-summary-key">
-          <i18n>Contributed</i18n>
-        </dt>
-        <dd class="c-summary-value c-metric-primaryText">
-          {{fakeStore.contributedFormatted}}
-        </dd>
-        <dt class="subtitle c-summary-key">
-          <i18n>Pledged</i18n>
-        </dt>
-        <dd class="c-summary-value c-metric-secondaryText">
-          {{fakeStore.pledgedFormatted}}
-        </dd>
-        <dt class="subtitle c-summary-key">
-          <i18n>Goal</i18n>
-        </dt>
-        <dd class="c-summary-value">
-          {{fakeStore.goalFormatted}}
-        </dd>
-      </dl>
-    </div>
-    <div class="c-bar" :style="{ backgroundColor: fakeStore.themeColor }">
-        <span class="c-bar-progress c-metric-secondary" :style="{ width: barPercentage.pledged }"></span>
-        <span class="c-bar-progress c-metric-primary" :style="{ width: barPercentage.contributed }"></span>
-    </div>
-  </div>
+<template lang="pug">
+div
+  .level
+    dl.level-left.c-summary(:style='{ color: fakeStore.themeColor }')
+      dt.subtitle.c-summary-key
+        i18n Contributed
+
+      dd.c-summary-value.c-metric-primaryText
+        | {{fakeStore.contributedFormatted}}
+
+      dt.subtitle.c-summary-key
+        i18n Pledged
+
+      dd.c-summary-value.c-metric-secondaryText
+        | {{fakeStore.pledgedFormatted}}
+
+      dt.subtitle.c-summary-key
+        i18n Goal
+
+      dd.c-summary-value
+        | {{fakeStore.goalFormatted}}
+
+  .c-bar(:style='{ backgroundColor: fakeStore.themeColor }')
+    span.c-bar-progress.c-metric-secondary(:style='{ width: barPercentage.pledged }')
+    span.c-bar-progress.c-metric-primary(:style='{ width: barPercentage.contributed }')
+
 </template>
+
+<script>
+export default {
+  name: 'ProgressOverview',
+  data () {
+    return {
+      fakeStore: {
+        period: 'July',
+        themeColor: '#5dc8f0', // The layout palette will adjust
+        contributed: 350,
+        pledged: 800,
+        goal: 1000,
+        contributedFormatted: '$350',
+        pledgedFormatted: '$800',
+        goalFormatted: '$1,000'
+      }
+    }
+  },
+  computed: {
+    barPercentage: function () {
+      return {
+        pledged: `${Math.floor(this.fakeStore.pledged * 100 / this.fakeStore.goal)}%`,
+        contributed: `${Math.floor(this.fakeStore.contributed * 100 / this.fakeStore.goal)}%`
+      }
+    }
+  }
+}
+</script>
 
 <style lang="scss" scoped>
   .c-summary {
@@ -93,30 +118,3 @@
     }
   }
 </style>
-<script>
-export default {
-  name: 'ProgressOverview',
-  data () {
-    return {
-      fakeStore: {
-        period: 'July',
-        themeColor: '#5dc8f0', // The layout palette will adjust
-        contributed: 350,
-        pledged: 800,
-        goal: 1000,
-        contributedFormatted: '$350',
-        pledgedFormatted: '$800',
-        goalFormatted: '$1,000'
-      }
-    }
-  },
-  computed: {
-    barPercentage: function () {
-      return {
-        pledged: `${Math.floor(this.fakeStore.pledged * 100 / this.fakeStore.goal)}%`,
-        contributed: `${Math.floor(this.fakeStore.contributed * 100 / this.fakeStore.goal)}%`
-      }
-    }
-  }
-}
-</script>

@@ -264,18 +264,7 @@ describe('Frontend', function () {
         .wait(elT('rulesStep'))
         // set rules step skipped for now
         .click(elT('nextBtn'))
-        .wait(elT('privacyStep'))
-        .click(elT('nextBtn'))
-        // invite members
-        .wait(elT('searchUser'))
-        .insert(elT('searchUser'), username + '4')
-        .click(elT('addButton'))
-        .wait(elT('member'))
 
-      const invited = await n.evaluate(el => document.querySelectorAll(el).length, elT('member'))
-      should(invited).equal(1)
-
-      await n.click(elT('nextBtn')).wait(elT('summaryStep'))
       // summary page sees group as valid
       const valid = await n.exists(`${elT('finishBtn')}:not(:disabled)`)
       should(valid).equal(true)

@@ -1,31 +1,61 @@
-<template>
-  <div class="c-wrapper" v-if="groups.length > 0">
-    <i18n tag="h2" class="subtitle c-subtitle">Groups chat shortcut</i18n>
-    <ul class="c-ul">
-      <li v-for="(group, index) in groups" class="c-ul-li" :key="`group-${index}`">
-        <router-link to="/group-chat"
-          @click.native="$emit('select', group.contractID)"
-          class="c-router no-border"
-        >
-          <avatar class="c-avatar"
-            src=""
-            :alt="group.groupName"
-            :fallbackBg="fallbackBg(index)"
-          />
-          <!-- NOTE: mocked just for layout purposes -->
-          <badge class="c-badge" :number="index === 0 ? 2 : 0" />
-          <span aria-hidden="true" class="c-ul-li-char has-text-weight-bold has-text-white is-size-5">{{ group.groupName.charAt(0) }}</span>
-        </router-link>
-      </li>
-    </ul>
-  </div>
+<template lang="pug">
+.c-wrapper(v-if='groups.length > 0')
+  i18n.subtitle.c-subtitle(tag='h2') Groups chat shortcut
+
+  ul.c-ul
+    li.c-ul-li(
+      v-for='(group, index) in groups'
+      :key='`group-${index}`'
+    )
+      router-link.c-router.no-border(
+        to='/group-chat'
+        @click.native="$emit('select', group.contractID)"
+      )
+        avatar.c-avatar(
+          src=''
+          :alt='group.groupName'
+          :fallbackbg='fallbackBg(index)'
+        )
+          // NOTE: mocked just for layout purposes
+          badge.c-badge(:number='index === 0 ? 2 : 0')
+            span.c-ul-li-char.has-text-weight-bold.has-text-white.is-size-5(aria-hidden='true') {{ group.groupName.charAt(0) }}
+
 </template>
+
+<script>
+import Avatar from '../Avatar.vue'
+import Badge from '../Badge.vue'
+
+export default {
+  // NOTE - maybe this approach should be used in the sidebar to switch between groups instead of a dropdown...
+  name: 'GroupsShortcut',
+  components: {
+    Avatar,
+    Badge
+  },
+  props: {
+    groups: Array
+  },
+  data () {
+    return {
+    }
+  },
+  computed: {},
+  methods: {
+    fallbackBg (index) {
+      // TODO/REVIEW $store - implement colors/avatars for groups
+      return ['#958cfd', '#fd978c', '#62d27d'][index] || ''
+    }
+  }
+}
+</script>
+
 <style lang="scss" scoped>
-@import "../../../assets/sass/theme/index";
+@import "../../../assets/style/_variables.scss";
 
 .c-wrapper {
   position: relative;
-  padding-left: $gi-spacer-sm;
+  padding-left: $spacer-sm;
 
   // fadeInRight: a gradient mask to indicate there are more groups by scrolling to the right.
   &::after {
@@ -46,15 +76,15 @@
 
 .c-ul {
   display: flex;
-  padding: $gi-spacer 0;
+  padding: $spacer 0;
   overflow-x: auto;
 
   &-li {
     position: relative;
-    margin-right: $gi-spacer;
+    margin-right: $spacer;
 
     &:last-child {
-      margin-right: $gi-spacer*3; // To not be under fadeInRight
+      margin-right: $spacer*3; // To not be under fadeInRight
     }
 
     &:hover,
@@ -86,30 +116,3 @@
   border: 2px solid $body-background-color;
 }
 </style>
-<script>
-import Avatar from '../Avatar.vue'
-import Badge from '../Badge.vue'
-
-export default {
-  // NOTE - maybe this approach should be used in the sidebar to switch between groups instead of a dropdown...
-  name: 'GroupsShortcut',
-  components: {
-    Avatar,
-    Badge
-  },
-  props: {
-    groups: Array
-  },
-  data () {
-    return {
-    }
-  },
-  computed: {},
-  methods: {
-    fallbackBg (index) {
-      // TODO/REVIEW $store - implement colors/avatars for groups
-      return ['#958cfd', '#fd978c', '#62d27d'][index] || ''
-    }
-  }
-}
-</script>

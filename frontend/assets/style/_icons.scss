@@ -1,0 +1,80 @@
+// More fonts icon in node_module/fontawesome
+$icons: (
+  angle-left: "\f104",
+  angle-down: "\f107",
+  arrow-right: "\f061",
+  bars: "\f0c9",
+  bell: "\f0f3",
+  chart-pie: "\f200",
+  check: "\f00c",
+  check-circle: "\f058",
+  chevron-left: "\f053",
+  chevron-right: "\f054",
+  cog: "\f013",
+  columns: "\f0db",
+  comment: "\f075",
+  edit: "\f044",
+  ellipsis-v: "\f142",
+  envelope: "\f0e0",
+  exclamation-triangle: "\f071",
+  eye: "\f06e",
+  eye-slash: "\f070",
+  globe: "\f0ac",
+  heart: "\f004",
+  info-circle: "\f05a",
+  lock: "\f023",
+  minus-circle: "\f056",
+  paper-plane: "\f1d8",
+  pencil-alt: "\f303",
+  plus: "\f067",
+  tag: "\f02b",
+  times-circle: "\f057",
+  undo: "\f0e2",
+  user: "\f007",
+  user-plus: "\f234"
+);
+
+@font-face {
+  font-family: 'Font Awesome 5 Free';
+  font-style: normal;
+  font-weight: 900;
+  src: url('../fonts/Icons/fa-solid-900.eot');
+  src: url('../fonts/Icons/fa-solid-900.eot?#iefix') format('embedded-opentype'),
+  url('../fonts/Icons/fa-solid-900.woff2') format('woff2'),
+  url('../fonts/Icons/fa-solid-900.woff') format('woff'),
+  url('../fonts/Icons/fa-solid-900.ttf') format('truetype'),
+  url('../fonts/Icons/fa-solid-900.svg#fontawesome') format('svg');
+}
+
+@font-face {
+  font-family: 'Font Awesome 5 Free';
+  font-style: normal;
+  font-weight: 400;
+  src: url('../fonts/Icons/fa-regular-400.eot');
+  src: url('../fonts/Icons/fa-regular-400.eot?#iefix') format('embedded-opentype'),
+  url('../fonts/Icons/fa-regular-400.woff2') format('woff2'),
+  url('../fonts/Icons/fa-regular-400.woff') format('woff'),
+  url('../fonts/Icons/fa-regular-400.ttf') format('truetype'),
+  url('../fonts/Icons/fa-regular-400.svg#fontawesome') format('svg');
+}
+
+[class^='icon-'] {
+  display: inline-block;
+  font-style: normal;
+  font-variant: normal;
+  
+  &::before {
+    text-rendering: auto;
+    line-height: 1;
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@each $name, $icon in $icons {
+  .icon-#{$name}:before {
+    content: $icon;
+  }
+}

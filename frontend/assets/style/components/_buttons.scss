@@ -1,0 +1,118 @@
+button,
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  cursor: pointer;
+  @extend %unselectable;
+  height: auto; // Usability purposes
+  min-height: 2.5rem; // A11Y purposes
+  font-weight: 600; // A11Y purposes
+  white-space: nowrap;
+  color: #fff;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+  border-radius: $radius;
+  border-color: transparent;
+  border-width: 1px;
+  background-color: $primary;
+  transition: filter 100ms ease-out;
+  font-weight: 600;
+  font-size: 1rem;
+  outline: none;
+
+  &:focus,
+  &:hover {
+    filter: contrast(1.2);
+  }
+
+  &.is-success {
+    background-color: $success;
+  }
+
+  &.is-danger {
+    background-color: $danger;
+  }
+
+  &.is-icon {
+    background-color: transparent;
+    padding: 0;
+    min-height: auto;
+    width: $spacer-lg;
+    height: $spacer-lg;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: $text-light;
+
+    [class^='icon-']:last-child {
+      margin-left: 0;
+    }
+
+    &:hover {
+      color: $text;
+    }
+  }
+
+  &.is-outlined {
+    background-color: transparent;
+    border-color: $border;
+    color: $text-light;
+
+    &.is-success {
+      border-color: $success;
+      color: $success;
+    }
+  
+    &.is-danger {
+      border-color: $danger;
+      color: $danger;
+    }
+  }
+
+  &[disabled] {
+    background-color: $border;
+    color: $text-light;
+    opacity: .5;
+
+    &:hover {
+      filter: none;
+    }
+  }
+
+  span + [class^='icon-'] {
+    margin-left: 6px;
+  }
+
+  &.is-small {
+    min-height: 1.6875rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-bottom: 0;
+    font-size: 12px;
+    line-height: 12px;
+
+    [class^='icon-'] {
+      margin-right: $spacer-sm;
+    }
+  }
+}
+
+.buttons {
+  padding-top: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  
+  &.is-centered {
+    justify-content: center;
+  }
+}
+
+button.link {
+  @extend %reset-button;
+  color: $link;
+  &:after {
+    width: 100%;
+  }
+}

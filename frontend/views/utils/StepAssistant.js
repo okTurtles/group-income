@@ -1,9 +1,9 @@
 // usage:
-// <template>
-//   <router-view></router-view>
-//   <button @click="prev" :disabled="!this.currentStep">Back</button>
-//   <button @click="next" v-if="currentStep + 1 < config.steps.length">Next</button>
-//   <button @click="submit" v-if="currentStep + 1 === config.steps.length">Finish</button>
+// <template lang="pug">
+// router-view
+//   button(@click='prev' :disabled='!this.currentStep') Back
+//   button(@click='next' v-if='currentStep + 1 < config.steps.length') Next
+//   button(@click='submit' v-if='currentStep + 1 === config.steps.length') Finish
 // </template>
 // <script>
 // export default {
@@ -31,6 +31,8 @@ export default {
     prev () {
       if (this.currentStep > 0) {
         this.$router.push({ name: this.config.steps[this.currentStep - 1] })
+      } else {
+        this.$router.push({ path: '/' })
       }
     },
     finish () {

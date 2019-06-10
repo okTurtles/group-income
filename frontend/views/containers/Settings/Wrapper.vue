@@ -43,7 +43,7 @@ export default {
 </script>
 
 <style lang='scss' scoped>
-@import "../../../assets/sass/theme/index";
+@import "../../../assets/style/_variables.scss";
 
 .wrapper-container {
   height: 100%;
