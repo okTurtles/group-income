@@ -1,10 +1,10 @@
 'use strict'
 
-import sbp from '~/shared/sbp.js'
+import sbp from '../../../shared/sbp.js'
 import Vue from 'vue'
-import { merge } from '@utils/giLodash.js'
+import { merge } from '../../utils/giLodash.js'
 import { DefineContract } from '../utils.js'
-import { NEW_PAYMENT, PAYMENT_UPDATE } from '@utils/events.js'
+import { NEW_PAYMENT, PAYMENT_UPDATE } from '../../utils/events.js'
 import {
   objectOf,
   arrayOf,
@@ -12,7 +12,7 @@ import {
   string,
   number,
   object
-} from '@utils/flowTyper.js'
+} from '../../utils/flowTyper.js'
 // } from 'flowTyper-js'
 
 // NOTE: All mutations must be atomic in their edits of the contract state.

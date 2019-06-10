@@ -7,7 +7,7 @@ import {
   string,
   object,
   optional
-} from '@utils/flowTyper.js'
+} from '../../utils/flowTyper.js'
 // } from 'flowTyper-js'
 
 export default DefineContract({
