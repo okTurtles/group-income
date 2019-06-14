@@ -1,31 +1,30 @@
 <template lang="pug">
 .c-chatnav
-  main-header(:title='title')
-    template(slot='actions')
-      // TODO design search results on mobile - MVP be same as desktop
-      //
-        <button class="button is-icon is-hidden-tablet">
-        <i class="icon-search"></i>
-        </button>
-      menu-parent.level-right
-        menu-trigger.is-icon
-          i.icon-ellipsis-v
-        // TODO be a drawer on mobile
-        menu-content.c-actions-content
-          ul
-            menu-item(tag='button' itemid='hash-1' icon='heart')
-              i18n Settings
-            menu-item(tag='button' itemid='hash-2' icon='heart' hasdivider='')
-              i18n Mute chat
-            menu-item(tag='button' itemid='hash-3' icon='heart')
-              i18n Report a problem
+  template(slot='actions')
+    // TODO design search results on mobile - MVP be same as desktop
+    //
+      <button class="button is-icon is-hidden-tablet">
+      <i class="icon-search"></i>
+      </button>
+    menu-parent
+      menu-trigger.is-icon
+        i.icon-ellipsis-v
+      // TODO be a drawer on mobile
+      menu-content.c-actions-content
+        ul
+          menu-item(tag='button' itemid='hash-1' icon='heart')
+            i18n Settings
+          menu-item(tag='button' itemid='hash-2' icon='heart' hasdivider='')
+            i18n Mute chat
+          menu-item(tag='button' itemid='hash-3' icon='heart')
+            i18n Report a problem
 
-    input.input.c-chatnav-search(
-      type='text'
-      v-if='searchPlaceholder'
-      :placeholder='searchPlaceholder'
-      @keyup='handleSearch'
-    )
+  input.input.c-chatnav-search(
+    type='text'
+    v-if='searchPlaceholder'
+    :placeholder='searchPlaceholder'
+    @keyup='handleSearch'
+  )
 
   .c-chatnav-body
     template(v-if='ephemeral.isSearching')
@@ -79,25 +78,15 @@ export default {
 @import "../../../assets/style/_variables.scss";
 
 .c-chatnav {
-  display: flex;
-  flex-direction: column;
-  width: 15rem;
-  border-right: 1px solid $border;
-
   .c-actions-content {
     top: $spacer-lg;
     right: 0;
     left: auto;
-    width: 10rem;
+    min-width: 10rem;
   }
 
   &-search {
     margin-top: $spacer;
-  }
-
-  &-body {
-    overflow: auto;
-    padding: $spacer-sm;
   }
 }
 
@@ -113,11 +102,6 @@ export default {
     &-search {
       margin: $spacer $spacer-sm 0;
       width: calc(100% - #{$spacer});
-    }
-
-    &-body {
-      padding-top: 8rem; // header + search
-      padding-bottom: $spacer-lg;
     }
   }
 }

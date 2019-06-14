@@ -1,5 +1,5 @@
 <template lang="pug">
-.is-flex.is-mobile.c-graph
+.is-flex.c-graph
   pie-chart.c-chart(
     :slices='groupPledgingSlices'
     :innerslices='groupPledgingInnerSlices'

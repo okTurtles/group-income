@@ -10,7 +10,7 @@
       .c-voting-info
         h5.has-text-weight-bold.is-uppercase.c-voting-info-title {{proposal.title}}
         p(v-html='proposal.text')
-        p.is-size-7.has-text-text-light(
+        p.is-size-7.has-text-light(
           v-if='proposal.textDetails'
           v-html='proposal.textDetails'
         )
@@ -30,7 +30,7 @@
           | {{proposal.ctas.for}}
       button-countdown(v-else-if='!isProposalClosed' :onstatechange='handleCloseProposalStateChange')
         | {{closeProposalBtnText}}
-    p.has-text-text-light.has-text-right(:class="{ 'c-feedback has-text-weight-bold': isProposalClosed }")
+    p.has-text-light.has-text-right(:class="{ 'c-feedback has-text-weight-bold': isProposalClosed }")
       | {{helperText}}
 
 </template>

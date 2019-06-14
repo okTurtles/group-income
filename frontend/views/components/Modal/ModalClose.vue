@@ -17,6 +17,7 @@ export default {
 .c-modal-close {
   position: absolute;
   right: 1rem;
+  top: 1rem;
   z-index: 4;
   height: 32px;
   min-height: 32px;

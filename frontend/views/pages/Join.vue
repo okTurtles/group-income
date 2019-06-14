@@ -1,31 +1,28 @@
 <template lang="pug">
 loading(theme='fullView' v-if='!ephemeral.contract.groupName')
-main.c-join(v-else='')
-  .c-join-grid.section
-    .c-join-grid-header
-      h1.has-text-text-light
-        i18n You&rsquo;ve been invited to join a group!
-
-      h2.is-1.is-marginless {{ephemeral.contract.groupName}}
-
-      h3.is-size-5 {{ephemeral.contract.sharedValues}}
-
-    .c-join-grid-ctas
-      .buttons
-        button(data-test='acceptLink' v-on:click='accept')
-          | Join Group
-        button.is-outlined(data-test='declineLink' v-on:click='decline')
-          | No, thanks
-      p.has-text-danger.has-text-centered-mobile(v-if='ephemeral.errorMsg') {{ephemeral.errorMsg}}
+page(pageTestName='dashboard' pageTestHeaderName='groupName' v-else='')
+  template(#title='') You&rsquo;ve been invited to join a group!
+  .p-section
+    h1 {{ephemeral.contract.groupName}}
+    p {{ephemeral.contract.sharedValues}}
 
     .c-join-grid-graphic(v-if='ephemeral.contract.members.length')
       members-circle(:members='ephemeral.contract.members')
         bars(:currency='ephemeral.contract.incomeCurrencySign' :history='ephemeral.contract.history' :mincome='+ephemeral.contract.incomeProvided')
+
+    p.error(v-if='ephemeral.errorMsg') {{ephemeral.errorMsg}}
+
+    .buttons
+      button.is-outlined(data-test='declineLink' v-on:click='decline')
+        | No, thanks
+      button(data-test='acceptLink' v-on:click='accept')
+        | Join Group
 </template>
 
 <script>
 import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
+import Page from './Page.vue'
 import Bars from '@components/Graphs/Bars.vue'
 import Loading from '@components/Loading.vue'
 import MembersCircle from '@components/MembersCircle.vue'
@@ -35,7 +32,8 @@ export default {
   components: {
     Bars,
     Loading,
-    MembersCircle
+    MembersCircle,
+    Page
   },
   data () {
     return {
@@ -135,61 +133,4 @@ export default {
 
 <style lang="scss" scoped>
 @import "../../assets/style/_variables.scss";
-
-.c-join {
-  &-grid {
-    display: grid;
-    grid-template-areas: "header" "graphic" "ctas";
-    grid-gap: $spacer-lg;
-    min-height: 100vh;
-    margin: auto;
-
-    &-header {
-      grid-area: header;
-      align-self: self-end;
-    }
-
-    &-ctas {
-      grid-area: ctas;
-    }
-
-    &-graphic {
-      grid-area: graphic;
-      justify-self: center;
-      align-self: center;
-    }
-
-    @include mobile {
-      justify-items: center;
-
-      &-header,
-      &-graphic {
-        text-align: center;
-      }
-    }
-
-    @include tablet {
-      grid-gap: $spacer-xl $spacer;
-      grid-template-columns: 50% 50%;
-      grid-template-rows: auto;
-      grid-template-areas: "header graphic" "ctas graphic";
-    }
-  }
-
-  .buttons {
-    &:not(:last-child) {
-      margin-bottom: 0;
-    }
-
-    .button:not(:last-child) {
-      margin-right: $spacer;
-    }
-
-    @include mobile {
-      .button {
-        font-size: $size-4; // force to be default size on mobile
-      }
-    }
-  }
-}
 </style>

@@ -15,6 +15,7 @@ form {
 
 .field {
   max-width: 100%;
+  width: 100%;
   margin-bottom: 38px; // TODO: Is this used?
   margin-bottom: 1rem;
 }
@@ -99,7 +100,7 @@ select,
 .input-combo {
   position: relative;
   display: flex;
-  align-items: center;
+  align-items: stretch;
   border: 1px solid $border;
   border-radius: $radius;
 
@@ -121,6 +122,10 @@ select,
     }
   }
 
+  button {
+    border-radius: 0 $radius $radius 0;
+  }
+
   .input {
     border-radius: $radius 0 0 $radius;
     border-right: 1px solid $border;
@@ -134,12 +139,14 @@ select,
     padding: 0 1rem;
     font-weight: normal;
     font-size: 1rem;
+    align-self: center;
   }
 
   .is-icon {
     min-width: 40px;
     text-align: center;
     color: $border;
+    align-self: center;
 
     &:first-child {
       position: absolute;
@@ -216,7 +223,7 @@ p.error {
       background-color: $primary;
       border-radius: 50%;
       position: absolute;
-      top: calc(50% - 1px);
+      top: 50%;
       left: 7px;
       transform: translate(-50%, -50%) scale(0);
       transform-origin: 50% 50%;

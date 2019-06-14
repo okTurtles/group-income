@@ -1,8 +1,9 @@
 <template lang="pug">
 div(v-on='$listeners')
-  .is-flex.c-header
-    i.icon-plus.is-flex.c-icon
-    i18n.title.is-5(tag='h2') Add Income Details
+  .c-header
+    button.is-small.is-outlined
+      i.icon-plus
+      | Add Income Details
 
   i18n.has-text-light(tag='p') Sharing a few income details helps ensure all group members meet the mincome.
 
@@ -14,27 +15,8 @@ div(v-on='$listeners')
 <style lang="scss" scoped>
 @import "../../../assets/style/_variables.scss";
 
-.c-box {
-  padding: $spacer;
-}
-
 .c-header {
-  align-items: center;
-}
-
-.c-icon {
-  background: $primary-bg-a;
-  width: 2rem;
-  height: 2rem;
-  margin-right: $spacer-sm;
-  justify-content: center;
-  align-items: center;
-  border-radius: 50%;
-  color: $primary;
-}
-
-.c-info {
-  margin: $spacer 0;
+  margin-top: $spacer;
 }
 
 .c-icon-attention {

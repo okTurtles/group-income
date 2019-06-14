@@ -1,5 +1,5 @@
 <template lang="pug">
-.c-group-members
+.c-group-members(data-test='groupMembers')
   .c-group-members-header
     label.label Members
 

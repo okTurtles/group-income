@@ -5,7 +5,7 @@
     i18n min income
 
   div(v-if='history.length')
-    .c-graph.is-flex
+    .c-graph
       span.c-graph-item(
         v-for='(percentage, index) in history'
         :key='`percentage-${index}`'
@@ -60,12 +60,12 @@ $barMarginBottom: $spacer-sm;
   margin-bottom: $spacer;
 }
 
-// REVIEW - make this a gi- class?
 .c-nowrap {
   white-space: nowrap;
 }
 
 .c-graph {
+  display: flex;
   position: relative;
   margin: $spacer 0 $barMarginBottom;
 
@@ -77,17 +77,17 @@ $barMarginBottom: $spacer-sm;
     width: 100%;
     border-top: 1px dashed $body-background-color;
   }
+}
 
-  &-item {
-    width: $spacer;
-    margin: 0 $spacer-xs;
-    height: $barHeight;
-    background: $primary;
-    display: block;
-    transform: scaleY(0);
-    transform-origin: 0 100%;
-    animation: scaleUp 750ms forwards;
-  }
+.c-graph-item {
+  width: $spacer;
+  margin: 0 $spacer-xs;
+  height: $barHeight;
+  background: $primary;
+  display: block;
+  transform: scaleY(0);
+  transform-origin: 0 100%;
+  animation: scaleUp 750ms forwards;
 }
 
 @keyframes scaleUp {

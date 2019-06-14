@@ -1,13 +1,11 @@
 <template lang="pug">
-page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupState')
-  template(#title='') Chat
+page(pageTestName='dashboard' pageTestHeaderName='groupName')
+  template(#title='') Group Chat
   template(#sidebar='')
-
-  chatroom(
-    :title="L('Chat')"
-    :searchplaceholder="L('Search for a channel')"
-  )
-    template(slot='nav')
+    chat-nav(
+      :title="L('Chat')"
+      :searchplaceholder="L('Search for a channel')"
+    )
       conversations-list(
         :title="L('Channels')"
         routepath='/group-chat/'
@@ -16,12 +14,13 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupS
         :type='type.groups'
       )
 
-      conversations-list(
-        :title="L('Members')"
-        :list='members'
-        routename='GroupChatConversation'
-        :type='type.members'
-      )
+      group-members
+
+  .p-section
+    chat-main(
+      :summary='summary'
+      :details='details'
+    )
 
 </template>
 
@@ -29,15 +28,23 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupS
 import { mapGetters } from 'vuex'
 import Page from '@pages/Page.vue'
 import { chatTypes, users, groupA } from '@containers/chatroom/fakeStore.js'
-import Chatroom from '@containers/chatroom/Chatroom.vue'
 import ConversationsList from '@components/chatroom/ConversationsList.vue'
+import ChatNav from '@components/chatroom/ChatNav.vue'
+import ChatMain from '@components/chatroom/ChatMain.vue'
+import chatroom from '@containers/chatroom/chatroom.js'
+import GroupMembers from '@containers/sidebar/GroupMembers.vue'
 
 export default {
   name: 'GroupChat',
+  mixins: [
+    chatroom
+  ],
   components: {
     Page,
-    Chatroom,
-    ConversationsList
+    ChatNav,
+    ChatMain,
+    ConversationsList,
+    GroupMembers
   },
   computed: {
     ...mapGetters([

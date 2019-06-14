@@ -97,7 +97,6 @@ export default {
   font-weight: bold;
 
   .c-avatar {
-    width: 24px;
     margin-right: 0.5rem;
     transition: transform cubic-bezier(0.18, 0.89, 0.32, 1.28) 0.3s;
   }

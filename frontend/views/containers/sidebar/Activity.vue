@@ -1,5 +1,5 @@
 <template lang="pug">
-menu-parent.level-right
+menu-parent
   menu-trigger.is-icon(:class="{ 'has-text-white': isDarkTheme }")
     i.icon-bell(:class="activityCount ? '' : 'active'")
     span.c-badge(v-if='activityCount' data-test='alertNotification') {{ activityCount }}
@@ -48,8 +48,9 @@ export default {
 
 .c-badge {
   position: absolute;
-  top: 0;
-  right: 0;
+  top: -1px;
+  right: -1px;
+  line-height: 1rem;
   width: $spacer;
   height: $spacer;
   color: $body-background-color;

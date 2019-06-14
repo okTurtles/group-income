@@ -75,7 +75,7 @@ main
                     option EUR
               p.control
                 input.input(
-                  :class="{'is-danger': $v.editedGroupProfile.contributionAmount.$error}"
+                  :class="{'error': $v.editedGroupProfile.contributionAmount.$error}"
                   type='text'
                   name='contributionAmount'
                   placeholder='Contribution Amount'
@@ -109,7 +109,7 @@ main
                     option EUR
               p.control
                 input.input(
-                  :class="{'is-danger': $v.editedGroupProfile.receivingLimit.$error}"
+                  :class="{'error': $v.editedGroupProfile.receivingLimit.$error}"
                   type='text'
                   name='receivingLimit'
                   placeholder='Receiving Limit'

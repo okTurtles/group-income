@@ -36,7 +36,7 @@
           i18n Email
 
         input#email.input(
-          :class="{'is-danger': $v.form.email.$error}"
+          :class="{'error': $v.form.email.$error}"
           name='email'
           v-model='form.email'
           @blur='$v.form.email.$touch()'

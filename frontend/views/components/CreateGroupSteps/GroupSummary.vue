@@ -31,7 +31,7 @@ div
   hr
   h2.subtitle
     i18n Group rules:
-  .columns.is-mobile.has-text-centered
+  .columns.has-text-centered
     .column
       p.percent {{ group.changeThreshold | toPercent }}
       p.subtitle.is-5

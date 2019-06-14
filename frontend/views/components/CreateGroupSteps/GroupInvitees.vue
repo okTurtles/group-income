@@ -3,62 +3,58 @@ div
   h1
     i18n Invite Members
 
-  .field.has-addons
-    .control.is-expanded
-      input.input.is-large.is-primary(
-        type='text'
-        ref='searchUser'
-        name='invitee'
-        placeholder='Username'
-        v-model='searchUser'
-        @keyup.enter='addInvitee'
-        data-test='searchUser'
-      )
-    .control
-      button(
-        @click='addInvitee'
-        data-test='addButton'
-      )
-        i18n Add
-
-  p.content
+  label.label
     i18n Who would you like to include in your group?
 
-  article.message.is-danger(v-if='userErrorMsg')
-    .message-body {{ userErrorMsg }}
-
-  .tile.is-ancestor
-    .tile.is-4.is-parent.invitee(
-      v-for='(invitee, index) in invitees'
-      :key='`invitee-${index}`'
-      data-test='member'
+  .input-combo
+    input.input(
+      type='text'
+      ref='searchUser'
+      name='invitee'
+      placeholder='Username'
+      v-model='searchUser'
+      @keyup.enter='addInvitee'
+      data-test='searchUser'
     )
-      .card.tile.is-child
-        .card-image
-          figure.image.is-square
-            img(
-              :src='invitee.state.attributes.picture'
-              :alt='invitee.state.attributes.name'
-            )
+    button(
+      @click='addInvitee'
+      data-test='addButton'
+    )
+      i18n Add
 
-        header.card-header
-          p.card-header-title {{invitee.state.attributes.name}}
+  p.error(v-if='userErrorMsg') {{ userErrorMsg }}
 
-          a.card-header-icon
-            button.delete(
-              @click='remove(index)'
-              data-test='deleteMember'
-            )
+  .invitee(
+    v-for='(invitee, index) in invitees'
+    :key='`invitee-${index}`'
+    data-test='member'
+  )
+    avatar(
+      :src='invitee.state.attributes.picture',
+      :alt='invitee.state.attributes.name'
+    )
+
+    p {{invitee.state.attributes.name}}
+
+    button.is-icon(
+      @click='remove(index)'
+      data-test='deleteMember'
+    )
+      i.icon-times-circle
 </template>
 
 <script>
 import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
+import Avatar from '@components/Avatar.vue'
 
 export default {
   name: 'GroupInvitees',
   props: {
     group: { type: Object }
+  },
+  components: {
+    Avatar
   },
   mounted () {
     this.$refs.searchUser.focus()
@@ -103,8 +99,16 @@ export default {
 }
 </script>
 
-<style>
-  .is-ancestor {
-    flex-wrap: wrap;
+<style lang="scss" scoped>
+
+.invitee {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  p {
+    margin-right: auto;
+    margin-left: 1rem;
   }
+}
 </style>

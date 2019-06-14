@@ -11,7 +11,7 @@ label.gi-fieldGroup
     span.control
       input.input(
         type='number'
-        :class="{'is-danger': error }"
+        :class="{'error': error }"
         v-bind='$attrs'
         v-on='$listeners'
       )

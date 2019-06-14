@@ -1,4 +1,5 @@
 <template lang="pug">
+//- TODO: move this into modal
 main.main#create-group-page
   .steps
     router-link.step(
@@ -189,7 +190,7 @@ export default {
   validations: {
     form: {
       groupName: { required },
-      groupPicture: { required },
+      groupPicture: { },
       sharedValues: { required },
       changeThreshold: {
         required,

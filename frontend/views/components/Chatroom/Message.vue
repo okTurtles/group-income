@@ -1,14 +1,14 @@
 <template lang="pug">
-.c-message.is-flex(:class="[variant, isSameSender && 'sameSender']")
-  avatar.c-avatar.level-left(:src='avatar' :class="{ 'alignToText': !hasWhoInvisible }" aria-hidden='true')
-    .c-body
-      span.has-text-text-light.is-size-7.c-who(:class="{ 'gi-sr-only': hasWhoInvisible }")
-        | {{who}}
-      // TODO: #502 - Chat: Add support to markdown formatted text
-      p.c-text(v-if='text') {{text}}
-      slot(v-else='')
-    button.is-icon.has-text-danger.c-retry(:class="{ 'alignToText': !hasWhoInvisible }" v-if="variant === 'failed'" @click="$emit('retry')")
-      i.icon-undo
+.c-message(:class="[variant, isSameSender && 'sameSender']")
+  avatar.c-avatar(:src='avatar' :class="{ 'alignToText': !hasWhoInvisible }" aria-hidden='true')
+  .c-body
+    span.has-text-light.c-who(:class="{ 'gi-sr-only': hasWhoInvisible }")
+      | {{who}}
+    // TODO: #502 - Chat: Add support to markdown formatted text
+    p.c-text(v-if='text') {{text}}
+    slot(v-else='')
+  button.is-icon.has-text-danger.c-retry(:class="{ 'alignToText': !hasWhoInvisible }" v-if="variant === 'failed'" @click="$emit('retry')")
+    i.icon-undo
 
 </template>
 
@@ -54,7 +54,8 @@ export default {
 @import "../../../assets/style/_variables.scss";
 
 .c-message {
-  margin: $spacer $spacer-sm 0;
+  display: flex;
+  margin: $spacer 0 0;
   align-items: flex-start;
 
   &.sent,
@@ -76,8 +77,8 @@ export default {
     flex-shrink: 0;
   }
 
-  @include phablet {
-    margin: $spacer $spacer 0;
+  .c-avatar {
+    margin-right: $spacer-sm;
   }
 }
 
@@ -95,7 +96,7 @@ export default {
     margin: 0 0 0 $spacer-sm;
 
     &.alignToText {
-      margin-top: 1.4rem; // visually center align to bubble text
+      margin-top: 1.3rem; // visually center align to bubble text
     }
   }
 
@@ -123,6 +124,7 @@ export default {
   max-width: 32rem;
   word-wrap: break-word; // too much long words will break
   white-space: pre-line; // break \n to a new line
+  margin: 0;
 
   .sent & {
     background-color: $primary-text;

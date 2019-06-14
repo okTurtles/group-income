@@ -2,116 +2,113 @@
 page(pageTestName='payGroupPage' pageTestHeaderName='payGroupTitle')
   template(#title='') Pay Group
 
-  section.c-invoice
-    header.c-summary
-      .c-summary-item
-        h2.subtitle
-          i18n Payments Sent
+  template(#sidebar='')
+    h2.subtitle
+      i18n Payments Sent
 
-        h3
-          i18n(
-            :args='{ sent: paymentSummary.sent, total: fakeStore.users.length }'
-          ) {sent} of {total}
+    h3
+      i18n(
+        :args='{ sent: paymentSummary.sent, total: fakeStore.users.length }'
+      ) {sent} of {total}&nbsp;
 
-          tooltip(v-if='paymentSummary.hasWarning')
-            i.icon-exclamation-triangle
+      tooltip(v-if='paymentSummary.hasWarning')
+        i.icon-exclamation-triangle
 
-            template(slot='tooltip')
-              strong Payment Declined
-              i18n(tag='p')
-                | Someone didn&rsquo;t confirm your payment. Please mark as payed only when it&rsquo;s done.
+        template(slot='tooltip')
+          strong Payment Declined
+          i18n(tag='p')
+            | Someone didn&rsquo;t confirm your payment. Please mark as payed only when it&rsquo;s done.
 
-      .c-summary-item
-        h2.subtitle
-          i18n Payments Confirmed
-        p
-          i18n(:args='{ sent: paymentSummary.confirmed, total: fakeStore.users.length }')
-            | {sent} of {total}
+    h2.subtitle
+      i18n Payments Confirmed
 
-      .c-summary-item
-        h2.subtitle
-          i18n Amount Sent
+    h3
+      i18n(:args='{ sent: paymentSummary.confirmed, total: fakeStore.users.length }')
+        | {sent} of {total}
 
-        h3(:class="{'has-text-success': paymentAllDone}")
-          i18n(
-            v-if='paymentAllDone'
-            :args='{ currency: fakeStore.currency, amountTotal: paymentSummary.amountTotal }'
-          ) All {currency}{amountTotal}
+    h2.subtitle
+      i18n Amount Sent
 
-          i18n(
-            v-else=''
-            :args='{ currency: fakeStore.currency, amoutPayed:paymentSummary.amoutPayed, amountTotal: paymentSummary.amountTotal }'
-          ) {currency}{amoutPayed} of {currency}{amountTotal}
+    h3(:class="{'has-text-success': paymentAllDone}")
+      i18n(
+        v-if='paymentAllDone'
+        :args='{ currency: fakeStore.currency, amountTotal: paymentSummary.amountTotal }'
+      ) All {currency}{amountTotal}
+
+      i18n(
+        v-else=''
+        :args='{ currency: fakeStore.currency, amoutPayed:paymentSummary.amoutPayed, amountTotal: paymentSummary.amountTotal }'
+      ) {currency}{amoutPayed} of {currency}{amountTotal}
 
       progress-bar(
         :primary='paymentProgress.sent'
         :secondary='paymentProgress.confirmed'
       )
-    .c-table
-      table.table
-        thead.sr-only
-          tr
-            i18n(tag='th') Name
-            i18n(tag='th') Payment Status
-            i18n(tag='th') Amount
-
-        tfoot
-          tr
-            i18n.c-table-cell(tag='th' colspan='2')
-              | Total
-            td
-              | {{fakeStore.currency}}{{paymentSummary.amountTotal}}
-
-        tbody
-          tr(
-            v-for='(user, index) in fakeStore.users'
-            :key='user.name'
-          )
-            th
-              avatar(
-                :src='user.avatar'
-                :alt='L("{username}\'s avatar", { username: user.name} )')
-
-              span.c-table-cell {{user.name}}
-
-            td
-              .c-status(v-if='statusIsToPay(user)')
-                i18n.button.is-small.c-table-cell(
-                  tag='button'
-                  @click='markAsPayed(user)'
-                ) Mark as paid
-
-                tooltip(
-                  v-if='statusIsRejected(user)'
-                  direction='right-start'
-                )
-                  i.icon-exclamation-triangle.has-text-warning.is-size-6.c-icon-badge
-
-                  template(slot='tooltip')
-                    strong.has-text-weight-bold Payment Declined
-                    i18n.has-text-weight-normal(
-                      tag='p'
-                      :args="{ name: 'bob' }"
-                    ) {name} didn&rsquo;t confirm your payment. Please mark as payed only when it&rsquo;s done.
-
-              .c-status(v-else-if='statusIsPending(user)')
-                i.icon-paper-plane.c-status-icon
-                p
-                  i18n.has-text-text-light(:args='{ name: getUserFirstName(user.name), admiration: getCustomAdmiration(index) }')
-                    | {admiration}! Waiting for {name} confirmation.
-                  i18n.is-unstyled.link(tag='button' @click='cancelPayment(user)')
-                    | Cancel payment
-
-              .has-text-success.c-status(v-else-if='statusIsCompleted(user)')
-                i.icon-check-circle.is-size-5.c-status-icon
-                i18n Payment sent!
-
-            td
-              | {{fakeStore.currency}}{{user.amount}}
-
-  template(#sidebar='')
     p
       i18n What's this page about, so the user understands the context.
+
+  .p-section
+    table.c-table
+      thead.sr-only
+        tr
+          i18n(tag='th') Name
+          i18n(tag='th') Payment Status
+          i18n(tag='th') Amount
+
+      tfoot
+        tr
+          i18n.c-table-cell(tag='th' colspan='2')
+            | Total
+          td
+            | {{fakeStore.currency}}{{paymentSummary.amountTotal}}
+
+      tbody
+        tr(
+          v-for='(user, index) in fakeStore.users'
+          :key='user.name'
+        )
+          th
+            avatar(
+              :src='user.avatar'
+              :alt='L("{username}\'s avatar", { username: user.name} )')
+
+            span.c-table-cell {{user.name}}
+
+          td
+            .c-status(v-if='statusIsToPay(user)')
+              i18n.button.is-small.c-table-cell(
+                tag='button'
+                @click='markAsPayed(user)'
+              ) Mark as paid
+
+              tooltip(
+                v-if='statusIsRejected(user)'
+                direction='right-start'
+              )
+                i.icon-exclamation-triangle.has-text-warning.is-size-6.c-icon-badge
+
+                template(slot='tooltip')
+                  strong.has-text-weight-bold Payment Declined
+                  i18n.has-text-weight-normal(
+                    tag='p'
+                    :args="{ name: 'bob' }"
+                  ) {name} didn&rsquo;t confirm your payment. Please mark as payed only when it&rsquo;s done.
+
+            .c-status(v-else-if='statusIsPending(user)')
+              i.icon-paper-plane.c-status-icon
+              p
+                i18n.has-text-light(:args='{ name: getUserFirstName(user.name), admiration: getCustomAdmiration(index) }')
+                  | {admiration}! Waiting for {name} confirmation.&nbsp;
+                i18n.is-unstyled.link(tag='button' @click='cancelPayment(user)')
+                  | Cancel payment
+
+            .has-text-success.c-status(v-else-if='statusIsCompleted(user)')
+              i.icon-check-circle.is-size-5.c-status-icon
+              i18n Payment sent!
+
+          td
+            | {{fakeStore.currency}}{{user.amount}}
+
 </template>
 
 <script>
@@ -276,47 +273,6 @@ export default {
   }
 }
 
-.c-table {
-  padding-top: 0;
-  padding-bottom: 0;
-
-  td {
-    padding-left: 0;
-    padding-right: 0;
-
-    // OPTIMIZE: wild selector, watch out its usage
-    > *:last-child {
-      margin-right: $spacer;
-    }
-  }
-
-  tfoot td,
-  tfoot th {
-    padding: $spacer 0;
-  }
-
-  // user name
-  th:first-child {
-    width: 12rem;
-  }
-
-  tbody tr {
-    &:first-child {
-      th,
-      td {
-        padding-top: $spacer;
-      }
-    }
-
-    &:last-child {
-      th,
-      td {
-        padding-bottom: $spacer;
-      }
-    }
-  }
-}
-
 .c-status {
   align-items: center;
 
@@ -327,6 +283,31 @@ export default {
 
 .c-icon-badge {
   margin-left: $spacer/2;
+}
+
+.c-table {
+  border-spacing: 2rem;
+  margin: 0 -2rem;
+  border-collapse: initial;
+}
+
+tr {
+  vertical-align: middle;
+
+  p {
+    display: inline;
+  }
+}
+
+th {
+  white-space: nowrap;
+}
+
+.c-avatar {
+  width: 2rem;
+  margin-right: 1rem;
+  display: inline-block;
+  margin-bottom: -0.7rem;
 }
 
 </style>

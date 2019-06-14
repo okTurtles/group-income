@@ -1,41 +1,44 @@
 <template lang="pug">
-main
-  section.section.columns.is-centered
-    .column.is-two-thirds
-      p.notification.is-success.has-text-centered(data-test='notifyInvitedSuccess' v-if='form.success')
-        i.notification-icon.icon-check
-        i18n(v-if='isProposal') Members proposed successfully!
-        i18n(v-else='') Members invited successfully!
+page(pageTestName='invite' pageTestHeaderName='invite')
+  template(#title='') Invite
 
-      group-invitees(
-        v-else=''
-        :group='form'
-        @input='(payload) => updateInvitees(payload)'
+  .p-section
+    p(
+      v-if='form.success'
+      data-test='notifyInvitedSuccess'
+    )
+      i.icon-check
+      i18n(v-if='isProposal') Members proposed successfully!
+      i18n(v-else='') Members invited successfully!
+
+    group-invitees(
+      v-else=''
+      :group='form'
+      @input='(payload) => updateInvitees(payload)'
+    )
+
+    .buttons
+      button.is-success(
+        type='submit'
+        :disabled='!form.invitees.length'
+        @click='submit' data-test='submit'
       )
-      .has-text-centered
-        button.is-success(
-          type='submit'
-          :disabled='!form.invitees.length'
-          @click='submit' data-test='submit'
-        )
-          i18n(v-if='isProposal') Propose Invites
-          i18n(v-else='') Send Invites
+        i18n(v-if='isProposal') Propose Invites
+        i18n(v-else='') Send Invites
 </template>
-<style lang="scss" scoped>
-.notification-icon {
-  margin-right: 1rem;
-}
-</style>
+
 <script>
 import sbp from '~/shared/sbp.js'
 import contracts from '@model/contracts.js'
 import L from '@view-utils/translations.js'
+import Page from './Page.vue'
 import { GroupInvitees } from '@components/CreateGroupSteps/index.js'
 import { mapState, mapGetters } from 'vuex'
 
 export default {
   name: 'Invite',
   components: {
+    Page,
     GroupInvitees
   },
   data () {
@@ -145,3 +148,10 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+.icon-check,
+.notification-icon {
+  margin-right: 1rem;
+}
+</style>

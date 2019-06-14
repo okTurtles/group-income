@@ -1,11 +1,11 @@
 <template lang="pug">
-span.c-progress
-  span.c-primary(
-    :style='{ width: primary }'
+.c-progress
+  .c-primary(
+    :style='{ width: primary + "%" }'
   )
-  span.c-secondary(
+  .c-secondary(
     v-if='secondary'
-    :style='{ width: secondary }'
+    :style='{ width: secondary + "%" }'
   )
 </template>
 
@@ -13,8 +13,8 @@ span.c-progress
 export default {
   name: 'ProgressBar',
   props: {
-    primary: String,
-    secondary: String
+    primary: Number,
+    secondary: Number
   }
 }
 </script>
@@ -23,13 +23,11 @@ export default {
 @import "../../../assets/style/_variables.scss";
 
 .c-progress {
-  position: absolute;
-  bottom: 0;
-  left: 0;
+  position: relative;
   width: 100%;
   height: $spacer-xs;
   background-color: $primary-bg-a;
-  box-shadow: inset 0 0 1px $primary;
+  margin-top: 1rem;
 }
 
 .c-primary,

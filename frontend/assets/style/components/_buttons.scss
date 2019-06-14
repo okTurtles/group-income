@@ -31,7 +31,7 @@ button,
     background-color: $success;
   }
 
-  &.is-danger {
+  &.error {
     background-color: $danger;
   }
 
@@ -65,7 +65,7 @@ button,
       color: $success;
     }
   
-    &.is-danger {
+    &.error {
       border-color: $danger;
       color: $danger;
     }
@@ -79,6 +79,10 @@ button,
     &:hover {
       filter: none;
     }
+  }
+
+  [class^='icon-'] + span{
+    margin-left: 1rem;
   }
 
   span + [class^='icon-'] {

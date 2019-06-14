@@ -1,72 +1,84 @@
 <template lang="pug">
-.c-chatmain(:class='{ isActive: summary.title }')
-  template(v-if='summary.title')
-    main-header(:description='summary.description' :routerback='summary.routerBack')
+div(v-if='summary.title')
+  main-header(:description='summary.description' :routerback='summary.routerBack')
 
-      template(slot='title')
-        avatar.c-header-avatar(:src='summary.picture' alt='')
-          i.c-header-private(:class="{\
-          'icon-globe': summary.private === false,\
-          'icon-lock': summary.private === true,\
-          }" v-if='summary.private !== undefined')
-          | {{summary.title}}
+    template(slot='title')
+      avatar.c-header-avatar(:src='summary.picture' alt='')
+        i.c-header-private(:class="{\
+        'icon-globe': summary.private === false,\
+        'icon-lock': summary.private === true,\
+        }" v-if='summary.private !== undefined')
+        | {{summary.title}}
 
-      template(slot='actions')
-        button.is-icon
-          i.icon-user-plus
-        button.is-icon
-          // TODO later - show a tooltip on notifications snooze
-          i.icon-bell
+    template(slot='actions')
+      button.is-icon
+        i.icon-user-plus
+      button.is-icon
+        // TODO later - show a tooltip on notifications snooze
+        i.icon-bell
 
-        menu-parent
-          menu-trigger.is-icon
-            i.icon-ellipsis-v
+      menu-parent
+        menu-trigger.is-icon
+          i.icon-ellipsis-v
 
-          // TODO later - be a drawer on mobile
-          menu-content.c-actions-content
-            ul
-              menu-item(tag='button' itemid='hash-1' icon='heart')
-                i18n Option 1
-              menu-item(tag='button' itemid='hash-2' icon='heart')
-                i18n Option 2
-              menu-item(tag='button' itemid='hash-3' icon='heart')
-                i18n Option 3
+        // TODO later - be a drawer on mobile
+        menu-content.c-actions-content
+          ul
+            menu-item(tag='button' itemid='hash-1' icon='heart')
+              i18n Option 1
+            menu-item(tag='button' itemid='hash-2' icon='heart')
+              i18n Option 2
+            menu-item(tag='button' itemid='hash-3' icon='heart')
+              i18n Option 3
 
-    .c-body(:style='bodyStyles')
-      .c-body-loading(v-if='details.isLoading')
-        loading
-          //
-            TODO later - Design a cool skeleton loading
-            - this should be done only after knowing exactly how server gets each conversation data
+  .c-body(:style='bodyStyles')
+    .c-body-loading(v-if='details.isLoading')
+      loading
+        //
+          TODO later - Design a cool skeleton loading
+          - this should be done only after knowing exactly how server gets each conversation data
 
-      .c-body-conversation(ref='conversation' v-else='')
-        conversation-greetings
-          template(v-for='(message, index) in details.conversation')
-            i18n.subtitle.c-divider(
-              v-if='startedUnreadIndex === index'
-              :key='`subtitle-${index}`'
-            ) New messages
+    .c-body-conversation(ref='conversation' v-else='')
+      conversation-greetings
+      template(v-for='(message, index) in details.conversation')
+        i18n.subtitle.c-divider(
+          v-if='startedUnreadIndex === index'
+          :key='`subtitle-${index}`'
+        ) New messages
 
-            message-notification(:key='`notification-${index}`' v-if="message.from === 'notification'")
-              | {{message.text}}
+        message-notification(
+          v-if="message.from === messageTypes.NOTIFICATION"
+          :key='`notification-${index}`'
+        ) {{message.text}}
 
-            // cf: https://github.com/vuejs/eslint-plugin-vue/issues/462
-            // eslint-disable-next-line vue/require-component-is
-            component(
-              v-else=''
-              :key='`message-${index}`'
-              v-bind='getMessageAt[index]'
-            )
+        message-interactive(
+          v-else-if="message.from === messageTypes.INTERACTIVE"
+          :key='`interactive-${index}`'
+          :text='message.text'
+        )
 
-          message(
-            v-for='(message, index) in ephemeral.pendingMessages'
-            :key='`pending-messages-${index}`'
-            v-bind='getPendingAt[index]'
-            @retry='retryMessage(index)'
-          )
+        // cf: https://github.com/vuejs/eslint-plugin-vue/issues/462
+        // eslint-disable-next-line vue/require-component-is
+        message(
+          v-else=''
+          :key='`message-${index}`'
+          :text='message.text',
+          :who='who(isCurrentUser(message.from), message.from)',
+          :avatar='avatar(isCurrentUser, message.from)',
+          :variant='variant(isCurrentUser(message.from))',
+          :hideWho='shouldHideWho(index)',
+          :isSameSender='isSameSender(index)'
+        )
 
-    .c-footer
-      send-area(:title='summary.title' @send='handleSendMessage' @heightupdate='updateSendAreaHeight' :loading='details.isLoading')
+      message(
+        v-for='(message, index) in ephemeral.pendingMessages'
+        :key='`pending-messages-${index}`'
+        v-bind='getPendingAt[index]'
+        @retry='retryMessage(index)'
+      )
+
+  .c-footer
+    send-area(:title='summary.title' @send='handleSendMessage' @heightupdate='updateSendAreaHeight' :loading='details.isLoading')
 
 </template>
 
@@ -93,6 +105,7 @@ export default {
     MenuContent,
     MenuItem,
     Message,
+    MessageInteractive,
     MessageNotification,
     ConversationGreetings,
     SendArea
@@ -109,6 +122,7 @@ export default {
   },
   data () {
     return {
+      messageTypes: messageTypes,
       config: {
         isPhone: null
       },
@@ -147,37 +161,8 @@ export default {
     startedUnreadIndex () {
       return this.details.conversation.findIndex(message => message.unread === true)
     },
-    getMessageAt () {
-      let isCurrentUser
-
-      return this.details.conversation.map((message, index) => {
-        isCurrentUser = this.currentUserAttr.id === message.from
-
-        if (message.from === messageTypes.INTERACTIVE) {
-          return {
-            is: MessageInteractive,
-            id: message.id
-          }
-        }
-        if (message.from === messageTypes.NOTIFICATION) {
-          return {
-            is: MessageNotification,
-            text: message.text
-          }
-        }
-
-        return {
-          is: Message,
-          text: message.text,
-          who: this.who(isCurrentUser, message.from),
-          avatar: this.avatar(isCurrentUser, message.from),
-          variant: this.variant(isCurrentUser),
-          hideWho: this.shouldHideWho(index),
-          isSameSender: this.isSameSender(index)
-        }
-      })
-    },
     getPendingAt () {
+      console.log('PLOP')
       return this.ephemeral.pendingMessages.map((message, index) => ({
         text: message.text,
         who: this.who(true),
@@ -254,19 +239,11 @@ export default {
 <style lang="scss" scoped>
 @import "../../../assets/style/_variables.scss";
 
-.c-chatmain {
-  position: relative;
-  width: 100vw;
-  min-width: 0;
-  min-height: 100vh;
-  background-color: $body-background-color;
-
-  .c-actions-content {
-    top: $spacer-lg;
-    right: 0;
-    left: auto;
-    width: 10rem;
-  }
+.c-header-top .c-actions-content {
+  top: $spacer-lg;
+  right: 0;
+  left: auto;
+  width: 10rem;
 }
 
 .c-header-private {
@@ -285,14 +262,10 @@ export default {
   flex-grow: 1;
   flex-direction: column;
   justify-content: flex-end;
-
-  &-conversation {
-    padding: $spacer 0;
-  }
 }
 
-.c-footer {
-  padding: 0 $spacer-sm $spacer;
+.c-body-conversation {
+  padding: $spacer 0;
 }
 
 .c-divider {
@@ -317,69 +290,18 @@ export default {
   }
 }
 
-@include phone {
-  .c-chatmain {
-    /* A - MVP static way - show / hide conversation */
-    display: none;
-    z-index: $zindex-tooltip;
-
-    &.isActive {
-      display: block;
-    }
-
-    /* B - dynamic way
-    - slideIn from right to left - more complex - needs tricky work
-    - TODO - If there's time, I'll build this alternative.
-    */
-  }
-
-  // NOTE: Mobile - prefer to fix the header & footer instead of using flexbox
-  // So the body scroll is the mobile browser's default instead of overflow::scroll inside flexbox
-  // It's much more smooth, so better for the user experience
-  .c-body {
-    padding-top: $spacer-xl;
-    padding-bottom: 2.5rem; // initial fixed footer height
-    min-height: 100vh;
-  }
-
-  .c-footer {
-    position: fixed;
-    left: 0;
-    bottom: 0;
-    width: 100vw;
-    background-color: $body-background-color;
-  }
-}
-
 @include phablet {
-  .c-chatmain {
-    width: auto;
-    display: flex;
-    flex-direction: column;
-    flex-basis: 25rem;
-    flex-grow: 1;
-  }
-
   .c-header {
     padding: $spacer;
   }
 
   .c-body {
-    overflow: scroll;
-
-    &-conversation {
-      position: relative;
-      padding-bottom: 0;
-      max-height: 100%;
-      overflow: scroll;
-      -webkit-overflow-scrolling: touch;
-    }
+    overflow: auto;
   }
 
-  .c-footer {
-    position: relative;
-    padding-left: $spacer;
-    padding-right: $spacer;
+  .c-body-conversation {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
 

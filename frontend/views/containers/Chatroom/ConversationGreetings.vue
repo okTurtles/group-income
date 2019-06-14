@@ -1,12 +1,12 @@
 <template lang="pug">
 .c-greetings
-  avatar.c-avatar(
+  avatar(
     v-for='(user, index) in founders'
     :key='`user-${index}`'
     :src='user.picture'
     :alt='user.displayName || user.name'
   )
-    message-notification {{text}}
+  message-notification {{text}}
 
 </template>
 
@@ -65,14 +65,12 @@ export default {
 @import "../../../assets/style/_variables.scss";
 
 .c-greetings {
-  align-self: center;
-  text-align: center;
   margin-bottom: $spacer-lg;
+  display: flex;
+  align-items: flex-end;
 }
 
 .c-avatar {
-  margin-left: -$spacer-xs;
-  margin-right: -$spacer-xs;
-  box-shadow: 0 0 0 1px $body-background-color;
+  margin-right: $spacer-sm;
 }
 </style>

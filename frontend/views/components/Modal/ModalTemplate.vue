@@ -109,9 +109,10 @@ export default {
 
 .c-modal-header {
   position: relative;
-  align-items: flex-start;
+  align-items: center;
   padding: 0 $spacer;
-  min-height: 88px;
+  // min-height: 88px;
+  min-height: 60px;
 
   @include tablet {
     min-height: 95px;

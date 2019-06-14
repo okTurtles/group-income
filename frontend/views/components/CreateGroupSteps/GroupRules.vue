@@ -144,6 +144,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "../../../assets/style/_variables.scss";
+
 .c-rules {
   display: flex;
 }
@@ -160,7 +162,7 @@ export default {
 }
 
 .c-percent {
-  font-size: size-extra-large;
+  font-size: $size-extra-large;
   font-weight: bold;
   margin: 0;
 }

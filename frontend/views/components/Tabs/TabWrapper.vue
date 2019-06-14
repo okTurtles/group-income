@@ -28,9 +28,7 @@
           :class="{ 'tab-active': activeTab === links.index, 'has-text-white': isDarkTheme}"
           :data-test='`link-${links.url}`'
           @click='tabClick(links)'
-        )
-          | {{ links.title }}
-          i.icon-chevron-right(aria-hidden='true')
+        ) {{ links.title }}
 
     section.tab-section
       slot

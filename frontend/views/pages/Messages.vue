@@ -1,12 +1,10 @@
 <template lang="pug">
-chatroom(
-  :title="L('Messages')"
-  :searchplaceholder="L('Search for a person')"
-)
-  template(slot='nav')
-    groups-shortcut.c-list(
-      :groups='groupsByName'
-      @select='handleGroupSelect'
+page(pageTestName='messages' pageTestHeaderName='messages')
+  template(#title='') Messages
+  template(#sidebar='')
+    chat-nav(
+      :title="L('Messages')"
+      :searchplaceholder="L('Search for a person')"
     )
       conversations-list(
         :title="L('Messages')"
@@ -15,19 +13,33 @@ chatroom(
         :type='type'
       )
 
+  .p-section
+    chat-main(
+      :summary='summary'
+      :details='details'
+    )
+
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
+import Page from '@pages/Page.vue'
 import { chatTypes, individualMessagesSorted, users } from '@containers/chatroom/fakeStore.js'
-import Chatroom from '@containers/chatroom/Chatroom.vue'
+import ChatNav from '@components/chatroom/ChatNav.vue'
+import ChatMain from '@components/chatroom/ChatMain.vue'
+import chatroom from '@containers/chatroom/chatroom.js'
 import GroupsShortcut from '@components/chatroom/GroupsShortcut.vue'
 import ConversationsList from '@components/chatroom/ConversationsList.vue'
 
 export default {
   name: 'Messages',
+  mixins: [
+    chatroom
+  ],
   components: {
-    Chatroom,
+    Page,
+    ChatNav,
+    ChatMain,
     GroupsShortcut,
     ConversationsList
   },

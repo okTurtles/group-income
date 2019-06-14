@@ -8,7 +8,7 @@ nav.c-navigation(:class="{ 'is-active': ephemeral.isActive }" role="navigation")
       img.c-logo(:src='logo' alt="GroupIncome's logo")
 
     // NOTE/REVIEW: If we follow Messages GIBot approach, the bell icon wont be needed
-    activity(:activitycount='activityCount')
+    activity(:activityCount='activityCount')
 
   .c-navigation-body
     .c-navigation-body-top

@@ -53,11 +53,11 @@ $pagePaddingDesktop: 75px;
 
 .p-no-sidebar {
   height: 100vh;
-  padding: $spacer;
+  width: 100vw;
 
   @include tablet {
     overflow: auto;
-    padding: $spacer*1.5;
+    width: auto;
   }
 }
 

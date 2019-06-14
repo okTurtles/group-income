@@ -90,11 +90,11 @@ export default {
 @import "../../assets/style/_variables.scss";
 
 $scale-tablet: 1.1;
-$scale-desktop: 1.5;
+$scale-desktop: 1.6;
 
 $mainCircle-size: 14rem;
 $mainCircle-size-tablet: $mainCircle-size * $scale-tablet;
-$mainCircle-size-desktop: $mainCircle-size * $scale-desktop;
+$mainCircle-size-desktop: 16.4rem;
 
 $itemCircle-size: 2rem;
 $itemCircle-size-tablet: 3rem;

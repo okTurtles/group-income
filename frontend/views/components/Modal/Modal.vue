@@ -39,7 +39,6 @@ export default {
   methods: {
     openModal (componentName) {
       if (this.content) {
-        console.log('AHAH')
         this.subcontent.push(componentName)
         sbp('okTurtles.events/emit', OPEN_MODAL)
       } else {

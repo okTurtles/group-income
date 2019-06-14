@@ -5,13 +5,13 @@
     :disabled='loading'
     :placeholder='customSendPlaceholder'
     :style='textareaStyles'
-    @keydown.exact='sendMessage'
+    @keydown.enter.exact='sendMessage'
     @keydown.ctrl='isNextLine'
     @keyup='handleKeyup'
     v-bind='$attrs'
   )
 
-  .level.is-mobile.is-marginless.c-send-actions(ref='actions')
+  .c-send-actions(ref='actions')
     i18n.button.c-send-btn(
       tag='button'
       :class='{ isActive }'
@@ -106,7 +106,7 @@ export default {
       this.$refs.mask.innerHTML = this.ephemeral.textWithLines + (isLastLineEmpty ? '.' : '')
 
       // ...and apply the maks's height to the textarea so it dynamically grows as the user types
-      this.ephemeral.maskHeight = this.$refs.mask.offsetHeight
+      this.ephemeral.maskHeight = this.$refs.mask.offsetHeight - 2
 
       // ... finaly inform the parent about the new height to adjust the layout
       this.$emit('heightUpdate', this.ephemeral.maskHeight + 'px')
@@ -116,12 +116,14 @@ export default {
       this.updateTextArea()
     },
     sendMessage () {
+      console.log('send')
       if (!this.$refs.textarea.value) {
         return false
       }
 
       this.$emit('send', this.$refs.textarea.value) // TODO remove first / last empty lines
       this.$refs.textarea.value = ''
+
       this.updateTextArea()
     }
   }
@@ -131,7 +133,7 @@ export default {
 <style lang="scss" scoped>
 @import "../../../assets/style/_variables.scss";
 
-$initialHeight: 2.5rem;
+$initialHeight: 43px;
 
 .c-send {
   position: relative;
@@ -175,14 +177,11 @@ $initialHeight: 2.5rem;
     padding-right: $spacer;
     color: $light;
     height: 100%;
+    border-radius: 0 $radius $radius 0;
 
     &:focus {
       box-shadow: none;
       color: $text-light;
-    }
-
-    &.isActive {
-      color: $primary;
     }
   }
 }

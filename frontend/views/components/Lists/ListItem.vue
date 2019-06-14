@@ -60,7 +60,6 @@ export default {
 @import "../../../assets/style/_variables.scss";
 
 .c-item {
-  padding: 0 $spacer-sm;
 
   &.has-divider {
     margin-bottom: $spacer-sm;

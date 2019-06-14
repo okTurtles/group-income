@@ -41,6 +41,7 @@ export default {
   border-radius: 50%;
   background-color: $border;
   object-fit: cover;
+  width: 2rem;
 
   &:after {
     content: "";

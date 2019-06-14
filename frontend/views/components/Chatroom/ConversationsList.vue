@@ -1,6 +1,6 @@
 <template lang="pug">
 .c-conversation-list
-  h2.subtitle {{title}}
+  label.label {{title}}
 
   ul
     list-item(
@@ -12,12 +12,12 @@
       :badgecount='list.conversations[id].unreadCount'
       :to='buildUrl(id)'
     )
-      .c-userAvatarNamed
-        avatar(
-          v-if='list.conversations[id].picture'
-          :src='list.conversations[id].picture'
-        )
-          span {{list.conversations[id].displayName || list.conversations[id].name}}
+      avatar(
+        v-if='list.conversations[id].picture'
+        :src='list.conversations[id].picture'
+      )
+
+      span {{list.conversations[id].displayName || list.conversations[id].name}}
 
 </template>
 
@@ -74,17 +74,4 @@ export default {
 
 <style lang="scss" scoped>
 @import "../../../assets/style/_variables.scss";
-
-.c-list:not(:first-child) {
-  margin: $spacer*1.5 0;
-}
-
-.subtitle {
-  padding-left: $spacer-sm;
-}
-
-.c-userAvatarNamed {
-  display: flex;
-  align-items: center;
-}
 </style>
