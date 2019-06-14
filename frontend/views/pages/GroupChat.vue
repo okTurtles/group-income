@@ -28,9 +28,9 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
 import { mapGetters } from 'vuex'
 import Page from '@pages/Page.vue'
 import { chatTypes, users, groupA } from '@containers/chatroom/fakeStore.js'
-import ConversationsList from '@components/chatroom/ConversationsList.vue'
-import ChatNav from '@components/chatroom/ChatNav.vue'
-import ChatMain from '@components/chatroom/ChatMain.vue'
+import ConversationsList from '@components/Chatroom/ConversationsList.vue'
+import ChatNav from '@components/Chatroom/ChatNav.vue'
+import ChatMain from '@components/Chatroom/ChatMain.vue'
 import chatroom from '@containers/chatroom/chatroom.js'
 import GroupMembers from '@containers/sidebar/GroupMembers.vue'
 

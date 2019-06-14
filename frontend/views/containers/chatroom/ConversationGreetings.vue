@@ -12,7 +12,7 @@
 
 <script>
 import { chatTypes, users, groupA } from './fakeStore.js'
-import MessageNotification from '@components/chatroom/MessageNotification.vue'
+import MessageNotification from '@components/Chatroom/MessageNotification.vue'
 import Avatar from '@components/Avatar.vue'
 
 export default {

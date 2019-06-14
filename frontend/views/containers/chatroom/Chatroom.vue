@@ -15,8 +15,8 @@
 
 // <script>
 // import { chatTypes, individualMessagesSorted, users, individualConversations, groupA } from './fakeStore.js'
-// import ChatMain from '@components/chatroom/ChatMain.vue'
-// import ChatNav from '@components/chatroom/ChatNav.vue'
+// import ChatMain from '@components/Chatroom/ChatMain.vue'
+// import ChatNav from '@components/Chatroom/ChatNav.vue'
 
 // export default {
 //   name: 'Chatroom',
