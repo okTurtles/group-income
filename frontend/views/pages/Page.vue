@@ -121,7 +121,7 @@ $pagePaddingDesktop: 75px;
 
   @include tablet {
     justify-content: flex-start;
-    font-size: $size-1;
+    font-size: $size-2;
   }
 }
 

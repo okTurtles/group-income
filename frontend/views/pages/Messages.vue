@@ -13,11 +13,10 @@ page(pageTestName='messages' pageTestHeaderName='messages')
         :type='type'
       )
 
-  .p-section
-    chat-main(
-      :summary='summary'
-      :details='details'
-    )
+  chat-main(
+    :summary='summary'
+    :details='details'
+  )
 
 </template>
 

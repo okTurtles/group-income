@@ -1,5 +1,5 @@
 <template lang="pug">
-div(v-if='summary.title')
+.p-section.c-chat-main(v-if='summary.title')
   main-header(:description='summary.description' :routerback='summary.routerBack')
 
     template(slot='title')
@@ -238,6 +238,12 @@ export default {
 
 <style lang="scss" scoped>
 @import "../../../assets/style/_variables.scss";
+
+.c-chat-main {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
 
 .c-header-top .c-actions-content {
   top: $spacer-lg;

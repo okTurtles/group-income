@@ -9,7 +9,7 @@
     menu-parent
       menu-trigger.is-icon
         i.icon-ellipsis-v
-      // TODO be a drawer on mobile
+
       menu-content.c-actions-content
         ul
           menu-item(tag='button' itemid='hash-1' icon='heart')
@@ -87,6 +87,16 @@ export default {
 
   &-search {
     margin-top: $spacer;
+  }
+
+  /deep/ .c-item-link {
+    padding: 1.25rem 0.5rem;
+    margin: 0.25rem -0.5rem;
+    border-radius: $radius;
+  }
+
+  /deep/ .c-avatar {
+    margin-right: 0.5rem;
   }
 }
 
