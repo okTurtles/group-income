@@ -206,13 +206,14 @@ declare module './views/containers/proposals/RuleChangeRule.vue' { declare modul
 declare module './views/containers/proposals/RuleRemoveMember.vue' { declare module.exports: Object }
 declare module './views/containers/sidebar/Sidebar.vue' { declare module.exports: Object }
 declare module './views/containers/SignUp.vue' { declare module.exports: Object }
-declare module '@view-utils/translations.js' { declare module.exports: any }
-declare module '@view-utils/vStyle.js' { declare module.exports: any }
 declare module './Voting.vue' { declare module.exports: Object }
 declare module '@/utils/stringTemplate.js' { declare module.exports: Function }
 declare module '@utils/events.js' { declare module.exports: any }
 declare module '@utils/flowTyper.js' { declare module.exports: Object }
 declare module '@utils/giLodash.js' { declare module.exports: Function }
+declare module '@view-utils/stepAssistant.js' { declare module.exports: any }
+declare module '@view-utils/translations.js' { declare module.exports: any }
+declare module '@view-utils/vStyle.js' { declare module.exports: any }
 declare module '~/shared/constants.js' { declare module.exports: Object }
 declare module '~/shared/domains/okTurtles/data/index.js' { declare module.exports: Object }
 declare module '~/shared/domains/okTurtles/events/index.js' { declare module.exports: any }
