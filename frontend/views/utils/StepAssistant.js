@@ -1,4 +1,4 @@
-// usage:
+// Usage:
 // <template lang="pug">
 // router-view
 //   button(@click='prev' :disabled='!this.currentStep') Back
