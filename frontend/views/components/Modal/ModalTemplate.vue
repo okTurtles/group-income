@@ -193,6 +193,20 @@ export default {
 }
 
 // Mofifiers
+.has-no-background {
+  .modal-close {
+    top: 24px;
+    right: 16px;
+    background-color: #f1f1f1;
+    width: 40px;
+    height: 40px;
+  }
+
+  .modal-card-body {
+    padding-top: 1.1rem;
+  }
+}
+
 .has-background {
   .c-modal-close {
     background-color: #fff;
@@ -270,6 +284,73 @@ export default {
         height: auto;
         font-size: 0.875rem;
         transform: none !important;
+      }
+    }
+  }
+}
+
+.has-submodal-background {
+  @include touch {
+    .modal-card {
+      &-head {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        z-index: 3;
+        background-color: var(--primary-bg-s);
+        min-height: 64px;
+      }
+    }
+
+    .title {
+      font-weight: bold;
+      font-size: 0.875rem;
+    }
+
+    .modal-close {
+      right: auto;
+      left: 1rem;
+      font-family: "Font Awesome 5 Free";
+      font-weight: 900;
+      height: 2rem;
+      width: 2rem;
+      color: #999;
+      background: transparent;
+      top: 1rem;
+
+      &:hover {
+        color: #363636;
+      }
+
+      &::after {
+        content: none;
+      }
+
+      &::before {
+        content: "\f053";
+        background-color: transparent;
+        position: relative;
+        left: 3px;
+        top: 0;
+        width: 12px;
+        height: auto;
+        font-size: 0.875rem;
+        transform: none !important;
+      }
+    }
+  }
+}
+
+.is-centered {
+  .modal-card {
+    &-body {
+      width: 100%;
+      max-width: calc(400px + 2rem);
+      align-self: center;
+
+      @include tablet {
+        text-align: center;
       }
     }
   }
