@@ -4,7 +4,7 @@
 
 import { verify, b64ToStr } from '../shared/functions.js'
 
-const Boom = require('boom')
+const Boom = require('@hapi/boom')
 
 exports.plugin = {
   name: 'gi-auth',

@@ -1,7 +1,7 @@
 'use strict'
 
 import * as db from './database.js'
-import Hapi from 'hapi'
+import Hapi from '@hapi/hapi'
 import GiAuth from './auth.js'
 import { GIMessage } from '../shared/GIMessage.js'
 import { makeResponse } from '../shared/functions.js'

@@ -62,8 +62,8 @@
             </div>
             <div class="panel-block" >
               <div id="errorMsg" v-if="ephemeral.errorMsg" class="help is-danger">{{ephemeral.errorMsg}}</div>
-              <button class="button is-success" type="submit" data-test="sendButton" v-on:click="send" :disabled="!ephemeral.composedMessage"  style="margin-left:auto; margin-right: 0;"><i18n>Send</i18n></button>
-              <button class="button is-danger" type="submit" v-on:click="cancel" style="margin-left:10px; margin-right: 0;"><i18n>Cancel</i18n></button>
+              <button class="button is-success" type="submit" data-test="sendButton" v-on:click="send" :disabled="!ephemeral.composedMessage"  style="margin-left: auto; margin-right: 0;"><i18n>Send</i18n></button>
+              <button class="button is-danger" type="submit" v-on:click="cancel" style="margin-left: 10px; margin-right: 0;"><i18n>Cancel</i18n></button>
             </div>
           </div>
           <div id="CurrentMessage" class="panel" v-if="ephemeral.mode === 'Read'">
@@ -75,8 +75,8 @@
             <p class="panel-block" style="display: block; word-wrap: break-word;">{{ephemeral.currentMessage.data.message}}</p>
 
             <div class="panel-block" >
-              <button class="button is-danger" v-if="ephemeral.currentMessage.data.messageType === 'Message'" type="submit" style="margin-left:auto; margin-right: 0;" v-on:click="remove(index)"><i18n>Delete</i18n></button>
-              <button class="button is-primary" type="submit" v-on:click="inboxMode" style="margin-left:10px; margin-right: 0;"><i18n>Return</i18n></button>
+              <button class="button is-danger" v-if="ephemeral.currentMessage.data.messageType === 'Message'" type="submit" style="margin-left: auto; margin-right: 0;" v-on:click="remove(index)"><i18n>Delete</i18n></button>
+              <button class="button is-primary" type="submit" v-on:click="inboxMode" style="margin-left: 10px; margin-right: 0;"><i18n>Return</i18n></button>
             </div>
           </div>
           <table id="Proposals" class="table is-bordered is-striped is-narrow"  v-if="ephemeral.mode === 'Inbox' && proposals.length">
