@@ -23,14 +23,14 @@
             <a class="button is-success is-large"
               data-test="forLink"
               v-on:click="voteFor"
-              style="margin-left:auto; margin-right: 20px;"
+              style="margin-left: auto; margin-right: 20px;"
             >
               <i18n>For</i18n>
             </a>
             <a class="button is-danger is-large"
               id="AgainstLink"
               v-on:click="voteAgainst"
-              style="margin-right:auto; margin-right: 20px;"
+              style="margin-right: auto; margin-right: 20px;"
             >
               <i18n>Against</i18n>
             </a>

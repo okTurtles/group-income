@@ -50,12 +50,12 @@ export default {
   width: 100%;
   opacity: 1;
 
-  /deep/ .settings-subtitle {
+  ::v-deep .settings-subtitle {
     margin-bottom: 24px;
     font-weight: bold;
   }
 
-  /deep/ .settings-title {
+  ::v-deep .settings-title {
     display: none;
     font-weight: bold;
 

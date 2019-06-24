@@ -2,8 +2,8 @@
 
 import { GIMessage } from '../shared/GIMessage.js'
 import * as db from './database.js'
-const Boom = require('boom')
-const Joi = require('joi')
+const Boom = require('@hapi/boom')
+const Joi = require('@hapi/joi')
 
 // NOTE: We could get rid of this RESTful API and just rely on pubsub.js to do this
 //       —BUT HTTP2 might be better than websockets and so we keep this around.

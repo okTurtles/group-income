@@ -42,7 +42,7 @@
 }
 
 // https://vue-loader.vuejs.org/guide/scoped-css.html#deep-selectors
-/deep/ .button {
+::v-deep .button {
   .fa-cog {
     font-size: 0.7rem;
     transition: transform ease-out 0.3s;

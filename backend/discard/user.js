@@ -4,10 +4,10 @@ import {server, db} from './setup'
 import _ from 'lodash'
 
 var Promise = require('bluebird')
-var Joi = require('joi')
+var Joi = require('@hapi/joi')
 var bcrypt = require('bcrypt')
 var hash = Promise.promisify(bcrypt.hash)
-var Boom = require('boom')
+var Boom = require('@hapi/boom')
 
 server.route({
   config: { auth: 'gi-auth' },

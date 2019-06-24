@@ -66,7 +66,7 @@
     margin-bottom: 0.125rem;
   }
 
-  & /deep/ .c-item-link {
+  & ::v-deep .c-item-link {
     &.is-active:hover,
     &:hover {
       background-color: $primary-bg-a;
@@ -89,7 +89,7 @@
   background-color: $primary-bg-s;
   transition: background-color ease-in 0.3s;
 
-  /deep/ .c-avatar {
+  ::v-deep .c-avatar {
     transition: transform cubic-bezier(0.18, 0.89, 0.32, 1.28) 0.3s;
   }
 
@@ -99,7 +99,7 @@
     background-color: $body-background-color;
     color: var(--primary-text-hover);
 
-    /deep/ .c-avatar {
+    ::v-deep .c-avatar {
       transform: scale(1.05);
     }
   }
@@ -112,7 +112,7 @@
   }
 }
 
-/deep/ .c-content {
+::v-deep .c-content {
   width: auto;
 }
 </style>
