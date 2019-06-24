@@ -12,9 +12,12 @@
       :placeholder="showPlaceholder ? name : ''"
       :data-test='name'
       v-model='value[name]'
-      @input="v[name].$touch()"
+      @input='v[name].$touch()'
     )
-    button.is-icon(@click.stop="isLock = !isLock" v-if='hasIconRight')
+    button.is-icon(
+      v-if='hasIconRight'
+      @click.stop='isLock = !isLock'
+    )
       i(
         :class="isLock ? 'icon-eye' : 'icon-eye-slash'"
       )

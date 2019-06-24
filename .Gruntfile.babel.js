@@ -76,10 +76,7 @@ module.exports = (grunt) => {
         // https://github.com/vuejs/vueify/issues/34#issuecomment-161722961
         // indentedSyntax: true,
         // sourceMapRoot: '/',
-        outputStyle: development ? 'nested' : 'compressed',
-        includePaths: [
-          './node_modules/@fortawesome/fontawesome-free/scss'
-        ]
+        outputStyle: development ? 'nested' : 'compressed'
       },
       dev: {
         files: [{

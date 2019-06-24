@@ -31,7 +31,7 @@
             type='file'
             name='profilePicture'
             accept='image/*'
-            @change="fileChange($event.target.files)"
+            @change='fileChange($event.target.files)'
             @input='$v.edited.picture.$touch()'
             placeholder='http://'
             data-test='profilePicture'

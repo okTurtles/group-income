@@ -5,7 +5,7 @@
     name='formData'
     @submit.prevent='changePassword'
   )
-    modal-template(class="has-submodal-background is-centered")
+    modal-template(class='has-submodal-background is-centered')
       template(slot='title') Change password
 
       form-password(

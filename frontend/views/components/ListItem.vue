@@ -15,7 +15,7 @@ li.c-item(:class="{ 'has-divider': hasDivider }")
 </template>
 
 <script>
-import Badge from '../Badge.vue'
+import Badge from './Badge.vue'
 
 export default {
   name: 'ListItem',
@@ -57,7 +57,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "../../../assets/style/_variables.scss";
+@import "../../assets/style/_variables.scss";
 
 .c-item {
 

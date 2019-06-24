@@ -1,7 +1,7 @@
 <template lang="pug">
   avatar(
-    :src="pictureURL"
-    :alt="username"
+    :src='pictureURL'
+    :alt='username'
   )
 </template>
 

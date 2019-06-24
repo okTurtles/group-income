@@ -22,14 +22,11 @@ _It is still on you to ensure your code conforms to the `standard` spec, whether
 Since this is a Vue.js project, any pull requests **must** follow *Priority A* rules mentioned in the [Vue.js Style Guide](https://vuejs.org/v2/style-guide/), and *should* follow the *Priority B* rules. Please take the time to read at least those two sections.
 
 ## CSS Style Guide
+
+Use l- for layout components and c- for anything inside a component. This makes it easier to understand where to find the code and understand the dependencies.
+All other classes are global and should be kept to a minimum for simplicity and to avoid conflicts.
+
 TODO: complete style guide
-
-Use l- for layout components and c- for anything inside a component. It's just easier to understand where to fine the code and inderstand the dependencies.
-All other classes are globals and should be kept to a minimum for simplicity and avoid interdependencies problems.
-
-In general, think simplicity and don't over ingenior.
-It's easier to add style in a component and add few lines of code than trying to create the most generic css that create increasing complexity.
-With design refinement the process should slowly reverse and we should see common pattern emerging naturally.
 
 ## Group Income Data Model Rules
 

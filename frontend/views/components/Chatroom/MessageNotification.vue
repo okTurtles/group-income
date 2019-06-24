@@ -26,7 +26,7 @@ export default {
     background-color: $light;
     border-radius: $radius-large;
 
-    @include phablet {
+    @include tablet {
       margin: $spacer $spacer 0;
     }
   }

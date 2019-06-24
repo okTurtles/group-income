@@ -5,7 +5,7 @@ main.main#create-group-page
     router-link.step(
       v-for='(step, index) in config.steps'
       :key='index'
-      :to="{name: step}"
+      :to='{name: step}'
       :class="[currentStep === index ? 'active' : '', currentStep < index ? 'next' : '']"
     ) {{ index + 1 }}
 

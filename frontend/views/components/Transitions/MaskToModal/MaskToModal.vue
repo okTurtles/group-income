@@ -1,5 +1,5 @@
 <template lang="pug">
-  component(:is="tag")
+  component(:is='tag')
     slot
 </template>
 

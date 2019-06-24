@@ -14,7 +14,7 @@ header.c-header(
       avatar(
         v-if='!routerBack'
         src='/assets/images/group-income-icon-transparent-circle.png'
-        alt="GroupIncome's logo"
+        alt='GroupIncome\'s logo'
       )
         template(v-if='title') {{ title }}
         slot(v-else='' name='title')

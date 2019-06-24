@@ -13,7 +13,7 @@ From anywhere in the App we can open any modal by using the `sbp` event `LOAD_MO
 ```html
 <!-- NavBar.vue -->
 <template>
-  <button @click="openLoginModal">Sign up</button>
+  <button @click='openLoginModal'>Sign up</button>
 </template>
 
 <script>

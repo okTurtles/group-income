@@ -1,11 +1,14 @@
 <template lang="pug">
-nav.c-navigation(:class="{ 'is-active': ephemeral.isActive }" role="navigation")
+nav.c-navigation(
+  role='navigation'
+  :class="{ 'is-active': ephemeral.isActive }"
+)
   toggle(@toggle='toggleMenu')
   .c-navigation-header
     h1.sr-only Main Menu
 
     router-link(to='/home')
-      img.c-logo(:src='logo' alt="GroupIncome's logo")
+      img.c-logo(:src='logo' alt='GroupIncome\'s logo')
 
     // NOTE/REVIEW: If we follow Messages GIBot approach, the bell icon wont be needed
     activity(:activityCount='activityCount')
@@ -68,7 +71,7 @@ import Activity from './Activity.vue'
 import GroupsList from './GroupsList.vue'
 import Profile from './Profile.vue'
 import Toggle from './Toggle.vue'
-import { ListItem } from '@components/Lists/index.js'
+import ListItem from '@components/ListItem.vue'
 import { mapGetters } from 'vuex'
 
 export default {

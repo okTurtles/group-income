@@ -24,22 +24,8 @@
   }
 }
 
-@mixin mobile {
-  @media screen and (max-width: $tablet - 1px) {
-    @content;
-  }
-}
-
-// TODO remove either mobile or phone
 @mixin phone {
-  @media screen and (max-width: 639px) {
-    @content;
-  }
-}
-
-// TODO remove either phablet or tablet
-@mixin phablet {
-  @media screen and (min-width: 640px) {
+  @media screen and (max-width: $tablet - 1px) {
     @content;
   }
 }

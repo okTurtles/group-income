@@ -4,6 +4,7 @@ span
   template(v-if='hasWhoElse')
     i18n and
     tooltip
+      // TODO: replace button with i18n(tag='button' :args='{numOthers: notFirstWho.length}') {numOthers} others
       button.is-unstyled.is-link-inherit(type='button')
         | {{notFirstWho.length}}
         i18n others

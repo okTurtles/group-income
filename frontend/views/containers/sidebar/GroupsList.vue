@@ -2,7 +2,7 @@
 div(v-if='groupsByName.length')
   menu-parent(@select='handleMenuSelect')
     menu-trigger.c-trigger(:class="`has-text-${isDarkTheme ? 'white' : 'dark'}`")
-      // TODO: Once the groupPicture is implemented :src="groupPicture" :alt="group.groupName"
+      // TODO: Once the groupPicture is implemented :src='groupPicture' :alt='group.groupName'
       avatar.c-avatar(src='/assets/images/default-avatar.png' alt='')
       | {{this.currentGroupState &amp;&amp; this.currentGroupState.groupName}}
       i.icon-angle-down
@@ -40,8 +40,8 @@ div(v-if='groupsByName.length')
 
 <script>
 import { mapGetters, mapState } from 'vuex'
-import { ListItem } from '@components/Lists/index.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuHeader, MenuItem } from '@components/Menu/index.js'
+import ListItem from '@components/ListItem.vue'
 import Avatar from '@components/Avatar.vue'
 
 export default {

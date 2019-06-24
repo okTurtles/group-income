@@ -18,19 +18,25 @@
   .c-voting-ctas
     .buttons
       template(v-if='!proposal.ownProposal')
-        button(:class="{\
-        'is-outlined': !hasVotedAgainst,\
-        'is-danger': !hasVotedFor\
-        }" @click='handleVoteAgainst')
-          | {{proposal.ctas.against}}
-        button(:class="{\
-        'is-outlined': !hasVotedFor,\
-        'is-success': !hasVotedAgainst\
-        }" @click='handleVoteFor')
-          | {{proposal.ctas.for}}
+        button(
+          :class="{\
+          'is-outlined': !hasVotedAgainst,\
+          'is-danger': !hasVotedFor\
+          }"
+          @click='handleVoteAgainst'
+        ) {{proposal.ctas.against}}
+
+        button(
+          @click='handleVoteFor'
+          :class="{\
+          'is-outlined': !hasVotedFor,\
+          'is-success': !hasVotedAgainst\
+          }"
+        ) {{proposal.ctas.for}}
+
       button-countdown(v-else-if='!isProposalClosed' :onstatechange='handleCloseProposalStateChange')
         | {{closeProposalBtnText}}
-    p.has-text-light.has-text-right(:class="{ 'c-feedback has-text-weight-bold': isProposalClosed }")
+    p.has-text-light(:class="{ 'c-feedback has-text-weight-bold': isProposalClosed }")
       | {{helperText}}
 
 </template>

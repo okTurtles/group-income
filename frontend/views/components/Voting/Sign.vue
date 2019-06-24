@@ -8,11 +8,15 @@
       :style='svgCircle.style'
       :class='svgCircle.class'
     )
-  p.c-voting-sign-value.title.is-size-4.has-text-centered(:class="{\
-  'c-is-mincome': isTypeMincome,\
-  'c-is-rule': isTypeRule\
-  }" v-if='isTypeRuleOrMincome')
-    | {{valuePerc}}
+
+  p.c-voting-sign-value.title.is-size-4.has-text-centered(
+    v-if='isTypeRuleOrMincome'
+    :class="{\
+    'c-is-mincome': isTypeMincome,\
+    'c-is-rule': isTypeRule\
+    }"
+  ) {{valuePerc}}
+
   avatar.c-voting-sign-avatar(
     :src='member.picture'
     :alt="`${member.name}'s avatar`"

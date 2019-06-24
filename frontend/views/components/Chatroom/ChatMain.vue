@@ -47,12 +47,12 @@
         ) New messages
 
         message-notification(
-          v-if="message.from === messageTypes.NOTIFICATION"
+          v-if='message.from === messageTypes.NOTIFICATION'
           :key='`notification-${index}`'
         ) {{message.text}}
 
         message-interactive(
-          v-else-if="message.from === messageTypes.INTERACTIVE"
+          v-else-if='message.from === messageTypes.INTERACTIVE'
           :key='`interactive-${index}`'
           :text='message.text'
         )
@@ -258,7 +258,7 @@ export default {
 
 .c-header-private,
 .c-header-avatar {
-  @include phablet {
+  @include tablet {
     display: none;
   }
 }
@@ -296,7 +296,7 @@ export default {
   }
 }
 
-@include phablet {
+@include tablet {
   .c-header {
     padding: $spacer;
   }

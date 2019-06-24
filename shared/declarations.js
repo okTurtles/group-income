@@ -106,6 +106,7 @@ declare module 'rollup' { declare module.exports: any }
 // .vue and .ejs files
 declare module '../backend/index.js' { declare module.exports: any }
 declare module '@components/i18n.vue' { declare module.exports: Object }
+declare module '@components/ListItem.vue' { declare module.exports: Object }
 declare module '@components/MembersCircle.vue' { declare module.exports: Object }
 declare module '../frontend/controller/backend.js' { declare module.exports: Function }
 declare module '../frontend/controller/namespace.js' { declare module.exports: any }
@@ -172,8 +173,6 @@ declare module './GroupRules.vue' { declare module.exports: Object }
 declare module './GroupSummary.vue' { declare module.exports: Object }
 declare module './interface.js' { declare module.exports: any }
 declare module './lazyLoadedView.js' { declare module.exports: any }
-declare module './List.vue' { declare module.exports: Object }
-declare module './ListItem.vue' { declare module.exports: Object }
 declare module './Masker.vue' { declare module.exports: Object }
 declare module './MaskToModal.vue' { declare module.exports: Object }
 declare module './MenuContent.vue' { declare module.exports: Object }

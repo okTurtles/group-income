@@ -3,9 +3,9 @@
   template(slot='actions')
     // TODO design search results on mobile - MVP be same as desktop
     //
-      <button class="button is-icon is-hidden-tablet">
-      <i class="icon-search"></i>
-      </button>
+      button.button.is-icon
+        i.icon-search
+
     menu-parent
       menu-trigger.is-icon
         i.icon-ellipsis-v

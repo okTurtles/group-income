@@ -1,4 +1,4 @@
-.l-no-navigation{
+.l-no-navigation {
   display: flex;
   justify-content: center;
   height: 100%;
@@ -24,7 +24,7 @@
   width: $leftSideWidth;
   height: 100vh;
 
-  @include mobile {
+  @include phone {
     position: absolute;
     z-index: $zindex-sidebar;
     transform: translateX(-100%);

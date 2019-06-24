@@ -15,7 +15,7 @@ modal-template(
 
       .radio-wrapper
         input.radio(
-          name="v-model"
+          name='v-model'
           type='radio'
           v-model='form.option'
           @change='resetFormVerify'
@@ -24,7 +24,7 @@ modal-template(
 
       .radio-wrapper
         input.radio(
-          name="v-model"
+          name='v-model'
           type='radio'
           v-model='form.option'
           @change='resetFormVerify'
@@ -70,7 +70,7 @@ modal-template(
         )
         label USD
 
-      p.error(v-if="v.form.pledge.$error") {{ this.infoRequired }}
+      p.error(v-if='v.form.pledge.$error') {{ this.infoRequired }}
 
       p.help(v-else)
         | Define up to how much you pledge to contribute to the group each month.

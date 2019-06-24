@@ -171,7 +171,7 @@
 //     min-height: auto;
 //   }
 
-//   @include phablet {
+//   @include tablet {
 //     display: flex;
 //     flex-direction: row;
 //     align-items: stretch;

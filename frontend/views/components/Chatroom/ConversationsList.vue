@@ -22,7 +22,7 @@
 </template>
 
 <script>
-import { ListItem } from '@components/Lists/index.js'
+import ListItem from '@components/ListItem.vue'
 import Avatar from '@components/Avatar.vue'
 
 export default {

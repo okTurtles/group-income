@@ -35,7 +35,7 @@ body {
   letter-spacing: 0.1px;
   color: $text-strong;
 
-  @include mobile {
+  @include phone {
     // slightly increase default font-size only on mobile devices for A11Y purpose
     font-size: 0.9375rem; // 15px
   }

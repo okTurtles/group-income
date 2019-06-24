@@ -1,8 +1,8 @@
 <template lang='pug'>
 AppSlider(
-  :value="fontSize"
-  :data="fontData"
-  :range="fontRange"
+  :value='fontSize'
+  :data='fontData'
+  :range='fontRange'
   @input='setFontSize($event)'
   ref='slider'
 )

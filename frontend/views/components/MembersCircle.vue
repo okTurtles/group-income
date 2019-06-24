@@ -15,7 +15,7 @@
       )
         img.c-list-item-img(
           :src='member.attributes.picture'
-          :alt="`${member.attributes.name}'s avatar`"
+          :alt='`${member.attributes.name}\'s avatar`'
         )
 
     li.c-list-item(v-if='members.length > maxMembers')
@@ -28,7 +28,7 @@
           i.icon-plus.is-size-4
 
   .c-member.has-text-centered(v-if='memberActive')
-    strong.is-size-5.has-text-font-weight-bold(v-if='memberActive.attributes')
+    strong(v-if='memberActive.attributes')
       | {{memberActive.attributes.name}}
     p.c-memberInfo-desc(v-if='memberActive.attributes')
       | Member since {2018}
