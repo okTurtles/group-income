@@ -35,7 +35,6 @@ declare var document: any
 declare module 'bcrypt' { declare module.exports: any }
 declare module 'bluebird' { declare module.exports: any }
 declare module 'boom' { declare module.exports: any }
-declare module 'bulma' { declare module.exports: any }
 declare module 'ejs' { declare module.exports: any }
 declare module 'font-awesome' { declare module.exports: any }
 declare module 'form-data' { declare module.exports: any }

@@ -347,7 +347,6 @@ function tupleOf_ (...typeFuncs) {
 // const tupleOf: TupleT = tupleOf_
 export const tupleOf = tupleOf_
 
-type V<T> = TypeValidator<T>
 type UnionT =
     (<A>(V<A>) => TypeValidator<A>)
   & (<A, B>(V<A>, V<B>) => TypeValidator<A | B>)

@@ -837,12 +837,12 @@ table {
   display: flex;
   flex-direction: column;
 
-  /deep/ .active {
+  ::v-deep .active {
     color: $border;
     text-decoration: line-through;
   }
 
-  /deep/ .last {
+  ::v-deep .last {
     text-decoration: underline;
     color: $primary;
   }

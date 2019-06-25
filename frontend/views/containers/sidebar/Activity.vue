@@ -61,7 +61,7 @@ export default {
 }
 
 // https://vue-loader.vuejs.org/guide/scoped-css.html#deep-selectors
-/deep/ {
+::v-deep {
   .icon-bell {
     font-size: 0.7rem;
     transform-origin: center 2px;

@@ -89,13 +89,13 @@ export default {
     margin-top: $spacer;
   }
 
-  /deep/ .c-item-link {
+  ::v-deep .c-item-link {
     padding: 1.25rem 0.5rem;
     margin: 0.25rem -0.5rem;
     border-radius: $radius;
   }
 
-  /deep/ .c-avatar {
+  ::v-deep .c-avatar {
     margin-right: 0.5rem;
   }
 }

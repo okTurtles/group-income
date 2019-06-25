@@ -61,11 +61,11 @@ export default {
     transition: max-height cubic-bezier(0.25, 0.46, 0.45, 0.94) 1s 100ms, opacity cubic-bezier(0.25, 0.46, 0.45, 0.94) 300ms 100ms;
   }
 
-  /deep/ .c-item {
+  ::v-deep .c-item {
     padding: 0;
   }
 
-  /deep/ .c-item-link {
+  ::v-deep .c-item-link {
     width: 100%;
 
     i {
