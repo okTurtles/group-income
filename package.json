@@ -75,7 +75,8 @@
       "at-rule-empty-line-before": null,
       "font-family-no-missing-generic-family-keyword": null,
       "string-quotes": "double",
-      "selector-pseudo-element-no-unknown": null
+      "selector-pseudo-element-no-unknown": null,
+      "no-descending-specificity": null
     }
   },
   "repository": {
