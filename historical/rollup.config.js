@@ -48,6 +48,10 @@ export default {
     //   options: {
     //     sourceMap: development,
     //     outputStyle: development ? 'nested' : 'compressed'
+    //     includePaths: [	
+    //       './node_modules/bulma',	
+    //       './node_modules/@fortawesome/fontawesome-free/scss'	
+    //     ]
     //   }
     // }),
     resolve({
