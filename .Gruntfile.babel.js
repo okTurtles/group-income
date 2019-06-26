@@ -123,7 +123,7 @@ module.exports = (grunt) => {
       // https://github.com/standard/standard/issues/750#issuecomment-379294276
       eslint: 'node ./node_modules/eslint/bin/eslint.js "**/*.{js,vue}"',
       eslintgrunt: "./node_modules/.bin/eslint --ignore-pattern '!.*.js' .Gruntfile.babel.js Gruntfile.js",
-      stylelint: 'node ./node_modules/stylelint/bin/stylelint.js "frontend/style/**/*.{css,scss,vue}"',
+      stylelint: 'node ./node_modules/stylelint/bin/stylelint.js "frontend/assets/style/**/*.{css,scss,vue}"',
       flow: './node_modules/.bin/flow'
     },
 

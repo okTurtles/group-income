@@ -1,5 +1,5 @@
 $white-ter:    #f4f4f4;
-$white:        #ffffff; // hsl(0, 0%, 100%)
+$white:        #fff; // hsl(0, 0%, 100%)
 
 // General colors
 $background: $white;
@@ -32,7 +32,7 @@ $link: $primary-text;
 $link-hover: $text-strong;
 $light: $white-ter;
 
-$colors: 'primary', 'primary-light', 'primary-bg-s', 'primary-bg-a', 'secondary', 'tertiary', 'success', 'warning', 'danger';
+$colors: "primary", "primary-light", "primary-bg-s", "primary-bg-a", "secondary", "tertiary", "success", "warning", "danger";
 
 @each $name in $colors {
   .has-text-#{$name} {
@@ -48,4 +48,3 @@ $colors: 'primary', 'primary-light', 'primary-bg-s', 'primary-bg-a', 'secondary'
 .has-text-light {
   color: $text-light;
 }
-

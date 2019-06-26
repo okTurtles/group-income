@@ -73,7 +73,7 @@ export default {
   padding-top: 1.5rem;
   position: relative;
 
-  &:before {
+  &::before {
     content: '';
     position: absolute;
     top: 0;

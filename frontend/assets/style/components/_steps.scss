@@ -1,4 +1,4 @@
-// Todo move into it's own component when once created
+// Todo move into it"s own component when once created
 .steps {
   display: flex;
   text-align: center;
@@ -11,7 +11,7 @@
 
   &::after,
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     z-index: -3;
     height: 2px;
@@ -41,7 +41,7 @@
     transition: background-color 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
 
     &::before {
-      content: '';
+      content: "";
       border-radius: 50%;
       background-color: #fff;
       position: absolute;
@@ -56,19 +56,19 @@
     }
 
     &::after {
-      content: '';
+      content: "";
       position: absolute;
       z-index: -2;
       left: 0;
       top: 50%;
-      width: 0vw;
+      width: 0;
       height: 2px;
       margin-top: -1px;
       background-color: $border;
       transition: width 1s;
     }
   }
-  
+
   .step:not(.next):hover,
   .active {
     background-color: $primary;
@@ -76,7 +76,7 @@
     &::before {
       transform: scale(1.2);
     }
-    
+
     &::after {
       width: 100vw;
     }
@@ -93,7 +93,7 @@
       background-color: transparent;
     }
   }
-  
+
   .next {
     background-color: $border;
     cursor: not-allowed;
@@ -101,7 +101,7 @@
   }
 }
 
-.steps-title{
+.steps-title {
   margin-top: 1rem;
   margin-bottom: 40px;
 }

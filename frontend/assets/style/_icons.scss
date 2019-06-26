@@ -35,38 +35,40 @@ $icons: (
 );
 
 @font-face {
-  font-family: 'Font Awesome 5 Free';
+  font-family: "Font Awesome 5 Free";
   font-style: normal;
   font-weight: 900;
-  src: url('../fonts/Icons/fa-solid-900.eot');
-  src: url('../fonts/Icons/fa-solid-900.eot?#iefix') format('embedded-opentype'),
-  url('../fonts/Icons/fa-solid-900.woff2') format('woff2'),
-  url('../fonts/Icons/fa-solid-900.woff') format('woff'),
-  url('../fonts/Icons/fa-solid-900.ttf') format('truetype'),
-  url('../fonts/Icons/fa-solid-900.svg#fontawesome') format('svg');
+  src: url("../fonts/Icons/fa-solid-900.eot");
+  src:
+    url("../fonts/Icons/fa-solid-900.eot?#iefix") format("embedded-opentype"),
+    url("../fonts/Icons/fa-solid-900.woff2") format("woff2"),
+    url("../fonts/Icons/fa-solid-900.woff") format("woff"),
+    url("../fonts/Icons/fa-solid-900.ttf") format("truetype"),
+    url("../fonts/Icons/fa-solid-900.svg#fontawesome") format("svg");
 }
 
 @font-face {
-  font-family: 'Font Awesome 5 Free';
+  font-family: "Font Awesome 5 Free";
   font-style: normal;
   font-weight: 400;
-  src: url('../fonts/Icons/fa-regular-400.eot');
-  src: url('../fonts/Icons/fa-regular-400.eot?#iefix') format('embedded-opentype'),
-  url('../fonts/Icons/fa-regular-400.woff2') format('woff2'),
-  url('../fonts/Icons/fa-regular-400.woff') format('woff'),
-  url('../fonts/Icons/fa-regular-400.ttf') format('truetype'),
-  url('../fonts/Icons/fa-regular-400.svg#fontawesome') format('svg');
+  src: url("../fonts/Icons/fa-regular-400.eot");
+  src:
+    url("../fonts/Icons/fa-regular-400.eot?#iefix") format("embedded-opentype"),
+    url("../fonts/Icons/fa-regular-400.woff2") format("woff2"),
+    url("../fonts/Icons/fa-regular-400.woff") format("woff"),
+    url("../fonts/Icons/fa-regular-400.ttf") format("truetype"),
+    url("../fonts/Icons/fa-regular-400.svg#fontawesome") format("svg");
 }
 
-[class^='icon-'] {
+[class^="icon-"] {
   display: inline-block;
   font-style: normal;
   font-variant: normal;
-  
+
   &::before {
     text-rendering: auto;
     line-height: 1;
-    font-family: 'Font Awesome 5 Free';
+    font-family: "Font Awesome 5 Free";
     font-weight: 900;
     -moz-osx-font-smoothing: grayscale;
     -webkit-font-smoothing: antialiased;
@@ -74,7 +76,7 @@ $icons: (
 }
 
 @each $name, $icon in $icons {
-  .icon-#{$name}:before {
+  .icon-#{$name}::before {
     content: $icon;
   }
 }

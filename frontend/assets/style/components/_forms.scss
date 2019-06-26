@@ -5,7 +5,7 @@ form {
 }
 
 @mixin placeholder {
-  $placeholders: ':-moz' ':-webkit-input' '-moz' '-ms-input';
+  $placeholders: ":-moz" ":-webkit-input" "-moz" "-ms-input";
   @each $placeholder in $placeholders {
     &:#{$placeholder}-placeholder {
       @content;
@@ -18,6 +18,13 @@ form {
   width: 100%;
   margin-bottom: 38px; // TODO: Is this used?
   margin-bottom: 1rem;
+}
+
+textarea,
+.textarea {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  height: auto;
 }
 
 textarea,
@@ -62,7 +69,7 @@ select,
 .select-wrapper {
   .select,
   select {
-    -webkit-appearance: none; 
+    -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
     background-color: transparent;
@@ -72,9 +79,9 @@ select,
     border: 0;
   }
 
-  &:before,
-  &:after {
-    content: '';
+  &::before,
+  &::after {
+    content: "";
     background-color: $primary;
     width: 9px;
     height: 2px;
@@ -86,7 +93,7 @@ select,
     transform: rotate(45deg);
   }
 
-  &:after {
+  &::after {
     transform: rotate(-45deg);
     right: 13px;
   }
@@ -104,28 +111,6 @@ select,
   border: 1px solid $border;
   border-radius: $radius;
 
-  select,
-  .input {
-    border: 0;
-
-    &:focus {
-      outline: 1px solid $primary;
-      outline-offset: 0px;
-      border-color: transparent;      
-
-      + label{
-        background-color: $primary;
-        color: #fff;
-        line-height: $inputHeight;
-        outline: 1px solid var(--primary);
-      }
-    }
-  }
-
-  button {
-    border-radius: 0 $radius $radius 0;
-  }
-
   .input {
     border-radius: $radius 0 0 $radius;
     border-right: 1px solid $border;
@@ -140,6 +125,28 @@ select,
     font-weight: normal;
     font-size: 1rem;
     align-self: center;
+  }
+
+  select,
+  .input {
+    border: 0;
+
+    &:focus {
+      outline: 1px solid $primary;
+      outline-offset: 0;
+      border-color: transparent;
+
+      + label {
+        background-color: $primary;
+        color: #fff;
+        line-height: $inputHeight;
+        outline: 1px solid var(--primary);
+      }
+    }
+  }
+
+  button {
+    border-radius: 0 $radius $radius 0;
   }
 
   .is-icon {
@@ -163,13 +170,6 @@ select,
   }
 }
 
-textarea,
-.textarea {
-  padding-top: 10px;
-  padding-bottom: 10px;
-  height: auto;
-}
-
 .error {
   color: $danger;
 }
@@ -178,9 +178,9 @@ p.error {
   margin-top: 0.5rem;
   margin-bottom: 0;
 
-  &:before {
+  &::before {
     content: "\f057";
-    font-family: 'Font Awesome 5 Free';
+    font-family: "Font Awesome 5 Free";
     font-weight: 900;
     margin-right: 0.25rem;
   }
@@ -191,6 +191,7 @@ p.error {
   margin-right: $spacer-md;
   position: relative;
   display: inline-block;
+
   .radio {
     cursor: pointer;
     outline: none;
@@ -206,7 +207,7 @@ p.error {
     cursor: pointer;
 
     &::before {
-      content: '';
+      content: "";
       width: 14px;
       height: 14px;
       margin-right: $spacer-sm;
@@ -217,7 +218,7 @@ p.error {
     }
 
     &::after {
-      content: '';
+      content: "";
       width: 7px;
       height: 7px;
       background-color: $primary;

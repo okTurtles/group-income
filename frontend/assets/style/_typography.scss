@@ -54,6 +54,7 @@ $lineHeight: 2.5, 1.875, 1.4375, 1.125, 1.9375;
 
 @each $size in $sizes {
   $i: index($sizes, $size);
+
   h#{$i},
   .is-#{$i} {
     font-size: $size;

@@ -55,10 +55,8 @@
 }
 
 @mixin desktop-only {
-  @if $widescreen-enabled {
-    @media screen and (min-width: $desktop) and (max-width: $widescreen - 1px) {
-      @content;
-    }
+  @media screen and (min-width: $desktop) and (max-width: $widescreen - 1px) {
+    @content;
   }
 }
 

@@ -8,7 +8,6 @@ button,
   @extend %unselectable;
   height: auto; // Usability purposes
   min-height: 2.5rem; // A11Y purposes
-  font-weight: 600; // A11Y purposes
   white-space: nowrap;
   color: #fff;
   padding-left: 1.5rem;
@@ -18,7 +17,7 @@ button,
   border-width: 1px;
   background-color: $primary;
   transition: filter 100ms ease-out;
-  font-weight: 600;
+  font-weight: 600; // A11Y purposes
   font-size: 1rem;
   outline: none;
 
@@ -35,6 +34,27 @@ button,
     background-color: $danger;
   }
 
+  [class^="icon-"] + span {
+    margin-left: 1rem;
+  }
+
+  span + [class^="icon-"] {
+    margin-left: 6px;
+  }
+
+  &.is-small {
+    min-height: 1.6875rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    padding-bottom: 0;
+    font-size: 12px;
+    line-height: 12px;
+
+    [class^="icon-"] {
+      margin-right: $spacer-sm;
+    }
+  }
+
   &.is-icon {
     background-color: transparent;
     padding: 0;
@@ -46,7 +66,7 @@ button,
     align-items: center;
     color: $text-light;
 
-    [class^='icon-']:last-child {
+    [class^="icon-"]:last-child {
       margin-left: 0;
     }
 
@@ -64,7 +84,7 @@ button,
       border-color: $success;
       color: $success;
     }
-  
+
     &.error {
       border-color: $danger;
       color: $danger;
@@ -74,31 +94,10 @@ button,
   &[disabled] {
     background-color: $border;
     color: $text-light;
-    opacity: .5;
+    opacity: 0.5;
 
     &:hover {
       filter: none;
-    }
-  }
-
-  [class^='icon-'] + span{
-    margin-left: 1rem;
-  }
-
-  span + [class^='icon-'] {
-    margin-left: 6px;
-  }
-
-  &.is-small {
-    min-height: 1.6875rem;
-    padding-left: 1rem;
-    padding-right: 1rem;
-    padding-bottom: 0;
-    font-size: 12px;
-    line-height: 12px;
-
-    [class^='icon-'] {
-      margin-right: $spacer-sm;
     }
   }
 }
@@ -107,7 +106,7 @@ button,
   padding-top: 1.5rem;
   display: flex;
   justify-content: space-between;
-  
+
   &.is-centered {
     justify-content: center;
   }
@@ -116,7 +115,8 @@ button,
 button.link {
   @extend %reset-button;
   color: $link;
-  &:after {
+
+  &::after {
     width: 100%;
   }
 }

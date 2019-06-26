@@ -43,7 +43,7 @@ export default {
   object-fit: cover;
   width: 2rem;
 
-  &:after {
+  &::after {
     content: "";
     display: block;
     padding-bottom: 100%;
