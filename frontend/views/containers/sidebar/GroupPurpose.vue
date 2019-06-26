@@ -7,7 +7,7 @@
   p(data-test='sharedValues')
     | {{ currentGroupState.sharedValues }}
 
-  button.link(@click'updateSharedValues')
+  button.link(@click='updateSharedValues')
     i18n Edit
 
 </template>
