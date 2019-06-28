@@ -1,8 +1,9 @@
-<template>
-  <ul class="is-flex is-multiline">
-    <slot></slot>
-  </ul>
+<template lang="pug">
+  ul.is-flex.is-multiline
+    slot
+
 </template>
+
 <script>
 export default {
   name: 'GraphLegendGroup'

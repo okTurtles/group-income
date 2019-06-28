@@ -1,0 +1,53 @@
+.is-link-inherit {
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+
+  &:hover,
+  &:focus {
+    color: $link;
+  }
+}
+
+.is-unstyled {
+  background: none;
+  border: none;
+  font-size: inherit;
+  color: inherit;
+  text-align: inherit;
+  padding: 0;
+
+  &:focus,
+  &:hover {
+    outline: none;
+    border: none;
+    color: inherit;
+  }
+}
+
+// Screen reader only
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+// Global Classes for SVG fills
+$fills: (
+  primary: $primary,
+  primary-light: $primary-light,
+  secondary: $secondary,
+  tertiary: $tertiary,
+  light: $light
+);
+
+@each $class, $color in $fills {
+  .gi-has-fill-#{$class} {
+    fill: $color;
+  }
+}

@@ -1,0 +1,50 @@
+$white-ter:    #f4f4f4;
+$white:        #fff; // hsl(0, 0%, 100%)
+
+// General colors
+$background: $white;
+$hr-background-color: $background;
+$body-background-color: #fff;
+$border:       #dbdbdb; // hsl(0, 0%, 86%)
+
+// Text colors
+$text-light:   #7a7a7a; // hsl(0, 0%, 48%)
+$text:         #636363; // hsl(0, 0%, 39%)
+$text-strong:  #363636; // hsl(0, 0%, 21%)
+
+$primary: var(--primary);
+$primarySaturated: var(--primarySaturated);
+$primary-light: var(--primary-light); // used on backgrounds
+$primary-text: var(--primary-text); // $primary is too light for texts - A11Y purposes
+
+// both colors are indentical on white bg: one is solid and another is transparent
+$primary-bg-s: var(--primary-bg-s);
+$primary-bg-a: var(--primary-bg-a);
+
+$secondary: var(--secondary);
+$tertiary: var(--tertiary);
+
+$success: $secondary;
+$warning: $tertiary;
+$danger: var(--danger);
+$info: $primary-text;
+$link: $primary-text;
+$link-hover: $text-strong;
+$light: $white-ter;
+
+$colors: "primary", "primary-light", "primary-bg-s", "primary-bg-a", "secondary", "tertiary", "success", "warning", "danger";
+
+@each $name in $colors {
+  .has-text-#{$name} {
+    color: var(--#{$name});
+  }
+
+  .has-background-#{$name} {
+    background-color: var(--#{$name});
+  }
+}
+
+.help,
+.has-text-light {
+  color: $text-light;
+}

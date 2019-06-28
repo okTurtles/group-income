@@ -1,9 +1,13 @@
-<template>
-    <avatar :src="pictureURL" :alt="username" size="xl"></avatar>
+<template lang="pug">
+  avatar(
+    :src='pictureURL'
+    :alt='username'
+  )
 </template>
+
 <script>
-import sbp from '../../../shared/sbp.js'
-import Avatar from '../components/Avatar.vue'
+import sbp from '~/shared/sbp.js'
+import Avatar from '@components/Avatar.vue'
 
 export default {
   name: 'UserImage',

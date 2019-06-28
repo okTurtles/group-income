@@ -133,10 +133,8 @@ module.exports = (grunt) => {
           commonjs({
             // include: 'node_modules/**'
             namedExports: {
-              'node_modules/vuelidate/lib/validators/index.js': [ 'required', 'between', 'email', 'minLength', 'requiredIf' ],
-              'node_modules/vue-circle-slider/dist/vue-circle-slider.common.js': [ 'CircleSlider' ]
+              'node_modules/vuelidate/lib/validators/index.js': [ 'required', 'between', 'email', 'minLength', 'requiredIf' ]
             }
-            // ignore: ['vue-circle-slider']
           }),
           babel({
             runtimeHelpers: true,
@@ -171,12 +169,6 @@ module.exports = (grunt) => {
         cwd: 'frontend/simple/assets',
         src: ['**/*', '!sass/**'],
         dest: 'dist/simple/assets',
-        expand: true
-      },
-      fontawesome: {
-        cwd: 'node_modules/@fortawesome/fontawesome-free/webfonts/',
-        src: ['fa-solid*'],
-        dest: 'dist/simple/assets/fonts',
         expand: true
       }
     },
@@ -348,10 +340,8 @@ module.exports = (grunt) => {
         commonjs({
           // include: 'node_modules/**'
           namedExports: {
-            'node_modules/vuelidate/lib/validators/index.js': [ 'required', 'between', 'email', 'minLength', 'requiredIf' ],
-            'node_modules/vue-circle-slider/dist/vue-circle-slider.common.js': [ 'CircleSlider' ]
+            'node_modules/vuelidate/lib/validators/index.js': [ 'required', 'between', 'email', 'minLength', 'requiredIf' ]
           }
-          // ignore: ['vue-circle-slider']
         }),
         babel({
           runtimeHelpers: true,
@@ -438,7 +428,6 @@ module.exports = (grunt) => {
             namedExports: {
               'node_modules/vuelidate/lib/validators/index.js': [ 'required', 'between', 'email', 'minLength', 'requiredIf' ]
             }
-            // ignore: ['vue-circle-slider']
           }),
           babel({
             runtimeHelpers: true,
@@ -474,11 +463,7 @@ function sassCfg () {
     // https://github.com/vuejs/vueify/issues/34#issuecomment-161722961
     // indentedSyntax: true,
     // sourceMapRoot: '/',
-    outputStyle: development ? 'nested' : 'compressed',
-    includePaths: [
-      './node_modules/bulma',
-      './node_modules/@fortawesome/fontawesome-free/scss'
-    ]
+    outputStyle: development ? 'nested' : 'compressed'
   }
 }
 

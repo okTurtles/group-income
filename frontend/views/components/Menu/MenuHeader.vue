@@ -1,17 +1,20 @@
-<template>
-  <div class="c-header has-text-info has-text-weight-bold is-size-7 is-uppercase">
-      <slot></slot>
-  </div>
+<template lang="pug">
+.c-header
+  slot
 </template>
-<style lang="scss" scoped>
-@import "../../../assets/sass/theme/index";
 
-.c-header {
-  padding: $gi-spacer $gi-spacer 0;
-}
-</style>
 <script>
 export default {
   name: 'MenuHeader'
 }
 </script>
+
+<style lang="scss" scoped>
+@import "../../../assets/style/_variables.scss";
+
+.c-header {
+  padding: $spacer-sm $spacer $spacer-sm $spacer;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+</style>

@@ -1,42 +1,16 @@
-<template>
-  <div v-if="showFallback" class="c-avatar" :class="{ [size]: size, hasMargin }" v-on="$listeners"
-    :style="{ backgroundColor: fallbackBg }"
-  />
-  <img v-else :src="src" :alt="alt" class="c-avatar" :class="{ [size]: size, hasMargin }"
-    @error="handleFallback"
-    v-on="$listeners"
-  />
+<template lang="pug">
+  .c-avatar(
+    v-if='showFallback'
+    v-on='$listeners'
+  )
+  img.c-avatar(
+    v-else
+    :src='src'
+    :alt='alt'
+    v-on='$listeners'
+  )
 </template>
-<style lang="scss" scoped>
-@import "../../assets/sass/theme/index";
 
-@mixin size($value) {
-  width: $value;
-  max-width: $value;
-  height: $value;
-  max-height: $value;
-  background-color: $body-background-color;
-}
-
-.c-avatar {
-  border-radius: 50%;
-  width: 100%;
-
-  &.hasMargin {
-    margin-right: $gi-spacer-sm;
-  }
-
-  &.xs { @include size($gi-spacer); }
-
-  &.sm { @include size($gi-spacer*1.5); }
-
-  &.md { @include size($gi-spacer*2); }
-
-  &.lg { @include size($gi-spacer*3); }
-
-  &.xl { @include size($gi-spacer*4); }
-}
-</style>
 <script>
 export default {
   name: 'Avatar',
@@ -45,14 +19,7 @@ export default {
     alt: {
       type: String,
       default: ''
-    },
-    size: {
-      type: String,
-      default: ''
-    },
-    fallbackBg: String,
-    /** When true a right margin is added - useful when there's text on the side */
-    hasMargin: Boolean
+    }
   },
   data () {
     return {
@@ -66,3 +33,20 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+@import "../../assets/style/_variables.scss";
+
+.c-avatar {
+  border-radius: 50%;
+  background-color: $border;
+  object-fit: cover;
+  width: 2rem;
+
+  &::after {
+    content: "";
+    display: block;
+    padding-bottom: 100%;
+  }
+}
+</style>

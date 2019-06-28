@@ -1,37 +1,58 @@
-<template>
-    <menu-parent class="level-right">
-      <menu-trigger class="is-icon" :class="{ 'has-text-white': isDarkTheme }">
-        <i class="fa-bell" :class="activityCount ? 'far' : 'fas'"></i>
-        <span class="c-badge" v-if="activityCount" data-test="alertNotification">{{ activityCount }}</span>
-      </menu-trigger>
+<template lang="pug">
+menu-parent
+  menu-trigger.is-icon(:class="{ 'has-text-white': isDarkTheme }")
+    i.icon-bell(:class="activityCount ? '' : 'active'")
+    span.c-badge(v-if='activityCount' data-test='alertNotification') {{ activityCount }}
 
-      <menu-content class="c-content">
-        <menu-header>
-          <i18n>Notifications</i18n>
-        </menu-header>
-        <list hasMargin>
-          <menu-item tag="router-link" itemId="hash-3" to="/somewhere-new">
-            New member proposal at Dreamers
-          </menu-item>
-          <menu-item tag="router-link" itemId="hash-3" to="/somewhere-new" hasDivider>
-            TODO Design here
-          </menu-item>
-        </list>
-        <div class="has-text-centered c-seeall">
-          <router-link to="#activity">See All</router-link>
-        </div>
-      </menu-content>
-    </menu-parent>
+  menu-content.c-content
+    menu-header
+      i18n Notifications
+
+    ul
+      menu-item(tag='router-link' itemid='hash-3' to='/somewhere-new')
+        | New member proposal at Dreamers
+
+      menu-item(tag='router-link' itemid='hash-3' to='/somewhere-new' hasdivider='')
+        | TODO Design here
+
+    .c-seeall
+      router-link(to='#activity') See All
 </template>
+
+<script>
+import { mapGetters } from 'vuex'
+import { MenuParent, MenuTrigger, MenuContent, MenuHeader, MenuItem } from '@components/Menu/index.js'
+
+export default {
+  name: 'Activity',
+  props: {
+    activityCount: Number
+  },
+  computed: {
+    ...mapGetters([
+      'isDarkTheme'
+    ])
+  },
+  components: {
+    MenuParent,
+    MenuTrigger,
+    MenuContent,
+    MenuHeader,
+    MenuItem
+  }
+}
+</script>
+
 <style lang="scss" scoped>
-@import "../../../assets/sass/theme/index";
+@import "../../../assets/style/_variables.scss";
 
 .c-badge {
   position: absolute;
-  top: 0;
-  right: 0;
-  width: $gi-spacer;
-  height: $gi-spacer;
+  top: -1px;
+  right: -1px;
+  line-height: 1rem;
+  width: $spacer;
+  height: $spacer;
   color: $body-background-color;
   background-color: $danger;
   border-radius: 50%;
@@ -41,13 +62,16 @@
 
 // https://vue-loader.vuejs.org/guide/scoped-css.html#deep-selectors
 ::v-deep {
-  .fa-bell {
+  .icon-bell {
     font-size: 0.7rem;
     transform-origin: center 2px;
+    &.active {
+      font-weight: 900;
+    }
   }
 
-  .button:hover {
-    .fa-bell {
+  button:hover {
+    .icon-bell {
       font-size: 0.7rem;
       animation: bell 750ms forwards;
     }
@@ -64,35 +88,11 @@
 
 .c-content {
   left: 2rem;
-  width: 15rem;
+  width: 16rem;
 }
 
 .c-seeall {
-  margin-bottom: $gi-spacer-sm;
+  padding: $spacer-sm;
+  text-align: center;
 }
 </style>
-<script>
-import { mapGetters } from 'vuex'
-import { List } from '../../components/Lists/index.js'
-import { MenuParent, MenuTrigger, MenuContent, MenuHeader, MenuItem } from '../../components/Menu/index.js'
-
-export default {
-  name: 'Activity',
-  props: {
-    activityCount: Number
-  },
-  computed: {
-    ...mapGetters([
-      'isDarkTheme'
-    ])
-  },
-  components: {
-    List,
-    MenuParent,
-    MenuTrigger,
-    MenuContent,
-    MenuHeader,
-    MenuItem
-  }
-}
-</script>

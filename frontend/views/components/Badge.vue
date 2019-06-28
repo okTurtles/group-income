@@ -1,8 +1,18 @@
-<template>
-  <span class="c-badge has-text-weight-normal" v-if="number">{{number}}</span>
+<template lang="pug">
+  span.c-badge(v-if='number') {{number}}
 </template>
+
+<script>
+export default {
+  name: 'Badge',
+  props: {
+    number: Number
+  }
+}
+</script>
+
 <style lang="scss" scoped>
-@import "../../assets/sass/theme/index";
+@import "../../assets/style/_variables.scss";
 
 .c-badge {
   display: inline-block;
@@ -13,11 +23,3 @@
   background-color: $danger;
 }
 </style>
-<script>
-export default {
-  name: 'Badge',
-  props: {
-    number: Number
-  }
-}
-</script>

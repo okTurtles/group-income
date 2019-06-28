@@ -1,120 +1,51 @@
-<template>
-  <div class="is-flex c-voting">
-    <div class="c-voting-body is-flex">
-      <sign
-        :type="type"
-        :value="proposal.value"
-        :member="proposal.member"
-      />
+<template lang="pug">
+.is-flex.c-voting
+  .c-voting-body.is-flex
+    sign(
+      :type='type'
+      :value='proposal.value'
+      :member='proposal.member'
+    )
+      // TODO: fix the i18n stuff here
+      .c-voting-info
+        h5.has-text-weight-bold.is-uppercase.c-voting-info-title {{proposal.title}}
+        p(v-html='proposal.text')
+        p.is-size-7.has-text-light(
+          v-if='proposal.textDetails'
+          v-html='proposal.textDetails'
+        )
 
-      <!-- TODO: fix the i18n stuff here -->
-      <div class="c-voting-info">
-        <h5 class="has-text-weight-bold is-uppercase c-voting-info-title">{{proposal.title}}</h5>
-        <p v-html="proposal.text"></p>
-        <p class="is-size-7 has-text-text-light" v-if="proposal.textDetails" v-html="proposal.textDetails"></p>
-      </div>
-    </div>
+  .c-voting-ctas
+    .buttons
+      template(v-if='!proposal.ownProposal')
+        button(
+          :class="{\
+          'is-outlined': !hasVotedAgainst,\
+          'is-danger': !hasVotedFor\
+          }"
+          @click='handleVoteAgainst'
+        ) {{proposal.ctas.against}}
 
-    <div class="c-voting-ctas">
-      <div class="buttons">
-        <template v-if="!proposal.ownProposal">
-          <button class="button"
-            :class="{
-              'is-outlined': !hasVotedAgainst,
-              'is-danger': !hasVotedFor
-            }"
-            @click="handleVoteAgainst"
-          >
-            {{proposal.ctas.against}}
-          </button>
+        button(
+          @click='handleVoteFor'
+          :class="{\
+          'is-outlined': !hasVotedFor,\
+          'is-success': !hasVotedAgainst\
+          }"
+        ) {{proposal.ctas.for}}
 
-          <button class="button"
-            :class="{
-              'is-outlined': !hasVotedFor,
-              'is-success': !hasVotedAgainst
-            }"
-            @click="handleVoteFor"
-          >
-            {{proposal.ctas.for}}
-          </button>
-        </template>
+      button-countdown(v-else-if='!isProposalClosed' :onstatechange='handleCloseProposalStateChange')
+        | {{closeProposalBtnText}}
+    p.has-text-light(:class="{ 'c-feedback has-text-weight-bold': isProposalClosed }")
+      | {{helperText}}
 
-        <button-countdown
-          v-else-if="!isProposalClosed"
-          :onStateChange="handleCloseProposalStateChange"
-        >
-          {{closeProposalBtnText}}
-        </button-countdown>
-      </div>
-
-      <p class="has-text-text-light has-text-right"
-        :class="{ 'c-feedback has-text-weight-bold': isProposalClosed }"
-      >
-        {{helperText}}
-      </p>
-    </div>
-  </div>
 </template>
-<style lang="scss" scoped>
-@import "../../../assets/sass/theme/index";
 
-%avatarSize {
-  width: 4.5rem;
-  height: 4.5rem;
-}
-
-.c-voting {
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  margin: $gi-spacer*3 0;
-
-  &:last-child {
-    margin-bottom: 0;
-  }
-
-  &-body {
-    margin-bottom: $gi-spacer;
-    flex-grow: 1;
-  }
-
-  &-info {
-    flex-grow: 1;
-    padding-left: $gi-spacer;
-
-    &-title {
-      margin-bottom: $gi-spacer-xs;
-      line-height: 1;
-    }
-  }
-
-  @include tablet {
-    flex-wrap: nowrap;
-    justify-content: space-between;
-
-    &-body {
-      margin-bottom: 0;
-    }
-
-    &-info {
-      padding: 0 $gi-spacer 0 $gi-spacer-lg;
-    }
-  }
-}
-
-.c-feedback {
-  margin-top: $gi-spacer;
-}
-
-.buttons {
-  flex-wrap: nowrap;
-  justify-content: flex-end;
-}
-</style>
 <script>
 import ButtonCountdown, { countdownStates } from '../ButtonCountdown/index.js'
 import Sign from './Sign.vue'
-import L from '../../utils/translations.js'
-import { votingType } from '../../utils/validators.js'
+import L from '@view-utils/translations.js'
+import { votingType } from '@view-utils/validators.js'
 
 export default {
   name: 'Voting',
@@ -225,3 +156,59 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+@import "../../../assets/style/_variables.scss";
+
+%avatarSize {
+  width: 4.5rem;
+  height: 4.5rem;
+}
+
+.c-voting {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin: $spacer*3 0;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &-body {
+    margin-bottom: $spacer;
+    flex-grow: 1;
+  }
+
+  &-info {
+    flex-grow: 1;
+    padding-left: $spacer;
+
+    &-title {
+      margin-bottom: $spacer-xs;
+      line-height: 1;
+    }
+  }
+
+  @include tablet {
+    flex-wrap: nowrap;
+    justify-content: space-between;
+
+    &-body {
+      margin-bottom: 0;
+    }
+
+    &-info {
+      padding: 0 $spacer 0 $spacer-lg;
+    }
+  }
+}
+
+.c-feedback {
+  margin-top: $spacer;
+}
+
+.buttons {
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+}
+</style>

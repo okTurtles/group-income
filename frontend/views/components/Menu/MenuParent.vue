@@ -1,13 +1,8 @@
-<template>
-  <div class="c-menu">
-    <slot></slot>
-  </div>
+<template lang="pug">
+  .c-menu
+    slot
 </template>
-<style lang="scss" scoped>
-.c-menu {
-  position: relative;
-}
-</style>
+
 <script>
 export default {
   name: 'MenuSelect',
@@ -42,3 +37,9 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+.c-menu {
+  position: relative;
+}
+</style>

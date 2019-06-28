@@ -1,17 +1,14 @@
-<template>
-  <div class="message" :class="'is-'+severity">
-    <div class="media">
-      <i class="fas" :class="getIcon"></i>
-    </div>
-    <div class="media-content">
-      <div class="message-header">
-        <slot name="header"></slot>
-      </div>
-      <div class="message-body">
-        <slot></slot>
-      </div>
-    </div>
-  </div>
+<template lang="pug">
+.message(:class="'is-'+severity")
+  .media
+    i(:class='getIcon')
+
+  .media-content
+    .message-header
+      slot(name='header')
+
+    .message-body
+      slot
 </template>
 
 <script>
@@ -28,11 +25,57 @@ export default {
   computed: {
     getIcon () {
       return {
-        warning: 'fa-exclamation-triangle',
-        danger: 'fa-times-circle',
-        info: 'fa-info-circle'
+        warning: 'icon-exclamation-triangle',
+        danger: 'icon-times-circle',
+        info: 'icon-info-circle'
       }[this.severity]
     }
   }
 }
 </script>
+
+<style lang="scss" scoped>
+@import "../../assets/style/_variables.scss";
+
+.message {
+  padding: $spacer-lg 1.5rem $spacer-lg $spacer-lg;
+  border-radius: $radius-large;
+  letter-spacing: 0.1px;
+  display: flex;
+  strong {
+    color: currentColor;
+  }
+  a:not(.button):not(.tag) {
+    color: currentColor;
+  }
+  i {
+    font-size: 1.389rem;
+    padding-right: $spacer-lg;
+  }
+  &.is-info {
+    background-color: #e0f4fc;
+    i {
+      color: $info;
+    }
+  }
+  &.is-danger {
+    background-color: #ffe2df;
+    i {
+      color: $danger;
+    }
+  }
+  &.is-warning {
+    background-color: #fef4e6;
+    i {
+      color: $warning;
+    }
+  }
+}
+
+.message-header {
+  color: $text-light;
+  display: flex;
+  padding-bottom: 0, 25rem;
+  position: relative;
+}
+</style>

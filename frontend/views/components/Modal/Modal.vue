@@ -5,7 +5,7 @@
 </template>
 <script>
 import sbp from '~/shared/sbp.js'
-import { OPEN_MODAL, LOAD_MODAL, UNLOAD_MODAL, CLOSE_MODAL } from '@utils/events.js'
+import { OPEN_MODAL, LOAD_MODAL, UNLOAD_MODAL, REPLACE_MODAL, CLOSE_MODAL } from '@utils/events.js'
 
 export default {
   name: 'Modal',
@@ -18,6 +18,7 @@ export default {
   created () {
     sbp('okTurtles.events/on', LOAD_MODAL, component => this.openModal(component))
     sbp('okTurtles.events/on', UNLOAD_MODAL, component => this.closeModal(component))
+    sbp('okTurtles.events/on', REPLACE_MODAL, component => this.replaceModal(component))
   },
   mounted () {
     const modal = this.$route.query.modal
@@ -26,6 +27,7 @@ export default {
   beforeDestroy () {
     sbp('okTurtles.events/off', LOAD_MODAL, this.openModal)
     sbp('okTurtles.events/off', UNLOAD_MODAL, this.closeModal)
+    sbp('okTurtles.events/off', REPLACE_MODAL, this.replaceModal)
   },
   watch: {
     '$route' (to, from) {
@@ -44,6 +46,12 @@ export default {
         sbp('okTurtles.events/emit', OPEN_MODAL)
       }
       this.$router.push({ query: { modal: this.content, subcontent: this.subcontent[this.subcontent.length - 1] } })
+    },
+    replaceModal (componentName) {
+      this.closeModal()
+      setTimeout(() => {
+        this.openModal(componentName)
+      }, 300)
     },
     closeModal () {
       let query = this.$route.query || {}

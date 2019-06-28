@@ -1,20 +1,33 @@
-<template>
-  <span class="c-progress">
-    <span class="c-primary" :style="{ width: primary }"></span>
-    <span class="c-secondary" :style="{ width: secondary }" v-if="secondary"></span>
-  </span>
+<template lang="pug">
+.c-progress
+  .c-primary(
+    :style='{ width: primary + "%" }'
+  )
+  .c-secondary(
+    v-if='secondary'
+    :style='{ width: secondary + "%" }'
+  )
 </template>
+
+<script>
+export default {
+  name: 'ProgressBar',
+  props: {
+    primary: Number,
+    secondary: Number
+  }
+}
+</script>
+
 <style lang="scss" scoped>
-@import "../../../assets/sass/theme/index";
+@import "../../../assets/style/_variables.scss";
 
 .c-progress {
-  position: absolute;
-  bottom: 0;
-  left: 0;
+  position: relative;
   width: 100%;
-  height: $gi-spacer-xs;
+  height: $spacer-xs;
   background-color: $primary-bg-a;
-  box-shadow: inset 0 0 1px $primary;
+  margin-top: 1rem;
 }
 
 .c-primary,
@@ -48,12 +61,3 @@
   }
 }
 </style>
-<script>
-export default {
-  name: 'ProgressBar',
-  props: {
-    primary: String,
-    secondary: String
-  }
-}
-</script>

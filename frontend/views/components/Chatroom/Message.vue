@@ -1,124 +1,17 @@
-<template>
-  <div class="c-message is-flex" :class="[variant, isSameSender && 'sameSender']">
-    <avatar :src="avatar"
-      hasMargin
-      size="sm"
-      class="c-avatar level-left"
-      :class="{ 'alignToText': !hasWhoInvisible }"
-      aria-hidden="true"
-    />
-    <div class="c-body">
-      <span class="has-text-text-light is-size-7 c-who" :class="{ 'gi-sr-only': hasWhoInvisible }">
-        {{who}}
-      </span>
-      <!-- TODO: #502 - Chat: Add support to markdown formatted text -->
-      <p class="c-text" v-if="text">{{text}}</p>
-      <slot v-else></slot>
-    </div>
-    <button class="button is-icon has-text-danger c-retry"
-      :class="{ 'alignToText': !hasWhoInvisible }"
-      v-if="variant === 'failed'"
-      @click="$emit('retry')"
-    >
-      <i class="fa fa-undo"></i>
-    </button>
-  </div>
+<template lang="pug">
+.c-message(:class="[variant, isSameSender && 'sameSender']")
+  avatar.c-avatar(:src='avatar' :class="{ 'alignToText': !hasWhoInvisible }" aria-hidden='true')
+  .c-body
+    span.has-text-light.c-who(:class="{ 'gi-sr-only': hasWhoInvisible }")
+      | {{who}}
+    // TODO: #502 - Chat: Add support to markdown formatted text
+    p.c-text(v-if='text') {{text}}
+    slot(v-else='')
+  button.is-icon.has-text-danger.c-retry(:class="{ 'alignToText': !hasWhoInvisible }" v-if="variant === 'failed'" @click="$emit('retry')")
+    i.icon-undo
+
 </template>
-<style lang="scss" scoped>
-@import "../../../assets/sass/theme/index";
 
-.c-message {
-  margin: $gi-spacer $gi-spacer-sm 0;
-  align-items: flex-start;
-
-  &.sent,
-  &.failed {
-    margin-left: $gi-spacer-xl;
-    flex-direction: row-reverse;
-    text-align: right;
-  }
-
-  &.sameSender {
-    margin-top: $gi-spacer-xs;
-  }
-
-  &:last-of-type {
-    margin-bottom: $gi-spacer;
-  }
-
-  .button {
-    flex-shrink: 0;
-  }
-
-  @include phablet {
-    margin: $gi-spacer $gi-spacer 0;
-  }
-}
-
-.c-avatar,
-.c-retry {
-  &.alignToText {
-    color: red;
-    margin-top: $gi-spacer; // visually center align to text
-  }
-}
-
-.c-avatar {
-  .sent &,
-  .failed & {
-    margin: 0 0 0 $gi-spacer-sm;
-
-    &.alignToText {
-      margin-top: 1.4rem; // visually center align to bubble text
-    }
-  }
-
-  .isHidden &,
-  .sameSender & {
-    visibility: hidden;
-    height: 0;
-  }
-}
-
-.c-body {
-  max-width: 100%;
-}
-
-.c-who {
-  display: block;
-
-  .sent &,
-  .failed & {
-    margin-right: $gi-spacer-xs;
-  }
-}
-
-.c-text {
-  max-width: 32rem;
-  word-wrap: break-word; // too much long words will break
-  white-space: pre-line; // break \n to a new line
-
-  .sent & {
-    background-color: $primary-text;
-    color: $body-background-color;
-    border: 1px solid;
-    border-radius: $radius-large;
-    padding: $gi-spacer-xs $gi-spacer-sm;
-  }
-
-  .failed & {
-    color: $text-light;
-    border: 1px dashed $danger;
-    border-radius: $radius-large;
-    padding: $gi-spacer-xs $gi-spacer-sm;
-  }
-
-  // When .c-shot is the only element (when .c-who isn't rendered)
-  &:first-child:last-child {
-    margin-bottom: $gi-spacer-sm;
-  }
-}
-</style>
 <script>
 import Avatar from '../Avatar.vue'
 
@@ -156,3 +49,101 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+@import "../../../assets/style/_variables.scss";
+
+.c-message {
+  display: flex;
+  margin: $spacer 0 0;
+  align-items: flex-start;
+
+  &.sent,
+  &.failed {
+    margin-left: $spacer-xl;
+    flex-direction: row-reverse;
+    text-align: right;
+  }
+
+  &.sameSender {
+    margin-top: $spacer-xs;
+  }
+
+  &:last-of-type {
+    margin-bottom: $spacer;
+  }
+
+  .button {
+    flex-shrink: 0;
+  }
+
+  .c-avatar {
+    margin-right: $spacer-sm;
+  }
+}
+
+.c-avatar,
+.c-retry {
+  &.alignToText {
+    color: red;
+    margin-top: $spacer; // visually center align to text
+  }
+}
+
+.c-avatar {
+  .sent &,
+  .failed & {
+    margin: 0 0 0 $spacer-sm;
+
+    &.alignToText {
+      margin-top: 1.3rem; // visually center align to bubble text
+    }
+  }
+
+  .isHidden &,
+  .sameSender & {
+    visibility: hidden;
+    height: 0;
+  }
+}
+
+.c-body {
+  max-width: 100%;
+}
+
+.c-who {
+  display: block;
+
+  .sent &,
+  .failed & {
+    margin-right: $spacer-xs;
+  }
+}
+
+.c-text {
+  max-width: 32rem;
+  word-wrap: break-word; // too much long words will break
+  white-space: pre-line; // break \n to a new line
+  margin: 0;
+
+  .sent & {
+    background-color: $primary-text;
+    color: $body-background-color;
+    border: 1px solid;
+    border-radius: $radius-large;
+    padding: $spacer-xs $spacer-sm;
+  }
+
+  .failed & {
+    color: $text-light;
+    border: 1px dashed $danger;
+    border-radius: $radius-large;
+    padding: $spacer-xs $spacer-sm;
+  }
+
+  // When .c-shot is the only element (when .c-who isn't rendered)
+  &:first-child:last-child {
+    margin-bottom: $spacer-sm;
+  }
+}
+</style>

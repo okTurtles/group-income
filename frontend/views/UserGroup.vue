@@ -1,9 +1,10 @@
-<template>
-  <div class="content user-group">
-    <h1 class="title">{{ msg }}</h1>
-    <!-- <%- include included %> -->
-  </div>
+<template lang="pug">
+.content.user-group
+  h1.title {{ msg }}
+  // <%- include included %>
+
 </template>
+
 <script>
 export default {
   name: 'UserGroupView',

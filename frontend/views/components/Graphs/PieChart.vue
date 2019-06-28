@@ -1,83 +1,50 @@
-<template>
-  <div class="c-container">
-    <svg viewBox="-1 -1 2 2" class="c-piechart" :style="{ height: size }">
-      <path v-for="(slice, index) in slices"
-        :key="`slice-${index}`"
-        :data-id="slice.id"
-        :d="sliceData(slice, index)"
-        :class="`c-slice gi-has-fill-${slice.color}`"
-        @mouseenter="(e) => showLabel(e, index)"
-        @mouseleave="(e) => hideLabel(e, index)"
-      ></path>
-      <path v-if="!!missingSlice"
-        data-id="_missingSlice_"
-        :d="missingSlice"
-        :class="`c-slice gi-has-fill-${lastSliceColor}`"
-      ></path>
-      <circle r="33%" class="c-pie-donut"></circle>
+<template lang="pug">
+.c-container
+  svg.c-piechart(viewbox='-1 -1 2 2' :style='{ height: size }')
+    path(
+      v-for='(slice, index) in slices'
+      :key='`slice-${index}`'
+      :data-id='slice.id'
+      :d='sliceData(slice, index)'
+      :class='`c-slice gi-has-fill-${slice.color}`'
+      @mouseenter='(e) => showLabel(e, index)' @mouseleave='(e) => hideLabel(e, index)'
+    )
 
-      <path v-for="(slice, index) in innerSlices"
-        :key="`inner-slice-${index}`"
-        :data-id="slice.id"
-        :d="sliceData(slice, index)"
-        :class="`c-slice c-inner gi-has-fill-${slice.color}`"
-      ></path>
-      <circle r="29%" class="c-pie-donut"></circle>
-    </svg>
-    <div class="c-title">
-      <slot></slot>
-    </div>
-    <tooltip
-      :text="slices[ephemeral.labelActiveIndex].label"
-      :style="ephemeral.labelStyle"
-      :shouldShow="ephemeral.isLabelVisible"
-    />
-  </div>
+    path(
+      v-if='!!missingSlice'
+      data-id='_missingSlice_'
+      :d='missingSlice'
+      :class='`c-slice gi-has-fill-${lastSliceColor}`'
+    )
+
+    circle.c-pie-donut(r='33%')
+
+    path(
+      v-for='(slice, index) in innerSlices'
+      :key='`inner-slice-${index}`'
+      :data-id='slice.id'
+      :d='sliceData(slice, index)'
+      :class='`c-slice c-inner gi-has-fill-${slice.color}`'
+    )
+    circle.c-pie-donut(r='29%')
+
+  .c-title
+    slot
+
+  tooltip(
+    :text='slices[ephemeral.labelActiveIndex].label'
+    :style='ephemeral.labelStyle'
+    :shouldshow='ephemeral.isLabelVisible'
+  )
+
 </template>
-<style lang="scss" scoped>
-@import "../../../assets/sass/theme/index";
 
-.c-container {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.c-piechart {
-  transform: rotate(-90deg);
-}
-
-.c-slice {
-  // Simulate a gap between each slice
-  stroke: $body-background-color;
-  stroke-width: 0.03; // small unit because this SVG is a 1x1 grid system
-
-  &.c-inner {
-    transform: scale(0.64);
-  }
-}
-
-.c-pie-donut {
-  fill: $body-background-color;
-}
-
-.c-title {
-  position: absolute;
-  width: 53%; // almost 2x inner .c-pie-donut radius
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-  line-height: 1.2;
-}
-</style>
 <script>
 // Learn more about SVG & PieCharts
 // -> https://hackernoon.com/a-simple-pie-chart-in-svg-dbdd653b6936
 
 import Tooltip from '../Tooltip.vue'
-import { debounce } from '../../../utils/giLodash.js'
+import { debounce } from '@utils/giLodash.js'
 
 export default {
   name: 'PieChart',
@@ -162,3 +129,42 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+@import "../../../assets/style/_variables.scss";
+
+.c-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.c-piechart {
+  transform: rotate(-90deg);
+}
+
+.c-slice {
+  // Simulate a gap between each slice
+  stroke: $body-background-color;
+  stroke-width: 0.03; // small unit because this SVG is a 1x1 grid system
+
+  &.c-inner {
+    transform: scale(0.64);
+  }
+}
+
+.c-pie-donut {
+  fill: $body-background-color;
+}
+
+.c-title {
+  position: absolute;
+  width: 53%; // almost 2x inner .c-pie-donut radius
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  line-height: 1.2;
+}
+</style>

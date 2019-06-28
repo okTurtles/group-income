@@ -1,100 +1,79 @@
-<template>
-  <div class="is-flex is-mobile c-graph">
-    <pie-chart class="c-chart"
-      :slices="groupPledgingSlices"
-      :innerSlices="groupPledgingInnerSlices"
-      :size="chartSize"
-    >
-      <i18n tag="p" class="is-uppercase has-text-text-light is-size-7">Group Pledge Goal</i18n>
-      <span class="has-text-weight-bold">{{fakeStore.currency}}{{graphData.goal}}</span>
-    </pie-chart>
-    <graph-legend-group class="columns c-legend" :aria-label="L('Group\'s Pledge Summary')">
-      <graph-legend-item :label="L('Members Pledging')" :class="legendItemClass">
-        {{graphData.members}}<i18n>of</i18n> {{fakeStore.groupMembersTotal}}
-      </graph-legend-item>
+<template lang="pug">
+.is-flex.c-graph
+  pie-chart.c-chart(
+    :slices='groupPledgingSlices'
+    :innerslices='groupPledgingInnerSlices'
+    :size='chartSize'
+  )
+    i18n.is-uppercase.is-size-7(tag='p') Group Pledge Goal
+    span.has-text-weight-bold {{fakeStore.currency}}{{graphData.goal}}
 
-      <graph-legend-item :label="L('Average Pledged')" :class="legendItemClass">
-        {{fakeStore.currency}}{{graphData.avg}}
-      </graph-legend-item>
+  graph-legend-group.columns.c-legend(
+    :aria-label='L("Group\'s Pledge Summary")'
+  )
+    graph-legend-item(
+      :label="L('Members Pledging')"
+      :class='legendItemClass'
+    )
+      | {{graphData.members}}
+      i18n of
+      | {{fakeStore.groupMembersTotal}}
 
-      <graph-legend-item :label="L('Total Pledged')" :class="legendItemClass" color="primary-light">
-        {{fakeStore.currency}}{{graphData.totalAmount}}
-      </graph-legend-item>
+    graph-legend-item(
+      :label='L("Average Pledged")'
+      :class='legendItemClass'
+    ) {{fakeStore.currency}}{{graphData.avg}}
 
-      <graph-legend-item :label="L('Needed Pledges')" :class="legendItemClass" color="light"
-        v-if="graphData.neededPledges"
-      >
-        {{fakeStore.currency}}{{graphData.neededPledges}}
-      </graph-legend-item>
+    graph-legend-item(
+      :label='L("Total Pledged")'
+      :class='legendItemClass'
+      color='primary-light'
+    ) {{fakeStore.currency}}{{graphData.totalAmount}}
 
-      <graph-legend-item :label="L('Surplus (not needed)')" :class="legendItemClass" color="secondary"
-        v-if="graphData.surplus"
-      >
-        {{fakeStore.currency}}{{graphData.surplus}}
-      </graph-legend-item>
+    graph-legend-item(
+      v-if='graphData.neededPledges'
+      :label='L("Needed Pledges")'
+      :class='legendItemClass'
+      color='light'
+    ) {{fakeStore.currency}}{{graphData.neededPledges}}
 
-      <graph-legend-item :label="L('Income to receive')" :class="legendItemClass" color="tertiary"
-        v-if="graphData.userIncomeToReceive"
-      >
-        <tooltip direction="right" v-if="graphData.userIncomeNeeded !== graphData.userIncomeToReceive">
-          {{fakeStore.currency}}{{graphData.userIncomeToReceive}}
-          <i class="fa fa-info-circle is-size-6 has-text-tertiary c-legendItem-icon"></i>
+    graph-legend-item(
+      :label="L('Surplus (not needed)')"
+      :class='legendItemClass' color='secondary' v-if='graphData.surplus'
+    ) {{fakeStore.currency}}{{graphData.surplus}}
 
-          <template slot="tooltip">
-            <i18n tag="strong" class="has-text-weight-bold">Income Incomplete</i18n>
-            <i18n tag="p" class="has-text-weight-normal" :args="{ amount: `${fakeStore.currency}${graphData.userIncomeNeeded}` }">
-              The group at the moment is not pledging enough to cover everyone's mincome.
-              So you'll receive only a part instead of the {amount} you need.
-            </i18n>
-          </template>
-        </tooltip>
-        <template v-else>
-          {{fakeStore.currency}}{{graphData.userIncomeToReceive}}
-        </template>
-      </graph-legend-item>
-    </graph-legend-group>
-  </div>
+    graph-legend-item(
+      v-if='graphData.userIncomeToReceive'
+      :label="L('Income to receive')"
+      :class='legendItemClass'
+      color='tertiary'
+    )
+      tooltip(
+        v-if='graphData.userIncomeNeeded !== graphData.userIncomeToReceive'
+        direction='right'
+      )
+        | {{fakeStore.currency}}{{graphData.userIncomeToReceive}}
+        i.icon-info-circle.is-size-6.has-text-tertiary.c-legendItem-icon
+
+        template(slot='tooltip')
+          i18n.has-text-weight-bold(tag='strong') Income Incomplete
+          i18n.has-text-weight-normal(
+            tag='p'
+            :args='{ amount: `${fakeStore.currency}${graphData.userIncomeNeeded}` }'
+          )
+            | The group at the moment is not pledging enough to cover everyone&apos;s mincome.
+            | So you&apos;ll receive only a part instead of the {amount} you need.
+
+      template(v-else='')
+        | {{fakeStore.currency}}{{graphData.userIncomeToReceive}}
+
 </template>
-<style lang="scss" scoped>
-@import "../../assets/sass/theme/index";
 
-.c-graph {
-  position: relative;
-  flex-wrap: wrap;
-  align-items: center;
-  align-content: flex-start;
-}
-
-.c-legend {
-  flex-basis: 50%;
-  flex-grow: 1;
-  padding: $gi-spacer 0 $gi-spacer $gi-spacer-lg;
-
-  &-item {
-    padding: $gi-spacer-sm;
-    flex-basis: 33.3%;
-
-    @include phone {
-      padding: $gi-spacer-sm $gi-spacer-xs;
-      flex-basis: 50%;
-    }
-
-    @include tablet {
-      flex-basis: 50%;
-    }
-  }
-
-  &-icon {
-    display: inline-block;
-    margin-left: $gi-spacer-xs;
-  }
-}
-</style>
 <script>
-import { PieChart, GraphLegendGroup, GraphLegendItem } from '../components/Graphs/index.js'
-import Tooltip from '../components/Tooltip.vue'
-import currencies from '../utils/currencies.js'
-import { debounce } from '../../utils/giLodash.js'
+import { PieChart, GraphLegendGroup, GraphLegendItem } from '@components/Graphs/index.js'
+import Tooltip from '@components/Tooltip.vue'
+import currencies from '@view-utils/currencies.js'
+import { debounce } from '@utils/giLodash.js'
 
 export default {
   name: 'GroupPledgesGraph',
@@ -238,3 +217,39 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+@import "../../assets/style/_variables.scss";
+
+.c-graph {
+  position: relative;
+  flex-wrap: wrap;
+  align-items: center;
+  align-content: flex-start;
+}
+
+.c-legend {
+  flex-basis: 50%;
+  flex-grow: 1;
+  padding: $spacer 0 $spacer $spacer-lg;
+
+  &-item {
+    padding: $spacer-sm;
+    flex-basis: 33.3%;
+
+    @include phone {
+      padding: $spacer-sm $spacer-xs;
+      flex-basis: 50%;
+    }
+
+    @include tablet {
+      flex-basis: 50%;
+    }
+  }
+
+  &-icon {
+    display: inline-block;
+    margin-left: $spacer-xs;
+  }
+}
+</style>

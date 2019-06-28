@@ -1,8 +1,8 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import store from '../model/state.js'
-
-import CreateGroup from '../views/CreateGroup.vue'
+// TODO: move create group in modal container
+import CreateGroup from '../views/pages/CreateGroup.vue'
 import {
   GroupName,
   GroupPurpose,
@@ -12,17 +12,17 @@ import {
   GroupInvitees,
   GroupSummary
 } from '../views/components/CreateGroupSteps/index.js'
-import Contributions from '../views/Contributions.vue'
-import DesignSystem from '../views/DesignSystem.vue'
-import GroupDashboard from '../views/GroupDashboard.vue'
-import GroupChat from '../views/GroupChat.vue'
-import Home from '../views/Home.vue'
-import Invite from '../views/Invite.vue'
-import Join from '../views/Join.vue'
-import Mailbox from '../views/Mailbox.vue'
-import PayGroup from '../views/PayGroup.vue'
-import Messages from '../views/Messages.vue'
-import Vote from '../views/Vote.vue'
+import DesignSystem from '../views/pages/DesignSystem.vue'
+import Home from '../views/pages/Home.vue'
+import Messages from '../views/pages/Messages.vue'
+import GroupDashboard from '../views/pages/GroupDashboard.vue'
+import Contributions from '../views/pages/Contributions.vue'
+import PayGroup from '../views/pages/PayGroup.vue'
+import GroupChat from '../views/pages/GroupChat.vue'
+import Invite from '../views/pages/Invite.vue'
+import Join from '../views/pages/Join.vue'
+import Mailbox from '../views/pages/Mailbox.vue'
+import Vote from '../views/pages/Vote.vue'
 
 Vue.use(Router)
 

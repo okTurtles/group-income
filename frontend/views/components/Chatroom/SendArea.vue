@@ -1,84 +1,29 @@
-<template>
-  <div class="c-send">
-    <textarea class="textarea c-send-textarea"
-      ref="textarea"
-      :disabled="loading"
-      :placeholder="customSendPlaceholder"
-      :style="textareaStyles"
-      @keydown.exact="sendMessage"
-      @keydown.ctrl="isNextLine"
-      @keyup="handleKeyup"
-      v-bind="$attrs"
-    ></textarea>
-    <div class="level is-mobile is-marginless c-send-actions" ref="actions">
-      <i18n tag="button"
-        :class="{ isActive }"
-        class="button gi-is-unstyled has-text-weight-bold c-send-btn"
-        @click="sendMessage"
-      >Send</i18n>
-    </div>
-    <div class="textarea c-send-mask" ref="mask" :style="maskStyles"></div>
-  </div>
+<template lang="pug">
+.c-send
+  textarea.textarea.c-send-textarea(
+    ref='textarea'
+    :disabled='loading'
+    :placeholder='customSendPlaceholder'
+    :style='textareaStyles'
+    @keydown.enter.exact='sendMessage'
+    @keydown.ctrl='isNextLine'
+    @keyup='handleKeyup'
+    v-bind='$attrs'
+  )
+
+  .c-send-actions(ref='actions')
+    i18n.button.c-send-btn(
+      tag='button'
+      :class='{ isActive }'
+      @click='sendMessage'
+    ) Send
+
+  .textarea.c-send-mask(
+    ref='mask'
+    :style='maskStyles'
+  )
 </template>
-<style lang="scss" scoped>
-@import "../../../assets/sass/theme/index";
 
-$initialHeight: 2.5rem;
-
-.c-send {
-  position: relative;
-
-  &-textarea,
-  &-mask {
-    display: block;
-    width: 100%;
-    min-height: $initialHeight;
-    font-size: 1rem;
-    word-wrap: break-word;
-  }
-
-  &-textarea {
-    height: $initialHeight;
-    resize: none;
-
-    &::-webkit-scrollbar {
-      display: none;
-    }
-  }
-
-  &-mask {
-    position: absolute;
-    top: 0;
-    left: 0;
-    opacity: 0;
-    pointer-events: none;
-    height: auto;
-  }
-
-  &-actions {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    height: $initialHeight;
-  }
-
-  &-btn {
-    padding: $gi-spacer-sm;
-    padding-right: $gi-spacer;
-    color: $light;
-    height: 100%;
-
-    &:focus {
-      box-shadow: none;
-      color: $text-light;
-    }
-
-    &.isActive {
-      color: $primary;
-    }
-  }
-}
-</style>
 <script>
 export default {
   name: 'Chatroom',
@@ -161,7 +106,7 @@ export default {
       this.$refs.mask.innerHTML = this.ephemeral.textWithLines + (isLastLineEmpty ? '.' : '')
 
       // ...and apply the maks's height to the textarea so it dynamically grows as the user types
-      this.ephemeral.maskHeight = this.$refs.mask.offsetHeight
+      this.ephemeral.maskHeight = this.$refs.mask.offsetHeight - 2
 
       // ... finaly inform the parent about the new height to adjust the layout
       this.$emit('heightUpdate', this.ephemeral.maskHeight + 'px')
@@ -171,14 +116,73 @@ export default {
       this.updateTextArea()
     },
     sendMessage () {
+      console.log('send')
       if (!this.$refs.textarea.value) {
         return false
       }
 
       this.$emit('send', this.$refs.textarea.value) // TODO remove first / last empty lines
       this.$refs.textarea.value = ''
+
       this.updateTextArea()
     }
   }
 }
 </script>
+
+<style lang="scss" scoped>
+@import "../../../assets/style/_variables.scss";
+
+$initialHeight: 43px;
+
+.c-send {
+  position: relative;
+
+  &-textarea,
+  &-mask {
+    display: block;
+    width: 100%;
+    min-height: $initialHeight;
+    font-size: 1rem;
+    word-wrap: break-word;
+  }
+
+  &-textarea {
+    height: $initialHeight;
+    resize: none;
+
+    &::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
+  &-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0;
+    pointer-events: none;
+    height: auto;
+  }
+
+  &-actions {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    height: $initialHeight;
+  }
+
+  &-btn {
+    padding: $spacer-sm;
+    padding-right: $spacer;
+    color: $light;
+    height: 100%;
+    border-radius: 0 $radius $radius 0;
+
+    &:focus {
+      box-shadow: none;
+      color: $text-light;
+    }
+  }
+}
+</style>

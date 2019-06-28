@@ -1,31 +1,27 @@
-<template>
-  <div class="notification columns is-multiline is-centered is-warning has-text-centered">
-    <p class="column is-12">
-      <strong data-test="initiator">{{ initiator }}</strong>
-      <i18n>proposed to</i18n>
-      <strong data-test="proposal">{{ proposalText }}</strong>
-    </p>
+<template lang="pug">
+.notification.columns.is-multiline.is-centered.is-warning.has-text-centered
+  p.column.is-12
+    strong(data-test='initiator') {{ initiator }}
+    i18n proposed to
+    strong(data-test='proposal') {{ proposalText }}
 
-    <div class="column is-3">
-      <button class="button is-success is-fullwidth">
-        <i18n>For</i18n>
-      </button>
-    </div>
+  .column.is-3
+    button.is-success.is-fullwidth
+      i18n For
 
-    <div class="column is-3">
-      <button class="button is-danger is-fullwidth">
-        <i18n>Against</i18n>
-      </button>
-    </div>
+  .column.is-3
+    button.is-danger.is-fullwidth
+      i18n Against
 
-    <p class="column is-12 is-size-7 is-italic gi-is-opacity-1">
-      {{votesCount}} <i18n>votes received</i18n>
-    </p>
-  </div>
+  p.column.is-12.is-size-7.is-italic
+    | {{votesCount}}
+    i18n votes received
+
 </template>
+
 <script>
-import L from '../utils/translations.js'
-import contracts from '../../model/contracts.js'
+import L from '@view-utils/translations.js'
+import contracts from '@model/contracts.js'
 
 export default {
   name: 'VotingBanner',

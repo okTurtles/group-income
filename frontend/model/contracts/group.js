@@ -12,8 +12,8 @@ import {
   string,
   number,
   object
-} from '../../utils/flow-typer.js'
-// } from 'flow-typer-js'
+} from '../../utils/flowTyper.js'
+// } from 'flowTyper-js'
 
 // NOTE: All mutations must be atomic in their edits of the contract state.
 //       THEY ARE NOT to farm out any further mutations through the async actions!
@@ -23,6 +23,7 @@ export default DefineContract({
     validate: objectOf({
       // TODO: add 'groupPubkey'
       groupName: string,
+      groupPicture: string,
       sharedValues: string,
       changeThreshold: number,
       memberApprovalThreshold: number,

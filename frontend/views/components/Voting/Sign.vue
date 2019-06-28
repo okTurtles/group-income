@@ -1,82 +1,30 @@
-<template>
-  <div class="c-voting-sign">
-    <svg class="c-voting-sign-svg"
-      v-if="isTypeRule"
-    >
-      <circle cx="32" cy="32" r="31"
-        class="c-voting-sign-svg-circle"
-        :style="svgCircle.style"
-        :class="svgCircle.class"
-      />
-    </svg>
+<template lang="pug">
+.c-voting-sign
+  svg.c-voting-sign-svg(v-if='isTypeRule')
+    circle.c-voting-sign-svg-circle(
+      cx='32'
+      cy='32'
+      r='31'
+      :style='svgCircle.style'
+      :class='svgCircle.class'
+    )
 
-    <p class="c-voting-sign-value title is-size-4 has-text-centered"
-      :class="{
-        'c-is-mincome': isTypeMincome,
-        'c-is-rule': isTypeRule
-      }"
-      v-if="isTypeRuleOrMincome"
-    >
-      {{valuePerc}}
-    </p>
+  p.c-voting-sign-value.title.is-size-4.has-text-centered(
+    v-if='isTypeRuleOrMincome'
+    :class="{\
+    'c-is-mincome': isTypeMincome,\
+    'c-is-rule': isTypeRule\
+    }"
+  ) {{valuePerc}}
 
-    <avatar class="c-voting-sign-avatar"
-      :src="member.picture"
-      :alt="`${member.name}'s avatar`"
-      size="xl"
-      v-if="isTypeMember"
-    />
-  </div>
+  avatar.c-voting-sign-avatar(
+    :src='member.picture'
+    :alt="`${member.name}'s avatar`"
+    v-if='isTypeMember'
+  )
+
 </template>
-<style lang="scss" scoped>
-@import "../../../assets/sass/theme/index";
 
-%avatarSize {
-  width: $gi-spacer-xl;
-  height: $gi-spacer-xl;
-}
-
-.c-voting-sign {
-  position: relative;
-  flex-shrink: 0;
-
-  &-avatar,
-  &-value {
-    @extend %avatarSize;
-    border-radius: 50%;
-    line-height: $gi-spacer-xl;
-    white-space: nowrap;
-
-    &.c-is-mincome {
-      line-height: 2;
-    }
-
-    &.c-is-rule {
-      border: 1px solid $grey-lighter;
-    }
-  }
-
-  &-svg {
-    @extend %avatarSize;
-    position: absolute;
-    top: 0;
-    left: 0;
-    transform-origin: 50%;
-    transform: rotate(-90deg);
-
-    &-circle {
-      stroke: $success;
-      stroke-width: 2px;
-      stroke-linecap: round;
-      fill: transparent;
-
-      &.has-stroke-warning {
-        stroke: $tertiary;
-      }
-    }
-  }
-}
-</style>
 <script>
 import Avatar from '../Avatar.vue'
 import { votingType } from '../../utils/validators'
@@ -123,3 +71,53 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+@import "../../../assets/style/_variables.scss";
+
+%avatarSize {
+  width: $spacer-xl;
+  height: $spacer-xl;
+}
+
+.c-voting-sign {
+  position: relative;
+  flex-shrink: 0;
+
+  &-avatar,
+  &-value {
+    @extend %avatarSize;
+    border-radius: 50%;
+    line-height: $spacer-xl;
+    white-space: nowrap;
+
+    &.c-is-mincome {
+      line-height: 2;
+    }
+
+    &.c-is-rule {
+      border: 1px solid $border;
+    }
+  }
+
+  &-svg {
+    @extend %avatarSize;
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: 50%;
+    transform: rotate(-90deg);
+
+    &-circle {
+      stroke: $success;
+      stroke-width: 2px;
+      stroke-linecap: round;
+      fill: transparent;
+
+      &.has-stroke-warning {
+        stroke: $tertiary;
+      }
+    }
+  }
+}
+</style>

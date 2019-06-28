@@ -47,10 +47,10 @@ export default {
     //   runtime: require('node-sass'),
     //   options: {
     //     sourceMap: development,
-    //     outputStyle: development ? 'nested' : 'compressed',
-    //     includePaths: [
-    //       './node_modules/bulma',
-    //       './node_modules/@fortawesome/fontawesome-free/scss'
+    //     outputStyle: development ? 'nested' : 'compressed'
+    //     includePaths: [	
+    //       './node_modules/bulma',	
+    //       './node_modules/@fortawesome/fontawesome-free/scss'	
     //     ]
     //   }
     // }),
@@ -66,10 +66,8 @@ export default {
     commonjs({
       // include: ['node_modules/**'],
       namedExports: {
-        'node_modules/vuelidate/lib/validators/index.js': [ 'required', 'between', 'email', 'minLength', 'requiredIf' ],
-        'node_modules/vue-circle-slider/dist/vue-circle-slider.common.js': [ 'CircleSlider' ]
+        'node_modules/vuelidate/lib/validators/index.js': [ 'required', 'between', 'email', 'minLength', 'requiredIf' ]
       }
-      // ignore: ['vue-circle-slider']
     }),
     babel({
       runtimeHelpers: true,

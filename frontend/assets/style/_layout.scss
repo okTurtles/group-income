@@ -1,0 +1,41 @@
+.l-no-navigation {
+  display: flex;
+  justify-content: center;
+  height: 100%;
+}
+
+.l-with-navigation {
+  display: grid;
+  overflow: hidden;
+  max-height: 100vh;
+  grid-template-areas: "l-navigation l-page";
+
+  @include tablet {
+    grid-template-columns: $leftSideWidth 1fr;
+  }
+}
+
+.l-page {
+  grid-area: l-page;
+}
+
+.l-navigation {
+  grid-area: l-navigation;
+  width: $leftSideWidth;
+  height: 100vh;
+
+  @include phone {
+    position: absolute;
+    z-index: $zindex-sidebar;
+    transform: translateX(-100%);
+    transition: transform $transitionSpeed;
+
+    &.is-active {
+      transform: translateX(0);
+    }
+  }
+}
+
+.l-modal {
+  position: absolute;
+}

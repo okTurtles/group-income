@@ -1,0 +1,107 @@
+// Todo move into it"s own component when once created
+.steps {
+  display: flex;
+  text-align: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 0;
+  overflow: hidden;
+  padding: 4px;
+  margin-left: -4px;
+
+  &::after,
+  &::before {
+    content: "";
+    position: absolute;
+    z-index: -3;
+    height: 2px;
+    width: 100%;
+    background-color: $primary-light;
+    top: 50%;
+    margin-top: -1px;
+  }
+
+  &::after {
+    background-color: #fff;
+    z-index: 3;
+    width: 4px;
+    right: 0;
+  }
+
+  .step {
+    cursor: pointer;
+    position: relative;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: $primary-light;
+    color: #fff;
+    font-size: 12px;
+    line-height: 24px;
+    transition: background-color 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+
+    &::before {
+      content: "";
+      border-radius: 50%;
+      background-color: #fff;
+      position: absolute;
+      z-index: -1;
+      border: 1px solid $primary;
+      width: 100%;
+      height: 100%;
+      left: 0;
+      transform-origin: 50%;
+      transform: scale(0);
+      transition: transform 300ms ease-out;
+    }
+
+    &::after {
+      content: "";
+      position: absolute;
+      z-index: -2;
+      left: 0;
+      top: 50%;
+      width: 0;
+      height: 2px;
+      margin-top: -1px;
+      background-color: $border;
+      transition: width 1s;
+    }
+  }
+
+  .step:not(.next):hover,
+  .active {
+    background-color: $primary;
+
+    &::before {
+      transform: scale(1.2);
+    }
+
+    &::after {
+      width: 100vw;
+    }
+
+    &:last-child::after {
+      z-index: 4;
+      width: 3px;
+      left: -3px;
+      background-color: #fff;
+    }
+
+    &:last-child::before {
+      z-index: 5;
+      background-color: transparent;
+    }
+  }
+
+  .next {
+    background-color: $border;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+}
+
+.steps-title {
+  margin-top: 1rem;
+  margin-bottom: 40px;
+}

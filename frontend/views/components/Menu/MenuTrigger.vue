@@ -1,9 +1,9 @@
-<template>
-  <button class="button"
-    v-if="hideWhenActive ? !isActive : true"
-    @click="handleClick">
-    <slot></slot>
-  </button>
+<template lang="pug">
+button(
+  v-if='hideWhenActive ? !isActive : true'
+  @click='handleClick'
+)
+  slot
 </template>
 <script>
 export default {

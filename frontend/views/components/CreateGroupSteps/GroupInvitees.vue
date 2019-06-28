@@ -1,77 +1,60 @@
-<template>
-  <div>
-    <h1 class="title is-2 has-text-centered"><i18n>Invite Members</i18n></h1>
-    <div class="field has-addons">
-      <div class="control is-expanded">
-        <input
-          class="input is-large is-primary"
-          placeholder="Username"
-          name="invitee"
-          type="text"
-          v-model="searchUser"
-          data-test="searchUser"
-          ref="searchUser"
-          @keyup.enter="addInvitee"
-        >
-      </div>
-      <div class="control">
-        <button
-          class="button is-primary is-large"
-          data-test="addButton"
-          @click="addInvitee"
-        >
-          <i18n>Add</i18n>
-        </button>
-      </div>
-    </div>
+<template lang="pug">
+div
+  h1
+    i18n Invite Members
 
-    <p class="content"><i18n>Who would you like to include in your group?</i18n></p>
+  label.label
+    i18n Who would you like to include in your group?
 
-    <article class="message is-danger" v-if="userErrorMsg">
-      <div class="message-body">
-        {{ userErrorMsg }}
-      </div>
-    </article>
+  .input-combo
+    input.input(
+      type='text'
+      ref='searchUser'
+      name='invitee'
+      placeholder='Username'
+      v-model='searchUser'
+      @keyup.enter='addInvitee'
+      data-test='searchUser'
+    )
+    button(
+      @click='addInvitee'
+      data-test='addButton'
+    )
+      i18n Add
 
-    <div class="tile is-ancestor">
-      <div class="tile is-4 is-parent invitee"
-        v-for="(invitee, index) in invitees"
-        :key="`invitee-${index}`"
-        data-test="member"
-      >
-        <div class="card tile is-child">
-          <div class="card-image">
-            <figure class="image is-square">
-              <img :src="invitee.state.attributes.picture" :alt="invitee.state.attributes.name">
-            </figure>
-          </div>
-          <header class="card-header">
-            <p class="card-header-title">
-              {{invitee.state.attributes.name}}
-            </p>
-            <a class="card-header-icon">
-              <button class="delete" data-test="deleteMember" @click="remove(index)"></button>
-            </a>
-          </header>
-        </div>
-      </div>
-    </div>
+  p.error(v-if='userErrorMsg') {{ userErrorMsg }}
 
-  </div>
+  .invitee(
+    v-for='(invitee, index) in invitees'
+    :key='`invitee-${index}`'
+    data-test='member'
+  )
+    avatar(
+      :src='invitee.state.attributes.picture',
+      :alt='invitee.state.attributes.name'
+    )
+
+    p {{invitee.state.attributes.name}}
+
+    button.is-icon(
+      @click='remove(index)'
+      data-test='deleteMember'
+    )
+      i.icon-times-circle
 </template>
-<style>
-  .tile.is-ancestor {
-    flex-wrap: wrap;
-  }
-</style>
+
 <script>
 import sbp from '~/shared/sbp.js'
-import L from '~/frontend/views/utils/translations.js'
+import L from '@view-utils/translations.js'
+import Avatar from '@components/Avatar.vue'
 
 export default {
   name: 'GroupInvitees',
   props: {
     group: { type: Object }
+  },
+  components: {
+    Avatar
   },
   mounted () {
     this.$refs.searchUser.focus()
@@ -115,3 +98,17 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+
+.invitee {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  p {
+    margin-right: auto;
+    margin-left: 1rem;
+  }
+}
+</style>

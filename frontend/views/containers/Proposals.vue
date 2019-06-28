@@ -1,61 +1,50 @@
-<template>
-  <div>
-    <!--  Start Original Voting Banner to delete soon -->
-    <voting-banner v-for="(proposal, index) in Object.values(proposals)"
-      :key="`proposal-${index}`"
-      :proposal="proposal"
-    />
-    <!--  End Original Voting Banner to delete soon -->
-
-    <!-- REVIEW: Not sure about these banners. -->
-
-    <!--
-    <h4 class="title is-size-5 notification is-warning gi-is-banner c-notify"
+<template lang="pug">
+div
+  // Start Original Voting Banner to delete soon
+  voting-banner(
+    v-for='(proposal, index) in Object.values(proposals)'
+    :key='`proposal-${index}`'
+    :proposal='proposal'
+  )
+    // End Original Voting Banner to delete soon
+    // REVIEW: Not sure about these banners.
+    //
+      <h4 class="title is-size-5 notification is-warning gi-is-banner c-notify"
       v-if="groupProposals.notVoted.length"
-    >
+      >
       <i18n>These are waiting for your vote!</i18n>
-    </h4>
-    -->
+      </h4>
+    i18n.notification.gi-is-banner.c-notify(v-if='allVoted') Cool, you already voted on all proposals.
 
-    <i18n class="notification gi-is-banner c-notify" v-if="allVoted">Cool, you already voted on all proposals.</i18n>
-
-    <voting
+    voting(
       v-for="(proposal, index) in groupProposals.notVoted"
       :key="`not-voted-${index}`"
       :type="proposal.type"
       :proposal="proposal.data"
       :onVoteAgainst="handleVoteAgainst"
       :onVoteFor="handleVoteFor"
-    />
+    )
 
-    <voting
+    voting(
       v-for="(proposal, index) in groupProposals.own"
       :key="`own-${index}`"
       :type="proposal.type"
       :proposal="proposal.data"
       :handleCloseProposal="handleCloseProposal"
-    />
+    )
 
-    <voting
+    voting(
       v-for="(proposal, index) in groupProposals.alreadyVoted"
       :key="`already-voted-${index}`"
       :type="proposal.type"
       :proposal="proposal.data"
       :onVoteAgainst="handleVoteAgainst"
       :onVoteFor="handleVoteFor"
-    />
-  </div>
+    )
 </template>
-<style lang="scss" scoped>
-@import "../../assets/sass/theme/index";
 
-.c-notify {
-  display: block;
-  margin-top: $gi-spacer-lg;
-}
-</style>
 <script>
-import Voting from '../components/Voting/index.js'
+import Voting from '@components/Voting/index.js'
 import VotingBanner from './VotingBanner.vue'
 
 export default {
@@ -191,3 +180,12 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+@import "../../assets/style/_variables.scss";
+
+.c-notify {
+  display: block;
+  margin-top: $spacer-lg;
+}
+</style>

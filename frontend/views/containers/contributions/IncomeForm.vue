@@ -1,141 +1,110 @@
-<template>
-  <modal-template ref="modal" :isActive="true" @close="cancelForm">
-    <form class="modal-card-content c-wrapper" @submit.prevent="verifyForm" novalidate="true">
-      <i18n tag="h2" class="title is-3">Income Details</i18n>
-      <div class="columns is-mobile c-wrapper-columns">
-        <div class="column c-form">
-          <fieldset class="fieldset">
-            <i18n tag="legend" class="gi-sr-only">Income details</i18n>
+<template lang="pug">
+modal-template(
+  ref='modal'
+  :isactive='true'
+  @close='cancelForm'
+)
+  form(
+    @submit.prevent='verifyForm'
+    novalidate='true'
+  )
+    i18n(tag='h2') Income Details
 
-            <div class="field is-narrow gi-fieldGroup">
-              <i18n tag="p" class="label">Do you make at least {{fakeStore.mincomeFormatted}} per month?</i18n>
-              <i18n tag="span" class="help has-text-danger gi-help" v-if="$v.form.option.$error">{{infoRequired}}</i18n>
-              <div class="control">
-                <label class="gi-tick">
-                  <input class="gi-tick-input" type="radio" value="no" v-model="form.option" @change="resetFormVerify">
-                  <span class="gi-tick-custom"></span>
-                  <i18n>No, I don't</i18n>
-                </label>
-                <label class="gi-tick">
-                  <input class="gi-tick-input" type="radio" value="yes" v-model="form.option" @change="resetFormVerify">
-                  <span class="gi-tick-custom"></span>
-                  <i18n>Yes, I do</i18n>
-                </label>
-              </div>
-            </div>
+    .field
+      label.label Do you make at least {{fakeStore.mincomeFormatted}} per month?
 
-            <input-amount v-if="needsIncome"
-              label="What's your monthly income?"
-              :error="inputIncomeError"
-              @input="verifyInputIncome"
-              :value="form.income"
-              :placeholder="L('amout')"
-            >
-              <template slot="help">
-                <text-who :who="['Rick', 'Carl', 'Kim']"></text-who>
-                <i18n>will ensure you meet the mincome</i18n>
-              </template>
-            </input-amount>
+      .radio-wrapper
+        input.radio(
+          name='v-model'
+          type='radio'
+          v-model='form.option'
+          @change='resetFormVerify'
+        )
+        i18n No, I don&apos;t
 
-            <input-amount v-else-if="canPledge"
-              label="How much do you want to pledge?"
-              :error="$v.form.pledge.$error ? this.infoRequired : null"
-              @input="verifyInputPledge"
-              :value="form.pledge"
-              :placeholder="L('amout')"
-            >
-              <template slot="help">
-                <i18n tag="p">Define up to how much you pledge to contribute to the group each month.</i18n>
-                <i18n tag="p" class="c-help-extra">You can pledge any amount (even $1 million!) Only the minimum needed amount will be given.</i18n>
-              </template>
-            </input-amount>
-          </fieldset>
-          <fieldset class="fieldset" v-if="!!form.option">
-            <payment-methods :userIsGiver="canPledge" />
-          </fieldset>
-        </div>
+      .radio-wrapper
+        input.radio(
+          name='v-model'
+          type='radio'
+          v-model='form.option'
+          @change='resetFormVerify'
+        )
+        i18n  Yes, I do
 
-        <group-pledges-graph class="column c-pledgesGraph"
-          :userPledgeAmount="canPledge && !!form.pledge ? Number(form.pledge) : null"
-          :userIncomeAmount="needsIncome && !!form.income ? Number(form.income) : null"
-        />
-      </div>
+      p.error(v-if='$v.form.option.$error')
+        i18n {{infoRequired}}
 
-      <div class="field is-grouped">
-        <p class="control">
-          <i18n tag="button" class="button is-primary" type="submit">{{saveButtonText}}</i18n>
-        </p>
-        <p class="control">
-          <i18n tag="button" class="button" type="button" @click="cancelForm">Cancel</i18n>
-        </p>
-      </div>
-      </form>
-  </modal-template>
+    .field(v-if='needsIncome')
+      label.label
+        i18n What's your monthly income?
+
+      .input-combo
+        input.input(
+          type='number'
+          placeholder='New amount'
+          :class='{"error": inputIncomeError }'
+          @input='verifyInputIncome'
+          :value='form.income'
+          :placeholder="L('amout')"
+        )
+        label USD
+
+      p.error(v-if='inputIncomeError') inputIncomeError
+
+      p.help(v-else)
+        text-who(:who="['Rick', 'Carl', 'Kim']")
+        i18n will ensure you meet the mincome
+
+    .field(v-else-if='canPledge')
+      label.label
+        i18n How much do you want to pledge?
+
+      .input-combo
+        input.input(
+          type='number'
+          placeholder='New amount'
+          :class='{"error": $v.form.pledge.$error }'
+          @input='verifyInputPledge'
+          :value='form.pledge'
+          :placeholder="L('amout')"
+        )
+        label USD
+
+      p.error(v-if='v.form.pledge.$error') {{ this.infoRequired }}
+
+      p.help(v-else)
+        | Define up to how much you pledge to contribute to the group each month.
+        small You can pledge any amount (even $1 million!) Only the minimum needed amount will be given.
+
+    fieldset.fieldset(v-if='!!form.option')
+      payment-methods(:userisgiver='canPledge')
+
+  group-pledges-graph(
+    :userpledgeamount='canPledge && !!form.pledge ? Number(form.pledge) : null'
+    :userincomeamount='needsIncome && !!form.income ? Number(form.income) : null'
+  )
+
+  .buttons
+    input.button(
+      type='submit'
+      :value='L("saveButtonText")'
+    )
+
+    input.button(
+      type='button'
+      @click='cancelForm'
+      :value='L("Cancel")'
+    )
+
 </template>
-<style lang="scss" scoped>
-@import "../../../assets/sass/theme/index";
 
-.c-wrapper {
-  width: 50rem;
-  max-width: 100%;
-  height: 100%;
-  overflow: auto; // TODO - maybe the overflow logic should be modal's responsability ?
-
-  // NOTE: A fadeOut make at the modals' bottom
-  // to help the user perceive when there's more content bellow.
-  &::after {
-    content: "";
-    position: absolute;
-    bottom: 0;
-    left: $gi-spacer;
-    width: calc(100% - #{$gi-spacer-lg});
-    height: $gi-spacer-lg;
-    background: linear-gradient(rgba($body-background-color, 0), $body-background-color);
-  }
-
-  @include mobile {
-    height: 100vh;
-  }
-
-  &-columns {
-    @include mobile {
-      flex-direction: column;
-    }
-  }
-}
-
-.c-help-extra {
-  margin-top: $gi-spacer-sm;
-}
-
-.c-form,
-.c-pledgesGraph {
-  flex-basis: 50%;
-}
-
-.c-pledgesGraph {
-  align-items: flex-start;
-  flex-grow: 1;
-
-  @include mobile {
-    order: -1; // display on the top for better understanding on small screens
-    padding: $gi-spacer $gi-spacer-sm;
-  }
-
-  @include tablet {
-    justify-content: center;
-    margin-top: -$gi-spacer-lg;
-  }
-}
-
-</style>
 <script>
 import { validationMixin } from 'vuelidate'
 import { requiredIf, required } from 'vuelidate/lib/validators'
 import InputAmount from './InputAmount.vue'
 import PaymentMethods from './PaymentMethods.vue'
-import ModalTemplate from '../../components/Modal/ModalTemplate.vue'
-import TextWho from '../../components/TextWho.vue'
+import ModalTemplate from '@components/Modal/ModalTemplate.vue'
+import TextWho from '@components/TextWho.vue'
 import GroupPledgesGraph from '../GroupPledgesGraph.vue'
 
 const fakeStoreMincome = 500
@@ -248,3 +217,7 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+@import "../../../assets/style/_variables.scss";
+</style>

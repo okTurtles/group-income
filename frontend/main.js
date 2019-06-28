@@ -1,21 +1,21 @@
-import sbp from '../shared/sbp.js'
-import '../shared/domains/okTurtles/events/index.js'
-import '../shared/domains/okTurtles/data/index.js'
-import './controller/namespace.js'
-import { createWebSocket } from './controller/backend.js'
-// import SBP stuff before anything else so that domains register themselves before called
 import Vue from 'vue'
-import './views/utils/translations.js'
+// import SBP stuff before anything else so that domains register themselves before called
+import sbp from '~/shared/sbp.js'
+import '~/shared/domains/okTurtles/data/index.js'
+import '~/shared/domains/okTurtles/events/index.js'
+import './controller/namespace.js'
 import router from './controller/router.js'
-import * as db from './model/database.js'
+import { createWebSocket } from './controller/backend.js'
 import store from './model/state.js'
+import * as db from './model/database.js'
 import { LOGOUT } from './utils/events'
-import Sidebar from './views/containers/sidebar/Sidebar.vue'
-import Modal from './views/components/Modal/Modal.vue'
-import AppStyles from './views/components/AppStyles.vue'
 import './utils/autofocus.js'
-import './views/utils/v-style.js'
-import './lazyLoadedView.js'
+import './utils/lazyLoadedView.js'
+import Navigation from './views/containers/sidebar/Navigation.vue'
+import AppStyles from './views/components/AppStyles.vue'
+import Modal from './views/components/Modal/Modal.vue'
+import './views/utils/translations.js'
+import './views/utils/vStyle.js'
 
 console.log('NODE_ENV:', process.env.NODE_ENV)
 
@@ -57,11 +57,11 @@ async function startApp () {
     router: router,
     components: {
       AppStyles,
-      Sidebar,
+      Navigation,
       Modal
     },
     computed: {
-      showSidebar () {
+      showNav () {
         return this.$store.state.loggedIn
       }
     },

@@ -1,27 +1,58 @@
-<template>
-  <div>
-    <p v-if="history.length === 0"><i18n>Your group is still in its first month.</i18n></p>
-    <div class="history columns" v-else>
-      <div v-for="(percentage, index) in history" class="column is-2" :key="`percentage-${index}`">
-        <div :class="['period', getResult(percentage)]">
-          <p class="period-title">{{ months[index] }}</p>
-          <p class="period-txt">{{ percentage | toPercent }}</p>
-          <span class="period-progress" :style="{height: getPercentage(percentage)}"></span>
-        </div>
-      </div>
-    </div>
-  </div>
+<template lang="pug">
+div
+  p(v-if='history.length === 0')
+    i18n Your group is still in its first month.
+
+  .history(v-else='')
+    .months(
+      v-for='(percentage, index) in history'
+      :key='`percentage-${index}`'
+    )
+      div(:class="['period', getResult(percentage)]")
+        p.period-title {{ months[index] }}
+        p.period-txt {{ percentage | toPercent }}
+        span.period-progress(:style='{height: getPercentage(percentage)}')
 </template>
+
+<script>
+import { toPercent } from '../../utils/filters'
+
+export default {
+  name: 'GroupSupportHistory',
+  props: {
+    history: Array
+  },
+  data () {
+    return {
+      months: ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+    }
+  },
+  computed: {
+  },
+  methods: {
+    getPercentage (percentage) {
+      return percentage >= 1 ? '100%' : `${Math.floor(percentage * 100)}%`
+    },
+    getResult (percentage) {
+      if (percentage < 0.6) return 'has-background-danger'
+      if (percentage < 1) return 'has-background-warning'
+      return 'has-background-success'
+    }
+  },
+  filters: {
+    toPercent
+  }
+}
+</script>
+
 <style lang="scss" scoped>
-$gapHistory: 0.5rem; // force reduced gap - modifier .is-n avaiable on new bulma version
-.history .column {
-  padding: $gapHistory; // reduce gap
+.history {
+  display: flex;
+  margin: 0.5rem;
 }
 
-.history.columns {
-  margin-left: -$gapHistory;
-  margin-right: -$gapHistory;
-  margin-top: -$gapHistory;
+.months {
+  padding: 0.5rem;
 }
 
 .period {
@@ -77,35 +108,4 @@ $gapHistory: 0.5rem; // force reduced gap - modifier .is-n avaiable on new bulma
     opacity: 0.8;
   }
 }
-
 </style>
-<script>
-import { toPercent } from '../../utils/filters'
-
-export default {
-  name: 'GroupSupportHistory',
-  props: {
-    history: Array
-  },
-  data () {
-    return {
-      months: ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
-    }
-  },
-  computed: {
-  },
-  methods: {
-    getPercentage (percentage) {
-      return percentage >= 1 ? '100%' : `${Math.floor(percentage * 100)}%`
-    },
-    getResult (percentage) {
-      if (percentage < 0.6) return 'has-background-danger'
-      if (percentage < 1) return 'has-background-warning'
-      return 'has-background-success'
-    }
-  },
-  filters: {
-    toPercent
-  }
-}
-</script>

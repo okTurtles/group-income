@@ -1,37 +1,18 @@
-<template>
-  <span class="c-wrapper" @mouseenter="show" @mouseleave="hide">
-    <slot></slot>
-    <div
-      class="has-background-dark has-text-white is-bottom is-size-7 c-tooltip"
-      :style="stylesPosition"
-      v-if="isActive || shouldShow"
-      v-append-to-body
-    >
-      <template v-if="text">{{text}}</template>
-      <slot v-else name="tooltip"></slot>
-    </div>
-  </span>
+<template lang="pug">
+span.c-wrapper(
+  @mouseenter='show'
+  @mouseleave='hide'
+)
+  slot
+  .c-tooltip(
+    :style='stylesPosition'
+    v-if='isActive || shouldShow'
+    v-append-to-body=''
+  )
+    template(v-if='text') {{text}}
+    slot(v-else='' name='tooltip')
 </template>
-<style lang="scss" scoped>
-@import "../../assets/sass/theme/index";
 
-.c-wrapper {
-  display: inline-block;
-}
-
-.c-tooltip {
-  position: absolute;
-  top: 0;
-  left: 0;
-  min-width: 3rem;
-  max-width: 12rem;
-  border-radius: $radius;
-  padding: $gi-spacer-sm;
-  opacity: 0.95;
-  z-index: $gi-zindex-tooltip;
-  pointer-events: none;
-}
-</style>
 <script>
 /*
 NOTE: when needed, this component can be improved with more options:
@@ -116,3 +97,22 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+@import "../../assets/style/_variables.scss";
+
+.c-tooltip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  min-width: 3rem;
+  max-width: 12rem;
+  border-radius: $radius;
+  padding: $spacer-sm;
+  opacity: 0.95;
+  z-index: $zindex-tooltip;
+  pointer-events: none;
+  background-color: $text-strong;
+  color: #fff;
+}
+</style>

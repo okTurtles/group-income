@@ -24,7 +24,6 @@ If you already fully grok modern web dev and want to get started immediately, sk
     + [Babel](#babel---tomorrows-javascript-featurestoday)
     + [Vue.js](#vuejs---modern-frontend-component-framework)
     + [EJS](#ejs---like-php-but-javascript)
-    + [Bulma](#bulma---lightweight-modern-flexbox-css-framework)
     + [Honorable Mentions: Webpack, Gulp, React, Riot.js, Rollup](#honorable-mentions-webpack-gulp-react-riotjs-rollup)
 - [Frontend Workflow](#frontend-workflow)
     + [How do I get set up / just run the site?](#how-do-i-get-set-up--just-run-the-site)
@@ -218,10 +217,6 @@ This ~~project supports using it in `.vue` files~~ *(UPDATE: this is no longer t
 <% } %>
 ```
 
-###### __[Bulma](http://bulma.io/)__ - _Lightweight Modern [Flexbox](https://github.com/okTurtles/group-income-simple/wiki/Architecture-Notes#misc-useful-things) CSS Framework_
-
-We chose Bulma because it's more lightweight than Bootstrap.
-
 ##### Honorable Mentions: [Webpack](https://webpack.github.io/), [Gulp](http://gulpjs.com/), [React](https://github.com/facebook/react), [Riot.js](http://riotjs.com), [Rollup](https://rollupjs.org)
 
 We've chosen (for now at least) to use Browserify over Webpack, Grunt over Gulp, and Vue.js over React, even though these are all perfectly fine tools in the modern web development toolkit. Briefly, our reasoning:
@@ -293,7 +288,7 @@ Here are the important files and folders within `frontend/simple/`:
     + __Designer note:__ See: [When should I create a `.vue` file instead of an `.ejs` file?](#when-should-i-create-a-vue-file-instead-of-an-ejs-file)
 - `js/` - Folder for placing "handy js that's used in lots of places" _that you wrote_ (not third-party, [that goes in `assets/vendor/`](#where-should-i-put-javascript-someone-else-wrote-eg-jquery)).
     + __Designer note:__ Generally as a designer you can ignore this folder. Most of the JavaScript that designers need can either be `require`'d (see the next section) or created directly within `.vue` or `.ejs` files.
-- `sass/` - These are used (along with the Bulma framework) to generate the css files for the site. Can contain either `.sass` or `.scss` files.
+- `style/` - These are used to generate the css files for the site.
 - `assets/` - Grunt simply copies the folders within here to the output directory: `dist/`. This is where you drop in CSS files, images, and any other static assets.
     + __Developer note:__ Currently we do not [translate](https://github.com/gruntjs/grunt-contrib-sass), optimize, minify, or [fingerprint](http://guides.rubyonrails.org/asset_pipeline.html#what-is-fingerprinting-and-why-should-i-care-questionmark) any of these assets, but we will (using grunt). We won't, however, be "bundling" these assets via Webpack or rollup. "Bundling" refers to the practice of concatenating js, css (sometimes [even images!](https://github.com/webpack/file-loader)) and putting into a single `.js` file. This might have [made sense in the HTTP/1.0 days](https://jakearchibald.com/2016/link-in-body), however HTTP/2.0 makes this bizarro practice [totally unnecessary](https://blog.cloudflare.com/http-2-for-web-developers/).
 

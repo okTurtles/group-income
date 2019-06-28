@@ -1,45 +1,26 @@
-<template>
-  <div class="box is-unfilled c-box" v-on="$listeners">
-    <div class="is-flex c-header">
-      <i class="fa fa-plus is-flex c-icon"></i>
-      <i18n tag="h2" class="title is-5">Add Income Details</i18n>
-    </div>
-    <i18n tag="p" class="c-info">Sharing a few income details helps ensure all group members meet the mincome.</i18n>
+<template lang="pug">
+div(v-on='$listeners')
+  .c-header
+    button.is-small.is-outlined
+      i.icon-plus
+      | Add Income Details
 
-    <div class="has-text-danger has-text-weight-bold">
-      <i class="c-icon-attention fa fa-exclamation-triangle"></i>
-      <i18n>This information is required for you to be able to be part of the group.</i18n>
-    </div>
-  </div>
+  i18n.has-text-light(tag='p') Sharing a few income details helps ensure all group members meet the mincome.
+
+  p.error
+    i.c-icon-attention
+    i18n This information is required for you to be able to be part of the group.
+
 </template>
 <style lang="scss" scoped>
-@import "../../../assets/sass/theme/index";
-
-.c-box {
-  padding: $gi-spacer;
-}
+@import "../../../assets/style/_variables.scss";
 
 .c-header {
-  align-items: center;
-}
-
-.c-icon {
-  background: $primary-bg-a;
-  width: 2rem;
-  height: 2rem;
-  margin-right: $gi-spacer-sm;
-  justify-content: center;
-  align-items: center;
-  border-radius: 50%;
-  color: $primary;
-}
-
-.c-info {
-  margin: $gi-spacer 0;
+  margin-top: $spacer;
 }
 
 .c-icon-attention {
-  margin-right: $gi-spacer-sm;
+  margin-right: $spacer-sm;
 }
 </style>
 <script>

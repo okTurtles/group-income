@@ -29,8 +29,8 @@
 
 <script>
 import { mapGetters, mapMutations } from 'vuex'
-import Themes from '../../../model/colors.js'
-import colorsMixins from '../../utils/colorsManipulation.js'
+import Themes from '@model/colors.js'
+import colorsMixins from '@view-utils/colorsManipulation.js'
 
 export default {
   name: 'SelectorTheme',
@@ -65,7 +65,6 @@ export default {
   padding: 0;
   width: 410px;
   max-width: 100%;
-  list-style-type: none;
 }
 
 .search {
