@@ -173,8 +173,7 @@ module.exports = (grunt) => {
 
   grunt.registerTask('build', function () {
     const rollup = this.flags.watch ? 'rollup:watch' : 'rollup'
-    // grunt.task.run(['exec:eslint', 'exec:stylelint', 'copy', 'sass', rollup])
-    grunt.task.run(['exec:stylelint', 'copy', 'sass', rollup])
+    grunt.task.run(['exec:eslint', 'exec:stylelint', 'copy', 'sass', rollup])
   })
 
   // -------------------------------------------------------------------------
