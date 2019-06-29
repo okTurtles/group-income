@@ -336,7 +336,7 @@ function flow (options = {}) {
     name: 'flow-remove-types',
     transform: (code) => ({
       code: flowRemoveTypes(code, options).toString(),
-      map: null
+      map: options.pretty ? { mappings: '' } : null
     })
   }
 }
