@@ -4,7 +4,7 @@ import commonjs from 'rollup-plugin-commonjs'
 import alias from 'rollup-plugin-alias'
 import babel from 'rollup-plugin-babel'
 import VuePlugin from 'rollup-plugin-vue'
-import flow from 'rollup-plugin-flow'
+import flowRemoveTypes from 'flow-remove-types'
 import json from 'rollup-plugin-json'
 import globals from 'rollup-plugin-node-globals'
 import { eslint } from 'rollup-plugin-eslint'
@@ -242,8 +242,6 @@ module.exports = (grunt) => {
       output: {
         format: 'system',
         dir: distJS,
-        // currently bad sourcemaps are being generated due to a bug in rollup or a plugin:
-        // https://github.com/rollup/rollup/issues/2011#issuecomment-459929269
         sourcemap: development
       },
       external: ['crypto'],
@@ -330,6 +328,19 @@ module.exports = (grunt) => {
     })
   })
 }
+
+// Using this instead of rollup-plugin-flow due to
+// https://github.com/leebyron/rollup-plugin-flow/issues/5
+function flow (options = {}) {
+  return {
+    name: 'flow-remove-types',
+    transform: (code) => ({
+      code: flowRemoveTypes(code, options).toString(),
+      map: null
+    })
+  }
+}
+
 /*
 // ----------------------------------------
 // TODO: convert this to a pure rollup plugin
