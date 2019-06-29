@@ -1,4 +1,4 @@
-// <template lang="pug">
+<template lang="pug">
 // main.c-chatroom
 //   chat-nav(
 //     :title='title'
@@ -11,9 +11,9 @@
 //     :details='details'
 //   )
 
-// </template>
+</template>
 
-// <script>
+<script>
 // import { chatTypes, individualMessagesSorted, users, individualConversations, groupA } from './fakeStore.js'
 // import ChatMain from '@components/Chatroom/ChatMain.vue'
 // import ChatNav from '@components/Chatroom/ChatNav.vue'
@@ -158,9 +158,9 @@
 //     }
 //   }
 // }
-// </script>
+</script>
 
-// <style lang="scss" scoped>
+<style lang="scss" scoped>
 // @import "../../../assets/style/_variables.scss";
 
 // .c-chatroom {
@@ -178,4 +178,4 @@
 //     height: 100vh;
 //   }
 // }
-// </style>
+</style>

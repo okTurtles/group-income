@@ -1,4 +1,3 @@
-/* global fetch */
 'use strict'
 
 import sbp from '../../shared/sbp.js'
