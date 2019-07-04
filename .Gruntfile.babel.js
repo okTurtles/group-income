@@ -123,6 +123,7 @@ module.exports = (grunt) => {
       // https://github.com/standard/standard/issues/750#issuecomment-379294276
       eslint: 'node ./node_modules/eslint/bin/eslint.js "**/*.{js,vue}"',
       eslintgrunt: "./node_modules/.bin/eslint --ignore-pattern '!.*.js' .Gruntfile.babel.js Gruntfile.js",
+      puglint: './node_modules/.bin/pug-lint-vue frontend/views',
       stylelint: 'node ./node_modules/stylelint/bin/stylelint.js "frontend/assets/style/**/*.{css,scss,vue}"',
       flow: './node_modules/.bin/flow'
     },
@@ -173,7 +174,7 @@ module.exports = (grunt) => {
 
   grunt.registerTask('build', function () {
     const rollup = this.flags.watch ? 'rollup:watch' : 'rollup'
-    grunt.task.run(['exec:eslint', 'exec:stylelint', 'copy', 'sass', rollup])
+    grunt.task.run(['exec:eslint', 'exec:puglint', 'exec:stylelint', 'copy', 'sass', rollup])
   })
 
   // -------------------------------------------------------------------------

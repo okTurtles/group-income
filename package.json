@@ -150,6 +150,7 @@
     "nightmare": "3.0.2",
     "node-fetch": "2.6.0",
     "node-sass": "4.12.0",
+    "pug-lint-vue": "0.3.0",
     "rollup": "1.16.2",
     "rollup-plugin-alias": "1.5.2",
     "rollup-plugin-babel": "4.3.3",
