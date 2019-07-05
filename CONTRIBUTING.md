@@ -47,6 +47,7 @@ This contribution policy will evolve over time. For now it is based on a slightl
 5. A PR **MUST** include new tests for any new functionality introduced.
 6. A PR **SHOULD** avoid "callback-hell" style and instead prefer "async/await" style.
 7. A PR **MUST** follow the requirements spelled out in this project's [Style Guide](docs/Style-Guide.md).
+8. A PR **MUST** receive approval from at least one reviewer (existing, long-term contributor) before being merged. *Reviewers may not review their own PRs, and may not push commits to someone else's PR.*
 
 ## How to submit an issue
 
