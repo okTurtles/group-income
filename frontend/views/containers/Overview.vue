@@ -54,7 +54,6 @@
 
       p.help
         i18n This amount will not be used
-
 </template>
 
 <script>

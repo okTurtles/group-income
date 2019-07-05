@@ -35,7 +35,6 @@ div(v-if='groupsByName.length')
       i18n Group Chat
     list-item(tag='router-link' icon='cog' to='/group-settings')
       i18n Group Settings
-
 </template>
 
 <script>

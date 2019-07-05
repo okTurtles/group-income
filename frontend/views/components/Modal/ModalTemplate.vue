@@ -20,7 +20,6 @@
 
         footer.c-modal-footer(v-if='$scopedSlots.footer')
           slot(name='footer')
-
 </template>
 
 <script>

@@ -10,7 +10,6 @@ div(v-on='$listeners')
   p.error
     i.c-icon-attention
     i18n This information is required for you to be able to be part of the group.
-
 </template>
 <style lang="scss" scoped>
 @import "../../../assets/style/_variables.scss";

@@ -57,7 +57,6 @@
           @click='changePassword'
           :disabled='$v.form.$invalid'
         ) Change password
-
 </template>
 <script>
 import { validationMixin } from 'vuelidate'

@@ -27,7 +27,6 @@ main.c-splash(data-test='homeLogo')
     to='new-group'
   )
     i18n Start a Group
-
 </template>
 
 <script>

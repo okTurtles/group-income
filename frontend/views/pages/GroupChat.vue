@@ -21,7 +21,6 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
       :summary='summary'
       :details='details'
     )
-
 </template>
 
 <script>

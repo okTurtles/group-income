@@ -3,18 +3,18 @@
   .slide-bar(ref='elem')
     template
       .slide-bar-always.slide-bar-tooltip-container(
-          ref='tooltip'
-          @mousedown='moveStart'
-          @touchstart='moveStart'
-        )
+        ref='tooltip'
+        @mousedown='moveStart'
+        @touchstart='moveStart'
+      )
         span.slide-bar-tooltip-top.slide-bar-tooltip-wrap
           span.slide-bar-tooltip
     .slide-bar-process(ref='process')
   .slide-bar-range(v-if='range')
     .slide-bar-separate(
-        v-for='(r, index) in range'
-        :key='index'
-      )
+      v-for='(r, index) in range'
+      :key='index'
+    )
       span.slide-bar-separate-text {{ r.label }}
 </template>
 <script>

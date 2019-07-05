@@ -14,7 +14,7 @@
         label.label
           i18n Username
 
-        input#name.input(
+        input.input#name(
           :class="{'error': $v.form.name.$error}"
           name='name'
           @input='debounceName'
@@ -35,7 +35,7 @@
         label.label
           i18n Email
 
-        input#email.input(
+        input.input#email(
           :class="{'error': $v.form.email.$error}"
           name='email'
           v-model='form.email'
@@ -70,7 +70,6 @@
         i18n Already have an account?&nbsp;
         a.link(@click='showLoginModal')
           i18n Login
-
 </template>
 
 <script>

@@ -9,7 +9,6 @@
   | An interactive action would be here...
   br
   |  Accept an invite or vote on a proposal
-
 </template>
 
 <script>

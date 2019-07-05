@@ -23,7 +23,6 @@ div
   .c-bar(:style='{ backgroundColor: fakeStore.themeColor }')
     span.c-bar-progress.c-metric-secondary(:style='{ width: barPercentage.pledged }')
     span.c-bar-progress.c-metric-primary(:style='{ width: barPercentage.contributed }')
-
 </template>
 
 <script>

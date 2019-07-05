@@ -86,7 +86,6 @@
         target='_blank'
       )
         i18n Read more on our blog about the dangers of majority rule.
-
 </template>
 
 <script>

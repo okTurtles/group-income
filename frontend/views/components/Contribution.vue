@@ -45,7 +45,6 @@ li(v-else-if='isUnfilled')
 
 li(v-else='' :class='itemClasses')
   slot
-
 </template>
 
 <script>

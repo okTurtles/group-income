@@ -41,7 +41,6 @@ div
 
     i18n.help(tag='p')
       | With manual payments, members can manually send pledges using any method that works for the giving and the receiving group member(s). Once the pledge is sent, you will receive a notification so you know to expect the pledge. After receiving the pledge, be sure to mark it as &quot;Received&quot; so the sender will know it went through.
-
 </template>
 
 <script>

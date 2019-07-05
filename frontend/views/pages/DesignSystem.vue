@@ -90,48 +90,48 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
           | https://fortawesome.com/sets/font-awesome-5-regular
 
       table
-          thead
-            th code
-            th demo
-          tr
-            td
-              pre
-                | .c-icons
-                |   i.icon-angle-left
-            td
-              .c-icons
-                i.icon-angle-left icon-angle-left
-                i.icon-angle-down icon-angle-down
-                i.icon-arrow-right icon-arrow-right
-                i.icon-bars icon-bars
-                i.icon-bell icon-bell
-                i.icon-chart-pie icon-chart-pie
-                i.icon-check icon-check
-                i.icon-check-circle icon-check-circle
-                i.icon-chevron-left icon-chevron-left
-                i.icon-chevron-right icon-chevron-right
-                i.icon-cog icon-cog
-                i.icon-columns icon-columns
-                i.icon-comment icon-comment
-                i.icon-edit icon-edit
-                i.icon-ellipsis-v icon-ellipsis-v
-                i.icon-envelope icon-envelope
-                i.icon-exclamation-triangle icon-exclamation-triangle
-                i.icon-eye icon-eye
-                i.icon-eye-slash icon-eye-slash
-                i.icon-globe icon-globe
-                i.icon-heart icon-heart
-                i.icon-info-circle icon-info-circle
-                i.icon-lock icon-lock
-                i.icon-minus-circle icon-minus-circle
-                i.icon-paper-plane icon-paper-plane
-                i.icon-pencil-alt icon-pencil-alt
-                i.icon-plus icon-plus
-                i.icon-tag icon-tag
-                i.icon-times-circle icon-times-circle
-                i.icon-undo icon-undo
-                i.icon-user icon-user
-                i.icon-user-plus icon-user-plus
+        thead
+          th code
+          th demo
+        tr
+          td
+            pre
+              | .c-icons
+              |   i.icon-angle-left
+          td
+            .c-icons
+              i.icon-angle-left icon-angle-left
+              i.icon-angle-down icon-angle-down
+              i.icon-arrow-right icon-arrow-right
+              i.icon-bars icon-bars
+              i.icon-bell icon-bell
+              i.icon-chart-pie icon-chart-pie
+              i.icon-check icon-check
+              i.icon-check-circle icon-check-circle
+              i.icon-chevron-left icon-chevron-left
+              i.icon-chevron-right icon-chevron-right
+              i.icon-cog icon-cog
+              i.icon-columns icon-columns
+              i.icon-comment icon-comment
+              i.icon-edit icon-edit
+              i.icon-ellipsis-v icon-ellipsis-v
+              i.icon-envelope icon-envelope
+              i.icon-exclamation-triangle icon-exclamation-triangle
+              i.icon-eye icon-eye
+              i.icon-eye-slash icon-eye-slash
+              i.icon-globe icon-globe
+              i.icon-heart icon-heart
+              i.icon-info-circle icon-info-circle
+              i.icon-lock icon-lock
+              i.icon-minus-circle icon-minus-circle
+              i.icon-paper-plane icon-paper-plane
+              i.icon-pencil-alt icon-pencil-alt
+              i.icon-plus icon-plus
+              i.icon-tag icon-tag
+              i.icon-times-circle icon-times-circle
+              i.icon-undo icon-undo
+              i.icon-user icon-user
+              i.icon-user-plus icon-user-plus
 
   article#spacing
     .p-section-header
@@ -567,44 +567,44 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
 
     section.p-section-header
       table
-          thead
-            th code
-            th demo
-          tr
-            td
-              pre
-                | .steps
-                br
-                |   a.step 1
-                br
-                |   a.step.active 2
-                br
-                |   a.step.next 3
-            td
-              .steps
-                a.step 1
-                a.step.active 2
-                a.step.next 3
+        thead
+          th code
+          th demo
+        tr
+          td
+            pre
+              | .steps
+              br
+              |   a.step 1
+              br
+              |   a.step.active 2
+              br
+              |   a.step.next 3
+          td
+            .steps
+              a.step 1
+              a.step.active 2
+              a.step.next 3
   article#menu
     .p-section-header
       h2 Menu
 
     section.p-section
       table
-          thead
-            th code
-            th demo
-          tr
-            td
-              code
-                | this.$store.dispatch('login',
-                br
-                |   { name: 'TestUser' }
-                br
-                | )
-            td
-              button(@click="login()")
-                i18n Open Menu
+        thead
+          th code
+          th demo
+        tr
+          td
+            code
+              | this.$store.dispatch('login',
+              br
+              |   { name: 'TestUser' }
+              br
+              | )
+          td
+            button(@click="login()")
+              i18n Open Menu
 
   article#modal
     .p-section-header
@@ -612,20 +612,20 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
 
     section.p-section
       table
-          thead
-            th code
-            th demo
-          tr
-            td
-              code
-                | sbp('okTurtles.events/emit',
-                br
-                |   LOAD_MODAL, 'DesignSystemModal'
-                br
-                | )
-            td
-              button(@click="openModal('DesignSystemModal')")
-                i18n Open Modal
+        thead
+          th code
+          th demo
+        tr
+          td
+            code
+              | sbp('okTurtles.events/emit',
+              br
+              |   LOAD_MODAL, 'DesignSystemModal'
+              br
+              | )
+          td
+            button(@click="openModal('DesignSystemModal')")
+              i18n Open Modal
 </template>
 
 <script>

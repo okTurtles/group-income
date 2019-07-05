@@ -128,7 +128,6 @@ main
           data-test='GroupProfileSubmitBtn'
         )
           i18n Save Group Profile
-
 </template>
 <script>
 import { validationMixin } from 'vuelidate'

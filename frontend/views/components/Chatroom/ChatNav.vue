@@ -31,7 +31,6 @@
       | Search results for &quot;{{ ephemeral.searchTerm }}&quot; to be done...
     slot(v-else='')
       // Content for each chatNav is up to the parent
-
 </template>
 
 <script>

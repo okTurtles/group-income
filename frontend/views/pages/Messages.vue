@@ -17,7 +17,6 @@ page(pageTestName='messages' pageTestHeaderName='messages')
     :summary='summary'
     :details='details'
   )
-
 </template>
 
 <script>

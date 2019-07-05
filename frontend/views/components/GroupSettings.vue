@@ -30,7 +30,6 @@
       @click.prevent="openProposal('RuleRemoveMember')"
     )
       i18n Propose change
-
 </template>
 
 <script>

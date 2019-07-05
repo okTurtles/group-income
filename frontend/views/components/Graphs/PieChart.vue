@@ -36,7 +36,6 @@
     :style='ephemeral.labelStyle'
     :shouldshow='ephemeral.isLabelVisible'
   )
-
 </template>
 
 <script>

@@ -12,7 +12,6 @@ modal-base-template
         settings-appearence
       tab-item
         tab-placeholder(name='Changelog')
-
 </template>
 
 <script>

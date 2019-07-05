@@ -27,7 +27,7 @@
             avatar(:src='userPicture')
             i18n.link Change avatar
 
-          input#profilePicture.profilePictureInput(
+          input.profilePictureInput#profilePicture(
             type='file'
             name='profilePicture'
             accept='image/*'
@@ -121,7 +121,6 @@
             data-test='submit'
           )
             i18n Delete account
-
 </template>
 
 <script>

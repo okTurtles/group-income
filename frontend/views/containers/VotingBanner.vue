@@ -16,7 +16,6 @@
   p.column.is-12.is-size-7.is-italic
     | {{votesCount}}
     i18n votes received
-
 </template>
 
 <script>

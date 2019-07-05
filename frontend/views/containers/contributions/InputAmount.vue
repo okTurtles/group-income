@@ -18,7 +18,6 @@ label.gi-fieldGroup
 
   p.is-size-6.gi-help(v-if='$slots.help')
     slot(name='help')
-
 </template>
 
 <script>

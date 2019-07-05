@@ -18,7 +18,6 @@
       @click="openModal('Settings')"
     )
       i.icon-cog
-
 </template>
 
 <script>

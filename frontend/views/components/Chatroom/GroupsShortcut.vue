@@ -19,7 +19,6 @@
           // NOTE: mocked just for layout purposes
           badge.c-badge(:number='index === 0 ? 2 : 0')
             span.c-ul-li-char.has-text-weight-bold.has-text-white.is-size-5(aria-hidden='true') {{ group.groupName.charAt(0) }}
-
 </template>
 
 <script>

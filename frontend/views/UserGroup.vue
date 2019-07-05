@@ -2,7 +2,6 @@
 .content.user-group
   h1.title {{ msg }}
   // <%- include included %>
-
 </template>
 
 <script>

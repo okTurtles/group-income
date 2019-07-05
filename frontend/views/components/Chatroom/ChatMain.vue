@@ -4,10 +4,10 @@
 
     template(slot='title')
       avatar.c-header-avatar(:src='summary.picture' alt='')
-        i.c-header-private(:class="{\
-        'icon-globe': summary.private === false,\
-        'icon-lock': summary.private === true,\
-        }" v-if='summary.private !== undefined')
+        i.c-header-private(
+          v-if='summary.private !== undefined'
+          :class="{'icon-globe': summary.private === false, 'icon-lock': summary.private === true}"
+        )
         | {{summary.title}}
 
     template(slot='actions')
@@ -62,11 +62,11 @@
         message(
           v-else=''
           :key='`message-${index}`'
-          :text='message.text',
-          :who='who(isCurrentUser(message.from), message.from)',
-          :avatar='avatar(isCurrentUser, message.from)',
-          :variant='variant(isCurrentUser(message.from))',
-          :hideWho='shouldHideWho(index)',
+          :text='message.text'
+          :who='who(isCurrentUser(message.from), message.from)'
+          :avatar='avatar(isCurrentUser, message.from)'
+          :variant='variant(isCurrentUser(message.from))'
+          :hideWho='shouldHideWho(index)'
           :isSameSender='isSameSender(index)'
         )
 
@@ -79,7 +79,6 @@
 
   .c-footer
     send-area(:title='summary.title' @send='handleSendMessage' @heightupdate='updateSendAreaHeight' :loading='details.isLoading')
-
 </template>
 
 <script>

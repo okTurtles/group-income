@@ -9,7 +9,6 @@
 
   button.link(@click='updateSharedValues')
     i18n Edit
-
 </template>
 
 <script>
