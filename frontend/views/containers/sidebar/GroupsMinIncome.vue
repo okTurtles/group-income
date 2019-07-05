@@ -7,7 +7,6 @@ div
 
   button.link(@click='openProposal')
     i18n Change
-
 </template>
 
 <script>

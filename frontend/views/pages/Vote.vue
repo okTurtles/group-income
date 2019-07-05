@@ -21,7 +21,7 @@ section.section.full-screen
             i18n Your Decision?
 
         .panel-block.center(style='display: block; text-align: center;')
-          #errorMsg.help.is-danger(v-if='errorMsg') {{errorMsg}}
+          .help.is-danger(v-if='errorMsg') {{errorMsg}}
 
           a.button.is-success(
             style='margin-left:auto; margin-right: 20px;'
@@ -30,7 +30,7 @@ section.section.full-screen
           )
             i18n For
 
-          a#AgainstLink.button.is-danger(
+          a.button.is-danger(
             @click='voteAgainst'
             style='margin-right:auto; margin-right: 20px;'
           )

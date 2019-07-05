@@ -30,7 +30,7 @@ div
     data-test='member'
   )
     avatar(
-      :src='invitee.state.attributes.picture',
+      :src='invitee.state.attributes.picture'
       :alt='invitee.state.attributes.name'
     )
 

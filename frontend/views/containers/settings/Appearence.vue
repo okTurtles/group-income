@@ -17,7 +17,6 @@
       .preview
         h3.title Text size preview
         p.para Group Income (n) is an efficient, fair, decentralized Basic Income system for you and your friends.
-
 </template>
 
 <script>

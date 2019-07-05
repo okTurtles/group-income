@@ -38,7 +38,6 @@
         | {{closeProposalBtnText}}
     p.has-text-light(:class="{ 'c-feedback has-text-weight-bold': isProposalClosed }")
       | {{helperText}}
-
 </template>
 
 <script>

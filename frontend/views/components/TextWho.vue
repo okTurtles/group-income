@@ -10,7 +10,6 @@ span
         i18n others
       template(slot='tooltip')
         p(v-for='(name, index) in notFirstWho' :key='`name-${index}`') {{name}}
-
 </template>
 
 <script>

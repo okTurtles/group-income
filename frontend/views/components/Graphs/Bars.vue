@@ -24,7 +24,6 @@
       i18n months
 
   p(v-else='') We are on the first month.
-
 </template>
 
 <script>

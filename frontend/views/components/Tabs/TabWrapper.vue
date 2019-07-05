@@ -32,7 +32,6 @@
 
     section.tab-section
       slot
-
 </template>
 
 <script>

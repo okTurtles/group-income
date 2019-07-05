@@ -14,7 +14,7 @@
         label.label
           i18n Username
 
-        input#loginName.input(
+        input.input#loginName(
           :class="{'error': $v.form.name.$error}"
           name='name'
           v-model='form.name'

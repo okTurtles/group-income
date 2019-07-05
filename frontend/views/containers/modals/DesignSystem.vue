@@ -19,7 +19,6 @@ modal-template(:class="{ 'has-background': background }")
 
   template(#footer='')
     p According to your voting rules, 8 out of 10 members will have to agree with this.
-
 </template>
 <script>
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'

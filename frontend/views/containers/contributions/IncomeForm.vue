@@ -95,7 +95,6 @@ modal-template(
       @click='cancelForm'
       :value='L("Cancel")'
     )
-
 </template>
 
 <script>

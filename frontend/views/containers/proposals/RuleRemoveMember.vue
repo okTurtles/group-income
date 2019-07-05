@@ -3,7 +3,6 @@ proposal-template(
   :subTitle="L('Change Rule to Remove Member')"
   :onSubmit='handleSubmit'
 ) I step to change rule of remove member it's on the way
-
 </template>
 
 <script>

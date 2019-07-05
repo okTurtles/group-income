@@ -10,7 +10,6 @@
 //     :summary='summary'
 //     :details='details'
 //   )
-
 </template>
 
 <script>

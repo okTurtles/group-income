@@ -16,7 +16,6 @@ div
     :value='group.sharedValues'
     @input='update'
   )
-
 </template>
 
 <script>

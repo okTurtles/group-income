@@ -36,7 +36,6 @@
               i18n Option 2
             menu-item(tag='button' itemid='hash-3' icon='heart')
               i18n Option 3
-
 </template>
 
 <script>

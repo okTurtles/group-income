@@ -9,7 +9,6 @@
     slot(v-else='')
   button.is-icon.has-text-danger.c-retry(:class="{ 'alignToText': !hasWhoInvisible }" v-if="variant === 'failed'" @click="$emit('retry')")
     i.icon-undo
-
 </template>
 
 <script>

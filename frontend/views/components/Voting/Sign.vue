@@ -22,7 +22,6 @@
     :alt="`${member.name}'s avatar`"
     v-if='isTypeMember'
   )
-
 </template>
 
 <script>

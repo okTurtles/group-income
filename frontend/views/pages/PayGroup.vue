@@ -108,7 +108,6 @@ page(pageTestName='payGroupPage' pageTestHeaderName='payGroupTitle')
 
           td
             | {{fakeStore.currency}}{{user.amount}}
-
 </template>
 
 <script>

@@ -66,7 +66,6 @@
 
       template(v-else='')
         | {{fakeStore.currency}}{{graphData.userIncomeToReceive}}
-
 </template>
 
 <script>

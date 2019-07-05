@@ -48,7 +48,6 @@ main.main#create-group-page
     v-if='ephemeral.errorMsg'
     severity='danger'
   ) {{ ephemeral.errorMsg }}
-
 </template>
 
 <script>

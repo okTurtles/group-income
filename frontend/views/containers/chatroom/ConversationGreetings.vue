@@ -7,7 +7,6 @@
     :alt='user.displayName || user.name'
   )
   message-notification {{text}}
-
 </template>
 
 <script>

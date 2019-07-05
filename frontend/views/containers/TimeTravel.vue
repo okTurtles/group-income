@@ -6,7 +6,6 @@
     @callback='timeTravel'
   )
   div {{ ephemeral.history.length }}
-
 </template>
 
 <script>

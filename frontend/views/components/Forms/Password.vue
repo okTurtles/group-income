@@ -27,7 +27,6 @@
     data-test='badPassword'
   )
     i18n {{ v[name].$error }}
-</div>
 </template>
 
 <script>

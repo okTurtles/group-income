@@ -6,7 +6,6 @@ div
   p
     i18n
       | This step is to be designed. What group privacy settings would you feel more comfortable having control over? Let us know at dunno@groupincome.org!
-
 </template>
 
 <script>

@@ -18,7 +18,6 @@
       )
 
       span {{list.conversations[id].displayName || list.conversations[id].name}}
-
 </template>
 
 <script>

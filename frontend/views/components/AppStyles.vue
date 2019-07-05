@@ -15,7 +15,6 @@ v-style.
     --success: {{lightenDarkenColor(colors.secondary, 0.03)}};
     --placeholder: {{colors.placeholder}}
   }
-
 </template>
 
 <script>

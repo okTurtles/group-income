@@ -8,7 +8,7 @@ div
     avatar(:src='group.groupPicture')
     i18n.link Upload an image
 
-    input#groupPicture.groupPictureInput(
+    input.groupPictureInput#groupPicture(
       type='file'
       name='groupPicture'
       accept='image/*'
@@ -35,7 +35,6 @@ div
     @keyup.enter='next'
     data-test='groupName'
   )
-
 </template>
 
 <script>
