@@ -1,6 +1,6 @@
 language: node_js
 node_js:
-  - "10"
+  - "12"
 # https://docs.travis-ci.com/user/gui-and-headless-browsers/#Using-xvfb-to-Run-Tests-That-Require-a-GUI
 # to specify screen resolution, add this to before_script instead of init.d/xvfb start:
 # - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x16"
@@ -10,7 +10,8 @@ before_script:
 compiler: clang # per: https://docs.travis-ci.com/user/languages/c
 # https://docs.travis-ci.com/user/environment-variables
 env:
-  - CXX=clang++ DISPLAY=':99.0' DEBUG='nightmare*'
+ - CXX=clang++ DISPLAY=':99.0'
+#  - CXX=clang++ DISPLAY=':99.0' DEBUG='nightmare*'
 branches:
   only:
     - master # https://github.com/okTurtles/group-income-simple/issues/58

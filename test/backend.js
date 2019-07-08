@@ -1,13 +1,13 @@
 /* eslint-env mocha */
 
-import sbp from '../shared/sbp.js'
-import '../shared/domains/okTurtles/events/index.js'
+import sbp from '~/shared/sbp.js'
+import '~/shared/domains/okTurtles/events/index.js'
 import chalk from 'chalk'
-import { GIMessage } from '../shared/GIMessage.js'
-import contracts from '../frontend/model/contracts.js'
-import * as _ from '../frontend/utils/giLodash.js'
-import { createWebSocket } from '../frontend/controller/backend.js'
-import '../frontend/controller/namespace.js'
+import { GIMessage } from '~/shared/GIMessage.js'
+import contracts from '~/frontend/model/contracts.js'
+import * as _ from '~/frontend/utils/giLodash.js'
+import { createWebSocket } from '~/frontend/controller/backend.js'
+import '~/frontend/controller/namespace.js'
 
 global.fetch = require('node-fetch')
 const should = require('should') // eslint-disable-line

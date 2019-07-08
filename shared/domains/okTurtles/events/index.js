@@ -4,7 +4,7 @@
 // Domain: Event publish/subscribe
 // =======================
 
-import sbp from '../../../sbp.js'
+import sbp from '~/shared/sbp.js'
 
 const listenKey = evt => `events/${evt}/listeners`
 

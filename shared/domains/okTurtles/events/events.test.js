@@ -1,8 +1,8 @@
 /* eslint-env mocha */
 
 import sinon from 'sinon'
-import sbp from '../../../sbp.js'
-import '../data'
+import sbp from '~/shared/sbp.js'
+import '../data/index.js'
 import './index.js'
 
 require('should-sinon')

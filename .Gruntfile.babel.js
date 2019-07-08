@@ -1,4 +1,7 @@
-import { setupPrimus } from './backend/pubsub.js'
+'use strict'
+
+import sbp from '~/shared/sbp.js'
+import '~/backend/pubsub.js'
 import resolve from 'rollup-plugin-node-resolve'
 import commonjs from 'rollup-plugin-commonjs'
 import alias from 'rollup-plugin-alias'
@@ -26,7 +29,7 @@ const url = require('url')
 const development = process.env.NODE_ENV === 'development'
 const livereload = development && (parseInt(process.env.PORT_SHIFT || 0) + 35729)
 
-setupPrimus(require('http').createServer(), true)
+sbp('backend/pubsub/setup', require('http').createServer(), true)
 
 const distDir = 'dist'
 const distAssets = `${distDir}/assets`
@@ -139,15 +142,23 @@ module.exports = (grunt) => {
         middleware: (connect, opts, middlewares) => {
           middlewares.unshift((req, res, next) => {
             var f = url.parse(req.url).pathname // eslint-disable-line
-            if (f !== undefined && /^\/app(\/|$)/.test(f)) {
-              // NOTE: if you change the URL from /app you must modify it here,
-              //       and also:
-              //       - page() function in `frontend/test.js`
-              //       - base property in `frontend/simple/controller/router.js`
-              console.log(`Req: ${req.url}, sending index.html for: ${f}`)
-              res.end(fs.readFileSync(`${distDir}/index.html`))
-            } else {
-              next() // otherwise send the resource itself, whatever it is
+            if (f !== undefined) {
+              if (/^\/app(\/|$)/.test(f)) {
+                // NOTE: if you change the URL from /app you must modify it here,
+                //       and also:
+                //       - page() function in `frontend/test.js`
+                //       - base property in `frontend/simple/controller/router.js`
+                console.log(chalk.grey(`Req: ${req.url}, sending index.html for: ${f}`))
+                res.end(fs.readFileSync(`${distDir}/index.html`))
+              // NOTE: next we check for sourcemapped files
+              } else if (/^\/(frontend|shared|node_modules)\//.test(f)) {
+                // NOTE: we will not be doing this or using this in production
+                console.log(chalk`{grey Req: ${req.url},} sending dev file`)
+                res.end(fs.readFileSync(f.slice(1)))
+              } else {
+                console.log(chalk.grey(`sending: ${req.url}`))
+                next() // otherwise send the resource itself, whatever it is
+              }
             }
           })
           return middlewares
@@ -243,7 +254,13 @@ module.exports = (grunt) => {
       output: {
         format: 'system',
         dir: distJS,
-        sourcemap: development
+        sourcemap: development,
+        sourcemapPathTransform: relativePath => {
+          // const relativePath2 = '/' + path.relative('../../../', relativePath)
+          const relativePath2 = path.relative('../', relativePath)
+          // console.log('RELATIVE PATH: ' + relativePath + ' => ' + relativePath2)
+          return relativePath2
+        }
       },
       external: ['crypto'],
       moduleContext: {
@@ -275,6 +292,7 @@ module.exports = (grunt) => {
         //       per: https://rollupjs.org/guide/en#plugins-overview
         // browserifyPlugin(script2ify, { include: '*.{vue,html}' }),
         scssVariable(),
+        // note there is a sourcemap bug for component.css: https://github.com/thgh/rollup-plugin-css-only/issues/10
         css({ output: `${distCSS}/component.css` }), // SUCCESS - spits out what's in .vue <style> tags
         // collectSass({ importOnce: true, extract: `${distCSS}/collectSass.css` }), // FAIL - flowtypes conflict
         // sass({ output: `${distCSS}/sass.css` }), // FAIL - flowtypes conflict
@@ -282,7 +300,8 @@ module.exports = (grunt) => {
         //                                              useful in the <script> section, i.e.
         //                                              <script>import 'foo.scss' ...
         eslint({ throwOnError: true, throwOnWarning: true }),
-        VuePlugin({ css: false }), // TODO: switch to false and uncomment `css()`
+        VuePlugin({ css: false }),
+        // VuePlugin(),
         flow({ all: true }),
         commonjs({
           // include: 'node_modules/**'

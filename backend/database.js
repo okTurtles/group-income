@@ -1,11 +1,10 @@
 'use strict'
 
-// import fs from 'fs'
+import sbp from '~/shared/sbp.js'
+import { GIMessage } from '~/shared/GIMessage.js'
+import { strToB64 } from '~/shared/functions.js'
 import { Readable } from 'stream'
-import { GIMessage } from '../shared/GIMessage.js'
-import sbp from '../shared/sbp.js'
-import '../shared/domains/okTurtles/data/index.js'
-import { strToB64 } from '../shared/functions.js'
+// import fs from 'fs'
 
 // TODO: use some fast key/value store
 // TODO: just use the file system! store the json of each message to disk as a file with its hash as the file name
@@ -54,7 +53,6 @@ export function lastEntry (contractID: string): GIMessage {
 // => request.on('close', stream.end.bind(stream))
 // NOTE: On Hapi.js the event is 'disconnect'.
 export function streamEntriesSince (contractID: string, hash: string) {
-  console.log('streamEntriesSince():', contractID, hash)
   var currentHEAD = get(logHEAD(contractID))
   var prefix = '['
   return new Readable({
@@ -85,3 +83,12 @@ export function registerName (name: string, value: string) {
 export function lookupName (name: string) {
   return get(`namespace/${name}`)
 }
+
+export default sbp('sbp/selectors/register', {
+  'backend/db/addLogEntry': addLogEntry,
+  'backend/db/getLogEntry': getLogEntry,
+  'backend/db/lastEntry': lastEntry,
+  'backend/db/streamEntriesSince': streamEntriesSince,
+  'backend/db/registerName': registerName,
+  'backend/db/lookupName': lookupName
+})
