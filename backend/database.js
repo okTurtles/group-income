@@ -6,6 +6,8 @@ import { strToB64 } from '~/shared/functions.js'
 import { Readable } from 'stream'
 // import fs from 'fs'
 
+// import fs from 'fs'
+
 // TODO: use some fast key/value store
 // TODO: just use the file system! store the json of each message to disk as a file with its hash as the file name
 
@@ -83,6 +85,27 @@ export function registerName (name: string, value: string) {
 export function lookupName (name: string) {
   return get(`namespace/${name}`)
 }
+
+// =======================
+// Filesystem API
+//
+// TODO: add encryption
+// =======================
+
+export function writeFile (filename: string, data: any) {
+  // TODO: check for how much space we have, and have a server setting
+  //       that determines how much of the disk space we're allowed to
+  //       use. If the size of the file would cause us to exceed this
+  //       amount, throw an exception
+}
+
+export function readFile (filename: string) {
+
+}
+
+// =======================
+// Register SBP selectors
+// =======================
 
 export default sbp('sbp/selectors/register', {
   'backend/db/addLogEntry': addLogEntry,

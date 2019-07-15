@@ -24,7 +24,7 @@ export function makeResponse (
   return { type, data }
 }
 
-export function blake32Hash (data: string) {
+export function blake32Hash (data: string | Buffer | Uint8Array) {
   // TODO: for node/electron, switch to: https://github.com/ludios/node-blake2
   let uint8array = blake.blake2b(data, null, 32)
   // TODO: if we switch to webpack we may need: https://github.com/feross/buffer

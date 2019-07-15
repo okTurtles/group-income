@@ -4,6 +4,7 @@
 
 import sbp from '~/shared/sbp.js'
 import { GIMessage } from '~/shared/GIMessage.js'
+import { blake32Hash } from '~/shared/functions.js'
 import { SERVER_INSTANCE } from './instance-keys.js'
 import './database.js'
 const Boom = require('@hapi/boom')
@@ -109,18 +110,48 @@ route.GET('/latestHash/{contractID}', {}, function (request, h) {
 //       - https://www.raymondcamden.com/2016/06/03/capturing-camerapicture-data-without-phonegap-an-update
 //       - https://hacks.mozilla.org/2012/02/storing-images-and-files-in-indexeddb/
 //       - https://robertnyman.com/2012/03/06/storing-images-and-files-in-indexeddb/
+//
+//       NOTE: if the browser deletes our cache then not everyone
+//             has a complete copy of the data and can act as a
+//             new coordinating server... I don't like that.
+//
 // TODO: combine all of these routes into a single generic key-value store?
 //       i.e. the first two routes (/event and /events) should be renamed
 //       and should be able to handle file upload too...
 //       OTOH having image specific handler could be useful for things like
 //       specifying the size of the image...
-// TODO: add backend tests with https://github.com/form-data/form-data
+
+const MEGABTYE = 1048576
+const SECOND = 1000
+
 route.POST('/file', {
+  // TODO: only allow uploads from registered users
   payload: {
-    output: 'stream',
-    allow: 'multipart/form-data'
+    output: 'data',
+    allow: 'multipart/form-data',
+    failAction: async function (request, h, err) {
+      console.error('failAction triggered!')
+      // console.error('failAction payload:', request)
+      console.error('failAction error:', err)
+      return err
+    },
+    maxBytes: 6 * MEGABTYE, // TODO: make this a configurable setting
+    timeout: 10 * SECOND // TODO: make this a configurable setting
   }
 }, function (request, h) {
+  try {
+    console.log('FILE UPLOAD!')
+    console.log(request.payload)
+    const { hash, data } = request.payload
+    if (!hash) return Boom.badRequest('missing hash')
+    if (!data) return Boom.badRequest('missing data')
+    // console.log('typeof data:', typeof data)
+    if (blake32Hash(data) !== hash) return Boom.badRequest('bad hash!')
+    return hash // TODO: respond with URL hash to file
+  } catch (err) {
+    logger(err)
+    return err
+  }
 })
 
 route.GET('/file/{hash}', {}, function (request, h) {
