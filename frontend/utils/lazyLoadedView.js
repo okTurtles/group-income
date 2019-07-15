@@ -8,7 +8,7 @@ Vue.component('RuleChangeRule', () => import('../views/containers/proposals/Rule
 Vue.component('RuleAddMember', () => import('../views/containers/proposals/RuleAddMember.vue'))
 Vue.component('RuleRemoveMember', () => import('../views/containers/proposals/RuleRemoveMember.vue'))
 Vue.component('PasswordModal', () => import('../views/containers/modals/PasswordModal.vue'))
-Vue.component('ProposalTemplate', () => import('../views/containers/proposals/ProposalTemplate.vue')) // TODO change that to mincome
+Vue.component('ProposalTemplate', () => import('../views/containers/proposals/Mincome.vue'))
 
 // TODO Remove after design test period
 Vue.component('DesignSystemModal', () => import('../views/containers/modals/DesignSystem.vue'))
