@@ -26,7 +26,7 @@ export default {
   },
   methods: {
     openProposal () {
-      sbp('okTurtles.events/emit', LOAD_MODAL, 'Mincome')
+      sbp('okTurtles.events/emit', LOAD_MODAL, 'ProposalTemplate') // Todo change to mincome
     }
   }
 }
