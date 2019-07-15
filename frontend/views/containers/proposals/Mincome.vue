@@ -49,12 +49,6 @@
         :class="{ 'error': $v.form.changeReason.$error }"
         v-model='form.changeReason'
       )
-
-      p.error(
-        v-show='$v.form.changeReason.$error'
-      )
-        i18n username cannot contain spaces
-
 </template>
 
 <script>
@@ -103,11 +97,6 @@ export default {
   methods: {
     submit: async function () {
       // TODO record action
-    }
-  },
-  computed: {
-    isConfirmation () {
-      return this.currentStep === this.config.steps.length
     }
   },
   validations: {

@@ -1,19 +1,75 @@
 <template lang="pug">
 proposal-template(
-  :subTitle="L('Change Rule to Add Member')"
-  :onSubmit='handleSubmit'
-) I step to change rule of add member it's on the way.
+  title= 'Change Rule to Add Member'
+  footer='According to your voting rules, 8 out of 10 members will have to agree with this.'
+  :disabled='$v.form.$invalid || ($v.steps[config.steps[currentStep]] && $v.steps[config.steps[currentStep]].$invalid)'
+  :maxSteps='config.steps.length'
+  :currentStep.sync='currentStep'
+  @submit='submit'
+)
+
+  .field(v-if='currentStep === 0' key='0')
+    label.label I step to change rule of add member it's on the way.
+
+  .field(v-if='currentStep === 1' key='1')
+    label.label
+      i18n Why are you proposing this change?
+
+    textarea.textarea(
+      name='changeReason'
+      ref='purpose'
+      placeholder='The reason why I\' propositiong this change is...'
+      maxlength='500'
+      :class="{ 'error': $v.form.changeReason.$error }"
+      v-model='form.changeReason'
+    )
 </template>
 
 <script>
 import ProposalTemplate from './ProposalTemplate.vue'
+import { validationMixin } from 'vuelidate'
 
 export default {
-  name: 'Mincome',
-  components: { ProposalTemplate },
+  name: 'ProposalAddMember',
+  components: {
+    ProposalTemplate
+  },
+  mixins: [
+    validationMixin
+  ],
+  data () {
+    return {
+      v: { type: Object },
+      form: {
+        changeReason: null
+      },
+      ephemeral: {
+        errorMsg: null,
+        // this determines whether or not to render proxy components for nightmare
+        dev: process.env.NODE_ENV === 'development'
+      },
+      config: {
+        steps: [
+          'AddMemberRule',
+          'ChangeReason'
+        ]
+      }
+    }
+  },
   methods: {
-    handleSubmit () {
+    submit () {
       console.log('TODO: Logic to Propose a new rule of add member')
+    }
+  },
+  validations: {
+    form: {
+    },
+    // validation groups by route name for steps
+    steps: {
+      AddMemberRule: [],
+      Reason: [
+        'form.changeReason'
+      ]
     }
   }
 }

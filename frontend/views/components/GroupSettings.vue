@@ -6,7 +6,7 @@
     p.is-size-5
       i18n Change Rules
     a.link(
-      @click.prevent="openProposal('RuleChangeRule')"
+      @click.prevent="openProposal('RuleChangeRuleProposal')"
     )
       i18n Propose change
 
@@ -16,7 +16,7 @@
     p.is-size-5
       i18n Add Member
     a.link(
-      @click.prevent="openProposal('RuleAddMember')"
+      @click.prevent="openProposal('RuleAddMemberProposal')"
     )
       i18n Propose change
 
@@ -27,7 +27,7 @@
     p.is-size-5
       i18n Remove Member
     a.link(
-      @click.prevent="openProposal('RuleRemoveMember')"
+      @click.prevent="openProposal('RuleRemoveMemberProposal')"
     )
       i18n Propose change
 </template>
