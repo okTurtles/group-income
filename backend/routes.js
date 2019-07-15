@@ -138,7 +138,7 @@ route.POST('/file', {
     maxBytes: 6 * MEGABTYE, // TODO: make this a configurable setting
     timeout: 10 * SECOND // TODO: make this a configurable setting
   }
-}, function (request, h) {
+}, async function (request, h) {
   try {
     console.log('FILE UPLOAD!')
     console.log(request.payload)
@@ -147,6 +147,7 @@ route.POST('/file', {
     if (!data) return Boom.badRequest('missing data')
     // console.log('typeof data:', typeof data)
     if (blake32Hash(data) !== hash) return Boom.badRequest('bad hash!')
+    await sbp('backend/db/writeFile', hash, data)
     return hash // TODO: respond with URL hash to file
   } catch (err) {
     logger(err)

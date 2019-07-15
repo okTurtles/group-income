@@ -4,12 +4,19 @@ import sbp from '~/shared/sbp.js'
 import { GIMessage } from '~/shared/GIMessage.js'
 import { strToB64 } from '~/shared/functions.js'
 import { Readable } from 'stream'
-// import fs from 'fs'
+import fs from 'fs'
+import util from 'util'
 
-// import fs from 'fs'
+const writeFileAsync = util.promisify(fs.writeFile)
+const readFileAsync = util.promisify(fs.readFile)
+const dataFolder = './data'
 
 // TODO: use some fast key/value store
 // TODO: just use the file system! store the json of each message to disk as a file with its hash as the file name
+
+if (!fs.existsSync(dataFolder)) {
+  fs.mkdirSync(dataFolder, { mode: 0o750 })
+}
 
 // delete the test database if it exists
 // const production = process.env.NODE_ENV === 'production'
@@ -97,10 +104,16 @@ export function writeFile (filename: string, data: any) {
   //       that determines how much of the disk space we're allowed to
   //       use. If the size of the file would cause us to exceed this
   //       amount, throw an exception
+  const filepath = dataFolder + '/' + filename
+  if (fs.existsSync(filepath)) {
+    console.debug('writeFile: exists:', filepath)
+    return Promise.resolve()
+  }
+  return writeFileAsync(filepath, data)
 }
 
 export function readFile (filename: string) {
-
+  return readFileAsync(dataFolder + '/' + filename)
 }
 
 // =======================
@@ -113,5 +126,7 @@ export default sbp('sbp/selectors/register', {
   'backend/db/lastEntry': lastEntry,
   'backend/db/streamEntriesSince': streamEntriesSince,
   'backend/db/registerName': registerName,
-  'backend/db/lookupName': lookupName
+  'backend/db/lookupName': lookupName,
+  'backend/db/writeFile': writeFile,
+  'backend/db/readFile': readFile
 })
