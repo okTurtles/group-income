@@ -5,6 +5,7 @@
 // =======================
 
 import sbp from '~/shared/sbp.js'
+import './data.js'
 
 const listenKey = evt => `events/${evt}/listeners`
 

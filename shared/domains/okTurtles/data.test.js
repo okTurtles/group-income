@@ -3,7 +3,7 @@
 import should from 'should'
 import sinon from 'sinon'
 import sbp from '~/shared/sbp.js'
-import './index.js'
+import './data.js'
 
 require('should-sinon')
 

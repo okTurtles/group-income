@@ -9,7 +9,7 @@ import Vuex from 'vuex'
 import { GIMessage } from '~/shared/GIMessage.js'
 import contracts from './contracts.js'
 import * as _ from '@utils/giLodash.js'
-import * as db from './database.js'
+import { SETTING_CURRENT_USER } from './database.js'
 import { LOGIN, LOGOUT, EVENT_HANDLED } from '@utils/events.js'
 import Colors from './colors.js'
 
@@ -251,7 +251,7 @@ const actions = {
     { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object},
     user: Object
   ) {
-    const settings = await db.loadSettings(user.name)
+    const settings = await sbp('gi/settings/load', user.name)
     if (settings) {
       console.log('loadSettings:', settings)
       commit('setCurrentGroupId', settings.currentGroupId)
@@ -259,7 +259,7 @@ const actions = {
       commit('setTheme', settings.theme || 'blue')
       commit('setFontSize', settings.fontSize || 1)
     }
-    await db.saveCurrentUser(user.name)
+    await sbp('gi/settings/save', SETTING_CURRENT_USER, user.name)
     // This may seem unintuitive to use the state from the global store object
     // but the state object in scope is a copy that becomes stale if something modifies it
     // like an outside dispatch
@@ -273,7 +273,7 @@ const actions = {
   ) {
     debouncedSave.cancel()
     await dispatch('saveSettings', state)
-    await db.clearCurrentUser()
+    await sbp('gi/settings/save', SETTING_CURRENT_USER, null)
     for (let contractID of Object.keys(state.contracts)) {
       mutations.removeContract(state, contractID)
     }
@@ -296,7 +296,7 @@ const actions = {
         theme: state.theme
       }
       console.log('saveSettings:', settings)
-      await db.saveSettings(state.loggedIn.name, settings)
+      await sbp('gi/settings/save', state.loggedIn.name, settings)
     }
   },
   // this function is called from ../controller/utils/pubsub.js and is the entry point
@@ -320,7 +320,7 @@ const actions = {
         return console.error(`NOT EXPECTING EVENT!`, contractID, message)
       }
 
-      await db.addLogEntry(message)
+      await sbp('gi.log/addLogEntry', message)
 
       if (message.isFirstMessage()) {
         commit('addContract', { contractID, type, HEAD, data })

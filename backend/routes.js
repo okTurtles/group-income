@@ -26,11 +26,11 @@ const route = new Proxy({}, {
 route.POST('/event', {
   auth: 'gi-auth',
   validate: { payload: Joi.string().required() }
-}, function (request, h) {
+}, async function (request, h) {
   try {
     console.log('/event handler')
     const entry = GIMessage.deserialize(request.payload)
-    sbp('backend/server/handleEntry', entry)
+    await sbp('backend/server/handleEntry', entry)
     return entry.hash()
   } catch (err) {
     logger(err)
@@ -41,7 +41,7 @@ route.POST('/event', {
 route.GET('/events/{contractID}/{since}', {}, async function (request, h) {
   try {
     const { contractID, since } = request.params
-    var stream = sbp('backend/db/streamEntriesSince', contractID, since)
+    var stream = await sbp('backend/db/streamEntriesSince', contractID, since)
     // "On an HTTP server, make sure to manually close your streams if a request is aborted."
     // From: http://knexjs.org/#Interfaces-Streams
     //       https://github.com/tgriesser/knex/wiki/Manually-Closing-Streams
@@ -51,9 +51,7 @@ route.GET('/events/{contractID}/{since}', {}, async function (request, h) {
     //       we're currently returning a Readable stream, which doesn't have
     //       '.end'. If there are any issues we can try switching to returning a
     //       Writable stream. Both types however do have .destroy.
-    request.events.once('disconnect', () => {
-      stream.destroy.bind(stream)
-    })
+    request.events.once('disconnect', stream.destroy.bind(stream))
     return stream
   } catch (err) {
     logger(err)
@@ -90,9 +88,9 @@ route.GET('/name/{name}', {}, function (request, h) {
   }
 })
 
-route.GET('/latestHash/{contractID}', {}, function (request, h) {
+route.GET('/latestHash/{contractID}', {}, async function (request, h) {
   try {
-    var entry = sbp('backend/db/lastEntry', request.params.contractID)
+    var entry = await sbp('gi.log/lastEntry', request.params.contractID)
     return entry ? entry.hash() : Boom.notFound()
   } catch (err) {
     logger(err)
@@ -130,8 +128,6 @@ route.POST('/file', {
     output: 'data',
     allow: 'multipart/form-data',
     failAction: async function (request, h, err) {
-      console.error('failAction triggered!')
-      // console.error('failAction payload:', request)
       console.error('failAction error:', err)
       return err
     },
@@ -156,5 +152,10 @@ route.POST('/file', {
 })
 
 route.GET('/file/{hash}', {}, function (request, h) {
-
+  try {
+    return sbp('backend/db/readFile', request.params.hash)
+  } catch (err) {
+    logger(err)
+    return Boom.notFound()
+  }
 })

@@ -1,13 +1,13 @@
 import Vue from 'vue'
 // import SBP stuff before anything else so that domains register themselves before called
 import sbp from '~/shared/sbp.js'
-import '~/shared/domains/okTurtles/data/index.js'
-import '~/shared/domains/okTurtles/events/index.js'
+import '~/shared/domains/okTurtles/data.js'
+import '~/shared/domains/okTurtles/events.js'
 import './controller/namespace.js'
 import router from './controller/router.js'
 import { createWebSocket } from './controller/backend.js'
 import store from './model/state.js'
-import * as db from './model/database.js'
+import { SETTING_CURRENT_USER } from './model/database.js'
 import { LOGOUT } from './utils/events'
 import './utils/autofocus.js'
 import './utils/lazyLoadedView.js'
@@ -38,7 +38,7 @@ async function startApp () {
     strategy: ['disconnect', 'online', 'timeout']
   })
 
-  let user = await db.loadCurrentUser()
+  let user = await sbp('gi/settings/load', SETTING_CURRENT_USER)
   if (user) {
     try {
       let identityContractId = await sbp('namespace/lookup', user)
@@ -48,7 +48,7 @@ async function startApp () {
       store.dispatch('logout')
       if (err.status === 404) {
         console.warn(`It looks like the local user does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
-        db.clearUser(user)
+        sbp('gi/settings/delete', user)
       }
     }
   }

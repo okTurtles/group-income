@@ -1,8 +1,8 @@
 'use strict'
 
 import sbp from '~/shared/sbp.js'
-import '~/shared/domains/okTurtles/data/index.js'
-import '~/shared/domains/okTurtles/events/index.js'
+import '~/shared/domains/okTurtles/data.js'
+import '~/shared/domains/okTurtles/events.js'
 import { SERVER_RUNNING } from './events.js'
 import { PUBSUB_INSTANCE } from './instance-keys.js'
 import chalk from 'chalk'

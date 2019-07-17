@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 
 import sbp from '~/shared/sbp.js'
-import '~/shared/domains/okTurtles/events/index.js'
+import '~/shared/domains/okTurtles/events.js'
 import chalk from 'chalk'
 import { GIMessage } from '~/shared/GIMessage.js'
 import contracts from '~/frontend/model/contracts.js'

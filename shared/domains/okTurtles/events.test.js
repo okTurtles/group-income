@@ -2,8 +2,7 @@
 
 import sinon from 'sinon'
 import sbp from '~/shared/sbp.js'
-import '../data/index.js'
-import './index.js'
+import './events.js'
 
 require('should-sinon')
 

@@ -30,9 +30,9 @@ const hapi = Hapi.server({
 sbp('okTurtles.data/set', SERVER_INSTANCE, hapi)
 
 sbp('sbp/selectors/register', {
-  'backend/server/handleEntry': function (entry: GIMessage) {
+  'backend/server/handleEntry': async function (entry: GIMessage) {
     const contractID = entry.isFirstMessage() ? entry.hash() : entry.message().contractID
-    sbp('backend/db/addLogEntry', entry)
+    await sbp('gi.log/addLogEntry', entry)
     var response = makeResponse(RESPONSE_TYPE.ENTRY, entry.serialize())
     console.log(bold.blue(`broadcasting to room ${contractID}:`), entry.hash(), entry.type())
     sbp('okTurtles.data/apply', PUBSUB_INSTANCE, p => {

@@ -6,7 +6,7 @@
 // https://github.com/primus/primus-emit (better than primus-emitter)
 
 import sbp from '~/shared/sbp.js'
-import '~/shared/domains/okTurtles/data/index.js'
+import '~/shared/domains/okTurtles/data.js'
 import { bold } from 'chalk'
 import { RESPONSE_TYPE } from '~/shared/constants.js'
 import { makeResponse as reply } from '~/shared/functions.js'

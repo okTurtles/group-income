@@ -46,6 +46,13 @@ const SBP_BASE_SELECTORS = {
       delete selectors[selector]
     }
   },
+  'sbp/selectors/overwrite': function (sels: {[string]: Function}) {
+    sbp('sbp/selectors/unregister', Object.keys(sels))
+    return sbp('sbp/selectors/register', sels)
+  },
+  'sbp/selectors/fn': function (sel: string): Function {
+    return selectors[sel]
+  },
   'sbp/filters/global/add': function (filter: TypeFilter) {
     globalFilters.push(filter)
   },
