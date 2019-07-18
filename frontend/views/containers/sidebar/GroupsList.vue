@@ -2,9 +2,12 @@
 div(v-if='groupsByName.length')
   menu-parent(@select='handleMenuSelect')
     menu-trigger.c-trigger(:class="`has-text-${isDarkTheme ? 'white' : 'dark'}`")
-      // TODO: Once the groupPicture is implemented :src='groupPicture' :alt='group.groupName'
-      avatar.c-avatar(src='/assets/images/default-avatar.png' alt='')
-      | {{this.currentGroupState &amp;&amp; this.currentGroupState.groupName}}
+      avatar.c-avatar(
+        src='/assets/images/default-avatar.png'
+        :alt='currentGroupState.groupName'
+        :blobURL='currentGroupState.groupPicture'
+      )
+      | {{ this.currentGroupState.groupName }}
       i.icon-angle-down
 
     menu-content

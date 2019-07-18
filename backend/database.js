@@ -7,7 +7,7 @@ import fs from 'fs'
 import util from 'util'
 import path from 'path'
 import '~/shared/domains/okTurtles/data.js'
-import '~/shared/domains/gi/log.js'
+import '~/shared/domains/gi/db.js'
 
 const writeFileAsync = util.promisify(fs.writeFile)
 const readFileAsync = util.promisify(fs.readFile)
@@ -23,13 +23,13 @@ const production = process.env.NODE_ENV === 'production'
 
 export default sbp('sbp/selectors/register', {
   'backend/db/streamEntriesSince': async function (contractID: string, hash: string) {
-    var currentHEAD = await sbp('gi.log/get', sbp('gi.log/logHEAD', contractID))
+    var currentHEAD = await sbp('gi.db/log/get', sbp('gi.db/log/logHEAD', contractID))
     var prefix = '['
     // NOTE: if this ever stops working you can also try Readable.from():
     // https://nodejs.org/api/stream.html#stream_stream_readable_from_iterable_options
     return new Readable({
       async read () {
-        const entry = await sbp('gi.log/getLogEntry', currentHEAD)
+        const entry = await sbp('gi.db/log/getEntry', currentHEAD)
         const json = `"${strToB64(entry.serialize())}"`
         if (currentHEAD !== hash) {
           this.push(prefix + json)
@@ -82,7 +82,7 @@ export default sbp('sbp/selectors/register', {
 
 if (production) {
   sbp('sbp/selectors/overwrite', {
-    'gi.log/get': sbp('sbp/selectors/fn', 'backend/db/readFile'),
-    'gi.log/set': sbp('sbp/selectors/fn', 'backend/db/writeFile')
+    'gi.db/log/get': sbp('sbp/selectors/fn', 'backend/db/readFile'),
+    'gi.db/log/set': sbp('sbp/selectors/fn', 'backend/db/writeFile')
   })
 }

@@ -96,10 +96,12 @@ export default {
       // upload group profile picture if there is one and store it locally in our cache
       try {
         if (this.ephemeral.groupPictureFile) {
+          const file = this.ephemeral.groupPictureFile
+          console.debug('will upload a picture of type:', file.type)
           // https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications#Asynchronously_handling_the_file_upload_process
           const reply = await new Promise((resolve, reject) => {
+            // we use FileReader to get raw bytes to generate correct hash
             const reader = new FileReader()
-            const file = this.ephemeral.groupPictureFile
             // https://developer.mozilla.org/en-US/docs/Web/API/Blob
             reader.onloadend = async function () {
               const fd = new FormData()
@@ -114,8 +116,8 @@ export default {
             }
             reader.readAsArrayBuffer(file)
           })
-          console.debug('got back reply:', reply)
-          this.form.groupPicture = reply
+          this.form.groupPicture = reply + '?type=' + encodeURIComponent(file.type)
+          console.debug('will use URL for image:', this.form.groupPicture)
         }
       } catch (error) {
         console.error(error)

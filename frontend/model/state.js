@@ -133,7 +133,7 @@ const mutations = {
 // https://vuex.vuejs.org/en/modules.html
 const getters = {
   currentGroupState (state) {
-    return state[state.currentGroupId]
+    return state[state.currentGroupId] || {} // avoid "undefined" vue errors at inoportune times
   },
   mailboxContract (state, getters) {
     return getters.currentUserIdentityContract &&
@@ -255,7 +255,7 @@ const actions = {
     { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object},
     user: Object
   ) {
-    const settings = await sbp('gi/settings/load', user.name)
+    const settings = await sbp('gi.db/settings/load', user.name)
     if (settings) {
       console.log('loadSettings:', settings)
       commit('setCurrentGroupId', settings.currentGroupId)
@@ -263,7 +263,7 @@ const actions = {
       commit('setTheme', settings.theme || 'blue')
       commit('setFontSize', settings.fontSize || 1)
     }
-    await sbp('gi/settings/save', SETTING_CURRENT_USER, user.name)
+    await sbp('gi.db/settings/save', SETTING_CURRENT_USER, user.name)
     // This may seem unintuitive to use the state from the global store object
     // but the state object in scope is a copy that becomes stale if something modifies it
     // like an outside dispatch
@@ -277,7 +277,7 @@ const actions = {
   ) {
     debouncedSave.cancel()
     await dispatch('saveSettings', state)
-    await sbp('gi/settings/save', SETTING_CURRENT_USER, null)
+    await sbp('gi.db/settings/save', SETTING_CURRENT_USER, null)
     for (let contractID of Object.keys(state.contracts)) {
       mutations.removeContract(state, contractID)
     }
@@ -300,7 +300,7 @@ const actions = {
         theme: state.theme
       }
       console.log('saveSettings:', settings)
-      await sbp('gi/settings/save', state.loggedIn.name, settings)
+      await sbp('gi.db/settings/save', state.loggedIn.name, settings)
     }
   },
   // this function is called from ../controller/utils/pubsub.js and is the entry point
@@ -324,7 +324,7 @@ const actions = {
         return console.error(`NOT EXPECTING EVENT!`, contractID, message)
       }
 
-      await sbp('gi.log/addLogEntry', message)
+      await sbp('gi.db/log/addEntry', message)
 
       if (message.isFirstMessage()) {
         commit('addContract', { contractID, type, HEAD, data })

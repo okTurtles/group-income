@@ -90,7 +90,7 @@ route.GET('/name/{name}', {}, function (request, h) {
 
 route.GET('/latestHash/{contractID}', {}, async function (request, h) {
   try {
-    var entry = await sbp('gi.log/lastEntry', request.params.contractID)
+    var entry = await sbp('gi.db/log/lastEntry', request.params.contractID)
     return entry ? entry.hash() : Boom.notFound()
   } catch (err) {
     logger(err)
@@ -99,27 +99,16 @@ route.GET('/latestHash/{contractID}', {}, async function (request, h) {
 })
 
 // file upload related
-// TODO: WARNING: We want to be offline-first! This means we need to be
-//       able to cache and store profile pictures offline, and in fact
-//       load them not from the server by from the local cache, only
-//       going to the server if we need to update the cache.
-//       Answers:
-//       - https://www.raymondcamden.com/2018/10/05/storing-retrieving-photos-in-indexeddb
-//       - https://www.raymondcamden.com/2016/06/03/capturing-camerapicture-data-without-phonegap-an-update
-//       - https://hacks.mozilla.org/2012/02/storing-images-and-files-in-indexeddb/
-//       - https://robertnyman.com/2012/03/06/storing-images-and-files-in-indexeddb/
-//
-//       NOTE: if the browser deletes our cache then not everyone
-//             has a complete copy of the data and can act as a
-//             new coordinating server... I don't like that.
+
+// TODO: if the browser deletes our cache then not everyone
+//       has a complete copy of the data and can act as a
+//       new coordinating server... I don't like that.
 //
 // TODO: combine all of these routes into a single generic key-value store?
 //       i.e. the first two routes (/event and /events) should be renamed
 //       and should be able to handle file upload too...
-//       OTOH having image specific handler could be useful for things like
-//       specifying the size of the image...
 
-const MEGABTYE = 1048576
+const MEGABTYE = 1048576 // TODO: add settings for these
 const SECOND = 1000
 
 route.POST('/file', {

@@ -13,7 +13,26 @@ Try:
 - `npm cache clean` - This fixed a real problem someone was having
 - `npm install npm@latest -g`
 
-## Can not sign-up user when databases get out of sync 
+## "Multiple conflicting contents for sourcemap"
+
+Problem: `grunt dev` outputs something like the following when you save:
+
+```
+rollup: frontend/main.js
+>> rollup:watch {
+>>   code: 'ERROR',
+>>   error: Error: Multiple conflicting contents for sourcemap source /path/to/group-income-simple/frontend/views/containers/sidebar/GroupsList.vue
+>>       at error (/path/to/group-income-simple/node_modules/rollup/dist/rollup.js:9396:30)
+```
+
+We're not sure why this happens, but there are a few solutions:
+
+- Create a newline near the top of the file with a comment and save again
+- Restart `grunt dev`, or do `grunt clean dev` to also delete the sourcemaps
+
+## Can not sign-up user when databases get out of sync
+
+*NOTE: this should no longer be an issue, but we're leaving this here just in case.*
 
 This can happen when you re-run grunt dev and then can no longer sign up a user because the database on the backend has been wiped, but the database in the browser's frontend still contains contracts that the frontend will try to re-subscribe to (that no longer exist on the backend).
 

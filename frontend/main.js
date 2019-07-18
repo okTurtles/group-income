@@ -27,9 +27,9 @@ async function startApp () {
     const reducer = (o, v) => { o[v] = true; return o }
     const domainBlacklist = ['okTurtles.data'].reduce(reducer, {})
     const selBlacklist = [
-      'gi.log/get',
-      'gi.log/logHEAD',
-      'gi.log/set'
+      'gi.db/log/get',
+      'gi.db/log/logHEAD',
+      'gi.db/log/set'
     ].reduce(reducer, {})
     sbp('sbp/filters/global/add', (domain, selector, data) => {
       if (domainBlacklist[domain] || selBlacklist[selector]) return
@@ -44,7 +44,7 @@ async function startApp () {
     strategy: ['disconnect', 'online', 'timeout']
   })
 
-  let user = await sbp('gi/settings/load', SETTING_CURRENT_USER)
+  let user = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
   if (user) {
     try {
       let identityContractId = await sbp('namespace/lookup', user)
@@ -53,7 +53,7 @@ async function startApp () {
       console.log('lookup failed!', err)
       store.dispatch('logout')
       console.warn(`It looks like the local user does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
-      sbp('gi/settings/delete', user)
+      sbp('gi.db/settings/delete', user)
     }
   }
   /* eslint-disable no-new */

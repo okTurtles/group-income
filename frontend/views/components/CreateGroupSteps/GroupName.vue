@@ -6,7 +6,7 @@ div
 
   label.avatar(for='groupPicture')
     //- TODO: set a default placeholder image using a built-in asset
-    avatar(:src='group.groupPicture' @load='imgLoad($event)')
+    avatar(ref='picture')
     //- we don't need to add any code to trigger the hidden file input field
     //- because we use this label(for='elem') trick:
     //- https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications#Using_a_label_element_to_trigger_a_hidden_file_input_element
@@ -72,30 +72,11 @@ export default {
         this.$emit('next')
       }
     },
-    fileChange (fileList) {
-      if (!fileList.length) return
+    fileChange (files) {
+      if (!files.length) return
       this.v.groupPicture.$touch()
-      this.$assistant.ephemeral.groupPictureFile = fileList[0]
-      const imageURL = URL.createObjectURL(fileList[0])
-      // TODO: call URL.revokeObjectURL(imageURL) per: https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications#Using_object_URLs
-      // you can call that in the img.onload function:
-      // img.onload = function() { URL.revokeObjectURL(this.src) }
-      console.debug('imageURL:', imageURL)
-      // we can use the FileReader API to manipulate a thumbnail of the image
-      // https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications#Example_Showing_thumbnails_of_user-selected_images
-      // And we can add a built-in thumbnail editor, for example:
-      // https://hacks.mozilla.org/2011/01/how-to-develop-a-html5-image-uploader/
-      // https://github.com/beakerbrowser/fritter/blob/master/com/profile/profile-editor.js
-      // https://github.com/beakerbrowser/fritter/blob/master/com/crop-popup.js
-      this.$emit('input', {
-        data: {
-          groupPicture: imageURL
-        }
-      })
-    },
-    imgLoad (e) {
-      // free this resource per https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications#Using_object_URLs
-      URL.revokeObjectURL(e.target.src)
+      this.$assistant.ephemeral.groupPictureFile = files[0]
+      this.$refs.picture.setFromBlob(files[0])
     }
   }
 }
