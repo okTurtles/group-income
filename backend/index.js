@@ -9,7 +9,7 @@ import chalk from 'chalk'
 
 global.logger = function (err) {
   console.error(err)
-  console.error(err.stack)
+  err.stack && console.error(err.stack)
 }
 
 function logSBP (domain, selector, data) {

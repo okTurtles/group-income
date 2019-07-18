@@ -19,18 +19,24 @@ import './views/utils/vStyle.js'
 
 console.log('NODE_ENV:', process.env.NODE_ENV)
 
-// NOTE: we setup this global SBP filter and domain regs here
-//       to get logging for all subsequent SBP calls.
-//       In the future we might move it elsewhere.
-if (process.env.NODE_ENV !== 'production') {
-  sbp('sbp/filters/global/add', (domain, selector, data) => {
-    if (domain !== 'okTurtles.data') {
-      console.log(`[sbp] ${selector}`, data)
-    }
-  })
-}
-
 async function startApp () {
+  // NOTE: we setup this global SBP filter and domain regs here
+  //       to get logging for all subsequent SBP calls.
+  //       In the future we might move it elsewhere.
+  if (process.env.NODE_ENV !== 'production') {
+    const reducer = (o, v) => { o[v] = true; return o }
+    const domainBlacklist = ['okTurtles.data'].reduce(reducer, {})
+    const selBlacklist = [
+      'gi.log/get',
+      'gi.log/logHEAD',
+      'gi.log/set'
+    ].reduce(reducer, {})
+    sbp('sbp/filters/global/add', (domain, selector, data) => {
+      if (domainBlacklist[domain] || selBlacklist[selector]) return
+      console.log(`[sbp] ${selector}`, data)
+    })
+  }
+
   // TODO: handle any socket errors?
   createWebSocket(process.env.API_URL, {
     // TODO: verify these are good defaults
@@ -44,12 +50,10 @@ async function startApp () {
       let identityContractId = await sbp('namespace/lookup', user)
       await store.dispatch('login', { name: user, identityContractId })
     } catch (err) {
-      console.log('lookup failed!')
+      console.log('lookup failed!', err)
       store.dispatch('logout')
-      if (err.status === 404) {
-        console.warn(`It looks like the local user does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
-        sbp('gi/settings/delete', user)
-      }
+      console.warn(`It looks like the local user does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
+      sbp('gi/settings/delete', user)
     }
   }
   /* eslint-disable no-new */

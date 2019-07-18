@@ -52,6 +52,8 @@ main.main#create-group-page
 
 <script>
 import sbp from '~/shared/sbp.js'
+import { blake32Hash } from '~/shared/functions.js'
+import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import contracts from '@model/contracts.js'
 import L from '@view-utils/translations.js'
 import { decimals } from '@view-utils/validators.js'
@@ -89,6 +91,39 @@ export default {
         return
       }
 
+      // TODO: we need to show a progress bar for all of these steps
+
+      // upload group profile picture if there is one and store it locally in our cache
+      try {
+        if (this.ephemeral.groupPictureFile) {
+          // https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications#Asynchronously_handling_the_file_upload_process
+          const reply = await new Promise((resolve, reject) => {
+            const reader = new FileReader()
+            const file = this.ephemeral.groupPictureFile
+            // https://developer.mozilla.org/en-US/docs/Web/API/Blob
+            reader.onloadend = async function () {
+              const fd = new FormData()
+              const hash = blake32Hash(new Uint8Array(reader.result))
+              console.debug('groupPicture hash:', hash)
+              fd.append('hash', hash)
+              fd.append('data', file)
+              fetch(`${process.env.API_URL}/file`, {
+                method: 'POST',
+                body: fd
+              }).then(handleFetchResult('text')).then(resolve).catch(reject)
+            }
+            reader.readAsArrayBuffer(file)
+          })
+          console.debug('got back reply:', reply)
+          this.form.groupPicture = reply
+        }
+      } catch (error) {
+        console.error(error)
+        this.ephemeral.errorMsg = L('Failed to upload group picture')
+        return
+      }
+
+      // create the GroupContract
       try {
         this.ephemeral.errorMsg = null
         const entry = sbp('gi/contract/create', 'GroupContract', {
@@ -121,6 +156,7 @@ export default {
         return
       }
 
+      // send out invitations to people's mailboxes (if there are any)
       try {
         this.ephemeral.errorMsg = null
         // TODO: as invitees are successfully invited display in a

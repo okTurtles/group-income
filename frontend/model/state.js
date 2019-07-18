@@ -68,15 +68,19 @@ const mutations = {
     sbp('okTurtles.events/emit', LOGOUT)
   },
   addContract (state, { contractID, type, HEAD, data }) {
-    // 'Mutations Follow Vue's Reactivity Rules' - important for modifying objects
-    // See: https://vuex.vuejs.org/en/mutations.html
-    Vue.set(state.contracts, contractID, { type, HEAD })
     // copy over the initial state, making sure *not* to use cloneDeep on
     // the entire vuexModule object (because cloneDeep doesn't clone functions)
     var vuexModule = Object.assign({}, contracts[type].vuexModule)
     // make sure we restore any previously saved state (e.g. after login)
     vuexModule.state = Object.assign(_.cloneDeep(vuexModule.state), data)
     store.registerModule(contractID, vuexModule)
+    // NOTE: we modify state.contracts __AFTER__ calling registerModule, to
+    //       ensure that any reactive Vue components that depend on
+    //       `state.contracts` for their reactivity (e.g. `groupsByName` getter)
+    //       will not result in errors like "state[contractID] is undefined"
+    // 'Mutations Follow Vue's Reactivity Rules' - important for modifying objects
+    // See: https://vuex.vuejs.org/en/mutations.html
+    Vue.set(state.contracts, contractID, { type, HEAD })
     // we've successfully received it back, so remove it from expectation pending
     const index = state.pending.indexOf(contractID)
     index !== -1 && state.pending.splice(index, 1)
@@ -153,8 +157,8 @@ const getters = {
     // The code below was originally Object.entries(...) but changed to .keys()
     // due to the same flow issue as https://github.com/facebook/flow/issues/5838
     return Object.keys(contracts)
-      .filter((key) => contracts[key].type === 'GroupContract')
-      .map((key) => ({ groupName: state[key].groupName, contractID: key }))
+      .filter(contractID => contracts[contractID].type === 'GroupContract')
+      .map(contractID => ({ groupName: state[contractID].groupName, contractID }))
   },
   proposals (state) {
     // TODO: clean this up

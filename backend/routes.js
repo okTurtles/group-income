@@ -142,9 +142,13 @@ route.POST('/file', {
     if (!hash) return Boom.badRequest('missing hash')
     if (!data) return Boom.badRequest('missing data')
     // console.log('typeof data:', typeof data)
-    if (blake32Hash(data) !== hash) return Boom.badRequest('bad hash!')
+    const ourHash = blake32Hash(data)
+    if (ourHash !== hash) {
+      console.error(`hash(${hash}) != ourHash(${ourHash})`)
+      return Boom.badRequest('bad hash!')
+    }
     await sbp('backend/db/writeFile', hash, data)
-    return hash // TODO: respond with URL hash to file
+    return process.env.API_URL + '/file/' + hash
   } catch (err) {
     logger(err)
     return err

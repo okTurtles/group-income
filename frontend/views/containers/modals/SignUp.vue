@@ -158,6 +158,7 @@ export default {
           }
           sbp('okTurtles.events/emit', CLOSE_MODAL)
         } catch (ex) {
+          console.error('SignUp.vue submit() error:', ex)
           this.$store.dispatch('logout')
           this.form.response = ex.toString()
           this.form.error = true
@@ -177,6 +178,7 @@ export default {
           // standalone validator ideally should not assume a field is required
           if (value === '' || !/^\S+$/.test(value)) return true
           // async validator can return a promise
+          // TODO: fix "uncaught exception" errors in console when name is already taken
           return new Promise((resolve, reject) => {
             // we need the opposite of sbp('namespace/lookup', value) here
             sbp('namespace/lookup', value).then(reject, resolve)

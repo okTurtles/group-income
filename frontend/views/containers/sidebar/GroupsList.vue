@@ -44,7 +44,7 @@ import ListItem from '@components/ListItem.vue'
 import Avatar from '@components/Avatar.vue'
 
 export default {
-  name: 'YourGroupsList',
+  name: 'GroupsList',
   components: {
     MenuParent,
     MenuContent,

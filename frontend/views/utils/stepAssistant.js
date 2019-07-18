@@ -22,6 +22,11 @@ export default {
       this.$router.push({ name: this.config.steps[this.currentStep] })
     }
   },
+  provide () {
+    return {
+      '$assistant': this
+    }
+  },
   methods: {
     next () {
       if (this.currentStep + 1 < this.config.steps.length) {

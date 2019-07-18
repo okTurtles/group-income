@@ -227,14 +227,16 @@ module.exports = (grunt) => {
           // ^C can cause c to be null, which is an OK error
           process.exit(c || 0)
         }
-        child = null
       })
       done()
     }
     if (child) {
       grunt.log.writeln('Killing child!')
       // wait for successful shutdown to avoid EADDRINUSE errors
-      child.on('message', fork2)
+      child.on('message', () => {
+        child = null
+        fork2()
+      })
       child.send({})
     } else {
       fork2()

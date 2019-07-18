@@ -44,6 +44,8 @@ export default sbp('sbp/selectors/register', {
   },
   // =======================
   // wrapper methods to add / lookup names
+  //
+  // TODO: implement persistence
   // =======================
   'backend/db/registerName': function (name: string, value: string) {
     if (sbp('okTurtles.data/get', `namespace/${name}`)) throw new Error(`exists: ${name}`)
