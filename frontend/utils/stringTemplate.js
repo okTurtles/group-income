@@ -3,12 +3,12 @@ var nargs = /\{([0-9a-zA-Z_]+)\}/g
 export default function template (string: string = '') {
   var args
 
-  if (arguments.length === 2 && typeof arguments[ 1 ] === 'object') {
-    args = arguments[ 1 ]
+  if (arguments.length === 2 && typeof arguments[1] === 'object') {
+    args = arguments[1]
   } else {
     args = new Array(arguments.length - 1)
     for (var i = 1; i < arguments.length; ++i) {
-      args[ i - 1 ] = arguments[ i ]
+      args[i - 1] = arguments[i]
     }
   }
 
@@ -19,11 +19,14 @@ export default function template (string: string = '') {
   return string.replace(nargs, function replaceArg (match, i, index) {
     var result
 
-    if (string[ index - 1 ] === '{' &&
-      string[ index + match.length ] === '}') {
+    if (string[index - 1] === '{' &&
+      string[index + match.length] === '}') {
       return i
     } else {
-      result = args.hasOwnProperty(i) ? args[ i ] : null
+      // TODO: find out and fix this eslint error
+      // "Do not access Object.prototype method 'hasOwnProperty' from target object  no-prototype-builtins"
+      // eslint-disable-next-line
+      result = args.hasOwnProperty(i) ? args[i] : null
       if (result === null || result === undefined) {
         return ''
       }

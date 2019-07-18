@@ -163,7 +163,7 @@ export default {
         this.ephemeral.errorMsg = null
         // TODO: as invitees are successfully invited display in a
         // seperate invitees grid and add them to some validation for duplicate invites
-        for (let invitee of this.form.invitees) {
+        for (const invitee of this.form.invitees) {
           // We need to have the latest mailbox attribute for the user
           const sentDate = new Date().toISOString()
           // We need to post the invite to the users' mailbox contract
@@ -255,7 +255,7 @@ export default {
         'form.groupName',
         'form.groupPicture'
       ],
-      GroupPurpose: [ 'form.sharedValues' ],
+      GroupPurpose: ['form.sharedValues'],
       GroupMincome: [
         'form.incomeProvided',
         'form.incomeCurrency'

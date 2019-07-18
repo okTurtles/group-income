@@ -5,7 +5,7 @@ export default class CircleSliderState {
     this.steps = steps
     this.offset = offset
     this.currentStepIndex = 0
-    for (let stepIndex in this.steps) {
+    for (const stepIndex in this.steps) {
       if (this.steps[stepIndex] === initialValue) {
         this.currentStepIndex = stepIndex
         break

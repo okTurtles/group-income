@@ -270,10 +270,10 @@ export default {
     send: async function () {
       try {
         for (let i = 0; i < this.ephemeral.recipients.length; i++) {
-          let recipient = this.ephemeral.recipients[i]
+          const recipient = this.ephemeral.recipients[i]
           // TODO:: latestContractState is inefficient
-          let state = await sbp('state/latestContractState', recipient.contractID)
-          let message = await sbp('gi/contract/create-action', 'MailboxPostMessage', {
+          const state = await sbp('state/latestContractState', recipient.contractID)
+          const message = await sbp('gi/contract/create-action', 'MailboxPostMessage', {
             sentDate: new Date().toISOString(),
             messageType: contracts.MailboxPostMessage.TypeMessage,
             from: this.$store.state.loggedIn.name,
@@ -320,7 +320,7 @@ export default {
     addRecipient: async function () {
       if (this.recipient) {
         try {
-          let contractID = await sbp('namespace/lookup', this.recipient)
+          const contractID = await sbp('namespace/lookup', this.recipient)
           if (!this.ephemeral.recipients.find(recipient => recipient.name === this.recipient)) {
             this.ephemeral.recipients.push({ name: this.recipient, contractID: contractID })
           }

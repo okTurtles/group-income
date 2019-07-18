@@ -54,7 +54,7 @@ export default {
       }, 300)
     },
     closeModal () {
-      let query = this.$route.query || {}
+      const query = this.$route.query || {}
 
       if (this.subcontent.length) {
         this.subcontent.pop()

@@ -61,24 +61,24 @@ export default {
       try {
         // TODO: this section is unclear and it's not clear what's going on at all.
         //       rewrite and make it nicer.
-        let vote = await sbp('gi/contract/create-action', 'GroupVoteForProposal',
+        const vote = await sbp('gi/contract/create-action', 'GroupVoteForProposal',
           {
             username: this.$store.state.loggedIn.name,
             proposalHash: this.$route.query.proposalHash
           },
           this.$route.query.groupId
         )
-        let proposal = _.cloneDeep(this.proposal)
-        let threshold = Math.ceil(proposal.threshold * this.memberCount)
+        const proposal = _.cloneDeep(this.proposal)
+        const threshold = Math.ceil(proposal.threshold * this.memberCount)
 
         await sbp('backend/publishLogEntry', vote)
         // If the vote passes fulfill the action
         if (proposal.for.length + 1 >= threshold) {
           // TODO: this is poorly implementated. do not create poposals in this manner.
           console.error('proposal actions:', proposal.actions)
-          for (let step of proposal.actions) {
-            let actData = JSON.parse(step.action)
-            let entry = await sbp('gi/contract/create-action', step.type, actData, step.contractID)
+          for (const step of proposal.actions) {
+            const actData = JSON.parse(step.action)
+            const entry = await sbp('gi/contract/create-action', step.type, actData, step.contractID)
             await sbp('backend/publishLogEntry', entry)
           }
         }
@@ -93,7 +93,7 @@ export default {
       this.errorMsg = null
       try {
         // Create a against the proposal
-        let vote = await sbp('gi/contract/create-action', 'GroupVoteAgainstProposal',
+        const vote = await sbp('gi/contract/create-action', 'GroupVoteAgainstProposal',
           {
             username: this.$store.state.loggedIn.name,
             proposalHash: this.$route.query.proposalHash

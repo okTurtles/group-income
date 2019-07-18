@@ -14,6 +14,6 @@ import mixinTransitions from './mixinTransitions.js'
 
 export default {
   name: 'Trigger',
-  mixins: [ mixinTransitions ]
+  mixins: [mixinTransitions]
 }
 </script>

@@ -50,7 +50,7 @@ var mailGuard = {
 }
 function createEnterGuards (...guards) {
   return function (to, from, next) {
-    for (let current of guards) {
+    for (const current of guards) {
       if (current.guard(to, from)) {
         return next(current.redirect(to, from))
       }

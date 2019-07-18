@@ -44,10 +44,10 @@ async function startApp () {
     strategy: ['disconnect', 'online', 'timeout']
   })
 
-  let user = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
+  const user = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
   if (user) {
     try {
-      let identityContractId = await sbp('namespace/lookup', user)
+      const identityContractId = await sbp('namespace/lookup', user)
       await store.dispatch('login', { name: user, identityContractId })
     } catch (err) {
       console.log('lookup failed!', err)

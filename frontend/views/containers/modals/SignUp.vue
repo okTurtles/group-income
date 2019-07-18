@@ -85,7 +85,7 @@ import FormPassword from '@components/Forms/Password.vue'
 // TODO: fix all this
 export default {
   name: 'SignUpModal',
-  mixins: [ validationMixin ],
+  mixins: [validationMixin],
   components: {
     ModalTemplate,
     FormPassword
@@ -113,7 +113,7 @@ export default {
       // Prevent autocomplete submission when empty field
       if (this.form.name !== null && this.form.email !== null) {
         try {
-          let user = sbp('gi/contract/create', 'IdentityContract', {
+          const user = sbp('gi/contract/create', 'IdentityContract', {
             // authorizations: [Events.CanModifyAuths.dummyAuth()],
             attributes: {
               name: this.form.name,
@@ -121,14 +121,14 @@ export default {
               picture: `${window.location.origin}/assets/images/default-avatar.png`
             }
           })
-          let mailbox = sbp('gi/contract/create', 'MailboxContract', {
+          const mailbox = sbp('gi/contract/create', 'MailboxContract', {
             // authorizations: [Events.CanModifyAuths.dummyAuth(user.hash())]
           })
           await sbp('backend/publishLogEntry', user)
           await sbp('backend/publishLogEntry', mailbox)
 
           // set the attribute *after* publishing the identity contract
-          let attribute = await sbp('gi/contract/create-action', 'IdentitySetAttributes',
+          const attribute = await sbp('gi/contract/create-action', 'IdentitySetAttributes',
             { mailbox: mailbox.hash() },
             user.hash()
           )
@@ -138,7 +138,7 @@ export default {
           // call syncContractWithServer on all of these contracts to:
           // 1. begin monitoring the contracts for updates via the pubsub system
           // 2. add these contracts to our vuex state
-          for (let contract of [user, mailbox]) {
+          for (const contract of [user, mailbox]) {
             await this.$store.dispatch('syncContractWithServer', contract.hash())
           }
           // TODO: Just add cryptographic magic

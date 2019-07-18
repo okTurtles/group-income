@@ -70,7 +70,7 @@ import L from '@view-utils/translations.js'
 
 export default {
   name: 'PasswordModal',
-  mixins: [ validationMixin ],
+  mixins: [validationMixin],
   data () {
     return {
       form: {

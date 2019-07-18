@@ -35,7 +35,8 @@
     "rules": {
       "vue/max-attributes-per-line": "off",
       "vue/html-indent": "off",
-      "flowtype/no-types-missing-file-annotation": "off"
+      "flowtype/no-types-missing-file-annotation": "off",
+      "quote-props": "off"
     }
   },
   "eslintIgnore": [
@@ -86,7 +87,7 @@
   "author": "okTurtles Foundation",
   "license": "GPL-3.0",
   "dependencies": {
-    "@babel/runtime": "7.4.5",
+    "@babel/runtime": "7.5.5",
     "@fortawesome/fontawesome-free": "5.9.0",
     "@hapi/boom": "7.4.2",
     "@hapi/hapi": "18.3.1",
@@ -118,21 +119,21 @@
     "ws": "7.0.1"
   },
   "devDependencies": {
-    "@babel/core": "7.4.5",
-    "@babel/plugin-proposal-class-properties": "7.4.4",
-    "@babel/plugin-proposal-object-rest-spread": "7.4.4",
+    "@babel/core": "7.5.5",
+    "@babel/plugin-proposal-class-properties": "7.5.5",
+    "@babel/plugin-proposal-object-rest-spread": "7.5.5",
     "@babel/plugin-syntax-dynamic-import": "7.2.0",
-    "@babel/plugin-transform-runtime": "7.4.4",
-    "@babel/preset-env": "7.4.5",
+    "@babel/plugin-transform-runtime": "7.5.5",
+    "@babel/preset-env": "7.5.5",
     "@babel/preset-flow": "7.0.0",
-    "@babel/register": "7.4.4",
+    "@babel/register": "7.5.5",
     "babel-eslint": "10.0.2",
-    "babel-plugin-root-import": "6.2.0",
+    "babel-plugin-root-import": "6.3.0",
     "babel-plugin-transform-inline-environment-variables": "0.4.3",
     "chalk": "2.4.2",
     "cheerio": "1.0.0-rc.3",
     "eslint": "6.0.1",
-    "eslint-config-standard": "12.0.0",
+    "eslint-config-standard": "13.0.1",
     "eslint-plugin-flowtype": "3.11.1",
     "eslint-plugin-import": "2.18.0",
     "eslint-plugin-node": "9.1.0",
@@ -155,7 +156,7 @@
     "node-fetch": "2.6.0",
     "node-sass": "4.12.0",
     "pug-lint-vue": "0.3.0",
-    "rollup": "1.16.2",
+    "rollup": "1.17.0",
     "rollup-plugin-alias": "1.5.2",
     "rollup-plugin-babel": "4.3.3",
     "rollup-plugin-commonjs": "10.0.1",
@@ -163,7 +164,7 @@
     "rollup-plugin-eslint": "7.0.0",
     "rollup-plugin-json": "4.0.0",
     "rollup-plugin-node-globals": "1.4.0",
-    "rollup-plugin-node-resolve": "5.1.0",
+    "rollup-plugin-node-resolve": "5.2.0",
     "rollup-plugin-sass-variables": "0.1.1",
     "rollup-plugin-vue": "5.0.1",
     "should": "13.2.3",

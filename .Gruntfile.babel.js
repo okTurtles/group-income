@@ -308,7 +308,7 @@ module.exports = (grunt) => {
         commonjs({
           // include: 'node_modules/**'
           namedExports: {
-            'node_modules/vuelidate/lib/validators/index.js': [ 'required', 'between', 'email', 'minLength', 'requiredIf' ]
+            'node_modules/vuelidate/lib/validators/index.js': ['required', 'between', 'email', 'minLength', 'requiredIf']
           },
           ignore: ['crypto']
         }),

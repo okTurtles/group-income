@@ -92,8 +92,8 @@ export default {
     // Then use CSS scale() to decrease the innerSlices's size.
     sliceData (slice, index) {
       const startPoint = this.getStartPercent(index)
-      const [ startX, startY ] = this.getCoordinatesForPercent(startPoint)
-      const [ endX, endY ] = this.getCoordinatesForPercent(startPoint + slice.percent)
+      const [startX, startY] = this.getCoordinatesForPercent(startPoint)
+      const [endX, endY] = this.getCoordinatesForPercent(startPoint + slice.percent)
 
       // When a slice is more than 50%, the large arc point should be 1
       const isLargeArc = slice.percent > 0.5 ? 1 : 0

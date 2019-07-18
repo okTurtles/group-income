@@ -141,7 +141,7 @@ const url = helpers.regex('url', /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i)
 
 export default {
   name: 'UserProfile',
-  mixins: [ validationMixin ],
+  mixins: [validationMixin],
   computed: {
     attributes () {
       return this.$store.getters.currentUserIdentityContract.attributes
@@ -189,12 +189,12 @@ export default {
       try {
         this.profileSaved = false
         var attrs = {}
-        for (let key of Object.keys(this.edited)) {
+        for (const key of Object.keys(this.edited)) {
           if (this.edited[key] && this.edited[key] !== this.attributes[key]) {
             attrs[key] = this.edited[key]
           }
         }
-        let attributes = await sbp('gi/contract/create-action', 'IdentitySetAttributes',
+        const attributes = await sbp('gi/contract/create-action', 'IdentitySetAttributes',
           attrs,
           this.$store.state.loggedIn.identityContractId
         )
@@ -215,7 +215,7 @@ export default {
     async saveGroupProfile () {
       try {
         this.groupProfileSaved = false
-        let updatedProfile = await sbp('gi/contract/create-action', 'GroupSetGroupProfile',
+        const updatedProfile = await sbp('gi/contract/create-action', 'GroupSetGroupProfile',
           {
             username: this.$store.state.loggedIn.name,
             profile: this.editedGroupProfile

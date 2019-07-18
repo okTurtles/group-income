@@ -111,7 +111,7 @@ const hasLowIncome = (value) => value < fakeStoreMincome - 1
 
 export default {
   name: 'IncomeForm',
-  mixins: [ validationMixin ],
+  mixins: [validationMixin],
   components: {
     ModalTemplate,
     InputAmount,

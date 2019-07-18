@@ -45,7 +45,7 @@ export default {
   },
   async mounted () {
     try {
-      let state = await sbp('state/latestContractState', this.$route.query.groupId)
+      const state = await sbp('state/latestContractState', this.$route.query.groupId)
       if (!state.invitees.find(invitee => invitee === this.$store.state.loggedIn.name)) {
         // TODO: proper user-facing error
         // TODO: somehow I got this error... I created 4 accounts, and after inviting
@@ -80,7 +80,7 @@ export default {
       try {
         // post acceptance event to the group contract
         this.ephemeral.errorMsg = null
-        let acceptance = await sbp('gi/contract/create-action', 'GroupAcceptInvitation',
+        const acceptance = await sbp('gi/contract/create-action', 'GroupAcceptInvitation',
           {
             username: this.$store.state.loggedIn.name,
             identityContractId: this.$store.state.loggedIn.identityContractId,
@@ -109,7 +109,7 @@ export default {
       try {
         // post decline event
         this.ephemeral.errorMsg = null
-        let declination = await sbp('gi/contract/create-action', 'GroupDeclineInvitation',
+        const declination = await sbp('gi/contract/create-action', 'GroupDeclineInvitation',
           {
             username: this.$store.state.loggedIn.name,
             inviteHash: this.$route.query.inviteHash,
