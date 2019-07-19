@@ -19,7 +19,6 @@ proposal-template(
       name='changeReason'
       ref='purpose'
       placeholder='The reason why I\' propositiong this change is...'
-      maxlength='500'
       :class="{ 'error': $v.form.changeReason.$error }"
       v-model='form.changeReason'
     )
@@ -28,6 +27,7 @@ proposal-template(
 <script>
 import ProposalTemplate from './ProposalTemplate.vue'
 import { validationMixin } from 'vuelidate'
+import { minLength } from 'vuelidate/lib/validators'
 
 export default {
   name: 'ProposalChangeRule',
@@ -39,6 +39,7 @@ export default {
   ],
   data () {
     return {
+      currentStep: 0,
       v: { type: Object },
       form: {
         changeReason: null
@@ -63,6 +64,9 @@ export default {
   },
   validations: {
     form: {
+      changeReason: {
+        minLength: minLength(10)
+      }
     },
     // validation groups by route name for steps
     steps: {

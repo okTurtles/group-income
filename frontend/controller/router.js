@@ -23,6 +23,7 @@ import Invite from '../views/pages/Invite.vue'
 import Join from '../views/pages/Join.vue'
 import Mailbox from '../views/pages/Mailbox.vue'
 import Vote from '../views/pages/Vote.vue'
+import GroupSettings from '../views/pages/GroupSettings.vue'
 
 Vue.use(Router)
 
@@ -225,6 +226,15 @@ var router = new Router({
       name: 'GroupChat',
       meta: {
         title: 'Group Chat'
+      },
+      beforeEnter: createEnterGuards(loginGuard)
+    },
+    {
+      path: '/group-settings',
+      component: GroupSettings,
+      name: 'GroupSettings',
+      meta: {
+        title: 'Group Seettings'
       },
       beforeEnter: createEnterGuards(loginGuard)
     },

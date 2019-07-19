@@ -10,7 +10,7 @@
       transition(name='fade' mode='out-in')
         slot
 
-        div.confirmation(v-if='isConfirmation')
+        .confirmation(v-if='isConfirmation')
           img(src='/assets/images/group-vote.png' alt='Group vote')
           p
             | Members of your group will now be asked to vote.

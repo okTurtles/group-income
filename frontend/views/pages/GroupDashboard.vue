@@ -2,20 +2,20 @@
 page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupState')
   template(#title='') {{ currentGroupState.groupName }}
 
-  dashboard-section(title='This months overview')
+  page-section(title='This months overview')
     overview
 
-  dashboard-section(title='Proposals')
+  page-section(title='Proposals')
     proposals(:proposals='currentGroupState.proposals')
 
-  dashboard-section(title='July Overview')
+  page-section(title='July Overview')
     //- group-pledges-graph
     progress-overview
 
-  //- dashboard-section(title='Support History')
+  //- page-section(title='Support History')
   //-   support-history(:history='[1.2, 1, .85, .95, 1.05, .35]')
 
-  //- dashboard-section(title='Group Settings')
+  //- page-section(title='Group Settings')
   //-   group-settings(:group='currentGroupState')
 
   template(#sidebar='')
@@ -28,7 +28,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupS
 import { mapGetters, mapState } from 'vuex'
 
 import Page from '@pages/Page.vue'
-import DashboardSection from '@components/DashboardSection.vue'
+import PageSection from '@components/PageSection.vue'
 import Overview from '@containers/Overview.vue'
 import Proposals from '@containers/Proposals.vue'
 // import GroupPledgesGraph from '@containers/GroupPledgesGraph.vue'
@@ -52,7 +52,7 @@ export default {
   },
   components: {
     Page,
-    DashboardSection,
+    PageSection,
     Overview,
     Proposals,
     // GroupPledgesGraph

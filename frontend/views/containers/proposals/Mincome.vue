@@ -59,18 +59,13 @@ import { required } from 'vuelidate/lib/validators'
 import currencies from '@view-utils/currencies'
 
 export default {
-  name: 'ModalForm',
+  name: 'MincomeProposal',
   components: {
     ProposalTemplate
   },
   mixins: [
     validationMixin
   ],
-  props: {
-    subTitle: String,
-    submitError: String,
-    onSubmit: Function
-  },
   data () {
     return {
       currencies,
