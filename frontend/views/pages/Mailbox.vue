@@ -369,7 +369,7 @@ export default {
   i {
     margin-right: 1rem;
     font-size: 0.77rem;
-    color: #7a7a7a;
+    color: $text-light;
     transition: transform cubic-bezier(0.18, 0.89, 0.32, 1.28) 0.3s, color ease-in 0.3s;
   }
 

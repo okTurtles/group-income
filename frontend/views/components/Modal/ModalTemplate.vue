@@ -319,7 +319,7 @@ export default {
       top: 1rem;
 
       &:hover {
-        color: #363636;
+        color: $text-strong;
       }
 
       &::after {
