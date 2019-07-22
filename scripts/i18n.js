@@ -3,22 +3,22 @@ const ejs = require('ejs')
 const fs = require('fs')
 const pth = require('path')
 
-let localeObject = {}
+const localeObject = {}
 function parseJS (text) {
-  let functionEx = /\bL\(\s*['"](.*?)['"]\s*(?:,\s*['"](.*?)['"]\s*)?\)/mg
+  const functionEx = /\bL\(\s*['"](.*?)['"]\s*(?:,\s*['"](.*?)['"]\s*)?\)/mg
   let matches = functionEx.exec(text)
   while (matches) {
-    let text = matches[ 1 ]
-    let comment = matches[ 2 ]
-    localeObject[ text ] = { text: text, comment: comment || '' }
+    const text = matches[1]
+    const comment = matches[2]
+    localeObject[text] = { text: text, comment: comment || '' }
     matches = functionEx.exec(text)
   }
 }
 function parseHtml (text) {
-  let $ = cheerio.load(text)
+  const $ = cheerio.load(text)
   $('i18n').each((index, el) => {
-    let text = $(el).text()
-    localeObject[ text ] = { text: text, comment: $(el).attr('comment') || '' }
+    const text = $(el).text()
+    localeObject[text] = { text: text, comment: $(el).attr('comment') || '' }
   })
   $('script').each((index, el) => {
     parseJS($(el).text())
@@ -35,7 +35,7 @@ function traversePath (path, cb) {
           if (err) {
             return cb(err)
           }
-          let text = data.toString()
+          const text = data.toString()
           parseHtml(text)
           return cb()
         })
@@ -44,7 +44,7 @@ function traversePath (path, cb) {
           if (err) {
             return cb(err)
           }
-          let text = data.toString()
+          const text = data.toString()
           parseJS(text)
           return cb()
         })
@@ -64,18 +64,18 @@ function traversePath (path, cb) {
         if (err) {
           return cb(err)
         }
-        let contents = items.map(function (item) {
+        const contents = items.map(function (item) {
           return pth.join(path, item)
         })
         let i = -1
         let current
-        let next = (err) => {
+        const next = (err) => {
           if (err) {
             return cb(err)
           }
           i++
           if (i < contents.length) {
-            current = contents[ i ]
+            current = contents[i]
             traversePath(current, next)
           } else {
             return cb()
@@ -87,8 +87,8 @@ function traversePath (path, cb) {
   })
 }
 
-const source = process.argv[ 2 ] || '../frontend/'
-const output = process.argv[ 3 ] || '../frontend/assets/locales/en/translation.json'
+const source = process.argv[2] || '../frontend/'
+const output = process.argv[3] || '../frontend/assets/locales/en/translation.json'
 traversePath(source, (err) => {
   if (err) {
     throw err

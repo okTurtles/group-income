@@ -69,7 +69,7 @@ import L from '@view-utils/translations.js'
 
 export default {
   name: 'LoginModal',
-  mixins: [ validationMixin ],
+  mixins: [validationMixin],
   components: {
     ModalTemplate,
     FormPassword

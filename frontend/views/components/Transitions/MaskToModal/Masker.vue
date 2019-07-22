@@ -12,7 +12,7 @@ import mixinTransitions from './mixinTransitions.js'
 
 export default {
   name: 'Masker',
-  mixins: [ mixinTransitions ],
+  mixins: [mixinTransitions],
   props: {
     isActive: Boolean,
     elementsSize: Object

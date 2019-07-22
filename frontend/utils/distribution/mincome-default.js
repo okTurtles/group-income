@@ -2,10 +2,10 @@
 
 import type { IncomeObject } from '~/shared/types.js'
 
-let frequencies = function (incomes: Array<IncomeObject>) {
-  let freqs = {}
+const frequencies = function (incomes: Array<IncomeObject>) {
+  const freqs = {}
   incomes.map(function (a) {
-    let amount = a.amount
+    const amount = a.amount
     if (!(amount in this)) {
       this[amount] = 1
     } else {
@@ -17,7 +17,7 @@ let frequencies = function (incomes: Array<IncomeObject>) {
 }
 
 function findIncomeFrequencyByKey (incomeFrequencies, amount: number): number {
-  for (let incomeFrequencyAmount in incomeFrequencies) {
+  for (const incomeFrequencyAmount in incomeFrequencies) {
     if (parseInt(incomeFrequencyAmount) === amount) {
       return incomeFrequencies[amount]
     }
@@ -26,7 +26,7 @@ function findIncomeFrequencyByKey (incomeFrequencies, amount: number): number {
 }
 
 function getSortedIncomeFrequencyAmounts (incomeFrequencies) {
-  let frequencyAmounts = Object.keys(incomeFrequencies)
+  const frequencyAmounts = Object.keys(incomeFrequencies)
   frequencyAmounts.sort(function (a, b) {
     return parseInt(a) - parseInt(b)
   })
@@ -34,12 +34,12 @@ function getSortedIncomeFrequencyAmounts (incomeFrequencies) {
 }
 
 function findIncreaseAmount (incomeFrequencies, minCome: number): number {
-  let sortedIncomeFrequencyAmounts = getSortedIncomeFrequencyAmounts(incomeFrequencies)
+  const sortedIncomeFrequencyAmounts = getSortedIncomeFrequencyAmounts(incomeFrequencies)
   return Math.min(parseInt(sortedIncomeFrequencyAmounts[1]), minCome)
 }
 
 function findDecreaseAmount (incomeFrequencies, minCome: number): number {
-  let sortedIncomeFrequencyAmounts = getSortedIncomeFrequencyAmounts(incomeFrequencies)
+  const sortedIncomeFrequencyAmounts = getSortedIncomeFrequencyAmounts(incomeFrequencies)
   return Math.max(parseInt(sortedIncomeFrequencyAmounts[sortedIncomeFrequencyAmounts.length - 2]), minCome)
 }
 
@@ -75,7 +75,7 @@ function floorTo (number): number {
 }
 
 function incomeDistribution (incomes: Array<IncomeObject>, minCome: number) {
-  let incomeLength = incomes.length
+  const incomeLength = incomes.length
 
   if (incomeLength === 1) {
     incomes.sort(incomeKeys)
@@ -83,44 +83,44 @@ function incomeDistribution (incomes: Array<IncomeObject>, minCome: number) {
   }
 
   incomes.sort(incomeAmounts)
-  let incomeFrequencies = frequencies(incomes)
+  const incomeFrequencies = frequencies(incomes)
 
   // --- left side ---
-  let smallestAmount = incomes[0].amount
-  let smallestCount = findIncomeFrequencyByKey(incomeFrequencies, smallestAmount)
+  const smallestAmount = incomes[0].amount
+  const smallestCount = findIncomeFrequencyByKey(incomeFrequencies, smallestAmount)
   if (smallestAmount >= minCome) {
     incomes.sort(incomeKeys)
     return incomes
   }
-  let smallestIncreaseAmount = findIncreaseAmount(incomeFrequencies, minCome)
-  let smallestMaxIncrease = smallestIncreaseAmount - smallestAmount
+  const smallestIncreaseAmount = findIncreaseAmount(incomeFrequencies, minCome)
+  const smallestMaxIncrease = smallestIncreaseAmount - smallestAmount
 
   // --- right side
-  let largestAmount = incomes[incomeLength - 1].amount
-  let largestCount = findIncomeFrequencyByKey(incomeFrequencies, largestAmount)
+  const largestAmount = incomes[incomeLength - 1].amount
+  const largestCount = findIncomeFrequencyByKey(incomeFrequencies, largestAmount)
   if (largestAmount <= minCome) {
     incomes.sort(incomeKeys)
     return incomes
   }
-  let smallestDecreaseAmount = findDecreaseAmount(incomeFrequencies, minCome)
-  let smallestMaxDecrease = largestAmount - smallestDecreaseAmount
+  const smallestDecreaseAmount = findDecreaseAmount(incomeFrequencies, minCome)
+  const smallestMaxDecrease = largestAmount - smallestDecreaseAmount
 
   // --- calculate transfer
-  let totalRequired = smallestMaxIncrease * smallestCount
-  let totalAvailable = smallestMaxDecrease * largestCount
-  let transferAmount = Math.min(totalRequired, totalAvailable)
+  const totalRequired = smallestMaxIncrease * smallestCount
+  const totalAvailable = smallestMaxDecrease * largestCount
+  const transferAmount = Math.min(totalRequired, totalAvailable)
 
   // --- transfer amounts from largest element(s) to smallest element(s)
-  let decreasePerMember = -floorTo(transferAmount / largestCount)
-  let decreaseTotal = decreasePerMember * largestCount
-  let increasePerMember = -floorTo(decreaseTotal / smallestCount)
-  let increaseTotal = increasePerMember * smallestCount
+  const decreasePerMember = -floorTo(transferAmount / largestCount)
+  const decreaseTotal = decreasePerMember * largestCount
+  const increasePerMember = -floorTo(decreaseTotal / smallestCount)
+  const increaseTotal = increasePerMember * smallestCount
 
   incomes = transferValue(incomes, largestAmount, decreasePerMember)
   incomes = transferValue(incomes, smallestAmount, increasePerMember)
 
   // --- add the remainder for fractional transfers for the smallest on the left
-  let remainder = Math.ceil((-decreaseTotal - increaseTotal) * 100) / 100
+  const remainder = Math.ceil((-decreaseTotal - increaseTotal) * 100) / 100
   incomes[0].amount += remainder
 
   return incomeDistribution(incomes, minCome)

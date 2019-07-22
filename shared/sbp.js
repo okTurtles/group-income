@@ -17,9 +17,9 @@ function sbp (selector: string, ...data: any): any {
   // can prevent the execution of a selector.
   // TODO: decide whether the order of filter calls should be reversed
   //       e.g. call the most specific filter before the more general filter
-  for (let filters of [globalFilters, domainFilters[domain], selectorFilters[selector]]) {
+  for (const filters of [globalFilters, domainFilters[domain], selectorFilters[selector]]) {
     if (filters) {
-      for (let filter of filters) {
+      for (const filter of filters) {
         if (filter(domain, selector, data) === false) return
       }
     }
@@ -45,6 +45,13 @@ const SBP_BASE_SELECTORS = {
     for (const selector of sels) {
       delete selectors[selector]
     }
+  },
+  'sbp/selectors/overwrite': function (sels: {[string]: Function}) {
+    sbp('sbp/selectors/unregister', Object.keys(sels))
+    return sbp('sbp/selectors/register', sels)
+  },
+  'sbp/selectors/fn': function (sel: string): Function {
+    return selectors[sel]
   },
   'sbp/filters/global/add': function (filter: TypeFilter) {
     globalFilters.push(filter)

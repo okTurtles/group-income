@@ -1,3 +1,5 @@
+'use strict'
+
 // =======================
 // Entry point.
 //
@@ -54,7 +56,7 @@ Object.assign(process.env, {
 
 // Now 'require' is primed to parse files through babel.
 if (!process.env.LOAD_NO_FILE) {
-  let target = process.env.LOAD_TARGET_FILE || './.Gruntfile.babel.js'
+  const target = process.env.LOAD_TARGET_FILE || './.Gruntfile.babel.js'
   console.log('Gruntfile.js: loading file with babel support:', target)
   module.exports = require(target)
 } else {

@@ -52,7 +52,7 @@ export default {
     this.angle = this.circleSliderState.angleValue
     this.currentStepValue = this.circleSliderState.currentStep
 
-    let maxCurveWidth = Math.max(this.cpMainCircleStrokeWidth, this.cpPathStrokeWidth)
+    const maxCurveWidth = Math.max(this.cpMainCircleStrokeWidth, this.cpPathStrokeWidth)
     this.radius = (this.side / 2) - Math.max(maxCurveWidth, this.cpKnobRadius * 2) / 2
     this.updateFromPropValue(this.value)
   },
@@ -192,7 +192,7 @@ export default {
       return this.knobRadius || (this.side / 2) / this.knobRadiusRel
     },
     cpPathD () {
-      let parts = []
+      const parts = []
       parts.push('M' + this.cpCenter)
       parts.push(this.cpCenter + this.radius)
       parts.push('A')
@@ -286,7 +286,7 @@ export default {
     /*
      */
     updateFromPropValue (value) {
-      let stepValue = this.fitToStep(value)
+      const stepValue = this.fitToStep(value)
       this.circleSliderState.updateCurrentStepFromValue(stepValue)
 
       this.angle = this.circleSliderState.angleValue

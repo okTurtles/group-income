@@ -35,7 +35,7 @@ import colorsMixins from '@view-utils/colorsManipulation.js'
 export default {
   name: 'SelectorTheme',
 
-  mixins: [ colorsMixins ],
+  mixins: [colorsMixins],
 
   data () {
     return {

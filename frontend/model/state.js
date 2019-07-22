@@ -9,7 +9,7 @@ import Vuex from 'vuex'
 import { GIMessage } from '~/shared/GIMessage.js'
 import contracts from './contracts.js'
 import * as _ from '@utils/giLodash.js'
-import * as db from './database.js'
+import { SETTING_CURRENT_USER } from './database.js'
 import { LOGIN, LOGOUT, EVENT_HANDLED } from '@utils/events.js'
 import Colors from './colors.js'
 
@@ -33,9 +33,9 @@ sbp('sbp/selectors/register', {
   'state/latestContractState': async (contractID: string) => {
     let events = await sbp('backend/eventsSince', contractID, contractID)
     events = events.map(e => GIMessage.deserialize(e))
-    let contract = contracts[events[0].type()]
-    let state = _.cloneDeep(contract.vuexModule.state)
-    for (let e of events) {
+    const contract = contracts[events[0].type()]
+    const state = _.cloneDeep(contract.vuexModule.state)
+    for (const e of events) {
       contracts[e.type()].validate(e.data())
       contract.vuexModule.mutations[e.type()](state, {
         data: e.data(),
@@ -68,15 +68,19 @@ const mutations = {
     sbp('okTurtles.events/emit', LOGOUT)
   },
   addContract (state, { contractID, type, HEAD, data }) {
-    // 'Mutations Follow Vue's Reactivity Rules' - important for modifying objects
-    // See: https://vuex.vuejs.org/en/mutations.html
-    Vue.set(state.contracts, contractID, { type, HEAD })
     // copy over the initial state, making sure *not* to use cloneDeep on
     // the entire vuexModule object (because cloneDeep doesn't clone functions)
     var vuexModule = Object.assign({}, contracts[type].vuexModule)
     // make sure we restore any previously saved state (e.g. after login)
     vuexModule.state = Object.assign(_.cloneDeep(vuexModule.state), data)
     store.registerModule(contractID, vuexModule)
+    // NOTE: we modify state.contracts __AFTER__ calling registerModule, to
+    //       ensure that any reactive Vue components that depend on
+    //       `state.contracts` for their reactivity (e.g. `groupsByName` getter)
+    //       will not result in errors like "state[contractID] is undefined"
+    // 'Mutations Follow Vue's Reactivity Rules' - important for modifying objects
+    // See: https://vuex.vuejs.org/en/mutations.html
+    Vue.set(state.contracts, contractID, { type, HEAD })
     // we've successfully received it back, so remove it from expectation pending
     const index = state.pending.indexOf(contractID)
     index !== -1 && state.pending.splice(index, 1)
@@ -93,21 +97,21 @@ const mutations = {
     sbp('okTurtles.events/emit', 'contractsModified', { remove: contractID })
   },
   setContracts (state, contracts) {
-    for (let contractID of Object.keys(state.contracts)) {
+    for (const contractID of Object.keys(state.contracts)) {
       mutations.removeContract(state, contractID)
     }
-    for (let contract of contracts) {
+    for (const contract of contracts) {
       mutations.addContract(state, contract)
     }
   },
   deleteMessage (state, hash) {
-    let mailboxContract = store.getters.mailboxContract
-    let index = mailboxContract && mailboxContract.messages.findIndex(msg => msg.hash === hash)
+    const mailboxContract = store.getters.mailboxContract
+    const index = mailboxContract && mailboxContract.messages.findIndex(msg => msg.hash === hash)
     if (index > -1) { mailboxContract.messages.splice(index, 1) }
   },
   markMessageAsRead (state, hash) {
-    let mailboxContract = store.getters.mailboxContract
-    let index = mailboxContract && mailboxContract.messages.findIndex(msg => msg.hash === hash)
+    const mailboxContract = store.getters.mailboxContract
+    const index = mailboxContract && mailboxContract.messages.findIndex(msg => msg.hash === hash)
     if (index > -1) { mailboxContract.messages[index].read = true }
   },
   setCurrentGroupId (state, currentGroupId) {
@@ -129,18 +133,18 @@ const mutations = {
 // https://vuex.vuejs.org/en/modules.html
 const getters = {
   currentGroupState (state) {
-    return state[state.currentGroupId]
+    return state[state.currentGroupId] || {} // avoid "undefined" vue errors at inoportune times
   },
   mailboxContract (state, getters) {
     return getters.currentUserIdentityContract &&
       state[getters.currentUserIdentityContract.attributes.mailbox]
   },
   mailbox (state, getters) {
-    let mailboxContract = getters.mailboxContract
+    const mailboxContract = getters.mailboxContract
     return mailboxContract && mailboxContract.messages
   },
   unreadMessageCount (state, getters) {
-    let messages = getters.mailbox
+    const messages = getters.mailbox
     return messages && messages.filter(msg => !msg.read).length
   },
   // Logged In user's identity contract
@@ -153,17 +157,17 @@ const getters = {
     // The code below was originally Object.entries(...) but changed to .keys()
     // due to the same flow issue as https://github.com/facebook/flow/issues/5838
     return Object.keys(contracts)
-      .filter((key) => contracts[key].type === 'GroupContract')
-      .map((key) => ({ groupName: state[key].groupName, contractID: key }))
+      .filter(contractID => contracts[contractID].type === 'GroupContract')
+      .map(contractID => ({ groupName: state[contractID].groupName, contractID }))
   },
   proposals (state) {
     // TODO: clean this up
-    let proposals = []
+    const proposals = []
     if (!state.currentGroupId) { return proposals }
-    for (let groupContractId of Object.keys(state.contracts)
+    for (const groupContractId of Object.keys(state.contracts)
       .filter(key => state.contracts[key].type === 'GroupContract')
     ) {
-      for (let proposal of Object.keys(state[groupContractId].proposals || {})) {
+      for (const proposal of Object.keys(state[groupContractId].proposals || {})) {
         if (state[groupContractId].proposals[proposal].initatior !== state.loggedIn.name &&
         !state[groupContractId].proposals[proposal].for.find(name => name === state.loggedIn.name) &&
         !state[groupContractId].proposals[proposal].against.find(name => name === state.loggedIn.name)
@@ -225,7 +229,7 @@ const actions = {
     { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object},
     contractID: string
   ) {
-    let latest = await sbp('backend/latestHash', contractID)
+    const latest = await sbp('backend/latestHash', contractID)
     console.log(`syncContractWithServer(): ${contractID} latestHash is: ${latest}`)
     // there is a chance two users are logged in to the same machine and must check their contracts before syncing
     var recent
@@ -239,7 +243,7 @@ const actions = {
     if (latest !== recent) {
       console.log(`Now Synchronizing Contract: ${contractID} its most recent was ${recent || 'undefined'} but the latest is ${latest}`)
       // TODO Do we need a since call that is inclusive? Since does not imply inclusion
-      let events = await sbp('backend/eventsSince', contractID, recent || contractID)
+      const events = await sbp('backend/eventsSince', contractID, recent || contractID)
       // remove the first element in cases where we are not getting the contract for the first time
       state.contracts[contractID] && events.shift()
       for (let i = 0; i < events.length; i++) {
@@ -251,7 +255,7 @@ const actions = {
     { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object},
     user: Object
   ) {
-    const settings = await db.loadSettings(user.name)
+    const settings = await sbp('gi.db/settings/load', user.name)
     if (settings) {
       console.log('loadSettings:', settings)
       commit('setCurrentGroupId', settings.currentGroupId)
@@ -259,11 +263,11 @@ const actions = {
       commit('setTheme', settings.theme || 'blue')
       commit('setFontSize', settings.fontSize || 1)
     }
-    await db.saveCurrentUser(user.name)
+    await sbp('gi.db/settings/save', SETTING_CURRENT_USER, user.name)
     // This may seem unintuitive to use the state from the global store object
     // but the state object in scope is a copy that becomes stale if something modifies it
     // like an outside dispatch
-    for (let key of Object.keys(store.state.contracts)) {
+    for (const key of Object.keys(store.state.contracts)) {
       await dispatch('syncContractWithServer', key)
     }
     commit('login', user)
@@ -273,8 +277,8 @@ const actions = {
   ) {
     debouncedSave.cancel()
     await dispatch('saveSettings', state)
-    await db.clearCurrentUser()
-    for (let contractID of Object.keys(state.contracts)) {
+    await sbp('gi.db/settings/save', SETTING_CURRENT_USER, null)
+    for (const contractID of Object.keys(state.contracts)) {
       mutations.removeContract(state, contractID)
     }
     commit('logout')
@@ -296,7 +300,7 @@ const actions = {
         theme: state.theme
       }
       console.log('saveSettings:', settings)
-      await db.saveSettings(state.loggedIn.name, settings)
+      await sbp('gi.db/settings/save', state.loggedIn.name, settings)
     }
   },
   // this function is called from ../controller/utils/pubsub.js and is the entry point
@@ -320,7 +324,7 @@ const actions = {
         return console.error(`NOT EXPECTING EVENT!`, contractID, message)
       }
 
-      await db.addLogEntry(message)
+      await sbp('gi.db/log/addEntry', message)
 
       if (message.isFirstMessage()) {
         commit('addContract', { contractID, type, HEAD, data })
