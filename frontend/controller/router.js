@@ -23,6 +23,7 @@ import Invite from '../views/pages/Invite.vue'
 import Join from '../views/pages/Join.vue'
 import Mailbox from '../views/pages/Mailbox.vue'
 import Vote from '../views/pages/Vote.vue'
+import GroupWelcome from '../views/pages/GroupWelcome.vue'
 
 Vue.use(Router)
 
@@ -149,6 +150,15 @@ var router = new Router({
           component: GroupSummary
         }
       ]
+    },
+    {
+      path: '/welcome',
+      component: GroupWelcome,
+      name: GroupWelcome.name,
+      meta: {
+        title: 'Your Group Created'
+      },
+      beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '/dashboard',

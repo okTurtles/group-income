@@ -98,6 +98,9 @@ export default {
   object-fit: cover;
   width: 2rem;
 
+  &.is-large {
+    width: 128px;
+  }
   &::after {
     content: "";
     display: block;
