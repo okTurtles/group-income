@@ -8,6 +8,7 @@ $body-background-color: #fff;
 $border:       #dbdbdb; // hsl(0, 0%, 86%)
 
 // Text colors
+$light-grey:   #f4f3f4;
 $text-light:   #7a7a7a; // hsl(0, 0%, 48%)
 $text:         #636363; // hsl(0, 0%, 39%)
 $text-strong:  #363636; // hsl(0, 0%, 21%)
@@ -47,6 +48,14 @@ $colors: "primary", "primary-light", "primary-bg-s", "primary-bg-a", "secondary"
 .help,
 .has-text-light {
   color: $text-light;
+}
+
+.has-text-white {
+  color: $white;
+}
+
+.has-text-light-grey {
+  color: $light-grey;
 }
 
 .has-text-strong {
