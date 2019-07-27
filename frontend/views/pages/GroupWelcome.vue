@@ -1,16 +1,15 @@
-<!-- sourcemap -->
 <template lang="pug">
 main.c-splash
-  avatar.is-large(
+  avatar(
     src='/assets/images/default-avatar.png'
-    :alt='currentGroupState.groupName'
-    :blobURL='currentGroupState.groupPicture'
+    :alt='userName'
+    :blobURL='userPicture'
   )
 
-  h1
-    i18n Welcome The Dreamers
+  h1.c-title
+    i18n Welcome {{ userName }}!
 
-  p.has-text-strong
+  p.has-text-strong.c-description
     i18n You are now embarking on a new journey. We hope you have a blast!
 
   .buttons.is-centered
@@ -19,19 +18,26 @@ main.c-splash
       @click='toDashboard'
     )
       i18n Awesome
+
+  confetti-animation
 </template>
 
 <script>
 import Avatar from '@components/Avatar.vue'
+import ConfettiAnimation from '@components/ConfettiAnimation/ConfettiAnimation.vue'
 
 export default {
   name: 'GroupWelcome',
   components: {
-    Avatar
+    Avatar,
+    ConfettiAnimation
   },
   computed: {
-    currentGroupState () {
-      return this.$store.getters.currentGroupState
+    userName () {
+      return this.$store.getters.currentGroupState.groupName
+    },
+    userPicture () {
+      return this.$store.getters.currentGroupState.groupPicture
     }
   },
   data () {
@@ -44,27 +50,49 @@ export default {
       if (this.isButtonClicked) return
 
       this.isButtonClicked = true
-      this.$router.push({ path: '/dashboard' })
+      this.$router.replace({ path: '/dashboard' })
     }
   }
 }
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@import "../../assets/style/_variables.scss";
+
 .c-splash {
+  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  min-height: 100%;
-  border: 1px dashed rgba(170,20,25,0.25);
+  min-height: 100vh;
 
-  > * {
-    background: #000;
+  .c-avatar {
+    height: 128px;
+    width: 128px;
   }
-}
 
-.c-avatar {
-  width: 156px;
+  .c-title,
+  .c-description {
+    text-align: center;
+    word-break: keep-all;
+    padding: 0 16px;
+  }
+
+  .c-title {
+    margin-bottom: 0;
+
+    @include phone {
+      font-size: $size-2;
+    }
+  }
+
+  .c-description {
+    margin: 0 0 8px;
+  }
+
+  @include phone {
+    width: 100vw;
+  }
 }
 </style>
