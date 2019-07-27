@@ -1,5 +1,7 @@
 <template lang="pug">
-main.c-splash
+main.c-splash(
+  data-test='welcome'
+)
   avatar(
     src='/assets/images/default-avatar.png'
     :alt='userName'
@@ -16,6 +18,7 @@ main.c-splash
     button(
       :disabled='isButtonClicked'
       @click='toDashboard'
+      data-test='toDashboardBtn'
     )
       i18n Awesome
 
