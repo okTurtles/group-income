@@ -21,7 +21,7 @@ nav.c-navigation(
           to='/messages'
           icon='envelope'
           :class="`has-text-${isDarkTheme ? 'white' : 'dark'}`"
-          :badgecount='2'
+          :badgeCount='2'
         )
           i18n Messages
 
@@ -34,7 +34,7 @@ nav.c-navigation(
         style='opacity: 0; cursor: default;'
         icon='envelope'
         data-test='mailboxLink'
-        :badgecount='unreadMessagesCount || activityCount'
+        :badgeCount='unreadMessagesCount || activityCount'
       )
         i18n Inbox (deprecated)
 

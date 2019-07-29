@@ -9,7 +9,7 @@
       tag='router-link'
       variant='solid'
       :icon='getIcon(id)'
-      :badgecount='list.conversations[id].unreadCount'
+      :badgeCount='list.conversations[id].unreadCount'
       :to='buildUrl(id)'
     )
       avatar(

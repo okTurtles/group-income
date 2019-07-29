@@ -34,7 +34,7 @@ div(v-if='groupsByName.length')
       i18n Contributions
     list-item(tag='router-link' icon='tag' to='/pay-group')
       i18n Pay Group
-    list-item(tag='router-link' icon='comment' to='/group-chat' :badgecount='3')
+    list-item(tag='router-link' icon='comment' to='/group-chat' :badgeCount='3')
       i18n Group Chat
     list-item(tag='router-link' icon='cog' to='/group-settings')
       i18n Group Settings
@@ -94,7 +94,6 @@ export default {
   background-color: $primary-bg-s;
   transition: background-color ease-in 0.3s;
   justify-content: flex-start;
-  color: $text-strong;
   font-size: $size-4;
   font-weight: bold;
 
