@@ -9,7 +9,8 @@
   )
 
     .field(v-if='currentStep === 0' key='0')
-      label.label New minimum income
+      label.label
+        i18n New minimum income
       .select-wrapper
         input.input(
           ref='mincome'
@@ -35,7 +36,8 @@
             :key='code'
           ) {{ symbol }}
 
-      p Currently $1000 monthly.
+      p
+        i18n Currently $1000 monthly.
 
     .field(v-if='currentStep === 1' key='1')
       label.label
@@ -44,7 +46,7 @@
       textarea.textarea(
         name='changeReason'
         ref='purpose'
-        placeholder='The reason why I\' propositiong this change is...'
+        :placeholder='L("The reason why I\' propositiong this change is...")'
         maxlength='500'
         :class="{ 'error': $v.form.changeReason.$error }"
         v-model='form.changeReason'

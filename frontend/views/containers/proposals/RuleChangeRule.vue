@@ -9,7 +9,8 @@ proposal-template(
 )
 
   .field(v-if='currentStep === 0' key='0')
-    label.label I step to change rule of change rule it's on the way
+    label.label
+      i18n I step to change rule of change rule it's on the way
 
   .field(v-if='currentStep === 1' key='1')
     label.label
@@ -18,7 +19,7 @@ proposal-template(
     textarea.textarea(
       name='changeReason'
       ref='purpose'
-      placeholder='The reason why I\' propositiong this change is...'
+      :placeholder='L("The reason why I\' propositiong this change is...")'
       :class="{ 'error': $v.form.changeReason.$error }"
       v-model='form.changeReason'
     )

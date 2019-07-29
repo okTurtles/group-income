@@ -18,7 +18,7 @@ proposal-template(
     textarea.textarea(
       name='changeReason'
       ref='purpose'
-      placeholder='The reason why I\' propositiong this change is...'
+      :placeholder='L("The reason why I\' propositiong this change is...")'
       maxlength='500'
       :class="{ 'error': $v.form.changeReason.$error }"
       v-model='form.changeReason'
