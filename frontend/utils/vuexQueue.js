@@ -8,20 +8,23 @@ class VuexQueue {
     _queue.set(this, [])
     _isRunning.set(this, false)
   }
+
   // call an action return a promise
   dispatch (id, payload) {
     return this.enqueue('action', id, payload)
   }
+
   // call a mutation return a promise
   commit (id, payload) {
     return this.enqueue('mutation', id, payload)
   }
+
   async run () {
     // Run if not already started
     if (!_isRunning.get(this)) {
       // set running flag
       _isRunning.set(this, true)
-      let queue = _queue.get(this)
+      const queue = _queue.get(this)
       // loop through queue
       let next = queue.pop()
       while (next) {
@@ -41,15 +44,17 @@ class VuexQueue {
       _isRunning.set(this, false)
     }
   }
+
   enqueue (type, id, payload) {
-    let queue = _queue.get(this)
+    const queue = _queue.get(this)
     let release
     let exception
-    let promise = new Promise((resolve, reject) => (release = resolve) && (exception = reject))
+    const promise = new Promise((resolve, reject) => (release = resolve) && (exception = reject))
     queue.push({ type, id, payload, release, exception })
     this.run()
     return promise
   }
+
   get isRunning () {
     return _isRunning.get(this)
   }

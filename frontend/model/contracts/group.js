@@ -146,7 +146,7 @@ export default DefineContract({
       mutation: (state, { data }) => {
         if (state.proposals[data.proposalHash]) {
           state.proposals[data.proposalHash].for.push(data.username)
-          let threshold = Math.ceil(state.proposals[data.proposalHash].threshold * Object.keys(state.profiles).length)
+          const threshold = Math.ceil(state.proposals[data.proposalHash].threshold * Object.keys(state.profiles).length)
           if (state.proposals[data.proposalHash].for.length >= threshold) {
             Vue.delete(state.proposals, data.proposalHash)
           }
@@ -163,8 +163,8 @@ export default DefineContract({
       mutation: (state, { data }) => {
         if (state.proposals[data.proposalHash]) {
           state.proposals[data.proposalHash].against.push(data.username)
-          let memberCount = Object.keys(state.profiles).length
-          let threshold = Math.ceil(state.proposals[data.proposalHash].threshold * memberCount)
+          const memberCount = Object.keys(state.profiles).length
+          const threshold = Math.ceil(state.proposals[data.proposalHash].threshold * memberCount)
           if (state.proposals[data.proposalHash].against.length > memberCount - threshold) {
             Vue.delete(state.proposals, data.proposalHash)
           }
@@ -190,7 +190,7 @@ export default DefineContract({
     }),
     vuexModuleConfig: {
       mutation: (state, { data }) => {
-        let index = state.invitees.findIndex(username => username === data.username)
+        const index = state.invitees.findIndex(username => username === data.username)
         if (index > -1) { state.invitees.splice(index, 1) }
       }
     }
@@ -204,7 +204,7 @@ export default DefineContract({
     }),
     vuexModuleConfig: {
       mutation: (state, { data }) => {
-        let index = state.invitees.findIndex(username => username === data.username)
+        const index = state.invitees.findIndex(username => username === data.username)
         if (index > -1) {
           state.invitees.splice(index, 1)
           Vue.set(state.profiles, data.username, {

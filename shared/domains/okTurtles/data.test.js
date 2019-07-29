@@ -2,8 +2,8 @@
 
 import should from 'should'
 import sinon from 'sinon'
-import sbp from '../../../sbp.js'
-import './index.js'
+import sbp from '~/shared/sbp.js'
+import './data.js'
 
 require('should-sinon')
 
@@ -39,5 +39,10 @@ describe('[SBP] DATA domain', () => {
     testFn.should.be.called()
     sbp('okTurtles.data/remove', 'fnTestCollection', testFn)
     should(sbp('okTurtles.data/get', 'fnTestCollection').length).equal(1)
+  })
+
+  it('should apply String fn to key "test"', () => {
+    should(sbp('okTurtles.data/apply', 'test', String)).type('string')
+    should(sbp('okTurtles.data/apply', 'test', String)).equal('1')
   })
 })

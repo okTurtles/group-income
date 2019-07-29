@@ -23,7 +23,7 @@ import colorsMixins from '@view-utils/colorsManipulation.js'
 export default {
   name: 'AppStyles',
 
-  mixins: [ colorsMixins ],
+  mixins: [colorsMixins],
 
   computed: {
     colors () {

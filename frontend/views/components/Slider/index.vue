@@ -71,7 +71,7 @@ export default {
       },
       set (val) {
         if (this.data) {
-          let index = this.data.indexOf(val)
+          const index = this.data.indexOf(val)
           if (index > -1) {
             this.currentValue = index
           }
@@ -93,7 +93,7 @@ export default {
       return this.data ? (this.data.length - 1) : this.max
     },
     multiple () {
-      let decimals = `${this.interval}`.split('.')[1]
+      const decimals = `${this.interval}`.split('.')[1]
       return decimals ? Math.pow(10, decimals.length) : 1
     },
     spacing () {
@@ -125,12 +125,12 @@ export default {
       else this.setValue(val, this.speed)
     },
     max () {
-      let resetVal = this.limitValue(this.val)
+      const resetVal = this.limitValue(this.val)
       this.setValue(resetVal)
       this.refresh()
     },
     min () {
-      let resetVal = this.limitValue(this.val)
+      const resetVal = this.limitValue(this.val)
       this.setValue(resetVal)
       this.refresh()
     }
@@ -158,7 +158,7 @@ export default {
       return e.clientX - this.offset
     },
     wrapClick (e) {
-      let pos = this.getPos(e)
+      const pos = this.getPos(e)
       this.setValueOnPos(pos)
     },
     moveStart () {
@@ -184,11 +184,11 @@ export default {
       this.setPosition()
     },
     setValueOnPos (pos, isDrag) {
-      let range = this.limit
-      let valueRange = this.valueLimit
+      const range = this.limit
+      const valueRange = this.valueLimit
       if (pos >= range[0] && pos <= range[1]) {
         this.setTransform(pos)
-        let v = (Math.round(pos / this.gap) * (this.spacing * this.multiple) + (this.minimum * this.multiple)) / this.multiple
+        const v = (Math.round(pos / this.gap) * (this.spacing * this.multiple) + (this.minimum * this.multiple)) / this.multiple
         this.setCurrentValue(v, isDrag)
       } else if (pos < range[0]) {
         this.setTransform(range[0])
@@ -224,7 +224,7 @@ export default {
     },
     setValue (val, speed) {
       if (this.isDiff(this.val, val)) {
-        let resetVal = this.limitValue(val)
+        const resetVal = this.limitValue(val)
         this.val = resetVal
         this.syncValue()
       }
@@ -236,8 +236,8 @@ export default {
       this.setTransform(this.position)
     },
     setTransform (val) {
-      let value = val - ((this.$refs.tooltip.scrollWidth - 2) / 2)
-      let translateValue = `translateX(${value}px)`
+      const value = val - ((this.$refs.tooltip.scrollWidth - 2) / 2)
+      const translateValue = `translateX(${value}px)`
       this.slider.style.transform = translateValue
       this.slider.style.WebkitTransform = translateValue
       this.slider.style.msTransform = translateValue
@@ -265,7 +265,7 @@ export default {
       return inRange(val)
     },
     syncValue () {
-      let val = this.val
+      const val = this.val
       if (this.range) {
         this.$emit('callbackRange', this.range[this.currentIndex])
       }

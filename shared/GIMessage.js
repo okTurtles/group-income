@@ -10,6 +10,7 @@ function defaultSignatureFn (data: string) {
 export class GIMessage {
   // flow type annoations to make flow happy
   _message: Object
+
   _mapping: Object
 
   // NOTE: the JSON string generated here must be preserved forever.

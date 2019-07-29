@@ -15,11 +15,11 @@ export function DefineContract (contract: Object) {
   var exportedObject = {}
   var contractName
 
-  for (let name in contract) {
+  for (const name in contract) {
     // NOTE: very important that we use 'let' here instead of 'var'!
     //       if we use 'var' then 'vuexModuleConfig.mutation' below will not be properly set
     //       for the different mutation functions!
-    let { isConstructor, validate, constants, vuexModuleConfig } = contract[name]
+    const { isConstructor, validate, constants, vuexModuleConfig } = contract[name]
 
     exportedObject[name] = { validate }
 
@@ -39,7 +39,7 @@ export function DefineContract (contract: Object) {
     }
     // if any constants are defined make them easily accessible via exported object
     if (constants) {
-      for (let constant in constants) {
+      for (const constant in constants) {
         exportedObject[name][constant] = constants[constant]
       }
     }
@@ -65,7 +65,7 @@ export function DefineContract (contract: Object) {
     }
     // set any getters
     if (vuexModuleConfig.getters) {
-      for (let getterName in vuexModuleConfig.getters) {
+      for (const getterName in vuexModuleConfig.getters) {
         vuexModule.getters[getterName] = vuexModuleConfig.getters[getterName]
       }
     }

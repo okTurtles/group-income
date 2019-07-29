@@ -4,7 +4,7 @@
 // Domain: Data persistence
 // =======================
 
-import sbp from '../../../sbp.js'
+import sbp from '~/shared/sbp.js'
 
 const _store = new Map()
 
@@ -34,5 +34,8 @@ export default sbp('sbp/selectors/register', {
       _store.set(key, filtered)
       return aLen - filtered.length
     }
+  },
+  'okTurtles.data/apply': function (key: any, fn: Function) {
+    return fn(_store.get(key))
   }
 })

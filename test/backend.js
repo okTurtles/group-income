@@ -1,16 +1,24 @@
 /* eslint-env mocha */
 
-import sbp from '../shared/sbp.js'
-import '../shared/domains/okTurtles/events/index.js'
+import sbp from '~/shared/sbp.js'
+import '~/shared/domains/okTurtles/events.js'
 import chalk from 'chalk'
-import { GIMessage } from '../shared/GIMessage.js'
-import contracts from '../frontend/model/contracts.js'
-import * as _ from '../frontend/utils/giLodash.js'
-import { createWebSocket } from '../frontend/controller/backend.js'
-import '../frontend/controller/namespace.js'
+import { GIMessage } from '~/shared/GIMessage.js'
+import contracts from '~/frontend/model/contracts.js'
+import * as _ from '~/frontend/utils/giLodash.js'
+import { createWebSocket } from '~/frontend/controller/backend.js'
+import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
+// import { blake2bInit, blake2bUpdate, blake2bFinal } from 'blakejs'
+// import multihash from 'multihashes'
+import { blake32Hash } from '~/shared/functions.js'
+import '~/frontend/controller/namespace.js'
 
 global.fetch = require('node-fetch')
 const should = require('should') // eslint-disable-line
+const FormData = require('form-data')
+const fs = require('fs')
+const path = require('path')
+// const { PassThrough, Readable } = require('stream')
 
 chalk.enabled = true // for some reason it's not detecting that terminal supports colors
 const { bold } = chalk
@@ -252,6 +260,55 @@ describe('Full walkthrough', function () {
     // TODO: these events, as well as all messages sent over the sockets
     //       should all be authenticated and identified by the user's
     //       identity contract
+  })
+
+  describe('File upload', function () {
+    it('Should upload "default-avatar.png" as "multipart/form-data"', async function () {
+      const form = new FormData()
+      const filepath = './frontend/assets/images/default-avatar.png'
+      // const context = blake2bInit(32, null)
+      // const stream = fs.createReadStream(filepath)
+      // // the problem here is that we need to get the hash of the file
+      // // but doing so consumes the stream, invalidating it and making it
+      // // so that we can't simply do `form.append('data', stream)`
+      // // I tried creating a secondary piped stream and sending that instead,
+      // // however that didn't work.
+      // // const pass = new PassThrough() // couldn't get this or Readable to work no matter how I tried
+      // // So instead we save the raw buffer and send that, using a hack
+      // // to work around a weird bug in hapi or form-data where we have to
+      // // specify the filename or otherwise the backend treats the data as a string,
+      // // resulting in the wrong hash for some reason. By specifying `filename` the backend
+      // // treats it as a Buffer, and we get the correct file hash.
+      // // We could of course simply read the file twice, but that seems even more hackish.
+      // var buffer
+      // const hash = await new Promise((resolve, reject) => {
+      //   stream.on('error', e => reject(e))
+      //   stream.on('data', chunk => {
+      //     buffer = buffer ? Buffer.concat([buffer, chunk]) : chunk
+      //     blake2bUpdate(context, chunk)
+      //   })
+      //   stream.on('end', () => {
+      //     const uint8array = blake2bFinal(context)
+      //     resolve(multihash.toB58String(multihash.encode(Buffer.from(uint8array.buffer), 'blake2b-32', 32)))
+      //   })
+      // })
+      // since we're just saving the buffer now, we might as well use the simpler readFileSync API
+      const buffer = fs.readFileSync(filepath)
+      const hash = blake32Hash(buffer)
+      console.log(`hash for ${path.basename(filepath)}: ${hash}`)
+      form.append('hash', hash)
+      form.append('data', buffer, {
+        filename: 'a file name hack' // hack to make sure the contentDisposition header is set
+                                     // otherwise the backend will treat 'data' as a string
+                                     // instead of a buffer for some reason, resulting in the
+                                     // wrong file hash.
+                                     // The filename is ignored by the backend so it doesn't
+                                     // matter what we call it.
+      })
+      await fetch(`${process.env.API_URL}/file`, { method: 'POST', body: form })
+      .then(handleFetchResult('text'))
+      .then(r => should(r).equal(`${process.env.API_URL}/file/${hash}`))
+    })
   })
 })
 

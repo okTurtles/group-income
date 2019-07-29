@@ -5,13 +5,13 @@
 import type { JSONObject } from '~/shared/types.js'
 
 export function mapValues (obj: Object, fn: Function, o: Object = {}) {
-  for (let key in obj) { o[key] = fn(obj[key]) }
+  for (const key in obj) { o[key] = fn(obj[key]) }
   return o
 }
 
 export function pick (o: Object, props: Array<*>) {
   var x = {}
-  for (let k of props) { x[k] = o[k] }
+  for (const k of props) { x[k] = o[k] }
   return x
 }
 
@@ -25,13 +25,13 @@ function isMergeableObject (val) {
 }
 
 export function merge (obj: Object, src: Object) {
-  for (let key in src) {
-    let clone = isMergeableObject(src[ key ]) ? cloneDeep(src[ key ]) : undefined
-    if (clone && isMergeableObject(obj[ key ])) {
-      merge(obj[ key ], clone)
+  for (const key in src) {
+    const clone = isMergeableObject(src[key]) ? cloneDeep(src[key]) : undefined
+    if (clone && isMergeableObject(obj[key])) {
+      merge(obj[key], clone)
       continue
     }
-    obj[ key ] = clone || src[ key ]
+    obj[key] = clone || src[key]
   }
   return obj
 }
@@ -97,7 +97,7 @@ export function debounce (func: Function, wait: number, options?: Object) {
     const timeSinceLastCall = time - Number(lastCallTime)
     const timeSinceLastInvoke = time - lastInvokeTime
     const timeWaiting = wait - timeSinceLastCall
-    let remainingWait = maxing ? Math.min(timeWaiting, maxWait - timeSinceLastInvoke) : timeWaiting
+    const remainingWait = maxing ? Math.min(timeWaiting, maxWait - timeSinceLastInvoke) : timeWaiting
     timerId = setTimeout(timerExpired, remainingWait)
   }
   function trailingEdge (time) {
@@ -163,7 +163,7 @@ export function debounce (func: Function, wait: number, options?: Object) {
 export function flatten (arr: Array<*>) {
   let flat: Array<*> = []
   for (let i = 0; i < arr.length; i++) {
-    if (Array.isArray(arr[ i ])) {
+    if (Array.isArray(arr[i])) {
       flat = flat.concat(arr[i])
     } else {
       flat.push(arr[i])
@@ -173,22 +173,22 @@ export function flatten (arr: Array<*>) {
 }
 
 export function zip () {
-  let arr = Array.prototype.slice.call(arguments)
-  let zipped = []
+  const arr = Array.prototype.slice.call(arguments)
+  const zipped = []
   let max = 0
   arr.forEach((current) => (max = Math.max(max, current.length)))
-  for (let current of arr) {
+  for (const current of arr) {
     for (let i = 0; i < max; i++) {
-      zipped[ i ] = zipped[ i ] || []
-      zipped[ i ].push(current[ i ])
+      zipped[i] = zipped[i] || []
+      zipped[i].push(current[i])
     }
   }
   return zipped
 }
 
 export function fromPairs (arr: Array<*>) {
-  let obj = {}
-  for (let [key, value] of arr) {
+  const obj = {}
+  for (const [key, value] of arr) {
     obj[key] = value
   }
   return obj

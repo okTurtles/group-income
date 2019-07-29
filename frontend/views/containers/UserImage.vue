@@ -15,8 +15,8 @@ export default {
   props: ['username'],
   async mounted () {
     if (!this.profile) {
-      let userContractId = await sbp('namespace/lookup', this.username)
-      let state = await sbp('state/latestContractState', userContractId)
+      const userContractId = await sbp('namespace/lookup', this.username)
+      const state = await sbp('state/latestContractState', userContractId)
       this.ephemeral.url = state.attributes.picture
     }
   },

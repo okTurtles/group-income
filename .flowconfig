@@ -27,3 +27,6 @@ shared/declarations.js
 [options]
 module.ignore_non_literal_requires=true
 all=true
+
+# https://github.com/entwicklerstube/babel-plugin-root-import#dont-let-flow-be-confused
+module.name_mapper='^~/\(.*\)$' -> '<PROJECT_ROOT>/\1'

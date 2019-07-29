@@ -74,9 +74,9 @@ export default {
         const groupId = this.currentGroupId
         const groupName = this.currentGroupState.groupName
 
-        for (let member of this.form.invitees) {
-          let mailbox = member.state.attributes.mailbox
-          let memberName = member.state.attributes.name
+        for (const member of this.form.invitees) {
+          const mailbox = member.state.attributes.mailbox
+          const memberName = member.state.attributes.name
 
           if (this.isAlreadyInvited(member)) {
             this.form.errorMsg = L('Failed to invite users: member {name} is already invited',
@@ -84,7 +84,7 @@ export default {
             return
           }
 
-          let inviteToMailbox = await sbp('gi/contract/create-action', 'MailboxPostMessage',
+          const inviteToMailbox = await sbp('gi/contract/create-action', 'MailboxPostMessage',
             {
               from: groupName,
               headers: [groupId],
@@ -93,7 +93,7 @@ export default {
             },
             mailbox
           )
-          let inviteToGroup = await sbp('gi/contract/create-action', 'GroupRecordInvitation',
+          const inviteToGroup = await sbp('gi/contract/create-action', 'GroupRecordInvitation',
             {
               username: memberName,
               inviteHash: inviteToMailbox.hash(),
@@ -103,7 +103,7 @@ export default {
           )
 
           if (this.isProposal) {
-            let proposal = await sbp('gi/contract/create-action', 'GroupProposal',
+            const proposal = await sbp('gi/contract/create-action', 'GroupProposal',
               {
                 // for proposal template selection in Vote.vue
                 type: contracts.GroupProposal.TypeInvitation,

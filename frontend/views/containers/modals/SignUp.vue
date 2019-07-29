@@ -85,7 +85,7 @@ import FormPassword from '@components/Forms/Password.vue'
 // TODO: fix all this
 export default {
   name: 'SignUpModal',
-  mixins: [ validationMixin ],
+  mixins: [validationMixin],
   components: {
     ModalTemplate,
     FormPassword
@@ -113,7 +113,17 @@ export default {
       // Prevent autocomplete submission when empty field
       if (this.form.name !== null && this.form.email !== null) {
         try {
-          let user = sbp('gi/contract/create', 'IdentityContract', {
+          // TODO: make sure we namespace these names:
+          //       https://github.com/okTurtles/group-income-simple/issues/598
+          const oldSettings = await sbp('gi.db/settings/load', this.form.name)
+          if (oldSettings) {
+            // TODO: prompt to ask user before deleting and overwriting an existing user
+            //       https://github.com/okTurtles/group-income-simple/issues/599
+            console.warn(`deleting settings for pre-existing user ${this.form.name}!`, oldSettings)
+            await sbp('gi.db/settings/delete', this.form.name)
+          }
+          // proceed with creation
+          const user = sbp('gi/contract/create', 'IdentityContract', {
             // authorizations: [Events.CanModifyAuths.dummyAuth()],
             attributes: {
               name: this.form.name,
@@ -121,14 +131,14 @@ export default {
               picture: `${window.location.origin}/assets/images/default-avatar.png`
             }
           })
-          let mailbox = sbp('gi/contract/create', 'MailboxContract', {
+          const mailbox = sbp('gi/contract/create', 'MailboxContract', {
             // authorizations: [Events.CanModifyAuths.dummyAuth(user.hash())]
           })
           await sbp('backend/publishLogEntry', user)
           await sbp('backend/publishLogEntry', mailbox)
 
           // set the attribute *after* publishing the identity contract
-          let attribute = await sbp('gi/contract/create-action', 'IdentitySetAttributes',
+          const attribute = await sbp('gi/contract/create-action', 'IdentitySetAttributes',
             { mailbox: mailbox.hash() },
             user.hash()
           )
@@ -138,7 +148,7 @@ export default {
           // call syncContractWithServer on all of these contracts to:
           // 1. begin monitoring the contracts for updates via the pubsub system
           // 2. add these contracts to our vuex state
-          for (let contract of [user, mailbox]) {
+          for (const contract of [user, mailbox]) {
             await this.$store.dispatch('syncContractWithServer', contract.hash())
           }
           // TODO: Just add cryptographic magic
@@ -158,6 +168,7 @@ export default {
           }
           sbp('okTurtles.events/emit', CLOSE_MODAL)
         } catch (ex) {
+          console.error('SignUp.vue submit() error:', ex)
           this.$store.dispatch('logout')
           this.form.response = ex.toString()
           this.form.error = true
@@ -177,6 +188,7 @@ export default {
           // standalone validator ideally should not assume a field is required
           if (value === '' || !/^\S+$/.test(value)) return true
           // async validator can return a promise
+          // TODO: fix "uncaught exception" errors in console when name is already taken
           return new Promise((resolve, reject) => {
             // we need the opposite of sbp('namespace/lookup', value) here
             sbp('namespace/lookup', value).then(reject, resolve)

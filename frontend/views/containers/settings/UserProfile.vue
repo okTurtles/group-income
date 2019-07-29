@@ -135,7 +135,7 @@ const url = helpers.regex('url', /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i)
 
 export default {
   name: 'SettingsUserProfile',
-  mixins: [ validationMixin ],
+  mixins: [validationMixin],
   components: {
     Avatar
   },
@@ -179,12 +179,12 @@ export default {
       try {
         this.profileSaved = false
         var attrs = {}
-        for (let key of Object.keys(this.edited)) {
+        for (const key of Object.keys(this.edited)) {
           if (this.edited[key] && this.edited[key] !== this.attributes[key]) {
             attrs[key] = this.edited[key]
           }
         }
-        let attributes = await sbp('gi/contract/create-action', 'IdentitySetAttributes',
+        const attributes = await sbp('gi/contract/create-action', 'IdentitySetAttributes',
           attrs,
           this.$store.state.loggedIn.identityContractId
         )

@@ -5,7 +5,11 @@ div
     i18n Create a new group
 
   label.avatar(for='groupPicture')
-    avatar(:src='group.groupPicture')
+    //- TODO: set a default placeholder image using a built-in asset
+    avatar(ref='picture')
+    //- we don't need to add any code to trigger the hidden file input field
+    //- because we use this label(for='elem') trick:
+    //- https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications#Using_a_label_element_to_trigger_a_hidden_file_input_element
     i18n.link Upload an image
 
     input.groupPictureInput#groupPicture(
@@ -46,6 +50,7 @@ export default {
     group: { type: Object },
     v: { type: Object }
   },
+  inject: ['$assistant'],
   components: {
     Avatar
   },
@@ -67,15 +72,11 @@ export default {
         this.$emit('next')
       }
     },
-    fileChange (fileList) {
-      if (!fileList.length) return
+    fileChange (files) {
+      if (!files.length) return
       this.v.groupPicture.$touch()
-      console.log(URL.createObjectURL(fileList[0]))
-      this.$emit('input', {
-        data: {
-          groupPicture: URL.createObjectURL(fileList[0])
-        }
-      })
+      this.$assistant.ephemeral.groupPictureFile = files[0]
+      this.$refs.picture.setFromBlob(files[0])
     }
   }
 }
