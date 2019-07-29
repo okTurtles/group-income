@@ -59,7 +59,7 @@ import sbp from '~/shared/sbp.js'
 
 export default {
   name: 'deleteGroupModal',
-  mixins: [ validationMixin ],
+  mixins: [validationMixin],
   data () {
     return {
       form: {

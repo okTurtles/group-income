@@ -90,7 +90,7 @@ import Message from '@components/Message.vue'
 
 export default {
   name: 'LeaveGroupModal',
-  mixins: [ validationMixin ],
+  mixins: [validationMixin],
   data () {
     return {
       form: {

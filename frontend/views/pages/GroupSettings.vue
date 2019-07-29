@@ -95,7 +95,7 @@ import PageSection from '@components/PageSection.vue'
 
 export default {
   name: 'GroupSettings',
-  mixins: [ validationMixin ],
+  mixins: [validationMixin],
   components: {
     Page,
     PageSection
