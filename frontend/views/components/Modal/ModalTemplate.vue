@@ -74,7 +74,7 @@ export default {
     border-radius: 6px;
     max-width: 640px;
     height: auto;
-    margin: 20px auto;
+    margin: auto;
     transition: none !important;
   }
 }
