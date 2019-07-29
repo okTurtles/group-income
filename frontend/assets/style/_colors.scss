@@ -54,6 +54,10 @@ $colors: "primary", "primary-light", "primary-bg-s", "primary-bg-a", "secondary"
   color: $white;
 }
 
+.has-text-dark {
+  color: $text-strong;
+}
+
 .has-text-light-grey {
   color: $light-grey;
 }
