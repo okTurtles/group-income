@@ -2,7 +2,6 @@
 .field
   label.label(v-if='label')
     i18n {{ label }}
-
   .input-combo
     input.input(
       :type="isLock ? 'password' : 'text'"
@@ -14,9 +13,9 @@
       v-model='value[name]'
       @input='v[name].$touch()'
     )
-    button.is-icon(
+    .button.is-icon(
       v-if='hasIconRight'
-      @click.stop='isLock = !isLock'
+      @click.prevent='isLock = !isLock'
     )
       i(
         :class="isLock ? 'icon-eye' : 'icon-eye-slash'"
