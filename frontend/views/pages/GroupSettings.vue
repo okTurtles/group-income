@@ -3,7 +3,8 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupS
   template(#title='') Group Settings
 
   page-section(title='')
-    p Changes to these settings will be visible to all group members
+    p
+      i18n Changes to these settings will be visible to all group members
 
     form
       .field
@@ -51,7 +52,8 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupS
               :key='code'
             ) {{ symbol }}
 
-        p This is the currency that will be displayed for every member of the group, across the platform.
+        p
+          i18n This is the currency that will be displayed for every member of the group, across the platform.
 
       button.is-success(
         ref='save'
@@ -62,7 +64,8 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupS
         i18n Save changes
 
   page-section(title='Leave Group')
-    p This means you will stop having access to the #[b group chat] (including direct messages to other group members) and #[b contributions]. Re-joining the group is possible, but requires other members to vote and reach an agreement.
+    p
+      i18n This means you will stop having access to the #[b group chat] (including direct messages to other group members) and #[b contributions]. Re-joining the group is possible, but requires other members to vote and reach an agreement.
 
     button.is-danger.is-outlined(
       ref='leave'
@@ -72,7 +75,8 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupS
       i18n Leave group
 
   page-section(title='Delete Group')
-    p This will delete all the data associated with this group permanently.
+    p
+      i18n This will delete all the data associated with this group permanently.
 
     button.is-danger.is-outlined(
       ref='delete'

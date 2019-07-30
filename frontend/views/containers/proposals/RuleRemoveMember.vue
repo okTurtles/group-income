@@ -1,7 +1,7 @@
 <template lang="pug">
 proposal-template(
-  title= 'Change Rule to Remove Member'
-  footer='According to your voting rules, 8 out of 10 members will have to agree with this.'
+  title= 'L("Change Rule to Remove Member")'
+  footer='L("According to your voting rules, 8 out of 10 members will have to agree with this.")'
   :disabled='$v.form.$invalid || ($v.steps[config.steps[currentStep]] && $v.steps[config.steps[currentStep]].$invalid)'
   :maxSteps='config.steps.length'
   :currentStep.sync='currentStep'

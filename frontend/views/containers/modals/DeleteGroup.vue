@@ -6,11 +6,16 @@
     @submit.prevent='submit'
   )
     modal-template(class='has-submodal-background is-centered')
-      template(slot='title') Leave a group
+      template(slot='title') {{L('Leave a group')}}
 
-      h3 Are you sure you want to delete this group?
+      h3
+        i18n Are you sure you want to delete this group?
 
-      p All messages exchanged between members will be #[b() deleted permanently].
+      p
+        i18n All messages exchanged between members will be
+        b
+          i18n  deleted permanently
+        | .
 
       form(
         novalidate
@@ -36,16 +41,20 @@
           p.error(
             v-show='$v.form.confirmation.$error'
           )
-            i18n Please enter the sentence "#[b Delete The Dreamers]" to confirm that you delete the group
+            i18n Please enter the sentence "
+            b
+              i18n Delete The Dreamers
+            | "
+            i18n to confirm that you delete the group
 
         .buttons
           button.is-outlined(
             @click='close'
-          ) Cancel
+          ) {{ L('Cancel') }}
           button.is-danger(
             @click='submit'
             :disabled='$v.form.$invalid'
-          ) Delete Group
+          ) {{ L('Delete Group') }}
 
       template(slot='errors') {{ form.response }}
 </template>

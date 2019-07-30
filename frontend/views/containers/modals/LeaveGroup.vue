@@ -1,4 +1,5 @@
 <template lang='pug'>
+  // temp
   form(
     novalidate
     ref='form'
@@ -6,12 +7,23 @@
     @submit.prevent='submit'
   )
     modal-template(class='has-submodal-background is-centered')
-      template(slot='title') Leave a group
+      template(slot='title') {{L('Leave a group')}}
 
-      p If you leave, you will stop having access to the #[b() group chat] and #[b() contributions]. Re-joining the group is possible, but requires other members to #[b() vote and reach an agreement].
+      p
+        i18n If you leave, you will stop having access to the
+        b
+          i18n  group chat
+        i18n  and
+        b
+          i18n  contributions
+        i18n . Re-joining the group is possible, but requires other members to
+        b
+          i18n  vote and reach an agreement.
 
-      message(severity='danger') This action #[b() cannot be undone].
-
+      message(severity='danger')
+        i18n This action
+        b
+          i18n  cannot be undone.
       form(
         novalidate
         ref='form'
