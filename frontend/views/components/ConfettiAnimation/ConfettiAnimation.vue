@@ -1,16 +1,15 @@
 <template lang="pug">
 svg.c-svg(
+  v-if='animationActive'
   xmlns='http://www.w3.org/2000/svg'
   xmlns:xlink='http://www.w3.org/1999/xlink'
   ref='svg'
 )
   component(
     v-for='(confetti, index) in confettis'
+    v-bind='confetti.props'
     :key='index'
     :is='confetti.confettiType'
-    :position='confetti.position'
-    :transforms='confetti.sway.transformValues'
-    :color='confetti.color'
   )
 </template>
 

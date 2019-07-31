@@ -1,6 +1,7 @@
 <template lang="pug">
   g.confetti.gi-logo(
     :transform='`translate(${position.x},${position.y})`'
+    :opacity='opacity'
   )
     defs
       path#hook(
@@ -9,9 +10,12 @@
       )
     g.inner(
       stroke="rgb(93,200,240)"
-      :transform='`translate(${transforms.translate},0) rotate(${transforms.rotate})`'
+      :transform='`translate(0,${innerGroupY})`'
     )
-      g.object(stroke="inherit")
+      g.object(
+        stroke="inherit"
+        :transform='`translate(${transforms.translate},0) rotate(${transforms.rotate})`'
+      )
         g.scale(transform="scale(0.5)" data-logo="true" stroke="inherit" fill="none")
           use(
             v-for="hook in hooks"
@@ -25,6 +29,7 @@
 <script>
 export default {
   name: 'ConfettiLogo',
+  inheritAttrs: false,
   data () {
     return {
       hooks: [
@@ -36,6 +41,8 @@ export default {
   },
   props: {
     position: Object,
+    innerGroupY: [Number, String],
+    opacity: [Number, String],
     transforms: Object
   }
 }
