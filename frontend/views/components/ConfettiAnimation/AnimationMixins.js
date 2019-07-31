@@ -21,6 +21,8 @@ let unitExplosionDistance = 0
 
 // utils
 function linearScale ([d1, d2], [r1, r2]) {
+  // creates and return a linear-scale function that takes a value between d1 and d2
+  // then calculates a linearly-scaled output value between r1 and r2.
   const [dSpan, rSpan] = [d2 - d1, r2 - r1]
   return function (value) {
     if (value <= d1) {
@@ -64,6 +66,8 @@ function randomFromArray (arr) {
 function createEase ({
   type, init, end, duration
 }) {
+  // easing functions created by this factory function take a time value(t) between 0 and duration
+  // and calculates the output between the initial and end value using the easing graph.
   switch (type) {
     case 'QuadInOut':
       return t => {
@@ -85,6 +89,7 @@ function createEase ({
 }
 
 class Confetti {
+  // Confetti Object constructor
   constructor (x, y, index, color, confettiType) {
     this.confettiType = confettiType
     this.index = index
@@ -116,6 +121,8 @@ class Confetti {
       explosionAngle
     )
 
+    // it's responsible for initial explosion of the confetti particles
+    // the duration and distance are randomized using the constants above
     this.explosion = {
       duration: explosionDuration,
       distance: explosionDistance,
@@ -135,6 +142,9 @@ class Confetti {
       }
     }
 
+    // these constants are edge values for confetti object transformation functions
+    // transformation of each confetti object is randomized using these values
+    // so their movements differ from one another
     const Y_VEL_MIN = 0.75
     const Y_VEL_DEVIATION = 2
     const SWAY_DURATION = randomIntFromRange(800, 1200)
@@ -144,7 +154,10 @@ class Confetti {
     const SCALE_MIN = -1
     const SCALE_DEVIATION = 0.3
 
+    // this variable is responsible for pulling the confetti particle down constantly
     this.yVelocity = Y_VEL_MIN + Math.random() * Y_VEL_DEVIATION
+
+    // it's responsible for making the confetti wiggle
     this.sway = {
       direction: 'forward',
       tRef: null,
@@ -178,6 +191,7 @@ class Confetti {
     const removalDuration = MIN_REMOVAL_DURATION +
       Math.floor(REMOVAL_DURATION_DEVIATION * Math.random())
 
+    // it's responsible for fading the confetti out at the end
     this.fadeOut = {
       tStart: REF_REMOVAL_TIME +
         randomSign() * Math.floor(REMOVAL_TIME_DEVIATION * Math.random()),
@@ -190,6 +204,7 @@ class Confetti {
       })
     }
     this.disappeared = false
+    // these are used for measuring the time passed
     this.tRefMaster = null
     this.tPassedMaster = 0
   }
@@ -275,15 +290,21 @@ const animationMixins = {
       canvas.width = canvasWidth
       canvas.height = canvasHeight
 
+      // the point on the page from which the confetti particles explode
+      // it's in the upper center of the page
       const explosionTip = {
         x: canvasWidth / 2,
         y: canvasHeight * 0.125
       }
+
+      // The amount of confetti is determined based on the page width
       const confettiAmount = confettiAmountScaler(canvasWidth)
+      // the maximum distance the exploding particle reaches gets smaller as the page size gets smaller
       const MAX_EXPLOSION_DISTANCE =
         Math.sqrt(canvasWidth * canvasWidth + canvasHeight * canvasHeight) * 0.35
       unitExplosionDistance = MAX_EXPLOSION_DISTANCE / confettiAmount
 
+      // create confetti objects
       const confettis = []
       for (let i = 0; i < confettiAmount; i++) {
         confettis.push(
@@ -310,6 +331,7 @@ const animationMixins = {
         }
       })
 
+      // if all the confetti particles have disappeared, stop the animation and also remove it from the DOM
       if (hasAllDisappeared) {
         this.animationActive = false
         this.stopAnimation()
@@ -320,6 +342,7 @@ const animationMixins = {
     }
   },
   mounted () {
+    // animation begins after a bit of delay
     window.setTimeout(() => {
       this.initializeAnimation()
       this.animate()
