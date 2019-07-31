@@ -320,8 +320,10 @@ const animationMixins = {
     }
   },
   mounted () {
-    this.initializeAnimation()
-    this.animate()
+    window.setTimeout(() => {
+      this.initializeAnimation()
+      this.animate()
+    }, 500)
   },
   beforeDestroy () {
     this.stopAnimation()
