@@ -8,14 +8,9 @@
     modal-template(class='has-submodal-background is-centered')
       template(slot='title') {{L('Leave a group')}}
 
-      h3
-        i18n Are you sure you want to delete this group?
+      i18n(tag='h3') Are you sure you want to delete this group?
 
-      p
-        i18n All messages exchanged between members will be
-        b
-          i18n  deleted permanently
-        | .
+      p(v-html='L("All messages exchanged between members will be <b>deleted permanently</b>.")')
 
       form(
         novalidate
@@ -25,8 +20,7 @@
         @submit.prevent='submit'
       )
         .field
-          label.label
-            i18n Type "Delete The Dreamers" below
+          i18n(tag='label' class='label') Type "Delete The Dreamers" below
 
           input.input(
             :class="{'error': $v.form.confirmation.$error}"
@@ -40,12 +34,8 @@
 
           p.error(
             v-show='$v.form.confirmation.$error'
+            v-html="L('Please enter the sentence \"<b>Delete The Dreamers</b>\"to confirm that you delete the group')"
           )
-            i18n Please enter the sentence "
-            b
-              i18n Delete The Dreamers
-            | "
-            i18n to confirm that you delete the group
 
         .buttons
           button.is-outlined(

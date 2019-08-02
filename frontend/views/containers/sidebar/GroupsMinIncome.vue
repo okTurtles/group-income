@@ -1,6 +1,6 @@
 <template lang="pug">
 div
-  label.label Minimum Income
+  i18n.label(tag='label') Minimum Income
 
   p.income-provided(data-test='minIncome')
     | {{ currency }}{{ group.incomeProvided }}

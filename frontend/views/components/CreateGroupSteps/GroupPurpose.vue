@@ -1,11 +1,8 @@
 <template lang="pug">
 div
-  p.steps-title
-    | 2.&nbsp;
-    i18n Group Purpose
+  i18n.steps-title(tag='p') 2. Group Purpose
 
-  label.label
-    i18n How would you describe your group?
+  i18n.label(tag='label') How would you describe your group?
 
   textarea.textarea(
     name='sharedValues'

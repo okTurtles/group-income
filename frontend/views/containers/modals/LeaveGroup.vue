@@ -1,5 +1,4 @@
 <template lang='pug'>
-  // temp
   form(
     novalidate
     ref='form'
@@ -7,23 +6,13 @@
     @submit.prevent='submit'
   )
     modal-template(class='has-submodal-background is-centered')
-      template(slot='title') {{L('Leave a group')}}
+      template(slot='title') {{ L('Leave a group') }}
 
-      p
-        i18n If you leave, you will stop having access to the
-        b
-          i18n  group chat
-        i18n  and
-        b
-          i18n  contributions
-        i18n . Re-joining the group is possible, but requires other members to
-        b
-          i18n  vote and reach an agreement.
+      p(v-html='L("If you leave, you will stop having access to the <b>group chat</b> and <b>contributions</b>. Re-joining the group is possible, but requires other members to <b>vote and reach an agreement</b>.")')
 
       message(severity='danger')
-        i18n This action
-        b
-          i18n  cannot be undone.
+        p(v-html='L(" This action <b>cannot be undone</b>.")')
+
       form(
         novalidate
         ref='form'
@@ -32,8 +21,7 @@
         @submit.prevent='submit'
       )
         .field
-          label.label
-            i18n Username
+          i18n.label(tag='label') Username
 
           input.input#loginName(
             :class="{'error': $v.form.name.$error}"
@@ -46,10 +34,10 @@
             autofocus
             data-test='loginName'
           )
-          p.error(
+          i18n.error(
+            tag='p'
             v-show='$v.form.name.$error'
-          )
-            i18n username cannot contain spaces
+          ) username cannot contain spaces
 
         form-password(
           :label='L("Password")'
@@ -61,8 +49,7 @@
         )
 
         .field
-          label.label
-            i18n Type "Leave The Dreamers" below
+          i18n.label(tag='label') Type "Leave The Dreamers" below
 
           input.input(
             :class="{'error': $v.form.confirmation.$error}"
@@ -76,17 +63,17 @@
 
           p.error(
             v-show='$v.form.confirmation.$error'
+            v-html="L('Please enter the sentence \"<b>Leave The Dreamers</b>\" to confirm that you leave the group')"
           )
-            i18n Please enter the sentence "#[b Leave The Dreamers]" to confirm that you leave the group
 
         .buttons
           button.is-outlined(
             @click='close'
-          ) Cancel
+          ) {{ L('Cancel') }}
           button.is-danger(
             @click='submit'
             :disabled='$v.form.$invalid'
-          ) Leave Group
+          ) {{ L('Leave Group') }}
 
       template(slot='errors') {{ form.response }}
 </template>

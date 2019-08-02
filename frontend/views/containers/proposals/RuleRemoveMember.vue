@@ -9,11 +9,10 @@ proposal-template(
 )
 
   .field(v-if='currentStep === 0' key='0')
-    label.label I step to change rule of remove member it's on the way
+    i18n.label(tag='label') I step to change rule of remove member it's on the way
 
   .field(v-if='currentStep === 1' key='1')
-    label.label
-      i18n Why are you proposing this change?
+    i18n.label(tag='label') Why are you proposing this change?
 
     textarea.textarea(
       name='changeReason'

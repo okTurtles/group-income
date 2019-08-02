@@ -3,13 +3,11 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupS
   template(#title='') Group Settings
 
   page-section(title='')
-    p
-      i18n Changes to these settings will be visible to all group members
+    i18n(tag='p') Changes to these settings will be visible to all group members
 
     form
       .field
-        label.label
-          i18n Group name
+        i18n.label(tag='label') Group name
 
         input.input.is-large.is-primary(
           ref='name'
@@ -23,8 +21,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupS
         )
 
       .field
-        label.label
-          i18n Description
+        i18n.label(tag='label') Description
 
         textarea.textarea(
           name='sharedValues'
@@ -37,8 +34,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupS
         )
 
       .field
-        label.label
-          i18n Default currency
+        i18n.label(tag='label') Default currency
         .select-wrapper
           select(
             name='incomeCurrency'
@@ -52,8 +48,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupS
               :key='code'
             ) {{ symbol }}
 
-        p
-          i18n This is the currency that will be displayed for every member of the group, across the platform.
+        i18n(tag='p') This is the currency that will be displayed for every member of the group, across the platform.
 
       button.is-success(
         ref='save'
@@ -64,8 +59,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupS
         i18n Save changes
 
   page-section(title='Leave Group')
-    p
-      i18n This means you will stop having access to the #[b group chat] (including direct messages to other group members) and #[b contributions]. Re-joining the group is possible, but requires other members to vote and reach an agreement.
+    i18n(tag='p') This means you will stop having access to the #[b group chat] (including direct messages to other group members) and #[b contributions]. Re-joining the group is possible, but requires other members to vote and reach an agreement.
 
     button.is-danger.is-outlined(
       ref='leave'
@@ -75,8 +69,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupS
       i18n Leave group
 
   page-section(title='Delete Group')
-    p
-      i18n This will delete all the data associated with this group permanently.
+    i18n(tag='p') This will delete all the data associated with this group permanently.
 
     button.is-danger.is-outlined(
       ref='delete'

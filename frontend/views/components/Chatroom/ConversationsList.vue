@@ -1,6 +1,6 @@
 <template lang="pug">
 .c-conversation-list
-  label.label {{title}}
+  i18n.label(tag='label') {{title}}
 
   ul
     list-item(

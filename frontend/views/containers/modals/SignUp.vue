@@ -11,8 +11,7 @@
       @submit.prevent='signup'
     )
       .field
-        label.label
-          i18n Username
+        i18n.label(tag='label') Username
 
         input.input#name(
           :class="{'error': $v.form.name.$error}"
@@ -32,8 +31,7 @@
           i18n(v-if='!$v.form.name.nonWhitespace') cannot contain spaces
 
       .field
-        label.label
-          i18n Email
+        i18n.label(tag='label') Email
 
         input.input#email(
           :class="{'error': $v.form.email.$error}"

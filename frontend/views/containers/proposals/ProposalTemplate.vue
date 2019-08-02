@@ -12,10 +12,7 @@
 
         .confirmation(v-if='isConfirmation')
           img(src='/assets/images/group-vote.png' alt='Group vote')
-          p
-            i18n
-              | Members of your group will now be asked to vote.
-              | You need 8 yes votes for your proposal to be accepted.
+          p(v-html="L('Members of your group will now be asked to vote.</br>You need 8 yes votes for your proposal to be accepted.')")
 
       .buttons(:class='{ "is-centered": isConfirmation }')
         button.is-outlined(

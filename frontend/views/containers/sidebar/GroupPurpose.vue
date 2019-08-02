@@ -1,8 +1,7 @@
 <template lang="pug">
 .c-group-purpose
   .c-group-purpose-header
-    label.label
-      i18n About the group
+    i18n.label(tag='label') About the group
 
   p(data-test='sharedValues')
     | {{ currentGroupState.sharedValues }}

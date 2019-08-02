@@ -1,10 +1,8 @@
 <template lang="pug">
 div
-  h1
-    i18n Invite Members
+  i18n(tag='h1') Invite Members
 
-  label.label
-    i18n Who would you like to include in your group?
+  i18n.label(tag='label') Who would you like to include in your group?
 
   .input-combo
     input.input(

@@ -11,7 +11,7 @@ modal-template(
     i18n(tag='h2') Income Details
 
     .field
-      label.label Do you make at least {{fakeStore.mincomeFormatted}} per month?
+      i18n.label(tag='label') Do you make at least {{fakeStore.mincomeFormatted}} per month?
 
       .radio-wrapper
         input.radio(
@@ -35,8 +35,7 @@ modal-template(
         i18n {{infoRequired}}
 
     .field(v-if='needsIncome')
-      label.label
-        i18n What's your monthly income?
+      i18n.label(tag='label')  What's your monthly income?
 
       .input-combo
         input.input(
@@ -56,8 +55,7 @@ modal-template(
         i18n will ensure you meet the mincome
 
     .field(v-else-if='canPledge')
-      label.label
-        i18n How much do you want to pledge?
+      i18n.label(tag='label') How much do you want to pledge?
 
       .input-combo
         input.input(

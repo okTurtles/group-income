@@ -1,7 +1,7 @@
 <template lang='pug'>
   proposal-template(
     title= 'L("Change minimum income")'
-    footer='L("According to your voting rules, 8 out of 10 members will have to agree with this.")"'
+    footer='L("According to your voting rules, 8 out of 10 members will have to agree with this.")'
     :disabled='$v.form.$invalid || ($v.steps[config.steps[currentStep]] && $v.steps[config.steps[currentStep]].$invalid)'
     :maxSteps='config.steps.length'
     :currentStep.sync='currentStep'
@@ -9,8 +9,7 @@
   )
 
     .field(v-if='currentStep === 0' key='0')
-      label.label
-        i18n New minimum income
+      i18n.label(tag='label') New minimum income
       .select-wrapper
         input.input(
           ref='mincome'
@@ -36,17 +35,15 @@
             :key='code'
           ) {{ symbol }}
 
-      p
-        i18n Currently $1000 monthly.
+      i18n(p) Currently $1000 monthly.
 
     .field(v-if='currentStep === 1' key='1')
-      label.label
-        i18n Why are you proposing this change?
+      i18n.label(tag='label') Why are you proposing this change?
 
       textarea.textarea(
         name='changeReason'
         ref='purpose'
-        :placeholder='L("The reason why I\' propositiong this change is...")'
+        :placeholder='L("The reason why I\'m proposing this change is...")'
         maxlength='500'
         :class="{ 'error': $v.form.changeReason.$error }"
         v-model='form.changeReason'

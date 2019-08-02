@@ -1,7 +1,7 @@
 <template lang="pug">
 proposal-template(
-  title= 'Change Rule to change Rule'
-  footer='According to your voting rules, 8 out of 10 members will have to agree with this.'
+  :title= 'L("Change Rule to change Rule")'
+  footer='L("According to your voting rules, 8 out of 10 members will have to agree with this.")'
   :disabled='$v.form.$invalid || ($v.steps[config.steps[currentStep]] && $v.steps[config.steps[currentStep]].$invalid)'
   :maxSteps='config.steps.length'
   :currentStep.sync='currentStep'
@@ -9,12 +9,10 @@ proposal-template(
 )
 
   .field(v-if='currentStep === 0' key='0')
-    label.label
-      i18n I step to change rule of change rule it's on the way
+    i18n.label(tag='label') I step to change rule of change rule it's on the way
 
   .field(v-if='currentStep === 1' key='1')
-    label.label
-      i18n Why are you proposing this change?
+    i18n.label(tag='label') Why are you proposing this change?
 
     textarea.textarea(
       name='changeReason'

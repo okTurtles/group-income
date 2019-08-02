@@ -40,8 +40,7 @@
           .tag Surplus
 
     .c-chart-info
-      label.label
-        i18n Total amount needed
+      i18n.label(tag='label') Total amount needed
         .c-total-amount $750
 
       label.label
@@ -52,8 +51,7 @@
         i18n Surplus
         .c-surplus $50
 
-      p.help
-        i18n This amount will not be used
+      i18n.help(tag='p') This amount will not be used
 </template>
 
 <script>

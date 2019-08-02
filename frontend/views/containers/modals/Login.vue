@@ -11,8 +11,7 @@
       @submit.prevent='login'
     )
       .field
-        label.label
-          i18n Username
+        i18n.label(tag='label') Username
 
         input.input#loginName(
           :class="{'error': $v.form.name.$error}"
@@ -25,10 +24,10 @@
           autofocus
           data-test='loginName'
         )
-        p.error(
+        i18n.error(
           v-show='$v.form.name.$error'
-        )
-          i18n username cannot contain spaces
+          tag='p'
+        ) U?sername cannot contain spaces
 
       form-password(
         :label='L("Password")'
