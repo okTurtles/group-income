@@ -146,7 +146,8 @@ export default {
         sbp('okTurtles.events/once', hash, (contractID, entry) => {
           this.$store.commit('setCurrentGroupId', hash)
           // Take them to the dashboard.
-          this.$router.push({ path: '/dashboard' })
+          // *** this.$router.push({ path: '/dashboard' })
+          this.$router.push({ path: '/welcome' })
         })
         // TODO: convert this to SBL
         await sbp('backend/publishLogEntry', entry)

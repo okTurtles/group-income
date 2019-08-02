@@ -271,8 +271,8 @@ describe('Frontend', function () {
       const valid = await n.exists(`${elT('finishBtn')}:not(:disabled)`)
       should(valid).equal(true)
       // submit group
-      await n.click(elT('finishBtn')).wait(elT('dashboard'))
-
+      await n.click(elT('finishBtn')).wait(elT('welcome'))
+      await n.click(elT('toDashboardBtn')).wait(elT('dashboard'))
       // const created = await n.evaluate(() => ({
       //   groupName: document.querySelector('[data-test="groupName"]').innerText,
       //   sharedValues: document.querySelector('[data-test="sharedValues"]').innerText,
