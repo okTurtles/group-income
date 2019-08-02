@@ -5,8 +5,10 @@ div
   p.income-provided(data-test='minIncome')
     | {{ currency }}{{ group.incomeProvided }}
 
-  button.link(@click='openProposal')
-    i18n Change
+  i18n.link(
+    tag='button'
+    @click='openProposal'
+  ) Change
 </template>
 
 <script>

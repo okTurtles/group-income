@@ -23,18 +23,18 @@ section.section.full-screen
         .panel-block.center(style='display: block; text-align: center;')
           .help.is-danger(v-if='errorMsg') {{errorMsg}}
 
-          a.button.is-success(
+          .button.is-success(
+            tag='a'
             style='margin-left:auto; margin-right: 20px;'
             @click='voteFor'
             data-test='forLink'
-          )
-            i18n For
+          ) For
 
-          a.button.is-danger(
+          .button.is-danger(
+            tag='a'
             @click='voteAgainst'
             style='margin-right:auto; margin-right: 20px;'
-          )
-            i18n Against
+          ) Against
     .column
 </template>
 

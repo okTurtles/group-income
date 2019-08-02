@@ -56,12 +56,12 @@
       p.error(v-if='form.response') {{ form.response }}
 
       .buttons.is-centered
-        button.is-primary.is-centered(
+        i18n.is-primary.is-centered(
+          tag='button'
           type='submit'
           :disabled='$v.form.$invalid'
           data-test='signSubmit'
-        )
-          i18n Create account
+        ) Create account
 
     template(slot='footer')
       p

@@ -50,33 +50,33 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupS
 
         i18n(tag='p') This is the currency that will be displayed for every member of the group, across the platform.
 
-      button.is-success(
+      i18n.is-success(
+        tag='button'
         ref='save'
         @click='save'
         :disabled='$v.form.$invalid'
         data-test='saveBtn'
-      )
-        i18n Save changes
+      ) Save changes
 
   page-section(title='Leave Group')
     i18n(tag='p') This means you will stop having access to the #[b group chat] (including direct messages to other group members) and #[b contributions]. Re-joining the group is possible, but requires other members to vote and reach an agreement.
 
-    button.is-danger.is-outlined(
+    i18n.is-danger.is-outlined(
+      tag='button'
       ref='leave'
       @click='openProposal("LeaveGroupModal")'
       data-test='LeaveBtn'
-    )
-      i18n Leave group
+    ) Leave group
 
   page-section(title='Delete Group')
     i18n(tag='p') This will delete all the data associated with this group permanently.
 
-    button.is-danger.is-outlined(
+    i18n.is-danger.is-outlined(
+      tag='button'
       ref='delete'
       @click='openProposal("DeleteGroup")'
       data-test='deleteBtn'
-    )
-      i18n Delete group
+    ) Delete group
 </template>
 
 <script>

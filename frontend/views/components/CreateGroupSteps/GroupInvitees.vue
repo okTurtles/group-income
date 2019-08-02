@@ -14,11 +14,11 @@ div
       @keyup.enter='addInvitee'
       data-test='searchUser'
     )
-    button(
+    i18n(
+      tag='button'
       @click='addInvitee'
       data-test='addButton'
-    )
-      i18n Add
+    ) Add
 
   p.error(v-if='userErrorMsg') {{ userErrorMsg }}
 

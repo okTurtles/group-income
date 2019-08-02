@@ -85,14 +85,13 @@ modal-template(
   .buttons
     input.button(
       type='submit'
-      :value='L("saveButtonText")'
+      :value='saveButtonText'
     )
 
-    input.button(
-      type='button'
+    i18n.button(
+      tag='button'
       @click='cancelForm'
-      :value='L("Cancel")'
-    )
+    ) Cancel
 </template>
 
 <script>

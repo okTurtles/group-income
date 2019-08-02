@@ -5,21 +5,21 @@ main.c-splash(data-test='homeLogo')
     i18n Welcome to GroupIncome
 
   .buttons(v-if='!$store.state.loggedIn')
-    button(
+    i18n(
+      tag='button'
       ref='loginBtn'
       :disabled='isModalOpen'
       @click="openModal('LoginModal')"
       data-test='loginBtn'
-    )
-      i18n Login
+    ) Login
 
-    button(
+    i18n(
+      tag='button'
       ref='signupBtn'
       @click="openModal('SignUp')"
       @keyup.enter="openModal('SignUp')" :disabled='isModalOpen'
       data-test='signupBtn'
-    )
-      i18n Signup
+    ) Signup
 
   router-link.button(
     v-else=''

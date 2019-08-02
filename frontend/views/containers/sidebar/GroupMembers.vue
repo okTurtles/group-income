@@ -8,7 +8,7 @@
       @click='invite'
     )
       i.icon-plus
-      | Add
+      i18n Add
 
   ul
     li.c-group-member(

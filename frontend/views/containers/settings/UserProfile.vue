@@ -86,19 +86,19 @@
           i18n.label(tag='label') Password
           .fake-password **********
 
-          button.link(
+          i18n.link(
+            tag='button'
             data-test='passwordBtn'
             @click.prevent="openModal('PasswordModal')"
-          )
-            i18n Update Password
+          ) Update Password
 
         .buttons
-          button.is-success(
+          i18n.is-success(
+            tag='button'
             :disabled='$v.edited.$invalid'
             type='submit'
             data-test='submit'
-          )
-            i18n Save account changes
+          ) Save account changes
     hr
     section.section
       form(
@@ -112,11 +112,11 @@
           i18n.is-danger This action cannot be undone.
 
         .buttons
-          button.error.is-outlined(
+          i18n.button.error.is-outlined(
+            tag='button'
             type='submit'
             data-test='submit'
-          )
-            i18n Delete account
+          ) Delete account
 </template>
 
 <script>

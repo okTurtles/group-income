@@ -38,13 +38,15 @@
           )
 
         .buttons
-          button.is-outlined(
+          i18n.is-outlined(
+            tag='button'
             @click='close'
-          ) {{ L('Cancel') }}
-          button.is-danger(
+          ) Cancel
+          i18n.is-danger(
+            tag='button'
             @click='submit'
             :disabled='$v.form.$invalid'
-          ) {{ L('Delete Group') }}
+          ) Delete Group
 
       template(slot='errors') {{ form.response }}
 </template>

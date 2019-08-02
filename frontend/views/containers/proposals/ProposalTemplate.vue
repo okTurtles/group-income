@@ -32,22 +32,22 @@
           i18n Next
           i.icon-arrow-right
 
-        button.is-success(
+        i18n.is-success(
+          tag='button'
           v-if='isLastStep'
           ref='finish'
           @click.prevent='submit'
           :disabled='disabled'
           data-test='finishBtn'
-        )
-          i18n Create Proposal
+        ) Create Proposal
 
-        button.is-outlined(
+        i18n.is-outlined(
+          tag='button'
           v-if='isConfirmation'
           ref='close'
           @click.prevent='close'
           data-test='closeBtn'
-        )
-          i18n Awesome
+        ) Awesome
 
     template(#footer='' v-if='!isConfirmation')
       i18n(v-if='footer') {{ footer }}

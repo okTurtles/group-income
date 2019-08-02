@@ -122,12 +122,12 @@ main
               | The Receiving Limit must be a numeric currency amount and may contain 2 decimal points.
 
       .has-text-centered.button-box
-        button.is-success(
+        i18n.is-success(
+          tag='button'
           v-if='currentGroupContractId'
           :disabled='$v.editedGroupProfile.$invalid'
           data-test='GroupProfileSubmitBtn'
-        )
-          i18n Save Group Profile
+        ) Save Group Profile
 </template>
 <script>
 import { validationMixin } from 'vuelidate'

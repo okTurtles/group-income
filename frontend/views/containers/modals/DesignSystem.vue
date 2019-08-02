@@ -14,8 +14,14 @@ modal-template(:class="{ 'has-background': background }")
         | {{ L('Felix and Brian are two very important figures in the electronic music scene. They have greatly contributed to the development of genres like ambient music and are now ready to contribute to this group. They are Dreamers like us!') }}
 
     .buttons
-      button(@click.prevent='toggleSubtitle') {{ L('Toggle subtitle') }}
-      button(@click.prevent='toggleBackground') {{ L('Toggle background') }}
+      i18n(
+        tag='button'
+        @click.prevent='toggleSubtitle'
+      ) Toggle subtitle
+      i18n(
+        tag='button'
+        @click.prevent='toggleBackground'
+      ) Toggle background
 
   template(#footer='')
     i18n(tag='p') According to your voting rules, 8 out of 10 members will have to agree with this.

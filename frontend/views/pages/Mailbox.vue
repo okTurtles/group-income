@@ -65,18 +65,18 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
         p.error(v-if='ephemeral.errorMsg') {{ephemeral.errorMsg}}
 
       .buttons
-        button.button.is-danger(
+        i18n.is-danger(
+          tag='button'
           type='submit'
           @click='cancel'
-        )
-          i18n Cancel
+        ) Cancel
 
-        button.button.is-success(type='submit'
+        i18n.is-success(type='submit'
+          tag='button'
           data-test='sendButton'
           @click='send'
           :disabled='!ephemeral.composedMessage'
-        )
-          i18n Send
+        ) Send
 
   article(v-if="ephemeral.mode === 'Read'")
     .p-section-header
@@ -96,18 +96,18 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
       ) {{ephemeral.currentMessage.data.message}}
 
       .buttons
-        button.button(
+        i18n.button(
+          tag='button'
           type='submit'
           @click='inboxMode'
-        )
-          i18n Return
+        ) Return
 
-        button.button.is-danger(
+        i18n.button.is-danger(
+          tag='button'
           v-if="ephemeral.currentMessage.data.messageType === 'Message'"
           type='submit'
           @click='remove(index)'
-        )
-          i18n Delete
+        ) Delete
 
   article(v-if="ephemeral.mode === 'Inbox' && proposals.length")
     .p-section-heading

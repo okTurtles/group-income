@@ -43,18 +43,20 @@
       p.error(v-if='form.response') {{ form.response }}
 
       .buttons.is-centered
-        button(
+        i18n(
+          tag='button'
           :disabled='$v.form.$invalid'
           data-test='loginSubmit'
           type='submit'
-        )
-          i18n Login
+        ) Login
 
     template(slot='footer')
       p
         i18n Not on Group Income yet?&nbsp;
-        a.link(@click='showSignUpModal')
-          i18n Create an account
+        i18n.link(
+          tag='a'
+          @click='showSignUpModal'
+        ) Create an account
 </template>
 
 <script>
