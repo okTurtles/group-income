@@ -256,7 +256,7 @@ module.exports = (grunt) => {
       output: {
         format: 'system',
         dir: distJS,
-        sourcemap: development,
+        sourcemap: development, // NOTE: change back to development before pushing PR
         sourcemapPathTransform: relativePath => {
           // const relativePath2 = '/' + path.relative('../../../', relativePath)
           const relativePath2 = path.relative('../', relativePath)
