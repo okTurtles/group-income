@@ -48,6 +48,19 @@ export default {
   a:not(.button):not(.tag) {
     color: currentColor;
   }
+
+  ::v-deep a.link {
+    border-bottom: 1px solid $text-light;
+
+    &:hover,
+    &:focus {
+      border-color: transparent;
+    }
+    &::after {
+      background-color: $text-light;
+    }
+  }
+
   i {
     font-size: 1.389rem;
     padding-right: $spacer-lg;
