@@ -51,7 +51,7 @@
             data-test='displayName'
           )
 
-          i18n.help(p) This is how others will see your name accross the platform.
+          i18n.help(tag='p') This is how others will see your name accross the platform.
 
         .field
           i18n.label(tag='label') Bio

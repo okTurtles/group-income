@@ -28,13 +28,13 @@ section.section.full-screen
             style='margin-left:auto; margin-right: 20px;'
             @click='voteFor'
             data-test='forLink'
-          ) For
+          ) {{ L('For') }}
 
           .button.is-danger(
             tag='a'
             @click='voteAgainst'
             style='margin-right:auto; margin-right: 20px;'
-          ) Against
+          ) {{ L('Against') }}
     .column
 </template>
 

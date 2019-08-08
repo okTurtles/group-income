@@ -59,7 +59,9 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupS
       ) Save changes
 
   page-section(title='Leave Group')
-    i18n(tag='p') This means you will stop having access to the #[b group chat] (including direct messages to other group members) and #[b contributions]. Re-joining the group is possible, but requires other members to vote and reach an agreement.
+    p
+      | {{ L('This means you will stop having access to the') }} #[b {{ L('group chat') }}] {{ L('including direct messages to other group members) and') }} #[b {{ L('contributions') }}].
+      | {{ L('Re-joining the group is possible, but requires other members to vote and reach an agreement.') }}
 
     i18n.is-danger.is-outlined(
       tag='button'
