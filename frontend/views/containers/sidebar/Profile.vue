@@ -96,12 +96,16 @@ export default {
 button {
   .icon-cog {
     font-size: 0.75rem;
-    transition: transform ease-out 0.3s;
     margin-left: 0;
   }
 
-  &:hover .icon-cog {
-    transform: rotate(180deg);
+  &:hover .icon-cog,
+  &:focus .icon-cog {
+    animation: cog 400ms forwards;
   }
+}
+
+@keyframes cog {
+  to { transform: rotate(180deg); }
 }
 </style>

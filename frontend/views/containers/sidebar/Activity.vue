@@ -70,7 +70,8 @@ export default {
     }
   }
 
-  button:hover {
+  button:hover,
+  button:focus {
     .icon-bell {
       font-size: 0.7rem;
       animation: bell 750ms forwards;
