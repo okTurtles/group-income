@@ -18,6 +18,16 @@ DefineContract({
       state.messages = []
     }
   },
+  metadata: {
+    validate: objectOf({
+      createdDate: string
+    }),
+    create () {
+      return {
+        createdDate: new Date().toISOString()
+      }
+    }
+  },
   actions: {
     'gi.contracts/mailbox/postMessage': {
       validate: objectOf({

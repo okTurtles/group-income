@@ -11,6 +11,9 @@ import * as _ from '@utils/giLodash.js'
 import { SETTING_CURRENT_USER } from './database.js'
 import { LOGIN, LOGOUT, EVENT_HANDLED } from '@utils/events.js'
 import Colors from './colors.js'
+import './contracts/group.js'
+import './contracts/mailbox.js'
+import './contracts/identity.js'
 
 // babel transforms lodash imports: https://github.com/lodash/babel-plugin-lodash#faq
 // for diff between 'lodash/map' and 'lodash/fp/map'
@@ -24,10 +27,10 @@ var store // this is set and made the default export at the bottom of the file.
 //       TO STORE AN INSTANCE OF A CLASS (LIKE A CONTRACT), IT WILL NOT STORE
 //       THE ACTUAL CONTRACT, BUT JSON.STRINGIFY(CONTRACT) INSTEAD!
 
-const CONTRACT_TYPE_REGEX = /^gi\.contracts\/(?:([^/]+)\/)(?:([^/]+)\/)?process$/
+const CONTRACT_REGEX = /^gi\.contracts\/(?:([^/]+)\/)(?:([^/]+)\/)?process$/
 // guard all sbp calls for contract actions with this function
-export function selectorIsContract (sel: string) {
-  if (!CONTRACT_TYPE_REGEX.test(sel)) {
+export function selectorIsContractOrAction (sel: string) {
+  if (!CONTRACT_REGEX.test(sel)) {
     throw new Error(`bad selector '${sel}' for contract type!`)
   }
 }
@@ -42,7 +45,7 @@ sbp('sbp/selectors/register', {
     events = events.map(e => GIMessage.deserialize(e))
     const state = {}
     for (const e of events) {
-      selectorIsContract(e.type())
+      selectorIsContractOrAction(e.type())
       sbp(e.type(), state, { data: e.data(), meta: e.meta(), hash: e.hash() })
     }
     return state
@@ -74,8 +77,8 @@ const mutations = {
     sbp('okTurtles.events/emit', LOGOUT)
   },
   processMessage (state, { selector, message }) {
-    selectorIsContract(selector)
-    sbp(selector, message)
+    selectorIsContractOrAction(selector)
+    sbp(selector, state, message)
   },
   addContract (state, { contractID, type, HEAD, data }) {
     // copy over the initial state, making sure *not* to use cloneDeep on
@@ -220,12 +223,16 @@ const getters = {
       )
     }
   },
+  candidateMembers (state) {
+    const groupState = state[state.currentGroupId]
+    return groupState ? Object.keys(groupState.proposals).filter(key => groupState.proposals[key].candidate).map(key => groupState.proposals[key].candidate) : []
+  },
+  memberUsernames (state) {
+    var profiles = state.currentGroupId && state[state.currentGroupId] && state[state.currentGroupId].profiles
+    return Object.keys(profiles || {})
+  },
   memberCount (state, getters) {
-    return groupId => {
-      if (!groupId) groupId = state.currentGroupId
-      if (!groupId) return 0
-      return Object.keys(state[groupId].profiles).length
-    }
+    return getters.memberUsernames.length
   },
   colors (state) {
     return Colors[state.theme]
@@ -271,7 +278,7 @@ const actions = {
     { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object},
     user: Object
   ) {
-    const settings = await sbp('gi.db/settings/load', user.name)
+    const settings = await sbp('gi.db/settings/load', user.username)
     if (settings) {
       console.log('loadSettings:', settings)
       commit('setCurrentGroupId', settings.currentGroupId)
@@ -279,7 +286,7 @@ const actions = {
       commit('setTheme', settings.theme || 'blue')
       commit('setFontSize', settings.fontSize || 1)
     }
-    await sbp('gi.db/settings/save', SETTING_CURRENT_USER, user.name)
+    await sbp('gi.db/settings/save', SETTING_CURRENT_USER, user.username)
     // This may seem unintuitive to use the state from the global store object
     // but the state object in scope is a copy that becomes stale if something modifies it
     // like an outside dispatch
@@ -328,12 +335,12 @@ const actions = {
     try {
       const contractID = message.isFirstMessage() ? message.hash() : message.message().contractID
       const selector = message.type()
-      const type = CONTRACT_TYPE_REGEX.exec(selector)[1]
+      const type = CONTRACT_REGEX.exec(selector)[1]
       const hash = message.hash()
       const data = message.data()
       const meta = message.meta()
       // ensure valid message
-      selectorIsContract(selector)
+      selectorIsContractOrAction(selector)
       // TODO: verify each message is signed by a group member
       // verify we're expecting to hear from this contract
       if (!state.pending.includes(contractID) && !state.contracts[contractID]) {
@@ -370,7 +377,7 @@ const actions = {
       throw e // TODO: handle this better
       // See: https://github.com/okTurtles/group-income-simple/issues/602
       // note that we should be able to recover even if the very first line
-      // fails, e.g. if something like CONTRACT_TYPE_REGEX.exec(selector)[1]
+      // fails, e.g. if something like CONTRACT_REGEX.exec(selector)[1]
       // throws an exception.
     }
   },

@@ -42,6 +42,7 @@ section.section.full-screen
 import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
 import * as _ from '@utils/giLodash.js'
+import { mapGetters } from 'vuex'
 export default {
   name: 'Vote',
   computed: {
@@ -51,9 +52,10 @@ export default {
     proposal () {
       return this.contract.proposals[this.$route.query.proposalHash] || { proposal: null }
     },
-    memberCount () {
-      return this.$store.getters[`${this.$route.query.groupId}/memberUsernames`].length
-    }
+    ...mapGetters([
+      'currentGroupState',
+      'memberCount'
+    ])
   },
   methods: {
     async voteFor () {

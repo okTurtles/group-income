@@ -53,7 +53,7 @@ export default {
   },
   computed: {
     isProposal () {
-      return this.memberCount() >= 3
+      return this.memberCount >= 3
     },
     ...mapState([
       'currentGroupId',
@@ -138,7 +138,7 @@ export default {
       }
     },
     isAlreadyInvited (member) {
-      const candidateMembers = this.$store.getters[`${this.$store.state.currentGroupId}/candidateMembers`]
+      const candidateMembers = this.$store.getters.candidateMembers
       return Object.keys(this.currentGroupState.profiles).find(profile => profile === member) ||
         this.currentGroupState.invitees.find(invitee => invitee === member) ||
         candidateMembers.find(username => username === member)

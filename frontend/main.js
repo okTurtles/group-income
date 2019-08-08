@@ -55,6 +55,14 @@ async function startApp () {
       console.log('lookup failed!', err)
       sbp('state/vuex/dispatch', 'logout')
       console.warn(`It looks like the local user '${username}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
+      // TODO: do not delete the username like this! handle this better!
+      //       because of how await works, this exception handler can be triggered
+      //       even by random errors from Vue.js, example:
+      //
+      //         lookup failed! TypeError: "state[state.currentGroupId] is undefined"
+      //         memberUsernames state.js:231
+      //
+      //       Which doesn't mean that the lookup actually failed!
       sbp('gi.db/settings/delete', username)
     }
   }

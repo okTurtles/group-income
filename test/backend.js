@@ -51,10 +51,11 @@ sbp('sbp/selectors/register', {
   'state/vuex/dispatch': function (action, e) {
     switch (action) {
       case 'handleEvent':
+        const contractID = e.isFirstMessage() ? e.hash() : e.message().contractID
         if (e.isFirstMessage()) {
-          vuexState[e.hash()] = {}
+          vuexState[contractID] = {}
         }
-        sbp(e.type(), vuexState[e.message().contractID], {
+        sbp(e.type(), vuexState[contractID], {
           data: e.data(),
           meta: e.meta(),
           hash: e.hash()
@@ -78,6 +79,15 @@ sbp('sbp/selectors/register', {
 describe('Full walkthrough', function () {
   var users = {}
   var groups = {}
+
+  function login (user) {
+    // we set this so that the metadata on subsequent messages is properly filled in
+    // currently group and mailbox contracts use this to determine message sender
+    vuexState.loggedIn = {
+      username: user.data().attributes.name,
+      identityContractID: user.hash()
+    }
+  }
 
   function createSocket () {
     return createWebSocket(process.env.API_URL, { timeout: 3000, strategy: false })
@@ -199,10 +209,7 @@ describe('Full walkthrough', function () {
   describe('Group tests', function () {
     it('Should create a group & subscribe Alice', async function () {
       // set user Alice as being logged in so that metadata on messages is properly set
-      vuexState.loggedIn = {
-        username: users.alice.data().attributes.name,
-        identityContractID: users.alice.hash()
-      }
+      login(users.alice)
       groups.group1 = createGroup('group1')
       await users.alice.socket.sub(groups.group1.hash())
       await postEntry(groups.group1)
@@ -248,8 +255,7 @@ describe('Full walkthrough', function () {
         {
           from: users.bob.data().attributes.name,
           messageType: TYPE_INVITE,
-          message: groups.group1.hash(),
-          sentDate: new Date().toISOString()
+          message: groups.group1.hash()
         },
         mailbox.hash()
       ).then(invite => {
