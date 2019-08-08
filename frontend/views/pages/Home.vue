@@ -49,7 +49,7 @@ export default {
         sbp('okTurtles.events/on', UNLOAD_MODAL, this.enableSubmit)
         this.enableSubmit()
         // Fix firefox autofocus
-        process.nextTick(() => this.$refs[this.lastFocus].focus())
+        process.nextTick(() => this.$refs[this.lastFocus].$el.focus())
       }
     }
   },
@@ -67,7 +67,7 @@ export default {
       this.isModalOpen = false
       if (!this.$store.state.loggedIn) {
         // Enable focus on button and fix for firefox
-        this.$nextTick(() => this.$refs[this.lastFocus].focus())
+        this.$nextTick(() => this.$refs[this.lastFocus].$el.focus())
       }
     }
   }

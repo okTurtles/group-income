@@ -58,8 +58,8 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupS
         data-test='saveBtn'
       ) Save changes
 
-  page-section(title='Leave Group')
-    i18n(tag='p') This means you will stop having access to the #[b group chat] (including direct messages to other group members) and #[b contributions]. Re-joining the group is possible, but requires other members to vote and reach an agreement.
+  page-section(:title='L("Leave Group")')
+    p(v-html="L('This means you will stop having access to the <b>group chat</b> (including direct messages to other group members) and <b>contributions</b>. Re-joining the group is possible, but requires other members to vote and reach an agreement.')")
 
     i18n.is-danger.is-outlined(
       tag='button'
@@ -68,7 +68,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupS
       data-test='LeaveBtn'
     ) Leave group
 
-  page-section(title='Delete Group')
+  page-section(:title='L("Delete Group")')
     i18n(tag='p') This will delete all the data associated with this group permanently.
 
     i18n.is-danger.is-outlined(

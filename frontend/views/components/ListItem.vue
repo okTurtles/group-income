@@ -114,7 +114,7 @@ export default {
 
     &:hover,
     &:focus {
-      background-color: transparent;
+      background-color: $primary-bg-a;
     }
   }
 

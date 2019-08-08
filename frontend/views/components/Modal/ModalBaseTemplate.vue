@@ -9,7 +9,7 @@
 import modalMixins from './ModalMixins.js'
 
 export default {
-  name: 'ModalTemplate',
+  name: 'ModalBaseTemplate',
   mixins: [modalMixins]
 }
 </script>

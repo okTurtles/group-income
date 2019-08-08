@@ -169,7 +169,6 @@ declare module './GroupName.vue' { declare module.exports: Object }
 declare module './GroupPrivacy.vue' { declare module.exports: Object }
 declare module './GroupPurpose.vue' { declare module.exports: Object }
 declare module './GroupRules.vue' { declare module.exports: Object }
-declare module './GroupSummary.vue' { declare module.exports: Object }
 declare module './interface.js' { declare module.exports: any }
 declare module './lazyLoadedView.js' { declare module.exports: any }
 declare module './Masker.vue' { declare module.exports: Object }

@@ -27,7 +27,7 @@
         i18n.error(
           v-show='$v.form.name.$error'
           tag='p'
-        ) U?sername cannot contain spaces
+        ) Username cannot contain spaces
 
       form-password(
         :label='L("Password")'

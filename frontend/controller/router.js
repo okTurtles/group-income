@@ -9,8 +9,7 @@ import {
   GroupMincome,
   GroupRules,
   GroupPrivacy,
-  GroupInvitees,
-  GroupSummary
+  GroupInvitees
 } from '../views/components/CreateGroupSteps/index.js'
 import DesignSystem from '../views/pages/DesignSystem.vue'
 import Home from '../views/pages/Home.vue'
@@ -141,14 +140,6 @@ var router = new Router({
             title: 'Start A Group - Invite Members'
           },
           component: GroupInvitees
-        },
-        {
-          path: 'create',
-          name: GroupSummary.name,
-          meta: {
-            title: 'Start A Group - Launch Group'
-          },
-          component: GroupSummary
         }
       ]
     },

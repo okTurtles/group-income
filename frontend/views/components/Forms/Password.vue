@@ -12,7 +12,8 @@
       v-model='value[name]'
       @input='v[name].$touch()'
     )
-    .button.is-icon(
+    button.is-icon(
+      type="button"
       v-if='hasIconRight'
       @click.prevent='isLock = !isLock'
     )

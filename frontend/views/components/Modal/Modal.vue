@@ -11,6 +11,8 @@ export default {
   name: 'Modal',
   data () {
     return {
+      // QUESTION: What's the dif between content and subcontent?
+      // What are the use cases of it?
       content: null,
       subcontent: []
     }
@@ -40,9 +42,12 @@ export default {
     openModal (componentName) {
       if (this.content) {
         this.subcontent.push(componentName)
+        // QUESTION: Why emmiting this event if
+        // there is not any events/on' poiting to OPEN_MODAL?
         sbp('okTurtles.events/emit', OPEN_MODAL)
       } else {
         this.content = componentName
+        // QUESTION: Same here..
         sbp('okTurtles.events/emit', OPEN_MODAL)
       }
       this.$router.push({ query: { modal: this.content, subcontent: this.subcontent[this.subcontent.length - 1] } })
@@ -63,6 +68,9 @@ export default {
       } else {
         this.content = undefined
       }
+
+      // BUG: This isn't working at all but if you pause the dev
+      // tools and do it manually on the console it works :/
       // Avoid event problem by removing completly the component
       this.$router.push({ query: query })
     }
