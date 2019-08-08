@@ -147,7 +147,7 @@ export default {
   margin-bottom: 2rem;
   align-items: center;
 
-  ::v-deep i {
+  i {
     padding-right: 1rem;
   }
 }
