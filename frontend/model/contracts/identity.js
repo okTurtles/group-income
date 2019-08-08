@@ -1,15 +1,45 @@
 'use strict'
 
 import Vue from 'vue'
-import { DefineContract } from '../utils.js'
+import { DefineContract } from './Contract.js'
 import {
   objectOf,
   arrayOf,
   string,
   object
-} from '../../utils/flowTyper.js'
-// } from 'flowTyper-js'
+} from '~/frontend/utils/flowTyper.js'
 
+export default DefineContract({
+  name: 'gi.contracts/identity',
+  contract: {
+    validate: objectOf({
+      attributes: object
+    }),
+    process (state, { data }) {
+      Vue.set(state, 'attributes', data.attributes)
+    }
+  },
+  actions: {
+    'gi.contracts/identity/setAttributes': {
+      validate: object,
+      process (state, { data }) {
+        for (var key in data) {
+          Vue.set(state.attributes, key, data[key])
+        }
+      }
+    },
+    'gi.contracts/identity/deleteAttributes': {
+      validate: arrayOf(string),
+      process (state, { data }) {
+        for (var attribute of data) {
+          Vue.delete(state.attributes, attribute)
+        }
+      }
+    }
+  }
+})
+
+/*
 export default DefineContract({
   'IdentityContract': {
     isConstructor: true,
@@ -44,3 +74,4 @@ export default DefineContract({
     }
   }
 })
+*/

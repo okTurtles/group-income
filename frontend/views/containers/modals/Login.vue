@@ -82,9 +82,12 @@ export default {
     async login () {
       try {
         // TODO: Insert cryptography here
-        const identityContractId = await sbp('namespace/lookup', this.form.name)
-        console.log(`Retrieved identity ${identityContractId}`)
-        await this.$store.dispatch('login', { name: this.form.name, identityContractId })
+        const identityContractID = await sbp('namespace/lookup', this.form.name)
+        console.log(`Retrieved identity ${identityContractID}`)
+        await sbp('state/vuex/dispatch', 'login', {
+          username: this.form.name,
+          identityContractID
+        })
         this.close()
         this.$router.push({ path: '/' })
       } catch (error) {

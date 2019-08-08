@@ -84,26 +84,24 @@ export default {
             return
           }
 
-          const inviteToMailbox = await sbp('gi/contract/create-action', 'MailboxPostMessage',
+          const inviteToMailbox = await sbp('gi.contracts/mailbox/postMessage/create',
             {
               from: groupName,
               headers: [groupId],
-              messageType: contracts.MailboxPostMessage.TypeInvite,
-              sentDate: new Date().toISOString()
+              messageType: contracts.MailboxPostMessage.TypeInvite
             },
             mailbox
           )
-          const inviteToGroup = await sbp('gi/contract/create-action', 'GroupRecordInvitation',
+          const inviteToGroup = await sbp('gi.contracts/group/invite/create',
             {
               username: memberName,
-              inviteHash: inviteToMailbox.hash(),
-              sentDate: new Date().toISOString()
+              inviteHash: inviteToMailbox.hash()
             },
             groupId
           )
 
           if (this.isProposal) {
-            const proposal = await sbp('gi/contract/create-action', 'GroupProposal',
+            const proposal = await sbp('gi.contracts/group/proposal/create',
               {
                 // for proposal template selection in Vote.vue
                 type: contracts.GroupProposal.TypeInvitation,
@@ -116,8 +114,7 @@ export default {
                   { contractID: mailbox, type: inviteToMailbox.type(), action: JSON.stringify(inviteToMailbox.data()) },
                   { contractID: groupId, type: inviteToGroup.type(), action: JSON.stringify(inviteToGroup.data()) }
                 ],
-                initiator: this.loggedIn.name,
-                initiationDate: new Date().toISOString()
+                initiator: this.loggedIn.username
               },
               groupId
             )

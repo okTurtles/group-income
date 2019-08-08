@@ -7,7 +7,6 @@ import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import { GIMessage } from '~/shared/GIMessage.js'
-import contracts from './contracts.js'
 import * as _ from '@utils/giLodash.js'
 import { SETTING_CURRENT_USER } from './database.js'
 import { LOGIN, LOGOUT, EVENT_HANDLED } from '@utils/events.js'
@@ -25,6 +24,14 @@ var store // this is set and made the default export at the bottom of the file.
 //       TO STORE AN INSTANCE OF A CLASS (LIKE A CONTRACT), IT WILL NOT STORE
 //       THE ACTUAL CONTRACT, BUT JSON.STRINGIFY(CONTRACT) INSTEAD!
 
+const CONTRACT_TYPE_REGEX = /^gi\.contracts\/(?:([^/]+)\/)(?:([^/]+)\/)?process$/
+// guard all sbp calls for contract actions with this function
+export function selectorIsContract (sel: string) {
+  if (!CONTRACT_TYPE_REGEX.test(sel)) {
+    throw new Error(`bad selector '${sel}' for contract type!`)
+  }
+}
+
 sbp('sbp/selectors/register', {
   'state/vuex/dispatch': (...args) => {
     return store.dispatch(...args)
@@ -33,16 +40,19 @@ sbp('sbp/selectors/register', {
   'state/latestContractState': async (contractID: string) => {
     let events = await sbp('backend/eventsSince', contractID, contractID)
     events = events.map(e => GIMessage.deserialize(e))
-    const contract = contracts[events[0].type()]
-    const state = _.cloneDeep(contract.vuexModule.state)
+    const state = {}
     for (const e of events) {
-      contracts[e.type()].validate(e.data())
-      contract.vuexModule.mutations[e.type()](state, {
+      selectorIsContract(e.type())
+      sbp(e.type(), state, {
         data: e.data(),
+        meta: e.meta(),
         hash: e.hash()
       })
     }
     return state
+  },
+  'state/vuex/state': () => {
+    return store.state
   }
 })
 
@@ -50,7 +60,7 @@ const state = {
   currentGroupId: null,
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
-  loggedIn: false, // false | { name: string, identityContractId: string }
+  loggedIn: false, // false | { username: string, identityContractID: string }
   theme: 'blue',
   fontSize: 1
 }
@@ -67,12 +77,22 @@ const mutations = {
     state.currentGroupId = null
     sbp('okTurtles.events/emit', LOGOUT)
   },
+  processMessage (state, { selector, message }) {
+    selectorIsContract(selector)
+    sbp(selector, message)
+  },
   addContract (state, { contractID, type, HEAD, data }) {
     // copy over the initial state, making sure *not* to use cloneDeep on
     // the entire vuexModule object (because cloneDeep doesn't clone functions)
-    var vuexModule = Object.assign({}, contracts[type].vuexModule)
-    // make sure we restore any previously saved state (e.g. after login)
-    vuexModule.state = Object.assign(_.cloneDeep(vuexModule.state), data)
+    // var vuexModule = Object.assign({}, contracts[type].vuexModule)
+    var vuexModule = {
+      // vuex module namespaced under this contract's hash
+      // see details: https://vuex.vuejs.org/en/modules.html
+      namespaced: true,
+      // make sure we restore any previously saved state (e.g. after login)
+      state: data,
+      mutations: { processMessage: mutations.processMessage }
+    }
     store.registerModule(contractID, vuexModule)
     // NOTE: we modify state.contracts __AFTER__ calling registerModule, to
     //       ensure that any reactive Vue components that depend on
@@ -149,7 +169,7 @@ const getters = {
   },
   // Logged In user's identity contract
   currentUserIdentityContract (state) {
-    return state.loggedIn && state[state.loggedIn.identityContractId]
+    return state.loggedIn && state[state.loggedIn.identityContractID]
   },
   // list of group names and contractIDs
   groupsByName (state) {
@@ -157,7 +177,7 @@ const getters = {
     // The code below was originally Object.entries(...) but changed to .keys()
     // due to the same flow issue as https://github.com/facebook/flow/issues/5838
     return Object.keys(contracts)
-      .filter(contractID => contracts[contractID].type === 'GroupContract')
+      .filter(contractID => contracts[contractID].type === 'group')
       .map(contractID => ({ groupName: state[contractID].groupName, contractID }))
   },
   proposals (state) {
@@ -165,12 +185,12 @@ const getters = {
     const proposals = []
     if (!state.currentGroupId) { return proposals }
     for (const groupContractId of Object.keys(state.contracts)
-      .filter(key => state.contracts[key].type === 'GroupContract')
+      .filter(key => state.contracts[key].type === 'group')
     ) {
       for (const proposal of Object.keys(state[groupContractId].proposals || {})) {
-        if (state[groupContractId].proposals[proposal].initatior !== state.loggedIn.name &&
-        !state[groupContractId].proposals[proposal].for.find(name => name === state.loggedIn.name) &&
-        !state[groupContractId].proposals[proposal].against.find(name => name === state.loggedIn.name)
+        if (state[groupContractId].proposals[proposal].initatior !== state.loggedIn.username &&
+        !state[groupContractId].proposals[proposal].for.find(name => name === state.loggedIn.username) &&
+        !state[groupContractId].proposals[proposal].against.find(name => name === state.loggedIn.username)
         ) {
           proposals.push({
             groupContractId,
@@ -300,7 +320,7 @@ const actions = {
         theme: state.theme
       }
       console.log('saveSettings:', settings)
-      await sbp('gi.db/settings/save', state.loggedIn.name, settings)
+      await sbp('gi.db/settings/save', state.loggedIn.username, settings)
     }
   },
   // this function is called from ../controller/utils/pubsub.js and is the entry point
@@ -311,12 +331,14 @@ const actions = {
   ) {
     try {
       const contractID = message.isFirstMessage() ? message.hash() : message.message().contractID
-      const type = message.type()
-      const HEAD = message.hash()
+      const selector = message.type()
+      const type = CONTRACT_TYPE_REGEX.exec(selector)[1]
+      const hash = message.hash()
       const data = message.data()
+      const meta = message.meta()
       // ensure valid message
+      selectorIsContract(selector)
       // TODO: verify each message is signed by a group member
-      contracts[type].validate(data)
       // verify we're expecting to hear from this contract
       if (!state.pending.includes(contractID) && !state.contracts[contractID]) {
         // TODO: use a global notification system to both display a notification
@@ -327,23 +349,33 @@ const actions = {
       await sbp('gi.db/log/addEntry', message)
 
       if (message.isFirstMessage()) {
-        commit('addContract', { contractID, type, HEAD, data })
+        commit('addContract', { contractID, type, HEAD: hash, data })
       }
-      commit('setContractHEAD', { contractID, HEAD })
 
-      const mutation = { data, hash: HEAD }
-      commit(`${contractID}/${type}`, mutation)
+      const mutation = { data, meta, hash }
+      commit(`${contractID}/processMessage`, { selector, message: mutation })
+      // TODO: delete this or reimplement it
       // if this mutation has a corresponding action, perform it after thet mutation
-      await dispatch(`${contractID}/${type}`, mutation)
+      // await dispatch(`${contractID}/${type}`, mutation)
+
+      // all's good, so update our contract HEAD
+      // TODO: handle malformed message DoS
+      //       https://github.com/okTurtles/group-income-simple/issues/602
+      commit('setContractHEAD', { contractID, HEAD: hash })
 
       // handleEvent might be called very frequently, so save only after a pause
       debouncedSave(dispatch)
       // let any listening components know that we've received, processed, and stored the event
-      sbp('okTurtles.events/emit', HEAD, contractID, message)
+      sbp('okTurtles.events/emit', hash, contractID, message)
       sbp('okTurtles.events/emit', EVENT_HANDLED, contractID, message)
+      sbp('okTurtles.events/emit', selector, contractID, message)
     } catch (e) {
       console.error('[ERROR] exception in handleEvent!', e.message, e)
       throw e // TODO: handle this better
+      // See: https://github.com/okTurtles/group-income-simple/issues/602
+      // note that we should be able to recover even if the very first line
+      // fails, e.g. if something like CONTRACT_TYPE_REGEX.exec(selector)[1]
+      // throws an exception.
     }
   },
   async setTheme (

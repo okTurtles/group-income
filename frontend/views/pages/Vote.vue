@@ -61,9 +61,9 @@ export default {
       try {
         // TODO: this section is unclear and it's not clear what's going on at all.
         //       rewrite and make it nicer.
-        const vote = await sbp('gi/contract/create-action', 'GroupVoteForProposal',
+        const vote = await sbp('gi.contracts/group/voteForProposal/create',
           {
-            username: this.$store.state.loggedIn.name,
+            username: this.$store.state.loggedIn.username,
             proposalHash: this.$route.query.proposalHash
           },
           this.$route.query.groupId
@@ -78,7 +78,7 @@ export default {
           console.error('proposal actions:', proposal.actions)
           for (const step of proposal.actions) {
             const actData = JSON.parse(step.action)
-            const entry = await sbp('gi/contract/create-action', step.type, actData, step.contractID)
+            const entry = await sbp(`gi.contracts/group/${step.type}/create`, actData, step.contractID)
             await sbp('backend/publishLogEntry', entry)
           }
         }
@@ -93,9 +93,9 @@ export default {
       this.errorMsg = null
       try {
         // Create a against the proposal
-        const vote = await sbp('gi/contract/create-action', 'GroupVoteAgainstProposal',
+        const vote = await sbp('gi.contracts/group/voteAgainstProposal/create',
           {
-            username: this.$store.state.loggedIn.name,
+            username: this.$store.state.loggedIn.username,
             proposalHash: this.$route.query.proposalHash
           },
           this.$route.query.groupId

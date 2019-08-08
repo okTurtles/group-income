@@ -163,7 +163,7 @@ export default {
         this.$store.getters.currentUserIdentityContract.attributes.picture)
     },
     userName () {
-      return this.$store.state.loggedIn.name
+      return this.$store.state.loggedIn.username
     }
   },
   methods: {
@@ -180,9 +180,9 @@ export default {
             attrs[key] = this.edited[key]
           }
         }
-        const attributes = await sbp('gi/contract/create-action', 'IdentitySetAttributes',
+        const attributes = await sbp('gi.contracts/identity/setAttributes/create',
           attrs,
-          this.$store.state.loggedIn.identityContractId
+          this.$store.state.loggedIn.identityContractID
         )
         await sbp('backend/publishLogEntry', attributes)
         this.profileSaved = true

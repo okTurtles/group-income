@@ -194,9 +194,9 @@ export default {
             attrs[key] = this.edited[key]
           }
         }
-        const attributes = await sbp('gi/contract/create-action', 'IdentitySetAttributes',
+        const attributes = await sbp('gi.contracts/identity/setAttributes/create',
           attrs,
-          this.$store.state.loggedIn.identityContractId
+          this.$store.state.loggedIn.identityContractID
         )
         await sbp('backend/publishLogEntry', attributes)
         this.profileSaved = true
@@ -209,15 +209,15 @@ export default {
       this.editedGroupProfile = cloneDeep(
         this.$store
           .state[this.currentGroupContractId]
-          .profiles[this.$store.state.loggedIn.name] || {}
+          .profiles[this.$store.state.loggedIn.username] || {}
       )
     },
     async saveGroupProfile () {
       try {
         this.groupProfileSaved = false
-        const updatedProfile = await sbp('gi/contract/create-action', 'GroupSetGroupProfile',
+        const updatedProfile = await sbp('gi.contracts/group/setGroupProfile/create',
           {
-            username: this.$store.state.loggedIn.name,
+            username: this.$store.state.loggedIn.username,
             profile: this.editedGroupProfile
           },
           this.currentGroupContractId

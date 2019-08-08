@@ -128,7 +128,7 @@ export default {
       // create the GroupContract
       try {
         this.ephemeral.errorMsg = null
-        const entry = sbp('gi/contract/create', 'GroupContract', {
+        const entry = sbp('gi.contracts/group/create', {
           // authorizations: [contracts.CanModifyAuths.dummyAuth()], // TODO: this
           groupName: this.form.groupName,
           groupPicture: this.form.groupPicture,
@@ -137,9 +137,7 @@ export default {
           memberApprovalThreshold: this.form.memberApprovalThreshold,
           memberRemovalThreshold: this.form.memberRemovalThreshold,
           incomeProvided: +this.form.incomeProvided, // ensure this is a number
-          incomeCurrency: this.form.incomeCurrency,
-          founderUsername: this.$store.state.loggedIn.name,
-          founderIdentityContractId: this.$store.state.loggedIn.identityContractId
+          incomeCurrency: this.form.incomeCurrency
         })
         const hash = entry.hash()
         // TODO: convert this to SBL
@@ -152,7 +150,7 @@ export default {
         // TODO: convert this to SBL
         await sbp('backend/publishLogEntry', entry)
         // add to vuex and monitor this contract for updates
-        await this.$store.dispatch('syncContractWithServer', hash)
+        await sbp('state/vuex/dispatch', 'syncContractWithServer', hash)
       } catch (error) {
         console.error(error)
         this.ephemeral.errorMsg = L('Failed to Create Group')
@@ -165,26 +163,22 @@ export default {
         // TODO: as invitees are successfully invited display in a
         // seperate invitees grid and add them to some validation for duplicate invites
         for (const invitee of this.form.invitees) {
-          // We need to have the latest mailbox attribute for the user
-          const sentDate = new Date().toISOString()
           // We need to post the invite to the users' mailbox contract
-          const invite = await sbp('gi/contract/create-action', 'MailboxPostMessage',
+          const invite = await sbp('gi.contracts/mailbox/postMessage/create',
             {
               from: this.$store.getters.currentGroupState.groupName,
               headers: [this.$store.state.currentGroupId],
-              messageType: contracts.MailboxPostMessage.TypeInvite,
-              sentDate
+              messageType: contracts.MailboxPostMessage.TypeInvite
             },
             invitee.state.attributes.mailbox
           )
           await sbp('backend/publishLogEntry', invite)
 
           // We need to make a record of the invitation in the group's contract
-          const invited = await sbp('gi/contract/create-action', 'GroupRecordInvitation',
+          const invited = await sbp('gi.contracts/group/invite/create',
             {
               username: invitee.state.attributes.name,
-              inviteHash: invite.hash(),
-              sentDate
+              inviteHash: invite.hash()
             },
             this.$store.state.currentGroupId
           )

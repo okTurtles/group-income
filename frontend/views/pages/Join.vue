@@ -52,7 +52,7 @@ export default {
   async mounted () {
     try {
       const state = await sbp('state/latestContractState', this.$route.query.groupId)
-      if (!state.invitees.find(invitee => invitee === this.$store.state.loggedIn.name)) {
+      if (!state.invitees.find(invitee => invitee === this.$store.state.loggedIn.username)) {
         // TODO: proper user-facing error
         // TODO: somehow I got this error... I created 4 accounts, and after inviting
         //       the 4th one, there was an exception thrown by HashableGroupVoteAgainstProposal
@@ -86,19 +86,18 @@ export default {
       try {
         // post acceptance event to the group contract
         this.ephemeral.errorMsg = null
-        const acceptance = await sbp('gi/contract/create-action', 'GroupAcceptInvitation',
+        const acceptance = await sbp('gi.contracts/group/inviteAccept/create',
           {
-            username: this.$store.state.loggedIn.name,
-            identityContractId: this.$store.state.loggedIn.identityContractId,
-            inviteHash: this.$route.query.inviteHash,
-            acceptanceDate: new Date().toISOString()
+            username: this.$store.state.loggedIn.username,
+            identityContractID: this.$store.state.loggedIn.identityContractID,
+            inviteHash: this.$route.query.inviteHash
           },
           this.$route.query.groupId
         )
         // let the group know we've accepted their invite
         await sbp('backend/publishLogEntry', acceptance)
         // sync the group's contract state
-        await this.$store.dispatch('syncContractWithServer', this.$route.query.groupId)
+        await sbp('state/vuex/dispatch', 'syncContractWithServer', this.$route.query.groupId)
         // after syncing, we can set the current group
         this.$store.commit('setCurrentGroupId', this.$route.query.groupId)
 
@@ -115,11 +114,10 @@ export default {
       try {
         // post decline event
         this.ephemeral.errorMsg = null
-        const declination = await sbp('gi/contract/create-action', 'GroupDeclineInvitation',
+        const declination = await sbp('gi.contracts/group/inviteDecline/create',
           {
-            username: this.$store.state.loggedIn.name,
-            inviteHash: this.$route.query.inviteHash,
-            declinedDate: new Date().toISOString()
+            username: this.$store.state.loggedIn.username,
+            inviteHash: this.$route.query.inviteHash
           },
           this.$route.query.groupId
         )

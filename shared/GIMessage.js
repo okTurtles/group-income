@@ -22,7 +22,8 @@ export class GIMessage {
     previousHEAD: ?string = null,
     signatureFn: Function = defaultSignatureFn,
     actionType: string,
-    actionData: JSONType
+    actionData: JSONType,
+    metaData: ?Object = {}
   ) {
     var instance = new this()
     instance._message = {
@@ -30,10 +31,12 @@ export class GIMessage {
       previousHEAD,
       contractID,
       // make it difficult to guess contract hashes and prevent conflicts
-      nonce: parseInt(Math.random() * 10000000), // TODO: verify this is sufficient
+      nonce: parseInt(Math.random() * 10000000),
+      // TODO: this action object needs to be encrypted JSON
       action: {
         type: actionType,
-        data: actionData
+        data: actionData,
+        meta: metaData
       }
     }
     const messageJSON = JSON.stringify(instance._message)
@@ -61,6 +64,8 @@ export class GIMessage {
   type (): string { return this.message().action.type }
 
   data (): Object { return this.message().action.data }
+
+  meta (): Object { return this.message().action.meta }
 
   isFirstMessage (): boolean { return !this.message().previousHEAD }
 

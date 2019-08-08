@@ -1,15 +1,53 @@
 'use strict'
 
-import { DefineContract } from '../utils.js'
+// import Vue from 'vue'
+import { DefineContract } from './Contract.js'
 import {
   objectOf,
   arrayOf,
   string,
   object,
   optional
-} from '../../utils/flowTyper.js'
-// } from 'flowTyper-js'
+} from '~/frontend/utils/flowTyper.js'
 
+export default DefineContract({
+  name: 'gi.contracts/mailbox',
+  contract: {
+    validate: object,
+    process (state, { data }) {
+      state.messages = []
+    }
+  },
+  actions: {
+    'gi.contracts/mailbox/postMessage': {
+      validate: objectOf({
+        messageType: string,
+        from: string,
+        message: optional(string),
+        headers: optional(arrayOf(string))
+      }),
+      constants: {
+        TypeInvite: 'Invite',
+        TypeMessage: 'Message',
+        TypeProposal: 'Proposal'
+      },
+      process (state, { data, meta, hash }) {
+        state.messages.push({ data, meta, hash })
+      }
+    },
+    'gi.contracts/mailbox/authorizeSender': {
+      validate: objectOf({
+        sender: string
+      }),
+      process (state, { data }) {
+        // TODO: maybe replace this via OP_KEY_*?
+        throw new Error('unimplemented!')
+      }
+    }
+  }
+})
+
+/*
 export default DefineContract({
   'MailboxContract': {
     isConstructor: true,
@@ -28,13 +66,12 @@ export default DefineContract({
     validate: objectOf({
       messageType: string,
       from: string,
-      sentDate: string,
       message: optional(string),
       headers: optional(arrayOf(string))
     }),
     vuexModuleConfig: {
-      mutation: (state, { data, hash }) => {
-        state.messages.push({ data, hash })
+      mutation: (state, { data, meta, hash }) => {
+        state.messages.push({ data, meta, hash })
       }
     }
   },
@@ -50,3 +87,4 @@ export default DefineContract({
     }
   }
 })
+*/

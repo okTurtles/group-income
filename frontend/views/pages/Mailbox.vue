@@ -85,7 +85,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
         | &nbsp;{{ephemeral.currentMessage.data.messageType}}
       div
         strong Sent:
-        | &nbsp;{{formatDate(ephemeral.currentMessage.data.sentDate)}}
+        | &nbsp;{{formatDate(ephemeral.currentMessage.meta.createdDate)}}
       div
         strong From:
         | &nbsp;{{ephemeral.currentMessage.data.from}}
@@ -143,7 +143,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
         .c-message-desc
           div
             strong Sent:
-            | &nbsp;{{formatDate(message.data.sentDate)}}
+            | &nbsp;{{formatDate(message.meta.createdDate)}}
           div
             strong From:
             | &nbsp;{{message.data.from}}
@@ -166,7 +166,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
         )
           div
             strong Sent:
-            | &nbsp;{{formatDate(message.data.sentDate)}}
+            | &nbsp;{{formatDate(message.meta.createdDate)}}
           div
             strong From:
             | &nbsp;{{message.data.from}}
@@ -187,7 +187,7 @@ import L from '@view-utils/translations.js'
 import Page from './Page.vue'
 import Avatar from '@components/Avatar.vue'
 
-const criteria = (msg) => new Date(msg.sentDate)
+const criteria = (msg) => msg.meta.createdDate
 
 // TODO: this whole file needs to be improved/rewritten
 
@@ -210,7 +210,7 @@ export default {
         composedMessage: '',
         // TODO: this is ugly, make it nicer
         // place an empty message here so that the rendered doesn't complain about missing fields or data
-        currentMessage: { data: {} },
+        currentMessage: { data: {}, meta: {} },
         currentIndex: null
       }
     }
@@ -269,10 +269,9 @@ export default {
           const recipient = this.ephemeral.recipients[i]
           // TODO:: latestContractState is inefficient
           const state = await sbp('state/latestContractState', recipient.contractID)
-          const message = await sbp('gi/contract/create-action', 'MailboxPostMessage', {
-            sentDate: new Date().toISOString(),
+          const message = await sbp('gi.contracts/mailbox/postMessage/create', {
             messageType: contracts.MailboxPostMessage.TypeMessage,
-            from: this.$store.state.loggedIn.name,
+            from: this.$store.state.loggedIn.username,
             message: this.ephemeral.composedMessage
           }, state.attributes.mailbox)
           await sbp('backend/publishLogEntry', message)

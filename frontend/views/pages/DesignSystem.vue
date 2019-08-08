@@ -597,9 +597,9 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
         tr
           td
             code
-              | this.$store.dispatch('login',
+              | sbp('state/vuex/dispatch', 'login',
               br
-              |   { name: 'TestUser' }
+              |   { username: 'TestUser', identityContractID }
               br
               | )
           td
@@ -719,7 +719,7 @@ export default {
   },
   methods: {
     login () {
-      this.$store.dispatch('login', { name: 'TestUser' })
+      console.error('unimplemented, try using the actual Login.vue modal')
     },
     openModal (mode) {
       sbp('okTurtles.events/emit', LOAD_MODAL, mode)

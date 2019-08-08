@@ -35,6 +35,15 @@ const { bold } = chalk
 //       member's key to all the groups that they're in (that's unweildy
 //       and compromises privacy).
 
+const vuexState = {
+  currentGroupId: null,
+  contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
+  pending: [], // contractIDs we've just published but haven't received back yet
+  loggedIn: false, // false | { username: string, identityContractID: string }
+  theme: 'blue',
+  fontSize: 1
+}
+
 sbp('sbp/selectors/register', {
   // intercept 'handleEvent' from backend.js
   'state/vuex/dispatch': function (action, event) {
@@ -45,6 +54,10 @@ sbp('sbp/selectors/register', {
         break
       default: throw new Error(`unknown dispatch: ${action}`)
     }
+  },
+  // for handling the loggedIn metadata() in Contracts.js
+  'state/vuex/state': () => {
+    return vuexState
   }
 })
 
@@ -62,13 +75,13 @@ describe('Full walkthrough', function () {
   }
 
   function createIdentity (name, email) {
-    return sbp('gi/contract/create', 'IdentityContract', {
+    return sbp('gi.contracts/identity/create', {
       // authorizations: [Events.CanModifyAuths.dummyAuth(name)],
       attributes: { name, email }
     })
   }
-  function createGroup (name, founder) {
-    return sbp('gi/contract/create', 'GroupContract', {
+  function createGroup (name) {
+    return sbp('gi.contracts/group/create', {
       // authorizations: [Events.CanModifyAuths.dummyAuth(name)],
       groupName: name,
       groupPicture: '',
@@ -77,35 +90,31 @@ describe('Full walkthrough', function () {
       memberApprovalThreshold: 0.8,
       memberRemovalThreshold: 0.8,
       incomeProvided: 1000,
-      incomeCurrency: 'USD', // TODO: grab this as a constant from currencies.js
-      founderUsername: founder.data().attributes.name,
-      founderIdentityContractId: founder.hash()
+      incomeCurrency: 'USD' // TODO: grab this as a constant from currencies.js
     })
   }
-  function createPayment (from, to, amount, parentHash, currency = 'USD') {
-    return sbp('gi/contract/create-action', 'GroupPayment',
+  function createPaymentTo (to, amount, parentHash, currency = 'USD') {
+    return sbp('gi.contracts/group/payment/create',
       {
-        fromUser: from.data().attributes.name,
         toUser: to.data().attributes.name,
-        date: new Date().toISOString(),
         amount: amount,
         currency: currency,
         txid: String(parseInt(Math.random() * 10000000)),
-        status: contracts.GroupPayment.StatusPending,
-        paymentType: contracts.GroupPayment.TypeManual
+        status: contracts.GroupPaymentCreate.StatusPending,
+        paymentType: contracts.GroupPaymentCreate.TypeManual
       },
       parentHash
     )
   }
 
   async function createMailboxFor (user) {
-    var mailbox = sbp('gi/contract/create', 'MailboxContract', {
+    var mailbox = sbp('gi.contracts/mailbox/create', {
       // authorizations: [Events.CanModifyAuths.dummyAuth(user.hash())]
     })
     await user.socket.sub(mailbox.hash())
     await postEntry(mailbox)
     await postEntry(
-      await sbp('gi/contract/create-action', 'IdentitySetAttributes', {
+      await sbp('gi.contracts/identity/setAttributes/create', {
         mailbox: mailbox.hash()
       }, user.hash())
     )
@@ -180,7 +189,12 @@ describe('Full walkthrough', function () {
 
   describe('Group tests', function () {
     it('Should create a group & subscribe Alice', async function () {
-      groups.group1 = createGroup('group1', users.alice)
+      // set user Alice as being logged in so that metadata on messages is properly set
+      vuexState.loggedIn = {
+        username: users.alice.data().attributes.name,
+        identityContractID: users.alice.hash()
+      }
+      groups.group1 = createGroup('group1')
       await users.alice.socket.sub(groups.group1.hash())
       await postEntry(groups.group1)
     })
@@ -225,7 +239,7 @@ describe('Full walkthrough', function () {
 
     it("Should invite Bob to Alice's group", function (done) {
       var mailbox = users.bob.mailbox
-      sbp('gi/contract/create-action', 'MailboxPostMessage',
+      sbp('gi.contracts/mailbox/postMessage/create',
         {
           from: users.bob.data().attributes.name,
           messageType: contracts.MailboxPostMessage.TypeInvite,
@@ -244,12 +258,12 @@ describe('Full walkthrough', function () {
     })
 
     it('Should post an event', async function () {
-      await postEntry(await createPayment(users.bob, users.alice, 100, groups.group1.hash()))
+      await postEntry(await createPaymentTo(users.bob, 100, groups.group1.hash()))
     })
 
     it('Should fail with wrong parentHash', async function () {
       try {
-        var p = await createPayment(users.alice, users.bob, 100, '')
+        var p = await createPaymentTo(users.bob, 100, '')
         await postEntry(p)
         return Promise.reject(new Error("shouldn't get here!"))
       } catch (e) {
