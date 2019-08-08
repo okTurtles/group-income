@@ -1,19 +1,78 @@
 <template lang="pug">
 proposal-template(
-  :subTitle="L('Change Rule to change Rule')"
-  :onSubmit='handleSubmit'
-) I step to change rule of change rule it's on the way
+  :title= 'L("Change Rule to change Rule")'
+  footer='L("According to your voting rules, 8 out of 10 members will have to agree with this.")'
+  :disabled='$v.form.$invalid || ($v.steps[config.steps[currentStep]] && $v.steps[config.steps[currentStep]].$invalid)'
+  :maxSteps='config.steps.length'
+  :currentStep.sync='currentStep'
+  @submit='submit'
+)
+
+  .field(v-if='currentStep === 0' key='0')
+    i18n.label(tag='label') I step to change rule of change rule it's on the way
+
+  .field(v-if='currentStep === 1' key='1')
+    i18n.label(tag='label') Why are you proposing this change?
+
+    textarea.textarea(
+      name='changeReason'
+      ref='purpose'
+      :placeholder='L("The reason why I\' propositiong this change is...")'
+      :class="{ 'error': $v.form.changeReason.$error }"
+      v-model='form.changeReason'
+    )
 </template>
 
 <script>
 import ProposalTemplate from './ProposalTemplate.vue'
+import { validationMixin } from 'vuelidate'
+import { minLength } from 'vuelidate/lib/validators'
 
 export default {
-  name: 'Mincome',
-  components: { ProposalTemplate },
+  name: 'ProposalChangeRule',
+  components: {
+    ProposalTemplate
+  },
+  mixins: [
+    validationMixin
+  ],
+  data () {
+    return {
+      currentStep: 0,
+      v: { type: Object },
+      form: {
+        changeReason: null
+      },
+      ephemeral: {
+        errorMsg: null,
+        // this determines whether or not to render proxy components for nightmare
+        dev: process.env.NODE_ENV === 'development'
+      },
+      config: {
+        steps: [
+          'AddMemberRule',
+          'ChangeReason'
+        ]
+      }
+    }
+  },
   methods: {
-    handleSubmit () {
+    submit () {
       console.log('TODO: Logic to Propose a new rule to change a rule')
+    }
+  },
+  validations: {
+    form: {
+      changeReason: {
+        minLength: minLength(10)
+      }
+    },
+    // validation groups by route name for steps
+    steps: {
+      AddMemberRule: [],
+      Reason: [
+        'form.changeReason'
+      ]
     }
   }
 }

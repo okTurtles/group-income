@@ -1,8 +1,6 @@
 <template lang="pug">
 div
-  p.steps-title
-    | 1.&nbsp;
-    i18n Create a new group
+  i18n.steps-title(tag='p') 1. Create a new group
 
   label.avatar(for='groupPicture')
     //- TODO: set a default placeholder image using a built-in asset
@@ -22,12 +20,9 @@ div
       data-test='groupPicture'
     )
 
-  p.error(v-if='v.groupPicture.$error')
-    i18n
-      | The group picture must be a valid url
+  i18n.error(v-if='v.groupPicture.$error' tag='p') The group picture must be a valid url
 
-  label.label
-    i18n What is the name of your group?
+  i18n.label(tag='label') What is the name of your group?
 
   input.input.is-large.is-primary(
     ref='name'

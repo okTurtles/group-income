@@ -1,11 +1,8 @@
 <template lang="pug">
 div
-  p.steps-title
-    | 3.&nbsp;
-    i18n  Minimum Income
+  i18n.steps-title(tag='p') 3. Minimum Income
 
-  label.label
-    i18n What is the minimum each individual in your group should receive monthly?
+  i18n.label(tag='label') What is the minimum each individual in your group should receive monthly?
 
   .select-wrapper
     input.input(
@@ -34,7 +31,7 @@ div
         :key='code'
       ) {{ symbol }}
 
-  p.has-text-light This value can be adjusted in the future.
+  i18n.has-text-light(tag='p') This value can be adjusted in the future.
 </template>
 
 <script>

@@ -21,7 +21,7 @@ nav.c-navigation(
           to='/messages'
           icon='envelope'
           :class="`has-text-${isDarkTheme ? 'white' : 'dark'}`"
-          :badgecount='2'
+          :badgeCount='2'
         )
           i18n Messages
 
@@ -34,7 +34,7 @@ nav.c-navigation(
         style='opacity: 0; cursor: default;'
         icon='envelope'
         data-test='mailboxLink'
-        :badgecount='unreadMessagesCount || activityCount'
+        :badgeCount='unreadMessagesCount || activityCount'
       )
         i18n Inbox (deprecated)
 
@@ -46,7 +46,7 @@ nav.c-navigation(
           href='https://groupincome.org/blog/'
           target='_blank'
         )
-          i18n Blog
+          i18n(:class="isDarkTheme ? 'has-text-light-grey' : ''") Blog
 
         list-item(
           tag='a'
@@ -54,7 +54,7 @@ nav.c-navigation(
           href='https://groupincome.org/faq/'
           target='_blank'
         )
-          i18n Help &amp; Feedback
+          i18n(:class="isDarkTheme ? 'has-text-light-grey' : ''") Help &amp; Feedback
 
         list-item(
           tag='a'
@@ -62,7 +62,7 @@ nav.c-navigation(
           href='https://groupincome.org/donate/'
           target='_blank'
         )
-          i18n Donate
+          i18n(:class="isDarkTheme ? 'has-text-light-grey' : ''") Donate
       profile
 </template>
 

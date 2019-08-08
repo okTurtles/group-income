@@ -6,12 +6,10 @@
     strong(data-test='proposal') {{ proposalText }}
 
   .column.is-3
-    button.is-success.is-fullwidth
-      i18n For
+    i18n.is-success.is-fullwidth(tag='button') For
 
   .column.is-3
-    button.is-danger.is-fullwidth
-      i18n Against
+    i18n.is-danger.is-fullwidth(tag='button') Against
 
   p.column.is-12.is-size-7.is-italic
     | {{votesCount}}

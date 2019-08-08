@@ -1,14 +1,14 @@
 <template lang="pug">
 .c-group-members(data-test='groupMembers')
   .c-group-members-header
-    label.label Members
+    i18n.label(tag='label') Members
 
     button.button.is-small.is-outlined(
       data-test='inviteButton'
       @click='invite'
     )
       i.icon-plus
-      | Add
+      i18n Add
 
   ul
     li.c-group-member(

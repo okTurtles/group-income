@@ -1,8 +1,6 @@
 <template lang='pug'>
 .field
-  label.label(v-if='label')
-    i18n {{ label }}
-
+  i18n.label(tag='label' v-if='label') {{ label }}
   .input-combo
     input.input(
       :type="isLock ? 'password' : 'text'"
@@ -14,19 +12,17 @@
       v-model='value[name]'
       @input='v[name].$touch()'
     )
-    button.is-icon(
+    .button.is-icon(
       v-if='hasIconRight'
-      @click.stop='isLock = !isLock'
+      @click.prevent='isLock = !isLock'
     )
-      i(
-        :class="isLock ? 'icon-eye' : 'icon-eye-slash'"
-      )
+      i(:class="isLock ? 'icon-eye' : 'icon-eye-slash'")
 
-  p.error(
+  i18n.error(
+    tag='p'
     v-show='v[name].$error'
     data-test='badPassword'
-  )
-    i18n {{ v[name].$error }}
+  ) {{ v[name].$error }}
 </template>
 
 <script>

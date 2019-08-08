@@ -11,16 +11,16 @@ main.c-splash(
   h1.c-title
     i18n Welcome {{ userName }}!
 
-  p.has-text-strong.c-description
+  p.has-text-dark.c-description
     i18n You are now embarking on a new journey. We hope you have a blast!
 
   .buttons.is-centered
-    button(
+    i18n(
+      tag='button'
       :disabled='isButtonClicked'
       @click='toDashboard'
       data-test='toDashboardBtn'
-    )
-      i18n Awesome
+    ) Awesome
 
   confetti-animation
 </template>

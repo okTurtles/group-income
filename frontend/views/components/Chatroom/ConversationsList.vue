@@ -1,6 +1,6 @@
 <template lang="pug">
 .c-conversation-list
-  label.label {{title}}
+  i18n.label(tag='label') {{title}}
 
   ul
     list-item(
@@ -9,7 +9,7 @@
       tag='router-link'
       variant='solid'
       :icon='getIcon(id)'
-      :badgecount='list.conversations[id].unreadCount'
+      :badgeCount='list.conversations[id].unreadCount'
       :to='buildUrl(id)'
     )
       avatar(

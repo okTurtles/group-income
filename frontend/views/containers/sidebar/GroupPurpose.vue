@@ -1,14 +1,15 @@
 <template lang="pug">
 .c-group-purpose
   .c-group-purpose-header
-    label.label
-      i18n About the group
+    i18n.label(tag='label') About the group
 
   p(data-test='sharedValues')
     | {{ currentGroupState.sharedValues }}
 
-  button.link(@click='updateSharedValues')
-    i18n Edit
+  i18n.link(
+    tag='button'
+    @click='updateSharedValues'
+  ) Edit
 </template>
 
 <script>

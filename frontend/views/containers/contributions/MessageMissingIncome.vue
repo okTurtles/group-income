@@ -3,7 +3,7 @@ div(v-on='$listeners')
   .c-header
     button.is-small.is-outlined
       i.icon-plus
-      | Add Income Details
+      i18n Add Income Details
 
   i18n.has-text-light(tag='p') Sharing a few income details helps ensure all group members meet the mincome.
 

@@ -2,8 +2,7 @@
 page(pageTestName='dashboard' pageTestHeaderName='groupName')
   template(#title='') Mailbox
   template(#sidebar='')
-    h3
-      i18n Menu
+    i18n(tag='h3') Menu
     ul
       li
         a.c-item-link(
@@ -27,12 +26,11 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
 
   article(v-if="ephemeral.mode === 'Compose'")
     .p-section-header
-      h3
-        i18n New Message
+      i18n(tag='h3') New Message
 
     .p-section
       .field
-        label.label To:
+        i18n.label(tag='label') To:
         .input-combo
           input.input(
             type='text'
@@ -43,8 +41,10 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
           button.is-icon(@click='addRecipient')
             i.icon-plus
 
-        p.error(v-if='ephemeral.error')
-          i18n Invalid Username
+        i18n.error(
+          v-if='ephemeral.error'
+          tag='p'
+        ) Invalid Username
 
       table
         tr(
@@ -56,7 +56,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
             i.icon-times-circle(@click='removeRecipient(index)')
 
       .field
-        label.label Compose:
+        i18n.label(tag='label') Compose:
         textarea.textarea(
           v-model='ephemeral.composedMessage'
           data-test='composedMessage'
@@ -65,18 +65,18 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
         p.error(v-if='ephemeral.errorMsg') {{ephemeral.errorMsg}}
 
       .buttons
-        button.button.is-danger(
+        i18n.is-danger(
+          tag='button'
           type='submit'
           @click='cancel'
-        )
-          i18n Cancel
+        ) Cancel
 
-        button.button.is-success(type='submit'
+        i18n.is-success(type='submit'
+          tag='button'
           data-test='sendButton'
           @click='send'
           :disabled='!ephemeral.composedMessage'
-        )
-          i18n Send
+        ) Send
 
   article(v-if="ephemeral.mode === 'Read'")
     .p-section-header
@@ -96,25 +96,24 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
       ) {{ephemeral.currentMessage.data.message}}
 
       .buttons
-        button.button(
+        i18n.button(
+          tag='button'
           type='submit'
           @click='inboxMode'
-        )
-          i18n Return
+        ) Return
 
-        button.button.is-danger(
+        i18n.button.is-danger(
+          tag='button'
           v-if="ephemeral.currentMessage.data.messageType === 'Message'"
           type='submit'
           @click='remove(index)'
-        )
-          i18n Delete
+        ) Delete
 
   article(v-if="ephemeral.mode === 'Inbox' && proposals.length")
     .p-section-heading
 
     .p-section
-      h3
-        i18n Proposals
+      i18n(tag='h3') Proposals
 
       .c-message(v-for='(proposal, index) in proposals' :key='`proposal-${index}`')
         avatar(src='/assets/images/default-avatar.png' alt='' @click='respondToProposal(index)')
@@ -132,8 +131,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
 
   article(v-if="ephemeral.mode === 'Inbox' && invites.length")
     .p-section
-      h3
-        i18n Invites
+      i18n(tag='h3') Invites
       .c-message(
         v-for='(message, index) in invites'
         :key='`message-${index}`'
@@ -154,8 +152,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
           i.icon-user-plus
   article(v-if="ephemeral.mode === 'Inbox'" data-test='inbox')
     .p-section
-      h3
-        i18n Inbox
+      i18n(tag='h3') Inbox
 
       .c-message(v-for='(message, index) in inbox' :key='`inbox-message-${index}`')
         avatar(
@@ -180,8 +177,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
           i.icon-times-circle
 
       div(v-if='!inbox.length')
-        p.info
-          i18n No Messages
+        i18n.info(tag='p') No Messages
 </template>
 
 <script>
@@ -369,7 +365,7 @@ export default {
   i {
     margin-right: 1rem;
     font-size: 0.77rem;
-    color: #7a7a7a;
+    color: $text-light;
     transition: transform cubic-bezier(0.18, 0.89, 0.32, 1.28) 0.3s, color ease-in 0.3s;
   }
 

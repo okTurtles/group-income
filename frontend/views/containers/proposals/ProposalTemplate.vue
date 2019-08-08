@@ -1,23 +1,62 @@
-<template lang="pug">
-modal-template
-  template(#title='')
-    i18n New Proposal
+<template lang='pug'>
+  modal-template(class='has-background is-centered')
+    template(slot='subtitle')
+      i18n New proposal
+    template(slot='title')
+      i18n(v-if='isConfirmation') Your proposal was created
+      i18n(v-else) {{ title }}
 
-  template(#subtitle='')
-    | {{ subTitle }}
+    form
+      transition(name='fade' mode='out-in')
+        slot
 
-  slot
+        .confirmation(v-if='isConfirmation')
+          img(src='/assets/images/group-vote.png' alt='Group vote')
+          p(v-html="L('Members of your group will now be asked to vote.</br>You need 8 yes votes for your proposal to be accepted.')")
 
-  template(#errors='')
-    | {{ submitError }}
+      .buttons(:class='{ "is-centered": isConfirmation }')
+        button.is-outlined(
+          v-if='!isConfirmation'
+          @click.prevent='prev'
+          data-test='prevBtn'
+        )
+          i18n {{ currentStep === 0 ? 'Cancel' : 'Back' }}
 
-  template(#buttons='')
-    button(@click='onSubmit')
-      i18n Submit Proposal
+        button.is-success(
+          v-if='isNextStep'
+          ref='next'
+          @click.prevent='next'
+          :disabled='disabled'
+          data-test='nextBtn'
+        )
+          i18n Next
+          i.icon-arrow-right
+
+        i18n.is-success(
+          tag='button'
+          v-if='isLastStep'
+          ref='finish'
+          @click.prevent='submit'
+          :disabled='disabled'
+          data-test='finishBtn'
+        ) Create Proposal
+
+        i18n.is-outlined(
+          tag='button'
+          v-if='isConfirmation'
+          ref='close'
+          @click.prevent='close'
+          data-test='closeBtn'
+        ) Awesome
+
+    template(#footer='' v-if='!isConfirmation')
+      i18n(v-if='footer') {{ footer }}
 </template>
 
 <script>
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
+import { CLOSE_MODAL } from '@utils/events.js'
+import sbp from '~/shared/sbp.js'
 
 export default {
   name: 'ModalForm',
@@ -25,9 +64,73 @@ export default {
     ModalTemplate
   },
   props: {
-    subTitle: String,
-    submitError: String,
-    onSubmit: Function
+    title: {
+      type: String,
+      required: true
+    },
+    footer: {
+      type: String,
+      required: true
+    },
+    disabled: Boolean,
+    maxSteps: {
+      type: Number,
+      required: true
+    }
+  },
+  data () {
+    return {
+      currentStep: 0
+    }
+  },
+  methods: {
+    close () {
+      sbp('okTurtles.events/emit', CLOSE_MODAL)
+    },
+    next () {
+      this.currentStep++
+      this.updateParent()
+    },
+    prev () {
+      if (this.currentStep > 0) {
+        this.currentStep--
+        this.updateParent()
+      } else {
+        this.close()
+      }
+    },
+    updateParent () {
+      this.$emit('update:currentStep', this.currentStep)
+    },
+    submit () {
+      this.next()
+      this.$emit('submit')
+    }
+  },
+  computed: {
+    isNextStep () {
+      return this.currentStep < this.maxSteps - 1
+    },
+    isLastStep () {
+      return this.currentStep === this.maxSteps - 1
+    },
+    isConfirmation () {
+      return this.currentStep === this.maxSteps
+    }
   }
 }
 </script>
+
+<style lang="scss" scoped>
+@import "../../../assets/style/_variables.scss";
+
+.confirmation {
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+
+  img {
+    margin: 0 auto 2rem;
+  }
+}
+</style>

@@ -19,8 +19,10 @@ header.c-header(
         template(v-if='title') {{ title }}
         slot(v-else='' name='title')
 
-      label.label(v-if='description')
-        | {{ description }}
+      i18n.label(
+        v-if='description'
+        tag='label'
+      ) {{ description }}
 
     slot(name='actions')
   slot

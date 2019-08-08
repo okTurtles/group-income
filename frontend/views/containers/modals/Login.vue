@@ -11,8 +11,7 @@
       @submit.prevent='login'
     )
       .field
-        label.label
-          i18n Username
+        i18n.label(tag='label') Username
 
         input.input#loginName(
           :class="{'error': $v.form.name.$error}"
@@ -25,10 +24,10 @@
           autofocus
           data-test='loginName'
         )
-        p.error(
+        i18n.error(
           v-show='$v.form.name.$error'
-        )
-          i18n username cannot contain spaces
+          tag='p'
+        ) U?sername cannot contain spaces
 
       form-password(
         :label='L("Password")'
@@ -44,18 +43,20 @@
       p.error(v-if='form.response') {{ form.response }}
 
       .buttons.is-centered
-        button(
+        i18n(
+          tag='button'
           :disabled='$v.form.$invalid'
           data-test='loginSubmit'
           type='submit'
-        )
-          i18n Login
+        ) Login
 
     template(slot='footer')
       p
         i18n Not on Group Income yet?&nbsp;
-        a.link(@click='showSignUpModal')
-          i18n Create an account
+        i18n.link(
+          tag='a'
+          @click='showSignUpModal'
+        ) Create an account
 </template>
 
 <script>

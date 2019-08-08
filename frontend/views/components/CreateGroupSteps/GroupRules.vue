@@ -1,11 +1,8 @@
 <template lang="pug">
 .c-group-rules(data-test='rulesStep')
-  p.steps-title
-    | 3.&nbsp;
-    i18n  Voting Rules
+  i18n.steps-title(tag='p') 3. Voting Rules
 
-  label.label
-    i18n What percentage approval is necessary to adjust the group rules?
+  i18n.label(tag='label') What percentage approval is necessary to adjust the group rules?
 
   .c-rules
     .c-rule
@@ -26,8 +23,7 @@
         :knobColor="changeColor"
         circleColor='#F4F8E7'
       )
-      p.subtitle
-        i18n Change Rules
+      i18n.subtitle(tag='p') Change Rules
 
     .c-rule
       p.c-percent
@@ -47,8 +43,7 @@
         :knobColor="approveColor"
         circleColor='#F4F8E7'
       )
-      p.subtitle
-        i18n Add Member
+      i18n.subtitle(tag='p') Add Member
 
     .c-rule
       p.c-percent
@@ -68,8 +63,7 @@
         :knobColor="removeColor"
         circleColor='#F4F8E7'
       )
-      p.subtitle
-        i18n Remove Member
+      i18n.subtitle(tag='p')  Remove Member
 
   transition(name='slidedown')
     message(

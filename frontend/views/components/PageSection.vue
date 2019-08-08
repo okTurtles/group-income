@@ -7,7 +7,7 @@ section.p-section
 
 <script>
 export default {
-  name: 'DashboardSection',
+  name: 'PageSection',
   props: {
     title: String
   }

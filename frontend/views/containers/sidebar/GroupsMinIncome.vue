@@ -1,12 +1,14 @@
 <template lang="pug">
 div
-  label.label Minimum Income
+  i18n.label(tag='label') Minimum Income
 
   p.income-provided(data-test='minIncome')
     | {{ currency }}{{ group.incomeProvided }}
 
-  button.link(@click='openProposal')
-    i18n Change
+  i18n.link(
+    tag='button'
+    @click='openProposal'
+  ) Change
 </template>
 
 <script>
@@ -26,7 +28,7 @@ export default {
   },
   methods: {
     openProposal () {
-      sbp('okTurtles.events/emit', LOAD_MODAL, 'Mincome')
+      sbp('okTurtles.events/emit', LOAD_MODAL, 'MincomeProposal')
     }
   }
 }

@@ -41,8 +41,7 @@
             i18n The profile picture must be a valid url
 
         .field
-          label.label
-            i18n Display Name
+          i18n.label(tag='label') Display Name
 
           input.input(
             name='displayName'
@@ -52,12 +51,10 @@
             data-test='displayName'
           )
 
-          p.help
-            i18n This is how others will see your name accross the platform.
+          i18n.help(p) This is how others will see your name accross the platform.
 
         .field
-          label.label
-            i18n Bio
+          i18n.label(tag='label') Bio
 
           textarea.textarea(
             type='text'
@@ -68,8 +65,7 @@
           )
 
         .field
-          label.label
-            i18n Email
+          i18n.label(tag='label') Email
 
           input.input(
             :class="{'error': $v.edited.email.$error}"
@@ -81,28 +77,28 @@
             data-test='profileEmail'
           )
 
-          p.error(v-if='$v.edited.email.$error')
-            i18n Not an email
+          i18n.error(
+            v-if='$v.edited.email.$error'
+            tag='p'
+          ) Not an email
 
         .field
-          label.label
-            i18n Password
-
+          i18n.label(tag='label') Password
           .fake-password **********
 
-          button.link(
+          i18n.link(
+            tag='button'
             data-test='passwordBtn'
             @click.prevent="openModal('PasswordModal')"
-          )
-            i18n Update Password
+          ) Update Password
 
         .buttons
-          button.is-success(
+          i18n.is-success(
+            tag='button'
             :disabled='$v.edited.$invalid'
             type='submit'
             data-test='submit'
-          )
-            i18n Save account changes
+          ) Save account changes
     hr
     section.section
       form(
@@ -110,17 +106,17 @@
         name='DeleteProfileForm'
         @submit.prevent='save'
       )
-        label.label Delete account
+        i18n.label(tag='label') Delete account
         p
           i18n Deleting your account will erase all your data, and remove you from the groups you belong to.
           i18n.is-danger This action cannot be undone.
 
         .buttons
-          button.error.is-outlined(
+          i18n.button.error.is-outlined(
+            tag='button'
             type='submit'
             data-test='submit'
-          )
-            i18n Delete account
+          ) Delete account
 </template>
 
 <script>

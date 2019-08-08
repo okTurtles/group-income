@@ -13,10 +13,16 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-else='')
     p.error(v-if='ephemeral.errorMsg') {{ephemeral.errorMsg}}
 
     .buttons
-      button.is-outlined(data-test='declineLink' v-on:click='decline')
-        | No, thanks
-      button(data-test='acceptLink' v-on:click='accept')
-        | Join Group
+      i18n.is-outlined(
+        tag='button'
+        data-test='declineLink'
+        v-on:click='decline'
+      )  No, thanks
+      i18n(
+        tag='button'
+        data-test='acceptLink'
+        v-on:click='accept'
+      ) Join Group
 </template>
 
 <script>

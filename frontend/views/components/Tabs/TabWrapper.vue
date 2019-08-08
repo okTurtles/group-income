@@ -250,7 +250,6 @@ $closeMobileBarBgColor: #3c3c3c;
 }
 
 .tab-link {
-  color: $text-strong;
   display: flex;
   justify-content: space-between;
   letter-spacing: -0.4px;

@@ -50,10 +50,13 @@
       template(slot='errors') {{ form.response }}
 
       template(slot='buttons')
-        button.is-outlined(
+        i18n.is-outlined(
+          tag='button'
           @click='close'
         ) Cancel
-        button.is-success(
+
+        i18n.is-success(
+          tag='button'
           @click='changePassword'
           :disabled='$v.form.$invalid'
         ) Change password

@@ -1,4 +1,5 @@
 <template lang="pug">
+//- TODO: Remove?
 div
   h1(data-test='summaryStep')
     i18n Review &amp; Finish

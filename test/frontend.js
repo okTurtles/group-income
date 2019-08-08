@@ -487,19 +487,17 @@ describe('Frontend', function () {
     })
   })
 
-  // TODO: implement test on the new group settings page once it will be implemented
   // describe('Test Local Group Related Functions', function () {
   //   it('Test Group Profile Attributes Change', async function () {
   //     this.timeout(4000)
 
   //     await n
   //       .use(relogin(username))
-  //       .goto(page('dashboard'))
-  //       .click(elT('/group-settings'))
-  //       .wait(elT('profilePicture'))
+  //       .wait(transitionDelay)
+  //       .wait(elT('settingsBtn'))
+  //       .click(elT('settingsBtn'))
   //       .wait(elT('GroupProfileContributionAmount'))
   //       .insert(elT('GroupProfileContributionAmount'), 100)
-  //       .wait(elT('GroupProfileReceivingAmount'))
   //       .insert(elT('GroupProfileReceivingAmount'), 50)
   //       .click(elT('GroupProfileSubmitBtn'))
   //       .wait(elT('GroupProfileSaved'))
