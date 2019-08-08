@@ -1,5 +1,9 @@
 'use strict'
 
-export const PROPOSAL_INVITE = '@proposals/invite'
-export const PROPOSAL_MEMBER_REMOVE = '@proposals/member-remove'
-export const PROPOSAL_MINCOME_CHANGE = '@proposals/mincome-change'
+import { literalOf, unionOf } from '~/frontend/utils/flowTyper.js'
+
+export const PROPOSAL_INVITE = 'invite'
+export const PROPOSAL_REMOVE_MEMBER = 'remove-member'
+export const PROPOSAL_PROP_CHANGE = 'prop-change'
+
+export const proposalType = unionOf(literalOf(PROPOSAL_INVITE), literalOf(PROPOSAL_REMOVE_MEMBER), literalOf(PROPOSAL_PROP_CHANGE))

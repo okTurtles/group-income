@@ -182,7 +182,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
 
 <script>
 import sbp from '~/shared/sbp.js'
-import contracts from '@model/contracts.js'
+import { TYPE_INVITE, TYPE_MESSAGE } from '@model/contracts/mailbox.js'
 import L from '@view-utils/translations.js'
 import Page from './Page.vue'
 import Avatar from '@components/Avatar.vue'
@@ -217,10 +217,10 @@ export default {
   },
   computed: {
     inbox () {
-      return this.$store.getters.mailbox.filter(msg => msg.data.messageType === contracts.MailboxPostMessage.TypeMessage).sort(criteria)
+      return this.$store.getters.mailbox.filter(msg => msg.data.messageType === TYPE_MESSAGE).sort(criteria)
     },
     invites () {
-      return this.$store.getters.mailbox.filter(msg => msg.data.messageType === contracts.MailboxPostMessage.TypeInvite).sort(criteria)
+      return this.$store.getters.mailbox.filter(msg => msg.data.messageType === TYPE_INVITE).sort(criteria)
     },
     proposals () {
       return this.$store.getters.proposals
@@ -270,7 +270,7 @@ export default {
           // TODO:: latestContractState is inefficient
           const state = await sbp('state/latestContractState', recipient.contractID)
           const message = await sbp('gi.contracts/mailbox/postMessage/create', {
-            messageType: contracts.MailboxPostMessage.TypeMessage,
+            messageType: TYPE_MESSAGE,
             from: this.$store.state.loggedIn.username,
             message: this.ephemeral.composedMessage
           }, state.attributes.mailbox)

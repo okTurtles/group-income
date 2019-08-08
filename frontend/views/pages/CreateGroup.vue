@@ -54,7 +54,7 @@ main.main#create-group-page
 import sbp from '~/shared/sbp.js'
 import { blake32Hash } from '~/shared/functions.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
-import contracts from '@model/contracts.js'
+import { TYPE_INVITE } from '@model/contracts/mailbox.js'
 import L from '@view-utils/translations.js'
 import { decimals } from '@view-utils/validators.js'
 import StepAssistant from '@view-utils/stepAssistant.js'
@@ -168,7 +168,7 @@ export default {
             {
               from: this.$store.getters.currentGroupState.groupName,
               headers: [this.$store.state.currentGroupId],
-              messageType: contracts.MailboxPostMessage.TypeInvite
+              messageType: TYPE_INVITE
             },
             invitee.state.attributes.mailbox
           )

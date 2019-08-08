@@ -18,7 +18,7 @@
 
 <script>
 import L from '@view-utils/translations.js'
-import contracts from '@model/contracts.js'
+import * as proposals from '@model/contracts/voting/proposals.js'
 
 export default {
   name: 'VotingBanner',
@@ -35,21 +35,21 @@ export default {
     proposalText: function () {
       let proposal = ''
       switch (this.proposal.type) {
-        case contracts.GroupProposal.TypeInvitation: {
+        case proposals.PROPOSAL_INVITE: {
           proposal = L('invite {candidate} to the group.',
             {
               candidate: this.proposal.candidate
             })
           break
         }
-        case contracts.GroupProposal.TypeRemoval: {
+        case proposals.PROPOSAL_REMOVE_MEMBER: {
           proposal = L('remove {member} from the group.',
             {
               member: this.proposal.candidate
             })
           break
         }
-        case contracts.GroupProposal.TypeChange: {
+        case proposals.PROPOSAL_PROP_CHANGE: {
           proposal = L('change {property} to {value}.',
             {
               property: this.proposal.property,

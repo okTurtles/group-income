@@ -43,11 +43,7 @@ sbp('sbp/selectors/register', {
     const state = {}
     for (const e of events) {
       selectorIsContract(e.type())
-      sbp(e.type(), state, {
-        data: e.data(),
-        meta: e.meta(),
-        hash: e.hash()
-      })
+      sbp(e.type(), state, { data: e.data(), meta: e.meta(), hash: e.hash() })
     }
     return state
   },

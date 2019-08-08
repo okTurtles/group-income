@@ -8,7 +8,7 @@ export const VOTE_FOR = 1
 
 export const voteType = unionOf(literalOf(VOTE_AGAINST), literalOf(VOTE_INDIFFERENT), literalOf(VOTE_FOR))
 
-export const RULE_THRESHOLD = '@voting-rule/threshold'
+export const RULE_THRESHOLD = 'threshold'
 
 export const ruleType = unionOf(literalOf(RULE_THRESHOLD))
 

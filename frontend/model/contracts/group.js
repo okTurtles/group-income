@@ -4,17 +4,22 @@ import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import { merge } from '../../utils/giLodash.js'
 import { DefineContract } from './Contract.js'
-import {
-  objectOf,
-  // arrayOf,
-  optional,
-  string,
-  number,
-  object
-} from '~/frontend/utils/flowTyper.js'
+import { objectOf, optional, string, number, object, unionOf, literalOf } from '~/frontend/utils/flowTyper.js'
 import * as votingRules from './voting/rules.js'
+import * as proposals from './voting/proposals.js'
 
-export default DefineContract({
+// for gi.contracts/group/payment
+export const PAYMENT_PENDING = 'pending'
+export const PAYMENT_CANCELLED = 'cancelled'
+export const PAYMENT_ERROR = 'error'
+export const PAYMENT_COMPLETED = 'completed'
+export const PAYMENT_TYPE_MANUAL = 'manual'
+export const PAYMENT_TYPE_BITCOIN = 'bitcoin'
+export const PAYMENT_TYPE_PAYPAL = 'paypal'
+export const paymentType = unionOf(literalOf(PAYMENT_TYPE_MANUAL), literalOf(PAYMENT_TYPE_BITCOIN), literalOf(PAYMENT_TYPE_PAYPAL))
+export const paymentStatus = unionOf(literalOf(PAYMENT_PENDING), literalOf(PAYMENT_CANCELLED), literalOf(PAYMENT_ERROR), literalOf(PAYMENT_COMPLETED))
+
+DefineContract({
   name: 'gi.contracts/group',
   contract: {
     validate: objectOf({
@@ -75,21 +80,11 @@ export default DefineContract({
         amount: number,
         currency: string,
         txid: string,
-        status: string,
-        paymentType: string,
+        status: paymentStatus,
+        paymentType: paymentType,
         details: optional(object),
         memo: optional(string)
       }),
-      // TODO: place these someplace else? or implement it?
-      constants: {
-        StatusPending: 'pending',
-        StatusCancelled: 'cancelled',
-        StatusError: 'error',
-        StatusCompleted: 'completed',
-        TypeManual: 'manual',
-        TypeBitcoin: 'bitcoin',
-        TypePayPal: 'paypal'
-      },
       process (state, { data, hash }) {
         state.payments[hash] = { data, updates: [] }
       }
@@ -108,14 +103,8 @@ export default DefineContract({
       }
     },
     'gi.contracts/group/proposal': {
-      constants: {
-        // TODO: delete these and replace all usages with values from model/voting/proposals.js
-        TypeInvitation: 'invitationProposal',
-        TypeRemoval: 'removalProposal',
-        TypeChange: 'changeProposal'
-      },
       validate: objectOf({
-        proposalType: string, // constant from frontend/model/voting/proposals.js
+        proposalType: proposals.proposalType,
         proposalData: object,
         votingRule: votingRules.ruleType,
         expires: string // calculate by grabbing proposal expiry from group properties and add to `meta.date`
@@ -205,7 +194,9 @@ export default DefineContract({
             groupProfile: {}
           })
         }
-        Vue.nextTick(() => sbp('okTurtles.events/emit', 'gi.contracts/group/invite-accept', state, { data }))
+        // NOTE: handleEvent already emits 'gi.contracts/group/inviteAccept/process' for us
+        //       but it doesn't pass in the state object for this contract...
+        Vue.nextTick(() => sbp('okTurtles.events/emit', 'gi.contracts/group/inviteAccept', state, { data }))
       }
     },
     // TODO: remove group profile when leave group is implemented
@@ -229,7 +220,7 @@ export default DefineContract({
 // This is critical to the function of that latest contract hash.
 // They should only coordinate the actions of outside contracts.
 // Otherwise `latestContractState` and `handleEvent` will not produce same state!
-sbp('okTurtles.events/on', 'gi.contracts/group/invite-accept', async (state, { data }) => {
+sbp('okTurtles.events/on', 'gi.contracts/group/inviteAccept', async (state, { data }) => {
   const rootState = sbp('state/vuex/state')
   // TODO: per #257 this will have to be encompassed in a recoverable transaction
   if (data.username === rootState.loggedIn.username) {

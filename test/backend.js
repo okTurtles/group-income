@@ -4,13 +4,15 @@ import sbp from '~/shared/sbp.js'
 import '~/shared/domains/okTurtles/events.js'
 import chalk from 'chalk'
 import { GIMessage } from '~/shared/GIMessage.js'
-import contracts from '~/frontend/model/contracts.js'
 import * as _ from '~/frontend/utils/giLodash.js'
 import { createWebSocket } from '~/frontend/controller/backend.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 // import { blake2bInit, blake2bUpdate, blake2bFinal } from 'blakejs'
 // import multihash from 'multihashes'
 import { blake32Hash } from '~/shared/functions.js'
+import { TYPE_INVITE } from '~/frontend/model/contracts/mailbox.js'
+import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts/group.js'
+import '~/frontend/model/contracts/identity.js'
 import '~/frontend/controller/namespace.js'
 
 global.fetch = require('node-fetch')
@@ -46,11 +48,18 @@ const vuexState = {
 
 sbp('sbp/selectors/register', {
   // intercept 'handleEvent' from backend.js
-  'state/vuex/dispatch': function (action, event) {
+  'state/vuex/dispatch': function (action, e) {
     switch (action) {
       case 'handleEvent':
-        contracts[event.type()].validate(event.data())
-        sbp('okTurtles.events/emit', event.hash(), event)
+        if (e.isFirstMessage()) {
+          vuexState[e.hash()] = {}
+        }
+        sbp(e.type(), vuexState[e.message().contractID], {
+          data: e.data(),
+          meta: e.meta(),
+          hash: e.hash()
+        })
+        sbp('okTurtles.events/emit', e.hash(), e)
         break
       default: throw new Error(`unknown dispatch: ${action}`)
     }
@@ -100,8 +109,8 @@ describe('Full walkthrough', function () {
         amount: amount,
         currency: currency,
         txid: String(parseInt(Math.random() * 10000000)),
-        status: contracts.GroupPaymentCreate.StatusPending,
-        paymentType: contracts.GroupPaymentCreate.TypeManual
+        status: PAYMENT_PENDING,
+        paymentType: PAYMENT_TYPE_MANUAL
       },
       parentHash
     )
@@ -220,13 +229,9 @@ describe('Full walkthrough', function () {
       // Illustraiting its importance: when converting the code below from
       // raw-objects to instances, the hash check failed and I caught several bugs!
       events = events.map(e => GIMessage.deserialize(e))
-      let contract = contracts[events[0].type()]
-      var state = _.cloneDeep(contract.vuexModule.state)
+      var state = {}
       for (let e of events) {
-        contract.vuexModule.mutations[e.type()](state, {
-          data: e.data(),
-          hash: e.hash()
-        })
+        sbp(e.type(), state, { data: e.data(), meta: e.meta(), hash: e.hash() })
       }
       console.log(bold.red('FINAL STATE:'), state)
       // 3. get bob's mailbox contractID from his identity contract attributes
@@ -242,7 +247,7 @@ describe('Full walkthrough', function () {
       sbp('gi.contracts/mailbox/postMessage/create',
         {
           from: users.bob.data().attributes.name,
-          messageType: contracts.MailboxPostMessage.TypeInvite,
+          messageType: TYPE_INVITE,
           message: groups.group1.hash(),
           sentDate: new Date().toISOString()
         },

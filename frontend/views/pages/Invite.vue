@@ -29,7 +29,8 @@ page(pageTestName='invite' pageTestHeaderName='invite')
 
 <script>
 import sbp from '~/shared/sbp.js'
-import contracts from '@model/contracts.js'
+import { PROPOSAL_INVITE } from '@model/contracts/voting/proposals.js'
+import { TYPE_INVITE } from '@model/contracts/mailbox.js'
 import L from '@view-utils/translations.js'
 import Page from './Page.vue'
 import { GroupInvitees } from '@components/CreateGroupSteps/index.js'
@@ -88,7 +89,7 @@ export default {
             {
               from: groupName,
               headers: [groupId],
-              messageType: contracts.MailboxPostMessage.TypeInvite
+              messageType: TYPE_INVITE
             },
             mailbox
           )
@@ -104,7 +105,7 @@ export default {
             const proposal = await sbp('gi.contracts/group/proposal/create',
               {
                 // for proposal template selection in Vote.vue
-                type: contracts.GroupProposal.TypeInvitation,
+                type: PROPOSAL_INVITE,
                 // calculate the voting threshold from the group data
                 threshold: this.currentGroupState.memberApprovalThreshold,
                 candidate: memberName,

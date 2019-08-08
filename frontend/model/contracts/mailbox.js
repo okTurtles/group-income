@@ -2,15 +2,15 @@
 
 // import Vue from 'vue'
 import { DefineContract } from './Contract.js'
-import {
-  objectOf,
-  arrayOf,
-  string,
-  object,
-  optional
-} from '~/frontend/utils/flowTyper.js'
+import { objectOf, arrayOf, string, object, unionOf, literalOf, optional } from '~/frontend/utils/flowTyper.js'
 
-export default DefineContract({
+export const TYPE_INVITE = 'invite'
+export const TYPE_MESSAGE = 'message'
+export const TYPE_PROPOSAL = 'proposal'
+
+export const messageType = unionOf(literalOf(TYPE_INVITE), literalOf(TYPE_MESSAGE), literalOf(TYPE_PROPOSAL))
+
+DefineContract({
   name: 'gi.contracts/mailbox',
   contract: {
     validate: object,
@@ -21,16 +21,11 @@ export default DefineContract({
   actions: {
     'gi.contracts/mailbox/postMessage': {
       validate: objectOf({
-        messageType: string,
+        messageType: messageType,
         from: string,
         message: optional(string),
         headers: optional(arrayOf(string))
       }),
-      constants: {
-        TypeInvite: 'Invite',
-        TypeMessage: 'Message',
-        TypeProposal: 'Proposal'
-      },
       process (state, { data, meta, hash }) {
         state.messages.push({ data, meta, hash })
       }
@@ -40,51 +35,9 @@ export default DefineContract({
         sender: string
       }),
       process (state, { data }) {
-        // TODO: maybe replace this via OP_KEY_*?
+        // TODO: replace this via OP_KEY_*?
         throw new Error('unimplemented!')
       }
     }
   }
 })
-
-/*
-export default DefineContract({
-  'MailboxContract': {
-    isConstructor: true,
-    validate: object,
-    vuexModuleConfig: {
-      initialState: { messages: [] },
-      mutation: function (state, { data }) {}
-    }
-  },
-  'MailboxPostMessage': {
-    constants: {
-      TypeInvite: 'Invite',
-      TypeMessage: 'Message',
-      TypeProposal: 'Proposal'
-    },
-    validate: objectOf({
-      messageType: string,
-      from: string,
-      message: optional(string),
-      headers: optional(arrayOf(string))
-    }),
-    vuexModuleConfig: {
-      mutation: (state, { data, meta, hash }) => {
-        state.messages.push({ data, meta, hash })
-      }
-    }
-  },
-  'MailboxAuthorizeSender': {
-    validate: objectOf({
-      sender: string
-    }),
-    vuexModuleConfig: {
-      mutation: (state, { data }) => {
-        throw new Error('unimplemented!')
-        // state.authorizations[contracts.MailboxAuthorizeSender.authorization].data = data.sender
-      }
-    }
-  }
-})
-*/
