@@ -256,7 +256,10 @@ module.exports = (grunt) => {
       output: {
         format: 'system',
         dir: distJS,
-        sourcemap: development, // NOTE: Set to false to fix sourcemap issue. Please revert this change before opening a PR
+        // NOTE: If you are facing errors related to sourcemaps, set sourcemap to false.
+        // Read more about at docs/Troubleshooting.md.
+        // Please don't forget to revert this change before opening a PR.
+        sourcemap: development,
         sourcemapPathTransform: relativePath => {
           // const relativePath2 = '/' + path.relative('../../../', relativePath)
           const relativePath2 = path.relative('../', relativePath)
