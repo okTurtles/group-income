@@ -25,7 +25,8 @@
     color: currentColor;
   }
 
-  &:hover {
+  &:hover,
+  &:focus {
     color: $link-hover;
     border-color: transparent;
     transition: none;

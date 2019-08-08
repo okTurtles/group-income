@@ -1,3 +1,11 @@
+@mixin focusState($color) {
+  @media (hover: hover) {
+    &:focus {
+      box-shadow: 0 0 0 1px $background, 0 0 1px 2px $color;
+    }
+  }
+}
+
 button,
 .button {
   display: inline-flex;
@@ -16,7 +24,7 @@ button,
   border-color: transparent;
   border-width: 1px;
   background-color: $primary;
-  transition: filter 100ms ease-out;
+  transition: filter 100ms ease-out, box-shadow 150ms ease-in;
   font-weight: 600; // A11Y purposes
   font-size: 1rem;
   outline: none;
@@ -26,13 +34,19 @@ button,
     filter: contrast(1.2);
   }
 
+  @include focusState($primary);
+
   &.is-success {
     background-color: $success;
+
+    @include focusState($success);
   }
 
   &.is-danger,
   &.error {
     background-color: $danger;
+
+    @include focusState($danger);
   }
 
   [class^="icon-"] + span {
@@ -71,8 +85,10 @@ button,
       margin-left: 0;
     }
 
-    &:hover {
+    &:hover,
+    &:focus {
       color: $text;
+      box-shadow: none; // override @mixin focusState
     }
   }
 
@@ -81,15 +97,21 @@ button,
     border-color: $border;
     color: $text-light;
 
+    @include focusState($border);
+
     &.is-success {
       border-color: $success;
       color: $success;
+
+      @include focusState($success);
     }
 
     &.is-danger,
     &.error {
       border-color: $danger;
       color: $danger;
+
+      @include focusState($danger);
     }
   }
 
