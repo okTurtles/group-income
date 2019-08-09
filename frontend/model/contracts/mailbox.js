@@ -34,6 +34,7 @@ DefineContract({
         messageType: messageType,
         from: string,
         message: optional(string),
+        // TODO: these should be optional(object)
         headers: optional(arrayOf(string))
       }),
       process (state, { data, meta, hash }) {

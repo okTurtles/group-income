@@ -5,6 +5,8 @@ import Vue from 'vue'
 import { merge } from '../../utils/giLodash.js'
 import { DefineContract } from './Contract.js'
 import { objectOf, optional, string, number, object, unionOf, literalOf } from '~/frontend/utils/flowTyper.js'
+// TODO: use protocol versioning to load these (and other) files
+//       https://github.com/okTurtles/group-income-simple/issues/603
 import * as votingRules from './voting/rules.js'
 import * as proposals from './voting/proposals.js'
 
@@ -77,7 +79,7 @@ DefineContract({
         memo: optional(string)
       }),
       process (state, { data, hash }) {
-        state.payments[hash] = { data, updates: [] }
+        Vue.set(state.payments, hash, { data, updates: [] })
       }
     },
     'gi.contracts/group/paymentUpdate': {
@@ -101,13 +103,15 @@ DefineContract({
         expires: string // calculate by grabbing proposal expiry from group properties and add to `meta.date`
       }),
       process (state, { data, meta, hash }) {
+        // TODO: save all proposals disk so that we only keep open proposals in memory
         Vue.set(state.proposals, hash, { data, meta })
       }
     },
     'gi.contracts/group/proposalVote': {
       validate: objectOf({
         proposalHash: string,
-        vote: votingRules.voteType
+        vote: votingRules.voteType,
+        proposalPassPayload: optional(unionOf(object, string)) // TODO: this, somehow we need to send an OP_KEY_ADD GIMessage to add a generated once-only writeonly message public key to the contract, and (encrypted) include the corresponding invite link, also, we need all clients to verify that this message/operation was valid to prevent a hacked client from adding arbitrary OP_KEY_ADD messages, and automatically ban anyone generating such messages
       }),
       process (state, { data, meta }) {
         // TODO: rewrite all this

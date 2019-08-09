@@ -299,6 +299,7 @@ export default {
     },
     respondToInvite: function (index) {
       this.$store.commit('markMessageAsRead', this.invites[index].hash)
+      // TODO: this is a bad way to use headers, see related comment in mailbox.js
       this.$router.push({ path: '/join', query: { groupId: this.invites[index].data.headers[0], inviteHash: this.invites[index].hash } })
     },
     read: function ({ index, type }) {
