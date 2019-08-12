@@ -7,7 +7,7 @@ import { DefineContract } from './Contract.js'
 import { objectOf, optional, string, number, object, unionOf, literalOf } from '~/frontend/utils/flowTyper.js'
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income-simple/issues/603
-import votingRules, { voteType, ruleType, VOTE_INDIFFERENT } from './voting/rules.js'
+import votingRules, { ruleType, VOTE_UNDECIDED } from './voting/rules.js'
 import proposals, { proposalType, proposalSettingsType, archiveProposal, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from './voting/proposals.js'
 
 // for gi.contracts/group/payment ... TODO: put these in some other file?
@@ -115,14 +115,14 @@ DefineContract({
         Vue.set(state.proposals, hash, { data, meta, votes: {} })
         // TODO: handle RULE_DISAGREEMENT by creating a timer on all RULE_DISAGREEMENT
         //       proposals that runs the voting rule when it expires, and results in
-        //       VOTE_FOR if the result is VOTE_INDIFFERENT at the time of expiry.
+        //       VOTE_FOR if the result is VOTE_UNDECIDED at the time of expiry.
         //       This should be done in some global timer that runs once a second
       }
     },
     'gi.contracts/group/proposalVote': {
       validate: objectOf({
         proposalHash: string,
-        vote: voteType,
+        vote: string,
         passPayload: optional(unionOf(object, string)) // TODO: this, somehow we need to send an OP_KEY_ADD GIMessage to add a generated once-only writeonly message public key to the contract, and (encrypted) include the corresponding invite link, also, we need all clients to verify that this message/operation was valid to prevent a hacked client from adding arbitrary OP_KEY_ADD messages, and automatically ban anyone generating such messages
       }),
       process (state, { data, meta }) {
@@ -143,7 +143,7 @@ DefineContract({
         }
         // see if this is a deciding vote
         const result = votingRules[proposal.data.votingRule](state, proposal.data.proposalType, proposal.votes)
-        if (result !== VOTE_INDIFFERENT) {
+        if (result !== VOTE_UNDECIDED) {
           // handle proposal pass or fail
           proposals[proposal.data.proposalType][result](state, data)
         }

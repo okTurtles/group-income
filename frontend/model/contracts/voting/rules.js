@@ -2,22 +2,21 @@
 
 import { literalOf, unionOf } from '~/frontend/utils/flowTyper.js'
 
-export const VOTE_AGAINST = -1
-export const VOTE_INDIFFERENT = 0
-export const VOTE_FOR = 1
-
-export const voteType = unionOf(...[VOTE_AGAINST, VOTE_INDIFFERENT, VOTE_FOR].map(k => literalOf(k)))
+export const VOTE_AGAINST = ':against'
+export const VOTE_INDIFFERENT = ':indifferent'
+export const VOTE_UNDECIDED = ':undecided'
+export const VOTE_FOR = ':for'
 
 export const RULE_THRESHOLD = 'threshold'
 export const RULE_DISAGREEMENT = 'disagreement'
 
 const rules = {
-  // if this is not a deciding vote, return VOTE_INDIFFERENT
   [RULE_THRESHOLD]: function (state, proposalType, votes) {
+    votes = Object.values(votes)
     const threshold = state.settings.proposals[proposalType].ruleSettings[RULE_THRESHOLD].threshold
-    const totalIndifferent = Object.values(votes).filter(x => x === VOTE_INDIFFERENT).length
-    const totalFor = Object.values(votes).filter(x => x === VOTE_FOR).length
-    const totalAgainst = Object.values(votes).filter(x => x === VOTE_AGAINST).length
+    const totalIndifferent = votes.filter(x => x === VOTE_INDIFFERENT).length
+    const totalFor = votes.filter(x => x === VOTE_FOR).length
+    const totalAgainst = votes.filter(x => x === VOTE_AGAINST).length
     const totalForOrAgainst = totalFor + totalAgainst
     const population = Object.keys(state.profiles).length
     const turnout = totalForOrAgainst + totalIndifferent
@@ -34,13 +33,21 @@ const rules = {
     if (totalFor >= neededToPass) {
       return VOTE_FOR
     }
-    return totalFor + absent < neededToPass ? VOTE_AGAINST : VOTE_INDIFFERENT
+    return totalFor + absent < neededToPass ? VOTE_AGAINST : VOTE_UNDECIDED
   },
   [RULE_DISAGREEMENT]: function (state, proposalType, votes) {
+    votes = Object.values(votes)
     const disagreementThreshold = state.settings.proposals[proposalType].ruleSettings[RULE_DISAGREEMENT].threshold
-    const totalAgainst = Object.values(votes).filter(x => x === VOTE_AGAINST).length
-    console.debug(`votingRule ${RULE_DISAGREEMENT} for ${proposalType}:`, { totalAgainst, disagreementThreshold })
-    return totalAgainst >= disagreementThreshold ? VOTE_AGAINST : VOTE_INDIFFERENT
+    const totalFor = votes.filter(x => x === VOTE_FOR).length
+    const totalAgainst = votes.filter(x => x === VOTE_AGAINST).length
+    const population = Object.keys(state.profiles).length
+    const turnout = votes.length
+    const absent = population - turnout
+    console.debug(`votingRule ${RULE_DISAGREEMENT} for ${proposalType}:`, { totalFor, totalAgainst, disagreementThreshold, turnout, population, absent })
+    if (totalAgainst >= disagreementThreshold) {
+      return VOTE_AGAINST
+    }
+    return totalAgainst + absent < disagreementThreshold && totalFor > totalAgainst ? VOTE_FOR : VOTE_UNDECIDED
   }
 }
 

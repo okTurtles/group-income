@@ -37,10 +37,10 @@ const proposals = {
   [PROPOSAL_INVITE_MEMBER]: {
     defaults: {
       rule: RULE_THRESHOLD, // the default voting rule governing invites
-      expires_ms: 7 * DAYS_MILLIS,
+      expires_ms: 14 * DAYS_MILLIS,
       ruleSettings: {
         [RULE_THRESHOLD]: { threshold: 0.8 },
-        [RULE_DISAGREEMENT]: { threshold: 2 }
+        [RULE_DISAGREEMENT]: { threshold: 1 }
       }
     },
     [VOTE_FOR]: function (state, data) {
@@ -64,10 +64,10 @@ const proposals = {
   [PROPOSAL_REMOVE_MEMBER]: {
     defaults: {
       rule: RULE_THRESHOLD,
-      expires_ms: 7 * DAYS_MILLIS,
+      expires_ms: 14 * DAYS_MILLIS,
       ruleSettings: {
         [RULE_THRESHOLD]: { threshold: 0.8 },
-        [RULE_DISAGREEMENT]: { threshold: 2 }
+        [RULE_DISAGREEMENT]: { threshold: 1 }
       }
     },
     [VOTE_FOR]: function (state, { proposalHash, passPayload }) {
@@ -81,7 +81,7 @@ const proposals = {
       expires_ms: 7 * DAYS_MILLIS,
       ruleSettings: {
         [RULE_THRESHOLD]: { threshold: 0.8 },
-        [RULE_DISAGREEMENT]: { threshold: 2 }
+        [RULE_DISAGREEMENT]: { threshold: 1 }
       }
     },
     [VOTE_FOR]: function (state, { proposalHash, passPayload }) {
@@ -96,7 +96,7 @@ const proposals = {
       expires_ms: 7 * DAYS_MILLIS,
       ruleSettings: {
         [RULE_THRESHOLD]: { threshold: 0.8 },
-        [RULE_DISAGREEMENT]: { threshold: 2 }
+        [RULE_DISAGREEMENT]: { threshold: 1 }
       }
     },
     [VOTE_FOR]: function (state, { proposalHash, passPayload }) {
@@ -110,7 +110,7 @@ const proposals = {
       expires_ms: 7 * DAYS_MILLIS,
       ruleSettings: {
         [RULE_THRESHOLD]: { threshold: 0.8 },
-        [RULE_DISAGREEMENT]: { threshold: 2 }
+        [RULE_DISAGREEMENT]: { threshold: 1 }
       }
     },
     [VOTE_FOR]: function (state, { proposalHash, passPayload }) {
