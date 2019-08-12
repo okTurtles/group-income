@@ -1,6 +1,6 @@
 <template lang="pug">
 page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupState')
-  template(#title='') {{ currentGroupState.groupName }}
+  template(#title='') {{ currentGroupState.settings.groupName }}
 
   page-section(title='This months overview')
     overview

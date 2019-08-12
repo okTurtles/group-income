@@ -37,10 +37,10 @@ export default {
   },
   computed: {
     userName () {
-      return this.$store.getters.currentGroupState.groupName
+      return this.$store.getters.currentGroupState.settings.groupName
     },
     userPicture () {
-      return this.$store.getters.currentGroupState.groupPicture
+      return this.$store.getters.currentGroupState.settings.groupPicture
     }
   },
   data () {

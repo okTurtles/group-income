@@ -10,10 +10,12 @@ import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 // import { blake2bInit, blake2bUpdate, blake2bFinal } from 'blakejs'
 // import multihash from 'multihashes'
 import { blake32Hash } from '~/shared/functions.js'
+import proposals, { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '@model/contracts/voting/proposals.js'
 import { TYPE_INVITE } from '~/frontend/model/contracts/mailbox.js'
 import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts/group.js'
 import '~/frontend/model/contracts/identity.js'
 import '~/frontend/controller/namespace.js'
+
 
 global.fetch = require('node-fetch')
 const should = require('should') // eslint-disable-line
@@ -51,7 +53,7 @@ sbp('sbp/selectors/register', {
   'state/vuex/dispatch': function (action, e) {
     switch (action) {
       case 'handleEvent':
-        const contractID = e.isFirstMessage() ? e.hash() : e.message().contractID
+        const contractID = e.contractID()
         if (e.isFirstMessage()) {
           vuexState[contractID] = {}
         }
@@ -105,11 +107,15 @@ describe('Full walkthrough', function () {
       groupName: name,
       groupPicture: '',
       sharedValues: 'our values',
-      changeThreshold: 0.8,
-      memberApprovalThreshold: 0.8,
-      memberRemovalThreshold: 0.8,
       incomeProvided: 1000,
-      incomeCurrency: 'USD' // TODO: grab this as a constant from currencies.js
+      incomeCurrency: 'USD', // TODO: grab this as a constant from currencies.js
+      proposals: {
+        [PROPOSAL_GROUP_SETTING_CHANGE]: proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults,
+        [PROPOSAL_INVITE_MEMBER]: proposals[PROPOSAL_INVITE_MEMBER].defaults,
+        [PROPOSAL_REMOVE_MEMBER]: proposals[PROPOSAL_REMOVE_MEMBER].defaults,
+        [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].defaults,
+        [PROPOSAL_GENERIC]: proposals[PROPOSAL_GENERIC].defaults
+      }
     })
   }
   function createPaymentTo (to, amount, parentHash, currency = 'USD') {

@@ -4,10 +4,10 @@ div(v-if='groupsByName.length')
     menu-trigger.c-trigger(:class="`has-text-${isDarkTheme ? 'white' : 'dark'}`")
       avatar.c-avatar(
         src='/assets/images/default-avatar.png'
-        :alt='currentGroupState.groupName'
-        :blobURL='currentGroupState.groupPicture'
+        :alt='currentGroupState.settings.groupName'
+        :blobURL='currentGroupState.settings.groupPicture'
       )
-      | {{ this.currentGroupState.groupName }}
+      | {{ this.currentGroupState.settings.groupName }}
       i.icon-angle-down
 
     menu-content

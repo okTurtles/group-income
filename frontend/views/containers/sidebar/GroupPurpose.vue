@@ -4,7 +4,7 @@
     i18n.label(tag='label') About the group
 
   p(data-test='sharedValues')
-    | {{ currentGroupState.sharedValues }}
+    | {{ currentGroupState.settings.sharedValues }}
 
   i18n.link(
     tag='button'

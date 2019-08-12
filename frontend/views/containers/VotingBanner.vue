@@ -35,7 +35,7 @@ export default {
     proposalText: function () {
       let proposal = ''
       switch (this.proposal.type) {
-        case proposals.PROPOSAL_INVITE: {
+        case proposals.PROPOSAL_INVITE_MEMBER: {
           proposal = L('invite {candidate} to the group.',
             {
               candidate: this.proposal.candidate
@@ -49,7 +49,7 @@ export default {
             })
           break
         }
-        case proposals.PROPOSAL_PROP_CHANGE: {
+        case proposals.PROPOSAL_GROUP_SETTING_CHANGE: {
           proposal = L('change {property} to {value}.',
             {
               property: this.proposal.property,

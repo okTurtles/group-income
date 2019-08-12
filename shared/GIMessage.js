@@ -69,6 +69,8 @@ export class GIMessage {
 
   isFirstMessage (): boolean { return !this.message().previousHEAD }
 
+  contractID (): string { return this.message().contractID || this.hash() }
+
   serialize (): string { return this._mapping.value }
 
   hash (): string { return this._mapping.key }

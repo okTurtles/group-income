@@ -8,7 +8,7 @@ export const TYPE_INVITE = 'invite'
 export const TYPE_MESSAGE = 'message'
 export const TYPE_PROPOSAL = 'proposal'
 
-export const messageType = unionOf(literalOf(TYPE_INVITE), literalOf(TYPE_MESSAGE), literalOf(TYPE_PROPOSAL))
+export const messageType = unionOf(...[TYPE_INVITE, TYPE_MESSAGE, TYPE_PROPOSAL].map(k => literalOf(k)))
 
 DefineContract({
   name: 'gi.contracts/mailbox',

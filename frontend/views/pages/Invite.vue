@@ -29,7 +29,7 @@ page(pageTestName='invite' pageTestHeaderName='invite')
 
 <script>
 import sbp from '~/shared/sbp.js'
-import { PROPOSAL_INVITE } from '@model/contracts/voting/proposals.js'
+import { PROPOSAL_INVITE_MEMBER } from '@model/contracts/voting/proposals.js'
 import { TYPE_INVITE } from '@model/contracts/mailbox.js'
 import L from '@view-utils/translations.js'
 import Page from './Page.vue'
@@ -73,7 +73,7 @@ export default {
       try {
         this.form.errorMsg = null
         const groupId = this.currentGroupId
-        const groupName = this.currentGroupState.groupName
+        const groupName = this.currentGroupState.settings.groupName
 
         for (const member of this.form.invitees) {
           const mailbox = member.state.attributes.mailbox
@@ -105,7 +105,7 @@ export default {
             const proposal = await sbp('gi.contracts/group/proposal/create',
               {
                 // for proposal template selection in Vote.vue
-                type: PROPOSAL_INVITE,
+                type: PROPOSAL_INVITE_MEMBER,
                 // calculate the voting threshold from the group data
                 threshold: this.currentGroupState.memberApprovalThreshold,
                 candidate: memberName,

@@ -177,7 +177,7 @@ const getters = {
     // due to the same flow issue as https://github.com/facebook/flow/issues/5838
     return Object.keys(contracts)
       .filter(contractID => contracts[contractID].type === 'group')
-      .map(contractID => ({ groupName: state[contractID].groupName, contractID }))
+      .map(contractID => ({ groupName: state[contractID].settings.groupName, contractID }))
   },
   proposals (state) {
     // TODO: clean this up
@@ -193,7 +193,7 @@ const getters = {
         ) {
           proposals.push({
             groupContractId,
-            groupName: state[groupContractId].groupName,
+            groupName: state[groupContractId].settings.groupName,
             proposal,
             initiationDate: state[groupContractId].proposals[proposal].initiationDate
           })
@@ -333,7 +333,7 @@ const actions = {
     message: GIMessage
   ) {
     try {
-      const contractID = message.isFirstMessage() ? message.hash() : message.message().contractID
+      const contractID = message.contractID()
       const selector = message.type()
       const type = CONTRACT_REGEX.exec(selector)[1]
       const hash = message.hash()

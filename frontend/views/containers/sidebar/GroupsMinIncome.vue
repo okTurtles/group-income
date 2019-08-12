@@ -3,7 +3,7 @@ div
   i18n.label(tag='label') Minimum Income
 
   p.income-provided(data-test='minIncome')
-    | {{ currency }}{{ group.incomeProvided }}
+    | {{ currency }}{{ group.settings.incomeProvided }}
 
   i18n.link(
     tag='button'

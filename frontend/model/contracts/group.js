@@ -7,19 +7,19 @@ import { DefineContract } from './Contract.js'
 import { objectOf, optional, string, number, object, unionOf, literalOf } from '~/frontend/utils/flowTyper.js'
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income-simple/issues/603
-import * as votingRules from './voting/rules.js'
-import * as proposals from './voting/proposals.js'
+import votingRules, { voteType, ruleType, VOTE_INDIFFERENT } from './voting/rules.js'
+import proposals, { proposalType, proposalSettingsType, archiveProposal, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from './voting/proposals.js'
 
-// for gi.contracts/group/payment
+// for gi.contracts/group/payment ... TODO: put these in some other file?
 export const PAYMENT_PENDING = 'pending'
 export const PAYMENT_CANCELLED = 'cancelled'
 export const PAYMENT_ERROR = 'error'
 export const PAYMENT_COMPLETED = 'completed'
+export const paymentStatus = unionOf(...[PAYMENT_PENDING, PAYMENT_CANCELLED, PAYMENT_ERROR, PAYMENT_COMPLETED].map(k => literalOf(k)))
 export const PAYMENT_TYPE_MANUAL = 'manual'
 export const PAYMENT_TYPE_BITCOIN = 'bitcoin'
 export const PAYMENT_TYPE_PAYPAL = 'paypal'
-export const paymentType = unionOf(literalOf(PAYMENT_TYPE_MANUAL), literalOf(PAYMENT_TYPE_BITCOIN), literalOf(PAYMENT_TYPE_PAYPAL))
-export const paymentStatus = unionOf(literalOf(PAYMENT_PENDING), literalOf(PAYMENT_CANCELLED), literalOf(PAYMENT_ERROR), literalOf(PAYMENT_COMPLETED))
+export const paymentType = unionOf(...[PAYMENT_TYPE_MANUAL, PAYMENT_TYPE_BITCOIN, PAYMENT_TYPE_PAYPAL].map(k => literalOf(k)))
 
 DefineContract({
   name: 'gi.contracts/group',
@@ -29,24 +29,32 @@ DefineContract({
       groupName: string,
       groupPicture: string,
       sharedValues: string,
-      changeThreshold: number,
-      memberApprovalThreshold: number,
-      memberRemovalThreshold: number,
       incomeProvided: number,
-      incomeCurrency: string
+      incomeCurrency: string,
+      proposals: objectOf({
+        [PROPOSAL_INVITE_MEMBER]: proposalSettingsType,
+        [PROPOSAL_REMOVE_MEMBER]: proposalSettingsType,
+        [PROPOSAL_GROUP_SETTING_CHANGE]: proposalSettingsType,
+        [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposalSettingsType,
+        [PROPOSAL_GENERIC]: proposalSettingsType
+      })
     }),
     process (state, { data, meta }) {
-      Object.assign(state, {
+      const initialState = {
         payments: {},
         invitees: [],
         proposals: {}, // hashes => {} TODO: this, see related TODOs in GroupProposal
+        settings: data,
         profiles: {
           [meta.username]: {
             contractID: meta.identityContractID,
             groupProfile: {}
           }
         }
-      }, data)
+      }
+      for (const key in initialState) {
+        Vue.set(state, key, initialState[key])
+      }
     }
   },
   metadata: {
@@ -97,40 +105,47 @@ DefineContract({
     },
     'gi.contracts/group/proposal': {
       validate: objectOf({
-        proposalType: proposals.proposalType,
+        proposalType: proposalType,
         proposalData: object,
-        votingRule: votingRules.ruleType,
-        expires: string // calculate by grabbing proposal expiry from group properties and add to `meta.date`
+        votingRule: ruleType,
+        expires_date_ms: number // calculate by grabbing proposal expiry from group properties and add to `meta.createdDate`
       }),
       process (state, { data, meta, hash }) {
         // TODO: save all proposals disk so that we only keep open proposals in memory
-        Vue.set(state.proposals, hash, { data, meta })
+        Vue.set(state.proposals, hash, { data, meta, votes: {} })
+        // TODO: handle RULE_DISAGREEMENT by creating a timer on all RULE_DISAGREEMENT
+        //       proposals that runs the voting rule when it expires, and results in
+        //       VOTE_FOR if the result is VOTE_INDIFFERENT at the time of expiry.
+        //       This should be done in some global timer that runs once a second
       }
     },
     'gi.contracts/group/proposalVote': {
       validate: objectOf({
         proposalHash: string,
-        vote: votingRules.voteType,
-        proposalPassPayload: optional(unionOf(object, string)) // TODO: this, somehow we need to send an OP_KEY_ADD GIMessage to add a generated once-only writeonly message public key to the contract, and (encrypted) include the corresponding invite link, also, we need all clients to verify that this message/operation was valid to prevent a hacked client from adding arbitrary OP_KEY_ADD messages, and automatically ban anyone generating such messages
+        vote: voteType,
+        passPayload: optional(unionOf(object, string)) // TODO: this, somehow we need to send an OP_KEY_ADD GIMessage to add a generated once-only writeonly message public key to the contract, and (encrypted) include the corresponding invite link, also, we need all clients to verify that this message/operation was valid to prevent a hacked client from adding arbitrary OP_KEY_ADD messages, and automatically ban anyone generating such messages
       }),
       process (state, { data, meta }) {
-        // TODO: rewrite all this
         const proposal = state.proposals[data.proposalHash]
         if (!proposal) {
+          // TODO: better handle this and similar errors
+          //       https://github.com/okTurtles/group-income-simple/issues/602
           console.error(`GroupProposalVote: no proposal for ${data.proposalHash}!`, data)
-        } else {
-          Vue.set(proposal.votes, meta.username, data.vote)
-          // TODO: handle vote pass/fail
-          // check if proposal is expired, if so, ignore (but log vote)
-          // see if this is a deciding vote
-          if (votingRules.rules[proposal.data.votingRule]() !== votingRules.VOTE_INDIFFERENT) {
-
-          }
-          // state.proposals[data.proposalHash].for.push(data.username)
-          // const threshold = Math.ceil(state.proposals[data.proposalHash].threshold * Object.keys(state.profiles).length)
-          // if (state.proposals[data.proposalHash].for.length >= threshold) {
-          //   Vue.delete(state.proposals, data.proposalHash)
-          // }
+          return // TODO: or throw exception?
+        }
+        Vue.set(proposal.votes, meta.username, data.vote)
+        // TODO: handle vote pass/fail
+        // check if proposal is expired, if so, ignore (but log vote)
+        if (Date.now() > proposal.data.expires_date_ms) {
+          console.warn(`GroupProposalVote: vote on expired proposal!`, { proposal, data, meta })
+          // TODO: display warning or something
+          return
+        }
+        // see if this is a deciding vote
+        const result = votingRules[proposal.data.votingRule](state, proposal.data.proposalType, proposal.votes)
+        if (result !== VOTE_INDIFFERENT) {
+          // handle proposal pass or fail
+          proposals[proposal.data.proposalType][result](state, data)
         }
       }
     },
@@ -139,15 +154,15 @@ DefineContract({
         proposalHash: string
       }),
       process (state, { data, meta }) {
-        // TODO: implement this properly
         const proposal = state.proposals[data.proposalHash]
         if (!proposal) {
           console.error(`GroupProposalWithdraw: no proposal for ${data.proposalHash}!`, data)
-        } else if (proposal.creator !== meta.username) {
-          // TODO: properly handle this
-          console.error(`GroupProposalWithdraw: proposal ${data.proposalHash} belongs to ${proposal.creator} not ${meta.username}!`)
+        } else if (proposal.meta.username !== meta.username) {
+          // TODO: properly handle these error conditions!
+          console.error(`GroupProposalWithdraw: proposal ${data.proposalHash} belongs to ${proposal.meta.username} not ${meta.username}!`)
         } else {
-          Vue.delete(state.proposals, data.proposalHash)
+          // TODO: make sure this is a synchronous function, and if not handle it appropriately
+          archiveProposal(state, data.proposalHash)
         }
       }
     },

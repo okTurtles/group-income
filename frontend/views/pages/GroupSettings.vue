@@ -9,12 +9,14 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupS
       .field
         i18n.label(tag='label') Group name
 
+        //- BUG: TODO: cannot bind directly to :value here, as any changes
+        //- to currentGroupState.settings must be done via proposals.
         input.input.is-large.is-primary(
           ref='name'
           type='text'
           name='groupName'
           :class="{ 'error': $v.form.groupName.$error }"
-          :value='currentGroupState.groupName'
+          :value='currentGroupState.settings.groupName'
           @input='update'
           @keyup.enter='next'
           data-test='groupName'
@@ -29,7 +31,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupS
           placeholder='Group Purpose'
           maxlength='500'
           :class="{ 'error': $v.form.sharedValues.$error }"
-          :value='currentGroupState.sharedValues'
+          :value='currentGroupState.settings.sharedValues'
           @input='update'
         )
 
@@ -39,7 +41,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupS
           select(
             name='incomeCurrency'
             required=''
-            :value='currentGroupState.incomeCurrency'
+            :value='currentGroupState.settings.incomeCurrency'
             @input='update'
           )
             option(
