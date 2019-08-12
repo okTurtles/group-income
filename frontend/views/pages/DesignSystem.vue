@@ -59,6 +59,16 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
             citizen's financial status. Basic income can be implemented nationally, regionally
             or locally. The World Bank's World Development Report 2019 on the future of work describes
             the existing schemes around the world.
+
+        tr
+          td
+            pre .has-text-big
+          td.has-text-big Body #[b big]
+
+        tr
+          td
+            pre .has-text-small
+          td.has-text-small Body #[b small]
         tr
           td
             code $text-light
