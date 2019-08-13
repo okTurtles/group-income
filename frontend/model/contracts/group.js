@@ -25,6 +25,7 @@ export function generateInvites (numInvites: number) {
   return {
     inviteSecret: `${parseInt(Math.random() * 10000)}`, // TODO: this
     numInvites
+    // expires: // TODO: this
   }
 }
 
