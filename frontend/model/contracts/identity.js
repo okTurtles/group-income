@@ -11,7 +11,9 @@ DefineContract({
       attributes: object
     }),
     process (state, { data }) {
-      Vue.set(state, 'attributes', data.attributes)
+      for (const key in data) {
+        Vue.set(state, key, data[key])
+      }
     }
   },
   actions: {

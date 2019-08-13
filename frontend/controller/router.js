@@ -45,10 +45,10 @@ var groupGuard = {
   guard: (to, from) => !store.state.currentGroupId,
   redirect: (to, from) => ({ path: '/new-group' })
 }
-var mailGuard = {
-  guard: (to, from) => from.name !== Mailbox.name,
-  redirect: (to, from) => ({ path: '/mailbox' })
-}
+// var mailGuard = {
+//   guard: (to, from) => from.name !== Mailbox.name,
+//   redirect: (to, from) => ({ path: '/mailbox' })
+// }
 function createEnterGuards (...guards) {
   return function (to, from, next) {
     for (const current of guards) {
@@ -252,7 +252,7 @@ var router = new Router({
       meta: {
         title: 'Join a Group'
       },
-      beforeEnter: createEnterGuards(loginGuard, mailGuard)
+      beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '/vote',
@@ -261,7 +261,7 @@ var router = new Router({
       meta: {
         title: 'Vote on a Proposal'
       },
-      beforeEnter: createEnterGuards(loginGuard, mailGuard)
+      beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '*',

@@ -9,6 +9,8 @@ export const VOTE_FOR = ':for'
 
 export const RULE_THRESHOLD = 'threshold'
 export const RULE_DISAGREEMENT = 'disagreement'
+export const RULE_MULTI_CHOICE = 'multi-choice'
+// TODO: ranked-choice? :D
 
 const rules = {
   [RULE_THRESHOLD]: function (state, proposalType, votes) {
@@ -47,7 +49,17 @@ const rules = {
     if (totalAgainst >= disagreementThreshold) {
       return VOTE_AGAINST
     }
+    // consider proposal passed if more vote for it than against it and there aren't
+    // enough votes left to tip the scales past the disagreementThreshold
     return totalAgainst + absent < disagreementThreshold && totalFor > totalAgainst ? VOTE_FOR : VOTE_UNDECIDED
+  },
+  [RULE_MULTI_CHOICE]: function (state, proposalType, votes) {
+    throw new Error('unimplemented!')
+    // TODO: return VOTE_UNDECIDED if 0 votes, otherwise value w/greatest number of votes
+    //       the proposal/poll is considered passed only after the expiry time period
+    // NOTE: are we sure though that this even belongs here as a voting rule...?
+    //       perhaps there could be a situation were one of several valid settings options
+    //       is being proposed... in effect this would be a plurality voting rule
   }
 }
 

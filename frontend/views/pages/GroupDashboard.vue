@@ -1,12 +1,12 @@
 <template lang="pug">
-page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupState')
+page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupState.settings')
   template(#title='') {{ currentGroupState.settings.groupName }}
 
   page-section(title='This months overview')
     overview
 
   page-section(title='Proposals')
-    proposals(:proposals='currentGroupState.proposals')
+    proposals
 
   page-section(title='July Overview')
     //- group-pledges-graph

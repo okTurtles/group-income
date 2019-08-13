@@ -96,7 +96,7 @@ export default {
     ]),
     activityCount () {
       // TODO: activityCount should really count unreadMessageCount?
-      return this.$store.getters.unreadMessageCount || this.$store.getters.proposals.length
+      return this.$store.getters.unreadMessageCount
     },
     unreadMessagesCount () {
       return this.$store.getters.unreadMessageCount

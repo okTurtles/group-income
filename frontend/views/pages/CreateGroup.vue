@@ -54,14 +54,14 @@ main.main#create-group-page
 import sbp from '~/shared/sbp.js'
 import { blake32Hash } from '~/shared/functions.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
-import { TYPE_INVITE } from '@model/contracts/mailbox.js'
+import { RULE_THRESHOLD } from '@model/contracts/voting/rules.js'
+import proposals, { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '@model/contracts/voting/proposals.js'
 import L from '@view-utils/translations.js'
 import { decimals } from '@view-utils/validators.js'
 import StepAssistant from '@view-utils/stepAssistant.js'
 import Message from '@components/Message.vue'
+import { merge } from '@utils/giLodash.js'
 import { validationMixin } from 'vuelidate'
-import { RULE_THRESHOLD } from './rules.js'
-import proposals, { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '@model/contracts/voting/proposals.js'
 
 // we use require instead of import with this file to make rollup happy
 // or not... using require only makes rollup happy during compilation
@@ -140,30 +140,18 @@ export default {
           proposals: {
             // TODO: make the UI support changing the rule type, so that we have
             //       a component for RULE_DISAGREEMENT as well
-            [PROPOSAL_GROUP_SETTING_CHANGE]: {
-              ...proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults,
-              ...{
-                ruleSettings: {
-                  [RULE_THRESHOLD]: { threshold: this.form.changeThreshold }
-                }
-              }
-            },
-            [PROPOSAL_INVITE_MEMBER]: {
-              ...proposals[PROPOSAL_INVITE_MEMBER].defaults,
-              ...{
-                ruleSettings: {
-                  [RULE_THRESHOLD]: { threshold: this.form.memberApprovalThreshold }
-                }
-              }
-            },
-            [PROPOSAL_REMOVE_MEMBER]: {
-              ...proposals[PROPOSAL_REMOVE_MEMBER].defaults,
-              ...{
-                ruleSettings: {
-                  [RULE_THRESHOLD]: { threshold: this.form.memberRemovalThreshold }
-                }
-              }
-            },
+            [PROPOSAL_GROUP_SETTING_CHANGE]: merge({},
+              proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults,
+              { ruleSettings: { [RULE_THRESHOLD]: { threshold: this.form.changeThreshold } } }
+            ),
+            [PROPOSAL_INVITE_MEMBER]: merge({},
+              proposals[PROPOSAL_INVITE_MEMBER].defaults,
+              { ruleSettings: { [RULE_THRESHOLD]: { threshold: this.form.memberApprovalThreshold } } }
+            ),
+            [PROPOSAL_REMOVE_MEMBER]: merge({},
+              proposals[PROPOSAL_REMOVE_MEMBER].defaults,
+              { ruleSettings: { [RULE_THRESHOLD]: { threshold: this.form.memberRemovalThreshold } } }
+            ),
             [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].defaults,
             [PROPOSAL_GENERIC]: proposals[PROPOSAL_GENERIC].defaults
           }
@@ -183,40 +171,6 @@ export default {
       } catch (error) {
         console.error(error)
         this.ephemeral.errorMsg = L('Failed to Create Group')
-        return
-      }
-
-      // send out invitations to people's mailboxes (if there are any)
-      try {
-        this.ephemeral.errorMsg = null
-        // TODO: as invitees are successfully invited display in a
-        // seperate invitees grid and add them to some validation for duplicate invites
-        for (const invitee of this.form.invitees) {
-          // We need to post the invite to the users' mailbox contract
-          const invite = await sbp('gi.contracts/mailbox/postMessage/create',
-            {
-              from: this.$store.getters.currentGroupState.settings.groupName,
-              headers: [this.$store.state.currentGroupId],
-              messageType: TYPE_INVITE
-            },
-            invitee.state.attributes.mailbox
-          )
-          await sbp('backend/publishLogEntry', invite)
-
-          // We need to make a record of the invitation in the group's contract
-          const invited = await sbp('gi.contracts/group/invite/create',
-            {
-              username: invitee.state.attributes.name,
-              inviteHash: invite.hash()
-            },
-            this.$store.state.currentGroupId
-          )
-          await sbp('backend/publishLogEntry', invited)
-        }
-      } catch (error) {
-        console.error(error)
-        // TODO: Create More descriptive errors
-        this.ephemeral.errorMsg = L('Failed to Invite Users')
       }
     }
   },
@@ -230,8 +184,7 @@ export default {
         memberApprovalThreshold: proposals[PROPOSAL_INVITE_MEMBER].defaults.ruleSettings[RULE_THRESHOLD].threshold,
         memberRemovalThreshold: proposals[PROPOSAL_REMOVE_MEMBER].defaults.ruleSettings[RULE_THRESHOLD].threshold,
         incomeProvided: null,
-        incomeCurrency: 'USD', // TODO: grab this as a constant from currencies.js
-        invitees: []
+        incomeCurrency: 'USD' // TODO: grab this as a constant from currencies.js
       },
       ephemeral: {
         errorMsg: null,

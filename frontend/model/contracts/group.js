@@ -7,7 +7,7 @@ import { DefineContract } from './Contract.js'
 import { objectOf, optional, string, number, object, unionOf, literalOf } from '~/frontend/utils/flowTyper.js'
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income-simple/issues/603
-import votingRules, { ruleType, VOTE_UNDECIDED } from './voting/rules.js'
+import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST } from './voting/rules.js'
 import proposals, { proposalType, proposalSettingsType, archiveProposal, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from './voting/proposals.js'
 
 // for gi.contracts/group/payment ... TODO: put these in some other file?
@@ -20,6 +20,13 @@ export const PAYMENT_TYPE_MANUAL = 'manual'
 export const PAYMENT_TYPE_BITCOIN = 'bitcoin'
 export const PAYMENT_TYPE_PAYPAL = 'paypal'
 export const paymentType = unionOf(...[PAYMENT_TYPE_MANUAL, PAYMENT_TYPE_BITCOIN, PAYMENT_TYPE_PAYPAL].map(k => literalOf(k)))
+
+export function generateInvites (numInvites: number) {
+  return {
+    inviteSecret: `${parseInt(Math.random() * 10000)}`, // TODO: this
+    numInvites
+  }
+}
 
 DefineContract({
   name: 'gi.contracts/group',
@@ -42,7 +49,7 @@ DefineContract({
     process (state, { data, meta }) {
       const initialState = {
         payments: {},
-        invitees: [],
+        invites: {},
         proposals: {}, // hashes => {} TODO: this, see related TODOs in GroupProposal
         settings: data,
         profiles: {
@@ -106,17 +113,19 @@ DefineContract({
     'gi.contracts/group/proposal': {
       validate: objectOf({
         proposalType: proposalType,
-        proposalData: object,
+        proposalData: object, // data for Vue widgets
         votingRule: ruleType,
         expires_date_ms: number // calculate by grabbing proposal expiry from group properties and add to `meta.createdDate`
       }),
       process (state, { data, meta, hash }) {
+        Vue.set(state.proposals, hash, {
+          data,
+          meta,
+          votes: { [meta.username]: VOTE_FOR },
+          payload: null
+        })
         // TODO: save all proposals disk so that we only keep open proposals in memory
-        Vue.set(state.proposals, hash, { data, meta, votes: {} })
-        // TODO: handle RULE_DISAGREEMENT by creating a timer on all RULE_DISAGREEMENT
-        //       proposals that runs the voting rule when it expires, and results in
-        //       VOTE_FOR if the result is VOTE_UNDECIDED at the time of expiry.
-        //       This should be done in some global timer that runs once a second
+        // TODO: create a global timer to auto-pass/archive expired votes
       }
     },
     'gi.contracts/group/proposalVote': {
@@ -130,25 +139,26 @@ DefineContract({
         if (!proposal) {
           // TODO: better handle this and similar errors
           //       https://github.com/okTurtles/group-income-simple/issues/602
-          console.error(`GroupProposalVote: no proposal for ${data.proposalHash}!`, data)
+          console.error(`proposalVote: no proposal for ${data.proposalHash}!`, data)
           return // TODO: or throw exception?
         }
         Vue.set(proposal.votes, meta.username, data.vote)
         // TODO: handle vote pass/fail
         // check if proposal is expired, if so, ignore (but log vote)
         if (Date.now() > proposal.data.expires_date_ms) {
-          console.warn(`GroupProposalVote: vote on expired proposal!`, { proposal, data, meta })
+          console.warn(`proposalVote: vote on expired proposal!`, { proposal, data, meta })
           // TODO: display warning or something
           return
         }
         // see if this is a deciding vote
         const result = votingRules[proposal.data.votingRule](state, proposal.data.proposalType, proposal.votes)
-        if (result !== VOTE_UNDECIDED) {
+        if (result === VOTE_FOR || result === VOTE_AGAINST) {
           // handle proposal pass or fail
           proposals[proposal.data.proposalType][result](state, data)
         }
       }
     },
+    // NOTE: there is no way to withdraw a vote on a proposal. User can however change their vote, including changing it to be indifferent.
     'gi.contracts/group/proposalWithdraw': {
       validate: objectOf({
         proposalHash: string
@@ -156,57 +166,68 @@ DefineContract({
       process (state, { data, meta }) {
         const proposal = state.proposals[data.proposalHash]
         if (!proposal) {
-          console.error(`GroupProposalWithdraw: no proposal for ${data.proposalHash}!`, data)
+          console.error(`proposalWithdraw: no proposal for ${data.proposalHash}!`, data)
         } else if (proposal.meta.username !== meta.username) {
           // TODO: properly handle these error conditions!
-          console.error(`GroupProposalWithdraw: proposal ${data.proposalHash} belongs to ${proposal.meta.username} not ${meta.username}!`)
+          console.error(`proposalWithdraw: proposal ${data.proposalHash} belongs to ${proposal.meta.username} not ${meta.username}!`)
         } else {
           // TODO: make sure this is a synchronous function, and if not handle it appropriately
           archiveProposal(state, data.proposalHash)
         }
       }
     },
-    // NOTE: there is no way to withdraw a vote on a proposal. User can however change their vote, including changing it to be indifferent.
     'gi.contracts/group/invite': {
       validate: objectOf({
-        username: string,
-        inviteHash: string
-        // sentDate: string // TODO: use meta.date
+        inviteSecret: string, // NOTE: simulate the OP_KEY_* stuff for now
+        numInvites: number
       }),
       process (state, { data }) {
-        state.invitees.push(data.username)
+        Vue.set(state.invites, data.inviteSecret, {
+          generated: data.numInvites,
+          responses: {},
+          status: 'valid'
+        })
       }
     },
     'gi.contracts/group/inviteDecline': {
       validate: objectOf({
-        username: string,
-        inviteHash: string
-        // declinedDate: string // TODO: use meta.date
+        inviteSecret: string // NOTE: simulate the OP_KEY_* stuff for now
       }),
-      process (state, { data }) {
-        const index = state.invitees.findIndex(username => username === data.username)
-        if (index > -1) { state.invitees.splice(index, 1) }
+      process (state, { data, meta }) {
+        const invite = state.invites[data.inviteSecret]
+        if (invite.status !== 'valid') {
+          // throw an exception so that the event handler doesn't get triggered
+          throw new Error(`inviteDecline: invite for ${meta.username} is: ${invite.status}`)
+        }
+        Vue.set(invite.responses, meta.username, false)
+        if (Object.keys(invite.responses).length === invite.generated) {
+          invite.status = 'used'
+        }
+        // TODO: archiving of expired/used/cancelled invites
       }
     },
     'gi.contracts/group/inviteAccept': {
       validate: objectOf({
-        username: string,
-        identityContractID: string, // TODO: use meta.identityContract
-        inviteHash: string
-        // acceptanceDate: string
+        inviteSecret: string // NOTE: simulate the OP_KEY_* stuff for now
       }),
-      process (state, { data }) {
-        const index = state.invitees.findIndex(username => username === data.username)
-        if (index > -1) {
-          state.invitees.splice(index, 1)
-          Vue.set(state.profiles, data.username, {
-            contractID: data.identityContractID,
-            groupProfile: {}
-          })
+      process (state, { data, meta }) {
+        console.debug(`inviteAccept:`, data, state.invites)
+        const invite = state.invites[data.inviteSecret]
+        if (invite.status !== 'valid') {
+          // throw an exception so that the event handler doesn't get triggered
+          throw new Error(`inviteAccept: invite for ${meta.username} is: ${invite.status}`)
         }
-        // NOTE: handleEvent already emits 'gi.contracts/group/inviteAccept/process' for us
-        //       but it doesn't pass in the state object for this contract...
-        Vue.nextTick(() => sbp('okTurtles.events/emit', 'gi.contracts/group/inviteAccept', state, { data }))
+        Vue.set(invite.responses, meta.username, true)
+        if (Object.keys(invite.responses).length === invite.generated) {
+          invite.status = 'used'
+        }
+        Vue.set(state.profiles, meta.username, {
+          contractID: meta.identityContractID,
+          groupProfile: {}
+        })
+        // NOTE: after this, the asynchronous sbp event listener below for
+        //       'gi.contracts/group/inviteAccept/process' will be called
+        //       and we will subscribe to this new user's identity contract
       }
     },
     // TODO: remove group profile when leave group is implemented
@@ -230,19 +251,24 @@ DefineContract({
 // This is critical to the function of that latest contract hash.
 // They should only coordinate the actions of outside contracts.
 // Otherwise `latestContractState` and `handleEvent` will not produce same state!
-sbp('okTurtles.events/on', 'gi.contracts/group/inviteAccept', async (state, { data }) => {
-  const rootState = sbp('state/vuex/state')
-  // TODO: per #257 this will have to be encompassed in a recoverable transaction
-  if (data.username === rootState.loggedIn.username) {
-    // we're the person who just accepted the group invite
-    // so subscribe to founder's IdentityContract & everyone else's
-    for (const name of Object.keys(state.profiles)) {
-      if (name === rootState.loggedIn.username) continue
-      await sbp('state/vuex/dispatch', 'syncContractWithServer', state.profiles[name].contractID)
+sbp('okTurtles.events/on', 'gi.contracts/group/inviteAccept/process',
+  async function (contractID, message) {
+    const rootState = sbp('state/vuex/state')
+    const groupState = rootState[contractID]
+    const data = message.data()
+    const meta = message.meta()
+    // TODO: per #257 this will have to be encompassed in a recoverable transaction
+    if (data.username === rootState.loggedIn.username) {
+      // we're the person who just accepted the group invite
+      // so subscribe to founder's IdentityContract & everyone else's
+      for (const name of Object.keys(groupState.profiles)) {
+        if (name === rootState.loggedIn.username) continue
+        await sbp('state/vuex/dispatch', 'syncContractWithServer', groupState.profiles[name].contractID)
+      }
+    } else {
+      // we're an existing member of the group getting notified that a
+      // new member has joined, so subscribe to their identity contract
+      await sbp('state/vuex/dispatch', 'syncContractWithServer', meta.identityContractID)
     }
-  } else {
-    // we're an existing member of the group getting notified that a
-    // new member has joined, so subscribe to their identity contract
-    await sbp('state/vuex/dispatch', 'syncContractWithServer', data.identityContractID)
   }
-})
+)

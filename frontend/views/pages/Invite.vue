@@ -21,16 +21,20 @@ page(pageTestName='invite' pageTestHeaderName='invite')
       button.is-success(
         type='submit'
         :disabled='!form.invitees.length'
+        v-if='!form.success'
         @click='submit' data-test='submit'
       )
         i18n(v-if='isProposal') Propose Invites
         i18n(v-else='') Send Invites
 </template>
-
 <script>
+// TODO: delete or rewrite this entire file and all related components
+//       https://github.com/okTurtles/group-income-simple/issues/609
+
 import sbp from '~/shared/sbp.js'
 import { PROPOSAL_INVITE_MEMBER } from '@model/contracts/voting/proposals.js'
-import { TYPE_INVITE } from '@model/contracts/mailbox.js'
+import { generateInvites } from '@model/contracts/group.js'
+import { TYPE_MESSAGE } from '@model/contracts/mailbox.js'
 import L from '@view-utils/translations.js'
 import Page from './Page.vue'
 import { GroupInvitees } from '@components/CreateGroupSteps/index.js'
@@ -79,48 +83,39 @@ export default {
           const mailbox = member.state.attributes.mailbox
           const memberName = member.state.attributes.name
 
-          if (this.isAlreadyInvited(member)) {
-            this.form.errorMsg = L('Failed to invite users: member {name} is already invited',
-              { name: memberName })
-            return
-          }
-
-          const inviteToMailbox = await sbp('gi.contracts/mailbox/postMessage/create',
-            {
-              from: groupName,
-              headers: [groupId],
-              messageType: TYPE_INVITE
-            },
-            mailbox
-          )
-          const inviteToGroup = await sbp('gi.contracts/group/invite/create',
-            {
-              username: memberName,
-              inviteHash: inviteToMailbox.hash()
-            },
-            groupId
-          )
-
           if (this.isProposal) {
             const proposal = await sbp('gi.contracts/group/proposal/create',
               {
-                // for proposal template selection in Vote.vue
-                type: PROPOSAL_INVITE_MEMBER,
-                // calculate the voting threshold from the group data
-                threshold: this.currentGroupState.memberApprovalThreshold,
-                candidate: memberName,
-                // TODO: this is bad, do not turn the messages into actions like this.
-                //       put only the minimal data necessary.
-                actions: [
-                  { contractID: mailbox, type: inviteToMailbox.type(), action: JSON.stringify(inviteToMailbox.data()) },
-                  { contractID: groupId, type: inviteToGroup.type(), action: JSON.stringify(inviteToGroup.data()) }
-                ],
-                initiator: this.loggedIn.username
+                proposalType: PROPOSAL_INVITE_MEMBER,
+                proposalData: {
+                  members: [memberName], // TODO: create a single proposal?
+                  reason: L("Because they're great") // TODO: this?
+                },
+                votingRule: this.currentGroupState.settings.proposals[PROPOSAL_INVITE_MEMBER].rule,
+                expires_date_ms: Date.now() + this.currentGroupState.settings.proposals[PROPOSAL_INVITE_MEMBER].expires_ms
               },
               groupId
             )
             await sbp('backend/publishLogEntry', proposal)
           } else {
+            const invite = generateInvites(1)
+            const inviteToMailbox = await sbp('gi.contracts/mailbox/postMessage/create',
+              {
+                messageType: TYPE_MESSAGE,
+                from: groupName,
+                subject: `You've been invited to join ${groupName}!`,
+                message: `Hi ${memberName},
+
+                Here's your special invite link:
+
+                ${process.env.FRONTEND_URL}/app/join?groupId=${this.$store.state.currentGroupId}&secret=${invite.inviteSecret}`
+              },
+              mailbox
+            )
+            const inviteToGroup = await sbp('gi.contracts/group/invite/create',
+              invite, // or, if this is a bulk invite, the number of members invited
+              groupId
+            )
             // TODO: place these in SBP calls, consider using ArchivedTransactionQueue
             // NOTE: avoiding use of ArchivedTransactionQueue is better than using it. Here for example,
             //       we could make it so that a user can be invited to a group multiple times, and the system
@@ -136,12 +131,6 @@ export default {
         // TODO: Create More descriptive errors
         this.form.errorMsg = L('Failed to Invite Users')
       }
-    },
-    isAlreadyInvited (member) {
-      const candidateMembers = this.$store.getters.candidateMembers
-      return Object.keys(this.currentGroupState.profiles).find(profile => profile === member) ||
-        this.currentGroupState.invitees.find(invitee => invitee === member) ||
-        candidateMembers.find(username => username === member)
     }
   }
 }

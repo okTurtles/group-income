@@ -30,13 +30,13 @@ export class GIMessage {
       version: 1,
       previousHEAD,
       contractID,
-      // make it difficult to guess contract hashes and prevent conflicts
-      nonce: parseInt(Math.random() * 10000000),
       // TODO: this action object needs to be encrypted JSON
       action: {
         type: actionType,
         data: actionData,
-        meta: metaData
+        meta: metaData,
+        // make it difficult to predict message contents and prevent conflicts
+        nonce: Math.random()
       }
     }
     const messageJSON = JSON.stringify(instance._message)

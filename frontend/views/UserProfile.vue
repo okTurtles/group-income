@@ -144,16 +144,17 @@ export default {
   mixins: [validationMixin],
   computed: {
     attributes () {
-      return this.$store.getters.currentUserIdentityContract.attributes
+      const contract = this.$store.getters.currentUserIdentityContract
+      return (contract && contract.attributes) || {}
     }
   },
   data () {
     return {
       edited: {
-        picture: this.$store.getters.currentUserIdentityContract.attributes.picture,
-        bio: this.$store.getters.currentUserIdentityContract.attributes.bio,
-        displayName: this.$store.getters.currentUserIdentityContract.attributes.displayName,
-        email: this.$store.getters.currentUserIdentityContract.attributes.email
+        picture: this.attributes.picture,
+        bio: this.attributes.bio,
+        displayName: this.attributes.displayName,
+        email: this.attributes.email
       },
       // TODO: populate this based on profile values in current group's profile vuex state
       editedGroupProfile: {

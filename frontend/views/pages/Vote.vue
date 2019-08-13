@@ -7,21 +7,21 @@ section.section.full-screen
         .subtitle
           i18n Your vote has been requested on a proposal for the group:
 
-        h1 {{contract.groupName}}
+        h1 {{ settings.groupName }}
 
       .panel
         .panel-block
           p
             // TODO different templates for different invitation types
             i18n This is an invitation proposal. The user to be invited:
-            strong(data-test='candidateName') {{proposal.candidate}}
+            strong(data-test='candidateName') {{ JSON.stringify(data) }}
 
         .panel-block.notification.is-warning(style='text-align: center;')
           strong(style='margin: 0 auto;')
             i18n Your Decision?
 
         .panel-block.center(style='display: block; text-align: center;')
-          .help.is-danger(v-if='errorMsg') {{errorMsg}}
+          .help.is-danger(v-if='errorMsg') {{ errorMsg }}
 
           i18n.button.is-success(
             tag='a'
@@ -41,51 +41,83 @@ section.section.full-screen
 <script>
 import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
-import * as _ from '@utils/giLodash.js'
+import { VOTE_FOR, VOTE_AGAINST } from '@model/contracts/voting/rules.js'
+import { TYPE_MESSAGE } from '@model/contracts/mailbox.js'
+import { oneVoteToPass } from '@model/contracts/voting/proposals.js'
+import { generateInvites } from '@model/contracts/group.js'
 import { mapGetters } from 'vuex'
+
 export default {
   name: 'Vote',
   computed: {
-    contract () {
-      return this.$store.state[this.$route.query.groupId] || { proposals: {} }
-    },
     proposal () {
-      return this.contract.proposals[this.$route.query.proposalHash] || { proposal: null }
+      return this.currentGroupState.proposals[this.$route.query.proposalHash]
     },
+    meta () {
+      return this.proposal.meta
+    },
+    type () {
+      return this.proposal.data.proposalType
+    },
+    data () {
+      return this.proposal.data.proposalData
+    },
+    // TODO: either delete this or use it and delete 'contract' computed property
     ...mapGetters([
       'currentGroupState',
-      'memberCount'
+      'settings'
     ])
   },
   methods: {
     async voteFor () {
       this.errorMsg = null
       try {
-        // TODO: this section is unclear and it's not clear what's going on at all.
-        //       rewrite and make it nicer.
-        const vote = await sbp('gi.contracts/group/voteForProposal/create',
+        const proposalHash = this.$route.query.proposalHash
+        var payload
+        if (oneVoteToPass(proposalHash)) {
+          // pass in the data for 'gi.contracts/group/invite/process'
+          payload = {
+            passPayload: generateInvites(this.data.members.length)
+          }
+        }
+        const vote = await sbp('gi.contracts/group/proposalVote/create',
           {
-            username: this.$store.state.loggedIn.username,
-            proposalHash: this.$route.query.proposalHash
+            proposalHash,
+            vote: VOTE_FOR,
+            ...(payload || {})
           },
           this.$route.query.groupId
         )
-        const proposal = _.cloneDeep(this.proposal)
-        const threshold = Math.ceil(proposal.threshold * this.memberCount)
-
         await sbp('backend/publishLogEntry', vote)
-        // If the vote passes fulfill the action
-        if (proposal.for.length + 1 >= threshold) {
-          // TODO: this is poorly implementated. do not create poposals in this manner.
-          console.error('proposal actions:', proposal.actions)
-          for (const step of proposal.actions) {
-            const actData = JSON.parse(step.action)
-            const entry = await sbp(`gi.contracts/group/${step.type}/create`, actData, step.contractID)
-            await sbp('backend/publishLogEntry', entry)
+
+        if (payload) {
+          const groupName = this.settings.groupName
+          // TODO: delete this entire section, this is just
+          //       here for debug and testing purposes until
+          //       we get the links page working nicely.
+          //       this.data.members will not contain usernames in the future.
+          for (const username of this.data.members) {
+            const contractID = await sbp('namespace/lookup', username)
+            const identityContract = await sbp('state/latestContractState', contractID)
+            console.debug('sending invite to:', contractID, identityContract)
+            const inviteToMailbox = await sbp('gi.contracts/mailbox/postMessage/create',
+              {
+                messageType: TYPE_MESSAGE,
+                from: groupName,
+                subject: `You've been invited to join ${groupName}!`,
+                message: `Hi ${username},
+                
+                ${groupName} has voted to invite you! Horray!
+                Here's your special invite link:
+
+                ${process.env.FRONTEND_URL}/app/join?groupId=${this.$store.state.currentGroupId}&secret=${payload.passPayload.inviteSecret}`
+              },
+              identityContract.attributes.mailbox
+            )
+            await sbp('backend/publishLogEntry', inviteToMailbox)
           }
         }
-        // return to mailbox
-        this.$router.push({ path: '/mailbox' })
+        this.$router.push({ path: '/' })
       } catch (ex) {
         console.log(ex)
         this.errorMsg = L('Failed to Cast Vote')
@@ -94,16 +126,15 @@ export default {
     async voteAgainst () {
       this.errorMsg = null
       try {
-        // Create a against the proposal
-        const vote = await sbp('gi.contracts/group/voteAgainstProposal/create',
+        const vote = await sbp('gi.contracts/group/proposalVote/create',
           {
-            username: this.$store.state.loggedIn.username,
-            proposalHash: this.$route.query.proposalHash
+            proposalHash: this.$route.query.proposalHash,
+            vote: VOTE_AGAINST
           },
           this.$route.query.groupId
         )
         await sbp('backend/publishLogEntry', vote)
-        this.$router.push({ path: '/mailbox' })
+        this.$router.push({ path: '/' })
       } catch (ex) {
         console.log(ex)
         this.errorMsg = L('Failed to Cast Vote')

@@ -1,0 +1,80 @@
+<template lang="pug">
+.c-proposal-box
+  i18n(tag='strong' :args='{ type, user: meta.username, desc: description }') Proposal to {type} {desc} from {user}
+  | &nbsp;&nbsp;
+  i18n(:args='{ for: vYes, against: vNo, indifferent: vIndif }') [{for} for, {against} against, {indifferent} indifferent]
+  | &nbsp;&nbsp;
+  router-link.button(
+    v-if='!ourVote'
+    :to='{ path: "/vote", query: { groupId: currentGroupId, proposalHash } }'
+  )
+    i18n Vote here!
+</template>
+
+<script>
+import { mapGetters, mapState } from 'vuex'
+import { VOTE_FOR, VOTE_AGAINST, VOTE_INDIFFERENT } from '@model/contracts/voting/rules.js'
+import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '@model/contracts/voting/proposals.js'
+
+export default {
+  name: 'ProposalBox',
+  props: {
+    proposalHash: String
+  },
+  components: {
+  },
+  mounted () {
+  },
+  data () {
+    return {
+      ephemeral: {
+      }
+    }
+  },
+  computed: {
+    proposal () {
+      return this.currentGroupState.proposals[this.proposalHash]
+    },
+    meta () {
+      return this.proposal.meta
+    },
+    type () {
+      return this.proposal.data.proposalType
+    },
+    data () {
+      return this.proposal.data.proposalData
+    },
+    description () {
+      return {
+        [PROPOSAL_INVITE_MEMBER]: () => this.data.members.join(', '),
+        [PROPOSAL_REMOVE_MEMBER]: () => this.data.member,
+        [PROPOSAL_GROUP_SETTING_CHANGE]: () => 'unimplemented',
+        [PROPOSAL_PROPOSAL_SETTING_CHANGE]: () => 'unimplemented',
+        [PROPOSAL_GENERIC]: () => 'unimplemented'
+      }[this.type]()
+    },
+    ourVote () {
+      return this.proposal.votes[this.$store.state.loggedIn.username]
+    },
+    vYes () {
+      return Object.values(this.proposal.votes).filter(x => x === VOTE_FOR).length
+    },
+    vNo () {
+      return Object.values(this.proposal.votes).filter(x => x === VOTE_AGAINST).length
+    },
+    vIndif () {
+      return Object.values(this.proposal.votes).filter(x => x === VOTE_INDIFFERENT).length
+    },
+    ...mapGetters(['currentGroupState']),
+    ...mapState(['currentGroupId'])
+  },
+  methods: {
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+.c-proposal-box {
+
+}
+</style>

@@ -1,21 +1,23 @@
 'use strict'
 
-// import Vue from 'vue'
+import Vue from 'vue'
 import { DefineContract } from './Contract.js'
-import { objectOf, arrayOf, string, object, unionOf, literalOf, optional } from '~/frontend/utils/flowTyper.js'
+import { objectOf, string, object, unionOf, literalOf, optional } from '~/frontend/utils/flowTyper.js'
 
-export const TYPE_INVITE = 'invite'
 export const TYPE_MESSAGE = 'message'
-export const TYPE_PROPOSAL = 'proposal'
+export const TYPE_FRIEND_REQ = 'friend-request'
 
-export const messageType = unionOf(...[TYPE_INVITE, TYPE_MESSAGE, TYPE_PROPOSAL].map(k => literalOf(k)))
+export const messageType = unionOf(...[TYPE_MESSAGE, TYPE_FRIEND_REQ].map(k => literalOf(k)))
 
 DefineContract({
   name: 'gi.contracts/mailbox',
   contract: {
-    validate: object,
+    validate: object, // TODO: define this
     process (state, { data }) {
-      state.messages = []
+      for (const key in data) {
+        Vue.set(state, key, data[key])
+      }
+      Vue.set(state, 'messages', [])
     }
   },
   metadata: {
@@ -33,9 +35,9 @@ DefineContract({
       validate: objectOf({
         messageType: messageType,
         from: string,
+        subject: optional(string),
         message: optional(string),
-        // TODO: these should be optional(object)
-        headers: optional(arrayOf(string))
+        headers: optional(object)
       }),
       process (state, { data, meta, hash }) {
         state.messages.push({ data, meta, hash })

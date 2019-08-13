@@ -129,6 +129,8 @@ import L from '@view-utils/translations.js'
 
 const url = helpers.regex('url', /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i)
 
+// TODO: rename this file to match the name below!
+
 export default {
   name: 'SettingsUserProfile',
   mixins: [validationMixin],
@@ -136,12 +138,13 @@ export default {
     Avatar
   },
   data () {
+    const attrCopy = Object.assign({}, this.$store.getters.currentUserIdentityContract.attributes || {})
     return {
       edited: {
-        picture: this.$store.getters.currentUserIdentityContract.attributes.picture,
-        bio: this.$store.getters.currentUserIdentityContract.attributes.bio,
-        displayName: this.$store.getters.currentUserIdentityContract.attributes.displayName,
-        email: this.$store.getters.currentUserIdentityContract.attributes.email
+        picture: attrCopy.picture,
+        bio: attrCopy.bio,
+        displayName: attrCopy.displayName,
+        email: attrCopy.email
       },
       errorMsg: null,
       profileSaved: false
@@ -155,12 +158,10 @@ export default {
   },
   computed: {
     attributes () {
-      return this.$store.getters.currentUserIdentityContract.attributes
+      return this.$store.getters.currentUserIdentityContract.attributes || {}
     },
     userPicture () {
-      return this.edited.picture || (this.$store.getters.currentUserIdentityContract &&
-        this.$store.getters.currentUserIdentityContract.attributes &&
-        this.$store.getters.currentUserIdentityContract.attributes.picture)
+      return this.edited.picture || this.attributes.picture
     },
     userName () {
       return this.$store.state.loggedIn.username
