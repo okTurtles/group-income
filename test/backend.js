@@ -11,7 +11,7 @@ import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 // import multihash from 'multihashes'
 import { blake32Hash } from '~/shared/functions.js'
 import proposals, { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '~/frontend/model/contracts/voting/proposals.js'
-import { TYPE_INVITE } from '~/frontend/model/contracts/mailbox.js'
+import { TYPE_MESSAGE } from '~/frontend/model/contracts/mailbox.js'
 import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts/group.js'
 import '~/frontend/model/contracts/identity.js'
 import '~/frontend/controller/namespace.js'
@@ -260,7 +260,7 @@ describe('Full walkthrough', function () {
       sbp('gi.contracts/mailbox/postMessage/create',
         {
           from: users.bob.data().attributes.name,
-          messageType: TYPE_INVITE,
+          messageType: TYPE_MESSAGE,
           message: groups.group1.hash()
         },
         mailbox.hash()
