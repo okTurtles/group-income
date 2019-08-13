@@ -3,13 +3,15 @@
 //-       it's missing a bunch of stuff.
 //-       And also, it's not meant to redirect to /vote (a page
 //-       that isn't necessarily even going to be around much longer
-.c-proposal-box
+.c-proposal-box(:class='[boxClass]')
   i18n(tag='strong' :args='{ type, user: meta.username, desc: description }') Proposal to {type} {desc} from {user}
   | &nbsp;&nbsp;
   i18n(:args='{ for: vYes, against: vNo, indifferent: vIndif }') [{for} for, {against} against, {indifferent} indifferent]
   | &nbsp;&nbsp;
+  i18n(:args='{ status }' html='Status: <strong>{status}</strong>')
+  | &nbsp;&nbsp;
   router-link.button(
-    v-if='!ourVote'
+    v-if='!ourVote && status === statuses.STATUS_OPEN'
     :to='{ path: "/vote", query: { groupId: currentGroupId, proposalHash } }'
   )
     i18n Vote here!
@@ -18,7 +20,7 @@
 <script>
 import { mapGetters, mapState } from 'vuex'
 import { VOTE_FOR, VOTE_AGAINST, VOTE_INDIFFERENT } from '@model/contracts/voting/rules.js'
-import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '@model/contracts/voting/proposals.js'
+import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_PASSED, STATUS_FAILED, STATUS_EXPIRED, STATUS_WITHDRAWN } from '@model/contracts/voting/proposals.js'
 
 export default {
   name: 'ProposalBox',
@@ -47,6 +49,21 @@ export default {
     },
     data () {
       return this.proposal.data.proposalData
+    },
+    status () {
+      return this.proposal.status
+    },
+    statuses () {
+      return { STATUS_OPEN, STATUS_PASSED, STATUS_FAILED, STATUS_EXPIRED, STATUS_WITHDRAWN }
+    },
+    boxClass () {
+      return {
+        [STATUS_OPEN]: 'has-background-primary-light',
+        [STATUS_PASSED]: 'has-background-success',
+        [STATUS_FAILED]: 'has-background-danger',
+        [STATUS_EXPIRED]: 'has-background-warning',
+        [STATUS_WITHDRAWN]: 'has-background-tertiary'
+      }[this.status]
     },
     description () {
       return {

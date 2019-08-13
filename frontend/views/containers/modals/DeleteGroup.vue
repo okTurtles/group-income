@@ -10,7 +10,7 @@
 
       i18n(tag='h3') Are you sure you want to delete this group?
 
-      p(v-html='L("All messages exchanged between members will be <b>deleted permanently</b>.")')
+      i18n(tag='p' html='All messages exchanged between members will be <b>deleted permanently</b>.')
 
       form(
         novalidate

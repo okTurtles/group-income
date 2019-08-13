@@ -11,6 +11,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle' v-
         v-for='(contribution, index) in fakeStore.receiving.nonMonetary'
         :key='`contribution-${index}`'
       )
+        //- TODO: verify this is safe (no XSS)
         span(v-html='textReceivingNonMonetary(contribution)')
         text-who(:who='contribution.who')
 
@@ -20,6 +21,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle' v-
         ismonetary=''
         @interaction='handleFormTriggerClick'
       )
+        //- TODO: verify this is safe (no XSS)
         span(v-html='textReceivingMonetary(fakeStore.receiving.monetary)')
         text-who(:who='fakeStore.groupMembersPledging')
         i18n each month

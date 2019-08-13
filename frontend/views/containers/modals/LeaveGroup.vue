@@ -8,10 +8,10 @@
     modal-template(class='has-submodal-background is-centered')
       template(slot='title') {{ L('Leave a group') }}
 
-      p(v-html='L("If you leave, you will stop having access to the <b>group chat</b> and <b>contributions</b>. Re-joining the group is possible, but requires other members to <b>vote and reach an agreement</b>.")')
+      i18n(tag='p' html='If you leave, you will stop having access to the <b>group chat</b> and <b>contributions</b>. Re-joining the group is possible, but requires other members to <b>vote and reach an agreement</b>.')
 
       message(severity='danger')
-        p(v-html='L(" This action <b>cannot be undone</b>.")')
+        i18n(tag='p' html=' This action <b>cannot be undone</b>.')
 
       form(
         novalidate
@@ -61,9 +61,10 @@
             data-test='confirmation'
           )
 
-          p.error(
+          i18n.error(
+            tag='p'
             v-show='$v.form.confirmation.$error'
-            v-html="L('Please enter the sentence \"<b>Leave The Dreamers</b>\" to confirm that you leave the group')"
+            html='Please enter the sentence "<b>Leave The Dreamers</b>" to confirm that you leave the group'
           )
 
         .buttons

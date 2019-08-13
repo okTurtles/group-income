@@ -1,7 +1,7 @@
 'use strict'
 
 import sbp from '~/shared/sbp.js'
-import Vue from 'vue'
+// import Vue from 'vue'
 import { objectOf, literalOf, unionOf, number } from '~/frontend/utils/flowTyper.js'
 import { DAYS_MILLIS } from '~/frontend/utils/time.js'
 import { PROPOSAL_RESULT } from '~/frontend/utils/events.js'
@@ -13,9 +13,16 @@ export const PROPOSAL_GROUP_SETTING_CHANGE = 'group-setting-change'
 export const PROPOSAL_PROPOSAL_SETTING_CHANGE = 'proposal-setting-change'
 export const PROPOSAL_GENERIC = 'generic'
 
+export const STATUS_OPEN = 'open'
+export const STATUS_PASSED = 'passed'
+export const STATUS_FAILED = 'failed'
+export const STATUS_EXPIRED = 'expired'
+export const STATUS_WITHDRAWN = 'withdrawn'
+
 export function archiveProposal (state, proposalHash) {
   // TODO: handle this better (archive the proposal or whatever)
-  Vue.delete(state.proposals, proposalHash)
+  console.warn(`archiveProposal is not fully implemented yet...`)
+  // Vue.delete(state.proposals, proposalHash)
 }
 
 export const proposalSettingsType = objectOf({
@@ -42,6 +49,8 @@ export function oneVoteToPass (proposalHash) {
 
 function voteAgainst (state, data) {
   const { proposalHash } = data
+  const proposal = state.proposals[proposalHash]
+  proposal.status = STATUS_FAILED
   archiveProposal(state, proposalHash)
   sbp('okTurtles.events/emit', PROPOSAL_RESULT, state, VOTE_AGAINST, data)
 }
@@ -59,6 +68,7 @@ const proposals = {
     [VOTE_FOR]: function (state, data) {
       const proposal = state.proposals[data.proposalHash]
       proposal.payload = data.passPayload
+      proposal.status = STATUS_PASSED
       sbp('gi.contracts/group/invite/process', state, {
         meta: proposal.meta,
         data: data.passPayload

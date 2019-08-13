@@ -8,7 +8,7 @@ import { objectOf, optional, string, number, object, unionOf, literalOf } from '
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income-simple/issues/603
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST } from './voting/rules.js'
-import proposals, { proposalType, proposalSettingsType, archiveProposal, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from './voting/proposals.js'
+import proposals, { proposalType, proposalSettingsType, archiveProposal, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_WITHDRAWN } from './voting/proposals.js'
 
 // for gi.contracts/group/payment ... TODO: put these in some other file?
 export const PAYMENT_PENDING = 'pending'
@@ -123,10 +123,12 @@ DefineContract({
           data,
           meta,
           votes: { [meta.username]: VOTE_FOR },
+          status: STATUS_OPEN,
           payload: null
         })
         // TODO: save all proposals disk so that we only keep open proposals in memory
         // TODO: create a global timer to auto-pass/archive expired votes
+        //       make sure to set that proposal's status as STATUS_EXPIRED if it's expired
       }
     },
     'gi.contracts/group/proposalVote': {
@@ -154,7 +156,7 @@ DefineContract({
         // see if this is a deciding vote
         const result = votingRules[proposal.data.votingRule](state, proposal.data.proposalType, proposal.votes)
         if (result === VOTE_FOR || result === VOTE_AGAINST) {
-          // handle proposal pass or fail
+          // handles proposal pass or fail, will update proposal.status accordingly
           proposals[proposal.data.proposalType][result](state, data)
         }
       }
@@ -173,6 +175,7 @@ DefineContract({
           console.error(`proposalWithdraw: proposal ${data.proposalHash} belongs to ${proposal.meta.username} not ${meta.username}!`)
         } else {
           // TODO: make sure this is a synchronous function, and if not handle it appropriately
+          proposal.status = STATUS_WITHDRAWN
           archiveProposal(state, data.proposalHash)
         }
       }
