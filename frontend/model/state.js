@@ -294,7 +294,7 @@ const actions = {
         contracts: Object.keys(state.contracts).map(contractID => ({
           contractID,
           ...state.contracts[contractID], // inserts `HEAD` and `type`
-          data: _.cloneDeep(state[contractID])
+          data: state[contractID]
         })),
         theme: state.theme
       }

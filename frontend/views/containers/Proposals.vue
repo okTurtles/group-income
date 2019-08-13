@@ -2,6 +2,7 @@
 .c-proposals
   proposal-box(
     v-for='(proposal, hash) in currentGroupState.proposals'
+    :key='hash'
     :proposalHash='hash'
   )
 </template>

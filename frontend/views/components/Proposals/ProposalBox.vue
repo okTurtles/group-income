@@ -1,4 +1,8 @@
 <template lang="pug">
+//- NOTE: this is obviously ugly markup and needs to be redesigned
+//-       it's missing a bunch of stuff.
+//-       And also, it's not meant to redirect to /vote (a page
+//-       that isn't necessarily even going to be around much longer
 .c-proposal-box
   i18n(tag='strong' :args='{ type, user: meta.username, desc: description }') Proposal to {type} {desc} from {user}
   | &nbsp;&nbsp;

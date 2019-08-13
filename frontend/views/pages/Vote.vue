@@ -1,4 +1,7 @@
 <template lang="pug">
+//- TODO: consider deleting this entire file if no longer necessary
+//-       it's currently used for debug/testing purposes only and should
+//-       be either deleted or rewritten.
 section.section.full-screen
   .columns
     .column

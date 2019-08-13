@@ -197,6 +197,7 @@ DefineContract({
         const invite = state.invites[data.inviteSecret]
         if (invite.status !== 'valid') {
           // throw an exception so that the event handler doesn't get triggered
+          // TODO: handle this kind of error (e.g. an invite being used twice)
           throw new Error(`inviteDecline: invite for ${meta.username} is: ${invite.status}`)
         }
         Vue.set(invite.responses, meta.username, false)
