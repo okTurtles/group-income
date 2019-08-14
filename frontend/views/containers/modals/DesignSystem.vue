@@ -1,9 +1,12 @@
 <template lang="pug">
-//- NOTE: Greg asks: why is this file here? Either delete it or write
-//-       a comment explaining its purpose.
-//-       Also, why is it called DesignSystem.vue when there is another
-//-       file with the same name?
+//- NOTE: This file is here to serve as a test case / example
+//-       In my (greg's) opinion, it should be deleted soon.
+//-       If you use it as an example when creating other modals
+//-       (instead of existing modals), make sure to replace many
+//-       of the tags below with their equivalent i18n tags.
 modal-template(:class="{ 'has-background': background }")
+  //- In your version, this should be:
+  //- i18n(tag='template' #title='') Title
   template(#title='') Title
   template(#subtitle='' v-if='subtitle') subtitle
 
@@ -14,8 +17,8 @@ modal-template(:class="{ 'has-background': background }")
 
     .field
       i18n.label(tag='label') Introduce the potential new member(s) to your group
-      //- We are not using i18n for the textarea text below because it doesn't
-      //- need to be included in the translations
+      //- We aren't using L or i18n here to avoid this example text being
+      //- translated by the translators (since it won't appear in the UI)
       textarea(rows='5')
         | Felix and Brian are two very important figures in the electronic music scene. They have greatly contributed to the development of genres like ambient music and are now ready to contribute to this group. They are Dreamers like us!'
 
