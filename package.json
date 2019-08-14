@@ -166,7 +166,7 @@
     "rollup-plugin-node-globals": "1.4.0",
     "rollup-plugin-node-resolve": "5.2.0",
     "rollup-plugin-sass-variables": "0.1.1",
-    "rollup-plugin-vue": "5.0.1",
+    "rollup-plugin-vue": "4.2.0",
     "should": "13.2.3",
     "should-sinon": "0.0.6",
     "sinon": "7.3.2",

@@ -13,24 +13,6 @@ Try:
 - `npm cache clean` - This fixed a real problem someone was having
 - `npm install npm@latest -g`
 
-## "Multiple conflicting contents for sourcemap"
-
-Problem: `grunt dev` outputs something like the following when you save:
-
-```
-rollup: frontend/main.js
->> rollup:watch {
->>   code: 'ERROR',
->>   error: Error: Multiple conflicting contents for sourcemap source /path/to/group-income-simple/frontend/views/containers/sidebar/GroupsList.vue
->>       at error (/path/to/group-income-simple/node_modules/rollup/dist/rollup.js:9396:30)
-```
-
-We're not sure why this happens, but there are a few solutions:
-
-- A. Change `.Gruntfile.babel.js` line 259 `sourcemap` key to `false` and restart `grunt dev`. Please make sure to revert this change before opening a PR.
-- B. Create a newline near the top of the file with a comment and save again - delete that line on the next save and repeat the process for each save...
-- C. Restart `grunt dev`, or do `grunt clean dev` to also delete the sourcemaps.
-
 ## Can not sign-up user when databases get out of sync
 
 *NOTE: this should no longer be an issue, but we're leaving this here just in case.*
