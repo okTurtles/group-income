@@ -1,4 +1,8 @@
 <template lang="pug">
+//- NOTE: Greg asks: why is this file here? Either delete it or write
+//-       a comment explaining its purpose.
+//-       Also, why is it called DesignSystem.vue when there is another
+//-       file with the same name?
 modal-template(:class="{ 'has-background': background }")
   template(#title='') Title
   template(#subtitle='' v-if='subtitle') subtitle
@@ -10,8 +14,10 @@ modal-template(:class="{ 'has-background': background }")
 
     .field
       i18n.label(tag='label') Introduce the potential new member(s) to your group
+      //- We are not using i18n for the textarea text below because it doesn't
+      //- need to be included in the translations
       textarea(rows='5')
-        | {{ L('Felix and Brian are two very important figures in the electronic music scene. They have greatly contributed to the development of genres like ambient music and are now ready to contribute to this group. They are Dreamers like us!') }}
+        | Felix and Brian are two very important figures in the electronic music scene. They have greatly contributed to the development of genres like ambient music and are now ready to contribute to this group. They are Dreamers like us!'
 
     .buttons
       i18n(
@@ -24,7 +30,8 @@ modal-template(:class="{ 'has-background': background }")
       ) Toggle background
 
   template(#footer='')
-    i18n(tag='p') According to your voting rules, 8 out of 10 members will have to agree with this.
+    //- We aren't using i18n because this string shouldn't be translated either
+    p According to your voting rules, 8 out of 10 members will have to agree with this.
 </template>
 <script>
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'

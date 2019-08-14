@@ -6,7 +6,7 @@
     @submit.prevent='submit'
   )
     modal-template(class='has-submodal-background is-centered')
-      template(slot='title') {{L('Leave a group')}}
+      i18n(tag='template' slot='title') Leave a group
 
       i18n(tag='h3') Are you sure you want to delete this group?
 
@@ -32,9 +32,10 @@
             data-test='confirmation'
           )
 
-          p.error(
+          i18n.error(
+            tag='p'
             v-show='$v.form.confirmation.$error'
-            v-html="L('Please enter the sentence \"<b>Delete The Dreamers</b>\"to confirm that you delete the group')"
+            html='Please enter the sentence "<b>Delete The Dreamers</b>"to confirm that you delete the group'
           )
 
         .buttons
