@@ -343,7 +343,7 @@ export default {
 
   &:hover {
     cursor: pointer;
-    background-color: $primary-bg-s;
+    background-color: $primary_2;
   }
 }
 
@@ -365,13 +365,13 @@ export default {
   i {
     margin-right: 1rem;
     font-size: 0.77rem;
-    color: $text-light;
+    color: $text_1;
     transition: transform cubic-bezier(0.18, 0.89, 0.32, 1.28) 0.3s, color ease-in 0.3s;
   }
 
   &:hover {
     transition: none;
-    background-color: var(--primary-bg-a);
+    background-color: var(--primary_a);
   }
 }
 
@@ -383,8 +383,8 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  color: $body-background-color;
-  background-color: $danger;
+  color: $background;
+  background-color: $danger_0;
   border-radius: 50%;
   font-size: 0.7rem;
   font-weight: 600;

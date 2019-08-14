@@ -32,22 +32,22 @@ select,
   border-radius: $radius;
   padding: 0 10px;
   background-color: #fff;
-  border: 1px solid $border;
+  border: 1px solid $general_0;
   letter-spacing: -0.6px;
   font-size: 1rem;
   line-height: 23px;
   outline: none;
 
   @mixin placeholder {
-    color: $text-light;
+    color: $text_1;
   }
 
   &:focus {
-    border-color: $primary;
+    border-color: $primary_0;
   }
 
   &.error {
-    border-color: $danger;
+    border-color: $danger_0;
     color: initial;
   }
 }
@@ -82,7 +82,7 @@ textarea,
   &::before,
   &::after {
     content: "";
-    background-color: $primary;
+    background-color: $primary_0;
     width: 9px;
     height: 2px;
     position: absolute;
@@ -108,12 +108,12 @@ textarea,
   position: relative;
   display: flex;
   align-items: stretch;
-  border: 1px solid $border;
+  border: 1px solid $general_0;
   border-radius: $radius;
 
   .input {
     border-radius: $radius 0 0 $radius;
-    border-right: 1px solid $border;
+    border-right: 1px solid $general_0;
   }
 
   * + .input {
@@ -132,12 +132,12 @@ textarea,
     border: 0;
 
     &:focus {
-      outline: 1px solid $primary;
+      outline: 1px solid $primary_0;
       outline-offset: 0;
       border-color: transparent;
 
       + label {
-        background-color: $primary;
+        background-color: $primary_0;
         color: #fff;
         line-height: $inputHeight;
         outline: 1px solid var(--primary);
@@ -152,7 +152,7 @@ textarea,
   .is-icon {
     min-width: 40px;
     text-align: center;
-    color: $border;
+    color: $general_0;
     align-self: center;
 
     &:first-child {
@@ -165,13 +165,13 @@ textarea,
     }
 
     &:focus {
-      color: $primary;
+      color: $primary_0;
     }
   }
 }
 
 .error {
-  color: $danger;
+  color: $danger_0;
 }
 
 p.error {
@@ -213,7 +213,7 @@ p.error {
       margin-right: $spacer-sm;
       display: inline-block;
       border-radius: 50%;
-      border: 1px solid $border;
+      border: 1px solid $general_0;
       transform: translateY(2px);
     }
 
@@ -221,7 +221,7 @@ p.error {
       content: "";
       width: 7px;
       height: 7px;
-      background-color: $primary;
+      background-color: $primary_0;
       border-radius: 50%;
       position: absolute;
       top: 50%;
@@ -238,7 +238,7 @@ p.error {
     margin-right: -1px;
 
     &::before {
-      border-color: $text;
+      border-color: $text_0;
     }
 
     &::after {

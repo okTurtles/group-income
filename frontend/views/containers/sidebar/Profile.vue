@@ -1,23 +1,23 @@
 <template lang='pug'>
-  .c-profile(v-if='$store.state.loggedIn')
-    .c-avatar-user
-      avatar(:src='userPicture')
-      .c-user
-        strong(
-          :data-test="userDisplayName ? 'profileName' : 'profileDisplayName'"
-          :class="`has-text-${isDarkTheme ? 'white' : 'dark'}`"
-        ) {{userDisplayName ? userDisplayName : userName}}
+.c-profile(v-if='$store.state.loggedIn')
+  .c-avatar-user
+    avatar(:src='userPicture')
+    .c-user
+      strong(
+        :data-test="userDisplayName ? 'profileName' : 'profileDisplayName'"
+        :class="`has-text-${isDarkTheme ? 'white' : 'dark'}`"
+      ) {{userDisplayName ? userDisplayName : userName}}
 
-        span.is-size-6(
-          data-test='profileDisplayName'
-          v-if='userDisplayName'
-        ) {{userName}}
+      span.is-size-6(
+        data-test='profileDisplayName'
+        v-if='userDisplayName'
+      ) {{userName}}
 
-    button.is-icon(
-      data-test='settingsBtn'
-      @click="openModal('Settings')"
-    )
-      i.icon-cog
+  button.is-icon(
+    data-test='settingsBtn'
+    @click="openModal('Settings')"
+  )
+    i.icon-cog
 </template>
 
 <script>
@@ -67,7 +67,7 @@ export default {
   height: 52px;
   padding: 0 $spacer-sm;
   margin-top: 0.75rem;
-  background-color: $primary-bg-a;
+  background-color: $primary_2;
 }
 
 .c-avatar-user {
@@ -89,7 +89,7 @@ export default {
   line-height: 1.15rem;
 
   span {
-    color: $text-light;
+    color: $text_1;
   }
 }
 

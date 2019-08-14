@@ -46,7 +46,7 @@ nav.c-navigation(
           href='https://groupincome.org/blog/'
           target='_blank'
         )
-          i18n(:class="isDarkTheme ? 'has-text-light-grey' : ''") Blog
+          i18n(:class="isDarkTheme ? 'has-text-light' : ''") Blog
 
         list-item(
           tag='a'
@@ -54,7 +54,7 @@ nav.c-navigation(
           href='https://groupincome.org/faq/'
           target='_blank'
         )
-          i18n(:class="isDarkTheme ? 'has-text-light-grey' : ''") Help &amp; Feedback
+          i18n(:class="isDarkTheme ? 'has-text-light' : ''") Help &amp; Feedback
 
         list-item(
           tag='a'
@@ -62,7 +62,7 @@ nav.c-navigation(
           href='https://groupincome.org/donate/'
           target='_blank'
         )
-          i18n(:class="isDarkTheme ? 'has-text-light-grey' : ''") Donate
+          i18n(:class="isDarkTheme ? 'has-text-light' : ''") Donate
       profile
 </template>
 
@@ -121,7 +121,7 @@ export default {
   display: flex;
   flex-direction: column;
   font-weight: normal;
-  background: $primary-bg-s; // solid
+  background: $primary_2; // solid
 }
 
 .c-navigation-header {
@@ -152,7 +152,7 @@ export default {
 .c-group-list {
   padding-top: 1rem;
   padding-bottom: 0.8rem;
-  background-color: $primary-bg-a;
+  background-color: $primary_2;
 }
 
 .c-toggle {

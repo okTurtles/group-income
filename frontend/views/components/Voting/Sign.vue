@@ -95,7 +95,7 @@ export default {
     }
 
     &.c-is-rule {
-      border: 1px solid $border;
+      border: 1px solid $general_0;
     }
   }
 
@@ -108,13 +108,13 @@ export default {
     transform: rotate(-90deg);
 
     &-circle {
-      stroke: $success;
+      stroke: $success_0;
       stroke-width: 2px;
       stroke-linecap: round;
       fill: transparent;
 
       &.has-stroke-warning {
-        stroke: $tertiary;
+        stroke: $warning_0;
       }
     }
   }

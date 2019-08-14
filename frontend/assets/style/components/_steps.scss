@@ -16,7 +16,7 @@
     z-index: -3;
     height: 2px;
     width: 100%;
-    background-color: $primary-light;
+    background-color: $primary_1;
     top: 50%;
     margin-top: -1px;
   }
@@ -34,7 +34,7 @@
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    background-color: $primary-light;
+    background-color: $primary_1;
     color: #fff;
     font-size: 12px;
     line-height: 24px;
@@ -46,7 +46,7 @@
       background-color: #fff;
       position: absolute;
       z-index: -1;
-      border: 1px solid $primary;
+      border: 1px solid $primary_0;
       width: 100%;
       height: 100%;
       left: 0;
@@ -64,14 +64,14 @@
       width: 0;
       height: 2px;
       margin-top: -1px;
-      background-color: $border;
+      background-color: $general_0;
       transition: width 1s;
     }
   }
 
   .step:not(.next):hover,
   .active {
-    background-color: $primary;
+    background-color: $primary_0;
 
     &::before {
       transform: scale(1.2);
@@ -95,7 +95,7 @@
   }
 
   .next {
-    background-color: $border;
+    background-color: $general_0;
     cursor: not-allowed;
     pointer-events: none;
   }

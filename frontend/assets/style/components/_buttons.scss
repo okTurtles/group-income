@@ -23,7 +23,7 @@ button,
   border-radius: $radius;
   border-color: transparent;
   border-width: 1px;
-  background-color: $primary;
+  background-color: $primary_0;
   transition: filter 100ms ease-out, box-shadow 150ms ease-in;
   font-weight: 600; // A11Y purposes
   font-size: 1rem;
@@ -34,19 +34,19 @@ button,
     filter: contrast(1.2);
   }
 
-  @include focusState($primary);
+  @include focusState($primary_0);
 
   &.is-success {
-    background-color: $success;
+    background-color: $success_0;
 
-    @include focusState($success);
+    @include focusState($success_0);
   }
 
   &.is-danger,
   &.error {
-    background-color: $danger;
+    background-color: $danger_0;
 
-    @include focusState($danger);
+    @include focusState($danger_0);
   }
 
   [class^="icon-"] + span {
@@ -79,7 +79,7 @@ button,
     display: flex;
     justify-content: center;
     align-items: center;
-    color: $text-light;
+    color: $text_1;
 
     [class^="icon-"]:last-child {
       margin-left: 0;
@@ -87,37 +87,37 @@ button,
 
     &:hover,
     &:focus {
-      color: $text;
+      color: $text_0;
       box-shadow: none; // override @mixin focusState
     }
   }
 
   &.is-outlined {
     background-color: transparent;
-    border-color: $border;
-    color: $text-light;
+    border-color: $general_0;
+    color: $text_1;
 
-    @include focusState($border);
+    @include focusState($general_0);
 
     &.is-success {
-      border-color: $success;
-      color: $success;
+      border-color: $success_0;
+      color: $success_0;
 
-      @include focusState($success);
+      @include focusState($success_0);
     }
 
     &.is-danger,
     &.error {
-      border-color: $danger;
-      color: $danger;
+      border-color: $danger_0;
+      color: $danger_0;
 
-      @include focusState($danger);
+      @include focusState($danger_0);
     }
   }
 
   &[disabled] {
-    background-color: $border;
-    color: $text-light;
+    background-color: $general_0;
+    color: $text_1;
     opacity: 0.5;
 
     &:hover {
@@ -138,7 +138,7 @@ button,
 
 button.link {
   @extend %reset-button;
-  color: $link;
+  color: $primary_0;
 
   &::after {
     width: 100%;

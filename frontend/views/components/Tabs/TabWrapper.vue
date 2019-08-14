@@ -168,7 +168,7 @@ $closeMobileBarBgColor: #3c3c3c;
   align-items: center;
   position: relative;
   z-index: 3;
-  background-color: var(--primary-bg-s);
+  background-color: var(--primary);
 
   @include tablet {
     justify-content: start;
@@ -228,7 +228,7 @@ $closeMobileBarBgColor: #3c3c3c;
 
   @include tablet {
     grid-area: sidebar;
-    background-color: var(--primary-bg-s);
+    background-color: var(--primary);
     position: relative;
     align-items: flex-end;
     padding-top: 0;
@@ -299,11 +299,11 @@ $closeMobileBarBgColor: #3c3c3c;
 }
 
 .tab-link:hover {
-  background-color: $primary-bg-a;
+  background-color: $primary_2;
 }
 
 .tab-active {
-  background-color: $primary !important;
+  background-color: $primary_0 !important;
   font-weight: bold;
   color: $activeColor;
 }

@@ -283,7 +283,7 @@ export default {
   &::after {
     content: "";
     flex-grow: 1;
-    border-bottom: 1px solid $tertiary;
+    border-bottom: 1px solid $warning_0;
   }
 
   &::before {

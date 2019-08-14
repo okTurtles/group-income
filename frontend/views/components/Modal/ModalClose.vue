@@ -46,7 +46,7 @@ export default {
 
   &::before,
   &::after {
-    background-color: $text-light;
+    background-color: $text_1;
     content: "";
     display: block;
     position: absolute;
@@ -59,7 +59,7 @@ export default {
     transform-origin: center center;
 
     @include desktop {
-      background-color: $text-strong;
+      background-color: $text_0;
     }
   }
 

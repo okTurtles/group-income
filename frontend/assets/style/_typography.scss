@@ -33,7 +33,7 @@ body {
   font-size: 0.875rem; // 14px
   line-height: 1.3125rem; // 21px
   letter-spacing: 0.1px;
-  color: $text-strong;
+  color: $text_0;
 }
 
 // From _variables.scss
@@ -96,7 +96,7 @@ header p,
   font-weight: normal;
   font-size: $size-5; // 12px
   line-height: 1rem; // 16px
-  color: $text-light;
+  color: $text_1;
 }
 
 .label {

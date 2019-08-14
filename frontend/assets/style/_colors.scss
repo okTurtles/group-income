@@ -1,63 +1,50 @@
-$white-ter:    #f4f4f4;
-$white:        #fff; // hsl(0, 0%, 100%)
-
-// General colors
+$white:      #fff;
 $background: $white;
-$hr-background-color: $background;
-$body-background-color: #fff;
-$border:       #dbdbdb; // hsl(0, 0%, 86%)
 
-// Text colors
-$light-grey:   #f4f3f4;
-$text-light:   #7a7a7a; // hsl(0, 0%, 48%)
-$text:         #636363; // hsl(0, 0%, 39%)
-$text-strong:  #363636; // hsl(0, 0%, 21%)
+$general_0: var(--general_0);
+$general_1: var(--general_1);
+$general_2: var(--general_2);
 
-$primary: var(--primary);
-$primarySaturated: var(--primarySaturated);
-$primary-light: var(--primary-light); // used on backgrounds
-$primary-text: var(--primary-text); // $primary is too light for texts - A11Y purposes
+$text_0: var(--text_0);
+$text_1: var(--text_1);
 
-// both colors are indentical on white bg: one is solid and another is transparent
-$primary-bg-s: var(--primary-bg-s);
-$primary-bg-a: var(--primary-bg-a);
+$primary_0: var(--primary_0);
+$primary_1: var(--primary_1);
+$primary_2: var(--primary_2);
 
-$secondary: var(--secondary);
-$tertiary: var(--tertiary);
+$success_0: var(--success_0);
+$success_1: var(--success_1);
+$success_2: var(--success_2);
 
-$success: $secondary;
-$warning: $tertiary;
-$danger: var(--danger);
-$info: $primary-text;
-$link: $primary-text;
-$link-hover: $text-strong;
-$light: $white-ter;
+$warning_0: var(--warning_0);
+$warning_1: var(--warning_1);
+$warning_2: var(--warning_2);
 
-$colors: "primary", "primary-light", "primary-bg-s", "primary-bg-a", "secondary", "tertiary", "success", "warning", "danger";
+$danger_0: var(--danger_0);
+$danger_1: var(--danger_1);
+$danger_2: var(--danger_2);
+
+$colors: "primary", "success", "warning", "danger";
 
 @each $name in $colors {
   .has-text-#{$name} {
-    color: var(--#{$name});
+    color: var(--#{$name}_0);
   }
 
   .has-background-#{$name} {
-    background-color: var(--#{$name});
+    background-color: var(--#{$name}_2);
   }
-}
-
-.help,
-.has-text-light {
-  color: $text-light;
 }
 
 .has-text-white {
   color: $white;
 }
 
-.has-text-dark {
-  color: $text-strong;
+.has-text-0 {
+  color: $text_0;
 }
 
-.has-text-light-grey {
-  color: $light-grey;
+.help,
+.has-text-1 {
+  color: $text_1;
 }

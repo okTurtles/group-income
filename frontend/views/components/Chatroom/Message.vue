@@ -126,16 +126,16 @@ export default {
   margin: 0;
 
   .sent & {
-    background-color: $primary-text;
-    color: $body-background-color;
+    background-color: $primary_0;
+    color: $background;
     border: 1px solid;
     border-radius: $radius-large;
     padding: $spacer-xs $spacer-sm;
   }
 
   .failed & {
-    color: $text-light;
-    border: 1px dashed $danger;
+    color: $text_1;
+    border: 1px dashed $danger_0;
     border-radius: $radius-large;
     padding: $spacer-xs $spacer-sm;
   }

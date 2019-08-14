@@ -1,5 +1,5 @@
 <template lang="pug">
-  span.c-badge(v-if='number') {{number}}
+span.c-badge(v-if='number') {{number}}
 </template>
 
 <script>
@@ -17,9 +17,9 @@ export default {
 .c-badge {
   display: inline-block;
   padding: 1px 5px; // a rounded square
-  color: $body-background-color;
+  color: $background;
   line-height: 1.1;
   border-radius: $radius;
-  background-color: $danger;
+  background-color: $danger_0;
 }
 </style>

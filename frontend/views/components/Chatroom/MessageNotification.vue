@@ -23,7 +23,7 @@ export default {
     padding: $spacer-xs $spacer-sm;
     text-align: center;
     max-width: 32rem;
-    background-color: $light;
+    background-color: $general_2;
     border-radius: $radius-large;
 
     @include tablet {

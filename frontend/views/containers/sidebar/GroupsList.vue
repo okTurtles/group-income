@@ -91,7 +91,7 @@ export default {
   width: calc(100% - 1rem);
   line-height: 1;
   overflow: hidden;
-  background-color: $primary-bg-s;
+  background-color: $primary_2;
   transition: background-color ease-in 0.3s;
   justify-content: flex-start;
   font-size: $size-4;
@@ -116,7 +116,7 @@ export default {
   &.has-text-white {
     &:hover,
     &:focus {
-      color: var(--primary-text-hover) !important;
+      color: var(--primary_1) !important;
     }
   }
 }

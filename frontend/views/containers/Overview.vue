@@ -165,20 +165,20 @@ export default {
 }
 
 .c-total-amount {
-  color: $tertiary;
+  color: $warning_0;
 }
 
 .c-total-pledge {
-  color: $primary;
+  color: $primary_0;
 }
 
 .c-surplus {
-  color: $secondary;
+  color: $success_0;
 }
 
 .tag {
   font-size: 12px;
-  background-color: $border;
+  background-color: $general_0;
   border-radius: 3px;
   text-align: center;
   display: flex;
@@ -187,24 +187,24 @@ export default {
   align-items: center;
   margin-left: 4px;
   line-height: 0;
-  color: $text-light;
+  color: $text_1;
 
   &::before {
     content: '';
     width: 4px;
     height: 4px;
     transform: rotate(45deg);
-    background-color: $border;
+    background-color: $general_0;
     position: absolute;
     left: 2px;
   }
 
   &.mincome {
-    background-color: $text-light;
+    background-color: $text_1;
     color: #fff;
 
     &::before {
-      background-color: $text-light;
+      background-color: $text_1;
     }
   }
 }

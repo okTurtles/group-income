@@ -62,7 +62,7 @@ export default {
     position: absolute;
     bottom: 0;
     right: 0;
-    background: linear-gradient(to right, rgba($body-background-color, 0), $body-background-color);
+    background: linear-gradient(to right, rgba($background, 0), $background);
     width: 3rem;
     height: 100%;
     pointer-events: none;
@@ -112,6 +112,6 @@ export default {
   bottom: 0;
   right: 0;
   transform: translate(44%, 44%);
-  border: 2px solid $body-background-color;
+  border: 2px solid $background;
 }
 </style>

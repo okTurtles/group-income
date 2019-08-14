@@ -97,7 +97,7 @@ export default {
 
       &:focus {
         background-color: transparent;
-        color: $text;
+        color: $text_0;
       }
     }
   }
