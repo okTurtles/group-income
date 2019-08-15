@@ -157,14 +157,10 @@ export default {
           }
         })
         const hash = entry.hash()
-        // TODO: convert this to SBL
         sbp('okTurtles.events/once', hash, (contractID, entry) => {
           this.$store.commit('setCurrentGroupId', hash)
-          // Take them to the dashboard.
-          // *** this.$router.push({ path: '/dashboard' })
           this.$router.push({ path: '/welcome' })
         })
-        // TODO: convert this to SBL
         await sbp('backend/publishLogEntry', entry)
         // add to vuex and monitor this contract for updates
         await sbp('state/vuex/dispatch', 'syncContractWithServer', hash)

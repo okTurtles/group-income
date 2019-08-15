@@ -48,6 +48,7 @@ DefineContract({
       })
     }),
     process (state, { data, meta }) {
+      // TODO: checkpointing: https://github.com/okTurtles/group-income-simple/issues/354
       const initialState = {
         payments: {},
         invites: {},
