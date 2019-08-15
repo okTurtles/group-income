@@ -2,7 +2,6 @@
 
 import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
-import { merge } from '../../utils/giLodash.js'
 import { DefineContract } from './Contract.js'
 import { objectOf, optional, string, number, object, unionOf, literalOf } from '~/frontend/utils/flowTyper.js'
 // TODO: use protocol versioning to load these (and other) files
@@ -237,15 +236,13 @@ DefineContract({
       }
     },
     // TODO: remove group profile when leave group is implemented
-    // TODO: rename to GroupProfileCreate / GroupProfileUpdate
-    'gi.contracts/group/setGroupProfile': {
-      validate: objectOf({
-        username: string, // TODO: use meta.username
-        profile: object
-      }),
-      process (state, { data }) {
-        var { groupProfile } = state.profiles[data.username]
-        state.profiles[data.username].groupProfile = merge(groupProfile, data.profile)
+    'gi.contracts/group/groupProfileUpdate': {
+      validate: object,
+      process (state, { data, meta }) {
+        var { groupProfile } = state.profiles[meta.username]
+        for (var key in data) {
+          Vue.set(groupProfile, key, data[key])
+        }
       }
     }
   }
