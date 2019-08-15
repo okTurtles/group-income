@@ -255,6 +255,7 @@ var router = new Router({
       meta: {
         title: 'Join a Group'
       },
+      // beforeEnter: createEnterGuards(loginGuard, mailGuard)
       beforeEnter: createEnterGuards(loginGuard)
     },
     {

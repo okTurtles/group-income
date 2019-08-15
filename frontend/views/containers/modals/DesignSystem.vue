@@ -1,7 +1,5 @@
 <template lang="pug">
-//- NOTE: This file is here to serve as a test case / example
-//-       In my (greg's) opinion, it should be deleted soon.
-//-       If you use it as an example when creating other modals
+//- NOTE: If you use it as an example when creating other modals
 //-       (instead of existing modals), make sure to replace many
 //-       of the tags below with their equivalent i18n tags.
 modal-template(:class="{ 'has-background': background }")
@@ -33,7 +31,9 @@ modal-template(:class="{ 'has-background': background }")
       ) Toggle background
 
   template(#footer='')
-    //- We aren't using i18n because this string shouldn't be translated either
+    //- We aren't using i18n in this DesignSystem.vue file because
+    //- this string shouldn't be translated. However, if you copy this file,
+    //- you must change this to be i18n(tag='p')
     p According to your voting rules, 8 out of 10 members will have to agree with this.
 </template>
 <script>

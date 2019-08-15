@@ -144,7 +144,7 @@ describe('Frontend', function () {
 
   describe('Sign up Test', function () {
     it('Should register User', function () {
-      this.timeout(50000)
+      this.timeout(10000)
       return n.use(signup(username, 'test@testgroupincome.com', 'testtest'))
     })
 
