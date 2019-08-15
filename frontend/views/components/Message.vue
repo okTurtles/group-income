@@ -78,7 +78,7 @@ export default {
     }
   }
   &.is-warning {
-    background-color: var(--warning_2);;
+    background-color: var(--warning_2);
     i {
       color: $warning_0;
     }

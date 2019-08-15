@@ -71,9 +71,8 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
           td.has-text-small Body #[b small]
         tr
           td
-            code $text_1
-            pre .has-text-light
-          td.has-text-light Use this color on non critical texts.
+            pre .has-text-1
+          td.has-text-1 Use this color on non critical texts.
         tr
           td
             pre .link

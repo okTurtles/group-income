@@ -2,7 +2,7 @@
 .c-message(:class="[variant, isSameSender && 'sameSender']")
   avatar.c-avatar(:src='avatar' :class="{ 'alignToText': !hasWhoInvisible }" aria-hidden='true')
   .c-body
-    span.has-text-light.c-who(:class="{ 'gi-sr-only': hasWhoInvisible }")
+    span.has-text-1.c-who(:class="{ 'gi-sr-only': hasWhoInvisible }")
       | {{who}}
     // TODO: #502 - Chat: Add support to markdown formatted text
     p.c-text(v-if='text') {{text}}

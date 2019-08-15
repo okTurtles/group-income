@@ -1,6 +1,6 @@
 <template lang="pug">
 .c-overview
-  p.has-text-light Group members and their pledges
+  p.has-text-1 Group members and their pledges
   //- input(type="text" v-model='ratioWidthPadding')
   .c-chart-wrapper
     svg.c-chart(

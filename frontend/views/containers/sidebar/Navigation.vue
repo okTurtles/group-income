@@ -46,7 +46,7 @@ nav.c-navigation(
           href='https://groupincome.org/blog/'
           target='_blank'
         )
-          i18n(:class="isDarkTheme ? 'has-text-light' : ''") Blog
+          i18n(:class="isDarkTheme ? 'has-text-1' : ''") Blog
 
         list-item(
           tag='a'
@@ -54,7 +54,7 @@ nav.c-navigation(
           href='https://groupincome.org/faq/'
           target='_blank'
         )
-          i18n(:class="isDarkTheme ? 'has-text-light' : ''") Help &amp; Feedback
+          i18n(:class="isDarkTheme ? 'has-text-1' : ''") Help &amp; Feedback
 
         list-item(
           tag='a'
@@ -62,7 +62,7 @@ nav.c-navigation(
           href='https://groupincome.org/donate/'
           target='_blank'
         )
-          i18n(:class="isDarkTheme ? 'has-text-light' : ''") Donate
+          i18n(:class="isDarkTheme ? 'has-text-1' : ''") Donate
       profile
 </template>
 
