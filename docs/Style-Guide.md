@@ -78,7 +78,7 @@ There are **three exceptions**, and all of them have to do with different types 
 
 **The object returned by `data ()` should have only these keys:**
 
-1. **`form`** — form validation metadata for [`vuelidate`](https://github.com/okTurtles/group-income-simple/issues/334).
+1. **`form`** — the data to be validated by [`vuelidate`](https://github.com/okTurtles/group-income-simple/issues/334) and bound using `v-model` to a form.
 2. **`config`** — some Vue.js components require bindings to config data (for example, the `sliderConfig` for `<vue-slider>` in `TimeTravel.vue` and `steps` for `helpers/StepAssistant.js` in `CreateGroup.vue` or [Vue Provide](https://vuejs.org/v2/api/#provide-inject)).
 3. **`ephemeral`** — any data we might not care to save beyond the life of the view (unless some other action is performed) should be placed here. There shouldn't be much that fits in this category (as, for example, most error handling stuff should be handled by `form` and in the `<template>` section). However, it might be useful to cache some data temporarily (like a profile picture or URL) here.
 
