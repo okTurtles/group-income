@@ -161,13 +161,16 @@ var router = new Router({
       },
       beforeEnter: createEnterGuards(loginGuard)
     },
-    {
-      path: '/user-group',
-      component: () => import('../views/UserGroup.vue'),
-      meta: {
-        title: 'Your Group'
-      }
-    },
+    // NOTE: do not delete this! Event though we no longer use it,
+    //       we keep it around to demonstrate how to asynchronously
+    //       load a route using import() function
+    // {
+    //   path: '/user-group',
+    //   component: () => import('../views/UserGroup.vue'),
+    //   meta: {
+    //     title: 'Your Group'
+    //   }
+    // },
     {
       path: '/contributions',
       component: Contributions,

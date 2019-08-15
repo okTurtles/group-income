@@ -1,7 +1,6 @@
 <template lang='pug'>
   .settings-container
-    h2.settings-title
-      i18n My account
+    i18n.settings-title(tag='h2') My account
 
     p.username.is-size-6 @{{ userName }}
 
@@ -12,17 +11,15 @@
         @submit.prevent='save'
       )
         p.is-success(
-          v-if='profileSaved'
+          v-if='ephemeral.profileSaved'
           data-test='profileSaveSuccess'
         )
           i.icon-check
           i18n Profile saved successfully!
 
-        p.error(
-          v-if='errorMsg'
-        ) {{errorMsg}}
+        p.error(v-if='ephemeral.errorMsg') {{ ephemeral.errorMsg }}
 
-        .avatar(:class="{'error': $v.edited.picture.$error}")
+        .avatar(:class="{ error: $v.form.picture.$error }")
           label(for='profilePicture')
             avatar(:src='userPicture')
             i18n.link Change avatar
@@ -32,13 +29,13 @@
             name='profilePicture'
             accept='image/*'
             @change='fileChange($event.target.files)'
-            @input='$v.edited.picture.$touch()'
+            @input='$v.form.picture.$touch()'
             placeholder='http://'
             data-test='profilePicture'
           )
 
-          p.error(v-if='$v.edited.picture.$error')
-            i18n The profile picture must be a valid url
+          i18n.error(tag='p' v-if='$v.form.picture.$error')
+            | The profile picture must be a valid url
 
         .field
           i18n.label(tag='label') Display Name
@@ -46,7 +43,7 @@
           input.input(
             name='displayName'
             type='text'
-            v-model='edited.displayName'
+            v-model='form.displayName'
             placeholder='Name'
             data-test='displayName'
           )
@@ -59,7 +56,7 @@
           textarea.textarea(
             type='text'
             name='bio'
-            v-model='edited.bio'
+            v-model='form.bio'
             placeholder='Bio'
             data-test='bio'
           )
@@ -68,19 +65,16 @@
           i18n.label(tag='label') Email
 
           input.input(
-            :class="{'error': $v.edited.email.$error}"
+            :class="{'error': $v.form.email.$error}"
             name='profileEmail'
             type='text'
-            v-model='edited.email'
-            @input='$v.edited.email.$touch()'
+            v-model='form.email'
+            @input='$v.form.email.$touch()'
             placeholder='Email'
             data-test='profileEmail'
           )
 
-          i18n.error(
-            v-if='$v.edited.email.$error'
-            tag='p'
-          ) Not an email
+          i18n.error(tag='p' v-if='$v.form.email.$error') Not an email
 
         .field
           i18n.label(tag='label') Password
@@ -95,7 +89,7 @@
         .buttons
           i18n.is-success(
             tag='button'
-            :disabled='$v.edited.$invalid'
+            :disabled='$v.form.$invalid'
             type='submit'
             data-test='submit'
           ) Save account changes
@@ -127,31 +121,32 @@ import Avatar from '@components/Avatar.vue'
 import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
 
-const url = helpers.regex('url', /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i)
-
-// TODO: rename this file to match the name below!
+const url = helpers.regex('url', /^https?:\/\/[^\s/$.?#].[^\s]*$/i)
 
 export default {
-  name: 'SettingsUserProfile',
+  name: 'UserProfile',
   mixins: [validationMixin],
   components: {
     Avatar
   },
   data () {
-    const attrCopy = Object.assign({}, this.$store.getters.currentUserIdentityContract.attributes || {})
+    // create a copy of the attributes so that we do not directly modify the values in the store
+    const attrsCopy = { ...this.$store.getters.currentUserIdentityContract.attributes || {} }
     return {
-      edited: {
-        picture: attrCopy.picture,
-        bio: attrCopy.bio,
-        displayName: attrCopy.displayName,
-        email: attrCopy.email
+      form: {
+        picture: attrsCopy.picture,
+        bio: attrsCopy.bio,
+        displayName: attrsCopy.displayName,
+        email: attrsCopy.email
       },
-      errorMsg: null,
-      profileSaved: false
+      ephemeral: {
+        errorMsg: null,
+        profileSaved: false
+      }
     }
   },
   validations: {
-    edited: {
+    form: {
       picture: { url },
       email: { email }
     }
@@ -161,7 +156,7 @@ export default {
       return this.$store.getters.currentUserIdentityContract.attributes || {}
     },
     userPicture () {
-      return this.edited.picture || this.attributes.picture
+      return this.form.picture || this.attributes.picture
     },
     userName () {
       return this.$store.state.loggedIn.username
@@ -174,11 +169,11 @@ export default {
     },
     async save () {
       try {
-        this.profileSaved = false
+        this.ephemeral.profileSaved = false
         var attrs = {}
-        for (const key of Object.keys(this.edited)) {
-          if (this.edited[key] && this.edited[key] !== this.attributes[key]) {
-            attrs[key] = this.edited[key]
+        for (const key in this.form) {
+          if (this.form[key] !== this.attributes[key]) {
+            attrs[key] = this.form[key]
           }
         }
         const attributes = await sbp('gi.contracts/identity/setAttributes/create',
@@ -186,16 +181,19 @@ export default {
           this.$store.state.loggedIn.identityContractID
         )
         await sbp('backend/publishLogEntry', attributes)
-        this.profileSaved = true
+        this.ephemeral.profileSaved = true
       } catch (ex) {
-        console.log(ex)
-        this.errorMsg = L('Failed to Save Profile')
+        // TODO: handle better
+        console.error(ex)
+        this.ephemeral.errorMsg = L('Failed to Save Profile')
       }
     },
     fileChange (fileList) {
+      // TODO: while respecting DRY, handle this in the same way that it's handled
+      //       in CreateGroup.vue
       if (!fileList.length) return
       // Temp
-      this.edited.picture = URL.createObjectURL(fileList[0])
+      this.form.picture = URL.createObjectURL(fileList[0])
     }
   }
 }

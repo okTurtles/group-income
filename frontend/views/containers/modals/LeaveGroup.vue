@@ -86,6 +86,7 @@ import { required } from 'vuelidate/lib/validators'
 import { CLOSE_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
 import Message from '@components/Message.vue'
+import L from '@view-utils/translations.js'
 
 export default {
   name: 'LeaveGroupModal',
@@ -111,7 +112,7 @@ export default {
         required,
         checkConfirmation: value => {
           console.log(value)
-          return value === 'Leave The Dreamers'
+          return value === L('Leave The Dreamers')
         }
       }
     }
