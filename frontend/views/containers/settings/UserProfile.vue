@@ -117,6 +117,7 @@
 import { validationMixin } from 'vuelidate'
 import { email, helpers } from 'vuelidate/lib/validators'
 import { LOAD_MODAL } from '@utils/events.js'
+import { cloneDeep } from '@utils/giLodash.js'
 import Avatar from '@components/Avatar.vue'
 import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
@@ -130,8 +131,9 @@ export default {
     Avatar
   },
   data () {
-    // create a copy of the attributes so that we do not directly modify the values in the store
-    const attrsCopy = { ...this.$store.getters.currentUserIdentityContract.attributes || {} }
+    // create a copy of the attributes to avoid any Vue.js reactivity weirdness
+    // so that we do not directly modify the values in the store
+    const attrsCopy = cloneDeep(this.$store.getters.currentUserIdentityContract.attributes || {})
     return {
       form: {
         picture: attrsCopy.picture,
