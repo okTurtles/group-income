@@ -21,6 +21,8 @@
 /.imdone/
 /NOTES.md
 .editorconfig
+*.sublime-workspace
+*.sublime-project
 
 # Misc
 /ignored

@@ -9,7 +9,7 @@ import Vuex from 'vuex'
 import { GIMessage } from '~/shared/GIMessage.js'
 import * as _ from '@utils/giLodash.js'
 import { SETTING_CURRENT_USER } from './database.js'
-import { LOGIN, LOGOUT, EVENT_HANDLED } from '@utils/events.js'
+import { LOGIN, LOGOUT, EVENT_HANDLED, CONTRACTS_MODIFIED } from '@utils/events.js'
 import Colors from './colors.js'
 import './contracts/group.js'
 import './contracts/mailbox.js'
@@ -36,9 +36,6 @@ export function selectorIsContractOrAction (sel: string) {
 }
 
 sbp('sbp/selectors/register', {
-  'state/vuex/dispatch': (...args) => {
-    return store.dispatch(...args)
-  },
   // This will build the current contract state from applying all its actions
   'state/latestContractState': async (contractID: string) => {
     let events = await sbp('backend/eventsSince', contractID, contractID)
@@ -50,18 +47,16 @@ sbp('sbp/selectors/register', {
     }
     return state
   },
-  'state/vuex/state': () => {
-    return store.state
-  }
+  'state/vuex/state': () => store.state,
+  'state/vuex/dispatch': (...args) => store.dispatch(...args)
 })
 
-const state = {
+const initialState = {
   currentGroupId: null,
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
-  theme: 'blue',
-  fontSize: 1
+  theme: 'blue'
 }
 
 // Mutations must be synchronous! Never call these directly!
@@ -104,7 +99,7 @@ const mutations = {
     const index = state.pending.indexOf(contractID)
     index !== -1 && state.pending.splice(index, 1)
     // calling this will make pubsub subscribe for events on `contractID`!
-    sbp('okTurtles.events/emit', 'contractsModified', { add: contractID })
+    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, { add: contractID })
   },
   setContractHEAD (state, { contractID, HEAD }) {
     state.contracts[contractID] && Vue.set(state.contracts[contractID], 'HEAD', HEAD)
@@ -113,10 +108,10 @@ const mutations = {
     store.unregisterModule(contractID)
     Vue.delete(state.contracts, contractID)
     // calling this will make pubsub unsubscribe for events on `contractID`!
-    sbp('okTurtles.events/emit', 'contractsModified', { remove: contractID })
+    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, { remove: contractID })
   },
   setContracts (state, contracts) {
-    for (const contractID of Object.keys(state.contracts)) {
+    for (const contractID in state.contracts) {
       mutations.removeContract(state, contractID)
     }
     for (const contract of contracts) {
@@ -143,9 +138,6 @@ const mutations = {
   },
   setTheme (state, color) {
     state.theme = color
-  },
-  setFontSize (state, fontSize) {
-    state.fontSize = fontSize
   }
 }
 // https://vuex.vuejs.org/en/getters.html
@@ -213,11 +205,8 @@ const getters = {
   colors (state) {
     return Colors[state.theme]
   },
-  isDarkTheme () {
+  isDarkTheme (state) {
     return Colors[state.theme].theme === 'dark'
-  },
-  fontSize (state) {
-    return state.fontSize
   }
 }
 
@@ -260,14 +249,13 @@ const actions = {
       commit('setCurrentGroupId', settings.currentGroupId)
       commit('setContracts', settings.contracts || [])
       commit('setTheme', settings.theme || 'blue')
-      commit('setFontSize', settings.fontSize || 1)
     }
     await sbp('gi.db/settings/save', SETTING_CURRENT_USER, user.username)
     // This may seem unintuitive to use the state from the global store object
     // but the state object in scope is a copy that becomes stale if something modifies it
     // like an outside dispatch
-    for (const key of Object.keys(store.state.contracts)) {
-      await dispatch('syncContractWithServer', key)
+    for (const contractID in store.state.contracts) {
+      await dispatch('syncContractWithServer', contractID)
     }
     commit('login', user)
   },
@@ -277,7 +265,7 @@ const actions = {
     debouncedSave.cancel()
     await dispatch('saveSettings', state)
     await sbp('gi.db/settings/save', SETTING_CURRENT_USER, null)
-    for (const contractID of Object.keys(state.contracts)) {
+    for (const contractID in state.contracts) {
       mutations.removeContract(state, contractID)
     }
     commit('logout')
@@ -308,6 +296,7 @@ const actions = {
     { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object},
     message: GIMessage
   ) {
+    // const clonedState = _.cloneDeep(state)
     try {
       const contractID = message.contractID()
       const selector = message.type()
@@ -369,17 +358,11 @@ const actions = {
     colors: String
   ) {
     commit('setTheme', colors)
-  },
-  async setFontSize (
-    { commit }: {commit: Function},
-    colors: String
-  ) {
-    commit('setFontSize', colors)
   }
 }
 const debouncedSave = _.debounce((dispatch, savedState) => dispatch('saveSettings', savedState), 500)
 
-store = new Vuex.Store({ state, mutations, getters, actions })
+store = new Vuex.Store({ state: _.cloneDeep(initialState), mutations, getters, actions })
 store.subscribe(() => debouncedSave(store.dispatch))
 
 export default store

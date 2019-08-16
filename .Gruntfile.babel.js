@@ -305,7 +305,24 @@ module.exports = (grunt) => {
         //                                              useful in the <script> section, i.e.
         //                                              <script>import 'foo.scss' ...
         eslint({ throwOnError: true, throwOnWarning: true }),
-        VuePlugin({ css: false }),
+        VuePlugin({
+          // https://rollup-plugin-vue.vuejs.org/options.html
+          // https://github.com/vuejs/rollup-plugin-vue/blob/master/src/index.ts
+          // https://github.com/vuejs/vue-component-compiler#api
+          css: false,
+          style: {
+            preprocessOptions: {
+              scss: {
+                // https://github.com/sass/node-sass#includepaths
+                includePaths: [
+                  // so that you can write things like this inside component style sections:
+                  // @import 'vue-slider-component/lib/theme/default.scss';
+                  path.resolve('./node_modules')
+                ]
+              }
+            }
+          }
+        }),
         // VuePlugin(),
         flow({ all: true }),
         commonjs({

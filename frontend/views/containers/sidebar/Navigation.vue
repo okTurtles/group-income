@@ -1,4 +1,5 @@
 <template lang="pug">
+//- adsf
 nav.c-navigation(
   role='navigation'
   :class="{ 'is-active': ephemeral.isActive }"
@@ -13,7 +14,9 @@ nav.c-navigation(
     // NOTE/REVIEW: If we follow Messages GIBot approach, the bell icon wont be needed
     activity(:activityCount='activityCount')
 
-  .c-navigation-body
+  .c-navigation-body(
+    @click.self='enableTimeTravel'
+  )
     .c-navigation-body-top
       ul.c-top-links
         list-item(
@@ -34,7 +37,7 @@ nav.c-navigation(
         style='opacity: 0; cursor: default;'
         icon='envelope'
         data-test='mailboxLink'
-        :badgeCount='unreadMessagesCount || activityCount'
+        :badgeCount='unreadMessageCount || activityCount'
       )
         i18n Inbox (deprecated)
 
@@ -64,6 +67,8 @@ nav.c-navigation(
         )
           i18n(:class="isDarkTheme ? 'has-text-light-grey' : ''") Donate
       profile
+
+  component(:is='ephemeral.timeTravelComponentName')
 </template>
 
 <script>
@@ -86,29 +91,35 @@ export default {
   data () {
     return {
       ephemeral: {
-        isActive: false
+        isActive: false,
+        timeTravelComponentName: null
       }
     }
   },
   computed: {
     ...mapGetters([
-      'isDarkTheme'
+      'isDarkTheme',
+      'unreadMessageCount',
+      'colors'
     ]),
     activityCount () {
-      // TODO: activityCount should really count unreadMessageCount?
-      return this.$store.getters.unreadMessageCount
-    },
-    unreadMessagesCount () {
-      return this.$store.getters.unreadMessageCount
+      // TODO: implement this? (or not?)
+      return 0
     },
     logo () {
-      const name = this.$store.getters.colors.theme === 'dark' ? '-white' : ''
+      const name = this.colors.theme === 'dark' ? '-white' : ''
       return `/assets/images/logo-transparent${name}.png`
     }
   },
   methods: {
     toggleMenu () {
       this.ephemeral.isActive = !this.ephemeral.isActive
+    },
+    enableTimeTravel (evt) {
+      if (evt.shiftKey) {
+        console.debug('enable time travel!')
+        this.ephemeral.timeTravelComponentName = 'TimeTravel'
+      }
     }
   }
 }

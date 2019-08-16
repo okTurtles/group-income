@@ -4,6 +4,7 @@ import sbp from '~/shared/sbp.js'
 import { sign, bufToB64, b64ToStr } from '~/shared/functions.js'
 import { GIMessage } from '~/shared/GIMessage.js'
 import { RESPONSE_TYPE } from '~/shared/constants.js'
+import { CONTRACTS_MODIFIED } from '@utils/events.js'
 import pubsub from './utils/pubsub.js'
 import { handleFetchResult } from './utils/misc.js'
 
@@ -61,7 +62,7 @@ export function createWebSocket (url: string, options: Object): Promise<Object> 
 }
 
 // Keep pubsub in sync (logged into the right "rooms") with store.state.contracts
-sbp('okTurtles.events/on', 'contractsModified', async (data) => {
+sbp('okTurtles.events/on', CONTRACTS_MODIFIED, async (data) => {
   var contractID = data.add || data.remove
   var idx = contractSubscriptions.indexOf(contractID)
   var method = data.add ? 'sub' : 'unsub'
