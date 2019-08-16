@@ -1,24 +1,22 @@
 <template lang="pug">
-//- .box.time-travel
-.time-travel
-  //- for some reason vue-slider-component is invisible in the UI?!
-  //- vue-slider(
-  //-   v-bind='config.sliderConfig'
-  //-   v-model='ephemeral.position'
-  //-   @dragging='timeTravel'
-  //- )
-  input.slider(
-    type='range'
-    v-bind='config.sliderConfig'
-    v-model='ephemeral.position'
-    @input='timeTravel'
-  )
-  div {{ ephemeral.history.length }}
+  .time-travel
+    vue-slider(
+     v-model="ephemeral.position"
+     v-bind="config.sliderConfig"
+     @change='timeTravel'
+    )
+    //
+      input.slider(
+        type='range'
+        @input='timeTravel'
+      )
+
 </template>
 
 <script>
 import sbp from '~/shared/sbp.js'
-// import VueSlider from 'vue-slider-component'
+import VueSlider from 'vue-slider-component'
+import 'vue-slider-component/theme/default.css'
 import store from '@model/state.js'
 import { REPLACED_STATE } from '@utils/events.js'
 import { cloneDeep } from '@utils/giLodash.js'
@@ -30,7 +28,7 @@ import '~/shared/domains/okTurtles/events.js'
 const disableTimeTravel = false
 export default {
   name: 'TimeTravel',
-  // components: { VueSlider }, // disabled until we can figure out how to make it visible
+  components: { VueSlider },
   created () {
     if (disableTimeTravel) {
       console.debug("[TimeTravel] this feature is disabled for now because it's causing problems...")
@@ -66,12 +64,12 @@ export default {
       },
       config: {
         sliderConfig: {
-          tooltip: 'focus',
           marks: true,
           adsorb: true,
           lazy: true,
           min: 0,
-          max: 0
+          max: 1,
+          interval: 1
         }
       }
     }
@@ -80,32 +78,18 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-// NOTE: importing this in a scoped section means that it will be
-//       duplicated in the generated component.css, something we don't
-//       want if we're actually going to use this component. We should
-//       import the style globally instead.
-// @import 'vue-slider-component/lib/theme/material.scss';
 .time-travel {
   position: fixed;
-  bottom: 10px;
-  right: 10px;
+  bottom: 30px;
+  left: 20%;
   width: 60%;
   z-index: 10000;
   padding: 0 10px;
   box-shadow: 0 2px 30px rgba(10, 10, 10, 0.1), 0 0 0 1px rgba(10, 10, 10, 0.1);
 }
+
 input.slider {
   width: 100%;
   padding: 10px 0;
 }
-/*
-.ticks {
-  display: flex;
-  justify-content: space-between;
-}
-
-.ticks li {
-  display: inline-block;
-}
-*/
 </style>
