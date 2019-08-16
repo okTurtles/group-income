@@ -166,32 +166,30 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
       h2 Color
 
     section.p-section
-      h3 Support
+      h3 Variable
 
-      table
+      table.colors
         thead
           th code
           th demo
-          //- th usage
-        tr(v-for='(color, index) in config.colors.brand' :key='`brand-color-${index}`')
+
+        tr(v-for='(color, index) in config.colors' :key='`color-${index}`')
           td
-            code ${{color.name}}
-            pre(v-if='!color.noClass') .has-background-{{color.name}}
+            code {{color.name}}
+            pre(v-for='num in [0, 1, 2]' :key='num') var(--{{color.name}}_{{num}})&nbsp
           td
-            span.c-palette(:class='`has-background-${color.name}`')
-          //- td(v-html='color.usage')
+            span.c-palette(v-for='num in [0, 1, 2]' :key='num' :style="{ backgroundColor: `var(--${color.name}_${num})`}")
 
     section.p-section
-      h3 Support
+      h3 Background
 
       table
         thead
           th code
           th demo
           //- th usage
-        tr(v-for='(color, index) in config.colors.support' :key='`support-color-${index}`')
+        tr(v-for='(color, index) in config.colors' :key='`support-color-${index}`')
           td
-            code ${{color.name}}
             pre(v-if='!color.noClass') .has-background-{{color.name}}
           td
             span.c-palette(:class='`has-background-${color.name}`')
@@ -650,28 +648,24 @@ export default {
     return {
       articles: [],
       config: {
-        colors: {
-          brand: [
-            {
-              name: 'primary',
-              usage: 'Used on main decorative / interactive elements.'
-            }
-          ],
-          support: [
-            {
-              name: 'success',
-              usage: 'Used on elements to show something good happened - Do not mix its usage with success (same color in this theme but with  different meanings)'
-            },
-            {
-              name: 'warning',
-              usage: 'Used on elements to show something not that good happened - Do not mix its usage with $tertiary (same color in this theme but with different meanings)'
-            },
-            {
-              name: 'danger',
-              usage: 'Used on elements to show something wrong happened'
-            }
-          ]
-        }
+        colors: [
+          {
+            name: 'primary',
+            usage: 'Used on main decorative / interactive elements.'
+          },
+          {
+            name: 'success',
+            usage: 'Used on elements to show something good happened - Do not mix its usage with success (same color in this theme but with  different meanings)'
+          },
+          {
+            name: 'warning',
+            usage: 'Used on elements to show something not that good happened - Do not mix its usage with $tertiary (same color in this theme but with different meanings)'
+          },
+          {
+            name: 'danger',
+            usage: 'Used on elements to show something wrong happened'
+          }
+        ]
       }
     }
   },
@@ -814,6 +808,10 @@ table {
   .table td{
     vertical-align: top;
   }
+}
+
+.colors td {
+  vertical-align: top
 }
 
 .message {
