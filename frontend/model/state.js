@@ -301,17 +301,11 @@ const actions = {
       await sbp('gi.db/log/addEntry', message)
 
       if (message.isFirstMessage()) {
-        // we pass in an empty data here because it will be filled in an processed
-        // by the process mutation, while `registerContract` simply sets the initial state to it
-        // we do this for compatibility with the `login` action.
         commit('registerContract', { contractID, type })
       }
 
       const mutation = { data, meta, hash }
       commit(`${contractID}/processMessage`, { selector, message: mutation })
-      // TODO: delete this or reimplement it
-      // if this mutation has a corresponding action, perform it after thet mutation
-      // await dispatch(`${contractID}/${type}`, mutation)
 
       // all's good, so update our contract HEAD
       // TODO: handle malformed message DoS
@@ -337,7 +331,13 @@ const actions = {
   }
 }
 
-store = new Vuex.Store({ state: _.cloneDeep(initialState), mutations, getters, actions })
+store = new Vuex.Store({
+  state: _.cloneDeep(initialState),
+  mutations,
+  getters,
+  actions,
+  strict: !!process.env.VUEX_STRICT
+})
 const debouncedSave = _.debounce(() => store.dispatch('saveSettings'), 500)
 store.subscribe(debouncedSave)
 
