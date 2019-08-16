@@ -4,10 +4,10 @@ div(v-if='groupsByName.length')
     menu-trigger.c-trigger(:class="`has-text-${isDarkTheme ? 'white' : 'dark'}`")
       avatar.c-avatar(
         src='/assets/images/default-avatar.png'
-        :alt='settings.groupName'
-        :blobURL='settings.groupPicture'
+        :alt='groupSettings.groupName'
+        :blobURL='groupSettings.groupPicture'
       )
-      | {{ this.settings.groupName }}
+      | {{ groupSettings.groupName }}
       i.icon-angle-down
 
     menu-content
@@ -62,7 +62,7 @@ export default {
       'currentGroupId'
     ]),
     ...mapGetters([
-      'settings',
+      'groupSettings',
       'groupsByName',
       'isDarkTheme'
     ])

@@ -17,7 +17,8 @@ main.c-splash(data-test='homeLogo')
       tag='button'
       ref='signupBtn'
       @click="openModal('SignUp')"
-      @keyup.enter="openModal('SignUp')" :disabled='isModalOpen'
+      @keyup.enter="openModal('SignUp')"
+      :disabled='isModalOpen'
       data-test='signupBtn'
     ) Signup
 

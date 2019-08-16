@@ -80,7 +80,7 @@ import ListItem from '@components/ListItem.vue'
 import { mapGetters } from 'vuex'
 
 export default {
-  name: 'SideBar',
+  name: 'Navigation',
   components: {
     Toggle,
     Activity,
@@ -104,7 +104,7 @@ export default {
     ]),
     activityCount () {
       // TODO: implement this? (or not?)
-      return 0
+      return 0 + this.unreadMessageCount
     },
     logo () {
       const name = this.colors.theme === 'dark' ? '-white' : ''

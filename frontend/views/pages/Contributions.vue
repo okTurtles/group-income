@@ -1,5 +1,5 @@
 <template lang="pug">
-page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle' v-if='currentGroupState')
+page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
   template(#title='') Contributions
 
   .p-section-header
@@ -73,11 +73,10 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle' v-
     )
 
   template(#sidebar='')
-    groups-min-income(:group='currentGroupState')
+    groups-min-income
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
 import Page from '@pages/Page.vue'
 import currencies from '@view-utils/currencies.js'
 import MessageMissingIncome from '@containers/contributions/MessageMissingIncome.vue'
@@ -134,9 +133,6 @@ export default {
     }
   },
   computed: {
-    ...mapGetters([
-      'currentGroupState'
-    ]),
     doesReceiveMonetary () {
       return !!this.fakeStore.receiving.monetary && !this.ephemeral.isEditingIncome
     },

@@ -4,7 +4,7 @@
     i18n.label(tag='label') About the group
 
   p(data-test='sharedValues')
-    | {{ currentGroupState.settings.sharedValues }}
+    | {{ groupSettings.sharedValues }}
 
   i18n.link(
     tag='button'
@@ -19,7 +19,7 @@ export default {
   name: 'GroupMembers',
   computed: {
     ...mapGetters([
-      'currentGroupState'
+      'groupSettings'
     ])
   },
   methods: {
