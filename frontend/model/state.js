@@ -56,7 +56,8 @@ const initialState = {
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
-  theme: 'blue'
+  theme: 'blue',
+  fontSize: 1
 }
 
 // Mutations must be synchronous! Never call these directly!
@@ -132,6 +133,9 @@ const mutations = {
   },
   setTheme (state, color) {
     state.theme = color
+  },
+  setFontSize (state, fontSize) {
+    state.fontSize = fontSize
   }
 }
 // https://vuex.vuejs.org/en/getters.html
