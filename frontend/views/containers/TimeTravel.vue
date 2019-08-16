@@ -1,16 +1,10 @@
 <template lang="pug">
   .time-travel
     vue-slider(
-     v-model="ephemeral.position"
-     v-bind="config.sliderConfig"
-     @change='timeTravel'
+      v-model='ephemeral.position'
+      v-bind='config.sliderConfig'
+      @change='timeTravel'
     )
-    //
-      input.slider(
-        type='range'
-        @input='timeTravel'
-      )
-
 </template>
 
 <script>
@@ -38,7 +32,11 @@ export default {
         console.debug('[TimeTravel] spied mutation:', mutation)
         this.ephemeral.history.push(cloneDeep(state))
         this.config.sliderConfig.max += 1
-        this.ephemeral.position = this.config.sliderConfig.max
+        this.$nextTick(() => {
+          // do this in nextTick to prevent
+          // "[VueSlider error]: The "value" cannot be greater than the maximum."
+          this.ephemeral.position = this.config.sliderConfig.max
+        })
       })
     }
   },
@@ -66,9 +64,9 @@ export default {
         sliderConfig: {
           marks: true,
           adsorb: true,
-          lazy: true,
+          lazy: false,
           min: 0,
-          max: 1,
+          max: 0,
           interval: 1
         }
       }
@@ -84,7 +82,7 @@ export default {
   left: 20%;
   width: 60%;
   z-index: 10000;
-  padding: 0 10px;
+  padding: 10px 20px;
   box-shadow: 0 2px 30px rgba(10, 10, 10, 0.1), 0 0 0 1px rgba(10, 10, 10, 0.1);
 }
 
