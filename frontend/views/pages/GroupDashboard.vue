@@ -1,6 +1,6 @@
 <template lang="pug">
-page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupState.settings')
-  template(#title='') {{ currentGroupState.settings.groupName }}
+page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings.groupName')
+  template(#title='') {{ groupSettings.groupName }}
 
   page-section(title='This months overview')
     overview
@@ -13,13 +13,13 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupS
     progress-overview
 
   //- page-section(title='Support History')
-  //-   support-history(:history='[1.2, 1, .85, .95, 1.05, .35]')
+  //-   support-history
 
   //- page-section(title='Group Settings')
-  //-   group-settings(:group='currentGroupState')
+  //-   group-settings
 
   template(#sidebar='')
-    groups-min-income(:group='currentGroupState')
+    groups-min-income
     group-members
     group-purpose
 </template>
@@ -46,7 +46,7 @@ export default {
       'currentGroupId'
     ]),
     ...mapGetters([
-      'currentGroupState',
+      'groupSettings',
       'groupsByName'
     ])
   },

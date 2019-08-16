@@ -150,7 +150,8 @@ export default {
             await sbp('state/vuex/dispatch', 'syncContractWithServer', contract.hash())
           }
           // TODO: Just add cryptographic magic
-          // TODO: login also calls 'syncContractWithServer', this is duplication!
+          // login also calls 'syncContractWithServer', but not in this case since we
+          // just sync'd it.
           await sbp('state/vuex/dispatch', 'login', {
             username: this.form.name,
             identityContractID: user.hash()

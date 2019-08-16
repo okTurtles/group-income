@@ -75,26 +75,28 @@ const mutations = {
     selectorIsContractOrAction(selector)
     sbp(selector, state, message)
   },
-  addContract (state, { contractID, type, HEAD, data }) {
-    // copy over the initial state, making sure *not* to use cloneDeep on
-    // the entire vuexModule object (because cloneDeep doesn't clone functions)
-    // var vuexModule = Object.assign({}, contracts[type].vuexModule)
+  registerContract (state, { contractID, type }) {
+    const firstTimeRegistering = !state[contractID]
     var vuexModule = {
       // vuex module namespaced under this contract's hash
       // see details: https://vuex.vuejs.org/en/modules.html
       namespaced: true,
-      // make sure we restore any previously saved state (e.g. after login)
-      state: data,
+      state: {},
       mutations: { processMessage: mutations.processMessage }
     }
-    store.registerModule(contractID, vuexModule)
+    // we set preserveState because 'login' action does 'replaceState'
+    store.registerModule(contractID, vuexModule, { preserveState: !firstTimeRegistering })
     // NOTE: we modify state.contracts __AFTER__ calling registerModule, to
     //       ensure that any reactive Vue components that depend on
     //       `state.contracts` for their reactivity (e.g. `groupsByName` getter)
     //       will not result in errors like "state[contractID] is undefined"
     // 'Mutations Follow Vue's Reactivity Rules' - important for modifying objects
     // See: https://vuex.vuejs.org/en/mutations.html
-    Vue.set(state.contracts, contractID, { type, HEAD })
+    if (firstTimeRegistering) {
+      // this if block will get called when we first subscribe to a contract
+      // and won't get called upon login (becase replaceState will have been called)
+      Vue.set(state.contracts, contractID, { type, HEAD: contractID })
+    }
     // we've successfully received it back, so remove it from expectation pending
     const index = state.pending.indexOf(contractID)
     index !== -1 && state.pending.splice(index, 1)
@@ -102,21 +104,13 @@ const mutations = {
     sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, { add: contractID })
   },
   setContractHEAD (state, { contractID, HEAD }) {
-    state.contracts[contractID] && Vue.set(state.contracts[contractID], 'HEAD', HEAD)
+    state.contracts[contractID].HEAD = HEAD
   },
   removeContract (state, contractID) {
     store.unregisterModule(contractID)
     Vue.delete(state.contracts, contractID)
     // calling this will make pubsub unsubscribe for events on `contractID`!
     sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, { remove: contractID })
-  },
-  setContracts (state, contracts) {
-    for (const contractID in state.contracts) {
-      mutations.removeContract(state, contractID)
-    }
-    for (const contract of contracts) {
-      mutations.addContract(state, contract)
-    }
   },
   deleteMessage (state, hash) {
     const mailboxContract = store.getters.mailboxContract
@@ -146,7 +140,7 @@ const getters = {
   currentGroupState (state) {
     return state[state.currentGroupId] || {} // avoid "undefined" vue errors at inoportune times
   },
-  settings (state, getters) {
+  groupSettings (state, getters) {
     return getters.currentGroupState.settings || {}
   },
   mailboxContract (state, getters) {
@@ -244,29 +238,30 @@ const actions = {
     user: Object
   ) {
     const settings = await sbp('gi.db/settings/load', user.username)
+    // NOTE: login can be called when no settings are saved (e.g. from SignUp.vue)
     if (settings) {
-      console.log('loadSettings:', settings)
-      commit('setCurrentGroupId', settings.currentGroupId)
-      commit('setContracts', settings.contracts || [])
-      commit('setTheme', settings.theme || 'blue')
+      console.debug('loadSettings:', settings)
+      store.replaceState(settings)
+      // This may seem unintuitive to use the store.state from the global store object
+      // but the state object in scope is a copy that becomes stale if something modifies it
+      // like an outside dispatch
+      for (const contractID in store.state.contracts) {
+        const type = store.state.contracts[contractID].type
+        commit('registerContract', { contractID, type })
+        await dispatch('syncContractWithServer', contractID)
+      }
     }
     await sbp('gi.db/settings/save', SETTING_CURRENT_USER, user.username)
-    // This may seem unintuitive to use the state from the global store object
-    // but the state object in scope is a copy that becomes stale if something modifies it
-    // like an outside dispatch
-    for (const contractID in store.state.contracts) {
-      await dispatch('syncContractWithServer', contractID)
-    }
     commit('login', user)
   },
   async logout (
     { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object}
   ) {
     debouncedSave.cancel()
-    await dispatch('saveSettings', state)
+    await dispatch('saveSettings')
     await sbp('gi.db/settings/save', SETTING_CURRENT_USER, null)
     for (const contractID in state.contracts) {
-      mutations.removeContract(state, contractID)
+      commit('removeContract', contractID)
     }
     commit('logout')
   },
@@ -275,19 +270,8 @@ const actions = {
     { state }: {state: Object}
   ) {
     if (state.loggedIn) {
-      // var stateCopy = _.cloneDeep(state) // don't think this is necessary
-      // TODO: encrypt these
-      const settings = {
-        currentGroupId: state.currentGroupId,
-        contracts: Object.keys(state.contracts).map(contractID => ({
-          contractID,
-          ...state.contracts[contractID], // inserts `HEAD` and `type`
-          data: state[contractID]
-        })),
-        theme: state.theme
-      }
-      console.log('saveSettings:', settings)
-      await sbp('gi.db/settings/save', state.loggedIn.username, settings)
+      // TODO: encrypt this
+      await sbp('gi.db/settings/save', state.loggedIn.username, state)
     }
   },
   // this function is called from ../controller/utils/pubsub.js and is the entry point
@@ -318,9 +302,9 @@ const actions = {
 
       if (message.isFirstMessage()) {
         // we pass in an empty data here because it will be filled in an processed
-        // by the process mutation, while `addContract` simply sets the initial state to it
+        // by the process mutation, while `registerContract` simply sets the initial state to it
         // we do this for compatibility with the `login` action.
-        commit('addContract', { contractID, type, HEAD: hash, data: {} })
+        commit('registerContract', { contractID, type })
       }
 
       const mutation = { data, meta, hash }
@@ -334,8 +318,6 @@ const actions = {
       //       https://github.com/okTurtles/group-income-simple/issues/602
       commit('setContractHEAD', { contractID, HEAD: hash })
 
-      // handleEvent might be called very frequently, so save only after a pause
-      debouncedSave(dispatch)
       // let any listening components know that we've received, processed, and stored the event
       sbp('okTurtles.events/emit', hash, contractID, message)
       sbp('okTurtles.events/emit', EVENT_HANDLED, contractID, message)
@@ -352,17 +334,11 @@ const actions = {
       // fails, e.g. if something like CONTRACT_REGEX.exec(selector)[1]
       // throws an exception.
     }
-  },
-  async setTheme (
-    { commit }: {commit: Function},
-    colors: String
-  ) {
-    commit('setTheme', colors)
   }
 }
-const debouncedSave = _.debounce((dispatch, savedState) => dispatch('saveSettings', savedState), 500)
 
 store = new Vuex.Store({ state: _.cloneDeep(initialState), mutations, getters, actions })
-store.subscribe(() => debouncedSave(store.dispatch))
+const debouncedSave = _.debounce(() => store.dispatch('saveSettings'), 500)
+store.subscribe(debouncedSave)
 
 export default store

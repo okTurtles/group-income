@@ -64,7 +64,7 @@ export default {
       'loggedIn'
     ]),
     ...mapGetters([
-      'currentGroupState',
+      'groupSettings',
       'memberCount'
     ])
   },
@@ -77,7 +77,7 @@ export default {
       try {
         this.form.errorMsg = null
         const groupId = this.currentGroupId
-        const groupName = this.currentGroupState.settings.groupName
+        const groupName = this.groupSettings.groupName
 
         for (const member of this.form.invitees) {
           const mailbox = member.state.attributes.mailbox
@@ -91,8 +91,8 @@ export default {
                   members: [memberName], // TODO: create a single proposal?
                   reason: L("Because they're great") // TODO: this?
                 },
-                votingRule: this.currentGroupState.settings.proposals[PROPOSAL_INVITE_MEMBER].rule,
-                expires_date_ms: Date.now() + this.currentGroupState.settings.proposals[PROPOSAL_INVITE_MEMBER].expires_ms
+                votingRule: this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].rule,
+                expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].expires_ms
               },
               groupId
             )

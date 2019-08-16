@@ -89,6 +89,7 @@ export default {
           identityContractID
         })
         this.close()
+        // BUG: TODO: find out why the router homeGuard doesn't redirect us to the dashboard
         this.$router.push({ path: '/' })
       } catch (error) {
         this.form.response = L('Invalid username or password')

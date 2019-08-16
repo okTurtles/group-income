@@ -10,7 +10,7 @@ section.section.full-screen
         .subtitle
           i18n Your vote has been requested on a proposal for the group:
 
-        h1 {{ settings.groupName }}
+        h1 {{ groupSettings.groupName }}
 
       .panel
         .panel-block
@@ -68,7 +68,7 @@ export default {
     // TODO: either delete this or use it and delete 'contract' computed property
     ...mapGetters([
       'currentGroupState',
-      'settings'
+      'groupSettings'
     ])
   },
   methods: {
@@ -94,7 +94,7 @@ export default {
         await sbp('backend/publishLogEntry', vote)
 
         if (payload) {
-          const groupName = this.settings.groupName
+          const groupName = this.groupSettings.groupName
           // TODO: delete this entire section, this is just
           //       here for debug and testing purposes until
           //       we get the links page working nicely.
