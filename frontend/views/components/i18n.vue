@@ -2,7 +2,8 @@
 component(
   :is='tag'
   v-on='$listeners'
-) {{ translatedText() }}
+  v-html='translatedText'
+)
 </template>
 
 <script>
@@ -12,23 +13,21 @@ export default {
     tag: {
       type: String,
       default: 'span'
-    }
+    },
+    html: [String]
   },
-  methods: {
+  computed: {
     translatedText () {
-      const text = this.L(
-        this.$slots.default[0].text,
-        this.args || {},
-        { defaultValue: this.$slots.default[0].text }
-      )
+      const text = this.html || this.$slots.default[0].text
+      const translation = this.L(text, this.args || {}, { defaultValue: text })
 
-      if (text) {
-        return text
+      if (translation) {
+        return translation
       }
 
-      console.warn('The following i18n text was not translated correctly:', this.$slots.default[0].text)
+      console.warn('The following i18n text was not translated correctly:', text)
 
-      return this.$slots.default[0].text
+      return text
     }
   }
 }

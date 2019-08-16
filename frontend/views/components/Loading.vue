@@ -2,34 +2,27 @@
 .c-loading.has-text-centered(
   :class="{ 'c-fullView': theme === 'fullView' }"
 )
-  h1 {{Ltitle}}&gt;
-  p {{Ltext}}
+  h1 {{ title }}&gt;
+  p {{ text }}
 </template>
 
 <script>
+import L from '@view-utils/translations.js'
 export default {
   name: 'Loading',
   props: {
     title: {
-      default: 'Hang in there',
+      default: L('Hang in there'),
       type: String
     },
     text: {
-      default: 'Magic is happening...',
+      default: L('Magic is happening...'),
       type: [String, Number]
     },
     theme: {
       validator (value) {
         return ['fullView', ''].indexOf(value) !== -1
       }
-    }
-  },
-  computed: {
-    Ltitle () {
-      return this.L(this.title)
-    },
-    Ltext () {
-      return this.L(this.text)
     }
   }
 }

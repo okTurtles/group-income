@@ -121,7 +121,7 @@ export default {
             await sbp('gi.db/settings/delete', this.form.name)
           }
           // proceed with creation
-          const user = sbp('gi/contract/create', 'IdentityContract', {
+          const user = sbp('gi.contracts/identity/create', {
             // authorizations: [Events.CanModifyAuths.dummyAuth()],
             attributes: {
               name: this.form.name,
@@ -129,14 +129,14 @@ export default {
               picture: `${window.location.origin}/assets/images/default-avatar.png`
             }
           })
-          const mailbox = sbp('gi/contract/create', 'MailboxContract', {
+          const mailbox = sbp('gi.contracts/mailbox/create', {
             // authorizations: [Events.CanModifyAuths.dummyAuth(user.hash())]
           })
           await sbp('backend/publishLogEntry', user)
           await sbp('backend/publishLogEntry', mailbox)
 
           // set the attribute *after* publishing the identity contract
-          const attribute = await sbp('gi/contract/create-action', 'IdentitySetAttributes',
+          const attribute = await sbp('gi.contracts/identity/setAttributes/create',
             { mailbox: mailbox.hash() },
             user.hash()
           )
@@ -147,13 +147,14 @@ export default {
           // 1. begin monitoring the contracts for updates via the pubsub system
           // 2. add these contracts to our vuex state
           for (const contract of [user, mailbox]) {
-            await this.$store.dispatch('syncContractWithServer', contract.hash())
+            await sbp('state/vuex/dispatch', 'syncContractWithServer', contract.hash())
           }
           // TODO: Just add cryptographic magic
-          // TODO: login also calls 'syncContractWithServer', this is duplication!
-          await this.$store.dispatch('login', {
-            name: this.form.name,
-            identityContractId: user.hash()
+          // login also calls 'syncContractWithServer', but not in this case since we
+          // just sync'd it.
+          await sbp('state/vuex/dispatch', 'login', {
+            username: this.form.name,
+            identityContractID: user.hash()
           })
           this.form.response = 'success' // TODO: get rid of this and fix/update tests accordingly
           if (this.$route.query.next) {
@@ -167,7 +168,7 @@ export default {
           sbp('okTurtles.events/emit', CLOSE_MODAL)
         } catch (ex) {
           console.error('SignUp.vue submit() error:', ex)
-          this.$store.dispatch('logout')
+          sbp('state/vuex/dispatch', 'logout')
           this.form.response = ex.toString()
           this.form.error = true
         }

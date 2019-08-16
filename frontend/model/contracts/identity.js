@@ -1,42 +1,33 @@
 'use strict'
 
 import Vue from 'vue'
-import { DefineContract } from '../utils.js'
-import {
-  objectOf,
-  arrayOf,
-  string,
-  object
-} from '../../utils/flowTyper.js'
-// } from 'flowTyper-js'
+import { DefineContract } from './Contract.js'
+import { objectOf, arrayOf, string, object } from '~/frontend/utils/flowTyper.js'
 
-export default DefineContract({
-  'IdentityContract': {
-    isConstructor: true,
+DefineContract({
+  name: 'gi.contracts/identity',
+  contract: {
     validate: objectOf({
       attributes: object
     }),
-    vuexModuleConfig: {
-      initialState: { attributes: {} },
-      mutation: (state, { data }) => {
-        state.attributes = data.attributes
+    process (state, { data }) {
+      for (const key in data) {
+        Vue.set(state, key, data[key])
       }
     }
   },
-  'IdentitySetAttributes': {
-    validate: object,
-    vuexModuleConfig: {
-      mutation: (state, { data }) => {
+  actions: {
+    'gi.contracts/identity/setAttributes': {
+      validate: object,
+      process (state, { data }) {
         for (var key in data) {
           Vue.set(state.attributes, key, data[key])
         }
       }
-    }
-  },
-  'IdentityDeleteAttributes': {
-    validate: arrayOf(string),
-    vuexModuleConfig: {
-      mutation: (state, { data }) => {
+    },
+    'gi.contracts/identity/deleteAttributes': {
+      validate: arrayOf(string),
+      process (state, { data }) {
         for (var attribute of data) {
           Vue.delete(state.attributes, attribute)
         }

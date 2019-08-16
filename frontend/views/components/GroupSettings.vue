@@ -37,6 +37,7 @@ import sbp from '~/shared/sbp.js'
 import { toPercent } from '@view-utils/filters.js'
 import { LOAD_MODAL } from '@utils/events.js'
 
+// TODO: there is another file called GroupSettings in pages/, rename this one (and move it?)
 export default {
   name: 'GroupSettings',
   props: {

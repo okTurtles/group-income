@@ -1,5 +1,5 @@
 <template lang="pug">
-page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle' v-if='currentGroupState')
+page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
   template(#title='') Contributions
 
   .p-section-header
@@ -11,6 +11,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle' v-
         v-for='(contribution, index) in fakeStore.receiving.nonMonetary'
         :key='`contribution-${index}`'
       )
+        //- TODO: verify this is safe (no XSS)
         span(v-html='textReceivingNonMonetary(contribution)')
         text-who(:who='contribution.who')
 
@@ -20,6 +21,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle' v-
         ismonetary=''
         @interaction='handleFormTriggerClick'
       )
+        //- TODO: verify this is safe (no XSS)
         span(v-html='textReceivingMonetary(fakeStore.receiving.monetary)')
         text-who(:who='fakeStore.groupMembersPledging')
         i18n each month
@@ -71,11 +73,10 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle' v-
     )
 
   template(#sidebar='')
-    groups-min-income(:group='currentGroupState')
+    groups-min-income
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
 import Page from '@pages/Page.vue'
 import currencies from '@view-utils/currencies.js'
 import MessageMissingIncome from '@containers/contributions/MessageMissingIncome.vue'
@@ -132,9 +133,6 @@ export default {
     }
   },
   computed: {
-    ...mapGetters([
-      'currentGroupState'
-    ]),
     doesReceiveMonetary () {
       return !!this.fakeStore.receiving.monetary && !this.ephemeral.isEditingIncome
     },

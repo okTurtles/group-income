@@ -3,7 +3,7 @@ div
   i18n.label(tag='label') Minimum Income
 
   p.income-provided(data-test='minIncome')
-    | {{ currency }}{{ group.incomeProvided }}
+    | {{ currency }}{{ groupSettings.incomeProvided }}
 
   i18n.link(
     tag='button'
@@ -15,16 +15,17 @@ div
 import sbp from '~/shared/sbp.js'
 import { LOAD_MODAL } from '@utils/events.js'
 import currencies from '@view-utils/currencies.js'
+import { mapGetters } from 'vuex'
 
 export default {
   name: 'GroupsMinIncome',
-  props: {
-    group: Object
-  },
   computed: {
     currency: function () {
-      return currencies[this.group.incomeCurrency]
-    }
+      return currencies[this.groupSettings.incomeCurrency]
+    },
+    ...mapGetters([
+      'groupSettings'
+    ])
   },
   methods: {
     openProposal () {
