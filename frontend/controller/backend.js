@@ -5,6 +5,7 @@ import { sign, bufToB64, b64ToStr } from '~/shared/functions.js'
 import { GIMessage } from '~/shared/GIMessage.js'
 import { RESPONSE_TYPE } from '~/shared/constants.js'
 import { CONTRACTS_MODIFIED } from '~/frontend/utils/events.js'
+import { intersection, difference } from '~/frontend/utils/giLodash.js'
 import pubsub from './utils/pubsub.js'
 import { handleFetchResult } from './utils/misc.js'
 
@@ -22,7 +23,7 @@ function signJSON (json, keypair) {
   }, json)
 }
 
-var contractSubscriptions = []
+var contractSubscriptions = {}
 var serverSocket
 
 export function createWebSocket (url: string, options: Object): Promise<Object> {
@@ -55,28 +56,35 @@ export function createWebSocket (url: string, options: Object): Promise<Object> 
       // TODO: handle going offline event
     })
     serverSocket.on('reconnected', () => {
-      console.log('websocket connection re-established. re-joining:', contractSubscriptions)
-      contractSubscriptions.forEach(contractID => serverSocket.sub(contractID))
+      const contractIDs = Object.keys(contractSubscriptions)
+      console.log('websocket connection re-established. re-joining:', contractIDs)
+      contractIDs.forEach(id => serverSocket.sub(id))
     })
   })
 }
 
 // Keep pubsub in sync (logged into the right "rooms") with store.state.contracts
-sbp('okTurtles.events/on', CONTRACTS_MODIFIED, async (data) => {
-  var contractID = data.add || data.remove
-  var idx = contractSubscriptions.indexOf(contractID)
-  var method = data.add ? 'sub' : 'unsub'
-  if ((data.add && idx > -1) || (data.remove && idx === -1)) {
-    return // if already subscribed or already unsubscribed
+sbp('okTurtles.events/on', CONTRACTS_MODIFIED, async (contracts) => {
+  const subscribedIDs = Object.keys(contractSubscriptions)
+  const currentIDs = Object.keys(contracts)
+  const leaveSubscribed = intersection(subscribedIDs, currentIDs)
+  const toUnsubscribe = difference(subscribedIDs, leaveSubscribed)
+  const toSubscribe = difference(currentIDs, leaveSubscribed)
+  try {
+    for (const contractID of toUnsubscribe) {
+      const res = await serverSocket.unsub(contractID)
+      console.debug(`[Backend] unsubscribed ${contractID}`, res)
+      delete contractSubscriptions[contractID]
+    }
+    for (const contractID of toSubscribe) {
+      const res = await serverSocket.sub(contractID)
+      contractSubscriptions[contractID] = contractID
+      console.debug(`[Backend] subscribed ${contractID}`, res)
+    }
+  } catch (e) {
+    // TODO: handle any exceptions!
+    console.error(`CONTRACTS_MODIFIED: error in pubsub!`, e, { toUnsubscribe, toSubscribe })
   }
-  // TODO: handle any exceptions!
-  var res = await serverSocket[method](contractID)
-  if (data.add) {
-    contractSubscriptions.push(contractID)
-  } else {
-    contractSubscriptions.splice(idx, 1)
-  }
-  console.log(`[Backend] ${method}scribed ${contractID}:`, res)
 })
 
 sbp('sbp/selectors/register', {

@@ -34,6 +34,7 @@ export default sbp('sbp/selectors/register', {
     const HEAD = await sbp('gi.db/log/get', sbp('gi.db/log/logHEAD', contractID))
     if (!entry.isFirstMessage() && previousHEAD !== HEAD) {
       console.error(`[addLogEntry] bad previousHEAD: ${previousHEAD}! Expected: ${HEAD} for contractID: ${contractID}`)
+      // TODO: make this a special error
       throw new Error(`bad previousHEAD: ${previousHEAD}`)
     }
     await sbp('gi.db/log/set', sbp('gi.db/log/logHEAD', contractID), entry.hash())

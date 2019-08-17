@@ -193,3 +193,20 @@ export function fromPairs (arr: Array<*>) {
   }
   return obj
 }
+
+export function uniq (array: Array<*>) {
+  return Array.from(new Set(array))
+}
+
+export function union (...arrays) {
+  return uniq([].concat.apply([], arrays))
+}
+
+export function intersection (a1: Array<*>, ...arrays) {
+  return uniq(a1).filter(v1 => arrays.every(v2 => v2.indexOf(v1) >= 0))
+}
+
+export function difference (a1: Array<*>, ...arrays) {
+  const a2 = [].concat.apply([], arrays)
+  return a1.filter(v => a2.indexOf(v) === -1)
+}

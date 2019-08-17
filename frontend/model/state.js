@@ -11,6 +11,7 @@ import * as _ from '@utils/giLodash.js'
 import { SETTING_CURRENT_USER } from './database.js'
 import { LOGIN, LOGOUT, EVENT_HANDLED, CONTRACTS_MODIFIED } from '@utils/events.js'
 import Colors from './colors.js'
+import { TypeValidatorError } from '@utils/flowTyper.js'
 import './contracts/group.js'
 import './contracts/mailbox.js'
 import './contracts/identity.js'
@@ -57,7 +58,8 @@ const initialState = {
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
   theme: 'blue',
-  fontSize: 1
+  fontSize: 1,
+  reprocessMessagesQueue: []
 }
 
 // Mutations must be synchronous! Never call these directly!
@@ -102,7 +104,7 @@ const mutations = {
     const index = state.pending.indexOf(contractID)
     index !== -1 && state.pending.splice(index, 1)
     // calling this will make pubsub subscribe for events on `contractID`!
-    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, { add: contractID })
+    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
   },
   setContractHEAD (state, { contractID, HEAD }) {
     state.contracts[contractID].HEAD = HEAD
@@ -111,7 +113,7 @@ const mutations = {
     store.unregisterModule(contractID)
     Vue.delete(state.contracts, contractID)
     // calling this will make pubsub unsubscribe for events on `contractID`!
-    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, { remove: contractID })
+    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
   },
   deleteMessage (state, hash) {
     const mailboxContract = store.getters.mailboxContract
@@ -250,7 +252,7 @@ const actions = {
       // but the state object in scope is a copy that becomes stale if something modifies it
       // like an outside dispatch
       for (const contractID in store.state.contracts) {
-        const type = store.state.contracts[contractID].type
+        const { type } = store.state.contracts[contractID]
         commit('registerContract', { contractID, type })
         await dispatch('syncContractWithServer', contractID)
       }
@@ -284,14 +286,20 @@ const actions = {
     { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object},
     message: GIMessage
   ) {
-    // const clonedState = _.cloneDeep(state)
+    // prepare for any errors, see:
+    // https://github.com/okTurtles/group-income-simple/issues/610
+    // https://github.com/okTurtles/group-income-simple/issues/602
+    const [REPROCESS_QUEUE, IGNORE_AND_BAN] = [0, 1]
+    var errorType = IGNORE_AND_BAN
+    var errorDuringMutation = false
+    const clonedState = _.cloneDeep(state)
     try {
       const contractID = message.contractID()
       const selector = message.type()
-      const type = CONTRACT_REGEX.exec(selector)[1]
       const hash = message.hash()
       const data = message.data()
       const meta = message.meta()
+      const type = CONTRACT_REGEX.exec(selector)[1]
       // ensure valid message
       selectorIsContractOrAction(selector)
       // TODO: verify each message is signed by a group member
@@ -299,38 +307,75 @@ const actions = {
       if (!state.pending.includes(contractID) && !state.contracts[contractID]) {
         // TODO: use a global notification system to both display a notification
         //       and throw an exception and write a log message.
-        return console.error(`NOT EXPECTING EVENT!`, contractID, message)
+        return console.error(`[CRITICAL ERROR] NOT EXPECTING EVENT!`, contractID, message)
       }
-
-      await sbp('gi.db/log/addEntry', message)
-
-      if (message.isFirstMessage()) {
-        commit('registerContract', { contractID, type })
+      try {
+        await sbp('gi.db/log/addEntry', message)
+        // TODO: go through reprocess queue
+      } catch (e) {
+        // TODO: this
       }
-
-      const mutation = { data, meta, hash }
-      commit(`${contractID}/processMessage`, { selector, message: mutation })
-
-      // all's good, so update our contract HEAD
-      // TODO: handle malformed message DoS
-      //       https://github.com/okTurtles/group-income-simple/issues/602
-      commit('setContractHEAD', { contractID, HEAD: hash })
-
+      try {
+        if (message.isFirstMessage()) {
+          commit('registerContract', { contractID, type })
+        } else {
+          // TODO: this
+          if (state.reprocessMessagesQueue.length > 0) {
+            for (const messageID of state.reprocessMessagesQueue) {
+              await actions.handleEvent(sbp('gi.db/log/getEntry', messageID))
+              // TODO: pop it off the queue
+            }
+          }
+        }
+        const mutation = { data, meta, hash }
+        commit(`${contractID}/processMessage`, { selector, message: mutation })
+        // all's good, so update our contract HEAD
+        commit('setContractHEAD', { contractID, HEAD: hash })
+        // this is how asynchronous actions get triggered, for example:
+        // 'gi.contracts/group/inviteAccept/process'
+        await sbp('okTurtles.events/emit', selector, contractID, message)
+      } catch (e) {
+        errorDuringMutation = true
+        console.error(`[ERROR] during processMessage in handleEvent!`, e)
+        if (!(e instanceof TypeValidatorError)) {
+          // most likely a Vue.js error TODO: verify actual vue.js errors
+          errorType = REPROCESS_QUEUE
+        }
+        throw e // rethrow the error
+      }
       // let any listening components know that we've received, processed, and stored the event
-      sbp('okTurtles.events/emit', hash, contractID, message)
-      sbp('okTurtles.events/emit', EVENT_HANDLED, contractID, message)
-      sbp('okTurtles.events/emit', selector, contractID, message)
-      // TODO: handle any exception generated by any of the above events
+      try {
+        sbp('okTurtles.events/emit', hash, contractID, message)
+        sbp('okTurtles.events/emit', EVENT_HANDLED, contractID, message)
+      } catch (e) {
+        // if an error happens at this point, it's almost certainly non-contract related
+        // so it's safe to "ignore" it
+        console.error(`[ERROR] handleEvent event handler exception:`, e)
+      }
     } catch (e) {
       console.error('[ERROR] exception in handleEvent!', e.message, e)
-      throw e // TODO: handle this better
-      // TODO: mutations passed to processMessage should throw exceptions
-      //       if there's anything wrong with the message or internal state
-      //       to ensure that none of the event emitters get triggered
-      // See: https://github.com/okTurtles/group-income-simple/issues/602
-      // note that we should be able to recover even if the very first line
-      // fails, e.g. if something like CONTRACT_REGEX.exec(selector)[1]
-      // throws an exception.
+      if (errorDuringMutation) {
+        try {
+          console.error(`reverting to previous state!`, {
+            corrupt: JSON.stringify(store.state),
+            reverted: JSON.stringify(clonedState)
+          })
+          store.replaceState(clonedState)
+        } catch (e) {
+          console.error(`[CRITICAL ERROR] couldn't revert state!`, e)
+        } finally {
+          // if replaceState resulted in any contracts being added or removed
+          // make sure our web sockets are either subscribed or unsubscribed as needed
+          sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
+        }
+      }
+      if (errorType === REPROCESS_QUEUE) {
+        // TODO: this should be done in a mutation (?)
+        state.reprocessMessagesQueue.push(message.hash())
+      } else if (errorType === IGNORE_AND_BAN) {
+        // check and see if this is a group contract message, if so, initiate
+        // proposal to ban them (or vote on an existing proposal to ban them)
+      }
     }
   }
 }

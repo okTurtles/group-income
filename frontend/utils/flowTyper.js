@@ -65,7 +65,7 @@ export const getType = (typeFn, _options) => {
 }
 
 // error
-class TypeValidatorError extends Error {
+export class TypeValidatorError extends Error {
   expectedType: string
   valueType: string
   value: string
@@ -89,6 +89,7 @@ class TypeValidatorError extends Error {
     this.typeScope = typeScope || ''
     this.sourceFile = this.getSourceFile()
     this.message = `${errMessage}\n${this.getErrorInfo()}`
+    this.name = this.constructor.name
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, TypeValidatorError)
     }
