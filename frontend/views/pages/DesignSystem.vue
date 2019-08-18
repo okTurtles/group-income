@@ -318,6 +318,22 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
           td
             button.is-icon
               i.icon-cog
+        tr
+          td
+            pre
+              | button.is-icon.has-background
+              |   i.icon-cog
+          td
+            button.is-icon.has-background
+              i.icon-cog
+        tr
+          td
+            pre
+              | button.is-icon.is-small-icon
+              |   i.icon-cog
+          td
+            button.is-icon.is-small-icon
+              i.icon-cog
 
   article#user-feedback
     .p-section-header
