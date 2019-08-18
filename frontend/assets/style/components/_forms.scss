@@ -47,6 +47,7 @@ select,
     &:hover {
       border-color: $primary_0;
     }
+
     &:focus {
       box-shadow: 0 0 0 2px $primary_1;
     }
@@ -155,8 +156,8 @@ textarea,
         border-radius: 0 3px 3px 0;
         position: relative;
 
-        &:before {
-          content: '';
+        &::before {
+          content: "";
           background-color: $primary_0;
           position: absolute;
           top: 0;
