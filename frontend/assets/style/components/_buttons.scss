@@ -164,4 +164,14 @@ button.link {
   &::after {
     width: 100%;
   }
+
+  @media (hover: hover) {
+    &:hover {
+      background-color: transparent;
+    }
+
+    &:focus {
+      box-shadow: none;
+    }
+  }
 }
