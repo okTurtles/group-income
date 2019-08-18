@@ -16,7 +16,7 @@
     z-index: -3;
     height: 2px;
     width: 100%;
-    background-color: $primary_1;
+    background-color: $primary_0;
     top: 50%;
     margin-top: -1px;
   }
@@ -34,7 +34,7 @@
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    background-color: $primary_1;
+    background-color: $primary_0;
     color: #fff;
     font-size: 12px;
     line-height: 24px;
@@ -43,7 +43,7 @@
     &::before {
       content: "";
       border-radius: 50%;
-      background-color: #fff;
+      background-color: $general_2;
       position: absolute;
       z-index: -1;
       border: 1px solid $primary_0;
@@ -72,9 +72,10 @@
   .step:not(.next):hover,
   .active {
     background-color: $primary_0;
+    font-weight: bold;
 
     &::before {
-      transform: scale(1.2);
+      transform: scale(1.3334);
     }
 
     &::after {
@@ -85,7 +86,7 @@
       z-index: 4;
       width: 3px;
       left: -3px;
-      background-color: #fff;
+      background-color: $white;
     }
 
     &:last-child::before {
@@ -95,9 +96,11 @@
   }
 
   .next {
-    background-color: $general_0;
+    background-color: $white;
+    color: $text_1;
     cursor: not-allowed;
     pointer-events: none;
+    border: 1px solid $general_0;
   }
 }
 
