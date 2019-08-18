@@ -244,7 +244,7 @@ export default {
         align-items: center;
         position: relative;
         z-index: 3;
-        background-color: var(--primary_0);
+        background-color: $primary_0;
         min-height: 64px;
       }
     }
