@@ -1,7 +1,24 @@
-@mixin focusState($color) {
+@mixin buttonState($color, $color_2) {
   @media (hover: hover) {
+    &:hover {
+      background-color: #{$color};
+    }
     &:focus {
-      box-shadow: 0 0 0 1px $background, 0 0 1px 2px $color;
+      box-shadow: 0 0 0 2px #{$color_2};
+    }
+  }
+}
+
+@mixin outlinedButtonState($color, $color_2) {
+  @media (hover: hover) {
+    &:focus,
+    &:hover {
+      background-color: transparent;
+      border-color: $color;
+      color: $color;
+    }
+    &:focus {
+      box-shadow: 0 0 0 2px #{$color_2};
     }
   }
 }
@@ -15,50 +32,40 @@ button,
   cursor: pointer;
   @extend %unselectable;
   height: auto; // Usability purposes
-  min-height: 2.5rem; // A11Y purposes
-  white-space: nowrap;
-  color: #fff;
+  min-height: 2.75rem; // A11Y purposes
+  border-radius: 2.75rem;
   padding-left: 1.5rem;
   padding-right: 1.5rem;
-  border-radius: $radius;
   border-color: transparent;
-  border-width: 1px;
   background-color: $primary_0;
-  transition: filter 100ms ease-out, box-shadow 150ms ease-in;
-  font-weight: 600; // A11Y purposes
-  font-size: 1rem;
+  border-width: 1px;
+  color: #fff;
+  transition: box-shadow 150ms ease-in;
+  white-space: nowrap;
+  font-size: $size-4;
   outline: none;
 
-  &:focus,
-  &:hover {
-    filter: contrast(1.2);
-  }
-
-  @include focusState($primary_0);
+  @include buttonState($primary_0_1, $primary_1);
 
   &.is-success {
     background-color: $success_0;
 
-    @include focusState($success_0);
+    @include buttonState($success_0_1, $success_1);
   }
 
   &.is-danger,
   &.error {
     background-color: $danger_0;
 
-    @include focusState($danger_0);
+    @include buttonState($danger_0_1, $danger_1);
   }
 
-  [class^="icon-"] + span {
-    margin-left: 1rem;
-  }
-
-  span + [class^="icon-"] {
+  [class^="icon-"]:last-child {
     margin-left: 6px;
   }
 
   &.is-small {
-    min-height: 1.6875rem;
+    min-height: 1.688rem;
     padding-left: 1rem;
     padding-right: 1rem;
     padding-bottom: 0;
@@ -74,21 +81,38 @@ button,
     background-color: transparent;
     padding: 0;
     min-height: auto;
-    width: $spacer-lg;
-    height: $spacer-lg;
+    width: 2.75rem;
+    height: 2.75rem;
     display: flex;
     justify-content: center;
     align-items: center;
     color: $text_1;
+    border-radius: 50%;
 
     [class^="icon-"]:last-child {
       margin-left: 0;
     }
 
-    &:hover,
-    &:focus {
-      color: $text_0;
-      box-shadow: none; // override @mixin focusState
+    @media (hover: hover) {
+      &:hover,
+      &:focus {
+        color: $text_0;
+        background-color: $general_1;
+        box-shadow: none; // override @mixin buttonState
+      }
+
+      &:focus {
+        box-shadow: 0 0 0 2px #{$primary_1};
+      }
+    }
+
+    &.has-background {
+      background-color: $general_2;
+    }
+
+    &.is-small-icon {
+      width: 1.6875rem;
+      height: 1.6875rem;
     }
   }
 
@@ -97,21 +121,19 @@ button,
     border-color: $general_0;
     color: $text_1;
 
-    @include focusState($general_0);
+    @include outlinedButtonState($primary_0_1, $primary_1);
 
     &.is-success {
       border-color: $success_0;
       color: $success_0;
-
-      @include focusState($success_0);
+      @include outlinedButtonState($success_0_1, $success_1);
     }
 
     &.is-danger,
     &.error {
       border-color: $danger_0;
       color: $danger_0;
-
-      @include focusState($danger_0);
+      @include outlinedButtonState($danger_0_1, $danger_1);
     }
   }
 
@@ -119,10 +141,7 @@ button,
     background-color: $general_0;
     color: $text_1;
     opacity: 0.5;
-
-    &:hover {
-      filter: none;
-    }
+    cursor: not-allowed;
   }
 }
 
