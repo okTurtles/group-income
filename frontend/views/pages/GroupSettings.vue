@@ -1,5 +1,5 @@
 <template lang="pug">
-page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupState')
+page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings.groupName')
   template(#title='') Group Settings
 
   page-section(title='')
@@ -9,12 +9,15 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupS
       .field
         i18n.label(tag='label') Group name
 
+        //- BUG: TODO: cannot bind directly to :value here, as any changes
+        //- to groupSettings must be done via proposals and/or
+        //- like it's done in UserProfile.vue
         input.input.is-large.is-primary(
           ref='name'
           type='text'
           name='groupName'
           :class="{ 'error': $v.form.groupName.$error }"
-          :value='currentGroupState.groupName'
+          :value='groupSettings.groupName'
           @input='update'
           @keyup.enter='next'
           data-test='groupName'
@@ -29,7 +32,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupS
           placeholder='Group Purpose'
           maxlength='500'
           :class="{ 'error': $v.form.sharedValues.$error }"
-          :value='currentGroupState.sharedValues'
+          :value='groupSettings.sharedValues'
           @input='update'
         )
 
@@ -39,7 +42,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='currentGroupS
           select(
             name='incomeCurrency'
             required=''
-            :value='currentGroupState.incomeCurrency'
+            :value='groupSettings.incomeCurrency'
             @input='update'
           )
             option(
@@ -104,7 +107,7 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'currentGroupState'
+      'groupSettings'
     ])
   },
   methods: {

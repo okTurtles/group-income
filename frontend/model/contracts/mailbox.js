@@ -1,51 +1,55 @@
 'use strict'
 
-import { DefineContract } from '../utils.js'
-import {
-  objectOf,
-  arrayOf,
-  string,
-  object,
-  optional
-} from '../../utils/flowTyper.js'
-// } from 'flowTyper-js'
+import Vue from 'vue'
+import { DefineContract } from './Contract.js'
+import { objectOf, string, object, unionOf, literalOf, optional } from '~/frontend/utils/flowTyper.js'
 
-export default DefineContract({
-  'MailboxContract': {
-    isConstructor: true,
-    validate: object,
-    vuexModuleConfig: {
-      initialState: { messages: [] },
-      mutation: function (state, { data }) {}
+export const TYPE_MESSAGE = 'message'
+export const TYPE_FRIEND_REQ = 'friend-request'
+
+export const messageType = unionOf(...[TYPE_MESSAGE, TYPE_FRIEND_REQ].map(k => literalOf(k)))
+
+DefineContract({
+  name: 'gi.contracts/mailbox',
+  contract: {
+    validate: object, // TODO: define this
+    process (state, { data }) {
+      for (const key in data) {
+        Vue.set(state, key, data[key])
+      }
+      Vue.set(state, 'messages', [])
     }
   },
-  'MailboxPostMessage': {
-    constants: {
-      TypeInvite: 'Invite',
-      TypeMessage: 'Message',
-      TypeProposal: 'Proposal'
-    },
+  metadata: {
     validate: objectOf({
-      messageType: string,
-      from: string,
-      sentDate: string,
-      message: optional(string),
-      headers: optional(arrayOf(string))
+      createdDate: string
     }),
-    vuexModuleConfig: {
-      mutation: (state, { data, hash }) => {
-        state.messages.push({ data, hash })
+    create () {
+      return {
+        createdDate: new Date().toISOString()
       }
     }
   },
-  'MailboxAuthorizeSender': {
-    validate: objectOf({
-      sender: string
-    }),
-    vuexModuleConfig: {
-      mutation: (state, { data }) => {
+  actions: {
+    'gi.contracts/mailbox/postMessage': {
+      validate: objectOf({
+        messageType: messageType,
+        from: string,
+        subject: optional(string),
+        message: optional(string),
+        headers: optional(object)
+      }),
+      process (state, { data, meta, hash }) {
+        state.messages.push({ data, meta, hash })
+      }
+    },
+    'gi.contracts/mailbox/authorizeSender': {
+      validate: objectOf({
+        sender: string
+      }),
+      process (state, { data }) {
+        // TODO: replace this via OP_KEY_*?
         throw new Error('unimplemented!')
-        // state.authorizations[contracts.MailboxAuthorizeSender.authorization].data = data.sender
       }
     }
   }

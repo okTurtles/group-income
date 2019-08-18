@@ -3,13 +3,13 @@ modal-base-template
   .wrapper-container
     tab-wrapper(:tabNav='settings')
       tab-item
-        settings-user-profile
+        user-profile
       tab-item
         tab-placeholder(name='Privacy & Safety')
       tab-item
         tab-placeholder(name='Notifications')
       tab-item
-        settings-appearence
+        appearence
       tab-item
         tab-placeholder(name='Changelog')
 </template>
@@ -20,8 +20,8 @@ import ModalBaseTemplate from '@components/Modal/ModalBaseTemplate.vue'
 import TabItem from '@components/Tabs/TabItems.vue'
 import TabWrapper from '@components/Tabs/TabWrapper.vue'
 import TabPlaceholder from './Placeholder.vue'
-import SettingsAppearence from './Appearence.vue'
-import SettingsUserProfile from './UserProfile.vue'
+import Appearence from './Appearence.vue'
+import UserProfile from './UserProfile.vue'
 
 export default {
   name: 'SettingsWrapper',
@@ -30,8 +30,8 @@ export default {
     ModalBaseTemplate,
     TabWrapper,
     TabItem,
-    SettingsAppearence,
-    SettingsUserProfile,
+    Appearence,
+    UserProfile,
     TabPlaceholder
   },
 

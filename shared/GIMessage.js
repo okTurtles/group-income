@@ -22,18 +22,21 @@ export class GIMessage {
     previousHEAD: ?string = null,
     signatureFn: Function = defaultSignatureFn,
     actionType: string,
-    actionData: JSONType
+    actionData: JSONType,
+    metaData: ?Object = {}
   ) {
     var instance = new this()
     instance._message = {
       version: 1,
       previousHEAD,
       contractID,
-      // make it difficult to guess contract hashes and prevent conflicts
-      nonce: parseInt(Math.random() * 10000000), // TODO: verify this is sufficient
+      // TODO: this action object needs to be encrypted JSON
       action: {
         type: actionType,
-        data: actionData
+        data: actionData,
+        meta: metaData,
+        // make it difficult to predict message contents and prevent conflicts
+        nonce: Math.random()
       }
     }
     const messageJSON = JSON.stringify(instance._message)
@@ -62,7 +65,11 @@ export class GIMessage {
 
   data (): Object { return this.message().action.data }
 
+  meta (): Object { return this.message().action.meta }
+
   isFirstMessage (): boolean { return !this.message().previousHEAD }
+
+  contractID (): string { return this.message().contractID || this.hash() }
 
   serialize (): string { return this._mapping.value }
 

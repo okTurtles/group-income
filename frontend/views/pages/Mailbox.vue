@@ -22,7 +22,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
             v-if='$store.getters.unreadMessageCount'
             data-test='inboxUnread'
           )
-            | {{$store.getters.unreadMessageCount}}
+            | {{ $store.getters.unreadMessageCount }}
 
   article(v-if="ephemeral.mode === 'Compose'")
     .p-section-header
@@ -52,7 +52,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
           :key='`recipient-${index}`'
         )
           td
-            | {{recipient.name}}
+            | {{ recipient.name }}
             i.icon-times-circle(@click='removeRecipient(index)')
 
       .field
@@ -62,7 +62,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
           data-test='composedMessage'
         )
 
-        p.error(v-if='ephemeral.errorMsg') {{ephemeral.errorMsg}}
+        p.error(v-if='ephemeral.errorMsg') {{ ephemeral.errorMsg }}
 
       .buttons
         i18n.is-danger(
@@ -82,13 +82,13 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
     .p-section-header
       div
         strong Type:
-        | &nbsp;{{ephemeral.currentMessage.data.messageType}}
+        | &nbsp;{{ ephemeral.currentMessage.data.messageType }}
       div
         strong Sent:
-        | &nbsp;{{formatDate(ephemeral.currentMessage.data.sentDate)}}
+        | &nbsp;{{ formatDate(ephemeral.currentMessage.meta.createdDate) }}
       div
         strong From:
-        | &nbsp;{{ephemeral.currentMessage.data.from}}
+        | &nbsp;{{ ephemeral.currentMessage.data.from }}
 
     .p-section
       p(
@@ -109,47 +109,26 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
           @click='remove(index)'
         ) Delete
 
-  article(v-if="ephemeral.mode === 'Inbox' && proposals.length")
+  article(v-if="ephemeral.mode === 'Inbox' && Object.keys(proposals).length")
     .p-section-heading
 
     .p-section
       i18n(tag='h3') Proposals
 
-      .c-message(v-for='(proposal, index) in proposals' :key='`proposal-${index}`')
-        avatar(src='/assets/images/default-avatar.png' alt='' @click='respondToProposal(index)')
+      .c-message(v-for='(proposal, hash) in proposals' :key='hash')
+        avatar(src='/assets/images/default-avatar.png' alt='' @click='respondToProposal(hash)')
 
         .c-message-desc(
-          @click='respondToProposal(index)'
+          @click='respondToProposal(hash)'
           data-test='proposalMessage'
         )
           div
             strong Sent:
-            | &nbsp;{{formatDate(proposal.initiationDate)}}
+            | &nbsp;{{ formatDate(proposal.meta.createdDate) }}
           div
             strong From:
-            | &nbsp;{{proposal.groupName}}
+            | &nbsp;{{ proposal.meta.username }}
 
-  article(v-if="ephemeral.mode === 'Inbox' && invites.length")
-    .p-section
-      i18n(tag='h3') Invites
-      .c-message(
-        v-for='(message, index) in invites'
-        :key='`message-${index}`'
-        @click='respondToInvite(index)'
-        data-test='inviteMessage'
-      )
-        avatar(src='/assets/images/default-avatar.png' alt='')
-
-        .c-message-desc
-          div
-            strong Sent:
-            | &nbsp;{{formatDate(message.data.sentDate)}}
-          div
-            strong From:
-            | &nbsp;{{message.data.from}}
-
-        button.button.is-icon(@click='respondToInvite(index)')
-          i.icon-user-plus
   article(v-if="ephemeral.mode === 'Inbox'" data-test='inbox')
     .p-section
       i18n(tag='h3') Inbox
@@ -166,12 +145,12 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
         )
           div
             strong Sent:
-            | &nbsp;{{formatDate(message.data.sentDate)}}
+            | &nbsp;{{ formatDate(message.meta.createdDate) }}
           div
             strong From:
-            | &nbsp;{{message.data.from}}
+            | &nbsp;{{ message.data.from }}
           span(style='color: grey;')
-            | {{message.data.message.substr(0,50)}}{{message.data.message.length &gt; 50 ? &apos;...&apos; : &apos;&apos;}}
+            | {{ message.data.message.substr(0,50) }}{{ message.data.message.length &gt; 50 ? &apos;...&apos; : &apos;&apos; }}
 
         button.button.is-danger.is-icon(type='submit' @click="remove(index, 'inbox')")
           i.icon-times-circle
@@ -182,12 +161,13 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
 
 <script>
 import sbp from '~/shared/sbp.js'
-import contracts from '@model/contracts.js'
+import { TYPE_MESSAGE } from '@model/contracts/mailbox.js'
 import L from '@view-utils/translations.js'
 import Page from './Page.vue'
 import Avatar from '@components/Avatar.vue'
+import { mapGetters } from 'vuex'
 
-const criteria = (msg) => new Date(msg.sentDate)
+const criteria = (msg) => msg.meta.createdDate
 
 // TODO: this whole file needs to be improved/rewritten
 
@@ -210,21 +190,21 @@ export default {
         composedMessage: '',
         // TODO: this is ugly, make it nicer
         // place an empty message here so that the rendered doesn't complain about missing fields or data
-        currentMessage: { data: {} },
+        currentMessage: { data: {}, meta: {} },
         currentIndex: null
       }
     }
   },
   computed: {
     inbox () {
-      return this.$store.getters.mailbox.filter(msg => msg.data.messageType === contracts.MailboxPostMessage.TypeMessage).sort(criteria)
-    },
-    invites () {
-      return this.$store.getters.mailbox.filter(msg => msg.data.messageType === contracts.MailboxPostMessage.TypeInvite).sort(criteria)
+      return this.$store.getters.mailboxMessages.filter(msg => msg.data.messageType === TYPE_MESSAGE).sort(criteria)
     },
     proposals () {
-      return this.$store.getters.proposals
-    }
+      return this.currentGroupState.proposals || {}
+    },
+    ...mapGetters([
+      'currentGroupState'
+    ])
   },
   methods: {
     formatDate: function (date) {
@@ -258,21 +238,15 @@ export default {
       this.ephemeral.mode = 'Deleted'
       this.messages = this.deleted
     },
-    invitesMode: function () {
-      this.clearCompose()
-      this.ephemeral.mode = 'Invites'
-      this.messages = this.invites
-    },
     send: async function () {
       try {
         for (let i = 0; i < this.ephemeral.recipients.length; i++) {
           const recipient = this.ephemeral.recipients[i]
           // TODO:: latestContractState is inefficient
           const state = await sbp('state/latestContractState', recipient.contractID)
-          const message = await sbp('gi/contract/create-action', 'MailboxPostMessage', {
-            sentDate: new Date().toISOString(),
-            messageType: contracts.MailboxPostMessage.TypeMessage,
-            from: this.$store.state.loggedIn.name,
+          const message = await sbp('gi.contracts/mailbox/postMessage/create', {
+            messageType: TYPE_MESSAGE,
+            from: this.$store.state.loggedIn.username,
             message: this.ephemeral.composedMessage
           }, state.attributes.mailbox)
           await sbp('backend/publishLogEntry', message)
@@ -295,13 +269,20 @@ export default {
     compose: function () {
       this.ephemeral.mode = 'Compose'
     },
-    respondToProposal: function (index) {
-      this.$router.push({ path: '/vote', query: { groupId: this.proposals[index].groupContractId, proposalHash: this.proposals[index].proposal } })
+    respondToProposal: function (proposalHash) {
+      this.$router.push({
+        path: '/vote',
+        query: {
+          groupId: this.$store.state.currentGroupId,
+          proposalHash
+        }
+      })
     },
-    respondToInvite: function (index) {
-      this.$store.commit('markMessageAsRead', this.invites[index].hash)
-      this.$router.push({ path: '/join', query: { groupId: this.invites[index].data.headers[0], inviteHash: this.invites[index].hash } })
-    },
+    // respondToInvite: function (index) {
+    //   this.$store.commit('markMessageAsRead', this.invites[index].hash)
+    //   // TODO: this is a bad way to use headers, see related comment in mailbox.js
+    //   this.$router.push({ path: '/join', query: { groupId: this.invites[index].data.headers[0], inviteHash: this.invites[index].hash } })
+    // },
     read: function ({ index, type }) {
       this.ephemeral.mode = 'Read'
       if (Number.isInteger(index)) {

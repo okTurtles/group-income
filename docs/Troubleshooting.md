@@ -25,11 +25,14 @@ rollup: frontend/main.js
 >>       at error (/path/to/group-income-simple/node_modules/rollup/dist/rollup.js:9396:30)
 ```
 
-We're not sure why this happens, but there are a few solutions:
+We're not sure why this happens, but there are some hackish solutions while we wait for someone to [fix this bug](https://github.com/vuejs/rollup-plugin-vue/issues/238):
 
-- A. Change `.Gruntfile.babel.js` line 259 `sourcemap` key to `false` and restart `grunt dev`. Please make sure to revert this change before opening a PR.
-- B. Create a newline near the top of the file with a comment and save again - delete that line on the next save and repeat the process for each save...
-- C. Restart `grunt dev`, or do `grunt clean dev` to also delete the sourcemaps.
+- Create a newline near the top of the file with a comment and save again - delete that line on the next save and repeat the process for each save...
+- Run `grunt dev` with `DISABLE_SOURCEMAPS` enabled like so:
+
+    ```
+    $ DISABLE_SOURCEMAPS=1 grunt dev
+    ```
 
 ## Can not sign-up user when databases get out of sync
 

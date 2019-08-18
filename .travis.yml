@@ -1,17 +1,22 @@
 language: node_js
 node_js:
   - "12"
-# https://docs.travis-ci.com/user/gui-and-headless-browsers/#Using-xvfb-to-Run-Tests-That-Require-a-GUI
-# to specify screen resolution, add this to before_script instead of init.d/xvfb start:
-# - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x16"
-before_script:
-  - sh -e /etc/init.d/xvfb start
-  - sleep 3 # give xvfb some time to start
+# https://stackoverflow.com/questions/55674746/travis-sh-0-cant-open-etc-init-d-xvfb
+# https://benlimmer.com/2019/01/14/travis-ci-xvfb/
+# https://docs.travis-ci.com/user/gui-and-headless-browsers/#using-services-xvfb
+# dist: bionic
+# services:
+#   - xvfb
+dist: trusty
+# before_script:
+#   - sh -e /etc/init.d/xvfb start
+#   - sleep 3 # give xvfb some time to start
 compiler: clang # per: https://docs.travis-ci.com/user/languages/c
 # https://docs.travis-ci.com/user/environment-variables
 env:
- - CXX=clang++ DISPLAY=':99.0'
-#  - CXX=clang++ DISPLAY=':99.0' DEBUG='nightmare*'
+ - CXX=clang++ DEBUG='nightmare*'
+ # - CXX=clang++ DISPLAY=':99.0' DEBUG='nightmare*'
+# according to travis docs, the services -xvfb line will set DISPLAY
 branches:
   only:
     - master # https://github.com/okTurtles/group-income-simple/issues/58
@@ -19,6 +24,7 @@ addons:
   apt:
     packages:
       - xvfb
+  # chrome: stable
 # don't seem to need these anymore
 # env:
 #   - CXX=g++-4.8 DISPLAY=':99.0' DEBUG='nightmare*'
@@ -36,3 +42,6 @@ addons:
 #   - export DISPLAY=':99.0'
 #   - export DEBUG='nightmare*'
 #   - Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+# https://docs.travis-ci.com/user/gui-and-headless-browsers/#Using-xvfb-to-Run-Tests-That-Require-a-GUI
+# to specify screen resolution, add this to before_script instead of init.d/xvfb start:
+# - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x16"

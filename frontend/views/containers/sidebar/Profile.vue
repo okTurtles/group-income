@@ -46,7 +46,7 @@ export default {
         this.$store.getters.currentUserIdentityContract.attributes.displayName
     },
     userName () {
-      return this.$store.state.loggedIn.name
+      return this.$store.state.loggedIn.username
     }
   },
   methods: {

@@ -4,12 +4,12 @@ main.c-splash(
 )
   avatar(
     src='/assets/images/default-avatar.png'
-    :alt='userName'
-    :blobURL='userPicture'
+    :alt='groupSettings.groupName'
+    :blobURL='groupSettings.groupPicture'
   )
 
   h1.c-title
-    i18n Welcome {{ userName }}!
+    i18n Welcome {{ groupSettings.groupName }}!
 
   p.has-text-0.c-description
     i18n You are now embarking on a new journey. We hope you have a blast!
@@ -28,6 +28,7 @@ main.c-splash(
 <script>
 import Avatar from '@components/Avatar.vue'
 import ConfettiAnimation from '@components/ConfettiAnimation/ConfettiAnimation.vue'
+import { mapGetters } from 'vuex'
 
 export default {
   name: 'GroupWelcome',
@@ -36,12 +37,7 @@ export default {
     ConfettiAnimation
   },
   computed: {
-    userName () {
-      return this.$store.getters.currentGroupState.groupName
-    },
-    userPicture () {
-      return this.$store.getters.currentGroupState.groupPicture
-    }
+    ...mapGetters(['groupSettings'])
   },
   data () {
     return {

@@ -68,7 +68,7 @@ export default {
     async addInvitee () {
       if (!this.searchUser) return
 
-      if (this.searchUser === this.$store.state.loggedIn.name) {
+      if (this.searchUser === this.$store.state.loggedIn.username) {
         this.userErrorMsg = L('Invalid User: Cannot Invite One\'s self')
         return
       } else {

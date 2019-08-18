@@ -54,11 +54,13 @@ main.main#create-group-page
 import sbp from '~/shared/sbp.js'
 import { blake32Hash } from '~/shared/functions.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
-import contracts from '@model/contracts.js'
+import { RULE_THRESHOLD } from '@model/contracts/voting/rules.js'
+import proposals, { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '@model/contracts/voting/proposals.js'
 import L from '@view-utils/translations.js'
 import { decimals } from '@view-utils/validators.js'
 import StepAssistant from '@view-utils/stepAssistant.js'
 import Message from '@components/Message.vue'
+import { merge } from '@utils/giLodash.js'
 import { validationMixin } from 'vuelidate'
 
 // we use require instead of import with this file to make rollup happy
@@ -128,72 +130,43 @@ export default {
       // create the GroupContract
       try {
         this.ephemeral.errorMsg = null
-        const entry = sbp('gi/contract/create', 'GroupContract', {
+        const entry = sbp('gi.contracts/group/create', {
           // authorizations: [contracts.CanModifyAuths.dummyAuth()], // TODO: this
           groupName: this.form.groupName,
           groupPicture: this.form.groupPicture,
           sharedValues: this.form.sharedValues,
-          changeThreshold: this.form.changeThreshold,
-          memberApprovalThreshold: this.form.memberApprovalThreshold,
-          memberRemovalThreshold: this.form.memberRemovalThreshold,
           incomeProvided: +this.form.incomeProvided, // ensure this is a number
           incomeCurrency: this.form.incomeCurrency,
-          founderUsername: this.$store.state.loggedIn.name,
-          founderIdentityContractId: this.$store.state.loggedIn.identityContractId
+          proposals: {
+            // TODO: make the UI support changing the rule type, so that we have
+            //       a component for RULE_DISAGREEMENT as well
+            [PROPOSAL_GROUP_SETTING_CHANGE]: merge({},
+              proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults,
+              { ruleSettings: { [RULE_THRESHOLD]: { threshold: this.form.changeThreshold } } }
+            ),
+            [PROPOSAL_INVITE_MEMBER]: merge({},
+              proposals[PROPOSAL_INVITE_MEMBER].defaults,
+              { ruleSettings: { [RULE_THRESHOLD]: { threshold: this.form.memberApprovalThreshold } } }
+            ),
+            [PROPOSAL_REMOVE_MEMBER]: merge({},
+              proposals[PROPOSAL_REMOVE_MEMBER].defaults,
+              { ruleSettings: { [RULE_THRESHOLD]: { threshold: this.form.memberRemovalThreshold } } }
+            ),
+            [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].defaults,
+            [PROPOSAL_GENERIC]: proposals[PROPOSAL_GENERIC].defaults
+          }
         })
         const hash = entry.hash()
-        // TODO: convert this to SBL
         sbp('okTurtles.events/once', hash, (contractID, entry) => {
           this.$store.commit('setCurrentGroupId', hash)
-          // Take them to the dashboard.
-          // *** this.$router.push({ path: '/dashboard' })
           this.$router.push({ path: '/welcome' })
         })
-        // TODO: convert this to SBL
         await sbp('backend/publishLogEntry', entry)
         // add to vuex and monitor this contract for updates
-        await this.$store.dispatch('syncContractWithServer', hash)
+        await sbp('state/vuex/dispatch', 'syncContractWithServer', hash)
       } catch (error) {
         console.error(error)
         this.ephemeral.errorMsg = L('Failed to Create Group')
-        return
-      }
-
-      // send out invitations to people's mailboxes (if there are any)
-      try {
-        this.ephemeral.errorMsg = null
-        // TODO: as invitees are successfully invited display in a
-        // seperate invitees grid and add them to some validation for duplicate invites
-        for (const invitee of this.form.invitees) {
-          // We need to have the latest mailbox attribute for the user
-          const sentDate = new Date().toISOString()
-          // We need to post the invite to the users' mailbox contract
-          const invite = await sbp('gi/contract/create-action', 'MailboxPostMessage',
-            {
-              from: this.$store.getters.currentGroupState.groupName,
-              headers: [this.$store.state.currentGroupId],
-              messageType: contracts.MailboxPostMessage.TypeInvite,
-              sentDate
-            },
-            invitee.state.attributes.mailbox
-          )
-          await sbp('backend/publishLogEntry', invite)
-
-          // We need to make a record of the invitation in the group's contract
-          const invited = await sbp('gi/contract/create-action', 'GroupRecordInvitation',
-            {
-              username: invitee.state.attributes.name,
-              inviteHash: invite.hash(),
-              sentDate
-            },
-            this.$store.state.currentGroupId
-          )
-          await sbp('backend/publishLogEntry', invited)
-        }
-      } catch (error) {
-        console.error(error)
-        // TODO: Create More descriptive errors
-        this.ephemeral.errorMsg = L('Failed to Invite Users')
       }
     }
   },
@@ -203,12 +176,11 @@ export default {
         groupName: '',
         groupPicture: '',
         sharedValues: null,
-        changeThreshold: 0.8,
-        memberApprovalThreshold: 0.8,
-        memberRemovalThreshold: 0.8,
+        changeThreshold: proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults.ruleSettings[RULE_THRESHOLD].threshold,
+        memberApprovalThreshold: proposals[PROPOSAL_INVITE_MEMBER].defaults.ruleSettings[RULE_THRESHOLD].threshold,
+        memberRemovalThreshold: proposals[PROPOSAL_REMOVE_MEMBER].defaults.ruleSettings[RULE_THRESHOLD].threshold,
         incomeProvided: null,
-        incomeCurrency: 'USD', // TODO: grab this as a constant from currencies.js
-        invitees: []
+        incomeCurrency: 'USD' // TODO: grab this as a constant from currencies.js
       },
       ephemeral: {
         errorMsg: null,

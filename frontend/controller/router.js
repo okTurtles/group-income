@@ -45,10 +45,10 @@ var groupGuard = {
   guard: (to, from) => !store.state.currentGroupId,
   redirect: (to, from) => ({ path: '/new-group' })
 }
-var mailGuard = {
-  guard: (to, from) => from.name !== Mailbox.name,
-  redirect: (to, from) => ({ path: '/mailbox' })
-}
+// var mailGuard = {
+//   guard: (to, from) => from.name !== Mailbox.name,
+//   redirect: (to, from) => ({ path: '/mailbox' })
+// }
 function createEnterGuards (...guards) {
   return function (to, from, next) {
     for (const current of guards) {
@@ -161,13 +161,16 @@ var router = new Router({
       },
       beforeEnter: createEnterGuards(loginGuard)
     },
-    {
-      path: '/user-group',
-      component: () => import('../views/UserGroup.vue'),
-      meta: {
-        title: 'Your Group'
-      }
-    },
+    // NOTE: do not delete this! Event though we no longer use it,
+    //       we keep it around to demonstrate how to asynchronously
+    //       load a route using import() function
+    // {
+    //   path: '/user-group',
+    //   component: () => import('../views/UserGroup.vue'),
+    //   meta: {
+    //     title: 'Your Group'
+    //   }
+    // },
     {
       path: '/contributions',
       component: Contributions,
@@ -252,7 +255,8 @@ var router = new Router({
       meta: {
         title: 'Join a Group'
       },
-      beforeEnter: createEnterGuards(loginGuard, mailGuard)
+      // beforeEnter: createEnterGuards(loginGuard, mailGuard)
+      beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '/vote',
@@ -261,7 +265,7 @@ var router = new Router({
       meta: {
         title: 'Vote on a Proposal'
       },
-      beforeEnter: createEnterGuards(loginGuard, mailGuard)
+      beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '*',

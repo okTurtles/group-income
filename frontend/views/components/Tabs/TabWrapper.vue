@@ -103,7 +103,7 @@ export default {
         this.$router.push({ query: query })
         this.changeTab(tabItem.index)
       } else {
-        this.$store.dispatch(tabItem.action)
+        sbp('state/vuex/dispatch', tabItem.action)
         sbp('okTurtles.events/emit', CLOSE_MODAL)
       }
     }
