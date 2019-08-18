@@ -27,7 +27,7 @@ export default {
   pointer-events: none;
   position: fixed;
   opacity: 0;
-  background: $primary-bg-s;
+  background: $primary_2;
   border-radius: $radius;
   z-index: $zindex-mask;
 }

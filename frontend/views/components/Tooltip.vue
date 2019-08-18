@@ -112,7 +112,7 @@ export default {
   opacity: 0.95;
   z-index: $zindex-tooltip;
   pointer-events: none;
-  background-color: $text-strong;
+  background-color: $text_0;
   color: #fff;
 }
 </style>

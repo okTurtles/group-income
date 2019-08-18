@@ -59,11 +59,20 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
             citizen's financial status. Basic income can be implemented nationally, regionally
             or locally. The World Bank's World Development Report 2019 on the future of work describes
             the existing schemes around the world.
+
         tr
           td
-            code $text-light
-            pre .has-text-light
-          td.has-text-light Use this color on non critical texts.
+            pre .has-text-big
+          td.has-text-big Body #[b big]
+
+        tr
+          td
+            pre .has-text-small
+          td.has-text-small Body #[b small]
+        tr
+          td
+            pre .has-text-1
+          td.has-text-1 Use this color on non critical texts.
         tr
           td
             pre .link
@@ -157,32 +166,30 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
       h2 Color
 
     section.p-section
-      h3 Support
+      h3 Variable
 
-      table
+      table.colors
         thead
           th code
           th demo
-          //- th usage
-        tr(v-for='(color, index) in config.colors.brand' :key='`brand-color-${index}`')
+
+        tr(v-for='(color, index) in config.colors' :key='`color-${index}`')
           td
-            code ${{color.name}}
-            pre(v-if='!color.noClass') .has-background-{{color.name}}
+            code {{color.name}}
+            pre(v-for='num in [0, 1, 2]' :key='num') var(--{{color.name}}_{{num}})&nbsp
           td
-            span.c-palette(:class='`has-background-${color.name}`')
-          //- td(v-html='color.usage')
+            span.c-palette(v-for='num in [0, 1, 2]' :key='num' :style="{ backgroundColor: `var(--${color.name}_${num})`}")
 
     section.p-section
-      h3 Support
+      h3 Background
 
       table
         thead
           th code
           th demo
           //- th usage
-        tr(v-for='(color, index) in config.colors.support' :key='`support-color-${index}`')
+        tr(v-for='(color, index) in config.colors' :key='`support-color-${index}`')
           td
-            code ${{color.name}}
             pre(v-if='!color.noClass') .has-background-{{color.name}}
           td
             span.c-palette(:class='`has-background-${color.name}`')
@@ -310,6 +317,22 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
               |   i.icon-cog
           td
             button.is-icon
+              i.icon-cog
+        tr
+          td
+            pre
+              | button.is-icon.has-background
+              |   i.icon-cog
+          td
+            button.is-icon.has-background
+              i.icon-cog
+        tr
+          td
+            pre
+              | button.is-icon.is-small-icon
+              |   i.icon-cog
+          td
+            button.is-icon.is-small-icon
               i.icon-cog
 
   article#user-feedback
@@ -641,50 +664,24 @@ export default {
     return {
       articles: [],
       config: {
-        colors: {
-          brand: [
-            {
-              name: 'primary',
-              usage: 'Used on main decorative / interactive elements.'
-            },
-            {
-              name: 'primary-light',
-              usage: 'Used as background on secondary interactive elements (ex: Group Contributions Graph)'
-            },
-            {
-              name: 'primary-bg-s',
-              noClass: true,
-              usage: 'Used as background on sidebar.'
-            },
-            {
-              name: 'primary-bg-a',
-              noClass: true,
-              usage: 'rgba() (with transparent) variant of <code>$primary-bg-s</code>. Used as background on :hover/:focus of interactive elements (ex: icon buttons and interactive contributions boxs).'
-            },
-            {
-              name: 'secondary',
-              usage: 'Used as an auxiliar color on decorative elements'
-            },
-            {
-              name: 'tertiary',
-              usage: 'Used as another auxiliar color on decorative elements'
-            }
-          ],
-          support: [
-            {
-              name: 'success',
-              usage: 'Used on elements to show something good happened - Do not mix its usage with $secondary (same color in this theme but with  different meanings)'
-            },
-            {
-              name: 'warning',
-              usage: 'Used on elements to show something not that good happened - Do not mix its usage with $tertiary (same color in this theme but with different meanings)'
-            },
-            {
-              name: 'danger',
-              usage: 'Used on elements to show something wrong happened'
-            }
-          ]
-        }
+        colors: [
+          {
+            name: 'primary',
+            usage: 'Used on main decorative / interactive elements.'
+          },
+          {
+            name: 'success',
+            usage: 'Used on elements to show something good happened - Do not mix its usage with success (same color in this theme but with  different meanings)'
+          },
+          {
+            name: 'warning',
+            usage: 'Used on elements to show something not that good happened - Do not mix its usage with $tertiary (same color in this theme but with different meanings)'
+          },
+          {
+            name: 'danger',
+            usage: 'Used on elements to show something wrong happened'
+          }
+        ]
       }
     }
   },
@@ -749,17 +746,17 @@ $pagePaddingTablet: 24px;
 $pagePaddingDesktop: 75px;
 
 pre {
-  color: $primary;
+  color: $primary_0;
 }
 
 code {
-  color: $secondary;
+  color: $success_0;
 }
 
 article {
   padding-bottom: $spacer-lg;
   margin-bottom: $spacer-lg;
-  border-bottom: 1px dashed $border;
+  border-bottom: 1px dashed $general_0;
 }
 
 section.p-section {
@@ -796,7 +793,7 @@ table {
 
 .c-spacer {
   display: inline-block;
-  border: 1px dashed $primary;
+  border: 1px dashed $primary_0;
   width: $spacer;
   height: $spacer;
   margin-right: $spacer;
@@ -829,6 +826,10 @@ table {
   }
 }
 
+.colors td {
+  vertical-align: top
+}
+
 .message {
   margin-bottom: $spacer-lg;
 }
@@ -838,13 +839,13 @@ table {
   flex-direction: column;
 
   ::v-deep .active {
-    color: $border;
+    color: $general_0;
     text-decoration: line-through;
   }
 
   ::v-deep .last {
     text-decoration: underline;
-    color: $primary;
+    color: $primary_0;
   }
 }
 </style>

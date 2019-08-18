@@ -32,23 +32,36 @@ select,
   border-radius: $radius;
   padding: 0 10px;
   background-color: #fff;
-  border: 1px solid $border;
+  border: 1px solid $general_0;
   letter-spacing: -0.6px;
   font-size: 1rem;
   line-height: 23px;
   outline: none;
 
   @mixin placeholder {
-    color: $text-light;
+    color: $text_1;
   }
 
-  &:focus {
-    border-color: $primary;
+  @media (hover: hover) {
+    &:focus,
+    &:hover {
+      border-color: $primary_0;
+    }
+
+    &:focus {
+      box-shadow: 0 0 0 2px $primary_1;
+    }
   }
 
   &.error {
-    border-color: $danger;
+    border-color: $danger_0;
     color: initial;
+
+    @media (hover: hover) {
+      &:focus {
+        box-shadow: 0 0 0 2px $danger_1;
+      }
+    }
   }
 }
 
@@ -82,7 +95,7 @@ textarea,
   &::before,
   &::after {
     content: "";
-    background-color: $primary;
+    background-color: $primary_0;
     width: 9px;
     height: 2px;
     position: absolute;
@@ -108,12 +121,12 @@ textarea,
   position: relative;
   display: flex;
   align-items: stretch;
-  border: 1px solid $border;
+  border: 1px solid $general_0;
   border-radius: $radius;
 
   .input {
     border-radius: $radius 0 0 $radius;
-    border-right: 1px solid $border;
+    border-right: 1px solid $general_0;
   }
 
   * + .input {
@@ -132,17 +145,32 @@ textarea,
     border: 0;
 
     &:focus {
-      outline: 1px solid $primary;
-      outline-offset: 0;
-      border-color: transparent;
+      box-shadow: 0 0 0 2px $primary_1;
+      border: 1px solid $primary_0;
 
       + label {
-        background-color: $primary;
+        background-color: $primary_0;
         color: #fff;
         line-height: $inputHeight;
-        outline: 1px solid var(--primary);
+        box-shadow: 0 0 0 2px $primary_1;
+        border-radius: 0 3px 3px 0;
+        position: relative;
+
+        &::before {
+          content: "";
+          background-color: $primary_0;
+          position: absolute;
+          top: 0;
+          left: -2px;
+          width: 2px;
+          height: 100%;
+        }
       }
     }
+  }
+
+  input + select:focus {
+    border-radius: 0 3px 3px 0;
   }
 
   button {
@@ -151,9 +179,12 @@ textarea,
 
   .is-icon {
     min-width: 40px;
+    height: 43px;
     text-align: center;
-    color: $border;
-    align-self: center;
+    color: $general_0;
+    align-items: center;
+    justify-content: center;
+    display: flex;
 
     &:first-child {
       position: absolute;
@@ -164,14 +195,17 @@ textarea,
       border-radius: $radius;
     }
 
+    &:hover,
     &:focus {
-      color: $primary;
+      box-shadow: 0 0 0 2px $primary_1;
+      background-color: $primary_0;
+      color: $white;
     }
   }
 }
 
 .error {
-  color: $danger;
+  color: $danger_0;
 }
 
 p.error {
@@ -213,18 +247,18 @@ p.error {
       margin-right: $spacer-sm;
       display: inline-block;
       border-radius: 50%;
-      border: 1px solid $border;
+      border: 1px solid $general_0;
       transform: translateY(2px);
     }
 
     &::after {
       content: "";
-      width: 7px;
-      height: 7px;
-      background-color: $primary;
+      width: 6px;
+      height: 6px;
+      background-color: $primary_0;
       border-radius: 50%;
       position: absolute;
-      top: 50%;
+      top: 11px;
       left: 7px;
       transform: translate(-50%, -50%) scale(0);
       transform-origin: 50% 50%;
@@ -238,7 +272,7 @@ p.error {
     margin-right: -1px;
 
     &::before {
-      border-color: $text;
+      border-color: $primary_0;
     }
 
     &::after {

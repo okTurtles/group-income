@@ -94,7 +94,7 @@ export default {
 
 .c-avatar {
   border-radius: 50%;
-  background-color: $border;
+  background-color: $general_0;
   object-fit: cover;
   width: 2rem;
 

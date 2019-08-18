@@ -145,7 +145,7 @@ export default {
 
 .c-slice {
   // Simulate a gap between each slice
-  stroke: $body-background-color;
+  stroke: $background;
   stroke-width: 0.03; // small unit because this SVG is a 1x1 grid system
 
   &.c-inner {
@@ -154,7 +154,7 @@ export default {
 }
 
 .c-pie-donut {
-  fill: $body-background-color;
+  fill: $background;
 }
 
 .c-title {

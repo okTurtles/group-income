@@ -5,7 +5,7 @@
 
   &:hover,
   &:focus {
-    color: $link;
+    color: $primary_0;
   }
 }
 
@@ -39,11 +39,11 @@
 
 // Global Classes for SVG fills
 $fills: (
-  primary: $primary,
-  primary-light: $primary-light,
-  secondary: $secondary,
-  tertiary: $tertiary,
-  light: $light
+  primary: $primary_0,
+  primary-light: $primary_2,
+  secondary: $success_0,
+  tertiary: $warning_0,
+  light: $general_2
 );
 
 @each $class, $color in $fills {

@@ -26,7 +26,7 @@ export default {
   position: relative;
   width: 100%;
   height: $spacer-xs;
-  background-color: $primary-bg-a;
+  background-color: $primary_2;
   margin-top: 1rem;
 }
 
@@ -44,13 +44,13 @@ export default {
 }
 
 .c-primary {
-  background-color: $primary;
+  background-color: $primary_0;
   // this bar is slower: starts sooner and ends later
   animation: progress 700ms ease-in-out 450ms forwards;
 }
 
 .c-secondary {
-  background-color: $success;
+  background-color: $success_0;
   animation: progress 500ms ease-in-out 550ms forwards;
 }
 

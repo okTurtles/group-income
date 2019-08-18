@@ -152,7 +152,7 @@ $border-width: 1px;
   @extend %circleSize;
 
   &-circle {
-    stroke: $primary;
+    stroke: $primary_0;
     stroke-width: $border-width;
     stroke-dasharray: $spacer*0.75 $spacer;
     stroke-linecap: round;
@@ -187,7 +187,7 @@ $border-width: 1px;
       &::before {
         position: absolute;
         content: "";
-        box-shadow: 0 0 0 $border-width $primary;
+        box-shadow: 0 0 0 $border-width $primary_0;
         opacity: 0;
         transition: opacity 150ms;
         @include itemRound;
@@ -200,7 +200,7 @@ $border-width: 1px;
     }
 
     &-img {
-      border: $border-width solid $body-background-color;
+      border: $border-width solid $background;
       @include itemRound;
     }
 
@@ -210,8 +210,8 @@ $border-width: 1px;
       justify-content: center;
       align-items: center;
       border-radius: 50%;
-      background: $white-ter;
-      color: $primary;
+      background: $general_2;
+      color: $primary_0;
     }
   }
 }
@@ -227,7 +227,7 @@ $border-width: 1px;
   }
 
   &-tag {
-    background: rgba($primary, 0.3);
+    background: rgba($primary_0, 0.3);
   }
 }
 </style>

@@ -54,7 +54,7 @@ export default {
   position: relative;
   padding: $spacer 0;
   z-index: $zindex-header;
-  background-color: $body-background-color;
+  background-color: $background;
 
   // fadeOutTop: a gradient mask to fadeout nav on scroll.
   &::after {
@@ -64,7 +64,7 @@ export default {
     left: 0;
     height: $spacer;
     width: calc(100% - #{$spacer}); // so it doesn't get above scrollbar
-    background: linear-gradient($body-background-color, rgba($body-background-color, 0));
+    background: linear-gradient($background, rgba($background, 0));
     pointer-events: none;
   }
 }
