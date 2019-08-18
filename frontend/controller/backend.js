@@ -73,12 +73,12 @@ sbp('okTurtles.events/on', CONTRACTS_MODIFIED, async (contracts) => {
   try {
     for (const contractID of toUnsubscribe) {
       const res = await serverSocket.unsub(contractID)
-      console.debug(`[Backend] unsubscribed ${contractID}`, res)
       delete contractSubscriptions[contractID]
+      console.debug(`[Backend] unsubscribed ${contractID}`, res)
     }
     for (const contractID of toSubscribe) {
       const res = await serverSocket.sub(contractID)
-      contractSubscriptions[contractID] = contractID
+      contractSubscriptions[contractID] = true
       console.debug(`[Backend] subscribed ${contractID}`, res)
     }
   } catch (e) {

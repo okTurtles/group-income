@@ -309,6 +309,7 @@ const actions = {
         //       and throw an exception and write a log message.
         return console.error(`[CRITICAL ERROR] NOT EXPECTING EVENT!`, contractID, message)
       }
+      // TODO: make all of this prettier... try to hide the ugliness of the try/catch stuff
       try {
         await sbp('gi.db/log/addEntry', message)
         // TODO: go through reprocess queue
