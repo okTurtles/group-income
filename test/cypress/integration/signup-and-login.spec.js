@@ -44,7 +44,7 @@ describe('SignUp, Profile and Login', () => {
     // Close Modal and verify the new profile names
     cy.get('.c-modal-close').click()
 
-    cy.getByDT('profileDisplayName').should('contain', 'I am a bot')
+    cy.getByDT('profileDisplayName').should('contain', 'I am not a bot')
     cy.getByDT('profileName').should('contain', userName)
   })
 
