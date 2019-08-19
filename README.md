@@ -53,10 +53,21 @@ grunt clean
 Run the tests:
 
 ```
+# all tests
 grunt test
+
+# unit-tests
+grunt test:unit
+
+# end-to-end tests
+grunt test:e2e
+
+# just run cypress in open mode
+# you must start the server before (grunt dev) 
+npm run cy:open
 ```
 
-**Use [Daydream](https://github.com/segmentio/daydream) to create frontend tests. All new functionality must have corresponding tests!**
+**We used [Cypress] to create end-to-end tests. All new functionality must have corresponding tests!**
 
 #### Using Docker for extra security
 

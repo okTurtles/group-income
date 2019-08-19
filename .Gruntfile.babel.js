@@ -122,7 +122,6 @@ module.exports = (grunt) => {
         cmd: 'node node_modules/mocha/bin/mocha --require Gruntfile.js --exit -R spec --bail "{./{,!(node_modules)/**/}*.test.js,./test/*.js}"',
         options: { env: { LOAD_NO_FILE: 'true', ...process.env } }
       },
-
       // https://github.com/standard/standard/issues/750#issuecomment-379294276
       eslint: 'node ./node_modules/eslint/bin/eslint.js "**/*.{js,vue}"',
       eslintgrunt: "./node_modules/.bin/eslint --ignore-pattern '!.*.js' .Gruntfile.babel.js Gruntfile.js",
@@ -179,13 +178,36 @@ module.exports = (grunt) => {
   grunt.registerTask('backend', ['backend:relaunch', 'watch'])
   grunt.registerTask('dev', ['checkDependencies', 'build:watch', 'connect', 'backend'])
   grunt.registerTask('dist', ['build'])
-  grunt.registerTask('test', ['dist', 'connect', 'exec:test'])
+  grunt.registerTask('test', ['dist', 'connect', 'exec:test', 'backend:launch', 'cypress'])
+  grunt.registerTask('test:unit', ['dist', 'connect', 'exec:test'])
+  grunt.registerTask('test:e2e', ['dist', 'connect', 'backend:launch', 'cypress'])
+
   // TODO: add 'deploy' per:
   //       https://github.com/okTurtles/group-income-simple/issues/10
 
   grunt.registerTask('build', function () {
     const rollup = this.flags.watch ? 'rollup:watch' : 'rollup'
     grunt.task.run(['exec:eslint', 'exec:puglint', 'exec:stylelint', 'copy', 'sass', rollup])
+  })
+
+  grunt.registerTask('cypress', function () {
+    const cypress = require('cypress')
+    const done = this.async()
+    const command = this.flags.open ? 'open' : 'run'
+    const headed = this.flags.headed
+
+    grunt.log.writeln(`cypress: running on "${command}" mode...`)
+
+    cypress[command]({
+      headed
+    })
+      .then((results) => {
+        const success = !results.totalFailed
+        return done(success)
+      })
+      .catch((err) => {
+        return done(Error('Ups, Cypress did not run!', err))
+      })
   })
 
   // -------------------------------------------------------------------------
@@ -208,7 +230,7 @@ module.exports = (grunt) => {
     }
   })
 
-  grunt.registerTask('backend:relaunch', '[internal]', function () {
+  grunt.registerTask('backend:relaunch', function () {
     const done = this.async() // tell grunt we're async
     const fork2 = function () {
       grunt.log.writeln('backend: forking...')
@@ -241,6 +263,25 @@ module.exports = (grunt) => {
     } else {
       fork2()
     }
+  })
+
+  grunt.registerTask('backend:launch', function () {
+    const done = this.async()
+    grunt.log.writeln('backend: launching...')
+
+    const server = require('./backend/index.js')
+    // This seems to start the server, but not totally...
+    // When opening :8000, there's an error on console
+    // > primus.js:3572 WebSocket connection to
+    //   'ws://localhost:3000/primus?_primuscb=Mo-BBJH' failed:
+    //   Error during WebSocket handshake: Unexpected response code: 404
+
+    // And for that reason some logic on the code doesn't work properly
+    // ex: updating profileDisplayName doesn't update the name on the sidebar.
+
+    server.then(
+      done(true)
+    )
   })
 
   // -----------------------
