@@ -179,7 +179,7 @@ module.exports = (grunt) => {
   grunt.registerTask('backend', ['backend:relaunch', 'watch'])
   grunt.registerTask('dev', ['checkDependencies', 'build:watch', 'connect', 'backend'])
   grunt.registerTask('dist', ['build'])
-  grunt.registerTask('test', ['dist', 'connect', 'exec:test'])
+  grunt.registerTask('test', ['dist', 'exec:test'])
   // TODO: add 'deploy' per:
   //       https://github.com/okTurtles/group-income-simple/issues/10
 
