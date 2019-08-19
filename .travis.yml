@@ -32,8 +32,9 @@ cache:
 install:
   - npm ci
 script:
-  ## now run cypress headlessly
-  ## and record all of the tests.
+  ## run backend tests
+  - npm run test
+  ## run cypress (frontend tests)
   - npm run test:cy
 
   # chrome: stable
