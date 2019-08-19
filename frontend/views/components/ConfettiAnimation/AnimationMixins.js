@@ -277,7 +277,8 @@ const animationMixins = {
   data () {
     return {
       confettis: [],
-      animationActive: true
+      animationActive: true,
+      timeout: null // animation begins after a bit of delay
     }
   },
   methods: {
@@ -338,12 +339,12 @@ const animationMixins = {
       }
     },
     stopAnimation () {
+      clearTimeout(this.timeout)
       window.cancelAnimationFrame(requestId)
     }
   },
   mounted () {
-    // animation begins after a bit of delay
-    window.setTimeout(() => {
+    this.timeout = setTimeout(() => {
       this.initializeAnimation()
       this.animate()
     }, 500)

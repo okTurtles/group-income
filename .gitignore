@@ -27,3 +27,7 @@
 # Misc
 /ignored
 /data/*
+
+# Cypress
+/test/cypress/videos
+/test/cypress/screenshots
