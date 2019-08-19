@@ -41,10 +41,11 @@ describe('SignUp, Profile and Login', () => {
     cy.getByDT('saveAccount').click()
     cy.getByDT('profileSaveSuccess').should('contain', 'Profile saved successfully!')
 
-    // Close Modal and verify the new displayName
+    // Close Modal and verify the new profile names
     cy.get('.c-modal-close').click()
-    // TODO: We should fix this, there's a miss using between displayName and profileName
-    cy.getByDT('profileName').should('contain', 'I am a bot')
+
+    cy.getByDT('profileDisplayName').should('contain', 'I am a bot')
+    cy.getByDT('profileName').should('contain', userName)
   })
 
   it('user1 logout and login again', () => {

@@ -46,7 +46,6 @@
     }
   },
   "eslintIgnore": [
-    "_cypress_example/*",
     "!.Gruntfile.babel.js",
     "**/vue2-slider.vue",
     "frontend/_static/*",

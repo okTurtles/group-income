@@ -19,7 +19,7 @@ Cypress.Commands.add('giSignUp', (userName, password = '123456789') => {
 
   cy.getByDT('signSubmit').click()
 
-  cy.getByDT('profileDisplayName').should('contain', userName)
+  cy.getByDT('profileName').should('contain', userName)
 })
 
 Cypress.Commands.add('giLogin', (userName, password = '123456789') => {
@@ -29,7 +29,12 @@ Cypress.Commands.add('giLogin', (userName, password = '123456789') => {
 
   cy.getByDT('loginSubmit').click()
 
-  cy.getByDT('profileDisplayName').should('contain', userName)
+  // For the case if the user has displayName
+  const elName = cy.getByDT('userProfile').find('[data-test="profileName"]')
+    ? 'profileName'
+    : 'profileDisplayName'
+
+  cy.getByDT(elName).should('contain', userName)
 })
 
 Cypress.Commands.add('giLogOut', () => {
