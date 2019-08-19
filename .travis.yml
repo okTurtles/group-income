@@ -31,15 +31,10 @@ cache:
     - ~/.cache
 install:
   - npm ci
-before_script:
-  ## runs the 'start' script which
-  ## boots our local app server on port 8080
-  ## which cypress expects to be running
-  - npm start
 script:
   ## now run cypress headlessly
   ## and record all of the tests.
-  - npm run test:ci
+  - npm run test:cy
 
   # chrome: stable
 # don't seem to need these anymore
