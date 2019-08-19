@@ -85,15 +85,15 @@ function note (message) {
 
 // example of how to extend nightmare with custom functions, see
 // https://github.com/segmentio/nightmare#nightmareactionname-electronactionelectronnamespace-actionnamespace
-Nightmare.action('size', function (done) {
-  this.evaluate_now(() => {
-    const width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0)
-    const height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0)
-    return { height, width }
-  }, done)
-})
+// Nightmare.action('size', function (done) {
+//   this.evaluate_now(() => {
+//     const width = Math.max(document.documentElement.clientWidth, window.innerWidth || 0)
+//     const height = Math.max(document.documentElement.clientHeight, window.innerHeight || 0)
+//     return { height, width }
+//   }, done)
+// })
 
-describe('Frontend', function () {
+describe.skip('Frontend', function () {
   const n = Nightmare({
     openDevTools: { mode: 'detach' },
     show: !!process.env.SHOW_BROWSER,
@@ -130,6 +130,7 @@ describe('Frontend', function () {
   })
   let username = `User`
 
+  // TODO
   describe.skip('New user page', function () {
     it('Should create user George', function () {
       this.timeout(5000)

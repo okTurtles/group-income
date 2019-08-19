@@ -4,6 +4,7 @@
   "private": true,
   "description": "",
   "scripts": {
+    "start": "grunt dev",
     "backend": "cross-env LOAD_TARGET_FILE=./backend/index.js nodemon --ignore backend/discard/ --watch backend/ Gruntfile.js",
     "rollup": "rollup -c",
     "rollup-dev": "rollup -c -w",
@@ -11,7 +12,10 @@
     "sass-dist": "node-sass --output-style compressed -o ./dist/assets/css ./frontend/assets/style",
     "server": "serve -p 8000",
     "dev": "npm-run-all --parallel backend sass-dev rollup-dev server",
+    "cy:open": "cypress open",
+    "cy:run": "cypress run",
     "test": "xvfb-run --server-args=\"-screen 0 1024x768x24\" grunt test",
+    "test:ci": "run-p --race start cypress:run",
     "eslint": "eslint \"**/*.{js,vue}\"",
     "i18n": "node scripts/i18n.js",
     "flow": "flow",
@@ -25,12 +29,14 @@
       "parser": "babel-eslint"
     },
     "extends": [
+      "plugin:cypress/recommended",
       "plugin:flowtype/recommended",
       "plugin:vue/essential",
       "standard"
     ],
     "plugins": [
-      "flowtype"
+      "flowtype",
+      "cypress"
     ],
     "rules": {
       "vue/max-attributes-per-line": "off",
@@ -40,6 +46,7 @@
     }
   },
   "eslintIgnore": [
+    "_cypress_example/*",
     "!.Gruntfile.babel.js",
     "**/vue2-slider.vue",
     "frontend/_static/*",
@@ -132,8 +139,10 @@
     "babel-plugin-transform-inline-environment-variables": "0.4.3",
     "chalk": "2.4.2",
     "cheerio": "1.0.0-rc.3",
+    "cypress": "3.4.1",
     "eslint": "6.1.0",
     "eslint-config-standard": "13.0.1",
+    "eslint-plugin-cypress": "2.6.1",
     "eslint-plugin-flowtype": "4.2.0",
     "eslint-plugin-import": "2.18.2",
     "eslint-plugin-node": "9.1.0",
@@ -155,6 +164,7 @@
     "nightmare": "3.0.2",
     "node-fetch": "2.6.0",
     "node-sass": "4.12.0",
+    "npm-run-all": "4.1.5",
     "pug-lint-vue": "0.3.0",
     "rollup": "1.19.4",
     "rollup-plugin-alias": "1.5.2",

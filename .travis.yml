@@ -24,6 +24,23 @@ addons:
   apt:
     packages:
       - xvfb
+cache:
+  # Caches $HOME/.npm when npm ci is default script command
+  directories:
+    # cache folder with Cypress binary to avoid downloading Cypress again and again
+    - ~/.cache
+install:
+  - npm ci
+before_script:
+  ## runs the 'start' script which
+  ## boots our local app server on port 8080
+  ## which cypress expects to be running
+  - npm start
+script:
+  ## now run cypress headlessly
+  ## and record all of the tests.
+  - npm run test:ci
+
   # chrome: stable
 # don't seem to need these anymore
 # env:
