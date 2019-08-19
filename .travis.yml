@@ -14,9 +14,6 @@ dist: trusty
 compiler: clang # per: https://docs.travis-ci.com/user/languages/c
 # https://docs.travis-ci.com/user/environment-variables
 env:
- - CXX=clang++ DEBUG='nightmare*'
- # - CXX=clang++ DISPLAY=':99.0' DEBUG='nightmare*'
-# according to travis docs, the services -xvfb line will set DISPLAY
 branches:
   only:
     - master # https://github.com/okTurtles/group-income-simple/issues/58

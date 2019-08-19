@@ -77,7 +77,7 @@ export default {
       },
       ephemeral: {
         errorMsg: null,
-        // this determines whether or not to render proxy components for nightmare
+        // this determines whether or not to render proxy components for tests
         dev: process.env.NODE_ENV === 'development'
       },
       config: {

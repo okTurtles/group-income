@@ -160,7 +160,6 @@
     "grunt-sass": "3.0.2",
     "load-grunt-tasks": "5.0.0",
     "mocha": "6.1.4",
-    "nightmare": "3.0.2",
     "node-fetch": "2.6.0",
     "node-sass": "4.12.0",
     "pug-lint-vue": "0.3.0",
