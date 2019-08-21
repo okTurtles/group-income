@@ -122,7 +122,7 @@ module.exports = (grunt) => {
         cmd: 'node node_modules/mocha/bin/mocha --require Gruntfile.js --exit -R spec --bail "{./{,!(node_modules)/**/}*.test.js,./test/*.js}"',
         options: { env: { LOAD_NO_FILE: 'true', ...process.env } }
       },
-
+      cypress: 'npm run cy:run',
       // https://github.com/standard/standard/issues/750#issuecomment-379294276
       eslint: 'node ./node_modules/eslint/bin/eslint.js "**/*.{js,vue}"',
       eslintgrunt: "./node_modules/.bin/eslint --ignore-pattern '!.*.js' .Gruntfile.babel.js Gruntfile.js",
@@ -179,7 +179,7 @@ module.exports = (grunt) => {
   grunt.registerTask('backend', ['backend:relaunch', 'watch'])
   grunt.registerTask('dev', ['checkDependencies', 'build:watch', 'connect', 'backend'])
   grunt.registerTask('dist', ['build'])
-  grunt.registerTask('test', ['dist', 'exec:test'])
+  grunt.registerTask('test', ['dist', 'connect', 'exec:cypress', 'exec:test'])
   // TODO: add 'deploy' per:
   //       https://github.com/okTurtles/group-income-simple/issues/10
 

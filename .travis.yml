@@ -14,7 +14,4 @@ cache:
 install:
   - npm ci
 script:
-  ## run backend tests
-  - npm run test
-  ## run cypress (frontend tests)
-  - npm run test:cy
+  - npm test

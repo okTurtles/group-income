@@ -11,10 +11,9 @@
     "sass-dist": "node-sass --output-style compressed -o ./dist/assets/css ./frontend/assets/style",
     "server": "serve -p 8000",
     "dev": "npm-run-all --parallel backend sass-dev rollup-dev server",
+    "test": "grunt test",
     "cy:run": "cypress run",
     "cy:open": "cypress open",
-    "test": "grunt test",
-    "test:cy": "start-server-and-test grunt dev http://localhost:8000 cy:run",
     "eslint": "eslint \"**/*.{js,vue}\"",
     "i18n": "node scripts/i18n.js",
     "flow": "flow",
@@ -43,7 +42,10 @@
       "vue/html-indent": "off",
       "flowtype/no-types-missing-file-annotation": "off",
       "quote-props": "off",
-      "import/extensions": [2, "ignorePackages"]
+      "import/extensions": [
+        2,
+        "ignorePackages"
+      ]
     }
   },
   "eslintIgnore": [
@@ -174,10 +176,10 @@
     "rollup-plugin-node-resolve": "5.2.0",
     "rollup-plugin-sass-variables": "0.1.1",
     "rollup-plugin-vue": "5.0.1",
+    "serve": "11.1.0",
     "should": "13.2.3",
     "should-sinon": "0.0.6",
     "sinon": "7.3.2",
-    "start-server-and-test": "1.10.0",
     "stylelint": "10.1.0",
     "stylelint-config-standard": "18.3.0",
     "vue-cli-plugin-pug": "1.0.7",
