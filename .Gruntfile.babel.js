@@ -309,6 +309,7 @@ module.exports = (grunt) => {
           // https://rollup-plugin-vue.vuejs.org/options.html
           // https://github.com/vuejs/rollup-plugin-vue/blob/master/src/index.ts
           // https://github.com/vuejs/vue-component-compiler#api
+          needMap: false,
           css: false,
           style: {
             preprocessOptions: {
