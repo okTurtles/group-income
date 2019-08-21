@@ -74,7 +74,7 @@ $barMarginBottom: $spacer-sm;
     bottom: $barHeight;
     left: 0;
     width: 100%;
-    border-top: 1px dashed $body-background-color;
+    border-top: 1px dashed $background;
   }
 }
 
@@ -82,7 +82,7 @@ $barMarginBottom: $spacer-sm;
   width: $spacer;
   margin: 0 $spacer-xs;
   height: $barHeight;
-  background: $primary;
+  background: $primary_0;
   display: block;
   transform: scaleY(0);
   transform-origin: 0 100%;

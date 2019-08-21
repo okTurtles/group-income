@@ -93,10 +93,10 @@ $pagePaddingDesktop: 75px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  border-bottom: 1px solid $border;
+  border-bottom: 1px solid $general_0;
   transition: padding ease-out 300ms;
 
-  background-color: $primary-bg-s;
+  background-color: $primary_2;
   text-align: center;
   padding-left: 0;
 
@@ -161,7 +161,7 @@ $pagePaddingDesktop: 75px;
   background-color: $background;
   transform: translateX(100%);
   transition: transform $transitionSpeed;
-  border-left: 1px solid $border;
+  border-left: 1px solid $general_0;
 
   &.is-active {
     transform: translateX(0);

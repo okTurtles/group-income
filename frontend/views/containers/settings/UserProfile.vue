@@ -207,7 +207,7 @@ export default {
 .username {
   display: none;
   margin-bottom: $spacer-lg;
-  color: $text-light;
+  color: $text_1;
 
   @include tablet {
     display: block;

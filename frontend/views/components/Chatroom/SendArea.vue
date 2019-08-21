@@ -175,13 +175,13 @@ $initialHeight: 43px;
   &-btn {
     padding: $spacer-sm;
     padding-right: $spacer;
-    color: $light;
+    color: $general_2;
     height: 100%;
     border-radius: 0 $radius $radius 0;
 
     &:focus {
       box-shadow: none;
-      color: $text-light;
+      color: $text_1;
     }
   }
 }

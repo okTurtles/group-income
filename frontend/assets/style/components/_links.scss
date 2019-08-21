@@ -1,7 +1,7 @@
 // Inline
 .link {
-  color: $link;
-  border-bottom: 1px solid $primary-light;
+  color: $primary_0;
+  border-bottom: 1px solid $primary_1;
   cursor: pointer;
   text-decoration: none;
   position: relative;
@@ -17,7 +17,7 @@
     right: 0;
     width: 0;
     height: 1px;
-    background-color: $primary-light;
+    background-color: $primary_1;
     transition: width cubic-bezier(0, 0, 0.5, 0) 0.2s;
   }
 
@@ -27,7 +27,7 @@
 
   &:hover,
   &:focus {
-    color: $link-hover;
+    color: $text_0;
     border-color: transparent;
     transition: none;
 

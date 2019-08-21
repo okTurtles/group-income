@@ -79,7 +79,7 @@ export default {
     left: -1.5rem;
     right: -1.5rem;
     height: 1px;
-    background-color: $border;
+    background-color: $general_0;
   }
 }
 

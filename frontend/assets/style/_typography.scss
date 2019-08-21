@@ -1,18 +1,18 @@
 @font-face {
-  src: url(../fonts/Source_Sans_Pro/SourceSansPro-Light.ttf);
-  font-family: "Source Sans Pro";
-  font-weight: 300;
+  src: url(../fonts/Lato/Lato-Bold.ttf);
+  font-family: "Lato";
+  font-weight: 700;
 }
 
 @font-face {
-  src: url(../fonts/Source_Sans_Pro/SourceSansPro-Regular.ttf);
-  font-family: "Source Sans Pro";
+  src: url(../fonts/Lato/Lato-Regular.ttf);
+  font-family: "Lato";
   font-weight: 400;
 }
 
 @font-face {
-  src: url(../fonts/Source_Sans_Pro/SourceSansPro-Bold.ttf);
-  font-family: "Source Sans Pro";
+  src: url(../fonts/Poppins/Poppins-Bold.ttf);
+  font-family: "Poppins";
   font-weight: 700;
 }
 
@@ -27,18 +27,13 @@ html {
 }
 
 body {
-  font-family: "Source Sans Pro", "Helvetica Neue", "sans-serif";
+  font-family: "Lato", "Helvetica Neue", "sans-serif";
   font-style: normal;
   font-weight: normal;
-  font-size: 0.875rem; // 14px
+  font-size: $size-4; // 14px
   line-height: 1.3125rem; // 21px
   letter-spacing: 0.1px;
-  color: $text-strong;
-
-  @include phone {
-    // slightly increase default font-size only on mobile devices for A11Y purpose
-    font-size: 0.9375rem; // 15px
-  }
+  color: $text_0;
 }
 
 // From _variables.scss
@@ -49,16 +44,42 @@ body {
 // $size-5 =  0.75rem = 12px = $size-small
 
 $sizes: $size-1, $size-2, $size-3, $size-4, $size-5;
-$lineHeight: 2.5, 1.875, 1.4375, 1.125, 1.9375;
-// From line height: 40px, 30px, 23px, 18px, 15px
+$lineHeight: 3, 2.25, 1.6875, 1.3125, 1;
+// From line height: 48px, 36px, 27px, 21px, 16px
 
 @each $size in $sizes {
   $i: index($sizes, $size);
 
   h#{$i},
   .is-#{$i} {
+    font-family: "Poppins";
+    font-weight: bold;
     font-size: $size;
     line-height: #{nth($lineHeight, $i)}rem;
+  }
+}
+
+@include tablet-only {
+  h1 {
+    font-size: $size-2; // 24px
+    line-height: 2.125rem; // 34px
+  }
+
+  h2 {
+    font-size: 1.25rem; // 20px
+    line-height: 1.75rem; // 28px
+  }
+}
+
+@include phone {
+  h1 {
+    font-size: 1.25rem; // 20px
+    line-height: 2.125rem; // 34px
+  }
+
+  h2 {
+    font-size: $size-3; // 18px
+    line-height: 1.5625rem; // 25px
   }
 }
 
@@ -75,14 +96,19 @@ header p,
   font-weight: normal;
   font-size: $size-5; // 12px
   line-height: 1rem; // 16px
-  color: $text-light;
+  color: $text_1;
 }
 
 .label {
   font-weight: bold;
 }
 
+.has-text-big {
+  font-size: 1rem; // 16px
+}
+
 .help,
+.has-text-small,
 small {
-  font-size: 0.875em;
+  font-size: 0.75rem; // 12px
 }

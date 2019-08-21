@@ -64,7 +64,7 @@ export default {
   &.has-divider {
     margin-bottom: $spacer-sm;
     padding-bottom: $spacer-sm;
-    border-bottom: 1px solid $border;
+    border-bottom: 1px solid $general_0;
   }
 
   &-slot {
@@ -85,17 +85,17 @@ export default {
   i {
     margin-right: $spacer;
     font-size: 0.77rem;
-    color: $text-light;
+    color: $text_1;
     transition: transform cubic-bezier(0.18, 0.89, 0.32, 1.28) 0.3s, color ease-in 0.3s;
   }
 
   &:hover,
   &:focus {
     transition: none;
-    background-color: $primary-bg-a;
+    background-color: $primary_2;
 
     &.solid {
-      background-color: $light;
+      background-color: $general_2;
     }
 
     .i {
@@ -109,12 +109,12 @@ export default {
   }
 
   &.secondary {
-    color: $text-light;
+    color: $text_1;
     letter-spacing: -0.01rem;
 
     &:hover,
     &:focus {
-      background-color: $primary-bg-a;
+      background-color: $primary_2;
     }
   }
 
@@ -122,12 +122,12 @@ export default {
     font-weight: 600;
 
     i {
-      color: var(--primary-saturated);
+      // color: var(--primary-saturated); // TODO replace color
     }
 
     &:hover,
     &:focus {
-      background-color: $primary-bg-a;
+      background-color: $primary_2;
     }
   }
 }

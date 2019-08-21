@@ -50,14 +50,14 @@ export default {
   }
 
   ::v-deep a.link {
-    border-bottom: 1px solid $text-light;
+    border-bottom: 1px solid $text_1;
 
     &:hover,
     &:focus {
       border-color: transparent;
     }
     &::after {
-      background-color: $text-light;
+      background-color: $text_1;
     }
   }
 
@@ -66,27 +66,27 @@ export default {
     padding-right: $spacer-lg;
   }
   &.is-info {
-    background-color: #e0f4fc;
+    background-color: var(--primary_2);
     i {
-      color: $info;
+      color: $primary_0;
     }
   }
   &.is-danger {
-    background-color: #ffe2df;
+    background-color: var(--danger_2);
     i {
-      color: $danger;
+      color: $danger_0;
     }
   }
   &.is-warning {
-    background-color: #fef4e6;
+    background-color: var(--warning_2);
     i {
-      color: $warning;
+      color: $warning_0;
     }
   }
 }
 
 .message-header {
-  color: $text-light;
+  color: $text_1;
   display: flex;
   padding-bottom: 0, 25rem;
   position: relative;

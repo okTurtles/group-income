@@ -43,7 +43,7 @@ export default {
   right: $spacer-sm;
   z-index: 2;
   border-radius: $radius;
-  background-color: $body-background-color;
+  background-color: $background;
   box-shadow: 0px 8px 20px rgba(54, 54, 54, 0.3);
   max-height: 0;
   opacity: 0;

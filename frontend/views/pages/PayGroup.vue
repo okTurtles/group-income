@@ -97,7 +97,7 @@ page(pageTestName='payGroupPage' pageTestHeaderName='payGroupTitle')
             .c-status(v-else-if='statusIsPending(user)')
               i.icon-paper-plane.c-status-icon
               p
-                i18n.has-text-light(:args='{ name: getUserFirstName(user.name), admiration: getCustomAdmiration(index) }')
+                i18n.has-text-1(:args='{ name: getUserFirstName(user.name), admiration: getCustomAdmiration(index) }')
                   | {admiration}! Waiting for {name} confirmation.&nbsp;
                 i18n.is-unstyled.link(tag='button' @click='cancelPayment(user)')
                   | Cancel payment

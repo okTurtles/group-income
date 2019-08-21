@@ -244,7 +244,7 @@ export default {
         align-items: center;
         position: relative;
         z-index: 3;
-        background-color: var(--primary-bg-s);
+        background-color: $primary_0;
         min-height: 64px;
       }
     }
@@ -266,7 +266,7 @@ export default {
       top: $spacer;
 
       &:hover {
-        color: $text-strong;
+        color: $text_0;
       }
 
       &::after {
@@ -297,7 +297,7 @@ export default {
         align-items: center;
         position: relative;
         z-index: 3;
-        background-color: var(--primary-bg-s);
+        background-color: var(--primary_0);
         min-height: 64px;
       }
     }
@@ -319,7 +319,7 @@ export default {
       top: 1rem;
 
       &:hover {
-        color: $text-strong;
+        color: $text_0;
       }
 
       &::after {

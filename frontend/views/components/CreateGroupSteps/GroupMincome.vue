@@ -31,7 +31,7 @@ div
         :key='code'
       ) {{ symbol }}
 
-  i18n.has-text-light(tag='p') This value can be adjusted in the future.
+  i18n.has-text-1(tag='p') This value can be adjusted in the future.
 </template>
 
 <script>

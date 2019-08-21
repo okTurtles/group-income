@@ -53,8 +53,8 @@ export default {
   line-height: 1rem;
   width: $spacer;
   height: $spacer;
-  color: $body-background-color;
-  background-color: $danger;
+  color: $background;
+  background-color: $danger_0;
   border-radius: 50%;
   font-size: 0.7rem;
   font-weight: 600;
