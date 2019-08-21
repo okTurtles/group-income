@@ -35,14 +35,16 @@
       "standard"
     ],
     "plugins": [
+      "cypress",
       "flowtype",
-      "cypress"
+      "import"
     ],
     "rules": {
       "vue/max-attributes-per-line": "off",
       "vue/html-indent": "off",
       "flowtype/no-types-missing-file-annotation": "off",
-      "quote-props": "off"
+      "quote-props": "off",
+      "import/extensions": [2, "ignorePackages"]
     }
   },
   "eslintIgnore": [
@@ -56,8 +58,7 @@
     "historical/*",
     "shared/types.js",
     "dist/*",
-    "ignored/*",
-    "test/*"
+    "ignored/*"
   ],
   "browserslist": "> 1% and since 2018 and not dead",
   "stylelint": {

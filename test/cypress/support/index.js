@@ -13,11 +13,11 @@
 // https://on.cypress.io/configuration
 // ***********************************************************
 
-import './commands'
+import './commands.js'
 
-// Abort tests on first fail 
-afterEach(function() {
+// Abort tests on first fail
+afterEach(function () {
   if (this.currentTest.state === 'failed') {
     Cypress.runner.stop()
   }
-});
+})
