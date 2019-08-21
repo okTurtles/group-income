@@ -126,3 +126,9 @@ small {
 .has-bold {
   font-weight: 600;
 }
+
+.has-ellipsis {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

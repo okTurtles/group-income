@@ -158,16 +158,6 @@ export default {
   }
 }
 
-.pill {
-  background: $text_0;
-  color: $general_2;
-  font-weight: 600;
-  border-radius: 3px;
-  padding: 0.375rem 0.5rem;
-  line-height: 1;
-  margin: 0 $spacer-xs;
-}
-
 .c-actions-content.c-content {
   left: auto;
   min-width: 214px;
