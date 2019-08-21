@@ -9,7 +9,7 @@ Cypress.Commands.add('getByDT', (element) => {
   return cy.get(`[data-test="${element}"]`)
 })
 
-// NOTE/TODO: We can go a step further and not use UI to do repetitive tasks.
+// NOTE: We can go a step further and not use UI to do repetitive tasks.
 // https://docs.cypress.io/guides/getting-started/testing-your-app.html#Fully-test-the-login-flow-%E2%80%93-but-only-once
 Cypress.Commands.add('giSignUp', (userName, password = '123456789') => {
   cy.getByDT('signupBtn').click()

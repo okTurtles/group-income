@@ -7,11 +7,6 @@ describe('SignUp, Profile and Login', () => {
     cy.visit('/')
   })
 
-  // NOTE: What's the purpose of this test?
-  // it.skip('Should start the backend server if necessary', function () {
-  //   return require('../backend/index.js')
-  // })
-
   it('sign up new user1', () => {
     cy.giSignUp(userName)
   })

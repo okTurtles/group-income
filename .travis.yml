@@ -1,31 +1,16 @@
 language: node_js
 node_js:
   - "12"
-# https://stackoverflow.com/questions/55674746/travis-sh-0-cant-open-etc-init-d-xvfb
-# https://benlimmer.com/2019/01/14/travis-ci-xvfb/
-# https://docs.travis-ci.com/user/gui-and-headless-browsers/#using-services-xvfb
-# dist: bionic
-# services:
-#   - xvfb
 dist: trusty
-# before_script:
-#   - sh -e /etc/init.d/xvfb start
-#   - sleep 3 # give xvfb some time to start
 compiler: clang # per: https://docs.travis-ci.com/user/languages/c
-# https://docs.travis-ci.com/user/environment-variables
 env:
 branches:
   only:
     - master # https://github.com/okTurtles/group-income-simple/issues/58
-addons:
-  apt:
-    packages:
-      - xvfb
 cache:
-  # Caches $HOME/.npm when npm ci is default script command
   directories:
-    # cache folder with Cypress binary to avoid downloading Cypress again and again
-    - ~/.cache
+    - node_modules # NPM packages
+    - ~/.cache # Cypress binary
 install:
   - npm ci
 script:
@@ -33,25 +18,3 @@ script:
   - npm run test
   ## run cypress (frontend tests)
   - npm run test:cy
-
-  # chrome: stable
-# don't seem to need these anymore
-# env:
-#   - CXX=g++-4.8 DISPLAY=':99.0' DEBUG='nightmare*'
-# addons:
-#   apt:
-#     sources:
-#       - ubuntu-toolchain-r-test
-#     packages:
-#       - gcc-4.8
-#       - g++-4.8
-#       - xvfb
-# going by the travis recommendations above (seems cleaner)
-# https://github.com/electron/electron/blob/master/docs/tutorial/testing-on-headless-ci.md
-# install:
-#   - export DISPLAY=':99.0'
-#   - export DEBUG='nightmare*'
-#   - Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-# https://docs.travis-ci.com/user/gui-and-headless-browsers/#Using-xvfb-to-Run-Tests-That-Require-a-GUI
-# to specify screen resolution, add this to before_script instead of init.d/xvfb start:
-# - "/sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -ac -screen 0 1280x1024x16"

@@ -4,7 +4,6 @@
   "private": true,
   "description": "",
   "scripts": {
-    "start": "grunt dev",
     "backend": "cross-env LOAD_TARGET_FILE=./backend/index.js nodemon --ignore backend/discard/ --watch backend/ Gruntfile.js",
     "rollup": "rollup -c",
     "rollup-dev": "rollup -c -w",
@@ -14,8 +13,8 @@
     "dev": "npm-run-all --parallel backend sass-dev rollup-dev server",
     "cy:run": "cypress run",
     "cy:open": "cypress open",
-    "test": "xvfb-run --server-args=\"-screen 0 1024x768x24\" grunt test",
-    "test:cy": "start-server-and-test start http://localhost:8000 cy:run",
+    "test": "grunt test",
+    "test:cy": "start-server-and-test grunt dev http://localhost:8000 cy:run",
     "eslint": "eslint \"**/*.{js,vue}\"",
     "i18n": "node scripts/i18n.js",
     "flow": "flow",
