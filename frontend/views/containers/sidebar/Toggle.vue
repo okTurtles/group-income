@@ -45,6 +45,7 @@ $speed: 300ms;
     top: 0;
     transition: height 1ms 1ms, width 1ms 1ms, background $speed/2;
 
+    .icon-ellipsis-v,
     .icon-bars {
       transition: opacity 1ms 1ms;
       opacity: 0;

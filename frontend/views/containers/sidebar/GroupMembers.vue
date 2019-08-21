@@ -22,7 +22,7 @@
         //- span.tag(v-if='member.pledge')
         //-   | {{ member.pledge }}
 
-      .c-name(data-test='username')
+      .c-name.has-ellipsis(data-test='username')
         | {{ username }}
 
       i18n.pill.has-text-small(

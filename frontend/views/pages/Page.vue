@@ -161,8 +161,6 @@ $pagePaddingDesktop: 75px;
   background-color: var(--general_2);
   transform: translateX(100%);
   transition: transform $transitionSpeed;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
 
   &.is-active {
     transform: translateX(0);
@@ -171,6 +169,9 @@ $pagePaddingDesktop: 75px;
   @include widescreen {
     position: relative;
     transform: translateX(0%);
+    // TODO: handle on small screens
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .c-toggle {
