@@ -300,7 +300,7 @@ const actions = {
       // verify we're expecting to hear from this contract
       if (!state.pending.includes(contractID) && !state.contracts[contractID]) {
         console.error(`[CRITICAL ERROR] NOT EXPECTING EVENT!`, contractID, message)
-        throw GIErrorIgnore(`not expecting ${message.hash()} ${message.serialize()}`)
+        throw new GIErrorIgnore(`not expecting ${message.hash()} ${message.serialize()}`)
       }
       // the order the following actions are done is critically important!
       // first we make sure we save this message to the db
@@ -404,7 +404,7 @@ const handleEvent = {
       store.commit('setContractHEAD', { contractID, HEAD: hash })
     } catch (e) {
       console.error(`processMutation: error ${e.name}`, e)
-      if (e.name.indexOf('GIError')) {
+      if (e.name.indexOf('GIError') === 0) {
         throw e // simply rethrow whatever error the contract has decided should be thrown
       } else if (!(e instanceof TypeValidatorError)) {
         if (preValidationFinished) {
@@ -430,7 +430,13 @@ const handleEvent = {
     } catch (e) {
       // if an error happens at this point, it's almost certainly not due to malformed data
       // (since all of the validations successfully passed in processMutation)
-      throw new GIErrorSaveAndReprocess(`${e.name} during processSideEffects: ${e.message}`)
+      if (e.name.indexOf('GIError') === 0) {
+        // unlikely to happen but this most likely means the contract's side effect is deciding
+        // for us how to handle the error, so rethrow
+        throw e
+      } else {
+        throw new GIErrorSaveAndReprocess(`${e.name} during processSideEffects: ${e.message}`)
+      }
     }
   },
   restoreCachedState (cachedState: Object) {
