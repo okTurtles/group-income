@@ -142,7 +142,6 @@ export default {
 <style lang="scss" scoped>
 @import "../../assets/style/_variables.scss";
 .c-overview {
-  margin-top: -16px;
 }
 
 .c-chart-wrapper {

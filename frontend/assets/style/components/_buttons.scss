@@ -14,7 +14,7 @@
   @media (hover: hover) {
     &:focus,
     &:hover {
-      background-color: transparent;
+      background-color: $background;
       border-color: $color;
       color: $color;
     }
@@ -88,7 +88,7 @@ button,
     display: flex;
     justify-content: center;
     align-items: center;
-    color: $text_1;
+    color: $text_0;
     border-radius: 50%;
 
     [class^="icon-"]:last-child {
@@ -119,9 +119,9 @@ button,
   }
 
   &.is-outlined {
-    background-color: transparent;
+    background-color: $background;
     border-color: $general_0;
-    color: $text_1;
+    color: $text_0;
 
     @include outlinedButtonState($primary_0_1, $primary_1);
 
@@ -160,6 +160,7 @@ button,
 button.link {
   @extend %reset-button;
   color: $primary_0;
+  font-weight: 600;
 
   &::after {
     width: 100%;

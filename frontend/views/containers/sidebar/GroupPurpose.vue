@@ -1,9 +1,9 @@
 <template lang="pug">
 .c-group-purpose
   .c-group-purpose-header
-    i18n.label(tag='label') About the group
+    i18n.title.is-4(tag='h4') About the group
 
-  p(data-test='sharedValues')
+  p.c-text.has-text-1(data-test='sharedValues')
     | {{ groupSettings.sharedValues }}
 
   i18n.link(
@@ -38,15 +38,9 @@ export default {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
   position: relative;
+}
 
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -1.5rem;
-    right: -1.5rem;
-    height: 1px;
-    background-color: $general_0;
-  }
+.c-text {
+  margin: $spacer-sm 0;
 }
 </style>

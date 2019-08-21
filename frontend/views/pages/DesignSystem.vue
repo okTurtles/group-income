@@ -75,6 +75,10 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
           td.has-text-1 Use this color on non critical texts.
         tr
           td
+            pre .has-bold
+          td.has-bold I'm bold, without using "b" or "strong" tag.
+        tr
+          td
             pre .link
           td
             | Make sure&nbsp;

@@ -36,6 +36,16 @@ body {
   color: $text_0;
 }
 
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin: 0; // reset margins
+}
+
 // From _variables.scss
 // $size-1 = 2rem     = 32px
 // $size-2 = 1.5rem   = 24px = $size-large
@@ -100,7 +110,7 @@ header p,
 }
 
 .label {
-  font-weight: bold;
+  font-weight: 600;
 }
 
 .has-text-big {
@@ -111,4 +121,8 @@ header p,
 .has-text-small,
 small {
   font-size: 0.75rem; // 12px
+}
+
+.has-bold {
+  font-weight: 600;
 }
