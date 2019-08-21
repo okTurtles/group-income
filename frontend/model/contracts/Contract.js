@@ -35,7 +35,9 @@ export function DefineContract (contract: Object) {
         contract.actions[action].validate(message.data)
         meta.validate(message.meta)
         contract.actions[action].process(state, message)
-      }
+      },
+      // if this is undefined sbp will not register it
+      [`${action}/process/sideEffect`]: contract.actions[action].sideEffect
     })
   }
 }

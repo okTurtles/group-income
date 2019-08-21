@@ -27,7 +27,10 @@ async function startApp () {
   //       In the future we might move it elsewhere.
   if (process.env.NODE_ENV !== 'production') {
     const reducer = (o, v) => { o[v] = true; return o }
-    const domainBlacklist = ['okTurtles.data'].reduce(reducer, {})
+    const domainBlacklist = [
+      'sbp',
+      'okTurtles.data'
+    ].reduce(reducer, {})
     const selBlacklist = [
       'gi.db/log/get',
       'gi.db/log/logHEAD',
