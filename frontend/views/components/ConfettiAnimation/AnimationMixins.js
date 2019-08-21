@@ -277,17 +277,12 @@ const animationMixins = {
   data () {
     return {
       confettis: [],
-      animationActive: true
+      animationActive: true,
+      timeout: null // animation begins after a bit of delay
     }
   },
   methods: {
     initializeAnimation () {
-      if (!this.$refs.svg) {
-        // This can happen if the user changes page too fast.
-        // It also happens on tests if we don't use a timeout
-        return false
-      }
-
       const {
         width: canvasWidth,
         height: canvasHeight
@@ -344,12 +339,12 @@ const animationMixins = {
       }
     },
     stopAnimation () {
+      clearTimeout(this.timeout)
       window.cancelAnimationFrame(requestId)
     }
   },
   mounted () {
-    // animation begins after a bit of delay
-    window.setTimeout(() => {
+    this.timeout = setTimeout(() => {
       this.initializeAnimation()
       this.animate()
     }, 500)
