@@ -8,6 +8,9 @@ branches:
   only:
     - master # https://github.com/okTurtles/group-income-simple/issues/58
 cache:
+  # Caches $HOME/.npm when npm ci is default script command
+  # Caches node_modules in all other cases
+  npm: true
   directories:
     - node_modules # NPM packages
     - ~/.cache # Cypress binary

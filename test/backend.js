@@ -152,10 +152,10 @@ describe('Full walkthrough', function () {
     return res
   }
 
-  it('Should start the server', function () {
-    this.timeout(10000)
-    return require('../backend/index.js')
-  })
+  // it('Should start the server', function () {
+  //   this.timeout(10000)
+  //   return require('../backend/index.js')
+  // })
 
   after(function () {
     // The code below was originally Object.values(...) but changed to .keys()

@@ -122,7 +122,10 @@ module.exports = (grunt) => {
         cmd: 'node node_modules/mocha/bin/mocha --require Gruntfile.js --exit -R spec --bail "{./{,!(node_modules)/**/}*.test.js,./test/*.js}"',
         options: { env: { LOAD_NO_FILE: 'true', ...process.env } }
       },
-      cypress: 'npm run cy:run',
+      requireGruntfile: {
+        cmd: 'node --require ./Gruntfile.js',
+        options: { env: { LOAD_NO_FILE: 'true', ...process.env } }
+      },
       // https://github.com/standard/standard/issues/750#issuecomment-379294276
       eslint: 'node ./node_modules/eslint/bin/eslint.js "**/*.{js,vue}"',
       eslintgrunt: "./node_modules/.bin/eslint --ignore-pattern '!.*.js' .Gruntfile.babel.js Gruntfile.js",
@@ -179,13 +182,26 @@ module.exports = (grunt) => {
   grunt.registerTask('backend', ['backend:relaunch', 'watch'])
   grunt.registerTask('dev', ['checkDependencies', 'build:watch', 'connect', 'backend'])
   grunt.registerTask('dist', ['build'])
-  grunt.registerTask('test', ['dist', 'connect', 'exec:cypress', 'exec:test'])
+  grunt.registerTask('test', ['dist', 'connect', 'backend:relaunch', 'cypress', 'exec:test'])
+  grunt.registerTask('test:fe', ['dist', 'connect', 'backend:relaunch', 'cypress'])
+  grunt.registerTask('test:be', ['dist', 'connect', 'backend:relaunch', 'exec:test'])
+
   // TODO: add 'deploy' per:
   //       https://github.com/okTurtles/group-income-simple/issues/10
 
   grunt.registerTask('build', function () {
     const rollup = this.flags.watch ? 'rollup:watch' : 'rollup'
     grunt.task.run(['exec:eslint', 'exec:puglint', 'exec:stylelint', 'copy', 'sass', rollup])
+  })
+
+  grunt.registerTask('cypress', function () {
+    const cypress = require('cypress')
+    var done = this.async()
+
+    cypress.run()
+      .then((results) => {
+        done()
+      })
   })
 
   // -------------------------------------------------------------------------
@@ -310,6 +326,7 @@ module.exports = (grunt) => {
           // https://github.com/vuejs/rollup-plugin-vue/blob/master/src/index.ts
           // https://github.com/vuejs/vue-component-compiler#api
           css: false,
+          needMap: false,
           style: {
             preprocessOptions: {
               scss: {
