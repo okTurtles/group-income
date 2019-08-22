@@ -94,27 +94,7 @@ export default {
   },
   computed: {
     profiles () {
-      // TODO delete this, it's just for mocks
-      return {
-        s1: this.$store.getters.profilesForGroup().sandy,
-        s2: this.$store.getters.profilesForGroup().sandy,
-        s3: this.$store.getters.profilesForGroup().sandy,
-        s4: this.$store.getters.profilesForGroup().sandy,
-        s5: this.$store.getters.profilesForGroup().sandy,
-        s6: {
-          ...this.$store.getters.profilesForGroup().sandy,
-          pending: true
-        },
-        s7: this.$store.getters.profilesForGroup().sandy,
-        s8: this.$store.getters.profilesForGroup().sandy,
-        s9: this.$store.getters.profilesForGroup().sandy,
-        s10: this.$store.getters.profilesForGroup().sandy,
-        s11: this.$store.getters.profilesForGroup().sandy,
-        s12: this.$store.getters.profilesForGroup().sandy,
-        s13: this.$store.getters.profilesForGroup().sandy,
-        s14: this.$store.getters.profilesForGroup().sandy
-      }
-      // return this.$store.getters.profilesForGroup()
+      return this.$store.getters.profilesForGroup()
     },
     profilesCount () {
       return Object.keys(this.profiles).length
