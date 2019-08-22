@@ -53,10 +53,12 @@ grunt clean
 Run the tests:
 
 ```
-grunt test
+grunt test # all tests
+grunt test:be # only backend (unit-tests)
+grunt test:fe # only frontend (end-to-end tests)
 ```
 
-**Use [Daydream](https://github.com/segmentio/daydream) to create frontend tests. All new functionality must have corresponding tests!**
+**We used [Cypress] to create end-to-end tests. All new functionality must have corresponding tests!**
 
 #### Using Docker for extra security
 
