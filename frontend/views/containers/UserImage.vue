@@ -13,8 +13,8 @@ export default {
   name: 'UserImage',
   components: { Avatar },
   props: {
-    'username': String,
-    'alt': {
+    username: String,
+    alt: {
       type: String,
       default: ''
     }

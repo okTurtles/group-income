@@ -60,7 +60,6 @@ export default {
 @import "../../assets/style/_variables.scss";
 
 .c-item {
-
   &.has-divider {
     margin-bottom: $spacer-sm;
     padding-bottom: $spacer-sm;
@@ -81,11 +80,13 @@ export default {
   height: $spacer-lg;
   cursor: pointer;
   transition: background-color ease-out 0.3s;
+  color: $text_0;
 
   i {
-    margin-right: $spacer;
+    width: 1rem;
+    margin-right: $spacer-md;
     font-size: 0.77rem;
-    color: $text_1;
+    color: $general_0;
     transition: transform cubic-bezier(0.18, 0.89, 0.32, 1.28) 0.3s, color ease-in 0.3s;
   }
 

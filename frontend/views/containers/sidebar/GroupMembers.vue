@@ -63,12 +63,15 @@
     tag='button'
     v-if="profilesCount > 10"
     :args='{ profilesCount }'
+    @click="openModal('GroupMembersList')"
   ) See all {profilesCount} members
 </template>
 
 <script>
+import sbp from '~/shared/sbp.js'
 import Tooltip from '@components/Tooltip.vue'
 import UserImage from '@containers/UserImage.vue'
+import { LOAD_MODAL } from '@utils/events.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/Menu/index.js'
 
 export default {
@@ -84,6 +87,9 @@ export default {
   methods: {
     invite () {
       this.$router.push({ path: '/invite' })
+    },
+    openModal (modal) {
+      sbp('okTurtles.events/emit', LOAD_MODAL, modal)
     }
   },
   computed: {
