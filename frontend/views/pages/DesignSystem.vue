@@ -139,6 +139,7 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
               i.icon-eye-slash icon-eye-slash
               i.icon-globe icon-globe
               i.icon-heart icon-heart
+              i.icon-info icon-info
               i.icon-info-circle icon-info-circle
               i.icon-lock icon-lock
               i.icon-minus-circle icon-minus-circle
@@ -147,6 +148,7 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
               i.icon-plus icon-plus
               i.icon-question-circle icon-question-circle
               i.icon-tag icon-tag
+              i.icon-times icon-times
               i.icon-times-circle icon-times-circle
               i.icon-undo icon-undo
               i.icon-user icon-user
@@ -339,10 +341,10 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
         tr
           td
             pre
-              | button.is-icon.is-small-icon
+              | button.is-icon-small
               |   i.icon-cog
           td
-            button.is-icon.is-small-icon
+            button.is-icon-small
               i.icon-cog
 
   article#pills

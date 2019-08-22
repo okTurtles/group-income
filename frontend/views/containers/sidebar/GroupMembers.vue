@@ -34,29 +34,30 @@
         v-if='member.pending'
         direction="bottom-end"
       )
-        span.button.is-icon(
+        span.button.is-icon-small(
           data-test='pendingTooltip'
         )
           i.icon-question-circle
         template(slot='tooltip')
-          i18n(tag='p')
-            | Voting proposal in progress
+          i18n(
+            tag='p'
+            :args='{ username }'
+          )
+            | We are waiting for {username} to join the group by using their unique invite link.
 
       menu-parent(
         v-else
       )
-        menu-trigger.is-icon
+        menu-trigger.is-icon-small
           i.icon-ellipsis-v
 
         // TODO later - be a drawer on mobile
         menu-content.c-actions-content
           ul
-            menu-item(tag='button' itemid='hash-1' icon='heart')
-              i18n Option 1
-            menu-item(tag='button' itemid='hash-2' icon='heart')
-              i18n Option 2
-            menu-item(tag='button' itemid='hash-3' icon='heart')
-              i18n Option 3
+            menu-item(tag='router-link' to="/chat" itemid='hash-1' icon='comment')
+              i18n Send Message
+            menu-item(tag='button' itemid='hash-2' icon='times')
+              i18n Remover member...
 
   i18n.link(
     tag='button'
@@ -88,26 +89,26 @@ export default {
   computed: {
     profiles () {
       // TODO delete this, it's just for mocks
-      // return {
-      //   s1: this.$store.getters.profilesForGroup().sandy,
-      //   s2: this.$store.getters.profilesForGroup().sandy,
-      //   s3: this.$store.getters.profilesForGroup().sandy,
-      //   s4: this.$store.getters.profilesForGroup().sandy,
-      //   s5: this.$store.getters.profilesForGroup().sandy,
-      //   s6: {
-      //     ...this.$store.getters.profilesForGroup().sandy,
-      //     pending: true
-      //   },
-      //   s7: this.$store.getters.profilesForGroup().sandy,
-      //   s8: this.$store.getters.profilesForGroup().sandy,
-      //   s9: this.$store.getters.profilesForGroup().sandy,
-      //   s10: this.$store.getters.profilesForGroup().sandy,
-      //   s11: this.$store.getters.profilesForGroup().sandy,
-      //   s12: this.$store.getters.profilesForGroup().sandy,
-      //   s13: this.$store.getters.profilesForGroup().sandy,
-      //   s14: this.$store.getters.profilesForGroup().sandy
-      // }
-      return this.$store.getters.profilesForGroup()
+      return {
+        s1: this.$store.getters.profilesForGroup().sandy,
+        s2: this.$store.getters.profilesForGroup().sandy,
+        s3: this.$store.getters.profilesForGroup().sandy,
+        s4: this.$store.getters.profilesForGroup().sandy,
+        s5: this.$store.getters.profilesForGroup().sandy,
+        s6: {
+          ...this.$store.getters.profilesForGroup().sandy,
+          pending: true
+        },
+        s7: this.$store.getters.profilesForGroup().sandy,
+        s8: this.$store.getters.profilesForGroup().sandy,
+        s9: this.$store.getters.profilesForGroup().sandy,
+        s10: this.$store.getters.profilesForGroup().sandy,
+        s11: this.$store.getters.profilesForGroup().sandy,
+        s12: this.$store.getters.profilesForGroup().sandy,
+        s13: this.$store.getters.profilesForGroup().sandy,
+        s14: this.$store.getters.profilesForGroup().sandy
+      }
+      // return this.$store.getters.profilesForGroup()
     },
     profilesCount () {
       return Object.keys(this.profiles).length
@@ -159,6 +160,7 @@ export default {
 }
 
 .c-actions-content.c-content {
+  top: calc(100% + #{$spacer-sm});
   left: auto;
   min-width: 214px;
 }

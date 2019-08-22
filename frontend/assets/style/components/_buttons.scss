@@ -79,12 +79,11 @@ button,
     }
   }
 
-  &.is-icon {
+  &.is-icon,
+  &.is-icon-small {
     background-color: transparent;
     padding: 0;
     min-height: auto;
-    width: 2.75rem;
-    height: 2.75rem;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -111,11 +110,16 @@ button,
     &.has-background {
       background-color: $general_2;
     }
+  }
 
-    &.is-small-icon {
-      width: 1.6875rem;
-      height: 1.6875rem;
-    }
+  &.is-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  &.is-icon-small {
+    width: 1.6875rem;
+    height: 1.6875rem;
   }
 
   &.is-outlined {
@@ -144,6 +148,8 @@ button,
     color: $text_1;
     opacity: 0.5;
     cursor: not-allowed;
+
+    @include buttonState($general_0, $text_1);
   }
 }
 

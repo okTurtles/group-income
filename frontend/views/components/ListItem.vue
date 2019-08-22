@@ -92,7 +92,7 @@ export default {
   &:hover,
   &:focus {
     transition: none;
-    background-color: $primary_2;
+    background-color: $general_2;
 
     &.solid {
       background-color: $general_2;

@@ -6,17 +6,17 @@
   p.c-text.has-text-1(data-test='sharedValues')
     | {{ groupSettings.sharedValues }}
 
-  i18n.link(
-    tag='button'
-    @click='updateSharedValues'
-  ) Edit
+  router-link.link(
+    to='/group-settings'
+    )
+    i18n Edit
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
 
 export default {
-  name: 'GroupMembers',
+  name: 'GroupPurpose',
   computed: {
     ...mapGetters([
       'groupSettings'
