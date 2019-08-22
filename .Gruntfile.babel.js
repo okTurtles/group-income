@@ -122,10 +122,10 @@ module.exports = (grunt) => {
         cmd: 'node node_modules/mocha/bin/mocha --require Gruntfile.js --exit -R spec --bail "{./{,!(node_modules)/**/}*.test.js,./test/*.js}"',
         options: { env: { LOAD_NO_FILE: 'true', ...process.env } }
       },
-      requireGruntfile: {
-        cmd: 'node --require ./Gruntfile.js',
-        options: { env: { LOAD_NO_FILE: 'true', ...process.env } }
-      },
+      // requireGruntfile: {
+      //   cmd: 'node --require ./Gruntfile.js',
+      //   options: { env: { LOAD_NO_FILE: 'true', ...process.env } }
+      // },
       // https://github.com/standard/standard/issues/750#issuecomment-379294276
       eslint: 'node ./node_modules/eslint/bin/eslint.js "**/*.{js,vue}"',
       eslintgrunt: "./node_modules/.bin/eslint --ignore-pattern '!.*.js' .Gruntfile.babel.js Gruntfile.js",
