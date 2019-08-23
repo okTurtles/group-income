@@ -182,7 +182,7 @@ module.exports = (grunt) => {
   grunt.registerTask('backend', ['backend:relaunch', 'watch'])
   grunt.registerTask('dev', ['checkDependencies', 'build:watch', 'connect', 'backend'])
   grunt.registerTask('dist', ['build'])
-  grunt.registerTask('test', ['dist', 'connect', 'exec:test', 'cypress'])
+  grunt.registerTask('test', ['dist', 'connect', 'backend:launch', 'exec:requireGruntfile', 'cypress'])
   grunt.registerTask('test:unit', ['dist', 'connect', 'exec:test'])
   grunt.registerTask('test:e2e', ['dist', 'connect', 'backend:launch', 'exec:requireGruntfile', 'cypress'])
 
@@ -200,10 +200,19 @@ module.exports = (grunt) => {
     const command = this.flags.open ? 'open' : 'run'
     const headed = this.flags.headed
 
+    grunt.log.writeln('cypress: running on {command} mode...')
+
     cypress[command]({
       headed
     })
       .then((results) => {
+        const code = results.totalFailed ? 1 : 0
+        process.exit(code)
+        done()
+      })
+      .catch((err) => {
+        grunt.log.writeln('Ups, Cypress did not run!', err)
+        process.exit(1)
         done()
       })
   })
