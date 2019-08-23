@@ -1,5 +1,5 @@
 <template lang="pug">
-.c-overview
+div
   p.has-text-1 Group members and their pledges
   //- input(type="text" v-model='ratioWidthPadding')
   .c-chart-wrapper
@@ -141,8 +141,6 @@ export default {
 
 <style lang="scss" scoped>
 @import "../../assets/style/_variables.scss";
-.c-overview {
-}
 
 .c-chart-wrapper {
   display: flex;

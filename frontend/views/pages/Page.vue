@@ -158,7 +158,7 @@ $pagePaddingDesktop: 75px;
   width: $rightSideWidth;
   height: 100vh;
   padding: 1.5rem 1.5rem $spacer 1.5rem;
-  background-color: var(--general_2);
+  background-color: $general_2;
   transform: translateX(100%);
   transition: transform $transitionSpeed;
 
