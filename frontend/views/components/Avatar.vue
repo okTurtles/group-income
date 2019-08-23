@@ -39,9 +39,11 @@ export default {
       this.$refs.img.onload = function () { URL.revokeObjectURL(this.src) }
       this.objectURL = URL.createObjectURL(blob)
     },
-    async setBlobURL (newBlobURL) {
-      const oldBlobURL = this.blobURL
-      if (!newBlobURL) return // don't do anything if newBlobURL is blank
+    async setBlobURL (newBlobURL, oldBlobURL) {
+      if (!newBlobURL) {
+        this.objectURL = ''
+        return
+      } // don't do anything if newBlobURL is blank
       try {
         const url = new URL(newBlobURL)
         const imageType = url.searchParams.get('type')
@@ -77,8 +79,8 @@ export default {
   },
   watch: {
     blobURL (newBlobURL, oldBlobURL) {
-      console.debug(`Avatar blobURL watcher: ${oldBlobURL} => ${newBlobURL}`)
-      this.setBlobURL(newBlobURL)
+      console.log(`Avatar blobURL watcher: ${oldBlobURL} => ${newBlobURL}`)
+      this.setBlobURL(newBlobURL, oldBlobURL)
     }
   },
   computed: {

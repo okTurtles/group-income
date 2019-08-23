@@ -18,9 +18,9 @@ div(v-if='groupsByName.length')
           v-for='(group, index) in groupsByName'
           :key='`group-${index}`'
           tag='button'
-          :itemid='group.contractID'
-          :isactive='currentGroupId === group.contractID'
-          :hasdivider='index === groupsByName.length - 1'
+          :item-id='group.contractID'
+          :is-active='currentGroupId === group.contractID'
+          :has-divider='index === groupsByName.length - 1'
         )
           | {{ group.groupName }}
         menu-item(tag='router-link' to='/new-group/name' icon='plus')
