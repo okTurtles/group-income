@@ -326,7 +326,6 @@ module.exports = (grunt) => {
           // https://github.com/vuejs/rollup-plugin-vue/blob/master/src/index.ts
           // https://github.com/vuejs/vue-component-compiler#api
           css: false,
-          needMap: false,
           style: {
             preprocessOptions: {
               scss: {
