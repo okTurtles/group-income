@@ -12,15 +12,13 @@
 
   ul.c-group-list
     li.c-group-member(
-      v-for='(member, username, index) in profiles'
+      v-for='(member, username, index) in groupMembers'
       v-if="index < 10"
       :class='member.pending && "is-pending"'
       :key='username'
       data-test='member'
     )
       user-image(:username='username')
-        //- span.tag(v-if='member.pledge')
-        //-   | {{ member.pledge }}
 
       .c-name.has-ellipsis(data-test='username')
         | {{ username }}
@@ -61,13 +59,14 @@
 
   i18n.link(
     tag='button'
-    v-if="profilesCount > 10"
-    :args='{ profilesCount }'
+    v-if="groupMembersCount > 0"
+    :args='{ groupMembersCount }'
     @click="openModal('GroupMembersList')"
-  ) See all {profilesCount} members
+  ) See all {groupMembersCount} members
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import Tooltip from '@components/Tooltip.vue'
 import UserImage from '@containers/UserImage.vue'
@@ -93,12 +92,10 @@ export default {
     }
   },
   computed: {
-    profiles () {
-      return this.$store.getters.profilesForGroup()
-    },
-    profilesCount () {
-      return Object.keys(this.profiles).length
-    }
+    ...mapGetters([
+      'groupMembers',
+      'groupMembersCount'
+    ])
   }
 }
 </script>
