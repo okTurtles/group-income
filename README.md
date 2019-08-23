@@ -53,9 +53,18 @@ grunt clean
 Run the tests:
 
 ```
-grunt test # all tests
-grunt test:be # only backend (unit-tests)
-grunt test:fe # only frontend (end-to-end tests)
+# all tests
+grunt test
+
+# unit-tests
+grunt test:unit
+
+# end-to-end tests
+grunt test:e2e
+
+# just run cypress in open mode
+# you must start the server before (grunt dev) 
+npm run cy:open
 ```
 
 **We used [Cypress] to create end-to-end tests. All new functionality must have corresponding tests!**

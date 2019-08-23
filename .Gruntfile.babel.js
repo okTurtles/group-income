@@ -122,10 +122,10 @@ module.exports = (grunt) => {
         cmd: 'node node_modules/mocha/bin/mocha --require Gruntfile.js --exit -R spec --bail "{./{,!(node_modules)/**/}*.test.js,./test/*.js}"',
         options: { env: { LOAD_NO_FILE: 'true', ...process.env } }
       },
-      // requireGruntfile: {
-      //   cmd: 'node --require ./Gruntfile.js',
-      //   options: { env: { LOAD_NO_FILE: 'true', ...process.env } }
-      // },
+      requireGruntfile: {
+        cmd: 'node --require ./Gruntfile.js',
+        options: { env: { LOAD_NO_FILE: 'true', ...process.env } }
+      },
       // https://github.com/standard/standard/issues/750#issuecomment-379294276
       eslint: 'node ./node_modules/eslint/bin/eslint.js "**/*.{js,vue}"',
       eslintgrunt: "./node_modules/.bin/eslint --ignore-pattern '!.*.js' .Gruntfile.babel.js Gruntfile.js",
@@ -182,9 +182,9 @@ module.exports = (grunt) => {
   grunt.registerTask('backend', ['backend:relaunch', 'watch'])
   grunt.registerTask('dev', ['checkDependencies', 'build:watch', 'connect', 'backend'])
   grunt.registerTask('dist', ['build'])
-  grunt.registerTask('test', ['dist', 'connect', 'backend:relaunch', 'cypress', 'exec:test'])
-  grunt.registerTask('test:fe', ['dist', 'connect', 'backend:relaunch', 'cypress'])
-  grunt.registerTask('test:be', ['dist', 'connect', 'backend:relaunch', 'exec:test'])
+  grunt.registerTask('test', ['dist', 'connect', 'exec:test', 'cypress'])
+  grunt.registerTask('test:unit', ['dist', 'connect', 'exec:test'])
+  grunt.registerTask('test:e2e', ['dist', 'connect', 'backend:launch', 'exec:requireGruntfile', 'cypress'])
 
   // TODO: add 'deploy' per:
   //       https://github.com/okTurtles/group-income-simple/issues/10
@@ -196,9 +196,13 @@ module.exports = (grunt) => {
 
   grunt.registerTask('cypress', function () {
     const cypress = require('cypress')
-    var done = this.async()
+    const done = this.async()
+    const command = this.flags.open ? 'open' : 'run'
+    const headed = this.flags.headed
 
-    cypress.run()
+    cypress[command]({
+      headed
+    })
       .then((results) => {
         done()
       })
@@ -257,6 +261,13 @@ module.exports = (grunt) => {
     } else {
       fork2()
     }
+  })
+
+  grunt.registerTask('backend:launch', function () {
+    const done = this.async()
+    const server = require('./backend/index.js')
+
+    server.then(done())
   })
 
   // -----------------------
