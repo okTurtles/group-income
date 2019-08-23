@@ -1,7 +1,7 @@
 <template lang="pug">
 .c-group-members(data-test='groupMembers')
   .c-group-members-header
-    i18n.label(tag='label') Members
+    i18n.title.is-4(tag='h4') Members
 
     button.button.is-small.is-outlined(
       data-test='inviteButton'
@@ -10,36 +10,67 @@
       i.icon-plus
       i18n Add
 
-  ul
+  ul.c-group-list
     li.c-group-member(
-      v-for='(member, username) in profiles'
+      v-for='(member, username, index) in groupMembers'
+      v-if="index < 10"
+      :class='member.pending && "is-pending"'
       :key='username'
       data-test='member'
     )
       user-image(:username='username')
-        //- span.tag(v-if='member.pledge')
-        //-   | {{ member.pledge }}
 
-      .c-name(data-test='username')
+      .c-name.has-ellipsis(data-test='username')
         | {{ username }}
 
-      menu-parent
-        menu-trigger.is-icon
+      i18n.pill.has-text-small(
+        v-if='member.pending'
+        data-test='pending'
+      ) pending
+
+      tooltip(
+        v-if='member.pending'
+        direction="bottom-end"
+      )
+        span.button.is-icon-small(
+          data-test='pendingTooltip'
+        )
+          i.icon-question-circle
+        template(slot='tooltip')
+          i18n(
+            tag='p'
+            :args='{ username }'
+          )
+            | We are waiting for {username} to join the group by using their unique invite link.
+
+      menu-parent(
+        v-else
+      )
+        menu-trigger.is-icon-small
           i.icon-ellipsis-v
 
         // TODO later - be a drawer on mobile
         menu-content.c-actions-content
           ul
-            menu-item(tag='button' itemid='hash-1' icon='heart')
-              i18n Option 1
-            menu-item(tag='button' itemid='hash-2' icon='heart')
-              i18n Option 2
-            menu-item(tag='button' itemid='hash-3' icon='heart')
-              i18n Option 3
+            menu-item(tag='router-link' to="/chat" itemid='hash-1' icon='comment')
+              i18n Send Message
+            menu-item(tag='button' itemid='hash-2' icon='times')
+              i18n Remover member...
+
+  i18n.link(
+    tag='button'
+    v-if="groupMembersCount > 0"
+    :args='{ groupMembersCount }'
+    @click="openModal('GroupMembersList')"
+  ) See all {groupMembersCount} members
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
+import sbp from '~/shared/sbp.js'
+import Tooltip from '@components/Tooltip.vue'
 import UserImage from '@containers/UserImage.vue'
+import { LOAD_MODAL } from '@utils/events.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/Menu/index.js'
 
 export default {
@@ -49,17 +80,22 @@ export default {
     MenuTrigger,
     MenuContent,
     MenuItem,
+    Tooltip,
     UserImage
   },
   methods: {
     invite () {
       this.$router.push({ path: '/invite' })
+    },
+    openModal (modal) {
+      sbp('okTurtles.events/emit', LOAD_MODAL, modal)
     }
   },
   computed: {
-    profiles () {
-      return this.$store.getters.profilesForGroup()
-    }
+    ...mapGetters([
+      'groupMembers',
+      'groupMembersCount'
+    ])
   }
 }
 </script>
@@ -71,22 +107,16 @@ export default {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
   position: relative;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -1.5rem;
-    right: -1.5rem;
-    height: 1px;
-    background-color: $general_0;
-  }
 }
 
 .c-group-members-header {
   display: flex;
   justify-content: space-between;
   align-items: end;
+}
+
+.c-group-list {
+  margin-bottom: $spacer-md + $spacer-sm;
 }
 
 .c-group-member {
@@ -106,9 +136,14 @@ export default {
 .c-name {
   margin-right: auto;
   margin-left: 0.5rem;
+
+  .is-pending & {
+    color: $text_1;
+  }
 }
 
 .c-actions-content.c-content {
+  top: calc(100% + #{$spacer-sm});
   left: auto;
   min-width: 214px;
 }

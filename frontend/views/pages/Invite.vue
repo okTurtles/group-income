@@ -57,7 +57,7 @@ export default {
   },
   computed: {
     isProposal () {
-      return this.memberCount >= 3
+      return this.groupMembersCount >= 3
     },
     ...mapState([
       'currentGroupId',
@@ -65,7 +65,7 @@ export default {
     ]),
     ...mapGetters([
       'groupSettings',
-      'memberCount'
+      'groupMembersCount'
     ])
   },
   methods: {

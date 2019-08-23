@@ -1,7 +1,7 @@
 <template lang="pug">
   avatar(
     :src='pictureURL'
-    :alt='username'
+    :alt='alt'
   )
 </template>
 
@@ -12,7 +12,13 @@ import Avatar from '@components/Avatar.vue'
 export default {
   name: 'UserImage',
   components: { Avatar },
-  props: ['username'],
+  props: {
+    username: String,
+    alt: {
+      type: String,
+      default: ''
+    }
+  },
   async mounted () {
     if (!this.profile) {
       const userContractId = await sbp('namespace/lookup', this.username)

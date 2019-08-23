@@ -14,7 +14,7 @@
   @media (hover: hover) {
     &:focus,
     &:hover {
-      background-color: transparent;
+      background-color: $background;
       border-color: $color;
       color: $color;
     }
@@ -79,16 +79,15 @@ button,
     }
   }
 
-  &.is-icon {
+  &.is-icon,
+  &.is-icon-small {
     background-color: transparent;
     padding: 0;
     min-height: auto;
-    width: 2.75rem;
-    height: 2.75rem;
     display: flex;
     justify-content: center;
     align-items: center;
-    color: $text_1;
+    color: $text_0;
     border-radius: 50%;
 
     [class^="icon-"]:last-child {
@@ -111,17 +110,22 @@ button,
     &.has-background {
       background-color: $general_2;
     }
+  }
 
-    &.is-small-icon {
-      width: 1.6875rem;
-      height: 1.6875rem;
-    }
+  &.is-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  &.is-icon-small {
+    width: 1.6875rem;
+    height: 1.6875rem;
   }
 
   &.is-outlined {
-    background-color: transparent;
+    background-color: $background;
     border-color: $general_0;
-    color: $text_1;
+    color: $text_0;
 
     @include outlinedButtonState($primary_0_1, $primary_1);
 
@@ -144,6 +148,8 @@ button,
     color: $text_1;
     opacity: 0.5;
     cursor: not-allowed;
+
+    @include buttonState($general_0, $text_1);
   }
 }
 
@@ -160,6 +166,7 @@ button,
 button.link {
   @extend %reset-button;
   color: $primary_0;
+  font-weight: 600;
 
   &::after {
     width: 100%;
