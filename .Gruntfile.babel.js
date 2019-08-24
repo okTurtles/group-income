@@ -122,10 +122,6 @@ module.exports = (grunt) => {
         cmd: 'node node_modules/mocha/bin/mocha --require Gruntfile.js --exit -R spec --bail "{./{,!(node_modules)/**/}*.test.js,./test/*.js}"',
         options: { env: { LOAD_NO_FILE: 'true', ...process.env } }
       },
-      requireGruntfile: {
-        cmd: 'node --require ./Gruntfile.js',
-        options: { env: { LOAD_NO_FILE: 'true', ...process.env } }
-      },
       // https://github.com/standard/standard/issues/750#issuecomment-379294276
       eslint: 'node ./node_modules/eslint/bin/eslint.js "**/*.{js,vue}"',
       eslintgrunt: "./node_modules/.bin/eslint --ignore-pattern '!.*.js' .Gruntfile.babel.js Gruntfile.js",
@@ -182,9 +178,9 @@ module.exports = (grunt) => {
   grunt.registerTask('backend', ['backend:relaunch', 'watch'])
   grunt.registerTask('dev', ['checkDependencies', 'build:watch', 'connect', 'backend'])
   grunt.registerTask('dist', ['build'])
-  grunt.registerTask('test', ['dist', 'connect', 'backend:launch', 'exec:requireGruntfile', 'cypress'])
+  grunt.registerTask('test', ['dist', 'connect', 'exec:test', 'backend:launch', 'cypress'])
   grunt.registerTask('test:unit', ['dist', 'connect', 'exec:test'])
-  grunt.registerTask('test:e2e', ['dist', 'connect', 'backend:launch', 'exec:requireGruntfile', 'cypress'])
+  grunt.registerTask('test:e2e', ['dist', 'connect', 'backend:launch', 'cypress'])
 
   // TODO: add 'deploy' per:
   //       https://github.com/okTurtles/group-income-simple/issues/10
@@ -200,7 +196,7 @@ module.exports = (grunt) => {
     const command = this.flags.open ? 'open' : 'run'
     const headed = this.flags.headed
 
-    grunt.log.writeln('cypress: running on {command} mode...')
+    grunt.log.writeln(`cypress: running on "${command}" mode...`)
 
     cypress[command]({
       headed
@@ -208,12 +204,12 @@ module.exports = (grunt) => {
       .then((results) => {
         const code = results.totalFailed ? 1 : 0
         process.exit(code)
-        done()
+        return done()
       })
       .catch((err) => {
         grunt.log.writeln('Ups, Cypress did not run!', err)
         process.exit(1)
-        done()
+        return done()
       })
   })
 
@@ -237,7 +233,7 @@ module.exports = (grunt) => {
     }
   })
 
-  grunt.registerTask('backend:relaunch', '[internal]', function () {
+  grunt.registerTask('backend:relaunch', function () {
     const done = this.async() // tell grunt we're async
     const fork2 = function () {
       grunt.log.writeln('backend: forking...')
@@ -274,9 +270,22 @@ module.exports = (grunt) => {
 
   grunt.registerTask('backend:launch', function () {
     const done = this.async()
-    const server = require('./backend/index.js')
+    grunt.log.writeln('backend: launching...')
 
-    server.then(done())
+    // I don't understand how test:e2e works but `grun test` doesn't...
+    // this doesn't seem to start the server, but somehow it starts...
+    child = fork('Gruntfile.js', process.argv, {
+      env: { LOAD_NO_FILE: true, ...process.env }
+    })
+
+    child.on('exit', (c) => {
+      if (c !== 0) {
+        grunt.log.error(`child exited with error code: ${c}`.bold)
+        // ^C can cause c to be null, which is an OK error
+        process.exit(c || 0)
+      }
+    })
+    done()
   })
 
   // -----------------------
