@@ -269,20 +269,19 @@ module.exports = (grunt) => {
     const done = this.async()
     grunt.log.writeln('backend: launching...')
 
-    // I don't understand how test:e2e works but `grun test` doesn't...
-    // this doesn't seem to start the server, but somehow it starts...
-    child = fork('Gruntfile.js', process.argv, {
-      env: { LOAD_NO_FILE: true, ...process.env }
-    })
+    const server = require('./backend/index.js')
+    // This seems to start the server, but not totally...
+    // When opening :8000, there's an error on console
+    // > primus.js:3572 WebSocket connection to
+    //   'ws://localhost:3000/primus?_primuscb=Mo-BBJH' failed:
+    //   Error during WebSocket handshake: Unexpected response code: 404
 
-    child.on('exit', (c) => {
-      if (c !== 0) {
-        grunt.log.error(`child exited with error code: ${c}`.bold)
-        // ^C can cause c to be null, which is an OK error
-        process.exit(c || 0)
-      }
-    })
-    done()
+    // And for that reason some logic on the code doesn't work properly
+    // ex: updating profileDisplayName doesn't update the name on the sidebar.
+
+    server.then(
+      done(true)
+    )
   })
 
   // -----------------------
