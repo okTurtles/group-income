@@ -202,14 +202,11 @@ module.exports = (grunt) => {
       headed
     })
       .then((results) => {
-        const code = results.totalFailed ? 1 : 0
-        process.exit(code)
-        return done()
+        const success = !results.totalFailed
+        return done(success)
       })
       .catch((err) => {
-        grunt.log.writeln('Ups, Cypress did not run!', err)
-        process.exit(1)
-        return done()
+        return done(Error('Ups, Cypress did not run!', err))
       })
   })
 
