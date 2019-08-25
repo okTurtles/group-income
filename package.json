@@ -133,6 +133,7 @@
     "@babel/preset-env": "7.5.5",
     "@babel/preset-flow": "7.0.0",
     "@babel/register": "7.5.5",
+    "@cypress/browserify-preprocessor": "2.1.1",
     "babel-eslint": "10.0.2",
     "babel-plugin-root-import": "6.3.0",
     "babel-plugin-transform-inline-environment-variables": "0.4.3",
