@@ -130,7 +130,7 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
               i.icon-chevron-right icon-chevron-right
               i.icon-cog icon-cog
               i.icon-columns icon-columns
-              i.icon-comment icon-comment
+              i.icon-comments icon-comments
               i.icon-edit icon-edit
               i.icon-ellipsis-v icon-ellipsis-v
               i.icon-envelope icon-envelope

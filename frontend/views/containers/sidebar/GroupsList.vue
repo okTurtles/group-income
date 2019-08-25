@@ -25,25 +25,11 @@ div(v-if='groupsByName.length')
           | {{ group.groupName }}
         menu-item(tag='router-link' to='/new-group/name' icon='plus')
           i18n Create a new group
-
-  ul.c-menu-list(:class="`has-text-${isDarkTheme ? 'white' : 'dark'}`")
-    // TODO/BUG: Mobile - hide navbar after going to a page
-    list-item(tag='router-link' icon='columns' to='/dashboard')
-      i18n Dashboard
-    list-item(tag='router-link' icon='chart-pie' to='/contributions')
-      i18n Contributions
-    list-item(tag='router-link' icon='tag' to='/pay-group')
-      i18n Pay Group
-    list-item(tag='router-link' icon='comment' to='/group-chat' :badgeCount='3')
-      i18n Group Chat
-    list-item(tag='router-link' icon='cog' to='/group-settings')
-      i18n Group Settings
 </template>
 
 <script>
 import { mapGetters, mapState } from 'vuex'
 import { MenuParent, MenuTrigger, MenuContent, MenuHeader, MenuItem } from '@components/Menu/index.js'
-import ListItem from '@components/ListItem.vue'
 import Avatar from '@components/Avatar.vue'
 
 export default {
@@ -54,7 +40,6 @@ export default {
     MenuHeader,
     MenuTrigger,
     MenuItem,
-    ListItem,
     Avatar
   },
   computed: {

@@ -60,22 +60,19 @@ export default {
   font-weight: 600;
 }
 
-// https://vue-loader.vuejs.org/guide/scoped-css.html#deep-selectors
-::v-deep {
-  .icon-bell {
-    font-size: 0.7rem;
-    transform-origin: center 2px;
-    &.active {
-      font-weight: 900;
-    }
+.icon-bell {
+  font-size: 0.9rem;
+  transform-origin: center 2px;
+  margin-top: 2px;
+  &.active {
+    font-weight: 900;
   }
+}
 
-  button:hover,
-  button:focus {
-    .icon-bell {
-      font-size: 0.7rem;
-      animation: bell 750ms forwards;
-    }
+button:hover,
+button:focus {
+  .icon-bell {
+    animation: bell 750ms forwards;
   }
 }
 

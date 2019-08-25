@@ -1,5 +1,4 @@
 <template lang="pug">
-//- adsf
 nav.c-navigation(
   role='navigation'
   :class="{ 'is-active': ephemeral.isActive }"
@@ -14,58 +13,66 @@ nav.c-navigation(
     // NOTE/REVIEW: If we follow Messages GIBot approach, the bell icon wont be needed
     activity(:activityCount='activityCount')
 
+  // TODO reintegrate group list once design is approuved
+  //- groups-list.c-group-list
+
   .c-navigation-body(
     @click.self='enableTimeTravel'
   )
     .c-navigation-body-top
-      ul.c-top-links
+      ul.c-menu-list
+        // TODO/BUG: Mobile - hide navbar after going to a page
+        list-item(tag='router-link' icon='columns' to='/dashboard')
+          i18n Dashboard
+        list-item(tag='router-link' icon='chart-pie' to='/contributions')
+          i18n Contributions
+        list-item(tag='router-link' icon='tag' to='/pay-group')
+          i18n Pay Group
+        list-item(tag='router-link' icon='comments' to='/group-chat' :badgeCount='3')
+          i18n Chat
+        list-item(tag='router-link' icon='cog' to='/group-settings')
+          i18n Group Settings
+
+        // Keep it here atm until we remove completly the mailbox
         list-item(
           tag='router-link'
           to='/messages'
+          style='opacity: 0; cursor: default;'
           icon='envelope'
-          :class="`has-text-${isDarkTheme ? 'white' : 'dark'}`"
           :badgeCount='2'
         )
           i18n Messages
 
-      groups-list.c-group-list
-
-      // Keep it here atm until we remove completly the mailbox
-      list-item(
-        tag='router-link'
-        to='/mailbox'
-        style='opacity: 0; cursor: default;'
-        icon='envelope'
-        data-test='mailboxLink'
-        :badgeCount='unreadMessageCount || activityCount'
-      )
-        i18n Inbox (deprecated)
+        list-item(
+          tag='router-link'
+          to='/mailbox'
+          style='opacity: 0; cursor: default;'
+          icon='envelope'
+          data-test='mailboxLink'
+          :badgeCount='unreadMessageCount || activityCount'
+        )
+          i18n Inbox (deprecated)
 
     .c-navigation-body-bottom
-      ul
-        list-item(
+      ul.c-menu-list-bottom
+        i18n(
           tag='a'
-          variant='secondary'
           href='https://groupincome.org/blog/'
           target='_blank'
-        )
-          i18n(:class="isDarkTheme ? 'has-text-1' : ''") Blog
+        ) Blog
 
-        list-item(
+        i18n(
           tag='a'
-          variant='secondary'
           href='https://groupincome.org/faq/'
           target='_blank'
-        )
-          i18n(:class="isDarkTheme ? 'has-text-1' : ''") Help &amp; Feedback
+        ) Help &amp; Feedback
 
-        list-item(
+        i18n(
           tag='a'
-          variant='secondary'
           href='https://groupincome.org/donate/'
           target='_blank'
-        )
-          i18n(:class="isDarkTheme ? 'has-text-1' : ''") Donate
+        ) Donate
+
       profile
 
   component(:is='ephemeral.timeTravelComponentName')
@@ -98,7 +105,6 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'isDarkTheme',
       'unreadMessageCount',
       'colors'
     ]),
@@ -132,15 +138,16 @@ export default {
   display: flex;
   flex-direction: column;
   font-weight: normal;
-  background: $primary_2; // solid
+  background: $general_2;
 }
 
 .c-navigation-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 $spacer-sm 0 $spacer;
-  height: $spacer-xl;
+  padding: 0 0.45rem 0 $spacer;
+  height: 4.6rem;
+  margin-bottom: -0.1rem;
 }
 
 .c-navigation-body {
@@ -153,6 +160,23 @@ export default {
 
 .c-navigation-bottom {
   padding-top: $spacer-lg;
+}
+
+.c-menu-list-bottom {
+  display: flex;
+  flex-direction: column;
+  margin-left: $spacer;
+  font-size: $size-5;
+
+  a {
+    line-height: 1.65rem;
+    color: $text_1;
+
+    &:hover {
+      font-weight: bold;
+      color: $text_0;
+    }
+  }
 }
 
 .c-logo {
@@ -173,9 +197,5 @@ export default {
   @include tablet {
     display: none;
   }
-}
-
-.c-top-links {
-  margin-bottom: $spacer-sm;
 }
 </style>
