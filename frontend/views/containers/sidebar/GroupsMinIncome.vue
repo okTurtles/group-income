@@ -1,12 +1,13 @@
 <template lang="pug">
 div
-  i18n.label(tag='label') Minimum Income
+  i18n.title.is-4(tag='h4') Minimum Income
 
-  p.income-provided(data-test='minIncome')
+  p.title.is-2.income-provided(data-test='minIncome')
     | {{ currency }}{{ groupSettings.incomeProvided }}
 
   i18n.link(
     tag='button'
+    aria-label="Change minIncome"
     @click='openProposal'
   ) Change
 </template>
@@ -39,8 +40,6 @@ export default {
 @import "../../../assets/style/_variables.scss";
 
 .income-provided {
-  font-size: $size-large;
-  font-weight: bold;
-  margin: $spacer-sm 0;
+  margin: $spacer-xs 0;
 }
 </style>

@@ -75,6 +75,14 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
           td.has-text-1 Use this color on non critical texts.
         tr
           td
+            pre .has-bold
+          td.has-bold I'm bold, without using "b" or "strong" tag.
+        tr
+          td
+            pre .has-ellipsis
+          td.has-ellipsis.c-demo-ellipsis When a text is too long and you don't want to break in multiple lines, it's okay so use ellipsis.
+        tr
+          td
             pre .link
           td
             | Make sure&nbsp;
@@ -87,7 +95,7 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
 
     section.p-section
       p
-        | This is only the currently used Icon.
+        | This is only the currently used icons (at _icons.scss).
         br
         | A complete list can be find here:&nbsp;
         br
@@ -97,6 +105,7 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
         br
         a.link(href="https://fortawesome.com/sets/font-awesome-5-regular" target="_blank")
           | https://fortawesome.com/sets/font-awesome-5-regular
+        br
 
       table
         thead
@@ -130,13 +139,16 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
               i.icon-eye-slash icon-eye-slash
               i.icon-globe icon-globe
               i.icon-heart icon-heart
+              i.icon-info icon-info
               i.icon-info-circle icon-info-circle
               i.icon-lock icon-lock
               i.icon-minus-circle icon-minus-circle
               i.icon-paper-plane icon-paper-plane
               i.icon-pencil-alt icon-pencil-alt
               i.icon-plus icon-plus
+              i.icon-question-circle icon-question-circle
               i.icon-tag icon-tag
+              i.icon-times icon-times
               i.icon-times-circle icon-times-circle
               i.icon-undo icon-undo
               i.icon-user icon-user
@@ -329,11 +341,26 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
         tr
           td
             pre
-              | button.is-icon.is-small-icon
+              | button.is-icon-small
               |   i.icon-cog
           td
-            button.is-icon.is-small-icon
+            button.is-icon-small
               i.icon-cog
+
+  article#pills
+    .p-section-header
+      h2 Pills
+
+    section.p-section
+      table
+        thead
+          th code
+          th demo
+        tr
+          td
+            pre .pill
+          td
+            span.pill Pending
 
   article#user-feedback
     .p-section-header
@@ -403,12 +430,29 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
       h2 Tooltips
 
     section.p-section
+      tooltip(
+        text="A simple text inside"
+        )
+        i.icon-exclamation-triangle Basic
+
+      | &nbsp;&nbsp;&nbsp;&nbsp;
+
       tooltip
-        | TODO: update tooltip to be visible
+        i.icon-exclamation-triangle Complete
         template(slot='tooltip')
-          | This is a tooltip. It has a maximum width of&nbsp;
+          p.has-bold Custom markdown
+          | It has a maximum width of&nbsp;
           strong 14rem
           |  (224px).
+
+      | &nbsp;&nbsp;&nbsp;&nbsp;
+
+      tooltip(
+        direction="right"
+        )
+        i.icon-exclamation-triangle Custom Direction
+        template(slot='tooltip')
+          | It accepts multiple directions. Check sourcecode to know more.
 
   article#forms
     .p-section-header
@@ -824,6 +868,10 @@ table {
   .table td{
     vertical-align: top;
   }
+}
+
+.c-demo-ellipsis {
+  max-width: 10rem;
 }
 
 .colors td {

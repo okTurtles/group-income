@@ -13,27 +13,6 @@ Try:
 - `npm cache clean` - This fixed a real problem someone was having
 - `npm install npm@latest -g`
 
-## "Multiple conflicting contents for sourcemap"
-
-Problem: `grunt dev` outputs something like the following when you save:
-
-```
-rollup: frontend/main.js
->> rollup:watch {
->>   code: 'ERROR',
->>   error: Error: Multiple conflicting contents for sourcemap source /path/to/group-income-simple/frontend/views/containers/sidebar/GroupsList.vue
->>       at error (/path/to/group-income-simple/node_modules/rollup/dist/rollup.js:9396:30)
-```
-
-We're not sure why this happens, but there are some hackish solutions while we wait for someone to [fix this bug](https://github.com/vuejs/rollup-plugin-vue/issues/238):
-
-- Create a newline near the top of the file with a comment and save again - delete that line on the next save and repeat the process for each save...
-- Run `grunt dev` with `DISABLE_SOURCEMAPS` enabled like so:
-
-    ```
-    $ DISABLE_SOURCEMAPS=1 grunt dev
-    ```
-
 ## Can not sign-up user when databases get out of sync
 
 *NOTE: this should no longer be an issue, but we're leaving this here just in case.*

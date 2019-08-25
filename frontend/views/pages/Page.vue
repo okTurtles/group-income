@@ -157,10 +157,9 @@ $pagePaddingDesktop: 75px;
   width: $rightSideWidth;
   height: 100vh;
   padding: 1.5rem 1.5rem $spacer 1.5rem;
-  background-color: $background;
+  background-color: $general_2;
   transform: translateX(100%);
   transition: transform $transitionSpeed;
-  border-left: 1px solid $general_0;
 
   &.is-active {
     transform: translateX(0);
@@ -169,6 +168,9 @@ $pagePaddingDesktop: 75px;
   @include widescreen {
     position: relative;
     transform: translateX(0%);
+    // TODO: handle on small screens
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .c-toggle {

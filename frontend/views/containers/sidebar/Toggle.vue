@@ -1,7 +1,7 @@
 <template lang="pug">
 button.c-toggle.is-unstyled(@click='$emit("toggle")')
   i.icon-bars(v-if='element === "navigation"' aria-label='Navigation - Popup button')
-  i.icon-ellipsis-v(v-else aria-label='Sidebar - Popup button')
+  i.icon-info(v-else aria-label='Sidebar - Popup button')
 </template>
 
 <script>
@@ -30,7 +30,7 @@ $speed: 300ms;
   background-color: transparent;
   transition: height 1ms $speed, width 1ms $speed, background $speed/2;
   overflow: hidden;
-  color: $text_1;
+  color: $text_0;
 
   .icon-bars {
     margin-left: $spacer;
@@ -45,6 +45,7 @@ $speed: 300ms;
     top: 0;
     transition: height 1ms 1ms, width 1ms 1ms, background $speed/2;
 
+    .icon-ellipsis-v,
     .icon-bars {
       transition: opacity 1ms 1ms;
       opacity: 0;

@@ -189,24 +189,22 @@ const getters = {
       }
     }
   },
-  profilesForGroup (state, getters) {
-    return groupId => {
-      groupId = groupId || state.currentGroupId
-      return groupId && Object.keys(state[groupId].profiles).reduce(
-        (result, username) => {
-          result[username] = getters.memberProfile(username, groupId)
-          return result
-        },
-        {}
-      )
-    }
+  groupMembers (state, getters) {
+    const groupId = state.currentGroupId
+    return groupId && Object.keys(state[groupId].profiles).reduce(
+      (result, username) => {
+        result[username] = getters.memberProfile(username, groupId)
+        return result
+      },
+      {}
+    )
   },
-  memberUsernames (state) {
+  groupMembersByUsername (state) {
     var profiles = state.currentGroupId && state[state.currentGroupId] && state[state.currentGroupId].profiles
     return Object.keys(profiles || {})
   },
-  memberCount (state, getters) {
-    return getters.memberUsernames.length
+  groupMembersCount (state, getters) {
+    return getters.groupMembersByUsername.length
   },
   colors (state) {
     return Colors[state.theme]

@@ -29,7 +29,7 @@ export default {
     shouldShow: Boolean,
     direction: {
       type: String,
-      validator: (value) => ['bottom', 'right', 'right-start'].includes(value),
+      validator: (value) => ['bottom', 'bottom-end', 'right', 'right-start'].includes(value),
       default: 'bottom'
     }
   },
@@ -62,6 +62,9 @@ export default {
       } else if (this.direction === 'right-start') {
         x = scrollX + left + width + spacing
         y = scrollY + top
+      } else if (this.direction === 'bottom-end') {
+        x = scrollX + left + width - this.tooltip.width
+        y = scrollY + top + height + spacing
       } else { // 'bottom' as default
         x = scrollX + left + width / 2 - this.tooltip.width / 2
         y = scrollY + top + height + spacing

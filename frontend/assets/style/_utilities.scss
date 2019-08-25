@@ -12,7 +12,9 @@
 .is-unstyled {
   background: none;
   border: none;
+  border-radius: 0;
   font-size: inherit;
+  min-height: auto;
   color: inherit;
   text-align: inherit;
   padding: 0;
