@@ -116,7 +116,7 @@ export default {
       this.ephemeral.isActive = !this.ephemeral.isActive
     },
     enableTimeTravel (evt) {
-      if (evt.shiftKey) {
+      if (evt.shiftKey && process.env.NODE_ENV !== 'production') {
         console.debug('enable time travel!')
         this.ephemeral.timeTravelComponentName = 'TimeTravel'
       }

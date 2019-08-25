@@ -3,8 +3,7 @@ div(:data-test='pageTestName' :class='$scopedSlots.sidebar ? "p-with-sidebar" : 
   header.p-header
     h1.p-title(:data-test='pageTestHeaderName')
       img.c-logo(src='/assets/images/group-income-icon-transparent.png' alt="GroupIncome's logo")
-      i18n
-        slot(name='title')
+      slot(name='title')
 
   main.p-main
     slot

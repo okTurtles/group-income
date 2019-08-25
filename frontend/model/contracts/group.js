@@ -8,7 +8,7 @@ import { objectOf, optional, string, number, object, unionOf, literalOf } from '
 //       https://github.com/okTurtles/group-income-simple/issues/603
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST } from './voting/rules.js'
 import proposals, { proposalType, proposalSettingsType, archiveProposal, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_WITHDRAWN } from './voting/proposals.js'
-import { GIErrorIgnore } from '../errors.js'
+import * as Errors from '../errors.js'
 
 // for gi.contracts/group/payment ... TODO: put these in some other file?
 export const PAYMENT_PENDING = 'pending'
@@ -203,7 +203,7 @@ DefineContract({
         if (invite.status !== 'valid') {
           // throw an exception so that the event handler doesn't get triggered
           // TODO: handle this kind of error (e.g. an invite being used twice)
-          throw new GIErrorIgnore(`inviteDecline: invite for ${meta.username} is: ${invite.status}`)
+          throw new Errors.GIErrorIgnore(`inviteDecline: invite for ${meta.username} is: ${invite.status}`)
         }
         Vue.set(invite.responses, meta.username, false)
         if (Object.keys(invite.responses).length === invite.generated) {
@@ -221,7 +221,7 @@ DefineContract({
         const invite = state.invites[data.inviteSecret]
         if (invite.status !== 'valid') {
           // throw an exception so that the event handler doesn't get triggered
-          throw new GIErrorIgnore(`inviteAccept: invite for ${meta.username} is: ${invite.status}`)
+          throw new Errors.GIErrorIgnore(`inviteAccept: invite for ${meta.username} is: ${invite.status}`)
         }
         Vue.set(invite.responses, meta.username, true)
         if (Object.keys(invite.responses).length === invite.generated) {
@@ -269,7 +269,22 @@ DefineContract({
           Vue.set(groupProfile, key, data[key])
         }
       }
-    }
+    },
+    ...(
+      process.env.NODE_ENV === 'development' ? {
+        'gi.contracts/group/malformedMutation': {
+          validate: objectOf({ errorType: string }),
+          process (state, { data }) {
+            const ErrorType = Errors[data.errorType]
+            if (ErrorType) {
+              throw new ErrorType('malformedMutation!')
+            } else {
+              throw new Error(`unknown error type: ${data.errorType}`)
+            }
+          }
+        }
+      } : {}
+    )
     // TODO: remove group profile when leave group is implemented
   }
 })

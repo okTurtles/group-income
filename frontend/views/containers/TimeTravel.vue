@@ -28,6 +28,9 @@ export default {
       console.debug("[TimeTravel] this feature is disabled for now because it's causing problems...")
     } else {
       console.debug('[TimeTravel] initial state:', this.ephemeral.history[this.ephemeral.position])
+      // TODO: use https://vuex.vuejs.org/api/#subscribeaction instead,
+      //       and reset the state to whatever it was last if the current
+      //       position is not at the max
       store.subscribe((mutation, state) => {
         console.debug('[TimeTravel] spied mutation:', mutation)
         this.ephemeral.history.push(cloneDeep(state))

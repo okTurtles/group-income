@@ -321,13 +321,18 @@ const actions = {
       // handle all error types defined in ./errors.js
       if (e instanceof GIErrorIgnore) {
         console.error(`handleEvent: ignoring GIErrorIgnore:`, e)
+        // TODO: figure out whether contractHEAD should be updated (or if we need a new type of Ignore error) and whether we need to restore the state
       } else if (e instanceof GIErrorIgnoreAndBanIfGroup) {
-        await handleEvent.autoBanSenderOfMessage(message)
+        await handleEvent.autoBanSenderOfMessage(message, e)
+        // TODO: we want to restore the state, update the contractHEAD, but NOT savedQueueAddMessage
       } else if (e instanceof GIErrorSaveAndReprocess) {
         restoreCachedState = true
+        // TODO: split savedQueueAddMessage from restoring the state
       } else {
         console.error(`[CRITICAL ERROR] handleEvent: UNKNOWN ERROR SHOULD NEVER HAPPEN:`, e)
         restoreCachedState = true
+        // TODO: figure out whether we need to update contractHEAD, savedQueueAddMessage, etc.
+        // TODO: place state machine into critical error state
       }
       if (restoreCachedState) {
         commit('savedQueueAddMessage', message.hash())
@@ -359,6 +364,7 @@ const handleEvent = {
         throw new GIErrorIgnore(e.message)
       } else {
         // we should never get here, but if we do...
+        // TODO: set state machine critical error state
         throw new GIErrorSaveAndReprocess(`${e.name} during addMessageToDB! SHOULD NEVER HAPPEN! ${e.message}`)
       }
     }
@@ -458,7 +464,7 @@ const handleEvent = {
       console.error(`[CRITICAL ERROR] ${e.name} couldn't revert state!`, e.message, e)
     }
   },
-  async autoBanSenderOfMessage (message: GIMessage) {
+  async autoBanSenderOfMessage (message: GIMessage, error: Object) {
     try {
       if (message.type().indexOf('gi.contracts/group/') === 0) {
         var proposal
@@ -488,7 +494,7 @@ const handleEvent = {
               proposalType: PROPOSAL_REMOVE_MEMBER,
               proposalData: {
                 member: message.meta().username,
-                reason: L("Automated ban because they're sending malformed messages")
+                reason: L("Automated ban because they're sending malformed messages resulting in: {error}", { error: error.message })
               },
               votingRule: store.getters.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].rule,
               expires_date_ms: Date.now() + store.getters.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].expires_ms
