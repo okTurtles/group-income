@@ -171,6 +171,15 @@ textarea,
 
   button {
     border-radius: 0 $radius $radius 0;
+
+    &.is-icon {
+      &:hover,
+      &:focus {
+        box-shadow: 0 0 0 2px $primary_1;
+        background-color: $primary_0;
+        color: $white;
+      }
+    }
   }
 
   .is-icon {
@@ -189,13 +198,6 @@ textarea,
     + .input {
       padding-left: 40px;
       border-radius: $radius;
-    }
-
-    &:hover,
-    &:focus {
-      box-shadow: 0 0 0 2px $primary_1;
-      background-color: $primary_0;
-      color: $white;
     }
   }
 }
