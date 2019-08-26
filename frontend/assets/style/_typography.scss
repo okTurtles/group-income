@@ -75,12 +75,14 @@ $lineHeight: 3, 2.25, 1.6875, 1.3125, 1;
   }
 }
 
-@include tablet-only {
+@include until($tablet) {
+  .is-1,
   h1 {
     font-size: $size-2; // 24px
     line-height: 2.125rem; // 34px
   }
 
+  .is-2,
   h2 {
     font-size: 1.25rem; // 20px
     line-height: 1.75rem; // 28px
