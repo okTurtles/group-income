@@ -79,7 +79,7 @@ export default {
     }
   },
   watch: {
-    blobURL (newBlobURL) {
+    blobURL (newBlobURL, oldBlobURL) {
       console.debug(`Avatar blobURL watcher: ${oldBlobURL} => ${newBlobURL}`)
       this.setBlobURL(newBlobURL)
     }
