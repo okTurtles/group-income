@@ -33,7 +33,7 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
               | or
               br
               | .subtitle
-          td.subtitle This is an subtitle
+          td.subtitle This is a subtitle
         tr
           td
             pre .label
