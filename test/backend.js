@@ -152,19 +152,6 @@ describe('Full walkthrough', function () {
     return res
   }
 
-  it('Should start the server', function () {
-    this.timeout(10000)
-    return require('../backend/index.js')
-  })
-
-  after(function () {
-    // The code below was originally Object.values(...) but changed to .keys()
-    // due to a similar flow issue to https://github.com/facebook/flow/issues/2221
-    Object.keys(users).forEach((userKey) => {
-      users[userKey].socket && users[userKey].socket.destroy({ timeout: 500 })
-    })
-  })
-
   describe('Identity tests', function () {
     it('Should create identity contracts for Alice and Bob', async function () {
       users.bob = createIdentity('Bob', 'bob@okturtles.com')
@@ -196,11 +183,8 @@ describe('Full walkthrough', function () {
     })
 
     it('Should open sockets for Alice and Bob', async function () {
-      // The code below was originally Object.values(...) but changed to .keys()
-      // due to a similar flow issue to https://github.com/facebook/flow/issues/2221
-      const userList = Object.keys(users).map((userKey) => users[userKey])
-      for (const user of userList) {
-        user.socket = await createSocket()
+      for (const user in users) {
+        users[user].socket = await createSocket()
       }
     })
 
@@ -338,6 +322,16 @@ describe('Full walkthrough', function () {
       await fetch(`${process.env.API_URL}/file`, { method: 'POST', body: form })
         .then(handleFetchResult('text'))
         .then(r => should(r).equal(`${process.env.API_URL}/file/${hash}`))
+    })
+  })
+
+  describe('Cleanup', function () {
+    it('Should destroy all opened sockets', function () {
+      // The code below was originally Object.values(...) but changed to .keys()
+      // due to a similar flow issue to https://github.com/facebook/flow/issues/2221
+      Object.keys(users).forEach((userKey) => {
+        users[userKey].socket && users[userKey].socket.destroy({ timeout: 500 })
+      })
     })
   })
 })

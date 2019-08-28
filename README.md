@@ -56,18 +56,23 @@ Run the tests:
 # all tests
 grunt test
 
-# unit-tests
+# all tests while skipping build step
+grunt test --skipbuild
+
+# unit tests only
 grunt test:unit
 
-# end-to-end tests
-grunt test:e2e
+# unit tests while skipping build step
+grunt test:unit --skipbuild
 
-# just run cypress in open mode
-# you must start the server before (grunt dev) 
-npm run cy:open
+# show tests live in a browser
+grunt test --browser
+
+# run Cypress in "open" mode
+grunt test --browser=debug
 ```
 
-**We used [Cypress] to create end-to-end tests. All new functionality must have corresponding tests!**
+**We use [Cypress](https://www.cypress.io) to create end-to-end tests. All new functionality must have corresponding tests!**
 
 #### Using Docker for extra security
 
@@ -78,6 +83,7 @@ For example:
 ```
 $ npm run docker -- npm install
 $ npm run docker -- grunt dev
+$ npm run docker -- grunt test --skipbuild
 ```
 
 For details, see: **[`Docker.md`](docs/Docker.md)**
