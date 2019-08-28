@@ -11,7 +11,7 @@
   grid-template-areas: "l-navigation l-page";
 
   @include tablet {
-    grid-template-columns: $leftSideWidth 1fr;
+    grid-template-columns: auto 1fr;
   }
 }
 
@@ -21,7 +21,6 @@
 
 .l-navigation {
   grid-area: l-navigation;
-  width: $leftSideWidth;
   height: 100vh;
 
   @include phone {

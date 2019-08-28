@@ -77,8 +77,8 @@ export default {
   position: relative;
 
   i {
-    width: 1rem;
-    margin-right: 1.1rem;
+    width: $spacer;
+    margin-right: 1.2rem;
     font-size: 1rem;
     color: $text_1;
     transition: transform cubic-bezier(0.18, 0.89, 0.32, 1.28) 0.3s, color ease-in 0.3s;
@@ -88,7 +88,7 @@ export default {
     content: '';
     position: absolute;
     left: 0;
-    width: 1px;
+    width: 2px;
     height: 0%;
     background-color: $text_0;
     transition: height .3s ease-out;

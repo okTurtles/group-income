@@ -4,34 +4,43 @@ nav.c-navigation(
   :class="{ 'is-active': ephemeral.isActive }"
 )
   toggle(@toggle='toggleMenu')
-  .c-navigation-header
-    h1.sr-only Main Menu
 
-    router-link(to='/home')
-      img.c-logo(:src='logo' alt='GroupIncome\'s logo')
+  groups-list(v-if="groupsByName.length > 1")
 
-    // NOTE/REVIEW: If we follow Messages GIBot approach, the bell icon wont be needed
-    activity(:activityCount='activityCount')
+  .c-navigation-wrapper
+    .c-navigation-header
+      h1.sr-only Main Menu
 
-  // TODO reintegrate group list once design is approuved
-  //- groups-list.c-group-list
+      router-link(to='/home')
+        img.c-logo(:src='logo' alt='GroupIncome\'s logo')
 
-  .c-navigation-body(
-    @click.self='enableTimeTravel'
-  )
-    .c-navigation-body-top
-      ul.c-menu-list
-        // TODO/BUG: Mobile - hide navbar after going to a page
-        list-item(tag='router-link' icon='columns' to='/dashboard')
-          i18n Dashboard
-        list-item(tag='router-link' icon='chart-pie' to='/contributions')
-          i18n Contributions
-        list-item(tag='router-link' icon='tag' to='/pay-group')
-          i18n Pay Group
-        list-item(tag='router-link' icon='comments' to='/group-chat' :badgeCount='3')
-          i18n Chat
-        list-item(tag='router-link' icon='cog' to='/group-settings')
-          i18n Group Settings
+      // NOTE/REVIEW: If we follow Messages GIBot approach, the bell icon wont be needed
+      activity(:activityCount='activityCount')
+
+    .c-navigation-body(
+      @click.self='enableTimeTravel'
+    )
+      .c-navigation-body-top
+        ul.c-menu-list
+          // TODO/BUG: Mobile - hide navbar after going to a page
+          list-item(tag='router-link' icon='columns' to='/dashboard')
+            i18n Dashboard
+          list-item(tag='router-link' icon='chart-pie' to='/contributions')
+            i18n Contributions
+          list-item(tag='router-link' icon='tag' to='/pay-group')
+            i18n Pay Group
+          list-item(tag='router-link' icon='comments' to='/group-chat' :badgeCount='3')
+            i18n Chat
+          list-item(tag='router-link' icon='cog' to='/group-settings')
+            i18n Group Settings
+
+        .c-navigation-separator(v-if="groupsByName.length < 2")
+          router-link.button.is-small.is-outlined(
+            to='/new-group/name'
+            alt='L("Add a group")'
+          )
+            i.icon-plus
+            i18n Add a group
 
         // Keep it here atm until we remove completly the mailbox
         list-item(
@@ -53,27 +62,27 @@ nav.c-navigation(
         )
           i18n Inbox (deprecated)
 
-    .c-navigation-body-bottom
-      ul.c-menu-list-bottom
-        i18n(
-          tag='a'
-          href='https://groupincome.org/blog/'
-          target='_blank'
-        ) Blog
+      .c-navigation-body-bottom
+        ul.c-menu-list-bottom
+          i18n(
+            tag='a'
+            href='https://groupincome.org/blog/'
+            target='_blank'
+          ) Blog
 
-        i18n(
-          tag='a'
-          href='https://groupincome.org/faq/'
-          target='_blank'
-        ) Help &amp; Feedback
+          i18n(
+            tag='a'
+            href='https://groupincome.org/faq/'
+            target='_blank'
+          ) Help &amp; Feedback
 
-        i18n(
-          tag='a'
-          href='https://groupincome.org/donate/'
-          target='_blank'
-        ) Donate
+          i18n(
+            tag='a'
+            href='https://groupincome.org/donate/'
+            target='_blank'
+          ) Donate
 
-      profile
+        profile
 
   component(:is='ephemeral.timeTravelComponentName')
 </template>
@@ -105,6 +114,7 @@ export default {
   },
   computed: {
     ...mapGetters([
+      'groupsByName',
       'unreadMessageCount',
       'colors'
     ]),
@@ -136,9 +146,15 @@ export default {
 
 .c-navigation {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   font-weight: normal;
   background: $general_2;
+}
+
+.c-navigation-wrapper {
+  display: flex;
+  flex-direction: column;
+  min-width: 14.375rem;
 }
 
 .c-navigation-header {
@@ -156,6 +172,13 @@ export default {
   justify-content: space-between;
   flex-direction: column;
   flex-grow: 1;
+}
+
+.c-navigation-separator {
+  text-align: center;
+  margin: 1.5rem;
+  border-top: 1px solid $general_0;
+  padding-top: 1.5rem;
 }
 
 .c-navigation-bottom {
@@ -182,12 +205,6 @@ export default {
 .c-logo {
   min-width: 8rem;
   width: 8rem;
-}
-
-.c-group-list {
-  padding-top: 1rem;
-  padding-bottom: 0.8rem;
-  background-color: $primary_2;
 }
 
 .c-toggle {
