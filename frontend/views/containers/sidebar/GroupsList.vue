@@ -19,7 +19,6 @@ ul.c-group-list(v-if='groupsByName.length')
       alt='L("Create a new group")'
     )
       i.icon-plus.is-size-4
-
 </template>
 
 <script>
