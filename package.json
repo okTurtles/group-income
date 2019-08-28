@@ -10,8 +10,6 @@
     "sass-dev": "node-sass --output-style nested --source-map true -w -r -o ./dist/assets/css ./frontend/assets/style",
     "sass-dist": "node-sass --output-style compressed -o ./dist/assets/css ./frontend/assets/style",
     "test": "grunt test",
-    "cy:run": "cypress run",
-    "cy:open": "cypress open",
     "eslint": "eslint \"**/*.{js,vue}\"",
     "i18n": "node scripts/i18n.js",
     "flow": "flow",
@@ -57,7 +55,8 @@
     "historical/*",
     "shared/types.js",
     "dist/*",
-    "ignored/*"
+    "ignored/*",
+    "test/cypress/cache/*"
   ],
   "browserslist": "> 1% and since 2018 and not dead",
   "stylelint": {
@@ -133,7 +132,6 @@
     "@babel/preset-env": "7.5.5",
     "@babel/preset-flow": "7.0.0",
     "@babel/register": "7.5.5",
-    "@cypress/browserify-preprocessor": "2.1.1",
     "babel-eslint": "10.0.2",
     "babel-plugin-root-import": "6.3.0",
     "babel-plugin-transform-inline-environment-variables": "0.4.3",

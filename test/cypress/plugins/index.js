@@ -11,13 +11,14 @@
 // This function is called when a project is opened or re-opened (e.g. due to
 // the project's config changing)
 
-const browserify = require('@cypress/browserify-preprocessor')
+// const browserify = require('@cypress/browserify-preprocessor')
 
-module.exports = (on) => {
-  // Make cypress share the same babelrc config as the rest of the project
-  // https://github.com/cypress-io/cypress-browserify-preprocessor#modifying-default-options
-  const options = browserify.defaultOptions
-  options.browserifyOptions.transform[1][1].babelrc = true
+module.exports = (on) => {}
+// module.exports = (on) => {
+//   // Make cypress share the same babelrc config as the rest of the project
+//   // https://github.com/cypress-io/cypress-browserify-preprocessor#modifying-default-options
+//   const options = browserify.defaultOptions
+//   options.browserifyOptions.transform[1][1].babelrc = true
 
-  on('file:preprocessor', browserify(options))
-}
+//   on('file:preprocessor', browserify(options))
+// }
