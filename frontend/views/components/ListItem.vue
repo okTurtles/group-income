@@ -120,6 +120,7 @@ export default {
   &.is-active {
     font-weight: 600;
 
+    &:focus::before,
     &:hover::before {
       background-color: $text_0;
     }
