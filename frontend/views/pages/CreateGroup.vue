@@ -93,12 +93,10 @@ export default {
       }
 
       if (this.ephemeral.groupPictureFile) {
-        const image = await imageUpload(this.ephemeral.groupPictureFile)
-
-        if (image.success) {
-          this.form.groupPicture = image.url
-        } else {
-          console.error(image.error)
+        try {
+          this.form.groupPicture = await imageUpload(this.ephemeral.groupPictureFile)
+        } catch (error) {
+          console.error(error)
           this.ephemeral.errorMsg = L('Failed to upload Group Picture')
           return false
         }

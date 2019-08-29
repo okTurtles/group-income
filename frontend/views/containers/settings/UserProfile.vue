@@ -170,12 +170,10 @@ export default {
     },
     async save () {
       if (this.ephemeral.newPicture) {
-        const image = await imageUpload(this.form.picture)
-
-        if (image.success) {
-          this.form.picture = image.url
-        } else {
-          console.error(image.error)
+        try {
+          this.form.picture = await imageUpload(this.form.picture)
+        } catch (error) {
+          console.error(error)
           this.ephemeral.errorMsg = L('Failed to upload user picture')
           return false
         }
