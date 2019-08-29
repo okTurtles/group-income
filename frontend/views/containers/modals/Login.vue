@@ -89,8 +89,7 @@ export default {
           identityContractID
         })
         this.close()
-        // BUG: TODO: find out why the router homeGuard doesn't redirect us to the dashboard
-        if (this.userHasGroup) this.$router.push({ path: '/dashboard' })
+        if (this.$store.state.currentGroupId) this.$router.push({ path: '/dashboard' })
       } catch (error) {
         this.form.response = L('Invalid username or password')
         console.error(error)
@@ -114,11 +113,6 @@ export default {
         password: null,
         response: null
       }
-    }
-  },
-  computed: {
-    userHasGroup () {
-      return !!this.$store.state.currentGroupId
     }
   },
   validations: {
