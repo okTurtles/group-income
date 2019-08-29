@@ -39,7 +39,7 @@ async function startApp () {
     })
   }
 
-  // TODO: handle any socket errors?
+  // TODO: handle any socket errors!
   createWebSocket(process.env.API_URL, {
     // TODO: verify these are good defaults
     timeout: 3000,

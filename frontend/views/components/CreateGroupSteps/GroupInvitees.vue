@@ -1,5 +1,7 @@
 <template lang="pug">
-div
+div(
+  data-test="invitees"
+  )
   i18n(tag='h1') Invite Members
 
   i18n.label(tag='label') Who would you like to include in your group?

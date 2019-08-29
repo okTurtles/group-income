@@ -8,7 +8,9 @@ main.c-splash(
     :blobURL='groupSettings.groupPicture'
   )
 
-  h1.c-title
+  h1.c-title(
+    data-test="welcomeGroup"
+  )
     i18n Welcome {{ groupSettings.groupName }}!
 
   p.has-text-0.c-description

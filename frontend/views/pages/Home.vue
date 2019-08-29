@@ -2,7 +2,9 @@
 main.c-splash(data-test='homeLogo')
   img.logo(src='/assets/images/group-income-icon-transparent.png')
   h1
-    i18n Welcome to GroupIncome
+    i18n(
+      data-test="welcomeHome"
+    ) Welcome to GroupIncome
 
   .buttons(v-if='!$store.state.loggedIn')
     i18n(

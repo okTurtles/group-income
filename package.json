@@ -9,9 +9,7 @@
     "rollup-dev": "rollup -c -w",
     "sass-dev": "node-sass --output-style nested --source-map true -w -r -o ./dist/assets/css ./frontend/assets/style",
     "sass-dist": "node-sass --output-style compressed -o ./dist/assets/css ./frontend/assets/style",
-    "server": "serve -p 8000",
-    "dev": "npm-run-all --parallel backend sass-dev rollup-dev server",
-    "test": "xvfb-run --server-args=\"-screen 0 1024x768x24\" grunt test",
+    "test": "grunt test",
     "eslint": "eslint \"**/*.{js,vue}\"",
     "i18n": "node scripts/i18n.js",
     "flow": "flow",
@@ -25,18 +23,25 @@
       "parser": "babel-eslint"
     },
     "extends": [
+      "plugin:cypress/recommended",
       "plugin:flowtype/recommended",
       "plugin:vue/essential",
       "standard"
     ],
     "plugins": [
-      "flowtype"
+      "cypress",
+      "flowtype",
+      "import"
     ],
     "rules": {
       "vue/max-attributes-per-line": "off",
       "vue/html-indent": "off",
       "flowtype/no-types-missing-file-annotation": "off",
-      "quote-props": "off"
+      "quote-props": "off",
+      "import/extensions": [
+        2,
+        "ignorePackages"
+      ]
     }
   },
   "eslintIgnore": [
@@ -51,7 +56,7 @@
     "shared/types.js",
     "dist/*",
     "ignored/*",
-    "test/*"
+    "test/cypress/cache/*"
   ],
   "browserslist": "> 1% and since 2018 and not dead",
   "stylelint": {
@@ -132,8 +137,10 @@
     "babel-plugin-transform-inline-environment-variables": "0.4.3",
     "chalk": "2.4.2",
     "cheerio": "1.0.0-rc.3",
+    "cypress": "3.4.1",
     "eslint": "6.1.0",
     "eslint-config-standard": "13.0.1",
+    "eslint-plugin-cypress": "2.6.1",
     "eslint-plugin-flowtype": "4.2.0",
     "eslint-plugin-import": "2.18.2",
     "eslint-plugin-node": "9.1.0",
@@ -152,7 +159,6 @@
     "grunt-sass": "3.0.2",
     "load-grunt-tasks": "5.0.0",
     "mocha": "6.1.4",
-    "nightmare": "3.0.2",
     "node-fetch": "2.6.0",
     "node-sass": "4.12.0",
     "pug-lint-vue": "0.3.0",

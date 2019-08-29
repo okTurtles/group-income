@@ -1,14 +1,17 @@
 <template lang='pug'>
-.c-profile(v-if='$store.state.loggedIn')
+.c-profile(
+  v-if='$store.state.loggedIn'
+  data-test="userProfile"
+  )
   .c-avatar-user
     avatar(:src='userPicture')
     .c-user
       strong(
-        :data-test="userDisplayName ? 'profileName' : 'profileDisplayName'"
+        :data-test="userDisplayName ? 'profileDisplayName' : 'profileName'"
       ) {{userDisplayName ? userDisplayName : userName}}
 
       span(
-        data-test='profileDisplayName'
+        data-test='profileName'
         v-if='userDisplayName'
       ) {{userName}}
 
