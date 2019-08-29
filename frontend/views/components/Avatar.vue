@@ -14,7 +14,7 @@ import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 export default {
   name: 'Avatar',
   props: {
-    src: String, // acts as a placeholder when used together with blobURL
+    src: [String, Object, File], // acts as a placeholder when used together with blobURL
     alt: {
       type: String,
       default: ''

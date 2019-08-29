@@ -21,7 +21,7 @@
 
         .avatar(:class="{ error: $v.form.picture.$error }")
           label(for='profilePicture')
-            avatar(:src='userPicture')
+            avatar(:src='userPicture' ref="picture")
             i18n.link Change avatar
 
           input.profilePictureInput#profilePicture(
@@ -29,7 +29,6 @@
             name='profilePicture'
             accept='image/*'
             @change='fileChange($event.target.files)'
-            @input='$v.form.picture.$touch()'
             placeholder='http://'
             data-test='profilePicture'
           )
@@ -115,14 +114,13 @@
 
 <script>
 import { validationMixin } from 'vuelidate'
-import { email, helpers } from 'vuelidate/lib/validators'
+import { email } from 'vuelidate/lib/validators'
 import { LOAD_MODAL } from '@utils/events.js'
 import { cloneDeep } from '@utils/giLodash.js'
+import imageUpload from '@utils/imageUpload.js'
 import Avatar from '@components/Avatar.vue'
 import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
-
-const url = helpers.regex('url', /^https?:\/\/[^\s/$.?#].[^\s]*$/i)
 
 export default {
   name: 'UserProfile',
@@ -143,13 +141,14 @@ export default {
       },
       ephemeral: {
         errorMsg: null,
+        newPicture: false,
         profileSaved: false
       }
     }
   },
   validations: {
     form: {
-      picture: { url },
+      picture: {},
       email: { email }
     }
   },
@@ -170,9 +169,21 @@ export default {
       return false
     },
     async save () {
+      if (this.ephemeral.newPicture) {
+        const image = await imageUpload(this.form.picture)
+
+        if (image.success) {
+          this.form.picture = image.url
+        } else {
+          console.error(image.error)
+          this.ephemeral.errorMsg = L('Failed to upload user picture')
+          return false
+        }
+      }
+
       try {
         this.ephemeral.profileSaved = false
-        var attrs = {}
+        const attrs = {}
         for (const key in this.form) {
           if (this.form[key] !== this.attributes[key]) {
             attrs[key] = this.form[key]
@@ -191,11 +202,10 @@ export default {
       }
     },
     fileChange (fileList) {
-      // TODO: while respecting DRY, handle this in the same way that it's handled
-      //       in CreateGroup.vue
       if (!fileList.length) return
-      // Temp
-      this.form.picture = URL.createObjectURL(fileList[0])
+      this.form.picture = fileList[0]
+      this.ephemeral.newPicture = true
+      this.$refs.picture.setFromBlob(fileList[0])
     }
   }
 }
