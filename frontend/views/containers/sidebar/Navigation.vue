@@ -161,7 +161,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 0.45rem 0 $spacer;
+  padding: 0 $spacer;
   height: 4.6rem;
   margin-bottom: -0.1rem;
 }
@@ -196,7 +196,6 @@ export default {
     color: $text_1;
 
     &:hover {
-      font-weight: bold;
       color: $text_0;
     }
   }

@@ -1,6 +1,6 @@
 <template lang="pug">
 menu-parent
-  menu-trigger.is-icon(:class="{ 'has-text-white': isDarkTheme }")
+  menu-trigger.is-icon-small
     i.icon-bell(:class="activityCount ? '' : 'active'")
     span.c-badge(v-if='activityCount' data-test='alertNotification') {{ activityCount }}
 
@@ -20,7 +20,6 @@ menu-parent
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
 import { MenuParent, MenuTrigger, MenuContent, MenuHeader, MenuItem } from '@components/Menu/index.js'
 
 export default {
@@ -28,11 +27,7 @@ export default {
   props: {
     activityCount: Number
   },
-  computed: {
-    ...mapGetters([
-      'isDarkTheme'
-    ])
-  },
+
   components: {
     MenuParent,
     MenuTrigger,

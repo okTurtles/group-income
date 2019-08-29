@@ -110,6 +110,11 @@ button,
 
     &.has-background {
       background-color: $general_2;
+
+      &:hover,
+      &:focus {
+        background-color: $general_1;
+      }
     }
   }
 

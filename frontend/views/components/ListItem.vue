@@ -65,59 +65,68 @@ export default {
 }
 
 .c-item-link {
+  position: relative;
   display: flex;
   align-items: center;
-  padding: 0 1.25rem;
+  padding: 0 $spacer;
   height: 3rem;
-  cursor: pointer;
   transition: background-color ease-out 0.3s;
-  font-family: "Poppins";
   color: $text_0;
+  font-family: "Poppins";
+  text-align: center;
   font-weight: 100;
-  position: relative;
+  cursor: pointer;
 
   i {
     width: $spacer;
-    margin-right: 1.2rem;
+    margin-right: $spacer;
     font-size: 1rem;
     color: $text_1;
     transition: transform cubic-bezier(0.18, 0.89, 0.32, 1.28) 0.3s, color ease-in 0.3s;
   }
 
-  &:before {
+  &::before {
     content: '';
     position: absolute;
     left: 0;
     width: 2px;
     height: 0%;
     background-color: $text_0;
-    transition: height .3s ease-out;
+    transition: height 0.3s ease-out, 0.3s background-color ease-out 0.3s;
   }
 
   &:hover,
   &:focus {
-    background-color: $white;
+    background-color: $general_1;
 
-    i {
-      color: $text_0;
-      transform: scale(1.1);
+    &::before {
+      background-color: $general_0;
+      transition: height 0.3s ease-out, 0s background-color;
     }
   }
 
-  &.no-radius {
-    border-radius: 0;
+  &.is-active,
+  &:hover,
+  &:focus {
+    i {
+      color: $text_0;
+    }
+
+    &::before {
+      height: 100%;
+    }
   }
 
   &.is-active {
     font-weight: 600;
 
-    i {
-      color: $text_0;
+    &:hover::before {
+      background-color: $text_0;
     }
+  }
 
-    &:before {
-      height: 100%;
-    }
+  &.no-radius {
+    border-radius: 0;
   }
 }
 </style>

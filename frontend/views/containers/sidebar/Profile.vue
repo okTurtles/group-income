@@ -15,7 +15,7 @@
         v-if='userDisplayName'
       ) {{userName}}
 
-  button.is-icon(
+  button.is-icon-small(
     data-test='settingsBtn'
     @click="openModal('Settings')"
   )
@@ -63,7 +63,7 @@ export default {
   justify-content: space-between;
   align-items: center;
   height: $spacer-xl;
-  padding: 0 $spacer-sm 0 $spacer;
+  padding: 0 $spacer;
   margin-top: 0.35rem;
 }
 

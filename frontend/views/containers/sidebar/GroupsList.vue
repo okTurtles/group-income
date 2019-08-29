@@ -6,15 +6,15 @@ ul.c-group-list(v-if='groupsByName.length')
     tag='button'
     :class="{ 'is-active': currentGroupId === group.contractID}"
   )
-    avatar.c-avatar(
-      src='/assets/images/default-avatar.png'
-      :alt='group.groupName'
-      :blobURL='group.groupPicture'
-      @click="handleMenuSelect(group.contractID)"
-    )
+    button.is-unstyled(@click="handleMenuSelect(group.contractID)")
+      avatar.c-avatar(
+        src='/assets/images/default-avatar.png'
+        :alt='group.groupName'
+        :blobURL='group.groupPicture'
+      )
 
   li.c-group-list-item
-    router-link.c-group-create(
+    router-link.button.is-icon.has-background(
       to='/new-group/name'
       alt='L("Create a new group")'
     )
@@ -108,28 +108,5 @@ export default {
   width: 2.5rem;
   position: relative;
   z-index: 1;
-}
-
-.c-group-create {
-  background: white;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  i {
-    transition: transform .25s ease-out;
-  }
-
-  &:hover {
-    background-color: $general_0;
-
-    i {
-      transform: rotate(180deg);
-      color: $white;
-    }
-  }
 }
 </style>
