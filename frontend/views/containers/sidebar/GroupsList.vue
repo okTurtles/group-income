@@ -90,6 +90,7 @@ export default {
 
   &:not(.is-active) {
     cursor: pointer;
+    &:focus::before
     &:hover::before {
       border-color: $white;
       border-width: 3px;
