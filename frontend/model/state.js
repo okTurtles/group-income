@@ -169,11 +169,7 @@ const getters = {
     // due to the same flow issue as https://github.com/facebook/flow/issues/5838
     return Object.keys(contracts)
       .filter(contractID => contracts[contractID].type === 'group' && state[contractID].settings)
-      .map(contractID => ({
-        groupName: state[contractID].settings.groupName,
-        contractID,
-        groupPicture: state[contractID].settings.groupPicture
-      }))
+      .map(contractID => ({ groupName: state[contractID].settings.groupName, contractID }))
   },
   memberProfile (state, getters) {
     return (username, groupId) => {
