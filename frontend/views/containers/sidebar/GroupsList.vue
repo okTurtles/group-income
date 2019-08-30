@@ -10,7 +10,7 @@ ul.c-group-list(v-if='groupsByName.length')
       direction="right"
       :text='group.groupName'
     )
-      button.is-unstyled(@click="handleMenuSelect(group.contractID)")
+      button.c-group-picture.is-unstyled(@click="handleMenuSelect(group.contractID)")
         avatar.c-avatar(
           src='/assets/images/default-avatar.png'
           :blobURL='group.groupPicture'
@@ -116,5 +116,9 @@ export default {
   width: 2.5rem;
   position: relative;
   z-index: 1;
+}
+
+.c-group-picture {
+  display: flex;
 }
 </style>
