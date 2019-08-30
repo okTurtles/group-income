@@ -40,6 +40,7 @@ nav.c-navigation(
             alt='L("Add a group")'
           )
             i.icon-plus
+            i18n Add a group
 
         // Keep it here atm until we remove completly the mailbox
         list-item(
