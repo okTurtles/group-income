@@ -6,29 +6,37 @@ ul.c-group-list(v-if='groupsByName.length')
     tag='button'
     :class="{ 'is-active': currentGroupId === group.contractID}"
   )
-    button.is-unstyled(@click="handleMenuSelect(group.contractID)")
-      avatar.c-avatar(
-        src='/assets/images/default-avatar.png'
-        :alt='group.groupName'
-        :blobURL='group.groupPicture'
-      )
+    tooltip(
+      direction="right"
+      :text='group.groupName'
+    )
+      button.is-unstyled(@click="handleMenuSelect(group.contractID)")
+        avatar.c-avatar(
+          src='/assets/images/default-avatar.png'
+          :blobURL='group.groupPicture'
+        )
 
   li.c-group-list-item
-    router-link.button.is-icon.has-background(
-      to='/new-group/name'
-      alt='L("Create a new group")'
+    tooltip(
+      direction="right"
+      :text='L("Create a new group")'
     )
-      i.icon-plus
+      router-link.button.is-icon.has-background(
+        to='/new-group/name'
+      )
+        i.icon-plus
 </template>
 
 <script>
 import { mapGetters, mapState } from 'vuex'
 import Avatar from '@components/Avatar.vue'
+import Tooltip from '@components/Tooltip.vue'
 
 export default {
   name: 'GroupsList',
   components: {
-    Avatar
+    Avatar,
+    Tooltip
   },
   computed: {
     ...mapState([

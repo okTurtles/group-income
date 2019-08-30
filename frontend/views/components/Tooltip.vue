@@ -50,7 +50,7 @@ export default {
       this.trigger = this.$el.getBoundingClientRect()
       const { scrollX, scrollY } = window
       const { width, height, left, top } = this.trigger
-      const spacing = 5
+      const spacing = 16
       let x
       let y
 
