@@ -43,7 +43,6 @@ export default {
       'currentGroupId'
     ]),
     ...mapGetters([
-      'groupSettings',
       'groupsByName'
     ])
   },
