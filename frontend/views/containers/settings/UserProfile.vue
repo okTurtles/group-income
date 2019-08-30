@@ -21,7 +21,10 @@
 
         .avatar(:class="{ error: $v.form.picture.$error }")
           label(for='profilePicture')
-            avatar(:src='userPicture' ref="picture")
+            avatar(
+              :src='userPictureInitial'
+              ref="picture"
+            )
             i18n.link Change avatar
 
           input.profilePictureInput#profilePicture(
@@ -156,8 +159,8 @@ export default {
     attributes () {
       return this.$store.getters.currentUserIdentityContract.attributes || {}
     },
-    userPicture () {
-      return this.form.picture || this.attributes.picture
+    userPictureInitial () {
+      return this.attributes.picture
     },
     userName () {
       return this.$store.state.loggedIn.username
