@@ -8,15 +8,14 @@
     .c-user
       strong(
         :data-test="userDisplayName ? 'profileDisplayName' : 'profileName'"
-        :class="`has-text-${isDarkTheme ? 'white' : 'dark'}`"
       ) {{userDisplayName ? userDisplayName : userName}}
 
-      span.is-size-6(
+      span(
         data-test='profileName'
         v-if='userDisplayName'
       ) {{userName}}
 
-  button.is-icon(
+  button.is-icon-small(
     data-test='settingsBtn'
     @click="openModal('Settings')"
   )
@@ -27,7 +26,6 @@
 import Avatar from '@components/Avatar.vue'
 import sbp from '~/shared/sbp.js'
 import { LOAD_MODAL } from '@utils/events.js'
-import { mapGetters } from 'vuex'
 
 export default {
   name: 'Profile',
@@ -35,9 +33,6 @@ export default {
     Avatar
   },
   computed: {
-    ...mapGetters([
-      'isDarkTheme'
-    ]),
     userPicture () {
       return this.$store.getters.currentUserIdentityContract &&
         this.$store.getters.currentUserIdentityContract.attributes &&
@@ -67,10 +62,9 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 52px;
-  padding: 0 $spacer-sm;
-  margin-top: 0.75rem;
-  background-color: $primary_2;
+  height: $spacer-xl;
+  padding: 0 $spacer;
+  margin-top: 0.35rem;
 }
 
 .c-avatar-user {
@@ -86,10 +80,12 @@ export default {
 .c-user {
   display: flex;
   flex-direction: column;
-  margin-left: 1rem;
+  margin-left: 0.5rem;
   max-width: 5rem;
   white-space: nowrap;
-  line-height: 1.15rem;
+  line-height: 1.3rem;
+  font-family: "Poppins";
+  margin-top: 1px;
 
   span {
     color: $text_1;
@@ -98,8 +94,7 @@ export default {
 
 button {
   .icon-cog {
-    font-size: 0.75rem;
-    margin-left: 0;
+    font-size: 0.9rem;
   }
 
   &:hover .icon-cog,
