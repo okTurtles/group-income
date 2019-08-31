@@ -1,5 +1,5 @@
 .card {
-  padding: 1.5rem;
+  padding: 1.5rem $spacer;
   background-color: $background_0;
   border-radius: 0.625rem; // 10px
   box-shadow: 0 0 20px rgba(219, 219, 219, 0.6); // $general_0
@@ -7,6 +7,10 @@
 
   &:last-child {
     margin-bottom: 4rem;
+  }
+
+  @include tablet {
+    padding: 1.5rem;
   }
 
   @include widescreen {
