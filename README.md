@@ -44,7 +44,7 @@ Build the app for distribution:
 grunt dist
 ```
 
-Clean up files in `dist/` and the `sqlite.db` file (which will be better handled in the future):
+Clean up files in `dist/`:
 
 ```
 grunt clean
