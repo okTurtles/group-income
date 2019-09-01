@@ -41,6 +41,7 @@ button,
   border-color: transparent;
   background-color: $primary_0;
   border-width: 1px;
+  border-style: solid;
   color: #fff;
   transition: box-shadow 150ms ease-in;
   white-space: nowrap;
@@ -109,6 +110,11 @@ button,
 
     &.has-background {
       background-color: $general_2;
+
+      &:hover,
+      &:focus {
+        background-color: $general_1;
+      }
     }
   }
 

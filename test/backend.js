@@ -4,7 +4,7 @@ import sbp from '~/shared/sbp.js'
 import '~/shared/domains/okTurtles/events.js'
 import chalk from 'chalk'
 import { GIMessage } from '~/shared/GIMessage.js'
-import * as _ from '~/frontend/utils/giLodash.js'
+// import * as _ from '~/frontend/utils/giLodash.js'
 import { createWebSocket } from '~/frontend/controller/backend.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 // import { blake2bInit, blake2bUpdate, blake2bFinal } from 'blakejs'
@@ -15,7 +15,6 @@ import { TYPE_MESSAGE } from '~/frontend/model/contracts/mailbox.js'
 import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts/group.js'
 import '~/frontend/model/contracts/identity.js'
 import '~/frontend/controller/namespace.js'
-
 
 global.fetch = require('node-fetch')
 const should = require('should') // eslint-disable-line
@@ -153,19 +152,6 @@ describe('Full walkthrough', function () {
     return res
   }
 
-  it('Should start the server', function () {
-    this.timeout(10000)
-    return require('../backend/index.js')
-  })
-
-  after(function () {
-    // The code below was originally Object.values(...) but changed to .keys()
-    // due to a similar flow issue to https://github.com/facebook/flow/issues/2221
-    Object.keys(users).forEach((userKey) => {
-      users[userKey].socket && users[userKey].socket.destroy({ timeout: 500 })
-    });
-  })
-
   describe('Identity tests', function () {
     it('Should create identity contracts for Alice and Bob', async function () {
       users.bob = createIdentity('Bob', 'bob@okturtles.com')
@@ -197,11 +183,8 @@ describe('Full walkthrough', function () {
     })
 
     it('Should open sockets for Alice and Bob', async function () {
-      // The code below was originally Object.values(...) but changed to .keys()
-      // due to a similar flow issue to https://github.com/facebook/flow/issues/2221
-      const userList = Object.keys(users).map((userKey) => users[userKey])
-      for (let user of userList) {
-        user.socket = await createSocket()
+      for (const user in users) {
+        users[user].socket = await createSocket()
       }
     })
 
@@ -243,7 +226,7 @@ describe('Full walkthrough', function () {
       // raw-objects to instances, the hash check failed and I caught several bugs!
       events = events.map(e => GIMessage.deserialize(e))
       var state = {}
-      for (let e of events) {
+      for (const e of events) {
         sbp(e.type(), state, { data: e.data(), meta: e.meta(), hash: e.hash() })
       }
       console.log(bold.red('FINAL STATE:'), state)
@@ -330,15 +313,25 @@ describe('Full walkthrough', function () {
       form.append('hash', hash)
       form.append('data', buffer, {
         filename: 'a file name hack' // hack to make sure the contentDisposition header is set
-                                     // otherwise the backend will treat 'data' as a string
-                                     // instead of a buffer for some reason, resulting in the
-                                     // wrong file hash.
-                                     // The filename is ignored by the backend so it doesn't
-                                     // matter what we call it.
+        // otherwise the backend will treat 'data' as a string
+        // instead of a buffer for some reason, resulting in the
+        // wrong file hash.
+        // The filename is ignored by the backend so it doesn't
+        // matter what we call it.
       })
       await fetch(`${process.env.API_URL}/file`, { method: 'POST', body: form })
-      .then(handleFetchResult('text'))
-      .then(r => should(r).equal(`${process.env.API_URL}/file/${hash}`))
+        .then(handleFetchResult('text'))
+        .then(r => should(r).equal(`${process.env.API_URL}/file/${hash}`))
+    })
+  })
+
+  describe('Cleanup', function () {
+    it('Should destroy all opened sockets', function () {
+      // The code below was originally Object.values(...) but changed to .keys()
+      // due to a similar flow issue to https://github.com/facebook/flow/issues/2221
+      Object.keys(users).forEach((userKey) => {
+        users[userKey].socket && users[userKey].socket.destroy({ timeout: 500 })
+      })
     })
   })
 })

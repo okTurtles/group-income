@@ -11,9 +11,11 @@
       i18n Add
 
   ul.c-group-list
+    // TODO: Check why removing member condition can fail here
+    // TODO: remove v-if in v-for loop and reorder list member by active user limited to 10
     li.c-group-member(
       v-for='(member, username, index) in groupMembers'
-      v-if="index < 10"
+      v-if="index < 10 && member"
       :class='member.pending && "is-pending"'
       :key='username'
       data-test='member'

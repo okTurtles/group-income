@@ -1,5 +1,5 @@
 <template lang="pug">
-li.c-item(:class="{ 'has-divider': hasDivider }")
+li.c-item
   component.c-item-link.is-unstyled(
     :is='tag'
     :class='itemLinkClasses'
@@ -27,8 +27,6 @@ export default {
     icon: String,
     badgeCount: Number,
     /** When true a 1px border is added to the bottom of the list item. */
-    hasDivider: Boolean,
-    disableRadius: Boolean,
     isActive: Boolean,
     tag: {
       validator (value) {
@@ -36,19 +34,12 @@ export default {
       },
       default: 'div',
       required: true
-    },
-    variant: {
-      validator (value) {
-        return ['secondary', 'solid'].indexOf(value) > -1
-      }
     }
   },
   inheritAttrs: false,
   computed: {
     itemLinkClasses () {
       return {
-        [this.variant]: this.variant,
-        'no-radius': this.disableRadius,
         'is-active': this.isActive
       }
     }
@@ -74,62 +65,69 @@ export default {
 }
 
 .c-item-link {
+  position: relative;
   display: flex;
   align-items: center;
   padding: 0 $spacer;
-  height: $spacer-lg;
-  cursor: pointer;
+  height: 3rem;
   transition: background-color ease-out 0.3s;
   color: $text_0;
+  font-family: "Poppins";
+  text-align: center;
+  font-weight: 100;
+  cursor: pointer;
 
   i {
-    width: 1rem;
-    margin-right: $spacer-md;
-    font-size: 0.77rem;
-    color: $general_0;
+    width: $spacer;
+    margin-right: $spacer;
+    font-size: 1rem;
+    color: $text_1;
     transition: transform cubic-bezier(0.18, 0.89, 0.32, 1.28) 0.3s, color ease-in 0.3s;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    width: 2px;
+    height: 0%;
+    background-color: $text_0;
+    transition: height 0.3s ease-out, 0.3s background-color ease-out 0.3s;
   }
 
   &:hover,
   &:focus {
-    transition: none;
-    background-color: $general_2;
+    background-color: $general_1;
 
-    &.solid {
-      background-color: $general_2;
-    }
-
-    .i {
-      color: inherit;
-      transform: scale(1.1);
+    &::before {
+      background-color: $general_0;
+      transition: height 0.3s ease-out, 0s background-color;
     }
   }
 
-  &.no-radius {
-    border-radius: 0;
-  }
+  &.is-active,
+  &:hover,
+  &:focus {
+    i {
+      color: $text_0;
+    }
 
-  &.secondary {
-    color: $text_1;
-    letter-spacing: -0.01rem;
-
-    &:hover,
-    &:focus {
-      background-color: $primary_2;
+    &::before {
+      height: 100%;
     }
   }
 
   &.is-active {
     font-weight: 600;
 
-    i {
-      // color: var(--primary-saturated); // TODO replace color
+    &:focus::before,
+    &:hover::before {
+      background-color: $text_0;
     }
+  }
 
-    &:hover,
-    &:focus {
-      background-color: $primary_2;
-    }
+  &.no-radius {
+    border-radius: 0;
   }
 }
 </style>

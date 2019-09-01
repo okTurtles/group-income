@@ -41,7 +41,10 @@ export default {
     },
     async setBlobURL (newBlobURL) {
       const oldBlobURL = this.blobURL
-      if (!newBlobURL) return // don't do anything if newBlobURL is blank
+      if (!newBlobURL) {
+        this.objectURL = ''
+        return
+      } // don't do anything if newBlobURL is blank
       try {
         const url = new URL(newBlobURL)
         const imageType = url.searchParams.get('type')
