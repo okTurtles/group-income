@@ -46,15 +46,3 @@ Instead, update them from within the container, like so:
 ```
 npm run docker -- npm i vue@latest -S
 ```
-
-## Known Issues
-
-### Testing in Docker
-
-Currently tests involving the frontend are not supported because the container environment doesn't support running nightmare.js tests because it relies on electron, which doesn't seem to work (at least not on Mac OS X, ymmv on Linux).
-
-If you can get tests working in the container let us know and send us a PR!
-
-### Modifying ports
-
-The `./scripts/docker.sh` script currently doesn't [sync any port changes](https://github.com/okTurtles/group-income-simple/issues/71).

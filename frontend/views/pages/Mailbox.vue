@@ -322,6 +322,7 @@ export default {
   padding: 0.5rem;
   border-radius: 3px;
 
+  &:focus,
   &:hover {
     cursor: pointer;
     background-color: $primary_2;
@@ -350,6 +351,7 @@ export default {
     transition: transform cubic-bezier(0.18, 0.89, 0.32, 1.28) 0.3s, color ease-in 0.3s;
   }
 
+  &:focus,
   &:hover {
     transition: none;
     background-color: var(--primary_a);

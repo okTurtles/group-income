@@ -70,6 +70,7 @@ textarea,
   padding-top: 10px;
   padding-bottom: 10px;
   height: auto;
+  resize: vertical;
 }
 
 .label {
@@ -89,7 +90,6 @@ textarea,
     padding-right: 38px;
     padding-left: 16px;
     min-width: 98px;
-    border: 0;
   }
 
   &::before,
@@ -129,10 +129,6 @@ textarea,
     border-right: 1px solid $general_0;
   }
 
-  * + .input {
-    border: 0;
-  }
-
   label {
     padding: 0 1rem;
     font-weight: normal;
@@ -141,8 +137,9 @@ textarea,
   }
 
   select,
+  .select,
   .input {
-    border: 0;
+    border: 1px solid transparent;
 
     &:focus {
       box-shadow: 0 0 0 2px $primary_1;
@@ -175,6 +172,15 @@ textarea,
 
   button {
     border-radius: 0 $radius $radius 0;
+
+    &.is-icon {
+      &:hover,
+      &:focus {
+        box-shadow: 0 0 0 2px $primary_1;
+        background-color: $primary_0;
+        color: $white;
+      }
+    }
   }
 
   .is-icon {
@@ -193,13 +199,6 @@ textarea,
     + .input {
       padding-left: 40px;
       border-radius: $radius;
-    }
-
-    &:hover,
-    &:focus {
-      box-shadow: 0 0 0 2px $primary_1;
-      background-color: $primary_0;
-      color: $white;
     }
   }
 }

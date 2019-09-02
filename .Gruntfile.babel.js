@@ -1,7 +1,6 @@
 'use strict'
 
 import sbp from '~/shared/sbp.js'
-import '~/backend/pubsub.js'
 import resolve from 'rollup-plugin-node-resolve'
 import commonjs from 'rollup-plugin-commonjs'
 import alias from 'rollup-plugin-alias'
@@ -28,8 +27,6 @@ const url = require('url')
 
 const development = process.env.NODE_ENV === 'development'
 const livereload = development && (parseInt(process.env.PORT_SHIFT || 0) + 35729)
-
-sbp('backend/pubsub/setup', require('http').createServer(), true)
 
 const distDir = 'dist'
 const distAssets = `${distDir}/assets`
@@ -119,10 +116,9 @@ module.exports = (grunt) => {
       //    - anything in /test folder, eg. integration tests
       //    - anything that ends with .test.js, eg. unit tests for sbp domains kept in the domain folder
       test: {
-        cmd: 'node node_modules/mocha/bin/mocha --require Gruntfile.js --exit -R spec --bail "{./{,!(node_modules)/**/}*.test.js,./test/*.js}"',
+        cmd: 'node node_modules/mocha/bin/mocha --require Gruntfile.js --exit -R spec --bail "{./{,!(node_modules|test)/**/}*.test.js,./test/*.js}"',
         options: { env: { LOAD_NO_FILE: 'true', ...process.env } }
       },
-
       // https://github.com/standard/standard/issues/750#issuecomment-379294276
       eslint: 'node ./node_modules/eslint/bin/eslint.js "**/*.{js,vue}"',
       eslintgrunt: "./node_modules/.bin/eslint --ignore-pattern '!.*.js' .Gruntfile.babel.js Gruntfile.js",
@@ -176,16 +172,43 @@ module.exports = (grunt) => {
   // -------------------------------------------------------------------------
 
   grunt.registerTask('default', ['dev'])
-  grunt.registerTask('backend', ['backend:relaunch', 'watch'])
-  grunt.registerTask('dev', ['checkDependencies', 'build:watch', 'connect', 'backend'])
+  grunt.registerTask('dev', ['checkDependencies', 'build:watch', 'connect', 'backend:relaunch', 'watch'])
   grunt.registerTask('dist', ['build'])
-  grunt.registerTask('test', ['dist', 'connect', 'exec:test'])
+  grunt.registerTask('test', ['build', 'connect', 'backend:launch', 'exec:test', 'cypress'])
+  grunt.registerTask('test:unit', ['build', 'backend:launch', 'exec:test'])
+
   // TODO: add 'deploy' per:
   //       https://github.com/okTurtles/group-income-simple/issues/10
 
   grunt.registerTask('build', function () {
     const rollup = this.flags.watch ? 'rollup:watch' : 'rollup'
-    grunt.task.run(['exec:eslint', 'exec:puglint', 'exec:stylelint', 'copy', 'sass', rollup])
+    if (this.flags.watch) {
+      // if we are being run with 'grunt dev', tell Primus to generate the file
+      // ./frontend/controller/utils/primus.js, otherwise, this is 'grunt test', and this
+      // block will be skipped so that pubsub.js can be required through ./backend/index.js
+      require('~/backend/pubsub.js') // hack to register 'backend/pubsub/setup' selector
+      sbp('backend/pubsub/setup', require('http').createServer(), true)
+    }
+    if (!grunt.option('skipbuild')) {
+      grunt.task.run(['exec:eslint', 'exec:puglint', 'exec:stylelint', 'copy', 'sass', rollup])
+    }
+  })
+
+  grunt.registerTask('cypress', function () {
+    const cypress = require('cypress')
+    const done = this.async()
+    const command = grunt.option('browser') === 'debug' ? 'open' : 'run'
+    // https://docs.cypress.io/guides/guides/module-api.html
+    const options = {
+      run: {
+        headed: grunt.option('browser') === true
+      },
+      open: {
+        // add cypress.open() options here
+      }
+    }[command]
+    grunt.log.writeln(`cypress: running in "${command}" mode...`)
+    cypress[command](options).then(r => done(r.totalFailed === 0)).catch(done)
   })
 
   // -------------------------------------------------------------------------
@@ -208,6 +231,8 @@ module.exports = (grunt) => {
     }
   })
 
+  // used with `grunt dev` only, makes it possible to restart just the server when
+  // backend files are modified (in conjunction with grunt-contrib-watch)
   grunt.registerTask('backend:relaunch', '[internal]', function () {
     const done = this.async() // tell grunt we're async
     const fork2 = function () {
@@ -241,6 +266,13 @@ module.exports = (grunt) => {
     } else {
       fork2()
     }
+  })
+
+  // useful helper task for `grunt test`
+  grunt.registerTask('backend:launch', '[internal]', function () {
+    const done = this.async()
+    grunt.log.writeln('backend: launching...')
+    require('./backend/index.js').then(done).catch(done)
   })
 
   // -----------------------

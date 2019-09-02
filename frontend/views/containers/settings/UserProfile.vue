@@ -91,7 +91,7 @@
             tag='button'
             :disabled='$v.form.$invalid'
             type='submit'
-            data-test='submit'
+            data-test='saveAccount'
           ) Save account changes
     hr
     section.section
@@ -109,7 +109,7 @@
           i18n.button.error.is-outlined(
             tag='button'
             type='submit'
-            data-test='submit'
+            data-test='deleteAccount'
           ) Delete account
 </template>
 

@@ -46,8 +46,13 @@ sbp('sbp/selectors/register', {
   }
 })
 
+// This is a hack to check if pubsub.js is being loaded directly (as via 'grunt dev' in .Gruntfile.babel.js)
+// or "properly" by backend/server.js. If we're being loaded directly, this is being done solely to register
+// the 'backend/pubsub/setup' selector so that it can be called with saveAndDestroy=true (in order to
+// generate the file ./frontend/controller/utils/primus.js).
+// TODO: In the future all of this hackishness will go away once we get rid of Primus:
+// https://github.com/okTurtles/group-income-simple/issues/576
 if (sbp('okTurtles.data/get', SERVER_INSTANCE)) {
-  // SERVER_INSTANCE isn't registered when we're called from .Gruntfile.babel.js
   sbp('okTurtles.data/apply', SERVER_INSTANCE, function (server: Object) {
     sbp('backend/pubsub/setup', server.listener)
 
