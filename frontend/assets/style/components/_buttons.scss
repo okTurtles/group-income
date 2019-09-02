@@ -169,6 +169,11 @@ button,
   }
 }
 
+p + button,
+p + .button {
+  margin-top: 1.5rem;
+}
+
 button.link {
   @extend %reset-button;
   color: $primary_0;

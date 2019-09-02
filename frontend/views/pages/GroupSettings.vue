@@ -1,9 +1,9 @@
 <template lang="pug">
 page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings.groupName')
   template(#title='') Group Settings
+  template(#description='') Changes to these settings will be visible to all group members
 
   page-section(title='')
-    i18n(tag='p') Changes to these settings will be visible to all group members
 
     form
       .field

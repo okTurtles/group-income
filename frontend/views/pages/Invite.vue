@@ -2,7 +2,7 @@
 page(pageTestName='invite' pageTestHeaderName='invite')
   template(#title='') Invite
 
-  .p-section
+  .card
     p(
       v-if='form.success'
       data-test='notifyInvitedSuccess'

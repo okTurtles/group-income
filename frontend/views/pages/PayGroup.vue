@@ -47,7 +47,7 @@ page(pageTestName='payGroupPage' pageTestHeaderName='payGroupTitle')
     p
       i18n What's this page about, so the user understands the context.
 
-  .p-section
+  .card
     table.c-table
       thead.sr-only
         tr

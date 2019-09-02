@@ -2,9 +2,9 @@
   .settings-container
     i18n.settings-title(tag='h2') My account
 
-    p.username.is-size-6 @{{ userName }}
+    p.username @{{ userName }}
 
-    section.section
+    section.card
       form(
         ref='ProfileForm'
         name='ProfileForm'
@@ -95,14 +95,14 @@
             type='submit'
             data-test='saveAccount'
           ) Save account changes
-    hr
-    section.section
+
+    section.card
       form(
         ref='DeleteProfileForm'
         name='DeleteProfileForm'
         @submit.prevent='save'
       )
-        i18n.label(tag='label') Delete account
+        i18n(tag='h3' class='card-header') Delete account
         p
           i18n Deleting your account will erase all your data, and remove you from the groups you belong to.
           i18n.is-danger This action cannot be undone.
@@ -219,6 +219,7 @@ export default {
 .username {
   display: none;
   margin-bottom: $spacer-lg;
+  margin-top: $spacer;
   color: $text_1;
 
   @include tablet {
@@ -273,17 +274,6 @@ export default {
   font-weight: bold;
   padding-top: 5px;
   padding-bottom: 5px;
-}
-
-// TODO confirm button size with
-// Default size defined by A11Y
-.button {
-  font-size: 15px;
-  padding: 0 19px;
-  font-weight: normal;
-  height: 36px;
-  min-height: 36px;
-  letter-spacing: 0.6px;
 }
 
 .icon-check {

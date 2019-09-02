@@ -1,5 +1,5 @@
 <template lang="pug">
-.p-section.c-chat-main(v-if='summary.title')
+.c-chat-main(v-if='summary.title')
   main-header(:description='summary.description' :routerback='summary.routerBack')
 
     template(slot='title')

@@ -146,7 +146,7 @@ $closeMobileBarBgColor: #3c3c3c;
     "header header"
     "main main";
   min-height: 100%;
-  background-color: #fff;
+  background-color: $general_2;
 
   @include tablet {
     grid-template-columns: 35% auto;
@@ -224,6 +224,7 @@ $closeMobileBarBgColor: #3c3c3c;
   transition: transform 500ms cubic-bezier(0.165, 0.84, 0.44, 1);
   transform: translateX(-100%);
   z-index: 2;
+  font-family: "Poppins";
   background-color: #fff;
 
   @include tablet {
@@ -231,7 +232,7 @@ $closeMobileBarBgColor: #3c3c3c;
     background-color: var(--primary);
     position: relative;
     align-items: flex-end;
-    padding-top: 0;
+    padding-top: 0.75rem;
     transform: translateX(0);
   }
 }
@@ -240,7 +241,6 @@ $closeMobileBarBgColor: #3c3c3c;
   height: 2rem;
   color: $legendColor;
   font-size: 12px;
-  letter-spacing: 0.2px;
   text-transform: uppercase;
 
   @include tablet {
@@ -252,11 +252,7 @@ $closeMobileBarBgColor: #3c3c3c;
 .tab-link {
   display: flex;
   justify-content: space-between;
-  letter-spacing: -0.4px;
-  height: 44px;
-  @include tablet {
-    height: 32px;
-  }
+  height: 3rem;
 
   .fa {
     color: #dbdbdb;
@@ -273,9 +269,9 @@ $closeMobileBarBgColor: #3c3c3c;
 .tab-link {
   display: flex;
   align-items: center;
-  padding-left: 8px;
-  padding-right: 8px;
-  border-radius: 2px;
+  padding-left: $spacer;
+  padding-right: $spacer;
+  border-radius: 3px;
   cursor: pointer;
   transition: background-color 150ms cubic-bezier(0.4, 0.25, 0.3, 1);
 
@@ -293,7 +289,7 @@ $closeMobileBarBgColor: #3c3c3c;
 
   @include tablet {
     width: 183px;
-    padding-top: 14px;
+    padding-top: 1.5rem;
     padding-bottom: 0;
   }
 }
@@ -303,15 +299,14 @@ $closeMobileBarBgColor: #3c3c3c;
 }
 
 .tab-active {
-  background-color: $primary_0 !important;
+  background-color: $background_0 !important;
   font-weight: bold;
-  color: $activeColor;
 }
 
 .tab-nav-separator {
   height: 1px;
   margin: 4px auto;
-  background: #b2c3ca;
+  background: $general_0;
   opacity: 0;
 
   @include tablet {
