@@ -1,5 +1,6 @@
 $white:      #fff;
-$background: $white;
+$background: var(--background_0); // Not sure yet if that should be one value or two, that will depend on other themes
+$background_0: var(--background_0);
 
 $general_0: var(--general_0);
 $general_1: var(--general_1);

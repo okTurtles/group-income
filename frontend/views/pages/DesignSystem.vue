@@ -1,20 +1,23 @@
 <template lang="pug">
-page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' class='p-design-system')
+page(
+  mainClass='full-width'
+  pageTestName='designSystemPage'
+  pageTestHeaderName='designSystemTitle'
+  class='p-design-system'
+)
   template(#title='') Design System
+  template(#description='')
+    | A design system exists to help you build more cohesive interfaces.
+    br
+    | Follow the guidelines for the most common elements: Typography, Spacing, Colors, etc...
 
   template(#sidebar='')
     #c-design-system-sidebar
 
-  .p-section-header
-    p
-      | A design system exists to help you build more cohesive interfaces.
-      br
-      | Follow the guidelines for the most common elements: Typography, Spacing, Colors, etc...
-
   article#typography
-    .p-section-header
-      h2 Typography
-    section.p-section.c-typography
+    section.card.c-typography
+      i18n(tag='h2' class='card-header') Typography
+
       h3 Titles
 
       table
@@ -40,7 +43,6 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
           td
             label.label Label
 
-    section.p-section
       h3 Body Copy
 
       table
@@ -89,11 +91,31 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
             a.link(href='#') the link is readable
             |  for everyone, this is, accessible.
 
-  article#icons
-    .p-section-header
-      h2 Icons
+  article#typography
+    section.card
+      i18n(tag='h2' class='card-header') Cards
 
-    section.p-section
+      table
+        thead
+          th code
+          th demo
+        tr
+          td
+            pre .card
+          td
+            .card
+
+        tr
+          td
+            pre .card-header
+          td
+            .card
+              h2.card-header Title
+              p Description
+
+  article#icons
+    section.card
+      i18n(tag='h2' class='card-header') Icons
       p
         | This is only the currently used icons (at _icons.scss).
         br
@@ -155,10 +177,8 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
               i.icon-user-plus icon-user-plus
 
   article#spacing
-    .p-section-header
-      h2 Spacing
-
-    section.p-section
+    section.card
+      i18n(tag='h2' class='card-header') Spacing
       table
         thead
           th code
@@ -174,10 +194,9 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
           //- td Used to space element by {{Math.pow(2, (index+1))}}px
 
   article#color
-    .p-section-header
-      h2 Color
+    section.card
+      i18n(tag='h2' class='card-header') Color
 
-    section.p-section
       h3 Variable
 
       table.colors
@@ -192,7 +211,6 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
           td
             span.c-palette(v-for='num in [0, 1, 2]' :key='num' :style="{ backgroundColor: `var(--${color.name}_${num})`}")
 
-    section.p-section
       h3 Background
 
       table
@@ -207,10 +225,8 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
             span.c-palette(:class='`has-background-${color.name}`')
           //- td(v-html='color.usage')
   article#buttons
-    .p-section-header
-      h2 Buttons
-
-    section.p-section
+    section.card
+      i18n(tag='h2' class='card-header') Buttons
       h3 Default size
       table
         thead
@@ -269,7 +285,6 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
               | Next
               i.icon-arrow-right
 
-    section.p-section
       h3 Small size
       table
         thead
@@ -299,7 +314,6 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
           td
             button.is-danger.is-outlined.is-small Default text
 
-    section.p-section
       h3 Small size with icon
       table
         thead
@@ -316,7 +330,6 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
               i.icon-plus
               | Add
 
-    section.p-section
       h3 Icon Buttons
       table
         thead
@@ -348,10 +361,8 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
               i.icon-cog
 
   article#pills
-    .p-section-header
-      h2 Pills
-
-    section.p-section
+    section.card
+      i18n(tag='h2' class='card-header') Pills
       table
         thead
           th code
@@ -363,10 +374,8 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
             span.pill Pending
 
   article#user-feedback
-    .p-section-header
-      h2 User Feedback
-
-    section.p-section
+    section.card
+      i18n(tag='h2' class='card-header') User Feedback
       h3 Simple
 
       table
@@ -403,7 +412,7 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
               |  with a&nbsp;
               a.link(href='/') link
               | . This message can grow in width or height, as needed.
-    section.p-section
+
       h3 With title
       table
         thead
@@ -426,10 +435,8 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
                 | . This message can grow in width or height, as needed.
 
   article#tooltips
-    .p-section-header
-      h2 Tooltips
-
-    section.p-section
+    section.card
+      i18n(tag='h2' class='card-header') Tooltips
       tooltip(
         text="A simple text inside"
         )
@@ -455,15 +462,14 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
           | It accepts multiple directions. Check sourcecode to know more.
 
   article#forms
-    .p-section-header
-      h2 Forms
+    section.card
+      i18n(tag='h2' class='card-header') Forms
 
       p
         | The width of the input depend of their container
         br
         | For more consistency anything inside a div call .field a margin bottom of 38px
 
-    section.p-section
       h3 Textbox
 
       table
@@ -499,7 +505,6 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
             label.label This is a textarea
             textarea(placeholder='Placeholder' rows="4")
 
-    section.p-section
       h3 Selectbox
 
       table
@@ -520,7 +525,6 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
                 option BTC
                 option EUR
 
-    section.p-section
       h3 Radio
 
       table
@@ -549,7 +553,6 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
               )
               i18n Radio label
 
-    section.p-section
       h3 Combination
 
       table
@@ -627,12 +630,10 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
               input.input(type='text' placeholder='Placeholder')
 
   article#stepper
-    .p-section-header
-      h2 Stepper
+    section.card
+      i18n(tag='h2' class='card-header') Stepper
 
       p Todo: replace with component once created
-
-    section.p-section-header
       table
         thead
           th code
@@ -653,10 +654,8 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
               a.step.active 2
               a.step.next 3
   article#menu
-    .p-section-header
-      h2 Menu
-
-    section.p-section
+    section.card
+      i18n(tag='h2' class='card-header') Menu
       table
         thead
           th code
@@ -674,10 +673,8 @@ page(pageTestName='designSystemPage' pageTestHeaderName='designSystemTitle' clas
               i18n Open Menu
 
   article#modal
-    .p-section-header
-      h2 Modal
-
-    section.p-section
+    section.card
+      i18n(tag='h2' class='card-header') Modal
       table
         thead
           th code
@@ -736,6 +733,7 @@ export default {
   },
   mounted () {
     const menu = document.getElementById('c-design-system-sidebar')
+    menu.parentElement.setAttribute('style', 'position: fixed')
     document.querySelectorAll('article').forEach((el) => {
       const link = document.createElement('A')
       link.appendChild(document.createTextNode(el.querySelector('h2').innerHTML))
@@ -746,8 +744,8 @@ export default {
         top: el.getBoundingClientRect().top - window.innerHeight
       })
     })
-    console.log(this.articles)
-    document.querySelectorAll('.p-main')[0].addEventListener('scroll', this.handleScroll)
+
+    document.querySelectorAll('.l-page')[0].addEventListener('scroll', this.handleScroll)
 
     // Keep the position of the current element you're working on
     const hash = document.location.hash
@@ -789,6 +787,10 @@ $pagePadding: 1rem;
 $pagePaddingTablet: 24px;
 $pagePaddingDesktop: 75px;
 
+article h3 {
+  margin-top: $spacer;
+}
+
 pre {
   color: $primary_0;
 }
@@ -797,13 +799,7 @@ code {
   color: $success_0;
 }
 
-article {
-  padding-bottom: $spacer-lg;
-  margin-bottom: $spacer-lg;
-  border-bottom: 1px dashed $general_0;
-}
-
-section.p-section {
+section.card {
   margin-bottom: $spacer-lg;
 }
 

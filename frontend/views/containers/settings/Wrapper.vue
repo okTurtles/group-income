@@ -60,7 +60,7 @@ export default {
 
     @include tablet {
       display: block;
-      top: -2.6rem;
+      top: -1.5rem;
       position: absolute;
     }
   }

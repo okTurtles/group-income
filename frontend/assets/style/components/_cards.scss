@@ -1,0 +1,11 @@
+.card {
+  padding: 2.5rem;
+  background-color: $background_0;
+  border-radius: 0.625rem; // 10px
+  margin-bottom: $spacer;
+  box-shadow: 0px 0px 20px rgba(219, 219, 219, 0.6); // $general_0
+}
+
+.card-header {
+  margin-bottom: $spacer-sm
+}

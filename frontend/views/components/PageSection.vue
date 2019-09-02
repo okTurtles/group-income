@@ -1,5 +1,5 @@
 <template lang="pug">
-section.p-section
+section.card
   h3.title(v-if='title')
     i18n {{title}}
   slot
