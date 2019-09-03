@@ -103,11 +103,11 @@ $pagePaddingDesktop: 5.5rem;
   }
 
   @include tablet {
+    margin-left: 0;
     padding-left: $pagePaddingTablet;
   }
 
   @include widescreen {
-    margin-left: 0;
     padding-left: $pagePaddingDesktop;
   }
 }
