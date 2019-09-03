@@ -61,7 +61,7 @@
 
   i18n.link(
     tag='button'
-    v-if="groupMembersCount > 0"
+    v-if="groupMembersCount > 10"
     :args='{ groupMembersCount }'
     @click="openModal('GroupMembersList')"
   ) See all {groupMembersCount} members
