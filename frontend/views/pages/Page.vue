@@ -95,6 +95,7 @@ $pagePaddingDesktop: 5.5rem;
   padding-right: $spacer;
   margin: 0 auto;
   max-width: 43rem;
+  overflow: auto;
   @include overflow-touch;
 
   &.full-width {
