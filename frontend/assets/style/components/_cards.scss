@@ -1,9 +1,17 @@
 .card {
-  padding: 2.5rem;
+  padding: 1.5rem;
   background-color: $background_0;
   border-radius: 0.625rem; // 10px
-  margin-bottom: $spacer;
   box-shadow: 0 0 20px rgba(219, 219, 219, 0.6); // $general_0
+  margin-bottom: $spacer;
+
+  &:last-child {
+    margin-bottom: 4rem;
+  }
+
+  @include widescreen {
+    padding: 2.5rem;
+  }
 }
 
 .card-header {
