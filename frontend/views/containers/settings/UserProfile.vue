@@ -175,6 +175,7 @@ export default {
       if (this.ephemeral.newPicture) {
         try {
           this.form.picture = await imageUpload(this.form.picture)
+          this.ephemeral.newPicture = false
         } catch (error) {
           console.error(error)
           this.ephemeral.errorMsg = L('Failed to upload user picture')
