@@ -9,8 +9,26 @@ import { GIMessage } from '~/shared/GIMessage.js'
 //       - 'gi.db/log/get'
 //       - 'gi.db/log/set'
 
-export class ErrorDBMalformed extends Error {}
-export class ErrorDBConnection extends Error {}
+export class ErrorDBMalformed extends Error {
+  // ugly boilerplate because JavaScript is stupid
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error#Custom_Error_Types
+  constructor (...params) {
+    super(...params)
+    this.name = this.constructor.name
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor)
+    }
+  }
+}
+export class ErrorDBConnection extends Error {
+  constructor (...params) {
+    super(...params)
+    this.name = this.constructor.name
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor)
+    }
+  }
+}
 
 export default sbp('sbp/selectors/register', {
   'gi.db/log/logHEAD': function (contractID: string): string {

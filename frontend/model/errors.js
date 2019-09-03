@@ -1,7 +1,31 @@
 'use strict'
 
-// TODO: I don't think babel converts these to be compatible with
-//       e.g. Safari, to ensure that e.name etc. is properly set
-export class GIErrorIgnore extends Error {}
-export class GIErrorIgnoreAndBanIfGroup extends Error {}
-export class GIErrorSaveAndReprocess extends Error {}
+export class GIErrorIgnore extends Error {
+  // ugly boilerplate because JavaScript is stupid
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error#Custom_Error_Types
+  constructor (...params) {
+    super(...params)
+    this.name = this.constructor.name
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor)
+    }
+  }
+}
+export class GIErrorIgnoreAndBanIfGroup extends Error {
+  constructor (...params) {
+    super(...params)
+    this.name = this.constructor.name
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor)
+    }
+  }
+}
+export class GIErrorSaveAndReprocess extends Error {
+  constructor (...params) {
+    super(...params)
+    this.name = this.constructor.name
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor)
+    }
+  }
+}

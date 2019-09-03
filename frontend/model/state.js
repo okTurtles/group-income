@@ -292,8 +292,8 @@ const actions = {
   ) {
     // prepare for any errors
     const cachedState = _.cloneDeep(state)
+    const contractID = message.contractID()
     try {
-      const contractID = message.contractID()
       // TODO: verify each message is signed by a group member
       // verify we're expecting to hear from this contract
       if (!state.pending.includes(contractID) && !state.contracts[contractID]) {
@@ -316,25 +316,41 @@ const actions = {
       // TODO: use a global notification system to both display a notification
       console.error('[ERROR] exception in handleEvent!', e.message, e)
       var restoreCachedState = false
-      // handle all error types defined in ./errors.js
-      if (e instanceof GIErrorIgnore) {
-        console.error(`handleEvent: ignoring GIErrorIgnore:`, e)
-        // TODO: figure out whether contractHEAD should be updated (or if we need a new type of Ignore error) and whether we need to restore the state
+      var updateContractHEAD = false
+      var reprocessMessage = false
+      var banUser = false
+      // handle all error types defined in ./errors.js + ErrorDBConnection
+      if (e instanceof ErrorDBConnection) {
+        console.error(`[CRITICAL ERROR] handleEvent: ErrorDBConnection:`, e.message, e.stack)
+        restoreCachedState = true
+        // TODO: place state machine into critical error state
+      } else if (e instanceof GIErrorIgnore) {
+        updateContractHEAD = true
+        restoreCachedState = true
       } else if (e instanceof GIErrorIgnoreAndBanIfGroup) {
-        await handleEvent.autoBanSenderOfMessage(message, e)
-        // TODO: we want to restore the state, update the contractHEAD, but NOT savedQueueAddMessage
+        banUser = true
+        restoreCachedState = true
+        updateContractHEAD = true
       } else if (e instanceof GIErrorSaveAndReprocess) {
         restoreCachedState = true
-        // TODO: split savedQueueAddMessage from restoring the state
+        reprocessMessage = true
       } else {
         console.error(`[CRITICAL ERROR] handleEvent: UNKNOWN ERROR SHOULD NEVER HAPPEN:`, e)
         restoreCachedState = true
-        // TODO: figure out whether we need to update contractHEAD, savedQueueAddMessage, etc.
         // TODO: place state machine into critical error state
       }
       if (restoreCachedState) {
-        commit('savedQueueAddMessage', message.hash())
         handleEvent.restoreCachedState(cachedState)
+      }
+      // do these after restoreCachedState, to ensure the modifications make it in
+      if (reprocessMessage) {
+        commit('savedQueueAddMessage', message.hash())
+      }
+      if (updateContractHEAD) {
+        commit('setContractHEAD', { contractID, HEAD: message.hash() })
+      }
+      if (banUser) {
+        await handleEvent.autoBanSenderOfMessage(message, e)
       }
     }
   }
@@ -358,8 +374,8 @@ const handleEvent = {
         }
       } else if (e instanceof ErrorDBConnection) {
         // we cannot throw GIErrorSaveAndReprocess because saving is clearly broken
-        // so we just ignore it
-        throw new GIErrorIgnore(e.message)
+        // so we re-throw this special error condition that means we can't do anything
+        throw e
       } else {
         // we should never get here, but if we do...
         // TODO: set state machine critical error state
@@ -410,7 +426,7 @@ const handleEvent = {
       console.error(`processMutation: error ${e.name}`, e)
       if (e.name.indexOf('GIError') === 0) {
         throw e // simply rethrow whatever error the contract has decided should be thrown
-      } else if (!(e instanceof TypeValidatorError)) {
+      } else if (!(e instanceof TypeValidatorError) && !(e instanceof TypeError)) {
         if (preValidationFinished) {
           // this is likely a GUI-related error/bug, so it's safe to save and reprocess later
           throw new GIErrorSaveAndReprocess(`${e.name} during processMutation: ${e.message}`)
@@ -432,6 +448,7 @@ const handleEvent = {
       sbp('okTurtles.events/emit', hash, contractID, message)
       sbp('okTurtles.events/emit', EVENT_HANDLED, contractID, message)
     } catch (e) {
+      console.error(`processSideEffects: ${e.name}:`, e)
       // if an error happens at this point, it's almost certainly not due to malformed data
       // (since all of the validations successfully passed in processMutation)
       if (e.name.indexOf('GIError') === 0) {

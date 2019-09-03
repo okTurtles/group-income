@@ -1,4 +1,5 @@
 <template lang="pug">
+//- This is a debug/testing page that shouldn't use i18n tag or L function
 page
   template(#title='') Error Testing
   page-section
@@ -43,24 +44,26 @@ export default {
   },
   mounted () {
     sbp('okTurtles.events/on', EVENT_HANDLED, (contractID, message) => {
-      const ErrorType = Errors[this.form.sideEffectErrorType]
-      if (ErrorType) {
-        throw new ErrorType('blah!')
-      } else {
-        throw new Error('unknown error')
+      if (this.form.sideEffectErrorType !== 'none') {
+        const ErrorType = Errors[this.form.sideEffectErrorType]
+        if (ErrorType) {
+          throw new ErrorType('blah!')
+        } else {
+          throw new Error('unknown error')
+        }
       }
     })
   },
   methods: {
-    sendMalformedMessage () {
-      const msg = sbp('gi.contracts/group/inviteAccept/create',
+    async sendMalformedMessage () {
+      const msg = await sbp('gi.contracts/group/inviteAccept/create',
         { inviteSecret: 'poop!' },
         this.$store.state.currentGroupId
       )
       sbp('backend/publishLogEntry', msg)
     },
-    sendMalformedMutationOfType () {
-      const msg = sbp('gi.contracts/group/malformedMutation/create',
+    async sendMalformedMutationOfType () {
+      const msg = await sbp('gi.contracts/group/malformedMutation/create',
         { errorType: this.form.mutationErrorType },
         this.$store.state.currentGroupId
       )
