@@ -93,8 +93,9 @@ $pagePaddingDesktop: 5.5rem;
   grid-area: p-main;
   padding-left: $spacer;
   padding-right: $spacer;
-  margin-right: auto;
+  margin: 0 auto;
   max-width: 43rem;
+  @include overflow-touch;
 
   &.full-width {
     max-width: 100%;
@@ -105,6 +106,7 @@ $pagePaddingDesktop: 5.5rem;
   }
 
   @include widescreen {
+    margin-left: 0;
     padding-left: $pagePaddingDesktop;
   }
 }
