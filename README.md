@@ -70,6 +70,11 @@ grunt test --browser
 
 # run Cypress in "open" mode
 grunt test --browser=debug
+
+# Developing at the same time as writing tests
+grunt dev
+# and in other terminal run cypress in "open" mode
+npm run cy:open
 ```
 
 **We use [Cypress](https://www.cypress.io) to create end-to-end tests. All new functionality must have corresponding tests!**

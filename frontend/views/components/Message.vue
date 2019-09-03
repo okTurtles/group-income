@@ -38,7 +38,7 @@ export default {
 @import "../../assets/style/_variables.scss";
 
 .message {
-  padding: $spacer-lg 1.5rem $spacer-lg $spacer-lg;
+  padding: $spacer-md 1.5rem $spacer-md $spacer-md;
   border-radius: $radius-large;
   letter-spacing: 0.1px;
   display: flex;
@@ -62,25 +62,26 @@ export default {
   }
 
   i {
-    font-size: 1.389rem;
-    padding-right: $spacer-lg;
+    font-size: $size-3;
+    line-height: 1.3125;
+    padding-right: $spacer-md;
   }
   &.is-info {
     background-color: var(--primary_2);
     i {
-      color: $primary_0;
+      color: $primary_1;
     }
   }
   &.is-danger {
     background-color: var(--danger_2);
     i {
-      color: $danger_0;
+      color: $danger_1;
     }
   }
   &.is-warning {
     background-color: var(--warning_2);
     i {
-      color: $warning_0;
+      color: $warning_1;
     }
   }
 }
