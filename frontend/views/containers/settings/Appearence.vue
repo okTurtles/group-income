@@ -1,8 +1,5 @@
 <template lang='pug'>
   .settings-container
-    h1.settings-title
-      i18n Appearence
-
     section.card
       h2.settings-subtitle Theme
 
@@ -37,7 +34,9 @@ export default {
 @import "../../../assets/style/_variables.scss";
 
 .settings-container {
-  padding-top: 2rem;
+  @include tablet {
+    padding-top: 1.5rem;
+  }
 }
 
 .preview {

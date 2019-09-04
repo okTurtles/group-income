@@ -116,6 +116,15 @@ button,
         background-color: $general_1;
       }
     }
+
+    &.has-background-inverted {
+      background-color: $white;
+
+      &:hover,
+      &:focus {
+        background-color: $general_1;
+      }
+    }
   }
 
   &.is-icon {

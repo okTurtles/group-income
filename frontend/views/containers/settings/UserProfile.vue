@@ -1,7 +1,5 @@
 <template lang='pug'>
   .settings-container
-    i18n.settings-title(tag='h2') My account
-
     p.username @{{ userName }}
 
     section.card
@@ -219,7 +217,7 @@ export default {
 .username {
   display: none;
   margin-bottom: $spacer-lg;
-  margin-top: $spacer;
+  margin-top: $spacer-sm;
   color: $text_1;
 
   @include tablet {
