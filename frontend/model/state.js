@@ -318,7 +318,7 @@ const actions = {
       // process any side-effects (these must never result in any mutation to this contract state)
       await handleEvent.processSideEffects(message)
     } catch (e) {
-      // For details about the rational for how error handling works here see these links:
+      // For details about the rationale for how error handling works here see these links:
       // https://gitlab.okturtles.org/okturtles/group-income-simple/snippets/9
       // https://github.com/okTurtles/group-income-simple/issues/610
       // https://github.com/okTurtles/group-income-simple/issues/602
@@ -472,6 +472,9 @@ const handleEvent = {
   },
   async autoBanSenderOfMessage (message: GIMessage, error: Object) {
     try {
+      // If we just joined, we're likely witnessing an old error that was handled
+      // by the existing members, so we shouldn't attempt to participating in voting
+      // in a proposal that has long since passed.
       if (sbp('okTurtles.data/get', WE_JUST_JOINED)) {
         console.debug('skipping autoBanSenderOfMessage since WE_JUST_JOINED')
         return // don't do anything, assume the existing users handled this event
