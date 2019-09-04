@@ -537,7 +537,6 @@ const handleEvent = {
       console.error(`${e.name} during autoBanSenderOfMessage!`, e)
       // we really can't do much at this point since this is an exception
       // inside of the exception handler :-(
-      // TODO: set state machine critical error state
     }
   }
 }
