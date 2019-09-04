@@ -324,34 +324,27 @@ const actions = {
       // https://github.com/okTurtles/group-income-simple/issues/602
       // TODO: use a global notification system to both display a notification
       console.error(`[ERROR] exception ${e.name} in handleEvent!`, e.message, e)
-      var restoreCachedState = false
       var updateContractHEAD = false
       var banUser = false
       var enterUnrecoverableState = false
       // handle all error types defined in ./errors.js + ErrorDBConnection
       if (e instanceof GIErrorUnrecoverable) {
         console.error(`[CRITICAL ERROR] handleEvent:`, e.message, e.stack)
-        restoreCachedState = true
         enterUnrecoverableState = true
         // TODO: allow the GIErrorUnrecoverable class a way to specify a potential manual recovery method
         //       that can be displayed on the recovery page?
       } else if (e instanceof GIErrorIgnoreAndBanIfGroup) {
         banUser = true
-        restoreCachedState = true
         updateContractHEAD = true
       } else if (e instanceof GIErrorDropAndReprocess) {
-        restoreCachedState = true
         dropAllMessagesUntilRefresh = true
       } else {
         console.error(`[CRITICAL ERROR] handleEvent: UNKNOWN ERROR ${e.name} SHOULD NEVER HAPPEN:`, e.message, e.stack)
-        restoreCachedState = true
         enterUnrecoverableState = true
       }
       // Take action based on the type of error.
       // The order of the statements below is very important
-      if (restoreCachedState) {
-        handleEvent.restoreCachedState(cachedState)
-      }
+      handleEvent.restoreCachedState(cachedState)
       // do these after restoreCachedState, to ensure the modifications make it in
       if (updateContractHEAD) {
         commit('setContractHEAD', { contractID, HEAD: message.hash() })
@@ -473,7 +466,7 @@ const handleEvent = {
   async autoBanSenderOfMessage (message: GIMessage, error: Object) {
     try {
       // If we just joined, we're likely witnessing an old error that was handled
-      // by the existing members, so we shouldn't attempt to participating in voting
+      // by the existing members, so we shouldn't attempt to participate in voting
       // in a proposal that has long since passed.
       if (sbp('okTurtles.data/get', WE_JUST_JOINED)) {
         console.debug('skipping autoBanSenderOfMessage since WE_JUST_JOINED')
