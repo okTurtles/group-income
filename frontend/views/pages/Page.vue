@@ -95,7 +95,6 @@ $pagePaddingDesktop: 5.5rem;
   padding-right: $spacer;
   margin: 0 auto;
   max-width: 43rem;
-  overflow: auto;
   @include overflow-touch;
 
   &.full-width {
@@ -152,7 +151,7 @@ $pagePaddingDesktop: 5.5rem;
 .p-descritpion {
   font-weight: normal;
   font-size: $size-5; // 12px
-  line-height: 1rem; // 16px
+  line-height: 1rem;
   color: $text_1;
   display: none;
   padding-bottom: 3rem;

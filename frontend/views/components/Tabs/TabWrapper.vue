@@ -7,9 +7,9 @@
       )
         i.icon-chevron-left(aria-hidden='true')
 
-      h1.tab-title
+      h2.tab-title
         i18n.menu-title Settings
-        i18n.main-title {{ title }}
+        .main-title {{ title }}
 
     nav.tab-nav-sidebar(
       aria-label='navigation'
@@ -28,7 +28,10 @@
           :class="{ 'tab-active': activeTab === links.index, 'has-text-white': isDarkTheme}"
           :data-test='`link-${links.url}`'
           @click='tabClick(links)'
-        ) {{ links.title }}
+        )
+          | {{ links.title }}
+          .c-icons
+            i.icon-chevron-right
 
     section.tab-section
       slot
@@ -85,8 +88,11 @@ export default {
      */
     changeTab (newIndex) {
       if (this.activeTab === newIndex) return
-      this.tabItems[this.activeTab].deactivate(this.activeTab, newIndex)
-      this.tabItems[newIndex].activate(this.activeTab, newIndex)
+      const transition = this.activeTab < newIndex
+        ? 'slide-next'
+        : 'slide-prev'
+      this.tabItems[this.activeTab].changeTab(false, transition)
+      this.tabItems[newIndex].changeTab(true, transition)
       this.activeTab = newIndex
       this.$emit('change', newIndex)
     },
@@ -141,15 +147,17 @@ $closeMobileBarBgColor: #3c3c3c;
 .tab-wrapper {
   display: grid;
   grid-template-columns: 1fr;
-  grid-template-rows: 64px 1fr;
+  grid-template-rows: 4.75rem 1fr;
   grid-template-areas:
     "header header"
     "main main";
-  min-height: 100%;
+  height: 100%;
   background-color: $general_2;
+  overflow: hidden;
 
   @include tablet {
     grid-template-columns: 35% auto;
+    grid-template-rows: auto 1fr;
     grid-template-areas:
       "sidebar header"
       "sidebar main";
@@ -168,7 +176,7 @@ $closeMobileBarBgColor: #3c3c3c;
   align-items: center;
   position: relative;
   z-index: 3;
-  background-color: var(--primary);
+  background-color: $background;
 
   @include tablet {
     justify-content: start;
@@ -180,19 +188,9 @@ $closeMobileBarBgColor: #3c3c3c;
   display: none;
 }
 
-.main-title {
-  @include tablet {
-    display: none;
-  }
-}
-
 .tab-title {
-  font-weight: bold;
-  font-size: 0.875rem;
-
   @include tablet {
-    margin: 16px 0 0 27px;
-    font-size: 1.5rem;
+    margin: 2.5rem 0 0 27px;
   }
 }
 
@@ -225,11 +223,10 @@ $closeMobileBarBgColor: #3c3c3c;
   transform: translateX(-100%);
   z-index: 2;
   font-family: "Poppins";
-  background-color: #fff;
+  background-color: $general_2;
 
   @include tablet {
     grid-area: sidebar;
-    background-color: var(--primary);
     position: relative;
     align-items: flex-end;
     padding-top: 0.75rem;
@@ -295,11 +292,11 @@ $closeMobileBarBgColor: #3c3c3c;
 }
 
 .tab-link:hover {
-  background-color: $primary_2;
+  background-color: $general_1;
 }
 
 .tab-active {
-  background-color: $background_0 !important;
+  background-color: $background_0;
   font-weight: bold;
 }
 
@@ -318,6 +315,7 @@ $closeMobileBarBgColor: #3c3c3c;
 
 .tab-item {
   height: 100%;
+  width: 100%;
   display: flex;
   justify-content: center;
 
@@ -331,6 +329,11 @@ $closeMobileBarBgColor: #3c3c3c;
   grid-area: main;
   transition: transform 500ms cubic-bezier(0.165, 0.84, 0.44, 1);
   transform: translateX(0%);
+  padding-top: 1.5rem;
+
+  @include tablet {
+    padding-top: 0;
+  }
 }
 
 // Open state
@@ -353,6 +356,10 @@ $closeMobileBarBgColor: #3c3c3c;
 
   .main-title {
     display: none;
+
+    @include tablet {
+      display: block;
+    }
   }
 
   .tab-section {

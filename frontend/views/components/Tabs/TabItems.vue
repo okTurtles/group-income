@@ -1,5 +1,5 @@
 <template lang='pug'>
-  transition(:name='transitionName')
+  transition(:name='transitionName' mode='')
     div(v-show='isActive' class='tab-item')
       slot
 </template>
@@ -16,19 +16,9 @@ export default {
   },
 
   methods: {
-    // Activate tab, alter animation name based on the index.
-    activate (oldIndex, index) {
-      this.transitionName = index < oldIndex
-        ? 'slide-next'
-        : 'slide-prev'
-      this.isActive = true
-    },
-    // Deactivate tab, alter animation name based on the index.
-    deactivate (oldIndex, index) {
-      this.transitionName = index < oldIndex
-        ? 'slide-next'
-        : 'slide-prev'
-      this.isActive = false
+    changeTab (isActive, transitionName) {
+      this.transitionName = transitionName
+      this.isActive = isActive
     }
   },
 
