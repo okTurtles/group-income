@@ -116,6 +116,15 @@ button,
         background-color: $general_1;
       }
     }
+
+    &.has-background-inverted {
+      background-color: $white;
+
+      &:hover,
+      &:focus {
+        background-color: $general_1;
+      }
+    }
   }
 
   &.is-icon {
@@ -167,6 +176,11 @@ button,
   &.is-centered {
     justify-content: center;
   }
+}
+
+p + button,
+p + .button {
+  margin-top: 1.5rem;
 }
 
 button.link {

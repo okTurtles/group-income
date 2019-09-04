@@ -60,7 +60,7 @@ div
           figure.image.is-square
             img(:src='invitee.state.attributes.picture' :alt='invitee.state.attributes.name')
         header.card-header
-          p.card-header-title
+          p
             | {{invitee.state.attributes.name}}
   p.has-text-right
     router-link.button(:to="{name: 'GroupInvitees'}")

@@ -176,7 +176,7 @@ export default {
 
 .c-navigation-separator {
   text-align: center;
-  margin: 1.5rem;
+  margin: 1.5rem 1.5rem 0 1.5rem;
   border-top: 1px solid $general_0;
   padding-top: 1.5rem;
 }

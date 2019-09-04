@@ -18,7 +18,8 @@ export default {
     text_1: '#7a7a7a',
     general_0: '#dbdbdb',
     general_1: '#ededed',
-    general_2: '#f5f5f5'
+    general_2: '#f5f5f5',
+    background_0: '#ffffff'
   },
   'green': {
     'name': 'blue',
@@ -39,7 +40,8 @@ export default {
     text_1: '#7a7a7a',
     general_0: '#dbdbdb',
     general_1: '#ededed',
-    general_2: '#f5f5f5'
+    general_2: '#f5f5f5',
+    background_0: '#ffffff'
   },
   'yellow': {
     'name': 'blue',
@@ -60,6 +62,7 @@ export default {
     text_1: '#7a7a7a',
     general_0: '#dbdbdb',
     general_1: '#ededed',
-    general_2: '#f5f5f5'
+    general_2: '#f5f5f5',
+    background_0: '#ffffff'
   }
 }

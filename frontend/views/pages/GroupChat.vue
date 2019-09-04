@@ -16,7 +16,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
 
       group-members
 
-  .p-section
+  .card
     chat-main(
       :summary='summary'
       :details='details'

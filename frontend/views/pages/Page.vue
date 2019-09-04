@@ -5,7 +5,13 @@ div(:data-test='pageTestName' :class='$scopedSlots.sidebar ? "p-with-sidebar" : 
       img.c-logo(src='/assets/images/group-income-icon-transparent.png' alt="GroupIncome's logo")
       slot(name='title')
 
-  main.p-main
+    p(
+      v-if='$scopedSlots.description'
+      class='p-descritpion'
+    )
+      slot(name='description')
+
+  main.p-main(:class='mainClass')
     slot
 
   aside.p-sidebar(
@@ -26,7 +32,8 @@ export default {
   },
   props: {
     pageTestName: String,
-    pageTestHeaderName: String
+    pageTestHeaderName: String,
+    mainClass: String
   },
   data () {
     return {
@@ -48,7 +55,7 @@ export default {
 
 $pagePadding: 1rem;
 $pagePaddingTablet: 24px;
-$pagePaddingDesktop: 75px;
+$pagePaddingDesktop: 5.5rem;
 
 .p-no-sidebar {
   height: 100vh;
@@ -62,10 +69,10 @@ $pagePaddingDesktop: 75px;
 
 .p-with-sidebar {
   display: grid;
-  overflow: hidden;
+  overflow: auto;
   grid-template-areas: "p-header" "p-main";
   grid-template-columns: 1fr;
-  grid-template-rows: 64px 1fr;
+  grid-template-rows: auto minmax(0, 1fr);
   width: 100vw;
   height: 100vh;
 
@@ -75,7 +82,6 @@ $pagePaddingDesktop: 75px;
 
   @include widescreen {
     grid-template-columns: 1fr $rightSideWidth;
-    grid-template-rows: 79px auto;
     grid-template-areas:
       "p-header p-sidebar"
       "p-main p-sidebar";
@@ -84,7 +90,24 @@ $pagePaddingDesktop: 75px;
 
 .p-main {
   grid-area: p-main;
-  overflow: auto;
+  padding-left: $spacer;
+  padding-right: $spacer;
+  margin: 0 auto;
+  max-width: 43rem;
+  @include overflow-touch;
+
+  &.full-width {
+    max-width: 100%;
+  }
+
+  @include tablet {
+    margin-left: 0;
+    padding-left: $pagePaddingTablet;
+  }
+
+  @include widescreen {
+    padding-left: $pagePaddingDesktop;
+  }
 }
 
 .p-header {
@@ -92,21 +115,21 @@ $pagePaddingDesktop: 75px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  border-bottom: 1px solid $general_0;
   transition: padding ease-out 300ms;
-
-  background-color: $primary_2;
   text-align: center;
-  padding-left: 0;
+  min-height: 4rem;
 
   @include tablet {
+    display: block;
+    padding-top: 1.125rem;
     padding-left: $pagePaddingTablet;
-    background-color: $background;
     text-align: left;
+    min-height: 4.75rem;
   }
 
   @include widescreen {
     padding-left: $pagePaddingDesktop;
+    min-height: 5.25rem;
   }
 }
 
@@ -124,6 +147,19 @@ $pagePaddingDesktop: 75px;
   }
 }
 
+.p-descritpion {
+  font-weight: normal;
+  font-size: $size-5; // 12px
+  line-height: 1rem;
+  color: $text_1;
+  display: none;
+  padding-bottom: 3rem;
+
+  @include tablet {
+    display: block;
+  }
+}
+
 .c-logo {
   width: $spacer;
   height: $spacer;
@@ -131,21 +167,6 @@ $pagePaddingDesktop: 75px;
 
   @include tablet {
     display: none;
-  }
-}
-
-.p-section-header,
-.p-section {
-  padding: 1.5rem $pagePadding; // Futur proof just add margin to add bubble
-  transition: padding ease-out 300ms;
-  background-color: $background;
-
-  @include tablet {
-    padding: 1.5rem $pagePaddingTablet;
-  }
-
-  @include widescreen {
-    padding: 1.5rem $pagePaddingDesktop;
   }
 }
 

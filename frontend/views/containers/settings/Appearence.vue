@@ -1,15 +1,12 @@
 <template lang='pug'>
   .settings-container
-    h1.settings-title.is-size-4
-      i18n Appearence
-
-    section.section
-      h2.settings-subtitle.is-size-5 Theme
+    section.card
+      h2.settings-subtitle Theme
 
       SelectorTheme
 
-    section.section
-      h2.settings-subtitle.is-size-5 Text settings
+    section.card
+      h2.settings-subtitle Text settings
 
       //- TODO in separate tickets
       //- SelectorFontSize
@@ -37,7 +34,9 @@ export default {
 @import "../../../assets/style/_variables.scss";
 
 .settings-container {
-  padding-top: 2rem;
+  @include tablet {
+    padding-top: 1.5rem;
+  }
 }
 
 .preview {

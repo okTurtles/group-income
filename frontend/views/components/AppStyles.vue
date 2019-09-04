@@ -22,6 +22,7 @@ v-style.
     --general_0: {{colors.general_0}};
     --general_1: {{colors.general_1}};
     --general_2: {{colors.general_2}};
+    --background_0: {{colors.background_0}};
   }
 </template>
 

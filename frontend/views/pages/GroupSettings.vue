@@ -2,9 +2,9 @@
 page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings.groupName')
   //- NOTE: i18n tag doesn't work with 'template'
   template(#title='') {{ L('Group Settings') }}
+  template(#description='') {{ L('Changes to these settings will be visible to all group members') }}
 
   page-section(title='')
-    i18n(tag='p') Changes to these settings will be visible to all group members
 
     form
       .field
