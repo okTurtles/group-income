@@ -36,6 +36,16 @@ export function merge (obj: Object, src: Object) {
   return obj
 }
 
+export function delay (msec: number) {
+  return new Promise((resolve, reject) => {
+    setTimeout(resolve, msec)
+  })
+}
+
+export function randomIntFromRange (min: number, max: number) {
+  return Math.floor(Math.random() * (max - min + 1) + min)
+}
+
 export function debounce (func: Function, wait: number, options?: Object) {
   if (typeof func !== 'function') {
     throw new TypeError('Invalid Function')

@@ -119,7 +119,9 @@ const proposals = {
       }
     },
     [VOTE_FOR]: function (state, { proposalHash, passPayload }) {
-      throw new Error('unimplemented!')
+      console.error('unimplemented!')
+      // TODO: unsubscribe from their mailbox and identity contract
+      //       call commit('removeContract'), etc.
     },
     [VOTE_AGAINST]: voteAgainst
   },
@@ -133,7 +135,7 @@ const proposals = {
       }
     },
     [VOTE_FOR]: function (state, { proposalHash, passPayload }) {
-      throw new Error('unimplemented!')
+      console.error('unimplemented!')
     },
     [VOTE_AGAINST]: voteAgainst
   },

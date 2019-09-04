@@ -3,21 +3,21 @@
 page
   template(#title='') Error Testing
   page-section
-    p Enable side effect error type:&nbsp;
-      select(:value='form.sideEffectErrorType')
+    p Enable side effect error type on handleEvent:&nbsp;
+      select(v-model='form.sideEffectErrorType')
         option(value='none') None
-        option(value='GIErrorIgnore') GIErrorIgnore
         option(value='GIErrorIgnoreAndBanIfGroup') GIErrorIgnoreAndBanIfGroup
-        option(value='GIErrorSaveAndReprocess') GIErrorSaveAndReprocess
+        option(value='GIErrorDropAndReprocess') GIErrorDropAndReprocess
+        option(value='GIErrorUnrecoverable') GIErrorUnrecoverable
         option(value='unknown') Unknown
   page-section
     a.button(@click='sendMalformedMessage') Send malformed message
   page-section
     p Send malformed mutation of type:&nbsp;
-      select(:value='form.mutationErrorType')
-        option(value='GIErrorIgnore') GIErrorIgnore
+      select(v-model='form.mutationErrorType')
         option(value='GIErrorIgnoreAndBanIfGroup') GIErrorIgnoreAndBanIfGroup
-        option(value='GIErrorSaveAndReprocess') GIErrorSaveAndReprocess
+        option(value='GIErrorDropAndReprocess') GIErrorDropAndReprocess
+        option(value='GIErrorUnrecoverable') GIErrorUnrecoverable
         option(value='unknownType') unknownType
       a.button(@click='sendMalformedMutationOfType') Send
 </template>
@@ -38,13 +38,14 @@ export default {
     return {
       form: {
         sideEffectErrorType: 'none',
-        mutationErrorType: 'GIErrorIgnore'
+        mutationErrorType: 'GIErrorIgnoreAndBanIfGroup'
       }
     }
   },
   mounted () {
     sbp('okTurtles.events/on', EVENT_HANDLED, (contractID, message) => {
       if (this.form.sideEffectErrorType !== 'none') {
+        console.debug(`ErrorTesting page EVENT_HANDLED callback about to throw '${this.form.sideEffectErrorType}' error`)
         const ErrorType = Errors[this.form.sideEffectErrorType]
         if (ErrorType) {
           throw new ErrorType('blah!')

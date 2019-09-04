@@ -41,15 +41,20 @@ export function createWebSocket (url: string, options: Object): Promise<Object> 
           reject(err)
         },
         data: msg => {
-          console.log('websocket message:', msg)
+          // TODO: place us in unrecoverable state (see state.js error handling TODOs)
           if (!msg.data) throw new Error('malformed message: ' + JSON.stringify(msg))
           switch (msg.type) {
             case RESPONSE_TYPE.ENTRY:
               // calling dispatch via SBP makes it simple to implement 'test/backend.js'
               sbp('state/vuex/dispatch', 'handleEvent', GIMessage.deserialize(msg.data))
               break
+            case RESPONSE_TYPE.SUB:
+            case RESPONSE_TYPE.UNSUB:
+            case RESPONSE_TYPE.PUB: // .PUB can be used to send ephemeral messages outside of any contract logs
+              console.debug(`NOTE: ignoring websocket event ${msg.type} in room:`, msg.data)
+              break
             default:
-              console.log('SOCKET UNHANDLED EVENT!', msg) // TODO: this
+              console.error('SOCKET UNHANDLED EVENT!', msg) // TODO: this
           }
         }
       }
@@ -96,6 +101,8 @@ sbp('sbp/selectors/register', {
         'Content-Type': 'text/plain',
         'Authorization': `gi ${signature}`
       }
+    // TODO: auto resend after short random delay
+    //       https://github.com/okTurtles/group-income-simple/issues/608
     }).then(handleFetchResult('text'))
   },
   // TODO: r.body is a stream.Transform, should we use a callback to process

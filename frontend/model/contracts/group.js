@@ -141,10 +141,9 @@ DefineContract({
       process (state, { data, meta }) {
         const proposal = state.proposals[data.proposalHash]
         if (!proposal) {
-          // TODO: better handle this and similar errors
-          //       https://github.com/okTurtles/group-income-simple/issues/602
+          // https://github.com/okTurtles/group-income-simple/issues/602
           console.error(`proposalVote: no proposal for ${data.proposalHash}!`, data)
-          return // TODO: or throw exception?
+          throw new Errors.GIErrorIgnoreAndBanIfGroup(`proposalVote without existing proposal`)
         }
         Vue.set(proposal.votes, meta.username, data.vote)
         // TODO: handle vote pass/fail
@@ -171,9 +170,10 @@ DefineContract({
         const proposal = state.proposals[data.proposalHash]
         if (!proposal) {
           console.error(`proposalWithdraw: no proposal for ${data.proposalHash}!`, data)
+          throw new Errors.GIErrorIgnoreAndBanIfGroup(`proposalWithdraw without existing proposal`)
         } else if (proposal.meta.username !== meta.username) {
-          // TODO: properly handle these error conditions!
           console.error(`proposalWithdraw: proposal ${data.proposalHash} belongs to ${proposal.meta.username} not ${meta.username}!`)
+          throw new Errors.GIErrorIgnoreAndBanIfGroup(`proposalWithdraw for wrong user!`)
         } else {
           // TODO: make sure this is a synchronous function, and if not handle it appropriately
           proposal.status = STATUS_WITHDRAWN
@@ -201,9 +201,8 @@ DefineContract({
       process (state, { data, meta }) {
         const invite = state.invites[data.inviteSecret]
         if (invite.status !== 'valid') {
-          // throw an exception so that the event handler doesn't get triggered
-          // TODO: handle this kind of error (e.g. an invite being used twice)
-          throw new Errors.GIErrorIgnore(`inviteDecline: invite for ${meta.username} is: ${invite.status}`)
+          console.error(`inviteDecline: invite for ${meta.username} is: ${invite.status}`)
+          return
         }
         Vue.set(invite.responses, meta.username, false)
         if (Object.keys(invite.responses).length === invite.generated) {
@@ -220,8 +219,8 @@ DefineContract({
         console.debug(`inviteAccept:`, data, state.invites)
         const invite = state.invites[data.inviteSecret]
         if (invite.status !== 'valid') {
-          // throw an exception so that the event handler doesn't get triggered
-          throw new Errors.GIErrorIgnore(`inviteAccept: invite for ${meta.username} is: ${invite.status}`)
+          console.error(`inviteAccept: invite for ${meta.username} is: ${invite.status}`)
+          return
         }
         Vue.set(invite.responses, meta.username, true)
         if (Object.keys(invite.responses).length === invite.generated) {

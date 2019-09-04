@@ -1,7 +1,5 @@
-import {
-  confettiComponents,
-  confettiNames
-} from './confettiComponents/index.js'
+import { confettiComponents, confettiNames } from './confettiComponents/index.js'
+import { randomIntFromRange } from '@utils/giLodash.js'
 
 const canvas = {
   width: null, height: null
@@ -53,10 +51,6 @@ function getPositionTo (pFrom, d, angle) {
 
 function randomSign () {
   return (Math.random() > 0.5) ? 1 : -1
-}
-
-function randomIntFromRange (min, max) {
-  return Math.floor(Math.random() * (max - min + 1) + min)
 }
 
 function randomFromArray (arr) {

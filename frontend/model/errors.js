@@ -1,6 +1,6 @@
 'use strict'
 
-export class GIErrorIgnore extends Error {
+export class GIErrorIgnoreAndBanIfGroup extends Error {
   // ugly boilerplate because JavaScript is stupid
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error#Custom_Error_Types
   constructor (...params) {
@@ -11,7 +11,7 @@ export class GIErrorIgnore extends Error {
     }
   }
 }
-export class GIErrorIgnoreAndBanIfGroup extends Error {
+export class GIErrorDropAndReprocess extends Error {
   constructor (...params) {
     super(...params)
     this.name = this.constructor.name
@@ -20,7 +20,8 @@ export class GIErrorIgnoreAndBanIfGroup extends Error {
     }
   }
 }
-export class GIErrorSaveAndReprocess extends Error {
+
+export class GIErrorUnrecoverable extends Error {
   constructor (...params) {
     super(...params)
     this.name = this.constructor.name

@@ -1,6 +1,7 @@
 <template lang="pug">
 page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings.groupName')
-  i18n(tag='template' #title='') Group Settings
+  //- NOTE: i18n tag doesn't work with 'template'
+  template(#title='') {{ L('Group Settings') }}
 
   page-section(title='')
     i18n(tag='p') Changes to these settings will be visible to all group members
