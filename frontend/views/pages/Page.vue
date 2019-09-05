@@ -96,7 +96,6 @@ $pagePaddingDesktop: 5.5rem;
   @include overflow-touch;
 
   &.full-width {
-    width: 100%;
     max-width: 100%;
   }
 
