@@ -1,8 +1,8 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import store from '../model/state.js'
+import store from '@model/state.js'
 // TODO: move create group in modal container
-import CreateGroup from '../views/pages/CreateGroup.vue'
+import CreateGroup from '@pages/CreateGroup.vue'
 import {
   GroupName,
   GroupPurpose,
@@ -10,20 +10,21 @@ import {
   GroupRules,
   GroupPrivacy,
   GroupInvitees
-} from '../views/components/CreateGroupSteps/index.js'
-import DesignSystem from '../views/pages/DesignSystem.vue'
-import Home from '../views/pages/Home.vue'
-import Messages from '../views/pages/Messages.vue'
-import GroupDashboard from '../views/pages/GroupDashboard.vue'
-import Contributions from '../views/pages/Contributions.vue'
-import PayGroup from '../views/pages/PayGroup.vue'
-import GroupChat from '../views/pages/GroupChat.vue'
-import Invite from '../views/pages/Invite.vue'
-import Join from '../views/pages/Join.vue'
-import Mailbox from '../views/pages/Mailbox.vue'
-import Vote from '../views/pages/Vote.vue'
-import GroupSettings from '../views/pages/GroupSettings.vue'
-import GroupWelcome from '../views/pages/GroupWelcome.vue'
+} from '@components/CreateGroupSteps/index.js'
+import DesignSystem from '@pages/DesignSystem.vue'
+import Home from '@pages/Home.vue'
+import Messages from '@pages/Messages.vue'
+import GroupDashboard from '@pages/GroupDashboard.vue'
+import Contributions from '@pages/Contributions.vue'
+import PayGroup from '@pages/PayGroup.vue'
+import GroupChat from '@pages/GroupChat.vue'
+import Invite from '@pages/Invite.vue'
+import Join from '@pages/Join.vue'
+import Mailbox from '@pages/Mailbox.vue'
+import Vote from '@pages/Vote.vue'
+import GroupSettings from '@pages/GroupSettings.vue'
+import GroupWelcome from '@pages/GroupWelcome.vue'
+import ErrorTesting from '@pages/ErrorTesting.vue'
 
 Vue.use(Router)
 
@@ -45,6 +46,7 @@ var groupGuard = {
   guard: (to, from) => !store.state.currentGroupId,
   redirect: (to, from) => ({ path: '/new-group' })
 }
+// TODO: add state machine guard and redirect to critical error page if necessary
 // var mailGuard = {
 //   guard: (to, from) => from.name !== Mailbox.name,
 //   redirect: (to, from) => ({ path: '/mailbox' })
@@ -70,18 +72,14 @@ var router = new Router({
       path: '/',
       component: Home,
       name: 'home',
-      meta: {
-        title: 'Group Income' // page title. see issue #45
-      },
+      meta: { title: 'Group Income' }, // page title. see issue #45
       beforeEnter: createEnterGuards(homeGuard)
     },
     {
       path: '/design-system',
       component: DesignSystem,
       name: DesignSystem.name,
-      meta: {
-        title: 'Design System'
-      }
+      meta: { title: 'Design System' }
       // beforeEnter: createEnterGuards(designGuard)
     },
     {
@@ -96,49 +94,37 @@ var router = new Router({
         {
           path: 'name',
           name: GroupName.name,
-          meta: {
-            title: 'Start A Group - Name Your Group'
-          },
+          meta: { title: 'Start A Group - Name Your Group' },
           component: GroupName
         },
         {
           path: 'purpose',
           name: GroupPurpose.name,
-          meta: {
-            title: 'Start A Group - Group Purpose'
-          },
+          meta: { title: 'Start A Group - Group Purpose' },
           component: GroupPurpose
         },
         {
           path: 'income',
           name: GroupMincome.name,
-          meta: {
-            title: 'Start A Group - Minimum Income'
-          },
+          meta: { title: 'Start A Group - Minimum Income' },
           component: GroupMincome
         },
         {
           path: 'rules',
           name: GroupRules.name,
-          meta: {
-            title: 'Start A Group - Rules'
-          },
+          meta: { title: 'Start A Group - Rules' },
           component: GroupRules
         },
         {
           path: 'privacy',
           name: GroupPrivacy.name,
-          meta: {
-            title: 'Start A Group - Privacy'
-          },
+          meta: { title: 'Start A Group - Privacy' },
           component: GroupPrivacy
         },
         {
           path: 'invitees',
           name: GroupInvitees.name,
-          meta: {
-            title: 'Start A Group - Invite Members'
-          },
+          meta: { title: 'Start A Group - Invite Members' },
           component: GroupInvitees
         }
       ]
@@ -147,18 +133,14 @@ var router = new Router({
       path: '/welcome',
       component: GroupWelcome,
       name: GroupWelcome.name,
-      meta: {
-        title: 'Your Group Created'
-      },
+      meta: { title: 'Your Group Created' },
       beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '/dashboard',
       component: GroupDashboard,
       name: GroupDashboard.name,
-      meta: {
-        title: 'Group Dashboard'
-      },
+      meta: { title: 'Group Dashboard' },
       beforeEnter: createEnterGuards(loginGuard)
     },
     // NOTE: do not delete this! Event though we no longer use it,
@@ -174,17 +156,13 @@ var router = new Router({
     {
       path: '/contributions',
       component: Contributions,
-      meta: {
-        title: 'Contributions'
-      },
+      meta: { title: 'Contributions' },
       beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '/pay-group',
       component: PayGroup,
-      meta: {
-        title: 'Pay Group'
-      },
+      meta: { title: 'Pay Group' },
       beforeEnter: createEnterGuards(loginGuard)
     },
     /* Guards need to be created for any route that should not be directly accessed by url */
@@ -192,27 +170,21 @@ var router = new Router({
       path: '/invite',
       name: Invite.name,
       component: Invite,
-      meta: {
-        title: 'Invite Group Members'
-      },
+      meta: { title: 'Invite Group Members' },
       beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     {
       path: '/mailbox',
       name: Mailbox.name,
       component: Mailbox,
-      meta: {
-        title: 'Mailbox'
-      },
+      meta: { title: 'Mailbox' },
       beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '/messages',
       name: 'Messages',
       component: Messages,
-      meta: {
-        title: 'Messages'
-      },
+      meta: { title: 'Messages' },
       beforeEnter: createEnterGuards(loginGuard)
     },
     {
@@ -228,18 +200,14 @@ var router = new Router({
       path: '/group-chat',
       component: GroupChat,
       name: 'GroupChat',
-      meta: {
-        title: 'Group Chat'
-      },
+      meta: { title: 'Group Chat' },
       beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '/group-settings',
       component: GroupSettings,
       name: 'GroupSettings',
-      meta: {
-        title: 'Group Seettings'
-      },
+      meta: { title: 'Group Seettings' },
       beforeEnter: createEnterGuards(loginGuard)
     },
     {
@@ -252,9 +220,7 @@ var router = new Router({
       path: '/join',
       name: Join.name,
       component: Join,
-      meta: {
-        title: 'Join a Group'
-      },
+      meta: { title: 'Join a Group' },
       // beforeEnter: createEnterGuards(loginGuard, mailGuard)
       beforeEnter: createEnterGuards(loginGuard)
     },
@@ -262,10 +228,14 @@ var router = new Router({
       path: '/vote',
       name: Vote.name,
       component: Vote,
-      meta: {
-        title: 'Vote on a Proposal'
-      },
+      meta: { title: 'Vote on a Proposal' },
       beforeEnter: createEnterGuards(loginGuard)
+    },
+    {
+      path: '/error-testing',
+      name: ErrorTesting.name,
+      component: ErrorTesting,
+      meta: { title: 'Error Testing' }
     },
     {
       path: '*',

@@ -36,6 +36,16 @@ export function merge (obj: Object, src: Object) {
   return obj
 }
 
+export function delay (msec: number) {
+  return new Promise((resolve, reject) => {
+    setTimeout(resolve, msec)
+  })
+}
+
+export function randomIntFromRange (min: number, max: number) {
+  return Math.floor(Math.random() * (max - min + 1) + min)
+}
+
 export function debounce (func: Function, wait: number, options?: Object) {
   if (typeof func !== 'function') {
     throw new TypeError('Invalid Function')
@@ -192,4 +202,21 @@ export function fromPairs (arr: Array<*>) {
     obj[key] = value
   }
   return obj
+}
+
+export function uniq (array: Array<*>) {
+  return Array.from(new Set(array))
+}
+
+export function union (...arrays) {
+  return uniq([].concat.apply([], arrays))
+}
+
+export function intersection (a1: Array<*>, ...arrays) {
+  return uniq(a1).filter(v1 => arrays.every(v2 => v2.indexOf(v1) >= 0))
+}
+
+export function difference (a1: Array<*>, ...arrays) {
+  const a2 = [].concat.apply([], arrays)
+  return a1.filter(v => a2.indexOf(v) === -1)
 }

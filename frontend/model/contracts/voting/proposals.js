@@ -113,11 +113,15 @@ const proposals = {
       expires_ms: 14 * DAYS_MILLIS,
       ruleSettings: {
         [RULE_THRESHOLD]: { threshold: 0.8 },
-        [RULE_DISAGREEMENT]: { threshold: 1 }
+        // at least 2, since the member being removed shouldn't be able to
+        // block the proposal themselves
+        [RULE_DISAGREEMENT]: { threshold: 2 }
       }
     },
     [VOTE_FOR]: function (state, { proposalHash, passPayload }) {
-      throw new Error('unimplemented!')
+      console.error('unimplemented!')
+      // TODO: unsubscribe from their mailbox and identity contract
+      //       call commit('removeContract'), etc.
     },
     [VOTE_AGAINST]: voteAgainst
   },
@@ -131,7 +135,7 @@ const proposals = {
       }
     },
     [VOTE_FOR]: function (state, { proposalHash, passPayload }) {
-      throw new Error('unimplemented!')
+      console.error('unimplemented!')
     },
     [VOTE_AGAINST]: voteAgainst
   },

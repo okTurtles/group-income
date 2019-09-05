@@ -8,42 +8,53 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import { GIMessage } from '~/shared/GIMessage.js'
 import * as _ from '@utils/giLodash.js'
+import L from '@view-utils/translations.js'
 import { SETTING_CURRENT_USER } from './database.js'
+import { ErrorDBMalformed, ErrorDBConnection } from '~/shared/domains/gi/db.js'
 import { LOGIN, LOGOUT, EVENT_HANDLED, CONTRACTS_MODIFIED } from '@utils/events.js'
 import Colors from './colors.js'
+import { TypeValidatorError } from '@utils/flowTyper.js'
+import { GIErrorUnrecoverable, GIErrorIgnoreAndBanIfGroup, GIErrorDropAndReprocess } from './errors.js'
+import { STATUS_OPEN, PROPOSAL_REMOVE_MEMBER } from './contracts/voting/proposals.js'
+import { VOTE_FOR } from '@model/contracts/voting/rules.js'
+import { WE_JUST_JOINED } from '@model/constants.js'
 import './contracts/group.js'
 import './contracts/mailbox.js'
 import './contracts/identity.js'
 
-// babel transforms lodash imports: https://github.com/lodash/babel-plugin-lodash#faq
-// for diff between 'lodash/map' and 'lodash/fp/map'
-// see: https://github.com/lodash/lodash/wiki/FP-Guide
-
 Vue.use(Vuex)
 var store // this is set and made the default export at the bottom of the file.
 // we have it declared here to make it accessible in mutations
-// 'state' is the Vuex state object
-// NOTE: THE STATE CAN ONLY STORE *SERIALIZABLE* OBJECTS! THAT MEANS IF YOU TRY
-//       TO STORE AN INSTANCE OF A CLASS (LIKE A CONTRACT), IT WILL NOT STORE
-//       THE ACTUAL CONTRACT, BUT JSON.STRINGIFY(CONTRACT) INSTEAD!
+// 'state' is the Vuex state object, and it can only store JSON-like data
+var dropAllMessagesUntilRefresh = false
 
 const CONTRACT_REGEX = /^gi\.contracts\/(?:([^/]+)\/)(?:([^/]+)\/)?process$/
 // guard all sbp calls for contract actions with this function
 export function selectorIsContractOrAction (sel: string) {
   if (!CONTRACT_REGEX.test(sel)) {
-    throw new Error(`bad selector '${sel}' for contract type!`)
+    throw new GIErrorIgnoreAndBanIfGroup(`bad selector '${sel}' for contract type!`)
   }
 }
 
 sbp('sbp/selectors/register', {
-  // This will build the current contract state from applying all its actions
   'state/latestContractState': async (contractID: string) => {
     let events = await sbp('backend/eventsSince', contractID, contractID)
     events = events.map(e => GIMessage.deserialize(e))
-    const state = {}
+    var state = {}
     for (const e of events) {
-      selectorIsContractOrAction(e.type())
-      sbp(e.type(), state, { data: e.data(), meta: e.meta(), hash: e.hash() })
+      selectorIsContractOrAction(e.type()) // TODO: handle error if this throws
+      const stateCopy = _.cloneDeep(state)
+      try {
+        sbp(e.type(), state, { data: e.data(), meta: e.meta(), hash: e.hash() })
+      } catch (err) {
+        if (!(err instanceof GIErrorUnrecoverable)) {
+          console.warn(`latestContractState: ignoring mutation ${e.hash()}|${e.type()} because of ${err.name}`)
+          state = stateCopy
+        } else {
+          // TODO: make sure every location that calls latestContractState can handle this
+          throw err
+        }
+      }
     }
     return state
   },
@@ -60,7 +71,7 @@ const initialState = {
   fontSize: 1
 }
 
-// Mutations must be synchronous! Never call these directly!
+// Mutations must be synchronous! Never call these directly, instead use commit()
 // http://vuex.vuejs.org/en/mutations.html
 const mutations = {
   login (state, user) {
@@ -102,16 +113,22 @@ const mutations = {
     const index = state.pending.indexOf(contractID)
     index !== -1 && state.pending.splice(index, 1)
     // calling this will make pubsub subscribe for events on `contractID`!
-    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, { add: contractID })
+    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
   },
   setContractHEAD (state, { contractID, HEAD }) {
     state.contracts[contractID].HEAD = HEAD
   },
   removeContract (state, contractID) {
-    store.unregisterModule(contractID)
-    Vue.delete(state.contracts, contractID)
+    try {
+      store.unregisterModule(contractID)
+      Vue.delete(state.contracts, contractID)
+    } catch (e) {
+      // it's possible this could get triggered if 'removeContract' gets called multiple times
+      // with the same contractID
+      console.warn(`removeContract: ${e.name} attempting to remove ${contractID}:`, e.message)
+    }
     // calling this will make pubsub unsubscribe for events on `contractID`!
-    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, { remove: contractID })
+    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
   },
   deleteMessage (state, hash) {
     const mailboxContract = store.getters.mailboxContract
@@ -124,6 +141,7 @@ const mutations = {
     if (index > -1) { mailboxContract.messages[index].read = true }
   },
   setCurrentGroupId (state, currentGroupId) {
+    // TODO: unsubscribe from events for all members who are not in this group
     state.currentGroupId = currentGroupId
   },
   pending (state, contractID) {
@@ -248,7 +266,7 @@ const actions = {
       // but the state object in scope is a copy that becomes stale if something modifies it
       // like an outside dispatch
       for (const contractID in store.state.contracts) {
-        const type = store.state.contracts[contractID].type
+        const { type } = store.state.contracts[contractID]
         commit('registerContract', { contractID, type })
         await dispatch('syncContractWithServer', contractID)
       }
@@ -282,53 +300,236 @@ const actions = {
     { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object},
     message: GIMessage
   ) {
-    // const clonedState = _.cloneDeep(state)
+    // prepare for any errors
+    const cachedState = _.cloneDeep(state)
+    const contractID = message.contractID()
     try {
-      const contractID = message.contractID()
-      const selector = message.type()
-      const type = CONTRACT_REGEX.exec(selector)[1]
-      const hash = message.hash()
-      const data = message.data()
-      const meta = message.meta()
-      // ensure valid message
-      selectorIsContractOrAction(selector)
       // TODO: verify each message is signed by a group member
       // verify we're expecting to hear from this contract
       if (!state.pending.includes(contractID) && !state.contracts[contractID]) {
-        // TODO: use a global notification system to both display a notification
-        //       and throw an exception and write a log message.
-        return console.error(`NOT EXPECTING EVENT!`, contractID, message)
+        console.error(`[CRITICAL ERROR] NOT EXPECTING EVENT!`, contractID, message)
+        throw new GIErrorUnrecoverable(`not expecting ${message.hash()} ${message.serialize()}`)
       }
+      // the order the following actions are done is critically important!
+      // first we make sure we save this message to the db
+      await handleEvent.addMessageToDB(message)
+      // process the mutation on the state (everything here must be synchronous)
+      handleEvent.processMutation(message)
+      // process any side-effects (these must never result in any mutation to this contract state)
+      await handleEvent.processSideEffects(message)
+    } catch (e) {
+      // For details about the rationale for how error handling works here see these links:
+      // https://gitlab.okturtles.org/okturtles/group-income-simple/snippets/9
+      // https://github.com/okTurtles/group-income-simple/issues/610
+      // https://github.com/okTurtles/group-income-simple/issues/602
+      // TODO: use a global notification system to both display a notification
+      console.error(`[ERROR] exception ${e.name} in handleEvent!`, e.message, e)
+      var updateContractHEAD = false
+      var banUser = false
+      var enterUnrecoverableState = false
+      // handle all error types defined in ./errors.js + ErrorDBConnection
+      if (e instanceof GIErrorUnrecoverable) {
+        console.error(`[CRITICAL ERROR] handleEvent:`, e.message, e.stack)
+        enterUnrecoverableState = true
+        // TODO: allow the GIErrorUnrecoverable class a way to specify a potential manual recovery method
+        //       that can be displayed on the recovery page?
+      } else if (e instanceof GIErrorIgnoreAndBanIfGroup) {
+        banUser = true
+        updateContractHEAD = true
+      } else if (e instanceof GIErrorDropAndReprocess) {
+        dropAllMessagesUntilRefresh = true
+      } else {
+        console.error(`[CRITICAL ERROR] handleEvent: UNKNOWN ERROR ${e.name} SHOULD NEVER HAPPEN:`, e.message, e.stack)
+        enterUnrecoverableState = true
+      }
+      // Take action based on the type of error.
+      // The order of the statements below is very important
+      handleEvent.restoreCachedState(cachedState)
+      // do these after restoreCachedState, to ensure the modifications make it in
+      if (updateContractHEAD) {
+        commit('setContractHEAD', { contractID, HEAD: message.hash() })
+      }
+      if (enterUnrecoverableState) {
+        // TODO: set state machine critical error state
+        console.error(`handleEvent: unrecoverable state unimplemented!`)
+        dropAllMessagesUntilRefresh = true
+      }
+      if (banUser) {
+        await handleEvent.autoBanSenderOfMessage(message, e)
+      }
+    }
+  }
+}
 
-      await sbp('gi.db/log/addEntry', message)
-
+// to make handleEvent() easier to read and reason about, it has been split up into
+// the following functions below, each of which must throw one of the error types
+// defined in ./errors.js if there is any error, with the exception of functions
+// called from within the handleEvent catch() error handler (like restoreCachedState()
+// and autoBanSenderOfMessage() functions).
+const handleEvent = {
+  async addMessageToDB (message: GIMessage) {
+    if (dropAllMessagesUntilRefresh) {
+      throw new GIErrorDropAndReprocess(`ignoring message until page refresh: ${message.type()}`)
+    }
+    try {
+      return await sbp('gi.db/log/addEntry', message)
+    } catch (e) {
+      if (e instanceof ErrorDBMalformed) {
+        throw new GIErrorIgnoreAndBanIfGroup(e.message)
+      } else if (e instanceof ErrorDBConnection) {
+        // we cannot throw GIErrorDropAndReprocess because saving is clearly broken
+        // so we re-throw this special error condition that means we can't do anything
+        throw new GIErrorUnrecoverable(`${e.name} during addMessageToDB!`)
+      } else {
+        // we should never get here, but if we do...
+        throw new GIErrorUnrecoverable(`${e.name} during addMessageToDB! SHOULD NEVER HAPPEN! ${e.message}`)
+      }
+    }
+  },
+  processMutation (message: GIMessage) {
+    var preValidationFinished = false
+    try {
+      const contractID = message.contractID()
+      const selector = message.type()
+      const hash = message.hash()
+      const data = message.data()
+      const meta = message.meta()
+      const type = CONTRACT_REGEX.exec(selector)[1]
+      selectorIsContractOrAction(selector)
+      preValidationFinished = true
       if (message.isFirstMessage()) {
-        commit('registerContract', { contractID, type })
+        store.commit('registerContract', { contractID, type })
       }
-
       const mutation = { data, meta, hash }
-      commit(`${contractID}/processMessage`, { selector, message: mutation })
-
+      // this selector is created by Contract.js
+      store.commit(`${contractID}/processMessage`, { selector, message: mutation })
       // all's good, so update our contract HEAD
-      // TODO: handle malformed message DoS
-      //       https://github.com/okTurtles/group-income-simple/issues/602
-      commit('setContractHEAD', { contractID, HEAD: hash })
-
+      store.commit('setContractHEAD', { contractID, HEAD: hash })
+    } catch (e) {
+      console.error(`processMutation: error ${e.name}`, e)
+      if (e.name.indexOf('GIError') === 0) {
+        throw e // simply rethrow whatever error the contract has decided should be thrown
+      } else if (!(e instanceof TypeValidatorError) && !(e instanceof TypeError)) {
+        if (preValidationFinished) {
+          // this is likely a GUI-related error/bug, so it's safe to save and reprocess later
+          throw new GIErrorDropAndReprocess(`${e.name} during processMutation: ${e.message}`)
+        }
+      }
+      throw new GIErrorIgnoreAndBanIfGroup(`${e.name} during processMutation: ${e.message}`)
+    }
+  },
+  async processSideEffects (message: GIMessage) {
+    try {
+      const contractID = message.contractID()
+      const selector = message.type()
+      const hash = message.hash()
+      // this selector is created by Contract.js
+      if (sbp('sbp/selectors/fn', `${selector}/sideEffect`)) {
+        await sbp(`${selector}/sideEffect`, message)
+      }
       // let any listening components know that we've received, processed, and stored the event
       sbp('okTurtles.events/emit', hash, contractID, message)
       sbp('okTurtles.events/emit', EVENT_HANDLED, contractID, message)
-      sbp('okTurtles.events/emit', selector, contractID, message)
-      // TODO: handle any exception generated by any of the above events
     } catch (e) {
-      console.error('[ERROR] exception in handleEvent!', e.message, e)
-      throw e // TODO: handle this better
-      // TODO: mutations passed to processMessage should throw exceptions
-      //       if there's anything wrong with the message or internal state
-      //       to ensure that none of the event emitters get triggered
-      // See: https://github.com/okTurtles/group-income-simple/issues/602
-      // note that we should be able to recover even if the very first line
-      // fails, e.g. if something like CONTRACT_REGEX.exec(selector)[1]
-      // throws an exception.
+      console.error(`processSideEffects: ${e.name}:`, e)
+      // if an error happens at this point, it's almost certainly not due to malformed data
+      // (since all of the validations successfully passed in processMutation)
+      if (e.name.indexOf('GIError') === 0) {
+        // unlikely to happen but this most likely means the contract's side effect is deciding
+        // for us how to handle the error, so rethrow
+        throw e
+      } else {
+        throw new GIErrorDropAndReprocess(`${e.name} during processSideEffects: ${e.message}`)
+      }
+    }
+  },
+  restoreCachedState (cachedState: Object) {
+    try {
+      console.error(`reverting to previous state!`, {
+        corrupt: JSON.stringify(store.state),
+        reverted: JSON.stringify(cachedState)
+      })
+      store.replaceState(cachedState)
+      // if replaceState resulted in any contracts being added or removed
+      // make sure our web sockets are either subscribed or unsubscribed as needed
+      try {
+        sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, store.state.contracts)
+      } catch (e) {
+        console.error(e.message, e.stack)
+      }
+    } catch (e) {
+      // pretty much f*'d here
+      console.error(`[CRITICAL ERROR] ${e.name} couldn't revert state!`, e.message, e)
+      // TODO: set state machine critical error state
+    }
+  },
+  async autoBanSenderOfMessage (message: GIMessage, error: Object) {
+    try {
+      // If we just joined, we're likely witnessing an old error that was handled
+      // by the existing members, so we shouldn't attempt to participate in voting
+      // in a proposal that has long since passed.
+      if (sbp('okTurtles.data/get', WE_JUST_JOINED)) {
+        console.debug('skipping autoBanSenderOfMessage since WE_JUST_JOINED')
+        return // don't do anything, assume the existing users handled this event
+      }
+      // NOTE: this random delay is here for multiple reasons:
+      //       1. to avoid backend throwing 'bad previousHEAD' error
+      //       https://github.com/okTurtles/group-income-simple/issues/608
+      await _.delay(_.randomIntFromRange(1, 2000))
+      //       2. because we need to make sure that if a proposal has been cast by someone,
+      //       then we are likely to find it in store.state, so we have this random delay
+      //       here a the top, before we iterate store.state[groupID].proposals, and
+      //       3. to avoid weird errors like 'TypeError: "state[(intermediate value)] is undefined"'
+      const username = message.meta().username
+      if (message.type().indexOf('gi.contracts/group/') !== 0) {
+        const contractID = message.contractID()
+        console.warn(`autoBanSenderOfMessage: removing & unsubscribing from ${username} contractID: ${contractID}`)
+        store.commit('removeContract', contractID)
+      }
+      if (username && store.getters.memberProfile(username)) {
+        console.warn(`autoBanSenderOfMessage: autobanning ${username}`)
+        const groupID = store.state.currentGroupId
+        var proposal
+        var proposalHash
+        // find existing proposal if it exists
+        for (const hash in store.state[groupID].proposals) {
+          const prop = store.state[groupID].proposals[hash]
+          if (prop.status === STATUS_OPEN && prop.data.proposalType === PROPOSAL_REMOVE_MEMBER && prop.data.proposalData.member === username) {
+            proposal = prop
+            proposalHash = hash
+            break
+          }
+        }
+        if (proposal) {
+          // cast our vote if we haven't already cast it
+          if (!proposal.votes[store.state.loggedIn.username]) {
+            const vote = await sbp('gi.contracts/group/proposalVote/create',
+              { proposalHash, vote: VOTE_FOR },
+              groupID
+            )
+            await sbp('backend/publishLogEntry', vote)
+          }
+        } else {
+          // create our proposal to ban the user
+          proposal = await sbp('gi.contracts/group/proposal/create',
+            {
+              proposalType: PROPOSAL_REMOVE_MEMBER,
+              proposalData: {
+                member: username,
+                reason: L("Automated ban because they're sending malformed messages resulting in: {error}", { error: error.message })
+              },
+              votingRule: store.getters.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].rule,
+              expires_date_ms: Date.now() + store.getters.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].expires_ms
+            },
+            groupID
+          )
+          await sbp('backend/publishLogEntry', proposal)
+        }
+      }
+    } catch (e) {
+      console.error(`${e.name} during autoBanSenderOfMessage!`, e)
+      // we really can't do much at this point since this is an exception
+      // inside of the exception handler :-(
     }
   }
 }

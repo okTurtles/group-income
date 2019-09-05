@@ -9,6 +9,27 @@ import { GIMessage } from '~/shared/GIMessage.js'
 //       - 'gi.db/log/get'
 //       - 'gi.db/log/set'
 
+export class ErrorDBMalformed extends Error {
+  // ugly boilerplate because JavaScript is stupid
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error#Custom_Error_Types
+  constructor (...params) {
+    super(...params)
+    this.name = this.constructor.name
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor)
+    }
+  }
+}
+export class ErrorDBConnection extends Error {
+  constructor (...params) {
+    super(...params)
+    this.name = this.constructor.name
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor)
+    }
+  }
+}
+
 export default sbp('sbp/selectors/register', {
   'gi.db/log/logHEAD': function (contractID: string): string {
     return `${contractID}-HEAD`
@@ -20,30 +41,45 @@ export default sbp('sbp/selectors/register', {
     return Promise.resolve(sbp('okTurtles.data/set', key, value))
   },
   'gi.db/log/getEntry': async function (hash: string): Promise<GIMessage> {
-    const value: string = await sbp('gi.db/log/get', hash)
-    if (!value) throw new Error(`no entry for ${hash}!`)
-    return GIMessage.deserialize(value)
+    try {
+      const value: string = await sbp('gi.db/log/get', hash)
+      if (!value) throw new Error(`no entry for ${hash}!`)
+      return GIMessage.deserialize(value)
+    } catch (e) {
+      throw new ErrorDBConnection(`${e.name} during getEntry: ${e.message}`)
+    }
   },
   'gi.db/log/addEntry': async function (entry: GIMessage): Promise<string> {
-    const { previousHEAD } = entry.message()
-    var contractID: string = previousHEAD ? entry.message().contractID : entry.hash()
-    if (await sbp('gi.db/log/get', entry.hash())) {
-      console.warn(`[addLogEntry] entry exists: ${entry.hash()}`)
+    try {
+      const { previousHEAD } = entry.message()
+      var contractID: string = previousHEAD ? entry.message().contractID : entry.hash()
+      if (await sbp('gi.db/log/get', entry.hash())) {
+        console.warn(`[addLogEntry] entry exists: ${entry.hash()}`)
+        return entry.hash()
+      }
+      const HEAD = await sbp('gi.db/log/get', sbp('gi.db/log/logHEAD', contractID))
+      if (!entry.isFirstMessage() && previousHEAD !== HEAD) {
+        console.error(`[addLogEntry] bad previousHEAD: ${previousHEAD}! Expected: ${HEAD} for contractID: ${contractID}`)
+        throw new ErrorDBMalformed(`bad previousHEAD: ${previousHEAD}`)
+      }
+      await sbp('gi.db/log/set', sbp('gi.db/log/logHEAD', contractID), entry.hash())
+      console.debug(`[addLogEntry] HEAD for ${contractID} updated to:`, entry.hash())
+      await sbp('gi.db/log/set', entry.hash(), entry.serialize())
       return entry.hash()
+    } catch (e) {
+      if (e.name.indexOf('ErrorDB') === 0) {
+        throw e // throw the specific type of ErrorDB instance
+      }
+      throw new ErrorDBConnection(`${e.name} during addEntry: ${e.message}`)
     }
-    const HEAD = await sbp('gi.db/log/get', sbp('gi.db/log/logHEAD', contractID))
-    if (!entry.isFirstMessage() && previousHEAD !== HEAD) {
-      console.error(`[addLogEntry] bad previousHEAD: ${previousHEAD}! Expected: ${HEAD} for contractID: ${contractID}`)
-      throw new Error(`bad previousHEAD: ${previousHEAD}`)
-    }
-    await sbp('gi.db/log/set', sbp('gi.db/log/logHEAD', contractID), entry.hash())
-    console.debug(`[addLogEntry] HEAD for ${contractID} updated to:`, entry.hash())
-    await sbp('gi.db/log/set', entry.hash(), entry.serialize())
-    return entry.hash()
   },
   'gi.db/log/lastEntry': async function (contractID: string): Promise<GIMessage> {
-    const hash = await sbp('gi.db/log/get', sbp('gi.db/log/logHEAD', contractID))
-    if (!hash) throw new Error(`contract ${contractID} hash no latest hash!`)
-    return sbp('gi.db/log/getEntry', hash)
+    try {
+      const hash = await sbp('gi.db/log/get', sbp('gi.db/log/logHEAD', contractID))
+      if (!hash) throw new Error(`contract ${contractID} hash no latest hash!`)
+      return sbp('gi.db/log/getEntry', hash)
+    } catch (e) {
+      throw new ErrorDBConnection(`${e.name} during lastEntry: ${e.message}`)
+    }
   }
 })

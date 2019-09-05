@@ -1,7 +1,8 @@
 <template lang="pug">
 page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings.groupName')
-  template(#title='') Group Settings
-  template(#description='') Changes to these settings will be visible to all group members
+  //- NOTE: i18n tag doesn't work with 'template'
+  template(#title='') {{ L('Group Settings') }}
+  template(#description='') {{ L('Changes to these settings will be visible to all group members') }}
 
   page-section(title='')
 
@@ -62,7 +63,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
       ) Save changes
 
   page-section(:title='L("Leave Group")')
-    p(v-html="L('This means you will stop having access to the <b>group chat</b> (including direct messages to other group members) and <b>contributions</b>. Re-joining the group is possible, but requires other members to vote and reach an agreement.')")
+    i18n(tag='p' html='This means you will stop having access to the <b>group chat</b> (including direct messages to other group members) and <b>contributions</b>. Re-joining the group is possible, but requires other members to vote and reach an agreement.')
 
     i18n.is-danger.is-outlined(
       tag='button'
@@ -83,8 +84,8 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
 import sbp from '~/shared/sbp.js'
+import { mapGetters } from 'vuex'
 import { LOAD_MODAL } from '@utils/events.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
