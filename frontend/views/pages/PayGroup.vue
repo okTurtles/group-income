@@ -297,7 +297,10 @@ export default {
   margin-top: $spacer;
   &-item {
     padding: $spacer $spacer-sm;
-    border-bottom: 1px solid $general_1;
+
+    &:not(:last-child) {
+      border-bottom: 1px solid $general_1;
+    }
 
     @include tablet {
       display: flex;

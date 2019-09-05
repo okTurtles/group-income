@@ -3,12 +3,12 @@
     :class='{ "is-completed": percent === "100%", "has-marks": hasMarks }'
   )
   .c-bg
-  .c-bar(
-    :style='{ width: percent }'
-  )
   .c-marks(
     v-if="hasMarks"
     :style="marksStyle"
+  )
+  .c-bar(
+    :style='{ width: percent }'
   )
 </template>
 
@@ -27,7 +27,7 @@ export default {
     marksStyle () {
       const color = this.percent === '100%'
         ? this.$store.getters.colors.success_0
-        : this.$store.getters.colors.primary_0
+        : this.$store.getters.colors.general_0
 
       const percent = `${100 / this.max}%`
       const markWidth = '2px'
