@@ -90,7 +90,7 @@ page(
                 :args="{ name: getUserFirstName(user.name) }"
               ) The payment was not received by {name}.
 
-          .c-ctas
+          .buttons.is-start.c-ctas
             router-link.button.is-small.is-outlined(
               v-if='statusIsRejected(user)'
               to='messages/liliabt'
@@ -296,13 +296,14 @@ export default {
 .c-payments {
   margin-top: $spacer;
   &-item {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    align-items: center;
     padding: $spacer $spacer-sm;
     border-bottom: 1px solid $general_1;
-    min-height: 4.7rem; // aligned for when has 1 or 2 lines text.
+
+    @include tablet {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
   }
 
   .c-avatar {
@@ -310,6 +311,7 @@ export default {
     min-width: 1.5rem;
     width: 1.5rem;
     margin-right: $spacer;
+    margin-bottom: $spacer-sm;
 
     @include tablet {
       min-width: 2.5rem;
@@ -319,30 +321,20 @@ export default {
 }
 
 .c-info {
-  display: flex;
-  align-items: center;
-  flex-grow: 1;
-  margin-right: $spacer-sm;
-}
-
-.c-ctas {
-  display: flex;
-  margin: $spacer-sm 0;
-
-  &-sent {
-    margin-left: $spacer-sm;
-
-    @include widescreen {
-      margin-left: $spacer;
-    }
+  @include tablet {
+    display: flex;
+    align-items: center;
+    margin-right: $spacer-sm;
   }
+
 }
 
 .c-ctas {
-  margin: $spacer-xs 0;
+  margin-bottom: $spacer-sm;
 
-  &-send {
-    margin-left: $spacer-sm;
+  @include tablet {
+    margin: 0;
+    padding: 0;
   }
 }
 

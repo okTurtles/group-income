@@ -169,12 +169,23 @@ button,
 }
 
 .buttons {
-  padding-top: 1.5rem;
+  padding-top: $spacer;
   display: flex;
   justify-content: space-between;
 
   &.is-centered {
     justify-content: center;
+  }
+
+  &.is-start {
+    justify-content: flex-start;
+  }
+
+  button,
+  .button {
+    &:not(:last-child) {
+      margin-right: $spacer-sm;
+    }
   }
 }
 
