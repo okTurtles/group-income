@@ -300,7 +300,7 @@ export default {
     flex-wrap: wrap;
     justify-content: flex-end;
     align-items: center;
-    padding: $spacer $spacer-sm $spacer 0;
+    padding: $spacer $spacer-sm;
     border-bottom: 1px solid $general_1;
     min-height: 4.7rem; // aligned for when has 1 or 2 lines text.
   }
