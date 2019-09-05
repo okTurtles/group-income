@@ -21,10 +21,7 @@ page(
       p(:class="{'has-text-success': item.max === item.value}")
         i.icon-check(v-if="item.max === item.value")
         i18n.has-text-1 {{item.label}}
-  div(
-    v-if='!hasPayments'
-    class='c-container-empty'
-  )
+  .c-container-empty(v-if='!hasPayments')
     svg.svg
       use(xlink:href='#svg-receive')
 
@@ -58,63 +55,64 @@ page(
           clipPath#clip0
             path(fill="#fff" d="M0 0h129v131.633H0z")
 
-  .card(v-else)
-    i18n.title.is-3(
-      tag='h3'
-      :args='{ month: "July" }'
-    ) {month} contributions
-    i18n(
-      tag='p'
-      :args='{ amount: "$60" }'
-    ) {amount} in total
+  div(v-else)
+    .card
+      i18n.title.is-3(
+        tag='h3'
+        :args='{ month: paymentStatus.month }'
+      ) {month} contributions
+      i18n.has-text-1(
+        tag='p'
+        :args='{ amount: `${fakeStore.currency}${paymentStatus.amountTotal}` }'
+      ) {amount} in total
 
-    ul.c-payments
-      li.c-payments-item(
-        v-for='(user, index) in fakeStore.usersToPay'
-        :key='user.name'
-      )
-        .c-info
-          avatar.c-avatar(:src='user.avatar')
-          div(role="alert")
-            i18n(
-              tag="p"
-              :args='{ total: `<b>${fakeStore.currency}${user.amount}</b>`, user: `<b>${user.name}</b>`}'
-            ) {total} to {user}
-            i18n.has-text-1(
-              v-if='statusIsPending(user)'
-              :args='{ name: getUserFirstName(user.name) }'
-            ) Waiting for {name} confirmation...
-            i18n.has-text-success(
-              v-if='statusIsCompleted(user)'
-            ) Payment confirmed!
-            i18n.has-text-weight-normal.has-text-warning(
+      ul.c-payments
+        li.c-payments-item(
+          v-for='(user, index) in fakeStore.usersToPay'
+          :key='user.name'
+        )
+          .c-info
+            avatar.c-avatar(:src='user.avatar')
+            div(role="alert")
+              i18n(
+                tag="p"
+                :args='{ total: `<b>${fakeStore.currency}${user.amount}</b>`, user: `<b>${user.name}</b>`}'
+              ) {total} to {user}
+              i18n.has-text-1(
+                v-if='statusIsPending(user)'
+                :args='{ name: getUserFirstName(user.name) }'
+              ) Waiting for {name} confirmation...
+              i18n.has-text-success(
+                v-if='statusIsCompleted(user)'
+              ) Payment confirmed!
+              i18n.has-text-weight-normal.has-text-warning(
+                v-if='statusIsRejected(user)'
+                :args="{ name: getUserFirstName(user.name) }"
+              ) The payment was not received by {name}.
+
+          .c-ctas
+            router-link.button.is-small.is-outlined(
               v-if='statusIsRejected(user)'
-              :args="{ name: getUserFirstName(user.name) }"
-            ) The payment was not received by {name}.
+              to='messages/liliabt'
+            ) {{ L('Send Message...') }}
+            i18n.button.is-small.c-ctas-send(
+              tag='button'
+              key="send"
+              v-if='statusIsToPay(user)'
+              @click='markAsPayed(user)'
+            ) Mark as sent
+            i18n.button.is-small.is-outlined(
+              tag='button'
+              key="cancel"
+              v-if='statusIsPending(user)'
+              @click='cancelPayment(user)'
+            ) Cancel
 
-        .c-ctas
-          router-link.button.is-small.is-outlined(
-            v-if='statusIsRejected(user)'
-            to='messages/liliabt'
-          ) {{ L('Send Message...') }}
-          i18n.button.is-small.c-ctas-send(
-            tag='button'
-            key="send"
-            v-if='statusIsToPay(user)'
-            @click='markAsPayed(user)'
-          ) Mark as sent
-          i18n.button.is-small.is-outlined(
-            tag='button'
-            key="cancel"
-            v-if='statusIsPending(user)'
-            @click='cancelPayment(user)'
-          ) Cancel
-
-  .footer
-    i18n.button.is-small.is-outlined(
-      tag='button'
-      @click="seeHistory"
-    ) See past contributions
+    .c-footer
+      i18n.button.is-small.is-outlined(
+        tag='button'
+        @click="seeHistory"
+      ) See past contributions
 </template>
 
 <script>
@@ -177,13 +175,21 @@ export default {
     hasPayments () {
       return this.fakeStore.usersToPay.length > 0
     },
+    paymentStatus () {
+      const { usersToPay } = this.fakeStore
+
+      return {
+        month: 'July',
+        paymentsTotal: usersToPay.length,
+        sent: usersToPay.reduce((acc, user) => this.statusIsSent(user) ? acc + 1 : acc, 0),
+        confirmed: usersToPay.reduce((acc, user) => this.statusIsCompleted(user) ? acc + 1 : acc, 0),
+        amoutSent: usersToPay.reduce((acc, user) => this.statusIsSent(user) ? acc + user.amount : acc, 0),
+        amountTotal: usersToPay.reduce((acc, user) => acc + user.amount, 0)
+      }
+    },
     paymentSummary () {
-      const { usersToPay, currency } = this.fakeStore
-      const paymentsTotal = usersToPay.length
-      const sent = usersToPay.reduce((acc, user) => this.statusIsSent(user) ? acc + 1 : acc, 0)
-      const confirmed = usersToPay.reduce((acc, user) => this.statusIsCompleted(user) ? acc + 1 : acc, 0)
-      const amoutSent = usersToPay.reduce((acc, user) => this.statusIsSent(user) ? acc + user.amount : acc, 0)
-      const amountTotal = usersToPay.reduce((acc, user) => acc + user.amount, 0)
+      const { currency } = this.fakeStore
+      const { sent, confirmed, amoutSent, amountTotal, paymentsTotal } = this.paymentStatus
 
       return [
         {
@@ -288,6 +294,7 @@ export default {
 }
 
 .c-payments {
+  margin-top: $spacer;
   &-item {
     display: flex;
     flex-wrap: wrap;
