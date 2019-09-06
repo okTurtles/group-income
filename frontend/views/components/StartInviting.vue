@@ -10,7 +10,10 @@ section.card.c-card
         tag="button"
         @click="openModal"
       ) Add members
-      router-link.button(to="/invite") {{L('Invite members')}}
+      router-link.button(
+        to="/invite"
+        data-test='inviteButton'
+      ) {{L('Invite members')}}
 
   // TODO: Build a cleaner way of handling SVGs theme-proof
   svg.c-sprite(
