@@ -16,8 +16,13 @@ form {
 .field {
   max-width: 100%;
   width: 100%;
-  margin-bottom: 38px; // TODO: Is this used?
   margin-bottom: 1rem;
+
+  .helper {
+    display: block;
+    color: $text_1;
+    margin-top: $spacer-xs;
+  }
 }
 
 textarea,
@@ -37,6 +42,7 @@ select,
   font-size: 1rem;
   line-height: 23px;
   outline: none;
+  font-family: inherit;
 
   @mixin placeholder {
     color: $text_1;
@@ -70,6 +76,7 @@ textarea,
   padding-top: 10px;
   padding-bottom: 10px;
   height: auto;
+  min-height: 7.5rem;
   resize: vertical;
 }
 
@@ -87,28 +94,22 @@ textarea,
     -moz-appearance: none;
     appearance: none;
     background-color: transparent;
-    padding-right: 38px;
-    padding-left: 16px;
-    min-width: 98px;
+    padding-right: $spacer-lg;
+    padding-left: $spacer;
+    min-width: 6.5rem;
   }
 
-  &::before,
   &::after {
-    content: "";
-    background-color: $primary_0;
-    width: 9px;
-    height: 2px;
+    content: "\f107"; // angle-down
+    text-rendering: auto;
+    line-height: 1;
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    -moz-osx-font-smoothing: grayscale;
     position: absolute;
-    right: 18px;
     top: 50%;
-    margin-top: -1px;
-    transform-origin: center;
-    transform: rotate(45deg);
-  }
-
-  &::after {
-    transform: rotate(-45deg);
-    right: 13px;
+    right: $spacer;
+    transform: translateY(-50%);
   }
 }
 
@@ -129,17 +130,23 @@ textarea,
     border-right: 1px solid $general_0;
   }
 
-  label {
+  .sufix {
     padding: 0 1rem;
     font-weight: normal;
     font-size: 1rem;
     align-self: center;
+    height: $inputHeight;
+    line-height: $inputHeight;
+    border-left: 1px solid $general_0;
+    white-space: nowrap;
   }
 
   select,
   .select,
   .input {
-    border: 1px solid transparent;
+    border: none;
+    border-radius: 0;
+    border-left: 1px solid $general_1;
 
     &:focus {
       box-shadow: 0 0 0 2px $primary_1;
@@ -185,7 +192,7 @@ textarea,
 
   .is-icon {
     min-width: 40px;
-    height: 43px;
+    height: $inputHeight;
     text-align: center;
     color: $general_0;
     align-items: center;

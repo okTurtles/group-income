@@ -1,39 +1,46 @@
 <template lang='pug'>
   proposal-template(
-    :title='L("Change minimum income")'
-    :rule='{ value: 8, total: 10 }'
+    :title='L("Add new members")'
+    :rule='{ value: 5, total: 10 }'
     :disabled='$v.form.$invalid || ($v.steps[config.steps[currentStep]] && $v.steps[config.steps[currentStep]].$invalid)'
     :maxSteps='config.steps.length'
     :currentStep.sync='currentStep'
     @submit='submit'
   )
+    div(v-if='currentStep === 0' key='0')
+      label.field
+        i18n.label Username
+        .input-combo
+          input.input(
+            type='text'
+            placeholder='Jack Mars'
+            name='mincome'
+            required=''
+            :class="{ 'error': $v.form.member.$error }"
+            v-model='form.member'
+            @keyup.enter='next'
+          )
+      button.link.c-addMember(
+        @click="addNewMember"
+      )
+        i.icon-plus
+        | Add more people
 
-    label.field(v-if='currentStep === 0' key='0')
-      i18n.label New minimum income
-      .input-combo
-        input.input(
-          type='number'
-          placeholder='Amount'
-          name='incomeProvided'
-          min='0'
-          required=''
-          :class="{ 'error': $v.form.incomeProvided.$error }"
-          v-model='form.incomeProvided'
-          @keyup.enter='next'
-        )
-        .sufix {{fakeStore.groupCurrency}}
-      i18n.helper(:args='{value: "$1000"}') Currently {value} monthly.
+      // | TBD in another task
+      // | https://github.com/okTurtles/group-income-simple/issues/609
+      // invite
 </template>
 
 <script>
-import ProposalTemplate from './ProposalTemplate.vue'
+import Invite from '@pages/Invite.vue'
 import { validationMixin } from 'vuelidate'
-import { decimals } from '@view-utils/validators.js'
 import { required } from 'vuelidate/lib/validators'
+import ProposalTemplate from './ProposalTemplate.vue'
 
 export default {
-  name: 'MincomeProposal',
+  name: 'AddMembers',
   components: {
+    Invite,
     ProposalTemplate
   },
   mixins: [
@@ -44,32 +51,28 @@ export default {
       currentStep: 0,
       v: { type: Object },
       form: {
-        incomeProvided: null
+        member: null
       },
       ephemeral: {
         errorMsg: null
       },
       config: {
         steps: [
-          'GroupMincome'
+          'Member'
         ]
-      },
-      fakeStore: {
-        groupCurrency: '$ USD'
       }
     }
   },
   validations: {
     form: {
-      incomeProvided: {
-        required,
-        decimals: decimals(2)
+      member: {
+        required
       }
     },
     // validation groups by route name for steps
     steps: {
-      GroupMincome: [
-        'form.incomeProvided'
+      Member: [
+        'form.member'
       ]
     }
   },
@@ -77,7 +80,7 @@ export default {
     submit (form) {
       console.log(
         'TODO: Logic to Propose Mincome.',
-        'mincome:', this.form.incomeProvided,
+        'mincome:', this.form.member,
         'reason:', form.reason
       )
     }
@@ -86,7 +89,12 @@ export default {
 </script>
 <style lang="scss" scoped>
 @import "../../../assets/style/_variables.scss";
-.c-info {
-  margin-top: $spacer-sm;
+
+.c-addMember {
+  margin-top: $spacer;
+
+  .icon-plus {
+    margin-right: $spacer-sm;
+  }
 }
 </style>

@@ -3,6 +3,7 @@
   .c-group-members-header
     i18n.title.is-4(tag='h4') Members
 
+    // @click="openModal('AddMembers')"
     button.button.is-small.is-outlined(
       data-test='inviteButton'
       @click='invite'
@@ -45,19 +46,26 @@
           )
             | We are waiting for {username} to join the group by using their unique invite link.
 
-      menu-parent(
-        v-else
-      )
+      menu-parent(v-else)
         menu-trigger.is-icon-small
           i.icon-ellipsis-v
 
         // TODO later - be a drawer on mobile
         menu-content.c-actions-content
           ul
-            menu-item(tag='router-link' to="/chat" itemid='hash-1' icon='comment')
-              i18n Send Message
-            menu-item(tag='button' itemid='hash-2' icon='times')
-              i18n Remover member...
+            menu-item(
+              tag='router-link' to="/chat"
+              item-id='message'
+              icon='comment'
+            )
+              i18n Send message
+            menu-item(
+              tag='button'
+              item-id='remove'
+              icon='times'
+              @click="openModal('RemoveMember')"
+            )
+              i18n Remove member
 
   i18n.link(
     tag='button'

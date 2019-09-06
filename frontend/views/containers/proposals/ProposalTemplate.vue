@@ -1,28 +1,46 @@
 <template lang='pug'>
-  modal-template(class='has-background is-centered')
+  modal-template(
+    class='is-centered'
+    :class='{"has-background": !isConfirmation}'
+  )
     template(slot='subtitle')
       i18n New proposal
     template(slot='title')
-      i18n(v-if='isConfirmation') Your proposal was created
-      i18n(v-else) {{ title }}
+      i18n(key='title1' v-if='isConfirmation') Your proposal was created
+      span(v-else) {{ title }}
 
     form
-      transition(name='fade' mode='out-in')
+      transition-group
         slot
 
-        .confirmation(v-if='isConfirmation')
+        label.field(v-if='isReasonStep' key="reason")
+          i18n.label Why are you proposing this change?
+          textarea.textarea(
+            name='changeReason'
+            ref='reason'
+            :placeholder='L("The reason why I\'m proposing this change is...")'
+            maxlength='500'
+          )
+          i18n.helper This is optional.
+
+        .confirmation(v-if='isConfirmation' key="confirmation")
           img(src='/assets/images/group-vote.png' alt='Group vote')
           p(v-html="L('Members of your group will now be asked to vote.</br>You need 8 yes votes for your proposal to be accepted.')")
 
-      .buttons(:class='{ "is-centered": isConfirmation }')
+      transition-group(
+        class="buttons"
+        :class='{ "is-centered": isConfirmation }'
+      )
         button.is-outlined(
+          key="back"
           v-if='!isConfirmation'
           @click.prevent='prev'
           data-test='prevBtn'
         )
           i18n {{ currentStep === 0 ? 'Cancel' : 'Back' }}
 
-        button.is-success(
+        button(
+          key="next"
           v-if='isNextStep'
           ref='next'
           @click.prevent='next'
@@ -33,8 +51,9 @@
           i.icon-arrow-right
 
         i18n.is-success(
+          key="create"
           tag='button'
-          v-if='isLastStep'
+          v-if='isReasonStep'
           ref='finish'
           @click.prevent='submit'
           :disabled='disabled'
@@ -42,6 +61,7 @@
         ) Create Proposal
 
         i18n.is-outlined(
+          key="awesome"
           tag='button'
           v-if='isConfirmation'
           ref='close'
@@ -49,8 +69,10 @@
           data-test='closeBtn'
         ) Awesome
 
-    template(#footer='' v-if='!isConfirmation')
-      i18n(v-if='footer') {{ footer }}
+    template(slot='footer' v-if='!isConfirmation && rule')
+      .c-footer
+        i.icon-vote-yea
+        i18n(html='According to your voting rules, <b>{value} out of {total} members</b> will have to agree with this.' :args='{value: rule.value, total: rule.total}')
 </template>
 
 <script>
@@ -68,8 +90,8 @@ export default {
       type: String,
       required: true
     },
-    footer: {
-      type: String,
+    rule: {
+      type: Object,
       required: true
     },
     disabled: Boolean,
@@ -104,18 +126,20 @@ export default {
     },
     submit () {
       this.next()
-      this.$emit('submit')
+      this.$emit('submit', {
+        reason: this.$refs.reason.value
+      })
     }
   },
   computed: {
     isNextStep () {
-      return this.currentStep < this.maxSteps - 1
+      return this.currentStep <= this.maxSteps - 1
     },
-    isLastStep () {
-      return this.currentStep === this.maxSteps - 1
+    isReasonStep () {
+      return this.currentStep === this.maxSteps
     },
     isConfirmation () {
-      return this.currentStep === this.maxSteps
+      return this.currentStep === this.maxSteps + 1
     }
   }
 }
@@ -130,7 +154,17 @@ export default {
   text-align: center;
 
   img {
+    height: 100px; // TODO SVG
     margin: 0 auto 2rem;
+  }
+}
+
+.c-footer {
+  display: flex;
+
+  .icon-vote-yea {
+    color: $primary_0;
+    margin-right: $spacer;
   }
 }
 </style>

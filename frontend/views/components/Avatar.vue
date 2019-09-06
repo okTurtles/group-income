@@ -99,7 +99,9 @@ export default {
   border-radius: 50%;
   background-color: $general_0;
   object-fit: cover;
+  min-width: 2rem;
   width: 2rem;
+  height: 2rem;
 
   &::after {
     content: "";
