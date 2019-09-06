@@ -1,6 +1,6 @@
 <template lang="pug">
 page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
-  template(#title='') Contributions
+  template(#title='') {{ L('Contributions') }}
 
   section.card
     i18n(tag='h2' class='card-header') Receiving

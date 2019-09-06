@@ -1,6 +1,6 @@
 <template lang="pug">
 page(pageTestName='invite' pageTestHeaderName='invite')
-  template(#title='') Invite
+  template(#title='') {{ L('Invite') }}
 
   .card
     p(
