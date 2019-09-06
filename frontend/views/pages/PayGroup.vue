@@ -3,7 +3,7 @@ page(
   pageTestName='payGroupPage'
   pageTestHeaderName='payGroupTitle'
 )
-  template(#title='') Pay Group
+  template(#title='') {{ L('Pay Group') }}
 
   template(#sidebar=''
     v-if='hasPayments'
@@ -12,7 +12,7 @@ page(
       v-for='(item, index) in paymentSummary'
       :key='index'
     )
-      i18n.title.is-4(tag="h4") {{item.title}}
+      h4.title.is-4 {{item.title}}
       progress-bar.c-progress(
         :max='item.max'
         :value='item.value'
@@ -20,7 +20,7 @@ page(
       )
       p(:class="{'has-text-success': item.max === item.value}")
         i.icon-check(v-if="item.max === item.value")
-        i18n.has-text-1 {{item.label}}
+        .has-text-1 {{item.label}}
   .c-container-empty(v-if='!hasPayments')
     svg.svg
       use(xlink:href='#svg-receive')
