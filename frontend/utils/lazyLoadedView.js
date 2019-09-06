@@ -7,6 +7,8 @@ Vue.component('PasswordModal', () => import('../views/containers/modals/Password
 Vue.component('LeaveGroupModal', () => import('../views/containers/modals/LeaveGroup.vue'))
 Vue.component('DeleteGroup', () => import('../views/containers/modals/DeleteGroup.vue'))
 Vue.component('GroupMembersList', () => import('../views/containers/modals/GroupMembersList.vue'))
+Vue.component('InviteByLink', () => import('../views/containers/modals/InviteByLink.vue'))
+
 Vue.component('AddMembers', () => import('../views/containers/proposals/AddMembers.vue'))
 Vue.component('MincomeProposal', () => import('../views/containers/proposals/Mincome.vue'))
 Vue.component('PayGroupHistory', () => import('../views/containers/modals/PayGroupHistory.vue'))

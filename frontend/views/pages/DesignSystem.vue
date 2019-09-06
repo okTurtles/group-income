@@ -179,6 +179,7 @@ page(
               i.icon-heart icon-heart
               i.icon-info icon-info
               i.icon-info-circle icon-info-circle
+              i.icon-link icon-link
               i.icon-lock icon-lock
               i.icon-minus-circle icon-minus-circle
               i.icon-paper-plane icon-paper-plane

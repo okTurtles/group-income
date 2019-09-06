@@ -2,6 +2,8 @@
 page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings.groupName')
   template(#title='') {{ groupSettings.groupName }}
 
+  start-inviting(v-if="groupMembersCount === 1")
+
   page-section(title='This months overview')
     overview
 
@@ -20,7 +22,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
 
   template(#sidebar='')
     groups-min-income
-    group-members
+    group-members(v-if="groupMembersCount > 10")
     group-purpose
 </template>
 
@@ -33,6 +35,7 @@ import Overview from '@containers/Overview.vue'
 import Proposals from '@containers/Proposals.vue'
 // import GroupPledgesGraph from '@containers/GroupPledgesGraph.vue'
 import ProgressOverview from '@components/ProgressOverview.vue'
+import StartInviting from '@components/StartInviting.vue'
 // import SupportHistory from '@components/Graphs/SupportHistory.vue'
 // import GroupSettings from '@components/GroupSettings.vue'
 import GroupsMinIncome from '@containers/sidebar/GroupsMinIncome.vue'
@@ -47,7 +50,8 @@ export default {
     ]),
     ...mapGetters([
       'groupSettings',
-      'groupsByName'
+      'groupsByName',
+      'groupMembersCount'
     ])
   },
   components: {
@@ -61,7 +65,8 @@ export default {
     // GroupSettings,
     GroupsMinIncome,
     GroupMembers,
-    GroupPurpose
+    GroupPurpose,
+    StartInviting
   }
 }
 </script>
