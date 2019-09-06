@@ -269,21 +269,19 @@ DefineContract({
         }
       }
     },
-    ...(
-      process.env.NODE_ENV === 'development' ? {
-        'gi.contracts/group/malformedMutation': {
-          validate: objectOf({ errorType: string }),
-          process (state, { data }) {
-            const ErrorType = Errors[data.errorType]
-            if (ErrorType) {
-              throw new ErrorType('malformedMutation!')
-            } else {
-              throw new Error(`unknown error type: ${data.errorType}`)
-            }
+    ...(process.env.NODE_ENV === 'development' ? {
+      'gi.contracts/group/malformedMutation': {
+        validate: objectOf({ errorType: string }),
+        process (state, { data }) {
+          const ErrorType = Errors[data.errorType]
+          if (ErrorType) {
+            throw new ErrorType('malformedMutation!')
+          } else {
+            throw new Error(`unknown error type: ${data.errorType}`)
           }
         }
-      } : {}
-    )
+      }
+    } : {})
     // TODO: remove group profile when leave group is implemented
   }
 })

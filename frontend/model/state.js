@@ -39,12 +39,12 @@ export function selectorIsContractOrAction (sel: string) {
 sbp('sbp/selectors/register', {
   'state/latestContractState': async (contractID: string) => {
     let events = await sbp('backend/eventsSince', contractID, contractID)
+    let state = {}
     events = events.map(e => GIMessage.deserialize(e))
-    var state = {}
     for (const e of events) {
-      selectorIsContractOrAction(e.type()) // TODO: handle error if this throws
       const stateCopy = _.cloneDeep(state)
       try {
+        selectorIsContractOrAction(e.type())
         sbp(e.type(), state, { data: e.data(), meta: e.meta(), hash: e.hash() })
       } catch (err) {
         if (!(err instanceof GIErrorUnrecoverable)) {

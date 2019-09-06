@@ -24,7 +24,7 @@ import Mailbox from '@pages/Mailbox.vue'
 import Vote from '@pages/Vote.vue'
 import GroupSettings from '@pages/GroupSettings.vue'
 import GroupWelcome from '@pages/GroupWelcome.vue'
-import ErrorTesting from '@pages/ErrorTesting.vue'
+import L from '@view-utils/translations.js'
 
 Vue.use(Router)
 
@@ -72,59 +72,57 @@ var router = new Router({
       path: '/',
       component: Home,
       name: 'home',
-      meta: { title: 'Group Income' }, // page title. see issue #45
+      meta: { title: L('Group Income') }, // page title. see issue #45
       beforeEnter: createEnterGuards(homeGuard)
     },
     {
       path: '/design-system',
       component: DesignSystem,
       name: DesignSystem.name,
-      meta: { title: 'Design System' }
+      meta: { title: L('Design System') }
       // beforeEnter: createEnterGuards(designGuard)
     },
     {
       path: '/new-group',
       component: CreateGroup,
       name: CreateGroup.name,
-      meta: {
-        title: 'Start A Group'
-      },
+      meta: { title: L('Start A Group') },
       beforeEnter: createEnterGuards(loginGuard),
       children: [
         {
           path: 'name',
           name: GroupName.name,
-          meta: { title: 'Start A Group - Name Your Group' },
+          meta: { title: L('Start A Group - Name Your Group') },
           component: GroupName
         },
         {
           path: 'purpose',
           name: GroupPurpose.name,
-          meta: { title: 'Start A Group - Group Purpose' },
+          meta: { title: L('Start A Group - Group Purpose') },
           component: GroupPurpose
         },
         {
           path: 'income',
           name: GroupMincome.name,
-          meta: { title: 'Start A Group - Minimum Income' },
+          meta: { title: L('Start A Group - Minimum Income') },
           component: GroupMincome
         },
         {
           path: 'rules',
           name: GroupRules.name,
-          meta: { title: 'Start A Group - Rules' },
+          meta: { title: L('Start A Group - Rules') },
           component: GroupRules
         },
         {
           path: 'privacy',
           name: GroupPrivacy.name,
-          meta: { title: 'Start A Group - Privacy' },
+          meta: { title: L('Start A Group - Privacy') },
           component: GroupPrivacy
         },
         {
           path: 'invitees',
           name: GroupInvitees.name,
-          meta: { title: 'Start A Group - Invite Members' },
+          meta: { title: L('Start A Group - Invite Members') },
           component: GroupInvitees
         }
       ]
@@ -133,36 +131,26 @@ var router = new Router({
       path: '/welcome',
       component: GroupWelcome,
       name: GroupWelcome.name,
-      meta: { title: 'Your Group Created' },
+      meta: { title: L('Your Group Created') },
       beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '/dashboard',
       component: GroupDashboard,
       name: GroupDashboard.name,
-      meta: { title: 'Group Dashboard' },
+      meta: { title: L('Group Dashboard') },
       beforeEnter: createEnterGuards(loginGuard)
     },
-    // NOTE: do not delete this! Event though we no longer use it,
-    //       we keep it around to demonstrate how to asynchronously
-    //       load a route using import() function
-    // {
-    //   path: '/user-group',
-    //   component: () => import('../views/UserGroup.vue'),
-    //   meta: {
-    //     title: 'Your Group'
-    //   }
-    // },
     {
       path: '/contributions',
       component: Contributions,
-      meta: { title: 'Contributions' },
+      meta: { title: L('Contributions') },
       beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '/pay-group',
       component: PayGroup,
-      meta: { title: 'Pay Group' },
+      meta: { title: L('Pay Group') },
       beforeEnter: createEnterGuards(loginGuard)
     },
     /* Guards need to be created for any route that should not be directly accessed by url */
@@ -170,21 +158,21 @@ var router = new Router({
       path: '/invite',
       name: Invite.name,
       component: Invite,
-      meta: { title: 'Invite Group Members' },
+      meta: { title: L('Invite Group Members') },
       beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     {
       path: '/mailbox',
       name: Mailbox.name,
       component: Mailbox,
-      meta: { title: 'Mailbox' },
+      meta: { title: L('Mailbox') },
       beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '/messages',
       name: 'Messages',
       component: Messages,
-      meta: { title: 'Messages' },
+      meta: { title: L('Messages') },
       beforeEnter: createEnterGuards(loginGuard)
     },
     {
@@ -200,14 +188,14 @@ var router = new Router({
       path: '/group-chat',
       component: GroupChat,
       name: 'GroupChat',
-      meta: { title: 'Group Chat' },
+      meta: { title: L('Group Chat') },
       beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '/group-settings',
       component: GroupSettings,
       name: 'GroupSettings',
-      meta: { title: 'Group Seettings' },
+      meta: { title: L('Group Seettings') },
       beforeEnter: createEnterGuards(loginGuard)
     },
     {
@@ -220,7 +208,7 @@ var router = new Router({
       path: '/join',
       name: Join.name,
       component: Join,
-      meta: { title: 'Join a Group' },
+      meta: { title: L('Join a Group') },
       // beforeEnter: createEnterGuards(loginGuard, mailGuard)
       beforeEnter: createEnterGuards(loginGuard)
     },
@@ -228,15 +216,15 @@ var router = new Router({
       path: '/vote',
       name: Vote.name,
       component: Vote,
-      meta: { title: 'Vote on a Proposal' },
+      meta: { title: L('Vote on a Proposal') },
       beforeEnter: createEnterGuards(loginGuard)
     },
-    {
+    process.env.NODE_ENV === 'development' ? {
       path: '/error-testing',
-      name: ErrorTesting.name,
-      component: ErrorTesting,
-      meta: { title: 'Error Testing' }
-    },
+      name: 'ErrorTesting',
+      component: () => import('../views/pages/ErrorTesting.vue'),
+      meta: { title: L('Error Testing') }
+    } : {},
     {
       path: '*',
       redirect: '/'
