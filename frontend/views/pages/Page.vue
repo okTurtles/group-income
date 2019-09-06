@@ -54,7 +54,7 @@ export default {
 @import "../../assets/style/_variables.scss";
 
 $pagePadding: 1rem;
-$pagePaddingTablet: 24px;
+$pagePaddingTablet: 1.5rem;
 $pagePaddingDesktop: 5.5rem;
 
 .p-no-sidebar {
@@ -90,10 +90,9 @@ $pagePaddingDesktop: 5.5rem;
 
 .p-main {
   grid-area: p-main;
-  padding-left: $spacer;
-  padding-right: $spacer;
-  margin: 0 auto;
-  max-width: 43rem;
+  margin-left: $spacer;
+  margin-right: $spacer;
+  max-width: 50rem;
   @include overflow-touch;
 
   &.full-width {
@@ -101,12 +100,13 @@ $pagePaddingDesktop: 5.5rem;
   }
 
   @include tablet {
-    margin-left: 0;
-    padding-left: $pagePaddingTablet;
+    margin-right: $pagePaddingTablet;
+    margin-left: $pagePaddingTablet;
   }
 
   @include widescreen {
-    padding-left: $pagePaddingDesktop;
+    margin-right: $spacer-lg;
+    margin-left: $pagePaddingDesktop;
   }
 }
 

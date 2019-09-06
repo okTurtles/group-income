@@ -1,6 +1,6 @@
 <template lang="pug">
 page(pageTestName='dashboard' pageTestHeaderName='groupName')
-  template(#title='') Mailbox
+  template(#title='') {{ L('Mailbox') }}
   template(#sidebar='')
     i18n(tag='h3') Menu
     ul

@@ -2,7 +2,7 @@
 //- test
 loading(theme='fullView' v-if='!ephemeral.contract.settings.groupName')
 page(pageTestName='dashboard' pageTestHeaderName='groupName' v-else='')
-  template(#title='') You&rsquo;ve been invited to join a group!
+  template(#title='') {{ L("You've been invited to join a group!") }}
   .card
     h1 {{ephemeral.contract.settings.groupName}}
     p {{ephemeral.contract.settings.sharedValues}}
