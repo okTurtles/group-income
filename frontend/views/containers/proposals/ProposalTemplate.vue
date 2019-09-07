@@ -17,7 +17,6 @@
         textarea.textarea(
           name='changeReason'
           ref='reason'
-          :placeholder='L("The reason why I\'m proposing this change is...")'
           maxlength='500'
         )
         i18n.helper This is optional.

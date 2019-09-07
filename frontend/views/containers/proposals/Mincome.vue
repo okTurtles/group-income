@@ -13,7 +13,6 @@
       .input-combo
         input.input(
           type='number'
-          placeholder='Amount'
           name='incomeProvided'
           min='0'
           required=''

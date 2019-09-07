@@ -19,7 +19,6 @@
           v-model='form.name'
           @keyup.enter='login'
           @input='$v.form.name.$touch()'
-          placeholder='username'
           ref='username'
           autofocus
           data-test='loginName'

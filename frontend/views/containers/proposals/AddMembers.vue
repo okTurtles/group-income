@@ -15,7 +15,6 @@
         .input-combo
           input.input(
             type='text'
-            placeholder='Jack Mars'
             name='mincome'
             required=''
             :class="{ 'error': $v.form.member.$error }"
