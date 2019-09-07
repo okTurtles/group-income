@@ -48,22 +48,6 @@ export default {
   height: 100%;
   width: 100%;
   opacity: 1;
-
-  ::v-deep .settings-subtitle {
-    margin-bottom: 24px;
-    font-weight: bold;
-  }
-
-  ::v-deep .settings-title {
-    display: none;
-    font-weight: bold;
-
-    @include tablet {
-      display: block;
-      top: -2.6rem;
-      position: absolute;
-    }
-  }
 }
 
 .settings-container {

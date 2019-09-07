@@ -31,12 +31,11 @@ const SBP_BASE_SELECTORS = {
   'sbp/selectors/register': function (sels: {[string]: Function}) {
     var registered = []
     for (const selector in sels) {
-      // TODO: debug log (using an SBP logging facility) if we're already registered
-      if (!selectors[selector]) {
+      if (selectors[selector]) {
+        (console.warn || console.log)(`[SBP WARN]: not registering already registered selector: ${selector}`)
+      } else if (typeof sels[selector] === 'function') {
         selectors[selector] = sels[selector]
         registered.push(selector)
-      } else {
-        (console.warn || console.log)(`[SBP WARN]: not registering already registered selector: ${selector}`)
       }
     }
     return registered

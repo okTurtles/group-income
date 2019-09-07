@@ -2,8 +2,8 @@
 //- test
 loading(theme='fullView' v-if='!ephemeral.contract.settings.groupName')
 page(pageTestName='dashboard' pageTestHeaderName='groupName' v-else='')
-  template(#title='') You&rsquo;ve been invited to join a group!
-  .p-section
+  template(#title='') {{ L("You've been invited to join a group!") }}
+  .card
     h1 {{ephemeral.contract.settings.groupName}}
     p {{ephemeral.contract.settings.sharedValues}}
 
@@ -33,6 +33,7 @@ import Page from './Page.vue'
 import Bars from '@components/Graphs/Bars.vue'
 import Loading from '@components/Loading.vue'
 import MembersCircle from '@components/MembersCircle.vue'
+import { WE_JUST_JOINED } from '@model/constants.js'
 
 export default {
   name: 'Join',
@@ -84,7 +85,9 @@ export default {
         // let the group know we've accepted their invite
         await sbp('backend/publishLogEntry', acceptance)
         // sync the group's contract state
+        sbp('okTurtles.data/set', WE_JUST_JOINED, true)
         await sbp('state/vuex/dispatch', 'syncContractWithServer', this.$route.query.groupId)
+        setTimeout(() => sbp('okTurtles.data/delete', WE_JUST_JOINED), 1000)
         // after syncing, we can set the current group
         this.$store.commit('setCurrentGroupId', this.$route.query.groupId)
         this.$router.push({ path: '/' })

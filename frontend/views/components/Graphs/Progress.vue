@@ -1,11 +1,14 @@
 <template lang="pug">
-.c-progress
-  .c-primary(
-    :style='{ width: primary + "%" }'
+.c-progress(
+    :class='{ "is-completed": percent === "100%", "has-marks": hasMarks }'
   )
-  .c-secondary(
-    v-if='secondary'
-    :style='{ width: secondary + "%" }'
+  .c-bg
+  .c-marks(
+    v-if="hasMarks"
+    :style="marksStyle"
+  )
+  .c-bar(
+    :style='{ width: percent }'
   )
 </template>
 
@@ -13,8 +16,32 @@
 export default {
   name: 'ProgressBar',
   props: {
-    primary: Number,
-    secondary: Number
+    max: Number,
+    value: Number,
+    hasMarks: Boolean
+  },
+  computed: {
+    percent () {
+      return `${100 * this.value / this.max}%`
+    },
+    marksStyle () {
+      const color = this.percent === '100%'
+        ? this.$store.getters.colors.success_0
+        : this.$store.getters.colors.general_0
+
+      const percent = `${100 / this.max}%`
+      const markWidth = '2px'
+      const gap = `calc(${percent} - ${markWidth})`
+
+      return {
+        background: `repeating-linear-gradient(to right,
+          transparent 0,
+          transparent ${gap},
+          ${color} ${gap},
+          ${color} ${percent}
+        )`
+      }
+    }
   }
 }
 </script>
@@ -24,40 +51,64 @@ export default {
 
 .c-progress {
   position: relative;
-  width: 100%;
-  height: $spacer-xs;
-  background-color: $primary_2;
-  margin-top: 1rem;
+  height: $spacer-sm;
+
+  &.has-marks {
+    height: $spacer;
+  }
 }
 
-.c-primary,
-.c-secondary {
+.c-bg,
+.c-bar {
   position: absolute;
-  top: 0;
+  width: 100%;
+  height: $spacer-sm;
+  top: 50%;
   left: 0;
-  height: 100%;
+  transform: translateY(-50%);
+  border-radius: $spacer-sm;
+}
+
+.c-bg {
+  background-color: $general_0;
+}
+
+.c-bar {
+  background-color: $primary_0;
   // Animation to modify the bar
   transition: width 450ms ease-in-out;
   // Animation to show up the bar
   transform: scaleX(0);
   transform-origin: 0 0;
+  animation: progress 700ms ease-out 350ms forwards;
+
+  .is-completed & {
+    background-color: $success_0;
+  }
+
+  .has-marks:not(.is-completed) & {
+    border-radius: $spacer-sm 0 0 $spacer-sm;
+  }
 }
 
-.c-primary {
-  background-color: $primary_0;
-  // this bar is slower: starts sooner and ends later
-  animation: progress 700ms ease-in-out 450ms forwards;
-}
+.c-marks {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
 
-.c-secondary {
-  background-color: $success_0;
-  animation: progress 500ms ease-in-out 550ms forwards;
+  // hide last marker
+  $edge: calc(100% - 2px);
+  clip-path: polygon(0 0, $edge 0, $edge 100%, 0 100%);
 }
 
 @keyframes progress {
+  from {
+    transform: translateY(-50%) scaleX(0);
+  }
   to {
-    transform: scaleX(1);
-    opacity: 1;
+    transform: translateY(-50%) scaleX(1);
   }
 }
 </style>

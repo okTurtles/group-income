@@ -1,27 +1,31 @@
+'use strict'
+
+import L from '@view-utils/translations.js'
+
 export default {
   activeTab: 3,
   settings: [{
-    legend: 'User settings',
+    legend: L('User settings'),
     links: [
       {
-        title: 'My account',
+        title: L('My account'),
         url: 'my-account',
         index: 0
       }, {
-        title: 'Privacy & Safety',
+        title: L('Privacy & Safety'),
         url: 'privacy-safety',
         index: 1
       }
     ]
   }, {
-    legend: 'App settings',
+    legend: L('App settings'),
     links: [
       {
-        title: 'Notifications',
+        title: L('Notifications'),
         url: 'notifications',
         index: 2
       }, {
-        title: 'Appearance',
+        title: L('Appearance'),
         url: 'appearance',
         index: 3
       }
@@ -29,12 +33,12 @@ export default {
   }, {
     links: [
       {
-        title: 'Changelog',
+        title: L('Changelog'),
         url: 'changelog',
         index: 4
       },
       {
-        title: 'Log Out',
+        title: L('Log Out'),
         url: 'logout',
         action: 'logout'
       }

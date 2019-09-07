@@ -132,7 +132,7 @@ export default {
       this.ephemeral.isActive = !this.ephemeral.isActive
     },
     enableTimeTravel (evt) {
-      if (evt.shiftKey) {
+      if (evt.shiftKey && process.env.NODE_ENV !== 'production') {
         console.debug('enable time travel!')
         this.ephemeral.timeTravelComponentName = 'TimeTravel'
       }
@@ -176,7 +176,7 @@ export default {
 
 .c-navigation-separator {
   text-align: center;
-  margin: 1.5rem;
+  margin: 1.5rem 1.5rem 0 1.5rem;
   border-top: 1px solid $general_0;
   padding-top: 1.5rem;
 }

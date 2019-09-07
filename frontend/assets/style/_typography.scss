@@ -107,14 +107,13 @@ header,
   font-weight: bold;
 }
 
-header p,
 .subtitle {
   font-family: "Poppins";
   text-transform: uppercase;
   letter-spacing: 0.1px;
   font-weight: normal;
   font-size: $size-5; // 12px
-  line-height: 1rem; // 16px
+  line-height: 1rem;
   color: $text_1;
 }
 
@@ -132,7 +131,7 @@ small {
   font-size: 0.75rem; // 12px
 }
 
-.has-bold {
+.has-text-bold {
   font-weight: 600;
 }
 

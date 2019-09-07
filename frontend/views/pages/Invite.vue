@@ -1,8 +1,8 @@
 <template lang="pug">
 page(pageTestName='invite' pageTestHeaderName='invite')
-  template(#title='') Invite
+  template(#title='') {{ L('Invite') }}
 
-  .p-section
+  .card
     p(
       v-if='form.success'
       data-test='notifyInvitedSuccess'

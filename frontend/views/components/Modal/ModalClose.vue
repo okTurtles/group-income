@@ -17,7 +17,7 @@ export default {
 .c-modal-close {
   position: absolute;
   right: 1rem;
-  top: 1rem;
+  top: 1.375rem;
   z-index: 4;
   height: 32px;
   min-height: 32px;
@@ -29,10 +29,10 @@ export default {
   -moz-appearance: none;
   -webkit-appearance: none;
   cursor: pointer;
-  background-color: #F5F5F5;
+  background-color: $general_1;
 
   @include tablet {
-    background-color: #f1f1f1;
+    background-color: $background;
     top: 24px;
     right: 24px;
     height: 40px;
@@ -46,7 +46,7 @@ export default {
 
   &::before,
   &::after {
-    background-color: $text_1;
+    background-color: $text_0;
     content: "";
     display: block;
     position: absolute;
@@ -57,10 +57,6 @@ export default {
     transition: transform 0.15s ease-in;
     transform: translateX(-50%) translateY(-50%) rotate(45deg);
     transform-origin: center center;
-
-    @include desktop {
-      background-color: $text_0;
-    }
   }
 
   &::after {

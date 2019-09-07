@@ -1,6 +1,6 @@
 <template lang="pug">
 page(pageTestName='dashboard' pageTestHeaderName='groupName')
-  template(#title='') Mailbox
+  template(#title='') {{ L('Mailbox') }}
   template(#sidebar='')
     i18n(tag='h3') Menu
     ul
@@ -25,10 +25,8 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
             | {{ $store.getters.unreadMessageCount }}
 
   article(v-if="ephemeral.mode === 'Compose'")
-    .p-section-header
-      i18n(tag='h3') New Message
-
-    .p-section
+    .card
+      i18n(tag='h3' class='card-header') New Message
       .field
         i18n.label(tag='label') To:
         .input-combo
@@ -79,18 +77,18 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
         ) Send
 
   article(v-if="ephemeral.mode === 'Read'")
-    .p-section-header
-      div
-        strong Type:
-        | &nbsp;{{ ephemeral.currentMessage.data.messageType }}
-      div
-        strong Sent:
-        | &nbsp;{{ formatDate(ephemeral.currentMessage.meta.createdDate) }}
-      div
-        strong From:
-        | &nbsp;{{ ephemeral.currentMessage.data.from }}
 
-    .p-section
+    .card
+      .card-header
+        div
+          strong Type:
+          | &nbsp;{{ ephemeral.currentMessage.data.messageType }}
+        div
+          strong Sent:
+          | &nbsp;{{ formatDate(ephemeral.currentMessage.meta.createdDate) }}
+        div
+          strong From:
+          | &nbsp;{{ ephemeral.currentMessage.data.from }}
       p(
         style='display: block; word-wrap: break-word;'
       ) {{ephemeral.currentMessage.data.message}}
@@ -110,10 +108,8 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
         ) Delete
 
   article(v-if="ephemeral.mode === 'Inbox' && Object.keys(proposals).length")
-    .p-section-heading
-
-    .p-section
-      i18n(tag='h3') Proposals
+    .card
+      i18n(tag='h3' class='card-header') Proposals
 
       .c-message(v-for='(proposal, hash) in proposals' :key='hash')
         avatar(src='/assets/images/default-avatar.png' alt='' @click='respondToProposal(hash)')
@@ -130,8 +126,8 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
             | &nbsp;{{ proposal.meta.username }}
 
   article(v-if="ephemeral.mode === 'Inbox'" data-test='inbox')
-    .p-section
-      i18n(tag='h3') Inbox
+    .card
+      i18n(tag='h3' class='card-header') Inbox
 
       .c-message(v-for='(message, index) in inbox' :key='`inbox-message-${index}`')
         avatar(

@@ -1,10 +1,8 @@
 <template lang='pug'>
   .settings-container
-    i18n.settings-title(tag='h2') My account
+    p.username @{{ userName }}
 
-    p.username.is-size-6 @{{ userName }}
-
-    section.section
+    section.card
       form(
         ref='ProfileForm'
         name='ProfileForm'
@@ -21,7 +19,10 @@
 
         .avatar(:class="{ error: $v.form.picture.$error }")
           label(for='profilePicture')
-            avatar(:src='userPicture')
+            avatar(
+              :src='userPictureInitial'
+              ref="picture"
+            )
             i18n.link Change avatar
 
           input.profilePictureInput#profilePicture(
@@ -29,7 +30,6 @@
             name='profilePicture'
             accept='image/*'
             @change='fileChange($event.target.files)'
-            @input='$v.form.picture.$touch()'
             placeholder='http://'
             data-test='profilePicture'
           )
@@ -93,14 +93,14 @@
             type='submit'
             data-test='saveAccount'
           ) Save account changes
-    hr
-    section.section
+
+    section.card
       form(
         ref='DeleteProfileForm'
         name='DeleteProfileForm'
         @submit.prevent='save'
       )
-        i18n.label(tag='label') Delete account
+        i18n(tag='h3' class='card-header') Delete account
         p
           i18n Deleting your account will erase all your data, and remove you from the groups you belong to.
           i18n.is-danger This action cannot be undone.
@@ -115,14 +115,13 @@
 
 <script>
 import { validationMixin } from 'vuelidate'
-import { email, helpers } from 'vuelidate/lib/validators'
+import { email } from 'vuelidate/lib/validators'
 import { LOAD_MODAL } from '@utils/events.js'
 import { cloneDeep } from '@utils/giLodash.js'
+import imageUpload from '@utils/imageUpload.js'
 import Avatar from '@components/Avatar.vue'
 import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
-
-const url = helpers.regex('url', /^https?:\/\/[^\s/$.?#].[^\s]*$/i)
 
 export default {
   name: 'UserProfile',
@@ -143,13 +142,14 @@ export default {
       },
       ephemeral: {
         errorMsg: null,
+        newPicture: false,
         profileSaved: false
       }
     }
   },
   validations: {
     form: {
-      picture: { url },
+      picture: {},
       email: { email }
     }
   },
@@ -157,8 +157,8 @@ export default {
     attributes () {
       return this.$store.getters.currentUserIdentityContract.attributes || {}
     },
-    userPicture () {
-      return this.form.picture || this.attributes.picture
+    userPictureInitial () {
+      return this.attributes.picture
     },
     userName () {
       return this.$store.state.loggedIn.username
@@ -170,9 +170,20 @@ export default {
       return false
     },
     async save () {
+      if (this.ephemeral.newPicture) {
+        try {
+          this.form.picture = await imageUpload(this.form.picture)
+          this.ephemeral.newPicture = false
+        } catch (error) {
+          console.error(error)
+          this.ephemeral.errorMsg = L('Failed to upload user picture')
+          return false
+        }
+      }
+
       try {
         this.ephemeral.profileSaved = false
-        var attrs = {}
+        const attrs = {}
         for (const key in this.form) {
           if (this.form[key] !== this.attributes[key]) {
             attrs[key] = this.form[key]
@@ -191,11 +202,10 @@ export default {
       }
     },
     fileChange (fileList) {
-      // TODO: while respecting DRY, handle this in the same way that it's handled
-      //       in CreateGroup.vue
       if (!fileList.length) return
-      // Temp
-      this.form.picture = URL.createObjectURL(fileList[0])
+      this.form.picture = fileList[0]
+      this.ephemeral.newPicture = true
+      this.$refs.picture.setFromBlob(fileList[0])
     }
   }
 }
@@ -207,6 +217,7 @@ export default {
 .username {
   display: none;
   margin-bottom: $spacer-lg;
+  margin-top: $spacer-sm;
   color: $text_1;
 
   @include tablet {
@@ -261,17 +272,6 @@ export default {
   font-weight: bold;
   padding-top: 5px;
   padding-bottom: 5px;
-}
-
-// TODO confirm button size with
-// Default size defined by A11Y
-.button {
-  font-size: 15px;
-  padding: 0 19px;
-  font-weight: normal;
-  height: 36px;
-  min-height: 36px;
-  letter-spacing: 0.6px;
 }
 
 .icon-check {

@@ -1,11 +1,10 @@
 <template lang="pug">
 page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
-  template(#title='') Contributions
+  template(#title='') {{ L('Contributions') }}
 
-  .p-section-header
-    i18n(tag='h2') Receiving
+  section.card
+    i18n(tag='h2' class='card-header') Receiving
 
-  section.p-section
     ul.c-ul
       contribution(
         v-for='(contribution, index) in fakeStore.receiving.nonMonetary'
@@ -26,10 +25,8 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
         text-who(:who='fakeStore.groupMembersPledging')
         i18n each month
 
-  .p-section-header
-    i18n(tag='h2') Giving
-
-  section.p-section
+  section.card
+    i18n(tag='h2' class='card-header') Giving
     ul
       contribution.has-text-weight-bold(
         v-for='(contribution, index) in fakeStore.giving.nonMonetary'

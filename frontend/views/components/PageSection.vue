@@ -1,7 +1,6 @@
 <template lang="pug">
-section.p-section
-  h3.title(v-if='title')
-    i18n {{title}}
+section.card
+  h3.title(v-if='title') {{ title }}
   slot
 </template>
 

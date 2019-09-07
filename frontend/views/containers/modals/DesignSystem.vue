@@ -3,8 +3,6 @@
 //-       (instead of existing modals), make sure to replace many
 //-       of the tags below with their equivalent i18n tags.
 modal-template(:class="{ 'has-background': background }")
-  //- In your version, this should be:
-  //- i18n(tag='template' #title='') Title
   template(#title='') Title
   template(#subtitle='' v-if='subtitle') subtitle
 
