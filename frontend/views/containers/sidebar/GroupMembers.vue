@@ -43,8 +43,7 @@
           i18n(
             tag='p'
             :args='{ username }'
-          )
-            | We are waiting for {username} to join the group by using their unique invite link.
+          ) We are waiting for {username} to join the group by using their unique invite link.
 
       menu-parent(v-else)
         menu-trigger.is-icon-small

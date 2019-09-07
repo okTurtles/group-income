@@ -7,6 +7,8 @@
     :currentStep.sync='currentStep'
     @submit='submit'
   )
+    // | TBD in another task
+    // | https://github.com/okTurtles/group-income-simple/issues/609
     div(v-if='currentStep === 0' key='0')
       label.field
         i18n.label Username
@@ -24,10 +26,7 @@
         @click="addNewMember"
       )
         i.icon-plus
-        | Add more people
-
-      // | TBD in another task
-      // | https://github.com/okTurtles/group-income-simple/issues/609
+        i18n Add more people
       // invite
 </template>
 

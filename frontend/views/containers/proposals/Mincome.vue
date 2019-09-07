@@ -2,13 +2,13 @@
   proposal-template(
     :title='L("Change minimum income")'
     :rule='{ value: 8, total: 10 }'
-    :disabled='$v.form.$invalid || ($v.steps[config.steps[currentStep]] && $v.steps[config.steps[currentStep]].$invalid)'
+    :disabled='$v.form.$invalid || ($v.steps[config.steps[ephemeral.currentStep]] && $v.steps[config.steps[ephemeral.currentStep]].$invalid)'
     :maxSteps='config.steps.length'
-    :currentStep.sync='currentStep'
+    :currentStep.sync='ephemeral.currentStep'
     @submit='submit'
   )
 
-    label.field(v-if='currentStep === 0' key='0')
+    label.field(v-if='ephemeral.currentStep === 0' key='0')
       i18n.label New minimum income
       .input-combo
         input.input(
@@ -21,7 +21,7 @@
           v-model='form.incomeProvided'
           @keyup.enter='next'
         )
-        .sufix {{fakeStore.groupCurrency}}
+        .suffix {{fakeStore.groupCurrency}}
       i18n.helper(:args='{value: "$1000"}') Currently {value} monthly.
 </template>
 
@@ -41,13 +41,13 @@ export default {
   ],
   data () {
     return {
-      currentStep: 0,
       v: { type: Object },
       form: {
         incomeProvided: null
       },
       ephemeral: {
-        errorMsg: null
+        errorMsg: null,
+        currentStep: 0
       },
       config: {
         steps: [

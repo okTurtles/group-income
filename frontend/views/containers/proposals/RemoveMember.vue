@@ -3,10 +3,10 @@ proposal-template(
   :title='L("Remove Member")'
   :rule='{ value: 7, total: 10 }'
   :maxSteps='config.steps.length'
-  :currentStep.sync='currentStep'
+  :currentStep.sync='ephemeral.currentStep'
   @submit='submit'
 )
-  .c-step(v-if='currentStep === 0' key='0')
+  .c-step(v-if='ephemeral.currentStep === 0' key='0')
     avatar.c-avatar(:src='member.picture')
     i18n.title.is-4(tag='p' :args='{ name: member.displayName || member.name }') Remove {name} from your group?
     i18n.has-text-1(tag='p') All members will be asked to vote on this decision.
@@ -24,7 +24,9 @@ export default {
   },
   data () {
     return {
-      currentStep: 0,
+      ephemeral: {
+        currentStep: 0
+      },
       config: {
         steps: [
           'AddMemberRule'
@@ -64,11 +66,12 @@ export default {
   flex-direction: column;
   align-items: center;
   margin-bottom: $spacer-sm;
-}
 
-.c-avatar {
-  width: 5rem;
-  height: 5rem;
-  margin-bottom: $spacer;
+  // BUG on VUE? - without nesting it doesn't work
+  .c-avatar {
+    width: 5rem;
+    height: 5rem;
+    margin-bottom: $spacer;
+  }
 }
 </style>

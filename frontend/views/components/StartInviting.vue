@@ -4,7 +4,7 @@ section.card.c-card
     use(xlink:href='#svg-conversation')
   div
     i18n.title(tag="h3") Invite member to your group
-    p Start sharing your resources with the ones who matter to you!
+    i18n(tag='p') Start sharing your resources with the ones who matter to you!
     .buttons.is-start
       i18n(
         tag="button"
@@ -13,7 +13,7 @@ section.card.c-card
       router-link.button(
         to="/invite"
         data-test='inviteButton'
-      ) {{L('Invite members')}}
+      ) {{ L('Invite members') }}
 
   // TODO: Build a cleaner way of handling SVGs theme-proof
   svg.c-sprite(

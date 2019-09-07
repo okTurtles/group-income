@@ -1,6 +1,7 @@
 <template lang="pug">
 modal-template
-  template(#title='') Add new members
+  template(#title='')
+    i18n Add new members
 
   .c-container
     i18n.title.is-4(tag="h3") Share this link with others to grant access to your group.
@@ -9,7 +10,8 @@ modal-template
       i.icon-link
       | {{link}}
     i18n.has-text-1(tag="p") This invite link expires on the 4th of February.
-    button.is-outlined.c-cta(
+    i18n.is-outlined.c-cta(
+      tag="button"
       @click.prevent='close'
     ) Awesome
 </template>

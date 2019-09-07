@@ -45,8 +45,7 @@
           v-if='!isConfirmation'
           @click.prevent='prev'
           data-test='prevBtn'
-        )
-          i18n {{ currentStep === 0 ? 'Cancel' : 'Back' }}
+        ) {{ currentStep === 0 ? L('Cancel') : L('Back') }}
 
         button(
           key="next"
@@ -70,7 +69,7 @@
         ) Create Proposal
 
         i18n.is-outlined(
-          key="awesome"
+          key='awesome'
           tag='button'
           v-if='isConfirmation'
           ref='close'

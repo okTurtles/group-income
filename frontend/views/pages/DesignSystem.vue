@@ -618,7 +618,7 @@ page(
           td
             .input-combo
               input.input(type='text' placeholder='New amount')
-              .sufix USD
+              .suffix USD
 
         tr
           td
