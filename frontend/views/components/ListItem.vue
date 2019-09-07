@@ -9,19 +9,18 @@ li.c-item
       v-if='icon'
       :class='{ [`icon-${icon}`]: icon }'
     )
-      NotificationBadge(v-if='badgeCount' type='compact')
+      badge(v-if='badgeCount' type='compact')
     span.c-item-slot
       slot
-    // badge(:number='badgeCount')
 </template>
 
 <script>
-import NotificationBadge from './NotificationBadge.vue'
+import Badge from './Badge.vue'
 
 export default {
   name: 'ListItem',
   components: {
-    NotificationBadge
+    Badge
   },
   props: {
     itemId: String,
@@ -81,6 +80,7 @@ export default {
   i {
     position: relative;
     width: $spacer * 1.5;
+    height: $spacer * 1.5;
     margin-right: $spacer;
     font-size: 1rem;
     color: $text_1;

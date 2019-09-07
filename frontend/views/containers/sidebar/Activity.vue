@@ -2,8 +2,7 @@
 menu-parent
   menu-trigger.c-menu-trigger.is-icon-small
     i.icon-bell(:class="activityCount ? '' : 'active'")
-    notification-badge(v-if='activityCount' type='default' data-test='alertNotification') {{ activityCount }}
-    // span.c-badge(v-if='activityCount' data-test='alertNotification') {{ activityCount }}
+    badge(v-if='activityCount' data-test='alertNotification') {{ activityCount }}
 
   menu-content.c-content
     menu-header
@@ -22,7 +21,7 @@ menu-parent
 
 <script>
 import { MenuParent, MenuTrigger, MenuContent, MenuHeader, MenuItem } from '@components/Menu/index.js'
-import NotificationBadge from '@components/NotificationBadge.vue'
+import Badge from '@components/Badge.vue'
 
 export default {
   name: 'Activity',
@@ -31,7 +30,7 @@ export default {
   },
 
   components: {
-    NotificationBadge,
+    Badge,
     MenuParent,
     MenuTrigger,
     MenuContent,
