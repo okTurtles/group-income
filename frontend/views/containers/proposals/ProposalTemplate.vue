@@ -42,6 +42,7 @@
         button.is-outlined(
           key="back"
           v-if='!isConfirmation'
+          type="button"
           @click.prevent='prev'
           data-test='prevBtn'
         ) {{ currentStep === 0 ? L('Cancel') : L('Back') }}
@@ -59,7 +60,6 @@
 
         i18n.is-success(
           key="create"
-          tag='button'
           v-if='isReasonStep'
           ref='finish'
           @click.prevent='submit'

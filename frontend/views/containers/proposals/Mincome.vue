@@ -18,7 +18,6 @@
           required=''
           :class="{ 'error': $v.form.incomeProvided.$error }"
           v-model='form.incomeProvided'
-          @keyup.enter='next'
         )
         .suffix {{fakeStore.groupCurrency}}
       i18n.helper(:args='{value: "$1000"}') Currently {value} monthly.
@@ -40,7 +39,6 @@ export default {
   ],
   data () {
     return {
-      v: { type: Object },
       form: {
         incomeProvided: null
       },
