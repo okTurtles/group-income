@@ -106,7 +106,6 @@ export default {
       'groupMembersCount'
     ]),
     currentUserName () {
-      console.log('ora', this.$store.state.loggedIn.username, this.groupMembers)
       return this.$store.state.loggedIn.username
     }
   }

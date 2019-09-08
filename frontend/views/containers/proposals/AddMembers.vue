@@ -2,9 +2,9 @@
   proposal-template(
     :title='L("Add new members")'
     :rule='{ value: 5, total: 10 }'
-    :disabled='$v.form.$invalid || ($v.steps[config.steps[currentStep]] && $v.steps[config.steps[currentStep]].$invalid)'
+    :disabled='$v.form.$invalid || ($v.steps[config.steps[ephemeral.currentStep]] && $v.steps[config.steps[ephemeral.currentStep]].$invalid)'
     :maxSteps='config.steps.length'
-    :currentStep.sync='currentStep'
+    :currentStep.sync='ephemeral.currentStep'
     @submit='submit'
   )
     // | TBD in another task
@@ -46,12 +46,11 @@ export default {
   ],
   data () {
     return {
-      currentStep: 0,
-      v: { type: Object },
       form: {
         member: null
       },
       ephemeral: {
+        currentStep: 0,
         errorMsg: null
       },
       config: {
