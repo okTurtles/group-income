@@ -14,7 +14,7 @@ div
 
 <script>
 import sbp from '~/shared/sbp.js'
-import { LOAD_MODAL } from '@utils/events.js'
+import { OPEN_MODAL } from '@utils/events.js'
 import currencies from '@view-utils/currencies.js'
 import { mapGetters } from 'vuex'
 
@@ -30,7 +30,7 @@ export default {
   },
   methods: {
     openProposal () {
-      sbp('okTurtles.events/emit', LOAD_MODAL, 'MincomeProposal')
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'MincomeProposal')
     }
   }
 }

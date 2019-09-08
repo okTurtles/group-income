@@ -5,7 +5,7 @@
 </template>
 <script>
 import sbp from '~/shared/sbp.js'
-import { OPEN_MODAL, LOAD_MODAL, UNLOAD_MODAL, REPLACE_MODAL, CLOSE_MODAL } from '@utils/events.js'
+import { OPEN_MODAL, REPLACE_MODAL, CLOSE_MODAL } from '@utils/events.js'
 
 export default {
   name: 'Modal',
@@ -18,8 +18,8 @@ export default {
     }
   },
   created () {
-    sbp('okTurtles.events/on', LOAD_MODAL, component => this.openModal(component))
-    sbp('okTurtles.events/on', UNLOAD_MODAL, component => this.closeModal(component))
+    sbp('okTurtles.events/on', OPEN_MODAL, component => this.openModal(component))
+    sbp('okTurtles.events/on', CLOSE_MODAL, component => this.closeModal(component))
     sbp('okTurtles.events/on', REPLACE_MODAL, component => this.replaceModal(component))
   },
   mounted () {
@@ -27,12 +27,14 @@ export default {
     if (modal) this.openModal(modal)
   },
   beforeDestroy () {
-    sbp('okTurtles.events/off', LOAD_MODAL, this.openModal)
-    sbp('okTurtles.events/off', UNLOAD_MODAL, this.closeModal)
+    sbp('okTurtles.events/off', OPEN_MODAL, this.openModal)
+    sbp('okTurtles.events/off', CLOSE_MODAL, this.closeModal)
     sbp('okTurtles.events/off', REPLACE_MODAL, this.replaceModal)
   },
   watch: {
     '$route' (to, from) {
+      // When the route change we compare to see if the modal changed
+      // If so, we send the event to close the modal
       if (from.query.modal && !to.query.modal) {
         sbp('okTurtles.events/emit', CLOSE_MODAL)
       }
@@ -42,13 +44,8 @@ export default {
     openModal (componentName) {
       if (this.content) {
         this.subcontent.push(componentName)
-        // QUESTION: Why emmiting this event if
-        // there is not any events/on' poiting to OPEN_MODAL?
-        sbp('okTurtles.events/emit', OPEN_MODAL)
       } else {
         this.content = componentName
-        // QUESTION: Same here..
-        sbp('okTurtles.events/emit', OPEN_MODAL)
       }
       this.$router.push({ query: { modal: this.content, subcontent: this.subcontent[this.subcontent.length - 1] } })
     },
@@ -59,14 +56,18 @@ export default {
       }, 300)
     },
     closeModal () {
-      const query = this.$route.query || {}
-
+      let query = this.$route.query || {}
       if (this.subcontent.length) {
         this.subcontent.pop()
-        query.subcontent = this.subcontent[this.subcontent.length - 1]
+        if (this.subcontent.length) {
+          query.subcontent = this.subcontent[this.subcontent.length - 1]
+        } else {
+          delete query.subcontent
+        }
         query.modal = this.content
       } else {
-        this.content = undefined
+        this.content = null
+        query = {}
       }
 
       // BUG: This isn't working at all but if you pause the dev

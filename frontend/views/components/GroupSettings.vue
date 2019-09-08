@@ -35,7 +35,7 @@
 <script>
 import sbp from '~/shared/sbp.js'
 import { toPercent } from '@view-utils/filters.js'
-import { LOAD_MODAL } from '@utils/events.js'
+import { OPEN_MODAL } from '@utils/events.js'
 
 // TODO: there is another file called GroupSettings in pages/, rename this one (and move it?)
 export default {
@@ -48,7 +48,7 @@ export default {
   },
   methods: {
     openProposal (component) {
-      sbp('okTurtles.events/emit', LOAD_MODAL, component)
+      sbp('okTurtles.events/emit', OPEN_MODAL, component)
     }
   }
 }

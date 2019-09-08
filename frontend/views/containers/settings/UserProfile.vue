@@ -116,7 +116,7 @@
 <script>
 import { validationMixin } from 'vuelidate'
 import { email } from 'vuelidate/lib/validators'
-import { LOAD_MODAL } from '@utils/events.js'
+import { OPEN_MODAL } from '@utils/events.js'
 import { cloneDeep } from '@utils/giLodash.js'
 import imageUpload from '@utils/imageUpload.js'
 import Avatar from '@components/Avatar.vue'
@@ -166,7 +166,7 @@ export default {
   },
   methods: {
     openModal (mode) {
-      sbp('okTurtles.events/emit', LOAD_MODAL, mode)
+      sbp('okTurtles.events/emit', OPEN_MODAL, mode)
       return false
     },
     async save () {

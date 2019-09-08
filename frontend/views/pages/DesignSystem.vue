@@ -684,7 +684,7 @@ page(
             code
               | sbp('okTurtles.events/emit',
               br
-              |   LOAD_MODAL, 'DesignSystemModal'
+              |   OPEN_MODAL, 'DesignSystemModal'
               br
               | )
           td
@@ -697,7 +697,7 @@ import Page from '@pages/Page.vue'
 import sbp from '~/shared/sbp.js'
 import Message from '@components/Message.vue'
 import Tooltip from '@components/Tooltip.vue'
-import { LOAD_MODAL } from '@utils/events.js'
+import { OPEN_MODAL } from '@utils/events.js'
 
 export default {
   name: 'DesignSystemView',
@@ -761,7 +761,7 @@ export default {
       console.error('unimplemented, try using the actual Login.vue modal')
     },
     openModal (mode) {
-      sbp('okTurtles.events/emit', LOAD_MODAL, mode)
+      sbp('okTurtles.events/emit', OPEN_MODAL, mode)
     },
     handleScroll (e) {
       const top = e.target.scrollTop

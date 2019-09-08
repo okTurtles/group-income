@@ -1,5 +1,5 @@
 import Vue from 'vue'
-// NOTE: any modals opened with `LOAD_MODAL` go here
+// NOTE: any modals opened with `OPEN_MODAL` go here
 Vue.component('LoginModal', () => import('../views/containers/modals/Login.vue'))
 Vue.component('SignUp', () => import('../views/containers/modals/SignUp.vue'))
 Vue.component('Settings', () => import('../views/containers/settings/Wrapper.vue'))

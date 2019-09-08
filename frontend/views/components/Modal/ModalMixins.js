@@ -1,5 +1,5 @@
 import sbp from '~/shared/sbp.js'
-import { CLOSE_MODAL, UNLOAD_MODAL } from '~/frontend/utils/events.js'
+import { CLOSE_MODAL } from '~/frontend/utils/events.js'
 import ModalClose from './ModalClose.vue'
 let keyboardEvent = Event
 
@@ -21,7 +21,7 @@ const modaMixins = {
     })
   },
   beforeDestroy () {
-    sbp('okTurtles.events/emit', UNLOAD_MODAL)
+    sbp('okTurtles.events/off', CLOSE_MODAL, this.hide)
     window.removeEventListener('keyup', keyboardEvent)
   },
   methods: {
@@ -42,8 +42,6 @@ const modaMixins = {
           return false
         }
       }
-      // Remove event only if it's the last modal
-      sbp('okTurtles.events/off', CLOSE_MODAL)
       this.isActive = false
     }
   }
