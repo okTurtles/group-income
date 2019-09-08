@@ -387,37 +387,37 @@ page(
           td
             pre
               | $spacer-lg
-              |   badge(type='default') {{ 3 }}
+              |   badge(type='default') 3
           td
             span.c-badge-container
-              badge(type='default') {{ 3 }}
+              badge(type='default') 3
         tr
           td
             pre
               | $spacer-lg
-              |   badge(type='compact')
+              |   badge(type='compact') 3
           td
             span.c-badge-container
-              badge(type='compact')
+              badge(type='compact') 3
         tr
           td
             pre
               | button.is-icon(style='position: relative')
               |   i.icon-cog
-              |   badge(type='default') {{ 3 }}
+              |   badge(type='default') 3
 
           td
             button.is-icon(style='position: relative')
               i.icon-cog
-              badge(type='default') {{ 3 }}
+              badge(type='default') 3
         tr
           td
             pre
               | i.icon-comments
-              |   badge(type='compact')
+              |   badge(type='compact') 3
           td
             i.icon-comments.c-badge-container-small
-              badge(type='compact')
+              badge(type='compact') 3
 
   article#pills
     section.card

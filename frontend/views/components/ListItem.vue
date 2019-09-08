@@ -9,7 +9,7 @@ li.c-item
       v-if='icon'
       :class='{ [`icon-${icon}`]: icon }'
     )
-      badge(v-if='badgeCount' type='compact')
+      badge(v-if='badgeCount' type='compact') {{ badgeCount }}
     span.c-item-slot
       slot
 </template>

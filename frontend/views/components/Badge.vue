@@ -1,5 +1,9 @@
 <template lang="pug">
-span.c-badge(:class="`is-${type}`")
+span.c-badge(
+  :class='`is-${type}`'
+  :aria-label='`New ${$slots.default ? $slots.default[0].text : ""} notifications`'
+  role='alert'
+)
   slot
 </template>
 
