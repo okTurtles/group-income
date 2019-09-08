@@ -25,15 +25,16 @@ export default {
   border-radius: 50%;
   top: 0;
   right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 
   &.is-default {
-    top: -4px;
-    right: -4px;
+    top: -$spacer-xs;
+    right: -$spacer-xs;
     color: $background;
     width: $spacer;
     height: $spacer;
-    text-align: center;
-    line-height: 15px;
     font-size: 0.7rem;
     font-weight: normal;
   }
