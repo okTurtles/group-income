@@ -50,7 +50,7 @@ modal-template(class='has-submodal-background is-centered')
     .buttons
       i18n.is-outlined(
         tag='button'
-        @click='closeM'
+        @click='closeModal'
       ) Cancel
 
       i18n.is-success(
@@ -116,14 +116,13 @@ export default {
     FormPassword
   },
   methods: {
-    closeM () {
+    closeModal () {
       sbp('okTurtles.events/emit', CLOSE_MODAL)
     },
     async changePassword () {
-      console.log('YOLO')
       try {
         // TODO check password
-        this.closeM()
+        this.closeModal()
       } catch (error) {
         this.form.response = L('Invalid password')
         console.error(error)
