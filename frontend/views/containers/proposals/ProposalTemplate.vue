@@ -60,6 +60,7 @@
 
         i18n.is-success(
           key="create"
+          tag='button'
           v-if='isReasonStep'
           ref='finish'
           @click.prevent='submit'
