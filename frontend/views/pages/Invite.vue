@@ -19,7 +19,7 @@ page(pageTestName='invite' pageTestHeaderName='invite')
 
     .buttons
       button.is-success(
-        type='submit'
+        type='button'
         :disabled='!form.invitees.length'
         v-if='!form.success'
         @click='submit' data-test='submit'

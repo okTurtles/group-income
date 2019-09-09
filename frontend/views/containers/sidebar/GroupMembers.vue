@@ -3,6 +3,7 @@
   .c-group-members-header
     i18n.title.is-4(tag='h4') Members
 
+    // @click="openModal('AddMembers')"
     button.button.is-small.is-outlined(
       data-test='inviteButton'
       @click='invite'
@@ -15,7 +16,7 @@
     // TODO: remove v-if in v-for loop and reorder list member by active user limited to 10
     li.c-group-member(
       v-for='(member, username, index) in groupMembers'
-      v-if="index < 10 && member"
+      v-if="index < 10 && member && username !== currentUserName"
       :class='member.pending && "is-pending"'
       :key='username'
       data-test='member'
@@ -42,22 +43,28 @@
           i18n(
             tag='p'
             :args='{ username }'
-          )
-            | We are waiting for {username} to join the group by using their unique invite link.
+          ) We are waiting for {username} to join the group by using their unique invite link.
 
-      menu-parent(
-        v-else
-      )
+      menu-parent(v-else)
         menu-trigger.is-icon-small
           i.icon-ellipsis-v
 
         // TODO later - be a drawer on mobile
         menu-content.c-actions-content
           ul
-            menu-item(tag='router-link' to="/chat" itemid='hash-1' icon='comment')
-              i18n Send Message
-            menu-item(tag='button' itemid='hash-2' icon='times')
-              i18n Remover member...
+            menu-item(
+              tag='router-link' to="/chat"
+              item-id='message'
+              icon='comment'
+            )
+              i18n Send message
+            menu-item(
+              tag='button'
+              item-id='remove'
+              icon='times'
+              @click="openModal('RemoveMember')"
+            )
+              i18n Remove member
 
   i18n.link(
     tag='button'
@@ -97,7 +104,10 @@ export default {
     ...mapGetters([
       'groupMembers',
       'groupMembersCount'
-    ])
+    ]),
+    currentUserName () {
+      return this.$store.state.loggedIn.username
+    }
   }
 }
 </script>

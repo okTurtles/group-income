@@ -18,6 +18,7 @@ div(
     )
     i18n(
       tag='button'
+      type="button"
       @click='addInvitee'
       data-test='addButton'
     ) Add

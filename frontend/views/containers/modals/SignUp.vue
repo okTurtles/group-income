@@ -17,7 +17,6 @@
           :class="{'error': $v.form.name.$error}"
           name='name'
           @input='debounceName'
-          placeholder='username'
           ref='username'
           v-focus=''
           data-test='signName'
@@ -39,7 +38,6 @@
           v-model='form.email'
           @blur='$v.form.email.$touch()'
           type='email'
-          placeholder='email'
           data-test='signEmail'
         )
 

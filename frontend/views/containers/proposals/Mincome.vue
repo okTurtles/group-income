@@ -1,53 +1,26 @@
 <template lang='pug'>
   proposal-template(
     :title='L("Change minimum income")'
-    :footer='L("According to your voting rules, 8 out of 10 members will have to agree with this.")'
-    :disabled='$v.form.$invalid || ($v.steps[config.steps[currentStep]] && $v.steps[config.steps[currentStep]].$invalid)'
+    :rule='{ value: 8, total: 10 }'
+    :disabled='$v.form.$invalid || ($v.steps[config.steps[ephemeral.currentStep]] && $v.steps[config.steps[ephemeral.currentStep]].$invalid)'
     :maxSteps='config.steps.length'
-    :currentStep.sync='currentStep'
-    @submit='L("submit")'
+    :currentStep.sync='ephemeral.currentStep'
+    @submit='submit'
   )
 
-    .field(v-if='currentStep === 0' key='0')
-      i18n.label(tag='label') New minimum income
-      .select-wrapper
+    label.field(v-if='ephemeral.currentStep === 0' key='0')
+      i18n.label New minimum income
+      .input-combo
         input.input(
-          ref='mincome'
           type='number'
-          placeholder='Amount'
           name='incomeProvided'
-          step='1'
           min='0'
           required=''
           :class="{ 'error': $v.form.incomeProvided.$error }"
           v-model='form.incomeProvided'
-          @keyup.enter='next'
         )
-
-        select(
-          name='incomeCurrency'
-          required=''
-          v-model='form.incomeCurrency'
-        )
-          option(
-            v-for='(symbol, code) in currencies'
-            :value='code'
-            :key='code'
-          ) {{ symbol }}
-
-      i18n(p) Currently $1000 monthly.
-
-    .field(v-if='currentStep === 1' key='1')
-      i18n.label(tag='label') Why are you proposing this change?
-
-      textarea.textarea(
-        name='changeReason'
-        ref='purpose'
-        :placeholder='L("The reason why I\'m proposing this change is...")'
-        maxlength='500'
-        :class="{ 'error': $v.form.changeReason.$error }"
-        v-model='form.changeReason'
-      )
+        .suffix {{fakeStore.groupCurrency}}
+      i18n.helper(:args='{value: "$1000"}') Currently {value} monthly.
 </template>
 
 <script>
@@ -55,7 +28,6 @@ import ProposalTemplate from './ProposalTemplate.vue'
 import { validationMixin } from 'vuelidate'
 import { decimals } from '@view-utils/validators.js'
 import { required } from 'vuelidate/lib/validators'
-import currencies from '@view-utils/currencies'
 
 export default {
   name: 'MincomeProposal',
@@ -67,30 +39,21 @@ export default {
   ],
   data () {
     return {
-      currencies,
-      currentStep: 0,
-      v: { type: Object },
       form: {
-        incomeProvided: null,
-        incomeCurrency: 'USD', // TODO: grab this as a constant from currencies.js,
-        changeReason: null
+        incomeProvided: null
       },
       ephemeral: {
         errorMsg: null,
-        // this determines whether or not to render proxy components for tests
-        dev: process.env.NODE_ENV === 'development'
+        currentStep: 0
       },
       config: {
         steps: [
-          'GroupMincome',
-          'ChangeReason'
+          'GroupMincome'
         ]
+      },
+      fakeStore: {
+        groupCurrency: '$ USD'
       }
-    }
-  },
-  methods: {
-    submit: async function () {
-      // TODO record action
     }
   },
   validations: {
@@ -98,22 +61,29 @@ export default {
       incomeProvided: {
         required,
         decimals: decimals(2)
-      },
-      incomeCurrency: {
-        required
-      },
-      changeReason: {}
+      }
     },
     // validation groups by route name for steps
     steps: {
       GroupMincome: [
-        'form.incomeProvided',
-        'form.incomeCurrency'
-      ],
-      Reason: [
-        'form.changeReason'
+        'form.incomeProvided'
       ]
+    }
+  },
+  methods: {
+    submit (form) {
+      console.log(
+        'TODO: Logic to Propose Mincome.',
+        'mincome:', this.form.incomeProvided,
+        'reason:', form.reason
+      )
     }
   }
 }
 </script>
+<style lang="scss" scoped>
+@import "../../../assets/style/_variables.scss";
+.c-info {
+  margin-top: $spacer-sm;
+}
+</style>

@@ -179,6 +179,7 @@ page(
               i.icon-heart icon-heart
               i.icon-info icon-info
               i.icon-info-circle icon-info-circle
+              i.icon-link icon-link
               i.icon-lock icon-lock
               i.icon-minus-circle icon-minus-circle
               i.icon-paper-plane icon-paper-plane
@@ -191,7 +192,7 @@ page(
               i.icon-undo icon-undo
               i.icon-user icon-user
               i.icon-user-plus icon-user-plus
-
+              i.icon-vote-yea icon-vote-yea
   article#spacing
     section.card
       i18n(tag='h2' class='card-header') Spacing
@@ -617,7 +618,7 @@ page(
           td
             .input-combo
               input.input(type='text' placeholder='New amount')
-              label USD
+              .suffix USD
 
         tr
           td
