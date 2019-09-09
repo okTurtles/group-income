@@ -108,26 +108,26 @@ export default {
 
 .c-modal-header {
   position: relative;
-  align-items: center;
   padding: 0 $spacer;
-  // min-height: 88px;
-  min-height: 60px;
+  min-height: 4.75ren;
 
   @include tablet {
-    min-height: 95px;
+    align-items: center;
+    min-height: 5.75rem;
     align-items: center;
   }
 
-  @include tablet {
-    min-height: 105px;
+  @include desktop {
+    min-height: 6.5rem;
   }
 
   &.has-subtitle {
+    min-height: 5.625rem;
     @include tablet {
-      min-height: 114px;
+      min-height: 6.625rem;
     }
     @include desktop {
-      min-height: 124px;
+      min-height: 7.5rem;
     }
   }
 
@@ -137,7 +137,7 @@ export default {
 }
 
 .c-modal-body {
-  margin: $spacer $spacer 2.5rem $spacer;
+  margin: $spacer $spacer $spacer-lg $spacer;
 
   &:last-child {
     padding-bottom: $spacer-lg;

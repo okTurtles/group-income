@@ -16,32 +16,27 @@ export default {
 
 .c-modal-close {
   position: absolute;
-  right: 1rem;
-  top: 1.375rem;
+  right: $spacer;
+  top: $spacer;
   z-index: 4;
-  height: 32px;
-  min-height: 32px;
-  width: 32px;
+  height: 2.75rem;
+  width: 2.75rem;
   border: none;
   border-radius: 50%;
   padding: 0;
-  @extend %unselectable;
   -moz-appearance: none;
   -webkit-appearance: none;
   cursor: pointer;
   background-color: $general_1;
 
   @include tablet {
-    background-color: $background;
-    top: 24px;
-    right: 24px;
-    height: 40px;
-    width: 40px;
+    top: 1.5rem;
+    right: 1.5rem;
   }
 
   @include desktop {
-    top: 1rem;
-    right: 1rem;
+    top: $spacer;
+    right: $spacer;
   }
 
   &::before,
