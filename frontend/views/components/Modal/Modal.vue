@@ -56,24 +56,15 @@ export default {
       }, 300)
     },
     closeModal () {
-      let query = this.$route.query || {}
       if (this.subcontent.length) {
-        this.subcontent.pop()
-        if (this.subcontent.length) {
-          query.subcontent = this.subcontent[this.subcontent.length - 1]
-        } else {
-          delete query.subcontent
-        }
-        query.modal = this.content
+        this.$router.go(-1)
+        setTimeout(() => {
+          this.subcontent.pop()
+        }, 300)
       } else {
         this.content = null
-        query = {}
+        this.$router.push({})
       }
-
-      // BUG: This isn't working at all but if you pause the dev
-      // tools and do it manually on the console it works :/
-      // Avoid event problem by removing completly the component
-      this.$router.push({ query: query })
     }
   }
 }
