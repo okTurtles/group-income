@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 button(
   v-if='hideWhenActive ? !isActive : true'
   @click='handleClick'

@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 div
   i18n.steps-title(tag='p') 2. Group Purpose
 
@@ -9,7 +9,7 @@ div
     ref='purpose'
     placeholder='Group Purpose'
     maxlength='500'
-    :class="{ 'error': v.sharedValues.$error }"
+    :class='{ error: v.sharedValues.$error }'
     :value='group.sharedValues'
     @input='update'
   )

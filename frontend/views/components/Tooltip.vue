@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 span.c-wrapper(
   @mouseenter='show'
   @mouseleave='hide'

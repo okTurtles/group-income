@@ -1,6 +1,6 @@
-<template lang="pug">
+<template lang='pug'>
 div(
-  data-test="invitees"
+  data-test='invitees'
   )
   i18n(tag='h1') Invite Members
 
@@ -18,7 +18,7 @@ div(
     )
     i18n(
       tag='button'
-      type="button"
+      type='button'
       @click='addInvitee'
       data-test='addButton'
     ) Add

@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 proposal-template(
   title= 'L("Change Rule to Add Member")'
   footer='L("According to your voting rules, 8 out of 10 members will have to agree with this.")'
@@ -19,7 +19,7 @@ proposal-template(
       ref='purpose'
       :placeholder='L("The reason why I\' propositiong this change is...")'
       maxlength='500'
-      :class="{ 'error': $v.form.changeReason.$error }"
+      :class='{ error: $v.form.changeReason.$error }'
       v-model='form.changeReason'
     )
 </template>

@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
   .time-travel
     vue-slider(
       v-model='ephemeral.position'

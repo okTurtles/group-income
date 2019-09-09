@@ -1,5 +1,5 @@
 // Usage:
-// <template lang="pug">
+// <template lang='pug'>
 // router-view
 //   button(@click='prev' :disabled='!this.currentStep') Back
 //   button(@click='next' v-if='currentStep + 1 < config.steps.length') Next

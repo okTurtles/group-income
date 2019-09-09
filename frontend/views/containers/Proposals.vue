@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 .c-proposals
   proposal-box(
     v-for='(proposal, hash) in currentGroupState.proposals'

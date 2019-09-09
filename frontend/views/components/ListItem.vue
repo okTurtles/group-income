@@ -1,9 +1,11 @@
-<template lang="pug">
+<template lang='pug'>
 li.c-item
   component.c-item-link.is-unstyled(
     :is='tag'
     :class='itemLinkClasses'
-    :active-class="tag === 'router-link' && 'is-active'" v-bind='$attrs' v-on='$listeners'
+    :active-class='tag === "router-link" && "is-active"'
+    v-bind='$attrs'
+    v-on='$listeners'
   )
     i(
       v-if='icon'

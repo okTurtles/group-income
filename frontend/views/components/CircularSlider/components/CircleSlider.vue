@@ -1,9 +1,9 @@
-<template lang="pug">
+<template lang='pug'>
   div
     svg(
-      :width="side + 'px'"
-      :height="side + 'px'"
-      :viewbox="'0 0 ' + side + ' ' + side"
+      :width='side + "memberRemovalThreshold"'
+      :height='side + "memberRemovalThreshold"'
+      :viewbox='"0 0 " + side + " " + side'
       ref='_svg' @touchmove='handleTouchMove'
       @click='handleClick'
       @mousedown='handleMouseDown'

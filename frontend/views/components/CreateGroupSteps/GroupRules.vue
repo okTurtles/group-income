@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 .c-group-rules(data-test='rulesStep')
   i18n.steps-title(tag='p') 3. Voting Rules
 
@@ -11,7 +11,7 @@
         | %
       circle-slider.circle-slider(
         :value='group.changeThreshold'
-        @input="value => update('changeThreshold', value)"
+        @input='value => update("changeThreshold", value)'
         :min='0.01'
         :max='1'
         :step-size='0.01'
@@ -19,8 +19,8 @@
         :circleWidth='4'
         :progressWidth='4'
         :knobRadius='12'
-        :progressColor="changeColor"
-        :knobColor="changeColor"
+        :progressColor='changeColor'
+        :knobColor='changeColor'
         circleColor='#F4F8E7'
       )
       i18n.subtitle(tag='p') Change Rules
@@ -31,7 +31,7 @@
         | %
       circle-slider.circle-slider(
         :value='group.memberApprovalThreshold'
-        @input="value => update('memberApprovalThreshold', value)"
+        @input='value => update("memberApprovalThreshold", value)'
         :min='0.01'
         :max='1'
         :step-size='0.01'
@@ -39,8 +39,8 @@
         :circleWidth='4'
         :progressWidth='4'
         :knobRadius='12'
-        :progressColor="approveColor"
-        :knobColor="approveColor"
+        :progressColor='approveColor'
+        :knobColor='approveColor'
         circleColor='#F4F8E7'
       )
       i18n.subtitle(tag='p') Add Member
@@ -51,7 +51,7 @@
         | %
       circle-slider.circle-slider(
         :value='group.memberRemovalThreshold'
-        @input="value => update('memberRemovalThreshold', value)"
+        @input='value => update("memberRemovalThreshold", value)'
         :min='0.01'
         :max='1'
         :step-size='0.01'
@@ -59,8 +59,8 @@
         :circleWidth='4'
         :progressWidth='4'
         :knobRadius='12'
-        :progressColor="removeColor"
-        :knobColor="removeColor"
+        :progressColor='removeColor'
+        :knobColor='removeColor'
         circleColor='#F4F8E7'
       )
       i18n.subtitle(tag='p')  Remove Member

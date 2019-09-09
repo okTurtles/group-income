@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 main.c-splash(
   data-test='welcome'
 )
@@ -8,9 +8,7 @@ main.c-splash(
     :blobURL='groupSettings.groupPicture'
   )
 
-  h1.c-title(
-    data-test="welcomeGroup"
-  )
+  h1.c-title(data-test='welcomeGroup')
     i18n Welcome {{ groupSettings.groupName }}!
 
   p.has-text-0.c-description

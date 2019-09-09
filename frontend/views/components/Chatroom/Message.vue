@@ -1,13 +1,13 @@
-<template lang="pug">
-.c-message(:class="[variant, isSameSender && 'sameSender']")
-  avatar.c-avatar(:src='avatar' :class="{ 'alignToText': !hasWhoInvisible }" aria-hidden='true')
+<template lang='pug'>
+.c-message(:class='[variant, isSameSender && "sameSender"]')
+  avatar.c-avatar(:src='avatar' :class='{ alignToTex: !hasWhoInvisible }' aria-hidden='true')
   .c-body
-    span.has-text-1.c-who(:class="{ 'gi-sr-only': hasWhoInvisible }")
+    span.has-text-1.c-who(:class='{ "gi-sr-only": hasWhoInvisible }')
       | {{who}}
     // TODO: #502 - Chat: Add support to markdown formatted text
     p.c-text(v-if='text') {{text}}
     slot(v-else='')
-  button.is-icon.has-text-danger.c-retry(:class="{ 'alignToText': !hasWhoInvisible }" v-if="variant === 'failed'" @click="$emit('retry')")
+  button.is-icon.has-text-danger.c-retry(:class='{ alignToText: !hasWhoInvisible }' v-if='variant === "failed"' @click='$emit("retry")')
     i.icon-undo
 </template>
 

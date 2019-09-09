@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 span.c-badge(v-if='number') {{number}}
 </template>
 

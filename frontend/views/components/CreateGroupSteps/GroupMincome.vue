@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 div
   i18n.steps-title(tag='p') 3. Minimum Income
 
@@ -13,7 +13,7 @@ div
       step='1'
       min='0'
       required=''
-      :class="{ 'error': v.incomeProvided.$error }"
+      :class='{ error: v.incomeProvided.$error }'
       :value='group.incomeProvided'
       @input='update'
       @keyup.enter='next'

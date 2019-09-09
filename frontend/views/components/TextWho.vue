@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 span
   | {{firstWho}}
   template(v-if='hasWhoElse')

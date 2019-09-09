@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 page(pageTestName='invite' pageTestHeaderName='invite')
   template(#title='') {{ L('Invite') }}
 

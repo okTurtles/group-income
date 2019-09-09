@@ -1,13 +1,13 @@
-<template lang="pug">
+<template lang='pug'>
 page(pageTestName='dashboard' pageTestHeaderName='groupName')
   template(#title='') {{ L('Group Chat') }}
   template(#sidebar='')
     chat-nav(
-      :title="L('Chat')"
-      :searchplaceholder="L('Search for a channel')"
+      :title='L("Chat")'
+      :searchplaceholder='L("Search for a channel")'
     )
       conversations-list(
-        :title="L('Channels')"
+        :title='L("Channels")'
         routepath='/group-chat/'
         :list='channels'
         routename='GroupChatConversation'

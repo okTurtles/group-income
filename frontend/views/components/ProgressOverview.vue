@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 div
   .level
     dl.level-left.c-summary(:style='{ color: fakeStore.themeColor }')

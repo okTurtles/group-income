@@ -1,17 +1,17 @@
-<template lang="pug">
+<template lang='pug'>
 modal-template
   template(#title='')
     i18n Add new members
 
   .c-container
-    i18n.title.is-4(tag="h3") Share this link with others to grant access to your group.
-    i18n.has-text-1(tag="p") After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!
-    a.link.c-link(:href="link" target="_blank")
+    i18n.title.is-4(tag='h3') Share this link with others to grant access to your group.
+    i18n.has-text-1(tag='p') After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!
+    a.link.c-link(:href='link' target='_blank')
       i.icon-link
       | {{link}}
-    i18n.has-text-1(tag="p") This invite link expires on the 4th of February.
+    i18n.has-text-1(tag='p') This invite link expires on the 4th of February.
     i18n.is-outlined.c-cta(
-      tag="button"
+      tag='button'
       @click.prevent='close'
     ) Awesome
 </template>

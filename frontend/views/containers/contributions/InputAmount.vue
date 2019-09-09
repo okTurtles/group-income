@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 label.gi-fieldGroup
   p.label {{label}}
 
@@ -11,7 +11,7 @@ label.gi-fieldGroup
     span.control
       input.input(
         type='number'
-        :class="{'error': error }"
+        :class='{ error }'
         v-bind='$attrs'
         v-on='$listeners'
       )

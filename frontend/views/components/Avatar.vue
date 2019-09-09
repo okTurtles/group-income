@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
   img.c-avatar(
     :src='imageURL'
     :alt='alt'
