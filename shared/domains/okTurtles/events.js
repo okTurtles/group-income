@@ -21,8 +21,9 @@ export default sbp('sbp/selectors/register', {
     sbp('okTurtles.events/on', event, cbWithOff)
   },
   'okTurtles.events/emit': function (event: string, ...data: any) {
-    const listeners = sbp('okTurtles.data/get', listenKey(event)) || []
-    listeners.forEach(listener => listener(...data))
+    for (const listener of sbp('okTurtles.data/get', listenKey(event)) || []) {
+      listener(...data)
+    }
   },
   // almost identical to Vue.prototype.$off, except we require `event` argument
   'okTurtles.events/off': function (event: string, handler: ?Function) {

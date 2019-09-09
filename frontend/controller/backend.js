@@ -5,6 +5,7 @@ import { sign, bufToB64, b64ToStr } from '~/shared/functions.js'
 import { GIMessage } from '~/shared/GIMessage.js'
 import { RESPONSE_TYPE } from '~/shared/constants.js'
 import { CONTRACTS_MODIFIED } from '~/frontend/utils/events.js'
+import { intersection, difference } from '~/frontend/utils/giLodash.js'
 import pubsub from './utils/pubsub.js'
 import { handleFetchResult } from './utils/misc.js'
 
@@ -22,7 +23,7 @@ function signJSON (json, keypair) {
   }, json)
 }
 
-var contractSubscriptions = []
+var contractSubscriptions = {}
 var serverSocket
 
 export function createWebSocket (url: string, options: Object): Promise<Object> {
@@ -40,43 +41,55 @@ export function createWebSocket (url: string, options: Object): Promise<Object> 
           reject(err)
         },
         data: msg => {
-          console.log('websocket message:', msg)
+          // TODO: place us in unrecoverable state (see state.js error handling TODOs)
           if (!msg.data) throw new Error('malformed message: ' + JSON.stringify(msg))
           switch (msg.type) {
             case RESPONSE_TYPE.ENTRY:
               // calling dispatch via SBP makes it simple to implement 'test/backend.js'
               sbp('state/vuex/dispatch', 'handleEvent', GIMessage.deserialize(msg.data))
               break
+            case RESPONSE_TYPE.SUB:
+            case RESPONSE_TYPE.UNSUB:
+            case RESPONSE_TYPE.PUB: // .PUB can be used to send ephemeral messages outside of any contract logs
+              console.debug(`NOTE: ignoring websocket event ${msg.type} in room:`, msg.data)
+              break
             default:
-              console.log('SOCKET UNHANDLED EVENT!', msg) // TODO: this
+              console.error('SOCKET UNHANDLED EVENT!', msg) // TODO: this
           }
         }
       }
       // TODO: handle going offline event
     })
     serverSocket.on('reconnected', () => {
-      console.log('websocket connection re-established. re-joining:', contractSubscriptions)
-      contractSubscriptions.forEach(contractID => serverSocket.sub(contractID))
+      const contractIDs = Object.keys(contractSubscriptions)
+      console.log('websocket connection re-established. re-joining:', contractIDs)
+      contractIDs.forEach(id => serverSocket.sub(id))
     })
   })
 }
 
 // Keep pubsub in sync (logged into the right "rooms") with store.state.contracts
-sbp('okTurtles.events/on', CONTRACTS_MODIFIED, async (data) => {
-  var contractID = data.add || data.remove
-  var idx = contractSubscriptions.indexOf(contractID)
-  var method = data.add ? 'sub' : 'unsub'
-  if ((data.add && idx > -1) || (data.remove && idx === -1)) {
-    return // if already subscribed or already unsubscribed
+sbp('okTurtles.events/on', CONTRACTS_MODIFIED, async (contracts) => {
+  const subscribedIDs = Object.keys(contractSubscriptions)
+  const currentIDs = Object.keys(contracts)
+  const leaveSubscribed = intersection(subscribedIDs, currentIDs)
+  const toUnsubscribe = difference(subscribedIDs, leaveSubscribed)
+  const toSubscribe = difference(currentIDs, leaveSubscribed)
+  try {
+    for (const contractID of toUnsubscribe) {
+      const res = await serverSocket.unsub(contractID)
+      delete contractSubscriptions[contractID]
+      console.debug(`[Backend] unsubscribed ${contractID}`, res)
+    }
+    for (const contractID of toSubscribe) {
+      const res = await serverSocket.sub(contractID)
+      contractSubscriptions[contractID] = true
+      console.debug(`[Backend] subscribed ${contractID}`, res)
+    }
+  } catch (e) {
+    // TODO: handle any exceptions!
+    console.error(`CONTRACTS_MODIFIED: error in pubsub!`, e, { toUnsubscribe, toSubscribe })
   }
-  // TODO: handle any exceptions!
-  var res = await serverSocket[method](contractID)
-  if (data.add) {
-    contractSubscriptions.push(contractID)
-  } else {
-    contractSubscriptions.splice(idx, 1)
-  }
-  console.log(`[Backend] ${method}scribed ${contractID}:`, res)
 })
 
 sbp('sbp/selectors/register', {
@@ -88,6 +101,8 @@ sbp('sbp/selectors/register', {
         'Content-Type': 'text/plain',
         'Authorization': `gi ${signature}`
       }
+    // TODO: auto resend after short random delay
+    //       https://github.com/okTurtles/group-income-simple/issues/608
     }).then(handleFetchResult('text'))
   },
   // TODO: r.body is a stream.Transform, should we use a callback to process

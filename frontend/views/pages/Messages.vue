@@ -1,6 +1,6 @@
 <template lang="pug">
 page(pageTestName='messages' pageTestHeaderName='messages')
-  template(#title='') Messages
+  template(#title='') {{ L('Messages') }}
   template(#sidebar='')
     chat-nav(
       :title="L('Messages')"

@@ -77,8 +77,24 @@ page(
           td.has-text-1 Use this color on non critical texts.
         tr
           td
-            pre .has-bold
-          td.has-bold I'm bold, without using "b" or "strong" tag.
+            pre .has-text-bold
+          td.has-text-bold I'm bold, without using "b" or "strong" tag.
+        tr
+          td
+            pre .has-text-primary
+          td.has-text-primary An informative text perhaps.
+        tr
+          td
+            pre .has-text-success
+          td.has-text-success Mission completed!
+        tr
+          td
+            pre .has-text-warning
+          td.has-text-warning Be careful...
+        tr
+          td
+            pre .has-text-danger
+          td.has-text-danger Ups! something went wrong.
         tr
           td
             pre .has-ellipsis
@@ -447,7 +463,7 @@ page(
       tooltip
         i.icon-exclamation-triangle Complete
         template(slot='tooltip')
-          p.has-bold Custom markdown
+          p.has-text-bold Custom markdown
           | It has a maximum width of&nbsp;
           strong 14rem
           |  (224px).

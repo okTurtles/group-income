@@ -6,7 +6,7 @@
     @submit.prevent='submit'
   )
     modal-template(class='has-submodal-background is-centered')
-      i18n(tag='template' slot='title') Leave a group
+      template(slot='title') {{ L('Leave a group') }}
 
       i18n(tag='h3') Are you sure you want to delete this group?
 

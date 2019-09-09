@@ -8,6 +8,7 @@ import { objectOf, optional, string, number, object, unionOf, literalOf } from '
 //       https://github.com/okTurtles/group-income-simple/issues/603
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST } from './voting/rules.js'
 import proposals, { proposalType, proposalSettingsType, archiveProposal, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_WITHDRAWN } from './voting/proposals.js'
+import * as Errors from '../errors.js'
 
 // for gi.contracts/group/payment ... TODO: put these in some other file?
 export const PAYMENT_PENDING = 'pending'
@@ -140,10 +141,9 @@ DefineContract({
       process (state, { data, meta }) {
         const proposal = state.proposals[data.proposalHash]
         if (!proposal) {
-          // TODO: better handle this and similar errors
-          //       https://github.com/okTurtles/group-income-simple/issues/602
+          // https://github.com/okTurtles/group-income-simple/issues/602
           console.error(`proposalVote: no proposal for ${data.proposalHash}!`, data)
-          return // TODO: or throw exception?
+          throw new Errors.GIErrorIgnoreAndBanIfGroup(`proposalVote without existing proposal`)
         }
         Vue.set(proposal.votes, meta.username, data.vote)
         // TODO: handle vote pass/fail
@@ -170,9 +170,10 @@ DefineContract({
         const proposal = state.proposals[data.proposalHash]
         if (!proposal) {
           console.error(`proposalWithdraw: no proposal for ${data.proposalHash}!`, data)
+          throw new Errors.GIErrorIgnoreAndBanIfGroup(`proposalWithdraw without existing proposal`)
         } else if (proposal.meta.username !== meta.username) {
-          // TODO: properly handle these error conditions!
           console.error(`proposalWithdraw: proposal ${data.proposalHash} belongs to ${proposal.meta.username} not ${meta.username}!`)
+          throw new Errors.GIErrorIgnoreAndBanIfGroup(`proposalWithdraw for wrong user!`)
         } else {
           // TODO: make sure this is a synchronous function, and if not handle it appropriately
           proposal.status = STATUS_WITHDRAWN
@@ -200,9 +201,8 @@ DefineContract({
       process (state, { data, meta }) {
         const invite = state.invites[data.inviteSecret]
         if (invite.status !== 'valid') {
-          // throw an exception so that the event handler doesn't get triggered
-          // TODO: handle this kind of error (e.g. an invite being used twice)
-          throw new Error(`inviteDecline: invite for ${meta.username} is: ${invite.status}`)
+          console.error(`inviteDecline: invite for ${meta.username} is: ${invite.status}`)
+          return
         }
         Vue.set(invite.responses, meta.username, false)
         if (Object.keys(invite.responses).length === invite.generated) {
@@ -219,8 +219,8 @@ DefineContract({
         console.debug(`inviteAccept:`, data, state.invites)
         const invite = state.invites[data.inviteSecret]
         if (invite.status !== 'valid') {
-          // throw an exception so that the event handler doesn't get triggered
-          throw new Error(`inviteAccept: invite for ${meta.username} is: ${invite.status}`)
+          console.error(`inviteAccept: invite for ${meta.username} is: ${invite.status}`)
+          return
         }
         Vue.set(invite.responses, meta.username, true)
         if (Object.keys(invite.responses).length === invite.generated) {
@@ -230,12 +230,36 @@ DefineContract({
           contractID: meta.identityContractID,
           groupProfile: {}
         })
-        // NOTE: after this, the asynchronous sbp event listener below for
-        //       'gi.contracts/group/inviteAccept/process' will be called
-        //       and we will subscribe to this new user's identity contract
+        // If we're triggered by handleEvent in state.js (and not latestContractState)
+        // then the asynchronous sideEffect function will get called next
+        // and we will subscribe to this new user's identity contract
+      },
+      // !! IMPORANT!!
+      // Actions here MUST NOT modify contract state!
+      // They MUST NOT call 'commit'!
+      // They should only coordinate the actions of outside contracts.
+      // Otherwise `latestContractState` and `handleEvent` will not produce same state!
+      async sideEffect (message) {
+        const rootState = sbp('state/vuex/state')
+        const groupState = rootState[message.contractID()]
+        const data = message.data()
+        const meta = message.meta()
+        // TODO: per #257 this will have to be encompassed in a recoverable transaction
+        // however per #610 that might be handled in handleEvent (?), or per #356 might not be needed
+        if (data.username === rootState.loggedIn.username) {
+          // we're the person who just accepted the group invite
+          // so subscribe to founder's IdentityContract & everyone else's
+          for (const name of Object.keys(groupState.profiles)) {
+            if (name === rootState.loggedIn.username) continue
+            await sbp('state/vuex/dispatch', 'syncContractWithServer', groupState.profiles[name].contractID)
+          }
+        } else {
+          // we're an existing member of the group getting notified that a
+          // new member has joined, so subscribe to their identity contract
+          await sbp('state/vuex/dispatch', 'syncContractWithServer', meta.identityContractID)
+        }
       }
     },
-    // TODO: remove group profile when leave group is implemented
     'gi.contracts/group/groupProfileUpdate': {
       validate: object,
       process (state, { data, meta }) {
@@ -244,34 +268,20 @@ DefineContract({
           Vue.set(groupProfile, key, data[key])
         }
       }
-    }
+    },
+    ...(process.env.NODE_ENV === 'development' ? {
+      'gi.contracts/group/malformedMutation': {
+        validate: objectOf({ errorType: string }),
+        process (state, { data }) {
+          const ErrorType = Errors[data.errorType]
+          if (ErrorType) {
+            throw new ErrorType('malformedMutation!')
+          } else {
+            throw new Error(`unknown error type: ${data.errorType}`)
+          }
+        }
+      }
+    } : {})
+    // TODO: remove group profile when leave group is implemented
   }
 })
-
-// !! IMPORANT!!
-// Actions here MUST NOT modify contract state!
-// They MUST NOT call 'commit'!
-// This is critical to the function of that latest contract hash.
-// They should only coordinate the actions of outside contracts.
-// Otherwise `latestContractState` and `handleEvent` will not produce same state!
-sbp('okTurtles.events/on', 'gi.contracts/group/inviteAccept/process',
-  async function (contractID, message) {
-    const rootState = sbp('state/vuex/state')
-    const groupState = rootState[contractID]
-    const data = message.data()
-    const meta = message.meta()
-    // TODO: per #257 this will have to be encompassed in a recoverable transaction
-    if (data.username === rootState.loggedIn.username) {
-      // we're the person who just accepted the group invite
-      // so subscribe to founder's IdentityContract & everyone else's
-      for (const name of Object.keys(groupState.profiles)) {
-        if (name === rootState.loggedIn.username) continue
-        await sbp('state/vuex/dispatch', 'syncContractWithServer', groupState.profiles[name].contractID)
-      }
-    } else {
-      // we're an existing member of the group getting notified that a
-      // new member has joined, so subscribe to their identity contract
-      await sbp('state/vuex/dispatch', 'syncContractWithServer', meta.identityContractID)
-    }
-  }
-)

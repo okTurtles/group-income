@@ -1,6 +1,6 @@
 <template lang="pug">
 page(pageTestName='dashboard' pageTestHeaderName='groupName')
-  template(#title='') Group Chat
+  template(#title='') {{ L('Group Chat') }}
   template(#sidebar='')
     chat-nav(
       :title="L('Chat')"
