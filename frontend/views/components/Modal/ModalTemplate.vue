@@ -3,7 +3,7 @@
     transition(name='fade' appear)
       .c-modal-background(@click='close' v-if='isActive')
 
-    transition(name='slide-left' appear @after-leave='$destroy()')
+    transition(name='slide-left' appear)
       .c-modal-content(ref='card' v-if='isActive')
         header.c-modal-header(
           :class='{ "has-subtitle": $scopedSlots.subtitle }'
