@@ -2,6 +2,7 @@
   div
     svg(
       :width='side + "px"'
+      :height='side + "px"'
       :viewbox='"0 0 " + side + " " + side'
       ref='_svg' @touchmove='handleTouchMove'
       @click='handleClick'
