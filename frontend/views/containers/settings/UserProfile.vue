@@ -17,11 +17,11 @@
 
         p.error(v-if='ephemeral.errorMsg') {{ ephemeral.errorMsg }}
 
-        .avatar(:class="{ error: $v.form.picture.$error }")
+        .avatar(:class='{ error: $v.form.picture.$error }')
           label(for='profilePicture')
             avatar(
               :src='userPictureInitial'
-              ref="picture"
+              ref='picture'
             )
             i18n.link Change avatar
 
@@ -65,7 +65,7 @@
           i18n.label(tag='label') Email
 
           input.input(
-            :class="{'error': $v.form.email.$error}"
+            :class='{error: $v.form.email.$error}'
             name='profileEmail'
             type='text'
             v-model='form.email'
@@ -83,7 +83,7 @@
           i18n.link(
             tag='button'
             data-test='passwordBtn'
-            @click.prevent="openModal('PasswordModal')"
+            @click.prevent='openModal("PasswordModal")'
           ) Update Password
 
         .buttons

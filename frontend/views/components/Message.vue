@@ -1,5 +1,5 @@
-<template lang="pug">
-.message(:class="'is-'+severity")
+<template lang='pug'>
+.message(:class='`is-${severity}`')
   .media
     i(:class='getIcon')
 

@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
   template(#title='') {{ L('Contributions') }}
 
@@ -53,7 +53,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
       ) Pledging up to {amount}
       i18n to other&apos;s mincome
       i18n(
-        v-if='fakeStore.giving.monetary == 0' :args="{amount: '[$170]'}"
+        v-if='fakeStore.giving.monetary == 0' :args='{amount: "[$170]"}'
         tag='p'
       ) (The group&apos;s average pledge is {amount})
 

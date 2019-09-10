@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 .c-wrapper(v-if='groups.length > 0')
   i18n.subtitle.c-subtitle(tag='h2') Groups chat shortcut
 
@@ -9,7 +9,7 @@
     )
       router-link.c-router.no-border(
         to='/group-chat'
-        @click.native="$emit('select', group.contractID)"
+        @click.native='$emit("select", group.contractID)'
       )
         avatar.c-avatar(
           src=''

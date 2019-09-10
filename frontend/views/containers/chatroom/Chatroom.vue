@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 // main.c-chatroom
 //   chat-nav(
 //     :title='title'

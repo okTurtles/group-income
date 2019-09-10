@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 .is-flex.c-graph
   pie-chart.c-chart(
     :slices='groupPledgingSlices'
@@ -12,7 +12,7 @@
     :aria-label='L("Group\'s Pledge Summary")'
   )
     graph-legend-item(
-      :label="L('Members Pledging')"
+      :label='L("Members Pledging")'
       :class='legendItemClass'
     )
       | {{graphData.members}}
@@ -38,13 +38,13 @@
     ) {{fakeStore.currency}}{{graphData.neededPledges}}
 
     graph-legend-item(
-      :label="L('Surplus (not needed)')"
+      :label='L("Surplus (not needed)")'
       :class='legendItemClass' color='secondary' v-if='graphData.surplus'
     ) {{fakeStore.currency}}{{graphData.surplus}}
 
     graph-legend-item(
       v-if='graphData.userIncomeToReceive'
-      :label="L('Income to receive')"
+      :label='L("Income to receive")'
       :class='legendItemClass'
       color='tertiary'
     )

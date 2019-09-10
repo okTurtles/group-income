@@ -17,12 +17,12 @@
             type='text'
             name='mincome'
             required=''
-            :class="{ 'error': $v.form.member.$error }"
+            :class='{ error: $v.form.member.$error }'
             v-model='form.member'
             @keyup.enter='next'
           )
       button.link.c-addMember(
-        @click="addNewMember"
+        @click='addNewMember'
       )
         i.icon-plus
         i18n Add more people

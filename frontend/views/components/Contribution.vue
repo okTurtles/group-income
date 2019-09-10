@@ -1,11 +1,11 @@
-<template lang="pug">
+<template lang='pug'>
 li.c-item(v-if='isEditing || isAdding')
   input.input(
     type='text'
     ref='input'
     :placeholder='randomPlaceholder'
     maxlength='20'
-    :aria-label="L('Your contribution')"
+    :aria-label='L("Your contribution")'
     :aria-invalid='hasError'
     v-focus='isEditing && $slots.default[0].text'
     @keyup='verifyValue'

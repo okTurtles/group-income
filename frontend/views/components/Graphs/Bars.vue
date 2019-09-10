@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 .has-text-centered
   p.c-description
     strong.is-size-5.is-block.c-nowrap {{currency}} {{mincome}}

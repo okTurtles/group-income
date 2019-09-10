@@ -4,13 +4,13 @@ ul.c-group-list(v-if='groupsByName.length')
     v-for='(group, index) in groupsByName'
     :key='`group-${index}`'
     tag='button'
-    :class="{ 'is-active': currentGroupId === group.contractID}"
+    :class='{ "is-active": currentGroupId === group.contractID}'
   )
     tooltip(
-      direction="right"
+      direction='right'
       :text='group.groupName'
     )
-      button.c-group-picture.is-unstyled(@click="handleMenuSelect(group.contractID)")
+      button.c-group-picture.is-unstyled(@click='handleMenuSelect(group.contractID)')
         avatar.c-avatar(
           src='/assets/images/default-avatar.png'
           :blobURL='$store.state[group.contractID].settings.groupPicture'
@@ -18,7 +18,7 @@ ul.c-group-list(v-if='groupsByName.length')
 
   li.c-group-list-item
     tooltip(
-      direction="right"
+      direction='right'
       :text='L("Create a new group")'
     )
       router-link.button.is-icon.has-background(

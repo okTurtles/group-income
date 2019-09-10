@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 //
   MenuItem is a wrapper around ListItem with extra styles
   and to update MenuSelect when an option was selected.

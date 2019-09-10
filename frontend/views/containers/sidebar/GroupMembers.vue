@@ -16,7 +16,7 @@
     // TODO: remove v-if in v-for loop and reorder list member by active user limited to 10
     li.c-group-member(
       v-for='(member, username, index) in groupMembers'
-      v-if="index < 10 && member && username !== currentUserName"
+      v-if='index < 10 && member && username !== currentUserName'
       :class='member.pending && "is-pending"'
       :key='username'
       data-test='member'
@@ -33,7 +33,7 @@
 
       tooltip(
         v-if='member.pending'
-        direction="bottom-end"
+        direction='bottom-end'
       )
         span.button.is-icon-small(
           data-test='pendingTooltip'
@@ -53,7 +53,7 @@
         menu-content.c-actions-content
           ul
             menu-item(
-              tag='router-link' to="/chat"
+              tag='router-link' to='/chat'
               item-id='message'
               icon='comment'
             )
@@ -62,15 +62,15 @@
               tag='button'
               item-id='remove'
               icon='times'
-              @click="openModal('RemoveMember')"
+              @click='openModal("RemoveMember")'
             )
               i18n Remove member
 
   i18n.link(
     tag='button'
-    v-if="groupMembersCount > 10"
+    v-if='groupMembersCount > 10'
     :args='{ groupMembersCount }'
-    @click="openModal('GroupMembersList')"
+    @click='openModal("GroupMembersList")'
   ) See all {groupMembersCount} members
 </template>
 

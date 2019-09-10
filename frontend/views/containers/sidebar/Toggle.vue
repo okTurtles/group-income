@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 button.c-toggle.is-unstyled(@click='$emit("toggle")')
   i.icon-bars(v-if='element === "navigation"' aria-label='Navigation - Popup button')
   i.icon-info(v-else aria-label='Sidebar - Popup button')

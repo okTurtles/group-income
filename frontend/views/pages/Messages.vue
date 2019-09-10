@@ -1,13 +1,13 @@
-<template lang="pug">
+<template lang='pug'>
 page(pageTestName='messages' pageTestHeaderName='messages')
   template(#title='') {{ L('Messages') }}
   template(#sidebar='')
     chat-nav(
-      :title="L('Messages')"
-      :searchplaceholder="L('Search for a person')"
+      :title='L("Messages")'
+      :searchplaceholder='L("Search for a person")'
     )
       conversations-list(
-        :title="L('Messages')"
+        :title='L("Messages")'
         :list='messages'
         routename='MessagesConversation'
         :type='type'

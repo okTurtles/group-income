@@ -2,7 +2,7 @@
 page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings.groupName')
   template(#title='') {{ groupSettings.groupName }}
 
-  start-inviting(v-if="groupMembersCount === 1")
+  start-inviting(v-if='groupMembersCount === 1')
 
   page-section(title='This months overview')
     overview
@@ -22,7 +22,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
 
   template(#sidebar='')
     groups-min-income
-    group-members(v-if="groupMembersCount > 1")
+    group-members(v-if='groupMembersCount > 1')
     group-purpose
 </template>
 

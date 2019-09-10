@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 .c-send
   textarea.textarea.c-send-textarea(
     ref='textarea'

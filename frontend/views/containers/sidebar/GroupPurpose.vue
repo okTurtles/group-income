@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 .c-group-purpose
   .c-group-purpose-header
     i18n.title.is-4(tag='h4') About the group

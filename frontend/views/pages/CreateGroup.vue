@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 //- TODO: move this into modal
 main.main#create-group-page
   .steps
@@ -6,7 +6,7 @@ main.main#create-group-page
       v-for='(step, index) in config.steps'
       :key='index'
       :to='{name: step}'
-      :class="[currentStep === index ? 'active' : '', currentStep < index ? 'next' : '']"
+      :class='[currentStep === index ? "active" : "", currentStep < index ? "next" : ""]'
     ) {{ index + 1 }}
 
   transition(name='fade' mode='out-in')

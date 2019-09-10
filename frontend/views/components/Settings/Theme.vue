@@ -1,7 +1,7 @@
 <template lang='pug'>
 .theme-list
   fieldset.theme(v-for='(color, label) in themes' :key='label' @click='setTheme(color.name)')
-    input.radio(type='radio' name='theme' :value='label' :id='label' v-model="colors.name")
+    input.radio(type='radio' name='theme' :value='label' :id='label' v-model='colors.name')
     label(:for='label')
       svg(width='113' height='113' viewBox='0 0 113 113' fill='none' xmlns='http://www.w3.org/2000/svg')
         path.bg(:fill='color.general_0' :stroke='color.border' d='M2.60769 0.5H110.392C111.012 0.5 111.555 0.692751 111.933 0.981206C112.309 1.2693 112.5 1.63189 112.5 1.99412V111.006C112.5 111.368 112.309 111.731 111.933 112.019C111.555 112.307 111.012 112.5 110.392 112.5H2.60769C1.98753 112.5 1.44466 112.307 1.06745 112.019C0.690715 111.731 0.5 111.368 0.5 111.006V1.99412C0.5 1.63189 0.690715 1.2693 1.06745 0.981206C1.44466 0.692751 1.98753 0.5 2.60769 0.5Z')

@@ -16,7 +16,7 @@
           name='incomeProvided'
           min='0'
           required=''
-          :class="{ 'error': $v.form.incomeProvided.$error }"
+          :class='{ error: $v.form.incomeProvided.$error }'
           v-model='form.incomeProvided'
         )
         .suffix {{fakeStore.groupCurrency}}

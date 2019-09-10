@@ -1,11 +1,11 @@
-<template lang="pug">
+<template lang='pug'>
 .c-progress(
     :class='{ "is-completed": percent === "100%", "has-marks": hasMarks }'
   )
   .c-bg
   .c-marks(
-    v-if="hasMarks"
-    :style="marksStyle"
+    v-if='hasMarks'
+    :style='marksStyle'
   )
   .c-bar(
     :style='{ width: percent }'

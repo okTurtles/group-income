@@ -23,7 +23,7 @@
           i18n(tag='label' class='label') Type "Delete The Dreamers" below
 
           input.input(
-            :class="{'error': $v.form.confirmation.$error}"
+            :class='{error: $v.form.confirmation.$error}'
             name='confirmation'
             v-model='form.confirmation'
             @keyup.enter='submit'
