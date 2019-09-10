@@ -557,7 +557,7 @@ page(
           td
             .radio-wrapper
               input.radio(
-                name='v-model'
+                name='example'
                 type='radio'
                 checked='true'
               )
@@ -565,7 +565,7 @@ page(
 
             .radio-wrapper
               input.radio(
-                name='v-model'
+                name='example'
                 type='radio'
               )
               i18n Radio label

@@ -18,6 +18,8 @@
             name='mincome'
             required=''
             :class='{ error: $v.form.member.$error }'
+            v-model='form.member'
+            @keyup.enter='next'
           )
       button.link.c-addMember(
         @click='addNewMember'
