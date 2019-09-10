@@ -7,7 +7,7 @@ div
 
   i18n.link(
     tag='button'
-    aria-label='L("Change minIncome")'
+    :aria-label='L("Change Mincome")'
     @click='openProposal'
   ) Change
 </template>
