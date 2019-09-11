@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 .c-greetings
   avatar(
     v-for='(user, index) in founders'

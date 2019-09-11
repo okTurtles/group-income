@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 div
   h1(data-test='privacyStep')
     i18n Privacy Settings

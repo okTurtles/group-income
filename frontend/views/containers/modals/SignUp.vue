@@ -14,10 +14,9 @@
         i18n.label(tag='label') Username
 
         input.input#name(
-          :class="{'error': $v.form.name.$error}"
+          :class='{error: $v.form.name.$error}'
           name='name'
           @input='debounceName'
-          placeholder='username'
           ref='username'
           v-focus=''
           data-test='signName'
@@ -34,12 +33,11 @@
         i18n.label(tag='label') Email
 
         input.input#email(
-          :class="{'error': $v.form.email.$error}"
+          :class='{error: $v.form.email.$error}'
           name='email'
           v-model='form.email'
           @blur='$v.form.email.$touch()'
           type='email'
-          placeholder='email'
           data-test='signEmail'
         )
 

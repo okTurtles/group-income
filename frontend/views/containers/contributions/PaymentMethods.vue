@@ -1,16 +1,16 @@
-<template lang="pug">
+<template lang='pug'>
 div
   i18n.label(tag='legend') Payment method
-  ul.field.has-addons.c-options(:aria-label="L('Payment Methods')")
+  ul.field.has-addons.c-options(:aria-label='L("Payment Methods")')
     li.control(
       v-for='(method, index) in methodsAvailable'
       :key='`method-${index}`'
     )
       button.is-outlined(
         v-if='method.available'
-        :class="{ 'is-primary': active === method.name }"
+        :class='{ "is-primary": active === method.name }'
         :aria-pressed='active === method.name'
-        @click="$emit('change', method.name)"
+        @click='$emit("change", method.name)'
       )
         img.c-options-logo(
           v-if='method.logo'
@@ -20,7 +20,7 @@ div
         )
         template(v-else='') {{method.name}}
 
-      tooltip(v-else='' :text="L('Available soon')")
+      tooltip(v-else='' :text='L("Available soon")')
         button.is-outlined(disabled='')
           img.c-options-logo(
             :alt='method.name'

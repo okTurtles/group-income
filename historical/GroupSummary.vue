@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 //- TODO: Remove?
 div
   h1(data-test='summaryStep')

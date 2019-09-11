@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 modal-template(
   ref='modal'
   :isactive='true'
@@ -44,14 +44,14 @@ modal-template(
           :class='{"error": inputIncomeError }'
           @input='verifyInputIncome'
           :value='form.income'
-          :placeholder="L('amout')"
+          :placeholder='L("amout")'
         )
         label USD
 
       p.error(v-if='inputIncomeError') inputIncomeError
 
       p.help(v-else)
-        text-who(:who="['Rick', 'Carl', 'Kim']")
+        text-who(:who='["Rick", "Carl", "Kim"]')
         i18n will ensure you meet the mincome
 
     .field(v-else-if='canPledge')
@@ -64,7 +64,7 @@ modal-template(
           :class='{"error": $v.form.pledge.$error }'
           @input='verifyInputPledge'
           :value='form.pledge'
-          :placeholder="L('amout')"
+          :placeholder='L("amout")'
         )
         label USD
 

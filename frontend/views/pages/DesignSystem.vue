@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 page(
   mainClass='full-width'
   pageTestName='designSystemPage'
@@ -137,11 +137,11 @@ page(
         br
         | A complete list can be find here:&nbsp;
         br
-        a.link(href="https://fortawesome.com/sets/font-awesome-5-solid" target="_blank")
+        a.link(href='https://fortawesome.com/sets/font-awesome-5-solid' target='_blank')
           | https://fortawesome.com/sets/font-awesome-5-solid
         |  or&nbsp;
         br
-        a.link(href="https://fortawesome.com/sets/font-awesome-5-regular" target="_blank")
+        a.link(href='https://fortawesome.com/sets/font-awesome-5-regular' target='_blank')
           | https://fortawesome.com/sets/font-awesome-5-regular
         br
 
@@ -179,6 +179,7 @@ page(
               i.icon-heart icon-heart
               i.icon-info icon-info
               i.icon-info-circle icon-info-circle
+              i.icon-link icon-link
               i.icon-lock icon-lock
               i.icon-minus-circle icon-minus-circle
               i.icon-paper-plane icon-paper-plane
@@ -191,7 +192,7 @@ page(
               i.icon-undo icon-undo
               i.icon-user icon-user
               i.icon-user-plus icon-user-plus
-
+              i.icon-vote-yea icon-vote-yea
   article#spacing
     section.card
       i18n(tag='h2' class='card-header') Spacing
@@ -200,7 +201,7 @@ page(
           th code
           th demo
           //- th usage
-        tr(v-for="(spacer, index) in ['xs', 'sm', '', 'lg']" :key='index')
+        tr(v-for='(spacer, index) in ["xs", "sm", "", "lg"]' :key='index')
           td(v-if='spacer')
             code $spacer-{{spacer}}
           td(v-else='')
@@ -225,7 +226,7 @@ page(
             code {{color.name}}
             pre(v-for='num in [0, 1, 2]' :key='num') var(--{{color.name}}_{{num}})&nbsp
           td
-            span.c-palette(v-for='num in [0, 1, 2]' :key='num' :style="{ backgroundColor: `var(--${color.name}_${num})`}")
+            span.c-palette(v-for='num in [0, 1, 2]' :key='num' :style='{ backgroundColor: `var(--${color.name}_${num})`}')
 
       h3 Background
 
@@ -497,7 +498,7 @@ page(
     section.card
       i18n(tag='h2' class='card-header') Tooltips
       tooltip(
-        text="A simple text inside"
+        text='A simple text inside'
         )
         i.icon-exclamation-triangle Basic
 
@@ -514,7 +515,7 @@ page(
       | &nbsp;&nbsp;&nbsp;&nbsp;
 
       tooltip(
-        direction="right"
+        direction='right'
         )
         i.icon-exclamation-triangle Custom Direction
         template(slot='tooltip')
@@ -562,7 +563,7 @@ page(
               | textarea
           td
             label.label This is a textarea
-            textarea(placeholder='Placeholder' rows="4")
+            textarea(placeholder='Placeholder' rows='4')
 
       h3 Selectbox
 
@@ -599,7 +600,7 @@ page(
           td
             .radio-wrapper
               input.radio(
-                name="v-model"
+                name='example'
                 type='radio'
                 checked='true'
               )
@@ -607,7 +608,7 @@ page(
 
             .radio-wrapper
               input.radio(
-                name="v-model"
+                name='example'
                 type='radio'
               )
               i18n Radio label
@@ -660,7 +661,7 @@ page(
           td
             .input-combo
               input.input(type='text' placeholder='New amount')
-              label USD
+              .suffix USD
 
         tr
           td
@@ -728,7 +729,7 @@ page(
               br
               | )
           td
-            button(@click="login()")
+            button(@click='login')
               i18n Open Menu
 
   article#modal
@@ -747,7 +748,7 @@ page(
               br
               | )
           td
-            button(@click="openModal('DesignSystemModal')")
+            button(@click='openModal("DesignSystemModal")')
               i18n Open Modal
 </template>
 

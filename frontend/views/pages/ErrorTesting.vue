@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 //- This is a debug/testing page that shouldn't use i18n tag or L function
 page
   template(#title='') Error Testing

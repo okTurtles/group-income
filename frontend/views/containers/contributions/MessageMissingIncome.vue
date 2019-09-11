@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 div(v-on='$listeners')
   .c-header
     button.is-small.is-outlined

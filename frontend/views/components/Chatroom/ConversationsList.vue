@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 .c-conversation-list
   i18n.label(tag='label') {{title}}
 

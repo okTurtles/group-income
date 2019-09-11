@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 transition(
   @enter='maskEnter'
   @leave='maskLeave'

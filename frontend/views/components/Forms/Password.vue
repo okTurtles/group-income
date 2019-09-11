@@ -3,21 +3,21 @@
   i18n.label(tag='label' v-if='label') {{ label }}
   .input-combo
     input.input(
-      :type="isLock ? 'password' : 'text'"
+      :type='isLock ? "password" : "text"'
       :id='name'
-      :class="[{'error': v[name].$error}, size]"
+      :class='[{error: v[name].$error}, size]'
       :name='name'
-      :placeholder="showPlaceholder ? name : ''"
+      :placeholder='showPlaceholder ? name : ""'
       :data-test='name'
       v-model='value[name]'
       @input='v[name].$touch()'
     )
     button.is-icon(
-      type="button"
+      type='button'
       v-if='hasIconRight'
       @click.prevent='isLock = !isLock'
     )
-      i(:class="isLock ? 'icon-eye' : 'icon-eye-slash'")
+      i(:class='isLock ? "icon-eye" : "icon-eye-slash"')
 
   i18n.error(
     tag='p'

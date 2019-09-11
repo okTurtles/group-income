@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 page(pageTestName='dashboard' pageTestHeaderName='groupName')
   template(#title='') {{ L('Mailbox') }}
   template(#sidebar='')
@@ -24,7 +24,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
           )
             | {{ $store.getters.unreadMessageCount }}
 
-  article(v-if="ephemeral.mode === 'Compose'")
+  article(v-if='ephemeral.mode === "Compose"')
     .card
       i18n(tag='h3' class='card-header') New Message
       .field
@@ -76,7 +76,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
           :disabled='!ephemeral.composedMessage'
         ) Send
 
-  article(v-if="ephemeral.mode === 'Read'")
+  article(v-if='ephemeral.mode === "Read"')
 
     .card
       .card-header
@@ -102,12 +102,12 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
 
         i18n.button.is-danger(
           tag='button'
-          v-if="ephemeral.currentMessage.data.messageType === 'Message'"
+          v-if='ephemeral.currentMessage.data.messageType === "Message"'
           type='submit'
           @click='remove(index)'
         ) Delete
 
-  article(v-if="ephemeral.mode === 'Inbox' && Object.keys(proposals).length")
+  article(v-if='ephemeral.mode === "Inbox" && Object.keys(proposals).length')
     .card
       i18n(tag='h3' class='card-header') Proposals
 
@@ -125,7 +125,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
             strong From:
             | &nbsp;{{ proposal.meta.username }}
 
-  article(v-if="ephemeral.mode === 'Inbox'" data-test='inbox')
+  article(v-if='ephemeral.mode === "Inbox"' data-test='inbox')
     .card
       i18n(tag='h3' class='card-header') Inbox
 
@@ -148,7 +148,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
           span(style='color: grey;')
             | {{ message.data.message.substr(0,50) }}{{ message.data.message.length &gt; 50 ? &apos;...&apos; : &apos;&apos; }}
 
-        button.button.is-danger.is-icon(type='submit' @click="remove(index, 'inbox')")
+        button.button.is-danger.is-icon(type='submit' @click='remove(index, "inbox")')
           i.icon-times-circle
 
       div(v-if='!inbox.length')

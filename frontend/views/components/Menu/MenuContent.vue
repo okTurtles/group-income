@@ -1,5 +1,5 @@
-<template lang="pug">
-.c-content(:class="{ 'is-active': isActive }")
+<template lang='pug'>
+.c-content(:class='{ "is-active": isActive }')
   .c-content-wrapper(
     v-if='isActive'
     v-on-clickaway='closeMenu'

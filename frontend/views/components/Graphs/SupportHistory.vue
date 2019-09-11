@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 div
   p(v-if='history.length === 0')
     i18n Your group is still in its first month.
@@ -8,7 +8,7 @@ div
       v-for='(percentage, index) in history'
       :key='`percentage-${index}`'
     )
-      div(:class="['period', getResult(percentage)]")
+      div(:class='["period", getResult(percentage)]')
         p.period-title {{ months[index] }}
         p.period-txt {{ percentage | toPercent }}
         span.period-progress(:style='{height: getPercentage(percentage)}')

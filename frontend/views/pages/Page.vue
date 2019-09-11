@@ -1,8 +1,8 @@
-<template lang="pug">
+<template lang='pug'>
 div(:data-test='pageTestName' :class='$scopedSlots.sidebar ? "p-with-sidebar" : "p-no-sidebar"')
   header.p-header
     h1.p-title(:data-test='pageTestHeaderName')
-      img.c-logo(src='/assets/images/group-income-icon-transparent.png' alt="GroupIncome's logo")
+      img.c-logo(src='/assets/images/group-income-icon-transparent.png' alt='GroupIncome\'s logo')
       slot(name='title')
 
     p(
@@ -16,7 +16,7 @@ div(:data-test='pageTestName' :class='$scopedSlots.sidebar ? "p-with-sidebar" : 
 
   aside.p-sidebar(
     v-if='$scopedSlots.sidebar'
-    :class="{ 'is-active': ephemeral.isActive }"
+    :class='{ "is-active": ephemeral.isActive }'
   )
     toggle(@toggle='toggleMenu' element='sidebar')
     slot(name='sidebar')

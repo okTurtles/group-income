@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 menu-parent
   menu-trigger.c-menu-trigger.is-icon-small
     i.icon-bell(:class="activityCount ? '' : 'active'")

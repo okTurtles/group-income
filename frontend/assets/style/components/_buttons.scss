@@ -169,8 +169,10 @@ button,
 }
 
 .buttons {
-  padding-top: $spacer;
+  position: relative;
+  margin-top: $spacer;
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
 
   &.is-centered {
@@ -183,6 +185,8 @@ button,
 
   button,
   .button {
+    margin-top: $spacer-sm;
+
     &:not(:last-child) {
       margin-right: $spacer-sm;
     }

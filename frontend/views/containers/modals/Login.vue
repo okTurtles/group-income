@@ -14,12 +14,11 @@
         i18n.label(tag='label') Username
 
         input.input#loginName(
-          :class="{'error': $v.form.name.$error}"
+          :class='{error: $v.form.name.$error}'
           name='name'
           v-model='form.name'
           @keyup.enter='login'
           @input='$v.form.name.$touch()'
-          placeholder='username'
           ref='username'
           autofocus
           data-test='loginName'
