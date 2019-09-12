@@ -11,9 +11,9 @@ li.c-item
       v-if='icon'
       :class='{ [`icon-${icon}`]: icon }'
     )
+      badge(v-if='badgeCount' type='compact') {{ badgeCount }}
     span.c-item-slot
       slot
-    badge(:number='badgeCount')
 </template>
 
 <script>
@@ -80,7 +80,9 @@ export default {
   cursor: pointer;
 
   i {
-    width: $spacer;
+    position: relative;
+    width: $spacer * 1.5;
+    height: $spacer * 1.5;
     margin-right: $spacer;
     font-size: 1rem;
     color: $text_1;

@@ -377,6 +377,49 @@ page(
             button.is-icon-small
               i.icon-cog
 
+  article#notification-badges
+    section.card
+      i18n(tag='h2' class='card-header') Notification Badges
+      table
+        thead
+          th code
+          th demo
+        tr
+          td
+            pre
+              | $spacer-lg
+              |   badge(type='default') 3
+          td
+            span.c-badge-container
+              badge(type='default') 3
+        tr
+          td
+            pre
+              | $spacer-lg
+              |   badge(type='compact') 3
+          td
+            span.c-badge-container
+              badge(type='compact') 3
+        tr
+          td
+            pre
+              | button.is-icon(style='position: relative')
+              |   i.icon-cog
+              |   badge(type='default') 3
+
+          td
+            button.is-icon(style='position: relative')
+              i.icon-cog
+              badge(type='default') 3
+        tr
+          td
+            pre
+              | i.icon-comments
+              |   badge(type='compact') 3
+          td
+            i.icon-comments.c-badge-container-small
+              badge(type='compact') 3
+
   article#pills
     section.card
       i18n(tag='h2' class='card-header') Pills
@@ -714,6 +757,7 @@ import Page from '@pages/Page.vue'
 import sbp from '~/shared/sbp.js'
 import Message from '@components/Message.vue'
 import Tooltip from '@components/Tooltip.vue'
+import Badge from '@components/Badge.vue'
 import { LOAD_MODAL } from '@utils/events.js'
 
 export default {
@@ -746,7 +790,8 @@ export default {
   components: {
     Page,
     Message,
-    Tooltip
+    Tooltip,
+    Badge
   },
   mounted () {
     const menu = document.getElementById('c-design-system-sidebar')
@@ -893,6 +938,23 @@ table {
 
 .message {
   margin-bottom: $spacer-lg;
+}
+
+.c-badge-container {
+  position: relative;
+  display: inline-block;
+  width: $spacer-lg;
+  height: $spacer-lg;
+  border: 1px dashed $primary_1;
+
+  &-small {
+    @extend .c-badge-container;
+    width: $spacer-md * 1.5;
+    height: $spacer-md * 1.5;
+    line-height: $spacer-md * 1.5;
+    text-align: center;
+    border: none;
+  }
 }
 
 #c-design-system-sidebar {
