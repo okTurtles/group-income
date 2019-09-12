@@ -1,5 +1,4 @@
 <template lang="pug">
-// :aria-label=
 span.c-badge(
   :class='`is-${type}`'
   :aria-label='L("New notifications", undefined, { num: $slots.default ? $slots.default[0].text : "" })'
