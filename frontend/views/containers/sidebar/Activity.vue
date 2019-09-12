@@ -1,7 +1,7 @@
 <template lang='pug'>
 menu-parent
   menu-trigger.c-menu-trigger.is-icon-small
-    i.icon-bell(:class="activityCount ? '' : 'active'")
+    i.icon-bell(:class='activityCount ? "" : "active"')
     badge(v-if='activityCount' data-test='alertNotification') {{ activityCount }}
 
   menu-content.c-content
