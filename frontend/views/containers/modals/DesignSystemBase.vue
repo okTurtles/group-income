@@ -26,8 +26,8 @@ modal-base-template(:class="{ 'has-background': background }")
             tag='button'
             @click.prevent="openModal('DesignSystemModal')"
           ) Open Modal
-
 </template>
+
 <script>
 import ModalBaseTemplate from '@components/Modal/ModalBaseTemplate.vue'
 import sbp from '~/shared/sbp.js'
