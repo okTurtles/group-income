@@ -15,4 +15,5 @@ Vue.component('RuleRemoveMemberProposal', () => import('../views/containers/prop
 
 // TODO Remove after design test period
 Vue.component('DesignSystemModal', () => import('../views/containers/modals/DesignSystem.vue'))
+Vue.component('DesignSystemModalBase', () => import('../views/containers/modals/DesignSystemBase.vue'))
 Vue.component('TimeTravel', () => import('../views/containers/TimeTravel.vue'))

@@ -28,6 +28,11 @@ modal-template(:class="{ 'has-background': background }")
         @click.prevent='toggleBackground'
       ) Toggle background
 
+      i18n(
+        tag='button'
+        @click.prevent="openModal('SignUp')"
+      ) Open SubModal
+
   template(#footer='')
     //- We aren't using i18n in this DesignSystem.vue file because
     //- this string shouldn't be translated. However, if you copy this file,
@@ -36,6 +41,8 @@ modal-template(:class="{ 'has-background': background }")
 </template>
 <script>
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
+import sbp from '~/shared/sbp.js'
+import { OPEN_MODAL } from '@utils/events.js'
 
 export default {
   name: 'modal-test',
@@ -55,6 +62,9 @@ export default {
     },
     toggleBackground () {
       this.background = !this.background
+    },
+    openModal (mode) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, mode)
     }
   }
 }

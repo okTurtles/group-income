@@ -1,5 +1,5 @@
 <template lang='pug'>
-modal-base-template
+modal-base-template(class='has-background')
   .wrapper-container
     tab-wrapper(:tabNav='settings')
       tab-item

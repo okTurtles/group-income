@@ -1,8 +1,7 @@
 <template lang='pug'>
   transition(name='zoom' appear)
     .modal(data-test='modal' role='dialog' v-if='isActive')
-      .has-background
-        modal-close(@close='close')
+      modal-close(@close='close')
       slot
 </template>
 
@@ -33,7 +32,12 @@ export default {
   height: 100%;
 }
 
+.modal .c-modal-close {
+  background-color: $background;
+}
+
 .has-background .c-modal-close {
+  background-color: $general_1;
   @include tablet {
     background-color: $background;
   }
