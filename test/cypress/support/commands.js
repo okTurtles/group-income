@@ -12,6 +12,7 @@ Cypress.Commands.add('getByDT', (element) => {
 // NOTE: We can go a step further and not use UI to do repetitive tasks.
 // https://docs.cypress.io/guides/getting-started/testing-your-app.html#Fully-test-the-login-flow-%E2%80%93-but-only-once
 Cypress.Commands.add('giSignUp', (userName, password = '123456789') => {
+  cy.wait(300) // TODO: Find a way to get event from sbp
   cy.getByDT('signupBtn').click()
   cy.getByDT('signName').clear().type(userName)
   cy.getByDT('signEmail').clear().type(`${userName}@email.com`)
