@@ -195,20 +195,6 @@ export default {
 }
 
 // Mofifiers
-.has-no-background {
-  .modal-close {
-    top: 24px;
-    right: 16px;
-    background-color: #f1f1f1;
-    width: 40px;
-    height: 40px;
-  }
-
-  .modal-card-body {
-    padding-top: 1.1rem;
-  }
-}
-
 .has-background {
   .c-modal-close {
     background-color: #fff;
