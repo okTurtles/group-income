@@ -6,7 +6,6 @@
 <script>
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL, REPLACE_MODAL, UNLOAD_MODAL, CLOSE_MODAL } from '@utils/events.js'
-let keyboardEvent = Event
 
 export default {
   name: 'Modal',
@@ -21,12 +20,7 @@ export default {
     sbp('okTurtles.events/on', UNLOAD_MODAL, component => this.unloadModal(component))
     sbp('okTurtles.events/on', REPLACE_MODAL, component => this.replaceModal(component))
     // When press escape it should close the modal
-    keyboardEvent = window.addEventListener('keyup', (e) => {
-      // Only if there an active modal
-      if (this.content && e.key === 'Escape') {
-        this.unloadModal()
-      }
-    })
+    window.addEventListener('keyup', this.handleKeyUp)
   },
   mounted () {
     this.initializeModals()
@@ -35,7 +29,7 @@ export default {
     sbp('okTurtles.events/off', OPEN_MODAL)
     sbp('okTurtles.events/off', UNLOAD_MODAL)
     sbp('okTurtles.events/off', REPLACE_MODAL)
-    window.removeEventListener('keyup', keyboardEvent)
+    window.removeEventListener('keyup', this.handleKeyUp)
   },
   watch: {
     '$route' (to, from) {
@@ -59,6 +53,12 @@ export default {
     }
   },
   methods: {
+    handleKeyUp (e) {
+      // Only if there an active modal
+      if (this.content && e.key === 'Escape') {
+        this.unloadModal()
+      }
+    },
     activeSubcontent () {
       return this.subcontent[this.subcontent.length - 1]
     },
@@ -72,7 +72,7 @@ export default {
       if (this.content) {
         this.$router.push({ query: { modal: this.content, subcontent: this.activeSubcontent() } })
       } else {
-        this.$router.push({})
+        this.$router.push({ query: null })
       }
     },
     openModal (componentName) {
