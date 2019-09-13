@@ -773,7 +773,7 @@ page(
               br
               | )
           td
-            button(@click="openModal('DesignSystemModalBase')")
+            button(@click='openModal("DesignSystemModalBase")')
               i18n Open Modal
 </template>
 

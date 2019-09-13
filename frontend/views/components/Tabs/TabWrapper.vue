@@ -1,5 +1,5 @@
 <template lang='pug'>
-  .tab-wrapper(:class="{'open': open}")
+  .tab-wrapper(:class='{"open": open}')
     nav.tab-nav-sidebar(
       aria-label='navigation'
       @click='open = false'

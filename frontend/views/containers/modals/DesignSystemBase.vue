@@ -1,5 +1,5 @@
 <template lang="pug">
-modal-base-template(:class="{ 'has-background': background }")
+modal-base-template(:class='{ "has-background": background }')
   .wrapper-container
     .example-header
       h2 Modal base example
@@ -24,7 +24,7 @@ modal-base-template(:class="{ 'has-background': background }")
 
           i18n(
             tag='button'
-            @click.prevent="openModal('DesignSystemModal')"
+            @click.prevent='openModal("DesignSystemModal")'
           ) Open Modal
 </template>
 

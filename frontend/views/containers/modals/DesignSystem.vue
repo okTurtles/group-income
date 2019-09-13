@@ -30,7 +30,7 @@ modal-template(:class='{ "has-background": background }')
 
       i18n(
         tag='button'
-        @click.prevent="openModal('SignUp')"
+        @click.prevent='openModal("SignUp")'
       ) Open SubModal
 
   template(#footer='')
