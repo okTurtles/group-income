@@ -109,10 +109,9 @@ export default {
 .c-modal-header {
   position: relative;
   padding: 0 $spacer;
-  min-height: 4.75ren;
+  min-height: 4.75rem;
 
   @include tablet {
-    align-items: center;
     min-height: 5.75rem;
     align-items: center;
   }
@@ -191,6 +190,10 @@ export default {
   margin: 0;
 }
 
+.c-modal-close {
+  background-color: #fff;
+}
+
 // Mofifiers
 .has-no-background {
   .modal-close {
@@ -231,112 +234,6 @@ export default {
       align-items: flex-start;
       margin: 0;
       padding: 0 1.5rem;
-    }
-  }
-}
-
-.has-submodal-background {
-  @include touch {
-    .c-modal-content {
-      &-head {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        position: relative;
-        z-index: 3;
-        background-color: $primary_0;
-        min-height: 64px;
-      }
-    }
-
-    .title {
-      font-weight: bold;
-      font-size: 0.875rem;
-    }
-
-    .c-modal-close {
-      right: auto;
-      left: $spacer;
-      font-family: "Font Awesome 5 Free";
-      font-weight: 900;
-      height: $spacer-lg;
-      width: $spacer-lg;
-      color: #999;
-      background: transparent;
-      top: $spacer;
-
-      &:hover {
-        color: $text_0;
-      }
-
-      &::after {
-        content: none;
-      }
-
-      &::before {
-        content: "\f053";
-        background-color: transparent;
-        position: relative;
-        left: 3px;
-        top: 0;
-        width: 12px;
-        height: auto;
-        font-size: 0.875rem;
-        transform: none !important;
-      }
-    }
-  }
-}
-
-.has-submodal-background {
-  @include touch {
-    .modal-card {
-      &-head {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        position: relative;
-        z-index: 3;
-        background-color: var(--primary_0);
-        min-height: 64px;
-      }
-    }
-
-    .title {
-      font-weight: bold;
-      font-size: 0.875rem;
-    }
-
-    .modal-close {
-      right: auto;
-      left: 1rem;
-      font-family: "Font Awesome 5 Free";
-      font-weight: 900;
-      height: 2rem;
-      width: 2rem;
-      color: #999;
-      background: transparent;
-      top: 1rem;
-
-      &:hover {
-        color: $text_0;
-      }
-
-      &::after {
-        content: none;
-      }
-
-      &::before {
-        content: "\f053";
-        background-color: transparent;
-        position: relative;
-        left: 3px;
-        top: 0;
-        width: 12px;
-        height: auto;
-        font-size: 0.875rem;
-        transform: none !important;
-      }
     }
   }
 }

@@ -5,7 +5,7 @@
     name='formData'
     @submit.prevent='submit'
   )
-    modal-template(class='has-submodal-background is-centered')
+    modal-template(class='is-centered')
       template(slot='title') {{ L('Leave a group') }}
 
       i18n(tag='p' html='If you leave, you will stop having access to the <b>group chat</b> and <b>contributions</b>. Re-joining the group is possible, but requires other members to <b>vote and reach an agreement</b>.')

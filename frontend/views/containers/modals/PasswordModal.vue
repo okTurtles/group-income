@@ -1,5 +1,5 @@
 <template lang='pug'>
-modal-template(class='has-submodal-background is-centered')
+modal-template(class='is-centered')
   template(slot='title') Change password
 
   form(

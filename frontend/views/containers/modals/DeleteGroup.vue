@@ -5,7 +5,7 @@
     name='formData'
     @submit.prevent='submit'
   )
-    modal-template(class='has-submodal-background is-centered')
+    modal-template(class='is-centered')
       template(slot='title') {{ L('Leave a group') }}
 
       i18n(tag='h3') Are you sure you want to delete this group?
