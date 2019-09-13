@@ -22,7 +22,7 @@ const modaMixins = {
       this.isActive = false
       setTimeout(() => {
         sbp('okTurtles.events/emit', UNLOAD_MODAL)
-      }, 300)
+      }, 300) // Timeout is necessary to let the animation finish on the modal
     }
   }
 }
