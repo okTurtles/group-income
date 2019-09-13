@@ -1,7 +1,7 @@
 <template lang='pug'>
   .tab-wrapper(:class="{'open': open}")
     .tab-nav-header
-      button.is-icon.tab-back(
+      button.is-icon.tab-back.has-background(
         aria-label='back'
         @click='open = !open'
       )
@@ -199,13 +199,6 @@ $closeMobileBarBgColor: #3c3c3c;
   top: 1rem;
   left: 1rem;
   z-index: 1;
-  height: 2rem;
-  width: 2rem;
-
-  &:focus,
-  &:hover {
-    background: transparent;
-  }
 
   @include tablet {
     display: none;
