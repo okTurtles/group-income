@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
   avatar(
     :src='pictureURL'
     :alt='alt'

@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 li
   .subtitle.c-label
     span.c-visual(v-if='color' :class='`has-background-${color}`')

@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 div
   i18n.steps-title(tag='p') 1. Create a new group
 
@@ -14,8 +14,8 @@ div
       type='file'
       name='groupPicture'
       accept='image/*'
-      :class="{'error': v.groupPicture.$error}"
-      @change="fileChange($event.target.files)"
+      :class='{error: v.groupPicture.$error}'
+      @change='fileChange($event.target.files)'
       placeholder='http://'
       data-test='groupPicture'
     )
@@ -28,7 +28,7 @@ div
     ref='name'
     type='text'
     name='groupName'
-    :class="{ 'error': v.groupName.$error }"
+    :class='{ error: v.groupName.$error }'
     :value='group.groupName'
     @input='update'
     @keyup.enter='next'

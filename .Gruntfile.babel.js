@@ -59,6 +59,10 @@ module.exports = (grunt) => {
         files: ['frontend/**/*.html'],
         tasks: ['copy']
       },
+      puglint: {
+        files: ['frontend/views/**/*.vue'],
+        tasks: ['exec:puglint']
+      },
       backend: {
         files: ['backend/**/*.js', 'shared/**/*.js'],
         tasks: ['exec:eslint', 'backend:relaunch']

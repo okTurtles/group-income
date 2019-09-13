@@ -1,8 +1,8 @@
-<template lang="pug">
+<template lang='pug'>
 menu-parent
-  menu-trigger.is-icon-small
-    i.icon-bell(:class="activityCount ? '' : 'active'")
-    span.c-badge(v-if='activityCount' data-test='alertNotification') {{ activityCount }}
+  menu-trigger.c-menu-trigger.is-icon-small
+    i.icon-bell(:class='activityCount ? "" : "active"')
+    badge(v-if='activityCount' data-test='alertNotification') {{ activityCount }}
 
   menu-content.c-content
     menu-header
@@ -21,6 +21,7 @@ menu-parent
 
 <script>
 import { MenuParent, MenuTrigger, MenuContent, MenuHeader, MenuItem } from '@components/Menu/index.js'
+import Badge from '@components/Badge.vue'
 
 export default {
   name: 'Activity',
@@ -29,6 +30,7 @@ export default {
   },
 
   components: {
+    Badge,
     MenuParent,
     MenuTrigger,
     MenuContent,

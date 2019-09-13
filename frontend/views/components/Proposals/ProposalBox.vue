@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 //- NOTE: this is obviously ugly markup and needs to be redesigned
 //-       it's missing a bunch of stuff.
 //-       And also, it's not meant to redirect to /vote (a page

@@ -1,6 +1,6 @@
-<template lang="pug">
+<template lang='pug'>
 .c-loading.has-text-centered(
-  :class="{ 'c-fullView': theme === 'fullView' }"
+  :class='{ "c-fullView": theme === "fullView" }'
 )
   h1 {{ title }}&gt;
   p {{ text }}

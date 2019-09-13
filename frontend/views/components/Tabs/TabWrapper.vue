@@ -17,7 +17,7 @@
         a.tab-link.no-border(
           v-for='(links, index) in tabItem.links'
           :key='index'
-          :class="{ 'tab-active': activeTab === links.index, 'has-text-white': isDarkTheme}"
+          :class='{ "tab-active": activeTab === links.index, "has-text-white": isDarkTheme}'
           :data-test='`link-${links.url}`'
           @click='tabClick(links)'
         )

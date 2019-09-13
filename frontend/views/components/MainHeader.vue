@@ -1,6 +1,6 @@
-<template lang="pug">
+<template lang='pug'>
 header.c-header(
-  :class="[routerBack ? 'subPage': 'mainPage']"
+  :class='[routerBack ? "subPage": "mainPage"]'
   role='banner'
 )
   .c-header-top

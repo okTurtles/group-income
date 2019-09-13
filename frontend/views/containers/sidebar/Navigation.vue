@@ -1,11 +1,11 @@
-<template lang="pug">
+<template lang='pug'>
 nav.c-navigation(
   role='navigation'
-  :class="{ 'is-active': ephemeral.isActive }"
+  :class='{ "is-active": ephemeral.isActive }'
 )
   toggle(@toggle='toggleMenu')
 
-  groups-list(v-if="groupsByName.length > 1")
+  groups-list(v-if='groupsByName.length > 1')
 
   .c-navigation-wrapper
     .c-navigation-header
@@ -34,7 +34,7 @@ nav.c-navigation(
           list-item(tag='router-link' icon='cog' to='/group-settings')
             i18n Group Settings
 
-        .c-navigation-separator(v-if="groupsByName.length < 2")
+        .c-navigation-separator(v-if='groupsByName.length < 2')
           router-link.button.is-small.is-outlined(
             to='/new-group/name'
             alt='L("Add a group")'

@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 div
   i18n.title.is-4(tag='h4') Minimum Income
 
@@ -7,7 +7,7 @@ div
 
   i18n.link(
     tag='button'
-    aria-label="Change minIncome"
+    :aria-label='L("Change Mincome")'
     @click='openProposal'
   ) Change
 </template>

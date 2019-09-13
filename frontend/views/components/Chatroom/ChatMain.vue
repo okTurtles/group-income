@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 .c-chat-main(v-if='summary.title')
   main-header(:description='summary.description' :routerback='summary.routerBack')
 
@@ -6,7 +6,7 @@
       avatar.c-header-avatar(:src='summary.picture' alt='')
         i.c-header-private(
           v-if='summary.private !== undefined'
-          :class="{'icon-globe': summary.private === false, 'icon-lock': summary.private === true}"
+          :class='{"icon-globe": summary.private === false, "icon-lock": summary.private === true}'
         )
         | {{summary.title}}
 

@@ -1,19 +1,20 @@
-{  
+{
     "disallowAttributeInterpolation": true,
-    "disallowDuplicateAttributes": true, 
+    "disallowDuplicateAttributes": true,
     "disallowMultipleLineBreaks": true,
-    "disallowStringConcatenation": true, 
+    "disallowStringConcatenation": true,
     "disallowStringInterpolation": true,
-    "requireClassLiteralsBeforeAttributes": true, 
-    "requireClassLiteralsBeforeIdLiterals": true, 
+    "requireClassLiteralsBeforeAttributes": true,
+    "requireClassLiteralsBeforeIdLiterals": true,
     "requireIdLiteralsBeforeAttributes": true,
     "requireSpaceAfterCodeOperator": true,
     "requireStrictEqualityOperators": true,
-    "validateAttributeSeparator": { 
-        "separator": " ", 
+    "validateAttributeQuoteMarks": "'",
+    "validateAttributeSeparator": {
+        "separator": " ",
         "multiLineSeparator": "\n  "
-    }, 
+    },
     "validateDivTags": true,
-    "validateIndentation": 2, 
+    "validateIndentation": 2,
     "validateSelfClosingTags": true
 }

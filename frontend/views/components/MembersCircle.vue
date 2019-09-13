@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 .c-memberCircle-container
   svg.c-svg(viewbox='0 0 256 256' aria-hidden='true')
     circle.c-svg-circle(cx='128' cy='128' r='126')
@@ -21,8 +21,8 @@
     li.c-list-item(v-if='members.length > maxMembers')
       .c-list-item-box(
         :style='membersWithStyle[maxMembers].style'
-        v-on:mouseenter="toggleMemberActive('other', true)"
-        v-on:mouseleave="toggleMemberActive('other', false)"
+        v-on:mouseenter='toggleMemberActive("other", true)'
+        v-on:mouseleave='toggleMemberActive("other", false)'
       )
         .c-list-item-others.is-flex
           i.icon-plus.is-size-4

@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 div
   p.has-text-1 Group members and their pledges
   //- input(type="text" v-model='ratioWidthPadding')
@@ -31,12 +31,12 @@ div
 
       g.line(:transform='`translate(0,${ratioY/2})`')
         line(x1='0' y1='0' :x2='maxGraphWidth' y2='0' stroke='#dbdbdb' stroke-width='1')
-        foreignObject(x="469" y="-9" width="57" height="18")
+        foreignObject(x='469' y='-9' width='57' height='18')
           .tag.mincome Mincome
 
       g.line(:transform='`translate(0,${surplusPosition})`')
         line(x1='0' y1='0' :x2='maxGraphWidth' y2='0' stroke='#dbdbdb' stroke-width='1' stroke-dasharray='1')
-        foreignObject(x="469" y="-9" width="50" height="18")
+        foreignObject(x='469' y='-9' width='50' height='18')
           .tag Surplus
 
     .c-chart-info

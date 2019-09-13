@@ -1,31 +1,29 @@
-<template lang="pug">
+<template lang='pug'>
 main.c-splash(data-test='homeLogo')
   img.logo(src='/assets/images/group-income-icon-transparent.png')
   h1
-    i18n(
-      data-test="welcomeHome"
-    ) Welcome to GroupIncome
+    i18n(data-test='welcomeHome') Welcome to GroupIncome
 
   .buttons(v-if='!$store.state.loggedIn')
     i18n(
       tag='button'
       ref='loginBtn'
       :disabled='isModalOpen'
-      @click="openModal('LoginModal')"
+      @click='openModal("LoginModal")'
       data-test='loginBtn'
     ) Login
 
     i18n(
       tag='button'
       ref='signupBtn'
-      @click="openModal('SignUp')"
-      @keyup.enter="openModal('SignUp')"
+      @click='openModal("SignUp")'
+      @keyup.enter='openModal("SignUp")'
       :disabled='isModalOpen'
       data-test='signupBtn'
     ) Signup
 
   router-link.button(
-    v-else=''
+    v-else
     data-test='createGroup'
     to='new-group'
   )

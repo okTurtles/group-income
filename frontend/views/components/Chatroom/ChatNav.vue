@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 .c-chatnav
   template(slot='actions')
     // TODO design search results on mobile - MVP be same as desktop

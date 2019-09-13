@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 .c-notification
   p.c-notification-bubble
     // TODO: #502 - Chat: Add support to markdown formatted text

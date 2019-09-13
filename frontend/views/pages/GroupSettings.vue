@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings.groupName')
   template(#title='') {{ L('Group Settings') }}
   template(#description='') {{ L('Changes to these settings will be visible to all group members') }}
@@ -16,7 +16,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
           ref='name'
           type='text'
           name='groupName'
-          :class="{ 'error': $v.form.groupName.$error }"
+          :class='{ error: $v.form.groupName.$error }'
           :value='groupSettings.groupName'
           @input='update'
           @keyup.enter='next'
@@ -31,7 +31,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
           ref='purpose'
           placeholder='Group Purpose'
           maxlength='500'
-          :class="{ 'error': $v.form.sharedValues.$error }"
+          :class='{ error: $v.form.sharedValues.$error }'
           :value='groupSettings.sharedValues'
           @input='update'
         )

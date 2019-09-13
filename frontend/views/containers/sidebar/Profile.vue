@@ -1,13 +1,13 @@
 <template lang='pug'>
 .c-profile(
   v-if='$store.state.loggedIn'
-  data-test="userProfile"
+  data-test='userProfile'
   )
   .c-avatar-user
     avatar(:src='userPicture')
     .c-user
       strong(
-        :data-test="userDisplayName ? 'profileDisplayName' : 'profileName'"
+        :data-test='userDisplayName ? "profileDisplayName" : "profileName"'
       ) {{userDisplayName ? userDisplayName : userName}}
 
       span(
@@ -17,7 +17,7 @@
 
   button.is-icon-small(
     data-test='settingsBtn'
-    @click="openModal('Settings')"
+    @click='openModal("Settings")'
   )
     i.icon-cog
 </template>

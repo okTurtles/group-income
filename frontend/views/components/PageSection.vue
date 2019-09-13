@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 section.card
   h3.title(v-if='title') {{ title }}
   slot

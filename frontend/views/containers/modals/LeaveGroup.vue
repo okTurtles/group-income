@@ -24,7 +24,7 @@
           i18n.label(tag='label') Username
 
           input.input#loginName(
-            :class="{'error': $v.form.name.$error}"
+            :class='{error: $v.form.name.$error}'
             name='name'
             v-model='form.name'
             @keyup.enter='submit'
@@ -52,7 +52,7 @@
           i18n.label(tag='label') Type "Leave The Dreamers" below
 
           input.input(
-            :class="{'error': $v.form.confirmation.$error}"
+            :class='{error: $v.form.confirmation.$error}'
             name='confirmation'
             v-model='form.confirmation'
             @keyup.enter='submit'

@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 .c-message
   //
     TODO/REVIEW the idea would be to use component(:is='type')

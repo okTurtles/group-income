@@ -1,6 +1,6 @@
 <template lang='pug'>
   button.c-modal-close(
-    @click.self="$emit('close')"
+    @click.self='$emit("close")'
     aria-label='close'
   )
 </template>

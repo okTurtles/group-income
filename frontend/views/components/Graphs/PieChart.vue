@@ -1,4 +1,4 @@
-<template lang="pug">
+<template lang='pug'>
 .c-container
   svg.c-piechart(viewbox='-1 -1 2 2' :style='{ height: size }')
     path(
