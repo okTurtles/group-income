@@ -54,6 +54,5 @@ export default {
   position: relative;
   margin: 0 26px;
   max-width: 620px;
-  width: 100%;
 }
 </style>

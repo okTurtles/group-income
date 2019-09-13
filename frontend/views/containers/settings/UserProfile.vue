@@ -252,7 +252,7 @@ export default {
   @include widescreen {
     position: absolute;
     right: 0;
-    top: -40px;
+    top: -58px;
     margin: 0;
   }
 }
