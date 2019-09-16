@@ -161,7 +161,6 @@ export default {
       return this.details.conversation.findIndex(message => message.unread === true)
     },
     getPendingAt () {
-      console.log('PLOP')
       return this.ephemeral.pendingMessages.map((message, index) => ({
         text: message.text,
         who: this.who(true),

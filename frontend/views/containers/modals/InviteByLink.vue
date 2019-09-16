@@ -1,5 +1,5 @@
 <template lang='pug'>
-modal-template
+modal-template(ref='modal')
   template(#title='')
     i18n Add new members
 
@@ -17,8 +17,6 @@ modal-template
 </template>
 <script>
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
-import { CLOSE_MODAL } from '@utils/events.js'
-import sbp from '~/shared/sbp.js'
 
 export default {
   name: 'InviteByLink',
@@ -32,7 +30,7 @@ export default {
   },
   methods: {
     close () {
-      sbp('okTurtles.events/emit', CLOSE_MODAL)
+      this.$refs.modal.close()
     }
   }
 }

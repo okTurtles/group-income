@@ -1,11 +1,11 @@
 <template lang='pug'>
-  form(
-    novalidate
-    ref='form'
-    name='formData'
-    @submit.prevent='submit'
-  )
-    modal-template(class='has-submodal-background is-centered')
+  modal-template(class='is-centered' ref='modal')
+    form(
+      novalidate
+      ref='form'
+      name='formData'
+      @submit.prevent='submit'
+    )
       template(slot='title') {{ L('Leave a group') }}
 
       i18n(tag='p' html='If you leave, you will stop having access to the <b>group chat</b> and <b>contributions</b>. Re-joining the group is possible, but requires other members to <b>vote and reach an agreement</b>.')
@@ -83,8 +83,6 @@ import { validationMixin } from 'vuelidate'
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
 import FormPassword from '@components/Forms/Password.vue'
 import { required } from 'vuelidate/lib/validators'
-import { CLOSE_MODAL } from '@utils/events.js'
-import sbp from '~/shared/sbp.js'
 import Message from '@components/Message.vue'
 import L from '@view-utils/translations.js'
 
@@ -124,7 +122,7 @@ export default {
   },
   methods: {
     close () {
-      sbp('okTurtles.events/emit', CLOSE_MODAL)
+      this.$refs.modal.close()
     },
     async submit () {
       console.error('TODO: implement')

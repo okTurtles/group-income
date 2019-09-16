@@ -85,7 +85,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
 <script>
 import sbp from '~/shared/sbp.js'
 import { mapGetters } from 'vuex'
-import { LOAD_MODAL } from '@utils/events.js'
+import { OPEN_MODAL } from '@utils/events.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import currencies from '@view-utils/currencies.js'
@@ -112,7 +112,7 @@ export default {
   },
   methods: {
     openProposal (component) {
-      sbp('okTurtles.events/emit', LOAD_MODAL, component)
+      sbp('okTurtles.events/emit', OPEN_MODAL, component)
     },
     update (e) {
       // TODO update value

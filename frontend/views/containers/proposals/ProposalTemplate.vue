@@ -2,6 +2,7 @@
   modal-template(
     class='is-centered'
     :class='{"has-background": !isConfirmation}'
+    ref='modal'
   )
     template(slot='subtitle')
       i18n New proposal
@@ -85,8 +86,6 @@
 
 <script>
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
-import { CLOSE_MODAL } from '@utils/events.js'
-import sbp from '~/shared/sbp.js'
 
 export default {
   name: 'ModalForm',
@@ -115,7 +114,7 @@ export default {
   },
   methods: {
     close () {
-      sbp('okTurtles.events/emit', CLOSE_MODAL)
+      this.$refs.modal.close()
     },
     next () {
       this.currentStep++

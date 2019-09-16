@@ -1,78 +1,100 @@
 <template lang='pug'>
   div
-    component(:is='content')
+    component(:is='content' ref='content')
     component(:is='subcontent[subcontent.length-1]')
 </template>
 <script>
 import sbp from '~/shared/sbp.js'
-import { OPEN_MODAL, LOAD_MODAL, UNLOAD_MODAL, REPLACE_MODAL, CLOSE_MODAL } from '@utils/events.js'
+import { OPEN_MODAL, REPLACE_MODAL, CLOSE_MODAL } from '@utils/events.js'
 
 export default {
   name: 'Modal',
   data () {
     return {
-      // QUESTION: What's the dif between content and subcontent?
-      // What are the use cases of it?
-      content: null,
-      subcontent: []
+      content: null, // This is the main modal
+      subcontent: [] // This is for collection of modal on top of modals
     }
   },
   created () {
-    sbp('okTurtles.events/on', LOAD_MODAL, component => this.openModal(component))
-    sbp('okTurtles.events/on', UNLOAD_MODAL, component => this.closeModal(component))
+    sbp('okTurtles.events/on', OPEN_MODAL, component => this.openModal(component))
+    sbp('okTurtles.events/on', CLOSE_MODAL, component => this.unloadModal(component))
     sbp('okTurtles.events/on', REPLACE_MODAL, component => this.replaceModal(component))
+    // When press escape it should close the modal
+    window.addEventListener('keyup', this.handleKeyUp)
   },
   mounted () {
-    const modal = this.$route.query.modal
-    if (modal) this.openModal(modal)
+    this.initializeModals()
   },
   beforeDestroy () {
-    sbp('okTurtles.events/off', LOAD_MODAL, this.openModal)
-    sbp('okTurtles.events/off', UNLOAD_MODAL, this.closeModal)
-    sbp('okTurtles.events/off', REPLACE_MODAL, this.replaceModal)
+    sbp('okTurtles.events/off', OPEN_MODAL)
+    sbp('okTurtles.events/off', CLOSE_MODAL)
+    sbp('okTurtles.events/off', REPLACE_MODAL)
+    window.removeEventListener('keyup', this.handleKeyUp)
   },
   watch: {
     '$route' (to, from) {
-      if (from.query.modal && !to.query.modal) {
-        sbp('okTurtles.events/emit', CLOSE_MODAL)
+      if (to.query.modal) {
+        // We reset the modals with no animation for simplicity
+        if (to.query.modal !== this.content) this.content = to.query.modal
+        const subcontent = to.query.subcontent
+        if (subcontent !== this.activeSubcontent()) {
+          // Try to find the new subcontent in the list of subcontent
+          const i = this.subcontent.indexOf(subcontent)
+          if (i) {
+            this.subcontent = this.subcontent.splice(0, i)
+          } else this.subcontent = subcontent
+        }
+      } else {
+        // When the route change we compare to see if the modal changed
+        // If so, we send the event to close the modal
+        if (from.query.modal) {
+          sbp('okTurtles.events/emit', CLOSE_MODAL)
+        }
       }
     }
   },
   methods: {
+    handleKeyUp (e) {
+      // Only if there an active modal
+      if (this.content && e.key === 'Escape') {
+        this.unloadModal()
+      }
+    },
+    activeSubcontent () {
+      return this.subcontent[this.subcontent.length - 1]
+    },
+    initializeModals () {
+      const modal = this.$route.query.modal
+      if (modal) this.openModal(modal)
+      const subcontent = this.$route.query.subcontent
+      if (subcontent) this.openModal(subcontent)
+    },
+    updateUrl () {
+      if (this.content) {
+        this.$router.push({ query: { modal: this.content, subcontent: this.activeSubcontent() } })
+      } else {
+        this.$router.push({ query: null })
+      }
+    },
     openModal (componentName) {
       if (this.content) {
         this.subcontent.push(componentName)
-        // QUESTION: Why emmiting this event if
-        // there is not any events/on' poiting to OPEN_MODAL?
-        sbp('okTurtles.events/emit', OPEN_MODAL)
       } else {
         this.content = componentName
-        // QUESTION: Same here..
-        sbp('okTurtles.events/emit', OPEN_MODAL)
       }
-      this.$router.push({ query: { modal: this.content, subcontent: this.subcontent[this.subcontent.length - 1] } })
+      this.updateUrl()
     },
-    replaceModal (componentName) {
-      this.closeModal()
-      setTimeout(() => {
-        this.openModal(componentName)
-      }, 300)
-    },
-    closeModal () {
-      const query = this.$route.query || {}
-
+    unloadModal (name) {
       if (this.subcontent.length) {
         this.subcontent.pop()
-        query.subcontent = this.subcontent[this.subcontent.length - 1]
-        query.modal = this.content
       } else {
-        this.content = undefined
+        this.content = null
       }
-
-      // BUG: This isn't working at all but if you pause the dev
-      // tools and do it manually on the console it works :/
-      // Avoid event problem by removing completly the component
-      this.$router.push({ query: query })
+      this.updateUrl()
+    },
+    replaceModal (componentName) {
+      this.unloadModal()
+      this.openModal(componentName)
     }
   }
 }

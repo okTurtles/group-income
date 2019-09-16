@@ -3,13 +3,13 @@
     transition(name='fade' appear)
       .c-modal-background(@click='close' v-if='isActive')
 
-    transition(name='slide-left' appear @after-leave='$destroy()')
+    transition(name='slide-left' appear @after-leave='unload')
       .c-modal-content(ref='card' v-if='isActive')
         header.c-modal-header(
           :class='{ "has-subtitle": $scopedSlots.subtitle }'
           v-if='$scopedSlots.title || $scopedSlots.subTitle'
         )
-          modal-close(@close='close')
+          modal-close(@close='close' :back-on-mobile='backOnMobile')
           h2.subtitle(v-if='$scopedSlots.subtitle')
             slot(name='subtitle')
           h1.title(v-if='$scopedSlots.title')
@@ -108,26 +108,25 @@ export default {
 
 .c-modal-header {
   position: relative;
-  align-items: center;
   padding: 0 $spacer;
-  // min-height: 88px;
-  min-height: 60px;
+  min-height: 4.75rem;
 
   @include tablet {
-    min-height: 95px;
+    min-height: 5.75rem;
     align-items: center;
   }
 
-  @include tablet {
-    min-height: 105px;
+  @include desktop {
+    min-height: 6.5rem;
   }
 
   &.has-subtitle {
+    min-height: 5.625rem;
     @include tablet {
-      min-height: 114px;
+      min-height: 6.625rem;
     }
     @include desktop {
-      min-height: 124px;
+      min-height: 7.5rem;
     }
   }
 
@@ -136,8 +135,18 @@ export default {
   }
 }
 
+.is-left-aligned {
+  .c-modal-header {
+    @include until($tablet) {
+      flex-direction: row;
+      justify-content: flex-start;
+      align-items: center;
+    }
+  }
+}
+
 .c-modal-body {
-  margin: $spacer $spacer 2.5rem $spacer;
+  margin: $spacer $spacer $spacer-lg $spacer;
 
   &:last-child {
     padding-bottom: $spacer-lg;
@@ -191,21 +200,11 @@ export default {
   margin: 0;
 }
 
-// Mofifiers
-.has-no-background {
-  .modal-close {
-    top: 24px;
-    right: 16px;
-    background-color: #f1f1f1;
-    width: 40px;
-    height: 40px;
-  }
-
-  .modal-card-body {
-    padding-top: 1.1rem;
-  }
+.c-modal-close {
+  background-color: #fff;
 }
 
+// Mofifiers
 .has-background {
   .c-modal-close {
     background-color: #fff;
@@ -220,8 +219,7 @@ export default {
   }
 }
 
-.has-background,
-.has-background-footer {
+.has-background {
   .c-modal-footer {
     background-color: #f5f5f5;
     margin: $spacer;
@@ -231,112 +229,6 @@ export default {
       align-items: flex-start;
       margin: 0;
       padding: 0 1.5rem;
-    }
-  }
-}
-
-.has-submodal-background {
-  @include touch {
-    .c-modal-content {
-      &-head {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        position: relative;
-        z-index: 3;
-        background-color: $primary_0;
-        min-height: 64px;
-      }
-    }
-
-    .title {
-      font-weight: bold;
-      font-size: 0.875rem;
-    }
-
-    .c-modal-close {
-      right: auto;
-      left: $spacer;
-      font-family: "Font Awesome 5 Free";
-      font-weight: 900;
-      height: $spacer-lg;
-      width: $spacer-lg;
-      color: #999;
-      background: transparent;
-      top: $spacer;
-
-      &:hover {
-        color: $text_0;
-      }
-
-      &::after {
-        content: none;
-      }
-
-      &::before {
-        content: "\f053";
-        background-color: transparent;
-        position: relative;
-        left: 3px;
-        top: 0;
-        width: 12px;
-        height: auto;
-        font-size: 0.875rem;
-        transform: none !important;
-      }
-    }
-  }
-}
-
-.has-submodal-background {
-  @include touch {
-    .modal-card {
-      &-head {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        position: relative;
-        z-index: 3;
-        background-color: var(--primary_0);
-        min-height: 64px;
-      }
-    }
-
-    .title {
-      font-weight: bold;
-      font-size: 0.875rem;
-    }
-
-    .modal-close {
-      right: auto;
-      left: 1rem;
-      font-family: "Font Awesome 5 Free";
-      font-weight: 900;
-      height: 2rem;
-      width: 2rem;
-      color: #999;
-      background: transparent;
-      top: 1rem;
-
-      &:hover {
-        color: $text_0;
-      }
-
-      &::after {
-        content: none;
-      }
-
-      &::before {
-        content: "\f053";
-        background-color: transparent;
-        position: relative;
-        left: 3px;
-        top: 0;
-        width: 12px;
-        height: auto;
-        font-size: 0.875rem;
-        transform: none !important;
-      }
     }
   }
 }

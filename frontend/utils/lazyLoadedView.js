@@ -1,5 +1,5 @@
 import Vue from 'vue'
-// NOTE: any modals opened with `LOAD_MODAL` go here
+// NOTE: any modals opened with `OPEN_MODAL` go here
 Vue.component('LoginModal', () => import('../views/containers/modals/Login.vue'))
 Vue.component('SignUp', () => import('../views/containers/modals/SignUp.vue'))
 Vue.component('Settings', () => import('../views/containers/settings/Wrapper.vue'))
@@ -19,4 +19,5 @@ Vue.component('RuleRemoveMemberProposal', () => import('../views/containers/prop
 
 // TODO Remove after design test period
 Vue.component('DesignSystemModal', () => import('../views/containers/modals/DesignSystem.vue'))
+Vue.component('DesignSystemModalBase', () => import('../views/containers/modals/DesignSystemBase.vue'))
 Vue.component('TimeTravel', () => import('../views/containers/TimeTravel.vue'))

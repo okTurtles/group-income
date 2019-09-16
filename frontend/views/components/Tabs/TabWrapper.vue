@@ -1,20 +1,12 @@
 <template lang='pug'>
-  .tab-wrapper(:class='{open}')
-    .tab-nav-header
-      button.is-icon.tab-back(
-        aria-label='back'
-        @click='open = !open'
-      )
-        i.icon-chevron-left(aria-hidden='true')
-
-      h2.tab-title
-        i18n.menu-title Settings
-        .main-title {{ title }}
-
+  .tab-wrapper(:class='{"open": open}')
     nav.tab-nav-sidebar(
       aria-label='navigation'
       @click='open = false'
     )
+      .tab-nav-header
+        i18n.menu-title(tag='h2') Settings
+
       .tab-nav-list(
         v-for='(tabItem, index) in tabNav'
         :key='index'
@@ -40,7 +32,6 @@
 <script>
 import { mapGetters } from 'vuex'
 import sbp from '~/shared/sbp.js'
-import { CLOSE_MODAL } from '~/frontend/utils/events.js'
 
 export default {
   name: 'TabWrapper',
@@ -110,7 +101,7 @@ export default {
         this.changeTab(tabItem.index)
       } else {
         sbp('state/vuex/dispatch', tabItem.action)
-        sbp('okTurtles.events/emit', CLOSE_MODAL)
+        this.$emit('close')
       }
     }
   },
@@ -145,67 +136,27 @@ $closeMobileBarBgColor: #3c3c3c;
 
 // Page wrapper
 .tab-wrapper {
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: 4.75rem 1fr;
-  grid-template-areas:
-    "header header"
-    "main main";
+  position: relative;
+  z-index: 4; // Hide close button on mobile
+  display: flex;
   height: 100%;
-  background-color: $general_2;
   overflow: hidden;
+  background-color: $general_2;
 
   @include tablet {
-    grid-template-columns: 35% auto;
-    grid-template-rows: auto 1fr;
-    grid-template-areas:
-      "sidebar header"
-      "sidebar main";
-  }
-
-  @media screen and (min-width: 769px) and (max-width: 900px) {
-    grid-template-columns: 200px 1fr;
+    z-index: 2;
   }
 }
 
 // Header
 .tab-nav-header {
-  grid-area: header;
   display: flex;
   justify-content: center;
   align-items: center;
   position: relative;
-  z-index: 3;
+  width: 100%;
+  height: 4.75rem;
   background-color: $background;
-
-  @include tablet {
-    justify-content: start;
-    background-color: transparent;
-  }
-}
-
-.menu-title {
-  display: none;
-}
-
-.tab-title {
-  @include tablet {
-    margin: 2.5rem 0 0 27px;
-  }
-}
-
-.tab-back {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-  z-index: 1;
-  height: 2rem;
-  width: 2rem;
-
-  &:focus,
-  &:hover {
-    background: transparent;
-  }
 
   @include tablet {
     display: none;
@@ -214,10 +165,11 @@ $closeMobileBarBgColor: #3c3c3c;
 
 // Sidebar
 .tab-nav-sidebar {
-  grid-area: main;
+  position: absolute;
   display: flex;
   flex-direction: column;
   align-items: center;
+  height: 100%;
   width: 100%;
   transition: transform 500ms cubic-bezier(0.165, 0.84, 0.44, 1);
   transform: translateX(-100%);
@@ -226,22 +178,24 @@ $closeMobileBarBgColor: #3c3c3c;
   background-color: $general_2;
 
   @include tablet {
-    grid-area: sidebar;
     position: relative;
     align-items: flex-end;
-    padding-top: 0.75rem;
+    width: 35%;
     transform: translateX(0);
+  }
+
+  @media screen and (min-width: 769px) and (max-width: 900px) {
+    width: 200px;
   }
 }
 
 .tab-legend {
-  height: 2rem;
   color: $legendColor;
   font-size: 12px;
   text-transform: uppercase;
+  margin-bottom: $spacer-sm;
 
   @include tablet {
-    height: 38px;
     letter-spacing: 0.1px;
   }
 }
@@ -250,16 +204,6 @@ $closeMobileBarBgColor: #3c3c3c;
   display: flex;
   justify-content: space-between;
   height: 3rem;
-
-  .fa {
-    color: #dbdbdb;
-    font-size: 15px;
-    margin-top: -2px;
-
-    @include tablet {
-      display: none;
-    }
-  }
 }
 
 .tab-legend,
@@ -277,18 +221,29 @@ $closeMobileBarBgColor: #3c3c3c;
   }
 }
 
+.c-icons {
+  color: $text_1;
+  @include tablet {
+    display: none;
+  }
+}
+
 .tab-nav-list {
   display: flex;
   flex-direction: column;
   width: 456px;
   max-width: calc(100% - 1rem);
-  padding: 16px 4px 6px 0;
+  padding-top: 1.5rem;
+  padding-bottom: 6px;
 
   @include tablet {
     width: 183px;
-    padding-top: 1.5rem;
     padding-bottom: 0;
   }
+}
+
+.tab-nav-header + .tab-nav-list {
+  padding-top: 3rem;
 }
 
 .tab-link:hover {
@@ -296,70 +251,31 @@ $closeMobileBarBgColor: #3c3c3c;
 }
 
 .tab-active {
-  background-color: $background_0;
-  font-weight: bold;
+  @include tablet {
+    background-color: $background_0;
+    font-weight: bold;
+  }
 }
 
 .tab-nav-separator {
   height: 1px;
-  margin: 4px auto;
+  margin: 0 $spacer $spacer $spacer;
   background: $general_0;
-  opacity: 0;
-
-  @include tablet {
-    opacity: 1;
-    margin: 3px 28px 9px 8px;
-    margin-bottom: 1rem;
-  }
-}
-
-.tab-item {
-  height: 100%;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-
-  @include tablet {
-    justify-content: start;
-  }
 }
 
 // Main content
 .tab-section {
-  grid-area: main;
   transition: transform 500ms cubic-bezier(0.165, 0.84, 0.44, 1);
   transform: translateX(0%);
-  padding-top: 1.5rem;
-
-  @include tablet {
-    padding-top: 0;
-  }
+  overflow: auto;
+  width: 100%;
 }
 
 // Open state
 .open {
+  z-index: 2; // Show close button on mobile
   .tab-nav-sidebar {
     transform: translateX(0);
-  }
-
-  .tab-back {
-    opacity: 0;
-  }
-
-  .menu-title {
-    display: block;
-
-    @include tablet {
-      display: none;
-    }
-  }
-
-  .main-title {
-    display: none;
-
-    @include tablet {
-      display: block;
-    }
   }
 
   .tab-section {

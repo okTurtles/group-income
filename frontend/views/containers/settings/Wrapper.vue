@@ -1,5 +1,5 @@
 <template lang='pug'>
-modal-base-template
+modal-base-template(class='has-background')
   .wrapper-container
     tab-wrapper(:tabNav='settings')
       tab-item
@@ -54,6 +54,5 @@ export default {
   position: relative;
   margin: 0 26px;
   max-width: 620px;
-  width: 100%;
 }
 </style>

@@ -122,7 +122,7 @@ import Avatar from '@components/Avatar.vue'
 import ProgressBar from '@components/Graphs/Progress.vue'
 import currencies from '@view-utils/currencies.js'
 import Tooltip from '@components/Tooltip.vue'
-import { LOAD_MODAL } from '@utils/events.js'
+import { OPEN_MODAL } from '@utils/events.js'
 
 export default {
   name: 'PayGroup',
@@ -255,7 +255,7 @@ export default {
       user.status = 'todo'
     },
     seeHistory () {
-      sbp('okTurtles.events/emit', LOAD_MODAL, 'PayGroupHistory')
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'PayGroupHistory')
     }
   }
 }

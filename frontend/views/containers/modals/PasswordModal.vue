@@ -1,65 +1,65 @@
 <template lang='pug'>
+modal-template(class='is-centered is-left-aligned' back-on-mobile=true ref='modalTemplate')
+  template(slot='title') Change password
+
   form(
     novalidate
     ref='form'
     name='formData'
     @submit.prevent='changePassword'
   )
-    modal-template(class='has-submodal-background is-centered')
-      template(slot='title') Change password
+    form-password(
+      name='current'
+      :label='L("Current Password")'
+      :value='form'
+      :v='$v.form'
+      @enter='changePassword'
+      @input='(password) => { newPassword = password }'
+      :hasIconRight='true'
+      :showPlaceholder='false'
+      :showPassword='false'
+      size='is-large'
+    )
 
-      form-password(
-        name='current'
-        :label='L("Current Password")'
-        :value='form'
-        :v='$v.form'
-        @enter='changePassword'
-        @input='(password) => { newPassword = password }'
-        :hasIconRight='true'
-        :showPlaceholder='false'
-        :showPassword='false'
-        size='is-large'
-      )
+    form-password(
+      name='newPassword'
+      :label='L("New Password")'
+      :value='form'
+      :v='$v.form'
+      @enter='changePassword'
+      @input='(password) => { newPassword = password }'
+      :hasIconRight='true'
+      :showPlaceholder='false'
+      :showPassword='false'
+      size='is-large'
+    )
 
-      form-password(
-        name='newPassword'
-        :label='L("New Password")'
-        :value='form'
-        :v='$v.form'
-        @enter='changePassword'
-        @input='(password) => { newPassword = password }'
-        :hasIconRight='true'
-        :showPlaceholder='false'
-        :showPassword='false'
-        size='is-large'
-      )
+    form-password(
+      name='confirm'
+      :label='L("Confirm new Password")'
+      :value='form'
+      :v='$v.form'
+      @enter='changePassword'
+      @input='(password) => { newPassword = password }'
+      :hasIconRight='true'
+      :showPlaceholder='false'
+      :showPassword='false'
+      size='is-large'
+    )
 
-      form-password(
-        name='confirm'
-        :label='L("Confirm new Password")'
-        :value='form'
-        :v='$v.form'
-        @enter='changePassword'
-        @input='(password) => { newPassword = password }'
-        :hasIconRight='true'
-        :showPlaceholder='false'
-        :showPassword='false'
-        size='is-large'
-      )
+    .buttons
+      i18n.is-outlined(
+        tag='button'
+        @click='closeModal'
+      ) Cancel
 
-      template(slot='errors') {{ form.response }}
+      i18n.is-success(
+        tag='button'
+        @click='changePassword'
+        :disabled='$v.form.$invalid'
+      ) Change password
 
-      template(slot='buttons')
-        i18n.is-outlined(
-          tag='button'
-          @click='close'
-        ) Cancel
-
-        i18n.is-success(
-          tag='button'
-          @click='changePassword'
-          :disabled='$v.form.$invalid'
-        ) Change password
+  template(slot='errors') {{ form.response }}
 </template>
 <script>
 import { validationMixin } from 'vuelidate'
@@ -67,8 +67,6 @@ import ModalTemplate from '@components/Modal/ModalTemplate.vue'
 import FormPassword from '@components/Forms/Password.vue'
 import { required, minLength } from 'vuelidate/lib/validators'
 import sameAs from 'vuelidate/lib/validators/sameAs.js'
-import { CLOSE_MODAL } from '@utils/events.js'
-import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
 
 export default {
@@ -116,13 +114,14 @@ export default {
     FormPassword
   },
   methods: {
-    close () {
-      sbp('okTurtles.events/emit', CLOSE_MODAL)
+    closeModal () {
+      // We access directly the modal here to avoid broacasting event to every possible modal
+      this.$refs.modalTemplate.close()
     },
     async changePassword () {
       try {
         // TODO check password
-        this.close()
+        this.closeModal()
       } catch (error) {
         this.form.response = L('Invalid password')
         console.error(error)

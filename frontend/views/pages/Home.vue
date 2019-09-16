@@ -32,7 +32,7 @@ main.c-splash(data-test='homeLogo')
 
 <script>
 import sbp from '~/shared/sbp.js'
-import { LOAD_MODAL, UNLOAD_MODAL } from '@utils/events.js'
+import { OPEN_MODAL, CLOSE_MODAL } from '@utils/events.js'
 
 export default {
   name: 'Home',
@@ -47,7 +47,7 @@ export default {
       this.openModal('LoginModal')
     } else {
       if (!this.$store.state.loggedIn) {
-        sbp('okTurtles.events/on', UNLOAD_MODAL, this.enableSubmit)
+        sbp('okTurtles.events/on', CLOSE_MODAL, this.enableSubmit)
         this.enableSubmit()
         // Fix firefox autofocus
         process.nextTick(() => this.$refs[this.lastFocus].$el.focus())
@@ -55,14 +55,14 @@ export default {
     }
   },
   beforeDestroy () {
-    sbp('okTurtles.events/off', UNLOAD_MODAL, this.enableSubmit)
+    sbp('okTurtles.events/off', CLOSE_MODAL, this.enableSubmit)
   },
   methods: {
     openModal (mode) {
       this.isModalOpen = true
       // Keep track of user last action
       this.lastFocus = mode === 'SignUp' ? 'signupBtn' : 'loginBtn'
-      sbp('okTurtles.events/emit', LOAD_MODAL, mode)
+      sbp('okTurtles.events/emit', OPEN_MODAL, mode)
     },
     enableSubmit () {
       this.isModalOpen = false

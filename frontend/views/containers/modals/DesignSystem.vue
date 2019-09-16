@@ -2,7 +2,7 @@
 //- NOTE: If you use it as an example when creating other modals
 //-       (instead of existing modals), make sure to replace many
 //-       of the tags below with their equivalent i18n tags.
-modal-template(:class='{ "has-background": background }')
+modal-template(:class='{ "has-background": background, "is-left-aligned": backOnMobile }' :back-on-mobile='backOnMobile')
   template(#title='') Title
   template(#subtitle='' v-if='subtitle') subtitle
 
@@ -23,10 +23,21 @@ modal-template(:class='{ "has-background": background }')
         tag='button'
         @click.prevent='toggleSubtitle'
       ) Toggle subtitle
+
       i18n(
         tag='button'
         @click.prevent='toggleBackground'
       ) Toggle background
+
+      i18n(
+        tag='button'
+        @click.prevent='toggleBackOnMobile'
+      ) Toggle back button
+
+      i18n(
+        tag='button'
+        @click.prevent='openModal("SignUp")'
+      ) Open SubModal
 
   template(#footer='')
     //- We aren't using i18n in this DesignSystem.vue file because
@@ -36,6 +47,8 @@ modal-template(:class='{ "has-background": background }')
 </template>
 <script>
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
+import sbp from '~/shared/sbp.js'
+import { OPEN_MODAL } from '@utils/events.js'
 
 export default {
   name: 'modal-test',
@@ -43,7 +56,8 @@ export default {
     return {
       type: '',
       subtitle: false,
-      background: false
+      background: false,
+      backOnMobile: true
     }
   },
   components: {
@@ -55,6 +69,12 @@ export default {
     },
     toggleBackground () {
       this.background = !this.background
+    },
+    toggleBackOnMobile () {
+      this.backOnMobile = !this.backOnMobile
+    },
+    openModal (mode) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, mode)
     }
   }
 }

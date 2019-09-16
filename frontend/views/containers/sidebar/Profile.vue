@@ -25,7 +25,7 @@
 <script>
 import Avatar from '@components/Avatar.vue'
 import sbp from '~/shared/sbp.js'
-import { LOAD_MODAL } from '@utils/events.js'
+import { OPEN_MODAL } from '@utils/events.js'
 
 export default {
   name: 'Profile',
@@ -49,7 +49,7 @@ export default {
   },
   methods: {
     openModal (mode) {
-      sbp('okTurtles.events/emit', LOAD_MODAL, mode)
+      sbp('okTurtles.events/emit', OPEN_MODAL, mode)
     }
   }
 }

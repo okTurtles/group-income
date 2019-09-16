@@ -90,7 +90,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
           strong From:
           | &nbsp;{{ ephemeral.currentMessage.data.from }}
       p(
-        data-test="message"
+        data-test='message'
         style='display: block; word-wrap: break-word;'
       ) {{ephemeral.currentMessage.data.message}}
 

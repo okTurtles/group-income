@@ -1,5 +1,5 @@
 <template lang='pug'>
-  transition(name='zoom' appear @after-leave='$destroy()')
+  transition(name='zoom' appear @after-leave='unload')
     .modal(data-test='modal' role='dialog' v-if='isActive')
       modal-close(@close='close')
       slot
@@ -15,6 +15,8 @@ export default {
 </script>
 
 <style lang='scss' scoped>
+@import "../../../assets/style/_variables.scss";
+
 .modal {
   display: flex;
   position: fixed;
@@ -28,5 +30,16 @@ export default {
 
 .modal-body {
   height: 100%;
+}
+
+.modal .c-modal-close {
+  background-color: $background;
+}
+
+.has-background .c-modal-close {
+  background-color: $general_1;
+  @include tablet {
+    background-color: $background;
+  }
 }
 </style>

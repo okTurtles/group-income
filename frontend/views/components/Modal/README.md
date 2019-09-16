@@ -8,7 +8,7 @@ Let's see a real working example: **the Login modal**:
 
 ### How to open a modal
 
-From anywhere in the App we can open any modal by using the `sbp` event `LOAD_MODAL` with the Vue Component that contains the modal Content
+From anywhere in the App we can open any modal by using the `sbp` event `OPEN_MODAL` with the Vue Component that contains the modal Content
 
 ```html
 <!-- NavBar.vue -->
@@ -18,23 +18,23 @@ From anywhere in the App we can open any modal by using the `sbp` event `LOAD_MO
 
 <script>
 import sbp from '~/shared/sbp.js'
-import { LOAD_MODAL } from '@utils/events.js'
+import { OPEN_MODAL } from '@utils/events.js'
 
 openLoginModal () {
-  sbp('okTurtles.events/emit', LOAD_MODAL, 'LoginModal')
+  sbp('okTurtles.events/emit', OPEN_MODAL, 'LoginModal')
   // or pass an object with 'name' and 'subfolder' properties relative to containers folder // TODO: explain this better?
 }
 </script>
 ```
 
 ### How to close a modal
-In the same way we can also close the modal by using the event `CLOSE_MODAL`:
+To close the modal we nered to access directly the compinent instead of using event to avoid closing other openned modal
 
 ```js
 // LoginModal.vue
 
 closeModal () {
-  sbp('okTurtles.events/emit', CLOSE_MODAL)
+  this.$refs.modal.close()
 }
 ```
 
@@ -42,7 +42,7 @@ closeModal () {
 
 The `<modal />` is imported at `simple/index.html` at the bottom of the DOM.
 
-Its content use <modal-template /> and is dynamically loaded [(Know more about Vue Dynamic Components)](https://vuejs.org/v2/api/#is). The modal use `sbp` events `LOAD_MODAL` and `CLOSE_MODAL`.
+Its content use <modal-template /> and is dynamically loaded [(Know more about Vue Dynamic Components)](https://vuejs.org/v2/api/#is). The modal use `sbp` events `OPEN_MODAL` and `CLOSE_MODAL`.
 
 
 ### The `<modal-template />`

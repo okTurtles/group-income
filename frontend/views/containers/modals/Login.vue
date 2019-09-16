@@ -1,5 +1,5 @@
 <template lang='pug'>
-  modal-template(class='has-background-footer')
+  modal-template(class='has-background' ref='modal')
     template(slot='title')
       i18n Log in
 
@@ -62,7 +62,7 @@
 import { validationMixin } from 'vuelidate'
 import sbp from '~/shared/sbp.js'
 import { required, minLength } from 'vuelidate/lib/validators'
-import { REPLACE_MODAL, CLOSE_MODAL } from '@utils/events.js'
+import { REPLACE_MODAL } from '@utils/events.js'
 import FormPassword from '@components/Forms/Password.vue'
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
 import L from '@view-utils/translations.js'
@@ -95,7 +95,7 @@ export default {
       }
     },
     close () {
-      sbp('okTurtles.events/emit', CLOSE_MODAL)
+      this.$refs.modal.close()
     },
     showSignUpModal () {
       sbp('okTurtles.events/emit', REPLACE_MODAL, 'SignUp')

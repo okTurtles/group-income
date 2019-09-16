@@ -79,7 +79,7 @@ import { mapGetters } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import Tooltip from '@components/Tooltip.vue'
 import UserImage from '@containers/UserImage.vue'
-import { LOAD_MODAL } from '@utils/events.js'
+import { OPEN_MODAL } from '@utils/events.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/Menu/index.js'
 
 export default {
@@ -97,7 +97,7 @@ export default {
       this.$router.push({ path: '/invite' })
     },
     openModal (modal) {
-      sbp('okTurtles.events/emit', LOAD_MODAL, modal)
+      sbp('okTurtles.events/emit', OPEN_MODAL, modal)
     }
   },
   computed: {

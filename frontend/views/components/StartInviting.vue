@@ -32,13 +32,13 @@ section.card.c-card
 
 <script>
 import sbp from '~/shared/sbp.js'
-import { LOAD_MODAL } from '@utils/events.js'
+import { OPEN_MODAL } from '@utils/events.js'
 
 export default {
   name: 'StartInviting',
   methods: {
     openModal () {
-      sbp('okTurtles.events/emit', LOAD_MODAL, 'InviteByLink')
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'InviteByLink')
     }
   }
 }

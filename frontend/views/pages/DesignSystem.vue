@@ -744,11 +744,36 @@ page(
             code
               | sbp('okTurtles.events/emit',
               br
-              |   LOAD_MODAL, 'DesignSystemModal'
+              |   OPEN_MODAL, 'DesignSystemModal'
               br
               | )
           td
             button(@click='openModal("DesignSystemModal")')
+              i18n Open Modal
+
+  article#modalBase
+    section.card
+      i18n(tag='h2' class='card-header') Modal Base
+      i18n(tag='p') The modal base as very basic functionality. Compare to normal modal it has very basic style and let us add any kind of content.
+      i18n(tag='p') It only contain opening and closing mecanism (shared with the modal in modal mixin).
+      i18n(tag='p') The main use at the moment is to have a full screen master modal that can contains other small sub modals (ex: user settings)
+      br
+      i18n(tag='p') NB: at the moment we don't have sub sub modal, there for the implementation is flexible to allow an inifinty of modal but the animation is not implemented
+      br
+      table
+        thead
+          th code
+          th demo
+        tr
+          td
+            code
+              | sbp('okTurtles.events/emit',
+              br
+              |   OPEN_MODAL, 'DesignSystemModalBase'
+              br
+              | )
+          td
+            button(@click='openModal("DesignSystemModalBase")')
               i18n Open Modal
 </template>
 
@@ -758,7 +783,7 @@ import sbp from '~/shared/sbp.js'
 import Message from '@components/Message.vue'
 import Tooltip from '@components/Tooltip.vue'
 import Badge from '@components/Badge.vue'
-import { LOAD_MODAL } from '@utils/events.js'
+import { OPEN_MODAL } from '@utils/events.js'
 
 export default {
   name: 'DesignSystemView',
@@ -823,7 +848,7 @@ export default {
       console.error('unimplemented, try using the actual Login.vue modal')
     },
     openModal (mode) {
-      sbp('okTurtles.events/emit', LOAD_MODAL, mode)
+      sbp('okTurtles.events/emit', OPEN_MODAL, mode)
     },
     handleScroll (e) {
       const top = e.target.scrollTop
