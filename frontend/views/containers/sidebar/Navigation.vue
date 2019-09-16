@@ -1,7 +1,7 @@
 <template lang='pug'>
 nav.c-navigation(
   role='navigation'
-  :class='{ "is-active": ephemeral.isActive }'
+  :class='{ "is-active": ephemeral.isActive, "is-hidden":  groupsByName.length === 0}'
 )
   toggle(@toggle='toggleMenu')
 
@@ -15,10 +15,11 @@ nav.c-navigation(
         img.c-logo(:src='logo' alt='GroupIncome\'s logo')
 
       // NOTE/REVIEW: If we follow Messages GIBot approach, the bell icon wont be needed
-      activity(:activityCount='activityCount')
+      activity(:activityCount='activityCount' v-if='groupsByName.length')
 
     .c-navigation-body(
       @click.self='enableTimeTravel'
+      v-if='groupsByName.length'
     )
       .c-navigation-body-top
         ul.c-menu-list
@@ -147,6 +148,10 @@ export default {
   flex-direction: row;
   font-weight: normal;
   background: $general_2;
+
+  &.is-hidden {
+    width: 0;
+  }
 }
 
 .c-navigation-wrapper {
