@@ -1,12 +1,13 @@
 <template lang='pug'>
-  form(
-    novalidate
-    ref='form'
-    name='formData'
-    @submit.prevent='submit'
-  )
-    modal-template(class='is-centered')
-      template(slot='title') {{ L('Leave a group') }}
+  modal-template(class='is-centered' ref='modal')
+    template(slot='title') {{ L('Leave a group') }}
+
+    form(
+      novalidate
+      ref='form'
+      name='formData'
+      @submit.prevent='submit'
+    )
 
       i18n(tag='h3') Are you sure you want to delete this group?
 
@@ -56,8 +57,6 @@
 import { validationMixin } from 'vuelidate'
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
 import { required } from 'vuelidate/lib/validators'
-import { CLOSE_MODAL } from '@utils/events.js'
-import sbp from '~/shared/sbp.js'
 
 export default {
   name: 'deleteGroupModal',
@@ -85,7 +84,7 @@ export default {
   },
   methods: {
     close () {
-      sbp('okTurtles.events/emit', CLOSE_MODAL)
+      this.$refs.modal.close()
     },
     async submit () {
       console.error('TODO: implement')

@@ -1,5 +1,5 @@
 <template lang='pug'>
-  modal-template(class='has-background-footer')
+  modal-template(class='has-background-footer' ref='modal')
     template(slot='title')
       i18n Sign Up
 
@@ -72,7 +72,7 @@
 import { required, minLength, email } from 'vuelidate/lib/validators'
 import { validationMixin } from 'vuelidate'
 import { debounce } from '@utils/giLodash.js'
-import { REPLACE_MODAL, CLOSE_MODAL } from '@utils/events.js'
+import { REPLACE_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
 import { nonWhitespace } from '@views/utils/validators.js'
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
@@ -163,7 +163,7 @@ export default {
           } else {
             this.$router.push({ path: '/' })
           }
-          sbp('okTurtles.events/emit', CLOSE_MODAL)
+          this.$refs.modal.close()
         } catch (ex) {
           console.error('SignUp.vue submit() error:', ex)
           sbp('state/vuex/dispatch', 'logout')

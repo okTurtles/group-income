@@ -1,11 +1,11 @@
 <template lang='pug'>
   div
-    component(:is='content')
+    component(:is='content' ref='content')
     component(:is='subcontent[subcontent.length-1]')
 </template>
 <script>
 import sbp from '~/shared/sbp.js'
-import { OPEN_MODAL, REPLACE_MODAL, UNLOAD_MODAL, CLOSE_MODAL } from '@utils/events.js'
+import { OPEN_MODAL, REPLACE_MODAL, CLOSE_MODAL } from '@utils/events.js'
 
 export default {
   name: 'Modal',
@@ -17,7 +17,7 @@ export default {
   },
   created () {
     sbp('okTurtles.events/on', OPEN_MODAL, component => this.openModal(component))
-    sbp('okTurtles.events/on', UNLOAD_MODAL, component => this.unloadModal(component))
+    sbp('okTurtles.events/on', CLOSE_MODAL, component => this.unloadModal(component))
     sbp('okTurtles.events/on', REPLACE_MODAL, component => this.replaceModal(component))
     // When press escape it should close the modal
     window.addEventListener('keyup', this.handleKeyUp)
@@ -27,7 +27,7 @@ export default {
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', OPEN_MODAL)
-    sbp('okTurtles.events/off', UNLOAD_MODAL)
+    sbp('okTurtles.events/off', CLOSE_MODAL)
     sbp('okTurtles.events/off', REPLACE_MODAL)
     window.removeEventListener('keyup', this.handleKeyUp)
   },
@@ -37,11 +37,12 @@ export default {
         // We reset the modals with no animation for simplicity
         if (to.query.modal !== this.content) this.content = to.query.modal
         const subcontent = to.query.subcontent
-        if (subcontent && subcontent !== this.activeSubcontent()) {
+        if (subcontent !== this.activeSubcontent()) {
           // Try to find the new subcontent in the list of subcontent
           const i = this.subcontent.indexOf(subcontent)
-          if (i) this.subcontent = this.subcontent.splice(0, i)
-          else this.subcontent = subcontent
+          if (i) {
+            this.subcontent = this.subcontent.splice(0, i)
+          } else this.subcontent = subcontent
         }
       } else {
         // When the route change we compare to see if the modal changed

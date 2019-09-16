@@ -1,13 +1,22 @@
 <template lang='pug'>
   button.c-modal-close(
+    :class='{ "back-on-mobile": backOnMobile }'
     @click.self='$emit("close")'
     aria-label='close'
   )
+    i.icon-chevron-left(aria-hidden='true')
 </template>
 
 <script>
 export default {
-  name: 'ModalClose'
+  name: 'ModalClose',
+
+  props: {
+    backOnMobile: {
+      type: Boolean,
+      default: false
+    }
+  }
 }
 </script>
 
@@ -28,6 +37,10 @@ export default {
   -webkit-appearance: none;
   cursor: pointer;
   background-color: $general_1;
+
+  i {
+    display: none;
+  }
 
   @include tablet {
     top: 1.5rem;
@@ -70,6 +83,26 @@ export default {
 
     &::after {
       transform: translateX(-50%) translateY(-50%) rotate(0);
+    }
+  }
+
+  &.back-on-mobile {
+    @include until($tablet) {
+      position: relative;
+      left: 0;
+      top: 0;
+      margin-right: $spacer;
+
+      i {
+        display: block;
+        color: $text_0;
+        margin-left: 0;
+      }
+
+      &::before,
+      &::after {
+        content: none;
+      }
     }
   }
 }

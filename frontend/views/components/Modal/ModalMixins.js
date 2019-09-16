@@ -1,8 +1,14 @@
 import sbp from '~/shared/sbp.js'
-import { CLOSE_MODAL, UNLOAD_MODAL } from '~/frontend/utils/events.js'
+import { CLOSE_MODAL } from '~/frontend/utils/events.js'
 import ModalClose from './ModalClose.vue'
 
 const modaMixins = {
+  props: {
+    backOnMobile: {
+      type: Boolean,
+      default: false
+    }
+  },
   data () {
     return {
       isActive: true
@@ -11,18 +17,12 @@ const modaMixins = {
   components: {
     ModalClose
   },
-  mounted () {
-    sbp('okTurtles.events/on', CLOSE_MODAL, this.close)
-  },
-  beforeDestroy () {
-    sbp('okTurtles.events/off', CLOSE_MODAL)
-  },
   methods: {
     close (e) {
       this.isActive = false
-      setTimeout(() => {
-        sbp('okTurtles.events/emit', UNLOAD_MODAL)
-      }, 300) // Timeout is necessary to let the animation finish on the modal
+    },
+    unload () {
+      sbp('okTurtles.events/emit', CLOSE_MODAL)
     }
   }
 }

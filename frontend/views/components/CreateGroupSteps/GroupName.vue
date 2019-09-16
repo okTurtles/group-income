@@ -117,10 +117,12 @@ export default {
   img {
     display: block;
     width: 113px;
+    height: 113px;
     margin: 0 auto;
 
     @include tablet {
       width: 71px;
+      height: 71px;
     }
   }
 }

@@ -28,13 +28,13 @@ openLoginModal () {
 ```
 
 ### How to close a modal
-In the same way we can also close the modal by using the event `CLOSE_MODAL`:
+To close the modal we nered to access directly the compinent instead of using event to avoid closing other openned modal
 
 ```js
 // LoginModal.vue
 
 closeModal () {
-  sbp('okTurtles.events/emit', CLOSE_MODAL)
+  this.$refs.modal.close()
 }
 ```
 

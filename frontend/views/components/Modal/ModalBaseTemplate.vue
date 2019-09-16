@@ -1,5 +1,5 @@
 <template lang='pug'>
-  transition(name='zoom' appear)
+  transition(name='zoom' appear @after-leave='unload')
     .modal(data-test='modal' role='dialog' v-if='isActive')
       modal-close(@close='close')
       slot

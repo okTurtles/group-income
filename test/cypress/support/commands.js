@@ -9,12 +9,9 @@ Cypress.Commands.add('getByDT', (element) => {
   return cy.get(`[data-test="${element}"]`)
 })
 
-const closeModalDelay = 300
-
 // NOTE: We can go a step further and not use UI to do repetitive tasks.
 // https://docs.cypress.io/guides/getting-started/testing-your-app.html#Fully-test-the-login-flow-%E2%80%93-but-only-once
 Cypress.Commands.add('giSignUp', (userName, password = '123456789') => {
-  cy.wait(closeModalDelay) // TODO: Find a way to get event from sbp
   cy.getByDT('signupBtn').click()
   cy.getByDT('signName').clear().type(userName)
   cy.getByDT('signEmail').clear().type(`${userName}@email.com`)
@@ -26,7 +23,6 @@ Cypress.Commands.add('giSignUp', (userName, password = '123456789') => {
 })
 
 Cypress.Commands.add('giLogin', (userName, password = '123456789') => {
-  cy.wait(closeModalDelay) // TODO: Find a way to get event from sbp
   cy.getByDT('loginBtn').click()
   cy.getByDT('loginName').clear().type(userName)
   cy.getByDT('password').clear().type(password)

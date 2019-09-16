@@ -32,7 +32,6 @@
 <script>
 import { mapGetters } from 'vuex'
 import sbp from '~/shared/sbp.js'
-import { CLOSE_MODAL } from '~/frontend/utils/events.js'
 
 export default {
   name: 'TabWrapper',
@@ -102,7 +101,7 @@ export default {
         this.changeTab(tabItem.index)
       } else {
         sbp('state/vuex/dispatch', tabItem.action)
-        sbp('okTurtles.events/emit', CLOSE_MODAL)
+        this.$emit('close')
       }
     }
   },
@@ -205,16 +204,6 @@ $closeMobileBarBgColor: #3c3c3c;
   display: flex;
   justify-content: space-between;
   height: 3rem;
-
-  .fa {
-    color: #dbdbdb;
-    font-size: 15px;
-    margin-top: -2px;
-
-    @include tablet {
-      display: none;
-    }
-  }
 }
 
 .tab-legend,
@@ -232,6 +221,13 @@ $closeMobileBarBgColor: #3c3c3c;
   }
 }
 
+.c-icons {
+  color: $text_1;
+  @include tablet {
+    display: none;
+  }
+}
+
 .tab-nav-list {
   display: flex;
   flex-direction: column;
@@ -242,9 +238,12 @@ $closeMobileBarBgColor: #3c3c3c;
 
   @include tablet {
     width: 183px;
-    padding-top: 3rem;
     padding-bottom: 0;
   }
+}
+
+.tab-nav-header + .tab-nav-list {
+  padding-top: 3rem;
 }
 
 .tab-link:hover {
@@ -252,21 +251,16 @@ $closeMobileBarBgColor: #3c3c3c;
 }
 
 .tab-active {
-  background-color: $background_0;
-  font-weight: bold;
+  @include tablet {
+    background-color: $background_0;
+    font-weight: bold;
+  }
 }
 
 .tab-nav-separator {
   height: 1px;
-  margin: 4px auto;
+  margin: 0 $spacer $spacer $spacer;
   background: $general_0;
-  opacity: 0;
-
-  @include tablet {
-    opacity: 1;
-    margin: 3px 28px 9px 8px;
-    margin-bottom: 1rem;
-  }
 }
 
 // Main content

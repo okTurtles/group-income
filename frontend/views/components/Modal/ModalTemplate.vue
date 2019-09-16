@@ -3,13 +3,13 @@
     transition(name='fade' appear)
       .c-modal-background(@click='close' v-if='isActive')
 
-    transition(name='slide-left' appear)
+    transition(name='slide-left' appear @after-leave='unload')
       .c-modal-content(ref='card' v-if='isActive')
         header.c-modal-header(
           :class='{ "has-subtitle": $scopedSlots.subtitle }'
           v-if='$scopedSlots.title || $scopedSlots.subTitle'
         )
-          modal-close(@close='close')
+          modal-close(@close='close' :back-on-mobile='backOnMobile')
           h2.subtitle(v-if='$scopedSlots.subtitle')
             slot(name='subtitle')
           h1.title(v-if='$scopedSlots.title')
@@ -132,6 +132,16 @@ export default {
 
   @media screen and (max-height: 500px) {
     min-height: 50px;
+  }
+}
+
+.is-left-aligned {
+  .c-modal-header {
+    @include until($tablet) {
+      flex-direction: row;
+      justify-content: flex-start;
+      align-items: center;
+    }
   }
 }
 

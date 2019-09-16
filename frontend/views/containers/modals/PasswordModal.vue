@@ -1,5 +1,5 @@
 <template lang='pug'>
-modal-template(class='is-centered')
+modal-template(class='is-centered is-left-aligned' back-on-mobile=true ref='modalTemplate')
   template(slot='title') Change password
 
   form(
@@ -67,8 +67,6 @@ import ModalTemplate from '@components/Modal/ModalTemplate.vue'
 import FormPassword from '@components/Forms/Password.vue'
 import { required, minLength } from 'vuelidate/lib/validators'
 import sameAs from 'vuelidate/lib/validators/sameAs.js'
-import { CLOSE_MODAL } from '@utils/events.js'
-import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
 
 export default {
@@ -117,7 +115,8 @@ export default {
   },
   methods: {
     closeModal () {
-      sbp('okTurtles.events/emit', CLOSE_MODAL)
+      // We access directly the modal here to avoid broacasting event to every possible modal
+      this.$refs.modalTemplate.close()
     },
     async changePassword () {
       try {
