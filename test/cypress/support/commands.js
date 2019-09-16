@@ -43,3 +43,19 @@ Cypress.Commands.add('giLogOut', () => {
 
   cy.getByDT('welcomeHome').should('contain', 'Welcome to GroupIncome')
 })
+
+Cypress.Commands.add('giAcceptGroupInvite', (groupName) => {
+  cy.getByDT('mailboxLink').click()
+  cy.getByDT('inboxMessage').click()
+
+  cy.getByDT('message').invoke('text').then(text => {
+    const urlAt = text.indexOf('http://')
+    const url = text.substr(urlAt)
+
+    assert.isOk(url, 'url is found')
+
+    cy.visit(url)
+    cy.getByDT('acceptLink').click()
+    cy.getByDT('groupName').should('contain', groupName)
+  })
+})
