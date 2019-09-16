@@ -219,8 +219,7 @@ export default {
   }
 }
 
-.has-background,
-.has-background-footer {
+.has-background {
   .c-modal-footer {
     background-color: #f5f5f5;
     margin: $spacer;

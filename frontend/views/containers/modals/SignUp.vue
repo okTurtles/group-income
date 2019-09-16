@@ -1,5 +1,5 @@
 <template lang='pug'>
-  modal-template(class='has-background-footer' ref='modal')
+  modal-template(class='has-background' ref='modal')
     template(slot='title')
       i18n Sign Up
 
