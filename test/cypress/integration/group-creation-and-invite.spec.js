@@ -1,5 +1,6 @@
 describe('Group Creation and Inviting Members', () => {
   const userId = new Date().getMilliseconds()
+  const groupName = 'Dreamers'
 
   it('successfully loads the homepage', function () {
     cy.visit('/')
@@ -10,19 +11,26 @@ describe('Group Creation and Inviting Members', () => {
     cy.giLogOut()
   })
 
-  it('register user2', () => {
+  it('register user2 and logout', () => {
     cy.giSignUp(`user2-${userId}`)
+    cy.giLogOut()
   })
 
-  it('user2 create new Group', () => {
-    const testName = 'Test Group'
+  it('register user3 and logout', () => {
+    cy.giSignUp(`user3-${userId}`)
+    cy.giLogOut()
+  })
+
+  it('user1 logins back and creates new Group', () => {
     const testValues = 'Testing this software'
     const testIncome = 200
     // const testSetting = 80
     const groupImage = 'imageTest.png' // at fixtures/imageTest
 
+    cy.giLogin(`user1-${userId}`)
+
     cy.getByDT('createGroup').click()
-    cy.getByDT('groupName').type(testName)
+    cy.getByDT('groupName').type(groupName)
 
     // TODO make a custom command for this
     cy.fixture(groupImage).then((picture) =>
@@ -51,41 +59,51 @@ describe('Group Creation and Inviting Members', () => {
 
     cy.getByDT('finishBtn').click()
 
-    cy.getByDT('welcomeGroup').should('contain', `Welcome ${testName}!`)
+    cy.getByDT('welcomeGroup').should('contain', `Welcome ${groupName}!`)
   })
 
-  it('user2 starts inviting user1 to the Group', () => {
+  it('user1 starts inviting user2 to the Group', () => {
     cy.getByDT('toDashboardBtn').click()
 
     cy.getByDT('inviteButton').click()
 
-    cy.getByDT('searchUser').clear().type(`user1-${userId}`)
+    cy.getByDT('searchUser').clear().type(`user2-${userId}`)
 
     cy.getByDT('addButton').click()
 
     cy.getByDT('member').should('lengthOf', 1)
   })
 
-  it('user2 cancels user1 invitation', () => {
+  it('user1 cancels user2 invitation', () => {
     cy.getByDT('deleteMember').click()
 
     cy.getByDT('member').should('not.exist')
   })
 
-  it('user2 decides to actually invite user1', () => {
-    cy.getByDT('searchUser').clear().type(`user1-${userId}`)
+  it('user1 decides to actually invite user2 and user3 to the group', () => {
+    cy.getByDT('searchUser').clear().type(`user2-${userId}`)
+    cy.getByDT('addButton').click()
 
+    cy.getByDT('searchUser').clear().type(`user3-${userId}`)
     cy.getByDT('addButton').click()
 
     cy.getByDT('submit').click()
 
     cy.getByDT('notifyInvitedSuccess')
       .should('contain', 'Members invited successfully!')
-  })
 
-  it('user2 logs out', () => {
     cy.giLogOut()
   })
 
-  it.skip('Testing Proposal Member Invitation', () => {})
+  it('user2 accepts the invite', () => {
+    cy.giLogin(`user2-${userId}`)
+    cy.giAcceptGroupInvite(groupName)
+    cy.giLogOut()
+  })
+
+  it('user3 accepts the invite', () => {
+    cy.giLogin(`user3-${userId}`)
+    cy.giAcceptGroupInvite(groupName)
+    cy.giLogOut()
+  })
 })

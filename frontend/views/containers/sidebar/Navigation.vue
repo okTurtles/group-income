@@ -33,6 +33,14 @@ nav.c-navigation(
             i18n Chat
           list-item(tag='router-link' icon='cog' to='/group-settings')
             i18n Group Settings
+          list-item(
+            tag='router-link'
+            to='/mailbox'
+            icon='envelope'
+            data-test='mailboxLink'
+            :badgeCount='unreadMessageCount || activityCount'
+          )
+            i18n Inbox (deprecated)
 
         .c-navigation-separator(v-if='groupsByName.length < 2')
           router-link.button.is-small.is-outlined(
@@ -51,16 +59,6 @@ nav.c-navigation(
           :badgeCount='2'
         )
           i18n Messages
-
-        list-item(
-          tag='router-link'
-          to='/mailbox'
-          style='opacity: 0; cursor: default;'
-          icon='envelope'
-          data-test='mailboxLink'
-          :badgeCount='unreadMessageCount || activityCount'
-        )
-          i18n Inbox (deprecated)
 
       .c-navigation-body-bottom
         ul.c-menu-list-bottom
