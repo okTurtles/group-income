@@ -254,6 +254,7 @@ DefineContract({
             await sbp('state/vuex/dispatch', 'syncContractWithServer', groupState.profiles[name].contractID)
           }
         } else {
+          console.log('pass aqui?', meta.identityContractID)
           // we're an existing member of the group getting notified that a
           // new member has joined, so subscribe to their identity contract
           await sbp('state/vuex/dispatch', 'syncContractWithServer', meta.identityContractID)

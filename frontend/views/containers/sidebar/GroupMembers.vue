@@ -16,7 +16,7 @@
     // TODO: remove v-if in v-for loop and reorder list member by active user limited to 10
     li.c-group-member(
       v-for='(member, username, index) in groupMembers'
-      v-if='index < 10 && member && username !== currentUserName'
+      v-if='index < 10 && member'
       :class='member.pending && "is-pending"'
       :key='username'
       data-test='member'
@@ -91,6 +91,9 @@ export default {
     MenuItem,
     Tooltip,
     UserImage
+  },
+  mounted () {
+    console.log(this.groupMembers)
   },
   methods: {
     invite () {
