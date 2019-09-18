@@ -10,9 +10,8 @@
       data-test='login'
       @submit.prevent='login'
     )
-      .field
-        i18n.label(tag='label') Username
-
+      label.field
+        i18n.label Username
         input.input#loginName(
           :class='{error: $v.form.name.$error}'
           name='name'
@@ -26,6 +25,7 @@
         i18n.error(
           v-show='$v.form.name.$error'
           tag='p'
+          data-test='badUsername'
         ) Username cannot contain spaces
 
       form-password(
@@ -36,10 +36,9 @@
         @input='(newPassword) => {password = newPassword}'
       )
 
-      a.link(@click='forgotPassword')
-        i18n Forgot your password?
+      i18n.link(tag='a' @click='forgotPassword') Forgot your password?
 
-      p.error(v-if='form.response') {{ form.response }}
+      p.error(v-if='form.response' data-test='loginError') {{ form.response }}
 
       .buttons.is-centered
         i18n(
@@ -53,6 +52,7 @@
       p
         i18n Not on Group Income yet?&nbsp;
         i18n.link(
+          data-test='goToSignup'
           tag='a'
           @click='showSignUpModal'
         ) Create an account

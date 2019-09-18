@@ -1,6 +1,6 @@
 <template lang='pug'>
-.field
-  i18n.label(tag='label' v-if='label') {{ label }}
+label.field
+  .label(v-if='label') {{ label }}
   .input-combo
     input.input(
       :type='isLock ? "password" : "text"'

@@ -55,6 +55,46 @@ describe('SignUp, Profile and Login', () => {
     cy.giLogOut()
   })
 
-  it.skip('user1 must not signup twice', () => {
+  it('cannot login a non existent user', () => {
+    cy.getByDT('loginBtn').click()
+
+    cy.getByDT('loginName').clear().type('non existent')
+    cy.getByDT('badUsername').should('contain', 'cannot contain spaces')
+
+    cy.getByDT('loginName').clear().type('nonexistent')
+    cy.getByDT('password').clear().type('987654321')
+
+    cy.getByDT('loginSubmit').click()
+    cy.getByDT('loginError').should('contain', 'Invalid username or password')
+
+    cy.getByDT('closeModal').click()
+  })
+
+  it('cannot signup existing user1 twice', () => {
+    cy.getByDT('signupBtn').click()
+
+    cy.getByDT('signName').clear().type('new user')
+    cy.getByDT('badUsername').should('contain', 'cannot contain spaces')
+
+    cy.getByDT('signName').clear().type(userName)
+    cy.getByDT('badUsername').should('contain', 'name is unavailable')
+
+    // TODO: When email verification is implemented
+    // cy.getByDT('signEmail').clear().type(`${userName}@email.com`)
+    // cy.getByDT('badUsername').should('contain', 'email is unavailable')
+
+    cy.getByDT('closeModal').click()
+  })
+
+  it('switch directly between login to signup modals', () => {
+    cy.getByDT('loginBtn').click()
+
+    cy.getByDT('goToSignup').click()
+    cy.getByDT('signName').should('exist')
+
+    cy.getByDT('goToLogin').click()
+    cy.getByDT('loginName').should('exist')
+
+    cy.getByDT('closeModal').click()
   })
 })

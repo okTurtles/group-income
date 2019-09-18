@@ -10,9 +10,8 @@
       data-test='signup'
       @submit.prevent='signup'
     )
-      .field
-        i18n.label(tag='label') Username
-
+      label.field
+        i18n.label Username
         input.input#name(
           :class='{error: $v.form.name.$error}'
           name='name'
@@ -21,17 +20,12 @@
           v-focus=''
           data-test='signName'
         )
-
-        p.error(
-          v-if='$v.form.name.$error'
-          data-test='badUsername'
-        )
+        p.error(v-if='$v.form.name.$error' data-test='badUsername')
           i18n(v-if='!$v.form.name.isAvailable') name is unavailable
           i18n(v-if='!$v.form.name.nonWhitespace') cannot contain spaces
 
-      .field
-        i18n.label(tag='label') Email
-
+      label.field
+        i18n.label Email
         input.input#email(
           :class='{error: $v.form.email.$error}'
           name='email'
@@ -40,9 +34,9 @@
           type='email'
           data-test='signEmail'
         )
-
         p.error(v-if='$v.form.email.$error' data-test='badEmail')
-          i18n not an email
+          i18n(v-if='!$v.form.name.email') not an e-mail
+          i18n(v-if='!$v.form.name.isAvailable') e-mail is unavailable
 
       form-password(
         :label='L("Password")'
@@ -64,7 +58,7 @@
     template(slot='footer')
       p
         i18n Already have an account?&nbsp;
-        a.link(@click='showLoginModal')
+        a.link(@click='showLoginModal' data-test='goToLogin')
           i18n Login
 </template>
 
@@ -198,7 +192,11 @@ export default {
       },
       email: {
         required,
-        email
+        email,
+        isAvailable (value) {
+          // TODO - verify if e-mail exists
+          return true
+        }
       }
     }
   }

@@ -2,7 +2,8 @@
   button.c-modal-close(
     :class='{ "back-on-mobile": backOnMobile }'
     @click.self='$emit("close")'
-    aria-label='close'
+    :aria-label='L("close modal")'
+    data-test='closeModal'
   )
     i.icon-chevron-left(aria-hidden='true')
 </template>
