@@ -42,12 +42,12 @@ This contribution policy will evolve over time. For now it is based on a slightl
 
 1. A PR **SHOULD** be a minimal and accurate answer to exactly one identified and agreed problem.
 2. A PR **SHOULD** follow [the boy scout rule](https://github.com/okTurtles/group-income-simple/issues/383#issuecomment-383381863): leave the code cleaner than you found it when the refactor effort is not too big.
-3. A PR **SHALL NOT** include non-trivial code from other projects unless the Contributor is the original author of that code.
+3. A PR **MUST NOT** include non-trivial code from other projects unless the Contributor is the original author of that code.
 4. A PR **MUST** pass all tests on at least the principle target platform.
 5. A PR **MUST** include new tests for any new functionality introduced.
 6. A PR **SHOULD** avoid "callback-hell" style and instead prefer "async/await" style.
 7. A PR **MUST** follow the requirements spelled out in this project's [Style Guide](docs/Style-Guide.md).
-8. A PR **MUST** receive approval from at least one reviewer (existing, long-term contributor) before being merged. *Reviewers may not review their own PRs, and may not push commits to someone else's PR.*
+8. A PR **MUST** receive approval from at least one long-term contributor before being merged. Contributors **MUST NOT** review their own PRs, **MUST NOT** push commits to someone else's PR, and **SHOULD NOT** merge their own PRs.
 
 ## How to submit an issue
 
