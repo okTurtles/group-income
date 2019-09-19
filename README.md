@@ -5,6 +5,7 @@
 [![Gitter](https://badges.gitter.im/okTurtles/group-income.svg)](https://gitter.im/okTurtles/group-income) [![Build Status](https://img.shields.io/travis/okTurtles/group-income-simple/master.svg)](https://travis-ci.org/okTurtles/group-income-simple) [![Deps](https://david-dm.org/okTurtles/group-income-simple.svg)](https://david-dm.org/okTurtles/group-income-simple/#info=dependencies) [![Dev Deps](https://david-dm.org/okTurtles/group-income-simple/dev-status.svg)](https://david-dm.org/okTurtles/group-income-simple/#info=devDependencies) [![Donate](https://img.shields.io/badge/donate%20-%3D%E2%9D%A4-blue.svg)](https://okturtles.org/donate/)
 
 ## About
+
 [Group Income](https://groupincome.org/) is a fair income sharing mechanism that allows groups to provide their members a minimum income.
 
 This semi-centralized "Simple Edition" of Group Income is our way to rapidly prototype, develop, and research the concept with real groups.
@@ -24,7 +25,7 @@ We use [standard](https://github.com/feross/standard) for the code style and [Gi
 
 [![js-standard-style](https://cdn.rawgit.com/feross/standard/master/badge.svg)](https://github.com/feross/standard)
 
-We are committed to ensuring digital accessibility for all people. We are continually improving the user experience for everyone, and applying the relevant accessibility standards. We will be conformant with [WCAG 2.0](https://www.w3.org/WAI/standards-guidelines/wcag/) Level AA and trying or best to reach Level AAA in some areas of the application.
+We are continually improving the user experience for everyone, and applying the relevant accessibility standards. We will be conformant with [WCAG 2.0](https://www.w3.org/WAI/standards-guidelines/wcag/) Level AA and trying or best to reach Level AAA in some areas of the application.
 
 <a href="https://www.w3.org/WAI/WCAG2AA-Conformance"
   title="Explanation of WCAG 2.0 Level Double-A Conformance">
@@ -38,36 +39,58 @@ We are committed to ensuring digital accessibility for all people. We are contin
 
 - [:book: CONTRIBUTING.md](CONTRIBUTING.md) (required reading to send a PR!)
 - [:book: Getting Started — Modern frontend concepts & project overview](docs/Getting-Started-frontend.md)
-- [:book: Style Guide - Our development guidelines](docs/Style-Guide.md)
+- [:book: Style Guide — Our development guidelines](docs/Style-Guide.md)
 
 
 #### Basic workflow
+
 Group Income is an application based on [Vue.js](https://vuejs.org/). Here's how you can get started the development:
 
-1. Run all servers + watch files for changes
+Run all servers + watch files for changes
 
 ```bash
 grunt dev
 ```
 
-2. If all went well you should be able to visit [http://localhost:8000](http://localhost:8000)
+- If all went well you should be able to visit [http://localhost:8000](http://localhost:8000)
 
-3. Build the app for distribution
+Build the app for distribution
 
 ```bash
 grunt dist
 ```
 
-4. Clean up files in `dist/`:
+Clean up files in `dist/`
 
 ```bash
 grunt clean
 ```
 
-5. Run the tests
+Running tests
 
 ```bash
+# all tests
 grunt test
+
+# all tests while skipping build step
+grunt test --skipbuild
+
+# unit tests only
+grunt test:unit
+
+# unit tests while skipping build step
+grunt test:unit --skipbuild
+
+# show e2e tests (Cypress) live in a browser
+grunt test --browser
+
+# run e2e tests (Cypress) in "open" mode
+grunt test --browser=debug
+
+# Developing at the same time as writing E2E tests
+grunt dev
+# and in other terminal run cypress in "open" mode
+npm run cy:open
 ```
 
 #### Using Docker for extra security
@@ -76,10 +99,10 @@ You can run commands in a Docker container by using `npm run docker -- <cmd>` in
 
 For example:
 
-```
-$ npm run docker -- npm install
-$ npm run docker -- grunt dev
-$ npm run docker -- grunt test --skipbuild
+```bash
+npm run docker -- npm install
+npm run docker -- grunt dev
+npm run docker -- grunt test --skipbuild
 ```
 
 For details, see: **[`Docker.md`](docs/Docker.md)**
