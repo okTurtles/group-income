@@ -12,6 +12,7 @@ import globals from 'rollup-plugin-node-globals'
 import { eslint } from 'rollup-plugin-eslint'
 import css from 'rollup-plugin-css-only'
 import scssVariable from 'rollup-plugin-sass-variables'
+import svg from 'rollup-plugin-vue-inline-svg'
 // import collectSass from 'rollup-plugin-collect-sass'
 // import sass from 'rollup-plugin-sass'
 // import scss from 'rollup-plugin-scss'
@@ -107,7 +108,7 @@ module.exports = (grunt) => {
       },
       assets: {
         cwd: 'frontend/assets',
-        src: ['**/*', '!style/**'],
+        src: ['**/*', '!style/**', '!svg/**'],
         dest: distAssets,
         expand: true
       }
@@ -165,6 +166,21 @@ module.exports = (grunt) => {
         }
       },
       dev: {}
+    },
+    svg_sprite: {
+      options: {
+        mode: {
+          symbol: {
+            sprite: '../sprite.svg' // relative to assets/svg/symbol
+          }
+        }
+      },
+      basic: {
+        cwd: 'frontend/assets/svg',
+        src: ['**/*.svg'],
+        dest: 'frontend/assets/svg',
+        options: {}
+      }
     }
     // see also:
     // https://github.com/lud2k/grunt-serve
@@ -174,6 +190,8 @@ module.exports = (grunt) => {
   // -------------------------------------------------------------------------
   //  Grunt Tasks
   // -------------------------------------------------------------------------
+
+  grunt.loadNpmTasks('grunt-svg-sprite')
 
   grunt.registerTask('default', ['dev'])
   grunt.registerTask('dev', ['checkDependencies', 'build:watch', 'connect', 'backend:relaunch', 'watch'])
@@ -194,7 +212,7 @@ module.exports = (grunt) => {
       sbp('backend/pubsub/setup', require('http').createServer(), true)
     }
     if (!grunt.option('skipbuild')) {
-      grunt.task.run(['exec:eslint', 'exec:puglint', 'exec:stylelint', 'copy', 'sass', rollup])
+      grunt.task.run(['exec:eslint', 'exec:puglint', 'exec:stylelint', 'copy', 'sass', 'svg_sprite', rollup])
     }
   })
 
@@ -307,7 +325,7 @@ module.exports = (grunt) => {
       plugins: [
         alias({
           // https://vuejs.org/v2/guide/installation.html#Standalone-vs-Runtime-only-Build
-          resolve: ['.vue', '.js'],
+          resolve: ['.vue', '.js', '.svg'],
           vue: path.resolve('./node_modules/vue/dist/vue.common.js'),
           '~': path.resolve('./'),
           '@model': path.resolve('./frontend/model'),
@@ -338,6 +356,14 @@ module.exports = (grunt) => {
         //                                              useful in the <script> section, i.e.
         //                                              <script>import 'foo.scss' ...
         eslint({ throwOnError: true, throwOnWarning: true }),
+        svg({
+          svgoConfig: {
+            plugins: [
+              { cleanupIDs: false }, // needed when using <symbol> and <use>
+              { convertPathData: false } // Weird bug on SVGO. https://github.com/svg/svgo/issues/1153
+            ]
+          }
+        }),
         VuePlugin({
           // https://rollup-plugin-vue.vuejs.org/options.html
           // https://github.com/vuejs/rollup-plugin-vue/blob/master/src/index.ts

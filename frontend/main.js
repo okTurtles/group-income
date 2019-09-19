@@ -13,6 +13,7 @@ import './utils/autofocus.js'
 import './utils/lazyLoadedView.js'
 import Navigation from './views/containers/sidebar/Navigation.vue'
 import AppStyles from './views/components/AppStyles.vue'
+import AppSvgSprite from './views/components/AppSvgSprite.vue'
 import Modal from './views/components/Modal/Modal.vue'
 import './views/utils/translations.js'
 import './views/utils/vStyle.js'
@@ -74,6 +75,7 @@ async function startApp () {
     router: router,
     components: {
       AppStyles,
+      AppSvgSprite,
       Navigation,
       Modal
     },
