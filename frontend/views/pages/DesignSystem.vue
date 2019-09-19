@@ -778,7 +778,7 @@ page(
   article#Illustrations
     section.card
       i18n(tag='h2' class='card-header') Illustrations (SVGs)
-      p We have a good amount of nice illustrations across Group Income. Those illustrations need to adjust their colors based on the theme. For that reason we display them in inline SVGs.
+      p We have a good amount of nice illustrations across Group Income. Those illustrations' colors need to be customized based on the current theme. For that reason we display them in inline SVGs.
       br
       p Here's how you can load a SVG:
       br
@@ -790,7 +790,8 @@ page(
           td.c-top
             pre
               | svg-hello
-              | import SvgHello from '@svgs/hello'
+              |
+              | import SvgHello from '@svgs/hello.svg'
           td
             svg-hello.c-svg
 
@@ -800,7 +801,7 @@ page(
       br
       br
 
-      p Know more about how all of this works at #[pre assets/svg/README.md]
+      p Know more about how all of this works at #[pre(style='display:inline') assets/svg/README.md]
       br
       b.title.is-4 Available SVGs:
       .c-svgList
@@ -808,11 +809,9 @@ page(
           v-for='svg in config.svgs'
           :key='svg.name'
           )
-          svg.c-svg
-            use(:href='`#svg-${svg.name}`')
+          component.c-svg(:is='svg.component')
           .c-svgList-text
-            p #[b Name]: #svg-{{svg.name}}
-            p #[b Sprite]: {{svg.sprite}}
+            p #[b Name]: {{svg.name}}
 </template>
 
 <script>
@@ -822,12 +821,21 @@ import Message from '@components/Message.vue'
 import Tooltip from '@components/Tooltip.vue'
 import Badge from '@components/Badge.vue'
 import { OPEN_MODAL } from '@utils/events.js'
-// import mixinSvgSprite from '@components/Sprites/mixinSvgSprite.js'
+import SvgAccess from '@svgs/access.svg'
+import SvgBitcoin from '@svgs/bitcoin.svg'
+import SvgBrokenLink from '@svgs/broken-link.svg'
+import SvgContributions from '@svgs/contributions.svg'
+import SvgConversation from '@svgs/conversation.svg'
+import SvgCreateGroup from '@svgs/create-group.svg'
 import SvgHello from '@svgs/hello.svg'
+import SvgInvitation from '@svgs/invitation.svg'
+import SvgJoinGroup from '@svgs/join-group.svg'
+import SvgMoney from '@svgs/money.svg'
+import SvgProposal from '@svgs/proposal.svg'
+import SvgVote from '@svgs/vote.svg'
 
 export default {
   name: 'DesignSystemView',
-  // mixins: [mixinSvgSprite(['Dashboard', 'IncomeDetails', 'Newcomers'])],
   data () {
     return {
       articles: [],
@@ -852,51 +860,63 @@ export default {
         ],
         svgs: [
           {
-            name: 'access',
+            component: SvgAccess,
+            name: 'SvgAccess',
             sprite: 'Dashboard'
           },
           {
-            name: 'bitcoin',
+            component: SvgBitcoin,
+            name: 'SvgBitcoin',
             sprite: 'IncomeDetails'
           },
           {
-            name: 'broken-link',
+            component: SvgBrokenLink,
+            name: 'SvgBrokenLink',
             sprite: 'Newcomers'
           },
           {
-            name: 'contributions',
+            component: SvgContributions,
+            name: 'SvgContributions',
             sprite: 'Dashboard'
           },
           {
-            name: 'conversation',
+            component: SvgConversation,
+            name: 'SvgConversation',
             sprite: 'Dashboard'
           },
           {
-            name: 'create-group',
+            component: SvgCreateGroup,
+            name: 'SvgCreateGroup',
             sprite: 'Newcomers'
           },
           {
-            name: 'hello',
+            component: SvgHello,
+            name: 'SvgHello',
             sprite: 'IncomeDetails'
           },
           {
-            name: 'invitation',
+            component: SvgInvitation,
+            name: 'SvgInvitation',
             sprite: 'Newcomers'
           },
           {
-            name: 'join-group',
+            component: SvgJoinGroup,
+            name: 'SvgJoinGroup',
             sprite: 'Newcomers'
           },
           {
-            name: 'money',
+            component: SvgMoney,
+            name: 'SvgMoney',
             sprite: 'IncomeDetails'
           },
           {
-            name: 'proposal',
+            component: SvgProposal,
+            name: 'SvgProposal',
             sprite: 'Dashboard'
           },
           {
-            name: 'vote',
+            component: SvgVote,
+            name: 'SvgVote',
             sprite: 'Dashboard'
           }
         ]
@@ -1079,7 +1099,7 @@ table {
 }
 
 .c-svg {
-  max-width: 6rem;
+  width: 6rem;
   height: 6rem;
 }
 
@@ -1116,7 +1136,8 @@ table {
     flex-grow: 1;
 
     .c-svg {
-      max-width: auto;
+      max-width: none;
+      width: 8rem;
       height: 8rem;
     }
   }

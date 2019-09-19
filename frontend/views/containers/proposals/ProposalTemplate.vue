@@ -23,9 +23,7 @@
         i18n.helper This is optional.
 
       .c-confirmation(v-if='isConfirmation' key='confirmation')
-        svg.c-svg
-          use(href='#svg-proposal')
-
+        svg-proposal.c-svg
         i18n(html='Members of your group will now be asked to vote.</br>You need <strong>{value} yes votes</strong> for  your proposal to be accepted.' :args='{value: rule.value}')
 
       .buttons(:class='{ "is-centered": isConfirmation }')
@@ -75,13 +73,12 @@
 
 <script>
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
-import mixinSvgSprite from '@components/Sprites/mixinSvgSprite.js'
-
+import SvgProposal from '@svgs/proposal.svg'
 export default {
   name: 'ModalForm',
-  mixins: [mixinSvgSprite('Dashboard')],
   components: {
-    ModalTemplate
+    ModalTemplate,
+    SvgProposal
   },
   props: {
     title: {

@@ -111,7 +111,7 @@ module.exports = (grunt) => {
       },
       assets: {
         cwd: 'frontend/assets',
-        src: ['**/*', '!style/**', '!svg/**', 'svg/sprites/**'],
+        src: ['**/*', '!style/**', '!svgs/**', 'svgs/compressed/**'],
         dest: distAssets,
         expand: true
       }
@@ -128,7 +128,7 @@ module.exports = (grunt) => {
         options: { env: { LOAD_NO_FILE: 'true', ...process.env } }
       },
       // https://github.com/standard/standard/issues/750#issuecomment-379294276
-      eslint: 'node ./node_modules/eslint/bin/eslint.js --fix "**/*.{js,vue}"',
+      eslint: 'node ./node_modules/eslint/bin/eslint.js "**/*.{js,vue}"',
       eslintgrunt: "./node_modules/.bin/eslint --ignore-pattern '!.*.js' .Gruntfile.babel.js Gruntfile.js",
       puglint: './node_modules/.bin/pug-lint-vue frontend/views',
       stylelint: 'node ./node_modules/stylelint/bin/stylelint.js "frontend/assets/style/**/*.{css,scss,vue}"',
@@ -174,32 +174,24 @@ module.exports = (grunt) => {
     svg_sprite: {
       optimizeOnly: {
         cwd: 'frontend/assets/svgs/original',
-        dest: 'frontend/assets/svgs',
-        src: ['access.svg', '!original/'],
+        dest: 'frontend/assets/svgs/compressed',
+        src: ['*.svg'],
         options: {
           shape: {
             dest: './',
             transform: [{
               svgo: {
                 plugins: [
+                  { cleanupIDs: true },
+                  { removeTitle: true },
+                  { removeDesc: true },
+                  { removeUselessStrokeAndFill: true },
                   { removeViewBox: false },
-                  { removeDimensions: true },
-                  { prefixIds: false },
-                  { addCustomClass: {
-                    type: 'full',
-                    description: 'Add a custom class to each svg',
-                    fn: function (data, params) {
-                      const parent = data.content[0]
-
-                      console.log(data)
-
-                      if (!parent.isElem('svg')) return data
-
-                      parent.class.add('ora')
-
-                      return data
-                    }
-                  } }
+                  { removeDimensions: true }, // SVGO BUG # https://github.com/svg/svgo/issues/871
+                  { cleanupNumericValues: { floatPrecision: 2 } },
+                  { convertPathData: { floatPrecision: 2 } },
+                  { convertTransform: { floatPrecision: 2 } },
+                  { cleanupListOfValues: { floatPrecision: 2 } }
                 ]
               }
             }]
@@ -379,7 +371,7 @@ module.exports = (grunt) => {
           '@containers': path.resolve('./frontend/views/containers'),
           '@view-utils': path.resolve('./frontend/views/utils'),
           '@assets': path.resolve('./frontend/assets'),
-          '@svgs': path.resolve('./frontend/assets/svgs')
+          '@svgs': path.resolve('./frontend/assets/svgs/compressed')
 
         }),
         resolve({
@@ -400,16 +392,8 @@ module.exports = (grunt) => {
         // scss({ output: `${distCSS}/scss.css` }), // FAIL - produces empty bundle, probably only
         //                                              useful in the <script> section, i.e.
         //                                              <script>import 'foo.scss' ...
-        eslint({ throwOnError: true, throwOnWarning: true, fix: true }),
-        svgLoader({
-          // svgoConfig: {
-          //   plugins: [
-          //     { cleanupIDs: false }, // needed when using <symbol> and <use>
-          //     { convertPathData: false }, // Weird bug on SVGO. https://github.com/svg/svgo/issues/1153
-          //     { mergePaths: false } // svg_sprite already does that
-          //   ]
-          // }
-        }),
+        eslint({ throwOnError: true, throwOnWarning: true }),
+        svgLoader(),
         VuePlugin({
           // https://rollup-plugin-vue.vuejs.org/options.html
           // https://github.com/vuejs/rollup-plugin-vue/blob/master/src/index.ts
@@ -491,18 +475,30 @@ function flow (options = {}) {
 
 function svgLoader (options) {
   // Based on "rollup-plugin-vue-inline-svg" but better:
-  // without extra svgo jobs and with sourcemaps bug fixed
+  // - fix sourcemaps bug on original plugin
+  // - remove useless attrs and add global CSS class.
   const isSvg = createFilter('**/*.svg')
   return {
     name: 'vue-inline-svg',
-    transform: (source, id) => {
-      if (!isSvg(id)) return null
+    transform: (source, filePath) => {
+      if (!isSvg(filePath)) return null
+      const svgName = path.basename(filePath, '.svg')
+      const svgClass = `svg-${svgName}`
+      const svg = source
+        // remove width and height attrs to be customized only by CSS
+        // because SVGO can't do it at the moment (bug): https://github.com/svg/svgo/issues/871
+        .replace(/width="[a-zA-Z0-9:]*"/, '')
+        .replace(/height="[a-zA-Z0-9:]*"/, '')
+        // add global class automatically for theming customization
+        .replace('<svg', `<svg class="${svgClass}"`)
 
-      const compiled = compiler.compile(source, { preserveWhitespace: false })
-      const transformed = transpile(`module.exports = { render: function () { ${compiled.render} } };`).replace('module.exports =', 'export default')
+      const compiled = compiler.compile(svg, { preserveWhitespace: false })
+      const code = transpile(`module.exports = { render: function () { ${compiled.render} } };`)
+        // convert to ES6 modules
+        .replace('module.exports =', 'export default')
 
       return {
-        code: transformed,
+        code,
         map: { mappings: '' }
       }
     }

@@ -22,8 +22,7 @@ page(
         i.icon-check(v-if='item.max === item.value')
         .has-text-1 {{item.label}}
   .c-container-empty(v-if='!hasPayments')
-    svg.svg
-      use(href='#svg-contributions')
+    svg-contributions.c-svg
 
     i18n.title.is-4(tag='h2') There are no pending payments yet!
     i18n.has-text-1(tag='p') Once other group members add their income details, Group Income will re-distribute wealth amongst everyone.
@@ -96,16 +95,16 @@ import ProgressBar from '@components/Graphs/Progress.vue'
 import currencies from '@view-utils/currencies.js'
 import Tooltip from '@components/Tooltip.vue'
 import { OPEN_MODAL } from '@utils/events.js'
-import mixinSvgSprite from '@components/Sprites/mixinSvgSprite.js'
+import SvgContributions from '@svgs/contributions.svg'
 
 export default {
   name: 'PayGroup',
-  mixins: [mixinSvgSprite('Dashboard')],
   components: {
     Page,
     Avatar,
     ProgressBar,
-    Tooltip
+    Tooltip,
+    SvgContributions
   },
   data () {
     return {
@@ -148,7 +147,7 @@ export default {
   },
   computed: {
     hasPayments () {
-      return this.fakeStore.usersToPay.length < 0
+      return this.fakeStore.usersToPay.length > 0
     },
     paymentStatus () {
       const { usersToPay } = this.fakeStore
@@ -249,7 +248,7 @@ export default {
     margin: $spacer;
   }
 
-  .svg {
+  .c-svg {
     display: inline-block;
     height: 9rem;
     margin-bottom: $spacer-lg;

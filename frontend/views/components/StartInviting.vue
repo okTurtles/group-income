@@ -1,7 +1,6 @@
 <template lang="pug">
 section.card.c-card
-  svg.c-svg
-    use(href='#svg-conversation')
+  svg-conversation.c-svg
   div
     i18n.title(tag='h3') Invite member to your group
     i18n(tag='p') Start sharing your resources with the ones who matter to you!
@@ -19,11 +18,13 @@ section.card.c-card
 <script>
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
-import mixinSvgSprite from '@components/Sprites/mixinSvgSprite.js'
+import SvgConversation from '@svgs/conversation.svg'
 
 export default {
   name: 'StartInviting',
-  mixins: [mixinSvgSprite('Dashboard')],
+  components: {
+    SvgConversation
+  },
   methods: {
     openModal () {
       sbp('okTurtles.events/emit', OPEN_MODAL, 'InviteByLink')
