@@ -12,7 +12,9 @@ import globals from 'rollup-plugin-node-globals'
 import { eslint } from 'rollup-plugin-eslint'
 import css from 'rollup-plugin-css-only'
 import scssVariable from 'rollup-plugin-sass-variables'
-import svg from 'rollup-plugin-vue-inline-svg' // TODO sourcemaps https://github.com/e-e-e/rollup-plugin-vue-inline-svg/issues/1
+import { createFilter } from 'rollup-pluginutils'
+import transpile from 'vue-template-es2015-compiler'
+const compiler = require('vue-template-compiler') // NOTE: import doesnt work here?
 
 // import collectSass from 'rollup-plugin-collect-sass'
 // import sass from 'rollup-plugin-sass'
@@ -34,18 +36,6 @@ const distDir = 'dist'
 const distAssets = `${distDir}/assets`
 const distJS = `${distAssets}/js`
 const distCSS = `${distAssets}/css`
-
-const svgSpriteCommonConfig = (name) => ({
-  cwd: 'frontend/assets/svg',
-  dest: 'frontend/assets/svg/sprites',
-  options: {
-    mode: {
-      symbol: {
-        sprite: `../${name}.svg`
-      }
-    }
-  }
-})
 
 module.exports = (grunt) => {
   require('load-grunt-tasks')(grunt)
@@ -182,33 +172,58 @@ module.exports = (grunt) => {
     },
 
     svg_sprite: {
-      newcomers: {
-        ...svgSpriteCommonConfig('newcomers'),
-        src: [
-          'svg-broken-link.svg',
-          'svg-create-group.svg',
-          'svg-invitation.svg',
-          'svg-join-group.svg'
-        ]
-      },
-      group: {
-        ...svgSpriteCommonConfig('dashboard'),
-        src: [
-          'svg-conversation.svg',
-          'svg-access.svg',
-          'svg-contributions.svg',
-          'svg-proposal.svg',
-          'svg-vote.svg'
-        ]
-      },
-      incomeDetails: {
-        ...svgSpriteCommonConfig('income-details'),
-        src: [
-          'svg-hello.svg',
-          'svg-bitcoin.svg',
-          'svg-money.svg'
-        ]
+      optimizeOnly: {
+        cwd: 'frontend/assets/svgs/original',
+        dest: 'frontend/assets/svgs',
+        src: ['access.svg', '!original/'],
+        options: {
+          shape: {
+            dest: './',
+            transform: [{
+              svgo: {
+                plugins: [
+                  { removeViewBox: false },
+                  { removeDimensions: true },
+                  { prefixIds: false },
+                  { addCustomClass: {
+                    type: 'full',
+                    description: 'Add a custom class to each svg',
+                    fn: function (data, params) {
+                      const parent = data.content[0]
+
+                      console.log(data)
+
+                      if (!parent.isElem('svg')) return data
+
+                      parent.class.add('ora')
+
+                      return data
+                    }
+                  } }
+                ]
+              }
+            }]
+          }
+        }
       }
+      // NOTE: When we need a sprite in the future:
+      // newcomers: {
+      //   cwd: 'frontend/assets/svg',
+      //   dest: 'frontend/assets/svg/sprites',
+      //   options: {
+      //     mode: {
+      //       symbol: {
+      //         sprite: `../newcomers.svg`
+      //       }
+      //     }
+      //   }
+      //   src: [
+      //     'svg-broken-link.svg',
+      //     'svg-create-group.svg',
+      //     'svg-invitation.svg',
+      //     'svg-join-group.svg'
+      //   ]
+      // },
     }
     // see also:
     // https://github.com/lud2k/grunt-serve
@@ -363,7 +378,9 @@ module.exports = (grunt) => {
           '@components': path.resolve('./frontend/views/components'),
           '@containers': path.resolve('./frontend/views/containers'),
           '@view-utils': path.resolve('./frontend/views/utils'),
-          '@assets': path.resolve('./frontend/assets')
+          '@assets': path.resolve('./frontend/assets'),
+          '@svgs': path.resolve('./frontend/assets/svgs')
+
         }),
         resolve({
           // we set `preferBuiltins` to prevent rollup from erroring with
@@ -384,14 +401,14 @@ module.exports = (grunt) => {
         //                                              useful in the <script> section, i.e.
         //                                              <script>import 'foo.scss' ...
         eslint({ throwOnError: true, throwOnWarning: true, fix: true }),
-        svg({
-          svgoConfig: {
-            plugins: [
-              { cleanupIDs: false }, // needed when using <symbol> and <use>
-              { convertPathData: false }, // Weird bug on SVGO. https://github.com/svg/svgo/issues/1153
-              { mergePaths: false } // svg_sprite already does that
-            ]
-          }
+        svgLoader({
+          // svgoConfig: {
+          //   plugins: [
+          //     { cleanupIDs: false }, // needed when using <symbol> and <use>
+          //     { convertPathData: false }, // Weird bug on SVGO. https://github.com/svg/svgo/issues/1153
+          //     { mergePaths: false } // svg_sprite already does that
+          //   ]
+          // }
         }),
         VuePlugin({
           // https://rollup-plugin-vue.vuejs.org/options.html
@@ -469,6 +486,26 @@ function flow (options = {}) {
       code: flowRemoveTypes(code, options).toString(),
       map: options.pretty ? { mappings: '' } : null
     })
+  }
+}
+
+function svgLoader (options) {
+  // Based on "rollup-plugin-vue-inline-svg" but better:
+  // without extra svgo jobs and with sourcemaps bug fixed
+  const isSvg = createFilter('**/*.svg')
+  return {
+    name: 'vue-inline-svg',
+    transform: (source, id) => {
+      if (!isSvg(id)) return null
+
+      const compiled = compiler.compile(source, { preserveWhitespace: false })
+      const transformed = transpile(`module.exports = { render: function () { ${compiled.render} } };`).replace('module.exports =', 'export default')
+
+      return {
+        code: transformed,
+        map: { mappings: '' }
+      }
+    }
   }
 }
 

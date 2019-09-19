@@ -775,11 +775,10 @@ page(
           td
             button(@click='openModal("DesignSystemModalBase")')
               i18n Open Modal
-  article#Svgs
+  article#Illustrations
     section.card
-      i18n(tag='h2' class='card-header') SVGs (Illustrations)
-      p We have a good amount of nice illustrations across Group Income. Those illustrations need to adjust their colors based on the theme. For that reason we display them in multiple SVG sprites that are loaded asynchronous as the user explores the App.
-      p At the moment we distribute these illustrations in 3 sprites: #[b dashboard], #[b income-details] and #[b newcomers].
+      i18n(tag='h2' class='card-header') Illustrations (SVGs)
+      p We have a good amount of nice illustrations across Group Income. Those illustrations need to adjust their colors based on the theme. For that reason we display them in inline SVGs.
       br
       p Here's how you can load a SVG:
       br
@@ -790,20 +789,16 @@ page(
         tr
           td.c-top
             pre
-              | svg.c-svg
-              |   use(href='#svg-hello')
-              |
-              | // Load sprite via mixin
-              | mixins: [mixinSvgSprite('Dashboard')]
+              | svg-hello
+              | import SvgHello from '@svgs/hello'
           td
-            svg.c-svg
-              use(href='#svg-hello')
+            svg-hello.c-svg
+
             // NOTE: this is a very dummy POC for handling themes
             // The final solution should be implemented at #665.
             button.is-small(@click='isDarkTheme = !isDarkTheme') Toggle Dark Theme
       br
       br
-      svg-hello
 
       p Know more about how all of this works at #[pre assets/svg/README.md]
       br
@@ -827,12 +822,12 @@ import Message from '@components/Message.vue'
 import Tooltip from '@components/Tooltip.vue'
 import Badge from '@components/Badge.vue'
 import { OPEN_MODAL } from '@utils/events.js'
-import mixinSvgSprite from '@components/Sprites/mixinSvgSprite.js'
-import SvgHello from '@assets/svg/svg-hello'
+// import mixinSvgSprite from '@components/Sprites/mixinSvgSprite.js'
+import SvgHello from '@svgs/hello.svg'
 
 export default {
   name: 'DesignSystemView',
-  mixins: [mixinSvgSprite(['Dashboard', 'IncomeDetails', 'Newcomers'])],
+  // mixins: [mixinSvgSprite(['Dashboard', 'IncomeDetails', 'Newcomers'])],
   data () {
     return {
       articles: [],

@@ -53,3 +53,13 @@ $colors: "primary", "success", "warning", "danger";
 .has-text-1 {
   color: $text_1;
 }
+
+// ---------- SVGs
+
+// NOTE: This is only a POC to handle "themable" illustrations.
+// Final solution should be done at #665
+.svg-hello {
+  path:nth-child(1) {
+    fill: $primary_1;
+  }
+}
