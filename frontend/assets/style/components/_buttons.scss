@@ -200,6 +200,7 @@ p + .button {
 
 button.link {
   @extend %reset-button;
+  border-bottom: 1px solid $primary_1;
   color: $primary_0;
   font-weight: 600;
 

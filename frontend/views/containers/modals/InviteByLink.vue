@@ -6,7 +6,7 @@ modal-template(ref='modal')
   .c-container
     i18n.title.is-4(tag='h3') Share this link with others to grant access to your group.
     i18n.has-text-1(tag='p') After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!
-    a.link.c-link(:href='link' target='_blank')
+    a.link.has-icon.c-link(:href='link' target='_blank')
       i.icon-link
       | {{link}}
     i18n.has-text-1(tag='p') This invite link expires on the 4th of February.
@@ -42,13 +42,8 @@ export default {
 }
 
 .c-link {
-  display: inline-block;
   margin-top: $spacer-lg;
   margin-bottom: $spacer-sm;
-
-  .icon-link {
-    margin-right: $spacer-xs;
-  }
 }
 
 .c-cta {

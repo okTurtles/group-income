@@ -106,6 +106,13 @@ page(
             | Make sure&nbsp;
             a.link(href='#') the link is readable
             |  for everyone, this is, accessible.
+        tr
+          td
+            pre .link.has-icon
+          td
+            a.link.has-icon(href='#')
+              i.icon-link
+              | Share with everyone
 
   article#typography
     section.card
