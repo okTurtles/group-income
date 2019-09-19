@@ -775,6 +775,49 @@ page(
           td
             button(@click='openModal("DesignSystemModalBase")')
               i18n Open Modal
+  article#Svgs
+    section.card
+      i18n(tag='h2' class='card-header') SVGs (Illustrations)
+      p We have a good amount of nice illustrations across Group Income. Those illustrations need to adjust their colors based on the theme. For that reason we display them in multiple SVG sprites that are loaded asynchronous as the user explores the App.
+      p At the moment we distribute these illustrations in 3 sprites: #[b dashboard], #[b income-details] and #[b newcomers].
+      br
+      p Here's how you can load a SVG:
+      br
+      table.c-svgTable(:class='{ isDarkTheme }')
+        thead
+          th code
+          th demo
+        tr
+          td.c-top
+            pre
+              | svg.c-svg
+              |   use(href='#svg-hello')
+              |
+              | // Load sprite via mixin
+              | mixins: [mixinSvgSprite('Dashboard')]
+          td
+            svg.c-svg
+              use(href='#svg-hello')
+            // NOTE: this is a very dummy POC for handling themes
+            // The final solution should be implemented at #665.
+            button.is-small(@click='isDarkTheme = !isDarkTheme') Toggle Dark Theme
+      br
+      br
+      svg-hello
+
+      p Know more about how all of this works at #[pre assets/svg/README.md]
+      br
+      b.title.is-4 Available SVGs:
+      .c-svgList
+        .c-svgList-item(
+          v-for='svg in config.svgs'
+          :key='svg.name'
+          )
+          svg.c-svg
+            use(:href='`#svg-${svg.name}`')
+          .c-svgList-text
+            p #[b Name]: #svg-{{svg.name}}
+            p #[b Sprite]: {{svg.sprite}}
 </template>
 
 <script>
@@ -784,9 +827,12 @@ import Message from '@components/Message.vue'
 import Tooltip from '@components/Tooltip.vue'
 import Badge from '@components/Badge.vue'
 import { OPEN_MODAL } from '@utils/events.js'
+import mixinSvgSprite from '@components/Sprites/mixinSvgSprite.js'
+import SvgHello from '@assets/svg/svg-hello'
 
 export default {
   name: 'DesignSystemView',
+  mixins: [mixinSvgSprite(['Dashboard', 'IncomeDetails', 'Newcomers'])],
   data () {
     return {
       articles: [],
@@ -808,15 +854,67 @@ export default {
             name: 'danger',
             usage: 'Used on elements to show something wrong happened'
           }
+        ],
+        svgs: [
+          {
+            name: 'access',
+            sprite: 'Dashboard'
+          },
+          {
+            name: 'bitcoin',
+            sprite: 'IncomeDetails'
+          },
+          {
+            name: 'broken-link',
+            sprite: 'Newcomers'
+          },
+          {
+            name: 'contributions',
+            sprite: 'Dashboard'
+          },
+          {
+            name: 'conversation',
+            sprite: 'Dashboard'
+          },
+          {
+            name: 'create-group',
+            sprite: 'Newcomers'
+          },
+          {
+            name: 'hello',
+            sprite: 'IncomeDetails'
+          },
+          {
+            name: 'invitation',
+            sprite: 'Newcomers'
+          },
+          {
+            name: 'join-group',
+            sprite: 'Newcomers'
+          },
+          {
+            name: 'money',
+            sprite: 'IncomeDetails'
+          },
+          {
+            name: 'proposal',
+            sprite: 'Dashboard'
+          },
+          {
+            name: 'vote',
+            sprite: 'Dashboard'
+          }
         ]
-      }
+      },
+      isDarkTheme: false
     }
   },
   components: {
     Page,
     Message,
     Tooltip,
-    Badge
+    Badge,
+    SvgHello
   },
   mounted () {
     const menu = document.getElementById('c-design-system-sidebar')
@@ -897,6 +995,9 @@ table {
     min-width: 6rem;
     padding-right: 1rem;
     vertical-align: baseline;
+    &.c-top {
+      vertical-align: top;
+    }
   }
   td:first-child {
     min-width: 21rem;
@@ -979,6 +1080,55 @@ table {
     line-height: $spacer-md * 1.5;
     text-align: center;
     border: none;
+  }
+}
+
+.c-svg {
+  max-width: 6rem;
+  height: 6rem;
+}
+
+.c-svgTable {
+  &.isDarkTheme {
+    --text_0: white;
+    --primary_0: white;
+    --primary_1: wheat;
+    --primary_0_1: white;
+    --background_0: #363636;
+    background: $background_0;
+
+    th {
+      color: $text_0;
+    }
+
+    pre {
+      color: $primary_1;
+    }
+  }
+}
+
+.c-svgList {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: $spacer;
+
+  &-item {
+    padding: $spacer;
+    border: 1px solid $general_1;
+    width: 50%;
+    min-width: 16rem;
+    text-align: center;
+    flex-grow: 1;
+
+    .c-svg {
+      max-width: auto;
+      height: 8rem;
+    }
+  }
+
+  &-text {
+    padding-top: $spacer-sm;
+    text-align: left;
   }
 }
 

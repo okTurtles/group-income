@@ -10,3 +10,5 @@ export const CLOSE_MODAL = 'close-modal'
 export const REPLACE_MODAL = 'replace-modal'
 
 export const PROPOSAL_RESULT = 'proposal-result'
+
+export const LOAD_SPRITE = 'load-sprite'

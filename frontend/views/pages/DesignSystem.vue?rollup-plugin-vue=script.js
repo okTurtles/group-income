@@ -1,0 +1,953 @@
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//
+
+import Page from '@pages/Page.vue'
+import sbp from '~/shared/sbp.js'
+import Message from '@components/Message.vue'
+import Tooltip from '@components/Tooltip.vue'
+import Badge from '@components/Badge.vue'
+import { OPEN_MODAL } from '@utils/events.js'
+import mixinSvgSprite from '@components/Sprites/mixinSvgSprite.js'
+
+export default {
+  name: 'DesignSystemView',
+  mixins: [mixinSvgSprite(['Dashboard', 'IncomeDetails', 'Newcomers'])],
+  data () {
+    return {
+      articles: [],
+      config: {
+        colors: [
+          {
+            name: 'primary',
+            usage: 'Used on main decorative / interactive elements.'
+          },
+          {
+            name: 'success',
+            usage: 'Used on elements to show something good happened - Do not mix its usage with success (same color in this theme but with  different meanings)'
+          },
+          {
+            name: 'warning',
+            usage: 'Used on elements to show something not that good happened - Do not mix its usage with $tertiary (same color in this theme but with different meanings)'
+          },
+          {
+            name: 'danger',
+            usage: 'Used on elements to show something wrong happened'
+          }
+        ],
+        svgs: [
+          {
+            name: 'access',
+            sprite: 'dashboard'
+          },
+          {
+            name: 'bitcoin',
+            sprite: 'incomeDetails'
+          },
+          {
+            name: 'broken-link',
+            sprite: 'newcomers'
+          },
+          {
+            name: 'contributions',
+            sprite: 'dashboard'
+          },
+          {
+            name: 'conversation',
+            sprite: 'dashboard'
+          },
+          {
+            name: 'create-group',
+            sprite: 'newcomers'
+          },
+          {
+            name: 'hello',
+            sprite: 'income-details'
+          },
+          {
+            name: 'invitation',
+            sprite: 'newcomers'
+          },
+          {
+            name: 'join-group',
+            sprite: 'newcomers'
+          },
+          {
+            name: 'money',
+            sprite: 'income-details'
+          },
+          {
+            name: 'proposal',
+            sprite: 'dashboard'
+          },
+          {
+            name: 'vote',
+            sprite: 'dashboard'
+          }
+        ]
+
+      }
+    }
+  },
+  components: {
+    Page,
+    Message,
+    Tooltip,
+    Badge
+  },
+  mounted () {
+    const menu = document.getElementById('c-design-system-sidebar')
+    menu.parentElement.setAttribute('style', 'position: fixed')
+    document.querySelectorAll('article').forEach((el) => {
+      const link = document.createElement('A')
+      link.appendChild(document.createTextNode(el.querySelector('h2').innerHTML))
+      link.setAttribute('href', `#${el.id}`)
+      menu.appendChild(link)
+      this.articles.push({
+        link: link,
+        top: el.getBoundingClientRect().top - window.innerHeight
+      })
+    })
+
+    document.querySelectorAll('.l-page')[0].addEventListener('scroll', this.handleScroll)
+
+    // Keep the position of the current element you're working on
+    const hash = document.location.hash
+    if (hash) {
+      document.querySelector(hash).scrollIntoView()
+    }
+  },
+  destroyed () {
+    window.removeEventListener('scroll', this.handleScroll)
+  },
+  methods: {
+    login () {
+      console.error('unimplemented, try using the actual Login.vue modal')
+    },
+    openModal (mode) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, mode)
+    },
+    handleScroll (e) {
+      const top = e.target.scrollTop
+      let last = 0
+      this.articles.forEach((el, index) => {
+        if (top > (el.top)) {
+          el.link.classList.add('active')
+          last = index
+        } else {
+          el.link.classList.remove('active')
+        }
+        el.link.classList.remove('last')
+      })
+      this.articles[last].link.classList.add('last')
+    }
+  }
+}

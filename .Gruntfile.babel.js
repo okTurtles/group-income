@@ -12,7 +12,8 @@ import globals from 'rollup-plugin-node-globals'
 import { eslint } from 'rollup-plugin-eslint'
 import css from 'rollup-plugin-css-only'
 import scssVariable from 'rollup-plugin-sass-variables'
-import svg from 'rollup-plugin-vue-inline-svg'
+import svg from 'rollup-plugin-vue-inline-svg' // TODO sourcemaps https://github.com/e-e-e/rollup-plugin-vue-inline-svg/issues/1
+
 // import collectSass from 'rollup-plugin-collect-sass'
 // import sass from 'rollup-plugin-sass'
 // import scss from 'rollup-plugin-scss'
@@ -33,6 +34,18 @@ const distDir = 'dist'
 const distAssets = `${distDir}/assets`
 const distJS = `${distAssets}/js`
 const distCSS = `${distAssets}/css`
+
+const svgSpriteCommonConfig = (name) => ({
+  cwd: 'frontend/assets/svg',
+  dest: 'frontend/assets/svg/sprites',
+  options: {
+    mode: {
+      symbol: {
+        sprite: `../${name}.svg`
+      }
+    }
+  }
+})
 
 module.exports = (grunt) => {
   require('load-grunt-tasks')(grunt)
@@ -108,7 +121,7 @@ module.exports = (grunt) => {
       },
       assets: {
         cwd: 'frontend/assets',
-        src: ['**/*', '!style/**', '!svg/**'],
+        src: ['**/*', '!style/**', '!svg/**', 'svg/sprites/**'],
         dest: distAssets,
         expand: true
       }
@@ -125,7 +138,7 @@ module.exports = (grunt) => {
         options: { env: { LOAD_NO_FILE: 'true', ...process.env } }
       },
       // https://github.com/standard/standard/issues/750#issuecomment-379294276
-      eslint: 'node ./node_modules/eslint/bin/eslint.js "**/*.{js,vue}"',
+      eslint: 'node ./node_modules/eslint/bin/eslint.js --fix "**/*.{js,vue}"',
       eslintgrunt: "./node_modules/.bin/eslint --ignore-pattern '!.*.js' .Gruntfile.babel.js Gruntfile.js",
       puglint: './node_modules/.bin/pug-lint-vue frontend/views',
       stylelint: 'node ./node_modules/stylelint/bin/stylelint.js "frontend/assets/style/**/*.{css,scss,vue}"',
@@ -167,19 +180,34 @@ module.exports = (grunt) => {
       },
       dev: {}
     },
+
     svg_sprite: {
-      options: {
-        mode: {
-          symbol: {
-            sprite: '../sprite.svg' // relative to assets/svg/symbol
-          }
-        }
+      newcomers: {
+        ...svgSpriteCommonConfig('newcomers'),
+        src: [
+          'svg-broken-link.svg',
+          'svg-create-group.svg',
+          'svg-invitation.svg',
+          'svg-join-group.svg'
+        ]
       },
-      basic: {
-        cwd: 'frontend/assets/svg',
-        src: ['**/*.svg'],
-        dest: 'frontend/assets/svg',
-        options: {}
+      group: {
+        ...svgSpriteCommonConfig('dashboard'),
+        src: [
+          'svg-conversation.svg',
+          'svg-access.svg',
+          'svg-contributions.svg',
+          'svg-proposal.svg',
+          'svg-vote.svg'
+        ]
+      },
+      incomeDetails: {
+        ...svgSpriteCommonConfig('income-details'),
+        src: [
+          'svg-hello.svg',
+          'svg-bitcoin.svg',
+          'svg-money.svg'
+        ]
       }
     }
     // see also:
@@ -355,12 +383,13 @@ module.exports = (grunt) => {
         // scss({ output: `${distCSS}/scss.css` }), // FAIL - produces empty bundle, probably only
         //                                              useful in the <script> section, i.e.
         //                                              <script>import 'foo.scss' ...
-        eslint({ throwOnError: true, throwOnWarning: true }),
+        eslint({ throwOnError: true, throwOnWarning: true, fix: true }),
         svg({
           svgoConfig: {
             plugins: [
               { cleanupIDs: false }, // needed when using <symbol> and <use>
-              { convertPathData: false } // Weird bug on SVGO. https://github.com/svg/svgo/issues/1153
+              { convertPathData: false }, // Weird bug on SVGO. https://github.com/svg/svgo/issues/1153
+              { mergePaths: false } // svg_sprite already does that
             ]
           }
         }),

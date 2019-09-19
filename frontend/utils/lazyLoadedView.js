@@ -17,6 +17,10 @@ Vue.component('RuleAddMemberProposal', () => import('../views/containers/proposa
 Vue.component('RuleChangeRuleProposal', () => import('../views/containers/proposals/RuleChangeRule.vue'))
 Vue.component('RuleRemoveMemberProposal', () => import('../views/containers/proposals/RuleRemoveMember.vue'))
 
+Vue.component('SvgSpriteDashboard', () => import('../views/components/Sprites/SvgSpriteDashboard.vue'))
+Vue.component('SvgSpriteIncomeDetails', () => import('../views/components/Sprites/SvgSpriteIncomeDetails.vue'))
+Vue.component('SvgSpriteNewcomers', () => import('../views/components/Sprites/SvgSpriteNewcomers.vue'))
+
 // TODO Remove after design test period
 Vue.component('DesignSystemModal', () => import('../views/containers/modals/DesignSystem.vue'))
 Vue.component('DesignSystemModalBase', () => import('../views/containers/modals/DesignSystemBase.vue'))
