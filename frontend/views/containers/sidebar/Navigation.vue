@@ -110,6 +110,14 @@ export default {
       }
     }
   },
+  watch: {
+    $route (to, from) {
+      const isDifferentPage = from.path !== to.path
+      if (this.ephemeral.isActive && isDifferentPage) {
+        this.ephemeral.isActive = false
+      }
+    }
+  },
   computed: {
     ...mapGetters([
       'groupsByName',
