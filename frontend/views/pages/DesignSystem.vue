@@ -782,6 +782,43 @@ page(
           td
             button(@click='openModal("DesignSystemModalBase")')
               i18n Open Modal
+  article#Illustrations
+    section.card
+      i18n(tag='h2' class='card-header') Illustrations (SVGs)
+      p We have a good amount of nice illustrations across Group Income. Those illustrations' colors need to be customized based on the current theme. For that reason we display them in inline SVGs.
+      br
+      p Here's how you can load a SVG:
+      br
+      table.c-svgTable(:class='{ isDarkTheme }')
+        thead
+          th code
+          th demo
+        tr
+          td.c-top
+            pre
+              | svg-hello
+              |
+              | import SvgHello from '@svgs/hello.svg'
+          td
+            svg-hello.c-svg
+
+            // NOTE: this is a very dummy POC for handling themes
+            // The final solution should be implemented at #665.
+            button.is-small(@click='isDarkTheme = !isDarkTheme') Toggle Dark Theme
+      br
+      br
+
+      p Know more about how all of this works at #[pre(style='display:inline') assets/svg/README.md]
+      br
+      b.title.is-4 Available SVGs:
+      .c-svgList
+        .c-svgList-item(
+          v-for='svg in config.svgs'
+          :key='svg.name'
+          )
+          component.c-svg(:is='svg.component')
+          .c-svgList-text
+            p #[b Name]: {{svg.name}}
 </template>
 
 <script>
@@ -791,6 +828,18 @@ import Message from '@components/Message.vue'
 import Tooltip from '@components/Tooltip.vue'
 import Badge from '@components/Badge.vue'
 import { OPEN_MODAL } from '@utils/events.js'
+import SvgAccess from '@svgs/access.svg'
+import SvgBitcoin from '@svgs/bitcoin.svg'
+import SvgBrokenLink from '@svgs/broken-link.svg'
+import SvgContributions from '@svgs/contributions.svg'
+import SvgConversation from '@svgs/conversation.svg'
+import SvgCreateGroup from '@svgs/create-group.svg'
+import SvgHello from '@svgs/hello.svg'
+import SvgInvitation from '@svgs/invitation.svg'
+import SvgJoinGroup from '@svgs/join-group.svg'
+import SvgMoney from '@svgs/money.svg'
+import SvgProposal from '@svgs/proposal.svg'
+import SvgVote from '@svgs/vote.svg'
 
 export default {
   name: 'DesignSystemView',
@@ -815,15 +864,79 @@ export default {
             name: 'danger',
             usage: 'Used on elements to show something wrong happened'
           }
+        ],
+        svgs: [
+          {
+            component: SvgAccess,
+            name: 'SvgAccess',
+            sprite: 'Dashboard'
+          },
+          {
+            component: SvgBitcoin,
+            name: 'SvgBitcoin',
+            sprite: 'IncomeDetails'
+          },
+          {
+            component: SvgBrokenLink,
+            name: 'SvgBrokenLink',
+            sprite: 'Newcomers'
+          },
+          {
+            component: SvgContributions,
+            name: 'SvgContributions',
+            sprite: 'Dashboard'
+          },
+          {
+            component: SvgConversation,
+            name: 'SvgConversation',
+            sprite: 'Dashboard'
+          },
+          {
+            component: SvgCreateGroup,
+            name: 'SvgCreateGroup',
+            sprite: 'Newcomers'
+          },
+          {
+            component: SvgHello,
+            name: 'SvgHello',
+            sprite: 'IncomeDetails'
+          },
+          {
+            component: SvgInvitation,
+            name: 'SvgInvitation',
+            sprite: 'Newcomers'
+          },
+          {
+            component: SvgJoinGroup,
+            name: 'SvgJoinGroup',
+            sprite: 'Newcomers'
+          },
+          {
+            component: SvgMoney,
+            name: 'SvgMoney',
+            sprite: 'IncomeDetails'
+          },
+          {
+            component: SvgProposal,
+            name: 'SvgProposal',
+            sprite: 'Dashboard'
+          },
+          {
+            component: SvgVote,
+            name: 'SvgVote',
+            sprite: 'Dashboard'
+          }
         ]
-      }
+      },
+      isDarkTheme: false
     }
   },
   components: {
     Page,
     Message,
     Tooltip,
-    Badge
+    Badge,
+    SvgHello
   },
   mounted () {
     const menu = document.getElementById('c-design-system-sidebar')
@@ -904,6 +1017,9 @@ table {
     min-width: 6rem;
     padding-right: 1rem;
     vertical-align: baseline;
+    &.c-top {
+      vertical-align: top;
+    }
   }
   td:first-child {
     min-width: 21rem;
@@ -986,6 +1102,56 @@ table {
     line-height: $spacer-md * 1.5;
     text-align: center;
     border: none;
+  }
+}
+
+.c-svg {
+  width: 6rem;
+  height: 6rem;
+}
+
+.c-svgTable {
+  &.isDarkTheme {
+    --text_0: white;
+    --primary_0: white;
+    --primary_1: wheat;
+    --primary_0_1: white;
+    --background_0: #363636;
+    background: $background_0;
+
+    th {
+      color: $text_0;
+    }
+
+    pre {
+      color: $primary_1;
+    }
+  }
+}
+
+.c-svgList {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: $spacer;
+
+  &-item {
+    padding: $spacer;
+    border: 1px solid $general_1;
+    width: 50%;
+    min-width: 16rem;
+    text-align: center;
+    flex-grow: 1;
+
+    .c-svg {
+      max-width: none;
+      width: 8rem;
+      height: 8rem;
+    }
+  }
+
+  &-text {
+    padding-top: $spacer-sm;
+    text-align: left;
   }
 }
 

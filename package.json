@@ -158,6 +158,7 @@
     "grunt-contrib-watch": "1.1.0",
     "grunt-exec": "3.0.0",
     "grunt-sass": "3.0.2",
+    "grunt-svg-sprite": "1.5.0",
     "load-grunt-tasks": "5.0.0",
     "mocha": "6.1.4",
     "node-fetch": "2.6.0",
