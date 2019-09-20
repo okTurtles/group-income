@@ -37,7 +37,7 @@ We are continually improving the user experience for everyone, and applying the 
 
 #### Read first
 
-- [:book: CONTRIBUTING.md](CONTRIBUTING.md) (required reading to send a PR!)
+- __[:book: CONTRIBUTING.md](CONTRIBUTING.md) (required reading to send a PR!)__
 - [:book: Getting Started — Modern frontend concepts & project overview](docs/Getting-Started-frontend.md)
 - [:book: Style Guide — Our development guidelines](docs/Style-Guide.md)
 

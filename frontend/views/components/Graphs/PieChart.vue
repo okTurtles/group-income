@@ -102,8 +102,8 @@ export default {
       return [
         `M ${startX} ${startY}`, // Move starting point
         `A 1 1 0 ${isLargeArc} 1 ${endX} ${endY}`, // draw an Arc
-        `L 0 0`, // and draw a Line to this point
-        `Z` // cloZe the path back to first point - needed to have a stroke
+        'L 0 0', // and draw a Line to this point
+        'Z' // cloZe the path back to first point - needed to have a stroke
       ].join(' ')
     },
     getStartPercent (index) {

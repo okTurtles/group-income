@@ -143,7 +143,7 @@ export default {
       }
     },
     setError () {
-      this.hasError = this.L(`Whitespace characters aren't really a contribution`)
+      this.hasError = this.L('Whitespace characters aren\'t really a contribution')
     }
   },
   directives: {

@@ -60,10 +60,12 @@ route.GET('/events/{contractID}/{since}', {}, async function (request, h) {
 })
 
 route.POST('/name', {
-  validate: { payload: {
-    name: Joi.string().required(),
-    value: Joi.string().required()
-  } }
+  validate: {
+    payload: {
+      name: Joi.string().required(),
+      value: Joi.string().required()
+    }
+  }
 }, function (request, h) {
   try {
     const { name, value } = request.payload
