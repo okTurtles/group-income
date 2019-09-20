@@ -77,8 +77,8 @@
           i18n.error(tag='p' v-if='$v.form.email.$error') Not an email
 
         .field
-          i18n.label(tag='label') Password
-          .fake-password **********
+          i18n.label Password
+          .fake-password(aria-hidden='true') **********
 
           i18n.link(
             tag='button'
@@ -264,9 +264,10 @@ export default {
 }
 
 .fake-password {
-  margin-top: 10px;
+  display: inline-block;
+  margin-top: $spacer-sm;
   margin-left: -1px;
-  letter-spacing: -0.35px;
+  margin-right: $spacer-sm;
 }
 
 .legend {
