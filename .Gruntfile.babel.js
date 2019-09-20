@@ -226,8 +226,6 @@ module.exports = (grunt) => {
   //  Grunt Tasks
   // -------------------------------------------------------------------------
 
-  grunt.loadNpmTasks('grunt-svg-sprite')
-
   grunt.registerTask('default', ['dev'])
   grunt.registerTask('dev', ['checkDependencies', 'build:watch', 'connect', 'backend:relaunch', 'watch'])
   grunt.registerTask('dist', ['build'])
