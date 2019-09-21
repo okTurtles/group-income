@@ -17,4 +17,4 @@ cache:
 install:
   - npm ci
 script:
-  - npm test
+  - npm test -- --disable-video

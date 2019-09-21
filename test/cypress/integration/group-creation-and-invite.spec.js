@@ -95,15 +95,24 @@ describe('Group Creation and Inviting Members', () => {
     cy.giLogOut()
   })
 
+  function assertGroupMembersCount (count) {
+    // OPTIMIZE: We could also verify the username of each member...
+    cy.getByDT('groupMembers').find('ul')
+      .children()
+      .should('have.length', count)
+  }
+
   it('user2 accepts the invite', () => {
     cy.giLogin(`user2-${userId}`)
     cy.giAcceptGroupInvite(groupName)
+    assertGroupMembersCount(2)
     cy.giLogOut()
   })
 
   it('user3 accepts the invite', () => {
     cy.giLogin(`user3-${userId}`)
     cy.giAcceptGroupInvite(groupName)
+    assertGroupMembersCount(3)
     cy.giLogOut()
   })
 })

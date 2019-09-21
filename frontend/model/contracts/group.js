@@ -242,7 +242,6 @@ DefineContract({
       async sideEffect (message) {
         const rootState = sbp('state/vuex/state')
         const groupState = rootState[message.contractID()]
-        const data = message.data()
         const meta = message.meta()
         // TODO: per #257 this will have to be encompassed in a recoverable transaction
         // however per #610 that might be handled in handleEvent (?), or per #356 might not be needed
@@ -254,7 +253,6 @@ DefineContract({
             await sbp('state/vuex/dispatch', 'syncContractWithServer', groupState.profiles[name].contractID)
           }
         } else {
-          console.log('pass aqui?', meta.identityContractID)
           // we're an existing member of the group getting notified that a
           // new member has joined, so subscribe to their identity contract
           await sbp('state/vuex/dispatch', 'syncContractWithServer', meta.identityContractID)

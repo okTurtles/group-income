@@ -88,9 +88,6 @@ export default {
     Tooltip,
     UserImage
   },
-  mounted () {
-    console.log(this.groupMembers)
-  },
   methods: {
     invite () {
       this.$router.push({ path: '/invite' })
