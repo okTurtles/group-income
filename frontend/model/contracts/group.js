@@ -259,6 +259,14 @@ DefineContract({
         }
       }
     },
+    'gi.contracts/group/updateSettings': {
+      validate: object,
+      process (state, { data, meta }) {
+        for (var key in data) {
+          Vue.set(state.settings, key, data[key])
+        }
+      }
+    },
     'gi.contracts/group/groupProfileUpdate': {
       validate: object,
       process (state, { data, meta }) {

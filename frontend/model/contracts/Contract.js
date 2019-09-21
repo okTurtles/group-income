@@ -28,10 +28,14 @@ export function DefineContract (contract: Object) {
         const metadata = meta.create()
         contract.actions[action].validate(data)
         meta.validate(metadata)
+        if (!contractID) { // TODO dev log - remove on prod.
+          console.error(`It seems like you called a selector without passing the contractID as 2nd parameter. Please verify ${action}`)
+        }
         const previousHEAD = await sbp('backend/latestHash', contractID)
         return GIMessage.create(contractID, previousHEAD, undefined, `${action}/process`, data, metadata)
       },
       [`${action}/process`]: function (state, message) {
+        console.log('message...', message)
         contract.actions[action].validate(message.data)
         meta.validate(message.meta)
         contract.actions[action].process(state, message)
