@@ -16,10 +16,9 @@ All Svgs are at `assets/svgs/original`, exported [from Figma](https://www.figma.
 
 When running `grunt dev`, 2 things happen to SVGs: **compression** and **compiling**:
 
-1. **compression** - A Grunt Task `svg_sprite` is run on build time only. In there, [SVGO](https://github.com/svg/svgo/), a tool to compress SVGs, comes to action. The final result is exported to `assets/svgs/compressed`. Do NOT modify any file there directly (note that it's even added to `.gitignore`).
+1. **compression** - A Grunt Task `exec:svg_compress` is run on build time only. In there, [SVGO](https://github.com/svg/svgo/), a tool to compress SVGs, comes to action. The final result is exported to `assets/svgs/compressed`. Do NOT modify any file there directly (note that it's even added to `.gitignore`).
 
 2. **compiling** - A custom loader `svgLoader` is run during watch mode. This allow us to import SVGs directly and use them inline in the code. It also performs two additional things:
-    - Remove `width` and `height` attributes from SVG
     - Add a CSS class with the name of the icon `.svg-{file-name}`. This allow us to customize SVGs colors based on the current theme.
 
 ### Usage
@@ -32,7 +31,7 @@ svg-hello
 import SvgHello from '@svgs/hello.svg'
 ```
 
-**🎈Pro Tip:** During development, if you add a new SVG, it won't be compressed. But don't worry, you don't need to restart `grunt dev`. Just open another terminal window and run `grunt svg_sprite`, wait a few seconds and you are good to go!
+**🎈Pro Tip:** During development, if you add a new SVG, it won't be compressed. But don't worry, you don't need to restart `grunt dev`. Just open another terminal window and run `grunt exec:svg_compress`, wait a few seconds and you are good to go!
 
 ### [WIP] Theming
 
