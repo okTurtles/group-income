@@ -143,13 +143,13 @@ DefineContract({
         if (!proposal) {
           // https://github.com/okTurtles/group-income-simple/issues/602
           console.error(`proposalVote: no proposal for ${data.proposalHash}!`, data)
-          throw new Errors.GIErrorIgnoreAndBanIfGroup(`proposalVote without existing proposal`)
+          throw new Errors.GIErrorIgnoreAndBanIfGroup('proposalVote without existing proposal')
         }
         Vue.set(proposal.votes, meta.username, data.vote)
         // TODO: handle vote pass/fail
         // check if proposal is expired, if so, ignore (but log vote)
         if (Date.now() > proposal.data.expires_date_ms) {
-          console.warn(`proposalVote: vote on expired proposal!`, { proposal, data, meta })
+          console.warn('proposalVote: vote on expired proposal!', { proposal, data, meta })
           // TODO: display warning or something
           return
         }
@@ -170,10 +170,10 @@ DefineContract({
         const proposal = state.proposals[data.proposalHash]
         if (!proposal) {
           console.error(`proposalWithdraw: no proposal for ${data.proposalHash}!`, data)
-          throw new Errors.GIErrorIgnoreAndBanIfGroup(`proposalWithdraw without existing proposal`)
+          throw new Errors.GIErrorIgnoreAndBanIfGroup('proposalWithdraw without existing proposal')
         } else if (proposal.meta.username !== meta.username) {
           console.error(`proposalWithdraw: proposal ${data.proposalHash} belongs to ${proposal.meta.username} not ${meta.username}!`)
-          throw new Errors.GIErrorIgnoreAndBanIfGroup(`proposalWithdraw for wrong user!`)
+          throw new Errors.GIErrorIgnoreAndBanIfGroup('proposalWithdraw for wrong user!')
         } else {
           // TODO: make sure this is a synchronous function, and if not handle it appropriately
           proposal.status = STATUS_WITHDRAWN
@@ -216,7 +216,7 @@ DefineContract({
         inviteSecret: string // NOTE: simulate the OP_KEY_* stuff for now
       }),
       process (state, { data, meta }) {
-        console.debug(`inviteAccept:`, data, state.invites)
+        console.debug('inviteAccept:', data, state.invites)
         const invite = state.invites[data.inviteSecret]
         if (invite.status !== 'valid') {
           console.error(`inviteAccept: invite for ${meta.username} is: ${invite.status}`)

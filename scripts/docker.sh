@@ -7,6 +7,7 @@
 TZ=$(echo Etc/GMT`date +%z | sed 's/0//g'`)
 
 # build the docker image if it doesn't exist
+# to rebuild it, run: docker rmi groupincome
 if ! docker images -a | egrep -q "\bgroupincome\b"; then
   docker build -t groupincome --build-arg TIMEZONE="$TZ" .
 fi

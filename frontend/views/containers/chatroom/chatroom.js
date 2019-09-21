@@ -57,7 +57,7 @@ const chatroom = {
           currentId = 'c0'
           shouldRefresh = false
           // fall through
-        case 'GroupChatConversation':
+        case 'GroupChatConversation': {
           const groupId = currentId || this.findGroupId()
           currentId = groupId || this.findUserId()
           const newChatName = groupId ? groupA.channels[currentId].name : users[currentId].name
@@ -65,6 +65,7 @@ const chatroom = {
 
           this.redirectChat('GroupChatConversation', newChatName, chatType, currentId, shouldRefresh)
           break
+        }
         default:
           break
       }

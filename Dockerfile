@@ -1,4 +1,5 @@
 # FROM alpine
+# https://github.com/cypress-io/cypress-docker-images
 FROM cypress/base:12.6.0
 
 ARG TIMEZONE
@@ -23,7 +24,9 @@ RUN apt-get install --no-install-recommends -y tzdata ca-certificates \
   && ln -snf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime \
   && echo "${TIMEZONE}" > /etc/timezone
 
-RUN npm i -g grunt-cli node-gyp && ln -s /opt/test/cypress/cache /root/.cache
+RUN npm i -g npm@latest \
+  && npm i -g grunt-cli node-gyp \
+  && ln -s /opt/test/cypress/cache /root/.cache
 
 VOLUME /opt
 WORKDIR /opt

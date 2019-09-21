@@ -307,7 +307,7 @@ const actions = {
       // TODO: verify each message is signed by a group member
       // verify we're expecting to hear from this contract
       if (!state.pending.includes(contractID) && !state.contracts[contractID]) {
-        console.error(`[CRITICAL ERROR] NOT EXPECTING EVENT!`, contractID, message)
+        console.error('[CRITICAL ERROR] NOT EXPECTING EVENT!', contractID, message)
         throw new GIErrorUnrecoverable(`not expecting ${message.hash()} ${message.serialize()}`)
       }
       // the order the following actions are done is critically important!
@@ -329,7 +329,7 @@ const actions = {
       var enterUnrecoverableState = false
       // handle all error types defined in ./errors.js + ErrorDBConnection
       if (e instanceof GIErrorUnrecoverable) {
-        console.error(`[CRITICAL ERROR] handleEvent:`, e.message, e.stack)
+        console.error('[CRITICAL ERROR] handleEvent:', e.message, e.stack)
         enterUnrecoverableState = true
         // TODO: allow the GIErrorUnrecoverable class a way to specify a potential manual recovery method
         //       that can be displayed on the recovery page?
@@ -351,7 +351,7 @@ const actions = {
       }
       if (enterUnrecoverableState) {
         // TODO: set state machine critical error state
-        console.error(`handleEvent: unrecoverable state unimplemented!`)
+        console.error('handleEvent: unrecoverable state unimplemented!')
         dropAllMessagesUntilRefresh = true
       }
       if (banUser) {
@@ -445,7 +445,7 @@ const handleEvent = {
   },
   restoreCachedState (cachedState: Object) {
     try {
-      console.error(`reverting to previous state!`, {
+      console.error('reverting to previous state!', {
         corrupt: JSON.stringify(store.state),
         reverted: JSON.stringify(cachedState)
       })

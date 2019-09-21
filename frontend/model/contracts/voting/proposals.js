@@ -21,7 +21,7 @@ export const STATUS_WITHDRAWN = 'withdrawn'
 
 export function archiveProposal (state, proposalHash) {
   // TODO: handle this better (archive the proposal or whatever)
-  console.warn(`archiveProposal is not fully implemented yet...`)
+  console.warn('archiveProposal is not fully implemented yet...')
   // Vue.delete(state.proposals, proposalHash)
 }
 

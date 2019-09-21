@@ -88,7 +88,7 @@ sbp('okTurtles.events/on', CONTRACTS_MODIFIED, async (contracts) => {
     }
   } catch (e) {
     // TODO: handle any exceptions!
-    console.error(`CONTRACTS_MODIFIED: error in pubsub!`, e, { toUnsubscribe, toSubscribe })
+    console.error('CONTRACTS_MODIFIED: error in pubsub!', e, { toUnsubscribe, toSubscribe })
   }
 })
 
