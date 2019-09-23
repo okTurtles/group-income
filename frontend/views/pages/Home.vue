@@ -29,7 +29,7 @@ main.c-splash(data-test='homeLogo')
 
   .create-or-join(v-else)
     .card
-      img(src='/assets/images/create-a-group.png')
+      svg-create-group
       h3 Create
       p Create a new group and invite your friends.
 
@@ -40,7 +40,7 @@ main.c-splash(data-test='homeLogo')
       ) Create Group
 
     .card
-      img(src='/assets/images/join-a-group.png')
+      svg-join-group
       h3 Join
       p Enter an existing group using your username.
       i18n(
@@ -53,6 +53,8 @@ main.c-splash(data-test='homeLogo')
 <script>
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL, CLOSE_MODAL } from '@utils/events.js'
+import SvgCreateGroup from '@svgs/create-group.svg'
+import SvgJoinGroup from '@svgs/join-group.svg'
 
 export default {
   name: 'Home',
@@ -61,6 +63,10 @@ export default {
       isModalOpen: false,
       lastFocus: 'signupBtn'
     }
+  },
+  components: {
+    SvgJoinGroup,
+    SvgCreateGroup
   },
   mounted () {
     if (this.$route.query.next) {
@@ -167,7 +173,7 @@ export default {
     margin-bottom: 0.25rem;
   }
 
-  img {
+  svg {
     width: 6rem;
     margin-left: $spacer;
     float: right;
