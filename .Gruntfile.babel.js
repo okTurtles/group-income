@@ -12,6 +12,10 @@ import globals from 'rollup-plugin-node-globals'
 import { eslint } from 'rollup-plugin-eslint'
 import css from 'rollup-plugin-css-only'
 import scssVariable from 'rollup-plugin-sass-variables'
+import { createFilter } from 'rollup-pluginutils'
+import transpile from 'vue-template-es2015-compiler'
+const compiler = require('vue-template-compiler') // NOTE: import doesnt work here?
+
 // import collectSass from 'rollup-plugin-collect-sass'
 // import sass from 'rollup-plugin-sass'
 // import scss from 'rollup-plugin-scss'
@@ -107,7 +111,7 @@ module.exports = (grunt) => {
       },
       assets: {
         cwd: 'frontend/assets',
-        src: ['**/*', '!style/**'],
+        src: ['**/*', '!style/**', '!svgs/**', 'svgs/compressed/**'],
         dest: distAssets,
         expand: true
       }
@@ -165,6 +169,53 @@ module.exports = (grunt) => {
         }
       },
       dev: {}
+    },
+
+    svg_sprite: {
+      optimizeOnly: {
+        cwd: 'frontend/assets/svgs/original',
+        dest: 'frontend/assets/svgs/compressed',
+        src: ['*.svg'],
+        options: {
+          shape: {
+            dest: './',
+            transform: [{
+              svgo: {
+                plugins: [
+                  { cleanupIDs: true },
+                  { removeTitle: true },
+                  { removeDesc: true },
+                  { removeUselessStrokeAndFill: true },
+                  { removeViewBox: false },
+                  { removeDimensions: true }, // SVGO BUG # https://github.com/svg/svgo/issues/871
+                  { cleanupNumericValues: { floatPrecision: 2 } },
+                  { convertPathData: { floatPrecision: 2 } },
+                  { convertTransform: { floatPrecision: 2 } },
+                  { cleanupListOfValues: { floatPrecision: 2 } }
+                ]
+              }
+            }]
+          }
+        }
+      }
+      // NOTE: When we need a sprite in the future:
+      // newcomers: {
+      //   cwd: 'frontend/assets/svg',
+      //   dest: 'frontend/assets/svg/sprites',
+      //   options: {
+      //     mode: {
+      //       symbol: {
+      //         sprite: `../newcomers.svg`
+      //       }
+      //     }
+      //   }
+      //   src: [
+      //     'svg-broken-link.svg',
+      //     'svg-create-group.svg',
+      //     'svg-invitation.svg',
+      //     'svg-join-group.svg'
+      //   ]
+      // },
     }
     // see also:
     // https://github.com/lud2k/grunt-serve
@@ -194,7 +245,7 @@ module.exports = (grunt) => {
       sbp('backend/pubsub/setup', require('http').createServer(), true)
     }
     if (!grunt.option('skipbuild')) {
-      grunt.task.run(['exec:eslint', 'exec:puglint', 'exec:stylelint', 'copy', 'sass', rollup])
+      grunt.task.run(['exec:eslint', 'exec:puglint', 'exec:stylelint', 'copy', 'sass', 'svg_sprite', rollup])
     }
   })
 
@@ -307,7 +358,7 @@ module.exports = (grunt) => {
       plugins: [
         alias({
           // https://vuejs.org/v2/guide/installation.html#Standalone-vs-Runtime-only-Build
-          resolve: ['.vue', '.js'],
+          resolve: ['.vue', '.js', '.svg'],
           vue: path.resolve('./node_modules/vue/dist/vue.common.js'),
           '~': path.resolve('./'),
           '@model': path.resolve('./frontend/model'),
@@ -317,7 +368,9 @@ module.exports = (grunt) => {
           '@components': path.resolve('./frontend/views/components'),
           '@containers': path.resolve('./frontend/views/containers'),
           '@view-utils': path.resolve('./frontend/views/utils'),
-          '@assets': path.resolve('./frontend/assets')
+          '@assets': path.resolve('./frontend/assets'),
+          '@svgs': path.resolve('./frontend/assets/svgs/compressed')
+
         }),
         resolve({
           // we set `preferBuiltins` to prevent rollup from erroring with
@@ -338,6 +391,7 @@ module.exports = (grunt) => {
         //                                              useful in the <script> section, i.e.
         //                                              <script>import 'foo.scss' ...
         eslint({ throwOnError: true, throwOnWarning: true }),
+        svgLoader(),
         VuePlugin({
           // https://rollup-plugin-vue.vuejs.org/options.html
           // https://github.com/vuejs/rollup-plugin-vue/blob/master/src/index.ts
@@ -375,6 +429,7 @@ module.exports = (grunt) => {
     }
     const watcher = rollup.watch(watchOpts)
     watcher.on('event', event => {
+      const outputName = watchOpts.output.file || watchOpts.output.dir
       switch (event.code) {
         case 'BUNDLE_START':
           grunt.log.writeln(chalk`{green rollup:} ${event.input}`)
@@ -385,7 +440,6 @@ module.exports = (grunt) => {
           break
         case 'BUNDLE_END':
           grunt.verbose.debug(this.nameArgs, event.code)
-          const outputName = watchOpts.output.file || watchOpts.output.dir
           grunt.log.writeln(chalk`{green created} {bold ${outputName}} {green in} {bold ${(event.duration / 1000).toFixed(1)}s}`)
           watchFlag || watcher.close() // stop watcher (only build once) if 'rollup:watch' isn't called
           done && done()
@@ -414,6 +468,38 @@ function flow (options = {}) {
       code: flowRemoveTypes(code, options).toString(),
       map: options.pretty ? { mappings: '' } : null
     })
+  }
+}
+
+function svgLoader (options) {
+  // Based on "rollup-plugin-vue-inline-svg" but better:
+  // - fix sourcemaps bug on original plugin
+  // - remove useless attrs and add global CSS class.
+  const isSvg = createFilter('**/*.svg')
+  return {
+    name: 'vue-inline-svg',
+    transform: (source, filePath) => {
+      if (!isSvg(filePath)) return null
+      const svgName = path.basename(filePath, '.svg')
+      const svgClass = `svg-${svgName}`
+      const svg = source
+        // remove width and height attrs to be customized only by CSS
+        // because SVGO can't do it at the moment (bug): https://github.com/svg/svgo/issues/871
+        .replace(/width="[a-zA-Z0-9:]*"/, '')
+        .replace(/height="[a-zA-Z0-9:]*"/, '')
+        // add global class automatically for theming customization
+        .replace('<svg', `<svg class="${svgClass}"`)
+
+      const compiled = compiler.compile(svg, { preserveWhitespace: false })
+      const code = transpile(`module.exports = { render: function () { ${compiled.render} } };`)
+        // convert to ES6 modules
+        .replace('module.exports =', 'export default')
+
+      return {
+        code,
+        map: { mappings: '' }
+      }
+    }
   }
 }
 

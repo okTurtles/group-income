@@ -13,7 +13,7 @@
 ### 1. Decide what to work on
 
 - Check the [open issues](https://github.com/okTurtles/group-income-simple/issues).
-- View the [project board](https://github.com/okTurtles/group-income-simple/projects). 
+- View the [project board](https://github.com/okTurtles/group-income-simple/projects).
 - Check especially what's [`up for grabs`](../../labels/Note%3AUp-for-grabs), [`high priority`](../../labels/Priority%3AHigh), or [`level: starter`](../../labels/Level%3AStarter).
 - Read some docs, like: __[:book: Frontend: Getting Started](docs/Getting-Started-frontend.md)__
 
@@ -42,12 +42,13 @@ This contribution policy will evolve over time. For now it is based on a slightl
 
 1. A PR **SHOULD** be a minimal and accurate answer to exactly one identified and agreed problem.
 2. A PR **SHOULD** follow [the boy scout rule](https://github.com/okTurtles/group-income-simple/issues/383#issuecomment-383381863): leave the code cleaner than you found it when the refactor effort is not too big.
-3. A PR **SHALL NOT** include non-trivial code from other projects unless the Contributor is the original author of that code.
+3. A PR **MAY NOT** include non-trivial code from other projects unless the Contributor is the original author of that code.
 4. A PR **MUST** pass all tests on at least the principle target platform.
 5. A PR **MUST** include new tests for any new functionality introduced.
-6. A PR **SHOULD** avoid "callback-hell" style and instead prefer "async/await" style.
-7. A PR **MUST** follow the requirements spelled out in this project's [Style Guide](docs/Style-Guide.md).
-8. A PR **MUST** receive approval from at least one reviewer (existing, long-term contributor) before being merged. *Reviewers may not review their own PRs, and may not push commits to someone else's PR.*
+6. A PR **MUST** follow the requirements spelled out in this project's [Style Guide](docs/Style-Guide.md).
+7. A PR **MUST** receive approval from at least one long-term contributor before being merged. Contributors **MAY NOT** review their own PRs, **MUST NOT** push commits to someone else's PR, and **SHOULD NOT** merge their own PRs.
+8. A PR **MUST** receive approval from the designer when it's related to the user interface before being merged.
+9. A PR **MAY NOT** be merged if there exist unaddressed concerns from a current maintainer (via the Github "request changes" review feature). Contributors are encouraged to discuss the requested changes, and may even argue against them if there are strong reasons to do so. However, maintainers have veto power over all PRs.
 
 ## How to submit an issue
 

@@ -50,9 +50,9 @@ const vuexState = {
 sbp('sbp/selectors/register', {
   // intercept 'handleEvent' from backend.js
   'state/vuex/dispatch': function (action, e) {
+    const contractID = e.contractID()
     switch (action) {
       case 'handleEvent':
-        const contractID = e.contractID()
         if (e.isFirstMessage()) {
           vuexState[contractID] = {}
         }

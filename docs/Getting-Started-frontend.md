@@ -31,7 +31,6 @@ If you already fully grok modern web dev and want to get started immediately, sk
     + [What does `grunt dev` do?](#what-does-grunt-dev-do)
     + [What files do I edit?](#what-files-do-i-edit)
     + [How do I add a new page to the website?](#how-do-i-add-a-new-page-to-the-website)
-    + [When should I create a `.vue` file instead of an `.ejs` file?](#when-should-i-create-a-vue-file-instead-of-an-ejs-file)
     + [Where should I put non-JavaScript assets like CSS, images, etc.?](#where-should-i-put-non-javascript-assets-like-css-images-etc)
     + [Where should I put JavaScript *someone else* wrote (e.g. jQuery)?](#where-should-i-put-javascript-someone-else-wrote-eg-jquery)
     + [Where's the best place to put JavaScript *that I* create?](#wheres-the-best-place-to-put-javascript-that-i-create)
@@ -170,7 +169,7 @@ For doing things like:
 
 - Setting up a local development environment with servers to view your website, power a backend API, and automatically refreshing your browser anytime files are modified
 - Watching files for changes and performing actions automatically (like syntax-checking/"linting" them, combining them, copying them, etc.)
-- Converting files from one format into another (bundling `.vue` and `.ejs` files into `.js`, etc.)
+- Converting files from one format into another (bundling `.vue` files into `.js`, etc.)
 
 ###### __[Hapi.js](https://hapijs.com/)__ - _Node.js-powered HTTP(S) Server_
 
@@ -183,7 +182,7 @@ Powers the backend API that the frontend talks to. It's responsible for managing
 Makes it possible to write front-end code in the same way Node.js backend code is written. Instead of including a library like jQuery using a `<script>` tag, you `npm install jquery --save`  it, and then `var $ = require('jquery')` it. Browserify is much more than that however, it also:
 
 - Is designed be extended by "plugins" and "transforms"
-- The transforms make it possible to `require` any file format in JavaScript (like `.ejs` and `.vue` files!) and bundle it all together into a single javascript bundle.
+- The transforms make it possible to `require` any file format in JavaScript (like`.vue` files!) and bundle it all together into a single javascript bundle.
 - It can act as a pre-processor, so that when files are read in their contents can be transformed in the resulting JS bundle. This includes obvious things like minifying JavaScript, but also can include string-replacement, etc.
 
 ###### __[Babel](https://babeljs.io/)__ - _Tomorrow's JavaScript Features—Today!_
@@ -204,18 +203,6 @@ A frontend web framework that takes some inspiration from React, but is simply b
 In the section [What Vue.js is good for (and not)](#what-vuejs-is-good-for-and-not) we discuss its role and when/where/how to use it.
 
 [Riot.js](http://riotjs.com/) is another (very similar) fantastic framework for working with single-page-apps (SPAs). Both are great, I just came across Vue.js first.
-
-###### __[EJS](http://ejs.co/)__ - _Like PHP, but JavaScript_
-
-This ~~project supports using it in `.vue` files~~ *(UPDATE: this is no longer true! We only support .vue files now.)* and by itself in standalone `.ejs` files. Lets you do things like:
-
-```html
-<% if (true) { %>
-    <div>Hi!</div>
-<% } else { %>
-    <div>Bye!</div>
-<% } %>
-```
 
 ##### Honorable Mentions: [Webpack](https://webpack.github.io/), [Gulp](http://gulpjs.com/), [React](https://github.com/facebook/react), [Riot.js](http://riotjs.com), [Rollup](https://rollupjs.org)
 
@@ -271,26 +258,18 @@ A lot of things. Its output will tell you exactly what it does, but the general 
 
 #### What files do I edit?
 
-The `frontend/simple/` folder contains the frontend code.
+The `frontend/` folder contains the frontend code.
 
-The other files/folders within `frontend/` should be ignored:
-
-- `frontend/index.html` - Just a placeholder for [the groupincome.org repo](https://github.com/okTurtles/groupincome.org).
-- `_static/` - To be deleted soon. Contains markup that's being converting into `.vue` and `.ejs` files.
-
-Here are the important files and folders within `frontend/simple/`:
+Here are the important files and folders within `frontend/`:
 
 - `index.html` - This is the "entry point" for the frontend and the _only HTML file_ in the entire web app. Everything starts with this file being served. It loads the `dist/app.js` bundle that gets created by Browserify, and that file contains the contents of all of the `.js`, `.vue`, and `.ejs` files.
-    + __Designer note:__ This file is _purposefully minimal!_ You will rarely need to modify this file. If we modify it, it might only be to make it even smaller by removing any unnecessary `<script>` and `<link>` tags within it. This file is the "header and footer" that gets applied to _every "page"_ of our web app, and for that reason it's best to keep it as short as necessary.
+    + __Note:__ This file is _purposefully minimal!_ You will rarely need to modify this file. If we modify it, it might only be to make it even smaller by removing any unnecessary `<script>` and `<link>` tags within it. This file is the "header and footer" that gets applied to _every "page"_ of our web app, and for that reason it's best to keep it as short as necessary.
 - `main.js` - This is the entry point for all of the frontend code, where our modern web app starts. This file is responsible for setting up the Vue.js [`vue-router`](https://github.com/vuejs/vue-router), the client-side machinery that replicates the effect of having "different pages with different URLs" (modern web dev trickery that unbelievably isn't as ridiculous as it sounds). It is also responsible for loading all of the other "pages" (located in `views/`) and code (located in `js/`) that the website has.
-    + __Designer note:__ If you want to add a "new page" to the site (i.e. a new link in the top `<nav>` bar), then you will need to modify this file to update the routes.
-- `views/` - This contains all of the "pages" of the website. These are stored as either [`.vue` files](https://vue-loader.vuejs.org/en/start/spec.html) or `.ejs` files, which are just HTML files that support [using JavaScript like PHP](http://ejs.co) between [`<%` and `%>` tags](https://github.com/mde/ejs/blob/master/README.md#features).
-    + __Designer note:__ See: [When should I create a `.vue` file instead of an `.ejs` file?](#when-should-i-create-a-vue-file-instead-of-an-ejs-file)
-- `js/` - Folder for placing "handy js that's used in lots of places" _that you wrote_ (not third-party, [that goes in `assets/vendor/`](#where-should-i-put-javascript-someone-else-wrote-eg-jquery)).
-    + __Designer note:__ Generally as a designer you can ignore this folder. Most of the JavaScript that designers need can either be `require`'d (see the next section) or created directly within `.vue` or `.ejs` files.
-- `style/` - These are used to generate the css files for the site.
+    + __Note:__ If you want to add a "new page" to the site (i.e. a new link in the top `<nav>` bar), then you will need to modify this file to update the routes.
+- `views/` - This contains all of the interface (pages and components) of the website. These are stored as [`.vue` files](https://vue-loader.vuejs.org/en/start/spec.html).
+- `utils/` - Folder for placing "handy js that's used in lots of places" _that you wrote_ (not third-party, [that goes in `assets/vendor/`](#where-should-i-put-javascript-someone-else-wrote-eg-jquery)).
 - `assets/` - Grunt simply copies the folders within here to the output directory: `dist/`. This is where you drop in CSS files, images, and any other static assets.
-    + __Developer note:__ Currently we do not [translate](https://github.com/gruntjs/grunt-contrib-sass), optimize, minify, or [fingerprint](http://guides.rubyonrails.org/asset_pipeline.html#what-is-fingerprinting-and-why-should-i-care-questionmark) any of these assets, but we will (using grunt). We won't, however, be "bundling" these assets via Webpack or rollup. "Bundling" refers to the practice of concatenating js, css (sometimes [even images!](https://github.com/webpack/file-loader)) and putting into a single `.js` file. This might have [made sense in the HTTP/1.0 days](https://jakearchibald.com/2016/link-in-body), however HTTP/2.0 makes this bizarro practice [totally unnecessary](https://blog.cloudflare.com/http-2-for-web-developers/).
+    + __Note:__ Currently we do not [translate](https://github.com/gruntjs/grunt-contrib-sass), optimize, minify, or [fingerprint](http://guides.rubyonrails.org/asset_pipeline.html#what-is-fingerprinting-and-why-should-i-care-questionmark) any of these assets, but we will (using grunt). We won't, however, be "bundling" these assets via Webpack or rollup. "Bundling" refers to the practice of concatenating js, css (sometimes [even images!](https://github.com/webpack/file-loader)) and putting into a single `.js` file. This might have [made sense in the HTTP/1.0 days](https://jakearchibald.com/2016/link-in-body), however HTTP/2.0 makes this bizarro practice [totally unnecessary](https://blog.cloudflare.com/http-2-for-web-developers/).
 
 ----
 
@@ -324,34 +303,17 @@ meta: {
 
 ----
 
-#### When should I create a `.vue` file instead of an `.ejs` file?
-
-- If you're creating a logic-heavy page that takes advantage of Vue.js's two-way data bindings feature.
-- If you are designing a complex, self-contained reusable component. In Group Income, a good candidate for such a component is this payment row widget:
-
-    ![row](https://gitlab.okturtles.com/uploads/okturtles/group-income-simple/b3d1ff2112/row.jpg)
-
-Remember, **you can use Vue.js features within `.ejs` files!**
-
-There's no problem with using the [router-link](https://router.vuejs.org/en/essentials/nested-routes.html) directive within an `.ejs` file when linking to another "page".
-
-Otherwise we recommend sticking with `.ejs` files, although to be honest it doesn't matter much.
-
-See [the Appendix](#appendix) for important notes on using EJS with Vue.js and vice-versa.
-
-----
-
 #### Where should I put non-JavaScript assets like CSS, images, etc.?
 
 *If they're your assets:*
 
-Just place them into the appropriate folder(s) within `simple/assets`. You might need to re-run `grunt dev` and refresh the page (our gruntfile currently doesn't watch for asset changes). Grunt will copy them into `dist/`.
+Just place them into the appropriate folder(s) within `frontend/assets`. You might need to re-run `grunt dev` and refresh the page (our gruntfile currently doesn't watch for asset changes). Grunt will copy them into `dist/`.
 
-Then load them like normal (so `dist/assets/images/bitcoin.png` is loaded as `<img src="/images/bitcoin.png">`).
+Then load them like normal (so `frontend/assets/images/bitcoin.png` is loaded as `<img src="/assets/images/bitcoin.png">`).
 
 *If they're someone else's (e.g. a CSS framework):*
 
-Place them in `simple/assets/vendor`.
+Place them in `assets/vendor`.
 
 Please add only uncompressed/unminified assets to this folder (if possible) as that makes debugging simpler. We'll add minification later on (via grunt).
 
@@ -404,7 +366,7 @@ Next, just load jQuery in your template like normal:
 <script> /* do something with $ */ </script>
 ```
 
-This will work in both `.vue` and `.ejs` files thanks to the [`script2ify` browserify transform](https://github.com/taoeffect/vue-script2/blob/master/README.md#using-script-via-browserify-transform).
+This will work in `.vue` files thanks to the [`script2ify` browserify transform](https://github.com/taoeffect/vue-script2/blob/master/README.md#using-script-via-browserify-transform).
 
 Behind the scenes, this `<script>` tag is transformed into a VueScript2 Vue.js component that injects and loads the scripts. Using VueScript2 prevents jQuery from being bundled, and will load it only when the user visits a route that requests it (and only if it's not already loaded). By default, scripts are loaded one at a time in the order they appear on the page. You can add an `async` attribute to the `<script>` tag to have it be injected immediately without waiting for others.
 
@@ -421,7 +383,6 @@ You can lazy-load an entire route (i.e. an entire "page") by leveraging the *cod
 Any use of `require` (without code splitting) will result in that module's direct inclusion within the `app.js` bundle.
 
 - In `.vue` files, `require` can be used within the `<script>` section (not to be confused with any VueScript2 `<script>` tags in the `<template>` section, see note below).
-- In `.ejs` files, `require` can be used between the delimiters `<%` and `%>`.
 
 NOTE: `require` *cannot* be used within inlined `<script>` VueScript2 tags since that code is not parsed when the bundle is created, but at "runtime" when it's injected into a page. However, code within VueScript2 tags can access global variables that were `require`'d elsewhere.
 
@@ -431,8 +392,8 @@ NOTE: `require` *cannot* be used within inlined `<script>` VueScript2 tags since
 
 #### Where's the best place to put JavaScript *that I* create?
 
-- If the JavaScript is *specific to a page you're working on:* put it directly into the `.ejs` or `.vue` file
-- Otherwise, for JS that's used across multiple files, place it into a `.js` file within `simple/js` and then `require` it within a `.vue` or `.ejs` file
+- If the JavaScript is *specific to a page you're working on:* put it directly into the `.vue` files.
+- Otherwise, for JS that's used across multiple files, place it into a `.js` file within `frontend/utils` and then `import` it within a `.vue` file
 
 ----
 
@@ -456,26 +417,6 @@ That's OK! Ask us in the [chat](https://gitter.im/okTurtles/group-income) or the
 - Serving "web 2.0" (2.5?) static websites. I.e. you put your entire modern website in an `.html` file, have it call an API, and serve it to people over a CDN. Thanks to client-side routers the URL will magically change on "page visit". :point_left: This might be the most relevant part for us as it works well with the future move to Ethereum.
 
 It's **not** convenient for much else. It is especially not good for designers who are used to plain-old markup. Apparently, [being friendly toward designers is one of its strong points](https://vuejs.org/guide/comparison.html), but that's compared to other frameworks like React.js / Angular / Ember. Nor is it useful for creating relatively "small" widgets like custom input fields or buttons.
-
-### What EJS is good for (and not)
-
-EJS is basically PHP except JavaScript.
-
-So it is good for that style of programming, and it is therefore much more friendly and usable for designers (and programmers!). It's great for doing simple things like:
-
-- Avoiding repetition by including some file using `<%- include file %>` ([example](https://github.com/okTurtles/group-income-simple/blob/ebafb48385c63d271eb6a210545efbcc8d43d99c/frontend/simple/views/test.ejs#L10))
-- Adding simple logic like "display this chunk of HTML `if` something, otherwise display this other thing"
-
-You can even use EJS syntax within `.vue` files by setting the [template language](https://vuejs.org/guide/syntax.html) to `ejs`:
-
-```vue
-<template lang="ejs">
-  <div class="user-group">
-    <h1>{{ msg }}</h1>
-    <div><%- include included %></div>
-  </div>
-</template>
-```
 
 ### Useful Links
 

@@ -42,7 +42,7 @@ button,
   background-color: $primary_0;
   border-width: 1px;
   border-style: solid;
-  color: #fff;
+  color: $background_0;
   transition: box-shadow 150ms ease-in;
   white-space: nowrap;
   font-size: $size-4;
@@ -200,8 +200,11 @@ p + .button {
 
 button.link {
   @extend %reset-button;
+  border-bottom: 1px solid $primary_1;
   color: $primary_0;
   font-weight: 600;
+  display: inline-block;
+  line-height: inherit;
 
   &::after {
     width: 100%;

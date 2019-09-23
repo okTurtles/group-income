@@ -5,7 +5,8 @@ Please read all the sections below before writing a single line of code.
 - **[JavaScript Style Guide](#javascript-style-guide)**
 - **[Vue.js Style Guide](#vuejs-style-guide)**
 - **[CSS Style Guide](#css-style-guide)**
-    - [CSS Conventions](#css-conventions)
+- **[Accessibility Style Guide](#css-style-guide)**
+- **[Testing Style Guide](#css-style-guide)**
 - **[Group Income Data Model Rules](#group-income-data-model-rules)**
 - **[SBP Paradigm](#sbp) (Soon!)**
 
@@ -23,10 +24,49 @@ Since this is a Vue.js project, any pull requests **must** follow *Priority A* r
 
 ## CSS Style Guide
 
-Use l- for layout components and c- for anything inside a component. This makes it easier to understand where to find the code and understand the dependencies.
-All other classes are global and should be kept to a minimum for simplicity and to avoid conflicts.
+When writing CSS specific to a Vue component, use the prefix `c-`. This makes it easier to debug the CSS (where to find the CSS code) and understand the dependencies.
+All other classes are global, written at `frontend/assets/style` and should be kept to a minimum for simplicity and to avoid conflicts.
 
-TODO: complete style guide
+``html
+<template>
+    <!-- We can easily distinguish global classes from component's classes -->
+    <h1 class="title is-2 c-title">Hello world</h1>
+</template>
+
+<style lang="scss" scoped>
+.c-title {
+    margin-bottom: $spacer;
+}
+</style>
+```
+
+## Accessibility Style Guide
+
+We are committed to ensuring digital accessibility for all people, including those with low vision, blindness, hearing impairments, cognitive impairments, motor impairments or situational disabilities. We are continually improving the user experience for everyone, and applying the relevant accessibility standards.
+
+The [Web Content Accessibility Guidelines (WCAG)](https://www.w3.org/WAI/standards-guidelines/wcag/) defines requirements for designers and developers to improve accessibility for people with disabilities. It defines three levels of conformance: Level A, Level AA, and Level AAA. We will be conformant with WCAG 2.0 Level AA and trying or best to reach Level AAA in some areas of the application.
+
+In a summarized and practical way of putting this, when designing or developing any part of the user interface, keep in mind these requirements:
+
+- Users with diverse abilities can navigate and understand the UI.
+- Any essential action can be performed using only the keyboard.
+- The content is understandable by assistive technologies (ex: screen reader).
+- The website is functional in modern browsers.
+
+References to help you:
+
+- [WCAG 2.0 checklist](https://romeo.elsevier.com/accessibility_checklist/)
+- [Firefox Accessibility Inspector](https://developer.mozilla.org/en-US/docs/Tools/Accessibility_inspector)
+- [Accessibility Insights Extension](https://accessibilityinsights.io/)
+- [A11Y Style Guide Resources](https://a11y-style-guide.com/style-guide/section-resources.html)
+
+## Testing Style Guide
+
+We use [Mocha](https://mochajs.org/) for the unit tests and [Cypress](https://www.cypress.io/) for end-to-end (E2E) tests. **All new functionality must have corresponding tests!**
+
+When developing any new feature, make sure to add or update the respective tests.
+
+When writing E2E tests, follow [Cypress Best Practices](https://docs.cypress.io/guides/references/best-practices.html).
 
 ## Group Income Data Model Rules
 

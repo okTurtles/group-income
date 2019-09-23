@@ -50,14 +50,13 @@ export default {
   }
 
   ::v-deep a.link {
-    border-bottom: 1px solid $text_1;
+    font-weight: 400;
+    border-bottom-color: $text_0;
 
     &:hover,
     &:focus {
-      border-color: transparent;
-    }
-    &::after {
-      background-color: $text_1;
+      color: $text_1;
+      border-bottom-color: $text_1;
     }
   }
 
