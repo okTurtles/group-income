@@ -82,7 +82,7 @@ export default {
             io.disconnect()
           }
         } catch (error) {
-          console.error(error.message, `\n polyfill: https://github.com/w3c/IntersectionObserver`)
+          console.error(error.message, '\n polyfill: https://github.com/w3c/IntersectionObserver')
         }
       }
     },
