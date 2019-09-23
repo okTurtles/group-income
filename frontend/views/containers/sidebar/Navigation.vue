@@ -1,7 +1,7 @@
 <template lang='pug'>
 nav.c-navigation(
   role='navigation'
-  :class='{ "is-active": ephemeral.isActive, "is-hidden":  groupsByName.length === 0}'
+  :class='{ "is-active": ephemeral.isActive}'
 )
   toggle(@toggle='toggleMenu')
 
@@ -148,10 +148,6 @@ export default {
   flex-direction: row;
   font-weight: normal;
   background: $general_2;
-
-  &.is-hidden {
-    width: 0;
-  }
 }
 
 .c-navigation-wrapper {

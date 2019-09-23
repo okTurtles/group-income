@@ -703,16 +703,16 @@ page(
             pre
               | .steps
               br
-              |   a.step 1
+              |   button.step 1
               br
-              |   a.step.active 2
+              |   button.step.active 2
               br
-              |   a.step.next 3
+              |   button.step.next 3
           td
             .steps
-              a.step 1
-              a.step.active 2
-              a.step.next 3
+              button.step 1
+              button.step.active 2
+              button.step.next 3
   article#menu
     section.card
       i18n(tag='h2' class='card-header') Menu

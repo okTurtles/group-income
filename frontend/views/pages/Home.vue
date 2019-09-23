@@ -1,6 +1,11 @@
 <template lang='pug'>
 main.c-splash(data-test='homeLogo')
-  header
+  header(v-if='!$store.state.loggedIn')
+    img.logo(src='/assets/images/group-income-icon-transparent.png')
+    i18n(tag='h1' data-test='welcomeHome') Welcome to GroupIncome
+
+  header(v-else)
+    img.logo-2(src='/assets/images/logo-transparent.png')
     p.subtitle Welcome to group income
     i18n(tag='h1' data-test='welcomeHome') Let’s get this party started
 
@@ -27,21 +32,22 @@ main.c-splash(data-test='homeLogo')
       img(src='/assets/images/create-a-group.png')
       h3 Create
       p Create a new group and invite your friends.
-      router-link.button(
+
+      i18n(
+        tag='button'
+        @click='openModal("CreateGroup")'
         data-test='createGroup'
-        to='new-group'
-      )
-        i18n Create Group
+      ) Create Group
 
     .card
       img(src='/assets/images/join-a-group.png')
       h3 Join
       p Enter an existing group using your username.
-      router-link.button(
+      i18n(
+        tag='button'
+        @click='openModal("JoinGroup")'
         data-test='joinGroup'
-        to='join-group'
-      )
-        i18n Join a Group
+      ) Join a Group
 </template>
 
 <script>
@@ -73,9 +79,11 @@ export default {
   },
   methods: {
     openModal (mode) {
-      this.isModalOpen = true
-      // Keep track of user last action
-      this.lastFocus = mode === 'SignUp' ? 'signupBtn' : 'loginBtn'
+      if (!this.$store.state.loggedIn) {
+        this.isModalOpen = true
+        // Keep track of user last action
+        this.lastFocus = mode === 'SignUp' ? 'signupBtn' : 'loginBtn'
+      }
       sbp('okTurtles.events/emit', OPEN_MODAL, mode)
     },
     enableSubmit () {
@@ -95,14 +103,40 @@ export default {
 .c-splash {
   display: flex;
   flex-direction: column;
-  justify-content: center;
   text-align: center;
   align-items: center;
   min-height: 100%;
+
+  @include tablet {
+    justify-content: center;
+  }
 }
 
 .logo {
   width: 8rem;
+  margin: 2rem auto;
+}
+
+.logo-2 {
+  width: 8rem;
+  margin: 0 auto 3rem auto;
+
+  @include tablet {
+    margin: 0;
+    position: absolute;
+    left: 1.5rem;
+    top: 1.5rem;
+  }
+}
+
+.subtitle {
+  @include tablet {
+    margin-top: 3rem;
+  }
+
+  @include desktop {
+    margin-top: 0;
+  }
 }
 
 .buttons {
@@ -111,29 +145,45 @@ export default {
 
 .create-or-join {
   display: flex;
-  justify-content: center;
   width: 100%;
   flex-wrap: wrap;
   margin-top: $spacer-md;
+  justify-content: center;
+  text-align: left;
+  @include tablet {
+    text-align: center;
+  }
 }
 
 .card {
-  margin: 1.5rem;
-  width: 24.375rem;
-  max-width: 100%;
+  margin: 1.5rem 1.5rem 0 1.5rem;
+  width: 100%;
+
+  @include tablet {
+    width: 24.375rem;
+  }
 
   h3 {
     margin-bottom: 0.25rem;
   }
 
   img {
-    width: 9.75rem;
-    margin: 2.5rem auto 1.5rem auto;
+    width: 6rem;
+    margin-left: $spacer;
+    float: right;
+    @include tablet {
+      float: none;
+      width: 9.75rem;
+      margin: 2.5rem auto 1.5rem auto;
+    }
   }
 
   .button {
     margin-top: 2rem;
-    margin-bottom: $spacer;
+
+    @include tablet {
+      margin-bottom: $spacer;
+    }
   }
 }
 </style>

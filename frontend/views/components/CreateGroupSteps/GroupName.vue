@@ -1,6 +1,6 @@
 <template lang='pug'>
-div
-  i18n.steps-title(tag='p') 1. Create a new group
+.wrapper
+  i18n.steps-title(tag='h4') 1. Create a new group
 
   label.avatar(for='groupPicture')
     //- TODO: set a default placeholder image using a built-in asset
@@ -22,18 +22,21 @@ div
 
   i18n.error(v-if='v.groupPicture.$error' tag='p') The group picture must be a valid url
 
-  i18n.label(tag='label') What is the name of your group?
+  .card
+    i18n.label(tag='label') What is the name of your group?
 
-  input.input.is-large.is-primary(
-    ref='name'
-    type='text'
-    name='groupName'
-    :class='{ error: v.groupName.$error }'
-    :value='group.groupName'
-    @input='update'
-    @keyup.enter='next'
-    data-test='groupName'
-  )
+    input.input.is-large.is-primary(
+      ref='name'
+      type='text'
+      name='groupName'
+      :class='{ error: v.groupName.$error }'
+      :value='group.groupName'
+      @input='update'
+      @keyup.enter='next'
+      data-test='groupName'
+    )
+
+    slot
 </template>
 
 <script>
@@ -91,7 +94,7 @@ export default {
 }
 
 .avatar {
-  height: 125px;
+  height: 10rem;
   margin: 40px auto 32px auto;
   text-align: center;
   display: flex;
@@ -100,8 +103,8 @@ export default {
   align-items: center;
 
   .c-avatar {
-    width: 95px;
-    height: 95px;
+    width: 8.25rem;
+    height: 8.25rem;
   }
 
   .link {
