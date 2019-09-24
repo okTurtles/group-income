@@ -54,12 +54,12 @@ Cypress.Commands.add('giLogOut', () => {
   cy.getByDT('welcomeHome').should('contain', 'Welcome to GroupIncome')
 })
 
-Cypress.Commands.add('giCreateGroup', group => {
+Cypress.Commands.add('giCreateGroup', (name, { image = 'imageTest.png', values = 'Testing group values', income = 200 } = {}) => {
   cy.getByDT('createGroup').click()
-  cy.getByDT('groupName').type(group.name)
+  cy.getByDT('groupName').type(name)
 
   // TODO make a custom command for this
-  cy.fixture(group.image).then((picture) =>
+  cy.fixture(image).then((picture) =>
     // converting image to blob
     Cypress.Blob.base64StringToBlob(picture, 'image/png').then((blob) => {
       const testFile = new File([blob], 'logo.png')
@@ -73,10 +73,10 @@ Cypress.Commands.add('giCreateGroup', group => {
 
   cy.getByDT('nextBtn').click()
 
-  cy.get('textarea[name="sharedValues"]').type(group.values)
+  cy.get('textarea[name="sharedValues"]').type(values)
   cy.getByDT('nextBtn').click()
 
-  cy.get('input[name="incomeProvided"]').type(group.income)
+  cy.get('input[name="incomeProvided"]').type(income)
 
   cy.getByDT('nextBtn').click()
 

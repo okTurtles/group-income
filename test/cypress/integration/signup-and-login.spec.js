@@ -12,13 +12,7 @@ describe('SignUp, Profile and Login', () => {
   })
 
   it('Create group for new user1', () => {
-    const group = {
-      name: 'Dreamers 2',
-      image: 'imageTest.png',
-      values: 'Testing group values 2',
-      income: 1255
-    }
-    cy.giCreateGroup(group)
+    cy.giCreateGroup('Dreamers 2')
     cy.getByDT('profileName').should('contain', userName)
   })
 
