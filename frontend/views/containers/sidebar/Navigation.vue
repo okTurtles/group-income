@@ -44,8 +44,10 @@ nav.c-navigation(
             i18n Inbox (deprecated)
 
         .c-navigation-separator(v-if='groupsByName.length < 2')
-          router-link.button.is-small.is-outlined(
-            to='/new-group/name'
+          button(
+            class='is-small is-outlined'
+            @click='openModal("CreateGroup")'
+            data-test='createGroup'
             alt='L("Add a group")'
           )
             i.icon-plus
@@ -93,6 +95,8 @@ import Profile from './Profile.vue'
 import Toggle from './Toggle.vue'
 import ListItem from '@components/ListItem.vue'
 import { mapGetters } from 'vuex'
+import sbp from '~/shared/sbp.js'
+import { OPEN_MODAL } from '@utils/events.js'
 
 export default {
   name: 'Navigation',
@@ -137,6 +141,9 @@ export default {
   methods: {
     toggleMenu () {
       this.ephemeral.isActive = !this.ephemeral.isActive
+    },
+    openModal (mode) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, mode)
     },
     enableTimeTravel (evt) {
       if (evt.shiftKey && process.env.NODE_ENV !== 'production') {
