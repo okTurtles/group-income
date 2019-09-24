@@ -69,13 +69,13 @@ describe('Group Creation and Inviting Members', () => {
 
   it('user2 accepts the invite', () => {
     cy.giLogin(`user2-${userId}`)
-    cy.giAcceptGroupInvite(groupName)
+    cy.giAcceptGroupInvite(group.name)
     cy.giLogOut()
   })
 
   it('user3 accepts the invite', () => {
     cy.giLogin(`user3-${userId}`)
-    cy.giAcceptGroupInvite(groupName)
+    cy.giAcceptGroupInvite(group.name)
     cy.giLogOut()
   })
 })
