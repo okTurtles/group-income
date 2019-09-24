@@ -82,6 +82,8 @@ Cypress.Commands.add('giCreateGroup', (groupName, groupImage, testValues, testIn
   // so, let's just move on...
 
   cy.getByDT('finishBtn').click()
+
+  cy.getByDT('toDashboardBtn').click()
 })
 
 Cypress.Commands.add('giAcceptGroupInvite', (groupName) => {

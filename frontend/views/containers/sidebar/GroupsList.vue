@@ -28,7 +28,6 @@ ul.c-group-list(v-if='groupsByName.length')
         alt='L("Add a group")'
       )
         i.icon-plus
-
 </template>
 
 <script>

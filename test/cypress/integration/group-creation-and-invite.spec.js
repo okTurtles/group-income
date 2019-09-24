@@ -36,8 +36,6 @@ describe('Group Creation and Inviting Members', () => {
   })
 
   it('user1 starts inviting user2 to the Group', () => {
-    cy.getByDT('toDashboardBtn').click()
-
     cy.getByDT('inviteButton').click()
 
     cy.getByDT('searchUser').clear().type(`user2-${userId}`)

@@ -1,11 +1,12 @@
 <template lang='pug'>
 modal-base-template
-  .steps
+  .steps(v-if='currentStep + 1 < config.steps.length')
     button.step(
       v-for='(step, index) in config.steps'
       :key='index'
       :class='[currentStep === index ? "active" : "", currentStep < index ? "next" : ""]'
       @click='redirect(step)'
+      v-if='step != "GroupWelcome"'
     ) {{ index + 1 }}
 
   .wrapper.mobile-steps.subtitle
@@ -23,7 +24,7 @@ modal-base-template
       @focusref='focusRef'
       @input='payload => updateGroupData(payload)'
     )
-      .buttons
+      .buttons(v-if='currentStep + 1 < config.steps.length')
         button.is-outlined(
           @click='prev'
           data-test='prevBtn'
@@ -31,7 +32,7 @@ modal-base-template
           i18n {{ currentStep === 0 ? 'Cancel' : 'Back' }}
 
         button.is-primary(
-          v-if='currentStep + 1 < config.steps.length'
+          v-if='currentStep + 2 < config.steps.length'
           ref='next'
           @click='next'
           :disabled='$v.steps[content] && $v.steps[content].$invalid'
@@ -67,6 +68,7 @@ import StepAssistant from '@view-utils/stepAssistant.js'
 import Message from '@components/Message.vue'
 import { merge } from '@utils/giLodash.js'
 import { validationMixin } from 'vuelidate'
+import GroupWelcome from '@components/GroupWelcome.vue'
 import {
   GroupName,
   GroupPurpose,
@@ -95,7 +97,8 @@ export default {
     GroupMincome,
     GroupRules,
     GroupPrivacy,
-    GroupInvitees
+    GroupInvitees,
+    GroupWelcome
   },
   methods: {
     focusRef (ref) {
@@ -155,7 +158,7 @@ export default {
         const hash = entry.hash()
         sbp('okTurtles.events/once', hash, (contractID, entry) => {
           this.$store.commit('setCurrentGroupId', hash)
-          this.$router.push({ path: '/welcome' })
+          this.next()
         })
         await sbp('backend/publishLogEntry', entry)
         // add to vuex and monitor this contract for updates
@@ -188,7 +191,8 @@ export default {
           'GroupName',
           'GroupPurpose',
           'GroupMincome',
-          'GroupRules'
+          'GroupRules',
+          'GroupWelcome'
         ]
       }
     }
