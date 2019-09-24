@@ -60,8 +60,9 @@ main.c-splash(data-test='homeLogo')
         to='/mailbox'
         icon='envelope'
         data-test='mailboxLink'
+        class='button'
       )
-        i18n Inbox (deprecated)
+        i18n Inbox
 </template>
 
 <script>
@@ -212,7 +213,12 @@ export default {
 
 .temp {
   position: absolute;
-  right: 1rem;
-  bottom: 1rem;
+  right: 0;
+  bottom: 0;
+  display: flex;
+
+  > * {
+    margin: $spacer-sm;
+  }
 }
 </style>
