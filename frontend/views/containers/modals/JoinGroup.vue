@@ -11,7 +11,7 @@ modal-base-template
         i18n(tag='h4') 1. Get an invitation
         i18n(tag='p')
           | For now, the only way to join a group is to get an invitation. Don’t know anyone using Group Income?
-        i18n(tag='button' class='link') Create your own group
+        i18n(tag='button' class='link' @click='showCreateModal') Create your own group
 
       .slide(v-observer:1='updateIndicator' :id='config[1]')
         .slide-img
@@ -28,7 +28,12 @@ modal-base-template
         i18n(tag='p') Once the group agrees that you should join them, a unique access link will be generated, giving you instant access to the group
 
     .dots
-      a.dot(v-for='(link, i) in config' :class='{ active: indicator == i }' :href='"#"+link')
+      a.dot(
+        v-for='(link, i) in config'
+        :class='{ "is-active": indicator == i }'
+        :href='"#"+link'
+        :aria-label='`Go to ${i + 1} slider`'
+      )
 </template>
 
 <script>
@@ -86,7 +91,7 @@ export default {
     }
   },
   methods: {
-    showLoginModal () {
+    showCreateModal () {
       sbp('okTurtles.events/emit', REPLACE_MODAL, 'CreateGroup')
     },
     updateIndicator (i) {
@@ -126,6 +131,7 @@ export default {
   -webkit-overflow-scrolling: touch;
   scroll-snap-points-x: repeat(100vw);
   scroll-snap-type: x mandatory;
+  scrollbar-width: none;
 
   &::-webkit-scrollbar {
     width: 0 !important;
@@ -188,7 +194,7 @@ export default {
   overflow: hidden;
   margin: 0.25rem;
 
-  &.active {
+  &.is-active {
     background-color: $primary_0;
   }
 }
