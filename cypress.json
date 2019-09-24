@@ -8,5 +8,5 @@
   "screenshotsFolder": "test/cypress/screenshots",
   "supportFile": "test/cypress/support",
   "videosFolder": "test/cypress/videos",
-  "videoUploadOnPasses": false
+  "video": false
 }

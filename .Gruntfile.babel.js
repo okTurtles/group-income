@@ -253,16 +253,11 @@ module.exports = (grunt) => {
     const cypress = require('cypress')
     const done = this.async()
     const command = grunt.option('browser') === 'debug' ? 'open' : 'run'
-    const disableVideo = process.argv.indexOf('--disable-video') > -1
 
-    console.log('disableVideo', disableVideo, process.argv)
     // https://docs.cypress.io/guides/guides/module-api.html
     const options = {
       run: {
-        headed: grunt.option('browser') === true,
-        config: {
-          video: !disableVideo
-        }
+        headed: grunt.option('browser') === true
       },
       open: {
         // add cypress.open() options here
