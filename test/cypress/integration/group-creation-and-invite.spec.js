@@ -1,6 +1,12 @@
 describe('Group Creation and Inviting Members', () => {
   const userId = new Date().getMilliseconds()
-  const groupName = 'Dreamers'
+
+  const group = {
+    name: 'Dreamers',
+    image: 'imageTest.png',
+    values: 'Testing group values',
+    income: 200
+  }
 
   it('successfully loads the homepage', function () {
     cy.visit('/')
@@ -22,17 +28,12 @@ describe('Group Creation and Inviting Members', () => {
   })
 
   it('user1 logins back and creates new Group', () => {
-    const testValues = 'Testing this software'
-    const testIncome = 200
-    // const testSetting = 80
-    const groupImage = 'imageTest.png' // at fixtures/imageTest
-
     cy.giLogin(`user1-${userId}`)
 
-    cy.giCreateGroup(groupName, groupImage, testValues, testIncome)
+    cy.giCreateGroup(group)
     cy.getByDT('profileName').should('contain', `user1-${userId}`)
 
-    cy.getByDT('welcomeGroup').should('contain', `Welcome ${groupName}!`)
+    cy.getByDT('welcomeGroup').should('contain', `Welcome ${group.name}!`)
   })
 
   it('user1 starts inviting user2 to the Group', () => {
