@@ -8,7 +8,7 @@ modal-base-template
       @click='redirect(step)'
     ) {{ index + 1 }}
 
-  .mobile-steps.subtitle
+  .wrapper.mobile-steps.subtitle
     i18n(tag='span') Step
     |  {{ currentStep }}
     i18n(tag='span')  of
