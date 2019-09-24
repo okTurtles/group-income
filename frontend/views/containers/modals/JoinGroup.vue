@@ -4,7 +4,7 @@ modal-base-template
 
   .wrapper
     .slider
-      .slide#get-an-invitation(v-observer:0='updateIndicator')
+      .slide(v-observer:0='updateIndicator' :id='config[0]')
         .slide-img
           svg-invitation
 
@@ -13,14 +13,14 @@ modal-base-template
           | For now, the only way to join a group is to get an invitation. Don’t know anyone using Group Income?
         i18n(tag='button' class='link') Create your own group
 
-      .slide#wait-for-you-group-vote(v-observer:1='updateIndicator')
+      .slide(v-observer:1='updateIndicator' :id='config[1]')
         .slide-img
           svg-proposal
 
         i18n(tag='h4') 2. Wait for the group vote
         i18n(tag='p') On Group Income, every major decision goes through a voting process. This includes adding new members.
 
-      .slide#use-your-unique-access-link(v-observer:2='updateIndicator')
+      .slide(v-observer:2='updateIndicator' :id='config[2]')
         .slide-img
           svg-access
 
@@ -28,9 +28,7 @@ modal-base-template
         i18n(tag='p') Once the group agrees that you should join them, a unique access link will be generated, giving you instant access to the group
 
     .dots
-      a.dot(:class='{ active: indicator === "0" }' href='#get-an-invitation')
-      a.dot(:class='{ active: indicator === "1" }' href='#wait-for-you-group-vote')
-      a.dot(:class='{ active: indicator === "2" }' href='#use-your-unique-access-link')
+      a.dot(v-for='(link, i) in config' :class='{ active: indicator == i }' :href='"#"+link')
 </template>
 
 <script>
@@ -51,7 +49,12 @@ export default {
   },
   data () {
     return {
-      indicator: 0
+      indicator: 0,
+      config: [
+        'get-an-invitation',
+        'wait-for-you-group-vote',
+        'use-your-unique-access-link'
+      ]
     }
   },
   // TODO move this into slider component if we have more than one
@@ -61,7 +64,7 @@ export default {
         try {
           const io = new window.IntersectionObserver(
             (elements) => {
-              if (elements[0].intersectionRatio >= 0.5) {
+              if (elements[0].intersectionRatio >= 0.5) { // Wait for the middle of the screen
                 value(arg)
               }
             },
@@ -88,6 +91,7 @@ export default {
     },
     updateIndicator (i) {
       this.indicator = i
+      history.pushState(null, null, `#${this.config[i]}`)
     }
   }
 }
