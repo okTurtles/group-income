@@ -28,16 +28,18 @@ Cypress.Commands.add('giLogin', (userName, password = '123456789') => {
   cy.getByDT('password').clear().type(password)
 
   cy.getByDT('loginSubmit').click()
-})
 
-Cypress.Commands.add('giLoginWithGroup', (userName, password = '123456789') => {
-  cy.giLogin(userName)
-  // For the case if the user has displayName
-  const elName = cy.getByDT('userProfile').find('[data-test="profileName"]')
-    ? 'profileName'
-    : 'profileDisplayName'
+  // Check if user as a group
+  if (cy.get('#app').find('[data-test="welcomeHomeLoggedIn"]')) {
+    cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
+  } else {
+    // For the case if the user has displayName
+    const elName = cy.getByDT('userProfile').find('[data-test="profileName"]')
+      ? 'profileName'
+      : 'profileDisplayName'
 
-  cy.getByDT(elName).should('contain', userName)
+    cy.getByDT(elName).should('contain', userName)
+  }
 })
 
 Cypress.Commands.add('giLogOutWithNoGroup', () => {
