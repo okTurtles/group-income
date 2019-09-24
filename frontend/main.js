@@ -84,6 +84,7 @@ async function startApp () {
     },
     store // make this and all child components aware of the new store
   }).$mount('#app')
+
   sbp('okTurtles.events/on', LOGOUT, () => router.push({ path: '/' }))
 }
 

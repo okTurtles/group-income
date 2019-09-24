@@ -32,7 +32,9 @@ export default {
       if (this.$route.query.modal) {
         query = { query: { modal: this.$route.query.modal, step: content } }
       }
-      this.$router.push(query)
+      this.$router.push(query).catch(err => {
+        console.log(err)
+      })
       this.content = content
     },
     next () {
