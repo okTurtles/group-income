@@ -111,7 +111,7 @@ module.exports = (grunt) => {
       },
       assets: {
         cwd: 'frontend/assets',
-        src: ['**/*', '!style/**', '!svgs/**', 'svgs/compressed/**'],
+        src: ['**/*', '!style/**', '!svgs/**'],
         dest: distAssets,
         expand: true
       }
@@ -132,8 +132,7 @@ module.exports = (grunt) => {
       eslintgrunt: "./node_modules/.bin/eslint --ignore-pattern '!.*.js' .Gruntfile.babel.js Gruntfile.js",
       puglint: './node_modules/.bin/pug-lint-vue frontend/views',
       stylelint: 'node ./node_modules/stylelint/bin/stylelint.js "frontend/assets/style/**/*.{css,scss,vue}"',
-      flow: './node_modules/.bin/flow',
-      svg_compress: 'node scripts/svg-compress'
+      flow: './node_modules/.bin/flow'
     },
 
     clean: { dist: [`${distDir}/*`] },
@@ -199,7 +198,7 @@ module.exports = (grunt) => {
       sbp('backend/pubsub/setup', require('http').createServer(), true)
     }
     if (!grunt.option('skipbuild')) {
-      grunt.task.run(['exec:eslint', 'exec:puglint', 'exec:stylelint', 'copy', 'sass', 'exec:svg_compress', rollup])
+      grunt.task.run(['exec:eslint', 'exec:puglint', 'exec:stylelint', 'copy', 'sass', rollup])
     }
   })
 
@@ -323,7 +322,7 @@ module.exports = (grunt) => {
           '@containers': path.resolve('./frontend/views/containers'),
           '@view-utils': path.resolve('./frontend/views/utils'),
           '@assets': path.resolve('./frontend/assets'),
-          '@svgs': path.resolve('./frontend/assets/svgs/compressed')
+          '@svgs': path.resolve('./frontend/assets/svgs')
 
         }),
         resolve({
