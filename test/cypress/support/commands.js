@@ -19,7 +19,7 @@ Cypress.Commands.add('giSignUp', (userName, password = '123456789') => {
 
   cy.getByDT('signSubmit').click()
 
-  cy.getByDT('profileName').should('contain', userName)
+  cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
 })
 
 Cypress.Commands.add('giLogin', (userName, password = '123456789') => {
@@ -28,7 +28,10 @@ Cypress.Commands.add('giLogin', (userName, password = '123456789') => {
   cy.getByDT('password').clear().type(password)
 
   cy.getByDT('loginSubmit').click()
+})
 
+Cypress.Commands.add('giLoginWithGroup', (userName, password = '123456789') => {
+  cy.giLogin(userName)
   // For the case if the user has displayName
   const elName = cy.getByDT('userProfile').find('[data-test="profileName"]')
     ? 'profileName'
@@ -37,11 +40,48 @@ Cypress.Commands.add('giLogin', (userName, password = '123456789') => {
   cy.getByDT(elName).should('contain', userName)
 })
 
+Cypress.Commands.add('giLogOutWithNoGroup', () => {
+  cy.getByDT('logout').click()
+  cy.getByDT('welcomeHome').should('contain', 'Welcome to GroupIncome')
+})
+
 Cypress.Commands.add('giLogOut', () => {
   cy.getByDT('settingsBtn').click()
   cy.getByDT('link-logout').click()
 
   cy.getByDT('welcomeHome').should('contain', 'Welcome to GroupIncome')
+})
+
+Cypress.Commands.add('giCreateGroup', (groupName, groupImage, testValues, testIncome) => {
+  cy.getByDT('createGroup').click()
+  cy.getByDT('groupName').type(groupName)
+
+  // TODO make a custom command for this
+  cy.fixture(groupImage).then((picture) =>
+    // converting image to blob
+    Cypress.Blob.base64StringToBlob(picture, 'image/png').then((blob) => {
+      const testFile = new File([blob], 'logo.png')
+      // display property is none for input[type=file] so I force trigger it
+      cy.get('[data-test="groupPicture"]').trigger('change', {
+        force: true,
+        data: testFile
+      })
+    })
+  )
+
+  cy.getByDT('nextBtn').click()
+
+  cy.get('textarea[name="sharedValues"]').type(testValues)
+  cy.getByDT('nextBtn').click()
+
+  cy.get('input[name="incomeProvided"]').type(testIncome)
+
+  cy.getByDT('nextBtn').click()
+
+  // TODO - It seems we are not testing the Percentages Rules ATM.
+  // so, let's just move on...
+
+  cy.getByDT('finishBtn').click()
 })
 
 Cypress.Commands.add('giAcceptGroupInvite', (groupName) => {

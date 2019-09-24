@@ -1,15 +1,15 @@
 <template lang='pug'>
 main.c-splash(data-test='homeLogo')
-  header(v-if='!$store.state.loggedIn')
+  header(v-if='!$store.state.loggedIn' key='title1')
     img.logo(src='/assets/images/group-income-icon-transparent.png')
     i18n(tag='h1' data-test='welcomeHome') Welcome to GroupIncome
 
-  header(v-else)
+  header(v-else key='title2')
     img.logo-2(src='/assets/images/logo-transparent.png')
     p.subtitle Welcome to group income
-    i18n(tag='h1' data-test='welcomeHome') Let’s get this party started
+    i18n(tag='h1' data-test='welcomeHomeLoggedIn') Let’s get this party started
 
-  .buttons(v-if='!$store.state.loggedIn')
+  .buttons(v-if='!$store.state.loggedIn' key='body1')
     i18n(
       tag='button'
       ref='loginBtn'
@@ -27,7 +27,7 @@ main.c-splash(data-test='homeLogo')
       data-test='signupBtn'
     ) Signup
 
-  .create-or-join(v-else)
+  .create-or-join(v-else key='body2')
     .card
       svg-create-group
       h3 Create
@@ -48,11 +48,25 @@ main.c-splash(data-test='homeLogo')
         @click='openModal("JoinGroup")'
         data-test='joinGroup'
       ) Join a Group
+
+    .temp
+      i18n(
+        tag='button'
+        @click='logout'
+        data-test='logout'
+      ) Logout
+
+      router-link(
+        to='/mailbox'
+        icon='envelope'
+        data-test='mailboxLink'
+      )
+        i18n Inbox (deprecated)
 </template>
 
 <script>
 import sbp from '~/shared/sbp.js'
-import { OPEN_MODAL, CLOSE_MODAL } from '@utils/events.js'
+import { OPEN_MODAL, CLOSE_MODAL, LOGOUT } from '@utils/events.js'
 import SvgCreateGroup from '@svgs/create-group.svg'
 import SvgJoinGroup from '@svgs/join-group.svg'
 
@@ -98,6 +112,9 @@ export default {
         // Enable focus on button and fix for firefox
         this.$nextTick(() => this.$refs[this.lastFocus].$el.focus())
       }
+    },
+    logout () {
+      sbp('state/vuex/dispatch', LOGOUT)
     }
   }
 }
@@ -191,5 +208,11 @@ export default {
       margin-bottom: $spacer;
     }
   }
+}
+
+.temp {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
 }
 </style>
