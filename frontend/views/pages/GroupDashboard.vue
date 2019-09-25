@@ -22,7 +22,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
 
   template(#sidebar='')
     groups-min-income
-    group-members(v-if='groupMembersCount > 1')
+    group-members
     group-purpose
 </template>
 

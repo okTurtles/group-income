@@ -253,6 +253,7 @@ module.exports = (grunt) => {
     const cypress = require('cypress')
     const done = this.async()
     const command = grunt.option('browser') === 'debug' ? 'open' : 'run'
+
     // https://docs.cypress.io/guides/guides/module-api.html
     const options = {
       run: {

@@ -9,10 +9,6 @@ section.card.c-card
         tag='button'
         @click='openModal'
       ) Add members
-      router-link.button(
-        to='/invite'
-        data-test='inviteButton'
-      ) {{ L('Invite members') }}
 </template>
 
 <script>
