@@ -31,6 +31,7 @@ If you already fully grok modern web dev and want to get started immediately, sk
     + [What does `grunt dev` do?](#what-does-grunt-dev-do)
     + [What files do I edit?](#what-files-do-i-edit)
     + [How do I add a new page to the website?](#how-do-i-add-a-new-page-to-the-website)
+    + [How does the Logical layer (Model) of the website works](#how-does-the-logical-layer-model-of-the-website-works)
     + [Where should I put non-JavaScript assets like CSS, images, etc.?](#where-should-i-put-non-javascript-assets-like-css-images-etc)
     + [Where should I put JavaScript *someone else* wrote (e.g. jQuery)?](#where-should-i-put-javascript-someone-else-wrote-eg-jquery)
     + [Where's the best place to put JavaScript *that I* create?](#wheres-the-best-place-to-put-javascript-that-i-create)
@@ -220,7 +221,7 @@ For those new to "modern web development", we have a section above to quickly br
 
 #### How do I get set up / just run the site?
 
-The instructions below are for *NIX systems like OS X and Linux.
+The instructions below are for *NIX systems like OS X and Linux*.
 
 Pre-reqs:
 
@@ -300,6 +301,96 @@ meta: {
   title: 'Example Page'
 }
 ```
+
+----
+
+#### How does the Logical layer (Model) of the website works?
+
+**Note:** I recommend you to understand the [basics of `sbp`](style-guide.md#sbp) before moving on because everything that will come next, works around it.
+
+The simplest way to explain this is by starting to explain a couple of functions you'll see together in the project a lot of times. These two functions are the core to make any logical change at Group Income state:
+
+```js
+// proposals/Mincome.vue
+// Update a group minimum income to 150
+
+// 1. Message - Create a set of data to be later processed
+const message = await sbp(
+  'gi.contracts/group/updateSettings/create',
+  { incomeProvided: 150 },
+  currentGroupId
+)
+
+// 2. Mutation - Send the message to the server and update the store (Vuex) accordingly
+await sbp('backend/publishLogEntry', message)
+```
+
+Now, let me explain what really happens in each function with more detail. Bare with me, it's going to be a wild ride!
+
+##### 1. Create a Message
+
+The SBP selector [_domain_ `gi.contracts/`](../frontend/model/contracts/group.js) is based on a [common Contract](../frontend/model/Contract.js). Each action (ex: `group/updateSettings`) expects 2 arguments: the `data` and `contractId`.
+- `data`: an object passed to the action when is processed.
+- `contractId`: the current group hash where the action should take effect on.
+
+> **Note:** A _Contract_ is a set of information with a specific structure where the browser can subscribe to. It can be a group, a user profile (identity), the mailbox or any other thing. All current contracts can be found at [`model/contacts/`](../frontend/model/contracts/group.js).
+
+This group action creates and returns a [GIMessage](../shared/GIMessage.js) based on the information passed (`data` and `contractId`).
+
+##### 2. Perform a Mutation
+
+With this new message, we need to send it to the server...
+
+```js
+await sbp('backend/publishLogEntry', message)
+```
+
+###### 2.1 Communication with the server (database)
+
+Long story short, the sbp selector `'backend/publishLogEntry'` sends a POST request to the server with the _message_ serialized. The server, eventually, through a _websocket_, returns back the _message_ to the browser, desirializes it and dispatches it to Vuex.
+
+Then, [the dispatch event is handled by Vuex at model/state.js](../frontend/model/state.js#L303). There, the event is verified and, if all goes right, the message is processed through `sbp`, with the given `selector` (action), state based on `contractId` and the `data`.
+
+###### 2.1 Vuex reaction
+
+So far, you might wonder:
+
+> _Where do I create the sbp action, in this case 'gi.contracts/group/updateSettings'_?.
+
+All actions of a contract are created where the contract is created. In this case at [contracts/group.js`](../frontend/model/contracts/group.js). In this case, we have the following action:
+
+```js
+'gi.contracts/group/updateSettings': {
+  // Method to validate received data type (FlowJS)
+  validate: object,
+  // Runs when the selector is processed
+  // state: contractId's state
+  // data: { incomeProvided: 150 }
+  // meta: /* read note bellow */
+  process (state, { data, meta }) {
+    // Performs the needed mutation to Vuex state, in this case,
+    // updates the given keys (incomeProvided) with the new value (150).
+    for (var key in data) {
+      Vue.set(state.settings, key, data[key])
+    }
+  }
+},
+```
+
+> **Note**: `meta` is included as part of the 2nd parameter of any _Contract_ action. It has information about the action, such as when it was created and who created it.
+
+
+##### 3. Getting the latest changes of a _Contract_
+
+We are almost there! The only question remaining is:
+
+> _How do users know what Contracts should they subscribe to and where is that done?_
+
+Subscribing to a new Contract it's already done underneath during `backend/publishLogEntry` (look for `registerContract` mutation), so you probably won't need to worry about that for now.
+
+When subscribed to a Contract, the user is updated each time an action in that Contract is called, even if the action wasn't triggered by the user itself. (TODO: Add link/reference to where this happens)
+
+That's all for now! Feel free to dive deeply even more in the files mentioned so far and complement this docs with your discoveries.
 
 ----
 

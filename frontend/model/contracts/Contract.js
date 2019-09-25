@@ -25,7 +25,7 @@ export function DefineContract (contract: Object) {
     }
     sbp('sbp/selectors/register', {
       [`${action}/create`]: async function (data, contractID) {
-        if (!contractID) { // TODO dev log - remove on prod.
+        if (!contractID) {
           throw new Error(`A contractID as 2nd parameters is required when calling an action. Verify '${action}/create'`)
         }
         const metadata = meta.create()
@@ -35,7 +35,6 @@ export function DefineContract (contract: Object) {
         return GIMessage.create(contractID, previousHEAD, undefined, `${action}/process`, data, metadata)
       },
       [`${action}/process`]: function (state, message) {
-        console.log('message...', message)
         contract.actions[action].validate(message.data)
         meta.validate(message.meta)
         contract.actions[action].process(state, message)
