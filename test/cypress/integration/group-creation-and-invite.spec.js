@@ -9,17 +9,17 @@ describe('Group Creation and Inviting Members', () => {
 
   it('register user1 and logout', () => {
     cy.giSignUp(`user1-${userId}`)
-    cy.giLogOutWithNoGroup()
+    cy.giLogOut()
   })
 
   it('register user2 and logout', () => {
     cy.giSignUp(`user2-${userId}`)
-    cy.giLogOutWithNoGroup()
+    cy.giLogOut()
   })
 
   it('register user3 and logout', () => {
     cy.giSignUp(`user3-${userId}`)
-    cy.giLogOutWithNoGroup()
+    cy.giLogOut()
   })
 
   it('user1 logins back and creates new Group', () => {

@@ -42,16 +42,16 @@ Cypress.Commands.add('giLogin', (userName, password = '123456789') => {
   }
 })
 
-Cypress.Commands.add('giLogOutWithNoGroup', () => {
-  cy.getByDT('logout').click()
-  cy.getByDT('welcomeHome').should('contain', 'Welcome to GroupIncome')
-})
-
 Cypress.Commands.add('giLogOut', () => {
-  cy.getByDT('settingsBtn').click()
-  cy.getByDT('link-logout').click()
-
-  cy.getByDT('welcomeHome').should('contain', 'Welcome to GroupIncome')
+  cy.get('#app').then(($app) => {
+    if ($app.find('[data-test="logout"]').length) {
+      cy.getByDT('logout').click()
+    } else {
+      cy.getByDT('settingsBtn').click()
+      cy.getByDT('link-logout').click()
+    }
+    cy.getByDT('welcomeHome').should('contain', 'Welcome to GroupIncome')
+  })
 })
 
 Cypress.Commands.add('giCreateGroup', (name, { image = 'imageTest.png', values = 'Testing group values', income = 200 } = {}) => {
