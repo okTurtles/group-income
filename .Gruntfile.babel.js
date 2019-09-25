@@ -111,7 +111,7 @@ module.exports = (grunt) => {
       },
       assets: {
         cwd: 'frontend/assets',
-        src: ['**/*', '!style/**', '!svgs/**', 'svgs/compressed/**'],
+        src: ['**/*', '!style/**', '!svgs/**'],
         dest: distAssets,
         expand: true
       }
@@ -169,53 +169,6 @@ module.exports = (grunt) => {
         }
       },
       dev: {}
-    },
-
-    svg_sprite: {
-      optimizeOnly: {
-        cwd: 'frontend/assets/svgs/original',
-        dest: 'frontend/assets/svgs/compressed',
-        src: ['*.svg'],
-        options: {
-          shape: {
-            dest: './',
-            transform: [{
-              svgo: {
-                plugins: [
-                  { cleanupIDs: true },
-                  { removeTitle: true },
-                  { removeDesc: true },
-                  { removeUselessStrokeAndFill: true },
-                  { removeViewBox: false },
-                  { removeDimensions: true }, // SVGO BUG # https://github.com/svg/svgo/issues/871
-                  { cleanupNumericValues: { floatPrecision: 2 } },
-                  { convertPathData: { floatPrecision: 2 } },
-                  { convertTransform: { floatPrecision: 2 } },
-                  { cleanupListOfValues: { floatPrecision: 2 } }
-                ]
-              }
-            }]
-          }
-        }
-      }
-      // NOTE: When we need a sprite in the future:
-      // newcomers: {
-      //   cwd: 'frontend/assets/svg',
-      //   dest: 'frontend/assets/svg/sprites',
-      //   options: {
-      //     mode: {
-      //       symbol: {
-      //         sprite: `../newcomers.svg`
-      //       }
-      //     }
-      //   }
-      //   src: [
-      //     'svg-broken-link.svg',
-      //     'svg-create-group.svg',
-      //     'svg-invitation.svg',
-      //     'svg-join-group.svg'
-      //   ]
-      // },
     }
     // see also:
     // https://github.com/lud2k/grunt-serve
@@ -245,7 +198,7 @@ module.exports = (grunt) => {
       sbp('backend/pubsub/setup', require('http').createServer(), true)
     }
     if (!grunt.option('skipbuild')) {
-      grunt.task.run(['exec:eslint', 'exec:puglint', 'exec:stylelint', 'copy', 'sass', 'svg_sprite', rollup])
+      grunt.task.run(['exec:eslint', 'exec:puglint', 'exec:stylelint', 'copy', 'sass', rollup])
     }
   })
 
@@ -370,7 +323,7 @@ module.exports = (grunt) => {
           '@containers': path.resolve('./frontend/views/containers'),
           '@view-utils': path.resolve('./frontend/views/utils'),
           '@assets': path.resolve('./frontend/assets'),
-          '@svgs': path.resolve('./frontend/assets/svgs/compressed')
+          '@svgs': path.resolve('./frontend/assets/svgs')
 
         }),
         resolve({
@@ -484,10 +437,6 @@ function svgLoader (options) {
       const svgName = path.basename(filePath, '.svg')
       const svgClass = `svg-${svgName}`
       const svg = source
-        // remove width and height attrs to be customized only by CSS
-        // because SVGO can't do it at the moment (bug): https://github.com/svg/svgo/issues/871
-        .replace(/width="[a-zA-Z0-9:]*"/, '')
-        .replace(/height="[a-zA-Z0-9:]*"/, '')
         // add global class automatically for theming customization
         .replace('<svg', `<svg class="${svgClass}"`)
 
