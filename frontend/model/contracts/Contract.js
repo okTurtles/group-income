@@ -25,12 +25,12 @@ export function DefineContract (contract: Object) {
     }
     sbp('sbp/selectors/register', {
       [`${action}/create`]: async function (data, contractID) {
+        if (!contractID) { // TODO dev log - remove on prod.
+          throw new Error(`A contractID as 2nd parameters is required when calling an action. Verify '${action}/create'`)
+        }
         const metadata = meta.create()
         contract.actions[action].validate(data)
         meta.validate(metadata)
-        if (!contractID) { // TODO dev log - remove on prod.
-          console.error(`It seems like you called a selector without passing the contractID as 2nd parameter. Please verify ${action}`)
-        }
         const previousHEAD = await sbp('backend/latestHash', contractID)
         return GIMessage.create(contractID, previousHEAD, undefined, `${action}/process`, data, metadata)
       },

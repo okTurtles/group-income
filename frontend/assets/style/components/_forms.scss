@@ -209,6 +209,17 @@ textarea,
       border-radius: $radius;
     }
   }
+
+  &.error {
+    border-color: $danger_0;
+
+    @media (hover: hover) {
+      input:focus {
+        box-shadow: 0 0 0 2px $danger_1;
+        border-color: $danger_0;
+      }
+    }
+  }
 }
 
 .error {

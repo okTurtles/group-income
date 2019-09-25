@@ -4,9 +4,14 @@
 // https://on.cypress.io/custom-commands
 // ***********************************************
 
-// Get element by data-test attribute
-Cypress.Commands.add('getByDT', (element) => {
-  return cy.get(`[data-test="${element}"]`)
+/* Get element by data-test attribute and other attributes
+ ex:
+ cy.getByDT('login')            //  cy.get([data-test="login"])
+ cy.getByDT('login', 'button')  //  cy.get('button[data-test="login"]')
+ cy.getByDT('login', '.error')  //  cy.get('.error[data-test="login"]')
+*/
+Cypress.Commands.add('getByDT', (element, otherSelector = '') => {
+  return cy.get(`${otherSelector}[data-test="${element}"]`)
 })
 
 // NOTE: We can go a step further and not use UI to do repetitive tasks.

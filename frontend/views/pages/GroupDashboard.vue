@@ -21,7 +21,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
   //-   group-settings
 
   template(#sidebar='')
-    groups-min-income
+    group-mincome
     group-members
     group-purpose
 </template>
@@ -38,7 +38,7 @@ import ProgressOverview from '@components/ProgressOverview.vue'
 import StartInviting from '@components/StartInviting.vue'
 // import SupportHistory from '@components/Graphs/SupportHistory.vue'
 // import GroupSettings from '@components/GroupSettings.vue'
-import GroupsMinIncome from '@containers/sidebar/GroupsMinIncome.vue'
+import GroupMincome from '@containers/sidebar/GroupMincome.vue'
 import GroupMembers from '@containers/sidebar/GroupMembers.vue'
 import GroupPurpose from '@containers/sidebar/GroupPurpose.vue'
 
@@ -63,7 +63,7 @@ export default {
     ProgressOverview,
     // SupportHistory,
     // GroupSettings,
-    GroupsMinIncome,
+    GroupMincome,
     GroupMembers,
     GroupPurpose,
     StartInviting
