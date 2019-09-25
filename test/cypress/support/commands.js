@@ -50,8 +50,8 @@ Cypress.Commands.add('giLogOut', () => {
       cy.getByDT('settingsBtn').click()
       cy.getByDT('link-logout').click()
     }
-    cy.getByDT('welcomeHome').should('contain', 'Welcome to GroupIncome')
   })
+  cy.getByDT('welcomeHome').should('contain', 'Welcome to GroupIncome')
 })
 
 Cypress.Commands.add('giCreateGroup', (name, { image = 'imageTest.png', values = 'Testing group values', income = 200 } = {}) => {
