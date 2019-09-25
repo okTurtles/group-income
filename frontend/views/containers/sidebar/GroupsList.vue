@@ -114,6 +114,7 @@ export default {
 
 .c-avatar {
   width: 2.5rem;
+  height: 2.5rem;
   position: relative;
   z-index: 1;
 }
