@@ -9,11 +9,8 @@ modal-base-template
       v-if='step != "GroupWelcome"'
     ) {{ index + 1 }}
 
-  .wrapper.mobile-steps.subtitle
-    i18n(tag='span') Step
-    |  {{ currentStep }}
-    i18n(tag='span')  of
-    |  {{ config.steps.length + 1 }}
+  .wrapper.mobile-steps.subtitle(v-if='currentStep + 1 < config.steps.length')
+    i18n(:args='{ current: currentStep + 1, max: config.steps.length - 1}') Step {current} of {max}
 
   transition(name='fade' mode='out-in')
     component(
@@ -25,11 +22,13 @@ modal-base-template
       @input='payload => updateGroupData(payload)'
     )
       .buttons(v-if='currentStep + 1 < config.steps.length')
-        button.is-outlined(
+        i18n(
+          class='is-outlined'
+          tag='button'
           @click='prev'
+          :args='{ text: currentStep === 0 ? "Cancel" : "Back" }'
           data-test='prevBtn'
-        )
-          i18n {{ currentStep === 0 ? 'Cancel' : 'Back' }}
+        ) {text}
 
         button.is-primary(
           v-if='currentStep + 2 < config.steps.length'

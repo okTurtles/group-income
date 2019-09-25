@@ -64,23 +64,20 @@
           :knobColor='removeColor'
           circleColor='#F4F8E7'
         )
-        i18n.subtitle(tag='p')  Remove Member
+        i18n.subtitle(tag='p') Remove Member
 
     transition(name='slidedown')
       message(
         v-if='!superMajority'
         severity='warning'
       )
-        i18n
-          | The percentage value you are choosing is most likely too low
-          | for a decision that can have a potentially significant impact
-          | on a person&rsquo;s life. Please consider using a supermajority 175.
-        | &nbsp;
-        a.link(
+        i18n The percentage value you are choosing is most likely too low for a decision that can have a potentially significant impact  on a person&rsquo;s life. Please consider using a supermajority 175.
+        i18n(
+          tag='a'
+          class='link'
           href='https://groupincome.org/2016/09/deprecating-mays-theorem/#when-majority-rule-can-harm'
           target='_blank'
-        )
-          i18n Read more on our blog about the dangers of majority rule.
+        ) Read more on our blog about the dangers of majority rule.
     slot
 </template>
 

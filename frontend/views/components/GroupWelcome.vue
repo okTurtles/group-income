@@ -9,7 +9,7 @@
   )
 
   h1.c-title(data-test='welcomeGroup')
-    i18n Welcome {{ groupSettings.groupName }}!
+    i18n(:args='{ groupName: groupSettings.groupName }') Welcome {groupName}!
 
   p.has-text-0.c-description
     i18n You are now embarking on a new journey. We hope you have a blast!

@@ -9,8 +9,7 @@ modal-base-template
           svg-invitation
 
         i18n(tag='h4') 1. Get an invitation
-        i18n(tag='p')
-          | For now, the only way to join a group is to get an invitation. Don’t know anyone using Group Income?
+        i18n(tag='p') For now, the only way to join a group is to get an invitation. Don’t know anyone using Group Income?
         i18n(tag='button' class='link' @click='showCreateModal') Create your own group
 
       .slide(v-observer:1='updateIndicator' :id='config[1]')
