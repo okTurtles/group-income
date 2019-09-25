@@ -26,7 +26,7 @@ export function DefineContract (contract: Object) {
     sbp('sbp/selectors/register', {
       [`${action}/create`]: async function (data, contractID) {
         if (!contractID) {
-          throw new Error(`A contractID as 2nd parameters is required when calling an action. Verify '${action}/create'`)
+          throw new Error(`A contractID as 2nd parameter is required when calling a sbp action. Verify '${action}/create'`)
         }
         const metadata = meta.create()
         contract.actions[action].validate(data)

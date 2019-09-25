@@ -1,4 +1,4 @@
-describe('Group Creation and Inviting Members', () => {
+describe('Changing Group Settings', () => {
   const userId = new Date().getMilliseconds()
   const groupName = 'Dreamers'
   const groupMincome = 750

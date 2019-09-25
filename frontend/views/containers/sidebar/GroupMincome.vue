@@ -16,7 +16,7 @@ div(data-test='groupMincome')
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import currencies from '@view-utils/currencies.js'
-import { mapState, mapGetters } from 'vuex'
+import { mapGetters } from 'vuex'
 
 export default {
   name: 'GroupMincome',
@@ -24,9 +24,6 @@ export default {
     currency () {
       return currencies[this.groupSettings.incomeCurrency]
     },
-    ...mapState([
-      'currentGroupId'
-    ]),
     ...mapGetters([
       'groupSettings'
     ])
