@@ -7,5 +7,6 @@
   "pluginsFile": "test/cypress/plugins",
   "screenshotsFolder": "test/cypress/screenshots",
   "supportFile": "test/cypress/support",
-  "videosFolder": "test/cypress/videos"
+  "videosFolder": "test/cypress/videos",
+  "video": false
 }

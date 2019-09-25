@@ -1,7 +1,6 @@
 # Build artifacts
 /node_modules/
 /dist/
-/frontend/assets/svgs/compressed
 
 # prevent accidental addition of yarn.lock from making Travis builds longer
 /yarn.lock
