@@ -44,11 +44,11 @@ Cypress.Commands.add('giLogin', (userName, password = '123456789') => {
 
 Cypress.Commands.add('giLogOut', () => {
   cy.get('#app').then(($app) => {
-    if ($app.find('[data-test="logout"]').length) {
-      cy.getByDT('logout').click()
-    } else {
+    if ($app.find('[data-test="userProfile"]').length) {
       cy.getByDT('settingsBtn').click()
       cy.getByDT('link-logout').click()
+    } else {
+      cy.getByDT('logout').click()
     }
   })
   cy.getByDT('welcomeHome').should('contain', 'Welcome to GroupIncome')
