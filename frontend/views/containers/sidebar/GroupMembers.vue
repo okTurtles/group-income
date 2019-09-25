@@ -105,7 +105,7 @@ export default {
       return this.$store.state.loggedIn.username
     },
     firstTenMembers () {
-      const usernames = Object.keys(this.groupMembers).slice(0, 9)
+      const usernames = Object.keys(this.groupMembers).slice(0, 10)
 
       return usernames.reduce((acc, cur) => ({
         ...acc,
