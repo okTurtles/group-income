@@ -9,11 +9,7 @@
     @submit='submit'
   )
 
-    label.field(
-      v-if='ephemeral.currentStep === 0'
-      key='0'
-      data-test="mincome"
-    )
+    label.field(v-if='ephemeral.currentStep === 0' key='0')
       i18n.label New minimum income
       // REVIEW: why $error is never true, even if we type 0?
       .input-combo(:class='{ error: $v.form.incomeProvided.$error }')
