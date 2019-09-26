@@ -1,7 +1,7 @@
 <template lang='pug'>
 nav.c-navigation(
   role='navigation'
-  :class='{ "is-active": ephemeral.isActive}'
+  :class='{ "is-active": ephemeral.isActive }'
 )
   toggle(@toggle='toggleMenu')
 
@@ -48,7 +48,7 @@ nav.c-navigation(
             class='is-small is-outlined'
             @click='openModal("CreateGroup")'
             data-test='createGroup'
-            alt='L("Add a group")'
+            :aria-label='L("Add a group")'
           )
             i.icon-plus
             i18n Add a group

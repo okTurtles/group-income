@@ -29,9 +29,9 @@ modal-base-template
     .dots
       a.dot(
         v-for='(link, i) in config'
-        :class='{ "is-active": indicator == i }'
+        :class='{ "is-active": ephemeral.indicator == i }'
         :href='"#"+link'
-        :aria-label='L("Go to") + (i + 1) + L("slider")'
+        :aria-label='L("Go to {num} slider", { num: i + 1 })'
       )
 </template>
 
@@ -53,7 +53,9 @@ export default {
   },
   data () {
     return {
-      indicator: 0,
+      ephemeral: {
+        indicator: 0
+      },
       config: [
         'get-an-invitation',
         'wait-for-you-group-vote',
@@ -69,7 +71,7 @@ export default {
           const io = new window.IntersectionObserver(
             (elements) => {
               if (elements[0].intersectionRatio >= 0.5) { // Wait for the middle of the screen
-                value(arg)
+                value(parseInt(arg))
               }
             },
             { threshold: [0.5] }
@@ -94,7 +96,7 @@ export default {
       sbp('okTurtles.events/emit', REPLACE_MODAL, 'CreateGroup')
     },
     updateIndicator (i) {
-      this.indicator = i
+      this.ephemeral.indicator = i
       history.pushState(null, null, `#${this.config[i]}`)
     }
   }

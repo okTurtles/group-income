@@ -1,15 +1,15 @@
 <template lang='pug'>
 main.c-splash(data-test='homeLogo')
-  header(v-if='!$store.state.loggedIn' key='title1')
+  header(v-if='!$store.state.loggedIn' key='title-login')
     img.logo(src='/assets/images/group-income-icon-transparent.png')
     i18n(tag='h1' data-test='welcomeHome') Welcome to GroupIncome
 
-  header(v-else key='title2')
+  header(v-else key='title-not-login')
     img.logo-2(src='/assets/images/logo-transparent.png')
-    p.subtitle Welcome to group income
+    i18n(tag='p' class='subtitle') Welcome to group income
     i18n(tag='h1' data-test='welcomeHomeLoggedIn') Let’s get this party started
 
-  .buttons(v-if='!$store.state.loggedIn' key='body1')
+  .buttons(v-if='!$store.state.loggedIn' key='body-loggin')
     i18n(
       tag='button'
       ref='loginBtn'
@@ -27,7 +27,7 @@ main.c-splash(data-test='homeLogo')
       data-test='signupBtn'
     ) Signup
 
-  .create-or-join(v-else key='body2')
+  .create-or-join(v-else key='body-create')
     .card
       svg-create-group
       h3 Create
@@ -37,12 +37,13 @@ main.c-splash(data-test='homeLogo')
         tag='button'
         @click='openModal("CreateGroup")'
         data-test='createGroup'
+        :aria-label='L("Add a group")'
       ) Create Group
 
     .card
       svg-join-group
-      h3 Join
-      p Enter an existing group using your username.
+      i18n(tag='h3') Join
+      i18n(tag='p') Enter an existing group using your username.
       i18n(
         tag='button'
         @click='openModal("JoinGroup")'
@@ -67,7 +68,7 @@ main.c-splash(data-test='homeLogo')
 
 <script>
 import sbp from '~/shared/sbp.js'
-import { OPEN_MODAL, CLOSE_MODAL, LOGOUT } from '@utils/events.js'
+import { OPEN_MODAL, CLOSE_MODAL } from '@utils/events.js'
 import SvgCreateGroup from '@svgs/create-group.svg'
 import SvgJoinGroup from '@svgs/join-group.svg'
 
@@ -115,7 +116,7 @@ export default {
       }
     },
     logout () {
-      sbp('state/vuex/dispatch', LOGOUT)
+      sbp('state/vuex/dispatch', 'logout')
     }
   }
 }

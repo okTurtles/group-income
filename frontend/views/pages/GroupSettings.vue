@@ -29,7 +29,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
         textarea.textarea(
           name='sharedValues'
           ref='purpose'
-          placeholder='Group Purpose'
+          :placeholder='L("Group Purpose")'
           maxlength='500'
           :class='{ error: $v.form.sharedValues.$error }'
           :value='groupSettings.sharedValues'

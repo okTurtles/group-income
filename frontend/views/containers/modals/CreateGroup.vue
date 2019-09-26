@@ -22,13 +22,10 @@ modal-base-template
       @input='payload => updateGroupData(payload)'
     )
       .buttons(v-if='currentStep + 1 < config.steps.length')
-        i18n(
-          class='is-outlined'
-          tag='button'
+        button.is-outlined(
           @click='prev'
-          :args='{ text: currentStep === 0 ? "Cancel" : "Back" }'
           data-test='prevBtn'
-        ) {text}
+        ) {{ currentStep === 0 ? L('Cancel') : L('Back') }}
 
         button.is-primary(
           v-if='currentStep + 2 < config.steps.length'
@@ -37,7 +34,7 @@ modal-base-template
           :disabled='$v.steps[content] && $v.steps[content].$invalid'
           data-test='nextBtn'
         )
-          i18n Next
+          | {{ L('Next') }}
           i.icon-arrow-right
 
         button.is-success(
@@ -46,8 +43,7 @@ modal-base-template
           @click='submit'
           :disabled='$v.form.$invalid'
           data-test='finishBtn'
-        )
-          i18n Create Group
+        ) Create Group
 
   message(
     v-if='ephemeral.errorMsg'

@@ -25,7 +25,7 @@ ul.c-group-list(v-if='groupsByName.length')
         class='is-icon has-background'
         @click='openModal("CreateGroup")'
         data-test='createGroup'
-        alt='L("Add a group")'
+        :aria-label='L("Add a group")'
       )
         i.icon-plus
 </template>

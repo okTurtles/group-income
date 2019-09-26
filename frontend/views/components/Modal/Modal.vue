@@ -72,13 +72,9 @@ export default {
     },
     updateUrl () {
       if (this.content) {
-        this.$router.push({ query: { modal: this.content, subcontent: this.activeSubcontent() } }).catch(err => {
-          console.log(err)
-        })
+        this.$router.push({ query: { modal: this.content, subcontent: this.activeSubcontent() } }).catch(console.error)
       } else {
-        this.$router.push({ query: null }).catch(err => {
-          console.log(err)
-        })
+        this.$router.push({ query: null }).catch(console.error)
       }
     },
     openModal (componentName) {

@@ -8,7 +8,7 @@
     textarea.textarea(
       name='sharedValues'
       ref='purpose'
-      placeholder='Group Purpose'
+      :placeholder='L("Group Purpose")'
       maxlength='500'
       :class='{ error: v.sharedValues.$error }'
       :value='group.sharedValues'

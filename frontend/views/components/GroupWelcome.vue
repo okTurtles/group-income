@@ -8,10 +8,14 @@
     :blobURL='groupSettings.groupPicture'
   )
 
-  h1.c-title(data-test='welcomeGroup')
-    i18n(:args='{ groupName: groupSettings.groupName }') Welcome {groupName}!
+  i18n(
+    tag='h1'
+    class='c-title'
+    data-test='welcomeGroup'
+    :args='{ groupName: groupSettings.groupName }'
+  ) Welcome {groupName}!
 
-  p.has-text-0.c-description
+  i18np.has-text-0.c-description
     i18n You are now embarking on a new journey. We hope you have a blast!
 
   .buttons.is-centered
