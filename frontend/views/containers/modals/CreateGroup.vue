@@ -37,8 +37,10 @@ modal-base-template
           | {{ L('Next') }}
           i.icon-arrow-right
 
-        button.is-success(
+        i18n(
           v-else=''
+          tag='button'
+          class='is-success'
           ref='finish'
           @click='submit'
           :disabled='$v.form.$invalid'
