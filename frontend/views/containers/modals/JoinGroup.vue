@@ -79,16 +79,16 @@ export default {
 
           io.observe(el)
 
-          el.stop = () => {
+          el.giUnbind = () => {
             io.disconnect()
           }
         } catch (error) {
           console.error(error.message, '\n polyfill: https://github.com/w3c/IntersectionObserver')
         }
+      },
+      unbind (el) {
+        el.giUnbind()
       }
-    },
-    unbind (el) {
-      el.stop()
     }
   },
   methods: {
