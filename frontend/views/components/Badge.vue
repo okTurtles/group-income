@@ -41,6 +41,7 @@ export default {
     height: $spacer;
     font-size: 0.7rem;
     font-weight: normal;
+    line-height: 0.2; // force pixel alignment on Chrome
   }
 
   &.is-compact {
