@@ -533,9 +533,10 @@ page(
       i18n(tag='h2' class='card-header') Forms
 
       p
-        | The input's width depends on their container
-        br
-        | For consistency, add #[code .field] to have a margin bottom of 1rem
+        | The input's width depends on their container #[br]
+        | For consistency, add #[code .field] to have a margin bottom of 1rem #[br]
+        | For A11Y reasons, everything related to a form element, (label text, input element, helper text and error text) should be placed inside its respective #[code <label />] element.
+        | When an element is disabled, required or as an error, add the respective HTML attributes! #[code disabled, aria-required, or aria-describedby="error"]
       br
       button.is-small.is-outlined.is-danger(
         @click='ephemeral.forms.hasError = !ephemeral.forms.hasError'
@@ -554,9 +555,9 @@ page(
             pre
               | label.field
               |   .label Your username
-              |   input.input(type='text')
-              |   .helper Pick a name without spaces
+              |   input.input(type='text' required)
               |   span.error Name already taken
+              |   .helper Pick a name without spaces
           td
             label.field
               .label Username
@@ -564,8 +565,8 @@ page(
                 placeholder='Placeholder'
                 :class='{ error: ephemeral.forms.hasError }'
               )
-              .helper Pick a name without spaces
               span.error(v-if='ephemeral.forms.hasError') Name already taken
+              .helper Pick a name without spaces
 
         tr
           td

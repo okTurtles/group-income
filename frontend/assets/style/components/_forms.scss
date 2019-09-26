@@ -26,11 +26,14 @@ form {
   }
 }
 
+// [1] - make the border-corner around totally visisble at combo elements
+
 textarea,
 .textarea,
 select,
 .select,
 .input {
+  background: $background_0; // [1]
   display: flex;
   justify-content: center;
   height: $inputHeight;
@@ -98,6 +101,7 @@ textarea,
     padding-right: $spacer-lg;
     padding-left: $spacer;
     min-width: 6.5rem;
+    cursor: pointer;
   }
 
   &::after {
@@ -111,6 +115,7 @@ textarea,
     top: 50%;
     right: $spacer;
     transform: translateY(-50%);
+    pointer-events: none;
   }
 }
 
@@ -140,14 +145,18 @@ textarea,
     line-height: $inputHeight;
     border-left: 1px solid $general_0;
     white-space: nowrap;
+    color: $text_0;
+  }
+
+  select:not(:first-child) {
+    border-radius: 0;
+    border-left: 1px solid $general_1;
   }
 
   select,
   .select,
   .input {
     border: none;
-    border-radius: 0;
-    border-left: 1px solid $general_1;
 
     &:focus {
       box-shadow: 0 0 0 2px $primary_1;
@@ -237,6 +246,11 @@ p.error {
     font-family: "Font Awesome 5 Free";
     font-weight: 900;
     margin-right: 0.25rem;
+  }
+
+  & + .helper {
+    // When the error and a helper are visisble at the same time
+    margin-top: 0;
   }
 }
 
