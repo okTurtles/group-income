@@ -15,7 +15,7 @@
     :args='{ groupName: groupSettings.groupName }'
   ) Welcome {groupName}!
 
-  i18n(tag='p').has-text-0.c-description You are now embarking on a new journey. We hope you have a blast!
+  i18n(tag='p' class='has-text-0 c-description') You are now embarking on a new journey. We hope you have a blast!
 
   .buttons.is-centered
     i18n(
