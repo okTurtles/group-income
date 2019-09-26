@@ -22,7 +22,7 @@ form {
   .helper {
     display: block;
     color: $text_1;
-    margin-top: $spacer-xs;
+    margin-top: $spacer-sm;
   }
 }
 
@@ -226,8 +226,10 @@ textarea,
   color: $danger_0;
 }
 
+span.error,
 p.error {
-  margin-top: 0.5rem;
+  display: block;
+  margin-top: $spacer-sm;
   margin-bottom: 0;
 
   &::before {
