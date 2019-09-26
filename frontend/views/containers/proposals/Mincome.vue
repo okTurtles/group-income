@@ -11,14 +11,13 @@
 
     label.field(v-if='ephemeral.currentStep === 0' key='0')
       i18n.label New minimum income
-      // REVIEW: why $error is never true, even if we type 0?
       .input-combo(:class='{ error: $v.form.incomeProvided.$error }')
         input.input(
-          type='number'
+          v-model='$v.form.incomeProvided.$model'
           name='incomeProvided'
+          type='number'
           min='1'
           required
-          v-model='form.incomeProvided'
         )
         .suffix {{inputSuffix}}
       i18n.helper(:args='{value: friendlyIncome}') Currently {value} monthly.
@@ -60,11 +59,14 @@ export default {
       }
     }
   },
+  updated () {
+    console.log('j')
+  },
   validations: {
     form: {
       incomeProvided: {
         required,
-        minValue (value) { return value > 0 },
+        minValue: value => value > 0,
         decimals: decimals(2)
       }
     },
