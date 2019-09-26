@@ -68,5 +68,7 @@ describe('Changing Group Settings', () => {
     cy.getByDT('groupMincome').within(() => {
       cy.getByDT('minIncome').should('contain', `$${groupNewIncome}`)
     })
+
+    cy.giLogOut()
   })
 })
