@@ -156,11 +156,11 @@ textarea,
   select,
   .select,
   .input {
-    border: none;
+    border: 1px solid transparent;
 
     &:focus {
       box-shadow: 0 0 0 2px $primary_1;
-      border: 1px solid $primary_0;
+      border-color: $primary_0;
 
       + label {
         background-color: $primary_0;
