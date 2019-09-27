@@ -27,7 +27,7 @@ Since this is a Vue.js project, any pull requests **must** follow *Priority A* r
 When writing CSS specific to a Vue component, use the prefix `c-`. This makes it easier to debug the CSS (where to find the CSS code) and understand the dependencies.
 All other classes are global, written at `frontend/assets/style` and should be kept to a minimum for simplicity and to avoid conflicts.
 
-``html
+```html
 <template>
     <!-- We can easily distinguish global classes from component's classes -->
     <h1 class="title is-2 c-title">Hello world</h1>
