@@ -18,21 +18,22 @@ const message = await sbp(
 await sbp('backend/publishLogEntry', message)
 ```
 
-Now, let me explain in more detail what really happens in each function:
+Now, let's see in more detail what really happens in each function:
 
 ##### 1. Create a Message
-
-The SBP selector [_domain_ `gi.contracts/`](../frontend/model/contracts/group.js) is based on a [common Contract](../frontend/model/Contract.js). Each action (ex: `group/updateSettings`) expects 2 arguments: the `data` and `contractId`.
-- `data`: an object passed to the action when is processed.
+First, we need to create a message using a selector under _'gi.contracts'_ domain.
+When we call the first `sbp` function we need to pass 3 parameters:
+- `selector`: For example, _'gi.contracts/group/updateSettings/create'_ has a [_domain_ _gi.contracts/_](../frontend/model/contracts/group.js) based on a [Contract](../frontend/model/Contract.js) which will process the action _group/updateSettings/create_.
+- `data`: a set of information passed to the action when it's processed.
 - `contractId`: the current group hash where the action should take effect on.
 
-This group action creates and returns a [GIMessage](../shared/GIMessage.js) based on the information passed (`data` and `contractId`).
+The `gi.contract/*/create` selector will create and return a [GIMessage](../shared/GIMessage.js) (an event) based on the parameters passed.
 
-> **Note:** A _Contract_ is a set of information with a specific structure where the client can subscribe to. It can be a group, a user profile (identity), the mailbox or any other thing. All current contracts can be found at [`model/contacts/`](../frontend/model/contracts/group.js).
+> **Note:** _Contracts_ can be thought of as *distributed classes*. When you create a contract, you create an *instance*, similarly to how instances in [OOP](https://en.wikipedia.org/wiki/Object-oriented_programming) can be created. Contracts have an internal state that is updated by *actions*. A contract can be a group, a user profile (identity), or any other thing. All current contracts can be found at [`model/contacts/`](../frontend/model/contracts/).
 
 ##### 2. Perform a Mutation
 
-With this new message, we need to send it to the server...
+With a `GIMessage` created in the step before, we now need to send it to the server:
 
 ```js
 await sbp('backend/publishLogEntry', message)
@@ -40,7 +41,9 @@ await sbp('backend/publishLogEntry', message)
 
 ###### 2.1 Communication with the server (database)
 
-Long story short, the sbp selector `'backend/publishLogEntry'` sends a POST request to the server with the _message_ serialized. The server, eventually, through a _websocket_, returns the _message_ back to the client, deserializes and dispatches it to Vuex.
+GIMessages ("events") are used to represent either the creation of a contract, or an action performed upon that contract. When a client sends these messages to the server, they are sent back to everyone who is subscribed to that contract. Then, upon receiving a message/event, each client uses it to update their local copy of the contract state. That's all done under the selector _'backend/publishLogEntry'_.
+
+The sbp selector `'backend/publishLogEntry'` sends a POST request to the server with the _message_ serialized. The server will, through a _websocket_, return the _message_ back to the client, deserializes and dispatches it to Vuex.
 
 Then, [the dispatch event is handled by Vuex at model/state.js](../frontend/model/state.js#L302). There, the event is verified and, if all goes right, the message is processed through `sbp`, with the given `selector` (the action), the state based on the `contractId` and the `data`.
 
@@ -48,18 +51,18 @@ Then, [the dispatch event is handled by Vuex at model/state.js](../frontend/mode
 
 So far, you might wonder:
 
-> _Where do I create a sbp contract action? ('gi.contracts/group/updateSettings')_.
+> _Where do I create a contract action? ('gi.contracts/group/updateSettings')_.
 
-All actions of a contract are created where the contract is created. In this specific contract (Group), at [`contracts/group.js`](../frontend/model/contracts/group.js).
+All actions of a contract are in the contract definition. For example, the Group actions are created at [`contracts/group.js`](../frontend/model/contracts/group.js).
 
 ```js
 'gi.contracts/group/updateSettings': {
   // Method to validate the received data type (FlowJS)
   validate: object,
-  // Runs when the selector is processed
+  // Runs when the selector 'gi.contracts/group/updateSettings/process' is called
   // state: contractId's state
   // data: { incomeProvided: 150 }
-  // meta: /* read note bellow */
+  // meta: /* Metadata - read note bellow */
   process (state, { data, meta }) {
     // Performs the needed mutation to Vuex state, in this case,
     // updates the given keys (incomeProvided) with the new value (150).
@@ -70,7 +73,7 @@ All actions of a contract are created where the contract is created. In this spe
 },
 ```
 
-> **Note**: `meta` is included as part of the 2nd parameter of any _Contract_ action. It includes information about the action, such as when it was created and who created it.
+> **Note**: Metadata is only included when contracts define a metadata key in their contract definition. It includes information about the action, such as when it was created and who created it.
 
 ##### 3. Getting the latest changes of a _Contract_
 
@@ -78,7 +81,13 @@ We are almost there, the only question remaining is:
 
 > _How do users know what Contracts should they subscribe to and where is that done?_
 
-Subscribing to a new Contract it's already done underneath during `backend/publishLogEntry`. (you can look for `registerContract` mutation in the project)
+```js
+  await sbp('state/vuex/dispatch', 'syncContractWithServer', contractId)
+```
+
+`'syncContractWithServer'` is what's used to both subscribe to a contract as well as fetch the latest events from it.
+
+(...WIP...)
 
 When subscribed to a Contract, the user is updated each time an action there is called, even if the action wasn't triggered by the user itself. (TODO: Add link/reference to where this happens)
 

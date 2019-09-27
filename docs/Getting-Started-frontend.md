@@ -126,7 +126,7 @@ Two main reasons:
 It used to be that servers would render HTML (using a server-side templating language and/or programming language like PHP) for each page that is visited. Everyone remembers putting this in their HTML (right?):
 
 ```php
-<? include($_SERVER['DOCUMENT_ROOT'] . '/includes/header.php'); ?>
+< include($_SERVER['DOCUMENT_ROOT'] . '/includes/header.php'); >
 ```
 
 Well, as convenient as that was (to avoiding repeating the same HTML all over the place), it required there be *a server* that did all the heavy-lifting, assembling each one of these pages and sending the HTML back to clients. That's problematic for several reasons:
@@ -221,7 +221,7 @@ For those new to "modern web development", we have a section above to quickly br
 
 #### How do I get set up / just run the site?
 
-The instructions below are for *NIX systems like OS X and Linux*.
+The instructions below are for \*NIX systems like OS X and Linux.
 
 Pre-reqs:
 

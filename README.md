@@ -39,6 +39,7 @@ We are continually improving the user experience for everyone, and applying the 
 
 - __[:book: CONTRIBUTING.md](CONTRIBUTING.md) (required reading to send a PR!)__
 - [:book: Getting Started — Modern frontend concepts & project overview](docs/Getting-Started-frontend.md)
+- [:book: Information Flow - walkthrough of the logical layer](docs/Information-Flow.md)
 - [:book: Style Guide — Our development guidelines](docs/Style-Guide.md)
 
 
