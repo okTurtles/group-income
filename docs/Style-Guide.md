@@ -132,8 +132,6 @@ Details about SBP will be written in a blog post soon. In the meantime, you are 
 
 Search the project for `sbp(` for examples, and speak with @taoeffect about it before diving in (at least until the docs for SBP are still waiting to be written).
 
-_SBP is the greatest thing to happen to programming since computers were invented! :D->-<_
-
 ---
 
 Caught a mistake or want to contribute to the documentation? Edit this page on GitHub!
