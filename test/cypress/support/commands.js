@@ -34,17 +34,9 @@ Cypress.Commands.add('giLogin', (userName, password = '123456789') => {
 
   cy.getByDT('loginSubmit').click()
 
-  // Check if user as a group
-  if (cy.get('#app').find('[data-test="welcomeHomeLoggedIn"]')) {
-    cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
-  } else {
-    // For the case if the user has displayName
-    const elName = cy.getByDT('userProfile').find('[data-test="profileName"]')
-      ? 'profileName'
-      : 'profileDisplayName'
-
-    cy.getByDT(elName).should('contain', userName)
-  }
+  // We changed pages (to dashboard or create group)
+  // so there's no login button anymore
+  cy.getByDT('loginBtn').should('not.exist')
 })
 
 Cypress.Commands.add('giLogOut', () => {
