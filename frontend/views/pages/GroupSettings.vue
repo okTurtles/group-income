@@ -61,6 +61,13 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
         data-test='saveBtn'
       ) Save changes
 
+  page-section(:title='L("Invite links")')
+    p.c-invite-description
+      i18n.has-text-1 Here's a list of all invite links you own
+      button.button.is-small.is-outlined
+        | Active links
+        i.icon-angle-down
+
   page-section(:title='L("Leave Group")')
     i18n(tag='p' html='This means you will stop having access to the <b>group chat</b> (including direct messages to other group members) and <b>contributions</b>. Re-joining the group is possible, but requires other members to vote and reach an agreement.')
 
@@ -138,4 +145,10 @@ export default {
 
 <style lang="scss" scoped>
 @import "../../assets/style/_variables.scss";
+
+.c-invite-description {
+  display: flex;
+  justify-content: space-between;
+  margin-top: $spacer-sm;
+}
 </style>

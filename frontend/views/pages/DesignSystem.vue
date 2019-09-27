@@ -696,6 +696,26 @@ page(
                 i.icon-user
               input.input(type='text' placeholder='Placeholder')
 
+  article#table
+    section.card
+      i18n(tag='h2' class='card-header') Table
+
+      table.table
+        thead
+          th column title
+          th column title
+          th column title
+          th
+        tr(
+          v-for='n in 4'
+          :key='n'
+        )
+          td item
+          td.has-ellipsis https://www.groupincome.org/app/join?groupId=21XWnNTYwDWqV3LwV6ow1V6cBWRNNJSw7KEgUd97kNB3hDcSRR&secret=3355
+          td item
+          td
+            i.icon-ellipsis-v
+
   article#stepper
     section.card
       i18n(tag='h2' class='card-header') Stepper
