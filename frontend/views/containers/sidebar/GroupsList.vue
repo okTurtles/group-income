@@ -21,8 +21,11 @@ ul.c-group-list(v-if='groupsByName.length')
       direction='right'
       :text='L("Create a new group")'
     )
-      router-link.button.is-icon.has-background(
-        to='/new-group/name'
+      button(
+        class='is-icon has-background'
+        @click='openModal("CreateGroup")'
+        data-test='createGroup'
+        :aria-label='L("Add a group")'
       )
         i.icon-plus
 </template>
@@ -31,6 +34,8 @@ ul.c-group-list(v-if='groupsByName.length')
 import { mapGetters, mapState } from 'vuex'
 import Avatar from '@components/Avatar.vue'
 import Tooltip from '@components/Tooltip.vue'
+import sbp from '~/shared/sbp.js'
+import { OPEN_MODAL } from '@utils/events.js'
 
 export default {
   name: 'GroupsList',
@@ -47,6 +52,9 @@ export default {
     ])
   },
   methods: {
+    openModal (mode) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, mode)
+    },
     handleMenuSelect (id) {
       id && this.changeGroup(id)
     },

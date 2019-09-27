@@ -10,6 +10,8 @@
     to='/group-settings'
     )
     i18n Edit
+
+  slot
 </template>
 
 <script>

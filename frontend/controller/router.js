@@ -1,16 +1,6 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import store from '@model/state.js'
-// TODO: move create group in modal container
-import CreateGroup from '@pages/CreateGroup.vue'
-import {
-  GroupName,
-  GroupPurpose,
-  GroupMincome,
-  GroupRules,
-  GroupPrivacy,
-  GroupInvitees
-} from '@components/CreateGroupSteps/index.js'
 import DesignSystem from '@pages/DesignSystem.vue'
 import Home from '@pages/Home.vue'
 import Messages from '@pages/Messages.vue'
@@ -44,7 +34,7 @@ var loginGuard = {
 // Check if user has a group
 var groupGuard = {
   guard: (to, from) => !store.state.currentGroupId,
-  redirect: (to, from) => ({ path: '/new-group' })
+  redirect: (to, from) => ({ path: '?modal=new-group' })
 }
 // TODO: add state machine guard and redirect to critical error page if necessary
 // var mailGuard = {
@@ -81,51 +71,6 @@ var router = new Router({
       name: DesignSystem.name,
       meta: { title: L('Design System') }
       // beforeEnter: createEnterGuards(designGuard)
-    },
-    {
-      path: '/new-group',
-      component: CreateGroup,
-      name: CreateGroup.name,
-      meta: { title: L('Start A Group') },
-      beforeEnter: createEnterGuards(loginGuard),
-      children: [
-        {
-          path: 'name',
-          name: GroupName.name,
-          meta: { title: L('Start A Group - Name Your Group') },
-          component: GroupName
-        },
-        {
-          path: 'purpose',
-          name: GroupPurpose.name,
-          meta: { title: L('Start A Group - Group Purpose') },
-          component: GroupPurpose
-        },
-        {
-          path: 'income',
-          name: GroupMincome.name,
-          meta: { title: L('Start A Group - Minimum Income') },
-          component: GroupMincome
-        },
-        {
-          path: 'rules',
-          name: GroupRules.name,
-          meta: { title: L('Start A Group - Rules') },
-          component: GroupRules
-        },
-        {
-          path: 'privacy',
-          name: GroupPrivacy.name,
-          meta: { title: L('Start A Group - Privacy') },
-          component: GroupPrivacy
-        },
-        {
-          path: 'invitees',
-          name: GroupInvitees.name,
-          meta: { title: L('Start A Group - Invite Members') },
-          component: GroupInvitees
-        }
-      ]
     },
     {
       path: '/welcome',

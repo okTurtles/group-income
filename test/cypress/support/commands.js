@@ -19,7 +19,7 @@ Cypress.Commands.add('giSignUp', (userName, password = '123456789') => {
 
   cy.getByDT('signSubmit').click()
 
-  cy.getByDT('profileName').should('contain', userName)
+  cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
 })
 
 Cypress.Commands.add('giLogin', (userName, password = '123456789') => {
@@ -29,19 +29,63 @@ Cypress.Commands.add('giLogin', (userName, password = '123456789') => {
 
   cy.getByDT('loginSubmit').click()
 
-  // For the case if the user has displayName
-  const elName = cy.getByDT('userProfile').find('[data-test="profileName"]')
-    ? 'profileName'
-    : 'profileDisplayName'
+  // Check if user as a group
+  if (cy.get('#app').find('[data-test="welcomeHomeLoggedIn"]')) {
+    cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
+  } else {
+    // For the case if the user has displayName
+    const elName = cy.getByDT('userProfile').find('[data-test="profileName"]')
+      ? 'profileName'
+      : 'profileDisplayName'
 
-  cy.getByDT(elName).should('contain', userName)
+    cy.getByDT(elName).should('contain', userName)
+  }
 })
 
 Cypress.Commands.add('giLogOut', () => {
-  cy.getByDT('settingsBtn').click()
-  cy.getByDT('link-logout').click()
-
+  cy.get('#app').then(($app) => {
+    if ($app.find('[data-test="userProfile"]').length) {
+      cy.getByDT('settingsBtn').click()
+      cy.getByDT('link-logout').click()
+    } else {
+      cy.getByDT('logout').click()
+    }
+  })
   cy.getByDT('welcomeHome').should('contain', 'Welcome to GroupIncome')
+})
+
+Cypress.Commands.add('giCreateGroup', (name, { image = 'imageTest.png', values = 'Testing group values', income = 200 } = {}) => {
+  cy.getByDT('createGroup').click()
+  cy.getByDT('groupName').type(name)
+
+  // TODO make a custom command for this
+  cy.fixture(image).then((picture) =>
+    // converting image to blob
+    Cypress.Blob.base64StringToBlob(picture, 'image/png').then((blob) => {
+      const testFile = new File([blob], 'logo.png')
+      // display property is none for input[type=file] so I force trigger it
+      cy.get('[data-test="groupPicture"]').trigger('change', {
+        force: true,
+        data: testFile
+      })
+    })
+  )
+
+  cy.getByDT('nextBtn').click()
+
+  cy.get('textarea[name="sharedValues"]').type(values)
+  cy.getByDT('nextBtn').click()
+
+  cy.get('input[name="incomeProvided"]').type(income)
+
+  cy.getByDT('nextBtn').click()
+
+  // TODO - It seems we are not testing the Percentages Rules ATM.
+  // so, let's just move on...
+
+  cy.getByDT('finishBtn').click()
+
+  cy.getByDT('toDashboardBtn').click()
 })
 
 Cypress.Commands.add('giAcceptGroupInvite', (groupName) => {

@@ -1,7 +1,10 @@
 .l-no-navigation {
   display: flex;
   justify-content: center;
+  align-items: flex-start;
   height: 100%;
+  padding: 1.5rem;
+  overflow: auto;
 }
 
 .l-with-navigation {

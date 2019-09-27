@@ -18,9 +18,7 @@
 export default {
   name: 'StepAssistant',
   mounted () {
-    if (this.currentStep === 0) {
-      this.$router.push({ name: this.config.steps[this.currentStep] })
-    }
+    this.redirect(this.config.steps[this.currentStep])
   },
   provide () {
     return {
@@ -28,16 +26,25 @@ export default {
     }
   },
   methods: {
+    redirect (content) {
+      let query = { name: content }
+      // Overright for modals
+      if (this.$route.query.modal) {
+        query = { query: { modal: this.$route.query.modal, step: content } }
+      }
+      this.$router.push(query).catch(console.error)
+      this.content = content
+    },
     next () {
       if (this.currentStep + 1 < this.config.steps.length) {
-        this.$router.push({ name: this.config.steps[this.currentStep + 1] })
+        this.redirect(this.config.steps[this.currentStep + 1])
       }
     },
     prev () {
       if (this.currentStep > 0) {
-        this.$router.push({ name: this.config.steps[this.currentStep - 1] })
+        this.redirect(this.config.steps[this.currentStep - 1])
       } else {
-        this.$router.push({ path: '/' })
+        this.$router.push({ query: { modal: null } })
       }
     },
     finish () {
@@ -46,13 +53,17 @@ export default {
   },
   data () {
     return {
+      content: '',
       config: { steps: [] }
     }
   },
   computed: {
     currentStep () {
-      // get current step index from current route
-      return Math.max(this.config.steps.indexOf(this.$route.name), 0)
+      let current = this.$route.name
+      if (this.$route.query.modal) {
+        current = this.$route.query.step
+      }
+      return Math.max(this.config.steps.indexOf(current), 0)
     }
   }
 }

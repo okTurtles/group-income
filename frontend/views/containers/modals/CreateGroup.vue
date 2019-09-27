@@ -1,48 +1,49 @@
 <template lang='pug'>
-//- TODO: move this into modal
-main.main#create-group-page
-  .steps
-    router-link.step(
+modal-base-template
+  .steps(v-if='currentStep + 1 < config.steps.length')
+    button.step(
       v-for='(step, index) in config.steps'
       :key='index'
-      :to='{name: step}'
       :class='[currentStep === index ? "active" : "", currentStep < index ? "next" : ""]'
+      @click='redirect(step)'
+      v-if='step != "GroupWelcome"'
     ) {{ index + 1 }}
 
+  .wrapper.mobile-steps.subtitle(v-if='currentStep + 1 < config.steps.length')
+    i18n(:args='{ current: currentStep + 1, max: config.steps.length - 1}') Step {current} of {max}
+
   transition(name='fade' mode='out-in')
-    router-view(
+    component(
+      :is='content'
       :group='form'
       :v='$v.form'
       @next='next'
       @focusref='focusRef'
       @input='payload => updateGroupData(payload)'
     )
+      .buttons(v-if='currentStep + 1 < config.steps.length')
+        button.is-outlined(
+          @click='prev'
+          data-test='prevBtn'
+        ) {{ currentStep === 0 ? L('Cancel') : L('Back') }}
 
-  .buttons
-    button.is-outlined(
-      @click='prev'
-      data-test='prevBtn'
-    )
-      i18n {{ currentStep === 0 ? 'Cancel' : 'Back' }}
+        button.is-primary(
+          v-if='currentStep + 2 < config.steps.length'
+          ref='next'
+          @click='next'
+          :disabled='$v.steps[content] && $v.steps[content].$invalid'
+          data-test='nextBtn'
+        )
+          | {{ L('Next') }}
+          i.icon-arrow-right
 
-    button.is-success(
-      v-if='currentStep + 1 < config.steps.length'
-      ref='next'
-      @click='next'
-      :disabled='$v.steps[$route.name] && $v.steps[$route.name].$invalid'
-      data-test='nextBtn'
-    )
-      i18n Next
-      i.icon-arrow-right
-
-    button.is-success(
-      v-else=''
-      ref='finish'
-      @click='submit'
-      :disabled='$v.form.$invalid'
-      data-test='finishBtn'
-    )
-      i18n Create Group
+        button.is-success(
+          v-else=''
+          ref='finish'
+          @click='submit'
+          :disabled='$v.form.$invalid'
+          data-test='finishBtn'
+        ) {{ L('Create Group') }}
 
   message(
     v-if='ephemeral.errorMsg'
@@ -51,6 +52,7 @@ main.main#create-group-page
 </template>
 
 <script>
+import ModalBaseTemplate from '@components/Modal/ModalBaseTemplate.vue'
 import sbp from '~/shared/sbp.js'
 import { RULE_THRESHOLD } from '@model/contracts/voting/rules.js'
 import proposals, { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '@model/contracts/voting/proposals.js'
@@ -61,6 +63,15 @@ import StepAssistant from '@view-utils/stepAssistant.js'
 import Message from '@components/Message.vue'
 import { merge } from '@utils/giLodash.js'
 import { validationMixin } from 'vuelidate'
+import GroupWelcome from '@components/GroupWelcome.vue'
+import {
+  GroupName,
+  GroupPurpose,
+  GroupMincome,
+  GroupRules,
+  GroupPrivacy,
+  GroupInvitees
+} from '@components/CreateGroupSteps/index.js'
 
 // we use require instead of import with this file to make rollup happy
 // or not... using require only makes rollup happy during compilation
@@ -68,17 +79,24 @@ import { validationMixin } from 'vuelidate'
 import { required, between } from 'vuelidate/lib/validators'
 
 export default {
-  name: 'CreateGroupView',
+  name: 'CreateGroupModal',
   mixins: [
     StepAssistant,
     validationMixin
   ],
   components: {
-    Message
+    ModalBaseTemplate,
+    Message,
+    GroupName,
+    GroupPurpose,
+    GroupMincome,
+    GroupRules,
+    GroupPrivacy,
+    GroupInvitees,
+    GroupWelcome
   },
   methods: {
     focusRef (ref) {
-      console.log(this.$refs[ref], this.$refs, ref)
       this.$refs[ref].focus()
     },
     updateGroupData (payload) {
@@ -134,7 +152,7 @@ export default {
         const hash = entry.hash()
         sbp('okTurtles.events/once', hash, (contractID, entry) => {
           this.$store.commit('setCurrentGroupId', hash)
-          this.$router.push({ path: '/welcome' })
+          this.next()
         })
         await sbp('backend/publishLogEntry', entry)
         // add to vuex and monitor this contract for updates
@@ -167,7 +185,8 @@ export default {
           'GroupName',
           'GroupPurpose',
           'GroupMincome',
-          'GroupRules'
+          'GroupRules',
+          'GroupWelcome'
         ]
       }
     }
@@ -191,6 +210,7 @@ export default {
       },
       incomeProvided: {
         required,
+        minValue: (val) => val > 0,
         decimals: decimals(2)
       },
       incomeCurrency: {
@@ -218,10 +238,24 @@ export default {
 }
 </script>
 
-<style scoped>
-.main {
-  /* TODO: Remove this later */
-  max-width: 600px;
-  padding: 2.5rem;
+<style lang="scss" scoped>
+@import "../../../assets/style/_variables.scss";
+
+.modal {
+  flex-direction: column;
+  justify-content: top;
+  align-items: center;
+  background-color: $general_2;
+}
+
+.steps {
+  width: calc(100% - 2rem);
+  max-width: 34rem;
+  margin-top: 3.5rem;
+}
+
+.wrapper {
+  width: calc(100% - 2rem);
+  max-width: 33rem;
 }
 </style>
