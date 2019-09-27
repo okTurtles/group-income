@@ -15,6 +15,11 @@
 
 import './commands.js'
 
+// NOTE: Create a unique Id to avoid duplicated users on DB during crypress tests
+// We need to find a cleaner way to handle multiple
+// users and groups that are created along the tests...
+Cypress.env('sessionId', new Date().getMilliseconds())
+
 // Abort tests on first fail
 afterEach(function () {
   if (this.currentTest.state === 'failed') {

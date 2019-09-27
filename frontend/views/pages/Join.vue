@@ -9,7 +9,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-else='')
 
     .c-join-grid-graphic(v-if='ephemeral.contract.members.length')
       members-circle(:members='ephemeral.contract.members')
-        bars(:currency='ephemeral.contract.settings.incomeCurrencySign' :history='ephemeral.contract.history' :mincome='+ephemeral.contract.settings.incomeProvided')
+        bars(:currency='ephemeral.contract.settings.incomeCurrencySign' :history='ephemeral.contract.history' :mincome='+ephemeral.contract.settings.mincomeAmount')
 
     p.error(v-if='ephemeral.errorMsg') {{ephemeral.errorMsg}}
 

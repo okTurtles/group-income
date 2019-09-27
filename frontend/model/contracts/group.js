@@ -29,24 +29,26 @@ export function generateInvites (numInvites: number) {
   }
 }
 
+const groupSettingsValidation = objectOf({
+  // TODO: add 'groupPubkey'
+  groupName: string,
+  groupPicture: string,
+  sharedValues: string,
+  mincomeAmount: number,
+  incomeCurrency: string,
+  proposals: objectOf({
+    [PROPOSAL_INVITE_MEMBER]: proposalSettingsType,
+    [PROPOSAL_REMOVE_MEMBER]: proposalSettingsType,
+    [PROPOSAL_GROUP_SETTING_CHANGE]: proposalSettingsType,
+    [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposalSettingsType,
+    [PROPOSAL_GENERIC]: proposalSettingsType
+  })
+})
+
 DefineContract({
   name: 'gi.contracts/group',
   contract: {
-    validate: objectOf({
-      // TODO: add 'groupPubkey'
-      groupName: string,
-      groupPicture: string,
-      sharedValues: string,
-      incomeProvided: number,
-      incomeCurrency: string,
-      proposals: objectOf({
-        [PROPOSAL_INVITE_MEMBER]: proposalSettingsType,
-        [PROPOSAL_REMOVE_MEMBER]: proposalSettingsType,
-        [PROPOSAL_GROUP_SETTING_CHANGE]: proposalSettingsType,
-        [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposalSettingsType,
-        [PROPOSAL_GENERIC]: proposalSettingsType
-      })
-    }),
+    validate: groupSettingsValidation,
     process (state, { data, meta }) {
       // TODO: checkpointing: https://github.com/okTurtles/group-income-simple/issues/354
       const initialState = {
@@ -260,8 +262,23 @@ DefineContract({
       }
     },
     'gi.contracts/group/updateSettings': {
-      validate: object,
-      process (state, { data, meta }) {
+      // OPTIMIZE: Make this custom validation function
+      // reusable accross other future validators
+      validate: data => {
+        const validations = {
+          mincomeAmount: x => typeof x === 'number' && x > 0,
+          mincomeCurrency: x => typeof x === 'string'
+        }
+        for (const key in data) {
+          if (validations[key]) {
+            if (!validations[key](data[key])) {
+              throw new Error(`${key} has bad value: ${data[key]}`)
+            }
+          }
+        }
+        return data
+      },
+      process (state, { data }) {
         for (var key in data) {
           Vue.set(state.settings, key, data[key])
         }

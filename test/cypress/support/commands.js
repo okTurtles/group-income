@@ -48,7 +48,7 @@ Cypress.Commands.add('giLogin', (userName, password = '123456789') => {
 })
 
 Cypress.Commands.add('giLogOut', () => {
-  cy.get('#app').then(($app) => {
+  cy.getByDT('app').then(($app) => {
     if ($app.find('[data-test="userProfile"]').length) {
       cy.getByDT('settingsBtn').click()
       cy.getByDT('link-logout').click()
@@ -81,7 +81,7 @@ Cypress.Commands.add('giCreateGroup', (name, { image = 'imageTest.png', values =
   cy.get('textarea[name="sharedValues"]').type(values)
   cy.getByDT('nextBtn').click()
 
-  cy.get('input[name="incomeProvided"]').type(income)
+  cy.get('input[name="mincomeAmount"]').type(income)
 
   cy.getByDT('nextBtn').click()
 

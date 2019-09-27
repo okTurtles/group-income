@@ -106,7 +106,7 @@ describe('Full walkthrough', function () {
       groupName: name,
       groupPicture: '',
       sharedValues: 'our values',
-      incomeProvided: 1000,
+      mincomeAmount: 1000,
       incomeCurrency: 'USD', // TODO: grab this as a constant from currencies.js
       proposals: {
         [PROPOSAL_GROUP_SETTING_CHANGE]: proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults,

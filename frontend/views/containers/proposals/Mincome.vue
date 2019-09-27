@@ -11,17 +11,17 @@
 
     label.field(v-if='ephemeral.currentStep === 0' key='0')
       i18n.label New minimum income
-      .input-combo(:class='{ error: $v.form.incomeProvided.$error }')
+      .input-combo(:class='{ error: $v.form.mincomeAmount.$error }')
         input.input(
-          v-model='$v.form.incomeProvided.$model'
-          name='incomeProvided'
+          v-model='$v.form.mincomeAmount.$model'
+          name='mincomeAmount'
           type='number'
           min='1'
           required
         )
-        .suffix {{inputSuffix}}
+        .suffix {{ inputSuffix }}
       i18n.helper(:args='{value: friendlyIncome}') Currently {value} monthly.
-    p.error(v-if='form.response' data-test='loginError') {{ form.response }}
+    p.error(v-if='ephemeral.errorMsg') {{ form.response }}
 </template>
 
 <script>
@@ -44,9 +44,7 @@ export default {
   data () {
     return {
       form: {
-        incomeProvided: null,
-        error: false,
-        response: ''
+        mincomeAmount: null
       },
       ephemeral: {
         errorMsg: null,
@@ -59,12 +57,9 @@ export default {
       }
     }
   },
-  updated () {
-    console.log('j')
-  },
   validations: {
     form: {
-      incomeProvided: {
+      mincomeAmount: {
         required,
         minValue: value => value > 0,
         decimals: decimals(2)
@@ -73,7 +68,7 @@ export default {
     // validation groups by route name for steps
     steps: {
       GroupMincome: [
-        'form.incomeProvided'
+        'form.mincomeAmount'
       ]
     }
   },
@@ -89,18 +84,17 @@ export default {
       return `${currencies[this.groupSettings.incomeCurrency]} ${this.groupSettings.incomeCurrency}`
     },
     friendlyIncome () {
-      return `${currencies[this.groupSettings.incomeCurrency]}${this.groupSettings.incomeProvided}`
+      return `${currencies[this.groupSettings.incomeCurrency]}${this.groupSettings.mincomeAmount}`
     }
   },
   methods: {
     async submit (form) {
-      this.form.response = ''
-      this.form.error = false
+      this.ephemeral.errorMsg = null
 
       if (this.groupShouldPropose) {
         return console.log(
           'TODO: Logic to Propose Mincome.',
-          'mincome:', this.form.incomeProvided,
+          'mincome:', this.form.mincomeAmount,
           'reason:', form.reason
         )
       }
@@ -109,14 +103,14 @@ export default {
         const updatedSettings = await sbp(
           'gi.contracts/group/updateSettings/create',
           // to avoid numbers with leading zeros (ex: 01)
-          { incomeProvided: parseInt(this.form.incomeProvided, 10) },
+          { mincomeAmount: parseInt(this.form.mincomeAmount, 10) },
           this.currentGroupId
         )
         await sbp('backend/publishLogEntry', updatedSettings)
         this.$refs.proposal.close()
       } catch (error) {
-        this.form.response = error.toString()
-        this.form.error = true
+        console.log('ora', error)
+        this.ephemeral.errorMsg = error
       }
     }
   }

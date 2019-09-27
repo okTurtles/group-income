@@ -3,7 +3,7 @@ div(data-test='groupMincome')
   i18n.title.is-4(tag='h4') Minimum Income
 
   p.title.is-2.income(data-test='minIncome')
-    | {{ currency }}{{ groupSettings.incomeProvided }}
+    | {{ currency }}{{ groupSettings.mincomeAmount }}
 
   i18n.link(
     tag='button'

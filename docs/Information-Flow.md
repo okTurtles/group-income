@@ -10,7 +10,7 @@ The simplest way to explain this is by starting to explain a couple of functions
 // 1. Message - Create a set of data to be later processed
 const message = await sbp(
   'gi.contracts/group/updateSettings/create',
-  { incomeProvided: 150 },
+  { mincomeAmount: 150 },
   currentGroupId
 )
 
@@ -61,11 +61,11 @@ All actions of a contract are in the contract definition. For example, the Group
   validate: object,
   // Runs when the selector 'gi.contracts/group/updateSettings/process' is called
   // state: contractId's state
-  // data: { incomeProvided: 150 }
+  // data: { mincomeAmount: 150 }
   // meta: /* Metadata - read note bellow */
   process (state, { data, meta }) {
     // Performs the needed mutation to Vuex state, in this case,
-    // updates the given keys (incomeProvided) with the new value (150).
+    // updates the given keys (mincomeAmount) with the new value (150).
     for (var key in data) {
       Vue.set(state.settings, key, data[key])
     }

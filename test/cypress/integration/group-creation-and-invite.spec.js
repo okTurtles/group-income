@@ -1,5 +1,6 @@
 describe('Group Creation and Inviting Members', () => {
-  const userId = new Date().getMilliseconds()
+  const specId = new Date().getMilliseconds()
+  const userId = `${Cypress.env('sessionId')}-${specId}`
 
   const groupName = 'Dreamers'
 

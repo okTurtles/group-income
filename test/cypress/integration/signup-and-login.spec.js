@@ -1,7 +1,5 @@
 describe('SignUp, Profile and Login', () => {
-  // NOTE: Create a uniqueId to avoid duplicated users on DB during crypress watch mode (during dev)
-  const userId = new Date().getMilliseconds()
-  const userName = `user1-${userId}`
+  const userName = `user-${Cypress.env('sessionId')}`
 
   it('successfully loads homepage', () => {
     cy.visit('/')

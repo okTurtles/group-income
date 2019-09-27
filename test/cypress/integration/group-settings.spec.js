@@ -1,5 +1,6 @@
 describe('Changing Group Settings', () => {
-  const userId = new Date().getMilliseconds()
+  const specId = new Date().getMilliseconds()
+  const userId = `${Cypress.env('sessionId')}-${specId}`
   const groupName = 'Dreamers'
   const groupMincome = 750
   const groupNewIncome = groupMincome + 100
@@ -37,7 +38,7 @@ describe('Changing Group Settings', () => {
     cy.get('textarea[name="sharedValues"]').type(testValues)
     cy.getByDT('nextBtn').click()
 
-    cy.get('input[name="incomeProvided"]').type(groupMincome)
+    cy.get('input[name="mincomeAmount"]').type(groupMincome)
 
     cy.getByDT('nextBtn').click()
 
@@ -58,7 +59,7 @@ describe('Changing Group Settings', () => {
     })
 
     cy.getByDT('modalProposal').within(() => {
-      cy.get('input[type="number"][name="incomeProvided"]')
+      cy.get('input[type="number"][name="mincomeAmount"]')
         .type(groupNewIncome)
 
       cy.getByDT('finishBtn', 'button')

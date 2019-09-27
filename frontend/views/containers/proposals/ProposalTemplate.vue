@@ -76,7 +76,8 @@
     template(slot='footer' v-if='!isConfirmation && rule')
       .c-footer
         i.icon-vote-yea
-        span(v-html='footerMessage')
+        i18n(v-if='groupShouldPropose' html='According to your voting rules, <strong>{value} out of {total} members</strong> will have to agree with this.' :args='rule')
+        i18n(v-else html='Your group has less than 3 members, so <strong>this change will be immediate</strong> (no voting required).')
 </template>
 
 <script>
@@ -114,14 +115,6 @@ export default {
     ...mapGetters([
       'groupShouldPropose'
     ]),
-    footerMessage () {
-      const { value, total } = this.rule
-      const message = this.groupShouldPropose
-        ? 'According to your voting rules, <strong>{value} out of {total} members</strong> will have to agree with this.'
-        : 'Your group has less than 3 members, so <strong>this change will be immediate</strong> (no voting required).'
-
-      return this.L(message, { value, total })
-    },
     isNextStep () {
       return this.currentStep <= this.maxSteps - 1
     },

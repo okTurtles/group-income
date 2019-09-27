@@ -8,7 +8,7 @@ page(pageTestName='invite' pageTestHeaderName='invite')
       data-test='notifyInvitedSuccess'
     )
       i.icon-check
-      i18n(v-if='isProposal') Members proposed successfully!
+      i18n(v-if='groupShouldPropose') Members proposed successfully!
       i18n(v-else='') Members invited successfully!
 
     group-invitees(
@@ -24,7 +24,7 @@ page(pageTestName='invite' pageTestHeaderName='invite')
         v-if='!form.success'
         @click='submit' data-test='submit'
       )
-        i18n(v-if='isProposal') Propose Invites
+        i18n(v-if='groupShouldPropose') Propose Invites
         i18n(v-else='') Send Invites
 </template>
 <script>
@@ -56,16 +56,14 @@ export default {
     }
   },
   computed: {
-    isProposal () {
-      return this.groupMembersCount >= 3
-    },
     ...mapState([
       'currentGroupId',
       'loggedIn'
     ]),
     ...mapGetters([
       'groupSettings',
-      'groupMembersCount'
+      'groupMembersCount',
+      'groupShouldPropose'
     ])
   },
   methods: {
@@ -83,7 +81,7 @@ export default {
           const mailbox = member.state.attributes.mailbox
           const memberName = member.state.attributes.name
 
-          if (this.isProposal) {
+          if (this.groupShouldPropose) {
             const proposal = await sbp('gi.contracts/group/proposal/create',
               {
                 proposalType: PROPOSAL_INVITE_MEMBER,
