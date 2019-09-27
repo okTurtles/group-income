@@ -31,7 +31,7 @@ modal-base-template
         v-for='(link, i) in config'
         :class='{ "is-active": ephemeral.indicator == i }'
         :href='"#"+link'
-        :aria-label='L("Go to {num} slider", { num: i + 1 })'
+        :aria-label='L("Go to step {num}", { num: i + 1 })'
       )
 </template>
 
