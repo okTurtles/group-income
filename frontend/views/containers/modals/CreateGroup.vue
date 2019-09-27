@@ -37,15 +37,13 @@ modal-base-template
           | {{ L('Next') }}
           i.icon-arrow-right
 
-        i18n(
+        button.is-success(
           v-else=''
-          tag='button'
-          class='is-success'
           ref='finish'
           @click='submit'
           :disabled='$v.form.$invalid'
           data-test='finishBtn'
-        ) Create Group
+        ) {{ L('Create Group') }}
 
   message(
     v-if='ephemeral.errorMsg'
@@ -99,7 +97,6 @@ export default {
   },
   methods: {
     focusRef (ref) {
-      console.log(this.$refs[ref], this.$refs, ref)
       this.$refs[ref].focus()
     },
     updateGroupData (payload) {
