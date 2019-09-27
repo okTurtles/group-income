@@ -1,7 +1,5 @@
 describe('Group Creation and Inviting Members', () => {
-  const specId = new Date().getMilliseconds()
-  const userId = `${Cypress.env('sessionId')}-${specId}`
-
+  const userId = Math.floor(Math.random() * 10000)
   const groupName = 'Dreamers'
 
   it('successfully loads the homepage', function () {
