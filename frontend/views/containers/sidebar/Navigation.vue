@@ -15,10 +15,11 @@ nav.c-navigation(
         img.c-logo(:src='logo' alt='GroupIncome\'s logo')
 
       // NOTE/REVIEW: If we follow Messages GIBot approach, the bell icon wont be needed
-      activity(:activityCount='activityCount')
+      activity(:activityCount='activityCount' v-if='groupsByName.length')
 
     .c-navigation-body(
       @click.self='enableTimeTravel'
+      v-if='groupsByName.length'
     )
       .c-navigation-body-top
         ul.c-menu-list
@@ -43,9 +44,11 @@ nav.c-navigation(
             i18n Inbox (deprecated)
 
         .c-navigation-separator(v-if='groupsByName.length < 2')
-          router-link.button.is-small.is-outlined(
-            to='/new-group/name'
-            alt='L("Add a group")'
+          button(
+            class='is-small is-outlined'
+            @click='openModal("CreateGroup")'
+            data-test='createGroup'
+            :aria-label='L("Add a group")'
           )
             i.icon-plus
             i18n Add a group
@@ -92,6 +95,8 @@ import Profile from './Profile.vue'
 import Toggle from './Toggle.vue'
 import ListItem from '@components/ListItem.vue'
 import { mapGetters } from 'vuex'
+import sbp from '~/shared/sbp.js'
+import { OPEN_MODAL } from '@utils/events.js'
 
 export default {
   name: 'Navigation',
@@ -136,6 +141,9 @@ export default {
   methods: {
     toggleMenu () {
       this.ephemeral.isActive = !this.ephemeral.isActive
+    },
+    openModal (mode) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, mode)
     },
     enableTimeTravel (evt) {
       if (evt.shiftKey && process.env.NODE_ENV !== 'production') {

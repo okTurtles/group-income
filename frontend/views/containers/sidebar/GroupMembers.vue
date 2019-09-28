@@ -12,14 +12,10 @@
       i18n Add
 
   ul.c-group-list
-    // TODO: Check why removing member condition can fail here
-    // TODO: remove v-if in v-for loop and reorder list member by active user limited to 10
     li.c-group-member(
-      v-for='(member, username, index) in groupMembers'
-      v-if='index < 10 && member && username !== currentUserName'
+      v-for='(member, username, index) in firstTenMembers'
       :class='member.pending && "is-pending"'
       :key='username'
-      data-test='member'
     )
       user-image(:username='username')
 
@@ -107,6 +103,14 @@ export default {
     ]),
     currentUserName () {
       return this.$store.state.loggedIn.username
+    },
+    firstTenMembers () {
+      const usernames = Object.keys(this.groupMembers).slice(0, 10)
+
+      return usernames.reduce((acc, cur) => ({
+        ...acc,
+        [cur]: this.groupMembers[cur]
+      }), {})
     }
   }
 }

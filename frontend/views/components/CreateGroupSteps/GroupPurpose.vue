@@ -1,18 +1,20 @@
 <template lang='pug'>
-div
-  i18n.steps-title(tag='p') 2. Group Purpose
+.wrapper
+  i18n.steps-title(tag='h4') 2. Group Purpose
 
-  i18n.label(tag='label') How would you describe your group?
+  .card
+    i18n.label(tag='label') How would you describe your group?
 
-  textarea.textarea(
-    name='sharedValues'
-    ref='purpose'
-    placeholder='Group Purpose'
-    maxlength='500'
-    :class='{ error: v.sharedValues.$error }'
-    :value='group.sharedValues'
-    @input='update'
-  )
+    textarea.textarea(
+      name='sharedValues'
+      ref='purpose'
+      :placeholder='L("Group Purpose")'
+      maxlength='500'
+      :class='{ error: v.sharedValues.$error }'
+      :value='group.sharedValues'
+      @input='update'
+    )
+    slot
 </template>
 
 <script>

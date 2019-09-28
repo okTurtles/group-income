@@ -1,7 +1,7 @@
 <template lang='pug'>
 menu-parent
   menu-trigger.c-menu-trigger.is-icon-small
-    i.icon-bell(:class='activityCount ? "" : "active"')
+    i.icon-bell(:class='activityCount ? "" : "is-active"')
     badge(v-if='activityCount' data-test='alertNotification') {{ activityCount }}
 
   menu-content.c-content
@@ -61,7 +61,7 @@ export default {
   font-size: 0.9rem;
   transform-origin: center 2px;
   margin-top: 2px;
-  &.active {
+  &.is-active {
     font-weight: 900;
   }
 }

@@ -27,7 +27,7 @@ Since this is a Vue.js project, any pull requests **must** follow *Priority A* r
 When writing CSS specific to a Vue component, use the prefix `c-`. This makes it easier to debug the CSS (where to find the CSS code) and understand the dependencies.
 All other classes are global, written at `frontend/assets/style` and should be kept to a minimum for simplicity and to avoid conflicts.
 
-``html
+```html
 <template>
     <!-- We can easily distinguish global classes from component's classes -->
     <h1 class="title is-2 c-title">Hello world</h1>
@@ -131,8 +131,6 @@ Virtually everything in this project is [going to be converted](https://github.c
 Details about SBP will be written in a blog post soon. In the meantime, you are encouraged to adopt this paradigm wherever possible for your own code.
 
 Search the project for `sbp(` for examples, and speak with @taoeffect about it before diving in (at least until the docs for SBP are still waiting to be written).
-
-_SBP is the greatest thing to happen to programming since computers were invented! :D->-<_
 
 ---
 

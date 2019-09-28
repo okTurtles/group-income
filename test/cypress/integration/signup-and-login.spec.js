@@ -11,6 +11,11 @@ describe('SignUp, Profile and Login', () => {
     cy.giSignUp(userName)
   })
 
+  it('Create group for new user1', () => {
+    cy.giCreateGroup('Dreamers 2')
+    cy.getByDT('profileName').should('contain', userName)
+  })
+
   it('user1 changes profile settings', () => {
     const profilePicture = 'imageTest.png' // at fixtures/imageTest
 

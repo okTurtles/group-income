@@ -1,37 +1,40 @@
 <template lang='pug'>
-div
-  i18n.steps-title(tag='p') 3. Minimum Income
+.wrapper
+  i18n.steps-title(tag='h4') 3. Minimum Income
 
-  i18n.label(tag='label') What is the minimum each individual in your group should receive monthly?
+  .card
+    i18n.label(tag='label') What is the minimum each member should receive monthly?
 
-  .select-wrapper
-    input.input(
-      ref='mincome'
-      type='number'
-      placeholder='Amount'
-      name='incomeProvided'
-      step='1'
-      min='0'
-      required=''
-      :class='{ error: v.incomeProvided.$error }'
-      :value='group.incomeProvided'
-      @input='update'
-      @keyup.enter='next'
-    )
+    .select-wrapper
+      input.input(
+        ref='mincome'
+        type='number'
+        placeholder='Amount'
+        name='incomeProvided'
+        step='1'
+        min='0'
+        required=''
+        :class='{ error: v.incomeProvided.$error }'
+        :value='group.incomeProvided'
+        @input='update'
+        @keyup.enter='next'
+      )
 
-    select(
-      name='incomeCurrency'
-      required=''
-      :value='group.incomeCurrency'
-      @input='update'
-    )
-      option(
-        v-for='(symbol, code) in currencies'
-        :value='code'
-        :key='code'
-      ) {{ symbol }}
+      select(
+        name='incomeCurrency'
+        required=''
+        :value='group.incomeCurrency'
+        @input='update'
+      )
+        option(
+          v-for='(symbol, code) in currencies'
+          :value='code'
+          :key='code'
+        ) {{ symbol }}
 
-  i18n.has-text-1(tag='p') This value can be adjusted in the future.
+    i18n.has-text-1(tag='p') This value can be adjusted in the future.
+
+    slot
 </template>
 
 <script>

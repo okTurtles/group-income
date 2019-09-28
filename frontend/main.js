@@ -79,11 +79,12 @@ async function startApp () {
     },
     computed: {
       showNav () {
-        return this.$store.state.loggedIn
+        return this.$store.state.loggedIn && this.$store.getters.groupsByName.length >= 1
       }
     },
     store // make this and all child components aware of the new store
   }).$mount('#app')
+
   sbp('okTurtles.events/on', LOGOUT, () => router.push({ path: '/' }))
 }
 

@@ -12,7 +12,8 @@ export default {
   data () {
     return {
       content: null, // This is the main modal
-      subcontent: [] // This is for collection of modal on top of modals
+      subcontent: [], // This is for collection of modal on top of modals
+      replacement: null
     }
   },
   created () {
@@ -71,9 +72,9 @@ export default {
     },
     updateUrl () {
       if (this.content) {
-        this.$router.push({ query: { modal: this.content, subcontent: this.activeSubcontent() } })
+        this.$router.push({ query: { modal: this.content, subcontent: this.activeSubcontent() } }).catch(console.error)
       } else {
-        this.$router.push({ query: null })
+        this.$router.push({ query: null }).catch(console.error)
       }
     },
     openModal (componentName) {
@@ -91,10 +92,18 @@ export default {
         this.content = null
       }
       this.updateUrl()
+      if (this.replacement) {
+        this.openModal(this.replacement)
+        this.replacement = null
+      }
+    },
+    closeModal () {
+      // Use direct children instead of sbp to wait for animation out
+      this.$refs['content'].$children[0].close()
     },
     replaceModal (componentName) {
-      this.unloadModal()
-      this.openModal(componentName)
+      this.replacement = componentName
+      this.closeModal()
     }
   }
 }

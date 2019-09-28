@@ -242,11 +242,10 @@ DefineContract({
       async sideEffect (message) {
         const rootState = sbp('state/vuex/state')
         const groupState = rootState[message.contractID()]
-        const data = message.data()
         const meta = message.meta()
         // TODO: per #257 this will have to be encompassed in a recoverable transaction
         // however per #610 that might be handled in handleEvent (?), or per #356 might not be needed
-        if (data.username === rootState.loggedIn.username) {
+        if (meta.username === rootState.loggedIn.username) {
           // we're the person who just accepted the group invite
           // so subscribe to founder's IdentityContract & everyone else's
           for (const name of Object.keys(groupState.profiles)) {
