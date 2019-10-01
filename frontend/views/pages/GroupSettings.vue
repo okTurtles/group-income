@@ -68,6 +68,27 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
         | Active links
         i.icon-angle-down
 
+    table.table
+      thead
+        th created for
+        th invite link
+        th state
+        th
+      tr(
+        v-for='(item, index) in ephemeral.dummyInviteList'
+        :key='index'
+      )
+        td.name {{ item.name }}
+        td.link
+          span.link-url.has-ellipsis {{ item.inviteLink }}
+          i.icon-copy
+        td.state
+          span.state-description {{ item.state.description }}
+          span.state-expire {{ item.state.expireInfo }}
+        td.action
+          button.is-icon
+            i.icon-ellipsis-v
+
   page-section(:title='L("Leave Group")')
     i18n(tag='p' html='This means you will stop having access to the <b>group chat</b> (including direct messages to other group members) and <b>contributions</b>. Re-joining the group is possible, but requires other members to vote and reach an agreement.')
 
@@ -109,7 +130,43 @@ export default {
   },
   data () {
     return {
-      currencies
+      currencies,
+      ephemeral: {
+        dummyInviteList: [
+          {
+            name: 'Felix Kubin',
+            inviteLink: 'http://localhost:8000/app/join?groupId=21XWnNFz7RbNPKHUqAeSLLT1cNHnnCssmSw6dJeB1gfSSeZc7v&secret=4460',
+            state: {
+              description: 'Not used yet',
+              expireInfo: '1d 2h 30m left'
+            }
+          },
+          {
+            name: 'Brian Eno',
+            inviteLink: 'http://localhost:8000/app/join?groupId=21XWnNFz7RbNPKHUqAeSLLT1cNHnnCssmSw6dJeB1gfSSeZc7v&secret=4460',
+            state: {
+              description: 'Used',
+              expireInfo: null
+            }
+          },
+          {
+            name: 'Carl Sagan',
+            inviteLink: 'http://localhost:8000/app/join?groupId=21XWnNFz7RbNPKHUqAeSLLT1cNHnnCssmSw6dJeB1gfSSeZc7v&secret=4460',
+            state: {
+              description: 'Not used',
+              expireInfo: 'Expired'
+            }
+          },
+          {
+            name: 'Anyone',
+            inviteLink: 'http://localhost:8000/app/join?groupId=21XWnNFz7RbNPKHUqAeSLLT1cNHnnCssmSw6dJeB1gfSSeZc7v&secret=4460',
+            state: {
+              description: '10/60 used',
+              expireInfo: 'Expired'
+            }
+          }
+        ]
+      }
     }
   },
   computed: {
