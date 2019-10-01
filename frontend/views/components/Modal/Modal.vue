@@ -6,6 +6,7 @@
 <script>
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL, REPLACE_MODAL, CLOSE_MODAL } from '@utils/events.js'
+import { logExceptNavigationDuplicated } from '@controller/utils/misc.js'
 
 export default {
   name: 'Modal',
@@ -72,9 +73,9 @@ export default {
     },
     updateUrl () {
       if (this.content) {
-        this.$router.push({ query: { modal: this.content, subcontent: this.activeSubcontent() } }).catch(console.error)
+        this.$router.push({ query: { modal: this.content, subcontent: this.activeSubcontent() } }).catch(logExceptNavigationDuplicated)
       } else {
-        this.$router.push({ query: null }).catch(console.error)
+        this.$router.push({ query: null }).catch(logExceptNavigationDuplicated)
       }
     },
     openModal (componentName) {
