@@ -5,6 +5,7 @@ import '~/shared/domains/okTurtles/data.js'
 import '~/shared/domains/okTurtles/events.js'
 import './controller/namespace.js'
 import router from './controller/router.js'
+import { logExceptNavigationDuplicated } from './controller/utils/misc.js'
 import { createWebSocket } from './controller/backend.js'
 import store from './model/state.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
@@ -85,7 +86,7 @@ async function startApp () {
     store // make this and all child components aware of the new store
   }).$mount('#app')
 
-  sbp('okTurtles.events/on', LOGOUT, () => router.push({ path: '/' }))
+  sbp('okTurtles.events/on', LOGOUT, () => router.push({ path: '/' }).catch(logExceptNavigationDuplicated))
 }
 
 startApp()
