@@ -315,6 +315,7 @@ module.exports = (grunt) => {
           resolve: ['.vue', '.js', '.svg'],
           vue: path.resolve('./node_modules/vue/dist/vue.common.js'),
           '~': path.resolve('./'),
+          '@controller': path.resolve('./frontend/controller'),
           '@model': path.resolve('./frontend/model'),
           '@utils': path.resolve('./frontend/utils'),
           '@views': path.resolve('./frontend/views'),
