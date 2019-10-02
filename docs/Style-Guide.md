@@ -135,7 +135,7 @@ The first argument of `sbp` is always a selector you registered before and the r
 sbp(selector, ...args)
 ```
 
-You can think about it has calling a normal function, but with more advantages. One of them is to access any selector from anywhere in the project by just importing sbp itself.
+You can think about it has calling a normal function, but with more advantages. One of them is to access any selector from anywhere in the project by just importing `sbp` itself.
 
 ```js
 // Using SBP:
@@ -148,8 +148,8 @@ sbp('okTurtles.events/emit', 'CLOSE_MODAL')
 
 ```js
 // Using standard functions:
-// - import each function individually
 
+// - import each function individually
 import okTurtlesDataSet from 'path/to/method/data-set.js'
 import okTurtlesEventsEmit from 'path/to/method/events-emit.js'
 
