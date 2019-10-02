@@ -18,6 +18,7 @@ import { GIErrorUnrecoverable, GIErrorIgnoreAndBanIfGroup, GIErrorDropAndReproce
 import { STATUS_OPEN, PROPOSAL_REMOVE_MEMBER } from './contracts/voting/proposals.js'
 import { VOTE_FOR } from '@model/contracts/voting/rules.js'
 import { WE_JUST_JOINED } from '@model/constants.js'
+import { actionWhitelisted, CONTRACT_REGEX } from '@model/contracts/Contract.js'
 import './contracts/group.js'
 import './contracts/mailbox.js'
 import './contracts/identity.js'
@@ -28,12 +29,12 @@ var store // this is set and made the default export at the bottom of the file.
 // 'state' is the Vuex state object, and it can only store JSON-like data
 var dropAllMessagesUntilRefresh = false
 
-const CONTRACT_REGEX = /^gi\.contracts\/(?:([^/]+)\/)(?:([^/]+)\/)?process$/
 // guard all sbp calls for contract actions with this function
-export function selectorIsContractOrAction (sel: string) {
-  if (!CONTRACT_REGEX.test(sel)) {
-    throw new GIErrorIgnoreAndBanIfGroup(`bad selector '${sel}' for contract type!`)
+function guardedSBP (sel: string, ...data: any): any {
+  if (!actionWhitelisted(sel)) {
+    throw new GIErrorIgnoreAndBanIfGroup(`guardedSBP('${sel}') not whitelisted!`)
   }
+  return sbp(sel, ...data)
 }
 
 sbp('sbp/selectors/register', {
@@ -44,8 +45,7 @@ sbp('sbp/selectors/register', {
     for (const e of events) {
       const stateCopy = _.cloneDeep(state)
       try {
-        selectorIsContractOrAction(e.type())
-        sbp(e.type(), state, { data: e.data(), meta: e.meta(), hash: e.hash() })
+        guardedSBP(e.type(), state, { data: e.data(), meta: e.meta(), hash: e.hash() })
       } catch (err) {
         if (!(err instanceof GIErrorUnrecoverable)) {
           console.warn(`latestContractState: ignoring mutation ${e.hash()}|${e.type()} because of ${err.name}`)
@@ -84,8 +84,7 @@ const mutations = {
     sbp('okTurtles.events/emit', LOGOUT)
   },
   processMessage (state, { selector, message }) {
-    selectorIsContractOrAction(selector)
-    sbp(selector, state, message)
+    guardedSBP(selector, state, message)
   },
   registerContract (state, { contractID, type }) {
     const firstTimeRegistering = !state[contractID]
@@ -387,7 +386,6 @@ const handleEvent = {
     }
   },
   processMutation (message: GIMessage) {
-    var preValidationFinished = false
     try {
       const contractID = message.contractID()
       const selector = message.type()
@@ -395,8 +393,9 @@ const handleEvent = {
       const data = message.data()
       const meta = message.meta()
       const type = CONTRACT_REGEX.exec(selector)[1]
-      selectorIsContractOrAction(selector)
-      preValidationFinished = true
+      if (!type) {
+        throw new GIErrorIgnoreAndBanIfGroup(`bad selector '${selector}' for message ${hash}`)
+      }
       if (message.isFirstMessage()) {
         store.commit('registerContract', { contractID, type })
       }
@@ -410,10 +409,8 @@ const handleEvent = {
       if (e.name.indexOf('GIError') === 0) {
         throw e // simply rethrow whatever error the contract has decided should be thrown
       } else if (!(e instanceof TypeValidatorError) && !(e instanceof TypeError)) {
-        if (preValidationFinished) {
-          // this is likely a GUI-related error/bug, so it's safe to save and reprocess later
-          throw new GIErrorDropAndReprocess(`${e.name} during processMutation: ${e.message}`)
-        }
+        // this is likely a GUI-related error/bug, so it's safe to save and reprocess later
+        throw new GIErrorDropAndReprocess(`${e.name} during processMutation: ${e.message}`)
       }
       throw new GIErrorIgnoreAndBanIfGroup(`${e.name} during processMutation: ${e.message}`)
     }
