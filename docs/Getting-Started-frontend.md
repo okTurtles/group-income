@@ -31,6 +31,7 @@ If you already fully grok modern web dev and want to get started immediately, sk
     + [What does `grunt dev` do?](#what-does-grunt-dev-do)
     + [What files do I edit?](#what-files-do-i-edit)
     + [How do I add a new page to the website?](#how-do-i-add-a-new-page-to-the-website)
+    + [How does the Logical layer (Model) of the website works](#how-does-the-logical-layer-model-of-the-website-works)
     + [Where should I put non-JavaScript assets like CSS, images, etc.?](#where-should-i-put-non-javascript-assets-like-css-images-etc)
     + [Where should I put JavaScript *someone else* wrote (e.g. jQuery)?](#where-should-i-put-javascript-someone-else-wrote-eg-jquery)
     + [Where's the best place to put JavaScript *that I* create?](#wheres-the-best-place-to-put-javascript-that-i-create)
@@ -220,7 +221,7 @@ For those new to "modern web development", we have a section above to quickly br
 
 #### How do I get set up / just run the site?
 
-The instructions below are for *NIX systems like OS X and Linux.
+The instructions below are for \*NIX systems like OS X and Linux.
 
 Pre-reqs:
 
@@ -300,6 +301,12 @@ meta: {
   title: 'Example Page'
 }
 ```
+
+----
+
+#### How does the Logical layer (Model) of the website works?
+
+Read [Information-Flow.md](Information-Flow.md).
 
 ----
 

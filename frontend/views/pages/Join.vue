@@ -9,7 +9,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-else='')
 
     .c-join-grid-graphic(v-if='ephemeral.contract.members.length')
       members-circle(:members='ephemeral.contract.members')
-        bars(:currency='ephemeral.contract.settings.incomeCurrencySign' :history='ephemeral.contract.history' :mincome='+ephemeral.contract.settings.incomeProvided')
+        bars(:currency='ephemeral.contract.settings.mincomeCurrencySign' :history='ephemeral.contract.history' :mincome='+ephemeral.contract.settings.mincomeAmount')
 
     p.error(v-if='ephemeral.errorMsg') {{ephemeral.errorMsg}}
 
@@ -63,7 +63,7 @@ export default {
       state.members = members
 
       // Mocked histoy to show on members-circle
-      state.incomeCurrencySign = '$'
+      state.mincomeCurrencySign = '$'
       state.history = [1.1, 1.3, 0.7, 1.05, 1, 1.3]
 
       this.ephemeral.contract = state

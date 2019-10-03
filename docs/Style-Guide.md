@@ -128,7 +128,36 @@ Remember: if you can use a computed property based on the vuex store, it means y
 
 Virtually everything in this project is [going to be converted](https://github.com/okTurtles/group-income-simple/issues/295) to SBP ("selector-based programming", see `shared/sbp.js`).
 
-Details about SBP will be written in a blog post soon. In the meantime, you are encouraged to adopt this paradigm wherever possible for your own code.
+In SBP everything works based on selectors. A selector is a string composed by two parts: a _domain_ and an _action_. For example, in `'okTurtles.data/set'`, the domain is `okTurtles.data` and the action is `/set`.
+The first argument of `sbp` is always a selector you registered before and the rest of the arguments are parameters to be later processed by the function assigned to the selector.
+
+```
+sbp(selector, ...args)
+```
+
+You can think about it has calling a normal function, but with more advantages. One of them is to access any selector from anywhere in the project by just importing `sbp` itself.
+
+```js
+// Using SBP:
+import sbp from '~/shared/sbp.js'
+
+// - call any selector registered
+sbp('okTurtles.data/set', { login: true })
+sbp('okTurtles.events/emit', 'CLOSE_MODAL')
+```
+
+```js
+// Using standard functions:
+
+// - import each function individually
+import okTurtlesDataSet from 'path/to/method/data-set.js'
+import okTurtlesEventsEmit from 'path/to/method/events-emit.js'
+
+okTurtlesDataSet({ login: true })
+okTurtlesEventsEmit('CLOSE_MODAL')
+```
+
+More details about SBP will be written in a blog post soon. In the meantime, you are encouraged to adopt this paradigm wherever possible for your own code.
 
 Search the project for `sbp(` for examples, and speak with @taoeffect about it before diving in (at least until the docs for SBP are still waiting to be written).
 

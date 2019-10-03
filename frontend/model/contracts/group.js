@@ -37,8 +37,8 @@ DefineContract({
       groupName: string,
       groupPicture: string,
       sharedValues: string,
-      incomeProvided: number,
-      incomeCurrency: string,
+      mincomeAmount: number,
+      mincomeCurrency: string,
       proposals: objectOf({
         [PROPOSAL_INVITE_MEMBER]: proposalSettingsType,
         [PROPOSAL_REMOVE_MEMBER]: proposalSettingsType,
@@ -256,6 +256,29 @@ DefineContract({
           // we're an existing member of the group getting notified that a
           // new member has joined, so subscribe to their identity contract
           await sbp('state/vuex/dispatch', 'syncContractWithServer', meta.identityContractID)
+        }
+      }
+    },
+    'gi.contracts/group/updateSettings': {
+      // OPTIMIZE: Make this custom validation function
+      // reusable accross other future validators
+      validate: data => {
+        const validations = {
+          mincomeAmount: x => typeof x === 'number' && x > 0,
+          mincomeCurrency: x => typeof x === 'string'
+        }
+        for (const key in data) {
+          if (validations[key]) {
+            if (!validations[key](data[key])) {
+              throw new TypeError(`${key} has bad value: ${data[key]}`)
+            }
+          }
+        }
+        return data
+      },
+      process (state, { data }) {
+        for (var key in data) {
+          Vue.set(state.settings, key, data[key])
         }
       }
     },

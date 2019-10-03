@@ -34,6 +34,9 @@ export function DefineContract (contract: Object) {
     whitelistedSelectors[`${action}/process`] = true
     sbp('sbp/selectors/register', {
       [`${action}/create`]: async function (data, contractID) {
+        if (!contractID) {
+          throw new Error(`A contractID as 2nd parameter is required when calling '${action}/create'`)
+        }
         const metadata = meta.create()
         contract.actions[action].validate(data)
         meta.validate(metadata)

@@ -38,7 +38,7 @@
 
       i18n.link(tag='a' @click='forgotPassword') Forgot your password?
 
-      p.error(v-if='form.response' data-test='loginError') {{ form.response }}
+      p.error(v-if='ephemeral.errorMsg' data-test='loginError') {{ ephemeral.errorMsg }}
 
       .buttons.is-centered
         i18n(
@@ -90,7 +90,7 @@ export default {
         this.close()
         if (this.$store.state.currentGroupId) this.$router.push({ path: '/dashboard' })
       } catch (error) {
-        this.form.response = L('Invalid username or password')
+        this.ephemeral.errorMsg = L('Invalid username or password')
         console.error(error)
       }
     },
@@ -109,8 +109,10 @@ export default {
     return {
       form: {
         name: null,
-        password: null,
-        response: null
+        password: null
+      },
+      ephemeral: {
+        errorMsg: null
       }
     }
   },

@@ -1,6 +1,5 @@
 describe('Group Creation and Inviting Members', () => {
-  const userId = new Date().getMilliseconds()
-
+  const userId = Math.floor(Math.random() * 10000)
   const groupName = 'Dreamers'
 
   it('successfully loads the homepage', function () {

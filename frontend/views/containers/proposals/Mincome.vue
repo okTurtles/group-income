@@ -1,8 +1,9 @@
 <template lang='pug'>
   proposal-template(
+    ref='proposal'
     :title='L("Change minimum income")'
     :rule='{ value: 8, total: 10 }'
-    :disabled='$v.form.$invalid || ($v.steps[config.steps[ephemeral.currentStep]] && $v.steps[config.steps[ephemeral.currentStep]].$invalid)'
+    :disabled='$v.form.$invalid'
     :maxSteps='config.steps.length'
     :currentStep.sync='ephemeral.currentStep'
     @submit='submit'
@@ -10,24 +11,27 @@
 
     label.field(v-if='ephemeral.currentStep === 0' key='0')
       i18n.label New minimum income
-      .input-combo
+      .input-combo(:class='{ error: $v.form.mincomeAmount.$error }')
         input.input(
+          v-model='$v.form.mincomeAmount.$model'
+          name='mincomeAmount'
           type='number'
-          name='incomeProvided'
-          min='0'
-          required=''
-          :class='{ error: $v.form.incomeProvided.$error }'
-          v-model='form.incomeProvided'
+          min='1'
+          required
         )
-        .suffix {{fakeStore.groupCurrency}}
-      i18n.helper(:args='{value: "$1000"}') Currently {value} monthly.
+        .suffix {{ inputSuffix }}
+      i18n.helper(:args='{value: friendlyIncome}') Currently {value} monthly.
+    p.error(v-if='ephemeral.errorMsg') {{ form.response }}
 </template>
 
 <script>
-import ProposalTemplate from './ProposalTemplate.vue'
+import sbp from '~/shared/sbp.js'
 import { validationMixin } from 'vuelidate'
-import { decimals } from '@view-utils/validators.js'
 import { required } from 'vuelidate/lib/validators'
+import { mapGetters, mapState } from 'vuex'
+import currencies from '@view-utils/currencies.js'
+import { decimals } from '@view-utils/validators.js'
+import ProposalTemplate from './ProposalTemplate.vue'
 
 export default {
   name: 'MincomeProposal',
@@ -40,7 +44,7 @@ export default {
   data () {
     return {
       form: {
-        incomeProvided: null
+        mincomeAmount: null
       },
       ephemeral: {
         errorMsg: null,
@@ -50,33 +54,64 @@ export default {
         steps: [
           'GroupMincome'
         ]
-      },
-      fakeStore: {
-        groupCurrency: '$ USD'
       }
     }
   },
   validations: {
     form: {
-      incomeProvided: {
+      mincomeAmount: {
         required,
+        minValue: value => value > 0,
         decimals: decimals(2)
       }
     },
     // validation groups by route name for steps
     steps: {
       GroupMincome: [
-        'form.incomeProvided'
+        'form.mincomeAmount'
       ]
     }
   },
+  computed: {
+    ...mapState([
+      'currentGroupId'
+    ]),
+    ...mapGetters([
+      'groupShouldPropose',
+      'groupSettings'
+    ]),
+    inputSuffix () {
+      return `${currencies[this.groupSettings.mincomeCurrency]} ${this.groupSettings.mincomeCurrency}`
+    },
+    friendlyIncome () {
+      return `${currencies[this.groupSettings.mincomeCurrency]}${this.groupSettings.mincomeAmount}`
+    }
+  },
   methods: {
-    submit (form) {
-      console.log(
-        'TODO: Logic to Propose Mincome.',
-        'mincome:', this.form.incomeProvided,
-        'reason:', form.reason
-      )
+    async submit (form) {
+      this.ephemeral.errorMsg = null
+
+      if (this.groupShouldPropose) {
+        return console.log(
+          'TODO: Logic to Propose Mincome.',
+          'mincome:', this.form.mincomeAmount,
+          'reason:', form.reason
+        )
+      }
+
+      try {
+        const updatedSettings = await sbp(
+          'gi.contracts/group/updateSettings/create',
+          // to avoid numbers with leading zeros (ex: 01)
+          { mincomeAmount: parseInt(this.form.mincomeAmount, 10) },
+          this.currentGroupId
+        )
+        await sbp('backend/publishLogEntry', updatedSettings)
+        this.$refs.proposal.close()
+      } catch (error) {
+        console.error('update mincome failed:', error)
+        this.ephemeral.errorMsg = error
+      }
     }
   }
 }

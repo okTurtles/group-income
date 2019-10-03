@@ -128,8 +128,8 @@ export default {
           groupName: this.form.groupName,
           groupPicture: this.form.groupPicture,
           sharedValues: this.form.sharedValues,
-          incomeProvided: +this.form.incomeProvided, // ensure this is a number
-          incomeCurrency: this.form.incomeCurrency,
+          mincomeAmount: +this.form.mincomeAmount, // ensure this is a number
+          mincomeCurrency: this.form.mincomeCurrency,
           proposals: {
             // TODO: make the UI support changing the rule type, so that we have
             //       a component for RULE_DISAGREEMENT as well
@@ -172,8 +172,8 @@ export default {
         changeThreshold: proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults.ruleSettings[RULE_THRESHOLD].threshold,
         memberApprovalThreshold: proposals[PROPOSAL_INVITE_MEMBER].defaults.ruleSettings[RULE_THRESHOLD].threshold,
         memberRemovalThreshold: proposals[PROPOSAL_REMOVE_MEMBER].defaults.ruleSettings[RULE_THRESHOLD].threshold,
-        incomeProvided: null,
-        incomeCurrency: 'USD' // TODO: grab this as a constant from currencies.js
+        mincomeAmount: null,
+        mincomeCurrency: 'USD' // TODO: grab this as a constant from currencies.js
       },
       ephemeral: {
         errorMsg: null,
@@ -208,12 +208,12 @@ export default {
         required,
         between: between(0.01, 1)
       },
-      incomeProvided: {
+      mincomeAmount: {
         required,
         minValue: (val) => val > 0,
         decimals: decimals(2)
       },
-      incomeCurrency: {
+      mincomeCurrency: {
         required
       }
     },
@@ -225,8 +225,8 @@ export default {
       ],
       GroupPurpose: ['form.sharedValues'],
       GroupMincome: [
-        'form.incomeProvided',
-        'form.incomeCurrency'
+        'form.mincomeAmount',
+        'form.mincomeCurrency'
       ],
       GroupRules: [
         'form.changeThreshold',

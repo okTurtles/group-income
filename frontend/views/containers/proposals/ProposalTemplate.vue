@@ -1,11 +1,12 @@
 <template lang='pug'>
   modal-template(
+    data-test='modalProposal'
     class='is-centered'
     :class='{"has-background": !isConfirmation}'
     ref='modal'
   )
     template(slot='subtitle')
-      i18n New proposal
+      i18n(v-if='groupShouldPropose') New proposal
     template(slot='title')
       i18n(key='title1' v-if='isConfirmation') Your proposal was created
       span(v-else) {{ title }}
@@ -35,10 +36,18 @@
           data-test='prevBtn'
         ) {{ currentStep === 0 ? L('Cancel') : L('Back') }}
 
+        i18n.is-success(
+          key='change'
+          v-if='!groupShouldPropose'
+          tag='button'
+          @click.prevent='submit'
+          :disabled='disabled'
+          data-test='finishBtn'
+        ) Change
+
         button(
           key='next'
-          v-if='isNextStep'
-          ref='next'
+          v-if='groupShouldPropose && isNextStep'
           @click.prevent='next'
           :disabled='disabled'
           data-test='nextBtn'
@@ -50,7 +59,6 @@
           key='create'
           tag='button'
           v-if='isReasonStep'
-          ref='finish'
           @click.prevent='submit'
           :disabled='disabled'
           data-test='finishBtn'
@@ -68,12 +76,15 @@
     template(slot='footer' v-if='!isConfirmation && rule')
       .c-footer
         i.icon-vote-yea
-        i18n(html='According to your voting rules, <strong>{value} out of {total} members</strong> will have to agree with this.' :args='{value: rule.value, total: rule.total}')
+        i18n(v-if='groupShouldPropose' html='According to your voting rules, <strong>{value} out of {total} members</strong> will have to agree with this.' :args='rule')
+        i18n(v-else html='Your group has less than 3 members, so <strong>this change will be immediate</strong> (no voting required).')
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
 import SvgProposal from '@svgs/proposal.svg'
+
 export default {
   name: 'ModalForm',
   components: {
@@ -100,6 +111,20 @@ export default {
       currentStep: 0
     }
   },
+  computed: {
+    ...mapGetters([
+      'groupShouldPropose'
+    ]),
+    isNextStep () {
+      return this.currentStep <= this.maxSteps - 1
+    },
+    isReasonStep () {
+      return this.currentStep === this.maxSteps
+    },
+    isConfirmation () {
+      return this.currentStep === this.maxSteps + 1
+    }
+  },
   methods: {
     close () {
       this.$refs.modal.close()
@@ -120,21 +145,14 @@ export default {
       this.$emit('update:currentStep', this.currentStep)
     },
     submit () {
-      this.next()
-      this.$emit('submit', {
-        reason: this.$refs.reason.value
-      })
-    }
-  },
-  computed: {
-    isNextStep () {
-      return this.currentStep <= this.maxSteps - 1
-    },
-    isReasonStep () {
-      return this.currentStep === this.maxSteps
-    },
-    isConfirmation () {
-      return this.currentStep === this.maxSteps + 1
+      if (this.groupShouldPropose) {
+        this.next()
+        this.$emit('submit', {
+          reason: this.$refs.reason.value
+        })
+      } else {
+        this.$emit('submit')
+      }
     }
   }
 }
@@ -169,7 +187,7 @@ export default {
 
   .icon-vote-yea {
     color: $primary_0;
-    margin-right: $spacer;
+    margin-right: $spacer-sm;
   }
 }
 </style>
