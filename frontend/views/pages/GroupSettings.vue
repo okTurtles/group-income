@@ -40,9 +40,9 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
         i18n.label(tag='label') Default currency
         .select-wrapper
           select(
-            name='incomeCurrency'
+            name='mincomeCurrency'
             required=''
-            :value='groupSettings.incomeCurrency'
+            :value='groupSettings.mincomeCurrency'
             @input='update'
           )
             option(

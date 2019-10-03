@@ -22,7 +22,7 @@ export default {
   name: 'GroupMincome',
   computed: {
     currency () {
-      return currencies[this.groupSettings.incomeCurrency]
+      return currencies[this.groupSettings.mincomeCurrency]
     },
     ...mapGetters([
       'groupSettings'

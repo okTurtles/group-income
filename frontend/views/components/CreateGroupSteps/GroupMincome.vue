@@ -21,9 +21,9 @@
       )
 
       select(
-        name='incomeCurrency'
+        name='mincomeCurrency'
         required=''
-        :value='group.incomeCurrency'
+        :value='group.mincomeCurrency'
         @input='update'
       )
         option(

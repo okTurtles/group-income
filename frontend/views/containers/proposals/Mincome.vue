@@ -81,10 +81,10 @@ export default {
       'groupSettings'
     ]),
     inputSuffix () {
-      return `${currencies[this.groupSettings.incomeCurrency]} ${this.groupSettings.incomeCurrency}`
+      return `${currencies[this.groupSettings.mincomeCurrency]} ${this.groupSettings.mincomeCurrency}`
     },
     friendlyIncome () {
-      return `${currencies[this.groupSettings.incomeCurrency]}${this.groupSettings.mincomeAmount}`
+      return `${currencies[this.groupSettings.mincomeCurrency]}${this.groupSettings.mincomeAmount}`
     }
   },
   methods: {
@@ -109,7 +109,7 @@ export default {
         await sbp('backend/publishLogEntry', updatedSettings)
         this.$refs.proposal.close()
       } catch (error) {
-        console.log('ora', error)
+        console.error('update mincome failed:', error)
         this.ephemeral.errorMsg = error
       }
     }

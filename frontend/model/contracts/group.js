@@ -29,26 +29,24 @@ export function generateInvites (numInvites: number) {
   }
 }
 
-const groupSettingsValidation = objectOf({
-  // TODO: add 'groupPubkey'
-  groupName: string,
-  groupPicture: string,
-  sharedValues: string,
-  mincomeAmount: number,
-  incomeCurrency: string,
-  proposals: objectOf({
-    [PROPOSAL_INVITE_MEMBER]: proposalSettingsType,
-    [PROPOSAL_REMOVE_MEMBER]: proposalSettingsType,
-    [PROPOSAL_GROUP_SETTING_CHANGE]: proposalSettingsType,
-    [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposalSettingsType,
-    [PROPOSAL_GENERIC]: proposalSettingsType
-  })
-})
-
 DefineContract({
   name: 'gi.contracts/group',
   contract: {
-    validate: groupSettingsValidation,
+    validate: objectOf({
+      // TODO: add 'groupPubkey'
+      groupName: string,
+      groupPicture: string,
+      sharedValues: string,
+      mincomeAmount: number,
+      mincomeCurrency: string,
+      proposals: objectOf({
+        [PROPOSAL_INVITE_MEMBER]: proposalSettingsType,
+        [PROPOSAL_REMOVE_MEMBER]: proposalSettingsType,
+        [PROPOSAL_GROUP_SETTING_CHANGE]: proposalSettingsType,
+        [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposalSettingsType,
+        [PROPOSAL_GENERIC]: proposalSettingsType
+      })
+    }),
     process (state, { data, meta }) {
       // TODO: checkpointing: https://github.com/okTurtles/group-income-simple/issues/354
       const initialState = {
@@ -272,7 +270,7 @@ DefineContract({
         for (const key in data) {
           if (validations[key]) {
             if (!validations[key](data[key])) {
-              throw new Error(`${key} has bad value: ${data[key]}`)
+              throw new TypeError(`${key} has bad value: ${data[key]}`)
             }
           }
         }

@@ -85,9 +85,7 @@ export default {
       form: {
         name: null,
         password: null,
-        email: null,
-        response: '',
-        error: false
+        email: null
       },
       ephemeral: {
         errorMsg: null

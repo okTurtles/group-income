@@ -80,7 +80,7 @@ export default {
   },
   computed: {
     currency: function () {
-      return currencies[this.group.incomeCurrency]
+      return currencies[this.group.mincomeCurrency]
     }
   },
   filters: {
