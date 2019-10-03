@@ -3,9 +3,17 @@
 import sbp from '~/shared/sbp.js'
 import { GIMessage } from '~/shared/GIMessage.js'
 
+// this must not be exported, but instead accessed through 'actionWhitelisted'
+const whitelistedSelectors = {}
+
+// can be useful for extracting the name of the contract or action, for example:
+// const contractName = CONTRACT_REGEX.exec(selector)[1]
+export const CONTRACT_REGEX = /^[\w.]+\/([^/]+)\/(?:([^/]+)\/)?process$/
+
 // TODO: define a flow type for contracts
 export function DefineContract (contract: Object) {
   const meta = contract.metadata || { validate () {}, create: () => ({}) }
+  whitelistedSelectors[`${contract.name}/process`] = true
   sbp('sbp/selectors/register', {
     [`${contract.name}/create`]: function (data) {
       const metadata = meta.create()
@@ -23,6 +31,7 @@ export function DefineContract (contract: Object) {
     if (action.indexOf(contract.name) !== 0) {
       throw new Error(`contract action '${action}' must start with prefix: ${contract.name}`)
     }
+    whitelistedSelectors[`${action}/process`] = true
     sbp('sbp/selectors/register', {
       [`${action}/create`]: async function (data, contractID) {
         const metadata = meta.create()
@@ -40,6 +49,10 @@ export function DefineContract (contract: Object) {
       [`${action}/process/sideEffect`]: contract.actions[action].sideEffect
     })
   }
+}
+
+export function actionWhitelisted (sel: string): boolean {
+  return !!whitelistedSelectors[sel]
 }
 
 /*

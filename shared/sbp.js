@@ -14,10 +14,8 @@ function sbp (selector: string, ...data: any): any {
   if (domainLookup === null) return
   const domain = domainLookup[0]
   // Filters can perform additional functions, and by returning `false` they
-  // can prevent the execution of a selector.
-  // TODO: decide whether the order of filter calls should be reversed
-  //       e.g. call the most specific filter before the more general filter
-  for (const filters of [globalFilters, domainFilters[domain], selectorFilters[selector]]) {
+  // can prevent the execution of a selector. Check the most specific filters first.
+  for (const filters of [selectorFilters[selector], domainFilters[domain], globalFilters]) {
     if (filters) {
       for (const filter of filters) {
         if (filter(domain, selector, data) === false) return
