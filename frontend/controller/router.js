@@ -13,7 +13,6 @@ import Join from '@pages/Join.vue'
 import Mailbox from '@pages/Mailbox.vue'
 import Vote from '@pages/Vote.vue'
 import GroupSettings from '@pages/GroupSettings.vue'
-import GroupWelcome from '@pages/GroupWelcome.vue'
 import L from '@view-utils/translations.js'
 
 Vue.use(Router)
@@ -71,13 +70,6 @@ var router = new Router({
       name: DesignSystem.name,
       meta: { title: L('Design System') }
       // beforeEnter: createEnterGuards(designGuard)
-    },
-    {
-      path: '/welcome',
-      component: GroupWelcome,
-      name: GroupWelcome.name,
-      meta: { title: L('Your Group Created') },
-      beforeEnter: createEnterGuards(loginGuard)
     },
     {
       path: '/dashboard',
