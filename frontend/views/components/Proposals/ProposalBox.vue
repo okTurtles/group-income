@@ -1,13 +1,16 @@
 <template lang='pug'>
 li.c-wrapper
-  user-image.c-avatarProposing(:username='proposal.meta.username')
-  .c-content
-    h4.has-text-bold {{proposalTitle}}:
-    p.has-text-1 {{proposal.data.proposalData.reason}}
+  user-image.c-avatar(:username='proposal.meta.username')
+  .c-header
+    h4.has-text-bold {{title}}:
+    span {{humanDate}}
+  .c-main
+    p.has-text-1 "{{proposal.data.proposalData.reason}}"
+    // TODO - loop for grouped proposals
     template
       .c-proposal
-        user-image.c-proposal-icon(:username='proposal.meta.username')
-        .c-content
+        i(:class='proposalIconClass')
+        .c-proposal-main
           p.has-text-bold {{typeDescription}}
           p.has-text-1(
             :class='{ "has-text-danger": proposal.status === statuses.STATUS_FAILED, "has-text-success": proposal.status === statuses.STATUS_PASSED }'
@@ -21,6 +24,7 @@ li.c-wrapper
         i18n(
           :args='{ user: proposal.data.proposalData.member}'
         ) Please send the following link to {user} so they can join the group:
+        | &nbsp;
         a.link(:href='invitationLink') {{invitationLink}}
 </template>
 
@@ -69,7 +73,7 @@ export default {
     statuses () {
       return { STATUS_OPEN, STATUS_PASSED, STATUS_FAILED, STATUS_EXPIRED, STATUS_WITHDRAWN, STATUS_CANCELLED }
     },
-    proposalTitle () {
+    title () {
       const { identityContractID } = this.proposal.meta
       const username = this.$store.state[identityContractID].attributes.name
       const currentUsername = this.currentUserIdentityContract.attributes.name
@@ -82,6 +86,14 @@ export default {
       return username === currentUsername
         ? this.L('You are proposing')
         : this.L('{who} is proposing', { who })
+    },
+    humanDate () {
+      const date = new Date(this.proposal.meta.createdDate)
+
+      // TODO: Get correct day formate based on locales
+      return date.toLocaleDateString('en-EN', {
+        year: 'numeric', month: 'long', day: 'numeric'
+      })
     },
     typeDescription () {
       return {
@@ -119,6 +131,29 @@ export default {
           return `TODO status: ${this.proposal.status}`
       }
     },
+    proposalIconClass () {
+      const type = {
+        [PROPOSAL_INVITE_MEMBER]: 'icon-user-plus',
+        [PROPOSAL_REMOVE_MEMBER]: 'icon-user-times',
+        [PROPOSAL_GROUP_SETTING_CHANGE]: 'icon-users-cog',
+        [PROPOSAL_PROPOSAL_SETTING_CHANGE]: 'icon-chart-pie',
+        [PROPOSAL_GENERIC]: 'icon-poll'
+      }
+
+      const status = {
+        [STATUS_OPEN]: 'has-background-primary has-text-primary',
+        [STATUS_PASSED]: 'icon-check has-background-success has-text-success',
+        [STATUS_FAILED]: 'icon-times has-background-danger has-text-danger',
+        [STATUS_CANCELLED]: 'has-background-general has-text-1'
+      }
+
+      // So the icon is the correct one, no matter the proposal type
+      if ([STATUS_PASSED, STATUS_FAILED].includes(this.proposal.status)) {
+        return `${status[this.proposal.status]} c-proposal-icon`
+      }
+
+      return `${type[this.proposalType]} ${status[this.proposal.status]} c-proposal-icon`
+    },
     invitationLink () {
       if (this.proposalType === PROPOSAL_INVITE_MEMBER && this.proposal.status === STATUS_PASSED) {
         const secret = this.proposal.payload.inviteSecret
@@ -136,45 +171,92 @@ export default {
 <style lang="scss" scoped>
 @import "../../../assets/style/_variables.scss";
 
+// [1] - so text breaks when it contains long hashes,
+//      without breaking the layout.
+
 $spaceVertical: $spacer-sm*3;
 
 .c-wrapper {
+  margin-top: $spaceVertical;
   padding-bottom: $spaceVertical;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "avatar header"
+    "main main";
+
+  @include tablet {
+    grid-template-areas:
+      "avatar header"
+      "avatar main";
+  }
 
   &:not(:last-child) {
     border-bottom: 1px solid $general_1;
   }
 }
 
-.c-wrapper,
+.c-avatar {
+  grid-area: avatar;
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.c-header {
+  grid-area: header;
+  align-self: center;
+
+  @include tablet {
+    display: flex;
+    justify-content: space-between;
+  }
+}
+
+.c-main {
+  grid-area: main;
+  margin-top: $spacer-xs;
+  word-break: break-word; // [1]
+}
+
+.c-avatar,
+.c-proposal-icon {
+  margin-right: $spaceVertical;
+  margin-bottom: $spacer-xs;
+  margin-top: $spacer-xs; // visually better aligned
+  flex-shrink: 0
+}
+
 .c-proposal {
   display: flex;
   align-items: flex-start;
   margin-top: $spaceVertical;
-}
 
-.c-content {
-  flex-grow: 1;
-}
+  &-main {
+    flex-grow: 1;
+  }
 
-.c-wrapper-content {
-  flex-grow: 1;
-}
+  &-icon {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 2rem;
 
-.c-avatarProposing,
-.c-proposal-icon {
-  margin-right: $spaceVertical;
-  margin-top: $spacer-xs; // visually better aligned
+    @include phone {
+      margin-left: $spacer-sm; // TODO: Suggest to @mmbotelho
+    }
+  }
 }
 
 .c-sendLink {
   border-radius: 0.25rem;
-  background-color: $general_2;
+  background-color: $general_1;
   padding: $spacer;
   margin-top: $spacer;
 
   .link {
-    word-break: break-all;
+    word-break: break-all; // [1]
+    display: inline; // so the border goes through multiple lines
   }
 }
 </style>

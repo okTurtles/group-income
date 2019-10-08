@@ -11,7 +11,7 @@ ul.c-proposals
   // TOD2: - sort proposals by date.
   proposal-box(
     v-else
-    v-for='(proposal, hash) in currentGroupState.proposals'
+    v-for='(proposal, hash) in proposals'
     :key='hash'
     :proposalHash='hash'
   )
@@ -31,7 +31,11 @@ export default {
   computed: {
     ...mapGetters([
       'currentGroupState'
-    ])
+    ]),
+    proposals () {
+      console.log('list', this.currentGroupState.proposals)
+      return this.currentGroupState.proposals
+    }
   }
 }
 </script>
