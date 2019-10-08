@@ -34,7 +34,7 @@ export const proposalSettingsType = objectOf({
   })
 })
 
-// returns true IFF a single YES vote is required to pass the proposal
+// returns true IF a single YES vote is required to pass the proposal
 export function oneVoteToPass (proposalHash) {
   const rootState = sbp('state/vuex/state')
   const state = rootState[rootState.currentGroupId]

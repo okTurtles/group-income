@@ -86,7 +86,7 @@ export default {
               {
                 proposalType: PROPOSAL_INVITE_MEMBER,
                 proposalData: {
-                  members: [memberName], // TODO: create a single proposal?
+                  member: memberName,
                   reason: L("Because they're great") // TODO: this?
                 },
                 votingRule: this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].rule,

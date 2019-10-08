@@ -4,11 +4,11 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
 
   start-inviting(v-if='groupMembersCount === 1')
 
+  page-section(:title='currentGroupState.proposals ? L("Proposals") : ""')
+    proposals
+
   page-section(title='This months overview')
     overview
-
-  page-section(title='Proposals')
-    proposals
 
   page-section(title='July Overview')
     //- group-pledges-graph
@@ -49,6 +49,7 @@ export default {
       'currentGroupId'
     ]),
     ...mapGetters([
+      'currentGroupState', // TODO normalize getters names
       'groupSettings',
       'groupsByName',
       'groupMembersCount'

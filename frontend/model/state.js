@@ -158,6 +158,9 @@ const mutations = {
 // https://vuex.vuejs.org/en/getters.html
 // https://vuex.vuejs.org/en/modules.html
 const getters = {
+  currentGroupId (state) {
+    return state.currentGroupId
+  },
   currentGroupState (state) {
     return state[state.currentGroupId] || {} // avoid "undefined" vue errors at inoportune times
   },

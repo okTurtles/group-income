@@ -1,44 +1,28 @@
 <template lang='pug'>
-//- TODO: consider deleting this entire file if no longer necessary
-//-       it's currently used for debug/testing purposes only and should
-//-       be either deleted or rewritten.
-section.section.full-screen
-  .columns
-    .column
-    .column(style='text-align: center;')
-      div
-        .subtitle
-          i18n Your vote has been requested on a proposal for the group:
+.c-ctas
+  .c-cancel(v-if='hadVoted')
+    i18n.button.is-danger(
+      v-if='ownProposal'
+      tag='button'
+      @click='voteAgainst'
+      data-test='voteFor'
+    ) Cancel Proposal
+    p(v-else) You voted {{voteStatus}}.
+      a.link Change vote.
+    p.help.is-danger(v-if='errorMsg') {{ errorMsg }}
+  .buttons(v-else)
+    i18n.button.is-outlined.is-small.is-success(
+      tag='button'
+      @click='voteFor'
+      data-test='voteFor'
+    ) Vote yes
 
-        h1 {{ groupSettings.groupName }}
-
-      .panel
-        .panel-block
-          p
-            // TODO different templates for different invitation types
-            i18n This is an invitation proposal. The user to be invited:
-            strong(data-test='candidateName') {{ JSON.stringify(data) }}
-
-        .panel-block.notification.is-warning(style='text-align: center;')
-          strong(style='margin: 0 auto;')
-            i18n Your Decision?
-
-        .panel-block.center(style='display: block; text-align: center;')
-          .help.is-danger(v-if='errorMsg') {{ errorMsg }}
-
-          i18n.button.is-success(
-            tag='a'
-            style='margin-left:auto; margin-right: 20px;'
-            @click='voteFor'
-            data-test='forLink'
-          ) For
-
-          i18n.button.is-danger(
-            tag='a'
-            @click='voteAgainst'
-            style='margin-right:auto; margin-right: 20px;'
-          ) Against
-    .column
+    i18n.button.is-outlined.is-small.is-danger(
+      tag='button'
+      @click='voteAgainst'
+      data-test='voteFor'
+    ) Vote no
+  .help.has-text-danger.c-error(v-if='errorMsg') {{ errorMsg }}
 </template>
 
 <script>
@@ -52,9 +36,12 @@ import { mapGetters } from 'vuex'
 
 export default {
   name: 'Vote',
+  props: {
+    proposalHash: String
+  },
   computed: {
     proposal () {
-      return this.currentGroupState.proposals[this.$route.query.proposalHash]
+      return this.currentGroupState.proposals[this.proposalHash]
     },
     meta () {
       return this.proposal.meta
@@ -65,8 +52,14 @@ export default {
     data () {
       return this.proposal.data.proposalData
     },
-    // TODO: either delete this or use it and delete 'contract' computed property
+    hadVoted () {
+      return false
+    },
+    ownProposal () {
+      return false
+    },
     ...mapGetters([
+      'currentGroupId'
       'currentGroupState',
       'groupSettings'
     ])
@@ -75,12 +68,12 @@ export default {
     async voteFor () {
       this.errorMsg = null
       try {
-        const proposalHash = this.$route.query.proposalHash
+        const proposalHash = this.proposalHash
         var payload
         if (oneVoteToPass(proposalHash)) {
           // pass in the data for 'gi.contracts/group/invite/process'
           payload = {
-            passPayload: generateInvites(this.data.members.length)
+            passPayload: generateInvites(1)
           }
         }
         const vote = await sbp('gi.contracts/group/proposalVote/create',
@@ -89,7 +82,7 @@ export default {
             vote: VOTE_FOR,
             ...(payload || {})
           },
-          this.$route.query.groupId
+          this.currentGroupId
         )
         await sbp('backend/publishLogEntry', vote)
 
@@ -99,7 +92,7 @@ export default {
           //       here for debug and testing purposes until
           //       we get the links page working nicely.
           //       this.data.members will not contain usernames in the future.
-          for (const username of this.data.members) {
+          for (const username of this.data.member) {
             const contractID = await sbp('namespace/lookup', username)
             const identityContract = await sbp('state/latestContractState', contractID)
             console.debug('sending invite to:', contractID, identityContract)
@@ -120,10 +113,9 @@ export default {
             await sbp('backend/publishLogEntry', inviteToMailbox)
           }
         }
-        this.$router.push({ path: '/' })
       } catch (ex) {
         console.log(ex)
-        this.errorMsg = L('Failed to Cast Vote')
+        this.errorMsg = L('Failed to Cast Vote. Try again.')
       }
     },
     async voteAgainst () {
@@ -131,16 +123,15 @@ export default {
       try {
         const vote = await sbp('gi.contracts/group/proposalVote/create',
           {
-            proposalHash: this.$route.query.proposalHash,
+            proposalHash: this.proposalHash,
             vote: VOTE_AGAINST
           },
-          this.$route.query.groupId
+          this.currentGroupId
         )
         await sbp('backend/publishLogEntry', vote)
-        this.$router.push({ path: '/' })
       } catch (ex) {
         console.log(ex)
-        this.errorMsg = L('Failed to Cast Vote')
+        this.errorMsg = L('Failed to Cast Vote. Try again.')
       }
     }
   },
@@ -151,3 +142,15 @@ export default {
   }
 }
 </script>
+<style lang="scss" scoped>
+@import "../../../assets/style/_variables.scss";
+
+.buttons {
+  margin-top: 0;
+}
+
+.c-error {
+  margin-top: $spacer-xs;
+  text-align: right;
+}
+</style>
