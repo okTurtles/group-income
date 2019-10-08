@@ -18,11 +18,16 @@ export const STATUS_PASSED = 'passed'
 export const STATUS_FAILED = 'failed'
 export const STATUS_EXPIRED = 'expired'
 export const STATUS_WITHDRAWN = 'withdrawn'
+export const STATUS_CANCELLED = 'cancelled'
 
 export function archiveProposal (state, proposalHash) {
   // TODO: handle this better (archive the proposal or whatever)
   console.warn('archiveProposal is not fully implemented yet...')
   // Vue.delete(state.proposals, proposalHash)
+}
+
+export function buildInvitationUrl (groupId, inviteSecret) {
+  return `${process.env.FRONTEND_URL}/app/join?groupId=${groupId}&secret=${inviteSecret}`
 }
 
 export const proposalSettingsType = objectOf({

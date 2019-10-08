@@ -1,6 +1,6 @@
 <template lang='pug'>
-.c-proposals
-  .c-empty(v-if='Object.keys(currentGroupState.proposals).length === 0')
+ul.c-proposals
+  li.c-empty(v-if='Object.keys(currentGroupState.proposals).length === 0')
     svg-vote.c-svg
     div
       i18n(tag='h3') Proposals
@@ -8,6 +8,7 @@
       i18n.has-text-1(tag='p') No one has created a proposal yet.
       // TODO: no current proposals
   // TODO: button "see all proposals"
+  // TOD2: - sort proposals by date.
   proposal-box(
     v-else
     v-for='(proposal, hash) in currentGroupState.proposals'

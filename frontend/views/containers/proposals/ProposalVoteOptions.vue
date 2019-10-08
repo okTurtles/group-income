@@ -1,16 +1,6 @@
 <template lang='pug'>
 .c-ctas
-  .c-cancel(v-if='hadVoted')
-    i18n.button.is-danger(
-      v-if='ownProposal'
-      tag='button'
-      @click='voteAgainst'
-      data-test='voteFor'
-    ) Cancel Proposal
-    p(v-else) You voted {{voteStatus}}.
-      a.link Change vote.
-    p.help.is-danger(v-if='errorMsg') {{ errorMsg }}
-  .buttons(v-else)
+  .buttons(v-if='!hadVoted || ephemeral.changingVote')
     i18n.button.is-outlined.is-small.is-success(
       tag='button'
       @click='voteFor'
@@ -22,7 +12,16 @@
       @click='voteAgainst'
       data-test='voteFor'
     ) Vote no
-  .help.has-text-danger.c-error(v-if='errorMsg') {{ errorMsg }}
+
+  .c-cancel(v-else)
+    i18n.button.is-outlined.is-small(
+      tag='button'
+      v-if='ownProposal'
+      @click='cancelProposal'
+    ) Cancel Proposal
+    p.has-text-1(v-else) You voted {{voteStatus}}.&nbsp;
+      a.link(@click='startChangingVote') Change vote.
+  .help.has-text-danger.c-error(v-if='ephemeral.errorMsg') {{ ephemeral.errorMsg }}
 </template>
 
 <script>
@@ -30,7 +29,7 @@ import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
 import { VOTE_FOR, VOTE_AGAINST } from '@model/contracts/voting/rules.js'
 import { TYPE_MESSAGE } from '@model/contracts/mailbox.js'
-import { oneVoteToPass } from '@model/contracts/voting/proposals.js'
+import { oneVoteToPass, buildInvitationUrl } from '@model/contracts/voting/proposals.js'
 import { generateInvites } from '@model/contracts/group.js'
 import { mapGetters } from 'vuex'
 
@@ -39,9 +38,33 @@ export default {
   props: {
     proposalHash: String
   },
+  data () {
+    return {
+      ephemeral: {
+        changingVote: false
+      },
+      errorMsg: null
+    }
+  },
   computed: {
+    ...mapGetters([
+      'currentGroupId',
+      'currentGroupState',
+      'groupSettings',
+      'currentUserIdentityContract'
+    ]),
     proposal () {
       return this.currentGroupState.proposals[this.proposalHash]
+    },
+    currentUsername () {
+      return this.currentUserIdentityContract.attributes.name
+    },
+    voteStatus () {
+      const humanStatus = {
+        [VOTE_FOR]: 'yes',
+        [VOTE_AGAINST]: 'no'
+      }
+      return humanStatus[this.proposal.votes[this.currentUsername]]
     },
     meta () {
       return this.proposal.meta
@@ -53,20 +76,23 @@ export default {
       return this.proposal.data.proposalData
     },
     hadVoted () {
-      return false
+      return this.proposal.votes[this.currentUsername]
     },
     ownProposal () {
-      return false
-    },
-    ...mapGetters([
-      'currentGroupId'
-      'currentGroupState',
-      'groupSettings'
-    ])
+      return this.currentUsername === this.proposal.meta.username
+    }
   },
   methods: {
+    startChangingVote () {
+      this.ephemeral.changingVote = true
+    },
     async voteFor () {
-      this.errorMsg = null
+      this.ephemeral.changingVote = false
+      this.ephemeral.errorMsg = null
+      // Avoid redundant vote from "Change vote" because already voted FOR before
+      if (this.proposal.votes[this.currentUsername] === VOTE_FOR) {
+        return null
+      }
       try {
         const proposalHash = this.proposalHash
         var payload
@@ -88,38 +114,43 @@ export default {
 
         if (payload) {
           const groupName = this.groupSettings.groupName
+          const username = this.data.member
           // TODO: delete this entire section, this is just
           //       here for debug and testing purposes until
           //       we get the links page working nicely.
           //       this.data.members will not contain usernames in the future.
-          for (const username of this.data.member) {
-            const contractID = await sbp('namespace/lookup', username)
-            const identityContract = await sbp('state/latestContractState', contractID)
-            console.debug('sending invite to:', contractID, identityContract)
-            const inviteToMailbox = await sbp('gi.contracts/mailbox/postMessage/create',
-              {
-                messageType: TYPE_MESSAGE,
-                from: groupName,
-                subject: `You've been invited to join ${groupName}!`,
-                message: `Hi ${username},
-                
-                ${groupName} has voted to invite you! Horray!
-                Here's your special invite link:
-
-                ${process.env.FRONTEND_URL}/app/join?groupId=${this.$store.state.currentGroupId}&secret=${payload.passPayload.inviteSecret}`
-              },
-              identityContract.attributes.mailbox
-            )
-            await sbp('backend/publishLogEntry', inviteToMailbox)
-          }
+          console.log('username', username)
+          const contractID = await sbp('namespace/lookup', username)
+          const identityContract = await sbp('state/latestContractState', contractID)
+          console.debug('sending invite to:', contractID, identityContract)
+          const inviteToMailbox = await sbp('gi.contracts/mailbox/postMessage/create',
+            {
+              messageType: TYPE_MESSAGE,
+              from: groupName,
+              subject: `You've been invited to join ${groupName}!`,
+              message: `Hi ${username},
+              
+              ${groupName} has voted to invite you! Horray!
+              Here's your special invite link:
+              
+              ${buildInvitationUrl(this.$store.state.currentGroupId, payload.passPayload.inviteSecret)}`
+            },
+            identityContract.attributes.mailbox
+          )
+          await sbp('backend/publishLogEntry', inviteToMailbox)
         }
       } catch (ex) {
         console.log(ex)
-        this.errorMsg = L('Failed to Cast Vote. Try again.')
+        this.ephemeral.errorMsg = L('Failed to Cast Vote. Try again.')
       }
     },
     async voteAgainst () {
-      this.errorMsg = null
+      this.ephemeral.changingVote = false
+      this.ephemeral.errorMsg = null
+      // Avoid redundant vote from "Change vote" because already voted AGAINST before
+      if (this.proposal.votes[this.currentUsername] === VOTE_AGAINST) {
+        return null
+      }
       try {
         const vote = await sbp('gi.contracts/group/proposalVote/create',
           {
@@ -131,13 +162,27 @@ export default {
         await sbp('backend/publishLogEntry', vote)
       } catch (ex) {
         console.log(ex)
-        this.errorMsg = L('Failed to Cast Vote. Try again.')
+        this.ephemeral.errorMsg = L('Failed to Cast Vote. Try again.')
       }
-    }
-  },
-  data () {
-    return {
-      errorMsg: null
+    },
+    async cancelProposal () {
+      var isSure = confirm(this.L('Are you sure you want to cancel this proposal?'))
+      if (!isSure) {
+        return null
+      }
+      try {
+        const proposalHash = this.proposalHash
+        const vote = await sbp('gi.contracts/group/proposalCancel/create',
+          {
+            proposalHash
+          },
+          this.currentGroupId
+        )
+        await sbp('backend/publishLogEntry', vote)
+      } catch (ex) {
+        console.log(ex)
+        this.ephemeral.errorMsg = L('Failed to Cancel Proposal. Try again.')
+      }
     }
   }
 }

@@ -1,5 +1,5 @@
 describe('Group Creation and Inviting Members', () => {
-  const userId = '61'
+  const userId = '62'
 
   const groupName = 'Dreamers'
 

@@ -7,7 +7,7 @@ import { objectOf, optional, string, number, object, unionOf, literalOf } from '
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income-simple/issues/603
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST } from './voting/rules.js'
-import proposals, { proposalType, proposalSettingsType, archiveProposal, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_WITHDRAWN } from './voting/proposals.js'
+import proposals, { proposalType, proposalSettingsType, archiveProposal, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_WITHDRAWN, STATUS_CANCELLED } from './voting/proposals.js'
 import * as Errors from '../errors.js'
 
 // for gi.contracts/group/payment ... TODO: put these in some other file?
@@ -120,6 +120,7 @@ DefineContract({
         expires_date_ms: number // calculate by grabbing proposal expiry from group properties and add to `meta.createdDate`
       }),
       process (state, { data, meta, hash }) {
+        // BUG: avoid proposing same member twice
         Vue.set(state.proposals, hash, {
           data,
           meta,
@@ -159,6 +160,21 @@ DefineContract({
           // handles proposal pass or fail, will update proposal.status accordingly
           proposals[proposal.data.proposalType][result](state, data)
         }
+      }
+    },
+    'gi.contracts/group/proposalCancel': {
+      validate: objectOf({
+        proposalHash: string
+      }),
+      process (state, { data, meta }) {
+        const proposal = state.proposals[data.proposalHash]
+        if (!proposal) {
+          // https://github.com/okTurtles/group-income-simple/issues/602
+          console.error(`proposalVote: no proposal for ${data.proposalHash}!`, data)
+          throw new Errors.GIErrorIgnoreAndBanIfGroup('proposalVote without existing proposal')
+        }
+        // NOTE: should we clean the existing votes too?
+        Vue.set(proposal, 'status', STATUS_CANCELLED)
       }
     },
     // NOTE: there is no way to withdraw a vote on a proposal. User can however change their vote, including changing it to be indifferent.

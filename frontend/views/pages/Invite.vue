@@ -8,7 +8,7 @@ page(pageTestName='invite' pageTestHeaderName='invite')
       data-test='notifyInvitedSuccess'
     )
       i.icon-check
-      i18n(v-if='groupShouldPropose') Members proposed successfully!
+      i18n(v-if='isProposal') Members proposed successfully!
       i18n(v-else='') Members invited successfully!
 
     group-invitees(
@@ -24,7 +24,7 @@ page(pageTestName='invite' pageTestHeaderName='invite')
         v-if='!form.success'
         @click='submit' data-test='submit'
       )
-        i18n(v-if='groupShouldPropose') Propose Invites
+        i18n(v-if='isProposal') Propose Invites
         i18n(v-else='') Send Invites
 </template>
 <script>
@@ -32,7 +32,7 @@ page(pageTestName='invite' pageTestHeaderName='invite')
 //       https://github.com/okTurtles/group-income-simple/issues/609
 
 import sbp from '~/shared/sbp.js'
-import { PROPOSAL_INVITE_MEMBER } from '@model/contracts/voting/proposals.js'
+import { PROPOSAL_INVITE_MEMBER, buildInvitationUrl } from '@model/contracts/voting/proposals.js'
 import { generateInvites } from '@model/contracts/group.js'
 import { TYPE_MESSAGE } from '@model/contracts/mailbox.js'
 import L from '@view-utils/translations.js'
@@ -56,14 +56,16 @@ export default {
     }
   },
   computed: {
+    isProposal () {
+      return this.groupMembersCount >= 3
+    },
     ...mapState([
       'currentGroupId',
       'loggedIn'
     ]),
     ...mapGetters([
       'groupSettings',
-      'groupMembersCount',
-      'groupShouldPropose'
+      'groupMembersCount'
     ])
   },
   methods: {
@@ -81,13 +83,13 @@ export default {
           const mailbox = member.state.attributes.mailbox
           const memberName = member.state.attributes.name
 
-          if (this.groupShouldPropose) {
+          if (this.isProposal) {
             const proposal = await sbp('gi.contracts/group/proposal/create',
               {
                 proposalType: PROPOSAL_INVITE_MEMBER,
                 proposalData: {
                   member: memberName,
-                  reason: L("Because they're great") // TODO: this?
+                  reason: 'Because they are great, but this is a placeholder reason. We need to implement the real reason' // TODO: this?
                 },
                 votingRule: this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].rule,
                 expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].expires_ms
@@ -106,7 +108,7 @@ export default {
 
                 Here's your special invite link:
 
-                ${process.env.FRONTEND_URL}/app/join?groupId=${this.$store.state.currentGroupId}&secret=${invite.inviteSecret}`
+                ${buildInvitationUrl(this.$store.state.currentGroupId, invite.inviteSecret)}`
               },
               mailbox
             )
