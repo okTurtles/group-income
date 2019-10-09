@@ -19,6 +19,7 @@ import { STATUS_OPEN, PROPOSAL_REMOVE_MEMBER } from './contracts/voting/proposal
 import { VOTE_FOR } from '@model/contracts/voting/rules.js'
 import { WE_JUST_JOINED } from '@model/constants.js'
 import { actionWhitelisted, CONTRACT_REGEX } from '@model/contracts/Contract.js'
+import { createDateUTC } from '~shared/dateSync.js'
 import './contracts/group.js'
 import './contracts/mailbox.js'
 import './contracts/identity.js'
@@ -522,7 +523,7 @@ const handleEvent = {
                 reason: L("Automated ban because they're sending malformed messages resulting in: {error}", { error: error.message })
               },
               votingRule: store.getters.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].rule,
-              expires_date_ms: Date.now() + store.getters.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].expires_ms
+              expires_date_ms: createDateUTC().getTime() + store.getters.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].expires_ms
             },
             groupID
           )

@@ -1,5 +1,5 @@
 <template lang='pug'>
-ul.c-proposals
+ul.c-proposals(data-test="proposalsWidget")
   li.c-empty(v-if='Object.keys(currentGroupState.proposals).length === 0')
     svg-vote.c-svg
     div
@@ -13,6 +13,7 @@ ul.c-proposals
     v-else
     v-for='(proposal, hash) in proposals'
     :key='hash'
+    :displayDate='false'
     :proposalHash='hash'
   )
 </template>

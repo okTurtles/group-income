@@ -3,24 +3,25 @@ li.c-wrapper
   user-image.c-avatar(:username='proposal.meta.username')
   .c-header
     h4.has-text-bold {{title}}:
-    span {{humanDate}}
+    span(v-if='displayDate') {{humanDate}}
   .c-main
     p.has-text-1 "{{proposal.data.proposalData.reason}}"
     // TODO - loop for grouped proposals
     template
-      .c-proposal
+      .c-proposal(data-test='proposal')
         i(:class='proposalIconClass')
         .c-proposal-main
           p.has-text-bold {{typeDescription}}
           p.has-text-1(
             :class='{ "has-text-danger": proposal.status === statuses.STATUS_FAILED, "has-text-success": proposal.status === statuses.STATUS_PASSED }'
+            data-test="statusDescription"
             ) {{statusDescription}}
         .ctas
           proposal-vote-options(
             v-if='proposal.status === statuses.STATUS_OPEN'
             :proposalHash='proposalHash'
           )
-      p.c-sendLink(v-if='invitationLink')
+      p.c-sendLink(v-if='invitationLink' data-test="sendLink")
         i18n(
           :args='{ user: proposal.data.proposalData.member}'
         ) Please send the following link to {user} so they can join the group:
@@ -46,12 +47,14 @@ import {
 } from '@model/contracts/voting/proposals.js'
 import UserImage from '@containers/UserImage.vue'
 import ProposalVoteOptions from '@containers/proposals/ProposalVoteOptions.vue'
+import { convertDateToLocale } from '~shared/dateSync.js'
 
 export default {
   // TODO rename containers/proposals/ProposalVote
   name: 'ProposalBox',
   props: {
-    proposalHash: String
+    proposalHash: String,
+    displayDate: Boolean
   },
   components: {
     ProposalVoteOptions,
@@ -88,9 +91,9 @@ export default {
         : this.L('{who} is proposing', { who })
     },
     humanDate () {
-      const date = new Date(this.proposal.meta.createdDate)
+      const date = convertDateToLocale(this.proposal.meta.createdDate)
 
-      // TODO: Get correct day formate based on locales
+      // TODO: Display date format based on locale
       return date.toLocaleDateString('en-EN', {
         year: 'numeric', month: 'long', day: 'numeric'
       })

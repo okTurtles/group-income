@@ -39,6 +39,7 @@ import L from '@view-utils/translations.js'
 import Page from './Page.vue'
 import { GroupInvitees } from '@components/CreateGroupSteps/index.js'
 import { mapState, mapGetters } from 'vuex'
+import { createDateUTC } from '~shared/dateSync.js'
 
 export default {
   name: 'Invite',
@@ -92,7 +93,7 @@ export default {
                   reason: 'Because they are great, but this is a placeholder reason. We need to implement the real reason' // TODO: this?
                 },
                 votingRule: this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].rule,
-                expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].expires_ms
+                expires_date_ms: createDateUTC().getTime() + this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].expires_ms
               },
               groupId
             )

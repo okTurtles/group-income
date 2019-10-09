@@ -9,6 +9,7 @@ import { objectOf, optional, string, number, object, unionOf, literalOf } from '
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST } from './voting/rules.js'
 import proposals, { proposalType, proposalSettingsType, archiveProposal, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_WITHDRAWN, STATUS_CANCELLED } from './voting/proposals.js'
 import * as Errors from '../errors.js'
+import { createDateUTC } from '~shared/dateSync.js'
 
 // for gi.contracts/group/payment ... TODO: put these in some other file?
 export const PAYMENT_PENDING = 'pending'
@@ -149,7 +150,7 @@ DefineContract({
         Vue.set(proposal.votes, meta.username, data.vote)
         // TODO: handle vote pass/fail
         // check if proposal is expired, if so, ignore (but log vote)
-        if (Date.now() > proposal.data.expires_date_ms) {
+        if (createDateUTC().getTime() > proposal.data.expires_date_ms) {
           console.warn('proposalVote: vote on expired proposal!', { proposal, data, meta })
           // TODO: display warning or something
           return
