@@ -4,7 +4,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
 
   start-inviting(v-if='groupMembersCount === 1')
 
-  page-section(:title='currentGroupState.proposals ? L("Proposals") : ""')
+  page-section(:title='Object.keys(currentGroupState.proposals).length > 0 ? L("Proposals") : ""')
     proposals
 
   page-section(title='This months overview')

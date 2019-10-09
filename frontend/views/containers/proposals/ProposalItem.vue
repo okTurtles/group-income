@@ -40,7 +40,6 @@ import {
 import ProposalVoteOptions from '@containers/proposals/ProposalVoteOptions.vue'
 
 export default {
-  // TODO rename containers/proposals/ProposalVote
   name: 'ProposalItem',
   props: {
     proposalHash: String
@@ -58,7 +57,6 @@ export default {
       return { STATUS_OPEN, STATUS_PASSED, STATUS_FAILED, STATUS_EXPIRED, STATUS_WITHDRAWN, STATUS_CANCELLED }
     },
     proposal () {
-      console.log('hum', this.proposalHash)
       return this.currentGroupState.proposals[this.proposalHash]
     },
     proposalType () {
@@ -170,8 +168,12 @@ $spaceVertical: $spacer-sm*3;
 .c-sendLink {
   border-radius: 0.25rem;
   background-color: $general_2;
-  padding: $spacer;
+  padding: $spacer-sm;
   margin-top: $spacer;
+
+  @include tablet {
+    padding: $spacer;
+  }
 
   .link {
     word-break: break-all;

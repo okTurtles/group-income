@@ -345,7 +345,7 @@ module.exports = (grunt) => {
         // scss({ output: `${distCSS}/scss.css` }), // FAIL - produces empty bundle, probably only
         //                                              useful in the <script> section, i.e.
         //                                              <script>import 'foo.scss' ...
-        eslint({ throwOnError: true, throwOnWarning: true, fix: true }),
+        eslint({ throwOnError: true, throwOnWarning: true }),
         svgLoader(),
         VuePlugin({
           // https://rollup-plugin-vue.vuejs.org/options.html

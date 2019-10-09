@@ -1,4 +1,4 @@
-const userId = 'v1'
+const userId = Math.floor(Math.random() * 10000)
 const groupName = 'Dreamers'
 
 function assertGroupMembersCount (count) {
@@ -29,7 +29,7 @@ describe('Group proposals - Add members', () => {
     }
   })
 
-  it('user1 logins back and creates new Group', () => {
+  it('user1 logins back and creates a group', () => {
     cy.giLogin(`user1-${userId}`)
 
     cy.giCreateGroup(groupName, {
@@ -119,6 +119,7 @@ describe('Group proposals - Add members', () => {
           assertProposalOpenState({
             description: '1 out of 3 members voted.'
           })
+
           cy.getByDT('voteFor').click()
           cy.getByDT('statusDescription')
             .should('contain', '2 out of 3 members voted.')
@@ -137,6 +138,7 @@ describe('Group proposals - Add members', () => {
         cy.getByDT('voted').find('a.link')
           .should('contain', 'Change vote.')
           .click()
+
         cy.getByDT('voteFor').should('exist')
         cy.getByDT('voteAgainst').click()
 
@@ -150,7 +152,7 @@ describe('Group proposals - Add members', () => {
   })
 
   it('user2 logins and votes "yes" to add user5. Proposal is accepted and invitation is created.', () => {
-    // cy.giLogin(`user2-${userId}`)
+    cy.giLogin(`user2-${userId}`)
 
     getProposalBoxes().eq(1).within(() => {
       cy.getByDT('title', 'h4').as('title')
@@ -185,6 +187,7 @@ describe('Group proposals - Add members', () => {
       cy.getByDT('proposalItem').eq(0).within(() => {
         cy.getByDT('statusDescription')
           .should('contain', '2 out of 3 members voted.')
+
         cy.getByDT('cancelProposal').click()
         cy.getByDT('statusDescription')
           .should('contain', 'Proposal cancelled.')
@@ -196,7 +199,7 @@ describe('Group proposals - Add members', () => {
   })
 
   it('user1 logins and sees all 3 proposals with the correct states', () => {
-    // cy.giLogin(`user1-${userId}`)
+    cy.giLogin(`user1-${userId}`)
 
     // A quick checkup that each proposal state is correct.
     // OPTIMIZE: Maybe we should adopt Visual Testing in these cases

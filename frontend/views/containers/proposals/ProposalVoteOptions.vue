@@ -120,7 +120,6 @@ export default {
           //       here for debug and testing purposes until
           //       we get the links page working nicely.
           //       this.data.members will not contain usernames in the future.
-          console.log('username', username)
           const contractID = await sbp('namespace/lookup', username)
           const identityContract = await sbp('state/latestContractState', contractID)
           console.debug('sending invite to:', contractID, identityContract)

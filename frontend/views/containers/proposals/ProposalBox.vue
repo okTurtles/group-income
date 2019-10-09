@@ -22,7 +22,6 @@ import { convertDateToLocale } from '~shared/dateSync.js'
 import { STATUS_OPEN } from '@model/contracts/voting/proposals.js'
 
 export default {
-  // TODO rename containers/proposals/ProposalVote
   name: 'ProposalBox',
   props: {
     proposalHashes: Array, // [hash1, hash2, ...]
@@ -111,8 +110,11 @@ $spaceVertical: $spacer-sm*3;
 
 .c-main {
   grid-area: main;
-  margin-top: $spacer-xs;
   word-break: break-word;
+
+  @include phone {
+    margin-top: $spacer-xs;
+  }
 }
 
 .c-avatar {
