@@ -20,7 +20,7 @@
       @click='cancelProposal'
       data-test='cancelProposal'
     ) Cancel Proposal
-    p.has-text-1(v-else data-test="voted") You voted {{voteStatus}}.&nbsp;
+    p.has-text-1(v-else data-test='voted') You voted {{voteStatus}}.&nbsp;
       a.link(@click='startChangingVote') Change vote.
   .help.has-text-danger.c-error(v-if='ephemeral.errorMsg') {{ ephemeral.errorMsg }}
 </template>

@@ -69,14 +69,14 @@ DefineContract({
   },
   metadata: {
     validate: objectOf({
-      createdDate: string,
+      createdDate: number,
       username: string,
       identityContractID: string
     }),
     create () {
       const { username, identityContractID } = sbp('state/vuex/state').loggedIn
       return {
-        createdDate: new Date().toISOString(),
+        createdDate: createDateUTC().getTime(),
         username,
         identityContractID
       }

@@ -79,6 +79,9 @@ export default {
         this.form.errorMsg = null
         const groupId = this.currentGroupId
         const groupName = this.groupSettings.groupName
+        // NOTE: All invitees proposals expire at the exact same time. That's what
+        // we'll use to know they should be displayed visually together.
+        const expiresDateMs = createDateUTC().getTime() + this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].expires_ms
 
         for (const member of this.form.invitees) {
           const mailbox = member.state.attributes.mailbox
@@ -93,7 +96,7 @@ export default {
                   reason: 'Because they are great, but this is a placeholder reason. We need to implement the real reason' // TODO: this?
                 },
                 votingRule: this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].rule,
-                expires_date_ms: createDateUTC().getTime() + this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].expires_ms
+                expires_date_ms: expiresDateMs
               },
               groupId
             )
