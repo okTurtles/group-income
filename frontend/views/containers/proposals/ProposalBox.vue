@@ -37,20 +37,20 @@ export default {
       'currentUserIdentityContract'
     ]),
     proposal () {
-      // Pick the 1st hash as guidance/pivot to this group of proposals.
-      const pivot = this.proposalHashes[0]
-      return this.currentGroupState.proposals[pivot]
+      // Pick the 1st hash as guidance/pivot for this group of proposals
+      return this.currentGroupState.proposals[this.proposalHashes[0]]
     },
     title () {
       const { identityContractID } = this.proposal.meta
       const username = this.$store.state[identityContractID].attributes.name
       const currentUsername = this.currentUserIdentityContract.attributes.name
-      const who = username === currentUsername ? 'You' : username
+      const who = username === currentUsername ? this.L('You') : username
       const isAnyOpen = this.proposalHashes.some(hash => this.currentGroupState.proposals[hash].status === STATUS_OPEN)
 
       if (!isAnyOpen) {
         return this.L('{who} proposed', { who })
       }
+
       return username === currentUsername
         ? this.L('You are proposing')
         : this.L('{who} is proposing', { who })
@@ -120,7 +120,7 @@ $spaceVertical: $spacer-sm*3;
 .c-avatar {
   margin-right: $spaceVertical;
   margin-bottom: $spacer-xs;
-  margin-top: $spacer-xs; // visually better aligned
+  margin-top: $spacer-xs;
   flex-shrink: 0
 }
 </style>

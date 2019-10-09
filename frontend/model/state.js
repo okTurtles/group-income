@@ -220,7 +220,7 @@ const getters = {
     return getters.groupMembersByUsername.length
   },
   groupShouldPropose (state, getters) {
-    return getters.groupMembersCount.length >= 3
+    return getters.groupMembersCount >= 3
   },
   colors (state) {
     return Colors[state.theme]

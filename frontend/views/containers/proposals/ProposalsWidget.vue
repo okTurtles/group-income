@@ -19,7 +19,7 @@ ul.c-proposals(data-test='proposalsWidget')
 
 <script>
 import SvgVote from '@svgs/vote.svg'
-import ProposalBox from '@containers/proposals/Proposalbox.vue'
+import ProposalBox from '@containers/proposals/ProposalBox.vue'
 import { mapGetters } from 'vuex'
 
 export default {
@@ -38,12 +38,9 @@ export default {
       const p = this.currentGroupState.proposals
       const sortByExpire = Object.keys(p).sort((prev, curr) => p[curr].data.expires_date_ms - p[prev].data.expires_date_ms)
 
-      // return sortByExpire
-
       // HACK/NOTE: Proposals to invite members created at the same time by
       // the same user, should be "visually together". A solution without
-      // modifying the store/state is to group those proposals hashes
-      // in the array of proposals.
+      // modifying the store/state is to group the "similiar" proposals in a sub-array.
       // Let's create an Array of Arrays of Strings (hashes).
       const proposalsGrouped = [] // [[hash1], [hash2], [hash3_g, hash4_g]]
 
@@ -59,7 +56,7 @@ export default {
         const createdBySameUser = current.meta.username === previous.meta.username
         if (expireSameTime && createdBySameUser) {
           // This proposal should be displayed "visually together" with
-          // the previous, so let's group them under the same index.
+          // the previous proposal, so let's group it under the same index.
           proposalsGrouped[proposalsGrouped.length - 1].push(hash)
           return
         }

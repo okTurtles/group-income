@@ -114,8 +114,8 @@ export default {
         [STATUS_CANCELLED]: 'has-background-general has-text-1'
       }
 
-      // The icon is the correct one, no matter the proposal type
       if ([STATUS_PASSED, STATUS_FAILED].includes(this.proposal.status)) {
+        // Show the status icon, no matter the proposal type
         return `${status[this.proposal.status]} c-icon`
       }
 
@@ -177,7 +177,7 @@ $spaceVertical: $spacer-sm*3;
 
   .link {
     word-break: break-all;
-    display: inline; // so the border goes through multiple lines
+    display: inline; // show the border through multiple lines
   }
 }
 </style>

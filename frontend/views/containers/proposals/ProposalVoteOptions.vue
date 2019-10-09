@@ -20,8 +20,10 @@
       @click='cancelProposal'
       data-test='cancelProposal'
     ) Cancel Proposal
-    p.has-text-1(v-else data-test='voted') You voted {{voteStatus}}.&nbsp;
-      a.link(@click='startChangingVote') Change vote.
+    p.has-text-1(v-else data-test='voted')
+      | {{ L('You voted {voteStatus}', { voteStatus }) }}.
+      | &nbsp;
+      i18n.link(tag='button' @click='startChangingVote') Change vote.
   .help.has-text-danger.c-error(v-if='ephemeral.errorMsg') {{ ephemeral.errorMsg }}
 </template>
 
@@ -90,24 +92,22 @@ export default {
     async voteFor () {
       this.ephemeral.changingVote = false
       this.ephemeral.errorMsg = null
-      // Avoid redundant vote from "Change vote" because already voted FOR before
-      if (this.proposal.votes[this.currentUsername] === VOTE_FOR) {
+      const isSure = confirm(this.L('Are you sure you want to vote yes?'))
+      // Avoid redundant vote from "Change vote" if already voted FOR before
+      if (!isSure || this.proposal.votes[this.currentUsername] === VOTE_FOR) {
         return null
       }
       try {
         const proposalHash = this.proposalHash
-        var payload
+        const payload = {}
         if (oneVoteToPass(proposalHash)) {
-          // pass in the data for 'gi.contracts/group/invite/process'
-          payload = {
-            passPayload: generateInvites(1)
-          }
+          payload.passPayload = generateInvites(1)
         }
         const vote = await sbp('gi.contracts/group/proposalVote/create',
           {
             proposalHash,
             vote: VOTE_FOR,
-            ...(payload || {})
+            ...payload
           },
           this.currentGroupId
         )
@@ -147,8 +147,9 @@ export default {
     async voteAgainst () {
       this.ephemeral.changingVote = false
       this.ephemeral.errorMsg = null
-      // Avoid redundant vote from "Change vote" because already voted AGAINST before
-      if (this.proposal.votes[this.currentUsername] === VOTE_AGAINST) {
+      const isSure = confirm(this.L('Are you sure you want to vote no?'))
+      // Avoid redundant vote from "Change vote" if already voted AGAINST before
+      if (!isSure || this.proposal.votes[this.currentUsername] === VOTE_AGAINST) {
         return null
       }
       try {
@@ -166,7 +167,7 @@ export default {
       }
     },
     async cancelProposal () {
-      var isSure = confirm(this.L('Are you sure you want to cancel this proposal?'))
+      const isSure = confirm(this.L('Are you sure you want to cancel this proposal?'))
       if (!isSure) {
         return null
       }

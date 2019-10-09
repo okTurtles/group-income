@@ -121,7 +121,8 @@ DefineContract({
         expires_date_ms: number // calculate by grabbing proposal expiry from group properties and add to `meta.createdDate`
       }),
       process (state, { data, meta, hash }) {
-        // BUG: avoid proposing same member twice
+        // TODO/BUG: Avoid proposing same member twice.
+        // Should it be done here or on component before calling sbp?
         Vue.set(state.proposals, hash, {
           data,
           meta,

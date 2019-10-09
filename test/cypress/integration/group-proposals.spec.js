@@ -1,11 +1,6 @@
 const userId = Math.floor(Math.random() * 10000)
 const groupName = 'Dreamers'
 
-function assertGroupMembersCount (count) {
-  // OPTIMIZE: We could also verify the username of each member...
-  cy.getByDT('groupMembers').find('ul > li').should('have.length', count)
-}
-
 function assertProposalOpenState ({ description }) {
   cy.getByDT('statusDescription')
     .should('contain', description)
@@ -17,7 +12,7 @@ function getProposalBoxes () {
   return cy.getByDT('proposalsWidget', 'ul').children()
 }
 
-describe('Group proposals - Add members', () => {
+describe('Proposals - Add members', () => {
   it('successfully loads the homepage', function () {
     cy.visit('/')
   })
@@ -57,15 +52,13 @@ describe('Group proposals - Add members', () => {
     cy.giLogOut()
   })
 
-  it('user2 and user 3 accepts their invites', () => {
+  it('user2 and user3 accept their invites', () => {
     cy.giLogin(`user2-${userId}`)
     cy.giAcceptGroupInvite(groupName)
-    assertGroupMembersCount(2)
     cy.giLogOut()
 
     cy.giLogin(`user3-${userId}`)
     cy.giAcceptGroupInvite(groupName)
-    assertGroupMembersCount(3)
     cy.giLogOut()
   })
 
@@ -135,14 +128,13 @@ describe('Group proposals - Add members', () => {
       cy.getByDT('proposalItem').eq(0).within(() => {
         cy.getByDT('typeDescription')
           .should('contain', `Add user4-${userId} to group.`)
-        cy.getByDT('voted').find('a.link')
+        cy.getByDT('voted').find('button.link')
           .should('contain', 'Change vote.')
           .click()
 
         cy.getByDT('voteFor').should('exist')
         cy.getByDT('voteAgainst').click()
 
-        // The proposal was refused and that's it.
         cy.getByDT('statusDescription')
           .should('contain', 'Proposal refused.')
       })
@@ -161,7 +153,7 @@ describe('Group proposals - Add members', () => {
         assertProposalOpenState({
           description: '2 out of 3 members voted.'
         })
-        // Vote yes...
+
         cy.getByDT('voteFor').click()
         //  Proposal gets accepted and invitation is created!
         cy.getByDT('statusDescription')
@@ -224,5 +216,7 @@ describe('Group proposals - Add members', () => {
         cy.getByDT('sendLink').should('exist')
       })
     })
+
+    cy.giLogOut()
   })
 })

@@ -78,7 +78,7 @@ export default {
         const groupId = this.currentGroupId
         const groupName = this.groupSettings.groupName
         // NOTE: All invitees proposals will expire at the exact same time.
-        // That + the proposal's creator is what we'll use to know
+        // That plus the proposal creator is what we'll use to know
         // which proposals should be displayed visually together.
         const expiresDateMs = createDateUTC().getTime() + this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].expires_ms
 
