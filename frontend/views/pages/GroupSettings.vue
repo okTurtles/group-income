@@ -68,26 +68,43 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
         | Active links
         i.icon-angle-down
 
-    table.table
+    table.table.c-table
       thead
-        th created for
-        th invite link
-        th state
-        th
-      tr(
-        v-for='(item, index) in ephemeral.dummyInviteList'
-        :key='index'
-      )
-        td.name {{ item.name }}
-        td.link
-          span.link-url.has-ellipsis {{ item.inviteLink }}
-          i.icon-copy
-        td.state
-          span.state-description {{ item.state.description }}
-          span.state-expire {{ item.state.expireInfo }}
-        td.action
-          button.is-icon
-            i.icon-ellipsis-v
+        tr
+          i18n.name(tag='th') created for
+          i18n.invite-link(tag='th') invite link
+          i18n.state(tag='th') state
+          th.action
+      tbody
+        tr(
+          v-for='(item, index) in ephemeral.dummyInviteList'
+          :key='index'
+        )
+          td.name
+            | {{ item.name }}
+            button.is-icon-small(v-if='item.name === "Anyone"')
+              i.icon-info-circle
+          td.invite-link
+            div
+              span.link-url.has-ellipsis {{ item.inviteLink }}
+              button.is-icon-small.has-background
+                i.icon-copy.is-regular
+          td.state
+            div
+              i18n.state-description {{ item.state.description }}
+              i18n.state-expire(
+                :class='item.state.expireInfo === "Expired"? "expired" : ""'
+              ) {{ item.state.expireInfo }}
+          td.action
+            div
+              button.is-icon
+                i.icon-ellipsis-v
+
+    // TODO: figuring out using either i18n or L() for the tag below
+    p.c-invite-footer
+      | To generate a new link, you need to&nbsp;
+      span.link propose adding a new member
+      |  to your group.
 
   page-section(:title='L("Leave Group")')
     i18n(tag='p' html='This means you will stop having access to the <b>group chat</b> (including direct messages to other group members) and <b>contributions</b>. Re-joining the group is possible, but requires other members to vote and reach an agreement.')
@@ -206,6 +223,64 @@ export default {
 .c-invite-description {
   display: flex;
   justify-content: space-between;
-  margin-top: $spacer-sm;
+  margin-top: $spacer-sm 0;
+}
+
+.c-table {
+  width: 100%;
+  table-layout: fixed;
+  margin: $size-2 0;
+
+  .name {
+    width: 147px;
+    padding-right: $size-2;
+
+    button {
+      display: inline-block;
+      color: $primary_0;
+    }
+  }
+  .invite-link {
+    width: 197px;
+    padding-right: $size-2;
+
+    > div {
+      display: flex;
+      align-items: center;
+    }
+
+    button {
+      padding: 0 $spacer / 3;
+      width: 1.6875rem;
+      height: 1.6875rem;
+      font-weight: normal;
+    }
+  }
+  .state {
+    width: 123px;
+    padding-right: 3px;
+
+    > div {
+      display: flex;
+      flex-direction: column;
+
+      .state-expire {
+        line-height: $size-3;
+        font-size: $size-5;
+        color: $text-1;
+
+        &.expired {
+          color: $danger_0;
+        }
+      }
+    }
+  }
+  .action {
+    width: 60px;
+
+    button {
+      margin: 0 auto;
+    }
+  }
 }
 </style>

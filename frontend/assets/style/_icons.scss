@@ -82,6 +82,10 @@ $icons: (
     -moz-osx-font-smoothing: grayscale;
     -webkit-font-smoothing: antialiased;
   }
+
+  &.is-regular::before {
+    font-weight: 400;
+  }
 }
 
 @each $name, $icon in $icons {

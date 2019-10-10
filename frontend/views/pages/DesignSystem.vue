@@ -703,19 +703,21 @@ page(
 
       table.table
         thead
-          th column title
-          th column title
-          th column title
-          th
-        tr(
-          v-for='n in 4'
-          :key='n'
-        )
-          td item
-          td.has-ellipsis https://www.groupincome.org/app/join?groupId=21XWnNTYwDWqV3LwV6ow1V6cBWRNNJSw7KEgUd97kNB3hDcSRR&secret=3355
-          td item
-          td
-            i.icon-ellipsis-v
+          tr
+            th  column 1
+            th  column 2
+            th  column 3
+            th
+        tbody
+          tr(
+            v-for='n in 4'
+            :key='n'
+          )
+            td item
+            td item
+            td item
+            td
+              i.icon-ellipsis-v
 
   article#stepper
     section.card
@@ -1031,7 +1033,7 @@ section.card {
   margin-bottom: $spacer-lg;
 }
 
-table {
+table:not(.table) {
   width: 100%;
   th,
   td {

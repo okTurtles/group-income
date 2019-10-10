@@ -1,6 +1,33 @@
 table.table {
   position: relative;
-  table-layout: fixed;
-  max-width: 100%;
-  border: 1px dashed rgba(180, 20, 25, 0.25);
+  table-layout: auto;
+  width: 100%;
+
+  tr {
+    border-bottom: 1px solid $general_0;
+  }
+
+  tbody > tr:last-child {
+    border-bottom: none;
+  }
+
+  th {
+    text-transform: uppercase;
+    font-family: "Poppins";
+    font-size: $size-5;
+    color: $text-1;
+    padding: $spacer-sm 0;
+  }
+
+  td {
+    padding: 0.6875rem 0;
+    font-size: $size-4;
+    color: $text_0;
+  }
+
+  th,
+  td {
+    vertical-align: middle;
+    overflow: hidden;
+  }
 }
