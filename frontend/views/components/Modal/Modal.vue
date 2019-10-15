@@ -19,7 +19,10 @@ export default {
   },
   created () {
     sbp('okTurtles.events/on', OPEN_MODAL, component => this.openModal(component))
-    sbp('okTurtles.events/on', CLOSE_MODAL, component => this.unloadModal(component))
+    sbp('okTurtles.events/on', CLOSE_MODAL, component => {
+      this.isUrlChange = false
+      this.unloadModal(component)
+    })
     sbp('okTurtles.events/on', REPLACE_MODAL, component => this.replaceModal(component))
     // When press escape it should close the modal
     window.addEventListener('keyup', this.handleKeyUp)
