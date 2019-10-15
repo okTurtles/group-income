@@ -36,6 +36,7 @@ export default {
   watch: {
     '$route' (to, from) {
       if (this.isUrlChange) {
+        console.log('URLCHANGE')
         if (to.query.modal) {
           // We reset the modals with no animation for simplicity
           if (to.query.modal !== this.content) this.content = to.query.modal
@@ -100,11 +101,13 @@ export default {
         this.content = null
       }
 
-      if (this.replacement) {
-        this.openModal(this.replacement)
-        this.replacement = null
-      } else {
-        this.updateUrl()
+      if (!this.isUrlChange) {
+        if (this.replacement) {
+          this.openModal(this.replacement)
+          this.replacement = null
+        } else {
+          this.updateUrl()
+        }
       }
     },
     replaceModal (componentName) {
