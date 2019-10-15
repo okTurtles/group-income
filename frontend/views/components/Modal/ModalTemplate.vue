@@ -1,5 +1,13 @@
 <template lang='pug'>
-  .c-modal(data-test='modal' role='dialog')
+  .c-modal(
+    data-test='modal'
+    role='dialog'
+    :aria-labelledby='$scopedSlots.title'
+    aria-modal='true'
+    tabindex='-1'
+    v-focus=''
+    @keyup.tab='testFocus'
+  )
     transition(name='fade' appear)
       .c-modal-background(@click='close' v-if='isActive')
 

@@ -17,7 +17,6 @@
           name='name'
           @input='debounceName'
           ref='username'
-          v-focus=''
           data-test='signName'
         )
         p.error(v-if='$v.form.name.$error' data-test='badUsername')

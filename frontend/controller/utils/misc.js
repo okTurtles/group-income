@@ -6,7 +6,3 @@ export function handleFetchResult (type: string) {
     return r[type]()
   }
 }
-
-export function logExceptNavigationDuplicated (err: Error) {
-  err.name !== 'NavigationDuplicated' && console.error(err)
-}

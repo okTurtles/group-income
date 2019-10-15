@@ -6,7 +6,6 @@
 <script>
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL, REPLACE_MODAL, CLOSE_MODAL } from '@utils/events.js'
-import { logExceptNavigationDuplicated } from '@controller/utils/misc.js'
 
 export default {
   name: 'Modal',
@@ -14,7 +13,8 @@ export default {
     return {
       content: null, // This is the main modal
       subcontent: [], // This is for collection of modal on top of modals
-      replacement: null
+      replacement: null,
+      isUrlChange: true
     }
   },
   created () {
@@ -35,23 +35,27 @@ export default {
   },
   watch: {
     '$route' (to, from) {
-      if (to.query.modal) {
-        // We reset the modals with no animation for simplicity
-        if (to.query.modal !== this.content) this.content = to.query.modal
-        const subcontent = to.query.subcontent
-        if (subcontent !== this.activeSubcontent()) {
-          // Try to find the new subcontent in the list of subcontent
-          const i = this.subcontent.indexOf(subcontent)
-          if (i) {
-            this.subcontent = this.subcontent.splice(0, i)
-          } else this.subcontent = subcontent
+      if (this.isUrlChange) {
+        if (to.query.modal) {
+          // We reset the modals with no animation for simplicity
+          if (to.query.modal !== this.content) this.content = to.query.modal
+          const subcontent = to.query.subcontent
+          if (subcontent !== this.activeSubcontent()) {
+            // Try to find the new subcontent in the list of subcontent
+            const i = this.subcontent.indexOf(subcontent)
+            if (i) {
+              this.subcontent = this.subcontent.splice(0, i)
+            } else this.subcontent = subcontent
+          }
+        } else {
+          // When the route change we compare to see if the modal changed
+          // If so, we send the event to close the modal
+          if (from.query.modal) {
+            this.unloadModal()
+          }
         }
       } else {
-        // When the route change we compare to see if the modal changed
-        // If so, we send the event to close the modal
-        if (from.query.modal) {
-          sbp('okTurtles.events/emit', CLOSE_MODAL)
-        }
+        this.isUrlChange = true
       }
     }
   },
@@ -59,7 +63,9 @@ export default {
     handleKeyUp (e) {
       // Only if there an active modal
       if (this.content && e.key === 'Escape') {
+        e.preventDefault()
         this.unloadModal()
+        document.querySelectorAll('button, a, input, select, textarea, [tabindex]:not([tabindex="-1"])')[0].focus()
       }
     },
     activeSubcontent () {
@@ -72,10 +78,11 @@ export default {
       if (subcontent) this.openModal(subcontent)
     },
     updateUrl () {
+      this.isUrlChange = false
       if (this.content) {
-        this.$router.push({ query: { modal: this.content, subcontent: this.activeSubcontent() } }).catch(logExceptNavigationDuplicated)
+        this.$router.push({ query: { modal: this.content, subcontent: this.activeSubcontent() } }).catch((error) => { console.log(error) })
       } else {
-        this.$router.push({ query: null }).catch(logExceptNavigationDuplicated)
+        this.$router.push({ query: {} }).catch(console.error)
       }
     },
     openModal (componentName) {
@@ -92,19 +99,19 @@ export default {
       } else {
         this.content = null
       }
-      this.updateUrl()
+
       if (this.replacement) {
         this.openModal(this.replacement)
         this.replacement = null
+      } else {
+        this.updateUrl()
       }
-    },
-    closeModal () {
-      // Use direct children instead of sbp to wait for animation out
-      this.$refs['content'].$children[0].close()
     },
     replaceModal (componentName) {
       this.replacement = componentName
-      this.closeModal()
+      // At the moment you can only replace a modal if it's the main one by design
+      // Use direct children instead of sbp to wait for animation out
+      this.$refs['content'].$children[0].close()
     }
   }
 }

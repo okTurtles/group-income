@@ -1,6 +1,13 @@
 <template lang='pug'>
   transition(name='zoom' appear @after-leave='unload')
-    .modal(data-test='modal' role='dialog' v-if='isActive')
+    .modal(
+      data-test='modal'
+      role='dialog'
+      aria-modal='true'
+      tabindex='-1'
+      @keyup.tab='testFocus'
+      v-if='isActive'
+    )
       modal-close(@close='close')
       slot
 </template>
