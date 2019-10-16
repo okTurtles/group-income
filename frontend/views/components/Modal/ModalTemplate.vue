@@ -6,7 +6,7 @@
     aria-modal='true'
     tabindex='-1'
     v-focus=''
-    @keyup.tab='testFocus'
+    @keyup.tab='trapFocus'
   )
     transition(name='fade' appear)
       .c-modal-background(@click='close' v-if='isActive')

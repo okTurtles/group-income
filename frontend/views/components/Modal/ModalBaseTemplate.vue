@@ -5,7 +5,7 @@
       role='dialog'
       aria-modal='true'
       tabindex='-1'
-      @keyup.tab='testFocus'
+      @keyup.tab='trapFocus'
       v-if='isActive'
     )
       modal-close(@close='close')

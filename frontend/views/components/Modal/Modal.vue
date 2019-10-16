@@ -12,7 +12,7 @@ export default {
     return {
       content: null, // This is the main modal
       subcontent: [], // This is for collection of modal on top of modals
-      replacement: null
+      replacement: null // This let us replace the modal once the first one is close without updating the url
     }
   },
   created () {
@@ -40,7 +40,7 @@ export default {
         if (subcontent !== this.activeSubcontent()) {
           // Try to find the new subcontent in the list of subcontent
           const i = this.subcontent.indexOf(subcontent)
-          if (i) {
+          if (i !== -1) {
             this.subcontent = this.subcontent.splice(0, i)
           } else this.subcontent = subcontent
         }
@@ -59,7 +59,6 @@ export default {
       if (this.content && e.key === 'Escape') {
         e.preventDefault()
         this.unloadModal()
-        document.querySelectorAll('button, a, input, select, textarea, [tabindex]:not([tabindex="-1"])')[0].focus()
       }
     },
     activeSubcontent () {
@@ -99,6 +98,8 @@ export default {
         this.subcontent.pop()
       } else {
         this.content = null
+        // Refocus on the window focusable element (mainly hack for esc button)
+        document.querySelectorAll('button, a, input, select, textarea, [tabindex]:not([tabindex="-1"])')[0].focus()
       }
       if (this.replacement) {
         this.openModal(this.replacement)

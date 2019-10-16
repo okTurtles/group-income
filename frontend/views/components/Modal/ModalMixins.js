@@ -33,7 +33,7 @@ const modaMixins = {
     unload () {
       sbp('okTurtles.events/emit', CLOSE_MODAL)
     },
-    testFocus (e) {
+    trapFocus (e) {
       const currentFocus = document.activeElement
       const totalOfFocusable = this.focusableChildren.length
       const focusedIndex = this.focusableChildren.indexOf(currentFocus)
