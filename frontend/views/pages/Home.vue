@@ -13,7 +13,6 @@ main.c-splash(data-test='homeLogo')
     i18n(
       tag='button'
       ref='loginBtn'
-      :disabled='isModalOpen'
       @click='openModal("LoginModal")'
       data-test='loginBtn'
     ) Login
@@ -23,8 +22,8 @@ main.c-splash(data-test='homeLogo')
       ref='signupBtn'
       @click='openModal("SignUp")'
       @keyup.enter='openModal("SignUp")'
-      :disabled='isModalOpen'
       data-test='signupBtn'
+      v-focus=''
     ) Signup
 
   .create-or-join(v-else key='body-create')
@@ -68,18 +67,12 @@ main.c-splash(data-test='homeLogo')
 
 <script>
 import sbp from '~/shared/sbp.js'
-import { OPEN_MODAL, CLOSE_MODAL } from '@utils/events.js'
+import { OPEN_MODAL } from '@utils/events.js'
 import SvgCreateGroup from '@svgs/create-group.svg'
 import SvgJoinGroup from '@svgs/join-group.svg'
 
 export default {
   name: 'Home',
-  data () {
-    return {
-      isModalOpen: false,
-      lastFocus: 'signupBtn'
-    }
-  },
   components: {
     SvgJoinGroup,
     SvgCreateGroup
@@ -87,33 +80,11 @@ export default {
   mounted () {
     if (this.$route.query.next) {
       this.openModal('LoginModal')
-    } else {
-      if (!this.$store.state.loggedIn) {
-        sbp('okTurtles.events/on', CLOSE_MODAL, this.enableSubmit)
-        this.enableSubmit()
-        // Fix firefox autofocus
-        process.nextTick(() => this.$refs[this.lastFocus].$el.focus())
-      }
     }
-  },
-  beforeDestroy () {
-    sbp('okTurtles.events/off', CLOSE_MODAL, this.enableSubmit)
   },
   methods: {
     openModal (mode) {
-      if (!this.$store.state.loggedIn) {
-        this.isModalOpen = true
-        // Keep track of user last action
-        this.lastFocus = mode === 'SignUp' ? 'signupBtn' : 'loginBtn'
-      }
       sbp('okTurtles.events/emit', OPEN_MODAL, mode)
-    },
-    enableSubmit () {
-      this.isModalOpen = false
-      if (!this.$store.state.loggedIn) {
-        // Enable focus on button and fix for firefox
-        this.$nextTick(() => this.$refs[this.lastFocus].$el.focus())
-      }
     },
     logout () {
       sbp('state/vuex/dispatch', 'logout')
