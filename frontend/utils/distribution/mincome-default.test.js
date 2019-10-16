@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 
-const should = require('should')
-const incomeDistribution = require('../frontend/utils/distribution/mincome-default').default
+import should from 'should'
+import incomeDistribution from './mincome-default.js'
 
 describe('defaultMincomeDistributionTest', function () {
   it('should not change anything when there is only one member', function () {

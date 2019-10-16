@@ -4,15 +4,13 @@ import type { IncomeObject } from '~/shared/types.js'
 
 const frequencies = function (incomes: Array<IncomeObject>) {
   const freqs = {}
-  incomes.map(function (a) {
-    const amount = a.amount
-    if (!(amount in this)) {
-      this[amount] = 1
+  for (const { amount } of incomes) {
+    if (!freqs[amount]) {
+      freqs[amount] = 1
     } else {
-      this[amount] += 1
+      freqs[amount] += 1
     }
-    return amount
-  }, freqs)
+  }
   return freqs
 }
 

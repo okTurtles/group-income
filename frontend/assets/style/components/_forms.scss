@@ -270,7 +270,8 @@ p.error {
     -webkit-appearance: none;
   }
 
-  span {
+  span,
+  label {
     outline: none;
     cursor: pointer;
 
@@ -301,7 +302,9 @@ p.error {
   }
 
   .radio:focus + span,
-  .radio:checked + span {
+  .radio:focus + label,
+  .radio:checked + span,
+  .radio:checked + label {
     font-weight: bold;
     margin-right: -1px;
 
