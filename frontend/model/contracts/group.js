@@ -7,9 +7,8 @@ import { objectOf, optional, string, number, object, unionOf, literalOf } from '
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income-simple/issues/603
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST } from './voting/rules.js'
-import proposals, { proposalType, proposalSettingsType, archiveProposal, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_WITHDRAWN, STATUS_CANCELLED } from './voting/proposals.js'
+import proposals, { proposalType, proposalSettingsType, archiveProposal, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_CANCELLED } from './voting/proposals.js'
 import * as Errors from '../errors.js'
-import { createDateUTC } from '~shared/dateSync.js'
 
 // for gi.contracts/group/payment ... TODO: put these in some other file?
 export const PAYMENT_PENDING = 'pending'
@@ -69,14 +68,14 @@ DefineContract({
   },
   metadata: {
     validate: objectOf({
-      createdDate: number,
+      createdDate: string,
       username: string,
       identityContractID: string
     }),
     create () {
       const { username, identityContractID } = sbp('state/vuex/state').loggedIn
       return {
-        createdDate: createDateUTC().getTime(),
+        createdDate: new Date().toISOString(),
         username,
         identityContractID
       }
@@ -151,7 +150,7 @@ DefineContract({
         Vue.set(proposal.votes, meta.username, data.vote)
         // TODO: handle vote pass/fail
         // check if proposal is expired, if so, ignore (but log vote)
-        if (createDateUTC().getTime() > proposal.data.expires_date_ms) {
+        if (Date.now() > proposal.data.expires_date_ms) {
           console.warn('proposalVote: vote on expired proposal!', { proposal, data, meta })
           // TODO: display warning or something
           return
@@ -174,29 +173,13 @@ DefineContract({
           // https://github.com/okTurtles/group-income-simple/issues/602
           console.error(`proposalVote: no proposal for ${data.proposalHash}!`, data)
           throw new Errors.GIErrorIgnoreAndBanIfGroup('proposalVote without existing proposal')
-        }
-        // NOTE: should we clean the existing votes too?
-        Vue.set(proposal, 'status', STATUS_CANCELLED)
-      }
-    },
-    // NOTE: there is no way to withdraw a vote on a proposal. User can however change their vote, including changing it to be indifferent.
-    'gi.contracts/group/proposalWithdraw': {
-      validate: objectOf({
-        proposalHash: string
-      }),
-      process (state, { data, meta }) {
-        const proposal = state.proposals[data.proposalHash]
-        if (!proposal) {
-          console.error(`proposalWithdraw: no proposal for ${data.proposalHash}!`, data)
-          throw new Errors.GIErrorIgnoreAndBanIfGroup('proposalWithdraw without existing proposal')
         } else if (proposal.meta.username !== meta.username) {
           console.error(`proposalWithdraw: proposal ${data.proposalHash} belongs to ${proposal.meta.username} not ${meta.username}!`)
           throw new Errors.GIErrorIgnoreAndBanIfGroup('proposalWithdraw for wrong user!')
-        } else {
-          // TODO: make sure this is a synchronous function, and if not handle it appropriately
-          proposal.status = STATUS_WITHDRAWN
-          archiveProposal(state, data.proposalHash)
         }
+        // NOTE: should we clean the existing votes too?
+        Vue.set(proposal, 'status', STATUS_CANCELLED)
+        archiveProposal(state, data.proposalHash)
       }
     },
     'gi.contracts/group/invite': {

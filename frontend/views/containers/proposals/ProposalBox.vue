@@ -3,7 +3,7 @@ li.c-wrapper
   user-image.c-avatar(:username='proposal.meta.username')
   .c-header
     h4.has-text-bold(data-test='title') {{title}}:
-    span(v-if='displayDate') {{humanDate}}
+    span {{humanDate}}
   .c-main
     p.has-text-1 "{{proposal.data.proposalData.reason}}"
     ul
@@ -16,16 +16,15 @@ li.c-wrapper
 
 <script>
 import { mapGetters } from 'vuex'
+import L from '@view-utils/translations.js'
 import UserImage from '@containers/UserImage.vue'
 import ProposalItem from './ProposalItem.vue'
-import { convertDateToLocale } from '~shared/dateSync.js'
 import { STATUS_OPEN } from '@model/contracts/voting/proposals.js'
 
 export default {
   name: 'ProposalBox',
   props: {
-    proposalHashes: Array, // [hash1, hash2, ...]
-    displayDate: Boolean
+    proposalHashes: Array // [hash1, hash2, ...]
   },
   components: {
     ProposalItem,
@@ -44,22 +43,25 @@ export default {
       const { identityContractID } = this.proposal.meta
       const username = this.$store.state[identityContractID].attributes.name
       const currentUsername = this.currentUserIdentityContract.attributes.name
-      const who = username === currentUsername ? this.L('You') : username
+      const who = username === currentUsername ? L('You') : username
       const isAnyOpen = this.proposalHashes.some(hash => this.currentGroupState.proposals[hash].status === STATUS_OPEN)
 
       if (!isAnyOpen) {
-        return this.L('{who} proposed', { who })
+        return L('{who} proposed', { who })
       }
 
       return username === currentUsername
-        ? this.L('You are proposing')
-        : this.L('{who} is proposing', { who })
+        ? L('You are proposing')
+        : L('{who} is proposing', { who })
     },
     humanDate () {
-      const date = convertDateToLocale(this.proposal.meta.createdDate)
+      const date = new Date(this.proposal.meta.createdDate)
+      const offset = date.getTimezoneOffset()
+      const minutes = date.getMinutes()
+      date.setMinutes(minutes + offset)
+      const locale = navigator.languages !== undefined ? navigator.languages[0] : navigator.language
 
-      // TODO: Display date format based on locale
-      return date.toLocaleDateString('en-EN', {
+      return date.toLocaleDateString(locale, {
         year: 'numeric', month: 'long', day: 'numeric'
       })
     }
@@ -111,10 +113,7 @@ $spaceVertical: $spacer-sm*3;
 .c-main {
   grid-area: main;
   word-break: break-word;
-
-  @include phone {
-    margin-top: $spacer-xs;
-  }
+  margin-top: $spacer-xs;
 }
 
 .c-avatar {

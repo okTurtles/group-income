@@ -17,7 +17,6 @@ export const STATUS_OPEN = 'open'
 export const STATUS_PASSED = 'passed'
 export const STATUS_FAILED = 'failed'
 export const STATUS_EXPIRED = 'expired'
-export const STATUS_WITHDRAWN = 'withdrawn'
 export const STATUS_CANCELLED = 'cancelled'
 
 export function archiveProposal (state, proposalHash) {

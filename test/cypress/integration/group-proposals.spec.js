@@ -122,12 +122,12 @@ describe('Proposals - Add members', () => {
     })
   })
 
-  it('user3 changes their "yes" vote on user4 to "no" and proposal gets refused', () => {
+  it('user3 changes their "yes" vote on user5 to "no" and proposal gets refused', () => {
     getProposalBoxes().eq(1).within(() => {
       cy.getByDT('title', 'h4').should('contain', `user1-${userId} is proposing:`)
       cy.getByDT('proposalItem').eq(0).within(() => {
         cy.getByDT('typeDescription')
-          .should('contain', `Add user4-${userId} to group.`)
+          .should('contain', `Add user5-${userId} to group.`)
         cy.getByDT('voted').find('button.link')
           .should('contain', 'Change vote.')
           .click()
@@ -143,13 +143,13 @@ describe('Proposals - Add members', () => {
     cy.giLogOut()
   })
 
-  it('user2 logins and votes "yes" to add user5. Proposal is accepted and invitation is created.', () => {
+  it('user2 logins and votes "yes" to add user4. Proposal is accepted and invitation is created.', () => {
     cy.giLogin(`user2-${userId}`)
 
-    getProposalBoxes().eq(1).within(() => {
+    getProposalBoxes().eq(0).within(() => {
       cy.getByDT('title', 'h4').as('title')
       cy.get('@title').should('contain', `user1-${userId} is proposing:`)
-      cy.getByDT('proposalItem').eq(1).within(() => {
+      cy.getByDT('proposalItem').eq(0).within(() => {
         assertProposalOpenState({
           description: '2 out of 3 members voted.'
         })
@@ -160,7 +160,7 @@ describe('Proposals - Add members', () => {
           .should('contain', 'Proposal accepted!')
         cy.getByDT('voted').should('not.exist')
         cy.get('@title').should('contain', `user1-${userId} proposed:`)
-        cy.getByDT('sendLink').should('contain', `Please send the following link to user5-${userId} so they can join the group:`)
+        cy.getByDT('sendLink').should('contain', `Please send the following link to user4-${userId} so they can join the group:`)
         cy.getByDT('sendLink').get('a.link')
           .should('contain', 'http://localhost')
           .invoke('attr', 'href')
@@ -172,8 +172,7 @@ describe('Proposals - Add members', () => {
   })
 
   it('user2 decides to cancel his proposal of adding user6', () => {
-    // Get most recent proposal - own proposal
-    getProposalBoxes().eq(0).within(() => {
+    getProposalBoxes().eq(1).within(() => {
       cy.getByDT('title', 'h4').as('title')
       cy.get('@title').should('contain', 'You are proposing:')
       cy.getByDT('proposalItem').eq(0).within(() => {
@@ -197,23 +196,25 @@ describe('Proposals - Add members', () => {
     // OPTIMIZE: Maybe we should adopt Visual Testing in these cases
     // https://docs.cypress.io/guides/tooling/visual-testing.html#Functional-vs-visual-testing#article
     getProposalBoxes().eq(0).within(() => {
-      cy.getByDT('title', 'h4').should('contain', `user2-${userId} proposed:`)
-      cy.getByDT('proposalItem').eq(0).within(() => {
-        cy.getByDT('statusDescription')
-          .should('contain', 'Proposal cancelled.')
-      })
-    })
-    getProposalBoxes().eq(1).within(() => {
       cy.getByDT('title', 'h4').should('contain', 'You proposed:')
+
       cy.getByDT('proposalItem').eq(0).within(() => {
         cy.getByDT('statusDescription')
-          .should('contain', 'Proposal refused.')
+          .should('contain', 'Proposal accepted!')
+        cy.getByDT('sendLink').should('exist')
       })
 
       cy.getByDT('proposalItem').eq(1).within(() => {
         cy.getByDT('statusDescription')
-          .should('contain', 'Proposal accepted!')
-        cy.getByDT('sendLink').should('exist')
+          .should('contain', 'Proposal refused.')
+      })
+    })
+
+    getProposalBoxes().eq(1).within(() => {
+      cy.getByDT('title', 'h4').should('contain', `user2-${userId} proposed:`)
+      cy.getByDT('proposalItem').eq(0).within(() => {
+        cy.getByDT('statusDescription')
+          .should('contain', 'Proposal cancelled.')
       })
     })
 

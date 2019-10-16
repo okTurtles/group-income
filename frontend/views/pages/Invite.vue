@@ -39,7 +39,6 @@ import L from '@view-utils/translations.js'
 import Page from './Page.vue'
 import { GroupInvitees } from '@components/CreateGroupSteps/index.js'
 import { mapState, mapGetters } from 'vuex'
-import { createDateUTC } from '~shared/dateSync.js'
 
 export default {
   name: 'Invite',
@@ -80,7 +79,7 @@ export default {
         // NOTE: All invitees proposals will expire at the exact same time.
         // That plus the proposal creator is what we'll use to know
         // which proposals should be displayed visually together.
-        const expiresDateMs = createDateUTC().getTime() + this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].expires_ms
+        const expiresDateMs = Date.now() + this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].expires_ms
 
         for (const member of this.form.invitees) {
           const mailbox = member.state.attributes.mailbox
@@ -92,7 +91,7 @@ export default {
                 proposalType: PROPOSAL_INVITE_MEMBER,
                 proposalData: {
                   member: memberName,
-                  reason: 'Because they are great, but this is a placeholder reason. We need to implement the real reason' // TODO: this?
+                  reason: 'Because they are great, but this is a placeholder reason. We need to implement the real reason. Time:' // TODO: this?
                 },
                 votingRule: this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].rule,
                 expires_date_ms: expiresDateMs

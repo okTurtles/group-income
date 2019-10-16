@@ -28,13 +28,13 @@
 </template>
 
 <script>
+import { mapGetters, mapState } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
 import { VOTE_FOR, VOTE_AGAINST } from '@model/contracts/voting/rules.js'
 import { TYPE_MESSAGE } from '@model/contracts/mailbox.js'
 import { oneVoteToPass, buildInvitationUrl } from '@model/contracts/voting/proposals.js'
 import { generateInvites } from '@model/contracts/group.js'
-import { mapGetters } from 'vuex'
 
 export default {
   name: 'Vote',
@@ -50,8 +50,10 @@ export default {
     }
   },
   computed: {
+    ...mapState([
+      'currentGroupId'
+    ]),
     ...mapGetters([
-      'currentGroupId',
       'currentGroupState',
       'groupSettings',
       'currentUserIdentityContract'
@@ -64,8 +66,8 @@ export default {
     },
     voteStatus () {
       const humanStatus = {
-        [VOTE_FOR]: 'yes',
-        [VOTE_AGAINST]: 'no'
+        [VOTE_FOR]: L('yes'),
+        [VOTE_AGAINST]: L('no')
       }
       return humanStatus[this.proposal.votes[this.currentUsername]]
     },
@@ -92,7 +94,7 @@ export default {
     async voteFor () {
       this.ephemeral.changingVote = false
       this.ephemeral.errorMsg = null
-      const isSure = confirm(this.L('Are you sure you want to vote yes?'))
+      const isSure = confirm(L('Are you sure you want to vote yes?'))
       // Avoid redundant vote from "Change vote" if already voted FOR before
       if (!isSure || this.proposal.votes[this.currentUsername] === VOTE_FOR) {
         return null
@@ -113,7 +115,7 @@ export default {
         )
         await sbp('backend/publishLogEntry', vote)
 
-        if (payload) {
+        if (payload.passPayload) {
           const groupName = this.groupSettings.groupName
           const username = this.data.member
           // TODO: delete this entire section, this is just
@@ -147,7 +149,7 @@ export default {
     async voteAgainst () {
       this.ephemeral.changingVote = false
       this.ephemeral.errorMsg = null
-      const isSure = confirm(this.L('Are you sure you want to vote no?'))
+      const isSure = confirm(L('Are you sure you want to vote no?'))
       // Avoid redundant vote from "Change vote" if already voted AGAINST before
       if (!isSure || this.proposal.votes[this.currentUsername] === VOTE_AGAINST) {
         return null
@@ -167,7 +169,7 @@ export default {
       }
     },
     async cancelProposal () {
-      const isSure = confirm(this.L('Are you sure you want to cancel this proposal?'))
+      const isSure = confirm(L('Are you sure you want to cancel this proposal?'))
       if (!isSure) {
         return null
       }

@@ -23,6 +23,7 @@
 
 <script>
 import { mapGetters, mapState } from 'vuex'
+import L from '@view-utils/translations.js'
 import {
   PROPOSAL_INVITE_MEMBER,
   PROPOSAL_REMOVE_MEMBER,
@@ -33,7 +34,6 @@ import {
   STATUS_PASSED,
   STATUS_FAILED,
   STATUS_EXPIRED,
-  STATUS_WITHDRAWN,
   STATUS_CANCELLED,
   buildInvitationUrl
 } from '@model/contracts/voting/proposals.js'
@@ -54,7 +54,7 @@ export default {
     ]),
     ...mapState(['currentGroupId']),
     statuses () {
-      return { STATUS_OPEN, STATUS_PASSED, STATUS_FAILED, STATUS_EXPIRED, STATUS_WITHDRAWN, STATUS_CANCELLED }
+      return { STATUS_OPEN, STATUS_PASSED, STATUS_FAILED, STATUS_EXPIRED, STATUS_CANCELLED }
     },
     proposal () {
       return this.currentGroupState.proposals[this.proposalHash]
@@ -64,15 +64,15 @@ export default {
     },
     typeDescription () {
       return {
-        [PROPOSAL_INVITE_MEMBER]: () => this.L('Add {user} to group.', {
+        [PROPOSAL_INVITE_MEMBER]: () => L('Add {user} to group.', {
           user: this.proposal.data.proposalData.member
         }),
-        [PROPOSAL_REMOVE_MEMBER]: () => this.L('Remove {user} from group.', {
+        [PROPOSAL_REMOVE_MEMBER]: () => L('Remove {user} from group.', {
           user: this.proposal.data.proposalData.member
         }),
-        [PROPOSAL_GROUP_SETTING_CHANGE]: () => this.L('TODO: Change [setting] from [current] to [new-value]', {}),
-        [PROPOSAL_PROPOSAL_SETTING_CHANGE]: () => this.L('TODO: Change [rule setting] from [current] to [new-value]', {}),
-        [PROPOSAL_GENERIC]: () => this.L('TODO: Change [generic] from [current] to [new-value]', {})
+        [PROPOSAL_GROUP_SETTING_CHANGE]: () => L('TODO: Change [setting] from [current] to [new-value]', {}),
+        [PROPOSAL_PROPOSAL_SETTING_CHANGE]: () => L('TODO: Change [rule setting] from [current] to [new-value]', {}),
+        [PROPOSAL_GENERIC]: () => L('TODO: Change [generic] from [current] to [new-value]', {})
       }[this.proposalType]()
     },
     statusDescription () {
@@ -80,19 +80,19 @@ export default {
         case STATUS_OPEN: {
           const votesCount = Object.keys(this.proposal.votes).length
 
-          return this.L('{count} out of {total} members voted.', {
+          return L('{count} out of {total} members voted.', {
             count: votesCount,
             total: this.groupMembersCount
           })
         }
         case STATUS_FAILED: {
-          return this.L('Proposal refused.')
+          return L('Proposal refused.')
         }
         case STATUS_CANCELLED: {
-          return this.L('Proposal cancelled.')
+          return L('Proposal cancelled.')
         }
         case STATUS_PASSED: {
-          return this.L('Proposal accepted!')
+          return L('Proposal accepted!')
         }
         default:
           return `TODO status: ${this.proposal.status}`

@@ -12,15 +12,15 @@ ul.c-proposals(data-test='proposalsWidget')
     v-else
     v-for='hashes in proposals'
     :key='hashes[0]'
-    :displayDate='false'
     :proposalHashes='hashes'
   )
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import SvgVote from '@svgs/vote.svg'
 import ProposalBox from '@containers/proposals/ProposalBox.vue'
-import { mapGetters } from 'vuex'
+import { STATUS_OPEN } from '@model/contracts/voting/proposals.js'
 
 export default {
   name: 'Proposals',
@@ -28,20 +28,32 @@ export default {
     ProposalBox,
     SvgVote
   },
+  data () {
+    return {
+      ephemeral: {
+        // Keep initial proposals order even after voting in a proposal
+        // That way recently voted proposals don't change position immediatly.
+        // Only re-sort this when the user re-visits this component again.
+        proposalsSorted: null
+      }
+    }
+  },
   computed: {
     ...mapGetters([
-      'currentGroupState'
+      'currentGroupState',
+      'currentUserIdentityContract'
     ]),
     proposals () {
-      // Sort proposals by expering date (most recents at the top)
-      // TODO: Filter by only open proposals?
+      if (this.proposalsSorted) {
+        return this.proposalsSorted
+      }
+
       const p = this.currentGroupState.proposals
       const sortByExpire = Object.keys(p).sort((prev, curr) => p[curr].data.expires_date_ms - p[prev].data.expires_date_ms)
 
       // HACK/NOTE: Proposals to invite members created at the same time by
       // the same user, should be "visually together". A solution without
       // modifying the store/state is to group the "similiar" proposals in a sub-array.
-      // Let's create an Array of Arrays of Strings (hashes).
       const proposalsGrouped = [] // [[hash1], [hash2], [hash3_g, hash4_g]]
 
       sortByExpire.forEach((hash, index) => {
@@ -52,19 +64,29 @@ export default {
 
         const current = p[hash]
         const previous = p[sortByExpire[index - 1]]
-        const expireSameTime = current.data.expires_date_ms === previous.data.expires_date_ms
+        const expireAtSameTime = current.data.expires_date_ms === previous.data.expires_date_ms
         const createdBySameUser = current.meta.username === previous.meta.username
-        if (expireSameTime && createdBySameUser) {
+        if (expireAtSameTime && createdBySameUser) {
           // This proposal should be displayed "visually together" with
           // the previous proposal, so let's group it under the same index.
-          proposalsGrouped[proposalsGrouped.length - 1].push(hash)
-          return
+          const placeToAdd = this.hadVoted(p[hash]) ? 'push' : 'unshift'
+          proposalsGrouped[proposalsGrouped.length - 1][placeToAdd](hash)
+        } else {
+          proposalsGrouped.push([hash])
         }
-
-        proposalsGrouped.push([hash])
       })
-
-      return proposalsGrouped
+      // Push grouped proposals already voted to the bottom
+      // REVIEW: improve sort order, taking in account status as well
+      const sortByNotVoted = proposalsGrouped.sort((prev, curr) => {
+        return curr.some(hash => this.hadVoted(p[hash])) ? -1 : 1
+      })
+      this.proposalsSorted = sortByNotVoted // eslint-disable-line vue/no-side-effects-in-computed-properties
+      return this.proposalsSorted
+    }
+  },
+  methods: {
+    hadVoted (proposal) {
+      return proposal.votes[this.currentUserIdentityContract.attributes.name] || proposal.status !== STATUS_OPEN
     }
   }
 }

@@ -4,15 +4,15 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
 
   start-inviting(v-if='groupMembersCount === 1')
 
-  page-section(:title='Object.keys(currentGroupState.proposals).length > 0 ? L("Proposals") : ""')
-    proposals
-
   page-section(title='This months overview')
     overview
 
   page-section(title='July Overview')
     //- group-pledges-graph
     progress-overview
+
+  page-section(:title='Object.keys(currentGroupState.proposals).length > 0 ? L("Proposals") : ""')
+    proposals
 
   //- page-section(title='Support History')
   //-   support-history
