@@ -120,8 +120,7 @@ DefineContract({
         expires_date_ms: number // calculate by grabbing proposal expiry from group properties and add to `meta.createdDate`
       }),
       process (state, { data, meta, hash }) {
-        // TODO/BUG: Avoid proposing same member twice.
-        // Should it be done here or on component before calling sbp?
+        // TODO/BUG: Avoid proposing same user twice or existing member.
         Vue.set(state.proposals, hash, {
           data,
           meta,
@@ -177,7 +176,6 @@ DefineContract({
           console.error(`proposalWithdraw: proposal ${data.proposalHash} belongs to ${proposal.meta.username} not ${meta.username}!`)
           throw new Errors.GIErrorIgnoreAndBanIfGroup('proposalWithdraw for wrong user!')
         }
-        // NOTE: should we clean the existing votes too?
         Vue.set(proposal, 'status', STATUS_CANCELLED)
         archiveProposal(state, data.proposalHash)
       }
