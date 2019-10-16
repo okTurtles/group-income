@@ -230,7 +230,7 @@ export default {
   .c-modal-footer {
     background-color: #f5f5f5;
     margin: $spacer;
-    padding: 0 1rem;
+    padding: $spacer;
 
     @include desktop {
       align-items: flex-start;

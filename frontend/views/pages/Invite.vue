@@ -32,7 +32,7 @@ page(pageTestName='invite' pageTestHeaderName='invite')
 //       https://github.com/okTurtles/group-income-simple/issues/609
 
 import sbp from '~/shared/sbp.js'
-import { PROPOSAL_INVITE_MEMBER } from '@model/contracts/voting/proposals.js'
+import { PROPOSAL_INVITE_MEMBER, buildInvitationUrl } from '@model/contracts/voting/proposals.js'
 import { generateInvites } from '@model/contracts/group.js'
 import { TYPE_MESSAGE } from '@model/contracts/mailbox.js'
 import L from '@view-utils/translations.js'
@@ -76,6 +76,10 @@ export default {
         this.form.errorMsg = null
         const groupId = this.currentGroupId
         const groupName = this.groupSettings.groupName
+        // NOTE: All invitees proposals will expire at the exact same time.
+        // That plus the proposal creator is what we'll use to know
+        // which proposals should be displayed visually together.
+        const expiresDateMs = Date.now() + this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].expires_ms
 
         for (const member of this.form.invitees) {
           const mailbox = member.state.attributes.mailbox
@@ -86,11 +90,11 @@ export default {
               {
                 proposalType: PROPOSAL_INVITE_MEMBER,
                 proposalData: {
-                  members: [memberName], // TODO: create a single proposal?
-                  reason: L("Because they're great") // TODO: this?
+                  member: memberName,
+                  reason: 'Because they are great, but this is a placeholder reason. We need to implement the real reason. Time:' // TODO: this?
                 },
                 votingRule: this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].rule,
-                expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].expires_ms
+                expires_date_ms: expiresDateMs
               },
               groupId
             )
@@ -106,7 +110,7 @@ export default {
 
                 Here's your special invite link:
 
-                ${process.env.FRONTEND_URL}/app/join?groupId=${this.$store.state.currentGroupId}&secret=${invite.inviteSecret}`
+                ${buildInvitationUrl(this.$store.state.currentGroupId, invite.inviteSecret)}`
               },
               mailbox
             )

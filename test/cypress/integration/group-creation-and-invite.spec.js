@@ -6,17 +6,11 @@ describe('Group Creation and Inviting Members', () => {
     cy.visit('/')
   })
 
-  it('register user1 and logout', () => {
+  it('register user1, user2 and user3', () => {
     cy.giSignUp(`user1-${userId}`)
     cy.giLogOut()
-  })
-
-  it('register user2 and logout', () => {
     cy.giSignUp(`user2-${userId}`)
     cy.giLogOut()
-  })
-
-  it('register user3 and logout', () => {
     cy.giSignUp(`user3-${userId}`)
     cy.giLogOut()
   })

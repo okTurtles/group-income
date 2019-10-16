@@ -130,7 +130,6 @@ declare module '../views/PayGroup.vue' { declare module.exports: Object }
 declare module '../views/ProposeMember.vue' { declare module.exports: Object }
 declare module '../views/UserGroup.vue' { declare module.exports: Object }
 declare module '../views/UserProfile.vue' { declare module.exports: Object }
-declare module '../views/Vote.vue' { declare module.exports: Object }
 declare module '../views/VueAssistant.vue' { declare module.exports: Object }
 declare module './auth.js' { declare module.exports: Object }
 declare module './backend/pubsub.js' { declare module.exports: Function }

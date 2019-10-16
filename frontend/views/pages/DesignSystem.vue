@@ -192,6 +192,7 @@ page(
               i.icon-paper-plane icon-paper-plane
               i.icon-pencil-alt icon-pencil-alt
               i.icon-plus icon-plus
+              i.icon-poll icon-poll
               i.icon-question-circle icon-question-circle
               i.icon-tag icon-tag
               i.icon-times icon-times
@@ -199,6 +200,7 @@ page(
               i.icon-undo icon-undo
               i.icon-user icon-user
               i.icon-user-plus icon-user-plus
+              i.icon-user-times icon-user-times
               i.icon-vote-yea icon-vote-yea
   article#spacing
     section.card
