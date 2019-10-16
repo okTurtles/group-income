@@ -2,75 +2,74 @@
 page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
   template(#title='') {{ L('Contributions') }}
 
-  section.card
-    i18n(tag='h2' class='card-header') Receiving
+  section.card.contribution-card
+    .receiving
+      i18n(tag='h2' class='card-header') Receiving
 
-    ul.c-ul
-      contribution(
-        v-for='(contribution, index) in fakeStore.receiving.nonMonetary'
-        :key='`contribution-${index}`'
-      )
-        //- TODO: verify this is safe (no XSS)
-        span(v-html='textReceivingNonMonetary(contribution)')
-        text-who(:who='contribution.who')
+      i18n.has-text-1(tag='p') When other members pledge a monetary or non-monetary contribution, they will appear here.
+      ul.c-ul
+        contribution(
+          v-for='(contribution, index) in fakeStore.receiving.nonMonetary'
+          :key='`contribution-${index}`'
+        )
+          //- TODO: verify this is safe (no XSS)
+          span(v-html='textReceivingNonMonetary(contribution)')
+          text-who(:who='contribution.who')
+
+        contribution(
+          v-if='doesReceiveMonetary'
+          variant='editable'
+          ismonetary=''
+          @interaction='handleFormTriggerClick'
+        )
+          //- TODO: verify this is safe (no XSS)
+          span(v-html='textReceivingMonetary(fakeStore.receiving.monetary)')
+          text-who(:who='fakeStore.groupMembersPledging')
+          i18n each month
+    .giving
+      i18n(tag='h2' class='card-header') Giving
+      ul
+        contribution.has-text-weight-bold(
+          v-for='(contribution, index) in fakeStore.giving.nonMonetary'
+          :key='`contribution-${index}`'
+          variant='editable'
+          @new-value='(value) => handleEditNonMonetary(value, index)'
+        ) {{contribution}}
+
+        contribution(
+          variant='unfilled'
+          @new-value='submitAddNonMonetary'
+        )
+          i.icon-heart(aria-hidden='true')
+          i18n Add a non-monetary method
 
       contribution(
-        v-if='doesReceiveMonetary'
+        v-if='doesGiveMonetary'
         variant='editable'
         ismonetary=''
         @interaction='handleFormTriggerClick'
       )
-        //- TODO: verify this is safe (no XSS)
-        span(v-html='textReceivingMonetary(fakeStore.receiving.monetary)')
-        text-who(:who='fakeStore.groupMembersPledging')
-        i18n each month
+        i18n(
+          :args='{amount:`${fakeStore.currency}${fakeStore.giving.monetary}`}'
+        ) Pledging up to {amount}
+        i18n to other&apos;s mincome
+        i18n(
+          v-if='fakeStore.giving.monetary == 0' :args='{amount: "[$170]"}'
+          tag='p'
+        ) (The group&apos;s average pledge is {amount})
 
-  section.card
-    i18n(tag='h2' class='card-header') Giving
-    ul
-      contribution.has-text-weight-bold(
-        v-for='(contribution, index) in fakeStore.giving.nonMonetary'
-        :key='`contribution-${index}`'
-        variant='editable'
-        @new-value='(value) => handleEditNonMonetary(value, index)'
-      ) {{contribution}}
-
-      contribution(
-        variant='unfilled'
-        @new-value='submitAddNonMonetary'
+      message-missing-income(
+        v-if='fakeStore.isFirstTime && !ephemeral.isEditingIncome'
+        @click='handleFormTriggerClick'
       )
-        i.icon-heart(aria-hidden='true')
-        i18n Add a non-monetary method
 
-    contribution(
-      v-if='doesGiveMonetary'
-      variant='editable'
-      ismonetary=''
-      @interaction='handleFormTriggerClick'
-    )
-      i18n(
-        :args='{amount:`${fakeStore.currency}${fakeStore.giving.monetary}`}'
-      ) Pledging up to {amount}
-      i18n to other&apos;s mincome
-      i18n(
-        v-if='fakeStore.giving.monetary == 0' :args='{amount: "[$170]"}'
-        tag='p'
-      ) (The group&apos;s average pledge is {amount})
+      income-form(
+        v-if='ephemeral.isEditingIncome'
+        ref='incomeForm'
+        @save='handleIncomeSave'
+        @cancel='handleIncomeCancel'
+      )
 
-    message-missing-income(
-      v-if='fakeStore.isFirstTime && !ephemeral.isEditingIncome'
-      @click='handleFormTriggerClick'
-    )
-
-    income-form(
-      v-if='ephemeral.isEditingIncome'
-      ref='incomeForm'
-      @save='handleIncomeSave'
-      @cancel='handleIncomeCancel'
-    )
-
-  template(#sidebar='')
-    group-mincome
 </template>
 
 <script>
@@ -189,4 +188,11 @@ export default {
 
 <style lang="scss" scoped>
 @import "../../assets/style/_variables.scss";
+
+.contribution-card {
+  display: flex;
+  > div {
+    width: 50%;
+  }
+}
 </style>
