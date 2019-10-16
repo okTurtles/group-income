@@ -49,7 +49,8 @@ export default {
       }
 
       const p = this.currentGroupState.proposals
-      const sortByExpire = Object.keys(p).sort((prev, curr) => p[curr].data.expires_date_ms - p[prev].data.expires_date_ms)
+      // TODO/BUG: array.sort doesn't work the same in all browsers.
+      const sortByExpire = Object.keys(p) // .stableSort((prev, curr) => p[curr].data.expires_date_ms - p[prev].data.expires_date_ms)
 
       // HACK/NOTE: Proposals to invite members created at the same time by
       // the same user, should be "visually together". A solution without
@@ -69,19 +70,21 @@ export default {
         if (expireAtSameTime && createdBySameUser) {
           // This proposal should be displayed "visually together" with
           // the previous proposal, so let's group it under the same index.
-          const placeToAdd = this.hadVoted(p[hash]) ? 'push' : 'unshift'
-          proposalsGrouped[proposalsGrouped.length - 1][placeToAdd](hash)
+          proposalsGrouped[proposalsGrouped.length - 1].push(hash)
         } else {
           proposalsGrouped.push([hash])
         }
       })
       // Push grouped proposals already voted to the bottom
       // REVIEW: improve sort order, taking in account status as well
-      const sortByNotVoted = proposalsGrouped.sort((prev, curr) => {
-        return curr.some(hash => this.hadVoted(p[hash])) ? -1 : 1
-      })
-      this.proposalsSorted = sortByNotVoted // eslint-disable-line vue/no-side-effects-in-computed-properties
-      return this.proposalsSorted
+      // const sortByNotVoted = proposalsGrouped.stableSort((prev, curr) => {
+      //   return curr.some(hash => this.hadVoted(p[hash])) ? -1 : 1
+      // })
+      // this.proposalsSorted = sortByNotVoted // eslint-disable-line vue/no-side-effects-in-computed-properties
+
+      this.proposalsGrouped = proposalsGrouped // eslint-disable-line vue/no-side-effects-in-computed-properties
+
+      return this.proposalsGrouped
     }
   },
   methods: {

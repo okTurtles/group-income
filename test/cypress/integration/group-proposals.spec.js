@@ -123,9 +123,9 @@ describe('Proposals - Add members', () => {
   })
 
   it('user3 changes their "yes" vote on user5 to "no" and proposal gets refused', () => {
-    getProposalBoxes().eq(1).within(() => {
+    getProposalBoxes().eq(0).within(() => {
       cy.getByDT('title', 'h4').should('contain', `user1-${userId} is proposing:`)
-      cy.getByDT('proposalItem').eq(0).within(() => {
+      cy.getByDT('proposalItem').eq(1).within(() => {
         cy.getByDT('typeDescription')
           .should('contain', `Add user5-${userId} to group.`)
         cy.getByDT('voted').find('button.link')

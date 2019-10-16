@@ -94,9 +94,8 @@ export default {
     async voteFor () {
       this.ephemeral.changingVote = false
       this.ephemeral.errorMsg = null
-      const isSure = confirm(L('Are you sure you want to vote yes?'))
       // Avoid redundant vote from "Change vote" if already voted FOR before
-      if (!isSure || this.proposal.votes[this.currentUsername] === VOTE_FOR) {
+      if (!confirm(L('Are you sure you want to vote yes?')) || this.proposal.votes[this.currentUsername] === VOTE_FOR) {
         return null
       }
       try {
@@ -149,9 +148,8 @@ export default {
     async voteAgainst () {
       this.ephemeral.changingVote = false
       this.ephemeral.errorMsg = null
-      const isSure = confirm(L('Are you sure you want to vote no?'))
       // Avoid redundant vote from "Change vote" if already voted AGAINST before
-      if (!isSure || this.proposal.votes[this.currentUsername] === VOTE_AGAINST) {
+      if (!confirm(L('Are you sure you want to vote no?')) || this.proposal.votes[this.currentUsername] === VOTE_AGAINST) {
         return null
       }
       try {
@@ -169,8 +167,7 @@ export default {
       }
     },
     async cancelProposal () {
-      const isSure = confirm(L('Are you sure you want to cancel this proposal?'))
-      if (!isSure) {
+      if (!confirm(L('Are you sure you want to cancel this proposal?'))) {
         return null
       }
       try {
