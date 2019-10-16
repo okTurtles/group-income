@@ -3,7 +3,6 @@
     .modal(
       data-test='modal'
       role='dialog'
-      aria-modal='true'
       tabindex='-1'
       @keyup.tab='trapFocus'
       v-if='isActive'

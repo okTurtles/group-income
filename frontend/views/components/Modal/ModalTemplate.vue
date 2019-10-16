@@ -3,7 +3,6 @@
     data-test='modal'
     role='dialog'
     :aria-labelledby='$scopedSlots.title'
-    aria-modal='true'
     tabindex='-1'
     v-focus=''
     @keyup.tab='trapFocus'

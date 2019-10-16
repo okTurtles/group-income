@@ -12,13 +12,14 @@ export default {
     return {
       content: null, // This is the main modal
       subcontent: [], // This is for collection of modal on top of modals
-      replacement: null // This let us replace the modal once the first one is close without updating the url
+      replacement: null, // This let us replace the modal once the first one is close without updating the url
+      lastFocus: null // Record element that open the modal
     }
   },
   created () {
-    sbp('okTurtles.events/on', OPEN_MODAL, component => this.openModal(component))
+    sbp('okTurtles.events/on', OPEN_MODAL, this.openModal)
     sbp('okTurtles.events/on', CLOSE_MODAL, this.unloadModal)
-    sbp('okTurtles.events/on', REPLACE_MODAL, component => this.replaceModal(component))
+    sbp('okTurtles.events/on', REPLACE_MODAL, this.replaceModal)
     // When press escape it should close the modal
     window.addEventListener('keyup', this.handleKeyUp)
   },
@@ -41,7 +42,7 @@ export default {
           // Try to find the new subcontent in the list of subcontent
           const i = this.subcontent.indexOf(subcontent)
           if (i !== -1) {
-            this.subcontent = this.subcontent.splice(0, i)
+            this.subcontent = this.subcontent.slice(0, i)
           } else this.subcontent = subcontent
         }
       } else {
@@ -79,13 +80,15 @@ export default {
           }
         }).catch(console.error)
       } else if (this.$route.query.modal) {
-        var query = Object.assign({}, this.$route.query)
+        const query = { ...this.$route.query }
         delete query['modal']
         delete query['subcontent']
         this.$router.push({ query }).catch(console.error)
       }
     },
     openModal (componentName) {
+      // Record active element
+      this.lastFocus = document.activeElement
       if (this.content) {
         this.subcontent.push(componentName)
       } else {
@@ -98,8 +101,8 @@ export default {
         this.subcontent.pop()
       } else {
         this.content = null
-        // Refocus on the window focusable element (mainly hack for esc button)
-        document.querySelectorAll('button, a, input, select, textarea, [tabindex]:not([tabindex="-1"])')[0].focus()
+        // Refocus on button that open the modal
+        this.lastFocus.focus()
       }
       if (this.replacement) {
         this.openModal(this.replacement)
