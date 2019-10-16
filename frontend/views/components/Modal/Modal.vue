@@ -6,23 +6,18 @@
 <script>
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL, REPLACE_MODAL, CLOSE_MODAL } from '@utils/events.js'
-
 export default {
   name: 'Modal',
   data () {
     return {
       content: null, // This is the main modal
       subcontent: [], // This is for collection of modal on top of modals
-      replacement: null,
-      isUrlChange: true
+      replacement: null
     }
   },
   created () {
     sbp('okTurtles.events/on', OPEN_MODAL, component => this.openModal(component))
-    sbp('okTurtles.events/on', CLOSE_MODAL, component => {
-      this.isUrlChange = false
-      this.unloadModal(component)
-    })
+    sbp('okTurtles.events/on', CLOSE_MODAL, this.unloadModal)
     sbp('okTurtles.events/on', REPLACE_MODAL, component => this.replaceModal(component))
     // When press escape it should close the modal
     window.addEventListener('keyup', this.handleKeyUp)
@@ -38,28 +33,23 @@ export default {
   },
   watch: {
     '$route' (to, from) {
-      if (this.isUrlChange) {
-        console.log('URLCHANGE')
-        if (to.query.modal) {
-          // We reset the modals with no animation for simplicity
-          if (to.query.modal !== this.content) this.content = to.query.modal
-          const subcontent = to.query.subcontent
-          if (subcontent !== this.activeSubcontent()) {
-            // Try to find the new subcontent in the list of subcontent
-            const i = this.subcontent.indexOf(subcontent)
-            if (i) {
-              this.subcontent = this.subcontent.splice(0, i)
-            } else this.subcontent = subcontent
-          }
-        } else {
-          // When the route change we compare to see if the modal changed
-          // If so, we send the event to close the modal
-          if (from.query.modal) {
-            this.unloadModal()
-          }
+      if (to.query.modal) {
+        // We reset the modals with no animation for simplicity
+        if (to.query.modal !== this.content) this.content = to.query.modal
+        const subcontent = to.query.subcontent
+        if (subcontent !== this.activeSubcontent()) {
+          // Try to find the new subcontent in the list of subcontent
+          const i = this.subcontent.indexOf(subcontent)
+          if (i) {
+            this.subcontent = this.subcontent.splice(0, i)
+          } else this.subcontent = subcontent
         }
       } else {
-        this.isUrlChange = true
+        // When the route change we compare to see if the modal changed
+        // If so, we send the event to close the modal
+        if (from.query.modal) {
+          this.unloadModal()
+        }
       }
     }
   },
@@ -82,11 +72,18 @@ export default {
       if (subcontent) this.openModal(subcontent)
     },
     updateUrl () {
-      this.isUrlChange = false
       if (this.content) {
-        this.$router.push({ query: { modal: this.content, subcontent: this.activeSubcontent() } }).catch((error) => { console.log(error) })
-      } else {
-        this.$router.push({ query: {} }).catch(console.error)
+        this.$router.push({
+          query: {
+            ...this.$route.query,
+            ...{ modal: this.content, subcontent: this.activeSubcontent() }
+          }
+        }).catch(console.error)
+      } else if (this.$route.query.modal) {
+        var query = Object.assign({}, this.$route.query)
+        delete query['modal']
+        delete query['subcontent']
+        this.$router.push({ query }).catch(console.error)
       }
     },
     openModal (componentName) {
@@ -97,20 +94,17 @@ export default {
       }
       this.updateUrl()
     },
-    unloadModal (name) {
+    unloadModal () {
       if (this.subcontent.length) {
         this.subcontent.pop()
       } else {
         this.content = null
       }
-
-      if (!this.isUrlChange) {
-        if (this.replacement) {
-          this.openModal(this.replacement)
-          this.replacement = null
-        } else {
-          this.updateUrl()
-        }
+      if (this.replacement) {
+        this.openModal(this.replacement)
+        this.replacement = null
+      } else {
+        this.updateUrl()
       }
     },
     replaceModal (componentName) {
