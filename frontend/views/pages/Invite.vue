@@ -100,7 +100,7 @@ export default {
             )
             await sbp('backend/publishLogEntry', proposal)
           } else {
-            const invite = generateInvites(1)
+            const invite = generateInvites(this.$store.state.loggedIn.username, 1)
             const inviteToMailbox = await sbp('gi.contracts/mailbox/postMessage/create',
               {
                 messageType: TYPE_MESSAGE,

@@ -85,6 +85,49 @@ Cypress.Commands.add('giCreateGroup', (name, { image = 'imageTest.png', values =
   cy.getByDT('toDashboardBtn').click()
 })
 
+function inviteUser (invitee, index) {
+  cy.getByDT('invitee').eq(index).within(() => {
+    cy.get('input').clear().type(invitee)
+    cy.getByDT('add', 'button').click()
+    cy.getByDT('feedbackMsg').should('contain', 'Ready to be invited!')
+  })
+}
+
+Cypress.Commands.add('giInviteMember', (
+  invitees,
+  {
+    isProposal = false,
+    reason = 'Because they are great people!'
+  } = {}) => {
+  cy.getByDT('inviteButton').click()
+
+  if (typeof invitees === 'string') {
+    inviteUser(invitees, 0)
+  } else {
+    invitees.forEach((invitee, index) => {
+      if (index > 0) {
+        cy.getByDT('addMorePeople').click()
+      }
+      inviteUser(invitee, index)
+    })
+  }
+
+  if (isProposal) {
+    cy.getByDT('nextBtn').click()
+    cy.getByDT('reason', 'textarea').clear().type(reason)
+    cy.getByDT('submitBtn').click()
+    cy.getByDT('finishBtn').click()
+  } else {
+    cy.getByDT('submitBtn').click()
+    cy.getByDT('invitee').each(([invitee]) => {
+      cy.get(invitee)
+        .getByDT('feedbackMsg')
+        .should('contain', 'Member invited successfully!')
+    })
+    cy.getByDT('closeModal').click()
+  }
+})
+
 Cypress.Commands.add('giAcceptGroupInvite', (groupName) => {
   cy.getByDT('mailboxLink').click()
   cy.getByDT('inboxMessage').click()

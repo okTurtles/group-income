@@ -15,7 +15,7 @@ describe('Group Creation and Inviting Members', () => {
     cy.giLogOut()
   })
 
-  it('user1 logins back and creates new Group', () => {
+  it('user1 logins back and creates a group', () => {
     cy.giLogin(`user1-${userId}`)
 
     cy.giCreateGroup(groupName, {
@@ -26,33 +26,36 @@ describe('Group Creation and Inviting Members', () => {
     cy.getByDT('welcomeGroup').should('contain', `Welcome ${groupName}!`)
   })
 
-  it('user1 starts inviting user2 to the Group', () => {
+  it('user1 starts inviting user2 and user3 to the group', () => {
     cy.getByDT('inviteButton').click()
 
-    cy.getByDT('searchUser').clear().type(`user2-${userId}`)
+    cy.getByDT('invitee').within(() => {
+      cy.get('input').clear().type(`user2-${userId}`)
+      cy.getByDT('add', 'button').click()
+      cy.getByDT('feedbackMsg').should('contain', 'Ready to be invited!')
+    })
 
-    cy.getByDT('addButton').click()
+    cy.getByDT('addMorePeople').click()
 
-    cy.getByDT('member').should('lengthOf', 1)
+    cy.getByDT('invitee').eq(1).within(() => {
+      cy.get('input').clear().type(`user3-${userId}`)
+      cy.getByDT('add', 'button').click()
+      cy.getByDT('feedbackMsg').should('contain', 'Ready to be invited!')
+    })
   })
 
-  it('user1 cancels user2 invitation', () => {
-    cy.getByDT('deleteMember').click()
+  it('user1 removes user3 from invitation list and cancels process', () => {
+    cy.getByDT('invitee').eq(1).within(() => {
+      cy.getByDT('remove').click()
+    })
 
-    cy.getByDT('member').should('not.exist')
+    cy.getByDT('invitee').should('have.length', 1)
+
+    cy.getByDT('closeModal').click()
   })
 
   it('user1 decides to actually invite user2 and user3 to the group', () => {
-    cy.getByDT('searchUser').clear().type(`user2-${userId}`)
-    cy.getByDT('addButton').click()
-
-    cy.getByDT('searchUser').clear().type(`user3-${userId}`)
-    cy.getByDT('addButton').click()
-
-    cy.getByDT('submit').click()
-
-    cy.getByDT('notifyInvitedSuccess')
-      .should('contain', 'Members invited successfully!')
+    cy.giInviteMember([`user2-${userId}`, `user3-${userId}`])
 
     cy.giLogOut()
   })

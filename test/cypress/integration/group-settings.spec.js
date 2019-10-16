@@ -27,7 +27,7 @@ describe('Changing Group Settings', () => {
       cy.get('input[type="number"][name="mincomeAmount"]')
         .type(groupNewIncome)
 
-      cy.getByDT('finishBtn', 'button')
+      cy.getByDT('submitBtn', 'button')
         .click()
     })
 

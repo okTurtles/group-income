@@ -2,10 +2,10 @@
 li.c-wrapper
   user-image.c-avatar(:username='proposal.meta.username')
   .c-header
-    h4.has-text-bold(data-test='title') {{title}}:
-    span {{humanDate}}
+    h4.has-text-bold(data-test='title') {{ title }}:
+    span {{ humanDate }}
   .c-main
-    p.has-text-1 "{{proposal.data.proposalData.reason}}"
+    p.has-text-1(v-if='humanReason') {{ humanReason }}
     ul
       proposal-item(
         v-for='hash in proposalHashes'
@@ -64,6 +64,10 @@ export default {
       return date.toLocaleDateString(locale, {
         year: 'numeric', month: 'long', day: 'numeric'
       })
+    },
+    humanReason () {
+      const reason = this.proposal.data.proposalData.reason
+      return reason ? `"${reason}"` : undefined
     }
   }
 }
