@@ -11,23 +11,29 @@ table.table {
     border-bottom: none;
   }
 
+  thead tr {
+    padding: $spacer-sm 0;
+  }
+
+  tbody tr {
+    padding: 0.6875rem 0;
+  }
+
   th {
     text-transform: uppercase;
     font-family: "Poppins";
     font-size: $size-5;
     color: $text-1;
-    padding: $spacer-sm 0;
   }
 
   td {
-    padding: 0.6875rem 0;
     font-size: $size-4;
     color: $text_0;
   }
 
   th,
   td {
+    padding: 0;
     vertical-align: middle;
-    overflow: hidden;
   }
 }

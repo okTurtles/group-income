@@ -3,7 +3,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
   template(#title='') {{ L('Group Settings') }}
   template(#description='') {{ L('Changes to these settings will be visible to all group members') }}
 
-  page-section(title='')
+  page-section(title='' v-if='false')
 
     form
       .field
@@ -61,50 +61,9 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
         data-test='saveBtn'
       ) Save changes
 
-  page-section(:title='L("Invite links")')
-    p.c-invite-description
-      i18n.has-text-1 Here's a list of all invite links you own
-      button.button.is-small.is-outlined
-        | Active links
-        i.icon-angle-down
-
-    table.table.c-table
-      thead
-        tr
-          i18n.name(tag='th') created for
-          i18n.invite-link(tag='th') invite link
-          i18n.state(tag='th') state
-          th.action
-      tbody
-        tr(
-          v-for='(item, index) in ephemeral.dummyInviteList'
-          :key='index'
-        )
-          td.name
-            | {{ item.name }}
-            button.is-icon-small(v-if='item.name === "Anyone"')
-              i.icon-info-circle
-          td.invite-link
-            div
-              span.link-url.has-ellipsis {{ item.inviteLink }}
-              button.is-icon-small.has-background
-                i.icon-copy.is-regular
-          td.state
-            div
-              i18n.state-description {{ item.state.description }}
-              i18n.state-expire(
-                :class='item.state.expireInfo === "Expired"? "expired" : ""'
-              ) {{ item.state.expireInfo }}
-          td.action
-            div
-              button.is-icon
-                i.icon-ellipsis-v
-
-    // TODO: figuring out using either i18n or L() for the tag below
-    p.c-invite-footer
-      | To generate a new link, you need to&nbsp;
-      span.link propose adding a new member
-      |  to your group.
+  invitelinks(
+    :list='ephemeral.inviteLinks.dummyList'
+  )
 
   page-section(:title='L("Leave Group")')
     i18n(tag='p' html='This means you will stop having access to the <b>group chat</b> (including direct messages to other group members) and <b>contributions</b>. Re-joining the group is possible, but requires other members to vote and reach an agreement.')
@@ -137,52 +96,60 @@ import currencies from '@view-utils/currencies.js'
 
 import Page from '@pages/Page.vue'
 import PageSection from '@components/PageSection.vue'
+import Invitelinks from '@components/GroupSettings/InviteLinks.vue'
 
 export default {
   name: 'GroupSettings',
   mixins: [validationMixin],
   components: {
     Page,
-    PageSection
+    PageSection,
+    Invitelinks
   },
   data () {
     return {
       currencies,
       ephemeral: {
-        dummyInviteList: [
-          {
-            name: 'Felix Kubin',
-            inviteLink: 'http://localhost:8000/app/join?groupId=21XWnNFz7RbNPKHUqAeSLLT1cNHnnCssmSw6dJeB1gfSSeZc7v&secret=4460',
-            state: {
-              description: 'Not used yet',
-              expireInfo: '1d 2h 30m left'
+        inviteLinks: {
+          dummyList: [
+            {
+              name: 'Felix Kubin',
+              inviteLink: 'http://localhost:8000/app/join?groupId=21XWnNFz7RbNPKHUqAeSLLT1cNHnnCssmSw6dJeB1gfSSeZc7v&secret=4460',
+              state: {
+                description: 'Not used yet',
+                expireInfo: '1d 2h 30m left',
+                isExpired: false
+              }
+            },
+            {
+              name: 'Brian Eno',
+              inviteLink: 'http://localhost:8000/app/join?groupId=21XWnNFz7RbNPKHUqAeSLLT1cNHnnCssmSw6dJeB1gfSSeZc7v&secret=4460',
+              state: {
+                description: 'Used',
+                expireInfo: '',
+                isExpired: true
+              }
+            },
+            {
+              name: 'Carl Sagan',
+              inviteLink: 'http://localhost:8000/app/join?groupId=21XWnNFz7RbNPKHUqAeSLLT1cNHnnCssmSw6dJeB1gfSSeZc7v&secret=4460',
+              state: {
+                description: 'Not used',
+                expireInfo: 'Expired',
+                isExpired: true
+              }
+            },
+            {
+              name: 'Anyone',
+              inviteLink: 'http://localhost:8000/app/join?groupId=21XWnNFz7RbNPKHUqAeSLLT1cNHnnCssmSw6dJeB1gfSSeZc7v&secret=4460',
+              state: {
+                description: '10/60 used',
+                expireInfo: 'Expired',
+                isExpired: true
+              }
             }
-          },
-          {
-            name: 'Brian Eno',
-            inviteLink: 'http://localhost:8000/app/join?groupId=21XWnNFz7RbNPKHUqAeSLLT1cNHnnCssmSw6dJeB1gfSSeZc7v&secret=4460',
-            state: {
-              description: 'Used',
-              expireInfo: null
-            }
-          },
-          {
-            name: 'Carl Sagan',
-            inviteLink: 'http://localhost:8000/app/join?groupId=21XWnNFz7RbNPKHUqAeSLLT1cNHnnCssmSw6dJeB1gfSSeZc7v&secret=4460',
-            state: {
-              description: 'Not used',
-              expireInfo: 'Expired'
-            }
-          },
-          {
-            name: 'Anyone',
-            inviteLink: 'http://localhost:8000/app/join?groupId=21XWnNFz7RbNPKHUqAeSLLT1cNHnnCssmSw6dJeB1gfSSeZc7v&secret=4460',
-            state: {
-              description: '10/60 used',
-              expireInfo: 'Expired'
-            }
-          }
-        ]
+          ]
+        }
       }
     }
   },
@@ -218,69 +185,4 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "../../assets/style/_variables.scss";
-
-.c-invite-description {
-  display: flex;
-  justify-content: space-between;
-  margin-top: $spacer-sm 0;
-}
-
-.c-table {
-  width: 100%;
-  table-layout: fixed;
-  margin: $size-2 0;
-
-  .name {
-    width: 147px;
-    padding-right: $size-2;
-
-    button {
-      display: inline-block;
-      color: $primary_0;
-    }
-  }
-  .invite-link {
-    width: 197px;
-    padding-right: $size-2;
-
-    > div {
-      display: flex;
-      align-items: center;
-    }
-
-    button {
-      padding: 0 $spacer / 3;
-      width: 1.6875rem;
-      height: 1.6875rem;
-      font-weight: normal;
-    }
-  }
-  .state {
-    width: 123px;
-    padding-right: 3px;
-
-    > div {
-      display: flex;
-      flex-direction: column;
-
-      .state-expire {
-        line-height: $size-3;
-        font-size: $size-5;
-        color: $text-1;
-
-        &.expired {
-          color: $danger_0;
-        }
-      }
-    }
-  }
-  .action {
-    width: 60px;
-
-    button {
-      margin: 0 auto;
-    }
-  }
-}
 </style>
