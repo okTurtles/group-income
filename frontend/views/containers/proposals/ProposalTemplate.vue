@@ -188,6 +188,10 @@ export default {
   .icon-vote-yea {
     color: $primary_0;
     margin-right: $spacer-sm;
+
+    @include phone {
+      display: none;
+    }
   }
 }
 </style>

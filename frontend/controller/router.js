@@ -11,7 +11,6 @@ import GroupChat from '@pages/GroupChat.vue'
 import Invite from '@pages/Invite.vue'
 import Join from '@pages/Join.vue'
 import Mailbox from '@pages/Mailbox.vue'
-import Vote from '@pages/Vote.vue'
 import GroupSettings from '@pages/GroupSettings.vue'
 import L from '@view-utils/translations.js'
 
@@ -147,13 +146,6 @@ var router = new Router({
       component: Join,
       meta: { title: L('Join a Group') },
       // beforeEnter: createEnterGuards(loginGuard, mailGuard)
-      beforeEnter: createEnterGuards(loginGuard)
-    },
-    {
-      path: '/vote',
-      name: Vote.name,
-      component: Vote,
-      meta: { title: L('Vote on a Proposal') },
       beforeEnter: createEnterGuards(loginGuard)
     },
     process.env.NODE_ENV === 'development' ? {
