@@ -17,7 +17,6 @@
           name='name'
           @input='debounceName'
           ref='username'
-          v-focus=''
           data-test='signName'
         )
         p.error(v-if='$v.form.name.$error' data-test='badUsername')
@@ -45,7 +44,7 @@
         @input='(newPassword) => {password = newPassword}'
       )
 
-      p.error(v-if='form.response') {{ form.response }}
+      p.error(v-if='ephemeral.errorMsg') {{ ephemeral.errorMsg }}
 
       .buttons.is-centered
         i18n.is-primary.is-centered(
@@ -85,9 +84,10 @@ export default {
       form: {
         name: null,
         password: null,
-        email: null,
-        response: '',
-        error: false
+        email: null
+      },
+      ephemeral: {
+        errorMsg: null
       }
     }
   },
@@ -148,7 +148,7 @@ export default {
             username: this.form.name,
             identityContractID: user.hash()
           })
-          this.form.response = 'success' // TODO: get rid of this and fix/update tests accordingly
+          this.ephemeral.errorMsg = 'success' // TODO: get rid of this and fix/update tests accordingly
           if (this.$route.query.next) {
             // TODO: get rid of this timeout and fix/update tests accordingly
             setTimeout(() => {
@@ -161,8 +161,7 @@ export default {
         } catch (ex) {
           console.error('SignUp.vue submit() error:', ex)
           sbp('state/vuex/dispatch', 'logout')
-          this.form.response = ex.toString()
-          this.form.error = true
+          this.ephemeral.errorMsg = ex.toString()
         }
       }
     },

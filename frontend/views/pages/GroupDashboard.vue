@@ -7,12 +7,12 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
   page-section(title='This months overview')
     overview
 
-  page-section(title='Proposals')
-    proposals
-
   page-section(title='July Overview')
     //- group-pledges-graph
     progress-overview
+
+  page-section(:title='Object.keys(currentGroupState.proposals).length > 0 ? L("Proposals") : ""')
+    proposals
 
   //- page-section(title='Support History')
   //-   support-history
@@ -21,7 +21,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
   //-   group-settings
 
   template(#sidebar='')
-    groups-min-income
+    group-mincome
     group-members
     group-purpose
 </template>
@@ -32,13 +32,13 @@ import { mapGetters, mapState } from 'vuex'
 import Page from '@pages/Page.vue'
 import PageSection from '@components/PageSection.vue'
 import Overview from '@containers/Overview.vue'
-import Proposals from '@containers/Proposals.vue'
+import Proposals from '@containers/proposals/ProposalsWidget.vue'
 // import GroupPledgesGraph from '@containers/GroupPledgesGraph.vue'
 import ProgressOverview from '@components/ProgressOverview.vue'
 import StartInviting from '@components/StartInviting.vue'
 // import SupportHistory from '@components/Graphs/SupportHistory.vue'
 // import GroupSettings from '@components/GroupSettings.vue'
-import GroupsMinIncome from '@containers/sidebar/GroupsMinIncome.vue'
+import GroupMincome from '@containers/sidebar/GroupMincome.vue'
 import GroupMembers from '@containers/sidebar/GroupMembers.vue'
 import GroupPurpose from '@containers/sidebar/GroupPurpose.vue'
 
@@ -49,6 +49,7 @@ export default {
       'currentGroupId'
     ]),
     ...mapGetters([
+      'currentGroupState', // TODO normalize getters names
       'groupSettings',
       'groupsByName',
       'groupMembersCount'
@@ -63,7 +64,7 @@ export default {
     ProgressOverview,
     // SupportHistory,
     // GroupSettings,
-    GroupsMinIncome,
+    GroupMincome,
     GroupMembers,
     GroupPurpose,
     StartInviting

@@ -1,5 +1,7 @@
 # Modal System
 
+TODO: Replace mixin functionality with vuejs 2-3 functional API is out
+
 We have a centralized modal architecture. In other words, We only have 1 main dynamic modal that changes its content based on the current open modal by using `:is` Vue feature.
 
 Then we can open/close any modal from anywhere in the app using `sbp()`.
@@ -28,7 +30,7 @@ openLoginModal () {
 ```
 
 ### How to close a modal
-To close the modal we nered to access directly the compinent instead of using event to avoid closing other openned modal
+To close the modal we nered to access directly the component instead of using event to avoid closing other openned modal
 
 ```js
 // LoginModal.vue
@@ -37,6 +39,23 @@ closeModal () {
   this.$refs.modal.close()
 }
 ```
+
+There is differrent way of closing the modal which can be confusing.
+Here is a schema that help to understand the complicated process:
+
+1) Click on closing buttons or background:
+- ModalClose [$emit("close")] to parent ModalBaseTemplate or ModalTemplate
+- close action is call from mixin (that need to be replaced with functionnal API)
+- The modal is closed by a boolean
+- After the animation is done, unload event is called
+- sbp('okTurtles.events/emit', CLOSE_MODAL) is called from ModalMixin
+- unloadModal function is then call from Modal.vue that remove either content or subcontent
+- we set a temporary variable to avoid changes on url
+- Then we update the url
+
+2) Direct change of the url (either by back next of change in then search bar)
+- Modal.vue watch for changes
+- unloadModal function is then call from Modal.vue that remove either content or subcontent
 
 ### The `Modal.vue`
 

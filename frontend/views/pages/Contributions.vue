@@ -70,7 +70,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
     )
 
   template(#sidebar='')
-    groups-min-income
+    group-mincome
 </template>
 
 <script>
@@ -78,7 +78,7 @@ import Page from '@pages/Page.vue'
 import currencies from '@view-utils/currencies.js'
 import MessageMissingIncome from '@containers/contributions/MessageMissingIncome.vue'
 import IncomeForm from '@containers/contributions/IncomeForm.vue'
-import GroupsMinIncome from '@containers/sidebar/GroupsMinIncome.vue'
+import GroupMincome from '@containers/sidebar/GroupMincome.vue'
 import Contribution from '@components/Contribution.vue'
 import TextWho from '@components/TextWho.vue'
 
@@ -86,7 +86,7 @@ export default {
   name: 'Contributions',
   components: {
     Page,
-    GroupsMinIncome,
+    GroupMincome,
     Contribution,
     TextWho,
     IncomeForm,

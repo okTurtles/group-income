@@ -6,21 +6,20 @@
 <script>
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL, REPLACE_MODAL, CLOSE_MODAL } from '@utils/events.js'
-import { logExceptNavigationDuplicated } from '@controller/utils/misc.js'
-
 export default {
   name: 'Modal',
   data () {
     return {
       content: null, // This is the main modal
       subcontent: [], // This is for collection of modal on top of modals
-      replacement: null
+      replacement: null, // This let us replace the modal once the first one is close without updating the url
+      lastFocus: null // Record element that open the modal
     }
   },
   created () {
-    sbp('okTurtles.events/on', OPEN_MODAL, component => this.openModal(component))
-    sbp('okTurtles.events/on', CLOSE_MODAL, component => this.unloadModal(component))
-    sbp('okTurtles.events/on', REPLACE_MODAL, component => this.replaceModal(component))
+    sbp('okTurtles.events/on', OPEN_MODAL, this.openModal)
+    sbp('okTurtles.events/on', CLOSE_MODAL, this.unloadModal)
+    sbp('okTurtles.events/on', REPLACE_MODAL, this.replaceModal)
     // When press escape it should close the modal
     window.addEventListener('keyup', this.handleKeyUp)
   },
@@ -42,15 +41,15 @@ export default {
         if (subcontent !== this.activeSubcontent()) {
           // Try to find the new subcontent in the list of subcontent
           const i = this.subcontent.indexOf(subcontent)
-          if (i) {
-            this.subcontent = this.subcontent.splice(0, i)
+          if (i !== -1) {
+            this.subcontent = this.subcontent.slice(0, i)
           } else this.subcontent = subcontent
         }
       } else {
         // When the route change we compare to see if the modal changed
         // If so, we send the event to close the modal
         if (from.query.modal) {
-          sbp('okTurtles.events/emit', CLOSE_MODAL)
+          this.unloadModal()
         }
       }
     }
@@ -59,6 +58,7 @@ export default {
     handleKeyUp (e) {
       // Only if there an active modal
       if (this.content && e.key === 'Escape') {
+        e.preventDefault()
         this.unloadModal()
       }
     },
@@ -73,12 +73,22 @@ export default {
     },
     updateUrl () {
       if (this.content) {
-        this.$router.push({ query: { modal: this.content, subcontent: this.activeSubcontent() } }).catch(logExceptNavigationDuplicated)
-      } else {
-        this.$router.push({ query: null }).catch(logExceptNavigationDuplicated)
+        this.$router.push({
+          query: {
+            ...this.$route.query,
+            ...{ modal: this.content, subcontent: this.activeSubcontent() }
+          }
+        }).catch(console.error)
+      } else if (this.$route.query.modal) {
+        const query = { ...this.$route.query }
+        delete query['modal']
+        delete query['subcontent']
+        this.$router.push({ query }).catch(console.error)
       }
     },
     openModal (componentName) {
+      // Record active element
+      this.lastFocus = document.activeElement
       if (this.content) {
         this.subcontent.push(componentName)
       } else {
@@ -86,25 +96,26 @@ export default {
       }
       this.updateUrl()
     },
-    unloadModal (name) {
+    unloadModal () {
       if (this.subcontent.length) {
         this.subcontent.pop()
       } else {
         this.content = null
+        // Refocus on button that open the modal
+        this.lastFocus.focus()
       }
-      this.updateUrl()
       if (this.replacement) {
         this.openModal(this.replacement)
         this.replacement = null
+      } else {
+        this.updateUrl()
       }
-    },
-    closeModal () {
-      // Use direct children instead of sbp to wait for animation out
-      this.$refs['content'].$children[0].close()
     },
     replaceModal (componentName) {
       this.replacement = componentName
-      this.closeModal()
+      // At the moment you can only replace a modal if it's the main one by design
+      // Use direct children instead of sbp to wait for animation out
+      this.$refs['content'].$children[0].close()
     }
   }
 }

@@ -19,7 +19,7 @@
         </div>
     </div>
     <![endif]-->
-    <div id="app" :class="showNav ? 'l-with-navigation' : 'l-no-navigation'">
+    <div id="app" :class="showNav ? 'l-with-navigation' : 'l-no-navigation'" data-test="app">
       <app-styles></app-styles>
       <navigation v-if="showNav" class="l-navigation"></navigation>
       <router-view class="l-page"></router-view>

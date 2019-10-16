@@ -29,7 +29,16 @@ $danger_0_1: var(--danger_0_1);
 $danger_1: var(--danger_1);
 $danger_2: var(--danger_2);
 
-$colors: "primary", "success", "warning", "danger";
+$colors: "primary", "success", "warning", "danger", "general";
+
+.has-text-0 {
+  color: $text_0;
+}
+
+.help,
+.has-text-1 {
+  color: $text_1;
+}
 
 @each $name in $colors {
   .has-text-#{$name} {
@@ -43,15 +52,6 @@ $colors: "primary", "success", "warning", "danger";
 
 .has-text-white {
   color: $white;
-}
-
-.has-text-0 {
-  color: $text_0;
-}
-
-.help,
-.has-text-1 {
-  color: $text_1;
 }
 
 // ---------- SVGs

@@ -22,15 +22,18 @@ form {
   .helper {
     display: block;
     color: $text_1;
-    margin-top: $spacer-xs;
+    margin-top: $spacer-sm;
   }
 }
+
+// [1] - make the border-corner around totally visisble at combo elements
 
 textarea,
 .textarea,
 select,
 .select,
 .input {
+  background: $background_0; // [1]
   display: flex;
   justify-content: center;
   height: $inputHeight;
@@ -98,6 +101,7 @@ textarea,
     padding-right: $spacer-lg;
     padding-left: $spacer;
     min-width: 6.5rem;
+    cursor: pointer;
   }
 
   &::after {
@@ -111,6 +115,7 @@ textarea,
     top: 50%;
     right: $spacer;
     transform: translateY(-50%);
+    pointer-events: none;
   }
 }
 
@@ -140,18 +145,22 @@ textarea,
     line-height: $inputHeight;
     border-left: 1px solid $general_0;
     white-space: nowrap;
+    color: $text_0;
+  }
+
+  select:not(:first-child) {
+    border-radius: 0;
+    border-left: 1px solid $general_1;
   }
 
   select,
   .select,
   .input {
-    border: none;
-    border-radius: 0;
-    border-left: 1px solid $general_1;
+    border: 1px solid transparent;
 
     &:focus {
       box-shadow: 0 0 0 2px $primary_1;
-      border: 1px solid $primary_0;
+      border-color: $primary_0;
 
       + label {
         background-color: $primary_0;
@@ -209,14 +218,27 @@ textarea,
       border-radius: $radius;
     }
   }
+
+  &.error {
+    border-color: $danger_0;
+
+    @media (hover: hover) {
+      input:focus {
+        box-shadow: 0 0 0 2px $danger_1;
+        border-color: $danger_0;
+      }
+    }
+  }
 }
 
 .error {
   color: $danger_0;
 }
 
+span.error,
 p.error {
-  margin-top: 0.5rem;
+  display: block;
+  margin-top: $spacer-sm;
   margin-bottom: 0;
 
   &::before {
@@ -224,6 +246,11 @@ p.error {
     font-family: "Font Awesome 5 Free";
     font-weight: 900;
     margin-right: 0.25rem;
+  }
+
+  & + .helper {
+    // When the error and a helper are visisble at the same time
+    margin-top: 0;
   }
 }
 

@@ -10,20 +10,20 @@
         ref='mincome'
         type='number'
         placeholder='Amount'
-        name='incomeProvided'
+        name='mincomeAmount'
         step='1'
         min='0'
         required=''
-        :class='{ error: v.incomeProvided.$error }'
-        :value='group.incomeProvided'
+        :class='{ error: v.mincomeAmount.$error }'
+        :value='group.mincomeAmount'
         @input='update'
         @keyup.enter='next'
       )
 
       select(
-        name='incomeCurrency'
+        name='mincomeCurrency'
         required=''
-        :value='group.incomeCurrency'
+        :value='group.mincomeCurrency'
         @input='update'
       )
         option(

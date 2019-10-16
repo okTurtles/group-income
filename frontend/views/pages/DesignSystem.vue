@@ -192,6 +192,7 @@ page(
               i.icon-paper-plane icon-paper-plane
               i.icon-pencil-alt icon-pencil-alt
               i.icon-plus icon-plus
+              i.icon-poll icon-poll
               i.icon-question-circle icon-question-circle
               i.icon-tag icon-tag
               i.icon-times icon-times
@@ -199,6 +200,7 @@ page(
               i.icon-undo icon-undo
               i.icon-user icon-user
               i.icon-user-plus icon-user-plus
+              i.icon-user-times icon-user-times
               i.icon-vote-yea icon-vote-yea
               i.icon-copy icon-copy
   article#spacing
@@ -534,71 +536,79 @@ page(
       i18n(tag='h2' class='card-header') Forms
 
       p
-        | The width of the input depend of their container
-        br
-        | For more consistency anything inside a div call .field a margin bottom of 38px
-
-      h3 Textbox
-
+        | The input's width depends on their container #[br]
+        | For consistency, add #[code .field] to have a margin bottom of 1rem #[br]
+        | For A11Y reasons, everything related to a form element, (label text, input element, helper text and error text) should be placed inside its respective #[code <label />] element.
+        | When an element is disabled, required or as an error, add the respective HTML attributes! #[code disabled, aria-required, or aria-describedby="error"]
+      br
+      button.is-small.is-outlined.is-danger(
+        @click='ephemeral.forms.hasError = !ephemeral.forms.hasError'
+      ) Toggle Errors
+      br
+      br
       table
         thead
           th code
           th demo
         tr
           td
-            pre
-              | label.label
-              | input.input(type='text')
+            h3 Textbox
+        tr
           td
-            label.label This is a text input
-            input.input(type='text' placeholder='Placeholder')
+            pre
+              | label.field
+              |   .label Your username
+              |   input.input(type='text' required)
+              |   span.error Name already taken
+              |   .helper Pick a name without spaces
+          td
+            label.field
+              .label Username
+              input.input(
+                placeholder='Placeholder'
+                :class='{ error: ephemeral.forms.hasError }'
+              )
+              span.error(v-if='ephemeral.forms.hasError') Name already taken
+              .helper Pick a name without spaces
 
         tr
           td
             pre
-              | label.label
-              | input.input.error(type='text')
-              | p.error
+              | label.field
+              |   .label Explain why
+              |   textarea.error(rows='4')
           td
-            label.label This is a text input with error
-            input.input.error(type='text' placeholder='Placeholder' value='Error')
-            p.error There is an error in that field
+            label.field
+              .label Explain why
+              textarea(placeholder='Placeholder' rows='4'
+                :class='{ error: ephemeral.forms.hasError }'
+              )
+              span.error(v-if='ephemeral.forms.hasError') You can do better than that
 
         tr
           td
-            pre
-              | label.label
-              | textarea
-          td
-            label.label This is a textarea
-            textarea(placeholder='Placeholder' rows='4')
-
-      h3 Selectbox
-
-      table
-        thead
-          th code
-          th demo
+            h3 Selectbox
         tr
           td
             pre
-              | .select-wrapper
-              |    select
-              |       option
+              | label.field
+              |   .label Select currency
+              |   .select-wrapper.error
+              |     select
+              |       option USD
           td
-            label.label This is a dropdown
-            .select-wrapper
+            label.field
+            .label Select currency
+            .select-wrapper(:class='{ error: ephemeral.forms.hasError }')
               select
                 option USD
                 option BTC
                 option EUR
+            span.error(v-if='ephemeral.forms.hasError') Something went wrong
 
-      h3 Radio
-
-      table
-        thead
-          th code
-          th demo
+        tr
+          td
+            h3 Radio
         tr
           td
             pre
@@ -621,81 +631,63 @@ page(
               )
               i18n Radio label
 
-      h3 Combination
-
-      table
-        thead
-          th code
-          th demo
-
+        tr
+          td
+            h3 Combination
         tr
           td
             pre
-              | .field
-              |    label.label
-              |    input.input(type='text')
+              | label.field
+              |   .label Mincome
+              |   .select-wrapper.error
+              |     input.input
+              |     select
+              |       option USD
           td
-            .field
-              label.label This is a text input
-              input.input(type='text' placeholder='Placeholder')
-
-            .field
-              label.label This is a text input
-              input.input(type='text' placeholder='Placeholder')
-
+            label.field
+              .label Mincome
+              .select-wrapper(:class='{ error: ephemeral.forms.hasError }')
+                input.input(placeholder='Amount')
+                select
+                  option USD
+                  option BTC
+                  option EUR
+              span.error(v-if='ephemeral.forms.hasError') Something went wrong
         tr
           td
             pre
-              | .select-wrapper
-              |   input.input(type='text')
-              |   select
-              |     option USD
-              |     option BTC
-              |     option EUR
+              | label.field
+              |   .label New Amount
+              |   .input-combo.error
+              |     input.input
+              |     .suffix USD
           td
-            .select-wrapper
-              input.input(type='text' placeholder='New amount')
-              select
-                option USD
-                option BTC
-                option EUR
-
+            label.field
+              .label New Amount
+              .input-combo(:class='{ error: ephemeral.forms.hasError }')
+                input.input(type='text' placeholder='New amount')
+                .suffix USD
+              span.error(v-if='ephemeral.forms.hasError') Something went wrong
         tr
           td
+            | A11Y: Add #[code aria-label] to button.
             pre
-              | .input-combo
-              |    input.input(type='text')
-              |    label USD
-          td
-            .input-combo
-              input.input(type='text' placeholder='New amount')
-              .suffix USD
-
-        tr
-          td
-            pre
-              | .input-combo
-              |    input.input(type='text')
-              |    button.is-icon
+              | label.field
+              |   .label Password
+              |   .input-combo.error
+              |     input.input(type='text')
+              |     button.is-icon(
+              |       aria-label='Show password'
+              |     )
               |       i.icon-eye
           td
-            .input-combo
-              input.input(type='text' placeholder='Placeholder')
-              button.is-icon
-                i.icon-eye
-
-        tr
-          td
-            pre
-              | .input-combo
-              |    input.input(type='text')
-              |    button.is-icon
-              |       i.icon-eye
-          td
-            .input-combo
-              .is-icon
-                i.icon-user
-              input.input(type='text' placeholder='Placeholder')
+            label.field
+              .label Password
+              .input-combo(:class='{ error: ephemeral.forms.hasError }')
+                input.input(type='text' placeholder='Placeholder')
+                button.is-icon(aria-label='Show password')
+                  i.icon-eye
+            span.error(v-if='ephemeral.forms.hasError') Invalid password
 
   article#table
     section.card
@@ -950,6 +942,12 @@ export default {
             sprite: 'Dashboard'
           }
         ]
+      },
+      ephemeral: {
+        forms: {
+          hasError: false,
+          isDisabled: false
+        }
       },
       isDarkTheme: false
     }

@@ -1,19 +1,21 @@
 describe('SignUp, Profile and Login', () => {
-  // NOTE: Create a uniqueId to avoid duplicated users on DB during crypress watch mode (during dev)
-  const userId = new Date().getMilliseconds()
-  const userName = `user1-${userId}`
+  // NOTE: Create a uniqueId to avoid duplicated users during crypress tests
+  // OPTIMIZE: We need to find a cleaner way to handle multiple
+  // users and groups that are created during test...
+  const userId = Math.floor(Math.random() * 10000)
+  const username = `user1-${userId}`
 
   it('successfully loads homepage', () => {
     cy.visit('/')
   })
 
   it('sign up new user1', () => {
-    cy.giSignUp(userName)
+    cy.giSignUp(username)
   })
 
-  it('Create group for new user1', () => {
+  it('user1 creates a group', () => {
     cy.giCreateGroup('Dreamers 2')
-    cy.getByDT('profileName').should('contain', userName)
+    cy.getByDT('profileName').should('contain', username)
   })
 
   it('user1 changes profile settings', () => {
@@ -36,7 +38,7 @@ describe('SignUp, Profile and Login', () => {
       })
     )
 
-    cy.getByDT('profileEmail').clear().type(`${userName}@new-email.com`)
+    cy.getByDT('profileEmail').clear().type(`${username}@new-email.com`)
 
     cy.getByDT('saveAccount').click()
     cy.getByDT('profileSaveSuccess').should('contain', 'Profile saved successfully!')
@@ -45,12 +47,12 @@ describe('SignUp, Profile and Login', () => {
     cy.get('.c-modal-close').click()
 
     cy.getByDT('profileDisplayName').should('contain', 'I am a bot')
-    cy.getByDT('profileName').should('contain', userName)
+    cy.getByDT('profileName').should('contain', username)
   })
 
   it('user1 logout and login again', () => {
     cy.giLogOut()
-    cy.giLogin(userName)
+    cy.giLogin(username)
   })
 
   it('user1 logout one last time', () => {
@@ -81,11 +83,11 @@ describe('SignUp, Profile and Login', () => {
     cy.getByDT('signName').clear().type('new user')
     cy.getByDT('badUsername').should('contain', 'cannot contain spaces')
 
-    cy.getByDT('signName').clear().type(userName)
+    cy.getByDT('signName').clear().type(username)
     cy.getByDT('badUsername').should('contain', 'name is unavailable')
 
     // TODO: When email verification is implemented
-    // cy.getByDT('signEmail').clear().type(`${userName}@email.com`)
+    // cy.getByDT('signEmail').clear().type(`${username}@email.com`)
     // cy.getByDT('badUsername').should('contain', 'email is unavailable')
 
     cy.getByDT('closeModal').click()

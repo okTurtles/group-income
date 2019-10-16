@@ -4,9 +4,14 @@
 // https://on.cypress.io/custom-commands
 // ***********************************************
 
-// Get element by data-test attribute
-Cypress.Commands.add('getByDT', (element) => {
-  return cy.get(`[data-test="${element}"]`)
+/* Get element by data-test attribute and other attributes
+ ex:
+ cy.getByDT('login')            //  cy.get([data-test="login"])
+ cy.getByDT('login', 'button')  //  cy.get('button[data-test="login"]')
+ cy.getByDT('login', '.error')  //  cy.get('.error[data-test="login"]')
+*/
+Cypress.Commands.add('getByDT', (element, otherSelector = '') => {
+  return cy.get(`${otherSelector}[data-test="${element}"]`)
 })
 
 // NOTE: We can go a step further and not use UI to do repetitive tasks.
@@ -29,21 +34,13 @@ Cypress.Commands.add('giLogin', (userName, password = '123456789') => {
 
   cy.getByDT('loginSubmit').click()
 
-  // Check if user as a group
-  if (cy.get('#app').find('[data-test="welcomeHomeLoggedIn"]')) {
-    cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
-  } else {
-    // For the case if the user has displayName
-    const elName = cy.getByDT('userProfile').find('[data-test="profileName"]')
-      ? 'profileName'
-      : 'profileDisplayName'
-
-    cy.getByDT(elName).should('contain', userName)
-  }
+  // We changed pages (to dashboard or create group)
+  // so there's no login button anymore
+  cy.getByDT('loginBtn').should('not.exist')
 })
 
 Cypress.Commands.add('giLogOut', () => {
-  cy.get('#app').then(($app) => {
+  cy.getByDT('app').then(($app) => {
     if ($app.find('[data-test="userProfile"]').length) {
       cy.getByDT('settingsBtn').click()
       cy.getByDT('link-logout').click()
@@ -76,7 +73,7 @@ Cypress.Commands.add('giCreateGroup', (name, { image = 'imageTest.png', values =
   cy.get('textarea[name="sharedValues"]').type(values)
   cy.getByDT('nextBtn').click()
 
-  cy.get('input[name="incomeProvided"]').type(income)
+  cy.get('input[name="mincomeAmount"]').type(income)
 
   cy.getByDT('nextBtn').click()
 

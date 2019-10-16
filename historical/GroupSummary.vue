@@ -23,7 +23,7 @@ div
   hr
   h2.subtitle
     i18n Minimum income:
-  p(v-if='group.incomeProvided') {{ currency }}{{ group.incomeProvided }}
+  p(v-if='group.mincomeAmount') {{ currency }}{{ group.mincomeAmount }}
   p.subtitle.is-5.has-text-danger(v-else='')
     i18n No group income set
   p.has-text-right
@@ -80,7 +80,7 @@ export default {
   },
   computed: {
     currency: function () {
-      return currencies[this.group.incomeCurrency]
+      return currencies[this.group.mincomeCurrency]
     }
   },
   filters: {

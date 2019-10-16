@@ -48,8 +48,4 @@ export default {
     margin-right: 2.5rem;
   }
 }
-
-.c-sprite {
-  display: none;
-}
 </style>

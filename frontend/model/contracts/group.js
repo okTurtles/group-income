@@ -7,7 +7,7 @@ import { objectOf, optional, string, number, object, unionOf, literalOf } from '
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income-simple/issues/603
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST } from './voting/rules.js'
-import proposals, { proposalType, proposalSettingsType, archiveProposal, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_WITHDRAWN } from './voting/proposals.js'
+import proposals, { proposalType, proposalSettingsType, archiveProposal, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_CANCELLED } from './voting/proposals.js'
 import * as Errors from '../errors.js'
 
 // for gi.contracts/group/payment ... TODO: put these in some other file?
@@ -37,8 +37,8 @@ DefineContract({
       groupName: string,
       groupPicture: string,
       sharedValues: string,
-      incomeProvided: number,
-      incomeCurrency: string,
+      mincomeAmount: number,
+      mincomeCurrency: string,
       proposals: objectOf({
         [PROPOSAL_INVITE_MEMBER]: proposalSettingsType,
         [PROPOSAL_REMOVE_MEMBER]: proposalSettingsType,
@@ -120,6 +120,7 @@ DefineContract({
         expires_date_ms: number // calculate by grabbing proposal expiry from group properties and add to `meta.createdDate`
       }),
       process (state, { data, meta, hash }) {
+        // TODO/BUG: Avoid proposing same user twice or existing member.
         Vue.set(state.proposals, hash, {
           data,
           meta,
@@ -161,24 +162,22 @@ DefineContract({
         }
       }
     },
-    // NOTE: there is no way to withdraw a vote on a proposal. User can however change their vote, including changing it to be indifferent.
-    'gi.contracts/group/proposalWithdraw': {
+    'gi.contracts/group/proposalCancel': {
       validate: objectOf({
         proposalHash: string
       }),
       process (state, { data, meta }) {
         const proposal = state.proposals[data.proposalHash]
         if (!proposal) {
-          console.error(`proposalWithdraw: no proposal for ${data.proposalHash}!`, data)
-          throw new Errors.GIErrorIgnoreAndBanIfGroup('proposalWithdraw without existing proposal')
+          // https://github.com/okTurtles/group-income-simple/issues/602
+          console.error(`proposalVote: no proposal for ${data.proposalHash}!`, data)
+          throw new Errors.GIErrorIgnoreAndBanIfGroup('proposalVote without existing proposal')
         } else if (proposal.meta.username !== meta.username) {
           console.error(`proposalWithdraw: proposal ${data.proposalHash} belongs to ${proposal.meta.username} not ${meta.username}!`)
           throw new Errors.GIErrorIgnoreAndBanIfGroup('proposalWithdraw for wrong user!')
-        } else {
-          // TODO: make sure this is a synchronous function, and if not handle it appropriately
-          proposal.status = STATUS_WITHDRAWN
-          archiveProposal(state, data.proposalHash)
         }
+        Vue.set(proposal, 'status', STATUS_CANCELLED)
+        archiveProposal(state, data.proposalHash)
       }
     },
     'gi.contracts/group/invite': {
@@ -256,6 +255,29 @@ DefineContract({
           // we're an existing member of the group getting notified that a
           // new member has joined, so subscribe to their identity contract
           await sbp('state/vuex/dispatch', 'syncContractWithServer', meta.identityContractID)
+        }
+      }
+    },
+    'gi.contracts/group/updateSettings': {
+      // OPTIMIZE: Make this custom validation function
+      // reusable accross other future validators
+      validate: data => {
+        const validations = {
+          mincomeAmount: x => typeof x === 'number' && x > 0,
+          mincomeCurrency: x => typeof x === 'string'
+        }
+        for (const key in data) {
+          if (validations[key]) {
+            if (!validations[key](data[key])) {
+              throw new TypeError(`${key} has bad value: ${data[key]}`)
+            }
+          }
+        }
+        return data
+      },
+      process (state, { data }) {
+        for (var key in data) {
+          Vue.set(state.settings, key, data[key])
         }
       }
     },

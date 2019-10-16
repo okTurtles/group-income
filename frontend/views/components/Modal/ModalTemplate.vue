@@ -1,5 +1,12 @@
 <template lang='pug'>
-  .c-modal(data-test='modal' role='dialog')
+  .c-modal(
+    data-test='modal'
+    role='dialog'
+    :aria-labelledby='$scopedSlots.title'
+    tabindex='-1'
+    v-focus=''
+    @keyup.tab='trapFocus'
+  )
     transition(name='fade' appear)
       .c-modal-background(@click='close' v-if='isActive')
 
@@ -223,7 +230,7 @@ export default {
   .c-modal-footer {
     background-color: #f5f5f5;
     margin: $spacer;
-    padding: 0 1rem;
+    padding: $spacer;
 
     @include desktop {
       align-items: flex-start;

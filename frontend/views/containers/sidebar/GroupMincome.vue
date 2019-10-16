@@ -1,9 +1,9 @@
 <template lang='pug'>
-div
+div(data-test='groupMincome')
   i18n.title.is-4(tag='h4') Minimum Income
 
-  p.title.is-2.income-provided(data-test='minIncome')
-    | {{ currency }}{{ groupSettings.incomeProvided }}
+  p.title.is-2.income(data-test='minIncome')
+    | {{ currency }}{{ groupSettings.mincomeAmount }}
 
   i18n.link(
     tag='button'
@@ -19,10 +19,10 @@ import currencies from '@view-utils/currencies.js'
 import { mapGetters } from 'vuex'
 
 export default {
-  name: 'GroupsMinIncome',
+  name: 'GroupMincome',
   computed: {
-    currency: function () {
-      return currencies[this.groupSettings.incomeCurrency]
+    currency () {
+      return currencies[this.groupSettings.mincomeCurrency]
     },
     ...mapGetters([
       'groupSettings'
@@ -39,7 +39,7 @@ export default {
 <style lang="scss" scoped>
 @import "../../../assets/style/_variables.scss";
 
-.income-provided {
+.income {
   margin: $spacer-xs 0;
 }
 </style>

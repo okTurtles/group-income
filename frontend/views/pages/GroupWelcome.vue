@@ -5,7 +5,6 @@ main.c-splash
 
 <script>
 import GroupWelcome from '@components/GroupWelcome.vue'
-
 export default {
   name: 'GroupWelcomePage',
   components: {
