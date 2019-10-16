@@ -171,10 +171,9 @@ export default {
         return null
       }
       try {
-        const proposalHash = this.proposalHash
         const vote = await sbp('gi.contracts/group/proposalCancel/create',
           {
-            proposalHash
+            proposalHash: this.proposalHash
           },
           this.currentGroupId
         )
