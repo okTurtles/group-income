@@ -33,7 +33,7 @@
           v-model='$v.form.email.$model'
           type='email'
           data-test='signEmail'
-          v-error:email='{ tag: "p", attrs: { "data-test": "badEmail" } }'
+          v-error:email='{ attrs: { "data-test": "badEmail" } }'
         )
 
       form-password(

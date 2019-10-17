@@ -12,7 +12,7 @@ Vue.directive('error', {
       throw new Error(`v-error: vuelidate doesn't have validation for ${binding.arg}`)
     }
     const opts = binding.value
-    const pErr = document.createElement(opts.tag || 'span')
+    const pErr = document.createElement(opts.tag || 'p')
     for (const attr in (opts.attrs || {})) {
       pErr.setAttribute(attr, opts.attrs[attr])
     }
