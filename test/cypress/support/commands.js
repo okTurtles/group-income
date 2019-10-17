@@ -16,7 +16,21 @@ Cypress.Commands.add('getByDT', (element, otherSelector = '') => {
 
 // NOTE: We can go a step further and not use UI to do repetitive tasks.
 // https://docs.cypress.io/guides/getting-started/testing-your-app.html#Fully-test-the-login-flow-%E2%80%93-but-only-once
+
+function doubleCheckIsLoggedOut () {
+  // Fix #706
+  cy.getByDT('app').then(($app) => {
+    // wait for Vue to mount everything
+    cy.wait(250) // eslint-disable-line
+    if ($app.find('[data-test="loginBtn"]').length === 0) {
+      cy.giLogOut()
+    }
+  })
+}
+
 Cypress.Commands.add('giSignUp', (userName, password = '123456789') => {
+  doubleCheckIsLoggedOut()
+
   cy.getByDT('signupBtn').click()
   cy.getByDT('signName').clear().type(userName)
   cy.getByDT('signEmail').clear().type(`${userName}@email.com`)
@@ -28,6 +42,8 @@ Cypress.Commands.add('giSignUp', (userName, password = '123456789') => {
 })
 
 Cypress.Commands.add('giLogin', (userName, password = '123456789') => {
+  doubleCheckIsLoggedOut()
+
   cy.getByDT('loginBtn').click()
   cy.getByDT('loginName').clear().type(userName)
   cy.getByDT('password').clear().type(password)
