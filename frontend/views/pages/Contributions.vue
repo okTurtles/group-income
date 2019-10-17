@@ -110,6 +110,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
           type='text'
           v-model='$v.form.incomeAmount.$model'
           :class='{error: $v.form.incomeAmount.$error}'
+          v-error:incomeAmount='{ tag: "p", attrs: { "data-test": "badIncome" } }'
         )
 
       .field(v-else='')
@@ -202,7 +203,11 @@ export default {
   },
   validations: {
     form: {
-      incomeAmount: { required, minValue: v => v >= 0, decimals: decimals(2) },
+      incomeAmount: {
+        [L('field is required')]: required,
+        [L('cannot be negative')]: v => v >= 0,
+        [L('cannot have more than 2 decimals')]: decimals(2)
+      },
       pledgeAmount: { required, minValue: v => v >= 0, decimals: decimals(2) }
     }
   },
