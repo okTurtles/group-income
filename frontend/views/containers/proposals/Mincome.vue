@@ -2,7 +2,7 @@
   proposal-template(
     ref='proposal'
     :title='L("Change minimum income")'
-    :rule='{ value: 8, total: 10 }'
+    :rule='rule'
     :disabled='$v.form.$invalid'
     :maxSteps='config.steps.length'
     :currentStep.sync='ephemeral.currentStep'
@@ -78,13 +78,18 @@ export default {
     ]),
     ...mapGetters([
       'groupShouldPropose',
-      'groupSettings'
+      'groupSettings',
+      'groupMembersCount'
     ]),
     inputSuffix () {
       return `${currencies[this.groupSettings.mincomeCurrency]} ${this.groupSettings.mincomeCurrency}`
     },
     friendlyIncome () {
       return `${currencies[this.groupSettings.mincomeCurrency]}${this.groupSettings.mincomeAmount}`
+    },
+    rule () {
+      const { threshold } = this.groupSettings.proposals['group-setting-change'].ruleSettings.threshold
+      return { value: Math.round(this.groupMembersCount * threshold), total: this.groupMembersCount }
     }
   },
   methods: {

@@ -24,6 +24,10 @@ form {
     color: $text_1;
     margin-top: $spacer-sm;
   }
+
+  .error {
+    color: var(--danger_0);
+  }
 }
 
 // [1] - make the border-corner around totally visisble at combo elements
@@ -187,7 +191,15 @@ textarea,
     border-radius: 0 3px 3px 0;
   }
 
-  button {
+  button.is-shifted {
+    @include tablet {
+      position: absolute;
+      right: -$spacer-lg;
+      top: $spacer-sm;
+    }
+  }
+
+  button:not(.is-shifted) {
     border-radius: 0 $radius $radius 0;
 
     &.is-icon {
@@ -200,7 +212,7 @@ textarea,
     }
   }
 
-  .is-icon {
+  .is-icon:not(.is-shifted) {
     min-width: 40px;
     height: $inputHeight;
     text-align: center;
@@ -229,10 +241,6 @@ textarea,
       }
     }
   }
-}
-
-.error {
-  color: $danger_0;
 }
 
 span.error,

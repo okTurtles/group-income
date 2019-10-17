@@ -3,10 +3,9 @@
   .c-group-members-header
     i18n.title.is-4(tag='h4') Members
 
-    // @click="openModal('AddMembers')"
     button.button.is-small.is-outlined(
       data-test='inviteButton'
-      @click='invite'
+      @click='openModal("AddMembers")'
     )
       i.icon-plus
       i18n Add
