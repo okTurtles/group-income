@@ -130,17 +130,15 @@ export default {
         this.ephemeral.isValid = true
       } catch (err) {
         console.log(err)
-        return this.setInviteError(index, this.L('Non existing user. TODO support general invites'))
+        this.setInviteError(index, this.L('Non existing user. TODO support general invites'))
       }
     },
     setInviteError (index, text) {
       this.ephemeral.invitesToSend[index] = null
-      Vue.set(this.form.eachFeedbackMsg, index, null)
       Vue.set(this.form.eachFeedbackMsg, index, {
         text,
         class: 'error'
       })
-      return false
     },
     removeInvitee (index) {
       this.ephemeral.invitesCount -= 1
@@ -204,7 +202,6 @@ export default {
             await sbp('backend/publishLogEntry', inviteToGroup)
             await sbp('backend/publishLogEntry', inviteToMailbox)
 
-            Vue.set(this.form.eachFeedbackMsg, index, null)
             Vue.set(this.form.eachFeedbackMsg, index, {
               text: this.L('Member invited successfully!'),
               class: 'has-text-success'
