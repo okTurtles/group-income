@@ -74,6 +74,9 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
       novalidate
       @submit.prevent='setPaymentInfo'
     )
+      // TODO: change this so that the input *inside* of the label
+      //       as Sandrina describes here (using a fieldset):
+      //       https://github.com/okTurtles/group-income-simple/pull/705#discussion_r335817744
       .field
         i18n.label(
           tag='label'
@@ -218,9 +221,9 @@ export default {
       return !!this.fakeStore.giving.monetary && !this.ephemeral.isEditingIncome
     }
   },
-  mounted () {
-    const profile = this.memberProfile(this.$store.state.loggedIn.username)
-    const incomeDetailsKey = profile && profile.groupProfile && profile.groupProfile.incomeDetailsKey
+  beforeMount () {
+    const profile = this.memberProfile(this.$store.state.loggedIn.username) || {}
+    const incomeDetailsKey = profile.groupProfile && profile.groupProfile.incomeDetailsKey
     if (incomeDetailsKey) {
       this.form.incomeDetailsKey = incomeDetailsKey
       this.form[incomeDetailsKey] = profile.groupProfile[incomeDetailsKey]
