@@ -21,9 +21,8 @@ export const PAYMENT_TYPE_BITCOIN = 'bitcoin'
 export const PAYMENT_TYPE_PAYPAL = 'paypal'
 export const paymentType = unionOf(...[PAYMENT_TYPE_MANUAL, PAYMENT_TYPE_BITCOIN, PAYMENT_TYPE_PAYPAL].map(k => literalOf(k)))
 
-export function generateInvites (creator: string, numInvites: number) {
+export function generateInvites (numInvites: number) {
   return {
-    creator,
     inviteSecret: `${parseInt(Math.random() * 10000)}`, // TODO: this
     numInvites
     // expires: // TODO: this
@@ -184,13 +183,12 @@ DefineContract({
     'gi.contracts/group/invite': {
       validate: objectOf({
         inviteSecret: string, // NOTE: simulate the OP_KEY_* stuff for now
-        numInvites: number,
-        creator: string // NOTE/TODO: to be used on group settings link management
+        numInvites: number
       }),
-      process (state, { data }) {
+      process (state, { data, meta }) {
         Vue.set(state.invites, data.inviteSecret, {
           generated: data.numInvites,
-          creator: data.creator,
+          creator: meta.username,
           responses: {},
           status: 'valid'
         })
