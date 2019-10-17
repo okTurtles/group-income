@@ -3,19 +3,20 @@
 import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import { DefineContract } from './Contract.js'
-import { objectOf, optional, string, number, object, unionOf, literalOf } from '~/frontend/utils/flowTyper.js'
+import { objectOf, objectMaybeOf, optional, string, number, object, unionOf, literalOf } from '~/frontend/utils/flowTyper.js'
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income-simple/issues/603
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST } from './voting/rules.js'
 import proposals, { proposalType, proposalSettingsType, archiveProposal, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_CANCELLED } from './voting/proposals.js'
 import * as Errors from '../errors.js'
+import { merge } from '~/frontend/utils/giLodash.js'
 
 // for gi.contracts/group/payment ... TODO: put these in some other file?
 export const PAYMENT_PENDING = 'pending'
 export const PAYMENT_CANCELLED = 'cancelled'
 export const PAYMENT_ERROR = 'error'
 export const PAYMENT_COMPLETED = 'completed'
-export const paymentStatus = unionOf(...[PAYMENT_PENDING, PAYMENT_CANCELLED, PAYMENT_ERROR, PAYMENT_COMPLETED].map(k => literalOf(k)))
+export const paymentStatusType = unionOf(...[PAYMENT_PENDING, PAYMENT_CANCELLED, PAYMENT_ERROR, PAYMENT_COMPLETED].map(k => literalOf(k)))
 export const PAYMENT_TYPE_MANUAL = 'manual'
 export const PAYMENT_TYPE_BITCOIN = 'bitcoin'
 export const PAYMENT_TYPE_PAYPAL = 'paypal'
@@ -90,26 +91,37 @@ DefineContract({
         amount: number,
         currency: string,
         txid: string,
-        status: paymentStatus,
+        status: paymentStatusType,
         paymentType: paymentType,
         details: optional(object),
         memo: optional(string)
       }),
-      process (state, { data, hash }) {
-        Vue.set(state.payments, hash, { data, updates: [] })
+      process (state, { data, meta, hash }) {
+        Vue.set(state.payments, hash, { data, meta, history: [data] })
       }
     },
     'gi.contracts/group/paymentUpdate': {
       validate: objectOf({
-        referencePaymentHash: string,
-        txid: string,
-        newStatus: string,
-        details: optional(object)
+        paymentHash: string,
+        updatedProperties: object
       }),
-      process (state, { data, hash }) {
+      process (state, { data, meta, hash }) {
         // TODO: we don't want to keep a history of all payments in memory all the time
         //       https://github.com/okTurtles/group-income-simple/issues/426
-        state.payments[data.referencePaymentHash].updates.push({ hash, data })
+        const payment = state.payments[data.paymentHash]
+        // TODO: move these types of validation errors into the validate function so
+        //       that they can be done before sending as well as upon receiving
+        if (!payment) {
+          console.error(`paymentUpdate: no payment ${data.paymentHash}`, { data, meta, hash })
+          throw new Errors.GIErrorIgnoreAndBanIfGroup('paymentUpdate without existing payment')
+        }
+        if (meta.username !== payment.meta.username) {
+          console.error(`paymentUpdate: bad username ${meta.username} != ${payment.meta.username}`, { data, meta, hash })
+          throw new Errors.GIErrorIgnoreAndBanIfGroup('paymentUpdate from wrong user!')
+        }
+        payment.history.push(data.updatedProperties)
+        // TODO: validate new properties
+        merge(payment.data, data.updatedProperties)
       }
     },
     'gi.contracts/group/proposal': {
@@ -139,11 +151,11 @@ DefineContract({
         vote: string,
         passPayload: optional(unionOf(object, string)) // TODO: this, somehow we need to send an OP_KEY_ADD GIMessage to add a generated once-only writeonly message public key to the contract, and (encrypted) include the corresponding invite link, also, we need all clients to verify that this message/operation was valid to prevent a hacked client from adding arbitrary OP_KEY_ADD messages, and automatically ban anyone generating such messages
       }),
-      process (state, { data, meta }) {
+      process (state, { data, hash, meta }) {
         const proposal = state.proposals[data.proposalHash]
         if (!proposal) {
           // https://github.com/okTurtles/group-income-simple/issues/602
-          console.error(`proposalVote: no proposal for ${data.proposalHash}!`, data)
+          console.error(`proposalVote: no proposal for ${data.proposalHash}!`, { data, meta, hash })
           throw new Errors.GIErrorIgnoreAndBanIfGroup('proposalVote without existing proposal')
         }
         Vue.set(proposal.votes, meta.username, data.vote)
@@ -170,10 +182,10 @@ DefineContract({
         const proposal = state.proposals[data.proposalHash]
         if (!proposal) {
           // https://github.com/okTurtles/group-income-simple/issues/602
-          console.error(`proposalVote: no proposal for ${data.proposalHash}!`, data)
+          console.error(`proposalCancel: no proposal for ${data.proposalHash}!`, { data, meta })
           throw new Errors.GIErrorIgnoreAndBanIfGroup('proposalVote without existing proposal')
         } else if (proposal.meta.username !== meta.username) {
-          console.error(`proposalWithdraw: proposal ${data.proposalHash} belongs to ${proposal.meta.username} not ${meta.username}!`)
+          console.error(`proposalCancel: proposal ${data.proposalHash} belongs to ${proposal.meta.username} not ${meta.username}!`, { data, meta })
           throw new Errors.GIErrorIgnoreAndBanIfGroup('proposalWithdraw for wrong user!')
         }
         Vue.set(proposal, 'status', STATUS_CANCELLED)
@@ -261,20 +273,10 @@ DefineContract({
     'gi.contracts/group/updateSettings': {
       // OPTIMIZE: Make this custom validation function
       // reusable accross other future validators
-      validate: data => {
-        const validations = {
-          mincomeAmount: x => typeof x === 'number' && x > 0,
-          mincomeCurrency: x => typeof x === 'string'
-        }
-        for (const key in data) {
-          if (validations[key]) {
-            if (!validations[key](data[key])) {
-              throw new TypeError(`${key} has bad value: ${data[key]}`)
-            }
-          }
-        }
-        return data
-      },
+      validate: objectMaybeOf({
+        mincomeAmount: x => typeof x === 'number' && x > 0,
+        mincomeCurrency: x => typeof x === 'string'
+      }),
       process (state, { data }) {
         for (var key in data) {
           Vue.set(state.settings, key, data[key])
@@ -282,7 +284,11 @@ DefineContract({
       }
     },
     'gi.contracts/group/groupProfileUpdate': {
-      validate: object,
+      validate: objectMaybeOf({
+        incomeDetailsKey: x => ['incomeAmount', 'pledgeAmount'].includes(x),
+        incomeAmount: x => typeof x === 'number' && x >= 0,
+        pledgeAmount: x => typeof x === 'number' && x >= 0
+      }),
       process (state, { data, meta }) {
         var { groupProfile } = state.profiles[meta.username]
         for (var key in data) {

@@ -4,7 +4,7 @@
   "private": true,
   "description": "",
   "scripts": {
-    "backend": "cross-env LOAD_TARGET_FILE=./backend/index.js nodemon --ignore backend/discard/ --watch backend/ Gruntfile.js",
+    "backend": "cross-env LOAD_TARGET_FILE=./backend/index.js nodemon --watch backend/ Gruntfile.js",
     "rollup": "rollup -c",
     "rollup-dev": "rollup -c -w",
     "sass-dev": "node-sass --output-style nested --source-map true -w -r -o ./dist/assets/css ./frontend/assets/style",
@@ -53,7 +53,6 @@
     "frontend/assets/*",
     "frontend/controller/utils/primus.js",
     "frontend/utils/flowTyper.js",
-    "backend/discard/*",
     "historical/*",
     "shared/types.js",
     "dist/*",

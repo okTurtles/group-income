@@ -11,6 +11,13 @@ modal-template(
     i18n(tag='h2') Income Details
 
     .field
+      //- TODO: replace all of this with the code from page-section(title='Debug Income Details') in Contributions.vue
+      //- there are several things here that were improved:
+      //- o no need for resetFormVerify
+      //- o the use of label instead of span for the radio label
+      //- o better i18n string handling
+      //- o simpler vuelidate error handling (no need for p.error, instead uses :class and alert())
+      //- o implementation of setting income values in the contract
       i18n.label(tag='label') Do you make at least {{fakeStore.mincomeFormatted}} per month?
 
       .radio-wrapper
