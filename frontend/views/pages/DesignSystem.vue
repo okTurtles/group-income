@@ -689,28 +689,6 @@ page(
                   i.icon-eye
             span.error(v-if='ephemeral.forms.hasError') Invalid password
 
-  article#table
-    section.card
-      i18n(tag='h2' class='card-header') Table
-
-      table.table
-        thead
-          tr
-            th  column 1
-            th  column 2
-            th  column 3
-            th
-        tbody
-          tr(
-            v-for='n in 4'
-            :key='n'
-          )
-            td item
-            td item
-            td item
-            td
-              i.icon-ellipsis-v
-
   article#stepper
     section.card
       i18n(tag='h2' class='card-header') Stepper
@@ -1031,7 +1009,7 @@ section.card {
   margin-bottom: $spacer-lg;
 }
 
-table:not(.table) {
+table {
   width: 100%;
   th,
   td {

@@ -1,6 +1,6 @@
 <template lang='pug'>
 section.card
-  h3.title.c-title(v-if='title') 
+  h3.title.c-title(v-if='title')
     | {{ title }}
     slot(name='cta')
   slot
