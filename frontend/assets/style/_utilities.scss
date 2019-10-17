@@ -29,6 +29,10 @@
   }
 }
 
+.is-hidden {
+  display: none !important;
+}
+
 // Screen reader only
 .sr-only {
   position: absolute;
