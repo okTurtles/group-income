@@ -2,8 +2,7 @@
 div(data-test='groupMincome')
   i18n.title.is-4(tag='h4') Minimum Income
 
-  p.title.is-2.income(data-test='minIncome')
-    | {{ currency }}{{ groupSettings.mincomeAmount }}
+  p.title.is-2.income(data-test='minIncome') {{ mincome }}
 
   i18n.link(
     tag='button'
@@ -21,12 +20,13 @@ import { mapGetters } from 'vuex'
 export default {
   name: 'GroupMincome',
   computed: {
-    currency () {
-      return currencies[this.groupSettings.mincomeCurrency]
-    },
     ...mapGetters([
       'groupSettings'
-    ])
+    ]),
+    mincome () {
+      const settings = this.groupSettings
+      return currencies[settings.mincomeCurrency].displayWithCurrency(settings.mincomeAmount)
+    }
   },
   methods: {
     openProposal () {

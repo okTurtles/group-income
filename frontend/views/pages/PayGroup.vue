@@ -40,6 +40,49 @@ page(
 
       ul.c-payments
         li.c-payments-item(
+          v-for='(user, username) in usersToPay'
+          :key='username'
+        )
+          .c-info
+            user-image.c-avatar(:username='username')
+            div(role='alert')
+              i18n(
+                tag='p'
+                html='<b>{total}</b> to <b>{user}</b>'
+                :args='{ total: user.amountPretty, user: username }'
+              ) {total} to {user}
+              //- i18n.has-text-1(
+              //-   v-if='statusIsPending(user)'
+              //-   :args='{ username }'
+              //- ) Waiting for {username} confirmation...
+              //- i18n.has-text-success(
+              //-   v-if='statusIsCompleted(user)'
+              //- ) Payment confirmed!
+              //- i18n.has-text-weight-normal.has-text-warning(
+              //-   v-if='statusIsRejected(user)'
+              //-   :args='{ username }'
+              //- ) The payment was not received by {username}.
+
+          .buttons.is-start.c-ctas
+            router-link.button.is-small.is-outlined(
+              v-if='statusIsRejected(user)'
+              to='messages/liliabt'
+            ) {{ L('Send Message...') }}
+            i18n.button.is-small.c-ctas-send(
+              tag='button'
+              key='send'
+              v-if='statusIsToPay(user)'
+              @click='markAsPayed(user)'
+            ) Mark as sent
+            i18n.button.is-small.is-outlined(
+              tag='button'
+              key='cancel'
+              v-if='statusIsPending(user)'
+              @click='cancelPayment(user)'
+            ) Cancel
+
+      ul.c-payments
+        li.c-payments-item(
           v-for='(user, index) in fakeStore.usersToPay'
           :key='user.name'
         )
@@ -89,20 +132,23 @@ page(
 
 <script>
 import sbp from '~/shared/sbp.js'
+import { mapGetters } from 'vuex'
 import Page from '@pages/Page.vue'
 import Avatar from '@components/Avatar.vue'
+import UserImage from '@containers/UserImage.vue'
 import ProgressBar from '@components/Graphs/Progress.vue'
 import currencies from '@view-utils/currencies.js'
 import Tooltip from '@components/Tooltip.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgContributions from '@svgs/contributions.svg'
-// import incomeDistribution from '@utils/distribution/mincome-default.js'
+import incomeDistribution from '@utils/distribution/mincome-proportional.js'
 
 export default {
   name: 'PayGroup',
   components: {
     Page,
     Avatar,
+    UserImage,
     ProgressBar,
     Tooltip,
     SvgContributions
@@ -142,11 +188,49 @@ export default {
             amount: 50
           }
         ],
-        currency: currencies['USD']
+        currency: currencies.USD.symbol
       }
     }
   },
   computed: {
+    ...mapGetters([
+      'groupMembers',
+      'groupSettings'
+    ]),
+    mincomeAmount () {
+      return this.groupSettings.mincomeAmount
+    },
+    currency () {
+      return currencies[this.groupSettings.mincomeCurrency]
+    },
+    ourUsername () {
+      return this.$store.state.loggedIn.username
+    },
+    usersToPay () {
+      const profiles = this.groupMembers
+      const currentIncomeDistribution = []
+      const usersWithIncomeDetails = Object.keys(profiles).reduce((acc, username) => {
+        const profile = profiles[username]
+        const incomeDetailsKey = profile && profile.groupProfile.incomeDetailsKey
+        if (incomeDetailsKey) {
+          acc[username] = profile
+          const adjustment = incomeDetailsKey === 'incomeAmount' ? 0 : this.mincomeAmount
+          const adjustedAmount = adjustment + profile.groupProfile[incomeDetailsKey]
+          currentIncomeDistribution.push({ name: username, amount: adjustedAmount })
+        }
+        return acc
+      }, {})
+      const allPayments = incomeDistribution(currentIncomeDistribution, this.mincomeAmount)
+      console.debug({ usersWithIncomeDetails, currentIncomeDistribution, allPayments })
+      return allPayments.filter(p => p.from === this.ourUsername).reduce((acc, payment) => {
+        acc[payment.to] = {
+          ...usersWithIncomeDetails[payment.to],
+          amount: +this.currency.displayWithoutCurrency(payment.amount),
+          amountPretty: this.currency.displayWithCurrency(payment.amount)
+        }
+        return acc
+      }, {})
+    },
     hasPayments () {
       return this.fakeStore.usersToPay.length > 0
     },

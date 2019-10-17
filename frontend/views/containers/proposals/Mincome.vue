@@ -82,10 +82,10 @@ export default {
       'groupMembersCount'
     ]),
     inputSuffix () {
-      return `${currencies[this.groupSettings.mincomeCurrency]} ${this.groupSettings.mincomeCurrency}`
+      return `${currencies[this.groupSettings.mincomeCurrency].symbol} ${this.groupSettings.mincomeCurrency}`
     },
     friendlyIncome () {
-      return `${currencies[this.groupSettings.mincomeCurrency]}${this.groupSettings.mincomeAmount}`
+      return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency(this.groupSettings.mincomeAmount)
     },
     rule () {
       const { threshold } = this.groupSettings.proposals['group-setting-change'].ruleSettings.threshold

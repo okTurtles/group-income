@@ -48,6 +48,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
       ismonetary=''
       @interaction='handleFormTriggerClick'
     )
+      //- TODO: use displayWithCurrency!
       i18n(
         :args='{amount:`${fakeStore.currency}${fakeStore.giving.monetary}`}'
       ) Pledging up to {amount}
@@ -80,8 +81,8 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
       .field
         i18n.label(
           tag='label'
-          :args='{ mincome: groupSettings.mincomeAmount, currency }'
-        ) Do you make at least {currency}{mincome} per month?
+          :args='{ mincome }'
+        ) Do you make at least {mincome} per month?
 
         .radio-wrapper
           input.radio(
@@ -172,7 +173,7 @@ export default {
       },
       // -- Hardcoded Data just for layout purposes:
       fakeStore: {
-        currency: currencies['USD'],
+        currency: currencies['USD'].symbol,
         isFirstTime: true, // true when user doesn't have any income details. It displays the 'Add Income Details' box
         mincome: 500,
         receiving: {
@@ -216,8 +217,9 @@ export default {
       'groupSettings',
       'memberProfile'
     ]),
-    currency () {
-      return currencies[this.groupSettings.mincomeCurrency]
+    mincome () {
+      const settings = this.groupSettings
+      return currencies[settings.mincomeCurrency].displayWithCurrency(settings.mincomeAmount)
     },
     doesReceiveMonetary () {
       return !!this.fakeStore.receiving.monetary && !this.ephemeral.isEditingIncome
