@@ -82,7 +82,7 @@ page(
         tr
           td
             pre .has-text-primary
-          td.has-text-primary An informative text perhaps.
+          td.has-text-primary An informative text, but use it only for icons.
         tr
           td
             pre .has-text-success

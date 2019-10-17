@@ -17,9 +17,9 @@
       label.field(v-if='isReasonStep' key='reason')
         i18n.label Why are you proposing this change?
         textarea.textarea(
-          name='changeReason'
           ref='reason'
           maxlength='500'
+          data-test='reason'
         )
         i18n.helper This is optional.
 
@@ -36,14 +36,13 @@
           data-test='prevBtn'
         ) {{ currentStep === 0 ? L('Cancel') : L('Back') }}
 
-        i18n.is-success(
+        button.is-success(
           key='change'
           v-if='!groupShouldPropose'
-          tag='button'
           @click.prevent='submit'
           :disabled='disabled'
-          data-test='finishBtn'
-        ) Change
+          data-test='submitBtn'
+        ) {{ submitTextNonProposal }}
 
         button(
           key='next'
@@ -61,7 +60,7 @@
           v-if='isReasonStep'
           @click.prevent='submit'
           :disabled='disabled'
-          data-test='finishBtn'
+          data-test='submitBtn'
         ) Create Proposal
 
         i18n.is-outlined(
@@ -70,7 +69,7 @@
           v-if='isConfirmation'
           ref='close'
           @click.prevent='close'
-          data-test='closeBtn'
+          data-test='finishBtn'
         ) Awesome
 
     template(slot='footer' v-if='!isConfirmation && rule')
@@ -82,6 +81,7 @@
 
 <script>
 import { mapGetters } from 'vuex'
+import L from '@view-utils/translations.js'
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
 import SvgProposal from '@svgs/proposal.svg'
 
@@ -104,6 +104,11 @@ export default {
     maxSteps: {
       type: Number,
       required: true
+    },
+    variant: {
+      validator (value) {
+        return ['addMember', 'removeMember'].indexOf(value) > -1
+      }
     }
   },
   data () {
@@ -123,6 +128,15 @@ export default {
     },
     isConfirmation () {
       return this.currentStep === this.maxSteps + 1
+    },
+    submitTextNonProposal () {
+      const text = {
+        addMember: L('Send invitation'),
+        removeMember: L('Remove Member'),
+        default: L('Change')
+      }
+
+      return text[this.variant] || text.default
     }
   },
   methods: {

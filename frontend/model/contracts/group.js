@@ -197,9 +197,10 @@ DefineContract({
         inviteSecret: string, // NOTE: simulate the OP_KEY_* stuff for now
         numInvites: number
       }),
-      process (state, { data }) {
+      process (state, { data, meta }) {
         Vue.set(state.invites, data.inviteSecret, {
           generated: data.numInvites,
+          creator: meta.username,
           responses: {},
           status: 'valid'
         })
