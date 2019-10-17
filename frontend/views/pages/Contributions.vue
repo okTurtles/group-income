@@ -237,7 +237,7 @@ export default {
         const groupProfileUpdate = await sbp('gi.contracts/group/groupProfileUpdate/create',
           {
             incomeDetailsKey,
-            [incomeDetailsKey]: this.form[incomeDetailsKey]
+            [incomeDetailsKey]: +this.form[incomeDetailsKey]
           },
           this.$store.state.currentGroupId
         )

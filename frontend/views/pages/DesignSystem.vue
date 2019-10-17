@@ -612,23 +612,31 @@ page(
           td
             pre
               | .radio-wrapper
-              |   input.input(type='radio')
-              |   i18n Radio label
+              |   input.radio(
+              |     type='radio'
+              |     id='radio-id1'
+              |     value='radio 1 value'
+              |   )
+              |   i18n.label(tag='label' for='radio-id1') Radio label
           td
             .radio-wrapper
               input.radio(
                 name='example'
                 type='radio'
                 checked='true'
+                id='radio-1'
+                value='radio-1'
               )
-              i18n Radio label
+              i18n.label(tag='label' for='radio-1') Radio label
 
             .radio-wrapper
               input.radio(
                 name='example'
                 type='radio'
+                id='radio-2'
+                value='radio-2'
               )
-              i18n Radio label
+              i18n.label(tag='label' for='radio-2') Radio label
 
         tr
           td
