@@ -106,7 +106,7 @@ Cypress.Commands.add('giInviteMember', (
   } else {
     invitees.forEach((invitee, index) => {
       if (index > 0) {
-        cy.getByDT('addMorePeople').click()
+        cy.getByDT('addInviteeSlot').click()
       }
       inviteUser(invitee, index)
     })

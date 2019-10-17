@@ -1,15 +1,15 @@
 <template lang='pug'>
   proposal-template(
     :title='L("Add new members")'
-    :rule='{ value: 5, total: 10 }'
+    :rule='rule'
     :disabled='!ephemeral.isValid'
     :maxSteps='config.steps.length'
     :currentStep.sync='ephemeral.currentStep'
     variant='addMember'
     @submit='submit'
   )
-    div(v-if='ephemeral.currentStep === 0' key='0')
-      i18n.label Username
+    fieldset(v-if='ephemeral.currentStep === 0' key='0')
+      i18n.label(tag='legend') Full name
       label.field(
         v-for='(member, index) in ephemeral.invitesCount'
         :key='`member-${index}`'
@@ -20,20 +20,20 @@
           input.input(
             type='text'
             v-model='form.invitees[index]'
-            @keyup.enter='() => addInvitee(index)'
+            @keyup.enter='addInvitee(index)'
             aria-required
           )
           button(
             type='button'
             data-test='add'
-            @click='() => addInvitee(index)'
+            @click='addInvitee(index)'
           ) {{ L('Add') }}
           button.is-icon-small.is-shifted(
             v-if='index > 0'
             type='button'
-            @click='() => removeInvitee(index)'
+            @click='removeInvitee(index)'
             data-test='remove'
-            aria-label='L("Remove invitee")'
+            :aria-label='L("Remove invitee")'
           )
             i.icon-times
         // NOTE/TODO: These validations will be removed on issue #609
@@ -46,10 +46,10 @@
       button.link.has-icon.c-addPeople(
         type='button'
         @click='addInviteeSlot'
-        data-test='addMorePeople'
+        data-test='addInviteeSlot'
       )
         i.icon-plus
-        i18n Add more people
+        i18n Add more
 </template>
 
 <script>
@@ -103,7 +103,11 @@ export default {
       'groupSettings',
       'groupMembersCount',
       'groupShouldPropose'
-    ])
+    ]),
+    rule () {
+      const { threshold } = this.groupSettings.proposals['invite-member'].ruleSettings.threshold
+      return { value: Math.round(this.groupMembersCount * threshold), total: this.groupMembersCount }
+    }
   },
   methods: {
     async addInvitee (index) {
@@ -221,7 +225,7 @@ export default {
 @import "../../../assets/style/_variables.scss";
 
 .c-addPeople {
-  margin-top: $spacer;
+  margin: $spacer-sm 0 $spacer;
 
   .icon-plus {
     margin-right: $spacer-sm;

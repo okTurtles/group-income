@@ -35,7 +35,7 @@ describe('Group Creation and Inviting Members', () => {
       cy.getByDT('feedbackMsg').should('contain', 'Ready to be invited!')
     })
 
-    cy.getByDT('addMorePeople').click()
+    cy.getByDT('addInviteeSlot').click()
 
     cy.getByDT('invitee').eq(1).within(() => {
       cy.get('input').clear().type(`user3-${userId}`)
