@@ -110,7 +110,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
           type='text'
           v-model='$v.form.incomeAmount.$model'
           :class='{error: $v.form.incomeAmount.$error}'
-          v-error='"incomeAmount"'
+          v-error:incomeAmount='{ tag: "p", attrs: { "data-test": "badIncome" } }'
         )
 
       .field(v-else='')

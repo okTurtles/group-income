@@ -5,20 +5,24 @@ import Vue from 'vue'
 
 Vue.directive('error', {
   inserted (el, binding, vnode) {
-    if (!binding.value) {
+    if (!binding.arg) {
       throw new Error(`v-error: missing argument on ${el.outerHTML}`)
     }
-    if (!vnode.context.$v.form[binding.value]) {
-      throw new Error(`v-error: vuelidate doesn't have validation for ${binding.value}`)
+    if (!vnode.context.$v.form[binding.arg]) {
+      throw new Error(`v-error: vuelidate doesn't have validation for ${binding.arg}`)
     }
-    const pErr = document.createElement('p')
+    const opts = binding.value
+    const pErr = document.createElement(opts.tag || 'span')
+    for (const attr in (opts.attrs || {})) {
+      pErr.setAttribute(attr, opts.attrs[attr])
+    }
     pErr.classList.add('error', 'is-hidden')
     el.insertAdjacentElement('afterend', pErr)
   },
   update (el, binding, vnode) {
-    if (vnode.context.$v.form[binding.value].$error) {
-      for (const key in vnode.context.$v.form[binding.value].$params) {
-        if (!vnode.context.$v.form[binding.value][key]) {
+    if (vnode.context.$v.form[binding.arg].$error) {
+      for (const key in vnode.context.$v.form[binding.arg].$params) {
+        if (!vnode.context.$v.form[binding.arg][key]) {
           el.nextElementSibling.innerText = key
           break
         }
