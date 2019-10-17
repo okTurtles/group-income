@@ -20,7 +20,7 @@
           ref='username'
           autofocus
           data-test='loginName'
-          v-error:name='{ attrs: { "data-test": "badUsername" } }'
+          v-error:name='{ tag: "p", attrs: { "data-test": "badUsername" } }'
         )
 
       form-password(
