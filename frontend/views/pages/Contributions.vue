@@ -69,23 +69,89 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
       @cancel='handleIncomeCancel'
     )
 
+  page-section(title='Debug Income Details')
+    form(
+      novalidate
+      @submit.prevent='setPaymentInfo'
+    )
+      // TODO: change this so that the input *inside* of the label
+      //       as Sandrina describes here (using a fieldset):
+      //       https://github.com/okTurtles/group-income-simple/pull/705#discussion_r335817744
+      .field
+        i18n.label(
+          tag='label'
+          :args='{ mincome: groupSettings.mincomeAmount, currency }'
+        ) Do you make at least {currency}{mincome} per month?
+
+        .radio-wrapper
+          input.radio(
+            type='radio'
+            value='incomeAmount'
+            v-model='form.incomeDetailsKey'
+            id='radio-receiving'
+          )
+          //- TODO: update design system to make radio buttons use labels instead of spans (and update _forms.scss accordingly)
+          i18n(tag='label' for='radio-receiving') No, I don't
+
+        .radio-wrapper
+          input.radio(
+            type='radio'
+            value='pledgeAmount'
+            v-model='form.incomeDetailsKey'
+            id='radio-pleding'
+          )
+          i18n(tag='label' for='radio-pleding') Yes, I do
+
+      //- NOTE: this "key='formReceiving'" is needed or else the v-if doesn't work
+      //- for some reason...
+      .field(v-if='form.incomeDetailsKey === "incomeAmount"' key='formReceiving')
+        i18n.label(tag='label') Enter your income:
+        input.input.is-primary(
+          type='text'
+          v-model='$v.form.incomeAmount.$model'
+          :class='{error: $v.form.incomeAmount.$error}'
+        )
+
+      .field(v-else='')
+        i18n.label(tag='label') Enter pledge amount:
+        input.input.is-primary(
+          type='text'
+          v-model='$v.form.pledgeAmount.$model'
+          :class='{error: $v.form.pledgeAmount.$error}'
+        )
+
+      i18n.is-small(
+        tag='button'
+        type='submit'
+        :disabled='$v.form.$invalid'
+      ) Set payment info
+
   template(#sidebar='')
     group-mincome
 </template>
 
 <script>
+import sbp from '~/shared/sbp.js'
+import { validationMixin } from 'vuelidate'
+import { required } from 'vuelidate/lib/validators'
+import { decimals } from '@view-utils/validators.js'
+import { mapGetters } from 'vuex'
 import Page from '@pages/Page.vue'
+import PageSection from '@components/PageSection.vue'
 import currencies from '@view-utils/currencies.js'
 import MessageMissingIncome from '@containers/contributions/MessageMissingIncome.vue'
 import IncomeForm from '@containers/contributions/IncomeForm.vue'
 import GroupMincome from '@containers/sidebar/GroupMincome.vue'
 import Contribution from '@components/Contribution.vue'
 import TextWho from '@components/TextWho.vue'
+import L from '@view-utils/translations.js'
 
 export default {
   name: 'Contributions',
+  mixins: [validationMixin],
   components: {
     Page,
+    PageSection,
     GroupMincome,
     Contribution,
     TextWho,
@@ -94,6 +160,11 @@ export default {
   },
   data () {
     return {
+      form: {
+        incomeDetailsKey: 'incomeAmount',
+        incomeAmount: 0,
+        pledgeAmount: 0
+      },
       ephemeral: {
         isEditingIncome: false,
         isActive: true
@@ -129,7 +200,20 @@ export default {
       }
     }
   },
+  validations: {
+    form: {
+      incomeAmount: { required, minValue: v => v >= 0, decimals: decimals(2) },
+      pledgeAmount: { required, minValue: v => v >= 0, decimals: decimals(2) }
+    }
+  },
   computed: {
+    ...mapGetters([
+      'groupSettings',
+      'memberProfile'
+    ]),
+    currency () {
+      return currencies[this.groupSettings.mincomeCurrency]
+    },
     doesReceiveMonetary () {
       return !!this.fakeStore.receiving.monetary && !this.ephemeral.isEditingIncome
     },
@@ -137,17 +221,45 @@ export default {
       return !!this.fakeStore.giving.monetary && !this.ephemeral.isEditingIncome
     }
   },
+  beforeMount () {
+    const profile = this.memberProfile(this.$store.state.loggedIn.username) || {}
+    const incomeDetailsKey = profile.groupProfile && profile.groupProfile.incomeDetailsKey
+    if (incomeDetailsKey) {
+      this.form.incomeDetailsKey = incomeDetailsKey
+      this.form[incomeDetailsKey] = profile.groupProfile[incomeDetailsKey]
+    }
+  },
   methods: {
+    async setPaymentInfo () {
+      if (this.$v.form.$invalid) {
+        alert(L('Invalid payment info'))
+        return
+      }
+      try {
+        const incomeDetailsKey = this.form.incomeDetailsKey
+        const groupProfileUpdate = await sbp('gi.contracts/group/groupProfileUpdate/create',
+          {
+            incomeDetailsKey,
+            [incomeDetailsKey]: +this.form[incomeDetailsKey]
+          },
+          this.$store.state.currentGroupId
+        )
+        await sbp('backend/publishLogEntry', groupProfileUpdate)
+      } catch (e) {
+        console.error('setPaymentInfo', e)
+        alert(`Failed to update user's profile. Error: ${e.message}`)
+      }
+    },
     toggleMenu () {
       this.ephemeral.isActive = !this.ephemeral.isActive
     },
 
     textReceivingNonMonetary (contribution) {
       // REVIEW - Is it safe to use v-html here? Related #502
-      return this.L('<strong>{what}</strong> from ', { what: contribution.what })
+      return L('<strong>{what}</strong> from ', { what: contribution.what })
     },
     textReceivingMonetary (contribution) {
-      return this.L('<strong>Up to {amount} for mincome</strong> from ', {
+      return L('<strong>Up to {amount} for mincome</strong> from ', {
         amount: `${this.fakeStore.currency}${contribution}`
       })
     },

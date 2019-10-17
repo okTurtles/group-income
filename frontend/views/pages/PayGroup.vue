@@ -96,6 +96,7 @@ import currencies from '@view-utils/currencies.js'
 import Tooltip from '@components/Tooltip.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgContributions from '@svgs/contributions.svg'
+// import incomeDistribution from '@utils/distribution/mincome-default.js'
 
 export default {
   name: 'PayGroup',

@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 
-const should = require('should')
-const incomeDistribution = require('../frontend/utils/distribution/mincome-proportional').default
+import should from 'should'
+import incomeDistribution from './mincome-proportional.js'
 
 describe('proportionalMincomeDistributionTest', function () {
   it('distribute income above mincome proportionally', function () {
