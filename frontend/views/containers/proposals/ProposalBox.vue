@@ -33,7 +33,7 @@ export default {
   computed: {
     ...mapGetters([
       'currentGroupState',
-      'currentUserIdentityContract'
+      'ourUserIdentityContract'
     ]),
     proposal () {
       // Pick the 1st hash as guidance/pivot for this group of proposals
@@ -42,7 +42,7 @@ export default {
     title () {
       const { identityContractID } = this.proposal.meta
       const username = this.$store.state[identityContractID].attributes.name
-      const currentUsername = this.currentUserIdentityContract.attributes.name
+      const currentUsername = this.ourUserIdentityContract.attributes.name
       const who = username === currentUsername ? L('You') : username
       const isAnyOpen = this.proposalHashes.some(hash => this.currentGroupState.proposals[hash].status === STATUS_OPEN)
 

@@ -31,7 +31,7 @@ export default {
     founders () {
       const foundersMap = {
         [chatTypes.INDIVIDUAL]: [
-          this.$store.getters.currentUserIdentityContract.attributes,
+          this.$store.getters.ourUserIdentityContract.attributes,
           users[this.$route.params.currentConversation.id]
         ],
         [chatTypes.GROUP]: [

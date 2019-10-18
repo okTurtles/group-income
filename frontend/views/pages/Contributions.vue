@@ -48,14 +48,15 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
       ismonetary=''
       @interaction='handleFormTriggerClick'
     )
+      //- TODO: use displayWithCurrency!
       i18n(
         :args='{amount:`${fakeStore.currency}${fakeStore.giving.monetary}`}'
       ) Pledging up to {amount}
-      i18n to other&apos;s mincome
+      i18n to other's mincome
       i18n(
         v-if='fakeStore.giving.monetary == 0' :args='{amount: "[$170]"}'
         tag='p'
-      ) (The group&apos;s average pledge is {amount})
+      ) (The group's average pledge is {amount})
 
     message-missing-income(
       v-if='fakeStore.isFirstTime && !ephemeral.isEditingIncome'
@@ -80,8 +81,8 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
       .field
         i18n.label(
           tag='label'
-          :args='{ mincome: groupSettings.mincomeAmount, currency }'
-        ) Do you make at least {currency}{mincome} per month?
+          :args='{ groupMincomeFormatted }'
+        ) Do you make at least {groupMincomeFormatted} per month?
 
         .radio-wrapper
           input.radio(
@@ -172,7 +173,7 @@ export default {
       },
       // -- Hardcoded Data just for layout purposes:
       fakeStore: {
-        currency: currencies['USD'],
+        currency: currencies.USD.symbol,
         isFirstTime: true, // true when user doesn't have any income details. It displays the 'Add Income Details' box
         mincome: 500,
         receiving: {
@@ -214,11 +215,10 @@ export default {
   computed: {
     ...mapGetters([
       'groupSettings',
-      'memberProfile'
+      'memberProfile',
+      'groupMincomeFormatted',
+      'ourUsername'
     ]),
-    currency () {
-      return currencies[this.groupSettings.mincomeCurrency]
-    },
     doesReceiveMonetary () {
       return !!this.fakeStore.receiving.monetary && !this.ephemeral.isEditingIncome
     },
@@ -227,7 +227,7 @@ export default {
     }
   },
   beforeMount () {
-    const profile = this.memberProfile(this.$store.state.loggedIn.username) || {}
+    const profile = this.memberProfile(this.ourUsername) || {}
     const incomeDetailsKey = profile.groupProfile && profile.groupProfile.incomeDetailsKey
     if (incomeDetailsKey) {
       this.form.incomeDetailsKey = incomeDetailsKey

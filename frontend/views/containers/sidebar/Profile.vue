@@ -8,12 +8,12 @@
     .c-user
       strong(
         :data-test='userDisplayName ? "profileDisplayName" : "profileName"'
-      ) {{userDisplayName ? userDisplayName : userName}}
+      ) {{ userDisplayName ? userDisplayName : ourUsername }}
 
       span(
         data-test='profileName'
         v-if='userDisplayName'
-      ) {{userName}}
+      ) {{ ourUsername }}
 
   button.is-icon-small(
     data-test='settingsBtn'
@@ -26,6 +26,7 @@
 import Avatar from '@components/Avatar.vue'
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
+import { mapGetters } from 'vuex'
 
 export default {
   name: 'Profile',
@@ -33,18 +34,16 @@ export default {
     Avatar
   },
   computed: {
+    ...mapGetters([
+      'ourUsername'
+    ]),
     userPicture () {
-      return this.$store.getters.currentUserIdentityContract &&
-        this.$store.getters.currentUserIdentityContract.attributes &&
-        this.$store.getters.currentUserIdentityContract.attributes.picture
+      const userContract = this.$store.getters.ourUserIdentityContract
+      return userContract && userContract.attributes && userContract.attributes.picture
     },
     userDisplayName () {
-      return this.$store.getters.currentUserIdentityContract &&
-        this.$store.getters.currentUserIdentityContract.attributes &&
-        this.$store.getters.currentUserIdentityContract.attributes.displayName
-    },
-    userName () {
-      return this.$store.state.loggedIn.username
+      const userContract = this.$store.getters.ourUserIdentityContract
+      return userContract && userContract.attributes && userContract.attributes.displayName
     }
   },
   methods: {

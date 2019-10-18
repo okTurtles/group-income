@@ -21,6 +21,7 @@ DefineContract({
     }
   },
   metadata: {
+    // TODO: why is this missing the from username..?
     validate: objectOf({
       createdDate: string
     }),
