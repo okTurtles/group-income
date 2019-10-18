@@ -6,62 +6,79 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
     .receiving
       i18n(tag='h2' class='card-header') Receiving
 
-      i18n.has-text-1(tag='p') When other members pledge a monetary or non-monetary contribution, they will appear here.
-      ul.c-ul
+      i18n.has-text-1.spacer(
+        v-if='!doesReceive'
+        tag='p'
+      ) When other members pledge a monetary or non-monetary contribution, they will appear here.
+
+      ul.spacer(v-else)
+        contribution(
+          v-if='fakeStore.receiving.monetary'
+          variant='editable'
+          is-monetary=true
+          @interaction='open("incomeModal")'
+        )
+          contribution-item(
+            :what='fakeStore.currency + fakeStore.receiving.monetary'
+            :who='fakeStore.groupMembersPledging'
+            type='MONETARY'
+          )
+
         contribution(
           v-for='(contribution, index) in fakeStore.receiving.nonMonetary'
           :key='`contribution-${index}`'
         )
-          //- TODO: verify this is safe (no XSS)
-          span(v-html='textReceivingNonMonetary(contribution)')
-          text-who(:who='contribution.who')
+          contribution-item(
+            :what='contribution.what'
+            :who='contribution.who'
+            type='NON_MONETARY'
+          )
 
-        contribution(
-          v-if='doesReceiveMonetary'
-          variant='editable'
-          ismonetary=''
-          @interaction='handleFormTriggerClick'
-        )
-          //- TODO: verify this is safe (no XSS)
-          span(v-html='textReceivingMonetary(fakeStore.receiving.monetary)')
-          text-who(:who='fakeStore.groupMembersPledging')
-          i18n each month
+      button.button.is-small(
+        @click='open("InviteByLink")'
+        v-if='groupMembersCount === 0'
+      )
+        i.icon-plus
+        i18n Add members to group
+
     .giving
       i18n(tag='h2' class='card-header') Giving
-      ul
+
+      i18n.has-text-1.spacer(
+        v-if='!doesGive'
+        tag='p'
+      ) You can contribute to your group with money or other valuables like teaching skills, sharing your time ot help someone. The sky is the limit!
+
+      ul.spacer(v-else)
+        contribution(
+          v-if='fakeStore.giving.monetary'
+          variant='editable'
+          is-monetary=true
+        )
+          contribution-item(
+            :what='fakeStore.currency + fakeStore.giving.monetary'
+            type='MONETARY'
+            action='GIVING'
+          )
+
         contribution.has-text-weight-bold(
           v-for='(contribution, index) in fakeStore.giving.nonMonetary'
           :key='`contribution-${index}`'
           variant='editable'
           @new-value='(value) => handleEditNonMonetary(value, index)'
-        ) {{contribution}}
+        )
+          contribution-item(
+            :what='contribution'
+            type='NON_MONETARY'
+            action='GIVING'
+          )
 
         contribution(
           variant='unfilled'
           @new-value='submitAddNonMonetary'
         )
-          i.icon-heart(aria-hidden='true')
-          i18n Add a non-monetary method
-
-      contribution(
-        v-if='doesGiveMonetary'
-        variant='editable'
-        ismonetary=''
-        @interaction='handleFormTriggerClick'
-      )
-        i18n(
-          :args='{amount:`${fakeStore.currency}${fakeStore.giving.monetary}`}'
-        ) Pledging up to {amount}
-        i18n to other&apos;s mincome
-        i18n(
-          v-if='fakeStore.giving.monetary == 0' :args='{amount: "[$170]"}'
-          tag='p'
-        ) (The group&apos;s average pledge is {amount})
-
-      message-missing-income(
-        v-if='fakeStore.isFirstTime && !ephemeral.isEditingIncome'
-        @click='handleFormTriggerClick'
-      )
+          i.icon-plus(aria-hidden='true')
+          i18n Add a non-monetary pledge
 
       income-form(
         v-if='ephemeral.isEditingIncome'
@@ -69,17 +86,18 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
         @save='handleIncomeSave'
         @cancel='handleIncomeCancel'
       )
-
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
+import sbp from '~/shared/sbp.js'
+import { OPEN_MODAL } from '@utils/events.js'
 import Page from '@pages/Page.vue'
 import currencies from '@view-utils/currencies.js'
-import MessageMissingIncome from '@containers/contributions/MessageMissingIncome.vue'
 import IncomeForm from '@containers/contributions/IncomeForm.vue'
 import GroupMincome from '@containers/sidebar/GroupMincome.vue'
 import Contribution from '@components/Contribution.vue'
-import TextWho from '@components/TextWho.vue'
+import ContributionItem from '@components/ContributionItem.vue'
 
 export default {
   name: 'Contributions',
@@ -87,9 +105,8 @@ export default {
     Page,
     GroupMincome,
     Contribution,
-    TextWho,
-    IncomeForm,
-    MessageMissingIncome
+    ContributionItem,
+    IncomeForm
   },
   data () {
     return {
@@ -113,11 +130,13 @@ export default {
               who: ['Zoe Kim', 'Laurence E']
             }
           ],
-          monetary: null // Number - You can edit to see the receiving monetary contribution box (change isFirstTime to false too).
+          monetary: 100
         },
         giving: {
-          nonMonetary: [], // ArrayOf(String)
-          monetary: null // Number - You can eddit to see the giving monetary contribution box (change isFirstTime to false too).
+          nonMonetary: [
+            'Happiness'
+          ],
+          monetary: 432
         },
         groupMembersPledging: [
           'Jack Fisher',
@@ -129,26 +148,19 @@ export default {
     }
   },
   computed: {
-    doesReceiveMonetary () {
-      return !!this.fakeStore.receiving.monetary && !this.ephemeral.isEditingIncome
+    ...mapGetters([
+      'groupMembersCount'
+    ]),
+    doesReceive () {
+      return this.fakeStore.receiving.monetary || this.fakeStore.receiving.nonMonetary
     },
-    doesGiveMonetary () {
-      return !!this.fakeStore.giving.monetary && !this.ephemeral.isEditingIncome
+    doesGive () {
+      return this.fakeStore.giving.monetary || this.fakeStore.giving.nonMonetary
     }
   },
   methods: {
     toggleMenu () {
       this.ephemeral.isActive = !this.ephemeral.isActive
-    },
-
-    textReceivingNonMonetary (contribution) {
-      // REVIEW - Is it safe to use v-html here? Related #502
-      return this.L('<strong>{what}</strong> from ', { what: contribution.what })
-    },
-    textReceivingMonetary (contribution) {
-      return this.L('<strong>Up to {amount} for mincome</strong> from ', {
-        amount: `${this.fakeStore.currency}${contribution}`
-      })
     },
 
     submitAddNonMonetary (value) {
@@ -164,9 +176,6 @@ export default {
         this.$set(this.fakeStore.giving.nonMonetary, index, value) // Hardcoded Solution
       }
     },
-    handleFormTriggerClick () {
-      this.ephemeral.isEditingIncome = true
-    },
     handleIncomeSave ({ canPledge, amount }) {
       console.log('TODO $store - Save Income Details')
       // -- Hardcoded Solution
@@ -181,6 +190,9 @@ export default {
     },
     closeIncome () {
       this.ephemeral.isEditingIncome = false
+    },
+    open (modal) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, modal)
     }
   }
 }
@@ -191,8 +203,13 @@ export default {
 
 .contribution-card {
   display: flex;
+  justify-content: space-between;
   > div {
-    width: 50%;
+    width: calc(50% - 1rem);
   }
+}
+
+.spacer {
+  margin-bottom: $spacer * 1.5;
 }
 </style>

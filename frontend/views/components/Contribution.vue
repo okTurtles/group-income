@@ -1,5 +1,5 @@
 <template lang='pug'>
-li.c-item(v-if='isEditing || isAdding')
+li.c-contribution(v-if='isEditing || isAdding')
   input.input(
     type='text'
     ref='input'
@@ -12,35 +12,42 @@ li.c-item(v-if='isEditing || isAdding')
     @keydown.esc='cancel'
     @keydown.enter='handleEnter'
   )
-  i18n.button(
-    tag='button'
-    @click='cancel'
-  ) Cancel
-  i18n.button.is-outlined(
-    v-if='isAdding && isFilled'
-    tag='button'
-    @click='handleSubmit'
-  ) Add
-  i18n.button.is-outlined(
-    v-if='isEditing && isFilled'
-    tag='button'
-    @click='handleSubmit'
-  ) Save
-  i18n.button.is-danger.is-outlined(
-    v-if='isEditing && !isFilled'
-    tag='button'
-    @click='handleDelete'
-  ) Delete
-  p.error(v-if='hasError' role='alert') {{this.hasError}}
+  .buttons
+    i18n.button.is-small.is-danger.is-outlined(
+      v-if='isEditing && !isAdding'
+      tag='button'
+      @click='handleDelete'
+    ) Remove
+    .c-buttons-right
+      i18n.button.is-small.is-outlined(
+        tag='button'
+        @click='cancel'
+      ) Cancel
+      i18n.button.is-small(
+        v-if='isAdding && isFilled'
+        tag='button'
+        @click='handleSubmit'
+      ) Add
+      i18n.button.is-small(
+        v-if='isEditing && isFilled'
+        tag='button'
+        @click='handleSubmit'
+      ) Save
+
+  p.error.c-spacer-above(v-if='hasError' role='alert') {{this.hasError}}
 
 li(v-else-if='isEditable' :class='itemClasses')
   slot
 
-  button.is-icon(:aria-label='editAriaLabel' @click='handleEditClick')
-    i.icon-edit(aria-hidden='true')
+  button.button.is-small.is-outlined.c-inline-button(:aria-label='editAriaLabel' @click='handleEditClick')
+    i.icon-pencil-alt(aria-hidden='true')
+    | Edit
 
-li(v-else-if='isUnfilled')
-  button(:class='itemClasses' @click='handleClick')
+li.c-spacer-above(v-else-if='isUnfilled')
+  button.button.is-small(
+    :class='itemClasses'
+    @click='handleClick'
+  )
     slot
 
 li(v-else='' :class='itemClasses')
@@ -160,4 +167,47 @@ export default {
 
 <style lang="scss" scoped>
 @import "../../assets/style/_variables.scss";
+.c-contribution {
+  padding: $spacer * 1.5 0 $spacer 0;
+
+  &:first-child,
+  & + .c-contribution{
+    padding-top: 0;
+  }
+
+  & + .c-spacer-above{
+    padding-top: $spacer;
+  }
+}
+
+.c-spacer-above {
+  padding-top: $spacer * 1.5;
+}
+
+.c-buttons-right {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.buttons {
+  margin-bottom: $spacer-xs;
+}
+
+.button + .c-buttons-right {
+  width: auto;
+}
+
+.c-inline-button {
+  margin-left: $spacer;
+  .icon-pencil-alt {
+    margin-left: 0;
+  }
+}
+
+.has-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
 </style>
