@@ -10,23 +10,21 @@ menu-parent
         item-id='hash-3'
         to='/somewhere'
       )
-        i.icon-vote-yea.c-icon
-        | See original proposal
+        i18n.icon-vote-yea.c-icon(tag='i') See original proposal
       menu-item(
         tag='router-link'
         item-id='hash-3'
         v-if='!linkExpired'
         to='/somewhere'
       )
-        i.icon-times.c-icon
-        | Revoke link
+        i18n.icon-times.c-icon(tag='i') Revoke Link
 </template>
 
 <script>
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/Menu/index.js'
 
 export default {
-  name: 'inviteActionButton',
+  name: 'InviteLinksActionButton',
   components: {
     MenuParent,
     MenuTrigger,
@@ -34,10 +32,7 @@ export default {
     MenuItem
   },
   props: {
-    linkExpired: {
-      type: Boolean,
-      default: false
-    }
+    linkExpired: Boolean
   }
 }
 </script>
@@ -46,13 +41,20 @@ export default {
 @import '../../../assets/style/_variables.scss';
 
 .c-content {
-  width: 13.375rem;
-  margin-top: 3.5rem;
-  margin-left: -0.5rem;
+  min-width: 13.375rem;
+  width: max-content;
+  margin: 3.5 * $spacer 0 0 3 * $spacer;
+  transform: translateX(-100%);
 }
 
 .c-icon {
-  color: $general_0;
-  margin-right: 16px;
+  text-align: left;
+  font-size: $size-4;
+  margin: 0;
+
+  &::before {
+    color: $general_0;
+    margin-right: $spacer;
+  }
 }
 </style>

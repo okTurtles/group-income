@@ -3,7 +3,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
   template(#title='') {{ L('Group Settings') }}
   template(#description='') {{ L('Changes to these settings will be visible to all group members') }}
 
-  page-section(title='')
+  page-section(title='' v-if='false')
 
     form
       .field
@@ -61,9 +61,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
         data-test='saveBtn'
       ) Save changes
 
-  invitelinks(
-    :list='ephemeral.inviteLinks.dummyList'
-  )
+  invitelinks(:list='ephemeral.inviteLinks.dummyList')
 
   page-section(:title='L("Leave Group")')
     i18n(tag='p' html='This means you will stop having access to the <b>group chat</b> (including direct messages to other group members) and <b>contributions</b>. Re-joining the group is possible, but requires other members to vote and reach an agreement.')
