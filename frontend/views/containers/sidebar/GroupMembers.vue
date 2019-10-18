@@ -100,9 +100,6 @@ export default {
       'groupMembers',
       'groupMembersCount'
     ]),
-    currentUserName () {
-      return this.$store.state.loggedIn.username
-    },
     firstTenMembers () {
       const profiles = this.groupMembers
       const usernames = Object.keys(profiles).slice(0, 10)

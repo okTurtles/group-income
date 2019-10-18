@@ -19,6 +19,7 @@ import { STATUS_OPEN, PROPOSAL_REMOVE_MEMBER } from './contracts/voting/proposal
 import { VOTE_FOR } from '@model/contracts/voting/rules.js'
 import { WE_JUST_JOINED } from '@model/constants.js'
 import { actionWhitelisted, CONTRACT_REGEX } from '@model/contracts/Contract.js'
+import currencies from '@view-utils/currencies.js'
 import './contracts/group.js'
 import './contracts/mailbox.js'
 import './contracts/identity.js'
@@ -165,7 +166,7 @@ const getters = {
     return getters.currentGroupState.settings || {}
   },
   mailboxContract (state, getters) {
-    const contract = getters.currentUserIdentityContract
+    const contract = getters.ourUserIdentityContract
     return (contract.attributes && state[contract.attributes.mailbox]) || {}
   },
   mailboxMessages (state, getters) {
@@ -175,8 +176,11 @@ const getters = {
   unreadMessageCount (state, getters) {
     return getters.mailboxMessages.filter(msg => !msg.read).length
   },
+  ourUsername (state) {
+    return state.loggedIn && state.loggedIn.username
+  },
   // Logged In user's identity contract
-  currentUserIdentityContract (state) {
+  ourUserIdentityContract (state) {
     return (state.loggedIn && state[state.loggedIn.identityContractID]) || {}
   },
   // list of group names and contractIDs
@@ -217,6 +221,10 @@ const getters = {
   },
   groupShouldPropose (state, getters) {
     return getters.groupMembersCount >= 3
+  },
+  groupMincomeFormatted (state, getters) {
+    const settings = getters.groupSettings
+    return currencies[settings.mincomeCurrency].displayWithCurrency(settings.mincomeAmount)
   },
   colors (state) {
     return Colors[state.theme]

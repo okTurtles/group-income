@@ -195,16 +195,14 @@ export default {
   computed: {
     ...mapGetters([
       'groupMembers',
-      'groupSettings'
+      'groupSettings',
+      'ourUsername'
     ]),
     mincomeAmount () {
       return this.groupSettings.mincomeAmount
     },
     currency () {
       return currencies[this.groupSettings.mincomeCurrency]
-    },
-    ourUsername () {
-      return this.$store.state.loggedIn.username
     },
     usersToPay () {
       const profiles = this.groupMembers

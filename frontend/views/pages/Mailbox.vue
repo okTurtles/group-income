@@ -193,15 +193,16 @@ export default {
     }
   },
   computed: {
+    ...mapGetters([
+      'currentGroupState',
+      'ourUsername'
+    ]),
     inbox () {
       return this.$store.getters.mailboxMessages.filter(msg => msg.data.messageType === TYPE_MESSAGE).sort(criteria)
     },
     proposals () {
       return this.currentGroupState.proposals || {}
-    },
-    ...mapGetters([
-      'currentGroupState'
-    ])
+    }
   },
   methods: {
     formatDate: function (date) {
@@ -243,7 +244,7 @@ export default {
           const state = await sbp('state/latestContractState', recipient.contractID)
           const message = await sbp('gi.contracts/mailbox/postMessage/create', {
             messageType: TYPE_MESSAGE,
-            from: this.$store.state.loggedIn.username,
+            from: this.ourUsername,
             message: this.ephemeral.composedMessage
           }, state.attributes.mailbox)
           await sbp('backend/publishLogEntry', message)

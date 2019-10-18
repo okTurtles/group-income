@@ -20,7 +20,7 @@
           required
         )
         .suffix {{ inputSuffix }}
-      i18n.helper(:args='{value: friendlyIncome}') Currently {value} monthly.
+      i18n.helper(:args='{groupMincomeFormatted}') Currently {groupMincomeFormatted} monthly.
     p.error(v-if='ephemeral.errorMsg') {{ form.response }}
 </template>
 
@@ -79,13 +79,11 @@ export default {
     ...mapGetters([
       'groupShouldPropose',
       'groupSettings',
-      'groupMembersCount'
+      'groupMembersCount',
+      'groupMincomeFormatted'
     ]),
     inputSuffix () {
       return `${currencies[this.groupSettings.mincomeCurrency].symbol} ${this.groupSettings.mincomeCurrency}`
-    },
-    friendlyIncome () {
-      return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency(this.groupSettings.mincomeAmount)
     },
     rule () {
       const { threshold } = this.groupSettings.proposals['group-setting-change'].ruleSettings.threshold

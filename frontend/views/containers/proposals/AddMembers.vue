@@ -102,7 +102,8 @@ export default {
       'currentGroupState',
       'groupSettings',
       'groupMembersCount',
-      'groupShouldPropose'
+      'groupShouldPropose',
+      'ourUsername'
     ]),
     rule () {
       const { threshold } = this.groupSettings.proposals['invite-member'].ruleSettings.threshold
@@ -113,8 +114,8 @@ export default {
     async addInvitee (index) {
       const searchUser = this.form.invitees[index]
 
-      if (searchUser === this.$store.state.loggedIn.username) {
-        return this.setInviteError(index, this.L('You can\'t invite yourself'))
+      if (searchUser === this.ourUsername) {
+        return this.setInviteError(index, this.L("You can't invite yourself"))
       }
 
       if (this.currentGroupState.profiles[searchUser]) {
