@@ -258,48 +258,46 @@ p.error {
 
   & + .helper {
     // When the error and a helper are visisble at the same time
-    margin-top: 0;
+    margin-top: $spacer-xs;
   }
 }
 
-.radio-wrapper {
-  min-width: 10rem;
-  margin-right: $spacer-md;
+.radio {
   position: relative;
   display: inline-block;
+  cursor: pointer;
+  margin-right: 1.5rem;
 
-  .radio {
-    cursor: pointer;
-    outline: none;
+  .input {
     position: absolute;
-    height: 100%;
-    width: 100%;
-    -moz-appearance: none;
-    -webkit-appearance: none;
+    opacity: 0;
+    width: 14px;
+    height: 14px;
   }
 
-  label {
-    outline: none;
-    cursor: pointer;
+  :last-child {
+    white-space: nowrap;
+
+    &::before,
+    &::after {
+      content: "";
+      display: inline-block;
+      border-radius: 50%;
+    }
 
     &::before {
-      content: "";
       width: 14px;
       height: 14px;
       margin-right: $spacer-sm;
-      display: inline-block;
-      border-radius: 50%;
       border: 1px solid $general_0;
       transform: translateY(2px);
     }
 
     &::after {
-      content: "";
+      position: absolute;
       width: 6px;
       height: 6px;
       background-color: $primary_0;
-      border-radius: 50%;
-      position: absolute;
       top: 11px;
       left: 7px;
       transform: translate(-50%, -50%) scale(0);
@@ -308,8 +306,9 @@ p.error {
     }
   }
 
-  .radio:focus + label,
-  .radio:checked + label {
+  .input.is-checked + :last-child,
+  input:focus + :last-child,
+  input:checked + :last-child {
     font-weight: bold;
     margin-right: -1px;
 

@@ -2,12 +2,11 @@
 span
   | {{firstWho}}
   template(v-if='hasWhoElse')
+    | &nbsp
     i18n and
+    | &nbsp
     tooltip
-      // TODO: replace button with i18n(tag='button' :args='{numOthers: notFirstWho.length}') {numOthers} others
-      button.is-unstyled.is-link-inherit(type='button')
-        | {{notFirstWho.length}}
-        i18n others
+      i18n.link(:args='{count: notFirstWho.length}') {count} others
       template(slot='tooltip')
         p(v-for='(name, index) in notFirstWho' :key='`name-${index}`') {{name}}
 </template>

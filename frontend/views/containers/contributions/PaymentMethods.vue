@@ -1,76 +1,58 @@
 <template lang='pug'>
-div
-  i18n.label(tag='legend') Payment method
-  ul.field.has-addons.c-options(:aria-label='L("Payment Methods")')
-    li.control(
+fieldset
+  i18n.label(tag='legend') Payment methods
+  ul.c-list
+    li.c-item(
       v-for='(method, index) in methodsAvailable'
       :key='`method-${index}`'
     )
-      button.is-outlined(
-        v-if='method.available'
-        :class='{ "is-primary": active === method.name }'
-        :aria-pressed='active === method.name'
-        @click='$emit("change", method.name)'
+      button.is-unstyled.c-button(
+        type='button'
+        :disabled='!method.isAvailable'
+        :aria-pressed='selected === method.name'
+        @click='$emit("select", method.name)'
       )
-        img.c-options-logo(
-          v-if='method.logo'
-          :alt='method.name'
-          :src='method.logo'
-          :class='`is-${method.name}`'
-        )
-        template(v-else='') {{method.name}}
-
-      tooltip(v-else='' :text='L("Available soon")')
-        button.is-outlined(disabled='')
-          img.c-options-logo(
-            :alt='method.name'
-            :src='method.logo'
-            :class='`is-${method.name}`'
-          )
-
-  template(v-if='userIsGiver')
-    i18n.help(tag='p')
-      | Each month, after the group&apos;s mincome and pledges are finalized, you&apos;ll receive a notification that it&apos;s time to send your pledged contribution to other group members.
-
-    i18n.help(tag='p')
-      | With manual payments, you can manually send your pledge using any method that works for you and and the recipient(s). Once you send the pledge, be sure to click &quot;Mark as paid&quot; under &quot;Pay Group&quot; so the recipient knows to expect it. After receiving the pledge, the recipient will be sure to mark it as &quot;Received&quot;, so you&apos;ll know it went through.
-
-  template(v-else='')
-    i18n.help(tag='p')
-      | Each month, after the group&apos;s mincome and pledges are finalized, members will receive a notification that it&apos;s time to send their contributions to other group members.
-
-    i18n.help(tag='p')
-      | With manual payments, members can manually send pledges using any method that works for the giving and the receiving group member(s). Once the pledge is sent, you will receive a notification so you know to expect the pledge. After receiving the pledge, be sure to mark it as &quot;Received&quot; so the sender will know it went through.
+        .c-svg
+          component(:is='method.svg')
+        .radio.c-radio
+          .input(:class='{ "is-checked": selected === method.name }')
+          span(:class='{ "has-text-1": selected !== method.name }') {{method.name}}
+        span.has-text-1.c-description {{method.description}}
 </template>
 
 <script>
 import Tooltip from '@components/Tooltip.vue'
+import SvgBitcoin from '@svgs/bitcoin.svg'
+import SvgMoney from '@svgs/money.svg'
 
 export default {
   name: 'PaymentsMethod',
   components: {
+    SvgBitcoin,
+    SvgMoney,
     Tooltip
   },
   props: {
-    userIsGiver: Boolean,
-    active: {
+    selected: {
       type: String,
-      default: 'manual'
+      required: true,
+      validator: (method) => ['manual', 'bitcoin'].includes(method)
     }
   },
   computed: {
     methodsAvailable () {
-      // REVIEW - should it be static or from $store?
       return [
         {
           name: 'manual',
-          available: true,
-          logo: null
+          isAvailable: true,
+          svg: SvgMoney,
+          description: 'Send your contributions using whatever method works best for you.'
         },
         {
           name: 'bitcoin',
-          available: false,
-          logo: '/assets/images/bitcoin.png'
+          isAvailable: false,
+          svg: SvgBitcoin,
+          description: 'Coming soon!'
         }
       ]
     }
@@ -81,25 +63,66 @@ export default {
 <style lang="scss" scoped>
 @import "../../../assets/style/_variables.scss";
 
-.c-options {
+.c-list {
   display: flex;
+}
 
-  &-logo {
-    &.is-bitcoin { width: 4.3rem; }
+.c-item {
+  display: block;
+  width: calc(50% - #{$spacer-sm});
+
+  &:nth-child(odd) {
+    margin-right: $spacer;
   }
+}
 
-  .button {
-    text-transform: capitalize;
-    height: $spacer-lg;
+.c-button {
+  display: block;
+  width: 100%;
+  white-space: normal;
+  line-height: inherit;
 
-    &.is-primary {
-      z-index: 2; // Show all border
+  &[disabled] {
+    background-color: transparent;
+    opacity: 1;
+    cursor: not-allowed;
 
-      &:focus {
-        background-color: transparent;
-        color: $text_0;
-      }
+    &:hover,
+    &:focus {
+      background: transparent;
     }
   }
+
+  &:hover:not([disabled]),
+  &:focus {
+    background: transparent;
+
+    .c-svg {
+      border-color: $text_0;
+    }
+  }
+}
+
+.c-svg {
+  height: 4.5rem;
+  border: 1px solid $general_0;
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: $spacer;
+
+  [aria-pressed="true"] & {
+    border-color: $primary_0;
+  }
+
+  svg {
+    height: 3rem;
+  }
+}
+
+.c-description {
+  display: block;
+  margin-top: $spacer-xs;
 }
 </style>

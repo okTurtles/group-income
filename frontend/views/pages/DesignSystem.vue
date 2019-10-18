@@ -611,33 +611,23 @@ page(
         tr
           td
             pre
-              | .radio-wrapper
-              |   input.radio(
-              |     type='radio'
-              |     id='radio-id1'
-              |     value='radio 1 value'
-              |   )
-              |   i18n.label(tag='label' for='radio-id1') Radio label
+              | fieldset
+              |   .legend What's your favorite food?
+              |     label.radio
+              |       input(type='radio' name='fruit' checked='true')
+              |       span Oranges
+              |     label.radio
+              |       input(type='radio' name='fruit')
+              |       span Apples
           td
-            .radio-wrapper
-              input.radio(
-                name='example'
-                type='radio'
-                checked='true'
-                id='radio-1'
-                value='radio-1'
-              )
-              i18n.label(tag='label' for='radio-1') Radio label
-
-            .radio-wrapper
-              input.radio(
-                name='example'
-                type='radio'
-                id='radio-2'
-                value='radio-2'
-              )
-              i18n.label(tag='label' for='radio-2') Radio label
-
+            fieldset
+              .legend What's your favorite food?
+              label.radio
+                input.input(type='radio' name='fruit' checked='true')
+                span Oranges
+              label.radio
+                input.input(type='radio' name='fruit')
+                span Apples
         tr
           td
             h3 Combination
