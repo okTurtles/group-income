@@ -100,10 +100,6 @@ export default {
       form: {
         incomeDetailsType: null,
         amount: null
-      },
-      fakeStore: {
-        incomeDetailsType: 'pledgeAmount', // incomeAmount || pledgeAmount
-        amount: 100
       }
     }
   },

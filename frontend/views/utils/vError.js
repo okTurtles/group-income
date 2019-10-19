@@ -31,7 +31,7 @@ Vue.directive('error', {
     }
     const opts = binding.value || {}
     const pErr = document.createElement(opts.tag || 'span')
-    for (const attr in (opts.attrs)) {
+    for (const attr in opts.attrs) {
       pErr.setAttribute(attr, opts.attrs[attr])
     }
     pErr.classList.add('error', 'is-hidden')
