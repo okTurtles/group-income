@@ -241,6 +241,7 @@ textarea,
 
 span.error,
 p.error {
+  color: var(--danger_0);
   display: block;
   margin-top: $spacer-sm;
   margin-bottom: 0;

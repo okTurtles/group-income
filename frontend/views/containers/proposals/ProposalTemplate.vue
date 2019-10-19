@@ -11,7 +11,7 @@
       i18n(key='title1' v-if='isConfirmation') Your proposal was created
       span(v-else) {{ title }}
 
-    form.c-form
+    form.c-form(@submit.prevent='')
       slot
 
       label.field(v-if='isReasonStep' key='reason')
@@ -46,6 +46,7 @@
 
         button(
           key='next'
+          type='button'
           v-if='groupShouldPropose && isNextStep'
           @click.prevent='next'
           :disabled='disabled'

@@ -2,7 +2,7 @@
   proposal-template(
     :title='L("Add new members")'
     :rule='rule'
-    :disabled='!ephemeral.isValid'
+    :disabled='this.ephemeral.invitesToSend.length === 0'
     :maxSteps='config.steps.length'
     :currentStep.sync='ephemeral.currentStep'
     variant='addMember'
@@ -10,55 +10,48 @@
   )
     fieldset(v-if='ephemeral.currentStep === 0' key='0')
       i18n.label(tag='legend') Full name
-      label.field(
-        v-for='(member, index) in ephemeral.invitesCount'
-        :key='`member-${index}`'
-        data-test='invitee'
-      )
-        i18n.label.sr-only Username
-        .input-combo
+      label.field
+        i18n.label.sr-only Full name
+        .input-combo(v-error:invitee='')
           input.input(
             type='text'
-            v-model='form.invitees[index]'
-            @keyup.enter='addInvitee(index)'
-            aria-required
+            v-model.lazy='$v.form.invitee.$model'
+            @keyup.enter='addInvitee'
+            required
           )
           button(
             type='button'
             data-test='add'
-            @click='addInvitee(index)'
+            @click='addInvitee'
           ) {{ L('Add') }}
-          button.is-icon-small.is-shifted(
-            v-if='index > 0'
+      ul.c-list
+        li.c-list-item(
+          v-for='(invitee, index) in ephemeral.invitesToSend'
+          :key='`invitee-${index}`'
+        )
+          span {{ invitee.name }}
+          button.is-icon-small(
             type='button'
             @click='removeInvitee(index)'
-            data-test='remove'
+            data-test='removeInvitee'
             :aria-label='L("Remove invitee")'
           )
             i.icon-times
-        // NOTE/TODO: These validations will be removed on issue #609
-        p.helper(
-          v-if='form.eachFeedbackMsg[index]'
-          :class='form.eachFeedbackMsg[index].class'
-          data-test='feedbackMsg'
-        ) {{ form.eachFeedbackMsg[index].text }}
-
-      button.link.has-icon.c-addPeople(
-        type='button'
-        @click='addInviteeSlot'
-        data-test='addInviteeSlot'
-      )
-        i.icon-plus
-        i18n Add more
+      p.helper(
+        v-if='ephemeral.feedbackMsg.text'
+        :class='ephemeral.feedbackMsg.class'
+        data-test='feedbackMsg'
+      ) {{ ephemeral.feedbackMsg.text }}
 </template>
 
 <script>
-import Vue from 'vue'
 import { mapState, mapGetters } from 'vuex'
+import { validationMixin } from 'vuelidate'
 import sbp from '~/shared/sbp.js'
 import { PROPOSAL_INVITE_MEMBER, buildInvitationUrl } from '@model/contracts/voting/proposals.js'
 import { generateInvites } from '@model/contracts/group.js'
 import { TYPE_MESSAGE } from '@model/contracts/mailbox.js'
+// import L from '@view-utils/translations.js'
 import ProposalTemplate from './ProposalTemplate.vue'
 
 export default {
@@ -66,17 +59,18 @@ export default {
   components: {
     ProposalTemplate
   },
+  mixins: [
+    validationMixin
+  ],
   data () {
     return {
       form: {
-        invitees: [],
-        eachFeedbackMsg: []
+        invitee: null
       },
       ephemeral: {
+        invitesToSend: [],
         currentStep: 0,
-        isValid: false,
-        invitesCount: 1,
-        invitesToSend: []
+        feedbackMsg: {} // TODO/OPTIMIZE: use something similar to vError
       },
       config: {
         steps: [
@@ -86,11 +80,33 @@ export default {
     }
   },
   validations: {
-    // validation groups by route name for steps
     steps: {
-      Member: [
-        'form.member'
+      Invitee: [
+        'form.invitee'
       ]
+    },
+    form: {
+      invitee: {
+        // [L("You can't invite yourself")]: function (invitee) {
+        //   return invitee !== this.ourUsername
+        // },
+        // [L('This person is already on the group')]: function (invitee) {
+        //   return !this.currentGroupState.profiles[invitee]
+        // }
+        // TODO - vError doesnt support async validations.
+        // [L('Non existing user. TODO support general invites')]: async function (invitee) {
+        //   try {
+        //     const contractID = await sbp('namespace/lookup', invitee)
+        //     const userState = await sbp('state/latestContractState', contractID)
+        //     this.ephemeral.invitesToSend.push({ contractID, ...userState })
+        //     this.ephemeral.isValid = true
+        //     return false
+        //   } catch (err) {
+        //     console.log(err)
+        //     return true
+        //   }
+        // }
+      }
     }
   },
   computed: {
@@ -111,51 +127,8 @@ export default {
     }
   },
   methods: {
-    async addInvitee (index) {
-      const searchUser = this.form.invitees[index]
-
-      if (searchUser === this.ourUsername) {
-        return this.setInviteError(index, this.L("You can't invite yourself"))
-      }
-
-      if (this.currentGroupState.profiles[searchUser]) {
-        return this.setInviteError(index,
-          this.L('{searchUser} is already on the group', { searchUser })
-        )
-      }
-
-      try {
-        const contractID = await sbp('namespace/lookup', searchUser)
-        if (!contractID) {
-          this.setInviteError(index, this.L('Non existing user. TODO support general invites'))
-          return
-        }
-        const userState = await sbp('state/latestContractState', contractID)
-        this.ephemeral.invitesToSend[index] = { contractID, ...userState }
-        Vue.set(this.form.eachFeedbackMsg, index, {
-          text: this.L('Ready to be invited!'),
-          class: 'has-text-success'
-        })
-        this.ephemeral.isValid = true
-      } catch (err) {
-        console.error(err)
-        this.setInviteError(index, err.message)
-      }
-    },
-    setInviteError (index, text) {
-      this.ephemeral.invitesToSend[index] = null
-      Vue.set(this.form.eachFeedbackMsg, index, {
-        text,
-        class: 'error'
-      })
-    },
     removeInvitee (index) {
-      this.ephemeral.invitesCount -= 1
-      this.form.invitees.splice(index, 1)
-      this.ephemeral.invitesToSend[index] = null
-    },
-    addInviteeSlot () {
-      this.ephemeral.invitesCount += 1
+      this.ephemeral.invitesToSend.splice(index, 1)
     },
     async submit (form) {
       try {
@@ -185,10 +158,10 @@ export default {
             )
             await sbp('backend/publishLogEntry', proposal)
 
-            Vue.set(this.form.eachFeedbackMsg, index, {
+            this.ephemeral.feedbackMsg = {
               text: this.L('Member proposed successfully!'),
               class: 'has-text-success'
-            })
+            }
           } else {
             const invite = generateInvites(1)
             const inviteToMailbox = await sbp('gi.contracts/mailbox/postMessage/create',
@@ -211,16 +184,16 @@ export default {
             await sbp('backend/publishLogEntry', inviteToGroup)
             await sbp('backend/publishLogEntry', inviteToMailbox)
 
-            Vue.set(this.form.eachFeedbackMsg, index, {
+            this.ephemeral.feedbackMsg = {
               text: this.L('Member invited successfully!'),
               class: 'has-text-success'
-            })
+            }
           }
         }
       } catch (error) {
         console.error(error)
         // TODO: Create More descriptive errors
-        this.form.eachFeedbackMsg = this.L('Failed to invite, please try again.')
+        this.ephemeral.feedbackMsg = this.L('Failed to invite, please try again.')
       }
     }
   }
@@ -229,11 +202,16 @@ export default {
 <style lang="scss" scoped>
 @import "../../../assets/style/_variables.scss";
 
-.c-addPeople {
-  margin: $spacer-sm 0 $spacer;
+.c-list {
+  margin: $spacer 0;
 
-  .icon-plus {
-    margin-right: $spacer-sm;
+  &-item {
+    display: flex;
+    background: $general_2;
+    padding: $spacer-sm;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: $spacer-xs;
   }
 }
 </style>
