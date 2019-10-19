@@ -13,11 +13,8 @@ function getProposalBoxes () {
 }
 
 describe('Proposals - Add members', () => {
-  it('successfully loads the homepage', function () {
-    cy.visit('/')
-  })
-
   it('register 6 users and logout each one', () => {
+    cy.visit('/')
     for (var i = 1; i <= 6; i++) {
       cy.giSignUp(`user${i}-${userId}`)
       cy.giLogOut()
@@ -35,13 +32,11 @@ describe('Proposals - Add members', () => {
     cy.getByDT('welcomeGroup').should('contain', `Welcome ${groupName}!`)
   })
 
-  it('user1 invites user2 and user3 to the group', () => {
+  it('user1 invites user2 and user3 to the group and they accept', () => {
     cy.giInviteMember([`user2-${userId}`, `user3-${userId}`])
 
     cy.giLogOut()
-  })
 
-  it('user2 and user3 accept their invites', () => {
     cy.giLogin(`user2-${userId}`)
     cy.giAcceptGroupInvite(groupName)
     cy.giLogOut()
@@ -51,15 +46,13 @@ describe('Proposals - Add members', () => {
     cy.giLogOut()
   })
 
-  it('user1 proposes to add user4 and user5 together to the group', () => {
+  it('user1 proposes to add user4 and user5 together to the group and user2 proposes to add user6 to the group', () => {
     cy.giLogin(`user1-${userId}`)
 
     cy.giInviteMember([`user4-${userId}`, `user5-${userId}`], { isProposal: true })
 
     cy.giLogOut()
-  })
 
-  it('user2 proposes to add user6 to the group', () => {
     cy.giLogin(`user2-${userId}`)
 
     cy.giInviteMember(`user6-${userId}`, { isProposal: true })
