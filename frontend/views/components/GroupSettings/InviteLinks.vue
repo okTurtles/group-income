@@ -34,12 +34,13 @@ page-section.c-section(:title='L("Invite links")')
             :isTextCenter='true'
             :text='L("This invite link was only available during the onboarding period.")'
           )
-            button.is-icon-small(v-if='item.name === "Anyone"')
+            button.is-icon-small(v-if='item.isAnyoneLink')
               i.icon-info-circle
         td.c-invite-link
-          span.link.has-ellipsis {{ item.inviteLink }}
-          button.is-icon-small.has-background
-            i.icon-copy.is-regular
+          copy-to-clipboard.c-invite-link-wrapper(:textToCopy='item.inviteLink')
+            span.link.has-ellipsis {{ item.inviteLink }}
+            button.is-icon-small.has-background.c-invite-link-button
+              i.icon-copy.is-regular
         td.c-state
           i18n.c-state-description {{ item.state.description }}
           i18n.c-state-expire(
@@ -64,6 +65,7 @@ import PageSection from '@components/PageSection.vue'
 import Tooltip from '@components/Tooltip.vue'
 import SvgInvitation from '@svgs/invitation.svg'
 import InviteActionButton from './InviteActionButton.vue'
+import CopyToClipboard from '@components/CopyToClipboard.vue'
 
 export default {
   name: 'InviteLinks',
@@ -71,7 +73,8 @@ export default {
     PageSection,
     SvgInvitation,
     InviteActionButton,
-    Tooltip
+    Tooltip,
+    CopyToClipboard
   },
   data () {
     return {
@@ -165,7 +168,13 @@ export default {
     grid-area: invite-link;
     padding-right: $size-2;
 
-    button {
+    &-wrapper {
+      display: inherit;
+      align-items: inherit;
+      width: 100%;
+    }
+
+    .c-invite-link-button {
       padding: 0 $spacer / 3;
       width: 1.6875rem;
       height: 1.6875rem;

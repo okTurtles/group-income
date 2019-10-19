@@ -113,6 +113,7 @@ export default {
             {
               name: 'Felix Kubin',
               inviteLink: 'http://localhost:8000/app/join?groupId=21XWnNFz7RbNPKHUqAeSLLT1cNHnnCssmSw6dJeB1gfSSeZc7v&secret=4460',
+              isAnyoneLink: false,
               state: {
                 description: 'Not used yet',
                 expireInfo: '1d 2h 30m left',
@@ -122,6 +123,7 @@ export default {
             {
               name: 'Brian Eno',
               inviteLink: 'http://localhost:8000/app/join?groupId=21XWnNFz7RbNPKHUqAeSLLT1cNHnnCssmSw6dJeB1gfSSeZc7v&secret=4460',
+              isAnyoneLink: false,
               state: {
                 description: 'Used',
                 expireInfo: '',
@@ -131,6 +133,7 @@ export default {
             {
               name: 'Carl Sagan',
               inviteLink: 'http://localhost:8000/app/join?groupId=21XWnNFz7RbNPKHUqAeSLLT1cNHnnCssmSw6dJeB1gfSSeZc7v&secret=4460',
+              isAnyoneLink: false,
               state: {
                 description: 'Not used',
                 expireInfo: 'Expired',
@@ -140,6 +143,7 @@ export default {
             {
               name: 'Anyone',
               inviteLink: 'http://localhost:8000/app/join?groupId=21XWnNFz7RbNPKHUqAeSLLT1cNHnnCssmSw6dJeB1gfSSeZc7v&secret=4460',
+              isAnyoneLink: true,
               state: {
                 description: '10/60 used',
                 expireInfo: 'Expired',
