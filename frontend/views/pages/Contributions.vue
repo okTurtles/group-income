@@ -16,7 +16,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
           v-if='fakeStore.receiving.monetary'
           variant='editable'
           is-monetary=true
-          @interaction='open("incomeModal")'
+          @interaction='open("IncomeDetails")'
         )
           contribution-item(
             :what='fakeStore.currency + fakeStore.receiving.monetary'
