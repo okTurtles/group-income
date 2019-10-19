@@ -1,4 +1,5 @@
 'use strict'
 
 // useful for 'okTurtles.data'
-export const WE_JUST_JOINED = '@const/just-joined'
+// example (that we're no longer using):
+// export const WE_JUST_JOINED = '@const/just-joined'

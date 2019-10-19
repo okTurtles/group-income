@@ -2,7 +2,7 @@
 
 import sbp from '~/shared/sbp.js'
 import '~/shared/domains/okTurtles/events.js'
-import chalk from 'chalk'
+import '~/shared/domains/okTurtles/eventQueue.js'
 import { GIMessage } from '~/shared/GIMessage.js'
 // import * as _ from '~/frontend/utils/giLodash.js'
 import { createWebSocket } from '~/frontend/controller/backend.js'
@@ -15,6 +15,7 @@ import { TYPE_MESSAGE } from '~/frontend/model/contracts/mailbox.js'
 import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts/group.js'
 import '~/frontend/model/contracts/identity.js'
 import '~/frontend/controller/namespace.js'
+import chalk from 'chalk'
 
 global.fetch = require('node-fetch')
 const should = require('should') // eslint-disable-line
@@ -48,23 +49,18 @@ const vuexState = {
 }
 
 sbp('sbp/selectors/register', {
-  // intercept 'handleEvent' from backend.js
-  'state/vuex/dispatch': function (action, e) {
+  // intercept 'state/enqueueHandleEvent' from backend.js
+  'state/enqueueHandleEvent': function (e) {
     const contractID = e.contractID()
-    switch (action) {
-      case 'handleEvent':
-        if (e.isFirstMessage()) {
-          vuexState[contractID] = {}
-        }
-        sbp(e.type(), vuexState[contractID], {
-          data: e.data(),
-          meta: e.meta(),
-          hash: e.hash()
-        })
-        sbp('okTurtles.events/emit', e.hash(), e)
-        break
-      default: throw new Error(`unknown dispatch: ${action}`)
+    if (e.isFirstMessage()) {
+      vuexState[contractID] = {}
     }
+    sbp(e.type(), vuexState[contractID], {
+      data: e.data(),
+      meta: e.meta(),
+      hash: e.hash()
+    })
+    sbp('okTurtles.events/emit', e.hash(), e)
   },
   // for handling the loggedIn metadata() in Contracts.js
   'state/vuex/state': () => {

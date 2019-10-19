@@ -279,12 +279,12 @@ DefineContract({
           // so subscribe to founder's IdentityContract & everyone else's
           for (const name of Object.keys(groupState.profiles)) {
             if (name === rootState.loggedIn.username) continue
-            await sbp('state/vuex/dispatch', 'syncContractWithServer', groupState.profiles[name].contractID)
+            await sbp('state/enqueueContractSync', groupState.profiles[name].contractID)
           }
         } else {
           // we're an existing member of the group getting notified that a
           // new member has joined, so subscribe to their identity contract
-          await sbp('state/vuex/dispatch', 'syncContractWithServer', meta.identityContractID)
+          await sbp('state/enqueueContractSync', meta.identityContractID)
         }
       }
     },

@@ -156,7 +156,7 @@ export default {
         })
         await sbp('backend/publishLogEntry', entry)
         // add to vuex and monitor this contract for updates
-        await sbp('state/vuex/dispatch', 'syncContractWithServer', hash)
+        await sbp('state/enqueueContractSync', hash)
       } catch (error) {
         console.error(error)
         this.ephemeral.errorMsg = L('Failed to Create Group')

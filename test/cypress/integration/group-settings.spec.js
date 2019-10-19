@@ -16,8 +16,6 @@ describe('Changing Group Settings', () => {
   })
 
   it('user1 changes the group minimum income (increase it $100)', () => {
-    cy.getByDT('toDashboardBtn').click()
-
     cy.getByDT('groupMincome').within(() => {
       cy.getByDT('minIncome').should('contain', `$${groupMincome}`)
       cy.get('button').click()
