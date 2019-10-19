@@ -72,6 +72,7 @@ modal-base-template(ref='modal')
 import { mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
+import { decimals } from '@view-utils/validators.js'
 import sbp from '~/shared/sbp.js'
 import InputAmount from './InputAmount.vue'
 import PaymentMethods from './PaymentMethods.vue'
@@ -170,6 +171,8 @@ export default {
         [L('This field is required')]: required
       },
       amount: {
+        [L('cannot be negative')]: v => v >= 0,
+        [L('cannot have more than 2 decimals')]: decimals(2),
         [L('This field is required')]: required,
         [L("It seems your income is not lower than the group's mincome.")]: function (value) {
           if (this.needsIncome) {
