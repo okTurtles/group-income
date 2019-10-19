@@ -1,57 +1,58 @@
 <template lang='pug'>
-li.c-contribution(v-if='isEditing || isAdding')
-  input.input(
-    type='text'
-    ref='input'
-    :placeholder='randomPlaceholder'
-    maxlength='20'
-    :aria-label='L("Your contribution")'
-    :aria-invalid='hasError'
-    v-focus='isEditing && $slots.default[0].text'
-    @keyup='verifyValue'
-    @keydown.esc='cancel'
-    @keydown.enter='handleEnter'
-  )
-  .buttons
-    i18n.button.is-small.is-danger.is-outlined(
-      v-if='isEditing && !isAdding'
-      tag='button'
-      @click='handleDelete'
-    ) Remove
-    .c-buttons-right
-      i18n.button.is-small.is-outlined(
+transition(name='replacelist')
+  li.c-contribution(v-if='isEditing || isAdding' key=1)
+    input.input(
+      type='text'
+      ref='input'
+      :placeholder='randomPlaceholder'
+      maxlength='20'
+      :aria-label='L("Your contribution")'
+      :aria-invalid='hasError'
+      v-focus='isEditing && $slots.default[0].text'
+      @keyup='verifyValue'
+      @keydown.esc='cancel'
+      @keydown.enter='handleEnter'
+    )
+    .buttons
+      i18n.button.is-small.is-danger.is-outlined(
+        v-if='isEditing && !isAdding'
         tag='button'
-        @click='cancel'
-      ) Cancel
-      i18n.button.is-small(
-        v-if='isAdding && isFilled'
-        tag='button'
-        @click='handleSubmit'
-      ) Add
-      i18n.button.is-small(
-        v-if='isEditing && isFilled'
-        tag='button'
-        @click='handleSubmit'
-      ) Save
+        @click='handleDelete'
+      ) Remove
+      .c-buttons-right
+        i18n.button.is-small.is-outlined(
+          tag='button'
+          @click='cancel'
+        ) Cancel
+        i18n.button.is-small(
+          v-if='isAdding && isFilled'
+          tag='button'
+          @click='handleSubmit'
+        ) Add
+        i18n.button.is-small(
+          v-if='isEditing && isFilled'
+          tag='button'
+          @click='handleSubmit'
+        ) Save
 
-  p.error.c-spacer-above(v-if='hasError' role='alert') {{this.hasError}}
+    p.error.c-spacer-above(v-if='hasError' role='alert') {{this.hasError}}
 
-li(v-else-if='isEditable' :class='itemClasses')
-  slot
-
-  button.button.is-small.is-outlined.c-inline-button(:aria-label='editAriaLabel' @click='handleEditClick')
-    i.icon-pencil-alt(aria-hidden='true')
-    | Edit
-
-li.c-spacer-above(v-else-if='isUnfilled')
-  button.button.is-small(
-    :class='itemClasses'
-    @click='handleClick'
-  )
+  li(v-else-if='isEditable' :class='itemClasses' key=2)
     slot
 
-li(v-else='' :class='itemClasses')
-  slot
+    button.button.is-small.is-outlined.c-inline-button(:aria-label='editAriaLabel' @click='handleEditClick')
+      i.icon-pencil-alt(aria-hidden='true')
+      | Edit
+
+  li.c-spacer-above(v-else-if='isUnfilled' key=3)
+    button.button.is-small(
+      :class='itemClasses'
+      @click='handleClick'
+    )
+      slot
+
+  li(v-else='' :class='itemClasses' key=4)
+    slot
 </template>
 
 <script>
