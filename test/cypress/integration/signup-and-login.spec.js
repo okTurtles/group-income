@@ -5,15 +5,9 @@ describe('SignUp, Profile and Login', () => {
   const userId = Math.floor(Math.random() * 10000)
   const username = `user1-${userId}`
 
-  it('successfully loads homepage', () => {
+  it('user1 signups and creates a group', () => {
     cy.visit('/')
-  })
-
-  it('sign up new user1', () => {
     cy.giSignUp(username)
-  })
-
-  it('user1 creates a group', () => {
     cy.giCreateGroup('Dreamers 2')
     cy.getByDT('profileName').should('contain', username)
   })
@@ -48,21 +42,11 @@ describe('SignUp, Profile and Login', () => {
 
     cy.getByDT('profileDisplayName').should('contain', 'I am a bot')
     cy.getByDT('profileName').should('contain', username)
-  })
-
-  it('user1 logout and login again', () => {
-    cy.giLogOut()
-    cy.giLogin(username)
-  })
-
-  it('user1 logout one last time', () => {
-    // NOTE: Logout a last time so when tests restart they start
-    // from starting point. TODO - find a better way to do this
-    /// https://stackoverflow.com/questions/50711829/cypress-browser-state-maintains-log-in-how-do-i-stop-this-from-occurring
     cy.giLogOut()
   })
 
-  it('cannot login a non existent user', () => {
+  it('prevent incorrect logins/signup actions', () => {
+    cy.log('- Connot login a non existent user')
     cy.getByDT('loginBtn').click()
 
     cy.getByDT('loginName').clear().type('non existent')
@@ -75,9 +59,8 @@ describe('SignUp, Profile and Login', () => {
     cy.getByDT('loginError').should('contain', 'Invalid username or password')
 
     cy.getByDT('closeModal').click()
-  })
 
-  it('cannot signup existing user1 twice', () => {
+    cy.log('- Cannot signup existing user twice')
     cy.getByDT('signupBtn').click()
 
     cy.getByDT('signName').clear().type('new user')
@@ -91,9 +74,8 @@ describe('SignUp, Profile and Login', () => {
     // cy.getByDT('badUsername').should('contain', 'email is unavailable')
 
     cy.getByDT('closeModal').click()
-  })
 
-  it('switch directly between login to signup modals', () => {
+    cy.log('- Switch between login to signup modals')
     cy.getByDT('loginBtn').click()
 
     cy.getByDT('goToSignup').click()

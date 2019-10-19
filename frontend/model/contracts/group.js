@@ -9,7 +9,7 @@ import { objectOf, objectMaybeOf, optional, string, number, object, unionOf, lit
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST } from './voting/rules.js'
 import proposals, { proposalType, proposalSettingsType, archiveProposal, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_CANCELLED } from './voting/proposals.js'
 import * as Errors from '../errors.js'
-import { merge } from '~/frontend/utils/giLodash.js'
+import { merge, deepEqualJSONType } from '~/frontend/utils/giLodash.js'
 
 // for gi.contracts/group/payment ... TODO: put these in some other file?
 export const PAYMENT_PENDING = 'pending'
@@ -125,20 +125,37 @@ DefineContract({
       }
     },
     'gi.contracts/group/proposal': {
-      validate: objectOf({
-        proposalType: proposalType,
-        proposalData: object, // data for Vue widgets
-        votingRule: ruleType,
-        expires_date_ms: number // calculate by grabbing proposal expiry from group properties and add to `meta.createdDate`
-      }),
+      validate: data => {
+        objectOf({
+          proposalType: proposalType,
+          proposalData: object, // data for Vue widgets
+          votingRule: ruleType,
+          expires_date_ms: number // calculate by grabbing proposal expiry from group properties and add to `meta.createdDate`
+        })
+        // make sure this isn't a duplicate proposal
+        const ourUsername = sbp('state/vuex/getters').ourUsername
+        const groupID = sbp('state/vuex/state').currentGroupId
+        const groupState = sbp('state/vuex/state')[groupID]
+        for (const hash in groupState.proposals) {
+          const prop = groupState.proposals[hash]
+          if (prop.status === STATUS_OPEN &&
+            prop.data.proposalType === data.proposalType &&
+            prop.meta.username === ourUsername &&
+            deepEqualJSONType(prop.data.proposalData, data.proposalData)
+          ) {
+            throw new TypeError(`proposal: is identical to proposal ${hash}`)
+          }
+        }
+        // TODO/BUG: Avoid proposal to add existing member.
+        return data
+      },
       process (state, { data, meta, hash }) {
-        // TODO/BUG: Avoid proposing same user twice or existing member.
         Vue.set(state.proposals, hash, {
           data,
           meta,
           votes: { [meta.username]: VOTE_FOR },
           status: STATUS_OPEN,
-          payload: null
+          payload: null // set later by proposalVote
         })
         // TODO: save all proposals disk so that we only keep open proposals in memory
         // TODO: create a global timer to auto-pass/archive expired votes
@@ -262,12 +279,12 @@ DefineContract({
           // so subscribe to founder's IdentityContract & everyone else's
           for (const name of Object.keys(groupState.profiles)) {
             if (name === rootState.loggedIn.username) continue
-            await sbp('state/vuex/dispatch', 'syncContractWithServer', groupState.profiles[name].contractID)
+            await sbp('state/enqueueContractSync', groupState.profiles[name].contractID)
           }
         } else {
           // we're an existing member of the group getting notified that a
           // new member has joined, so subscribe to their identity contract
-          await sbp('state/vuex/dispatch', 'syncContractWithServer', meta.identityContractID)
+          await sbp('state/enqueueContractSync', meta.identityContractID)
         }
       }
     },

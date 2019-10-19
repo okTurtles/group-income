@@ -10,14 +10,13 @@ import { GIMessage } from '~/shared/GIMessage.js'
 import * as _ from '@utils/giLodash.js'
 import L from '@view-utils/translations.js'
 import { SETTING_CURRENT_USER } from './database.js'
-import { ErrorDBMalformed, ErrorDBConnection } from '~/shared/domains/gi/db.js'
+import { ErrorDBBadPreviousHEAD, ErrorDBConnection } from '~/shared/domains/gi/db.js'
 import { LOGIN, LOGOUT, EVENT_HANDLED, CONTRACTS_MODIFIED } from '@utils/events.js'
 import Colors from './colors.js'
 import { TypeValidatorError } from '@utils/flowTyper.js'
 import { GIErrorUnrecoverable, GIErrorIgnoreAndBanIfGroup, GIErrorDropAndReprocess } from './errors.js'
 import { STATUS_OPEN, PROPOSAL_REMOVE_MEMBER } from './contracts/voting/proposals.js'
 import { VOTE_FOR } from '@model/contracts/voting/rules.js'
-import { WE_JUST_JOINED } from '@model/constants.js'
 import { actionWhitelisted, CONTRACT_REGEX } from '@model/contracts/Contract.js'
 import currencies from '@view-utils/currencies.js'
 import './contracts/group.js'
@@ -29,6 +28,16 @@ var store // this is set and made the default export at the bottom of the file.
 // we have it declared here to make it accessible in mutations
 // 'state' is the Vuex state object, and it can only store JSON-like data
 var dropAllMessagesUntilRefresh = false
+const contractIsSyncing: {[string]: boolean} = {}
+
+const initialState = {
+  currentGroupId: null,
+  contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
+  pending: [], // contractIDs we've just published but haven't received back yet
+  loggedIn: false, // false | { username: string, identityContractID: string }
+  theme: 'blue',
+  fontSize: 1
+}
 
 // guard all sbp calls for contract actions with this function
 function guardedSBP (sel: string, ...data: any): any {
@@ -59,18 +68,28 @@ sbp('sbp/selectors/register', {
     }
     return state
   },
+  'state/enqueueContractSync': function (contractID: string) {
+    // enqueue this invocation in a serial queue to ensure
+    // handleEvent does not get called on contractID while it's being sync,
+    // but after it's finished syncing. This is used in tandem with
+    // 'state/enqueueHandleEvent' defined below. This is all to prevent
+    // handleEvent getting called with the wrong previousHEAD for an event.
+    return sbp('okTurtles.eventQueue/queueEvent', contractID, [
+      'state/vuex/dispatch', 'syncContractWithServer', contractID
+    ])
+  },
+  'state/enqueueHandleEvent': function (event: GIMessage) {
+    // make sure handleEvent is called AFTER any currently-running invocations
+    // to syncContractWithServer(), to prevent gi.db from throwing
+    // "bad previousHEAD" errors
+    return sbp('okTurtles.eventQueue/queueEvent', event.contractID(), [
+      'state/vuex/dispatch', 'handleEvent', event
+    ])
+  },
   'state/vuex/state': () => store.state,
+  'state/vuex/getters': () => store.getters,
   'state/vuex/dispatch': (...args) => store.dispatch(...args)
 })
-
-const initialState = {
-  currentGroupId: null,
-  contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
-  pending: [], // contractIDs we've just published but haven't received back yet
-  loggedIn: false, // false | { username: string, identityContractID: string }
-  theme: 'blue',
-  fontSize: 1
-}
 
 // Mutations must be synchronous! Never call these directly, instead use commit()
 // http://vuex.vuejs.org/en/mutations.html
@@ -257,13 +276,16 @@ const actions = {
     }
     if (latest !== recent) {
       console.log(`Now Synchronizing Contract: ${contractID} its most recent was ${recent || 'undefined'} but the latest is ${latest}`)
+      contractIsSyncing[contractID] = true
       // TODO Do we need a since call that is inclusive? Since does not imply inclusion
       const events = await sbp('backend/eventsSince', contractID, recent || contractID)
       // remove the first element in cases where we are not getting the contract for the first time
       state.contracts[contractID] && events.shift()
       for (let i = 0; i < events.length; i++) {
+        // this must be called directly, instead of via enqueueHandleEvent
         await dispatch('handleEvent', GIMessage.deserialize(events[i]))
       }
+      contractIsSyncing[contractID] = false
     }
   },
   async login (
@@ -281,7 +303,7 @@ const actions = {
       for (const contractID in store.state.contracts) {
         const { type } = store.state.contracts[contractID]
         commit('registerContract', { contractID, type })
-        await dispatch('syncContractWithServer', contractID)
+        await sbp('state/enqueueContractSync', contractID)
       }
     }
     await sbp('gi.db/settings/save', SETTING_CURRENT_USER, user.username)
@@ -387,8 +409,11 @@ const handleEvent = {
     try {
       return await sbp('gi.db/log/addEntry', message)
     } catch (e) {
-      if (e instanceof ErrorDBMalformed) {
-        throw new GIErrorIgnoreAndBanIfGroup(e.message)
+      if (e instanceof ErrorDBBadPreviousHEAD) {
+        // the server should never send us a bad previousHEAD (because)
+        // it verifies that before adding it to its db. So if we receive
+        // this error it means somehow we're getting valid messages out of order
+        throw new GIErrorDropAndReprocess(e.message)
       } else if (e instanceof ErrorDBConnection) {
         // we cannot throw GIErrorDropAndReprocess because saving is clearly broken
         // so we re-throw this special error condition that means we can't do anything
@@ -475,12 +500,13 @@ const handleEvent = {
     }
   },
   async autoBanSenderOfMessage (message: GIMessage, error: Object) {
+    const contractID = message.contractID()
     try {
       // If we just joined, we're likely witnessing an old error that was handled
       // by the existing members, so we shouldn't attempt to participate in voting
       // in a proposal that has long since passed.
-      if (sbp('okTurtles.data/get', WE_JUST_JOINED)) {
-        console.debug('skipping autoBanSenderOfMessage since WE_JUST_JOINED')
+      if (contractIsSyncing[contractID]) {
+        console.debug(`skipping autoBanSenderOfMessage since we're syncing ${contractID}`)
         return // don't do anything, assume the existing users handled this event
       }
       // NOTE: this random delay is here for multiple reasons:
@@ -493,7 +519,6 @@ const handleEvent = {
       //       3. to avoid weird errors like 'TypeError: "state[(intermediate value)] is undefined"'
       const username = message.meta().username
       if (message.type().indexOf('gi.contracts/group/') !== 0) {
-        const contractID = message.contractID()
         console.warn(`autoBanSenderOfMessage: removing & unsubscribing from ${username} contractID: ${contractID}`)
         store.commit('removeContract', contractID)
       }
@@ -513,7 +538,7 @@ const handleEvent = {
         }
         if (proposal) {
           // cast our vote if we haven't already cast it
-          if (!proposal.votes[store.state.loggedIn.username]) {
+          if (!proposal.votes[store.getters.ourUsername]) {
             const vote = await sbp('gi.contracts/group/proposalVote/create',
               { proposalHash, vote: VOTE_FOR },
               groupID
@@ -538,7 +563,7 @@ const handleEvent = {
         }
       }
     } catch (e) {
-      console.error(`${e.name} during autoBanSenderOfMessage!`, e)
+      console.error(`${e.name} during autoBanSenderOfMessage!`, message, e)
       // we really can't do much at this point since this is an exception
       // inside of the exception handler :-(
     }

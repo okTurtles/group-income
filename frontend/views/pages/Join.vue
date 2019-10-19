@@ -33,7 +33,6 @@ import Page from './Page.vue'
 import Bars from '@components/Graphs/Bars.vue'
 import Loading from '@components/Loading.vue'
 import MembersCircle from '@components/MembersCircle.vue'
-import { WE_JUST_JOINED } from '@model/constants.js'
 
 export default {
   name: 'Join',
@@ -78,18 +77,17 @@ export default {
       try {
         // post acceptance event to the group contract
         this.ephemeral.errorMsg = null
+        const groupId = this.$route.query.groupId
         const acceptance = await sbp('gi.contracts/group/inviteAccept/create',
           { inviteSecret: this.$route.query.secret },
-          this.$route.query.groupId
+          groupId
         )
         // let the group know we've accepted their invite
         await sbp('backend/publishLogEntry', acceptance)
         // sync the group's contract state
-        sbp('okTurtles.data/set', WE_JUST_JOINED, true)
-        await sbp('state/vuex/dispatch', 'syncContractWithServer', this.$route.query.groupId)
-        setTimeout(() => sbp('okTurtles.data/delete', WE_JUST_JOINED), 1000)
+        await sbp('state/enqueueContractSync', groupId)
         // after syncing, we can set the current group
-        this.$store.commit('setCurrentGroupId', this.$route.query.groupId)
+        this.$store.commit('setCurrentGroupId', groupId)
         this.$router.push({ path: '/' })
       } catch (ex) {
         console.log(ex)

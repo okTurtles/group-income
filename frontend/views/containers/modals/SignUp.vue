@@ -139,10 +139,10 @@ export default {
           // 1. begin monitoring the contracts for updates via the pubsub system
           // 2. add these contracts to our vuex state
           for (const contract of [user, mailbox]) {
-            await sbp('state/vuex/dispatch', 'syncContractWithServer', contract.hash())
+            await sbp('state/enqueueContractSync', contract.hash())
           }
           // TODO: Just add cryptographic magic
-          // login also calls 'syncContractWithServer', but not in this case since we
+          // login also calls 'state/enqueueContractSync', but not in this case since we
           // just sync'd it.
           await sbp('state/vuex/dispatch', 'login', {
             username: this.form.name,

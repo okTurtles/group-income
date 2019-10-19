@@ -220,3 +220,18 @@ export function difference (a1: Array<*>, ...arrays) {
   const a2 = [].concat.apply([], arrays)
   return a1.filter(v => a2.indexOf(v) === -1)
 }
+
+export function deepEqualJSONType (a: any, b: any): boolean {
+  if (a === b) return true
+  if (a === null || b === null || typeof (a) !== typeof (b)) return false
+  if (typeof a !== 'object') return a === b
+  if (Array.isArray(a)) {
+    if (a.length !== b.length) return false
+  } else if (a.constructor.name !== 'Object') {
+    throw new Error(`not JSON type: ${a}`)
+  }
+  for (var key in a) {
+    if (!deepEqualJSONType(a[key], b[key])) return false
+  }
+  return true
+}

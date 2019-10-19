@@ -5,7 +5,7 @@ require('should-sinon')
 const should = require('should')
 
 describe('Test giLodash', function () {
-  it('Test debounce', function () {
+  it('should debounce', function () {
     const clock = sinon.useFakeTimers()
     const callback = sinon.spy()
     const callback2 = sinon.spy()
@@ -34,18 +34,18 @@ describe('Test giLodash', function () {
     callback2.should.be.calledOnce()
     clock.restore()
   })
-  it('Test merge', function () {
+  it('should merge', function () {
     const a = { a: 'taco', b: { a: 'burrito', b: 'combo' }, c: [20] }
     const b = { a: 'churro', b: { c: 'platter' } }
     const c = _.merge(a, b)
     should(c).deepEqual({ a: 'churro', b: { a: 'burrito', b: 'combo', c: 'platter' }, c: [20] })
   })
-  it('Test flatten', function () {
+  it('should flatten', function () {
     const a = [1, [2, [3, 4]], 5]
     const b = _.flatten(a)
     should(b).deepEqual([1, 2, [3, 4], 5]) // important: use deepEqual not equal
   })
-  it('Test zip', function () {
+  it('should zip', function () {
     const a = _.zip([1, 2], ['a', 'b'], [true, false, null])
     const b = _.zip(['/foo/bar/node_modules/vue/dist/vue.common.js'])
     const c = _.zip(['/foo/bar/node_modules/vue/dist/vue.common.js'], [])
@@ -54,9 +54,19 @@ describe('Test giLodash', function () {
     should(b).deepEqual([['/foo/bar/node_modules/vue/dist/vue.common.js']])
     should(c).deepEqual([['/foo/bar/node_modules/vue/dist/vue.common.js', undefined]])
   })
-  it('Test fromPairs', function () {
+  it('should fromPairs', function () {
     const a = _.fromPairs([['a', 1], ['b', 2]])
     should(a.a).equal(1)
     should(a.b).equal(2)
+  })
+  it('should deepEqual for JSON only', function () {
+    should(_.deepEqualJSONType(4, 4)).be.true()
+    should(_.deepEqualJSONType(4, 5)).be.false()
+    should(_.deepEqualJSONType(4, new Number(4))).be.false() // eslint-disable-line
+    should(() => _.deepEqualJSONType(new Number(4), new Number(4))).throw() // eslint-disable-line
+    should(_.deepEqualJSONType('asdf', 'asdf')).be.true()
+    should(() => _.deepEqualJSONType(new String('asdf'), new String('asdf'))).throw() // eslint-disable-line
+    should(_.deepEqualJSONType({ a: 5, b: ['adsf'] }, { b: ['adsf'], a: 5 })).be.true()
+    should(_.deepEqualJSONType({ a: 5, b: ['adsf', {}] }, { b: ['adsf'], a: 5 })).be.false()
   })
 })

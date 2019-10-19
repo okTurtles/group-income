@@ -9,7 +9,7 @@ import { GIMessage } from '~/shared/GIMessage.js'
 //       - 'gi.db/log/get'
 //       - 'gi.db/log/set'
 
-export class ErrorDBMalformed extends Error {
+export class ErrorDBBadPreviousHEAD extends Error {
   // ugly boilerplate because JavaScript is stupid
   // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Error#Custom_Error_Types
   constructor (...params) {
@@ -52,7 +52,7 @@ export default sbp('sbp/selectors/register', {
   'gi.db/log/addEntry': async function (entry: GIMessage): Promise<string> {
     try {
       const { previousHEAD } = entry.message()
-      var contractID: string = previousHEAD ? entry.message().contractID : entry.hash()
+      var contractID: string = entry.contractID()
       if (await sbp('gi.db/log/get', entry.hash())) {
         console.warn(`[addLogEntry] entry exists: ${entry.hash()}`)
         return entry.hash()
@@ -60,7 +60,7 @@ export default sbp('sbp/selectors/register', {
       const HEAD = await sbp('gi.db/log/get', sbp('gi.db/log/logHEAD', contractID))
       if (!entry.isFirstMessage() && previousHEAD !== HEAD) {
         console.error(`[addLogEntry] bad previousHEAD: ${previousHEAD}! Expected: ${HEAD} for contractID: ${contractID}`)
-        throw new ErrorDBMalformed(`bad previousHEAD: ${previousHEAD}`)
+        throw new ErrorDBBadPreviousHEAD(`bad previousHEAD: ${previousHEAD}`)
       }
       await sbp('gi.db/log/set', sbp('gi.db/log/logHEAD', contractID), entry.hash())
       console.debug(`[addLogEntry] HEAD for ${contractID} updated to:`, entry.hash())

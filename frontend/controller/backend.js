@@ -45,8 +45,10 @@ export function createWebSocket (url: string, options: Object): Promise<Object> 
           if (!msg.data) throw new Error('malformed message: ' + JSON.stringify(msg))
           switch (msg.type) {
             case RESPONSE_TYPE.ENTRY:
-              // calling dispatch via SBP makes it simple to implement 'test/backend.js'
-              sbp('state/vuex/dispatch', 'handleEvent', GIMessage.deserialize(msg.data))
+              // We MUST use 'state/enqueueHandleEvent' here to ensure handleEvent()
+              // is called AFTER any currently-running calls to syncContractWithServer().
+              // Calling via SBP also makes it simple to implement 'test/backend.js'
+              sbp('state/enqueueHandleEvent', GIMessage.deserialize(msg.data))
               break
             case RESPONSE_TYPE.SUB:
             case RESPONSE_TYPE.UNSUB:
