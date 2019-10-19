@@ -8,5 +8,8 @@
   "screenshotsFolder": "test/cypress/screenshots",
   "supportFile": "test/cypress/support",
   "videosFolder": "test/cypress/videos",
-  "video": false
+  "video": true,
+  "videoUploadOnPasses": false,
+  "trashAssetsBeforeRuns": true,
+  "projectId": "q6whky"
 }
