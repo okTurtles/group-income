@@ -206,13 +206,12 @@ module.exports = (grunt) => {
     const cypress = require('cypress')
     const done = this.async()
     const command = grunt.option('browser') === 'debug' ? 'open' : 'run'
-
     // https://docs.cypress.io/guides/guides/module-api.html
     const options = {
       run: {
         headed: grunt.option('browser') === true,
         record: true,
-        key: process.env.CYPRESS_RECORD_KEY
+        key: '275fe74e-7d23-4025-8450-46170b7ab1b6' // process.env.CYPRESS_RECORD_KEY
       },
       open: {
         // add cypress.open() options here
