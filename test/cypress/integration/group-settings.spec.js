@@ -3,11 +3,8 @@ describe('Changing Group Settings', () => {
   const groupMincome = 750
   const groupNewIncome = groupMincome + 100
 
-  it('successfully loads the homepage', function () {
-    cy.visit('/')
-  })
-
   it('user1 registers and creates a new group', () => {
+    cy.visit('/')
     cy.giSignUp(`user1-${userId}`)
 
     cy.giCreateGroup('Dreamers', {
