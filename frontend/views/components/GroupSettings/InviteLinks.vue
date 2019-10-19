@@ -200,6 +200,7 @@ export default {
     @include phone {
       flex-direction: row;
       align-items: baseline;
+      justify-content: flex-start;
     }
   }
 
