@@ -209,11 +209,11 @@ export default {
       const currentIncomeDistribution = []
       const usersWithIncomeDetails = Object.keys(profiles).reduce((acc, username) => {
         const profile = profiles[username]
-        const incomeDetailsKey = profile && profile.groupProfile.incomeDetailsKey
-        if (incomeDetailsKey) {
+        const incomeDetailsType = profile && profile.groupProfile.incomeDetailsType
+        if (incomeDetailsType) {
           acc[username] = profile
-          const adjustment = incomeDetailsKey === 'incomeAmount' ? 0 : this.mincomeAmount
-          const adjustedAmount = adjustment + profile.groupProfile[incomeDetailsKey]
+          const adjustment = incomeDetailsType === 'incomeAmount' ? 0 : this.mincomeAmount
+          const adjustedAmount = adjustment + profile.groupProfile[incomeDetailsType]
           currentIncomeDistribution.push({ name: username, amount: adjustedAmount })
         }
         return acc

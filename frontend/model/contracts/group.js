@@ -3,7 +3,7 @@
 import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import { DefineContract } from './Contract.js'
-import { objectOf, objectMaybeOf, optional, string, number, object, unionOf, literalOf } from '~/frontend/utils/flowTyper.js'
+import { objectOf, objectMaybeOf, optional, string, number, object, unionOf, literalOf, arrayOf } from '~/frontend/utils/flowTyper.js'
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income-simple/issues/603
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST } from './voting/rules.js'
@@ -286,9 +286,10 @@ DefineContract({
     },
     'gi.contracts/group/groupProfileUpdate': {
       validate: objectMaybeOf({
-        incomeDetailsKey: x => ['incomeAmount', 'pledgeAmount'].includes(x),
+        incomeDetailsType: x => ['incomeAmount', 'pledgeAmount'].includes(x),
         incomeAmount: x => typeof x === 'number' && x >= 0,
-        pledgeAmount: x => typeof x === 'number' && x >= 0
+        pledgeAmount: x => typeof x === 'number' && x >= 0,
+        nonMonetaryContributions: arrayOf(string)
       }),
       process (state, { data, meta }) {
         var { groupProfile } = state.profiles[meta.username]
