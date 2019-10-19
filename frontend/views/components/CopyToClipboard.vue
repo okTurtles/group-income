@@ -7,7 +7,10 @@
   )
   slot
   transition(name='fade')
-    .c-tooltip(v-if='ephemeral.tooltipActive') {{ translatedTooltipText }}
+    i18n.c-tooltip(
+      tag='p'
+      v-if='ephemeral.tooltipActive'
+    ) Copied to clipboard!
 </template>
 
 <script>
@@ -29,15 +32,6 @@ export default {
     textToCopy: {
       type: String,
       required: true
-    },
-    tooltipText: {
-      type: String,
-      default: 'Copied to clipboard!'
-    }
-  },
-  computed: {
-    translatedTooltipText () {
-      return this.L(this.tooltipText)
     }
   },
   methods: {
