@@ -10,23 +10,9 @@ modal-base-template(ref='modal')
       )
         fieldset.c-firstQuestion
           legend.label
-<<<<<<< HEAD
-<<<<<<< HEAD
             | {{ L('Do you make at least {groupMincomeFormatted} per month?', { groupMincomeFormatted }) }}
             tooltip(:text='L("This is the minimum income in your group")' direction='top')
               .button.is-icon-smaller.is-primary.c-tip
-<<<<<<< HEAD
-=======
-            | {{ L('Do you make at least {value} per month?', { value: `${groupSettings.mincomeAmount}${currency}`}) }}
-            tooltip(:text='L("This is the minimum income in your group")')
-=======
-            | {{ L('Do you make at least {groupMincomeFormatted} per month?', { groupMincomeFormatted }) }}
-            tooltip(:text='L("This is the minimum income in your group")' direction='top')
->>>>>>> Update Income Details with v-error
-              button.is-icon-smaller.is-primary.c-tip(:aria-label='L("This is the minimum income in your group")')
->>>>>>> DS: add input shifted and icon-smaller examples
-=======
->>>>>>> Changes based on greg and margarida feedback
                 i.icon-info
           label.radio
             input.input(
@@ -37,11 +23,7 @@ modal-base-template(ref='modal')
               @change='resetAmount'
             )
             i18n Yes, I do
-<<<<<<< HEAD
           label.radio(v-error:incomeDetailsType='')
-=======
-          label.radio(v-error:incomeDetailsKey='')
->>>>>>> Changes based on greg and margarida feedback
             input.input(
               type='radio'
               name='incomeDetailsType'
@@ -53,15 +35,7 @@ modal-base-template(ref='modal')
         transition(name='expand')
           fieldset(v-if='!!form.incomeDetailsType')
             label.field
-<<<<<<< HEAD
-<<<<<<< HEAD
               .label {{ needsIncome ? L("What's your monthly income?") : L('How much do you want to pledge?') }}
-=======
-              .label {{ canPledge ? L('How much do you want to pledge?') : L('What\'s your monthly income?') }}
->>>>>>> Update Income Details with v-error
-=======
-              .label {{ needsIncome ? L("What's your monthly income?") : L('How much do you want to pledge?') }}
->>>>>>> Changes based on greg and margarida feedback
               .input-combo(
                 :class='{"error": $v.form.amount.$error }'
                 v-error:amount=''
@@ -70,22 +44,9 @@ modal-base-template(ref='modal')
                   type='number'
                   v-model='$v.form.amount.$model'
                 )
-<<<<<<< HEAD
-<<<<<<< HEAD
                 .suffix {{ groupMincomeSymbolWithCode }}
               .helper(v-if='needsIncome && whoIsPledging.length')
                 text-who(:who='whoIsPledging')
-=======
-                .suffix [$ USD]
-              i18n.helper(v-if='canPledge') Define up to how much you pledge to contribute to the group each month. Only the minimum needed amount will be given.
-              .helper(v-else)
-                text-who(:who='["[Rick]", "[Carl]", "[Kim]"]')
->>>>>>> Update Income Details with v-error
-=======
-                .suffix {{ groupMincomeSymbolWithCode }}
-              .helper(v-if='needsIncome && whoIsPledging.length')
-                text-who(:who='whoIsPledging')
->>>>>>> Changes based on greg and margarida feedback
                 | &nbsp
                 i18n will ensure you meet the mincome
               i18n.helper(v-else-if='!needsIncome') Define up to how much you pledge to contribute to the group each month. Only the minimum needed amount will be given.
@@ -151,42 +112,20 @@ export default {
       'groupMembers',
       'groupSettings',
       'memberProfile',
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> Changes based on greg and margarida feedback
       'groupMincomeFormatted',
       'groupMincomeSymbolWithCode',
       'ourUsername',
       'groupMembersByUsername'
-<<<<<<< HEAD
-=======
-      'groupMincomeFormatted'
->>>>>>> Update Income Details with v-error
-=======
->>>>>>> Changes based on greg and margarida feedback
     ]),
     memberGroupProfile () {
       const profile = this.memberProfile(this.ourUsername) || {}
       return profile.groupProfile || {}
     },
     needsIncome () {
-<<<<<<< HEAD
       return this.form.incomeDetailsType === 'incomeAmount'
     },
     whoIsPledging () {
       return this.groupMembersByUsername.filter(username => this.groupMembers[username].groupProfile.incomeDetailsType === 'pledgeAmount' && username !== this.ourUsername)
-=======
-      return this.form.incomeDetailsKey === 'incomeAmount'
-    },
-<<<<<<< HEAD
-    canPledge () {
-      return this.form.incomeDetailsKey === 'pledgeAmount'
->>>>>>> Update Income Details with v-error
-=======
-    whoIsPledging () {
-      return this.groupMembersByUsername.filter(username => this.groupMembers[username].groupProfile.incomeDetailsKey === 'pledgeAmount' && username !== this.ourUsername)
->>>>>>> Changes based on greg and margarida feedback
     }
   },
   created () {
@@ -198,11 +137,7 @@ export default {
   },
   methods: {
     resetAmount () {
-<<<<<<< HEAD
       this.form.amount = this.form.incomeDetailsType === this.memberGroupProfile.incomeDetailsType ? this.memberGroupProfile[this.memberGroupProfile.incomeDetailsType] : ''
-=======
-      this.form.amount = this.form.incomeDetailsKey === this.memberGroupProfile.incomeDetailsKey ? this.memberGroupProfile[this.memberGroupProfile.incomeDetailsKey] : ''
->>>>>>> Update Income Details with v-error
       this.$v.form.$reset()
     },
     closeModal () {
@@ -235,24 +170,12 @@ export default {
   },
   validations: {
     form: {
-<<<<<<< HEAD
       incomeDetailsType: {
-=======
-      incomeDetailsKey: {
->>>>>>> Update Income Details with v-error
         [L('This field is required')]: required
       },
       amount: {
         [L('This field is required')]: required,
-<<<<<<< HEAD
-<<<<<<< HEAD
         [L("It seems your income is not lower than the group's mincome.")]: function (value) {
-=======
-        [L('It seems your income is not lower than the group\'s mincome.')]: function (value) {
->>>>>>> Update Income Details with v-error
-=======
-        [L("It seems your income is not lower than the group's mincome.")]: function (value) {
->>>>>>> Changes based on greg and margarida feedback
           if (this.needsIncome) {
             return value < this.groupSettings.mincomeAmount - 1
           }
