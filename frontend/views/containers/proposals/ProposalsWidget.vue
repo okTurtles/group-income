@@ -41,7 +41,7 @@ export default {
   computed: {
     ...mapGetters([
       'currentGroupState',
-      'currentUserIdentityContract'
+      'ourUserIdentityContract'
     ]),
     proposals () {
       if (this.proposalsSorted) {
@@ -89,7 +89,7 @@ export default {
   },
   methods: {
     hadVoted (proposal) {
-      return proposal.votes[this.currentUserIdentityContract.attributes.name] || proposal.status !== STATUS_OPEN
+      return proposal.votes[this.ourUserIdentityContract.attributes.name] || proposal.status !== STATUS_OPEN
     }
   }
 }

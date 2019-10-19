@@ -2,6 +2,13 @@
 page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
   template(#title='') {{ L('Contributions') }}
 
+  page-section.c-card-empty
+    svg-contributions.c-svg
+    div
+      i18n(tag='h3') Add your income details
+      i18n.c-text(tag='p') This will allow you to start receiving or giving mincome.
+      i18n(tag='button' @click='openModal("IncomeDetails")') Add income details
+
   .contribution-header
     .has-text-1
       i18n(
@@ -30,7 +37,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
 
   section.card.contribution-card
     .receiving
-      i18n(tag='h2' class='card-header') Receiving
+      i18n(tag='h3' class='card-header') Receiving
 
       i18n.has-text-1.spacer-around(
         v-if='!doesReceive'
@@ -71,7 +78,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
         i18n Add members to group
 
     .giving
-      i18n(tag='h2' class='card-header') Giving
+      i18n(tag='h3' class='card-header') Giving
 
       i18n.has-text-1.spacer-around(
         v-if='!doesGive'
@@ -123,27 +130,37 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
 import sbp from '~/shared/sbp.js'
+import { mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
+import SvgContributions from '@svgs/contributions.svg'
 import Page from '@pages/Page.vue'
+import PageSection from '@components/PageSection.vue'
 import currencies from '@view-utils/currencies.js'
 import IncomeForm from '@containers/contributions/IncomeForm.vue'
 import GroupMincome from '@containers/sidebar/GroupMincome.vue'
 import Contribution from '@components/Contribution.vue'
 import ContributionItem from '@components/ContributionItem.vue'
+import L from '@view-utils/translations.js'
 
 export default {
   name: 'Contributions',
   components: {
     Page,
+    PageSection,
     GroupMincome,
     Contribution,
     ContributionItem,
-    IncomeForm
+    IncomeForm,
+    SvgContributions
   },
   data () {
     return {
+      form: {
+        incomeDetailsType: 'incomeAmount',
+        incomeAmount: 0,
+        pledgeAmount: 0
+      },
       ephemeral: {
         isEditingIncome: false,
         isActive: true
@@ -152,7 +169,7 @@ export default {
       fakeStore: {
         upTo: 400,
         paymentMethod: 'Manual',
-        currency: currencies['USD'],
+        currency: currencies.USD.symbol,
         isFirstTime: true, // true when user doesn't have any income details. It displays the 'Add Income Details' box
         mincome: 500,
         receiving: {
@@ -185,7 +202,11 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'groupMembersCount'
+      'groupMembersCount',
+      'groupSettings',
+      'memberProfile',
+      'groupMincomeFormatted',
+      'ourUsername'
     ]),
     doesReceive () {
       return this.fakeStore.receiving.monetary || this.fakeStore.receiving.nonMonetary
@@ -194,7 +215,38 @@ export default {
       return this.fakeStore.giving.monetary || this.fakeStore.giving.nonMonetary
     }
   },
+  beforeMount () {
+    const profile = this.memberProfile(this.ourUsername) || {}
+    const incomeDetailsType = profile.groupProfile && profile.groupProfile.incomeDetailsType
+    if (incomeDetailsType) {
+      this.form.incomeDetailsType = incomeDetailsType
+      this.form[incomeDetailsType] = profile.groupProfile[incomeDetailsType]
+    }
+  },
   methods: {
+    openModal (modal) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, modal)
+    },
+    async setPaymentInfo () {
+      if (this.$v.form.$invalid) {
+        alert(L('Invalid payment info'))
+        return
+      }
+      try {
+        const incomeDetailsType = this.form.incomeDetailsType
+        const groupProfileUpdate = await sbp('gi.contracts/group/groupProfileUpdate/create',
+          {
+            incomeDetailsType,
+            [incomeDetailsType]: +this.form[incomeDetailsType]
+          },
+          this.$store.state.currentGroupId
+        )
+        await sbp('backend/publishLogEntry', groupProfileUpdate)
+      } catch (e) {
+        console.error('setPaymentInfo', e)
+        alert(`Failed to update user's profile. Error: ${e.message}`)
+      }
+    },
     toggleMenu () {
       this.ephemeral.isActive = !this.ephemeral.isActive
     },
@@ -280,6 +332,22 @@ export default {
 
   @include tablet {
     margin-bottom: $spacer * 1.5;
+  }
+}
+.c-card-empty {
+  display: flex;
+
+  .c-svg {
+    width: 4rem;
+    height: 4rem;
+    margin-right: $spacer;
+    flex-shrink: 0;
+
+    @include widescreen {
+      width: 6.25rem;
+      height: 6.25rem;
+      margin-right: 2.5rem;
+    }
   }
 }
 </style>

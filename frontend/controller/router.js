@@ -148,12 +148,12 @@ var router = new Router({
       // beforeEnter: createEnterGuards(loginGuard, mailGuard)
       beforeEnter: createEnterGuards(loginGuard)
     },
-    process.env.NODE_ENV === 'development' ? {
+    ...(process.env.NODE_ENV === 'development' ? [{
       path: '/error-testing',
       name: 'ErrorTesting',
       component: () => import('../views/pages/ErrorTesting.vue'),
       meta: { title: L('Error Testing') }
-    } : {},
+    }] : []),
     {
       path: '*',
       redirect: '/'

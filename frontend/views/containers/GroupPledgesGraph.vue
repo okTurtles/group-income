@@ -99,7 +99,7 @@ export default {
       isMobile: this.verifyIsMobile(),
       // -- Hardcoded Data just for layout purpose:
       fakeStore: {
-        currency: currencies['USD'],
+        currency: currencies.USD.symbol,
         groupMembersTotal: 7,
         groupPledgeGoal: 800,
         mincome: 500,

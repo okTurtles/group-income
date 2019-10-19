@@ -48,6 +48,7 @@ div(
 import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
 import Avatar from '@components/Avatar.vue'
+import { mapGetters } from 'vuex'
 
 export default {
   name: 'GroupInvitees',
@@ -67,12 +68,15 @@ export default {
       userErrorMsg: ''
     }
   },
+  computed: {
+    ...mapGetters(['ourUsername'])
+  },
   methods: {
     async addInvitee () {
       if (!this.searchUser) return
 
-      if (this.searchUser === this.$store.state.loggedIn.username) {
-        this.userErrorMsg = L('Invalid User: Cannot Invite One\'s self')
+      if (this.searchUser === this.ourUsername) {
+        this.userErrorMsg = L("Invalid User: Cannot Invite One's self")
         return
       } else {
         this.userErrorMsg = ''

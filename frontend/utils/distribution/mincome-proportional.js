@@ -8,45 +8,41 @@ function incomeDistribution (incomes: Array<IncomeObject>, minCome: number) {
   const membersAbove = []
   let aboveMincomeTotalAmount = 0
 
-  incomes.map(function (member) {
-    const belowMincome = minCome - member.amount
+  for (const { name, amount } of incomes) {
+    const belowMincome = minCome - amount
     if (belowMincome > 0) {
-      membersBelow.push(member.name)
+      membersBelow.push(name)
       belowMincomeTotalAmount += belowMincome
     }
-    const aboveMincome = member.amount - minCome
+    const aboveMincome = amount - minCome
     if (aboveMincome > 0) {
-      membersAbove.push(member.name)
+      membersAbove.push(name)
       aboveMincomeTotalAmount += aboveMincome
     }
-  })
+  }
 
   const totalProportionalDistribution = Math.min(belowMincomeTotalAmount / aboveMincomeTotalAmount, 1)
 
   const payments = []
-  incomes.map(function (memberFrom) {
-    if (membersAbove.find(function (memberAboveName) {
-      return memberFrom.name === memberAboveName
-    })) {
-      const aboveAmount = memberFrom.amount - minCome
+  for (const { name: fromName, amount: fromAmount } of incomes) {
+    if (membersAbove.find(aboveName => fromName === aboveName)) {
+      const aboveAmount = fromAmount - minCome
       const distributionAmount = totalProportionalDistribution * aboveAmount
-      incomes.map(function (memberTo) {
-        if (membersBelow.find(function (memberBelowName) {
-          return memberTo.name === memberBelowName
-        })) {
-          const belowAmount = minCome - memberTo.amount
+      for (const { name: toName, amount: toAmount } of incomes) {
+        if (membersBelow.find(belowName => toName === belowName)) {
+          const belowAmount = minCome - toAmount
           const belowPercentage = belowAmount / belowMincomeTotalAmount
           const paymentAmount = distributionAmount * belowPercentage
           const payment = {
             amount: paymentAmount,
-            from: memberFrom.name,
-            to: memberTo.name
+            from: fromName,
+            to: toName
           }
           payments.push(payment)
         }
-      })
+      }
     }
-  })
+  }
 
   return payments
 }

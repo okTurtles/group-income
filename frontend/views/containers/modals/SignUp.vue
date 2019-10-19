@@ -19,6 +19,8 @@
           ref='username'
           data-test='signName'
         )
+        //- can't use v-error here because it doesn't support
+        //- asynchronous validation failures
         p.error(v-if='$v.form.name.$error' data-test='badUsername')
           i18n(v-if='!$v.form.name.isAvailable') name is unavailable
           i18n(v-if='!$v.form.name.nonWhitespace') cannot contain spaces
@@ -28,14 +30,11 @@
         input.input#email(
           :class='{error: $v.form.email.$error}'
           name='email'
-          v-model='form.email'
-          @blur='$v.form.email.$touch()'
+          v-model='$v.form.email.$model'
           type='email'
           data-test='signEmail'
+          v-error:email='{ tag: "p", attrs: { "data-test": "badEmail" } }'
         )
-        p.error(v-if='$v.form.email.$error' data-test='badEmail')
-          i18n(v-if='!$v.form.name.email') not an e-mail
-          i18n(v-if='!$v.form.name.isAvailable') e-mail is unavailable
 
       form-password(
         :label='L("Password")'
@@ -70,6 +69,7 @@ import sbp from '~/shared/sbp.js'
 import { nonWhitespace } from '@views/utils/validators.js'
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
 import FormPassword from '@components/Forms/Password.vue'
+import L from '@view-utils/translations.js'
 
 // TODO: fix all this
 export default {
@@ -191,8 +191,8 @@ export default {
       },
       email: {
         required,
-        email,
-        isAvailable (value) {
+        [L('not an e-mail')]: email,
+        [L('e-mail is unavailable')]: value => {
           // TODO - verify if e-mail exists
           return true
         }

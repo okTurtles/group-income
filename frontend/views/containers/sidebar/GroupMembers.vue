@@ -3,10 +3,9 @@
   .c-group-members-header
     i18n.title.is-4(tag='h4') Members
 
-    // @click="openModal('AddMembers')"
     button.button.is-small.is-outlined(
       data-test='inviteButton'
-      @click='invite'
+      @click='openModal("AddMembers")'
     )
       i.icon-plus
       i18n Add
@@ -101,20 +100,18 @@ export default {
       'groupMembers',
       'groupMembersCount'
     ]),
-    currentUserName () {
-      return this.$store.state.loggedIn.username
-    },
     firstTenMembers () {
-      const usernames = Object.keys(this.groupMembers).slice(0, 10)
-      return usernames.reduce((acc, cur) => {
+      const profiles = this.groupMembers
+      const usernames = Object.keys(profiles).slice(0, 10)
+      return usernames.reduce((acc, username) => {
         // Prevent displaying users without a synced contract.
         // It happens at the exact moment a user joins a group and both
         // contracts (group + user) are still syncing
-        const currentUser = this.groupMembers[cur] ? { [cur]: this.groupMembers[cur] } : {}
-        return {
-          ...acc,
-          ...currentUser
+        const profile = profiles[username]
+        if (profile) {
+          acc[username] = profile
         }
+        return acc
       }, {})
     }
   }

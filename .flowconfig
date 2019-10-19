@@ -10,7 +10,6 @@
 .*/dist/.*
 .*/ignored/.*
 .*/historical/.*
-.*/backend/discard/.*
 .*/frontend/assets/.*
 .*/frontend/controller/backend/interface.js
 .*/frontend/controller/utils/primus.js
