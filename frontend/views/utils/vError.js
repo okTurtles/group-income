@@ -29,15 +29,13 @@ Vue.directive('error', {
     if (!vnode.context.$v.form[binding.arg]) {
       throw new Error(`v-error: vuelidate doesn't have validation for ${binding.arg}`)
     }
-    const opts = binding.value = {}
+    const opts = binding.value || {}
     const pErr = document.createElement(opts.tag || 'span')
-    if (opts.attrs) {
-      for (const attr in (opts.attrs)) {
-        pErr.setAttribute(attr, opts.attrs[attr])
-      }
+    for (const attr in (opts.attrs)) {
+      pErr.setAttribute(attr, opts.attrs[attr])
     }
     pErr.classList.add('error', 'is-hidden')
-    el.insertAdjacentElement(opts.position || 'afterend', pErr)
+    el.insertAdjacentElement('afterend', pErr)
   },
   update (el, binding, vnode) {
     if (vnode.context.$v.form[binding.arg].$error) {

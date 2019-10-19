@@ -10,16 +10,20 @@ export default {
   USD: {
     symbol: '$',
     displayWithCurrency: n => '$' + twoDecimalsOrInt(n),
-    displayWithoutCurrency: twoDecimalsOrInt
+    displayWithoutCurrency: twoDecimalsOrInt,
+    symbolWithCode: '$ USD'
   },
   EUR: {
     symbol: '€',
     displayWithCurrency: n => '€' + twoDecimalsOrInt(n),
-    displayWithoutCurrency: twoDecimalsOrInt
+    displayWithoutCurrency: twoDecimalsOrInt,
+    symbolWithCode: '€ EUR'
+
   },
   BTC: {
     symbol: 'Ƀ',
     displayWithCurrency: n => n.toFixed(6) + 'Ƀ',
-    displayWithoutCurrency: n => n.toFixed(6)
+    displayWithoutCurrency: n => n.toFixed(6),
+    symbolWithCode: 'Ƀ BTC'
   }
 }

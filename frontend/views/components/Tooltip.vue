@@ -1,7 +1,11 @@
 <template lang='pug'>
 span.c-wrapper(
+  tabindex='0'
   @mouseenter='show'
   @mouseleave='hide'
+  @focus='show'
+  @blur='hide'
+  aria-label='text'
 )
   slot
   .c-tooltip(

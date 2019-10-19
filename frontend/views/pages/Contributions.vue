@@ -2,7 +2,8 @@
 page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
   template(#title='') {{ L('Contributions') }}
 
-  page-section.c-card-empty(v-if='true')
+  // v-if='memberProfile(ourUsername).groupProfile.incomeDetailsKey'
+  page-section.c-card-empty
     svg-contributions.c-svg
     div
       i18n(tag='h3') Add your income details

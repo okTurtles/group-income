@@ -16,7 +16,7 @@ fieldset
           component(:is='method.svg')
         .radio.c-radio
           .input(:class='{ "is-checked": selected === method.name }')
-          span(:class='{ "has-text-1": selected !== method.name }') {{method.name}}
+          span(:class='{ "has-text-1": selected !== method.name }') {{method.title}}
         span.has-text-1.c-description {{method.description}}
 </template>
 
@@ -24,6 +24,7 @@ fieldset
 import Tooltip from '@components/Tooltip.vue'
 import SvgBitcoin from '@svgs/bitcoin.svg'
 import SvgMoney from '@svgs/money.svg'
+import L from '@view-utils/translations.js'
 
 export default {
   name: 'PaymentsMethod',
@@ -44,15 +45,17 @@ export default {
       return [
         {
           name: 'manual',
+          title: L('Manual'),
           isAvailable: true,
           svg: SvgMoney,
-          description: 'Send your contributions using whatever method works best for you.'
+          description: L('Send your contributions using whatever method works best for you.')
         },
         {
           name: 'bitcoin',
+          title: L('Bitcoin'),
           isAvailable: false,
           svg: SvgBitcoin,
-          description: 'Coming soon!'
+          description: L('Coming soon!')
         }
       ]
     }
@@ -90,6 +93,7 @@ export default {
     &:hover,
     &:focus {
       background: transparent;
+      border-color: $primary_0_1;
     }
   }
 
@@ -105,7 +109,7 @@ export default {
 
 .c-svg {
   height: 4.5rem;
-  border: 1px solid $general_0;
+  border: 2px solid $general_0;
   border-radius: 4px;
   display: flex;
   justify-content: center;
