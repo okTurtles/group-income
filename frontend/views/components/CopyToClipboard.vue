@@ -36,7 +36,7 @@ export default {
   },
   methods: {
     copyToClipboard () {
-      // if the user is using the device that supports web share API, use it and then skip the other UI logics below.
+      // if the user is using the device that supports web share API, use it and then skip the other logics below.
       if (navigator.share) {
         this.activateWebShare()
         return
