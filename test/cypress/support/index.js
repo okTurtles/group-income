@@ -15,9 +15,19 @@
 
 import './commands.js'
 
-// Abort tests on first fail
+// Abort all tests specs on first fail
+
+before(function () {
+  cy.getCookie('FAILED_TEST').then(cookie => {
+    if (cookie && typeof cookie === 'object' && cookie.value === 'true') {
+      Cypress.runner.stop()
+    }
+  })
+})
+
 afterEach(function () {
   if (this.currentTest.state === 'failed') {
+    cy.setCookie('FAILED_TEST', 'true')
     Cypress.runner.stop()
   }
 })

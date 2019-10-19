@@ -2,11 +2,8 @@ describe('Group Creation and Inviting Members', () => {
   const userId = Math.floor(Math.random() * 10000)
   const groupName = 'Dreamers'
 
-  it('successfully loads the homepage', function () {
-    cy.visit('/')
-  })
-
   it('register user1, user2 and user3', () => {
+    cy.visit('/')
     cy.giSignUp(`user1-${userId}`)
     cy.giLogOut()
     cy.giSignUp(`user2-${userId}`)
@@ -15,18 +12,12 @@ describe('Group Creation and Inviting Members', () => {
     cy.giLogOut()
   })
 
-  it('user1 logins back and creates a group', () => {
+  it('user1 logins back and invites user2 and user3 to his group', () => {
     cy.giLogin(`user1-${userId}`)
 
-    cy.giCreateGroup(groupName, {
-      income: 400
-    })
-    cy.getByDT('profileName').should('contain', `user1-${userId}`)
-
+    cy.giCreateGroup(groupName, { income: 400 })
     cy.getByDT('welcomeGroup').should('contain', `Welcome ${groupName}!`)
-  })
 
-  it('user1 starts inviting user2 and user3 to the group', () => {
     cy.getByDT('inviteButton').click()
 
     cy.getByDT('invitee').within(() => {
@@ -42,21 +33,16 @@ describe('Group Creation and Inviting Members', () => {
       cy.getByDT('add', 'button').click()
       cy.getByDT('feedbackMsg').should('contain', 'Ready to be invited!')
     })
-  })
 
-  it('user1 removes user3 from invitation list and cancels process', () => {
+    cy.log('user1 removes user3 from invitation list and cancels process')
     cy.getByDT('invitee').eq(1).within(() => {
       cy.getByDT('remove').click()
     })
-
     cy.getByDT('invitee').should('have.length', 1)
-
     cy.getByDT('closeModal').click()
-  })
 
-  it('user1 decides to actually invite user2 and user3 to the group', () => {
+    cy.log('user1 decides to actually invite user2 and user3 to the group')
     cy.giInviteMember([`user2-${userId}`, `user3-${userId}`])
-
     cy.giLogOut()
   })
 
@@ -67,14 +53,12 @@ describe('Group Creation and Inviting Members', () => {
       .should('have.length', count)
   }
 
-  it('user2 accepts the invite', () => {
+  it('both user2 and user 3 accept the invitation', () => {
     cy.giLogin(`user2-${userId}`)
     cy.giAcceptGroupInvite(groupName)
     assertGroupMembersCount(2)
     cy.giLogOut()
-  })
 
-  it('user3 accepts the invite', () => {
     cy.giLogin(`user3-${userId}`)
     cy.giAcceptGroupInvite(groupName)
     assertGroupMembersCount(3)
