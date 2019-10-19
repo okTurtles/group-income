@@ -9,7 +9,7 @@ function assertProposalOpenState ({ description }) {
 }
 
 function getProposalBoxes () {
-  return cy.getByDT('proposalsWidget', 'ul').children()
+  return cy.getByDT('proposalsWidget').children()
 }
 
 describe('Proposals - Add members', () => {
