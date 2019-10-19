@@ -14,7 +14,7 @@
 </template>
 
 <script>
-import Tooltip from '@components/Tooltip.vue'
+import { activateWebShare } from '../utils/webShare.js'
 
 export default {
   name: 'copyToClipboard',
@@ -24,9 +24,6 @@ export default {
         tooltipActive: false
       }
     }
-  },
-  components: {
-    Tooltip
   },
   props: {
     textToCopy: {
@@ -38,7 +35,10 @@ export default {
     copyToClipboard () {
       // if the user is using the device that supports web share API, use it and then skip the other logics below.
       if (navigator.share) {
-        this.activateWebShare()
+        activateWebShare({
+          title: this.L('Your invite'),
+          url: this.textToCopy
+        })
         return
       }
 
@@ -48,12 +48,6 @@ export default {
       setTimeout(() => {
         this.ephemeral.tooltipActive = false
       }, 1500)
-    },
-    activateWebShare () {
-      navigator.share({
-        title: this.L('Your invite'),
-        url: this.textToCopy
-      })
     }
   }
 }
@@ -89,19 +83,31 @@ export default {
   }
 }
 
+/*
 .fade-enter-active {
-  animation: fadein 0.5s cubic-bezier(0.165, 0.84, 0.44, 1)
+  animation: fadein 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 .fade-leave-active {
-  animation: fadeout 0.5s cubic-bezier(0.165, 0.84, 0.44, 1)
+  animation: fadeout 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
 @keyframes fadein {
-  0% { opacity: 0; }
-  100% { opacity: 0.95; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 @keyframes fadeout {
-  0% { opacity: 0.95; }
-  100% { opacity: 0; }
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
 }
+*/
 </style>

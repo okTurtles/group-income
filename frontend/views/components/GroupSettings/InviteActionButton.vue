@@ -12,9 +12,9 @@ menu-parent
       )
         i18n.icon-vote-yea.c-icon(tag='i') See original proposal
       menu-item(
+        v-if='!linkExpired'
         tag='router-link'
         item-id='hash-3'
-        v-if='!linkExpired'
         to='/somewhere'
       )
         i18n.icon-times.c-icon(tag='i') Revoke Link

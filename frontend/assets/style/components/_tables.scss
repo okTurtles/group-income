@@ -5,16 +5,16 @@
     border-bottom: 1px solid $general_0;
   }
 
-  tbody > tr:last-child {
-    border-bottom: none;
+  tbody tr {
+    padding: 0.6875rem 0;
+
+    &:last-child {
+      border-bottom: none;
+    }
   }
 
   thead tr {
     padding: $spacer-sm 0;
-  }
-
-  tbody tr {
-    padding: 0.6875rem 0;
   }
 
   th {
