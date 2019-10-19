@@ -11,8 +11,7 @@ page-section.c-section(:title='L("Invite links")')
         option(value='All') {{ L('All links') }}
       span.c-rect
 
-  p.c-invite-description
-    i18n.has-text-1 Here's a list of all invite links you own
+  i18n.has-text-1.c-invite-description(tag='p') Here's a list of all invite links you own
 
   table.table.c-table(v-if='activeList.length')
     thead
