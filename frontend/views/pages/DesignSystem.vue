@@ -385,6 +385,15 @@ page(
           td
             button.is-icon-small
               i.icon-cog
+        tr
+          td
+            pre
+              | button.is-icon-smaller
+              |   i.icon-info
+          td
+            tooltip(text='Additional information')
+              button.is-icon-smaller
+                i.icon-info
 
   article#notification-badges
     section.card
@@ -612,12 +621,15 @@ page(
           td
             pre
               | fieldset
-              |   .legend What's your favorite food?
+              |   .legend Pick a favorite food
               |     label.radio
-              |       input(type='radio' name='fruit' checked='true')
+              |       input(type='radio'
+              |         name='fruit'
+              |         checked='true')
               |       span Oranges
               |     label.radio
-              |       input(type='radio' name='fruit')
+              |       input(type='radio'
+              |         name='fruit')
               |       span Apples
           td
             fieldset
@@ -664,6 +676,26 @@ page(
               .input-combo(:class='{ error: ephemeral.forms.hasError }')
                 input.input(type='text' placeholder='New amount')
                 .suffix USD
+              span.error(v-if='ephemeral.forms.hasError') Something went wrong
+        tr
+          td
+            pre
+              | label.field
+              |   .label Add invitee
+              |   .input-combo.error
+              |     input.input
+              |     button.is-icon-small.is-shifted(
+              |       :aria-label='Remove member'
+              |     )
+          td
+            label.field
+              .label Add invitee
+              .input-combo(:class='{ error: ephemeral.forms.hasError }')
+                input.input(type='text' placeholder='New amount')
+                .suffix USD
+                button.is-icon-small.is-shifted(
+                  :aria-label='L("Remove member")'
+                )
               span.error(v-if='ephemeral.forms.hasError') Something went wrong
         tr
           td

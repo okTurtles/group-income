@@ -81,7 +81,8 @@ button,
   }
 
   &.is-icon,
-  &.is-icon-small {
+  &.is-icon-small,
+  &.is-icon-smaller {
     background-color: transparent;
     padding: 0;
     min-height: auto;
@@ -110,20 +111,18 @@ button,
 
     &.has-background {
       background-color: $general_2;
-
-      &:hover,
-      &:focus {
-        background-color: $general_1;
-      }
+      @include buttonState($general_1, $general_1);
     }
 
     &.has-background-inverted {
       background-color: $white;
+      @include buttonState($general_1, $general_1);
+    }
 
-      &:hover,
-      &:focus {
-        background-color: $general_1;
-      }
+    &.is-primary {
+      background-color: $primary_0;
+      color: $white;
+      @include buttonState($primary_0_1, $primary_1);
     }
   }
 
@@ -135,6 +134,13 @@ button,
   &.is-icon-small {
     width: 1.6875rem;
     height: 1.6875rem;
+  }
+
+  &.is-icon-smaller {
+    width: 1rem;
+    height: 1rem;
+    font-size: 0.6rem;
+    transform: translateY(-1px);
   }
 
   &.is-outlined {

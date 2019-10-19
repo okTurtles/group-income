@@ -10,9 +10,15 @@ modal-base-template(ref='modal')
       )
         fieldset.c-firstQuestion
           legend.label
+<<<<<<< HEAD
             | {{ L('Do you make at least {groupMincomeFormatted} per month?', { groupMincomeFormatted }) }}
             tooltip(:text='L("This is the minimum income in your group")' direction='top')
               .button.is-icon-smaller.is-primary.c-tip
+=======
+            | {{ L('Do you make at least {value} per month?', { value: `${groupSettings.mincomeAmount}${currency}`}) }}
+            tooltip(:text='L("This is the minimum income in your group")')
+              button.is-icon-smaller.is-primary.c-tip(:aria-label='L("This is the minimum income in your group")')
+>>>>>>> DS: add input shifted and icon-smaller examples
                 i.icon-info
           label.radio
             input.input(
