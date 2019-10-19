@@ -82,7 +82,49 @@ export default {
         selectbox: {
           focused: false,
           selectedOption: 'Active'
-        }
+        },
+        dummyInviteList: [
+          {
+            name: 'Felix Kubin',
+            inviteLink: 'http://localhost:8000/app/join?groupId=21XWnNFz7RbNPKHUqAeSLLT1cNHnnCssmSw6dJeB1gfSSeZc7v&secret=4460',
+            isAnyoneLink: false,
+            state: {
+              description: 'Not used yet',
+              expireInfo: '1d 2h 30m left',
+              isExpired: false
+            }
+          },
+          {
+            name: 'Brian Eno',
+            inviteLink: 'http://localhost:8000/app/join?groupId=30aFnTYz7RbqAeSLLT1cNfSSeZHN6KHUnnCssmSw6dJeB1gc7v&secret=2250',
+            isAnyoneLink: false,
+            state: {
+              description: 'Used',
+              expireInfo: '',
+              isExpired: true
+            }
+          },
+          {
+            name: 'Carl Sagan',
+            inviteLink: 'http://localhost:8000/app/join?groupId=B1gfSSeZc721XWnNFz7RbkoyHUqAeSwLT1cNHnnCssmSw6dJev&secret=1348',
+            isAnyoneLink: false,
+            state: {
+              description: 'Not used',
+              expireInfo: 'Expired',
+              isExpired: true
+            }
+          },
+          {
+            name: 'Anyone',
+            inviteLink: 'http://localhost:8000/app/join?groupId=s8LT1cNHnnCs21XWnNFz7RbNPKHUqAesmSw6dJeB1gfSSeZc7v&secret=5521',
+            isAnyoneLink: true,
+            state: {
+              description: '10/60 used',
+              expireInfo: 'Expired',
+              isExpired: true
+            }
+          }
+        ]
       }
     }
   },
@@ -93,14 +135,8 @@ export default {
   },
   computed: {
     activeList () {
-      return this.ephemeral.selectbox.selectedOption === 'Active' ? this.list.filter(item => !item.state.isExpired)
-        : this.ephemeral.selectbox.selectedOption === 'All' && this.list
-    }
-  },
-  props: {
-    list: {
-      type: Array
-      // TODO: leaving a comment explaining the structure of this prop.
+      return this.ephemeral.selectbox.selectedOption === 'Active' ? this.ephemeral.dummyInviteList.filter(item => !item.state.isExpired)
+        : this.ephemeral.selectbox.selectedOption === 'All' && this.ephemeral.dummyInviteList
     }
   }
 }

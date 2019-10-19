@@ -61,7 +61,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
         data-test='saveBtn'
       ) Save changes
 
-  invitelinks(:list='ephemeral.inviteLinks.dummyList')
+  invitelinks
 
   page-section(:title='L("Leave Group")')
     i18n(tag='p' html='This means you will stop having access to the <b>group chat</b> (including direct messages to other group members) and <b>contributions</b>. Re-joining the group is possible, but requires other members to vote and reach an agreement.')
@@ -106,53 +106,7 @@ export default {
   },
   data () {
     return {
-      currencies,
-      ephemeral: {
-        inviteLinks: {
-          dummyList: [
-            {
-              name: 'Felix Kubin',
-              inviteLink: 'http://localhost:8000/app/join?groupId=21XWnNFz7RbNPKHUqAeSLLT1cNHnnCssmSw6dJeB1gfSSeZc7v&secret=4460',
-              isAnyoneLink: false,
-              state: {
-                description: 'Not used yet',
-                expireInfo: '1d 2h 30m left',
-                isExpired: false
-              }
-            },
-            {
-              name: 'Brian Eno',
-              inviteLink: 'http://localhost:8000/app/join?groupId=21XWnNFz7RbNPKHUqAeSLLT1cNHnnCssmSw6dJeB1gfSSeZc7v&secret=4460',
-              isAnyoneLink: false,
-              state: {
-                description: 'Used',
-                expireInfo: '',
-                isExpired: true
-              }
-            },
-            {
-              name: 'Carl Sagan',
-              inviteLink: 'http://localhost:8000/app/join?groupId=21XWnNFz7RbNPKHUqAeSLLT1cNHnnCssmSw6dJeB1gfSSeZc7v&secret=4460',
-              isAnyoneLink: false,
-              state: {
-                description: 'Not used',
-                expireInfo: 'Expired',
-                isExpired: true
-              }
-            },
-            {
-              name: 'Anyone',
-              inviteLink: 'http://localhost:8000/app/join?groupId=21XWnNFz7RbNPKHUqAeSLLT1cNHnnCssmSw6dJeB1gfSSeZc7v&secret=4460',
-              isAnyoneLink: true,
-              state: {
-                description: '10/60 used',
-                expireInfo: 'Expired',
-                isExpired: true
-              }
-            }
-          ]
-        }
-      }
+      currencies
     }
   },
   computed: {
