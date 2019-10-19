@@ -2,21 +2,50 @@
 page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
   template(#title='') {{ L('Contributions') }}
 
+  .contribution-header
+    .has-text-1
+      i18n(
+        v-if='fakeStore.receiving.monetary'
+        tag='p'
+        :args='{upTo: fakeStore.upTo, currency: fakeStore.currency}'
+        html='You need <span class="has-text-extra-bold has-text-0">{currency}{upTo}</span>'
+      )
+      i18n(
+        v-else
+        tag='p'
+        :args='{upTo: fakeStore.upTo, currency: fakeStore.currency}'
+        html='You are pledging up to <span class="has-text-extra-bold has-text-0">{currency}{upTo}</span>'
+      )
+
+      i18n(
+        tag='p'
+        :args='{paymentMethod: fakeStore.paymentMethod}'
+        html='Payment method <span class="has-text-extra-bold has-text-0">{paymentMethod}</span>'
+      )
+
+    div
+      button.button.is-small(
+        @click='open("IncomeDetails")'
+      ) Change
+
   section.card.contribution-card
     .receiving
       i18n(tag='h2' class='card-header') Receiving
 
-      i18n.has-text-1.spacer(
+      i18n.has-text-1.spacer-around(
         v-if='!doesReceive'
         tag='p'
       ) When other members pledge a monetary or non-monetary contribution, they will appear here.
 
-      ul.spacer(v-else)
+      i18n.has-text-1.spacer-around(
+        v-else-if='!fakeStore.receiving.monetary'
+        tag='p'
+      ) No one is pledging money at the moment.
+
+      ul.spacer(v-if='doesReceive')
         contribution(
           v-if='fakeStore.receiving.monetary'
-          variant='editable'
           is-monetary=true
-          @interaction='open("IncomeDetails")'
         )
           contribution-item(
             :what='fakeStore.currency + fakeStore.receiving.monetary'
@@ -35,8 +64,8 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
           )
 
       button.button.is-small(
-        @click='open("InviteByLink")'
         v-if='groupMembersCount === 0'
+        @click='open("InviteByLink")'
       )
         i.icon-plus
         i18n Add members to group
@@ -44,19 +73,24 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
     .giving
       i18n(tag='h2' class='card-header') Giving
 
-      i18n.has-text-1.spacer(
+      i18n.has-text-1.spacer-around(
         v-if='!doesGive'
         tag='p'
       ) You can contribute to your group with money or other valuables like teaching skills, sharing your time ot help someone. The sky is the limit!
 
-      ul.spacer(v-else)
+      i18n.has-text-1.spacer-around(
+        v-else-if='!fakeStore.giving.monetary'
+        tag='p'
+      ) No one needs monetary contributions at the moment.
+
+      ul.spacer(v-if='doesGive')
         contribution(
           v-if='fakeStore.giving.monetary'
-          variant='editable'
           is-monetary=true
         )
           contribution-item(
             :what='fakeStore.currency + fakeStore.giving.monetary'
+            :who='fakeStore.groupMembersPledging'
             type='MONETARY'
             action='GIVING'
           )
@@ -116,6 +150,8 @@ export default {
       },
       // -- Hardcoded Data just for layout purposes:
       fakeStore: {
+        upTo: 400,
+        paymentMethod: 'Manual',
         currency: currencies['USD'],
         isFirstTime: true, // true when user doesn't have any income details. It displays the 'Add Income Details' box
         mincome: 500,
@@ -136,7 +172,7 @@ export default {
           nonMonetary: [
             'Happiness'
           ],
-          monetary: 432
+          monetary: 20
         },
         groupMembersPledging: [
           'Jack Fisher',
@@ -200,16 +236,50 @@ export default {
 
 <style lang="scss" scoped>
 @import "../../assets/style/_variables.scss";
-
-.contribution-card {
+.contribution-header {
   display: flex;
   justify-content: space-between;
-  > div {
-    width: calc(50% - 1rem);
+  padding: 1rem 0 1.5rem 0;
+
+  button {
+    margin-top: -0.25rem;
+  }
+
+  @include tablet {
+    padding-top: 0;
+
+    p {
+      float: left;
+      margin-right: 1.5rem;
+    }
+  }
+}
+
+.contribution-card {
+
+  @include tablet {
+    display: flex;
+    justify-content: space-between;
+
+    > div {
+      width: calc(50% - 1rem);
+    }
+  }
+}
+
+.spacer-around {
+  margin: 0 0 1rem 0;
+
+  @include tablet {
+    margin: $spacer 0;
   }
 }
 
 .spacer {
-  margin-bottom: $spacer * 1.5;
+  margin-bottom: $spacer * 2.5;
+
+  @include tablet {
+    margin-bottom: $spacer * 1.5;
+  }
 }
 </style>

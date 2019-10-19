@@ -192,6 +192,7 @@ export default {
 }
 
 .buttons {
+  margin-top: $spacer-sm;
   margin-bottom: $spacer-xs;
 }
 
