@@ -1,7 +1,6 @@
 describe('Add contribution', () => {
   const userId = Math.floor(Math.random() * 10000)
   const groupMincome = 750
-  const groupNewIncome = groupMincome + 100
 
   it('successfully loads the homepage', function () {
     cy.visit('/')
