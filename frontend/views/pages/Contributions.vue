@@ -88,7 +88,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
           input.radio(
             type='radio'
             value='incomeAmount'
-            v-model='form.incomeDetailsKey'
+            v-model='form.incomeDetailsType'
             id='radio-receiving'
           )
           //- TODO: update design system to make radio buttons use labels instead of spans (and update _forms.scss accordingly)
@@ -98,14 +98,14 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
           input.radio(
             type='radio'
             value='pledgeAmount'
-            v-model='form.incomeDetailsKey'
+            v-model='form.incomeDetailsType'
             id='radio-pleding'
           )
           i18n(tag='label' for='radio-pleding') Yes, I do
 
       //- NOTE: this "key='formReceiving'" is needed or else the v-if doesn't work
       //- for some reason...
-      .field(v-if='form.incomeDetailsKey === "incomeAmount"' key='formReceiving')
+      .field(v-if='form.incomeDetailsType === "incomeAmount"' key='formReceiving')
         i18n.label(tag='label') Enter your income:
         input.input.is-primary(
           type='text'
@@ -163,7 +163,7 @@ export default {
   data () {
     return {
       form: {
-        incomeDetailsKey: 'incomeAmount',
+        incomeDetailsType: 'incomeAmount',
         incomeAmount: 0,
         pledgeAmount: 0
       },
@@ -228,10 +228,10 @@ export default {
   },
   beforeMount () {
     const profile = this.memberProfile(this.ourUsername) || {}
-    const incomeDetailsKey = profile.groupProfile && profile.groupProfile.incomeDetailsKey
-    if (incomeDetailsKey) {
-      this.form.incomeDetailsKey = incomeDetailsKey
-      this.form[incomeDetailsKey] = profile.groupProfile[incomeDetailsKey]
+    const incomeDetailsType = profile.groupProfile && profile.groupProfile.incomeDetailsType
+    if (incomeDetailsType) {
+      this.form.incomeDetailsType = incomeDetailsType
+      this.form[incomeDetailsType] = profile.groupProfile[incomeDetailsType]
     }
   },
   methods: {
@@ -241,11 +241,11 @@ export default {
         return
       }
       try {
-        const incomeDetailsKey = this.form.incomeDetailsKey
+        const incomeDetailsType = this.form.incomeDetailsType
         const groupProfileUpdate = await sbp('gi.contracts/group/groupProfileUpdate/create',
           {
-            incomeDetailsKey,
-            [incomeDetailsKey]: +this.form[incomeDetailsKey]
+            incomeDetailsType,
+            [incomeDetailsType]: +this.form[incomeDetailsType]
           },
           this.$store.state.currentGroupId
         )
