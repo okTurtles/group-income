@@ -16,7 +16,21 @@ Cypress.Commands.add('getByDT', (element, otherSelector = '') => {
 
 // NOTE: We can go a step further and not use UI to do repetitive tasks.
 // https://docs.cypress.io/guides/getting-started/testing-your-app.html#Fully-test-the-login-flow-%E2%80%93-but-only-once
+
+function doubleCheckIsLoggedOut () {
+  // Fix #706
+  cy.getByDT('app').then(($app) => {
+    // wait for Vue to mount everything
+    cy.wait(250) // eslint-disable-line
+    if ($app.find('[data-test="loginBtn"]').length === 0) {
+      cy.giLogOut()
+    }
+  })
+}
+
 Cypress.Commands.add('giSignUp', (userName, password = '123456789') => {
+  doubleCheckIsLoggedOut()
+
   cy.getByDT('signupBtn').click()
   cy.getByDT('signName').clear().type(userName)
   cy.getByDT('signEmail').clear().type(`${userName}@email.com`)
@@ -28,6 +42,8 @@ Cypress.Commands.add('giSignUp', (userName, password = '123456789') => {
 })
 
 Cypress.Commands.add('giLogin', (userName, password = '123456789') => {
+  doubleCheckIsLoggedOut()
+
   cy.getByDT('loginBtn').click()
   cy.getByDT('loginName').clear().type(userName)
   cy.getByDT('password').clear().type(password)
@@ -83,6 +99,49 @@ Cypress.Commands.add('giCreateGroup', (name, { image = 'imageTest.png', values =
   cy.getByDT('finishBtn').click()
 
   cy.getByDT('toDashboardBtn').click()
+})
+
+function inviteUser (invitee, index) {
+  cy.getByDT('invitee').eq(index).within(() => {
+    cy.get('input').clear().type(invitee)
+    cy.getByDT('add', 'button').click()
+    cy.getByDT('feedbackMsg').should('contain', 'Ready to be invited!')
+  })
+}
+
+Cypress.Commands.add('giInviteMember', (
+  invitees,
+  {
+    isProposal = false,
+    reason = 'Because they are great people!'
+  } = {}) => {
+  cy.getByDT('inviteButton').click()
+
+  if (typeof invitees === 'string') {
+    inviteUser(invitees, 0)
+  } else {
+    invitees.forEach((invitee, index) => {
+      if (index > 0) {
+        cy.getByDT('addInviteeSlot').click()
+      }
+      inviteUser(invitee, index)
+    })
+  }
+
+  if (isProposal) {
+    cy.getByDT('nextBtn').click()
+    cy.getByDT('reason', 'textarea').clear().type(reason)
+    cy.getByDT('submitBtn').click()
+    cy.getByDT('finishBtn').click()
+  } else {
+    cy.getByDT('submitBtn').click()
+    cy.getByDT('invitee').each(([invitee]) => {
+      cy.get(invitee)
+        .getByDT('feedbackMsg')
+        .should('contain', 'Member invited successfully!')
+    })
+    cy.getByDT('closeModal').click()
+  }
 })
 
 Cypress.Commands.add('giAcceptGroupInvite', (groupName) => {

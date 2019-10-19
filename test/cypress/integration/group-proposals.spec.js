@@ -36,18 +36,7 @@ describe('Proposals - Add members', () => {
   })
 
   it('user1 invites user2 and user3 to the group', () => {
-    cy.getByDT('inviteButton').click()
-
-    cy.getByDT('searchUser').clear().type(`user2-${userId}`)
-    cy.getByDT('addButton').click()
-
-    cy.getByDT('searchUser').clear().type(`user3-${userId}`)
-    cy.getByDT('addButton').click()
-
-    cy.getByDT('submit').click()
-
-    cy.getByDT('notifyInvitedSuccess')
-      .should('contain', 'Members invited successfully!')
+    cy.giInviteMember([`user2-${userId}`, `user3-${userId}`])
 
     cy.giLogOut()
   })
@@ -64,18 +53,8 @@ describe('Proposals - Add members', () => {
 
   it('user1 proposes to add user4 and user5 together to the group', () => {
     cy.giLogin(`user1-${userId}`)
-    cy.getByDT('inviteButton').click()
 
-    cy.getByDT('searchUser').clear().type(`user4-${userId}`)
-    cy.getByDT('addButton').click()
-
-    cy.getByDT('searchUser').clear().type(`user5-${userId}`)
-    cy.getByDT('addButton').click()
-
-    cy.getByDT('submit').click()
-
-    cy.getByDT('notifyInvitedSuccess')
-      .should('contain', 'Members proposed successfully!')
+    cy.giInviteMember([`user4-${userId}`, `user5-${userId}`], { isProposal: true })
 
     cy.giLogOut()
   })
@@ -83,15 +62,7 @@ describe('Proposals - Add members', () => {
   it('user2 proposes to add user6 to the group', () => {
     cy.giLogin(`user2-${userId}`)
 
-    cy.getByDT('inviteButton').click()
-
-    cy.getByDT('searchUser').clear().type(`user6-${userId}`)
-    cy.getByDT('addButton').click()
-
-    cy.getByDT('submit').click()
-
-    cy.getByDT('notifyInvitedSuccess')
-      .should('contain', 'Members proposed successfully!')
+    cy.giInviteMember(`user6-${userId}`, { isProposal: true })
 
     cy.giLogOut()
   })

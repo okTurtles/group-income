@@ -1,7 +1,11 @@
 <template lang='pug'>
 span.c-wrapper(
+  tabindex='0'
   @mouseenter='show'
   @mouseleave='hide'
+  @focus='show'
+  @blur='hide'
+  aria-label='text'
 )
   slot
   .c-tooltip(
@@ -108,6 +112,10 @@ export default {
 
 <style lang="scss" scoped>
 @import "../../assets/style/_variables.scss";
+
+.c-wrapper {
+  cursor: pointer;
+}
 
 .c-tooltip {
   position: absolute;

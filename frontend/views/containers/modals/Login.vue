@@ -15,18 +15,13 @@
         input.input#loginName(
           :class='{error: $v.form.name.$error}'
           name='name'
-          v-model='form.name'
+          v-model='$v.form.name.$model'
           @keyup.enter='login'
-          @input='$v.form.name.$touch()'
           ref='username'
           autofocus
           data-test='loginName'
+          v-error:name='{ tag: "p", attrs: { "data-test": "badUsername" } }'
         )
-        i18n.error(
-          v-show='$v.form.name.$error'
-          tag='p'
-          data-test='badUsername'
-        ) Username cannot contain spaces
 
       form-password(
         :label='L("Password")'
@@ -120,7 +115,7 @@ export default {
     form: {
       name: {
         required,
-        nonWhitespace: value => /^\S+$/.test(value)
+        [L('Username cannot contain spaces')]: value => /^\S+$/.test(value)
       },
       password: {
         required,

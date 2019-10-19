@@ -15,10 +15,10 @@
     &::before {
       content: "";
       position: absolute;
-      width: 1.4rem;
+      width: 1.3rem;
       bottom: -1px;
       left: 0;
-      border-bottom: 1px solid $background;
+      border-bottom: 2px solid $background;
       display: inline-block;
     }
 

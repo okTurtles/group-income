@@ -20,6 +20,8 @@ Vue.component('RuleAddMemberProposal', () => import('../views/containers/proposa
 Vue.component('RuleChangeRuleProposal', () => import('../views/containers/proposals/RuleChangeRule.vue'))
 Vue.component('RuleRemoveMemberProposal', () => import('../views/containers/proposals/RuleRemoveMember.vue'))
 
+Vue.component('IncomeDetails', () => import('../views/containers/contributions/IncomeDetails.vue'))
+
 // TODO Remove after design test period
 Vue.component('DesignSystemModal', () => import('../views/containers/modals/DesignSystem.vue'))
 Vue.component('DesignSystemModalBase', () => import('../views/containers/modals/DesignSystemBase.vue'))

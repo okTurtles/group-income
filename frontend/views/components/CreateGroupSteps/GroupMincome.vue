@@ -27,10 +27,10 @@
         @input='update'
       )
         option(
-          v-for='(symbol, code) in currencies'
+          v-for='(currency, code) in currencies'
           :value='code'
           :key='code'
-        ) {{ symbol }}
+        ) {{ currency.symbol }}
 
     i18n.has-text-1(tag='p') This value can be adjusted in the future.
 
@@ -38,7 +38,7 @@
 </template>
 
 <script>
-import currencies from '../../utils/currencies.js'
+import currencies from '@view-utils/currencies.js'
 
 export default {
   name: 'GroupMincome',

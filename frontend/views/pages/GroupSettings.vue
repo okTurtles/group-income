@@ -46,10 +46,10 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
             @input='update'
           )
             option(
-              v-for='(symbol, code) in currencies'
+              v-for='(currency, code) in currencies'
               :value='code'
               :key='code'
-            ) {{ symbol }}
+            ) {{ currency.symbol }}
 
         i18n(tag='p') This is the currency that will be displayed for every member of the group, across the platform.
 

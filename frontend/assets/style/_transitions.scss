@@ -73,22 +73,6 @@
   transform: translateX(-100%);
 }
 
-.zoom-enter-active {
-  animation: enterFromBottom 500ms both cubic-bezier(0.165, 0.84, 0.44, 1);
-
-  @include tablet {
-    animation: zoom 0.3s;
-  }
-}
-
-.zoom-leave-active {
-  animation: enterFromBottom 500ms both cubic-bezier(0.165, 0.84, 0.44, 1) reverse;
-
-  @include tablet {
-    animation: zoom 0.3s reverse;
-  }
-}
-
 .slide-left-enter-active,
 .slide-left-leave-active {
   transition: transform 0.3s;
@@ -111,6 +95,37 @@
   .slide-left-leave-to {
     animation: zoom 0.3s reverse;
   }
+}
+
+.zoom-enter-active {
+  animation: enterFromBottom 500ms both cubic-bezier(0.165, 0.84, 0.44, 1);
+
+  @include tablet {
+    animation: zoom 0.3s;
+  }
+}
+
+.zoom-leave-active {
+  animation: enterFromBottom 500ms both cubic-bezier(0.165, 0.84, 0.44, 1) reverse;
+
+  @include tablet {
+    animation: zoom 0.3s reverse;
+  }
+}
+
+.expand-enter-active,
+.expand-leave-active {
+  transition: opacity 0.5s, max-height 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
+  opacity: 1;
+  max-height: 21rem;
+  overflow: hidden;
+}
+
+.expand-enter,
+.expand-leave-to {
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
 }
 
 @keyframes blink-animation {

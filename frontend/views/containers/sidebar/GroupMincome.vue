@@ -2,8 +2,7 @@
 div(data-test='groupMincome')
   i18n.title.is-4(tag='h4') Minimum Income
 
-  p.title.is-2.income(data-test='minIncome')
-    | {{ currency }}{{ groupSettings.mincomeAmount }}
+  p.title.is-2.income(data-test='minIncome') {{ groupMincomeFormatted }}
 
   i18n.link(
     tag='button'
@@ -15,17 +14,14 @@ div(data-test='groupMincome')
 <script>
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
-import currencies from '@view-utils/currencies.js'
 import { mapGetters } from 'vuex'
 
 export default {
   name: 'GroupMincome',
   computed: {
-    currency () {
-      return currencies[this.groupSettings.mincomeCurrency]
-    },
     ...mapGetters([
-      'groupSettings'
+      'groupSettings',
+      'groupMincomeFormatted'
     ])
   },
   methods: {

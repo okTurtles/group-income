@@ -82,7 +82,7 @@ page(
         tr
           td
             pre .has-text-primary
-          td.has-text-primary An informative text perhaps.
+          td.has-text-primary An informative text, but use it only for icons.
         tr
           td
             pre .has-text-success
@@ -386,6 +386,15 @@ page(
           td
             button.is-icon-small
               i.icon-cog
+        tr
+          td
+            pre
+              | button.is-icon-smaller
+              |   i.icon-info
+          td
+            tooltip(text='Additional information')
+              button.is-icon-smaller
+                i.icon-info
 
   article#notification-badges
     section.card
@@ -612,33 +621,26 @@ page(
         tr
           td
             pre
-              | .radio-wrapper
-              |   input.radio(
-              |     type='radio'
-              |     id='radio-id1'
-              |     value='radio 1 value'
-              |   )
-              |   i18n.label(tag='label' for='radio-id1') Radio label
+              | fieldset
+              |   .legend Pick a favorite food
+              |     label.radio
+              |       input(type='radio'
+              |         name='fruit'
+              |         checked='true')
+              |       span Oranges
+              |     label.radio
+              |       input(type='radio'
+              |         name='fruit')
+              |       span Apples
           td
-            .radio-wrapper
-              input.radio(
-                name='example'
-                type='radio'
-                checked='true'
-                id='radio-1'
-                value='radio-1'
-              )
-              i18n.label(tag='label' for='radio-1') Radio label
-
-            .radio-wrapper
-              input.radio(
-                name='example'
-                type='radio'
-                id='radio-2'
-                value='radio-2'
-              )
-              i18n.label(tag='label' for='radio-2') Radio label
-
+            fieldset
+              .legend What's your favorite food?
+              label.radio
+                input.input(type='radio' name='fruit' checked='true')
+                span Oranges
+              label.radio
+                input.input(type='radio' name='fruit')
+                span Apples
         tr
           td
             h3 Combination
@@ -675,6 +677,26 @@ page(
               .input-combo(:class='{ error: ephemeral.forms.hasError }')
                 input.input(type='text' placeholder='New amount')
                 .suffix USD
+              span.error(v-if='ephemeral.forms.hasError') Something went wrong
+        tr
+          td
+            pre
+              | label.field
+              |   .label Add invitee
+              |   .input-combo.error
+              |     input.input
+              |     button.is-icon-small.is-shifted(
+              |       :aria-label='Remove member'
+              |     )
+          td
+            label.field
+              .label Add invitee
+              .input-combo(:class='{ error: ephemeral.forms.hasError }')
+                input.input(type='text' placeholder='New amount')
+                .suffix USD
+                button.is-icon-small.is-shifted(
+                  :aria-label='L("Remove member")'
+                )
               span.error(v-if='ephemeral.forms.hasError') Something went wrong
         tr
           td

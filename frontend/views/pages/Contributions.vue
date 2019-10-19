@@ -2,6 +2,14 @@
 page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
   template(#title='') {{ L('Contributions') }}
 
+  // v-if='memberProfile(ourUsername).groupProfile.incomeDetailsKey'
+  page-section.c-card-empty
+    svg-contributions.c-svg
+    div
+      i18n(tag='h3') Add your income details
+      i18n.c-text(tag='p') This will allow you to start receiving or giving mincome.
+      i18n(tag='button' @click='openModal("IncomeDetails")') Add income details
+
   section.card
     i18n(tag='h2' class='card-header') Receiving
 
@@ -48,25 +56,19 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
       ismonetary=''
       @interaction='handleFormTriggerClick'
     )
+      //- TODO: use displayWithCurrency!
       i18n(
         :args='{amount:`${fakeStore.currency}${fakeStore.giving.monetary}`}'
       ) Pledging up to {amount}
-      i18n to other&apos;s mincome
+      i18n to other's mincome
       i18n(
         v-if='fakeStore.giving.monetary == 0' :args='{amount: "[$170]"}'
         tag='p'
-      ) (The group&apos;s average pledge is {amount})
+      ) (The group's average pledge is {amount})
 
     message-missing-income(
       v-if='fakeStore.isFirstTime && !ephemeral.isEditingIncome'
       @click='handleFormTriggerClick'
-    )
-
-    income-form(
-      v-if='ephemeral.isEditingIncome'
-      ref='incomeForm'
-      @save='handleIncomeSave'
-      @cancel='handleIncomeCancel'
     )
 
   page-section(title='Debug Income Details')
@@ -80,14 +82,14 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
       .field
         i18n.label(
           tag='label'
-          :args='{ mincome: groupSettings.mincomeAmount, currency }'
-        ) Do you make at least {currency}{mincome} per month?
+          :args='{ groupMincomeFormatted }'
+        ) Do you make at least {groupMincomeFormatted} per month?
 
         .radio-wrapper
           input.radio(
             type='radio'
             value='incomeAmount'
-            v-model='form.incomeDetailsKey'
+            v-model='form.incomeDetailsType'
             id='radio-receiving'
           )
           //- TODO: update design system to make radio buttons use labels instead of spans (and update _forms.scss accordingly)
@@ -97,19 +99,20 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
           input.radio(
             type='radio'
             value='pledgeAmount'
-            v-model='form.incomeDetailsKey'
+            v-model='form.incomeDetailsType'
             id='radio-pleding'
           )
           i18n(tag='label' for='radio-pleding') Yes, I do
 
       //- NOTE: this "key='formReceiving'" is needed or else the v-if doesn't work
       //- for some reason...
-      .field(v-if='form.incomeDetailsKey === "incomeAmount"' key='formReceiving')
+      .field(v-if='form.incomeDetailsType === "incomeAmount"' key='formReceiving')
         i18n.label(tag='label') Enter your income:
         input.input.is-primary(
           type='text'
           v-model='$v.form.incomeAmount.$model'
           :class='{error: $v.form.incomeAmount.$error}'
+          v-error:incomeAmount='{ tag: "p", attrs: { "data-test": "badIncome" } }'
         )
 
       .field(v-else='')
@@ -134,13 +137,14 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
 import sbp from '~/shared/sbp.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
+import { OPEN_MODAL } from '@utils/events.js'
+import SvgContributions from '@svgs/contributions.svg'
 import { decimals } from '@view-utils/validators.js'
 import { mapGetters } from 'vuex'
 import Page from '@pages/Page.vue'
 import PageSection from '@components/PageSection.vue'
 import currencies from '@view-utils/currencies.js'
 import MessageMissingIncome from '@containers/contributions/MessageMissingIncome.vue'
-import IncomeForm from '@containers/contributions/IncomeForm.vue'
 import GroupMincome from '@containers/sidebar/GroupMincome.vue'
 import Contribution from '@components/Contribution.vue'
 import TextWho from '@components/TextWho.vue'
@@ -155,13 +159,13 @@ export default {
     GroupMincome,
     Contribution,
     TextWho,
-    IncomeForm,
-    MessageMissingIncome
+    MessageMissingIncome,
+    SvgContributions
   },
   data () {
     return {
       form: {
-        incomeDetailsKey: 'incomeAmount',
+        incomeDetailsType: 'incomeAmount',
         incomeAmount: 0,
         pledgeAmount: 0
       },
@@ -171,7 +175,7 @@ export default {
       },
       // -- Hardcoded Data just for layout purposes:
       fakeStore: {
-        currency: currencies['USD'],
+        currency: currencies.USD.symbol,
         isFirstTime: true, // true when user doesn't have any income details. It displays the 'Add Income Details' box
         mincome: 500,
         receiving: {
@@ -202,18 +206,21 @@ export default {
   },
   validations: {
     form: {
-      incomeAmount: { required, minValue: v => v >= 0, decimals: decimals(2) },
+      incomeAmount: {
+        [L('field is required')]: required,
+        [L('cannot be negative')]: v => v >= 0,
+        [L('cannot have more than 2 decimals')]: decimals(2)
+      },
       pledgeAmount: { required, minValue: v => v >= 0, decimals: decimals(2) }
     }
   },
   computed: {
     ...mapGetters([
       'groupSettings',
-      'memberProfile'
+      'memberProfile',
+      'groupMincomeFormatted',
+      'ourUsername'
     ]),
-    currency () {
-      return currencies[this.groupSettings.mincomeCurrency]
-    },
     doesReceiveMonetary () {
       return !!this.fakeStore.receiving.monetary && !this.ephemeral.isEditingIncome
     },
@@ -222,25 +229,28 @@ export default {
     }
   },
   beforeMount () {
-    const profile = this.memberProfile(this.$store.state.loggedIn.username) || {}
-    const incomeDetailsKey = profile.groupProfile && profile.groupProfile.incomeDetailsKey
-    if (incomeDetailsKey) {
-      this.form.incomeDetailsKey = incomeDetailsKey
-      this.form[incomeDetailsKey] = profile.groupProfile[incomeDetailsKey]
+    const profile = this.memberProfile(this.ourUsername) || {}
+    const incomeDetailsType = profile.groupProfile && profile.groupProfile.incomeDetailsType
+    if (incomeDetailsType) {
+      this.form.incomeDetailsType = incomeDetailsType
+      this.form[incomeDetailsType] = profile.groupProfile[incomeDetailsType]
     }
   },
   methods: {
+    openModal (modal) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, modal)
+    },
     async setPaymentInfo () {
       if (this.$v.form.$invalid) {
         alert(L('Invalid payment info'))
         return
       }
       try {
-        const incomeDetailsKey = this.form.incomeDetailsKey
+        const incomeDetailsType = this.form.incomeDetailsType
         const groupProfileUpdate = await sbp('gi.contracts/group/groupProfileUpdate/create',
           {
-            incomeDetailsKey,
-            [incomeDetailsKey]: +this.form[incomeDetailsKey]
+            incomeDetailsType,
+            [incomeDetailsType]: +this.form[incomeDetailsType]
           },
           this.$store.state.currentGroupId
         )
@@ -301,4 +311,20 @@ export default {
 
 <style lang="scss" scoped>
 @import "../../assets/style/_variables.scss";
+.c-card-empty {
+  display: flex;
+
+  .c-svg {
+    width: 4rem;
+    height: 4rem;
+    margin-right: $spacer;
+    flex-shrink: 0;
+
+    @include widescreen {
+      width: 6.25rem;
+      height: 6.25rem;
+      margin-right: 2.5rem;
+    }
+  }
+}
 </style>

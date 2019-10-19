@@ -1,6 +1,6 @@
 <template lang='pug'>
   .settings-container
-    p.username @{{ userName }}
+    p.username @{{ ourUsername }}
 
     section.card
       form(
@@ -118,6 +118,7 @@ import { validationMixin } from 'vuelidate'
 import { email } from 'vuelidate/lib/validators'
 import { OPEN_MODAL } from '@utils/events.js'
 import { cloneDeep } from '@utils/giLodash.js'
+import { mapGetters } from 'vuex'
 import imageUpload from '@utils/imageUpload.js'
 import Avatar from '@components/Avatar.vue'
 import sbp from '~/shared/sbp.js'
@@ -132,7 +133,7 @@ export default {
   data () {
     // create a copy of the attributes to avoid any Vue.js reactivity weirdness
     // so that we do not directly modify the values in the store
-    const attrsCopy = cloneDeep(this.$store.getters.currentUserIdentityContract.attributes || {})
+    const attrsCopy = cloneDeep(this.$store.getters.ourUserIdentityContract.attributes || {})
     return {
       form: {
         picture: attrsCopy.picture,
@@ -154,14 +155,14 @@ export default {
     }
   },
   computed: {
+    ...mapGetters([
+      'ourUsername'
+    ]),
     attributes () {
-      return this.$store.getters.currentUserIdentityContract.attributes || {}
+      return this.$store.getters.ourUserIdentityContract.attributes || {}
     },
     userPictureInitial () {
       return this.attributes.picture
-    },
-    userName () {
-      return this.$store.state.loggedIn.username
     }
   },
   methods: {

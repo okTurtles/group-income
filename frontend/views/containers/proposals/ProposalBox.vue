@@ -2,10 +2,10 @@
 li.c-wrapper
   user-image.c-avatar(:username='proposal.meta.username')
   .c-header
-    h4.has-text-bold(data-test='title') {{title}}:
-    span {{humanDate}}
+    h4.has-text-bold(data-test='title') {{ title }}:
+    span {{ humanDate }}
   .c-main
-    p.has-text-1 "{{proposal.data.proposalData.reason}}"
+    p.has-text-1(v-if='humanReason') {{ humanReason }}
     ul
       proposal-item(
         v-for='hash in proposalHashes'
@@ -33,7 +33,7 @@ export default {
   computed: {
     ...mapGetters([
       'currentGroupState',
-      'currentUserIdentityContract'
+      'ourUserIdentityContract'
     ]),
     proposal () {
       // Pick the 1st hash as guidance/pivot for this group of proposals
@@ -42,7 +42,7 @@ export default {
     title () {
       const { identityContractID } = this.proposal.meta
       const username = this.$store.state[identityContractID].attributes.name
-      const currentUsername = this.currentUserIdentityContract.attributes.name
+      const currentUsername = this.ourUserIdentityContract.attributes.name
       const who = username === currentUsername ? L('You') : username
       const isAnyOpen = this.proposalHashes.some(hash => this.currentGroupState.proposals[hash].status === STATUS_OPEN)
 
@@ -64,6 +64,10 @@ export default {
       return date.toLocaleDateString(locale, {
         year: 'numeric', month: 'long', day: 'numeric'
       })
+    },
+    humanReason () {
+      const reason = this.proposal.data.proposalData.reason
+      return reason ? `"${reason}"` : undefined
     }
   }
 }

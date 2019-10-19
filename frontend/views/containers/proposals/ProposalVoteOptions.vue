@@ -56,13 +56,13 @@ export default {
     ...mapGetters([
       'currentGroupState',
       'groupSettings',
-      'currentUserIdentityContract'
+      'ourUserIdentityContract'
     ]),
     proposal () {
       return this.currentGroupState.proposals[this.proposalHash]
     },
     currentUsername () {
-      return this.currentUserIdentityContract.attributes.name
+      return this.ourUserIdentityContract.attributes.name
     },
     voteStatus () {
       const humanStatus = {

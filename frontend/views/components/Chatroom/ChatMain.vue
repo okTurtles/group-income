@@ -171,7 +171,7 @@ export default {
     },
     currentUserAttr () {
       return {
-        ...this.$store.getters.currentUserIdentityContract.attributes,
+        ...this.$store.getters.ourUserIdentityContract.attributes,
         id: currentUserId
       }
     }
