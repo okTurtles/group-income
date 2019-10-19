@@ -7,7 +7,7 @@
   )
   slot
   transition(name='fade')
-    .c-tooltip(v-if='ephemeral.tooltipActive') {{ L(tooltipText) }}
+    .c-tooltip(v-if='ephemeral.tooltipActive') {{ translatedTooltipText }}
 </template>
 
 <script>
@@ -33,6 +33,11 @@ export default {
     tooltipText: {
       type: String,
       default: 'Copied to clipboard!'
+    }
+  },
+  computed: {
+    translatedTooltipText () {
+      return this.L(this.tooltipText)
     }
   },
   methods: {
