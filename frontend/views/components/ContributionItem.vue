@@ -4,25 +4,26 @@
   template(v-if='action === "RECEIVING"')
     template(v-if='type==="MONETARY"')
       template(v-if='hasWhoElse')
-        div(v-if='isVisible')
+        transition(name='replacelist')
+          div(v-if='isVisible')
+            i18n(
+              class='c-contribution-list'
+              :args='{what: what, listOfName: listOfName}'
+              html='<span class="has-text-bold">{what}</span> from {listOfName}'
+            )
+
+            i18n.is-unstyled.is-link-inherit.link(
+              tag='button'
+              type='button'
+              @click='isVisible = !isVisible'
+            ) Hide
+
           i18n(
-            class='c-contribution-list'
-            :args='{what: what, listOfName: listOfName}'
-            html='<span class="has-text-bold">{what}</span> from {listOfName}'
-          )
-
-          i18n.is-unstyled.is-link-inherit.link(
-            tag='button'
-            type='button'
+            v-else
+            :args='{what: what, numOthers: notFirstWho.length}'
             @click='isVisible = !isVisible'
-          ) Hide
-
-        i18n(
-          v-else
-          :args='{what: what, numOthers: notFirstWho.length}'
-          @click='isVisible = !isVisible'
-          html='<span class="has-text-bold">{what}</span> from <button class="is-unstyled is-link-inherit link">{numOthers} members</button>'
-        )
+            html='<span class="has-text-bold">{what}</span> from <button class="is-unstyled is-link-inherit link">{numOthers} members</button>'
+          )
 
       i18n(
         v-else
@@ -39,25 +40,26 @@
   template(v-else)
     template(v-if='type==="MONETARY"')
       template(v-if='hasWhoElse')
-        div(v-if='isVisible')
+        transition(name='replacelist')
+          div(v-if='isVisible')
+            i18n(
+              class='c-contribution-list'
+              :args='{what: what, listOfName: listOfName}'
+              html='<span class="has-text-bold">{what}</span> to {listOfName}'
+            )
+
+            i18n.is-unstyled.is-link-inherit.link(
+              tag='button'
+              type='button'
+              @click='isVisible = !isVisible'
+            ) Hide
+
           i18n(
-            class='c-contribution-list'
-            :args='{what: what, listOfName: listOfName}'
-            html='<span class="has-text-bold">{what}</span> to {listOfName}'
-          )
-
-          i18n.is-unstyled.is-link-inherit.link(
-            tag='button'
-            type='button'
+            v-else
+            :args='{what: what, numOthers: notFirstWho.length}'
             @click='isVisible = !isVisible'
-          ) Hide
-
-        i18n(
-          v-else
-          :args='{what: what, numOthers: notFirstWho.length}'
-          @click='isVisible = !isVisible'
-          html='<span class="has-text-bold">{what}</span> to <button class="is-unstyled is-link-inherit link">{numOthers} members</button>'
-        )
+            html='<span class="has-text-bold">{what}</span> to <button class="is-unstyled is-link-inherit link">{numOthers} members</button>'
+          )
       i18n(
         v-else=''
         class='c-contribution-list'
