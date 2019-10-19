@@ -40,9 +40,12 @@ transition(name='replacelist')
   li(v-else-if='isEditable' :class='itemClasses' key=2)
     slot
 
-    button.button.is-small.is-outlined.c-inline-button(:aria-label='editAriaLabel' @click='handleEditClick')
+    button.button.is-small.is-outlined.c-inline-button(
+      :aria-label='editAriaLabel'
+      @click='handleEditClick'
+    )
       i.icon-pencil-alt(aria-hidden='true')
-      | Edit
+      | {{ L('Edit') }}
 
   li.c-spacer-above(v-else-if='isUnfilled' key=3)
     button.button.is-small(

@@ -120,13 +120,6 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
         )
           i.icon-plus(aria-hidden='true')
           i18n Add a non-monetary pledge
-
-      income-form(
-        v-if='ephemeral.isEditingIncome'
-        ref='incomeForm'
-        @save='handleIncomeSave'
-        @cancel='handleIncomeCancel'
-      )
 </template>
 
 <script>
@@ -137,7 +130,6 @@ import SvgContributions from '@svgs/contributions.svg'
 import Page from '@pages/Page.vue'
 import PageSection from '@components/PageSection.vue'
 import currencies from '@view-utils/currencies.js'
-import IncomeForm from '@containers/contributions/IncomeForm.vue'
 import GroupMincome from '@containers/sidebar/GroupMincome.vue'
 import Contribution from '@components/Contribution.vue'
 import ContributionItem from '@components/ContributionItem.vue'
@@ -151,7 +143,6 @@ export default {
     GroupMincome,
     Contribution,
     ContributionItem,
-    IncomeForm,
     SvgContributions
   },
   data () {

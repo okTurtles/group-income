@@ -66,11 +66,7 @@
         :args='{what: what, listOfName: listOfName}'
         html='<span class="has-text-bold">{what}</span> to {listOfName}'
       )
-    i18n(
-      v-else
-      :args='{what: what}'
-      html='<span class="has-text-bold">{what}</span>'
-    )
+    span.has-text-bold(v-else) {{what}}
 </template>
 
 <script>
