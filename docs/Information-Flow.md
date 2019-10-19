@@ -82,10 +82,10 @@ We are almost there, the only question remaining is:
 > _How do users know what Contracts should they subscribe to and where is that done?_
 
 ```js
-  await sbp('state/vuex/dispatch', 'syncContractWithServer', contractId)
+  await sbp('state/enqueueContractSync', contractId)
 ```
 
-`'syncContractWithServer'` is what's used to both subscribe to a contract as well as fetch the latest events from it.
+`'state/enqueueContractSync'` is what's used to both subscribe to a contract as well as fetch the latest events from it.
 
 (...WIP...)
 
