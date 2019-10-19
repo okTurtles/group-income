@@ -25,6 +25,78 @@
   max-height: 0;
 }
 
+/* slide transition */
+.slide-next-enter-active,
+.slide-next-leave-active,
+.slide-prev-enter-active,
+.slide-prev-leave-active {
+  @include tablet {
+    position: absolute;
+    transition: transform 0.3s cubic-bezier(0.785, 0.135, 0.15, 0.86), opacity 0.3s cubic-bezier(0.785, 0.135, 0.15, 0.86) 0.1s;
+  }
+}
+
+.slide-next-leave-active,
+.slide-prev-leave-active {
+  @include tablet {
+    transition: transform 0.3s cubic-bezier(0.785, 0.135, 0.15, 0.86), opacity 0.2s cubic-bezier(0.785, 0.135, 0.15, 0.86);
+  }
+}
+
+.slide-prev-leave-to,
+.slide-next-enter {
+  @include tablet {
+    opacity: 0;
+    transform: translate3d(0, -100%, 0);
+  }
+}
+
+.slide-prev-enter,
+.slide-next-leave-to {
+  @include tablet {
+    opacity: 0;
+    transform: translate3d(0, 100%, 0);
+  }
+}
+
+.slide-fade-enter-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.slide-fade-leave-active {
+  transition: opacity 0.3s cubic-bezier(1, 0.5, 0.8, 1), transform 0.3s cubic-bezier(1, 0.5, 0.8, 1);
+}
+
+.slide-fade-enter,
+.slide-fade-leave-to {
+  opacity: 0;
+  transform: translateX(-100%);
+}
+
+.slide-left-enter-active,
+.slide-left-leave-active {
+  transition: transform 0.3s;
+}
+
+.slide-left-enter,
+.slide-left-leave-to {
+  transform: translate3d(100%, 0, 0);
+
+  @include desktop {
+    transform: none;
+  }
+}
+
+@include desktop {
+  .slide-left-enter {
+    animation: zoom 0.3s;
+  }
+
+  .slide-left-leave-to {
+    animation: zoom 0.3s reverse;
+  }
+}
+
 .zoom-enter-active {
   animation: enterFromBottom 500ms both cubic-bezier(0.165, 0.84, 0.44, 1);
 
