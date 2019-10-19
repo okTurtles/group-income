@@ -1,4 +1,5 @@
 <template lang='pug'>
+// TODO - Find a working i18n solution.
 span
   | {{firstWho}}
   template(v-if='hasWhoElse')

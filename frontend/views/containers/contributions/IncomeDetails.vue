@@ -8,8 +8,9 @@ modal-base-template(ref='modal')
         @submit.prevent='submit'
         novalidate='true'
       )
-        fieldset.c-firstQuestion
+        fieldset.c-firstQuestion(v-error:incomeDetailsKey='{position: "beforeend"}')
           legend.label
+<<<<<<< HEAD
 <<<<<<< HEAD
             | {{ L('Do you make at least {groupMincomeFormatted} per month?', { groupMincomeFormatted }) }}
             tooltip(:text='L("This is the minimum income in your group")' direction='top')
@@ -17,6 +18,10 @@ modal-base-template(ref='modal')
 =======
             | {{ L('Do you make at least {value} per month?', { value: `${groupSettings.mincomeAmount}${currency}`}) }}
             tooltip(:text='L("This is the minimum income in your group")')
+=======
+            | {{ L('Do you make at least {groupMincomeFormatted} per month?', { groupMincomeFormatted }) }}
+            tooltip(:text='L("This is the minimum income in your group")' direction='top')
+>>>>>>> Update Income Details with v-error
               button.is-icon-smaller.is-primary.c-tip(:aria-label='L("This is the minimum income in your group")')
 >>>>>>> DS: add input shifted and icon-smaller examples
                 i.icon-info
@@ -41,7 +46,11 @@ modal-base-template(ref='modal')
         transition(name='expand')
           fieldset(v-if='!!form.incomeDetailsType')
             label.field
+<<<<<<< HEAD
               .label {{ needsIncome ? L("What's your monthly income?") : L('How much do you want to pledge?') }}
+=======
+              .label {{ canPledge ? L('How much do you want to pledge?') : L('What\'s your monthly income?') }}
+>>>>>>> Update Income Details with v-error
               .input-combo(
                 :class='{"error": $v.form.amount.$error }'
                 v-error:amount=''
@@ -50,9 +59,16 @@ modal-base-template(ref='modal')
                   type='number'
                   v-model='$v.form.amount.$model'
                 )
+<<<<<<< HEAD
                 .suffix {{ groupMincomeSymbolWithCode }}
               .helper(v-if='needsIncome && whoIsPledging.length')
                 text-who(:who='whoIsPledging')
+=======
+                .suffix [$ USD]
+              i18n.helper(v-if='canPledge') Define up to how much you pledge to contribute to the group each month. Only the minimum needed amount will be given.
+              .helper(v-else)
+                text-who(:who='["[Rick]", "[Carl]", "[Kim]"]')
+>>>>>>> Update Income Details with v-error
                 | &nbsp
                 i18n will ensure you meet the mincome
               i18n.helper(v-else-if='!needsIncome') Define up to how much you pledge to contribute to the group each month. Only the minimum needed amount will be given.
@@ -118,20 +134,31 @@ export default {
       'groupMembers',
       'groupSettings',
       'memberProfile',
+<<<<<<< HEAD
       'groupMincomeFormatted',
       'groupMincomeSymbolWithCode',
       'ourUsername',
       'groupMembersByUsername'
+=======
+      'groupMincomeFormatted'
+>>>>>>> Update Income Details with v-error
     ]),
     memberGroupProfile () {
       const profile = this.memberProfile(this.ourUsername) || {}
       return profile.groupProfile || {}
     },
     needsIncome () {
+<<<<<<< HEAD
       return this.form.incomeDetailsType === 'incomeAmount'
     },
     whoIsPledging () {
       return this.groupMembersByUsername.filter(username => this.groupMembers[username].groupProfile.incomeDetailsType === 'pledgeAmount' && username !== this.ourUsername)
+=======
+      return this.form.incomeDetailsKey === 'incomeAmount'
+    },
+    canPledge () {
+      return this.form.incomeDetailsKey === 'pledgeAmount'
+>>>>>>> Update Income Details with v-error
     }
   },
   created () {
@@ -143,7 +170,11 @@ export default {
   },
   methods: {
     resetAmount () {
+<<<<<<< HEAD
       this.form.amount = this.form.incomeDetailsType === this.memberGroupProfile.incomeDetailsType ? this.memberGroupProfile[this.memberGroupProfile.incomeDetailsType] : ''
+=======
+      this.form.amount = this.form.incomeDetailsKey === this.memberGroupProfile.incomeDetailsKey ? this.memberGroupProfile[this.memberGroupProfile.incomeDetailsKey] : ''
+>>>>>>> Update Income Details with v-error
       this.$v.form.$reset()
     },
     closeModal () {
@@ -176,12 +207,20 @@ export default {
   },
   validations: {
     form: {
+<<<<<<< HEAD
       incomeDetailsType: {
+=======
+      incomeDetailsKey: {
+>>>>>>> Update Income Details with v-error
         [L('This field is required')]: required
       },
       amount: {
         [L('This field is required')]: required,
+<<<<<<< HEAD
         [L("It seems your income is not lower than the group's mincome.")]: function (value) {
+=======
+        [L('It seems your income is not lower than the group\'s mincome.')]: function (value) {
+>>>>>>> Update Income Details with v-error
           if (this.needsIncome) {
             return value < this.groupSettings.mincomeAmount - 1
           }
