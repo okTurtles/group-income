@@ -53,7 +53,7 @@ page-section.c-section(:title='L("Invite links")')
     SvgInvitation
 
   // TODO: router-link doesn't work and it might be related to the fact that this p tag is the output result of i18n.vue component.
-  // Discussion needed to solve the problem
+  // Discussion needed to solve the problem.
   i18n.c-invite-footer(
     tag='p'
     html='To generate a new link, you need to <router-link class="link" to="/invite">propose adding a new member</router-link> to your group.'
