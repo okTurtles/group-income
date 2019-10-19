@@ -60,6 +60,7 @@ sbp('sbp/selectors/register', {
     return state
   },
   'state/vuex/state': () => store.state,
+  'state/vuex/getters': () => store.getters,
   'state/vuex/dispatch': (...args) => store.dispatch(...args)
 })
 
@@ -513,7 +514,7 @@ const handleEvent = {
         }
         if (proposal) {
           // cast our vote if we haven't already cast it
-          if (!proposal.votes[store.state.loggedIn.username]) {
+          if (!proposal.votes[store.getters.ourUsername]) {
             const vote = await sbp('gi.contracts/group/proposalVote/create',
               { proposalHash, vote: VOTE_FOR },
               groupID
