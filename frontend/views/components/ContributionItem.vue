@@ -1,50 +1,51 @@
 <template lang='pug'>
 .c-contribution-item
   i(:class='iconClass')
-  template(v-if='hasWhoElse')
-    div(v-if='isVisible')
-      i18n(
-        class='c-contribution-list'
-        :args='{what: what, listOfName: listOfName}'
-        html='<span class="has-text-bold">{what}</span> from {listOfName}'
-      )
+  template(v-if='action === "RECEIVING"')
+    template(v-if='hasWhoElse')
+      div(v-if='isVisible')
+        i18n(
+          class='c-contribution-list'
+          :args='{what: what, listOfName: listOfName}'
+          html='<span class="has-text-bold">{what}</span> from {listOfName}'
+        )
 
-      i18n.is-unstyled.is-link-inherit.link(
-        tag='button'
-        type='button'
-        @click='isVisible = !isVisible'
-      ) Hide
+        i18n.is-unstyled.is-link-inherit.link(
+          tag='button'
+          type='button'
+          @click='isVisible = !isVisible'
+        ) Hide
 
-    template(v-else)
       i18n(
+        v-else
         :args='{what: what, numOthers: notFirstWho.length}'
         @click='isVisible = !isVisible'
         html='<span class="has-text-bold">{what}</span> from <button class="is-unstyled is-link-inherit link">{numOthers} others</button>'
       )
 
-  template(v-else)
-    div(v-if='type==="MONETARY"')
+    template(v-else)
       i18n(
-        v-if='action === "RECEIVING"'
+        v-if='action === "MONETARY"'
         :args='{what: what}'
         html='<span class="has-text-bold">{what}</span> from {firstWho}'
       )
       i18n(
         v-else
         :args='{what: what, firstWho: firstWho}'
-        html='Pledging up to <span class="has-text-bold">{what}</span>'
-      )
-    div(v-else)
-      i18n(
-        v-if='action === "RECEIVING"'
-        :args='{what: what, firstWho: firstWho}'
         html='<span class="has-text-bold">{what}</span> by {firstWho}'
       )
-      i18n(
-        v-else
-        :args='{what: what}'
-        html='<span class="has-text-bold">{what}</span>'
-      )
+
+  template(v-else)
+    i18n(
+      v-if='type==="MONETARY"'
+      :args='{what: what, firstWho: firstWho}'
+      html='Pledging up to <span class="has-text-bold">{what}</span>'
+    )
+    i18n(
+      v-else
+      :args='{what: what}'
+      html='<span class="has-text-bold">{what}</span>'
+    )
 </template>
 
 <script>
