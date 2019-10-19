@@ -26,7 +26,7 @@ export default {
 .modal {
   display: flex;
   position: fixed;
-  z-index: 9998;
+  z-index: $zindex-modal;
   top: 0;
   left: 0;
   bottom: 0;

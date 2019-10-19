@@ -210,7 +210,11 @@ module.exports = (grunt) => {
     // https://docs.cypress.io/guides/guides/module-api.html
     const options = {
       run: {
-        headed: grunt.option('browser') === true
+        headed: grunt.option('browser') === true,
+        ...(process.env.CYPRESS_RECORD_KEY ? {
+          record: true,
+          key: process.env.CYPRESS_RECORD_KEY
+        } : {})
       },
       open: {
         // add cypress.open() options here

@@ -226,6 +226,9 @@ const getters = {
     const settings = getters.groupSettings
     return currencies[settings.mincomeCurrency].displayWithCurrency(settings.mincomeAmount)
   },
+  groupMincomeSymbolWithCode (state, getters) {
+    return currencies[getters.groupSettings.mincomeCurrency].symbolWithCode
+  },
   colors (state) {
     return Colors[state.theme]
   },

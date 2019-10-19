@@ -1,7 +1,11 @@
 <template lang='pug'>
 span.c-wrapper(
+  tabindex='0'
   @mouseenter='show'
   @mouseleave='hide'
+  @focus='show'
+  @blur='hide'
+  aria-label='text'
 )
   slot
   .c-tooltip(
@@ -29,7 +33,7 @@ export default {
     shouldShow: Boolean,
     direction: {
       type: String,
-      validator: (value) => ['bottom', 'bottom-end', 'right', 'right-start'].includes(value),
+      validator: (value) => ['bottom', 'bottom-end', 'right', 'right-start', 'top'].includes(value),
       default: 'bottom'
     }
   },
@@ -65,6 +69,9 @@ export default {
       } else if (this.direction === 'bottom-end') {
         x = scrollX + left + width - this.tooltip.width
         y = scrollY + top + height + spacing
+      } else if (this.direction === 'top') {
+        x = scrollX + left + width / 2 - this.tooltip.width / 2
+        y = scrollY + top - (this.tooltip.height + spacing)
       } else { // 'bottom' as default
         x = scrollX + left + width / 2 - this.tooltip.width / 2
         y = scrollY + top + height + spacing
@@ -103,6 +110,10 @@ export default {
 
 <style lang="scss" scoped>
 @import "../../assets/style/_variables.scss";
+
+.c-wrapper {
+  cursor: pointer;
+}
 
 .c-tooltip {
   position: absolute;
