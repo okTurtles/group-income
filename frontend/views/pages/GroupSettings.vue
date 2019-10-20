@@ -64,7 +64,10 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
   invite-links
 
   page-section(:title='L("Leave Group")')
-    i18n(tag='p' html='This means you will stop having access to the <b>group chat</b> (including direct messages to other group members) and <b>contributions</b>. Re-joining the group is possible, but requires other members to vote and reach an agreement.')
+    i18n(
+      tag='p'
+      :args='LTags("b")'
+    ) This means you will stop having access to the {b_}group chat{_b} (including direct messages to other group members) and {b_}contributions{_b}. Re-joining the group is possible, but requires other members to vote and reach an agreement.
 
     i18n.is-danger.is-outlined(
       tag='button'

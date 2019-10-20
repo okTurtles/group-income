@@ -15,6 +15,18 @@ i18next.use(XHR).init({
 })
 
 Vue.prototype.L = L
+Vue.prototype.LTags = LTags
+
+export function LTags (...tags) {
+  const o = {
+    'br_': '<br/>'
+  }
+  for (const tag of tags) {
+    o[`${tag}_`] = `<${tag}>`
+    o[`_${tag}`] = `</${tag}>`
+  }
+  return o
+}
 
 export default function L (
   key: string,
@@ -65,7 +77,7 @@ Vue.component('i18n', {
       })
     } else {
       if (!context.data.domProps) context.data.domProps = {}
-      context.data.domProps.innerText = translation
+      context.data.domProps.innerHTML = translation
       return h(context.props.tag, context.data)
     }
   }
