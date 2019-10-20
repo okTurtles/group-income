@@ -1,8 +1,9 @@
 <template lang='pug'>
 section.card
-  h3.title.c-title(v-if='title')
-    | {{ title }}
+  .c-title-wrapper(v-if='$slots.cta')
+    h3.title(v-if='title') {{ title }}
     slot(name='cta')
+  h3.title(v-else-if='title') {{ title }}
   slot
 </template>
 
@@ -18,7 +19,7 @@ export default {
 <style lang="scss" scoped>
 @import "../../assets/style/_variables.scss";
 
-.c-title {
+.c-title-wrapper {
   display: flex;
   align-items: center;
   justify-content: space-between;

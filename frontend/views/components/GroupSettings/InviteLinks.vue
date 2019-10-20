@@ -30,12 +30,13 @@ page-section.c-section(:title='L("Invite links")')
         td.c-name
           | {{ item.name }}
           tooltip.c-name-tooltip(
+            v-if='item.isAnyoneLink'
             direction='top'
             :isTextCenter='true'
             :text='L("This invite link was only available during the onboarding period.")'
           )
-            button.is-icon-small(v-if='item.isAnyoneLink')
-              i.icon-info-circle
+            .button.is-icon-smaller.is-primary.c-tip
+              i.icon-info
         td.c-invite-link
           copy-to-clipboard.c-invite-link-wrapper(:textToCopy='item.inviteLink')
             span.link.has-ellipsis {{ item.inviteLink }}
@@ -50,7 +51,25 @@ page-section.c-section(:title='L("Invite links")')
             :class='item.state.isExpired ? "expired" : ""'
           ) {{ item.state.expireInfo }}
         td.c-action
-          invite-action-button.c-invite-action-button(:linkExpired='item.state.isExpired')
+          menu-parent
+            menu-trigger.is-icon
+              i.icon-ellipsis-v
+
+            menu-content.c-action-dropdown
+              ul
+                menu-item(
+                  tag='button'
+                  item-id='original'
+                  icon='vote-yea'
+                )
+                  i18n See original proposal
+                menu-item(
+                  v-if='!item.state.isExpired'
+                  tag='button'
+                  item-id='revoke'
+                  icon='times'
+                )
+                  i18n Revoke Link
 
   .c-empty-list(v-else)
     SvgInvitation
@@ -59,16 +78,16 @@ page-section.c-section(:title='L("Invite links")')
   // Discussion needed to solve the problem.
   i18n.c-invite-footer(
     tag='p'
-    @click='toInvite'
-    html='To generate a new link, you need to <span class="link">propose adding a new member</span> to your group.'
-  )
+    :args='{ r1: "<router-link class=\'link\' to=\'/invite\'>", r2: "</router-link>"}'
+    compile
+  ) To generate a new link, you need to {r1}propose adding a new member{r2} to your group.
 </template>
 
 <script>
+import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/Menu/index.js'
 import PageSection from '@components/PageSection.vue'
 import Tooltip from '@components/Tooltip.vue'
 import SvgInvitation from '@svgs/invitation.svg'
-import InviteActionButton from './InviteActionButton.vue'
 import CopyToClipboard from '@components/CopyToClipboard.vue'
 
 export default {
@@ -76,9 +95,12 @@ export default {
   components: {
     PageSection,
     SvgInvitation,
-    InviteActionButton,
     Tooltip,
-    CopyToClipboard
+    CopyToClipboard,
+    MenuParent,
+    MenuTrigger,
+    MenuContent,
+    MenuItem
   },
   data () {
     return {
@@ -208,10 +230,16 @@ export default {
   .c-name {
     grid-area: name;
     padding-right: $size-2;
+    line-height: 1.3125rem;
 
     button {
       display: inline-block;
       color: $primary_0;
+    }
+
+    .c-tip {
+      margin-left: $size-4 / 2;
+      line-height: 1.3125rem;
     }
   }
 
@@ -304,6 +332,13 @@ export default {
     @include until($tablet) {
       display: none;
     }
+  }
+
+  .c-action-dropdown {
+    min-width: 13.375rem;
+    width: max-content;
+    margin: 3.5 * $spacer 0 0 3 * $spacer;
+    transform: translateX(-100%);
   }
 }
 

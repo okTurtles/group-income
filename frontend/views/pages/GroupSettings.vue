@@ -3,7 +3,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
   template(#title='') {{ L('Group Settings') }}
   template(#description='') {{ L('Changes to these settings will be visible to all group members') }}
 
-  page-section(title='' v-if='false')
+  page-section(title='')
 
     form
       .field
@@ -61,7 +61,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
         data-test='saveBtn'
       ) Save changes
 
-  invitelinks
+  invite-links
 
   page-section(:title='L("Leave Group")')
     i18n(tag='p' html='This means you will stop having access to the <b>group chat</b> (including direct messages to other group members) and <b>contributions</b>. Re-joining the group is possible, but requires other members to vote and reach an agreement.')
@@ -94,7 +94,7 @@ import currencies from '@view-utils/currencies.js'
 
 import Page from '@pages/Page.vue'
 import PageSection from '@components/PageSection.vue'
-import Invitelinks from '@components/GroupSettings/InviteLinks.vue'
+import InviteLinks from '@components/GroupSettings/InviteLinks.vue'
 
 export default {
   name: 'GroupSettings',
@@ -102,7 +102,7 @@ export default {
   components: {
     Page,
     PageSection,
-    Invitelinks
+    InviteLinks
   },
   data () {
     return {

@@ -8,7 +8,7 @@
   slot
   transition(name='fade')
     i18n.c-tooltip(
-      v-if='ephemeral.tooltipActive'
+      v-if='ephemeral.isTooltipActive'
       key='test'
       tag='p'
     ) Copied to clipboard!
@@ -16,11 +16,11 @@
 
 <script>
 export default {
-  name: 'copyToClipboard',
+  name: 'CopyToClipboard',
   data () {
     return {
       ephemeral: {
-        tooltipActive: false
+        isTooltipActive: false
       }
     }
   },
