@@ -76,7 +76,6 @@ export default {
   color: $text_0;
   font-family: "Poppins";
   text-align: center;
-  font-weight: 100;
   cursor: pointer;
 
   i {
