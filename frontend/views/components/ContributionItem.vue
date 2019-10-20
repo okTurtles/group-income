@@ -40,7 +40,7 @@ export default {
       type: String,
       validator: function (value) {
         // The value must match one of these strings
-        return ['RECEIVING', 'GIVING'].indexOf(value) !== -1 || null
+        return ['RECEIVING', 'GIVING'].indexOf(value) !== -1
       },
       default: 'RECEIVING'
     },
