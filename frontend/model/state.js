@@ -98,6 +98,8 @@ sbp('sbp/selectors/register', {
 // http://vuex.vuejs.org/en/mutations.html
 const mutations = {
   login (state, user) {
+    // make sure each time we use the app a valid
+    // paymentsByMonth exists for the current month
     const monthTimestamp = currentMonthTimestamp()
     if (!state.paymentsByMonth) {
       state.paymentsByMonth = {}
@@ -264,15 +266,15 @@ const getters = {
     return currency && currency.symbolWithCode
   },
   groupIncomeDistribution (state, getters) {
-    const profiles = getters.groupMembers
+    const groupMembers = getters.groupMembers
     const mincomeAmount = getters.groupMincomeAmount
     const currentIncomeDistribution = []
-    for (const username in profiles) {
-      const profile = profiles[username]
-      const incomeDetailsType = profile && profile.groupProfile.incomeDetailsType
+    for (const username in groupMembers) {
+      const member = groupMembers[username]
+      const incomeDetailsType = member && member.groupProfile.incomeDetailsType
       if (incomeDetailsType) {
         const adjustment = incomeDetailsType === 'incomeAmount' ? 0 : mincomeAmount
-        const adjustedAmount = adjustment + profile.groupProfile[incomeDetailsType]
+        const adjustedAmount = adjustment + member.groupProfile[incomeDetailsType]
         currentIncomeDistribution.push({ name: username, amount: adjustedAmount })
       }
     }
