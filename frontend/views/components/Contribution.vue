@@ -185,8 +185,13 @@ export default {
 }
 
 .buttons {
-  margin-top: $spacer-sm;
-  margin-bottom: $spacer-xs;
+  padding-top: $spacer;
+  padding-bottom: $spacer-xs;
+  margin-top: 0;
+
+  button {
+    margin-top: 0;
+  }
 }
 
 .button + .c-buttons-right {
@@ -206,3 +211,9 @@ export default {
   align-items: baseline;
 }
 </style>
+
+// <style lang="scss">
+// .c-contribution-item .c-icon-round {
+//   margin: 0 !important;
+// }
+// </style>
