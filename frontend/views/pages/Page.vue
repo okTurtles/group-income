@@ -57,28 +57,22 @@ $pagePadding: 1rem;
 $pagePaddingTablet: 1.5rem;
 $pagePaddingDesktop: 5.5rem;
 
+.p-with-sidebar,
 .p-no-sidebar {
   height: 100vh;
   width: 100vw;
+  overflow: auto;
 
   @include tablet {
-    overflow: auto;
     width: auto;
   }
 }
 
 .p-with-sidebar {
   display: grid;
-  overflow: auto;
   grid-template-areas: "p-header" "p-main";
   grid-template-columns: 1fr;
   grid-template-rows: auto minmax(0, 1fr);
-  width: 100vw;
-  height: 100vh;
-
-  @include tablet {
-    width: auto;
-  }
 
   @include widescreen {
     grid-template-columns: 1fr $rightSideWidth;
