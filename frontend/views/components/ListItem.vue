@@ -86,7 +86,8 @@ export default {
     margin-right: $spacer;
     font-size: 1rem;
     color: $text_1;
-    transition: transform cubic-bezier(0.18, 0.89, 0.32, 1.28) 0.3s, color ease-in 0.3s;
+    transform: translateY(0.2rem); // visually vertical aligned
+    transition: color ease-in 0.3s;
   }
 
   &::before {
@@ -99,16 +100,6 @@ export default {
     transition: height 0.3s ease-out, 0.3s background-color ease-out 0.3s;
   }
 
-  &:hover,
-  &:focus {
-    background-color: $general_1;
-
-    &::before {
-      background-color: $general_0;
-      transition: height 0.3s ease-out, 0s background-color;
-    }
-  }
-
   &.is-active,
   &:hover,
   &:focus {
@@ -118,6 +109,15 @@ export default {
 
     &::before {
       height: 100%;
+      transition: height 0.3s ease-out, 0s background-color;
+    }
+  }
+
+  &:hover {
+    background-color: $general_1;
+
+    &::before {
+      background-color: $general_0;
     }
   }
 

@@ -905,6 +905,14 @@ export default {
           {
             name: 'danger',
             usage: 'Used on elements to show something wrong happened'
+          },
+          {
+            name: 'general',
+            usage: 'Used on backgrounds and interactions'
+          },
+          {
+            name: 'text',
+            usage: 'Used on text elements'
           }
         ],
         svgs: [
