@@ -131,7 +131,7 @@ var router = new Router({
       path: '/group-settings',
       component: GroupSettings,
       name: 'GroupSettings',
-      meta: { title: L('Group Seettings') },
+      meta: { title: L('Group Settings') },
       beforeEnter: createEnterGuards(loginGuard)
     },
     {

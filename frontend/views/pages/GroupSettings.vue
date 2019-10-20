@@ -61,6 +61,8 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
         data-test='saveBtn'
       ) Save changes
 
+  invite-links
+
   page-section(:title='L("Leave Group")')
     i18n(
       tag='p'
@@ -95,13 +97,15 @@ import currencies from '@view-utils/currencies.js'
 
 import Page from '@pages/Page.vue'
 import PageSection from '@components/PageSection.vue'
+import InviteLinks from '@components/GroupSettings/InviteLinks.vue'
 
 export default {
   name: 'GroupSettings',
   mixins: [validationMixin],
   components: {
     Page,
-    PageSection
+    PageSection,
+    InviteLinks
   },
   data () {
     return {
@@ -140,5 +144,4 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "../../assets/style/_variables.scss";
 </style>
