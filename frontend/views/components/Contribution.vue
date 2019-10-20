@@ -1,40 +1,41 @@
 <template lang='pug'>
 transition(name='replacelist')
-  li.c-contribution(v-if='isEditing || isAdding' key='editing')
-    input.input(
-      type='text'
-      ref='input'
-      :placeholder='randomPlaceholder'
-      maxlength='20'
-      :aria-label='L("Your contribution")'
-      :aria-invalid='hasError'
-      v-focus=''
-      v-model='isFilled'
-      @keyup='verifyValue'
-      @keydown.esc='cancel'
-      @keydown.enter='handleEnter'
-    )
-    .buttons
-      i18n.button.is-small.is-danger.is-outlined(
-        v-if='isEditing && !isAdding'
-        tag='button'
-        @click='handleDelete'
-      ) Remove
-      .c-buttons-right
-        i18n.button.is-small.is-outlined(
+  li.c-contribution-edit(v-if='isEditing || isAdding' key='editing')
+    .c-contribution
+      input.input(
+        type='text'
+        ref='input'
+        :placeholder='randomPlaceholder'
+        maxlength='20'
+        :aria-label='L("Your contribution")'
+        :aria-invalid='hasError'
+        v-focus=''
+        v-model='isFilled'
+        @keyup='verifyValue'
+        @keydown.esc='cancel'
+        @keydown.enter='handleEnter'
+      )
+      .buttons
+        i18n.button.is-small.is-danger.is-outlined(
+          v-if='isEditing && !isAdding'
           tag='button'
-          @click='cancel'
-        ) Cancel
-        i18n.button.is-small(
-          v-if='isAdding && isFilled'
-          tag='button'
-          @click='handleSubmit'
-        ) Add
-        i18n.button.is-small(
-          v-if='isEditing && isFilled'
-          tag='button'
-          @click='handleSubmit'
-        ) Save
+          @click='handleDelete'
+        ) Remove
+        .c-buttons-right
+          i18n.button.is-small.is-outlined(
+            tag='button'
+            @click='cancel'
+          ) Cancel
+          i18n.button.is-small(
+            v-if='isAdding && isFilled'
+            tag='button'
+            @click='handleSubmit'
+          ) Add
+          i18n.button.is-small(
+            v-if='isEditing && isFilled'
+            tag='button'
+            @click='handleSubmit'
+          ) Save
 
     p.error.c-spacer-above(v-if='hasError' role='alert') {{this.hasError}}
 
@@ -163,13 +164,15 @@ export default {
 @import "../../assets/style/_variables.scss";
 .c-contribution {
   padding: $spacer * 1.5 0 $spacer 0;
+}
 
+.c-contribution-edit {
   &:first-child,
-  & + .c-contribution{
+  .c-contribution + .c-contribution{
     padding-top: 0;
   }
 
-  & + .c-spacer-above{
+  & + .c-spacer-above .c-contribution{
     padding-top: $spacer;
   }
 }
