@@ -38,7 +38,7 @@ describe('Group Creation and Inviting Members', () => {
       cy.getByDT('remove').click()
     })
     cy.getByDT('invitee').should('have.length', 1)
-    cy.getByDT('closeModal').click()
+    cy.closeModal()
 
     cy.log('user1 decides to actually invite user2 and user3 to the group')
     cy.giInviteMember([`user2-${userId}`, `user3-${userId}`])

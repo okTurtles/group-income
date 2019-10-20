@@ -23,7 +23,7 @@ Cypress.Commands.add('giSignUp', (userName, password = '123456789') => {
   cy.getByDT('password').type(password)
 
   cy.getByDT('signSubmit').click()
-
+  cy.getByDT('closeModal').should('not.exist')
   cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
 })
 
@@ -33,6 +33,7 @@ Cypress.Commands.add('giLogin', (userName, password = '123456789') => {
   cy.getByDT('password').clear().type(password)
 
   cy.getByDT('loginSubmit').click()
+  cy.getByDT('closeModal').should('not.exist')
 
   // We changed pages (to dashboard or create group)
   // so there's no login button anymore
@@ -44,11 +45,17 @@ Cypress.Commands.add('giLogOut', () => {
     if ($app.find('[data-test="userProfile"]').length) {
       cy.getByDT('settingsBtn').click()
       cy.getByDT('link-logout').click()
+      cy.getByDT('closeModal').should('not.exist')
     } else {
       cy.getByDT('logout').click()
     }
   })
   cy.getByDT('welcomeHome').should('contain', 'Welcome to GroupIncome')
+})
+
+Cypress.Commands.add('closeModal', () => {
+  cy.getByDT('closeModal').click()
+  cy.getByDT('closeModal').should('not.exist')
 })
 
 Cypress.Commands.add('giCreateGroup', (name, { image = 'imageTest.png', values = 'Testing group values', income = 200 } = {}) => {
@@ -118,6 +125,7 @@ Cypress.Commands.add('giInviteMember', (
     cy.getByDT('reason', 'textarea').clear().type(reason)
     cy.getByDT('submitBtn').click()
     cy.getByDT('finishBtn').click()
+    cy.getByDT('closeModal').should('not.exist')
   } else {
     cy.getByDT('submitBtn').click()
     cy.getByDT('invitee').each(([invitee]) => {
@@ -125,7 +133,7 @@ Cypress.Commands.add('giInviteMember', (
         .getByDT('feedbackMsg')
         .should('contain', 'Member invited successfully!')
     })
-    cy.getByDT('closeModal').click()
+    cy.closeModal()
   }
 })
 
