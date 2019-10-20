@@ -65,25 +65,37 @@ export default {
   computed: {
     contribution () {
       if (this.hasWhoElse) {
-        return L(`<span class="has-text-bold">${this.what}</span> ${this.actionName} <button class="is-unstyled is-link-inherit link">${this.notFirstWho.length} members</button>`)
+        const html = {
+          0: `<span class="has-text-bold">${this.what}</span>`,
+          1: `<button class="is-unstyled is-link-inherit link">${this.notFirstWho.length}`,
+          2: '</button>'
+        }
+        if (this.action === 'RECEIVING' && this.type === 'MONETARY') {
+          return L('{0} from {1} members{2}', html)
+        } else {
+          return L('{0} to {1} members{2}', html)
+        }
       } else {
-        return L(`<span class="has-text-bold">${this.what}</span> ${this.actionName} ${this.firstWho}`)
+        const html = {
+          0: `<span class="has-text-bold">${this.what}</span>`,
+          1: this.firstWho
+        }
+        return L('{0} by {1}', html)
       }
     },
 
     listOfName () {
-      const list = this.who.map((name, index) => {
-        return `<p class="has-text-1 c-contribution-list-item">${name}</p>`
-      }).join('')
-      return L(`<span class="has-text-bold">${this.what}</span> ${this.actionName} ${list}`)
-    },
-
-    actionName () {
-      let verb = 'to'
-      if (this.action === 'RECEIVING') {
-        verb = this.type === 'MONETARY' ? 'by' : 'from'
+      const html = {
+        0: `<span class="has-text-bold">${this.what}</span>`,
+        1: this.who.map((name, index) => {
+          return `<p class="has-text-1 c-contribution-list-item">${name}</p>`
+        }).join('')
       }
-      return verb
+      if (this.action === 'RECEIVING') {
+        return L('{0} from {1}', html)
+      } else {
+        return L('{0} to {1}', html)
+      }
     },
 
     firstWho () {
