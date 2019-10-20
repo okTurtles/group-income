@@ -3,12 +3,13 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
   template(#title='') {{ L('Contributions') }}
 
   // v-if='memberProfile(ourUsername).groupProfile.incomeDetailsKey'
-  page-section.c-card-empty
-    svg-contributions.c-svg
-    div
-      i18n(tag='h3') Add your income details
-      i18n.c-text(tag='p') This will allow you to start receiving or giving mincome.
-      i18n(tag='button' @click='openModal("IncomeDetails")') Add income details
+  banner(
+    :isCard='true'
+    :title='L("Add your income details")'
+    :svg='SvgContributions'
+  )
+    i18n(tag='p') This will allow you to start receiving or giving mincome.
+    i18n(tag='button' @click='openModal("IncomeDetails")') Add income details
 
   section.card
     i18n(tag='h2' class='card-header') Receiving
@@ -138,6 +139,7 @@ import sbp from '~/shared/sbp.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import { OPEN_MODAL } from '@utils/events.js'
+import Banner from '@components/Banner.vue'
 import SvgContributions from '@svgs/contributions.svg'
 import { decimals } from '@view-utils/validators.js'
 import { mapGetters } from 'vuex'
@@ -156,6 +158,7 @@ export default {
   components: {
     Page,
     PageSection,
+    Banner,
     GroupMincome,
     Contribution,
     TextWho,
@@ -164,6 +167,7 @@ export default {
   },
   data () {
     return {
+      SvgContributions,
       form: {
         incomeDetailsType: 'incomeAmount',
         incomeAmount: 0,
@@ -311,20 +315,4 @@ export default {
 
 <style lang="scss" scoped>
 @import "../../assets/style/_variables.scss";
-.c-card-empty {
-  display: flex;
-
-  .c-svg {
-    width: 4rem;
-    height: 4rem;
-    margin-right: $spacer;
-    flex-shrink: 0;
-
-    @include widescreen {
-      width: 6.25rem;
-      height: 6.25rem;
-      margin-right: 2.5rem;
-    }
-  }
-}
 </style>

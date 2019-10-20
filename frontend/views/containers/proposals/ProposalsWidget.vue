@@ -1,24 +1,31 @@
 <template lang='pug'>
-ul.c-proposals(data-test='proposalsWidget')
-  li.c-empty(v-if='Object.keys(currentGroupState.proposals).length === 0')
-    svg-vote.c-svg
-    div
-      i18n(tag='h3') Proposals
-      i18n.c-text(tag='p') In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others.
-      i18n.has-text-1(tag='p') No one has created a proposal yet.
+  banner(
+    v-if='!hasProposals'
+    :title='L("Proposals")'
+    :svg='SvgVote'
+    :isCard='true'
+  )
+    i18n(tag='p') In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others.
+    i18n.has-text-1(tag='p') No one has created a proposal yet.
+
   // TODO: view without current proposals
   // TODO: button "see all proposals"
-  proposal-box(
+  page-section(
     v-else
-    v-for='hashes in proposals'
-    :key='hashes[0]'
-    :proposalHashes='hashes'
+    :title='L("Proposals")'
   )
+    ul.c-proposals(data-test='proposalsWidget')
+      proposal-box(
+        v-for='hashes in proposals'
+        :key='hashes[0]'
+        :proposalHashes='hashes'
+      )
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
 import SvgVote from '@svgs/vote.svg'
+import Banner from '@components/Banner.vue'
 import ProposalBox from '@containers/proposals/ProposalBox.vue'
 import { STATUS_OPEN } from '@model/contracts/voting/proposals.js'
 
@@ -26,10 +33,12 @@ export default {
   name: 'Proposals',
   components: {
     ProposalBox,
+    Banner,
     SvgVote
   },
   data () {
     return {
+      SvgVote,
       ephemeral: {
         // Keep initial proposals order even after voting in a proposal
         // That way recently voted proposals don't change position immediatly.
@@ -43,6 +52,9 @@ export default {
       'currentGroupState',
       'ourUserIdentityContract'
     ]),
+    hasProposals () {
+      return Object.keys(this.currentGroupState.proposals).length > 0
+    },
     proposals () {
       if (this.proposalsSorted) {
         return this.proposalsSorted
@@ -94,28 +106,3 @@ export default {
   }
 }
 </script>
-
-<style lang="scss" scoped>
-@import "../../../assets/style/_variables.scss";
-
-.c-empty {
-  display: flex;
-}
-
-.c-svg {
-  width: 4rem;
-  height: 4rem;
-  margin-right: $spacer;
-  flex-shrink: 0;
-
-  @include widescreen {
-    width: 6.25rem;
-    height: 6.25rem;
-    margin-right: 2.5rem;
-  }
-}
-
-.c-text {
-  margin: $spacer-sm 0;
-}
-</style>

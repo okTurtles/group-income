@@ -11,8 +11,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
     //- group-pledges-graph
     progress-overview
 
-  page-section(:title='Object.keys(currentGroupState.proposals).length > 0 ? L("Proposals") : ""')
-    proposals
+  proposals-widget
 
   //- page-section(title='Support History')
   //-   support-history
@@ -32,7 +31,7 @@ import { mapGetters, mapState } from 'vuex'
 import Page from '@pages/Page.vue'
 import PageSection from '@components/PageSection.vue'
 import Overview from '@containers/Overview.vue'
-import Proposals from '@containers/proposals/ProposalsWidget.vue'
+import ProposalsWidget from '@containers/proposals/ProposalsWidget.vue'
 // import GroupPledgesGraph from '@containers/GroupPledgesGraph.vue'
 import ProgressOverview from '@components/ProgressOverview.vue'
 import StartInviting from '@components/StartInviting.vue'
@@ -59,7 +58,7 @@ export default {
     Page,
     PageSection,
     Overview,
-    Proposals,
+    ProposalsWidget,
     // GroupPledgesGraph
     ProgressOverview,
     // SupportHistory,

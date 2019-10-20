@@ -114,9 +114,9 @@ page(
               i.icon-link
               | Share with everyone
 
-  article#typography
+  article#cards
     section.card
-      i18n(tag='h2' class='card-header') Cards
+      i18n(tag='h2' class='card-header') Cards / Banners
 
       table
         thead
@@ -135,6 +135,23 @@ page(
             .card
               h2.card-header Title
               p Description
+        tr
+          td
+            pre
+              | banner(
+              |   title='Proposals'
+              |   :svg='config.SvgVote'
+              |   :isCard='true'
+              | )
+              |   Any content inside
+          td
+            banner(
+              title='Proposals'
+              :svg='config.SvgVote'
+              :isCard='true'
+            )
+              i18n(tag='p') In Group Income, every member of the group gets to vote on important decisions, like removing or adding members, changing the mincome value and others.
+              i18n.has-text-1(tag='p') No one has created a proposal yet.
 
   article#icons
     section.card
@@ -850,6 +867,7 @@ import sbp from '~/shared/sbp.js'
 import Message from '@components/Message.vue'
 import Tooltip from '@components/Tooltip.vue'
 import Badge from '@components/Badge.vue'
+import Banner from '@components/Banner.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgAccess from '@svgs/access.svg'
 import SvgBitcoin from '@svgs/bitcoin.svg'
@@ -870,6 +888,7 @@ export default {
     return {
       articles: [],
       config: {
+        SvgVote,
         colors: [
           {
             name: 'primary',
@@ -962,6 +981,7 @@ export default {
   },
   components: {
     Page,
+    Banner,
     Message,
     Tooltip,
     Badge,
@@ -1051,10 +1071,10 @@ table {
     }
   }
   td:first-child {
-    min-width: 21rem;
+    min-width: 14rem;
   }
   td:last-child {
-    width: 30rem;
+    width: 35rem;
   }
 }
 
