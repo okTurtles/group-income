@@ -42,7 +42,10 @@ page-section.c-section(:title='L("Invite links")')
             span.link.has-ellipsis {{ item.inviteLink }}
             button.is-icon-small.has-background.c-invite-link-button
               i.icon-copy.is-regular
-          button.is-icon.c-invite-link-button-mobile(@click='activateWebShare(item.inviteLink)')
+          button.is-icon-small.c-invite-link-button-mobile(
+            @click='activateWebShare(item.inviteLink)'
+            :aria-label='L("Copy link")'
+          )
             i.icon-ellipsis-v
         td.c-state
           i18n.c-state-description {{ item.state.description }}
@@ -52,7 +55,7 @@ page-section.c-section(:title='L("Invite links")')
           ) {{ item.state.expireInfo }}
         td.c-action
           menu-parent
-            menu-trigger.is-icon
+            menu-trigger.is-icon(:aria-label='L("Show list")')
               i.icon-ellipsis-v
 
             menu-content.c-action-dropdown
@@ -250,9 +253,8 @@ export default {
     }
 
     .c-invite-link-button {
-      padding: 0 $spacer / 3;
-      width: 1.6875rem;
-      height: 1.6875rem;
+      margin-left: $spacer-xs;
+      flex-shrink: 0;
       font-weight: normal;
     }
 
