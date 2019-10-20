@@ -317,7 +317,7 @@ module.exports = (grunt) => {
         alias({
           // https://vuejs.org/v2/guide/installation.html#Standalone-vs-Runtime-only-Build
           resolve: ['.vue', '.js', '.svg'],
-          vue: path.resolve('./node_modules/vue/dist/vue.common.js'),
+          vue: path.resolve('./node_modules/vue/dist/vue.esm.js'),
           '~': path.resolve('./'),
           '@controller': path.resolve('./frontend/controller'),
           '@model': path.resolve('./frontend/model'),
@@ -373,7 +373,10 @@ module.exports = (grunt) => {
         // VuePlugin(),
         flow({ all: true }),
         commonjs({
-          // include: 'node_modules/**'
+          // NOTE: uncommenting this saves ~1 second off build process
+          //       while making it a massive pain to deal with dependencies
+          //       and causing "ReferenceError: require is not defined"
+          // include: /(node_modules\/(blakejs|multihashes|tweetnacl|localforage|@babel|vue.+).*|primus\.js$)/,
           namedExports: {
             'node_modules/vuelidate/lib/validators/index.js': ['required', 'between', 'email', 'minLength', 'requiredIf']
           },

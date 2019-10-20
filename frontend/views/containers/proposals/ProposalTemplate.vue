@@ -75,8 +75,14 @@
     template(slot='footer' v-if='!isConfirmation && rule')
       .c-footer
         i.icon-vote-yea
-        i18n(v-if='groupShouldPropose' html='According to your voting rules, <strong>{value} out of {total} members</strong> will have to agree with this.' :args='rule')
-        i18n(v-else html='Your group has less than 3 members, so <strong>this change will be immediate</strong> (no voting required).')
+        i18n(
+          v-if='groupShouldPropose'
+          :args='{ ...rule, ...LTags("strong") }'
+        ) According to your voting rules, {strong_}{value} out of {total} members{_strong} will have to agree with this.
+        i18n(
+          v-else
+          :args='LTags("strong")'
+        ) Your group has less than 3 members, so {strong_}this change will be immediate{_strong} (no voting required).
 </template>
 
 <script>
