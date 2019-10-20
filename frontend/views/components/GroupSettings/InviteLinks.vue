@@ -231,11 +231,7 @@ export default {
     grid-area: name;
     padding-right: $size-2;
     line-height: 1.3125rem;
-
-    button {
-      display: inline-block;
-      color: $primary_0;
-    }
+    align-items: center;
 
     .c-tip {
       margin-left: $size-4 / 2;

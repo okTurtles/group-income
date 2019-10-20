@@ -43,9 +43,9 @@ export default {
 
       this.$refs.input.select()
       document.execCommand('copy')
-      this.ephemeral.tooltipActive = true
+      this.ephemeral.isTooltipActive = true
       setTimeout(() => {
-        this.ephemeral.tooltipActive = false
+        this.ephemeral.isTooltipActive = false
       }, 1500)
     }
   }
