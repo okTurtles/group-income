@@ -16,7 +16,6 @@ describe('Group Creation and Inviting Members', () => {
     cy.giLogin(`user1-${userId}`)
 
     cy.giCreateGroup(groupName, { income: 400 })
-    cy.getByDT('welcomeGroup').should('contain', `Welcome ${groupName}!`)
 
     cy.getByDT('inviteButton').click()
 

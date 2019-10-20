@@ -24,12 +24,7 @@ describe('Proposals - Add members', () => {
   it('user1 logins back and creates a group', () => {
     cy.giLogin(`user1-${userId}`)
 
-    cy.giCreateGroup(groupName, {
-      income: 400
-    })
-    cy.getByDT('profileName').should('contain', `user1-${userId}`)
-
-    cy.getByDT('welcomeGroup').should('contain', `Welcome ${groupName}!`)
+    cy.giCreateGroup(groupName, { income: 400 })
   })
 
   it('user1 invites user2 and user3 to the group and they accept', () => {

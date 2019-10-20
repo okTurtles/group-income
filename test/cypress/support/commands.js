@@ -82,6 +82,7 @@ Cypress.Commands.add('giCreateGroup', (name, { image = 'imageTest.png', values =
 
   cy.getByDT('finishBtn').click()
 
+  cy.getByDT('welcomeGroup').should('contain', `Welcome ${name}!`)
   cy.getByDT('toDashboardBtn').click()
 })
 

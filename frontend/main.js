@@ -1,4 +1,5 @@
 import Vue from 'vue'
+import { mapMutations } from 'vuex'
 // import SBP stuff before anything else so that domains register themselves before called
 import sbp from '~/shared/sbp.js'
 import '~/shared/domains/okTurtles/data.js'
@@ -79,10 +80,28 @@ async function startApp () {
       Navigation,
       Modal
     },
+    mounted () {
+      const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)') || {}
+      if (reducedMotionQuery.matches || window.Cypress) {
+        this.setReducedMotion(true)
+      }
+    },
     computed: {
       showNav () {
-        return this.$store.state.loggedIn && this.$store.getters.groupsByName.length >= 1
+        return this.$store.state.loggedIn && this.$store.getters.groupsByName.length > 0
+      },
+      appClasses () {
+        return {
+          'l-with-navigation': this.showNav,
+          'l-no-navigation': !this.showNav,
+          'js-reducedMotion': this.$store.state.reducedMotion
+        }
       }
+    },
+    methods: {
+      ...mapMutations([
+        'setReducedMotion'
+      ])
     },
     store // make this and all child components aware of the new store
   }).$mount('#app')
