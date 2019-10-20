@@ -14,21 +14,18 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
       i18n(
         v-if='fakeStore.receiving.monetary'
         tag='p'
-        :args='{upTo: fakeStore.upTo, currency: fakeStore.currency}'
-        html='You need<span class="has-text-bold has-text-0">{currency}{upTo}</span>'
-      )
+        :args='{upTo: fakeStore.upTo,bold_:\'<span class="has-text-bold has-text-0">\',_bold:\'</span>\',currency:fakeStore.currency}'
+      ) You need {bold_}{currency}{upTo}{_bold}
       i18n(
         v-else
         tag='p'
-        :args='{upTo: fakeStore.upTo, currency: fakeStore.currency}'
-        html='You are pledging up to<span class="has-text-bold has-text-0">{currency}{upTo}</span>'
-      )
+        :args='{upTo: fakeStore.upTo,bold_:\'<span class="has-text-bold has-text-0">\',_bold:\'</span>\',currency:fakeStore.currency}'
+      ) You are pledging up to {bold_}{currency}{upTo}{_bold}
 
       i18n(
         tag='p'
-        :args='{paymentMethod: fakeStore.paymentMethod}'
-        html='Payment method<span class="has-text-bold has-text-0">{paymentMethod}</span>'
-      )
+        :args='{bold_:\'<span class="has-text-bold has-text-0">\',_bold:\'</span>\',paymentMethod:fakeStore.paymentMethod}'
+      ) Payment method {bold_}{paymentMethod}{_bold}
 
     div
       button.button.is-small(
