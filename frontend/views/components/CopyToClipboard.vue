@@ -8,14 +8,13 @@
   slot
   transition(name='fade')
     i18n.c-tooltip(
-      tag='p'
       v-if='ephemeral.tooltipActive'
+      key='test'
+      tag='p'
     ) Copied to clipboard!
 </template>
 
 <script>
-import { activateWebShare } from '../utils/webShare.js'
-
 export default {
   name: 'copyToClipboard',
   data () {
@@ -35,7 +34,7 @@ export default {
     copyToClipboard () {
       // if the user is using the device that supports web share API, use it and then skip the other logics below.
       if (navigator.share) {
-        activateWebShare({
+        navigator.share({
           title: this.L('Your invite'),
           url: this.textToCopy
         })
@@ -65,49 +64,25 @@ export default {
     opacity: 0;
     z-index: -100;
   }
+}
 
-  .c-tooltip {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translate(-50%, calc(-100% - #{$size-3}));
-    min-width: 3rem;
-    width: max-content;
-    border-radius: $radius;
-    padding: $spacer-sm;
+.c-tooltip {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, calc(-100% - #{$size-3}));
+  min-width: 3rem;
+  width: max-content;
+  border-radius: $radius;
+  padding: $spacer-sm;
+  z-index: $zindex-tooltip;
+  pointer-events: none;
+  background-color: $text_0;
+  color: #fff;
+
+  &:not(.fade-enter-active):not(.fade-leave-active) {
     opacity: 0.95;
-    z-index: $zindex-tooltip;
-    pointer-events: none;
-    background-color: $text_0;
-    color: #fff;
   }
 }
 
-/*
-.fade-enter-active {
-  animation: fadein 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
-}
-.fade-leave-active {
-  animation: fadeout 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
-}
-
-@keyframes fadein {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-@keyframes fadeout {
-  from {
-    opacity: 1;
-  }
-
-  to {
-    opacity: 0;
-  }
-}
-*/
 </style>

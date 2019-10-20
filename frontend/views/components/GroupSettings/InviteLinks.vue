@@ -41,6 +41,8 @@ page-section.c-section(:title='L("Invite links")')
             span.link.has-ellipsis {{ item.inviteLink }}
             button.is-icon-small.has-background.c-invite-link-button
               i.icon-copy.is-regular
+          button.is-icon.c-invite-link-button-mobile(@click='activateWebShare(item.inviteLink)')
+            i.icon-ellipsis-v
         td.c-state
           i18n.c-state-description {{ item.state.description }}
           i18n.c-state-expire(
@@ -49,6 +51,7 @@ page-section.c-section(:title='L("Invite links")')
           ) {{ item.state.expireInfo }}
         td.c-action
           invite-action-button.c-invite-action-button(:linkExpired='item.state.isExpired')
+
   .c-empty-list(v-else)
     SvgInvitation
 
@@ -56,7 +59,8 @@ page-section.c-section(:title='L("Invite links")')
   // Discussion needed to solve the problem.
   i18n.c-invite-footer(
     tag='p'
-    html='To generate a new link, you need to <router-link class="link" to="/invite">propose adding a new member</router-link> to your group.'
+    @click='toInvite'
+    html='To generate a new link, you need to <span class="link">propose adding a new member</span> to your group.'
   )
 </template>
 
@@ -131,6 +135,17 @@ export default {
   methods: {
     unfocusSelect () {
       this.$refs.select.blur()
+    },
+    toInvite (e) {
+      if (e.target.tagName === 'SPAN') this.$router.push({ path: '/invite' })
+    },
+    activateWebShare (inviteLink) {
+      if (navigator.share) {
+        navigator.share({
+          title: this.L('Your invite'),
+          url: inviteLink
+        })
+      }
     }
   },
   computed: {
@@ -173,15 +188,15 @@ export default {
   @include phone {
     thead tr {
       grid-template-columns: 81% auto;
-      grid-template-areas: "name action";
+      grid-template-areas: "name invite-link";
     }
 
     tbody tr {
       grid-template-columns: 81% auto;
       grid-template-rows: 1fr 1fr;
       grid-template-areas:
-        "name action"
-        "state action";
+        "name invite-link"
+        "state invite-link";
     }
   }
 
@@ -217,8 +232,21 @@ export default {
       font-weight: normal;
     }
 
-    @include phone {
+    .c-invite-link-button-mobile {
       display: none;
+    }
+
+    @include phone {
+      justify-content: flex-end;
+      padding-right: $spacer-sm;
+
+      &-wrapper {
+        display: none;
+      }
+
+      .c-invite-link-button-mobile {
+        display: inline-block;
+      }
     }
   }
 
@@ -273,7 +301,7 @@ export default {
       margin-right: $spacer-sm;
     }
 
-    @include tablet-only {
+    @include until($tablet) {
       display: none;
     }
   }
