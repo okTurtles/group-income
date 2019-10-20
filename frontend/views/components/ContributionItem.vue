@@ -3,24 +3,25 @@
   i(:class='iconClass')
 
   template(v-if='hasWhoElse')
-    div(
-      v-if='isVisible'
-      key='visible'
-    )
-      .c-contribution-list(v-html='listOfName')
+    transition(name='replacelist')
+      div(
+        v-if='isVisible'
+        key='visible'
+      )
+        .c-contribution-list(v-html='listOfName')
 
-      i18n.is-unstyled.is-link-inherit.link(
-        tag='button'
-        type='button'
+        i18n.is-unstyled.is-link-inherit.link(
+          tag='button'
+          type='button'
+          @click='isVisible = !isVisible'
+        ) Hide
+
+      div(
+        v-else
+        key='hidden'
         @click='isVisible = !isVisible'
-      ) Hide
-
-    div(
-      v-else
-      key='hidden'
-      @click='isVisible = !isVisible'
-      v-html='contributionText'
-    )
+        v-html='contributionText'
+      )
 
   .c-contribution-list(
     v-else=''
