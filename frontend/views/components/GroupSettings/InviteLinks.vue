@@ -389,7 +389,7 @@ export default {
     font-family: 'Poppins';
     letter-spacing: 0.1px;
     display: block;
-    padding-right: 1.75rem;
+    padding-right: 1.7rem;
 
     &:focus + .c-rect {
       display: block;
