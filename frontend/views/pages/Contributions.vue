@@ -9,25 +9,25 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
       i18n.c-text(tag='p') This will allow you to start receiving or giving mincome.
       i18n(tag='button' @click='openModal("IncomeDetails")') Add income details
 
-  .contribution-header
+  .c-contribution-header
     .has-text-1
       i18n(
         v-if='fakeStore.receiving.monetary'
         tag='p'
         :args='{upTo: fakeStore.upTo, currency: fakeStore.currency}'
-        html='You need <span class="has-text-extra-bold has-text-0">{currency}{upTo}</span>'
+        html='You need<span class="has-text-bold has-text-0">{currency}{upTo}</span>'
       )
       i18n(
         v-else
         tag='p'
         :args='{upTo: fakeStore.upTo, currency: fakeStore.currency}'
-        html='You are pledging up to <span class="has-text-extra-bold has-text-0">{currency}{upTo}</span>'
+        html='You are pledging up to<span class="has-text-bold has-text-0">{currency}{upTo}</span>'
       )
 
       i18n(
         tag='p'
         :args='{paymentMethod: fakeStore.paymentMethod}'
-        html='Payment method <span class="has-text-extra-bold has-text-0">{paymentMethod}</span>'
+        html='Payment method<span class="has-text-bold has-text-0">{paymentMethod}</span>'
       )
 
     div
@@ -52,7 +52,6 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
       ul.spacer(v-if='doesReceive')
         contribution(
           v-if='fakeStore.receiving.monetary'
-          is-monetary=true
         )
           contribution-item(
             :what='fakeStore.currency + fakeStore.receiving.monetary'
@@ -90,10 +89,9 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
         tag='p'
       ) No one needs monetary contributions at the moment.
 
-      ul.spacer(v-if='doesGive')
+      ul(v-if='doesGive')
         contribution(
           v-if='fakeStore.giving.monetary'
-          is-monetary=true
         )
           contribution-item(
             :what='fakeStore.currency + fakeStore.giving.monetary'
@@ -106,6 +104,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
           v-for='(contribution, index) in fakeStore.giving.nonMonetary'
           :key='`contribution-${index}`'
           variant='editable'
+          :initial-value='contribution'
           @new-value='(value) => handleEditNonMonetary(value, index)'
         )
           contribution-item(
@@ -277,9 +276,17 @@ export default {
 }
 </script>
 
+<style lang="scss">
+@import "../../assets/style/_variables.scss";
+.c-contribution-header .has-text-bold {
+  font-family: "Poppins";
+  padding-left: $spacer-sm;
+}
+</style>
+
 <style lang="scss" scoped>
 @import "../../assets/style/_variables.scss";
-.contribution-header {
+.c-contribution-header {
   display: flex;
   justify-content: space-between;
   padding: 1rem 0 1.5rem 0;
@@ -322,7 +329,7 @@ export default {
   margin-bottom: $spacer * 2.5;
 
   @include tablet {
-    margin-bottom: $spacer * 1.5;
+    margin-bottom: $spacer * 1;
   }
 }
 .c-card-empty {

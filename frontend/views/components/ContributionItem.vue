@@ -1,82 +1,43 @@
 <template lang='pug'>
 .c-contribution-item
   i(:class='iconClass')
-  template(v-if='action === "RECEIVING"')
-    template(v-if='type==="MONETARY"')
-      template(v-if='hasWhoElse')
-        transition(name='replacelist')
-          div(v-if='isVisible')
-            i18n(
-              class='c-contribution-list'
-              :args='{what: what, listOfName: listOfName}'
-              html='<span class="has-text-bold">{what}</span> from {listOfName}'
-            )
 
-            i18n.is-unstyled.is-link-inherit.link(
-              tag='button'
-              type='button'
-              @click='isVisible = !isVisible'
-            ) Hide
+  template(v-if='type==="MONETARY" && hasWhoElse')
+    transition(name='replacelist')
+      div(
+        v-if='isVisible'
+        key='visible'
+      )
+        .c-contribution-list(v-html='listOfName')
 
-          i18n(
-            v-else
-            :args='{what: what, numOthers: notFirstWho.length}'
-            @click='isVisible = !isVisible'
-            html='<span class="has-text-bold">{what}</span> from <button class="is-unstyled is-link-inherit link">{numOthers} members</button>'
-          )
+        i18n.is-unstyled.is-link-inherit.link(
+          tag='button'
+          type='button'
+          @click='isVisible = !isVisible'
+        ) Hide
 
-      i18n(
+      div(
         v-else
-        :args='{what: what}'
-        html='<span class="has-text-bold">{what}</span> from {firstWho}'
+        key='hidden'
+        @click='isVisible = !isVisible'
+        v-html='contribution'
       )
 
-    i18n(
-      v-else
-      :args='{what: what, firstWho: firstWho}'
-      html='<span class="has-text-bold">{what}</span> by {firstWho}'
-    )
+  span.has-text-bold(
+    v-else-if='type==="NON_MONETARY" && action === "GIVING"'
+  ) {{what}}
 
-  template(v-else)
-    template(v-if='type==="MONETARY"')
-      template(v-if='hasWhoElse')
-        transition(name='replacelist')
-          div(v-if='isVisible')
-            i18n(
-              class='c-contribution-list'
-              :args='{what: what, listOfName: listOfName}'
-              html='<span class="has-text-bold">{what}</span> to {listOfName}'
-            )
-
-            i18n.is-unstyled.is-link-inherit.link(
-              tag='button'
-              type='button'
-              @click='isVisible = !isVisible'
-            ) Hide
-
-          i18n(
-            v-else
-            :args='{what: what, numOthers: notFirstWho.length}'
-            @click='isVisible = !isVisible'
-            html='<span class="has-text-bold">{what}</span> to <button class="is-unstyled is-link-inherit link">{numOthers} members</button>'
-          )
-      i18n(
-        v-else=''
-        class='c-contribution-list'
-        :args='{what: what, listOfName: listOfName}'
-        html='<span class="has-text-bold">{what}</span> to {listOfName}'
-      )
-    span.has-text-bold(v-else) {{what}}
+  .c-contribution-list(
+    v-else=''
+    v-html='contribution'
+  )
 </template>
 
 <script>
-import TextWho from '@components/TextWho.vue'
+import L from '@view-utils/translations.js'
 
 export default {
   name: 'ContributionItem',
-  components: {
-    TextWho
-  },
   props: {
     who: [String, Array],
     what: String,
@@ -102,6 +63,29 @@ export default {
     }
   },
   computed: {
+    contribution () {
+      if (this.hasWhoElse) {
+        return L(`<span class="has-text-bold">${this.what}</span> ${this.actionName} <button class="is-unstyled is-link-inherit link">${this.notFirstWho.length} members</button>`)
+      } else {
+        return L(`<span class="has-text-bold">${this.what}</span> ${this.actionName} ${this.firstWho}`)
+      }
+    },
+
+    listOfName () {
+      const list = this.who.map((name, index) => {
+        return `<p class="has-text-1 c-contribution-list-item">${name}</p>`
+      }).join('')
+      return L(`<span class="has-text-bold">${this.what}</span> ${this.actionName} ${list}`)
+    },
+
+    actionName () {
+      let verb = 'to'
+      if (this.action === 'RECEIVING') {
+        verb = this.type === 'MONETARY' ? 'by' : 'from'
+      }
+      return verb
+    },
+
     firstWho () {
       const who = this.who
 
@@ -129,17 +113,24 @@ export default {
         }
       }
       return `icon-${style[this.type].icon} c-icon-round has-background-${style[this.type].color} has-text-${style[this.type].color}`
-    },
-    listOfName () {
-      return this.who.map((name, index) => {
-        // Ugly but necessary to keep css in scope
-        const style = `padding-top: ${index ? '0' : '8px'}; padding-bottom: ${index < this.who.length - 1 ? '0' : '8px'};`
-        return `<p class="has-text-1" style="${style}">${name}</p>`
-      }).join('')
     }
   }
 }
 </script>
+
+<style lang="scss">
+@import "../../assets/style/_variables.scss";
+
+.c-contribution-list-item {
+  &:nth-child(2) {
+    padding-top: $spacer-sm;
+  }
+
+  &:last-child {
+    padding-bottom: $spacer-sm;
+  }
+}
+</style>
 
 <style lang="scss" scoped>
 .c-contribution-item {

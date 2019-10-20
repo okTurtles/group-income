@@ -1,16 +1,6 @@
-.is-link-inherit {
-  color: inherit;
-  cursor: pointer;
-  text-decoration: underline;
-
-  &:hover,
-  &:focus {
-    color: $primary_0;
-  }
-}
-
 .is-unstyled {
   background: none;
+  border: none;
   border-radius: 0;
   font-size: inherit;
   min-height: auto;
@@ -21,10 +11,22 @@
   &:focus,
   &:hover {
     outline: none;
-    border-color: transparent;
+    border: none;
     color: inherit;
     background: none;
     box-shadow: none;
+  }
+}
+
+.is-link-inherit {
+  color: inherit;
+  cursor: pointer;
+  text-decoration: underline;
+
+  &:hover,
+  &:focus {
+    color: $primary_0;
+    border-bottom: 1px solid;
   }
 }
 

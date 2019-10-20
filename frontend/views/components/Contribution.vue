@@ -1,6 +1,6 @@
 <template lang='pug'>
 transition(name='replacelist')
-  li.c-contribution(v-if='isEditing || isAdding' key=1)
+  li.c-contribution(v-if='isEditing || isAdding' key='editing')
     input.input(
       type='text'
       ref='input'
@@ -9,6 +9,7 @@ transition(name='replacelist')
       :aria-label='L("Your contribution")'
       :aria-invalid='hasError'
       v-focus='isEditing && $slots.default[0].text'
+      v-model='isFilled'
       @keyup='verifyValue'
       @keydown.esc='cancel'
       @keydown.enter='handleEnter'
@@ -37,7 +38,7 @@ transition(name='replacelist')
 
     p.error.c-spacer-above(v-if='hasError' role='alert') {{this.hasError}}
 
-  li(v-else-if='isEditable' :class='itemClasses' key=2)
+  li(v-else-if='isEditable' :class='itemClasses' key='editable')
     slot
 
     button.button.is-small.is-outlined.c-inline-button(
@@ -47,14 +48,14 @@ transition(name='replacelist')
       i.icon-pencil-alt(aria-hidden='true')
       | {{ L('Edit') }}
 
-  li.c-spacer-above(v-else-if='isUnfilled' key=3)
+  li.c-spacer-above(v-else-if='isUnfilled' key='isUnfilled')
     button.button.is-small(
       :class='itemClasses'
-      @click='handleClick'
+      @click='isAdding = true'
     )
       slot
 
-  li(v-else='' :class='itemClasses' key=4)
+  li(v-else='' :class='itemClasses' key='basic')
     slot
 </template>
 
@@ -73,9 +74,9 @@ export default {
       },
       default: 'default'
     },
-    // When true doesn't show the input to edit the contribution text.
-    // Let the parent decide what to do using @interaction
-    isMonetary: Boolean
+    initialValue: {
+      type: String
+    }
   },
   data () {
     return {
@@ -107,20 +108,9 @@ export default {
     }
   },
   methods: {
-    handleClick () {
-      if (this.isMonetary) {
-        this.$emit('interaction')
-      } else {
-        this.isAdding = true
-      }
-    },
     handleEditClick (e) {
-      if (this.isMonetary) {
-        this.$emit('interaction')
-      } else {
-        this.isEditing = true
-        this.isFilled = true
-      }
+      this.isEditing = true
+      this.isFilled = this.initialValue || true
     },
     verifyValue (event) {
       this.isFilled = !!event.target.value

@@ -193,7 +193,7 @@ export default {
   height: 100%;
   width: 100%;
   opacity: 1;
-  background: $general_0;
+  background: $general_2;
   padding: 3rem $spacer-lg
 }
 
