@@ -46,9 +46,7 @@ modal-base-template(ref='modal')
                 )
                 .suffix {{ groupMincomeSymbolWithCode }}
               .helper(v-if='needsIncome && whoIsPledging.length')
-                text-who(:who='whoIsPledging')
-                | &nbsp
-                i18n will ensure you meet the mincome
+                p {{ contributionMemberText }}
               i18n.helper(v-else-if='!needsIncome') Define up to how much you pledge to contribute to the group each month. Only the minimum needed amount will be given.
             payment-methods(selected='manual')
         .buttons
@@ -78,7 +76,6 @@ import InputAmount from './InputAmount.vue'
 import PaymentMethods from './PaymentMethods.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ModalBaseTemplate from '@components/Modal/ModalBaseTemplate.vue'
-import TextWho from '@components/TextWho.vue'
 import GroupPledgesGraph from '../GroupPledgesGraph.vue'
 import L from '@view-utils/translations.js'
 
@@ -88,7 +85,6 @@ export default {
   components: {
     ModalBaseTemplate,
     InputAmount,
-    TextWho,
     Tooltip,
     PaymentMethods,
     GroupPledgesGraph
@@ -123,6 +119,25 @@ export default {
     },
     whoIsPledging () {
       return this.groupMembersByUsername.filter(username => this.groupMembers[username].groupProfile.incomeDetailsType === 'pledgeAmount' && username !== this.ourUsername)
+    },
+    contributionMemberText () {
+      const who = this.whoIsPledging
+      switch (who.length) {
+        case 1:
+          return L('{firstMember} will ensure you meet the mincome', {
+            firstMember: who[0]
+          })
+        case 2:
+          return L('{firstMember} and {othersMember} will ensure you meet the mincome', {
+            firstMember: who[0],
+            othersMember: who[1]
+          })
+        default:
+          return L('{firstMember} and {othersMembersCount} others members will ensure you meet the mincome', {
+            firstMember: who[0],
+            othersMembersCount: who.length - 1
+          })
+      }
     }
   },
   created () {

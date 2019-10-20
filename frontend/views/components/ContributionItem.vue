@@ -2,8 +2,8 @@
 .c-contribution-item
   i(:class='iconClass')
 
-  template(v-if='type==="MONETARY" && hasWhoElse')
-    transition(name='replacelist')
+  template(v-if='hasWhoElse')
+    transition(:name='showEdit')
       div(
         v-if='isVisible'
         key='visible'
@@ -20,16 +20,12 @@
         v-else
         key='hidden'
         @click='isVisible = !isVisible'
-        v-html='contribution'
+        v-html='contributionText'
       )
-
-  span.has-text-bold(
-    v-else-if='type==="NON_MONETARY" && action === "GIVING"'
-  ) {{what}}
 
   .c-contribution-list(
     v-else=''
-    v-html='contribution'
+    v-html='contributionText'
   )
 </template>
 
@@ -63,24 +59,29 @@ export default {
     }
   },
   computed: {
-    contribution () {
+    contributionText () {
       if (this.hasWhoElse) {
         const html = {
           0: `<span class="has-text-bold">${this.what}</span>`,
-          1: `<button class="is-unstyled is-link-inherit link">${this.notFirstWho.length}`,
+          1: `<button class="is-unstyled is-link-inherit link">${this.otherContributor}`,
           2: '</button>'
         }
+
         if (this.action === 'RECEIVING' && this.type === 'MONETARY') {
           return L('{0} from {1} members{2}', html)
         } else {
           return L('{0} to {1} members{2}', html)
         }
       } else {
-        const html = {
-          0: `<span class="has-text-bold">${this.what}</span>`,
-          1: this.firstWho
+        if (this.action === 'RECEIVING') {
+          const html = {
+            0: `<span class="has-text-bold">${this.what}</span>`,
+            1: this.firstWho
+          }
+          return L('{0} by {1}', html)
+        } else {
+          return `<span class="has-text-bold">${this.what}</span>`
         }
-        return L('{0} by {1}', html)
       }
     },
 
@@ -107,9 +108,11 @@ export default {
 
       return who.length === 2 ? this.L('{who0} and {who1}', { who0: who[0], who1: who[1] }) : who[0]
     },
-    notFirstWho () {
-      return this.who.slice(1)
+
+    otherContributor () {
+      return this.who.slice(1).length
     },
+
     hasWhoElse () {
       return Array.isArray(this.who) && this.who.length > 2
     },
