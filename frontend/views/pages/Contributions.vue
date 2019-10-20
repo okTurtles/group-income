@@ -3,7 +3,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
   template(#title='') {{ L('Contributions') }}
 
   // v-if='memberProfile(ourUsername).groupProfile.incomeDetailsKey'
-  banner(
+  callout-card(
     :isCard='true'
     :title='L("Add your income details")'
     :svg='SvgContributions'
@@ -139,7 +139,7 @@ import sbp from '~/shared/sbp.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import { OPEN_MODAL } from '@utils/events.js'
-import Banner from '@components/Banner.vue'
+import CalloutCard from '@components/CalloutCard.vue'
 import SvgContributions from '@svgs/contributions.svg'
 import { decimals } from '@view-utils/validators.js'
 import { mapGetters } from 'vuex'
@@ -158,7 +158,7 @@ export default {
   components: {
     Page,
     PageSection,
-    Banner,
+    CalloutCard,
     GroupMincome,
     Contribution,
     TextWho,

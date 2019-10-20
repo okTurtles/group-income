@@ -116,7 +116,7 @@ page(
 
   article#cards
     section.card
-      i18n(tag='h2' class='card-header') Cards / Banners
+      i18n(tag='h2' class='card-header') Cards
 
       table
         thead
@@ -138,14 +138,14 @@ page(
         tr
           td
             pre
-              | banner(
+              | callout-card(
               |   title='Proposals'
               |   :svg='config.SvgVote'
               |   :isCard='true'
               | )
               |   Any content inside
           td
-            banner(
+            callout-card(
               title='Proposals'
               :svg='config.SvgVote'
               :isCard='true'
@@ -867,7 +867,7 @@ import sbp from '~/shared/sbp.js'
 import Message from '@components/Message.vue'
 import Tooltip from '@components/Tooltip.vue'
 import Badge from '@components/Badge.vue'
-import Banner from '@components/Banner.vue'
+import CalloutCard from '@components/CalloutCard.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgAccess from '@svgs/access.svg'
 import SvgBitcoin from '@svgs/bitcoin.svg'
@@ -989,7 +989,7 @@ export default {
   },
   components: {
     Page,
-    Banner,
+    CalloutCard,
     Message,
     Tooltip,
     Badge,

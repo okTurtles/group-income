@@ -1,5 +1,5 @@
 <template lang="pug">
-  banner(
+  callout-card(
     :isCard='true'
     :title='L("Invite member to your group")'
     :svg='SvgConversation'
@@ -11,13 +11,13 @@
 <script>
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
-import Banner from '@components/Banner.vue'
+import CalloutCard from '@components/CalloutCard.vue'
 import SvgConversation from '@svgs/conversation.svg'
 
 export default {
   name: 'StartInviting',
   components: {
-    Banner,
+    CalloutCard,
     SvgConversation
   },
   data () {

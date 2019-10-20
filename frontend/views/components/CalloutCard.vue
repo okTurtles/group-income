@@ -1,5 +1,5 @@
 <template lang='pug'>
-  section.c-banner(:class='{ card: isCard }')
+  section.c-calloutCard(:class='{ card: isCard }')
     component.c-svg(:is='svg')
     div
       i18n.c-title(tag='h3') {{ title }}
@@ -8,7 +8,7 @@
 
 <script>
 export default {
-  name: 'Banner',
+  name: 'CalloutCard',
   props: {
     title: String,
     svg: Object, // Svg file as component
@@ -20,8 +20,12 @@ export default {
 <style lang="scss" scoped>
 @import "../../assets/style/_variables.scss";
 
-.c-banner {
+.c-calloutCard {
   display: flex;
+
+  p + button {
+    margin-top: $spacer-lg;
+  }
 }
 
 .c-svg {

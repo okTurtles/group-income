@@ -86,7 +86,7 @@ export default {
     margin-right: $spacer;
     font-size: 1rem;
     color: $text_1;
-    transform: translateY(0.2rem); // visually vertical aligned
+    transform: translateY(0.125rem); // visually vertical aligned
     transition: color ease-in 0.3s;
   }
 

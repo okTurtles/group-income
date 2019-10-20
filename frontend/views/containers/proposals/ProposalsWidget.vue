@@ -1,5 +1,5 @@
 <template lang='pug'>
-  banner(
+  callout-card(
     v-if='!hasProposals'
     :title='L("Proposals")'
     :svg='SvgVote'
@@ -25,7 +25,7 @@
 <script>
 import { mapGetters } from 'vuex'
 import SvgVote from '@svgs/vote.svg'
-import Banner from '@components/Banner.vue'
+import CalloutCard from '@components/CalloutCard.vue'
 import ProposalBox from '@containers/proposals/ProposalBox.vue'
 import { STATUS_OPEN } from '@model/contracts/voting/proposals.js'
 
@@ -33,7 +33,7 @@ export default {
   name: 'Proposals',
   components: {
     ProposalBox,
-    Banner,
+    CalloutCard,
     SvgVote
   },
   data () {

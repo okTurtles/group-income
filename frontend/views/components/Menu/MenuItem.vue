@@ -27,6 +27,9 @@ export default {
 
 .c-menuItem {
   ::v-deep .c-item-link {
+    height: $spacer-lg;
+    font-family: "Lato";
+
     i {
       color: $general_0;
     }
