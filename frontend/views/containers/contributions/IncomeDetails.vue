@@ -52,7 +52,9 @@ modal-base-template(ref='modal')
               i18n.helper(v-else-if='!needsIncome') Define up to how much you pledge to contribute to the group each month. Only the minimum needed amount will be given.
             payment-methods(selected='manual')
         .buttons
-          i18n.is-outlined(tag='button' @click='closeModal') Cancel
+          //- NOTE: this type='button' is needed here to prevent the ENTER
+          //-       key from calling closeModal twice
+          i18n.is-outlined(tag='button' type='button' @click='closeModal') Cancel
           i18n.is-success(tag='button' type='submit' :disabled='$v.form.$invalid') Save
         // TODO/OPTIMIZE - create directive similar to vError
         .c-feedback.has-text-1(

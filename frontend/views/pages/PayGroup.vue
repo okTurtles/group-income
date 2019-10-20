@@ -12,7 +12,7 @@ page(
       v-for='(item, index) in paymentSummary'
       :key='index'
     )
-      h4.title.is-4 {{item.title}}
+      h4.title.is-4 {{ item.title }}
       progress-bar.c-progress(
         :max='item.max'
         :value='item.value'
@@ -20,120 +20,121 @@ page(
       )
       p(:class='{"has-text-success": item.max === item.value}')
         i.icon-check(v-if='item.max === item.value')
-        .has-text-1 {{item.label}}
+        .has-text-1 {{ item.label }}
   .c-container-empty(v-if='!hasPayments')
     svg-contributions.c-svg
 
     i18n.title.is-4(tag='h2') There are no pending payments yet!
     i18n.has-text-1(tag='p') Once other group members add their income details, Group Income will re-distribute wealth amongst everyone.
 
-  div(v-else)
-    .card
-      i18n.title.is-3(
-        tag='h3'
-        :args='{ month: paymentStatus.month }'
-      ) {month} contributions
-      i18n.has-text-1(
-        tag='p'
-        :args='{ amount: `${fakeStore.currency}${paymentStatus.amountTotal}` }'
-      ) {amount} in total
+  section.card(v-else)
+    i18n.title.is-3(
+      tag='h3'
+      :args='{ month: paymentStatus.month }'
+    ) {month} contributions
+    i18n.has-text-1(
+      tag='p'
+      :args='{ amount: `${fakeStore.currency}${paymentStatus.amountTotal}` }'
+    ) {amount} in total
 
-      ul.c-payments
-        li.c-payments-item(
-          v-for='(user, username) in usersToPay'
-          :key='username'
-        )
-          .c-info
-            user-image.c-avatar(:username='username')
-            div(role='alert')
-              i18n(
-                tag='p'
-                :args='{ total: `<b>${user.amountPretty}</b>`, user: `<b>${username}</b>` }'
-                compile
-              ) {total} to {user}
-              //- i18n.has-text-1(
-              //-   v-if='statusIsPending(user)'
-              //-   :args='{ username }'
-              //- ) Waiting for {username} confirmation...
-              //- i18n.has-text-success(
-              //-   v-if='statusIsCompleted(user)'
-              //- ) Payment confirmed!
-              //- i18n.has-text-weight-normal.has-text-warning(
-              //-   v-if='statusIsRejected(user)'
-              //-   :args='{ username }'
-              //- ) The payment was not received by {username}.
+    ul.c-payments
+      li.c-payments-item(
+        v-for='(payment, username) in incomeDistribution'
+        :key='username'
+      )
+        .c-info
+          user-image.c-avatar(:username='username')
+          div(role='alert')
+            i18n(
+              tag='p'
+              :args='{ \
+                total: `<b>${payment.amountPretty}</b>`, \
+                user: `<b>${username}</b>` \
+              }'
+            ) {total} to {user}
+            //- i18n.has-text-1(
+            //-   v-if='statusIsPending(payment)'
+            //-   :args='{ username }'
+            //- ) Waiting for {username} confirmation...
+            //- i18n.has-text-success(
+            //-   v-if='statusIsCompleted(payment)'
+            //- ) Payment confirmed!
+            //- i18n.has-text-weight-normal.has-text-warning(
+            //-   v-if='statusIsRejected(payment)'
+            //-   :args='{ username }'
+            //- ) The payment was not received by {username}.
 
-          .buttons.is-start.c-ctas
-            router-link.button.is-small.is-outlined(
-              v-if='statusIsRejected(user)'
-              to='messages/liliabt'
-            ) {{ L('Send Message...') }}
-            i18n.button.is-small.c-ctas-send(
-              tag='button'
-              key='send'
-              v-if='statusIsToPay(user)'
-              @click='markAsPayed(user)'
-            ) Mark as sent
-            i18n.button.is-small.is-outlined(
-              tag='button'
-              key='cancel'
+        .buttons.is-start.c-ctas
+          router-link.button.is-small.is-outlined(
+            v-if='statusIsRejected(username)'
+            to='messages/liliabt'
+          ) {{ L('Send Message...') }}
+          i18n.button.is-small.c-ctas-send(
+            tag='button'
+            key='send'
+            v-if='statusIsToPay(username)'
+            @click='markAsPayed(username)'
+          ) Mark as sent
+          i18n.button.is-small.is-outlined(
+            tag='button'
+            key='cancel'
+            v-if='statusIsPending(username)'
+            @click='cancelPayment(username)'
+          ) Cancel
+
+    ul.c-payments
+      li.c-payments-item(
+        v-for='(user, index) in fakeStore.usersToPay'
+        :key='user.name'
+      )
+        .c-info
+          avatar.c-avatar(:src='user.avatar')
+          div(role='alert')
+            i18n(
+              tag='p'
+              :args='{ total: `<b>${fakeStore.currency}${user.amount}</b>`, user: `<b>${user.name}</b>`}'
+              compile
+            ) {total} to {user}
+            i18n.has-text-1(
               v-if='statusIsPending(user)'
-              @click='cancelPayment(user)'
-            ) Cancel
-
-      ul.c-payments
-        li.c-payments-item(
-          v-for='(user, index) in fakeStore.usersToPay'
-          :key='user.name'
-        )
-          .c-info
-            avatar.c-avatar(:src='user.avatar')
-            div(role='alert')
-              i18n(
-                tag='p'
-                :args='{ total: `<b>${fakeStore.currency}${user.amount}</b>`, user: `<b>${user.name}</b>`}'
-                compile
-              ) {total} to {user}
-              i18n.has-text-1(
-                v-if='statusIsPending(user)'
-                :args='{ name: getUserFirstName(user.name) }'
-              ) Waiting for {name} confirmation...
-              i18n.has-text-success(
-                v-if='statusIsCompleted(user)'
-              ) Payment confirmed!
-              i18n.has-text-weight-normal.has-text-warning(
-                v-if='statusIsRejected(user)'
-                :args='{ name: getUserFirstName(user.name) }'
-              ) The payment was not received by {name}.
-
-          .buttons.is-start.c-ctas
-            router-link.button.is-small.is-outlined(
+              :args='{ name: getUserFirstName(user.name) }'
+            ) Waiting for {name} confirmation...
+            i18n.has-text-success(
+              v-if='statusIsCompleted(user)'
+            ) Payment confirmed!
+            i18n.has-text-weight-normal.has-text-warning(
               v-if='statusIsRejected(user)'
-              to='messages/liliabt'
-            ) {{ L('Send Message...') }}
-            i18n.button.is-small.c-ctas-send(
-              tag='button'
-              key='send'
-              v-if='statusIsToPay(user)'
-              @click='markAsPayed(user)'
-            ) Mark as sent
-            i18n.button.is-small.is-outlined(
-              tag='button'
-              key='cancel'
-              v-if='statusIsPending(user)'
-              @click='cancelPayment(user)'
-            ) Cancel
+              :args='{ name: getUserFirstName(user.name) }'
+            ) The payment was not received by {name}.
 
-    .c-footer
-      i18n.button.is-small.is-outlined(
-        tag='button'
-        @click='seeHistory'
-      ) See past contributions
+        .buttons.is-start.c-ctas
+          router-link.button.is-small.is-outlined(
+            v-if='statusIsRejected(user)'
+            to='messages/liliabt'
+          ) {{ L('Send Message...') }}
+          i18n.button.is-small.c-ctas-send(
+            tag='button'
+            key='send'
+            v-if='statusIsToPay(user)'
+            @click='markAsPayed(user)'
+          ) Mark as sent
+          i18n.button.is-small.is-outlined(
+            tag='button'
+            key='cancel'
+            v-if='statusIsPending(user)'
+            @click='cancelPayment(user)'
+          ) Cancel
+
+  .c-footer
+    i18n.button.is-small.is-outlined(
+      tag='button'
+      @click='seeHistory'
+    ) See past contributions
 </template>
 
 <script>
 import sbp from '~/shared/sbp.js'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapState } from 'vuex'
 import Page from '@pages/Page.vue'
 import Avatar from '@components/Avatar.vue'
 import UserImage from '@containers/UserImage.vue'
@@ -142,7 +143,6 @@ import currencies from '@view-utils/currencies.js'
 import Tooltip from '@components/Tooltip.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgContributions from '@svgs/contributions.svg'
-import incomeDistribution from '@utils/distribution/mincome-proportional.js'
 
 export default {
   name: 'PayGroup',
@@ -194,42 +194,31 @@ export default {
     }
   },
   computed: {
+    ...mapState([
+      'paymentsByMonth'
+    ]),
     ...mapGetters([
+      'groupIncomeDistribution',
       'groupMembers',
       'groupSettings',
-      'ourUsername'
+      'ourUsername',
+      'memberProfile',
+      'thisMonthsPayments'
     ]),
-    mincomeAmount () {
-      return this.groupSettings.mincomeAmount
-    },
     currency () {
       return currencies[this.groupSettings.mincomeCurrency]
     },
-    usersToPay () {
-      const profiles = this.groupMembers
-      const currentIncomeDistribution = []
-      const usersWithIncomeDetails = Object.keys(profiles).reduce((acc, username) => {
-        const profile = profiles[username]
-        const incomeDetailsType = profile && profile.groupProfile.incomeDetailsType
-        if (incomeDetailsType) {
-          acc[username] = profile
-          const adjustment = incomeDetailsType === 'incomeAmount' ? 0 : this.mincomeAmount
-          const adjustedAmount = adjustment + profile.groupProfile[incomeDetailsType]
-          currentIncomeDistribution.push({ name: username, amount: adjustedAmount })
-        }
-        return acc
-      }, {})
-      const allPayments = incomeDistribution(currentIncomeDistribution, this.mincomeAmount)
-      console.debug({ usersWithIncomeDetails, currentIncomeDistribution, allPayments })
-      return allPayments.filter(p => p.from === this.ourUsername).reduce((acc, payment) => {
-        acc[payment.to] = {
-          ...usersWithIncomeDetails[payment.to],
-          amount: +this.currency.displayWithoutCurrency(payment.amount),
-          amountPretty: this.currency.displayWithCurrency(payment.amount)
-        }
-        return acc
-      }, {})
+    incomeDistribution () {
+      return this.groupIncomeDistribution.filter(p => p.from === this.ourUsername)
+        .reduce((acc, payment) => {
+          acc[payment.to] = {
+            amount: +this.currency.displayWithoutCurrency(payment.amount),
+            amountPretty: this.currency.displayWithCurrency(payment.amount)
+          }
+          return acc
+        }, {})
     },
+    // old stuff (to be deleted) follows
     hasPayments () {
       return this.fakeStore.usersToPay.length > 0
     },
@@ -284,8 +273,8 @@ export default {
     }
   },
   methods: {
-    statusIsToPay (user) {
-      return ['todo', 'rejected'].includes(user.status)
+    statusIsToPay (username) {
+      return !this.thisMonthsPayments[username]
     },
     statusIsSent (user) {
       return ['completed', 'pending'].includes(user.status)
