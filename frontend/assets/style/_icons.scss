@@ -13,6 +13,7 @@ $icons: (
   chevron-left: "\f053",
   chevron-right: "\f054",
   cog: "\f013",
+  copy: "\F0C5",
   columns: "\f0db",
   comment: "\f075",
   comments: "\f086",
@@ -82,6 +83,10 @@ $icons: (
     font-weight: 900;
     -moz-osx-font-smoothing: grayscale;
     -webkit-font-smoothing: antialiased;
+  }
+
+  &.is-regular::before {
+    font-weight: 400;
   }
 }
 

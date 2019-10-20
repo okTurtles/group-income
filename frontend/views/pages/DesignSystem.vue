@@ -202,6 +202,7 @@ page(
               i.icon-user-plus icon-user-plus
               i.icon-user-times icon-user-times
               i.icon-vote-yea icon-vote-yea
+              i.icon-copy icon-copy
   article#spacing
     section.card
       i18n(tag='h2' class='card-header') Spacing
