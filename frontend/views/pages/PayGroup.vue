@@ -48,8 +48,8 @@ page(
             div(role='alert')
               i18n(
                 tag='p'
-                html='<b>{total}</b> to <b>{user}</b>'
-                :args='{ total: user.amountPretty, user: username }'
+                :args='{ total: `<b>${user.amountPretty}</b>`, user: `<b>${username}</b>` }'
+                compile
               ) {total} to {user}
               //- i18n.has-text-1(
               //-   v-if='statusIsPending(user)'
@@ -92,6 +92,7 @@ page(
               i18n(
                 tag='p'
                 :args='{ total: `<b>${fakeStore.currency}${user.amount}</b>`, user: `<b>${user.name}</b>`}'
+                compile
               ) {total} to {user}
               i18n.has-text-1(
                 v-if='statusIsPending(user)'
