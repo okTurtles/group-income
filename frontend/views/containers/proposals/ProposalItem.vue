@@ -1,7 +1,7 @@
 <template lang='pug'>
   li(data-test='proposalItem')
     .c-item
-      i(:class='iconClass')
+      i.c-icon-round(:class='iconClass')
       .c-main
         p.has-text-bold(data-test='typeDescription') {{typeDescription}}
         p.has-text-1(
@@ -147,22 +147,6 @@ $spaceVertical: $spacer-sm*3;
 
 .c-main {
   flex-grow: 1;
-}
-
-.c-icon {
-  width: 2rem;
-  height: 2rem;
-  margin-right: $spaceVertical;
-  margin-bottom: $spacer-xs;
-  margin-top: $spacer-xs; // visually better aligned
-  flex-shrink: 0;
-  border-radius: 50%;
-  text-align: center;
-  line-height: 2rem;
-
-  @include phone {
-    margin-left: $spacer-sm; // TODO: Suggest to @mmbotelho
-  }
 }
 
 .c-sendLink {

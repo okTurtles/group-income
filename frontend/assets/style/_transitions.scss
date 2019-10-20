@@ -25,6 +25,26 @@
   max-height: 0;
 }
 
+.replacelist-enter-active,
+.replacelist-leave-active {
+  transition: max-height 0.15s ease, opacity 0.15s ease;
+  opacity: 1;
+
+  /* Todo: move that to dynamic js, so it's mnore generic */
+  max-height: 150px;
+  overflow: hidden;
+}
+
+.replacelist-enter-active {
+  transition: max-height 0.3s ease, opacity 0.3s ease 0.2s;
+}
+
+.replacelist-enter,
+.replacelist-leave-to {
+  max-height: 0;
+  opacity: 0;
+}
+
 /* slide transition */
 .slide-next-enter-active,
 .slide-next-leave-active,

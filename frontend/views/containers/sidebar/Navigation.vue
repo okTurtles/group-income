@@ -24,15 +24,15 @@ nav.c-navigation(
       .c-navigation-body-top
         ul.c-menu-list
           // TODO/BUG: Mobile - hide navbar after going to a page
-          list-item(tag='router-link' icon='columns' to='/dashboard')
+          list-item(tag='router-link' icon='columns' to='/dashboard' data-test='dashboard')
             i18n Dashboard
-          list-item(tag='router-link' icon='chart-pie' to='/contributions')
+          list-item(tag='router-link' icon='chart-pie' to='/contributions' data-test='contributionsLink')
             i18n Contributions
-          list-item(tag='router-link' icon='tag' to='/pay-group')
+          list-item(tag='router-link' icon='tag' to='/pay-group' data-test='payGroupLink')
             i18n Pay Group
-          list-item(tag='router-link' icon='comments' to='/group-chat' :badgeCount='3')
+          list-item(tag='router-link' icon='comments' to='/group-chat' :badgeCount='3' data-test='groupChatLink')
             i18n Chat
-          list-item(tag='router-link' icon='cog' to='/group-settings')
+          list-item(tag='router-link' icon='cog' to='/group-settings' data-test='groupSettingsLink')
             i18n Group Settings
           list-item(
             tag='router-link'

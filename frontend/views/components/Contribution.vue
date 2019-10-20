@@ -1,50 +1,62 @@
 <template lang='pug'>
-li.c-item(v-if='isEditing || isAdding')
-  input.input(
-    type='text'
-    ref='input'
-    :placeholder='randomPlaceholder'
-    maxlength='20'
-    :aria-label='L("Your contribution")'
-    :aria-invalid='hasError'
-    v-focus='isEditing && $slots.default[0].text'
-    @keyup='verifyValue'
-    @keydown.esc='cancel'
-    @keydown.enter='handleEnter'
-  )
-  i18n.button(
-    tag='button'
-    @click='cancel'
-  ) Cancel
-  i18n.button.is-outlined(
-    v-if='isAdding && isFilled'
-    tag='button'
-    @click='handleSubmit'
-  ) Add
-  i18n.button.is-outlined(
-    v-if='isEditing && isFilled'
-    tag='button'
-    @click='handleSubmit'
-  ) Save
-  i18n.button.is-danger.is-outlined(
-    v-if='isEditing && !isFilled'
-    tag='button'
-    @click='handleDelete'
-  ) Delete
-  p.error(v-if='hasError' role='alert') {{this.hasError}}
+transition(name='replacelist')
+  li.c-contribution(v-if='isEditing || isAdding' key='editing')
+    input.input(
+      type='text'
+      ref='input'
+      :placeholder='randomPlaceholder'
+      maxlength='20'
+      :aria-label='L("Your contribution")'
+      :aria-invalid='hasError'
+      v-focus='isEditing && $slots.default[0].text'
+      v-model='isFilled'
+      @keyup='verifyValue'
+      @keydown.esc='cancel'
+      @keydown.enter='handleEnter'
+    )
+    .buttons
+      i18n.button.is-small.is-danger.is-outlined(
+        v-if='isEditing && !isAdding'
+        tag='button'
+        @click='handleDelete'
+      ) Remove
+      .c-buttons-right
+        i18n.button.is-small.is-outlined(
+          tag='button'
+          @click='cancel'
+        ) Cancel
+        i18n.button.is-small(
+          v-if='isAdding && isFilled'
+          tag='button'
+          @click='handleSubmit'
+        ) Add
+        i18n.button.is-small(
+          v-if='isEditing && isFilled'
+          tag='button'
+          @click='handleSubmit'
+        ) Save
 
-li(v-else-if='isEditable' :class='itemClasses')
-  slot
+    p.error.c-spacer-above(v-if='hasError' role='alert') {{this.hasError}}
 
-  button.is-icon(:aria-label='editAriaLabel' @click='handleEditClick')
-    i.icon-edit(aria-hidden='true')
-
-li(v-else-if='isUnfilled')
-  button(:class='itemClasses' @click='handleClick')
+  li(v-else-if='isEditable' :class='itemClasses' key='editable')
     slot
 
-li(v-else='' :class='itemClasses')
-  slot
+    button.button.is-small.is-outlined.c-inline-button(
+      :aria-label='editAriaLabel'
+      @click='handleEditClick'
+    )
+      i.icon-pencil-alt(aria-hidden='true')
+      | {{ L('Edit') }}
+
+  li.c-spacer-above(v-else-if='isUnfilled' key='isUnfilled')
+    button.button.is-small(
+      :class='itemClasses'
+      @click='isAdding = true'
+    )
+      slot
+
+  li(v-else='' :class='itemClasses' key='basic')
+    slot
 </template>
 
 <script>
@@ -62,9 +74,9 @@ export default {
       },
       default: 'default'
     },
-    // When true doesn't show the input to edit the contribution text.
-    // Let the parent decide what to do using @interaction
-    isMonetary: Boolean
+    initialValue: {
+      type: String
+    }
   },
   data () {
     return {
@@ -96,20 +108,9 @@ export default {
     }
   },
   methods: {
-    handleClick () {
-      if (this.isMonetary) {
-        this.$emit('interaction')
-      } else {
-        this.isAdding = true
-      }
-    },
     handleEditClick (e) {
-      if (this.isMonetary) {
-        this.$emit('interaction')
-      } else {
-        this.isEditing = true
-        this.isFilled = true
-      }
+      this.isEditing = true
+      this.isFilled = this.initialValue || true
     },
     verifyValue (event) {
       this.isFilled = !!event.target.value
@@ -160,4 +161,59 @@ export default {
 
 <style lang="scss" scoped>
 @import "../../assets/style/_variables.scss";
+.c-contribution {
+  padding: $spacer * 1.5 0 $spacer 0;
+
+  &:first-child,
+  & + .c-contribution{
+    padding-top: 0;
+  }
+
+  & + .c-spacer-above{
+    padding-top: $spacer;
+  }
+}
+
+.c-spacer-above {
+  padding-top: $spacer * 1.5;
+}
+
+.c-buttons-right {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.buttons {
+  padding-top: $spacer;
+  padding-bottom: $spacer-xs;
+  margin-top: 0;
+
+  button {
+    margin-top: 0;
+  }
+}
+
+.button + .c-buttons-right {
+  width: auto;
+}
+
+.c-inline-button {
+  margin-left: $spacer;
+  .icon-pencil-alt {
+    margin-left: 0;
+  }
+}
+
+.has-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
 </style>
+
+// <style lang="scss">
+// .c-contribution-item .c-icon-round {
+//   margin: 0 !important;
+// }
+// </style>
