@@ -20,12 +20,12 @@
         v-else
         key='hidden'
         @click='isVisible = !isVisible'
-        v-html='contribution'
+        v-html='contributionText'
       )
 
   .c-contribution-list(
     v-else=''
-    v-html='contribution'
+    v-html='contributionText'
   )
 </template>
 
@@ -59,7 +59,7 @@ export default {
     }
   },
   computed: {
-    contribution () {
+    contributionText () {
       if (this.hasWhoElse) {
         const html = {
           0: `<span class="has-text-bold">${this.what}</span>`,
@@ -79,7 +79,7 @@ export default {
             1: this.firstWho
           }
           return L('{0} by {1}', html)
-          } else {
+        } else {
           return `<span class="has-text-bold">${this.what}</span>`
         }
       }
