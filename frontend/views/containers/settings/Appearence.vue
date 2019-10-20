@@ -40,7 +40,6 @@ export default {
       'setReducedMotion'
     ]),
     handleCheckbox (e) {
-      console.log(e.target.checked)
       this.setReducedMotion(e.target.checked)
     }
   }

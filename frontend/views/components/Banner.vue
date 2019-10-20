@@ -1,7 +1,6 @@
 <template lang='pug'>
   section.c-banner(:class='{ card: isCard }')
     component.c-svg(:is='svg')
-    // svg-contributions.c-svg
     div
       i18n.c-title(tag='h3') {{ title }}
       slot
