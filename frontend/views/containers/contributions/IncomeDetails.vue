@@ -3,7 +3,7 @@ modal-base-template(ref='modal')
   .wrapper-container
     .c-content
       i18n.c-title(tag='h2') Income Details
-      p {{ contributionMemberText }}
+
       form.card.c-card(
         @submit.prevent='submit'
         novalidate='true'
