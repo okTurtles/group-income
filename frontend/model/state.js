@@ -243,10 +243,12 @@ const getters = {
   },
   groupMincomeFormatted (state, getters) {
     const settings = getters.groupSettings
-    return currencies[settings.mincomeCurrency].displayWithCurrency(settings.mincomeAmount)
+    const currency = currencies[settings.mincomeCurrency]
+    return currency && currency.displayWithCurrency(settings.mincomeAmount)
   },
   groupMincomeSymbolWithCode (state, getters) {
-    return currencies[getters.groupSettings.mincomeCurrency].symbolWithCode
+    const currency = currencies[getters.groupSettings.mincomeCurrency]
+    return currency && currency.symbolWithCode
   },
   colors (state) {
     return Colors[state.theme]
