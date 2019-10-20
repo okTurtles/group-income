@@ -9,6 +9,8 @@ import Vuex from 'vuex'
 import { GIMessage } from '~/shared/GIMessage.js'
 import * as _ from '@utils/giLodash.js'
 import L from '@view-utils/translations.js'
+import currencies from '@view-utils/currencies.js'
+import incomeDistribution from '@utils/distribution/mincome-proportional.js'
 import { SETTING_CURRENT_USER } from './database.js'
 import { ErrorDBBadPreviousHEAD, ErrorDBConnection } from '~/shared/domains/gi/db.js'
 import { LOGIN, LOGOUT, EVENT_HANDLED, CONTRACTS_MODIFIED } from '@utils/events.js'
@@ -18,7 +20,7 @@ import { GIErrorUnrecoverable, GIErrorIgnoreAndBanIfGroup, GIErrorDropAndReproce
 import { STATUS_OPEN, PROPOSAL_REMOVE_MEMBER } from './contracts/voting/proposals.js'
 import { VOTE_FOR } from '@model/contracts/voting/rules.js'
 import { actionWhitelisted, CONTRACT_REGEX } from '@model/contracts/Contract.js'
-import currencies from '@view-utils/currencies.js'
+import { currentMonthTimestamp } from '@utils/time.js'
 import './contracts/group.js'
 import './contracts/mailbox.js'
 import './contracts/identity.js'
@@ -36,7 +38,8 @@ const initialState = {
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
   theme: 'blue',
-  fontSize: 1
+  fontSize: 1,
+  paymentsByMonth: {}
 }
 
 // guard all sbp calls for contract actions with this function
@@ -95,6 +98,13 @@ sbp('sbp/selectors/register', {
 // http://vuex.vuejs.org/en/mutations.html
 const mutations = {
   login (state, user) {
+    const monthTimestamp = currentMonthTimestamp()
+    if (!state.paymentsByMonth) {
+      state.paymentsByMonth = {}
+    }
+    if (!state.paymentsByMonth[monthTimestamp]) {
+      state.paymentsByMonth[monthTimestamp] = {}
+    }
     state.loggedIn = user
     sbp('okTurtles.events/emit', LOGIN, user)
   },
@@ -223,7 +233,7 @@ const getters = {
   },
   groupMembers (state, getters) {
     const groupId = state.currentGroupId
-    return groupId && Object.keys(state[groupId].profiles).reduce(
+    return groupId && state[groupId] && Object.keys(state[groupId].profiles || {}).reduce(
       (result, username) => {
         result[username] = getters.memberProfile(username, groupId)
         return result
@@ -241,6 +251,9 @@ const getters = {
   groupShouldPropose (state, getters) {
     return getters.groupMembersCount >= 3
   },
+  groupMincomeAmount (state, getters) {
+    return getters.groupSettings.mincomeAmount
+  },
   groupMincomeFormatted (state, getters) {
     const settings = getters.groupSettings
     const currency = currencies[settings.mincomeCurrency]
@@ -249,6 +262,25 @@ const getters = {
   groupMincomeSymbolWithCode (state, getters) {
     const currency = currencies[getters.groupSettings.mincomeCurrency]
     return currency && currency.symbolWithCode
+  },
+  groupIncomeDistribution (state, getters) {
+    const profiles = getters.groupMembers
+    const mincomeAmount = getters.groupMincomeAmount
+    const currentIncomeDistribution = []
+    for (const username in profiles) {
+      const profile = profiles[username]
+      const incomeDetailsType = profile && profile.groupProfile.incomeDetailsType
+      if (incomeDetailsType) {
+        const adjustment = incomeDetailsType === 'incomeAmount' ? 0 : mincomeAmount
+        const adjustedAmount = adjustment + profile.groupProfile[incomeDetailsType]
+        currentIncomeDistribution.push({ name: username, amount: adjustedAmount })
+      }
+    }
+    return incomeDistribution(currentIncomeDistribution, mincomeAmount)
+  },
+  thisMonthsPayments (state) {
+    const payments = state.paymentsByMonth
+    return payments && state.paymentsByMonth[currentMonthTimestamp()]
   },
   colors (state) {
     return Colors[state.theme]
@@ -302,10 +334,25 @@ const actions = {
       // This may seem unintuitive to use the store.state from the global store object
       // but the state object in scope is a copy that becomes stale if something modifies it
       // like an outside dispatch
-      for (const contractID in store.state.contracts) {
-        const { type } = store.state.contracts[contractID]
+      const contracts = store.state.contracts
+      for (const contractID in contracts) {
+        const { type } = contracts[contractID]
         commit('registerContract', { contractID, type })
         await sbp('state/enqueueContractSync', contractID)
+      }
+      // it's insane, and I'm not sure how this can happen, but it did... and
+      // the following steps actually fixed it...
+      // TODO: figure out what happened and prevent it from happening again
+      //       maybe move this recovery stuff to a recovery page and redirect
+      //       us there instead of doing it here.
+      const currentGroupId = store.state.currentGroupId
+      if (currentGroupId && !contracts[currentGroupId]) {
+        console.error(`login: lost current group state somehow for ${currentGroupId}! attempting resync...`)
+        await sbp('state/enqueueContractSync', currentGroupId)
+      }
+      if (!contracts[user.identityContractID]) {
+        console.error(`login: lost current identity state somehow for ${user.username} / ${user.identityContractID}! attempting resync...`)
+        await sbp('state/enqueueContractSync', user.identityContractID)
       }
     }
     await sbp('gi.db/settings/save', SETTING_CURRENT_USER, user.username)
@@ -507,6 +554,9 @@ const handleEvent = {
       // If we just joined, we're likely witnessing an old error that was handled
       // by the existing members, so we shouldn't attempt to participate in voting
       // in a proposal that has long since passed.
+      //
+      // TODO: we should still autoban them after the sync is finished
+      //       if the proposal is still open. See #731
       if (contractIsSyncing[contractID]) {
         console.debug(`skipping autoBanSenderOfMessage since we're syncing ${contractID}`)
         return // don't do anything, assume the existing users handled this event
