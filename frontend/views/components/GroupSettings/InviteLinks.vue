@@ -386,6 +386,10 @@ export default {
   .c-select {
     text-align: left;
     border-radius: 0.7rem;
+    font-family: 'Poppins';
+    letter-spacing: 0.1px;
+    display: block;
+    padding-right: 1.75rem;
 
     &:focus + .c-rect {
       display: block;
