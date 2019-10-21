@@ -24,7 +24,7 @@ export default {
     window.addEventListener('keyup', this.handleKeyUp)
   },
   mounted () {
-    !this.$route.query.next && this.initializeModals()
+    this.initializeModals()
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', OPEN_MODAL)
@@ -66,6 +66,11 @@ export default {
       return this.subcontent[this.subcontent.length - 1]
     },
     initializeModals () {
+      if (this.$route.query.next) {
+        this.openModal('LoginModal')
+        return
+      }
+
       const modal = this.$route.query.modal
       if (modal) this.openModal(modal)
       const subcontent = this.$route.query.subcontent
