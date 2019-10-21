@@ -10,6 +10,7 @@ import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST } from './voting/rules.js
 import proposals, { proposalType, proposalSettingsType, archiveProposal, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_CANCELLED } from './voting/proposals.js'
 import * as Errors from '../errors.js'
 import { merge, deepEqualJSONType } from '~/frontend/utils/giLodash.js'
+import { currentMonthTimestamp } from '~/frontend/utils/time.js'
 
 // for gi.contracts/group/payment ... TODO: put these in some other file?
 export const PAYMENT_PENDING = 'pending'
@@ -60,6 +61,9 @@ DefineContract({
             contractID: meta.identityContractID,
             groupProfile: {}
           }
+        },
+        paymentsByMonth: {
+          [currentMonthTimestamp()]: {}
         }
       }
       for (const key in initialState) {

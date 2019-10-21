@@ -103,16 +103,6 @@ sbp('sbp/selectors/register', {
 // http://vuex.vuejs.org/en/mutations.html
 const mutations = {
   login (state, user) {
-    // make sure each time we use the app a valid
-    // paymentsByMonth exists for the current month
-    // TODO: move these to group.js
-    const monthTimestamp = currentMonthTimestamp()
-    if (!state.paymentsByMonth) {
-      state.paymentsByMonth = {}
-    }
-    if (!state.paymentsByMonth[monthTimestamp]) {
-      state.paymentsByMonth[monthTimestamp] = {}
-    }
     state.loggedIn = user
     sbp('okTurtles.events/emit', EVENTS.LOGIN, user)
   },
@@ -289,9 +279,9 @@ const getters = {
     }
     return incomeDistribution(currentIncomeDistribution, mincomeAmount)
   },
-  thisMonthsPayments (state) {
-    const payments = state.paymentsByMonth
-    return payments && state.paymentsByMonth[currentMonthTimestamp()]
+  thisMonthsPayments (state, getters) {
+    const payments = getters.currentGroupState.paymentsByMonth
+    return payments && payments[currentMonthTimestamp()]
   },
   colors (state) {
     return Colors[state.theme]
