@@ -11,7 +11,7 @@
       label
         input(type='checkbox' :checked='$store.state.reducedMotion' @change='handleCheckbox')
         i18n Reduced motion
-        .help When enabled the amount of animations you see around are reduced.
+        i18n.help When enabled the amount of animations you see around are reduced.
 
     section.card
       h2.settings-subtitle Text settings

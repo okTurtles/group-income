@@ -16,29 +16,36 @@ describe('Proposals - Add members', () => {
   it('register 6 users and logout each one', () => {
     cy.visit('/')
     for (var i = 1; i <= 6; i++) {
-      cy.giSignUp(`user${i}-${userId}`)
-      cy.giLogOut()
+      cy.giSignup(`user${i}-${userId}`)
+      cy.giLogout({ hasNoGroup: true })
     }
   })
 
   it('user1 logins back and creates a group', () => {
     cy.giLogin(`user1-${userId}`)
 
-    cy.giCreateGroup(groupName, { income: 400 })
+    cy.giCreateGroup(groupName, {
+      income: 400
+    })
+    cy.getByDT('profileName').should('contain', `user1-${userId}`)
   })
 
   it('user1 invites user2 and user3 to the group and they accept', () => {
     cy.giInviteMember([`user2-${userId}`, `user3-${userId}`])
 
-    cy.giLogOut()
+    cy.giLogout()
+  })
 
+  it('user2 accepts the invite', () => {
     cy.giLogin(`user2-${userId}`)
     cy.giAcceptGroupInvite(groupName)
-    cy.giLogOut()
+    cy.giLogout()
+  })
 
+  it('user3 accepts the invite', () => {
     cy.giLogin(`user3-${userId}`)
     cy.giAcceptGroupInvite(groupName)
-    cy.giLogOut()
+    cy.giLogout()
   })
 
   it('user1 proposes to add user4 and user5 together to the group and user2 proposes to add user6 to the group', () => {
@@ -46,13 +53,13 @@ describe('Proposals - Add members', () => {
 
     cy.giInviteMember([`user4-${userId}`, `user5-${userId}`], { isProposal: true })
 
-    cy.giLogOut()
+    cy.giLogout()
 
     cy.giLogin(`user2-${userId}`)
 
     cy.giInviteMember(`user6-${userId}`, { isProposal: true })
 
-    cy.giLogOut()
+    cy.giLogout()
   })
 
   it('user3 logins and votes "yes" to all 3 proposals', () => {
@@ -99,7 +106,7 @@ describe('Proposals - Add members', () => {
       })
     })
 
-    cy.giLogOut()
+    cy.giLogout()
   })
 
   it('user2 logins and votes "yes" to add user4. Proposal is accepted and invitation is created.', () => {
@@ -145,7 +152,7 @@ describe('Proposals - Add members', () => {
       })
     })
 
-    cy.giLogOut()
+    cy.giLogout()
   })
 
   it('user1 logins and sees all 3 proposals with the correct states', () => {
@@ -177,6 +184,6 @@ describe('Proposals - Add members', () => {
       })
     })
 
-    cy.giLogOut()
+    cy.giLogout()
   })
 })

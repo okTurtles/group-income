@@ -7,7 +7,7 @@ describe('SignUp, Profile and Login', () => {
 
   it('user1 signups and creates a group', () => {
     cy.visit('/')
-    cy.giSignUp(username)
+    cy.giSignup(username)
     cy.giCreateGroup('Dreamers 2')
     cy.getByDT('profileName').should('contain', username)
   })
@@ -42,7 +42,7 @@ describe('SignUp, Profile and Login', () => {
 
     cy.getByDT('profileDisplayName').should('contain', 'I am a bot')
     cy.getByDT('profileName').should('contain', username)
-    cy.giLogOut()
+    cy.giLogout()
   })
 
   it('prevent incorrect logins/signup actions', () => {

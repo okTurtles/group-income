@@ -16,7 +16,7 @@ Cypress.Commands.add('getByDT', (element, otherSelector = '') => {
 
 // NOTE: We can go a step further and not use UI to do repetitive tasks.
 // https://docs.cypress.io/guides/getting-started/testing-your-app.html#Fully-test-the-login-flow-%E2%80%93-but-only-once
-Cypress.Commands.add('giSignUp', (userName, password = '123456789') => {
+Cypress.Commands.add('giSignup', (userName, password = '123456789') => {
   cy.getByDT('signupBtn').click()
   cy.getByDT('signName').clear().type(userName)
   cy.getByDT('signEmail').clear().type(`${userName}@email.com`)
@@ -40,16 +40,15 @@ Cypress.Commands.add('giLogin', (userName, password = '123456789') => {
   cy.getByDT('loginBtn').should('not.exist')
 })
 
-Cypress.Commands.add('giLogOut', () => {
-  cy.getByDT('app').then(($app) => {
-    if ($app.find('[data-test="userProfile"]').length) {
-      cy.getByDT('settingsBtn').click()
-      cy.getByDT('link-logout').click()
-      cy.getByDT('closeModal').should('not.exist')
-    } else {
-      cy.getByDT('logout').click()
-    }
-  })
+Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {
+  if (hasNoGroup) {
+    cy.getByDT('logout').click()
+  } else {
+    cy.getByDT('settingsBtn').click()
+    cy.getByDT('link-logout').click()
+    cy.getByDT('closeModal').should('not.exist')
+  }
+  cy.url().should('eq', 'http://localhost:8000/app/')
   cy.getByDT('welcomeHome').should('contain', 'Welcome to GroupIncome')
 })
 
@@ -91,6 +90,7 @@ Cypress.Commands.add('giCreateGroup', (name, { image = 'imageTest.png', values =
 
   cy.getByDT('welcomeGroup').should('contain', `Welcome ${name}!`)
   cy.getByDT('toDashboardBtn').click()
+  cy.url().should('eq', 'http://localhost:8000/app/dashboard')
 })
 
 function inviteUser (invitee, index) {
