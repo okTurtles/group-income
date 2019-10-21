@@ -104,16 +104,12 @@ export default {
     ...mapGetters([
       'groupMembers',
       'groupSettings',
-      'memberProfile',
+      'memberGroupProfile',
       'groupMincomeFormatted',
       'groupMincomeSymbolWithCode',
       'ourUsername',
       'groupMembersByUsername'
     ]),
-    memberGroupProfile () {
-      const profile = this.memberProfile(this.ourUsername) || {}
-      return profile.groupProfile || {}
-    },
     needsIncome () {
       return this.form.incomeDetailsType === 'incomeAmount'
     },

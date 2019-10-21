@@ -2,120 +2,121 @@
 page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
   template(#title='') {{ L('Contributions') }}
 
-  page-section.c-card-empty
+  page-section.c-card-empty(v-if='!memberProfile(ourUsername).groupProfile.incomeDetailsType')
     svg-contributions.c-svg
     div
       i18n(tag='h3') Add your income details
       i18n.c-text(tag='p') This will allow you to start receiving or giving mincome.
       i18n(tag='button' @click='openModal("IncomeDetails")') Add income details
 
-  .c-contribution-header
-    .has-text-1
-      i18n(
-        v-if='fakeStore.receiving.monetary'
-        tag='p'
-        :args='{upTo: fakeStore.upTo,bold_:\'<span class="has-text-bold has-text-0">\',_bold:\'</span>\',currency:fakeStore.currency}'
-      ) You need {bold_}{currency}{upTo}{_bold}
-      i18n(
-        v-else
-        tag='p'
-        :args='{upTo: fakeStore.upTo,bold_:\'<span class="has-text-bold has-text-0">\',_bold:\'</span>\',currency:fakeStore.currency}'
-      ) You are pledging up to {bold_}{currency}{upTo}{_bold}
+  template(v-else)
+    .c-contribution-header
+      .has-text-1
+        i18n(
+          v-if='needsIncome'
+          tag='p'
+          :args='{upTo: upTo,bold_:\'<span class="has-text-bold has-text-0">\',_bold:\'</span>\'}'
+        ) You need {bold_}{upTo}{_bold}
+        i18n(
+          v-else
+          tag='p'
+          :args='{upTo: upTo,bold_:\'<span class="has-text-bold has-text-0">\',_bold:\'</span>\'}'
+        ) You are pledging up to {bold_}{upTo}{_bold}
 
-      i18n(
-        tag='p'
-        :args='{bold_:\'<span class="has-text-bold has-text-0">\',_bold:\'</span>\',paymentMethod:fakeStore.paymentMethod}'
-      ) Payment method {bold_}{paymentMethod}{_bold}
+        i18n(
+          tag='p'
+          :args='{bold_:\'<span class="has-text-bold has-text-0">\',_bold:\'</span>\',paymentMethod:paymentMethod}'
+        ) Payment method {bold_}{paymentMethod}{_bold}
 
-    div
-      button.button.is-small(
-        @click='open("IncomeDetails")'
-      ) Change
+      div
+        button.button.is-small(
+          @click='openModal("IncomeDetails")'
+        ) Change
 
-  section.card.contribution-card
-    .receiving
-      i18n(tag='h3' class='card-header') Receiving
+    section.card.contribution-card
+      .receiving
+        i18n(tag='h3' class='card-header') Receiving
 
-      i18n.has-text-1.spacer-around(
-        v-if='!doesReceive'
-        tag='p'
-      ) When other members pledge a monetary or non-monetary contribution, they will appear here.
+        i18n.has-text-1.spacer-around(
+          v-if='!doesReceive'
+          tag='p'
+        ) When other members pledge a monetary or non-monetary contribution, they will appear here.
 
-      i18n.has-text-1.spacer-around(
-        v-else-if='!fakeStore.receiving.monetary'
-        tag='p'
-      ) No one is pledging money at the moment.
+        i18n.has-text-1.spacer-around(
+          v-else-if='!needsIncome'
+          tag='p'
+        ) No one is pledging money at the moment.
 
-      ul.spacer(v-if='doesReceive')
-        contribution(
-          v-if='fakeStore.receiving.monetary'
-        )
-          contribution-item(
-            :what='fakeStore.currency + fakeStore.receiving.monetary'
-            :who='fakeStore.groupMembersPledging'
-            type='MONETARY'
+        ul.spacer(v-if='doesReceive')
+          contribution(
+            v-if='needsIncome'
           )
+            contribution-item(
+              :what='upTo' // temp
+              :who='fakeStore.groupMembersPledging'
+              type='MONETARY'
+            )
 
-        contribution(
-          v-for='(contribution, index) in fakeStore.receiving.nonMonetary'
-          :key='`contribution-${index}`'
-        )
-          contribution-item(
-            :what='contribution.what'
-            :who='contribution.who'
-            type='NON_MONETARY'
+          contribution(
+            v-for='(contribution, index) in fakeStore.receiving.nonMonetary'
+            :key='`contribution-${index}`'
           )
+            contribution-item(
+              :what='contribution.what'
+              :who='contribution.who'
+              type='NON_MONETARY'
+            )
 
-      button.button.is-small(
-        v-if='groupMembersCount === 0'
-        @click='open("InviteByLink")'
-      )
-        i.icon-plus
-        i18n Add members to group
-
-    .giving
-      i18n(tag='h3' class='card-header') Giving
-
-      i18n.has-text-1.spacer-around(
-        v-if='!doesGive'
-        tag='p'
-      ) You can contribute to your group with money or other valuables like teaching skills, sharing your time ot help someone. The sky is the limit!
-
-      i18n.has-text-1.spacer-around(
-        v-else-if='!fakeStore.giving.monetary'
-        tag='p'
-      ) No one needs monetary contributions at the moment.
-
-      ul(v-if='doesGive')
-        contribution(
-          v-if='fakeStore.giving.monetary'
+        button.button.is-small(
+          v-if='groupMembersCount === 0'
+          @click='openModal("InviteByLink")'
         )
-          contribution-item(
-            :what='fakeStore.currency + fakeStore.giving.monetary'
-            :who='fakeStore.groupMembersPledging'
-            type='MONETARY'
-            action='GIVING'
+          i.icon-plus
+          i18n Add members to group
+
+      .giving
+        i18n(tag='h3' class='card-header') Giving
+
+        i18n.has-text-1.spacer-around(
+          v-if='!doesGive'
+          tag='p'
+        ) You can contribute to your group with money or other valuables like teaching skills, sharing your time ot help someone. The sky is the limit!
+
+        i18n.has-text-1.spacer-around(
+          v-else-if='!fakeStore.giving.monetary'
+          tag='p'
+        ) No one needs monetary contributions at the moment.
+
+        ul(v-if='doesGive')
+          contribution(
+            v-if='fakeStore.giving.monetary'
           )
+            contribution-item(
+              :what='fakeStore.currency + fakeStore.giving.monetary'
+              :who='fakeStore.groupMembersPledging'
+              type='MONETARY'
+              action='GIVING'
+            )
 
-        contribution.has-text-weight-bold(
-          v-for='(contribution, index) in fakeStore.giving.nonMonetary'
-          :key='`contribution-${index}`'
-          variant='editable'
-          :initial-value='contribution'
-          @new-value='(value) => handleEditNonMonetary(value, index)'
-        )
-          contribution-item(
-            :what='contribution'
-            type='NON_MONETARY'
-            action='GIVING'
+          contribution.has-text-weight-bold(
+            v-for='(contribution, index) in fakeStore.giving.nonMonetary'
+            :key='`contribution-${index}`'
+            variant='editable'
+            :initial-value='contribution'
+            @new-value='(value) => handleEditNonMonetary(value, index)'
           )
+            contribution-item(
+              :what='contribution'
+              type='NON_MONETARY'
+              action='GIVING'
+            )
 
-        contribution(
-          variant='unfilled'
-          @new-value='submitAddNonMonetary'
-        )
-          i.icon-plus(aria-hidden='true')
-          i18n Add a non-monetary pledge
+          contribution(
+            variant='unfilled'
+            @new-value='submitAddNonMonetary'
+          )
+            i.icon-plus(aria-hidden='true')
+            i18n Add a non-monetary pledge
 </template>
 
 <script>
@@ -152,14 +153,11 @@ export default {
         isEditingIncome: false,
         isActive: true
       },
+      paymentMethod: 'Manual', // static
       // -- Hardcoded Data just for layout purposes:
       fakeStore: {
-        upTo: 400,
-        paymentMethod: 'Manual',
-        currency: currencies.USD.symbol,
-        isFirstTime: true, // true when user doesn't have any income details. It displays the 'Add Income Details' box
-        mincome: 500,
-        receiving: {
+        currency: currencies.USD.symbol, // group (getter)
+        receiving: { // ?
           nonMonetary: [
             {
               what: 'Cooking',
@@ -172,13 +170,13 @@ export default {
           ],
           monetary: 100
         },
-        giving: {
+        giving: { // ?
           nonMonetary: [
             'Happiness'
           ],
           monetary: 20
         },
-        groupMembersPledging: [
+        groupMembersPledging: [ // group
           'Jack Fisher',
           'Charlotte Doherty',
           'Thomas Baker',
@@ -191,12 +189,21 @@ export default {
     ...mapGetters([
       'groupMembersCount',
       'groupSettings',
+      'currentGroupState',
       'memberProfile',
+      'memberGroupProfile',
       'groupMincomeFormatted',
       'ourUsername'
     ]),
+    upTo () {
+      const amount = this.memberGroupProfile[this.memberGroupProfile.incomeDetailsType]
+      return this.formatMincome(this.needsIncome ? this.groupSettings.mincomeAmount - amount : amount)
+    },
+    needsIncome () {
+      return this.memberGroupProfile.incomeDetailsType === 'incomeAmount'
+    },
     doesReceive () {
-      return this.fakeStore.receiving.monetary || this.fakeStore.receiving.nonMonetary
+      return this.needsIncome || this.fakeStore.receiving.nonMonetary
     },
     doesGive () {
       return this.fakeStore.giving.monetary || this.fakeStore.giving.nonMonetary
@@ -209,6 +216,8 @@ export default {
       this.form.incomeDetailsType = incomeDetailsType
       this.form[incomeDetailsType] = profile.groupProfile[incomeDetailsType]
     }
+
+    console.log('plop', this.memberGroupProfile, this.currentGroupState)
   },
   methods: {
     openModal (modal) {
@@ -234,10 +243,6 @@ export default {
         alert(`Failed to update user's profile. Error: ${e.message}`)
       }
     },
-    toggleMenu () {
-      this.ephemeral.isActive = !this.ephemeral.isActive
-    },
-
     submitAddNonMonetary (value) {
       console.log('TODO $store - submitAddNonMonetary')
       this.fakeStore.giving.nonMonetary.push(value) // Hardcoded Solution
@@ -251,23 +256,8 @@ export default {
         this.$set(this.fakeStore.giving.nonMonetary, index, value) // Hardcoded Solution
       }
     },
-    handleIncomeSave ({ canPledge, amount }) {
-      console.log('TODO $store - Save Income Details')
-      // -- Hardcoded Solution
-      this.fakeStore.receiving.monetary = canPledge ? null : this.fakeStore.mincome - amount
-      this.fakeStore.giving.monetary = canPledge ? amount : null
-      this.fakeStore.isFirstTime = false
-
-      this.closeIncome()
-    },
-    handleIncomeCancel () {
-      this.closeIncome()
-    },
-    closeIncome () {
-      this.ephemeral.isEditingIncome = false
-    },
-    open (modal) {
-      sbp('okTurtles.events/emit', OPEN_MODAL, modal)
+    formatIncome () {
+      return formatMincome = currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
     }
   }
 }

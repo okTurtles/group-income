@@ -221,6 +221,10 @@ const getters = {
       }
     }
   },
+  memberGroupProfile (state, getters) {
+    const profile = getters.memberProfile(getters.ourUsername) || {}
+    return profile.groupProfile || {}
+  },
   groupMembers (state, getters) {
     const groupId = state.currentGroupId
     return groupId && Object.keys(state[groupId].profiles).reduce(
