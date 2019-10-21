@@ -1,23 +1,22 @@
 'use strict'
 
-import { chompRight } from '~/shared/string.js'
-
-export function twoDecimalsOrInt (num) {
-  return chompRight(num.toFixed(2), '.00')
+export function decimalsOrInt (num, numDecimals) {
+  const fixed = num.toFixed(numDecimals)
+  return /\.0+$/.test(fixed) ? /^(.+)\.0+$/.exec(fixed)[1] : fixed
 }
 
 export default {
   USD: {
     symbol: '$',
     symbolWithCode: '$ USD',
-    displayWithCurrency: n => '$' + twoDecimalsOrInt(n),
-    displayWithoutCurrency: twoDecimalsOrInt
+    displayWithCurrency: n => '$' + decimalsOrInt(n, 0),
+    displayWithoutCurrency: n => decimalsOrInt(n, 0)
   },
   EUR: {
     symbol: '€',
     symbolWithCode: '€ EUR',
-    displayWithCurrency: n => '€' + twoDecimalsOrInt(n),
-    displayWithoutCurrency: twoDecimalsOrInt
+    displayWithCurrency: n => '€' + decimalsOrInt(n, 0),
+    displayWithoutCurrency: n => decimalsOrInt(n, 0)
 
   },
   BTC: {
