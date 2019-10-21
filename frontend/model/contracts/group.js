@@ -260,7 +260,9 @@ DefineContract({
         }
         Vue.set(state.profiles, meta.username, {
           contractID: meta.identityContractID,
-          groupProfile: {}
+          groupProfile: {
+            nonMonetaryContributions: []
+          }
         })
         // If we're triggered by handleEvent in state.js (and not latestContractState)
         // then the asynchronous sideEffect function will get called next
@@ -309,14 +311,24 @@ DefineContract({
         incomeDetailsType: x => ['incomeAmount', 'pledgeAmount'].includes(x),
         incomeAmount: x => typeof x === 'number' && x >= 0,
         pledgeAmount: x => typeof x === 'number' && x >= 0,
-        // TODO: make it possible to add / remove nonMonetaryContributions instead of
-        //       sending the entire list each time
-        nonMonetaryContributions: arrayOf(string)
+        nonMonetaryAdd: string,
+        nonMonetaryRemove: string
       }),
       process (state, { data, meta }) {
         var { groupProfile } = state.profiles[meta.username]
-        for (var key in data) {
-          Vue.set(groupProfile, key, data[key])
+        const nonMonetary = groupProfile.nonMonetaryContributions
+        for (const key in data) {
+          const value = data[key]
+          switch (key) {
+            case 'nonMonetaryAdd':
+              nonMonetary.push(value)
+              break
+            case 'nonMonetaryRemove':
+              nonMonetary.splice(nonMonetary.indexOf(value), 1)
+              break
+            default:
+              Vue.set(groupProfile, key, value)
+          }
         }
       }
     },
