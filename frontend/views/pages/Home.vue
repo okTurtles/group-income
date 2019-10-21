@@ -77,6 +77,11 @@ export default {
     SvgJoinGroup,
     SvgCreateGroup
   },
+  mounted () {
+    if (this.$route.query.next) {
+      this.openModal('LoginModal')
+    }
+  },
   methods: {
     openModal (mode) {
       sbp('okTurtles.events/emit', OPEN_MODAL, mode)
