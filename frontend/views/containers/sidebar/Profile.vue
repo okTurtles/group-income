@@ -17,7 +17,7 @@
 
   button.is-icon-small(
     data-test='settingsBtn'
-    @click='openModal("Settings")'
+    @click='openModal("SettingsWrapper")'
   )
     i.icon-cog
 </template>

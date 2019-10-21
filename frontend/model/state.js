@@ -105,6 +105,7 @@ const mutations = {
   login (state, user) {
     // make sure each time we use the app a valid
     // paymentsByMonth exists for the current month
+    // TODO: move these to group.js
     const monthTimestamp = currentMonthTimestamp()
     if (!state.paymentsByMonth) {
       state.paymentsByMonth = {}

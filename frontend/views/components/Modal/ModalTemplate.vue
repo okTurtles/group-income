@@ -8,10 +8,10 @@
     @keyup.tab='trapFocus'
   )
     transition(name='fade' appear)
-      .c-modal-background(@click='close' v-if='isActive')
+      .c-modal-background(@click='close' v-if='modalIsActive')
 
     transition(name='slide-left' appear @after-leave='unload')
-      .c-modal-content(ref='card' v-if='isActive')
+      .c-modal-content(ref='card' v-if='modalIsActive')
         header.c-modal-header(
           :class='{ "has-subtitle": $scopedSlots.subtitle }'
           v-if='$scopedSlots.title || $scopedSlots.subTitle'

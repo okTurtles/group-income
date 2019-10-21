@@ -97,7 +97,7 @@ export default {
           ...this.$route.query,
           section: tabItem.url
         }
-        this.$router.push({ query: query })
+        this.$router.push({ query })
         this.changeTab(tabItem.index)
       } else {
         sbp('state/vuex/dispatch', tabItem.action)
