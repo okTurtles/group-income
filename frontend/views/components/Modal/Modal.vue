@@ -24,7 +24,7 @@ export default {
     window.addEventListener('keyup', this.handleKeyUp)
   },
   mounted () {
-    this.initializeModals()
+    !this.$route.query.next && this.initializeModals()
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', OPEN_MODAL)
