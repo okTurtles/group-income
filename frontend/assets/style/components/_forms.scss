@@ -24,10 +24,6 @@ form {
     color: $text_1;
     margin-top: $spacer-sm;
   }
-
-  .error {
-    color: var(--danger_0);
-  }
 }
 
 // [1] - make the border-corner around totally visisble at combo elements
@@ -248,6 +244,7 @@ p.error {
   display: block;
   margin-top: $spacer-sm;
   margin-bottom: 0;
+  color: var(--danger_0);
 
   &::before {
     content: "\f057";

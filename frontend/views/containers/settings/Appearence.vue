@@ -6,6 +6,14 @@
       SelectorTheme
 
     section.card
+      h2.settings-subtitle Reduced Motion
+
+      label
+        input(type='checkbox' :checked='$store.state.reducedMotion' @change='handleCheckbox')
+        i18n Reduced motion
+        i18n.help When enabled the amount of animations you see around are reduced.
+
+    section.card
       h2.settings-subtitle Text settings
 
       //- TODO in separate tickets
@@ -17,15 +25,23 @@
 </template>
 
 <script>
+import { mapMutations } from 'vuex'
 import SelectorTheme from '@components/Settings/Theme.vue'
 // import SelectorFontSize from '@components/Settings/FontSize.vue'
 
 export default {
   name: 'SettingsAppearence',
-
   components: {
     SelectorTheme
-  //   SelectorFontSize
+    //   SelectorFontSize
+  },
+  methods: {
+    ...mapMutations([
+      'setReducedMotion'
+    ]),
+    handleCheckbox (e) {
+      this.setReducedMotion(e.target.checked)
+    }
   }
 }
 </script>

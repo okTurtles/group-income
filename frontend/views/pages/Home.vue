@@ -1,5 +1,5 @@
 <template lang='pug'>
-main.c-splash(data-test='homeLogo')
+main.c-splash(data-test='homeLogo' v-if='this.$store.getters.groupsByName.length === 0')
   header(v-if='!$store.state.loggedIn' key='title-login')
     img.logo(src='/assets/images/group-income-icon-transparent.png')
     i18n(tag='h1' data-test='welcomeHome') Welcome to GroupIncome

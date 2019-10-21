@@ -38,8 +38,9 @@ const initialState = {
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
   theme: 'blue',
-  fontSize: 1,
-  paymentsByMonth: {}
+  paymentsByMonth: {},
+  reducedMotion: false,
+  fontSize: 1
 }
 
 // guard all sbp calls for contract actions with this function
@@ -182,6 +183,9 @@ const mutations = {
   },
   setTheme (state, color) {
     state.theme = color
+  },
+  setReducedMotion (state, isChecked) {
+    state.reducedMotion = isChecked
   },
   setFontSize (state, fontSize) {
     state.fontSize = fontSize

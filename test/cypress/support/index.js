@@ -15,19 +15,18 @@
 
 import './commands.js'
 
-// Abort all tests specs on first fail
-
-before(function () {
-  cy.getCookie('FAILED_TEST').then(cookie => {
-    if (cookie && typeof cookie === 'object' && cookie.value === 'true') {
-      Cypress.runner.stop()
-    }
-  })
-})
-
+// Abort tests on first fail
 afterEach(function () {
   if (this.currentTest.state === 'failed') {
-    cy.setCookie('FAILED_TEST', 'true')
     Cypress.runner.stop()
   }
 })
+
+/* Some Notes / Best Practices about writing Cypress tests:
+- After performing an action that changes the view, look for ways to assert it
+  before looking for the new element that migh not exist yet.
+  For ex:, check the new URL. A common action at GI is to close the modal.
+  Use cy.closeModal() - it closes and waits for the modal to be closed
+  (URL changed) before moving on...
+- ...
+*/
