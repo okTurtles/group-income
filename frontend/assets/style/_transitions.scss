@@ -155,3 +155,17 @@
     transform: scale3d(1, 1, 1);
   }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+.js-reducedMotion {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

@@ -32,7 +32,7 @@ var loginGuard = {
 // Check if user has a group
 var groupGuard = {
   guard: (to, from) => !store.state.currentGroupId,
-  redirect: (to, from) => ({ path: '?modal=new-group' })
+  redirect: (to, from) => ({ path: '/' })
 }
 // TODO: add state machine guard and redirect to critical error page if necessary
 // var mailGuard = {
@@ -75,19 +75,19 @@ var router = new Router({
       component: GroupDashboard,
       name: GroupDashboard.name,
       meta: { title: L('Group Dashboard') },
-      beforeEnter: createEnterGuards(loginGuard)
+      beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     {
       path: '/contributions',
       component: Contributions,
       meta: { title: L('Contributions') },
-      beforeEnter: createEnterGuards(loginGuard)
+      beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     {
       path: '/pay-group',
       component: PayGroup,
       meta: { title: L('Pay Group') },
-      beforeEnter: createEnterGuards(loginGuard)
+      beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     /* Guards need to be created for any route that should not be directly accessed by url */
     {

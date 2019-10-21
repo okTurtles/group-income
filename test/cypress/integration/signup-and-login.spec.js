@@ -7,7 +7,7 @@ describe('SignUp, Profile and Login', () => {
 
   it('user1 signups and creates a group', () => {
     cy.visit('/')
-    cy.giSignUp(username)
+    cy.giSignup(username)
     cy.giCreateGroup('Dreamers 2')
     cy.getByDT('profileName').should('contain', username)
   })
@@ -42,7 +42,7 @@ describe('SignUp, Profile and Login', () => {
 
     cy.getByDT('profileDisplayName').should('contain', 'I am a bot')
     cy.getByDT('profileName').should('contain', username)
-    cy.giLogOut()
+    cy.giLogout()
   })
 
   it('prevent incorrect logins/signup actions', () => {
@@ -58,7 +58,7 @@ describe('SignUp, Profile and Login', () => {
     cy.getByDT('loginSubmit').click()
     cy.getByDT('loginError').should('contain', 'Invalid username or password')
 
-    cy.getByDT('closeModal').click()
+    cy.closeModal()
 
     cy.log('- Cannot signup existing user twice')
     cy.getByDT('signupBtn').click()
@@ -73,7 +73,7 @@ describe('SignUp, Profile and Login', () => {
     // cy.getByDT('signEmail').clear().type(`${username}@email.com`)
     // cy.getByDT('badUsername').should('contain', 'email is unavailable')
 
-    cy.getByDT('closeModal').click()
+    cy.closeModal()
 
     cy.log('- Switch between login to signup modals')
     cy.getByDT('loginBtn').click()
@@ -84,6 +84,6 @@ describe('SignUp, Profile and Login', () => {
     cy.getByDT('goToLogin').click()
     cy.getByDT('loginName').should('exist')
 
-    cy.getByDT('closeModal').click()
+    cy.closeModal()
   })
 })

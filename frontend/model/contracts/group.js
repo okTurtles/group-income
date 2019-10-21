@@ -103,7 +103,11 @@ DefineContract({
     'gi.contracts/group/paymentUpdate': {
       validate: objectOf({
         paymentHash: string,
-        updatedProperties: object
+        updatedProperties: objectMaybeOf({
+          status: paymentStatusType,
+          details: object,
+          memo: string
+        })
       }),
       process (state, { data, meta, hash }) {
         // TODO: we don't want to keep a history of all payments in memory all the time
@@ -120,7 +124,6 @@ DefineContract({
           throw new Errors.GIErrorIgnoreAndBanIfGroup('paymentUpdate from wrong user!')
         }
         payment.history.push(data.updatedProperties)
-        // TODO: validate new properties
         merge(payment.data, data.updatedProperties)
       }
     },
