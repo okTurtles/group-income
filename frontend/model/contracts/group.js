@@ -309,6 +309,8 @@ DefineContract({
         incomeDetailsType: x => ['incomeAmount', 'pledgeAmount'].includes(x),
         incomeAmount: x => typeof x === 'number' && x >= 0,
         pledgeAmount: x => typeof x === 'number' && x >= 0,
+        // TODO: make it possible to add / remove nonMonetaryContributions instead of
+        //       sending the entire list each time
         nonMonetaryContributions: arrayOf(string)
       }),
       process (state, { data, meta }) {

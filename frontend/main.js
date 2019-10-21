@@ -10,7 +10,7 @@ import router from './controller/router.js'
 import { createWebSocket } from './controller/backend.js'
 import store from './model/state.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
-import { LOGOUT } from './utils/events.js'
+import { LOGOUT, CONTRACT_IS_SYNCING } from './utils/events.js'
 import './utils/lazyLoadedView.js'
 import Navigation from './views/containers/sidebar/Navigation.vue'
 import AppStyles from './views/components/AppStyles.vue'
@@ -80,11 +80,26 @@ async function startApp () {
       Navigation,
       Modal
     },
+    data () {
+      return {
+        ephemeral: {
+          syncs: []
+        }
+      }
+    },
     mounted () {
       const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)') || {}
       if (reducedMotionQuery.matches || window.Cypress) {
         this.setReducedMotion(true)
       }
+      sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
+        // make it possible for Cypress to wait for contracts to finish syncing
+        if (isSyncing) {
+          this.ephemeral.syncs.push(contractID)
+        } else {
+          this.ephemeral.syncs = this.ephemeral.syncs.filter(id => id !== contractID)
+        }
+      })
     },
     computed: {
       showNav () {

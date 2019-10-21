@@ -19,7 +19,7 @@
         </div>
     </div>
     <![endif]-->
-    <div id="app" :class="appClasses" data-test="app">
+    <div id="app" :class="appClasses" data-test="app" :data-sync='ephemeral.syncs'>
       <app-styles></app-styles>
       <navigation v-if="showNav" class="l-navigation"></navigation>
       <router-view class="l-page"></router-view>

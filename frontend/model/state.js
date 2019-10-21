@@ -6,14 +6,12 @@
 import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
-import { GIMessage } from '~/shared/GIMessage.js'
-import * as _ from '@utils/giLodash.js'
 import L from '@view-utils/translations.js'
 import currencies from '@view-utils/currencies.js'
 import incomeDistribution from '@utils/distribution/mincome-proportional.js'
+import { GIMessage } from '~/shared/GIMessage.js'
 import { SETTING_CURRENT_USER } from './database.js'
 import { ErrorDBBadPreviousHEAD, ErrorDBConnection } from '~/shared/domains/gi/db.js'
-import { LOGIN, LOGOUT, EVENT_HANDLED, CONTRACTS_MODIFIED } from '@utils/events.js'
 import Colors from './colors.js'
 import { TypeValidatorError } from '@utils/flowTyper.js'
 import { GIErrorUnrecoverable, GIErrorIgnoreAndBanIfGroup, GIErrorDropAndReprocess } from './errors.js'
@@ -21,6 +19,8 @@ import { STATUS_OPEN, PROPOSAL_REMOVE_MEMBER } from './contracts/voting/proposal
 import { VOTE_FOR } from '@model/contracts/voting/rules.js'
 import { actionWhitelisted, CONTRACT_REGEX } from '@model/contracts/Contract.js'
 import { currentMonthTimestamp } from '@utils/time.js'
+import * as _ from '@utils/giLodash.js'
+import * as EVENTS from '@utils/events.js'
 import './contracts/group.js'
 import './contracts/mailbox.js'
 import './contracts/identity.js'
@@ -50,6 +50,10 @@ function guardedSBP (sel: string, ...data: any): any {
   }
   return sbp(sel, ...data)
 }
+
+sbp('okTurtles.events/on', EVENTS.CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
+  contractIsSyncing[contractID] = isSyncing
+})
 
 sbp('sbp/selectors/register', {
   'state/latestContractState': async (contractID: string) => {
@@ -109,12 +113,12 @@ const mutations = {
       state.paymentsByMonth[monthTimestamp] = {}
     }
     state.loggedIn = user
-    sbp('okTurtles.events/emit', LOGIN, user)
+    sbp('okTurtles.events/emit', EVENTS.LOGIN, user)
   },
   logout (state) {
     state.loggedIn = false
     state.currentGroupId = null
-    sbp('okTurtles.events/emit', LOGOUT)
+    sbp('okTurtles.events/emit', EVENTS.LOGOUT)
   },
   processMessage (state, { selector, message }) {
     guardedSBP(selector, state, message)
@@ -145,7 +149,7 @@ const mutations = {
     const index = state.pending.indexOf(contractID)
     index !== -1 && state.pending.splice(index, 1)
     // calling this will make pubsub subscribe for events on `contractID`!
-    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
+    sbp('okTurtles.events/emit', EVENTS.CONTRACTS_MODIFIED, state.contracts)
   },
   setContractHEAD (state, { contractID, HEAD }) {
     state.contracts[contractID].HEAD = HEAD
@@ -160,7 +164,7 @@ const mutations = {
       console.warn(`removeContract: ${e.name} attempting to remove ${contractID}:`, e.message)
     }
     // calling this will make pubsub unsubscribe for events on `contractID`!
-    sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, state.contracts)
+    sbp('okTurtles.events/emit', EVENTS.CONTRACTS_MODIFIED, state.contracts)
   },
   deleteMessage (state, hash) {
     const mailboxContract = store.getters.mailboxContract
@@ -316,8 +320,8 @@ const actions = {
     }
     if (latest !== recent) {
       console.log(`Now Synchronizing Contract: ${contractID} its most recent was ${recent || 'undefined'} but the latest is ${latest}`)
-      contractIsSyncing[contractID] = true
-      // TODO Do we need a since call that is inclusive? Since does not imply inclusion
+      sbp('okTurtles.events/emit', EVENTS.CONTRACT_IS_SYNCING, contractID, true)
+      // TODO: fetch events from localStorage instead of server if we have them
       const events = await sbp('backend/eventsSince', contractID, recent || contractID)
       // remove the first element in cases where we are not getting the contract for the first time
       state.contracts[contractID] && events.shift()
@@ -325,7 +329,7 @@ const actions = {
         // this must be called directly, instead of via enqueueHandleEvent
         await dispatch('handleEvent', GIMessage.deserialize(events[i]))
       }
-      contractIsSyncing[contractID] = false
+      sbp('okTurtles.events/emit', EVENTS.CONTRACT_IS_SYNCING, contractID, false)
     }
   },
   async login (
@@ -351,6 +355,7 @@ const actions = {
       // TODO: figure out what happened and prevent it from happening again
       //       maybe move this recovery stuff to a recovery page and redirect
       //       us there instead of doing it here.
+      // TODO: fetch events from localStorage instead of server if we have them
       const currentGroupId = store.state.currentGroupId
       if (currentGroupId && !contracts[currentGroupId]) {
         console.error(`login: lost current group state somehow for ${currentGroupId}! attempting resync...`)
@@ -520,7 +525,7 @@ const handleEvent = {
       }
       // let any listening components know that we've received, processed, and stored the event
       sbp('okTurtles.events/emit', hash, contractID, message)
-      sbp('okTurtles.events/emit', EVENT_HANDLED, contractID, message)
+      sbp('okTurtles.events/emit', EVENTS.EVENT_HANDLED, contractID, message)
     } catch (e) {
       console.error(`processSideEffects: ${e.name}:`, e)
       // if an error happens at this point, it's almost certainly not due to malformed data
@@ -544,7 +549,7 @@ const handleEvent = {
       // if replaceState resulted in any contracts being added or removed
       // make sure our web sockets are either subscribed or unsubscribed as needed
       try {
-        sbp('okTurtles.events/emit', CONTRACTS_MODIFIED, store.state.contracts)
+        sbp('okTurtles.events/emit', EVENTS.CONTRACTS_MODIFIED, store.state.contracts)
       } catch (e) {
         console.error(e.message, e.stack)
       }
