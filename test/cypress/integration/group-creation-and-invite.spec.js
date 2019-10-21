@@ -4,19 +4,18 @@ describe('Group Creation and Inviting Members', () => {
 
   it('register user1, user2 and user3', () => {
     cy.visit('/')
-    cy.giSignUp(`user1-${userId}`)
-    cy.giLogOut()
-    cy.giSignUp(`user2-${userId}`)
-    cy.giLogOut()
-    cy.giSignUp(`user3-${userId}`)
-    cy.giLogOut()
+    cy.giSignup(`user1-${userId}`)
+    cy.giLogout({ hasNoGroup: true })
+    cy.giSignup(`user2-${userId}`)
+    cy.giLogout({ hasNoGroup: true })
+    cy.giSignup(`user3-${userId}`)
+    cy.giLogout({ hasNoGroup: true })
   })
 
   it('user1 logins back and invites user2 and user3 to his group', () => {
     cy.giLogin(`user1-${userId}`)
 
     cy.giCreateGroup(groupName, { income: 400 })
-    cy.getByDT('welcomeGroup').should('contain', `Welcome ${groupName}!`)
 
     cy.getByDT('inviteButton').click()
 
@@ -39,11 +38,11 @@ describe('Group Creation and Inviting Members', () => {
       cy.getByDT('remove').click()
     })
     cy.getByDT('invitee').should('have.length', 1)
-    cy.getByDT('closeModal').click()
+    cy.closeModal()
 
     cy.log('user1 decides to actually invite user2 and user3 to the group')
     cy.giInviteMember([`user2-${userId}`, `user3-${userId}`])
-    cy.giLogOut()
+    cy.giLogout()
   })
 
   function assertGroupMembersCount (count) {
@@ -57,11 +56,11 @@ describe('Group Creation and Inviting Members', () => {
     cy.giLogin(`user2-${userId}`)
     cy.giAcceptGroupInvite(groupName)
     assertGroupMembersCount(2)
-    cy.giLogOut()
+    cy.giLogout()
 
     cy.giLogin(`user3-${userId}`)
     cy.giAcceptGroupInvite(groupName)
     assertGroupMembersCount(3)
-    cy.giLogOut()
+    cy.giLogout()
   })
 })
