@@ -1,5 +1,7 @@
 <template lang='pug'>
-main.c-splash(data-test='homeLogo' v-if='showHome')
+main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
+  //- TODO: split this into two files, one showing the login/signup buttons
+  //-       and the other showing the create/join group buttons!
   header(v-if='!$store.state.loggedIn' key='title-login')
     img.logo(src='/assets/images/group-income-icon-transparent.png')
     i18n(tag='h1' data-test='welcomeHome') Welcome to GroupIncome
@@ -70,7 +72,6 @@ import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgCreateGroup from '@svgs/create-group.svg'
 import SvgJoinGroup from '@svgs/join-group.svg'
-import { mapState, mapGetters } from 'vuex'
 
 export default {
   name: 'Home',
@@ -81,17 +82,6 @@ export default {
   mounted () {
     if (this.$route.query.next) {
       this.openModal('LoginModal')
-    }
-  },
-  computed: {
-    ...mapState([
-      'loggedIn'
-    ]),
-    ...mapGetters([
-      'groupsByName'
-    ]),
-    showHome () {
-      return this.loggedIn && this.groupsByName.length === 0
     }
   },
   methods: {
