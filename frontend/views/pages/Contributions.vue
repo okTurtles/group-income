@@ -6,7 +6,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
     :isCard='true'
     :title='L("Add your income details")'
     :svg='SvgContributions'
-    v-if='!memberProfile(ourUsername).groupProfile.incomeDetailsKey'
+    v-if='!memberGroupProfile.incomeDetailsType'
   )
     i18n(tag='p') This will allow you to start receiving or giving mincome.
     i18n(tag='button' @click='openModal("IncomeDetails")') Add income details
@@ -161,12 +161,6 @@ export default {
       // -- Hardcoded Data just for layout purposes:
       fakeStore: {
         currency: currencies.USD.symbol, // group (getter)
-        giving: { // ?
-          nonMonetary: [
-            'Happiness'
-          ],
-          monetary: 20
-        },
         groupMembersPledging: [ // group
           'Jack Fisher',
           'Charlotte Doherty',
@@ -215,6 +209,15 @@ export default {
         ],
         monetary: 100
       }
+    },
+    giving () {
+      // - this.memberGroupProfile
+      return { // ?
+        nonMonetary: [
+          'Happiness'
+        ],
+        monetary: 20
+      }
     }
   },
   beforeMount () {
@@ -225,7 +228,7 @@ export default {
       this.form[incomeDetailsType] = profile.groupProfile[incomeDetailsType]
     }
 
-    console.log('plop', this.memberGroupProfile, this.currentGroupState)
+    console.log('plop', this.memberGroupProfile, this.currentGroupState, this.memberGroupProfile.incomeDetailsType, this.memberProfile(this.ourUsername).groupProfile.incomeDetailsKey)
   },
   methods: {
     openModal (modal) {
