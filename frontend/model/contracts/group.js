@@ -11,6 +11,7 @@ import proposals, { proposalType, proposalSettingsType, archiveProposal, PROPOSA
 import * as Errors from '../errors.js'
 import { merge, deepEqualJSONType } from '~/frontend/utils/giLodash.js'
 import { currentMonthTimestamp } from '~/frontend/utils/time.js'
+import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 
 // for gi.contracts/group/payment ... TODO: put these in some other file?
 export const PAYMENT_PENDING = 'pending'
@@ -28,6 +29,14 @@ export function generateInvites (numInvites: number) {
     inviteSecret: `${parseInt(Math.random() * 10000)}`, // TODO: this
     numInvites
     // expires: // TODO: this
+  }
+}
+
+function initMonthlyPayments () {
+  return {
+    payments: {},
+    frozenDistribution: null,
+    frozenMincome: null
   }
 }
 
@@ -63,7 +72,7 @@ DefineContract({
           }
         },
         paymentsByMonth: {
-          [currentMonthTimestamp()]: {}
+          [currentMonthTimestamp()]: initMonthlyPayments()
         }
       }
       for (const key in initialState) {
@@ -101,7 +110,16 @@ DefineContract({
         memo: optional(string)
       }),
       process (state, { data, meta, hash }) {
-        Vue.set(state.payments, hash, { data, meta, history: [data] })
+        const monthstamp = currentMonthTimestamp()
+        const thisMonth = vueFetchInitKV(state.paymentsByMonth, monthstamp, initMonthlyPayments())
+        const paymentsForUser = vueFetchInitKV(thisMonth.payments, meta.username, {})
+        Vue.set(paymentsForUser, hash, { data, meta, history: [data] })
+        // if this is the first payment, freeze the monthy's distribution
+        // if (!thisMonth.frozenDistribution) {
+        //   const getters = sbp('state/contractSafeGetters', state)
+        //   thisMonth.frozenDistribution = getters.groupIncomeDistribution
+        //   thisMonth.frozenMincome = getters.groupMincomeAmount
+        // }
       }
     },
     'gi.contracts/group/paymentUpdate': {
@@ -114,6 +132,7 @@ DefineContract({
         })
       }),
       process (state, { data, meta, hash }) {
+        // TODO: what happens if a payment update comes in for a payment from last month?
         // TODO: we don't want to keep a history of all payments in memory all the time
         //       https://github.com/okTurtles/group-income-simple/issues/426
         const payment = state.payments[data.paymentHash]
@@ -132,31 +151,25 @@ DefineContract({
       }
     },
     'gi.contracts/group/proposal': {
-      validate: data => {
-        objectOf({
-          proposalType: proposalType,
-          proposalData: object, // data for Vue widgets
-          votingRule: ruleType,
-          expires_date_ms: number // calculate by grabbing proposal expiry from group properties and add to `meta.createdDate`
-        })
+      validate: objectOf({
+        proposalType: proposalType,
+        proposalData: object, // data for Vue widgets
+        votingRule: ruleType,
+        expires_date_ms: number // calculate by grabbing proposal expiry from group properties and add to `meta.createdDate`
+      }),
+      process (state, { data, meta, hash }) {
         // make sure this isn't a duplicate proposal
-        const ourUsername = sbp('state/vuex/getters').ourUsername
-        const groupID = sbp('state/vuex/state').currentGroupId
-        const groupState = sbp('state/vuex/state')[groupID]
-        for (const hash in groupState.proposals) {
-          const prop = groupState.proposals[hash]
+        for (const hash in state.proposals) {
+          const prop = state.proposals[hash]
           if (prop.status === STATUS_OPEN &&
             prop.data.proposalType === data.proposalType &&
-            prop.meta.username === ourUsername &&
+            prop.meta.username === meta.username &&
             deepEqualJSONType(prop.data.proposalData, data.proposalData)
           ) {
             throw new TypeError(`proposal: is identical to proposal ${hash}`)
           }
         }
         // TODO/BUG: Avoid proposal to add existing member.
-        return data
-      },
-      process (state, { data, meta, hash }) {
         Vue.set(state.proposals, hash, {
           data,
           meta,
