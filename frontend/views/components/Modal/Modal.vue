@@ -24,7 +24,7 @@ export default {
     window.addEventListener('keyup', this.handleKeyUp)
   },
   mounted () {
-    !this.$route.query.next && this.initializeModals()
+    this.initializeModals()
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', OPEN_MODAL)
@@ -87,6 +87,8 @@ export default {
       }
     },
     openModal (componentName) {
+      // Don't open the same kind of modal twice.
+      if (this.content === componentName) return
       // Record active element
       this.lastFocus = document.activeElement
       if (this.content) {
