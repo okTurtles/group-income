@@ -691,7 +691,7 @@ page(
           td
             label.field
               .label New Amount
-              .inpusst-combo(:class='{ error: ephemeral.forms.hasError }')
+              .input-combo(:class='{ error: ephemeral.forms.hasError }')
                 input.input(type='text' placeholder='New amount')
                 .suffix USD
               span.error(v-if='ephemeral.forms.hasError') Something went wrong

@@ -1,7 +1,7 @@
 import i18next from 'i18next'
 import XHR from 'i18next-xhr-backend'
 import Vue from 'vue'
-import template from '@utils/stringTemplate.js'
+import template from '~/frontend/utils/stringTemplate.js'
 
 i18next.use(XHR).init({
   load: 'languageOnly',

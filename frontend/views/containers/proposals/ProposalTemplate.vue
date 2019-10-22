@@ -26,9 +26,8 @@
       .c-confirmation(v-if='isConfirmation' key='confirmation')
         svg-proposal.c-svg
         i18n(
-          compile
-          :args='{ ...LTags("strong"), value: rule.value }'
-        ) Members of your group will now be asked to vote.{br_} You need {strong_}{value} yes votes{_strong} for your proposal to be accepted.
+          :args='{ ...LTags("strong"), numVotes: rule.value }'
+        ) Members of your group will now be asked to vote.{br_} You need {strong_}{numVotes} yes votes{_strong} for your proposal to be accepted.
 
       .buttons(:class='{ "is-centered": isConfirmation }')
         button.is-outlined(
