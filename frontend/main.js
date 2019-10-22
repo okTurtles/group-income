@@ -1,4 +1,5 @@
 import Vue from 'vue'
+import { mapMutations } from 'vuex'
 // import SBP stuff before anything else so that domains register themselves before called
 import sbp from '~/shared/sbp.js'
 import '~/shared/domains/okTurtles/data.js'
@@ -9,7 +10,7 @@ import router from './controller/router.js'
 import { createWebSocket } from './controller/backend.js'
 import store from './model/state.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
-import { LOGOUT } from './utils/events.js'
+import { LOGIN, LOGOUT, CONTRACT_IS_SYNCING } from './utils/events.js'
 import './utils/lazyLoadedView.js'
 import Navigation from './views/containers/sidebar/Navigation.vue'
 import AppStyles from './views/components/AppStyles.vue'
@@ -79,15 +80,54 @@ async function startApp () {
       Navigation,
       Modal
     },
+    data () {
+      return {
+        ephemeral: {
+          syncs: [],
+          finishedLogin: 'no'
+        }
+      }
+    },
+    mounted () {
+      const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)') || {}
+      if (reducedMotionQuery.matches || window.Cypress) {
+        this.setReducedMotion(true)
+      }
+      sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
+        // make it possible for Cypress to wait for contracts to finish syncing
+        if (isSyncing) {
+          this.ephemeral.syncs.push(contractID)
+        } else {
+          this.ephemeral.syncs = this.ephemeral.syncs.filter(id => id !== contractID)
+        }
+      })
+      sbp('okTurtles.events/on', LOGIN, () => {
+        this.ephemeral.finishedLogin = 'yes'
+      })
+      sbp('okTurtles.events/on', LOGOUT, () => {
+        this.ephemeral.finishedLogin = 'no'
+        router.push({ path: '/' }).catch(console.error)
+      })
+    },
     computed: {
       showNav () {
-        return this.$store.state.loggedIn && this.$store.getters.groupsByName.length >= 1
+        return this.$store.state.loggedIn && this.$store.getters.groupsByName.length > 0
+      },
+      appClasses () {
+        return {
+          'l-with-navigation': this.showNav,
+          'l-no-navigation': !this.showNav,
+          'js-reducedMotion': this.$store.state.reducedMotion
+        }
       }
+    },
+    methods: {
+      ...mapMutations([
+        'setReducedMotion'
+      ])
     },
     store // make this and all child components aware of the new store
   }).$mount('#app')
-
-  sbp('okTurtles.events/on', LOGOUT, () => router.push({ path: '/' }).catch(console.error))
 }
 
 startApp()

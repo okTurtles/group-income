@@ -16,14 +16,14 @@ Cypress.Commands.add('getByDT', (element, otherSelector = '') => {
 
 // NOTE: We can go a step further and not use UI to do repetitive tasks.
 // https://docs.cypress.io/guides/getting-started/testing-your-app.html#Fully-test-the-login-flow-%E2%80%93-but-only-once
-Cypress.Commands.add('giSignUp', (userName, password = '123456789') => {
+Cypress.Commands.add('giSignup', (userName, password = '123456789') => {
   cy.getByDT('signupBtn').click()
   cy.getByDT('signName').clear().type(userName)
   cy.getByDT('signEmail').clear().type(`${userName}@email.com`)
   cy.getByDT('password').type(password)
 
   cy.getByDT('signSubmit').click()
-
+  cy.getByDT('closeModal').should('not.exist')
   cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
 })
 
@@ -33,22 +33,34 @@ Cypress.Commands.add('giLogin', (userName, password = '123456789') => {
   cy.getByDT('password').clear().type(password)
 
   cy.getByDT('loginSubmit').click()
+  cy.getByDT('closeModal').should('not.exist')
 
   // We changed pages (to dashboard or create group)
   // so there's no login button anymore
   cy.getByDT('loginBtn').should('not.exist')
+
+  // make giLogin wait for contracts to finish syncing
+  cy.getByDT('app').then(([el]) => {
+    cy.wrap(el.getAttribute('data-logged-in')).should('eq', 'yes')
+    cy.wrap(el.getAttribute('data-sync')).should('be.empty')
+  })
 })
 
-Cypress.Commands.add('giLogOut', () => {
-  cy.getByDT('app').then(($app) => {
-    if ($app.find('[data-test="userProfile"]').length) {
-      cy.getByDT('settingsBtn').click()
-      cy.getByDT('link-logout').click()
-    } else {
-      cy.getByDT('logout').click()
-    }
-  })
+Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {
+  if (hasNoGroup) {
+    cy.getByDT('logout').click()
+  } else {
+    cy.getByDT('settingsBtn').click()
+    cy.getByDT('link-logout').click()
+    cy.getByDT('closeModal').should('not.exist')
+  }
+  cy.url().should('eq', 'http://localhost:8000/app/')
   cy.getByDT('welcomeHome').should('contain', 'Welcome to GroupIncome')
+})
+
+Cypress.Commands.add('closeModal', () => {
+  cy.getByDT('closeModal').click()
+  cy.getByDT('closeModal').should('not.exist')
 })
 
 Cypress.Commands.add('giCreateGroup', (name, { image = 'imageTest.png', values = 'Testing group values', income = 200 } = {}) => {
@@ -82,7 +94,9 @@ Cypress.Commands.add('giCreateGroup', (name, { image = 'imageTest.png', values =
 
   cy.getByDT('finishBtn').click()
 
+  cy.getByDT('welcomeGroup').should('contain', `Welcome ${name}!`)
   cy.getByDT('toDashboardBtn').click()
+  cy.url().should('eq', 'http://localhost:8000/app/dashboard')
 })
 
 function inviteUser (invitee, index) {
@@ -117,6 +131,7 @@ Cypress.Commands.add('giInviteMember', (
     cy.getByDT('reason', 'textarea').clear().type(reason)
     cy.getByDT('submitBtn').click()
     cy.getByDT('finishBtn').click()
+    cy.getByDT('closeModal').should('not.exist')
   } else {
     cy.getByDT('submitBtn').click()
     cy.getByDT('invitee').each(([invitee]) => {
@@ -124,7 +139,7 @@ Cypress.Commands.add('giInviteMember', (
         .getByDT('feedbackMsg')
         .should('contain', 'Member invited successfully!')
     })
-    cy.getByDT('closeModal').click()
+    cy.closeModal()
   }
 })
 

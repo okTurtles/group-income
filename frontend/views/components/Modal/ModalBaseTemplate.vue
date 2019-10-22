@@ -5,7 +5,8 @@
       role='dialog'
       tabindex='-1'
       @keyup.tab='trapFocus'
-      v-if='isActive'
+      v-if='modalIsActive'
+      @close='close'
     )
       modal-close(@close='close')
       slot

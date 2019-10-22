@@ -2,12 +2,14 @@
 page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
   template(#title='') {{ L('Contributions') }}
 
-  page-section.c-card-empty
-    svg-contributions.c-svg
-    div
-      i18n(tag='h3') Add your income details
-      i18n.c-text(tag='p') This will allow you to start receiving or giving mincome.
-      i18n(tag='button' @click='openModal("IncomeDetails")') Add income details
+  callout-card(
+    :isCard='true'
+    :title='L("Add your income details")'
+    :svg='SvgContributions'
+    v-if='memberProfile(ourUsername).groupProfile.incomeDetailsKey'
+  )
+    i18n(tag='p') This will allow you to start receiving or giving mincome.
+    i18n(tag='button' @click='openModal("IncomeDetails")') Add income details
 
   .c-contribution-header
     .has-text-1
@@ -125,6 +127,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
 import sbp from '~/shared/sbp.js'
 import { mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
+import CalloutCard from '@components/CalloutCard.vue'
 import SvgContributions from '@svgs/contributions.svg'
 import Page from '@pages/Page.vue'
 import PageSection from '@components/PageSection.vue'
@@ -139,6 +142,7 @@ export default {
   components: {
     Page,
     PageSection,
+    CalloutCard,
     GroupMincome,
     Contribution,
     ContributionItem,
@@ -146,6 +150,7 @@ export default {
   },
   data () {
     return {
+      SvgContributions,
       form: {
         incomeDetailsType: 'incomeAmount',
         incomeAmount: 0,
