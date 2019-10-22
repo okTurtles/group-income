@@ -14,6 +14,7 @@ form {
 }
 
 .field {
+  position: relative;
   display: block;
   max-width: 100%;
   width: 100%;
@@ -187,15 +188,7 @@ textarea,
     border-radius: 0 3px 3px 0;
   }
 
-  button.is-shifted {
-    @include tablet {
-      position: absolute;
-      right: -$spacer-lg;
-      top: $spacer-sm;
-    }
-  }
-
-  button:not(.is-shifted) {
+  button {
     border-radius: 0 $radius $radius 0;
 
     &.is-icon {
@@ -235,6 +228,20 @@ textarea,
         box-shadow: 0 0 0 2px $danger_1;
         border-color: $danger_0;
       }
+    }
+  }
+}
+
+.input-shifted {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  button {
+    margin-left: $spacer-sm;
+
+    @include tablet {
+      margin-right: -3rem;
     }
   }
 }

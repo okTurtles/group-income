@@ -122,7 +122,6 @@ declare module '../views/DesignSystem.vue' { declare module.exports: Object }
 declare module '../views/GroupChat.vue' { declare module.exports: Object }
 declare module '../views/GroupDashboard.vue' { declare module.exports: Object }
 declare module '../views/Home.vue' { declare module.exports: Object }
-declare module '../views/Invite.vue' { declare module.exports: Object }
 declare module '../views/Join.vue' { declare module.exports: Object }
 declare module '../views/Mailbox.vue' { declare module.exports: Object }
 declare module '../views/Messages.vue' { declare module.exports: Object }
@@ -162,7 +161,6 @@ declare module './database.js' { declare module.exports: Function }
 declare module './functions.js' { declare module.exports: Function }
 declare module './GraphLegendGroup.vue' { declare module.exports: Object }
 declare module './GraphLegendItem.vue' { declare module.exports: Object }
-declare module './GroupInvitees.vue' { declare module.exports: Object }
 declare module './GroupMincome.vue' { declare module.exports: Object }
 declare module './GroupName.vue' { declare module.exports: Object }
 declare module './GroupPrivacy.vue' { declare module.exports: Object }

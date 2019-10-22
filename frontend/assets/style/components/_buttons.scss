@@ -87,6 +87,7 @@ button,
     padding: 0;
     min-height: auto;
     display: flex;
+    flex-shrink: 0;
     justify-content: center;
     align-items: center;
     color: $text_0;
