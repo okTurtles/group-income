@@ -27,14 +27,16 @@ import { mapGetters } from 'vuex'
 import SvgVote from '@svgs/vote.svg'
 import CalloutCard from '@components/CalloutCard.vue'
 import ProposalBox from '@containers/proposals/ProposalBox.vue'
+import PageSection from '@components/PageSection.vue'
 import { STATUS_OPEN } from '@model/contracts/voting/proposals.js'
 
 export default {
-  name: 'Proposals',
+  name: 'ProposalsWidget',
   components: {
     ProposalBox,
     CalloutCard,
-    SvgVote
+    SvgVote,
+    PageSection
   },
   data () {
     return {

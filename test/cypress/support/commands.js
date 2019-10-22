@@ -38,6 +38,12 @@ Cypress.Commands.add('giLogin', (userName, password = '123456789') => {
   // We changed pages (to dashboard or create group)
   // so there's no login button anymore
   cy.getByDT('loginBtn').should('not.exist')
+
+  // make giLogin wait for contracts to finish syncing
+  cy.getByDT('app').then(([el]) => {
+    cy.wrap(el.getAttribute('data-logged-in')).should('eq', 'yes')
+    cy.wrap(el.getAttribute('data-sync')).should('be.empty')
+  })
 })
 
 Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {

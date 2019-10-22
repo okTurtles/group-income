@@ -19,7 +19,13 @@
         </div>
     </div>
     <![endif]-->
-    <div id="app" :class="appClasses" data-test="app">
+    <div
+      id="app"
+      data-test="app"
+      :class="appClasses"
+      :data-sync='ephemeral.syncs'
+      :data-logged-in='ephemeral.finishedLogin'
+    >
       <app-styles></app-styles>
       <navigation v-if="showNav" class="l-navigation"></navigation>
       <router-view class="l-page"></router-view>
