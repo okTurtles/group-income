@@ -691,7 +691,7 @@ page(
           td
             label.field
               .label New Amount
-              .input-combo(:class='{ error: ephemeral.forms.hasError }')
+              .inpusst-combo(:class='{ error: ephemeral.forms.hasError }')
                 input.input(type='text' placeholder='New amount')
                 .suffix USD
               span.error(v-if='ephemeral.forms.hasError') Something went wrong
@@ -700,20 +700,21 @@ page(
             pre
               | label.field
               |   .label Add invitee
-              |   .input-combo.error
+              |   .input-shifted
               |     input.input
-              |     button.is-icon-small.is-shifted(
+              |     button.is-icon-small(
               |       :aria-label='Remove member'
               |     )
+              |       i.icon-times
           td
             label.field
               .label Add invitee
-              .input-combo(:class='{ error: ephemeral.forms.hasError }')
+              .input-shifted(:class='{ error: ephemeral.forms.hasError }')
                 input.input(type='text' placeholder='New amount')
-                .suffix USD
-                button.is-icon-small.is-shifted(
+                button.is-icon-small(
                   :aria-label='L("Remove member")'
                 )
+                  i.icon-times
               span.error(v-if='ephemeral.forms.hasError') Something went wrong
         tr
           td

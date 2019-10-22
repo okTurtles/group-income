@@ -102,8 +102,6 @@ Cypress.Commands.add('giCreateGroup', (name, { image = 'imageTest.png', values =
 function inviteUser (invitee, index) {
   cy.getByDT('invitee').eq(index).within(() => {
     cy.get('input').clear().type(invitee)
-    cy.getByDT('add', 'button').click()
-    cy.getByDT('feedbackMsg').should('contain', 'Ready to be invited!')
   })
 }
 
@@ -115,16 +113,12 @@ Cypress.Commands.add('giInviteMember', (
   } = {}) => {
   cy.getByDT('inviteButton').click()
 
-  if (typeof invitees === 'string') {
-    inviteUser(invitees, 0)
-  } else {
-    invitees.forEach((invitee, index) => {
-      if (index > 0) {
-        cy.getByDT('addInviteeSlot').click()
-      }
-      inviteUser(invitee, index)
-    })
-  }
+  invitees.forEach((invitee, index) => {
+    if (index > 0) {
+      cy.getByDT('addInviteeSlot').click()
+    }
+    inviteUser(invitee, index)
+  })
 
   if (isProposal) {
     cy.getByDT('nextBtn').click()
@@ -134,11 +128,8 @@ Cypress.Commands.add('giInviteMember', (
     cy.getByDT('closeModal').should('not.exist')
   } else {
     cy.getByDT('submitBtn').click()
-    cy.getByDT('invitee').each(([invitee]) => {
-      cy.get(invitee)
-        .getByDT('feedbackMsg')
-        .should('contain', 'Member invited successfully!')
-    })
+    cy.getByDT('feedbackMsg')
+      .should('contain', `Invites to ${invitees.join(', ')} sent successfully!`)
     cy.closeModal()
   }
 })
