@@ -106,7 +106,7 @@ async function startApp () {
       })
       sbp('okTurtles.events/on', LOGOUT, () => {
         this.ephemeral.finishedLogin = 'no'
-        router.push({ path: '/' }).catch(console.error)
+        router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
       })
     },
     computed: {
