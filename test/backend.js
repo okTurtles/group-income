@@ -175,7 +175,8 @@ describe('Full walkthrough', function () {
       const { alice } = users
       var res = await sbp('namespace/lookup', alice.data().attributes.name)
       res.should.equal(alice.hash())
-      sbp('namespace/lookup', 'susan').should.be.rejected()
+      const contractID = await sbp('namespace/lookup', 'susan')
+      should(contractID).equal(null)
     })
 
     it('Should open sockets for Alice and Bob', async function () {

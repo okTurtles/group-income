@@ -45,6 +45,7 @@ div(
 </template>
 
 <script>
+// TODO: delete both this file and Invite.vue
 import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
 import Avatar from '@components/Avatar.vue'
@@ -84,7 +85,10 @@ export default {
 
       try {
         const contractID = await sbp('namespace/lookup', this.searchUser)
-        console.log('contractID:', contractID)
+        if (!contractID) {
+          this.userErrorMsg = L("User doesn't exist: {username}", { username: this.searchUser })
+          return
+        }
         const state = await sbp('state/latestContractState', contractID)
         if (!this.invitees.find(invitee => invitee.state.attributes.name === this.searchUser)) {
           this.invitees.push({ state, contractID })
@@ -93,8 +97,8 @@ export default {
         this.userErrorMsg = ''
         this.$emit('input', { data: { invitees: this.invitees } })
       } catch (err) {
-        console.log(err)
-        this.userErrorMsg = L('Invalid User')
+        console.error(err)
+        this.userErrorMsg = err.message
       }
     },
     remove (index) {

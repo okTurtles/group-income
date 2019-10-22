@@ -122,23 +122,25 @@ export default {
           //       we get the links page working nicely.
           //       this.data.members will not contain usernames in the future.
           const contractID = await sbp('namespace/lookup', username)
-          const identityContract = await sbp('state/latestContractState', contractID)
-          console.debug('sending invite to:', contractID, identityContract)
-          const inviteToMailbox = await sbp('gi.contracts/mailbox/postMessage/create',
-            {
-              messageType: TYPE_MESSAGE,
-              from: groupName,
-              subject: `You've been invited to join ${groupName}!`,
-              message: `Hi ${username},
-              
-              ${groupName} has voted to invite you! Horray!
-              Here's your special invite link:
-              
-              ${buildInvitationUrl(this.$store.state.currentGroupId, payload.passPayload.inviteSecret)}`
-            },
-            identityContract.attributes.mailbox
-          )
-          await sbp('backend/publishLogEntry', inviteToMailbox)
+          if (contractID) {
+            const identityContract = await sbp('state/latestContractState', contractID)
+            console.debug('sending invite to:', contractID, identityContract)
+            const inviteToMailbox = await sbp('gi.contracts/mailbox/postMessage/create',
+              {
+                messageType: TYPE_MESSAGE,
+                from: groupName,
+                subject: `You've been invited to join ${groupName}!`,
+                message: `Hi ${username},
+                
+                ${groupName} has voted to invite you! Horray!
+                Here's your special invite link:
+                
+                ${buildInvitationUrl(this.$store.state.currentGroupId, payload.passPayload.inviteSecret)}`
+              },
+              identityContract.attributes.mailbox
+            )
+            await sbp('backend/publishLogEntry', inviteToMailbox)
+          }
         }
       } catch (ex) {
         console.log(ex)

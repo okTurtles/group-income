@@ -15,8 +15,8 @@
         input.input#loginName(
           :class='{error: $v.form.name.$error}'
           name='name'
-          v-model='$v.form.name.$model'
           @keyup.enter='login'
+          @input='debounceName'
           ref='username'
           autofocus
           data-test='loginName'
@@ -45,7 +45,9 @@
 
     template(slot='footer')
       p
-        i18n Not on Group Income yet?&nbsp;
+        i18n Not on Group Income yet?
+        |
+        |
         i18n.link(
           data-test='goToSignup'
           tag='a'
@@ -54,10 +56,12 @@
 </template>
 
 <script>
-import { validationMixin } from 'vuelidate'
 import sbp from '~/shared/sbp.js'
+import { validationMixin } from 'vuelidate'
 import { required, minLength } from 'vuelidate/lib/validators'
+import { nonWhitespace } from '@views/utils/validators.js'
 import { REPLACE_MODAL } from '@utils/events.js'
+import { debounce } from '@utils/giLodash.js'
 import FormPassword from '@components/Forms/Password.vue'
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
 import L from '@view-utils/translations.js'
@@ -73,11 +77,19 @@ export default {
     this.$refs.username.focus()
   },
   methods: {
+    debounceName: debounce(function (e) {
+      this.form.name = e.target.value
+      this.$v.form.name.$touch()
+    }, 700),
     async login () {
       try {
         // TODO: Insert cryptography here
         const identityContractID = await sbp('namespace/lookup', this.form.name)
-        console.log(`Retrieved identity ${identityContractID}`)
+        if (!identityContractID) {
+          this.ephemeral.errorMsg = L('Invalid username or password')
+          return
+        }
+        console.debug(`Retrieved identity ${identityContractID}`)
         await sbp('state/vuex/dispatch', 'login', {
           username: this.form.name,
           identityContractID
@@ -85,7 +97,7 @@ export default {
         this.close()
         if (this.$store.state.currentGroupId) this.$router.push({ path: '/dashboard' })
       } catch (error) {
-        this.ephemeral.errorMsg = L('Invalid username or password')
+        this.ephemeral.errorMsg = error.message
         console.error(error)
       }
     },
@@ -115,7 +127,7 @@ export default {
     form: {
       name: {
         required,
-        [L('Username cannot contain spaces')]: value => /^\S+$/.test(value)
+        [L('cannot contain spaces')]: nonWhitespace
       },
       password: {
         required,

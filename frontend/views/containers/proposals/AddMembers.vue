@@ -126,6 +126,10 @@ export default {
 
       try {
         const contractID = await sbp('namespace/lookup', searchUser)
+        if (!contractID) {
+          this.setInviteError(index, this.L('Non existing user. TODO support general invites'))
+          return
+        }
         const userState = await sbp('state/latestContractState', contractID)
         this.ephemeral.invitesToSend[index] = { contractID, ...userState }
         Vue.set(this.form.eachFeedbackMsg, index, {
@@ -134,8 +138,8 @@ export default {
         })
         this.ephemeral.isValid = true
       } catch (err) {
-        console.log(err)
-        this.setInviteError(index, this.L('Non existing user. TODO support general invites'))
+        console.error(err)
+        this.setInviteError(index, err.message)
       }
     },
     setInviteError (index, text) {
