@@ -25,7 +25,7 @@ page-section.c-section(:title='L("Invite links")')
     tbody
       tr(
         v-for='(item, index) in invitesToShow'
-        :key='index'
+        :key='item.inviteSecret'
       )
         td.c-name
           | {{ item.invitee }}
@@ -38,12 +38,12 @@ page-section.c-section(:title='L("Invite links")')
             .button.is-icon-smaller.is-primary.c-tip
               i.icon-info
         td.c-invite-link
-          copy-to-clipboard.c-invite-link-wrapper(:textToCopy='`http://localhost:8000/tobecontinued=${index}`')
-            span.link.has-ellipsis {{ `http://localhost:8000/tobecontinued=${index}` }}
+          copy-to-clipboard.c-invite-link-wrapper(:textToCopy='item.inviteLink')
+            span.link.has-ellipsis {{ item.inviteLink }}
             button.is-icon-small.has-background.c-invite-link-button
               i.icon-copy.is-regular
           button.is-icon-small.c-invite-link-button-mobile(
-            @click='activateWebShare(`http://localhost:8000/tobecontinued=${index}`)'
+            @click='activateWebShare(item.inviteLink)'
             :aria-label='L("Copy link")'
           )
             i.icon-ellipsis-v
@@ -87,6 +87,8 @@ import PageSection from '@components/PageSection.vue'
 import Tooltip from '@components/Tooltip.vue'
 import SvgInvitation from '@svgs/invitation.svg'
 import CopyToClipboard from '@components/CopyToClipboard.vue'
+import { buildInvitationUrl } from '@model/contracts/voting/proposals.js'
+import { mapGetters, mapState } from 'vuex'
 
 export default {
   name: 'InviteLinks',
@@ -124,10 +126,18 @@ export default {
     }
   },
   computed: {
+    ...mapGetters(['currentGroupState']),
+    ...mapState(['currentGroupId']),
     invitesToShow () {
-      const invites = Object.values(this.$store.getters.currentGroupState.invites)
-      return this.ephemeral.selectbox.selectedOption === 'Active' ? invites.filter(invite => invite.status === 'valid')
-        : this.ephemeral.selectbox.selectedOption === 'All' && invites
+      const { invites } = this.currentGroupState
+      const invitesList = Object.entries(invites).map(([inviteSecret, invite]) => ({
+        inviteSecret,
+        inviteLink: buildInvitationUrl(this.currentGroupId, inviteSecret),
+        ...invite
+      }))
+
+      return this.ephemeral.selectbox.selectedOption === 'Active' ? invitesList.filter(invite => invite.status === 'valid')
+        : this.ephemeral.selectbox.selectedOption === 'All' && invitesList
     }
   }
 }
