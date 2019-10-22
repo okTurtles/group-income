@@ -27,7 +27,8 @@ export const paymentType = unionOf(...[PAYMENT_TYPE_MANUAL, PAYMENT_TYPE_BITCOIN
 export function generateInvites (numInvites: number) {
   return {
     inviteSecret: `${parseInt(Math.random() * 10000)}`, // TODO: this
-    numInvites
+    numInvites,
+    invitee: 'Felix'
     // expires: // TODO: this
   }
 }
@@ -232,14 +233,16 @@ DefineContract({
     'gi.contracts/group/invite': {
       validate: objectOf({
         inviteSecret: string, // NOTE: simulate the OP_KEY_* stuff for now
-        numInvites: number
+        numInvites: number,
+        invitee: string
       }),
       process (state, { data, meta }) {
         Vue.set(state.invites, data.inviteSecret, {
           generated: data.numInvites,
           creator: meta.username,
           responses: {},
-          status: 'valid'
+          status: 'valid',
+          invitee: data.invitee
         })
       }
     },

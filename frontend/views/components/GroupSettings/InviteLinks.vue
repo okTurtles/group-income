@@ -13,7 +13,7 @@ page-section.c-section(:title='L("Invite links")')
 
   i18n.has-text-1.c-invite-description(tag='p') Here's a list of all invite links you own
 
-  table.table.c-table(v-if='activeList.length')
+  table.table.c-table(v-if='invitesToShow && invitesToShow.length !== 0')
     thead
       tr
         i18n.c-name(tag='th') created for
@@ -24,13 +24,13 @@ page-section.c-section(:title='L("Invite links")')
         )
     tbody
       tr(
-        v-for='(item, index) in activeList'
+        v-for='(item, index) in invitesToShow'
         :key='index'
       )
         td.c-name
-          | {{ item.name }}
+          | {{ item.invitee }}
           tooltip.c-name-tooltip(
-            v-if='item.isAnyoneLink'
+            v-if='false'
             direction='top'
             :isTextCenter='true'
             :text='L("This invite link was only available during the onboarding period.")'
@@ -38,21 +38,18 @@ page-section.c-section(:title='L("Invite links")')
             .button.is-icon-smaller.is-primary.c-tip
               i.icon-info
         td.c-invite-link
-          copy-to-clipboard.c-invite-link-wrapper(:textToCopy='item.inviteLink')
-            span.link.has-ellipsis {{ item.inviteLink }}
+          copy-to-clipboard.c-invite-link-wrapper(:textToCopy='`http://localhost:8000/tobecontinued=${index}`')
+            span.link.has-ellipsis {{ `http://localhost:8000/tobecontinued=${index}` }}
             button.is-icon-small.has-background.c-invite-link-button
               i.icon-copy.is-regular
           button.is-icon-small.c-invite-link-button-mobile(
-            @click='activateWebShare(item.inviteLink)'
+            @click='activateWebShare(`http://localhost:8000/tobecontinued=${index}`)'
             :aria-label='L("Copy link")'
           )
             i.icon-ellipsis-v
         td.c-state
-          i18n.c-state-description {{ item.state.description }}
-          i18n.c-state-expire(
-            v-if='item.state.expireInfo'
-            :class='item.state.isExpired ? "expired" : ""'
-          ) {{ item.state.expireInfo }}
+          i18n.c-state-description {{ item.status }}
+          i18n.c-state-expire.expired(v-if='item.status === "used"') Expired
         td.c-action
           menu-parent
             menu-trigger.is-icon(:aria-label='L("Show list")')
@@ -67,7 +64,7 @@ page-section.c-section(:title='L("Invite links")')
                 )
                   i18n See original proposal
                 menu-item(
-                  v-if='!item.state.isExpired'
+                  v-if='item.status === "valid"'
                   tag='button'
                   item-id='revoke'
                   icon='times'
@@ -109,58 +106,13 @@ export default {
         selectbox: {
           focused: false,
           selectedOption: 'Active'
-        },
-        dummyInviteList: [
-          {
-            name: 'Felix Kubin',
-            inviteLink: 'http://localhost:8000/app/join?groupId=21XWnNFz7RbNPKHUqAeSLLT1cNHnnCssmSw6dJeB1gfSSeZc7v&secret=4460',
-            isAnyoneLink: false,
-            state: {
-              description: 'Not used yet',
-              expireInfo: '1d 2h 30m left',
-              isExpired: false
-            }
-          },
-          {
-            name: 'Brian Eno',
-            inviteLink: 'http://localhost:8000/app/join?groupId=30aFnTYz7RbqAeSLLT1cNfSSeZHN6KHUnnCssmSw6dJeB1gc7v&secret=2250',
-            isAnyoneLink: false,
-            state: {
-              description: 'Used',
-              expireInfo: '',
-              isExpired: true
-            }
-          },
-          {
-            name: 'Carl Sagan',
-            inviteLink: 'http://localhost:8000/app/join?groupId=B1gfSSeZc721XWnNFz7RbkoyHUqAeSwLT1cNHnnCssmSw6dJev&secret=1348',
-            isAnyoneLink: false,
-            state: {
-              description: 'Not used',
-              expireInfo: 'Expired',
-              isExpired: true
-            }
-          },
-          {
-            name: 'Anyone',
-            inviteLink: 'http://localhost:8000/app/join?groupId=s8LT1cNHnnCs21XWnNFz7RbNPKHUqAesmSw6dJeB1gfSSeZc7v&secret=5521',
-            isAnyoneLink: true,
-            state: {
-              description: '10/60 used',
-              expireInfo: 'Expired',
-              isExpired: true
-            }
-          }
-        ]
+        }
       }
     }
   },
   methods: {
     unfocusSelect () {
       this.$refs.select.blur()
-    },
-    toInvite (e) {
-      if (e.target.tagName === 'SPAN') this.$router.push({ path: '/invite' })
     },
     activateWebShare (inviteLink) {
       if (navigator.share) {
@@ -172,9 +124,10 @@ export default {
     }
   },
   computed: {
-    activeList () {
-      return this.ephemeral.selectbox.selectedOption === 'Active' ? this.ephemeral.dummyInviteList.filter(item => !item.state.isExpired)
-        : this.ephemeral.selectbox.selectedOption === 'All' && this.ephemeral.dummyInviteList
+    invitesToShow () {
+      const invites = Object.values(this.$store.getters.currentGroupState.invites)
+      return this.ephemeral.selectbox.selectedOption === 'Active' ? invites.filter(invite => invite.status === 'valid')
+        : this.ephemeral.selectbox.selectedOption === 'All' && invites
     }
   }
 }
