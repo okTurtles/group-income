@@ -87,6 +87,8 @@ export default {
       }
     },
     openModal (componentName) {
+      // Don't open the same kind of modal twice.
+      if (this.content === componentName) return
       // Record active element
       this.lastFocus = document.activeElement
       if (this.content) {
