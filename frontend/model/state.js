@@ -6,21 +6,21 @@
 import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
-import L from '@view-utils/translations.js'
-import currencies from '@view-utils/currencies.js'
-import incomeDistribution from '@utils/distribution/mincome-proportional.js'
+import L from '~/frontend/views/utils/translations.js'
+import currencies from '~/frontend/views/utils/currencies.js'
+import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
 import { GIMessage } from '~/shared/GIMessage.js'
 import { SETTING_CURRENT_USER } from './database.js'
 import { ErrorDBBadPreviousHEAD, ErrorDBConnection } from '~/shared/domains/gi/db.js'
 import Colors from './colors.js'
-import { TypeValidatorError } from '@utils/flowTyper.js'
+import { TypeValidatorError } from '~/frontend/utils/flowTyper.js'
 import { GIErrorUnrecoverable, GIErrorIgnoreAndBanIfGroup, GIErrorDropAndReprocess } from './errors.js'
 import { STATUS_OPEN, PROPOSAL_REMOVE_MEMBER } from './contracts/voting/proposals.js'
-import { VOTE_FOR } from '@model/contracts/voting/rules.js'
-import { actionWhitelisted, CONTRACT_REGEX } from '@model/contracts/Contract.js'
-import { currentMonthTimestamp } from '@utils/time.js'
-import * as _ from '@utils/giLodash.js'
-import * as EVENTS from '@utils/events.js'
+import { VOTE_FOR } from '~/frontend/model/contracts/voting/rules.js'
+import { actionWhitelisted, CONTRACT_REGEX } from '~/frontend/model/contracts/Contract.js'
+import { currentMonthTimestamp } from '~/frontend/utils/time.js'
+import * as _ from '~/frontend/utils/giLodash.js'
+import * as EVENTS from '~/frontend/utils/events.js'
 import './contracts/group.js'
 import './contracts/mailbox.js'
 import './contracts/identity.js'
@@ -94,8 +94,34 @@ sbp('sbp/selectors/register', {
       'state/vuex/dispatch', 'handleEvent', event
     ])
   },
+  // use 'contractSafeGetters' from within a contract to avoid code duplication,
+  // but be careful to only use getters that restrict themselves to the
+  // contract's state, and do not access state outside the contract.
+  // For example, if the getter you use tries to access `state.loggedIn`,
+  // that will break the `latestContractState` function, so DO NOT
+  // USE getters that access state outside of the contract from within
+  // the contract!
+  // The only place that is OK is in the contract's `sideEffect` function,
+  // and ONLY if the sideEffect does not modify the contract's state.
+  'state/contractSafeGetters': function (state: Object) {
+    var lastAccessedGetter
+    const stateProxy = new Proxy({}, {
+      get: function (obj, prop) {
+        if (!(prop in state)) {
+          throw new Error(`attempt to access state outside of contract state via getters.${lastAccessedGetter}. Property doesn't exist: state.${prop}`)
+        }
+        return state[prop]
+      }
+    })
+    const gettersProxy = new Proxy({}, {
+      get: function (obj, prop) {
+        lastAccessedGetter = prop
+        return getters[prop](stateProxy, gettersProxy)
+      }
+    })
+    return gettersProxy
+  },
   'state/vuex/state': () => store.state,
-  'state/vuex/getters': () => store.getters,
   'state/vuex/dispatch': (...args) => store.dispatch(...args)
 })
 
@@ -220,9 +246,9 @@ const getters = {
       .filter(contractID => contracts[contractID].type === 'group' && state[contractID].settings)
       .map(contractID => ({ groupName: state[contractID].settings.groupName, contractID }))
   },
-  memberProfile (state, getters) {
-    return (username, groupId) => {
-      var profile = state[groupId || state.currentGroupId].profiles[username]
+  memberProfile (state) {
+    return (username) => {
+      var profile = state[state.currentGroupId].profiles[username]
       return profile && state[profile.contractID] && {
         contractID: profile.contractID,
         globalProfile: state[profile.contractID].attributes,

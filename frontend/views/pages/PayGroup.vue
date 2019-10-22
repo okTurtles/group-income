@@ -39,7 +39,7 @@ page(
 
     ul.c-payments
       li.c-payments-item(
-        v-for='(payment, username) in incomeDistribution'
+        v-for='(payment, username) in paymentsDistribution'
         :key='username'
       )
         .c-info
@@ -52,6 +52,7 @@ page(
                 user: `<b>${username}</b>` \
               }'
             ) {total} to {user}
+            i18n(:class='paymentStatusClass()')
             //- i18n.has-text-1(
             //-   v-if='statusIsPending(payment)'
             //-   :args='{ username }'
@@ -82,7 +83,7 @@ page(
             @click='cancelPayment(username)'
           ) Cancel
 
-    ul.c-payments
+    //- ul.c-payments
       li.c-payments-item(
         v-for='(user, index) in fakeStore.usersToPay'
         :key='user.name'
@@ -208,15 +209,22 @@ export default {
     currency () {
       return currencies[this.groupSettings.mincomeCurrency]
     },
-    incomeDistribution () {
-      return this.groupIncomeDistribution.filter(p => p.from === this.ourUsername)
-        .reduce((acc, payment) => {
-          acc[payment.to] = {
-            amount: +this.currency.displayWithoutCurrency(payment.amount),
-            amountPretty: this.currency.displayWithCurrency(payment.amount)
-          }
-          return acc
-        }, {})
+    paymentsDistribution () {
+      return {}
+      /*
+      if (Object.keys(this.thisMonthsPayments).length > 0) {
+
+      } else {
+        return this.groupIncomeDistribution.filter(p => p.from === this.ourUsername)
+          .reduce((acc, payment) => {
+            acc[payment.to] = {
+              amount: +this.currency.displayWithoutCurrency(payment.amount),
+              amountPretty: this.currency.displayWithCurrency(payment.amount)
+            }
+            return acc
+          }, {})
+      }
+      */
     },
     // old stuff (to be deleted) follows
     hasPayments () {
