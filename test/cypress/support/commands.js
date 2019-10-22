@@ -40,8 +40,8 @@ Cypress.Commands.add('giLogin', (userName, password = '123456789') => {
   cy.getByDT('loginBtn').should('not.exist')
 
   // make giLogin wait for contracts to finish syncing
-  cy.wait(100) // eslint-disable-line
   cy.getByDT('app').then(([el]) => {
+    cy.wrap(el.getAttribute('data-logged-in')).should('eq', 'yes')
     cy.wrap(el.getAttribute('data-sync')).should('be.empty')
   })
 })

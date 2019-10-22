@@ -10,7 +10,7 @@ import router from './controller/router.js'
 import { createWebSocket } from './controller/backend.js'
 import store from './model/state.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
-import { LOGOUT, CONTRACT_IS_SYNCING } from './utils/events.js'
+import { LOGIN, LOGOUT, CONTRACT_IS_SYNCING } from './utils/events.js'
 import './utils/lazyLoadedView.js'
 import Navigation from './views/containers/sidebar/Navigation.vue'
 import AppStyles from './views/components/AppStyles.vue'
@@ -83,7 +83,8 @@ async function startApp () {
     data () {
       return {
         ephemeral: {
-          syncs: []
+          syncs: [],
+          finishedLogin: 'no'
         }
       }
     },
@@ -99,6 +100,13 @@ async function startApp () {
         } else {
           this.ephemeral.syncs = this.ephemeral.syncs.filter(id => id !== contractID)
         }
+      })
+      sbp('okTurtles.events/on', LOGIN, () => {
+        this.ephemeral.finishedLogin = 'yes'
+      })
+      sbp('okTurtles.events/on', LOGOUT, () => {
+        this.ephemeral.finishedLogin = 'no'
+        router.push({ path: '/' }).catch(console.error)
       })
     },
     computed: {
@@ -120,8 +128,6 @@ async function startApp () {
     },
     store // make this and all child components aware of the new store
   }).$mount('#app')
-
-  sbp('okTurtles.events/on', LOGOUT, () => router.push({ path: '/' }).catch(console.error))
 }
 
 startApp()

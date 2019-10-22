@@ -104,12 +104,10 @@ sbp('sbp/selectors/register', {
 const mutations = {
   login (state, user) {
     state.loggedIn = user
-    sbp('okTurtles.events/emit', EVENTS.LOGIN, user)
   },
   logout (state) {
     state.loggedIn = false
     state.currentGroupId = null
-    sbp('okTurtles.events/emit', EVENTS.LOGOUT)
   },
   processMessage (state, { selector, message }) {
     guardedSBP(selector, state, message)
@@ -359,6 +357,7 @@ const actions = {
     }
     await sbp('gi.db/settings/save', SETTING_CURRENT_USER, user.username)
     commit('login', user)
+    Vue.nextTick(() => sbp('okTurtles.events/emit', EVENTS.LOGIN, user))
   },
   async logout (
     { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object}
@@ -370,6 +369,7 @@ const actions = {
       commit('removeContract', contractID)
     }
     commit('logout')
+    Vue.nextTick(() => sbp('okTurtles.events/emit', EVENTS.LOGOUT))
   },
   // persisting the state
   async saveSettings (
