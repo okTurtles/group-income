@@ -18,12 +18,8 @@
           @input='debounceName'
           ref='username'
           data-test='signName'
+          v-error:name='{ tag: "p", attrs: { "data-test": "badUsername" } }'
         )
-        //- can't use v-error here because it doesn't support
-        //- asynchronous validation failures
-        p.error(v-if='$v.form.name.$error' data-test='badUsername')
-          i18n(v-if='!$v.form.name.isAvailable') name is unavailable
-          i18n(v-if='!$v.form.name.nonWhitespace') cannot contain spaces
 
       label.field
         i18n.label Email
@@ -173,16 +169,9 @@ export default {
     form: {
       name: {
         required,
-        nonWhitespace,
-        isAvailable (value) {
-          // standalone validator ideally should not assume a field is required
-          if (value === '' || !/^\S+$/.test(value)) return true
-          // async validator can return a promise
-          // TODO: fix "uncaught exception" errors in console when name is already taken
-          return new Promise((resolve, reject) => {
-            // we need the opposite of sbp('namespace/lookup', value) here
-            sbp('namespace/lookup', value).then(reject, resolve)
-          })
+        [L('cannot contain spaces')]: nonWhitespace,
+        [L('name is unavailable')]: async (value) => {
+          return !await sbp('namespace/lookup', value)
         }
       },
       password: {

@@ -22,6 +22,10 @@ export default {
   async mounted () {
     if (!this.profile) {
       const userContractId = await sbp('namespace/lookup', this.username)
+      if (!userContractId) {
+        console.error(`UserImage: ${this.username} doesn't exist!`)
+        return
+      }
       const state = await sbp('state/latestContractState', userContractId)
       this.ephemeral.url = state.attributes.picture
     }
