@@ -25,8 +25,6 @@ export default {
   },
   mounted () {
     this.initializeModals()
-    console.log('- content: ', this.content)
-    console.log('- subcontent: ', this.subcontent)
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', OPEN_MODAL)
