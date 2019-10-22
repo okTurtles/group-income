@@ -1,29 +1,10 @@
 <template lang='pug'>
-//- test
 loading(theme='fullView' v-if='!ephemeral.contract.settings.groupName')
 page(pageTestName='dashboard' pageTestHeaderName='groupName' v-else='')
   template(#title='') {{ L("You've been invited to join a group!") }}
   .card
     h1 {{ephemeral.contract.settings.groupName}}
     p {{ephemeral.contract.settings.sharedValues}}
-
-    .c-join-grid-graphic(v-if='ephemeral.contract.members.length')
-      members-circle(:members='ephemeral.contract.members')
-        bars(:currency='ephemeral.contract.settings.mincomeCurrencySign' :history='ephemeral.contract.history' :mincome='+ephemeral.contract.settings.mincomeAmount')
-
-    p.error(v-if='ephemeral.errorMsg') {{ephemeral.errorMsg}}
-
-    .buttons
-      i18n.is-outlined(
-        tag='button'
-        data-test='declineLink'
-        v-on:click='decline'
-      )  No, thanks
-      i18n(
-        tag='button'
-        data-test='acceptLink'
-        v-on:click='accept'
-      ) Join Group
 </template>
 
 <script>
