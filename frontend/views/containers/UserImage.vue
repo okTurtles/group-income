@@ -32,10 +32,10 @@ export default {
   },
   computed: {
     profile () {
-      return this.$store.getters.memberProfile(this.username)
+      return this.$store.getters.globalProfile(this.username)
     },
     pictureURL () {
-      return this.profile ? this.profile.globalProfile.picture : this.ephemeral.url
+      return this.profile ? this.profile.picture : this.ephemeral.url
     }
   },
   data () {

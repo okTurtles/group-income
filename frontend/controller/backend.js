@@ -5,9 +5,10 @@ import { sign, bufToB64, b64ToStr } from '~/shared/functions.js'
 import { GIMessage } from '~/shared/GIMessage.js'
 import { RESPONSE_TYPE } from '~/shared/constants.js'
 import { CONTRACTS_MODIFIED } from '~/frontend/utils/events.js'
-import { intersection, difference } from '~/frontend/utils/giLodash.js'
+import { intersection, difference, delay, randomIntFromRange } from '~/frontend/utils/giLodash.js'
 import pubsub from './utils/pubsub.js'
 import { handleFetchResult } from './utils/misc.js'
+import { CONTRACT_REGEX } from '~/frontend/model/contracts/Contract.js'
 
 // temporary identity for signing
 // const nacl = require('tweetnacl')
@@ -95,17 +96,40 @@ sbp('okTurtles.events/on', CONTRACTS_MODIFIED, async (contracts) => {
 })
 
 sbp('sbp/selectors/register', {
-  'backend/publishLogEntry': (entry: GIMessage) => {
-    return fetch(`${process.env.API_URL}/event`, {
-      method: 'POST',
-      body: entry.serialize(),
-      headers: {
-        'Content-Type': 'text/plain',
-        'Authorization': `gi ${signature}`
+  'backend/publishLogEntry': async (entry: GIMessage, { maxAttempts = 1 } = {}) => {
+    const action = CONTRACT_REGEX.exec(entry.type())[1]
+    var attempt = 1
+    // auto resend after short random delay
+    // https://github.com/okTurtles/group-income-simple/issues/608
+    while (true) {
+      const r = await fetch(`${process.env.API_URL}/event`, {
+        method: 'POST',
+        body: entry.serialize(),
+        headers: {
+          'Content-Type': 'text/plain',
+          'Authorization': `gi ${signature}`
+        }
+      })
+      if (r.ok) {
+        return r['text']()
       }
-    // TODO: auto resend after short random delay
-    //       https://github.com/okTurtles/group-income-simple/issues/608
-    }).then(handleFetchResult('text'))
+      if (r.status === 409) {
+        if (attempt + 1 > maxAttempts) {
+          console.error(`publishLogEntry: failed to publish ${action} after ${attempt} of ${maxAttempts} attempts`, entry)
+          throw new Error(`publishLogEntry: ${r.status} - ${r.statusText}. attempt ${attempt}`)
+        }
+        // create new entry
+        const randDelay = randomIntFromRange(500, 2000)
+        console.warn(`publishLogEntry: attempt ${attempt} of ${maxAttempts} failed. Waiting ${randDelay} msec before resending ${action}`)
+        attempt += 1
+        await delay(randDelay) // wait half a second before sending it again
+        // re-create it to get correct latestHash
+        entry = await sbp(`${action}create`, entry.data(), entry.contractID())
+      } else {
+        console.error(`publishLogEntry: ${r.status} - ${r.statusText}, failed to publish ${action}:`, entry)
+        throw new Error(`publishLogEntry: ${r.status} - ${r.statusText}`)
+      }
+    }
   },
   // TODO: r.body is a stream.Transform, should we use a callback to process
   //       the events one-by-one instead of converting to giant json object?

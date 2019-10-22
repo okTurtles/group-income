@@ -1,8 +1,9 @@
-import i18next from 'i18next'
-import XHR from 'i18next-xhr-backend'
+// import i18next from 'i18next'
+// import XHR from 'i18next-xhr-backend'
 import Vue from 'vue'
 import template from '~/frontend/utils/stringTemplate.js'
 
+/*
 i18next.use(XHR).init({
   load: 'languageOnly',
   fallbackLng: 'en',
@@ -13,6 +14,7 @@ i18next.use(XHR).init({
 }, (err) => {
   if (err) console.error('i18next setup error:', err)
 })
+*/
 
 Vue.prototype.L = L
 Vue.prototype.LTags = LTags
@@ -63,7 +65,11 @@ export default function L (
   // TODO: see also using i18next's interpolation and formatting
   //       https://www.i18next.com/translation-function/formatting
   //       https://www.i18next.com/translation-function/interpolation
-  return template(i18next.t(key, options), args)
+  // return template(i18next.t(key, options), args)
+  // BUG/TODO: i18next is broken, and we should get rid of it anyway
+  // doing L("Automated ban because they're sending malformed messages resulting in: {error}", { error: 'error.message' })
+  // results in output: " error.message"
+  return template(key, args)
 }
 
 Vue.component('i18n', {
