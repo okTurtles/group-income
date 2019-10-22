@@ -6,7 +6,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
     :isCard='true'
     :title='L("Add your income details")'
     :svg='SvgContributions'
-    v-if='memberProfile(ourUsername).groupProfile.incomeDetailsKey'
+    v-if='!memberProfile(ourUsername).groupProfile.incomeDetailsKey'
   )
     i18n(tag='p') This will allow you to start receiving or giving mincome.
     i18n(tag='button' @click='openModal("IncomeDetails")') Add income details
@@ -60,7 +60,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
             )
 
           contribution(
-            v-for='(contribution, index) in fakeStore.receiving.nonMonetary'
+            v-for='(contribution, index) in receiving.nonMonetary'
             :key='`contribution-${index}`'
           )
             contribution-item(
@@ -133,7 +133,6 @@ import currencies from '@view-utils/currencies.js'
 import GroupMincome from '@containers/sidebar/GroupMincome.vue'
 import Contribution from '@components/Contribution.vue'
 import ContributionItem from '@components/ContributionItem.vue'
-import L from '@view-utils/translations.js'
 
 export default {
   name: 'Contributions',
@@ -162,19 +161,6 @@ export default {
       // -- Hardcoded Data just for layout purposes:
       fakeStore: {
         currency: currencies.USD.symbol, // group (getter)
-        receiving: { // ?
-          nonMonetary: [
-            {
-              what: 'Cooking',
-              who: 'Lilia Bouvet'
-            },
-            {
-              what: 'Cuteness',
-              who: ['Zoe Kim', 'Laurence E']
-            }
-          ],
-          monetary: 100
-        },
         giving: { // ?
           nonMonetary: [
             'Happiness'
@@ -202,16 +188,33 @@ export default {
     ]),
     upTo () {
       const amount = this.memberGroupProfile[this.memberGroupProfile.incomeDetailsType]
-      return this.formatMincome(this.needsIncome ? this.groupSettings.mincomeAmount - amount : amount)
+      if (!amount) return false
+      console.log('ici', this.needsIncome ? this.groupSettings.mincomeAmount - amount : amount, this.needsIncome, this.groupSettings.mincomeAmount - amount, amount)
+      return this.formatIncome(this.needsIncome ? this.groupSettings.mincomeAmount - amount : amount)
     },
     needsIncome () {
       return this.memberGroupProfile.incomeDetailsType === 'incomeAmount'
     },
     doesReceive () {
-      return this.needsIncome || this.fakeStore.receiving.nonMonetary
+      return this.needsIncome || this.receiving.nonMonetary
     },
     doesGive () {
       return this.fakeStore.giving.monetary || this.fakeStore.giving.nonMonetary
+    },
+    receiving () {
+      return {
+        nonMonetary: [
+          {
+            what: 'Cooking',
+            who: 'Lilia Bouvet'
+          },
+          {
+            what: 'Cuteness',
+            who: ['Zoe Kim', 'Laurence E']
+          }
+        ],
+        monetary: 100
+      }
     }
   },
   beforeMount () {
@@ -228,29 +231,32 @@ export default {
     openModal (modal) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal)
     },
-    async setPaymentInfo () {
-      if (this.$v.form.$invalid) {
-        alert(L('Invalid payment info'))
-        return
-      }
-      try {
-        const incomeDetailsType = this.form.incomeDetailsType
-        const groupProfileUpdate = await sbp('gi.contracts/group/groupProfileUpdate/create',
-          {
-            incomeDetailsType,
-            [incomeDetailsType]: +this.form[incomeDetailsType]
-          },
-          this.$store.state.currentGroupId
-        )
-        await sbp('backend/publishLogEntry', groupProfileUpdate)
-      } catch (e) {
-        console.error('setPaymentInfo', e)
-        alert(`Failed to update user's profile. Error: ${e.message}`)
-      }
-    },
-    submitAddNonMonetary (value) {
-      console.log('TODO $store - submitAddNonMonetary')
-      this.fakeStore.giving.nonMonetary.push(value) // Hardcoded Solution
+    // - async setPaymentInfo () {
+    // -   if (this.$v.form.$invalid) {
+    // -     alert(L('Invalid payment info'))
+    // -     return
+    // -   }
+    // -   try {
+    // -     const incomeDetailsType = this.form.incomeDetailsType
+    // -     const groupProfileUpdate = await sbp('gi.contracts/group/groupProfileUpdate/create',
+    // -       {
+    // -         incomeDetailsType,
+    // -         [incomeDetailsType]: +this.form[incomeDetailsType]
+    // -       },
+    // -       this.$store.state.currentGroupId
+    // -     )
+    // -     await sbp('backend/publishLogEntry', groupProfileUpdate)
+    // -   } catch (e) {
+    // -     console.error('setPaymentInfo', e)
+    // -     alert(`Failed to update user's profile. Error: ${e.message}`)
+    // -   }
+    // - },
+    async submitAddNonMonetary (value) {
+      const groupProfileUpdate = await sbp('gi.contracts/group/groupProfileUpdate/create',
+        { nonMonetaryAdd: value },
+        this.$store.state.currentGroupId
+      )
+      await sbp('backend/publishLogEntry', groupProfileUpdate)
     },
     handleEditNonMonetary (value, index) {
       if (!value) {
@@ -261,8 +267,9 @@ export default {
         this.$set(this.fakeStore.giving.nonMonetary, index, value) // Hardcoded Solution
       }
     },
-    formatIncome () {
-      return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
+    formatIncome (value) {
+      console.log(value)
+      return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency(value)
     }
   }
 }
