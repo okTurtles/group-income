@@ -2,12 +2,14 @@
 page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
   template(#title='') {{ L('Contributions') }}
 
-  page-section.c-card-empty(v-if='!memberProfile(ourUsername).groupProfile.incomeDetailsType')
-    svg-contributions.c-svg
-    div
-      i18n(tag='h3') Add your income details
-      i18n.c-text(tag='p') This will allow you to start receiving or giving mincome.
-      i18n(tag='button' @click='openModal("IncomeDetails")') Add income details
+  callout-card(
+    :isCard='true'
+    :title='L("Add your income details")'
+    :svg='SvgContributions'
+    v-if='memberProfile(ourUsername).groupProfile.incomeDetailsKey'
+  )
+    i18n(tag='p') This will allow you to start receiving or giving mincome.
+    i18n(tag='button' @click='openModal("IncomeDetails")') Add income details
 
   template(v-else)
     .c-contribution-header
@@ -52,7 +54,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
             v-if='needsIncome'
           )
             contribution-item(
-              :what='upTo' // temp
+              :what='upTo'
               :who='fakeStore.groupMembersPledging'
               type='MONETARY'
             )
@@ -123,6 +125,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
 import sbp from '~/shared/sbp.js'
 import { mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
+import CalloutCard from '@components/CalloutCard.vue'
 import SvgContributions from '@svgs/contributions.svg'
 import Page from '@pages/Page.vue'
 import PageSection from '@components/PageSection.vue'
@@ -137,6 +140,7 @@ export default {
   components: {
     Page,
     PageSection,
+    CalloutCard,
     GroupMincome,
     Contribution,
     ContributionItem,
@@ -144,6 +148,7 @@ export default {
   },
   data () {
     return {
+      SvgContributions,
       form: {
         incomeDetailsType: 'incomeAmount',
         incomeAmount: 0,
@@ -257,7 +262,7 @@ export default {
       }
     },
     formatIncome () {
-      return formatMincome = currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
+      return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
     }
   }
 }

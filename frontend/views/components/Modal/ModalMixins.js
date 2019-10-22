@@ -11,7 +11,7 @@ const modaMixins = {
   },
   data () {
     return {
-      isActive: true,
+      modalIsActive: true,
       focusableChildren: []
     }
   },
@@ -28,7 +28,7 @@ const modaMixins = {
   },
   methods: {
     close (e) {
-      this.isActive = false
+      this.modalIsActive = false
     },
     unload () {
       sbp('okTurtles.events/emit', CLOSE_MODAL)

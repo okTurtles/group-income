@@ -3,13 +3,14 @@
 import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import { DefineContract } from './Contract.js'
-import { objectOf, objectMaybeOf, optional, string, number, object, unionOf, literalOf, arrayOf } from '~/frontend/utils/flowTyper.js'
+import { objectOf, objectMaybeOf, optional, string, number, object, unionOf, literalOf } from '~/frontend/utils/flowTyper.js'
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income-simple/issues/603
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST } from './voting/rules.js'
 import proposals, { proposalType, proposalSettingsType, archiveProposal, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_CANCELLED } from './voting/proposals.js'
 import * as Errors from '../errors.js'
 import { merge, deepEqualJSONType } from '~/frontend/utils/giLodash.js'
+import { currentMonthTimestamp } from '~/frontend/utils/time.js'
 
 // for gi.contracts/group/payment ... TODO: put these in some other file?
 export const PAYMENT_PENDING = 'pending'
@@ -60,6 +61,9 @@ DefineContract({
             contractID: meta.identityContractID,
             groupProfile: {}
           }
+        },
+        paymentsByMonth: {
+          [currentMonthTimestamp()]: {}
         }
       }
       for (const key in initialState) {
@@ -260,7 +264,9 @@ DefineContract({
         }
         Vue.set(state.profiles, meta.username, {
           contractID: meta.identityContractID,
-          groupProfile: {}
+          groupProfile: {
+            nonMonetaryContributions: []
+          }
         })
         // If we're triggered by handleEvent in state.js (and not latestContractState)
         // then the asynchronous sideEffect function will get called next
@@ -309,12 +315,24 @@ DefineContract({
         incomeDetailsType: x => ['incomeAmount', 'pledgeAmount'].includes(x),
         incomeAmount: x => typeof x === 'number' && x >= 0,
         pledgeAmount: x => typeof x === 'number' && x >= 0,
-        nonMonetaryContributions: arrayOf(string)
+        nonMonetaryAdd: string,
+        nonMonetaryRemove: string
       }),
       process (state, { data, meta }) {
         var { groupProfile } = state.profiles[meta.username]
-        for (var key in data) {
-          Vue.set(groupProfile, key, data[key])
+        const nonMonetary = groupProfile.nonMonetaryContributions
+        for (const key in data) {
+          const value = data[key]
+          switch (key) {
+            case 'nonMonetaryAdd':
+              nonMonetary.push(value)
+              break
+            case 'nonMonetaryRemove':
+              nonMonetary.splice(nonMonetary.indexOf(value), 1)
+              break
+            default:
+              Vue.set(groupProfile, key, value)
+          }
         }
       }
     },

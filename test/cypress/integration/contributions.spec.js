@@ -7,7 +7,7 @@ describe('Add contribution', () => {
   })
 
   it('user1 registers and creates a new group', () => {
-    cy.giSignUp(`user1-${userId}`)
+    cy.giSignup(`user1-${userId}`)
 
     cy.giCreateGroup('Dreamers', {
       income: groupMincome
@@ -37,6 +37,6 @@ describe('Add contribution', () => {
     //   cy.getByDT('minIncome').should('contain', `$${groupNewIncome}`)
     // })
 
-    cy.giLogOut()
+    cy.giLogout()
   })
 })

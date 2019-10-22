@@ -1,7 +1,7 @@
 <template lang='pug'>
 modal-base-template(class='has-background')
   .wrapper-container
-    tab-wrapper(:tabNav='settings')
+    tab-wrapper(:tabNav='settings' @close='$emit("close")')
       tab-item
         user-profile
       tab-item
@@ -15,13 +15,13 @@ modal-base-template(class='has-background')
 </template>
 
 <script>
-import Settings from '~/frontend/model/settings.js'
 import ModalBaseTemplate from '@components/Modal/ModalBaseTemplate.vue'
 import TabItem from '@components/Tabs/TabItems.vue'
 import TabWrapper from '@components/Tabs/TabWrapper.vue'
 import TabPlaceholder from './Placeholder.vue'
 import Appearence from './Appearence.vue'
 import UserProfile from './UserProfile.vue'
+import settings from '~/frontend/model/settings.js'
 
 export default {
   name: 'SettingsWrapper',
@@ -36,7 +36,7 @@ export default {
   },
 
   data () {
-    return Settings
+    return settings
   }
 }
 </script>

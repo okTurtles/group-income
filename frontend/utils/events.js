@@ -10,3 +10,5 @@ export const CLOSE_MODAL = 'close-modal'
 export const REPLACE_MODAL = 'replace-modal'
 
 export const PROPOSAL_RESULT = 'proposal-result'
+
+export const CONTRACT_IS_SYNCING = 'contract-is-syncing'
