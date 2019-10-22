@@ -25,7 +25,10 @@
 
       .c-confirmation(v-if='isConfirmation' key='confirmation')
         svg-proposal.c-svg
-        i18n(html='Members of your group will now be asked to vote.</br>You need <strong>{value} yes votes</strong> for  your proposal to be accepted.' :args='{value: rule.value}')
+        i18n(
+          compile
+          :args='{ ...LTags("strong"), value: rule.value }'
+        ) Members of your group will now be asked to vote.{br_} You need {strong_}{value} yes votes{_strong} for your proposal to be accepted.
 
       .buttons(:class='{ "is-centered": isConfirmation }')
         button.is-outlined(
@@ -45,8 +48,8 @@
         ) {{ submitTextNonProposal }}
 
         button(
-          key='next'
           type='button'
+          key='next'
           v-if='groupShouldPropose && isNextStep'
           @click.prevent='next'
           :disabled='disabled'
@@ -108,6 +111,7 @@ export default {
       required: true
     },
     disabled: Boolean,
+    currentStep: Number,
     maxSteps: {
       type: Number,
       required: true
@@ -116,11 +120,6 @@ export default {
       validator (value) {
         return ['addMember', 'removeMember'].indexOf(value) > -1
       }
-    }
-  },
-  data () {
-    return {
-      currentStep: 0
     }
   },
   computed: {
@@ -151,23 +150,17 @@ export default {
       this.$refs.modal.close()
     },
     next () {
-      this.currentStep++
-      this.updateParent()
+      this.$emit('update:currentStep', this.currentStep + 1)
     },
     prev () {
       if (this.currentStep > 0) {
-        this.currentStep--
-        this.updateParent()
+        this.$emit('update:currentStep', this.currentStep - 1)
       } else {
         this.close()
       }
     },
-    updateParent () {
-      this.$emit('update:currentStep', this.currentStep)
-    },
     submit () {
       if (this.groupShouldPropose) {
-        this.next()
         this.$emit('submit', {
           reason: this.$refs.reason.value
         })

@@ -1,7 +1,7 @@
 import i18next from 'i18next'
 import XHR from 'i18next-xhr-backend'
 import Vue from 'vue'
-import template from '~/frontend/utils/stringTemplate.js'
+import template from '@utils/stringTemplate.js'
 
 i18next.use(XHR).init({
   load: 'languageOnly',
@@ -16,6 +16,33 @@ i18next.use(XHR).init({
 
 Vue.prototype.L = L
 Vue.prototype.LTags = LTags
+
+/*
+Examples:
+
+Simple string:
+  i18n Hello world
+
+String with variables:
+  i18n(
+    :args='{ name: ourUsername }'
+  ) Hello {name}!
+
+String with HTML markup inside:
+  i18n(
+    :args='{ ...LTags("strong", "span"), name: ourUsername }'
+  ) Hello {strong_}{name}{_strong}, today it's a {span_}nice day{_span}!
+  | or
+  i18n(
+    :args='{ ...LTags("span"), name: "<strong>${ourUsername}</strong>" }'
+  ) Hello {name}, today it's a {span_}nice day{_span}!
+
+String with Vue components inside:
+  i18n(
+    compile
+    :args='{ r1: `<router-link class="link" to="/login">`, r2: "</router-link>"}'
+  ) Go to {r1}login{r2} page.
+*/
 
 export function LTags (...tags) {
   const o = {

@@ -8,7 +8,6 @@ import GroupDashboard from '@pages/GroupDashboard.vue'
 import Contributions from '@pages/Contributions.vue'
 import PayGroup from '@pages/PayGroup.vue'
 import GroupChat from '@pages/GroupChat.vue'
-import Invite from '@pages/Invite.vue'
 import Join from '@pages/Join.vue'
 import Mailbox from '@pages/Mailbox.vue'
 import GroupSettings from '@pages/GroupSettings.vue'
@@ -90,13 +89,6 @@ var router = new Router({
       beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     /* Guards need to be created for any route that should not be directly accessed by url */
-    {
-      path: '/invite',
-      name: Invite.name,
-      component: Invite,
-      meta: { title: L('Invite Group Members') },
-      beforeEnter: createEnterGuards(loginGuard, groupGuard)
-    },
     {
       path: '/mailbox',
       name: Mailbox.name,
