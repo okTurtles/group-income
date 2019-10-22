@@ -316,6 +316,10 @@ DefineContract({
         incomeAmount: x => typeof x === 'number' && x >= 0,
         pledgeAmount: x => typeof x === 'number' && x >= 0,
         nonMonetaryAdd: string,
+        nonMonetaryEdit: objectOf({
+          replace: string,
+          with: string
+        }),
         nonMonetaryRemove: string
       }),
       process (state, { data, meta }) {
@@ -329,6 +333,9 @@ DefineContract({
               break
             case 'nonMonetaryRemove':
               nonMonetary.splice(nonMonetary.indexOf(value), 1)
+              break
+            case 'nonMonetaryEdit':
+              nonMonetary.splice(nonMonetary.indexOf(value.replace), 1, value.with)
               break
             default:
               Vue.set(groupProfile, key, value)
