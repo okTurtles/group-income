@@ -196,7 +196,8 @@ export default {
       'groupProfiles',
       'thisMonthsPayments',
       'groupMincomeFormatted',
-      'groupIncomeDistribution'
+      'groupIncomeDistribution',
+      'globalProfile'
     ]),
     memberGroupProfile () {
       return this.groupProfile(this.ourUsername) || {}
@@ -232,9 +233,10 @@ export default {
           const nonMonetary = groupProfiles[username].nonMonetaryContributions
           nonMonetary.forEach((what) => {
             const contributionIndex = list.findIndex(x => x.what === what)
+            const displayName = this.displayName(username)
             contributionIndex >= 0
-              ? list[contributionIndex].who.push(username)
-              : list.push({ who: [username], what })
+              ? list[contributionIndex].who.push(displayName)
+              : list.push({ who: [displayName], what })
           })
           return list
         }, [])
@@ -242,7 +244,7 @@ export default {
     receivingMonetary () {
       const distributionTo = this.distribution.filter(p => p.to === this.ourUsername)
       let total = distributionTo.reduce((acc, payment) => acc + payment.amount, 0)
-      const list = distributionTo.reduce((acc, payment) => payment.from, [])
+      const list = distributionTo.reduce((acc, payment) => this.displayName(payment.from), [])
       total = this.currency.displayWithCurrency(total)
       return {
         list: list,
@@ -252,7 +254,7 @@ export default {
     givingMonetary () {
       const distributionTo = this.distribution.filter(p => p.from === this.ourUsername)
       let total = distributionTo.reduce((acc, payment) => acc + payment.amount, 0)
-      const list = distributionTo.reduce((acc, payment) => payment.to, [])
+      const list = distributionTo.reduce((acc, payment) => this.displayName(payment.to), [])
       total = this.currency.displayWithCurrency(total)
       return {
         list: list,
@@ -278,6 +280,9 @@ export default {
         this.$store.state.currentGroupId
       )
       await sbp('backend/publishLogEntry', groupProfileUpdate)
+    },
+    displayName (username) {
+      return this.globalProfile(username).displayName || username
     }
   }
 }
