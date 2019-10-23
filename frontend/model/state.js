@@ -487,7 +487,7 @@ const actions = {
           console.warn(`handleEvent: skipping autoBanSenderOfMessage since we're syncing ${contractID}`)
         } else {
           // NOTE: this random delay is here for multiple reasons:
-          const randomDelay = _.randomIntFromRange(0, 1000)
+          const randomDelay = _.randomIntFromRange(0, 1500)
           // 1. to avoid backend throwing 'bad previousHEAD' error
           // https://github.com/okTurtles/group-income-simple/issues/608
           // 2. because we need to make sure that if a proposal has been cast by someone,
@@ -675,12 +675,12 @@ const handleEvent = {
             expires_date_ms: Date.now() + store.getters.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].expires_ms
           }, groupID)
           try {
-            await sbp('backend/publishLogEntry', proposal)
+            await sbp('backend/publishLogEntry', proposal, { maxAttempts: 1 })
           } catch (e) {
             if (attempt > 2) {
               console.error(`autoBanSenderOfMessage: max attempts reached. Error ${e.message} attempting to ban ${username}`, message, e)
             } else {
-              const randDelay = _.randomIntFromRange(500, 1000)
+              const randDelay = _.randomIntFromRange(0, 1500)
               console.warn(`autoBanSenderOfMessage: ${e.message} attempting to ban ${username}, retrying in ${randDelay} ms...`, e)
               setTimeout(() => {
                 handleEvent.autoBanSenderOfMessage(message, error, attempt + 1)

@@ -96,7 +96,7 @@ sbp('okTurtles.events/on', CONTRACTS_MODIFIED, async (contracts) => {
 })
 
 sbp('sbp/selectors/register', {
-  'backend/publishLogEntry': async (entry: GIMessage, { maxAttempts = 1 } = {}) => {
+  'backend/publishLogEntry': async (entry: GIMessage, { maxAttempts = 2 } = {}) => {
     const action = CONTRACT_REGEX.exec(entry.type())[1]
     var attempt = 1
     // auto resend after short random delay
@@ -119,7 +119,7 @@ sbp('sbp/selectors/register', {
           throw new Error(`publishLogEntry: ${r.status} - ${r.statusText}. attempt ${attempt}`)
         }
         // create new entry
-        const randDelay = randomIntFromRange(500, 2000)
+        const randDelay = randomIntFromRange(0, 1500)
         console.warn(`publishLogEntry: attempt ${attempt} of ${maxAttempts} failed. Waiting ${randDelay} msec before resending ${action}`)
         attempt += 1
         await delay(randDelay) // wait half a second before sending it again
