@@ -363,7 +363,7 @@ const actions = {
     user: Object
   ) {
     const settings = await sbp('gi.db/settings/load', user.username)
-    // NOTE: login can be called when no settings are saved (e.g. from SignUp.vue)
+    // NOTE: login can be called when no settings are saved (e.g. from Signup.vue)
     if (settings) {
       console.debug('loadSettings:', settings)
       store.replaceState(settings)

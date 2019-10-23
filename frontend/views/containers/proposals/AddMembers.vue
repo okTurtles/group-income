@@ -39,11 +39,8 @@
       )
         i.icon-plus
         i18n Add more
-      .c-feedback(
-        v-if='ephemeral.formFeedbackMsg.text'
-        :class='ephemeral.formFeedbackMsg.class'
-        data-test='feedbackMsg'
-      ) {{ephemeral.formFeedbackMsg.text}}
+      .c-feedback.has-text-success( v-if='ephemeral.formSuccessMsg' data-test='feedbackMsg') {{ ephemeral.formSuccessMsg }}
+      .c-feedback.has-text-danger( v-if='ephemeral.formErrorMsg' data-test='feedbackMsg') {{ ephemeral.formErrorMsg }}
 </template>
 
 <script>
@@ -52,9 +49,7 @@ import Vue from 'vue'
 import { mapState, mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
 import sbp from '~/shared/sbp.js'
-import { PROPOSAL_INVITE_MEMBER, buildInvitationUrl } from '@model/contracts/voting/proposals.js'
-import { generateInvites } from '@model/contracts/group.js'
-import { TYPE_MESSAGE } from '@model/contracts/mailbox.js'
+import { PROPOSAL_INVITE_MEMBER } from '@model/contracts/voting/proposals.js'
 import ProposalTemplate from './ProposalTemplate.vue'
 import L from '@view-utils/translations.js'
 
@@ -70,7 +65,8 @@ export default {
         invitees: []
       },
       ephemeral: {
-        formFeedbackMsg: {},
+        formSuccessMsg: null,
+        formErrorMsg: null,
         currentStep: 0,
         isValid: false,
         invitesCount: 1
@@ -91,7 +87,6 @@ export default {
       'currentGroupState',
       'groupSettings',
       'groupMembersCount',
-      'groupShouldPropose',
       'ourUsername'
     ]),
     rule () {
@@ -126,7 +121,7 @@ export default {
     },
     async submit (form) {
       const invitationsSent = []
-      let hasFailed = false
+      const invitationsFailed = []
       // NOTE: All invitees proposals will expire at the exact same time.
       // That plus the proposal creator is what we'll use to know
       // which proposals should be displayed visually together.
@@ -134,72 +129,36 @@ export default {
 
       for (const inviteeName of this.form.invitees) {
         const groupId = this.currentGroupId
-        const contractID = await sbp('namespace/lookup', inviteeName)
-
-        if (this.groupShouldPropose) {
-          try {
-            const proposal = await sbp('gi.contracts/group/proposal/create',
-              {
-                proposalType: PROPOSAL_INVITE_MEMBER,
-                proposalData: {
-                  member: inviteeName,
-                  reason: form.reason
-                },
-                votingRule: this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].rule,
-                expires_date_ms: expiresDateMs
+        try {
+          const proposal = await sbp('gi.contracts/group/proposal/create',
+            {
+              proposalType: PROPOSAL_INVITE_MEMBER,
+              proposalData: {
+                member: inviteeName,
+                reason: form.reason
               },
-              groupId
-            )
-            await sbp('backend/publishLogEntry', proposal)
-          } catch (e) {
-            this.ephemeral.formFeedbackMsg = {
-              text: L('Invites to {inviteeName} failed!'),
-              class: 'has-text-danger'
-            }
-            console.error(`Invitees to ${inviteeName} failed to be sent!`, e)
-            hasFailed = true
-          }
-        } else {
-          // TODO - This scenario isnt needed after #614 is done.
-          const invite = generateInvites(1, inviteeName)
-          if (contractID) {
-            try {
-              const identityContract = await sbp('state/latestContractState', contractID)
-              const groupName = this.groupSettings.groupName
-              const inviteToMailbox = await sbp('gi.contracts/mailbox/postMessage/create', {
-                messageType: TYPE_MESSAGE,
-                from: groupName,
-                subject: `You've been invited to join ${groupName}!`,
-                message: `Hi ${inviteeName},
-                Here's your special invite link:
-                ${buildInvitationUrl(this.$store.state.currentGroupId, invite.inviteSecret)}`
-              }, identityContract.attributes.mailbox)
-
-              const inviteToGroup = await sbp('gi.contracts/group/invite/create', invite, groupId)
-              await sbp('backend/publishLogEntry', inviteToGroup)
-              await sbp('backend/publishLogEntry', inviteToMailbox)
-              invitationsSent.push(inviteeName)
-            } catch (e) {
-              console.error(`Invitees to ${inviteeName} failed to be sent!`, e)
-            }
-          } else {
-            invitationsSent.push(inviteeName)
-            console.warn(`The invitee ${inviteeName} isn't registered. TODO #614`)
-          }
-
-          this.ephemeral.formFeedbackMsg = {
-            text: L('Invites to {invitationsSent} sent successfully!', {
-              invitationsSent: invitationsSent.join(', ')
-            }),
-            class: 'has-text-success'
-          }
-          this.resetInvitations()
+              votingRule: this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].rule,
+              expires_date_ms: expiresDateMs
+            },
+            groupId
+          )
+          await sbp('backend/publishLogEntry', proposal)
+          invitationsSent.push(inviteeName)
+          this.ephemeral.formSuccessMsg = L('Invites to {invitationsSent} sent successfully!', {
+            invitationsSent: invitationsSent.join(', ')
+          })
+        } catch (e) {
+          console.error(`Invite to ${inviteeName} failed to be sent!`, e)
+          invitationsFailed.push(inviteeName)
+          this.ephemeral.formErrorMsg = L('Invites to {invitationsFailed} failed!', {
+            invitationsFailed: invitationsFailed.join(', ')
+          })
         }
       }
 
-      if (this.groupShouldPropose && !hasFailed) {
-        // Show Success step!
-        this.ephemeral.currentStep += 1
+      if (invitationsFailed.length === 0) {
+        this.resetInvitations()
+        this.ephemeral.currentStep += 1 // Show Success step!
       }
     }
   }

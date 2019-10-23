@@ -17,15 +17,18 @@ modal-template(ref='modal')
 </template>
 <script>
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
-
+import { buildInvitationUrl } from '@model/contracts/voting/proposals.js'
 export default {
   name: 'InviteByLink',
   components: {
     ModalTemplate
   },
-  data () {
-    return {
-      link: 'https://groupincome.org/f4k3_H45h_t0_5h4r3'
+  computed: {
+    link () {
+      console.log('ora')
+      const invites = this.$store.getters.currentGroupState.invites
+      const inviteWelcome = Object.keys(invites).find(invite => invites[invite].creator === 'GROUP_CREATOR')
+      return buildInvitationUrl(this.$store.state.currentGroupId, invites[inviteWelcome].inviteSecret)
     }
   },
   methods: {
@@ -44,6 +47,7 @@ export default {
 .c-link {
   margin-top: $spacer-lg;
   margin-bottom: $spacer-sm;
+  display: inline;
 }
 
 .c-cta {

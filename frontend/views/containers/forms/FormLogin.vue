@@ -1,3 +1,4 @@
+<template lang='pug'>
 form(
   novalidate
   ref='form'
@@ -75,7 +76,7 @@ export default {
           username: this.form.name,
           identityContractID
         })
-        this.emit('submitSucceeded')
+        this.$emit('submitSucceeded')
         // this.close()
         // if (this.$store.state.currentGroupId) this.$router.push({ path: '/dashboard' })
       } catch (error) {

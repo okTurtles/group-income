@@ -8,11 +8,8 @@
     template(slot='footer')
       p
         i18n Not on Group Income yet?
-        i18n.link(
-          data-test='goToSignup'
-          tag='a'
-          @click='showSignupModal'
-        ) Create an account
+        | &nbsp;
+        i18n.link(tag='button' data-test='goToSignup' @click='showSignupModal') Create an account
 </template>
 
 <script>

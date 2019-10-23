@@ -53,6 +53,7 @@ import { debounce } from '@utils/giLodash.js'
 import sbp from '~/shared/sbp.js'
 import { nonWhitespace } from '@views/utils/validators.js'
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
+import FormPassword from '@containers/forms/FormPassword.vue'
 import L from '@view-utils/translations.js'
 
 // TODO: fix all this
@@ -60,7 +61,8 @@ export default {
   name: 'FormSignup',
   mixins: [validationMixin],
   components: {
-    ModalTemplate
+    ModalTemplate,
+    FormPassword
   },
   data () {
     return {
@@ -132,9 +134,9 @@ export default {
             identityContractID: user.hash()
           })
           this.ephemeral.errorMsg = 'success' // TODO: get rid of this and fix/update tests accordingly
-          this.emit('submitSucceeded')
+          this.$emit('submitSucceeded')
         } catch (ex) {
-          console.error('SignUp.vue submit() error:', ex)
+          console.error('Signup.vue submit() error:', ex)
           sbp('state/vuex/dispatch', 'logout')
           this.ephemeral.errorMsg = ex.toString()
         }

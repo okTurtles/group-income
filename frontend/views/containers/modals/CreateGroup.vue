@@ -55,6 +55,7 @@ modal-base-template
 import ModalBaseTemplate from '@components/Modal/ModalBaseTemplate.vue'
 import sbp from '~/shared/sbp.js'
 import { RULE_THRESHOLD } from '@model/contracts/voting/rules.js'
+import { generateInvites } from '@model/contracts/group.js'
 import proposals, { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '@model/contracts/voting/proposals.js'
 import imageUpload from '@utils/imageUpload.js'
 import L from '@view-utils/translations.js'
@@ -101,7 +102,7 @@ export default {
       this.ephemeral.errorMsg = null
       Object.assign(this.form, payload.data)
     },
-    submit: async function () {
+    async submit () {
       if (this.$v.form.$invalid) {
         // TODO: more descriptive error message, highlight erroneous step
         this.ephemeral.errorMsg = L('We still need some info from you, please go back and fill missing fields')
@@ -121,6 +122,7 @@ export default {
       // create the GroupContract
       try {
         this.ephemeral.errorMsg = null
+        const initialInvite = generateInvites(60)
         const entry = sbp('gi.contracts/group/create', {
           // authorizations: [contracts.CanModifyAuths.dummyAuth()], // TODO: this
           groupName: this.form.groupName,
@@ -145,7 +147,8 @@ export default {
             ),
             [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].defaults,
             [PROPOSAL_GENERIC]: proposals[PROPOSAL_GENERIC].defaults
-          }
+          },
+          initialInvite
         })
         const hash = entry.hash()
         sbp('okTurtles.events/once', hash, (contractID, entry) => {

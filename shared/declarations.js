@@ -199,7 +199,7 @@ declare module './views/containers/proposals/RuleAddMember.vue' { declare module
 declare module './views/containers/proposals/RuleChangeRule.vue' { declare module.exports: Object }
 declare module './views/containers/proposals/RuleRemoveMember.vue' { declare module.exports: Object }
 declare module './views/containers/sidebar/Sidebar.vue' { declare module.exports: Object }
-declare module './views/containers/SignUp.vue' { declare module.exports: Object }
+declare module './views/containers/Signup.vue' { declare module.exports: Object }
 declare module './Voting.vue' { declare module.exports: Object }
 declare module '@/utils/stringTemplate.js' { declare module.exports: Function }
 declare module '@utils/events.js' { declare module.exports: any }

@@ -7,9 +7,9 @@
 
     template(slot='footer')
       p
-        i18n Already have an account?&nbsp;
-        a.link(@click='showLoginModal' data-test='goToLogin')
-          i18n Login
+        i18n Already have an account?
+        | &nbsp;
+        i18n.link(tag='a' @click='showLoginModal' data-test='goToLogin') Log in
 </template>
 
 <script>
