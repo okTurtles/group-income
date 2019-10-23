@@ -40,6 +40,13 @@ function initMonthlyPayments () {
   }
 }
 
+function initGroupProfile (contractID: string) {
+  return {
+    contractID: contractID,
+    nonMonetaryContributions: []
+  }
+}
+
 DefineContract({
   name: 'gi.contracts/group',
   contract: {
@@ -66,7 +73,7 @@ DefineContract({
         proposals: {}, // hashes => {} TODO: this, see related TODOs in GroupProposal
         settings: data,
         profiles: {
-          [meta.username]: { contractID: meta.identityContractID }
+          [meta.username]: initGroupProfile(meta.identityContractID)
         },
         userPaymentsByMonth: {
           [currentMonthTimestamp()]: initMonthlyPayments()
@@ -275,10 +282,7 @@ DefineContract({
         if (Object.keys(invite.responses).length === invite.generated) {
           invite.status = 'used'
         }
-        Vue.set(state.profiles, meta.username, {
-          contractID: meta.identityContractID,
-          nonMonetaryContributions: []
-        })
+        Vue.set(state.profiles, meta.username, initGroupProfile(meta.identityContractID))
         // If we're triggered by handleEvent in state.js (and not latestContractState)
         // then the asynchronous sideEffect function will get called next
         // and we will subscribe to this new user's identity contract
