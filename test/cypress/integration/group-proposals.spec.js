@@ -1,5 +1,5 @@
-const userId = 100
-// const userId = Math.floor(Math.random() * 10000)
+// const userId = 100
+const userId = Math.floor(Math.random() * 10000)
 const groupName = 'Dreamers'
 
 function assertProposalOpenState ({ description }) {
@@ -316,7 +316,7 @@ describe('Proposals - Add members', () => {
     cy.getByDT('buttonAddNonMonetaryContribution').click()
 
     cy.get('.giving .c-contribution-list')
-      .should('have.length', 2)
+      .should('have.length', 3)
     cy.giLogout()
   })
 
@@ -329,8 +329,8 @@ describe('Proposals - Add members', () => {
     cy.getByDT('submitIncome').click()
     cy.getByDT('contributionsLink').click()
     cy.getByDT('contributionsLink').click()
-    cy.pause()
-    // cy.giLogout()
+    // cy.pause()
+    cy.giLogout()
   })
 
   // it('It should do next test', () => {
