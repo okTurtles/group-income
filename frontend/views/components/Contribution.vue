@@ -156,7 +156,7 @@ export default {
         }
         if (this.isEditing) {
           this.$emit('new-value', 'nonMonetaryEdit', {
-            replace: this.initialValue || false,
+            replace: this.initialValue,
             with: this.form.contribution
           })
           this.isEditing = false

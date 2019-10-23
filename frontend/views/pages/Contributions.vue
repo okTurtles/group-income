@@ -243,9 +243,13 @@ export default {
     },
     receivingMonetary () {
       const distributionTo = this.distribution.filter(p => p.to === this.ourUsername)
-      let total = distributionTo.reduce((acc, payment) => acc + payment.amount, 0)
-      const list = distributionTo.reduce((acc, payment) => this.displayName(payment.from), [])
-      total = this.currency.displayWithCurrency(total)
+      const list = []
+      const total = this.currency.displayWithCurrency(
+        distributionTo.reduce((acc, payment) => {
+          list.push(this.displayName(payment.from))
+          return acc + payment.amount
+        }, 0)
+      )
       return {
         list: list,
         total: total
@@ -253,9 +257,13 @@ export default {
     },
     givingMonetary () {
       const distributionTo = this.distribution.filter(p => p.from === this.ourUsername)
-      let total = distributionTo.reduce((acc, payment) => acc + payment.amount, 0)
-      const list = distributionTo.reduce((acc, payment) => this.displayName(payment.to), [])
-      total = this.currency.displayWithCurrency(total)
+      const list = []
+      const total = this.currency.displayWithCurrency(
+        distributionTo.reduce((acc, payment) => {
+          list.push(this.displayName(payment.to))
+          return acc + payment.amount
+        }, 0)
+      )
       return {
         list: list,
         total: total
@@ -275,11 +283,16 @@ export default {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal)
     },
     async handleNonMonetary (type, value) {
-      const groupProfileUpdate = await sbp('gi.contracts/group/groupProfileUpdate/create',
-        { [type]: value },
-        this.$store.state.currentGroupId
-      )
-      await sbp('backend/publishLogEntry', groupProfileUpdate)
+      try {
+        const groupProfileUpdate = await sbp('gi.contracts/group/groupProfileUpdate/create',
+          { [type]: value },
+          this.$store.state.currentGroupId
+        )
+        await sbp('backend/publishLogEntry', groupProfileUpdate)
+      } catch (e) {
+        console.error('handleNonMonetary', e)
+        alert(e.message)
+      }
     },
     displayName (username) {
       return this.globalProfile(username).displayName || username
