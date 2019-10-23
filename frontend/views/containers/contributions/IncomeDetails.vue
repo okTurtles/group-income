@@ -116,7 +116,7 @@ export default {
       'ourUsername'
     ]),
     memberGroupProfile () {
-      return this.groupProfile(this.ourUsername) || {}
+      return this.groupProfile(this.ourUsername)
     },
     needsIncome () {
       return this.form.incomeDetailsType === 'incomeAmount'
