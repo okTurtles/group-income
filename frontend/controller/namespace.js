@@ -16,6 +16,15 @@ sbp('sbp/selectors/register', {
   },
   'namespace/lookup': (name: string) => {
     // TODO: should `name` be encodeURI'd?
-    return fetch(`${process.env.API_URL}/name/${name}`).then(handleFetchResult('text'))
+    return fetch(`${process.env.API_URL}/name/${name}`).then((r: Object) => {
+      if (!r.ok) {
+        console.warn(`namespace/lookup: ${r.status}`, r)
+        if (r.status !== 404) {
+          throw new Error(`${r.status}: ${r.statusText}`)
+        }
+        return null
+      }
+      return r['text']()
+    })
   }
 })

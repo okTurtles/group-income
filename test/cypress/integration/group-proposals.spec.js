@@ -38,7 +38,7 @@ describe('Proposals - Add members', () => {
     cy.get('.c-modal-close').click()
   })
 
-  it('user1 invites user2 and user3 to the group and they accept', () => {
+  it('user1 invites user2 and user3 to the group', () => {
     cy.giInviteMember([`user2-${userId}`, `user3-${userId}`])
 
     cy.giLogout()
@@ -70,16 +70,18 @@ describe('Proposals - Add members', () => {
     cy.giLogout()
   })
 
-  it('user1 proposes to add user4 and user5 together to the group and user2 proposes to add user6 to the group', () => {
+  it('user1 proposes to add user4 and user5 together to the group', () => {
     cy.giLogin(`user1-${userId}`)
 
     cy.giInviteMember([`user4-${userId}`, `user5-${userId}`], { isProposal: true })
 
     cy.giLogout()
+  })
 
+  it('user2 proposes to add user6 to the group', () => {
     cy.giLogin(`user2-${userId}`)
 
-    cy.giInviteMember(`user6-${userId}`, { isProposal: true })
+    cy.giInviteMember([`user6-${userId}`], { isProposal: true })
 
     cy.giLogout()
   })

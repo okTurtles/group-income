@@ -13,7 +13,8 @@ import { blake32Hash } from '~/shared/functions.js'
 import proposals, { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '~/frontend/model/contracts/voting/proposals.js'
 import { TYPE_MESSAGE } from '~/frontend/model/contracts/mailbox.js'
 import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts/group.js'
-import '~/frontend/model/contracts/identity.js'
+// import '~/frontend/model/contracts/identity.js'
+import '~/frontend/model/state.js'
 import '~/frontend/controller/namespace.js'
 import chalk from 'chalk'
 
@@ -48,7 +49,7 @@ const vuexState = {
   fontSize: 1
 }
 
-sbp('sbp/selectors/register', {
+sbp('sbp/selectors/overwrite', {
   // intercept 'state/enqueueHandleEvent' from backend.js
   'state/enqueueHandleEvent': function (e) {
     const contractID = e.contractID()
@@ -113,7 +114,7 @@ describe('Full walkthrough', function () {
       }
     })
   }
-  function createPaymentTo (to, amount, parentHash, currency = 'USD') {
+  function createPaymentTo (to, amount, contractID, currency = 'USD') {
     return sbp('gi.contracts/group/payment/create',
       {
         toUser: to.data().attributes.name,
@@ -123,7 +124,7 @@ describe('Full walkthrough', function () {
         status: PAYMENT_PENDING,
         paymentType: PAYMENT_TYPE_MANUAL
       },
-      parentHash
+      contractID
     )
   }
 
@@ -175,7 +176,8 @@ describe('Full walkthrough', function () {
       const { alice } = users
       var res = await sbp('namespace/lookup', alice.data().attributes.name)
       res.should.equal(alice.hash())
-      sbp('namespace/lookup', 'susan').should.be.rejected()
+      const contractID = await sbp('namespace/lookup', 'susan')
+      should(contractID).equal(null)
     })
 
     it('Should open sockets for Alice and Bob', async function () {
@@ -257,7 +259,7 @@ describe('Full walkthrough', function () {
       await postEntry(await createPaymentTo(users.bob, 100, groups.group1.hash()))
     })
 
-    it('Should fail with wrong parentHash', async function () {
+    it('Should fail with wrong contractID', async function () {
       try {
         var p = await createPaymentTo(users.bob, 100, '')
         await postEntry(p)

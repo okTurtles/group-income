@@ -71,7 +71,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
             )
 
           contribution(
-            v-for='(contribution, index) in groupMembersNonMonetary'
+            v-for='(contribution, index) in receivingNonMonetary'
             :key='`contribution-${index}`'
           )
             contribution-item(
@@ -115,10 +115,10 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
             )
 
           contribution.has-text-weight-bold(
-            v-for='(contribution, index) in giving.nonMonetary'
+            v-for='(contribution, index) in memberGroupProfile.nonMonetaryContributions'
             :key='`contribution-${index}`'
             variant='editable'
-            :contributions-list='giving.nonMonetary'
+            :contributions-list='memberGroupProfile.nonMonetaryContributions'
             :initial-value='contribution'
             @new-value='handleNonMonetary'
           )
@@ -130,7 +130,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
 
           contribution(
             variant='unfilled'
-            :contributions-list='giving.nonMonetary'
+            :contributions-list='memberGroupProfile.nonMonetaryContributions'
             @new-value='handleNonMonetary'
             data-test='addNonMonetaryContribution'
           )
@@ -190,15 +190,16 @@ export default {
   computed: {
     ...mapGetters([
       'groupMembersCount',
-      'groupMembersNonMonetary',
       'groupSettings',
       'currentGroupState',
-      'memberProfile',
-      'memberGroupProfile',
-      'groupMembers',
+      'groupProfile',
+      'groupProfiles',
       'groupMincomeFormatted',
       'ourUsername'
     ]),
+    memberGroupProfile () {
+      return this.groupProfile(this.ourUsername) || {}
+    },
     upTo () {
       const amount = this.memberGroupProfile[this.memberGroupProfile.incomeDetailsType]
       if (!amount) return false
@@ -208,10 +209,10 @@ export default {
       return this.memberGroupProfile.incomeDetailsType === 'incomeAmount'
     },
     doesReceive () {
-      return this.needsIncome || this.receiving.nonMonetary
+      return this.needsIncome || this.receivingNonMonetary
     },
     doesGive () {
-      return this.giving.monetary || this.giving.nonMonetary
+      return this.giving.monetary || this.memberGroupProfile.nonMonetaryContributions
     },
     receiving () {
       return {
@@ -229,22 +230,35 @@ export default {
       }
     },
     giving () {
-      console.log('plop', this.groupMembersNonMonetary)
+      console.log('plop', this.receivingNonMonetary)
       return {
-        nonMonetary: this.memberGroupProfile.nonMonetary,
+        nonMonetary: this.memberGroupProfile.nonMonetaryContributions,
         monetary: '[20]'
       }
+    },
+    receivingNonMonetary () {
+      const groupProfiles = this.groupProfiles
+      return Object.keys(groupProfiles)
+        .filter(key => key !== this.ourUsername && groupProfiles[key].nonMonetaryContributions)
+        .reduce((list, username) => {
+          const nonMonetary = groupProfiles[username].nonMonetaryContributions
+          nonMonetary.forEach((what) => {
+            const contributionIndex = list.findIndex(x => x.what === what)
+            contributionIndex >= 0
+              ? list[contributionIndex].who.push(username)
+              : list.push({ who: [username], what })
+          })
+          return list
+        }, [])
     }
   },
   beforeMount () {
-    const profile = this.memberProfile(this.ourUsername) || {}
-    const incomeDetailsType = profile.groupProfile && profile.groupProfile.incomeDetailsType
+    const profile = this.groupProfile(this.ourUsername) || {}
+    const incomeDetailsType = profile.incomeDetailsType
     if (incomeDetailsType) {
       this.form.incomeDetailsType = incomeDetailsType
-      this.form[incomeDetailsType] = profile.groupProfile[incomeDetailsType]
+      this.form[incomeDetailsType] = profile[incomeDetailsType]
     }
-
-    // - console.log('plop', this.memberGroupProfile, this.currentGroupState, this.memberGroupProfile.incomeDetailsType, this.memberProfile(this.ourUsername).groupProfile.incomeDetailsKey)
   },
   methods: {
     openModal (modal) {

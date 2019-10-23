@@ -5,9 +5,7 @@ page(
 )
   template(#title='') {{ L('Pay Group') }}
 
-  template(#sidebar=''
-    v-if='hasPayments'
-  )
+  template(#sidebar='' v-if='hasPayments')
     .c-summary-item(
       v-for='(item, index) in paymentSummary'
       :key='index'
@@ -21,6 +19,7 @@ page(
       p(:class='{"has-text-success": item.max === item.value}')
         i.icon-check(v-if='item.max === item.value')
         .has-text-1 {{ item.label }}
+
   .c-container-empty(v-if='!hasPayments')
     svg-contributions.c-svg
 
@@ -39,7 +38,7 @@ page(
 
     ul.c-payments
       li.c-payments-item(
-        v-for='(payment, username) in incomeDistribution'
+        v-for='(payment, username) in paymentsDistribution'
         :key='username'
       )
         .c-info
@@ -52,6 +51,7 @@ page(
                 user: `<b>${username}</b>` \
               }'
             ) {total} to {user}
+            //- i18n(:class='paymentStatusClass()')
             //- i18n.has-text-1(
             //-   v-if='statusIsPending(payment)'
             //-   :args='{ username }'
@@ -73,7 +73,7 @@ page(
             tag='button'
             key='send'
             v-if='statusIsToPay(username)'
-            @click='markAsPayed(username)'
+            @click='markAsPayed(username, payment)'
           ) Mark as sent
           i18n.button.is-small.is-outlined(
             tag='button'
@@ -82,7 +82,7 @@ page(
             @click='cancelPayment(username)'
           ) Cancel
 
-    ul.c-payments
+    //- ul.c-payments
       li.c-payments-item(
         v-for='(user, index) in fakeStore.usersToPay'
         :key='user.name'
@@ -134,7 +134,7 @@ page(
 
 <script>
 import sbp from '~/shared/sbp.js'
-import { mapGetters, mapState } from 'vuex'
+import { mapGetters } from 'vuex'
 import Page from '@pages/Page.vue'
 import Avatar from '@components/Avatar.vue'
 import UserImage from '@containers/UserImage.vue'
@@ -194,22 +194,23 @@ export default {
     }
   },
   computed: {
-    ...mapState([
-      'paymentsByMonth'
-    ]),
     ...mapGetters([
+      'currentGroupState',
       'groupIncomeDistribution',
-      'groupMembers',
+      'groupProfiles',
       'groupSettings',
       'ourUsername',
-      'memberProfile',
       'thisMonthsPayments'
     ]),
     currency () {
       return currencies[this.groupSettings.mincomeCurrency]
     },
-    incomeDistribution () {
-      return this.groupIncomeDistribution.filter(p => p.from === this.ourUsername)
+    paymentsDistribution () {
+      // TODO: make sure we create a new month if month roll's over
+      //       perhaps send a message to do that
+      const distribution = this.thisMonthsPayments.frozenDistribution || this.groupIncomeDistribution
+      // const distribution = this.groupIncomeDistribution
+      return distribution.filter(p => p.from === this.ourUsername)
         .reduce((acc, payment) => {
           acc[payment.to] = {
             amount: +this.currency.displayWithoutCurrency(payment.amount),
@@ -220,7 +221,7 @@ export default {
     },
     // old stuff (to be deleted) follows
     hasPayments () {
-      return this.fakeStore.usersToPay.length > 0
+      return Object.keys(this.paymentsDistribution).length > 0
     },
     paymentStatus () {
       const { usersToPay } = this.fakeStore
@@ -273,14 +274,21 @@ export default {
     }
   },
   methods: {
-    statusIsToPay (username) {
-      return !this.thisMonthsPayments[username]
+    statusIsToPay (toUser) {
+      const payments = this.thisMonthsPayments.payments
+      const ourPayments = payments && payments[this.ourUsername]
+      return !payments || !ourPayments || !ourPayments[toUser]
     },
     statusIsSent (user) {
       return ['completed', 'pending'].includes(user.status)
     },
-    statusIsPending (user) {
-      return user.status === 'pending'
+    statusIsPending (toUser) {
+      const payments = this.thisMonthsPayments.payments
+      const ourPayments = payments && payments[this.ourUsername]
+      const paymentHash = ourPayments && ourPayments[toUser]
+      // const payment = paymentHash && this.currentGroupState.payments[paymentHash]
+      // console.warn({ ourUser: this.ourUsername, toUser, payments, ourPayments, paymentHash, payment })
+      return paymentHash && this.currentGroupState.payments[paymentHash].data.status === 'pending'
     },
     statusIsRejected (user) {
       return user.status === 'rejected'
@@ -291,10 +299,20 @@ export default {
     getUserFirstName (name) {
       return name.split(' ')[0]
     },
-    markAsPayed (user) {
-      console.log('TODO - mark as payed')
-      // Raw Logic
-      user.status = 'pending'
+    async markAsPayed (toUser, payment) {
+      try {
+        const paymentMessage = await sbp('gi.contracts/group/payment/create', {
+          toUser,
+          amount: payment.amount,
+          currency: this.currency.symbol,
+          txid: String(Math.random()),
+          status: 'pending',
+          paymentType: 'manual'
+        }, this.$store.state.currentGroupId)
+        await sbp('backend/publishLogEntry', paymentMessage)
+      } catch (e) {
+        console.error(e)
+      }
     },
     cancelPayment (user) {
       console.log('TODO - cancel payment')

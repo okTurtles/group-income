@@ -22,7 +22,9 @@ import './views/utils/vStyle.js'
 
 console.log('NODE_ENV:', process.env.NODE_ENV)
 
-// TODO: implement Vue.config.errorHandler: https://vuejs.org/v2/api/#errorHandler
+Vue.config.errorHandler = function (err, vm, info) {
+  console.error(`uncaught Vue error in ${info}:`, err)
+}
 
 async function startApp () {
   // NOTE: we setup this global SBP filter and domain regs here
@@ -54,12 +56,11 @@ async function startApp () {
 
   const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
   if (username) {
-    try {
-      const identityContractID = await sbp('namespace/lookup', username)
+    const identityContractID = await sbp('namespace/lookup', username)
+    if (identityContractID) {
       await sbp('state/vuex/dispatch', 'login', { username, identityContractID })
-    } catch (err) {
-      console.log('lookup failed!', err)
-      sbp('state/vuex/dispatch', 'logout')
+    } else {
+      await sbp('state/vuex/dispatch', 'logout')
       console.warn(`It looks like the local user '${username}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
       // TODO: do not delete the username like this! handle this better!
       //       because of how await works, this exception handler can be triggered
@@ -69,7 +70,7 @@ async function startApp () {
       //         memberUsernames state.js:231
       //
       //       Which doesn't mean that the lookup actually failed!
-      sbp('gi.db/settings/delete', username)
+      await sbp('gi.db/settings/delete', username)
     }
   }
   /* eslint-disable no-new */
@@ -106,7 +107,7 @@ async function startApp () {
       })
       sbp('okTurtles.events/on', LOGOUT, () => {
         this.ephemeral.finishedLogin = 'no'
-        router.push({ path: '/' }).catch(console.error)
+        router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
       })
     },
     computed: {

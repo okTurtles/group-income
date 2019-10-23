@@ -6,21 +6,21 @@
 import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
-import L from '@view-utils/translations.js'
-import currencies from '@view-utils/currencies.js'
-import incomeDistribution from '@utils/distribution/mincome-proportional.js'
+import L from '~/frontend/views/utils/translations.js'
+import currencies from '~/frontend/views/utils/currencies.js'
+import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
 import { GIMessage } from '~/shared/GIMessage.js'
 import { SETTING_CURRENT_USER } from './database.js'
 import { ErrorDBBadPreviousHEAD, ErrorDBConnection } from '~/shared/domains/gi/db.js'
 import Colors from './colors.js'
-import { TypeValidatorError } from '@utils/flowTyper.js'
+import { TypeValidatorError } from '~/frontend/utils/flowTyper.js'
 import { GIErrorUnrecoverable, GIErrorIgnoreAndBanIfGroup, GIErrorDropAndReprocess } from './errors.js'
 import { STATUS_OPEN, PROPOSAL_REMOVE_MEMBER } from './contracts/voting/proposals.js'
-import { VOTE_FOR } from '@model/contracts/voting/rules.js'
-import { actionWhitelisted, CONTRACT_REGEX } from '@model/contracts/Contract.js'
-import { currentMonthTimestamp } from '@utils/time.js'
-import * as _ from '@utils/giLodash.js'
-import * as EVENTS from '@utils/events.js'
+import { VOTE_FOR } from '~/frontend/model/contracts/voting/rules.js'
+import { actionWhitelisted, CONTRACT_REGEX } from '~/frontend/model/contracts/Contract.js'
+import { currentMonthTimestamp } from '~/frontend/utils/time.js'
+import * as _ from '~/frontend/utils/giLodash.js'
+import * as EVENTS from '~/frontend/utils/events.js'
 import './contracts/group.js'
 import './contracts/mailbox.js'
 import './contracts/identity.js'
@@ -30,6 +30,7 @@ var store // this is set and made the default export at the bottom of the file.
 // we have it declared here to make it accessible in mutations
 // 'state' is the Vuex state object, and it can only store JSON-like data
 var dropAllMessagesUntilRefresh = false
+var attemptToReprocessMessageID
 const contractIsSyncing: {[string]: boolean} = {}
 
 const initialState = {
@@ -38,7 +39,6 @@ const initialState = {
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
   theme: 'blue',
-  paymentsByMonth: {},
   reducedMotion: false,
   fontSize: 1
 }
@@ -94,8 +94,35 @@ sbp('sbp/selectors/register', {
       'state/vuex/dispatch', 'handleEvent', event
     ])
   },
+  // use 'groupContractSafeGetters' from within a contract to avoid code duplication,
+  // but be careful to only use getters that restrict themselves to the
+  // contract's state, and do not access state outside the contract.
+  // For example, if the getter you use tries to access `state.loggedIn`,
+  // that will break the `latestContractState` function.
+  // It is only safe to access state outside of the contract in a contract action's
+  // `sideEffect` function (as long as it doesn't modify contract state)
+  'state/groupContractSafeGetters': function (state: Object) {
+    var lastAccessedGetter
+    const stateProxy = new Proxy({}, {
+      get: function (obj, prop) {
+        if (!(prop in state)) {
+          throw new Error(`attempt to access state outside of contract state via getters.${lastAccessedGetter}. Property doesn't exist: state.${prop}`)
+        }
+        return state[prop]
+      }
+    })
+    const gettersProxy = new Proxy({}, {
+      get: function (obj, prop) {
+        lastAccessedGetter = prop
+        // this is a bit of a hack, and in the future we might
+        // instead register getters on the vuex module and somehow
+        // pass them to the contract process function, but this works for now
+        return prop === 'currentGroupState' ? stateProxy : getters[prop](stateProxy, gettersProxy)
+      }
+    })
+    return gettersProxy
+  },
   'state/vuex/state': () => store.state,
-  'state/vuex/getters': () => store.getters,
   'state/vuex/dispatch': (...args) => store.dispatch(...args)
 })
 
@@ -186,6 +213,15 @@ const mutations = {
 }
 // https://vuex.vuejs.org/en/getters.html
 // https://vuex.vuejs.org/en/modules.html
+//
+// !!  IMPORTANT  !!
+//
+// To make it simple to use *SOME* of these getters (the ones related to
+// group contract state) via 'state/groupContractSafeGetters', prefer using
+// 'getters' to access state instead of 'state'.
+//
+// For example, instead of: state[state.currentGroupId]
+//     Use getters instead: getters.currentGroupState
 const getters = {
   currentGroupState (state) {
     return state[state.currentGroupId] || {} // avoid "undefined" vue errors at inoportune times
@@ -213,40 +249,37 @@ const getters = {
   },
   // list of group names and contractIDs
   groupsByName (state) {
-    const { contracts } = store.state
+    const contracts = state.contracts
     // The code below was originally Object.entries(...) but changed to .keys()
     // due to the same flow issue as https://github.com/facebook/flow/issues/5838
-    return Object.keys(contracts)
+    return Object.keys(contracts || {})
       .filter(contractID => contracts[contractID].type === 'group' && state[contractID].settings)
       .map(contractID => ({ groupName: state[contractID].settings.groupName, contractID }))
   },
-  memberProfile (state, getters) {
-    return (username, groupId) => {
-      var profile = state[groupId || state.currentGroupId].profiles[username]
-      return profile && state[profile.contractID] && {
-        contractID: profile.contractID,
-        globalProfile: state[profile.contractID].attributes,
-        groupProfile: profile.groupProfile
-      }
+  groupProfile (state, getters) {
+    return username => {
+      const profiles = getters.currentGroupState.profiles
+      return profiles && profiles[username]
     }
   },
-  memberGroupProfile (state, getters) {
-    const profile = getters.memberProfile(getters.ourUsername) || {}
-    return profile.groupProfile || {}
+  globalProfile (state, getters) {
+    return username => {
+      const groupProfile = getters.groupProfile(username)
+      const identityState = groupProfile && state[groupProfile.contractID]
+      return identityState && identityState.attributes
+    }
   },
-  groupMembers (state, getters) {
-    const groupId = state.currentGroupId
-    return groupId && state[groupId] && Object.keys(state[groupId].profiles || {}).reduce(
+  groupProfiles (state, getters) {
+    return Object.keys(getters.currentGroupState.profiles || {}).reduce(
       (result, username) => {
-        result[username] = getters.memberProfile(username, groupId)
+        result[username] = getters.groupProfile(username)
         return result
       },
       {}
     )
   },
-  groupMembersByUsername (state) {
-    var profiles = state.currentGroupId && state[state.currentGroupId] && state[state.currentGroupId].profiles
-    return Object.keys(profiles || {})
+  groupMembersByUsername (state, getters) {
+    return Object.keys(getters.currentGroupState.profiles || {})
   },
   groupMembersNonMonetary (state) {
     const groupId = state.currentGroupId
@@ -282,23 +315,23 @@ const getters = {
     return currency && currency.symbolWithCode
   },
   groupIncomeDistribution (state, getters) {
-    const groupMembers = getters.groupMembers
+    const groupProfiles = getters.groupProfiles
     const mincomeAmount = getters.groupMincomeAmount
     const currentIncomeDistribution = []
-    for (const username in groupMembers) {
-      const member = groupMembers[username]
-      const incomeDetailsType = member && member.groupProfile.incomeDetailsType
+    for (const username in groupProfiles) {
+      const profile = groupProfiles[username]
+      const incomeDetailsType = profile && profile.incomeDetailsType
       if (incomeDetailsType) {
         const adjustment = incomeDetailsType === 'incomeAmount' ? 0 : mincomeAmount
-        const adjustedAmount = adjustment + member.groupProfile[incomeDetailsType]
+        const adjustedAmount = adjustment + profile[incomeDetailsType]
         currentIncomeDistribution.push({ name: username, amount: adjustedAmount })
       }
     }
     return incomeDistribution(currentIncomeDistribution, mincomeAmount)
   },
   thisMonthsPayments (state, getters) {
-    const payments = getters.currentGroupState.paymentsByMonth
-    return payments && payments[currentMonthTimestamp()]
+    const payments = getters.currentGroupState.userPaymentsByMonth
+    return (payments && payments[currentMonthTimestamp()]) || {}
   },
   colors (state) {
     return Colors[state.theme]
@@ -422,6 +455,11 @@ const actions = {
       handleEvent.processMutation(message)
       // process any side-effects (these must never result in any mutation to this contract state)
       await handleEvent.processSideEffects(message)
+
+      if (attemptToReprocessMessageID === message.hash()) {
+        console.warn(`Successfully re-processed ${attemptToReprocessMessageID}!`)
+        attemptToReprocessMessageID = null
+      }
     } catch (e) {
       // For details about the rationale for how error handling works here see these links:
       // https://gitlab.okturtles.org/okturtles/group-income-simple/snippets/9
@@ -460,7 +498,19 @@ const actions = {
         dropAllMessagesUntilRefresh = true
       }
       if (banUser) {
-        await handleEvent.autoBanSenderOfMessage(message, e)
+        if (contractIsSyncing[contractID]) {
+          console.warn(`handleEvent: skipping autoBanSenderOfMessage since we're syncing ${contractID}`)
+        } else {
+          // NOTE: this random delay is here for multiple reasons:
+          const randomDelay = _.randomIntFromRange(0, 1500)
+          // 1. to avoid backend throwing 'bad previousHEAD' error
+          // https://github.com/okTurtles/group-income-simple/issues/608
+          // 2. because we need to make sure that if a proposal has been cast by someone,
+          // then we are likely to find it in store.state, so we have this random delay
+          // here a the top, before we iterate store.state[groupID].proposals, and
+          // 3. to avoid weird errors like 'TypeError: "state[(intermediate value)] is undefined"'
+          setTimeout(() => handleEvent.autoBanSenderOfMessage(message, e), randomDelay)
+        }
       }
     }
   }
@@ -480,6 +530,21 @@ const handleEvent = {
       return await sbp('gi.db/log/addEntry', message)
     } catch (e) {
       if (e instanceof ErrorDBBadPreviousHEAD) {
+        // sometimes we simply miss messages, it's not clear why, but it happens
+        // in rare cases. So we attempt to re-sync this contract once
+        if (!attemptToReprocessMessageID) {
+          // keep track of what message we're trying to reprocess
+          // so that if we're able to fix ourselves we can go back to normal
+          attemptToReprocessMessageID = message.hash()
+          console.warn(`addMessageToDB: going to attempt to resync ${message.contractID()} to re-process ${message.type()} / ${message.hash()}`)
+          setTimeout(() => {
+            // re-enable message processing
+            dropAllMessagesUntilRefresh = false
+            sbp('state/enqueueContractSync', message.contractID())
+          }, 1000)
+        } else {
+          console.error(`addMessageToDB: already attempted to re-process ${attemptToReprocessMessageID} ${message.type()}, will not attempt again!`)
+        }
         // the server should never send us a bad previousHEAD (because)
         // it verifies that before adding it to its db. So if we receive
         // this error it means somehow we're getting valid messages out of order
@@ -501,7 +566,7 @@ const handleEvent = {
       const hash = message.hash()
       const data = message.data()
       const meta = message.meta()
-      const type = CONTRACT_REGEX.exec(selector)[1]
+      const type = CONTRACT_REGEX.exec(selector)[3]
       if (!type) {
         throw new GIErrorIgnoreAndBanIfGroup(`bad selector '${selector}' for message ${hash}`)
       }
@@ -569,7 +634,7 @@ const handleEvent = {
       // TODO: set state machine critical error state
     }
   },
-  async autoBanSenderOfMessage (message: GIMessage, error: Object) {
+  async autoBanSenderOfMessage (message: GIMessage, error: Object, attempt = 1) {
     const contractID = message.contractID()
     try {
       // If we just joined, we're likely witnessing an old error that was handled
@@ -579,23 +644,15 @@ const handleEvent = {
       // TODO: we should still autoban them after the sync is finished
       //       if the proposal is still open. See #731
       if (contractIsSyncing[contractID]) {
-        console.debug(`skipping autoBanSenderOfMessage since we're syncing ${contractID}`)
+        console.warn(`skipping autoBanSenderOfMessage since we're syncing ${contractID}`)
         return // don't do anything, assume the existing users handled this event
       }
-      // NOTE: this random delay is here for multiple reasons:
-      //       1. to avoid backend throwing 'bad previousHEAD' error
-      //       https://github.com/okTurtles/group-income-simple/issues/608
-      await _.delay(_.randomIntFromRange(1, 2000))
-      //       2. because we need to make sure that if a proposal has been cast by someone,
-      //       then we are likely to find it in store.state, so we have this random delay
-      //       here a the top, before we iterate store.state[groupID].proposals, and
-      //       3. to avoid weird errors like 'TypeError: "state[(intermediate value)] is undefined"'
       const username = message.meta().username
       if (message.type().indexOf('gi.contracts/group/') !== 0) {
         console.warn(`autoBanSenderOfMessage: removing & unsubscribing from ${username} contractID: ${contractID}`)
         store.commit('removeContract', contractID)
       }
-      if (username && store.getters.memberProfile(username)) {
+      if (username && store.getters.groupProfile(username)) {
         console.warn(`autoBanSenderOfMessage: autobanning ${username}`)
         const groupID = store.state.currentGroupId
         var proposal
@@ -603,7 +660,10 @@ const handleEvent = {
         // find existing proposal if it exists
         for (const hash in store.state[groupID].proposals) {
           const prop = store.state[groupID].proposals[hash]
-          if (prop.status === STATUS_OPEN && prop.data.proposalType === PROPOSAL_REMOVE_MEMBER && prop.data.proposalData.member === username) {
+          if (prop.status === STATUS_OPEN &&
+            prop.data.proposalType === PROPOSAL_REMOVE_MEMBER &&
+            prop.data.proposalData.member === username
+          ) {
             proposal = prop
             proposalHash = hash
             break
@@ -616,23 +676,32 @@ const handleEvent = {
               { proposalHash, vote: VOTE_FOR },
               groupID
             )
-            await sbp('backend/publishLogEntry', vote)
+            await sbp('backend/publishLogEntry', vote, { maxAttempts: 3 })
           }
         } else {
           // create our proposal to ban the user
-          proposal = await sbp('gi.contracts/group/proposal/create',
-            {
-              proposalType: PROPOSAL_REMOVE_MEMBER,
-              proposalData: {
-                member: username,
-                reason: L("Automated ban because they're sending malformed messages resulting in: {error}", { error: error.message })
-              },
-              votingRule: store.getters.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].rule,
-              expires_date_ms: Date.now() + store.getters.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].expires_ms
+          proposal = await sbp('gi.contracts/group/proposal/create', {
+            proposalType: PROPOSAL_REMOVE_MEMBER,
+            proposalData: {
+              member: username,
+              reason: L("Automated ban because they're sending malformed messages resulting in: {error}", { error: error.message })
             },
-            groupID
-          )
-          await sbp('backend/publishLogEntry', proposal)
+            votingRule: store.getters.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].rule,
+            expires_date_ms: Date.now() + store.getters.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].expires_ms
+          }, groupID)
+          try {
+            await sbp('backend/publishLogEntry', proposal, { maxAttempts: 1 })
+          } catch (e) {
+            if (attempt > 2) {
+              console.error(`autoBanSenderOfMessage: max attempts reached. Error ${e.message} attempting to ban ${username}`, message, e)
+            } else {
+              const randDelay = _.randomIntFromRange(0, 1500)
+              console.warn(`autoBanSenderOfMessage: ${e.message} attempting to ban ${username}, retrying in ${randDelay} ms...`, e)
+              setTimeout(() => {
+                handleEvent.autoBanSenderOfMessage(message, error, attempt + 1)
+              }, randDelay)
+            }
+          }
         }
       }
     } catch (e) {

@@ -8,7 +8,7 @@
     variant='addMember'
     @submit='submit'
   )
-    fieldset(v-if='ephemeral.currentStep === 0' key='0')
+    fieldset(v-if='ephemeral.currentStep === 0' key='0' ref='fieldset')
       i18n.label(tag='legend') Full name
       label.field(
         v-for='(member, index) in ephemeral.invitesCount'
@@ -16,19 +16,14 @@
         data-test='invitee'
       )
         i18n.label.sr-only Username
-        .input-combo
+        .input-shifted
           input.input(
             type='text'
             v-model='form.invitees[index]'
-            @keyup.enter='addInvitee(index)'
+            @keyup='(e) => inviteeUpdate(e, index)'
             aria-required
           )
-          button(
-            type='button'
-            data-test='add'
-            @click='addInvitee(index)'
-          ) {{ L('Add') }}
-          button.is-icon-small.is-shifted(
+          button.is-icon-small(
             v-if='index > 0'
             type='button'
             @click='removeInvitee(index)'
@@ -36,12 +31,6 @@
             :aria-label='L("Remove invitee")'
           )
             i.icon-times
-        // NOTE/TODO: These validations will be removed on issue #609
-        p.helper(
-          v-if='form.eachFeedbackMsg[index]'
-          :class='form.eachFeedbackMsg[index].class'
-          data-test='feedbackMsg'
-        ) {{ form.eachFeedbackMsg[index].text }}
 
       button.link.has-icon.c-addPeople(
         type='button'
@@ -50,47 +39,46 @@
       )
         i.icon-plus
         i18n Add more
+      .c-feedback(
+        v-if='ephemeral.formFeedbackMsg.text'
+        :class='ephemeral.formFeedbackMsg.class'
+        data-test='feedbackMsg'
+      ) {{ephemeral.formFeedbackMsg.text}}
 </template>
 
 <script>
 import Vue from 'vue'
 import { mapState, mapGetters } from 'vuex'
+import { validationMixin } from 'vuelidate'
 import sbp from '~/shared/sbp.js'
 import { PROPOSAL_INVITE_MEMBER, buildInvitationUrl } from '@model/contracts/voting/proposals.js'
 import { generateInvites } from '@model/contracts/group.js'
 import { TYPE_MESSAGE } from '@model/contracts/mailbox.js'
 import ProposalTemplate from './ProposalTemplate.vue'
+import L from '@view-utils/translations.js'
 
 export default {
   name: 'AddMembers',
+  mixins: [validationMixin],
   components: {
     ProposalTemplate
   },
   data () {
     return {
       form: {
-        invitees: [],
-        eachFeedbackMsg: []
+        invitees: []
       },
       ephemeral: {
+        formFeedbackMsg: {},
         currentStep: 0,
         isValid: false,
-        invitesCount: 1,
-        invitesToSend: []
+        invitesCount: 1
       },
       config: {
         steps: [
           'Member'
         ]
       }
-    }
-  },
-  validations: {
-    // validation groups by route name for steps
-    steps: {
-      Member: [
-        'form.member'
-      ]
     }
   },
   computed: {
@@ -111,67 +99,49 @@ export default {
     }
   },
   methods: {
-    async addInvitee (index) {
-      const searchUser = this.form.invitees[index]
-
-      if (searchUser === this.ourUsername) {
-        return this.setInviteError(index, this.L("You can't invite yourself"))
-      }
-
-      if (this.currentGroupState.profiles[searchUser]) {
-        return this.setInviteError(index,
-          this.L('{searchUser} is already on the group', { searchUser })
-        )
-      }
-
-      try {
-        const contractID = await sbp('namespace/lookup', searchUser)
-        const userState = await sbp('state/latestContractState', contractID)
-        this.ephemeral.invitesToSend[index] = { contractID, ...userState }
-        Vue.set(this.form.eachFeedbackMsg, index, {
-          text: this.L('Ready to be invited!'),
-          class: 'has-text-success'
-        })
+    inviteeUpdate (e, index) {
+      if (e.target.value.length > 0 && !this.ephemeral.isValid) {
         this.ephemeral.isValid = true
-      } catch (err) {
-        console.log(err)
-        this.setInviteError(index, this.L('Non existing user. TODO support general invites'))
       }
-    },
-    setInviteError (index, text) {
-      this.ephemeral.invitesToSend[index] = null
-      Vue.set(this.form.eachFeedbackMsg, index, {
-        text,
-        class: 'error'
-      })
+      if (e.target.value.length === 0 && this.ephemeral.invitesCount === 1 && this.ephemeral.isValid) {
+        this.ephemeral.isValid = false
+      }
     },
     removeInvitee (index) {
       this.ephemeral.invitesCount -= 1
       this.form.invitees.splice(index, 1)
-      this.ephemeral.invitesToSend[index] = null
     },
-    addInviteeSlot () {
+    addInviteeSlot (e) {
       this.ephemeral.invitesCount += 1
+      Vue.nextTick(() => {
+        const inviteeSlots = this.$refs.fieldset.getElementsByTagName('label')
+        const newInviteeSlot = inviteeSlots[inviteeSlots.length - 1]
+        newInviteeSlot && newInviteeSlot.focus()
+      })
+    },
+    resetInvitations () {
+      this.ephemeral.invitesCount = 1
+      this.form.invitees[0] = ''
     },
     async submit (form) {
-      try {
-        const groupId = this.currentGroupId
-        const groupName = this.groupSettings.groupName
-        // NOTE: All invitees proposals will expire at the exact same time.
-        // That plus the proposal creator is what we'll use to know
-        // which proposals should be displayed visually together.
-        const expiresDateMs = Date.now() + this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].expires_ms
-        for (const index in this.ephemeral.invitesToSend) {
-          const member = this.ephemeral.invitesToSend[index]
-          const mailbox = member.attributes.mailbox
-          const memberName = member.attributes.name
+      const invitationsSent = []
+      let hasFailed = false
+      // NOTE: All invitees proposals will expire at the exact same time.
+      // That plus the proposal creator is what we'll use to know
+      // which proposals should be displayed visually together.
+      const expiresDateMs = Date.now() + this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].expires_ms
 
-          if (this.groupShouldPropose) {
+      for (const inviteeName of this.form.invitees) {
+        const groupId = this.currentGroupId
+        const contractID = await sbp('namespace/lookup', inviteeName)
+
+        if (this.groupShouldPropose) {
+          try {
             const proposal = await sbp('gi.contracts/group/proposal/create',
               {
                 proposalType: PROPOSAL_INVITE_MEMBER,
                 proposalData: {
-                  member: memberName,
+                  member: inviteeName,
                   reason: form.reason
                 },
                 votingRule: this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].rule,
@@ -180,43 +150,55 @@ export default {
               groupId
             )
             await sbp('backend/publishLogEntry', proposal)
-
-            Vue.set(this.form.eachFeedbackMsg, index, {
-              text: this.L('Member proposed successfully!'),
-              class: 'has-text-success'
-            })
-          } else {
-            const invite = generateInvites(1)
-            const inviteToMailbox = await sbp('gi.contracts/mailbox/postMessage/create',
-              {
+          } catch (e) {
+            this.ephemeral.formFeedbackMsg = {
+              text: L('Invites to {inviteeName} failed!'),
+              class: 'has-text-danger'
+            }
+            console.error(`Invitees to ${inviteeName} failed to be sent!`, e)
+            hasFailed = true
+          }
+        } else {
+          // TODO - This scenario isnt needed after #614 is done.
+          const invite = generateInvites(1, inviteeName)
+          if (contractID) {
+            try {
+              const identityContract = await sbp('state/latestContractState', contractID)
+              const groupName = this.groupSettings.groupName
+              const inviteToMailbox = await sbp('gi.contracts/mailbox/postMessage/create', {
                 messageType: TYPE_MESSAGE,
                 from: groupName,
                 subject: `You've been invited to join ${groupName}!`,
-                message: `Hi ${memberName},
-
+                message: `Hi ${inviteeName},
                 Here's your special invite link:
-
                 ${buildInvitationUrl(this.$store.state.currentGroupId, invite.inviteSecret)}`
-              },
-              mailbox
-            )
-            const inviteToGroup = await sbp('gi.contracts/group/invite/create',
-              invite, // or, if this is a bulk invite, the number of members invited
-              groupId
-            )
-            await sbp('backend/publishLogEntry', inviteToGroup)
-            await sbp('backend/publishLogEntry', inviteToMailbox)
+              }, identityContract.attributes.mailbox)
 
-            Vue.set(this.form.eachFeedbackMsg, index, {
-              text: this.L('Member invited successfully!'),
-              class: 'has-text-success'
-            })
+              const inviteToGroup = await sbp('gi.contracts/group/invite/create', invite, groupId)
+              await sbp('backend/publishLogEntry', inviteToGroup)
+              await sbp('backend/publishLogEntry', inviteToMailbox)
+              invitationsSent.push(inviteeName)
+            } catch (e) {
+              console.error(`Invitees to ${inviteeName} failed to be sent!`, e)
+            }
+          } else {
+            invitationsSent.push(inviteeName)
+            console.warn(`The invitee ${inviteeName} isn't registered. TODO #614`)
           }
+
+          this.ephemeral.formFeedbackMsg = {
+            text: L('Invites to {invitationsSent} sent successfully!', {
+              invitationsSent: invitationsSent.join(', ')
+            }),
+            class: 'has-text-success'
+          }
+          this.resetInvitations()
         }
-      } catch (error) {
-        console.error(error)
-        // TODO: Create More descriptive errors
-        this.form.eachFeedbackMsg = this.L('Failed to invite, please try again.')
+      }
+
+      if (this.groupShouldPropose && !hasFailed) {
+        // Show Success step!
+        this.ephemeral.currentStep += 1
       }
     }
   }
@@ -231,5 +213,9 @@ export default {
   .icon-plus {
     margin-right: $spacer-sm;
   }
+}
+
+.c-feedback {
+  text-align: center;
 }
 </style>

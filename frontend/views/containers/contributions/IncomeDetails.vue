@@ -112,19 +112,24 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'groupMembers',
       'groupSettings',
-      'memberGroupProfile',
+      'groupProfile',
+      'groupProfiles',
       'groupMincomeFormatted',
       'groupMincomeSymbolWithCode',
-      'ourUsername',
-      'groupMembersByUsername'
+      'ourUsername'
     ]),
+    memberGroupProfile () {
+      return this.groupProfile(this.ourUsername) || {}
+    },
     needsIncome () {
       return this.form.incomeDetailsType === 'incomeAmount'
     },
     whoIsPledging () {
-      return this.groupMembersByUsername.filter(username => this.groupMembers[username].groupProfile.incomeDetailsType === 'pledgeAmount' && username !== this.ourUsername)
+      const groupProfiles = this.groupProfiles
+      return Object.keys(groupProfiles).filter(username => {
+        return groupProfiles[username].incomeDetailsType === 'pledgeAmount' && username !== this.ourUsername
+      })
     },
     contributionMemberText () {
       const who = this.whoIsPledging

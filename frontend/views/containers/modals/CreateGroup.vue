@@ -69,8 +69,7 @@ import {
   GroupPurpose,
   GroupMincome,
   GroupRules,
-  GroupPrivacy,
-  GroupInvitees
+  GroupPrivacy
 } from '@components/CreateGroupSteps/index.js'
 
 // we use require instead of import with this file to make rollup happy
@@ -92,7 +91,6 @@ export default {
     GroupMincome,
     GroupRules,
     GroupPrivacy,
-    GroupInvitees,
     GroupWelcome
   },
   methods: {
