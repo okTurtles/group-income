@@ -80,6 +80,7 @@ export default {
 
   .c-title {
     margin-bottom: 0;
+    margin-top: $spacer;
 
     @include phone {
       font-size: $size-2;

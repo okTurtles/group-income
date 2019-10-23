@@ -15,8 +15,8 @@ div
             v-if='ephemeral.invitation.creatorPicture'
             :src='ephemeral.invitation.creatorPicture'
           )
-        h1.title.is-1 {{ ephemeral.invitation.groupName }}
-        p.has-text-1 {{ ephemeral.invitation.message }}
+        h1.title.is-1(data-test='groupName') {{ ephemeral.invitation.groupName }}
+        p.has-text-1(data-test='invitationMessage') {{ ephemeral.invitation.message }}
       .card
         form-signup(v-if='isStatus("SIGNING")' @submitSucceeded='accept')
         form-login(v-else @submitSucceeded='accept')

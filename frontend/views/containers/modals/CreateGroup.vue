@@ -124,31 +124,33 @@ export default {
         this.ephemeral.errorMsg = null
         const initialInvite = generateInvites(60)
         const entry = sbp('gi.contracts/group/create', {
-          // authorizations: [contracts.CanModifyAuths.dummyAuth()], // TODO: this
-          groupName: this.form.groupName,
-          groupPicture: this.form.groupPicture,
-          sharedValues: this.form.sharedValues,
-          mincomeAmount: +this.form.mincomeAmount, // ensure this is a number
-          mincomeCurrency: this.form.mincomeCurrency,
-          proposals: {
-            // TODO: make the UI support changing the rule type, so that we have
-            //       a component for RULE_DISAGREEMENT as well
-            [PROPOSAL_GROUP_SETTING_CHANGE]: merge({},
-              proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults,
-              { ruleSettings: { [RULE_THRESHOLD]: { threshold: this.form.changeThreshold } } }
-            ),
-            [PROPOSAL_INVITE_MEMBER]: merge({},
-              proposals[PROPOSAL_INVITE_MEMBER].defaults,
-              { ruleSettings: { [RULE_THRESHOLD]: { threshold: this.form.memberApprovalThreshold } } }
-            ),
-            [PROPOSAL_REMOVE_MEMBER]: merge({},
-              proposals[PROPOSAL_REMOVE_MEMBER].defaults,
-              { ruleSettings: { [RULE_THRESHOLD]: { threshold: this.form.memberRemovalThreshold } } }
-            ),
-            [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].defaults,
-            [PROPOSAL_GENERIC]: proposals[PROPOSAL_GENERIC].defaults
-          },
-          initialInvite
+          initialInvite,
+          settings: {
+            // authorizations: [contracts.CanModifyAuths.dummyAuth()], // TODO: this
+            groupName: this.form.groupName,
+            groupPicture: this.form.groupPicture,
+            sharedValues: this.form.sharedValues,
+            mincomeAmount: +this.form.mincomeAmount, // ensure this is a number
+            mincomeCurrency: this.form.mincomeCurrency,
+            proposals: {
+              // TODO: make the UI support changing the rule type, so that we have
+              //       a component for RULE_DISAGREEMENT as well
+              [PROPOSAL_GROUP_SETTING_CHANGE]: merge({},
+                proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults,
+                { ruleSettings: { [RULE_THRESHOLD]: { threshold: this.form.changeThreshold } } }
+              ),
+              [PROPOSAL_INVITE_MEMBER]: merge({},
+                proposals[PROPOSAL_INVITE_MEMBER].defaults,
+                { ruleSettings: { [RULE_THRESHOLD]: { threshold: this.form.memberApprovalThreshold } } }
+              ),
+              [PROPOSAL_REMOVE_MEMBER]: merge({},
+                proposals[PROPOSAL_REMOVE_MEMBER].defaults,
+                { ruleSettings: { [RULE_THRESHOLD]: { threshold: this.form.memberRemovalThreshold } } }
+              ),
+              [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].defaults,
+              [PROPOSAL_GENERIC]: proposals[PROPOSAL_GENERIC].defaults
+            }
+          }
         })
         const hash = entry.hash()
         sbp('okTurtles.events/once', hash, (contractID, entry) => {

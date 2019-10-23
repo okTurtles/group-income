@@ -63,27 +63,29 @@ DefineContract({
   name: 'gi.contracts/group',
   contract: {
     validate: objectOf({
-      // TODO: add 'groupPubkey'
-      groupName: string,
       initialInvite: objectOf({
         inviteSecret: string,
         numInvites: number,
         invitee: optional(string)
       }),
-      groupPicture: string,
-      sharedValues: string,
-      mincomeAmount: number,
-      mincomeCurrency: string,
-      proposals: objectOf({
-        [PROPOSAL_INVITE_MEMBER]: proposalSettingsType,
-        [PROPOSAL_REMOVE_MEMBER]: proposalSettingsType,
-        [PROPOSAL_GROUP_SETTING_CHANGE]: proposalSettingsType,
-        [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposalSettingsType,
-        [PROPOSAL_GENERIC]: proposalSettingsType
+      settings: objectOf({
+        // TODO: add 'groupPubkey'
+        groupName: string,
+        groupPicture: string,
+        sharedValues: string,
+        mincomeAmount: number,
+        mincomeCurrency: string,
+        proposals: objectOf({
+          [PROPOSAL_INVITE_MEMBER]: proposalSettingsType,
+          [PROPOSAL_REMOVE_MEMBER]: proposalSettingsType,
+          [PROPOSAL_GROUP_SETTING_CHANGE]: proposalSettingsType,
+          [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposalSettingsType,
+          [PROPOSAL_GENERIC]: proposalSettingsType
+        })
       })
     }),
     process (state, { data, meta }) {
-      const { initialInvite, ...settings } = data
+      const { initialInvite, settings } = data
       // TODO: checkpointing: https://github.com/okTurtles/group-income-simple/issues/354
       const initialState = {
         payments: {},
