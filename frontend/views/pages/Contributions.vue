@@ -53,7 +53,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
         ) When other members pledge a monetary or non-monetary contribution, they will appear here.
 
         i18n.has-text-1.spacer-around(
-          v-else-if='!needsIncome'
+          v-else-if='!needsIncome && !hasPayments'
           tag='p'
         ) No one is pledging money at the moment.
 
@@ -65,8 +65,8 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
             v-if='needsIncome'
           )
             contribution-item(
-              :what='upTo'
-              :who='fakeStore.groupMembersPledging'
+              :what='receivingMonetary.total'
+              :who='receivingMonetary.list'
               type='MONETARY'
             )
 
@@ -96,7 +96,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
         ) You can contribute to your group with money or other valuables like teaching skills, sharing your time ot help someone. The sky is the limit!
 
         i18n.has-text-1.spacer-around(
-          v-else-if='!giving.monetary'
+          v-else-if='!hasPayments'
           tag='p'
         ) No one needs monetary contributions at the moment.
 
@@ -105,11 +105,11 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
           data-test='givingList'
         )
           contribution(
-            v-if='giving.monetary'
+            v-if='hasPayments'
           )
             contribution-item(
-              :what='fakeStore.currency + giving.monetary'
-              :who='fakeStore.groupMembersPledging'
+              :what='givingMonetary.total'
+              :who='givingMonetary.list'
               type='MONETARY'
               action='GIVING'
             )
@@ -189,13 +189,14 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'groupMembersCount',
+      'ourUsername',
       'groupSettings',
-      'currentGroupState',
+      'groupMembersCount',
       'groupProfile',
       'groupProfiles',
+      'thisMonthsPayments',
       'groupMincomeFormatted',
-      'ourUsername'
+      'groupIncomeDistribution'
     ]),
     memberGroupProfile () {
       return this.groupProfile(this.ourUsername) || {}
@@ -203,38 +204,25 @@ export default {
     upTo () {
       const amount = this.memberGroupProfile[this.memberGroupProfile.incomeDetailsType]
       if (!amount) return false
-      return this.formatIncome(this.needsIncome ? this.groupSettings.mincomeAmount - amount : amount)
-    },
-    needsIncome () {
-      return this.memberGroupProfile.incomeDetailsType === 'incomeAmount'
+      return this.currency.displayWithCurrency(this.needsIncome ? this.groupSettings.mincomeAmount - amount : amount)
     },
     doesReceive () {
       return this.needsIncome || this.receivingNonMonetary
     },
     doesGive () {
-      return this.giving.monetary || this.memberGroupProfile.nonMonetaryContributions
+      return this.hasPayments || this.memberGroupProfile.nonMonetaryContributions
     },
-    receiving () {
-      return {
-        nonMonetary: [
-          {
-            what: 'Cooking',
-            who: 'Lilia Bouvet'
-          },
-          {
-            what: 'Cuteness',
-            who: ['Zoe Kim', 'Laurence E']
-          }
-        ],
-        monetary: 100
-      }
+    needsIncome () {
+      return this.memberGroupProfile.incomeDetailsType === 'incomeAmount'
     },
-    giving () {
-      console.log('plop', this.receivingNonMonetary)
-      return {
-        nonMonetary: this.memberGroupProfile.nonMonetaryContributions,
-        monetary: '[20]'
-      }
+    hasPayments () {
+      return Object.keys(this.givingMonetary.list).length > 0
+    },
+    currency () {
+      return currencies[this.groupSettings.mincomeCurrency]
+    },
+    distribution () {
+      return this.thisMonthsPayments.frozenDistribution || this.groupIncomeDistribution
     },
     receivingNonMonetary () {
       const groupProfiles = this.groupProfiles
@@ -250,6 +238,26 @@ export default {
           })
           return list
         }, [])
+    },
+    receivingMonetary () {
+      const distributionTo = this.distribution.filter(p => p.to === this.ourUsername)
+      let total = distributionTo.reduce((acc, payment) => acc + payment.amount, 0)
+      const list = distributionTo.reduce((acc, payment) => payment.from, [])
+      total = this.currency.displayWithCurrency(total)
+      return {
+        list: list,
+        total: total
+      }
+    },
+    givingMonetary () {
+      const distributionTo = this.distribution.filter(p => p.from === this.ourUsername)
+      let total = distributionTo.reduce((acc, payment) => acc + payment.amount, 0)
+      const list = distributionTo.reduce((acc, payment) => payment.to, [])
+      total = this.currency.displayWithCurrency(total)
+      return {
+        list: list,
+        total: total
+      }
     }
   },
   beforeMount () {
@@ -270,9 +278,6 @@ export default {
         this.$store.state.currentGroupId
       )
       await sbp('backend/publishLogEntry', groupProfileUpdate)
-    },
-    formatIncome (value) {
-      return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency(value)
     }
   }
 }

@@ -2,7 +2,7 @@
 .c-contribution-item
   i(:class='iconClass')
 
-  template(v-if='hasWhoElse')
+  div(v-if='hasWhoElse')
     transition(name='replacelist')
       div(
         v-if='isVisible'
@@ -71,7 +71,7 @@ export default {
         if (this.action === 'RECEIVING' && this.type === 'MONETARY') {
           return L('{0} from {1} members{2}', html)
         } else {
-          return L('{0} to {1} members{2}', html)
+          return L('A total of {0} to {1} members{2}', html)
         }
       } else {
         if (this.action === 'RECEIVING') {
@@ -81,7 +81,15 @@ export default {
           }
           return L('{0} by {1}', html)
         } else {
-          return `<span class="has-text-bold">${this.what}</span>`
+          if (this.type === 'MONETARY') {
+            const html = {
+              0: `<span class="has-text-bold">${this.what}</span>`,
+              1: this.firstWho
+            }
+            return L('{0} to {1}', html)
+          } else {
+            return `<span class="has-text-bold">${this.what}</span>`
+          }
         }
       }
     },
@@ -96,17 +104,13 @@ export default {
       if (this.action === 'RECEIVING') {
         return L('{0} from {1}', html)
       } else {
-        return L('{0} to {1}', html)
+        return L('A total of {0} to {1}', html)
       }
     },
 
     firstWho () {
       const who = this.who
-
-      if (!Array.isArray(who)) {
-        return who
-      }
-
+      if (!Array.isArray(who)) return who
       return who.length === 2 ? this.L('{who0} and {who1}', { who0: who[0], who1: who[1] }) : who[0]
     },
 
