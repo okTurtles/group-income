@@ -8,18 +8,15 @@ div
       .c-header
         .c-avatars
           avatar.c-avatars-group(
-            v-if='ephemeral.fakeInvitation.groupPicture'
-            :src='ephemeral.fakeInvitation.groupPicture'
+            v-if='ephemeral.invitation.groupPicture'
+            :src='ephemeral.invitation.groupPicture'
           )
           avatar.c-avatars-creator(
-            v-if='ephemeral.fakeInvitation.creatorPicture'
-            :src='ephemeral.fakeInvitation.creatorPicture'
+            v-if='ephemeral.invitation.creatorPicture'
+            :src='ephemeral.invitation.creatorPicture'
           )
-        h1.title.is-1 [The Dreamers]
-        i18n.has-text-1(
-          tag='p'
-          :args='{ who: ephemeral.fakeInvitation.creator }'
-        ) {who} invited you to join their group!
+        h1.title.is-1 {{ ephemeral.invitation.groupName }}
+        p.has-text-1 {{ ephemeral.invitation.message }}
       .card
         form-signup(v-if='isStatus("SIGNING")' @submitSucceeded='accept')
         form-login(v-else @submitSucceeded='accept')
@@ -40,8 +37,8 @@ div
       i18n.title.is-1(
         tag='h1'
         :args='{ ...LTags() }'
-      ) Oh no! {br_} Something went wrong!
-      | {{ ephemeral.errorMsg }}
+      ) Oh no! {br_} Something went wrong.
+      i18n.has-text-1(tag='p') {{ ephemeral.errorMsg }}
       i18n.c-goHome(tag='button' @click='goHome') Take me home
 
     .c-broken(v-else-if='isStatus("EXPIRED")')
@@ -56,9 +53,9 @@ div
       svg-broken-link.c-svg
       i18n.title.is-1(
         tag='h1'
-        :args='{ ...LTags(), groupName: fakeInvitation.groupName }'
+        :args='{ ...LTags(), groupName: invitation.groupName }'
       ) You are already part of {groupName}
-      i18n(tag='p') You should ask for a new one. Sorry about that!
+      i18n.has-text-1(tag='p') You should ask for a new one. Sorry about that!
       i18n.c-goHome(tag='button' @click='goHome') Take me home
 
   .buttons.c-debug
@@ -93,8 +90,8 @@ export default {
   data () {
     return {
       ephemeral: {
-        pageStatus: 'LOADING', // LOADING || WELCOME || SIGNING || LOGGING || EXPIRED || INVALID
-        fakeInvitation: {}
+        pageStatus: 'LOADING', // || WELCOME || SIGNING || LOGGING || EXPIRED || INVALID
+        invitation: {}
       }
     }
   },
@@ -111,21 +108,41 @@ export default {
           return
         }
       }
-      // TODO - wait for #743 to be fixed...
-      // const state = await sbp('state/latestContractState', this.$route.query.groupId)
+      const state = await sbp('state/latestContractState', this.$route.query.groupId)
+      const invite = state.invites[this.$route.query.secret]
+      if (!invite) {
+        this.ephemeral.errorMsg = L('This invite is not valid.')
+        return this.setStatus('INVALID')
+      } else if (invite && invite.status === 'used') {
+        return this.setStatus('EXPIRED')
+      } else {
+        let creator = null
+        let creatorPicture = null
+        let message = null
 
-      // ... Until then, mock valid GroupState
-      this.ephemeral.fakeInvitation = {
-        groupName: '[The Dreamers]',
-        creator: '[Margarida]',
-        creatorPicture: '/assets/images/default-avatar.png',
-        groupPicture: '/assets/images/default-avatar.png'
+        if (invite.creator === 'GROUP_WELCOME') {
+          message = L('You were invited to join')
+        } else {
+          const identityContractID = await sbp('namespace/lookup', invite.creator)
+          const userState = await sbp('state/latestContractState', identityContractID)
+          const userDisplayName = userState.attributes.displayName || userState.attributes.name
+          message = L('{who} invited you to join their group!', { who: userDisplayName })
+          creator = userDisplayName
+          creatorPicture = userState.attributes.picture
+        }
+
+        this.ephemeral.invitation = {
+          groupName: state.settings.groupName,
+          groupPicture: state.settings.groupPicture,
+          creator,
+          creatorPicture,
+          message
+        }
+        this.setStatus('SIGNING')
       }
-      setTimeout(() => this.setStatus('SIGNING'), 500)
-    } catch (ex) {
-      console.error(ex)
-      // TODO: Better error msg: invalid secret, non-existent group, etc...
-      this.ephemeral.errorMsg = L('This links is not valid')
+    } catch (e) {
+      console.error(e)
+      this.ephemeral.errorMsg = `${L('This invite is not valid.')} ${e.toString()}`
       this.setStatus('INVALID')
     }
   },

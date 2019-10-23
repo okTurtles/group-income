@@ -34,7 +34,7 @@ export function generateInvites (numInvites: number, invitee: string) {
   }
 }
 
-function setInvite ({ inviteSecret, numInvites, creator }) {
+function initInvite ({ inviteSecret, numInvites, creator }) {
   return {
     inviteSecret,
     numInvites,
@@ -88,12 +88,16 @@ DefineContract({
       const initialState = {
         payments: {},
         proposals: {}, // hashes => {} TODO: this, see related TODOs in GroupProposal
-        settings,
+        settings: {
+          ...settings,
+          groupCreator: meta.username,
+          groupPicture: settings.groupPicture || '/assets/images/default-avatar.png' // TODO - better avatar
+        },
         invites: {
-          [initialInvite.inviteSecret]: setInvite({
+          [initialInvite.inviteSecret]: initInvite({
             inviteSecret: initialInvite.inviteSecret,
             numInvites: initialInvite.numInvites,
-            creator: 'GROUP_CREATOR'
+            creator: 'GROUP_WELCOME'
           })
         },
         profiles: {
@@ -267,7 +271,7 @@ DefineContract({
         invitee: string
       }),
       process (state, { data, meta }) {
-        Vue.set(state.invites, data.inviteSecret, setInvite({
+        Vue.set(state.invites, data.inviteSecret, initInvite({
           inviteSecret: data.inviteSecret,
           numInvites: data.numInvites,
           creator: meta.username

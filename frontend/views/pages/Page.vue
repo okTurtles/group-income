@@ -126,14 +126,20 @@ $pagePaddingDesktop: 5.5rem;
   @include tablet {
     display: block;
     padding-top: 1.125rem;
-    /* padding-left: $pagePaddingTablet; */ // TODO EXPLORE THIS...
     text-align: left;
     min-height: 4.75rem;
+
+    .p-with-sidebar & {
+      padding-left: $pagePaddingTablet;
+    }
   }
 
   @include widescreen {
-    /* padding-left: $pagePaddingDesktop; */ // TODO EXPLORE THIS...
     min-height: 5.25rem;
+
+    .p-with-sidebar & {
+      padding-left: $pagePaddingDesktop;
+    }
   }
 }
 

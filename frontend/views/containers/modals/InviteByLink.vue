@@ -6,10 +6,11 @@ modal-template(ref='modal')
   .c-container
     i18n.title.is-4(tag='h3') Share this link to grant access to your group.
     i18n.has-text-1(tag='p') After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!
-    a.link.has-icon.c-link(:href='link' target='_blank')
-      i.icon-link
-      | {{link}}
-    i18n.has-text-1(tag='p') This invite link expires on the 4th of February.
+    .c-link
+      a.link.has-icon(:href='link' target='_blank')
+        i.icon-link
+        | {{link}}
+    i18n.has-text-1(tag='p') This invite link expires on the [4th of February].
     i18n.is-outlined.c-cta(
       tag='button'
       @click.prevent='close'
@@ -27,7 +28,7 @@ export default {
     link () {
       console.log('ora')
       const invites = this.$store.getters.currentGroupState.invites
-      const inviteWelcome = Object.keys(invites).find(invite => invites[invite].creator === 'GROUP_CREATOR')
+      const inviteWelcome = Object.keys(invites).find(invite => invites[invite].creator === 'GROUP_WELCOME')
       return buildInvitationUrl(this.$store.state.currentGroupId, invites[inviteWelcome].inviteSecret)
     }
   },
@@ -45,9 +46,13 @@ export default {
 }
 
 .c-link {
-  margin-top: $spacer-lg;
-  margin-bottom: $spacer-sm;
-  display: inline;
+  max-width: 25rem;
+  word-wrap: anywhere;
+  margin: $spacer-lg auto $spacer-sm;
+
+  .link {
+    display: inline;
+  }
 }
 
 .c-cta {
