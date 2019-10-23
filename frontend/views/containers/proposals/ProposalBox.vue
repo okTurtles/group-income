@@ -3,15 +3,12 @@ li.c-wrapper
   user-image.c-avatar(:username='proposal.meta.username')
   .c-header
     h4.has-text-bold(data-test='title') {{ title }}:
-    span {{ humanDate }}
+    span.has-text-1 {{ humanDate }}
   .c-main
-    p.has-text-1(v-if='humanReason') {{ humanReason }}
     ul
-      proposal-item(
-        v-for='hash in proposalHashes'
-        :key='hash'
-        :proposalHash='hash'
-      )
+      proposal-item(v-for='hash in proposalHashes' :key='hash' :proposalHash='hash')
+    p.has-text-1.c-reason(v-if='humanReason') {{ humanReason }}
+    // TODO - Read More / Hide
 </template>
 
 <script>
@@ -84,13 +81,13 @@ $spaceVertical: $spacer-sm*3;
   display: grid;
   grid-template-columns: auto 1fr;
   grid-template-areas:
-    "avatar header"
+    "header header"
     "main main";
 
   @include tablet {
     grid-template-areas:
       "avatar header"
-      "avatar main";
+      "null main";
   }
 
   &:not(:last-child) {
@@ -102,28 +99,29 @@ $spaceVertical: $spacer-sm*3;
   grid-area: avatar;
   width: 2.5rem;
   height: 2.5rem;
+
+  @include phone {
+    display: none;
+  }
 }
 
 .c-header {
   grid-area: header;
-  align-self: center;
-
-  @include tablet {
-    display: flex;
-    justify-content: space-between;
-  }
+  display: flex;
+  justify-content: space-between;
 }
 
 .c-main {
   grid-area: main;
   word-break: break-word;
-  margin-top: $spacer-xs;
 }
 
 .c-avatar {
   margin-right: $spaceVertical;
-  margin-bottom: $spacer-xs;
-  margin-top: $spacer-xs;
   flex-shrink: 0
+}
+
+.c-reason {
+  margin-top: 1.5rem;
 }
 </style>

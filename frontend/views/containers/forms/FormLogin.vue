@@ -31,7 +31,7 @@ form(
 
   p.error(v-if='ephemeral.errorMsg' data-test='loginError') {{ ephemeral.errorMsg }}
 
-  .buttons.is-centered
+  .buttons.is-centered.c-cta
     i18n(
       tag='button'
       :disabled='$v.form.$invalid'
@@ -60,6 +60,7 @@ export default {
   },
   methods: {
     debounceName: debounce(function (e) {
+      // TODO - $v.lazy this...
       this.form.name = e.target.value
       this.$v.form.name.$touch()
     }, 700),
@@ -77,8 +78,6 @@ export default {
           identityContractID
         })
         this.$emit('submitSucceeded')
-        // this.close()
-        // if (this.$store.state.currentGroupId) this.$router.push({ path: '/dashboard' })
       } catch (error) {
         this.ephemeral.errorMsg = error.message
         console.error(error)

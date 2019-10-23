@@ -24,8 +24,7 @@ describe('Proposals - Add members', () => {
     cy.giCreateGroup(groupName)
 
     cy.getByDT('inviteButton').click()
-
-    // OPTIMIZE - Find a better way to share global variables (invitation)
+    // OPTIMIZE - Find a better way to share global variables across tests (invitationLink)
     cy.getByDT('invitationLink').invoke('text').then(text => {
       const urlAt = text.indexOf('http://')
       const url = text.substr(urlAt)

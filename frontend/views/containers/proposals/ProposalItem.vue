@@ -1,5 +1,5 @@
 <template lang='pug'>
-  li(data-test='proposalItem')
+  li.c-li(data-test='proposalItem')
     .c-item
       i(:class='iconClass')
       .c-main
@@ -8,11 +8,10 @@
           :class='{ "has-text-danger": proposal.status === statuses.STATUS_FAILED, "has-text-success": proposal.status === statuses.STATUS_PASSED }'
           data-test='statusDescription'
           ) {{statusDescription}}
-      .ctas
-        proposal-vote-options(
-          v-if='proposal.status === statuses.STATUS_OPEN'
-          :proposalHash='proposalHash'
-        )
+      proposal-vote-options(
+        v-if='proposal.status === statuses.STATUS_OPEN'
+        :proposalHash='proposalHash'
+      )
     p.c-sendLink(v-if='invitationLink' data-test='sendLink')
       i18n(
         :args='{ user: proposal.data.proposalData.member}'
@@ -137,12 +136,21 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-$spaceVertical: $spacer-sm*3;
+.c-li {
+  margin-top: $spacer-sm*3;
+
+  &:first-child {
+    margin-top: $spacer;
+  }
+}
 
 .c-item {
   display: flex;
   align-items: flex-start;
-  margin-top: $spaceVertical;
+
+  @include phone {
+    flex-wrap: wrap;
+  }
 }
 
 .c-main {
@@ -152,17 +160,11 @@ $spaceVertical: $spacer-sm*3;
 .c-icon {
   width: 2rem;
   height: 2rem;
-  margin-right: $spaceVertical;
-  margin-bottom: $spacer-xs;
-  margin-top: $spacer-xs; // visually better aligned
+  margin-right: $spacer;
   flex-shrink: 0;
   border-radius: 50%;
   text-align: center;
   line-height: 2rem;
-
-  @include phone {
-    margin-left: $spacer-sm; // TODO: Suggest to @mmbotelho
-  }
 }
 
 .c-sendLink {

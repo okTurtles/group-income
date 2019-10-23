@@ -4,7 +4,7 @@ div
 
   loading(theme='fullView' v-if='isStatus("LOADING")')
   .c-page(v-else)
-    .c-joining(v-if='isStatus("SIGNING") || isStatus("LOGGING")')
+    div(v-if='isStatus("SIGNING") || isStatus("LOGGING")')
       .c-header
         .c-avatars
           avatar.c-avatars-group(
@@ -32,30 +32,19 @@ div
 
     group-welcome.c-welcome(v-else-if='isStatus("WELCOME")')
 
-    .c-broken(v-else-if='isStatus("INVALID")')
+    .c-broken(v-else-if='isStatus("INVALID") || isStatus("EXPIRED")')
       svg-broken-link.c-svg
       i18n.title.is-1(
+        v-if='isStatus("EXPIRED")'
         tag='h1'
         :args='{ ...LTags() }'
       ) Oh no! {br_} Something went wrong.
-      i18n.has-text-1(tag='p') {{ ephemeral.errorMsg }}
-      i18n.c-goHome(tag='button' @click='goHome') Take me home
-
-    .c-broken(v-else-if='isStatus("EXPIRED")')
-      svg-broken-link.c-svg
       i18n.title.is-1(
+        v-else
         tag='h1'
         :args='{ ...LTags() }'
-      ) Oh no! {br_} Your link has expired!
-      i18n(tag='p') You should ask for a new one. Sorry about that!
-      i18n.c-goHome(tag='button' @click='goHome') Take me home
-    .c-broken(v-else-if='isStatus("SHARE_INVITE")')
-      svg-broken-link.c-svg
-      i18n.title.is-1(
-        tag='h1'
-        :args='{ ...LTags(), groupName: invitation.groupName }'
-      ) You are already part of {groupName}
-      i18n.has-text-1(tag='p') You should ask for a new one. Sorry about that!
+      ) Oh no! {br_} Your link has expired.
+      p.has-text-1 {{ ephemeral.errorMsg }}
       i18n.c-goHome(tag='button' @click='goHome') Take me home
 
   .buttons.c-debug
@@ -114,6 +103,7 @@ export default {
         this.ephemeral.errorMsg = L('This invite is not valid.')
         return this.setStatus('INVALID')
       } else if (invite && invite.status === 'used') {
+        this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
         return this.setStatus('EXPIRED')
       } else {
         let creator = null
@@ -187,19 +177,28 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-logo {
-  position: absolute;
-  top: 1.5rem;
-  left: 1.5rem;
   min-width: 8rem;
   width: 8rem;
+  margin: auto;
+
+  @include tablet {
+    position: absolute;
+    top: 1.5rem;
+    left: 1.5rem;
+  }
+}
+
+.c-page {
+  width: calc(100vw - #{$spacer});
+  max-width: 33rem;
 }
 
 .c-welcome {
-  margin-top: -1.5rem; // makeup for the default l-page padding-top and respect 100vh
+  margin-top: -1.5rem; // makeup for the default l-page padding-top to respect 100vh
 }
 
 .c-header {
-  margin-top: $spacer-lg;
+  margin-top: 2.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -214,8 +213,13 @@ export default {
   margin-bottom: 1.5rem;
 
   .c-avatars-group {
-    width: 8rem; // TODO #672
-    height: 8rem;
+    width: 4.5rem; // TODO #672
+    height: 4.5rem;
+
+    @include tablet {
+      width: 8rem; // TODO #672
+      height: 8rem;
+    }
   }
 
   .c-avatars-creator {
@@ -229,8 +233,6 @@ export default {
 }
 
 .card {
-  width: 33rem;
-  max-width: 100%;
   padding: $spacer-sm;
   margin-top: 1.5rem;
 

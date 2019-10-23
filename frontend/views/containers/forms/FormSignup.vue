@@ -37,8 +37,8 @@ form(
 
   p.error(v-if='ephemeral.errorMsg') {{ ephemeral.errorMsg }}
 
-  .buttons.is-centered
-    i18n.is-primary.is-centered(
+  .buttons.is-centered.c-cta
+    i18n.is-primary(
       tag='button'
       type='submit'
       :disabled='$v.form.$invalid'
@@ -78,6 +78,7 @@ export default {
   },
   methods: {
     debounceName: debounce(function (e) {
+      // TODO - $v.lazy this...
       // "Validator is evaluated on every data change, as it is essentially a computed value.
       // If you need to throttle an async call, do it on your data change event, not on the validator itself.
       // You may end up with broken Vue observables otherwise."
@@ -133,7 +134,6 @@ export default {
             username: this.form.name,
             identityContractID: user.hash()
           })
-          this.ephemeral.errorMsg = 'success' // TODO: get rid of this and fix/update tests accordingly
           this.$emit('submitSucceeded')
         } catch (ex) {
           console.error('Signup.vue submit() error:', ex)
@@ -168,3 +168,10 @@ export default {
   }
 }
 </script>
+<style lang="scss" scoped>
+@import "../../../assets/style/_variables.scss";
+
+.c-cta {
+  margin-top: $spacer-lg;
+}
+</style>

@@ -13,7 +13,7 @@
       data-test='voteAgainst'
     ) Vote no
 
-  .c-cancel(v-else)
+  .buttons.c-cancel(v-else)
     i18n.button.is-outlined.is-small(
       tag='button'
       v-if='ownProposal'
@@ -161,6 +161,22 @@ export default {
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
+.c-ctas {
+  @include phone {
+    width: 100%;
+    margin-top: $spacer;
+    margin-bottom: $spacer-sm;
+
+    .button {
+      flex-grow: 1;
+
+      &:not(:last-child) {
+        margin-right: $spacer;
+      }
+    }
+  }
+}
 
 .buttons {
   margin-top: 0;
