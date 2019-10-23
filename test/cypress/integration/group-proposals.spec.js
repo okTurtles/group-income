@@ -334,7 +334,7 @@ describe('Proposals - Add members', () => {
   })
 
   // it('It should do next test', () => {
-    // cy.visit('/')
-    // cy.giLogout()
+  // cy.visit('/')
+  // cy.giLogout()
   // })
 })

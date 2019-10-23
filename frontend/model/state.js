@@ -281,21 +281,6 @@ const getters = {
   groupMembersByUsername (state, getters) {
     return Object.keys(getters.currentGroupState.profiles || {})
   },
-  groupMembersNonMonetary (state) {
-    const groupId = state.currentGroupId
-    return Object.keys(state[groupId].profiles || {})
-      .filter(key => key !== getters.ourUsername(state) && state[groupId].profiles[key].groupProfile.nonMonetary)
-      .reduce((list, username) => {
-        const nonMonetary = state[groupId].profiles[username].groupProfile.nonMonetary
-        nonMonetary.forEach((what) => {
-          const contributionIndex = list.findIndex(x => x.what === what)
-          contributionIndex >= 0
-            ? list[contributionIndex].who.push(username)
-            : list.push({ who: [username], what })
-        })
-        return list
-      }, [])
-  },
   groupMembersCount (state, getters) {
     return getters.groupMembersByUsername.length
   },
