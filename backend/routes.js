@@ -107,6 +107,10 @@ route.GET('/latestHash/{contractID}', {}, async function (request, h) {
   }
 })
 
+route.GET('/time', {}, function (request, h) {
+  return new Date().toISOString()
+})
+
 // file upload related
 
 // TODO: if the browser deletes our cache then not everyone
