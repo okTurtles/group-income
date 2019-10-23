@@ -114,7 +114,7 @@ describe('Full walkthrough', function () {
       }
     })
   }
-  function createPaymentTo (to, amount, parentHash, currency = 'USD') {
+  function createPaymentTo (to, amount, contractID, currency = 'USD') {
     return sbp('gi.contracts/group/payment/create',
       {
         toUser: to.data().attributes.name,
@@ -124,7 +124,7 @@ describe('Full walkthrough', function () {
         status: PAYMENT_PENDING,
         paymentType: PAYMENT_TYPE_MANUAL
       },
-      parentHash
+      contractID
     )
   }
 
@@ -259,7 +259,7 @@ describe('Full walkthrough', function () {
       await postEntry(await createPaymentTo(users.bob, 100, groups.group1.hash()))
     })
 
-    it('Should fail with wrong parentHash', async function () {
+    it('Should fail with wrong contractID', async function () {
       try {
         var p = await createPaymentTo(users.bob, 100, '')
         await postEntry(p)

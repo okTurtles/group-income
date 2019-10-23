@@ -6,7 +6,9 @@ import sbp from '~/shared/sbp.js'
 import { GIMessage } from '~/shared/GIMessage.js'
 import { blake32Hash } from '~/shared/functions.js'
 import { SERVER_INSTANCE } from './instance-keys.js'
+import chalk from 'chalk'
 import './database.js'
+
 const Boom = require('@hapi/boom')
 const Joi = require('@hapi/joi')
 
@@ -33,7 +35,12 @@ route.POST('/event', {
     await sbp('backend/server/handleEntry', entry)
     return entry.hash()
   } catch (err) {
-    logger(err)
+    if (err.name === 'ErrorDBBadPreviousHEAD') {
+      console.error(chalk.bold.yellow('ErrorDBBadPreviousHEAD'), err)
+      return Boom.conflict(err.message)
+    } else {
+      logger(err)
+    }
     return err
   }
 })
