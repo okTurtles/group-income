@@ -315,7 +315,7 @@ DefineContract({
         incomeDetailsType: x => ['incomeAmount', 'pledgeAmount'].includes(x),
         incomeAmount: x => typeof x === 'number' && x >= 0,
         pledgeAmount: x => typeof x === 'number' && x >= 0,
-        nonMonetaryAdd: string,
+        nonMonetaryAdd: x => string,
         nonMonetaryEdit: objectOf({
           replace: string,
           with: string
@@ -324,12 +324,13 @@ DefineContract({
       }),
       process (state, { data, meta }) {
         var { groupProfile } = state.profiles[meta.username]
-        const nonMonetary = groupProfile.nonMonetaryContributions
+        const nonMonetary = groupProfile.nonMonetary || []
         for (const key in data) {
           const value = data[key]
           switch (key) {
             case 'nonMonetaryAdd':
               nonMonetary.push(value)
+              Vue.set(groupProfile, 'nonMonetary', nonMonetary)
               break
             case 'nonMonetaryRemove':
               nonMonetary.splice(nonMonetary.indexOf(value), 1)

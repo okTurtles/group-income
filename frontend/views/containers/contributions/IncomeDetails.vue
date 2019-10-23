@@ -22,7 +22,7 @@ modal-base-template(ref='modal')
               v-model='$v.form.incomeDetailsType.$model'
               @change='resetAmount'
             )
-            i18n Yes, I do
+            i18n(data-test='needsIncomeRadio') Yes, I do
           label.radio(v-error:incomeDetailsType='')
             input.input(
               type='radio'
@@ -31,18 +31,21 @@ modal-base-template(ref='modal')
               v-model='$v.form.incomeDetailsType.$model'
               @change='resetAmount'
             )
-            i18n No, I don't
+            i18n(data-test='dontNeedsIncomeRadio') No, I don't
         transition(name='expand')
           fieldset(v-if='!!form.incomeDetailsType')
             label.field
-              .label {{ needsIncome ? L("What's your monthly income?") : L('How much do you want to pledge?') }}
+              .label(
+                data-test='introIncomeOrPledge'
+              ) {{ needsIncome ? L("What's your monthly income?") : L('How much do you want to pledge?') }}
               .input-combo(
                 :class='{"error": $v.form.amount.$error }'
-                v-error:amount=''
+                v-error:amount='{ tag: "p", attrs: { "data-test": "badIncome" } }'
               )
                 input.input(
                   type='number'
                   v-model='$v.form.amount.$model'
+                  data-test='inputIncomeOrPledge'
                 )
                 .suffix {{ groupMincomeSymbolWithCode }}
               .helper(v-if='needsIncome && whoIsPledging.length')
@@ -53,7 +56,12 @@ modal-base-template(ref='modal')
           //- NOTE: this type='button' is needed here to prevent the ENTER
           //-       key from calling closeModal twice
           i18n.is-outlined(tag='button' type='button' @click='closeModal') Cancel
-          i18n.is-success(tag='button' type='submit' :disabled='$v.form.$invalid') Save
+          i18n.is-success(
+            tag='button'
+            type='submit'
+            :disabled='$v.form.$invalid'
+            data-test='submitIncome'
+          ) Save
         // TODO/OPTIMIZE - create directive similar to vError
         .c-feedback.has-text-1(
           v-if='ephemeral.formFeedbackMsg.text'

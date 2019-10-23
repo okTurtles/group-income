@@ -1,4 +1,5 @@
-const userId = Math.floor(Math.random() * 10000)
+const userId = 100
+// const userId = Math.floor(Math.random() * 10000)
 const groupName = 'Dreamers'
 
 function assertProposalOpenState ({ description }) {
@@ -28,6 +29,13 @@ describe('Proposals - Add members', () => {
       income: 400
     })
     cy.getByDT('profileName').should('contain', `user1-${userId}`)
+
+    // Update display name
+    cy.getByDT('settingsBtn').click()
+    cy.getByDT('displayName').clear().type('Margarida')
+    cy.getByDT('saveAccount').click()
+    cy.getByDT('profileSaveSuccess').should('contain', 'Profile saved successfully!')
+    cy.get('.c-modal-close').click()
   })
 
   it('user1 invites user2 and user3 to the group and they accept', () => {
@@ -39,12 +47,26 @@ describe('Proposals - Add members', () => {
   it('user2 accepts the invite', () => {
     cy.giLogin(`user2-${userId}`)
     cy.giAcceptGroupInvite(groupName)
+
+    // Update display name
+    cy.getByDT('settingsBtn').click()
+    cy.getByDT('displayName').clear().type('Sandrina')
+    cy.getByDT('saveAccount').click()
+    cy.getByDT('profileSaveSuccess').should('contain', 'Profile saved successfully!')
+    cy.get('.c-modal-close').click()
     cy.giLogout()
   })
 
   it('user3 accepts the invite', () => {
     cy.giLogin(`user3-${userId}`)
     cy.giAcceptGroupInvite(groupName)
+
+    // Update display name
+    cy.getByDT('settingsBtn').click()
+    cy.getByDT('displayName').clear().type('Pierre')
+    cy.getByDT('saveAccount').click()
+    cy.getByDT('profileSaveSuccess').should('contain', 'Profile saved successfully!')
+    cy.get('.c-modal-close').click()
     cy.giLogout()
   })
 
@@ -183,7 +205,134 @@ describe('Proposals - Add members', () => {
           .should('contain', 'Proposal cancelled.')
       })
     })
+  })
 
+  it('It should add income detail modal', () => {
+    cy.getByDT('contributionsLink').click()
+    cy.getByDT('addIncomeDetailsFirstCard').should('contain', 'Add your income details')
+    cy.getByDT('openIncomeDetailModal').click()
+    cy.getByDT('introIncomeOrPledge').should('not.be.visible')
+    cy.getByDT('needsIncomeRadio').click()
+    cy.getByDT('introIncomeOrPledge').should('contain', 'How much do you want to pledge?')
+    cy.getByDT('dontNeedsIncomeRadio').click()
+    cy.getByDT('introIncomeOrPledge').should('contain', 'What\'s your monthly income?')
+    cy.getByDT('inputIncomeOrPledge').type(500)
+    cy.getByDT('badIncome').should('contain', 'It seems your income is not lower than the group\'s mincome.')
+    cy.getByDT('inputIncomeOrPledge').clear().type(100)
+    cy.getByDT('badIncome').should('not.be.visible')
+    cy.getByDT('submitIncome').click()
+    cy.getByDT('headerNeed').should('contain', 'You need $300')
+  })
+
+  it('It should add non monetary contribution', () => {
+    cy.getByDT('addNonMonetaryContribution').click()
+    cy.getByDT('inputNonMonetaryContribution').type('Portuguese classes')
+
+    cy.getByDT('buttonAddNonMonetaryContribution').click()
+    cy.getByDT('givingList')
+      .get('li.is-editable')
+      .should('have.length', 1)
+      .should('contain', 'Portuguese classes')
+  })
+
+  it('It should remove non monetary contribution', () => {
+    cy.getByDT('buttonEditNonMonetaryContribution').click()
+    cy.getByDT('buttonRemoveNonMonetaryContribution').click()
+    cy.getByDT('givingList')
+      .get('li.is-editable')
+      .should('have.length', 0)
+  })
+
+  it('It should add the same non monetary contribution', () => {
+    cy.getByDT('addNonMonetaryContribution').click()
+    cy.getByDT('inputNonMonetaryContribution').type('Portuguese classes')
+
+    cy.getByDT('buttonAddNonMonetaryContribution').click()
+    cy.getByDT('givingList')
+      .get('li.is-editable')
+      .should('have.length', 1)
+      .should('contain', 'Portuguese classes')
+  })
+
+  it('It should edit the non monetary contribution', () => {
+    cy.getByDT('buttonEditNonMonetaryContribution').click()
+    cy.getByDT('inputNonMonetaryContribution').clear().type('French classes')
+    cy.getByDT('buttonSaveNonMonetaryContribution').click()
+
+    cy.getByDT('givingList')
+      .get('li.is-editable')
+      .should('have.length', 1)
+      .should('contain', 'French classes')
+  })
+
+  it('It should cancel the edit', () => {
+    cy.getByDT('buttonEditNonMonetaryContribution').click()
+    cy.getByDT('buttonCancelNonMonetaryContribution').click()
+    cy.getByDT('givingList')
+      .get('li.is-editable')
+      .should('have.length', 1)
+      .should('contain', 'French classes')
+  })
+
+  it('It should add more non monetary contribution', () => {
+    cy.getByDT('addNonMonetaryContribution').click()
+    cy.getByDT('inputNonMonetaryContribution').type('German classes')
+    cy.getByDT('buttonAddNonMonetaryContribution').click()
+
+    cy.getByDT('addNonMonetaryContribution').click()
+    cy.getByDT('inputNonMonetaryContribution').type('Russian classes')
+    cy.getByDT('buttonAddNonMonetaryContribution').click()
+
+    cy.getByDT('addNonMonetaryContribution').click()
+    cy.getByDT('inputNonMonetaryContribution').type('Korean classes')
+    cy.getByDT('buttonAddNonMonetaryContribution').click()
+
+    cy.getByDT('givingList')
+      .get('li.is-editable')
+      .should('have.length', 4)
     cy.giLogout()
   })
+
+  it('It should receive non monetary contribution', () => {
+    cy.giLogin(`user2-${userId}`)
+    cy.getByDT('contributionsLink').click()
+    cy.getByDT('openIncomeDetailModal').click()
+    cy.getByDT('needsIncomeRadio').click()
+    cy.getByDT('inputIncomeOrPledge').clear().type(100)
+    cy.getByDT('submitIncome').click()
+    cy.getByDT('contributionsLink').click()
+
+    cy.get('.receiving .c-contribution-list')
+      .should('have.length', 4)
+
+    cy.getByDT('addNonMonetaryContribution').click()
+    cy.getByDT('inputNonMonetaryContribution').type('Korean classes')
+    cy.getByDT('buttonAddNonMonetaryContribution').click()
+
+    cy.getByDT('addNonMonetaryContribution').click()
+    cy.getByDT('inputNonMonetaryContribution').clear().type('French classes')
+    cy.getByDT('buttonAddNonMonetaryContribution').click()
+
+    cy.get('.giving .c-contribution-list')
+      .should('have.length', 2)
+    cy.giLogout()
+  })
+
+  it('It should receive non monetary contribution', () => {
+    cy.giLogin(`user3-${userId}`)
+    cy.getByDT('contributionsLink').click()
+    cy.getByDT('openIncomeDetailModal').click()
+    cy.getByDT('needsIncomeRadio').click()
+    cy.getByDT('inputIncomeOrPledge').clear().type(100)
+    cy.getByDT('submitIncome').click()
+    cy.getByDT('contributionsLink').click()
+    cy.getByDT('contributionsLink').click()
+    cy.pause()
+    // cy.giLogout()
+  })
+
+  // it('It should do next test', () => {
+    // cy.visit('/')
+    // cy.giLogout()
+  // })
 })

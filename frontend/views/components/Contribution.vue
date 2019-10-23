@@ -1,16 +1,19 @@
 <template lang='pug'>
 transition(name='replacelist')
   li.c-contribution-edit(v-if='isEditing || isAdding' key='editing')
-    .c-contribution
+    form.c-contribution(
+      @submit.prevent=''
+      novalidate='true'
+    )
       input.input(
         type='text'
-        ref='input'
         :placeholder='randomPlaceholder'
         maxlength='20'
         :aria-label='L("Your contribution")'
-        :aria-invalid='hasError'
+        v-error:contribution=''
         v-focus=''
-        v-model='isFilled'
+        v-model='$v.form.contribution.$model'
+        data-test='inputNonMonetaryContribution'
         @keyup='verifyValue'
         @keydown.esc='cancel'
         @keydown.enter='handleEnter'
@@ -20,24 +23,26 @@ transition(name='replacelist')
           v-if='isEditing && !isAdding'
           tag='button'
           @click='handleDelete'
+          data-test='buttonRemoveNonMonetaryContribution'
         ) Remove
         .c-buttons-right
           i18n.button.is-small.is-outlined(
             tag='button'
             @click='cancel'
+            data-test='buttonCancelNonMonetaryContribution'
           ) Cancel
           i18n.button.is-small(
             v-if='isAdding && isFilled'
             tag='button'
             @click='handleSubmit'
+            data-test='buttonAddNonMonetaryContribution'
           ) Add
           i18n.button.is-small(
             v-if='isEditing && isFilled'
             tag='button'
             @click='handleSubmit'
+            data-test='buttonSaveNonMonetaryContribution'
           ) Save
-
-    p.error.c-spacer-above(v-if='hasError' role='alert') {{this.hasError}}
 
   li(v-else-if='isEditable' :class='itemClasses' key='editable')
     slot
@@ -45,6 +50,7 @@ transition(name='replacelist')
     button.button.is-small.is-outlined.c-inline-button(
       :aria-label='editAriaLabel'
       @click='handleEditClick'
+      data-test='buttonEditNonMonetaryContribution'
     )
       i.icon-pencil-alt(aria-hidden='true')
       | {{ L('Edit') }}
@@ -61,8 +67,13 @@ transition(name='replacelist')
 </template>
 
 <script>
+import { validationMixin } from 'vuelidate'
+import { required } from 'vuelidate/lib/validators'
+import L from '@view-utils/translations.js'
+
 export default {
   name: 'Contribution',
+  mixins: [validationMixin],
   props: {
     variant: {
       type: String,
@@ -77,15 +88,18 @@ export default {
     },
     initialValue: {
       type: String
-    }
+    },
+    contributionsList: Array
   },
   data () {
     return {
       isAdding: false,
       isEditing: false,
       isFilled: null, // decide what input buttons to show
-      hasError: false,
-      placeholders: [this.L('Portuguese classes'), this.L('Programming'), this.L('Cooking'), this.L('Parties'), this.L('Free cinema tickets')]
+      placeholders: [this.L('Portuguese classes'), this.L('Programming'), this.L('Cooking'), this.L('Parties'), this.L('Free cinema tickets')],
+      form: {
+        contribution: this.initialValue
+      }
     }
   },
   computed: {
@@ -120,32 +134,35 @@ export default {
       this.isAdding = false
       this.isEditing = false
       this.isFilled = false
-      this.hasError = false
     },
     handleEnter (e) {
       if (this.isAdding && !this.isFilled) {
         this.setError()
         return false
       }
-
       return this.isFilled ? this.handleSubmit() : this.handleDelete()
     },
     handleDelete () {
-      this.$emit('new-value', this.$refs.input.value)
+      this.$emit('new-value', 'nonMonetaryRemove', this.initialValue)
       this.cancel()
     },
     handleSubmit () {
-      const text = this.$refs.input.value
-
-      if (text.trim() === '') {
-        this.setError()
-      } else {
-        this.$emit('new-value', text)
+      if (this.$v.form.$invalid) {
         this.cancel()
+      } else {
+        if (this.isAdding) {
+          this.$emit('new-value', 'nonMonetaryAdd', this.form.contribution)
+          this.isAdding = false
+        }
+        if (this.isEditing) {
+          this.$emit('new-value', 'nonMonetaryEdit', {
+            replace: this.initialValue || false,
+            with: this.form.contribution
+          })
+          this.isEditing = false
+        }
+        this.form.contribution = null
       }
-    },
-    setError () {
-      this.hasError = this.L('Whitespace characters aren\'t really a contribution')
     }
   },
   directives: {
@@ -154,6 +171,16 @@ export default {
         // This was the only working way I've found to set "contribution" as defaultValue
         if (binding.value) { el.value = binding.value }
         el.focus()
+      }
+    }
+  },
+  validations: {
+    form: {
+      contribution: {
+        [L('The contribution is required')]: required,
+        [L('The contribution already exist')]: function (x) {
+          return !this.contributionsList || !this.contributionsList.includes(x)
+        }
       }
     }
   }
