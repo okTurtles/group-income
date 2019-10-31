@@ -47,6 +47,7 @@ div
       p.has-text-1 {{ ephemeral.errorMsg }}
       i18n.c-goHome(tag='button' @click='goHome') Take me home
 
+  // TODO - Remove these. Only used for debug.
   .buttons.c-debug
     button.is-small.is-outlined(@click='setStatus("LOADING")') LOADING
     button.is-small.is-outlined(@click='setStatus("SIGNING")') SIGNING

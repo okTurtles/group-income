@@ -148,8 +148,6 @@ describe('Proposals - Add members', () => {
       })
     })
 
-    cy.pause()
-
     cy.giLogout()
   })
 

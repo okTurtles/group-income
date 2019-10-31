@@ -26,7 +26,6 @@ export default {
   },
   computed: {
     link () {
-      console.log('ora')
       const invites = this.$store.getters.currentGroupState.invites
       const inviteWelcome = Object.keys(invites).find(invite => invites[invite].creator === 'GROUP_WELCOME')
       return buildInvitationUrl(this.$store.state.currentGroupId, invites[inviteWelcome].inviteSecret)

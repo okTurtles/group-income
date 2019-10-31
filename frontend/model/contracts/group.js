@@ -99,7 +99,7 @@ DefineContract({
           [initialInvite.inviteSecret]: initInvite({
             inviteSecret: initialInvite.inviteSecret,
             numInvites: initialInvite.numInvites,
-            creator: 'GROUP_WELCOME'
+            creator: 'GROUP_WELCOME' // To be used as initial invitation to first X members.
           })
         },
         profiles: {

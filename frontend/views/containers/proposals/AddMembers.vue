@@ -44,7 +44,6 @@
 </template>
 
 <script>
-// CLOSE https://github.com/okTurtles/group-income-simple/issues/661
 import Vue from 'vue'
 import { mapState, mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'

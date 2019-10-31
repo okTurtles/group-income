@@ -40,7 +40,10 @@ export default {
     UserImage
   },
   computed: {
-    ...mapGetters(['currentGroupState', 'ourUserIdentityContract']),
+    ...mapGetters([
+      'currentGroupState',
+      'ourUserIdentityContract'
+    ]),
     proposal () {
       // Pick the 1st hash as guidance/pivot for this group of proposals
       return this.currentGroupState.proposals[this.proposalHashes[0]]
@@ -50,9 +53,7 @@ export default {
       const username = this.$store.state[identityContractID].attributes.name
       const currentUsername = this.ourUserIdentityContract.attributes.name
       const who = username === currentUsername ? L('You') : username
-      const isAnyOpen = this.proposalHashes.some(
-        hash => this.currentGroupState.proposals[hash].status === STATUS_OPEN
-      )
+      const isAnyOpen = this.proposalHashes.some(hash => this.currentGroupState.proposals[hash].status === STATUS_OPEN)
 
       if (!isAnyOpen) {
         return L('{who} proposed', { who })
@@ -67,15 +68,10 @@ export default {
       const offset = date.getTimezoneOffset()
       const minutes = date.getMinutes()
       date.setMinutes(minutes + offset)
-      const locale =
-        navigator.languages !== undefined
-          ? navigator.languages[0]
-          : navigator.language
+      const locale = navigator.languages !== undefined ? navigator.languages[0] : navigator.language
 
       return date.toLocaleDateString(locale, {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
+        year: 'numeric', month: 'long', day: 'numeric'
       })
     },
     humanReason () {
