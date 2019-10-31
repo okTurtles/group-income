@@ -172,6 +172,6 @@ export default {
 @import "../../../assets/style/_variables.scss";
 
 .c-cta {
-  margin-top: $spacer-lg;
+  margin-top: 1.5rem;
 }
 </style>

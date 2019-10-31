@@ -190,7 +190,7 @@ export default {
 }
 
 .c-page {
-  width: calc(100vw - #{$spacer});
+  width: calc(100vw - #{$spacer-lg});
   max-width: 33rem;
 }
 
@@ -199,13 +199,17 @@ export default {
 }
 
 .c-header {
-  margin-top: 2.5rem;
+  margin-top: $spacer;
   display: flex;
   flex-direction: column;
   align-items: center;
 
   .title {
     order: 2;
+  }
+
+  @include tablet {
+    margin-top: 2.5rem;
   }
 }
 
@@ -234,7 +238,7 @@ export default {
 }
 
 .card {
-  padding: $spacer-sm;
+  padding: 1.5rem $spacer;
   margin-top: 1.5rem;
 
   @include tablet {
@@ -261,9 +265,11 @@ export default {
   }
 }
 
-.c-debug {
-  position: absolute;
-  bottom: 1rem;
-  right: 1rem;
+@include tablet {
+  .c-debug {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+  }
 }
 </style>

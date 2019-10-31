@@ -31,7 +31,7 @@ form(
 
   p.error(v-if='ephemeral.errorMsg' data-test='loginError') {{ ephemeral.errorMsg }}
 
-  .buttons.is-centered.c-cta
+  .buttons.is-centered
     i18n(
       tag='button'
       :disabled='$v.form.$invalid'
