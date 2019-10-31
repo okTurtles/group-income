@@ -33,7 +33,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "../../../assets/style/_variables.scss";
+@import "_variables.scss";
 
 .income {
   margin: $spacer-xs 0;

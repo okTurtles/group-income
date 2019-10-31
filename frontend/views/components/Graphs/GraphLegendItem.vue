@@ -22,7 +22,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "../../../assets/style/_variables.scss";
+@import "_variables.scss";
 
 .c-label {
   line-height: 1;

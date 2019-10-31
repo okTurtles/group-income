@@ -162,6 +162,9 @@ export default {
       //       that there are no conflicts with timezones, to do that
       //       we need to go by the server's time, and not our time.
       //       https://github.com/okTurtles/group-income-simple/issues/531
+      // TODO: Have multiple frozen distributions based on new income details
+      // or new members, using any remainder leftover needed income from the
+      // previous distribution
       const distribution = this.thisMonthsPayments.frozenDistribution || this.groupIncomeDistribution
       return distribution.filter(p => p.from === this.ourUsername).map(transfer => {
         const { to, amount } = transfer
@@ -303,6 +306,7 @@ export default {
         alert(e.message)
       }
     },
+    // TODO: make multiple payments
     async cancelPayment (username, paymentHash) {
       try {
         const paymentMessage = await sbp('gi.contracts/group/paymentUpdate/create', {

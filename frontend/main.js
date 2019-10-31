@@ -1,11 +1,13 @@
-import Vue from 'vue'
-import { mapMutations } from 'vuex'
+'use strict'
+
 // import SBP stuff before anything else so that domains register themselves before called
 import sbp from '~/shared/sbp.js'
 import '~/shared/domains/okTurtles/data.js'
 import '~/shared/domains/okTurtles/events.js'
 import '~/shared/domains/okTurtles/eventQueue.js'
 import './controller/namespace.js'
+import Vue from 'vue'
+import { mapMutations } from 'vuex'
 import router from './controller/router.js'
 import { createWebSocket } from './controller/backend.js'
 import store from './model/state.js'

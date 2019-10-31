@@ -33,6 +33,12 @@ export function blake32Hash (data: string | Buffer | Uint8Array) {
   return multihash.toB58String(multihash.encode(buf, 'blake2b-32', 32))
 }
 
+// NOTE: to preserve consistency across browser and node, we use the Buffer
+//       class. We could use btoa and atob in web browsers (functions that
+//       are unavailable on Node.js), but they do not support Unicode,
+//       and you have to jump through some hoops to get it to work:
+//       https://developer.mozilla.org/en-US/docs/Web/API/WindowOrWorkerGlobalScope/btoa#Unicode_strings
+//       These hoops might result in inconsistencies between Node.js and the frontend.
 export const b64ToBuf = (b64: string) => Buffer.from(b64, 'base64')
 export const b64ToStr = (b64: string) => b64ToBuf(b64).toString('utf8')
 export const bufToB64 = (buf: Buffer) => Buffer.from(buf).toString('base64')

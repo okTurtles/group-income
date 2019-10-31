@@ -16,8 +16,8 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-@import "../../../assets/style/_variables.scss";
-@import "../../../assets/style/_mixins.scss";
+@import "_variables.scss";
+@import "_mixins.scss";
 
 $speed: 300ms;
 .c-toggle {

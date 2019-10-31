@@ -12,7 +12,7 @@ div(v-on='$listeners')
     i18n This information is required for you to be able to be part of the group.
 </template>
 <style lang="scss" scoped>
-@import "../../../assets/style/_variables.scss";
+@import "_variables.scss";
 
 .c-header {
   margin-top: $spacer;

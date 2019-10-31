@@ -237,7 +237,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "../../../assets/style/_variables.scss";
+@import "_variables.scss";
 
 .modal {
   flex-direction: column;

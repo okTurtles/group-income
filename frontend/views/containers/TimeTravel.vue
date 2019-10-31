@@ -10,7 +10,6 @@
 <script>
 import sbp from '~/shared/sbp.js'
 import VueSlider from 'vue-slider-component'
-import 'vue-slider-component/theme/default.css'
 import store from '@model/state.js'
 import { REPLACED_STATE } from '@utils/events.js'
 import { cloneDeep } from '@utils/giLodash.js'
@@ -79,6 +78,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import 'vue-slider-component/lib/theme/default.scss';
+
 .time-travel {
   position: fixed;
   bottom: 30px;
