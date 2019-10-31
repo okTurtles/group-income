@@ -322,13 +322,11 @@ module.exports = (grunt) => {
           preferBuiltins: false
         }),
         json(),
-        // scssVariable(),
-        // note there is a sourcemap bug for component.css: https://github.com/thgh/rollup-plugin-css-only/issues/10
-        // css({ output: `${distCSS}/component.css` }), // SUCCESS - spits out what's in .vue <style> tags
-        // collectSass({ importOnce: true, extract: `${distCSS}/collectSass.css` }), // FAIL - flowtypes conflict
-        // NOTE: this completely ignores outFile in the sassOptions
-        //       for some reason, so sourcemaps aren't generated for the SCSS :-\
+        // We use 'transformProxy' to intercept calls to the plugin's transform function,
+        // so that we can watch .scss files for changes and rebuild the bundle + refresh browser
         transformProxy({
+          // NOTE: this completely ignores outFile in the sassOptions
+          //       for some reason, so sourcemaps aren't generated for the SCSS :-\
           plugin: sass({ output: `${distCSS}/main.css`, options: sassOptions }),
           match: /\.scss$/,
           recurse: true
@@ -417,7 +415,7 @@ module.exports = (grunt) => {
           grunt.verbose.debug(chalk`addWatchFile {cyanBright ${match}} => {cyanBright ${resolvedPath}}`)
           this.addWatchFile(resolvedPath)
           if (recurse) {
-            await watchScss.call(this, await readFileAsync(resolvedPath, 'utf8'), resolvedPath)
+            await watchScss.call(this, await readFileAsync(resolvedPath, 'utf8'), resolvedPath, recurse)
           }
         } else {
           grunt.log.error(chalk`couldn't resolve: {cyanBright ${match}} in {cyanBright ${filename}}`)
@@ -428,7 +426,8 @@ module.exports = (grunt) => {
       throw e
     }
   }
-
+  // We use 'transformProxy' to intercept calls to the plugin's transform function,
+  // so that we can watch .scss files for changes and rebuild the bundle + refresh browser
   const transformProxy = function (opts: { plugin: Object, match: RegExp, recurse: boolean }) {
     return new Proxy(opts.plugin, {
       get: function (obj, prop) {
@@ -436,9 +435,9 @@ module.exports = (grunt) => {
         return async function (source: string, filename: string) {
           if (opts.match.test(filename)) {
             grunt.verbose.debug(chalk`{bold TRANFORM:} ${filename}`)
-            await watchScss.call(this, source, filename)
+            await watchScss.call(this, source, filename, opts.recurse)
           }
-          return obj.transform.call(this, source, filename, opts.recurse)
+          return obj.transform.call(this, source, filename)
         }
       }
     })

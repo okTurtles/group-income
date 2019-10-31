@@ -4,12 +4,12 @@ page(pageTestName='messages' pageTestHeaderName='messages')
   template(#sidebar='')
     chat-nav(
       :title='L("Messages")'
-      :searchplaceholder='L("Search for a person")'
+      :search-placeholder='L("Search for a person")'
     )
       conversations-list(
         :title='L("Messages")'
         :list='messages'
-        routename='MessagesConversation'
+        route-name='MessagesConversation'
         :type='type'
       )
 

@@ -1,6 +1,6 @@
 <template lang='pug'>
 .c-chat-main(v-if='summary.title')
-  main-header(:description='summary.description' :routerback='summary.routerBack')
+  main-header(:description='summary.description' :router-back='summary.routerBack')
 
     template(slot='title')
       avatar.c-header-avatar(:src='summary.picture' alt='')

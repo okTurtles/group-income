@@ -28,6 +28,7 @@ v-style.
 
 <script>
 import colorsMixins from '@view-utils/colorsManipulation.js'
+import '@assets/style/main.scss'
 
 export default {
   name: 'AppStyles',
