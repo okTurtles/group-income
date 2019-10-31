@@ -137,10 +137,10 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-li {
-  margin-top: $spacer-sm*3;
+  margin-top: $spacer-sm * 3;
 
   &:first-child {
-    margin-top: $spacer;
+    margin-top: $spacer-sm;
   }
 }
 
