@@ -121,14 +121,7 @@ describe('Proposals - Add members', () => {
           .should('contain', 'Proposal accepted!')
         cy.getByDT('voted').should('not.exist')
         cy.get('@title').should('contain', `user1-${userId} proposed:`)
-        cy.getByDT('sendLink').should('contain', `Please send the following link to user4-${userId} so they can join the group:`)
-        cy.getByDT('sendLink').get('a.link')
-          .should('contain', 'http://localhost')
-          .invoke('attr', 'href')
-          .then(href => {
-            invitationLinkToUser4 = href
-            expect(href).to.contain('http://localhost')
-          })
+        cy.getByDT('sendLink').should('not.exist') // Only visible to who created the proposal
       })
     })
   })
@@ -151,7 +144,25 @@ describe('Proposals - Add members', () => {
     cy.giLogout()
   })
 
-  it('user4 registers and joins the group through its especial proposal invitation link', () => {
+  it('user1 logs back and see their accepted proposal to invite user4', () => {
+    cy.giLogin(`user1-${userId}`)
+
+    getProposalBoxes().eq(0).within(() => {
+      cy.getByDT('title', 'h4').should('contain', 'You proposed:')
+      cy.getByDT('sendLink').should('contain', `Please send the following link to user4-${userId} so they can join the group:`)
+      cy.getByDT('sendLink').get('a.link')
+        .should('contain', 'http://localhost')
+        .invoke('attr', 'href')
+        .then(href => {
+          invitationLinkToUser4 = href
+          expect(href).to.contain('http://localhost')
+        })
+    })
+
+    cy.giLogout()
+  })
+
+  it('user4 registers and joins the group through its unique proposal invitation link', () => {
     cy.giSignup(`user4-${userId}`)
     cy.giAcceptGroupInvite(invitationLinkToUser4, {
       isLoggedIn: true,

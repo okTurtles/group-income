@@ -49,7 +49,8 @@ export default {
   computed: {
     ...mapGetters([
       'currentGroupState',
-      'groupMembersCount'
+      'groupMembersCount',
+      'ourUsername'
     ]),
     ...mapState(['currentGroupId']),
     statuses () {
@@ -60,6 +61,11 @@ export default {
     },
     proposalType () {
       return this.proposal.data.proposalType
+    },
+    isOurProposal () {
+      const { identityContractID } = this.proposal.meta
+      const username = this.$store.state[identityContractID].attributes.name
+      return username === this.ourUsername
     },
     typeDescription () {
       return {
@@ -121,7 +127,10 @@ export default {
       return `${type[this.proposalType]} ${status[this.proposal.status]} c-icon`
     },
     invitationLink () {
-      if (this.proposalType === PROPOSAL_INVITE_MEMBER && this.proposal.status === STATUS_PASSED) {
+      if (this.proposalType === PROPOSAL_INVITE_MEMBER &&
+        this.proposal.status === STATUS_PASSED &&
+        this.isOurProposal
+      ) {
         const secret = this.proposal.payload.inviteSecret
         if (this.currentGroupState.invites[secret].status === 'valid') {
           return buildInvitationUrl(this.currentGroupId, this.proposal.payload.inviteSecret)
@@ -137,16 +146,14 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-li {
-  margin-top: $spacer-sm * 3;
-
-  &:first-child {
-    margin-top: $spacer-sm;
+  &:not(:first-child) {
+    margin-top: 1.5rem;
   }
 }
 
 .c-item {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
 
   @include phone {
     flex-wrap: wrap;
@@ -158,13 +165,20 @@ export default {
 }
 
 .c-icon {
-  width: 2rem;
-  height: 2rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  line-height: 2.5rem;
   margin-right: $spacer;
   flex-shrink: 0;
   border-radius: 50%;
   text-align: center;
-  line-height: 2rem;
+
+  @include tablet {
+    width: 2rem;
+    height: 2rem;
+    line-height: 2rem;
+
+  }
 }
 
 .c-sendLink {

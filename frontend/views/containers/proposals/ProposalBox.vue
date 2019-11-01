@@ -2,28 +2,20 @@
 li.c-wrapper
   user-image.c-avatar(:username='proposal.meta.username')
   .c-header
-    h4.has-text-bold(data-test='title') {{ title }}:
+    h4.c-header-title(data-test='title' v-html='title')
     span.has-text-1 {{ humanDate }}
   .c-main
     ul
       proposal-item(v-for='hash in proposalHashes' :key='hash' :proposalHash='hash')
 
-    .c-reasonB(v-if='readMoreB')
-      p.has-text-1.c-reasonB-text(v-if='humanReasonB')
-        | {{ humanReasonB }}
-        i18n.link.c-reasonB-expand(
-          v-if='!ephemeral.isReasonVisible'
-          tag='button'
-          @click='toggleReason'
-        ) Read more
-
-    transition(name='expand' v-else)
-      .c-reason(v-if='!ephemeral.isReasonVisible')
-        p.has-text-1.c-reason-text(v-if='humanReason') {{ humanReason }}
-        i18n.link.c-reason-expand(tag='button' @click='toggleReason') Read more
-      .c-reason.full(v-else)
-        p.has-text-1.c-reason-text(v-if='humanReason') {{ humanReason }}
-        i18n.link.c-reason-link(tag='button' @click='toggleReason') Hide
+    .c-reason(v-if='humanReason')
+      p.has-text-1.c-reason-text(v-if='humanReason') {{ humanReason }}
+      | &nbsp;
+      i18n.link(
+        v-if='ephemeral.isReasonHidden'
+        tag='button'
+        @click='showReason'
+      ) Read more
 </template>
 
 <script>
@@ -40,9 +32,8 @@ export default {
   },
   data () {
     return {
-      readMoreB: true, // @mmbotelho - edit this to switch between versions
       ephemeral: {
-        isReasonVisible: false
+        isReasonHidden: true
       }
     }
   },
@@ -53,7 +44,7 @@ export default {
   computed: {
     ...mapGetters([
       'currentGroupState',
-      'ourUserIdentityContract'
+      'ourUsername'
     ]),
     proposal () {
       // Pick the 1st hash as guidance/pivot for this group of proposals
@@ -62,17 +53,16 @@ export default {
     title () {
       const { identityContractID } = this.proposal.meta
       const username = this.$store.state[identityContractID].attributes.name
-      const currentUsername = this.ourUserIdentityContract.attributes.name
-      const who = username === currentUsername ? L('You') : username
+      const who = username === this.ourUsername ? L('You') : username
       const isAnyOpen = this.proposalHashes.some(hash => this.currentGroupState.proposals[hash].status === STATUS_OPEN)
 
       if (!isAnyOpen) {
-        return L('{who} proposed', { who })
+        return L('{who}{_strong} proposed:', { who, ...this.LTags('strong') })
       }
 
-      return username === currentUsername
-        ? L('You are proposing')
-        : L('{who} is proposing', { who })
+      return username === this.ourUsername
+        ? L('You are proposing:')
+        : L('{strong_}{who}{_strong} is proposing:', { who, ...this.LTags('strong') })
     },
     humanDate () {
       const date = new Date(this.proposal.meta.createdDate)
@@ -82,28 +72,25 @@ export default {
       const locale = navigator.languages !== undefined ? navigator.languages[0] : navigator.language
 
       return date.toLocaleDateString(locale, {
-        year: 'numeric', month: 'long', day: 'numeric'
+        year: 'numeric', month: 'short', day: 'numeric'
       })
     },
     humanReason () {
       const reason = this.proposal.data.proposalData.reason
-      return reason
-        ? `"${reason} Let's add a very long text just to debug. You can find this at ProposalBox vue file around line 90. It's inside a humanReason function that returns this string. TODO - remove this before merge!"`
-        : undefined
-    },
-    humanReasonB () {
-      const reason = this.proposal.data.proposalData.reason + " Let's add a very long text just to debug. You can find this at ProposalBox vue file around line 95. It's inside a humanReasonB function that returns this string. TODO - remove this before merge!"
-
-      if (!this.ephemeral.isReasonVisible && reason.length > 170) {
-        return `"${reason.substr(0, 150)}..."`
+      const maxLength = window.innerWidth < 769 ? 60 : 180
+      const threshold = 30
+      if (this.ephemeral.isReasonHidden && reason.length > maxLength + threshold) {
+        this.ephemeral.isReasonHidden = true // eslint-disable-line vue/no-side-effects-in-computed-properties
+        return `"${reason.substr(0, maxLength)}..."`
       } else {
+        this.ephemeral.isReasonHidden = false // eslint-disable-line vue/no-side-effects-in-computed-properties
         return `"${reason}"`
       }
     }
   },
   methods: {
-    toggleReason () {
-      this.ephemeral.isReasonVisible = !this.ephemeral.isReasonVisible
+    showReason () {
+      this.ephemeral.isReasonHidden = false
     }
   }
 }
@@ -112,16 +99,18 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-$spaceVertical: $spacer-sm * 3;
-
 .c-wrapper {
-  margin-top: $spaceVertical;
-  padding-bottom: $spaceVertical;
+  margin-top: $spacer-lg;
+  padding-bottom: $spacer-lg;
   display: grid;
   grid-template-columns: auto 1fr;
   grid-template-areas:
     "header header"
     "main main";
+
+  &:first-child {
+    margin-top: 1.5rem;
+  }
 
   @include tablet {
     grid-template-areas:
@@ -138,7 +127,7 @@ $spaceVertical: $spacer-sm * 3;
   grid-area: avatar;
   width: 2.5rem;
   height: 2.5rem;
-  margin-right: $spaceVertical;
+  margin-right: $spacer;
   flex-shrink: 0;
 
   @include phone {
@@ -150,24 +139,22 @@ $spaceVertical: $spacer-sm * 3;
   grid-area: header;
   display: flex;
   justify-content: space-between;
+  align-items: center;
+
+  &-title {
+    font-family: "Lato";
+    font-weight: 400;
+  }
 }
 
 .c-main {
   grid-area: main;
+  margin-top: 1.5rem;
   word-break: break-word;
   min-width: 0; // So ellipsis work correctly inside grid.
-}
 
-.c-reasonB {
-  position: relative;
-  margin-top: 1.5rem;
-
-  &-text {
-    transition: all 500ms ease-out;
-  }
-
-  &-expand {
-    margin-left: $spacer-sm;
+  @include tablet {
+    margin-top: $spacer;
   }
 }
 
@@ -175,45 +162,8 @@ $spaceVertical: $spacer-sm * 3;
   position: relative;
   margin-top: 1.5rem;
 
-  &:not(.full) {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    max-height: 2.5rem; // 2 lines
-    overflow: hidden;
-  }
-
-  &.full {
-    display: block;
-  }
-
-  &:not(.full) &-text {
-    // white-space: nowrap;
-    // overflow: hidden;
-    // text-overflow: clip;
-  }
-
-  &-expand {
-    flex-shrink: 0;
-    word-wrap: normal;
-    margin-left: $spacer-xs;
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    z-index: 1;
-
-    &::before {
-      content: "";
-      position: absolute;
-      top: 0;
-      right: 0;
-      background-image: linear-gradient(to right, #ffffff00, #ffffff 30px);
-      color: var(--text_1);
-      display: block;
-      width: calc(100% + 40px);
-      height: 100%;
-      z-index: -1;
-    }
+  &-text {
+    display: inline;
   }
 }
 </style>
