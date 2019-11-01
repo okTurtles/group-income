@@ -62,6 +62,7 @@ page-section.c-section(:title='L("Invite links")')
                   item-id='original'
                   icon='vote-yea'
                 )
+                  // TODO: Implement the action for this menu button.
                   i18n See original proposal
                 menu-item(
                   v-if='item.status === "valid"'
@@ -135,9 +136,12 @@ export default {
         inviteLink: buildInvitationUrl(this.currentGroupId, inviteSecret),
         ...invite
       }))
+      const options = {
+        Active: () => invitesList.filter(invite => invite.status === 'valid'),
+        All: () => invitesList
+      }
 
-      return this.ephemeral.selectbox.selectedOption === 'Active' ? invitesList.filter(invite => invite.status === 'valid')
-        : this.ephemeral.selectbox.selectedOption === 'All' && invitesList
+      return options[this.ephemeral.selectbox.selectedOption]()
     }
   }
 }
