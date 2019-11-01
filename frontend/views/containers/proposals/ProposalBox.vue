@@ -7,7 +7,17 @@ li.c-wrapper
   .c-main
     ul
       proposal-item(v-for='hash in proposalHashes' :key='hash' :proposalHash='hash')
-    transition(name='expand')
+
+    .c-reasonB(v-if='readMoreB')
+      p.has-text-1.c-reasonB-text(v-if='humanReasonB')
+        | {{ humanReasonB }}
+        i18n.link.c-reasonB-expand(
+          v-if='!ephemeral.isReasonVisible'
+          tag='button'
+          @click='toggleReason'
+        ) Read more
+
+    transition(name='expand' v-else)
       .c-reason(v-if='!ephemeral.isReasonVisible')
         p.has-text-1.c-reason-text(v-if='humanReason') {{ humanReason }}
         i18n.link.c-reason-expand(tag='button' @click='toggleReason') Read more
@@ -30,6 +40,7 @@ export default {
   },
   data () {
     return {
+      readMoreB: true, // @mmbotelho - edit this to switch between versions
       ephemeral: {
         isReasonVisible: false
       }
@@ -77,8 +88,17 @@ export default {
     humanReason () {
       const reason = this.proposal.data.proposalData.reason
       return reason
-        ? `"${reason} Let's add a very long text just to debug. You can find this at ProposalBox.vue around line 83. It's inside a humanReason function that returns this string. TODO - remove this before merge!"`
+        ? `"${reason} Let's add a very long text just to debug. You can find this at ProposalBox vue file around line 90. It's inside a humanReason function that returns this string. TODO - remove this before merge!"`
         : undefined
+    },
+    humanReasonB () {
+      const reason = this.proposal.data.proposalData.reason + " Let's add a very long text just to debug. You can find this at ProposalBox vue file around line 95. It's inside a humanReasonB function that returns this string. TODO - remove this before merge!"
+
+      if (!this.ephemeral.isReasonVisible && reason.length > 170) {
+        return `"${reason.substr(0, 150)}..."`
+      } else {
+        return `"${reason}"`
+      }
     }
   },
   methods: {
@@ -136,6 +156,19 @@ $spaceVertical: $spacer-sm * 3;
   grid-area: main;
   word-break: break-word;
   min-width: 0; // So ellipsis work correctly inside grid.
+}
+
+.c-reasonB {
+  position: relative;
+  margin-top: 1.5rem;
+
+  &-text {
+    transition: all 500ms ease-out;
+  }
+
+  &-expand {
+    margin-left: $spacer-sm;
+  }
 }
 
 .c-reason {
