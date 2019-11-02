@@ -1047,7 +1047,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "../../assets/style/_variables.scss";
+@import "@assets/style/_variables.scss";
 $pagePadding: 1rem;
 $pagePaddingTablet: 24px;
 $pagePaddingDesktop: 75px;

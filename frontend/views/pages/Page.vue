@@ -2,7 +2,10 @@
 div(:data-test='pageTestName' :class='$scopedSlots.sidebar ? "p-with-sidebar" : "p-no-sidebar"')
   header.p-header
     h1.p-title(:data-test='pageTestHeaderName')
-      img.c-logo(src='/assets/images/group-income-icon-transparent.png' alt='GroupIncome\'s logo')
+      img.c-logo(
+        src='/assets/images/group-income-icon-transparent.png'
+        :alt='L("Group Income\'s logo")'
+      )
       slot(name='title')
 
     p(
@@ -51,7 +54,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "../../assets/style/_variables.scss";
+@import "@assets/style/_variables.scss";
 
 $pagePadding: 1rem;
 $pagePaddingTablet: 1.5rem;

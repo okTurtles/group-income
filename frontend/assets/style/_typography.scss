@@ -140,3 +140,40 @@ small {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+// formerly in _colors.scss, moved here so that
+// @import "_variables"; in scoped styles in vue components
+// doesn't result in repeated CSS generated
+
+.has-text-0 {
+  color: $text_0;
+}
+
+.help,
+.has-text-1 {
+  color: $text_1;
+}
+
+@each $name in $colors {
+  .has-text-#{$name} {
+    color: var(--#{$name}_0);
+  }
+
+  .has-background-#{$name} {
+    background-color: var(--#{$name}_2);
+  }
+}
+
+.has-text-white {
+  color: $white;
+}
+
+// ---------- SVGs
+
+// NOTE: This is only a POC to handle "themable" illustrations.
+// Final solution should be done at #665
+.svg-hello {
+  path:nth-child(1) {
+    fill: $primary_1;
+  }
+}

@@ -1,4 +1,6 @@
-const colorsMixins = {
+'use strict'
+
+export default {
   methods: {
     // Takes colors in hex format (i.e. #F06D06)
     // and lightens or darkens them with a value
@@ -84,5 +86,3 @@ const colorsMixins = {
     }
   }
 }
-
-export default colorsMixins

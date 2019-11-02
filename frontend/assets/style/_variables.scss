@@ -46,5 +46,11 @@ $transitionSpeed: 300ms;
 
 $rightSideWidth: 16.5rem;
 
+// IMPORTANT!
+// This file, and any files included below, cannot contain any CSS
+// classes, because these files are often included in the <style>
+// tag of .vue components, and so those classes would end up being
+// duplicated across all the injected component CSS
+
 @import "_colors";
 @import "_mixins";
