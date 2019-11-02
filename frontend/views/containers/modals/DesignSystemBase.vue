@@ -55,7 +55,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "_variables.scss";
+@import "@assets/style/_variables.scss";
 
 .wrapper-container {
   height: 100%;

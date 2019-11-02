@@ -34,7 +34,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "_variables.scss";
+@import "@assets/style/_variables.scss";
 
 .c-group-purpose {
   margin-top: 1.5rem;

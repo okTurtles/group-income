@@ -23,7 +23,7 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-@import "_variables.scss";
+@import "@assets/style/_variables.scss";
 
 .c-menuItem {
   ::v-deep .c-item-link {

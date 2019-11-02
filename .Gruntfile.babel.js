@@ -37,9 +37,17 @@ const sassOptions = {
   sourceMap: development,
   outputStyle: development ? 'expanded' : 'compressed',
   includePaths: [
-    path.resolve('./node_modules'), // so we can write things like @import 'vue-slider-component/lib/theme/default.scss';
-    path.resolve('./frontend/assets/style') // so we can write @import 'main.scss'; in AppStyles.vue
-  ]
+    path.resolve('./node_modules'), // so we can write @import 'vue-slider-component/lib/theme/default.scss'; in .vue <style>
+    path.resolve('./frontend/assets/style') // so we can write @import '_variables.scss'; in .vue <style> section
+    // but also for compatibility with resolveScssFromId() to prevent errors like this during the build process:
+    // couldn't resolve: @import "_reset"; in group-income-simple/frontend/assets/style/main.scss
+  ],
+  importer (url, prev, done) {
+    // so we can write @import "@assets/style/_variables.scss"; in the <style> section of .vue components too
+    return url.indexOf('@assets/') !== 0
+      ? null
+      : { file: path.resolve('./frontend/assets', chompLeft(url, '@assets/')) }
+  }
 }
 
 module.exports = (grunt) => {
@@ -322,8 +330,6 @@ module.exports = (grunt) => {
           preferBuiltins: false
         }),
         json(),
-        // We use 'transformProxy' to intercept calls to the plugin's transform function,
-        // so that we can watch .scss files for changes and rebuild the bundle + refresh browser
         transformProxy({
           // NOTE: this completely ignores outFile in the sassOptions
           //       for some reason, so sourcemaps aren't generated for the SCSS :-\

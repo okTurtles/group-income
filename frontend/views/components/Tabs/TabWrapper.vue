@@ -126,7 +126,7 @@ export default {
 </script>
 
 <style lang='scss' scoped>
-@import "_variables.scss";
+@import "@assets/style/_variables.scss";
 
 $separatorColor: #b2c3ca;
 $legendColor: #7b7b7b;

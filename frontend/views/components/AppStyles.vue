@@ -28,6 +28,11 @@ v-style.
 
 <script>
 import colorsMixins from '@view-utils/colorsManipulation.js'
+
+// importing this here (outside of the style tag) is important,
+// because this is what results in the global main.css file
+// being placed in dist/assets/css/main.css, which is included
+// by index.html
 import '@assets/style/main.scss'
 
 export default {

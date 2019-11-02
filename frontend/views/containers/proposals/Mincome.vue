@@ -120,7 +120,7 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-@import "_variables.scss";
+@import "@assets/style/_variables.scss";
 .c-info {
   margin-top: $spacer-sm;
 }

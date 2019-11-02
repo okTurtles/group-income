@@ -47,7 +47,7 @@ page(
             i18n(
               tag='p'
               :args='{ \
-                total: `<b>${payment.amountPretty}</b>`, \
+                total: `<b>${payment.amountFormatted}</b>`, \
                 user: `<b>${payment.to}</b>` \
               }'
             ) {total} to {user}
@@ -168,15 +168,15 @@ export default {
       const distribution = this.thisMonthsPayments.frozenDistribution || this.groupIncomeDistribution
       return distribution.filter(p => p.from === this.ourUsername).map(transfer => {
         const { to, amount } = transfer
-        const payment = this.paymentFor(to)
+        const { hash, data } = this.paymentFor(to)
         return {
           to,
+          hash,
+          data,
           amount: +this.currency.displayWithoutCurrency(amount),
-          amountPretty: this.currency.displayWithCurrency(amount),
-          data: payment.data,
-          hash: payment.hash,
-          paymentClass: this.paymentClass(payment.data),
-          paymentStatusText: this.paymentStatusText(payment.data, to)
+          amountFormatted: this.currency.displayWithCurrency(amount),
+          paymentClass: this.paymentClass(data),
+          paymentStatusText: this.paymentStatusText(data, to)
         }
       })
     },
@@ -252,23 +252,12 @@ export default {
     },
     paymentClass (paymentData) {
       return paymentData.status ? {
-        [PAYMENT_PENDING]: {
-          'has-text-1': true
-        },
-        [PAYMENT_CANCELLED]: {
-        },
-        [PAYMENT_ERROR]: {
-          'has-text-weight-normal': true,
-          'has-text-warning': true
-        },
-        [PAYMENT_NOT_RECEIVED]: {
-          'has-text-weight-normal': true,
-          'has-text-warning': true
-        },
-        [PAYMENT_COMPLETED]: {
-          'has-text-success': true
-        }
-      }[paymentData.status] : {}
+        [PAYMENT_PENDING]: 'has-text-1',
+        [PAYMENT_CANCELLED]: '',
+        [PAYMENT_ERROR]: 'has-text-weight-normal has-text-warning',
+        [PAYMENT_NOT_RECEIVED]: 'has-text-weight-normal has-text-warning',
+        [PAYMENT_COMPLETED]: 'has-text-success'
+      }[paymentData.status] : ''
     },
     paymentStatusText (paymentData, username) {
       return paymentData.status ? {
@@ -329,7 +318,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "../../assets/style/_variables.scss";
+@import "@assets/style/_variables.scss";
 
 .c-container-empty {
   max-width: 25rem;
