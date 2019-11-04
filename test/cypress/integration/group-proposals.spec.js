@@ -239,7 +239,7 @@ describe('Proposals - Add members', () => {
   })
 
   it('It should add non monetary contribution', () => {
-    cy.getByDT('addNonMonetaryContribution').click()
+    cy.getByDT('addNonMonetaryContribution').last().click()
     cy.getByDT('inputNonMonetaryContribution').type('Portuguese classes')
 
     cy.getByDT('buttonAddNonMonetaryContribution').last().click()
