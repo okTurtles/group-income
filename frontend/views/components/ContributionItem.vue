@@ -63,7 +63,7 @@ export default {
     contributionText () {
       if (this.hasWhoElse) {
         const html = {
-          service,
+          service: `<span class="has-text-bold">${this.what}</span>`,
           numMembers: `<button class="is-unstyled is-link-inherit link">${this.otherContributor}`,
           _button: '</button>'
         }
