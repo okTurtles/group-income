@@ -90,6 +90,7 @@ import SvgInvitation from '@svgs/invitation.svg'
 import CopyToClipboard from '@components/CopyToClipboard.vue'
 import { buildInvitationUrl } from '@model/contracts/voting/proposals.js'
 import { mapGetters, mapState } from 'vuex'
+import L from '@view-utils/translations.js'
 
 export default {
   name: 'InviteLinks',
@@ -124,6 +125,12 @@ export default {
           url: inviteLink
         })
       }
+    },
+    translateStatus (status) {
+      return ({
+        'used': L('used'),
+        'valid': L('valid')
+      })[status]
     }
   },
   computed: {
@@ -132,9 +139,10 @@ export default {
     invitesToShow () {
       const { invites } = this.currentGroupState
       const invitesList = Object.entries(invites).map(([inviteSecret, invite]) => ({
+        ...invite,
         inviteSecret,
         inviteLink: buildInvitationUrl(this.currentGroupId, inviteSecret),
-        ...invite
+        status: this.translateStatus(invite.status)
       }))
       const options = {
         Active: () => invitesList.filter(invite => invite.status === 'valid'),
