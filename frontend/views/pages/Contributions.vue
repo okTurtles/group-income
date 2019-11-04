@@ -23,22 +23,24 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
           v-if='needsIncome'
           tag='p'
           data-test='headerNeed'
-          :args='{upTo: upTo,bold_:\'<span class="has-text-bold has-text-0">\',_bold:\'</span>\'}'
-        ) You need {bold_}{upTo}{_bold}
+          :args='{ amount: `<span class="has-text-bold has-text-0">${upTo}</span>` }'
+        ) You need {amount}
         i18n(
           v-else
           tag='p'
           data-test='headerPledge'
-          :args='{upTo: upTo,bold_:\'<span class="has-text-bold has-text-0">\',_bold:\'</span>\'}'
-        ) You are pledging up to {bold_}{upTo}{_bold}
+          :args='{ upTo: `<span class="has-text-bold has-text-0">${upTo}</span>` }'
+        ) You are pledging up to {upTo}
 
         i18n(
           tag='p'
-          :args='{bold_:\'<span class="has-text-bold has-text-0">\',_bold:\'</span>\',paymentMethod:paymentMethod}'
-        ) Payment method {bold_}{paymentMethod}{_bold}
+          :args='{ paymentMethod: `<span class="has-text-bold has-text-0">${paymentMethod}</span>` }'
+        ) Payment method {paymentMethod}
 
       div
-        button.button.is-small(
+        i18n(
+          tag='button'
+          class='button is-small'
           data-test='openIncomeDetailModal'
           @click='openModal("IncomeDetails")'
         ) Change
@@ -173,17 +175,7 @@ export default {
         isEditingIncome: false,
         isActive: true
       },
-      paymentMethod: 'Manual', // static
-      // -- Hardcoded Data just for layout purposes:
-      fakeStore: {
-        currency: currencies.USD.symbol, // group (getter)
-        groupMembersPledging: [ // group
-          'Jack Fisher',
-          'Charlotte Doherty',
-          'Thomas Baker',
-          'Francisco Scott'
-        ]
-      }
+      paymentMethod: 'Manual' // static
     }
   },
   computed: {
@@ -199,7 +191,7 @@ export default {
       'globalProfile'
     ]),
     memberGroupProfile () {
-      return this.groupProfile(this.ourUsername) || {}
+      return this.groupProfile(this.ourUsername)
     },
     upTo () {
       const amount = this.memberGroupProfile[this.memberGroupProfile.incomeDetailsType]
@@ -226,8 +218,9 @@ export default {
     },
     receivingNonMonetary () {
       const groupProfiles = this.groupProfiles
+      // TODO to optimize in the future
       return Object.keys(groupProfiles)
-        .filter(key => key !== this.ourUsername && groupProfiles[key].nonMonetaryContributions)
+        .filter(key => key !== this.ourUsername && groupProfiles[key].nonMonetaryContributions.length > 0)
         .reduce((list, username) => {
           const nonMonetary = groupProfiles[username].nonMonetaryContributions
           nonMonetary.forEach((what) => {

@@ -96,7 +96,7 @@ export default {
       isAdding: false,
       isEditing: false,
       isFilled: null, // decide what input buttons to show
-      placeholders: [this.L('Portuguese classes'), this.L('Programming'), this.L('Cooking'), this.L('Parties'), this.L('Free cinema tickets')],
+      placeholders: [L('Portuguese classes'), L('Programming'), L('Cooking'), L('Parties'), L('Free cinema tickets')],
       form: {
         contribution: this.initialValue
       }
