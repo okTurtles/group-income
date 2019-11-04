@@ -335,7 +335,6 @@ DefineContract({
           switch (key) {
             case 'nonMonetaryAdd':
               nonMonetary.push(value)
-              Vue.set(groupProfile, 'nonMonetary', nonMonetary)
               break
             case 'nonMonetaryRemove':
               nonMonetary.splice(nonMonetary.indexOf(value), 1)

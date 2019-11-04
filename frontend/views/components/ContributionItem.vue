@@ -63,30 +63,30 @@ export default {
     contributionText () {
       if (this.hasWhoElse) {
         const html = {
-          0: `<span class="has-text-bold">${this.what}</span>`,
-          1: `<button class="is-unstyled is-link-inherit link">${this.otherContributor}`,
-          2: '</button>'
+          service,
+          numMembers: `<button class="is-unstyled is-link-inherit link">${this.otherContributor}`,
+          _button: '</button>'
         }
 
         if (this.action === 'RECEIVING' && this.type === 'MONETARY') {
-          return L('{0} from {1} members{2}', html)
+          return L('{service} from {numMembers} members{_button}', html)
         } else {
-          return L('A total of {0} to {1} members{2}', html)
+          return L('A total of {service} to {numMembers} members{_button}', html)
         }
       } else {
         if (this.action === 'RECEIVING') {
           const html = {
-            0: `<span class="has-text-bold">${this.what}</span>`,
-            1: this.firstWho
+            service: `<span class="has-text-bold">${this.what}</span>`,
+            who: this.firstWho
           }
-          return L('{0} by {1}', html)
+          return L('{service} by {who}', html)
         } else {
           if (this.type === 'MONETARY') {
             const html = {
-              0: `<span class="has-text-bold">${this.what}</span>`,
-              1: this.firstWho
+              service: `<span class="has-text-bold">${this.what}</span>`,
+              who: this.firstWho
             }
-            return L('{0} to {1}', html)
+            return L('{service} to {who}', html)
           } else {
             return `<span class="has-text-bold">${this.what}</span>`
           }
@@ -96,15 +96,15 @@ export default {
 
     listOfName () {
       const html = {
-        0: `<span class="has-text-bold">${this.what}</span>`,
-        1: this.who.map((name, index) => {
+        service: `<span class="has-text-bold">${this.what}</span>`,
+        listName: this.who.map((name, index) => {
           return `<p class="has-text-1 c-contribution-list-item">${name}</p>`
         }).join('')
       }
       if (this.action === 'RECEIVING') {
-        return L('{0} from {1}', html)
+        return L('{service} from {listName}', html)
       } else {
-        return L('A total of {0} to {1}', html)
+        return L('A total of {service} to {listName}', html)
       }
     },
 
@@ -139,7 +139,7 @@ export default {
 </script>
 
 <style lang="scss">
-@import "../../assets/style/_variables.scss";
+@import "@assets/style/_variables.scss";
 
 .c-contribution-list-item {
   &:nth-child(2) {
