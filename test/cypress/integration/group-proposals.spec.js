@@ -289,15 +289,15 @@ describe('Proposals - Add members', () => {
   })
 
   it('It should add more non monetary contribution', () => {
-    cy.getByDT('addNonMonetaryContribution').click()
+    cy.getByDT('addNonMonetaryContribution').last().last().click()
     cy.getByDT('inputNonMonetaryContribution').type('German classes')
     cy.getByDT('buttonAddNonMonetaryContribution').last().click()
 
-    cy.getByDT('addNonMonetaryContribution').click()
+    cy.getByDT('addNonMonetaryContribution').last().last().click()
     cy.getByDT('inputNonMonetaryContribution').type('Russian classes')
     cy.getByDT('buttonAddNonMonetaryContribution').last().click()
 
-    cy.getByDT('addNonMonetaryContribution').click()
+    cy.getByDT('addNonMonetaryContribution').last().last().click()
     cy.getByDT('inputNonMonetaryContribution').type('Korean classes')
     cy.getByDT('buttonAddNonMonetaryContribution').last().click()
 
@@ -319,11 +319,11 @@ describe('Proposals - Add members', () => {
     cy.get('.receiving .c-contribution-list')
       .should('have.length', 4)
 
-    cy.getByDT('addNonMonetaryContribution').click()
+    cy.getByDT('addNonMonetaryContribution').last().click()
     cy.getByDT('inputNonMonetaryContribution').type('Korean classes')
     cy.getByDT('buttonAddNonMonetaryContribution').last().click()
 
-    cy.getByDT('addNonMonetaryContribution').click()
+    cy.getByDT('addNonMonetaryContribution').last().click()
     cy.getByDT('inputNonMonetaryContribution').clear().type('French classes')
     cy.getByDT('buttonAddNonMonetaryContribution').last().click()
 
