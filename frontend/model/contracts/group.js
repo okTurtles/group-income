@@ -3,26 +3,16 @@
 import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import { DefineContract } from './Contract.js'
-import { objectOf, objectMaybeOf, optional, string, number, object, unionOf, literalOf } from '~/frontend/utils/flowTyper.js'
+import { objectOf, objectMaybeOf, optional, string, number, object, unionOf } from '~/frontend/utils/flowTyper.js'
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income-simple/issues/603
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST } from './voting/rules.js'
 import proposals, { proposalType, proposalSettingsType, archiveProposal, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_CANCELLED } from './voting/proposals.js'
+import { paymentStatusType, paymentType } from './payments/index.js'
 import * as Errors from '../errors.js'
 import { merge, deepEqualJSONType } from '~/frontend/utils/giLodash.js'
 import { currentMonthTimestamp } from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
-
-// for gi.contracts/group/payment ... TODO: put these in some other file?
-export const PAYMENT_PENDING = 'pending'
-export const PAYMENT_CANCELLED = 'cancelled'
-export const PAYMENT_ERROR = 'error'
-export const PAYMENT_COMPLETED = 'completed'
-export const paymentStatusType = unionOf(...[PAYMENT_PENDING, PAYMENT_CANCELLED, PAYMENT_ERROR, PAYMENT_COMPLETED].map(k => literalOf(k)))
-export const PAYMENT_TYPE_MANUAL = 'manual'
-export const PAYMENT_TYPE_BITCOIN = 'bitcoin'
-export const PAYMENT_TYPE_PAYPAL = 'paypal'
-export const paymentType = unionOf(...[PAYMENT_TYPE_MANUAL, PAYMENT_TYPE_BITCOIN, PAYMENT_TYPE_PAYPAL].map(k => literalOf(k)))
 
 export function generateInvites (numInvites: number) {
   return {
@@ -38,6 +28,13 @@ function initMonthlyPayments () {
     payments: {},
     frozenDistribution: null,
     frozenMincome: null
+  }
+}
+
+function initGroupProfile (contractID: string) {
+  return {
+    contractID: contractID,
+    nonMonetaryContributions: []
   }
 }
 
@@ -67,12 +64,9 @@ DefineContract({
         proposals: {}, // hashes => {} TODO: this, see related TODOs in GroupProposal
         settings: data,
         profiles: {
-          [meta.username]: {
-            contractID: meta.identityContractID,
-            groupProfile: {}
-          }
+          [meta.username]: initGroupProfile(meta.identityContractID)
         },
-        paymentsByMonth: {
+        userPaymentsByMonth: {
           [currentMonthTimestamp()]: initMonthlyPayments()
         }
       }
@@ -112,15 +106,19 @@ DefineContract({
       }),
       process (state, { data, meta, hash }) {
         const monthstamp = currentMonthTimestamp()
-        const thisMonth = vueFetchInitKV(state.paymentsByMonth, monthstamp, initMonthlyPayments())
-        const paymentsForUser = vueFetchInitKV(thisMonth.payments, meta.username, {})
-        Vue.set(paymentsForUser, hash, { data, meta, history: [data] })
+        const thisMonth = vueFetchInitKV(state.userPaymentsByMonth, monthstamp, initMonthlyPayments())
+        const paymentsFromUser = vueFetchInitKV(thisMonth.payments, meta.username, {})
+        Vue.set(state.payments, hash, { data, meta, history: [data] })
+        if (paymentsFromUser[data.toUser]) {
+          throw new Errors.GIErrorIgnoreAndBanIfGroup(`payment: ${meta.username} already paying ${data.toUser}! payment hash: ${hash}`)
+        }
+        Vue.set(paymentsFromUser, data.toUser, hash)
         // if this is the first payment, freeze the monthy's distribution
-        // if (!thisMonth.frozenDistribution) {
-        //   const getters = sbp('state/contractSafeGetters', state)
-        //   thisMonth.frozenDistribution = getters.groupIncomeDistribution
-        //   thisMonth.frozenMincome = getters.groupMincomeAmount
-        // }
+        if (!thisMonth.frozenDistribution) {
+          const getters = sbp('state/groupContractSafeGetters', state)
+          thisMonth.frozenDistribution = getters.groupIncomeDistribution
+          thisMonth.frozenMincome = getters.groupMincomeAmount
+        }
       }
     },
     'gi.contracts/group/paymentUpdate': {
@@ -133,7 +131,6 @@ DefineContract({
         })
       }),
       process (state, { data, meta, hash }) {
-        // TODO: what happens if a payment update comes in for a payment from last month?
         // TODO: we don't want to keep a history of all payments in memory all the time
         //       https://github.com/okTurtles/group-income-simple/issues/426
         const payment = state.payments[data.paymentHash]
@@ -278,12 +275,7 @@ DefineContract({
         if (Object.keys(invite.responses).length === invite.generated) {
           invite.status = 'used'
         }
-        Vue.set(state.profiles, meta.username, {
-          contractID: meta.identityContractID,
-          groupProfile: {
-            nonMonetaryContributions: []
-          }
-        })
+        Vue.set(state.profiles, meta.username, initGroupProfile(meta.identityContractID))
         // If we're triggered by handleEvent in state.js (and not latestContractState)
         // then the asynchronous sideEffect function will get called next
         // and we will subscribe to this new user's identity contract
@@ -339,7 +331,7 @@ DefineContract({
         nonMonetaryRemove: string
       }),
       process (state, { data, meta }) {
-        var { groupProfile } = state.profiles[meta.username]
+        var groupProfile = state.profiles[meta.username]
         const nonMonetary = groupProfile.nonMonetaryContributions
         for (const key in data) {
           const value = data[key]

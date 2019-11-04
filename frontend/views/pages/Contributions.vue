@@ -2,7 +2,7 @@
 page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
   template(#title='') {{ L('Contributions') }}
 
-  // v-if='memberProfile(ourUsername).groupProfile.incomeDetailsKey'
+  // v-if='groupProfile(ourUsername).incomeDetailsKey'
   callout-card(
     :isCard='true'
     :title='L("Add your income details")'
@@ -221,7 +221,7 @@ export default {
   computed: {
     ...mapGetters([
       'groupSettings',
-      'memberProfile',
+      'groupProfile',
       'groupMincomeFormatted',
       'ourUsername'
     ]),
@@ -233,11 +233,11 @@ export default {
     }
   },
   beforeMount () {
-    const profile = this.memberProfile(this.ourUsername) || {}
-    const incomeDetailsType = profile.groupProfile && profile.groupProfile.incomeDetailsType
+    const profile = this.groupProfile(this.ourUsername) || {}
+    const incomeDetailsType = profile.incomeDetailsType
     if (incomeDetailsType) {
       this.form.incomeDetailsType = incomeDetailsType
-      this.form[incomeDetailsType] = profile.groupProfile[incomeDetailsType]
+      this.form[incomeDetailsType] = profile[incomeDetailsType]
     }
   },
   methods: {
@@ -314,5 +314,5 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "../../assets/style/_variables.scss";
+@import "@assets/style/_variables.scss";
 </style>

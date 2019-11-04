@@ -1,21 +1,37 @@
-import i18next from 'i18next'
-import XHR from 'i18next-xhr-backend'
+'use strict'
+
 import Vue from 'vue'
 import template from '~/frontend/utils/stringTemplate.js'
 
-i18next.use(XHR).init({
-  load: 'languageOnly',
-  fallbackLng: 'en',
-  backend: {
-    loadPath: '/assets/locales/{{lng}}/{{ns}}.json',
-    allowMultiLoading: false
-  }
-}, (err) => {
-  if (err) console.error('i18next setup error:', err)
-})
-
 Vue.prototype.L = L
 Vue.prototype.LTags = LTags
+
+/*
+Examples:
+
+Simple string:
+  i18n Hello world
+
+String with variables:
+  i18n(
+    :args='{ name: ourUsername }'
+  ) Hello {name}!
+
+String with HTML markup inside:
+  i18n(
+    :args='{ ...LTags("strong", "span"), name: ourUsername }'
+  ) Hello {strong_}{name}{_strong}, today it's a {span_}nice day{_span}!
+  | or
+  i18n(
+    :args='{ ...LTags("span"), name: "<strong>${ourUsername}</strong>" }'
+  ) Hello {name}, today it's a {span_}nice day{_span}!
+
+String with Vue components inside:
+  i18n(
+    compile
+    :args='{ r1: `<router-link class="link" to="/login">`, r2: "</router-link>"}'
+  ) Go to {r1}login{r2} page.
+*/
 
 export function LTags (...tags) {
   const o = {
@@ -33,10 +49,7 @@ export default function L (
   args: Array<*> | Object | void,
   options: ?Object
 ) {
-  // TODO: see also using i18next's interpolation and formatting
-  //       https://www.i18next.com/translation-function/formatting
-  //       https://www.i18next.com/translation-function/interpolation
-  return template(i18next.t(key, options), args)
+  return template(key, args)
 }
 
 Vue.component('i18n', {

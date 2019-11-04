@@ -9,6 +9,8 @@ import path from 'path'
 import '~/shared/domains/okTurtles/data.js'
 import '~/shared/domains/gi/db.js'
 
+const Boom = require('@hapi/boom')
+
 const writeFileAsync = util.promisify(fs.writeFile)
 const readFileAsync = util.promisify(fs.readFile)
 const dataFolder = path.resolve('./data')
@@ -24,19 +26,28 @@ const production = process.env.NODE_ENV === 'production'
 export default sbp('sbp/selectors/register', {
   'backend/db/streamEntriesSince': async function (contractID: string, hash: string) {
     var currentHEAD = await sbp('gi.db/log/get', sbp('gi.db/log/logHEAD', contractID))
+    if (!currentHEAD) {
+      throw Boom.notFound(`contractID ${contractID} doesn't exist!`)
+    }
     var prefix = '['
     // NOTE: if this ever stops working you can also try Readable.from():
     // https://nodejs.org/api/stream.html#stream_stream_readable_from_iterable_options
     return new Readable({
       async read () {
-        const entry = await sbp('gi.db/log/getEntry', currentHEAD)
-        const json = `"${strToB64(entry.serialize())}"`
-        if (currentHEAD !== hash) {
-          this.push(prefix + json)
-          currentHEAD = entry.message().previousHEAD
-          prefix = ','
-        } else {
-          this.push(prefix + json + ']')
+        try {
+          const entry = await sbp('gi.db/log/getEntry', currentHEAD)
+          const json = `"${strToB64(entry.serialize())}"`
+          if (currentHEAD !== hash) {
+            this.push(prefix + json)
+            currentHEAD = entry.message().previousHEAD
+            prefix = ','
+          } else {
+            this.push(prefix + json + ']')
+            this.push(null)
+          }
+        } catch (e) {
+          console.error(`read(): ${e.message}:`, e)
+          this.push(']')
           this.push(null)
         }
       }

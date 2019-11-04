@@ -1,3 +1,5 @@
+'use strict'
+
 import Vue from 'vue'
 import Router from 'vue-router'
 import store from '@model/state.js'
@@ -8,7 +10,6 @@ import GroupDashboard from '@pages/GroupDashboard.vue'
 import Contributions from '@pages/Contributions.vue'
 import PayGroup from '@pages/PayGroup.vue'
 import GroupChat from '@pages/GroupChat.vue'
-import Invite from '@pages/Invite.vue'
 import Join from '@pages/Join.vue'
 import Mailbox from '@pages/Mailbox.vue'
 import GroupSettings from '@pages/GroupSettings.vue'
@@ -21,16 +22,16 @@ Vue.use(Router)
  the 'guard' defines how the route is blocked and the redirect determines the redirect behavior
  when a route is blocked
  */
-var homeGuard = {
+const homeGuard = {
   guard: (to, from) => !!store.state.currentGroupId,
   redirect: (to, from) => ({ path: '/dashboard' })
 }
-var loginGuard = {
+const loginGuard = {
   guard: (to, from) => !store.state.loggedIn,
   redirect: (to, from) => ({ path: '/', query: { next: to.path } })
 }
 // Check if user has a group
-var groupGuard = {
+const groupGuard = {
   guard: (to, from) => !store.state.currentGroupId,
   redirect: (to, from) => ({ path: '/' })
 }
@@ -49,7 +50,7 @@ function createEnterGuards (...guards) {
     next()
   }
 }
-var router = new Router({
+const router = new Router({
   mode: 'history',
   base: '/app',
   scrollBehavior (to, from, savedPosition) {
@@ -90,13 +91,6 @@ var router = new Router({
       beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     /* Guards need to be created for any route that should not be directly accessed by url */
-    {
-      path: '/invite',
-      name: Invite.name,
-      component: Invite,
-      meta: { title: L('Invite Group Members') },
-      beforeEnter: createEnterGuards(loginGuard, groupGuard)
-    },
     {
       path: '/mailbox',
       name: Mailbox.name,

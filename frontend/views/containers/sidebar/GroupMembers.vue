@@ -97,11 +97,11 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'groupMembers',
+      'groupProfiles',
       'groupMembersCount'
     ]),
     firstTenMembers () {
-      const profiles = this.groupMembers
+      const profiles = this.groupProfiles
       const usernames = Object.keys(profiles).slice(0, 10)
       return usernames.reduce((acc, username) => {
         // Prevent displaying users without a synced contract.
@@ -119,7 +119,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "../../../assets/style/_variables.scss";
+@import "@assets/style/_variables.scss";
 
 .c-group-members {
   margin-top: 1.5rem;

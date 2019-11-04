@@ -12,7 +12,7 @@ import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 import { blake32Hash } from '~/shared/functions.js'
 import proposals, { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '~/frontend/model/contracts/voting/proposals.js'
 import { TYPE_MESSAGE } from '~/frontend/model/contracts/mailbox.js'
-import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts/group.js'
+import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts/payments/index.js'
 // import '~/frontend/model/contracts/identity.js'
 import '~/frontend/model/state.js'
 import '~/frontend/controller/namespace.js'
@@ -114,7 +114,7 @@ describe('Full walkthrough', function () {
       }
     })
   }
-  function createPaymentTo (to, amount, parentHash, currency = 'USD') {
+  function createPaymentTo (to, amount, contractID, currency = 'USD') {
     return sbp('gi.contracts/group/payment/create',
       {
         toUser: to.data().attributes.name,
@@ -124,7 +124,7 @@ describe('Full walkthrough', function () {
         status: PAYMENT_PENDING,
         paymentType: PAYMENT_TYPE_MANUAL
       },
-      parentHash
+      contractID
     )
   }
 
@@ -259,7 +259,7 @@ describe('Full walkthrough', function () {
       await postEntry(await createPaymentTo(users.bob, 100, groups.group1.hash()))
     })
 
-    it('Should fail with wrong parentHash', async function () {
+    it('Should fail with wrong contractID', async function () {
       try {
         var p = await createPaymentTo(users.bob, 100, '')
         await postEntry(p)

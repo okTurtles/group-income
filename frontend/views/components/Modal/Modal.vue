@@ -46,9 +46,12 @@ export default {
           } else this.subcontent = subcontent
         }
       } else {
-        // When the route change we compare to see if the modal changed
-        // If so, we send the event to close the modal
-        if (from.query.modal) {
+        // Prevent a bug where we click to close a modal at the same time we
+        // redirect a page (ex: setting modal -> logout). Sometimes the logout
+        // and redirect would happen before the modal closes. At this moment
+        // from.query.modal doesn't exist anymore. But the modal should be closed,
+        // so we force the unloadModal.
+        if (this.content) {
           this.unloadModal()
         }
       }

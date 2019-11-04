@@ -6,9 +6,7 @@ import { GIMessage } from '~/shared/GIMessage.js'
 // this must not be exported, but instead accessed through 'actionWhitelisted'
 const whitelistedSelectors = {}
 
-// can be useful for extracting the name of the contract or action, for example:
-// const contractName = CONTRACT_REGEX.exec(selector)[1]
-export const CONTRACT_REGEX = /^[\w.]+\/([^/]+)\/(?:([^/]+)\/)?process$/
+export const CONTRACT_REGEX = /^(([\w.]+)\/([^/]+)\/(?:([^/]+)\/)?)process$/
 
 // TODO: define a flow type for contracts
 export function DefineContract (contract: Object) {
