@@ -301,7 +301,7 @@ export default {
 </script>
 
 <style lang="scss">
-@import "../../assets/style/_variables.scss";
+@import "@assets/style/_variables.scss";
 .c-contribution-header .has-text-bold {
   font-family: "Poppins";
   padding-left: $spacer-sm;
@@ -309,7 +309,7 @@ export default {
 </style>
 
 <style lang="scss" scoped>
-@import "../../assets/style/_variables.scss";
+@import "@assets/style/_variables.scss";
 .c-contribution-header {
   display: flex;
   justify-content: space-between;

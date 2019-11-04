@@ -33,96 +33,45 @@ page(
     ) {month} contributions
     i18n.has-text-1(
       tag='p'
-      :args='{ amount: `${fakeStore.currency}${paymentStatus.amountTotal}` }'
+      :args='{ amount: paymentTotal }'
     ) {amount} in total
 
     ul.c-payments
       li.c-payments-item(
-        v-for='(payment, username) in paymentsDistribution'
-        :key='username'
+        v-for='(payment, index) in paymentsDistribution'
+        :key='index'
       )
         .c-info
-          user-image.c-avatar(:username='username')
+          user-image.c-avatar(:username='payment.to')
           div(role='alert')
             i18n(
               tag='p'
               :args='{ \
-                total: `<b>${payment.amountPretty}</b>`, \
-                user: `<b>${username}</b>` \
+                total: `<b>${payment.amountFormatted}</b>`, \
+                user: `<b>${payment.to}</b>` \
               }'
             ) {total} to {user}
-            //- i18n(:class='paymentStatusClass()')
-            //- i18n.has-text-1(
-            //-   v-if='statusIsPending(payment)'
-            //-   :args='{ username }'
-            //- ) Waiting for {username} confirmation...
-            //- i18n.has-text-success(
-            //-   v-if='statusIsCompleted(payment)'
-            //- ) Payment confirmed!
-            //- i18n.has-text-weight-normal.has-text-warning(
-            //-   v-if='statusIsRejected(payment)'
-            //-   :args='{ username }'
-            //- ) The payment was not received by {username}.
+            span(
+              v-if='payment.hash'
+              :class='payment.paymentClass'
+            ) {{ payment.paymentStatusText }}
 
         .buttons.is-start.c-ctas
           router-link.button.is-small.is-outlined(
-            v-if='statusIsRejected(username)'
+            v-if='payment.data.status === statusType.PAYMENT_NOT_RECEIVED'
             to='messages/liliabt'
           ) {{ L('Send Message...') }}
           i18n.button.is-small.c-ctas-send(
             tag='button'
             key='send'
-            v-if='statusIsToPay(username)'
-            @click='markAsPayed(username, payment)'
+            v-if='showMarkAsPaid(payment)'
+            @click='markAsPayed(payment.to, payment)'
           ) Mark as sent
           i18n.button.is-small.is-outlined(
             tag='button'
             key='cancel'
-            v-if='statusIsPending(username)'
-            @click='cancelPayment(username)'
-          ) Cancel
-
-    //- ul.c-payments
-      li.c-payments-item(
-        v-for='(user, index) in fakeStore.usersToPay'
-        :key='user.name'
-      )
-        .c-info
-          avatar.c-avatar(:src='user.avatar')
-          div(role='alert')
-            i18n(
-              tag='p'
-              :args='{ total: `<b>${fakeStore.currency}${user.amount}</b>`, user: `<b>${user.name}</b>`}'
-              compile
-            ) {total} to {user}
-            i18n.has-text-1(
-              v-if='statusIsPending(user)'
-              :args='{ name: getUserFirstName(user.name) }'
-            ) Waiting for {name} confirmation...
-            i18n.has-text-success(
-              v-if='statusIsCompleted(user)'
-            ) Payment confirmed!
-            i18n.has-text-weight-normal.has-text-warning(
-              v-if='statusIsRejected(user)'
-              :args='{ name: getUserFirstName(user.name) }'
-            ) The payment was not received by {name}.
-
-        .buttons.is-start.c-ctas
-          router-link.button.is-small.is-outlined(
-            v-if='statusIsRejected(user)'
-            to='messages/liliabt'
-          ) {{ L('Send Message...') }}
-          i18n.button.is-small.c-ctas-send(
-            tag='button'
-            key='send'
-            v-if='statusIsToPay(user)'
-            @click='markAsPayed(user)'
-          ) Mark as sent
-          i18n.button.is-small.is-outlined(
-            tag='button'
-            key='cancel'
-            v-if='statusIsPending(user)'
-            @click='cancelPayment(user)'
+            v-if='payment.data.status === statusType.PAYMENT_PENDING'
+            @click='cancelPayment(payment.to, payment.hash)'
           ) Cancel
 
   .c-footer
@@ -143,6 +92,8 @@ import currencies from '@view-utils/currencies.js'
 import Tooltip from '@components/Tooltip.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgContributions from '@svgs/contributions.svg'
+import { PAYMENT_TYPE_MANUAL, PAYMENT_PENDING, PAYMENT_CANCELLED, PAYMENT_ERROR, PAYMENT_COMPLETED, PAYMENT_NOT_RECEIVED } from '@model/contracts/payments/index.js'
+import L from '@view-utils/translations.js'
 
 export default {
   name: 'PayGroup',
@@ -207,21 +158,39 @@ export default {
     },
     paymentsDistribution () {
       // TODO: make sure we create a new month if month roll's over
-      //       perhaps send a message to do that
+      //       perhaps send a message to do that, however make sure
+      //       that there are no conflicts with timezones, to do that
+      //       we need to go by the server's time, and not our time.
+      //       https://github.com/okTurtles/group-income-simple/issues/531
+      // TODO: Have multiple frozen distributions based on new income details
+      // or new members, using any remainder leftover needed income from the
+      // previous distribution
       const distribution = this.thisMonthsPayments.frozenDistribution || this.groupIncomeDistribution
-      // const distribution = this.groupIncomeDistribution
-      return distribution.filter(p => p.from === this.ourUsername)
-        .reduce((acc, payment) => {
-          acc[payment.to] = {
-            amount: +this.currency.displayWithoutCurrency(payment.amount),
-            amountPretty: this.currency.displayWithCurrency(payment.amount)
-          }
-          return acc
-        }, {})
+      return distribution.filter(p => p.from === this.ourUsername).map(transfer => {
+        const { to, amount } = transfer
+        const { hash, data } = this.paymentFor(to)
+        return {
+          to,
+          hash,
+          data,
+          amount: +this.currency.displayWithoutCurrency(amount),
+          amountFormatted: this.currency.displayWithCurrency(amount),
+          paymentClass: this.paymentClass(data),
+          paymentStatusText: this.paymentStatusText(data, to)
+        }
+      })
+    },
+    paymentTotal () {
+      return this.currency.displayWithCurrency(
+        this.paymentsDistribution.reduce((acc, p) => acc + p.amount, 0)
+      )
+    },
+    statusType () {
+      return { PAYMENT_PENDING, PAYMENT_CANCELLED, PAYMENT_ERROR, PAYMENT_COMPLETED, PAYMENT_NOT_RECEIVED }
     },
     // old stuff (to be deleted) follows
     hasPayments () {
-      return Object.keys(this.paymentsDistribution).length > 0
+      return this.paymentsDistribution.length > 0
     },
     paymentStatus () {
       const { usersToPay } = this.fakeStore
@@ -274,30 +243,41 @@ export default {
     }
   },
   methods: {
-    statusIsToPay (toUser) {
+    paymentFor (toUser) {
       const payments = this.thisMonthsPayments.payments
       const ourPayments = payments && payments[this.ourUsername]
-      return !payments || !ourPayments || !ourPayments[toUser]
+      const paymentHash = ourPayments && ourPayments[toUser]
+      const data = paymentHash && this.currentGroupState.payments[paymentHash].data
+      return data ? { hash: paymentHash, data } : { data: {} }
+    },
+    paymentClass (paymentData) {
+      return paymentData.status ? {
+        [PAYMENT_PENDING]: 'has-text-1',
+        [PAYMENT_CANCELLED]: '',
+        [PAYMENT_ERROR]: 'has-text-weight-normal has-text-warning',
+        [PAYMENT_NOT_RECEIVED]: 'has-text-weight-normal has-text-warning',
+        [PAYMENT_COMPLETED]: 'has-text-success'
+      }[paymentData.status] : ''
+    },
+    paymentStatusText (paymentData, username) {
+      return paymentData.status ? {
+        [PAYMENT_PENDING]: L('Waiting for {username} confirmation...', { username }),
+        [PAYMENT_CANCELLED]: '',
+        [PAYMENT_ERROR]: L('There was an error processing this payment'),
+        [PAYMENT_NOT_RECEIVED]: L('The payment was not received by {username}.', { username }),
+        [PAYMENT_COMPLETED]: L('Payment confirmed!')
+      }[paymentData.status] : ''
+    },
+    showMarkAsPaid (payment) {
+      return !payment.hash ||
+        payment.data.status === PAYMENT_NOT_RECEIVED ||
+        payment.data.status === PAYMENT_CANCELLED
     },
     statusIsSent (user) {
       return ['completed', 'pending'].includes(user.status)
     },
-    statusIsPending (toUser) {
-      const payments = this.thisMonthsPayments.payments
-      const ourPayments = payments && payments[this.ourUsername]
-      const paymentHash = ourPayments && ourPayments[toUser]
-      // const payment = paymentHash && this.currentGroupState.payments[paymentHash]
-      // console.warn({ ourUser: this.ourUsername, toUser, payments, ourPayments, paymentHash, payment })
-      return paymentHash && this.currentGroupState.payments[paymentHash].data.status === 'pending'
-    },
-    statusIsRejected (user) {
-      return user.status === 'rejected'
-    },
     statusIsCompleted (user) {
       return user.status === 'completed'
-    },
-    getUserFirstName (name) {
-      return name.split(' ')[0]
     },
     async markAsPayed (toUser, payment) {
       try {
@@ -306,18 +286,29 @@ export default {
           amount: payment.amount,
           currency: this.currency.symbol,
           txid: String(Math.random()),
-          status: 'pending',
-          paymentType: 'manual'
+          status: PAYMENT_PENDING,
+          paymentType: PAYMENT_TYPE_MANUAL
         }, this.$store.state.currentGroupId)
         await sbp('backend/publishLogEntry', paymentMessage)
       } catch (e) {
         console.error(e)
+        alert(e.message)
       }
     },
-    cancelPayment (user) {
-      console.log('TODO - cancel payment')
-      // Raw Logic
-      user.status = 'todo'
+    // TODO: make multiple payments
+    async cancelPayment (username, paymentHash) {
+      try {
+        const paymentMessage = await sbp('gi.contracts/group/paymentUpdate/create', {
+          paymentHash,
+          updatedProperties: {
+            status: PAYMENT_CANCELLED
+          }
+        }, this.$store.state.currentGroupId)
+        await sbp('backend/publishLogEntry', paymentMessage)
+      } catch (e) {
+        console.error(e)
+        alert(e.message)
+      }
     },
     seeHistory () {
       sbp('okTurtles.events/emit', OPEN_MODAL, 'PayGroupHistory')
@@ -327,7 +318,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "../../assets/style/_variables.scss";
+@import "@assets/style/_variables.scss";
 
 .c-container-empty {
   max-width: 25rem;

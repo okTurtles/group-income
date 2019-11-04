@@ -188,7 +188,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "../../assets/style/_variables.scss";
+@import "@assets/style/_variables.scss";
 .c-contribution {
   padding: $spacer * 1.5 0 $spacer 0;
 }

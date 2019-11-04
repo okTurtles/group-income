@@ -1,6 +1,6 @@
 <template lang='pug'>
 .c-chat-main(v-if='summary.title')
-  main-header(:description='summary.description' :routerback='summary.routerBack')
+  main-header(:description='summary.description' :router-back='summary.routerBack')
 
     template(slot='title')
       avatar.c-header-avatar(:src='summary.picture' alt='')
@@ -235,7 +235,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "../../../assets/style/_variables.scss";
+@import "@assets/style/_variables.scss";
 
 .c-chat-main {
   height: 100%;

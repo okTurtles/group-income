@@ -96,7 +96,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
-@import "../../assets/style/_variables.scss";
+@import "@assets/style/_variables.scss";
 
 .c-splash {
   display: flex;

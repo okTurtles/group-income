@@ -5,11 +5,12 @@
 
 # make container have same timezone as host
 TZ=$(echo Etc/GMT`date +%z | sed 's/0//g'`)
+PROJECT_NAME="$(basename `pwd` | sed 's/ /_/g')"
 
 # build the docker image if it doesn't exist
-# to rebuild it, run: docker rmi groupincome
-if ! docker images -a | egrep -q "\bgroupincome\b"; then
-  docker build -t groupincome --build-arg TIMEZONE="$TZ" .
+# to rebuild it, run: docker rmi $PROJECT_NAME
+if ! docker images -a | egrep -q "\b$PROJECT_NAME\b"; then
+  docker build -t "$PROJECT_NAME" --build-arg TIMEZONE="$TZ" .
 fi
 
 # TODO: take advantage of XQuartz X11 on macOS as described here:
@@ -20,7 +21,7 @@ docker run \
   -e PORT_SHIFT="$PORT_SHIFT" \
   -v "`pwd`:/opt" \
   --ipc=host \
-  groupincome $@
+  "$PROJECT_NAME" $@
 
 status=$?
 

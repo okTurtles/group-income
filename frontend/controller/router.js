@@ -1,3 +1,5 @@
+'use strict'
+
 import Vue from 'vue'
 import Router from 'vue-router'
 import store from '@model/state.js'
@@ -20,16 +22,16 @@ Vue.use(Router)
  the 'guard' defines how the route is blocked and the redirect determines the redirect behavior
  when a route is blocked
  */
-var homeGuard = {
+const homeGuard = {
   guard: (to, from) => !!store.state.currentGroupId,
   redirect: (to, from) => ({ path: '/dashboard' })
 }
-var loginGuard = {
+const loginGuard = {
   guard: (to, from) => !store.state.loggedIn,
   redirect: (to, from) => ({ path: '/', query: { next: to.path } })
 }
 // Check if user has a group
-var groupGuard = {
+const groupGuard = {
   guard: (to, from) => !store.state.currentGroupId,
   redirect: (to, from) => ({ path: '/' })
 }
@@ -48,7 +50,7 @@ function createEnterGuards (...guards) {
     next()
   }
 }
-var router = new Router({
+const router = new Router({
   mode: 'history',
   base: '/app',
   scrollBehavior (to, from, savedPosition) {
