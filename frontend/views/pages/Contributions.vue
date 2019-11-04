@@ -46,14 +46,13 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
     section.card.contribution-card
       .receiving
         i18n(tag='h3' class='card-header') Receiving
-
         i18n.has-text-1.spacer-around(
           v-if='!doesReceive'
           tag='p'
         ) When other members pledge a monetary or non-monetary contribution, they will appear here.
 
         i18n.has-text-1.spacer-around(
-          v-else-if='!needsIncome && !hasPayments'
+          v-else-if='needsIncome && !hasPayments'
           tag='p'
         ) No one is pledging money at the moment.
 
@@ -62,7 +61,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
           data-test='revceivingList'
         )
           contribution(
-            v-if='needsIncome'
+            v-if='needsIncome && hasPayments'
           )
             contribution-item(
               :what='receivingMonetary.total'
@@ -208,7 +207,7 @@ export default {
       return this.currency.displayWithCurrency(this.needsIncome ? this.groupSettings.mincomeAmount - amount : amount)
     },
     doesReceive () {
-      return this.needsIncome || this.receivingNonMonetary
+      return this.needsIncome || this.receivingNonMonetary.length > 0
     },
     doesGive () {
       return this.hasPayments || this.memberGroupProfile.nonMonetaryContributions

@@ -209,13 +209,20 @@ describe('Proposals - Add members', () => {
     })
   })
 
-  it('It should add income detail modal', () => {
+  it('It should display that no one is doing any contribution', () => {
     cy.getByDT('contributionsLink').click()
     cy.getByDT('addIncomeDetailsFirstCard').should('contain', 'Add your income details')
     cy.getByDT('openIncomeDetailModal').click()
     cy.getByDT('introIncomeOrPledge').should('not.be.visible')
     cy.getByDT('needsIncomeRadio').click()
     cy.getByDT('introIncomeOrPledge').should('contain', 'How much do you want to pledge?')
+    cy.getByDT('inputIncomeOrPledge').type(500)
+    cy.getByDT('submitIncome').click()
+    cy.get('.receiving p').should('contain', 'When other members pledge a monetary or non-monetary contribution, they will appear here.')
+  })
+
+  it('It should add income detail modal', () => {
+    cy.getByDT('openIncomeDetailModal').click()
     cy.getByDT('dontNeedsIncomeRadio').click()
     cy.getByDT('introIncomeOrPledge').should('contain', 'What\'s your monthly income?')
     cy.getByDT('inputIncomeOrPledge').type(500)
@@ -224,6 +231,11 @@ describe('Proposals - Add members', () => {
     cy.getByDT('badIncome').should('not.be.visible')
     cy.getByDT('submitIncome').click()
     cy.getByDT('headerNeed').should('contain', 'You need $300')
+  })
+
+  it('It should display that no one is pledging money at the moment.', () => {
+    cy.get('.giving p').should('contain', 'No one needs monetary contributions at the moment.')
+    cy.get('.receiving p').should('contain', 'No one is pledging money at the moment.')
   })
 
   it('It should add non monetary contribution', () => {
@@ -327,14 +339,11 @@ describe('Proposals - Add members', () => {
     cy.getByDT('needsIncomeRadio').click()
     cy.getByDT('inputIncomeOrPledge').clear().type(100)
     cy.getByDT('submitIncome').click()
-    cy.getByDT('contributionsLink').click()
-    cy.getByDT('contributionsLink').click()
-    cy.pause()
-    // cy.giLogout()
   })
 
-  // it('It should do next test', () => {
-  // cy.visit('/')
-  // cy.giLogout()
-  // })
+  it('It should give monetary contribution', () => {
+    cy.get('.giving .c-contribution-item:first-child')
+      .should('contain', '$100 to Margarida')
+    cy.giLogout()
+  })
 })
