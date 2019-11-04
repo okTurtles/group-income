@@ -68,10 +68,10 @@ route.GET('/events/{contractID}/{since}', {}, async function (request, h) {
 
 route.POST('/name', {
   validate: {
-    payload: {
+    payload: Joi.object({
       name: Joi.string().required(),
       value: Joi.string().required()
-    }
+    })
   }
 }, function (request, h) {
   try {
@@ -105,6 +105,10 @@ route.GET('/latestHash/{contractID}', {}, async function (request, h) {
     logger(err)
     return err
   }
+})
+
+route.GET('/time', {}, function (request, h) {
+  return new Date().toISOString()
 })
 
 // file upload related

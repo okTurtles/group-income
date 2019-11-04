@@ -23,22 +23,24 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
           v-if='needsIncome'
           tag='p'
           data-test='headerNeed'
-          :args='{upTo: upTo,bold_:\'<span class="has-text-bold has-text-0">\',_bold:\'</span>\'}'
-        ) You need {bold_}{upTo}{_bold}
+          :args='{ amount: `<span class="has-text-bold has-text-0">${upTo}</span>` }'
+        ) You need {amount}
         i18n(
           v-else
           tag='p'
           data-test='headerPledge'
-          :args='{upTo: upTo,bold_:\'<span class="has-text-bold has-text-0">\',_bold:\'</span>\'}'
-        ) You are pledging up to {bold_}{upTo}{_bold}
+          :args='{ upTo: `<span class="has-text-bold has-text-0">${upTo}</span>` }'
+        ) You are pledging up to {upTo}
 
         i18n(
           tag='p'
-          :args='{bold_:\'<span class="has-text-bold has-text-0">\',_bold:\'</span>\',paymentMethod:paymentMethod}'
-        ) Payment method {bold_}{paymentMethod}{_bold}
+          :args='{ paymentMethod: `<span class="has-text-bold has-text-0">${paymentMethod}</span>` }'
+        ) Payment method {paymentMethod}
 
       div
-        button.button.is-small(
+        i18n(
+          tag='button'
+          class='button is-small'
           data-test='openIncomeDetailModal'
           @click='openModal("IncomeDetails")'
         ) Change
@@ -46,14 +48,13 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
     section.card.contribution-card
       .receiving
         i18n(tag='h3' class='card-header') Receiving
-
         i18n.has-text-1.spacer-around(
           v-if='!doesReceive'
           tag='p'
         ) When other members pledge a monetary or non-monetary contribution, they will appear here.
 
         i18n.has-text-1.spacer-around(
-          v-else-if='!needsIncome && !hasPayments'
+          v-else-if='needsIncome && !hasPayments'
           tag='p'
         ) No one is pledging money at the moment.
 
@@ -62,7 +63,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
           data-test='revceivingList'
         )
           contribution(
-            v-if='needsIncome'
+            v-if='needsIncome && hasPayments'
           )
             contribution-item(
               :what='receivingMonetary.total'
@@ -174,17 +175,7 @@ export default {
         isEditingIncome: false,
         isActive: true
       },
-      paymentMethod: 'Manual', // static
-      // -- Hardcoded Data just for layout purposes:
-      fakeStore: {
-        currency: currencies.USD.symbol, // group (getter)
-        groupMembersPledging: [ // group
-          'Jack Fisher',
-          'Charlotte Doherty',
-          'Thomas Baker',
-          'Francisco Scott'
-        ]
-      }
+      paymentMethod: 'Manual' // static
     }
   },
   computed: {
@@ -200,7 +191,7 @@ export default {
       'globalProfile'
     ]),
     memberGroupProfile () {
-      return this.groupProfile(this.ourUsername) || {}
+      return this.groupProfile(this.ourUsername)
     },
     upTo () {
       const amount = this.memberGroupProfile[this.memberGroupProfile.incomeDetailsType]
@@ -208,7 +199,7 @@ export default {
       return this.currency.displayWithCurrency(this.needsIncome ? this.groupSettings.mincomeAmount - amount : amount)
     },
     doesReceive () {
-      return this.needsIncome || this.receivingNonMonetary
+      return this.needsIncome || this.receivingNonMonetary.length > 0
     },
     doesGive () {
       return this.hasPayments || this.memberGroupProfile.nonMonetaryContributions
@@ -227,8 +218,9 @@ export default {
     },
     receivingNonMonetary () {
       const groupProfiles = this.groupProfiles
+      // TODO to optimize in the future
       return Object.keys(groupProfiles)
-        .filter(key => key !== this.ourUsername && groupProfiles[key].nonMonetaryContributions)
+        .filter(key => key !== this.ourUsername && groupProfiles[key].nonMonetaryContributions.length > 0)
         .reduce((list, username) => {
           const nonMonetary = groupProfiles[username].nonMonetaryContributions
           nonMonetary.forEach((what) => {
@@ -302,7 +294,7 @@ export default {
 </script>
 
 <style lang="scss">
-@import "../../assets/style/_variables.scss";
+@import "@assets/style/_variables.scss";
 .c-contribution-header .has-text-bold {
   font-family: "Poppins";
   padding-left: $spacer-sm;
@@ -310,7 +302,7 @@ export default {
 </style>
 
 <style lang="scss" scoped>
-@import "../../assets/style/_variables.scss";
+@import "@assets/style/_variables.scss";
 .c-contribution-header {
   display: flex;
   justify-content: space-between;

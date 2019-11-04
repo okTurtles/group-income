@@ -35,7 +35,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "../../assets/style/_variables.scss";
+@import "@assets/style/_variables.scss";
 
 .message {
   padding: $spacer-md 1.5rem $spacer-md $spacer-md;

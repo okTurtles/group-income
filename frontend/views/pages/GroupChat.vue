@@ -4,13 +4,13 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
   template(#sidebar='')
     chat-nav(
       :title='L("Chat")'
-      :searchplaceholder='L("Search for a channel")'
+      :search-placeholder='L("Search for a channel")'
     )
       conversations-list(
         :title='L("Channels")'
         routepath='/group-chat/'
         :list='channels'
-        routename='GroupChatConversation'
+        route-name='GroupChatConversation'
         :type='type.groups'
       )
 
@@ -72,6 +72,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "../../assets/style/_variables.scss";
+@import "@assets/style/_variables.scss";
 
 </style>

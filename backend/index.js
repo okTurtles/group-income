@@ -12,25 +12,25 @@ global.logger = function (err) {
   err.stack && console.error(err.stack)
 }
 
+const dontLog = { 'backend/pubsub/setup': true }
+
 function logSBP (domain, selector, data) {
-  console.log(chalk.bold(`[sbp] ${selector}`), data)
+  if (!dontLog[selector]) {
+    console.log(chalk.bold(`[sbp] ${selector}`), data)
+  }
 }
 
-// ;[].forEach(domain => sbp('sbp/filters/domain/add', domain, logSBP))
-;[
-  'backend/server/handleEntry',
-  'backend/db/streamEntriesSince'
-].forEach(sel => sbp('sbp/filters/selector/add', sel, logSBP))
+;['backend'].forEach(domain => sbp('sbp/filters/domain/add', domain, logSBP))
+;[].forEach(sel => sbp('sbp/filters/selector/add', sel, logSBP))
 
 module.exports = new Promise((resolve, reject) => {
   sbp('okTurtles.events/on', SERVER_RUNNING, function () {
     console.log(chalk.bold('backend startup sequence complete.'))
     resolve()
   })
+  // call this after we've registered listener for SERVER_RUNNING
+  require('./server.js')
 })
-
-// call this after we've registered listener for SERVER_RUNNING
-require('./server.js')
 
 const shutdownFn = function () {
   sbp('okTurtles.data/apply', PUBSUB_INSTANCE, function (primus) {
