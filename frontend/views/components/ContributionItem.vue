@@ -97,15 +97,15 @@ export default {
 
     listOfName () {
       const html = {
-        service: `<span class="has-text-bold">${this.what}</span>`,
+        amount: `<span class="has-text-bold">${this.what}</span>`,
         listName: this.who.map((name, index) => {
           return `<p class="has-text-1 c-contribution-list-item">${name}</p>`
         }).join('')
       }
       if (this.action === 'RECEIVING') {
-        return L('{service} from {listName}', html)
+        return L('{amount} from {listName}', html)
       } else {
-        return L('A total of {service} to {listName}', html)
+        return L('A total of {amount} to {listName}', html)
       }
     },
 

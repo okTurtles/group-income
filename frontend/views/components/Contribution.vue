@@ -178,7 +178,7 @@ export default {
     form: {
       contribution: {
         [L('Contribution required')]: required,
-        [L('Contribution already exist')]: function (x) {
+        [L('Contribution already exists')]: function (x) {
           return !this.contributionsList || !this.contributionsList.includes(x)
         }
       }
