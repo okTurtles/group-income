@@ -144,7 +144,7 @@ export default {
             othersMember: who[1]
           })
         default:
-          return L('{firstMember} and {othersMembersCount} others members will ensure you meet the mincome', {
+          return L('{firstMember} and {othersMembersCount} others will ensure you meet the mincome', {
             firstMember: who[0],
             othersMembersCount: who.length - 1
           })

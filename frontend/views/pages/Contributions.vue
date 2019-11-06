@@ -37,13 +37,12 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
           :args='{ paymentMethod: `<span class="has-text-bold has-text-0">${paymentMethod}</span>` }'
         ) Payment method {paymentMethod}
 
-      div
-        i18n(
-          tag='button'
-          class='button is-small'
-          data-test='openIncomeDetailModal'
-          @click='openModal("IncomeDetails")'
-        ) Change
+      i18n(
+        tag='button'
+        class='button is-small'
+        data-test='openIncomeDetailModal'
+        @click='openModal("IncomeDetails")'
+      ) Change
 
     section.card.contribution-card
       .receiving
@@ -202,7 +201,7 @@ export default {
       return this.needsIncome || this.receivingNonMonetary.length > 0
     },
     doesGive () {
-      return this.hasPayments || this.memberGroupProfile.nonMonetaryContributions
+      return this.hasPayments || this.memberGroupProfile.nonMonetaryContributions.length > 0
     },
     needsIncome () {
       return this.memberGroupProfile.incomeDetailsType === 'incomeAmount'

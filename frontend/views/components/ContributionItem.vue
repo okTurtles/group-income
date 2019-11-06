@@ -64,14 +64,15 @@ export default {
       if (this.hasWhoElse) {
         const html = {
           service: `<span class="has-text-bold">${this.what}</span>`,
-          numMembers: `<button class="is-unstyled is-link-inherit link">${this.otherContributor}`,
+          button_: '<button class="is-unstyled is-link-inherit link">',
+          numMembers: this.otherContributor,
           _button: '</button>'
         }
 
         if (this.action === 'RECEIVING' && this.type === 'MONETARY') {
-          return L('{service} from {numMembers} members{_button}', html)
+          return L('{service} from {button_}{numMembers} members{_button}', html)
         } else {
-          return L('A total of {service} to {numMembers} members{_button}', html)
+          return L('A total of {service} to {button_}{numMembers} members{_button}', html)
         }
       } else {
         if (this.action === 'RECEIVING') {

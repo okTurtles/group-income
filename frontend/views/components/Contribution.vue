@@ -177,8 +177,8 @@ export default {
   validations: {
     form: {
       contribution: {
-        [L('The contribution is required')]: required,
-        [L('The contribution already exist')]: function (x) {
+        [L('Contribution required')]: required,
+        [L('Contribution already exist')]: function (x) {
           return !this.contributionsList || !this.contributionsList.includes(x)
         }
       }
