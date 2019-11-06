@@ -2,6 +2,7 @@
 component.c-wrapper(
   :is='tag'
   @click='copyToClipboard'
+  data-test='invitationLink'
 )
   input.c-invisible-input(
     type='text'

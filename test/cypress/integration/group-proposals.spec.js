@@ -129,12 +129,14 @@ describe('Proposals - Add members', () => {
         cy.getByDT('voted').should('not.exist')
         cy.get('@title').should('contain', `user1-${userId} proposed:`)
         cy.getByDT('sendLink').should('contain', `Please send the following link to user4-${userId} so they can join the group:`)
-        cy.getByDT('sendLink').get('a.link')
-          .should('contain', 'http://localhost')
-          .invoke('attr', 'href')
-          .then(href => {
-            expect(href).to.contain('http://localhost')
-          })
+        cy.getByDT('sendLink').within(() => {
+          cy.getByDT('invitationLink').get('.link').should('contain', 'http://localhost')
+          cy.getByDT('invitationLink').get('.c-invisible-input')
+            .invoke('prop', 'value')
+            .then(value => {
+              expect(value).to.contain('http://localhost')
+            })
+        })
       })
     })
   })
