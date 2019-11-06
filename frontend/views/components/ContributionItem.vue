@@ -115,7 +115,7 @@ export default {
     },
 
     otherContributor () {
-      return this.who.slice(1).length
+      return this.who.length // (-1 contributor + 1 array length)
     },
 
     hasWhoElse () {
