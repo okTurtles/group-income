@@ -241,9 +241,3 @@ export default {
   align-items: baseline;
 }
 </style>
-
-// <style lang="scss">
-// .c-contribution-item .c-icon-round {
-//   margin: 0 !important;
-// }
-// </style>
