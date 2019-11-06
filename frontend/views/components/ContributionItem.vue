@@ -84,10 +84,10 @@ export default {
         } else {
           if (this.type === 'MONETARY') {
             const html = {
-              service: `<span class="has-text-bold">${this.what}</span>`,
+              amount: `<span class="has-text-bold">${this.what}</span>`,
               who: this.firstWho
             }
-            return L('{service} to {who}', html)
+            return L('{amount} to {who}', html)
           } else {
             return `<span class="has-text-bold">${this.what}</span>`
           }
