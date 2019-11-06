@@ -38,10 +38,7 @@ page-section.c-section(:title='L("Invite links")')
             .button.is-icon-smaller.is-primary.c-tip
               i.icon-info
         td.c-invite-link
-          copy-to-clipboard.c-invite-link-wrapper(:textToCopy='item.inviteLink')
-            span.link.has-ellipsis {{ item.inviteLink }}
-            button.is-icon-small.has-background.c-invite-link-button
-              i.icon-copy.is-regular
+          invite-link-to-copy.c-invite-link-wrapper(:inviteLink='item.inviteLink')
           button.is-icon-small.c-invite-link-button-mobile(
             @click='activateWebShare(item.inviteLink)'
             :aria-label='L("Copy link")'
@@ -89,7 +86,7 @@ import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/Menu
 import PageSection from '@components/PageSection.vue'
 import Tooltip from '@components/Tooltip.vue'
 import SvgInvitation from '@svgs/invitation.svg'
-import CopyToClipboard from '@components/CopyToClipboard.vue'
+import InviteLinkToCopy from '@components/InviteLinkToCopy.vue'
 
 export default {
   name: 'InviteLinks',
@@ -97,7 +94,7 @@ export default {
     PageSection,
     SvgInvitation,
     Tooltip,
-    CopyToClipboard,
+    InviteLinkToCopy,
     MenuParent,
     MenuTrigger,
     MenuContent,
@@ -248,12 +245,11 @@ export default {
       display: inherit;
       align-items: inherit;
       width: 100%;
-    }
 
-    .c-invite-link-button {
-      margin-left: $spacer-xs;
-      flex-shrink: 0;
-      font-weight: normal;
+      ::v-deep .c-copy-button {
+        flex-shrink: 0;
+        font-weight: normal;
+      }
     }
 
     .c-invite-link-button-mobile {
