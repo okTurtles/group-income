@@ -84,13 +84,13 @@ export default {
     },
     humanReason () {
       const reason = this.proposal.data.proposalData.reason
-      const maxlength = this.config.reasonMaxLength;
+      const maxlength = this.config.reasonMaxLength
       if (this.ephemeral.isReasonHidden && this.shouldTruncateReason) {
         // Prevent "..." to be added after an empty space. ex: "they would ..." -> "they would..."
-        const charToTruncate = reason.chartAt(maxlength - 1) === ' ' ? maxlength - 1 : maxlength
+        const charToTruncate = reason.charAt(maxlength - 1) === ' ' ? maxlength - 1 : maxlength
         return `"${reason.substr(0, charToTruncate)}..."`
       }
-      
+
       this.ephemeral.isReasonHidden = false // eslint-disable-line vue/no-side-effects-in-computed-properties
       return `"${reason}"`
     }
@@ -143,7 +143,7 @@ export default {
   }
 }
 
-.c-header {
+::v-deep .c-header {
   grid-area: header;
   display: flex;
   justify-content: space-between;
@@ -153,10 +153,8 @@ export default {
     font-family: "Lato";
     font-weight: 400;
 
-    @include phone {
-      strong {
-        font-weight: 400;
-      }
+    ::v-deep strong {
+      font-weight: 400;
     }
   }
 }
