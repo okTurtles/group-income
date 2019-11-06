@@ -11,11 +11,10 @@ li.c-wrapper
     .c-reason(v-if='humanReason')
       p.has-text-1.c-reason-text(v-if='humanReason') {{ humanReason }}
       | &nbsp;
-      i18n.link(
-        v-if='ephemeral.isReasonHidden'
-        tag='button'
-        @click='showReason'
-      ) Read more
+      button.link(
+        v-if='shouldTruncateReason'
+        @click='toggleReason'
+      ) {{ ephemeral.isReasonHidden ? L('Read more') : L('Hide') }}
 </template>
 
 <script>
@@ -32,6 +31,9 @@ export default {
   },
   data () {
     return {
+      config: {
+        reasonMaxLength: window.innerWidth < 769 ? 50 : 170
+      },
       ephemeral: {
         isReasonHidden: true
       }
@@ -57,11 +59,11 @@ export default {
       const isAnyOpen = this.proposalHashes.some(hash => this.currentGroupState.proposals[hash].status === STATUS_OPEN)
 
       if (!isAnyOpen) {
-        return L('{who}{_strong} proposed:', { who, ...this.LTags('strong') })
+        return L('{strong_}{who}{_strong} proposed:', { who, ...this.LTags('strong') })
       }
 
       return username === this.ourUsername
-        ? L('You are proposing:')
+        ? L('{strong_}You{_strong} are proposing:', this.LTags('strong'))
         : L('{strong_}{who}{_strong} is proposing:', { who, ...this.LTags('strong') })
     },
     humanDate () {
@@ -75,22 +77,28 @@ export default {
         year: 'numeric', month: 'short', day: 'numeric'
       })
     },
+    shouldTruncateReason () {
+      const reason = this.proposal.data.proposalData.reason
+      const threshold = 40 // avoid clicking "read more" and see only a few more characters.
+      return reason.length > this.config.reasonMaxLength + threshold
+    },
     humanReason () {
       const reason = this.proposal.data.proposalData.reason
-      const maxLength = window.innerWidth < 769 ? 60 : 180
-      const threshold = 30
-      if (this.ephemeral.isReasonHidden && reason.length > maxLength + threshold) {
-        this.ephemeral.isReasonHidden = true // eslint-disable-line vue/no-side-effects-in-computed-properties
-        return `"${reason.substr(0, maxLength)}..."`
-      } else {
-        this.ephemeral.isReasonHidden = false // eslint-disable-line vue/no-side-effects-in-computed-properties
-        return `"${reason}"`
+      const maxlength = this.config.reasonMaxLength;
+      if (this.ephemeral.isReasonHidden && this.shouldTruncateReason) {
+        // Prevent "..." to be added after an empty space. ex: "they would ..." -> "they would..."
+        const charToTruncate = reason.chartAt(maxlength - 1) === ' ' ? maxlength - 1 : maxlength
+        return `"${reason.substr(0, charToTruncate)}..."`
       }
+      
+      this.ephemeral.isReasonHidden = false // eslint-disable-line vue/no-side-effects-in-computed-properties
+      return `"${reason}"`
     }
   },
   methods: {
-    showReason () {
-      this.ephemeral.isReasonHidden = false
+    toggleReason (e) {
+      e.target.blur() // so the button doesnt look black.
+      this.ephemeral.isReasonHidden = !this.ephemeral.isReasonHidden
     }
   }
 }
@@ -101,7 +109,6 @@ export default {
 
 .c-wrapper {
   margin-top: $spacer-lg;
-  padding-bottom: $spacer-lg;
   display: grid;
   grid-template-columns: auto 1fr;
   grid-template-areas:
@@ -112,14 +119,15 @@ export default {
     margin-top: 1.5rem;
   }
 
+  &:not(:last-child) {
+    padding-bottom: $spacer-lg;
+    border-bottom: 1px solid $general_1;
+  }
+
   @include tablet {
     grid-template-areas:
       "avatar header"
       "null main";
-  }
-
-  &:not(:last-child) {
-    border-bottom: 1px solid $general_1;
   }
 }
 
@@ -144,6 +152,12 @@ export default {
   &-title {
     font-family: "Lato";
     font-weight: 400;
+
+    @include phone {
+      strong {
+        font-weight: 400;
+      }
+    }
   }
 }
 
