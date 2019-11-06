@@ -1,5 +1,5 @@
-const userId = 100
-// const userId = Math.floor(Math.random() * 10000)
+// const userId = 100 // for local test
+const userId = Math.floor(Math.random() * 10000)
 const groupName = 'Dreamers'
 
 function assertProposalOpenState ({ description }) {
