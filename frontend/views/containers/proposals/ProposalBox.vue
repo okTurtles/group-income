@@ -150,15 +150,13 @@ export default {
   align-items: center;
 
   &-title {
-    font-family: "Lato";
-    font-weight: 400;
-
-    ::v-deep strong {
+    @include phone {
+      font-family: "Lato";
       font-weight: 400;
-    }
 
-    @include tablet {
-      font-weight: 600;
+      ::v-deep strong {
+        font-weight: 400;
+      }
     }
   }
 }
