@@ -74,7 +74,7 @@ export default {
       const locale = navigator.languages !== undefined ? navigator.languages[0] : navigator.language
 
       return date.toLocaleDateString(locale, {
-        year: 'numeric', month: 'short', day: 'numeric'
+        year: 'numeric', month: 'long', day: 'numeric'
       })
     },
     shouldTruncateReason () {
@@ -155,6 +155,10 @@ export default {
 
     ::v-deep strong {
       font-weight: 400;
+    }
+
+    @include tablet {
+      font-weight: 600;
     }
   }
 }
