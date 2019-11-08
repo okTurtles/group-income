@@ -99,13 +99,12 @@ describe('Full walkthrough', function () {
     })
   }
   function createGroup (name) {
-    const initialInvite = createInvite(60)
+    const initialInvite = createInvite(60, 'GROUP_WELCOME')
 
     return sbp('gi.contracts/group/create', {
       invites: {
         [initialInvite.inviteSecret]: initialInvite
       },
-      initialInvite,
       settings: {
         // authorizations: [Events.CanModifyAuths.dummyAuth(name)],
         groupName: name,
