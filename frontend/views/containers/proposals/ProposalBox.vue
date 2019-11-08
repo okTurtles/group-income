@@ -55,16 +55,20 @@ export default {
     title () {
       const { identityContractID } = this.proposal.meta
       const username = this.$store.state[identityContractID].attributes.name
-      const who = username === this.ourUsername ? L('You') : username
+      const who = username === this.ourUsername ? `<strong>${L('You')}</strong>` : `<strong>${username}</strong>`
       const isAnyOpen = this.proposalHashes.some(hash => this.currentGroupState.proposals[hash].status === STATUS_OPEN)
 
       if (!isAnyOpen) {
-        return L('{strong_}{who}{_strong} proposed:', { who, ...this.LTags('strong') })
+        // Note: In English, no matter the subject, the wording is the same,
+        // but in other languages the wording is different (ex: Portuguese)
+        return username === this.ourUsername
+          ? L('{you} proposed:', { you: who })
+          : L('{someone} proposed:', { someone: who })
       }
 
       return username === this.ourUsername
-        ? L('{strong_}You{_strong} are proposing:', this.LTags('strong'))
-        : L('{strong_}{who}{_strong} is proposing:', { who, ...this.LTags('strong') })
+        ? L('{you} are proposing:', { you: who })
+        : L('{someone} is proposing:', { someone: who })
     },
     humanDate () {
       const date = new Date(this.proposal.meta.createdDate)

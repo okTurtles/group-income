@@ -63,9 +63,7 @@ export default {
       return this.proposal.data.proposalType
     },
     isOurProposal () {
-      const { identityContractID } = this.proposal.meta
-      const username = this.$store.state[identityContractID].attributes.name
-      return username === this.ourUsername
+      return this.proposal.meta.username === this.ourUsername
     },
     typeDescription () {
       return {

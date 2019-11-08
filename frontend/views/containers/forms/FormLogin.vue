@@ -19,6 +19,7 @@ form(
       v-error:name='{ tag: "p", attrs: { "data-test": "badUsername" } }'
     )
 
+  // TODO #661 - improve :v
   form-password(
     :label='L("Password")'
     :value='form'

@@ -39,8 +39,6 @@
       )
         i.icon-plus
         i18n Add more
-      .c-feedback.has-text-success( v-if='ephemeral.formSuccessMsg' data-test='feedbackMsg') {{ ephemeral.formSuccessMsg }}
-      .c-feedback.has-text-danger( v-if='ephemeral.formErrorMsg' data-test='feedbackMsg') {{ ephemeral.formErrorMsg }}
 </template>
 
 <script>
@@ -50,7 +48,6 @@ import { validationMixin } from 'vuelidate'
 import sbp from '~/shared/sbp.js'
 import { PROPOSAL_INVITE_MEMBER } from '@model/contracts/voting/proposals.js'
 import ProposalTemplate from './ProposalTemplate.vue'
-import L from '@view-utils/translations.js'
 
 export default {
   name: 'AddMembers',
@@ -64,8 +61,6 @@ export default {
         invitees: []
       },
       ephemeral: {
-        formSuccessMsg: null,
-        formErrorMsg: null,
         currentStep: 0,
         isValid: false,
         invitesCount: 1
@@ -114,26 +109,21 @@ export default {
         newInviteeSlot && newInviteeSlot.focus()
       })
     },
-    resetInvitations () {
-      this.ephemeral.invitesCount = 1
-      this.form.invitees[0] = ''
-    },
     async submit (form) {
-      const invitationsSent = []
-      const invitationsFailed = []
+      let hasFailed = false
       // NOTE: All invitees proposals will expire at the exact same time.
       // That plus the proposal creator is what we'll use to know
       // which proposals should be displayed visually together.
       const expiresDateMs = Date.now() + this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].expires_ms
 
-      for (const inviteeName of this.form.invitees) {
+      for (const invitee of this.form.invitees) {
         const groupId = this.currentGroupId
         try {
           const proposal = await sbp('gi.contracts/group/proposal/create',
             {
               proposalType: PROPOSAL_INVITE_MEMBER,
               proposalData: {
-                member: inviteeName,
+                member: invitee,
                 reason: form.reason
               },
               votingRule: this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].rule,
@@ -142,21 +132,14 @@ export default {
             groupId
           )
           await sbp('backend/publishLogEntry', proposal)
-          invitationsSent.push(inviteeName)
-          this.ephemeral.formSuccessMsg = L('Invites to {invitationsSent} sent successfully!', {
-            invitationsSent: invitationsSent.join(', ')
-          })
         } catch (e) {
-          console.error(`Invite to ${inviteeName} failed to be sent!`, e)
-          invitationsFailed.push(inviteeName)
-          this.ephemeral.formErrorMsg = L('Invites to {invitationsFailed} failed!', {
-            invitationsFailed: invitationsFailed.join(', ')
-          })
+          hasFailed = true
+          console.error(`Invite to ${invitee} failed to be sent!`, e.message)
+          break
         }
       }
 
-      if (invitationsFailed.length === 0) {
-        this.resetInvitations()
+      if (!hasFailed) {
         this.ephemeral.currentStep += 1 // Show Success step!
       }
     }

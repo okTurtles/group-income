@@ -37,12 +37,12 @@ div
       i18n.title.is-1(
         v-if='isStatus("EXPIRED")'
         tag='h1'
-        :args='{ ...LTags() }'
+        :args='LTags()'
       ) Oh no! {br_} Something went wrong.
       i18n.title.is-1(
         v-else
         tag='h1'
-        :args='{ ...LTags() }'
+        :args='LTags()'
       ) Oh no! {br_} Your link has expired.
       p.has-text-1 {{ ephemeral.errorMsg }}
       i18n.c-goHome(tag='button' @click='goHome') Take me home
@@ -133,7 +133,7 @@ export default {
       }
     } catch (e) {
       console.error(e)
-      this.ephemeral.errorMsg = `${L('This invite is not valid.')} ${e.toString()}`
+      this.ephemeral.errorMsg = `${L('Something went wrong.')} ${e.message}`
       this.setStatus('INVALID')
     }
   },

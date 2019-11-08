@@ -28,6 +28,7 @@ form(
       v-error:email='{ tag: "p", attrs: { "data-test": "badEmail" } }'
     )
 
+  // TODO #661 - improve :v
   form-password(
     :label='L("Password")'
     :value='form'

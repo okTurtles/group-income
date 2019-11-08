@@ -5,7 +5,7 @@ div(:data-test='pageTestName' :class='$scopedSlots.sidebar ? "p-with-sidebar" : 
     h1.p-title(:data-test='pageTestHeaderName' v-if='$slots.title')
       img.c-logo(
         src='/assets/images/group-income-icon-transparent.png'
-        alt='GroupIncome\'s logo'
+        :alt='L("Group Income\'s logo")'
       )
       slot(name='title')
 

@@ -29,16 +29,16 @@ export default {
     ...mapGetters([
       'currentGroupState'
     ]),
-    invitationWelcome () {
+    welcomeInviteSecret () {
       const invites = this.currentGroupState.invites
       return Object.keys(invites).find(invite => invites[invite].creator === 'GROUP_WELCOME')
     },
     link () {
-      return buildInvitationUrl(this.$store.state.currentGroupId, this.currentGroupState.invites[this.invitationWelcome].inviteSecret)
+      return buildInvitationUrl(this.$store.state.currentGroupId, this.currentGroupState.invites[this.welcomeInviteSecret].inviteSecret)
     },
     expireDate () {
       // TODO retrive real expire date
-      // const expireDate = this.invitationWelcome.expireDate // format this
+      // const expireDate = this.welcomeInviteSecret.expireDate // format this
       return '4th of February'
     }
   },
