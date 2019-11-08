@@ -43,6 +43,9 @@ export default {
     ProposalItem,
     UserImage
   },
+  created () {
+    this.ephemeral.isReasonHidden = this.shouldTruncateReason
+  },
   computed: {
     ...mapGetters([
       'currentGroupState',
@@ -95,7 +98,6 @@ export default {
         return `"${reason.substr(0, charToTruncate)}..."`
       }
 
-      this.ephemeral.isReasonHidden = false // eslint-disable-line vue/no-side-effects-in-computed-properties
       return `"${reason}"`
     }
   },
