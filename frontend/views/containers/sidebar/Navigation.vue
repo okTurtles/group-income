@@ -23,7 +23,6 @@ nav.c-navigation(
     )
       .c-navigation-body-top
         ul.c-menu-list
-          // TODO/BUG: Mobile - hide navbar after going to a page
           list-item(tag='router-link' icon='columns' to='/dashboard' data-test='dashboard')
             i18n Dashboard
           list-item(tag='router-link' icon='chart-pie' to='/contributions' data-test='contributionsLink')

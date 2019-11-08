@@ -50,11 +50,13 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
         i18n.has-text-1.spacer-around(
           v-if='!doesReceive'
           tag='p'
+          data-test='receivingParagraph'
         ) When other members pledge a monetary or non-monetary contribution, they will appear here.
 
         i18n.has-text-1.spacer-around(
           v-else-if='needsIncome && !hasPayments'
           tag='p'
+          data-test='receivingParagraph'
         ) No one is pledging money at the moment.
 
         ul.spacer(
@@ -62,7 +64,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
           data-test='revceivingList'
         )
           contribution(
-            v-if='needsIncome && hasPayments'
+            v-if='doesReceiveMonetary'
           )
             contribution-item(
               :what='receivingMonetary.total'
@@ -91,17 +93,18 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
         i18n(tag='h3' class='card-header') Giving
 
         i18n.has-text-1.spacer-around(
-          v-if='!doesGive'
+          v-if='notContributing'
           tag='p'
+          data-test='givingParagraph'
         ) You can contribute to your group with money or other valuables like teaching skills, sharing your time ot help someone. The sky is the limit!
 
         i18n.has-text-1.spacer-around(
-          v-else-if='!hasPayments'
+          v-else-if='noOneToGive'
+          data-test='givingParagraph'
           tag='p'
-        ) No one needs monetary contributions at the moment.
+        ) No one needs monetary contributions at the moment. You can still add non-monetary contributions if you would like.
 
         ul(
-          v-if='doesGive'
           data-test='givingList'
         )
           contribution(
@@ -132,7 +135,6 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
             variant='unfilled'
             :contributions-list='memberGroupProfile.nonMonetaryContributions'
             @new-value='handleNonMonetary'
-            data-test='addNonMonetaryContribution'
           )
             i.icon-plus(aria-hidden='true')
             i18n Add a non-monetary pledge
@@ -200,14 +202,20 @@ export default {
     doesReceive () {
       return this.needsIncome || this.receivingNonMonetary.length > 0
     },
-    doesGive () {
-      return this.hasPayments || this.memberGroupProfile.nonMonetaryContributions.length > 0
+    doesReceiveMonetary () {
+      return this.needsIncome && this.receivingMonetary.list.length > 0
     },
     needsIncome () {
       return this.memberGroupProfile.incomeDetailsType === 'incomeAmount'
     },
     hasPayments () {
       return Object.keys(this.givingMonetary.list).length > 0
+    },
+    notContributing () {
+      return this.needsIncome && this.memberGroupProfile.nonMonetaryContributions.length === 0
+    },
+    noOneToGive () {
+      return !this.needsIncome && !this.hasPayments
     },
     currency () {
       return currencies[this.groupSettings.mincomeCurrency]

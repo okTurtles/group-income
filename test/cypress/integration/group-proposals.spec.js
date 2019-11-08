@@ -1,4 +1,4 @@
-// const userId = 100 // for local test
+// const userId = 1000 // for local test
 const userId = Math.floor(Math.random() * 10000)
 const groupName = 'Dreamers'
 
@@ -11,6 +11,13 @@ function assertProposalOpenState ({ description }) {
 
 function getProposalBoxes () {
   return cy.getByDT('proposalsWidget', 'ul').children()
+}
+
+function setDisplayName (name) {
+  cy.getByDT('settingsBtn').click()
+  cy.getByDT('displayName').clear().type(name)
+  cy.getByDT('saveAccount').click()
+  cy.getByDT('profileSaveSuccess').should('contain', 'Profile saved successfully!')
 }
 
 describe('Proposals - Add members', () => {
@@ -30,12 +37,8 @@ describe('Proposals - Add members', () => {
     })
     cy.getByDT('profileName').should('contain', `user1-${userId}`)
 
-    // Update display name
-    cy.getByDT('settingsBtn').click()
-    cy.getByDT('displayName').clear().type('Margarida')
-    cy.getByDT('saveAccount').click()
-    cy.getByDT('profileSaveSuccess').should('contain', 'Profile saved successfully!')
-    cy.get('.c-modal-close').click()
+    setDisplayName('Margarida')
+    cy.closeModal()
   })
 
   it('user1 invites user2 and user3 to the group', () => {
@@ -47,26 +50,16 @@ describe('Proposals - Add members', () => {
   it('user2 accepts the invite', () => {
     cy.giLogin(`user2-${userId}`)
     cy.giAcceptGroupInvite(groupName)
-
-    // Update display name
-    cy.getByDT('settingsBtn').click()
-    cy.getByDT('displayName').clear().type('Sandrina')
-    cy.getByDT('saveAccount').click()
-    cy.getByDT('profileSaveSuccess').should('contain', 'Profile saved successfully!')
-    cy.get('.c-modal-close').click()
+    setDisplayName('Sandrina')
+    cy.closeModal()
     cy.giLogout()
   })
 
   it('user3 accepts the invite', () => {
     cy.giLogin(`user3-${userId}`)
     cy.giAcceptGroupInvite(groupName)
-
-    // Update display name
-    cy.getByDT('settingsBtn').click()
-    cy.getByDT('displayName').clear().type('Pierre')
-    cy.getByDT('saveAccount').click()
-    cy.getByDT('profileSaveSuccess').should('contain', 'Profile saved successfully!')
-    cy.get('.c-modal-close').click()
+    setDisplayName('Pierre')
+    cy.closeModal()
     cy.giLogout()
   })
 
@@ -218,7 +211,8 @@ describe('Proposals - Add members', () => {
     cy.getByDT('introIncomeOrPledge').should('contain', 'How much do you want to pledge?')
     cy.getByDT('inputIncomeOrPledge').type(500)
     cy.getByDT('submitIncome').click()
-    cy.get('.receiving p').should('contain', 'When other members pledge a monetary or non-monetary contribution, they will appear here.')
+    cy.getByDT('receivingParagraph').should('contain', 'When other members pledge a monetary or non-monetary contribution, they will appear here.')
+    cy.getByDT('givingParagraph').should('contain', 'No one needs monetary contributions at the moment. You can still add non-monetary contributions if you would like.')
   })
 
   it('It should add income detail modal', () => {
@@ -231,19 +225,17 @@ describe('Proposals - Add members', () => {
     cy.getByDT('badIncome').should('not.be.visible')
     cy.getByDT('submitIncome').click()
     cy.getByDT('headerNeed').should('contain', 'You need $300')
-  })
-
-  it('It should display that no one is pledging money at the moment.', () => {
-    cy.get('.giving p').should('contain', 'No one needs monetary contributions at the moment.')
-    cy.get('.receiving p').should('contain', 'No one is pledging money at the moment.')
+    cy.getByDT('givingParagraph').should('contain', 'You can contribute to your group with money or other valuables like teaching skills, sharing your time ot help someone. The sky is the limit!')
   })
 
   it('It should add non monetary contribution', () => {
-    cy.getByDT('addNonMonetaryContribution').last().click()
+    cy.getByDT('addNonMonetaryContribution', 'button').click()
     cy.getByDT('inputNonMonetaryContribution').type('Portuguese classes')
 
+    cy.getByDT('givingParagraph').should('have.length', 1)
+
     cy.getByDT('buttonAddNonMonetaryContribution').click()
-    cy.getByDT('givingList')
+    cy.getByDT('givingList', 'ul')
       .get('li.is-editable')
       .should('have.length', 1)
       .should('contain', 'Portuguese classes')
@@ -252,17 +244,17 @@ describe('Proposals - Add members', () => {
   it('It should remove non monetary contribution', () => {
     cy.getByDT('buttonEditNonMonetaryContribution').click()
     cy.getByDT('buttonRemoveNonMonetaryContribution').click()
-    cy.getByDT('givingList')
+    cy.getByDT('givingList', 'ul')
       .get('li.is-editable')
       .should('have.length', 0)
   })
 
   it('It should add the same non monetary contribution', () => {
-    cy.getByDT('addNonMonetaryContribution').click()
+    cy.getByDT('addNonMonetaryContribution', 'button').click()
     cy.getByDT('inputNonMonetaryContribution').type('Portuguese classes')
 
     cy.getByDT('buttonAddNonMonetaryContribution').click()
-    cy.getByDT('givingList')
+    cy.getByDT('givingList', 'ul')
       .get('li.is-editable')
       .should('have.length', 1)
       .should('contain', 'Portuguese classes')
@@ -273,7 +265,7 @@ describe('Proposals - Add members', () => {
     cy.getByDT('inputNonMonetaryContribution').clear().type('French classes')
     cy.getByDT('buttonSaveNonMonetaryContribution').click()
 
-    cy.getByDT('givingList')
+    cy.getByDT('givingList', 'ul')
       .get('li.is-editable')
       .should('have.length', 1)
       .should('contain', 'French classes')
@@ -282,26 +274,26 @@ describe('Proposals - Add members', () => {
   it('It should cancel the edit', () => {
     cy.getByDT('buttonEditNonMonetaryContribution').click()
     cy.getByDT('buttonCancelNonMonetaryContribution').click()
-    cy.getByDT('givingList')
+    cy.getByDT('givingList', 'ul')
       .get('li.is-editable')
       .should('have.length', 1)
       .should('contain', 'French classes')
   })
 
   it('It should add more non monetary contribution', () => {
-    cy.getByDT('addNonMonetaryContribution').last().click()
+    cy.getByDT('addNonMonetaryContribution', 'button').click()
     cy.getByDT('inputNonMonetaryContribution').type('German classes')
-    cy.getByDT('buttonAddNonMonetaryContribution').click()
+    cy.getByDT('buttonAddNonMonetaryContribution', 'button').click()
 
-    cy.getByDT('addNonMonetaryContribution').last().click()
+    cy.getByDT('addNonMonetaryContribution', 'button').click()
     cy.getByDT('inputNonMonetaryContribution').type('Russian classes')
-    cy.getByDT('buttonAddNonMonetaryContribution').click()
+    cy.getByDT('buttonAddNonMonetaryContribution', 'button').click()
 
-    cy.getByDT('addNonMonetaryContribution').last().click()
+    cy.getByDT('addNonMonetaryContribution', 'button').click()
     cy.getByDT('inputNonMonetaryContribution').type('Korean classes')
-    cy.getByDT('buttonAddNonMonetaryContribution').click()
+    cy.getByDT('buttonAddNonMonetaryContribution', 'button').click()
 
-    cy.getByDT('givingList')
+    cy.getByDT('givingList', 'ul')
       .get('li.is-editable')
       .should('have.length', 4)
     cy.giLogout()
@@ -319,13 +311,13 @@ describe('Proposals - Add members', () => {
     cy.get('.receiving .c-contribution-list')
       .should('have.length', 4)
 
-    cy.getByDT('addNonMonetaryContribution').last().click()
+    cy.getByDT('addNonMonetaryContribution', 'button').click()
     cy.getByDT('inputNonMonetaryContribution').type('Korean classes')
-    cy.getByDT('buttonAddNonMonetaryContribution').click()
+    cy.getByDT('buttonAddNonMonetaryContribution', 'button').click()
 
-    cy.getByDT('addNonMonetaryContribution').last().click()
+    cy.getByDT('addNonMonetaryContribution', 'button').click()
     cy.getByDT('inputNonMonetaryContribution').clear().type('French classes')
-    cy.getByDT('buttonAddNonMonetaryContribution').click()
+    cy.getByDT('buttonAddNonMonetaryContribution', 'button').click()
 
     cy.get('.giving .c-contribution-list')
       .should('have.length', 3)

@@ -25,7 +25,7 @@ transition(name='replacelist')
           @click='handleDelete'
           data-test='buttonRemoveNonMonetaryContribution'
         ) Remove
-        .c-buttons-right
+        div
           i18n.button.is-small.is-outlined(
             tag='button'
             @click='cancel'
@@ -57,6 +57,7 @@ transition(name='replacelist')
 
   li.c-spacer-above(v-else-if='isUnfilled' key='isUnfilled')
     button.button.is-small(
+      data-test='addNonMonetaryContribution'
       :class='itemClasses'
       @click='isAdding = true'
     )
@@ -125,7 +126,7 @@ export default {
   methods: {
     handleEditClick (e) {
       this.isEditing = true
-      this.isFilled = this.initialValue || true
+      this.isFilled = !!this.initialValue
     },
     verifyValue (event) {
       this.isFilled = !!event.target.value
@@ -208,12 +209,6 @@ export default {
   padding-top: $spacer * 1.5;
 }
 
-.c-buttons-right {
-  display: flex;
-  justify-content: flex-end;
-  width: 100%;
-}
-
 .buttons {
   padding-top: $spacer;
   padding-bottom: $spacer-xs;
@@ -222,10 +217,6 @@ export default {
   button {
     margin-top: 0;
   }
-}
-
-.button + .c-buttons-right {
-  width: auto;
 }
 
 .c-inline-button {

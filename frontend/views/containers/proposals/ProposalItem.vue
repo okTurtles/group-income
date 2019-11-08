@@ -164,4 +164,10 @@ $spaceVertical: $spacer-sm*3;
     display: inline; // show the border through multiple lines
   }
 }
+
+.c-icon-round {
+  @include phone {
+    margin-left: $spacer-sm; // TODO: Suggest to @mmbotelho
+  }
+}
 </style>

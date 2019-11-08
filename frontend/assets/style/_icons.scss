@@ -107,8 +107,4 @@ $icons: (
   border-radius: 50%;
   text-align: center;
   line-height: 2rem;
-
-  @include phone {
-    margin-left: $spacer-sm; // TODO: Suggest to @mmbotelho
-  }
 }

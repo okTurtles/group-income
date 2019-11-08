@@ -139,10 +139,15 @@ export default {
 }
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.c-contribution-list-item {
+.c-contribution-item {
+  display: flex;
+  align-items: baseline;
+}
+
+::v-deep .c-contribution-list-item {
   &:nth-child(2) {
     padding-top: $spacer-sm;
   }
@@ -150,12 +155,5 @@ export default {
   &:last-child {
     padding-bottom: $spacer-sm;
   }
-}
-</style>
-
-<style lang="scss" scoped>
-.c-contribution-item {
-  display: flex;
-  align-items: baseline;
 }
 </style>
