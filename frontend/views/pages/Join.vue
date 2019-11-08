@@ -24,11 +24,11 @@ div
       p.c-switchEnter(v-if='isStatus("SIGNING")')
         i18n Already have an account?
         | &nbsp;
-        i18n.link(tag='button' @click='setStatus("LOGGING")' data-test='goToLogin') Log in
+        i18n.link(tag='button' @click='pageStatus = "LOGGING"' data-test='goToLogin') Log in
       p.c-switchEnter(v-else)
         i18n Not on Group Income yet?
         | &nbsp;
-        i18n.link(tag='button' @click='setStatus("SIGNING")' data-test='goToSingup') Create an account
+        i18n.link(tag='button' @click='pageStatus = "SIGNING"' data-test='goToSingup') Create an account
 
     group-welcome.c-welcome(v-else-if='isStatus("WELCOME")')
 
@@ -49,11 +49,11 @@ div
 
   // TODO - Remove these. Only used for debug.
   .buttons.c-debug
-    button.is-small.is-outlined(@click='setStatus("LOADING")') LOADING
-    button.is-small.is-outlined(@click='setStatus("SIGNING")') SIGNING
-    button.is-small.is-outlined(@click='setStatus("WELCOME")') WELCOME
-    button.is-small.is-outlined(@click='setStatus("EXPIRED")') EXPIRED
-    button.is-small.is-outlined(@click='setStatus("INVALID")') INVALID
+    button.is-small.is-outlined(@click='pageStatus = "LOADING"') LOADING
+    button.is-small.is-outlined(@click='pageStatus = "SIGNING"') SIGNING
+    button.is-small.is-outlined(@click='pageStatus = "WELCOME"') WELCOME
+    button.is-small.is-outlined(@click='pageStatus = "EXPIRED"') EXPIRED
+    button.is-small.is-outlined(@click='pageStatus = "INVALID"') INVALID
 </template>
 
 <script>
@@ -81,13 +81,23 @@ export default {
   data () {
     return {
       ephemeral: {
-        pageStatus: 'LOADING', // || WELCOME || SIGNING || LOGGING || EXPIRED || INVALID
+        pageStatus: 'LOADING',
         invitation: {}
       }
     }
   },
   computed: {
-    ...mapGetters(['ourUsername'])
+    ...mapGetters(['ourUsername']),
+    pageStatus: {
+      get () { return this.ephemeral.pageStatus },
+      set (status) {
+        const posibleStatus = ['LOADING', 'WELCOME', 'SIGNING', 'LOGGING', 'EXPIRED', 'INVALID']
+        if (!posibleStatus.includes(status)) {
+          throw new Error(`Bad status: ${status}. Use one of the following: ${posibleStatus.join(', ')}`)
+        }
+        this.ephemeral.pageStatus = status
+      }
+    }
   },
   async mounted () {
     try {
@@ -103,10 +113,10 @@ export default {
       const invite = state.invites[this.$route.query.secret]
       if (!invite) {
         this.ephemeral.errorMsg = L('This invite is not valid.')
-        return this.setStatus('INVALID')
+        this.pageStatus = 'INVALID'
       } else if (invite && invite.status !== INVITE_STATUS.VALID) {
         this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
-        return this.setStatus('EXPIRED')
+        this.pageStatus = 'EXPIRED'
       } else {
         let creator = null
         let creatorPicture = null
@@ -130,17 +140,18 @@ export default {
           creatorPicture,
           message
         }
-        this.setStatus('SIGNING')
+        this.pageStatus = 'SIGNING'
       }
     } catch (e) {
       console.error(e)
       this.ephemeral.errorMsg = `${L('Something went wrong.')} ${e.message}`
-      this.setStatus('INVALID')
+      this.pageStatus = 'INVALID'
     }
   },
   methods: {
     isStatus (status) {
-      return this.ephemeral.pageStatus === status
+      console.log('hum', this.pageStatus)
+      return this.pageStatus === status
     },
     setStatus (status) {
       this.ephemeral.pageStatus = status
@@ -163,12 +174,12 @@ export default {
         await sbp('state/enqueueContractSync', groupId)
         // after syncing, we can set the current group
         this.$store.commit('setCurrentGroupId', groupId)
-        this.setStatus('WELCOME')
+        this.pageStatus = 'WELCOME'
       } catch (ex) {
         console.log(ex)
         // TODO: post this to a global notification system instead of using this.ephemeral.errorMsg
         this.ephemeral.errorMsg = L('Failed to Accept Invitation')
-        this.setStatus('INVALID')
+        this.pageStatus = 'INVALID'
       }
     }
   }
