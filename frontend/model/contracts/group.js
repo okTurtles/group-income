@@ -3,7 +3,7 @@
 import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import { DefineContract } from './Contract.js'
-import { objectOf, objectMaybeOf, optional, string, number, object, unionOf } from '~/frontend/utils/flowTyper.js'
+import { mapOf, objectOf, objectMaybeOf, optional, string, number, object, unionOf } from '~/frontend/utils/flowTyper.js'
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income-simple/issues/603
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST } from './voting/rules.js'
@@ -14,22 +14,31 @@ import { merge, deepEqualJSONType } from '~/frontend/utils/giLodash.js'
 import { currentMonthTimestamp } from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 
-export function generateInvites (numInvites: number, invitee: string) {
+export const INVITE_INITIAL_CREATOR = 'GROUP_WELCOME'
+export const INVITE_STATUS = {
+  VALID: 'valid',
+  USED: 'used'
+}
+
+export const inviteType = objectOf({
+  inviteSecret: string,
+  numInvites: number,
+  creator: string,
+  invitee: optional(string),
+  status: string,
+  responses: mapOf(string, string),
+  expires: number
+})
+
+export function createInvite (numInvites: number, creator: string, invitee: string) {
   return {
     inviteSecret: `${parseInt(Math.random() * 10000)}`, // TODO: this
     numInvites,
-    invitee
-    // expires: // TODO: this
-  }
-}
-
-function initInvite ({ inviteSecret, numInvites, creator }) {
-  return {
-    inviteSecret,
-    numInvites,
     creator,
-    responses: {}, // { bob: true } list of usernames that answered
-    status: 'valid'
+    invitee,
+    status: INVITE_STATUS.VALID,
+    responses: {}, // { bob: true } list of usernames that accepted the invite.
+    expires: 123456789 // TODO: this
   }
 }
 
@@ -52,11 +61,7 @@ DefineContract({
   name: 'gi.contracts/group',
   contract: {
     validate: objectOf({
-      initialInvite: objectOf({
-        inviteSecret: string,
-        numInvites: number,
-        invitee: optional(string)
-      }),
+      invites: mapOf(string, inviteType),
       settings: objectOf({
         // TODO: add 'groupPubkey'
         groupName: string,
@@ -74,22 +79,13 @@ DefineContract({
       })
     }),
     process (state, { data, meta }) {
-      const { initialInvite, settings } = data
       // TODO: checkpointing: https://github.com/okTurtles/group-income-simple/issues/354
-      const initialState = {
+      const initialState = merge({
         payments: {},
+        invites: {},
         proposals: {}, // hashes => {} TODO: this, see related TODOs in GroupProposal
         settings: {
-          ...settings,
-          groupCreator: meta.username,
-          groupPicture: settings.groupPicture || '/assets/images/default-avatar.png' // TODO - better avatar
-        },
-        invites: {
-          [initialInvite.inviteSecret]: initInvite({
-            inviteSecret: initialInvite.inviteSecret,
-            numInvites: initialInvite.numInvites,
-            creator: 'GROUP_WELCOME' // To be used as initial invitation to first X members.
-          })
+          groupCreator: meta.username
         },
         profiles: {
           [meta.username]: initGroupProfile(meta.identityContractID)
@@ -97,7 +93,7 @@ DefineContract({
         userPaymentsByMonth: {
           [currentMonthTimestamp()]: initMonthlyPayments()
         }
-      }
+      }, data)
       for (const key in initialState) {
         Vue.set(state, key, initialState[key])
       }
@@ -256,34 +252,9 @@ DefineContract({
       }
     },
     'gi.contracts/group/invite': {
-      validate: objectOf({
-        inviteSecret: string, // NOTE: simulate the OP_KEY_* stuff for now
-        numInvites: number,
-        invitee: string
-      }),
+      validate: inviteType,
       process (state, { data, meta }) {
-        Vue.set(state.invites, data.inviteSecret, initInvite({
-          inviteSecret: data.inviteSecret,
-          numInvites: data.numInvites,
-          creator: meta.username
-        }))
-      }
-    },
-    'gi.contracts/group/inviteDecline': {
-      validate: objectOf({
-        inviteSecret: string // NOTE: simulate the OP_KEY_* stuff for now
-      }),
-      process (state, { data, meta }) {
-        const invite = state.invites[data.inviteSecret]
-        if (invite.status !== 'valid') {
-          console.error(`inviteDecline: invite for ${meta.username} is: ${invite.status}`)
-          return
-        }
-        Vue.set(invite.responses, meta.username, false)
-        if (Object.keys(invite.responses).length === invite.numInvites) {
-          invite.status = 'used'
-        }
-        // TODO: archiving of expired/used/cancelled invites
+        Vue.set(state.invites, data.inviteSecret, data)
       }
     },
     'gi.contracts/group/inviteAccept': {
@@ -293,13 +264,13 @@ DefineContract({
       process (state, { data, meta }) {
         console.debug('inviteAccept:', data, state.invites)
         const invite = state.invites[data.inviteSecret]
-        if (invite.status !== 'valid') {
+        if (invite.status !== INVITE_STATUS.VALID) {
           console.error(`inviteAccept: invite for ${meta.username} is: ${invite.status}`)
           return
         }
         Vue.set(invite.responses, meta.username, true)
         if (Object.keys(invite.responses).length === invite.numInvites) {
-          invite.status = 'used'
+          invite.status = INVITE_STATUS.USED
         }
         Vue.set(state.profiles, meta.username, initGroupProfile(meta.identityContractID))
         // If we're triggered by handleEvent in state.js (and not latestContractState)

@@ -59,13 +59,14 @@ div
 <script>
 import sbp from '~/shared/sbp.js'
 import { mapGetters } from 'vuex'
+import { INVITE_STATUS } from '@model/contracts/group.js'
 import FormSignup from '@containers/forms/FormSignup.vue'
 import FormLogin from '@containers/forms/FormLogin.vue'
 import Loading from '@components/Loading.vue'
 import Avatar from '@components/Avatar.vue'
+import GroupWelcome from '@components/GroupWelcome.vue'
 import SvgBrokenLink from '@svgs/broken-link.svg'
 import L from '@view-utils/translations.js'
-import GroupWelcome from '@components/GroupWelcome.vue'
 
 export default {
   name: 'Join',
@@ -103,7 +104,7 @@ export default {
       if (!invite) {
         this.ephemeral.errorMsg = L('This invite is not valid.')
         return this.setStatus('INVALID')
-      } else if (invite && invite.status === 'used') {
+      } else if (invite && invite.status !== INVITE_STATUS.VALID) {
         this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
         return this.setStatus('EXPIRED')
       } else {

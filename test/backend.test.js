@@ -13,7 +13,7 @@ import { blake32Hash } from '~/shared/functions.js'
 import proposals, { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '~/frontend/model/contracts/voting/proposals.js'
 import { TYPE_MESSAGE } from '~/frontend/model/contracts/mailbox.js'
 import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts/payments/index.js'
-import { generateInvites } from '~/frontend/model/contracts/group.js'
+import { createInvite } from '~/frontend/model/contracts/group.js'
 // import '~/frontend/model/contracts/identity.js'
 import '~/frontend/model/state.js'
 import '~/frontend/controller/namespace.js'
@@ -99,9 +99,12 @@ describe('Full walkthrough', function () {
     })
   }
   function createGroup (name) {
-    const initialInvite = generateInvites(60)
+    const initialInvite = createInvite(60)
 
     return sbp('gi.contracts/group/create', {
+      invites: {
+        [initialInvite.inviteSecret]: initialInvite
+      },
       initialInvite,
       settings: {
         // authorizations: [Events.CanModifyAuths.dummyAuth(name)],

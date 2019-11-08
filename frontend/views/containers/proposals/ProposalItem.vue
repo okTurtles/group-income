@@ -37,6 +37,7 @@ import {
   buildInvitationUrl
 } from '@model/contracts/voting/proposals.js'
 import ProposalVoteOptions from '@containers/proposals/ProposalVoteOptions.vue'
+import { INVITE_STATUS } from '@model/contracts/group.js'
 
 export default {
   name: 'ProposalItem',
@@ -130,7 +131,7 @@ export default {
         this.isOurProposal
       ) {
         const secret = this.proposal.payload.inviteSecret
-        if (this.currentGroupState.invites[secret].status === 'valid') {
+        if (this.currentGroupState.invites[secret].status === INVITE_STATUS.VALID) {
           return buildInvitationUrl(this.currentGroupId, this.proposal.payload.inviteSecret)
         }
       }

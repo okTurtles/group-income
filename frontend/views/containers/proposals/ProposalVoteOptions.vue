@@ -33,7 +33,7 @@ import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
 import { VOTE_FOR, VOTE_AGAINST } from '@model/contracts/voting/rules.js'
 import { oneVoteToPass } from '@model/contracts/voting/proposals.js'
-import { generateInvites } from '@model/contracts/group.js'
+import { createInvite } from '@model/contracts/group.js'
 
 export default {
   name: 'Vote',
@@ -102,7 +102,7 @@ export default {
         const proposalHash = this.proposalHash
         const payload = {}
         if (oneVoteToPass(proposalHash)) {
-          payload.passPayload = generateInvites(1, this.proposal.data.proposalData.member)
+          payload.passPayload = createInvite(1, this.proposal.data.proposalData.member)
         }
         const vote = await sbp('gi.contracts/group/proposalVote/create',
           {
