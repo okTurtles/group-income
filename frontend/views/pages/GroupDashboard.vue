@@ -4,14 +4,14 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
 
   start-inviting(v-if='groupMembersCount === 1')
 
+  proposals-widget
+
   page-section(title='This months overview')
     overview
 
   page-section(title='July Overview')
     //- group-pledges-graph
     progress-overview
-
-  proposals-widget
 
   //- page-section(title='Support History')
   //-   support-history

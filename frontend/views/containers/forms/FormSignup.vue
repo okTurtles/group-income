@@ -1,75 +1,65 @@
 <template lang='pug'>
-  modal-template(class='has-background' ref='modal')
-    template(slot='title')
-      i18n Sign Up
-
-    form(
-      novalidate
-      ref='form'
-      name='formData'
-      data-test='signup'
-      @submit.prevent='signup'
+form(
+  novalidate
+  ref='form'
+  name='formData'
+  data-test='signup'
+  @submit.prevent='signup'
+)
+  label.field
+    i18n.label Username
+    input.input#name(
+      :class='{error: $v.form.name.$error}'
+      name='name'
+      @input='debounceName'
+      ref='username'
+      data-test='signName'
+      v-error:name='{ tag: "p", attrs: { "data-test": "badUsername" } }'
     )
-      label.field
-        i18n.label Username
-        input.input#name(
-          :class='{error: $v.form.name.$error}'
-          name='name'
-          @input='debounceName'
-          ref='username'
-          data-test='signName'
-          v-error:name='{ tag: "p", attrs: { "data-test": "badUsername" } }'
-        )
 
-      label.field
-        i18n.label Email
-        input.input#email(
-          :class='{error: $v.form.email.$error}'
-          name='email'
-          v-model='$v.form.email.$model'
-          type='email'
-          data-test='signEmail'
-          v-error:email='{ tag: "p", attrs: { "data-test": "badEmail" } }'
-        )
+  label.field
+    i18n.label Email
+    input.input#email(
+      :class='{error: $v.form.email.$error}'
+      name='email'
+      v-model='$v.form.email.$model'
+      type='email'
+      data-test='signEmail'
+      v-error:email='{ tag: "p", attrs: { "data-test": "badEmail" } }'
+    )
 
-      form-password(
-        :label='L("Password")'
-        :value='form'
-        :v='$v.form'
-        @input='(newPassword) => {password = newPassword}'
-      )
+  // TODO #661 - improve :v
+  form-password(
+    :label='L("Password")'
+    :value='form'
+    :v='$v.form'
+    @input='(newPassword) => {password = newPassword}'
+  )
 
-      p.error(v-if='ephemeral.errorMsg') {{ ephemeral.errorMsg }}
+  p.error(v-if='ephemeral.errorMsg') {{ ephemeral.errorMsg }}
 
-      .buttons.is-centered
-        i18n.is-primary.is-centered(
-          tag='button'
-          type='submit'
-          :disabled='$v.form.$invalid'
-          data-test='signSubmit'
-        ) Create account
-
-    template(slot='footer')
-      p
-        i18n Already have an account?&nbsp;
-        a.link(@click='showLoginModal' data-test='goToLogin')
-          i18n Login
+  .buttons.is-centered.c-cta
+    i18n.is-primary(
+      tag='button'
+      type='submit'
+      :disabled='$v.form.$invalid'
+      data-test='signSubmit'
+    ) Create an account
 </template>
 
 <script>
 import { required, minLength, email } from 'vuelidate/lib/validators'
 import { validationMixin } from 'vuelidate'
 import { debounce } from '@utils/giLodash.js'
-import { REPLACE_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
 import { nonWhitespace } from '@views/utils/validators.js'
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
-import FormPassword from '@components/Forms/Password.vue'
+import FormPassword from '@containers/forms/FormPassword.vue'
 import L from '@view-utils/translations.js'
 
 // TODO: fix all this
 export default {
-  name: 'SignUpModal',
+  name: 'FormSignup',
   mixins: [validationMixin],
   components: {
     ModalTemplate,
@@ -89,13 +79,14 @@ export default {
   },
   methods: {
     debounceName: debounce(function (e) {
+      // TODO - $v.lazy this...
       // "Validator is evaluated on every data change, as it is essentially a computed value.
       // If you need to throttle an async call, do it on your data change event, not on the validator itself.
       // You may end up with broken Vue observables otherwise."
       this.form.name = e.target.value
       this.$v.form.name.$touch()
     }, 700),
-    signup: async function () {
+    async signup () {
       // Prevent autocomplete submission when empty field
       if (this.form.name !== null && this.form.email !== null) {
         try {
@@ -144,25 +135,13 @@ export default {
             username: this.form.name,
             identityContractID: user.hash()
           })
-          this.ephemeral.errorMsg = 'success' // TODO: get rid of this and fix/update tests accordingly
-          if (this.$route.query.next) {
-            // TODO: get rid of this timeout and fix/update tests accordingly
-            setTimeout(() => {
-              this.$router.push({ path: this.$route.query.next })
-            }, 1000)
-          } else {
-            this.$router.push({ path: '/' })
-          }
-          this.$refs.modal.close()
+          this.$emit('submitSucceeded')
         } catch (ex) {
-          console.error('SignUp.vue submit() error:', ex)
+          console.error('Signup.vue submit() error:', ex)
           sbp('state/vuex/dispatch', 'logout')
           this.ephemeral.errorMsg = ex.toString()
         }
       }
-    },
-    showLoginModal () {
-      sbp('okTurtles.events/emit', REPLACE_MODAL, 'LoginModal')
     }
   },
   validations: {
@@ -190,3 +169,10 @@ export default {
   }
 }
 </script>
+<style lang="scss" scoped>
+@import "@assets/style/_variables.scss";
+
+.c-cta {
+  margin-top: 1.5rem;
+}
+</style>

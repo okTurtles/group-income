@@ -13,6 +13,7 @@ import { blake32Hash } from '~/shared/functions.js'
 import proposals, { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '~/frontend/model/contracts/voting/proposals.js'
 import { TYPE_MESSAGE } from '~/frontend/model/contracts/mailbox.js'
 import { PAYMENT_PENDING, PAYMENT_TYPE_MANUAL } from '~/frontend/model/contracts/payments/index.js'
+import { INVITE_INITIAL_CREATOR, createInvite } from '~/frontend/model/contracts/group.js'
 // import '~/frontend/model/contracts/identity.js'
 import '~/frontend/model/state.js'
 import '~/frontend/controller/namespace.js'
@@ -98,19 +99,26 @@ describe('Full walkthrough', function () {
     })
   }
   function createGroup (name) {
+    const initialInvite = createInvite({ quantity: 60, creator: INVITE_INITIAL_CREATOR })
+
     return sbp('gi.contracts/group/create', {
-      // authorizations: [Events.CanModifyAuths.dummyAuth(name)],
-      groupName: name,
-      groupPicture: '',
-      sharedValues: 'our values',
-      mincomeAmount: 1000,
-      mincomeCurrency: 'USD', // TODO: grab this as a constant from currencies.js
-      proposals: {
-        [PROPOSAL_GROUP_SETTING_CHANGE]: proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults,
-        [PROPOSAL_INVITE_MEMBER]: proposals[PROPOSAL_INVITE_MEMBER].defaults,
-        [PROPOSAL_REMOVE_MEMBER]: proposals[PROPOSAL_REMOVE_MEMBER].defaults,
-        [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].defaults,
-        [PROPOSAL_GENERIC]: proposals[PROPOSAL_GENERIC].defaults
+      invites: {
+        [initialInvite.inviteSecret]: initialInvite
+      },
+      settings: {
+        // authorizations: [Events.CanModifyAuths.dummyAuth(name)],
+        groupName: name,
+        groupPicture: '',
+        sharedValues: 'our values',
+        mincomeAmount: 1000,
+        mincomeCurrency: 'USD',
+        proposals: {
+          [PROPOSAL_GROUP_SETTING_CHANGE]: proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults,
+          [PROPOSAL_INVITE_MEMBER]: proposals[PROPOSAL_INVITE_MEMBER].defaults,
+          [PROPOSAL_REMOVE_MEMBER]: proposals[PROPOSAL_REMOVE_MEMBER].defaults,
+          [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].defaults,
+          [PROPOSAL_GENERIC]: proposals[PROPOSAL_GENERIC].defaults
+        }
       }
     })
   }

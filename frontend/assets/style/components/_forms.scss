@@ -48,6 +48,7 @@ select,
   line-height: 23px;
   outline: none;
   font-family: inherit;
+  color: $text_0;
 
   @mixin placeholder {
     color: $text_1;

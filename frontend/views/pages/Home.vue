@@ -22,8 +22,8 @@ main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
     i18n(
       tag='button'
       ref='signupBtn'
-      @click='openModal("SignUp")'
-      @keyup.enter='openModal("SignUp")'
+      @click='openModal("Signup")'
+      @keyup.enter='openModal("Signup")'
       data-test='signupBtn'
       v-focus=''
     ) Signup

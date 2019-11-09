@@ -1,7 +1,8 @@
 <template lang='pug'>
 div(:data-test='pageTestName' :class='$scopedSlots.sidebar ? "p-with-sidebar" : "p-no-sidebar"')
   header.p-header
-    h1.p-title(:data-test='pageTestHeaderName')
+    slot(name='header')
+    h1.p-title(:data-test='pageTestHeaderName' v-if='$slots.title')
       img.c-logo(
         src='/assets/images/group-income-icon-transparent.png'
         :alt='L("Group Income\'s logo")'
@@ -125,14 +126,20 @@ $pagePaddingDesktop: 5.5rem;
   @include tablet {
     display: block;
     padding-top: 1.125rem;
-    padding-left: $pagePaddingTablet;
     text-align: left;
     min-height: 4.75rem;
+
+    .p-with-sidebar & {
+      padding-left: $pagePaddingTablet;
+    }
   }
 
   @include widescreen {
-    padding-left: $pagePaddingDesktop;
     min-height: 5.25rem;
+
+    .p-with-sidebar & {
+      padding-left: $pagePaddingDesktop;
+    }
   }
 }
 

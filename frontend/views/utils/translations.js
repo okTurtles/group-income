@@ -31,6 +31,19 @@ String with Vue components inside:
     compile
     :args='{ r1: `<router-link class="link" to="/login">`, r2: "</router-link>"}'
   ) Go to {r1}login{r2} page.
+
+## When to use LTags or write html as part of the key?
+- Use LTags when they wrap a variable and raw text. Example:
+
+  i18n(
+    :args='{ count: 5, ...LTags("strong") }'
+  ) Invite {strong}{count} members{strong} to the party!
+
+- Write HTML when it wraps only the variable.
+-- That way translators don't need to worry about extra information.
+  i18n(
+    :args='{ count: "<strong>5</strong>" }'
+  ) Invite {count} members to the party!
 */
 
 export function LTags (...tags) {

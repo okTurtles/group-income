@@ -13,7 +13,7 @@
       data-test='voteAgainst'
     ) Vote no
 
-  .c-cancel(v-else)
+  .buttons.c-cancel(v-else)
     i18n.button.is-outlined.is-small(
       tag='button'
       v-if='ownProposal'
@@ -32,9 +32,8 @@ import { mapGetters, mapState } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
 import { VOTE_FOR, VOTE_AGAINST } from '@model/contracts/voting/rules.js'
-import { TYPE_MESSAGE } from '@model/contracts/mailbox.js'
-import { oneVoteToPass, buildInvitationUrl } from '@model/contracts/voting/proposals.js'
-import { generateInvites } from '@model/contracts/group.js'
+import { oneVoteToPass } from '@model/contracts/voting/proposals.js'
+import { createInvite } from '@model/contracts/group.js'
 
 export default {
   name: 'Vote',
@@ -54,6 +53,7 @@ export default {
       'currentGroupId'
     ]),
     ...mapGetters([
+      'ourUsername',
       'currentGroupState',
       'groupSettings',
       'ourUserIdentityContract'
@@ -102,7 +102,7 @@ export default {
         const proposalHash = this.proposalHash
         const payload = {}
         if (oneVoteToPass(proposalHash)) {
-          payload.passPayload = generateInvites(1)
+          payload.passPayload = createInvite({ creator: this.proposal.data.proposalData.member })
         }
         const vote = await sbp('gi.contracts/group/proposalVote/create',
           {
@@ -113,35 +113,6 @@ export default {
           this.currentGroupId
         )
         await sbp('backend/publishLogEntry', vote)
-
-        if (payload.passPayload) {
-          const groupName = this.groupSettings.groupName
-          const username = this.data.member
-          // TODO: delete this entire section, this is just
-          //       here for debug and testing purposes until
-          //       we get the links page working nicely.
-          //       this.data.members will not contain usernames in the future.
-          const contractID = await sbp('namespace/lookup', username)
-          if (contractID) {
-            const identityContract = await sbp('state/latestContractState', contractID)
-            console.debug('sending invite to:', contractID, identityContract)
-            const inviteToMailbox = await sbp('gi.contracts/mailbox/postMessage/create',
-              {
-                messageType: TYPE_MESSAGE,
-                from: groupName,
-                subject: `You've been invited to join ${groupName}!`,
-                message: `Hi ${username},
-                
-                ${groupName} has voted to invite you! Horray!
-                Here's your special invite link:
-                
-                ${buildInvitationUrl(this.$store.state.currentGroupId, payload.passPayload.inviteSecret)}`
-              },
-              identityContract.attributes.mailbox
-            )
-            await sbp('backend/publishLogEntry', inviteToMailbox)
-          }
-        }
       } catch (ex) {
         console.log(ex)
         this.ephemeral.errorMsg = L('Failed to Cast Vote. Try again.')
@@ -190,6 +161,22 @@ export default {
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
+.c-ctas {
+  @include phone {
+    width: 100%;
+    margin-top: $spacer;
+    margin-bottom: $spacer-sm;
+
+    .button {
+      flex-grow: 1;
+
+      &:not(:last-child) {
+        margin-right: $spacer;
+      }
+    }
+  }
+}
 
 .buttons {
   margin-top: 0;
