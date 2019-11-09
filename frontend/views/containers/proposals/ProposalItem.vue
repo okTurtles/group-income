@@ -181,11 +181,8 @@ $spaceVertical: $spacer-sm*3;
   }
 
   .c-invite-link {
-    ::v-deep .link {
-      white-space: normal;
-      word-break: break-all;
-      display: inline;
-    }
+    display: inline-flex;
+    max-width: 50%;
 
     ::v-deep .c-copy-button {
       display: inline-block;

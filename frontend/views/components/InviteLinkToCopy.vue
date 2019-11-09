@@ -100,6 +100,7 @@ export default {
 
 .c-wrapper {
   position: relative;
+  min-width: 7rem;
 
   .c-invisible-input {
     position: absolute;
