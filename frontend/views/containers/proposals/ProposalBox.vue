@@ -56,7 +56,6 @@ export default {
       return this.currentGroupState.proposals[this.proposalHashes[0]]
     },
     title () {
-      const { identityContractID } = this.proposal.meta
       const username = this.proposal.meta.username
       const isOwnProposal = username === this.ourUsername
       const isAnyOpen = this.proposalHashes.some(hash => this.currentGroupState.proposals[hash].status === STATUS_OPEN)
