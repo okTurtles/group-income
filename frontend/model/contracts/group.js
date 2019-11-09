@@ -238,6 +238,7 @@ DefineContract({
           generated: data.numInvites,
           creator: meta.username,
           responses: {},
+          // TODO: define all possible values as constants
           status: 'valid',
           invitee: data.invitee
         })

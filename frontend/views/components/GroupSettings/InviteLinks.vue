@@ -127,10 +127,10 @@ export default {
       }
     },
     translateStatus (status) {
-      return ({
+      return {
         'used': L('used'),
         'valid': L('valid')
-      })[status]
+      }[status]
     }
   },
   computed: {
