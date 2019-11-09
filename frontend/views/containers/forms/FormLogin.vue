@@ -86,7 +86,7 @@ export default {
     },
     forgotPassword () {
       // TODO: implement forgot password
-      console.log('Coming soon')
+      alert(L('Coming soon'))
     }
   },
   data () {

@@ -24,11 +24,11 @@ div
       p.c-switchEnter(v-if='isStatus("SIGNING")')
         i18n Already have an account?
         | &nbsp;
-        i18n.link(tag='button' @click='pageStatus = "LOGGING"' data-test='goToLogin') Log in
+        i18n.link(tag='button' @click='pageStatus = "LOGGING"') Log in
       p.c-switchEnter(v-else)
         i18n Not on Group Income yet?
         | &nbsp;
-        i18n.link(tag='button' @click='pageStatus = "SIGNING"' data-test='goToSingup') Create an account
+        i18n.link(tag='button' @click='pageStatus = "SIGNING"') Create an account
 
     group-welcome.c-welcome(v-else-if='isStatus("WELCOME")')
 
@@ -38,28 +38,20 @@ div
         v-if='isStatus("EXPIRED")'
         tag='h1'
         :args='LTags()'
-      ) Oh no! {br_} Something went wrong.
+      ) Oh no! {br_}Something went wrong.
       i18n.title.is-1(
         v-else
         tag='h1'
         :args='LTags()'
-      ) Oh no! {br_} Your link has expired.
+      ) Oh no! {br_}Your link has expired.
       p.has-text-1 {{ ephemeral.errorMsg }}
       i18n.c-goHome(tag='button' @click='goHome') Take me home
-
-  // TODO - Remove these. Only used for debug.
-  .buttons.c-debug
-    button.is-small.is-outlined(@click='pageStatus = "LOADING"') LOADING
-    button.is-small.is-outlined(@click='pageStatus = "SIGNING"') SIGNING
-    button.is-small.is-outlined(@click='pageStatus = "WELCOME"') WELCOME
-    button.is-small.is-outlined(@click='pageStatus = "EXPIRED"') EXPIRED
-    button.is-small.is-outlined(@click='pageStatus = "INVALID"') INVALID
 </template>
 
 <script>
 import sbp from '~/shared/sbp.js'
 import { mapGetters } from 'vuex'
-import { INVITE_STATUS } from '@model/contracts/group.js'
+import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/group.js'
 import FormSignup from '@containers/forms/FormSignup.vue'
 import FormLogin from '@containers/forms/FormLogin.vue'
 import Loading from '@components/Loading.vue'
@@ -122,7 +114,7 @@ export default {
         let creatorPicture = null
         let message = null
 
-        if (invite.creator === 'GROUP_WELCOME') {
+        if (invite.creator === INVITE_INITIAL_CREATOR) {
           message = L('You were invited to join')
         } else {
           const identityContractID = await sbp('namespace/lookup', invite.creator)
@@ -152,9 +144,6 @@ export default {
     isStatus (status) {
       console.log('hum', this.pageStatus)
       return this.pageStatus === status
-    },
-    setStatus (status) {
-      this.ephemeral.pageStatus = status
     },
     goHome () {
       this.$router.push({ path: '/' })

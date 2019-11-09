@@ -19,6 +19,7 @@ modal-template(ref='modal')
 <script>
 import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
+import { INVITE_INITIAL_CREATOR } from '@model/contracts/group.js'
 import { buildInvitationUrl } from '@model/contracts/voting/proposals.js'
 export default {
   name: 'InviteByLink',
@@ -31,10 +32,10 @@ export default {
     ]),
     welcomeInviteSecret () {
       const invites = this.currentGroupState.invites
-      return Object.keys(invites).find(invite => invites[invite].creator === 'GROUP_WELCOME')
+      return Object.keys(invites).find(invite => invites[invite].creator === INVITE_INITIAL_CREATOR)
     },
     link () {
-      return buildInvitationUrl(this.$store.state.currentGroupId, this.currentGroupState.invites[this.welcomeInviteSecret].inviteSecret)
+      return buildInvitationUrl(this.$store.state.currentGroupId, this.welcomeInviteSecret)
     },
     expireDate () {
       // TODO retrive real expire date

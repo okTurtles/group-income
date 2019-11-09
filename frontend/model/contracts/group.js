@@ -14,7 +14,7 @@ import { merge, deepEqualJSONType } from '~/frontend/utils/giLodash.js'
 import { currentMonthTimestamp } from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 
-export const INVITE_INITIAL_CREATOR = 'GROUP_WELCOME'
+export const INVITE_INITIAL_CREATOR = 'INVITE_INITIAL_CREATOR'
 export const INVITE_STATUS = {
   VALID: 'valid',
   USED: 'used'
@@ -22,7 +22,7 @@ export const INVITE_STATUS = {
 
 export const inviteType = objectOf({
   inviteSecret: string,
-  numInvites: number,
+  quantity: number,
   creator: string,
   invitee: optional(string),
   status: string,
@@ -30,10 +30,16 @@ export const inviteType = objectOf({
   expires: number
 })
 
-export function createInvite (numInvites: number, creator: string, invitee: string) {
+export function createInvite (
+  {
+    quantity = 1,
+    creator,
+    invitee
+  }: { quantity: number, creator: string, invitee: string }
+) {
   return {
     inviteSecret: `${parseInt(Math.random() * 10000)}`, // TODO: this
-    numInvites,
+    quantity,
     creator,
     invitee,
     status: INVITE_STATUS.VALID,
@@ -60,7 +66,7 @@ function initGroupProfile (contractID: string) {
 DefineContract({
   name: 'gi.contracts/group',
   contract: {
-    validate: objectOf({
+    validate: objectMaybeOf({
       invites: mapOf(string, inviteType),
       settings: objectOf({
         // TODO: add 'groupPubkey'
@@ -208,7 +214,7 @@ DefineContract({
       validate: objectOf({
         proposalHash: string,
         vote: string,
-        passPayload: optional(unionOf(object, string)) // TODO: this, somehow we need to send an OP_KEY_ADD GIMessage to add a numInvites once-only writeonly message public key to the contract, and (encrypted) include the corresponding invite link, also, we need all clients to verify that this message/operation was valid to prevent a hacked client from adding arbitrary OP_KEY_ADD messages, and automatically ban anyone generating such messages
+        passPayload: optional(unionOf(object, string)) // TODO: this, somehow we need to send an OP_KEY_ADD GIMessage to add a generated once-only writeonly message public key to the contract, and (encrypted) include the corresponding invite link, also, we need all clients to verify that this message/operation was valid to prevent a hacked client from adding arbitrary OP_KEY_ADD messages, and automatically ban anyone generating such messages
       }),
       process (state, { data, hash, meta }) {
         const proposal = state.proposals[data.proposalHash]
@@ -269,7 +275,7 @@ DefineContract({
           return
         }
         Vue.set(invite.responses, meta.username, true)
-        if (Object.keys(invite.responses).length === invite.numInvites) {
+        if (Object.keys(invite.responses).length === invite.quantity) {
           invite.status = INVITE_STATUS.USED
         }
         Vue.set(state.profiles, meta.username, initGroupProfile(meta.identityContractID))

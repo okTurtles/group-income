@@ -55,7 +55,7 @@ modal-base-template
 import ModalBaseTemplate from '@components/Modal/ModalBaseTemplate.vue'
 import sbp from '~/shared/sbp.js'
 import { RULE_THRESHOLD } from '@model/contracts/voting/rules.js'
-import { createInvite } from '@model/contracts/group.js'
+import { INVITE_INITIAL_CREATOR, createInvite } from '@model/contracts/group.js'
 import proposals, { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '@model/contracts/voting/proposals.js'
 import imageUpload from '@utils/imageUpload.js'
 import L from '@view-utils/translations.js'
@@ -122,7 +122,7 @@ export default {
       // create the GroupContract
       try {
         this.ephemeral.errorMsg = null
-        const initialInvite = createInvite(60, 'GROUP_WELCOME')
+        const initialInvite = createInvite({ quantity: 60, creator: INVITE_INITIAL_CREATOR })
         const entry = sbp('gi.contracts/group/create', {
           invites: {
             [initialInvite.inviteSecret]: initialInvite
