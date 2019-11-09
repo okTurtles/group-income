@@ -142,7 +142,6 @@ export default {
   },
   methods: {
     isStatus (status) {
-      console.log('hum', this.pageStatus)
       return this.pageStatus === status
     },
     goHome () {
