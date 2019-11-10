@@ -8,7 +8,6 @@ transition(name='replacelist')
       input.input(
         type='text'
         :placeholder='randomPlaceholder'
-        maxlength='20'
         :aria-label='L("Your contribution")'
         v-error:contribution=''
         v-focus=''
@@ -25,7 +24,7 @@ transition(name='replacelist')
           @click='handleDelete'
           data-test='buttonRemoveNonMonetaryContribution'
         ) Remove
-        div
+        .c-buttons-right
           i18n.button.is-small.is-outlined(
             tag='button'
             @click='cancel'
@@ -230,5 +229,15 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
+}
+
+.c-buttons-right {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.button + .c-buttons-right {
+  width: auto;
 }
 </style>

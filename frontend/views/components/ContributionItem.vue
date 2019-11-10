@@ -70,9 +70,9 @@ export default {
         }
 
         if (this.action === 'RECEIVING' && this.type === 'MONETARY') {
-          return L('{service} from {button_}{numMembers} members{_button}', html)
-        } else {
           return L('A total of {service} to {button_}{numMembers} members{_button}', html)
+        } else {
+          return L('{service} from {button_}{numMembers} members{_button}', html)
         }
       } else {
         if (this.action === 'RECEIVING') {

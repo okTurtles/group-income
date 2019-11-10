@@ -179,10 +179,6 @@ $pagePaddingDesktop: 5.5rem;
   transform: translateX(100%);
   transition: transform $transitionSpeed;
 
-  &.is-active {
-    transform: translateX(0);
-  }
-
   @include widescreen {
     position: relative;
     transform: translateX(0%);
@@ -198,6 +194,14 @@ $pagePaddingDesktop: 5.5rem;
     @include widescreen {
       display: none;
       height: 79px;
+    }
+  }
+
+  &.is-active {
+    transform: translateX(0);
+
+    .c-toggle {
+      height: 100vh;
     }
   }
 }

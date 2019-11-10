@@ -48,13 +48,13 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
       .receiving
         i18n(tag='h3' class='card-header') Receiving
         i18n.has-text-1.spacer-around(
-          v-if='!doesReceive'
+          v-if='noOneCanContribute'
           tag='p'
           data-test='receivingParagraph'
         ) When other members pledge a monetary or non-monetary contribution, they will appear here.
 
         i18n.has-text-1.spacer-around(
-          v-else-if='needsIncome && !hasPayments'
+          v-else-if='!doesReceiveMonetary && needsIncome'
           tag='p'
           data-test='receivingParagraph'
         ) No one is pledging money at the moment.
@@ -199,14 +199,17 @@ export default {
       if (!amount) return false
       return this.currency.displayWithCurrency(this.needsIncome ? this.groupSettings.mincomeAmount - amount : amount)
     },
-    doesReceive () {
-      return this.needsIncome || this.receivingNonMonetary.length > 0
+    needsIncome () {
+      return this.memberGroupProfile.incomeDetailsType === 'incomeAmount'
+    },
+    doesReceiveNonMonetary () {
+      return this.receivingNonMonetary.length > 0
     },
     doesReceiveMonetary () {
       return this.needsIncome && this.receivingMonetary.list.length > 0
     },
-    needsIncome () {
-      return this.memberGroupProfile.incomeDetailsType === 'incomeAmount'
+    doesReceive () {
+      return this.doesReceiveMonetary || this.doesReceiveNonMonetary
     },
     hasPayments () {
       return Object.keys(this.givingMonetary.list).length > 0
@@ -216,6 +219,9 @@ export default {
     },
     noOneToGive () {
       return !this.needsIncome && !this.hasPayments
+    },
+    noOneCanContribute () {
+      return !this.doesReceiveMonetary && !this.doesReceiveNonMonetary && !this.needsIncome
     },
     currency () {
       return currencies[this.groupSettings.mincomeCurrency]
