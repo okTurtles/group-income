@@ -212,7 +212,7 @@ button.link {
   color: $primary_0;
   font-weight: 600;
   display: inline-block;
-  line-height: inherit;
+  line-height: 1.4; // better underline visually
 
   &::after {
     width: 100%;

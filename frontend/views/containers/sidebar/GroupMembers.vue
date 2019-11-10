@@ -5,7 +5,7 @@
 
     button.button.is-small.is-outlined(
       data-test='inviteButton'
-      @click='openModal("AddMembers")'
+      @click='openModal(groupShouldPropose ? "AddMembers" : "InviteByLink")'
     )
       i.icon-plus
       i18n Add
@@ -98,6 +98,7 @@ export default {
   computed: {
     ...mapGetters([
       'groupProfiles',
+      'groupShouldPropose',
       'groupMembersCount'
     ]),
     firstTenMembers () {

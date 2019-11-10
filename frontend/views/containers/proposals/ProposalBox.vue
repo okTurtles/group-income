@@ -2,16 +2,19 @@
 li.c-wrapper
   user-image.c-avatar(:username='proposal.meta.username')
   .c-header
-    h4.has-text-bold(data-test='title') {{ title }}:
-    span {{ humanDate }}
+    h4.c-header-title(data-test='title' v-html='title')
+    span.has-text-1 {{ humanDate }}
   .c-main
-    p.has-text-1(v-if='humanReason') {{ humanReason }}
     ul
-      proposal-item(
-        v-for='hash in proposalHashes'
-        :key='hash'
-        :proposalHash='hash'
-      )
+      proposal-item(v-for='hash in proposalHashes' :key='hash' :proposalHash='hash')
+
+    .c-reason(v-if='humanReason')
+      p.has-text-1.c-reason-text(v-if='humanReason') {{ humanReason }}
+      | &nbsp;
+      button.link(
+        v-if='shouldTruncateReason'
+        @click='toggleReason'
+      ) {{ ephemeral.isReasonHidden ? L('Read more') : L('Hide') }}
 </template>
 
 <script>
@@ -26,33 +29,48 @@ export default {
   props: {
     proposalHashes: Array // [hash1, hash2, ...]
   },
+  data () {
+    return {
+      config: {
+        reasonMaxLength: window.innerWidth < 769 ? 50 : 170
+      },
+      ephemeral: {
+        isReasonHidden: true
+      }
+    }
+  },
   components: {
     ProposalItem,
     UserImage
   },
+  created () {
+    this.ephemeral.isReasonHidden = this.shouldTruncateReason
+  },
   computed: {
     ...mapGetters([
       'currentGroupState',
-      'ourUserIdentityContract'
+      'ourUsername'
     ]),
     proposal () {
       // Pick the 1st hash as guidance/pivot for this group of proposals
       return this.currentGroupState.proposals[this.proposalHashes[0]]
     },
     title () {
-      const { identityContractID } = this.proposal.meta
-      const username = this.$store.state[identityContractID].attributes.name
-      const currentUsername = this.ourUserIdentityContract.attributes.name
-      const who = username === currentUsername ? L('You') : username
+      const username = this.proposal.meta.username
+      const isOwnProposal = username === this.ourUsername
       const isAnyOpen = this.proposalHashes.some(hash => this.currentGroupState.proposals[hash].status === STATUS_OPEN)
 
-      if (!isAnyOpen) {
-        return L('{who} proposed', { who })
+      if (isAnyOpen) {
+        return isOwnProposal
+          ? L('{strong_}You{_strong} are proposing:', this.LTags('strong'))
+          : L('{strong_}{username}{_strong} is proposing:', { username, ...this.LTags('strong') })
       }
 
-      return username === currentUsername
-        ? L('You are proposing')
-        : L('{who} is proposing', { who })
+      // Note: In English, no matter the subject, the wording is the same,
+      // but in other languages the wording is different (ex: Portuguese)
+      return isOwnProposal
+        ? L('{strong_}You{_strong} proposed:', this.LTags('strong'))
+        : L('{strong_}{username}{_strong} proposed:', { username, ...this.LTags('strong') })
     },
     humanDate () {
       const date = new Date(this.proposal.meta.createdDate)
@@ -65,9 +83,27 @@ export default {
         year: 'numeric', month: 'long', day: 'numeric'
       })
     },
+    shouldTruncateReason () {
+      const reason = this.proposal.data.proposalData.reason
+      const threshold = 40 // avoid clicking "read more" and see only a few more characters.
+      return reason.length > this.config.reasonMaxLength + threshold
+    },
     humanReason () {
       const reason = this.proposal.data.proposalData.reason
-      return reason ? `"${reason}"` : undefined
+      const maxlength = this.config.reasonMaxLength
+      if (this.ephemeral.isReasonHidden && this.shouldTruncateReason) {
+        // Prevent "..." to be added after an empty space. ex: "they would ..." -> "they would..."
+        const charToTruncate = reason.charAt(maxlength - 1) === ' ' ? maxlength - 1 : maxlength
+        return `"${reason.substr(0, charToTruncate)}..."`
+      }
+
+      return `"${reason}"`
+    }
+  },
+  methods: {
+    toggleReason (e) {
+      e.target.blur() // so the button doesnt look black.
+      this.ephemeral.isReasonHidden = !this.ephemeral.isReasonHidden
     }
   }
 }
@@ -76,25 +112,27 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-$spaceVertical: $spacer-sm*3;
-
 .c-wrapper {
-  margin-top: $spaceVertical;
-  padding-bottom: $spaceVertical;
+  margin-top: $spacer-lg;
   display: grid;
   grid-template-columns: auto 1fr;
   grid-template-areas:
-    "avatar header"
+    "header header"
     "main main";
+
+  &:first-child {
+    margin-top: 1.5rem;
+  }
+
+  &:not(:last-child) {
+    padding-bottom: $spacer-lg;
+    border-bottom: 1px solid $general_1;
+  }
 
   @include tablet {
     grid-template-areas:
       "avatar header"
-      "avatar main";
-  }
-
-  &:not(:last-child) {
-    border-bottom: 1px solid $general_1;
+      "null main";
   }
 }
 
@@ -102,28 +140,49 @@ $spaceVertical: $spacer-sm*3;
   grid-area: avatar;
   width: 2.5rem;
   height: 2.5rem;
+  margin-right: $spacer;
+  flex-shrink: 0;
+
+  @include phone {
+    display: none;
+  }
 }
 
-.c-header {
+::v-deep .c-header {
   grid-area: header;
-  align-self: center;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 
-  @include tablet {
-    display: flex;
-    justify-content: space-between;
+  &-title {
+    @include phone {
+      font-family: "Lato";
+      font-weight: 400;
+
+      ::v-deep strong {
+        font-weight: 400;
+      }
+    }
   }
 }
 
 .c-main {
   grid-area: main;
+  margin-top: 1.5rem;
   word-break: break-word;
-  margin-top: $spacer-xs;
+  min-width: 0; // So ellipsis work correctly inside grid.
+
+  @include tablet {
+    margin-top: $spacer;
+  }
 }
 
-.c-avatar {
-  margin-right: $spaceVertical;
-  margin-bottom: $spacer-xs;
-  margin-top: $spacer-xs;
-  flex-shrink: 0
+.c-reason {
+  position: relative;
+  margin-top: 1.5rem;
+
+  &-text {
+    display: inline;
+  }
 }
 </style>

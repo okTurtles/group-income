@@ -1,7 +1,5 @@
 <template lang='pug'>
-.wrapper(
-  data-test='welcome'
-)
+.wrapper(data-test='welcome')
   avatar(
     src='/assets/images/default-avatar.png'
     :alt='groupSettings.groupName'
@@ -13,7 +11,7 @@
     class='c-title'
     data-test='welcomeGroup'
     :args='{ groupName: groupSettings.groupName }'
-  ) Welcome {groupName}!
+  ) Welcome to {groupName}!
 
   i18n(tag='p' class='has-text-0 c-description') You are now embarking on a new journey. We hope you have a blast!
 
@@ -50,9 +48,8 @@ export default {
   methods: {
     toDashboard () {
       if (this.isButtonClicked) return
-
       this.isButtonClicked = true
-      this.$router.replace({ path: '/dashboard' })
+      this.$router.push({ path: '/dashboard' })
     }
   }
 }
@@ -83,6 +80,7 @@ export default {
 
   .c-title {
     margin-bottom: 0;
+    margin-top: $spacer;
 
     @include phone {
       font-size: $size-2;

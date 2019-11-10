@@ -3,8 +3,12 @@
   justify-content: center;
   align-items: flex-start;
   height: 100%;
-  padding: 1.5rem;
+  padding: $spacer;
   overflow: auto;
+
+  @include tablet {
+    padding: 1.5rem;
+  }
 }
 
 .l-with-navigation {

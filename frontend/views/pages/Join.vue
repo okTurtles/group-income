@@ -1,79 +1,153 @@
 <template lang='pug'>
-//- test
-loading(theme='fullView' v-if='!ephemeral.contract.settings.groupName')
-page(pageTestName='dashboard' pageTestHeaderName='groupName' v-else='')
-  template(#title='') {{ L("You've been invited to join a group!") }}
-  .card
-    h1 {{ephemeral.contract.settings.groupName}}
-    p {{ephemeral.contract.settings.sharedValues}}
+div
+  img.c-logo(src='/assets/images/logo-transparent.png')
 
-    .c-join-grid-graphic(v-if='ephemeral.contract.members.length')
-      members-circle(:members='ephemeral.contract.members')
-        bars(:currency='ephemeral.contract.settings.mincomeCurrencySign' :history='ephemeral.contract.history' :mincome='+ephemeral.contract.settings.mincomeAmount')
+  loading(theme='fullView' v-if='isStatus("LOADING")')
+  .c-page(v-else)
+    div(v-if='isStatus("SIGNING") || isStatus("LOGGING")')
+      .c-header
+        .c-avatars
+          avatar.c-avatars-group(
+            v-if='ephemeral.invitation.groupPicture'
+            :src='ephemeral.invitation.groupPicture'
+          )
+          avatar.c-avatars-creator(
+            v-if='ephemeral.invitation.creatorPicture'
+            :src='ephemeral.invitation.creatorPicture'
+          )
+        h1.title.is-1(data-test='groupName') {{ ephemeral.invitation.groupName }}
+        p.has-text-1(data-test='invitationMessage') {{ ephemeral.invitation.message }}
+      .card
+        form-signup(v-if='isStatus("SIGNING")' @submitSucceeded='accept')
+        form-login(v-else @submitSucceeded='accept')
 
-    p.error(v-if='ephemeral.errorMsg') {{ephemeral.errorMsg}}
+      p.c-switchEnter(v-if='isStatus("SIGNING")')
+        i18n Already have an account?
+        | &nbsp;
+        i18n.link(tag='button' @click='pageStatus = "LOGGING"') Log in
+      p.c-switchEnter(v-else)
+        i18n Not on Group Income yet?
+        | &nbsp;
+        i18n.link(tag='button' @click='pageStatus = "SIGNING"') Create an account
 
-    .buttons
-      i18n.is-outlined(
-        tag='button'
-        data-test='declineLink'
-        v-on:click='decline'
-      )  No, thanks
-      i18n(
-        tag='button'
-        data-test='acceptLink'
-        v-on:click='accept'
-      ) Join Group
+    group-welcome.c-welcome(v-else-if='isStatus("WELCOME")')
+
+    .c-broken(v-else-if='isStatus("INVALID") || isStatus("EXPIRED")')
+      svg-broken-link.c-svg
+      i18n.title.is-1(
+        v-if='isStatus("EXPIRED")'
+        tag='h1'
+        :args='LTags()'
+      ) Oh no! {br_}Something went wrong.
+      i18n.title.is-1(
+        v-else
+        tag='h1'
+        :args='LTags()'
+      ) Oh no! {br_}Your link has expired.
+      p.has-text-1 {{ ephemeral.errorMsg }}
+      i18n.c-goHome(tag='button' @click='goHome') Take me home
 </template>
 
 <script>
 import sbp from '~/shared/sbp.js'
-import L from '@view-utils/translations.js'
-import Page from './Page.vue'
-import Bars from '@components/Graphs/Bars.vue'
+import { mapGetters } from 'vuex'
+import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/group.js'
+import FormSignup from '@containers/forms/FormSignup.vue'
+import FormLogin from '@containers/forms/FormLogin.vue'
 import Loading from '@components/Loading.vue'
-import MembersCircle from '@components/MembersCircle.vue'
+import Avatar from '@components/Avatar.vue'
+import GroupWelcome from '@components/GroupWelcome.vue'
+import SvgBrokenLink from '@svgs/broken-link.svg'
+import L from '@view-utils/translations.js'
 
 export default {
   name: 'Join',
   components: {
-    Bars,
     Loading,
-    MembersCircle,
-    Page
+    FormLogin,
+    FormSignup,
+    Avatar,
+    GroupWelcome,
+    SvgBrokenLink
   },
   data () {
     return {
       ephemeral: {
-        contract: { members: [], settings: {} },
-        errorMsg: null
+        pageStatus: 'LOADING',
+        invitation: {}
+      }
+    }
+  },
+  computed: {
+    ...mapGetters(['ourUsername']),
+    pageStatus: {
+      get () { return this.ephemeral.pageStatus },
+      set (status) {
+        const posibleStatus = ['LOADING', 'WELCOME', 'SIGNING', 'LOGGING', 'EXPIRED', 'INVALID']
+        if (!posibleStatus.includes(status)) {
+          throw new Error(`Bad status: ${status}. Use one of the following: ${posibleStatus.join(', ')}`)
+        }
+        this.ephemeral.pageStatus = status
       }
     }
   },
   async mounted () {
     try {
-      const state = await sbp('state/latestContractState', this.$route.query.groupId)
-      // TODO: use the state.profiles directly?
-      var members = []
-      for (const name of Object.keys(state.profiles)) {
-        members.push(await sbp('state/latestContractState', state.profiles[name].contractID))
+      if (this.ourUsername) {
+        if (this.$store.state.contracts[this.$route.query.groupId]) {
+          this.$router.push({ path: '/dashboard' })
+        } else {
+          await this.accept()
+          return
+        }
       }
+      const state = await sbp('state/latestContractState', this.$route.query.groupId)
+      const invite = state.invites[this.$route.query.secret]
+      if (!invite) {
+        this.ephemeral.errorMsg = L('This invite is not valid.')
+        this.pageStatus = 'INVALID'
+      } else if (invite && invite.status !== INVITE_STATUS.VALID) {
+        this.ephemeral.errorMsg = L('You should ask for a new one. Sorry about that!')
+        this.pageStatus = 'EXPIRED'
+      } else {
+        let creator = null
+        let creatorPicture = null
+        let message = null
 
-      state.members = members
+        if (invite.creator === INVITE_INITIAL_CREATOR) {
+          message = L('You were invited to join')
+        } else {
+          const identityContractID = await sbp('namespace/lookup', invite.creator)
+          const userState = await sbp('state/latestContractState', identityContractID)
+          const userDisplayName = userState.attributes.displayName || userState.attributes.name
+          message = L('{who} invited you to join their group!', { who: userDisplayName })
+          creator = userDisplayName
+          creatorPicture = userState.attributes.picture
+        }
 
-      // Mocked histoy to show on members-circle
-      state.mincomeCurrencySign = '$'
-      state.history = [1.1, 1.3, 0.7, 1.05, 1, 1.3]
-
-      this.ephemeral.contract = state
-    } catch (ex) {
-      // TODO Add ui facing error notification
-      console.log(ex)
-      this.$router.push({ path: '/mailbox' })
+        this.ephemeral.invitation = {
+          groupName: state.settings.groupName,
+          groupPicture: state.settings.groupPicture,
+          creator,
+          creatorPicture,
+          message
+        }
+        this.pageStatus = 'SIGNING'
+      }
+    } catch (e) {
+      console.error(e)
+      this.ephemeral.errorMsg = `${L('Something went wrong.')} ${e.message}`
+      this.pageStatus = 'INVALID'
     }
   },
   methods: {
-    accept: async function () {
+    isStatus (status) {
+      return this.pageStatus === status
+    },
+    goHome () {
+      this.$router.push({ path: '/' })
+    },
+    async accept () {
       try {
         // post acceptance event to the group contract
         this.ephemeral.errorMsg = null
@@ -88,26 +162,12 @@ export default {
         await sbp('state/enqueueContractSync', groupId)
         // after syncing, we can set the current group
         this.$store.commit('setCurrentGroupId', groupId)
-        this.$router.push({ path: '/' })
+        this.pageStatus = 'WELCOME'
       } catch (ex) {
         console.log(ex)
         // TODO: post this to a global notification system instead of using this.ephemeral.errorMsg
-        this.ephemeral.errorMsg = L('Failed to Accept Invite')
-      }
-    },
-    decline: async function () {
-      try {
-        // post decline event
-        this.ephemeral.errorMsg = null
-        const declination = await sbp('gi.contracts/group/inviteDecline/create',
-          { inviteSecret: this.$route.query.secret },
-          this.$route.query.groupId
-        )
-        await sbp('backend/publishLogEntry', declination)
-        this.$router.push({ path: '/mailbox' })
-      } catch (ex) {
-        console.log(ex)
-        this.ephemeral.errorMsg = L('Failed to Decline Invite')
+        this.ephemeral.errorMsg = L('Failed to Accept Invitation')
+        this.pageStatus = 'INVALID'
       }
     }
   }
@@ -116,4 +176,100 @@ export default {
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
+.c-logo {
+  min-width: 8rem;
+  width: 8rem;
+  margin: auto;
+
+  @include tablet {
+    position: absolute;
+    top: 1.5rem;
+    left: 1.5rem;
+  }
+}
+
+.c-page {
+  width: calc(100vw - #{$spacer-lg});
+  max-width: 33rem;
+}
+
+.c-welcome {
+  margin-top: -1.5rem; // makeup for the default l-page padding-top to respect 100vh
+}
+
+.c-header {
+  margin-top: $spacer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .title {
+    order: 2;
+  }
+
+  @include tablet {
+    margin-top: 2.5rem;
+  }
+}
+
+.c-avatars {
+  position: relative;
+  margin-bottom: 1.5rem;
+
+  .c-avatars-group {
+    width: 4.5rem; // TODO #672
+    height: 4.5rem;
+
+    @include tablet {
+      width: 8rem; // TODO #672
+      height: 8rem;
+    }
+  }
+
+  .c-avatars-creator {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    border: 2px solid $white;
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+}
+
+.card {
+  padding: 1.5rem $spacer;
+  margin-top: 1.5rem;
+
+  @include tablet {
+    padding: 2.5rem;
+  }
+}
+
+.c-switchEnter {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.c-broken {
+  margin-top: 20vh;
+  text-align: center;
+
+  .title {
+    margin-top: 3rem;
+    margin-bottom: $spacer-sm;
+  }
+
+  .c-goHome {
+    margin-top: $spacer-lg;
+  }
+}
+
+@include tablet {
+  .c-debug {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+  }
+}
 </style>

@@ -64,7 +64,7 @@ modal-template(class='is-centered is-left-aligned' back-on-mobile=true ref='moda
 <script>
 import { validationMixin } from 'vuelidate'
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
-import FormPassword from '@components/Forms/Password.vue'
+import FormPassword from '@containers/forms/FormPassword.vue'
 import { required, minLength } from 'vuelidate/lib/validators'
 import sameAs from 'vuelidate/lib/validators/sameAs.js'
 import L from '@view-utils/translations.js'
