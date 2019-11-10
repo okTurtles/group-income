@@ -39,18 +39,12 @@ export function createInvite (
 ) {
   return {
     inviteSecret: `${parseInt(Math.random() * 10000)}`, // TODO: this
-<<<<<<< HEAD
-    numInvites,
-    invitee: 'Felix'
-    // expires: // TODO: this
-=======
     quantity,
     creator,
     invitee,
     status: INVITE_STATUS.VALID,
     responses: {}, // { bob: true } list of usernames that accepted the invite.
     expires: 123456789 // TODO: this
->>>>>>> okturtles/master
   }
 }
 

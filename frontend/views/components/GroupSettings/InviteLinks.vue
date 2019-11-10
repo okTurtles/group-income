@@ -138,6 +138,7 @@ export default {
     ...mapState(['currentGroupId']),
     invitesToShow () {
       const { invites } = this.currentGroupState
+      console.log('--- invites fetched: ', invites)
       const invitesList = Object.entries(invites).map(([inviteSecret, invite]) => ({
         ...invite,
         inviteSecret,
