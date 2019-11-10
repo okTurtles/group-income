@@ -18,49 +18,38 @@ function setDisplayName (name) {
   cy.getByDT('displayName').clear().type(name)
   cy.getByDT('saveAccount').click()
   cy.getByDT('profileSaveSuccess').should('contain', 'Profile saved successfully!')
+  cy.closeModal()
 }
 
 describe('Proposals - Add members', () => {
-  it('register 6 users and logout each one', () => {
+  let invitationLink = null
+  let invitationLinkToUser4 = null
+
+  it('user1 registers, creates a group and share its invitation link', () => {
     cy.visit('/')
-    for (var i = 1; i <= 6; i++) {
-      cy.giSignup(`user${i}-${userId}`)
-      cy.giLogout({ hasNoGroup: true })
-    }
-  })
 
-  it('user1 logins back and creates a group', () => {
-    cy.giLogin(`user1-${userId}`)
-
-    cy.giCreateGroup(groupName, {
-      income: 400
-    })
-    cy.getByDT('profileName').should('contain', `user1-${userId}`)
+    cy.giSignup(`user1-${userId}`)
 
     setDisplayName('Margarida')
-    cy.closeModal()
-  })
 
-  it('user1 invites user2 and user3 to the group', () => {
-    cy.giInviteMember([`user2-${userId}`, `user3-${userId}`])
+    cy.giCreateGroup(groupName)
 
-    cy.giLogout()
-  })
+    cy.getByDT('inviteButton').click()
+    // OPTIMIZE - Find a better way to share global variables across tests (invitationLink)
+    cy.getByDT('invitationLink').invoke('text').then(text => {
+      const urlAt = text.indexOf('http://')
+      const url = text.substr(urlAt)
+      invitationLink = url
+      assert.isOk(url, 'invitation link is found')
+    })
 
-  it('user2 accepts the invite', () => {
-    cy.giLogin(`user2-${userId}`)
-    cy.giAcceptGroupInvite(groupName)
-    setDisplayName('Sandrina')
-    cy.closeModal()
-    cy.giLogout()
-  })
-
-  it('user3 accepts the invite', () => {
-    cy.giLogin(`user3-${userId}`)
-    cy.giAcceptGroupInvite(groupName)
-    setDisplayName('Pierre')
     cy.closeModal()
     cy.giLogout()
+  })
+
+  it('not registered user2 and user3 join the group through the invitation link', () => {
+    cy.giAcceptGroupInvite(invitationLink, { username: `user2-${userId}`, groupName })
+    cy.giAcceptGroupInvite(invitationLink, { username: `user3-${userId}`, groupName })
   })
 
   it('user1 proposes to add user4 and user5 together to the group', () => {
@@ -143,13 +132,7 @@ describe('Proposals - Add members', () => {
           .should('contain', 'Proposal accepted!')
         cy.getByDT('voted').should('not.exist')
         cy.get('@title').should('contain', `user1-${userId} proposed:`)
-        cy.getByDT('sendLink').should('contain', `Please send the following link to user4-${userId} so they can join the group:`)
-        cy.getByDT('sendLink').get('a.link')
-          .should('contain', 'http://localhost')
-          .invoke('attr', 'href')
-          .then(href => {
-            expect(href).to.contain('http://localhost')
-          })
+        cy.getByDT('sendLink').should('not.exist') // Only visible to who created the proposal
       })
     })
   })
@@ -172,7 +155,33 @@ describe('Proposals - Add members', () => {
     cy.giLogout()
   })
 
-  it('user1 logins and sees all 3 proposals with the correct states', () => {
+  it('user1 logs back and see their accepted proposal to invite user4', () => {
+    cy.giLogin(`user1-${userId}`)
+
+    getProposalBoxes().eq(0).within(() => {
+      cy.getByDT('title', 'h4').should('contain', 'You proposed:')
+      cy.getByDT('sendLink').should('contain', `Please send the following link to user4-${userId} so they can join the group:`)
+      cy.getByDT('sendLink').get('a.link')
+        .should('contain', 'http://localhost')
+        .invoke('attr', 'href')
+        .then(href => {
+          invitationLinkToUser4 = href
+          expect(href).to.contain('http://localhost')
+        })
+    })
+
+    cy.giLogout()
+  })
+
+  it('user4 registers and joins the group through its unique proposal invitation link', () => {
+    cy.giSignup(`user4-${userId}`)
+    cy.giAcceptGroupInvite(invitationLinkToUser4, {
+      isLoggedIn: true,
+      groupName
+    })
+  })
+
+  it('user1 logins and sees all 3 proposals correctly and the new member', () => {
     cy.giLogin(`user1-${userId}`)
 
     // A quick checkup that each proposal state is correct.
@@ -184,7 +193,7 @@ describe('Proposals - Add members', () => {
       cy.getByDT('proposalItem').eq(0).within(() => {
         cy.getByDT('statusDescription')
           .should('contain', 'Proposal accepted!')
-        cy.getByDT('sendLink').should('exist')
+        cy.getByDT('sendLink').should('not.exist') // Because it was already used
       })
 
       cy.getByDT('proposalItem').eq(1).within(() => {
@@ -336,6 +345,16 @@ describe('Proposals - Add members', () => {
   it('It should give monetary contribution', () => {
     cy.get('.giving .c-contribution-item:first-child')
       .should('contain', '$100 to Margarida')
+
+    cy.getByDT('groupMembers').find('ul')
+      .children()
+      .should('have.length', 4)
+      .each(([member], index) => {
+        cy.get(member).within(() => {
+          cy.getByDT('username').should('contain', `user${index + 1}-${userId}`)
+        })
+      })
+
     cy.giLogout()
   })
 })

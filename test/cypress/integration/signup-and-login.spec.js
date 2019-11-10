@@ -1,4 +1,4 @@
-describe('SignUp, Profile and Login', () => {
+describe('Signup, Profile and Login', () => {
   // NOTE: Create a uniqueId to avoid duplicated users during crypress tests
   // OPTIMIZE: We need to find a cleaner way to handle multiple
   // users and groups that are created during test...

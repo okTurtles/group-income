@@ -13,7 +13,7 @@
       span(
         data-test='profileName'
         v-if='userDisplayName'
-      ) {{ ourUsername }}
+      ) @{{ ourUsername }}
 
   button.is-icon-small(
     data-test='settingsBtn'
@@ -87,6 +87,7 @@ export default {
   margin-top: 1px;
 
   span {
+    font-family: "Lato";
     color: $text_1;
   }
 }
