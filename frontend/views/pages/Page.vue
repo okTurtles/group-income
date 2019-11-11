@@ -123,7 +123,9 @@ $pagePaddingDesktop: 5.5rem;
     text-align: left;
     min-height: 4.75rem;
 
-    .p-with-sidebar & {
+    padding-left: $pagePaddingDesktop;
+
+    .p-with-sidebar, & {
       padding-left: $pagePaddingTablet;
     }
   }
@@ -131,7 +133,7 @@ $pagePaddingDesktop: 5.5rem;
   @include widescreen {
     min-height: 5.25rem;
 
-    .p-with-sidebar & {
+    .p-with-sidebar, & {
       padding-left: $pagePaddingDesktop;
     }
   }

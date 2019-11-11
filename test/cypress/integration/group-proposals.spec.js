@@ -30,9 +30,9 @@ describe('Proposals - Add members', () => {
 
     cy.giSignup(`user1-${userId}`)
 
-    setDisplayName('Margarida')
-
     cy.giCreateGroup(groupName)
+
+    setDisplayName('Margarida')
 
     cy.getByDT('inviteButton').click()
     // OPTIMIZE - Find a better way to share global variables across tests (invitationLink)
@@ -209,6 +209,15 @@ describe('Proposals - Add members', () => {
           .should('contain', 'Proposal cancelled.')
       })
     })
+
+    cy.getByDT('groupMembers').find('ul')
+      .children()
+      .should('have.length', 4)
+      .each(([member], index) => {
+        cy.get(member).within(() => {
+          cy.getByDT('username').should('contain', `user${index + 1}-${userId}`)
+        })
+      })
   })
 
   it('It should display that no one is doing any contribution', () => {
@@ -233,7 +242,7 @@ describe('Proposals - Add members', () => {
     cy.getByDT('inputIncomeOrPledge').clear().type(100)
     cy.getByDT('badIncome').should('not.be.visible')
     cy.getByDT('submitIncome').click()
-    cy.getByDT('headerNeed').should('contain', 'You need $300')
+    cy.getByDT('headerNeed').should('contain', 'You need $100')
     cy.getByDT('givingParagraph').should('contain', 'You can contribute to your group with money or other valuables like teaching skills, sharing your time ot help someone. The sky is the limit!')
   })
 
@@ -344,16 +353,7 @@ describe('Proposals - Add members', () => {
 
   it('It should give monetary contribution', () => {
     cy.get('.giving .c-contribution-item:first-child')
-      .should('contain', '$100 to Margarida')
-
-    cy.getByDT('groupMembers').find('ul')
-      .children()
-      .should('have.length', 4)
-      .each(([member], index) => {
-        cy.get(member).within(() => {
-          cy.getByDT('username').should('contain', `user${index + 1}-${userId}`)
-        })
-      })
+      .should('contain', '$50 to Margarida')
 
     cy.giLogout()
   })
