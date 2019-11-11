@@ -30,7 +30,7 @@ page-section.c-section(:title='L("Invite links")')
         td.c-name
           | {{ item.invitee }}
           tooltip.c-name-tooltip(
-            v-if='false'
+            v-if='item.isAnyoneLink'
             direction='top'
             :isTextCenter='true'
             :text='L("This invite link was only available during the onboarding period.")'
@@ -48,8 +48,11 @@ page-section.c-section(:title='L("Invite links")')
           )
             i.icon-ellipsis-v
         td.c-state
-          i18n.c-state-description {{ item.status }}
-          i18n.c-state-expire.expired(v-if='item.status === "used"') Expired
+          i18n.c-state-description {{ item.status.description }}
+          i18n.c-state-expire(
+            v-if='item.status.expiryInfo'
+            :class='{ "expired": item.status.isExpired }'
+          ) {{ item.status.expiryInfo }}
         td.c-action
           menu-parent
             menu-trigger.is-icon(:aria-label='L("Show list")')
@@ -121,7 +124,7 @@ export default {
     activateWebShare (inviteLink) {
       if (navigator.share) {
         navigator.share({
-          title: this.L('Your invite'),
+          title: L('Your invite'),
           url: inviteLink
         })
       }
@@ -131,6 +134,65 @@ export default {
         'used': L('used'),
         'valid': L('valid')
       }[status]
+    },
+    inviteStatusDescription ({
+      isAnyoneLink,
+      isInviteExpired,
+      isAllInviteUsed,
+      quantity,
+      numberOfResponses
+    }) {
+      if (isAnyoneLink) return L('{numberOfResponses}/{quantity} used', { numberOfResponses, quantity })
+      else if (isAllInviteUsed) return L('Used')
+      else return isInviteExpired ? L('Not used') : L('Not used yet')
+    },
+    readableExpiryInfo (expiryTime) {
+      const MIL = 1000
+      const MIL_MIN = 60 * MIL
+      const MIL_HR = MIL_MIN * 60
+      const MIL_DAY = 24 * MIL_HR
+      let remainder
+
+      const days = Math.floor(expiryTime / MIL_DAY)
+      remainder = expiryTime % MIL_DAY
+      const hours = Math.floor(remainder / MIL_HR)
+      remainder = remainder % MIL_HR
+      const minutes = Math.ceil(remainder / MIL_MIN)
+      const options = [
+        undefined,
+        L('{minutes}m left', { minutes }),
+        L('{hours}h {minutes}m left', { hours, minutes }),
+        L('{days}d {hours}h {minutes}m left', { days, hours, minutes })
+      ]
+
+      return options[!!days + !!hours + !!minutes]
+    },
+    mapInvite ({
+      creator,
+      inviteSecret,
+      responses,
+      quantity,
+      expires: expiryTime
+    }) {
+      const isAnyoneLink = creator === 'INVITE_INITIAL_CREATOR'
+      const isInviteExpired = expiryTime <= 0
+      const numberOfResponses = Object.keys(responses).length
+      const isAllInviteUsed = numberOfResponses === quantity
+
+      return {
+        isAnyoneLink,
+        invitee: isAnyoneLink ? 'Anyone' : Object.keys(responses)[0],
+        inviteSecret,
+        inviteLink: buildInvitationUrl(this.currentGroupId, inviteSecret),
+        status: {
+          isExpired: isInviteExpired,
+          isActive: !isInviteExpired && !isAllInviteUsed,
+          description: this.inviteStatusDescription({
+            isAnyoneLink, isInviteExpired, isAllInviteUsed, quantity, numberOfResponses
+          }),
+          expiryInfo: isAllInviteUsed ? '' : isInviteExpired ? L('Expired') : this.readableExpiryInfo(expiryTime)
+        }
+      }
     }
   },
   computed: {
@@ -138,15 +200,9 @@ export default {
     ...mapState(['currentGroupId']),
     invitesToShow () {
       const { invites } = this.currentGroupState
-      console.log('--- invites fetched: ', invites)
-      const invitesList = Object.entries(invites).map(([inviteSecret, invite]) => ({
-        ...invite,
-        inviteSecret,
-        inviteLink: buildInvitationUrl(this.currentGroupId, inviteSecret),
-        status: this.translateStatus(invite.status)
-      }))
+      const invitesList = Object.values(invites).map(this.mapInvite)
       const options = {
-        Active: () => invitesList.filter(invite => invite.status === 'valid'),
+        Active: () => invitesList.filter(invite => invite.status.isActive),
         All: () => invitesList
       }
 
