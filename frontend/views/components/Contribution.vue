@@ -79,9 +79,9 @@ export default {
       type: String,
       validator (value) {
         return [
-          'default', // light box just to read the content
-          'unfilled', // dashed box interactive to add a new contribution
-          'editable' // blue box to edit a contribution
+          'default', // Dispaly the contribution
+          'unfilled', // Add a new contribution
+          'editable' // Edit a contribution
         ].indexOf(value) > -1
       },
       default: 'default'
