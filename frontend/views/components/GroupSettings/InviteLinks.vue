@@ -73,6 +73,7 @@ page-section.c-section(:title='L("Invite links")')
                   item-id='revoke'
                   icon='times'
                 )
+                  // TODO: Implement the action for this menu button
                   i18n Revoke Link
 
   .c-empty-list(v-else)
@@ -128,12 +129,6 @@ export default {
           url: inviteLink
         })
       }
-    },
-    translateStatus (status) {
-      return {
-        'used': L('used'),
-        'valid': L('valid')
-      }[status]
     },
     inviteStatusDescription ({
       isAnyoneLink,
