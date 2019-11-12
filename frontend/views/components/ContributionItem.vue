@@ -69,7 +69,7 @@ export default {
           _button: '</button>'
         }
 
-        if (this.action === 'RECEIVING' && this.type === 'MONETARY') {
+        if (this.action === 'GIVING' && this.type === 'MONETARY') {
           return L('A total of {service} to {button_}{numMembers} members{_button}', html)
         } else {
           return L('{service} from {button_}{numMembers} members{_button}', html)

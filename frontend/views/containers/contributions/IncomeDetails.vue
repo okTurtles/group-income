@@ -22,7 +22,7 @@ modal-base-template(ref='modal')
               v-model='$v.form.incomeDetailsType.$model'
               @change='resetAmount'
             )
-            i18n(data-test='needsIncomeRadio') Yes, I do
+            i18n(data-test='dontNeedsIncomeRadio') Yes, I do
           label.radio(v-error:incomeDetailsType='')
             input.input(
               type='radio'
@@ -31,7 +31,7 @@ modal-base-template(ref='modal')
               v-model='$v.form.incomeDetailsType.$model'
               @change='resetAmount'
             )
-            i18n(data-test='dontNeedsIncomeRadio') No, I don't
+            i18n(data-test='needsIncomeRadio') No, I don't
         transition(name='expand')
           fieldset(v-if='!!form.incomeDetailsType')
             label.field
@@ -40,7 +40,7 @@ modal-base-template(ref='modal')
               ) {{ needsIncome ? L("What's your monthly income?") : L('How much do you want to pledge?') }}
               .input-combo(
                 :class='{"error": $v.form.amount.$error }'
-                v-error:amount='{ tag: "p", attrs: { "data-test": "badIncome" } }'
+                v-error:amount='{ attrs: { "data-test": "badIncome" } }'
               )
                 input.input(
                   type='number'

@@ -15,7 +15,7 @@ transition(name='replacelist')
         data-test='inputNonMonetaryContribution'
         @keyup='verifyValue'
         @keydown.esc='cancel'
-        @keydown.enter='handleEnter'
+        @keydown.enter.prevent='handleEnter'
       )
       .buttons
         i18n.button.is-small.is-danger.is-outlined(
@@ -153,6 +153,7 @@ export default {
         if (this.isAdding) {
           this.$emit('new-value', 'nonMonetaryAdd', this.form.contribution)
           this.isAdding = false
+          this.form.contribution = null
         }
         if (this.isEditing) {
           this.$emit('new-value', 'nonMonetaryEdit', {
@@ -161,7 +162,6 @@ export default {
           })
           this.isEditing = false
         }
-        this.form.contribution = null
       }
     }
   },
