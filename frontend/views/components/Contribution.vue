@@ -79,7 +79,7 @@ export default {
       type: String,
       validator (value) {
         return [
-          'default', // Dispaly the contribution
+          'default', // Display the contribution
           'unfilled', // Add a new contribution
           'editable' // Edit a contribution
         ].indexOf(value) > -1
