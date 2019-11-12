@@ -68,7 +68,7 @@ page-section.c-section(:title='L("Invite links")')
                   // TODO: Implement the action for this menu button.
                   i18n See original proposal
                 menu-item(
-                  v-if='item.status === "valid"'
+                  v-if='item.status.isActive'
                   tag='button'
                   item-id='revoke'
                   icon='times'
