@@ -220,6 +220,12 @@ page(
               i.icon-user-times icon-user-times
               i.icon-vote-yea icon-vote-yea
               i.icon-copy icon-copy
+        tr
+          td
+            pre
+              | i.icon-angle-left.c-icon-round.has-background-success.has-text-success
+          td
+            i.icon-angle-left.c-icon-round.has-background-success.has-text-success
   article#spacing
     section.card
       i18n(tag='h2' class='card-header') Spacing

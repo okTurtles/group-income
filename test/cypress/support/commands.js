@@ -68,6 +68,11 @@ Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {
   cy.getByDT('welcomeHome').should('contain', 'Welcome to GroupIncome')
 })
 
+Cypress.Commands.add('giSwitchUser', (user) => {
+  cy.giLogout()
+  cy.giLogin(user)
+})
+
 Cypress.Commands.add('closeModal', () => {
   cy.getByDT('closeModal').click()
   cy.getByDT('closeModal').should('not.exist')
