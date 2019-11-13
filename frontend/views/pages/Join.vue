@@ -35,16 +35,18 @@ div
     .c-broken(v-else-if='isStatus("INVALID") || isStatus("EXPIRED")')
       svg-broken-link.c-svg
       i18n.title.is-1(
-        v-if='isStatus("EXPIRED")'
+        v-if='isStatus("INVALID")'
         tag='h1'
+        data-test='pageTitle'
         :args='LTags()'
       ) Oh no! {br_}Something went wrong.
       i18n.title.is-1(
         v-else
         tag='h1'
+        data-test='pageTitle'
         :args='LTags()'
       ) Oh no! {br_}Your link has expired.
-      p.has-text-1 {{ ephemeral.errorMsg }}
+      p.has-text-1(data-test='helperText') {{ ephemeral.errorMsg }}
       i18n.c-goHome(tag='button' @click='goHome') Take me home
 </template>
 
@@ -136,7 +138,7 @@ export default {
       }
     } catch (e) {
       console.error(e)
-      this.ephemeral.errorMsg = `${L('Something went wrong.')} ${e.message}`
+      this.ephemeral.errorMsg = `${L('Something went wrong. Please, try again.')} ${e.message}`
       this.pageStatus = 'INVALID'
     }
   },

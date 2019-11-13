@@ -1,9 +1,8 @@
 <template lang='pug'>
 .wrapper(data-test='welcome')
   avatar(
-    src='/assets/images/default-avatar.png'
-    :alt='groupSettings.groupName'
-    :blobURL='groupSettings.groupPicture'
+    :src='groupSettings.groupPicture'
+    :aria-label='L("{groupName}\'s avatar", { groupName: groupSettings.groupName })'
   )
 
   i18n(

@@ -12,8 +12,7 @@ ul.c-group-list(v-if='groupsByName.length')
     )
       button.c-group-picture.is-unstyled(@click='handleMenuSelect(group.contractID)')
         avatar.c-avatar(
-          src='/assets/images/default-avatar.png'
-          :blobURL='$store.state[group.contractID].settings.groupPicture'
+          :src='$store.state[group.contractID].settings.groupPicture'
         )
 
   li.c-group-list-item
