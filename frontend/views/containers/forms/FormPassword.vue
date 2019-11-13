@@ -1,16 +1,18 @@
 <template lang='pug'>
-label.field
+label.field(
+  v-error:password=''
+)
   .label(v-if='label') {{ label }}
   .input-combo
     input.input(
       :type='isLock ? "password" : "text"'
       :id='name'
-      :class='[{error: v[name].$error}, size]'
+      :class='[{error: vForm[name].$error}, size]'
       :name='name'
       :placeholder='showPlaceholder ? name : ""'
       :data-test='name'
-      v-model='value[name]'
-      @input='v[name].$touch()'
+      @input='e => $emit("input", e)'
+      @blur='e => $emit("blur", e)'
     )
     button.is-icon(
       type='button'
@@ -20,10 +22,9 @@ label.field
       i(:class='isLock ? "icon-eye" : "icon-eye-slash"')
 
   i18n.error(
-    tag='p'
-    v-show='v[name].$error'
+    v-show='vForm[name].$error'
     data-test='badPassword'
-  ) {{ v[name].$error }}
+  ) {{ error }}
 </template>
 
 <script>
@@ -48,7 +49,7 @@ export default {
       type: Object,
       required: true
     },
-    v: {
+    vForm: {
       type: Object,
       required: true
     },
@@ -67,15 +68,14 @@ export default {
     size: {
       type: String,
       required: false
+    },
+    error: {
+      type: String,
+      required: false
     }
   },
   created () {
     this.isLock = !this.showPassword
-  },
-  watch: {
-    value () {
-      this.$emit('input', this.value)
-    }
   }
 }
 </script>

@@ -8,24 +8,22 @@ form(
 )
   label.field
     i18n.label Username
-    input.input#loginName(
+    input.input(
       :class='{error: $v.form.name.$error}'
       name='name'
-      @keyup.enter='login'
-      @input='debounceName'
-      ref='username'
+      @input='e => debounceField(e, "name")'
+      @blur='e => updateField(e, "name")'
       autofocus
       data-test='loginName'
-      v-error:name='{ tag: "p", attrs: { "data-test": "badUsername" } }'
+      v-error:name='{ attrs: { "data-test": "badUsername" } }'
     )
 
-  // TODO #661 - improve :v
   form-password(
     :label='L("Password")'
-    :value='form'
-    :v='$v.form'
-    @enter='login'
-    @input='(newPassword) => {password = newPassword}'
+    :vForm='$v.form'
+    :error='L("Minimum of 7 caracters")'
+    @input='e => debounceField(e, "password")'
+    @blur='e => updateField(e, "password")'
   )
 
   i18n.link(tag='a' @click='forgotPassword') Forgot your password?
@@ -60,11 +58,13 @@ export default {
     this.$refs.username.focus()
   },
   methods: {
-    debounceName: debounce(function (e) {
-      // TODO - $v.lazy this...
-      this.form.name = e.target.value
-      this.$v.form.name.$touch()
-    }, 700),
+    debounceField: debounce(function (e, fieldName) {
+      this.updateField(e, fieldName)
+    }, 500),
+    updateField (e, fieldName) {
+      this.form[fieldName] = e.target.value
+      this.$v.form[fieldName].$touch()
+    },
     async login () {
       try {
         // TODO: Insert cryptography here

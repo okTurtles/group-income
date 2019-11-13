@@ -14,7 +14,7 @@
         step='1'
         min='0'
         required=''
-        :class='{ error: v.mincomeAmount.$error }'
+        :class='{ error: vForm.mincomeAmount.$error }'
         :value='group.mincomeAmount'
         @input='update'
         @keyup.enter='next'
@@ -44,7 +44,7 @@ export default {
   name: 'GroupMincome',
   props: {
     group: { type: Object },
-    v: { type: Object }
+    vForm: { type: Object }
   },
   data () {
     return {
@@ -56,7 +56,7 @@ export default {
   },
   methods: {
     update (e) {
-      this.v[e.target.name].$touch()
+      this.vForm[e.target.name].$touch()
       this.$emit('input', {
         data: {
           [e.target.name]: e.target.value
@@ -64,8 +64,8 @@ export default {
       })
     },
     next (e) {
-      this.v[e.target.name].$touch()
-      if (!this.v[e.target.name].$invalid) {
+      this.vForm[e.target.name].$touch()
+      if (!this.vForm[e.target.name].$invalid) {
         this.$emit('next')
       }
     }

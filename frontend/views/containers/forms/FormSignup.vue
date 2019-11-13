@@ -1,39 +1,38 @@
 <template lang='pug'>
 form(
   novalidate
-  ref='form'
   name='formData'
   data-test='signup'
   @submit.prevent='signup'
 )
   label.field
     i18n.label Username
-    input.input#name(
+    input.input(
       :class='{error: $v.form.name.$error}'
       name='name'
-      @input='debounceName'
-      ref='username'
+      @input='e => debounceField(e, "name")'
+      @blur='e => updateField(e, "name")'
       data-test='signName'
-      v-error:name='{ tag: "p", attrs: { "data-test": "badUsername" } }'
+      v-error:name='{ attrs: { "data-test": "badUsername" } }'
     )
 
   label.field
     i18n.label Email
-    input.input#email(
+    input.input(
       :class='{error: $v.form.email.$error}'
       name='email'
-      v-model='$v.form.email.$model'
       type='email'
+      @input='e => debounceField(e, "email")'
+      @blur='e => updateField(e, "email")'
       data-test='signEmail'
-      v-error:email='{ tag: "p", attrs: { "data-test": "badEmail" } }'
+      v-error:email='{ attrs: { "data-test": "badEmail" } }'
     )
 
-  // TODO #661 - improve :v
   form-password(
     :label='L("Password")'
-    :value='form'
-    :v='$v.form'
-    @input='(newPassword) => {password = newPassword}'
+    :vForm='$v.form'
+    :error='L("Minimum of 7 caracters")'
+    @input='e => debounceField(e, "password")'
   )
 
   p.error(v-if='ephemeral.errorMsg') {{ ephemeral.errorMsg }}
@@ -78,14 +77,13 @@ export default {
     }
   },
   methods: {
-    debounceName: debounce(function (e) {
-      // TODO - $v.lazy this...
-      // "Validator is evaluated on every data change, as it is essentially a computed value.
-      // If you need to throttle an async call, do it on your data change event, not on the validator itself.
-      // You may end up with broken Vue observables otherwise."
-      this.form.name = e.target.value
-      this.$v.form.name.$touch()
-    }, 700),
+    debounceField: debounce(function (e, fieldName) {
+      this.updateField(e, fieldName)
+    }, 500),
+    updateField (e, fieldName) {
+      this.form[fieldName] = e.target.value
+      this.$v.form[fieldName].$touch()
+    },
     async signup () {
       // Prevent autocomplete submission when empty field
       if (this.form.name !== null && this.form.email !== null) {
@@ -158,7 +156,7 @@ export default {
         minLength: minLength(7)
       },
       email: {
-        required,
+        [L('e-mail required')]: required,
         [L('not an e-mail')]: email,
         [L('e-mail is unavailable')]: value => {
           // TODO - verify if e-mail exists

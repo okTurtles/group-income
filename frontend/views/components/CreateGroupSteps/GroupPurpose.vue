@@ -10,7 +10,7 @@
       ref='purpose'
       :placeholder='L("Group Purpose")'
       maxlength='500'
-      :class='{ error: v.sharedValues.$error }'
+      :class='{ error: vForm.sharedValues.$error }'
       :value='group.sharedValues'
       @input='update'
     )
@@ -22,14 +22,14 @@ export default {
   name: 'GroupPurpose',
   props: {
     group: { type: Object },
-    v: { type: Object }
+    vForm: { type: Object }
   },
   mounted () {
     this.$refs.purpose.focus()
   },
   methods: {
     update (e) {
-      this.v.sharedValues.$touch()
+      this.vForm.sharedValues.$touch()
       this.$emit('input', {
         data: {
           sharedValues: e.target.value
