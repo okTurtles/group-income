@@ -31,7 +31,7 @@ form(
   form-password(
     :label='L("Password")'
     :vForm='$v.form'
-    :error='L("Minimum of 7 caracters")'
+    :error='L("Your password must be at least 7 characters long.")'
     @input='e => debounceField(e, "password")'
   )
 
@@ -145,20 +145,20 @@ export default {
   validations: {
     form: {
       name: {
-        required,
-        [L('cannot contain spaces')]: nonWhitespace,
-        [L('name is unavailable')]: async (value) => {
+        [L('A username is required.')]: required,
+        [L('A username cannot contain spaces.')]: nonWhitespace,
+        [L('This username is already being used.')]: async (value) => {
           return !await sbp('namespace/lookup', value)
         }
       },
       password: {
-        required,
+        [L('A password is required.')]: required,
         minLength: minLength(7)
       },
       email: {
-        [L('e-mail required')]: required,
-        [L('not an e-mail')]: email,
-        [L('e-mail is unavailable')]: value => {
+        [L('An email is required.')]: required,
+        [L('Please enter a valid email.')]: email,
+        [L('This email is already being used.')]: value => {
           // TODO - verify if e-mail exists
           return true
         }

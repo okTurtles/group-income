@@ -50,7 +50,7 @@ describe('Signup, Profile and Login', () => {
     cy.getByDT('loginBtn').click()
 
     cy.getByDT('loginName').clear().type('non existent')
-    cy.getByDT('badUsername').should('contain', 'cannot contain spaces')
+    cy.getByDT('badUsername').should('contain', 'A username cannot contain spaces.')
 
     cy.getByDT('loginName').clear().type('nonexistent')
     cy.getByDT('password').clear().type('987654321')
@@ -64,10 +64,10 @@ describe('Signup, Profile and Login', () => {
     cy.getByDT('signupBtn').click()
 
     cy.getByDT('signName').clear().type('new user')
-    cy.getByDT('badUsername').should('contain', 'cannot contain spaces')
+    cy.getByDT('badUsername').should('contain', 'A username cannot contain spaces.')
 
     cy.getByDT('signName').clear().type(username)
-    cy.getByDT('badUsername').should('contain', 'name is unavailable')
+    cy.getByDT('badUsername').should('contain', 'This username is already being used.')
 
     // TODO: When email verification is implemented
     // cy.getByDT('signEmail').clear().type(`${username}@email.com`)

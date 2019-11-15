@@ -21,7 +21,7 @@ form(
   form-password(
     :label='L("Password")'
     :vForm='$v.form'
-    :error='L("Minimum of 7 caracters")'
+    :error='L("Your password must be at least 7 characters long.")'
     @input='e => debounceField(e, "password")'
     @blur='e => updateField(e, "password")'
   )
@@ -103,11 +103,11 @@ export default {
   validations: {
     form: {
       name: {
-        required,
-        [L('cannot contain spaces')]: nonWhitespace
+        [L('A username is required.')]: required,
+        [L('A username cannot contain spaces.')]: nonWhitespace
       },
       password: {
-        required,
+        [L('A password is required.')]: required,
         minLength: minLength(7)
       }
     }
