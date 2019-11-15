@@ -102,7 +102,10 @@ export default {
         const proposalHash = this.proposalHash
         const payload = {}
         if (oneVoteToPass(proposalHash)) {
-          payload.passPayload = createInvite({ creator: this.proposal.data.proposalData.member })
+          payload.passPayload = createInvite({
+            invitee: this.proposal.data.proposalData.member,
+            creator: this.proposal.meta.username
+          })
         }
         const vote = await sbp('gi.contracts/group/proposalVote/create',
           {

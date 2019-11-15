@@ -133,7 +133,7 @@ export default {
           color: 'success'
         }
       }
-      return `icon-${style[this.type].icon} c-icon-round has-background-${style[this.type].color} has-text-${style[this.type].color}`
+      return `icon-${style[this.type].icon} icon-round has-background-${style[this.type].color} has-text-${style[this.type].color}`
     }
   }
 }

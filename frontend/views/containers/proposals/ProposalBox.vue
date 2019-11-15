@@ -63,14 +63,14 @@ export default {
       if (isAnyOpen) {
         return isOwnProposal
           ? L('{strong_}You{_strong} are proposing:', this.LTags('strong'))
-          : L('{strong_}{username}{_strong} is proposing:', { username, ...this.LTags('strong') })
+          : L('{username} is proposing:', { username: `<strong>${username}</strong>` })
       }
 
       // Note: In English, no matter the subject, the wording is the same,
       // but in other languages the wording is different (ex: Portuguese)
       return isOwnProposal
         ? L('{strong_}You{_strong} proposed:', this.LTags('strong'))
-        : L('{strong_}{username}{_strong} proposed:', { username, ...this.LTags('strong') })
+        : L('{username} proposed:', { username: `<strong>${username}</strong>` })
     },
     humanDate () {
       const date = new Date(this.proposal.meta.createdDate)
@@ -97,12 +97,12 @@ export default {
         return `"${reason.substr(0, charToTruncate)}..."`
       }
 
-      return `"${reason}"`
+      return reason ? `"${reason}"` : ''
     }
   },
   methods: {
     toggleReason (e) {
-      e.target.blur() // so the button doesnt look black.
+      e.target.blur() // so the button doesnt remain focused (with black color).
       this.ephemeral.isReasonHidden = !this.ephemeral.isReasonHidden
     }
   }

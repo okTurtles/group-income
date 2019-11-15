@@ -1,7 +1,7 @@
 <template lang='pug'>
   li.c-li(data-test='proposalItem')
     .c-item
-      i.c-icon-round(:class='iconClass')
+      i(:class='iconClass')
       .c-main
         p.has-text-bold(data-test='typeDescription') {{typeDescription}}
         p.has-text-1(
@@ -120,10 +120,10 @@ export default {
 
       if ([STATUS_PASSED, STATUS_FAILED].includes(this.proposal.status)) {
         // Show the status icon, no matter the proposal type
-        return `${status[this.proposal.status]} c-icon`
+        return `${status[this.proposal.status]} icon-round`
       }
 
-      return `${type[this.proposalType]} ${status[this.proposal.status]} c-icon`
+      return `${type[this.proposalType]} ${status[this.proposal.status]} icon-round`
     },
     invitationLink () {
       if (this.proposalType === PROPOSAL_INVITE_MEMBER &&
@@ -179,9 +179,9 @@ export default {
   }
 }
 
-.c-icon-round {
+.icon-round {
   @include phone {
-    margin-left: $spacer-sm; // TODO: Suggest to @mmbotelho
+    margin-left: $spacer-sm;
   }
 }
 </style>

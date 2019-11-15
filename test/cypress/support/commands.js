@@ -149,7 +149,8 @@ Cypress.Commands.add('giInviteMember', (
 Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
   username,
   groupName,
-  isLoggedIn
+  isLoggedIn,
+  inviteCreator
 }) => {
   cy.visit(invitationLink)
 
@@ -157,7 +158,10 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     cy.getByDT('welcomeGroup').should('contain', `Welcome to ${groupName}!`)
   } else {
     cy.getByDT('groupName').should('contain', groupName)
-    cy.getByDT('invitationMessage').should('contain', 'You were invited to join')
+    const inviteMessage = inviteCreator
+      ? `${inviteCreator} invited you to join their group!`
+      : 'You were invited to join'
+    cy.getByDT('invitationMessage').should('contain', inviteMessage)
     cy.giSignup(username, { isInvitation: true, groupName })
   }
   cy.getByDT('toDashboardBtn').click()

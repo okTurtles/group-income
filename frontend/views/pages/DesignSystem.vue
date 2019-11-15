@@ -223,9 +223,9 @@ page(
         tr
           td
             pre
-              | i.icon-angle-left.c-icon-round.has-background-success.has-text-success
+              | i.icon-angle-left.icon-round.has-background-success.has-text-success
           td
-            i.icon-angle-left.c-icon-round.has-background-success.has-text-success
+            i.icon-angle-left.icon-round.has-background-success.has-text-success
   article#spacing
     section.card
       i18n(tag='h2' class='card-header') Spacing
