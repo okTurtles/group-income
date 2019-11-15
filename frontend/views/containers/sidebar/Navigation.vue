@@ -1,20 +1,19 @@
 <template lang='pug'>
 nav.c-navigation(
-  role='navigation'
+  :aria-label='L("Main")'
   :class='{ "is-active": ephemeral.isActive }'
 )
-  toggle(@toggle='toggleMenu')
+  toggle(@toggle='toggleMenu' element='navigation' :aria-expanded='ephemeral.isActive')
 
-  groups-list(v-if='groupsByName.length > 1')
+  groups-list(v-if='groupsByName.length > 1' :inert='isInert')
 
-  .c-navigation-wrapper
+  .c-navigation-wrapper(:inert='isInert')
     .c-navigation-header
       h1.sr-only Main Menu
 
       router-link(to='/home')
         img.c-logo(:src='logo' alt='GroupIncome\'s logo')
 
-      // NOTE/REVIEW: If we follow Messages GIBot approach, the bell icon wont be needed
       activity(:activityCount='activityCount' v-if='groupsByName.length')
 
     .c-navigation-body(
@@ -82,8 +81,8 @@ nav.c-navigation(
             target='_blank'
           ) Donate
 
-        profile
-
+    .c-navigation-footer(v-if='groupsByName.length')
+      profile
   component(:is='ephemeral.timeTravelComponentName')
 </template>
 
@@ -135,6 +134,11 @@ export default {
     logo () {
       const name = this.colors.theme === 'dark' ? '-white' : ''
       return `/assets/images/logo-transparent${name}.png`
+    },
+    isInert () {
+      // inert is a HTML attr used to prevent the content from being interactive (keyboard and Screen Readers)
+      // TODO: Update window.innerWidth on resize.
+      return !this.ephemeral.isActive && window.innerWidth < 1200
     }
   },
   methods: {
@@ -174,6 +178,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
   padding: 0 $spacer;
   height: 4.6rem;
   margin-bottom: -0.1rem;
@@ -182,7 +187,7 @@ export default {
 .c-navigation-body {
   display: flex;
   overflow: auto;
-  justify-content: space-between;
+  -webkit-overflow-scrolling: touch;
   flex-direction: column;
   flex-grow: 1;
 }
@@ -196,6 +201,11 @@ export default {
 
 .c-navigation-bottom {
   padding-top: $spacer-lg;
+  padding-bottom: $spacer-sm;
+}
+
+.c-navigation-footer {
+  flex-shrink: 0;
 }
 
 .c-menu-list-bottom {
@@ -208,8 +218,10 @@ export default {
     line-height: 1.65rem;
     color: $text_1;
 
-    &:hover {
+    &:hover,
+    &:focus {
       color: $text_0;
+      outline: none;
     }
   }
 }
@@ -221,10 +233,5 @@ export default {
 
 .c-toggle {
   left: 100%;
-  height: 64px;
-
-  @include tablet {
-    display: none;
-  }
 }
 </style>
