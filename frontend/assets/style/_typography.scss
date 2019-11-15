@@ -66,7 +66,6 @@ $lineHeight: 3, 2.25, 1.6875, 1.3125, 1;
 @each $size in $sizes {
   $i: index($sizes, $size);
 
-  h#{$i},
   .is-#{$i} {
     font-family: "Poppins";
     font-weight: bold;
@@ -76,26 +75,24 @@ $lineHeight: 3, 2.25, 1.6875, 1.3125, 1;
 }
 
 @include until($tablet) {
-  .is-1,
-  h1 {
+  .is-1 {
     font-size: $size-2; // 24px
     line-height: 2.125rem; // 34px
   }
 
-  .is-2,
-  h2 {
+  .is-2 {
     font-size: 1.25rem; // 20px
     line-height: 1.75rem; // 28px
   }
 }
 
 @include phone {
-  h1 {
+  .is-1 {
     font-size: 1.25rem; // 20px
     line-height: 2.125rem; // 34px
   }
 
-  h2 {
+  .is-2 {
     font-size: $size-3; // 18px
     line-height: 1.5625rem; // 25px
   }

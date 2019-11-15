@@ -1,6 +1,6 @@
 <template lang='pug'>
 modal-base-template
-  i18n(tag='h1') How to join a group
+  i18n.is-1(tag='h1') How to join a group
 
   .wrapper
     .slider

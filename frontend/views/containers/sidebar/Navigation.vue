@@ -51,16 +51,6 @@ nav.c-navigation(
             i.icon-plus
             i18n Add a group
 
-        // Keep it here atm until we remove completly the mailbox
-        list-item(
-          tag='router-link'
-          to='/messages'
-          style='opacity: 0; cursor: default;'
-          icon='envelope'
-          :badgeCount='2'
-        )
-          i18n Messages
-
       .c-navigation-body-bottom
         ul.c-menu-list-bottom
           i18n(
@@ -136,7 +126,6 @@ export default {
       return `/assets/images/logo-transparent${name}.png`
     },
     isInert () {
-      // inert is a HTML attr used to prevent the content from being interactive (keyboard and Screen Readers)
       // TODO: Update window.innerWidth on resize.
       return !this.ephemeral.isActive && window.innerWidth < 1200
     }
@@ -189,6 +178,7 @@ export default {
   overflow: auto;
   -webkit-overflow-scrolling: touch;
   flex-direction: column;
+  justify-content: space-between;
   flex-grow: 1;
 }
 
@@ -199,7 +189,7 @@ export default {
   padding-top: 1.5rem;
 }
 
-.c-navigation-bottom {
+.c-navigation-body-bottom {
   padding-top: $spacer-lg;
   padding-bottom: $spacer-sm;
 }

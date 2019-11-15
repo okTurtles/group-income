@@ -1,7 +1,7 @@
 <template lang='pug'>
 //- TODO: Remove?
 div
-  h1(data-test='summaryStep')
+  h1.is-1(data-test='summaryStep')
     i18n Review &amp; Finish
   h2.subtitle
     i18n Group name:

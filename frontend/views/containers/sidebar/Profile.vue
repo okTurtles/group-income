@@ -63,7 +63,6 @@ export default {
   align-items: center;
   height: $spacer-xl;
   padding: 0 $spacer;
-  margin-top: 0.35rem;
 }
 
 .c-avatar-user {

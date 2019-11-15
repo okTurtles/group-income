@@ -257,6 +257,7 @@ export default {
   width: calc(100% - 2rem);
   max-width: 34rem;
   margin-top: 3.5rem;
+  flex-shrink: 0;
 }
 
 .wrapper {

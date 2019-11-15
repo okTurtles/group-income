@@ -8,7 +8,7 @@
         )
           i.icon-chevron-left(aria-hidden='true')
 
-        h2.main-title {{ $parent.title }}
+        h2.is-2.main-title {{ $parent.title }}
 
       .tab-body
         slot

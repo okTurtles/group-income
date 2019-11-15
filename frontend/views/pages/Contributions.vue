@@ -371,7 +371,7 @@ export default {
     margin-right: $spacer;
     flex-shrink: 0;
 
-    @include widescreen {
+    @include desktop {
       width: 6.25rem;
       height: 6.25rem;
       margin-right: 2.5rem;

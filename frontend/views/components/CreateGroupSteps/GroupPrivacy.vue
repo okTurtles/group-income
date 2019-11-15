@@ -1,6 +1,6 @@
 <template lang='pug'>
 div
-  h1(data-test='privacyStep')
+  h1.is-1(data-test='privacyStep')
     i18n Privacy Settings
 
   p

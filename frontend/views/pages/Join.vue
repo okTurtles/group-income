@@ -34,13 +34,13 @@ div
 
     .c-broken(v-else-if='isStatus("INVALID") || isStatus("EXPIRED")')
       svg-broken-link.c-svg
-      i18n.title.is-1(
+      i18n.is-1(
         v-if='isStatus("INVALID")'
         tag='h1'
         data-test='pageTitle'
         :args='LTags()'
       ) Oh no! {br_}Something went wrong.
-      i18n.title.is-1(
+      i18n.is-1(
         v-else
         tag='h1'
         data-test='pageTitle'

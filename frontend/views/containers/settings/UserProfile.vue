@@ -234,7 +234,7 @@ export default {
     display: inline-block;
     margin-top: 7px;
 
-    @include widescreen {
+    @include desktop {
       display: block;
       margin-top: 0;
     }
@@ -252,7 +252,7 @@ export default {
     }
   }
 
-  @include widescreen {
+  @include desktop {
     position: absolute;
     right: 0;
     top: -58px;

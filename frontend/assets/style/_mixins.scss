@@ -36,12 +36,6 @@
   }
 }
 
-@mixin tablet-only {
-  @media screen and (min-width: $tablet) and (max-width: $desktop - 1px) {
-    @content;
-  }
-}
-
 @mixin touch {
   @media screen and (max-width: $desktop - 1px) {
     @content;
@@ -50,24 +44,6 @@
 
 @mixin desktop {
   @media screen and (min-width: $desktop) {
-    @content;
-  }
-}
-
-@mixin desktop-only {
-  @media screen and (min-width: $desktop) and (max-width: $widescreen - 1px) {
-    @content;
-  }
-}
-
-@mixin until-widescreen {
-  @media screen and (max-width: $widescreen - 1px) {
-    @content;
-  }
-}
-
-@mixin widescreen {
-  @media screen and (min-width: $widescreen) {
     @content;
   }
 }

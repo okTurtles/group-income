@@ -30,7 +30,7 @@
   grid-area: l-navigation;
   height: 100vh;
 
-  @include phone {
+  @include until($desktop) {
     position: absolute;
     z-index: $zindex-sidebar;
     transform: translateX(-100%);
