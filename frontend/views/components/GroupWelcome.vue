@@ -5,7 +5,7 @@
     :aria-label='L("{groupName}\'s avatar", { groupName: groupSettings.groupName })'
   )
 
-  i18n.is-1.c-title(
+  i18n.c-title(
     tag='h1'
     data-test='welcomeGroup'
     :args='{ groupName: groupSettings.groupName }'

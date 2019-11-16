@@ -4,12 +4,12 @@ main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
   //-       and the other showing the create/join group buttons!
   header(v-if='!$store.state.loggedIn' key='title-login')
     img.logo(src='/assets/images/group-income-icon-transparent.png')
-    i18n.is-1(tag='h1' data-test='welcomeHome') Welcome to GroupIncome
+    i18n(tag='h1' data-test='welcomeHome') Welcome to GroupIncome
 
   header(v-else key='title-not-login')
     img.logo-2(src='/assets/images/logo-transparent.png')
     i18n(tag='p' class='subtitle') Welcome to group income
-    i18n.is-1(tag='h1' data-test='welcomeHomeLoggedIn') Let’s get this party started
+    i18n(tag='h1' data-test='welcomeHomeLoggedIn') Let’s get this party started
 
   .buttons(v-if='!$store.state.loggedIn' key='body-loggin')
     i18n(

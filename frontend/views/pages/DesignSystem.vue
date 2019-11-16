@@ -19,22 +19,22 @@ page(
       i18n(tag='h2' class='card-header') Typography
 
       h3 Titles
-
+      p For ease of use, all heading tags come pre-styled, but remember: #[strong Heading Scales ≠ H# Tags]
+      | Apply a H tag that makes sense in that context, not the one that matches the design.
+      | In other words, it's okay to code #[code p.is-4] or #[code h3.is-2] when semanticaly the markup doesn't match the pre-styled.
+      br
+      br
       table
         thead
           th code
           th demo
         tr(v-for='(scale, index) in [1, 2, 3, 4]' :key='index')
           td
-            pre h{{scale}} or .title.is-{{scale}}
-          td.title(:class='`is-${scale}`') This is an H{{scale}} title
+            pre h{{scale}} or .is-{{scale}}
+          td(:class='`is-${scale}`') This is an H{{scale}} title
         tr
           td
             pre
-              | header p
-              br
-              | or
-              br
               | .subtitle
           td.subtitle This is a subtitle
         tr
@@ -223,7 +223,7 @@ page(
         tr
           td
             pre
-              | i.icon-angle-left.icon-round.has-background-success.has-text-success
+              | i.icon-round
           td
             i.icon-angle-left.icon-round.has-background-success.has-text-success
   article#spacing
@@ -857,7 +857,7 @@ page(
 
       p Know more about how all of this works at #[pre(style='display:inline') assets/svg/README.md]
       br
-      b.title.is-4 Available SVGs:
+      b.is-4 Available SVGs:
       .c-svgList
         .c-svgList-item(
           v-for='svg in config.svgs'

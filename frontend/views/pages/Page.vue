@@ -2,7 +2,7 @@
 div(:data-test='pageTestName' :class='$scopedSlots.sidebar ? "p-with-sidebar" : "p-no-sidebar"')
   header.p-header
     slot(name='header')
-    h1.is-2.p-title(:data-test='pageTestHeaderName' v-if='$slots.title')
+    h1.is-2(:data-test='pageTestHeaderName' v-if='$slots.title')
       img.c-logo(
         src='/assets/images/group-income-icon-transparent.png'
         :alt='L("Group Income\'s logo")'

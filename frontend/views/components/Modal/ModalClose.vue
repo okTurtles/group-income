@@ -49,6 +49,7 @@ export default {
   }
 
   @include desktop {
+    position: absolute;
     top: $spacer;
     right: $spacer;
   }
