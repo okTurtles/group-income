@@ -21,7 +21,7 @@ page(
       h3 Titles
       p For ease of use, all heading tags come pre-styled, but remember: #[strong Heading Scales ≠ H# Tags]
       | Apply a H tag that makes sense in that context, not the one that matches the design.
-      | In other words, it's okay to code #[code p.is-4] or #[code h3.is-2] when semanticaly the markup doesn't match the pre-styled.
+      | In other words, it's okay to code #[code p.is-4] or #[code h3.is-2] when semantically the markup doesn't match the pre-styles.
       br
       br
       table

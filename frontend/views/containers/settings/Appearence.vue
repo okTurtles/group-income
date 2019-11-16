@@ -20,7 +20,7 @@
       //- SelectorFontSize
 
       .preview
-        h3.is-4 Text size preview
+        p.is-4 Text size preview
         p.para Group Income (n) is an efficient, fair, decentralized Basic Income system for you and your friends.
 </template>
 

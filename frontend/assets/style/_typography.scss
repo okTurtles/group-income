@@ -75,8 +75,20 @@ $lineHeight: 3, 2.25, 1.6875, 1.3125, 1;
   }
 }
 
+// Responsive Headings:
+// NOTE: When we mix a h1/h2 with .is-[n], (ex: "h1.is-3") it will trigger unexpected behaviors:
+// On mobile/tablet the element will have different font-size (see rules bellow)
+
+// Well, I don't know any clean way of fixing it with CSS.. but here's a trick:
+// .is-3(role="heading" aria-level="1")
+// This has exactly the same semantic meaning has h1 tag.
+
+// Other solution could be to completely remove styles directly applied to h# tag
+// and always add the CSS class to the heading. (ex: h1.is-1).
 @include until($tablet) {
   h1,
+  // h1:not([class^=".is-"]), // Option 3: - This also fixes the bug!
+  // It other words, it means: "apply this to a h1 that doesn't contain .is-[n] class.
   .is-1 {
     font-size: $size-2; // 24px
     line-height: 2.125rem; // 34px
