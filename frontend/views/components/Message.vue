@@ -38,7 +38,7 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .message {
-  padding: $spacer-md 1.5rem $spacer-md $spacer-md;
+  padding: $spacer;
   border-radius: $radius-large;
   letter-spacing: 0.1px;
   display: flex;
@@ -60,11 +60,12 @@ export default {
     }
   }
 
-  i {
+  i:not(.icon-times) {
     font-size: $size-3;
     line-height: 1.3125;
     padding-right: $spacer-md;
   }
+
   &.is-info {
     background-color: var(--primary_2);
     i {
@@ -85,7 +86,11 @@ export default {
   }
 }
 
-.message-header {
+.media-content {
+  flex-grow: 1;
+}
+
+.media-header {
   color: $text_1;
   display: flex;
   padding-bottom: 0, 25rem;

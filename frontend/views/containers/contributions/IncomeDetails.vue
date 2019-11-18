@@ -52,9 +52,10 @@ modal-base-template(ref='modal')
                 p {{ contributionMemberText }}
               i18n.helper(v-else-if='!needsIncome') Define up to how much you pledge to contribute to the group each month. Only the minimum needed amount will be given.
             payment-methods(selected='manual')
+
+        feedback-banner(v-bind.sync='form.submitFeedback')
+
         .buttons
-          //- NOTE: this type='button' is needed here to prevent the ENTER
-          //-       key from calling closeModal twice
           i18n.is-outlined(tag='button' type='button' @click='closeModal') Cancel
           i18n.is-success(
             tag='button'
@@ -62,11 +63,6 @@ modal-base-template(ref='modal')
             :disabled='$v.form.$invalid'
             data-test='submitIncome'
           ) Save
-        // TODO/OPTIMIZE - create directive similar to vError
-        .c-feedback.has-text-1(
-          v-if='ephemeral.formFeedbackMsg.text'
-          :class='ephemeral.formFeedbackMsg.class'
-        ) {{ephemeral.formFeedbackMsg.text}}
       .c-graph
         | WIP: A graph is on its way!
         //
@@ -86,6 +82,7 @@ import InputAmount from './InputAmount.vue'
 import PaymentMethods from './PaymentMethods.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ModalBaseTemplate from '@components/Modal/ModalBaseTemplate.vue'
+import FeedbackBanner from '@components/FeedbackBanner.vue'
 import GroupPledgesGraph from '../GroupPledgesGraph.vue'
 import L from '@view-utils/translations.js'
 
@@ -94,6 +91,7 @@ export default {
   mixins: [validationMixin],
   components: {
     ModalBaseTemplate,
+    FeedbackBanner,
     InputAmount,
     Tooltip,
     PaymentMethods,
@@ -101,12 +99,10 @@ export default {
   },
   data () {
     return {
-      ephemeral: {
-        formFeedbackMsg: {}
-      },
       form: {
         incomeDetailsType: null,
-        amount: null
+        amount: null,
+        submitFeedback: {}
       }
     }
   },
@@ -167,10 +163,15 @@ export default {
       this.$refs.modal.close()
     },
     async submit () {
-      if (this.$v.form.$invalid) {
-        alert(L('Invalid payment info'))
+      const debugThis = 1 + 1 // DELETE THIS BEFORE MERGE!!
+      if (debugThis || this.$v.form.$invalid) {
+        this.$set(this.form, 'submitFeedback', {
+          message: L('Please, review your information and try again.'),
+          severity: 'danger'
+        })
         return
       }
+
       try {
         const incomeDetailsType = this.form.incomeDetailsType
         const groupProfileUpdate = await sbp('gi.contracts/group/groupProfileUpdate/create',
@@ -184,10 +185,10 @@ export default {
         this.closeModal()
       } catch (e) {
         console.error('setPaymentInfo', e)
-        this.ephemeral.formFeedbackMsg = {
-          text: L(`Failed to update income details. Error: ${e.message}`),
-          class: 'has-text-danger'
-        }
+        this.$set(this.form, 'submitFeedback', {
+          message: `${L('Failed to update income details.')} ${e.message}`,
+          severity: 'danger'
+        })
       }
     }
   },
@@ -220,7 +221,7 @@ export default {
   width: 100%;
   opacity: 1;
   background: $general_2;
-  padding: 3rem $spacer-lg
+  padding: 3rem $spacer-lg;
 }
 
 .c-content {

@@ -23,7 +23,7 @@ form(
 
   i18n.link(tag='a' @click='forgotPassword') Forgot your password?
 
-  p.error(v-if='ephemeral.errorMsg' data-test='loginError') {{ ephemeral.errorMsg }}
+  feedback-banner(data-test='loginError' v-bind.sync='form.submitFeedback')
 
   .buttons.is-centered
     i18n(
@@ -42,6 +42,7 @@ import { nonWhitespace } from '@views/utils/validators.js'
 import FormPassword from '@containers/forms/FormPassword.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import FeedbackBanner from '@components/FeedbackBanner.vue'
 
 export default {
   name: 'FormLogin',
@@ -50,7 +51,17 @@ export default {
     validationsDebouncedMixins
   ],
   components: {
-    FormPassword
+    FormPassword,
+    FeedbackBanner
+  },
+  data () {
+    return {
+      form: {
+        name: null,
+        password: null,
+        submitFeedback: {}
+      }
+    }
   },
   inserted () {
     this.$refs.username.focus()
@@ -61,7 +72,10 @@ export default {
         // TODO: Insert cryptography here
         const identityContractID = await sbp('namespace/lookup', this.form.name)
         if (!identityContractID) {
-          this.ephemeral.errorMsg = L('Invalid username or password')
+          this.$set(this.form, 'submitFeedback', {
+            message: L('Invalid username or password'),
+            severity: 'danger'
+          })
           return
         }
         console.debug(`Retrieved identity ${identityContractID}`)
@@ -71,24 +85,16 @@ export default {
         })
         this.$emit('submitSucceeded')
       } catch (error) {
-        this.ephemeral.errorMsg = error.message
         console.error(error)
+        this.$set(this.form, 'submitFeedback', {
+          message: `${L('Something went wrong, please try again.')} ${error.message}`,
+          severity: 'danger'
+        })
       }
     },
     forgotPassword () {
       // TODO: implement forgot password
       alert(L('Coming soon'))
-    }
-  },
-  data () {
-    return {
-      form: {
-        name: null,
-        password: null
-      },
-      ephemeral: {
-        errorMsg: null
-      }
     }
   },
   validations: {
