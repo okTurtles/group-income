@@ -30,7 +30,7 @@ div(:data-test='pageTestName' :class='$scopedSlots.sidebar ? "p-with-sidebar" : 
 
 <script>
 import Toggle from '@containers/sidebar/Toggle.vue'
-import { DESKTOP } from '@utils/breakpoints.js'
+import { DESKTOP } from '@view-utils/breakpoints.js'
 import { debounce } from '@utils/giLodash.js'
 
 export default {

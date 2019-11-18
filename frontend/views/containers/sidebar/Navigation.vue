@@ -85,7 +85,7 @@ import ListItem from '@components/ListItem.vue'
 import { mapGetters } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
-import { DESKTOP } from '@utils/breakpoints.js'
+import { DESKTOP } from '@view-utils/breakpoints.js'
 import { debounce } from '@utils/giLodash.js'
 
 export default {
