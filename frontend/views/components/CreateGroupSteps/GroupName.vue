@@ -14,13 +14,13 @@
       type='file'
       name='groupPicture'
       accept='image/*'
-      :class='{error: vForm.groupPicture.$error}'
+      :class='{error: $v.form.groupPicture.$error}'
       @change='fileChange($event.target.files)'
       placeholder='http://'
       data-test='groupPicture'
     )
 
-  i18n.error(v-if='vForm.groupPicture.$error' tag='p') The group picture must be a valid url
+  i18n.error(v-if='$v.form.groupPicture.$error' tag='p') The group picture must be a valid url
 
   .card
     i18n.label(tag='label') What is the name of your group?
@@ -29,7 +29,7 @@
       ref='name'
       type='text'
       name='groupName'
-      :class='{ error: vForm.groupName.$error }'
+      :class='{ error: $v.form.groupName.$error }'
       :value='group.groupName'
       @input='update'
       @keyup.enter='next'
@@ -46,7 +46,7 @@ export default {
   name: 'GroupName',
   props: {
     group: { type: Object },
-    vForm: { type: Object }
+    $v: { type: Object }
   },
   inject: ['$assistant'],
   components: {
@@ -57,7 +57,7 @@ export default {
   },
   methods: {
     update (e) {
-      this.vForm.groupName.$touch()
+      this.$v.form.groupName.$touch()
       this.$emit('input', {
         data: {
           groupName: e.target.value
@@ -65,14 +65,14 @@ export default {
       })
     },
     next (e) {
-      this.vForm[e.target.name].$touch()
-      if (!this.vForm[e.target.name].$invalid) {
+      this.$v.form[e.target.name].$touch()
+      if (!this.$v.form[e.target.name].$invalid) {
         this.$emit('next')
       }
     },
     fileChange (files) {
       if (!files.length) return
-      this.vForm.groupPicture.$touch()
+      this.$v.form.groupPicture.$touch()
       this.$assistant.ephemeral.groupPictureFile = files[0]
       this.$refs.picture.setFromBlob(files[0])
     }

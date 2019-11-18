@@ -37,6 +37,10 @@ export default {
     Avatar,
     ConfettiAnimation
   },
+  props: {
+    // Passed from CreateGroup.vue. Prevent from attaching it to the DOM.
+    $v: { type: Object }
+  },
   computed: {
     ...mapGetters(['groupSettings'])
   },
