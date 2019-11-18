@@ -19,12 +19,7 @@ form(
       autofocus
     )
 
-  form-password(
-    :label='L("Password")'
-    :$v='$v'
-    @input='debounceField("password")'
-    @blur='updateField("password")'
-  )
+  form-password(:label='L("Password")' name='password' :$v='$v')
 
   i18n.link(tag='a' @click='forgotPassword') Forgot your password?
 

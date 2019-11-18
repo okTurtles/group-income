@@ -29,13 +29,7 @@ form(
       v-error:email='{ attrs: { "data-test": "badEmail" } }'
     )
 
-  form-password(
-    :label='L("Password")'
-    name='password'
-    :$v='$v'
-    @input='debounceField("password")'
-    @blur='updateField("password")'
-  )
+  form-password(:label='L("Password")' name='password' :$v='$v')
 
   p.error(v-if='ephemeral.errorMsg') {{ ephemeral.errorMsg }}
 

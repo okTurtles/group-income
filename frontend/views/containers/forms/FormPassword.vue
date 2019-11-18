@@ -11,8 +11,8 @@ label.field
       :name='name'
       :data-test='name'
       v-model='$v.form[name].$model'
-      @input='e => $emit("input")'
-      @blur='e => $emit("blur")'
+      @input='debounceField("password")'
+      @blur='updateField("password")'
     )
     button.is-icon(
       type='button'
@@ -25,6 +25,8 @@ label.field
 </template>
 
 <script>
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+
 export default {
   name: 'FormPassword',
   data () {
@@ -32,6 +34,7 @@ export default {
       isLock: true
     }
   },
+  mixins: [validationsDebouncedMixins],
   props: {
     name: {
       type: String,
