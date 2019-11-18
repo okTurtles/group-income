@@ -8,25 +8,18 @@ form(
 )
   label.field
     i18n.label Username
-    input.input#loginName(
+    input.input(
       :class='{error: $v.form.name.$error}'
       name='name'
-      @keyup.enter='login'
-      @input='debounceName'
-      ref='username'
-      autofocus
+      v-model='form.name'
+      @input='debounceField("name")'
+      @blur='updateField("name")'
       data-test='loginName'
-      v-error:name='{ tag: "p", attrs: { "data-test": "badUsername" } }'
+      v-error:name='{ attrs: { "data-test": "badUsername" } }'
+      autofocus
     )
 
-  // TODO #661 - improve :v
-  form-password(
-    :label='L("Password")'
-    :value='form'
-    :v='$v.form'
-    @enter='login'
-    @input='(newPassword) => {password = newPassword}'
-  )
+  form-password(:label='L("Password")' name='password' :$v='$v')
 
   i18n.link(tag='a' @click='forgotPassword') Forgot your password?
 
@@ -44,15 +37,18 @@ form(
 <script>
 import sbp from '~/shared/sbp.js'
 import { validationMixin } from 'vuelidate'
-import { required, minLength } from 'vuelidate/lib/validators'
+import { required } from 'vuelidate/lib/validators'
 import { nonWhitespace } from '@views/utils/validators.js'
-import { debounce } from '@utils/giLodash.js'
 import FormPassword from '@containers/forms/FormPassword.vue'
 import L from '@view-utils/translations.js'
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
 export default {
   name: 'FormLogin',
-  mixins: [validationMixin],
+  mixins: [
+    validationMixin,
+    validationsDebouncedMixins
+  ],
   components: {
     FormPassword
   },
@@ -60,11 +56,6 @@ export default {
     this.$refs.username.focus()
   },
   methods: {
-    debounceName: debounce(function (e) {
-      // TODO - $v.lazy this...
-      this.form.name = e.target.value
-      this.$v.form.name.$touch()
-    }, 700),
     async login () {
       try {
         // TODO: Insert cryptography here
@@ -103,12 +94,11 @@ export default {
   validations: {
     form: {
       name: {
-        required,
-        [L('cannot contain spaces')]: nonWhitespace
+        [L('A username is required.')]: required,
+        [L('A username cannot contain spaces.')]: nonWhitespace
       },
       password: {
-        required,
-        minLength: minLength(7)
+        [L('A password is required.')]: required
       }
     }
   }

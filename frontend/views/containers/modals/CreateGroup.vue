@@ -16,7 +16,7 @@ modal-base-template
     component(
       :is='content'
       :group='form'
-      :v='$v.form'
+      :$v='$v'
       @next='next'
       @focusref='focusRef'
       @input='payload => updateGroupData(payload)'

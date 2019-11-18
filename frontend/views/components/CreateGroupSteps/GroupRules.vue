@@ -93,7 +93,7 @@ export default {
   name: 'GroupRules',
   props: {
     group: { type: Object },
-    v: { type: Object }
+    $v: { type: Object }
   },
   components: {
     CircleSlider,
@@ -104,7 +104,7 @@ export default {
   },
   methods: {
     update (prop, value) {
-      this.v[prop].$touch()
+      this.$v.form[prop].$touch()
       this.$emit('input', {
         data: {
           [prop]: value
