@@ -10,8 +10,8 @@ form(
     input.input(
       :class='{error: $v.form.name.$error}'
       name='name'
-      @input='e => debounceField(e, "name")'
-      @blur='e => updateField(e, "name")'
+      @input='e => debounceValidation("name", e.target.value)'
+      @blur='e => updateField("name", e.target.value)'
       data-test='signName'
       v-error:name='{ attrs: { "data-test": "badUsername" } }'
     )
@@ -22,17 +22,19 @@ form(
       :class='{error: $v.form.email.$error}'
       name='email'
       type='email'
-      @input='e => debounceField(e, "email")'
-      @blur='e => updateField(e, "email")'
+      v-model='form.email'
+      @input='debounceField("email")'
+      @blur='updateField("email")'
       data-test='signEmail'
       v-error:email='{ attrs: { "data-test": "badEmail" } }'
     )
 
   form-password(
     :label='L("Password")'
-    :vForm='$v.form'
-    :error='L("Your password must be at least 7 characters long.")'
-    @input='e => debounceField(e, "password")'
+    name='password'
+    :$v='$v'
+    @input='debounceField("password")'
+    @blur='updateField("password")'
   )
 
   p.error(v-if='ephemeral.errorMsg') {{ ephemeral.errorMsg }}
@@ -49,17 +51,19 @@ form(
 <script>
 import { required, minLength, email } from 'vuelidate/lib/validators'
 import { validationMixin } from 'vuelidate'
-import { debounce } from '@utils/giLodash.js'
 import sbp from '~/shared/sbp.js'
 import { nonWhitespace } from '@views/utils/validators.js'
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
 import FormPassword from '@containers/forms/FormPassword.vue'
 import L from '@view-utils/translations.js'
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
-// TODO: fix all this
 export default {
   name: 'FormSignup',
-  mixins: [validationMixin],
+  mixins: [
+    validationMixin,
+    validationsDebouncedMixins
+  ],
   components: {
     ModalTemplate,
     FormPassword
@@ -77,13 +81,6 @@ export default {
     }
   },
   methods: {
-    debounceField: debounce(function (e, fieldName) {
-      this.updateField(e, fieldName)
-    }, 500),
-    updateField (e, fieldName) {
-      this.form[fieldName] = e.target.value
-      this.$v.form[fieldName].$touch()
-    },
     async signup () {
       // Prevent autocomplete submission when empty field
       if (this.form.name !== null && this.form.email !== null) {
@@ -153,7 +150,7 @@ export default {
       },
       password: {
         [L('A password is required.')]: required,
-        minLength: minLength(7)
+        [L('Your password must be at least 7 characteres long.')]: minLength(7)
       },
       email: {
         [L('An email is required.')]: required,

@@ -1,30 +1,27 @@
 <template lang='pug'>
-label.field(
-  v-error:password=''
-)
+label.field
   .label(v-if='label') {{ label }}
-  .input-combo
+  .input-combo(
+    v-error:[name]='{ attrs: { "data-test": "badPassword" }}'
+  )
     input.input(
       :type='isLock ? "password" : "text"'
-      :id='name'
-      :class='[{error: vForm[name].$error}, size]'
-      :name='name'
+      :class='[{error: $v.form[name].$error}, size]'
       :placeholder='showPlaceholder ? name : ""'
+      :name='name'
       :data-test='name'
-      @input='e => $emit("input", e)'
-      @blur='e => $emit("blur", e)'
+      v-model='$v.form[name].$model'
+      @input='e => $emit("input")'
+      @blur='e => $emit("blur")'
     )
     button.is-icon(
       type='button'
       v-if='hasIconRight'
+      :aria-label='L("Toggle password visibility")'
+      :aria-pressed='!isLock'
       @click.prevent='isLock = !isLock'
     )
       i(:class='isLock ? "icon-eye" : "icon-eye-slash"')
-
-  i18n.error(
-    v-show='vForm[name].$error'
-    data-test='badPassword'
-  ) {{ error }}
 </template>
 
 <script>
@@ -45,11 +42,7 @@ export default {
       type: String,
       required: false
     },
-    value: {
-      type: Object,
-      required: true
-    },
-    vForm: {
+    $v: {
       type: Object,
       required: true
     },

@@ -42,7 +42,7 @@
         form-password(
           :label='L("Password")'
           :value='form'
-          :vForm='$v.form'
+          :v='$v'
           @enter='submit'
           @input='(Password) => {password = Password}'
           data-test='loginPassword'

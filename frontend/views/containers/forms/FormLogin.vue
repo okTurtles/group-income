@@ -11,19 +11,19 @@ form(
     input.input(
       :class='{error: $v.form.name.$error}'
       name='name'
-      @input='e => debounceField(e, "name")'
-      @blur='e => updateField(e, "name")'
-      autofocus
+      v-model='form.name'
+      @input='debounceField("name")'
+      @blur='updateField("name")'
       data-test='loginName'
       v-error:name='{ attrs: { "data-test": "badUsername" } }'
+      autofocus
     )
 
   form-password(
     :label='L("Password")'
-    :vForm='$v.form'
-    :error='L("Your password must be at least 7 characters long.")'
-    @input='e => debounceField(e, "password")'
-    @blur='e => updateField(e, "password")'
+    :$v='$v'
+    @input='debounceField("password")'
+    @blur='updateField("password")'
   )
 
   i18n.link(tag='a' @click='forgotPassword') Forgot your password?
@@ -42,15 +42,18 @@ form(
 <script>
 import sbp from '~/shared/sbp.js'
 import { validationMixin } from 'vuelidate'
-import { required, minLength } from 'vuelidate/lib/validators'
+import { required } from 'vuelidate/lib/validators'
 import { nonWhitespace } from '@views/utils/validators.js'
-import { debounce } from '@utils/giLodash.js'
 import FormPassword from '@containers/forms/FormPassword.vue'
 import L from '@view-utils/translations.js'
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
 export default {
   name: 'FormLogin',
-  mixins: [validationMixin],
+  mixins: [
+    validationMixin,
+    validationsDebouncedMixins
+  ],
   components: {
     FormPassword
   },
@@ -58,13 +61,6 @@ export default {
     this.$refs.username.focus()
   },
   methods: {
-    debounceField: debounce(function (e, fieldName) {
-      this.updateField(e, fieldName)
-    }, 500),
-    updateField (e, fieldName) {
-      this.form[fieldName] = e.target.value
-      this.$v.form[fieldName].$touch()
-    },
     async login () {
       try {
         // TODO: Insert cryptography here
@@ -107,8 +103,7 @@ export default {
         [L('A username cannot contain spaces.')]: nonWhitespace
       },
       password: {
-        [L('A password is required.')]: required,
-        minLength: minLength(7)
+        [L('A password is required.')]: required
       }
     }
   }
