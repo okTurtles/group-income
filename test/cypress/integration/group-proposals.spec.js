@@ -241,7 +241,7 @@ describe('Proposals - Add members', () => {
     cy.getByDT('addIncomeDetailsFirstCard').should('contain', 'Add your income details')
   })
 
-  it('User 1 fills their Income Details saying they are pledging 500$', () => {
+  it('User1 fills their Income Details saying they are pledging 500$', () => {
     cy.getByDT('openIncomeDetailModal').click()
     cy.getByDT('introIncomeOrPledge').should('not.be.visible') // Make sure only radio box to select the type is visible at the begining
 
@@ -273,7 +273,7 @@ describe('Proposals - Add members', () => {
     cy.getByDT('givingParagraph').should('contain', 'You can contribute to your group with money or other valuables like teaching skills, sharing your time ot help someone. The sky is the limit!')
   })
 
-  it('User 1 adds non monetary contribution', () => {
+  it('User1 adds non monetary contribution', () => {
     addNonMonetaryContribution('Portuguese classes')
 
     cy.getByDT('givingList', 'ul')
@@ -282,7 +282,7 @@ describe('Proposals - Add members', () => {
       .should('contain', 'Portuguese classes')
   })
 
-  it('User 1 remove non monetary contribution', () => {
+  it('User1 removes non monetary contribution', () => {
     cy.getByDT('buttonEditNonMonetaryContribution').click()
     cy.getByDT('buttonRemoveNonMonetaryContribution').click()
     cy.getByDT('givingList', 'ul')
@@ -290,7 +290,7 @@ describe('Proposals - Add members', () => {
       .should('have.length', 0)
   })
 
-  it('User 1 add the same non monetary contribution after removing it', () => {
+  it('User1 add the same non monetary contribution after removing it', () => {
     addNonMonetaryContribution('Portuguese classes')
     cy.getByDT('givingList', 'ul')
       .get('li.is-editable')
@@ -298,7 +298,7 @@ describe('Proposals - Add members', () => {
       .should('contain', 'Portuguese classes')
   })
 
-  it('User 1 edit the non monetary contribution', () => {
+  it('User1 edit the non monetary contribution', () => {
     cy.getByDT('buttonEditNonMonetaryContribution').click()
     cy.getByDT('inputNonMonetaryContribution').clear().type('French classes{enter}')
     editNonMonetaryContribution('French classes', true)
@@ -311,7 +311,7 @@ describe('Proposals - Add members', () => {
       .should('contain', 'French classes')
   })
 
-  it('User 1 cancel the edit', () => {
+  it('User1 cancel the edit', () => {
     cy.getByDT('buttonEditNonMonetaryContribution').click()
     cy.getByDT('buttonCancelNonMonetaryContribution').click()
     cy.getByDT('givingList', 'ul')
@@ -320,7 +320,7 @@ describe('Proposals - Add members', () => {
       .should('contain', 'French classes')
   })
 
-  it('User 1 add many more non monetary contributions', () => {
+  it('User1 add many more non monetary contributions', () => {
     addNonMonetaryContribution('German classes')
     addNonMonetaryContribution('Russian classes')
     addNonMonetaryContribution('Korean classes')
@@ -357,7 +357,7 @@ describe('Proposals - Add members', () => {
       .should('contain', '$50 to Margarida')
   })
 
-  it('User 4 and user 2 change their pledges to $500 each. user 1 sees the receiving contributions from 3 members.', () => {
+  it('User 4 and user 2 change their pledges to $500 each. User1 sees the receiving contributions from 3 members.', () => {
     cy.giSwitchUser(`user4-${userId}`)
     updateIncome(500, false)
     addNonMonetaryContribution('Korean classes')
