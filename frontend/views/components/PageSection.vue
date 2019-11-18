@@ -1,9 +1,9 @@
 <template lang='pug'>
 section.card
   .c-title-wrapper(v-if='$slots.cta')
-    h3(v-if='title') {{ title }}
+    h3.is-title-3(v-if='title') {{ title }}
     slot(name='cta')
-  h3(v-else-if='title') {{ title }}
+  h3.is-title-3(v-else-if='title') {{ title }}
   slot
 </template>
 

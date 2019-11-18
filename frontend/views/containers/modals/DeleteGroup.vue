@@ -9,7 +9,7 @@
       @submit.prevent='submit'
     )
 
-      i18n(tag='h3') Are you sure you want to delete this group?
+      i18n.is-title-3(tag='h3') Are you sure you want to delete this group?
 
       i18n(tag='p' html='All messages exchanged between members will be <b>deleted permanently</b>.')
 

@@ -1,12 +1,12 @@
 <template lang='pug'>
   .settings-container
     section.card
-      h2.is-3.c-title Theme
+      h2.is-title-3.c-title Theme
 
       SelectorTheme
 
     section.card
-      h2.is-3.c-title Reduced Motion
+      h2.is-title-3.c-title Reduced Motion
 
       label.field
         input(type='checkbox' :checked='$store.state.reducedMotion' @change='handleCheckbox')
@@ -14,13 +14,13 @@
         i18n.helper When enabled the amount of animations you see around are reduced.
 
     section.card
-      h2.is-3.c-title Text settings
+      h2.is-title-3.c-title Text settings
 
       //- TODO in separate tickets
       //- SelectorFontSize
 
       .preview
-        p.is-4 Text size preview
+        p.is-title-4 Text size preview
         p.para Group Income (n) is an efficient, fair, decentralized Basic Income system for you and your friends.
 </template>
 
@@ -60,7 +60,7 @@ export default {
 }
 
 .preview {
-  .is-4 {
+  .is-title-4 {
     margin: 0 0 6px 0;
     font-size: $size-5;
 

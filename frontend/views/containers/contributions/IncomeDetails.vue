@@ -2,7 +2,7 @@
 modal-base-template(ref='modal')
   .wrapper-container
     .c-content
-      i18n.c-title(tag='h2') Income Details
+      i18n.is-title-2.c-title(tag='h2') Income Details
 
       form.card.c-card(
         @submit.prevent='submit'

@@ -2,7 +2,7 @@
 div(:data-test='pageTestName' :class='$scopedSlots.sidebar ? "p-with-sidebar" : "p-no-sidebar"')
   header.p-header
     slot(name='header')
-    h1.is-2(:data-test='pageTestHeaderName' v-if='$slots.title')
+    h1.is-title-2.p-title(:data-test='pageTestHeaderName' v-if='$slots.title')
       img.c-logo(
         src='/assets/images/group-income-icon-transparent.png'
         :alt='L("Group Income\'s logo")'
@@ -30,6 +30,8 @@ div(:data-test='pageTestName' :class='$scopedSlots.sidebar ? "p-with-sidebar" : 
 
 <script>
 import Toggle from '@containers/sidebar/Toggle.vue'
+import { desktop } from '@utils/breakpoints.js'
+import { debounce } from '@utils/giLodash.js'
 
 export default {
   name: 'Page',
@@ -43,20 +45,37 @@ export default {
   },
   data () {
     return {
+      config: {
+        debounceResize: debounce(this.checkIsTouch, 250)
+      },
       ephemeral: {
-        isActive: false
+        isActive: false,
+        isTouch: null
       }
     }
   },
+  created () {
+    this.checkIsTouch()
+  },
+  mounted () {
+    // TODO - Create a single resize listener to be reused on components
+    window.addEventListener('resize', this.config.debounceResize)
+  },
+  beforeDestroy () {
+    window.removeEventListener('resize', this.config.debounceResize)
+  },
   computed: {
     isInert () {
-      // TODO: Update window.innerWidth on resize.
-      return !this.ephemeral.isActive && window.innerWidth < 1200
+      return !this.ephemeral.isActive && this.ephemeral.isTouch
     }
   },
   methods: {
     toggleMenu () {
       this.ephemeral.isActive = !this.ephemeral.isActive
+    },
+    checkIsTouch () {
+      console.log('chingg')
+      this.ephemeral.isTouch = window.innerWidth < desktop
     }
   }
 }
@@ -125,8 +144,8 @@ $pagePaddingDesktop: 5.5rem;
 
   @include touch {
     display: flex;
-    flex-direction: column;
     justify-content: center;
+    align-items: center;
     position: sticky;
     top: 0;
     background: $general_2;
@@ -142,15 +161,8 @@ $pagePaddingDesktop: 5.5rem;
 }
 
 .p-title {
-  text-transform: capitalize;
   display: flex;
-  justify-content: center;
   align-items: center;
-  padding-right: $spacer;
-
-  @include desktop {
-    justify-content: flex-start;
-  }
 }
 
 .p-descritpion {

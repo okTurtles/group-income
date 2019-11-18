@@ -46,7 +46,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
 
     section.card.contribution-card
       .receiving
-        i18n(tag='h3' class='card-header') Receiving
+        i18n.is-title-3(tag='h3' class='card-header') Receiving
         i18n.has-text-1.spacer-around(
           v-if='noOneCanContribute'
           tag='p'
@@ -90,7 +90,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
           i18n Add members to group
 
       .giving
-        i18n(tag='h3' class='card-header') Giving
+        i18n.is-title-3(tag='h3' class='card-header') Giving
 
         i18n.has-text-1.spacer-around(
           v-if='notContributing'

@@ -85,6 +85,8 @@ import ListItem from '@components/ListItem.vue'
 import { mapGetters } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
+import { desktop } from '@utils/breakpoints.js'
+import { debounce } from '@utils/giLodash.js'
 
 export default {
   name: 'Navigation',
@@ -97,11 +99,25 @@ export default {
   },
   data () {
     return {
+      config: {
+        debounceResize: debounce(this.checkIsTouch, 250)
+      },
       ephemeral: {
         isActive: false,
+        isTouch: null,
         timeTravelComponentName: null
       }
     }
+  },
+  created () {
+    this.checkIsTouch()
+  },
+  mounted () {
+    // TODO - Create a single resize listener to be reused on components
+    window.addEventListener('resize', this.config.debounceResize)
+  },
+  beforeDestroy () {
+    window.removeEventListener('resize', this.config.debounceResize)
   },
   watch: {
     $route (to, from) {
@@ -126,8 +142,7 @@ export default {
       return `/assets/images/logo-transparent${name}.png`
     },
     isInert () {
-      // TODO: Update window.innerWidth on resize.
-      return !this.ephemeral.isActive && window.innerWidth < 1200
+      return !this.ephemeral.isActive && this.ephemeral.isTouch
     }
   },
   methods: {
@@ -142,6 +157,9 @@ export default {
         console.debug('enable time travel!')
         this.ephemeral.timeTravelComponentName = 'TimeTravel'
       }
+    },
+    checkIsTouch () {
+      this.ephemeral.isTouch = window.innerWidth < desktop
     }
   }
 }

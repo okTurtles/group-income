@@ -19,7 +19,7 @@
           modal-close(@close='close' :back-on-mobile='backOnMobile')
           h2.subtitle(v-if='$scopedSlots.subtitle')
             slot(name='subtitle')
-          h1(v-if='$scopedSlots.title')
+          h1.is-title-1(v-if='$scopedSlots.title')
             slot(name='title')
 
         section.c-modal-body

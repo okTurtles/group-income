@@ -1,6 +1,6 @@
 <template lang='pug'>
 .wrapper
-  i18n.steps-title(tag='h4') 2. Group Purpose
+  i18n.is-title-4.steps-title(tag='h4') 2. Group Purpose
 
   .card
     i18n.label(tag='label') How would you describe your group?

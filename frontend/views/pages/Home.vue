@@ -4,12 +4,12 @@ main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
   //-       and the other showing the create/join group buttons!
   header(v-if='!$store.state.loggedIn' key='title-login')
     img.logo(src='/assets/images/group-income-icon-transparent.png')
-    i18n(tag='h1' data-test='welcomeHome') Welcome to GroupIncome
+    i18n.is-title-1(tag='h1' data-test='welcomeHome') Welcome to GroupIncome
 
   header(v-else key='title-not-login')
     img.logo-2(src='/assets/images/logo-transparent.png')
     i18n(tag='p' class='subtitle') Welcome to group income
-    i18n(tag='h1' data-test='welcomeHomeLoggedIn') Let’s get this party started
+    i18n.is-title-1(tag='h1' data-test='welcomeHomeLoggedIn') Let’s get this party started
 
   .buttons(v-if='!$store.state.loggedIn' key='body-loggin')
     i18n(
@@ -31,7 +31,7 @@ main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
   .create-or-join(v-else key='body-create')
     .card
       svg-create-group
-      h3 Create
+      h3.is-title-3 Create
       p Create a new group and invite your friends.
 
       i18n(
@@ -43,7 +43,7 @@ main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
 
     .card
       svg-join-group
-      i18n(tag='h3') Join
+      i18n.is-title-3(tag='h3') Join
       i18n(tag='p') Enter an existing group using your username.
       i18n(
         tag='button'

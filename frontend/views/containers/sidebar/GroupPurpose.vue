@@ -1,7 +1,7 @@
 <template lang='pug'>
 .c-group-purpose
   .c-group-purpose-header
-    i18n(tag='h4') About the group
+    i18n.is-title-4(tag='h4') About the group
 
   p.c-text.has-text-1(data-test='sharedValues')
     | {{ groupSettings.sharedValues }}

@@ -2,7 +2,7 @@
 modal-base-template(:class='{ "has-background": background }')
   .wrapper-container
     .example-header
-      h2 Modal base example
+      h2.is-title-2 Modal base example
 
     .example-container
 

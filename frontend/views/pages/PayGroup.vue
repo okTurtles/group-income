@@ -10,7 +10,7 @@ page(
       v-for='(item, index) in paymentSummary'
       :key='index'
     )
-      h4 {{ item.title }}
+      h4.is-title-4 {{ item.title }}
       progress-bar.c-progress(
         :max='item.max'
         :value='item.value'
@@ -27,7 +27,7 @@ page(
     i18n.has-text-1(tag='p') Once other group members add their income details, Group Income will re-distribute wealth amongst everyone.
 
   section.card(v-else)
-    i18n(
+    i18n.is-title-3(
       tag='h3'
       :args='{ month: paymentStatus.month }'
     ) {month} contributions

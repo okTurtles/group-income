@@ -1,6 +1,6 @@
 <template lang='pug'>
 modal-base-template
-  i18n(tag='h1') How to join a group
+  i18n.is-title-1(tag='h1') How to join a group
 
   .wrapper
     .slider
@@ -8,7 +8,7 @@ modal-base-template
         .slide-img
           svg-invitation
 
-        i18n(tag='h4') 1. Get an invitation
+        i18n.is-title-4(tag='h4') 1. Get an invitation
         i18n(tag='p') For now, the only way to join a group is to get an invitation. Don’t know anyone using Group Income?
         i18n(tag='button' class='link' @click='showCreateModal') Create your own group
 
@@ -16,14 +16,14 @@ modal-base-template
         .slide-img
           svg-proposal
 
-        i18n(tag='h4') 2. Wait for the group vote
+        i18n.is-title-4(tag='h4') 2. Wait for the group vote
         i18n(tag='p') On Group Income, every major decision goes through a voting process. This includes adding new members.
 
       .slide(v-observer:2='updateIndicator' :id='config[2]')
         .slide-img
           svg-access
 
-        i18n(tag='h4') 3. Use your unique access link
+        i18n.is-title-4(tag='h4') 3. Use your unique access link
         i18n(tag='p') Once the group agrees that you should join them, a unique access link will be generated, giving you instant access to the group
 
     .dots
