@@ -3,7 +3,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
   template(#title='') {{ L('Group Settings') }}
   template(#description='') {{ L('Changes to these settings will be visible to all group members') }}
 
-  page-section(title='')
+  page-section(title='' v-if='false')
 
     form
       .field

@@ -33,7 +33,7 @@ page-section.c-section(:title='L("Invite links")')
             v-if='item.isAnyoneLink'
             direction='top'
             :isTextCenter='true'
-            :text='L("This invite link was only available during the onboarding period.")'
+            :text='L("This invite link is only available during the onboarding period.")'
           )
             .button.is-icon-smaller.is-primary.c-tip
               i.icon-info
@@ -51,10 +51,10 @@ page-section.c-section(:title='L("Invite links")')
           i18n.c-state-description {{ item.status.description }}
           i18n.c-state-expire(
             v-if='item.status.expiryInfo'
-            :class='{ "expired": item.status.isExpired }'
+            :class='{ "is-expired": item.status.isExpired }'
           ) {{ item.status.expiryInfo }}
         td.c-action
-          menu-parent
+          menu-parent(v-if='!item.isAnyoneLink')
             menu-trigger.is-icon(:aria-label='L("Show list")')
               i.icon-ellipsis-v
 
@@ -93,6 +93,7 @@ import Tooltip from '@components/Tooltip.vue'
 import SvgInvitation from '@svgs/invitation.svg'
 import CopyToClipboard from '@components/CopyToClipboard.vue'
 import { buildInvitationUrl } from '@model/contracts/voting/proposals.js'
+import { INVITE_INITIAL_CREATOR } from '@model/contracts/group.js'
 import { mapGetters, mapState } from 'vuex'
 import L from '@view-utils/translations.js'
 
@@ -167,16 +168,17 @@ export default {
       inviteSecret,
       responses,
       quantity,
-      expires: expiryTime
+      expires: expiryTime,
+      invitee
     }) {
-      const isAnyoneLink = creator === 'INVITE_INITIAL_CREATOR'
+      const isAnyoneLink = creator === INVITE_INITIAL_CREATOR
       const isInviteExpired = expiryTime <= 0
       const numberOfResponses = Object.keys(responses).length
       const isAllInviteUsed = numberOfResponses === quantity
 
       return {
         isAnyoneLink,
-        invitee: isAnyoneLink ? 'Anyone' : Object.keys(responses)[0],
+        invitee: isAnyoneLink ? L('Anyone') : invitee,
         inviteSecret,
         inviteLink: buildInvitationUrl(this.currentGroupId, inviteSecret),
         status: {
@@ -195,6 +197,7 @@ export default {
     ...mapState(['currentGroupId']),
     invitesToShow () {
       const { invites } = this.currentGroupState
+      console.log('raw invites: ', invites)
       const invitesList = Object.values(invites).map(this.mapInvite)
       const options = {
         Active: () => invitesList.filter(invite => invite.status.isActive),
@@ -315,7 +318,7 @@ export default {
       font-size: $size-5;
       color: $text-1;
 
-      &.expired {
+      &.is-expired {
         color: $danger_0;
       }
     }
