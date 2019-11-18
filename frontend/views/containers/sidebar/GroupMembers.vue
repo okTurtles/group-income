@@ -7,7 +7,7 @@
       data-test='inviteButton'
       @click='openModal(groupShouldPropose ? "AddMembers" : "InviteByLink")'
     )
-      i.icon-plus
+      i.icon-plus.is-prefix
       i18n Add
 
   ul.c-group-list

@@ -218,6 +218,22 @@ page(
               | i.icon-round
           td
             i.icon-angle-left.icon-round.has-background-success.has-text-success
+        tr
+          td
+            pre
+              | Try again
+              | i.icon-undo.is-suffix
+          td
+            | Try again
+            i.icon-undo.is-suffix
+        tr
+          td
+            pre
+              | i.icon-bell.is-prefix
+              | Notifications
+          td
+            i.icon-bell.is-prefix
+            | Notifications
   article#spacing
     section.card
       h2.is-title-2.card-header Spacing
@@ -344,7 +360,7 @@ page(
           td
             button.is-danger.is-outlined.is-small Default text
 
-      h3.is-title-3 With icon
+      h3.is-title-3 With an icon
       table
         thead
           th code
@@ -352,23 +368,23 @@ page(
         tr
           td
             pre
-              | .button.has-icon-start
-              |   i.icon-plus
+              | .button
+              |   i.icon-plus.is-prefix
               |   Add
           td
             .button.has-icon-start
-              i.icon-plus
+              i.icon-plus.is-prefix
               | Add
         tr
           td
             pre
-              | .button.has-icon-end
+              | .button
               |   Next
-              |   i.icon-arrow-right
+              |   i.icon-arrow-right.is-suffix
           td
-            .button.has-icon-end
+            .button
               | Next
-              i.icon-arrow-right
+              i.icon-arrow-right.is-suffix
 
       h3.is-title-3 Icon Buttons
       table

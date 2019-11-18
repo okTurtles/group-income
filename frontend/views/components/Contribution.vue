@@ -51,7 +51,7 @@ transition(name='replacelist')
       @click='handleEditClick'
       data-test='buttonEditNonMonetaryContribution'
     )
-      i.icon-pencil-alt(aria-hidden='true')
+      i.icon-pencil-alt.is-prefix
       | {{ L('Edit') }}
 
   li.c-spacer-above(v-else-if='isUnfilled' key='isUnfilled')

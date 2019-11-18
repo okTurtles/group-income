@@ -35,7 +35,7 @@ modal-base-template
           data-test='nextBtn'
         )
           | {{ L('Next') }}
-          i.icon-arrow-right
+          i.icon-arrow-right.is-suffix
 
         button.is-success(
           v-else=''

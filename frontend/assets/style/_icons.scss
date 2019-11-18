@@ -89,6 +89,14 @@ $icons: (
   &.is-regular::before {
     font-weight: 400;
   }
+
+  &.is-prefix {
+    margin-right: $spacer-sm;
+  }
+
+  &.is-suffix {
+    margin-left: $spacer-sm;
+  }
 }
 
 @each $name, $icon in $icons {

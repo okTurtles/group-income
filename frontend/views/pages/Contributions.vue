@@ -136,7 +136,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
             :contributions-list='memberGroupProfile.nonMonetaryContributions'
             @new-value='handleNonMonetary'
           )
-            i.icon-plus(aria-hidden='true')
+            i.icon-plus.is-prefix
             i18n Add a non-monetary pledge
 </template>
 

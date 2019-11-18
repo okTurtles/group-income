@@ -162,18 +162,6 @@ button,
 
     @include buttonState($general_0, $text_1);
   }
-
-  &.has-icon-start {
-    [class^="icon-"] {
-      margin-right: $spacer-sm;
-    }
-  }
-
-  &.has-icon-end {
-    [class^="icon-"] {
-      margin-left: $spacer-sm;
-    }
-  }
 }
 
 .buttons {
