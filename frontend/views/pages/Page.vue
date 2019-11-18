@@ -74,7 +74,6 @@ export default {
       this.ephemeral.isActive = !this.ephemeral.isActive
     },
     checkIsTouch () {
-      console.log('chingg')
       this.ephemeral.isTouch = window.innerWidth < DESKTOP
     }
   }
