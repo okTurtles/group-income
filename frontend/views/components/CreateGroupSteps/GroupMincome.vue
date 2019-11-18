@@ -1,6 +1,6 @@
 <template lang='pug'>
 .wrapper
-  i18n.steps-title(tag='h4') 3. Minimum Income
+  i18n.is-title-4.steps-title(tag='h4') 3. Minimum Income
 
   .card
     i18n.label(tag='label') What is the minimum each member should receive monthly?

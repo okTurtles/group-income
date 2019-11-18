@@ -10,7 +10,7 @@ page(
       v-for='(item, index) in paymentSummary'
       :key='index'
     )
-      h4.title.is-4 {{ item.title }}
+      h4.is-title-4 {{ item.title }}
       progress-bar.c-progress(
         :max='item.max'
         :value='item.value'
@@ -23,11 +23,11 @@ page(
   .c-container-empty(v-if='!hasPayments')
     svg-contributions.c-svg
 
-    i18n.title.is-4(tag='h2') There are no pending payments yet!
+    i18n.c-title(tag='h2') There are no pending payments yet!
     i18n.has-text-1(tag='p') Once other group members add their income details, Group Income will re-distribute wealth amongst everyone.
 
   section.card(v-else)
-    i18n.title.is-3(
+    i18n.is-title-3(
       tag='h3'
       :args='{ month: paymentStatus.month }'
     ) {month} contributions
@@ -326,7 +326,7 @@ export default {
   padding: $spacer-xl $spacer $spacer;
   text-align: center;
 
-  .title {
+  .c-title {
     margin: $spacer;
   }
 
@@ -351,6 +351,7 @@ export default {
 
 .c-payments {
   margin-top: $spacer;
+
   &-item {
     padding: $spacer $spacer-sm;
 

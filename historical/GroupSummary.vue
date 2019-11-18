@@ -1,7 +1,7 @@
 <template lang='pug'>
 //- TODO: Remove?
 div
-  h1(data-test='summaryStep')
+  h1.is-title-1(data-test='summaryStep')
     i18n Review &amp; Finish
   h2.subtitle
     i18n Group name:
@@ -54,7 +54,7 @@ div
   p.subtitle.is-5.has-text-warning(v-if='!group.invitees.length')
     i18n No one invited
   .tile.is-ancestor
-    .tile.is-4.is-parent(v-for='(invitee, index) in group.invitees' :key='`invitee-${index}`')
+    .tile.is-title-4.is-parent(v-for='(invitee, index) in group.invitees' :key='`invitee-${index}`')
       .card.tile.is-child
         .card-image
           figure.image.is-square

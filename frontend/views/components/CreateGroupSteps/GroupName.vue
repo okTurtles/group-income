@@ -1,6 +1,6 @@
 <template lang='pug'>
 .wrapper
-  i18n.steps-title(tag='h4') 1. Create a new group
+  i18n.is-title-4.steps-title(tag='h4') 1. Create a new group
 
   label.avatar(for='groupPicture')
     //- TODO: set a default placeholder image using a built-in asset

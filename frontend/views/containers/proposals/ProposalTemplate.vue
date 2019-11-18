@@ -55,7 +55,7 @@
           data-test='nextBtn'
         )
           i18n Next
-          i.icon-arrow-right
+          i.icon-arrow-right.is-suffix
 
         i18n.is-success(
           key='create'

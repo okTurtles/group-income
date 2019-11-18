@@ -35,7 +35,7 @@ modal-base-template
           data-test='nextBtn'
         )
           | {{ L('Next') }}
-          i.icon-arrow-right
+          i.icon-arrow-right.is-suffix
 
         button.is-success(
           v-else=''
@@ -257,6 +257,7 @@ export default {
   width: calc(100% - 2rem);
   max-width: 34rem;
   margin-top: 3.5rem;
+  flex-shrink: 0;
 }
 
 .wrapper {
