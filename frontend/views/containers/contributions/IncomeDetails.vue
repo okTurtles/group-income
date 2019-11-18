@@ -22,7 +22,7 @@ modal-base-template(ref='modal')
               v-model='$v.form.incomeDetailsType.$model'
               @change='resetAmount'
             )
-            i18n Yes, I do
+            i18n(data-test='dontNeedsIncomeRadio') Yes, I do
           label.radio(v-error:incomeDetailsType='')
             input.input(
               type='radio'
@@ -31,31 +31,37 @@ modal-base-template(ref='modal')
               v-model='$v.form.incomeDetailsType.$model'
               @change='resetAmount'
             )
-            i18n No, I don't
+            i18n(data-test='needsIncomeRadio') No, I don't
         transition(name='expand')
           fieldset(v-if='!!form.incomeDetailsType')
             label.field
-              .label {{ needsIncome ? L("What's your monthly income?") : L('How much do you want to pledge?') }}
+              .label(
+                data-test='introIncomeOrPledge'
+              ) {{ needsIncome ? L("What's your monthly income?") : L('How much do you want to pledge?') }}
               .input-combo(
                 :class='{"error": $v.form.amount.$error }'
-                v-error:amount=''
+                v-error:amount='{ attrs: { "data-test": "badIncome" } }'
               )
                 input.input(
                   type='number'
                   v-model='$v.form.amount.$model'
+                  data-test='inputIncomeOrPledge'
                 )
                 .suffix {{ groupMincomeSymbolWithCode }}
               .helper(v-if='needsIncome && whoIsPledging.length')
-                text-who(:who='whoIsPledging')
-                | &nbsp
-                i18n will ensure you meet the mincome
+                p {{ contributionMemberText }}
               i18n.helper(v-else-if='!needsIncome') Define up to how much you pledge to contribute to the group each month. Only the minimum needed amount will be given.
             payment-methods(selected='manual')
         .buttons
           //- NOTE: this type='button' is needed here to prevent the ENTER
           //-       key from calling closeModal twice
           i18n.is-outlined(tag='button' type='button' @click='closeModal') Cancel
-          i18n.is-success(tag='button' type='submit' :disabled='$v.form.$invalid') Save
+          i18n.is-success(
+            tag='button'
+            type='submit'
+            :disabled='$v.form.$invalid'
+            data-test='submitIncome'
+          ) Save
         // TODO/OPTIMIZE - create directive similar to vError
         .c-feedback.has-text-1(
           v-if='ephemeral.formFeedbackMsg.text'
@@ -80,7 +86,6 @@ import InputAmount from './InputAmount.vue'
 import PaymentMethods from './PaymentMethods.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ModalBaseTemplate from '@components/Modal/ModalBaseTemplate.vue'
-import TextWho from '@components/TextWho.vue'
 import GroupPledgesGraph from '../GroupPledgesGraph.vue'
 import L from '@view-utils/translations.js'
 
@@ -90,7 +95,6 @@ export default {
   components: {
     ModalBaseTemplate,
     InputAmount,
-    TextWho,
     Tooltip,
     PaymentMethods,
     GroupPledgesGraph
@@ -126,6 +130,25 @@ export default {
       return Object.keys(groupProfiles).filter(username => {
         return groupProfiles[username].incomeDetailsType === 'pledgeAmount' && username !== this.ourUsername
       })
+    },
+    contributionMemberText () {
+      const who = this.whoIsPledging
+      switch (who.length) {
+        case 1:
+          return L('{firstMember} will ensure you meet the mincome', {
+            firstMember: who[0]
+          })
+        case 2:
+          return L('{firstMember} and {othersMember} will ensure you meet the mincome', {
+            firstMember: who[0],
+            othersMember: who[1]
+          })
+        default:
+          return L('{firstMember} and {othersMembersCount} others will ensure you meet the mincome', {
+            firstMember: who[0],
+            othersMembersCount: who.length - 1
+          })
+      }
     }
   },
   created () {
@@ -196,7 +219,7 @@ export default {
   height: 100%;
   width: 100%;
   opacity: 1;
-  background: $general_0;
+  background: $general_2;
   padding: 3rem $spacer-lg
 }
 

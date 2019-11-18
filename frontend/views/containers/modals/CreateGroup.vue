@@ -130,7 +130,7 @@ export default {
           settings: {
             // authorizations: [contracts.CanModifyAuths.dummyAuth()], // TODO: this
             groupName: this.form.groupName,
-            groupPicture: this.form.groupPicture || '/assets/images/default-avatar.png',
+            groupPicture: this.form.groupPicture || `${window.location.origin}/assets/images/default-group-avatar.png`,
             sharedValues: this.form.sharedValues,
             mincomeAmount: +this.form.mincomeAmount, // ensure this is a number
             mincomeCurrency: this.form.mincomeCurrency,

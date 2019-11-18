@@ -1,78 +1,105 @@
 <template lang='pug'>
-li.c-item(v-if='isEditing || isAdding')
-  input.input(
-    type='text'
-    ref='input'
-    :placeholder='randomPlaceholder'
-    maxlength='20'
-    :aria-label='L("Your contribution")'
-    :aria-invalid='hasError'
-    v-focus='isEditing && $slots.default[0].text'
-    @keyup='verifyValue'
-    @keydown.esc='cancel'
-    @keydown.enter='handleEnter'
-  )
-  i18n.button(
-    tag='button'
-    @click='cancel'
-  ) Cancel
-  i18n.button.is-outlined(
-    v-if='isAdding && isFilled'
-    tag='button'
-    @click='handleSubmit'
-  ) Add
-  i18n.button.is-outlined(
-    v-if='isEditing && isFilled'
-    tag='button'
-    @click='handleSubmit'
-  ) Save
-  i18n.button.is-danger.is-outlined(
-    v-if='isEditing && !isFilled'
-    tag='button'
-    @click='handleDelete'
-  ) Delete
-  p.error(v-if='hasError' role='alert') {{this.hasError}}
+transition(name='replacelist')
+  li.c-contribution-edit(v-if='isEditing || isAdding' key='editing')
+    form.c-contribution(
+      @submit.prevent=''
+      novalidate='true'
+    )
+      input.input(
+        type='text'
+        :placeholder='randomPlaceholder'
+        :aria-label='L("Your contribution")'
+        v-error:contribution=''
+        v-focus=''
+        v-model='$v.form.contribution.$model'
+        data-test='inputNonMonetaryContribution'
+        @keyup='verifyValue'
+        @keydown.esc='cancel'
+        @keydown.enter.prevent='handleEnter'
+      )
+      .buttons
+        i18n.button.is-small.is-danger.is-outlined(
+          v-if='isEditing && !isAdding'
+          tag='button'
+          @click='handleDelete'
+          data-test='buttonRemoveNonMonetaryContribution'
+        ) Remove
+        .c-buttons-right
+          i18n.button.is-small.is-outlined(
+            tag='button'
+            @click='cancel'
+            data-test='buttonCancelNonMonetaryContribution'
+          ) Cancel
+          i18n.button.is-small(
+            v-if='isAdding && isFilled'
+            tag='button'
+            @click='handleSubmit'
+            data-test='buttonAddNonMonetaryContribution'
+          ) Add
+          i18n.button.is-small(
+            v-if='isEditing && isFilled'
+            tag='button'
+            @click='handleSubmit'
+            data-test='buttonSaveNonMonetaryContribution'
+          ) Save
 
-li(v-else-if='isEditable' :class='itemClasses')
-  slot
-
-  button.is-icon(:aria-label='editAriaLabel' @click='handleEditClick')
-    i.icon-edit(aria-hidden='true')
-
-li(v-else-if='isUnfilled')
-  button(:class='itemClasses' @click='handleClick')
+  li(v-else-if='isEditable' :class='itemClasses' key='editable')
     slot
 
-li(v-else='' :class='itemClasses')
-  slot
+    button.button.is-small.is-outlined.c-inline-button(
+      :aria-label='editAriaLabel'
+      @click='handleEditClick'
+      data-test='buttonEditNonMonetaryContribution'
+    )
+      i.icon-pencil-alt(aria-hidden='true')
+      | {{ L('Edit') }}
+
+  li.c-spacer-above(v-else-if='isUnfilled' key='isUnfilled')
+    button.button.is-small(
+      data-test='addNonMonetaryContribution'
+      :class='itemClasses'
+      @click='isAdding = true'
+    )
+      slot
+
+  li(v-else='' :class='itemClasses' key='basic')
+    slot
 </template>
 
 <script>
+import { validationMixin } from 'vuelidate'
+import { required } from 'vuelidate/lib/validators'
+import L from '@view-utils/translations.js'
+
 export default {
   name: 'Contribution',
+  mixins: [validationMixin],
   props: {
     variant: {
       type: String,
       validator (value) {
         return [
-          'default', // light box just to read the content
-          'unfilled', // dashed box interactive to add a new contribution
-          'editable' // blue box to edit a contribution
+          'default', // Display the contribution
+          'unfilled', // Add a new contribution
+          'editable' // Edit a contribution
         ].indexOf(value) > -1
       },
       default: 'default'
     },
-    // When true doesn't show the input to edit the contribution text.
-    // Let the parent decide what to do using @interaction
-    isMonetary: Boolean
+    initialValue: {
+      type: String
+    },
+    contributionsList: Array
   },
   data () {
     return {
       isAdding: false,
       isEditing: false,
       isFilled: null, // decide what input buttons to show
-      hasError: false,
-      placeholders: [this.L('Portuguese classes'), this.L('Programming'), this.L('Cooking'), this.L('Parties'), this.L('Free cinema tickets')]
+      placeholders: [L('Portuguese classes'), L('Programming'), L('Cooking'), L('Parties'), L('Free cinema tickets')],
+      form: {
+        contribution: this.initialValue
+      }
     }
   },
   computed: {
@@ -96,20 +123,9 @@ export default {
     }
   },
   methods: {
-    handleClick () {
-      if (this.isMonetary) {
-        this.$emit('interaction')
-      } else {
-        this.isAdding = true
-      }
-    },
     handleEditClick (e) {
-      if (this.isMonetary) {
-        this.$emit('interaction')
-      } else {
-        this.isEditing = true
-        this.isFilled = true
-      }
+      this.isEditing = true
+      this.isFilled = !!this.initialValue
     },
     verifyValue (event) {
       this.isFilled = !!event.target.value
@@ -118,32 +134,35 @@ export default {
       this.isAdding = false
       this.isEditing = false
       this.isFilled = false
-      this.hasError = false
     },
     handleEnter (e) {
       if (this.isAdding && !this.isFilled) {
         this.setError()
         return false
       }
-
       return this.isFilled ? this.handleSubmit() : this.handleDelete()
     },
     handleDelete () {
-      this.$emit('new-value', this.$refs.input.value)
+      this.$emit('new-value', 'nonMonetaryRemove', this.initialValue)
       this.cancel()
     },
     handleSubmit () {
-      const text = this.$refs.input.value
-
-      if (text.trim() === '') {
-        this.setError()
-      } else {
-        this.$emit('new-value', text)
+      if (this.$v.form.$invalid) {
         this.cancel()
+      } else {
+        if (this.isAdding) {
+          this.$emit('new-value', 'nonMonetaryAdd', this.form.contribution)
+          this.isAdding = false
+          this.form.contribution = null
+        }
+        if (this.isEditing) {
+          this.$emit('new-value', 'nonMonetaryEdit', {
+            replace: this.initialValue,
+            with: this.form.contribution
+          })
+          this.isEditing = false
+        }
       }
-    },
-    setError () {
-      this.hasError = this.L('Whitespace characters aren\'t really a contribution')
     }
   },
   directives: {
@@ -154,10 +173,71 @@ export default {
         el.focus()
       }
     }
+  },
+  validations: {
+    form: {
+      contribution: {
+        [L('Contribution required')]: required,
+        [L('Contribution already exists')]: function (x) {
+          return !this.contributionsList || !this.contributionsList.includes(x)
+        }
+      }
+    }
   }
 }
 </script>
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+.c-contribution {
+  padding: $spacer * 1.5 0 $spacer 0;
+}
+
+.c-contribution-edit {
+  &:first-child,
+  .c-contribution + .c-contribution{
+    padding-top: 0;
+  }
+
+  & + .c-spacer-above .c-contribution{
+    padding-top: $spacer;
+  }
+}
+
+.c-spacer-above {
+  padding-top: $spacer * 1.5;
+}
+
+.buttons {
+  padding-top: $spacer;
+  padding-bottom: $spacer-xs;
+  margin-top: 0;
+
+  button {
+    margin-top: 0;
+  }
+}
+
+.c-inline-button {
+  margin-left: $spacer;
+  .icon-pencil-alt {
+    margin-left: 0;
+  }
+}
+
+.has-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.c-buttons-right {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.button + .c-buttons-right {
+  width: auto;
+}
 </style>

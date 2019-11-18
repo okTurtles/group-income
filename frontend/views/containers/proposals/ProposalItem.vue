@@ -120,10 +120,10 @@ export default {
 
       if ([STATUS_PASSED, STATUS_FAILED].includes(this.proposal.status)) {
         // Show the status icon, no matter the proposal type
-        return `${status[this.proposal.status]} c-icon`
+        return `${status[this.proposal.status]} icon-round`
       }
 
-      return `${type[this.proposalType]} ${status[this.proposal.status]} c-icon`
+      return `${type[this.proposalType]} ${status[this.proposal.status]} icon-round`
     },
     invitationLink () {
       if (this.proposalType === PROPOSAL_INVITE_MEMBER &&
@@ -163,23 +163,6 @@ export default {
   flex-grow: 1;
 }
 
-.c-icon {
-  width: 2.5rem;
-  height: 2.5rem;
-  line-height: 2.5rem;
-  margin-right: $spacer;
-  flex-shrink: 0;
-  border-radius: 50%;
-  text-align: center;
-
-  @include tablet {
-    width: 2rem;
-    height: 2rem;
-    line-height: 2rem;
-
-  }
-}
-
 .c-sendLink {
   border-radius: 0.25rem;
   background-color: $general_2;
@@ -193,6 +176,12 @@ export default {
   .link {
     word-break: break-all;
     display: inline; // show the border through multiple lines
+  }
+}
+
+.icon-round {
+  @include phone {
+    margin-left: $spacer-sm;
   }
 }
 </style>
