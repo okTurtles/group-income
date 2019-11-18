@@ -51,7 +51,7 @@ nav.c-navigation(
             i.icon-plus
             i18n Add a group
 
-      .c-navigation-body-bottom
+      .c-navigation-bottom
         ul.c-menu-list-bottom
           i18n(
             tag='a'
@@ -85,7 +85,7 @@ import ListItem from '@components/ListItem.vue'
 import { mapGetters } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
-import { desktop } from '@utils/breakpoints.js'
+import { DESKTOP } from '@utils/breakpoints.js'
 import { debounce } from '@utils/giLodash.js'
 
 export default {
@@ -159,7 +159,7 @@ export default {
       }
     },
     checkIsTouch () {
-      this.ephemeral.isTouch = window.innerWidth < desktop
+      this.ephemeral.isTouch = window.innerWidth < DESKTOP
     }
   }
 }
@@ -207,7 +207,7 @@ export default {
   padding-top: 1.5rem;
 }
 
-.c-navigation-body-bottom {
+.c-navigation-bottom {
   padding-top: $spacer-lg;
   padding-bottom: $spacer-sm;
 }

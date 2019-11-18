@@ -315,18 +315,6 @@ page(
             pre .button disabled
           td
             button(disabled) Default text
-
-        tr
-          td
-            pre
-              | .button
-              |   | Next
-              |   i.icon-arrow-right
-          td
-            button
-              | Next
-              i.icon-arrow-right
-
       h3.is-title-3 Small size
       table
         thead
@@ -356,7 +344,7 @@ page(
           td
             button.is-danger.is-outlined.is-small Default text
 
-      h3.is-title-3 Small size with icon
+      h3.is-title-3 With icon
       table
         thead
           th code
@@ -364,13 +352,23 @@ page(
         tr
           td
             pre
-              | .button.is-small.is-outlined
+              | .button.has-icon-start
               |   i.icon-plus
-              |   | Add
+              |   Add
           td
-            button.is-small.is-outlined
+            .button.has-icon-start
               i.icon-plus
               | Add
+        tr
+          td
+            pre
+              | .button.has-icon-end
+              |   Next
+              |   i.icon-arrow-right
+          td
+            .button.has-icon-end
+              | Next
+              i.icon-arrow-right
 
       h3.is-title-3 Icon Buttons
       table

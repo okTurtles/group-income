@@ -30,7 +30,7 @@ div(:data-test='pageTestName' :class='$scopedSlots.sidebar ? "p-with-sidebar" : 
 
 <script>
 import Toggle from '@containers/sidebar/Toggle.vue'
-import { desktop } from '@utils/breakpoints.js'
+import { DESKTOP } from '@utils/breakpoints.js'
 import { debounce } from '@utils/giLodash.js'
 
 export default {
@@ -75,7 +75,7 @@ export default {
     },
     checkIsTouch () {
       console.log('chingg')
-      this.ephemeral.isTouch = window.innerWidth < desktop
+      this.ephemeral.isTouch = window.innerWidth < DESKTOP
     }
   }
 }

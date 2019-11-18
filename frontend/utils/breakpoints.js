@@ -1,3 +1,3 @@
 // Same as CSS breakpoints at _variables.scss
-export const tablet = 769
-export const desktop = 1200
+export const TABLET = 769
+export const DESKTOP = 1200

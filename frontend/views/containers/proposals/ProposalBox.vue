@@ -23,7 +23,7 @@ import L from '@view-utils/translations.js'
 import UserImage from '@containers/UserImage.vue'
 import ProposalItem from './ProposalItem.vue'
 import { STATUS_OPEN } from '@model/contracts/voting/proposals.js'
-import { tablet } from '@utils/breakpoints.js'
+import { TABLET } from '@utils/breakpoints.js'
 
 export default {
   name: 'ProposalBox',
@@ -33,7 +33,7 @@ export default {
   data () {
     return {
       config: {
-        reasonMaxLength: window.innerWidth < tablet ? 50 : 170
+        reasonMaxLength: window.innerWidth < TABLET ? 50 : 170
       },
       ephemeral: {
         isReasonHidden: true
