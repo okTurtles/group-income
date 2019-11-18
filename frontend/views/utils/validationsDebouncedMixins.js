@@ -2,7 +2,6 @@ import { debounce } from '@utils/giLodash.js'
 
 /**
 Methods to debounce vuelidate validations.
-Don't forget to add v-model to the input where you use these.
 
 Ex:
 
@@ -51,22 +50,22 @@ export default {
     },
 
     /**
-     * Debounce field validations.
-     * - Useful when you want to debounce expensive validations.
-     */
-    debounceValidation: debounce(function (fieldName, value) {
-      this.updateField(fieldName, value)
-    }, 1000),
-
-    /**
      * Validate the field and update it immediatelly.
      * - Usually used on @blur.
      */
     updateField (fieldName, value) {
-      if (value) { // it means it needs to be a manually binded
+      if (value) { // it means it needs to be manually binded
         this.form[fieldName] = value
       }
       this.$v.form[fieldName].$touch()
-    }
+    },
+
+    /**
+     * Debounce field validations.
+     * - You can call it when u want to debounce expensive validations.
+     */
+    debounceValidation: debounce(function (fieldName, value) {
+      this.updateField(fieldName, value)
+    }, 1000)
   }
 }
