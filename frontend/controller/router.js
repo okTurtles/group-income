@@ -30,6 +30,15 @@ const loginGuard = {
   guard: (to, from) => !store.state.loggedIn,
   redirect: (to, from) => ({ path: '/', query: { next: to.path } })
 }
+
+var inviteGuard = {
+  guard: (to, from) => {
+    // ex: http://localhost:8000/app/join?groupId=21XWnNRE7vggw4ngGqmQz5D4vAwPYqcREhEkGop2mYZTKVkx8H&secret=5157
+    return !(to.query.groupId && to.query.secret)
+  },
+  redirect: (to, from) => ({ path: '/' })
+}
+
 // Check if user has a group
 const groupGuard = {
   guard: (to, from) => !store.state.currentGroupId,
@@ -140,7 +149,7 @@ const router = new Router({
       component: Join,
       meta: { title: L('Join a Group') },
       // beforeEnter: createEnterGuards(loginGuard, mailGuard)
-      beforeEnter: createEnterGuards(loginGuard)
+      beforeEnter: createEnterGuards(inviteGuard)
     },
     ...(process.env.NODE_ENV === 'development' ? [{
       path: '/error-testing',

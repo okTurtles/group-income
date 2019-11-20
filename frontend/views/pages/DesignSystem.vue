@@ -16,34 +16,26 @@ page(
 
   article#typography
     section.card.c-typography
-      i18n(tag='h2' class='card-header') Typography
+      h2.is-title-2.card-header Typography
 
-      h3 Titles
-
+      h3.is-title-3 Titles
+      br
+      br
       table
         thead
           th code
           th demo
         tr(v-for='(scale, index) in [1, 2, 3, 4]' :key='index')
           td
-            pre h{{scale}} or .title.is-{{scale}}
-          td.title(:class='`is-${scale}`') This is an H{{scale}} title
+            pre .is-title-{{scale}}
+          td(:class='`is-title-${scale}`') This is an title level {{scale}}
         tr
           td
             pre
-              | header p
-              br
-              | or
-              br
               | .subtitle
           td.subtitle This is a subtitle
-        tr
-          td
-            pre .label
-          td
-            label.label Label
 
-      h3 Body Copy
+      h3.is-title-3 Body Copy
 
       table
         thead
@@ -116,7 +108,7 @@ page(
 
   article#cards
     section.card
-      i18n(tag='h2' class='card-header') Cards
+      h2.is-title-2.card-header Cards
 
       table
         thead
@@ -155,7 +147,7 @@ page(
 
   article#icons
     section.card
-      i18n(tag='h2' class='card-header') Icons
+      h2.is-title-2.card-header Icons
       p
         | This is only the currently used icons (at _icons.scss).
         br
@@ -220,9 +212,31 @@ page(
               i.icon-user-times icon-user-times
               i.icon-vote-yea icon-vote-yea
               i.icon-copy icon-copy
+        tr
+          td
+            pre
+              | i.icon-round
+          td
+            i.icon-angle-left.icon-round.has-background-success.has-text-success
+        tr
+          td
+            pre
+              | Try again
+              | i.icon-undo.is-suffix
+          td
+            | Try again
+            i.icon-undo.is-suffix
+        tr
+          td
+            pre
+              | i.icon-bell.is-prefix
+              | Notifications
+          td
+            i.icon-bell.is-prefix
+            | Notifications
   article#spacing
     section.card
-      i18n(tag='h2' class='card-header') Spacing
+      h2.is-title-2.card-header Spacing
       table
         thead
           th code
@@ -239,9 +253,9 @@ page(
 
   article#color
     section.card
-      i18n(tag='h2' class='card-header') Color
+      h2.is-title-2.card-header Color
 
-      h3 Variable
+      h3.is-title-3 Variable
 
       table.colors
         thead
@@ -255,7 +269,7 @@ page(
           td
             span.c-palette(v-for='num in [0, 1, 2]' :key='num' :style='{ backgroundColor: `var(--${color.name}_${num})`}')
 
-      h3 Background
+      h3.is-title-3 Background
 
       table
         thead
@@ -270,8 +284,8 @@ page(
           //- td(v-html='color.usage')
   article#buttons
     section.card
-      i18n(tag='h2' class='card-header') Buttons
-      h3 Default size
+      h2.is-title-2.card-header Buttons
+      h3.is-title-3 Default size
       table
         thead
           th code
@@ -317,19 +331,7 @@ page(
             pre .button disabled
           td
             button(disabled) Default text
-
-        tr
-          td
-            pre
-              | .button
-              |   | Next
-              |   i.icon-arrow-right
-          td
-            button
-              | Next
-              i.icon-arrow-right
-
-      h3 Small size
+      h3.is-title-3 Small size
       table
         thead
           th code
@@ -358,7 +360,7 @@ page(
           td
             button.is-danger.is-outlined.is-small Default text
 
-      h3 Small size with icon
+      h3.is-title-3 With an icon
       table
         thead
           th code
@@ -366,15 +368,25 @@ page(
         tr
           td
             pre
-              | .button.is-small.is-outlined
-              |   i.icon-plus
-              |   | Add
+              | .button
+              |   i.icon-plus.is-prefix
+              |   Add
           td
-            button.is-small.is-outlined
-              i.icon-plus
+            .button.has-icon-start
+              i.icon-plus.is-prefix
               | Add
+        tr
+          td
+            pre
+              | .button
+              |   Next
+              |   i.icon-arrow-right.is-suffix
+          td
+            .button
+              | Next
+              i.icon-arrow-right.is-suffix
 
-      h3 Icon Buttons
+      h3.is-title-3 Icon Buttons
       table
         thead
           th code
@@ -415,7 +427,7 @@ page(
 
   article#notification-badges
     section.card
-      i18n(tag='h2' class='card-header') Notification Badges
+      h2.is-title-2.card-header Notification Badges
       table
         thead
           th code
@@ -458,7 +470,7 @@ page(
 
   article#pills
     section.card
-      i18n(tag='h2' class='card-header') Pills
+      h2.is-title-2.card-header Pills
       table
         thead
           th code
@@ -471,8 +483,8 @@ page(
 
   article#user-feedback
     section.card
-      i18n(tag='h2' class='card-header') User Feedback
-      h3 Simple
+      h2.is-title-2.card-header User Feedback
+      h3.is-title-3 Simple
 
       table
         thead
@@ -509,7 +521,7 @@ page(
               a.link(href='/') link
               | . This message can grow in width or height, as needed.
 
-      h3 With title
+      h3.is-title-3 With title
       table
         thead
           th code
@@ -532,7 +544,7 @@ page(
 
   article#tooltips
     section.card
-      i18n(tag='h2' class='card-header') Tooltips
+      h2.is-title-2.card-header Tooltips
       tooltip(
         text='A simple text inside'
         )
@@ -585,12 +597,12 @@ page(
 
   article#forms
     section.card
-      i18n(tag='h2' class='card-header') Forms
+      h2.is-title-2.card-header Forms
 
       p
         | The input's width depends on their container #[br]
         | For consistency, add #[code .field] to have a margin bottom of 1rem #[br]
-        | For A11Y reasons, everything related to a form element, (label text, input element, helper text and error text) should be placed inside its respective #[code <label />] element.
+        | For A11Y reasons, everything related to a form element, (label text, input element, helper text and error text) should be placed inside its respective #[code <\label \>] element.
         | When an element is disabled, required or as an error, add the respective HTML attributes! #[code disabled, aria-required, or aria-describedby="error"]
       br
       button.is-small.is-outlined.is-danger(
@@ -604,7 +616,7 @@ page(
           th demo
         tr
           td
-            h3 Textbox
+            h3.is-title-3 Textbox
         tr
           td
             pre
@@ -639,7 +651,7 @@ page(
 
         tr
           td
-            h3 Selectbox
+            h3.is-title-3 Selectbox
         tr
           td
             pre
@@ -660,7 +672,7 @@ page(
 
         tr
           td
-            h3 Radio
+            h3.is-title-3 Radio
         tr
           td
             pre
@@ -686,7 +698,7 @@ page(
                 span Apples
         tr
           td
-            h3 Combination
+            h3.is-title-3 Combination
         tr
           td
             pre
@@ -765,7 +777,7 @@ page(
 
   article#stepper
     section.card
-      i18n(tag='h2' class='card-header') Stepper
+      h2.is-title-2.card-header Stepper
 
       p Todo: replace with component once created
       table
@@ -789,7 +801,7 @@ page(
               button.step.next 3
   article#menu
     section.card
-      i18n(tag='h2' class='card-header') Menu
+      h2.is-title-2.card-header Menu
       table
         thead
           th code
@@ -808,7 +820,7 @@ page(
 
   article#modal
     section.card
-      i18n(tag='h2' class='card-header') Modal
+      h2.is-title-2.card-header Modal
       table
         thead
           th code
@@ -827,7 +839,7 @@ page(
 
   article#modalBase
     section.card
-      i18n(tag='h2' class='card-header') Modal Base
+      h2.is-title-2.card-header Modal Base
       i18n(tag='p') The modal base as very basic functionality. Compare to normal modal it has very basic style and let us add any kind of content.
       i18n(tag='p') It only contain opening and closing mecanism (shared with the modal in modal mixin).
       i18n(tag='p') The main use at the moment is to have a full screen master modal that can contains other small sub modals (ex: user settings)
@@ -851,7 +863,7 @@ page(
               i18n Open Modal
   article#Illustrations
     section.card
-      i18n(tag='h2' class='card-header') Illustrations (SVGs)
+      h2.is-title-2.card-header Illustrations (SVGs)
       p We have a good amount of nice illustrations across Group Income. Those illustrations' colors need to be customized based on the current theme. For that reason we display them in inline SVGs.
       br
       p Here's how you can load a SVG:
@@ -877,7 +889,7 @@ page(
 
       p Know more about how all of this works at #[pre(style='display:inline') assets/svg/README.md]
       br
-      b.title.is-4 Available SVGs:
+      b.is-title-4 Available SVGs:
       .c-svgList
         .c-svgList-item(
           v-for='svg in config.svgs'
@@ -1080,7 +1092,7 @@ $pagePadding: 1rem;
 $pagePaddingTablet: 24px;
 $pagePaddingDesktop: 75px;
 
-article h3 {
+article .is-title-3 {
   margin-top: $spacer;
 }
 

@@ -36,7 +36,7 @@ modal-template(:class='{ "has-background": background, "is-left-aligned": backOn
 
       i18n(
         tag='button'
-        @click.prevent='openModal("SignUp")'
+        @click.prevent='openModal("Signup")'
       ) Open SubModal
 
   template(#footer='')

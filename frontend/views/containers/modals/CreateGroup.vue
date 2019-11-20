@@ -16,7 +16,7 @@ modal-base-template
     component(
       :is='content'
       :group='form'
-      :v='$v.form'
+      :$v='$v'
       @next='next'
       @focusref='focusRef'
       @input='payload => updateGroupData(payload)'
@@ -35,7 +35,7 @@ modal-base-template
           data-test='nextBtn'
         )
           | {{ L('Next') }}
-          i.icon-arrow-right
+          i.icon-arrow-right.is-suffix
 
         button.is-success(
           v-else=''
@@ -55,6 +55,7 @@ modal-base-template
 import ModalBaseTemplate from '@components/Modal/ModalBaseTemplate.vue'
 import sbp from '~/shared/sbp.js'
 import { RULE_THRESHOLD } from '@model/contracts/voting/rules.js'
+import { INVITE_INITIAL_CREATOR, createInvite } from '@model/contracts/group.js'
 import proposals, { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '@model/contracts/voting/proposals.js'
 import imageUpload from '@utils/imageUpload.js'
 import L from '@view-utils/translations.js'
@@ -101,7 +102,7 @@ export default {
       this.ephemeral.errorMsg = null
       Object.assign(this.form, payload.data)
     },
-    submit: async function () {
+    async submit () {
       if (this.$v.form.$invalid) {
         // TODO: more descriptive error message, highlight erroneous step
         this.ephemeral.errorMsg = L('We still need some info from you, please go back and fill missing fields')
@@ -121,30 +122,36 @@ export default {
       // create the GroupContract
       try {
         this.ephemeral.errorMsg = null
+        const initialInvite = createInvite({ quantity: 60, creator: INVITE_INITIAL_CREATOR })
         const entry = sbp('gi.contracts/group/create', {
-          // authorizations: [contracts.CanModifyAuths.dummyAuth()], // TODO: this
-          groupName: this.form.groupName,
-          groupPicture: this.form.groupPicture,
-          sharedValues: this.form.sharedValues,
-          mincomeAmount: +this.form.mincomeAmount, // ensure this is a number
-          mincomeCurrency: this.form.mincomeCurrency,
-          proposals: {
-            // TODO: make the UI support changing the rule type, so that we have
-            //       a component for RULE_DISAGREEMENT as well
-            [PROPOSAL_GROUP_SETTING_CHANGE]: merge({},
-              proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults,
-              { ruleSettings: { [RULE_THRESHOLD]: { threshold: this.form.changeThreshold } } }
-            ),
-            [PROPOSAL_INVITE_MEMBER]: merge({},
-              proposals[PROPOSAL_INVITE_MEMBER].defaults,
-              { ruleSettings: { [RULE_THRESHOLD]: { threshold: this.form.memberApprovalThreshold } } }
-            ),
-            [PROPOSAL_REMOVE_MEMBER]: merge({},
-              proposals[PROPOSAL_REMOVE_MEMBER].defaults,
-              { ruleSettings: { [RULE_THRESHOLD]: { threshold: this.form.memberRemovalThreshold } } }
-            ),
-            [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].defaults,
-            [PROPOSAL_GENERIC]: proposals[PROPOSAL_GENERIC].defaults
+          invites: {
+            [initialInvite.inviteSecret]: initialInvite
+          },
+          settings: {
+            // authorizations: [contracts.CanModifyAuths.dummyAuth()], // TODO: this
+            groupName: this.form.groupName,
+            groupPicture: this.form.groupPicture || `${window.location.origin}/assets/images/default-group-avatar.png`,
+            sharedValues: this.form.sharedValues,
+            mincomeAmount: +this.form.mincomeAmount, // ensure this is a number
+            mincomeCurrency: this.form.mincomeCurrency,
+            proposals: {
+              // TODO: make the UI support changing the rule type, so that we have
+              //       a component for RULE_DISAGREEMENT as well
+              [PROPOSAL_GROUP_SETTING_CHANGE]: merge({},
+                proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults,
+                { ruleSettings: { [RULE_THRESHOLD]: { threshold: this.form.changeThreshold } } }
+              ),
+              [PROPOSAL_INVITE_MEMBER]: merge({},
+                proposals[PROPOSAL_INVITE_MEMBER].defaults,
+                { ruleSettings: { [RULE_THRESHOLD]: { threshold: this.form.memberApprovalThreshold } } }
+              ),
+              [PROPOSAL_REMOVE_MEMBER]: merge({},
+                proposals[PROPOSAL_REMOVE_MEMBER].defaults,
+                { ruleSettings: { [RULE_THRESHOLD]: { threshold: this.form.memberRemovalThreshold } } }
+              ),
+              [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].defaults,
+              [PROPOSAL_GENERIC]: proposals[PROPOSAL_GENERIC].defaults
+            }
           }
         })
         const hash = entry.hash()
@@ -250,6 +257,7 @@ export default {
   width: calc(100% - 2rem);
   max-width: 34rem;
   margin-top: 3.5rem;
+  flex-shrink: 0;
 }
 
 .wrapper {

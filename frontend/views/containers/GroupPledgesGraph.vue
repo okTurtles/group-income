@@ -73,6 +73,7 @@ import { PieChart, GraphLegendGroup, GraphLegendItem } from '@components/Graphs/
 import Tooltip from '@components/Tooltip.vue'
 import currencies from '@view-utils/currencies.js'
 import { debounce } from '@utils/giLodash.js'
+import { TABLET } from '@view-utils/breakpoints.js'
 
 export default {
   name: 'GroupPledgesGraph',
@@ -211,7 +212,7 @@ export default {
       this.isMobile = this.verifyIsMobile()
     }, 100),
     verifyIsMobile () {
-      return window.innerWidth < 769
+      return window.innerWidth < TABLET
     }
   }
 }

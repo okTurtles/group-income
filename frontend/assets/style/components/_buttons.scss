@@ -63,10 +63,6 @@ button,
     @include buttonState($danger_0_1, $danger_1);
   }
 
-  [class^="icon-"]:last-child {
-    margin-left: 6px;
-  }
-
   &.is-small {
     min-height: 1.688rem;
     padding-left: 1rem;
@@ -74,10 +70,6 @@ button,
     padding-bottom: 0;
     font-size: 12px;
     line-height: 12px;
-
-    [class^="icon-"] {
-      margin-right: $spacer-sm;
-    }
   }
 
   &.is-icon,
@@ -92,10 +84,6 @@ button,
     align-items: center;
     color: $text_0;
     border-radius: 50%;
-
-    [class^="icon-"]:last-child {
-      margin-left: 0;
-    }
 
     @media (hover: hover) {
       &:hover,
@@ -212,7 +200,7 @@ button.link {
   color: $primary_0;
   font-weight: 600;
   display: inline-block;
-  line-height: inherit;
+  line-height: 1.4; // better underline visually
 
   &::after {
     width: 100%;

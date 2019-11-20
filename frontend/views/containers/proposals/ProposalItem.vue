@@ -1,5 +1,5 @@
 <template lang='pug'>
-  li(data-test='proposalItem')
+  li.c-li(data-test='proposalItem')
     .c-item
       i(:class='iconClass')
       .c-main
@@ -8,11 +8,10 @@
           :class='{ "has-text-danger": proposal.status === statuses.STATUS_FAILED, "has-text-success": proposal.status === statuses.STATUS_PASSED }'
           data-test='statusDescription'
           ) {{statusDescription}}
-      .ctas
-        proposal-vote-options(
-          v-if='proposal.status === statuses.STATUS_OPEN'
-          :proposalHash='proposalHash'
-        )
+      proposal-vote-options(
+        v-if='proposal.status === statuses.STATUS_OPEN'
+        :proposalHash='proposalHash'
+      )
     p.c-sendLink(v-if='invitationLink' data-test='sendLink')
       i18n(
         :args='{ user: proposal.data.proposalData.member}'
@@ -42,6 +41,7 @@ import {
 } from '@model/contracts/voting/proposals.js'
 import ProposalVoteOptions from '@containers/proposals/ProposalVoteOptions.vue'
 import InviteLinkToCopy from '@components/InviteLinkToCopy.vue'
+import { INVITE_STATUS } from '@model/contracts/group.js'
 
 export default {
   name: 'ProposalItem',
@@ -55,7 +55,8 @@ export default {
   computed: {
     ...mapGetters([
       'currentGroupState',
-      'groupMembersCount'
+      'groupMembersCount',
+      'ourUsername'
     ]),
     ...mapState(['currentGroupId']),
     statuses () {
@@ -66,6 +67,9 @@ export default {
     },
     proposalType () {
       return this.proposal.data.proposalType
+    },
+    isOurProposal () {
+      return this.proposal.meta.username === this.ourUsername
     },
     typeDescription () {
       return {
@@ -121,15 +125,18 @@ export default {
 
       if ([STATUS_PASSED, STATUS_FAILED].includes(this.proposal.status)) {
         // Show the status icon, no matter the proposal type
-        return `${status[this.proposal.status]} c-icon`
+        return `${status[this.proposal.status]} icon-round`
       }
 
-      return `${type[this.proposalType]} ${status[this.proposal.status]} c-icon`
+      return `${type[this.proposalType]} ${status[this.proposal.status]} icon-round`
     },
     invitationLink () {
-      if (this.proposalType === PROPOSAL_INVITE_MEMBER && this.proposal.status === STATUS_PASSED) {
+      if (this.proposalType === PROPOSAL_INVITE_MEMBER &&
+        this.proposal.status === STATUS_PASSED &&
+        this.isOurProposal
+      ) {
         const secret = this.proposal.payload.inviteSecret
-        if (this.currentGroupState.invites[secret].status === 'valid') {
+        if (this.currentGroupState.invites[secret].status === INVITE_STATUS.VALID) {
           return buildInvitationUrl(this.currentGroupId, this.proposal.payload.inviteSecret)
         }
       }
@@ -142,32 +149,23 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-$spaceVertical: $spacer-sm*3;
+.c-li {
+  &:not(:first-child) {
+    margin-top: 1.5rem;
+  }
+}
 
 .c-item {
   display: flex;
-  align-items: flex-start;
-  margin-top: $spaceVertical;
+  align-items: center;
+
+  @include phone {
+    flex-wrap: wrap;
+  }
 }
 
 .c-main {
   flex-grow: 1;
-}
-
-.c-icon {
-  width: 2rem;
-  height: 2rem;
-  margin-right: $spaceVertical;
-  margin-bottom: $spacer-xs;
-  margin-top: $spacer-xs; // visually better aligned
-  flex-shrink: 0;
-  border-radius: 50%;
-  text-align: center;
-  line-height: 2rem;
-
-  @include phone {
-    margin-left: $spacer-sm; // TODO: Suggest to @mmbotelho
-  }
 }
 
 .c-sendLink {
@@ -188,6 +186,12 @@ $spaceVertical: $spacer-sm*3;
       display: inline-block;
       background: $white;
     }
+  }
+}
+
+.icon-round {
+  @include phone {
+    margin-left: $spacer-sm;
   }
 }
 </style>

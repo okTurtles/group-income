@@ -21,6 +21,7 @@ import './views/utils/translations.js'
 import './views/utils/vFocus.js'
 import './views/utils/vError.js'
 import './views/utils/vStyle.js'
+import 'wicg-inert'
 
 console.log('NODE_ENV:', process.env.NODE_ENV)
 
@@ -114,7 +115,7 @@ async function startApp () {
     },
     computed: {
       showNav () {
-        return this.$store.state.loggedIn && this.$store.getters.groupsByName.length > 0
+        return this.$store.state.loggedIn && this.$store.getters.groupsByName.length > 0 && this.$route.path !== '/join'
       },
       appClasses () {
         return {

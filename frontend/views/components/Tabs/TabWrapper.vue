@@ -5,7 +5,7 @@
       @click='open = false'
     )
       .tab-nav-header
-        i18n.menu-title(tag='h2') Settings
+        i18n.is-title-2.menu-title(tag='h2') Settings
 
       .tab-nav-list(
         v-for='(tabItem, index) in tabNav'

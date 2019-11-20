@@ -1,20 +1,19 @@
 <template lang='pug'>
 nav.c-navigation(
-  role='navigation'
+  :aria-label='L("Main")'
   :class='{ "is-active": ephemeral.isActive }'
 )
-  toggle(@toggle='toggleMenu')
+  toggle(@toggle='toggleMenu' element='navigation' :aria-expanded='ephemeral.isActive')
 
-  groups-list(v-if='groupsByName.length > 1')
+  groups-list(v-if='groupsByName.length > 1' :inert='isInert')
 
-  .c-navigation-wrapper
+  .c-navigation-wrapper(:inert='isInert')
     .c-navigation-header
       h1.sr-only Main Menu
 
       router-link(to='/home')
         img.c-logo(:src='logo' alt='GroupIncome\'s logo')
 
-      // NOTE/REVIEW: If we follow Messages GIBot approach, the bell icon wont be needed
       activity(:activityCount='activityCount' v-if='groupsByName.length')
 
     .c-navigation-body(
@@ -23,16 +22,15 @@ nav.c-navigation(
     )
       .c-navigation-body-top
         ul.c-menu-list
-          // TODO/BUG: Mobile - hide navbar after going to a page
-          list-item(tag='router-link' icon='columns' to='/dashboard')
+          list-item(tag='router-link' icon='columns' to='/dashboard' data-test='dashboard')
             i18n Dashboard
-          list-item(tag='router-link' icon='chart-pie' to='/contributions')
+          list-item(tag='router-link' icon='chart-pie' to='/contributions' data-test='contributionsLink')
             i18n Contributions
-          list-item(tag='router-link' icon='tag' to='/pay-group')
+          list-item(tag='router-link' icon='tag' to='/pay-group' data-test='payGroupLink')
             i18n Pay Group
-          list-item(tag='router-link' icon='comments' to='/group-chat' :badgeCount='3')
+          list-item(tag='router-link' icon='comments' to='/group-chat' :badgeCount='3' data-test='groupChatLink')
             i18n Chat
-          list-item(tag='router-link' icon='cog' to='/group-settings')
+          list-item(tag='router-link' icon='cog' to='/group-settings' data-test='groupSettingsLink')
             i18n Group Settings
           list-item(
             tag='router-link'
@@ -53,17 +51,7 @@ nav.c-navigation(
             i.icon-plus
             i18n Add a group
 
-        // Keep it here atm until we remove completly the mailbox
-        list-item(
-          tag='router-link'
-          to='/messages'
-          style='opacity: 0; cursor: default;'
-          icon='envelope'
-          :badgeCount='2'
-        )
-          i18n Messages
-
-      .c-navigation-body-bottom
+      .c-navigation-bottom
         ul.c-menu-list-bottom
           i18n(
             tag='a'
@@ -83,8 +71,8 @@ nav.c-navigation(
             target='_blank'
           ) Donate
 
-        profile
-
+    .c-navigation-footer(v-if='groupsByName.length')
+      profile
   component(:is='ephemeral.timeTravelComponentName')
 </template>
 
@@ -97,6 +85,8 @@ import ListItem from '@components/ListItem.vue'
 import { mapGetters } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
+import { DESKTOP } from '@view-utils/breakpoints.js'
+import { debounce } from '@utils/giLodash.js'
 
 export default {
   name: 'Navigation',
@@ -109,11 +99,25 @@ export default {
   },
   data () {
     return {
+      config: {
+        debounceResize: debounce(this.checkIsTouch, 250)
+      },
       ephemeral: {
         isActive: false,
+        isTouch: null,
         timeTravelComponentName: null
       }
     }
+  },
+  created () {
+    this.checkIsTouch()
+  },
+  mounted () {
+    // TODO - Create a single resize listener to be reused on components
+    window.addEventListener('resize', this.config.debounceResize)
+  },
+  beforeDestroy () {
+    window.removeEventListener('resize', this.config.debounceResize)
   },
   watch: {
     $route (to, from) {
@@ -136,6 +140,9 @@ export default {
     logo () {
       const name = this.colors.theme === 'dark' ? '-white' : ''
       return `/assets/images/logo-transparent${name}.png`
+    },
+    isInert () {
+      return !this.ephemeral.isActive && this.ephemeral.isTouch
     }
   },
   methods: {
@@ -150,6 +157,9 @@ export default {
         console.debug('enable time travel!')
         this.ephemeral.timeTravelComponentName = 'TimeTravel'
       }
+    },
+    checkIsTouch () {
+      this.ephemeral.isTouch = window.innerWidth < DESKTOP
     }
   }
 }
@@ -175,6 +185,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
   padding: 0 $spacer;
   height: 4.6rem;
   margin-bottom: -0.1rem;
@@ -183,8 +194,9 @@ export default {
 .c-navigation-body {
   display: flex;
   overflow: auto;
-  justify-content: space-between;
+  -webkit-overflow-scrolling: touch;
   flex-direction: column;
+  justify-content: space-between;
   flex-grow: 1;
 }
 
@@ -197,6 +209,11 @@ export default {
 
 .c-navigation-bottom {
   padding-top: $spacer-lg;
+  padding-bottom: $spacer-sm;
+}
+
+.c-navigation-footer {
+  flex-shrink: 0;
 }
 
 .c-menu-list-bottom {
@@ -209,8 +226,10 @@ export default {
     line-height: 1.65rem;
     color: $text_1;
 
-    &:hover {
+    &:hover,
+    &:focus {
       color: $text_0;
+      outline: none;
     }
   }
 }
@@ -222,10 +241,5 @@ export default {
 
 .c-toggle {
   left: 100%;
-  height: 64px;
-
-  @include tablet {
-    display: none;
-  }
 }
 </style>

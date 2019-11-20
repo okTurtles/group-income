@@ -8,7 +8,7 @@ proposal-template(
 )
   .c-step(v-if='ephemeral.currentStep === 0' key='0')
     avatar.c-avatar(:src='member.picture')
-    i18n.title.is-4(tag='p' :args='{ name: member.displayName || member.name }') Remove {name} from your group
+    i18n.is-title-4(tag='p' :args='{ name: member.displayName || member.name }') Remove {name} from your group
 </template>
 
 <script>

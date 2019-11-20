@@ -1,13 +1,13 @@
 <template lang="pug">
 .c-group-members(data-test='groupMembers')
   .c-group-members-header
-    i18n.title.is-4(tag='h4') Members
+    i18n.is-title-4(tag='h4') Members
 
     button.button.is-small.is-outlined(
       data-test='inviteButton'
-      @click='openModal("AddMembers")'
+      @click='openModal(groupShouldPropose ? "AddMembers" : "InviteByLink")'
     )
-      i.icon-plus
+      i.icon-plus.is-prefix
       i18n Add
 
   ul.c-group-list
@@ -98,6 +98,7 @@ export default {
   computed: {
     ...mapGetters([
       'groupProfiles',
+      'groupShouldPropose',
       'groupMembersCount'
     ]),
     firstTenMembers () {

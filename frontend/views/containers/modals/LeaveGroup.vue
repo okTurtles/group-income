@@ -42,7 +42,7 @@
         form-password(
           :label='L("Password")'
           :value='form'
-          :v='$v.form'
+          :v='$v'
           @enter='submit'
           @input='(Password) => {password = Password}'
           data-test='loginPassword'
@@ -81,7 +81,7 @@
 <script>
 import { validationMixin } from 'vuelidate'
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
-import FormPassword from '@components/Forms/Password.vue'
+import FormPassword from '@containers/forms/FormPassword.vue'
 import { required } from 'vuelidate/lib/validators'
 import Message from '@components/Message.vue'
 import L from '@view-utils/translations.js'

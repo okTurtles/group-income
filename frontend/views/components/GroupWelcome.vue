@@ -1,19 +1,15 @@
 <template lang='pug'>
-.wrapper(
-  data-test='welcome'
-)
+.wrapper(data-test='welcome')
   avatar(
-    src='/assets/images/default-avatar.png'
-    :alt='groupSettings.groupName'
-    :blobURL='groupSettings.groupPicture'
+    :src='groupSettings.groupPicture'
+    :aria-label='L("{groupName}\'s avatar", { groupName: groupSettings.groupName })'
   )
 
-  i18n(
+  i18n.is-title-1.c-title(
     tag='h1'
-    class='c-title'
     data-test='welcomeGroup'
     :args='{ groupName: groupSettings.groupName }'
-  ) Welcome {groupName}!
+  ) Welcome to {groupName}!
 
   i18n(tag='p' class='has-text-0 c-description') You are now embarking on a new journey. We hope you have a blast!
 
@@ -39,6 +35,10 @@ export default {
     Avatar,
     ConfettiAnimation
   },
+  props: {
+    // Passed from CreateGroup.vue. Prevent from attaching it to the DOM.
+    $v: { type: Object }
+  },
   computed: {
     ...mapGetters(['groupSettings'])
   },
@@ -50,9 +50,8 @@ export default {
   methods: {
     toDashboard () {
       if (this.isButtonClicked) return
-
       this.isButtonClicked = true
-      this.$router.replace({ path: '/dashboard' })
+      this.$router.push({ path: '/dashboard' })
     }
   }
 }
@@ -70,19 +69,18 @@ export default {
   min-height: 100vh;
 
   .c-avatar {
-    height: 128px;
-    width: 128px;
+    height: 8rem;
+    width: 8rem;
   }
 
   .c-title,
   .c-description {
     text-align: center;
-    word-break: keep-all;
-    padding: 0 16px;
+    padding: 0 $spacer;
   }
 
   .c-title {
-    margin-bottom: 0;
+    margin-top: $spacer;
 
     @include phone {
       font-size: $size-2;
@@ -90,7 +88,7 @@ export default {
   }
 
   .c-description {
-    margin: 0 0 8px;
+    margin: 0 0 $spacer-sm;
   }
 
   @include phone {

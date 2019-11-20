@@ -1,6 +1,6 @@
 <template lang='pug'>
 .columns.has-text-centered
-  .column.is-4
+  .column.is-title-4
     p.has-text-weight-bold.settings-number(data-test='changePercentage')
       | {{ group.changeThreshold | toPercent }}
     p.is-size-5
@@ -10,7 +10,7 @@
     )
       i18n Propose change
 
-  .column.is-4
+  .column.is-title-4
     p.has-text-weight-bold.settings-number(data-test='approvePercentage')
       | {{ group.memberApprovalThreshold | toPercent }}
     p.is-size-5
@@ -20,7 +20,7 @@
     )
       i18n Propose change
 
-  .column.is-4
+  .column.is-title-4
     p.has-text-weight-bold.settings-number(data-test='removePercentage')
       | {{ group.memberRemovalThreshold | toPercent }}
 

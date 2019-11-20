@@ -1,6 +1,6 @@
 <template lang='pug'>
 .wrapper(data-test='rulesStep')
-  i18n.steps-title(tag='h4') 3. Voting Rules
+  i18n.is-title-4.steps-title(tag='h4') 3. Voting Rules
 
   .card
     i18n.label(tag='label') What percentage approval is necessary to adjust the group rules?
@@ -93,7 +93,7 @@ export default {
   name: 'GroupRules',
   props: {
     group: { type: Object },
-    v: { type: Object }
+    $v: { type: Object }
   },
   components: {
     CircleSlider,
@@ -104,7 +104,7 @@ export default {
   },
   methods: {
     update (prop, value) {
-      this.v[prop].$touch()
+      this.$v.form[prop].$touch()
       this.$emit('input', {
         data: {
           [prop]: value
