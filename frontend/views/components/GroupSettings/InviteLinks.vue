@@ -155,9 +155,9 @@ export default {
       remainder = remainder % MIL_HR
       const minutes = Math.ceil(remainder / MIL_MIN)
       const args = {
-        days: days? `${days}d ` : '',
-        hours: hours? `${hours}h ` : '',
-        minutes: minutes? `${minutes}m ` : ''
+        days: days ? `${days}d ` : '',
+        hours: hours ? `${hours}h ` : '',
+        minutes: minutes ? `${minutes}m ` : ''
       }
 
       return L('{days}{hours}{minutes}left', args)
