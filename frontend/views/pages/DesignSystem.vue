@@ -571,7 +571,7 @@ page(
 
   article#InviteLink
     section.card
-      i18n(tag='h2' class='card-header') InviteLink
+      h2.is-title-2.card-header InviteLink
 
       p
         | Invitation links that are used across the app have the uniform design with 'click-to-copy' functionality.
@@ -589,11 +589,11 @@ page(
         tr
           td
             pre
-              | invite-link-to-copy(
-              |   initeLink='https://groupincome.org/f4k3_H45h_t0_5h4r3'
+              | link-to-copy(
+              |   link='https://groupincome.org/f4k3_H45h_t0_5h4r3'
               | )
           td
-            invite-link-to-copy.c-invite-link-demo(inviteLink='https://groupincome.org/f4k3_H45h_t0_5h4r3')
+            link-to-copy.c-invite-link-demo(link='https://groupincome.org/f4k3_H45h_t0_5h4r3')
 
   article#forms
     section.card
@@ -906,7 +906,7 @@ import sbp from '~/shared/sbp.js'
 import Message from '@components/Message.vue'
 import Tooltip from '@components/Tooltip.vue'
 import Badge from '@components/Badge.vue'
-import InviteLinkToCopy from '@components/InviteLinkToCopy.vue'
+import LinkToCopy from '@components/LinkToCopy.vue'
 import CalloutCard from '@components/CalloutCard.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgAccess from '@svgs/access.svg'
@@ -1033,7 +1033,7 @@ export default {
     Message,
     Tooltip,
     Badge,
-    InviteLinkToCopy,
+    LinkToCopy,
     SvgHello
   },
   mounted () {

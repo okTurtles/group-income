@@ -171,7 +171,7 @@ export default {
   grid-area: main;
   margin-top: 1.5rem;
   word-break: break-word;
-  min-width: 0; // So ellipsis work correctly inside grid.
+  min-width: 0;
 
   @include tablet {
     margin-top: $spacer;

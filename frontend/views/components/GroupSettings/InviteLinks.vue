@@ -38,12 +38,22 @@ page-section.c-section(:title='L("Invite links")')
             .button.is-icon-smaller.is-primary.c-tip
               i.icon-info
         td.c-invite-link
-          invite-link-to-copy.c-invite-link-wrapper(:inviteLink='item.inviteLink')
+          link-to-copy.c-invite-link-wrapper(:link='item.inviteLink')
           button.is-icon-small.c-invite-link-button-mobile(
             @click='activateWebShare(item.inviteLink)'
             :aria-label='L("Copy link")'
           )
             i.icon-ellipsis-v
+          menu-parent.c-webshare-fallback
+            menu-trigger.is-icon-small.c-fallback-trigger(ref='webShareFallbackBtn')
+
+            menu-content.c-dropdown-fallback
+              ul
+                menu-item(
+                  tag='button'
+                  icon='link'
+                )
+                  i18n Share link
         td.c-state
           i18n.c-state-description {{ item.state.description }}
           i18n.c-state-expire(
@@ -55,7 +65,7 @@ page-section.c-section(:title='L("Invite links")')
             menu-trigger.is-icon(:aria-label='L("Show list")')
               i.icon-ellipsis-v
 
-            menu-content.c-action-dropdown
+            menu-content.c-dropdown-action
               ul
                 menu-item(
                   tag='button'
@@ -86,7 +96,7 @@ import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/Menu
 import PageSection from '@components/PageSection.vue'
 import Tooltip from '@components/Tooltip.vue'
 import SvgInvitation from '@svgs/invitation.svg'
-import InviteLinkToCopy from '@components/InviteLinkToCopy.vue'
+import LinkToCopy from '@components/LinkToCopy.vue'
 
 export default {
   name: 'InviteLinks',
@@ -94,7 +104,7 @@ export default {
     PageSection,
     SvgInvitation,
     Tooltip,
-    InviteLinkToCopy,
+    LinkToCopy,
     MenuParent,
     MenuTrigger,
     MenuContent,
@@ -165,7 +175,7 @@ export default {
           title: this.L('Your invite'),
           url: inviteLink
         })
-      }
+      } else this.$refs.webShareFallbackBtn[0].handleClick()
     }
   },
   computed: {
@@ -238,6 +248,7 @@ export default {
   }
 
   .c-invite-link {
+    position: relative;
     grid-area: invite-link;
     padding-right: $size-2;
 
@@ -245,11 +256,6 @@ export default {
       display: inherit;
       align-items: inherit;
       width: 100%;
-
-      ::v-deep .c-copy-button {
-        flex-shrink: 0;
-        font-weight: normal;
-      }
     }
 
     .c-invite-link-button-mobile {
@@ -326,11 +332,33 @@ export default {
     }
   }
 
-  .c-action-dropdown {
-    min-width: 13.375rem;
+  .c-dropdown-action,
+  .c-dropdown-fallback {
     width: max-content;
-    margin: 3.5 * $spacer 0 0 3 * $spacer;
     transform: translateX(-100%);
+  }
+
+  .c-dropdown-action {
+    min-width: 13.375rem;
+    margin: 3.5*$spacer 0 0 3*$spacer;
+  }
+  .c-dropdown-fallback {
+    min-width: 8.5rem;
+    margin-top: 2*$spacer;
+  }
+
+  .c-webshare-fallback {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-right: $spacer-sm;
+    z-index: $zindex-tooltip;
+  }
+
+  .c-fallback-trigger {
+    width: 0;
+    height: 0;
   }
 }
 
