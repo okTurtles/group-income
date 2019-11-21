@@ -48,8 +48,8 @@ page-section.c-section(:title='L("Invite links")')
           )
             i.icon-ellipsis-v
         td.c-state
-          i18n.c-state-description {{ item.status.description }}
-          i18n.c-state-expire(
+          span.c-state-description {{ item.status.description }}
+          span.c-state-expire(
             v-if='item.status.expiryInfo'
             :class='{ "is-expired": item.status.isExpired }'
           ) {{ item.status.expiryInfo }}
@@ -154,14 +154,13 @@ export default {
       const hours = Math.floor(remainder / MIL_HR)
       remainder = remainder % MIL_HR
       const minutes = Math.ceil(remainder / MIL_MIN)
-      const options = [
-        undefined,
-        L('{minutes}m left', { minutes }),
-        L('{hours}h {minutes}m left', { hours, minutes }),
-        L('{days}d {hours}h {minutes}m left', { days, hours, minutes })
-      ]
+      const args = {
+        days: days? `${days}d ` : '',
+        hours: hours? `${hours}h ` : '',
+        minutes: minutes? `${minutes}m ` : ''
+      }
 
-      return options[!!days + !!hours + !!minutes]
+      return L('{days}{hours}{minutes}left', args)
     },
     mapInvite ({
       creator,
