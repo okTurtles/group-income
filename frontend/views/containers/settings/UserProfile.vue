@@ -20,7 +20,7 @@
             data-test='profilePicture'
           )
         // TODO #658
-        feedback-banner(ref='pictureMsg')
+        feedback-banner(ref='pictureMsg' dataTest='avatarMsg')
 
     section.card
       form(@submit.prevent='saveProfile')
@@ -53,7 +53,7 @@
             v-model='form.email'
             @input='debounceField("email")'
             @blur='updateField("email")'
-            data-test='signEmail'
+            data-test='profileEmail'
             v-error:email='{ attrs: { "data-test": "badEmail" } }'
           )
 
@@ -67,7 +67,7 @@
             @click.prevent='openModal("PasswordModal")'
           ) Update Password
 
-        feedback-banner(ref='formMsg')
+        feedback-banner(ref='formMsg' dataTest='profileMsg')
 
         .buttons
           i18n.is-success(
@@ -152,18 +152,6 @@ export default {
       sbp('okTurtles.events/emit', OPEN_MODAL, mode)
       return false
     },
-    async saveProfile () {
-      this.$refs.formMsg.clean()
-      const attrs = {}
-
-      for (const key in this.form) {
-        if (this.form[key] !== this.attributes[key]) {
-          attrs[key] = this.form[key]
-        }
-      }
-
-      await this.setAttributes(attrs, 'formMsg', L('Your changes were saved!'))
-    },
     async fileChange (fileList) {
       if (!fileList.length) return
       const fileReceived = fileList[0]
@@ -180,6 +168,18 @@ export default {
       }
 
       await this.setAttributes({ picture }, 'pictureMsg', L('Picture updated!'))
+    },
+    async saveProfile () {
+      this.$refs.formMsg.clean()
+      const attrs = {}
+
+      for (const key in this.form) {
+        if (this.form[key] !== this.attributes[key]) {
+          attrs[key] = this.form[key]
+        }
+      }
+
+      await this.setAttributes(attrs, 'formMsg', L('Your changes were saved!'))
     },
     async setAttributes (attrs, refFeedback, successMsg) {
       try {

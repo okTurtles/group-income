@@ -102,8 +102,15 @@ export default {
 .c-modal-body,
 .c-modal-footer {
   align-self: center;
-  width: calc(100% - 2rem);
-  max-width: 534px;
+  width: 100%;
+  max-width: calc(100% - 2rem);
+
+  @include tablet {
+    max-width: 534px;
+  }
+  @include desktop {
+    max-width: 400px;
+  }
 }
 
 .c-modal-header {

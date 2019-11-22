@@ -3,7 +3,7 @@
     .c-container(v-if='ephemeral.message')
       message(class='c-message' :severity='ephemeral.severity')
         .c-inner
-          .c-inner-text(data-test='feedbackMessage') {{ ephemeral.message }}
+          .c-inner-text(:data-test='dataTest') {{ ephemeral.message }}
           button.is-icon-small.c-button(
             type='button'
             :class='`is-${ephemeral.severity}`'
@@ -22,6 +22,12 @@ export default {
   components: {
     Message,
     TransitionExpand
+  },
+  props: {
+    dataTest: {
+      type: String,
+      default: 'feedbackMsg'
+    }
   },
   data: () => ({
     ephemeral: {
