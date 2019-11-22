@@ -166,7 +166,7 @@ button,
 
 .buttons {
   position: relative;
-  margin-top: $spacer;
+  margin-top: $spacer*1.5;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -181,8 +181,6 @@ button,
 
   button,
   .button {
-    margin-top: $spacer-sm;
-
     &:not(:last-child) {
       margin-right: $spacer-sm;
     }

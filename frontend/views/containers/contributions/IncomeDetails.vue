@@ -8,7 +8,7 @@ modal-base-template(ref='modal')
         @submit.prevent='submit'
         novalidate='true'
       )
-        fieldset.c-firstQuestion
+        fieldset.field
           legend.label
             | {{ L('Do you make at least {groupMincomeFormatted} per month?', { groupMincomeFormatted }) }}
             tooltip(:text='L("This is the minimum income in your group")' direction='top')
@@ -32,7 +32,7 @@ modal-base-template(ref='modal')
               @change='resetAmount'
             )
             i18n(data-test='needsIncomeRadio') No, I don't
-        transition(name='expand')
+        transition-expand
           fieldset(v-if='!!form.incomeDetailsType')
             label.field
               .label(
@@ -53,7 +53,7 @@ modal-base-template(ref='modal')
               i18n.helper(v-else-if='!needsIncome') Define up to how much you pledge to contribute to the group each month. Only the minimum needed amount will be given.
             payment-methods(selected='manual')
 
-        feedback-banner(v-bind.sync='form.submitFeedback')
+        feedback-banner(ref='formFeedback')
 
         .buttons
           i18n.is-outlined(tag='button' type='button' @click='closeModal') Cancel
@@ -83,6 +83,7 @@ import PaymentMethods from './PaymentMethods.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ModalBaseTemplate from '@components/Modal/ModalBaseTemplate.vue'
 import FeedbackBanner from '@components/FeedbackBanner.vue'
+import TransitionExpand from '@components/TransitionExpand.vue'
 import GroupPledgesGraph from '../GroupPledgesGraph.vue'
 import L from '@view-utils/translations.js'
 
@@ -91,6 +92,7 @@ export default {
   mixins: [validationMixin],
   components: {
     ModalBaseTemplate,
+    TransitionExpand,
     FeedbackBanner,
     InputAmount,
     Tooltip,
@@ -101,8 +103,7 @@ export default {
     return {
       form: {
         incomeDetailsType: null,
-        amount: null,
-        submitFeedback: {}
+        amount: null
       }
     }
   },
@@ -163,12 +164,8 @@ export default {
       this.$refs.modal.close()
     },
     async submit () {
-      const debugThis = 1 + 1 // DELETE THIS BEFORE MERGE!!
-      if (debugThis || this.$v.form.$invalid) {
-        this.$set(this.form, 'submitFeedback', {
-          message: L('Please, review your information and try again.'),
-          severity: 'danger'
-        })
+      if (this.$v.form.$invalid) {
+        this.$refs.formFeedback.danger(L('Invalid information, please review it and try again.'))
         return
       }
 
@@ -185,10 +182,7 @@ export default {
         this.closeModal()
       } catch (e) {
         console.error('setPaymentInfo', e)
-        this.$set(this.form, 'submitFeedback', {
-          message: `${L('Failed to update income details.')} ${e.message}`,
-          severity: 'danger'
-        })
+        this.$refs.formFeedback.danger(`${L('Something went wrong, please try again.')} ${e.message}`)
       }
     }
   },
@@ -256,10 +250,6 @@ export default {
 .c-tip {
   display: inline-block;
   margin-left: $spacer-xs;
-}
-
-.c-firstQuestion {
-  margin-bottom: 1.5rem;
 }
 
 .c-feedback {

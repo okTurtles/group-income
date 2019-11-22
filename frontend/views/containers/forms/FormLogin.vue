@@ -23,7 +23,7 @@ form(
 
   i18n.link(tag='a' @click='forgotPassword') Forgot your password?
 
-  feedback-banner(data-test='loginError' v-bind.sync='form.submitFeedback')
+  feedback-banner(ref='formFeedback')
 
   .buttons.is-centered
     i18n(
@@ -40,9 +40,9 @@ import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import { nonWhitespace } from '@views/utils/validators.js'
 import FormPassword from '@containers/forms/FormPassword.vue'
+import FeedbackBanner from '@components/FeedbackBanner.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-import FeedbackBanner from '@components/FeedbackBanner.vue'
 
 export default {
   name: 'FormLogin',
@@ -58,8 +58,7 @@ export default {
     return {
       form: {
         name: null,
-        password: null,
-        submitFeedback: {}
+        password: null
       }
     }
   },
@@ -72,10 +71,7 @@ export default {
         // TODO: Insert cryptography here
         const identityContractID = await sbp('namespace/lookup', this.form.name)
         if (!identityContractID) {
-          this.$set(this.form, 'submitFeedback', {
-            message: L('Invalid username or password'),
-            severity: 'danger'
-          })
+          this.$refs.formFeedback.danger(L('Invalid username or password'))
           return
         }
         console.debug(`Retrieved identity ${identityContractID}`)
@@ -86,10 +82,7 @@ export default {
         this.$emit('submitSucceeded')
       } catch (error) {
         console.error(error)
-        this.$set(this.form, 'submitFeedback', {
-          message: `${L('Something went wrong, please try again.')} ${error.message}`,
-          severity: 'danger'
-        })
+        this.$refs.formFeedback.danger(`${L('Something went wrong, please try again.')} ${error.message}`)
       }
     },
     forgotPassword () {

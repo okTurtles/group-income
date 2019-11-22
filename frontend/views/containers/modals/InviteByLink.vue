@@ -59,7 +59,7 @@ export default {
 .c-link {
   max-width: 20rem;
   word-break: break-all;
-  margin: $spacer-lg auto $spacer-sm;
+  margin: $spacer auto;
 
   .link {
     display: inline;
@@ -67,6 +67,6 @@ export default {
 }
 
 .c-cta {
-  margin-top: $spacer*3;
+  margin-top: $spacer-lg;
 }
 </style>

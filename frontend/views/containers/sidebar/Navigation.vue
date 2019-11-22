@@ -48,7 +48,7 @@ nav.c-navigation(
             data-test='createGroup'
             :aria-label='L("Add a group")'
           )
-            i.icon-plus
+            i.icon-plus.is-prefix
             i18n Add a group
 
       .c-navigation-bottom

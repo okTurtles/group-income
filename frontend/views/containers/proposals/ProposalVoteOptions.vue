@@ -13,7 +13,7 @@
       data-test='voteAgainst'
     ) Vote no
 
-  .buttons.c-cancel(v-else)
+  .buttons(v-else)
     i18n.button.is-outlined.is-small(
       tag='button'
       v-if='ownProposal'

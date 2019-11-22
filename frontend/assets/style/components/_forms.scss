@@ -18,7 +18,11 @@ form {
   display: block;
   max-width: 100%;
   width: 100%;
-  margin-bottom: 1rem;
+  margin-bottom: $spacer*1.5;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 
   .helper {
     display: block;

@@ -1,33 +1,51 @@
 <template lang='pug'>
-  message.c-container(v-if='message' :severity='severity')
-    .c-inner
-      span {{ message }}
-      button.is-icon-small(
-        :aria-label='L("Dismiss banner")'
-        @click='dismiss'
-      )
-        i.icon-times
+  transition-expand
+    .c-container(v-if='ephemeral.message')
+      message(class='c-message' :severity='ephemeral.severity')
+        .c-inner
+          span(data-test='feedbackMessage') {{ ephemeral.message }}
+          button.is-icon-small(
+            type='button'
+            :aria-label='L("Dismiss message")'
+            @click='dismiss'
+          )
+            i.icon-times
 </template>
 
 <script>
-import Message from '@components/message'
+import Message from '@components/Message.vue'
+import TransitionExpand from '@components/TransitionExpand.vue'
 
 export default {
   name: 'FeedbackBanner',
   components: {
-    Message
+    Message,
+    TransitionExpand
   },
-  props: {
-    message: String,
-    severity: {
-      type: String,
-      default: 'danger',
-      validator: (v) => ['info', 'warning', 'danger'].includes(v)
+  data: () => ({
+    ephemeral: {
+      message: null,
+      severity: null
     }
-  },
+  }),
   methods: {
     dismiss () {
-      this.$emit('update:message', '')
+      this.ephemeral.message = ''
+    },
+
+    // To be used by parent. Example:
+    // this.$refs.feedbackBanner.danger('ups!')
+    danger (message) {
+      this.ephemeral.message = message
+      this.ephemeral.severity = 'danger'
+    },
+    warning (message) {
+      this.ephemeral.message = message
+      this.ephemeral.severity = 'warning'
+    },
+    success (message) {
+      this.ephemeral.message = message
+      this.ephemeral.severity = 'success'
     }
   }
 }
@@ -37,7 +55,15 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-container {
-  margin: 1.5rem 0;
+  display: flex; /* so margins don't collapse and transition is smooth */
+  align-items: flex-start;
+  overflow: hidden;
+}
+
+.c-message {
+  width: 100%;
+  margin-top: $spacer*1.5;
+  overflow: hidden;
 }
 
 .c-inner {
