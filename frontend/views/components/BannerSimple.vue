@@ -63,7 +63,7 @@ export default {
     }
   }
 
-  i:not(.icon-times) {
+  .c-icon {
     font-size: $size-3;
     line-height: 1.3125;
     padding-right: $spacer-md;
@@ -106,7 +106,7 @@ export default {
   flex-grow: 1;
 }
 
-.media-header {
+.message-header {
   color: $text_1;
   display: flex;
   padding-bottom: 0, 25rem;

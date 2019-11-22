@@ -105,7 +105,7 @@ export default {
   computed: {
     itemClasses () {
       return [
-        `is-${this.variant}`,
+        `c-item is-${this.variant}`,
         { 'has-controls': this.isEditable }
       ]
     },
@@ -194,7 +194,7 @@ export default {
   padding: $spacer * 1.5 0 $spacer 0;
 }
 
-.is-default {
+.c-item.is-default {
   display: flex;
 }
 

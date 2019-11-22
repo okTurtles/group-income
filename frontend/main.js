@@ -116,9 +116,9 @@ async function startApp () {
       })
 
       // TODO - Ready to receive real information
-      // setTimeout(() => {
-      //   this.$refs.bannerGeneral.show('Trying to connect...', 'globe')
-      // }, 2500)
+      setTimeout(() => {
+        this.$refs.bannerGeneral.show('Trying to connect...', 'globe')
+      }, 2500)
     },
     computed: {
       showNav () {
