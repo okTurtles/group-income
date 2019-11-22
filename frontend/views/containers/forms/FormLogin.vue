@@ -23,7 +23,7 @@ form(
 
   i18n.link(tag='a' @click='forgotPassword') Forgot your password?
 
-  feedback-banner(ref='formMsg' dataTest="loginError")
+  feedback-banner(ref='formMsg' dataTest='loginError')
 
   .buttons.is-centered
     i18n(

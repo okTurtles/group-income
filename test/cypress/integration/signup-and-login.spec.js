@@ -14,12 +14,11 @@ describe('Signup, Profile and Login', () => {
 
   it('user1 changes avatar and profile settings', () => {
     const profilePicture = 'imageTest.png' // at fixtures/imageTest
-    const selector = '[data-test="profilePicture"]'
 
     cy.getByDT('settingsBtn').click()
 
     cy.fixture(profilePicture, 'base64').then(fileContent => {
-      cy.get(selector).upload({ fileContent, fileName: profilePicture, mimeType: 'image/png' }, { subjectType: 'input' })
+      cy.get('[data-test="profilePicture"]').upload({ fileContent, fileName: profilePicture, mimeType: 'image/png' }, { subjectType: 'input' })
     })
 
     cy.getByDT('avatarMsg').should('contain', 'Picture updated!')

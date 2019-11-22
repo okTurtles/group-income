@@ -492,6 +492,16 @@ page(
           th demo
         tr
           td
+            pre message(severity='success')
+          td
+            message(severity='success')
+              | This is a&nbsp;
+              strong success message
+              |  with a&nbsp;
+              a.link(href='/') link
+              | . This message can grow in width or height, as needed.
+        tr
+          td
             pre message(severity='warning')
           td
             message(severity='warning')
@@ -516,7 +526,7 @@ page(
           td
             message(severity='info')
               | This is an&nbsp;
-              strong infromation message
+              strong information message
               |  with a&nbsp;
               a.link(href='/') link
               | . This message can grow in width or height, as needed.
@@ -541,6 +551,31 @@ page(
                 |  with a&nbsp;
                 a.link(href='/') link
                 | . This message can grow in width or height, as needed.
+      h3.is-title-3 Dismissable banners
+      table
+        thead
+          th code
+          th demo
+        tr
+          td
+            | Methods available: success, warning, danger, info
+            br
+            br
+            pre
+              | feedback-banner(ref='banner')
+              |
+              | button(
+              |   @click='$refs.banner.danger("Ups!")'
+              | ) Save
+
+          td
+            div
+              feedback-banner(ref='banner')
+              .buttons
+                button.is-small.is-outlined(@click='$refs.banner.success("Changes saved!")') Save Success
+                button.is-small.is-outlined(@click='$refs.banner.warning("Are you sure?")') Save Warn
+                button.is-small.is-outlined(@click='$refs.banner.danger("Something went wrong, please try again.")') Save Danger
+                button.is-small.is-outlined(@click='$refs.banner.info("Just to let you know that you are an awesome person.")') Save Info
 
   article#tooltips
     section.card
@@ -878,6 +913,7 @@ page(
 import Page from '@pages/Page.vue'
 import sbp from '~/shared/sbp.js'
 import Message from '@components/Message.vue'
+import FeedbackBanner from '@components/FeedbackBanner.vue'
 import Tooltip from '@components/Tooltip.vue'
 import Badge from '@components/Badge.vue'
 import CalloutCard from '@components/CalloutCard.vue'
@@ -1004,6 +1040,7 @@ export default {
     Page,
     CalloutCard,
     Message,
+    FeedbackBanner,
     Tooltip,
     Badge,
     SvgHello

@@ -39,19 +39,23 @@ export default {
     // To be used by parent. Example:
     // this.$refs.feedbackBanner.danger('ups!')
     clean () {
-      this.ephemeral.message = ''
+      this.updateMessage('', '')
     },
     danger (message) {
-      this.ephemeral.message = message
-      this.ephemeral.severity = 'danger'
+      this.updateMessage(message, 'danger')
     },
     warning (message) {
-      this.ephemeral.message = message
-      this.ephemeral.severity = 'warning'
+      this.updateMessage(message, 'warning')
     },
     success (message) {
+      this.updateMessage(message, 'success')
+    },
+    info (message) {
+      this.updateMessage(message, 'info')
+    },
+    updateMessage (message, severity) {
       this.ephemeral.message = message
-      this.ephemeral.severity = 'success'
+      this.ephemeral.severity = severity
     }
   }
 }
@@ -90,6 +94,8 @@ $severities:
   "danger" $danger_0 $danger_1;
 
 .c-button {
+  transition: box-shadow 150ms ease-in;
+
   @each $class, $color, $hover in $severities {
     &.is-#{$class} {
       color: $color;
