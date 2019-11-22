@@ -21,6 +21,9 @@ modal-base-template
       @focusref='focusRef'
       @input='payload => updateGroupData(payload)'
     )
+
+      feedback-banner(ref='formMsg')
+
       .buttons(v-if='currentStep + 1 < config.steps.length')
         button.is-outlined(
           @click='prev'
@@ -44,11 +47,6 @@ modal-base-template
           :disabled='$v.form.$invalid'
           data-test='finishBtn'
         ) {{ L('Create Group') }}
-
-  message(
-    v-if='ephemeral.errorMsg'
-    severity='danger'
-  ) {{ ephemeral.errorMsg }}
 </template>
 
 <script>
@@ -61,7 +59,7 @@ import imageUpload from '@utils/imageUpload.js'
 import L from '@view-utils/translations.js'
 import { decimals } from '@view-utils/validators.js'
 import StepAssistant from '@view-utils/stepAssistant.js'
-import Message from '@components/Message.vue'
+import FeedbackBanner from '@components/FeedbackBanner.vue'
 import { merge } from '@utils/giLodash.js'
 import { validationMixin } from 'vuelidate'
 import GroupWelcome from '@components/GroupWelcome.vue'
@@ -86,7 +84,7 @@ export default {
   ],
   components: {
     ModalBaseTemplate,
-    Message,
+    FeedbackBanner,
     GroupName,
     GroupPurpose,
     GroupMincome,
@@ -99,13 +97,13 @@ export default {
       this.$refs[ref].focus()
     },
     updateGroupData (payload) {
-      this.ephemeral.errorMsg = null
+      this.$refs.formMsg.clean()
       Object.assign(this.form, payload.data)
     },
     async submit () {
       if (this.$v.form.$invalid) {
         // TODO: more descriptive error message, highlight erroneous step
-        this.ephemeral.errorMsg = L('We still need some info from you, please go back and fill missing fields')
+        this.$refs.formMsg.danger(L('Some information is invalid, please review it and try again.'))
         return
       }
 
@@ -114,14 +112,14 @@ export default {
           this.form.groupPicture = await imageUpload(this.ephemeral.groupPictureFile)
         } catch (error) {
           console.error(error)
-          this.ephemeral.errorMsg = L('Failed to upload Group Picture')
+          this.$refs.formMsg.danger(L('Failed to upload the group picture, please try again.'))
           return false
         }
       }
 
       // create the GroupContract
       try {
-        this.ephemeral.errorMsg = null
+        this.$refs.formMsg.clean()
         const initialInvite = createInvite({ quantity: 60, creator: INVITE_INITIAL_CREATOR })
         const entry = sbp('gi.contracts/group/create', {
           invites: {
@@ -164,7 +162,7 @@ export default {
         await sbp('state/enqueueContractSync', hash)
       } catch (error) {
         console.error(error)
-        this.ephemeral.errorMsg = L('Failed to Create Group')
+        this.$refs.formMsg.danger(`${L('Something went wrong, please try again.')} ${error.message}`)
       }
     }
   },
@@ -181,7 +179,6 @@ export default {
         mincomeCurrency: 'USD' // TODO: grab this as a constant from currencies.js
       },
       ephemeral: {
-        errorMsg: null,
         // this determines whether or not to render proxy components for tests
         dev: process.env.NODE_ENV === 'development'
       },

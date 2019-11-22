@@ -23,7 +23,7 @@ form(
 
   i18n.link(tag='a' @click='forgotPassword') Forgot your password?
 
-  feedback-banner(ref='formFeedback')
+  feedback-banner(ref='formMsg')
 
   .buttons.is-centered
     i18n(
@@ -71,7 +71,7 @@ export default {
         // TODO: Insert cryptography here
         const identityContractID = await sbp('namespace/lookup', this.form.name)
         if (!identityContractID) {
-          this.$refs.formFeedback.danger(L('Invalid username or password'))
+          this.$refs.formMsg.danger(L('Invalid username or password'))
           return
         }
         console.debug(`Retrieved identity ${identityContractID}`)
@@ -82,7 +82,7 @@ export default {
         this.$emit('submitSucceeded')
       } catch (error) {
         console.error(error)
-        this.$refs.formFeedback.danger(`${L('Something went wrong, please try again.')} ${error.message}`)
+        this.$refs.formMsg.danger(`${L('Something went wrong, please try again.')} ${error.message}`)
       }
     },
     forgotPassword () {

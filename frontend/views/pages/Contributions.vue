@@ -82,11 +82,11 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
               type='NON_MONETARY'
             )
 
-        button.button.is-small(
-          v-if='groupMembersCount === 0'
+        button.button.is-small.c-cta(
+          v-if='groupMembersCount === 1'
           @click='openModal("InviteByLink")'
         )
-          i.icon-plus
+          i.icon-plus.is-prefix
           i18n Add members to group
 
       .giving
@@ -308,6 +308,7 @@ export default {
 
 <style lang="scss">
 @import "@assets/style/_variables.scss";
+
 .c-contribution-header .has-text-bold {
   font-family: "Poppins";
   padding-left: $spacer-sm;
@@ -316,6 +317,7 @@ export default {
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
 .c-contribution-header {
   display: flex;
   justify-content: space-between;
@@ -347,11 +349,15 @@ export default {
   }
 }
 
+.c-cta {
+  margin-top: $spacer*1.5;
+}
+
 .spacer-around {
-  margin: 0 0 1rem 0;
+  margin: 0 0 $spacer 0;
 
   @include tablet {
-    margin: $spacer 0;
+    margin: $spacer 0 0;
   }
 }
 
@@ -362,6 +368,7 @@ export default {
     margin-bottom: $spacer * 1;
   }
 }
+
 .c-card-empty {
   display: flex;
 

@@ -53,7 +53,7 @@ modal-base-template(ref='modal')
               i18n.helper(v-else-if='!needsIncome') Define up to how much you pledge to contribute to the group each month. Only the minimum needed amount will be given.
             payment-methods(selected='manual')
 
-        feedback-banner(ref='formFeedback')
+        feedback-banner(ref='formMsg')
 
         .buttons
           i18n.is-outlined(tag='button' type='button' @click='closeModal') Cancel
@@ -165,7 +165,7 @@ export default {
     },
     async submit () {
       if (this.$v.form.$invalid) {
-        this.$refs.formFeedback.danger(L('Invalid information, please review it and try again.'))
+        this.$refs.formMsg.danger(L('Some information is missing, please review it and try again.'))
         return
       }
 
@@ -182,7 +182,7 @@ export default {
         this.closeModal()
       } catch (e) {
         console.error('setPaymentInfo', e)
-        this.$refs.formFeedback.danger(`${L('Something went wrong, please try again.')} ${e.message}`)
+        this.$refs.formMsg.danger(`${L('Something went wrong, please try again.')} ${e.message}`)
       }
     }
   },

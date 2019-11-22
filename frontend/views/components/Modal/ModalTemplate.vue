@@ -102,16 +102,8 @@ export default {
 .c-modal-body,
 .c-modal-footer {
   align-self: center;
-  width: 100%;
-  max-width: calc(100% - 2rem);
-
-  @include tablet {
-    max-width: 534px;
-  }
-
-  @include desktop {
-    max-width: 400px;
-  }
+  width: calc(100% - 2rem);
+  max-width: 534px;
 }
 
 .c-modal-header {
@@ -146,7 +138,7 @@ export default {
 
 .is-left-aligned {
   .c-modal-header {
-    @include until($tablet) {
+    @include touch {
       flex-direction: row;
       justify-content: flex-start;
       align-items: center;
@@ -229,7 +221,7 @@ export default {
       max-width: calc(400px + 2rem);
       align-self: center;
 
-      @include tablet {
+      @include desktop {
         text-align: center;
       }
     }

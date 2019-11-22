@@ -149,7 +149,7 @@ export default {
   position: relative;
   width: 9.8rem;
   height: 9.8rem;
-  margin: 40px auto;
+  margin: $spacer auto;
   text-align: center;
   display: flex;
   flex-direction: column;

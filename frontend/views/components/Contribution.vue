@@ -177,8 +177,8 @@ export default {
   validations: {
     form: {
       contribution: {
-        [L('Contribution required')]: required,
-        [L('Contribution already exists')]: function (x) {
+        [L('A contribution is required.')]: required,
+        [L('This contribution already exists.')]: function (x) {
           return !this.contributionsList || !this.contributionsList.includes(x)
         }
       }
@@ -189,17 +189,22 @@ export default {
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
 .c-contribution {
   padding: $spacer * 1.5 0 $spacer 0;
 }
 
+.is-default {
+  display: flex;
+}
+
 .c-contribution-edit {
   &:first-child,
-  .c-contribution + .c-contribution{
+  .c-contribution + .c-contribution {
     padding-top: 0;
   }
 
-  & + .c-spacer-above .c-contribution{
+  & + .c-spacer-above .c-contribution {
     padding-top: $spacer;
   }
 }
@@ -220,6 +225,7 @@ export default {
 
 .c-inline-button {
   margin-left: $spacer;
+
   .icon-pencil-alt {
     margin-left: 0;
   }

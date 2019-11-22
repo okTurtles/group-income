@@ -20,14 +20,15 @@ export default {
   },
   validator: function (value) {
     // The value must match one of these strings
-    return ['info', 'warning', 'danger'].indexOf(value) !== -1
+    return ['success', 'info', 'warning', 'danger'].indexOf(value) !== -1
   },
   computed: {
     getIcon () {
       return {
-        warning: 'icon-exclamation-triangle',
-        danger: 'icon-times-circle',
-        info: 'icon-info-circle'
+        warning: 'icon-exclamation-triangle c-icon',
+        danger: 'icon-times-circle c-icon',
+        info: 'icon-info-circle c-icon',
+        success: 'icon-check-circle c-icon'
       }[this.severity]
     }
   }
@@ -42,9 +43,11 @@ export default {
   border-radius: $radius-large;
   letter-spacing: 0.1px;
   display: flex;
+
   strong {
     color: currentColor;
   }
+
   a:not(.button):not(.tag) {
     color: currentColor;
   }
@@ -68,20 +71,33 @@ export default {
 
   &.is-info {
     background-color: var(--primary_2);
-    i {
+
+    .c-icon {
       color: $primary_1;
     }
   }
+
   &.is-danger {
     background-color: var(--danger_2);
-    i {
+
+    .c-icon {
       color: $danger_1;
     }
   }
+
   &.is-warning {
     background-color: var(--warning_2);
-    i {
+
+    .c-icon {
       color: $warning_1;
+    }
+  }
+
+  &.is-success {
+    background-color: var(--success_2);
+
+    .c-icon {
+      color: $success_1;
     }
   }
 }

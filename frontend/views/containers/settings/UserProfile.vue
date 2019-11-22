@@ -2,30 +2,16 @@
   .settings-container
     p.username @{{ ourUsername }}
 
-    section.card
-      form(
-        ref='ProfileForm'
-        name='ProfileForm'
-        @submit.prevent='save'
-      )
-        p.is-success(
-          v-if='ephemeral.profileSaved'
-          data-test='profileSaveSuccess'
-        )
-          i.icon-check
-          i18n Profile saved successfully!
+    form(@submit.prevent='')
+      .c-avatar
+        label.c-avatar-field
+          avatar.c-avatar-img(
+            :src='userPictureInitial'
+            ref='picture'
+          )
+          i18n.link.c-avatar-text Change avatar
 
-        p.error(v-if='ephemeral.errorMsg') {{ ephemeral.errorMsg }}
-
-        .avatar(:class='{ error: $v.form.picture.$error }')
-          label(for='profilePicture')
-            avatar(
-              :src='userPictureInitial'
-              ref='picture'
-            )
-            i18n.link Change avatar
-
-          input.profilePictureInput#profilePicture(
+          input.sr-only(
             type='file'
             name='profilePicture'
             accept='image/*'
@@ -33,13 +19,13 @@
             placeholder='http://'
             data-test='profilePicture'
           )
+        // TODO #658
+        feedback-banner(ref='pictureMsg')
 
-          i18n.error(tag='p' v-if='$v.form.picture.$error')
-            | The profile picture must be a valid url
-
-        .field
-          i18n.label(tag='label') Display Name
-
+    section.card
+      form(@submit.prevent='saveProfile')
+        label.field
+          i18n.label Display Name
           input.input(
             name='displayName'
             type='text'
@@ -47,36 +33,31 @@
             placeholder='Name'
             data-test='displayName'
           )
+          i18n.helper This is how others will see your name accross the platform.
 
-          i18n.help(tag='p') This is how others will see your name accross the platform.
-
-        .field
-          i18n.label(tag='label') Bio
-
+        label.field
+          i18n.label Bio
           textarea.textarea(
-            type='text'
             name='bio'
             v-model='form.bio'
             placeholder='Bio'
             data-test='bio'
           )
 
-        .field
-          i18n.label(tag='label') Email
-
+        label.field
+          i18n.label Email
           input.input(
             :class='{error: $v.form.email.$error}'
-            name='profileEmail'
-            type='text'
+            name='email'
+            type='email'
             v-model='form.email'
-            @input='$v.form.email.$touch()'
-            placeholder='Email'
-            data-test='profileEmail'
+            @input='debounceField("email")'
+            @blur='updateField("email")'
+            data-test='signEmail'
+            v-error:email='{ attrs: { "data-test": "badEmail" } }'
           )
 
-          i18n.error(tag='p' v-if='$v.form.email.$error') Not an email
-
-        .field
+        label.field
           i18n.label Password
           .fake-password(aria-hidden='true') **********
 
@@ -85,6 +66,8 @@
             data-test='passwordBtn'
             @click.prevent='openModal("PasswordModal")'
           ) Update Password
+
+        feedback-banner(ref='formMsg')
 
         .buttons
           i18n.is-success(
@@ -95,11 +78,7 @@
           ) Save account changes
 
     section.card
-      form(
-        ref='DeleteProfileForm'
-        name='DeleteProfileForm'
-        @submit.prevent='save'
-      )
+      form(name='DeleteProfileForm' @submit.prevent='')
         i18n.is-title-3(tag='h3' class='card-header') Delete account
         p
           i18n Deleting your account will erase all your data, and remove you from the groups you belong to.
@@ -115,20 +94,23 @@
 
 <script>
 import { validationMixin } from 'vuelidate'
-import { email } from 'vuelidate/lib/validators'
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import { required, email } from 'vuelidate/lib/validators'
 import { OPEN_MODAL } from '@utils/events.js'
 import { cloneDeep } from '@utils/giLodash.js'
 import { mapGetters } from 'vuex'
 import imageUpload from '@utils/imageUpload.js'
 import Avatar from '@components/Avatar.vue'
+import FeedbackBanner from '@components/FeedbackBanner.vue'
 import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
 
 export default {
   name: 'UserProfile',
-  mixins: [validationMixin],
+  mixins: [validationMixin, validationsDebouncedMixins],
   components: {
-    Avatar
+    Avatar,
+    FeedbackBanner
   },
   data () {
     // create a copy of the attributes to avoid any Vue.js reactivity weirdness
@@ -136,22 +118,22 @@ export default {
     const attrsCopy = cloneDeep(this.$store.getters.ourUserIdentityContract.attributes || {})
     return {
       form: {
-        picture: attrsCopy.picture,
-        bio: attrsCopy.bio,
         displayName: attrsCopy.displayName,
+        bio: attrsCopy.bio,
         email: attrsCopy.email
-      },
-      ephemeral: {
-        errorMsg: null,
-        newPicture: false,
-        profileSaved: false
       }
     }
   },
   validations: {
     form: {
-      picture: {},
-      email: { email }
+      email: {
+        [L('An email is required.')]: required,
+        [L('Please enter a valid email.')]: email,
+        [L('This email is already being used.')]: value => {
+          // TODO - verify if e-mail exists
+          return true
+        }
+      }
     }
   },
   computed: {
@@ -170,43 +152,47 @@ export default {
       sbp('okTurtles.events/emit', OPEN_MODAL, mode)
       return false
     },
-    async save () {
-      if (this.ephemeral.newPicture) {
-        try {
-          this.form.picture = await imageUpload(this.form.picture)
-          this.ephemeral.newPicture = false
-        } catch (error) {
-          console.error(error)
-          this.ephemeral.errorMsg = L('Failed to upload user picture')
-          return false
+    async saveProfile () {
+      this.$refs.formMsg.clean()
+      const attrs = {}
+
+      for (const key in this.form) {
+        if (this.form[key] !== this.attributes[key]) {
+          attrs[key] = this.form[key]
         }
       }
 
+      await this.setAttributes(attrs, 'formMsg', L('Your changes were saved!'))
+    },
+    async fileChange (fileList) {
+      if (!fileList.length) return
+      const fileReceived = fileList[0]
+      let picture
+
+      this.$refs.picture.setFromBlob(fileReceived)
+
       try {
-        this.ephemeral.profileSaved = false
-        const attrs = {}
-        for (const key in this.form) {
-          if (this.form[key] !== this.attributes[key]) {
-            attrs[key] = this.form[key]
-          }
-        }
+        picture = await imageUpload(fileReceived)
+      } catch (error) {
+        console.error(error)
+        this.$refs.pictureMsg.danger(`${L('Failed to upload avatar. Please, try again.')} ${error.message}`)
+        return false
+      }
+
+      await this.setAttributes({ picture }, 'pictureMsg', L('Picture updated!'))
+    },
+    async setAttributes (attrs, refFeedback, successMsg) {
+      try {
         const attributes = await sbp('gi.contracts/identity/setAttributes/create',
           attrs,
           this.$store.state.loggedIn.identityContractID
         )
         await sbp('backend/publishLogEntry', attributes)
-        this.ephemeral.profileSaved = true
-      } catch (ex) {
-        // TODO: handle better
-        console.error(ex)
-        this.ephemeral.errorMsg = L('Failed to Save Profile')
+        this.$refs[refFeedback].success(successMsg)
+      } catch (error) {
+        console.error(error)
+        this.$refs[refFeedback].danger(`${L('Something went wrong, please try again.')} ${error.message}`)
       }
-    },
-    fileChange (fileList) {
-      if (!fileList.length) return
-      this.form.picture = fileList[0]
-      this.ephemeral.newPicture = true
-      this.$refs.picture.setFromBlob(fileList[0])
     }
   }
 }
@@ -215,53 +201,54 @@ export default {
 <style lang='scss' scoped>
 @import "@assets/style/_variables.scss";
 
+.c-avatar-field {
+  @include desktop {
+    position: absolute;
+    top: -3.5rem;
+    right: 0;
+    align-items: flex-end;
+  }
+}
+
+.c-avatar {
+  margin: 0 auto $spacer*1.5;
+  display: flex;
+  flex-direction: column;
+  text-align: center;
+
+  @include desktop {
+    align-items: flex-end;
+
+    label {
+      margin-bottom: -0.5rem; /* temporary until #658 */
+    }
+  }
+
+  &-img {
+    width: 8rem;
+    height: 8rem;
+    margin-bottom: $spacer-sm;
+
+    @include desktop {
+      width: 4.5rem;
+      height: 4.5rem;
+    }
+  }
+
+  &-text {
+    display: inline-block;
+  }
+}
+
 .username {
   display: none;
   margin-bottom: $spacer-lg;
   margin-top: $spacer-sm;
   color: $text_1;
 
-  @include tablet {
-    display: block;
-  }
-}
-
-.avatar {
-  margin: 24px auto 20px auto;
-  text-align: center;
-
-  .link {
-    display: inline-block;
-    margin-top: 7px;
-
-    @include desktop {
-      display: block;
-      margin-top: 0;
-    }
-  }
-
-  img {
-    display: block;
-    width: 113px;
-    height: 113px;
-    margin: 0 auto;
-
-    @include tablet {
-      width: 71px;
-      height: 71px;
-    }
-  }
-
   @include desktop {
-    position: absolute;
-    right: 0;
-    top: -58px;
-    margin: 0;
+    display: block;
   }
-}
-
-.profilePictureInput {
-  display: none;
 }
 
 .fake-password {

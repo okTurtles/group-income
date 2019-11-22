@@ -108,9 +108,7 @@ $icons: (
 .icon-round {
   width: 2rem;
   height: 2rem;
-  margin-right: $spacer-sm*2;
-  margin-bottom: $spacer-xs;
-  margin-top: $spacer-xs; // visually better aligned
+  margin-right: $spacer;
   flex-shrink: 0;
   border-radius: 50%;
   text-align: center;

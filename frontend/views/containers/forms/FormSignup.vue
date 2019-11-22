@@ -31,7 +31,7 @@ form(
 
   form-password(:label='L("Password")' name='password' :$v='$v')
 
-  feedback-banner(ref='formFeedback')
+  feedback-banner(ref='formMsg')
 
   .buttons.is-centered
     i18n.is-primary(
@@ -127,7 +127,7 @@ export default {
         } catch (error) {
           console.error('Signup.vue submit() error:', error)
           sbp('state/vuex/dispatch', 'logout')
-          this.$refs.formFeedback.danger(`${L('Something went wrong, please try again.')} ${error.message}`)
+          this.$refs.formMsg.danger(`${L('Something went wrong, please try again.')} ${error.message}`)
         }
       }
     }

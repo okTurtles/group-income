@@ -6,7 +6,8 @@ Please read all the sections below before writing a single line of code.
 - **[Vue.js Style Guide](#vuejs-style-guide)**
 - **[CSS Style Guide](#css-style-guide)**
 - **[Accessibility Style Guide](#css-style-guide)**
-- **[Testing Style Guide](#css-style-guide)**
+- **[Testing Style Guide](#testing-style-guide)**
+- **[Feedback Messages](#feedback-messages)**
 - **[Group Income Data Model Rules](#group-income-data-model-rules)**
 - **[SBP Paradigm](#sbp) (Soon!)**
 
@@ -67,6 +68,33 @@ We use [Mocha](https://mochajs.org/) for the unit tests and [Cypress](https://ww
 When developing any new feature, make sure to add or update the respective tests.
 
 When writing E2E tests, follow [Cypress Best Practices](https://docs.cypress.io/guides/references/best-practices.html).
+
+
+## Feedback Messages
+
+When the user performs an action (ex: submiting a form), it's expected to show them some type of feedback, when succeedded or when something went wrong. Here's a guide of the current type of messages we show to them:
+
+### Informative / Success messages
+
+> Your changes were saved!  
+
+### Error messages
+
+#### While filling a form...
+The errors are displayed inline, while the user is typing (with a delay) or on input's blur. Here're some examples:
+> A {fieldname} is required. —— Ex: A password is required.  
+> A {fieldname} cannot {action}. —— Ex: A username cannot contain spaces.  
+> Your password must be at least 7 characteres long.  
+> Please enter a valid email.  
+> This email is already being used.
+
+#### When submitting a form...
+We should inform the user about what's wrong whenever possible, what action should be done and ask them to try again. Here're some examples:
+> Failed to upload the group picture. Please try again.  
+> You are offline. Please reconnect and try again.  
+> Some information is invalid. Please review it and try again.  
+> Something went wrong, please try again.  
+
 
 ## Group Income Data Model Rules
 
