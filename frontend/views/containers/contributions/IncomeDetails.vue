@@ -53,7 +53,7 @@ modal-base-template(ref='modal')
               i18n.helper(v-else-if='!needsIncome') Define up to how much you pledge to contribute to the group each month. Only the minimum needed amount will be given.
             payment-methods(selected='manual')
 
-        feedback-banner(ref='formMsg')
+        banner-scoped(ref='formMsg')
 
         .buttons
           i18n.is-outlined(tag='button' type='button' @click='closeModal') Cancel
@@ -82,7 +82,7 @@ import InputAmount from './InputAmount.vue'
 import PaymentMethods from './PaymentMethods.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ModalBaseTemplate from '@components/Modal/ModalBaseTemplate.vue'
-import FeedbackBanner from '@components/FeedbackBanner.vue'
+import BannerScoped from '@components/BannerScoped.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'
 import GroupPledgesGraph from '../GroupPledgesGraph.vue'
 import L from '@view-utils/translations.js'
@@ -93,7 +93,7 @@ export default {
   components: {
     ModalBaseTemplate,
     TransitionExpand,
-    FeedbackBanner,
+    BannerScoped,
     InputAmount,
     Tooltip,
     PaymentMethods,

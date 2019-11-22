@@ -22,7 +22,7 @@ modal-base-template
       @input='payload => updateGroupData(payload)'
     )
 
-      feedback-banner(ref='formMsg')
+      banner-scoped(ref='formMsg')
 
       .buttons(v-if='currentStep + 1 < config.steps.length')
         button.is-outlined(
@@ -59,7 +59,7 @@ import imageUpload from '@utils/imageUpload.js'
 import L from '@view-utils/translations.js'
 import { decimals } from '@view-utils/validators.js'
 import StepAssistant from '@view-utils/stepAssistant.js'
-import FeedbackBanner from '@components/FeedbackBanner.vue'
+import BannerScoped from '@components/BannerScoped.vue'
 import { merge } from '@utils/giLodash.js'
 import { validationMixin } from 'vuelidate'
 import GroupWelcome from '@components/GroupWelcome.vue'
@@ -84,7 +84,7 @@ export default {
   ],
   components: {
     ModalBaseTemplate,
-    FeedbackBanner,
+    BannerScoped,
     GroupName,
     GroupPurpose,
     GroupMincome,

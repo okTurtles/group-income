@@ -9,7 +9,7 @@
 import TransitionExpand from '@components/TransitionExpand.vue'
 
 export default {
-  name: 'FeedbackBanner',
+  name: 'BannerGeneral',
   components: {
     TransitionExpand
   },

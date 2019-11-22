@@ -23,7 +23,7 @@ form(
 
   i18n.link(tag='a' @click='forgotPassword') Forgot your password?
 
-  feedback-banner(ref='formMsg' dataTest='loginError')
+  banner-scoped(ref='formMsg' dataTest='loginError')
 
   .buttons.is-centered
     i18n(
@@ -40,7 +40,7 @@ import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import { nonWhitespace } from '@views/utils/validators.js'
 import FormPassword from '@containers/forms/FormPassword.vue'
-import FeedbackBanner from '@components/FeedbackBanner.vue'
+import BannerScoped from '@components/BannerScoped.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
@@ -52,7 +52,7 @@ export default {
   ],
   components: {
     FormPassword,
-    FeedbackBanner
+    BannerScoped
   },
   data () {
     return {

@@ -10,7 +10,7 @@
 
       i18n(tag='p' html='If you leave, you will stop having access to the <b>group chat</b> and <b>contributions</b>. Re-joining the group is possible, but requires other members to <b>vote and reach an agreement</b>.')
 
-      message(severity='danger')
+      banner-simple(severity='danger')
         i18n(tag='p' html=' This action <b>cannot be undone</b>.')
 
       form(
@@ -83,7 +83,7 @@ import { validationMixin } from 'vuelidate'
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
 import FormPassword from '@containers/forms/FormPassword.vue'
 import { required } from 'vuelidate/lib/validators'
-import Message from '@components/Message.vue'
+import BannerSimple from '@components/BannerSimple.vue'
 import L from '@view-utils/translations.js'
 
 export default {
@@ -118,7 +118,7 @@ export default {
   components: {
     ModalTemplate,
     FormPassword,
-    Message
+    BannerSimple
   },
   methods: {
     close () {

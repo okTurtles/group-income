@@ -20,7 +20,7 @@
             data-test='profilePicture'
           )
         // TODO #658
-        feedback-banner(ref='pictureMsg' dataTest='avatarMsg')
+        banner-scoped(ref='pictureMsg' dataTest='avatarMsg')
 
     section.card
       form(@submit.prevent='saveProfile')
@@ -67,7 +67,7 @@
             @click.prevent='openModal("PasswordModal")'
           ) Update Password
 
-        feedback-banner(ref='formMsg' dataTest='profileMsg')
+        banner-scoped(ref='formMsg' dataTest='profileMsg')
 
         .buttons
           i18n.is-success(
@@ -101,7 +101,7 @@ import { cloneDeep } from '@utils/giLodash.js'
 import { mapGetters } from 'vuex'
 import imageUpload from '@utils/imageUpload.js'
 import Avatar from '@components/Avatar.vue'
-import FeedbackBanner from '@components/FeedbackBanner.vue'
+import BannerScoped from '@components/BannerScoped.vue'
 import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
 
@@ -110,7 +110,7 @@ export default {
   mixins: [validationMixin, validationsDebouncedMixins],
   components: {
     Avatar,
-    FeedbackBanner
+    BannerScoped
   },
   data () {
     // create a copy of the attributes to avoid any Vue.js reactivity weirdness

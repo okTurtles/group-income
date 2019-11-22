@@ -1,9 +1,9 @@
 <template lang='pug'>
   transition-expand
-    .c-container(v-if='ephemeral.message')
-      message(class='c-message' :severity='ephemeral.severity')
+    .c-container(v-if='ephemeral.text')
+      banner-simple(class='c-banner' :severity='ephemeral.severity')
         .c-inner
-          .c-inner-text(:data-test='dataTest') {{ ephemeral.message }}
+          .c-inner-text(:data-test='dataTest') {{ ephemeral.text }}
           button.is-icon-small.c-button(
             type='button'
             :class='`is-${ephemeral.severity}`'
@@ -14,13 +14,13 @@
 </template>
 
 <script>
-import Message from '@components/Message.vue'
+import BannerSimple from '@components/BannerSimple.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'
 
 export default {
-  name: 'FeedbackBanner',
+  name: 'BannerScoped',
   components: {
-    Message,
+    BannerSimple,
     TransitionExpand
   },
   props: {
@@ -31,30 +31,24 @@ export default {
   },
   data: () => ({
     ephemeral: {
-      message: null,
+      text: null,
       severity: null
     }
   }),
   methods: {
     // To be used by parent. Example:
-    // this.$refs.feedbackBanner.danger('ups!')
+    // this.$refs.BannerScoped.danger('ups!')
     clean () {
-      this.updateMessage('', '')
+      this.updateBanner('', '')
     },
-    danger (message) {
-      this.updateMessage(message, 'danger')
+    danger (text) {
+      this.updateBanner(text, 'danger')
     },
-    warning (message) {
-      this.updateMessage(message, 'warning')
+    success (text) {
+      this.updateBanner(text, 'success')
     },
-    success (message) {
-      this.updateMessage(message, 'success')
-    },
-    info (message) {
-      this.updateMessage(message, 'info')
-    },
-    updateMessage (message, severity) {
-      this.ephemeral.message = message
+    updateBanner (text, severity) {
+      this.ephemeral.text = text
       this.ephemeral.severity = severity
     }
   }
@@ -70,7 +64,7 @@ export default {
   overflow: hidden;
 }
 
-.c-message {
+.c-banner {
   width: 100%;
   margin-top: $spacer*1.5;
   overflow: hidden;
@@ -88,9 +82,7 @@ export default {
 }
 
 $severities:
-  "info" $primary_0 $primary_1,
   "success" $success_0 $success_1,
-  "warning" $warning_0 $warning_1,
   "danger" $danger_0 $danger_1;
 
 .c-button {

@@ -483,7 +483,7 @@ page(
 
   article#user-feedback
     section.card
-      h2.is-title-2.card-header User Feedback
+      h2.is-title-2.card-header Feedback Banners
       h3.is-title-3 Simple
 
       table
@@ -492,9 +492,9 @@ page(
           th demo
         tr
           td
-            pre message(severity='success')
+            pre banner-simple(severity='success')
           td
-            message(severity='success')
+            banner-simple(severity='success')
               | This is a&nbsp;
               strong success message
               |  with a&nbsp;
@@ -502,9 +502,9 @@ page(
               | . This message can grow in width or height, as needed.
         tr
           td
-            pre message(severity='warning')
+            pre banner-simple(severity='warning')
           td
-            message(severity='warning')
+            banner-simple(severity='warning')
               | This is a&nbsp;
               strong warning message
               |  with a&nbsp;
@@ -512,9 +512,9 @@ page(
               | . This message can grow in width or height, as needed.
         tr
           td
-            pre message(severity='danger')
+            pre banner-simple(severity='danger')
           td
-            message(severity='danger')
+            banner-simple(severity='danger')
               | This is a&nbsp;
               strong danger / error message
               |  with a&nbsp;
@@ -522,16 +522,16 @@ page(
               | . This message can grow in width or height, as needed.
         tr
           td
-            pre message(severity='info')
+            pre banner-simple(severity='info')
           td
-            message(severity='info')
+            banner-simple(severity='info')
               | This is an&nbsp;
               strong information message
               |  with a&nbsp;
               a.link(href='/') link
               | . This message can grow in width or height, as needed.
 
-      h3.is-title-3 With title
+      h4.is-title-4 With title
       table
         thead
           th code
@@ -539,10 +539,10 @@ page(
         tr
           td
             pre
-            | message(severity='warning')
+            | banner-simple(severity='warning')
             |    div(slot='header')
           td
-            message(severity='warning')
+            banner-simple(severity='warning')
               div(slot='header')
                 | A title that gives context to the message
               slot
@@ -551,31 +551,25 @@ page(
                 |  with a&nbsp;
                 a.link(href='/') link
                 | . This message can grow in width or height, as needed.
-      h3.is-title-3 Dismissable banners
+      h3.is-title-3 Scoped Banners
       table
         thead
           th code
           th demo
         tr
           td
-            | Methods available: success, warning, danger, info
-            br
-            br
             pre
-              | feedback-banner(ref='banner')
-              |
+              | banner-scoped(ref='banner')
               | button(
               |   @click='$refs.banner.danger("Ups!")'
               | ) Save
 
           td
             div
-              feedback-banner(ref='banner')
-              .buttons
+              banner-scoped(ref='banner')
+              .buttons.is-centered
                 button.is-small.is-outlined(@click='$refs.banner.success("Changes saved!")') Save Success
-                button.is-small.is-outlined(@click='$refs.banner.warning("Are you sure?")') Save Warn
                 button.is-small.is-outlined(@click='$refs.banner.danger("Something went wrong, please try again.")') Save Danger
-                button.is-small.is-outlined(@click='$refs.banner.info("Just to let you know that you are an awesome person.")') Save Info
 
   article#tooltips
     section.card
@@ -912,8 +906,8 @@ page(
 <script>
 import Page from '@pages/Page.vue'
 import sbp from '~/shared/sbp.js'
-import Message from '@components/Message.vue'
-import FeedbackBanner from '@components/FeedbackBanner.vue'
+import BannerSimple from '@components/BannerSimple.vue'
+import BannerScoped from '@components/BannerScoped.vue'
 import Tooltip from '@components/Tooltip.vue'
 import Badge from '@components/Badge.vue'
 import CalloutCard from '@components/CalloutCard.vue'
@@ -1039,8 +1033,8 @@ export default {
   components: {
     Page,
     CalloutCard,
-    Message,
-    FeedbackBanner,
+    BannerSimple,
+    BannerScoped,
     Tooltip,
     Badge,
     SvgHello

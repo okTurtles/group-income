@@ -31,7 +31,7 @@ form(
 
   form-password(:label='L("Password")' name='password' :$v='$v')
 
-  feedback-banner(ref='formMsg')
+  banner-scoped(ref='formMsg')
 
   .buttons.is-centered
     i18n.is-primary(
@@ -49,7 +49,7 @@ import sbp from '~/shared/sbp.js'
 import { nonWhitespace } from '@views/utils/validators.js'
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
 import FormPassword from '@containers/forms/FormPassword.vue'
-import FeedbackBanner from '@components/FeedbackBanner.vue'
+import BannerScoped from '@components/BannerScoped.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
@@ -62,7 +62,7 @@ export default {
   components: {
     ModalTemplate,
     FormPassword,
-    FeedbackBanner
+    BannerScoped
   },
   data () {
     return {
