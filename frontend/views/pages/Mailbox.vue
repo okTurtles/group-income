@@ -2,7 +2,7 @@
 page(pageTestName='dashboard' pageTestHeaderName='groupName')
   template(#title='') {{ L('Mailbox') }}
   template(#sidebar='')
-    i18n(tag='h3') Menu
+    i18n.is-title-3(tag='h3') Menu
     ul
       li
         a.c-item-link(
@@ -26,7 +26,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
 
   article(v-if='ephemeral.mode === "Compose"')
     .card
-      i18n(tag='h3' class='card-header') New Message
+      i18n.is-title-3.card-header(tag='h3') New Message
       .field
         i18n.label(tag='label') To:
         .input-combo
@@ -110,7 +110,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
 
   article(v-if='ephemeral.mode === "Inbox" && Object.keys(proposals).length')
     .card
-      i18n(tag='h3' class='card-header') Proposals
+      i18n.is-title-3.card-header(tag='h3') Proposals
 
       .c-message(v-for='(proposal, hash) in proposals' :key='hash')
         avatar(src='/assets/images/default-avatar.png' alt='' @click='respondToProposal(hash)')
@@ -128,7 +128,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
 
   article(v-if='ephemeral.mode === "Inbox"' data-test='inbox')
     .card
-      i18n(tag='h3' class='card-header') Inbox
+      i18n.is-title-3.card-header(tag='h3') Inbox
 
       .c-message(v-for='(message, index) in inbox' :key='`inbox-message-${index}`')
         avatar(

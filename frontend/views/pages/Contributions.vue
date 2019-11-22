@@ -46,7 +46,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
 
     section.card.contribution-card
       .receiving
-        i18n(tag='h3' class='card-header') Receiving
+        i18n.is-title-3(tag='h3' class='card-header') Receiving
         i18n.has-text-1.spacer-around(
           v-if='noOneCanContribute'
           tag='p'
@@ -90,7 +90,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
           i18n Add members to group
 
       .giving
-        i18n(tag='h3' class='card-header') Giving
+        i18n.is-title-3(tag='h3' class='card-header') Giving
 
         i18n.has-text-1.spacer-around(
           v-if='notContributing'
@@ -136,7 +136,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
             :contributions-list='memberGroupProfile.nonMonetaryContributions'
             @new-value='handleNonMonetary'
           )
-            i.icon-plus(aria-hidden='true')
+            i.icon-plus.is-prefix
             i18n Add a non-monetary pledge
 </template>
 
@@ -371,7 +371,7 @@ export default {
     margin-right: $spacer;
     flex-shrink: 0;
 
-    @include widescreen {
+    @include desktop {
       width: 6.25rem;
       height: 6.25rem;
       margin-right: 2.5rem;

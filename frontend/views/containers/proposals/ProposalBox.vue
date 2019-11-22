@@ -2,7 +2,7 @@
 li.c-wrapper
   user-image.c-avatar(:username='proposal.meta.username')
   .c-header
-    h4.c-header-title(data-test='title' v-html='title')
+    h4.is-title-4.c-header-title(data-test='title' v-html='title')
     span.has-text-1 {{ humanDate }}
   .c-main
     ul
@@ -23,6 +23,7 @@ import L from '@view-utils/translations.js'
 import UserImage from '@containers/UserImage.vue'
 import ProposalItem from './ProposalItem.vue'
 import { STATUS_OPEN } from '@model/contracts/voting/proposals.js'
+import { TABLET } from '@view-utils/breakpoints.js'
 
 export default {
   name: 'ProposalBox',
@@ -32,7 +33,7 @@ export default {
   data () {
     return {
       config: {
-        reasonMaxLength: window.innerWidth < 769 ? 50 : 170
+        reasonMaxLength: window.innerWidth < TABLET ? 50 : 170
       },
       ephemeral: {
         isReasonHidden: true
@@ -63,14 +64,14 @@ export default {
       if (isAnyOpen) {
         return isOwnProposal
           ? L('{strong_}You{_strong} are proposing:', this.LTags('strong'))
-          : L('{strong_}{username}{_strong} is proposing:', { username, ...this.LTags('strong') })
+          : L('{username} is proposing:', { username: `<strong>${username}</strong>` })
       }
 
       // Note: In English, no matter the subject, the wording is the same,
       // but in other languages the wording is different (ex: Portuguese)
       return isOwnProposal
         ? L('{strong_}You{_strong} proposed:', this.LTags('strong'))
-        : L('{strong_}{username}{_strong} proposed:', { username, ...this.LTags('strong') })
+        : L('{username} proposed:', { username: `<strong>${username}</strong>` })
     },
     humanDate () {
       const date = new Date(this.proposal.meta.createdDate)
@@ -97,12 +98,12 @@ export default {
         return `"${reason.substr(0, charToTruncate)}..."`
       }
 
-      return `"${reason}"`
+      return reason ? `"${reason}"` : ''
     }
   },
   methods: {
     toggleReason (e) {
-      e.target.blur() // so the button doesnt look black.
+      e.target.blur() // so the button doesnt remain focused (with black color).
       this.ephemeral.isReasonHidden = !this.ephemeral.isReasonHidden
     }
   }

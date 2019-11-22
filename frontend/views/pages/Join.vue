@@ -15,7 +15,7 @@ div
             v-if='ephemeral.invitation.creatorPicture'
             :src='ephemeral.invitation.creatorPicture'
           )
-        h1.title.is-1(data-test='groupName') {{ ephemeral.invitation.groupName }}
+        h1.is-title-1.c-title(data-test='groupName') {{ ephemeral.invitation.groupName }}
         p.has-text-1(data-test='invitationMessage') {{ ephemeral.invitation.message }}
       .card
         form-signup(v-if='isStatus("SIGNING")' @submitSucceeded='accept')
@@ -34,17 +34,19 @@ div
 
     .c-broken(v-else-if='isStatus("INVALID") || isStatus("EXPIRED")')
       svg-broken-link.c-svg
-      i18n.title.is-1(
-        v-if='isStatus("EXPIRED")'
+      i18n.is-title-1(
+        v-if='isStatus("INVALID")'
         tag='h1'
+        data-test='pageTitle'
         :args='LTags()'
       ) Oh no! {br_}Something went wrong.
-      i18n.title.is-1(
+      i18n.is-title-1(
         v-else
         tag='h1'
+        data-test='pageTitle'
         :args='LTags()'
       ) Oh no! {br_}Your link has expired.
-      p.has-text-1 {{ ephemeral.errorMsg }}
+      p.has-text-1(data-test='helperText') {{ ephemeral.errorMsg }}
       i18n.c-goHome(tag='button' @click='goHome') Take me home
 </template>
 
@@ -136,7 +138,7 @@ export default {
       }
     } catch (e) {
       console.error(e)
-      this.ephemeral.errorMsg = `${L('Something went wrong.')} ${e.message}`
+      this.ephemeral.errorMsg = `${L('Something went wrong. Please, try again.')} ${e.message}`
       this.pageStatus = 'INVALID'
     }
   },
@@ -204,7 +206,7 @@ export default {
   flex-direction: column;
   align-items: center;
 
-  .title {
+  .c-title {
     order: 2;
   }
 
@@ -255,7 +257,7 @@ export default {
   margin-top: 20vh;
   text-align: center;
 
-  .title {
+  .is-title-1 {
     margin-top: 3rem;
     margin-bottom: $spacer-sm;
   }

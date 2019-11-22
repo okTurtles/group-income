@@ -2,7 +2,7 @@
 .c-loading.has-text-centered(
   :class='{ "c-fullView": theme === "fullView" }'
 )
-  h1 {{ title }}
+  h1.is-title-1 {{ title }}
   p {{ text }}
 </template>
 

@@ -89,6 +89,14 @@ $icons: (
   &.is-regular::before {
     font-weight: 400;
   }
+
+  &.is-prefix {
+    margin-right: $spacer-sm;
+  }
+
+  &.is-suffix {
+    margin-left: $spacer-sm;
+  }
 }
 
 @each $name, $icon in $icons {
@@ -97,7 +105,7 @@ $icons: (
   }
 }
 
-.c-icon-round {
+.icon-round {
   width: 2rem;
   height: 2rem;
   margin-right: $spacer-sm*2;

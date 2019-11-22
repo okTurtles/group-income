@@ -16,7 +16,7 @@ modal-base-template
     component(
       :is='content'
       :group='form'
-      :v='$v.form'
+      :$v='$v'
       @next='next'
       @focusref='focusRef'
       @input='payload => updateGroupData(payload)'
@@ -35,7 +35,7 @@ modal-base-template
           data-test='nextBtn'
         )
           | {{ L('Next') }}
-          i.icon-arrow-right
+          i.icon-arrow-right.is-suffix
 
         button.is-success(
           v-else=''
@@ -130,7 +130,7 @@ export default {
           settings: {
             // authorizations: [contracts.CanModifyAuths.dummyAuth()], // TODO: this
             groupName: this.form.groupName,
-            groupPicture: this.form.groupPicture || '/assets/images/default-avatar.png',
+            groupPicture: this.form.groupPicture || `${window.location.origin}/assets/images/default-group-avatar.png`,
             sharedValues: this.form.sharedValues,
             mincomeAmount: +this.form.mincomeAmount, // ensure this is a number
             mincomeCurrency: this.form.mincomeCurrency,
@@ -257,6 +257,7 @@ export default {
   width: calc(100% - 2rem);
   max-width: 34rem;
   margin-top: 3.5rem;
+  flex-shrink: 0;
 }
 
 .wrapper {

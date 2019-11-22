@@ -100,7 +100,7 @@
         name='DeleteProfileForm'
         @submit.prevent='save'
       )
-        i18n(tag='h3' class='card-header') Delete account
+        i18n.is-title-3(tag='h3' class='card-header') Delete account
         p
           i18n Deleting your account will erase all your data, and remove you from the groups you belong to.
           i18n.is-danger This action cannot be undone.
@@ -234,7 +234,7 @@ export default {
     display: inline-block;
     margin-top: 7px;
 
-    @include widescreen {
+    @include desktop {
       display: block;
       margin-top: 0;
     }
@@ -252,7 +252,7 @@ export default {
     }
   }
 
-  @include widescreen {
+  @include desktop {
     position: absolute;
     right: 0;
     top: -58px;

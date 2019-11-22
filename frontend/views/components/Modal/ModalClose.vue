@@ -25,7 +25,7 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-modal-close {
-  position: absolute;
+  position: fixed;
   right: $spacer;
   top: $spacer;
   z-index: 4;
@@ -49,6 +49,7 @@ export default {
   }
 
   @include desktop {
+    position: absolute;
     top: $spacer;
     right: $spacer;
   }

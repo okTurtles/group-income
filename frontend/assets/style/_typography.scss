@@ -59,15 +59,14 @@ p {
 // $size-4 = 0.875rem = 14px = $size-normal
 // $size-5 =  0.75rem = 12px = $size-small
 
-$sizes: $size-1, $size-2, $size-3, $size-4, $size-5;
+$titles: $size-1, $size-2, $size-3, $size-4;
 $lineHeight: 3, 2.25, 1.6875, 1.3125, 1;
 // From line height: 48px, 36px, 27px, 21px, 16px
 
-@each $size in $sizes {
-  $i: index($sizes, $size);
+@each $size in $titles {
+  $i: index($titles, $size);
 
-  h#{$i},
-  .is-#{$i} {
+  .is-title-#{$i} {
     font-family: "Poppins";
     font-weight: bold;
     font-size: $size;
@@ -76,34 +75,27 @@ $lineHeight: 3, 2.25, 1.6875, 1.3125, 1;
 }
 
 @include until($tablet) {
-  .is-1,
-  h1 {
+  .is-title-1 {
     font-size: $size-2; // 24px
     line-height: 2.125rem; // 34px
   }
 
-  .is-2,
-  h2 {
+  .is-title-2 {
     font-size: 1.25rem; // 20px
     line-height: 1.75rem; // 28px
   }
 }
 
 @include phone {
-  h1 {
+  .is-title-1 {
     font-size: 1.25rem; // 20px
     line-height: 2.125rem; // 34px
   }
 
-  h2 {
+  .is-title-2 {
     font-size: $size-3; // 18px
     line-height: 1.5625rem; // 25px
   }
-}
-
-.title {
-  font-style: normal;
-  font-weight: bold;
 }
 
 .subtitle {
@@ -111,7 +103,7 @@ $lineHeight: 3, 2.25, 1.6875, 1.3125, 1;
   text-transform: uppercase;
   letter-spacing: 0.1px;
   font-weight: normal;
-  font-size: $size-5; // 12px
+  font-size: $size-5;
   line-height: 1rem;
   color: $text_1;
 }
@@ -121,13 +113,13 @@ $lineHeight: 3, 2.25, 1.6875, 1.3125, 1;
 }
 
 .has-text-big {
-  font-size: 1rem; // 16px
+  font-size: 1rem;
 }
 
 .help,
 .has-text-small,
 small {
-  font-size: 0.75rem; // 12px
+  font-size: $size-5;
 }
 
 .has-text-bold {
