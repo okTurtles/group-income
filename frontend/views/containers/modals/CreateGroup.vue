@@ -97,7 +97,7 @@ export default {
       this.$refs[ref].focus()
     },
     updateGroupData (payload) {
-      this.$refs.formMsg.clean()
+      this.$refs.formMsg && this.$refs.formMsg.clean() // When changing to Welcome, it doesnt exist
       Object.assign(this.form, payload.data)
     },
     async submit () {

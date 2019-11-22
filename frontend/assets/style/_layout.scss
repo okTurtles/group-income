@@ -1,8 +1,10 @@
+$bannerGeneralHeight: 2.3rem;
+
 .l-no-navigation {
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  height: 100%;
+  height: 100vh;
   padding: $spacer;
   overflow: auto;
 
@@ -14,16 +16,40 @@
 .l-with-navigation {
   display: grid;
   overflow: hidden;
-  max-height: 100vh;
-  grid-template-areas: "l-navigation l-page";
+  height: 100vh;
+  grid-template-areas:
+    "l-banner l-banner"
+    "l-navigation l-page";
+  grid-template-rows: min-content auto;
 
   @include tablet {
     grid-template-columns: auto 1fr;
   }
 }
 
-.l-page {
-  grid-area: l-page;
+.l-banner {
+  grid-area: l-banner;
+  position: sticky;
+  height: $bannerGeneralHeight;
+  width: 100%;
+  background: $text_0;
+  color: $background;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacer-sm;
+
+  & ~ .l-navigation {
+    height: calc(100vh - #{$bannerGeneralHeight});
+
+    @include touch {
+      margin-top: $bannerGeneralHeight;
+    }
+  }
+
+  & ~ .l-page .p-sidebar {
+    height: calc(100vh - #{$bannerGeneralHeight});
+  }
 }
 
 .l-navigation {
@@ -40,6 +66,10 @@
       transform: translateX(0);
     }
   }
+}
+
+.l-page {
+  grid-area: l-page;
 }
 
 .l-modal {

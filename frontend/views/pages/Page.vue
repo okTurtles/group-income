@@ -93,6 +93,7 @@ $pagePaddingDesktop: 5.5rem;
   overflow: auto;
 
   @include desktop {
+    height: 100vh;
     width: auto;
   }
 }
@@ -199,14 +200,13 @@ $pagePaddingDesktop: 5.5rem;
   transition: transform $transitionSpeed;
 
   &-inner {
+    height: 100%;
     padding: $spacer*1.5 $spacer*1.5 $spacer;
-    overflow-y: auto;
+    overflow: auto;
     -webkit-overflow-scrolling: touch;
   }
 
   @include desktop {
-    position: sticky;
-    top: 0;
     transform: translateX(0%);
   }
 
