@@ -154,13 +154,11 @@ export default {
       const hours = Math.floor(remainder / MIL_HR)
       remainder = remainder % MIL_HR
       const minutes = Math.ceil(remainder / MIL_MIN)
-      const args = {
-        days: days ? `${days}d ` : '',
-        hours: hours ? `${hours}h ` : '',
-        minutes: minutes ? `${minutes}m ` : ''
-      }
 
-      return L('{days}{hours}{minutes}left', args)
+      if (days) return L('{days}d {hours}h {minutes}m left', { days, hours, minutes })
+      if (hours) return L('{hours}h {minutes}m left', { hours, minutes })
+      if (minutes) return L('{minutes}m left', { minutes })
+      return L('Expired')
     },
     mapInvite ({
       creator,
@@ -186,7 +184,7 @@ export default {
           description: this.inviteStatusDescription({
             isAnyoneLink, isInviteExpired, isAllInviteUsed, quantity, numberOfResponses
           }),
-          expiryInfo: isAllInviteUsed ? '' : isInviteExpired ? L('Expired') : this.readableExpiryInfo(expiryTime)
+          expiryInfo: isAllInviteUsed ? '' : this.readableExpiryInfo(expiryTime)
         }
       }
     }
@@ -196,7 +194,6 @@ export default {
     ...mapState(['currentGroupId']),
     invitesToShow () {
       const { invites } = this.currentGroupState
-      console.log('raw invites: ', invites)
       const invitesList = Object.values(invites).map(this.mapInvite)
       const options = {
         Active: () => invitesList.filter(invite => invite.status.isActive),
