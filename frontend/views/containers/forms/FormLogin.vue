@@ -21,9 +21,9 @@ form(
 
   form-password(:label='L("Password")' name='password' :$v='$v')
 
-  i18n.link(tag='a' @click='forgotPassword') Forgot your password?
+  i18n.link.c-forgot(tag='a' @click='forgotPassword') Forgot your password?
 
-  banner-scoped(ref='formMsg' dataTest='loginError')
+  banner-scoped(ref='formMsg' data-test='loginError')
 
   .buttons.is-centered
     i18n(
@@ -103,3 +103,12 @@ export default {
   }
 }
 </script>
+
+<style lang='scss' scoped>
+@import "@assets/style/_variables.scss";
+
+.c-forgot {
+  display: inline-block;
+  margin-top: $spacer;
+}
+</style>

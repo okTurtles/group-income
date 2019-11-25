@@ -37,7 +37,7 @@ export default {
   }),
   methods: {
     // To be used by parent. Example:
-    // this.$refs.BannerScoped.danger('ups!')
+    // this.$refs.BannerScoped.success(L('Changes saved!'))
     clean () {
       this.updateBanner('', '')
     },

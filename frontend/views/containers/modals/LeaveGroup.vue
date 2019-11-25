@@ -11,7 +11,9 @@
       i18n(tag='p' html='If you leave, you will stop having access to the <b>group chat</b> and <b>contributions</b>. Re-joining the group is possible, but requires other members to <b>vote and reach an agreement</b>.')
 
       banner-simple(severity='danger')
-        i18n(tag='p' html=' This action <b>cannot be undone</b>.')
+        i18n(
+          :args='LTags("strong")'
+        ) This action {strong_}cannot be undone{_strong}.
 
       form(
         novalidate

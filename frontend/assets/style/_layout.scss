@@ -1,15 +1,20 @@
 $bannerGeneralHeight: 2.3rem;
 
 .l-no-navigation {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  display: grid;
   height: 100vh;
-  padding: $spacer;
-  overflow: auto;
+  overflow: hidden;
+  grid-template-areas:
+    "l-banner"
+    "l-page";
+  grid-template-rows: min-content auto;
 
-  @include tablet {
-    padding: 1.5rem;
+  .l-page {
+    padding: $spacer;
+
+    @include tablet {
+      padding: 1.5rem;
+    }
   }
 }
 
@@ -69,7 +74,10 @@ $bannerGeneralHeight: 2.3rem;
 }
 
 .l-page {
+  position: relative;
   grid-area: l-page;
+  overflow-y: scroll;
+  overflow-x: hidden; /* so sidebars can be hidden correctly */
 }
 
 .l-modal {

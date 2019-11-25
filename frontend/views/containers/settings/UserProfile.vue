@@ -6,7 +6,7 @@
       .c-avatar
         label.c-avatar-field
           avatar.c-avatar-img(
-            :src='userPictureInitial'
+            :src='attributes.picture'
             ref='picture'
           )
           i18n.link.c-avatar-text Change avatar
@@ -20,7 +20,7 @@
             data-test='profilePicture'
           )
         // TODO #658
-        banner-scoped(ref='pictureMsg' dataTest='avatarMsg')
+        banner-scoped(ref='pictureMsg' data-test='avatarMsg')
 
     section.card
       form(@submit.prevent='saveProfile')
@@ -67,7 +67,7 @@
             @click.prevent='openModal("PasswordModal")'
           ) Update Password
 
-        banner-scoped(ref='formMsg' dataTest='profileMsg')
+        banner-scoped(ref='formMsg' data-test='profileMsg')
 
         .buttons
           i18n.is-success(
@@ -128,11 +128,7 @@ export default {
     form: {
       email: {
         [L('An email is required.')]: required,
-        [L('Please enter a valid email.')]: email,
-        [L('This email is already being used.')]: value => {
-          // TODO - verify if e-mail exists
-          return true
-        }
+        [L('Please enter a valid email.')]: email
       }
     }
   },
@@ -142,9 +138,6 @@ export default {
     ]),
     attributes () {
       return this.$store.getters.ourUserIdentityContract.attributes || {}
-    },
-    userPictureInitial () {
-      return this.attributes.picture
     }
   },
   methods: {
@@ -157,8 +150,6 @@ export default {
       const fileReceived = fileList[0]
       let picture
 
-      this.$refs.picture.setFromBlob(fileReceived)
-
       try {
         picture = await imageUpload(fileReceived)
       } catch (error) {
@@ -167,7 +158,14 @@ export default {
         return false
       }
 
-      await this.setAttributes({ picture }, 'pictureMsg', L('Picture updated!'))
+      try {
+        await this.setAttributes({ picture })
+        this.$refs.picture.setFromBlob(fileReceived)
+        this.$refs.pictureMsg.success(L('Picture updated!'))
+      } catch (error) {
+        console.error(error)
+        this.$refs.pictureMsg.danger(`${L('Failed to upload picture.')} ${error.message}`)
+      }
     },
     async saveProfile () {
       this.$refs.formMsg.clean()
@@ -179,20 +177,20 @@ export default {
         }
       }
 
-      await this.setAttributes(attrs, 'formMsg', L('Your changes were saved!'))
-    },
-    async setAttributes (attrs, refFeedback, successMsg) {
       try {
-        const attributes = await sbp('gi.contracts/identity/setAttributes/create',
-          attrs,
-          this.$store.state.loggedIn.identityContractID
-        )
-        await sbp('backend/publishLogEntry', attributes)
-        this.$refs[refFeedback].success(successMsg)
+        await this.setAttributes(attrs)
+        this.$refs.formMsg.success(L('Your changes were saved!'))
       } catch (error) {
         console.error(error)
-        this.$refs[refFeedback].danger(`${L('Something went wrong, please try again.')} ${error.message}`)
+        this.$refs.formMsg.danger(`${L('Something went wrong, please try again.')} ${error.message}`)
       }
+    },
+    async setAttributes (attrs) {
+      const attributes = await sbp('gi.contracts/identity/setAttributes/create',
+        attrs,
+        this.$store.state.loggedIn.identityContractID
+      )
+      await sbp('backend/publishLogEntry', attributes)
     }
   }
 }

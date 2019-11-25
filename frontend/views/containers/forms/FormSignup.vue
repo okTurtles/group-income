@@ -147,11 +147,7 @@ export default {
       },
       email: {
         [L('An email is required.')]: required,
-        [L('Please enter a valid email.')]: email,
-        [L('This email is already being used.')]: value => {
-          // TODO - verify if e-mail exists
-          return true
-        }
+        [L('Please enter a valid email.')]: email
       }
     }
   }

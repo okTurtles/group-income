@@ -21,9 +21,10 @@ export default {
   }),
   methods: {
     // To be used by parent. Example:
-    // this.$refs.bannerGeneral.show('Trying to reconnect...', 'wireless')
+    // this.$refs.bannerGeneral.show(L('Trying to reconnect...'), 'wifi')
     clean () {
-      this.updateMessage('', '')
+      this.ephemeral.message = ''
+      this.ephemeral.icon = ''
     },
     show (message, icon) {
       this.ephemeral.message = message

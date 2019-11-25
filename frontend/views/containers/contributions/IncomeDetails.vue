@@ -51,7 +51,7 @@ modal-base-template(ref='modal')
               .helper(v-if='needsIncome && whoIsPledging.length')
                 p {{ contributionMemberText }}
               i18n.helper(v-else-if='!needsIncome') Define up to how much you pledge to contribute to the group each month. Only the minimum needed amount will be given.
-            payment-methods(selected='manual')
+            payment-methods(selected='manual' class='c-methods')
 
         banner-scoped(ref='formMsg')
 
@@ -247,14 +247,13 @@ export default {
   padding: 2.5rem;
 }
 
+.c-methods {
+  margin-top: $spacer*1.5;
+}
+
 .c-tip {
   display: inline-block;
   margin-left: $spacer-xs;
-}
-
-.c-feedback {
-  text-align: center;
-  margin-top: $spacer-sm;
 }
 
 .c-graph {

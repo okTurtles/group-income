@@ -185,6 +185,7 @@ page(
               i.icon-cog icon-cog
               i.icon-columns icon-columns
               i.icon-comments icon-comments
+              i.icon-copy icon-copy
               i.icon-edit icon-edit
               i.icon-ellipsis-v icon-ellipsis-v
               i.icon-envelope icon-envelope
@@ -211,7 +212,7 @@ page(
               i.icon-user-plus icon-user-plus
               i.icon-user-times icon-user-times
               i.icon-vote-yea icon-vote-yea
-              i.icon-copy icon-copy
+              i.icon-wifi icon-wifi
         tr
           td
             pre

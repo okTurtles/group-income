@@ -90,7 +90,6 @@ $pagePaddingDesktop: 5.5rem;
 .p-no-sidebar {
   height: 100vh;
   width: 100vw;
-  overflow: auto;
 
   @include desktop {
     height: 100vh;
