@@ -1,40 +1,40 @@
 <template lang='pug'>
 .c-container
-  svg.c-piechart(viewbox='-1 -1 2 2' :style='{ height: size }')
+  svg.c-piechart(viewBox='-1 -1 2 2' :style='{ height: size }')
     path(
       v-for='(slice, index) in slices'
       :key='`slice-${index}`'
       :data-id='slice.id'
       :d='sliceData(slice, index)'
-      :class='`c-slice gi-has-fill-${slice.color}`'
-      @mouseenter='(e) => showLabel(e, index)' @mouseleave='(e) => hideLabel(e, index)'
+      :class='`c-slice c-has-fill-${slice.color}`'
+      @mouseenter='(e) => showLabel(e, index)'
+      @mouseleave='(e) => hideLabel(e, index)'
     )
 
     path(
-      v-if='!!missingSlice'
+      v-if='missingSlice'
       data-id='_missingSlice_'
       :d='missingSlice'
-      :class='`c-slice gi-has-fill-${lastSliceColor}`'
+      :class='`c-slice c-has-fill-needed`'
     )
 
-    circle.c-pie-donut(r='33%')
-
+    circle.c-pie-donut(r='38%')
     path(
       v-for='(slice, index) in innerSlices'
       :key='`inner-slice-${index}`'
       :data-id='slice.id'
       :d='sliceData(slice, index)'
-      :class='`c-slice c-inner gi-has-fill-${slice.color}`'
+      :class='`c-slice c-inner c-has-fill-${slice.color}`'
     )
-    circle.c-pie-donut(r='29%')
+    circle.c-pie-donut(r='33%')
 
-  .c-title
+  .c-slot
     slot
 
   tooltip(
     :text='slices[ephemeral.labelActiveIndex].label'
     :style='ephemeral.labelStyle'
-    :shouldshow='ephemeral.isLabelVisible'
+    :should-show='ephemeral.isLabelVisible'
   )
 </template>
 
@@ -56,10 +56,6 @@ export default {
     innerSlices: {
       type: Array, // [{ id, percent, color }]
       default () { return [] }
-    },
-    lastSliceColor: {
-      type: String,
-      default: 'light'
     },
     size: {
       type: String,
@@ -132,6 +128,8 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
+$graphBg: $general_2;
+
 .c-container {
   position: relative;
   display: flex;
@@ -145,19 +143,19 @@ export default {
 
 .c-slice {
   // Simulate a gap between each slice
-  stroke: $background;
+  stroke: $graphBg;
   stroke-width: 0.03; // small unit because this SVG is a 1x1 grid system
 
   &.c-inner {
-    transform: scale(0.64);
+    transform: scale(0.74);
   }
 }
 
 .c-pie-donut {
-  fill: $background;
+  fill: $graphBg;
 }
 
-.c-title {
+.c-slot {
   position: absolute;
   width: 53%; // almost 2x inner .c-pie-donut radius
   top: 50%;
@@ -165,5 +163,19 @@ export default {
   transform: translate(-50%, -50%);
   text-align: center;
   line-height: 1.2;
+}
+
+// Global Classes for SVG fills
+$fills: (
+  pledge: $primary_0,
+  needed: $background,
+  surplus: $success_0,
+  income: $warning_0,
+);
+
+@each $class, $color in $fills {
+  .c-has-fill-#{$class} {
+    fill: $color;
+  }
 }
 </style>

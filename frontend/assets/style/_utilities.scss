@@ -45,18 +45,3 @@
   clip: rect(0, 0, 0, 0);
   border: 0;
 }
-
-// Global Classes for SVG fills
-$fills: (
-  primary: $primary_0,
-  primary-light: $primary_2,
-  secondary: $success_0,
-  tertiary: $warning_0,
-  light: $general_2
-);
-
-@each $class, $color in $fills {
-  .gi-has-fill-#{$class} {
-    fill: $color;
-  }
-}

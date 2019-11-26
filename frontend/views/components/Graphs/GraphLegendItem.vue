@@ -1,11 +1,12 @@
 <template lang='pug'>
-li
-  .subtitle.c-label
-    span.c-visual(v-if='color' :class='`has-background-${color}`')
-    |       {{label}}
-
-  span.is-size-5.has-text-weight-bold
-    slot
+li.c-container
+  .c-inner
+    span.has-text-1 {{ label }}
+    span.is-title-4
+      slot
+      span.c-visual(:class='`has-background-${color}`')
+  .c-description.help
+    slot(name='description')
 </template>
 
 <script>
@@ -16,7 +17,10 @@ export default {
       type: String,
       required: true
     },
-    color: String
+    color: {
+      type: String,
+      required: true
+    }
   }
 }
 </script>
@@ -24,14 +28,30 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.c-label {
-  line-height: 1;
+.c-container {
+  padding: $spacer 0;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid $general_0;
+  }
+}
+
+.c-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .c-visual {
   display: inline-block;
   width: $spacer-sm;
   height: $spacer-sm;
-  margin-right: $spacer-xs;
+  margin-left: $spacer-sm;
+  margin-bottom: 0.06rem; // visually aligned
+  border-radius: 1px;
+
+  &.has-background-blank {
+    outline: 1px solid $general_0;
+  }
 }
 </style>

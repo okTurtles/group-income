@@ -2,74 +2,56 @@
 .is-flex.c-graph
   pie-chart.c-chart(
     :slices='groupPledgingSlices'
-    :innerslices='groupPledgingInnerSlices'
+    :inner-slices='groupPledgingInnerSlices'
     :size='chartSize'
   )
-    i18n.is-uppercase.is-size-7(tag='p') Group Pledge Goal
-    span.has-text-weight-bold {{fakeStore.currency}}{{graphData.goal}}
+    i18n.help.c-title(tag='h3') Group Goal
+    span.is-title-4 {{fakeStore.currency}}{{graphData.goal}}
 
-  graph-legend-group.columns.c-legend(
-    :aria-label='L("Group\'s Pledge Summary")'
-  )
-    graph-legend-item(
-      :label='L("Members Pledging")'
-      :class='legendItemClass'
-    )
-      | {{graphData.members}}
-      i18n of
-      | {{fakeStore.groupMembersTotal}}
-
-    graph-legend-item(
-      :label='L("Average Pledged")'
-      :class='legendItemClass'
-    ) {{fakeStore.currency}}{{graphData.avg}}
-
+  ul.c-legend(:aria-label='L("Group\'s Pledging Summary")')
     graph-legend-item(
       :label='L("Total Pledged")'
-      :class='legendItemClass'
-      color='primary-light'
+      color='primary-solid'
     ) {{fakeStore.currency}}{{graphData.totalAmount}}
 
     graph-legend-item(
       v-if='graphData.neededPledges'
       :label='L("Needed Pledges")'
-      :class='legendItemClass'
-      color='light'
+      color='blank'
     ) {{fakeStore.currency}}{{graphData.neededPledges}}
 
     graph-legend-item(
-      :label='L("Surplus (not needed)")'
-      :class='legendItemClass' color='secondary' v-if='graphData.surplus'
+      v-if='graphData.surplus'
+      :label='L("Surplus")'
+      color='success-solid'
     ) {{fakeStore.currency}}{{graphData.surplus}}
+      template(slot='description')
+        i18n This amount will not be used until someone needs it.
 
     graph-legend-item(
       v-if='graphData.userIncomeToReceive'
-      :label='L("Income to receive")'
+      :label='L("You\'ll receive")'
       :class='legendItemClass'
-      color='tertiary'
+      color='warning-solid'
     )
       tooltip(
         v-if='graphData.userIncomeNeeded !== graphData.userIncomeToReceive'
-        direction='right'
       )
         | {{fakeStore.currency}}{{graphData.userIncomeToReceive}}
-        i.icon-info-circle.is-size-6.has-text-tertiary.c-legendItem-icon
+        i.icon-info-circle.is-suffix
 
         template(slot='tooltip')
           i18n.has-text-weight-bold(tag='strong') Income Incomplete
           i18n.has-text-weight-normal(
-            tag='p'
             :args='{ amount: `${fakeStore.currency}${graphData.userIncomeNeeded}` }'
-          )
-            | The group at the moment is not pledging enough to cover everyone&apos;s mincome.
-            | So you&apos;ll receive only a part instead of the {amount} you need.
+          ) The group at the moment is not pledging enough to cover everyone's mincome. So you'll receive only a part instead of the {amount} you need.
 
       template(v-else='')
         | {{fakeStore.currency}}{{graphData.userIncomeToReceive}}
 </template>
 
 <script>
-import { PieChart, GraphLegendGroup, GraphLegendItem } from '@components/Graphs/index.js'
+import { PieChart, GraphLegendItem } from '@components/Graphs/index.js'
 import Tooltip from '@components/Tooltip.vue'
 import currencies from '@view-utils/currencies.js'
 import { debounce } from '@utils/giLodash.js'
@@ -79,7 +61,6 @@ export default {
   name: 'GroupPledgesGraph',
   components: {
     PieChart,
-    GraphLegendGroup,
     GraphLegendItem,
     Tooltip
   },
@@ -117,9 +98,6 @@ export default {
   computed: {
     chartSize () {
       return this.isMobile ? '8rem' : undefined
-    },
-    legendItemClass () {
-      return 'column c-legend-item'
     },
     graphData () {
       const { userPledgeAmount, userIncomeAmount } = this
@@ -159,7 +137,7 @@ export default {
         {
           id: 'othersAmount',
           percent: this.decimalSlice(othersAmount),
-          color: 'primary-light',
+          color: 'pledge',
           label: this.L('{amount} pledged by other members', { amount: currency + othersAmount })
         }
       ]
@@ -168,7 +146,7 @@ export default {
         slices.push({
           id: 'userPledgeAmount',
           percent: this.decimalSlice(userPledgeAmount),
-          color: 'primary-light',
+          color: 'pledge',
           label: this.L('{amount} pledged by you', { amount: currency + userPledgeAmount })
         })
       }
@@ -177,14 +155,14 @@ export default {
         slices.push({
           id: 'neededPledges',
           percent: this.decimalSlice(neededPledges),
-          color: 'light', // TODO later - review this color, too light
+          color: 'needed',
           label: this.L('{amount} needed pledge', { amount: currency + neededPledges })
         })
       } else if (surplus) {
         slices.push({
           id: 'surplus',
           percent: this.decimalSlice(surplus),
-          color: 'secondary',
+          color: 'surplus',
           label: this.L('{amount} extra pledge', { amount: currency + surplus })
         })
       }
@@ -196,7 +174,7 @@ export default {
         {
           id: 'userIncomeToReceive',
           percent: this.decimalSlice(this.graphData.userIncomeToReceive),
-          color: 'tertiary'
+          color: 'income'
         }
       ]
     }
@@ -228,28 +206,9 @@ export default {
   align-content: flex-start;
 }
 
-.c-legend {
-  flex-basis: 50%;
-  flex-grow: 1;
-  padding: $spacer 0 $spacer $spacer-lg;
-
-  &-item {
-    padding: $spacer-sm;
-    flex-basis: 33.3%;
-
-    @include phone {
-      padding: $spacer-sm $spacer-xs;
-      flex-basis: 50%;
-    }
-
-    @include tablet {
-      flex-basis: 50%;
-    }
-  }
-
-  &-icon {
-    display: inline-block;
-    margin-left: $spacer-xs;
-  }
+.c-title {
+  margin-bottom: $spacer-xs;
 }
+
+.c-legend {}
 </style>

@@ -64,12 +64,10 @@ modal-base-template(ref='modal')
             data-test='submitIncome'
           ) Save
       .c-graph
-        | WIP: A graph is on its way!
-        //
-          group-pledges-graph.c-graph(
-            :userpledgeamount='!needsIncome && !!form.pledge ? Number(form.pledge) : null'
-            :userincomeamount='needsIncome && !!form.income ? Number(form.income) : null'
-          )
+        group-pledges-graph.c-graph(
+          :user-pledge-amount='!needsIncome && !!form.amount ? Number(form.amount) : null'
+          :user-income-amount='needsIncome && !!form.amount ? Number(form.amount) : null'
+        )
 </template>
 
 <script>
@@ -220,7 +218,7 @@ export default {
 
 .c-content {
   display: grid;
-  grid-template-columns: auto 14rem;
+  grid-template-columns: auto 13rem;
   grid-column-gap: $spacer-xl;
   grid-template-areas:
     "title title"
