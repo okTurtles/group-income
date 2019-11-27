@@ -166,7 +166,7 @@ $pagePaddingDesktop: 5.5rem;
 
 .p-descritpion {
   font-weight: normal;
-  font-size: $size-5; // 12px
+  font-size: $size_5; // 12px
   line-height: 1rem;
   color: $text_1;
   display: none;

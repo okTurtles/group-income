@@ -83,7 +83,7 @@ export default {
     margin-top: $spacer;
 
     @include phone {
-      font-size: $size-2;
+      font-size: $size_2;
     }
   }
 

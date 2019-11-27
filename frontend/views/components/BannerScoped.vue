@@ -77,7 +77,7 @@ export default {
   align-items: flex-start;
 
   &-text {
-    margin-top: 0.1rem; /* visually aligned */
+    margin-top: 0.1875rem; // visually better centered aligned
   }
 }
 
@@ -87,6 +87,7 @@ $severities:
 
 .c-button {
   transition: box-shadow 150ms ease-in;
+  margin-left: $spacer-sm;
 
   @each $class, $color, $hover in $severities {
     &.is-#{$class} {

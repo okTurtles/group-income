@@ -45,7 +45,7 @@ button,
   color: $background_0;
   transition: box-shadow 150ms ease-in;
   white-space: nowrap;
-  font-size: $size-4;
+  font-size: $size_4;
   outline: none;
 
   @include buttonState($primary_0_1, $primary_1);

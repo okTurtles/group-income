@@ -192,8 +192,8 @@ export default {
         [L('This field is required')]: required
       },
       amount: {
-        [L('cannot be negative')]: v => v >= 0,
-        [L('cannot have more than 2 decimals')]: decimals(2),
+        [L('Oops, you entered a negative number')]: v => v >= 0,
+        [L('The amount cannot have more than 2 decimals')]: decimals(2),
         [L('This field is required')]: required,
         [L("It seems your income is not lower than the group's mincome.")]: function (value) {
           if (this.needsIncome) {

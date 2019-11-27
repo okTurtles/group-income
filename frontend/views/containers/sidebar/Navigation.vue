@@ -220,7 +220,7 @@ export default {
   display: flex;
   flex-direction: column;
   margin-left: $spacer;
-  font-size: $size-5;
+  font-size: $size_5;
 
   a {
     line-height: 1.65rem;

@@ -70,7 +70,7 @@ export default {
   position: absolute;
   top: 0;
   left: 50%;
-  transform: translate(-50%, calc(-100% - #{$size-3}));
+  transform: translate(-50%, calc(-100% - #{$size_3}));
   min-width: 3rem;
   width: max-content;
   border-radius: $radius;

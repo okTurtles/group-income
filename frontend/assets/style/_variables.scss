@@ -14,18 +14,18 @@ $zindex-sidebar: 40;
 $zindex-header: 30;
 
 // Used for typography
-$size-1: 2rem;     // 32px
-$size-2: 1.5rem;   // 24px
-$size-3: 1.125rem; // 18px
-$size-4: 0.875rem; // 14px
-$size-5: 0.75rem;  // 12px
+$size_1: 2rem;     // 32px
+$size_2: 1.5rem;   // 24px
+$size_3: 1.125rem; // 18px
+$size_4: 0.875rem; // 14px
+$size_5: 0.75rem;  // 12px
 
 // Alias for fonts
-$size-small: $size-5;
-$size-normal: $size-4;
-$size-medium: $size-3;
-$size-large: $size-2;
-$size-extra-large: $size-1;
+$size_small: $size_5;
+$size_normal: $size_4;
+$size_medium: $size_3;
+$size_large: $size_2;
+$size_extra-large: $size_1;
 
 $radius: 3px;
 $radius-large: 5px;

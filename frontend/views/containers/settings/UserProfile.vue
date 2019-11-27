@@ -1,6 +1,6 @@
 <template lang='pug'>
   .settings-container
-    p.username @{{ ourUsername }}
+    span.c-username @{{ ourUsername }}
 
     form(@submit.prevent='')
       .c-avatar
@@ -209,7 +209,7 @@ export default {
 }
 
 .c-avatar {
-  margin: 0 auto $spacer*1.5;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   text-align: center;
@@ -238,7 +238,7 @@ export default {
   }
 }
 
-.username {
+.c-username {
   display: none;
   margin-bottom: $spacer-lg;
   margin-top: $spacer-sm;
@@ -257,7 +257,7 @@ export default {
 }
 
 .legend {
-  font-size: $size-5;
+  font-size: $size_5;
   font-weight: bold;
   padding-top: 5px;
   padding-bottom: 5px;

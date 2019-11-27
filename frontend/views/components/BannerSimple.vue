@@ -1,13 +1,12 @@
 <template lang='pug'>
-.message(:class='`is-${severity}`')
-  .media
-    i(:class='getIcon')
+.c-message(:class='`is-${severity}`')
+  i(:class='getIcon')
 
-  .media-content
-    .message-header
+  .c-content
+    .c-header
       slot(name='header')
 
-    .message-body
+    .c-body
       slot
 </template>
 
@@ -38,39 +37,31 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.message {
+.c-message {
   padding: $spacer;
   border-radius: $radius-large;
-  letter-spacing: 0.1px;
   display: flex;
+  align-items: flex-start;
 
   strong {
     color: currentColor;
   }
 
-  a:not(.button):not(.tag) {
-    color: currentColor;
-  }
-
   ::v-deep a.link {
     font-weight: 400;
-    border-bottom-color: $text_0;
+    color: currentColor;
+    border-bottom-color: currentColor;
 
     &:hover,
     &:focus {
-      color: $text_1;
-      border-bottom-color: $text_1;
+      color: $text_0;
+      border-bottom-color: $text_0;
     }
   }
 
-  .c-icon {
-    font-size: $size-3;
-    line-height: 1.3125;
-    padding-right: $spacer-md;
-  }
-
   &.is-info {
-    background-color: var(--primary_2);
+    background-color: $primary_2;
+    color: $primary_0;
 
     .c-icon {
       color: $primary_1;
@@ -78,7 +69,8 @@ export default {
   }
 
   &.is-danger {
-    background-color: var(--danger_2);
+    background-color: $danger_2;
+    color: $danger_0;
 
     .c-icon {
       color: $danger_1;
@@ -86,7 +78,8 @@ export default {
   }
 
   &.is-warning {
-    background-color: var(--warning_2);
+    background-color: $warning_2;
+    color: $warning_0;
 
     .c-icon {
       color: $warning_1;
@@ -94,7 +87,8 @@ export default {
   }
 
   &.is-success {
-    background-color: var(--success_2);
+    background-color: $success_2;
+    color: $success_0;
 
     .c-icon {
       color: $success_1;
@@ -102,14 +96,18 @@ export default {
   }
 }
 
-.media-content {
+.c-icon {
+  margin-top: 0.1875rem; // visually better centered aligned
+  font-size: $size_3;
+  margin-right: $spacer;
+}
+
+.c-content {
   flex-grow: 1;
 }
 
-.message-header {
-  color: $text_1;
-  display: flex;
-  padding-bottom: 0, 25rem;
-  position: relative;
+.c-header {
+  display: block;
+  color: $text_0;
 }
 </style>
