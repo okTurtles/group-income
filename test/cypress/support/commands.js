@@ -21,7 +21,8 @@ Cypress.Commands.add('getByDT', (element, otherSelector = '') => {
 Cypress.Commands.add('giSignup', (userName, {
   password = '123456789',
   isInvitation = false,
-  groupName
+  groupName,
+  displayName
 } = {}) => {
   if (!isInvitation) {
     cy.getByDT('signupBtn').click()
@@ -80,6 +81,14 @@ Cypress.Commands.add('closeModal', () => {
   cy.getByDT('closeModal').should('not.exist')
 })
 
+Cypress.Commands.add('giSetDisplayName', (name) => {
+  cy.getByDT('settingsBtn').click()
+  cy.getByDT('displayName').clear().type(name)
+  cy.getByDT('saveAccount').click()
+  cy.getByDT('profileSaveSuccess').should('contain', 'Profile saved successfully!')
+  cy.closeModal()
+})
+
 Cypress.Commands.add('giCreateGroup', (name, {
   image = 'imageTest.png',
   values = 'Testing group values',
@@ -117,6 +126,17 @@ function inviteUser (invitee, index) {
   })
 }
 
+Cypress.Commands.add('giGetInvitationAnyone', () => {
+  cy.getByDT('inviteButton').click()
+  cy.getByDT('invitationLink').invoke('text').then(text => {
+    const urlAt = text.indexOf('http://')
+    const url = text.substr(urlAt)
+    assert.isOk(url, 'invitation link is found')
+    cy.closeModal()
+    return cy.wrap(url)
+  })
+})
+
 Cypress.Commands.add('giInviteMember', (
   invitees,
   {
@@ -143,7 +163,8 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
   username,
   groupName,
   isLoggedIn,
-  inviteCreator
+  inviteCreator,
+  displayName
 }) => {
   cy.visit(invitationLink)
 
@@ -159,5 +180,9 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
   }
   cy.getByDT('toDashboardBtn').click()
   cy.url().should('eq', 'http://localhost:8000/app/dashboard')
+
+  if (displayName) {
+    cy.giSetDisplayName(displayName)
+  }
   cy.giLogout()
 })
