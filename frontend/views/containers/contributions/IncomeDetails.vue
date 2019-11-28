@@ -63,11 +63,11 @@ modal-base-template(ref='modal')
             :disabled='$v.form.$invalid'
             data-test='submitIncome'
           ) Save
-      .c-graph
-        group-pledges-graph.c-graph(
-          :user-pledge-amount='!needsIncome && !!form.amount ? Number(form.amount) : null'
-          :user-income-amount='needsIncome && !!form.amount ? Number(form.amount) : null'
-        )
+
+      group-pledges-graph.c-graph(
+        :user-pledge-amount='!needsIncome && !!form.amount ? Number(form.amount) : null'
+        :user-income-amount='needsIncome && !!form.amount ? Number(form.amount) : null'
+      )
 </template>
 
 <script>
@@ -213,13 +213,15 @@ export default {
   width: 100%;
   opacity: 1;
   background: $general_2;
-  padding: 3rem $spacer-lg;
+  padding: $spacer*1.5 $spacer;
+
+  @include tablet {
+    padding: $spacer-lg $spacer*1.5;
+  }
 }
 
 .c-content {
   display: grid;
-  grid-template-columns: auto 13rem;
-  grid-column-gap: $spacer-xl;
   grid-template-areas:
     "title title"
     "graph graph"
@@ -228,20 +230,25 @@ export default {
   margin: 0 auto;
 
   @include tablet {
+    grid-template-columns: auto 12rem;
+    grid-column-gap: $spacer*1.5;
     grid-template-areas:
       "title title"
       "card graph";
+  }
+
+  @include desktop {
+    grid-column-gap: $spacer-xl;
   }
 }
 
 .c-title {
   grid-area: title;
-  margin-bottom: $spacer;
+  margin-bottom: $spacer*1.5;
 }
 
 .c-card {
   grid-area: card;
-  margin-top: $spacer-sm;
   padding: 2.5rem;
 }
 
@@ -257,5 +264,6 @@ export default {
 .c-graph {
   grid-area: graph;
   flex-shrink: 0;
+  margin-bottom: $spacer*1.5;
 }
 </style>

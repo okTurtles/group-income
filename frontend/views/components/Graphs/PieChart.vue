@@ -1,6 +1,6 @@
 <template lang='pug'>
 .c-container
-  svg.c-piechart(viewBox='-1 -1 2 2' :style='{ height: size }')
+  svg.c-piechart(viewBox='-1 -1 2 2')
     path(
       v-for='(slice, index) in slices'
       :key='`slice-${index}`'
@@ -18,7 +18,7 @@
       :class='`c-slice c-has-fill-needed`'
     )
 
-    circle.c-pie-donut(r='38%')
+    circle.c-pie-donut(r='39%')
     path(
       v-for='(slice, index) in innerSlices'
       :key='`inner-slice-${index}`'
@@ -26,7 +26,7 @@
       :d='sliceData(slice, index)'
       :class='`c-slice c-inner c-has-fill-${slice.color}`'
     )
-    circle.c-pie-donut(r='33%')
+    circle.c-pie-donut(r='34%')
 
   .c-slot
     slot
@@ -147,7 +147,7 @@ $graphBg: $general_2;
   stroke-width: 0.03; // small unit because this SVG is a 1x1 grid system
 
   &.c-inner {
-    transform: scale(0.74);
+    transform: scale(0.75);
   }
 }
 

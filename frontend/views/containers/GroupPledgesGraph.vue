@@ -1,11 +1,10 @@
 <template lang='pug'>
-.is-flex.c-graph
+.c-gwrapper
   pie-chart.c-chart(
     :slices='groupPledgingSlices'
     :inner-slices='groupPledgingInnerSlices'
-    :size='chartSize'
   )
-    i18n.help.c-title(tag='h3') Group Goal
+    i18n.help.c-title(tag='h3') <span class="c-title-part">Group</span> Goal
     span.is-title-4 {{fakeStore.currency}}{{graphData.goal}}
 
   ul.c-legend(:aria-label='L("Group\'s Pledging Summary")')
@@ -31,7 +30,6 @@
     graph-legend-item(
       v-if='graphData.userIncomeToReceive'
       :label='L("You\'ll receive")'
-      :class='legendItemClass'
       color='warning-solid'
     )
       tooltip(
@@ -96,9 +94,6 @@ export default {
     window.removeEventListener('resize', this.handleResize)
   },
   computed: {
-    chartSize () {
-      return this.isMobile ? '8rem' : undefined
-    },
     graphData () {
       const { userPledgeAmount, userIncomeAmount } = this
       const { groupMembersTotal, groupPledgeGoal, mincome, othersPledges } = this.fakeStore
@@ -199,16 +194,49 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.c-graph {
+.c-gwrapper {
   position: relative;
-  flex-wrap: wrap;
+  display: flex;
   align-items: center;
   align-content: flex-start;
+
+  @include tablet {
+    flex-direction: column;
+  }
+}
+
+.c-chart {
+  ::v-deep .c-piechart {
+    width: 7.5rem;
+
+    @include tablet {
+      width: 10rem;
+    }
+
+    @include desktop {
+      width: 12rem;
+    }
+  }
 }
 
 .c-title {
   margin-bottom: $spacer-xs;
+
+  &-part {
+    @include phone {
+      display: none;
+    }
+  }
 }
 
-.c-legend {}
+.c-legend {
+  flex-grow: 1;
+  margin: 0 $spacer-sm 0 $spacer;
+  max-width: 15rem;
+
+  @include tablet {
+    margin: $spacer-sm 0 0 0;
+    width: 100%;
+  }
+}
 </style>

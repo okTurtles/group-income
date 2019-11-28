@@ -1,7 +1,7 @@
 <template lang='pug'>
 li.c-container
   .c-inner
-    span.has-text-1 {{ label }}
+    span.has-text-1.c-desc {{ label }}
     span.is-title-4
       slot
       span.c-visual(:class='`has-background-${color}`')
@@ -40,6 +40,11 @@ export default {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.c-desc {
+  display: block;
+  margin-right: $spacer-sm;
 }
 
 .c-visual {
