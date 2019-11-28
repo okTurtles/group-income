@@ -124,10 +124,10 @@ export default {
             identityContractID: user.hash()
           })
           this.$emit('submitSucceeded')
-        } catch (error) {
-          console.error('Signup.vue submit() error:', error)
+        } catch (e) {
+          console.error('Signup.vue submit() error:', e)
+          this.$refs.formMsg.danger(L('Failed to signup, please try again. {codeError}', { codeError: e.message }))
           sbp('state/vuex/dispatch', 'logout')
-          this.$refs.formMsg.danger(`${L('Something went wrong, please try again.')} ${error.message}`)
         }
       }
     }

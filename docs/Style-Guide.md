@@ -71,6 +71,7 @@ When writing E2E tests, follow [Cypress Best Practices](https://docs.cypress.io/
 
 
 ### Feedback Messages
+
 When the user performs an action (ex: submiting a form), it's expected to show them some type of feedback, on success or failure. There are 3 types of messages we want to display to the user:
 
 #### Type 1 - while filling a form
@@ -136,7 +137,9 @@ submit () {
   this.$refs.formMsg.success(L('Changes saved!'))
 
   // If something wen't wrong... Try to be more specific whenever possible.
-  this.$refs.formMsg.danger(L('Something went wrong, please try again.'))
+  this.$refs.formMsg.danger(L('Failed to upload the group picture, please try again. {codeError}', {
+    codeError: error.message
+  }))
 }
 ```
 
@@ -155,6 +158,8 @@ import BannerGeneral from './views/components/BannerGeneral.vue'
 
 this.$refs.bannerGeneral.show(L('Trying to reconnect...'), 'wifi')
 ```
+
+NOTE: this type of banner is under construction and will change soon.
 
 ## Group Income Data Model Rules
 

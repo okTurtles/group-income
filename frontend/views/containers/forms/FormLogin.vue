@@ -80,9 +80,9 @@ export default {
           identityContractID
         })
         this.$emit('submitSucceeded')
-      } catch (error) {
-        console.error(error)
-        this.$refs.formMsg.danger(`${L('Something went wrong, please try again.')} ${error.message}`)
+      } catch (e) {
+        console.error(e)
+        this.$refs.formMsg.danger(L('Failed to login, please try again. {codeError}', { codeError: e.message }))
       }
     },
     forgotPassword () {

@@ -181,8 +181,8 @@ export default {
         await sbp('backend/publishLogEntry', groupProfileUpdate)
         this.closeModal()
       } catch (e) {
-        console.error('setPaymentInfo', e)
-        this.$refs.formMsg.danger(`${L('Something went wrong, please try again.')} ${e.message}`)
+        console.error('Failed to update income details', e)
+        this.$refs.formMsg.danger(L('Failed to update income details, please try again. {codeError}', { codeError: e.message }))
       }
     }
   },

@@ -570,7 +570,7 @@ page(
               banner-scoped(ref='banner')
               .buttons.is-centered
                 button.is-small.is-outlined(@click='$refs.banner.success("Changes saved!")') Save Success
-                button.is-small.is-outlined(@click='$refs.banner.danger("Something went wrong, please try again.")') Save Danger
+                button.is-small.is-outlined(@click='$refs.banner.danger("Failed to save the world, please try again.")') Save Danger
 
   article#tooltips
     section.card

@@ -162,9 +162,9 @@ export default {
         await this.setAttributes({ picture })
         this.$refs.picture.setFromBlob(fileReceived)
         this.$refs.pictureMsg.success(L('Picture updated!'))
-      } catch (error) {
-        console.error(error)
-        this.$refs.pictureMsg.danger(`${L('Failed to upload picture.')} ${error.message}`)
+      } catch (e) {
+        console.error('Failed to upload picture', e)
+        this.$refs.pictureMsg.danger(L('Failed to upload picture, please try again. {codeError}', { codeError: e.message }))
       }
     },
     async saveProfile () {
@@ -180,9 +180,9 @@ export default {
       try {
         await this.setAttributes(attrs)
         this.$refs.formMsg.success(L('Your changes were saved!'))
-      } catch (error) {
-        console.error(error)
-        this.$refs.formMsg.danger(`${L('Something went wrong, please try again.')} ${error.message}`)
+      } catch (e) {
+        console.error('Failed to update profile', e)
+        this.$refs.formMsg.danger(L('Failed to update profile, please try again. {codeError}', { codeError: e.message }))
       }
     },
     async setAttributes (attrs) {

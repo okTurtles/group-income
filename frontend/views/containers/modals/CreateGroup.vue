@@ -110,9 +110,9 @@ export default {
       if (this.ephemeral.groupPictureFile) {
         try {
           this.form.groupPicture = await imageUpload(this.ephemeral.groupPictureFile)
-        } catch (error) {
-          console.error(error)
-          this.$refs.formMsg.danger(L('Failed to upload the group picture, please try again.'))
+        } catch (e) {
+          console.error('Failed to upload the group picture', e)
+          this.$refs.formMsg.danger(L('Failed to upload the group picture, please try again. {codeError}', { codeError: e.message }))
           return false
         }
       }
@@ -160,9 +160,9 @@ export default {
         await sbp('backend/publishLogEntry', entry)
         // add to vuex and monitor this contract for updates
         await sbp('state/enqueueContractSync', hash)
-      } catch (error) {
-        console.error(error)
-        this.$refs.formMsg.danger(`${L('Something went wrong, please try again.')} ${error.message}`)
+      } catch (e) {
+        console.error('Failed to create the group', e)
+        this.$refs.formMsg.danger(L('Failed to create the group, please try again. {codeError}', { codeError: e.message }))
       }
     }
   },
