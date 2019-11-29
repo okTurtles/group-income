@@ -14,7 +14,6 @@
     ) {{ L('Total Pledged') }}
 
     graph-legend-item(
-      v-if='graphData.neededPledges'
       :amount='withCurrency(graphData.neededPledges)'
       color='blank'
     ) {{ L('Needed Pledges') }}

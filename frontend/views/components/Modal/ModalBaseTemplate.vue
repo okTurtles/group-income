@@ -8,8 +8,11 @@
       v-if='modalIsActive'
       @close='close'
     )
-      modal-close(@close='close')
-      slot
+      modal-close(@close='close' :fullscreen='fullscreen')
+
+      .modal-fullscreen(v-if='fullscreen')
+        slot
+      slot(v-else)
 </template>
 
 <script>
@@ -17,7 +20,10 @@ import modalMixins from './ModalMixins.js'
 
 export default {
   name: 'ModalBaseTemplate',
-  mixins: [modalMixins]
+  mixins: [modalMixins],
+  props: {
+    fullscreen: Boolean
+  }
 }
 </script>
 
@@ -33,6 +39,17 @@ export default {
   bottom: 0;
   right: 0;
   overflow: auto;
+}
+
+.modal-fullscreen {
+  height: 100%;
+  width: 100%;
+  background: $general_2;
+  padding: $spacer-lg $spacer;
+
+  @include tablet {
+    padding: $spacer*2.5 $spacer*1.5;
+  }
 }
 
 .modal-body {
