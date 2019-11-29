@@ -65,8 +65,8 @@ modal-base-template(ref='modal')
           ) Save
 
       group-pledges-graph.c-graph(
-        :user-pledge-amount='!needsIncome && !!form.amount ? Number(form.amount) : null'
-        :user-income-amount='needsIncome && !!form.amount ? Number(form.amount) : null'
+        :type='form.incomeDetailsType'
+        :amount='+form.amount'
       )
 </template>
 
@@ -195,7 +195,7 @@ export default {
         [L('This field is required')]: required,
         [L("It seems your income is not lower than the group's mincome.")]: function (value) {
           if (this.needsIncome) {
-            return value < this.groupSettings.mincomeAmount - 1
+            return value < this.groupSettings.mincomeAmount
           }
           return true
         }

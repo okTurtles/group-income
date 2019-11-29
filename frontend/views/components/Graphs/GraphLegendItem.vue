@@ -1,10 +1,10 @@
 <template lang='pug'>
-li.c-container
+li.c-legend
   .c-inner
     span.has-text-1.c-desc {{ label }}
-    span.is-title-4
+    span.is-title-4.c-amount
       slot
-      span.c-visual(:class='`has-background-${color}`')
+      span.c-marker(:class='`has-background-${color}`')
   .c-description.help
     slot(name='description')
 </template>
@@ -28,7 +28,7 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.c-container {
+.c-legend {
   padding: $spacer 0;
 
   &:not(:last-child) {
@@ -47,7 +47,11 @@ export default {
   margin-right: $spacer-sm;
 }
 
-.c-visual {
+.c-amount {
+  white-space: nowrap;
+}
+
+.c-marker {
   display: inline-block;
   width: $spacer-sm;
   height: $spacer-sm;
