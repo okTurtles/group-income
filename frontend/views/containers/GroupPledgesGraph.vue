@@ -4,45 +4,40 @@
     :slices='mainSlices'
     :inner-slices='innerSlices'
   )
-    i18n.has-text-1.c-title(tag='h3' :args='LTags("span")') {span_}Group{_span} Goal
+    i18n.has-text-1.c-title(tag='h3' :args='LTags("span")') {span_}Group{_span} goal
     span.is-title-4 {{ withCurrency(graphData.groupGoal) }}
 
-  ul.c-legend(:aria-label='L("Group pledging summary")')
+  ul.c-legendList(:aria-label='L("Group pledging summary")')
     graph-legend-item(
-      :label='L("Total Pledged")'
+      :amount='withCurrency(graphData.pledgeTotal)'
       color='primary-solid'
-    ) {{ withCurrency(graphData.pledgeTotal) }}
+    ) {{ L('Total Pledged') }}
 
     graph-legend-item(
       v-if='graphData.neededPledges'
-      :label='L("Needed Pledges")'
+      :amount='withCurrency(graphData.neededPledges)'
       color='blank'
-    ) {{ withCurrency(graphData.neededPledges) }}
+    ) {{ L('Needed Pledges') }}
 
     graph-legend-item(
       v-if='graphData.surplus'
-      :label='L("Surplus")'
+      :amount='withCurrency(graphData.surplus)'
       color='success-solid'
-    ) {{ withCurrency(graphData.surplus) }}
+    ) {{ L('Surplus') }}
       template(slot='description')
         i18n This amount will not be used until someone needs it.
 
     graph-legend-item(
-      v-if='graphData.userIncomeToReceive'
-      :label='L("You will receive")'
+      v-if='graphData.ourIncomeToReceive > 0'
+      :amount='withCurrency(graphData.ourIncomeToReceive)'
       color='warning-solid'
-    )
-      template(v-if='graphData.userIncomeNeeded === graphData.userIncomeToReceive')
-        | {{ withCurrency(graphData.userIncomeToReceive) }}
-      tooltip(v-else)
-        | {{ withCurrency(graphData.userIncomeToReceive) }}
-        i.icon-info-circle.is-suffix
-
+    ) {{ L('You will receive') }}
+      tooltip(v-if='graphData.ourIncomeNeeded !== graphData.ourIncomeToReceive')
+        i.icon-info-circle.is-suffix.has-text-primary
         template(slot='tooltip')
           i18n.has-text-weight-bold.c-tooltip-title(tag='strong') Income Incomplete
           i18n.has-text-weight-normal(
-            tag='p'
-            :args='{ amount: withCurrency(graphData.userIncomeNeeded) }'
+            :args='{ amount: withCurrency(graphData.ourIncomeNeeded) }'
           ) The group at the moment is not pledging enough to cover everyone's mincome. So you'll receive only a part instead of the {amount} you need.
 </template>
 
@@ -74,103 +69,116 @@ export default {
       'groupSettings',
       'groupProfiles',
       'groupMembersCount',
-      'ourUserIdentityContract'
+      'ourContractId'
     ]),
     graphData () {
       const mincome = this.groupSettings.mincomeAmount
-      const userPledgeAmount = this.type === 'pledgeAmount' && this.amount >= 0 && this.amount
-      const userIncomeAmount = this.type === 'incomeAmount' && this.amount < mincome && this.amount
-      let othersIncomeTotal = 0
-      let othersPledgesTotal = 0
-      const othersPledgesParts = []
+      const ourPledgeAmount = this.type === 'pledgeAmount' && this.amount >= 0 && this.amount
+      const ourIncomeAmount = this.type === 'incomeAmount' && this.amount < mincome && this.amount
+      const doWeNeedPledge = typeof ourIncomeAmount === 'number'
+      let othersIncomeNeeded = 0
+      let othersPledgesAmount = 0
+      let othersPledgesCount = 0
 
       Object.keys(this.groupProfiles).forEach(username => {
         const { incomeDetailsType, contractID, ...profile } = this.groupProfiles[username]
-        // OPTIMIZE - contractId or identityContract? different names, same thing.
-        const isCurrentUser = contractID === this.ourUserIdentityContract
+
+        if (contractID === this.ourContractId) { return }
+
         const amount = profile[incomeDetailsType]
 
-        if (isCurrentUser) { return false }
-
         if (incomeDetailsType === 'incomeAmount') {
-          othersIncomeTotal += mincome - amount
+          othersIncomeNeeded += mincome - amount
         } else if (incomeDetailsType === 'pledgeAmount') {
-          othersPledgesTotal += amount
-          othersPledgesParts.push(amount)
+          othersPledgesAmount += amount
+          othersPledgesCount += 1
         }
       })
 
-      const userIncomeNeeded = userIncomeAmount ? mincome - userIncomeAmount : null
-      const pledgeTotal = othersPledgesTotal + userPledgeAmount
-      const groupGoal = othersIncomeTotal + userIncomeNeeded
+      const ourIncomeNeeded = doWeNeedPledge ? mincome - ourIncomeAmount : null
+      const pledgeTotal = othersPledgesAmount + ourPledgeAmount
+      const groupGoal = othersIncomeNeeded + ourIncomeNeeded
       const neededPledges = groupGoal - pledgeTotal
-      const surplus = pledgeTotal - othersIncomeTotal
-      const membersNeedingPledges = this.groupMembersCount - othersPledgesParts.length
+      const surplus = pledgeTotal - othersIncomeNeeded - ourIncomeNeeded
 
-      // TODO - get real income to receive based on distribution algorithm
-      const avgMembersNeedingPledges = groupGoal / membersNeedingPledges
-      const avgNeededPledges = neededPledges / membersNeedingPledges
-      const userIncomeToReceive = userIncomeNeeded ? +(userIncomeNeeded - (userIncomeNeeded * avgNeededPledges / avgMembersNeedingPledges)).toFixed(0) : 0
+      let ourIncomeToReceive
+      if (neededPledges > 0) {
+        // TODO - get real income to receive based on distribution algorithm
+        const membersNeedingPledges = this.groupMembersCount - othersPledgesCount
+        const avgNeededPledges = neededPledges / membersNeedingPledges
+        const avgMembersNeedingPledges = groupGoal / membersNeedingPledges
+        ourIncomeToReceive = +(ourIncomeNeeded - (ourIncomeNeeded * avgNeededPledges / avgMembersNeedingPledges)).toFixed(0)
+      } else {
+        ourIncomeToReceive = doWeNeedPledge ? ourIncomeNeeded : null
+      }
 
       return {
-        othersPledgesTotal,
-        userPledgeAmount,
-        userIncomeNeeded,
-        userIncomeToReceive,
+        othersPledgesAmount,
+        ourPledgeAmount,
+        ourIncomeNeeded,
+        ourIncomeToReceive,
         pledgeTotal,
         groupGoal,
-        neededPledges: neededPledges > 0 ? neededPledges : false,
-        surplus: surplus > 0 ? surplus : false
+        neededPledges: neededPledges > 0 ? neededPledges : 0,
+        surplus: surplus > 0 ? surplus : 0
       }
     },
     mainSlices () {
-      const { othersPledgesTotal, userPledgeAmount, neededPledges, surplus } = this.graphData
-      const withCurrency = this.withCurrency
+      const { groupGoal, othersPledgesAmount, ourPledgeAmount, pledgeTotal, surplus } = this.graphData
+      const slices = []
 
-      const slices = [
-        {
-          id: 'othersPledgesTotal',
-          percent: this.decimalSlice(othersPledgesTotal),
-          color: 'pledge',
-          label: this.L('{amount} pledged by other members', { amount: withCurrency(othersPledgesTotal) })
-        }
-      ]
+      if (groupGoal === 0) {
+        return slices
+      }
 
-      if (userPledgeAmount) {
+      // Note: surplus is added on the innerSlices, so we need to substract its part from the pledges.
+      // To be fair, we remove the equivalent percentage of each pledge part (others and ours)
+
+      if (othersPledgesAmount > 0) {
+        const pledgePerc = (othersPledgesAmount / pledgeTotal).toFixed(2)
+        const surplusToBeRemoved = surplus * pledgePerc
+
         slices.push({
-          id: 'userPledgeAmount',
-          percent: this.decimalSlice(userPledgeAmount),
-          color: 'pledge',
-          label: this.L('{amount} pledged by you', { amount: withCurrency(userPledgeAmount) })
+          id: 'othersPledgesAmount',
+          percent: this.decimalSlice(othersPledgesAmount - surplusToBeRemoved),
+          color: 'pledge'
         })
       }
 
-      if (neededPledges) {
+      if (ourPledgeAmount > 0) {
+        const pledgePerc = (ourPledgeAmount / pledgeTotal).toFixed(2)
+        const surplusToBeRemoved = surplus * pledgePerc
+
         slices.push({
-          id: 'neededPledges',
-          percent: this.decimalSlice(neededPledges),
-          color: 'needed',
-          label: this.L('{amount} needed pledge', { amount: withCurrency(neededPledges) })
-        })
-      } else if (surplus) {
-        slices.push({
-          id: 'surplus',
-          percent: this.decimalSlice(surplus),
-          color: 'surplus',
-          label: this.L('{amount} extra pledge', { amount: withCurrency(surplus) })
+          id: 'ourPledgeAmount',
+          percent: this.decimalSlice(ourPledgeAmount - surplusToBeRemoved),
+          color: 'pledge'
         })
       }
 
       return slices
     },
     innerSlices () {
-      return [
-        {
-          id: 'userIncomeToReceive',
-          percent: this.decimalSlice(this.graphData.userIncomeToReceive),
+      const { ourIncomeToReceive, surplus } = this.graphData
+      const slices = []
+
+      if (ourIncomeToReceive > 0) {
+        slices.push({
+          id: 'ourIncomeToReceive',
+          percent: this.decimalSlice(ourIncomeToReceive),
           color: 'income'
-        }
-      ]
+        })
+      }
+
+      if (surplus > 0) {
+        slices.push({
+          id: 'surplus',
+          percent: this.decimalSlice(surplus),
+          color: 'surplus'
+        })
+      }
+
+      return slices
     }
   },
   methods: {
@@ -178,10 +186,11 @@ export default {
       return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency(amount)
     },
     decimalSlice (amount) {
-      // NOTE: When bigger than (group) goal, take in account the surplus slice
-      const { groupGoal, pledgeTotal, surplus } = this.graphData
-      const circleCompleteAmount = Math.max(pledgeTotal + surplus, groupGoal)
-      return amount / circleCompleteAmount
+      const perc = amount / this.graphData.groupGoal
+      // avoid breaking the graph when perc is bigger than 1,
+      if (perc > 1) return 1
+      if (perc < 0) return 0
+      return perc
     }
   }
 }
@@ -218,21 +227,27 @@ export default {
 .c-title {
   margin-bottom: $spacer-xs;
 
-  span {
-    @include phone {
+  @include phone {
+    text-transform: capitalize;
+
+    ::v-deep span {
       display: none;
     }
   }
 }
 
-.c-legend {
+.c-legendList {
   flex-grow: 1;
   margin: 0 $spacer-sm 0 $spacer;
-  max-width: 15rem;
+  max-width: 20rem;
 
   @include tablet {
-    margin: $spacer-sm 0 0 0;
+    margin: $spacer*1.5 0 0 0;
     width: 100%;
   }
+}
+
+.c-tooltip-title {
+  display: block;
 }
 </style>

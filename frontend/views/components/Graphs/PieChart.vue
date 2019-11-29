@@ -1,6 +1,6 @@
 <template lang='pug'>
 .c-container
-  svg.c-piechart(viewBox='-1 -1 2 2')
+  svg.c-piechart(viewBox='-1 -1 2 2' aria-hidden='hidden')
     path(
       v-for='(slice, index) in slices'
       :key='`slice-${index}`'
@@ -10,14 +10,12 @@
       @mouseenter='(e) => showLabel(e, index)'
       @mouseleave='(e) => hideLabel(e, index)'
     )
-
     path(
       v-if='missingSlice'
       data-id='_missingSlice_'
       :d='missingSlice'
       :class='`c-slice c-has-fill-needed`'
     )
-
     circle.c-pie-donut(r='39%')
     path(
       v-for='(slice, index) in innerSlices'
@@ -30,24 +28,16 @@
 
   .c-slot
     slot
-
-  tooltip(
-    :text='slices[ephemeral.labelActiveIndex].label'
-    :style='ephemeral.labelStyle'
-    :should-show='ephemeral.isLabelVisible'
-  )
 </template>
 
 <script>
 // Learn more about SVG & PieCharts
 // -> https://hackernoon.com/a-simple-pie-chart-in-svg-dbdd653b6936
 
-import Tooltip from '../Tooltip.vue'
 import { debounce } from '@utils/giLodash.js'
 
 export default {
   name: 'PieChart',
-  components: { Tooltip },
   props: {
     slices: {
       type: Array, // [{ id, percent, color }]
@@ -56,10 +46,6 @@ export default {
     innerSlices: {
       type: Array, // [{ id, percent, color }]
       default () { return [] }
-    },
-    size: {
-      type: String,
-      default: '13rem'
     }
   },
   data: () => ({

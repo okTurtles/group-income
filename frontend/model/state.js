@@ -243,6 +243,9 @@ const getters = {
   ourUsername (state) {
     return state.loggedIn && state.loggedIn.username
   },
+  ourContractId (state) {
+    return state.loggedIn && state.loggedIn.identityContractID
+  },
   // Logged In user's identity contract
   ourUserIdentityContract (state) {
     return (state.loggedIn && state[state.loggedIn.identityContractID]) || {}
