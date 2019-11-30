@@ -20,7 +20,7 @@
             data-test='profilePicture'
           )
         // TODO #658
-        banner-scoped(ref='pictureMsg' data-test='pictureMsg' class='c-pictureMsg')
+        banner-scoped.c-pictureMsg(ref='pictureMsg' data-test='pictureMsg')
 
     section.card
       form(@submit.prevent='saveProfile')
@@ -152,9 +152,9 @@ export default {
 
       try {
         picture = await imageUpload(fileReceived)
-      } catch (error) {
-        console.error(error)
-        this.$refs.pictureMsg.danger(`${L('Failed to upload avatar. Please, try again.')} ${error.message}`)
+      } catch (e) {
+        console.error(e)
+        this.$refs.pictureMsg.danger(L('Failed to upload picture, please try again. {codeError}', { codeError: e.message }))
         return false
       }
 
@@ -163,8 +163,8 @@ export default {
         this.$refs.picture.setFromBlob(fileReceived)
         this.$refs.pictureMsg.success(L('Picture updated!'))
       } catch (e) {
-        console.error('Failed to upload picture', e)
-        this.$refs.pictureMsg.danger(L('Failed to upload picture, please try again. {codeError}', { codeError: e.message }))
+        console.error('Failed to save picture', e)
+        this.$refs.pictureMsg.danger(L('Failed to save picture, please try again. {codeError}', { codeError: e.message }))
       }
     },
     async saveProfile () {

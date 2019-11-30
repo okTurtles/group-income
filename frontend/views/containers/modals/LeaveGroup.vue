@@ -11,7 +11,7 @@
       i18n(
         tag='p'
         :args='LTags("strong")'
-      ) 'If you leave, you will stop having access to the {strong_}group chat{_strong} and {strong_}contributions{_strong}. Re-joining the group is possible, but requires other members to {strong_}vote and reach an agreement{_strong}.')
+      ) If you leave, you will stop having access to the {strong_}group chat{_strong} and {strong_}contributions{_strong}. Re-joining the group is possible, but requires other members to {strong_}vote and reach an agreement{_strong}.
 
       banner-simple(severity='danger')
         i18n(
