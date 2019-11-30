@@ -133,21 +133,6 @@
   }
 }
 
-.expand-enter-active,
-.expand-leave-active {
-  transition: opacity 0.5s, max-height 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
-  opacity: 1;
-  max-height: 21rem;
-  overflow: hidden;
-}
-
-.expand-enter,
-.expand-leave-to {
-  opacity: 0;
-  max-height: 0;
-  overflow: hidden;
-}
-
 @keyframes blink-animation {
   to {
     opacity: 0;

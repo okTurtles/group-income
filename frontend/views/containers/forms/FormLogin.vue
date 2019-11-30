@@ -21,9 +21,9 @@ form(
 
   form-password(:label='L("Password")' name='password' :$v='$v')
 
-  i18n.link(tag='a' @click='forgotPassword') Forgot your password?
+  i18n.link.c-forgot(tag='a' @click='forgotPassword') Forgot your password?
 
-  p.error(v-if='ephemeral.errorMsg' data-test='loginError') {{ ephemeral.errorMsg }}
+  banner-scoped(ref='formMsg' data-test='loginError')
 
   .buttons.is-centered
     i18n(
@@ -40,6 +40,7 @@ import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import { nonWhitespace } from '@views/utils/validators.js'
 import FormPassword from '@containers/forms/FormPassword.vue'
+import BannerScoped from '@components/BannerScoped.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
@@ -50,7 +51,16 @@ export default {
     validationsDebouncedMixins
   ],
   components: {
-    FormPassword
+    FormPassword,
+    BannerScoped
+  },
+  data () {
+    return {
+      form: {
+        name: null,
+        password: null
+      }
+    }
   },
   inserted () {
     this.$refs.username.focus()
@@ -61,7 +71,7 @@ export default {
         // TODO: Insert cryptography here
         const identityContractID = await sbp('namespace/lookup', this.form.name)
         if (!identityContractID) {
-          this.ephemeral.errorMsg = L('Invalid username or password')
+          this.$refs.formMsg.danger(L('Invalid username or password'))
           return
         }
         console.debug(`Retrieved identity ${identityContractID}`)
@@ -70,25 +80,14 @@ export default {
           identityContractID
         })
         this.$emit('submitSucceeded')
-      } catch (error) {
-        this.ephemeral.errorMsg = error.message
-        console.error(error)
+      } catch (e) {
+        console.error(e)
+        this.$refs.formMsg.danger(L('Failed to login, please try again. {codeError}', { codeError: e.message }))
       }
     },
     forgotPassword () {
       // TODO: implement forgot password
       alert(L('Coming soon'))
-    }
-  },
-  data () {
-    return {
-      form: {
-        name: null,
-        password: null
-      },
-      ephemeral: {
-        errorMsg: null
-      }
     }
   },
   validations: {
@@ -104,3 +103,12 @@ export default {
   }
 }
 </script>
+
+<style lang='scss' scoped>
+@import "@assets/style/_variables.scss";
+
+.c-forgot {
+  display: inline-block;
+  margin-top: $spacer;
+}
+</style>

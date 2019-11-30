@@ -45,7 +45,7 @@ button,
   color: $background_0;
   transition: box-shadow 150ms ease-in;
   white-space: nowrap;
-  font-size: $size-4;
+  font-size: $size_4;
   outline: none;
 
   @include buttonState($primary_0_1, $primary_1);
@@ -166,7 +166,7 @@ button,
 
 .buttons {
   position: relative;
-  margin-top: $spacer;
+  margin-top: $spacer*1.5;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -181,8 +181,6 @@ button,
 
   button,
   .button {
-    margin-top: $spacer-sm;
-
     &:not(:last-child) {
       margin-right: $spacer-sm;
     }

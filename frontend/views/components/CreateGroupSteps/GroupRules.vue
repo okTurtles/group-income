@@ -67,7 +67,7 @@
         i18n.subtitle(tag='p') Remove Member
 
     transition(name='slidedown')
-      message(
+      banner-simple(
         v-if='!superMajority'
         severity='warning'
       )
@@ -84,7 +84,7 @@
 <script>
 import { toPercent } from '@view-utils/filters.js'
 import { CircleSlider } from '@components/CircularSlider/index.js'
-import Message from '../Message.vue'
+import BannerSimple from '@components/BannerSimple.vue'
 import { mapGetters } from 'vuex'
 
 const SUPERMAJORITY = 0.67
@@ -97,7 +97,7 @@ export default {
   },
   components: {
     CircleSlider,
-    Message
+    BannerSimple
   },
   filters: {
     toPercent
@@ -149,7 +149,7 @@ export default {
   position: relative;
   width: 9.8rem;
   height: 9.8rem;
-  margin: 40px auto;
+  margin: $spacer auto;
   text-align: center;
   display: flex;
   flex-direction: column;

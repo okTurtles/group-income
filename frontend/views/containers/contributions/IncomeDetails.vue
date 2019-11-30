@@ -8,7 +8,7 @@ modal-base-template(ref='modal')
         @submit.prevent='submit'
         novalidate='true'
       )
-        fieldset.c-firstQuestion
+        fieldset.field
           legend.label
             | {{ L('Do you make at least {groupMincomeFormatted} per month?', { groupMincomeFormatted }) }}
             tooltip(:text='L("This is the minimum income in your group")' direction='top')
@@ -32,7 +32,7 @@ modal-base-template(ref='modal')
               @change='resetAmount'
             )
             i18n(data-test='needsIncomeRadio') No, I don't
-        transition(name='expand')
+        transition-expand
           fieldset(v-if='!!form.incomeDetailsType')
             label.field
               .label(
@@ -51,10 +51,11 @@ modal-base-template(ref='modal')
               .helper(v-if='needsIncome && whoIsPledging.length')
                 p {{ contributionMemberText }}
               i18n.helper(v-else-if='!needsIncome') Define up to how much you pledge to contribute to the group each month. Only the minimum needed amount will be given.
-            payment-methods(selected='manual')
+            payment-methods(selected='manual' class='c-methods')
+
+        banner-scoped(ref='formMsg')
+
         .buttons
-          //- NOTE: this type='button' is needed here to prevent the ENTER
-          //-       key from calling closeModal twice
           i18n.is-outlined(tag='button' type='button' @click='closeModal') Cancel
           i18n.is-success(
             tag='button'
@@ -62,11 +63,6 @@ modal-base-template(ref='modal')
             :disabled='$v.form.$invalid'
             data-test='submitIncome'
           ) Save
-        // TODO/OPTIMIZE - create directive similar to vError
-        .c-feedback.has-text-1(
-          v-if='ephemeral.formFeedbackMsg.text'
-          :class='ephemeral.formFeedbackMsg.class'
-        ) {{ephemeral.formFeedbackMsg.text}}
       .c-graph
         | WIP: A graph is on its way!
         //
@@ -86,6 +82,8 @@ import InputAmount from './InputAmount.vue'
 import PaymentMethods from './PaymentMethods.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ModalBaseTemplate from '@components/Modal/ModalBaseTemplate.vue'
+import BannerScoped from '@components/BannerScoped.vue'
+import TransitionExpand from '@components/TransitionExpand.vue'
 import GroupPledgesGraph from '../GroupPledgesGraph.vue'
 import L from '@view-utils/translations.js'
 
@@ -94,6 +92,8 @@ export default {
   mixins: [validationMixin],
   components: {
     ModalBaseTemplate,
+    TransitionExpand,
+    BannerScoped,
     InputAmount,
     Tooltip,
     PaymentMethods,
@@ -101,9 +101,6 @@ export default {
   },
   data () {
     return {
-      ephemeral: {
-        formFeedbackMsg: {}
-      },
       form: {
         incomeDetailsType: null,
         amount: null
@@ -168,9 +165,10 @@ export default {
     },
     async submit () {
       if (this.$v.form.$invalid) {
-        alert(L('Invalid payment info'))
+        this.$refs.formMsg.danger(L('Some information is missing, please review it and try again.'))
         return
       }
+
       try {
         const incomeDetailsType = this.form.incomeDetailsType
         const groupProfileUpdate = await sbp('gi.contracts/group/groupProfileUpdate/create',
@@ -183,11 +181,8 @@ export default {
         await sbp('backend/publishLogEntry', groupProfileUpdate)
         this.closeModal()
       } catch (e) {
-        console.error('setPaymentInfo', e)
-        this.ephemeral.formFeedbackMsg = {
-          text: L(`Failed to update income details. Error: ${e.message}`),
-          class: 'has-text-danger'
-        }
+        console.error('Failed to update income details', e)
+        this.$refs.formMsg.danger(L('Failed to update income details, please try again. {codeError}', { codeError: e.message }))
       }
     }
   },
@@ -197,8 +192,8 @@ export default {
         [L('This field is required')]: required
       },
       amount: {
-        [L('cannot be negative')]: v => v >= 0,
-        [L('cannot have more than 2 decimals')]: decimals(2),
+        [L('Oops, you entered a negative number')]: v => v >= 0,
+        [L('The amount cannot have more than 2 decimals')]: decimals(2),
         [L('This field is required')]: required,
         [L("It seems your income is not lower than the group's mincome.")]: function (value) {
           if (this.needsIncome) {
@@ -220,7 +215,7 @@ export default {
   width: 100%;
   opacity: 1;
   background: $general_2;
-  padding: 3rem $spacer-lg
+  padding: 3rem $spacer-lg;
 }
 
 .c-content {
@@ -252,18 +247,13 @@ export default {
   padding: 2.5rem;
 }
 
+.c-methods {
+  margin-top: $spacer*1.5;
+}
+
 .c-tip {
   display: inline-block;
   margin-left: $spacer-xs;
-}
-
-.c-firstQuestion {
-  margin-bottom: 1.5rem;
-}
-
-.c-feedback {
-  text-align: center;
-  margin-top: $spacer-sm;
 }
 
 .c-graph {

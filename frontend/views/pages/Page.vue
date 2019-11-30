@@ -90,9 +90,9 @@ $pagePaddingDesktop: 5.5rem;
 .p-no-sidebar {
   height: 100vh;
   width: 100vw;
-  overflow: auto;
 
   @include desktop {
+    height: 100vh;
     width: auto;
   }
 }
@@ -166,7 +166,7 @@ $pagePaddingDesktop: 5.5rem;
 
 .p-descritpion {
   font-weight: normal;
-  font-size: $size-5; // 12px
+  font-size: $size_5; // 12px
   line-height: 1rem;
   color: $text_1;
   display: none;
@@ -199,14 +199,13 @@ $pagePaddingDesktop: 5.5rem;
   transition: transform $transitionSpeed;
 
   &-inner {
+    height: 100%;
     padding: $spacer*1.5 $spacer*1.5 $spacer;
-    overflow-y: auto;
+    overflow: auto;
     -webkit-overflow-scrolling: touch;
   }
 
   @include desktop {
-    position: sticky;
-    top: 0;
     transform: translateX(0%);
   }
 

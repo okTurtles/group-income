@@ -31,9 +31,9 @@ form(
 
   form-password(:label='L("Password")' name='password' :$v='$v')
 
-  p.error(v-if='ephemeral.errorMsg') {{ ephemeral.errorMsg }}
+  banner-scoped(ref='formMsg')
 
-  .buttons.is-centered.c-cta
+  .buttons.is-centered
     i18n.is-primary(
       tag='button'
       type='submit'
@@ -49,6 +49,7 @@ import sbp from '~/shared/sbp.js'
 import { nonWhitespace } from '@views/utils/validators.js'
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
 import FormPassword from '@containers/forms/FormPassword.vue'
+import BannerScoped from '@components/BannerScoped.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
@@ -60,7 +61,8 @@ export default {
   ],
   components: {
     ModalTemplate,
-    FormPassword
+    FormPassword,
+    BannerScoped
   },
   data () {
     return {
@@ -68,9 +70,6 @@ export default {
         name: null,
         password: null,
         email: null
-      },
-      ephemeral: {
-        errorMsg: null
       }
     }
   },
@@ -125,10 +124,10 @@ export default {
             identityContractID: user.hash()
           })
           this.$emit('submitSucceeded')
-        } catch (ex) {
-          console.error('Signup.vue submit() error:', ex)
+        } catch (e) {
+          console.error('Signup.vue submit() error:', e)
+          this.$refs.formMsg.danger(L('Failed to signup, please try again. {codeError}', { codeError: e.message }))
           sbp('state/vuex/dispatch', 'logout')
-          this.ephemeral.errorMsg = ex.toString()
         }
       }
     }
@@ -148,20 +147,9 @@ export default {
       },
       email: {
         [L('An email is required.')]: required,
-        [L('Please enter a valid email.')]: email,
-        [L('This email is already being used.')]: value => {
-          // TODO - verify if e-mail exists
-          return true
-        }
+        [L('Please enter a valid email.')]: email
       }
     }
   }
 }
 </script>
-<style lang="scss" scoped>
-@import "@assets/style/_variables.scss";
-
-.c-cta {
-  margin-top: 1.5rem;
-}
-</style>

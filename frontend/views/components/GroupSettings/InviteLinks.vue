@@ -200,7 +200,7 @@ export default {
 .c-table {
   width: 100%;
   table-layout: fixed;
-  margin: $size-2 0;
+  margin: $size_2 0;
 
   tr {
     display: grid;
@@ -230,19 +230,19 @@ export default {
 
   .c-name {
     grid-area: name;
-    padding-right: $size-2;
+    padding-right: $size_2;
     line-height: 1.3125rem;
     align-items: center;
 
     .c-tip {
-      margin-left: $size-4 / 2;
+      margin-left: $size_4 / 2;
       line-height: 1.3125rem;
     }
   }
 
   .c-invite-link {
     grid-area: invite-link;
-    padding-right: $size-2;
+    padding-right: $size_2;
 
     &-wrapper {
       display: inherit;
@@ -284,8 +284,8 @@ export default {
     align-items: flex-start;
 
     .c-state-expire {
-      line-height: $size-3;
-      font-size: $size-5;
+      line-height: $size_3;
+      font-size: $size_5;
       color: $text-1;
 
       &.expired {
@@ -339,7 +339,7 @@ export default {
 }
 
 .c-empty-list {
-  margin: $size-2 0;
+  margin: $size_2 0;
   text-align: center;
 }
 
@@ -359,7 +359,7 @@ export default {
   width: max-content;
 
   &::after {
-    font-size: $size-5;
+    font-size: $size_5;
   }
 
   .c-rect {

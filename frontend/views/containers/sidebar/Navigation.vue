@@ -48,7 +48,7 @@ nav.c-navigation(
             data-test='createGroup'
             :aria-label='L("Add a group")'
           )
-            i.icon-plus
+            i.icon-plus.is-prefix
             i18n Add a group
 
       .c-navigation-bottom
@@ -220,7 +220,7 @@ export default {
   display: flex;
   flex-direction: column;
   margin-left: $spacer;
-  font-size: $size-5;
+  font-size: $size_5;
 
   a {
     line-height: 1.65rem;
