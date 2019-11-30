@@ -20,7 +20,7 @@
             data-test='profilePicture'
           )
         // TODO #658
-        banner-scoped(ref='pictureMsg' data-test='avatarMsg')
+        banner-scoped(ref='pictureMsg' data-test='pictureMsg' class='c-pictureMsg')
 
     section.card
       form(@submit.prevent='saveProfile')
@@ -235,6 +235,14 @@ export default {
 
   &-text {
     display: inline-block;
+  }
+}
+
+.c-pictureMsg {
+  width: 100%;
+
+  ::v-deep .c-banner {
+    margin: 0.5rem 0 $spacer*1.5;
   }
 }
 

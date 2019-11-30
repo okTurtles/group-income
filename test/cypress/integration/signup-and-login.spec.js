@@ -21,7 +21,7 @@ describe('Signup, Profile and Login', () => {
       cy.get('[data-test="profilePicture"]').upload({ fileContent, fileName: profilePicture, mimeType: 'image/png' }, { subjectType: 'input' })
     })
 
-    cy.getByDT('avatarMsg').should('contain', 'Picture updated!')
+    cy.getByDT('pictureMsg').should('contain', 'Picture updated!')
 
     cy.getByDT('displayName').clear().type('John Bot')
     cy.getByDT('bio').clear().type('Born in a test case')

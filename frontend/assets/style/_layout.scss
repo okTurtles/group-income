@@ -43,6 +43,7 @@ $bannerGeneralHeight: 2.3rem;
   align-items: center;
   justify-content: center;
   padding: $spacer-sm;
+  z-index: $zindex-banner;
 
   & ~ .l-navigation {
     height: calc(100vh - #{$bannerGeneralHeight});
@@ -54,6 +55,20 @@ $bannerGeneralHeight: 2.3rem;
 
   & ~ .l-page .p-sidebar {
     height: calc(100vh - #{$bannerGeneralHeight});
+  }
+
+  @include touch {
+    & ~ .l-modal {
+      .c-modal {
+        margin-top: $bannerGeneralHeight;
+      }
+
+      .c-modal-close {
+        top: $spacer*3;
+      }
+    }
+
+    // TODO - handle fullscreen modals
   }
 }
 
