@@ -105,6 +105,10 @@ $icons: (
   }
 }
 
+.icon-eye::before {
+  font-weight: 400; /* thinner version */
+}
+
 .icon-round {
   width: 2rem;
   height: 2rem;
