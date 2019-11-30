@@ -200,6 +200,10 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-avatar-field {
+  @include touch {
+    margin-bottom: $spacer*1.5;
+  }
+
   @include desktop {
     position: absolute;
     top: -3.5rem;
@@ -242,7 +246,11 @@ export default {
   width: 100%;
 
   ::v-deep .c-banner {
-    margin: 0.5rem 0 $spacer*1.5;
+    margin: 0 0 $spacer*1.5;
+
+    @include desktop {
+      margin: 0.5rem 0 $spacer*1.5;
+    }
   }
 }
 
