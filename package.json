@@ -72,7 +72,8 @@
             "extend",
             "content",
             "each",
-            "for"
+            "for",
+            "if"
           ]
         }
       ],
