@@ -7,7 +7,7 @@
     i18n.has-text-1.c-title(tag='h3' :args='LTags("span")') {span_}Group{_span} goal
     span.is-title-4 {{ withCurrency(graphData.groupGoal) }}
 
-  ul.c-legendList(:aria-label='L("Group pledging summary")')
+  ul.c-legendList(:aria-label='L("Group pledging summary")' data-test='groupPledgeSummary')
     graph-legend-item(
       :amount='withCurrency(graphData.pledgeTotal)'
       color='primary-solid'
@@ -30,7 +30,7 @@
       v-if='graphData.ourIncomeToReceive > 0'
       :amount='withCurrency(graphData.ourIncomeToReceive)'
       color='warning-solid'
-    ) {{ L('You will receive') }}
+    ) {{ L("You'll receive") }}
       tooltip(v-if='graphData.ourIncomeNeeded !== graphData.ourIncomeToReceive')
         i.icon-info-circle.is-suffix.has-text-primary
         template(slot='tooltip')

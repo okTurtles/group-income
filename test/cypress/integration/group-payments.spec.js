@@ -22,19 +22,29 @@ function assertNonMonetaryEditableValue (name) {
   cy.getByDT('buttonSaveNonMonetaryContribution').click()
 }
 
-function updateIncome (newIncome, needsIncome, incomeStatus) {
+function assertGraphicSummary (legendListItems) {
+  cy.getByDT('groupPledgeSummary', 'ul').within(([list]) => {
+    legendListItems.forEach((legendText, index) => {
+      cy.get(list).children().eq(index)
+        .invoke('text')
+        .should('contain', legendText)
+    })
+  })
+}
+
+function updateIncome (newIncome, needsIncome, graphicLegend, incomeStatus) {
   cy.getByDT('contributionsLink').click()
   cy.getByDT('openIncomeDetailModal').click()
   cy.getByDT(needsIncome ? 'needsIncomeRadio' : 'dontNeedsIncomeRadio').click()
   cy.getByDT('inputIncomeOrPledge').clear().type(newIncome)
+
+  assertGraphicSummary(graphicLegend)
+
   cy.getByDT('submitIncome').click()
   cy.getByDT('closeModal').should('not.exist') // make sure the modal closes.
 
-  if (needsIncome) {
-    cy.get(elReceivingFirst).should('contain', incomeStatus)
-  } else {
-    cy.get(elGivingFirst).should('contain', incomeStatus)
-  }
+  const elIncomeStatus = needsIncome ? elReceivingFirst : elGivingFirst
+  cy.get(elIncomeStatus).should('contain', incomeStatus)
 }
 
 describe('Payments', () => {
@@ -79,7 +89,19 @@ describe('Payments', () => {
     cy.getByDT('dontNeedsIncomeRadio').click()
     // Make sure the user is aksed how much he want to pledge
     cy.getByDT('introIncomeOrPledge').should('contain', 'How much do you want to pledge?')
+
+    assertGraphicSummary([
+      'Total Pledged$0',
+      'Needed Pledges$0'
+    ])
+
     cy.getByDT('inputIncomeOrPledge').type(500)
+
+    assertGraphicSummary([
+      'Total Pledged$500',
+      'Needed Pledges$0'
+    ])
+
     cy.getByDT('submitIncome').click()
     // After selecting the amount and close the modal make sure it show that no one is in need
     cy.getByDT('receivingParagraph').should('contain', 'When other members pledge a monetary or non-monetary contribution, they will appear here.')
@@ -99,6 +121,12 @@ describe('Payments', () => {
     cy.getByDT('inputIncomeOrPledge').clear().type(100)
     // After updating the income under the limit it should hide the error message
     cy.getByDT('badIncome').should('not.be.visible')
+
+    assertGraphicSummary([
+      'Total Pledged$0',
+      'Needed Pledges$100'
+    ])
+
     cy.getByDT('submitIncome').click()
     // After closing the modal it should dislay how much user need
     cy.getByDT('headerNeed').should('contain', 'You need $100')
@@ -165,7 +193,12 @@ describe('Payments', () => {
 
   it('user2 pledges $100 and sees their contributions.', () => {
     cy.giSwitchUser(`user2-${userId}`)
-    updateIncome(100, false, '$100 to Greg')
+
+    const graphicLegend = [
+      'Total Pledged$100',
+      'Needed Pledges$0'
+    ]
+    updateIncome(100, false, graphicLegend, '$100 to Greg')
 
     cy.get(elReceivingFirst)
       .should('contain', 'French classes by Greg')
@@ -184,16 +217,30 @@ describe('Payments', () => {
 
   it('user3 pledges $100 and sees who they are pledging to - $50 to user1 (Greg)', () => {
     cy.giSwitchUser(`user3-${userId}`)
-    updateIncome(100, false, '$50 to Greg')
+    const graphicLegend = [
+      'Total Pledged$200',
+      'Needed Pledges$0'
+    ]
+    updateIncome(100, false, graphicLegend, '$50 to Greg')
   })
 
-  it('user4 and user2 change their pledges to $500 each. user1 sees the receiving contributions from 3 members.', () => {
+  it('user4 and user2 increase their pledges to $500 each. user1 sees the receiving contributions from 3 members.', () => {
     cy.giSwitchUser(`user4-${userId}`)
-    updateIncome(500, false, '$71 to Greg')
+    const graphicLegend4 = [
+      'Total Pledged$700',
+      'Needed Pledges$0',
+      'Surplus$600'
+    ]
+    updateIncome(500, false, graphicLegend4, '$71 to Greg')
     addNonMonetaryContribution('Korean classes')
 
     cy.giSwitchUser(`user2-${userId}`)
-    updateIncome(500, false, '$45 to Greg')
+    const graphicLegend2 = [
+      'Total Pledged$1100',
+      'Needed Pledges$0',
+      'Surplus$1000'
+    ]
+    updateIncome(500, false, graphicLegend2, '$45 to Greg')
 
     cy.giSwitchUser(`user1-${userId}`)
 
@@ -203,14 +250,24 @@ describe('Payments', () => {
 
   it('user4 and user2 reduced income to $10 and now receive money.', () => {
     cy.giSwitchUser(`user4-${userId}`)
-    updateIncome(10, true, '$190 by Margarida and Pierre')
+    const graphicLegend4 = [
+      'Total Pledged$600',
+      'Needed Pledges$0',
+      'Surplus$310',
+      "You'll receive$190"
+    ]
+    updateIncome(10, true, graphicLegend4, '$190 by Margarida and Pierre')
 
     cy.giSwitchUser(`user2-${userId}`)
-    // NOTE: They both have the same income of $10, why user2 receives less?
-    updateIncome(10, true, '$40 by Pierre')
+    const graphicLegend2 = [
+      'Total Pledged$100',
+      'Needed Pledges$380',
+      "You'll receive$40"
+    ]
+    updateIncome(10, true, graphicLegend2, '$40 by Pierre')
   })
 
-  it('user3 receives monetary contribution from 3 members', () => {
+  it('user3 pledges to all 3 members', () => {
     cy.giSwitchUser(`user3-${userId}`)
     cy.getByDT('contributionsLink').click()
 
@@ -218,33 +275,31 @@ describe('Payments', () => {
       .should('contain', 'A total of $100 to 3 members')
   })
 
-  it('user4 sees the pledging graphic with the correct data', () => {
-    cy.giSwitchUser(`user4-${userId}`)
+  it('user1 receives part of what they need', () => {
+    cy.giSwitchUser(`user1-${userId}`)
+    cy.getByDT('contributionsLink').click()
 
-    // TODO - basic tests to cover graphic features.
+    // BUG! It should be $20, not $21. Read Notes bellow.
+    cy.get(elReceivingFirst)
+      .should('contain', '$21 by Pierre')
 
     cy.giLogout()
   })
 })
 
 /*
+NOTE: Summary of the group status so far:
 user1
   - needs $100
   - $21 by pierre
+    // BUG - Should be $20, not $21,
+    cause the max is 100 !== (40 + 40 + 21)
 user2
   - needs $190
   - $40 by pierre
 user3
-  - pledges $100
-  - to user1, user2 and user4
+  - pledges $100 to user1, user2 and user4
 user4
   - needs $190
   - $40 by pierre
-
-Graphic for user4:
-
-goal: 100 + 190 + userincomeneeded
-totalPledge: grouppledge + userpledge
-needed: total - goal
-surplus: goal - totalPledge
 */
