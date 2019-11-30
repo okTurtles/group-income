@@ -168,7 +168,7 @@ textarea,
       &:hover,
       &:focus {
         color: $primary_0;
-        background-color: $background;
+        background-color: transparent;
       }
 
       &:focus {
@@ -179,6 +179,9 @@ textarea,
   }
 
   .is-icon:not(.is-shifted) {
+    position: absolute;
+    top: 0;
+    right: 0;
     min-width: 40px;
     height: $inputHeight;
     text-align: center;
