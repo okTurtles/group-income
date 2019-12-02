@@ -89,7 +89,7 @@ export default {
   }
 
   &.back-on-mobile {
-    @include until($tablet) {
+    @include touch {
       position: relative;
       left: 0;
       top: 0;

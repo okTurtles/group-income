@@ -18,7 +18,11 @@ form {
   display: block;
   max-width: 100%;
   width: 100%;
-  margin-bottom: 1rem;
+  margin-bottom: $spacer*1.5;
+
+  &:last-of-type {
+    margin-bottom: 0;
+  }
 
   .helper {
     display: block;
@@ -138,18 +142,6 @@ textarea,
     border-right: 1px solid $general_0;
   }
 
-  .suffix {
-    padding: 0 1rem;
-    font-weight: normal;
-    font-size: 1rem;
-    align-self: center;
-    height: $inputHeight;
-    line-height: $inputHeight;
-    border-left: 1px solid $general_0;
-    white-space: nowrap;
-    color: $text_0;
-  }
-
   select:not(:first-child) {
     border-radius: 0;
     border-left: 1px solid $general_1;
@@ -160,28 +152,12 @@ textarea,
   .input {
     border: 1px solid transparent;
 
+    &:hover {
+      border-color: $primary_0;
+    }
+
     &:focus {
       box-shadow: 0 0 0 2px $primary_1;
-      border-color: $primary_0;
-
-      + label {
-        background-color: $primary_0;
-        color: #fff;
-        line-height: $inputHeight;
-        box-shadow: 0 0 0 2px $primary_1;
-        border-radius: 0 3px 3px 0;
-        position: relative;
-
-        &::before {
-          content: "";
-          background-color: $primary_0;
-          position: absolute;
-          top: 0;
-          left: -2px;
-          width: 2px;
-          height: 100%;
-        }
-      }
     }
   }
 
@@ -195,14 +171,21 @@ textarea,
     &.is-icon {
       &:hover,
       &:focus {
+        color: $primary_0;
+        background-color: transparent;
+      }
+
+      &:focus {
         box-shadow: 0 0 0 2px $primary_1;
-        background-color: $primary_0;
-        color: $white;
+        border-color: $primary_0;
       }
     }
   }
 
   .is-icon:not(.is-shifted) {
+    position: absolute;
+    top: 0;
+    right: 0;
     min-width: 40px;
     height: $inputHeight;
     text-align: center;
@@ -230,6 +213,27 @@ textarea,
         border-color: $danger_0;
       }
     }
+  }
+}
+
+.input-combo {
+  .input {
+    border-radius: $radius;
+    padding-right: 5rem; /* avg of suffix width */
+  }
+
+  .suffix {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 0 1rem;
+    font-weight: normal;
+    font-size: 1rem;
+    align-self: center;
+    height: $inputHeight;
+    line-height: $inputHeight;
+    white-space: nowrap;
+    color: $text_1;
   }
 }
 

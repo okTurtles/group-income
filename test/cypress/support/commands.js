@@ -4,6 +4,8 @@
 // https://on.cypress.io/custom-commands
 // ***********************************************
 
+import 'cypress-file-upload'
+
 /* Get element by data-test attribute and other attributes
  ex:
  cy.getByDT('login')            //  cy.get([data-test="login"])
@@ -86,18 +88,9 @@ Cypress.Commands.add('giCreateGroup', (name, {
   cy.getByDT('createGroup').click()
   cy.getByDT('groupName').type(name)
 
-  // TODO make a custom command for this
-  cy.fixture(image).then((picture) =>
-    // converting image to blob
-    Cypress.Blob.base64StringToBlob(picture, 'image/png').then((blob) => {
-      const testFile = new File([blob], 'logo.png')
-      // display property is none for input[type=file] so I force trigger it
-      cy.get('[data-test="groupPicture"]').trigger('change', {
-        force: true,
-        data: testFile
-      })
-    })
-  )
+  cy.fixture(image, 'base64').then(fileContent => {
+    cy.get('[data-test="groupPicture"]').upload({ fileContent, fileName: image, mimeType: 'image/png' }, { subjectType: 'input' })
+  })
 
   cy.getByDT('nextBtn').click()
 
