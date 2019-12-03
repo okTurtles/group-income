@@ -249,7 +249,7 @@ export default {
 
 .c-title {
   grid-area: title;
-  margin-bottom: $spacer-lg;
+  margin-bottom: $spacer*2.5;
 
   @include tablet {
     margin-bottom: $spacer*1.5;
