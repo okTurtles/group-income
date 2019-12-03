@@ -229,6 +229,7 @@ export default {
     "title title"
     "graph graph"
     "card card";
+  width: 100%;
   max-width: 55rem;
   margin: 0 auto;
 
@@ -253,6 +254,7 @@ export default {
 .c-card {
   grid-area: card;
   padding: 2.5rem;
+  align-self: flex-start;
 }
 
 .c-methods {

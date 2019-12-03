@@ -48,6 +48,7 @@ export default {
   height: 100%;
   width: 100%;
   opacity: 1;
+  background-color: $general_2;
 }
 
 .settings-container {

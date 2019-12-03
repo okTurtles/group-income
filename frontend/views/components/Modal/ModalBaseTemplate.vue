@@ -1,6 +1,7 @@
 <template lang='pug'>
   transition(name='zoom' appear @after-leave='unload')
     .modal(
+      :class='{ fullscreen }'
       data-test='modal'
       role='dialog'
       tabindex='-1'
@@ -9,10 +10,7 @@
       @close='close'
     )
       modal-close(@close='close' :fullscreen='fullscreen')
-
-      .modal-fullscreen(v-if='fullscreen')
-        slot
-      slot(v-else)
+      slot
 </template>
 
 <script>
@@ -39,16 +37,17 @@ export default {
   bottom: 0;
   right: 0;
   overflow: auto;
-}
 
-.modal-fullscreen {
-  height: 100%;
-  width: 100%;
-  background: $general_2;
-  padding: $spacer-lg $spacer;
+  &.fullscreen {
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    background: $general_2;
+    padding: $spacer-lg $spacer;
 
-  @include tablet {
-    padding: $spacer*2.5 $spacer*1.5;
+    @include tablet {
+      padding: $spacer*2.5 $spacer*1.5;
+    }
   }
 }
 

@@ -1,5 +1,5 @@
 <template lang='pug'>
-modal-base-template
+modal-base-template(:fullscreen='true')
   .steps(v-if='currentStep + 1 < config.steps.length')
     button.step(
       v-for='(step, index) in config.steps'
@@ -243,18 +243,15 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.modal {
-  flex-direction: column;
-  justify-content: top;
-  align-items: center;
-  background-color: $general_2;
-}
-
 .steps {
   width: calc(100% - 2rem);
   max-width: 34rem;
-  margin-top: 3.5rem;
+  margin-top: -1rem;
   flex-shrink: 0;
+
+  @include desktop {
+    margin-top: 1rem;
+  }
 }
 
 .wrapper {

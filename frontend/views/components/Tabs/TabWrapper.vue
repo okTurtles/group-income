@@ -141,7 +141,6 @@ $closeMobileBarBgColor: #3c3c3c;
   display: flex;
   height: 100%;
   overflow: hidden;
-  background-color: $general_2;
 
   @include desktop {
     z-index: 2;
