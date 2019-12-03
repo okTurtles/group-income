@@ -1,5 +1,5 @@
 <template lang='pug'>
-.c-gwrapper
+.c-wrapper
   pie-chart.c-chart(
     :slices='mainSlices'
     :inner-slices='innerSlices'
@@ -31,13 +31,12 @@
       :amount='withCurrency(graphData.ourIncomeToReceive)'
       color='warning-solid'
     ) {{ L("You'll receive") }}
-      tooltip(v-if='graphData.ourIncomeNeeded !== graphData.ourIncomeToReceive')
+      tooltip(
+        v-if='graphData.ourIncomeNeeded !== graphData.ourIncomeToReceive'
+        :hasTextCenter='true'
+        :text='L("Based on other members pledges, the group is not able to provide a full mincome yet.")'
+      )
         i.icon-info-circle.is-suffix.has-text-primary
-        template(slot='tooltip')
-          i18n.has-text-weight-bold.c-tooltip-title(tag='strong') Income Incomplete
-          i18n.has-text-weight-normal(
-            :args='{ amount: withCurrency(graphData.ourIncomeNeeded) }'
-          ) The group at the moment is not pledging enough to cover everyone's mincome. So you'll receive only a part instead of the {amount} you need.
 </template>
 
 <script>
@@ -68,7 +67,7 @@ export default {
       'groupSettings',
       'groupProfiles',
       'groupMembersCount',
-      'ourContractId'
+      'ourIdentityContractId'
     ]),
     graphData () {
       const mincome = this.groupSettings.mincomeAmount
@@ -79,10 +78,10 @@ export default {
       let othersPledgesAmount = 0
       let othersPledgesCount = 0
 
-      Object.keys(this.groupProfiles).forEach(username => {
+      for (const username in this.groupProfiles) {
         const { incomeDetailsType, contractID, ...profile } = this.groupProfiles[username]
 
-        if (contractID === this.ourContractId) { return }
+        if (contractID === this.ourIdentityContractId) { continue }
 
         const amount = profile[incomeDetailsType]
 
@@ -92,7 +91,9 @@ export default {
           othersPledgesAmount += amount
           othersPledgesCount += 1
         }
-      })
+      }
+
+      console.log('hum.......')
 
       const ourIncomeNeeded = doWeNeedPledge ? mincome - ourIncomeAmount : null
       const pledgeTotal = othersPledgesAmount + ourPledgeAmount
@@ -124,14 +125,19 @@ export default {
     },
     mainSlices () {
       const { groupGoal, othersPledgesAmount, ourPledgeAmount, pledgeTotal, surplus } = this.graphData
-      const slices = []
 
       if (groupGoal === 0) {
-        return slices
+        return pledgeTotal > 0 ? [{
+          id: 'goal_zero',
+          percent: 1,
+          color: 'primary'
+        }] : []
       }
 
       // Note: surplus is added on the innerSlices, so we need to substract its part from the pledges.
       // To be fair, we remove the equivalent percentage of each pledge part (others and ours)
+
+      const slices = []
 
       if (othersPledgesAmount > 0) {
         const pledgePerc = (othersPledgesAmount / pledgeTotal).toFixed(2)
@@ -140,7 +146,7 @@ export default {
         slices.push({
           id: 'othersPledgesAmount',
           percent: this.decimalSlice(othersPledgesAmount - surplusToBeRemoved),
-          color: 'pledge'
+          color: 'primary'
         })
       }
 
@@ -151,7 +157,7 @@ export default {
         slices.push({
           id: 'ourPledgeAmount',
           percent: this.decimalSlice(ourPledgeAmount - surplusToBeRemoved),
-          color: 'pledge'
+          color: 'primary'
         })
       }
 
@@ -165,7 +171,7 @@ export default {
         slices.push({
           id: 'ourIncomeToReceive',
           percent: this.decimalSlice(ourIncomeToReceive),
-          color: 'income'
+          color: 'warning'
         })
       }
 
@@ -173,7 +179,7 @@ export default {
         slices.push({
           id: 'surplus',
           percent: this.decimalSlice(surplus),
-          color: 'surplus'
+          color: 'success'
         })
       }
 
@@ -198,7 +204,7 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.c-gwrapper {
+.c-wrapper {
   position: relative;
   display: flex;
   align-items: center;
@@ -244,9 +250,5 @@ export default {
     margin: $spacer*1.5 0 0 0;
     width: 100%;
   }
-}
-
-.c-tooltip-title {
-  display: block;
 }
 </style>

@@ -4,25 +4,25 @@
     path(
       v-for='(slice, index) in slices'
       :key='`slice-${index}`'
-      :data-id='slice.id'
+      :class='sliceClasses(slice, false)'
       :d='sliceData(slice, index)'
-      :class='`c-slice c-has-fill-${slice.color}`'
+      :data-id='slice.id'
       @mouseenter='(e) => showLabel(e, index)'
       @mouseleave='(e) => hideLabel(e, index)'
     )
     path(
       v-if='missingSlice'
+      :class='sliceClasses(missingSlice, false)'
+      :d='missingSlice.data'
       data-id='_missingSlice_'
-      :d='missingSlice'
-      :class='`c-slice c-has-fill-needed`'
     )
     circle.c-pie-donut(r='39%')
     path(
       v-for='(slice, index) in innerSlices'
       :key='`inner-slice-${index}`'
-      :data-id='slice.id'
+      :class='sliceClasses(slice, true)'
       :d='sliceData(slice, index)'
-      :class='`c-slice c-inner c-has-fill-${slice.color}`'
+      :data-id='slice.id'
     )
     circle.c-pie-donut(r='34%')
 
@@ -60,16 +60,25 @@ export default {
       // When all slices together don't reach 100%, add a last light slice to complete the circle
       const index = this.slices.length
       const totalPercent = this.getStartPercent(index)
+      const percent = 1 - totalPercent
 
-      if (totalPercent === 1) {
-        return false
+      if (percent === 0) { return false }
+
+      return {
+        data: this.sliceData({ percent }, index),
+        color: 'blank',
+        percent
       }
-
-      const slice = { percent: 1 - totalPercent }
-      return this.sliceData(slice, index)
     }
   },
   methods: {
+    sliceClasses (slice, isInner) {
+      return {
+        [`c-slice u-has-fill-${slice.color}`]: true,
+        'c-inner': isInner,
+        'c-full': slice.percent === 1
+      }
+    },
     // Apply the same method to build any kind of slice.
     // Then use CSS scale() to decrease the innerSlices's size.
     sliceData (slice, index) {
@@ -132,6 +141,10 @@ $graphBg: $general_2;
   stroke: $graphBg;
   stroke-width: 0.03; // small unit because this SVG is a 1x1 grid system
 
+  &.c-full {
+    stroke-width: 0;
+  }
+
   &.c-inner {
     transform: scale(0.75);
   }
@@ -149,19 +162,5 @@ $graphBg: $general_2;
   transform: translate(-50%, -50%);
   text-align: center;
   line-height: 1.2;
-}
-
-// Global Classes for SVG fills
-$fills: (
-  pledge: $primary_0,
-  needed: $background,
-  surplus: $success_0,
-  income: $warning_0,
-);
-
-@each $class, $color in $fills {
-  .c-has-fill-#{$class} {
-    fill: $color;
-  }
 }
 </style>

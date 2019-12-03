@@ -10,7 +10,7 @@ span.c-twrapper(
   slot
   .c-tooltip(
     :style='stylesPosition'
-    :class='isTextCenter ? "has-text-center" : ""'
+    :class='hasTextCenter ? "has-text-center" : ""'
     v-if='isActive || shouldShow'
     v-append-to-body=''
   )
@@ -32,7 +32,7 @@ export default {
     text: String,
     // Force to show tooltip manually
     shouldShow: Boolean,
-    isTextCenter: Boolean,
+    hasTextCenter: Boolean,
     direction: {
       type: String,
       validator: (value) => ['bottom', 'bottom-end', 'right', 'right-start', 'top'].includes(value),

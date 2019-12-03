@@ -45,3 +45,17 @@
   clip: rect(0, 0, 0, 0);
   border: 0;
 }
+
+// Global Classes for SVG fills
+$fills: (
+  primary: $primary_0,
+  blank: $background,
+  success: $success_0,
+  warning: $warning_0,
+);
+
+@each $class, $color in $fills {
+  .u-has-fill-#{$class} {
+    fill: $color;
+  }
+}

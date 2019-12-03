@@ -248,7 +248,11 @@ export default {
 
 .c-title {
   grid-area: title;
-  margin-bottom: $spacer*1.5;
+  margin-bottom: $spacer-lg;
+
+  @include tablet {
+    margin-bottom: $spacer*1.5;
+  }
 }
 
 .c-card {

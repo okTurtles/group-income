@@ -12,41 +12,6 @@ function getProposalBoxes () {
   return cy.getByDT('proposalsWidget', 'ul').children()
 }
 
-<<<<<<< HEAD
-function setDisplayName (name) {
-  cy.getByDT('settingsBtn').click()
-  cy.getByDT('displayName').clear().type(name)
-  cy.getByDT('saveAccount').click()
-  cy.getByDT('profileMsg').should('contain', 'Your changes were saved!')
-  cy.closeModal()
-}
-
-function addNonMonetaryContribution (name) {
-  cy.getByDT('addNonMonetaryContribution', 'button').click()
-  cy.getByDT('inputNonMonetaryContribution').type(name)
-  cy.getByDT('buttonAddNonMonetaryContribution', 'button').click()
-}
-
-function editNonMonetaryContribution (name, check) {
-  cy.getByDT('buttonEditNonMonetaryContribution').click()
-  if (check) {
-    cy.getByDT('inputNonMonetaryContribution').should('have.value', name)
-  } else {
-    cy.getByDT('inputNonMonetaryContribution').clear().type(name)
-  }
-  cy.getByDT('buttonSaveNonMonetaryContribution').click()
-}
-
-function updateIncome (newIcome, needIcome) {
-  cy.getByDT('contributionsLink').click()
-  cy.getByDT('openIncomeDetailModal').click()
-  cy.getByDT(needIcome ? 'needsIncomeRadio' : 'dontNeedsIncomeRadio').click()
-  cy.getByDT('inputIncomeOrPledge').clear().type(newIcome)
-  cy.getByDT('submitIncome').click()
-}
-
-=======
->>>>>>> incomeDetails: connect real data to graphic +  write cypress tests
 describe('Proposals - Add members', () => {
   const invitationLinks = {}
 
