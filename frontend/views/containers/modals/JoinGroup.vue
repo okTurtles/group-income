@@ -107,7 +107,11 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-title {
-  margin-top: 15vh;
+  margin-top: 5rem;
+
+  @include desktop {
+    margin-top: 15vh;
+  }
 }
 
 .wrapper {

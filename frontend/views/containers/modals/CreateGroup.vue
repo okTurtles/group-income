@@ -246,12 +246,8 @@ export default {
 .steps {
   width: calc(100% - 2rem);
   max-width: 34rem;
-  margin-top: -1rem;
+  margin-top: 3.5rem;
   flex-shrink: 0;
-
-  @include desktop {
-    margin-top: 1rem;
-  }
 }
 
 .wrapper {

@@ -85,7 +85,7 @@ Cypress.Commands.add('giSetDisplayName', (name) => {
   cy.getByDT('settingsBtn').click()
   cy.getByDT('displayName').clear().type(name)
   cy.getByDT('saveAccount').click()
-  cy.getByDT('profileSaveSuccess').should('contain', 'Profile saved successfully!')
+  cy.getByDT('profileMsg').should('contain', 'Your changes were saved!')
   cy.closeModal()
 })
 

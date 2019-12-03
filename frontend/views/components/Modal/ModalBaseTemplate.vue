@@ -43,10 +43,10 @@ export default {
     justify-content: flex-start;
     align-items: center;
     background: $general_2;
-    padding: $spacer-lg $spacer;
+    padding: 0 $spacer;
 
     @include tablet {
-      padding: $spacer*2.5 $spacer*1.5;
+      padding: 0 $spacer*1.5;
     }
   }
 }

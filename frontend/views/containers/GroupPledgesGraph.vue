@@ -44,6 +44,7 @@ import { mapGetters } from 'vuex'
 import { PieChart, GraphLegendItem } from '@components/Graphs/index.js'
 import Tooltip from '@components/Tooltip.vue'
 import currencies from '@view-utils/currencies.js'
+import distributeIncome from '@utils/distribution/mincome-proportional.js'
 
 export default {
   name: 'GroupPledgesGraph',
@@ -67,49 +68,52 @@ export default {
       'groupSettings',
       'groupProfiles',
       'groupMembersCount',
-      'ourIdentityContractId'
+      'ourIdentityContractId',
+      'ourUsername'
     ]),
+    doWePledge () {
+      return this.type === 'pledgeAmount'
+    },
     graphData () {
       const mincome = this.groupSettings.mincomeAmount
-      const ourPledgeAmount = this.type === 'pledgeAmount' && this.amount >= 0 && this.amount
-      const ourIncomeAmount = this.type === 'incomeAmount' && this.amount < mincome && this.amount
-      const doWeNeedPledge = typeof ourIncomeAmount === 'number'
+      // NOTE: validate this.amount to avoid displyaing negative values in the graph
+      const ourPledgeAmount = this.doWePledge && this.amount >= 0 && this.amount
+      const ourIncomeAmount = !this.doWePledge && this.amount < mincome && this.amount
+      const incomeDistribution = []
       let othersIncomeNeeded = 0
       let othersPledgesAmount = 0
-      let othersPledgesCount = 0
 
       for (const username in this.groupProfiles) {
         const { incomeDetailsType, contractID, ...profile } = this.groupProfiles[username]
-
         if (contractID === this.ourIdentityContractId) { continue }
 
         const amount = profile[incomeDetailsType]
+        const doesNeedPledge = incomeDetailsType === 'incomeAmount'
+        const adjustment = doesNeedPledge ? 0 : mincome
+        const adjustedAmount = adjustment + profile[incomeDetailsType]
 
-        if (incomeDetailsType === 'incomeAmount') {
+        incomeDistribution.push({ name: username, amount: adjustedAmount })
+
+        if (doesNeedPledge) {
           othersIncomeNeeded += mincome - amount
         } else if (incomeDetailsType === 'pledgeAmount') {
           othersPledgesAmount += amount
-          othersPledgesCount += 1
         }
       }
 
-      console.log('hum.......')
-
-      const ourIncomeNeeded = doWeNeedPledge ? mincome - ourIncomeAmount : null
+      const ourIncomeNeeded = this.doWePledge ? null : mincome - ourIncomeAmount
       const pledgeTotal = othersPledgesAmount + ourPledgeAmount
       const groupGoal = othersIncomeNeeded + ourIncomeNeeded
-      const neededPledges = groupGoal - pledgeTotal
-      const surplus = pledgeTotal - othersIncomeNeeded - ourIncomeNeeded
+      const neededPledges = Math.max(0, groupGoal - pledgeTotal)
+      const surplus = Math.max(0, pledgeTotal - othersIncomeNeeded - ourIncomeNeeded)
+      let ourIncomeToReceive = ourIncomeNeeded
 
-      let ourIncomeToReceive
       if (neededPledges > 0) {
-        // TODO - get real income to receive based on distribution algorithm
-        const membersNeedingPledges = this.groupMembersCount - othersPledgesCount
-        const avgNeededPledges = neededPledges / membersNeedingPledges
-        const avgMembersNeedingPledges = groupGoal / membersNeedingPledges
-        ourIncomeToReceive = +(ourIncomeNeeded - (ourIncomeNeeded * avgNeededPledges / avgMembersNeedingPledges)).toFixed(0)
-      } else {
-        ourIncomeToReceive = doWeNeedPledge ? ourIncomeNeeded : null
+        incomeDistribution.push({ name: this.ourUsername, amount: ourIncomeAmount })
+
+        ourIncomeToReceive = distributeIncome(incomeDistribution, mincome)
+          .filter(i => i.to === this.ourUsername)
+          .reduce((acc, cur) => cur.amount + acc, 0)
       }
 
       return {
@@ -119,8 +123,8 @@ export default {
         ourIncomeToReceive,
         pledgeTotal,
         groupGoal,
-        neededPledges: neededPledges > 0 ? neededPledges : 0,
-        surplus: surplus > 0 ? surplus : 0
+        neededPledges,
+        surplus
       }
     },
     mainSlices () {
@@ -165,25 +169,24 @@ export default {
     },
     innerSlices () {
       const { ourIncomeToReceive, surplus } = this.graphData
-      const slices = []
 
       if (ourIncomeToReceive > 0) {
-        slices.push({
+        return [{
           id: 'ourIncomeToReceive',
           percent: this.decimalSlice(ourIncomeToReceive),
           color: 'warning'
-        })
+        }]
       }
 
       if (surplus > 0) {
-        slices.push({
+        return [{
           id: 'surplus',
           percent: this.decimalSlice(surplus),
           color: 'success'
-        })
+        }]
       }
 
-      return slices
+      return []
     }
   },
   methods: {

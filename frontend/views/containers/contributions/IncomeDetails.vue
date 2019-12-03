@@ -231,7 +231,7 @@ export default {
     "card card";
   width: 100%;
   max-width: 55rem;
-  margin: 0 auto;
+  margin-top: $spacer*1.5;
 
   @include tablet {
     grid-template-columns: auto 12rem;
@@ -239,6 +239,7 @@ export default {
     grid-template-areas:
       "title title"
       "card graph";
+    margin-top: $spacer*2.5;
   }
 
   @include desktop {

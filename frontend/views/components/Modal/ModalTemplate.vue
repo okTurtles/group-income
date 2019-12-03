@@ -93,7 +93,10 @@ export default {
   justify-content: center;
   align-items: flex-start;
   display: flex;
+}
 
+.c-modal-header,
+.c-modal-body {
   @include tablet {
     align-items: center;
   }
