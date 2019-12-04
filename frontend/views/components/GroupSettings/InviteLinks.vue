@@ -190,11 +190,14 @@ export default {
     }
   },
   computed: {
-    ...mapGetters(['currentGroupState']),
+    ...mapGetters(['currentGroupState', 'ourUsername']),
     ...mapState(['currentGroupId']),
     invitesToShow () {
       const { invites } = this.currentGroupState
-      const invitesList = Object.values(invites).map(this.mapInvite)
+      console.log('raw invites, username: ', invites, this.ourUsername)
+      const invitesList = Object.values(invites)
+        .filter(invite => invite.creator === INVITE_INITIAL_CREATOR || invite.creator === this.ourUsername)
+        .map(this.mapInvite)
       const options = {
         Active: () => invitesList.filter(invite => invite.status.isActive),
         All: () => invitesList
