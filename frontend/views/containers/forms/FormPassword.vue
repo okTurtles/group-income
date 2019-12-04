@@ -1,32 +1,32 @@
 <template lang='pug'>
 label.field
   .label(v-if='label') {{ label }}
-  .input-combo
+  .input-combo(
+    v-error:[name]='{ attrs: { "data-test": "badPassword" }}'
+  )
     input.input(
       :type='isLock ? "password" : "text"'
-      :id='name'
-      :class='[{error: v[name].$error}, size]'
-      :name='name'
+      :class='[{error: $v.form[name].$error}, size]'
       :placeholder='showPlaceholder ? name : ""'
+      :name='name'
       :data-test='name'
-      v-model='value[name]'
-      @input='v[name].$touch()'
+      v-model='$v.form[name].$model'
+      @input='debounceField("password")'
+      @blur='updateField("password")'
     )
     button.is-icon(
       type='button'
       v-if='hasIconRight'
+      :aria-label='L("Toggle password visibility")'
+      :aria-pressed='!isLock'
       @click.prevent='isLock = !isLock'
     )
       i(:class='isLock ? "icon-eye" : "icon-eye-slash"')
-
-  i18n.error(
-    tag='p'
-    v-show='v[name].$error'
-    data-test='badPassword'
-  ) {{ v[name].$error }}
 </template>
 
 <script>
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+
 export default {
   name: 'FormPassword',
   data () {
@@ -34,6 +34,7 @@ export default {
       isLock: true
     }
   },
+  mixins: [validationsDebouncedMixins],
   props: {
     name: {
       type: String,
@@ -44,11 +45,7 @@ export default {
       type: String,
       required: false
     },
-    value: {
-      type: Object,
-      required: true
-    },
-    v: {
+    $v: {
       type: Object,
       required: true
     },
@@ -71,11 +68,6 @@ export default {
   },
   created () {
     this.isLock = !this.showPassword
-  },
-  watch: {
-    value () {
-      this.$emit('input', this.value)
-    }
   }
 }
 </script>

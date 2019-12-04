@@ -1,7 +1,11 @@
 <template lang='pug'>
-button.c-toggle.is-unstyled(@click='$emit("toggle")')
-  i.icon-bars(v-if='element === "navigation"' aria-label='Navigation - Popup button')
-  i.icon-info(v-else aria-label='Sidebar - Popup button')
+button.c-toggle.is-unstyled(
+  :class='element'
+  @click='$emit("toggle")'
+  :aria-label='L("Toggle navigation")'
+)
+  i.icon-bars(v-if='element === "navigation"')
+  i.icon-info(v-else-if='element === "sidebar"')
 </template>
 
 <script>
@@ -10,7 +14,8 @@ export default {
   props: {
     element: {
       type: String,
-      default: 'navigation'
+      validator: (value) => ['navigation', 'sidebar'].includes(value),
+      required: true
     }
   }
 }
@@ -20,36 +25,74 @@ export default {
 @import "@assets/style/_mixins.scss";
 
 $speed: 300ms;
+$iconSize: 2.75rem;
+
 .c-toggle {
   @extend %reset-button;
+  height: $spacer-xl;
   position: absolute;
   top: 0;
-  padding: $spacer*1.1 0 $spacer;
-  width: 2.8rem;
-  text-align: left;
+  padding: $spacer-sm 0;
+  width: $spacer-lg + $iconSize; // gap on the edge
   background-color: transparent;
   transition: height 1ms $speed, width 1ms $speed, background $speed/2;
   overflow: hidden;
   color: $text_0;
 
-  .icon-bars {
-    margin-left: $spacer;
+  // Similar to .button.is-icon but adapted to a "corner" button
+  &:hover,
+  &:focus {
+    .icon-bars,
+    .icon-info {
+      background-color: $general_1;
+    }
+  }
+
+  &:focus {
+    .icon-bars,
+    .icon-info {
+      box-shadow: 0 0 0 2px #{$primary_1};
+    }
+  }
+
+  &.navigation {
+    text-align: right;
+  }
+
+  &.sidebar {
+    text-align: left;
+  }
+
+  .icon-bars,
+  .icon-info {
+    border-radius: 50%;
+    width: $iconSize;
+    height: $iconSize;
+    text-align: center;
+    line-height: $iconSize;
     transition: opacity $speed/5 $speed;
-    // TODO/OPTIMIZE review this toogle appearance
   }
 
   .is-active & {
     background-color: rgba(0, 0, 0, 0.7);
     height: 100vh;
-    width: 200vh;
+    width: 200vw;
     top: 0;
     transition: height 1ms 1ms, width 1ms 1ms, background $speed/2;
 
-    .icon-ellipsis-v,
+    .icon-info,
     .icon-bars {
       transition: opacity 1ms 1ms;
       opacity: 0;
     }
+  }
+
+  @include tablet {
+    width: $spacer*3 + $iconSize;
+  }
+
+  @include desktop {
+    display: none;
   }
 }
 </style>

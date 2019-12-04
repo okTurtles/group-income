@@ -1,6 +1,6 @@
 <template lang='pug'>
 .wrapper(data-test='rulesStep')
-  i18n.steps-title(tag='h4') 3. Voting Rules
+  i18n.is-title-4.steps-title(tag='h4') 3. Voting Rules
 
   .card
     i18n.label(tag='label') What percentage approval is necessary to adjust the group rules?
@@ -67,7 +67,7 @@
         i18n.subtitle(tag='p') Remove Member
 
     transition(name='slidedown')
-      message(
+      banner-simple(
         v-if='!superMajority'
         severity='warning'
       )
@@ -84,7 +84,7 @@
 <script>
 import { toPercent } from '@view-utils/filters.js'
 import { CircleSlider } from '@components/CircularSlider/index.js'
-import Message from '../Message.vue'
+import BannerSimple from '@components/BannerSimple.vue'
 import { mapGetters } from 'vuex'
 
 const SUPERMAJORITY = 0.67
@@ -93,18 +93,18 @@ export default {
   name: 'GroupRules',
   props: {
     group: { type: Object },
-    v: { type: Object }
+    $v: { type: Object }
   },
   components: {
     CircleSlider,
-    Message
+    BannerSimple
   },
   filters: {
     toPercent
   },
   methods: {
     update (prop, value) {
-      this.v[prop].$touch()
+      this.$v.form[prop].$touch()
       this.$emit('input', {
         data: {
           [prop]: value
@@ -149,7 +149,7 @@ export default {
   position: relative;
   width: 9.8rem;
   height: 9.8rem;
-  margin: 40px auto;
+  margin: $spacer auto;
   text-align: center;
   display: flex;
   flex-direction: column;

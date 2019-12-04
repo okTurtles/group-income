@@ -1,6 +1,6 @@
 <template lang='pug'>
 .wrapper
-  i18n.steps-title(tag='h4') 2. Group Purpose
+  i18n.is-title-4.steps-title(tag='h4') 2. Group Purpose
 
   .card
     i18n.label(tag='label') How would you describe your group?
@@ -10,7 +10,7 @@
       ref='purpose'
       :placeholder='L("Group Purpose")'
       maxlength='500'
-      :class='{ error: v.sharedValues.$error }'
+      :class='{ error: $v.form.sharedValues.$error }'
       :value='group.sharedValues'
       @input='update'
     )
@@ -22,14 +22,14 @@ export default {
   name: 'GroupPurpose',
   props: {
     group: { type: Object },
-    v: { type: Object }
+    $v: { type: Object }
   },
   mounted () {
     this.$refs.purpose.focus()
   },
   methods: {
     update (e) {
-      this.v.sharedValues.$touch()
+      this.$v.form.sharedValues.$touch()
       this.$emit('input', {
         data: {
           sharedValues: e.target.value

@@ -72,7 +72,8 @@
             "extend",
             "content",
             "each",
-            "for"
+            "for",
+            "if"
           ]
         }
       ],
@@ -118,6 +119,7 @@
     "vue-slider-component": "3.0.41",
     "vuelidate": "0.7.4",
     "vuex": "3.1.1",
+    "wicg-inert": "3.0.0",
     "ws": "7.2.0"
   },
   "devDependencies": {
@@ -137,6 +139,7 @@
     "cheerio": "1.0.0-rc.3",
     "chokidar": "3.2.3",
     "cypress": "3.5.0",
+    "cypress-file-upload": "3.5.0",
     "eslint": "6.6.0",
     "eslint-config-standard": "14.1.0",
     "eslint-plugin-cypress": "2.7.0",

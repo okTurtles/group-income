@@ -2,7 +2,7 @@
 li.c-wrapper
   user-image.c-avatar(:username='proposal.meta.username')
   .c-header
-    h4.c-header-title(data-test='title' v-html='title')
+    h4.is-title-4.c-header-title(data-test='title' v-html='title')
     span.has-text-1 {{ humanDate }}
   .c-main
     ul
@@ -23,6 +23,7 @@ import L from '@view-utils/translations.js'
 import UserImage from '@containers/UserImage.vue'
 import ProposalItem from './ProposalItem.vue'
 import { STATUS_OPEN } from '@model/contracts/voting/proposals.js'
+import { TABLET } from '@view-utils/breakpoints.js'
 
 export default {
   name: 'ProposalBox',
@@ -32,7 +33,7 @@ export default {
   data () {
     return {
       config: {
-        reasonMaxLength: window.innerWidth < 769 ? 50 : 170
+        reasonMaxLength: window.innerWidth < TABLET ? 50 : 170
       },
       ephemeral: {
         isReasonHidden: true

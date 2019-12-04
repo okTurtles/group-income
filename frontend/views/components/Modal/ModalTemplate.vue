@@ -19,7 +19,7 @@
           modal-close(@close='close' :back-on-mobile='backOnMobile')
           h2.subtitle(v-if='$scopedSlots.subtitle')
             slot(name='subtitle')
-          h1.title(v-if='$scopedSlots.title')
+          h1.is-title-1(v-if='$scopedSlots.title')
             slot(name='title')
 
         section.c-modal-body
@@ -93,6 +93,7 @@ export default {
   justify-content: center;
   align-items: flex-start;
   display: flex;
+
   @include tablet {
     align-items: center;
   }
@@ -107,7 +108,6 @@ export default {
   @include tablet {
     max-width: 534px;
   }
-
   @include desktop {
     max-width: 400px;
   }
@@ -129,6 +129,7 @@ export default {
 
   &.has-subtitle {
     min-height: 5.625rem;
+
     @include tablet {
       min-height: 6.625rem;
     }
@@ -144,7 +145,7 @@ export default {
 
 .is-left-aligned {
   .c-modal-header {
-    @include until($tablet) {
+    @include touch {
       flex-direction: row;
       justify-content: flex-start;
       align-items: center;
@@ -189,24 +190,6 @@ export default {
   }
 }
 
-// TODO: check if that's generic
-.title {
-  font-size: $size-3;
-
-  @include tablet {
-    font-size: $size-2;
-  }
-
-  @include desktop {
-    font-size: $size-1;
-  }
-}
-
-.subtitle,
-.title {
-  margin: 0;
-}
-
 .c-modal-close {
   background-color: #fff;
 }
@@ -217,16 +200,14 @@ export default {
     background-color: #fff;
   }
 
-  .c-modal-header{
+  .c-modal-header {
     background-color: #f5f5f5;
   }
 
   .c-modal-body {
     margin-top: $spacer-lg;
   }
-}
 
-.has-background {
   .c-modal-footer {
     background-color: #f5f5f5;
     margin: $spacer;
@@ -247,7 +228,7 @@ export default {
       max-width: calc(400px + 2rem);
       align-self: center;
 
-      @include tablet {
+      @include desktop {
         text-align: center;
       }
     }

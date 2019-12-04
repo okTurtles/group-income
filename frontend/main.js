@@ -14,6 +14,7 @@ import store from './model/state.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
 import { LOGIN, LOGOUT, CONTRACT_IS_SYNCING } from './utils/events.js'
 import './utils/lazyLoadedView.js'
+import BannerGeneral from './views/components/BannerGeneral.vue'
 import Navigation from './views/containers/sidebar/Navigation.vue'
 import AppStyles from './views/components/AppStyles.vue'
 import Modal from './views/components/Modal/Modal.vue'
@@ -21,6 +22,7 @@ import './views/utils/translations.js'
 import './views/utils/vFocus.js'
 import './views/utils/vError.js'
 import './views/utils/vStyle.js'
+import 'wicg-inert'
 
 console.log('NODE_ENV:', process.env.NODE_ENV)
 
@@ -80,6 +82,7 @@ async function startApp () {
     router: router,
     components: {
       AppStyles,
+      BannerGeneral,
       Navigation,
       Modal
     },
@@ -111,6 +114,11 @@ async function startApp () {
         this.ephemeral.finishedLogin = 'no'
         router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
       })
+
+      // TODO - Ready to receive real information
+      // setTimeout(() => {
+      //   this.$refs.bannerGeneral.show(this.L('Trying to reconnect...'), 'wifi')
+      // }, 2500)
     },
     computed: {
       showNav () {

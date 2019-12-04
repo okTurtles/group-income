@@ -5,7 +5,7 @@
       @click='open = false'
     )
       .tab-nav-header
-        i18n.menu-title(tag='h2') Settings
+        i18n.is-title-2.menu-title(tag='h2') Settings
 
       .tab-nav-list(
         v-for='(tabItem, index) in tabNav'
@@ -143,7 +143,7 @@ $closeMobileBarBgColor: #3c3c3c;
   overflow: hidden;
   background-color: $general_2;
 
-  @include tablet {
+  @include desktop {
     z-index: 2;
   }
 }
@@ -155,10 +155,14 @@ $closeMobileBarBgColor: #3c3c3c;
   align-items: center;
   position: relative;
   width: 100%;
-  height: 4.75rem;
+  min-height: 4.75rem;
   background-color: $background;
 
   @include tablet {
+    min-height: 5.75rem;
+  }
+
+  @include desktop {
     display: none;
   }
 }
@@ -177,15 +181,11 @@ $closeMobileBarBgColor: #3c3c3c;
   font-family: "Poppins";
   background-color: $general_2;
 
-  @include tablet {
+  @include desktop {
     position: relative;
     align-items: flex-end;
     width: 35%;
     transform: translateX(0);
-  }
-
-  @media screen and (min-width: 769px) and (max-width: 900px) {
-    width: 200px;
   }
 }
 
@@ -195,7 +195,7 @@ $closeMobileBarBgColor: #3c3c3c;
   text-transform: uppercase;
   margin-bottom: $spacer-sm;
 
-  @include tablet {
+  @include desktop {
     letter-spacing: 0.1px;
   }
 }
@@ -216,14 +216,14 @@ $closeMobileBarBgColor: #3c3c3c;
   cursor: pointer;
   transition: background-color 150ms cubic-bezier(0.4, 0.25, 0.3, 1);
 
-  @include tablet {
+  @include desktop {
     margin-right: 4px;
   }
 }
 
 .c-icons {
   color: $text_1;
-  @include tablet {
+  @include desktop {
     display: none;
   }
 }
@@ -236,7 +236,7 @@ $closeMobileBarBgColor: #3c3c3c;
   padding-top: 1.5rem;
   padding-bottom: 6px;
 
-  @include tablet {
+  @include desktop {
     width: 183px;
     padding-bottom: 0;
   }
@@ -251,7 +251,7 @@ $closeMobileBarBgColor: #3c3c3c;
 }
 
 .tab-active {
-  @include tablet {
+  @include desktop {
     background-color: $background_0;
     font-weight: bold;
   }
@@ -281,7 +281,7 @@ $closeMobileBarBgColor: #3c3c3c;
   .tab-section {
     transform: translateX(10%);
 
-    @include tablet {
+    @include desktop {
       transform: translateX(0);
     }
   }

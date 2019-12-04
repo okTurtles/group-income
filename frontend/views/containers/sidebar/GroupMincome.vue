@@ -1,8 +1,8 @@
 <template lang='pug'>
 div(data-test='groupMincome')
-  i18n.title.is-4(tag='h4') Minimum Income
+  i18n.is-title-4(tag='h4') Minimum Income
 
-  p.title.is-2.income(data-test='minIncome') {{ groupMincomeFormatted }}
+  p.is-title-2.income(data-test='minIncome') {{ groupMincomeFormatted }}
 
   i18n.link(
     tag='button'

@@ -45,7 +45,7 @@ button,
   color: $background_0;
   transition: box-shadow 150ms ease-in;
   white-space: nowrap;
-  font-size: $size-4;
+  font-size: $size_4;
   outline: none;
 
   @include buttonState($primary_0_1, $primary_1);
@@ -63,10 +63,6 @@ button,
     @include buttonState($danger_0_1, $danger_1);
   }
 
-  [class^="icon-"]:last-child {
-    margin-left: 6px;
-  }
-
   &.is-small {
     min-height: 1.688rem;
     padding-left: 1rem;
@@ -74,10 +70,6 @@ button,
     padding-bottom: 0;
     font-size: 12px;
     line-height: 12px;
-
-    [class^="icon-"] {
-      margin-right: $spacer-sm;
-    }
   }
 
   &.is-icon,
@@ -92,10 +84,6 @@ button,
     align-items: center;
     color: $text_0;
     border-radius: 50%;
-
-    [class^="icon-"]:last-child {
-      margin-left: 0;
-    }
 
     @media (hover: hover) {
       &:hover,
@@ -178,7 +166,7 @@ button,
 
 .buttons {
   position: relative;
-  margin-top: $spacer;
+  margin-top: $spacer*1.5;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -193,8 +181,6 @@ button,
 
   button,
   .button {
-    margin-top: $spacer-sm;
-
     &:not(:last-child) {
       margin-right: $spacer-sm;
     }

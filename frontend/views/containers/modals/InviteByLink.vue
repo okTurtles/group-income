@@ -4,7 +4,7 @@ modal-template(ref='modal')
     i18n Add new members
 
   .c-container
-    i18n.title.is-4(tag='h3') Share this link to grant access to your group.
+    i18n.is-title-4(tag='h3') Share this link to grant access to your group.
     i18n.has-text-1(tag='p') After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!
     .c-link
       a.link.has-icon(:href='link' target='_blank' data-test='invitationLink')
@@ -59,7 +59,7 @@ export default {
 .c-link {
   max-width: 20rem;
   word-break: break-all;
-  margin: $spacer-lg auto $spacer-sm;
+  margin: $spacer auto;
 
   .link {
     display: inline;
@@ -67,6 +67,6 @@ export default {
 }
 
 .c-cta {
-  margin-top: $spacer*3;
+  margin-top: $spacer-lg;
 }
 </style>

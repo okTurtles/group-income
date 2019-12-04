@@ -1,44 +1,39 @@
 <template lang='pug'>
 form(
   novalidate
-  ref='form'
   name='formData'
   data-test='signup'
   @submit.prevent='signup'
 )
   label.field
     i18n.label Username
-    input.input#name(
+    input.input(
       :class='{error: $v.form.name.$error}'
       name='name'
-      @input='debounceName'
-      ref='username'
+      @input='e => debounceValidation("name", e.target.value)'
+      @blur='e => updateField("name", e.target.value)'
       data-test='signName'
-      v-error:name='{ tag: "p", attrs: { "data-test": "badUsername" } }'
+      v-error:name='{ attrs: { "data-test": "badUsername" } }'
     )
 
   label.field
     i18n.label Email
-    input.input#email(
+    input.input(
       :class='{error: $v.form.email.$error}'
       name='email'
-      v-model='$v.form.email.$model'
       type='email'
+      v-model='form.email'
+      @input='debounceField("email")'
+      @blur='updateField("email")'
       data-test='signEmail'
-      v-error:email='{ tag: "p", attrs: { "data-test": "badEmail" } }'
+      v-error:email='{ attrs: { "data-test": "badEmail" } }'
     )
 
-  // TODO #661 - improve :v
-  form-password(
-    :label='L("Password")'
-    :value='form'
-    :v='$v.form'
-    @input='(newPassword) => {password = newPassword}'
-  )
+  form-password(:label='L("Password")' name='password' :$v='$v')
 
-  p.error(v-if='ephemeral.errorMsg') {{ ephemeral.errorMsg }}
+  banner-scoped(ref='formMsg')
 
-  .buttons.is-centered.c-cta
+  .buttons.is-centered
     i18n.is-primary(
       tag='button'
       type='submit'
@@ -50,20 +45,24 @@ form(
 <script>
 import { required, minLength, email } from 'vuelidate/lib/validators'
 import { validationMixin } from 'vuelidate'
-import { debounce } from '@utils/giLodash.js'
 import sbp from '~/shared/sbp.js'
 import { nonWhitespace } from '@views/utils/validators.js'
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
 import FormPassword from '@containers/forms/FormPassword.vue'
+import BannerScoped from '@components/BannerScoped.vue'
 import L from '@view-utils/translations.js'
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
-// TODO: fix all this
 export default {
   name: 'FormSignup',
-  mixins: [validationMixin],
+  mixins: [
+    validationMixin,
+    validationsDebouncedMixins
+  ],
   components: {
     ModalTemplate,
-    FormPassword
+    FormPassword,
+    BannerScoped
   },
   data () {
     return {
@@ -71,21 +70,10 @@ export default {
         name: null,
         password: null,
         email: null
-      },
-      ephemeral: {
-        errorMsg: null
       }
     }
   },
   methods: {
-    debounceName: debounce(function (e) {
-      // TODO - $v.lazy this...
-      // "Validator is evaluated on every data change, as it is essentially a computed value.
-      // If you need to throttle an async call, do it on your data change event, not on the validator itself.
-      // You may end up with broken Vue observables otherwise."
-      this.form.name = e.target.value
-      this.$v.form.name.$touch()
-    }, 700),
     async signup () {
       // Prevent autocomplete submission when empty field
       if (this.form.name !== null && this.form.email !== null) {
@@ -136,10 +124,10 @@ export default {
             identityContractID: user.hash()
           })
           this.$emit('submitSucceeded')
-        } catch (ex) {
-          console.error('Signup.vue submit() error:', ex)
+        } catch (e) {
+          console.error('Signup.vue submit() error:', e)
+          this.$refs.formMsg.danger(L('Failed to signup, please try again. {codeError}', { codeError: e.message }))
           sbp('state/vuex/dispatch', 'logout')
-          this.ephemeral.errorMsg = ex.toString()
         }
       }
     }
@@ -147,32 +135,21 @@ export default {
   validations: {
     form: {
       name: {
-        required,
-        [L('cannot contain spaces')]: nonWhitespace,
-        [L('name is unavailable')]: async (value) => {
+        [L('A username is required.')]: required,
+        [L('A username cannot contain spaces.')]: nonWhitespace,
+        [L('This username is already being used.')]: async (value) => {
           return !await sbp('namespace/lookup', value)
         }
       },
       password: {
-        required,
-        minLength: minLength(7)
+        [L('A password is required.')]: required,
+        [L('Your password must be at least 7 characteres long.')]: minLength(7)
       },
       email: {
-        required,
-        [L('not an e-mail')]: email,
-        [L('e-mail is unavailable')]: value => {
-          // TODO - verify if e-mail exists
-          return true
-        }
+        [L('An email is required.')]: required,
+        [L('Please enter a valid email.')]: email
       }
     }
   }
 }
 </script>
-<style lang="scss" scoped>
-@import "@assets/style/_variables.scss";
-
-.c-cta {
-  margin-top: 1.5rem;
-}
-</style>

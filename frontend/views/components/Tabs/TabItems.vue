@@ -8,7 +8,7 @@
         )
           i.icon-chevron-left(aria-hidden='true')
 
-        h2.main-title {{ $parent.title }}
+        h2.is-title-2.main-title {{ $parent.title }}
 
       .tab-body
         slot
@@ -59,14 +59,14 @@ export default {
   z-index: 3;
   background-color: $background;
 
-  @include tablet {
+  @include desktop {
     justify-content: start;
     background-color: transparent;
   }
 }
 
 .main-title {
-  @include tablet {
+  @include desktop {
     margin: 2.5rem 0 0 27px;
   }
 }
@@ -77,7 +77,7 @@ export default {
   left: 1rem;
   z-index: 1;
 
-  @include tablet {
+  @include desktop {
     display: none;
   }
 }
@@ -87,7 +87,7 @@ export default {
   justify-content: center;
   padding-top: 1.5rem;
 
-  @include tablet {
+  @include desktop {
     justify-content: flex-start;
     padding-top: 0;
   }
