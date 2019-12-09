@@ -31,17 +31,21 @@ div
         aria-labelledby='title'
         role='img'
       )
+        // Move graph origin to the middle
         g(:transform='`translate(0,${middle})`')
+          // Animate using scale from the middle
           g.g-animate(:style='`transform: scale3d(1,${ ready ? 1 : 0 },1)`')
             g.bars(
               v-for='(member, index) in members.list'
               :transform='positionX(index)'
             )
+              // Total needed or total pledge bars
               path(
                 :class='color(member, false)'
                 :d='roundedRect(member >= 0, 0, positionY(member), width, height(member), 3)'
               )
 
+              // Needs or surplus bars
               path.g-animate-opacity.g-animate-delay(
                 v-if='hasSurplus(member)'
                 :class='color(member, true)'
@@ -49,11 +53,13 @@ div
                 :style='`opacity: ${ ready ? 1 : 0 }`'
               )
 
+          // Base with $0 on top of bars
           g.line
             line(x1='0' y1='0' :x2='ratioX' y2='0' stroke='#dbdbdb' stroke-width='1')
             foreignObject(:x='ratioX - 25' :y='-labelPadding' width='25' height='18')
               .tag.mincome {{ base }}
 
+          // Surplus line on top of bars
           g.line(
             :transform='`translate(0, ${-surplusPosition})`'
           )
@@ -67,6 +73,7 @@ div
               stroke-width='1'
               stroke-dasharray='1'
             )
+            // Income label
             foreignObject(
               :x='ratioX - mincome.length * 10'
               :y='-labelPadding'
@@ -194,7 +201,7 @@ export default {
       return this.calculRatioY(this.positiveBalance ? position : -position)
     },
     surplusLabelPosition () {
-      // Add padding if surplus label is to close to 0 line
+      // Add padding if surplus label is to close to the 0 base line
       if (Math.abs(this.surplusPosition) < this.labelPadding * 2) {
         return this.positiveBalance ? -this.labelPadding : this.labelPadding
       } else return 0
