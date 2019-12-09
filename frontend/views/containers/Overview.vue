@@ -88,11 +88,6 @@ import { TABLET } from '@view-utils/breakpoints.js'
 export default {
   name: 'Overview',
   data: () => ({
-    ephemeral: {
-      labelActiveIndex: 0,
-      labelStyle: {},
-      isLabelVisible: false
-    },
     ratioWidthPadding: 1.2,
     ratioX: 526,
     ratioY: 163,
@@ -114,17 +109,51 @@ export default {
       'groupProfiles',
       'groupSettings'
     ]),
-    currency () {
-      return currencies[this.groupSettings.mincomeCurrency]
+    // Extract members incomes
+    members () {
+      const list = []
+      let totalPledge = 0
+      let totalNeeded = 0
+      Object.values(this.groupProfiles).forEach(member => {
+        if (member.incomeDetailsType === 'incomeAmount' && member.incomeAmount) {
+          list.push({ delta: -member.incomeAmount })
+          totalNeeded += member.incomeAmount
+        } else if (member.pledgeAmount) {
+          list.push({ delta: member.pledgeAmount })
+          totalPledge += member.pledgeAmount
+        }
+      })
+      list.sort((a, b) => (a.delta > b.delta) ? 1 : (a.delta === b.delta) ? ((a.delta > b.delta) ? 1 : -1) : -1)
+      return { list, totalPledge, totalNeeded }
     },
     membersNumber () {
       return this.members.list.length
     },
+    // Display Legends
+    currency () {
+      return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
+    },
+    mincome () {
+      return this.currency(this.groupSettings.mincomeAmount)
+    },
+    totalNeeded () {
+      return this.currency(this.members.totalNeeded)
+    },
+    totalPledge () {
+      return this.currency(this.members.totalPledge)
+    },
+    surplus () {
+      return this.currency(Math.abs(this.members.totalPledge - this.members.totalNeeded))
+    },
+    base () {
+      return this.currency(0)
+    },
+    positiveBalance () {
+      return this.members.totalPledge - this.members.totalNeeded >= 0
+    },
+    // Graphic proportions
     width () {
       return Math.min(this.ratioX / this.membersNumber / this.ratioWidthPadding, this.maxWidth)
-    },
-    middle () {
-      return this.calculRatioY(this.max) + this.verticalPadding / 2
     },
     max () {
       return Math.max.apply(Math, this.members.list.map((m) => { return m.delta }))
@@ -132,6 +161,10 @@ export default {
     min () {
       return Math.min.apply(Math, this.members.list.map((m) => { return m.delta }))
     },
+    middle () {
+      return this.calculRatioY(this.max) + this.verticalPadding / 2
+    },
+    // Calcul surplus position on the graph
     surplusPosition () {
       // Find who by the surplus or need position
       const surplusMembers = this.members.list.reduce((filtered, member) => {
@@ -161,42 +194,7 @@ export default {
           }
         }
       })
-
       return this.calculRatioY(this.positiveBalance ? position : -position)
-    },
-    members () {
-      const list = []
-      let totalPledge = 0
-      let totalNeeded = 0
-      Object.values(this.groupProfiles).forEach(member => {
-        if (member.incomeDetailsType === 'incomeAmount' && member.incomeAmount) {
-          list.push({ delta: -member.incomeAmount })
-          totalNeeded += member.incomeAmount
-        } else if (member.pledgeAmount) {
-          list.push({ delta: member.pledgeAmount })
-          totalPledge += member.pledgeAmount
-        }
-      })
-      list.sort((a, b) => (a.delta > b.delta) ? 1 : (a.delta === b.delta) ? ((a.delta > b.delta) ? 1 : -1) : -1)
-      return { list, totalPledge, totalNeeded }
-    },
-    mincome () {
-      return this.currency.displayWithCurrency(this.groupSettings.mincomeAmount)
-    },
-    totalNeeded () {
-      return this.currency.displayWithCurrency(this.members.totalNeeded)
-    },
-    totalPledge () {
-      return this.currency.displayWithCurrency(this.members.totalPledge)
-    },
-    surplus () {
-      return this.currency.displayWithCurrency(Math.abs(this.members.totalPledge - this.members.totalNeeded))
-    },
-    positiveBalance () {
-      return this.members.totalPledge - this.members.totalNeeded >= 0
-    },
-    base () {
-      return this.currency.displayWithCurrency(0)
     },
     surplusLabelPosition () {
       // Add padding if surplus label is to close to 0 line
