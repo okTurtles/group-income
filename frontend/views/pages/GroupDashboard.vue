@@ -4,10 +4,11 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
 
   start-inviting(v-if='groupMembersCount === 1')
 
-  proposals-widget
-
   page-section(title='This months overview')
+    span.support-history.button.is-outlined.is-small Support history
     overview
+
+  proposals-widget
 
   page-section(title='July Overview')
     //- group-pledges-graph
@@ -73,4 +74,18 @@ export default {
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
+.card {
+  position: relative;
+}
+
+.support-history {
+  position: absolute;
+  right: 2.5rem;
+  top: 2.5rem;
+
+  @include phone {
+    display: none;
+  }
+}
 </style>

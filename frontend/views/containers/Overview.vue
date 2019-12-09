@@ -1,131 +1,249 @@
 <template lang='pug'>
 div
   p.has-text-1 Group members and their pledges
-  //- input(type="text" v-model='ratioWidthPadding')
-  .c-chart-wrapper
-    svg.c-chart(
-      width='100%'
-      :viewBox='`0 0 526 ${ratioY}`'
-      preserveAspectRatio='xMidYMid meet'
-      aria-labelledby='title'
-      role='img'
-    )
-      g.bars(
-        v-for='(member, index) in fakeData.members'
-        :transform='position(index)'
-      )
-        rect(
-          :width='width'
-          :height='height(member.delta)'
-          :y='positionY(member.delta)'
-          :fill='color(member.delta)'
-        )
+  .c-chart
+    .c-chart-legends
+      .c-legend
+        span.square.has-background-warning-solid
+        i18n Total needed
+        b {{ totalNeeded }}
 
-        rect(
-          v-if='member.delta >= 0 && (ratioY / 2 - height(member.delta)) < surplusPosition'
-          :width='width'
-          :height='surplusPosition'
-          :y='positionY(member.delta)'
-          fill='#A0D10E'
-        )
-
-      g.line(:transform='`translate(0,${ratioY/2})`')
-        line(x1='0' y1='0' :x2='maxGraphWidth' y2='0' stroke='#dbdbdb' stroke-width='1')
-        foreignObject(x='469' y='-9' width='57' height='18')
-          .tag.mincome Mincome
-
-      g.line(:transform='`translate(0,${surplusPosition})`')
-        line(x1='0' y1='0' :x2='maxGraphWidth' y2='0' stroke='#dbdbdb' stroke-width='1' stroke-dasharray='1')
-        foreignObject(x='469' y='-9' width='50' height='18')
-          .tag Surplus
-
-    .c-chart-info
-      i18n.label(tag='label') Total amount needed
-        .c-total-amount $750
-
-      label.label
+      .c-legend
+        span.square.has-background-primary-solid
         i18n Total pledged
-        .c-total-pledge $800
+        b {{ totalPledge }}
 
-      label.label
+      .c-legend(v-if='positiveBalance')
+        span.square.has-background-success-solid
         i18n Surplus
-        .c-surplus $50
+        b {{ surplus }}
 
-      i18n.help(tag='p') This amount will not be used
+      .c-legend(v-else)
+        span.square.has-background-danger-solid
+        i18n Needed
+        b {{ surplus }}
+
+    .c-chart-wrapper
+      svg(
+        width='100%'
+        :viewBox='`0 0 ${ratioX} ${ratioY + verticalPadding}`'
+        preserveAspectRatio='xMidYMid meet'
+        aria-labelledby='title'
+        role='img'
+        ref='graph'
+      )
+        g(:transform='`translate(0,${middle})`')
+          g.g-animate(:style='`transform: scale3d(1,${ ready ? 1 : 0 },1)`')
+            g.bars(
+              v-for='(member, index) in members.list'
+              :transform='positionX(index)'
+            )
+              path(
+                :class='color(member.delta)'
+                :d='roundedRect(member.delta >= 0, 0, positionY(member.delta), width, height(member.delta), 3)'
+              )
+
+              path(
+                v-if='needMore(member.delta)'
+                class='g-needed g-animate-opacity g-animate-delay'
+                :d='roundedRect(false, 0, positionY(member.delta) - surplusPosition, width, height(member.delta) - Math.abs(surplusPosition), 3)'
+                :style='`opacity: ${ ready ? 1 : 0 }`'
+              )
+
+              path(
+                v-if='hasSurplus(member.delta)'
+                class='g-surplus g-animate-opacity g-animate-delay'
+                :d='roundedRect(true, 0, positionY(member.delta), width, height(member.delta) - Math.abs(surplusPosition), 3)'
+                :style='`opacity: ${ ready ? 1 : 0 }`'
+              )
+
+          g.line
+            line(x1='0' y1='0' :x2='ratioX' y2='0' stroke='#dbdbdb' stroke-width='1')
+            foreignObject(:x='ratioX - 37' :y='-labelPadding' width='37' height='18')
+              .tag.mincome {{ base }}
+
+          g.line(
+            :transform='`translate(0, ${-surplusPosition})`'
+          )
+            line.g-animate.g-animate-delay(
+              :style='`transform: scale3d(${ ready ? 1 : 0 },1,1)`'
+              x1='0'
+              y1='0'
+              :x2='ratioX'
+              y2='0'
+              stroke='#dbdbdb'
+              stroke-width='1'
+              stroke-dasharray='1'
+            )
+            foreignObject(
+              :x='ratioX - 50'
+              :y='-labelPadding'
+              width='50'
+              height='18'
+              :transform='`translate(0,${surplusLabelPosition})`'
+            )
+              .tag.g-animate-opacity.g-animate-delay(
+                :style='`opacity: ${ ready ? 1 : 0 }`'
+              ) {{ mincome }}
 </template>
 
 <script>
 import { debounce } from '@utils/giLodash.js'
+import { mapGetters } from 'vuex'
+import currencies from '@view-utils/currencies.js'
+import { TABLET } from '@view-utils/breakpoints.js'
 
 export default {
   name: 'Overview',
-  props: {
-    // Todo: replace data
-  },
   data: () => ({
     ephemeral: {
       labelActiveIndex: 0,
       labelStyle: {},
       isLabelVisible: false
     },
-    ratioWidthPadding: 1.9,
+    ratioWidthPadding: 1.2,
     ratioX: 526,
     ratioY: 163,
-    maxGraphWidth: 465,
-    fakeData: { // Todo with real data: transform user pledge to delta using mincome
-      members: [
-        {
-          delta: '-81'
-        },
-        {
-          delta: '-36'
-        },
-        {
-          delta: '-27'
-        },
-        {
-          delta: '22'
-        },
-        {
-          delta: '67'
-        },
-        {
-          delta: '80'
-        }
-      ]
-    }
+    verticalPadding: 22,
+    labelPadding: 11,
+    maxWidth: 48,
+    ready: false,
+    isMobile: false
   }),
+  mounted () {
+    window.addEventListener('resize', this.handleResize)
+    this.handleResize()
+    setTimeout(() => {
+      this.ready = true
+    }, 0)
+  },
+  beforeDestroy: function () {
+    window.removeEventListener('resize', this.handleResize)
+  },
   computed: {
+    ...mapGetters([
+      'groupProfiles',
+      'groupSettings'
+    ]),
+    currency () {
+      return currencies[this.groupSettings.mincomeCurrency]
+    },
     membersNumber () {
-      return this.fakeData.members.length
+      return this.members.list.length
     },
     width () {
-      return this.maxGraphWidth / this.membersNumber / this.ratioWidthPadding
+      return Math.min(this.ratioX / this.membersNumber / this.ratioWidthPadding, this.maxWidth)
+    },
+    middle () {
+      return this.calculRatioY(this.max) + this.verticalPadding / 2
     },
     max () {
-      return Math.max.apply(Math, this.fakeData.members.map((m) => { return m.delta }))
+      return Math.max.apply(Math, this.members.list.map((m) => { return m.delta }))
+    },
+    min () {
+      return Math.min.apply(Math, this.members.list.map((m) => { return m.delta }))
     },
     surplusPosition () {
-      const m = this.fakeData.members
-      const total = m.map(member => member.delta).reduce((prev, next) => parseInt(prev) + parseInt(next))
-      return this.ratioY / this.max * total / this.membersNumber
+      // Find who by the surplus or need position
+      const surplusMembers = this.members.list.reduce((filtered, member) => {
+        if (this.positiveBalance === (member.delta > 0)) filtered.push(Math.abs(member.delta))
+        return filtered
+      }, []).sort((a, b) => a - b)
+
+      // Surplus or Needed Position
+      let position = 0
+      // Either total Needed or total pledge is used to calcul the surplus position
+      let used = Math.min(this.members.totalNeeded, this.members.totalPledge)
+      // Loop only on members that overlay the surplus position
+      surplusMembers.forEach((delta, index) => {
+        // Get all the people that are not already completlety included in the surplus
+        const nb = surplusMembers.length - index
+        const all = nb * delta
+        if (used > 0) {
+          // console.log(`Loop ${index}: delta ${delta}, nb right:${nb}, all: ${all} , used:${used}, position: ${position}`)
+          if (all > used) {
+            position += used / nb
+            used = 0
+            // console.log(`all > used and position: ${position}`)
+          } else {
+            used -= all
+            position += delta
+            // console.log(`all < used and used: ${used}, position: ${position}`)
+          }
+        }
+      })
+
+      return this.calculRatioY(this.positiveBalance ? position : -position)
+    },
+    members () {
+      const list = []
+      let totalPledge = 0
+      let totalNeeded = 0
+      Object.values(this.groupProfiles).forEach(member => {
+        if (member.incomeDetailsType === 'incomeAmount' && member.incomeAmount) {
+          list.push({ delta: -member.incomeAmount })
+          totalNeeded += member.incomeAmount
+        } else if (member.pledgeAmount) {
+          list.push({ delta: member.pledgeAmount })
+          totalPledge += member.pledgeAmount
+        }
+      })
+      list.sort((a, b) => (a.delta > b.delta) ? 1 : (a.delta === b.delta) ? ((a.delta > b.delta) ? 1 : -1) : -1)
+      return { list, totalPledge, totalNeeded }
+    },
+    mincome () {
+      return this.currency.displayWithCurrency(this.groupSettings.mincomeAmount)
+    },
+    totalNeeded () {
+      return this.currency.displayWithCurrency(this.members.totalNeeded)
+    },
+    totalPledge () {
+      return this.currency.displayWithCurrency(this.members.totalPledge)
+    },
+    surplus () {
+      return this.currency.displayWithCurrency(Math.abs(this.members.totalPledge - this.members.totalNeeded))
+    },
+    positiveBalance () {
+      return this.members.totalPledge - this.members.totalNeeded >= 0
+    },
+    base () {
+      return this.currency.displayWithCurrency(0)
+    },
+    surplusLabelPosition () {
+      // Add padding if surplus label is to close to 0 line
+      if (Math.abs(this.surplusPosition) < this.labelPadding * 2) {
+        return this.positiveBalance ? -this.labelPadding : this.labelPadding
+      } else return 0
     }
   },
   methods: {
-    height (delta) {
-      return this.ratioY / this.max * Math.abs(delta) / 2
+    handleResize: debounce(function () {
+      this.isMobile = this.verifyIsMobile()
+      this.ratioX = this.isMobile ? 310 : 526
+    }, 100),
+    verifyIsMobile () {
+      return window.innerWidth < TABLET
     },
-    position (index) {
-      const marginLeft = (this.width * this.ratioWidthPadding - this.width) / 2
-      const centerY = this.ratioY / 2
-      const positionX = this.maxGraphWidth / this.membersNumber * index
-      return `translate(${positionX + marginLeft}, ${centerY})`
+    calculRatioY (y) {
+      return this.ratioY / (this.max + Math.abs(this.min)) * y
+    },
+    height (delta) {
+      return this.calculRatioY(Math.abs(delta))
+    },
+    positionX (index) {
+      const marginLeft = Math.max((this.width * this.ratioWidthPadding - this.width) / 2, 28)
+      let maxWidth = this.membersNumber * (this.width + marginLeft)
+      if (this.isMobile) maxWidth -= 50
+      const positionX = maxWidth / this.membersNumber * index
+      const offset = this.isMobile ? -marginLeft : (this.ratioX - maxWidth) / 2 - marginLeft
+      return `translate(${positionX + marginLeft + offset}, 0)`
     },
     positionY (delta) {
-      return delta >= 0 ? -(this.ratioY / this.max * delta / 2) : 0
+      // If delta is positive, the bar start at 0 otherw
+      return delta >= 0 ? -(this.calculRatioY(delta)) : 0
     },
     color (delta) {
-      return delta >= 0 ? 'rgba(93,200,240,1)' : 'rgba(248,146,1,0.7)'
+      return delta >= 0 ? 'g-positive' : 'g-negative'
     },
     showLabel: debounce(function (e, index) {
       this.ephemeral.labelActiveIndex = index
@@ -134,6 +252,47 @@ export default {
     }, 100),
     hideLabel (event) {
       this.ephemeral.isLabelVisible = false
+    },
+    hasSurplus (delta) {
+      return this.positiveBalance && delta > 0 && this.height(delta) > this.surplusPosition
+    },
+    needMore (delta) {
+      return !this.positiveBalance && delta < this.surplusPosition
+    },
+    roundedRect (up, x, y, w, h, r) {
+      let retval = 'M' + (x + r) + ',' + y
+      retval += 'h' + (w - 2 * r)
+      // Top right corner
+      if (up) retval += 'a' + r + ',' + r + ' 0 0 1 ' + r + ',' + r // Arc
+      else {
+        // Square corner
+        retval += 'h' + r
+        retval += 'v' + r
+      }
+      retval += 'v' + (h - 2 * r)
+      // Bottom right corner
+      if (up) {
+        // Square corner
+        retval += 'v' + r
+        retval += 'h' + -r
+      } else retval += 'a' + r + ',' + r + ' 0 0 1 ' + -r + ',' + r // Arc
+      retval += 'h' + (2 * r - w)
+      // Bottom left corner
+      if (up) {
+        // Square corner
+        retval += 'h' + -r
+        retval += 'v' + -r
+      } else retval += 'a' + r + ',' + r + ' 0 0 1 ' + -r + ',' + -r // Arc
+      retval += 'v' + (2 * r - h)
+      // Top left corner
+      if (up) retval += 'a' + r + ',' + r + ' 0 0 1 ' + r + ',' + -r // Arc
+      else {
+        // Square corner
+        retval += 'v' + -r
+        retval += 'h' + r
+      }
+      retval += 'z'
+      return retval
     }
   }
 }
@@ -142,23 +301,16 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.c-chart-wrapper {
-  display: flex;
-  flex-wrap: wrap;
-}
-
 .c-chart {
-  width: 526px;
-  max-width: 100%;
-
-  @include tablet {
-    margin-right: 27px;
+  @include phone {
+    display: flex;
+    flex-direction: column-reverse;
   }
 }
 
-.c-chart-info {
-  width: 176px;
-  margin-top: 24px;
+.c-chart-wrapper {
+  display: flex;
+  flex-wrap: wrap;
 }
 
 .c-total-amount {
@@ -175,34 +327,95 @@ export default {
 
 .tag {
   font-size: 12px;
-  background-color: $general_0;
-  border-radius: 3px;
-  text-align: center;
-  display: flex;
-  height: 18px;
-  justify-content: center;
-  align-items: center;
-  margin-left: 4px;
-  line-height: 0;
-  color: $text_1;
+  background-color: #fff;
+  color: var(--text_1);
+  text-align: right;
+}
 
-  &::before {
-    content: '';
-    width: 4px;
-    height: 4px;
-    transform: rotate(45deg);
-    background-color: $general_0;
-    position: absolute;
-    left: 2px;
+.c-chart-legends {
+  display: flex;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+
+  @include phone {
+    display: flex;
+    flex-direction: column;
+  }
+}
+
+.c-legend {
+  margin-right: 40px;
+
+  @include phone {
+    margin-right: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 
-  &.mincome {
-    background-color: $text_1;
-    color: #fff;
+  .square {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 10px;
+    border-radius: 1px;
 
-    &::before {
-      background-color: $text_1;
+    @include phone {
+      position: absolute;
+      right: 7px;
+      margin-top: 1px;
     }
   }
+  b {
+    margin-left: 7px;
+  }
+}
+
+.g-surplus {
+  fill: $success_0;
+}
+
+.g-positive {
+  fill: $primary_0;
+}
+
+.g-negative {
+  fill: $warning_0;
+}
+
+.g-needed {
+  fill: $danger_0;
+}
+
+// TODO remove once merge with Sandrina
+.has-background-primary-solid {
+  background-color: $primary_0;
+}
+
+.has-background-success-solid {
+  background-color: $success_0;
+}
+
+.has-background-warning-solid {
+  background-color: $warning_0;
+}
+
+.has-background-danger-solid {
+  background-color: $danger_0;
+}
+
+.g-animate {
+  // TODO: remove important once test are done
+  transition: transform 0.7s ease-out !important;
+}
+
+.g-animate-opacity {
+  // TODO: remove important once test are done
+  transition: opacity 0.7s ease-out !important;
+}
+
+.g-animate-delay {
+  // TODO: remove important once test are done
+  transition-delay: 0.5s !important;
 }
 </style>
