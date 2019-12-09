@@ -30,7 +30,6 @@ div
         preserveAspectRatio='xMidYMid meet'
         aria-labelledby='title'
         role='img'
-        ref='graph'
       )
         g(:transform='`translate(0,${middle})`')
           g.g-animate(:style='`transform: scale3d(1,${ ready ? 1 : 0 },1)`')
@@ -39,27 +38,20 @@ div
               :transform='positionX(index)'
             )
               path(
-                :class='color(member.delta)'
+                :class='color(member.delta, false)'
                 :d='roundedRect(member.delta >= 0, 0, positionY(member.delta), width, height(member.delta), 3)'
               )
 
-              path(
-                v-if='needMore(member.delta)'
-                class='g-needed g-animate-opacity g-animate-delay'
-                :d='roundedRect(false, 0, positionY(member.delta) - surplusPosition, width, height(member.delta) - Math.abs(surplusPosition), 3)'
-                :style='`opacity: ${ ready ? 1 : 0 }`'
-              )
-
-              path(
+              path.g-animate-opacity.g-animate-delay(
                 v-if='hasSurplus(member.delta)'
-                class='g-surplus g-animate-opacity g-animate-delay'
-                :d='roundedRect(true, 0, positionY(member.delta), width, height(member.delta) - Math.abs(surplusPosition), 3)'
+                :class='color(member.delta, true)'
+                :d='surplusRectangle(member.delta)'
                 :style='`opacity: ${ ready ? 1 : 0 }`'
               )
 
           g.line
             line(x1='0' y1='0' :x2='ratioX' y2='0' stroke='#dbdbdb' stroke-width='1')
-            foreignObject(:x='ratioX - 37' :y='-labelPadding' width='37' height='18')
+            foreignObject(:x='ratioX - 25' :y='-labelPadding' width='25' height='18')
               .tag.mincome {{ base }}
 
           g.line(
@@ -76,9 +68,9 @@ div
               stroke-dasharray='1'
             )
             foreignObject(
-              :x='ratioX - 50'
+              :x='ratioX - mincome.length * 10'
               :y='-labelPadding'
-              width='50'
+              :width='mincome.length * 10'
               height='18'
               :transform='`translate(0,${surplusLabelPosition})`'
             )
@@ -112,10 +104,7 @@ export default {
   }),
   mounted () {
     window.addEventListener('resize', this.handleResize)
-    this.handleResize()
-    setTimeout(() => {
-      this.ready = true
-    }, 0)
+    setTimeout(() => { this.ready = true }, 0)
   },
   beforeDestroy: function () {
     window.removeEventListener('resize', this.handleResize)
@@ -242,22 +231,17 @@ export default {
       // If delta is positive, the bar start at 0 otherw
       return delta >= 0 ? -(this.calculRatioY(delta)) : 0
     },
-    color (delta) {
-      return delta >= 0 ? 'g-positive' : 'g-negative'
-    },
-    showLabel: debounce(function (e, index) {
-      this.ephemeral.labelActiveIndex = index
-      this.ephemeral.labelStyle = { position: 'fixed', top: `${e.clientY}px`, left: `${e.clientX}px` }
-      this.ephemeral.isLabelVisible = true
-    }, 100),
-    hideLabel (event) {
-      this.ephemeral.isLabelVisible = false
+    color (delta, surplus) {
+      if (delta >= 0) return surplus ? 'g-surplus' : 'g-positive'
+      else return surplus ? 'g-needed' : 'g-negative'
     },
     hasSurplus (delta) {
-      return this.positiveBalance && delta > 0 && this.height(delta) > this.surplusPosition
+      return this.height(delta) > Math.abs(this.surplusPosition) && (this.positiveBalance === (delta > 0))
     },
-    needMore (delta) {
-      return !this.positiveBalance && delta < this.surplusPosition
+    surplusRectangle (delta) {
+      let positionY = this.positionY(delta)
+      if (!this.positiveBalance) positionY -= this.surplusPosition
+      return this.roundedRect(this.positiveBalance, 0, positionY, this.width, this.height(delta) - Math.abs(this.surplusPosition), 3)
     },
     roundedRect (up, x, y, w, h, r) {
       let retval = 'M' + (x + r) + ',' + y
