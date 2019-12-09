@@ -38,14 +38,14 @@ div
               :transform='positionX(index)'
             )
               path(
-                :class='color(member.delta, false)'
-                :d='roundedRect(member.delta >= 0, 0, positionY(member.delta), width, height(member.delta), 3)'
+                :class='color(member, false)'
+                :d='roundedRect(member >= 0, 0, positionY(member), width, height(member), 3)'
               )
 
               path.g-animate-opacity.g-animate-delay(
-                v-if='hasSurplus(member.delta)'
-                :class='color(member.delta, true)'
-                :d='surplusRectangle(member.delta)'
+                v-if='hasSurplus(member)'
+                :class='color(member, true)'
+                :d='surplusRectangle(member)'
                 :style='`opacity: ${ ready ? 1 : 0 }`'
               )
 
@@ -116,14 +116,14 @@ export default {
       let totalNeeded = 0
       Object.values(this.groupProfiles).forEach(member => {
         if (member.incomeDetailsType === 'incomeAmount' && member.incomeAmount) {
-          list.push({ delta: -member.incomeAmount })
+          list.push(-member.incomeAmount)
           totalNeeded += member.incomeAmount
         } else if (member.pledgeAmount) {
-          list.push({ delta: member.pledgeAmount })
+          list.push(member.pledgeAmount)
           totalPledge += member.pledgeAmount
         }
       })
-      list.sort((a, b) => (a.delta > b.delta) ? 1 : (a.delta === b.delta) ? ((a.delta > b.delta) ? 1 : -1) : -1)
+      list.sort((a, b) => (a > b) ? 1 : (a === b) ? ((a > b) ? 1 : -1) : -1)
       return { list, totalPledge, totalNeeded }
     },
     membersNumber () {
@@ -156,10 +156,10 @@ export default {
       return Math.min(this.ratioX / this.membersNumber / this.ratioWidthPadding, this.maxWidth)
     },
     max () {
-      return Math.max.apply(Math, this.members.list.map((m) => { return m.delta }))
+      return Math.max.apply(Math, this.members.list)
     },
     min () {
-      return Math.min.apply(Math, this.members.list.map((m) => { return m.delta }))
+      return Math.min.apply(Math, this.members.list)
     },
     middle () {
       return this.calculRatioY(this.max) + this.verticalPadding / 2
@@ -167,10 +167,10 @@ export default {
     // Calcul surplus position on the graph
     surplusPosition () {
       // Find who by the surplus or need position
-      const surplusMembers = this.members.list.reduce((filtered, member) => {
-        if (this.positiveBalance === (member.delta > 0)) filtered.push(Math.abs(member.delta))
-        return filtered
-      }, []).sort((a, b) => a - b)
+      const surplusMembers = this.members.list
+        .filter(member => this.positiveBalance === (member > 0))
+        .map(member => Math.abs(member))
+        .sort((a, b) => a - b)
 
       // Surplus or Needed Position
       let position = 0
@@ -178,19 +178,16 @@ export default {
       let used = Math.min(this.members.totalNeeded, this.members.totalPledge)
       // Loop only on members that overlay the surplus position
       surplusMembers.forEach((delta, index) => {
-        // Get all the people that are not already completlety included in the surplus
+        // Get numbers of people that are not already completlety included in the surplus
         const nb = surplusMembers.length - index
-        const all = nb * delta
+        const deltas = nb * delta
         if (used > 0) {
-          // console.log(`Loop ${index}: delta ${delta}, nb right:${nb}, all: ${all} , used:${used}, position: ${position}`)
-          if (all > used) {
+          if (deltas > used) {
             position += used / nb
             used = 0
-            // console.log(`all > used and position: ${position}`)
           } else {
-            used -= all
+            used -= deltas
             position += delta
-            // console.log(`all < used and used: ${used}, position: ${position}`)
           }
         }
       })
