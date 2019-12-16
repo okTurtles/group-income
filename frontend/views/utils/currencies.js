@@ -1,28 +1,29 @@
 'use strict'
 
-export function decimalsOrInt (num, numDecimals) {
+export function decimalsOrInt (num: number, numDecimals: number): string {
   const fixed = num.toFixed(numDecimals)
-  return /\.0+$/.test(fixed) ? /^(.+)\.0+$/.exec(fixed)[1] : fixed
+  const integerPart = /^(.+)\.0+$/.exec(fixed)
+  return integerPart ? integerPart[1] : fixed
 }
 
 export default {
   USD: {
     symbol: '$',
     symbolWithCode: '$ USD',
-    displayWithCurrency: n => '$' + decimalsOrInt(n, 0),
-    displayWithoutCurrency: n => decimalsOrInt(n, 0)
+    displayWithCurrency: n => '$' + decimalsOrInt(n, 2),
+    displayWithoutCurrency: n => decimalsOrInt(n, 2)
   },
   EUR: {
     symbol: '€',
     symbolWithCode: '€ EUR',
-    displayWithCurrency: n => '€' + decimalsOrInt(n, 0),
-    displayWithoutCurrency: n => decimalsOrInt(n, 0)
+    displayWithCurrency: n => '€' + decimalsOrInt(n, 2),
+    displayWithoutCurrency: n => decimalsOrInt(n, 2)
 
   },
   BTC: {
     symbol: 'Ƀ',
     symbolWithCode: 'Ƀ BTC',
-    displayWithCurrency: n => n.toFixed(6) + 'Ƀ',
-    displayWithoutCurrency: n => n.toFixed(6)
+    displayWithCurrency: n => decimalsOrInt(n, 6) + 'Ƀ',
+    displayWithoutCurrency: n => decimalsOrInt(n, 6)
   }
 }
