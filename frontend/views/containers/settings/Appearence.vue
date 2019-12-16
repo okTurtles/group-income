@@ -62,7 +62,7 @@ export default {
 .preview {
   .is-title-4 {
     margin: 0 0 6px 0;
-    font-size: $size-5;
+    font-size: $size_5;
 
     @include tablet {
       margin-left: 0;

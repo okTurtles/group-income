@@ -145,6 +145,7 @@ export default {
 .c-contribution-item {
   display: flex;
   align-items: baseline;
+  margin: $spacer-sm 0;
 }
 
 ::v-deep .c-contribution-list-item {

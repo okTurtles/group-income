@@ -63,6 +63,6 @@ export default {
 }
 
 .c-cta {
-  margin-top: $spacer*3;
+  margin-top: $spacer-lg;
 }
 </style>

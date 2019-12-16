@@ -1,29 +1,75 @@
-.l-no-navigation {
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-  height: 100%;
-  padding: $spacer;
-  overflow: auto;
+$bannerGeneralHeight: 2.3rem;
 
-  @include tablet {
-    padding: 1.5rem;
+.l-no-navigation {
+  display: grid;
+  height: 100vh;
+  overflow: hidden;
+  grid-template-areas:
+    "l-banner"
+    "l-page";
+  grid-template-rows: min-content auto;
+
+  .l-page {
+    padding: $spacer;
+
+    @include tablet {
+      padding: 1.5rem;
+    }
   }
 }
 
 .l-with-navigation {
   display: grid;
   overflow: hidden;
-  max-height: 100vh;
-  grid-template-areas: "l-navigation l-page";
+  height: 100vh;
+  grid-template-areas:
+    "l-banner l-banner"
+    "l-navigation l-page";
+  grid-template-rows: min-content auto;
 
   @include tablet {
     grid-template-columns: auto 1fr;
   }
 }
 
-.l-page {
-  grid-area: l-page;
+.l-banner {
+  grid-area: l-banner;
+  position: sticky;
+  height: $bannerGeneralHeight;
+  width: 100%;
+  background: $text_0;
+  color: $background;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacer-sm;
+  z-index: $zindex-banner;
+
+  & ~ .l-navigation {
+    height: calc(100vh - #{$bannerGeneralHeight});
+
+    @include touch {
+      margin-top: $bannerGeneralHeight;
+    }
+  }
+
+  & ~ .l-page .p-sidebar {
+    height: calc(100vh - #{$bannerGeneralHeight});
+  }
+
+  @include touch {
+    & ~ .l-modal {
+      .c-modal {
+        margin-top: $bannerGeneralHeight;
+      }
+
+      .c-modal-close {
+        top: $spacer*3;
+      }
+    }
+
+    // TODO - handle fullscreen modals
+  }
 }
 
 .l-navigation {
@@ -40,6 +86,13 @@
       transform: translateX(0);
     }
   }
+}
+
+.l-page {
+  position: relative;
+  grid-area: l-page;
+  overflow-y: scroll;
+  overflow-x: hidden; /* so sidebars can be hidden correctly */
 }
 
 .l-modal {

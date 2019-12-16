@@ -192,8 +192,8 @@ export default {
 }
 
 .c-page {
-  width: calc(100vw - #{$spacer-lg});
   max-width: 33rem;
+  margin: auto;
 }
 
 .c-welcome {
