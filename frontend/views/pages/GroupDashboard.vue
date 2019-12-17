@@ -4,18 +4,18 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
 
   start-inviting(v-if='groupMembersCount === 1')
 
-  page-section(title='This months overview')
-    span.support-history.button.is-outlined.is-small Support history
+  page-section(title='This months overview' v-if='!showHistory')
+    span.support-history.button.is-outlined.is-small(@click='showHistory = !showHistory') Support history
     overview
+
+  page-section(title='Support History' v-if='showHistory')
+    span.support-history.button.is-outlined.is-small(@click='showHistory = !showHistory') This month's overview
+    support-history
 
   proposals-widget
 
-  page-section(title='July Overview')
-    //- group-pledges-graph
-    progress-overview
-
-  //- page-section(title='Support History')
-  //-   support-history
+  //- page-section(title='July Overview')
+  //-   progress-overview
 
   //- page-section(title='Group Settings')
   //-   group-settings
@@ -36,7 +36,7 @@ import ProposalsWidget from '@containers/proposals/ProposalsWidget.vue'
 // import GroupPledgesGraph from '@containers/GroupPledgesGraph.vue'
 import ProgressOverview from '@components/ProgressOverview.vue'
 import StartInviting from '@components/StartInviting.vue'
-// import SupportHistory from '@components/Graphs/SupportHistory.vue'
+import SupportHistory from '@components/Graphs/SupportHistory.vue'
 // import GroupSettings from '@components/GroupSettings.vue'
 import GroupMincome from '@containers/sidebar/GroupMincome.vue'
 import GroupMembers from '@containers/sidebar/GroupMembers.vue'
@@ -44,6 +44,11 @@ import GroupPurpose from '@containers/sidebar/GroupPurpose.vue'
 
 export default {
   name: 'GroupDashboard',
+  data () {
+    return {
+      showHistory: false
+    }
+  },
   computed: {
     ...mapState([
       'currentGroupId'
@@ -62,7 +67,7 @@ export default {
     ProposalsWidget,
     // GroupPledgesGraph
     ProgressOverview,
-    // SupportHistory,
+    SupportHistory,
     // GroupSettings,
     GroupMincome,
     GroupMembers,
