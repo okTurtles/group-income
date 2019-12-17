@@ -32,7 +32,7 @@ page-section.c-section(:title='L("Invite links")')
           tooltip.c-name-tooltip(
             v-if='item.isAnyoneLink'
             direction='top'
-            :isTextCenter='true'
+            :hasTextCenter='true'
             :text='L("This invite link is only available during the onboarding period.")'
           )
             .button.is-icon-smaller.is-primary.c-tip

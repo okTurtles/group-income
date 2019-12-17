@@ -1,75 +1,72 @@
 <template lang='pug'>
-modal-base-template(ref='modal')
-  .wrapper-container
-    .c-content
-      i18n.is-title-2.c-title(tag='h2') Income Details
+modal-base-template(ref='modal' :fullscreen='true')
+  .c-content
+    i18n.is-title-2.c-title(tag='h2') Income Details
 
-      form.card.c-card(
-        @submit.prevent='submit'
-        novalidate='true'
-      )
-        fieldset.field
-          legend.label
-            | {{ L('Do you make at least {groupMincomeFormatted} per month?', { groupMincomeFormatted }) }}
-            tooltip(:text='L("This is the minimum income in your group")' direction='top')
-              .button.is-icon-smaller.is-primary.c-tip
-                i.icon-info
-          label.radio
-            input.input(
-              type='radio'
-              name='incomeDetailsType'
-              value='pledgeAmount'
-              v-model='$v.form.incomeDetailsType.$model'
-              @change='resetAmount'
-            )
-            i18n(data-test='dontNeedsIncomeRadio') Yes, I do
-          label.radio(v-error:incomeDetailsType='')
-            input.input(
-              type='radio'
-              name='incomeDetailsType'
-              value='incomeAmount'
-              v-model='$v.form.incomeDetailsType.$model'
-              @change='resetAmount'
-            )
-            i18n(data-test='needsIncomeRadio') No, I don't
-        transition-expand
-          fieldset(v-if='!!form.incomeDetailsType')
-            label.field
-              .label(
-                data-test='introIncomeOrPledge'
-              ) {{ needsIncome ? L("What's your monthly income?") : L('How much do you want to pledge?') }}
-              .input-combo(
-                :class='{"error": $v.form.amount.$error }'
-                v-error:amount='{ attrs: { "data-test": "badIncome" } }'
-              )
-                input.input(
-                  type='number'
-                  v-model='$v.form.amount.$model'
-                  data-test='inputIncomeOrPledge'
-                )
-                .suffix {{ groupMincomeSymbolWithCode }}
-              .helper(v-if='needsIncome && whoIsPledging.length')
-                p {{ contributionMemberText }}
-              i18n.helper(v-else-if='!needsIncome') Define up to how much you pledge to contribute to the group each month. Only the minimum needed amount will be given.
-            payment-methods(selected='manual' class='c-methods')
-
-        banner-scoped(ref='formMsg')
-
-        .buttons
-          i18n.is-outlined(tag='button' type='button' @click='closeModal') Cancel
-          i18n.is-success(
-            tag='button'
-            type='submit'
-            :disabled='$v.form.$invalid'
-            data-test='submitIncome'
-          ) Save
-      .c-graph
-        | WIP: A graph is on its way!
-        //
-          group-pledges-graph.c-graph(
-            :userpledgeamount='!needsIncome && !!form.pledge ? Number(form.pledge) : null'
-            :userincomeamount='needsIncome && !!form.income ? Number(form.income) : null'
+    form.card.c-card(
+      @submit.prevent='submit'
+      novalidate='true'
+    )
+      fieldset.field
+        legend.label
+          | {{ L('Do you make at least {groupMincomeFormatted} per month?', { groupMincomeFormatted }) }}
+          tooltip(:text='L("This is the minimum income in your group")' direction='top')
+            .button.is-icon-smaller.is-primary.c-tip
+              i.icon-info
+        label.radio
+          input.input(
+            type='radio'
+            name='incomeDetailsType'
+            value='pledgeAmount'
+            v-model='$v.form.incomeDetailsType.$model'
+            @change='resetAmount'
           )
+          i18n(data-test='dontNeedsIncomeRadio') Yes, I do
+        label.radio(v-error:incomeDetailsType='')
+          input.input(
+            type='radio'
+            name='incomeDetailsType'
+            value='incomeAmount'
+            v-model='$v.form.incomeDetailsType.$model'
+            @change='resetAmount'
+          )
+          i18n(data-test='needsIncomeRadio') No, I don't
+      transition-expand
+        fieldset(v-if='!!form.incomeDetailsType')
+          label.field
+            .label(
+              data-test='introIncomeOrPledge'
+            ) {{ needsIncome ? L("What's your monthly income?") : L('How much do you want to pledge?') }}
+            .input-combo(
+              :class='{"error": $v.form.amount.$error }'
+              v-error:amount='{ attrs: { "data-test": "badIncome" } }'
+            )
+              input.input(
+                type='number'
+                v-model='$v.form.amount.$model'
+                data-test='inputIncomeOrPledge'
+              )
+              .suffix {{ groupMincomeSymbolWithCode }}
+            .helper(v-if='needsIncome && whoIsPledging.length')
+              p {{ contributionMemberText }}
+            i18n.helper(v-else-if='!needsIncome') Define up to how much you pledge to contribute to the group each month. Only the minimum needed amount will be given.
+          payment-methods(selected='manual' class='c-methods')
+
+      banner-scoped(ref='formMsg')
+
+      .buttons
+        i18n.is-outlined(tag='button' type='button' @click='closeModal') Cancel
+        i18n.is-success(
+          tag='button'
+          type='submit'
+          :disabled='$v.form.$invalid'
+          data-test='submitIncome'
+        ) Save
+
+    group-pledges-graph.c-graph(
+      :type='form.incomeDetailsType'
+      :amount='form.amount === "" ? undefined : +form.amount'
+    )
 </template>
 
 <script>
@@ -195,11 +192,8 @@ export default {
         [L('Oops, you entered a negative number')]: v => v >= 0,
         [L('The amount cannot have more than 2 decimals')]: decimals(2),
         [L('This field is required')]: required,
-        [L("It seems your income is not lower than the group's mincome.")]: function (value) {
-          if (this.needsIncome) {
-            return value < this.groupSettings.mincomeAmount - 1
-          }
-          return true
+        [L('Your income must be lower than the group mincome')]: function (value) {
+          return !this.needsIncome || value < this.groupSettings.mincomeAmount
         }
       }
     }
@@ -215,36 +209,54 @@ export default {
   width: 100%;
   opacity: 1;
   background: $general_2;
-  padding: 3rem $spacer-lg;
+  padding: $spacer*1.5 $spacer;
+
+  @include tablet {
+    padding: $spacer-lg $spacer*1.5;
+  }
+
+  @include desktop {
+    padding: $spacer*2.5 $spacer*1.5;
+  }
 }
 
 .c-content {
   display: grid;
-  grid-template-columns: auto 14rem;
-  grid-column-gap: $spacer-xl;
   grid-template-areas:
     "title title"
     "graph graph"
     "card card";
+  width: 100%;
   max-width: 55rem;
-  margin: 0 auto;
+  margin-top: $spacer*1.5;
 
   @include tablet {
+    grid-template-columns: auto 12rem;
+    grid-column-gap: $spacer*1.5;
     grid-template-areas:
       "title title"
       "card graph";
+    margin-top: $spacer*2.5;
+  }
+
+  @include desktop {
+    grid-column-gap: $spacer-xl;
   }
 }
 
 .c-title {
   grid-area: title;
-  margin-bottom: $spacer;
+  margin-bottom: $spacer*2.5;
+
+  @include tablet {
+    margin-bottom: $spacer*1.5;
+  }
 }
 
 .c-card {
   grid-area: card;
-  margin-top: $spacer-sm;
   padding: 2.5rem;
+  align-self: flex-start;
 }
 
 .c-methods {
@@ -259,5 +271,6 @@ export default {
 .c-graph {
   grid-area: graph;
   flex-shrink: 0;
+  margin-bottom: $spacer*1.5;
 }
 </style>

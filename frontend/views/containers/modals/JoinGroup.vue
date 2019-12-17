@@ -1,6 +1,6 @@
 <template lang='pug'>
-modal-base-template
-  i18n.is-title-1(tag='h1') How to join a group
+modal-base-template(:fullscreen='true')
+  i18n.is-title-1.c-title(tag='h1') How to join a group
 
   .wrapper
     .slider
@@ -106,11 +106,12 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.modal {
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  background-color: $general_2;
+.c-title {
+  margin-top: 5rem;
+
+  @include desktop {
+    margin-top: 15vh;
+  }
 }
 
 .wrapper {

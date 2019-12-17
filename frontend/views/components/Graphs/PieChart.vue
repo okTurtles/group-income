@@ -1,53 +1,43 @@
 <template lang='pug'>
 .c-container
-  svg.c-piechart(viewbox='-1 -1 2 2' :style='{ height: size }')
+  svg.c-piechart(viewBox='-1 -1 2 2' aria-hidden='hidden')
     path(
       v-for='(slice, index) in slices'
       :key='`slice-${index}`'
-      :data-id='slice.id'
+      :class='sliceClasses(slice, false)'
       :d='sliceData(slice, index)'
-      :class='`c-slice gi-has-fill-${slice.color}`'
-      @mouseenter='(e) => showLabel(e, index)' @mouseleave='(e) => hideLabel(e, index)'
+      :data-id='slice.id'
+      @mouseenter='(e) => showLabel(e, index)'
+      @mouseleave='(e) => hideLabel(e, index)'
     )
-
     path(
-      v-if='!!missingSlice'
+      v-if='missingSlice'
+      :class='sliceClasses(missingSlice, false)'
+      :d='missingSlice.data'
       data-id='_missingSlice_'
-      :d='missingSlice'
-      :class='`c-slice gi-has-fill-${lastSliceColor}`'
     )
-
-    circle.c-pie-donut(r='33%')
-
+    circle.c-pie-donut(r='39%')
     path(
       v-for='(slice, index) in innerSlices'
       :key='`inner-slice-${index}`'
-      :data-id='slice.id'
+      :class='sliceClasses(slice, true)'
       :d='sliceData(slice, index)'
-      :class='`c-slice c-inner gi-has-fill-${slice.color}`'
+      :data-id='slice.id'
     )
-    circle.c-pie-donut(r='29%')
+    circle.c-pie-donut(r='34%')
 
-  .c-title
+  .c-slot
     slot
-
-  tooltip(
-    :text='slices[ephemeral.labelActiveIndex].label'
-    :style='ephemeral.labelStyle'
-    :shouldshow='ephemeral.isLabelVisible'
-  )
 </template>
 
 <script>
 // Learn more about SVG & PieCharts
 // -> https://hackernoon.com/a-simple-pie-chart-in-svg-dbdd653b6936
 
-import Tooltip from '../Tooltip.vue'
 import { debounce } from '@utils/giLodash.js'
 
 export default {
   name: 'PieChart',
-  components: { Tooltip },
   props: {
     slices: {
       type: Array, // [{ id, percent, color }]
@@ -56,14 +46,6 @@ export default {
     innerSlices: {
       type: Array, // [{ id, percent, color }]
       default () { return [] }
-    },
-    lastSliceColor: {
-      type: String,
-      default: 'light'
-    },
-    size: {
-      type: String,
-      default: '13rem'
     }
   },
   data: () => ({
@@ -78,16 +60,25 @@ export default {
       // When all slices together don't reach 100%, add a last light slice to complete the circle
       const index = this.slices.length
       const totalPercent = this.getStartPercent(index)
+      const percent = 1 - totalPercent
 
-      if (totalPercent === 1) {
-        return false
+      if (percent === 0) { return false }
+
+      return {
+        data: this.sliceData({ percent }, index),
+        color: 'blank',
+        percent
       }
-
-      const slice = { percent: 1 - totalPercent }
-      return this.sliceData(slice, index)
     }
   },
   methods: {
+    sliceClasses (slice, isInner) {
+      return {
+        [`c-slice u-has-fill-${slice.color}`]: true,
+        'c-inner': isInner,
+        'c-full': slice.percent === 1
+      }
+    },
     // Apply the same method to build any kind of slice.
     // Then use CSS scale() to decrease the innerSlices's size.
     sliceData (slice, index) {
@@ -132,6 +123,8 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
+$graphBg: $general_2;
+
 .c-container {
   position: relative;
   display: flex;
@@ -145,19 +138,23 @@ export default {
 
 .c-slice {
   // Simulate a gap between each slice
-  stroke: $background;
+  stroke: $graphBg;
   stroke-width: 0.03; // small unit because this SVG is a 1x1 grid system
 
+  &.c-full {
+    stroke-width: 0;
+  }
+
   &.c-inner {
-    transform: scale(0.64);
+    transform: scale(0.75);
   }
 }
 
 .c-pie-donut {
-  fill: $background;
+  fill: $graphBg;
 }
 
-.c-title {
+.c-slot {
   position: absolute;
   width: 53%; // almost 2x inner .c-pie-donut radius
   top: 50%;

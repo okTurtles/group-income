@@ -12,38 +12,6 @@ function getProposalBoxes () {
   return cy.getByDT('proposalsWidget', 'ul').children()
 }
 
-function setDisplayName (name) {
-  cy.getByDT('settingsBtn').click()
-  cy.getByDT('displayName').clear().type(name)
-  cy.getByDT('saveAccount').click()
-  cy.getByDT('profileMsg').should('contain', 'Your changes were saved!')
-  cy.closeModal()
-}
-
-function addNonMonetaryContribution (name) {
-  cy.getByDT('addNonMonetaryContribution', 'button').click()
-  cy.getByDT('inputNonMonetaryContribution').type(name)
-  cy.getByDT('buttonAddNonMonetaryContribution', 'button').click()
-}
-
-function editNonMonetaryContribution (name, check) {
-  cy.getByDT('buttonEditNonMonetaryContribution').click()
-  if (check) {
-    cy.getByDT('inputNonMonetaryContribution').should('have.value', name)
-  } else {
-    cy.getByDT('inputNonMonetaryContribution').clear().type(name)
-  }
-  cy.getByDT('buttonSaveNonMonetaryContribution').click()
-}
-
-function updateIncome (newIcome, needIcome) {
-  cy.getByDT('contributionsLink').click()
-  cy.getByDT('openIncomeDetailModal').click()
-  cy.getByDT(needIcome ? 'needsIncomeRadio' : 'dontNeedsIncomeRadio').click()
-  cy.getByDT('inputIncomeOrPledge').clear().type(newIcome)
-  cy.getByDT('submitIncome').click()
-}
-
 describe('Proposals - Add members', () => {
   const invitationLinks = {}
 
@@ -54,18 +22,10 @@ describe('Proposals - Add members', () => {
 
     cy.giCreateGroup(groupName)
 
-    setDisplayName('Margarida')
-
-    cy.getByDT('inviteButton').click()
-    // OPTIMIZE - Find a better way to share global variables across tests (invitationLink)
-    cy.getByDT('invitationLink').invoke('text').then(text => {
-      const urlAt = text.indexOf('http://')
-      const url = text.substr(urlAt)
+    cy.giGetInvitationAnyone().then(url => {
       invitationLinks.anyone = url
-      assert.isOk(url, 'invitation link is found')
     })
 
-    cy.closeModal()
     cy.giLogout()
   })
 
@@ -214,7 +174,7 @@ describe('Proposals - Add members', () => {
     cy.giAcceptGroupInvite(invitationLinks.user6, {
       groupName,
       username: `user6-${userId}`,
-      inviteCreator: 'Margarida'
+      inviteCreator: `user1-${userId}`
     })
   })
 
@@ -288,159 +248,6 @@ describe('Proposals - Add members', () => {
           cy.getByDT('username').should('contain', `user${usersMap[index]}-${userId}`)
         })
       })
-  })
-
-  it('user clicks on contribution link and is asked to add income details', () => {
-    cy.getByDT('contributionsLink').click()
-    cy.getByDT('addIncomeDetailsFirstCard').should('contain', 'Add your income details')
-  })
-
-  it('user1 fills their Income Details saying they are pledging 500$', () => {
-    cy.getByDT('openIncomeDetailModal').click()
-    cy.getByDT('introIncomeOrPledge').should('not.be.visible') // Make sure only radio box to select the type is visible at the begining
-
-    cy.getByDT('dontNeedsIncomeRadio').click()
-    cy.getByDT('introIncomeOrPledge').should('contain', 'How much do you want to pledge?') // Make sure the user is aksed how much he want to pledge
-
-    cy.getByDT('inputIncomeOrPledge').type(500)
-    cy.getByDT('submitIncome').click()
-    // After selecting the amount and close the modal make sure it show that no one is in need
-    cy.getByDT('receivingParagraph').should('contain', 'When other members pledge a monetary or non-monetary contribution, they will appear here.')
-    cy.getByDT('givingParagraph').should('contain', 'No one needs monetary contributions at the moment. You can still add non-monetary contributions if you would like.')
-  })
-
-  it('user1 decides to switch income details to needing $100', () => {
-    cy.getByDT('openIncomeDetailModal').click()
-    cy.getByDT('needsIncomeRadio').click()
-    // After swithing to need income, it should ask user how much he need
-    cy.getByDT('introIncomeOrPledge').should('contain', 'What\'s your monthly income?')
-    cy.getByDT('inputIncomeOrPledge').type(500)
-    // It should not let user ask for money if he has more than the basic income
-    cy.getByDT('badIncome').should('contain', 'It seems your income is not lower than the group\'s mincome.')
-    cy.getByDT('inputIncomeOrPledge').clear().type(100)
-    // After updating the income under the limit it should hide the error message
-    cy.getByDT('badIncome').should('not.be.visible')
-    cy.getByDT('submitIncome').click()
-    // After closing the modal it should dislay how much user need
-    cy.getByDT('headerNeed').should('contain', 'You need $100')
-    // The user should be inform that even if he can\'t pledge he can still contribute
-    cy.getByDT('givingParagraph').should('contain', 'You can contribute to your group with money or other valuables like teaching skills, sharing your time ot help someone. The sky is the limit!')
-  })
-
-  it('user1 adds non monetary contribution', () => {
-    addNonMonetaryContribution('Portuguese classes')
-
-    cy.getByDT('givingList', 'ul')
-      .get('li.is-editable')
-      .should('have.length', 1)
-      .should('contain', 'Portuguese classes')
-  })
-
-  it('user1 removes non monetary contribution', () => {
-    cy.getByDT('buttonEditNonMonetaryContribution').click()
-    cy.getByDT('buttonRemoveNonMonetaryContribution').click()
-    cy.getByDT('givingList', 'ul')
-      .get('li.is-editable')
-      .should('have.length', 0)
-  })
-
-  it('user1 adds the same non monetary contribution after removing it', () => {
-    addNonMonetaryContribution('Portuguese classes')
-    cy.getByDT('givingList', 'ul')
-      .get('li.is-editable')
-      .should('have.length', 1)
-      .should('contain', 'Portuguese classes')
-  })
-
-  it('user1 edits the non monetary contribution', () => {
-    cy.getByDT('buttonEditNonMonetaryContribution').click()
-    cy.getByDT('inputNonMonetaryContribution').clear().type('French classes{enter}')
-    editNonMonetaryContribution('French classes', true)
-    // Double check
-    editNonMonetaryContribution('French classes', true)
-
-    cy.getByDT('givingList', 'ul')
-      .get('li.is-editable')
-      .should('have.length', 1)
-      .should('contain', 'French classes')
-  })
-
-  it('user1 cancels the edit', () => {
-    cy.getByDT('buttonEditNonMonetaryContribution').click()
-    cy.getByDT('buttonCancelNonMonetaryContribution').click()
-    cy.getByDT('givingList', 'ul')
-      .get('li.is-editable')
-      .should('have.length', 1)
-      .should('contain', 'French classes')
-  })
-
-  it('user1 adds many more non monetary contributions', () => {
-    addNonMonetaryContribution('German classes')
-    addNonMonetaryContribution('Russian classes')
-    addNonMonetaryContribution('Korean classes')
-
-    cy.getByDT('givingList', 'ul')
-      .get('li.is-editable')
-      .should('have.length', 4)
-  })
-
-  it('user2 pledges $100 and sees the non-contributions they are receiving.', () => {
-    cy.giSwitchUser(`user2-${userId}`)
-    updateIncome(100, false)
-
-    cy.get('.receiving .c-contribution-item:first-child')
-      .should('contain', 'French classes by Margarida')
-
-    cy.get('.receiving .c-contribution-list')
-      .should('have.length', 4)
-  })
-
-  it('user2 also gives non monetary contribution', () => {
-    addNonMonetaryContribution('Korean classes')
-    addNonMonetaryContribution('French classes')
-
-    cy.get('.giving .c-contribution-list')
-      .should('have.length', 3)
-  })
-
-  it('user3 pledges $100 and sees who they are pledging to - $50 to user1 (Margarida)', () => {
-    cy.giSwitchUser(`user3-${userId}`)
-    updateIncome(100, false)
-
-    cy.get('.giving .c-contribution-item:first-child')
-      .should('contain', '$50 to Margarida')
-  })
-
-  it('user4 and user2 change their pledges to $500 each. user1 sees the receiving contributions from 3 members.', () => {
-    cy.giSwitchUser(`user4-${userId}`)
-    updateIncome(500, false)
-    addNonMonetaryContribution('Korean classes')
-
-    cy.giSwitchUser(`user2-${userId}`)
-    updateIncome(500, false)
-
-    cy.giSwitchUser(`user1-${userId}`)
-    cy.getByDT('contributionsLink').click()
-    cy.get('.receiving .c-contribution-item:first-child')
-      .should('contain', '$100 from 3 members')
-  })
-
-  it('After lower the income of user4 and user2, user3 should give to 3 persons', () => {
-    cy.giSwitchUser(`user4-${userId}`)
-    updateIncome(10, true)
-
-    cy.giSwitchUser(`user2-${userId}`)
-    updateIncome(10, true)
-
-    cy.giSwitchUser(`user3-${userId}`)
-    cy.getByDT('contributionsLink').click()
-    cy.get('.giving .c-contribution-item:first-child')
-      .should('contain', 'A total of $100 to 3 members')
-  })
-
-  it('user3 should receives the same non monetary contribution from 3 members', () => {
-    cy.get('.giving .c-contribution-item:first-child')
-      .should('contain', 'A total of $100 to 3 members')
 
     cy.giLogout()
   })

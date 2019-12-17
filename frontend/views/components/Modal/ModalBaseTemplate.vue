@@ -1,6 +1,7 @@
 <template lang='pug'>
   transition(name='zoom' appear @after-leave='unload')
     .modal(
+      :class='{ fullscreen }'
       data-test='modal'
       role='dialog'
       tabindex='-1'
@@ -8,7 +9,7 @@
       v-if='modalIsActive'
       @close='close'
     )
-      modal-close(@close='close')
+      modal-close(@close='close' :fullscreen='fullscreen')
       slot
 </template>
 
@@ -17,7 +18,10 @@ import modalMixins from './ModalMixins.js'
 
 export default {
   name: 'ModalBaseTemplate',
-  mixins: [modalMixins]
+  mixins: [modalMixins],
+  props: {
+    fullscreen: Boolean
+  }
 }
 </script>
 
@@ -33,6 +37,18 @@ export default {
   bottom: 0;
   right: 0;
   overflow: auto;
+
+  &.fullscreen {
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    background: $general_2;
+    padding: 0 $spacer;
+
+    @include tablet {
+      padding: 0 $spacer*1.5;
+    }
+  }
 }
 
 .modal-body {

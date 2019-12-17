@@ -1,22 +1,20 @@
 <template lang='pug'>
   button.c-modal-close(
-    :class='{ "back-on-mobile": backOnMobile }'
+    :class='{ backOnMobile, fullscreen }'
     @click.self='$emit("close")'
     :aria-label='L("close modal")'
     data-test='closeModal'
   )
-    i.icon-chevron-left(aria-hidden='true')
+    i.icon-chevron-left.c-iconBack(aria-hidden='true')
+    i18n.c-modal-close-txt.has-text-small ESC
 </template>
 
 <script>
 export default {
   name: 'ModalClose',
-
   props: {
-    backOnMobile: {
-      type: Boolean,
-      default: false
-    }
+    backOnMobile: Boolean,
+    fullscreen: Boolean
   }
 }
 </script>
@@ -26,8 +24,8 @@ export default {
 
 .c-modal-close {
   position: fixed;
-  right: $spacer;
   top: $spacer;
+  right: $spacer;
   z-index: 4;
   height: 2.75rem;
   width: 2.75rem;
@@ -39,19 +37,42 @@ export default {
   cursor: pointer;
   background-color: $general_1;
 
-  i {
-    display: none;
-  }
-
   @include tablet {
-    top: 1.5rem;
-    right: 1.5rem;
+    top: $spacer*1.5;
+    right: $spacer*1.5;
   }
 
   @include desktop {
     position: absolute;
     top: $spacer;
     right: $spacer;
+  }
+
+  &.fullscreen {
+    top: $spacer*1.5;
+
+    @include desktop {
+      position: fixed;
+      right: $spacer*2.5;
+    }
+
+    .c-modal-close-text {
+      display: block;
+      position: absolute;
+      bottom: calc(-1em - #{$spacer-sm});
+      left: 0;
+      text-align: center;
+      width: 100%;
+      color: $text_0;
+
+      @include touch {
+        display: none;
+      }
+    }
+  }
+
+  .c-iconBack {
+    display: none;
   }
 
   &::before,
@@ -88,14 +109,14 @@ export default {
     }
   }
 
-  &.back-on-mobile {
-    @include touch {
+  &.backOnMobile {
+    @include until($tablet) {
       position: relative;
       left: 0;
       top: 0;
       margin-right: $spacer;
 
-      i {
+      .c-iconBack {
         display: block;
         color: $text_0;
         margin-left: 0;
@@ -106,6 +127,10 @@ export default {
         content: none;
       }
     }
+  }
+
+  &-txt {
+    display: none;
   }
 }
 </style>
