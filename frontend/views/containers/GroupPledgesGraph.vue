@@ -72,6 +72,7 @@ export default {
       'ourUsername'
     ]),
     graphData () {
+      const hasData = !!this.type
       const doWePledge = this.type === 'pledgeAmount'
       const mincome = this.groupSettings.mincomeAmount
       // NOTE: validate this.amount to avoid displyaing negative values in the graph
@@ -99,14 +100,14 @@ export default {
         }
       }
 
-      const ourIncomeNeeded = doWePledge ? null : mincome - ourIncomeAmount
+      const ourIncomeNeeded = doWePledge || !hasData ? null : mincome - ourIncomeAmount
       const pledgeTotal = othersPledgesAmount + ourPledgeAmount
       const groupGoal = othersIncomeNeeded + ourIncomeNeeded
       const neededPledges = Math.max(0, groupGoal - pledgeTotal)
       const surplus = Math.max(0, pledgeTotal - othersIncomeNeeded - ourIncomeNeeded)
       let ourIncomeToReceive = ourIncomeNeeded
 
-      if (doWePledge && neededPledges > 0) {
+      if (!doWePledge && neededPledges > 0) {
         incomeDistribution.push({ name: this.ourUsername, amount: ourIncomeAmount })
 
         ourIncomeToReceive = distributeIncome(incomeDistribution, mincome)
