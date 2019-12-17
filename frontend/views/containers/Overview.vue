@@ -327,6 +327,10 @@ export default {
   color: $text_1;
   margin-right: 40px;
 
+  &:last-child {
+    margin-right: 0;
+  }
+
   @include phone {
     margin-right: 15px;
     display: flex;
