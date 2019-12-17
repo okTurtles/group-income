@@ -194,10 +194,8 @@ export default {
     },
     decimalSlice (amount) {
       const perc = amount / this.graphData.groupGoal
-      // avoid breaking the graph when perc is bigger than 1
-      if (perc > 1) return 1
-      if (perc < 0) return 0
-      return perc
+      // avoid breaking the graph when perc is bigger than 1 or smaller than 0
+      return Math.min(Math.max(0, perc), 1)
     }
   }
 }
