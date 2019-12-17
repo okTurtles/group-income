@@ -231,7 +231,7 @@ describe('Payments', () => {
       'Needed Pledges$0',
       'Surplus$600'
     ]
-    updateIncome(500, false, graphicLegend4, '$71 to Greg')
+    updateIncome(500, false, graphicLegend4, '$71.43 to Greg')
     addNonMonetaryContribution('Korean classes')
 
     cy.giSwitchUser(`user2-${userId}`)
@@ -240,7 +240,7 @@ describe('Payments', () => {
       'Needed Pledges$0',
       'Surplus$1000'
     ]
-    updateIncome(500, false, graphicLegend2, '$45 to Greg')
+    updateIncome(500, false, graphicLegend2, '$45.45 to Greg')
 
     cy.giSwitchUser(`user1-${userId}`)
 
@@ -262,9 +262,9 @@ describe('Payments', () => {
     const graphicLegend2 = [
       'Total Pledged$100',
       'Needed Pledges$380',
-      "You'll receive$40"
+      "You'll receive$39.58"
     ]
-    updateIncome(10, true, graphicLegend2, '$40 by Pierre')
+    updateIncome(10, true, graphicLegend2, '$39.58 by Pierre')
   })
 
   it('user3 pledges to all 3 members', () => {
@@ -279,27 +279,24 @@ describe('Payments', () => {
     cy.giSwitchUser(`user1-${userId}`)
     cy.getByDT('contributionsLink').click()
 
-    // BUG! It should be $20, not $21. Read Notes bellow.
     cy.get(elReceivingFirst)
-      .should('contain', '$21 by Pierre')
+      .should('contain', '$20.83 by Pierre')
 
     cy.giLogout()
   })
 })
 
 /*
-NOTE: Summary of the group status so far:
+Summary of the group status so far:
 user1
   - needs $100
-  - $21 by pierre
-    // BUG - Should be $20, not $21,
-    cause the max is 100 !== (40 + 40 + 21)
+  - $20.83 by pierre
 user2
   - needs $190
-  - $40 by pierre
+  - $39.58 by pierre
 user3
   - pledges $100 to user1, user2 and user4
 user4
   - needs $190
-  - $40 by pierre
+  - $39.58 by pierre
 */
