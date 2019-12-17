@@ -106,7 +106,7 @@ export default {
       const surplus = Math.max(0, pledgeTotal - othersIncomeNeeded - ourIncomeNeeded)
       let ourIncomeToReceive = ourIncomeNeeded
 
-      if (doWeNeedPledge && neededPledges > 0) {
+      if (doWePledge && neededPledges > 0) {
         incomeDistribution.push({ name: this.ourUsername, amount: ourIncomeAmount })
 
         ourIncomeToReceive = distributeIncome(incomeDistribution, mincome)
