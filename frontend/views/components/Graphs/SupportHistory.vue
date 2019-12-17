@@ -1,5 +1,7 @@
 <template lang='pug'>
 div
+  i18n(tag='p') Percentage of the goal reached by the group.
+
   p(v-if='history.length === 0')
     i18n Your group is still in its first month.
 
@@ -20,7 +22,10 @@ import { toPercent } from '../../utils/filters'
 export default {
   name: 'GroupSupportHistory',
   props: {
-    history: Array
+    history: {
+      type: Array,
+      default: () => []
+    }
   },
   data () {
     return {
