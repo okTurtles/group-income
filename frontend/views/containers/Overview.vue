@@ -6,22 +6,22 @@ div
       .c-legend
         span.square.has-background-warning-solid
         i18n Total needed
-        b {{ totalNeeded }}
+        b {{ formatTotalNeeded }}
 
       .c-legend
         span.square.has-background-primary-solid
         i18n Total pledged
-        b {{ totalPledge }}
+        b {{ formatTotalPledge }}
 
       .c-legend(v-if='positiveBalance')
         span.square.has-background-success-solid
         i18n Surplus
-        b {{ surplus }}
+        b {{ formatSurplus }}
 
       .c-legend(v-else)
         span.square.has-background-danger-solid
         i18n Needed
-        b {{ surplus }}
+        b {{ formatSurplus }}
 
     .c-chart-wrapper
       svg(
@@ -30,27 +30,21 @@ div
         preserveAspectRatio='xMidYMid meet'
         aria-labelledby='title'
         role='img'
+        ref='graph'
       )
         // Move graph origin to the middle
         g(:transform='`translate(0,${middle})`')
           // Animate using scale from the middle
           g.g-animate(:style='`transform: scale3d(1,${ ready ? 1 : 0 },1)`')
             g.bars(
-              v-for='(member, index) in members.list'
+              v-for='(member, index) in members'
               :transform='positionX(index)'
             )
               // Total needed or total pledge bars
               path(
-                :class='color(member, false)'
-                :d='roundedRect(member >= 0, 0, positionY(member), width, height(member), 3)'
-              )
-
-              // Needs or surplus bars
-              path.g-animate-opacity.g-animate-delay(
-                v-if='hasSurplus(member)'
-                :class='color(member, true)'
-                :d='surplusRectangle(member)'
-                :style='`opacity: ${ ready ? 1 : 0 }`'
+                v-for='(values, index) in [member.total, member.amount]'
+                :class='color(values, index)'
+                :d='roundedRect(values >= 0, 0, positionY(values), width, height(values), 3)'
               )
 
           // Base with $0 on top of bars
@@ -75,15 +69,15 @@ div
             )
             // Income label
             foreignObject(
-              :x='ratioX - mincome.length * 10'
+              :x='ratioX - formatMincome.length * 10'
               :y='-labelPadding'
-              :width='mincome.length * 10'
+              :width='formatMincome.length * 10'
               height='18'
               :transform='`translate(0,${surplusLabelPosition})`'
             )
               .tag.g-animate-opacity.g-animate-delay(
                 :style='`opacity: ${ ready ? 1 : 0 }`'
-              ) {{ mincome }}
+              ) {{ formatMincome }}
 </template>
 
 <script>
@@ -114,91 +108,82 @@ export default {
   computed: {
     ...mapGetters([
       'groupProfiles',
-      'groupSettings'
+      'groupSettings',
+      'groupIncomeDistribution',
+      'thisMonthsPayments'
     ]),
+    distribution () {
+      return this.thisMonthsPayments.frozenDistribution || this.groupIncomeDistribution
+    },
     // Extract members incomes
     members () {
-      const list = []
-      let totalPledge = 0
-      let totalNeeded = 0
-      Object.values(this.groupProfiles).forEach(member => {
-        if (member.incomeDetailsType === 'incomeAmount' && member.incomeAmount) {
-          list.push(-member.incomeAmount)
-          totalNeeded += member.incomeAmount
-        } else if (member.pledgeAmount) {
-          list.push(member.pledgeAmount)
-          totalPledge += member.pledgeAmount
-        }
+      // Create object that contain what people need / pledge and what people receive / give
+      let list = {}
+      this.groupIncomeDistribution.map(distribution => {
+        list = this.addToList(list, distribution.from, distribution.amount)
+        list = this.addToList(list, distribution.to, -distribution.amount)
       })
-      list.sort((a, b) => (a > b) ? 1 : (a === b) ? ((a > b) ? 1 : -1) : -1)
-      return { list, totalPledge, totalNeeded }
+      // Sort object by need / pledge
+      list = Object.values(list).sort((a, b) => a.total - b.total)
+      return list
+    },
+    totals () {
+      return this.members.map(a => a.total)
+    },
+    amounts () {
+      return this.members.map(a => a.amount)
+    },
+    totalNeeded () {
+      return Math.abs(this.totals.filter(total => total < 0).reduce((total, amount) => total + amount))
+    },
+    totalPledge () {
+      return this.amounts.filter(member => member > 0).reduce((total, amount) => total + amount)
     },
     membersNumber () {
-      return this.members.list.length
+      return this.members.length
     },
-    // Display Legends
+    mincome () {
+      return this.groupSettings.mincomeAmount
+    },
+    // Formated Legends
     currency () {
       return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
     },
-    mincome () {
-      return this.currency(this.groupSettings.mincomeAmount)
+    formatMincome () {
+      return this.currency(this.mincome)
     },
-    totalNeeded () {
-      return this.currency(this.members.totalNeeded)
+    formatTotalNeeded () {
+      return this.currency(this.totalNeeded)
     },
-    totalPledge () {
-      return this.currency(this.members.totalPledge)
+    formatTotalPledge () {
+      return this.currency(this.totalPledge)
     },
-    surplus () {
-      return this.currency(Math.abs(this.members.totalPledge - this.members.totalNeeded))
+    formatSurplus () {
+      return this.currency(Math.abs(this.totalPledge - this.totalNeeded))
     },
     base () {
       return this.currency(0)
     },
     positiveBalance () {
-      return this.members.totalPledge - this.members.totalNeeded >= 0
+      return this.totalPledge - this.totalNeeded >= 0
     },
     // Graphic proportions
     width () {
       return Math.min(this.ratioX / this.membersNumber / this.ratioWidthPadding, this.maxWidth)
     },
     max () {
-      return Math.max.apply(Math, this.members.list)
+      return Math.max.apply(Math, this.totals)
     },
     min () {
-      return Math.min.apply(Math, this.members.list)
+      return Math.min.apply(Math, this.totals)
     },
     middle () {
       return this.calculRatioY(this.max) + this.verticalPadding / 2
     },
     // Calcul surplus position on the graph
     surplusPosition () {
-      // Find who by the surplus or need position
-      const surplusMembers = this.members.list
-        .filter(member => this.positiveBalance === (member > 0))
-        .map(member => Math.abs(member))
-        .sort((a, b) => a - b)
-
-      // Surplus or Needed Position
-      let position = 0
-      // Either total Needed or total pledge is used to calcul the surplus position
-      let used = Math.min(this.members.totalNeeded, this.members.totalPledge)
-      // Loop only on members that overlay the surplus position
-      surplusMembers.forEach((delta, index) => {
-        // Get numbers of people that are not already completlety included in the surplus
-        const nb = surplusMembers.length - index
-        const deltas = nb * delta
-        if (used > 0) {
-          if (deltas > used) {
-            position += used / nb
-            used = 0
-          } else {
-            used -= deltas
-            position += delta
-          }
-        }
-      })
-      return this.calculRatioY(this.positiveBalance ? position : -position)
+      const surplus = this.amounts.filter(member => this.positiveBalance === (member > 0))
+      return this.calculRatioY(surplus.reduce((total, amount) => total + amount) / surplus.length)
     },
     surplusLabelPosition () {
       // Add padding if surplus label is to close to the 0 base line
@@ -210,10 +195,26 @@ export default {
   methods: {
     handleResize: debounce(function () {
       this.isMobile = this.verifyIsMobile()
-      this.ratioX = this.isMobile ? 310 : 526
+      this.ratioX = this.$refs.graph.clientWidth
     }, 100),
     verifyIsMobile () {
       return window.innerWidth < TABLET
+    },
+    addToList (list, id, amount) {
+      const existingUser = list[id]
+      // Test if user already in the list
+      if (typeof existingUser !== 'undefined') {
+        list[id].amount = existingUser.amount + amount
+      } else {
+        // Add new user to the list
+        list[id] = {
+          amount: amount,
+          total: amount > 0
+            ? this.groupProfiles[id].pledgeAmount
+            : this.groupProfiles[id].incomeAmount - this.mincome
+        }
+      }
+      return list
     },
     calculRatioY (y) {
       return this.ratioY / (this.max + Math.abs(this.min)) * y
@@ -234,8 +235,8 @@ export default {
       return delta >= 0 ? -(this.calculRatioY(delta)) : 0
     },
     color (delta, surplus) {
-      if (delta >= 0) return surplus ? 'g-surplus' : 'g-positive'
-      else return surplus ? 'g-needed' : 'g-negative'
+      if (delta >= 0) return surplus ? 'g-positive' : 'g-surplus'
+      else return surplus ? 'g-negative' : 'g-needed'
     },
     hasSurplus (delta) {
       return this.height(delta) > Math.abs(this.surplusPosition) && (this.positiveBalance === (delta > 0))
