@@ -117,7 +117,7 @@ describe('Payments', () => {
     cy.getByDT('introIncomeOrPledge').should('contain', 'What\'s your monthly income?')
     cy.getByDT('inputIncomeOrPledge').type(500)
     // It should not let user ask for money if he has more than the basic income
-    cy.getByDT('badIncome').should('contain', 'Income must be lower than group mincome')
+    cy.getByDT('badIncome').should('contain', 'Your income must be lower than the group mincome')
     cy.getByDT('inputIncomeOrPledge').clear().type(100)
     // After updating the income under the limit it should hide the error message
     cy.getByDT('badIncome').should('not.be.visible')

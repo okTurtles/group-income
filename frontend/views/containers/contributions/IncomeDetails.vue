@@ -192,7 +192,7 @@ export default {
         [L('Oops, you entered a negative number')]: v => v >= 0,
         [L('The amount cannot have more than 2 decimals')]: decimals(2),
         [L('This field is required')]: required,
-        [L('Income must be lower than group mincome')]: function (value) {
+        [L('Your income must be lower than the group mincome')]: function (value) {
           return !this.needsIncome || value < this.groupSettings.mincomeAmount
         }
       }
