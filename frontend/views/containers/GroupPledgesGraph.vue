@@ -71,14 +71,12 @@ export default {
       'ourIdentityContractId',
       'ourUsername'
     ]),
-    doWePledge () {
-      return this.type === 'pledgeAmount'
-    },
     graphData () {
+      const doWePledge = this.type === 'pledgeAmount'
       const mincome = this.groupSettings.mincomeAmount
       // NOTE: validate this.amount to avoid displyaing negative values in the graph
-      const ourPledgeAmount = this.doWePledge && this.amount >= 0 && this.amount
-      const ourIncomeAmount = !this.doWePledge && this.amount < mincome && this.amount
+      const ourPledgeAmount = doWePledge && this.amount >= 0 && this.amount
+      const ourIncomeAmount = !doWePledge && this.amount < mincome && this.amount
       const incomeDistribution = []
       let othersIncomeNeeded = 0
       let othersPledgesAmount = 0
@@ -101,7 +99,7 @@ export default {
         }
       }
 
-      const ourIncomeNeeded = this.doWePledge ? null : mincome - ourIncomeAmount
+      const ourIncomeNeeded = doWePledge ? null : mincome - ourIncomeAmount
       const pledgeTotal = othersPledgesAmount + ourPledgeAmount
       const groupGoal = othersIncomeNeeded + ourIncomeNeeded
       const neededPledges = Math.max(0, groupGoal - pledgeTotal)
@@ -196,9 +194,7 @@ export default {
     decimalSlice (amount) {
       const perc = amount / this.graphData.groupGoal
       // avoid breaking the graph when perc is bigger than 1,
-      if (perc > 1) return 1
-      if (perc < 0) return 0
-      return perc
+      return Math.max(1, Math.min(0, perc))
     }
   }
 }
