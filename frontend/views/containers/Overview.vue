@@ -1,32 +1,28 @@
 <template lang='pug'>
 div
-  p.has-text-1 Group members and their pledges
+  i18n.has-text-1(tag='p') Group members and their pledges
   .c-chart
     .c-chart-legends
       .c-legend
         span.square.has-background-warning-solid
-        i18n Total needed
-        b {{ formatTotalNeeded }}
+        i18n(:args='{ ...LTags("b"), formatTotalNeeded }') Total needed {b_}{formatTotalNeeded}{_b}
 
       .c-legend
         span.square.has-background-primary-solid
-        i18n Total pledged
-        b {{ formatTotalPledge }}
+        i18n(:args='{ ...LTags("b"), formatTotalPledge }') Total pledged {b_}{formatTotalPledge}{_b}
 
       .c-legend(v-if='positiveBalance')
         span.square.has-background-success-solid
-        i18n Surplus
-        b {{ formatSurplus }}
+        i18n(:args='{ ...LTags("b"), formatSurplus }') Surplus {b_}{formatSurplus}{_b}
 
       .c-legend(v-else)
         span.square.has-background-danger-solid
-        i18n Needed
-        b {{ formatSurplus }}
+        i18n(:args='{ ...LTags("b"), formatSurplus }') Needed {b_}{formatSurplus}{_b}
 
     .c-chart-wrapper
       svg(
         width='100%'
-        :viewBox='`0 0 ${ratioX} ${ratioY + verticalPadding}`'
+        :viewBox='`0 0 ${ratioX} ${ratioY}`'
         preserveAspectRatio='xMidYMid meet'
         aria-labelledby='title'
         role='img'
@@ -36,7 +32,7 @@ div
         g(:transform='`translate(0,${middle})`')
           // Animate using scale from the middle
           g.g-animate(:style='`transform: scale3d(1,${ ready ? 1 : 0 },1)`')
-            g.bars(
+            g(
               v-for='(member, index) in members'
               :transform='positionX(index)'
             )
@@ -48,17 +44,14 @@ div
               )
 
           // Base with $0 on top of bars
-          g.line
-            line(x1='0' y1='0' :x2='ratioX' y2='0' stroke='#dbdbdb' stroke-width='1')
-            foreignObject(:x='ratioX - 25' :y='-labelPadding' width='25' height='18')
-              .tag.mincome {{ base }}
+          line(x1='0' y1='0' :x2='ratioX' y2='0' stroke='#dbdbdb' stroke-width='1')
 
           // Surplus line on top of bars
-          g.line(
-            :transform='`translate(0, ${-surplusPosition})`'
+          g(
+            :transform='`translate(0,${-surplusPosition})`'
           )
             line.g-animate.g-animate-delay(
-              :style='`transform: scale3d(${ ready ? 1 : 0 },1,1)`'
+              :style='`transform: scale3d(${ready ? 1 : 0},1,1)`'
               x1='0'
               y1='0'
               :x2='ratioX'
@@ -67,17 +60,11 @@ div
               stroke-width='1'
               stroke-dasharray='1'
             )
-            // Income label
-            foreignObject(
-              :x='ratioX - formatMincome.length * 10'
-              :y='-labelPadding'
-              :width='formatMincome.length * 10'
-              height='18'
-              :transform='`translate(0,${surplusLabelPosition})`'
-            )
-              .tag.g-animate-opacity.g-animate-delay(
-                :style='`opacity: ${ ready ? 1 : 0 }`'
-              ) {{ formatMincome }}
+
+      .tag.mincome(:style='middleTag') {{ base }}
+      .tag.g-animate-opacity.g-animate-delay(
+        :style='surplusTag'
+      ) {{ formatMincome }}
 </template>
 
 <script>
@@ -92,14 +79,14 @@ export default {
     ratioWidthPadding: 1.2,
     ratioX: 526,
     ratioY: 163,
-    verticalPadding: 22,
-    labelPadding: 11,
+    labelPadding: 10,
     maxWidth: 48,
     ready: false,
     isMobile: false
   }),
   mounted () {
     window.addEventListener('resize', this.handleResize)
+    this.handleResize()
     setTimeout(() => { this.ready = true }, 0)
   },
   beforeDestroy: function () {
@@ -178,18 +165,20 @@ export default {
       return Math.min.apply(Math, this.totals)
     },
     middle () {
-      return this.calculRatioY(this.max) + this.verticalPadding / 2
+      return this.calculRatioY(this.max)
+    },
+    middleTag () {
+      return { transform: 'translate(0,' + (this.middle - this.labelPadding) + 'px)' }
     },
     // Calcul surplus position on the graph
     surplusPosition () {
       const surplus = this.amounts.filter(member => this.positiveBalance === (member > 0))
       return this.calculRatioY(surplus.reduce((total, amount) => total + amount) / surplus.length)
     },
-    surplusLabelPosition () {
-      // Add padding if surplus label is to close to the 0 base line
-      if (Math.abs(this.surplusPosition) < this.labelPadding * 2) {
-        return this.positiveBalance ? -this.labelPadding : this.labelPadding
-      } else return 0
+    surplusTag () {
+      let positionY = this.middle - this.surplusPosition - this.labelPadding
+      if (Math.abs(this.surplusPosition) < this.labelPadding) positionY += this.positiveBalance ? -2 * this.labelPadding : 2 * this.labelPadding
+      return { opacity: 1, transform: 'translate(0,' + positionY + 'px)' }
     }
   },
   methods: {
@@ -298,6 +287,7 @@ export default {
 .c-chart-wrapper {
   display: flex;
   flex-wrap: wrap;
+  position: relative;
 }
 
 .c-total-amount {
@@ -313,10 +303,13 @@ export default {
 }
 
 .tag {
+  position: absolute;
+  right: 0;
   font-size: 12px;
   background-color: #fff;
   color: var(--text_1);
   text-align: right;
+  padding-left: 10px;
 }
 
 .c-chart-legends {
@@ -331,6 +324,7 @@ export default {
 }
 
 .c-legend {
+  color: $text_1;
   margin-right: 40px;
 
   @include phone {
@@ -353,8 +347,11 @@ export default {
       margin-top: 1px;
     }
   }
-  b {
+
+  ::v-deep b {
+    font-family: "Poppins";
     margin-left: 7px;
+    color: $text_0;
   }
 }
 
