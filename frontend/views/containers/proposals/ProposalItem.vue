@@ -23,6 +23,7 @@
 <script>
 import { mapGetters, mapState } from 'vuex'
 import L from '@view-utils/translations.js'
+import currencies from '~/frontend/views/utils/currencies.js'
 import {
   PROPOSAL_INVITE_MEMBER,
   PROPOSAL_REMOVE_MEMBER,
@@ -74,7 +75,23 @@ export default {
         [PROPOSAL_REMOVE_MEMBER]: () => L('Remove {user} from group.', {
           user: this.proposal.data.proposalData.member
         }),
-        [PROPOSAL_GROUP_SETTING_CHANGE]: () => L('TODO: Change [setting] from [current] to [new-value]', {}),
+        [PROPOSAL_GROUP_SETTING_CHANGE]: () => {
+          const { setting } = this.proposal.data.proposalData
+
+          const variablesMap = {
+            'mincomeAmount': () => {
+              const { mincomeCurrency, currentValue, proposedValue } = this.proposal.data.proposalData
+
+              return {
+                setting: L('mincome'),
+                currentValue: currencies[mincomeCurrency].displayWithCurrency(currentValue),
+                proposedValue: currencies[mincomeCurrency].displayWithCurrency(proposedValue)
+              }
+            }
+          }[setting]()
+
+          return L('Change {setting} from {currentValue} to {proposedValue}', variablesMap)
+        },
         [PROPOSAL_PROPOSAL_SETTING_CHANGE]: () => L('TODO: Change [rule setting] from [current] to [new-value]', {}),
         [PROPOSAL_GENERIC]: () => L('TODO: Change [generic] from [current] to [new-value]', {})
       }[this.proposalType]()
@@ -106,7 +123,7 @@ export default {
       const type = {
         [PROPOSAL_INVITE_MEMBER]: 'icon-user-plus',
         [PROPOSAL_REMOVE_MEMBER]: 'icon-user-times',
-        [PROPOSAL_GROUP_SETTING_CHANGE]: 'icon-users-cog',
+        [PROPOSAL_GROUP_SETTING_CHANGE]: 'icon-coins',
         [PROPOSAL_PROPOSAL_SETTING_CHANGE]: 'icon-chart-pie',
         [PROPOSAL_GENERIC]: 'icon-poll'
       }

@@ -197,7 +197,6 @@ DefineContract({
             throw new TypeError(`proposal: is identical to proposal ${hash}`)
           }
         }
-        // TODO/BUG: Avoid proposal to add existing member.
         Vue.set(state.proposals, hash, {
           data,
           meta,

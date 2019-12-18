@@ -78,36 +78,6 @@ const proposals = {
         data: data.passPayload
       })
       sbp('okTurtles.events/emit', PROPOSAL_RESULT, state, VOTE_FOR, data)
-      // TODO: for now, generate the link and send it to the user's inbox
-      //       however, we cannot send GIMessages in any way from here
-      //       because that means each time someone synchronizes this contract
-      //       a new invite would be sent...
-      //       which means the voter who casts the deciding ballot needs to
-      //       include in this message the authorization for the new user to
-      //       join the group.
-      //       we could make it so that all users generate the same authorization
-      //       somehow...
-      //       however if it's an OP_KEY_* message ther can only be one of those!
-      //
-      //       so, the deciding voter is the one that generates the passPayload data for the
-      //       link includes the OP_KEY_* message in their final vote authorizing
-      //       the user.
-      //       additionally, for our testing purposes, we check to see if the
-      //       currently logged in user is the deciding voter, and if so we
-      //       send a message to that user's inbox with the link. The user
-      //       clicks the link and then generates an invite accept or invite decline message.
-      //
-      //       we no longer have a state.invitees, instead we have a state.invites
-      // sbp('okTurtles.events/emit', PROPOSAL_RESULT, state, VOTE_FOR, data)
-      // TODO: generate and save invite link, which is used to generate a group/inviteAccept message
-      //       the invite link contains the secret to a public/private keypair that is generated
-      //       by the final voter, this keypair is a special "write only" keypair that is allowed
-      //       to only send a single kind of message to the group (accepting the invite, deleting
-      //       the writeonly keypair, and registering a new keypair with the group that has
-      //       full member privileges, i.e. their identity contract). The writeonly keypair
-      //       that's registered originally also contains attributes that tell the server
-      //       what kind of message(s) it's allowed to send to the contract, and how many
-      //       of them.
     },
     [VOTE_AGAINST]: voteAgainst
   },
@@ -138,8 +108,15 @@ const proposals = {
         [RULE_DISAGREEMENT]: { threshold: 1 }
       }
     },
-    [VOTE_FOR]: function (state, { proposalHash, passPayload }) {
-      console.error('unimplemented!')
+    [VOTE_FOR]: function (state, data) {
+      const proposal = state.proposals[data.proposalHash]
+      proposal.status = STATUS_PASSED
+      const { setting, proposedValue } = proposal.data.proposalData
+
+      sbp('gi.contracts/group/updateSettings/process', state, {
+        meta: proposal.meta,
+        data: { [setting]: proposedValue }
+      })
     },
     [VOTE_AGAINST]: voteAgainst
   },
