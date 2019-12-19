@@ -9,7 +9,13 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
 
     contributions-overview(v-if='canDisplayGraph')
 
+<<<<<<< HEAD
   proposals-widget
+=======
+    contributions-widget(v-if='hasIncomeDetails')
+
+    proposals-widget
+>>>>>>> Create ContributionsWidget
 
   //- page-section(title='L("July Overview")')
   //-   progress-overview
@@ -45,15 +51,20 @@ export default {
       'currentGroupId'
     ]),
     ...mapGetters([
+      'ourUsername',
       'currentGroupState', // TODO normalize getters names
       'groupSettings',
       'groupsByName',
       'groupMembersCount',
       'groupProfiles',
-      'ourGroupProfile'
+      'ourGroupProfile',
+      'groupProfile'
     ]),
     canDisplayGraph () {
       return Object.values(this.groupProfiles).filter(profile => profile.incomeDetailsType).length > 0
+    },
+    hasIncomeDetails () {
+      return !!this.groupProfile(this.ourUsername).incomeDetailsType
     }
   },
   components: {
