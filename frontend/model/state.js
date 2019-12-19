@@ -246,6 +246,10 @@ const getters = {
   ourGroupProfile (state, getters) {
     return getters.groupProfile(getters.ourUsername)
   },
+  ourUserDisplayName (state, getters) {
+    const userContract = getters.ourUserIdentityContract || {}
+    return (userContract.attributes && userContract.attributes.displayName) || getters.ourUsername
+  },
   ourIdentityContractId (state) {
     return state.loggedIn && state.loggedIn.identityContractID
   },

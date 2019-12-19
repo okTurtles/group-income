@@ -2,10 +2,9 @@
 page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings.groupName')
   template(#title='') {{ groupSettings.groupName }}
 
-  welcome(v-if='!ourGroupProfile.incomeDetailsType')
+  welcome-widget(v-if='!hasIncomeDetails')
 
   div(v-else)
-
     start-inviting(v-if='groupMembersCount === 1')
 
     contributions-overview(v-if='canDisplayGraph')
@@ -35,7 +34,7 @@ import ContributionsOverview from '@containers/contributions/ContributionsOvervi
 import GroupMincome from '@containers/sidebar/GroupMincome.vue'
 import GroupMembers from '@containers/sidebar/GroupMembers.vue'
 import GroupPurpose from '@containers/sidebar/GroupPurpose.vue'
-import Welcome from '@containers/Welcome.vue'
+import WelcomeWidget from '@containers/Welcome.vue'
 // import GroupPledgesGraph from '@containers/GroupPledgesGraph.vue'
 // import GroupSettings from '@components/GroupSettings.vue'
 
@@ -66,7 +65,7 @@ export default {
     GroupMembers,
     GroupPurpose,
     StartInviting,
-    Welcome
+    WelcomeWidget
     // GroupSettings,
     // GroupPledgesGraph
   }

@@ -34,9 +34,9 @@ export default {
   margin-right: $spacer;
   flex-shrink: 0;
 
-  @include desktop {
+  @include tablet {
     width: 6.25rem;
-    height: 6.25rem;
+    height: auto;
     margin-right: 2.5rem;
   }
 }
