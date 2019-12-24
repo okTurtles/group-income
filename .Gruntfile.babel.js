@@ -25,7 +25,7 @@ const util = require('util')
 const readFileAsync = util.promisify(fs.readFile)
 
 const development = process.env.NODE_ENV === 'development'
-const livereload = development && (parseInt(process.env.PORT_SHIFT || 0) + 35729)
+const livereload = development && parseInt(process.env.PORT_SHIFT || 0) + 35729
 
 const distDir = 'dist'
 const distAssets = `${distDir}/assets`
@@ -50,7 +50,7 @@ const sassOptions = {
   }
 }
 
-module.exports = (grunt) => {
+module.exports = grunt => {
   require('load-grunt-tasks')(grunt)
 
   grunt.initConfig({
@@ -112,14 +112,17 @@ module.exports = (grunt) => {
       //    - anything in /test folder, eg. integration tests
       //    - anything that ends with .test.js, eg. unit tests for sbp domains kept in the domain folder
       test: {
-        cmd: 'node node_modules/mocha/bin/mocha --require Gruntfile.js --exit -R spec --bail "{./{,!(node_modules|test)/**/}*.test.js,./test/*.js}"',
+        cmd:
+          'node node_modules/mocha/bin/mocha --require Gruntfile.js --exit -R spec --bail "{./{,!(node_modules|test)/**/}*.test.js,./test/*.js}"',
         options: { env: { LOAD_NO_FILE: 'true', ...process.env } }
       },
       // https://github.com/standard/standard/issues/750#issuecomment-379294276
       eslint: 'node ./node_modules/eslint/bin/eslint.js "**/*.{js,vue}"',
-      eslintgrunt: "./node_modules/.bin/eslint --ignore-pattern '!.*.js' .Gruntfile.babel.js Gruntfile.js",
+      eslintgrunt:
+        "./node_modules/.bin/eslint --ignore-pattern '!.*.js' .Gruntfile.babel.js Gruntfile.js",
       puglint: './node_modules/.bin/pug-lint-vue frontend/views',
-      stylelint: 'node ./node_modules/stylelint/bin/stylelint.js "frontend/assets/style/**/*.{css,scss,vue}"',
+      stylelint:
+        'node ./node_modules/stylelint/bin/stylelint.js "frontend/assets/style/**/*.{css,scss,vue}"',
       flow: './node_modules/.bin/flow'
     },
 
@@ -133,16 +136,18 @@ module.exports = (grunt) => {
         livereload: livereload,
         middleware: (connect, opts, middlewares) => {
           middlewares.unshift((req, res, next) => {
-            var f = url.parse(req.url).pathname // eslint-disable-line
+            var f = url.parse(req.url).pathname; // eslint-disable-line
             if (f !== undefined) {
               if (/^\/app(\/|$)/.test(f)) {
                 // NOTE: if you change the URL from /app you must modify it here,
                 //       and also:
                 //       - page() function in `frontend/test.js`
                 //       - base property in `frontend/simple/controller/router.js`
-                console.log(chalk.grey(`Req: ${req.url}, sending index.html for: ${f}`))
+                console.log(
+                  chalk.grey(`Req: ${req.url}, sending index.html for: ${f}`)
+                )
                 res.end(fs.readFileSync(`${distDir}/index.html`))
-              // NOTE: next we check for sourcemapped files
+                // NOTE: next we check for sourcemapped files
               } else if (/^\/(frontend|shared|node_modules)\//.test(f)) {
                 // NOTE: we will not be doing this or using this in production
                 console.log(chalk`{grey Req: ${req.url},} sending dev file`)
@@ -168,9 +173,21 @@ module.exports = (grunt) => {
   // -------------------------------------------------------------------------
 
   grunt.registerTask('default', ['dev'])
-  grunt.registerTask('dev', ['checkDependencies', 'build:watch', 'connect', 'backend:relaunch', 'watch'])
+  grunt.registerTask('dev', [
+    'checkDependencies',
+    'build:watch',
+    'connect',
+    'backend:relaunch',
+    'watch'
+  ])
   grunt.registerTask('dist', ['build'])
-  grunt.registerTask('test', ['build', 'connect', 'backend:launch', 'exec:test', 'cypress'])
+  grunt.registerTask('test', [
+    'build',
+    'connect',
+    'backend:launch',
+    'exec:test',
+    'cypress'
+  ])
   grunt.registerTask('test:unit', ['build', 'backend:launch', 'exec:test'])
 
   // TODO: add 'deploy' per:
@@ -186,7 +203,13 @@ module.exports = (grunt) => {
       sbp('backend/pubsub/setup', require('http').createServer(), true)
     }
     if (!grunt.option('skipbuild')) {
-      grunt.task.run(['exec:eslint', 'exec:puglint', 'exec:stylelint', 'copy', rollup])
+      grunt.task.run([
+        'exec:eslint',
+        'exec:puglint',
+        'exec:stylelint',
+        'copy',
+        rollup
+      ])
     }
   })
 
@@ -199,17 +222,21 @@ module.exports = (grunt) => {
     const options = {
       run: {
         headed: grunt.option('browser') === true,
-        ...(process.env.CYPRESS_RECORD_KEY ? {
-          record: true,
-          key: process.env.CYPRESS_RECORD_KEY
-        } : {})
+        ...(process.env.CYPRESS_RECORD_KEY
+          ? {
+            record: true,
+            key: process.env.CYPRESS_RECORD_KEY
+          }
+          : {})
       },
       open: {
         // add cypress.open() options here
       }
     }[command]
     grunt.log.writeln(`cypress: running in "${command}" mode...`)
-    cypress[command](options).then(r => done(r.totalFailed === 0)).catch(done)
+    cypress[command](options)
+      .then(r => done(r.totalFailed === 0))
+      .catch(done)
   })
 
   // -------------------------------------------------------------------------
@@ -219,7 +246,8 @@ module.exports = (grunt) => {
   var fork = require('child_process').fork
   var child = null
 
-  process.on('exit', () => { // 'beforeExit' doesn't work
+  process.on('exit', () => {
+    // 'beforeExit' doesn't work
     // In cases where 'watch' fails while child (server) is still running
     // we will exit and child will continue running in the background.
     // This can happen, for example, when running two GIS instances via
@@ -241,13 +269,13 @@ module.exports = (grunt) => {
       child = fork('Gruntfile.js', process.argv, {
         env: { LOAD_TARGET_FILE: './backend/index.js', ...process.env }
       })
-      child.on('error', (err) => {
+      child.on('error', err => {
         if (err) {
           console.error('error starting or sending message to child:', err)
           process.exit(1)
         }
       })
-      child.on('exit', (c) => {
+      child.on('exit', c => {
         if (c !== 0) {
           grunt.log.error(`child exited with error code: ${c}`.bold)
           // ^C can cause c to be null, which is an OK error
@@ -273,7 +301,9 @@ module.exports = (grunt) => {
   grunt.registerTask('backend:launch', '[internal]', function () {
     const done = this.async()
     grunt.log.writeln('backend: launching...')
-    require('./backend/index.js').then(done).catch(done)
+    require('./backend/index.js')
+      .then(done)
+      .catch(done)
   })
 
   // -----------------------
@@ -309,7 +339,7 @@ module.exports = (grunt) => {
           // https://vuejs.org/v2/guide/installation.html#Standalone-vs-Runtime-only-Build
           resolve: ['.vue', '.js', '.svg', '.scss'],
           entries: {
-            'vue': path.resolve('./node_modules/vue/dist/vue.esm.js'),
+            vue: path.resolve('./node_modules/vue/dist/vue.esm.js'),
             '~': path.resolve('./'),
             '@controller': path.resolve('./frontend/controller'),
             '@model': path.resolve('./frontend/model'),
@@ -337,7 +367,7 @@ module.exports = (grunt) => {
           match: /\.scss$/,
           recurse: true
         }),
-        eslint({ throwOnError: true, throwOnWarning: true }),
+        eslint({ throwOnError: true, throwOnWarning: true, fix: true }),
         svgLoader(),
         transformProxy({
           plugin: VuePlugin({
@@ -360,7 +390,13 @@ module.exports = (grunt) => {
           //       and causing "ReferenceError: require is not defined"
           // include: /(node_modules\/(blakejs|multihashes|tweetnacl|localforage|@babel|vue.+).*|primus\.js$)/,
           namedExports: {
-            'node_modules/vuelidate/lib/validators/index.js': ['required', 'between', 'email', 'minLength', 'requiredIf']
+            'node_modules/vuelidate/lib/validators/index.js': [
+              'required',
+              'between',
+              'email',
+              'minLength',
+              'requiredIf'
+            ]
           },
           ignore: ['crypto']
         }),
@@ -384,7 +420,11 @@ module.exports = (grunt) => {
           break
         case 'BUNDLE_END':
           grunt.verbose.debug(this.nameArgs, event.code)
-          grunt.log.writeln(chalk`{green created} {bold ${outputName}} {green in} {bold ${(event.duration / 1000).toFixed(1)}s}`)
+          grunt.log.writeln(
+            chalk`{green created} {bold ${outputName}} {green in} {bold ${(
+              event.duration / 1000
+            ).toFixed(1)}s}`
+          )
           watchFlag || watcher.close() // stop watcher (only build once) if 'rollup:watch' isn't called
           done && done()
           // set done to undefined so that if we get an 'ERROR' event later
@@ -412,29 +452,54 @@ module.exports = (grunt) => {
     }
   }
 
-  const watchScss = async function (source: string, filename: string, recurse: boolean) {
+  const watchScss = async function (
+    source: string,
+    filename: string,
+    recurse: boolean
+  ) {
     try {
-      for (const [match, id1, id2] of source.matchAll(/(?<!\/\/.*)(?:import ['"](.+?\.scss)['"]|@import ['"](.+?)['"];)/g)) {
+      for (const [match, id1, id2] of source.matchAll(
+        /(?<!\/\/.*)(?:import ['"](.+?\.scss)['"]|@import ['"](.+?)['"];)/g
+      )) {
         // sometimes the @imports in .scss files will contain the extension, and sometimes they won't
-        const resolvedPath = resolveScssFromId(id1 || `${chompRight(id2, '.scss')}.scss`)
+        const resolvedPath = resolveScssFromId(
+          id1 || `${chompRight(id2, '.scss')}.scss`
+        )
         if (resolvedPath) {
-          grunt.verbose.debug(chalk`addWatchFile {cyanBright ${match}} => {cyanBright ${resolvedPath}}`)
+          grunt.verbose.debug(
+            chalk`addWatchFile {cyanBright ${match}} => {cyanBright ${resolvedPath}}`
+          )
           this.addWatchFile(resolvedPath)
           if (recurse) {
-            await watchScss.call(this, await readFileAsync(resolvedPath, 'utf8'), resolvedPath, recurse)
+            await watchScss.call(
+              this,
+              await readFileAsync(resolvedPath, 'utf8'),
+              resolvedPath,
+              recurse
+            )
           }
         } else {
-          grunt.log.error(chalk`couldn't resolve: {cyanBright ${match}} in {cyanBright ${filename}}`)
+          grunt.log.error(
+            chalk`couldn't resolve: {cyanBright ${match}} in {cyanBright ${filename}}`
+          )
         }
       }
     } catch (e) {
-      grunt.log.error(`watchScss for ${filename} (typeof source = ${typeof source}):`, e.message, source)
+      grunt.log.error(
+        `watchScss for ${filename} (typeof source = ${typeof source}):`,
+        e.message,
+        source
+      )
       throw e
     }
   }
   // We use 'transformProxy' to intercept calls to the plugin's transform function,
   // so that we can watch .scss files for changes and rebuild the bundle + refresh browser
-  const transformProxy = function (opts: { plugin: Object, match: RegExp, recurse: boolean }) {
+  const transformProxy = function (opts: {
+    plugin: Object,
+    match: RegExp,
+    recurse: boolean,
+  }) {
     return new Proxy(opts.plugin, {
       get: function (obj, prop) {
         if (prop !== 'transform') return obj[prop]
@@ -455,7 +520,7 @@ module.exports = (grunt) => {
 function flow (options = {}) {
   return {
     name: 'flow-remove-types',
-    transform: (code) => ({
+    transform: code => ({
       code: flowRemoveTypes(code, options).toString(),
       map: options.pretty ? { mappings: '' } : null
     })
@@ -478,7 +543,9 @@ function svgLoader (options) {
         .replace('<svg', `<svg class="${svgClass}"`)
 
       const compiled = compiler.compile(svg, { preserveWhitespace: false })
-      const code = transpile(`module.exports = { render: function () { ${compiled.render} } };`)
+      const code = transpile(
+        `module.exports = { render: function () { ${compiled.render} } };`
+      )
         // convert to ES6 modules
         .replace('module.exports =', 'export default')
 

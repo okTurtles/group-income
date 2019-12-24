@@ -257,6 +257,70 @@ const getters = {
   ourUserIdentityContract (state) {
     return (state.loggedIn && state[state.loggedIn.identityContractID]) || {}
   },
+  ourContributionSummary (state, getters) {
+    const groupProfiles = getters.groupProfiles
+    const ourUsername = getters.ourUsername
+    const ourGroupProfile = groupProfiles[ourUsername]
+    const needsIncome = ourGroupProfile.incomeDetailsType === 'incomeAmount'
+    const distribution = getters.thisMonthsPayments.frozenDistribution || getters.groupIncomeDistribution
+    const withCurrency = currencies[getters.groupSettings.mincomeCurrency].displayWithCurrency
+
+    const nonContributionsOf = (username) => groupProfiles[username].nonMonetaryContributions || []
+    const getDisplayName = (username) => getters.globalProfile(username).displayName || username
+
+    return {
+      givesMonetary: (() => {
+        if (needsIncome) { return null }
+
+        const who = []
+        const total = distribution
+          .filter(p => p.from === ourUsername)
+          .reduce((acc, payment) => {
+            who.push(getDisplayName(payment.to))
+            return acc + payment.amount
+          }, 0)
+
+        return total ? { who, total: withCurrency(total) } : null
+      })(),
+      receivesMonetary: (() => {
+        if (!needsIncome) { return null }
+
+        const who = []
+        const total = distribution
+          .filter(p => p.to === ourUsername)
+          .reduce((acc, payment) => {
+            who.push(getDisplayName(payment.from))
+            return acc + payment.amount
+          }, 0)
+
+        return total ? { who, total: withCurrency(total) } : null
+      })(),
+      receivesNonMonetary: (() => {
+        const listWho = Object.keys(groupProfiles)
+          .filter(username => username !== ourUsername && nonContributionsOf(username).length > 0)
+        const listWhat = listWho.reduce((contr, username) => {
+          const displayName = getDisplayName(username)
+          const userContributions = nonContributionsOf(username)
+
+          userContributions.forEach((what) => {
+            const contributionIndex = contr.findIndex(c => c.what === what)
+            contributionIndex >= 0
+              ? contr[contributionIndex].who.push(displayName)
+              : contr.push({ who: [displayName], what })
+          })
+          return contr
+        }, [])
+
+        return listWho.length > 0 ? { what: listWhat, who: listWho } : null
+      })(),
+      givesNonMonetary: (() => {
+        const contributions = ourGroupProfile.nonMonetaryContributions
+
+        return contributions.length > 0 ? contributions : null
+      })()
+    }
+  },
+
   // list of group names and contractIDs
   groupsByName (state) {
     const contracts = state.contracts
