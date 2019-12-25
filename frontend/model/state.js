@@ -258,20 +258,24 @@ const getters = {
     return (state.loggedIn && state[state.loggedIn.identityContractID]) || {}
   },
   ourContributionSummary (state, getters) {
+    // TODO - Refactor Contributions.js and GroupPledgeGraph to use this.
     const groupProfiles = getters.groupProfiles
     const ourUsername = getters.ourUsername
     const ourGroupProfile = groupProfiles[ourUsername]
-    const needsIncome = ourGroupProfile.incomeDetailsType === 'incomeAmount'
+
+    if (!ourGroupProfile.incomeDetailsType) {
+      return {}
+    }
+
+    const doWeNeedIncome = ourGroupProfile.incomeDetailsType === 'incomeAmount'
     const distribution = getters.thisMonthsPayments.frozenDistribution || getters.groupIncomeDistribution
-    const withCurrency = currencies[getters.groupSettings.mincomeCurrency].displayWithCurrency
 
     const nonContributionsOf = (username) => groupProfiles[username].nonMonetaryContributions || []
     const getDisplayName = (username) => getters.globalProfile(username).displayName || username
 
     return {
       givesMonetary: (() => {
-        if (needsIncome) { return null }
-
+        if (doWeNeedIncome) { return null }
         const who = []
         const total = distribution
           .filter(p => p.from === ourUsername)
@@ -280,11 +284,11 @@ const getters = {
             return acc + payment.amount
           }, 0)
 
-        return total ? { who, total: withCurrency(total) } : null
+        return { who, total, pledged: ourGroupProfile.pledgeAmount }
       })(),
       receivesMonetary: (() => {
-        if (!needsIncome) { return null }
-
+        if (!doWeNeedIncome) { return null }
+        const needed = getters.groupSettings.mincomeAmount - ourGroupProfile.incomeAmount
         const who = []
         const total = distribution
           .filter(p => p.to === ourUsername)
@@ -293,7 +297,7 @@ const getters = {
             return acc + payment.amount
           }, 0)
 
-        return total ? { who, total: withCurrency(total) } : null
+        return { who, total, needed }
       })(),
       receivesNonMonetary: (() => {
         const listWho = Object.keys(groupProfiles)
@@ -320,7 +324,6 @@ const getters = {
       })()
     }
   },
-
   // list of group names and contractIDs
   groupsByName (state) {
     const contracts = state.contracts

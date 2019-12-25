@@ -1,30 +1,31 @@
 <template lang='pug'>
   page-section(:title='L("Contributions")')
     .c-widget
-      .column
-        h3.is-title-4.c-title {{ copy.payments.title }}
-        .has-text-1(v-if='copy.payments.status') {{ copy.payments.status }}
+      .c-column
+        div(v-if='copy.payments.title')
+          h3.is-title-4.c-title {{ copy.payments.title }}
+          .has-text-1(
+            v-if='copy.payments.text'
+            v-html='copy.payments.text'
+            @click='handlePaymentTextClick'
+          )
         payments-summary(v-else)
 
-        //-
-          ::::CONTINUE HERE - TODO ::::
-          - [ ] - payments Summary
-          - [ ] - Copy / style for payments cta
-          - [ ] - Responsive
-          - [ ] - Reuse 'ourContributionSummary' at Contributions and IncomeDetailsPage
-        //- v-if='copy.payments.cta'
         router-link.button.is-small.c-cta(
+          v-if='copy.payments.ctaText'
           to='/pay-group'
-        ) {{ L('See payments') }}
-      .column
+          :class='copy.payments.ctaClass'
+        ) {{ copy.payments.ctaText }}
+      .c-column
         h3.is-title-4.c-title(v-html='copy.monetary.title')
-        .has-text-1 {{ copy.monetary.status }}
+        .has-text-1 {{ copy.monetary.text }}
         i18n.link.c-cta(tag='button' @click='openModal("IncomeDetails")') Change
-      .column
+      .c-column
         h3.is-title-4.c-title {{ copy.nonMonetary.title }}
-        .has-text-1 {{ copy.nonMonetary.status }}
-        router-link.link.c-cta(to='/contributions')
-          | {{ L('See all contributions') }}
+        .has-text-1 {{ copy.nonMonetary.text }}
+        router-link.link.c-cta(
+          to='/contributions'
+        ) {{ L('See all contributions') }}
 </template>
 
 <script>
@@ -55,10 +56,6 @@ export default {
       return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
     },
     copy () {
-      console.log(this.ourContributionSummary)
-      const ourGroupProfile = this.groupProfiles[this.ourUsername]
-      const needsIncome = ourGroupProfile.incomeDetailsType === 'incomeAmount'
-
       const {
         givesMonetary,
         givesNonMonetary,
@@ -68,66 +65,74 @@ export default {
 
       const copy = {}
 
-      if (needsIncome) {
-        const title = L('Payments received')
-        let status
-
-        if (receivesMonetary) {
-          status = ''
-        } else {
-          status = 'No members in the group are pledging yet! 😔'
+      if (receivesMonetary) {
+        copy.payments = {
+          title: !receivesMonetary.total && L('Payments received'),
+          text: !receivesMonetary.total && L('No members in the group are pledging yet! 😔'),
+          ctaText: receivesMonetary.total && L('See more')
         }
-        copy.payments = { title, status }
-      } else {
-        const copyMonetaryTitle = (amount) => L('You are pledging {br_} {amount}', { ...this.LTags(), amount })
-        const zeroCurrency = this.withCurrency(0)
 
-        if (ourGroupProfile.pledgeAmount === 0) {
+        copy.monetary = {
+          title: L('You need {br_}{amount}', {
+            ...this.LTags(),
+            amount: this.withCurrency(receivesMonetary.needed)
+          }),
+          text: L('You will receive {amount}.', {
+            amount: this.withCurrency(receivesMonetary.total)
+          })
+        }
+      } else if (givesMonetary) {
+        const copyMonetaryTitle = (amount) => L('You are pledging {br_} {amount}', {
+          ...this.LTags(),
+          amount: this.withCurrency(amount)
+        })
+
+        if (givesMonetary.pledged > 0) {
+          const payedAll = false // TODO - connect with real data when PaymentsSystem is done.
+
+          copy.payments = {
+            title: !givesMonetary.total && L('Payments sent'),
+            text: !givesMonetary.total && L('At the moment, no one is in need of contributions.'),
+            ctaText: givesMonetary.total ? (payedAll ? L('Review payments') : L('Send payments')) : null,
+            ctaClass: payedAll && 'is-outlined'
+          }
+
+          copy.monetary = {
+            title: copyMonetaryTitle(givesMonetary.pledged),
+            text: L('{amount} will be used.', {
+              amount: this.withCurrency(givesMonetary.total)
+            })
+          }
+        } else {
           copy.payments = {
             title: L('Payments'),
-            status: L('[Make a pledge] to start contributing to other members')
-          }
-          copy.monetary = {
-            title: copyMonetaryTitle(zeroCurrency),
-            status: ''
-          }
-        } else {
-          const title = L('Payments sent')
-          let status
-
-          if (givesMonetary) {
-            status = ''
-          } else {
-            status = 'At the moment, no one is in need of contributions'
-          }
-
-          copy.payments = { title, status }
-
-          copy.monetary = {
-            title: copyMonetaryTitle(this.withCurrency(ourGroupProfile.pledgeAmount)),
-            status: L('{amount} will be used.', {
-              amount: givesMonetary ? givesMonetary.total : zeroCurrency
+            text: L('{b1}Make a pledge{b2} to start contributing to other members.', {
+              b1: '<button class="link js-btnPledge">',
+              b2: '</button>'
             })
+          }
+
+          copy.monetary = {
+            title: copyMonetaryTitle(givesMonetary.total)
           }
         }
       }
 
       copy.nonMonetary = (() => {
-        const title = L('Non-monetary')
-        let status
+        let text
 
         if (receivesNonMonetary) {
           const count = receivesNonMonetary.who.length
-          status = givesNonMonetary
+          text = givesNonMonetary
             ? L('You and {count} other members are contributing.', { count })
             : L('{count} members are contributing.', { count })
         } else {
-          status = givesNonMonetary
+          text = givesNonMonetary
             ? L('You are contributing.')
             : L('There are no non-monetary contributions.')
         }
 
-        return { title, status }
+        return { title: L('Non-monetary'), text }
       })()
 
       return copy
@@ -136,6 +141,11 @@ export default {
   methods: {
     openModal (modal) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal)
+    },
+    handlePaymentTextClick (e) {
+      if (e.target.classList.contains('js-btnPledge')) {
+        this.openModal('incomeDetails')
+      }
     }
   }
 }
@@ -146,8 +156,23 @@ export default {
 .c-widget {
   margin-top: $spacer;
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
-  grid-column-gap: $spacer;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas:
+    "payments payments"
+    "monetary nonMonetary";
+  grid-column-gap: $spacer*1.5;
+  grid-row-gap: $spacer*1.5;
+
+  @include tablet {
+    grid-template-columns: 2fr 1fr 1fr;
+    grid-template-areas: "payments monetary nonMonetary";
+  }
+}
+
+.c-column {
+  &:nth-child(1) { grid-area: payments; }
+  &:nth-child(2) { grid-area: monetary; }
+  &:nth-child(3) { grid-area: nonMonetary; }
 }
 
 .c-title {
@@ -155,6 +180,6 @@ export default {
 }
 
 .c-cta {
-  margin-top: $spacer;
+  margin-top: $spacer*1.5;
 }
 </style>

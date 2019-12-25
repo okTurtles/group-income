@@ -10,12 +10,18 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
     contributions-overview(v-if='canDisplayGraph')
 
 <<<<<<< HEAD
+<<<<<<< HEAD
   proposals-widget
 =======
     contributions-widget(v-if='hasIncomeDetails')
 
     proposals-widget
 >>>>>>> Create ContributionsWidget
+=======
+    contributions-widget
+
+    proposals-widget(v-if='Object.keys(currentGroupState.proposals).length > 0')
+>>>>>>> finish ContributionsWidget
 
   //- page-section(title='L("July Overview")')
   //-   progress-overview
