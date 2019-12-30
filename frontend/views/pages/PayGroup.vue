@@ -23,7 +23,7 @@ page(
   .c-container-empty(v-if='!hasPayments')
     svg-contributions.c-svg
 
-    i18n.c-title(tag='h2') There are no pending payments yet!
+    i18n.is-title-4.c-title(tag='h2') There are no pending payments yet!
     i18n.has-text-1(tag='p') Once other group members add their income details, Group Income will re-distribute wealth amongst everyone.
 
   section.card(v-else)

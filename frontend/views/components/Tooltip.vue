@@ -1,5 +1,5 @@
 <template lang='pug'>
-span.c-wrapper(
+span.c-twrapper(
   tabindex='0'
   @mouseenter='show'
   @mouseleave='hide'
@@ -10,7 +10,7 @@ span.c-wrapper(
   slot
   .c-tooltip(
     :style='stylesPosition'
-    :class='isTextCenter ? "has-text-center" : ""'
+    :class='hasTextCenter ? "has-text-center" : ""'
     v-if='isActive || shouldShow'
     v-append-to-body=''
   )
@@ -32,7 +32,7 @@ export default {
     text: String,
     // Force to show tooltip manually
     shouldShow: Boolean,
-    isTextCenter: Boolean,
+    hasTextCenter: Boolean,
     direction: {
       type: String,
       validator: (value) => ['bottom', 'bottom-end', 'right', 'right-start', 'top'].includes(value),
@@ -113,7 +113,7 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.c-wrapper {
+.c-twrapper {
   cursor: pointer;
 }
 

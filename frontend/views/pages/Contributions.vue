@@ -196,7 +196,7 @@ export default {
     },
     upTo () {
       const amount = this.memberGroupProfile[this.memberGroupProfile.incomeDetailsType]
-      if (!amount) return false
+      if (typeof amount !== 'number') return false
       return this.currency.displayWithCurrency(this.needsIncome ? this.groupSettings.mincomeAmount - amount : amount)
     },
     needsIncome () {
@@ -321,6 +321,7 @@ export default {
 .c-contribution-header {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
   padding: 1rem 0 1.5rem 0;
 
   button {
@@ -351,6 +352,10 @@ export default {
 
 .c-cta {
   margin-top: $spacer*1.5;
+
+  @include phone {
+    margin-bottom: $spacer-xl;
+  }
 }
 
 .spacer-around {
