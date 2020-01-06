@@ -32,7 +32,7 @@ div
         g(:transform='`translate(0,${middle})`')
           // Animate using scale from the middle
           g.g-animate(:style='`transform: scale3d(1,${ ready ? 1 : 0 },1)`')
-            g(
+            g.graph-bar(
               v-for='(member, index) in members'
               :transform='positionX(index)'
             )

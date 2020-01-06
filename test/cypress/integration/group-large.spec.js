@@ -41,6 +41,7 @@ describe('Payments', () => {
       })
     }
 
-    cy.giLogin(`user1-${userId}`)
+    cy.get('.graph-bar')
+      .should('have.length', 4)
   })
 })
