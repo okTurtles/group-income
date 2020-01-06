@@ -42,6 +42,6 @@ describe('Payments', () => {
     }
 
     cy.get('.graph-bar')
-      .should('have.length', 4)
+      .should('have.length', 20)
   })
 })
