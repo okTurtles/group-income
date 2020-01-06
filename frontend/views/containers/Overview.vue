@@ -9,7 +9,7 @@ div
 
       .c-legend
         span.square.has-background-primary-solid
-        i18n(:args='{ ...LTags("b"), formatTotalPledge }') Total contribution {b_}{formatTotalPledge}{_b}
+        i18n(:args='{ ...LTags("b"), formatTotalPledge }') Total pledged {b_}{formatTotalPledge}{_b}
 
       .c-legend(v-if='positiveBalance')
         span.square.has-background-success-solid
@@ -80,7 +80,7 @@ export default {
   data: () => ({
     ratioWidthPadding: 1.5,
     ratioX: 526,
-    ratioY: 163,
+    ratioY: 160,
     labelPadding: 10,
     labelwidth: 52,
     availableWidth: 474,
@@ -142,11 +142,6 @@ export default {
         ? this.amounts.filter(member => member > 0).reduce((total, amount) => total + amount)
         : 0
     },
-    totalSurplus () {
-      return this.totals.length > 0
-        ? this.totals.filter(member => member > 0).reduce((total, amount) => total + amount) - this.totalNeeded
-        : 0
-    },
     membersNumber () {
       return this.members.length
     },
@@ -164,7 +159,7 @@ export default {
       return this.currency(this.totalPledge)
     },
     formatSurplus () {
-      return this.currency(Math.abs(this.totalSurplus - this.totalNeeded))
+      return this.currency(Math.abs(this.totalPledge - this.totalNeeded))
     },
     base () {
       return this.currency(0)
@@ -261,7 +256,7 @@ export default {
       const marginLeft = Math.min((this.availableWidth - (this.width * this.membersNumber)) / this.membersNumber, 28)
       const maxWidth = this.membersNumber * (this.width + marginLeft)
       const positionX = maxWidth / this.membersNumber * index
-      const offset = this.isMobile ? -marginLeft : (this.availableWidth - maxWidth) / 2 - marginLeft
+      const offset = (this.availableWidth - maxWidth) / 2 - marginLeft
       return `translate(${positionX + marginLeft + offset}, 0)`
     },
     positionY (delta) {
@@ -318,6 +313,7 @@ export default {
   @include phone {
     display: flex;
     flex-direction: column-reverse;
+    padding-top: 1.5rem;
   }
 }
 
@@ -357,6 +353,14 @@ export default {
   @include phone {
     display: flex;
     flex-direction: column;
+    margin-top: 1rem;
+    margin-bottom: 0;
+
+    span:last-child {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+    }
   }
 }
 
@@ -373,6 +377,10 @@ export default {
     display: flex;
     justify-content: space-between;
     align-items: center;
+
+    &:last-child {
+      margin-right: 15px;
+    }
   }
 
   .square {
