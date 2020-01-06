@@ -4,13 +4,16 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
 
   start-inviting(v-if='groupMembersCount === 1')
 
-  page-section(title='This months overview' v-if='!showHistory')
-    span.support-history.button.is-outlined.is-small(@click='showHistory = !showHistory') Support history
-    overview
+  welcome(v-if='groupIncomeDistribution.length === 0')
 
-  page-section(title='Support History' v-if='showHistory')
-    span.support-history.button.is-outlined.is-small(@click='showHistory = !showHistory') This month's overview
-    support-history
+  div(v-else)
+    page-section(title='This months overview' v-if='!showHistory')
+      span.support-history.button.is-outlined.is-small(@click='showHistory = !showHistory') Support history
+      overview
+
+    page-section(title='Support History' v-if='showHistory')
+      span.support-history.button.is-outlined.is-small(@click='showHistory = !showHistory') This month's overview
+      support-history
 
   proposals-widget
 
@@ -41,6 +44,7 @@ import SupportHistory from '@components/Graphs/SupportHistory.vue'
 import GroupMincome from '@containers/sidebar/GroupMincome.vue'
 import GroupMembers from '@containers/sidebar/GroupMembers.vue'
 import GroupPurpose from '@containers/sidebar/GroupPurpose.vue'
+import Welcome from '@containers/Welcome.vue'
 
 export default {
   name: 'GroupDashboard',
@@ -57,7 +61,8 @@ export default {
       'currentGroupState', // TODO normalize getters names
       'groupSettings',
       'groupsByName',
-      'groupMembersCount'
+      'groupMembersCount',
+      'groupIncomeDistribution'
     ])
   },
   components: {
@@ -72,7 +77,8 @@ export default {
     GroupMincome,
     GroupMembers,
     GroupPurpose,
-    StartInviting
+    StartInviting,
+    Welcome
   }
 }
 </script>

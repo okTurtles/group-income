@@ -9,7 +9,7 @@ div
 
       .c-legend
         span.square.has-background-primary-solid
-        i18n(:args='{ ...LTags("b"), formatTotalPledge }') Total pledged {b_}{formatTotalPledge}{_b}
+        i18n(:args='{ ...LTags("b"), formatTotalPledge }') Total contribution {b_}{formatTotalPledge}{_b}
 
       .c-legend(v-if='positiveBalance')
         span.square.has-background-success-solid
@@ -40,7 +40,7 @@ div
               path(
                 v-for='(values, index) in [member.total, member.amount]'
                 :class='color(values, index)'
-                :d='roundedRect(values >= 0, 0, positionY(values), width, height(values), 3)'
+                :d='roundedRect(values >= 0, 0, positionY(values), width, height(values), width > 15 ? 3 : 1)'
               )
 
           // Base with $0 on top of bars
@@ -48,7 +48,8 @@ div
 
           // Surplus line on top of bars
           g(
-            :transform='`translate(0,${-surplusPosition})`'
+            v-for='scaleLine in createScale'
+            :transform='`translate(0,${-scaleLine.position})`'
           )
             line.g-animate.g-animate-delay(
               :style='`transform: scale3d(${ready ? 1 : 0},1,1)`'
@@ -63,8 +64,9 @@ div
 
       .tag.mincome(:style='middleTag') {{ base }}
       .tag.g-animate-opacity.g-animate-delay(
-        :style='surplusTag'
-      ) {{ formatMincome }}
+        v-for='scaleLine in createScale'
+        :style='{ opacity: ready ? 1 : 0, transform: "translate(0," + (-scaleLine.position + middle - labelPadding) + "px)" }'
+      ) {{ scaleLine.label }}
 </template>
 
 <script>
@@ -76,10 +78,12 @@ import { TABLET } from '@view-utils/breakpoints.js'
 export default {
   name: 'Overview',
   data: () => ({
-    ratioWidthPadding: 1.2,
+    ratioWidthPadding: 1.5,
     ratioX: 526,
     ratioY: 163,
     labelPadding: 10,
+    labelwidth: 52,
+    availableWidth: 474,
     maxWidth: 48,
     ready: false,
     isMobile: false
@@ -88,6 +92,14 @@ export default {
     window.addEventListener('resize', this.handleResize)
     this.handleResize()
     setTimeout(() => { this.ready = true }, 0)
+
+    // TODO remove after tests
+    // this.toPrecision(0.0000002234234)
+    // this.toPrecision(0.34)
+    // this.toPrecision(0.00334)
+    // this.toPrecision(234)
+    // this.toPrecision(4234)
+    // this.toPrecision(3234234)
   },
   beforeDestroy: function () {
     window.removeEventListener('resize', this.handleResize)
@@ -121,10 +133,19 @@ export default {
       return this.members.map(a => a.amount)
     },
     totalNeeded () {
-      return Math.abs(this.totals.filter(total => total < 0).reduce((total, amount) => total + amount))
+      return this.totals.length > 0
+        ? Math.abs(this.totals.filter(total => total < 0).reduce((total, amount) => total + amount))
+        : 0
     },
     totalPledge () {
-      return this.amounts.filter(member => member > 0).reduce((total, amount) => total + amount)
+      return this.amounts.length > 0
+        ? this.amounts.filter(member => member > 0).reduce((total, amount) => total + amount)
+        : 0
+    },
+    totalSurplus () {
+      return this.totals.length > 0
+        ? this.totals.filter(member => member > 0).reduce((total, amount) => total + amount) - this.totalNeeded
+        : 0
     },
     membersNumber () {
       return this.members.length
@@ -136,9 +157,6 @@ export default {
     currency () {
       return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
     },
-    formatMincome () {
-      return this.currency(this.mincome)
-    },
     formatTotalNeeded () {
       return this.currency(this.totalNeeded)
     },
@@ -146,7 +164,7 @@ export default {
       return this.currency(this.totalPledge)
     },
     formatSurplus () {
-      return this.currency(Math.abs(this.totalPledge - this.totalNeeded))
+      return this.currency(Math.abs(this.totalSurplus - this.totalNeeded))
     },
     base () {
       return this.currency(0)
@@ -156,7 +174,7 @@ export default {
     },
     // Graphic proportions
     width () {
-      return Math.min(this.ratioX / this.membersNumber / this.ratioWidthPadding, this.maxWidth)
+      return Math.min(this.availableWidth / this.membersNumber / this.ratioWidthPadding, this.maxWidth)
     },
     max () {
       return Math.max.apply(Math, this.totals)
@@ -170,22 +188,50 @@ export default {
     middleTag () {
       return { transform: 'translate(0,' + (this.middle - this.labelPadding) + 'px)' }
     },
-    // Calcul surplus position on the graph
-    surplusPosition () {
-      const surplus = this.amounts.filter(member => this.positiveBalance === (member > 0))
-      return this.calculRatioY(surplus.reduce((total, amount) => total + amount) / surplus.length)
-    },
-    surplusTag () {
-      let positionY = this.middle - this.surplusPosition - this.labelPadding
-      if (Math.abs(this.surplusPosition) < this.labelPadding) positionY += this.positiveBalance ? -2 * this.labelPadding : 2 * this.labelPadding
-      return { opacity: 1, transform: 'translate(0,' + positionY + 'px)' }
+    createScale () {
+      const range = this.max - this.min
+      const maxScalesCount = 4
+      const roundedTickRange = this.toPrecision(range / maxScalesCount)
+      const scales = []
+      let scale = Math.ceil(this.min / roundedTickRange) * roundedTickRange
+      while (scale <= this.max) {
+        let label = this.currency(Math.abs(scale))
+        if (scale < 0) label = '-' + label
+        // Add scale label and positition
+        scales.push({ label: label, position: this.calculRatioY(scale) })
+        scale = scale + roundedTickRange
+      }
+      return scales
     }
   },
   methods: {
     handleResize: debounce(function () {
-      this.isMobile = this.verifyIsMobile()
-      this.ratioX = this.$refs.graph.clientWidth
+      if (this.$refs.graph) {
+        this.isMobile = this.verifyIsMobile()
+        this.ratioX = this.$refs.graph.clientWidth
+        this.availableWidth = this.ratioX - this.labelwidth
+      }
     }, 100),
+
+    toPrecision (nbr) {
+      if (typeof nbr !== 'number') return 0
+      if (nbr === 0) return 0
+      // log only for positive number
+      const num = Math.abs(nbr)
+      // Remove floating number for large number to calcul the precision
+      if (nbr > 10) nbr = parseInt(nbr)
+      // Increase precision for small value
+      const precision = nbr.toString().length > 3 ? 2 : 1
+      // Rounding technic
+      const digits = Math.ceil(Math.log(num) / Math.LN10)
+      const factor = Math.pow(10, precision - digits)
+      let result = Math.round(num * factor, 0) / factor
+      // Remove floating number for large number
+      if (num > 1000) result = parseInt(result)
+      // Bring sign back
+      return nbr > 0 ? result : -result
+    },
+
     verifyIsMobile () {
       return window.innerWidth < TABLET
     },
@@ -212,11 +258,10 @@ export default {
       return this.calculRatioY(Math.abs(delta))
     },
     positionX (index) {
-      const marginLeft = Math.max((this.width * this.ratioWidthPadding - this.width) / 2, 28)
-      let maxWidth = this.membersNumber * (this.width + marginLeft)
-      if (this.isMobile) maxWidth -= 50
+      const marginLeft = Math.min((this.availableWidth - (this.width * this.membersNumber)) / this.membersNumber, 28)
+      const maxWidth = this.membersNumber * (this.width + marginLeft)
       const positionX = maxWidth / this.membersNumber * index
-      const offset = this.isMobile ? -marginLeft : (this.ratioX - maxWidth) / 2 - marginLeft
+      const offset = this.isMobile ? -marginLeft : (this.availableWidth - maxWidth) / 2 - marginLeft
       return `translate(${positionX + marginLeft + offset}, 0)`
     },
     positionY (delta) {
@@ -226,14 +271,6 @@ export default {
     color (delta, surplus) {
       if (delta >= 0) return surplus ? 'g-positive' : 'g-surplus'
       else return surplus ? 'g-negative' : 'g-needed'
-    },
-    hasSurplus (delta) {
-      return this.height(delta) > Math.abs(this.surplusPosition) && (this.positiveBalance === (delta > 0))
-    },
-    surplusRectangle (delta) {
-      let positionY = this.positionY(delta)
-      if (!this.positiveBalance) positionY -= this.surplusPosition
-      return this.roundedRect(this.positiveBalance, 0, positionY, this.width, this.height(delta) - Math.abs(this.surplusPosition), 3)
     },
     roundedRect (up, x, y, w, h, r) {
       let retval = 'M' + (x + r) + ',' + y
@@ -405,5 +442,9 @@ export default {
 .g-animate-delay {
   // TODO: remove important once test are done
   transition-delay: 0.5s !important;
+}
+
+.c-no-activities {
+  display: flex;
 }
 </style>

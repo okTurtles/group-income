@@ -164,7 +164,8 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
   groupName,
   isLoggedIn,
   inviteCreator,
-  displayName
+  displayName,
+  actionBeforeLoggout
 }) => {
   cy.visit(invitationLink)
 
@@ -184,5 +185,7 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
   if (displayName) {
     cy.giSetDisplayName(displayName)
   }
+
+  if (actionBeforeLoggout) actionBeforeLoggout()
   cy.giLogout()
 })
