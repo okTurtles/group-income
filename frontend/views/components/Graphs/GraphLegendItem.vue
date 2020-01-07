@@ -32,16 +32,33 @@ export default {
 .c-wlegend {
   padding: $spacer 0;
 
-  &:first-child {
-    padding-top: 0;
+  &.c-wlegend-side {
+    &:first-child {
+      padding-top: 0;
+    }
+
+    &:last-child {
+      padding-bottom: 0;
+    }
+
+    &:not(:last-child) {
+      border-bottom: 1px solid $general_0;
+    }
   }
 
-  &:last-child {
-    padding-bottom: 0;
-  }
+  @include tablet {
+    &.c-wlegend-inline {
+      position: relative;
+      margin-right: 2.5rem;
+      padding-left: 1rem;
 
-  &:not(:last-child) {
-    border-bottom: 1px solid $general_0;
+      .c-marker {
+        position: absolute;
+        left: 0;
+        top: 1.45rem;
+        margin-left: 0;
+      }
+    }
   }
 }
 

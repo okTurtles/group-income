@@ -2,22 +2,28 @@
 div
   i18n.has-text-1(tag='p') Group members and their pledges
   .c-chart
-    .c-chart-legends
-      .c-legend
-        span.square.has-background-warning-solid
-        i18n(:args='{ ...LTags("b"), formatTotalNeeded }') Total needed {b_}{formatTotalNeeded}{_b}
+    ul.c-chart-legends
+      graph-legend-item.c-wlegend-inline(
+        :amount='withCurrency(this.totalNeeded)'
+        color='warning-solid'
+      ) {{ L('Total needed') }}
 
-      .c-legend
-        span.square.has-background-primary-solid
-        i18n(:args='{ ...LTags("b"), formatTotalPledge }') Total pledged {b_}{formatTotalPledge}{_b}
+      graph-legend-item.c-wlegend-inline(
+        :amount='withCurrency(this.totalPledge)'
+        color='primary-solid'
+      ) {{ L('Total Pledged') }}
 
-      .c-legend(v-if='positiveBalance')
-        span.square.has-background-success-solid
-        i18n(:args='{ ...LTags("b"), formatSurplus }') Surplus {b_}{formatSurplus}{_b}
+      graph-legend-item.c-wlegend-inline(
+        v-if='positiveBalance'
+        :amount='withCurrency(Math.abs(totalPledge - totalNeeded))'
+        color='success-solid'
+      ) {{ L('Surplus') }}
 
-      .c-legend(v-else)
-        span.square.has-background-danger-solid
-        i18n(:args='{ ...LTags("b"), formatSurplus }') Needed {b_}{formatSurplus}{_b}
+      graph-legend-item.c-wlegend-inline(
+        v-else
+        :amount='withCurrency(Math.abs(totalPledge - totalNeeded))'
+        color='danger-solid'
+      ) {{ L('Needed') }}
 
     .c-chart-wrapper
       svg(
@@ -74,15 +80,19 @@ import { debounce } from '@utils/giLodash.js'
 import { mapGetters } from 'vuex'
 import currencies from '@view-utils/currencies.js'
 import { TABLET } from '@view-utils/breakpoints.js'
+import { GraphLegendItem } from '@components/Graphs/index.js'
 
 export default {
   name: 'Overview',
+  components: {
+    GraphLegendItem
+  },
   data: () => ({
     ratioWidthPadding: 1.5,
     ratioX: 526,
     ratioY: 160,
     labelPadding: 10,
-    labelwidth: 52,
+    labelwidth: 40,
     availableWidth: 474,
     maxWidth: 48,
     ready: false,
@@ -207,6 +217,10 @@ export default {
         this.availableWidth = this.ratioX - this.labelwidth
       }
     }, 100),
+
+    withCurrency (amount) {
+      return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency(amount)
+    },
 
     toPrecision (nbr) {
       if (typeof nbr !== 'number') return 0
@@ -347,60 +361,10 @@ export default {
 
 .c-chart-legends {
   display: flex;
-  margin-top: 1.5rem;
-  margin-bottom: 1.5rem;
 
   @include phone {
     display: flex;
     flex-direction: column;
-    margin-top: 1rem;
-    margin-bottom: 0;
-
-    span:last-child {
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-    }
-  }
-}
-
-.c-legend {
-  color: $text_1;
-  margin-right: 40px;
-
-  &:last-child {
-    margin-right: 0;
-  }
-
-  @include phone {
-    margin-right: 15px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    &:last-child {
-      margin-right: 15px;
-    }
-  }
-
-  .square {
-    display: inline-block;
-    width: 7px;
-    height: 7px;
-    margin-right: 10px;
-    border-radius: 1px;
-
-    @include phone {
-      position: absolute;
-      right: 7px;
-      margin-top: 1px;
-    }
-  }
-
-  ::v-deep b {
-    font-family: "Poppins";
-    margin-left: 7px;
-    color: $text_0;
   }
 }
 
@@ -418,23 +382,6 @@ export default {
 
 .g-needed {
   fill: $danger_0;
-}
-
-// TODO remove once merge with Sandrina
-.has-background-primary-solid {
-  background-color: $primary_0;
-}
-
-.has-background-success-solid {
-  background-color: $success_0;
-}
-
-.has-background-warning-solid {
-  background-color: $warning_0;
-}
-
-.has-background-danger-solid {
-  background-color: $danger_0;
 }
 
 .g-animate {

@@ -8,17 +8,17 @@
     span.is-title-4 {{ withCurrency(graphData.groupGoal) }}
 
   ul.c-legendList(:aria-label='L("Group pledging summary")' data-test='groupPledgeSummary')
-    graph-legend-item(
+    graph-legend-item.c-wlegend-side(
       :amount='withCurrency(graphData.pledgeTotal)'
       color='primary-solid'
     ) {{ L('Total Pledged') }}
 
-    graph-legend-item(
+    graph-legend-item.c-wlegend-side(
       :amount='withCurrency(graphData.neededPledges)'
       color='blank'
     ) {{ L('Needed Pledges') }}
 
-    graph-legend-item(
+    graph-legend-item.c-wlegend-side(
       v-if='graphData.surplus'
       :amount='withCurrency(graphData.surplus)'
       color='success-solid'
@@ -26,7 +26,7 @@
       template(slot='description')
         i18n This amount will not be used until someone needs it.
 
-    graph-legend-item(
+    graph-legend-item.c-wlegend-side(
       v-if='graphData.ourIncomeToReceive > 0'
       :amount='withCurrency(graphData.ourIncomeToReceive)'
       color='warning-solid'
