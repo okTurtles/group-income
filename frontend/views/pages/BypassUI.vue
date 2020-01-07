@@ -31,8 +31,8 @@ page
 
 <script>
 import sbp from '~/shared/sbp.js'
-import Page from '@pages/Page.vue'
-import BannerScoped from '@components/BannerScoped.vue'
+import Page from '@components/Page.vue'
+import BannerScoped from '@components/banners/BannerScoped.vue'
 
 export default {
   name: 'BypassUI',

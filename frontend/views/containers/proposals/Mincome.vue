@@ -33,7 +33,7 @@ import { mapGetters, mapState } from 'vuex'
 import { decimals } from '@view-utils/validators.js'
 import L from '@view-utils/translations.js'
 import ProposalTemplate from './ProposalTemplate.vue'
-import BannerScoped from '@components/BannerScoped.vue'
+import BannerScoped from '@components/banners/BannerScoped.vue'
 import { PROPOSAL_GROUP_SETTING_CHANGE } from '@model/contracts/voting/proposals.js'
 
 export default {

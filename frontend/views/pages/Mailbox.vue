@@ -160,7 +160,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
 import sbp from '~/shared/sbp.js'
 import { TYPE_MESSAGE } from '@model/contracts/mailbox.js'
 import L from '@view-utils/translations.js'
-import Page from './Page.vue'
+import Page from '@components/Page.vue'
 import Avatar from '@components/Avatar.vue'
 import { mapGetters } from 'vuex'
 

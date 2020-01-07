@@ -861,11 +861,11 @@ page(
             code
               | sbp('okTurtles.events/emit',
               br
-              |   OPEN_MODAL, 'DesignSystemModal'
+              |   OPEN_MODAL, 'DSModalSimple'
               br
               | )
           td
-            button(@click='openModal("DesignSystemModal")')
+            button(@click='openModal("DSModalSimple")')
               i18n Open Modal
 
   article#modalBase
@@ -886,11 +886,11 @@ page(
             code
               | sbp('okTurtles.events/emit',
               br
-              |   OPEN_MODAL, 'DesignSystemModalBase'
+              |   OPEN_MODAL, 'DSModalNested'
               br
               | )
           td
-            button(@click='openModal("DesignSystemModalBase")')
+            button(@click='openModal("DSModalNested")')
               i18n Open Modal
   article#Illustrations
     section.card
@@ -932,10 +932,10 @@ page(
 </template>
 
 <script>
-import Page from '@pages/Page.vue'
+import Page from '@components/Page.vue'
 import sbp from '~/shared/sbp.js'
-import BannerSimple from '@components/BannerSimple.vue'
-import BannerScoped from '@components/BannerScoped.vue'
+import BannerSimple from '@components/banners/BannerSimple.vue'
+import BannerScoped from '@components/banners/BannerScoped.vue'
 import Tooltip from '@components/Tooltip.vue'
 import Badge from '@components/Badge.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'

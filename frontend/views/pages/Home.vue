@@ -22,8 +22,8 @@ main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
     i18n(
       tag='button'
       ref='signupBtn'
-      @click='openModal("Signup")'
-      @keyup.enter='openModal("Signup")'
+      @click='openModal("SignupModal")'
+      @keyup.enter='openModal("SignupModal")'
       data-test='signupBtn'
       v-focus=''
     ) Signup
@@ -36,7 +36,7 @@ main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
 
       i18n(
         tag='button'
-        @click='openModal("CreateGroup")'
+        @click='openModal("GroupCreationModal")'
         data-test='createGroup'
         :aria-label='L("Add a group")'
       ) Create Group
@@ -47,7 +47,7 @@ main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
       i18n(tag='p') Enter an existing group using your username.
       i18n(
         tag='button'
-        @click='openModal("JoinGroup")'
+        @click='openModal("GroupJoinModal")'
         data-test='joinGroup'
       ) Join a Group
 

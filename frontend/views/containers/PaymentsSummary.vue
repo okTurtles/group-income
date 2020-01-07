@@ -14,7 +14,7 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import ProgressBar from '@components/Graphs/Progress.vue'
+import ProgressBar from '@components/graphs/Progress.vue'
 import L from '@view-utils/translations.js'
 
 export default {
