@@ -71,6 +71,9 @@ export default {
     },
     hasIncomeDetails () {
       return !!this.groupProfile(this.ourUsername).incomeDetailsType
+    },
+    hasProposals () {
+      return Object.keys(this.currentGroupState.proposals).length > 0
     }
   },
   components: {

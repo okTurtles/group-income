@@ -247,6 +247,7 @@ const getters = {
     return getters.groupProfile(getters.ourUsername)
   },
   ourUserDisplayName (state, getters) {
+    // TODO - refactor Profile and Welcome and any other component that needs this
     const userContract = getters.ourUserIdentityContract || {}
     return (userContract.attributes && userContract.attributes.displayName) || getters.ourUsername
   },
@@ -258,7 +259,7 @@ const getters = {
     return (state.loggedIn && state[state.loggedIn.identityContractID]) || {}
   },
   ourContributionSummary (state, getters) {
-    // TODO - Refactor Contributions.js and GroupPledgeGraph to use this.
+    // TODO - Refactor Contributions and GroupPledgeGraph to use this.
     const groupProfiles = getters.groupProfiles
     const ourUsername = getters.ourUsername
     const ourGroupProfile = groupProfiles[ourUsername]
