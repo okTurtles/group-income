@@ -43,5 +43,7 @@ describe('Payments', () => {
 
     cy.get('.graph-bar')
       .should('have.length', 20)
+    cy.giLogin(`user1-${userId}`)
+    cy.giLogout()
   })
 })
