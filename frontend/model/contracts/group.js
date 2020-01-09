@@ -336,13 +336,6 @@ DefineContract({
         var groupProfile = state.profiles[meta.username]
         const nonMonetary = groupProfile.nonMonetaryContributions
 
-        // Prevent stale amounts when the user changes their incomeDetailsType
-        if (data.incomeDetailsType === 'pledgeAmount') {
-          Vue.set(groupProfile, 'incomeAmount', null)
-        } else if (data.incomeDetailsType === 'incomeAmount') {
-          Vue.set(groupProfile, 'pledgeAmount', null)
-        }
-
         for (const key in data) {
           const value = data[key]
           switch (key) {
