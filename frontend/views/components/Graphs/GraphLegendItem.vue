@@ -101,6 +101,10 @@ export default {
   &.has-background-warning-solid {
     border-color: $warning_0;
   }
+
+  &.has-background-danger-solid {
+    border-color: $danger_0;
+  }
 }
 
 .c-description {

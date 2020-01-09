@@ -4,26 +4,26 @@ div
   .c-chart
     ul.c-chart-legends
       graph-legend-item.c-wlegend-inline(
-        :amount='withCurrency(this.totalNeeded)'
+        :amount='withCurrency(totalCovered)'
         color='warning-solid'
-      ) {{ L('Total needed') }}
+      ) {{ L('Total covered') }}
 
       graph-legend-item.c-wlegend-inline(
-        :amount='withCurrency(this.totalPledge)'
+        :amount='withCurrency(totalCovered)'
         color='primary-solid'
       ) {{ L('Total Pledged') }}
 
       graph-legend-item.c-wlegend-inline(
-        v-if='positiveBalance'
-        :amount='withCurrency(Math.abs(totalPledge - totalNeeded))'
+        v-if='surplus > 0'
+        :amount='withCurrency(surplus)'
         color='success-solid'
       ) {{ L('Surplus') }}
 
       graph-legend-item.c-wlegend-inline(
         v-else
-        :amount='withCurrency(Math.abs(totalPledge - totalNeeded))'
+        :amount='withCurrency(Math.abs(surplus))'
         color='danger-solid'
-      ) {{ L('Needed') }}
+      ) {{ L('Total needed') }}
 
     bars(:totals='totals' :members='members')
 </template>
@@ -70,20 +70,23 @@ export default {
     amounts () {
       return this.members.map(a => a.amount)
     },
-    totalNeeded () {
-      const needyPeople = this.totals.filter(total => total < 0)
-      return needyPeople.length > 0
-        ? Math.abs(needyPeople.reduce((total, amount) => total + amount))
-        : 0
-    },
-    totalPledge () {
+    totalCovered () {
       const pledgePeople = this.amounts.filter(member => member > 0)
       return pledgePeople.length > 0
         ? pledgePeople.reduce((total, amount) => total + amount)
         : 0
     },
-    positiveBalance () {
-      return this.totalPledge - this.totalNeeded >= 0
+    surplus () {
+      const needyPeople = this.totals.filter(member => member < 0)
+      const totalNeeded = needyPeople.length > 0
+        ? Math.abs(needyPeople.reduce((total, amount) => total + amount))
+        : 0
+      const pledgePeople = this.totals.filter(member => member > 0)
+      const totalPledge = pledgePeople.length > 0
+        ? Math.abs(pledgePeople.reduce((total, amount) => total + amount))
+        : 0
+
+      return totalPledge - totalNeeded
     }
   },
   methods: {
