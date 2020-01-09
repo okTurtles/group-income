@@ -19,7 +19,7 @@
           min='1'
           required
         )
-        .suffix {{ inputSuffix }}
+        .suffix {{ groupMincomeSymbolWithCode }}
       i18n.helper(:args='{groupMincomeFormatted}') Currently {groupMincomeFormatted} monthly.
 
     banner-scoped(ref='formMsg' data-test='proposalError')
@@ -30,7 +30,6 @@ import sbp from '~/shared/sbp.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import { mapGetters, mapState } from 'vuex'
-import currencies from '@view-utils/currencies.js'
 import { decimals } from '@view-utils/validators.js'
 import L from '@view-utils/translations.js'
 import ProposalTemplate from './ProposalTemplate.vue'
@@ -85,11 +84,9 @@ export default {
       'groupShouldPropose',
       'groupSettings',
       'groupMembersCount',
-      'groupMincomeFormatted'
+      'groupMincomeFormatted',
+      'groupMincomeSymbolWithCode'
     ]),
-    inputSuffix () {
-      return `${currencies[this.groupSettings.mincomeCurrency].symbol} ${this.groupSettings.mincomeCurrency}`
-    },
     rule () {
       const { threshold } = this.groupSettings.proposals['group-setting-change'].ruleSettings.threshold
       return { value: Math.round(this.groupMembersCount * threshold), total: this.groupMembersCount }
