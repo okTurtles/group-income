@@ -88,7 +88,7 @@ export default {
       'groupMincomeSymbolWithCode'
     ]),
     rule () {
-      const { threshold } = this.groupSettings.proposals['group-setting-change'].ruleSettings.threshold
+      const { threshold } = this.groupSettings.proposals[PROPOSAL_GROUP_SETTING_CHANGE].ruleSettings.threshold
       return { value: Math.round(this.groupMembersCount * threshold), total: this.groupMembersCount }
     }
   },
