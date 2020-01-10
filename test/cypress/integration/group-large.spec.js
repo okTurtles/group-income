@@ -1,10 +1,10 @@
 const userId = Math.floor(Math.random() * 10000)
 const groupName = 'Dreamers'
 
-describe('Payments', () => {
+describe('Large group', () => {
   const invitationLinks = {}
 
-  it('user1 creates a group', () => {
+  it('A group with 20 members shows correctly the pledging month overview widget', () => {
     cy.visit('/')
 
     cy.giSignup(`user1-${userId}`)
@@ -16,14 +16,12 @@ describe('Payments', () => {
     })
 
     cy.giLogout()
-  })
 
-  it('20 users join the group', () => {
     for (let i = 2; i <= 21; i++) {
       cy.giAcceptGroupInvite(invitationLinks.anyone, {
         username: `user${i}-${userId}`,
         groupName,
-        actionBeforeLoggout: () => {
+        actionBeforeLogout: () => {
           if (i > 3) {
             cy.getByDT('contributionsLink').click()
           }

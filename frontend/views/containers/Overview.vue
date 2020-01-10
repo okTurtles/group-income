@@ -3,26 +3,30 @@ div
   i18n.has-text-1(tag='p') Group members and their pledges
   .c-chart
     ul.c-chart-legends
-      graph-legend-item.c-wlegend-inline(
+      graph-legend-item(
         :amount='withCurrency(totalCovered)'
         color='warning-solid'
+        variant='inline'
       ) {{ L('Total covered') }}
 
-      graph-legend-item.c-wlegend-inline(
+      graph-legend-item(
         :amount='withCurrency(totalCovered)'
         color='primary-solid'
+        variant='inline'
       ) {{ L('Total Pledged') }}
 
-      graph-legend-item.c-wlegend-inline(
+      graph-legend-item(
         v-if='surplus > 0'
         :amount='withCurrency(surplus)'
         color='success-solid'
+        variant='inline'
       ) {{ L('Surplus') }}
 
-      graph-legend-item.c-wlegend-inline(
+      graph-legend-item(
         v-else
         :amount='withCurrency(Math.abs(surplus))'
         color='danger-solid'
+        variant='inline'
       ) {{ L('Total needed') }}
 
     bars(:totals='totals' :members='members')

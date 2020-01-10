@@ -2,9 +2,9 @@
 page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings.groupName')
   template(#title='') {{ groupSettings.groupName }}
 
-  start-inviting(v-if='groupMembersCount === 1')
-
   welcome(v-if='groupIncomeDistribution.length === 0')
+
+  start-inviting(v-if='groupMembersCount === 1')
 
   div(v-else)
     page-section(title='This months overview' v-if='!showHistory')

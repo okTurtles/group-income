@@ -1,5 +1,5 @@
 <template lang='pug'>
-li.c-wlegend
+li.c-wlegend(:class='`c-wlegend-${variant}`')
   .c-inner
     span.has-text-1.c-desc
       slot
@@ -21,6 +21,10 @@ export default {
     color: {
       type: String,
       required: true
+    },
+    variant: {
+      type: String,
+      default: 'side'
     }
   }
 }
@@ -46,11 +50,20 @@ export default {
     }
   }
 
+  &.c-wlegend-inline {
+    padding: $spacer-xs 0;
+
+    &:first-child {
+      padding-top: $spacer;
+    }
+  }
+
   @include tablet {
     &.c-wlegend-inline {
+      padding: $spacer 0;
       position: relative;
       margin-right: 2.5rem;
-      padding-left: 1rem;
+      padding-left: $spacer;
 
       .c-marker {
         position: absolute;
