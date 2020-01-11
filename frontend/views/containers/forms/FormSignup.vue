@@ -52,7 +52,7 @@ import FormPassword from '@containers/forms/FormPassword.vue'
 import BannerScoped from '@components/BannerScoped.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-
+import { signup } from '../../../actions/actions.js'
 export default {
   name: 'FormSignup',
   mixins: [
@@ -76,59 +76,26 @@ export default {
   methods: {
     async signup () {
       // Prevent autocomplete submission when empty field
-      if (this.form.name !== null && this.form.email !== null) {
-        try {
-          // TODO: make sure we namespace these names:
-          //       https://github.com/okTurtles/group-income-simple/issues/598
-          const oldSettings = await sbp('gi.db/settings/load', this.form.name)
-          if (oldSettings) {
-            // TODO: prompt to ask user before deleting and overwriting an existing user
-            //       https://github.com/okTurtles/group-income-simple/issues/599
-            console.warn(`deleting settings for pre-existing user ${this.form.name}!`, oldSettings)
-            await sbp('gi.db/settings/delete', this.form.name)
-          }
-          // proceed with creation
-          const user = sbp('gi.contracts/identity/create', {
-            // authorizations: [Events.CanModifyAuths.dummyAuth()],
-            attributes: {
-              name: this.form.name,
-              email: this.form.email,
-              picture: `${window.location.origin}/assets/images/default-avatar.png`
-            }
-          })
-          const mailbox = sbp('gi.contracts/mailbox/create', {
-            // authorizations: [Events.CanModifyAuths.dummyAuth(user.hash())]
-          })
-          await sbp('backend/publishLogEntry', user)
-          await sbp('backend/publishLogEntry', mailbox)
+      if (!this.form.name || !this.form.email || !this.form.password) {
+        return
+      }
 
-          // set the attribute *after* publishing the identity contract
-          const attribute = await sbp('gi.contracts/identity/setAttributes/create',
-            { mailbox: mailbox.hash() },
-            user.hash()
-          )
-          await sbp('backend/publishLogEntry', attribute)
-          // register our username if contract creation worked out
-          await sbp('namespace/register', this.form.name, user.hash())
-          // call syncContractWithServer on all of these contracts to:
-          // 1. begin monitoring the contracts for updates via the pubsub system
-          // 2. add these contracts to our vuex state
-          for (const contract of [user, mailbox]) {
-            await sbp('state/enqueueContractSync', contract.hash())
+      try {
+        signup({
+          username: this.form.name,
+          email: this.form.email,
+          password: this.form.password
+        }, (err) => {
+          if (err) {
+            console.error('Signup.vue submit() error:', err)
+            this.$refs.formMsg.danger(L('Failed to signup, please try again. {codeError}', { codeError: err.message }))
+            return
           }
-          // TODO: Just add cryptographic magic
-          // login also calls 'state/enqueueContractSync', but not in this case since we
-          // just sync'd it.
-          await sbp('state/vuex/dispatch', 'login', {
-            username: this.form.name,
-            identityContractID: user.hash()
-          })
           this.$emit('submitSucceeded')
-        } catch (e) {
-          console.error('Signup.vue submit() error:', e)
-          this.$refs.formMsg.danger(L('Failed to signup, please try again. {codeError}', { codeError: e.message }))
-          sbp('state/vuex/dispatch', 'logout')
-        }
+        })
+      } catch (err) {
+        console.error('Signup.vue submit() catch error:', err)
+        this.$refs.formMsg.danger(L('Failed to signup, please try again. {codeError}', { codeError: err.message }))
       }
     }
   },

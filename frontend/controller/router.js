@@ -3,7 +3,10 @@
 import Vue from 'vue'
 import Router from 'vue-router'
 import store from '@model/state.js'
+
 import DesignSystem from '@pages/DesignSystem.vue'
+import BypassUi from '@pages/BypassUi.vue'
+
 import Home from '@pages/Home.vue'
 import Messages from '@pages/Messages.vue'
 import GroupDashboard from '@pages/GroupDashboard.vue'
@@ -79,6 +82,12 @@ const router = new Router({
       name: DesignSystem.name,
       meta: { title: L('Design System') }
       // beforeEnter: createEnterGuards(designGuard)
+    },
+    {
+      path: '/bypass-ui',
+      component: BypassUi,
+      name: BypassUi.name,
+      meta: { title: L('Cypress - BypassUI') }
     },
     {
       path: '/dashboard',
