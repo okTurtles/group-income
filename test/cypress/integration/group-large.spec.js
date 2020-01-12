@@ -16,7 +16,9 @@ describe('Large group', () => {
     })
 
     cy.giLogout()
+  })
 
+  it('A group with 20 members shows correctly the pledging month overview widget', () => {
     for (let i = 2; i <= 21; i++) {
       cy.giAcceptGroupInvite(invitationLinks.anyone, {
         username: `user${i}-${userId}`,
