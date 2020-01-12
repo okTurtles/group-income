@@ -75,8 +75,6 @@ export default {
     ratioX: 720,
     ratioY: 160,
     labelPadding: 10,
-    labelwidth: 26,
-    availableWidth: 694,
     maxWidth: 48,
     ready: false,
     isMobile: false,
@@ -111,6 +109,12 @@ export default {
     width () {
       return Math.min(this.availableWidth / this.membersNumber / this.ratioWidthPadding, this.maxWidth)
     },
+    availableWidth () {
+      return this.ratioX - this.labelwidth
+    },
+    labelwidth () {
+      return this.max.toString().length * 9
+    },
     max () {
       return Math.max.apply(Math, this.totals)
     },
@@ -144,7 +148,6 @@ export default {
       if (this.$refs.graph) {
         this.isMobile = this.verifyIsMobile()
         this.ratioX = this.$refs.graph.clientWidth
-        this.availableWidth = this.ratioX - this.labelwidth
       }
     }, 100),
 
@@ -262,10 +265,11 @@ export default {
   position: absolute;
   right: 0;
   font-size: 12px;
+  min-width: 30px;
   background-color: #fff;
   color: var(--text_1);
   text-align: right;
-  padding-left: 10px;
+  padding-left: 2px;
 }
 
 .c-tag-user {
