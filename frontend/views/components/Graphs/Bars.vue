@@ -45,7 +45,7 @@
       line(x1='0' y1='0' :x2='ratioX' y2='0' stroke='#dbdbdb' stroke-width='1')
 
   .c-tag-user(
-    :class='{ positif: barAmount >= 0 }'
+    :class='{ positive: barAmount >= 0 }'
     :style='{ opacity: barTotal || barAmount ? 1 : 0, transform: `translate3d(${labelX}px,${labelY}px,0)`} '
   )
     .c-tag-total {{currency(Math.abs(Math.round(barTotal)))}}
@@ -302,7 +302,7 @@ export default {
     padding: 0 2px;
   }
 
-  &.positif {
+  &.positive {
     color: $success_0;
 
     .c-tag-amount {
