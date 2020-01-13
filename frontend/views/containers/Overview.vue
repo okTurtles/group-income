@@ -13,7 +13,7 @@ div
         :amount='withCurrency(totalCovered)'
         color='primary-solid'
         variant='inline'
-      ) {{ L('Total Pledged') }}
+      ) {{ L('Total given') }}
 
       graph-legend-item(
         v-if='surplus > 0'
@@ -60,10 +60,22 @@ export default {
     members () {
       // Create object that contain what people need / pledge and what people receive / give
       let list = {}
-      this.groupIncomeDistribution.map(distribution => {
-        list = this.addToList(list, distribution.from, distribution.amount)
-        list = this.addToList(list, distribution.to, -distribution.amount)
-      })
+      if (this.distribution.length === 0) {
+        Object.keys(this.groupProfiles).forEach(username => {
+          const profile = this.groupProfiles[username]
+          if (profile.incomeAmount) {
+            list[username] = {
+              amount: 0,
+              total: profile.incomeDetailsType === 'incomeAmount' ? profile.incomeAmount - this.mincome : profile.incomeAmount
+            }
+          }
+        })
+      } else {
+        this.distribution.map(distribution => {
+          list = this.addToList(list, distribution.from, distribution.amount)
+          list = this.addToList(list, distribution.to, -distribution.amount)
+        })
+      }
       // Sort object by need / pledge
       list = Object.values(list).sort((a, b) => a.total - b.total)
       return list

@@ -7,6 +7,7 @@
     aria-labelledby='title'
     role='img'
     ref='graph'
+    @mouseleave='hideLabel()'
   )
     // Move graph origin to the middle
     g(:transform='`translate(0,${middle})`')
@@ -45,11 +46,11 @@
       line(x1='0' y1='0' :x2='ratioX' y2='0' stroke='#dbdbdb' stroke-width='1')
 
   .c-tag-user(
-    :class='{ positive: barAmount >= 0 }'
+    :class='{ positive: barAmount > 0 }'
     :style='{ opacity: barTotal || barAmount ? 1 : 0, transform: `translate3d(${labelX}px,${labelY}px,0)`} '
   )
-    .c-tag-total {{currency(Math.abs(Math.round(barTotal)))}}
-    .c-tag-amount(v-if='Math.round(barAmount) !== Math.round(barTotal)') {{currency(Math.abs(Math.round(barAmount)))}}
+    .c-tag-total(v-if='Math.round(barTotal) !== 0') {{currency(Math.abs(Math.round(barTotal)))}}
+    .c-tag-amount(v-if='barAmount !== 0 && Math.round(barAmount) !== Math.round(barTotal)') {{currency(Math.abs(Math.round(barAmount)))}}
 
   .c-tag.mincome(:style='middleTag') {{ base }}
   .c-tag.g-animate-opacity.g-animate-delay(
@@ -116,19 +117,21 @@ export default {
       return this.max.toString().length * 9
     },
     max () {
-      return Math.max.apply(Math, this.totals)
+      const max = Math.max.apply(Math, this.totals)
+      return max > 0 ? Math.max.apply(Math, this.totals) : 0
     },
     min () {
-      return Math.min.apply(Math, this.totals)
+      const min = Math.min.apply(Math, this.totals)
+      return min > 0 ? 0 : min
     },
     middle () {
-      return this.calculRatioY(this.max)
+      return this.max > 0 ? this.calculRatioY(this.max) : 0
     },
     middleTag () {
       return { transform: 'translate(0,' + (this.middle - this.labelPadding) + 'px)' }
     },
     createScale () {
-      const range = this.max - this.min
+      const range = this.max + Math.abs(this.min)
       const maxScalesCount = 4
       const roundedTickRange = this.toPrecision(range / maxScalesCount)
       const scales = []
@@ -175,11 +178,11 @@ export default {
     },
 
     calculRatioY (y) {
-      return this.ratioY / (this.max + Math.abs(this.min)) * y
+      return (y !== 0) ? this.ratioY / (this.max + Math.abs(this.min)) * y : 0
     },
 
     height (delta) {
-      return this.calculRatioY(Math.abs(delta))
+      return (delta !== 0) ? this.calculRatioY(Math.abs(delta)) : 0
     },
 
     calculPositionX (index) {
@@ -196,7 +199,7 @@ export default {
 
     positionY (delta) {
       // If delta is positive, the bar start at 0 otherwise we start at the top of the bar
-      return delta >= 0 ? -(this.calculRatioY(delta)) : 0
+      return delta > 0 ? -(this.calculRatioY(delta)) : 0
     },
 
     color (delta, surplus) {
@@ -240,11 +243,16 @@ export default {
       return retval
     },
 
+    hideLabel () {
+      this.barTotal = 0
+      this.barAmount = 0
+    },
+
     showLabel (index, member) {
       this.labelX = this.calculPositionX(index) + this.width / 2
       if (member) {
         this.labelY = member.total > 0 ? this.positionY(member.amount) + this.middle : this.height(member.amount) + this.middle
-        this.barTotal = member.total
+        this.barTotal = member.total - member.amount
         this.barAmount = member.amount
       }
     }
@@ -281,18 +289,15 @@ export default {
   pointer-events: none;
   border-radius: 3px;
   text-align: center;
-  color: $warning_0;
+  color: $danger_0;
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   align-items: center;
   transition: opacity 0.2s ease-in 0.2s, transform 0.2s ease-out !important;
 
-  .c-tag-total {
-    margin-bottom: 6px;
-  }
-
   .c-tag-amount {
-    color: $danger_0;
+    color: $warning_0;
+    margin-bottom: 6px;
   }
 
   .c-tag-amount,
@@ -303,10 +308,16 @@ export default {
   }
 
   &.positive {
+    flex-direction: column;
     color: $success_0;
 
     .c-tag-amount {
       color: $primary_0;
+      margin-bottom: 0;
+    }
+
+    .c-tag-total {
+      margin-bottom: 6px;
     }
 
     .c-tag-total:last-child {
