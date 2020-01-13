@@ -8,8 +8,14 @@ describe('Signup, Profile and Login', () => {
   it('user1 signups and creates a group', () => {
     cy.visit('/')
     cy.giSignup(username)
-    cy.giCreateGroup('Dreamers 2')
+
+    cy.giCreateGroup('Dreamers', { bypassUI: true })
     cy.getByDT('profileName').should('contain', username)
+  })
+
+  it('user1 logout and login again', () => {
+    cy.visit('/')
+    cy.giLogin(username)
   })
 
   it('user1 changes avatar and profile settings', () => {
@@ -62,10 +68,6 @@ describe('Signup, Profile and Login', () => {
 
     cy.getByDT('signName').clear().type(username)
     cy.getByDT('badUsername').should('contain', 'This username is already being used.')
-
-    // TODO: When email verification is implemented
-    // cy.getByDT('signEmail').clear().type(`${username}@email.com`)
-    // cy.getByDT('badUsername').should('contain', 'email is unavailable')
 
     cy.closeModal()
 

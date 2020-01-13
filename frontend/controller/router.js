@@ -5,7 +5,7 @@ import Router from 'vue-router'
 import store from '@model/state.js'
 
 import DesignSystem from '@pages/DesignSystem.vue'
-import BypassUi from '@pages/BypassUi.vue'
+import BypassUI from '@pages/BypassUI.vue'
 
 import Home from '@pages/Home.vue'
 import Messages from '@pages/Messages.vue'
@@ -85,8 +85,8 @@ const router = new Router({
     },
     {
       path: '/bypass-ui',
-      component: BypassUi,
-      name: BypassUi.name,
+      component: BypassUI,
+      name: BypassUI.name,
       meta: { title: L('Cypress - BypassUI') }
     },
     {

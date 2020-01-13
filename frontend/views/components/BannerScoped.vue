@@ -78,7 +78,8 @@ export default {
 
   &-text {
     margin-top: 0.1875rem; // visually better centered aligned
-    text-align: left; /* force even when the parent has another alignment */
+    text-align: left; // force even when the parent has another alignment
+    word-break: break-word; // handle long messages
   }
 }
 

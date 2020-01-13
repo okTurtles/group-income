@@ -1,30 +1,37 @@
 <template lang='pug'>
 page
-  h1.is-title-1 Cypress - Bypass UI
-  p This page is used exclusively by Cypress to perform repetitive actions. Here's a list of available queries and their subqueries:
+  h1.is-title-1 Cypress - Bypassing the UI
+  p This page is used exclusively by Cypress to perform repetitive actions. &nbsp;
+    a.link(href='https://docs.cypress.io/guides/getting-started/testing-your-app.html#Bypassing-your-UI') Read more about this strategy.
   br
   .card
-    p.is-title-3 Performing Action:
+    h2.is-title-2 Performing Action &nbsp;
+      span.has-text-success(data-test='actionName') {{ ephemeral.action.name }}
     div(v-if='ephemeral.action.name')
-      p Action: {{ephemeral.action.name }}
-      p Queries: {{ JSON.stringify(ephemeral.action.queries) }}
-
-      banner-scoped(ref='bannerAction')
+      p.has-text-bold Queries:
+      p.c-query {{ JSON.stringify(ephemeral.action.queries) }}
     div(v-else)
       p.has-text-1 Nothing at the moment...
-      p _
-  h2.is-title-3 signup
-  p Queries: username, email
-  p.has-text-1 Ex: /bypass-ui?action=signup&username=user-1&email=user1@email.com
+
+    banner-scoped(ref='bannerAction')
+
+  .card
+    h3.is-title-2 Actions available
+    p Pass the action name and its arguments as queries.
+    p.has-text-1 Ex: /bypass-ui?action=signup&username=john&email=john@email.com&password=123456789
+    ul.c-list
+      li(v-for='action in Object.keys(actions())') {{ action }}
 </template>
 
 <script>
 import Page from '@pages/Page.vue'
 import BannerScoped from '@components/BannerScoped.vue'
-import { signup } from '../../actions/actions.js'
+import signup from '../../actions/signup.js'
+import login from '../../actions/login.js'
+import groupCreation from '../../actions/groupCreation.js'
 
 export default {
-  name: 'BypassUi',
+  name: 'BypassUI',
   components: {
     Page,
     BannerScoped
@@ -43,39 +50,65 @@ export default {
       return false
     }
 
-    this.ephemeral.action = {
-      name: action,
-      queries
-    }
+    const { actionFn, finalize } = this.actions()[action] || {}
 
-    const actionsAvailable = {
-      signup: () => {
-        console.log(signup)
-        try {
-          signup(queries, (err) => {
-            if (err) {
-              this.$refs.bannerAction.danger(`Action ${action} failed. Error:`, err.message)
-            }
-            this.$refs.bannerAction.success('Success!')
+    // Wait for $refs.bannerAction to be ready.
+    this.$nextTick(async () => {
+      if (!actionFn) {
+        this.$refs.bannerAction.danger(`Action ${action} doesn't exist.`)
+      }
+
+      this.ephemeral.action = {
+        name: action,
+        queries
+      }
+
+      try {
+        await actionFn(queries)
+        this.$refs.bannerAction.success(`${action} success!`)
+        finalize()
+      } catch (err) {
+        this.$refs.bannerAction.danger(`Action ${action} failed. ${err.message}`)
+      }
+    })
+  },
+  methods: {
+    actions () {
+      return {
+        signup: {
+          actionFn: signup,
+          finalize: () => {
             this.$router.push({ path: '/app' })
-          })
-        } catch (err) {
-          this.$refs.bannerAction.danger(`Action ${action} failed. Error:`, err.message)
+          }
+        },
+        login: {
+          actionFn: login,
+          finalize: () => {
+            this.$router.push({ path: '/app' })
+          }
+        },
+        groupCreation: {
+          actionFn: groupCreation,
+          finalize: () => {
+            this.$router.push({ path: '/dashboard' })
+          }
         }
       }
     }
-
-    // Wait for $refs.bannerAction to be ready.
-    this.$nextTick(() => {
-      actionsAvailable[action]()
-    })
-  },
-  computed: {},
-  methods: {}
+  }
 }
 </script>
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
+.c-list {
+  margin-top: $spacer;
+  margin-left: $spacer;
+  list-style-type: circle;
+}
+
+.c-query {
+  word-break: break-all;
+}
 </style>

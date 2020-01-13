@@ -35,7 +35,6 @@ form(
 </template>
 
 <script>
-import sbp from '~/shared/sbp.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import { nonWhitespace } from '@views/utils/validators.js'
@@ -43,6 +42,7 @@ import FormPassword from '@containers/forms/FormPassword.vue'
 import BannerScoped from '@components/BannerScoped.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import login from '../../../actions/login.js'
 
 export default {
   name: 'FormLogin',
@@ -68,21 +68,19 @@ export default {
   methods: {
     async login () {
       try {
-        // TODO: Insert cryptography here
-        const identityContractID = await sbp('namespace/lookup', this.form.name)
-        if (!identityContractID) {
-          this.$refs.formMsg.danger(L('Invalid username or password'))
-          return
-        }
-        console.debug(`Retrieved identity ${identityContractID}`)
-        await sbp('state/vuex/dispatch', 'login', {
+        await login({
           username: this.form.name,
-          identityContractID
+          password: this.form.password
         })
+
         this.$emit('submitSucceeded')
       } catch (e) {
-        console.error(e)
-        this.$refs.formMsg.danger(L('Failed to login, please try again. {codeError}', { codeError: e.message }))
+        if (e.cause === 'INVALID_MATCH') {
+          this.$refs.formMsg.danger(L('Invalid username or password'))
+        } else {
+          console.error(e)
+          this.$refs.formMsg.danger(L('Failed to login. {codeError}', { codeError: e.message }))
+        }
       }
     },
     forgotPassword () {

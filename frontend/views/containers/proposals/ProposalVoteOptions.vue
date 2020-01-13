@@ -61,15 +61,12 @@ export default {
     proposal () {
       return this.currentGroupState.proposals[this.proposalHash]
     },
-    currentUsername () {
-      return this.ourUserIdentityContract.attributes.name
-    },
     voteStatus () {
       const humanStatus = {
         [VOTE_FOR]: L('yes'),
         [VOTE_AGAINST]: L('no')
       }
-      return humanStatus[this.proposal.votes[this.currentUsername]]
+      return humanStatus[this.proposal.votes[this.ourUsername]]
     },
     meta () {
       return this.proposal.meta

@@ -123,6 +123,7 @@ sbp('sbp/selectors/register', {
     return gettersProxy
   },
   'state/vuex/state': () => store.state,
+  'state/vuex/commit': (id, payload) => store.commit(id, payload),
   'state/vuex/dispatch': (...args) => store.dispatch(...args)
 })
 

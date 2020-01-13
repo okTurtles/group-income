@@ -52,7 +52,8 @@ import FormPassword from '@containers/forms/FormPassword.vue'
 import BannerScoped from '@components/BannerScoped.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-import { signup } from '../../../actions/actions.js'
+import signup from '../../../actions/signup.js'
+
 export default {
   name: 'FormSignup',
   mixins: [
@@ -81,21 +82,15 @@ export default {
       }
 
       try {
-        signup({
+        await signup({
           username: this.form.name,
           email: this.form.email,
           password: this.form.password
-        }, (err) => {
-          if (err) {
-            console.error('Signup.vue submit() error:', err)
-            this.$refs.formMsg.danger(L('Failed to signup, please try again. {codeError}', { codeError: err.message }))
-            return
-          }
-          this.$emit('submitSucceeded')
         })
-      } catch (err) {
-        console.error('Signup.vue submit() catch error:', err)
-        this.$refs.formMsg.danger(L('Failed to signup, please try again. {codeError}', { codeError: err.message }))
+        this.$emit('submitSucceeded')
+      } catch (error) {
+        console.error('Signup.vue submit() error:', error)
+        this.$refs.formMsg.danger(L('Failed to signup. {codeError}', { codeError: error.message }))
       }
     }
   },

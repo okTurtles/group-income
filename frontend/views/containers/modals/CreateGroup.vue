@@ -51,16 +51,12 @@ modal-base-template(:fullscreen='true')
 
 <script>
 import ModalBaseTemplate from '@components/Modal/ModalBaseTemplate.vue'
-import sbp from '~/shared/sbp.js'
 import { RULE_THRESHOLD } from '@model/contracts/voting/rules.js'
-import { INVITE_INITIAL_CREATOR, createInvite } from '@model/contracts/group.js'
-import proposals, { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC } from '@model/contracts/voting/proposals.js'
-import imageUpload from '@utils/imageUpload.js'
+import proposals, { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE } from '@model/contracts/voting/proposals.js'
 import L from '@view-utils/translations.js'
 import { decimals } from '@view-utils/validators.js'
 import StepAssistant from '@view-utils/stepAssistant.js'
 import BannerScoped from '@components/BannerScoped.vue'
-import { merge } from '@utils/giLodash.js'
 import { validationMixin } from 'vuelidate'
 import GroupWelcome from '@components/GroupWelcome.vue'
 import {
@@ -75,6 +71,7 @@ import {
 // or not... using require only makes rollup happy during compilation
 // but then the browser complains about "require is not defined"
 import { required, between } from 'vuelidate/lib/validators'
+import groupCreation from '../../../actions/groupCreation.js'
 
 export default {
   name: 'CreateGroupModal',
@@ -107,62 +104,26 @@ export default {
         return
       }
 
-      if (this.ephemeral.groupPictureFile) {
-        try {
-          this.form.groupPicture = await imageUpload(this.ephemeral.groupPictureFile)
-        } catch (e) {
-          console.error('Failed to upload the group picture', e)
-          this.$refs.formMsg.danger(L('Failed to upload the group picture, please try again. {codeError}', { codeError: e.message }))
-          return false
-        }
-      }
-
-      // create the GroupContract
       try {
         this.$refs.formMsg.clean()
-        const initialInvite = createInvite({ quantity: 60, creator: INVITE_INITIAL_CREATOR })
-        const entry = sbp('gi.contracts/group/create', {
-          invites: {
-            [initialInvite.inviteSecret]: initialInvite
-          },
-          settings: {
-            // authorizations: [contracts.CanModifyAuths.dummyAuth()], // TODO: this
-            groupName: this.form.groupName,
-            groupPicture: this.form.groupPicture || `${window.location.origin}/assets/images/default-group-avatar.png`,
-            sharedValues: this.form.sharedValues,
-            mincomeAmount: +this.form.mincomeAmount, // ensure this is a number
-            mincomeCurrency: this.form.mincomeCurrency,
-            proposals: {
-              // TODO: make the UI support changing the rule type, so that we have
-              //       a component for RULE_DISAGREEMENT as well
-              [PROPOSAL_GROUP_SETTING_CHANGE]: merge({},
-                proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults,
-                { ruleSettings: { [RULE_THRESHOLD]: { threshold: this.form.changeThreshold } } }
-              ),
-              [PROPOSAL_INVITE_MEMBER]: merge({},
-                proposals[PROPOSAL_INVITE_MEMBER].defaults,
-                { ruleSettings: { [RULE_THRESHOLD]: { threshold: this.form.memberApprovalThreshold } } }
-              ),
-              [PROPOSAL_REMOVE_MEMBER]: merge({},
-                proposals[PROPOSAL_REMOVE_MEMBER].defaults,
-                { ruleSettings: { [RULE_THRESHOLD]: { threshold: this.form.memberRemovalThreshold } } }
-              ),
-              [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].defaults,
-              [PROPOSAL_GENERIC]: proposals[PROPOSAL_GENERIC].defaults
-            }
-          }
-        })
-        const hash = entry.hash()
-        sbp('okTurtles.events/once', hash, (contractID, entry) => {
-          this.$store.commit('setCurrentGroupId', hash)
+        groupCreation({
+          name: this.form.groupName,
+          picture: this.ephemeral.groupPictureFile,
+          sharedValues: this.form.sharedValues,
+          mincomeAmount: this.form.mincomeAmount,
+          mincomeCurrency: this.form.mincomeCurrency,
+          thresholdChange: this.form.changeThreshold,
+          thresholdMemberApproval: this.form.memberApprovalThreshold,
+          thresholdMemberRemoval: this.form.memberRemovalThreshold
+        }, () => {
           this.next()
         })
-        await sbp('backend/publishLogEntry', entry)
-        // add to vuex and monitor this contract for updates
-        await sbp('state/enqueueContractSync', hash)
       } catch (e) {
-        console.error('Failed to create the group', e)
-        this.$refs.formMsg.danger(L('Failed to create the group, please try again. {codeError}', { codeError: e.message }))
+        if (e.cause === 'PICTURE_UPLOAD_FAILED') {
+          return this.$refs.formMsg.danger(L('Failed to upload the group picture. {codeError}', { codeError: e.message }))
+        }
+
+        this.$refs.formMsg.danger(L('Failed to create the group. {codeError}', { codeError: e.message }))
       }
     }
   },

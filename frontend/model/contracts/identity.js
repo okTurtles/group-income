@@ -8,7 +8,11 @@ DefineContract({
   name: 'gi.contracts/identity',
   contract: {
     validate: objectOf({
-      attributes: object
+      attributes: objectOf({
+        name: string,
+        email: string,
+        picture: string
+      })
     }),
     process (state, { data }) {
       for (const key in data) {

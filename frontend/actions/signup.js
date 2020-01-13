@@ -1,9 +1,9 @@
 import sbp from '~/shared/sbp.js'
 
-export async function signup ({
+export default async function signup ({
   username,
   email,
-  password // TODO - implement password
+  password // TODO - implement
 }, callback) {
   try {
     // TODO: make sure we namespace these names:
@@ -19,7 +19,7 @@ export async function signup ({
     const user = sbp('gi.contracts/identity/create', {
       // authorizations: [Events.CanModifyAuths.dummyAuth()],
       attributes: {
-        name: name,
+        name: username,
         email: email,
         picture: `${window.location.origin}/assets/images/default-avatar.png`
       }
@@ -52,9 +52,11 @@ export async function signup ({
       identityContractID: user.hash()
     })
 
-    return callback()
-  } catch (e) {
+    return true // CONTINUE HEREEE
+    //  Somehow, this isnt working
+    // - identityContractID.name is undefined causing breaked proposals
+  } catch (error) {
     sbp('state/vuex/dispatch', 'logout')
-    return callback(e)
+    throw Error(error)
   }
 }
