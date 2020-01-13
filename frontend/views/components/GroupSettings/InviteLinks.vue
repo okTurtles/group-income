@@ -13,7 +13,7 @@ page-section.c-section(:title='L("Invite links")')
 
   i18n.has-text-1.c-invite-description(tag='p') Here's a list of all invite links you own
 
-  table.table.c-table(v-if='activeList.length')
+  table.table.c-table(v-if='invitesToShow && invitesToShow.length !== 0')
     thead
       tr
         i18n.c-name(tag='th') created for
@@ -24,16 +24,16 @@ page-section.c-section(:title='L("Invite links")')
         )
     tbody
       tr(
-        v-for='(item, index) in activeList'
-        :key='index'
+        v-for='(item, index) in invitesToShow'
+        :key='item.inviteSecret'
       )
         td.c-name
-          | {{ item.name }}
+          | {{ item.invitee }}
           tooltip.c-name-tooltip(
             v-if='item.isAnyoneLink'
             direction='top'
-            :isTextCenter='true'
-            :text='L("This invite link was only available during the onboarding period.")'
+            :hasTextCenter='true'
+            :text='L("This invite link is only available during the onboarding period.")'
           )
             .button.is-icon-smaller.is-primary.c-tip
               i.icon-info
@@ -55,11 +55,11 @@ page-section.c-section(:title='L("Invite links")')
                 )
                   i18n Copy link
         td.c-state
-          i18n.c-state-description {{ item.state.description }}
-          i18n.c-state-expire(
-            v-if='item.state.expireInfo'
-            :class='item.state.isExpired ? "expired" : ""'
-          ) {{ item.state.expireInfo }}
+          span.c-state-description {{ item.status.description }}
+          span.c-state-expire(
+            v-if='item.status.expiryInfo'
+            :class='{ "is-expired": item.status.isExpired }'
+          ) {{ item.status.expiryInfo }}
         td.c-action
           menu-parent(v-if='!item.isAnyoneLink')
             menu-trigger.is-icon(:aria-label='L("Show list")')
@@ -72,13 +72,15 @@ page-section.c-section(:title='L("Invite links")')
                   item-id='original'
                   icon='vote-yea'
                 )
+                  // TODO: Implement the action for this menu button.
                   i18n See original proposal
                 menu-item(
-                  v-if='!item.state.isExpired'
+                  v-if='item.status.isActive'
                   tag='button'
                   item-id='revoke'
                   icon='times'
                 )
+                  // TODO: Implement the action for this menu button
                   i18n Revoke Link
 
   .c-empty-list(v-else)
@@ -97,6 +99,10 @@ import PageSection from '@components/PageSection.vue'
 import Tooltip from '@components/Tooltip.vue'
 import SvgInvitation from '@svgs/invitation.svg'
 import LinkToCopy from '@components/LinkToCopy.vue'
+import { buildInvitationUrl } from '@model/contracts/voting/proposals.js'
+import { INVITE_INITIAL_CREATOR } from '@model/contracts/group.js'
+import { mapGetters, mapState } from 'vuex'
+import L from '@view-utils/translations.js'
 
 export default {
   name: 'InviteLinks',
@@ -116,49 +122,7 @@ export default {
         selectbox: {
           focused: false,
           selectedOption: 'Active'
-        },
-        dummyInviteList: [
-          {
-            name: 'Felix Kubin',
-            inviteLink: 'http://localhost:8000/app/join?groupId=21XWnNFz7RbNPKHUqAeSLLT1cNHnnCssmSw6dJeB1gfSSeZc7v&secret=4460',
-            isAnyoneLink: false,
-            state: {
-              description: 'Not used yet',
-              expireInfo: '1d 2h 30m left',
-              isExpired: false
-            }
-          },
-          {
-            name: 'Brian Eno',
-            inviteLink: 'http://localhost:8000/app/join?groupId=30aFnTYz7RbqAeSLLT1cNfSSeZHN6KHUnnCssmSw6dJeB1gc7v&secret=2250',
-            isAnyoneLink: false,
-            state: {
-              description: 'Used',
-              expireInfo: '',
-              isExpired: true
-            }
-          },
-          {
-            name: 'Carl Sagan',
-            inviteLink: 'http://localhost:8000/app/join?groupId=B1gfSSeZc721XWnNFz7RbkoyHUqAeSwLT1cNHnnCssmSw6dJev&secret=1348',
-            isAnyoneLink: false,
-            state: {
-              description: 'Not used',
-              expireInfo: 'Expired',
-              isExpired: true
-            }
-          },
-          {
-            name: 'Anyone',
-            inviteLink: 'http://localhost:8000/app/join?groupId=s8LT1cNHnnCs21XWnNFz7RbNPKHUqAesmSw6dJeB1gfSSeZc7v&secret=5521',
-            isAnyoneLink: true,
-            state: {
-              description: '10/60 used',
-              expireInfo: 'Expired',
-              isExpired: true
-            }
-          }
-        ]
+        }
       }
     }
   },
@@ -166,22 +130,86 @@ export default {
     unfocusSelect () {
       this.$refs.select.blur()
     },
-    toInvite (e) {
-      if (e.target.tagName === 'SPAN') this.$router.push({ path: '/invite' })
-    },
     activateWebShare (inviteLink) {
       if (navigator.share) {
         navigator.share({
-          title: this.L('Your invite'),
+          title: L('Your invite'),
           url: inviteLink
         })
       } else this.$refs.webShareFallbackBtn[0].handleClick()
+    },
+    inviteStatusDescription ({
+      isAnyoneLink,
+      isInviteExpired,
+      isAllInviteUsed,
+      quantity,
+      numberOfResponses
+    }) {
+      if (isAnyoneLink) return L('{numberOfResponses}/{quantity} used', { numberOfResponses, quantity })
+      else if (isAllInviteUsed) return L('Used')
+      else return isInviteExpired ? L('Not used') : L('Not used yet')
+    },
+    readableExpiryInfo (expiryTime) {
+      const MIL = 1000
+      const MIL_MIN = 60 * MIL
+      const MIL_HR = MIL_MIN * 60
+      const MIL_DAY = 24 * MIL_HR
+      let remainder
+
+      const days = Math.floor(expiryTime / MIL_DAY)
+      remainder = expiryTime % MIL_DAY
+      const hours = Math.floor(remainder / MIL_HR)
+      remainder = remainder % MIL_HR
+      const minutes = Math.ceil(remainder / MIL_MIN)
+
+      if (days) return L('{days}d {hours}h {minutes}m left', { days, hours, minutes })
+      if (hours) return L('{hours}h {minutes}m left', { hours, minutes })
+      if (minutes) return L('{minutes}m left', { minutes })
+      return L('Expired')
+    },
+    mapInvite ({
+      creator,
+      inviteSecret,
+      responses,
+      quantity,
+      expires: expiryTime,
+      invitee
+    }) {
+      const isAnyoneLink = creator === INVITE_INITIAL_CREATOR
+      const isInviteExpired = expiryTime <= 0
+      const numberOfResponses = Object.keys(responses).length
+      const isAllInviteUsed = numberOfResponses === quantity
+
+      return {
+        isAnyoneLink,
+        invitee: isAnyoneLink ? L('Anyone') : invitee,
+        inviteSecret,
+        inviteLink: buildInvitationUrl(this.currentGroupId, inviteSecret),
+        status: {
+          isExpired: isInviteExpired,
+          isActive: !isInviteExpired && !isAllInviteUsed,
+          description: this.inviteStatusDescription({
+            isAnyoneLink, isInviteExpired, isAllInviteUsed, quantity, numberOfResponses
+          }),
+          expiryInfo: isAllInviteUsed ? '' : this.readableExpiryInfo(expiryTime)
+        }
+      }
     }
   },
   computed: {
-    activeList () {
-      return this.ephemeral.selectbox.selectedOption === 'Active' ? this.ephemeral.dummyInviteList.filter(item => !item.state.isExpired)
-        : this.ephemeral.selectbox.selectedOption === 'All' && this.ephemeral.dummyInviteList
+    ...mapGetters(['currentGroupState', 'ourUsername']),
+    ...mapState(['currentGroupId']),
+    invitesToShow () {
+      const { invites } = this.currentGroupState
+      const invitesList = Object.values(invites)
+        .filter(invite => invite.creator === INVITE_INITIAL_CREATOR || invite.creator === this.ourUsername)
+        .map(this.mapInvite)
+      const options = {
+        Active: () => invitesList.filter(invite => invite.status.isActive),
+        All: () => invitesList
+      }
+
+      return options[this.ephemeral.selectbox.selectedOption]()
     }
   }
 }
@@ -290,7 +318,7 @@ export default {
       font-size: $size_5;
       color: $text-1;
 
-      &.expired {
+      &.is-expired {
         color: $danger_0;
       }
     }

@@ -49,14 +49,13 @@
 // Global Classes for SVG fills
 $fills: (
   primary: $primary_0,
-  primary-light: $primary_2,
-  secondary: $success_0,
-  tertiary: $warning_0,
-  light: $general_2
+  blank: $background,
+  success: $success_0,
+  warning: $warning_0,
 );
 
 @each $class, $color in $fills {
-  .gi-has-fill-#{$class} {
+  .u-has-fill-#{$class} {
     fill: $color;
   }
 }

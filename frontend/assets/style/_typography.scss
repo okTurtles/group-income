@@ -37,8 +37,7 @@ body {
   font-style: normal;
   font-weight: normal;
   font-size: $size_4; // 14px
-  line-height: 1.3125rem; // 21px
-  letter-spacing: 0.1px;
+  line-height: 1.5; // 21/14
   color: $text_0;
 }
 
@@ -153,6 +152,14 @@ small {
   .has-background-#{$name} {
     background-color: var(--#{$name}_2);
   }
+
+  .has-background-#{$name}-solid {
+    background-color: var(--#{$name}_0);
+  }
+}
+
+.has-background-blank {
+  background-color: $background;
 }
 
 .has-text-white {

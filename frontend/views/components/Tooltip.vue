@@ -1,5 +1,5 @@
 <template lang='pug'>
-span.c-wrapper(
+span.c-twrapper(
   tabindex='0'
   @mouseenter='show'
   @mouseleave='hide'
@@ -113,7 +113,7 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.c-wrapper {
+.c-twrapper {
   cursor: pointer;
 }
 

@@ -138,8 +138,15 @@ const proposals = {
         [RULE_DISAGREEMENT]: { threshold: 1 }
       }
     },
-    [VOTE_FOR]: function (state, { proposalHash, passPayload }) {
-      console.error('unimplemented!')
+    [VOTE_FOR]: function (state, data) {
+      const proposal = state.proposals[data.proposalHash]
+      proposal.status = STATUS_PASSED
+      const { setting, proposedValue } = proposal.data.proposalData
+
+      sbp('gi.contracts/group/updateSettings/process', state, {
+        meta: proposal.meta,
+        data: { [setting]: proposedValue }
+      })
     },
     [VOTE_AGAINST]: voteAgainst
   },

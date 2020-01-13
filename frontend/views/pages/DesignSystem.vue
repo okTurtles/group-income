@@ -183,6 +183,7 @@ page(
               i.icon-chevron-left icon-chevron-left
               i.icon-chevron-right icon-chevron-right
               i.icon-cog icon-cog
+              i.icon-coins icon-coins
               i.icon-columns icon-columns
               i.icon-comments icon-comments
               i.icon-copy icon-copy

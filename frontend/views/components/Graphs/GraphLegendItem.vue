@@ -1,22 +1,27 @@
 <template lang='pug'>
-li
-  .subtitle.c-label
-    span.c-visual(v-if='color' :class='`has-background-${color}`')
-    |       {{label}}
-
-  span.is-size-5.has-text-weight-bold
-    slot
+li.c-wlegend
+  .c-inner
+    span.has-text-1.c-desc
+      slot
+    span.is-title-4.c-amount
+      | {{ amount }}
+      span.c-marker(:class='`has-background-${color}`')
+  .c-description.help(v-if='$slots.description')
+    slot(name='description')
 </template>
 
 <script>
 export default {
   name: 'GraphLegendItem',
   props: {
-    label: {
+    amount: {
       type: String,
       required: true
     },
-    color: String
+    color: {
+      type: String,
+      required: true
+    }
   }
 }
 </script>
@@ -24,14 +29,64 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.c-label {
-  line-height: 1;
+.c-wlegend {
+  padding: $spacer 0;
+
+  &:first-child {
+    padding-top: 0;
+  }
+
+  &:last-child {
+    padding-bottom: 0;
+  }
+
+  &:not(:last-child) {
+    border-bottom: 1px solid $general_0;
+  }
 }
 
-.c-visual {
+.c-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.c-desc {
+  display: block;
+  margin-right: $spacer-sm;
+}
+
+.c-amount {
+  white-space: nowrap;
+}
+
+.c-marker {
   display: inline-block;
   width: $spacer-sm;
   height: $spacer-sm;
-  margin-right: $spacer-xs;
+  margin-left: $spacer-sm;
+  margin-bottom: 0.06rem; // visually aligned
+  border-radius: 1px;
+  border: 1px solid;
+
+  &.has-background-blank {
+    border-color: $general_0;
+  }
+
+  &.has-background-primary-solid {
+    border-color: $primary_0;
+  }
+
+  &.has-background-success-solid {
+    border-color: $success_0;
+  }
+
+  &.has-background-warning-solid {
+    border-color: $warning_0;
+  }
+}
+
+.c-description {
+  margin-top: $spacer-sm;
 }
 </style>
