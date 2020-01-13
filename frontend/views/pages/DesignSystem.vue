@@ -623,7 +623,7 @@ page(
               |   link='https://groupincome.org/f4k3_H45h_t0_5h4r3'
               | )
           td
-            link-to-copy.c-invite-link-demo(link='https://groupincome.org/f4k3_H45h_t0_5h4r3')
+            link-to-copy(link='https://groupincome.org/f4k3_H45h_t0_5h4r3')
 
   article#forms
     section.card
@@ -1233,11 +1233,6 @@ table {
     text-align: center;
     border: none;
   }
-}
-
-.c-invite-link-demo {
-  display: flex;
-  align-items: center;
 }
 
 .c-svg {

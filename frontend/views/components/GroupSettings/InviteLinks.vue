@@ -53,7 +53,7 @@ page-section.c-section(:title='L("Invite links")')
                   tag='button'
                   icon='link'
                 )
-                  i18n Share link
+                  i18n Copy link
         td.c-state
           i18n.c-state-description {{ item.state.description }}
           i18n.c-state-expire(
@@ -61,7 +61,7 @@ page-section.c-section(:title='L("Invite links")')
             :class='item.state.isExpired ? "expired" : ""'
           ) {{ item.state.expireInfo }}
         td.c-action
-          menu-parent
+          menu-parent(v-if='!item.isAnyoneLink')
             menu-trigger.is-icon(:aria-label='L("Show list")')
               i.icon-ellipsis-v
 
