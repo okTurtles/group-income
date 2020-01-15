@@ -92,7 +92,7 @@ Cypress.Commands.add('giSetDisplayName', (name) => {
 Cypress.Commands.add('giCreateGroup', (name, {
   image = 'imageTest.png',
   values = 'Testing group values',
-  income = 200
+  mincome = 200
 } = {}) => {
   cy.getByDT('createGroup').click()
   cy.getByDT('groupName').type(name)
@@ -106,7 +106,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
   cy.get('textarea[name="sharedValues"]').type(values)
   cy.getByDT('nextBtn').click()
 
-  cy.get('input[name="mincomeAmount"]').type(income)
+  cy.get('input[name="mincomeAmount"]').type(mincome)
 
   cy.getByDT('nextBtn').click()
 

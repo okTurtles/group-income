@@ -129,7 +129,7 @@ export default {
           color: 'warning'
         },
         'MONETARY': {
-          icon: 'dollar-sign',
+          icon: 'coins',
           color: 'success'
         }
       }

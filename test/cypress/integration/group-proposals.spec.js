@@ -1,11 +1,19 @@
 const userId = Math.floor(Math.random() * 10000)
 const groupName = 'Dreamers'
+const groupMincome = 250
+const groupNewMincome = 500
 
 function assertProposalOpenState ({ description }) {
   cy.getByDT('statusDescription')
     .should('contain', description)
   cy.getByDT('voteFor').should('exist')
   cy.getByDT('voteAgainst').should('exist')
+}
+
+function assertMincome (mincome) {
+  cy.getByDT('groupMincome').within(() => {
+    cy.getByDT('minIncome').should('contain', `$${mincome}`)
+  })
 }
 
 function getProposalBoxes () {
@@ -20,7 +28,7 @@ describe('Proposals - Add members', () => {
 
     cy.giSignup(`user1-${userId}`)
 
-    cy.giCreateGroup(groupName)
+    cy.giCreateGroup(groupName, { mincome: groupMincome })
 
     cy.giGetInvitationAnyone().then(url => {
       invitationLinks.anyone = url
@@ -47,17 +55,34 @@ describe('Proposals - Add members', () => {
   it('user2 proposes to add user7 to the group', () => {
     cy.giSwitchUser(`user2-${userId}`)
 
-    cy.giInviteMember([`user6-${userId}`])
+    cy.giInviteMember([`user7-${userId}`])
   })
 
-  it('user3 votes "yes" to all 4 proposals', () => {
+  it('user2 proposes to change mincome to $500', () => {
+    cy.getByDT('groupMincome').within(() => {
+      cy.get('button').click()
+    })
+
+    cy.getByDT('modalProposal').within(() => {
+      cy.get('input[type="number"][name="mincomeAmount"]')
+        .type(groupNewMincome)
+      cy.getByDT('nextBtn', 'button')
+        .click()
+      cy.getByDT('reason', 'textarea').clear().type('House renting is increasing.')
+      cy.getByDT('submitBtn').click()
+      cy.getByDT('finishBtn').click()
+      cy.getByDT('closeModal').should('not.exist')
+    })
+  })
+
+  it('user3 votes "yes" to all 5 proposals', () => {
     cy.giSwitchUser(`user3-${userId}`)
 
     getProposalBoxes()
       // assert grouped proposals
-      .should('have.length', 3)
+      .should('have.length', 4)
       // assert total individual proposals
-      .getByDT('proposalItem').should('have.length', 4)
+      .getByDT('proposalItem').should('have.length', 5)
 
     // Go through each individual proposal and vote yes!
     getProposalBoxes().each(([group]) => {
@@ -158,6 +183,29 @@ describe('Proposals - Add members', () => {
 
     assertInvitationLinkFor(0, 'user4')
     assertInvitationLinkFor(1, 'user6')
+  })
+
+  it('user1 votes "yes" to the new mincome ($500) and proposal is accepted.', () => {
+    assertMincome(groupMincome)
+
+    getProposalBoxes().eq(3).within(() => {
+      cy.getByDT('title', 'h4').as('title')
+      cy.get('@title').should('contain', `user2-${userId} is proposing:`)
+      cy.getByDT('proposalItem').eq(0).within(() => {
+        cy.getByDT('typeDescription')
+          .should('contain', `Change mincome from $${groupMincome} to $${groupNewMincome}`)
+        cy.getByDT('statusDescription')
+          .should('contain', '2 out of 3 members voted.')
+
+        cy.getByDT('voteFor').click()
+        //  Proposal gets accepted and mincome is updated on the sidebar!
+        cy.getByDT('statusDescription')
+          .should('contain', 'Proposal accepted!')
+        cy.get('@title').should('contain', `user2-${userId} proposed:`)
+      })
+    })
+
+    assertMincome(groupNewMincome)
 
     cy.giLogout()
   })
@@ -200,7 +248,7 @@ describe('Proposals - Add members', () => {
     cy.getByDT('welcomeHome').should('contain', 'Welcome to GroupIncome')
   })
 
-  it('user1 logins and sees all 4 proposals correctly and the new member', () => {
+  it('user1 logins and sees all 5 proposals correctly and the new member', () => {
     cy.giLogin(`user1-${userId}`)
 
     // A quick checkup that each proposal state is correct.
@@ -239,6 +287,15 @@ describe('Proposals - Add members', () => {
       })
     })
 
+    getProposalBoxes().eq(3).within(() => {
+      cy.getByDT('title', 'h4').should('contain', `user2-${userId} proposed:`)
+
+      cy.getByDT('proposalItem').eq(0).within(() => {
+        cy.getByDT('statusDescription')
+          .should('contain', 'Proposal accepted!')
+      })
+    })
+
     cy.getByDT('groupMembers').find('ul')
       .children()
       .should('have.length', 5)
@@ -248,6 +305,8 @@ describe('Proposals - Add members', () => {
           cy.getByDT('username').should('contain', `user${usersMap[index]}-${userId}`)
         })
       })
+
+    assertMincome(groupNewMincome)
 
     cy.giLogout()
   })

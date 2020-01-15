@@ -1,14 +1,14 @@
 describe('Changing Group Settings', () => {
   const userId = Math.floor(Math.random() * 10000)
   const groupMincome = 750
-  const groupNewIncome = groupMincome + 100
+  const groupNewMincome = groupMincome + 100
 
   it('user1 registers and creates a new group', () => {
     cy.visit('/')
     cy.giSignup(`user1-${userId}`)
 
     cy.giCreateGroup('Dreamers', {
-      income: groupMincome
+      mincome: groupMincome
     })
   })
 
@@ -20,14 +20,14 @@ describe('Changing Group Settings', () => {
 
     cy.getByDT('modalProposal').within(() => {
       cy.get('input[type="number"][name="mincomeAmount"]')
-        .type(groupNewIncome)
+        .type(groupNewMincome)
 
       cy.getByDT('submitBtn', 'button')
         .click()
     })
 
     cy.getByDT('groupMincome').within(() => {
-      cy.getByDT('minIncome').should('contain', `$${groupNewIncome}`)
+      cy.getByDT('minIncome').should('contain', `$${groupNewMincome}`)
     })
 
     cy.giLogout()
