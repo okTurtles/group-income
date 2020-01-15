@@ -56,50 +56,50 @@ export default {
     },
     copy () {
       const {
-        givesMonetary,
-        givesNonMonetary,
-        receivesMonetary,
-        receivesNonMonetary
+        givingMonetary,
+        givingNonMonetary,
+        receivingMonetary,
+        receivingNonMonetary
       } = this.ourContributionSummary
 
       const copy = {}
 
-      if (receivesMonetary) {
+      if (receivingMonetary) {
         copy.payments = {
-          title: !receivesMonetary.total && L('Payments received'),
-          status: !receivesMonetary.total && L('No members in the group are pledging yet! 😔'),
-          ctaText: receivesMonetary.total && L('See more')
+          title: !receivingMonetary.total && L('Payments received'),
+          status: !receivingMonetary.total && L('No members in the group are pledging yet! 😔'),
+          ctaText: receivingMonetary.total && L('See more')
         }
 
         copy.monetary = {
           title: L('You need {br_}{amount}', {
             ...this.LTags(),
-            amount: this.withCurrency(receivesMonetary.needed)
+            amount: this.withCurrency(receivingMonetary.needed)
           }),
           status: L('You will receive {amount}.', {
-            amount: this.withCurrency(receivesMonetary.total)
+            amount: this.withCurrency(receivingMonetary.total)
           })
         }
-      } else if (givesMonetary) {
+      } else if (givingMonetary) {
         const copyMonetaryTitle = (amount) => L('You are pledging {br_} {amount}', {
           ...this.LTags(),
           amount: this.withCurrency(amount)
         })
 
-        if (givesMonetary.pledged > 0) {
+        if (givingMonetary.pledged > 0) {
           const payedAll = false // TODO - connect with real data when PaymentsSystem is done.
 
           copy.payments = {
-            title: !givesMonetary.total && L('Payments sent'),
-            status: !givesMonetary.total && L('At the moment, no one is in need of contributions.'),
-            ctaText: givesMonetary.total ? (payedAll ? L('Review payments') : L('Send payments')) : null,
+            title: !givingMonetary.total && L('Payments sent'),
+            status: !givingMonetary.total && L('At the moment, no one is in need of contributions.'),
+            ctaText: givingMonetary.total ? (payedAll ? L('Review payments') : L('Send payments')) : null,
             ctaClass: payedAll && 'is-outlined'
           }
 
           copy.monetary = {
-            title: copyMonetaryTitle(givesMonetary.pledged),
+            title: copyMonetaryTitle(givingMonetary.pledged),
             status: L('{amount} will be used.', {
-              amount: this.withCurrency(givesMonetary.total)
+              amount: this.withCurrency(givingMonetary.total)
             })
           }
         } else {
@@ -112,7 +112,7 @@ export default {
           }
 
           copy.monetary = {
-            title: copyMonetaryTitle(givesMonetary.total)
+            title: copyMonetaryTitle(givingMonetary.total)
           }
         }
       }
@@ -120,13 +120,13 @@ export default {
       copy.nonMonetary = (() => {
         let status
 
-        if (receivesNonMonetary) {
-          const count = receivesNonMonetary.who.length
-          status = givesNonMonetary
+        if (receivingNonMonetary) {
+          const count = receivingNonMonetary.who.length
+          status = givingNonMonetary
             ? L('You and {count} other members are contributing.', { count })
             : L('{count} members are contributing.', { count })
         } else {
-          status = givesNonMonetary
+          status = givingNonMonetary
             ? L('You are contributing.')
             : L('There are no non-monetary contributions.')
         }

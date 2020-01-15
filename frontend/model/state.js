@@ -259,7 +259,6 @@ const getters = {
     return (state.loggedIn && state[state.loggedIn.identityContractID]) || {}
   },
   ourContributionSummary (state, getters) {
-    // TODO - Refactor Contributions and GroupPledgeGraph to use this.
     const groupProfiles = getters.groupProfiles
     const ourUsername = getters.ourUsername
     const ourGroupProfile = groupProfiles[ourUsername]
@@ -275,7 +274,7 @@ const getters = {
     const getDisplayName = (username) => getters.globalProfile(username).displayName || username
 
     return {
-      givesMonetary: (() => {
+      givingMonetary: (() => {
         if (doWeNeedIncome) { return null }
         const who = []
         const total = distribution
@@ -287,7 +286,7 @@ const getters = {
 
         return { who, total, pledged: ourGroupProfile.pledgeAmount }
       })(),
-      receivesMonetary: (() => {
+      receivingMonetary: (() => {
         if (!doWeNeedIncome) { return null }
         const needed = getters.groupSettings.mincomeAmount - ourGroupProfile.incomeAmount
         const who = []
@@ -300,7 +299,7 @@ const getters = {
 
         return { who, total, needed }
       })(),
-      receivesNonMonetary: (() => {
+      receivingNonMonetary: (() => {
         const listWho = Object.keys(groupProfiles)
           .filter(username => username !== ourUsername && nonContributionsOf(username).length > 0)
         const listWhat = listWho.reduce((contr, username) => {
@@ -318,7 +317,7 @@ const getters = {
 
         return listWho.length > 0 ? { what: listWhat, who: listWho } : null
       })(),
-      givesNonMonetary: (() => {
+      givingNonMonetary: (() => {
         const contributions = ourGroupProfile.nonMonetaryContributions
 
         return contributions.length > 0 ? contributions : null

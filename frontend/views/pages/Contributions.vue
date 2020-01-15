@@ -48,39 +48,40 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
       .receiving
         i18n.is-title-3(tag='h3' class='card-header') Receiving
         i18n.has-text-1.spacer-around(
-          v-if='noOneCanContribute'
+          v-if='!this.needsIncome && !doesReceiveNonMonetary'
           tag='p'
           data-test='receivingParagraph'
-        ) When other members pledge a monetary or non-monetary contribution, they will appear here.
+        ) When other members give a non-monetary contribution, they will appear here.
 
         i18n.has-text-1.spacer-around(
-          v-else-if='!doesReceiveMonetary && needsIncome'
+          v-else-if='needsIncome && !doesReceiveMonetary'
           tag='p'
           data-test='receivingParagraph'
         ) No one is pledging money at the moment.
 
         ul.spacer(
-          v-if='doesReceive'
+          v-if='doesReceiveAny'
           data-test='revceivingList'
         )
           contribution(
             v-if='doesReceiveMonetary'
           )
             contribution-item(
-              :what='receivingMonetary.total'
-              :who='receivingMonetary.list'
+              :what='wCurrency(receivingMonetary.total)'
+              :who='receivingMonetary.who'
               type='MONETARY'
             )
 
-          contribution(
-            v-for='(contribution, index) in receivingNonMonetary'
-            :key='`contribution-${index}`'
-          )
-            contribution-item(
-              :what='contribution.what'
-              :who='contribution.who'
-              type='NON_MONETARY'
+          template(v-if='receivingNonMonetary')
+            contribution(
+              v-for='(contribution, index) in receivingNonMonetary.what'
+              :key='`contribution-${index}`'
             )
+              contribution-item(
+                :what='contribution.what'
+                :who='contribution.who'
+                type='NON_MONETARY'
+              )
 
         button.button.is-small.c-cta(
           v-if='groupMembersCount === 1'
@@ -96,7 +97,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
           v-if='notContributing'
           tag='p'
           data-test='givingParagraph'
-        ) You can contribute to your group with money or other valuables like teaching skills, sharing your time ot help someone. The sky is the limit!
+        ) You can contribute to your group with money or other valuables like teaching skills, sharing your time to help someone. The sky is the limit!
 
         i18n.has-text-1.spacer-around(
           v-else-if='noOneToGive'
@@ -108,11 +109,11 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
           data-test='givingList'
         )
           contribution(
-            v-if='hasPayments'
+            v-if='doesGiveMonetary'
           )
             contribution-item(
-              :what='givingMonetary.total'
-              :who='givingMonetary.list'
+              :what='wCurrency(givingMonetary.total)'
+              :who='givingMonetary.who'
               type='MONETARY'
               action='GIVING'
             )
@@ -187,90 +188,50 @@ export default {
       'groupMembersCount',
       'groupProfile',
       'groupProfiles',
-      'thisMonthsPayments',
       'groupMincomeFormatted',
-      'groupIncomeDistribution',
-      'globalProfile'
+      'globalProfile',
+      'ourContributionSummary'
     ]),
+    ourGroupProfile () {
+      return this.groupProfile(this.ourUsername)
+    },
     upTo () {
       const amount = this.ourGroupProfile[this.ourGroupProfile.incomeDetailsType]
       if (typeof amount !== 'number') return false
-      return this.currency.displayWithCurrency(this.needsIncome ? this.groupSettings.mincomeAmount - amount : amount)
+      return this.wCurrency(this.needsIncome ? this.groupSettings.mincomeAmount - amount : amount)
     },
     needsIncome () {
       return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'
     },
+    receivingNonMonetary () {
+      return this.ourContributionSummary.receivingNonMonetary
+    },
+    receivingMonetary () {
+      return this.ourContributionSummary.receivingMonetary
+    },
+    givingMonetary () {
+      return this.ourContributionSummary.givingMonetary
+    },
     doesReceiveNonMonetary () {
-      return this.receivingNonMonetary.length > 0
+      return this.receivingNonMonetary && this.receivingNonMonetary.who.length > 0
     },
     doesReceiveMonetary () {
-      return this.needsIncome && this.receivingMonetary.list.length > 0
+      return (this.receivingMonetary || {}).total > 0
     },
-    doesReceive () {
+    doesReceiveAny () {
       return this.doesReceiveMonetary || this.doesReceiveNonMonetary
     },
-    hasPayments () {
-      return Object.keys(this.givingMonetary.list).length > 0
+    doesGiveMonetary () {
+      return (this.givingMonetary || {}).total > 0
     },
     notContributing () {
-      return this.needsIncome && this.ourGroupProfile.nonMonetaryContributions.length === 0
+      return this.needsIncome && !this.ourContributionSummary.givingNonMonetary
     },
     noOneToGive () {
-      return !this.needsIncome && !this.hasPayments
-    },
-    noOneCanContribute () {
-      return !this.doesReceiveMonetary && !this.doesReceiveNonMonetary && !this.needsIncome
+      return (this.givingMonetary || {}).total === 0
     },
     currency () {
       return currencies[this.groupSettings.mincomeCurrency]
-    },
-    distribution () {
-      return this.thisMonthsPayments.frozenDistribution || this.groupIncomeDistribution
-    },
-    receivingNonMonetary () {
-      const groupProfiles = this.groupProfiles
-      // TODO to optimize in the future
-      return Object.keys(groupProfiles)
-        .filter(key => key !== this.ourUsername && groupProfiles[key].nonMonetaryContributions.length > 0)
-        .reduce((list, username) => {
-          const nonMonetary = groupProfiles[username].nonMonetaryContributions
-          nonMonetary.forEach((what) => {
-            const contributionIndex = list.findIndex(x => x.what === what)
-            const displayName = this.displayName(username)
-            contributionIndex >= 0
-              ? list[contributionIndex].who.push(displayName)
-              : list.push({ who: [displayName], what })
-          })
-          return list
-        }, [])
-    },
-    receivingMonetary () {
-      const distributionTo = this.distribution.filter(p => p.to === this.ourUsername)
-      const list = []
-      const total = this.currency.displayWithCurrency(
-        distributionTo.reduce((acc, payment) => {
-          list.push(this.displayName(payment.from))
-          return acc + payment.amount
-        }, 0)
-      )
-      return {
-        list: list,
-        total: total
-      }
-    },
-    givingMonetary () {
-      const distributionTo = this.distribution.filter(p => p.from === this.ourUsername)
-      const list = []
-      const total = this.currency.displayWithCurrency(
-        distributionTo.reduce((acc, payment) => {
-          list.push(this.displayName(payment.to))
-          return acc + payment.amount
-        }, 0)
-      )
-      return {
-        list: list,
-        total: total
-      }
     }
   },
   beforeMount () {
@@ -299,6 +260,9 @@ export default {
     },
     displayName (username) {
       return this.globalProfile(username).displayName || username
+    },
+    wCurrency (amount) {
+      return this.currency.displayWithCurrency(amount)
     }
   }
 }

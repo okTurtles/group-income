@@ -104,7 +104,7 @@ describe('Payments', () => {
 
     cy.getByDT('submitIncome').click()
     // After selecting the amount and close the modal make sure it show that no one is in need
-    cy.getByDT('receivingParagraph').should('contain', 'When other members pledge a monetary or non-monetary contribution, they will appear here.')
+    cy.getByDT('receivingParagraph').should('contain', 'When other members give a non-monetary contribution, they will appear here.')
     cy.getByDT('givingParagraph').should('contain', 'No one needs monetary contributions at the moment. You can still add non-monetary contributions if you would like.')
   })
 
@@ -131,7 +131,7 @@ describe('Payments', () => {
     // After closing the modal it should dislay how much user need
     cy.getByDT('headerNeed').should('contain', 'You need $100')
     // The user should be inform that even if he can\'t pledge he can still contribute
-    cy.getByDT('givingParagraph').should('contain', 'You can contribute to your group with money or other valuables like teaching skills, sharing your time ot help someone. The sky is the limit!')
+    cy.getByDT('givingParagraph').should('contain', 'You can contribute to your group with money or other valuables like teaching skills, sharing your time to help someone. The sky is the limit!')
   })
 
   it('user1 adds non monetary contribution', () => {

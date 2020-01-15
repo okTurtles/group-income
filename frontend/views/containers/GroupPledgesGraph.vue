@@ -79,7 +79,7 @@ export default {
       const doWePledge = this.type === 'pledgeAmount'
       const doWeNeedIncome = this.type === 'incomeAmount'
       const mincome = this.groupSettings.mincomeAmount
-      // NOTE: validate this.amount to avoid displyaing negative values in the graph
+      // NOTE: validate this.amount to avoid negative values in the graph
       const ourPledgeAmount = doWePledge && this.amount >= 0 && this.amount
       const ourIncomeAmount = doWeNeedIncome && this.amount < mincome && this.amount
       const incomeDistribution = []
