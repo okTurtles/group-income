@@ -63,10 +63,10 @@ export default {
       if (this.distribution.length === 0) {
         Object.keys(this.groupProfiles).forEach(username => {
           const profile = this.groupProfiles[username]
-          if (profile.incomeAmount) {
+          if (profile.incomeDetailsType) {
             list[username] = {
               amount: 0,
-              total: profile.incomeDetailsType === 'incomeAmount' ? profile.incomeAmount - this.mincome : profile.incomeAmount
+              total: profile.incomeDetailsType === 'incomeAmount' ? profile.incomeAmount - this.mincome : profile.pledgeAmount
             }
           }
         })

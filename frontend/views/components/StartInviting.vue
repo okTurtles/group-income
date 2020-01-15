@@ -1,7 +1,7 @@
 <template lang="pug">
   callout-card(
     :isCard='true'
-    :title='L("Invite member to your group")'
+    :title='L("Invite members to your group")'
     :svg='SvgConversation'
   )
     i18n(tag='p') Start sharing your resources with the ones who matter to you!

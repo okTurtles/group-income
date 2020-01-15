@@ -9,7 +9,7 @@ callout-card(
     :args='{ userName: userDisplayName ? userDisplayName : ourUsername }'
   ) Welcome {userName}
 
-  div(v-if='!memberGroupProfile.incomeDetailsType')
+  div
     i18n(tag='p') Add your income details to start receiving or giving mincome.
 
     i18n(
@@ -17,11 +17,6 @@ callout-card(
       data-test='openIncomeDetailModal'
       @click='openModal("IncomeDetails")'
     ) Add income details
-  div(v-else)
-    i18n(tag='p' v-if='memberGroupProfile.incomeDetailsType === "pledgeAmount"') At the moment, no one in your group need your financial help.
-    i18n(tag='p' v-else) At the moment, no one is able pledging any money to your group.
-    i18n(tag='p') Maybe someone is missing from the group?
-    i18n(tag='button' @click='openModal("InviteByLink")') Add members
 </template>
 
 <script>
@@ -44,16 +39,11 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'groupIncomeDistribution',
-      'ourUsername',
-      'groupProfile'
+      'ourUsername'
     ]),
     userDisplayName () {
       const userContract = this.$store.getters.ourUserIdentityContract
       return userContract && userContract.attributes && userContract.attributes.displayName
-    },
-    memberGroupProfile () {
-      return this.groupProfile(this.ourUsername)
     }
   },
   methods: {

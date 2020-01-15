@@ -2,26 +2,28 @@
 page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings.groupName')
   template(#title='') {{ groupSettings.groupName }}
 
-  welcome(v-if='groupIncomeDistribution.length === 0')
-
-  start-inviting(v-if='groupMembersCount === 1')
+  welcome(v-if='!ourGroupProfile.incomeDetailsType')
 
   div(v-else)
-    page-section(title='This months overview' v-if='!showHistory')
-      span.support-history.button.is-outlined.is-small(@click='showHistory = !showHistory') Support history
-      overview
 
-    page-section(title='Support History' v-if='showHistory')
-      span.support-history.button.is-outlined.is-small(@click='showHistory = !showHistory') This month's overview
-      support-history
+    start-inviting(v-if='groupMembersCount === 1')
 
-  proposals-widget
+    div(v-if='canDisplayGraph')
+      page-section(title='This months overview' v-if='!showHistory')
+        span.support-history.button.is-outlined.is-small(@click='showHistory = !showHistory') Support history
+        overview
 
-  //- page-section(title='July Overview')
-  //-   progress-overview
+      page-section(title='Support History' v-if='showHistory')
+        span.support-history.button.is-outlined.is-small(@click='showHistory = !showHistory') This month's overview
+        support-history
 
-  //- page-section(title='Group Settings')
-  //-   group-settings
+    proposals-widget
+
+    //- page-section(title='July Overview')
+    //-   progress-overview
+
+    //- page-section(title='Group Settings')
+    //-   group-settings
 
   template(#sidebar='')
     group-mincome
@@ -62,8 +64,12 @@ export default {
       'groupSettings',
       'groupsByName',
       'groupMembersCount',
-      'groupIncomeDistribution'
-    ])
+      'groupProfiles',
+      'ourGroupProfile'
+    ]),
+    canDisplayGraph () {
+      return Object.values(this.groupProfiles).filter(profile => profile.incomeDetailsType).length > 0
+    }
   },
   components: {
     Page,

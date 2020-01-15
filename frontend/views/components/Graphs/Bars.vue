@@ -12,14 +12,14 @@
     // Move graph origin to the middle
     g(:transform='`translate(0,${middle})`')
       // Animate using scale from the middle
-      g.g-animate(:style='`transform: scale3d(1,${ ready ? 1 : 0 },1)`')
+      g.g-animate(:style='`transform: scale3d(1,${ isReady ? 1 : 0 },1)`')
         // Surplus line on top of bars
         g(
           v-for='scaleLine in createScale'
           :transform='`translate(0,${-scaleLine.position})`'
         )
           line.g-animate.g-animate-delay(
-            :style='`transform: scale3d(${ready ? 1 : 0},1,1)`'
+            :style='`transform: scale3d(${isReady ? 1 : 0},1,1)`'
             x1='0'
             y1='0'
             :x2='ratioX'
@@ -46,7 +46,7 @@
       line(x1='0' y1='0' :x2='ratioX' y2='0' stroke='#dbdbdb' stroke-width='1')
 
   .c-tag-user(
-    :class='{ positive: barAmount > 0 }'
+    :class='{ positive: barTotal >= 0 }'
     :style='{ opacity: barTotal || barAmount ? 1 : 0, transform: `translate3d(${labelX}px,${labelY}px,0)`} '
   )
     .c-tag-total(v-if='Math.round(barTotal) !== 0') {{currency(Math.abs(Math.round(barTotal)))}}
@@ -55,7 +55,7 @@
   .c-tag.mincome(:style='middleTag') {{ base }}
   .c-tag.g-animate-opacity.g-animate-delay(
     v-for='scaleLine in createScale'
-    :style='{ opacity: ready ? 1 : 0, transform: "translate(0," + (-scaleLine.position + middle - labelPadding) + "px)" }'
+    :style='{ opacity: isReady ? 1 : 0, transform: "translate(0," + (-scaleLine.position + middle - labelPadding) + "px)" }'
   ) {{ scaleLine.label }}
 </template>
 
@@ -77,7 +77,7 @@ export default {
     ratioY: 160,
     labelPadding: 10,
     maxWidth: 48,
-    ready: false,
+    isReady: false,
     isMobile: false,
     barTotal: 0,
     barAmount: 0,
@@ -87,7 +87,7 @@ export default {
   mounted () {
     window.addEventListener('resize', this.handleResize)
     this.handleResize()
-    setTimeout(() => { this.ready = true }, 0)
+    setTimeout(() => { this.isReady = true }, 0)
   },
   beforeDestroy: function () {
     window.removeEventListener('resize', this.handleResize)
@@ -111,9 +111,9 @@ export default {
       return Math.min(this.availableWidth / this.membersNumber / this.ratioWidthPadding, this.maxWidth)
     },
     availableWidth () {
-      return this.ratioX - this.labelwidth
+      return this.ratioX - this.labelWidth
     },
-    labelwidth () {
+    labelWidth () {
       return this.max.toString().length * 9
     },
     max () {
@@ -309,7 +309,6 @@ export default {
 
   &.positive {
     flex-direction: column;
-    color: $success_0;
 
     .c-tag-amount {
       color: $primary_0;
@@ -317,12 +316,12 @@ export default {
     }
 
     .c-tag-total {
+      color: $success_0;
       margin-bottom: 6px;
     }
 
     .c-tag-total:last-child {
       margin-top: 26px;
-      color: $primary_0;
     }
   }
 }
