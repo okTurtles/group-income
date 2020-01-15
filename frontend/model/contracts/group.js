@@ -335,7 +335,6 @@ DefineContract({
       process (state, { data, meta }) {
         var groupProfile = state.profiles[meta.username]
         const nonMonetary = groupProfile.nonMonetaryContributions
-
         for (const key in data) {
           const value = data[key]
           switch (key) {
