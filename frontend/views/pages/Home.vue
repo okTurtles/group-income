@@ -10,6 +10,8 @@ main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
     img.logo-2(src='/assets/images/logo-transparent.png')
     i18n(tag='p' class='subtitle') Welcome to group income
     i18n.is-title-1(tag='h1' data-test='welcomeHomeLoggedIn') Let’s get this party started
+    | name::: {{(this.$store.getters.ourUserIdentityContract.attributes || {}).name}}
+    | logged::: {{ this.$store.state.loggedIn}}
 
   .buttons(v-if='!$store.state.loggedIn' key='body-loggin')
     i18n(

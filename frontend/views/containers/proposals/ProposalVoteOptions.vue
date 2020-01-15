@@ -78,10 +78,10 @@ export default {
       return this.proposal.data.proposalData
     },
     hadVoted () {
-      return this.proposal.votes[this.currentUsername]
+      return this.proposal.votes[this.ourUsername]
     },
     ownProposal () {
-      return this.currentUsername === this.proposal.meta.username
+      return this.ourUsername === this.proposal.meta.username
     }
   },
   methods: {
@@ -92,7 +92,7 @@ export default {
       this.ephemeral.changingVote = false
       this.ephemeral.errorMsg = null
       // Avoid redundant vote from "Change vote" if already voted FOR before
-      if (!confirm(L('Are you sure you want to vote yes?')) || this.proposal.votes[this.currentUsername] === VOTE_FOR) {
+      if (!confirm(L('Are you sure you want to vote yes?')) || this.proposal.votes[this.ourUsername] === VOTE_FOR) {
         return null
       }
       try {
@@ -123,7 +123,7 @@ export default {
       this.ephemeral.changingVote = false
       this.ephemeral.errorMsg = null
       // Avoid redundant vote from "Change vote" if already voted AGAINST before
-      if (!confirm(L('Are you sure you want to vote no?')) || this.proposal.votes[this.currentUsername] === VOTE_AGAINST) {
+      if (!confirm(L('Are you sure you want to vote no?')) || this.proposal.votes[this.ourUsername] === VOTE_AGAINST) {
         return null
       }
       try {

@@ -22,10 +22,7 @@ export default async function login ({
 
   try {
     console.debug(`Retrieved identity ${identityContractID}`)
-    await sbp('state/vuex/dispatch', 'login', {
-      username,
-      identityContractID
-    })
+    await sbp('state/vuex/dispatch', 'login', { username, identityContractID })
 
     return true
   } catch (e) {

@@ -15,12 +15,18 @@ page
 
     banner-scoped(ref='bannerAction')
 
+    button.is-success.c-finalize(
+      v-if='ephemeral.finalized'
+      data-test='finalizeBtn'
+      @click='finalizeAction'
+    ) Finalize action
+
   .card
     h3.is-title-2 Actions available
     p Pass the action name and its arguments as queries.
     p.has-text-1 Ex: /bypass-ui?action=signup&username=john&email=john@email.com&password=123456789
     ul.c-list
-      li(v-for='action in Object.keys(actions())') {{ action }}
+      li(v-for='action in Object.keys(actions)') {{ action }}
 </template>
 
 <script>
@@ -39,61 +45,87 @@ export default {
   data () {
     return {
       ephemeral: {
-        action: {}
+        action: {},
+        finalized: false
       }
     }
   },
-  mounted () {
+  async mounted () {
     const { action, ...queries } = this.$route.query
 
     if (!action) {
       return false
     }
 
-    const { actionFn, finalize } = this.actions()[action] || {}
+    const { actionFn } = this.actions[action] || {}
 
-    // Wait for $refs.bannerAction to be ready.
-    this.$nextTick(async () => {
-      if (!actionFn) {
+    if (!actionFn) {
+      // Wait for $refs.bannerAction to exist
+      this.$nextTick(() => {
         this.$refs.bannerAction.danger(`Action ${action} doesn't exist.`)
-      }
+      })
+    }
 
-      this.ephemeral.action = {
-        name: action,
-        queries
-      }
+    this.ephemeral.action = {
+      name: action,
+      queries
+    }
 
-      try {
-        await actionFn(queries)
-        this.$refs.bannerAction.success(`${action} success!`)
-        finalize()
-      } catch (err) {
-        this.$refs.bannerAction.danger(`Action ${action} failed. ${err.message}`)
-      }
-    })
+    try {
+      await actionFn(queries)
+
+      // Use "finalized" so cypress can wait for the action to be succeded
+      // And continue the tests correctly.
+      this.ephemeral.finalized = true
+      this.$refs.bannerAction.success(`${action} succeded!`)
+    } catch (err) {
+      this.$refs.bannerAction.danger(`Action ${action} failed. ${err.message}`)
+    }
   },
-  methods: {
+  computed: {
     actions () {
+      // Bug vue/no-side-effects-in-computed-properties
+      //  -> https://github.com/vuejs/eslint-plugin-vue/issues/873
       return {
         signup: {
-          actionFn: signup,
+          actionFn: (params) => {
+            const username = this.$store.getters.ourUsername
+            if (username) {
+              // QUESTION: Should we do this inside signup itself?
+              throw Error(`You're signed as '${username}'. Please, logout first.`)
+            }
+            signup(params)
+          },
           finalize: () => {
-            this.$router.push({ path: '/app' })
+            this.$router.push({ path: '/app' }) // eslint-disable-line
           }
         },
         login: {
-          actionFn: login,
+          actionFn: (params) => {
+            const username = this.$store.getters.ourUsername
+            if (username) {
+              throw Error(`You're loggedin as '${username}'. Please, logout first.`)
+            }
+            login(params)
+          },
           finalize: () => {
-            this.$router.push({ path: '/app' })
+            this.$router.push({ path: '/app' }) // eslint-disable-line
           }
         },
         groupCreation: {
           actionFn: groupCreation,
           finalize: () => {
-            this.$router.push({ path: '/dashboard' })
+            this.$router.push({ path: '/dashboard' }) // eslint-disable-line
           }
         }
       }
+    }
+  },
+  methods: {
+    finalizeAction () {
+      const { action } = this.$route.query
+
+      return this.actions[action].finalize()
     }
   }
 }
@@ -110,5 +142,9 @@ export default {
 
 .c-query {
   word-break: break-all;
+}
+
+.c-finalize {
+  margin-top: $spacer;
 }
 </style>

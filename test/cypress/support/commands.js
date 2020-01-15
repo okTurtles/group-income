@@ -22,6 +22,9 @@ function cyBypassUI (action, params) {
   cy.log(`Bypassing UI ::: ${action}`)
   cy.visit(`/app/bypass-ui?action=${action}${query}`)
   cy.getByDT('actionName').should('text', action)
+  cy.getByDT('feedbackMsg').should('text', `${action} succeded!`)
+
+  cy.getByDT('finalizeBtn').click()
 }
 
 Cypress.Commands.add('giSignup', (username, {
@@ -56,7 +59,7 @@ Cypress.Commands.add('giSignup', (username, {
 Cypress.Commands.add('giLogin', (username, {
   password = '123456789',
   bypassUI
-}) => {
+} = {}) => {
   if (bypassUI) {
     cyBypassUI('login', { username, password })
   } else {
@@ -127,6 +130,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
     })
 
     cy.url().should('eq', 'http://localhost:8000/app/dashboard')
+    cy.getByDT('groupName').should('contain', name)
     return
   }
 
@@ -204,9 +208,15 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
   actionBeforeLogout,
   bypassUI
 }) => {
+  if (!isLoggedIn && bypassUI) {
+    // Do the other way around: signup before visiting the page,
+    // it will automatically accepts the invitation when visiting the page.
+    cy.giSignup(username, { bypassUI })
+  }
+
   cy.visit(invitationLink)
 
-  if (isLoggedIn) {
+  if (isLoggedIn || bypassUI) {
     cy.getByDT('welcomeGroup').should('contain', `Welcome to ${groupName}!`)
   } else {
     cy.getByDT('groupName').should('contain', groupName)
@@ -216,9 +226,8 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     cy.getByDT('invitationMessage').should('contain', inviteMessage)
     cy.giSignup(username, { isInvitation: true, groupName, bypassUI })
   }
-  if (!bypassUI) {
-    cy.getByDT('toDashboardBtn').click()
-  }
+
+  cy.getByDT('toDashboardBtn').click()
   cy.url().should('eq', 'http://localhost:8000/app/dashboard')
 
   if (displayName) {

@@ -90,7 +90,7 @@ async function startApp () {
       return {
         ephemeral: {
           syncs: [],
-          finishedLogin: 'no'
+          finishedLogin: !!this.$store.state.loggedIn
         }
       }
     },

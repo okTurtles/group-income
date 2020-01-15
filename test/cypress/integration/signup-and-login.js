@@ -9,12 +9,12 @@ describe('Signup, Profile and Login', () => {
     cy.visit('/')
     cy.giSignup(username)
 
-    cy.giCreateGroup('Dreamers', { bypassUI: true })
+    cy.giCreateGroup('Dreamers')
     cy.getByDT('profileName').should('contain', username)
   })
 
   it('user1 logout and login again', () => {
-    cy.visit('/')
+    cy.giLogout()
     cy.giLogin(username)
   })
 

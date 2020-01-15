@@ -52,9 +52,7 @@ export default async function signup ({
       identityContractID: user.hash()
     })
 
-    return true // CONTINUE HEREEE
-    //  Somehow, this isnt working
-    // - identityContractID.name is undefined causing breaked proposals
+    return true
   } catch (error) {
     sbp('state/vuex/dispatch', 'logout')
     throw Error(error)

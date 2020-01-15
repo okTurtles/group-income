@@ -11,6 +11,9 @@
     :args='{ groupName: groupSettings.groupName }'
   ) Welcome to {groupName}!
 
+  | name::: {{(this.$store.getters.ourUserIdentityContract.attributes || {}).name}}
+  | logged::: {{ this.$store.state.loggedIn}}
+
   i18n(tag='p' class='has-text-0 c-description') You are now embarking on a new journey. We hope you have a blast!
 
   .buttons.is-centered

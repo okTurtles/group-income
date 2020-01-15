@@ -62,11 +62,12 @@ describe('Payments', () => {
 
   it('user1 creates a group', () => {
     cy.visit('/')
-
     cy.giSignup(`user1-${userId}`, { bypassUI: true })
 
-    cy.giCreateGroup(groupName, { bypassUI: true })
-
+    // TODO/NOTE: When bypassUI, something related to identity.attributes
+    // doesnt fully sync...
+    cy.giCreateGroup(groupName, { bypassUI: false })
+    // ... causing this step to fail, because attributes is empty.
     cy.giSetDisplayName(usersDisplayName[1])
 
     cy.giGetInvitationAnyone().then(url => {
@@ -81,12 +82,12 @@ describe('Payments', () => {
       cy.giAcceptGroupInvite(invitationLinks.anyone, {
         username: `user${i}-${userId}`,
         groupName,
-        displayName: usersDisplayName[i],
-        bypassUI: true
+        displayName: usersDisplayName[i]
+        // bypassUI: true
       })
     }
 
-    cy.giLogin(`user1-${userId}`)
+    cy.giLogin(`user1-${userId}`, { bypassUI: true })
   })
 
   it('user1 fills their Income Details - pledges $500', () => {
