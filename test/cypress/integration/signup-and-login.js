@@ -9,14 +9,14 @@ describe('Signup, Profile and Login', () => {
     cy.visit('/')
     cy.giSignup(username)
 
-    cy.giCreateGroup('Dreamers')
+    cy.giCreateGroup('Dreamers', { bypassUI: true })
     cy.getByDT('profileName').should('contain', username)
   })
 
-  it('user1 logout and login again', () => {
-    cy.giLogout()
-    cy.giLogin(username)
-  })
+  // it('user1 logout and login again', () => {
+  //   cy.giLogout()
+  //   cy.giLogin(username)
+  // })
 
   it('user1 changes avatar and profile settings', () => {
     const profilePicture = 'imageTest.png' // at fixtures/imageTest
@@ -32,7 +32,7 @@ describe('Signup, Profile and Login', () => {
     cy.getByDT('displayName').clear().type('John Bot')
     cy.getByDT('bio').clear().type('Born in a test case')
 
-    cy.getByDT('profileEmail').clear().type(`${username}@new-email.com`)
+    // cy.getByDT('profileEmail').clear().type(`${username}@new-email.com`)
 
     cy.getByDT('saveAccount').click()
     cy.getByDT('profileMsg').should('contain', 'Your changes were saved!')
@@ -45,7 +45,7 @@ describe('Signup, Profile and Login', () => {
     cy.giLogout()
   })
 
-  it('prevent incorrect logins/signup actions', () => {
+  it.skip('prevent incorrect logins/signup actions', () => {
     cy.log('- Connot login a non existent user')
     cy.getByDT('loginBtn').click()
 

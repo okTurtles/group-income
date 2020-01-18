@@ -19,8 +19,19 @@ Cypress.Commands.add('getByDT', (element, otherSelector = '') => {
 function cyBypassUI (action, params) {
   const query = Object.keys(params)
     .reduce((query, param) => query + `&${param}=${params[param]}`, '')
+
   cy.log(`Bypassing UI ::: ${action}`)
-  cy.visit(`/app/bypass-ui?action=${action}${query}`)
+
+  // Option 1 - wait fo contracts to finish sync. - doesnt work.
+  // cy.getByDT('app').then(([el]) => {
+  //   cy.get(el).should('have.attr', 'data-logged-in', 'yes')
+  //   cy.get(el).should('have.attr', 'data-sync', '')
+  // })
+
+  // Option 2 - hardcore wait. it works, but meh...
+  // cy.wait(1500)
+
+  cy.visit(`/app/bypass-ui?action=${action}${query}`) /// it's lost.
   cy.getByDT('actionName').should('text', action)
   cy.getByDT('feedbackMsg').should('text', `${action} succeded!`)
 
