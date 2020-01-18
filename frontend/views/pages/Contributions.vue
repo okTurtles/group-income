@@ -48,10 +48,10 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
       .receiving
         i18n.is-title-3(tag='h3' class='card-header') Receiving
         i18n.has-text-1.spacer-around(
-          v-if='!this.needsIncome && !doesReceiveNonMonetary'
+          v-if='!doesReceiveAny'
           tag='p'
           data-test='receivingParagraph'
-        ) When other members give a non-monetary contribution, they will appear here.
+        ) When other members pledge a monetary or non-monetary contribution, they will appear here.
 
         i18n.has-text-1.spacer-around(
           v-else-if='needsIncome && !doesReceiveMonetary'

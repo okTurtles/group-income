@@ -104,7 +104,7 @@ describe('Payments', () => {
 
     cy.getByDT('submitIncome').click()
     // After selecting the amount and close the modal make sure it show that no one is in need
-    cy.getByDT('receivingParagraph').should('contain', 'When other members give a non-monetary contribution, they will appear here.')
+    cy.getByDT('receivingParagraph').should('contain', 'When other members pledge a monetary or non-monetary contribution, they will appear here.')
     cy.getByDT('givingParagraph').should('contain', 'No one needs monetary contributions at the moment. You can still add non-monetary contributions if you would like.')
   })
 
