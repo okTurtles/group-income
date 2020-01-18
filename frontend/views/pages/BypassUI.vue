@@ -2,7 +2,7 @@
 page
   h1.is-title-1 Cypress - Bypassing the UI
   p This page is used exclusively by Cypress to perform repetitive actions. &nbsp;
-    a.link(href='https://docs.cypress.io/guides/getting-started/testing-your-app.html#Bypassing-your-UI') Read more about this strategy.
+    a.link(href='https://docs.cypress.io/guides/getting-started/testing-your-app.html#Bypassing-your-UI' target='_blank') Read more about this strategy.
   br
   .card
     h2.is-title-2 Performing Action &nbsp;
@@ -15,8 +15,8 @@ page
 
     banner-scoped(ref='bannerAction')
 
-    button.is-success.c-finalize(
-      v-if='ephemeral.finalized'
+    button.is-success.c-btn(
+      v-if='ephemeral.isFinalized'
       data-test='finalizeBtn'
       @click='finalizeAction'
     ) Finalize action
@@ -26,7 +26,7 @@ page
     p Pass the action name and its arguments as queries.
     p.has-text-1 Ex: /bypass-ui?action=signup&username=john&email=john@email.com&password=123456789
     ul.c-list
-      li(v-for='action in Object.keys(actions)') {{ action }}
+      li(v-for='(obj, actionName) in actions') {{ actionName }}
 </template>
 
 <script>
@@ -46,7 +46,7 @@ export default {
     return {
       ephemeral: {
         action: {},
-        finalized: false
+        isFinalized: false
       }
     }
   },
@@ -74,9 +74,9 @@ export default {
     try {
       await actionFn(queries)
 
-      // Use "finalized" so cypress can wait for the action to be succeded
+      // Use "isFinalized" so cypress can wait for the action to be succeded
       // And continue the tests correctly.
-      this.ephemeral.finalized = true
+      this.ephemeral.isFinalized = true
       this.$refs.bannerAction.success(`${action} succeded!`)
     } catch (err) {
       this.$refs.bannerAction.danger(`Action ${action} failed. ${err.message}`)
@@ -84,19 +84,19 @@ export default {
   },
   computed: {
     actions () {
-      // Bug vue/no-side-effects-in-computed-properties
-      //  -> https://github.com/vuejs/eslint-plugin-vue/issues/873
       return {
         signup: {
           actionFn: (params) => {
             const username = this.$store.getters.ourUsername
             if (username) {
-              // QUESTION: Should we do this inside signup itself?
-              throw Error(`You're signed as '${username}'. Please, logout first.`)
+              // QUESTION: Should we do this validation inside signup? Same for login
+              throw Error(`You're signed as '${username}'. Logout first and re-run the tests.`)
             }
             signup(params)
           },
           finalize: () => {
+            // Bug vue/no-side-effects-in-computed-properties
+            //  -> https://github.com/vuejs/eslint-plugin-vue/issues/873
             this.$router.push({ path: '/app' }) // eslint-disable-line
           }
         },
@@ -104,7 +104,7 @@ export default {
           actionFn: (params) => {
             const username = this.$store.getters.ourUsername
             if (username) {
-              throw Error(`You're loggedin as '${username}'. Please, logout first.`)
+              throw Error(`You're loggedin as '${username}'. Logout first and re-run the tests.`)
             }
             login(params)
           },
@@ -144,7 +144,7 @@ export default {
   word-break: break-all;
 }
 
-.c-finalize {
+.c-btn {
   margin-top: $spacer;
 }
 </style>

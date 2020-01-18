@@ -13,6 +13,8 @@ describe('Signup, Profile and Login', () => {
     cy.getByDT('profileName').should('contain', username)
   })
 
+  // NOTE IMPORTANT: Uncomment this test when the bypassUI bug is solved.
+  // When login happens, the data is retrieved again and the bug gets unnoticed.
   // it('user1 logout and login again', () => {
   //   cy.giLogout()
   //   cy.giLogin(username)
@@ -32,7 +34,8 @@ describe('Signup, Profile and Login', () => {
     cy.getByDT('displayName').clear().type('John Bot')
     cy.getByDT('bio').clear().type('Born in a test case')
 
-    // cy.getByDT('profileEmail').clear().type(`${username}@new-email.com`)
+    cy.getByDT('profileEmail').should('have.value', `${username}@email.com`)
+    cy.getByDT('profileEmail').clear().type(`${username}@new-email.com`)
 
     cy.getByDT('saveAccount').click()
     cy.getByDT('profileMsg').should('contain', 'Your changes were saved!')
@@ -45,7 +48,7 @@ describe('Signup, Profile and Login', () => {
     cy.giLogout()
   })
 
-  it.skip('prevent incorrect logins/signup actions', () => {
+  it('prevent incorrect logins/signup actions', () => {
     cy.log('- Connot login a non existent user')
     cy.getByDT('loginBtn').click()
 

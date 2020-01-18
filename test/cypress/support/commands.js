@@ -24,16 +24,19 @@ function cyBypassUI (action, params) {
 
   // Option 1 - wait fo contracts to finish sync. - doesnt work.
   // cy.getByDT('app').then(([el]) => {
-  //   cy.get(el).should('have.attr', 'data-logged-in', 'yes')
   //   cy.get(el).should('have.attr', 'data-sync', '')
   // })
 
-  // Option 2 - hardcore wait. it works, but meh...
-  // cy.wait(1500)
+  // Option 2 - hardcore wait. it works, but it isn't the ideal solution.
+  // cy.wait(500); // eslint-disable-line
 
   cy.visit(`/app/bypass-ui?action=${action}${query}`) /// it's lost.
   cy.getByDT('actionName').should('text', action)
   cy.getByDT('feedbackMsg').should('text', `${action} succeded!`)
+
+  // Same as before. wait to stuff finish syncing on db...
+  // (See snapshot attached on PR)
+  // cy.wait(500); // eslint-disable-line
 
   cy.getByDT('finalizeBtn').click()
 }
@@ -220,8 +223,8 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
   bypassUI
 }) => {
   if (!isLoggedIn && bypassUI) {
-    // Do the other way around: signup before visiting the page,
-    // it will automatically accepts the invitation when visiting the page.
+    // Do the other way around: signup before visiting the page.
+    // Then, the invitation is automatically accepted.
     cy.giSignup(username, { bypassUI })
   }
 
@@ -235,7 +238,7 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
       ? `${inviteCreator} invited you to join their group!`
       : 'You were invited to join'
     cy.getByDT('invitationMessage').should('contain', inviteMessage)
-    cy.giSignup(username, { isInvitation: true, groupName, bypassUI })
+    cy.giSignup(username, { isInvitation: true, groupName })
   }
 
   cy.getByDT('toDashboardBtn').click()

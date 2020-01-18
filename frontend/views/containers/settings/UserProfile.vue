@@ -26,7 +26,6 @@
       form(@submit.prevent='saveProfile')
         label.field
           i18n.label Display Name
-          | ora::: {{(this.$store.getters.ourUserIdentityContract.attributes || {}).name}}
           input.input(
             name='displayName'
             type='text'

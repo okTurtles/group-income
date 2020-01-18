@@ -80,6 +80,9 @@ export default {
     SvgCreateGroup
   },
   mounted () {
+    console.log('::groupId:', this.$store.state.currentGroupId)
+    console.log('::groupsByName:', this.$store.getters.groupsByName)
+
     if (this.$route.query.next) {
       this.openModal('LoginModal')
     }

@@ -62,12 +62,10 @@ describe('Payments', () => {
 
   it('user1 creates a group', () => {
     cy.visit('/')
-    cy.giSignup(`user1-${userId}`, { bypassUI: false })
+    cy.giSignup(`user1-${userId}`, { bypassUI: true })
 
-    // TODO/NOTE: When bypassUI, something related to identity.attributes
-    // doesnt fully sync...
-    cy.giCreateGroup(groupName, { bypassUI: false })
-    // ... causing this step to fail, because attributes is empty.
+    cy.giCreateGroup(groupName, { bypassUI: true })
+
     cy.giSetDisplayName(usersDisplayName[1])
 
     cy.giGetInvitationAnyone().then(url => {
@@ -82,12 +80,12 @@ describe('Payments', () => {
       cy.giAcceptGroupInvite(invitationLinks.anyone, {
         username: `user${i}-${userId}`,
         groupName,
-        displayName: usersDisplayName[i]
-        // bypassUI: false
+        displayName: usersDisplayName[i],
+        bypassUI: true
       })
     }
 
-    cy.giLogin(`user1-${userId}`, { bypassUI: false })
+    cy.giLogin(`user1-${userId}`, { bypassUI: true })
   })
 
   it('user1 fills their Income Details - pledges $500', () => {
@@ -222,7 +220,7 @@ describe('Payments', () => {
   })
 
   it('user2 pledges $100 and sees their contributions.', () => {
-    cy.giSwitchUser(`user2-${userId}`, { bypassUI: false })
+    cy.giSwitchUser(`user2-${userId}`, { bypassUI: true })
 
     const graphicLegend = [
       'Total Pledged$100',
@@ -253,7 +251,7 @@ describe('Payments', () => {
   })
 
   it('user3 pledges $100 and sees who they are pledging to - $50 to user1 (Greg)', () => {
-    cy.giSwitchUser(`user3-${userId}`, { bypassUI: false })
+    cy.giSwitchUser(`user3-${userId}`, { bypassUI: true })
     const graphicLegend = [
       'Total Pledged$200',
       'Needed Pledges$0'
@@ -262,7 +260,7 @@ describe('Payments', () => {
   })
 
   it('user4 and user2 increase their pledges to $500 each. user1 sees the receiving contributions from 3 members.', () => {
-    cy.giSwitchUser(`user4-${userId}`, { bypassUI: false })
+    cy.giSwitchUser(`user4-${userId}`, { bypassUI: true })
     const graphicLegend4 = [
       'Total Pledged$700',
       'Needed Pledges$0',
@@ -293,7 +291,7 @@ describe('Payments', () => {
   })
 
   it('user4 and user2 reduced income to $10 and now receive money.', () => {
-    cy.giSwitchUser(`user4-${userId}`, { bypassUI: false })
+    cy.giSwitchUser(`user4-${userId}`, { bypassUI: true })
     const graphicLegend4 = [
       'Total Pledged$600',
       'Needed Pledges$0',
@@ -302,7 +300,7 @@ describe('Payments', () => {
     ]
     updateIncome(10, true, graphicLegend4, '$190 by Margarida and Pierre')
 
-    cy.giSwitchUser(`user2-${userId}`, { bypassUI: false })
+    cy.giSwitchUser(`user2-${userId}`, { bypassUI: true })
     const graphicLegend2 = [
       'Total Pledged$100',
       'Needed Pledges$380',
@@ -319,7 +317,7 @@ describe('Payments', () => {
   })
 
   it('user3 pledges to all 3 members', () => {
-    cy.giSwitchUser(`user3-${userId}`, { bypassUI: false })
+    cy.giSwitchUser(`user3-${userId}`, { bypassUI: true })
     cy.getByDT('contributionsLink').click()
 
     cy.get(elGivingFirst)
@@ -327,7 +325,7 @@ describe('Payments', () => {
   })
 
   it('user1 receives part of what they need', () => {
-    cy.giSwitchUser(`user1-${userId}`, { bypassUI: false })
+    cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
     cy.getByDT('contributionsLink').click()
 
     cy.get(elReceivingFirst)

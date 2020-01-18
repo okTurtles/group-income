@@ -26,23 +26,18 @@
       :data-logged-in='ephemeral.finishedLogin'
     >
       <app-styles></app-styles>
+      <!-- TODO IMPORTANT - remove this before merge -->
       <div style="position: fixed; top: 0; left: 23vw; right: 23vw;
-      font-size: 0.8rem; opacity: 0.9;
-      outline: 1px solid red; padding: 5px; z-index: 9999; background: white; pointer-events: none;">
-        <p>
-          :: username :: {{(this.$store.getters.ourUserIdentityContract.attributes || {}).name}}
-        </p>
+      font-size: 0.75rem; opacity: 0.7; pointer-events: none;
+      outline: 1px solid red; padding: 5px; z-index: 9999; background: white;">
+        <p> :: username :: {{(this.$store.getters.ourUserIdentityContract.attributes || {}).name}}</p>
+        <p> :: loggedIn :: {{$store.state.loggedIn}} </p>
         ---
-        <p>
-          :: loggedIn :: {{$store.state.loggedIn}}
-        </p>
-        ---
-        <p>
-          <li v-for="x in Object.keys($store.state.contracts)">
-            <p> :: contractId :: {{$store.state.contracts[x]}} </p>
-            <p>:: contractObj :: {{$store.state[x]}}</p>
-          </li>
-        </p>
+        <span v-for="(obj, id) in $store.state.contracts">
+          <p> :: contracts[id] :: {{ obj }} </p>
+          <p>:: state[id] exists :: {{ !!$store.state[id] }}</p>
+          -
+        </span>
 
       </div>
       <banner-general ref="bannerGeneral"></banner-general>
