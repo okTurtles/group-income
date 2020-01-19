@@ -8,7 +8,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
 
     start-inviting(v-if='groupMembersCount === 1')
 
-    graph-widget(v-if='canDisplayGraph')
+    contributions-overview(v-if='canDisplayGraph')
 
     proposals-widget
 
@@ -31,7 +31,7 @@ import Page from '@pages/Page.vue'
 import ProposalsWidget from '@containers/proposals/ProposalsWidget.vue'
 import ProgressOverview from '@components/ProgressOverview.vue'
 import StartInviting from '@components/StartInviting.vue'
-import GraphWidget from '@components/Graphs/GraphWidget.vue'
+import ContributionsOverview from '@containers/contributions/ContributionsOverview.vue'
 import GroupMincome from '@containers/sidebar/GroupMincome.vue'
 import GroupMembers from '@containers/sidebar/GroupMembers.vue'
 import GroupPurpose from '@containers/sidebar/GroupPurpose.vue'
@@ -60,7 +60,7 @@ export default {
   components: {
     Page,
     ProposalsWidget,
-    GraphWidget,
+    ContributionsOverview,
     ProgressOverview,
     GroupMincome,
     GroupMembers,

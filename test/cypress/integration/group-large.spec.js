@@ -1,10 +1,11 @@
 const userId = Math.floor(Math.random() * 10000)
 const groupName = 'Dreamers'
+const groupLength = 4
 
 describe('Large group', () => {
   const invitationLinks = {}
 
-  it('A group with 20 members shows correctly the pledging month overview widget', () => {
+  it('user1 creates a group', () => {
     cy.visit('/')
 
     cy.giSignup(`user1-${userId}`)
@@ -18,8 +19,8 @@ describe('Large group', () => {
     cy.giLogout()
   })
 
-  it('A group with 20 members shows correctly the pledging month overview widget', () => {
-    for (let i = 2; i <= 21; i++) {
+  it(`A group with ${groupLength} members shows correctly the pledging month overview widget`, () => {
+    for (let i = 2; i <= groupLength + 1; i++) {
       cy.giAcceptGroupInvite(invitationLinks.anyone, {
         username: `user${i}-${userId}`,
         groupName,
@@ -27,23 +28,15 @@ describe('Large group', () => {
           if (i > 3) {
             cy.getByDT('contributionsLink').click()
           }
-          cy.getByDT('openIncomeDetailModal').click()
-          let salary = Math.floor(Math.random() * (600 - 20) + 20)
-          let action = 'dontNeedsIncomeRadio'
-          if (Math.random() < 0.5) {
-            salary = Math.floor(Math.random() * (200 - 20) + 20)
-            action = 'needsIncomeRadio'
-          }
-          cy.getByDT(action).click()
-          cy.getByDT('inputIncomeOrPledge').type(salary)
-          cy.getByDT('submitIncome').click()
+          cy.giAddRandomIncome()
         }
       })
     }
 
     cy.giLogin(`user1-${userId}`)
+    cy.giAddRandomIncome()
     cy.get('.graph-bar')
-      .should('have.length', 20)
+      .should('have.length', groupLength + 1)
     cy.giLogout()
   })
 })

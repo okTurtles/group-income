@@ -20,7 +20,7 @@ import SupportHistory from '@components/Graphs/SupportHistory.vue'
 import PageSection from '@components/PageSection.vue'
 
 export default {
-  name: 'GroupDashboard',
+  name: 'ContributionsOverview',
   data () {
     return {
       showHistory: false

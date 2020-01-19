@@ -189,3 +189,17 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
   if (actionBeforeLogout) actionBeforeLogout()
   cy.giLogout()
 })
+
+Cypress.Commands.add('giAddRandomIncome', () => {
+  cy.getByDT('openIncomeDetailModal').click()
+  let salary = Math.floor(Math.random() * (600 - 20) + 20)
+  let action = 'dontNeedsIncomeRadio'
+  // Add randomly negative or positive income
+  if (Math.random() < 0.5) {
+    salary = Math.floor(Math.random() * (200 - 20) + 20)
+    action = 'needsIncomeRadio'
+  }
+  cy.getByDT(action).click()
+  cy.getByDT('inputIncomeOrPledge').type(salary)
+  cy.getByDT('submitIncome').click()
+})
