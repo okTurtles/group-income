@@ -50,6 +50,7 @@ modal-base-template(:fullscreen='true')
 </template>
 
 <script>
+import sbp from '~/shared/sbp.js'
 import ModalBaseTemplate from '@components/Modal/ModalBaseTemplate.vue'
 import { RULE_THRESHOLD } from '@model/contracts/voting/rules.js'
 import proposals, { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE } from '@model/contracts/voting/proposals.js'
@@ -71,7 +72,6 @@ import {
 // or not... using require only makes rollup happy during compilation
 // but then the browser complains about "require is not defined"
 import { required, between } from 'vuelidate/lib/validators'
-import groupCreation from '../../../actions/groupCreation.js'
 
 export default {
   name: 'CreateGroupModal',
@@ -106,7 +106,8 @@ export default {
 
       try {
         this.$refs.formMsg.clean()
-        groupCreation({
+
+        const groupID = await sbp('gi.actions/group/create', {
           name: this.form.groupName,
           picture: this.ephemeral.groupPictureFile,
           sharedValues: this.form.sharedValues,
@@ -115,9 +116,12 @@ export default {
           thresholdChange: this.form.changeThreshold,
           thresholdMemberApproval: this.form.memberApprovalThreshold,
           thresholdMemberRemoval: this.form.memberRemovalThreshold
-        }, () => {
+        })
+        sbp('okTurtles.events/once', groupID, (contractID, entry) => {
+          sbp('gi.actions/group/switch', groupID)
           this.next()
         })
+        await sbp('gi.actions/contract/subscribeAndWait', groupID)
       } catch (e) {
         console.error('CreateGroup.vue submit() error:', e)
         this.$refs.formMsg.danger(e.message)

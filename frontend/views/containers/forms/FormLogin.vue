@@ -37,12 +37,12 @@ form(
 <script>
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
+import sbp from '~/shared/sbp.js'
 import { nonWhitespace } from '@views/utils/validators.js'
 import FormPassword from '@containers/forms/FormPassword.vue'
 import BannerScoped from '@components/BannerScoped.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-import login from '../../../actions/login.js'
 
 export default {
   name: 'FormLogin',
@@ -68,7 +68,7 @@ export default {
   methods: {
     async login () {
       try {
-        await login({
+        await sbp('gi.actions/user/login', {
           username: this.form.name,
           password: this.form.password
         })

@@ -52,7 +52,6 @@ import FormPassword from '@containers/forms/FormPassword.vue'
 import BannerScoped from '@components/BannerScoped.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-import signup from '../../../actions/signup.js'
 
 export default {
   name: 'FormSignup',
@@ -82,7 +81,7 @@ export default {
       }
 
       try {
-        await signup({
+        await sbp('gi.actions/user/signup', {
           username: this.form.name,
           email: this.form.email,
           password: this.form.password

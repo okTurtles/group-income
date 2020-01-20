@@ -6,6 +6,7 @@ import '~/shared/domains/okTurtles/data.js'
 import '~/shared/domains/okTurtles/events.js'
 import '~/shared/domains/okTurtles/eventQueue.js'
 import './controller/namespace.js'
+import './controller/actions/index.js'
 import Vue from 'vue'
 import { mapMutations } from 'vuex'
 import router from './controller/router.js'
@@ -90,7 +91,7 @@ async function startApp () {
       return {
         ephemeral: {
           syncs: [],
-          finishedLogin: !!this.$store.state.loggedIn
+          finishedLogin: this.$store.state.loggedIn ? 'yes' : 'no'
         }
       }
     },

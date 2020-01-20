@@ -1,4 +1,6 @@
 <script>
+import sbp from '~/shared/sbp.js'
+
 // From https://markus.oberlehner.net/blog/transition-to-height-auto-with-vue/
 export default {
   name: 'TransitionExpand',
@@ -13,10 +15,7 @@ export default {
           element.style.height = 'auto'
         },
         enter (element) {
-          // TODO/QUESTION -How we do access store here?
-          // const reducedMotion = store.state.reducedMotion
-          const reducedMotion = document.getElementById('app').classList.contains('js-reducedMotion')
-          if (reducedMotion) { return }
+          if (sbp('state/vuex/state').reducedMotion) { return }
 
           const { width } = getComputedStyle(element)
           element.style.width = width
@@ -39,8 +38,7 @@ export default {
           })
         },
         leave (element) {
-          const reducedMotion = document.getElementById('app').classList.contains('js-reducedMotion')
-          if (reducedMotion) { return }
+          if (sbp('state/vuex/state').reducedMotion) { return }
 
           const { height } = getComputedStyle(element)
           element.style.height = height

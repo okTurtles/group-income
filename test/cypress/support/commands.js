@@ -28,7 +28,7 @@ function cyBypassUI (action, params) {
   // })
 
   // Option 2 - hardcore wait. it works, but it isn't the ideal solution.
-  // cy.wait(500); // eslint-disable-line
+  cy.wait(450); // eslint-disable-line
 
   cy.visit(`/app/bypass-ui?action=${action}${query}`) /// it's lost.
   cy.getByDT('actionName').should('text', action)
@@ -36,7 +36,7 @@ function cyBypassUI (action, params) {
 
   // Same as before. wait to stuff finish syncing on db...
   // (See snapshot attached on PR)
-  // cy.wait(500); // eslint-disable-line
+  cy.wait(450); // eslint-disable-line
 
   cy.getByDT('finalizeBtn').click()
 }
@@ -50,7 +50,7 @@ Cypress.Commands.add('giSignup', (username, {
   const email = `${username}@email.com`
 
   if (bypassUI) {
-    cyBypassUI('signup', { username, email, password })
+    cyBypassUI('user_signup', { username, email, password })
   } else {
     if (!isInvitation) {
       cy.getByDT('signupBtn').click()
@@ -75,7 +75,7 @@ Cypress.Commands.add('giLogin', (username, {
   bypassUI
 } = {}) => {
   if (bypassUI) {
-    cyBypassUI('login', { username, password })
+    cyBypassUI('user_login', { username, password })
   } else {
     cy.getByDT('loginBtn').click()
     cy.getByDT('loginName').clear().type(username)
@@ -133,7 +133,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
   bypassUI = false
 } = {}) => {
   if (bypassUI) {
-    cyBypassUI('groupCreation', {
+    cyBypassUI('group_create', {
       name,
       sharedValues: values,
       mincomeAmount: mincome,

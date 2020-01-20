@@ -24,17 +24,15 @@ page
   .card
     h3.is-title-2 Actions available
     p Pass the action name and its arguments as queries.
-    p.has-text-1 Ex: /bypass-ui?action=signup&username=john&email=john@email.com&password=123456789
+    p.has-text-1 Ex: /bypass-ui?action=user_signup&username=john&email=john@email.com&password=123456789
     ul.c-list
       li(v-for='(obj, actionName) in actions') {{ actionName }}
 </template>
 
 <script>
+import sbp from '~/shared/sbp.js'
 import Page from '@pages/Page.vue'
 import BannerScoped from '@components/BannerScoped.vue'
-import signup from '../../actions/signup.js'
-import login from '../../actions/login.js'
-import groupCreation from '../../actions/groupCreation.js'
 
 export default {
   name: 'BypassUI',
@@ -78,21 +76,19 @@ export default {
       // And continue the tests correctly.
       this.ephemeral.isFinalized = true
       this.$refs.bannerAction.success(`${action} succeded!`)
-    } catch (err) {
-      this.$refs.bannerAction.danger(`Action ${action} failed. ${err.message}`)
+    } catch (e) {
+      this.$refs.bannerAction.danger(`Action ${action} failed. ${e.message}`)
     }
   },
   computed: {
     actions () {
       return {
-        signup: {
-          actionFn: (params) => {
+        'user_signup': {
+          actionFn: async (params) => {
             const username = this.$store.getters.ourUsername
-            if (username) {
-              // QUESTION: Should we do this validation inside signup? Same for login
-              throw Error(`You're signed as '${username}'. Logout first and re-run the tests.`)
-            }
-            signup(params)
+            // QUESTION: Maybe we should do this validation inside sbp action...
+            if (username) { throw Error(`You're signed as '${username}'. Logout first and re-run the tests.`) }
+            await sbp('gi.actions/user/signup', params)
           },
           finalize: () => {
             // Bug vue/no-side-effects-in-computed-properties
@@ -100,20 +96,24 @@ export default {
             this.$router.push({ path: '/app' }) // eslint-disable-line
           }
         },
-        login: {
-          actionFn: (params) => {
+        'user_login': {
+          actionFn: async (params) => {
             const username = this.$store.getters.ourUsername
-            if (username) {
-              throw Error(`You're loggedin as '${username}'. Logout first and re-run the tests.`)
-            }
-            login(params)
+            if (username) { throw Error(`You're loggedin as '${username}'. Logout first and re-run the tests.`) }
+            await sbp('gi.actions/user/login', params)
           },
           finalize: () => {
             this.$router.push({ path: '/app' }) // eslint-disable-line
           }
         },
-        groupCreation: {
-          actionFn: groupCreation,
+        'group_create': {
+          actionFn: async (params) => {
+            const groupID = await sbp('gi.actions/group/create', params)
+            sbp('okTurtles.events/once', groupID, (contractID, entry) => {
+              sbp('gi.actions/group/switch', groupID)
+            })
+            await sbp('gi.actions/contract/subscribeAndWait', groupID)
+          },
           finalize: () => {
             this.$router.push({ path: '/dashboard' }) // eslint-disable-line
           }
