@@ -10,15 +10,8 @@ import { RULE_THRESHOLD } from '@model/contracts/voting/rules.js'
 import { INVITE_INITIAL_CREATOR, createInvite } from '@model/contracts/group.js'
 import imageUpload from '@utils/imageUpload.js'
 import { merge } from '@utils/giLodash.js'
-
-// TODO - reuse this to handle other GI specific errors
-class ErrorCaused extends Error {
-  constructor (cause, ...args) {
-    super(...args)
-    this.cause = cause
-    Error.captureStackTrace(this, ErrorCaused)
-  }
-}
+import { GIErrorUIRuntimeError } from '@model/errors.js'
+import L from '@view-utils/translations.js'
 
 export default async function groupCreation ({
   name,
@@ -37,7 +30,7 @@ export default async function groupCreation ({
       finalPicture = await imageUpload(picture)
     } catch (e) {
       console.error('Failed to upload the group picture', e)
-      throw new ErrorCaused('PICTURE_UPLOAD_FAILED', e)
+      throw new GIErrorUIRuntimeError(L('Failed to upload the group picture. {codeError}', { codeError: e.message }))
     }
   }
 
@@ -84,7 +77,6 @@ export default async function groupCreation ({
     // add to vuex and monitor this contract for updates
     await sbp('state/enqueueContractSync', hash)
   } catch (e) {
-    console.error('Failed to create the group', e)
-    throw Error(e)
+    throw new GIErrorUIRuntimeError(L('Failed to create the group: {codeError}', { codeError: e.message }))
   }
 }

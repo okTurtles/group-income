@@ -2,13 +2,13 @@
 
 import Vue from 'vue'
 import { DefineContract } from './Contract.js'
-import { objectOf, arrayOf, string, object } from '~/frontend/utils/flowTyper.js'
+import { objectOf, objectMaybeOf, arrayOf, string, object } from '~/frontend/utils/flowTyper.js'
 
 DefineContract({
   name: 'gi.contracts/identity',
   contract: {
     validate: objectOf({
-      attributes: objectOf({
+      attributes: objectMaybeOf({
         name: string,
         email: string,
         picture: string

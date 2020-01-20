@@ -1,4 +1,6 @@
 import sbp from '~/shared/sbp.js'
+import { GIErrorUIRuntimeError } from '@model/errors.js'
+import L from '@view-utils/translations.js'
 
 export default async function signup ({
   username,
@@ -53,8 +55,8 @@ export default async function signup ({
     })
 
     return true
-  } catch (error) {
+  } catch (e) {
     sbp('state/vuex/dispatch', 'logout')
-    throw Error(error)
+    throw new GIErrorUIRuntimeError(L('Failed to signup: {codeError}', { codeError: e.message }))
   }
 }

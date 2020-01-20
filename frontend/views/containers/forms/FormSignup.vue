@@ -88,9 +88,9 @@ export default {
           password: this.form.password
         })
         this.$emit('submitSucceeded')
-      } catch (error) {
-        console.error('Signup.vue submit() error:', error)
-        this.$refs.formMsg.danger(L('Failed to signup. {codeError}', { codeError: error.message }))
+      } catch (e) {
+        console.error('Signup.vue submit() error:', e)
+        this.$refs.formMsg.danger(e.message)
       }
     }
   },

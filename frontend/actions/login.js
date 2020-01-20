@@ -1,13 +1,6 @@
 import sbp from '~/shared/sbp.js'
-
-// TODO - reuse this to handle other GI specific errors
-class ErrorCaused extends Error {
-  constructor (cause, ...args) {
-    super(...args)
-    this.cause = args.cause || cause
-    Error.captureStackTrace(this, ErrorCaused)
-  }
-}
+import { GIErrorUIRuntimeError } from '@model/errors.js'
+import L from '@view-utils/translations.js'
 
 export default async function login ({
   username,
@@ -15,9 +8,8 @@ export default async function login ({
 }) {
   // TODO: Insert cryptography here
   const identityContractID = await sbp('namespace/lookup', username)
-  console.log('ora bem', identityContractID)
   if (!identityContractID) {
-    throw new ErrorCaused('INVALID_MATCH')
+    throw new GIErrorUIRuntimeError(L('Invalid username or password'))
   }
 
   try {
@@ -26,6 +18,6 @@ export default async function login ({
 
     return true
   } catch (e) {
-    throw Error(e)
+    throw new GIErrorUIRuntimeError(L('Failed to login: {codeError}', { codeError: e.message }))
   }
 };

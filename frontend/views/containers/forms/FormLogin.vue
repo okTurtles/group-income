@@ -75,12 +75,8 @@ export default {
 
         this.$emit('submitSucceeded')
       } catch (e) {
-        if (e.cause === 'INVALID_MATCH') {
-          this.$refs.formMsg.danger(L('Invalid username or password'))
-        } else {
-          console.error(e)
-          this.$refs.formMsg.danger(L('Failed to login. {codeError}', { codeError: e.message }))
-        }
+        console.error('FormLogin.vue login() error:', e)
+        this.$refs.formMsg.danger(e.message)
       }
     },
     forgotPassword () {

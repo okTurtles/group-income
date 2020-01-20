@@ -119,11 +119,8 @@ export default {
           this.next()
         })
       } catch (e) {
-        if (e.cause === 'PICTURE_UPLOAD_FAILED') {
-          return this.$refs.formMsg.danger(L('Failed to upload the group picture. {codeError}', { codeError: e.message }))
-        }
-
-        this.$refs.formMsg.danger(L('Failed to create the group. {codeError}', { codeError: e.message }))
+        console.error('CreateGroup.vue submit() error:', e)
+        this.$refs.formMsg.danger(e.message)
       }
     }
   },
