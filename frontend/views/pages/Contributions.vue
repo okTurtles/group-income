@@ -12,7 +12,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
     i18n(tag='p') This will allow you to start receiving or giving mincome.
     i18n(
       tag='button'
-      data-test='openIncomeDetailModal'
+      data-test='openIncomeDetailsModal'
       @click='openModal("IncomeDetails")'
     ) Add income details
 
@@ -40,7 +40,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
       i18n(
         tag='button'
         class='button is-small'
-        data-test='openIncomeDetailModal'
+        data-test='openIncomeDetailsModal'
         @click='openModal("IncomeDetails")'
       ) Change
 

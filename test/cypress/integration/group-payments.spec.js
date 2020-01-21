@@ -34,7 +34,7 @@ function assertGraphicSummary (legendListItems) {
 
 function updateIncome (newIncome, needsIncome, graphicLegend, incomeStatus) {
   cy.getByDT('contributionsLink').click()
-  cy.getByDT('openIncomeDetailModal').click()
+  cy.getByDT('openIncomeDetailsModal').click()
   cy.getByDT(needsIncome ? 'needsIncomeRadio' : 'dontNeedsIncomeRadio').click()
   cy.getByDT('inputIncomeOrPledge').clear().type(newIncome)
 
@@ -82,7 +82,7 @@ describe('Payments', () => {
     cy.getByDT('contributionsLink').click()
     cy.getByDT('addIncomeDetailsFirstCard').should('contain', 'Add your income details')
 
-    cy.getByDT('openIncomeDetailModal').click()
+    cy.getByDT('openIncomeDetailsModal').click()
     // Make sure only radio box to select the type is visible at the begining
     cy.getByDT('introIncomeOrPledge').should('not.be.visible')
 
@@ -111,7 +111,7 @@ describe('Payments', () => {
   it('user1 decides to switch income details to needing $100', () => {
     cy.visit('/app/contributions')
 
-    cy.getByDT('openIncomeDetailModal').click()
+    cy.getByDT('openIncomeDetailsModal').click()
     cy.getByDT('needsIncomeRadio').click()
     // After swithing to need income, it should ask user how much he need
     cy.getByDT('introIncomeOrPledge').should('contain', 'What\'s your monthly income?')
