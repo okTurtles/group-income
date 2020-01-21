@@ -111,11 +111,9 @@ export default {
       'groupProfiles',
       'groupMincomeFormatted',
       'groupMincomeSymbolWithCode',
-      'ourUsername'
+      'ourUsername',
+      'ourGroupProfile'
     ]),
-    memberGroupProfile () {
-      return this.groupProfile(this.ourUsername)
-    },
     needsIncome () {
       return this.form.incomeDetailsType === 'incomeAmount'
     },
@@ -146,15 +144,15 @@ export default {
     }
   },
   created () {
-    const incomeDetailsType = this.memberGroupProfile.incomeDetailsType
+    const incomeDetailsType = this.ourGroupProfile.incomeDetailsType
     if (incomeDetailsType) {
       this.form.incomeDetailsType = incomeDetailsType
-      this.form.amount = this.memberGroupProfile[incomeDetailsType]
+      this.form.amount = this.ourGroupProfile[incomeDetailsType]
     }
   },
   methods: {
     resetAmount () {
-      this.form.amount = this.form.incomeDetailsType === this.memberGroupProfile.incomeDetailsType ? this.memberGroupProfile[this.memberGroupProfile.incomeDetailsType] : ''
+      this.form.amount = this.form.incomeDetailsType === this.ourGroupProfile.incomeDetailsType ? this.ourGroupProfile[this.ourGroupProfile.incomeDetailsType] : ''
       this.$v.form.$reset()
     },
     closeModal () {

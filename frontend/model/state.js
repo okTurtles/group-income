@@ -243,6 +243,9 @@ const getters = {
   ourUsername (state) {
     return state.loggedIn && state.loggedIn.username
   },
+  ourGroupProfile (state, getters) {
+    return getters.groupProfile(getters.ourUsername)
+  },
   ourIdentityContractId (state) {
     return state.loggedIn && state.loggedIn.identityContractID
   },

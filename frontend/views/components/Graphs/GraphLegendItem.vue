@@ -1,5 +1,5 @@
 <template lang='pug'>
-li.c-wlegend
+li.c-wlegend(:class='`c-wlegend-${variant}`')
   .c-inner
     span.has-text-1.c-desc
       slot
@@ -21,6 +21,10 @@ export default {
     color: {
       type: String,
       required: true
+    },
+    variant: {
+      type: String,
+      default: 'side'
     }
   }
 }
@@ -32,16 +36,42 @@ export default {
 .c-wlegend {
   padding: $spacer 0;
 
-  &:first-child {
-    padding-top: 0;
+  &.c-wlegend-side {
+    &:first-child {
+      padding-top: 0;
+    }
+
+    &:last-child {
+      padding-bottom: 0;
+    }
+
+    &:not(:last-child) {
+      border-bottom: 1px solid $general_0;
+    }
   }
 
-  &:last-child {
-    padding-bottom: 0;
+  &.c-wlegend-inline {
+    padding: $spacer-xs 0;
+
+    &:first-child {
+      padding-top: $spacer;
+    }
   }
 
-  &:not(:last-child) {
-    border-bottom: 1px solid $general_0;
+  @include tablet {
+    &.c-wlegend-inline {
+      padding: $spacer 0;
+      position: relative;
+      margin-right: 2.5rem;
+      padding-left: $spacer;
+
+      .c-marker {
+        position: absolute;
+        left: 0;
+        top: 1.45rem;
+        margin-left: 0;
+      }
+    }
   }
 }
 
@@ -83,6 +113,10 @@ export default {
 
   &.has-background-warning-solid {
     border-color: $warning_0;
+  }
+
+  &.has-background-danger-solid {
+    border-color: $danger_0;
   }
 }
 

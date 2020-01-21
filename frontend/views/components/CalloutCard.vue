@@ -2,7 +2,7 @@
   section.c-calloutCard(:class='{ card: isCard }')
     component.c-svg(:is='svg')
     div
-      i18n.is-title-3.c-title(tag='h3') {{ title }}
+      h3.is-title-3.c-title(v-if='title') {{ title }}
       slot
 </template>
 
