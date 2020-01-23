@@ -91,7 +91,8 @@ async function startApp () {
       return {
         ephemeral: {
           syncs: [],
-          finishedLogin: this.$store.state.loggedIn ? 'yes' : 'no'
+          // TODO/REVIEW page can load with already loggedin. -> this.$store.state.loggedIn ? 'yes' : 'no'
+          finishedLogin: 'no'
         }
       }
     },

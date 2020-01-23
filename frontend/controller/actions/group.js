@@ -28,7 +28,9 @@ export default sbp('sbp/selectors/register', {
     thresholdChange,
     thresholdMemberApproval,
     thresholdMemberRemoval
-  }) {
+  }, {
+    sync = true
+  } = {}) {
     let finalPicture = `${window.location.origin}/assets/images/default-group-avatar.png`
 
     if (picture) {
@@ -73,17 +75,25 @@ export default sbp('sbp/selectors/register', {
           }
         }
       })
+      const groupId = entry.hash()
+
       await sbp('backend/publishLogEntry', entry)
-      return entry.hash()
+
+      if (!sync) { return groupId }
+
+      await sbp('gi.actions/contract/syncAndWait', groupId)
+      return groupId
     } catch (e) {
+      console.error('gi.actions/group/create failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to create the group: {codeError}', { codeError: e.message }))
     }
   },
-  // REVIEW these 2...
-  'gi.actions/group/createAndSubscribe': async function () {},
-  'gi.actions/group/createAndSubscribeWait': async function () {},
-
-  'gi.actions/group/switch': async function (groupId) {
+  'gi.actions/group/createAndSwitch': async function (groupParams, { sync = true } = {}) {
+    const groupID = await sbp('gi.actions/group/create', groupParams)
+    sbp('gi.actions/group/switch', groupID)
+    return groupID
+  },
+  'gi.actions/group/switch': function (groupId) {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
   }
 })

@@ -58,7 +58,7 @@ export default {
     const { actionFn } = this.actions[action] || {}
 
     if (!actionFn) {
-      // Wait for $refs.bannerAction to exist
+      // Wait for $refs.bannerAction to be mounted.
       this.$nextTick(() => {
         this.$refs.bannerAction.danger(`Action ${action} doesn't exist.`)
       })
@@ -82,13 +82,16 @@ export default {
   },
   computed: {
     actions () {
+      // NOTE: actions name are based on sbp selector.
+      //       replace '/' by '_' to avoid url conflicts.
+      //       ex: user/signup -> user_signup
       return {
         'user_signup': {
           actionFn: async (params) => {
             const username = this.$store.getters.ourUsername
             // QUESTION: Maybe we should do this validation inside sbp action...
             if (username) { throw Error(`You're signed as '${username}'. Logout first and re-run the tests.`) }
-            await sbp('gi.actions/user/signup', params)
+            await sbp('gi.actions/user/signupAndLogin', params)
           },
           finalize: () => {
             // Bug vue/no-side-effects-in-computed-properties
@@ -108,11 +111,9 @@ export default {
         },
         'group_create': {
           actionFn: async (params) => {
-            const groupID = await sbp('gi.actions/group/create', params)
-            sbp('okTurtles.events/once', groupID, (contractID, entry) => {
-              sbp('gi.actions/group/switch', groupID)
+            await sbp('gi.actions/group/createAndSwitch', params, () => {
+              return true
             })
-            await sbp('gi.actions/contract/subscribeAndWait', groupID)
           },
           finalize: () => {
             this.$router.push({ path: '/dashboard' }) // eslint-disable-line

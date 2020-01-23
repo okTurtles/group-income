@@ -107,7 +107,7 @@ export default {
       try {
         this.$refs.formMsg.clean()
 
-        const groupID = await sbp('gi.actions/group/create', {
+        await sbp('gi.actions/group/createAndSwitch', {
           name: this.form.groupName,
           picture: this.ephemeral.groupPictureFile,
           sharedValues: this.form.sharedValues,
@@ -117,11 +117,7 @@ export default {
           thresholdMemberApproval: this.form.memberApprovalThreshold,
           thresholdMemberRemoval: this.form.memberRemovalThreshold
         })
-        sbp('okTurtles.events/once', groupID, (contractID, entry) => {
-          sbp('gi.actions/group/switch', groupID)
-          this.next()
-        })
-        await sbp('gi.actions/contract/subscribeAndWait', groupID)
+        this.next()
       } catch (e) {
         console.error('CreateGroup.vue submit() error:', e)
         this.$refs.formMsg.danger(e.message)
