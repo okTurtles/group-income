@@ -63,14 +63,13 @@ export default {
       'groupsByName',
       'groupMembersCount',
       'groupProfiles',
-      'ourGroupProfile',
-      'groupProfile'
+      'ourGroupProfile'
     ]),
     canDisplayGraph () {
       return Object.values(this.groupProfiles).filter(profile => profile.incomeDetailsType).length > 0
     },
     hasIncomeDetails () {
-      return !!this.groupProfile(this.ourUsername).incomeDetailsType
+      return !!this.ourGroupProfile.incomeDetailsType
     },
     hasProposals () {
       return Object.keys(this.currentGroupState.proposals).length > 0

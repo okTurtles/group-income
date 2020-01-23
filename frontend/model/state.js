@@ -261,7 +261,7 @@ const getters = {
   ourContributionSummary (state, getters) {
     const groupProfiles = getters.groupProfiles
     const ourUsername = getters.ourUsername
-    const ourGroupProfile = groupProfiles[ourUsername]
+    const ourGroupProfile = getters.ourGroupProfile
 
     if (!ourGroupProfile.incomeDetailsType) {
       return {}
@@ -270,7 +270,7 @@ const getters = {
     const doWeNeedIncome = ourGroupProfile.incomeDetailsType === 'incomeAmount'
     const distribution = getters.thisMonthsPayments.frozenDistribution || getters.groupIncomeDistribution
 
-    const nonContributionsOf = (username) => groupProfiles[username].nonMonetaryContributions || []
+    const nonMonetaryContributionsOf = (username) => groupProfiles[username].nonMonetaryContributions || []
     const getDisplayName = (username) => getters.globalProfile(username).displayName || username
 
     return {
@@ -301,10 +301,10 @@ const getters = {
       })(),
       receivingNonMonetary: (() => {
         const listWho = Object.keys(groupProfiles)
-          .filter(username => username !== ourUsername && nonContributionsOf(username).length > 0)
+          .filter(username => username !== ourUsername && nonMonetaryContributionsOf(username).length > 0)
         const listWhat = listWho.reduce((contr, username) => {
           const displayName = getDisplayName(username)
-          const userContributions = nonContributionsOf(username)
+          const userContributions = nonMonetaryContributionsOf(username)
 
           userContributions.forEach((what) => {
             const contributionIndex = contr.findIndex(c => c.what === what)
