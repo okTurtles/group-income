@@ -7,7 +7,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
     data-test='addIncomeDetailsFirstCard'
     :title='L("Add your income details")'
     :svg='SvgContributions'
-    v-if='!memberGroupProfile.incomeDetailsType'
+    v-if='!ourGroupProfile.incomeDetailsType'
   )
     i18n(tag='p') This will allow you to start receiving or giving mincome.
     i18n(
@@ -118,10 +118,10 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
             )
 
           contribution.has-text-weight-bold(
-            v-for='(contribution, index) in memberGroupProfile.nonMonetaryContributions'
+            v-for='(contribution, index) in ourGroupProfile.nonMonetaryContributions'
             :key='`contribution-${index}`'
             variant='editable'
-            :contributions-list='memberGroupProfile.nonMonetaryContributions'
+            :contributions-list='ourGroupProfile.nonMonetaryContributions'
             :initial-value='contribution'
             @new-value='handleNonMonetary'
           )
@@ -133,7 +133,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
 
           contribution(
             variant='unfilled'
-            :contributions-list='memberGroupProfile.nonMonetaryContributions'
+            :contributions-list='ourGroupProfile.nonMonetaryContributions'
             @new-value='handleNonMonetary'
           )
             i.icon-plus.is-prefix
@@ -182,6 +182,7 @@ export default {
   computed: {
     ...mapGetters([
       'ourUsername',
+      'ourGroupProfile',
       'groupSettings',
       'groupMembersCount',
       'groupProfile',
@@ -191,16 +192,13 @@ export default {
       'groupIncomeDistribution',
       'globalProfile'
     ]),
-    memberGroupProfile () {
-      return this.groupProfile(this.ourUsername)
-    },
     upTo () {
-      const amount = this.memberGroupProfile[this.memberGroupProfile.incomeDetailsType]
+      const amount = this.ourGroupProfile[this.ourGroupProfile.incomeDetailsType]
       if (typeof amount !== 'number') return false
       return this.currency.displayWithCurrency(this.needsIncome ? this.groupSettings.mincomeAmount - amount : amount)
     },
     needsIncome () {
-      return this.memberGroupProfile.incomeDetailsType === 'incomeAmount'
+      return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'
     },
     doesReceiveNonMonetary () {
       return this.receivingNonMonetary.length > 0
@@ -215,7 +213,7 @@ export default {
       return Object.keys(this.givingMonetary.list).length > 0
     },
     notContributing () {
-      return this.needsIncome && this.memberGroupProfile.nonMonetaryContributions.length === 0
+      return this.needsIncome && this.ourGroupProfile.nonMonetaryContributions.length === 0
     },
     noOneToGive () {
       return !this.needsIncome && !this.hasPayments
