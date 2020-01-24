@@ -10,13 +10,13 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
 
     contributions-overview(v-if='canDisplayGraph')
 
-    proposals-widget
+  proposals-widget
 
-    //- page-section(title='L("July Overview")')
-    //-   progress-overview
+  //- page-section(title='L("July Overview")')
+  //-   progress-overview
 
-    //- page-section(title='L("Group Settings")')
-    //-   group-settings
+  //- page-section(title='L("Group Settings")')
+  //-   group-settings
 
   template(#sidebar='')
     group-mincome
