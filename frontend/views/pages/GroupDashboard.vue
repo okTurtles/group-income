@@ -2,26 +2,16 @@
 page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings.groupName')
   template(#title='') {{ groupSettings.groupName }}
 
-  welcome-widget(v-if='!hasIncomeDetails')
+  add-income-details-widget(v-if='!hasIncomeDetails')
 
   div(v-else)
     start-inviting(v-if='groupMembersCount === 1')
 
     contributions-overview(v-if='canDisplayGraph')
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-  proposals-widget
-=======
-    contributions-widget(v-if='hasIncomeDetails')
-
-    proposals-widget
->>>>>>> Create ContributionsWidget
-=======
     contributions-widget
 
-    proposals-widget(v-if='Object.keys(currentGroupState.proposals).length > 0')
->>>>>>> finish ContributionsWidget
+  proposals-widget(v-if='hasProposals')
 
   //- page-section(title='L("July Overview")')
   //-   progress-overview
@@ -46,7 +36,7 @@ import ContributionsOverview from '@containers/contributions/ContributionsOvervi
 import GroupMincome from '@containers/sidebar/GroupMincome.vue'
 import GroupMembers from '@containers/sidebar/GroupMembers.vue'
 import GroupPurpose from '@containers/sidebar/GroupPurpose.vue'
-import WelcomeWidget from '@containers/Welcome.vue'
+import AddIncomeDetailsWidget from '@containers/AddIncomeDetailsWidget.vue'
 // import GroupPledgesGraph from '@containers/GroupPledgesGraph.vue'
 // import GroupSettings from '@components/GroupSettings.vue'
 
@@ -84,7 +74,7 @@ export default {
     GroupMembers,
     GroupPurpose,
     StartInviting,
-    WelcomeWidget
+    AddIncomeDetailsWidget
     // GroupSettings,
     // GroupPledgesGraph
   }

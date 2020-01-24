@@ -18,12 +18,11 @@ div(:data-test='pageTestName' :class='$scopedSlots.sidebar ? "p-with-sidebar" : 
   main.p-main(:class='mainClass')
     slot
 
-  nav.p-sidebar(
-    :role='L("Secondary")'
+  section.p-sidebar(
     v-if='$scopedSlots.sidebar'
     :class='{ "is-active": ephemeral.isActive }'
   )
-    i18n.sr-only(tag='h2') Page Details
+    i18n.sr-only(tag='h2') Page details
     toggle(@toggle='toggleMenu' element='sidebar' :aria-expanded='ephemeral.isActive')
     .p-sidebar-inner(:inert='isInert')
       slot(name='sidebar')

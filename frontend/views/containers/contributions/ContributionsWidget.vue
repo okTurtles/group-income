@@ -72,7 +72,7 @@ export default {
         }
 
         copy.monetary = {
-          title: L('You need {br_}{amount}', {
+          title: L('You need {br_} {amount}', {
             ...this.LTags(),
             amount: this.withCurrency(receivingMonetary.needed)
           }),
