@@ -33,6 +33,7 @@ import ProposalsWidget from '@containers/proposals/ProposalsWidget.vue'
 import ProgressOverview from '@components/ProgressOverview.vue'
 import StartInviting from '@components/StartInviting.vue'
 import ContributionsOverview from '@containers/contributions/ContributionsOverview.vue'
+import ContributionsWidget from '@containers/contributions/ContributionsWidget.vue'
 import GroupMincome from '@containers/sidebar/GroupMincome.vue'
 import GroupMembers from '@containers/sidebar/GroupMembers.vue'
 import GroupPurpose from '@containers/sidebar/GroupPurpose.vue'
@@ -69,6 +70,7 @@ export default {
     Page,
     ProposalsWidget,
     ContributionsOverview,
+    ContributionsWidget,
     ProgressOverview,
     GroupMincome,
     GroupMembers,

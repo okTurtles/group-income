@@ -1,14 +1,15 @@
 <template lang='pug'>
   page-section(:title='L("Contributions")')
-    .c-widget
+    .c-widget(data-test='contributionsWidget')
       .c-column
         .c-status(v-if='copy.payments.title')
-          h3.is-title-4.c-title {{ copy.payments.title }}
+          h3.is-title-4.c-title(data-test='paymentsTitle') {{ copy.payments.title }}
           .has-text-1(
+            data-test='paymentsStatus'
             v-html='copy.payments.status'
             @click='handlePaymentStatusClick'
           )
-        payments-summary.c-status(v-else)
+        payments-summary.c-status(v-else data-test='paymentsSummary')
 
         router-link.button.is-small(
           v-if='copy.payments.ctaText'
@@ -16,12 +17,12 @@
           :class='copy.payments.ctaClass'
         ) {{ copy.payments.ctaText }}
       .c-column
-        h3.is-title-4.c-title(v-html='copy.monetary.title')
-        .has-text-1.c-status {{ copy.monetary.status }}
+        h3.is-title-4.c-title(v-html='copy.monetary.title' data-test='monetaryTitle')
+        .has-text-1.c-status(data-test='monetaryStatus') {{ copy.monetary.status }}
         i18n.link(tag='button' @click='openModal("IncomeDetails")') Change
       .c-column
         h3.is-title-4.c-title {{ copy.nonMonetary.title }}
-        .has-text-1.c-status {{ copy.nonMonetary.status }}
+        .has-text-1.c-status(data-test='nonMonetaryStatus') {{ copy.nonMonetary.status }}
         router-link.link(
           to='/contributions'
         ) {{ L('See all contributions') }}
@@ -72,7 +73,7 @@ export default {
         }
 
         copy.monetary = {
-          title: L('You need {br_} {amount}', {
+          title: L('You need {br_}{amount}', {
             ...this.LTags(),
             amount: this.withCurrency(receivingMonetary.needed)
           }),
@@ -81,7 +82,7 @@ export default {
           })
         }
       } else if (givingMonetary) {
-        const copyMonetaryTitle = (amount) => L('You are pledging {br_} {amount}', {
+        const copyMonetaryTitle = (amount) => L('You are pledging {br_}{amount}', {
           ...this.LTags(),
           amount: this.withCurrency(amount)
         })
