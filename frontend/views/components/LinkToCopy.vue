@@ -9,12 +9,16 @@ component.c-wrapper(
     ref='input'
     :value='link'
   )
-  span.link.has-ellipsis.c-link(aria-hidden='true') {{ link }}
+  a.link.has-ellipsis.c-link(
+    :href='link'
+    aria-hidden='true'
+    @click.prevent=''
+  ) {{ link }}
   button.is-icon-small.has-background.c-copy-button(:aria-label='L("Copy link")')
     i.icon-copy.is-regular
   tooltip.c-feedback(
     v-if='ephemeral.isTooltipActive'
-    isVisible
+    :isVisible='true'
     direction='top'
     :text='L("Copied to clipboard!")'
   )

@@ -32,7 +32,7 @@ page-section.c-section(:title='L("Invite links")')
           tooltip.c-name-tooltip(
             v-if='item.isAnyoneLink'
             direction='top'
-            :hasTextCenter='true'
+            :isTextCenter='true'
             :text='L("This invite link is only available during the onboarding period.")'
           )
             .button.is-icon-smaller.is-primary.c-tip
@@ -136,7 +136,9 @@ export default {
           title: L('Your invite'),
           url: inviteLink
         })
-      } else this.$refs.webShareFallbackBtn[0].handleClick()
+      } else {
+        this.$refs.webShareFallbackBtn[0].handleClick()
+      }
     },
     inviteStatusDescription ({
       isAnyoneLink,
