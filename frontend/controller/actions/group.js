@@ -88,8 +88,8 @@ export default sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Failed to create the group: {codeError}', { codeError: e.message }))
     }
   },
-  'gi.actions/group/createAndSwitch': async function (groupParams, { sync = true } = {}) {
-    const groupID = await sbp('gi.actions/group/create', groupParams)
+  'gi.actions/group/createAndSwitch': async function (groupParams) {
+    const groupID = await sbp('gi.actions/group/create', groupParams, { sync: true })
     sbp('gi.actions/group/switch', groupID)
     return groupID
   },

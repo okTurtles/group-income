@@ -44,6 +44,11 @@
       <navigation v-if="showNav" class="l-navigation"></navigation>
       <router-view class="l-page"></router-view>
       <modal class="l-modal"></modal>
+      <a to="#" v-if='isInCypress'
+        class='button is-small is-outlined is-danger'
+        style='position: absolute; bottom: 1rem; right: 1rem; z-index: 999999;'
+        :data-test='isInCypress && "cy_bypassUI"'
+        @click='handleBypass'>BypassUI</a>
     </div>
     <script src="/assets/js/s.min.js"></script>
     <script type="text/javascript">

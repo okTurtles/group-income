@@ -13,12 +13,10 @@ describe('Signup, Profile and Login', () => {
     cy.getByDT('profileName').should('contain', username)
   })
 
-  // NOTE IMPORTANT: Uncomment this test when the bypassUI bug is solved.
-  // When login happens, the data is retrieved again and the bug gets unnoticed.
-  // it('user1 logout and login again', () => {
-  //   cy.giLogout()
-  //   cy.giLogin(username)
-  // })
+  it('user1 does logout and login again', () => {
+    cy.giLogout()
+    cy.giLogin(username)
+  })
 
   it('user1 changes avatar and profile settings', () => {
     const profilePicture = 'imageTest.png' // at fixtures/imageTest

@@ -17,26 +17,41 @@ Cypress.Commands.add('getByDT', (element, otherSelector = '') => {
 })
 
 function cyBypassUI (action, params) {
-  const query = Object.keys(params)
-    .reduce((query, param) => query + `&${param}=${params[param]}`, '')
+  const query = Object.keys(params).reduce((query, param) => {
+    return query + `&${param}=${params[param]}`
+  }, `?action=${action}`)
 
   cy.log(`Bypassing UI ::: ${action}`)
 
-  // Option 1 - wait fo contracts to finish sync. - doesnt work.
+  // Option 1 - wait for contracts to finish sync. - doesnt work.
   // cy.getByDT('app').then(([el]) => {
   //   cy.get(el).should('have.attr', 'data-sync', '')
   // })
+  // cy.visit(`/app/bypass-ui?action=${action}${query}`)
 
   // Option 2 - hardcore wait. it works, but it isn't the ideal solution.
-  cy.wait(450); // eslint-disable-line
+  // cy.wait(400); // eslint-disable-line
+  // cy.visit(`/app/bypass-ui?action=${action}${query}`)
 
-  cy.visit(`/app/bypass-ui?action=${action}${query}`) /// it's lost.
+  // Option 3 - Navigate to /bypass-ui using Vue instead of cy.visit!
+  // There's some issue between cypress and forageStorage (indexedDB).
+  // If we go to a page using cy.visit a refresh is caused
+  // (because we are changing pages the old fashion way).
+  // This refresh seems to happen too soon and the indexedDB is somehow lost.
+  // On page load, when we try to auto-login the user (from the indexedDB), it fails.
+  // But if we navigate without refreshing the page (a.k.a using Vue),
+  // the state is preserved and we don't lose any data.
+  cy.getByDT('cy_bypassUI')
+    .then(([$link]) => {
+      $link.setAttribute('data-url', `/bypass-ui${query}`)
+    }).click()
+    .then(([$link]) => {
+      // Reset data-url to allow manual click while debugging cypress
+      $link.setAttribute('data-url', '')
+    })
+
   cy.getByDT('actionName').should('text', action)
   cy.getByDT('feedbackMsg').should('text', `${action} succeded!`)
-
-  // Same as before. wait to stuff finish syncing on db...
-  // (See snapshot attached on PR)
-  cy.wait(450); // eslint-disable-line
 
   cy.getByDT('finalizeBtn').click()
 }
@@ -222,10 +237,13 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
   actionBeforeLogout,
   bypassUI
 }) => {
-  if (!isLoggedIn && bypassUI) {
-    // Do the other way around: signup before visiting the page.
+  if (bypassUI && !isLoggedIn) {
+    // TODO - Create bypass action to join group. Until then
+    // do the other way around: signup before visiting the page.
     // Then, the invitation is automatically accepted.
     cy.giSignup(username, { bypassUI })
+    // use an hardcoded wait so indexedDB is synced before cy.visit()
+    cy.wait(400) // eslint-disable-line
   }
 
   cy.visit(invitationLink)

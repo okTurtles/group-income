@@ -34,7 +34,17 @@ export default sbp('sbp/selectors/register', {
     await sbp('backend/publishLogEntry', user)
     await sbp('backend/publishLogEntry', mailbox)
 
-    return [user.hash(), mailbox.hash()]
+    const userID = user.hash()
+    const mailboxID = mailbox.hash()
+
+    // set the attribute *after* publishing the identity contract
+    const attribute = await sbp('gi.contracts/identity/setAttributes/create',
+      { mailbox: mailboxID },
+      userID
+    )
+    await sbp('backend/publishLogEntry', attribute)
+
+    return [userID, mailboxID]
   },
   'gi.actions/user/signup': async function ({
     username,
@@ -46,19 +56,12 @@ export default sbp('sbp/selectors/register', {
     try {
       const [userID, mailboxID] = await sbp('gi.actions/user/create', { username, email, password })
 
-      // set the attribute *after* publishing the identity contract
-      const attribute = await sbp('gi.contracts/identity/setAttributes/create',
-        { mailbox: mailboxID },
-        userID
-      )
-      await sbp('backend/publishLogEntry', attribute)
       await sbp('namespace/register', username, userID)
 
-      const contracts = [userID, mailboxID]
-
-      if (!sync) { return contracts }
-      await sbp('gi.actions/contract/syncAndWait', contracts)
-      return contracts
+      if (sync) {
+        await sbp('gi.actions/contract/syncAndWait', [userID, mailboxID])
+      }
+      return [userID, mailboxID]
     } catch (e) {
       await sbp('gi.actions/user/logout') // TODO: should this be here?
       console.error('gi.actions/user/signup failed!', e)
@@ -79,11 +82,13 @@ export default sbp('sbp/selectors/register', {
 
     try {
       console.debug(`Retrieved identity ${userId}`)
+      // TODO: move the login vuex action code into this function (see #804)
       await sbp('state/vuex/dispatch', 'login', { username, identityContractID: userId })
 
-      if (!sync) { return userId }
+      if (sync) {
+        await sbp('gi.actions/contract/syncAndWait', userId)
+      }
 
-      await sbp('gi.actions/contract/syncAndWait', userId)
       return userId
     } catch (e) {
       console.error('gi.actions/user/login failed!', e)
@@ -91,9 +96,9 @@ export default sbp('sbp/selectors/register', {
     }
   },
   'gi.actions/user/signupAndLogin': async function (signupParams) {
-    const [userId, mailboxId] = await sbp('gi.actions/user/signup', signupParams)
-    await sbp('gi.actions/user/login', signupParams)
-    return [userId, mailboxId]
+    const contractIDs = await sbp('gi.actions/user/signup', signupParams, { sync: true })
+    await sbp('gi.actions/user/login', signupParams, { sync: true })
+    return contractIDs
   },
 
   'gi.actions/user/logout': async function () {

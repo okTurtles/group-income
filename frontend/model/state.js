@@ -433,8 +433,10 @@ const actions = {
         // this must be called directly, instead of via enqueueHandleEvent
         await dispatch('handleEvent', GIMessage.deserialize(events[i]))
       }
-      sbp('okTurtles.events/emit', EVENTS.CONTRACT_IS_SYNCING, contractID, false)
+    } else {
+      console.log(`Contract ${contractID} was already synchronized`)
     }
+    sbp('okTurtles.events/emit', EVENTS.CONTRACT_IS_SYNCING, contractID, false)
   },
   async login (
     { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object},

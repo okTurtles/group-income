@@ -98,7 +98,7 @@ async function startApp () {
     },
     mounted () {
       const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)') || {}
-      if (reducedMotionQuery.matches || window.Cypress) {
+      if (reducedMotionQuery.matches || this.isInCypress) {
         this.setReducedMotion(true)
       }
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
@@ -133,12 +133,21 @@ async function startApp () {
           'l-no-navigation': !this.showNav,
           'js-reducedMotion': this.$store.state.reducedMotion
         }
+      },
+      isInCypress () {
+        return !!window.Cypress
       }
     },
     methods: {
       ...mapMutations([
         'setReducedMotion'
-      ])
+      ]),
+      handleBypass (e) {
+        e.preventDefault()
+        // NOTE: Read Cypress commands.js cyBypassUI() for more details.
+        const path = e.target.getAttribute('data-url') || '/bypass-ui'
+        this.$router.push({ path })
+      }
     },
     store // make this and all child components aware of the new store
   }).$mount('#app')

@@ -57,16 +57,17 @@ export default {
 
     const { actionFn } = this.actions[action] || {}
 
+    this.ephemeral.action = {
+      name: action,
+      queries
+    }
+
     if (!actionFn) {
       // Wait for $refs.bannerAction to be mounted.
       this.$nextTick(() => {
         this.$refs.bannerAction.danger(`Action ${action} doesn't exist.`)
       })
-    }
-
-    this.ephemeral.action = {
-      name: action,
-      queries
+      return
     }
 
     try {

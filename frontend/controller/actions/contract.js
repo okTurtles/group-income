@@ -9,7 +9,7 @@ export default sbp('sbp/selectors/register', {
       await sbp('state/enqueueContractSync', id)
     }
   },
-  'gi.actions/contract/syncAndWait': async function (contractIDs: string | array) {
+  'gi.actions/contract/syncAndWait': function (contractIDs: string | array) {
     const listOfIds = typeof contractIDs === 'string' ? [contractIDs] : contractIDs
 
     const promises = listOfIds.map(id => new Promise((resolve, reject) => {
@@ -23,6 +23,6 @@ export default sbp('sbp/selectors/register', {
       sbp('state/enqueueContractSync', id)
     }))
 
-    Promise.all(promises)
+    return Promise.all(promises)
   }
 })
