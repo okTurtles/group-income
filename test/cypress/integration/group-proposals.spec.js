@@ -78,8 +78,6 @@ describe('Proposals - Add members', () => {
   it('user3 votes "yes" to all 5 proposals', () => {
     cy.giSwitchUser(`user3-${userId}`)
 
-    cy.giAddRandomIncome()
-
     getProposalBoxes()
       // assert grouped proposals
       .should('have.length', 4)
@@ -125,8 +123,6 @@ describe('Proposals - Add members', () => {
   it('user2 votes "yes" to add user4 and user6. Proposals are accepted and invitations created.', () => {
     cy.giSwitchUser(`user2-${userId}`)
 
-    cy.giAddRandomIncome()
-
     function voteForAndIsAccepted (index, username) {
       getProposalBoxes().eq(index).within(() => {
         cy.getByDT('title', 'h4').as('title')
@@ -170,8 +166,6 @@ describe('Proposals - Add members', () => {
 
   it('user1 see their accepted proposals to invite user4 and user6', () => {
     cy.giSwitchUser(`user1-${userId}`)
-
-    cy.giAddRandomIncome()
 
     function assertInvitationLinkFor (index, username) {
       getProposalBoxes().eq(index).within(() => {
