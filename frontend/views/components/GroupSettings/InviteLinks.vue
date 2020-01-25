@@ -32,21 +32,28 @@ page-section.c-section(:title='L("Invite links")')
           tooltip.c-name-tooltip(
             v-if='item.isAnyoneLink'
             direction='top'
-            :hasTextCenter='true'
+            :isTextCenter='true'
             :text='L("This invite link is only available during the onboarding period.")'
           )
             .button.is-icon-smaller.is-primary.c-tip
               i.icon-info
         td.c-invite-link
-          copy-to-clipboard.c-invite-link-wrapper(:textToCopy='item.inviteLink')
-            span.link.has-ellipsis {{ item.inviteLink }}
-            button.is-icon-small.has-background.c-invite-link-button
-              i.icon-copy.is-regular
+          link-to-copy.c-invite-link-wrapper(:link='item.inviteLink')
           button.is-icon-small.c-invite-link-button-mobile(
             @click='activateWebShare(item.inviteLink)'
             :aria-label='L("Copy link")'
           )
             i.icon-ellipsis-v
+          menu-parent.c-webshare-fallback
+            menu-trigger.is-icon-small.c-fallback-trigger(ref='webShareFallbackBtn')
+
+            menu-content.c-dropdown-fallback
+              ul
+                menu-item(
+                  tag='button'
+                  icon='link'
+                )
+                  i18n Copy link
         td.c-state
           span.c-state-description {{ item.status.description }}
           span.c-state-expire(
@@ -58,7 +65,7 @@ page-section.c-section(:title='L("Invite links")')
             menu-trigger.is-icon(:aria-label='L("Show list")')
               i.icon-ellipsis-v
 
-            menu-content.c-action-dropdown
+            menu-content.c-dropdown-action
               ul
                 menu-item(
                   tag='button'
@@ -91,7 +98,7 @@ import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/Menu
 import PageSection from '@components/PageSection.vue'
 import Tooltip from '@components/Tooltip.vue'
 import SvgInvitation from '@svgs/invitation.svg'
-import CopyToClipboard from '@components/CopyToClipboard.vue'
+import LinkToCopy from '@components/LinkToCopy.vue'
 import { buildInvitationUrl } from '@model/contracts/voting/proposals.js'
 import { INVITE_INITIAL_CREATOR } from '@model/contracts/group.js'
 import { mapGetters, mapState } from 'vuex'
@@ -103,7 +110,7 @@ export default {
     PageSection,
     SvgInvitation,
     Tooltip,
-    CopyToClipboard,
+    LinkToCopy,
     MenuParent,
     MenuTrigger,
     MenuContent,
@@ -129,6 +136,8 @@ export default {
           title: L('Your invite'),
           url: inviteLink
         })
+      } else {
+        this.$refs.webShareFallbackBtn[0].handleClick()
       }
     },
     inviteStatusDescription ({
@@ -269,6 +278,7 @@ export default {
   }
 
   .c-invite-link {
+    position: relative;
     grid-area: invite-link;
     padding-right: $size_2;
 
@@ -276,12 +286,6 @@ export default {
       display: inherit;
       align-items: inherit;
       width: 100%;
-    }
-
-    .c-invite-link-button {
-      margin-left: $spacer-xs;
-      flex-shrink: 0;
-      font-weight: normal;
     }
 
     .c-invite-link-button-mobile {
@@ -358,11 +362,33 @@ export default {
     }
   }
 
-  .c-action-dropdown {
-    min-width: 13.375rem;
+  .c-dropdown-action,
+  .c-dropdown-fallback {
     width: max-content;
-    margin: 3.5 * $spacer 0 0 3 * $spacer;
     transform: translateX(-100%);
+  }
+
+  .c-dropdown-action {
+    min-width: 13.375rem;
+    margin: 3.5*$spacer 0 0 3*$spacer;
+  }
+  .c-dropdown-fallback {
+    min-width: 8.5rem;
+    margin-top: 2*$spacer;
+  }
+
+  .c-webshare-fallback {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-right: $spacer-sm;
+    z-index: $zindex-tooltip;
+  }
+
+  .c-fallback-trigger {
+    width: 0;
+    height: 0;
   }
 }
 

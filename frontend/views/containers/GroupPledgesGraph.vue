@@ -37,7 +37,7 @@
     ) {{ L("You'll receive") }}
       tooltip(
         v-if='graphData.ourIncomeNeeded !== graphData.ourIncomeToReceive'
-        :hasTextCenter='true'
+        :isTextCenter='true'
         :text='L("Based on other members pledges, the group is not able to provide a full mincome yet.")'
       )
         i.icon-info-circle.is-suffix.has-text-primary

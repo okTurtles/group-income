@@ -10,8 +10,8 @@ span.c-twrapper(
   slot
   .c-tooltip(
     :style='stylesPosition'
-    :class='hasTextCenter ? "has-text-center" : ""'
-    v-if='isActive || shouldShow'
+    :class='isTextCenter ? "has-text-center" : ""'
+    v-if='isActive || isVisible'
     v-append-to-body=''
   )
     template(v-if='text') {{text}}
@@ -31,8 +31,8 @@ export default {
   props: {
     text: String,
     // Force to show tooltip manually
-    shouldShow: Boolean,
-    hasTextCenter: Boolean,
+    isVisible: Boolean,
+    isTextCenter: Boolean,
     direction: {
       type: String,
       validator: (value) => ['bottom', 'bottom-end', 'right', 'right-start', 'top'].includes(value),
@@ -125,11 +125,11 @@ export default {
   max-width: 12rem;
   border-radius: $radius;
   padding: $spacer-sm;
-  opacity: 0.95;
   z-index: $zindex-tooltip;
   pointer-events: none;
   background-color: $text_0;
   color: #fff;
+  opacity: 0.95;
 
   &.has-text-center {
     text-align: center;

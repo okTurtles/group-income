@@ -6,11 +6,8 @@ modal-template(ref='modal')
   .c-container
     i18n.is-title-4(tag='h3') Share this link to grant access to your group.
     i18n.has-text-1(tag='p') After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!
-    .c-link
-      a.link.has-icon(:href='link' target='_blank' data-test='invitationLink')
-        i.icon-link
-        | {{link}}
-    i18n.has-text-1(tag='p' :args='{ expireDate }') This invite link expires on the {expireDate}.
+    link-to-copy.c-link(:link='link')
+    i18n.has-text-1(tag='p' :args='{ expireDate }') This invite link expires on {expireDate}.
     i18n.is-outlined.c-cta(
       tag='button'
       @click.prevent='close'
@@ -19,12 +16,15 @@ modal-template(ref='modal')
 <script>
 import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/Modal/ModalTemplate.vue'
+import LinkToCopy from '@components/LinkToCopy.vue'
 import { INVITE_INITIAL_CREATOR } from '@model/contracts/group.js'
 import { buildInvitationUrl } from '@model/contracts/voting/proposals.js'
+
 export default {
   name: 'InviteByLink',
   components: {
-    ModalTemplate
+    ModalTemplate,
+    LinkToCopy
   },
   computed: {
     ...mapGetters([
@@ -54,16 +54,12 @@ export default {
 @import "@assets/style/_variables.scss";
 .c-container {
   text-align: center;
+  max-width: 100%;
 }
 
 .c-link {
-  max-width: 20rem;
-  word-break: break-all;
-  margin: $spacer auto;
-
-  .link {
-    display: inline;
-  }
+  margin-top: $spacer-lg;
+  margin-bottom: $spacer-sm;
 }
 
 .c-cta {

@@ -1,33 +1,50 @@
 <template lang='pug'>
-.c-wrapper(@click='copyToClipboard')
+component.c-wrapper(
+  :is='tag'
+  @click='copyToClipboard'
+  data-test='invitationLink'
+)
   input.c-invisible-input(
     type='text'
     ref='input'
-    :value='textToCopy'
+    :value='link'
   )
-  slot
-  transition(name='fade')
-    i18n.c-tooltip(
-      v-if='ephemeral.isTooltipActive'
-      key='test'
-      tag='p'
-    ) Copied to clipboard!
+  a.link.has-ellipsis.c-link(
+    :href='link'
+    aria-hidden='true'
+    @click.prevent=''
+  ) {{ link }}
+  button.is-icon-small.has-background.c-copy-button(:aria-label='L("Copy link")')
+    i.icon-copy.is-regular
+  tooltip.c-feedback(
+    v-if='ephemeral.isTooltipActive'
+    :isVisible='true'
+    direction='top'
+    :text='L("Copied to clipboard!")'
+  )
 </template>
 
 <script>
+import Tooltip from '@components/Tooltip.vue'
+
 export default {
-  name: 'CopyToClipboard',
-  data () {
-    return {
-      ephemeral: {
-        isTooltipActive: false
-      }
-    }
+  name: 'LinkToCopy',
+  components: {
+    Tooltip
   },
+  data: () => ({
+    ephemeral: {
+      isTooltipActive: false
+    }
+  }),
   props: {
-    textToCopy: {
+    link: {
       type: String,
       required: true
+    },
+    tag: {
+      type: String,
+      default: 'div'
     }
   },
   methods: {
@@ -53,36 +70,29 @@ export default {
 </script>
 
 <style lang='scss' scoped>
-@import '../../assets/style/_variables.scss';
+@import '@assets/style/_variables.scss';
 
 .c-wrapper {
   position: relative;
+  display: flex;
+  align-items: center;
 
   .c-invisible-input {
     position: absolute;
     pointer-events: none;
     opacity: 0;
-    z-index: -100;
   }
 }
 
-.c-tooltip {
+.c-feedback {
   position: absolute;
-  top: 0;
   left: 50%;
-  transform: translate(-50%, calc(-100% - #{$size_3}));
-  min-width: 3rem;
-  width: max-content;
-  border-radius: $radius;
-  padding: $spacer-sm;
-  z-index: $zindex-tooltip;
-  pointer-events: none;
-  background-color: $text_0;
-  color: #fff;
-
-  &:not(.fade-enter-active):not(.fade-leave-active) {
-    opacity: 0.95;
-  }
+  transform: translateX(-50%);
 }
 
+.c-copy-button {
+  margin-left: $spacer-xs;
+  flex-shrink: 0;
+  font-weight: normal;
+}
 </style>

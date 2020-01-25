@@ -171,13 +171,15 @@ describe('Proposals - Add members', () => {
       getProposalBoxes().eq(index).within(() => {
         cy.getByDT('title', 'h4').should('contain', 'You proposed:')
         cy.getByDT('sendLink').should('contain', `Please send the following link to ${username}-${userId} so they can join the group:`)
-        cy.getByDT('sendLink').get('a.link')
-          .should('contain', 'http://localhost')
-          .invoke('attr', 'href')
-          .then(href => {
-            invitationLinks[username] = href
-            expect(href).to.contain('http://localhost')
-          })
+        cy.getByDT('sendLink').within(() => {
+          cy.getByDT('invitationLink').get('.link').should('contain', 'http://localhost')
+          cy.getByDT('invitationLink').get('.c-invisible-input')
+            .invoke('prop', 'value')
+            .then(inviteLink => {
+              invitationLinks[username] = inviteLink
+              expect(inviteLink).to.contain('http://localhost')
+            })
+        })
       })
     }
 

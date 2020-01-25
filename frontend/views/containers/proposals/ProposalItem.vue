@@ -17,7 +17,10 @@
         :args='{ user: proposal.data.proposalData.member}'
       ) Please send the following link to {user} so they can join the group:
       | &nbsp;
-      a.link(:href='invitationLink') {{invitationLink}}
+      link-to-copy.c-invite-link(
+        :link='invitationLink'
+        tag='p'
+      )
 </template>
 
 <script>
@@ -38,6 +41,7 @@ import {
   buildInvitationUrl
 } from '@model/contracts/voting/proposals.js'
 import ProposalVoteOptions from '@containers/proposals/ProposalVoteOptions.vue'
+import LinkToCopy from '@components/LinkToCopy.vue'
 import { INVITE_STATUS } from '@model/contracts/group.js'
 
 export default {
@@ -46,7 +50,8 @@ export default {
     proposalHash: String
   },
   components: {
-    ProposalVoteOptions
+    ProposalVoteOptions,
+    LinkToCopy
   },
   computed: {
     ...mapGetters([
@@ -183,16 +188,17 @@ export default {
 .c-sendLink {
   border-radius: 0.25rem;
   background-color: $general_2;
-  padding: $spacer-sm;
+  padding: 1.1875rem $spacer;
   margin-top: $spacer;
 
   @include tablet {
     padding: $spacer;
   }
 
-  .link {
-    word-break: break-all;
-    display: inline; // show the border through multiple lines
+  .c-invite-link {
+    ::v-deep .c-copy-button {
+      background: $white;
+    }
   }
 }
 

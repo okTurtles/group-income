@@ -600,6 +600,32 @@ page(
         template(slot='tooltip')
           | It accepts multiple directions. Check sourcecode to know more.
 
+  article#InviteLink
+    section.card
+      h2.is-title-2.card-header InviteLink
+
+      p
+        | Invitation links that are used across the app have the uniform design with 'click-to-copy' functionality.
+        | Please refer to&nbsp;
+        a.link(
+          href='https://github.com/okTurtles/group-income-simple/issues/756'
+          target='_link'
+        ) issue #756
+        | &nbsp;for more information.
+      br
+      table
+        thead
+          th code
+          th demo
+        tr
+          td
+            pre
+              | link-to-copy(
+              |   link='https://groupincome.org/f4k3_H45h_t0_5h4r3'
+              | )
+          td
+            link-to-copy(link='https://groupincome.org/f4k3_H45h_t0_5h4r3')
+
   article#forms
     section.card
       h2.is-title-2.card-header Forms
@@ -912,6 +938,7 @@ import BannerSimple from '@components/BannerSimple.vue'
 import BannerScoped from '@components/BannerScoped.vue'
 import Tooltip from '@components/Tooltip.vue'
 import Badge from '@components/Badge.vue'
+import LinkToCopy from '@components/LinkToCopy.vue'
 import CalloutCard from '@components/CalloutCard.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgAccess from '@svgs/access.svg'
@@ -1039,6 +1066,7 @@ export default {
     BannerScoped,
     Tooltip,
     Badge,
+    LinkToCopy,
     SvgHello
   },
   mounted () {
