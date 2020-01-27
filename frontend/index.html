@@ -26,20 +26,6 @@
       :data-logged-in='ephemeral.finishedLogin'
     >
       <app-styles></app-styles>
-      <!-- TODO IMPORTANT - remove this before merge -->
-      <div style="position: fixed; top: 0; left: 23vw; right: 23vw;
-      font-size: 0.75rem; opacity: 0.7; pointer-events: none;
-      outline: 1px solid red; padding: 5px; z-index: 9999; background: white;">
-        <p> :: username :: {{(this.$store.getters.ourUserIdentityContract.attributes || {}).name}}</p>
-        <p> :: loggedIn :: {{$store.state.loggedIn}} </p>
-        ---
-        <span v-for="(obj, id) in $store.state.contracts">
-          <p> :: contracts[id] :: {{ obj }} </p>
-          <p>:: state[id] exists :: {{ !!$store.state[id] }}</p>
-          -
-        </span>
-
-      </div>
       <banner-general ref="bannerGeneral"></banner-general>
       <navigation v-if="showNav" class="l-navigation"></navigation>
       <router-view class="l-page"></router-view>

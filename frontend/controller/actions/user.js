@@ -102,6 +102,7 @@ export default sbp('sbp/selectors/register', {
   },
 
   'gi.actions/user/logout': async function () {
+    // TODO: move the logout vuex action code into this function (see #804)
     await sbp('state/vuex/dispatch', 'logout')
   }
 })

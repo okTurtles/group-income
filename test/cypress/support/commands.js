@@ -23,17 +23,7 @@ function cyBypassUI (action, params) {
 
   cy.log(`Bypassing UI ::: ${action}`)
 
-  // Option 1 - wait for contracts to finish sync. - doesnt work.
-  // cy.getByDT('app').then(([el]) => {
-  //   cy.get(el).should('have.attr', 'data-sync', '')
-  // })
-  // cy.visit(`/app/bypass-ui?action=${action}${query}`)
-
-  // Option 2 - hardcore wait. it works, but it isn't the ideal solution.
-  // cy.wait(400); // eslint-disable-line
-  // cy.visit(`/app/bypass-ui?action=${action}${query}`)
-
-  // Option 3 - Navigate to /bypass-ui using Vue instead of cy.visit!
+  // Navigate to /bypass-ui using Vue instead of cy.visit!
   // There's some issue between cypress and forageStorage (indexedDB).
   // If we go to a page using cy.visit a refresh is caused
   // (because we are changing pages the old fashion way).
@@ -237,18 +227,9 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
   actionBeforeLogout,
   bypassUI
 }) => {
-  if (bypassUI && !isLoggedIn) {
-    // TODO - Create bypass action to join group. Until then
-    // do the other way around: signup before visiting the page.
-    // Then, the invitation is automatically accepted.
-    cy.giSignup(username, { bypassUI })
-    // use an hardcoded wait so indexedDB is synced before cy.visit()
-    cy.wait(400) // eslint-disable-line
-  }
-
   cy.visit(invitationLink)
 
-  if (isLoggedIn || bypassUI) {
+  if (isLoggedIn) {
     cy.getByDT('welcomeGroup').should('contain', `Welcome to ${groupName}!`)
   } else {
     cy.getByDT('groupName').should('contain', groupName)

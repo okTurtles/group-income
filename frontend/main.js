@@ -124,7 +124,6 @@ async function startApp () {
     },
     computed: {
       showNav () {
-        console.log(':: groupsByName', this.$store.getters.groupsByName)
         return this.$store.state.loggedIn && this.$store.getters.groupsByName.length > 0 && this.$route.path !== '/join'
       },
       appClasses () {

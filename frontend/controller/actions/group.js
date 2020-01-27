@@ -79,9 +79,10 @@ export default sbp('sbp/selectors/register', {
 
       await sbp('backend/publishLogEntry', entry)
 
-      if (!sync) { return groupId }
+      if (sync) {
+        await sbp('gi.actions/contract/syncAndWait', groupId)
+      }
 
-      await sbp('gi.actions/contract/syncAndWait', groupId)
       return groupId
     } catch (e) {
       console.error('gi.actions/group/create failed!', e)

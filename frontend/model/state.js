@@ -434,7 +434,7 @@ const actions = {
         await dispatch('handleEvent', GIMessage.deserialize(events[i]))
       }
     } else {
-      console.log(`Contract ${contractID} was already synchronized`)
+      console.debug(`Contract ${contractID} was already synchronized`)
     }
     sbp('okTurtles.events/emit', EVENTS.CONTRACT_IS_SYNCING, contractID, false)
   },
