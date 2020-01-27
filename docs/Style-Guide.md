@@ -31,7 +31,7 @@ All other classes are global, written at `frontend/assets/style` and should be k
 ```html
 <template>
     <!-- We can easily distinguish global classes from component's classes -->
-    <h1 class="title is-2 c-title">Hello world</h1>
+    <h1 class="is-title-1 c-title">Hello world</h1>
 </template>
 
 <style lang="scss" scoped>
@@ -40,6 +40,22 @@ All other classes are global, written at `frontend/assets/style` and should be k
 }
 </style>
 ```
+
+### Titles
+
+There should not be heading gap in the page.
+So for example, h3 can be present only if there is an h2 tag.
+But sometime a title look better in the page if h2 is the size of h3. In that case we will use 
+
+```html
+<template lang='pug'>
+  h1.is-title-1 Main title
+  h2.is-title-3
+</template>
+```
+
+Also here, we explicity define the style of h1. This way, even if the tag changes from h1 to h2, we keep the same style.
+We respect the separation of concern between the semantic and the style.
 
 ## Accessibility Style Guide
 
