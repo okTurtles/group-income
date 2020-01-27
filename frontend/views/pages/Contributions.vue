@@ -67,7 +67,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
             v-if='doesReceiveMonetary'
           )
             contribution-item(
-              :what='wCurrency(receivingMonetary.total)'
+              :what='withCurrency(receivingMonetary.total)'
               :who='receivingMonetary.who'
               type='MONETARY'
             )
@@ -112,7 +112,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
             v-if='doesGiveMonetary'
           )
             contribution-item(
-              :what='wCurrency(givingMonetary.total)'
+              :what='withCurrency(givingMonetary.total)'
               :who='givingMonetary.who'
               type='MONETARY'
               action='GIVING'
@@ -192,13 +192,10 @@ export default {
       'globalProfile',
       'ourContributionSummary'
     ]),
-    ourGroupProfile () {
-      return this.groupProfile(this.ourUsername)
-    },
     upTo () {
       const amount = this.ourGroupProfile[this.ourGroupProfile.incomeDetailsType]
       if (typeof amount !== 'number') return false
-      return this.wCurrency(this.needsIncome ? this.groupSettings.mincomeAmount - amount : amount)
+      return this.withCurrency(this.needsIncome ? this.groupSettings.mincomeAmount - amount : amount)
     },
     needsIncome () {
       return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'
@@ -261,7 +258,7 @@ export default {
     displayName (username) {
       return this.globalProfile(username).displayName || username
     },
-    wCurrency (amount) {
+    withCurrency (amount) {
       return this.currency.displayWithCurrency(amount)
     }
   }
