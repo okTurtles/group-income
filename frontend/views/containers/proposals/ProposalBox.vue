@@ -20,7 +20,7 @@ li.c-wrapper
 <script>
 import { mapGetters } from 'vuex'
 import L from '@view-utils/translations.js'
-import UserImage from '@containers/UserImage.vue'
+import UserImage from '@components/UserImage.vue'
 import ProposalItem from './ProposalItem.vue'
 import { STATUS_OPEN } from '@model/contracts/voting/proposals.js'
 import { TABLET } from '@view-utils/breakpoints.js'

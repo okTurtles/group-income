@@ -26,7 +26,7 @@
 
 <script>
 import Avatar from '@components/Avatar.vue'
-import ConfettiAnimation from '@components/ConfettiAnimation/ConfettiAnimation.vue'
+import ConfettiAnimation from '@components/confetti-animation/ConfettiAnimation.vue'
 import { mapGetters } from 'vuex'
 
 export default {

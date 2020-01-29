@@ -91,7 +91,7 @@
 <script>
 import { mapGetters } from 'vuex'
 import L from '@view-utils/translations.js'
-import ModalTemplate from '@components/Modal/ModalTemplate.vue'
+import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import SvgProposal from '@svgs/proposal.svg'
 
 export default {

@@ -35,7 +35,7 @@ import { OPEN_MODAL } from '@utils/events.js'
 import PageSection from '@components/PageSection.vue'
 import L from '@view-utils/translations.js'
 import currencies from '@view-utils/currencies.js'
-import PaymentsSummary from '@containers/PaymentsSummary'
+import PaymentsSummary from '@containers/payments/PaymentsSummary.vue'
 
 export default {
   name: 'ContributionsWidget',
