@@ -15,7 +15,7 @@
         :key='`member-${index}`'
         data-test='invitee'
       )
-        i18n.label.sr-only Username
+        i18n.label.sr-only Invitee name
         .input-shifted
           input.input(
             type='text'

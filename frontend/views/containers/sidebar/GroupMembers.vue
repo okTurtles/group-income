@@ -1,7 +1,7 @@
 <template lang="pug">
 .c-group-members(data-test='groupMembers')
   .c-group-members-header
-    i18n.is-title-4(tag='h4') Members
+    i18n.is-title-4(tag='h3') Members
 
     button.button.is-small.is-outlined(
       data-test='inviteButton'

@@ -5,7 +5,7 @@ div(:data-test='pageTestName' :class='$scopedSlots.sidebar ? "p-with-sidebar" : 
     h1.is-title-2.p-title(:data-test='pageTestHeaderName' v-if='$slots.title')
       img.c-logo(
         src='/assets/images/group-income-icon-transparent.png'
-        :alt='L("Group Income\'s logo")'
+        alt=''
       )
       slot(name='title')
 
@@ -18,11 +18,11 @@ div(:data-test='pageTestName' :class='$scopedSlots.sidebar ? "p-with-sidebar" : 
   main.p-main(:class='mainClass')
     slot
 
-  nav.p-sidebar(
-    :role='L("Secondary")'
+  section.p-sidebar(
     v-if='$scopedSlots.sidebar'
     :class='{ "is-active": ephemeral.isActive }'
   )
+    i18n.sr-only(tag='h2') Page details
     toggle(@toggle='toggleMenu' element='sidebar' :aria-expanded='ephemeral.isActive')
     .p-sidebar-inner(:inert='isInert')
       slot(name='sidebar')
