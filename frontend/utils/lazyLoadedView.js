@@ -25,4 +25,4 @@ Vue.component('IncomeDetails', () => import('../views/containers/contributions/I
 // TODO Remove after design test period
 Vue.component('DSModalSimple', () => import('../views/containers/design-system/DSModalSimple.vue'))
 Vue.component('DSModalNested', () => import('../views/containers/design-system/DSModalNested.vue'))
-Vue.component('TimeTravel', () => import('../views/components/TimeTravel.vue'))
+Vue.component('TimeTravel', () => import('../views/containers/navigation/TimeTravel.vue'))
