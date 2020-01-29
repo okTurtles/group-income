@@ -174,17 +174,17 @@ NOTE: this type of banner is under construction and will change soon.
 ### Structure
 
 ```bash
-frontend
-└─ assets # Any static file including Styles.
-└─ controller
-└─ model
-└─ utils 
-└─ views # where Vue components live
-    └─ components # Vue components reused across the app places.
-    └─ containers # Vue components related to a specific part of the app, not reusable.
-    └─ pages # Vue components connected to a route
-    └─ utils # Utils used only within /frontend/views
-    | main.js # App entry point
+frontend/
+└─ main.js # App entry point
+└─ assets/ # Any static file including Styles.
+└─ controller/
+└─ model/
+└─ utils/ 
+└─ views/ # where Vue components live
+    └─ components/ # Vue components reused across the app places.
+    └─ containers/ # Vue components related to a specific part of the app, not reusable.
+    └─ pages/ # Vue components connected to a route
+    └─ utils/ # Utils used only within /frontend/views
 ```
 
 ## Group Income Data Model Rules
