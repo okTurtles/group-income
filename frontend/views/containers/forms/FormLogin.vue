@@ -35,9 +35,9 @@ form(
 </template>
 
 <script>
-import sbp from '~/shared/sbp.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
+import sbp from '~/shared/sbp.js'
 import { nonWhitespace } from '@views/utils/validators.js'
 import FormPassword from '@containers/forms/FormPassword.vue'
 import BannerScoped from '@components/BannerScoped.vue'
@@ -68,21 +68,14 @@ export default {
   methods: {
     async login () {
       try {
-        // TODO: Insert cryptography here
-        const identityContractID = await sbp('namespace/lookup', this.form.name)
-        if (!identityContractID) {
-          this.$refs.formMsg.danger(L('Invalid username or password'))
-          return
-        }
-        console.debug(`Retrieved identity ${identityContractID}`)
-        await sbp('state/vuex/dispatch', 'login', {
+        await sbp('gi.actions/user/login', {
           username: this.form.name,
-          identityContractID
+          password: this.form.password
         })
         this.$emit('submitSucceeded')
       } catch (e) {
-        console.error(e)
-        this.$refs.formMsg.danger(L('Failed to login, please try again. {codeError}', { codeError: e.message }))
+        console.error('FormLogin.vue login() error:', e)
+        this.$refs.formMsg.danger(e.message)
       }
     },
     forgotPassword () {

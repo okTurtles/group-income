@@ -8,9 +8,9 @@ describe('Large group', () => {
   it('user1 creates a group', () => {
     cy.visit('/')
 
-    cy.giSignup(`user1-${userId}`)
+    cy.giSignup(`user1-${userId}`, { bypassUI: true })
 
-    cy.giCreateGroup(groupName)
+    cy.giCreateGroup(groupName, { bypassUI: true })
 
     cy.giGetInvitationAnyone().then(url => {
       invitationLinks.anyone = url
@@ -24,6 +24,7 @@ describe('Large group', () => {
       cy.giAcceptGroupInvite(invitationLinks.anyone, {
         username: `user${i}-${userId}`,
         groupName,
+        bypassUI: true,
         actionBeforeLogout: () => {
           if (i > 3) {
             cy.getByDT('contributionsLink').click()

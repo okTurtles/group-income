@@ -26,9 +26,9 @@ describe('Proposals - Add members', () => {
   it('user1 registers, creates a group and share its invitation link', () => {
     cy.visit('/')
 
-    cy.giSignup(`user1-${userId}`)
+    cy.giSignup(`user1-${userId}`, { bypassUI: true })
 
-    cy.giCreateGroup(groupName, { mincome: groupMincome })
+    cy.giCreateGroup(groupName, { mincome: groupMincome, bypassUI: true })
 
     cy.giGetInvitationAnyone().then(url => {
       invitationLinks.anyone = url
@@ -43,7 +43,7 @@ describe('Proposals - Add members', () => {
   })
 
   it('user1 proposes to add user4, user5 together to the group', () => {
-    cy.giLogin(`user1-${userId}`)
+    cy.giLogin(`user1-${userId}`, { bypassUI: true })
 
     cy.giInviteMember([`user4-${userId}`, `user5-${userId}`])
   })
@@ -213,7 +213,7 @@ describe('Proposals - Add members', () => {
   })
 
   it('user4 registers and then joins the group through their unique invitation link', () => {
-    cy.giSignup(`user4-${userId}`)
+    cy.giSignup(`user4-${userId}`, { bypassUI: true })
     cy.giAcceptGroupInvite(invitationLinks.user4, {
       isLoggedIn: true,
       groupName
@@ -251,7 +251,7 @@ describe('Proposals - Add members', () => {
   })
 
   it('user1 logins and sees all 5 proposals correctly and the new member', () => {
-    cy.giLogin(`user1-${userId}`)
+    cy.giLogin(`user1-${userId}`, { bypassUI: true })
 
     // A quick checkup that each proposal state is correct.
     // OPTIMIZE: Maybe we should adopt Visual Testing in these cases

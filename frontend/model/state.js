@@ -123,6 +123,7 @@ sbp('sbp/selectors/register', {
     return gettersProxy
   },
   'state/vuex/state': () => store.state,
+  'state/vuex/commit': (id, payload) => store.commit(id, payload),
   'state/vuex/dispatch': (...args) => store.dispatch(...args)
 })
 
@@ -432,8 +433,10 @@ const actions = {
         // this must be called directly, instead of via enqueueHandleEvent
         await dispatch('handleEvent', GIMessage.deserialize(events[i]))
       }
-      sbp('okTurtles.events/emit', EVENTS.CONTRACT_IS_SYNCING, contractID, false)
+    } else {
+      console.debug(`Contract ${contractID} was already synchronized`)
     }
+    sbp('okTurtles.events/emit', EVENTS.CONTRACT_IS_SYNCING, contractID, false)
   },
   async login (
     { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object},
