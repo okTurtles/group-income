@@ -1,49 +1,33 @@
 <template lang='pug'>
-page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings.groupName')
+page.c-page
   template(#title='') {{ L('Group Settings') }}
   template(#description='') {{ L('Changes to these settings will be visible to all group members') }}
 
-  page-section(title='')
-
+  page-section
     form
-      .field
-        i18n.label(tag='label') Group name
-
-        //- BUG: TODO: cannot bind directly to :value here, as any changes
-        //- to groupSettings must be done via proposals and/or
-        //- like it's done in UserProfile.vue
-        input.input.is-large.is-primary(
-          ref='name'
-          type='text'
+      label.field
+        i18n.label Group name
+        input.input(
           name='groupName'
-          :class='{ error: $v.form.groupName.$error }'
-          :value='groupSettings.groupName'
-          @input='update'
-          @keyup.enter='next'
+          type='text'
+          v-model='form.groupName'
           data-test='groupName'
         )
 
-      .field
-        i18n.label(tag='label') Description
-
+      label.field
+        i18n.label About the group
         textarea.textarea(
           name='sharedValues'
-          ref='purpose'
-          :placeholder='L("Group Purpose")'
           maxlength='500'
-          :class='{ error: $v.form.sharedValues.$error }'
-          :value='groupSettings.sharedValues'
-          @input='update'
+          :value='form.sharedValues'
         )
 
-      .field
-        i18n.label(tag='label') Default currency
-        .select-wrapper
+      label.field
+        i18n.label Default currency
+        .select-wrapper.c-currency-select
           select(
             name='mincomeCurrency'
-            required=''
-            :value='groupSettings.mincomeCurrency'
-            @input='update'
+            :value='form.mincomeCurrency'
           )
             option(
               v-for='(currency, code) in currencies'
@@ -51,40 +35,50 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
               :key='code'
             ) {{ currency.symbol }}
 
-        i18n(tag='p') This is the currency that will be displayed for every member of the group, across the platform.
+        i18n.helper This is the currency that will be displayed for every member of the group, across the platform.
 
-      i18n.is-success(
-        tag='button'
-        ref='save'
-        @click='save'
-        :disabled='$v.form.$invalid'
-        data-test='saveBtn'
-      ) Save changes
+      banner-scoped(ref='formMsg' data-test='profileMsg')
+
+      .buttons
+        i18n.is-success(
+          tag='button'
+          ref='save'
+          @click='save'
+          :disabled='$v.form.$invalid'
+          data-test='saveBtn'
+        ) Save changes
 
   invitations-table
 
   page-section(:title='L("Leave Group")')
-    i18n(
+    i18n.has-text-1(
       tag='p'
       :args='LTags("b")'
     ) This means you will stop having access to the {b_}group chat{_b} (including direct messages to other group members) and {b_}contributions{_b}. Re-joining the group is possible, but requires other members to vote and reach an agreement.
 
-    i18n.is-danger.is-outlined(
-      tag='button'
-      ref='leave'
-      @click='openProposal("GroupLeaveModal")'
-      data-test='LeaveBtn'
-    ) Leave group
+    .buttons
+      i18n.is-danger.is-outlined(
+        tag='button'
+        ref='leave'
+        @click='openProposal("GroupLeaveModal")'
+        data-test='LeaveBtn'
+      ) Leave group
 
   page-section(:title='L("Delete Group")')
-    i18n(tag='p') This will delete all the data associated with this group permanently.
+    i18n.has-text-1(tag='p') This will delete all the data associated with this group permanently.
 
-    i18n.is-danger.is-outlined(
-      tag='button'
-      ref='delete'
-      @click='openProposal("GroupDeletionModal")'
-      data-test='deleteBtn'
-    ) Delete group
+    .buttons
+      i18n.is-danger.is-outlined(
+        tag='button'
+        ref='delete'
+        @click='openProposal("GroupDeletionModal")'
+        data-test='deleteBtn'
+      ) Delete group
+
+    banner-simple(severity='info')
+      i18n(
+        :args='{ count: groupMembersCount - 1, groupName: groupSettings.groupNname, ...LTags("b")}'
+      ) You can only delete a group when all the other members have left. {groupName} still has {b_}{count} other members{_b}.
 </template>
 
 <script>
@@ -94,10 +88,12 @@ import { OPEN_MODAL } from '@utils/events.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import currencies from '@view-utils/currencies.js'
-
 import Page from '@components/Page.vue'
 import PageSection from '@components/PageSection.vue'
 import InvitationsTable from '@containers/group-settings/InvitationsTable.vue'
+import BannerSimple from '@components/banners/BannerSimple.vue'
+import BannerScoped from '@components/banners/BannerScoped.vue'
+import L from '@view-utils/translations.js'
 
 export default {
   name: 'GroupSettings',
@@ -105,16 +101,25 @@ export default {
   components: {
     Page,
     PageSection,
-    InvitationsTable
+    InvitationsTable,
+    BannerSimple,
+    BannerScoped
   },
   data () {
+    const { groupName, sharedValues, mincomeCurrency } = this.$store.getters.groupSettings
     return {
-      currencies
+      currencies,
+      form: {
+        groupName: groupName,
+        sharedValues: sharedValues,
+        mincomeCurrency: mincomeCurrency
+      }
     }
   },
   computed: {
     ...mapGetters([
-      'groupSettings'
+      'groupSettings',
+      'groupMembersCount'
     ])
   },
   methods: {
@@ -127,16 +132,17 @@ export default {
     },
     save (e) {
       // TODO save form
+      // ::::::::::: CONTINUE HERE - handle disable status
       console.log('Save', e)
     }
   },
   validations: {
     form: {
       groupName: {
-        required
+        [L('A name is required.')]: required
       },
       sharedValues: {
-        required
+        [L('A group without description?')]: required
       }
     }
   }
@@ -144,4 +150,15 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "@assets/style/_variables.scss";
+
+.c-page ::v-deep .p-main {
+  max-width: 37rem;
+}
+
+.c-currency-select {
+  @include tablet {
+    width: 50%;
+  }
+}
 </style>
