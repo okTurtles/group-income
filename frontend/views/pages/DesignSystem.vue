@@ -526,11 +526,10 @@ page(
             pre banner-simple(severity='info')
           td
             banner-simple(severity='info')
-              | This is an&nbsp;
-              strong information message
+              | This is a&nbsp;
+              strong short message
               |  with a&nbsp;
-              a.link(href='/') link
-              | . This message can grow in width or height, as needed.
+              a.link(href='/') link.
 
       h4.is-title-4 With title
       table

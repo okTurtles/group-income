@@ -97,12 +97,12 @@ export default {
 }
 
 .c-icon {
-  margin-top: 0.1875rem; // visually better centered aligned
   font-size: $size_3;
   margin-right: $spacer;
 }
 
 .c-content {
+  margin-top: 0.125rem; // visually better, with 1 or multiple lines
   flex-grow: 1;
 }
 
