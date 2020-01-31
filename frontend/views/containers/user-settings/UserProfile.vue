@@ -2,25 +2,7 @@
   .settings-container
     span.c-username @{{ ourUsername }}
 
-    form(@submit.prevent='')
-      .c-avatar
-        label.c-avatar-field
-          avatar.c-avatar-img(
-            :src='attributes.picture'
-            ref='picture'
-          )
-          i18n.link.c-avatar-text Change avatar
-
-          input.sr-only(
-            type='file'
-            name='profilePicture'
-            accept='image/*'
-            @change='fileChange($event.target.files)'
-            placeholder='http://'
-            data-test='profilePicture'
-          )
-        // TODO #658
-        banner-scoped.c-pictureMsg(ref='pictureMsg' data-test='pictureMsg')
+    avatar-upload(variant='user')
 
     section.card
       form(@submit.prevent='saveProfile')
@@ -99,9 +81,8 @@ import { required, email } from 'vuelidate/lib/validators'
 import { OPEN_MODAL } from '@utils/events.js'
 import { cloneDeep } from '@utils/giLodash.js'
 import { mapGetters } from 'vuex'
-import imageUpload from '@utils/imageUpload.js'
-import Avatar from '@components/Avatar.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
+import AvatarUpload from '@components/AvatarUpload.vue'
 import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
 
@@ -109,8 +90,8 @@ export default {
   name: 'UserProfile',
   mixins: [validationMixin, validationsDebouncedMixins],
   components: {
-    Avatar,
-    BannerScoped
+    BannerScoped,
+    AvatarUpload
   },
   data () {
     // create a copy of the attributes to avoid any Vue.js reactivity weirdness
@@ -145,28 +126,6 @@ export default {
       sbp('okTurtles.events/emit', OPEN_MODAL, mode)
       return false
     },
-    async fileChange (fileList) {
-      if (!fileList.length) return
-      const fileReceived = fileList[0]
-      let picture
-
-      try {
-        picture = await imageUpload(fileReceived)
-      } catch (e) {
-        console.error(e)
-        this.$refs.pictureMsg.danger(L('Failed to upload picture, please try again. {codeError}', { codeError: e.message }))
-        return false
-      }
-
-      try {
-        await this.setAttributes({ picture })
-        this.$refs.picture.setFromBlob(fileReceived)
-        this.$refs.pictureMsg.success(L('Picture updated!'))
-      } catch (e) {
-        console.error('Failed to save picture', e)
-        this.$refs.pictureMsg.danger(L('Failed to save picture, please try again. {codeError}', { codeError: e.message }))
-      }
-    },
     async saveProfile () {
       this.$refs.formMsg.clean()
       const attrs = {}
@@ -178,19 +137,16 @@ export default {
       }
 
       try {
-        await this.setAttributes(attrs)
+        const attributes = await sbp('gi.contracts/identity/setAttributes/create',
+          attrs,
+          this.$store.state.loggedIn.identityContractID
+        )
+        await sbp('backend/publishLogEntry', attributes)
         this.$refs.formMsg.success(L('Your changes were saved!'))
       } catch (e) {
         console.error('Failed to update profile', e)
         this.$refs.formMsg.danger(L('Failed to update profile, please try again. {codeError}', { codeError: e.message }))
       }
-    },
-    async setAttributes (attrs) {
-      const attributes = await sbp('gi.contracts/identity/setAttributes/create',
-        attrs,
-        this.$store.state.loggedIn.identityContractID
-      )
-      await sbp('backend/publishLogEntry', attributes)
     }
   }
 }
@@ -198,61 +154,6 @@ export default {
 
 <style lang='scss' scoped>
 @import "@assets/style/_variables.scss";
-
-.c-avatar-field {
-  @include touch {
-    margin-bottom: $spacer*1.5;
-  }
-
-  @include desktop {
-    position: absolute;
-    top: -3.5rem;
-    right: 0;
-    align-items: flex-end;
-  }
-}
-
-.c-avatar {
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  text-align: center;
-
-  @include desktop {
-    align-items: flex-end;
-
-    label {
-      margin-bottom: -0.5rem; /* temporary until #658 */
-    }
-  }
-
-  &-img {
-    width: 8rem;
-    height: 8rem;
-    /* margin-bottom: $spacer-sm; */
-
-    @include desktop {
-      width: 4.5rem;
-      height: 4.5rem;
-    }
-  }
-
-  &-text {
-    display: inline-block;
-  }
-}
-
-.c-pictureMsg {
-  width: 100%;
-
-  ::v-deep .c-banner {
-    margin: 0 0 $spacer*1.5;
-
-    @include desktop {
-      margin: 0.5rem 0 $spacer*1.5;
-    }
-  }
-}
 
 .c-username {
   display: none;

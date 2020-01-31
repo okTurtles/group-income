@@ -3,25 +3,7 @@ page.c-page
   template(#title='') {{ L('Group Settings') }}
   template(#description='') {{ L('Changes to these settings will be visible to all group members') }}
 
-  form.c-form-avatar(@submit.prevent='')
-    .c-avatar
-      label.c-avatar-field
-        avatar.c-avatar-img(
-          :src='form.groupPicture'
-          ref='picture'
-        )
-        i18n.link.c-avatar-text Change avatar
-
-        input.sr-only(
-          type='file'
-          name='groupPicture'
-          accept='image/*'
-          @change='fileChange($event.target.files)'
-          placeholder='http://'
-          data-test='groupPicture'
-        )
-      // TODO #658
-      banner-scoped.c-bannerAvatarMsg(ref='bannerPictureMsg' data-test='bannerPictureMsg')
+  avatar-upload(variant='group')
 
   page-section
     form(@submit.prevent='saveSettings')
@@ -112,10 +94,9 @@ import { mapState, mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import { required } from 'vuelidate/lib/validators'
 import currencies from '@view-utils/currencies.js'
-import imageUpload from '@utils/imageUpload.js'
 import Page from '@components/Page.vue'
 import PageSection from '@components/PageSection.vue'
-import Avatar from '@components/Avatar.vue'
+import AvatarUpload from '@components/AvatarUpload.vue'
 import InvitationsTable from '@containers/group-settings/InvitationsTable.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
@@ -128,16 +109,15 @@ export default {
     Page,
     PageSection,
     InvitationsTable,
-    Avatar,
+    AvatarUpload,
     BannerSimple,
     BannerScoped
   },
   data () {
-    const { groupName, groupPicture, sharedValues, mincomeCurrency } = this.$store.getters.groupSettings
+    const { groupName, sharedValues, mincomeCurrency } = this.$store.getters.groupSettings
     return {
       form: {
         groupName,
-        groupPicture,
         sharedValues,
         mincomeCurrency
       },
@@ -165,28 +145,6 @@ export default {
     openProposal (component) {
       sbp('okTurtles.events/emit', OPEN_MODAL, component)
     },
-    async fileChange (fileList) {
-      if (!fileList.length) return
-      const fileReceived = fileList[0]
-      let picture
-
-      try {
-        picture = await imageUpload(fileReceived)
-      } catch (e) {
-        console.error(e)
-        this.$refs.bannerPictureMsg.danger(L('Failed to upload avatar. {codeError}', { codeError: e.message }))
-        return false
-      }
-
-      try {
-        await this.setAttributes({ groupPicture: picture })
-        this.$refs.picture.setFromBlob(fileReceived)
-        this.$refs.bannerPictureMsg.success(L('Avatar updated!'))
-      } catch (e) {
-        console.error('Failed to save avatar', e)
-        this.$refs.bannerPictureMsg.danger(L('Failed to save avatar. {codeError}', { codeError: e.message }))
-      }
-    },
     async saveSettings (e) {
       if (this.ephemeral.isSubmitting) { return }
       this.ephemeral.isSubmitting = true
@@ -199,20 +157,16 @@ export default {
       }
 
       try {
-        const updatedAttrs = await this.setAttributes(attrs)
-        await sbp('backend/publishLogEntry', updatedAttrs)
+        const settings = await sbp('gi.contracts/group/updateSettings/create',
+          attrs,
+          this.currentGroupId
+        )
+        await sbp('backend/publishLogEntry', settings)
         this.$refs.formMsg.success(L('Your changes were saved!'))
       } catch (e) {
         this.$refs.formMsg.danger(L('Failed to update group settings. {codeError}', { codeError: e.message }))
       }
       this.ephemeral.isSubmitting = false
-    },
-    async setAttributes (attrs) {
-      const settings = await sbp('gi.contracts/group/updateSettings/create',
-        attrs,
-        this.currentGroupId
-      )
-      await sbp('backend/publishLogEntry', settings)
     }
   },
   validations: {
@@ -233,65 +187,6 @@ export default {
 
 .c-page ::v-deep .p-main {
   max-width: 37rem;
-}
-
-.c-form-avatar {
-  position: relative;
-}
-
-.c-avatar-field {
-  @include touch {
-    margin-bottom: $spacer*1.5;
-  }
-
-  @include desktop {
-    position: absolute;
-    top: -6.5rem; // -3.5rem;
-    right: 0;
-    align-items: flex-end;
-  }
-}
-
-.c-avatar {
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  text-align: center;
-
-  @include desktop {
-    align-items: flex-end;
-
-    label {
-      margin-bottom: -0.5rem; /* temporary until #658 */
-    }
-  }
-
-  &-img {
-    width: 8rem;
-    height: 8rem;
-    /* margin-bottom: $spacer-sm; */
-
-    @include desktop {
-      width: 4.5rem;
-      height: 4.5rem;
-    }
-  }
-
-  &-text {
-    display: inline-block;
-  }
-}
-
-.c-bannerAvatarMsg {
-  width: 100%;
-
-  ::v-deep .c-banner {
-    margin: 0 0 $spacer*1.5;
-
-    @include desktop {
-      margin: 0.5rem 0 $spacer*1.5;
-    }
-  }
 }
 
 .c-currency-select {
