@@ -4,7 +4,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
 
   add-income-details-widget(v-if='!hasIncomeDetails')
 
-  div(v-else)
+  template(v-else)
     start-inviting-widget(v-if='groupMembersCount === 1')
 
     contributions-overview-widget(v-if='canDisplayGraph')
