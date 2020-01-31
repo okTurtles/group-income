@@ -90,8 +90,8 @@ export default {
   name: 'UserProfile',
   mixins: [validationMixin, validationsDebouncedMixins],
   components: {
-    BannerScoped,
-    AvatarUpload
+    AvatarUpload,
+    BannerScoped
   },
   data () {
     // create a copy of the attributes to avoid any Vue.js reactivity weirdness

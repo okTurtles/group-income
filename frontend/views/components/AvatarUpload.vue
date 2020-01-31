@@ -128,7 +128,7 @@ export default {
 
     @include desktop {
       position: absolute;
-      top: -6.5rem; // -3.5rem;
+      top: -6.5rem;
       right: 0;
       align-items: flex-end;
       margin-bottom: -0.5rem;
