@@ -52,6 +52,7 @@
 
 <script>
 import { validationMixin } from 'vuelidate'
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import PasswordForm from '@containers/access/PasswordForm.vue'
@@ -59,7 +60,6 @@ import { required } from 'vuelidate/lib/validators'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import L from '@view-utils/translations.js'
-import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
 export default {
   name: 'GroupLeaveModal',

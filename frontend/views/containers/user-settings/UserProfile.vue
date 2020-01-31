@@ -229,7 +229,7 @@ export default {
   &-img {
     width: 8rem;
     height: 8rem;
-    margin-bottom: $spacer-sm;
+    /* margin-bottom: $spacer-sm; */
 
     @include desktop {
       width: 4.5rem;
