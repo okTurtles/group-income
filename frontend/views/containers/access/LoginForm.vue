@@ -59,6 +59,9 @@ export default {
       form: {
         name: null,
         password: null
+      },
+      ephemeral: {
+        isSubmitting: false
       }
     }
   },
@@ -67,6 +70,8 @@ export default {
   },
   methods: {
     async login () {
+      if (this.ephemeral.isSubmitting) { return }
+      this.ephemeral.isSubmitting = true
       try {
         await sbp('gi.actions/user/login', {
           username: this.form.name,
@@ -77,6 +82,7 @@ export default {
         console.error('FormLogin.vue login() error:', e)
         this.$refs.formMsg.danger(e.message)
       }
+      this.ephemeral.isSubmitting = false
     },
     forgotPassword () {
       // TODO: implement forgot password
