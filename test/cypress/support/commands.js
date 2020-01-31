@@ -133,14 +133,14 @@ Cypress.Commands.add('giSetDisplayName', (name) => {
 
 Cypress.Commands.add('giCreateGroup', (name, {
   image = 'imageTest.png',
-  values = 'Testing group values',
+  sharedValues = 'Testing group values',
   mincome = 200,
   bypassUI = false
 } = {}) => {
   if (bypassUI) {
     cyBypassUI('group_create', {
       name,
-      sharedValues: values,
+      sharedValues,
       mincomeAmount: mincome,
       mincomeCurrency: 'USD',
       thresholdChange: 0.8,
@@ -162,7 +162,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
 
   cy.getByDT('nextBtn').click()
 
-  cy.get('textarea[name="sharedValues"]').type(values)
+  cy.get('textarea[name="sharedValues"]').type(sharedValues)
   cy.getByDT('nextBtn').click()
 
   cy.get('input[name="mincomeAmount"]').type(mincome)

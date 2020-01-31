@@ -24,10 +24,10 @@ describe('Signup, Profile and Login', () => {
     cy.getByDT('settingsBtn').click()
 
     cy.fixture(profilePicture, 'base64').then(fileContent => {
-      cy.get('[data-test="profilePicture"]').upload({ fileContent, fileName: profilePicture, mimeType: 'image/png' }, { subjectType: 'input' })
+      cy.get('[data-test="avatar"]').upload({ fileContent, fileName: profilePicture, mimeType: 'image/png' }, { subjectType: 'input' })
     })
 
-    cy.getByDT('pictureMsg').should('contain', 'Picture updated!')
+    cy.getByDT('avatarMsg').should('contain', 'Avatar updated!')
 
     cy.getByDT('displayName').clear().type('John Bot')
     cy.getByDT('bio').clear().type('Born in a test case')

@@ -15,9 +15,9 @@
           accept='image/*'
           @change='fileChange($event.target.files)'
           placeholder='http://'
-          data-test='picture'
+          data-test='avatar'
         )
-      banner-scoped.c-formMsg(ref='formMsg' data-test='formMsg')
+      banner-scoped.c-formMsg(ref='formMsg' data-test='avatarMsg')
 </template>
 <script>
 import sbp from '~/shared/sbp.js'

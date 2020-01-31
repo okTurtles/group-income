@@ -16,6 +16,7 @@ page.c-page
           @input='debounceField("groupName")'
           @blur='updateField("groupName")'
           v-error:groupName=''
+          data-test='groupName'
         )
 
       label.field
@@ -27,6 +28,7 @@ page.c-page
           @input='debounceField("sharedValues")'
           @blur='updateField("sharedValues")'
           v-error:sharedValues=''
+          data-test='sharedValues'
         )
 
       label.field
@@ -44,7 +46,7 @@ page.c-page
 
         i18n.helper This is the currency that will be displayed for every member of the group, across the platform.
 
-      banner-scoped(ref='formMsg' data-test='profileMsg')
+      banner-scoped(ref='formMsg' data-test='formMsg')
 
       .buttons
         i18n.is-success(
