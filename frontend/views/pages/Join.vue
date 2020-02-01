@@ -99,6 +99,7 @@ export default {
       if (this.ourUsername) {
         if (this.$store.state.contracts[this.$route.query.groupId]) {
           this.$router.push({ path: '/dashboard' })
+          return
         } else {
           await this.accept()
           return
