@@ -196,7 +196,7 @@ button.link {
   border-bottom: 1px solid $primary_1;
   color: $primary_0;
   font-weight: 600;
-  display: inline-block;
+  display: inline; // so border breaks correctly on multiple lines.
   line-height: 1.4; // better underline visually
 
   &::after {

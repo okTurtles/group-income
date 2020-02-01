@@ -1,4 +1,6 @@
 <script>
+import sbp from '~/shared/sbp.js'
+
 // From https://markus.oberlehner.net/blog/transition-to-height-auto-with-vue/
 export default {
   name: 'TransitionExpand',
@@ -13,6 +15,8 @@ export default {
           element.style.height = 'auto'
         },
         enter (element) {
+          if (sbp('state/vuex/state').reducedMotion) { return }
+
           const { width } = getComputedStyle(element)
           element.style.width = width
           element.style.position = 'absolute'
@@ -34,6 +38,8 @@ export default {
           })
         },
         leave (element) {
+          if (sbp('state/vuex/state').reducedMotion) { return }
+
           const { height } = getComputedStyle(element)
           element.style.height = height
 
@@ -64,8 +70,8 @@ export default {
 </style>
 
 <style>
-.expand-enter-active,
-.expand-leave-active {
+#app:not(.js-reducedMotion) .expand-enter-active,
+#app:not(.js-reducedMotion) .expand-leave-active {
   opacity: 1;
   transition:
     height 200ms cubic-bezier(0.82, 0.09, 0.4, 0.92),
@@ -73,8 +79,8 @@ export default {
   overflow: hidden;
 }
 
-.expand-enter,
-.expand-leave-to {
+#app:not(.js-reducedMotion) .expand-enter,
+#app:not(.js-reducedMotion) .expand-leave-to {
   opacity: 0;
   height: 0;
 }

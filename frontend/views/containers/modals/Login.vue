@@ -27,7 +27,7 @@ export default {
   methods: {
     submit () {
       this.$refs.modal.close()
-      if (this.$store.state.currentGroupId) this.$router.push({ path: '/dashboard' })
+      this.$router.push({ path: '/dashboard' })
     },
     showSignupModal () {
       sbp('okTurtles.events/emit', REPLACE_MODAL, 'Signup')

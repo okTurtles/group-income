@@ -16,23 +16,58 @@ Cypress.Commands.add('getByDT', (element, otherSelector = '') => {
   return cy.get(`${otherSelector}[data-test="${element}"]`)
 })
 
-// NOTE: We can go a step further and not use UI to do repetitive tasks.
-// https://docs.cypress.io/guides/getting-started/testing-your-app.html#Fully-test-the-login-flow-%E2%80%93-but-only-once
-Cypress.Commands.add('giSignup', (userName, {
+function cyBypassUI (action, params) {
+  const query = Object.keys(params).reduce((query, param) => {
+    return query + `&${param}=${params[param]}`
+  }, `?action=${action}`)
+
+  cy.log(`Bypassing UI ::: ${action}`)
+
+  // Navigate to /bypass-ui using Vue instead of cy.visit!
+  // There's some issue between cypress and forageStorage (indexedDB).
+  // If we go to a page using cy.visit a refresh is caused
+  // (because we are changing pages the old fashion way).
+  // This refresh seems to happen too soon and the indexedDB is somehow lost.
+  // On page load, when we try to auto-login the user (from the indexedDB), it fails.
+  // But if we navigate without refreshing the page (a.k.a using Vue),
+  // the state is preserved and we don't lose any data.
+  cy.getByDT('cy_bypassUI')
+    .then(([$link]) => {
+      $link.setAttribute('data-url', `/bypass-ui${query}`)
+    }).click()
+    .then(([$link]) => {
+      // Reset data-url to allow manual click while debugging cypress
+      $link.setAttribute('data-url', '')
+    })
+
+  cy.getByDT('actionName').should('text', action)
+  cy.getByDT('feedbackMsg').should('text', `${action} succeded!`)
+
+  cy.getByDT('finalizeBtn').click()
+}
+
+Cypress.Commands.add('giSignup', (username, {
   password = '123456789',
   isInvitation = false,
   groupName,
-  displayName
+  bypassUI = false
 } = {}) => {
-  if (!isInvitation) {
-    cy.getByDT('signupBtn').click()
-  }
-  cy.getByDT('signName').clear().type(userName)
-  cy.getByDT('signEmail').clear().type(`${userName}@email.com`)
-  cy.getByDT('password').type(password)
+  const email = `${username}@email.com`
 
-  cy.getByDT('signSubmit').click()
-  cy.getByDT('closeModal').should('not.exist')
+  if (bypassUI) {
+    cyBypassUI('user_signup', { username, email, password })
+  } else {
+    if (!isInvitation) {
+      cy.getByDT('signupBtn').click()
+    }
+    cy.getByDT('signName').clear().type(username)
+    cy.getByDT('signEmail').clear().type(email)
+    cy.getByDT('password').type(password)
+
+    cy.getByDT('signSubmit').click()
+    cy.getByDT('closeModal').should('not.exist')
+  }
+
   if (isInvitation) {
     cy.getByDT('welcomeGroup').should('contain', `Welcome to ${groupName}!`)
   } else {
@@ -40,22 +75,29 @@ Cypress.Commands.add('giSignup', (userName, {
   }
 })
 
-Cypress.Commands.add('giLogin', (userName, password = '123456789') => {
-  cy.getByDT('loginBtn').click()
-  cy.getByDT('loginName').clear().type(userName)
-  cy.getByDT('password').clear().type(password)
+Cypress.Commands.add('giLogin', (username, {
+  password = '123456789',
+  bypassUI
+} = {}) => {
+  if (bypassUI) {
+    cyBypassUI('user_login', { username, password })
+  } else {
+    cy.getByDT('loginBtn').click()
+    cy.getByDT('loginName').clear().type(username)
+    cy.getByDT('password').clear().type(password)
 
-  cy.getByDT('loginSubmit').click()
-  cy.getByDT('closeModal').should('not.exist')
+    cy.getByDT('loginSubmit').click()
+    cy.getByDT('closeModal').should('not.exist')
+  }
 
   // We changed pages (to dashboard or create group)
   // so there's no login button anymore
   cy.getByDT('loginBtn').should('not.exist')
 
-  // make giLogin wait for contracts to finish syncing
+  // wait for contracts to finish syncing
   cy.getByDT('app').then(([el]) => {
-    cy.wrap(el.getAttribute('data-logged-in')).should('eq', 'yes')
-    cy.wrap(el.getAttribute('data-sync')).should('be.empty')
+    cy.get(el).should('have.attr', 'data-logged-in', 'yes')
+    cy.get(el).should('have.attr', 'data-sync', '')
   })
 })
 
@@ -73,7 +115,7 @@ Cypress.Commands.add('giLogout', ({ hasNoGroup = false } = {}) => {
 
 Cypress.Commands.add('giSwitchUser', (user) => {
   cy.giLogout()
-  cy.giLogin(user)
+  cy.giLogin(user, { bypassUI: true })
 })
 
 Cypress.Commands.add('closeModal', () => {
@@ -92,8 +134,25 @@ Cypress.Commands.add('giSetDisplayName', (name) => {
 Cypress.Commands.add('giCreateGroup', (name, {
   image = 'imageTest.png',
   values = 'Testing group values',
-  mincome = 200
+  mincome = 200,
+  bypassUI = false
 } = {}) => {
+  if (bypassUI) {
+    cyBypassUI('group_create', {
+      name,
+      sharedValues: values,
+      mincomeAmount: mincome,
+      mincomeCurrency: 'USD',
+      thresholdChange: 0.8,
+      thresholdMemberApproval: 0.8,
+      thresholdMemberRemoval: 0.8
+    })
+
+    cy.url().should('eq', 'http://localhost:8000/app/dashboard')
+    cy.getByDT('groupName').should('contain', name)
+    return
+  }
+
   cy.getByDT('createGroup').click()
   cy.getByDT('groupName').type(name)
 
@@ -110,13 +169,13 @@ Cypress.Commands.add('giCreateGroup', (name, {
 
   cy.getByDT('nextBtn').click()
 
-  // TODO - It seems we are not testing the Percentages Rules ATM.
-  // so, let's just move on...
+  // TODO - It seems we are not testing the Percentages Rules ATM, so, let's just move on...
 
   cy.getByDT('finishBtn').click()
 
   cy.getByDT('welcomeGroup').should('contain', `Welcome to ${name}!`)
   cy.getByDT('toDashboardBtn').click()
+
   cy.url().should('eq', 'http://localhost:8000/app/dashboard')
 })
 
@@ -165,7 +224,8 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
   isLoggedIn,
   inviteCreator,
   displayName,
-  actionBeforeLogout
+  actionBeforeLogout,
+  bypassUI
 }) => {
   cy.visit(invitationLink)
 
@@ -179,6 +239,7 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
     cy.getByDT('invitationMessage').should('contain', inviteMessage)
     cy.giSignup(username, { isInvitation: true, groupName })
   }
+
   cy.getByDT('toDashboardBtn').click()
   cy.url().should('eq', 'http://localhost:8000/app/dashboard')
 
@@ -191,7 +252,7 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
 })
 
 Cypress.Commands.add('giAddRandomIncome', () => {
-  cy.getByDT('openIncomeDetailModal').click()
+  cy.getByDT('openIncomeDetailsModal').click()
   let salary = Math.floor(Math.random() * (600 - 20) + 20)
   let action = 'dontNeedsIncomeRadio'
   // Add randomly negative or positive income

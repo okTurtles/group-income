@@ -11,6 +11,7 @@ export class GIErrorIgnoreAndBanIfGroup extends Error {
     }
   }
 }
+
 export class GIErrorDropAndReprocess extends Error {
   constructor (...params) {
     super(...params)
@@ -22,6 +23,19 @@ export class GIErrorDropAndReprocess extends Error {
 }
 
 export class GIErrorUnrecoverable extends Error {
+  constructor (...params) {
+    super(...params)
+    this.name = this.constructor.name
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, this.constructor)
+    }
+  }
+}
+
+// -----------------------
+
+// Used to throw human readable errors on UI.
+export class GIErrorUIRuntimeError extends Error {
   constructor (...params) {
     super(...params)
     this.name = this.constructor.name

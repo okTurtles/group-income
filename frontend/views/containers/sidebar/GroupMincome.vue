@@ -1,6 +1,6 @@
 <template lang='pug'>
 div(data-test='groupMincome')
-  i18n.is-title-4(tag='h4') Minimum Income
+  i18n.is-title-4(tag='h3') Minimum Income
 
   p.is-title-2.income(data-test='minIncome') {{ groupMincomeFormatted }}
 

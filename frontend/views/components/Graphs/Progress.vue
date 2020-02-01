@@ -78,9 +78,13 @@ export default {
   // Animation to modify the bar
   transition: width 450ms ease-in-out;
   // Animation to show up the bar
-  transform: scaleX(0);
+  transform: translateY(-50%) scaleX(0);
   transform-origin: 0 0;
   animation: progress 700ms ease-out 350ms forwards;
+
+  .js-reducedMotion & {
+    transform: translateY(-50%) scaleX(1);
+  }
 
   .is-completed & {
     background-color: $success_0;

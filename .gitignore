@@ -24,6 +24,7 @@
 .editorconfig
 *.sublime-workspace
 *.sublime-project
+.vscode
 
 # Misc
 /ignored
