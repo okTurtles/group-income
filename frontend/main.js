@@ -19,6 +19,7 @@ import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 import Navigation from './views/containers/navigation/Navigation.vue'
 import AppStyles from './views/components/AppStyles.vue'
 import Modal from './views/components/modal/Modal.vue'
+import CypressBypassUi from './views/containers/navigation/CypressBypassUI.vue'
 import './views/utils/translations.js'
 import './views/utils/vFocus.js'
 import './views/utils/vError.js'
@@ -84,6 +85,7 @@ async function startApp () {
     components: {
       AppStyles,
       BannerGeneral,
+      CypressBypassUi,
       Navigation,
       Modal
     },
@@ -140,13 +142,7 @@ async function startApp () {
     methods: {
       ...mapMutations([
         'setReducedMotion'
-      ]),
-      handleBypass (e) {
-        e.preventDefault()
-        // NOTE: Read Cypress commands.js cyBypassUI() for more details.
-        const path = e.target.getAttribute('data-url') || '/bypass-ui'
-        this.$router.push({ path })
-      }
+      ])
     },
     store // make this and all child components aware of the new store
   }).$mount('#app')
