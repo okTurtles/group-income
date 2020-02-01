@@ -3,7 +3,7 @@
   i18n.is-title-4.steps-title(tag='h4') 1. Create a new group
 
   label.avatar(for='groupPicture')
-    avatar(ref='picture' src='/assets/images/default-group-avatar.png')
+    avatar(ref='picture' size='xl' src='/assets/images/default-group-avatar.png')
     //- we don't need to add any code to trigger the hidden file input field
     //- because we use this label(for='elem') trick:
     //- https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications#Using_a_label_element_to_trigger_a_hidden_file_input_element
@@ -94,38 +94,16 @@ export default {
 
 .avatar {
   height: 10rem;
-  margin: 40px auto 32px auto;
+  margin: $spacer*2.5 auto $spacer-lg auto;
   text-align: center;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
 
-  .c-avatar {
-    width: 8.25rem;
-    height: 8.25rem;
-  }
-
   .link {
     display: inline-block;
-    margin-top: 7px;
-
-    @include tablet {
-      display: block;
-      margin-top: 0;
-    }
-  }
-
-  img {
-    display: block;
-    width: 113px;
-    height: 113px;
-    margin: 0 auto;
-
-    @include tablet {
-      width: 71px;
-      height: 71px;
-    }
+    margin-top: $spacer-sm;
   }
 }
 

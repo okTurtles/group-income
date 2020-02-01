@@ -3,7 +3,7 @@
   main-header(:description='summary.description' :router-back='summary.routerBack')
 
     template(slot='title')
-      avatar.c-header-avatar(:src='summary.picture' alt='')
+      avatar.c-header-avatar(:src='summary.picture' alt='' size='sm')
         i.c-header-private(
           v-if='summary.private !== undefined'
           :class='{"icon-globe": summary.private === false, "icon-lock": summary.private === true}'

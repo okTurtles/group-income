@@ -42,7 +42,7 @@ page(
         :key='index'
       )
         .c-info
-          user-image.c-avatar(:username='payment.to')
+          avatar-user.c-avatar(:username='payment.to' size='sm')
           div(role='alert')
             i18n(
               tag='p'
@@ -85,8 +85,7 @@ page(
 import sbp from '~/shared/sbp.js'
 import { mapGetters } from 'vuex'
 import Page from '@components/Page.vue'
-import Avatar from '@components/Avatar.vue'
-import UserImage from '@components/UserImage.vue'
+import AvatarUser from '@components/AvatarUser.vue'
 import ProgressBar from '@components/graphs/Progress.vue'
 import currencies from '@view-utils/currencies.js'
 import Tooltip from '@components/Tooltip.vue'
@@ -99,8 +98,7 @@ export default {
   name: 'PayGroup',
   components: {
     Page,
-    Avatar,
-    UserImage,
+    AvatarUser,
     ProgressBar,
     Tooltip,
     SvgContributions
@@ -367,16 +365,8 @@ export default {
   }
 
   .c-avatar {
-    // REVIEW: without nesting it doesnt work
-    min-width: 1.5rem;
-    width: 1.5rem;
     margin-right: $spacer;
     margin-bottom: $spacer-sm;
-
-    @include tablet {
-      min-width: 2.5rem;
-      width: 2.5rem;
-    }
   }
 }
 

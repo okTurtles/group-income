@@ -3,6 +3,7 @@
   avatar(
     :src='groupSettings.groupPicture'
     :aria-label='L("{groupName}\'s avatar", { groupName: groupSettings.groupName })'
+    size='xl'
   )
 
   i18n.is-title-1.c-title(
@@ -68,11 +69,6 @@ export default {
   align-items: center;
   min-height: 100vh;
 
-  .c-avatar {
-    height: 8rem;
-    width: 8rem;
-  }
-
   .c-title,
   .c-description {
     text-align: center;
@@ -81,10 +77,6 @@ export default {
 
   .c-title {
     margin-top: $spacer;
-
-    @include phone {
-      font-size: $size_2;
-    }
   }
 
   .c-description {

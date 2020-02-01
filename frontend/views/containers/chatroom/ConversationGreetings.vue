@@ -5,6 +5,7 @@
     :key='`user-${index}`'
     :src='user.picture'
     :alt='user.displayName || user.name'
+    size='sm'
   )
   message-notification {{text}}
 </template>

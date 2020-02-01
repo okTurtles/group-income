@@ -15,6 +15,7 @@
       avatar(
         v-if='list.conversations[id].picture'
         :src='list.conversations[id].picture'
+        size='sm'
       )
 
       span {{list.conversations[id].displayName || list.conversations[id].name}}

@@ -11,9 +11,7 @@ ul.c-group-list(v-if='groupsByName.length')
       :text='group.groupName'
     )
       button.c-group-picture.is-unstyled(@click='handleMenuSelect(group.contractID)')
-        avatar.c-avatar(
-          :src='$store.state[group.contractID].settings.groupPicture'
-        )
+        avatar.c-avatar(:src='$store.state[group.contractID].settings.groupPicture')
 
   li.c-group-list-item
     tooltip(
@@ -91,7 +89,7 @@ export default {
     border: 1px solid transparent;
     border-radius: 50%;
     transform: scale(0.7);
-    transition: all .25s cubic-bezier(0.18, 0.89, 0.32, 1.38);
+    transition: all 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.38);
   }
 
   &.is-active {
@@ -104,7 +102,8 @@ export default {
 
   &:not(.is-active) {
     cursor: pointer;
-    &:focus::before
+
+    &:focus::before,
     &:hover::before {
       border-color: $white;
       border-width: 3px;
@@ -114,14 +113,12 @@ export default {
 }
 
 @keyframes spin {
-  0%{transform: rotate(45deg); filter:hue-rotate(0deg); border-color: $primary_0 transparent transparent; };
-  50%{transform: rotate(315deg); filter:hue-rotate(360deg); border-color: $primary_0 transparent transparent;};
-  100%{ transform: rotate(585deg); border-color: $white;}
+  0% { transform: rotate(45deg); filter: hue-rotate(0deg); border-color: $primary_0 transparent transparent; }
+  50% { transform: rotate(315deg); filter: hue-rotate(360deg); border-color: $primary_0 transparent transparent; }
+  100% { transform: rotate(585deg); border-color: $white; }
 }
 
 .c-avatar {
-  width: 2.5rem;
-  height: 2.5rem;
   position: relative;
   z-index: 1;
 }

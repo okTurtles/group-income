@@ -16,7 +16,7 @@
       :class='member.pending && "is-pending"'
       :key='username'
     )
-      user-image(:username='username')
+      avatar-user(:username='username' size='sm')
 
       .c-name.has-ellipsis(data-test='username')
         | {{ username }}
@@ -55,16 +55,16 @@
 import { mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
-import Tooltip from '@components/Tooltip.vue'
-import UserImage from '@components/UserImage.vue'
+import AvatarUser from '@components/AvatarUser.vue'
 import GroupMemberMenu from '@containers/dashboard/GroupMemberMenu.vue'
+import Tooltip from '@components/Tooltip.vue'
 
 export default {
   name: 'GroupMembers',
   components: {
-    Tooltip,
-    UserImage,
-    GroupMemberMenu
+    AvatarUser,
+    GroupMemberMenu,
+    Tooltip
   },
   methods: {
     invite () {
