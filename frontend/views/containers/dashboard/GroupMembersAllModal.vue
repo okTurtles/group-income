@@ -62,7 +62,7 @@ import { mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
 import ModalBaseTemplate from '@components/Modal/ModalBaseTemplate.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'
-import UserImage from '@containers/UserImage.vue'
+import UserImage from '@components/UserImage.vue'
 
 export default {
   name: 'IncomeDetails',
