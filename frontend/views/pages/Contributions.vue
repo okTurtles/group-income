@@ -85,7 +85,7 @@ page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
 
         button.button.is-small.c-cta(
           v-if='groupMembersCount === 1'
-          @click='openModal("InviteByLink")'
+          @click='openModal("InvitationLinkModal")'
         )
           i.icon-plus.is-prefix
           i18n Add members to group
@@ -147,12 +147,11 @@ import { mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import CalloutCard from '@components/CalloutCard.vue'
 import SvgContributions from '@svgs/contributions.svg'
-import Page from '@pages/Page.vue'
+import Page from '@components/Page.vue'
 import PageSection from '@components/PageSection.vue'
 import currencies from '@view-utils/currencies.js'
-import GroupMincome from '@containers/sidebar/GroupMincome.vue'
-import Contribution from '@components/Contribution.vue'
-import ContributionItem from '@components/ContributionItem.vue'
+import Contribution from '@containers/contributions/Contribution.vue'
+import ContributionItem from '@containers/contributions/ContributionItem.vue'
 
 export default {
   name: 'Contributions',
@@ -160,7 +159,6 @@ export default {
     Page,
     PageSection,
     CalloutCard,
-    GroupMincome,
     Contribution,
     ContributionItem,
     SvgContributions

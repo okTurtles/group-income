@@ -75,13 +75,12 @@ import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import { decimals } from '@view-utils/validators.js'
 import sbp from '~/shared/sbp.js'
-import InputAmount from './InputAmount.vue'
 import PaymentMethods from './PaymentMethods.vue'
+import GroupPledgesGraph from './GroupPledgesGraph.vue'
 import Tooltip from '@components/Tooltip.vue'
-import ModalBaseTemplate from '@components/Modal/ModalBaseTemplate.vue'
-import BannerScoped from '@components/BannerScoped.vue'
+import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
+import BannerScoped from '@components/banners/BannerScoped.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'
-import GroupPledgesGraph from '../GroupPledgesGraph.vue'
 import L from '@view-utils/translations.js'
 
 export default {
@@ -91,7 +90,6 @@ export default {
     ModalBaseTemplate,
     TransitionExpand,
     BannerScoped,
-    InputAmount,
     Tooltip,
     PaymentMethods,
     GroupPledgesGraph

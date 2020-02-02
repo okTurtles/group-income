@@ -61,7 +61,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
         data-test='saveBtn'
       ) Save changes
 
-  invite-links
+  invitations-table
 
   page-section(:title='L("Leave Group")')
     i18n(
@@ -72,7 +72,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
     i18n.is-danger.is-outlined(
       tag='button'
       ref='leave'
-      @click='openProposal("LeaveGroupModal")'
+      @click='openProposal("GroupLeaveModal")'
       data-test='LeaveBtn'
     ) Leave group
 
@@ -82,7 +82,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
     i18n.is-danger.is-outlined(
       tag='button'
       ref='delete'
-      @click='openProposal("DeleteGroup")'
+      @click='openProposal("GroupDeletionModal")'
       data-test='deleteBtn'
     ) Delete group
 </template>
@@ -95,9 +95,9 @@ import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import currencies from '@view-utils/currencies.js'
 
-import Page from '@pages/Page.vue'
+import Page from '@components/Page.vue'
 import PageSection from '@components/PageSection.vue'
-import InviteLinks from '@components/GroupSettings/InviteLinks.vue'
+import InvitationsTable from '@containers/group-settings/InvitationsTable.vue'
 
 export default {
   name: 'GroupSettings',
@@ -105,7 +105,7 @@ export default {
   components: {
     Page,
     PageSection,
-    InviteLinks
+    InvitationsTable
   },
   data () {
     return {

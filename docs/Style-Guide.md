@@ -7,6 +7,7 @@ Please read all the sections below before writing a single line of code.
 - **[CSS Style Guide](#css-style-guide)**
 - **[Accessibility Style Guide](#css-style-guide)**
 - **[Testing Style Guide](#testing-style-guide)**
+- **[Folder Structure Style Guide](#folder-structure-style-guide)**
 - **[Feedback Messages](#feedback-messages)**
 - **[Group Income Data Model Rules](#group-income-data-model-rules)**
 - **[SBP Paradigm](#sbp) (Soon!)**
@@ -132,7 +133,7 @@ banner-scoped(ref='formMsg')
 ```
 
 ```js
-import BannerScoped from '@components/BannerScoped.vue'
+import BannerScoped from '@components/banners/BannerScoped.vue'
 
 submit () {
   // If everything went right...
@@ -156,12 +157,35 @@ This banner informs the user that there's something going on with the app itself
 
 ```js
 // main.js
-import BannerGeneral from './views/components/BannerGeneral.vue'
+import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 
 this.$refs.bannerGeneral.show(L('Trying to reconnect...'), 'wifi')
 ```
 
 NOTE: this type of banner is under construction and will change soon.
+
+## Folder Structure Style Guide
+
+### Naming Conventions
+- The folders are `kebab-case`
+- Vue files are `PascalCase.vue` - follow [Vue Style Guide](https://vuejs.org/v2/style-guide/#Order-of-words-in-component-names-strongly-recommended)
+- JS files are `camelCase.js`
+
+### Structure
+
+```bash
+frontend/
+└─ main.js # App entry point
+└─ assets/ # Any static file including Styles.
+└─ controller/
+└─ model/
+└─ utils/ 
+└─ views/ # where Vue components live
+    └─ components/ # Vue components reused across the app places.
+    └─ containers/ # Vue components related to a specific part of the app, not reusable.
+    └─ pages/ # Vue components connected to a route
+    └─ utils/ # Utils used only within /frontend/views
+```
 
 ## Group Income Data Model Rules
 

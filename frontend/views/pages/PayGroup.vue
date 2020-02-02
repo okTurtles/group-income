@@ -84,10 +84,10 @@ page(
 <script>
 import sbp from '~/shared/sbp.js'
 import { mapGetters } from 'vuex'
-import Page from '@pages/Page.vue'
+import Page from '@components/Page.vue'
 import Avatar from '@components/Avatar.vue'
-import UserImage from '@containers/UserImage.vue'
-import ProgressBar from '@components/Graphs/Progress.vue'
+import UserImage from '@components/UserImage.vue'
+import ProgressBar from '@components/graphs/Progress.vue'
 import currencies from '@view-utils/currencies.js'
 import Tooltip from '@components/Tooltip.vue'
 import { OPEN_MODAL } from '@utils/events.js'
@@ -311,7 +311,7 @@ export default {
       }
     },
     seeHistory () {
-      sbp('okTurtles.events/emit', OPEN_MODAL, 'PayGroupHistory')
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'PayGroupHistoryModal')
     }
   }
 }
