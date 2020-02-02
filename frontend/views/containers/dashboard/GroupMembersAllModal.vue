@@ -58,7 +58,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
           :key='username'
         )
           .c-identity
-            user-image(:username='username')
+            avatar-user(:username='username' size='sm')
             .c-name(data-test='username')
               strong {{ displayName ? displayName : username }}
               .c-display-name(
@@ -87,14 +87,14 @@ import sbp from '~/shared/sbp.js'
 import { mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
-import UserImage from '@components/UserImage.vue'
+import AvatarUser from '@components/AvatarUser.vue'
 import GroupMemberMenu from '@containers/dashboard/GroupMemberMenu.vue'
 
 export default {
   name: 'GroupMembersAllModal',
   components: {
     ModalBaseTemplate,
-    UserImage,
+    AvatarUser,
     GroupMemberMenu
   },
   data () {

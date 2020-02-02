@@ -47,10 +47,10 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'groupProfiles'
+      'ourGroupProfile'
     ]),
     profilePicture () {
-      const profile = this.$store.state[this.groupProfiles[this.username].contractID]
+      const profile = this.ourGroupProfile && this.$store.state[this.ourGroupProfile.contractID]
       return profile && profile.attributes && profile.attributes.picture
     },
     pictureURL () {
