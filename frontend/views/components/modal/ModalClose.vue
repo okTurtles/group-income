@@ -49,9 +49,8 @@ export default {
   }
 
   &.fullscreen {
-    top: $spacer*1.5;
-
     @include desktop {
+      top: $spacer*1.5;
       position: fixed;
       right: $spacer*2.5;
     }

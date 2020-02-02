@@ -25,8 +25,8 @@
   max-height: 0;
 }
 
-.replacelist-enter-active,
-.replacelist-leave-active {
+.replace-list-enter-active,
+.replace-list-leave-active {
   transition: max-height 0.15s ease, opacity 0.15s ease;
   opacity: 1;
 
@@ -35,12 +35,12 @@
   overflow: hidden;
 }
 
-.replacelist-enter-active {
+.replace-list-enter-active {
   transition: max-height 0.3s ease, opacity 0.3s ease 0.2s;
 }
 
-.replacelist-enter,
-.replacelist-leave-to {
+.replace-list-enter,
+.replace-list-leave-to {
   max-height: 0;
   opacity: 0;
 }
