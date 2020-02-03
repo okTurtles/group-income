@@ -37,7 +37,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
           tr.c-group-member(
             v-for='(member, username) in searchResult'
             :class='member.pending && "is-pending"'
-            :key='username'
+            :key='member.name'
           )
             td.c-identity
               user-image(:username='username')
