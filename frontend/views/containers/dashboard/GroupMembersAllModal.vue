@@ -7,7 +7,6 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
     .c-content.card.c-card
       form(
         @submit.prevent='submit'
-        novalidate='true'
       )
         label.field
           .input-combo
@@ -36,7 +35,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
       table.table.c-table(v-if='searchResult')
         transition-group.c-group-list(name='slide-list' tag='tbody')
           tr.c-group-member(
-            v-for='(member, username, index) in searchResult'
+            v-for='(member, username) in searchResult'
             :class='member.pending && "is-pending"'
             :key='username'
           )
@@ -51,26 +50,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
               ) @{{ ourUsername }}
 
             td.c-actions
-              menu-parent
-                menu-trigger.is-icon-small
-                  i.icon-ellipsis-v
-
-                menu-content.c-actions-content
-                  ul
-                    menu-item(
-                      tag='button'
-                      item-id='message'
-                      icon='comment'
-                      @click='toChat'
-                    )
-                      i18n Send message
-                    menu-item(
-                      tag='button'
-                      item-id='remove'
-                      icon='times'
-                      @click='openModal("RemoveMember")'
-                    )
-                      i18n Remove member
+              group-member-menu
 
               .c-tablet
                 button.button.is-outlined.is-small(
@@ -86,24 +66,19 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
-import { validationMixin } from 'vuelidate'
-import { OPEN_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
+import { mapGetters } from 'vuex'
+import { OPEN_MODAL } from '@utils/events.js'
 import ModalBaseTemplate from '@components/Modal/ModalBaseTemplate.vue'
 import UserImage from '@components/UserImage.vue'
-import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
+import GroupMemberMenu from '@containers/dashboard/GroupMemberMenu.vue'
 
 export default {
   name: 'IncomeDetails',
-  mixins: [validationMixin],
   components: {
     ModalBaseTemplate,
     UserImage,
-    MenuParent,
-    MenuTrigger,
-    MenuContent,
-    MenuItem
+    GroupMemberMenu
   },
   data () {
     return {
@@ -115,26 +90,21 @@ export default {
   computed: {
     ...mapGetters([
       'groupProfiles',
+      'globalProfile',
       'groupMembersCount'
     ]),
     searchResult () {
-      if (this.form.search) {
-        return Object.keys(this.groupProfiles)
-          .filter(username => {
-            const profile = this.$store.getters.globalProfile(username)
-            let isCandidate = profile.name.toUpperCase().indexOf(this.form.search.toUpperCase()) > -1
-            if (!isCandidate && profile.displayName) {
-              isCandidate = profile.displayName.toUpperCase().indexOf(this.form.search.toUpperCase()) > -1
-            }
-            return isCandidate
-          })
-          .reduce((gp, key) => {
-            gp[key] = this.groupProfiles[key]
-            return gp
-          }, {})
-      } else {
-        return this.groupProfiles
-      }
+      if (!this.form.search) return this.groupProfiles
+      return Object.keys(this.groupProfiles)
+        .filter(username => {
+          const isNameinList = (n) => n.toUpperCase().indexOf(this.form.search.toUpperCase()) > -1
+          const { name, displayName } = this.globalProfile(username)
+          return isNameinList(name) || (displayName === undefined ? false : isNameinList(displayName))
+        })
+        .reduce((groupProfiles, key) => {
+          groupProfiles[key] = this.groupProfiles[key]
+          return groupProfiles
+        }, {})
     }
   },
   methods: {
