@@ -221,11 +221,6 @@ export default {
   }
 }
 
-::v-deep .c-content {
-  width: 200px;
-  margin-left: -182px;
-}
-
 .button + .button {
   margin-left: .5rem;
 }

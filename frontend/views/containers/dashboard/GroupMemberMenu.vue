@@ -3,7 +3,6 @@ menu-parent
   menu-trigger.is-icon-small
     i.icon-ellipsis-v
 
-  // TODO later - be a drawer on mobile
   menu-content.c-actions-content
     ul
       menu-item(
@@ -43,3 +42,10 @@ export default {
   }
 }
 </script>
+
+<style lang="scss" scoped>
+.c-content {
+  width: 200px;
+  margin-left: -182px;
+}
+</style>
