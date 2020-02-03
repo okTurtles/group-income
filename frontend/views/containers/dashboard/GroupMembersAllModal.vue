@@ -24,7 +24,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
           v-if='form.search'
           tag='div'
           :args='{ searchCount: Object.keys(searchResult).length, searchTerm: form.search}'
-        ) Showing {searchCount} result for {searchTerm}
+        ) Showing {searchCount} result for "{searchTerm}"
 
         i18n.c-member-count.has-text-1(
           v-else
