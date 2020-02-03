@@ -293,7 +293,7 @@ export default {
   display: flex;
   flex-direction: column-reverse;
   align-items: center;
-  transition: opacity 0.2s ease-in 0.2s, transform 0.2s ease-out !important;
+  transition: opacity 0.2s ease-in 0.2s, transform 0.2s ease-out;
 
   .c-tag-amount {
     color: $warning_0;
@@ -347,17 +347,14 @@ export default {
 }
 
 .g-animate {
-  // TODO: remove important once test are done
-  transition: transform 0.7s ease-out !important;
+  transition: transform 0.7s ease-out;
 }
 
 .g-animate-opacity {
-  // TODO: remove important once test are done
-  transition: opacity 0.7s ease-out !important;
+  transition: opacity 0.7s ease-out;
 }
 
 .g-animate-delay {
-  // TODO: remove important once test are done
-  transition-delay: 0.5s !important;
+  transition-delay: 0.5s;
 }
 </style>
