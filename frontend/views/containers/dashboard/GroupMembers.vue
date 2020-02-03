@@ -5,14 +5,14 @@
 
     button.button.is-small.is-outlined(
       data-test='inviteButton'
-      @click='openModal(groupShouldPropose ? "AddMembers" : "InvitationLinkModal")'
+      @click='openModal(groupShouldPropose ? "AddMembers" : "InviteByLink")'
     )
       i.icon-plus.is-prefix
       i18n Add
 
   ul.c-group-list
     li.c-group-member(
-      v-for='(member, username, index) in firstTenMembers'
+      v-for='(member, username) in firstTenMembers'
       :class='member.pending && "is-pending"'
       :key='username'
     )
@@ -40,26 +40,7 @@
             :args='{ username }'
           ) We are waiting for {username} to join the group by using their unique invite link.
 
-      menu-parent(v-else)
-        menu-trigger.is-icon-small
-          i.icon-ellipsis-v
-
-        // TODO later - be a drawer on mobile
-        menu-content.c-actions-content
-          ul
-            menu-item(
-              tag='router-link' to='/chat'
-              item-id='message'
-              icon='comment'
-            )
-              i18n Send message
-            menu-item(
-              tag='button'
-              item-id='remove'
-              icon='times'
-              @click='openModal("RemoveMember")'
-            )
-              i18n Remove member
+      group-member-menu(v-else)
 
   i18n.link(
     tag='button'
@@ -71,21 +52,18 @@
 
 <script>
 import { mapGetters } from 'vuex'
+import { OPEN_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
 import Tooltip from '@components/Tooltip.vue'
 import UserImage from '@components/UserImage.vue'
-import { OPEN_MODAL } from '@utils/events.js'
-import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
+import GroupMemberMenu from '@containers/dashboard/GroupMemberMenu.vue'
 
 export default {
   name: 'GroupMembers',
   components: {
-    MenuParent,
-    MenuTrigger,
-    MenuContent,
-    MenuItem,
     Tooltip,
-    UserImage
+    UserImage,
+    GroupMemberMenu
   },
   methods: {
     invite () {
