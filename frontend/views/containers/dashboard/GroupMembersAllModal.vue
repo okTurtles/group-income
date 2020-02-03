@@ -67,7 +67,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
 import sbp from '~/shared/sbp.js'
 import { mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
-import ModalBaseTemplate from '@components/Modal/ModalBaseTemplate.vue'
+import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import UserImage from '@components/UserImage.vue'
 import GroupMemberMenu from '@containers/dashboard/GroupMemberMenu.vue'
 
