@@ -22,7 +22,7 @@ menu-parent
 </template>
 
 <script>
-import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/Menu/index.js'
+import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
 export default {
