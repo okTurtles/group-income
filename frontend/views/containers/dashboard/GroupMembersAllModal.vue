@@ -4,7 +4,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
     .c-header
       i18n.is-title-2.c-title(tag='h2') Group members
 
-    .c-content.card.c-card
+    .card.c-card
       form(
         @submit.prevent='submit'
       )
@@ -35,24 +35,22 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
       table.table.c-table(v-if='searchResult')
         transition-group.c-group-list(name='slide-list' tag='tbody')
           tr.c-group-member(
-            v-for='(member, username) in searchResult'
-            :class='member.pending && "is-pending"'
-            :key='member.name'
+            v-for='{username, name, displayName} in searchResult'
+            :key='username'
           )
             td.c-identity
               user-image(:username='username')
-              .c-name.has-ellipsis(data-test='username')
-                strong {{ member.displayName ? member.displayName : username }}
-
-              span(
-                data-test='profileName'
-                v-if='member.displayName'
-              ) @{{ ourUsername }}
+              .c-name(data-test='username')
+                strong {{ displayName ? displayName : name }}
+                .c-display-name(
+                  data-test='profileName'
+                  v-if='displayName'
+                ) @{{ name }}
 
             td.c-actions
               group-member-menu
 
-              .c-tablet
+              .c-actions-buttons
                 button.button.is-outlined.is-small(
                   @click='toChat'
                 )
@@ -94,17 +92,15 @@ export default {
       'groupMembersCount'
     ]),
     searchResult () {
-      if (!this.form.search) return this.groupProfiles
       return Object.keys(this.groupProfiles)
-        .filter(username => {
-          const isNameinList = (n) => n.toUpperCase().indexOf(this.form.search.toUpperCase()) > -1
+        .map(username => {
+          const inList = (n) => n.toUpperCase().indexOf(this.form.search.toUpperCase()) > -1
           const { name, displayName } = this.globalProfile(username)
-          return isNameinList(name) || (displayName === undefined ? false : isNameinList(displayName))
+          if (!this.form.search || inList(name) || (displayName ? inList(displayName) : false)) {
+            return { username, name, displayName }
+          }
         })
-        .reduce((groupProfiles, key) => {
-          groupProfiles[key] = this.groupProfiles[key]
-          return groupProfiles
-        }, {})
+        .filter(profile => profile, [])
     }
   },
   methods: {
@@ -154,7 +150,7 @@ export default {
   }
 }
 
-.c-content {
+.c-card {
   margin-top: 1.5rem;
 }
 
@@ -184,6 +180,11 @@ export default {
 
 .c-name {
   margin-left: 1.5rem;
+  min-width: 100%;
+}
+
+.c-display-name {
+  color: var(--text_1);
 }
 
 .c-group-member {
@@ -202,21 +203,15 @@ export default {
   border-bottom: 0;
 }
 
-.c-tablet {
+.c-actions-buttons {
   display: none;
+
+  i {
+    margin-right: .5rem;
+  }
 
   @include tablet {
     display: block;
-  }
-}
-
-.c-actions {
-  text-align: right;
-
-  .c-tablet {
-    i {
-      margin-right: .5rem;
-    }
   }
 }
 
@@ -226,9 +221,9 @@ export default {
   }
 }
 
-.c-content {
-  min-width: 200px;
-  left: -200px;
+::v-deep .c-content {
+  width: 200px;
+  margin-left: -182px;
 }
 
 .button + .button {
