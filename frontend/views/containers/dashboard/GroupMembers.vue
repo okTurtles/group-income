@@ -5,7 +5,7 @@
 
     button.button.is-small.is-outlined(
       data-test='inviteButton'
-      @click='openModal(groupShouldPropose ? "AddMembers" : "InviteByLink")'
+      @click='openModal(groupShouldPropose ? "AddMembers" : "InvitationLinkModal")'
     )
       i.icon-plus.is-prefix
       i18n Add
