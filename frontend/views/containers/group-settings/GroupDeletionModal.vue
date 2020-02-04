@@ -68,7 +68,7 @@ export default {
       'groupSettings'
     ]),
     code () {
-      return `DELETE ${this.groupSettings.groupName.toUpperCase()}`
+      return L('DELETE {GROUP_NAME}', { GROUP_NAME: this.groupSettings.groupName.toUpperCase() })
     }
   },
   methods: {
