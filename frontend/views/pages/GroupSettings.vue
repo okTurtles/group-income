@@ -3,7 +3,10 @@ page.c-page
   template(#title='') {{ L('Group Settings') }}
   template(#description='') {{ L('Changes to these settings will be visible to all group members') }}
 
-  avatar-upload(variant='group')
+  avatar-upload(
+    :avatar='$store.getters.groupSettings.groupPicture'
+    :sbpParams='sbpParams'
+  )
 
   page-section
     form(@submit.prevent='saveSettings')
@@ -141,6 +144,13 @@ export default {
     },
     currencies () {
       return currencies
+    },
+    sbpParams () {
+      return {
+        selector: 'gi.contracts/group/updateSettings/create',
+        contractID: this.$store.state.currentGroupId,
+        key: 'groupPicture'
+      }
     }
   },
   methods: {

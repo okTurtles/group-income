@@ -2,7 +2,10 @@
   .settings-container
     span.c-username @{{ ourUsername }}
 
-    avatar-upload(variant='user')
+    avatar-upload(
+      :avatar='$store.getters.ourUserIdentityContract.attributes.picture'
+      :sbpParams='sbpParams'
+    )
 
     section.card
       form(@submit.prevent='saveProfile')
@@ -119,6 +122,13 @@ export default {
     ]),
     attributes () {
       return this.$store.getters.ourUserIdentityContract.attributes || {}
+    },
+    sbpParams () {
+      return {
+        selector: 'gi.contracts/identity/setAttributes/create',
+        contractID: this.$store.state.loggedIn.identityContractID,
+        key: 'picture'
+      }
     }
   },
   methods: {

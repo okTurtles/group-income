@@ -4,7 +4,7 @@
     .c-avatar-wrapper
       label.c-avatar-label
         avatar.c-avatar-img(
-          :src='form.picture'
+          :src='avatar'
           ref='picture'
         )
         i18n.link.c-avatar-text Change avatar
@@ -29,9 +29,12 @@ import L from '@view-utils/translations.js'
 export default {
   name: 'AvatarUpload',
   props: {
-    variant: {
+    avatar: {
       type: String,
-      validator: (value) => ['user', 'group'].includes(value),
+      required: true
+    },
+    sbpParams: {
+      type: Object,
       required: true
     }
   },
@@ -40,34 +43,10 @@ export default {
     BannerScoped
   },
   data () {
-    const picture = {
-      user: this.$store.getters.ourUserIdentityContract.attributes.picture,
-      group: this.$store.getters.groupSettings.groupPicture
-    }[this.variant]
-
     return {
-      form: {
-        picture
-      },
       ephemeral: {
         isSubmitting: false
       }
-    }
-  },
-  computed: {
-    sbpParams () {
-      return {
-        user: {
-          selector: 'gi.contracts/identity/setAttributes/create',
-          contractID: this.$store.state.loggedIn.identityContractID,
-          key: 'picture'
-        },
-        group: {
-          selector: 'gi.contracts/group/updateSettings/create',
-          contractID: this.$store.state.currentGroupId,
-          key: 'groupPicture'
-        }
-      }[this.variant]
     }
   },
   methods: {
