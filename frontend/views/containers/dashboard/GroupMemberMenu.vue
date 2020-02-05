@@ -45,7 +45,7 @@ export default {
 
 <style lang="scss" scoped>
 .c-content {
-  width: 200px;
-  margin-left: -182px;
+  width: 12rem;
+  margin-left: -12rem;
 }
 </style>
