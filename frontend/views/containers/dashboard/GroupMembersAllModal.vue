@@ -47,35 +47,38 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
           :args='{ groupMembersCount }'
         ) {groupMembersCount} members
 
-      table.table.c-table(v-if='searchResult')
-        transition-group.c-group-list(name='slide-list' tag='tbody')
-          tr.c-group-member(
-            v-for='{username, name, displayName} in searchResult'
-            :key='username'
-          )
-            td.c-identity
-              user-image(:username='username')
-              .c-name(data-test='username')
-                strong {{ displayName ? displayName : name }}
-                .c-display-name(
-                  data-test='profileName'
-                  v-if='displayName'
-                ) @{{ name }}
+      transition-group.c-group-list(
+        v-if='searchResult'
+        name='slide-list'
+        tag='ul'
+      )
+        li.c-group-member(
+          v-for='{username, name, displayName} in searchResult'
+          :key='username'
+        )
+          .c-identity
+            user-image(:username='username')
+            .c-name(data-test='username')
+              strong {{ displayName ? displayName : name }}
+              .c-display-name(
+                data-test='profileName'
+                v-if='displayName'
+              ) @{{ name }}
 
-            td.c-actions
-              group-member-menu.c-action-menu
+          .c-actions
+            group-member-menu.c-action-menu
 
-              .c-actions-buttons
-                button.button.is-outlined.is-small(
-                  @click='toChat'
-                )
-                  i.icon-comment
-                  i18n Send message
-                button.button.is-outlined.is-small(
-                  @click='openModal("RemoveMember")'
-                )
-                  i.icon-times
-                  i18n Remove member
+            .c-actions-buttons.buttons
+              button.button.is-outlined.is-small(
+                @click='toChat'
+              )
+                i.icon-comment
+                i18n Send message
+              button.button.is-outlined.is-small(
+                @click='openModal("RemoveMember")'
+              )
+                i.icon-times
+                i18n Remove member
 </template>
 
 <script>
@@ -188,17 +191,8 @@ export default {
   .is-icon-small {
     margin-left: $spacer-sm;
     margin-right: $spacer-sm;
-    background: var(--general_2);
+    background: $general_2;
     border-radius: 50%;
-  }
-}
-
-.c-table {
-  width: 100%;
-  tr {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
   }
 }
 
@@ -217,9 +211,17 @@ export default {
 }
 
 .c-group-member {
+  display: flex;
   height: 4.5rem;
   padding: 0;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid $general_0;
   transition: opacity ease-in .25s, height ease-in .25s;
+
+  &:last-child {
+    border-bottom: 0;
+  }
 }
 
 .slide-list-enter, .slide-list-leave-to {
@@ -234,6 +236,7 @@ export default {
 
 .c-actions-buttons {
   display: none;
+  margin-top: 0;
 
   i {
     margin-right: .5rem;
@@ -248,9 +251,5 @@ export default {
   @include tablet {
     display: none;
   }
-}
-
-.button + .button {
-  margin-left: .5rem;
 }
 </style>
