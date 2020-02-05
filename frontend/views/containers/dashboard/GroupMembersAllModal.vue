@@ -30,7 +30,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
         i18n.c-member-count.has-text-1(
           v-if='form.search && searchCount > 0'
           tag='div'
-          :args='{ searchCount: `<strong>${searchCount}`, result: `${searchCount === 1 ? L("result") : L("results")}</strong>`, searchTerm: `<strong>${form.search}</strong>`}'
+          :args='{ searchCount: `<strong>${searchCount}</strong>`, result: `<strong>${searchCount === 1 ? L("result") : L("results")}</strong>`, searchTerm: `<strong>${form.search}</strong>`}'
           compile
         ) Showing {searchCount} {result} for "{searchTerm}"
 
