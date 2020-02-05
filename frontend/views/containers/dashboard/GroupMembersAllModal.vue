@@ -9,6 +9,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
         @submit.prevent='submit'
       )
         label.field
+          i18n.sr-only Search for a member
           .input-combo
             .is-icon(:aria-label='L("Search")')
               i.icon-search
@@ -62,7 +63,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
                 ) @{{ name }}
 
             td.c-actions
-              group-member-menu
+              group-member-menu.c-action-menu
 
               .c-actions-buttons
                 button.button.is-outlined.is-small(
@@ -243,7 +244,7 @@ export default {
   }
 }
 
-.c-menu {
+.c-action-menu {
   @include tablet {
     display: none;
   }
