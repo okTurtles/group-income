@@ -21,10 +21,18 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
             )
 
         i18n.c-member-count.has-text-1(
-          v-if='form.search'
+          v-if='form.search && searchCount > 0'
           tag='div'
-          :args='{ searchCount: Object.keys(searchResult).length, searchTerm: form.search}'
-        ) Showing {searchCount} result for "{searchTerm}"
+          :args='{ searchCount: `<strong>${searchCount}`, result: `${searchCount === 1 ? L("result") : L("results")}</strong>`, searchTerm: `<strong>${form.search}</strong>`}'
+          compile
+        ) Showing {searchCount} {result} for "{searchTerm}"
+
+        i18n.c-member-count.has-text-1(
+          v-if='form.search && searchCount === 0'
+          tag='div'
+          :args='{searchTerm: `<strong>${form.search}</strong>`}'
+          compile
+        ) Sorry, we couldn't find anyone called "{searchTerm}"
 
         i18n.c-member-count.has-text-1(
           v-else
@@ -101,6 +109,9 @@ export default {
           }
         })
         .filter(profile => profile, [])
+    },
+    searchCount () {
+      return Object.keys(this.searchResult).length
     }
   },
   methods: {
