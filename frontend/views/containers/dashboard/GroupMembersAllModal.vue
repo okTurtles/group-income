@@ -19,6 +19,12 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
               placeholder='Search...'
               v-model='form.search'
             )
+            button.is-icon-small(
+              v-if='form.search'
+              aria-label='Clear search'
+              @click='form.search = null'
+            )
+              i.icon-times
 
         i18n.c-member-count.has-text-1(
           v-if='form.search && searchCount > 0'
@@ -170,9 +176,20 @@ export default {
   margin-bottom: 1.5rem;
 }
 
-.input-combo .is-icon {
-  left: 0;
-  right: auto;
+.input-combo {
+  align-items: center;
+
+  .is-icon {
+    left: 0;
+    right: auto;
+  }
+
+  .is-icon-small {
+    margin-left: $spacer-sm;
+    margin-right: $spacer-sm;
+    background: var(--general_2);
+    border-radius: 50%;
+  }
 }
 
 .c-table {
