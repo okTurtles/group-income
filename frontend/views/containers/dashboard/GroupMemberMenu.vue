@@ -25,7 +25,7 @@ import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu
 import { OPEN_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
 export default {
-  name: 'GroupMembers',
+  name: 'GroupMembersMenu',
   components: {
     MenuParent,
     MenuTrigger,
