@@ -4,7 +4,15 @@ menu-parent
     i.icon-ellipsis-v
 
   menu-content.c-actions-content
-    ul
+    ul(v-if='username === ourUsername')
+      menu-item(
+        tag='button'
+        item-id='profile'
+        icon='pencil-alt'
+        @click='openModal("UserSettingsModal")'
+      )
+        i18n Edit profile
+    ul(v-else)
       menu-item(
         tag='router-link' :to='`/messages/${username}`'
         item-id='message'
@@ -15,7 +23,7 @@ menu-parent
         tag='button'
         item-id='remove'
         icon='times'
-        @click='openModal("RemoveMember")'
+        @click='openModal("RemoveMember", { username })'
       )
         i18n Remove member
 </template>

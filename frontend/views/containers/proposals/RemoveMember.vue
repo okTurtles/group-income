@@ -12,6 +12,9 @@ proposal-template(
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
+import sbp from '~/shared/sbp.js'
+import { CLOSE_MODAL } from '@utils/events.js'
 import Avatar from '@components/Avatar.vue'
 import ProposalTemplate from './ProposalTemplate.vue'
 
@@ -21,6 +24,9 @@ export default {
     Avatar,
     ProposalTemplate
   },
+  props: {
+    username: String
+  },
   data () {
     return {
       ephemeral: {
@@ -28,30 +34,31 @@ export default {
       },
       config: {
         steps: [
-          'AddMemberRule'
+          'RemoveMember'
         ]
       }
     }
   },
   created () {
-    console.log('TODO - Get username info')
+    if (!this.username) {
+      sbp('okTurtles.events/emit', CLOSE_MODAL)
+    }
   },
   computed: {
+    ...mapGetters([
+      'globalProfile'
+    ]),
     member () {
-      // TODO - connect to real store.
-      return {
-        id: 1000,
-        displayName: '[Attila the Hun]',
-        picture: '/assets/images/default-avatar.png'
-      }
+      // TODO - add display name if available.
+      return this.username ? this.globalProfile(this.username) : {}
     }
   },
   methods: {
     submit (form) {
       console.log(
         'TODO: Logic to Propose removing a member.',
-        'member:', 'DUMMY',
-        'reason:', form.reason
+        'member:', this.username,
+        'reason:', form && form.reason
       )
     }
   }

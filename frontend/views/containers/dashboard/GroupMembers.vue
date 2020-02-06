@@ -41,7 +41,6 @@
           ) We are waiting for {username} to join the group by using their unique invite link.
 
       group-member-menu(v-else :username='username')
-
   i18n.link(
     tag='button'
     v-if='groupMembersCount > 10'
@@ -70,15 +69,16 @@ export default {
     invite () {
       this.$router.push({ path: '/invite' })
     },
-    openModal (modal) {
-      sbp('okTurtles.events/emit', OPEN_MODAL, modal)
+    openModal (modal, props) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
     }
   },
   computed: {
     ...mapGetters([
       'groupProfiles',
       'groupShouldPropose',
-      'groupMembersCount'
+      'groupMembersCount',
+      'ourUsername'
     ]),
     firstTenMembers () {
       const profiles = this.groupProfiles

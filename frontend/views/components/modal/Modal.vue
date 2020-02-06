@@ -1,6 +1,6 @@
 <template lang='pug'>
   div
-    component(:is='content' ref='content')
+    component(:is='content' ref='content' v-bind='contentProps')
     component(:is='subcontent[subcontent.length-1]')
 </template>
 <script>
@@ -10,9 +10,10 @@ export default {
   name: 'Modal',
   data () {
     return {
-      content: null, // This is the main modal
-      subcontent: [], // This is for collection of modal on top of modals
-      replacement: null, // This let us replace the modal once the first one is close without updating the url
+      content: null, // Main modal
+      contentProps: {}, // Custom props passed down to the main modal
+      subcontent: [], // Collection of modal on top of modals
+      replacement: null, // Replace the modal once the first one is close without updating the url
       lastFocus: null // Record element that open the modal
     }
   },
@@ -89,7 +90,7 @@ export default {
         this.$router.push({ query }).catch(console.error)
       }
     },
-    openModal (componentName) {
+    openModal (componentName, componentProps = {}) {
       // Don't open the same kind of modal twice.
       if (this.content === componentName) return
       // Record active element
@@ -98,6 +99,7 @@ export default {
         this.subcontent.push(componentName)
       } else {
         this.content = componentName
+        this.contentProps = componentProps
       }
       this.updateUrl()
     },
@@ -106,6 +108,7 @@ export default {
         this.subcontent.pop()
       } else {
         this.content = null
+        this.contentProps = {}
         // Refocus on button that open the modal
         this.lastFocus.focus()
       }
