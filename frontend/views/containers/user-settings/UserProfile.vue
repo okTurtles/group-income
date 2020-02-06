@@ -3,7 +3,7 @@
     span.c-username @{{ ourUsername }}
 
     avatar-upload(
-      :avatar='$store.getters.ourUserIdentityContract.attributes.picture'
+      :avatar='attributes.picture'
       :sbpParams='sbpParams'
     )
 

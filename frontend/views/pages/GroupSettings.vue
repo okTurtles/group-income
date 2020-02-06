@@ -87,7 +87,7 @@ page.c-page
 
     banner-simple(severity='info' v-else)
       i18n(
-        :args='{ count: membersLeft, groupName: groupSettings.groupNname, ...LTags("b")}'
+        :args='{ count: membersLeft, groupName: groupSettings.groupName, ...LTags("b")}'
       ) You can only delete a group when all the other members have left. {groupName} still has {b_}{count} other members{_b}.
 </template>
 
