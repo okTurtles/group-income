@@ -69,8 +69,8 @@ export default {
     invite () {
       this.$router.push({ path: '/invite' })
     },
-    openModal (modal, props) {
-      sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
+    openModal (modal, queries) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
     }
   },
   computed: {

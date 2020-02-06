@@ -339,6 +339,30 @@ DefineContract({
         archiveProposal(state, data.proposalHash)
       }
     },
+    'gi.contracts/group/removeMember': {
+      validate: objectOf({
+        username: string
+      }),
+      process (state, { data, meta }) {
+        const rootState = sbp('state/vuex/state')
+        if (data.username === rootState.loggedIn.username) {
+          console.warn('TODO - Im the member being removed... what happens?')
+          // Should remove contracts.
+          // Set currentGroupId to null or change to another group? Show any info about it?
+        } else {
+          Vue.delete(state.profiles, data.username)
+        }
+      },
+      async sideEffect (message) {
+        const rootState = sbp('state/vuex/state')
+        const data = message.data()
+        if (data.username === rootState.loggedIn.username) {
+          console.warn('TODO sideEffect - Remove all related contracts. How?')
+        } else {
+          console.warn('TODO sideEffect - Remove member from state', data.username)
+        }
+      }
+    },
     'gi.contracts/group/invite': {
       validate: inviteType,
       process ({ data, meta }, { state }) {
