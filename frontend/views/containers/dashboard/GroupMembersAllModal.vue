@@ -38,7 +38,6 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
           v-if='form.search && searchCount === 0'
           tag='div'
           :args='{searchTerm: `<strong>${form.search}</strong>`}'
-          compile
         ) Sorry, we couldn't find anyone called "{searchTerm}"
 
         i18n.c-member-count.has-text-1(
@@ -53,17 +52,17 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
         tag='ul'
       )
         li.c-group-member(
-          v-for='{username, name, displayName} in searchResult'
+          v-for='{username, displayName} in searchResult'
           :key='username'
         )
           .c-identity
             user-image(:username='username')
             .c-name(data-test='username')
-              strong {{ displayName ? displayName : name }}
+              strong {{ displayName ? displayName : username }}
               .c-display-name(
                 data-test='profileName'
                 v-if='displayName'
-              ) @{{ name }}
+              ) @{{ username }}
 
           .c-actions
             group-member-menu.c-action-menu
@@ -90,7 +89,7 @@ import UserImage from '@components/UserImage.vue'
 import GroupMemberMenu from '@containers/dashboard/GroupMemberMenu.vue'
 
 export default {
-  name: 'IncomeDetails',
+  name: 'GroupMembersAllModal',
   components: {
     ModalBaseTemplate,
     UserImage,
@@ -113,12 +112,12 @@ export default {
       return Object.keys(this.groupProfiles)
         .map(username => {
           const inList = (n) => n.toUpperCase().indexOf(this.form.search.toUpperCase()) > -1
-          const { name, displayName } = this.globalProfile(username)
-          if (!this.form.search || inList(name) || (displayName ? inList(displayName) : false)) {
-            return { username, name, displayName }
+          const { displayName } = this.globalProfile(username)
+          if (!this.form.search || inList(username) || (displayName ? inList(displayName) : false)) {
+            return { username, displayName }
           }
         })
-        .filter(profile => profile, [])
+        .filter(profile => profile !== undefined)
     },
     searchCount () {
       return Object.keys(this.searchResult).length
