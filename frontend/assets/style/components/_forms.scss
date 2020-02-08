@@ -279,24 +279,29 @@ p.error {
 .radio,
 .checkbox {
   position: relative;
-  display: block;
+  display: inline-block;
   cursor: pointer;
   margin-right: 1.5rem;
 
-  input {
+  .input {
     position: absolute;
     opacity: 0;
     width: 14px;
     height: 14px;
     transform: translateY(4px);
   }
+
+  .is-column & { 
+    display: block;
+
+    + .radio,
+    + .checkbox {
+      margin-top: $spacer;
+    }
+  }
 }
 
 .radio {
-  + .radio {
-    margin-top: $spacer;
-  }
-
   :last-child {
     white-space: nowrap;
 
@@ -328,7 +333,7 @@ p.error {
     }
   }
 
-  input:checked + :last-child {
+  .input:checked + :last-child {
     &::before {
       border-color: $primary_0;
       background-color: $primary_0;
@@ -339,8 +344,9 @@ p.error {
     }
   }
 
-  input:hover + :last-child,
-  input:focus + :last-child {
+  .input:not(:disabled):hover + :last-child,
+  .input:not(:disabled):focus + :last-child {
+
     &::before {
       border-color: $primary_0;
       box-shadow: 0 0 0 2px $primary_1;
@@ -349,10 +355,6 @@ p.error {
 }
 
 .checkbox {
-  + .checkbox {
-    margin-top: $spacer;
-  }
-
   :last-child {
     white-space: nowrap;
 
@@ -390,7 +392,7 @@ p.error {
     }
   }
 
-  input:checked + :last-child {
+  .input:checked + :last-child {
     &::before {
       border-color: $primary_0;
       background-color: $primary_0;
@@ -401,8 +403,8 @@ p.error {
     }
   }
 
-  input:hover + :last-child,
-  input:focus + :last-child {
+  .input:not(:disabled):hover + :last-child,
+  .input:not(:disabled):focus + :last-child {
     &::before {
       border-color: $primary_0;
       box-shadow: 0 0 0 2px $primary_1;

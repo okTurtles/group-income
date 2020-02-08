@@ -1,21 +1,24 @@
 <template lang='pug'>
 fieldset
   i18n.label(tag='legend') Payment methods
-  ul.c-list
-    li.c-item(
+  .c-list
+    label.c-item(
       v-for='(method, index) in methodsAvailable'
       :key='`method-${index}`'
     )
-      button.is-unstyled.c-button(
+      .c-button(
         type='button'
         :disabled='!method.isAvailable'
         :aria-pressed='selected === method.name'
-        @click='$emit("select", method.name)'
       )
         .c-svg
           component(:is='method.svg')
         .radio.c-radio
-          .input(:class='{ "is-checked": selected === method.name }')
+          input.input(type='radio' name='method'
+            @change='$emit("select", method.name)'
+            :disabled='!method.isAvailable'
+            :checked='method.name === selected'
+          )
           span(:class='{ "has-text-1": selected !== method.name }') {{method.title}}
         span.has-text-1.c-description {{method.description}}
 </template>
