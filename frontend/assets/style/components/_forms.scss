@@ -291,6 +291,11 @@ p.error {
     transform: translateY(4px);
   }
 
+  .input:disabled + :last-child {
+    color: $text_1;
+    cursor: default;
+  }
+
   .is-column & { 
     display: block;
 

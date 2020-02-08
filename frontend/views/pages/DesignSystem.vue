@@ -716,8 +716,8 @@ page(
               |     span Pizza
               |   label.radio
               |     input.input(type='radio' name='food'
-              |       value='Hot Dog')
-              |     span Hot Dog
+              |       value='Burger')
+              |     span Burger
           td
             fieldset
               legend.legend Pick a favorite food
@@ -725,11 +725,11 @@ page(
                 input.input(type='radio' name='fruit' value='Pizza' checked='true')
                 span Pizza
               label.radio
-                input.input(type='radio' name='fruit' value='Hot Dog')
-                span Hot Dog
+                input.input(type='radio' name='fruit' value='Burger')
+                span Burger
               label.radio
-                input.input(type='radio' name='fruit' value='Burguer')
-                span Burguer
+                input.input(type='radio' name='fruit' value='Salad' disabled)
+                span Salad
         tr
           td
             h3.is-title-3 Checkbox
@@ -740,8 +740,7 @@ page(
               |   legend.legend What browsers do you use?
               |   label.checkbox
               |     input.input(type='checkbox' name='browser'
-              |       value='Chrome'
-              |       checked='true')
+              |       value='Chrome')
               |     span Chrome
               |   label.checkbox
               |     input.input(type='checkbox' name='browser'
@@ -751,7 +750,7 @@ page(
             fieldset.is-column
               legend.legend What browsers do you use?
               label.checkbox
-                input.input(type='checkbox' name='browser' value='Chrome' checked='true')
+                input.input(type='checkbox' name='browser' value='Chrome')
                 span Chrome
               label.checkbox
                 input.input(type='checkbox' name='browser' value='Firefox')
@@ -759,6 +758,9 @@ page(
               label.checkbox
                 input.input(type='checkbox' name='browser' value='Edge')
                 span Edge
+              label.checkbox
+                input.input(type='checkbox' name='browser' value='Edge' disabled)
+                span Internet Explorer
         tr
           td
             h3.is-title-3 Combination

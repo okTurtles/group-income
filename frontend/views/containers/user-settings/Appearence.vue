@@ -9,7 +9,7 @@
       h2.is-title-3.c-title Reduced Motion
 
       label.checkbox
-        input(type='checkbox' :checked='$store.state.reducedMotion' @change='handleCheckbox')
+        input.input(type='checkbox' :checked='$store.state.reducedMotion' @change='handleCheckbox')
         i18n Reduced motion
       i18n.help(tag='p') When enabled the amount of animations you see around are reduced.
 
