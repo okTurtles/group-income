@@ -24,7 +24,7 @@
         path.main-color(:fill='color.primary_2' fill-rule='evenodd' clip-rule='evenodd' d='M7.14286 82H11.8571C11.936 82 12 82.447 12 83V86C12 86.553 11.936 87 11.8571 87H7.14286C7.064 87 7 86.553 7 86V83C7 82.447 7.064 82 7.14286 82Z')
         path.main-color(:fill='color.primary_2' fill-rule='evenodd' clip-rule='evenodd' d='M7.14286 92H11.8571C11.936 92 12 92.447 12 93V96C12 96.553 11.936 97 11.8571 97H7.14286C7.064 97 7 96.553 7 96V93C7 92.447 7.064 92 7.14286 92Z')
       .radio
-        input(type='radio' name='theme' :value='label' :id='label' v-model='colors.name')
+        input.input(type='radio' name='theme' :value='label' :id='label' v-model='colors.name')
         span {{ label }}
 </template>
 
@@ -75,6 +75,7 @@ export default {
 }
 
 svg {
+  display: block;
   transition: all 250ms cubic-bezier(0.4, 0.25, 0.3, 1);
   margin-bottom: $spacer-sm;
 }
