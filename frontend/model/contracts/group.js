@@ -341,25 +341,28 @@ DefineContract({
     },
     'gi.contracts/group/removeMember': {
       validate: objectOf({
-        username: string
+        member: string,
+        memberID: string,
+        groupID: string
       }),
       process (state, { data, meta }) {
-        const rootState = sbp('state/vuex/state')
-        if (data.username === rootState.loggedIn.username) {
-          console.warn('TODO - Im the member being removed... what happens?')
-          // Should remove contracts.
-          // Set currentGroupId to null or change to another group? Show any info about it?
-        } else {
-          Vue.delete(state.profiles, data.username)
-        }
+        Vue.delete(state.profiles, data.member)
       },
-      async sideEffect (message) {
-        const rootState = sbp('state/vuex/state')
+      sideEffect (message) {
         const data = message.data()
-        if (data.username === rootState.loggedIn.username) {
-          console.warn('TODO sideEffect - Remove all related contracts. How?')
+        const rootState = sbp('state/vuex/state')
+
+        if (data.member === rootState.loggedIn.username) {
+          // TODO - If I have another group, set to that groupID
+          // TODO - should we redirect *here* to home if null?
+          sbp('state/vuex/commit', 'setCurrentGroupId', null)
+          sbp('state/vuex/commit', 'removeContract', data.groupID)
+          // TODO - remove other group members contract
+          //        unless we have another group in common.
         } else {
-          console.warn('TODO sideEffect - Remove member from state', data.username)
+          // TODO/BUG - we should not delete this contract if we
+          // have any other group in common with this member.
+          sbp('state/vuex/commit', 'removeContract', data.memberID)
         }
       }
     },

@@ -2,7 +2,7 @@
 proposal-template(
   ref='proposal'
   :title='L("Remove Member")'
-  :rule='{ value: 7, total: 10 }'
+  :rule='rule'
   :maxSteps='config.steps.length'
   :currentStep.sync='ephemeral.currentStep'
   @submit='submit'
@@ -20,6 +20,7 @@ import sbp from '~/shared/sbp.js'
 import { CLOSE_MODAL } from '@utils/events.js'
 import L from '@view-utils/translations.js'
 import Avatar from '@components/Avatar.vue'
+import { PROPOSAL_REMOVE_MEMBER } from '@model/contracts/voting/proposals.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ProposalTemplate from './ProposalTemplate.vue'
 
@@ -56,38 +57,54 @@ export default {
     ]),
     ...mapGetters([
       'globalProfile',
-      'groupShouldPropose'
+      'groupProfiles',
+      'groupSettings',
+      'groupShouldPropose',
+      'groupMembersCount'
     ]),
     member () {
       // TODO - add display name if available.
       return this.username ? this.globalProfile(this.username) : {}
+    },
+    rule () {
+      const { threshold } = this.groupSettings.proposals['remove-member'].ruleSettings.threshold
+      return { value: Math.round(this.groupMembersCount * threshold), total: this.groupMembersCount }
     }
   },
   methods: {
     async submit (form) {
       this.$refs.formMsg.clean()
-      const username = this.member.name
+      const member = this.username
+      const memberID = this.groupProfiles[member].contractID
 
       if (this.groupShouldPropose) {
-        try {
-          console.warn('TODO create proposal to remove member')
-          // const proposal = await sbp('gi.contracts/group/proposal/create',
-          //   {
-          //     proposalType: PROPOSAL_REMOVE_MEMBER,
-          //     proposalData: {
-          //       username,
-          //       reason: form.reason
-          //     },
-          //     votingRule: this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].rule,
-          //     expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].expires_ms
-          //   },
-          //   this.currentGroupId
-          // )
-          // await sbp('backend/publishLogEntry', proposal)
+        const theresAproposalGoinOn = false // TODO this
+        if (theresAproposalGoinOn) {
+          this.$refs.formMsg.danger(L('There is already an open proposal to remove this member.'))
+          this.ephemeral.currentStep = 0
+          return
+        }
 
-          // this.ephemeral.currentStep += 1 // Show Success step
+        try {
+          const proposal = await sbp('gi.contracts/group/proposal/create',
+            {
+              proposalType: PROPOSAL_REMOVE_MEMBER,
+              proposalData: {
+                member,
+                memberID,
+                groupID: this.currentGroupId,
+                reason: form.reason
+              },
+              votingRule: this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].rule,
+              expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].expires_ms
+            },
+            this.currentGroupId
+          )
+          await sbp('backend/publishLogEntry', proposal)
+
+          this.ephemeral.currentStep += 1 // Show Success step
         } catch (e) {
-          console.error(`Failed proposing to remove member ${username}`, e.message)
+          console.error(`Failed proposing to remove member ${member}`, e.message)
           this.$refs.formMsg.danger(L('Failed proposing to remove member. {codeError}', { codeError: e.message }))
           this.ephemeral.currentStep = 0
         }
@@ -97,13 +114,17 @@ export default {
       try {
         const memberRemoved = await sbp(
           'gi.contracts/group/removeMember/create',
-          { username },
+          {
+            member,
+            memberID,
+            groupID: this.currentGroupId
+          },
           this.currentGroupId
         )
         await sbp('backend/publishLogEntry', memberRemoved)
         this.$refs.proposal.close()
       } catch (e) {
-        console.error(`Failed to remove member ${username}`, e.message)
+        console.error(`Failed to remove member ${member}`, e.message)
         this.$refs.formMsg.danger(L('Failed to remove member. {codeError}', { codeError: e.message }))
       }
     }

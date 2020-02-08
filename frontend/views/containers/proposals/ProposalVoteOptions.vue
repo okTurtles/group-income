@@ -1,6 +1,8 @@
 <template lang='pug'>
 .c-ctas
-  .buttons(v-if='!hadVoted || ephemeral.changingVote')
+  // TODO - NEED BETTER DESIGN
+  i18n(v-if='votingToRemoveMe') You cannot vote.
+  .buttons(v-else-if='!hadVoted || ephemeral.changingVote')
     i18n.button.is-outlined.is-small.is-success(
       tag='button'
       @click='voteFor'
@@ -32,7 +34,7 @@ import { mapGetters, mapState } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
 import { VOTE_FOR, VOTE_AGAINST } from '@model/contracts/voting/rules.js'
-import { PROPOSAL_INVITE_MEMBER, oneVoteToPass } from '@model/contracts/voting/proposals.js'
+import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, oneVoteToPass } from '@model/contracts/voting/proposals.js'
 import { createInvite } from '@model/contracts/group.js'
 
 export default {
@@ -76,6 +78,9 @@ export default {
     },
     data () {
       return this.proposal.data.proposalData
+    },
+    votingToRemoveMe () {
+      return this.type === PROPOSAL_REMOVE_MEMBER && this.data.member === this.ourUsername
     },
     hadVoted () {
       return this.proposal.votes[this.ourUsername]
