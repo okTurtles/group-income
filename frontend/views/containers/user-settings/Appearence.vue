@@ -8,10 +8,10 @@
     section.card
       h2.is-title-3.c-title Reduced Motion
 
-      label.field
+      label.checkbox
         input(type='checkbox' :checked='$store.state.reducedMotion' @change='handleCheckbox')
         i18n Reduced motion
-        i18n.helper When enabled the amount of animations you see around are reduced.
+      i18n.help(tag='p') When enabled the amount of animations you see around are reduced.
 
     section.card
       h2.is-title-3.c-title Text settings
