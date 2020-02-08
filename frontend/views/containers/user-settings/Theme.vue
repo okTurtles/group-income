@@ -59,6 +59,8 @@ export default {
 </script>
 
 <style lang='scss' scoped>
+@import "@assets/style/_variables.scss";
+
 .theme-list {
   display: flex;
   flex-wrap: wrap;
@@ -74,6 +76,7 @@ export default {
 
 svg {
   transition: all 250ms cubic-bezier(0.4, 0.25, 0.3, 1);
+  margin-bottom: $spacer-sm;
 }
 
 .theme {

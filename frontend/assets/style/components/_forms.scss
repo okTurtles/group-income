@@ -15,6 +15,7 @@ form {
 
 legend.legend {
   font-weight: 600;
+  margin-bottom: $spacer-sm;
 }
 
 .field {
@@ -292,6 +293,10 @@ p.error {
 }
 
 .radio {
+  + .radio {
+    margin-top: $spacer;
+  }
+
   :last-child {
     white-space: nowrap;
 
@@ -344,6 +349,10 @@ p.error {
 }
 
 .checkbox {
+  + .checkbox {
+    margin-top: $spacer;
+  }
+
   :last-child {
     white-space: nowrap;
 
