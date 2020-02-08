@@ -1,76 +1,45 @@
 <template lang='pug'>
-  modal-template(class='is-centered' ref='modal')
-    form(
-      novalidate
-      ref='form'
-      name='formData'
-      @submit.prevent='submit'
-    )
-      template(slot='title') {{ L('Leave a group') }}
+  modal-template(ref='modal')
+    template(slot='title')
+      i18n Leave group
 
+    form(novalidate @submit.prevent='submit')
       i18n(
         tag='p'
         :args='LTags("strong")'
       ) If you leave, you will stop having access to the {strong_}group chat{_strong} and {strong_}contributions{_strong}. Re-joining the group is possible, but requires other members to {strong_}vote and reach an agreement{_strong}.
 
-      banner-simple(severity='danger')
+      banner-simple.c-banner(severity='danger')
         i18n(
           :args='LTags("strong")'
         ) This action {strong_}cannot be undone{_strong}.
 
-      form(
-        novalidate
-        ref='form'
-        name='formData'
-        data-test='leaveGroup'
-        @submit.prevent='submit'
-      )
-        .field
-          i18n.label(tag='label') Username
-
-          input.input#loginName(
-            :class='{error: $v.form.name.$error}'
-            name='name'
-            v-model='form.name'
-            @keyup.enter='submit'
-            @input='$v.form.name.$touch()'
-            placeholder='username'
-            ref='username'
-            autofocus
-            data-test='loginName'
+      form(novalidate @submit.prevent='submit')
+        label.field
+          i18n.label Username
+          input.input(
+            :class='{error: $v.form.username.$error}'
+            type='text'
+            v-model='form.username'
+            @input='debounceField("username")'
+            @blur='updateField("username")'
+            v-error:username=''
           )
-          i18n.error(
-            tag='p'
-            v-show='$v.form.name.$error'
-          ) username cannot contain spaces
 
-        password-form(
-          :label='L("Password")'
-          :value='form'
-          :v='$v'
-          @enter='submit'
-          @input='(Password) => {password = Password}'
-          data-test='loginPassword'
-        )
+        password-form(:label='L("Password")' :$v='$v')
 
-        .field
-          i18n.label(tag='label') Type "Leave The Dreamers" below
-
+        label.field
+          i18n.label(:args='{ code }') Type "{code}" below
           input.input(
             :class='{error: $v.form.confirmation.$error}'
-            name='confirmation'
+            type='text'
             v-model='form.confirmation'
-            @keyup.enter='submit'
-            @input='$v.form.confirmation.$touch()'
-            placeholder=''
-            data-test='confirmation'
+            @input='debounceField("confirmation")'
+            @blur='updateField("confirmation")'
+            v-error:confirmation=''
           )
 
-          i18n.error(
-            tag='p'
-            v-show='$v.form.confirmation.$error'
-            html='Please enter the sentence "<b>Leave The Dreamers</b>" to confirm that you leave the group'
-          )
+        banner-scoped(ref='formMsg')
 
         .buttons
           i18n.is-outlined(tag='button' @click='close') Cancel
@@ -79,82 +48,80 @@
             @click='submit'
             :disabled='$v.form.$invalid'
           ) Leave Group
-
-      template(slot='errors') {{ form.response }}
 </template>
 
 <script>
 import { validationMixin } from 'vuelidate'
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import PasswordForm from '@containers/access/PasswordForm.vue'
 import { required } from 'vuelidate/lib/validators'
 import BannerSimple from '@components/banners/BannerSimple.vue'
+import BannerScoped from '@components/banners/BannerScoped.vue'
 import L from '@view-utils/translations.js'
 
 export default {
   name: 'GroupLeaveModal',
-  mixins: [validationMixin],
+  mixins: [validationMixin, validationsDebouncedMixins],
+  components: {
+    ModalTemplate,
+    PasswordForm,
+    BannerSimple,
+    BannerScoped
+  },
   data () {
     return {
       form: {
-        name: null,
+        username: null,
         password: null,
         confirmation: null
       }
     }
   },
-  validations: {
-    form: {
-      name: {
-        required
-      },
-      password: {
-        required
-      },
-      confirmation: {
-        required,
-        checkConfirmation: value => {
-          console.log(value)
-          return value === L('Leave The Dreamers')
-        }
-      }
+  computed: {
+    ...mapGetters([
+      'groupSettings',
+      'ourUsername'
+    ]),
+    code () {
+      return L('LEAVE {GROUP_NAME}', { GROUP_NAME: this.groupSettings.groupName.toUpperCase() })
     }
-  },
-  components: {
-    ModalTemplate,
-    PasswordForm,
-    BannerSimple
   },
   methods: {
     close () {
       this.$refs.modal.close()
     },
     async submit () {
-      console.error('TODO: implement')
-      this.close()
+      alert('TODO implement this')
+    }
+  },
+  validations: {
+    form: {
+      username: {
+        [L('This field is required')]: required,
+        [L('Your username is different')]: function (value) {
+          return value === this.ourUsername
+        }
+      },
+      password: {
+        [L('This field is required')]: required
+      },
+      confirmation: {
+        [L('This field is required')]: required,
+        [L('Does not match')]: function (value) {
+          return value === this.code
+        }
+      }
     }
   }
 }
 </script>
 
 <style lang="scss" scoped>
-.modal-card-body {
-  padding-top: 0;
-}
+@import "@assets/style/_variables.scss";
 
-.message.is-danger {
-  width: 100%;
-  padding: 1rem;
-  margin-top: 1rem;
-  margin-bottom: 2rem;
-  align-items: center;
-
-  i {
-    padding-right: 1rem;
-  }
-}
-
-.media {
-  display: flex;
+.c-banner {
+  margin: $spacer*1.5 0;
 }
 </style>

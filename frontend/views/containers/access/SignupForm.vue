@@ -70,16 +70,19 @@ export default {
         name: null,
         password: null,
         email: null
+      },
+      ephemeral: {
+        isSubmitting: false
       }
     }
   },
   methods: {
     async signup () {
       // Prevent autocomplete submission when empty field
-      if (!this.form.name || !this.form.email || !this.form.password) {
+      if (!this.form.name || !this.form.email || !this.form.password || this.ephemeral.isSubmitting) {
         return
       }
-
+      this.ephemeral.isSubmitting = true
       try {
         await sbp('gi.actions/user/signupAndLogin', {
           username: this.form.name,
@@ -91,6 +94,7 @@ export default {
         console.error('Signup.vue submit() error:', e)
         this.$refs.formMsg.danger(e.message)
       }
+      this.ephemeral.isSubmitting = false
     }
   },
   validations: {

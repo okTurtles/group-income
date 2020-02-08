@@ -88,12 +88,15 @@ page-section.c-section(:title='L("Invite links")')
 
   i18n.c-invite-footer(
     tag='p'
-    :args='{ r1: "<router-link class=\'link\' to=\'/invite\'>", r2: "</router-link>"}'
+    @click='handleInviteClick'
     compile
+    :args='{ r1: `<button class="link js-btnInvite">`, r2: "</button>"}'
   ) To generate a new link, you need to {r1}propose adding a new member{r2} to your group.
 </template>
 
 <script>
+import sbp from '~/shared/sbp.js'
+import { OPEN_MODAL } from '@utils/events.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import PageSection from '@components/PageSection.vue'
 import Tooltip from '@components/Tooltip.vue'
@@ -195,6 +198,11 @@ export default {
           }),
           expiryInfo: isAllInviteUsed ? '' : this.readableExpiryInfo(expiryTime)
         }
+      }
+    },
+    handleInviteClick (e) {
+      if (e.target.classList.contains('js-btnInvite')) {
+        sbp('okTurtles.events/emit', OPEN_MODAL, 'AddMembers')
       }
     }
   },
@@ -426,8 +434,8 @@ export default {
     background-color: $white;
     z-index: 2;
     border: {
-      left: 1px solid $text_0;
-      right: 1px solid $text_0;
+      left: 1px solid $primary_0;
+      right: 1px solid $primary_0;
     }
     box-shadow: 0 2px 0 2px $primary_1;
   }

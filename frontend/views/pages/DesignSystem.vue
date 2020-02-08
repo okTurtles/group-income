@@ -1,6 +1,5 @@
 <template lang='pug'>
 page(
-  mainClass='full-width'
   pageTestName='designSystemPage'
   pageTestHeaderName='designSystemTitle'
   class='p-design-system'
@@ -527,11 +526,10 @@ page(
             pre banner-simple(severity='info')
           td
             banner-simple(severity='info')
-              | This is an&nbsp;
-              strong information message
+              | This is a&nbsp;
+              strong short message
               |  with a&nbsp;
-              a.link(href='/') link
-              | . This message can grow in width or height, as needed.
+              a.link(href='/') link.
 
       h4.is-title-4 With title
       table
@@ -1105,11 +1103,11 @@ export default {
       const top = e.target.scrollTop
       let last = 0
       this.articles.forEach((el, index) => {
-        if (top > (el.top)) {
-          el.link.classList.add('active')
+        if (top > (el.top + window.innerHeight - 40)) { // 30 - space between each card.
+          el.link.classList.add('scrolled')
           last = index
         } else {
-          el.link.classList.remove('active')
+          el.link.classList.remove('scrolled')
         }
         el.link.classList.remove('last')
       })
@@ -1290,12 +1288,13 @@ table {
   display: flex;
   flex-direction: column;
 
-  ::v-deep .active {
-    color: $general_0;
+  ::v-deep .scrolled {
+    opacity: 0.4;
     text-decoration: line-through;
   }
 
   ::v-deep .last {
+    opacity: 1;
     text-decoration: underline;
     color: $primary_0;
   }

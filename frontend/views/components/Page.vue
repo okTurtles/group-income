@@ -11,7 +11,7 @@ div(:data-test='pageTestName' :class='$scopedSlots.sidebar ? "p-with-sidebar" : 
 
     p(
       v-if='$scopedSlots.description'
-      class='p-descritpion'
+      class='p-descritpion has-text-small has-text-1'
     )
       slot(name='description')
 
@@ -165,15 +165,12 @@ $pagePaddingDesktop: 5.5rem;
 }
 
 .p-descritpion {
-  font-weight: normal;
-  font-size: $size_5; // 12px
-  line-height: 1rem;
-  color: $text_1;
   display: none;
-  padding-bottom: 3rem;
 
   @include desktop {
     display: block;
+    margin-top: $spacer-xs;
+    padding-bottom: $spacer-md*3;
   }
 }
 
@@ -206,6 +203,7 @@ $pagePaddingDesktop: 5.5rem;
   }
 
   @include desktop {
+    position: fixed;
     transform: translateX(0%);
   }
 

@@ -1,66 +1,61 @@
 <template lang='pug'>
-  modal-template(class='is-centered' ref='modal')
-    template(slot='title') {{ L('Leave a group') }}
+  modal-template(ref='modal')
+    template(slot='title')
+      i18n Delete group
 
-    form(
-      novalidate
-      ref='form'
-      name='formData'
-      @submit.prevent='submit'
-    )
+    form(novalidate @submit.prevent='submit')
+      i18n.has-text-bold(tag='p') Are you sure you want to delete this group?
+      i18n(
+        tag='p'
+        :args='LTags("strong")'
+      ) All messages exchanged between members will be {strong_} deleted permanently{_strong}.
 
-      i18n.is-title-3(tag='h3') Are you sure you want to delete this group?
+      banner-simple.c-banner(severity='danger')
+        i18n(
+          :args='LTags("strong")'
+        ) This action {strong_}cannot be undone{_strong}.
 
-      i18n(tag='p' html='All messages exchanged between members will be <b>deleted permanently</b>.')
-
-      form(
-        novalidate
-        ref='form'
-        name='formData'
-        data-test='GroupDeletionModal'
-        @submit.prevent='submit'
-      )
-        .field
-          i18n(tag='label' class='label') Type "Delete The Dreamers" below
-
+      form(novalidate @submit.prevent='submit')
+        label.field
+          i18n.label(:args='{ code }') Type "{code}" below
           input.input(
             :class='{error: $v.form.confirmation.$error}'
-            name='confirmation'
+            type='text'
             v-model='form.confirmation'
-            @keyup.enter='submit'
-            @input='$v.form.confirmation.$touch()'
-            placeholder=''
-            data-test='confirmation'
+            @input='debounceField("confirmation")'
+            @blur='updateField("confirmation")'
+            v-error:confirmation=''
           )
 
-          i18n.error(
-            tag='p'
-            v-show='$v.form.confirmation.$error'
-            html='Please enter the sentence "<b>Delete The Dreamers</b>"to confirm that you delete the group'
-          )
+        banner-scoped(ref='formMsg')
 
         .buttons
-          i18n.is-outlined(
-            tag='button'
-            @click='close'
-          ) Cancel
+          i18n.is-outlined(tag='button' @click='close') Cancel
           i18n.is-danger(
             tag='button'
             @click='submit'
             :disabled='$v.form.$invalid'
           ) Delete Group
-
-      template(slot='errors') {{ form.response }}
 </template>
 
 <script>
 import { validationMixin } from 'vuelidate'
+import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import { required } from 'vuelidate/lib/validators'
+import BannerSimple from '@components/banners/BannerSimple.vue'
+import BannerScoped from '@components/banners/BannerScoped.vue'
+import L from '@view-utils/translations.js'
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
 export default {
-  name: 'GroupDeletionModalModal',
-  mixins: [validationMixin],
+  name: 'GroupLeaveModal',
+  mixins: [validationMixin, validationsDebouncedMixins],
+  components: {
+    ModalTemplate,
+    BannerSimple,
+    BannerScoped
+  },
   data () {
     return {
       form: {
@@ -68,39 +63,39 @@ export default {
       }
     }
   },
-  validations: {
-    form: {
-      confirmation: {
-        required,
-        checkConfirmation: value => {
-          console.log(value)
-          return value === 'Delete The Dreamers'
-        }
-      }
+  computed: {
+    ...mapGetters([
+      'groupSettings'
+    ]),
+    code () {
+      return L('DELETE {GROUP_NAME}', { GROUP_NAME: this.groupSettings.groupName.toUpperCase() })
     }
-  },
-  components: {
-    ModalTemplate
   },
   methods: {
     close () {
       this.$refs.modal.close()
     },
     async submit () {
-      console.error('TODO: implement')
-      this.close()
+      alert('TODO implement this')
+    }
+  },
+  validations: {
+    form: {
+      confirmation: {
+        [L('This field is required')]: required,
+        [L('Does not match')]: function (value) {
+          return value === this.code
+        }
+      }
     }
   }
 }
 </script>
 
 <style lang="scss" scoped>
-h3 {
-  align-self: start;
-  margin-bottom: 0;
-}
+@import "@assets/style/_variables.scss";
 
-form {
-  margin-top: 2rem;
+.c-banner {
+  margin: $spacer*1.5 0;
 }
 </style>
