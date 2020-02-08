@@ -38,8 +38,9 @@
           data-test='prevBtn'
         ) {{ currentStep === 0 ? L('Cancel') : L('Back') }}
 
-        button.is-success(
+        button(
           key='change'
+          :class='submitStyleNonProposal'
           v-if='!groupShouldPropose'
           @click.prevent='submit'
           :disabled='disabled'
@@ -133,6 +134,9 @@ export default {
     },
     isConfirmation () {
       return this.currentStep === this.maxSteps + 1
+    },
+    submitStyleNonProposal () {
+      return this.variant === 'removeMember' ? 'is-danger' : 'is-success'
     },
     submitTextNonProposal () {
       const text = {

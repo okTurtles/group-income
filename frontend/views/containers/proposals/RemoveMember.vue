@@ -1,6 +1,7 @@
 <template lang="pug">
 proposal-template(
   ref='proposal'
+  variant='removeMember'
   :title='L("Remove Member")'
   :rule='rule'
   :maxSteps='config.steps.length'
@@ -9,7 +10,8 @@ proposal-template(
 )
   .c-step(v-if='ephemeral.currentStep === 0' key='0')
     avatar.c-avatar(:src='member.picture' size='lg')
-    i18n.is-title-4(tag='p' :args='{ name: member.name }') Remove {name} from your group
+    i18n.is-title-4(tag='p' :args='{ name: member.name }' v-if='groupShouldPropose') Remove {name} from your group
+    i18n.is-title-4(tag='p' :args='{ name: member.name }' v-else) Are you sure you want to remove {name} from your group?
 
   banner-scoped(ref='formMsg' data-test='proposalError')
 </template>
