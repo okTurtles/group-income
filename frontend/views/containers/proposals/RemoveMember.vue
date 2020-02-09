@@ -9,7 +9,7 @@ proposal-template(
   @submit='submit'
 )
   .c-step(v-if='ephemeral.currentStep === 0' key='0')
-    avatar.c-avatar(:src='member.picture' size='lg')
+    avatar.c-avatar(:src='memberGlobalProfile.picture' size='lg')
     i18n.is-title-4(tag='p' :args='{ name: member.name }' v-if='groupShouldPropose') Remove {name} from your group
     i18n.is-title-4(tag='p' :args='{ name: member.name }' v-else) Are you sure you want to remove {name} from your group?
 
@@ -64,9 +64,8 @@ export default {
       'groupShouldPropose',
       'groupMembersCount'
     ]),
-    member () {
-      // TODO - add display name if available.
-      return this.username ? this.globalProfile(this.username) : {}
+    memberGlobalProfile () {
+      return this.globalProfile(this.username) || {}
     },
     rule () {
       const { threshold } = this.groupSettings.proposals['remove-member'].ruleSettings.threshold
