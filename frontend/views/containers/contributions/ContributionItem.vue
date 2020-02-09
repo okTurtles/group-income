@@ -3,7 +3,7 @@
   i(:class='iconClass')
 
   div(v-if='hasWhoElse')
-    transition(name='replacelist')
+    transition(name='replace-list')
       div(
         v-if='isVisible'
         key='visible'

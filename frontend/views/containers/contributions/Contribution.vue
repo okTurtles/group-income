@@ -1,5 +1,5 @@
 <template lang='pug'>
-transition(name='replacelist')
+transition(name='replace-list')
   li.c-contribution-edit(v-if='isEditing || isAdding' key='editing')
     form.c-contribution(
       @submit.prevent=''
