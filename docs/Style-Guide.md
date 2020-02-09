@@ -33,9 +33,9 @@ All other classes are global, written at `frontend/assets/style` and should be k
 
 We strive to keep semantics (HTML) decoupled from styling (CSS). For example, when it comes to headings, we use classes `.is-title-[n]` instead of styling directly the heading tag `h1, h2 ...`. Read [this explanation](https://stackoverflow.com/questions/19099401/why-use-h1-instead-of-actual-h1/19166926#19166926) to know more about this approach.
 
-There should not be heading gap in the page.
+There should not be headings gap in the page.
 So for example, h3 can be present only if there is an h2 tag.
-But sometime a title look better in the page if h2 is the size of h3. In that case we will use 
+But sometimes a title look better in the page if h2 is the size of h3. In that case we will use 
 
 ```html
 <template>
