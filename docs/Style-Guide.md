@@ -29,12 +29,19 @@ Since this is a Vue.js project, any pull requests **must** follow *Priority A* r
 When writing CSS specific to a Vue component, use the prefix `c-`. This makes it easier to debug the CSS (where to find the CSS code) and understand the dependencies.
 All other classes are global, written at `frontend/assets/style` and should be kept to a minimum for simplicity and to avoid conflicts.
 
-We strive to keep semantics (HTML) decoupled from styling (CSS). For example, when it comes to headings, we use classes `.is-title-[n]` instead of styling directly the heading tag `h1, h2 ...`. Read [this explanation](https://stackoverflow.com/questions/19099401/why-use-h1-instead-of-actual-h1/19166926#19166926) to know more about this approach. When writing the markup make sure its semantics are complete. For example, if there's a page section but no visual heading is needed, add `.sr-only` to the element so screen readers can read it to the users. `<h2 class="sr-only>Page details</h2>`.
+### Titles
+
+We strive to keep semantics (HTML) decoupled from styling (CSS). For example, when it comes to headings, we use classes `.is-title-[n]` instead of styling directly the heading tag `h1, h2 ...`. Read [this explanation](https://stackoverflow.com/questions/19099401/why-use-h1-instead-of-actual-h1/19166926#19166926) to know more about this approach.
+
+There should not be heading gap in the page.
+So for example, h3 can be present only if there is an h2 tag.
+But sometime a title look better in the page if h2 is the size of h3. In that case we will use 
 
 ```html
 <template>
     <!-- We can easily distinguish global classes from component's classes -->
     <h1 class="is-title-1 c-title">Hello world</h1>
+    <h2 class="is-title-3 c-title">I look better smaller</h1>
 </template>
 
 <style lang="scss" scoped>
@@ -44,22 +51,13 @@ We strive to keep semantics (HTML) decoupled from styling (CSS). For example, wh
 </style>
 ```
 
-### Titles
-
-There should not be heading gap in the page.
-So for example, h3 can be present only if there is an h2 tag.
-But sometime a title look better in the page if h2 is the size of h3. In that case we will use 
+When writing the markup make sure its semantics are complete. For example, if there's a page section but no visual heading is needed, add `.sr-only` to the element so screen readers can read it to the users.
 
 ```html
-<template lang='pug'>
-  h1.is-title-1 Main title
-  h2.is-title-3
+<template>
+    <h2 class="sr-only">Page details</h2>
 </template>
 ```
-
-Also here, we explicity define the style of h1. This way, even if the tag changes from h1 to h2, we keep the same style.
-We respect the separation of concern between the semantic and the style.
-
 ## Accessibility Style Guide
 
 We are committed to ensuring digital accessibility for all people, including those with low vision, blindness, hearing impairments, cognitive impairments, motor impairments or situational disabilities. We are continually improving the user experience for everyone, and applying the relevant accessibility standards.
