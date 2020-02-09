@@ -123,6 +123,7 @@ sbp('sbp/selectors/register', {
     return gettersProxy
   },
   'state/vuex/state': () => store.state,
+  'state/vuex/commit': (id, payload) => store.commit(id, payload),
   'state/vuex/dispatch': (...args) => store.dispatch(...args)
 })
 
@@ -246,12 +247,83 @@ const getters = {
   ourGroupProfile (state, getters) {
     return getters.groupProfile(getters.ourUsername)
   },
+  ourUserDisplayName (state, getters) {
+    // TODO - refactor Profile and Welcome and any other component that needs this
+    const userContract = getters.ourUserIdentityContract || {}
+    return (userContract.attributes && userContract.attributes.displayName) || getters.ourUsername
+  },
   ourIdentityContractId (state) {
     return state.loggedIn && state.loggedIn.identityContractID
   },
   // Logged In user's identity contract
   ourUserIdentityContract (state) {
     return (state.loggedIn && state[state.loggedIn.identityContractID]) || {}
+  },
+  ourContributionSummary (state, getters) {
+    const groupProfiles = getters.groupProfiles
+    const ourUsername = getters.ourUsername
+    const ourGroupProfile = getters.ourGroupProfile
+
+    if (!ourGroupProfile.incomeDetailsType) {
+      return {}
+    }
+
+    const doWeNeedIncome = ourGroupProfile.incomeDetailsType === 'incomeAmount'
+    const distribution = getters.thisMonthsPayments.frozenDistribution || getters.groupIncomeDistribution
+
+    const nonMonetaryContributionsOf = (username) => groupProfiles[username].nonMonetaryContributions || []
+    const getDisplayName = (username) => getters.globalProfile(username).displayName || username
+
+    return {
+      givingMonetary: (() => {
+        if (doWeNeedIncome) { return null }
+        const who = []
+        const total = distribution
+          .filter(p => p.from === ourUsername)
+          .reduce((acc, payment) => {
+            who.push(getDisplayName(payment.to))
+            return acc + payment.amount
+          }, 0)
+
+        return { who, total, pledged: ourGroupProfile.pledgeAmount }
+      })(),
+      receivingMonetary: (() => {
+        if (!doWeNeedIncome) { return null }
+        const needed = getters.groupSettings.mincomeAmount - ourGroupProfile.incomeAmount
+        const who = []
+        const total = distribution
+          .filter(p => p.to === ourUsername)
+          .reduce((acc, payment) => {
+            who.push(getDisplayName(payment.from))
+            return acc + payment.amount
+          }, 0)
+
+        return { who, total, needed }
+      })(),
+      receivingNonMonetary: (() => {
+        const listWho = Object.keys(groupProfiles)
+          .filter(username => username !== ourUsername && nonMonetaryContributionsOf(username).length > 0)
+        const listWhat = listWho.reduce((contr, username) => {
+          const displayName = getDisplayName(username)
+          const userContributions = nonMonetaryContributionsOf(username)
+
+          userContributions.forEach((what) => {
+            const contributionIndex = contr.findIndex(c => c.what === what)
+            contributionIndex >= 0
+              ? contr[contributionIndex].who.push(displayName)
+              : contr.push({ who: [displayName], what })
+          })
+          return contr
+        }, [])
+
+        return listWho.length > 0 ? { what: listWhat, who: listWho } : null
+      })(),
+      givingNonMonetary: (() => {
+        const contributions = ourGroupProfile.nonMonetaryContributions
+
+        return contributions.length > 0 ? contributions : null
+      })()
+    }
   },
   // list of group names and contractIDs
   groupsByName (state) {
@@ -361,8 +433,10 @@ const actions = {
         // this must be called directly, instead of via enqueueHandleEvent
         await dispatch('handleEvent', GIMessage.deserialize(events[i]))
       }
-      sbp('okTurtles.events/emit', EVENTS.CONTRACT_IS_SYNCING, contractID, false)
+    } else {
+      console.debug(`Contract ${contractID} was already synchronized`)
     }
+    sbp('okTurtles.events/emit', EVENTS.CONTRACT_IS_SYNCING, contractID, false)
   },
   async login (
     { dispatch, commit, state }: {dispatch: Function, commit: Function, state: Object},

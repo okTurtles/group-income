@@ -7,6 +7,7 @@ Please read all the sections below before writing a single line of code.
 - **[CSS Style Guide](#css-style-guide)**
 - **[Accessibility Style Guide](#css-style-guide)**
 - **[Testing Style Guide](#testing-style-guide)**
+- **[Folder Structure Style Guide](#folder-structure-style-guide)**
 - **[Feedback Messages](#feedback-messages)**
 - **[Group Income Data Model Rules](#group-income-data-model-rules)**
 - **[SBP Paradigm](#sbp) (Soon!)**
@@ -27,6 +28,8 @@ Since this is a Vue.js project, any pull requests **must** follow *Priority A* r
 
 When writing CSS specific to a Vue component, use the prefix `c-`. This makes it easier to debug the CSS (where to find the CSS code) and understand the dependencies.
 All other classes are global, written at `frontend/assets/style` and should be kept to a minimum for simplicity and to avoid conflicts.
+
+We strive to keep semantics (HTML) decoupled from styling (CSS). For example, when it comes to headings, we use classes `.is-title-[n]` instead of styling directly the heading tag `h1, h2 ...`. Read [this explanation](https://stackoverflow.com/questions/19099401/why-use-h1-instead-of-actual-h1/19166926#19166926) to know more about this approach. When writing the markup make sure its semantics are complete. For example, if there's a page section but no visual heading is needed, add `.sr-only` to the element so screen readers can read it to the users. `<h2 class="sr-only>Page details</h2>`.
 
 ```html
 <template>
@@ -146,7 +149,7 @@ banner-scoped(ref='formMsg')
 ```
 
 ```js
-import BannerScoped from '@components/BannerScoped.vue'
+import BannerScoped from '@components/banners/BannerScoped.vue'
 
 submit () {
   // If everything went right...
@@ -170,12 +173,35 @@ This banner informs the user that there's something going on with the app itself
 
 ```js
 // main.js
-import BannerGeneral from './views/components/BannerGeneral.vue'
+import BannerGeneral from './views/components/banners/BannerGeneral.vue'
 
 this.$refs.bannerGeneral.show(L('Trying to reconnect...'), 'wifi')
 ```
 
 NOTE: this type of banner is under construction and will change soon.
+
+## Folder Structure Style Guide
+
+### Naming Conventions
+- The folders are `kebab-case`
+- Vue files are `PascalCase.vue` - follow [Vue Style Guide](https://vuejs.org/v2/style-guide/#Order-of-words-in-component-names-strongly-recommended)
+- JS files are `camelCase.js`
+
+### Structure
+
+```bash
+frontend/
+└─ main.js # App entry point
+└─ assets/ # Any static file including Styles.
+└─ controller/
+└─ model/
+└─ utils/ 
+└─ views/ # where Vue components live
+    └─ components/ # Vue components reused across the app places.
+    └─ containers/ # Vue components related to a specific part of the app, not reusable.
+    └─ pages/ # Vue components connected to a route
+    └─ utils/ # Utils used only within /frontend/views
+```
 
 ## Group Income Data Model Rules
 

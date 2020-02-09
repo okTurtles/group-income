@@ -2,7 +2,7 @@
   section.c-calloutCard(:class='{ card: isCard }')
     component.c-svg(:is='svg')
     div
-      h3.is-title-3.c-title(v-if='title') {{ title }}
+      h2.is-title-3.c-title(v-if='title') {{ title }}
       slot
 </template>
 
@@ -34,9 +34,9 @@ export default {
   margin-right: $spacer;
   flex-shrink: 0;
 
-  @include desktop {
+  @include tablet {
     width: 6.25rem;
-    height: 6.25rem;
+    height: auto;
     margin-right: 2.5rem;
   }
 }

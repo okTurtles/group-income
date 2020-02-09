@@ -21,13 +21,13 @@ page(pageTestName='messages' pageTestHeaderName='messages')
 
 <script>
 import { mapGetters } from 'vuex'
-import Page from '@pages/Page.vue'
+import Page from '@components/Page.vue'
 import { chatTypes, individualMessagesSorted, users } from '@containers/chatroom/fakeStore.js'
-import ChatNav from '@components/Chatroom/ChatNav.vue'
-import ChatMain from '@components/Chatroom/ChatMain.vue'
+import ChatNav from '@containers/chatroom/ChatNav.vue'
+import ChatMain from '@containers/chatroom/ChatMain.vue'
 import chatroom from '@containers/chatroom/chatroom.js'
-import GroupsShortcut from '@components/Chatroom/GroupsShortcut.vue'
-import ConversationsList from '@components/Chatroom/ConversationsList.vue'
+import GroupsShortcut from '@containers/chatroom/GroupsShortcut.vue'
+import ConversationsList from '@containers/chatroom/ConversationsList.vue'
 
 export default {
   name: 'Messages',

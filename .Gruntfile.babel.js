@@ -495,7 +495,6 @@ function svgLoader (options) {
 // TODO: convert this to a pure rollup plugin
 // ----------------------------------------
 var through = require('through2')
-
 // This will replace <script> with <script2> in .html and .vue files
 // EXCEPT:
 // - within <!-- comments -->

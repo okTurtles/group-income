@@ -32,9 +32,19 @@ function assertGraphicSummary (legendListItems) {
   })
 }
 
+function assertContributionsWidget (assertions) {
+  cy.getByDT('dashboard', 'a').click()
+  cy.getByDT('contributionsWidget').within(() => {
+    Object.keys(assertions).forEach(dataTest => {
+      cy.getByDT(dataTest).should('contain', assertions[dataTest])
+    })
+  })
+  cy.getByDT('contributionsLink', 'a').click()
+}
+
 function updateIncome (newIncome, needsIncome, graphicLegend, incomeStatus) {
   cy.getByDT('contributionsLink').click()
-  cy.getByDT('openIncomeDetailModal').click()
+  cy.getByDT('openIncomeDetailsModal').click()
   cy.getByDT(needsIncome ? 'needsIncomeRadio' : 'dontNeedsIncomeRadio').click()
   cy.getByDT('inputIncomeOrPledge').clear().type(newIncome)
 
@@ -52,10 +62,9 @@ describe('Payments', () => {
 
   it('user1 creates a group', () => {
     cy.visit('/')
+    cy.giSignup(`user1-${userId}`, { bypassUI: true })
 
-    cy.giSignup(`user1-${userId}`)
-
-    cy.giCreateGroup(groupName)
+    cy.giCreateGroup(groupName, { bypassUI: true })
 
     cy.giSetDisplayName(usersDisplayName[1])
 
@@ -71,18 +80,19 @@ describe('Payments', () => {
       cy.giAcceptGroupInvite(invitationLinks.anyone, {
         username: `user${i}-${userId}`,
         groupName,
-        displayName: usersDisplayName[i]
+        displayName: usersDisplayName[i],
+        bypassUI: true
       })
     }
 
-    cy.giLogin(`user1-${userId}`)
+    cy.giLogin(`user1-${userId}`, { bypassUI: true })
   })
 
   it('user1 fills their Income Details - pledges $500', () => {
     cy.getByDT('contributionsLink').click()
     cy.getByDT('addIncomeDetailsFirstCard').should('contain', 'Add your income details')
 
-    cy.getByDT('openIncomeDetailModal').click()
+    cy.getByDT('openIncomeDetailsModal').click()
     // Make sure only radio box to select the type is visible at the begining
     cy.getByDT('introIncomeOrPledge').should('not.be.visible')
 
@@ -106,12 +116,18 @@ describe('Payments', () => {
     // After selecting the amount and close the modal make sure it show that no one is in need
     cy.getByDT('receivingParagraph').should('contain', 'When other members pledge a monetary or non-monetary contribution, they will appear here.')
     cy.getByDT('givingParagraph').should('contain', 'No one needs monetary contributions at the moment. You can still add non-monetary contributions if you would like.')
+
+    assertContributionsWidget({
+      paymentsTitle: 'Payments sent',
+      paymentsStatus: 'At the moment, no one is in need of contributions.',
+      monetaryTitle: 'You are pledging $500',
+      monetaryStatus: '$0 will be used.',
+      nonMonetaryStatus: 'There are no non-monetary contributions.'
+    })
   })
 
   it('user1 decides to switch income details to needing $100', () => {
-    cy.visit('/app/contributions')
-
-    cy.getByDT('openIncomeDetailModal').click()
+    cy.getByDT('openIncomeDetailsModal').click()
     cy.getByDT('needsIncomeRadio').click()
     // After swithing to need income, it should ask user how much he need
     cy.getByDT('introIncomeOrPledge').should('contain', 'What\'s your monthly income?')
@@ -130,8 +146,16 @@ describe('Payments', () => {
     cy.getByDT('submitIncome').click()
     // After closing the modal it should dislay how much user need
     cy.getByDT('headerNeed').should('contain', 'You need $100')
-    // The user should be inform that even if he can\'t pledge he can still contribute
-    cy.getByDT('givingParagraph').should('contain', 'You can contribute to your group with money or other valuables like teaching skills, sharing your time ot help someone. The sky is the limit!')
+    // The user should be inform that even if he can't pledge he can still contribute
+    cy.getByDT('givingParagraph').should('contain', 'You can contribute to your group with money or other valuables like teaching skills, sharing your time to help someone. The sky is the limit!')
+
+    assertContributionsWidget({
+      paymentsTitle: 'Payments received',
+      paymentsStatus: 'No members in the group are pledging yet! 😔',
+      monetaryTitle: 'You need $100',
+      monetaryStatus: 'You will receive $0.',
+      nonMonetaryStatus: 'There are no non-monetary contributions.'
+    })
   })
 
   it('user1 adds non monetary contribution', () => {
@@ -189,10 +213,14 @@ describe('Payments', () => {
     cy.getByDT('givingList', 'ul')
       .get('li.is-editable')
       .should('have.length', 4)
+
+    assertContributionsWidget({
+      nonMonetaryStatus: 'You are contributing.'
+    })
   })
 
   it('user2 pledges $100 and sees their contributions.', () => {
-    cy.giSwitchUser(`user2-${userId}`)
+    cy.giSwitchUser(`user2-${userId}`, { bypassUI: true })
 
     const graphicLegend = [
       'Total Pledged$100',
@@ -213,10 +241,17 @@ describe('Payments', () => {
 
     cy.get('.giving .c-contribution-list')
       .should('have.length', 3)
+
+    assertContributionsWidget({
+      paymentsSummary: ' ', // TODO - just confirm it exists for now.
+      monetaryTitle: 'You are pledging $100',
+      monetaryStatus: '$100 will be used.',
+      nonMonetaryStatus: 'You and 1 other members are contributing.'
+    })
   })
 
   it('user3 pledges $100 and sees who they are pledging to - $50 to user1 (Greg)', () => {
-    cy.giSwitchUser(`user3-${userId}`)
+    cy.giSwitchUser(`user3-${userId}`, { bypassUI: true })
     const graphicLegend = [
       'Total Pledged$200',
       'Needed Pledges$0'
@@ -225,7 +260,7 @@ describe('Payments', () => {
   })
 
   it('user4 and user2 increase their pledges to $500 each. user1 sees the receiving contributions from 3 members.', () => {
-    cy.giSwitchUser(`user4-${userId}`)
+    cy.giSwitchUser(`user4-${userId}`, { bypassUI: true })
     const graphicLegend4 = [
       'Total Pledged$700',
       'Needed Pledges$0',
@@ -246,10 +281,17 @@ describe('Payments', () => {
 
     cy.getByDT('contributionsLink').click()
     cy.get(elReceivingFirst).should('contain', '$100 from 3 members')
+
+    assertContributionsWidget({
+      paymentsSummary: ' ', // TODO - just confirm it exists for now.
+      monetaryTitle: 'You need $100',
+      monetaryStatus: 'You will receive $100.',
+      nonMonetaryStatus: 'You and 2 other members are contributing.'
+    })
   })
 
   it('user4 and user2 reduced income to $10 and now receive money.', () => {
-    cy.giSwitchUser(`user4-${userId}`)
+    cy.giSwitchUser(`user4-${userId}`, { bypassUI: true })
     const graphicLegend4 = [
       'Total Pledged$600',
       'Needed Pledges$0',
@@ -258,17 +300,24 @@ describe('Payments', () => {
     ]
     updateIncome(10, true, graphicLegend4, '$190 by Margarida and Pierre')
 
-    cy.giSwitchUser(`user2-${userId}`)
+    cy.giSwitchUser(`user2-${userId}`, { bypassUI: true })
     const graphicLegend2 = [
       'Total Pledged$100',
       'Needed Pledges$380',
       "You'll receive$39.58"
     ]
     updateIncome(10, true, graphicLegend2, '$39.58 by Pierre')
+
+    assertContributionsWidget({
+      paymentsSummary: ' ', // TODO - just confirm it exists for now.
+      monetaryTitle: 'You need $190',
+      monetaryStatus: 'You will receive $39.58.',
+      nonMonetaryStatus: 'You and 2 other members are contributing.'
+    })
   })
 
   it('user3 pledges to all 3 members', () => {
-    cy.giSwitchUser(`user3-${userId}`)
+    cy.giSwitchUser(`user3-${userId}`, { bypassUI: true })
     cy.getByDT('contributionsLink').click()
 
     cy.get(elGivingFirst)
@@ -276,12 +325,18 @@ describe('Payments', () => {
   })
 
   it('user1 receives part of what they need', () => {
-    cy.giSwitchUser(`user1-${userId}`)
+    cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
     cy.getByDT('contributionsLink').click()
 
     cy.get(elReceivingFirst)
       .should('contain', '$20.83 by Pierre')
 
+    assertContributionsWidget({
+      paymentsSummary: ' ', // TODO - just confirm it exists for now.
+      monetaryTitle: 'You need $100',
+      monetaryStatus: 'You will receive $20.83.',
+      nonMonetaryStatus: 'You and 2 other members are contributing.'
+    })
     cy.giLogout()
   })
 })

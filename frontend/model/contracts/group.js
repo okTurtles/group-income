@@ -311,6 +311,9 @@ DefineContract({
       // OPTIMIZE: Make this custom validation function
       // reusable accross other future validators
       validate: objectMaybeOf({
+        groupName: x => typeof x === 'string',
+        groupPicture: x => typeof x === 'string',
+        sharedValues: x => typeof x === 'string',
         mincomeAmount: x => typeof x === 'number' && x > 0,
         mincomeCurrency: x => typeof x === 'string'
       }),

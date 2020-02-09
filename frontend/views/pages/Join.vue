@@ -18,8 +18,8 @@ div
         h1.is-title-1.c-title(data-test='groupName') {{ ephemeral.invitation.groupName }}
         p.has-text-1(data-test='invitationMessage') {{ ephemeral.invitation.message }}
       .card
-        form-signup(v-if='isStatus("SIGNING")' @submitSucceeded='accept')
-        form-login(v-else @submitSucceeded='accept')
+        signup-form(v-if='isStatus("SIGNING")' @submitSucceeded='accept')
+        login-form(v-else @submitSucceeded='accept')
 
       p.c-switchEnter(v-if='isStatus("SIGNING")')
         i18n Already have an account?
@@ -54,8 +54,8 @@ div
 import sbp from '~/shared/sbp.js'
 import { mapGetters } from 'vuex'
 import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/group.js'
-import FormSignup from '@containers/forms/FormSignup.vue'
-import FormLogin from '@containers/forms/FormLogin.vue'
+import SignupForm from '@containers/access/SignupForm.vue'
+import LoginForm from '@containers/access/LoginForm.vue'
 import Loading from '@components/Loading.vue'
 import Avatar from '@components/Avatar.vue'
 import GroupWelcome from '@components/GroupWelcome.vue'
@@ -66,8 +66,8 @@ export default {
   name: 'Join',
   components: {
     Loading,
-    FormLogin,
-    FormSignup,
+    LoginForm,
+    SignupForm,
     Avatar,
     GroupWelcome,
     SvgBrokenLink

@@ -6,6 +6,7 @@ import '~/shared/domains/okTurtles/data.js'
 import '~/shared/domains/okTurtles/events.js'
 import '~/shared/domains/okTurtles/eventQueue.js'
 import './controller/namespace.js'
+import './controller/actions/index.js'
 import Vue from 'vue'
 import { mapMutations } from 'vuex'
 import router from './controller/router.js'
@@ -14,10 +15,10 @@ import store from './model/state.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
 import { LOGIN, LOGOUT, CONTRACT_IS_SYNCING } from './utils/events.js'
 import './utils/lazyLoadedView.js'
-import BannerGeneral from './views/components/BannerGeneral.vue'
-import Navigation from './views/containers/sidebar/Navigation.vue'
+import BannerGeneral from './views/components/banners/BannerGeneral.vue'
+import Navigation from './views/containers/navigation/Navigation.vue'
 import AppStyles from './views/components/AppStyles.vue'
-import Modal from './views/components/Modal/Modal.vue'
+import Modal from './views/components/modal/Modal.vue'
 import './views/utils/translations.js'
 import './views/utils/vFocus.js'
 import './views/utils/vError.js'
@@ -90,13 +91,14 @@ async function startApp () {
       return {
         ephemeral: {
           syncs: [],
+          // TODO/REVIEW page can load with already loggedin. -> this.$store.state.loggedIn ? 'yes' : 'no'
           finishedLogin: 'no'
         }
       }
     },
     mounted () {
       const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)') || {}
-      if (reducedMotionQuery.matches || window.Cypress) {
+      if (reducedMotionQuery.matches || this.isInCypress) {
         this.setReducedMotion(true)
       }
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
@@ -130,12 +132,21 @@ async function startApp () {
           'l-no-navigation': !this.showNav,
           'js-reducedMotion': this.$store.state.reducedMotion
         }
+      },
+      isInCypress () {
+        return !!window.Cypress
       }
     },
     methods: {
       ...mapMutations([
         'setReducedMotion'
-      ])
+      ]),
+      handleBypass (e) {
+        e.preventDefault()
+        // NOTE: Read Cypress commands.js cyBypassUI() for more details.
+        const path = e.target.getAttribute('data-url') || '/bypass-ui'
+        this.$router.push({ path })
+      }
     },
     store // make this and all child components aware of the new store
   }).$mount('#app')
