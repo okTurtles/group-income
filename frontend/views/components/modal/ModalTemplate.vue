@@ -17,7 +17,7 @@
           v-if='$scopedSlots.title || $scopedSlots.subTitle'
         )
           modal-close(@close='close' :back-on-mobile='backOnMobile')
-          h2.subtitle(v-if='$scopedSlots.subtitle')
+          h2.is-title-2.subtitle(v-if='$scopedSlots.subtitle')
             slot(name='subtitle')
           h1.is-title-1(v-if='$scopedSlots.title')
             slot(name='title')

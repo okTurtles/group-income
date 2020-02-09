@@ -124,7 +124,7 @@ page(
             pre .card-header
           td
             .card
-              h2.card-header Title
+              h2.is-title-2.card-header Title
               p Description
         tr
           td

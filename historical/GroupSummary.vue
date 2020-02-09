@@ -3,7 +3,7 @@
 div
   h1.is-title-1(data-test='summaryStep')
     i18n Review &amp; Finish
-  h2.subtitle
+  h2.is-title-2.subtitle
     i18n Group name:
   p(v-if='group.groupName') {{ group.groupName }}
   p.subtitle.is-5.has-text-danger(v-else='')
@@ -12,7 +12,7 @@ div
     router-link.button(:to="{name: 'GroupName'}")
       i18n Edit
   hr
-  h2.subtitle
+  h2.is-title-2.subtitle
     i18n Group purpose:
   p(v-if='group.sharedValues') {{ group.sharedValues }}
   p.subtitle.is-5.has-text-danger(v-else='')
@@ -21,7 +21,7 @@ div
     router-link.button(:to="{name: 'GroupPurpose'}")
       i18n Edit
   hr
-  h2.subtitle
+  h2.is-title-2.subtitle
     i18n Minimum income:
   p(v-if='group.mincomeAmount') {{ currency }}{{ group.mincomeAmount }}
   p.subtitle.is-5.has-text-danger(v-else='')
@@ -30,7 +30,7 @@ div
     router-link.button(:to="{name: 'GroupMincome'}")
       i18n Edit
   hr
-  h2.subtitle
+  h2.is-title-2.subtitle
     i18n Group rules:
   .columns.has-text-centered
     .column
@@ -49,7 +49,7 @@ div
     router-link.button(:to="{name: 'GroupRules'}")
       i18n Edit
   hr
-  h2.subtitle
+  h2.is-title-2.subtitle
     i18n Members to invite:
   p.subtitle.is-5.has-text-warning(v-if='!group.invitees.length')
     i18n No one invited
