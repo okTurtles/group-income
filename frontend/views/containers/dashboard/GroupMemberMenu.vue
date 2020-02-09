@@ -6,7 +6,7 @@ menu-parent
   menu-content.c-actions-content
     ul
       menu-item(
-        tag='router-link' to='/chat'
+        tag='router-link' :to='`/messages/${username}`'
         item-id='message'
         icon='comment'
       )
@@ -31,6 +31,9 @@ export default {
     MenuTrigger,
     MenuContent,
     MenuItem
+  },
+  props: {
+    username: String
   },
   methods: {
     openModal (modal) {

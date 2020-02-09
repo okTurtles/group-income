@@ -31,6 +31,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
           v-if='form.search && searchCount > 0'
           tag='div'
           :args='{ searchCount: `<strong>${searchCount}</strong>`, result: `<strong>${searchCount === 1 ? L("result") : L("results")}</strong>`, searchTerm: `<strong>${form.search}</strong>`}'
+          data-test='memberSearchCount'
           compile
         ) Showing {searchCount} {result} for "{searchTerm}"
 
@@ -41,17 +42,18 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
         ) Sorry, we couldn't find anyone called "{searchTerm}"
 
         i18n.c-member-count.has-text-1(
-          v-else
+          v-if='!form.search'
           tag='div'
           :args='{ groupMembersCount }'
+          data-test='memberCount'
         ) {groupMembersCount} members
 
-      transition-group.c-group-list(
+      transition-group(
         v-if='searchResult'
         name='slide-list'
         tag='ul'
       )
-        li.c-group-member(
+        li.c-search-member(
           v-for='{username, displayName} in searchResult'
           :key='username'
         )
@@ -65,11 +67,11 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
               ) @{{ username }}
 
           .c-actions
-            group-member-menu.c-action-menu
+            group-member-menu.c-action-menu(:username='username')
 
             .c-actions-buttons.buttons
               button.button.is-outlined.is-small(
-                @click='toChat'
+                @click='toMessages(username)'
               )
                 i.icon-comment
                 i18n Send message
@@ -130,8 +132,8 @@ export default {
     closeModal () {
       this.$refs.modal.close()
     },
-    toChat () {
-      this.$router.push({ path: '/chat' })
+    toMessages (username) {
+      this.$router.push({ path: `/messages/${username}` })
     }
   }
 }
@@ -188,10 +190,14 @@ export default {
   }
 
   .is-icon-small {
-    margin-left: $spacer-sm;
-    margin-right: $spacer-sm;
+    position: absolute;
+    right: $spacer-sm;
     background: $general_2;
     border-radius: 50%;
+
+    &:hover {
+      background: $general_1;
+    }
   }
 }
 
@@ -209,7 +215,7 @@ export default {
   color: var(--text_1);
 }
 
-.c-group-member {
+.c-search-member {
   display: flex;
   height: 4.5rem;
   padding: 0;

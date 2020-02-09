@@ -40,13 +40,14 @@
             :args='{ username }'
           ) We are waiting for {username} to join the group by using their unique invite link.
 
-      group-member-menu(v-else)
+      group-member-menu(v-else :username='username')
 
   i18n.link(
     tag='button'
     v-if='groupMembersCount > 10'
     :args='{ groupMembersCount }'
     @click='openModal("GroupMembersAllModal")'
+    data-test='seeAllMembers'
   ) See all {groupMembersCount} members
 </template>
 
