@@ -1,5 +1,6 @@
 <template lang='pug'>
 .c-wrapper
+  i18n.sr-only(tag='h3') Group Pledging Status
   pie-chart.c-chart(
     :slices='mainSlices'
     :inner-slices='innerSlices'
