@@ -1,6 +1,6 @@
 <template lang='pug'>
 .c-wrapper(v-if='groups.length > 0')
-  i18n.subtitle.is-title-2(tag='h2') Groups chat shortcut
+  i18n.is-subtitle(tag='h2') Groups chat shortcut
 
   ul.c-ul
     li.c-ul-li(

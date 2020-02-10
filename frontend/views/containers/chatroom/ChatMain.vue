@@ -41,7 +41,7 @@
     .c-body-conversation(ref='conversation' v-else='')
       conversation-greetings
       template(v-for='(message, index) in details.conversation')
-        i18n.subtitle.c-divider(
+        i18n.is-subtitle.c-divider(
           v-if='startedUnreadIndex === index'
           :key='`subtitle-${index}`'
         ) New messages

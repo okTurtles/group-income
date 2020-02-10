@@ -8,7 +8,7 @@ main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
 
   header(v-else key='title-not-login')
     img.logo-2(src='/assets/images/logo-transparent.png')
-    i18n(tag='p' class='subtitle') Welcome to group income
+    i18n.is-subtitle(tag='p') Welcome to group income
     i18n.is-title-1(tag='h1' data-test='welcomeHomeLoggedIn') Let’s get this party started
 
   .buttons(v-if='!$store.state.loggedIn' key='body-loggin')
@@ -127,7 +127,7 @@ export default {
   }
 }
 
-.subtitle {
+.is-subtitle {
   @include tablet {
     margin-top: 3rem;
   }

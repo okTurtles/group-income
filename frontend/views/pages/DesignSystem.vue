@@ -31,8 +31,8 @@ page(
         tr
           td
             pre
-              | .subtitle
-          td.subtitle This is a subtitle
+              | .is-subtitle
+          td.is-subtitle This is a subtitle
 
       h3.is-title-3 Body Copy
 
