@@ -5,7 +5,7 @@
     :slices='mainSlices'
     :inner-slices='innerSlices'
   )
-    i18n.has-text-1.c-title(tag='h3' :args='LTags("span")') {span_}Group{_span} goal
+    i18n.has-text-1.c-title(tag='p' :args='LTags("span")') {span_}Group{_span} goal
     span.is-title-4 {{ withCurrency(graphData.groupGoal) }}
 
   ul.c-legendList(:aria-label='L("Group pledging summary")' data-test='groupPledgeSummary')
