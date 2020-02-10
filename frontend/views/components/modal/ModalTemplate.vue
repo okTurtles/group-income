@@ -14,7 +14,7 @@
       .c-modal-content(ref='card' v-if='modalIsActive')
         header.c-modal-header(
           :class='{ "has-subtitle": $scopedSlots.subtitle }'
-          v-if='$scopedSlots.title || $scopedSlots.issubtitle'
+          v-if='$scopedSlots.title || $scopedSlots.subtitle'
         )
           modal-close(@close='close' :back-on-mobile='backOnMobile')
           h2.is-subtitle(v-if='$scopedSlots.subtitle')
