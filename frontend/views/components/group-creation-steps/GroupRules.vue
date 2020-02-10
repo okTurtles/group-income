@@ -24,7 +24,7 @@
           :knobColor='changeColor'
           circleColor='#F4F8E7'
         )
-        i18n.subtitle(tag='p') Change Rules
+        i18n.is-subtitle(tag='p') Change Rules
 
       .c-rule
         p.c-percent
@@ -44,7 +44,7 @@
           :knobColor='approveColor'
           circleColor='#F4F8E7'
         )
-        i18n.subtitle(tag='p') Add Member
+        i18n.is-subtitle(tag='p') Add Member
 
       .c-rule
         p.c-percent
@@ -64,7 +64,7 @@
           :knobColor='removeColor'
           circleColor='#F4F8E7'
         )
-        i18n.subtitle(tag='p') Remove Member
+        i18n.is-subtitle(tag='p') Remove Member
 
     transition(name='slidedown')
       banner-simple(
@@ -170,7 +170,7 @@ export default {
   margin: 3px 4px 8px 0;
 }
 
-.subtitle {
+.is-subtitle {
   margin: 0;
 }
 
