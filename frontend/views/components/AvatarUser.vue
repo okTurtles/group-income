@@ -34,7 +34,7 @@ export default {
     }
   },
   async mounted () {
-    if (!this.profile) {
+    if (!this.profilePicture) {
       console.debug(`Looking for ${this.username} profile picture`)
       const userContractId = await sbp('namespace/lookup', this.username)
       if (!userContractId) {
@@ -50,8 +50,8 @@ export default {
       'ourGroupProfile'
     ]),
     profilePicture () {
-      const profile = this.ourGroupProfile && this.$store.state[this.ourGroupProfile.contractID]
-      return profile && profile.attributes && profile.attributes.picture
+      const profile = this.$store.getters.globalProfile(this.username)
+      return profile && profile.picture
     },
     pictureURL () {
       return this.profilePicture || this.ephemeral.url
