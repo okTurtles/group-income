@@ -296,6 +296,19 @@ p.error {
     cursor: default;
   }
 
+  .input:not(:disabled):hover + :last-child {
+    &::before {
+      border-color: $primary_0;
+    }
+  }
+
+  .input:not(:disabled):focus + :last-child {
+    &::before {
+      border-color: $primary_0;
+      box-shadow: 0 0 0 2px $primary_1;
+    }
+  }
+
   .is-column & {
     display: block;
 
@@ -348,14 +361,6 @@ p.error {
       transform: translate(-50%, -50%) scale(1);
     }
   }
-
-  .input:not(:disabled):hover + :last-child,
-  .input:not(:disabled):focus + :last-child {
-    &::before {
-      border-color: $primary_0;
-      box-shadow: 0 0 0 2px $primary_1;
-    }
-  }
 }
 
 .checkbox {
@@ -405,14 +410,6 @@ p.error {
 
     &::after {
       transform: translate(-50%, -50%) scale(1);
-    }
-  }
-
-  .input:not(:disabled):hover + :last-child,
-  .input:not(:disabled):focus + :last-child {
-    &::before {
-      border-color: $primary_0;
-      box-shadow: 0 0 0 2px $primary_1;
     }
   }
 }
