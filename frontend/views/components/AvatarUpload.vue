@@ -6,6 +6,7 @@
         avatar.c-avatar-img(
           :src='avatar'
           ref='picture'
+          size='xl'
         )
         i18n.link.c-avatar-text Change avatar
 
@@ -114,10 +115,8 @@ export default {
     }
   }
 
-  &-img {
+  &-img.is-xl {
     margin: 0 auto;
-    width: 8rem;
-    height: 8rem;
 
     @include desktop {
       width: 4.5rem;

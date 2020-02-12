@@ -1,6 +1,6 @@
 <template lang='pug'>
 .c-message(:class='[variant, isSameSender && "sameSender"]')
-  avatar.c-avatar(:src='avatar' :class='{ alignToText: !hasWhoInvisible }' aria-hidden='true')
+  avatar.c-avatar(:src='avatar' :class='{ alignToText: !hasWhoInvisible }' aria-hidden='true' size='sm')
   .c-body
     span.has-text-1.c-who(:class='{ "gi-sr-only": hasWhoInvisible }')
       | {{who}}

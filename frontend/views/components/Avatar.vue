@@ -1,5 +1,6 @@
 <template lang='pug'>
   img.c-avatar(
+    :class='`is-${size}`'
     :src='imageURL'
     :alt='alt'
     ref='img'
@@ -19,7 +20,12 @@ export default {
       type: String,
       default: ''
     },
-    blobURL: String
+    blobURL: String,
+    size: {
+      type: String,
+      default: 'md',
+      validator: (value) => ['xs', 'sm', 'md', 'lg', 'xl'].includes(value)
+    }
   },
   mounted () {
     console.log(`Avatar under ${this.$parent.$vnode.tag} blobURL:`, this.blobURL, 'src:', this.src)
@@ -95,18 +101,27 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
+@mixin size($size) {
+  width: $size;
+  height: $size;
+}
+
 .c-avatar {
   border-radius: 50%;
   background-color: $general_0;
   object-fit: cover;
-  min-width: 2rem;
-  width: 2rem;
-  height: 2rem;
+  flex-shrink: 0;
 
   &::after {
     content: "";
     display: block;
     padding-bottom: 100%;
   }
+
+  &.is-xs { @include size(1.5rem); }
+  &.is-sm { @include size(2rem); }
+  &.is-md { @include size(2.5rem); }
+  &.is-lg { @include size(4.5rem); }
+  &.is-xl { @include size(8rem); }
 }
 </style>

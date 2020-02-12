@@ -4,7 +4,7 @@
   data-test='userProfile'
   )
   .c-avatar-user
-    avatar(:src='userPicture')
+    avatar-user(:username='ourUsername' size='sm')
     .c-user
       strong(
         :data-test='userDisplayName ? "profileDisplayName" : "profileName"'
@@ -23,7 +23,7 @@
 </template>
 
 <script>
-import Avatar from '@components/Avatar.vue'
+import AvatarUser from '@components/AvatarUser.vue'
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters } from 'vuex'
@@ -31,16 +31,12 @@ import { mapGetters } from 'vuex'
 export default {
   name: 'Profile',
   components: {
-    Avatar
+    AvatarUser
   },
   computed: {
     ...mapGetters([
       'ourUsername'
     ]),
-    userPicture () {
-      const userContract = this.$store.getters.ourUserIdentityContract
-      return userContract && userContract.attributes && userContract.attributes.picture
-    },
     userDisplayName () {
       const userContract = this.$store.getters.ourUserIdentityContract
       return userContract && userContract.attributes && userContract.attributes.displayName
@@ -68,11 +64,6 @@ export default {
 .c-avatar-user {
   display: flex;
   align-items: center;
-}
-
-.c-avatar {
-  width: $spacer-lg;
-  height: $spacer-lg;
 }
 
 .c-user {

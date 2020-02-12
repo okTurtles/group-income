@@ -10,6 +10,7 @@ div
           avatar.c-avatars-group(
             v-if='ephemeral.invitation.groupPicture'
             :src='ephemeral.invitation.groupPicture'
+            size='lg'
           )
           avatar.c-avatars-creator(
             v-if='ephemeral.invitation.creatorPicture'
@@ -98,6 +99,7 @@ export default {
       if (this.ourUsername) {
         if (this.$store.state.contracts[this.$route.query.groupId]) {
           this.$router.push({ path: '/dashboard' })
+          return
         } else {
           await this.accept()
           return
@@ -219,12 +221,9 @@ export default {
   position: relative;
   margin-bottom: 1.5rem;
 
-  .c-avatars-group {
-    width: 4.5rem; // TODO #672
-    height: 4.5rem;
-
+  .c-avatars-group.is-lg {
     @include tablet {
-      width: 8rem; // TODO #672
+      width: 8rem;
       height: 8rem;
     }
   }
@@ -234,8 +233,6 @@ export default {
     bottom: 0;
     right: 0;
     border: 2px solid $white;
-    width: 2.5rem;
-    height: 2.5rem;
   }
 }
 

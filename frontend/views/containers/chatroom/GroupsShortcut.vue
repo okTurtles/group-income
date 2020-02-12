@@ -15,6 +15,7 @@
           src=''
           :alt='group.groupName'
           :fallbackbg='fallbackBg(index)'
+          size='sm'
         )
           // NOTE: mocked just for layout purposes
           badge.c-badge(:number='index === 0 ? 2 : 0')

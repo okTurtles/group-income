@@ -113,7 +113,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
       i18n.is-title-3.card-header(tag='h3') Proposals
 
       .c-message(v-for='(proposal, hash) in proposals' :key='hash')
-        avatar(src='/assets/images/default-avatar.png' alt='' @click='respondToProposal(hash)')
+        avatar(src='/assets/images/default-avatar.png' alt='' @click='respondToProposal(hash)' size='sm')
 
         .c-message-desc(
           @click='respondToProposal(hash)'
@@ -134,6 +134,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
         avatar(
           src='/assets/images/default-avatar.png' alt=''
           @click='read({index, type: message.data.messageType})'
+          size='sm'
         )
 
         .c-message-desc(

@@ -7,7 +7,7 @@ proposal-template(
   @submit='submit'
 )
   .c-step(v-if='ephemeral.currentStep === 0' key='0')
-    avatar.c-avatar(:src='member.picture')
+    avatar.c-avatar(:src='member.picture' size='lg')
     i18n.is-title-4(tag='p' :args='{ name: member.displayName || member.name }') Remove {name} from your group
 </template>
 
@@ -59,6 +59,7 @@ export default {
 </script>
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
 .c-step {
   width: 100%;
   display: flex;
@@ -68,8 +69,6 @@ export default {
 
   // BUG on VUE? - without nesting it doesn't work
   .c-avatar {
-    width: 5rem;
-    height: 5rem;
     margin-bottom: $spacer;
   }
 }

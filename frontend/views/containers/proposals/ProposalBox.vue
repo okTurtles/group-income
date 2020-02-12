@@ -1,6 +1,6 @@
 <template lang='pug'>
 li.c-wrapper
-  user-image.c-avatar(:username='proposal.meta.username')
+  avatar-user.c-avatar(:username='proposal.meta.username' size='sm')
   .c-header
     h4.is-title-4.c-header-title(data-test='title' v-html='title')
     span.has-text-1 {{ humanDate }}
@@ -20,7 +20,7 @@ li.c-wrapper
 <script>
 import { mapGetters } from 'vuex'
 import L from '@view-utils/translations.js'
-import UserImage from '@components/UserImage.vue'
+import AvatarUser from '@components/AvatarUser.vue'
 import ProposalItem from './ProposalItem.vue'
 import { STATUS_OPEN } from '@model/contracts/voting/proposals.js'
 import { TABLET } from '@view-utils/breakpoints.js'
@@ -42,7 +42,7 @@ export default {
   },
   components: {
     ProposalItem,
-    UserImage
+    AvatarUser
   },
   created () {
     this.ephemeral.isReasonHidden = this.shouldTruncateReason
@@ -139,8 +139,6 @@ export default {
 
 .c-avatar {
   grid-area: avatar;
-  width: 2.5rem;
-  height: 2.5rem;
   margin-right: $spacer;
   flex-shrink: 0;
 
