@@ -13,6 +13,11 @@ form {
   }
 }
 
+legend.legend {
+  font-weight: 600;
+  margin-bottom: $spacer-sm;
+}
+
 .field {
   position: relative;
   display: block;
@@ -271,7 +276,8 @@ p.error {
   }
 }
 
-.radio {
+.radio,
+.checkbox {
   position: relative;
   display: inline-block;
   cursor: pointer;
@@ -282,8 +288,38 @@ p.error {
     opacity: 0;
     width: 14px;
     height: 14px;
+    transform: translateY(4px);
   }
 
+  .input:disabled + :last-child {
+    color: $text_1;
+    cursor: default;
+  }
+
+  .input:not(:disabled):hover + :last-child {
+    &::before {
+      border-color: $primary_0;
+    }
+  }
+
+  .input:not(:disabled):focus + :last-child {
+    &::before {
+      border-color: $primary_0;
+      box-shadow: 0 0 0 2px $primary_1;
+    }
+  }
+
+  .is-column & {
+    display: block;
+
+    + .radio,
+    + .checkbox {
+      margin-top: $spacer;
+    }
+  }
+}
+
+.radio {
   :last-child {
     white-space: nowrap;
 
@@ -300,29 +336,76 @@ p.error {
       margin-right: $spacer-sm;
       border: 1px solid $general_0;
       transform: translateY(2px);
+      transition: box-shadow 150ms, background-color 150ms;
     }
 
     &::after {
       position: absolute;
       width: 6px;
       height: 6px;
-      background-color: $primary_0;
+      background-color: $background_0;
       top: 11px;
       left: 7px;
       transform: translate(-50%, -50%) scale(0);
-      transform-origin: 50% 50%;
       transition: transform 150ms;
     }
   }
 
-  .input.is-checked + :last-child,
-  input:focus + :last-child,
-  input:checked + :last-child {
-    font-weight: bold;
-    margin-right: -1px;
-
+  .input:checked + :last-child {
     &::before {
       border-color: $primary_0;
+      background-color: $primary_0;
+    }
+
+    &::after {
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+}
+
+.checkbox {
+  :last-child {
+    white-space: nowrap;
+
+    &::before,
+    &::after {
+      display: inline-block;
+      border-radius: 2px;
+    }
+
+    &::before {
+      content: "";
+      width: 14px;
+      height: 14px;
+      margin-right: $spacer-sm;
+      border: 1px solid $general_0;
+      transform: translateY(2px);
+      transition: box-shadow 150ms, background-color 150ms;
+    }
+
+    &::after {
+      content: "\f00c"; // icon-check
+      text-rendering: auto;
+      line-height: 1;
+      font-family: "Font Awesome 5 Free";
+      font-weight: 900;
+      -moz-osx-font-smoothing: grayscale;
+      font-size: 10px;
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      top: 9px;
+      left: 5px;
+      color: $background_0;
+      transform: translate(-50%, -50%) scale(0);
+      transition: transform 150ms;
+    }
+  }
+
+  .input:checked + :last-child {
+    &::before {
+      border-color: $primary_0;
+      background-color: $primary_0;
     }
 
     &::after {

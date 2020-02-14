@@ -706,25 +706,59 @@ page(
           td
             pre
               | fieldset
-              |   .legend Pick a favorite food
-              |     label.radio
-              |       input(type='radio'
-              |         name='fruit'
-              |         checked='true')
-              |       span Oranges
-              |     label.radio
-              |       input(type='radio'
-              |         name='fruit')
-              |       span Apples
+              |   legend.legend Pick a favorite food
+              |   label.radio
+              |     input.input(type='radio' name='food'
+              |       value='Pizza'
+              |       checked='true')
+              |     span Pizza
+              |   label.radio
+              |     input.input(type='radio' name='food'
+              |       value='Burger')
+              |     span Burger
           td
             fieldset
-              .legend What's your favorite food?
+              legend.legend Pick a favorite food
               label.radio
-                input.input(type='radio' name='fruit' checked='true')
-                span Oranges
+                input.input(type='radio' name='fruit' value='Pizza' checked='true')
+                span Pizza
               label.radio
-                input.input(type='radio' name='fruit')
-                span Apples
+                input.input(type='radio' name='fruit' value='Burger')
+                span Burger
+              label.radio
+                input.input(type='radio' name='fruit' value='Salad' disabled)
+                span Salad
+        tr
+          td
+            h3.is-title-3 Checkbox
+        tr
+          td
+            pre
+              | fieldset.is-column
+              |   legend.legend What browsers do you use?
+              |   label.checkbox
+              |     input.input(type='checkbox' name='browser'
+              |       value='Chrome')
+              |     span Chrome
+              |   label.checkbox
+              |     input.input(type='checkbox' name='browser'
+              |       value='Firefox')
+              |     span Firefox
+          td
+            fieldset.is-column
+              legend.legend What browsers do you use?
+              label.checkbox
+                input.input(type='checkbox' name='browser' value='Chrome')
+                span Chrome
+              label.checkbox
+                input.input(type='checkbox' name='browser' value='Firefox')
+                span Firefox
+              label.checkbox
+                input.input(type='checkbox' name='browser' value='Edge')
+                span Edge
+              label.checkbox
+                input.input(type='checkbox' name='browser' value='Edge' disabled)
+                span Internet Explorer
         tr
           td
             h3.is-title-3 Combination

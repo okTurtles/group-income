@@ -1,7 +1,6 @@
 <template lang='pug'>
 .theme-list
   fieldset.theme(v-for='(color, label) in themes' :key='label' @click='setTheme(color.name)')
-    input.radio(type='radio' name='theme' :value='label' :id='label' v-model='colors.name')
     label(:for='label')
       svg(width='113' height='113' viewBox='0 0 113 113' fill='none' xmlns='http://www.w3.org/2000/svg')
         path.bg(:fill='color.general_0' :stroke='color.border' d='M2.60769 0.5H110.392C111.012 0.5 111.555 0.692751 111.933 0.981206C112.309 1.2693 112.5 1.63189 112.5 1.99412V111.006C112.5 111.368 112.309 111.731 111.933 112.019C111.555 112.307 111.012 112.5 110.392 112.5H2.60769C1.98753 112.5 1.44466 112.307 1.06745 112.019C0.690715 111.731 0.5 111.368 0.5 111.006V1.99412C0.5 1.63189 0.690715 1.2693 1.06745 0.981206C1.44466 0.692751 1.98753 0.5 2.60769 0.5Z')
@@ -24,7 +23,9 @@
         path.main-color(:fill='color.primary_2' fill-rule='evenodd' clip-rule='evenodd' d='M7.14286 72H11.8571C11.936 72 12 72.447 12 73V76C12 76.553 11.936 77 11.8571 77H7.14286C7.064 77 7 76.553 7 76V73C7 72.447 7.064 72 7.14286 72Z')
         path.main-color(:fill='color.primary_2' fill-rule='evenodd' clip-rule='evenodd' d='M7.14286 82H11.8571C11.936 82 12 82.447 12 83V86C12 86.553 11.936 87 11.8571 87H7.14286C7.064 87 7 86.553 7 86V83C7 82.447 7.064 82 7.14286 82Z')
         path.main-color(:fill='color.primary_2' fill-rule='evenodd' clip-rule='evenodd' d='M7.14286 92H11.8571C11.936 92 12 92.447 12 93V96C12 96.553 11.936 97 11.8571 97H7.14286C7.064 97 7 96.553 7 96V93C7 92.447 7.064 92 7.14286 92Z')
-      span.label-text {{ label }}
+      .radio
+        input.input(type='radio' name='theme' :value='label' :id='label' v-model='colors.name')
+        span {{ label }}
 </template>
 
 <script>
@@ -58,6 +59,8 @@ export default {
 </script>
 
 <style lang='scss' scoped>
+@import "@assets/style/_variables.scss";
+
 .theme-list {
   display: flex;
   flex-wrap: wrap;
@@ -71,12 +74,10 @@ export default {
   fill: #fff;
 }
 
-label {
-  text-transform: capitalize;
-}
-
 svg {
+  display: block;
   transition: all 250ms cubic-bezier(0.4, 0.25, 0.3, 1);
+  margin-bottom: $spacer-sm;
 }
 
 .theme {
@@ -109,62 +110,5 @@ svg {
   display: block;
   padding: 13px 22px;
   line-height: 1rem;
-}
-
-.radio {
-  display: none;
-
-  + label {
-    -webkit-tap-highlight-color: transparent;
-    cursor: pointer;
-    user-select: none;
-    font-size: 0.875rem;
-
-    &::before,
-    &::after {
-      content: "";
-      position: absolute;
-      bottom: 17px;
-      left: 3px;
-      width: 6px;
-      height: 6px;
-      font-size: 0;
-      border-radius: 50%;
-      background-color: #fff;
-      border: 1px solid #d9d9d9;
-      transition: all 250ms cubic-bezier(0.4, 0.25, 0.3, 1);
-    }
-
-    &::before {
-      border-color: transparent;
-      transform: scale(1.5);
-    }
-
-    &::after {
-      width: 12px;
-      height: 12px;
-      bottom: 14px;
-      left: 0;
-      background-color: transparent;
-      border-width: 1px;
-      transition: all 250ms cubic-bezier(0.4, 0.25, 0.3, 1);
-    }
-  }
-
-  &:checked + label {
-    .label-text {
-      font-weight: bold;
-    }
-
-    &::before {
-      background-color: #5dc8f0;
-      border-color: transparent;
-      transform: scale(1);
-    }
-
-    &::after {
-      border-color: #000;
-    }
-  }
 }
 </style>
