@@ -1,13 +1,22 @@
 <template lang='pug'>
   li.c-li(data-test='proposalItem')
     .c-item
-      i(:class='iconClass')
       .c-main
-        p.has-text-bold(data-test='typeDescription') {{typeDescription}}
-        p.has-text-1(
-          :class='{ "has-text-danger": proposal.status === statuses.STATUS_FAILED, "has-text-success": proposal.status === statuses.STATUS_PASSED }'
-          data-test='statusDescription'
-          ) {{statusDescription}}
+        i(:class='iconClass')
+        .c-main-content
+          p.has-text-bold(data-test='typeDescription')
+            | {{typeDescription}}
+            tooltip.c-tip(
+              v-if='isToRemoveMe'
+              direction='top'
+              :text='L("You cannot vote.")'
+            )
+              .button.is-icon-smaller.is-primary
+                i.icon-question
+          p.has-text-1(
+            :class='{ "has-text-danger": proposal.status === statuses.STATUS_FAILED, "has-text-success": proposal.status === statuses.STATUS_PASSED }'
+            data-test='statusDescription'
+            ) {{statusDescription}}
       proposal-vote-options(
         v-if='proposal.status === statuses.STATUS_OPEN'
         :proposalHash='proposalHash'
@@ -42,6 +51,7 @@ import {
 } from '@model/contracts/voting/proposals.js'
 import ProposalVoteOptions from '@containers/proposals/ProposalVoteOptions.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
+import Tooltip from '@components/Tooltip.vue'
 import { INVITE_STATUS } from '@model/contracts/group.js'
 
 export default {
@@ -51,12 +61,14 @@ export default {
   },
   components: {
     ProposalVoteOptions,
-    LinkToCopy
+    LinkToCopy,
+    Tooltip
   },
   computed: {
     ...mapGetters([
       'currentGroupState',
       'groupMembersCount',
+      'userDisplayName',
       'ourUsername'
     ]),
     ...mapState(['currentGroupId']),
@@ -72,14 +84,20 @@ export default {
     isOurProposal () {
       return this.proposal.meta.username === this.ourUsername
     },
+    isToRemoveMe () {
+      return this.proposalType === PROPOSAL_REMOVE_MEMBER && this.proposal.data.proposalData.member === this.ourUsername
+    },
     typeDescription () {
       return {
         [PROPOSAL_INVITE_MEMBER]: () => L('Add {user} to group.', {
           user: this.proposal.data.proposalData.member
         }),
-        [PROPOSAL_REMOVE_MEMBER]: () => L('Remove {user} from group.', {
-          user: this.proposal.data.proposalData.member
-        }),
+        [PROPOSAL_REMOVE_MEMBER]: () => {
+          const user = this.userDisplayName(this.proposal.data.proposalData.member)
+          return this.isToRemoveMe
+            ? L('Remove {user} (you) from the group.', { user })
+            : L('Remove {user} from the group.', { user })
+        },
         [PROPOSAL_GROUP_SETTING_CHANGE]: () => {
           const { setting } = this.proposal.data.proposalData
 
@@ -127,7 +145,7 @@ export default {
     iconClass () {
       const type = {
         [PROPOSAL_INVITE_MEMBER]: 'icon-user-plus',
-        [PROPOSAL_REMOVE_MEMBER]: 'icon-user-times',
+        [PROPOSAL_REMOVE_MEMBER]: 'icon-user-minus',
         [PROPOSAL_GROUP_SETTING_CHANGE]: 'icon-coins',
         [PROPOSAL_PROPOSAL_SETTING_CHANGE]: 'icon-chart-pie',
         [PROPOSAL_GENERIC]: 'icon-poll'
@@ -174,7 +192,7 @@ export default {
 
 .c-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
 
   @include phone {
     flex-wrap: wrap;
@@ -182,7 +200,16 @@ export default {
 }
 
 .c-main {
+  display: flex;
   flex-grow: 1;
+
+  &-content {
+    flex-grow: 1;
+  }
+}
+
+.c-tip {
+  margin-left: $spacer-xs;
 }
 
 .c-sendLink {

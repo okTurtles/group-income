@@ -1,8 +1,6 @@
 <template lang='pug'>
-.c-ctas
-  // TODO - NEED BETTER DESIGN
-  i18n(v-if='votingToRemoveMe') You cannot vote.
-  .buttons(v-else-if='!hadVoted || ephemeral.changingVote')
+.c-ctas(v-if='!isToRemoveMe')
+  .buttons.c-options(v-if='!hadVoted || ephemeral.changingVote')
     i18n.button.is-outlined.is-small.is-success(
       tag='button'
       @click='voteFor'
@@ -35,7 +33,7 @@ import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
 import { VOTE_FOR, VOTE_AGAINST } from '@model/contracts/voting/rules.js'
 import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, oneVoteToPass } from '@model/contracts/voting/proposals.js'
-import { createInvite } from '@model/contracts/group.js'
+import { createInvite, removeMemberSecret } from '@model/contracts/group.js'
 
 export default {
   name: 'Vote',
@@ -79,7 +77,7 @@ export default {
     data () {
       return this.proposal.data.proposalData
     },
-    votingToRemoveMe () {
+    isToRemoveMe () {
       return this.type === PROPOSAL_REMOVE_MEMBER && this.data.member === this.ourUsername
     },
     hadVoted () {
@@ -102,14 +100,18 @@ export default {
       }
       try {
         const proposalHash = this.proposalHash
-        const inviteMember = this.type === PROPOSAL_INVITE_MEMBER
+        const isOneVoteToPass = oneVoteToPass(proposalHash)
         const payload = {}
-        if (inviteMember && oneVoteToPass(proposalHash)) {
+
+        if (isOneVoteToPass && this.type === PROPOSAL_INVITE_MEMBER) {
           payload.passPayload = createInvite({
             invitee: this.proposal.data.proposalData.member,
             creator: this.proposal.meta.username
           })
+        } else if (isOneVoteToPass && this.type === PROPOSAL_REMOVE_MEMBER) {
+          payload.passPayload = removeMemberSecret()
         }
+
         const vote = await sbp('gi.contracts/group/proposalVote/create',
           {
             proposalHash,
@@ -186,6 +188,12 @@ export default {
 
 .buttons {
   margin-top: 0;
+}
+
+.c-options {
+  @include tablet {
+    flex-wrap: nowrap;
+  }
 }
 
 .c-error {

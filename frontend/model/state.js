@@ -310,6 +310,12 @@ const getters = {
       })()
     }
   },
+  userDisplayName (state, getters) {
+    return (username) => {
+      const profile = getters.globalProfile(username) || {}
+      return profile.displayName || profile.name || username
+    }
+  },
   // list of group names and contractIDs
   groupsByName (state) {
     const contracts = state.contracts
