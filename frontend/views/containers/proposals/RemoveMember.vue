@@ -10,8 +10,8 @@ proposal-template(
 )
   .c-step(v-if='ephemeral.currentStep === 0' key='0')
     avatar.c-avatar(:src='memberGlobalProfile.picture' size='lg')
-    i18n.is-title-4(tag='p' :args='{ name: member.name }' v-if='groupShouldPropose') Remove {name} from your group
-    i18n.is-title-4(tag='p' :args='{ name: member.name }' v-else) Are you sure you want to remove {name} from your group?
+    i18n.is-title-4(tag='p' :args='{ name: userDisplayName(username) }' v-if='groupShouldPropose') Remove {name} from your group
+    i18n.is-title-4(tag='p' :args='{ name: userDisplayName(username) }' v-else) Are you sure you want to remove {name} from your group?
 
   banner-scoped(ref='formMsg' data-test='proposalError')
 </template>
@@ -22,9 +22,10 @@ import sbp from '~/shared/sbp.js'
 import { CLOSE_MODAL } from '@utils/events.js'
 import L from '@view-utils/translations.js'
 import Avatar from '@components/Avatar.vue'
-import { PROPOSAL_REMOVE_MEMBER } from '@model/contracts/voting/proposals.js'
+import { PROPOSAL_REMOVE_MEMBER, STATUS_OPEN } from '@model/contracts/voting/proposals.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ProposalTemplate from './ProposalTemplate.vue'
+import { validateRemoveMember } from '@model/contracts/group.js'
 
 export default {
   name: 'RemoveMember',
@@ -50,6 +51,7 @@ export default {
   },
   created () {
     if (!this.username) {
+      console.warn('Missing username to display RemoveMember modal')
       sbp('okTurtles.events/emit', CLOSE_MODAL)
     }
   },
@@ -58,11 +60,14 @@ export default {
       'currentGroupId'
     ]),
     ...mapGetters([
+      'currentGroupState',
       'globalProfile',
       'groupProfiles',
       'groupSettings',
       'groupShouldPropose',
-      'groupMembersCount'
+      'groupMembersCount',
+      'ourUsername',
+      'userDisplayName'
     ]),
     memberGlobalProfile () {
       return this.globalProfile(this.username) || {}
@@ -73,60 +78,77 @@ export default {
     }
   },
   methods: {
+    validateRemoval (data) {
+      return validateRemoveMember(this.currentGroupState, {
+        data,
+        meta: { username: this.ourUsername }
+      })
+    },
     async submit (form) {
       this.$refs.formMsg.clean()
       const member = this.username
       const memberID = this.groupProfiles[member].contractID
 
       if (this.groupShouldPropose) {
-        const theresAproposalGoinOn = false // TODO this
-        if (theresAproposalGoinOn) {
-          this.$refs.formMsg.danger(L('There is already an open proposal to remove this member.'))
-          this.ephemeral.currentStep = 0
-          return
+        // Look for existing proposal
+        for (const hash in this.currentGroupState.proposals) {
+          const prop = this.currentGroupState.proposals[hash]
+          if (prop.status === STATUS_OPEN &&
+            prop.data.proposalType === PROPOSAL_REMOVE_MEMBER &&
+            prop.data.proposalData.member === member
+          ) {
+            console.error('Duplicated proposal.')
+            this.$refs.formMsg.danger(L('There is already an open proposal to remove this member.'))
+            this.ephemeral.currentStep = 0
+            return
+          }
         }
 
         try {
-          const proposal = await sbp('gi.contracts/group/proposal/create',
-            {
-              proposalType: PROPOSAL_REMOVE_MEMBER,
-              proposalData: {
-                member,
-                memberID,
-                groupID: this.currentGroupId,
-                reason: form.reason
-              },
-              votingRule: this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].rule,
-              expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].expires_ms
+          const data = {
+            proposalType: PROPOSAL_REMOVE_MEMBER,
+            proposalData: {
+              member,
+              memberID,
+              groupID: this.currentGroupId,
+              reason: form.reason
             },
+            votingRule: this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].rule,
+            expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].expires_ms
+          }
+          this.validateRemoval(data.proposalData)
+          const proposal = await sbp('gi.contracts/group/proposal/create',
+            data,
             this.currentGroupId
           )
           await sbp('backend/publishLogEntry', proposal)
 
           this.ephemeral.currentStep += 1 // Show Success step
         } catch (e) {
-          console.error(`Failed proposing to remove member ${member}`, e.message)
+          console.error(`Failed proposing to remove member ${member}.`, e.message)
           this.$refs.formMsg.danger(L('Failed proposing to remove member. {codeError}', { codeError: e.message }))
           this.ephemeral.currentStep = 0
         }
+
         return
       }
 
       try {
-        const memberRemoved = await sbp(
-          'gi.contracts/group/removeMember/create',
-          {
-            member,
-            memberID,
-            groupID: this.currentGroupId
-          },
+        const data = {
+          member,
+          memberID,
+          groupID: this.currentGroupId
+        }
+        this.validateRemoval(data)
+        const memberRemoved = await sbp('gi.contracts/group/removeMember/create',
+          data,
           this.currentGroupId
         )
         await sbp('backend/publishLogEntry', memberRemoved)
         this.$refs.proposal.close()
       } catch (e) {
-        console.error(`Failed to remove member ${member}`, e.message)
-        this.$refs.formMsg.danger(L('Failed to remove member. {codeError}', { codeError: e.message }))
+        console.error(`Failed to remove member ${member}.`, e.message)
+        this.$refs.formMsg.danger(L('Failed to remove member {member}. {codeError}', { member, codeError: e.message }))
       }
     }
   }

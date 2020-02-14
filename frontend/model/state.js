@@ -140,6 +140,11 @@ const mutations = {
     sbp('okTurtles.events/emit', EVENTS.CONTRACTS_MODIFIED, state.contracts)
   },
   setContractHEAD (state, { contractID, HEAD }) {
+    const contract = state.contracts[contractID]
+    if (!contract) {
+      console.error(`This contract ${contractID} doesnt exist anymore. Probably you left the group just now.`)
+      return
+    }
     state.contracts[contractID].HEAD = HEAD
   },
   removeContract (state, contractID) {

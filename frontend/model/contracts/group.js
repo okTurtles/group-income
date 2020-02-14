@@ -7,7 +7,11 @@ import { mapOf, objectOf, objectMaybeOf, optional, string, number, object, union
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income-simple/issues/603
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST } from './voting/rules.js'
-import proposals, { proposalType, proposalSettingsType, archiveProposal, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_CANCELLED } from './voting/proposals.js'
+import proposals, {
+  proposalType, proposalSettingsType, archiveProposal,
+  PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC,
+  STATUS_OPEN, STATUS_CANCELLED
+} from './voting/proposals.js'
 import { paymentStatusType, paymentType } from './payments/index.js'
 import * as Errors from '../errors.js'
 import { merge, deepEqualJSONType } from '~/frontend/utils/giLodash.js'
@@ -63,6 +67,67 @@ function initGroupProfile (contractID: string) {
     contractID: contractID,
     nonMonetaryContributions: []
   }
+}
+
+export function removeMemberSecret () {
+  return {
+    secret: `${parseInt(Math.random() * 10000)}` // TODO: this
+  }
+}
+
+export function validateRemoveMember (groupState, { data, meta }) {
+  const memberToRemove = data.member
+  const membersCount = Object.keys(groupState.profiles).length
+
+  if (!groupState.profiles[memberToRemove]) {
+    console.error(`validateRemoveMember - ${memberToRemove} isn't part of the group`)
+    throw new GIErrorUIRuntimeError(L('The member {memberToRemove} is not part of the group.', { memberToRemove }))
+  }
+
+  if (membersCount === 1) {
+    console.error('validateRemoveMember - only 1 member')
+    throw new GIErrorUIRuntimeError(L('The group only has one member and you cannot remove yourself.'))
+  }
+
+  if (membersCount === 2) {
+    if (meta.username !== groupState.settings.groupCreator) {
+      console.error('validateRemoveMember - not the group creator')
+      throw new GIErrorUIRuntimeError(L('In a group of 2, only the group creator can remove the other member.'))
+    }
+  } else {
+    const { payload } = groupState.proposals[data.proposalHash] || {}
+    if (payload && payload.secret === data.proposalPayload) {
+      console.error('validateRemoveMember - invalid associated proposal')
+      throw new GIErrorUIRuntimeError(L('The proposal associated to remove {memberToRemove} is not valid.', { memberToRemove }))
+    }
+  }
+
+  return true
+}
+export async function removeMemberSideEffect (data) {
+  const rootState = sbp('state/vuex/state')
+  const contracts = rootState.contracts || {}
+
+  if (data.member === rootState.loggedIn.username) {
+    if (sbp('okTurtles.data/get', 'JOINING_GROUP')) { // Same as above
+      return false
+    }
+
+    const groupIDToSwitch = Object.keys(contracts)
+      .find(contractID => contracts[contractID].type === 'group' &&
+        contractID !== data.groupID &&
+        rootState[contractID].settings) || null
+    sbp('state/vuex/commit', 'setCurrentGroupId', groupIDToSwitch)
+    sbp('state/vuex/commit', 'removeContract', data.groupID)
+
+    sbp('state/router').push({ path: groupIDToSwitch ? '/dashboard' : '/' })
+    // TODO - #828 remove other group members contracts if applicable
+  } else {
+    // TODO - #828 remove the member contract if applicable.
+    // sbp('state/vuex/commit', 'removeContract', data.memberID)
+  }
+  // TODO - verify open proposals and see if they need some re-adjustments.
+  // ex 3 of 4 members voted -> one member left -> 3 of 3 members voted -> need to resync and mark it as passed!
 }
 
 DefineContract({
@@ -277,15 +342,26 @@ DefineContract({
             prop.meta.username === meta.username &&
             deepEqualJSONType(prop.data.proposalData, data.proposalData)
           ) {
-            throw new TypeError(`proposal: is identical to proposal ${hash}`)
+            // BUG: cc @taoeffect
+            // If I try to create the same proposal twice (imagine: remove member)
+            // it will create a proposal to remove me.
+            // That doesn't make sense....
+            console.warn(`proposal: is identical to proposal ${hash}`)
+            // throw new TypeError(`proposal: is identical to proposal ${hash}`)
           }
         }
         Vue.set(state.proposals, hash, {
           data,
           meta,
-          votes: { [meta.username]: VOTE_FOR },
+          votes: {
+            [meta.username]: VOTE_FOR,
+            ...(data.proposalType === PROPOSAL_REMOVE_MEMBER ? {
+              // Member to be removed cannot vote against.
+              [data.proposalData.member]: VOTE_FOR
+            } : {})
+          },
           status: STATUS_OPEN,
-          payload: null // set later by proposalVote
+          payload: null // set later by group/proposalVote
         })
         // TODO: save all proposals disk so that we only keep open proposals in memory
         // TODO: create a global timer to auto-pass/archive expired votes
@@ -340,40 +416,43 @@ DefineContract({
       }
     },
     'gi.contracts/group/removeMember': {
-      validate: objectOf({
-        member: string,
-        memberID: string,
-        groupID: string
-      }),
-      process (state, { data, meta }) {
-        Vue.delete(state.profiles, data.member)
+      validate: (data) => {
+        return objectOf({
+          member: string,
+          memberID: string,
+          groupID: string,
+          // In case it happens in a big group (by proposal)
+          // we need to validate the associated proposal.
+          proposalHash: optional(string),
+          proposalPayload: optional(objectOf({
+            secret: string // NOTE: simulate the OP_KEY_* stuff for now
+          }))
+        })
       },
-      sideEffect (message) {
-        const data = message.data()
+      process (state, { data, meta }) {
         const rootState = sbp('state/vuex/state')
-        const contracts = rootState.contracts || {}
-
         if (data.member === rootState.loggedIn.username) {
           // If this member is re-joining the group, ignore the rest
           // so the member doesn't remove themself again.
           if (sbp('okTurtles.data/get', 'JOINING_GROUP')) {
             return false
           }
-
-          const groupIDToSwitch = Object.keys(contracts)
-            .find(contractID => contracts[contractID].type === 'group' &&
-              contractID !== data.groupID &&
-              rootState[contractID].settings) || null
-          sbp('state/vuex/commit', 'setCurrentGroupId', groupIDToSwitch)
-          sbp('state/vuex/commit', 'removeContract', data.groupID)
-
-          sbp('state/router').push({ path: groupIDToSwitch ? '/dashboard' : '/' })
-
-          // TODO - #828 remove other group members contracts if applicable
-        } else {
-          // TODO - #828 remove the member contract if applicable.
-          // sbp('state/vuex/commit', 'removeContract', data.memberID)
         }
+
+        // QUESTION: Shouldn't these validatons be on validate() method above?
+        // But there we don't have access to state and meta.
+
+        // If we do a validation here and it fails,
+        // will this try to ban/propose to remove only "meta.username" <-- i guess!
+        // or everyone in the group who proccesses this? <-- I saw this happening O.o
+
+        // Well... meanwhile I added validateRemoveMember
+        // on the component side too, before group/removeMember.
+        validateRemoveMember(state, { data, meta })
+        Vue.delete(state.profiles, data.member)
+      },
+      sideEffect (message) {
+        removeMemberSideEffect(message.data())
       }
     },
     'gi.contracts/group/invite': {

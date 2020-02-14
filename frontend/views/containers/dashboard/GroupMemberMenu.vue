@@ -19,7 +19,10 @@ menu-parent
         icon='comment'
       )
         i18n Send message
+      // TODO - Remove true from v-if before MERGE.
+      // - Used to see/debug one GIErrorUI "only the creator can remove the other member"
       menu-item(
+        v-if='true || groupShouldPropose || groupSettings.creator === ourUsername'
         tag='button'
         item-id='remove'
         icon='times'
@@ -29,6 +32,7 @@ menu-parent
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
@@ -43,9 +47,16 @@ export default {
   props: {
     username: String
   },
+  computed: {
+    ...mapGetters([
+      'ourUsername',
+      'groupSettings',
+      'groupShouldPropose'
+    ])
+  },
   methods: {
-    openModal (modal) {
-      sbp('okTurtles.events/emit', OPEN_MODAL, modal)
+    openModal (modal, props) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
     },
     closeModal () {
       this.$refs.modal.close()

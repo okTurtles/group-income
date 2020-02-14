@@ -153,6 +153,7 @@ export default {
       this.$refs.modal.close()
     },
     next () {
+      // TODO/BUG - we must clear formMsg (if visible) when changing steps.
       this.$emit('update:currentStep', this.currentStep + 1)
     },
     prev () {

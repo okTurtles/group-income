@@ -1,11 +1,11 @@
 'use strict'
 
 import sbp from '~/shared/sbp.js'
-// import Vue from 'vue'
 import { objectOf, literalOf, unionOf, number } from '~/frontend/utils/flowTyper.js'
 import { DAYS_MILLIS } from '~/frontend/utils/time.js'
 import { PROPOSAL_RESULT } from '~/frontend/utils/events.js'
 import rules, { ruleType, VOTE_UNDECIDED, VOTE_AGAINST, VOTE_FOR, RULE_THRESHOLD, RULE_DISAGREEMENT } from './rules.js'
+import { validateRemoveMember, removeMemberSideEffect } from '@model/contracts/group.js'
 
 export const PROPOSAL_INVITE_MEMBER = 'invite-member'
 export const PROPOSAL_REMOVE_MEMBER = 'remove-member'
@@ -122,10 +122,48 @@ const proposals = {
         [RULE_DISAGREEMENT]: { threshold: 2 }
       }
     },
-    [VOTE_FOR]: function (state, { proposalHash, passPayload }) {
-      console.error('unimplemented!')
-      // TODO: unsubscribe from their mailbox and identity contract
-      //       call commit('removeContract'), etc.
+    [VOTE_FOR]: async function (state, { proposalHash, passPayload }) {
+      const proposal = state.proposals[proposalHash]
+      const { member, memberID, groupID } = proposal.data.proposalData
+      proposal.status = STATUS_PASSED
+      proposal.payload = passPayload
+
+      const data = {
+        member,
+        memberID,
+        groupID,
+        proposalHash,
+        proposalPayload: passPayload
+      }
+
+      // Q: Calling this here, so in case it fails, doesn't propose to remove the member.
+      // And instead it catches (and shows) the error to the user.
+      validateRemoveMember(state, { data, meta: proposal.meta })
+
+      sbp('gi.contracts/group/removeMember/process', state, {
+        meta: proposal.meta,
+        data
+      })
+
+      removeMemberSideEffect(data)
+      // // NOTE_1: I tried to call selector sideEffect manually but it didnt work
+      // // TypeError: selectors[selector] is not a function - sbp.js
+      // sbp('gi.contracts/group/removeMember/sideEffect', {
+      //   // Q: Why sideEffect(message), message is not a simple object?
+      //   meta: () => proposal.meta,
+      //   data: () => data
+      // })
+
+      // NOTE_2: Everything went fine to all members expect the one being removed.
+      /*
+       There was an error:
+       - "processMutation: error TypeError TypeError: "state.contracts[contractID] is undefined"
+       - state.js:653 -> :172 at setContractHEAD()
+
+       I think this happens because the member received a new event where
+       the proposal was accepted. But the contract was already removed, so it breaks...
+       - A quick fix was to put a if() there but I feel like the issue is bigger than that.
+       */
     },
     [VOTE_AGAINST]: voteAgainst
   },
