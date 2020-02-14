@@ -203,6 +203,7 @@ page(
               i.icon-pencil-alt icon-pencil-alt
               i.icon-plus icon-plus
               i.icon-poll icon-poll
+              i.icon-question icon-question
               i.icon-question-circle icon-question-circle
               i.icon-tag icon-tag
               i.icon-times icon-times
@@ -210,7 +211,7 @@ page(
               i.icon-undo icon-undo
               i.icon-user icon-user
               i.icon-user-plus icon-user-plus
-              i.icon-user-times icon-user-times
+              i.icon-user-minus icon-user-minus
               i.icon-vote-yea icon-vote-yea
               i.icon-wifi icon-wifi
         tr
