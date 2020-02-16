@@ -94,6 +94,25 @@ export default sbp('sbp/selectors/register', {
     sbp('gi.actions/group/switch', groupID)
     return groupID
   },
+  'gi.actions/group/join': async function ({ groupId, inviteSecret }) {
+    try {
+      const acceptance = await sbp('gi.contracts/group/inviteAccept/create',
+        { inviteSecret },
+        groupId
+      )
+      await sbp('backend/publishLogEntry', acceptance)
+      await sbp('state/enqueueContractSync', groupId)
+      return groupId
+    } catch (e) {
+      console.error('gi.actions/group/join failed!', e)
+      throw new GIErrorUIRuntimeError(L('Failed to join the group: {codeError}', { codeError: e.message }))
+    }
+  },
+  'gi.actions/group/joinAndSwitch': async function (joinParams) {
+    const groupId = await sbp('gi.actions/group/join', joinParams)
+    sbp('gi.actions/group/switch', groupId)
+    return groupId
+  },
   'gi.actions/group/switch': function (groupId) {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
   }

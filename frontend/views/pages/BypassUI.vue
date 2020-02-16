@@ -119,6 +119,14 @@ export default {
           finalize: () => {
             this.$router.push({ path: '/dashboard' }) // eslint-disable-line
           }
+        },
+        'group_join': {
+          actionFn: async (params) => {
+            await sbp('gi.actions/group/joinAndSwitch', params)
+          },
+          finalize: () => {
+            this.$router.push({ path: '/dashboard' }) // eslint-disable-line
+          }
         }
       }
     }

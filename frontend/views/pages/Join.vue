@@ -152,25 +152,18 @@ export default {
       this.$router.push({ path: '/' })
     },
     async accept () {
+      this.ephemeral.errorMsg = null
+      const { groupId, secret } = this.$route.query || {}
+
       try {
-        // post acceptance event to the group contract
-        this.ephemeral.errorMsg = null
-        const groupId = this.$route.query.groupId
-        const acceptance = await sbp('gi.contracts/group/inviteAccept/create',
-          { inviteSecret: this.$route.query.secret },
-          groupId
-        )
-        // let the group know we've accepted their invite
-        await sbp('backend/publishLogEntry', acceptance)
-        // sync the group's contract state
-        await sbp('state/enqueueContractSync', groupId)
-        // after syncing, we can set the current group
-        this.$store.commit('setCurrentGroupId', groupId)
+        await sbp('gi.actions/group/joinAndSwitch', {
+          groupId,
+          inviteSecret: secret
+        })
         this.pageStatus = 'WELCOME'
-      } catch (ex) {
-        console.log(ex)
-        // TODO: post this to a global notification system instead of using this.ephemeral.errorMsg
-        this.ephemeral.errorMsg = L('Failed to Accept Invitation')
+      } catch (e) {
+        console.error('Join.vue accept() error:', e)
+        this.ephemeral.errorMsg = e.message
         this.pageStatus = 'INVALID'
       }
     }
