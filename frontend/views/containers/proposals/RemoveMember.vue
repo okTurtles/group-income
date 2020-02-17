@@ -134,21 +134,15 @@ export default {
       }
 
       try {
-        const data = {
+        await sbp('gi.actions/group/removeMember', {
           member,
           memberID,
           groupID: this.currentGroupId
-        }
-        this.validateRemoval(data)
-        const memberRemoved = await sbp('gi.contracts/group/removeMember/create',
-          data,
-          this.currentGroupId
-        )
-        await sbp('backend/publishLogEntry', memberRemoved)
+        }, this.currentGroupId)
         this.$refs.proposal.close()
       } catch (e) {
-        console.error(`Failed to remove member ${member}.`, e.message)
-        this.$refs.formMsg.danger(L('Failed to remove member {member}. {codeError}', { member, codeError: e.message }))
+        console.error(`Failed to remove member ${member}.`, e)
+        this.$refs.formMsg.danger(e.message)
       }
     }
   }

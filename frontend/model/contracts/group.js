@@ -80,25 +80,20 @@ export function validateRemoveMember (groupState, { data, meta }) {
   const membersCount = Object.keys(groupState.profiles).length
 
   if (!groupState.profiles[memberToRemove]) {
-    console.error(`validateRemoveMember - ${memberToRemove} isn't part of the group`)
-    throw new GIErrorUIRuntimeError(L('The member {memberToRemove} is not part of the group.', { memberToRemove }))
+    console.error(`removeMember - ${memberToRemove} isn't part of the group`)
+    throw new TypeError('not_a_member')
   }
 
   if (membersCount === 1) {
-    console.error('validateRemoveMember - only 1 member')
-    throw new GIErrorUIRuntimeError(L('The group only has one member and you cannot remove yourself.'))
+    console.error('removeMember - only 1 member')
+    throw new TypeError('cannot_remove_yourself')
   }
 
-  if (membersCount === 2) {
-    if (meta.username !== groupState.settings.groupCreator) {
-      console.error('validateRemoveMember - not the group creator')
-      throw new GIErrorUIRuntimeError(L('In a group of 2, only the group creator can remove the other member.'))
-    }
-  } else {
+  if (membersCount >= 3) {
     const { payload } = groupState.proposals[data.proposalHash] || {}
     if (payload && payload.secret === data.proposalPayload) {
-      console.error('validateRemoveMember - invalid associated proposal')
-      throw new GIErrorUIRuntimeError(L('The proposal associated to remove {memberToRemove} is not valid.', { memberToRemove }))
+      console.error('removeMember - invalid associated proposal')
+      throw new TypeError('invalid_associated_proposal')
     }
   }
 
@@ -109,7 +104,9 @@ export async function removeMemberSideEffect (data) {
   const contracts = rootState.contracts || {}
 
   if (data.member === rootState.loggedIn.username) {
-    if (sbp('okTurtles.data/get', 'JOINING_GROUP')) { // Same as above
+    // If this member is re-joining the group, ignore the rest
+    // so the member doesn't remove themself again.
+    if (sbp('okTurtles.data/get', 'JOINING_GROUP')) {
       return false
     }
 
@@ -354,11 +351,7 @@ DefineContract({
           data,
           meta,
           votes: {
-            [meta.username]: VOTE_FOR,
-            ...(data.proposalType === PROPOSAL_REMOVE_MEMBER ? {
-              // Member to be removed cannot vote against.
-              [data.proposalData.member]: VOTE_FOR
-            } : {})
+            [meta.username]: VOTE_FOR
           },
           status: STATUS_OPEN,
           payload: null // set later by group/proposalVote
@@ -416,11 +409,11 @@ DefineContract({
       }
     },
     'gi.contracts/group/removeMember': {
-      validate: (data) => {
+      validate: (data, { state, meta } = {}) => {
         return objectOf({
           member: string,
           memberID: string,
-          groupID: string,
+          groupId: string,
           // In case it happens in a big group (by proposal)
           // we need to validate the associated proposal.
           proposalHash: optional(string),
@@ -428,8 +421,13 @@ DefineContract({
             secret: string // NOTE: simulate the OP_KEY_* stuff for now
           }))
         })
+        // Add this after #838 is merged
+        // validateRemoveMember(state, { data, meta })
       },
       process (state, { data, meta }) {
+        // Add this after #838 is merged
+        // validateRemoveMember(state, { data, meta })
+
         const rootState = sbp('state/vuex/state')
         if (data.member === rootState.loggedIn.username) {
           // If this member is re-joining the group, ignore the rest
@@ -439,16 +437,6 @@ DefineContract({
           }
         }
 
-        // QUESTION: Shouldn't these validatons be on validate() method above?
-        // But there we don't have access to state and meta.
-
-        // If we do a validation here and it fails,
-        // will this try to ban/propose to remove only "meta.username" <-- i guess!
-        // or everyone in the group who proccesses this? <-- I saw this happening O.o
-
-        // Well... meanwhile I added validateRemoveMember
-        // on the component side too, before group/removeMember.
-        validateRemoveMember(state, { data, meta })
         Vue.delete(state.profiles, data.member)
       },
       sideEffect (message) {

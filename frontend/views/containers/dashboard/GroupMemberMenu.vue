@@ -19,10 +19,7 @@ menu-parent
         icon='comment'
       )
         i18n Send message
-      // TODO - Remove true from v-if before MERGE.
-      // - Used to see/debug one GIErrorUI "only the creator can remove the other member"
       menu-item(
-        v-if='true || groupShouldPropose || groupSettings.creator === ourUsername'
         tag='button'
         item-id='remove'
         icon='times'

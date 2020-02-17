@@ -7,7 +7,7 @@ import { PROPOSAL_RESULT } from '~/frontend/utils/events.js'
 import rules, { ruleType, VOTE_UNDECIDED, VOTE_AGAINST, VOTE_FOR, RULE_THRESHOLD, RULE_DISAGREEMENT } from './rules.js'
 
 // NOTE: This creates a circular dependency. I think we should isolate these 2 fn, right?
-import { validateRemoveMember, removeMemberSideEffect } from '~/frontend/model/contracts/group.js'
+import { removeMemberSideEffect } from '~/frontend/model/contracts/group.js'
 
 export const PROPOSAL_INVITE_MEMBER = 'invite-member'
 export const PROPOSAL_REMOVE_MEMBER = 'remove-member'
@@ -137,10 +137,6 @@ const proposals = {
         proposalHash,
         proposalPayload: passPayload
       }
-
-      // Q: Calling this here, so in case it fails, doesn't propose to remove the member.
-      // And instead it catches (and shows) the error to the user.
-      validateRemoveMember(state, { data, meta: proposal.meta })
 
       sbp('gi.contracts/group/removeMember/process', state, {
         meta: proposal.meta,
