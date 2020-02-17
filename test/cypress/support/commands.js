@@ -227,27 +227,39 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
   actionBeforeLogout,
   bypassUI
 }) => {
-  cy.visit(invitationLink)
-
-  if (isLoggedIn) {
-    cy.getByDT('welcomeGroup').should('contain', `Welcome to ${groupName}!`)
+  if (bypassUI) {
+    if (!isLoggedIn) {
+      cy.giSignup(username, { bypassUI: true })
+    }
+    const params = new URLSearchParams(new URL(invitationLink).search)
+    const groupId = params.get('groupId')
+    const inviteSecret = params.get('secret')
+    cyBypassUI('group_join', { groupId, inviteSecret })
   } else {
-    cy.getByDT('groupName').should('contain', groupName)
-    const inviteMessage = inviteCreator
-      ? `${inviteCreator} invited you to join their group!`
-      : 'You were invited to join'
-    cy.getByDT('invitationMessage').should('contain', inviteMessage)
-    cy.giSignup(username, { isInvitation: true, groupName })
-  }
+    cy.visit(invitationLink)
 
-  cy.getByDT('toDashboardBtn').click()
-  cy.url().should('eq', 'http://localhost:8000/app/dashboard')
+    if (isLoggedIn) {
+      cy.getByDT('welcomeGroup').should('contain', `Welcome to ${groupName}!`)
+    } else {
+      cy.getByDT('groupName').should('contain', groupName)
+      const inviteMessage = inviteCreator
+        ? `${inviteCreator} invited you to join their group!`
+        : 'You were invited to join'
+      cy.getByDT('invitationMessage').should('contain', inviteMessage)
+      cy.giSignup(username, { isInvitation: true, groupName })
+    }
+
+    cy.getByDT('toDashboardBtn').click()
+    cy.url().should('eq', 'http://localhost:8000/app/dashboard')
+  }
 
   if (displayName) {
     cy.giSetDisplayName(displayName)
   }
 
-  if (actionBeforeLogout) actionBeforeLogout()
+  if (actionBeforeLogout) {
+    actionBeforeLogout()
+  }
   cy.giLogout()
 })
 
