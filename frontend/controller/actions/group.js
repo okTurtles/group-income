@@ -96,11 +96,14 @@ export default sbp('sbp/selectors/register', {
   },
   'gi.actions/group/join': async function ({ groupId, inviteSecret }) {
     try {
+      // post acceptance event to the group contract
       const acceptance = await sbp('gi.contracts/group/inviteAccept/create',
         { inviteSecret },
         groupId
       )
+      // let the group know we've accepted their invite
       await sbp('backend/publishLogEntry', acceptance)
+      // sync the group's contract state
       await sbp('state/enqueueContractSync', groupId)
       return groupId
     } catch (e) {
@@ -110,6 +113,7 @@ export default sbp('sbp/selectors/register', {
   },
   'gi.actions/group/joinAndSwitch': async function (joinParams) {
     const groupId = await sbp('gi.actions/group/join', joinParams)
+    // after joining, we can set the current group
     sbp('gi.actions/group/switch', groupId)
     return groupId
   },
