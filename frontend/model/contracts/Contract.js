@@ -15,13 +15,13 @@ export function DefineContract (contract: Object) {
   sbp('sbp/selectors/register', {
     [`${contract.name}/create`]: function (data) {
       const metadata = meta.create()
-      contract.contract.validate(data)
       meta.validate(metadata)
+      contract.contract.validate(data, { state: null, meta: metadata })
       return GIMessage.create(null, null, undefined, `${contract.name}/process`, data, metadata)
     },
     [`${contract.name}/process`]: function (state, message) {
-      contract.contract.validate(message.data)
       meta.validate(message.meta)
+      contract.contract.validate(message.data, { state, meta: message.meta })
       contract.contract.process(state, message)
     }
   })
@@ -36,14 +36,16 @@ export function DefineContract (contract: Object) {
           throw new Error(`A contractID as 2nd parameter is required when calling '${action}/create'`)
         }
         const metadata = meta.create()
-        contract.actions[action].validate(data)
+        // TODO: this is hackish and not library friendly, fix in #749
+        const state = sbp('state/vuex/state')[contractID]
         meta.validate(metadata)
+        contract.actions[action].validate(data, { state, meta: metadata })
         const previousHEAD = await sbp('backend/latestHash', contractID)
         return GIMessage.create(contractID, previousHEAD, undefined, `${action}/process`, data, metadata)
       },
       [`${action}/process`]: function (state, message) {
-        contract.actions[action].validate(message.data)
         meta.validate(message.meta)
+        contract.actions[action].validate(message.data, { state, meta: message.meta })
         contract.actions[action].process(state, message)
       },
       // if this is undefined sbp will not register it
