@@ -17,7 +17,7 @@ import { TypeValidatorError } from '~/frontend/utils/flowTyper.js'
 import { GIErrorUnrecoverable, GIErrorIgnoreAndBanIfGroup, GIErrorDropAndReprocess } from './errors.js'
 import { STATUS_OPEN, PROPOSAL_REMOVE_MEMBER } from './contracts/voting/proposals.js'
 import { VOTE_FOR } from '~/frontend/model/contracts/voting/rules.js'
-import { actionWhitelisted, CONTRACT_REGEX } from '~/frontend/model/contracts/Contract.js'
+import { actionWhitelisted, ACTION_REGEX } from '~/frontend/model/contracts/Contract.js'
 import { currentMonthTimestamp } from '~/frontend/utils/time.js'
 import * as _ from '~/frontend/utils/giLodash.js'
 import * as EVENTS from '~/frontend/utils/events.js'
@@ -63,7 +63,8 @@ sbp('sbp/selectors/register', {
     for (const e of events) {
       const stateCopy = _.cloneDeep(state)
       try {
-        guardedSBP(e.type(), state, { data: e.data(), meta: e.meta(), hash: e.hash() })
+        const message = { data: e.data(), meta: e.meta(), hash: e.hash(), contractID }
+        guardedSBP(e.type(), state, message)
       } catch (err) {
         if (!(err instanceof GIErrorUnrecoverable)) {
           console.warn(`latestContractState: ignoring mutation ${e.hash()}|${e.type()} because of ${err.name}`)
@@ -631,14 +632,14 @@ const handleEvent = {
       const hash = message.hash()
       const data = message.data()
       const meta = message.meta()
-      const type = CONTRACT_REGEX.exec(selector)[3]
+      const type = ACTION_REGEX.exec(selector)[3]
       if (!type) {
         throw new GIErrorIgnoreAndBanIfGroup(`bad selector '${selector}' for message ${hash}`)
       }
       if (message.isFirstMessage()) {
         store.commit('registerContract', { contractID, type })
       }
-      const mutation = { data, meta, hash }
+      const mutation = { data, meta, hash, contractID }
       // this selector is created by Contract.js
       store.commit(`${contractID}/processMessage`, { selector, message: mutation })
       // all's good, so update our contract HEAD

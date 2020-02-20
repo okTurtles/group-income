@@ -65,46 +65,6 @@ function initGroupProfile (contractID: string) {
 
 DefineContract({
   name: 'gi.contracts/group',
-  contract: {
-    validate: objectMaybeOf({
-      invites: mapOf(string, inviteType),
-      settings: objectOf({
-        // TODO: add 'groupPubkey'
-        groupName: string,
-        groupPicture: string,
-        sharedValues: string,
-        mincomeAmount: number,
-        mincomeCurrency: string,
-        proposals: objectOf({
-          [PROPOSAL_INVITE_MEMBER]: proposalSettingsType,
-          [PROPOSAL_REMOVE_MEMBER]: proposalSettingsType,
-          [PROPOSAL_GROUP_SETTING_CHANGE]: proposalSettingsType,
-          [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposalSettingsType,
-          [PROPOSAL_GENERIC]: proposalSettingsType
-        })
-      })
-    }),
-    process (state, { data, meta }) {
-      // TODO: checkpointing: https://github.com/okTurtles/group-income-simple/issues/354
-      const initialState = merge({
-        payments: {},
-        invites: {},
-        proposals: {}, // hashes => {} TODO: this, see related TODOs in GroupProposal
-        settings: {
-          groupCreator: meta.username
-        },
-        profiles: {
-          [meta.username]: initGroupProfile(meta.identityContractID)
-        },
-        userPaymentsByMonth: {
-          [currentMonthTimestamp()]: initMonthlyPayments()
-        }
-      }, data)
-      for (const key in initialState) {
-        Vue.set(state, key, initialState[key])
-      }
-    }
-  },
   metadata: {
     validate: objectOf({
       createdDate: string,
@@ -120,9 +80,58 @@ DefineContract({
       }
     }
   },
+  state (contractID) {
+    return sbp('state/vuex/state')[contractID]
+  },
+  getters: {
+    groupMincomeAmount (state, getters) {
+      return getters.groupSettings.mincomeAmount
+    }
+  },
   // NOTE: All mutations must be atomic in their edits of the contract state.
   //       THEY ARE NOT to farm out any further mutations through the async actions!
   actions: {
+    // this is the constructor
+    'gi.contracts/group': {
+      validate: objectMaybeOf({
+        invites: mapOf(string, inviteType),
+        settings: objectOf({
+          // TODO: add 'groupPubkey'
+          groupName: string,
+          groupPicture: string,
+          sharedValues: string,
+          mincomeAmount: number,
+          mincomeCurrency: string,
+          proposals: objectOf({
+            [PROPOSAL_INVITE_MEMBER]: proposalSettingsType,
+            [PROPOSAL_REMOVE_MEMBER]: proposalSettingsType,
+            [PROPOSAL_GROUP_SETTING_CHANGE]: proposalSettingsType,
+            [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposalSettingsType,
+            [PROPOSAL_GENERIC]: proposalSettingsType
+          })
+        })
+      }),
+      process (state, { data, meta }) {
+        // TODO: checkpointing: https://github.com/okTurtles/group-income-simple/issues/354
+        const initialState = merge({
+          payments: {},
+          invites: {},
+          proposals: {}, // hashes => {} TODO: this, see related TODOs in GroupProposal
+          settings: {
+            groupCreator: meta.username
+          },
+          profiles: {
+            [meta.username]: initGroupProfile(meta.identityContractID)
+          },
+          userPaymentsByMonth: {
+            [currentMonthTimestamp()]: initMonthlyPayments()
+          }
+        }, data)
+        for (const key in initialState) {
+          Vue.set(state, key, initialState[key])
+        }
+      }
+    },
     'gi.contracts/group/payment': {
       validate: objectOf({
         toUser: string,

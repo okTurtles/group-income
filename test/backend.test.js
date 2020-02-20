@@ -57,11 +57,11 @@ sbp('sbp/selectors/overwrite', {
     if (e.isFirstMessage()) {
       vuexState[contractID] = {}
     }
-    sbp(e.type(), vuexState[contractID], {
-      data: e.data(),
-      meta: e.meta(),
-      hash: e.hash()
-    })
+    sbp(
+      e.type(),
+      vuexState[contractID],
+      { data: e.data(), meta: e.meta(), hash: e.hash(), contractID }
+    )
     sbp('okTurtles.events/emit', e.hash(), e)
   },
   // for handling the loggedIn metadata() in Contracts.js
@@ -137,7 +137,7 @@ describe('Full walkthrough', function () {
   }
 
   async function createMailboxFor (user) {
-    var mailbox = sbp('gi.contracts/mailbox/create', {
+    var mailbox = await sbp('gi.contracts/mailbox/create', {
       // authorizations: [Events.CanModifyAuths.dummyAuth(user.hash())]
     })
     await user.socket.sub(mailbox.hash())
@@ -159,8 +159,8 @@ describe('Full walkthrough', function () {
 
   describe('Identity tests', function () {
     it('Should create identity contracts for Alice and Bob', async function () {
-      users.bob = createIdentity('Bob', 'bob@okturtles.com')
-      users.alice = createIdentity('Alice', 'alice@okturtles.org')
+      users.bob = await createIdentity('Bob', 'bob@okturtles.com')
+      users.alice = await createIdentity('Alice', 'alice@okturtles.org')
       const { alice, bob } = users
       // verify attribute creation and state initialization
       bob.data().attributes.name.should.equal('Bob')
@@ -205,7 +205,7 @@ describe('Full walkthrough', function () {
     it('Should create a group & subscribe Alice', async function () {
       // set user Alice as being logged in so that metadata on messages is properly set
       login(users.alice)
-      groups.group1 = createGroup('group1')
+      groups.group1 = await createGroup('group1')
       await users.alice.socket.sub(groups.group1.hash())
       await postEntry(groups.group1)
     })
@@ -233,7 +233,8 @@ describe('Full walkthrough', function () {
       events = events.map(e => GIMessage.deserialize(e))
       var state = {}
       for (const e of events) {
-        sbp(e.type(), state, { data: e.data(), meta: e.meta(), hash: e.hash() })
+        const message = { data: e.data(), meta: e.meta(), hash: e.hash(), contractID: bobsContractId }
+        sbp(e.type(), state, message)
       }
       console.log(bold.red('FINAL STATE:'), state)
       // 3. get bob's mailbox contractID from his identity contract attributes
