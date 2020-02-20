@@ -19,7 +19,7 @@ DefineContract({
           picture: string
         })
       }),
-      process (state, { data }) {
+      process ({ data }, { state }) {
         for (const key in data) {
           Vue.set(state, key, data[key])
         }
@@ -27,7 +27,7 @@ DefineContract({
     },
     'gi.contracts/identity/setAttributes': {
       validate: object,
-      process (state, { data }) {
+      process ({ data }, { state }) {
         for (var key in data) {
           Vue.set(state.attributes, key, data[key])
         }
@@ -35,7 +35,7 @@ DefineContract({
     },
     'gi.contracts/identity/deleteAttributes': {
       validate: arrayOf(string),
-      process (state, { data }) {
+      process ({ data }, { state }) {
         for (var attribute of data) {
           Vue.delete(state.attributes, attribute)
         }

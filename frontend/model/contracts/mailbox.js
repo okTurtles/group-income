@@ -29,7 +29,7 @@ DefineContract({
   actions: {
     'gi.contracts/mailbox': {
       validate: object, // TODO: define this
-      process (state, { data }) {
+      process ({ data }, { state }) {
         for (const key in data) {
           Vue.set(state, key, data[key])
         }
@@ -44,15 +44,15 @@ DefineContract({
         message: optional(string),
         headers: optional(object)
       }),
-      process (state, { data, meta, hash }) {
-        state.messages.push({ data, meta, hash })
+      process (message, { state }) {
+        state.messages.push(message)
       }
     },
     'gi.contracts/mailbox/authorizeSender': {
       validate: objectOf({
         sender: string
       }),
-      process (state, { data }) {
+      process ({ data }, { state }) {
         // TODO: replace this via OP_KEY_*?
         throw new Error('unimplemented!')
       }

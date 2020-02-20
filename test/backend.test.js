@@ -59,8 +59,8 @@ sbp('sbp/selectors/overwrite', {
     }
     sbp(
       e.type(),
-      vuexState[contractID],
-      { data: e.data(), meta: e.meta(), hash: e.hash(), contractID }
+      { data: e.data(), meta: e.meta(), hash: e.hash(), contractID },
+      vuexState[contractID]
     )
     sbp('okTurtles.events/emit', e.hash(), e)
   },
@@ -234,7 +234,7 @@ describe('Full walkthrough', function () {
       var state = {}
       for (const e of events) {
         const message = { data: e.data(), meta: e.meta(), hash: e.hash(), contractID: bobsContractId }
-        sbp(e.type(), state, message)
+        sbp(e.type(), message, state)
       }
       console.log(bold.red('FINAL STATE:'), state)
       // 3. get bob's mailbox contractID from his identity contract attributes

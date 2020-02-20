@@ -9,9 +9,19 @@ export function mapValues (obj: Object, fn: Function, o: Object = {}) {
   return o
 }
 
-export function pick (o: Object, props: Array<*>) {
+export function pick (o: Object, props: [string]) {
   var x = {}
   for (const k of props) { x[k] = o[k] }
+  return x
+}
+
+export function omit (o: Object, props: [string]) {
+  var x = {}
+  for (const k in o) {
+    if (!props.includes(k)) {
+      x[k] = o[k]
+    }
+  }
   return x
 }
 

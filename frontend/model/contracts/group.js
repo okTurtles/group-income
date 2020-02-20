@@ -13,6 +13,8 @@ import * as Errors from '../errors.js'
 import { merge, deepEqualJSONType } from '~/frontend/utils/giLodash.js'
 import { currentMonthTimestamp } from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
+import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
+import currencies from '~/frontend/views/utils/currencies.js'
 
 export const INVITE_INITIAL_CREATOR = 'INVITE_INITIAL_CREATOR'
 export const INVITE_STATUS = {
@@ -80,12 +82,84 @@ DefineContract({
       }
     }
   },
+  // This function defines how the contract locates the state of a specific contractID.
+  // It is required. We can do cool things, like overriding 'state/vuex/state' in
+  // 'test/backend.test.js' to simplify and speed up testing by bypassing Vuex.
   state (contractID) {
     return sbp('state/vuex/state')[contractID]
   },
+  // These getters are restricted only to the contract's state.
+  // Do not access state outside the contract state inside of them.
+  // For example, if the getter you use tries to access `state.loggedIn`,
+  // that will break the `latestContractState` function in state.js.
+  // It is only safe to access state outside of the contract in a contract action's
+  // `sideEffect` function (as long as it doesn't modify contract state)
   getters: {
+    // we define `currentGroupState` here so that we can redefine it in state.js
+    // so that we can re-use these getter definitions in state.js since they are
+    // compatible with Vuex getter definitions.
+    // Here `state` refers to the individual group contract's state, the equivalent
+    // of `vuexRootState[someGroupContractID]`.
+    currentGroupState (state) {
+      return state
+    },
+    groupSettings (state, getters) {
+      return getters.currentGroupState.settings || {}
+    },
+    groupProfile (state, getters) {
+      return username => {
+        const profiles = getters.currentGroupState.profiles
+        return profiles && profiles[username]
+      }
+    },
+    groupProfiles (state, getters) {
+      return Object.keys(getters.currentGroupState.profiles || {}).reduce(
+        (result, username) => {
+          result[username] = getters.groupProfile(username)
+          return result
+        },
+        {}
+      )
+    },
     groupMincomeAmount (state, getters) {
       return getters.groupSettings.mincomeAmount
+    },
+    groupIncomeDistribution (state, getters) {
+      const groupProfiles = getters.groupProfiles
+      const mincomeAmount = getters.groupMincomeAmount
+      const currentIncomeDistribution = []
+      for (const username in groupProfiles) {
+        const profile = groupProfiles[username]
+        const incomeDetailsType = profile && profile.incomeDetailsType
+        if (incomeDetailsType) {
+          const adjustment = incomeDetailsType === 'incomeAmount' ? 0 : mincomeAmount
+          const adjustedAmount = adjustment + profile[incomeDetailsType]
+          currentIncomeDistribution.push({ name: username, amount: adjustedAmount })
+        }
+      }
+      return incomeDistribution(currentIncomeDistribution, mincomeAmount)
+    },
+    groupMembersByUsername (state, getters) {
+      return Object.keys(getters.currentGroupState.profiles || {})
+    },
+    groupMembersCount (state, getters) {
+      return getters.groupMembersByUsername.length
+    },
+    groupShouldPropose (state, getters) {
+      return getters.groupMembersCount >= 3
+    },
+    groupMincomeFormatted (state, getters) {
+      const settings = getters.groupSettings
+      const currency = currencies[settings.mincomeCurrency]
+      return currency && currency.displayWithCurrency(settings.mincomeAmount)
+    },
+    groupMincomeSymbolWithCode (state, getters) {
+      const currency = currencies[getters.groupSettings.mincomeCurrency]
+      return currency && currency.symbolWithCode
+    },
+    thisMonthsPayments (state, getters) {
+      const payments = getters.currentGroupState.userPaymentsByMonth
+      return (payments && payments[currentMonthTimestamp()]) || {}
     }
   },
   // NOTE: All mutations must be atomic in their edits of the contract state.
@@ -111,7 +185,7 @@ DefineContract({
           })
         })
       }),
-      process (state, { data, meta }) {
+      process ({ data, meta }, { state }) {
         // TODO: checkpointing: https://github.com/okTurtles/group-income-simple/issues/354
         const initialState = merge({
           payments: {},
@@ -143,7 +217,7 @@ DefineContract({
         details: optional(object),
         memo: optional(string)
       }),
-      process (state, { data, meta, hash }) {
+      process ({ data, meta, hash }, { state, getters }) {
         const monthstamp = currentMonthTimestamp()
         const thisMonth = vueFetchInitKV(state.userPaymentsByMonth, monthstamp, initMonthlyPayments())
         const paymentsFromUser = vueFetchInitKV(thisMonth.payments, meta.username, {})
@@ -154,7 +228,7 @@ DefineContract({
         Vue.set(paymentsFromUser, data.toUser, hash)
         // if this is the first payment, freeze the monthy's distribution
         if (!thisMonth.frozenDistribution) {
-          const getters = sbp('state/groupContractSafeGetters', state)
+          // const getters = sbp('state/groupContractSafeGetters', state)
           thisMonth.frozenDistribution = getters.groupIncomeDistribution
           thisMonth.frozenMincome = getters.groupMincomeAmount
         }
@@ -169,7 +243,7 @@ DefineContract({
           memo: string
         })
       }),
-      process (state, { data, meta, hash }) {
+      process ({ data, meta, hash }, { state }) {
         // TODO: we don't want to keep a history of all payments in memory all the time
         //       https://github.com/okTurtles/group-income-simple/issues/426
         const payment = state.payments[data.paymentHash]
@@ -194,7 +268,7 @@ DefineContract({
         votingRule: ruleType,
         expires_date_ms: number // calculate by grabbing proposal expiry from group properties and add to `meta.createdDate`
       }),
-      process (state, { data, meta, hash }) {
+      process ({ data, meta, hash }, { state }) {
         // make sure this isn't a duplicate proposal
         for (const hash in state.proposals) {
           const prop = state.proposals[hash]
@@ -224,7 +298,7 @@ DefineContract({
         vote: string,
         passPayload: optional(unionOf(object, string)) // TODO: this, somehow we need to send an OP_KEY_ADD GIMessage to add a generated once-only writeonly message public key to the contract, and (encrypted) include the corresponding invite link, also, we need all clients to verify that this message/operation was valid to prevent a hacked client from adding arbitrary OP_KEY_ADD messages, and automatically ban anyone generating such messages
       }),
-      process (state, { data, hash, meta }) {
+      process ({ data, hash, meta }, { state }) {
         const proposal = state.proposals[data.proposalHash]
         if (!proposal) {
           // https://github.com/okTurtles/group-income-simple/issues/602
@@ -251,7 +325,7 @@ DefineContract({
       validate: objectOf({
         proposalHash: string
       }),
-      process (state, { data, meta }) {
+      process ({ data, meta }, { state }) {
         const proposal = state.proposals[data.proposalHash]
         if (!proposal) {
           // https://github.com/okTurtles/group-income-simple/issues/602
@@ -267,7 +341,7 @@ DefineContract({
     },
     'gi.contracts/group/invite': {
       validate: inviteType,
-      process (state, { data, meta }) {
+      process ({ data, meta }, { state }) {
         Vue.set(state.invites, data.inviteSecret, data)
       }
     },
@@ -275,7 +349,7 @@ DefineContract({
       validate: objectOf({
         inviteSecret: string // NOTE: simulate the OP_KEY_* stuff for now
       }),
-      process (state, { data, meta }) {
+      process ({ data, meta }, { state }) {
         console.debug('inviteAccept:', data, state.invites)
         const invite = state.invites[data.inviteSecret]
         if (invite.status !== INVITE_STATUS.VALID) {
@@ -296,18 +370,16 @@ DefineContract({
       // They MUST NOT call 'commit'!
       // They should only coordinate the actions of outside contracts.
       // Otherwise `latestContractState` and `handleEvent` will not produce same state!
-      async sideEffect (message) {
-        const rootState = sbp('state/vuex/state')
-        const groupState = rootState[message.contractID()]
-        const meta = message.meta()
+      async sideEffect ({ meta, contractID }, { state }) {
+        const vuexState = sbp('state/vuex/state')
         // TODO: per #257 this will have to be encompassed in a recoverable transaction
         // however per #610 that might be handled in handleEvent (?), or per #356 might not be needed
-        if (meta.username === rootState.loggedIn.username) {
+        if (meta.username === vuexState.loggedIn.username) {
           // we're the person who just accepted the group invite
           // so subscribe to founder's IdentityContract & everyone else's
-          for (const name of Object.keys(groupState.profiles)) {
-            if (name === rootState.loggedIn.username) continue
-            await sbp('state/enqueueContractSync', groupState.profiles[name].contractID)
+          for (const name of Object.keys(state.profiles)) {
+            if (name === vuexState.loggedIn.username) continue
+            await sbp('state/enqueueContractSync', state.profiles[name].contractID)
           }
         } else {
           // we're an existing member of the group getting notified that a
@@ -326,7 +398,7 @@ DefineContract({
         mincomeAmount: x => typeof x === 'number' && x > 0,
         mincomeCurrency: x => typeof x === 'string'
       }),
-      process (state, { data }) {
+      process ({ data }, { state }) {
         for (var key in data) {
           Vue.set(state.settings, key, data[key])
         }
@@ -344,7 +416,7 @@ DefineContract({
         }),
         nonMonetaryRemove: string
       }),
-      process (state, { data, meta }) {
+      process ({ data, meta }, { state }) {
         var groupProfile = state.profiles[meta.username]
         const nonMonetary = groupProfile.nonMonetaryContributions
         for (const key in data) {
@@ -368,7 +440,7 @@ DefineContract({
     ...(process.env.NODE_ENV === 'development' ? {
       'gi.contracts/group/malformedMutation': {
         validate: objectOf({ errorType: string }),
-        process (state, { data }) {
+        process ({ data }, { state }) {
           const ErrorType = Errors[data.errorType]
           if (ErrorType) {
             throw new ErrorType('malformedMutation!')
