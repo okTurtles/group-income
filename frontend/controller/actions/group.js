@@ -44,7 +44,7 @@ export default sbp('sbp/selectors/register', {
 
     try {
       const initialInvite = createInvite({ quantity: 60, creator: INVITE_INITIAL_CREATOR })
-      const entry = sbp('gi.contracts/group/create', {
+      const entry = await sbp('gi.contracts/group/create', {
         invites: {
           [initialInvite.inviteSecret]: initialInvite
         },

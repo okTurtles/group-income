@@ -73,10 +73,10 @@ const proposals = {
       const proposal = state.proposals[data.proposalHash]
       proposal.payload = data.passPayload
       proposal.status = STATUS_PASSED
-      sbp('gi.contracts/group/invite/process', state, {
-        meta: proposal.meta,
-        data: data.passPayload
-      })
+      // NOTE: if invite/process requires more than just data+meta
+      //       this code will need to be updated...
+      const message = { meta: proposal.meta, data: data.passPayload }
+      sbp('gi.contracts/group/invite/process', message, state)
       sbp('okTurtles.events/emit', PROPOSAL_RESULT, state, VOTE_FOR, data)
       // TODO: for now, generate the link and send it to the user's inbox
       //       however, we cannot send GIMessages in any way from here
@@ -142,11 +142,13 @@ const proposals = {
       const proposal = state.proposals[data.proposalHash]
       proposal.status = STATUS_PASSED
       const { setting, proposedValue } = proposal.data.proposalData
-
-      sbp('gi.contracts/group/updateSettings/process', state, {
+      // NOTE: if updateSettings ever needs more ethana just meta+data
+      //       this code will need to be updated
+      const message = {
         meta: proposal.meta,
         data: { [setting]: proposedValue }
-      })
+      }
+      sbp('gi.contracts/group/updateSettings/process', message, state)
     },
     [VOTE_AGAINST]: voteAgainst
   },

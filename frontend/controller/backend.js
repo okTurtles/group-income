@@ -8,7 +8,7 @@ import { CONTRACTS_MODIFIED } from '~/frontend/utils/events.js'
 import { intersection, difference, delay, randomIntFromRange } from '~/frontend/utils/giLodash.js'
 import pubsub from './utils/pubsub.js'
 import { handleFetchResult } from './utils/misc.js'
-import { CONTRACT_REGEX } from '~/frontend/model/contracts/Contract.js'
+import { ACTION_REGEX } from '~/frontend/model/contracts/Contract.js'
 
 // temporary identity for signing
 // const nacl = require('tweetnacl')
@@ -97,7 +97,7 @@ sbp('okTurtles.events/on', CONTRACTS_MODIFIED, async (contracts) => {
 
 sbp('sbp/selectors/register', {
   'backend/publishLogEntry': async (entry: GIMessage, { maxAttempts = 2 } = {}) => {
-    const action = CONTRACT_REGEX.exec(entry.type())[1]
+    const action = ACTION_REGEX.exec(entry.type())[1]
     var attempt = 1
     // auto resend after short random delay
     // https://github.com/okTurtles/group-income-simple/issues/608

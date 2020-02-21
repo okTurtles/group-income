@@ -20,7 +20,7 @@ export default sbp('sbp/selectors/register', {
       await sbp('gi.db/settings/delete', username)
     }
     // proceed with creation
-    const user = sbp('gi.contracts/identity/create', {
+    const user = await sbp('gi.contracts/identity/create', {
       // authorizations: [Events.CanModifyAuths.dummyAuth()],
       attributes: {
         name: username,
@@ -28,7 +28,7 @@ export default sbp('sbp/selectors/register', {
         picture: `${window.location.origin}/assets/images/default-avatar.png`
       }
     })
-    const mailbox = sbp('gi.contracts/mailbox/create', {
+    const mailbox = await sbp('gi.contracts/mailbox/create', {
       // authorizations: [Events.CanModifyAuths.dummyAuth(user.hash())]
     })
     await sbp('backend/publishLogEntry', user)
