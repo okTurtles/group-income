@@ -5,14 +5,37 @@ describe('Changing Group Settings', () => {
   const groupNewMincome = groupMincome + 100
   const sharedValues = 'One dream at the time.'
 
-  it('user1 creates a new group', () => {
+  const invitationLinks = []
+
+  it('user1 creates a new group and invites a new user (user2)', () => {
     cy.visit('/')
     cy.giSignup(`user1-${userId}`, { bypassUI: true })
 
     cy.giCreateGroup(groupName, { mincome: groupMincome, sharedValues })
+
+    cy.giGetInvitationAnyone().then(url => {
+      invitationLinks.anyone = url
+    })
   })
 
-  it('user1 changes the group minimum income (increase it $100)', () => {
+  it('user2 accepts the group invitation and user1 removes them aftewards', () => {
+    cy.giAcceptGroupInvite(invitationLinks.anyone, {
+      username: `user2-${userId}`,
+      bypassUI: true
+    })
+
+    // cy.giLogin()
+    // click dots - menu
+    // click remove
+    // verify list of members
+    // signup
+  })
+
+  it('user2 rejoins the group', () => {
+    // ...
+  })
+
+  it.skip('user1 changes the group minimum income (increase it $100)', () => {
     cy.getByDT('groupMincome').within(() => {
       cy.getByDT('minIncome').should('contain', `$${groupMincome}`)
       cy.get('button').click()
@@ -31,7 +54,7 @@ describe('Changing Group Settings', () => {
     })
   })
 
-  it('user1 changes avatar and profile settings', () => {
+  it.skip('user1 changes avatar and profile settings', () => {
     const groupPicture = 'imageTest.png' // at fixtures/imageTest
     const newGroupName = 'Turtles'
     const newSharedValues = 'One step at the time.'
