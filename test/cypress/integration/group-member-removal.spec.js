@@ -14,7 +14,6 @@ describe('Group - Removing a member', () => {
   }
 
   function openRemoveMemberModal (username, nth) {
-    // Open "Remove Member" modal
     cy.getByDT('groupMembers').find(`ul>li:nth-child(${nth})`).within(() => {
       cy.getByDT('username').should('contain', `${username}-${userId}`)
 
@@ -25,13 +24,12 @@ describe('Group - Removing a member', () => {
     })
   }
 
-  function removeMember (username) {
+  function removeMemberNow (username) {
+    assertMembersCount(2)
     cy.getByDT('modalProposal').within(() => {
       cy.getByDT('description').should('contain', `Are you sure you want to remove ${username}-${userId} from the group?`)
       cy.getByDT('submitBtn').click()
     })
-
-    // Verify the group has only 1 member again.
     cy.getByDT('closeModal').should('not.exist')
     assertMembersCount(1)
   }
@@ -63,7 +61,7 @@ describe('Group - Removing a member', () => {
     cy.giLogin(`user1-${userId}`)
 
     openRemoveMemberModal('user2', 2)
-    removeMember('user2')
+    removeMemberNow('user2')
     cy.giLogout()
 
     // verify user2 (removed) has no group now.
@@ -72,7 +70,7 @@ describe('Group - Removing a member', () => {
   })
 
   it('user2 rejoins groupA', () => {
-    // Wait for contracts to sync before visiting invitationLink. TODO avoid this.
+    // Wait for contracts to sync before visiting invitationLink. TODO avoid .wait().
     cy.wait(500); // eslint-disable-line
     cy.giAcceptGroupInvite(invitationLinks.anyone_groupA, {
       username: `user2-${userId}`,
@@ -82,7 +80,6 @@ describe('Group - Removing a member', () => {
       // TODO not working. error: [CRITICAL ERROR] NOT EXPECTING EVENT!'
       // bypassUI: true,
     })
-    // Verify the roup members list has 2 members again.
     assertMembersCount(2)
   })
 
@@ -111,7 +108,7 @@ describe('Group - Removing a member', () => {
     cy.giLogin(`user2-${userId}`)
 
     openRemoveMemberModal('user1', 2)
-    removeMember('user1')
+    removeMemberNow('user1')
     cy.giLogout()
 
     // verify user1 (removed) still has group1.
@@ -161,7 +158,7 @@ describe('Group - Removing a member', () => {
     })
   })
 
-  it('user2 votes for. Proposal is accepted and userBot removed', () => {
+  it('user2 votes "yes". Proposal is accepted and userBot removed', () => {
     cy.giSwitchUser(`user2-${userId}`)
 
     // Change from groupB to groupA dashboard
@@ -174,17 +171,18 @@ describe('Group - Removing a member', () => {
         .should('contain', 'Proposal accepted!')
     })
 
-    // The group has 2 members only again
+    // Verify the group has 2 members only again
     assertMembersCount(2)
-    cy.getByDT('groupMembers').find('ul>li').should('have.length', 2)
 
     // Verify user1 only sees 2 members too
     cy.giSwitchUser(`user1-${userId}`)
     assertMembersCount(2)
     cy.giLogout()
 
-    // userBot has no group now
+    // Verify userBot has no group now
     cy.giLogin(`userBot-${userId}`) // [*note_1*]
     cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
+
+    cy.giLogout()
   })
 })

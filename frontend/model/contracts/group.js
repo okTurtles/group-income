@@ -349,7 +349,7 @@ DefineContract({
           if (prop.meta.username === meta.username &&
             deepEqualJSONType(prop.data.proposalData, data.proposalData)
           ) {
-            console.warn(`proposal: is identical to proposal ${hash}`)
+            console.error(`proposal: is identical to proposal ${hash}`)
             throw new TypeError('duplicated_proposal')
           }
         }

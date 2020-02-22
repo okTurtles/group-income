@@ -5,8 +5,7 @@ nav.c-navigation(
 )
   toggle(@toggle='toggleMenu' element='navigation' :aria-expanded='ephemeral.isActive')
 
-  // TODO/NOTE PUT BACK > 1 BEFORE MERGE
-  groups-list(v-if='groupsByName.length > 0' :inert='isInert')
+  groups-list(v-if='groupsByName.length > 1' :inert='isInert')
 
   .c-navigation-wrapper(:inert='isInert')
     .c-navigation-header
