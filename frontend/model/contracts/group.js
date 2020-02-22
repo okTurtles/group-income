@@ -75,11 +75,11 @@ export function removeMemberSecret () {
   }
 }
 
-export function validateRemoveMember (groupState, { data, meta }) {
+export function validateRemoveMember ({ data, meta }, { state }) {
   const memberToRemove = data.member
-  const membersCount = Object.keys(groupState.profiles).length
+  const membersCount = Object.keys(state.profiles).length
 
-  if (!groupState.profiles[memberToRemove]) {
+  if (!state.profiles[memberToRemove]) {
     console.error(`removeMember - ${memberToRemove} isn't part of the group`)
     throw new TypeError('not_a_member')
   }
@@ -90,9 +90,9 @@ export function validateRemoveMember (groupState, { data, meta }) {
   }
 
   if (membersCount >= 3) {
-    const { payload } = groupState.proposals[data.proposalHash] || {}
-    if (payload && payload.secret === data.proposalPayload) {
-      console.error('removeMember - invalid associated proposal')
+    const { payload } = state.proposals[data.proposalHash] || {}
+    if (!payload || payload.secret !== data.proposalPayload.secret) {
+      console.error('removeMember - invalid associated proposal', data.proposalHash)
       throw new TypeError('invalid_associated_proposal')
     }
   }
@@ -324,29 +324,37 @@ DefineContract({
       }
     },
     'gi.contracts/group/proposal': {
-      validate: objectOf({
-        proposalType: proposalType,
-        proposalData: object, // data for Vue widgets
-        votingRule: ruleType,
-        expires_date_ms: number // calculate by grabbing proposal expiry from group properties and add to `meta.createdDate`
-      }),
-      process ({ data, meta, hash }, { state }) {
-        // make sure this isn't a duplicate proposal
+      validate: (data, { state, meta }) => {
+        objectOf({
+          proposalType: proposalType,
+          proposalData: object, // data for Vue widgets
+          votingRule: ruleType,
+          expires_date_ms: number // calculate by grabbing proposal expiry from group properties and add to `meta.createdDate`
+        })
+
+        // Validate this isn't a duplicate proposal
         for (const hash in state.proposals) {
           const prop = state.proposals[hash]
-          if (prop.status === STATUS_OPEN &&
-            prop.data.proposalType === data.proposalType &&
-            prop.meta.username === meta.username &&
+          if (prop.status !== STATUS_OPEN || prop.data.proposalType !== data.proposalType) {
+            continue
+          }
+
+          if (prop.data.proposalType === PROPOSAL_REMOVE_MEMBER &&
+            prop.data.proposalData.member === data.member
+          ) {
+            console.error('Remove Member proposal already exists.')
+            throw new TypeError('proposal_remove_member_exists')
+          }
+
+          if (prop.meta.username === meta.username &&
             deepEqualJSONType(prop.data.proposalData, data.proposalData)
           ) {
-            // BUG: cc @taoeffect
-            // If I try to create the same proposal twice (imagine: remove member)
-            // it will create a proposal to remove me.
-            // That doesn't make sense....
             console.warn(`proposal: is identical to proposal ${hash}`)
-            // throw new TypeError(`proposal: is identical to proposal ${hash}`)
+            throw new TypeError('duplicated_proposal')
           }
         }
+      },
+      process ({ data, meta, hash }, { state }) {
         Vue.set(state.proposals, hash, {
           data,
           meta,
@@ -409,8 +417,8 @@ DefineContract({
       }
     },
     'gi.contracts/group/removeMember': {
-      validate: (data, { state, meta } = {}) => {
-        return objectOf({
+      validate: (data, { state, meta }) => {
+        objectOf({
           member: string,
           memberID: string,
           groupId: string,
@@ -421,13 +429,9 @@ DefineContract({
             secret: string // NOTE: simulate the OP_KEY_* stuff for now
           }))
         })
-        // Add this after #838 is merged
-        // validateRemoveMember(state, { data, meta })
+        validateRemoveMember({ data, meta }, { state })
       },
-      process (state, { data, meta }) {
-        // Add this after #838 is merged
-        // validateRemoveMember(state, { data, meta })
-
+      process ({ data, meta }, { state }) {
         const rootState = sbp('state/vuex/state')
         if (data.member === rootState.loggedIn.username) {
           // If this member is re-joining the group, ignore the rest
@@ -439,8 +443,8 @@ DefineContract({
 
         Vue.delete(state.profiles, data.member)
       },
-      sideEffect (message) {
-        removeMemberSideEffect(message.data())
+      sideEffect ({ data }) {
+        removeMemberSideEffect(data)
       }
     },
     'gi.contracts/group/invite': {

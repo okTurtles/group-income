@@ -22,10 +22,9 @@ import sbp from '~/shared/sbp.js'
 import { CLOSE_MODAL } from '@utils/events.js'
 import L from '@view-utils/translations.js'
 import Avatar from '@components/Avatar.vue'
-import { PROPOSAL_REMOVE_MEMBER, STATUS_OPEN } from '@model/contracts/voting/proposals.js'
+import { PROPOSAL_REMOVE_MEMBER } from '@model/contracts/voting/proposals.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ProposalTemplate from './ProposalTemplate.vue'
-import { validateRemoveMember } from '@model/contracts/group.js'
 
 export default {
   name: 'RemoveMember',
@@ -78,32 +77,12 @@ export default {
     }
   },
   methods: {
-    validateRemoval (data) {
-      return validateRemoveMember(this.currentGroupState, {
-        data,
-        meta: { username: this.ourUsername }
-      })
-    },
     async submit (form) {
       this.$refs.formMsg.clean()
       const member = this.username
       const memberID = this.groupProfiles[member].contractID
 
       if (this.groupShouldPropose) {
-        // Look for existing proposal
-        for (const hash in this.currentGroupState.proposals) {
-          const prop = this.currentGroupState.proposals[hash]
-          if (prop.status === STATUS_OPEN &&
-            prop.data.proposalType === PROPOSAL_REMOVE_MEMBER &&
-            prop.data.proposalData.member === member
-          ) {
-            console.error('Duplicated proposal.')
-            this.$refs.formMsg.danger(L('There is already an open proposal to remove this member.'))
-            this.ephemeral.currentStep = 0
-            return
-          }
-        }
-
         try {
           const data = {
             proposalType: PROPOSAL_REMOVE_MEMBER,
@@ -116,17 +95,21 @@ export default {
             votingRule: this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].rule,
             expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].expires_ms
           }
-          this.validateRemoval(data.proposalData)
           const proposal = await sbp('gi.contracts/group/proposal/create',
             data,
             this.currentGroupId
           )
           await sbp('backend/publishLogEntry', proposal)
 
-          this.ephemeral.currentStep += 1 // Show Success step
+          this.ephemeral.currentStep += 1
         } catch (e) {
           console.error(`Failed proposing to remove member ${member}.`, e.message)
-          this.$refs.formMsg.danger(L('Failed proposing to remove member. {codeError}', { codeError: e.message }))
+          const mapMsgs = {
+            'proposal_remove_member_exists': () => L('There is already an open proposal to remove {member}.', { member }),
+            'duplicated_proposal': () => L('This proposal is identical to another one.'),
+            default: () => L('Failed to remove member: {codeError}', { codeError: e.message })
+          }
+          this.$refs.formMsg.danger((mapMsgs[e.message] || mapMsgs.default)())
           this.ephemeral.currentStep = 0
         }
 

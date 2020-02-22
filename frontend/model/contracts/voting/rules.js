@@ -2,6 +2,10 @@
 
 import { literalOf, unionOf } from '~/frontend/utils/flowTyper.js'
 
+// Error: Circular dependency:
+// import { PROPOSAL_REMOVE_MEMBER } from '@model/contracts/voting/proposals.js'
+const PROPOSAL_REMOVE_MEMBER = 'remove-member'
+
 export const VOTE_AGAINST = ':against'
 export const VOTE_INDIFFERENT = ':indifferent'
 export const VOTE_UNDECIDED = ':undecided'
@@ -10,17 +14,21 @@ export const VOTE_FOR = ':for'
 export const RULE_THRESHOLD = 'threshold'
 export const RULE_DISAGREEMENT = 'disagreement'
 export const RULE_MULTI_CHOICE = 'multi-choice'
+
 // TODO: ranked-choice? :D
 
 const rules = {
   [RULE_THRESHOLD]: function (state, proposalType, votes) {
     votes = Object.values(votes)
-    const threshold = state.settings.proposals[proposalType].ruleSettings[RULE_THRESHOLD].threshold
+    const population = Object.keys(state.profiles).length
+    const defaultThreshold = state.settings.proposals[proposalType].ruleSettings[RULE_THRESHOLD].threshold
+    const threshold = proposalType === PROPOSAL_REMOVE_MEMBER
+      ? Math.min(defaultThreshold, (population - 1) / population)
+      : defaultThreshold
     const totalIndifferent = votes.filter(x => x === VOTE_INDIFFERENT).length
     const totalFor = votes.filter(x => x === VOTE_FOR).length
     const totalAgainst = votes.filter(x => x === VOTE_AGAINST).length
     const totalForOrAgainst = totalFor + totalAgainst
-    const population = Object.keys(state.profiles).length
     const turnout = totalForOrAgainst + totalIndifferent
     const absent = population - turnout
     // TODO: figure out if this is the right way to figure out the "neededToPass" number

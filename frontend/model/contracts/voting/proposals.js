@@ -137,11 +137,8 @@ const proposals = {
         proposalHash,
         proposalPayload: passPayload
       }
-
-      sbp('gi.contracts/group/removeMember/process', state, {
-        meta: proposal.meta,
-        data
-      })
+      const message = { data, meta: proposal.meta }
+      sbp('gi.contracts/group/removeMember/process', message, state)
 
       removeMemberSideEffect(data)
       // // NOTE_1: I tried to call selector sideEffect manually but it didnt work
