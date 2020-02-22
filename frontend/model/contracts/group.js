@@ -13,13 +13,13 @@ import proposals, {
   STATUS_OPEN, STATUS_CANCELLED
 } from './voting/proposals.js'
 import { paymentStatusType, paymentType } from './payments/index.js'
+import removeMemberSideEffect from './members/removeMemberSideEffect.js'
 import * as Errors from '../errors.js'
 import { merge, deepEqualJSONType } from '~/frontend/utils/giLodash.js'
 import { currentMonthTimestamp } from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
 import currencies from '~/frontend/views/utils/currencies.js'
-
 export const INVITE_INITIAL_CREATOR = 'INVITE_INITIAL_CREATOR'
 export const INVITE_STATUS = {
   VALID: 'valid',
@@ -98,33 +98,6 @@ export function validateRemoveMember ({ data, meta }, { state }) {
   }
 
   return true
-}
-export async function removeMemberSideEffect (data) {
-  const rootState = sbp('state/vuex/state')
-  const contracts = rootState.contracts || {}
-
-  if (data.member === rootState.loggedIn.username) {
-    // If this member is re-joining the group, ignore the rest
-    // so the member doesn't remove themself again.
-    if (sbp('okTurtles.data/get', 'JOINING_GROUP')) {
-      return false
-    }
-
-    const groupIDToSwitch = Object.keys(contracts)
-      .find(contractID => contracts[contractID].type === 'group' &&
-        contractID !== data.groupID &&
-        rootState[contractID].settings) || null
-    sbp('state/vuex/commit', 'setCurrentGroupId', groupIDToSwitch)
-    sbp('state/vuex/commit', 'removeContract', data.groupID)
-
-    sbp('state/router').push({ path: groupIDToSwitch ? '/dashboard' : '/' })
-    // TODO - #828 remove other group members contracts if applicable
-  } else {
-    // TODO - #828 remove the member contract if applicable.
-    // sbp('state/vuex/commit', 'removeContract', data.memberID)
-  }
-  // TODO - verify open proposals and see if they need some re-adjustments.
-  // ex 3 of 4 members voted -> one member left -> 3 of 3 members voted -> need to resync and mark it as passed!
 }
 
 DefineContract({

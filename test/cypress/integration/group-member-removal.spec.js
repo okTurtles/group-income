@@ -183,6 +183,6 @@ describe('Group - Removing a member', () => {
     cy.giLogin(`userBot-${userId}`) // [*note_1*]
     cy.getByDT('welcomeHomeLoggedIn').should('contain', 'Let’s get this party started')
 
-    cy.giLogout()
+    cy.giLogout({ hasNoGroup: true })
   })
 })

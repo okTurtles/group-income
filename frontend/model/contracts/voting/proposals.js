@@ -6,8 +6,7 @@ import { DAYS_MILLIS } from '~/frontend/utils/time.js'
 import { PROPOSAL_RESULT } from '~/frontend/utils/events.js'
 import rules, { ruleType, VOTE_UNDECIDED, VOTE_AGAINST, VOTE_FOR, RULE_THRESHOLD, RULE_DISAGREEMENT } from './rules.js'
 
-// NOTE TODO This creates a circular dependency (didn't see any bug caused by it though). Should we isolate this function?
-import { removeMemberSideEffect } from '~/frontend/model/contracts/group.js'
+import removeMemberSideEffect from '../members/removeMemberSideEffect.js'
 
 export const PROPOSAL_INVITE_MEMBER = 'invite-member'
 export const PROPOSAL_REMOVE_MEMBER = 'remove-member'
