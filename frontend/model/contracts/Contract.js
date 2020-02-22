@@ -6,7 +6,6 @@ import { GIMessage } from '~/shared/GIMessage.js'
 // this must not be exported, but instead accessed through 'actionWhitelisted'
 const whitelistedSelectors = {}
 
-export const IS_CONSTRUCTOR = /^[\w.]+\/[^/]+\/(create|process)$/
 export const ACTION_REGEX = /^(([\w.]+)\/([^/]+)\/(?:([^/]+)\/)?)process$/
 // ACTION_REGEX.exec('gi.contracts/group/payment/process')
 // 0 => 'gi.contracts/group/payment/process'
@@ -36,7 +35,7 @@ export function DefineContract (contract: Object) {
         if (contractID) {
           state = contract.state(contractID)
           previousHEAD = await sbp('backend/latestHash', contractID)
-        } else if (!IS_CONSTRUCTOR.test(`${action}/create`)) {
+        } else if (action !== contract.name) {
           throw new Error(`contractID required when calling '${action}/create'`)
         }
         const meta = metadata.create()
