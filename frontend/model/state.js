@@ -7,8 +7,7 @@ import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import Vuex from 'vuex'
 import L from '~/frontend/views/utils/translations.js'
-import currencies from '~/frontend/views/utils/currencies.js'
-import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
+// import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
 import { GIMessage } from '~/shared/GIMessage.js'
 import { SETTING_CURRENT_USER } from './database.js'
 import { ErrorDBBadPreviousHEAD, ErrorDBConnection } from '~/shared/domains/gi/db.js'
@@ -17,8 +16,7 @@ import { TypeValidatorError } from '~/frontend/utils/flowTyper.js'
 import { GIErrorUnrecoverable, GIErrorIgnoreAndBanIfGroup, GIErrorDropAndReprocess } from './errors.js'
 import { STATUS_OPEN, PROPOSAL_REMOVE_MEMBER } from './contracts/voting/proposals.js'
 import { VOTE_FOR } from '~/frontend/model/contracts/voting/rules.js'
-import { actionWhitelisted, CONTRACT_REGEX } from '~/frontend/model/contracts/Contract.js'
-import { currentMonthTimestamp } from '~/frontend/utils/time.js'
+import { actionWhitelisted, ACTION_REGEX } from '~/frontend/model/contracts/Contract.js'
 import * as _ from '~/frontend/utils/giLodash.js'
 import * as EVENTS from '~/frontend/utils/events.js'
 import './contracts/group.js'
@@ -63,7 +61,8 @@ sbp('sbp/selectors/register', {
     for (const e of events) {
       const stateCopy = _.cloneDeep(state)
       try {
-        guardedSBP(e.type(), state, { data: e.data(), meta: e.meta(), hash: e.hash() })
+        const message = { data: e.data(), meta: e.meta(), hash: e.hash(), contractID }
+        guardedSBP(e.type(), message, state)
       } catch (err) {
         if (!(err instanceof GIErrorUnrecoverable)) {
           console.warn(`latestContractState: ignoring mutation ${e.hash()}|${e.type()} because of ${err.name}`)
@@ -94,34 +93,6 @@ sbp('sbp/selectors/register', {
       'state/vuex/dispatch', 'handleEvent', event
     ])
   },
-  // use 'groupContractSafeGetters' from within a contract to avoid code duplication,
-  // but be careful to only use getters that restrict themselves to the
-  // contract's state, and do not access state outside the contract.
-  // For example, if the getter you use tries to access `state.loggedIn`,
-  // that will break the `latestContractState` function.
-  // It is only safe to access state outside of the contract in a contract action's
-  // `sideEffect` function (as long as it doesn't modify contract state)
-  'state/groupContractSafeGetters': function (state: Object) {
-    var lastAccessedGetter
-    const stateProxy = new Proxy({}, {
-      get: function (obj, prop) {
-        if (!(prop in state)) {
-          throw new Error(`attempt to access state outside of contract state via getters.${lastAccessedGetter}. Property doesn't exist: state.${prop}`)
-        }
-        return state[prop]
-      }
-    })
-    const gettersProxy = new Proxy({}, {
-      get: function (obj, prop) {
-        lastAccessedGetter = prop
-        // this is a bit of a hack, and in the future we might
-        // instead register getters on the vuex module and somehow
-        // pass them to the contract process function, but this works for now
-        return prop === 'currentGroupState' ? stateProxy : getters[prop](stateProxy, gettersProxy)
-      }
-    })
-    return gettersProxy
-  },
   'state/vuex/state': () => store.state,
   'state/vuex/commit': (id, payload) => store.commit(id, payload),
   'state/vuex/dispatch': (...args) => store.dispatch(...args)
@@ -138,7 +109,7 @@ const mutations = {
     state.currentGroupId = null
   },
   processMessage (state, { selector, message }) {
-    guardedSBP(selector, state, message)
+    guardedSBP(selector, message, state)
   },
   registerContract (state, { contractID, type }) {
     const firstTimeRegistering = !state[contractID]
@@ -214,21 +185,32 @@ const mutations = {
 }
 // https://vuex.vuejs.org/en/getters.html
 // https://vuex.vuejs.org/en/modules.html
-//
-// !!  IMPORTANT  !!
-//
-// To make it simple to use *SOME* of these getters (the ones related to
-// group contract state) via 'state/groupContractSafeGetters', prefer using
-// 'getters' to access state instead of 'state'.
-//
-// For example, instead of: state[state.currentGroupId]
-//     Use getters instead: getters.currentGroupState
 const getters = {
+  // !!  IMPORTANT  !!
+  //
+  // For getters that get data from only contract state, write them
+  // under the 'getters' key of the object passed to DefineContract.
+  // See for example: frontend/model/contracts/group.js
+  //
+  // For convenience, we've defined the same getter, `currentGroupState`,
+  // twice, so that we can reuse the same getter definitions both here with Vuex,
+  // and inside of the contracts (e.g. in group.js).
+  //
+  // The one here is based off the value of `state.currentGroupId` — a user
+  // preference that does not exist in the group contract state.
+  //
+  // The getters in DefineContract are designed to be compatible with Vuex!
+  // When they're used in the context of DefineContract, their 'state' always refers
+  // to the state of the contract whose messages are being processed, regardless
+  // of what group we're in. That is why the definition of 'currentGroupState' in
+  // group.js simply returns the state.
+  //
+  // Since the getter functions are compatible between Vuex and our contract chain
+  // library, we can simply import them here, while excluding the getter for
+  // `currentGroupState`, and redefining it here based on the Vuex rootState.
+  ..._.omit(sbp('gi.contracts/group/getters'), ['currentGroupState']),
   currentGroupState (state) {
     return state[state.currentGroupId] || {} // avoid "undefined" vue errors at inoportune times
-  },
-  groupSettings (state, getters) {
-    return getters.currentGroupState.settings || {}
   },
   mailboxContract (state, getters) {
     const contract = getters.ourUserIdentityContract
@@ -259,6 +241,9 @@ const getters = {
   ourUserIdentityContract (state) {
     return (state.loggedIn && state[state.loggedIn.identityContractID]) || {}
   },
+  // NOTE: since this getter is written using `getters.ourUsername`, which is based
+  //       on vuexState.loggedIn (a user preference), we cannot use this getter
+  //       into group.js
   ourContributionSummary (state, getters) {
     const groupProfiles = getters.groupProfiles
     const ourUsername = getters.ourUsername
@@ -334,67 +319,12 @@ const getters = {
       .filter(contractID => contracts[contractID].type === 'group' && state[contractID].settings)
       .map(contractID => ({ groupName: state[contractID].settings.groupName, contractID }))
   },
-  groupProfile (state, getters) {
-    return username => {
-      const profiles = getters.currentGroupState.profiles
-      return profiles && profiles[username]
-    }
-  },
   globalProfile (state, getters) {
     return username => {
       const groupProfile = getters.groupProfile(username)
       const identityState = groupProfile && state[groupProfile.contractID]
       return identityState && identityState.attributes
     }
-  },
-  groupProfiles (state, getters) {
-    return Object.keys(getters.currentGroupState.profiles || {}).reduce(
-      (result, username) => {
-        result[username] = getters.groupProfile(username)
-        return result
-      },
-      {}
-    )
-  },
-  groupMembersByUsername (state, getters) {
-    return Object.keys(getters.currentGroupState.profiles || {})
-  },
-  groupMembersCount (state, getters) {
-    return getters.groupMembersByUsername.length
-  },
-  groupShouldPropose (state, getters) {
-    return getters.groupMembersCount >= 3
-  },
-  groupMincomeAmount (state, getters) {
-    return getters.groupSettings.mincomeAmount
-  },
-  groupMincomeFormatted (state, getters) {
-    const settings = getters.groupSettings
-    const currency = currencies[settings.mincomeCurrency]
-    return currency && currency.displayWithCurrency(settings.mincomeAmount)
-  },
-  groupMincomeSymbolWithCode (state, getters) {
-    const currency = currencies[getters.groupSettings.mincomeCurrency]
-    return currency && currency.symbolWithCode
-  },
-  groupIncomeDistribution (state, getters) {
-    const groupProfiles = getters.groupProfiles
-    const mincomeAmount = getters.groupMincomeAmount
-    const currentIncomeDistribution = []
-    for (const username in groupProfiles) {
-      const profile = groupProfiles[username]
-      const incomeDetailsType = profile && profile.incomeDetailsType
-      if (incomeDetailsType) {
-        const adjustment = incomeDetailsType === 'incomeAmount' ? 0 : mincomeAmount
-        const adjustedAmount = adjustment + profile[incomeDetailsType]
-        currentIncomeDistribution.push({ name: username, amount: adjustedAmount })
-      }
-    }
-    return incomeDistribution(currentIncomeDistribution, mincomeAmount)
-  },
-  thisMonthsPayments (state, getters) {
-    const payments = getters.currentGroupState.userPaymentsByMonth
-    return (payments && payments[currentMonthTimestamp()]) || {}
   },
   colors (state) {
     return Colors[state.theme]
@@ -631,14 +561,14 @@ const handleEvent = {
       const hash = message.hash()
       const data = message.data()
       const meta = message.meta()
-      const type = CONTRACT_REGEX.exec(selector)[3]
+      const type = ACTION_REGEX.exec(selector)[3]
       if (!type) {
         throw new GIErrorIgnoreAndBanIfGroup(`bad selector '${selector}' for message ${hash}`)
       }
       if (message.isFirstMessage()) {
         store.commit('registerContract', { contractID, type })
       }
-      const mutation = { data, meta, hash }
+      const mutation = { data, meta, hash, contractID }
       // this selector is created by Contract.js
       store.commit(`${contractID}/processMessage`, { selector, message: mutation })
       // all's good, so update our contract HEAD
@@ -659,9 +589,12 @@ const handleEvent = {
       const contractID = message.contractID()
       const selector = message.type()
       const hash = message.hash()
+      const data = message.data()
+      const meta = message.meta()
+      const mutation = { data, meta, hash, contractID }
       // this selector is created by Contract.js
       if (sbp('sbp/selectors/fn', `${selector}/sideEffect`)) {
-        await sbp(`${selector}/sideEffect`, message)
+        await sbp(`${selector}/sideEffect`, mutation)
       }
       // let any listening components know that we've received, processed, and stored the event
       sbp('okTurtles.events/emit', hash, contractID, message)

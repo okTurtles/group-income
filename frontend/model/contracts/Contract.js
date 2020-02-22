@@ -6,24 +6,23 @@ import { GIMessage } from '~/shared/GIMessage.js'
 // this must not be exported, but instead accessed through 'actionWhitelisted'
 const whitelistedSelectors = {}
 
-export const CONTRACT_REGEX = /^(([\w.]+)\/([^/]+)\/(?:([^/]+)\/)?)process$/
+export const IS_CONSTRUCTOR = /^[\w.]+\/[^/]+\/(create|process)$/
+export const ACTION_REGEX = /^(([\w.]+)\/([^/]+)\/(?:([^/]+)\/)?)process$/
+// ACTION_REGEX.exec('gi.contracts/group/payment/process')
+// 0 => 'gi.contracts/group/payment/process'
+// 1 => 'gi.contracts/group/payment/'
+// 2 => 'gi.contracts'
+// 3 => 'group'
+// 4 => 'payment'
 
 // TODO: define a flow type for contracts
 export function DefineContract (contract: Object) {
-  const meta = contract.metadata || { validate () {}, create: () => ({}) }
-  whitelistedSelectors[`${contract.name}/process`] = true
+  const metadata = contract.metadata || { validate () {}, create: () => ({}) }
+  const getters = contract.getters
   sbp('sbp/selectors/register', {
-    [`${contract.name}/create`]: function (data) {
-      const metadata = meta.create()
-      meta.validate(metadata)
-      contract.contract.validate(data, { state: null, meta: metadata })
-      return GIMessage.create(null, null, undefined, `${contract.name}/process`, data, metadata)
-    },
-    [`${contract.name}/process`]: function (state, message) {
-      meta.validate(message.meta)
-      contract.contract.validate(message.data, { state, meta: message.meta })
-      contract.contract.process(state, message)
-    }
+    // expose getters for Vuex integration and other conveniences
+    [`${contract.name}/getters`]: () => getters,
+    [`${contract.name}/state`]: contract.state
   })
   for (const action in contract.actions) {
     if (action.indexOf(contract.name) !== 0) {
@@ -31,27 +30,48 @@ export function DefineContract (contract: Object) {
     }
     whitelistedSelectors[`${action}/process`] = true
     sbp('sbp/selectors/register', {
-      [`${action}/create`]: async function (data, contractID) {
-        if (!contractID) {
-          throw new Error(`A contractID as 2nd parameter is required when calling '${action}/create'`)
+      [`${action}/create`]: async function (data: Object, contractID: string = null) {
+        var previousHEAD = null
+        var state = null
+        if (contractID) {
+          state = contract.state(contractID)
+          previousHEAD = await sbp('backend/latestHash', contractID)
+        } else if (!IS_CONSTRUCTOR.test(`${action}/create`)) {
+          throw new Error(`contractID required when calling '${action}/create'`)
         }
-        const metadata = meta.create()
-        // TODO: this is hackish and not library friendly, fix in #749
-        const state = sbp('state/vuex/state')[contractID]
-        meta.validate(metadata)
-        contract.actions[action].validate(data, { state, meta: metadata })
-        const previousHEAD = await sbp('backend/latestHash', contractID)
-        return GIMessage.create(contractID, previousHEAD, undefined, `${action}/process`, data, metadata)
+        const meta = metadata.create()
+        const gProxy = gettersProxy(state, getters)
+        metadata.validate(meta, { state, ...gProxy, contractID })
+        contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
+        return GIMessage.create(contractID, previousHEAD, undefined, `${action}/process`, data, meta)
       },
-      [`${action}/process`]: function (state, message) {
-        meta.validate(message.meta)
-        contract.actions[action].validate(message.data, { state, meta: message.meta })
-        contract.actions[action].process(state, message)
+      [`${action}/process`]: function (message: Object, state: Object) {
+        const { meta, data, contractID } = message
+        // TODO: optimize so that you're creating a proxy object only when needed
+        const gProxy = gettersProxy(state, getters)
+        state = state || contract.state(contractID)
+        metadata.validate(meta, { state, ...gProxy, contractID })
+        contract.actions[action].validate(data, { state, ...gProxy, meta, contractID })
+        contract.actions[action].process(message, { state, ...gProxy })
       },
       // if this is undefined sbp will not register it
-      [`${action}/process/sideEffect`]: contract.actions[action].sideEffect
+      [`${action}/process/sideEffect`]: contract.actions[action].sideEffect &&
+      function (message: Object, state: Object) {
+        state = state || contract.state(message.contractID)
+        const gProxy = gettersProxy(state, getters)
+        contract.actions[action].sideEffect(message, { state, ...gProxy })
+      }
     })
   }
+}
+
+function gettersProxy (state: Object, getters: Object) {
+  const proxyGetters = new Proxy({}, {
+    get: function (obj, prop) {
+      return getters[prop](state, proxyGetters)
+    }
+  })
+  return { getters: proxyGetters }
 }
 
 export function actionWhitelisted (sel: string): boolean {
