@@ -10,8 +10,9 @@ proposal-template(
 )
   .c-step(v-if='ephemeral.currentStep === 0' key='0')
     avatar.c-avatar(:src='memberGlobalProfile.picture' size='lg')
-    i18n.is-title-4(tag='p' :args='{ name: userDisplayName(username) }' v-if='groupShouldPropose') Remove {name} from your group
-    i18n.is-title-4(tag='p' :args='{ name: userDisplayName(username) }' v-else) Are you sure you want to remove {name} from your group?
+    p.is-title-4(data-test='description')
+      i18n(:args='{ name: userDisplayName(username) }' v-if='groupShouldPropose') Remove {name} from the group
+      i18n(:args='{ name: userDisplayName(username) }' v-else) Are you sure you want to remove {name} from the group?
 
   banner-scoped(ref='formMsg' data-test='proposalError')
 </template>

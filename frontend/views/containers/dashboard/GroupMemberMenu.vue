@@ -1,6 +1,6 @@
 <template lang="pug">
-menu-parent
-  menu-trigger.is-icon-small
+menu-parent(data-test='menuActions')
+  menu-trigger.is-icon-small(aria-label='Show actions')
     i.icon-ellipsis-v
 
   menu-content.c-actions-content
