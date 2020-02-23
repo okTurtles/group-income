@@ -13,14 +13,14 @@ export default async function removeMemberSideEffect (data) {
       return false
     }
 
-    const groupIDToSwitch = Object.keys(contracts)
+    const groupIdToSwitch = Object.keys(contracts)
       .find(contractID => contracts[contractID].type === 'group' &&
-        contractID !== data.groupID &&
+        contractID !== data.groupId &&
         rootState[contractID].settings) || null
-    sbp('state/vuex/commit', 'setCurrentGroupId', groupIDToSwitch)
-    sbp('state/vuex/commit', 'removeContract', data.groupID)
+    sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
+    sbp('state/vuex/commit', 'removeContract', data.groupId)
 
-    sbp('state/router').push({ path: groupIDToSwitch ? '/dashboard' : '/' })
+    sbp('state/router').push({ path: groupIdToSwitch ? '/dashboard' : '/' })
     // TODO - #828 remove other group members contracts if applicable
   } else {
     // TODO - #828 remove the member contract if applicable.

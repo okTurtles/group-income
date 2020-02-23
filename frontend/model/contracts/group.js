@@ -75,31 +75,6 @@ export function removeMemberSecret () {
   }
 }
 
-export function validateRemoveMember ({ data, meta }, { state }) {
-  const memberToRemove = data.member
-  const membersCount = Object.keys(state.profiles).length
-
-  if (!state.profiles[memberToRemove]) {
-    console.error(`removeMember - ${memberToRemove} isn't part of the group`)
-    throw new TypeError('not_a_member')
-  }
-
-  if (membersCount === 1) {
-    console.error('removeMember - only 1 member')
-    throw new TypeError('cannot_remove_yourself')
-  }
-
-  if (membersCount >= 3) {
-    const { payload } = state.proposals[data.proposalHash] || {}
-    if (!payload || payload.secret !== data.proposalPayload.secret) {
-      console.error('removeMember - invalid associated proposal', data.proposalHash)
-      throw new TypeError('invalid_associated_proposal')
-    }
-  }
-
-  return true
-}
-
 DefineContract({
   name: 'gi.contracts/group',
   metadata: {
@@ -303,7 +278,7 @@ DefineContract({
           proposalData: object, // data for Vue widgets
           votingRule: ruleType,
           expires_date_ms: number // calculate by grabbing proposal expiry from group properties and add to `meta.createdDate`
-        })
+        })(data)
 
         // Validate this isn't a duplicate proposal
         for (const hash in state.proposals) {
@@ -315,15 +290,13 @@ DefineContract({
           if (prop.data.proposalType === PROPOSAL_REMOVE_MEMBER &&
             prop.data.proposalData.member === data.member
           ) {
-            console.error('Remove Member proposal already exists.')
-            throw new TypeError('proposal_remove_member_exists')
+            throw new TypeError('There is an open proposal to remove them.')
           }
 
           if (prop.meta.username === meta.username &&
             deepEqualJSONType(prop.data.proposalData, data.proposalData)
           ) {
-            console.error(`proposal: is identical to proposal ${hash}`)
-            throw new TypeError('duplicated_proposal')
+            throw new TypeError('This proposal is identical to another one.')
           }
         }
       },
@@ -331,9 +304,7 @@ DefineContract({
         Vue.set(state.proposals, hash, {
           data,
           meta,
-          votes: {
-            [meta.username]: VOTE_FOR
-          },
+          votes: { [meta.username]: VOTE_FOR },
           status: STATUS_OPEN,
           payload: null // set later by group/proposalVote
         })
@@ -390,10 +361,10 @@ DefineContract({
       }
     },
     'gi.contracts/group/removeMember': {
-      validate: (data, { state, meta }) => {
+      validate: (data, { state, getters }) => {
         objectOf({
           member: string,
-          memberID: string,
+          memberId: string,
           groupId: string,
           // In case it happens in a big group (by proposal)
           // we need to validate the associated proposal.
@@ -401,8 +372,23 @@ DefineContract({
           proposalPayload: optional(objectOf({
             secret: string // NOTE: simulate the OP_KEY_* stuff for now
           }))
-        })
-        validateRemoveMember({ data, meta }, { state })
+        })(data)
+
+        const memberToRemove = data.member
+        const membersCount = getters.groupMembersCount
+
+        if (!state.profiles[memberToRemove]) {
+          throw new TypeError('Not part of the group.')
+        }
+        if (membersCount === 1) {
+          throw new TypeError('Cannot remove yourself.')
+        }
+        if (membersCount >= 3) {
+          const { payload } = state.proposals[data.proposalHash] || {}
+          if (!payload || payload.secret !== data.proposalPayload.secret) {
+            throw new TypeError('Invalid associated proposal.')
+          }
+        }
       },
       process ({ data, meta }, { state }) {
         const rootState = sbp('state/vuex/state')

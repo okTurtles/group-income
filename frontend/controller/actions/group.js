@@ -121,19 +121,12 @@ export default sbp('sbp/selectors/register', {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
   },
   'gi.actions/group/removeMember': async function (params, groupID) {
-    const memberToRemove = params.member
     try {
       const message = await sbp('gi.contracts/group/removeMember/create', params, groupID)
       await sbp('backend/publishLogEntry', message)
     } catch (e) {
-      const mapMsgs = {
-        not_a_member: () => L('{memberToRemove} is not part of the group.', { memberToRemove }),
-        cannot_remove_yourself: () => L('You cannot remove yourself.'),
-        invalid_associated_proposal: () => L('The associated proposal is invalid.'),
-        default: () => L('Failed to remove member: {codeError}', { codeError: e.message })
-      }
-
-      throw new GIErrorUIRuntimeError((mapMsgs[e.message] || mapMsgs.default)())
+      console.error('gi.actions/group/removeMember failed', e)
+      throw new GIErrorUIRuntimeError(L('Failed to remove {member}: {codeError}', { codeError: e.message, member: params.member }))
     }
     return true
   }

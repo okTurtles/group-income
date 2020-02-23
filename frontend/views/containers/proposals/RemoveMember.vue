@@ -81,7 +81,7 @@ export default {
     async submit (form) {
       this.$refs.formMsg.clean()
       const member = this.username
-      const memberID = this.groupProfiles[member].contractID
+      const memberId = this.groupProfiles[member].contractID
 
       if (this.groupShouldPropose) {
         try {
@@ -89,8 +89,8 @@ export default {
             proposalType: PROPOSAL_REMOVE_MEMBER,
             proposalData: {
               member,
-              memberID,
-              groupID: this.currentGroupId,
+              memberId,
+              groupId: this.currentGroupId,
               reason: form.reason
             },
             votingRule: this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].rule,
@@ -104,13 +104,9 @@ export default {
 
           this.ephemeral.currentStep += 1
         } catch (e) {
-          console.error(`Failed proposing to remove member ${member}.`, e.message)
-          const mapMsgs = {
-            'proposal_remove_member_exists': () => L('There is already an open proposal to remove {member}.', { member }),
-            'duplicated_proposal': () => L('This proposal is identical to another one.'),
-            default: () => L('Failed to remove member: {codeError}', { codeError: e.message })
-          }
-          this.$refs.formMsg.danger((mapMsgs[e.message] || mapMsgs.default)())
+          console.error(`Failed to propose remove ${member}.`, e)
+          this.$refs.formMsg.danger(L('Failed to propose remove {member}: {codeError}', { codeError: e.message, member }))
+
           this.ephemeral.currentStep = 0
         }
 
@@ -120,8 +116,8 @@ export default {
       try {
         await sbp('gi.actions/group/removeMember', {
           member,
-          memberID,
-          groupID: this.currentGroupId
+          memberId,
+          groupId: this.currentGroupId
         }, this.currentGroupId)
         this.$refs.proposal.close()
       } catch (e) {

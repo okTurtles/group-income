@@ -125,14 +125,14 @@ const proposals = {
     },
     [VOTE_FOR]: async function (state, { proposalHash, passPayload }) {
       const proposal = state.proposals[proposalHash]
-      const { member, memberID, groupID } = proposal.data.proposalData
+      const { member, memberId, groupId } = proposal.data.proposalData
       proposal.status = STATUS_PASSED
       proposal.payload = passPayload
 
       const data = {
         member,
-        memberID,
-        groupID,
+        memberId,
+        groupId,
         proposalHash,
         proposalPayload: passPayload
       }
