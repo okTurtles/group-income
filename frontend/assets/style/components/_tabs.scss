@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: row;
   text-align: center;
-  box-shadow: inset 0px -2px 0px $general_2;
+  box-shadow: inset 0 -2px 0 $general_2;
   font-family: "Poppins";
   font-size: 0.75rem;
   line-height: 1rem;
@@ -17,8 +17,8 @@
     padding: $spacer;
     cursor: pointer;
     color: $text_1;
-    transition: box-shadow .2s ease-in;
-    box-shadow: inset 0px 0px 0px transparent;
+    transition: box-shadow 0.2s ease-in;
+    box-shadow: inset 0 0 0 transparent;
 
     @include tablet {
       padding: $spacer 1.5rem;
@@ -30,7 +30,7 @@
 
     &:hover,
     &-active {
-      box-shadow: inset 0px -2px 0px $primary_0;
+      box-shadow: inset 0 -2px 0 $primary_0;
     }
 
     &-active {
@@ -44,7 +44,7 @@
     justify-content: center;
     width: $spacer;
     height: $spacer;
-    margin-left: .5rem;
+    margin-left: 0.5rem;
     border-radius: 3px;
     background-color: $primary_2;
     color: $primary_0;

@@ -1,7 +1,7 @@
 .table {
   tr {
     position: relative;
-    box-shadow: inset 0px -2px 0px $general_2;
+    box-shadow: inset 0 -2px 0 $general_2;
   }
 
   tbody tr {
@@ -34,7 +34,8 @@
 .table-in-card {
   @include removeSideCardPadding;
 
-  th, td {
+  th,
+  td {
     &:first-child {
       padding-left: $spacer;
 
