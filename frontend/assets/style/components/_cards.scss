@@ -21,3 +21,33 @@
 .card-header {
   margin-bottom: $spacer-sm;
 }
+
+@mixin removeSideCardPadding {
+  width: calc(100% + 2rem);
+  margin-left: -1rem;
+  margin-right: -1rem;
+
+  @include tablet {
+    width: calc(100% + 3rem);
+    margin-left: -1.5rem;
+    margin-right: -1.5rem;
+  }
+
+  @include desktop {
+    width: calc(100% + 5rem);
+    margin-left: -2.5rem;
+    margin-right: -2.5rem;
+  }
+}
+
+@mixin removeTopCardPadding {
+  margin-top: -1.5rem;
+
+  @include tablet {
+    margin-top: -1.5rem;
+  }
+
+  @include desktop {
+    margin-top: -2.5rem;
+  }
+}

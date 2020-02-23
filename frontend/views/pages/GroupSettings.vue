@@ -1,7 +1,8 @@
 <template lang='pug'>
 page.c-page
   template(#title='') {{ L('Group Settings') }}
-  template(#description='') {{ L('Changes to these settings will be visible to all group members') }}
+  template(#description='')
+    p.p-descritpion.has-text-small.has-text-1 {{ L('Changes to these settings will be visible to all group members') }}
 
   avatar-upload(
     :avatar='$store.getters.groupSettings.groupPicture'
@@ -204,6 +205,20 @@ export default {
 .c-currency-select {
   @include tablet {
     width: 50%;
+  }
+}
+
+.p-descritpion {
+  display: none;
+  margin-top: $spacer-xs;
+  padding-bottom: $spacer-md*3;
+
+  @include desktop {
+    display: block;
+  }
+
+  &.show-mobile {
+    display: block;
   }
 }
 </style>

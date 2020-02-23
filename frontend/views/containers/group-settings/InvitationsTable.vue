@@ -1,19 +1,19 @@
 <template lang="pug">
 page-section.c-section(:title='L("Invite links")')
   template(#cta='')
-    .select-wrapper.c-select-wrapper(:class='{ focus: ephemeral.selectbox.focused }')
-      select.button.is-small.is-outlined.c-select(
+    .select-wrapper.combobox(:class='{ focus: ephemeral.selectbox.focused }')
+      select.button.is-small.is-outlined(
         ref='select'
         v-model='ephemeral.selectbox.selectedOption'
         @change='unfocusSelect'
       )
         option(value='Active') {{ L('Active links') }}
         option(value='All') {{ L('All links') }}
-      span.c-rect
+      span.combobox-rect
 
   i18n.has-text-1.c-invite-description(tag='p') Here's a list of all invite links you own
 
-  table.table.c-table(v-if='invitesToShow && invitesToShow.length !== 0')
+  table.table.table-in-card.c-table(v-if='invitesToShow && invitesToShow.length !== 0')
     thead
       tr
         i18n.c-name(tag='th') created for
@@ -243,9 +243,9 @@ export default {
 }
 
 .c-table {
-  width: 100%;
   table-layout: fixed;
-  margin: $size_2 0;
+  margin-top: $size_2;
+  margin-bottom: $size_2;
 
   tr {
     display: grid;
@@ -412,45 +412,6 @@ export default {
 .c-active-button {
   .c-arrow {
     margin-right: 0;
-  }
-}
-
-.c-select-wrapper {
-  position: relative;
-  border: none;
-  width: max-content;
-
-  &::after {
-    font-size: $size_5;
-  }
-
-  .c-rect {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    display: none;
-    width: 100%;
-    height: 32%;
-    background-color: $white;
-    z-index: 2;
-    border: {
-      left: 1px solid $primary_0;
-      right: 1px solid $primary_0;
-    }
-    box-shadow: 0 2px 0 2px $primary_1;
-  }
-
-  .c-select {
-    text-align: left;
-    border-radius: 0.7rem;
-    font-family: "Poppins";
-    letter-spacing: 0.1px;
-    display: block;
-    padding-right: 1.7rem;
-
-    &:focus + .c-rect {
-      display: block;
-    }
   }
 }
 </style>

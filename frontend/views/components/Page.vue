@@ -9,11 +9,7 @@ div(:data-test='pageTestName' :class='$scopedSlots.sidebar ? "p-with-sidebar" : 
       )
       slot(name='title')
 
-    p(
-      v-if='$scopedSlots.description'
-      class='p-descritpion has-text-small has-text-1'
-    )
-      slot(name='description')
+    slot(name='description')
 
   main.p-main(:class='mainClass')
     slot
@@ -162,16 +158,6 @@ $pagePaddingDesktop: 5.5rem;
 .p-title {
   display: flex;
   align-items: center;
-}
-
-.p-descritpion {
-  display: none;
-
-  @include desktop {
-    display: block;
-    margin-top: $spacer-xs;
-    padding-bottom: $spacer-md*3;
-  }
 }
 
 .c-logo {
