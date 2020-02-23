@@ -1,135 +1,61 @@
 <template lang='pug'>
 fieldset
-  i18n.label(tag='legend') Payment methods
-  .c-list
-    label.c-item(
-      v-for='(method, index) in methodsAvailable'
+  legend.has-text-bold.c-legend
+    i18n Payment info
+    | &nbsp;
+    i18n.has-text-1.has-text-small (optional)
+  i18n.has-text-1 Other group members will be able to use this information to send you monthly contributions.
+
+  .c-methods
+    label.c-field(
+      v-for='(method, index) in ephemeral.methodsCount'
       :key='`method-${index}`'
+      data-test='method'
     )
-      .c-button(
-        type='button'
-        :disabled='!method.isAvailable'
-        :aria-pressed='selected === method.name'
-      )
-        .c-svg
-          component(:is='method.svg')
-        .radio.c-radio
-          input.input(type='radio' name='method'
-            @change='$emit("select", method.name)'
-            :disabled='!method.isAvailable'
-            :checked='method.name === selected'
-          )
-          span(:class='{ "has-text-1": selected !== method.name }') {{method.title}}
-        span.has-text-1.c-description {{method.description}}
+      i18n.sr-only Payment info
+      .select-wrapper.is-reversed.is-shifted
+        select.select
+          i18n(tag='option' selected='true' disabled='true') Choose...
+          option(v-for='name of config.options') {{name}}
+        input.input
+        button.is-icon-small.is-btn-shifted(:aria-label='L("Remove method")')
+          i.icon-times
 </template>
 
 <script>
-import Tooltip from '@components/Tooltip.vue'
-import SvgBitcoin from '@svgs/bitcoin.svg'
-import SvgMoney from '@svgs/money.svg'
 import L from '@view-utils/translations.js'
 
 export default {
-  name: 'PaymentsMethod',
-  components: {
-    SvgBitcoin,
-    SvgMoney,
-    Tooltip
-  },
+  name: 'PaymentMethods',
+  components: {},
   props: {
-    selected: {
-      type: String,
-      required: true,
-      validator: (method) => ['manual', 'bitcoin'].includes(method)
-    }
+    // @select - emit
   },
-  computed: {
-    methodsAvailable () {
-      return [
-        {
-          name: 'manual',
-          title: L('Manual'),
-          isAvailable: true,
-          svg: SvgMoney,
-          description: L('Send your contributions using whatever method works best for you.')
-        },
-        {
-          name: 'bitcoin',
-          title: L('Bitcoin'),
-          isAvailable: false,
-          svg: SvgBitcoin,
-          description: L('Coming soon!')
-        }
-      ]
+  data: () => ({
+    config: {
+      options: ['Bitcoin', 'Paypal', 'Venmo', L('Other')]
+    },
+    ephemeral: {
+      methodsCount: 1
     }
-  }
+  }),
+  computed: {}
 }
 </script>
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.c-list {
-  display: flex;
+.c-legend {
+  margin-bottom: $spacer-xs;
 }
 
-.c-item {
+.c-methods {
+  margin-top: $spacer-sm;
+}
+
+.c-field {
   display: block;
-  width: calc(50% - #{$spacer-sm});
-
-  &:nth-child(odd) {
-    margin-right: $spacer;
-  }
-}
-
-.c-button {
-  display: block;
-  width: 100%;
-  white-space: normal;
-  line-height: inherit;
-
-  &[disabled] {
-    background-color: transparent;
-    opacity: 1;
-    cursor: not-allowed;
-
-    &:hover,
-    &:focus {
-      background: transparent;
-      border-color: $primary_0_1;
-    }
-  }
-
-  &:hover:not([disabled]),
-  &:focus {
-    background: transparent;
-
-    .c-svg {
-      border-color: $text_0;
-    }
-  }
-}
-
-.c-svg {
-  height: 4.5rem;
-  border: 2px solid $general_0;
-  border-radius: 4px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   margin-bottom: $spacer;
-
-  [aria-pressed="true"] & {
-    border-color: $primary_0;
-  }
-
-  svg {
-    height: 3rem;
-  }
-}
-
-.c-description {
-  display: block;
-  margin-top: $spacer-xs;
 }
 </style>

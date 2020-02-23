@@ -111,8 +111,13 @@ textarea,
     background-color: transparent;
     padding-right: $spacer-lg;
     padding-left: $spacer;
-    min-width: 6.5rem;
+    min-width: 7.5rem;
+    width: 7.5rem;
     cursor: pointer;
+
+    option:disabled {
+      color: $text_1;
+    }
   }
 
   &::after {
@@ -127,6 +132,11 @@ textarea,
     right: $spacer;
     transform: translateY(-50%);
     pointer-events: none;
+  }
+
+  &.is-reversed::after {
+    right: auto;
+    left: 6rem;
   }
 }
 
@@ -147,9 +157,9 @@ textarea,
     border-right: 1px solid $general_0;
   }
 
-  select:not(:first-child) {
+  select {
     border-radius: 0;
-    border-left: 1px solid $general_1;
+    border-left: 1px solid $general_0;
   }
 
   select,
@@ -170,7 +180,28 @@ textarea,
     border-radius: 0 3px 3px 0;
   }
 
-  button {
+  &.is-reversed {
+    select {
+      border-radius: $radius 0 0 $radius;
+      border-right: 1px solid $general_0;
+    }
+
+    .input {
+      border-radius: 0 $radius $radius 0;
+    }
+  }
+
+  &.is-shifted {
+    width: calc(100% - 2.5rem); /* space for X (remove) btn */
+  }
+
+  .is-btn-shifted {
+    position: absolute;
+    top: 0.5rem;
+    left: calc(100% + 0.5rem);
+  }
+
+  button:not(.is-icon-small) {
     border-radius: 0 $radius $radius 0;
 
     &.is-icon {
