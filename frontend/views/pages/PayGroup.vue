@@ -3,7 +3,7 @@ page(
   pageTestName='payGroupPage'
   pageTestHeaderName='payGroupTitle'
 )
-  template(#title='') {{ L('Payment') }}
+  template(#title='') {{ L('Payments') }}
 
   template(#sidebar='' v-if='hasPayments')
     i18n.c-summary-title.is-title-4(
@@ -27,24 +27,25 @@ page(
         i.icon-check(v-if='item.max === item.value')
         .has-text-1 {{ item.label }}
 
-  i18n.p-descritpion.has-text-small.has-text-1(
+  i18n.p-descritpion.has-text-1(
     tag='p'
     data-test='openIncomeDetailsModal'
     @click='openModal("IncomeDetails")'
-    :args='{ receive_or_send: needsIncome ? L("receiving") : L("sending"), r1: `<button class="link js-btnInvite">`, r2: "</button>"}'
+    :args='{ receive_or_send: `<strong>${needsIncome ? L("receiving") : L("sending")}</strong>`, r1: `<button class="link js-btnInvite">`, r2: "</button>"}'
   ) You are currently {receive_or_send} mincome. You can change this at any time by updating your {r1}income details{r2}.
 
   section.card
     nav.tabs(
       v-if='!needsIncome'
-      aria-label='navigation'
+      aria-label='payments type'
       @click='open = false'
     )
-      a.tabs-link(
+      button.is-unstyled.tabs-link(
         v-for='(link, index) in tabItems'
         :key='index'
         :class='{ "tabs-link-active": activeTab === link.url}'
         :data-test='`link-${link}`'
+        :aria-expanded='activeTab === link.url'
         @click='activeTab = link.url'
       )
         | {{ link.title }}
@@ -55,7 +56,6 @@ page(
       @submit.prevent='submit'
     )
       label.field
-        i18n.sr-only Search payments
         .input-combo
           .is-icon(:aria-label='L("Search")')
             i.icon-search
@@ -68,23 +68,19 @@ page(
           )
           button.is-icon-small(
             v-if='form.search'
-            aria-label='Clear search'
+            :aria-label='L("Clear search")'
             @click='form.search = null'
           )
             i.icon-times
 
-    section.tab-section
+    .tab-section
       .c-container(v-if='hasPayments')
         table.table.table-in-card.c-payments
           thead
-            tr(v-if='activeTab === "todo"')
-              i18n(tag='th') Send to
-              i18n.c-payments-amount(tag='th') Amount
-              i18n.c-payments-date(tag='th') Due in
-            tr(v-else)
-              i18n(tag='th') Sent to
-              i18n.c-payments-amount(tag='th') Amount
-              i18n.c-payments-date(tag='th') Date
+            tr
+              th {{ tableTitles.one }}
+              th.c-payments-amount {{ tableTitles.two }}
+              th.c-payments-date {{ tableTitles.three }}
 
           tbody
             tr(
@@ -131,7 +127,7 @@ page(
                 .c-actions
                   .c-actions-month(:class='!(index !== 0 && activeTab === "todo") ? "has-text-1" : "c-status-danger c-status"') {{ randomMonth() }}
                   menu-parent
-                    menu-trigger.is-icon-small
+                    menu-trigger.is-icon-small(:aria-label='L("Show payment menu")')
                       i.icon-ellipsis-v
 
                     menu-content.c-actions-content
@@ -225,7 +221,7 @@ page(
 
       .c-container-empty(v-else)
         svg-contributions.c-svg
-        i18n.c-title(tag='h2') There are no pending payments.
+        i18n.c-title.is-title-4(tag='h2') There are no pending payments.
 </template>
 
 <script>
@@ -333,6 +329,17 @@ export default {
     },
     needsIncome () {
       return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'
+    },
+    tableTitles () {
+      return this.activeTab === 'todo' ? {
+        one: L('Send to'),
+        two: L('Amount'),
+        three: L('Due in')
+      } : {
+        one: L('Sent to'),
+        two: L('Amount'),
+        three: L('Date')
+      }
     },
     paymentsDistribution () {
       // TODO: make sure we create a new month if month roll's over
@@ -516,7 +523,7 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .p-descritpion {
-  margin-top: -1.8rem;
+  margin-top: -1.5rem;
   padding-bottom: $spacer;
 
   @include desktop {
@@ -537,7 +544,6 @@ export default {
 
   .c-title {
     margin: 1.5rem 0 0 0;
-    font-size: $size_4;
     color: $text_1;
   }
 

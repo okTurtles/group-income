@@ -216,9 +216,5 @@ export default {
   @include desktop {
     display: block;
   }
-
-  &.show-mobile {
-    display: block;
-  }
 }
 </style>

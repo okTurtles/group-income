@@ -244,8 +244,8 @@ export default {
 
 .c-table {
   table-layout: fixed;
-  margin-top: $size_2;
-  margin-bottom: $size_2;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
 
   tr {
     display: grid;
@@ -276,7 +276,7 @@ export default {
 
   .c-name {
     grid-area: name;
-    padding-right: $size_2;
+    padding-right: 1.5rem;
     line-height: 1.3125rem;
     align-items: center;
 
@@ -289,7 +289,7 @@ export default {
   .c-invite-link {
     position: relative;
     grid-area: invite-link;
-    padding-right: $size_2;
+    padding-right: 1.5rem;
 
     &-wrapper {
       display: inherit;
@@ -401,7 +401,7 @@ export default {
 }
 
 .c-empty-list {
-  margin: $size_2 0;
+  margin: 1.5rem 0;
   text-align: center;
 }
 

@@ -22,7 +22,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
             )
             button.is-icon-small(
               v-if='form.search'
-              aria-label='Clear search'
+              :aria-label='L("Clear search")'
               @click='form.search = null'
             )
               i.icon-times
