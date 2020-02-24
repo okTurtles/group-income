@@ -625,6 +625,12 @@ export default {
   }
 }
 
+.c-name {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
 .c-actions {
   justify-content: space-between;
 }
