@@ -1,7 +1,9 @@
 <template lang='pug'>
-table.table.table-in-card.c-payments
+table.table.table-in-card.c-payments(:class='{"c-payments-edit": paymentsType === "edit"}')
   thead
     tr
+      th(v-if='paymentsType === "edit"')
+        input.input.c-checkbox(type='checkbox')
       th {{ titles.one }}
       th.c-payments-amount {{ titles.two }}
       th.c-payments-date {{ titles.three }}
@@ -11,12 +13,14 @@ table.table.table-in-card.c-payments
       v-for='(payment, index) in payments'
       :key='index'
     )
+      td(v-if='paymentsType === "edit"')
+        input.input.c-checkbox(type='checkbox')
       td
         .c-user
           avatar-user.c-avatar(:username='payment.to' size='xs')
           strong.c-name {{payment.to}}
         .c-user-month(:class='index === 0 ? "has-text-1" : "c-status-danger c-status"') {{ randomMonth() }}
-      td.c-payments-amount
+      td.c-payments-amount(v-if='paymentsType !== "edit"')
         .c-payments-amount-info(v-if='index === 0 && (!needsIncome && paymentsType === "todo")')
           i18n.c-payments-amount-text.has-text-1(
             tag='span'
@@ -51,9 +55,21 @@ table.table.table-in-card.c-payments
         .c-actions
           .c-actions-month(:class='!(index !== 0 && paymentsType === "todo") ? "has-text-1" : "c-status-danger c-status"') {{ randomMonth() }}
           payments-list-menu(
+            v-if='paymentsType !== "edit"'
             :paymentsType='paymentsType'
             :needsIncome='needsIncome'
           )
+          i18n.is-unstyled.is-link-inherit.link.c-reset(
+            v-else
+            tag='button'
+            type='button'
+            @click='reset'
+          ) Reset
+      td(v-if='paymentsType === "edit"')
+        label.field
+          .input-combo
+            input.input
+            .suffix $ USD
 </template>
 
 <script>
@@ -107,6 +123,9 @@ export default {
     // TEMP
     randomMonth () {
       return this.monthsNames[new Date(+(new Date()) - Math.floor(Math.random() * 10000000000)).getMonth()]
+    },
+    async reset () {
+      console.log('Todo: Implement reset payment')
     }
   }
 }
@@ -142,6 +161,37 @@ export default {
   &-amount {
     @include phone {
       text-align: right;
+    }
+  }
+
+  &-edit {
+    th, td {
+      &:first-child {
+        width: 10%;
+        @include phone {
+          width: 3rem;
+        }
+      }
+
+      &:last-child {
+        width: 33%;
+        min-width: 150px;
+        display: table-cell;
+      }
+    }
+
+    .c-actions {
+      justify-content: flex-end;
+    }
+
+    .c-reset {
+      margin-left: $spacer;
+    }
+
+    .c-payments-date {
+      @include phone {
+        display: block;
+      }
     }
   }
 }
@@ -231,5 +281,11 @@ export default {
   &:hover {
     color: #fff;
   }
+}
+
+// Edit mode
+.c-checkbox {
+  width: 16px;
+  margin-right: $spacer;
 }
 </style>

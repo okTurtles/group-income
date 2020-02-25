@@ -22,6 +22,8 @@ Vue.component('RuleRemoveMemberProposal', () => import('../views/containers/prop
 
 Vue.component('IncomeDetails', () => import('../views/containers/contributions/IncomeDetails.vue'))
 
+Vue.component('RecordPayment', () => import('../views/containers/payments/RecordPayment.vue'))
+
 // TODO Remove after design test period
 Vue.component('DSModalSimple', () => import('../views/containers/design-system/DSModalSimple.vue'))
 Vue.component('DSModalNested', () => import('../views/containers/design-system/DSModalNested.vue'))

@@ -52,6 +52,7 @@ page(
             i18n.button(
               tag='button'
               data-test='recorPayment'
+              @click='openModal("RecordPayment")'
             ) Record payments
           payments-pagination(v-else)
 

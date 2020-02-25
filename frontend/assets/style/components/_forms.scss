@@ -413,3 +413,53 @@ p.error {
     }
   }
 }
+
+/* The toggle container */
+.switch {
+  width: 3rem;
+  height: 1.6875rem;
+  border-radius: 1.6875rem;
+  position: relative;
+  background: $general_0;
+  cursor: pointer;
+  outline: none;
+  transition: background-color 0.25s cubic-bezier(0.165, 0.84, 0.44, 1);
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  @media (hover: hover) {
+    &:focus,
+    &:hover {
+      border-color: $primary_0;
+    }
+
+    &:focus {
+      box-shadow: 0 0 0 2px $primary_1;
+    }
+  }
+}
+
+/* The toggle knob */
+.switch::after {
+  content: "";
+  border-radius: 50%;
+  width: 1.1875rem;
+  height: 1.1875rem;
+  position: absolute;
+  left: 0.3125rem;
+  top: 0.25rem;
+  background: $white;
+  transition: transform 0.25s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.switch:checked {
+  background: $primary_0;
+
+  &::after {
+    transform: translateX(1.1875rem);
+  }
+}
+
+.switch:disabled:not(:checked)::after {
+  opacity: 0.6;
+}

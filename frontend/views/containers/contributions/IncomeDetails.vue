@@ -200,22 +200,6 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.wrapper-container {
-  height: 100%;
-  width: 100%;
-  opacity: 1;
-  background: $general_2;
-  padding: $spacer*1.5 $spacer;
-
-  @include tablet {
-    padding: $spacer-lg $spacer*1.5;
-  }
-
-  @include desktop {
-    padding: $spacer*2.5 $spacer*1.5;
-  }
-}
-
 .c-content {
   display: grid;
   grid-template-areas:
