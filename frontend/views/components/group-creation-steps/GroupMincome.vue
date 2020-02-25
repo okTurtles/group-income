@@ -30,7 +30,7 @@
           v-for='(currency, code) in currencies'
           :value='code'
           :key='code'
-        ) {{ currency.symbol }}
+        ) {{ currency.symbolWithCode }}
 
     i18n.has-text-1(tag='p') This value can be adjusted in the future.
 

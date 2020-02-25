@@ -24,7 +24,7 @@
             aria-required
           )
           button.is-icon-small(
-            v-if='index > 0'
+            v-if='ephemeral.invitesCount > 0'
             type='button'
             @click='removeInvitee(index)'
             data-test='remove'

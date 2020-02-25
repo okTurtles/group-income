@@ -50,7 +50,7 @@ modal-base-template(ref='modal' :fullscreen='true')
             .helper(v-if='needsIncome && whoIsPledging.length')
               p {{ contributionMemberText }}
             i18n.helper(v-else-if='!needsIncome') Define up to how much you pledge to contribute to the group each month. Only the minimum needed amount will be given.
-          payment-methods.c-methods(v-if='needsIncome' @select='updatePaymentMethods')
+          payment-methods.c-methods(v-if='needsIncome' ref='paymentMethods')
 
       banner-scoped(ref='formMsg')
 
@@ -153,16 +153,33 @@ export default {
       this.form.amount = this.form.incomeDetailsType === this.ourGroupProfile.incomeDetailsType ? this.ourGroupProfile[this.ourGroupProfile.incomeDetailsType] : ''
       this.$v.form.$reset()
     },
-    updatePaymentMethods (data) {
-      console.warn('TODO! updatePaymentMethods', data)
-    },
     closeModal () {
       this.$refs.modal.close()
     },
     async submit () {
       if (this.$v.form.$invalid) {
-        this.$refs.formMsg.danger(L('Some information is missing, please review it and try again.'))
+        this.$refs.formMsg.danger(L('Your income details are missing. Please review it and try again.'))
         return
+      }
+
+      let paymentMethods
+
+      if (this.needsIncome) {
+        const validPaymentMethods = this.$refs.paymentMethods.form.methods.filter(method => !!method.input)
+
+        if (validPaymentMethods.length === 0) {
+          // TODO - confirm if it's optional!
+          // this.$refs.formMsg.danger(L('Your payment info is missing. Please review it and try again.'))
+          // return
+        } else {
+          paymentMethods = {}
+
+          for (const method of validPaymentMethods) {
+            paymentMethods[method.select] = {
+              value: method.input
+            }
+          }
+        }
       }
 
       try {
@@ -170,7 +187,8 @@ export default {
         const groupProfileUpdate = await sbp('gi.contracts/group/groupProfileUpdate/create',
           {
             incomeDetailsType,
-            [incomeDetailsType]: +this.form.amount
+            [incomeDetailsType]: +this.form.amount,
+            paymentMethods
           },
           this.$store.state.currentGroupId
         )
