@@ -144,7 +144,7 @@ describe('Group - Removing a member', () => {
 
     cy.getByDT('proposalsWidget', 'ul').find('li').within(() => {
       cy.getByDT('typeDescription').should('contain', `Remove userBot-${userId} from the group.`)
-      cy.getByDT('statusDescription').should('contain', '1 out of 3 members voted.')
+      cy.getByDT('statusDescription').should('contain', '1 out of 2 members voted.') // 1 out of 2 - the 3rd member can't vote.
     })
   })
 

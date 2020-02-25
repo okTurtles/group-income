@@ -10,7 +10,7 @@ proposal-template(
 )
   .c-step(v-if='ephemeral.currentStep === 0' key='0')
     avatar.c-avatar(:src='memberGlobalProfile.picture' size='lg')
-    p.is-title-4(data-test='description')
+    p.is-title-4.c-descr(data-test='description')
       i18n(:args='{ name: userDisplayName(username) }' v-if='groupShouldPropose') Remove {name} from the group
       i18n(:args='{ name: userDisplayName(username) }' v-else) Are you sure you want to remove {name} from the group?
 
@@ -142,5 +142,9 @@ export default {
   .c-avatar {
     margin-bottom: $spacer;
   }
+}
+
+.c-descr {
+  text-align: center;
 }
 </style>

@@ -122,11 +122,11 @@ export default {
     statusDescription () {
       switch (this.proposal.status) {
         case STATUS_OPEN: {
-          const votesCount = Object.keys(this.proposal.votes).length
+          const excludeVotes = this.proposalType === PROPOSAL_REMOVE_MEMBER ? 1 : 0
 
           return L('{count} out of {total} members voted.', {
-            count: votesCount,
-            total: this.groupMembersCount
+            count: Object.keys(this.proposal.votes).length,
+            total: this.groupMembersCount - excludeVotes
           })
         }
         case STATUS_FAILED: {
