@@ -20,6 +20,7 @@ import { currentMonthTimestamp } from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
 import currencies from '~/frontend/views/utils/currencies.js'
+import L from '~/frontend/views/utils/translations.js'
 export const INVITE_INITIAL_CREATOR = 'INVITE_INITIAL_CREATOR'
 export const INVITE_STATUS = {
   VALID: 'valid',
@@ -290,13 +291,11 @@ DefineContract({
           if (prop.data.proposalType === PROPOSAL_REMOVE_MEMBER &&
             prop.data.proposalData.member === data.member
           ) {
-            throw new TypeError('There is an open proposal to remove them.')
+            throw new TypeError(L('There is an open proposal to remove them.'))
           }
 
-          if (prop.meta.username === meta.username &&
-            deepEqualJSONType(prop.data.proposalData, data.proposalData)
-          ) {
-            throw new TypeError('This proposal is identical to another one.')
+          if (deepEqualJSONType(prop.data.proposalData, data.proposalData)) {
+            throw new TypeError(L('This proposal is identical to another one.'))
           }
         }
       },
@@ -378,15 +377,15 @@ DefineContract({
         const membersCount = getters.groupMembersCount
 
         if (!state.profiles[memberToRemove]) {
-          throw new TypeError('Not part of the group.')
+          throw new TypeError(L('Not part of the group.'))
         }
         if (membersCount === 1) {
-          throw new TypeError('Cannot remove yourself.')
+          throw new TypeError(L('Cannot remove yourself.'))
         }
         if (membersCount >= 3) {
           const { payload } = state.proposals[data.proposalHash] || {}
           if (!payload || payload.secret !== data.proposalPayload.secret) {
-            throw new TypeError('Invalid associated proposal.')
+            throw new TypeError(L('Invalid associated proposal.'))
           }
         }
       },
@@ -402,8 +401,8 @@ DefineContract({
 
         Vue.delete(state.profiles, data.member)
       },
-      sideEffect ({ data }) {
-        removeMemberSideEffect(data)
+      async sideEffect ({ data }) {
+        await removeMemberSideEffect(data)
       }
     },
     'gi.contracts/group/invite': {

@@ -139,7 +139,7 @@ const proposals = {
       const message = { data, meta: proposal.meta }
       sbp('gi.contracts/group/removeMember/process', message, state)
 
-      removeMemberSideEffect(data)
+      await removeMemberSideEffect(data)
       // // NOTE_1: I tried to call selector sideEffect manually but it didnt work
       // // TypeError: selectors[selector] is not a function - sbp.js
       // sbp('gi.contracts/group/removeMember/sideEffect', {

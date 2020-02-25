@@ -10,7 +10,7 @@ export default async function removeMemberSideEffect (data) {
     // If this member is re-joining the group, ignore the rest
     // so the member doesn't remove themself again.
     if (sbp('okTurtles.data/get', 'JOINING_GROUP')) {
-      return false
+      return
     }
 
     const groupIdToSwitch = Object.keys(contracts)
