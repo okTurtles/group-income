@@ -140,7 +140,7 @@ export default {
   }
 }
 
-/* TODO - review/isolate to forms.scss at #834 */
+/* TODO - review/isolate to forms.scss at #833 and #831 */
 
 .select.is-empty {
   color: $text_1;
