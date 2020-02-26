@@ -1,22 +1,22 @@
 <template lang='pug'>
-fieldset(data-test='paymentInfo')
+fieldset(data-test='paymentMethods')
   legend.has-text-bold.c-legend
     i18n Payment info
     | &nbsp;
     i18n.has-text-1.has-text-small (optional)
   i18n.has-text-1 Other group members will be able to use this information to send you monthly contributions.
 
-  ul.c-fields(ref='fields')
+  ul.c-fields(ref='fields' data-test='fields')
     li.c-fields-item(
-      v-for='(method, index) in ephemeral.methodsCount'
+      v-for='(method, index) in form.methods'
       :key='`method-${index}`'
       data-test='method'
     )
       .select-wrapper.is-reversed.is-shifted
         label
           .sr-only Payment name
-          select.select(v-model='form.methods[index].select'
-            :class='{ "is-empty": form.methods[index].select === "choose"}'
+          select.select(v-model='method.name'
+            :class='{ "is-empty": method.name === "choose"}'
             @change='e => handleSelectChange(e, index)'
           )
             i18n(tag='option' value='choose' disabled='true') Choose...
@@ -26,11 +26,11 @@ fieldset(data-test='paymentInfo')
           .sr-only Payment description
           input.input(
             type='text'
-            v-model='form.methods[index].input'
-            :disabled='form.methods[index].select === "choose"'
+            v-model='method.value'
+            :disabled='method.name === "choose"'
           )
         button.is-icon-small.is-btn-shifted(
-          v-if='ephemeral.methodsCount > 1'
+          v-if='methodsCount > 1'
           type='button'
           :aria-label='L("Remove method")'
           @click='removeMethod(index)'
@@ -55,9 +55,6 @@ import L from '@view-utils/translations.js'
 export default {
   name: 'PaymentMethods',
   components: {},
-  props: {
-    // @select - emit
-  },
   data: () => ({
     config: {
       options: {
@@ -70,65 +67,58 @@ export default {
     },
     form: {
       methods: []
-    },
-    ephemeral: {
-      methodsCount: 1
     }
   }),
   created () {
-    const methods = Object.keys(this.paymentMethods)
-    const methodsCount = methods.length
+    const savedMethods = this.ourGroupProfile.paymentMethods || {}
+    const savedMethodsKeys = Object.keys(savedMethods)
+    const savedMethodsCount = savedMethodsKeys.length
 
-    if (methodsCount === 0) {
+    if (savedMethodsCount === 0) {
       // set the minimum necessary to show the first empty field.
-      this.ephemeral.methodsCount = 1
       Vue.set(this.form.methods, 0, {
-        select: 'choose',
-        input: ''
+        name: 'choose',
+        value: ''
       })
       return
     }
 
-    for (let index = 0; index < methodsCount; index++) {
-      const method = methods[index]
+    for (let index = 0; index < savedMethodsCount; index++) {
+      const method = savedMethodsKeys[index]
       Vue.set(this.form.methods, index, {
-        select: method,
-        input: this.paymentMethods[method].value
+        name: method,
+        value: this.ourGroupProfile.paymentMethods[method].value
       })
     }
-
-    this.ephemeral.methodsCount = methodsCount
   },
   computed: {
     ...mapGetters([
       'ourUsername',
       'ourGroupProfile'
     ]),
-    paymentMethods () {
-      return this.ourGroupProfile.paymentMethods || {}
+    methodsCount () {
+      return Object.keys(this.form.methods).length
     }
   },
   methods: {
     handleSelectChange (e, index) {
       // Reset the respective input and focus on it
       Vue.set(this.form.methods, index, {
-        select: e.target.value,
-        input: ''
+        name: e.target.value,
+        value: ''
       })
       Vue.nextTick(() => {
         this.$refs.fields.childNodes[index].getElementsByTagName('label')[1].focus()
       })
     },
     handleAddMethod () {
-      Vue.set(this.form.methods, this.ephemeral.methodsCount, {
-        select: 'choose',
-        input: ''
+      Vue.set(this.form.methods, this.methodsCount, {
+        name: 'choose',
+        value: ''
       })
-      this.ephemeral.methodsCount += 1
     },
     removeMethod (index) {
       this.form.methods.splice(index, 1)
-      this.ephemeral.methodsCount -= 1
     }
   }
 }

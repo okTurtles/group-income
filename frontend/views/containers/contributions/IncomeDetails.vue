@@ -162,21 +162,19 @@ export default {
         return
       }
 
-      let paymentMethods
+      const paymentMethods = {}
 
       if (this.needsIncome) {
-        const validPaymentMethods = this.$refs.paymentMethods.form.methods.filter(method => !!method.input)
+        const validPaymentMethods = this.$refs.paymentMethods.form.methods.filter(method => !!method.value)
 
         if (validPaymentMethods.length === 0) {
           // TODO - confirm if it's optional!
           // this.$refs.formMsg.danger(L('Your payment info is missing. Please review it and try again.'))
           // return
         } else {
-          paymentMethods = {}
-
           for (const method of validPaymentMethods) {
-            paymentMethods[method.select] = {
-              value: method.input
+            paymentMethods[method.name] = {
+              value: method.value
             }
           }
         }
