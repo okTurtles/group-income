@@ -180,7 +180,7 @@ router.beforeEach((to, from, next) => {
 })
 
 sbp('sbp/selectors/register', {
-  'state/router': () => router
+  'controller/router': () => router
 })
 
 export default router

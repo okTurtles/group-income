@@ -2,9 +2,7 @@
 
 import { literalOf, unionOf } from '~/frontend/utils/flowTyper.js'
 
-// Error: Circular dependency:
-// import { PROPOSAL_REMOVE_MEMBER } from '@model/contracts/voting/proposals.js'
-const PROPOSAL_REMOVE_MEMBER = 'remove-member'
+import { PROPOSAL_REMOVE_MEMBER } from '~/frontend/model/contracts/voting/constants.js'
 
 export const VOTE_AGAINST = ':against'
 export const VOTE_INDIFFERENT = ':indifferent'

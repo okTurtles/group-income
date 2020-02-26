@@ -23,7 +23,7 @@ import sbp from '~/shared/sbp.js'
 import { CLOSE_MODAL } from '@utils/events.js'
 import L from '@view-utils/translations.js'
 import Avatar from '@components/Avatar.vue'
-import { PROPOSAL_REMOVE_MEMBER } from '@model/contracts/voting/proposals.js'
+import { PROPOSAL_REMOVE_MEMBER } from '@model/contracts/voting/constants.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ProposalTemplate from './ProposalTemplate.vue'
 

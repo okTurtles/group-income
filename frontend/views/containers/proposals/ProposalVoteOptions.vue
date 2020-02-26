@@ -32,8 +32,9 @@ import { mapGetters, mapState } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
 import { VOTE_FOR, VOTE_AGAINST } from '@model/contracts/voting/rules.js'
-import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, oneVoteToPass } from '@model/contracts/voting/proposals.js'
-import { createInvite, removeMemberSecret } from '@model/contracts/group.js'
+import { oneVoteToPass } from '@model/contracts/voting/proposals.js'
+import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER } from '@model/contracts/voting/constants.js'
+import { createInvite } from '@model/contracts/group.js'
 
 export default {
   name: 'Vote',
@@ -109,7 +110,9 @@ export default {
             creator: this.proposal.meta.username
           })
         } else if (isOneVoteToPass && this.type === PROPOSAL_REMOVE_MEMBER) {
-          payload.passPayload = removeMemberSecret()
+          payload.passPayload = {
+            secret: `${parseInt(Math.random() * 10000)}` // TODO: this
+          }
         }
 
         const vote = await sbp('gi.contracts/group/proposalVote/create',

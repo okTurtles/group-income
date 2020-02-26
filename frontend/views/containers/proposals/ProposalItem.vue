@@ -36,6 +36,7 @@
 import { mapGetters, mapState } from 'vuex'
 import L from '@view-utils/translations.js'
 import currencies from '~/frontend/views/utils/currencies.js'
+import { buildInvitationUrl } from '@model/contracts/voting/proposals.js'
 import {
   PROPOSAL_INVITE_MEMBER,
   PROPOSAL_REMOVE_MEMBER,
@@ -46,9 +47,8 @@ import {
   STATUS_PASSED,
   STATUS_FAILED,
   STATUS_EXPIRED,
-  STATUS_CANCELLED,
-  buildInvitationUrl
-} from '@model/contracts/voting/proposals.js'
+  STATUS_CANCELLED
+} from '@model/contracts/voting/constants.js'
 import ProposalVoteOptions from '@containers/proposals/ProposalVoteOptions.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import Tooltip from '@components/Tooltip.vue'

@@ -6,19 +6,18 @@ import { DAYS_MILLIS } from '~/frontend/utils/time.js'
 import { PROPOSAL_RESULT } from '~/frontend/utils/events.js'
 import rules, { ruleType, VOTE_UNDECIDED, VOTE_AGAINST, VOTE_FOR, RULE_THRESHOLD, RULE_DISAGREEMENT } from './rules.js'
 
-import removeMemberSideEffect from '../members/removeMemberSideEffect.js'
-
-export const PROPOSAL_INVITE_MEMBER = 'invite-member'
-export const PROPOSAL_REMOVE_MEMBER = 'remove-member'
-export const PROPOSAL_GROUP_SETTING_CHANGE = 'group-setting-change'
-export const PROPOSAL_PROPOSAL_SETTING_CHANGE = 'proposal-setting-change'
-export const PROPOSAL_GENERIC = 'generic'
-
-export const STATUS_OPEN = 'open'
-export const STATUS_PASSED = 'passed'
-export const STATUS_FAILED = 'failed'
-export const STATUS_EXPIRED = 'expired'
-export const STATUS_CANCELLED = 'cancelled'
+import {
+  PROPOSAL_INVITE_MEMBER,
+  PROPOSAL_REMOVE_MEMBER,
+  PROPOSAL_GROUP_SETTING_CHANGE,
+  PROPOSAL_PROPOSAL_SETTING_CHANGE,
+  PROPOSAL_GENERIC,
+  // STATUS_OPEN,
+  STATUS_PASSED,
+  STATUS_FAILED
+  // STATUS_EXPIRED,
+  // STATUS_CANCELLED
+} from './constants.js'
 
 export function archiveProposal (state, proposalHash) {
   // TODO: handle this better (archive the proposal or whatever)
@@ -139,25 +138,7 @@ const proposals = {
       const message = { data, meta: proposal.meta }
       sbp('gi.contracts/group/removeMember/process', message, state)
 
-      await removeMemberSideEffect(data)
-      // // NOTE_1: I tried to call selector sideEffect manually but it didnt work
-      // // TypeError: selectors[selector] is not a function - sbp.js
-      // sbp('gi.contracts/group/removeMember/sideEffect', {
-      //   // Q: Why sideEffect(message), message is not a simple object?
-      //   meta: () => proposal.meta,
-      //   data: () => data
-      // })
-
-      // NOTE_2: Everything went fine to all members expect the one being removed.
-      /*
-       There was an error:
-       - "processMutation: error TypeError TypeError: "state.contracts[contractID] is undefined"
-       - state.js:653 -> :172 at setContractHEAD()
-
-       I think this happens because the member received a new event where
-       the proposal was accepted. But the contract was already removed, so it breaks...
-       - A quick fix was to put a if() there but I feel like the issue is bigger than that.
-       */
+      await sbp('gi.contracts/group/removeMember/process/sideEffect', message)
     },
     [VOTE_AGAINST]: voteAgainst
   },

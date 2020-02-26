@@ -34,7 +34,7 @@ import { decimals } from '@view-utils/validators.js'
 import L from '@view-utils/translations.js'
 import ProposalTemplate from './ProposalTemplate.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
-import { PROPOSAL_GROUP_SETTING_CHANGE } from '@model/contracts/voting/proposals.js'
+import { PROPOSAL_GROUP_SETTING_CHANGE } from '@model/contracts/voting/constants.js'
 
 export default {
   name: 'MincomeProposal',

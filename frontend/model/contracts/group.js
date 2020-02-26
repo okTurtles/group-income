@@ -7,15 +7,14 @@ import { mapOf, objectOf, objectMaybeOf, optional, string, number, object, union
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income-simple/issues/603
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST } from './voting/rules.js'
-import proposals, {
-  proposalType, proposalSettingsType, archiveProposal,
+import proposals, { proposalType, proposalSettingsType, archiveProposal } from './voting/proposals.js'
+import {
   PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC,
   STATUS_OPEN, STATUS_CANCELLED
-} from './voting/proposals.js'
+} from './voting/constants.js'
 import { paymentStatusType, paymentType } from './payments/index.js'
-import removeMemberSideEffect from './members/removeMemberSideEffect.js'
 import * as Errors from '../errors.js'
-import { merge, deepEqualJSONType } from '~/frontend/utils/giLodash.js'
+import { merge, deepEqualJSONType, omit } from '~/frontend/utils/giLodash.js'
 import { currentMonthTimestamp } from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
@@ -67,12 +66,6 @@ function initGroupProfile (contractID: string) {
   return {
     contractID: contractID,
     nonMonetaryContributions: []
-  }
-}
-
-export function removeMemberSecret () {
-  return {
-    secret: `${parseInt(Math.random() * 10000)}` // TODO: this
   }
 }
 
@@ -281,6 +274,8 @@ DefineContract({
           expires_date_ms: number // calculate by grabbing proposal expiry from group properties and add to `meta.createdDate`
         })(data)
 
+        const dataToCompare = omit(data.proposalData, 'reason')
+
         // Validate this isn't a duplicate proposal
         for (const hash in state.proposals) {
           const prop = state.proposals[hash]
@@ -288,14 +283,8 @@ DefineContract({
             continue
           }
 
-          if (prop.data.proposalType === PROPOSAL_REMOVE_MEMBER &&
-            prop.data.proposalData.member === data.member
-          ) {
-            throw new TypeError(L('There is an open proposal to remove them.'))
-          }
-
-          if (deepEqualJSONType(prop.data.proposalData, data.proposalData)) {
-            throw new TypeError(L('This proposal is identical to another one.'))
+          if (deepEqualJSONType(omit(prop.data.proposalData, 'reason'), dataToCompare)) {
+            throw new TypeError(L('There is an identical open proposal.'))
           }
         }
       },
@@ -402,7 +391,30 @@ DefineContract({
         Vue.delete(state.profiles, data.member)
       },
       async sideEffect ({ data }) {
-        await removeMemberSideEffect(data)
+        const rootState = sbp('state/vuex/state')
+        const contracts = rootState.contracts || {}
+
+        if (data.member === rootState.loggedIn.username) {
+          // If this member is re-joining the group, ignore the rest
+          // so the member doesn't remove themself again.
+          if (sbp('okTurtles.data/get', 'JOINING_GROUP')) {
+            return
+          }
+
+          const groupIdToSwitch = Object.keys(contracts)
+            .find(contractID => contracts[contractID].type === 'group' &&
+        contractID !== data.groupId &&
+        rootState[contractID].settings) || null
+          sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
+          sbp('state/vuex/commit', 'removeContract', data.groupId)
+
+          sbp('controller/router').push({ path: groupIdToSwitch ? '/dashboard' : '/' })
+          // TODO - #828 remove other group members contracts if applicable
+        } else {
+          // TODO - #828 remove the member contract if applicable.
+          // sbp('state/vuex/commit', 'removeContract', data.memberID)
+        }
+        // TODO - #850 verify open proposals and see if they need some re-adjustment.
       }
     },
     'gi.contracts/group/invite': {
