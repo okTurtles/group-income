@@ -45,19 +45,20 @@ const rules = {
   },
   [RULE_DISAGREEMENT]: function (state, proposalType, votes) {
     votes = Object.values(votes)
-    const disagreementThreshold = state.settings.proposals[proposalType].ruleSettings[RULE_DISAGREEMENT].threshold
+    const minimumMax = proposalType === PROPOSAL_REMOVE_MEMBER ? 2 : 0
+    const threshold = Math.max(state.settings.proposals[proposalType].ruleSettings[RULE_DISAGREEMENT].threshold, minimumMax)
     const totalFor = votes.filter(x => x === VOTE_FOR).length
     const totalAgainst = votes.filter(x => x === VOTE_AGAINST).length
     const population = Object.keys(state.profiles).length
     const turnout = votes.length
     const absent = population - turnout
-    console.debug(`votingRule ${RULE_DISAGREEMENT} for ${proposalType}:`, { totalFor, totalAgainst, disagreementThreshold, turnout, population, absent })
-    if (totalAgainst >= disagreementThreshold) {
+    console.debug(`votingRule ${RULE_DISAGREEMENT} for ${proposalType}:`, { totalFor, totalAgainst, threshold, turnout, population, absent })
+    if (totalAgainst >= threshold) {
       return VOTE_AGAINST
     }
     // consider proposal passed if more vote for it than against it and there aren't
-    // enough votes left to tip the scales past the disagreementThreshold
-    return totalAgainst + absent < disagreementThreshold && totalFor > totalAgainst ? VOTE_FOR : VOTE_UNDECIDED
+    // enough votes left to tip the scales past the threshold
+    return totalAgainst + absent < threshold && totalFor > totalAgainst ? VOTE_FOR : VOTE_UNDECIDED
   },
   [RULE_MULTI_CHOICE]: function (state, proposalType, votes) {
     throw new Error('unimplemented!')
