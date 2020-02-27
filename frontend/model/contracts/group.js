@@ -349,7 +349,7 @@ DefineContract({
       }
     },
     'gi.contracts/group/removeMember': {
-      validate: (data, { state, getters }) => {
+      validate: (data, { state, getters, meta }) => {
         objectOf({
           member: string,
           memberId: string,
@@ -371,7 +371,14 @@ DefineContract({
         if (membersCount === 1) {
           throw new TypeError(L('Cannot remove yourself.'))
         }
-        if (membersCount >= 3) {
+
+        if (membersCount < 3) {
+          // In a small group make sure this only the creator can remove someone
+          if (meta.username !== state.settings.groupCreator) {
+            throw new TypeError(L('Only the group creator can remove members.'))
+          }
+        } else {
+          // In a big group make sure theres a related approved proposal
           const { payload } = state.proposals[data.proposalHash] || {}
           if (!payload || payload.secret !== data.proposalPayload.secret) {
             throw new TypeError(L('Invalid associated proposal.'))
@@ -379,15 +386,6 @@ DefineContract({
         }
       },
       process ({ data, meta }, { state }) {
-        const rootState = sbp('state/vuex/state')
-        if (data.member === rootState.loggedIn.username) {
-          // If this member is re-joining the group, ignore the rest
-          // so the member doesn't remove themself again.
-          if (sbp('okTurtles.data/get', 'JOINING_GROUP')) {
-            return false
-          }
-        }
-
         Vue.delete(state.profiles, data.member)
       },
       async sideEffect ({ data }) {
@@ -403,11 +401,11 @@ DefineContract({
 
           const groupIdToSwitch = Object.keys(contracts)
             .find(contractID => contracts[contractID].type === 'group' &&
-        contractID !== data.groupId &&
-        rootState[contractID].settings) || null
+              contractID !== data.groupId &&
+              rootState[contractID].settings) || null
+
           sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
           sbp('state/vuex/commit', 'removeContract', data.groupId)
-
           sbp('controller/router').push({ path: groupIdToSwitch ? '/dashboard' : '/' })
           // TODO - #828 remove other group members contracts if applicable
         } else {
