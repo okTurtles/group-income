@@ -166,6 +166,12 @@ export default {
 
       if (this.needsIncome) {
         const validPaymentMethods = this.$refs.paymentMethods.form.methods.filter(method => !!method.value)
+        const incompletedMethod = validPaymentMethods.find(method => !method.name || method.name === 'choose')
+
+        if (incompletedMethod) {
+          this.$refs.formMsg.danger(L('Please choose the method name for "{methodValue}".', { methodValue: incompletedMethod.value }))
+          return
+        }
 
         if (validPaymentMethods.length > 0) {
           for (const method of validPaymentMethods) {

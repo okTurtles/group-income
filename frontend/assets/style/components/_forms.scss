@@ -65,7 +65,7 @@ select,
 
   @media (hover: hover) {
     &:focus,
-    &:hover:not(:disabled) {
+    &:hover {
       border-color: $primary_0;
     }
 
@@ -153,7 +153,7 @@ textarea,
     position: relative;
     border: 1px solid transparent;
 
-    &:hover:not(:disabled) {
+    &:hover {
       border-color: $primary_0;
       z-index: 1; /* all the border gets visible even if next to another input */
     }
@@ -184,7 +184,7 @@ textarea,
       margin-left: -1px; /* show border */
       border-left: 1px solid $general_0;
 
-      &:hover:not(:disabled) {
+      &:hover {
         border-color: $primary_0;
       }
     }

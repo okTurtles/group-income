@@ -27,7 +27,6 @@ fieldset(data-test='paymentMethods')
           input.input(
             type='text'
             v-model='method.value'
-            :disabled='method.name === "choose"'
           )
         button.is-icon-small.is-btn-shifted(
           type='button'

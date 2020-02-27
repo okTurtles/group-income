@@ -172,7 +172,7 @@ describe('Payments', () => {
           .should('have.value', null)
           .select('bitcoin')
         cy.get('input').type('h4sh-t0-b3-s4ved')
-        cy.getByDT('remove', 'button').should('not.exist')
+        cy.getByDT('remove', 'button').should('not.be.visible')
       })
 
       cy.log('Add a 2º payment method (paypal)')
@@ -184,7 +184,7 @@ describe('Payments', () => {
         cy.get('input').should('have.value', '')
         cy.get('select').select('paypal')
         cy.get('input').type('user1-paypal@email.com')
-        cy.getByDT('remove', 'button').should('exist')
+        cy.getByDT('remove', 'button').should('be.visible')
       })
 
       cy.log('Add a 3º payment method (other)')
@@ -196,7 +196,7 @@ describe('Payments', () => {
         cy.get('input').should('have.value', '')
         cy.get('select').select('other')
         cy.get('input').type('IBAN: 12345')
-        cy.getByDT('remove', 'button').should('exist')
+        cy.getByDT('remove', 'button').should('be.visible')
       })
 
       cy.log('Remove the 2º payment method (paypal)')
@@ -217,14 +217,25 @@ describe('Payments', () => {
       cy.getByDT('method').eq(0).within(() => {
         cy.get('select').should('have.value', 'bitcoin')
         cy.get('input').should('have.value', 'h4sh-t0-b3-s4ved')
-        cy.getByDT('remove', 'button').should('exist')
+        cy.getByDT('remove', 'button').should('be.visible')
       })
       cy.getByDT('method').eq(1).within(() => {
         cy.get('select').should('have.value', 'other')
         cy.get('input').should('have.value', 'IBAN: 12345')
-        cy.getByDT('remove', 'button').should('exist')
+        cy.getByDT('remove', 'button').should('be.visible')
+      })
+
+      cy.log('Try to add a 3º payment method - incompleted')
+      cy.getByDT('addMethod', 'button').click()
+      cy.getByDT('fields', 'ul').children().should('have.length', 3)
+
+      cy.getByDT('method').eq(2).within(() => {
+        cy.get('input').type('mylink.com')
       })
     })
+
+    cy.getByDT('submitIncome').click()
+    cy.getByDT('feedbackMsg').should('contain', 'Please choose the method name for "mylink.com".')
 
     cy.closeModal()
   })
