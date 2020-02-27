@@ -59,7 +59,7 @@ describe('Group - Removing a member', () => {
         cy.getByDT('groupMembers').find('ul>li:nth-child(1)').within(() => {
           cy.getByDT('username').should('contain', `user1-${userId}`)
           cy.getByDT('menuActions').find('button').click()
-          cy.getByDT('menuContent').find('ul>li').should('have.length', 1) // Edit Profile
+          cy.getByDT('menuContent').find('ul>li').should('have.length', 2) // Edit Profile
         })
       }
     })
