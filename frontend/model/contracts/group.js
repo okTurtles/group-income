@@ -374,13 +374,19 @@ DefineContract({
 
         if (membersCount < 3) {
           // In a small group only the creator can remove someone
+          // TODO: check whether meta.username has required admin permissions
           if (meta.username !== state.settings.groupCreator) {
             throw new TypeError(L('Only the group creator can remove members.'))
           }
         } else {
           // In a big group a removal can only happen through a proposal
-          const { payload } = state.proposals[data.proposalHash] || {}
-          if (!payload || payload.secret !== data.proposalPayload.secret) {
+          const proposal = state.proposals[data.proposalHash]
+          if (!proposal) {
+            // TODO this
+            throw new TypeError(L('Admin credentials needed and not implemented yet.'))
+          }
+
+          if (!proposal.payload || proposal.payload.secret !== data.proposalPayload.secret) {
             throw new TypeError(L('Invalid associated proposal.'))
           }
         }
