@@ -176,6 +176,10 @@ export default {
 .c-modal-footer {
   min-height: 53px;
 
+  @include touch {
+    border-radius: 0.25rem;
+  }
+
   @include desktop {
     padding-bottom: $spacer-xl;
     max-width: 100%;

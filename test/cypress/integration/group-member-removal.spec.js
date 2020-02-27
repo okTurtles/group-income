@@ -49,11 +49,19 @@ describe('Group - Removing a member', () => {
     cy.giLogout()
   })
 
-  it('user2 joins groupA', () => {
+  it('user2 joins groupA and cannot remove user1', () => {
     cy.giAcceptGroupInvite(invitationLinks.anyone_groupA, {
       username: `user2-${userId}`,
       groupName: groupNameA,
-      bypassUI: true
+      bypassUI: true,
+      actionBeforeLogout: () => {
+        cy.log('Option to Remove Member does not exist')
+        cy.getByDT('groupMembers').find('ul>li:nth-child(1)').within(() => {
+          cy.getByDT('username').should('contain', `user1-${userId}`)
+          cy.getByDT('menuActions').find('button').click()
+          cy.getByDT('menuContent').find('ul>li').should('have.length', 1) // Edit Profile
+        })
+      }
     })
   })
 

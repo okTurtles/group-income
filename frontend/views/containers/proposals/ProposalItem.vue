@@ -7,7 +7,7 @@
           p.has-text-bold(data-test='typeDescription')
             | {{typeDescription}}
             tooltip.c-tip(
-              v-if='isToRemoveMe'
+              v-if='isToRemoveMe && proposal.status === statuses.STATUS_OPEN'
               direction='top'
               :text='L("You cannot vote.")'
             )

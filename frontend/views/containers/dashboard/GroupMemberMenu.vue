@@ -23,6 +23,7 @@ menu-parent(data-test='menuActions')
         tag='button'
         item-id='remove'
         icon='times'
+        v-if='groupShouldPropose || ourUsername === groupSettings.groupCreator'
         @click='openModal("RemoveMember", { username })'
       )
         i18n Remove member
