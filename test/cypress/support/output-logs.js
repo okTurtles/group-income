@@ -24,7 +24,8 @@ Cypress.on('window:before:load', (window) => {
          */
       // Save everything passed into a variable or any other solution
       // you make to keep track of the logs
-      logs += args.join(' ') + '\n'
+      // Use JSON.stringify to avoid [object, object] in the output
+      logs += JSON.stringify(args.join(' ')) + '\n'
     }
   })
 })
