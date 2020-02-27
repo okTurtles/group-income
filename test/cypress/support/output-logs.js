@@ -6,6 +6,11 @@
 let logs = ''
 
 Cypress.on('window:before:load', (window) => {
+  // Only output App logs when running headless.
+  if (!Cypress.browser.isHeadless) {
+    return
+  }
+
   // Get your apps iframe by id.
   const docIframe = window.parent.document.getElementById("Your App: 'group-income-simple'")
 
@@ -25,7 +30,8 @@ Cypress.on('window:before:load', (window) => {
       // Save everything passed into a variable or any other solution
       // you make to keep track of the logs
       // Use JSON.stringify to avoid [object, object] in the output
-      logs += JSON.stringify(args.join(' ')) + '\n'
+      // logs += JSON.stringify(args.join(' ')) + '\n'
+      logs += `::${consoleProperty}:: ${args} \n`
     }
   })
 })
