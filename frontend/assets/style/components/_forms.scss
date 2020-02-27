@@ -65,7 +65,7 @@ select,
 
   @media (hover: hover) {
     &:focus,
-    &:hover {
+    &:hover:not(:disabled) {
       border-color: $primary_0;
     }
 
@@ -111,8 +111,7 @@ textarea,
     background-color: transparent;
     padding-right: $spacer-lg;
     padding-left: $spacer;
-    min-width: 7.5rem;
-    width: 7.5rem;
+    min-width: 6.5rem;
     cursor: pointer;
 
     option:disabled {
@@ -121,7 +120,7 @@ textarea,
   }
 
   &::after {
-    content: "\f0dd"; // sort-down
+    content: "\f0dd"; // icon-sort-down
     text-rendering: auto;
     line-height: 1;
     font-family: "Font Awesome 5 Free";
@@ -130,18 +129,14 @@ textarea,
     position: absolute;
     top: 50%;
     right: $spacer;
-    transform: translateY(-50%);
+    transform: translateY(calc(-50% - 2px));
     pointer-events: none;
   }
 
   &.is-reversed::after {
     right: auto;
-    left: 6rem;
+    left: 5rem;
   }
-}
-
-.input + select {
-  width: auto;
 }
 
 .select-wrapper,
@@ -152,23 +147,15 @@ textarea,
   border: 1px solid $general_0;
   border-radius: $radius;
 
-  .input {
-    border-radius: $radius 0 0 $radius;
-    border-right: 1px solid $general_0;
-  }
-
-  select {
-    border-radius: 0;
-    border-left: 1px solid $general_0;
-  }
-
   select,
   .select,
   .input {
+    position: relative;
     border: 1px solid transparent;
 
-    &:hover {
+    &:hover:not(:disabled) {
       border-color: $primary_0;
+      z-index: 1; /* all the border gets visible even if next to another input */
     }
 
     &:focus {
@@ -176,29 +163,31 @@ textarea,
     }
   }
 
-  input + select:focus {
-    border-radius: 0 3px 3px 0;
+  .input {
+    border-radius: $radius 0 0 $radius;
+  }
+
+  input + select {
+    width: auto;
+    border-left: 1px solid $general_0;
+    border-radius: 0 $radius $radius 0;
+    margin-left: -1px /* border */
   }
 
   &.is-reversed {
-    select {
+    .select {
       border-radius: $radius 0 0 $radius;
-      border-right: 1px solid $general_0;
     }
 
     .input {
       border-radius: 0 $radius $radius 0;
+      margin-left: -1px; /* show border */
+      border-left: 1px solid $general_0;
+
+      &:hover:not(:disabled) {
+        border-color: $primary_0;
+      }
     }
-  }
-
-  &.is-shifted {
-    width: calc(100% - 2.5rem); /* space for X (remove) btn */
-  }
-
-  .is-btn-shifted {
-    position: absolute;
-    top: 0.5rem;
-    left: calc(100% + 0.5rem);
   }
 
   button:not(.is-icon-small) {
@@ -270,6 +259,7 @@ textarea,
     line-height: $inputHeight;
     white-space: nowrap;
     color: $text_1;
+    z-index: 1 /* to be above input, always */
   }
 }
 

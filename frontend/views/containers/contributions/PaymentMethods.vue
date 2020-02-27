@@ -1,9 +1,9 @@
 <template lang='pug'>
 fieldset(data-test='paymentMethods')
   legend.has-text-bold.c-legend
-    i18n Payment info
+    i18n.is-title-4 Payment info
     | &nbsp;
-    i18n.has-text-1.has-text-small (optional)
+    i18n.has-text-1.has-text-small.c-optional (optional)
   i18n.has-text-1 Other group members will be able to use this information to send you monthly contributions.
 
   ul.c-fields(ref='fields' data-test='fields')
@@ -12,7 +12,7 @@ fieldset(data-test='paymentMethods')
       :key='`method-${index}`'
       data-test='method'
     )
-      .select-wrapper.is-reversed.is-shifted
+      .select-wrapper.is-reversed(:class='{"is-shifted": methodsCount > 1 }')
         label
           .sr-only Payment name
           select.select(v-model='method.name'
@@ -30,7 +30,6 @@ fieldset(data-test='paymentMethods')
             :disabled='method.name === "choose"'
           )
         button.is-icon-small.is-btn-shifted(
-          v-if='methodsCount > 1'
           type='button'
           :aria-label='L("Remove method")'
           @click='removeMethod(index)'
@@ -127,6 +126,10 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
+.c-optional {
+  font-weight: 400;
+}
+
 .c-legend {
   margin-bottom: $spacer-xs;
 }
@@ -140,10 +143,34 @@ export default {
   }
 }
 
-/* TODO - review/isolate to forms.scss at #833 and #831 */
+// TODO - Review & Refactor to forms.scss at #833 and #831
+.select-wrapper {
+  .is-btn-shifted {
+    display: none;
+    position: absolute;
+    top: 0.5rem;
+    left: calc(100% + 0.5rem);
+  }
 
-.select.is-empty {
-  color: $text_1;
+  &.is-shifted {
+    width: calc(100% - 2.5rem); // space for .btn-shift (X)
+
+    .is-btn-shifted {
+      display: block;
+    }
+  }
+
+  .select {
+    min-width: 7rem;
+
+    &.is-empty {
+      color: $text_1;
+    }
+  }
+
+  &::after { // icon-sort-down
+    left: 5.5rem;
+  }
 }
 
 .c-select-input {

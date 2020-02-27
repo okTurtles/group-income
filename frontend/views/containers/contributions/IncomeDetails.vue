@@ -167,11 +167,7 @@ export default {
       if (this.needsIncome) {
         const validPaymentMethods = this.$refs.paymentMethods.form.methods.filter(method => !!method.value)
 
-        if (validPaymentMethods.length === 0) {
-          // TODO - confirm if it's optional!
-          // this.$refs.formMsg.danger(L('Your payment info is missing. Please review it and try again.'))
-          // return
-        } else {
+        if (validPaymentMethods.length > 0) {
           for (const method of validPaymentMethods) {
             paymentMethods[method.name] = {
               value: method.value
@@ -270,8 +266,11 @@ export default {
 
 .c-card {
   grid-area: card;
-  padding: 2.5rem;
   align-self: flex-start;
+
+  @include desktop {
+    padding: 2.5rem;
+  }
 }
 
 .c-methods {

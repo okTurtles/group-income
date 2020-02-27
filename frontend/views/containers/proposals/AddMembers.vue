@@ -10,7 +10,7 @@
   )
     fieldset(v-if='ephemeral.currentStep === 0' key='0' ref='fieldset')
       i18n.label(tag='legend') Full name
-      label.field(
+      label.field.c-fields-item(
         v-for='(member, index) in ephemeral.invitesCount'
         :key='`member-${index}`'
         data-test='invitee'
@@ -149,12 +149,8 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.c-addPeople {
-  margin: $spacer-sm 0 $spacer;
-
-  .icon-plus {
-    margin-right: $spacer-sm;
-  }
+.c-fields-item {
+  margin-bottom: $spacer;
 }
 
 .c-feedback {
