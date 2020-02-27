@@ -373,12 +373,12 @@ DefineContract({
         }
 
         if (membersCount < 3) {
-          // In a small group make sure this only the creator can remove someone
+          // In a small group only the creator can remove someone
           if (meta.username !== state.settings.groupCreator) {
             throw new TypeError(L('Only the group creator can remove members.'))
           }
         } else {
-          // In a big group make sure theres a related approved proposal
+          // In a big group a removal can only happen through a proposal
           const { payload } = state.proposals[data.proposalHash] || {}
           if (!payload || payload.secret !== data.proposalPayload.secret) {
             throw new TypeError(L('Invalid associated proposal.'))
