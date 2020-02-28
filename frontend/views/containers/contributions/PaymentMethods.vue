@@ -14,7 +14,7 @@ fieldset(data-test='paymentMethods')
     )
       .select-wrapper.is-reversed(:class='{"is-shifted": methodsCount > 1 }')
         label
-          .sr-only Payment name
+          i18n.sr-only Payment name
           select.select(v-model='method.name'
             :class='{ "is-empty": method.name === "choose"}'
             @change='e => handleSelectChange(e, index)'
@@ -23,7 +23,7 @@ fieldset(data-test='paymentMethods')
             option(v-for='(option, key) in config.options' :value='key') {{ option }}
 
         label.c-select-input
-          .sr-only Payment description
+          i18n.sr-only Payment value
           input.input(
             type='text'
             v-model='method.value'

@@ -32,7 +32,7 @@
           )
             i.icon-times
 
-      button.link.has-icon.c-addPeople(
+      button.link.has-icon(
         type='button'
         @click='addInviteeSlot'
         data-test='addInviteeSlot'

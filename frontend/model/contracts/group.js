@@ -411,10 +411,10 @@ DefineContract({
         pledgeAmount: x => typeof x === 'number' && x >= 0,
         nonMonetaryAdd: string,
         paymentMethods: objectMaybeOf({
-          bitcoin: objectOf({ value: string }),
-          paypal: objectOf({ value: string }),
-          venmo: objectOf({ value: string }),
-          other: objectOf({ value: string })
+          bitcoin: objectMaybeOf({ value: string }),
+          paypal: objectMaybeOf({ value: string }),
+          venmo: objectMaybeOf({ value: string }),
+          other: objectMaybeOf({ value: string })
         }),
         nonMonetaryEdit: objectOf({
           replace: string,
