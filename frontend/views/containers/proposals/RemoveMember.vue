@@ -73,8 +73,9 @@ export default {
       return this.globalProfile(this.username) || {}
     },
     rule () {
-      const { threshold } = this.groupSettings.proposals['remove-member'].ruleSettings.threshold
-      return { value: Math.round(this.groupMembersCount * threshold), total: this.groupMembersCount }
+      const proposalRule = this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER]
+      const { threshold } = proposalRule.ruleSettings[proposalRule.rule]
+      return { value: Math.round(this.groupMembersCount - 1 * threshold), total: this.groupMembersCount - 1 }
     }
   },
   methods: {
