@@ -26,6 +26,7 @@
 import currencies from '@view-utils/currencies.js'
 import { mapGetters } from 'vuex'
 import ProgressBar from '@components/graphs/Progress.vue'
+import L from '@view-utils/translations.js'
 
 export default {
   name: 'MonthOverview',
@@ -89,38 +90,38 @@ export default {
       'groupSettings'
     ]),
     currency () {
-      return currencies[this.groupSettings.mincomeCurrency].symbol
+      return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
     },
     paymentSummary () {
       const { sent, confirmed, amoutSent, amountTotal, paymentsTotal } = this.paymentStatus
 
       return [
         {
-          title: this.L('Payments completed'),
+          title: L('Payments completed'),
           value: sent,
           max: paymentsTotal,
           hasMarks: true,
-          label: this.L('{value} out of {max}', {
+          label: L('{value} out of {max}', {
             value: sent,
             max: paymentsTotal
           })
         },
         {
-          title: this.L('Amout sent'),
+          title: L('Amout sent'),
           value: amoutSent,
           max: amountTotal,
           hasMarks: false,
-          label: this.L('{value} of {max}', {
-            value: `${this.currency}${amoutSent}`,
-            max: `${this.currency}${amountTotal}`
+          label: L('{value} of {max}', {
+            value: this.currency(amoutSent),
+            max: this.currency(amountTotal)
           })
         },
         {
-          title: this.L('Payments received'),
+          title: L('Payments received'),
           value: confirmed,
           max: paymentsTotal,
           hasMarks: true,
-          label: this.L('{value} of {max}', {
+          label: L('{value} of {max}', {
             value: confirmed,
             max: paymentsTotal
           })

@@ -3,7 +3,10 @@ table.table.table-in-card.c-payments(:class='{"c-payments-edit": paymentsType ==
   thead
     tr
       th(v-if='paymentsType === "edit"')
-        input.input.c-checkbox(type='checkbox')
+        input.input.c-checkbox(
+          @change='checkAllpayment'
+          type='checkbox'
+        )
       th {{ titles.one }}
       th.c-payments-amount {{ titles.two }}
       th.c-payments-date {{ titles.three }}
@@ -14,7 +17,7 @@ table.table.table-in-card.c-payments(:class='{"c-payments-edit": paymentsType ==
       :key='index'
     )
       td(v-if='paymentsType === "edit"')
-        input.input.c-checkbox(type='checkbox')
+        input.input.c-checkbox(type='checkbox' v-model='payment.checked')
       td
         .c-user
           avatar-user.c-avatar(:username='payment.to' size='xs')
@@ -24,10 +27,10 @@ table.table.table-in-card.c-payments(:class='{"c-payments-edit": paymentsType ==
         .c-payments-amount-info(v-if='index === 0 && (!needsIncome && paymentsType === "todo")')
           i18n.c-payments-amount-text.has-text-1(
             tag='span'
-            :args='{partial_amount: `<strong class="has-text-0">$20</strong>`, partial_total: payment.amountFormatted}'
+            :args='{partial_amount: `<strong class="has-text-0">$20</strong>`, partial_total: currency(payment.amount)}'
           ) {partial_amount} out of {partial_total}
 
-          span.c-status.c-status-primary Partial
+          i18n.c-status.c-status-primary Partial
           //- i18n.c-status.c-status-primary(
           //-   tag='span'
           //-   role='alert'
@@ -35,7 +38,7 @@ table.table.table-in-card.c-payments(:class='{"c-payments-edit": paymentsType ==
           //-   :class='payment.paymentClass'
           //- ) {{ payment.paymentStatusText }}
 
-        strong(v-else) {{payment.amountFormatted}}
+        strong(v-else) {{currency(payment.amount)}}
         .c-payments-amount-info(
           v-if='index === 0 && (needsIncome || paymentsType === "received")'
           :class='"c-status-warning"'
@@ -44,12 +47,12 @@ table.table.table-in-card.c-payments(:class='{"c-payments-edit": paymentsType ==
             v-if=''
             direction='top'
             :isTextCenter='true'
-            :text='payment.to + L(" marked this payment as not received.")'
+            :text='L("{personName} marked this payment as not received.", { personName: payment.to })'
           )
             .button.is-icon-smaller.c-tip
               i.icon-info
 
-          span.c-status Not received
+          i18n.c-status Not received
 
       td
         .c-actions
@@ -68,8 +71,8 @@ table.table.table-in-card.c-payments(:class='{"c-payments-edit": paymentsType ==
       td(v-if='paymentsType === "edit"')
         label.field
           .input-combo
-            input.input
-            .suffix $ USD
+            input.input(:value='payment.amount')
+            .suffix {{currency()}}
 </template>
 
 <script>
@@ -77,6 +80,7 @@ import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
 import Tooltip from '@components/Tooltip.vue'
 import PaymentsListMenu from '@containers/payments/PaymentsListMenu.vue'
+import currencies from '@view-utils/currencies.js'
 
 export default {
   name: 'PaymentTable',
@@ -102,6 +106,7 @@ export default {
   data () {
     return {
       // Temp
+      tableChecked: false,
       monthsNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
     }
   },
@@ -126,6 +131,15 @@ export default {
     },
     async reset () {
       console.log('Todo: Implement reset payment')
+    },
+    currency () {
+      return currencies[this.groupSettings.mincomeCurrency].symbolWithCode
+    },
+    checkAllpayment () {
+      this.tableChecked = !this.tableChecked
+      this.payments.map(payment => {
+        payment.checked = this.tableChecked
+      })
     }
   }
 }
@@ -174,8 +188,8 @@ export default {
       }
 
       &:last-child {
-        width: 33%;
-        min-width: 150px;
+        width: 40%;
+        min-width: 9,375rem;
         display: table-cell;
       }
     }
@@ -285,7 +299,7 @@ export default {
 
 // Edit mode
 .c-checkbox {
-  width: 16px;
+  width: $spacer;
   margin-right: $spacer;
 }
 </style>

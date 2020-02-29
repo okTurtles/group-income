@@ -8,12 +8,11 @@ page(
   template(#sidebar='' v-if='hasPayments')
     month-overview
 
-  i18n.p-descritpion.has-text-1(
-    tag='p'
+  p.p-descritpion.has-text-1(
     data-test='openIncomeDetailsModal'
     @click='openModal("IncomeDetails")'
-    :args='{ receive_or_send: `<strong>${needsIncome ? L("receiving") : L("sending")}</strong>`, r1: `<button class="link js-btnInvite">`, r2: "</button>"}'
-  ) You are currently {receive_or_send} mincome. You can change this at any time by updating your {r1}income details{r2}.
+    v-html='introTitle'
+  )
 
   section.card(v-if='!(needsIncome && !hasPayments)')
     nav.tabs(
@@ -139,6 +138,11 @@ export default {
         two: L('Amount'),
         three: L('Date')
       }
+    },
+    introTitle () {
+      let copy = this.needsIncome ? L('You are currently {strong_}receiving{_strong} mincome. ', this.LTags('strong')) : L('You are currently {strong_}sending{_strong} mincome. ', this.LTags('strong'))
+      copy += L('You can change this at any time by updating your {r1}income details{r2}.', { r1: '<button class="link js-btnInvite">', r2: '</button>' })
+      return copy
     },
     paymentsDistribution () {
       // TODO: make sure we create a new month if month roll's over

@@ -32,7 +32,7 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background')
               name='displayComment'
               @change='displayComment = !displayComment'
             )
-            label.sr-only(for='displayComment') Toggle comment box
+            i18n.sr-only(tag='label' for='displayComment') Toggle comment box
 
         transition(name='slidedown')
           label.field(v-if='displayComment')
@@ -87,11 +87,11 @@ export default {
         paymentsDistribution: [{
           to: 'pierre',
           amount: 910.99,
-          amountFormatted: '$910.99'
+          checked: false
         }, {
           to: 'sandrina',
           amount: 1089.01,
-          amountFormatted: '$1089.01'
+          checked: true
         }]
       }
     }

@@ -10,7 +10,7 @@ form.c-search-form(
         type='text'
         name='search'
         data-test='search'
-        placeholder='Search payments...'
+        placeholder='L("Search payments...")'
         v-model='form.search'
       )
       button.is-icon-small(
