@@ -165,16 +165,22 @@ export default {
       const paymentMethods = {}
 
       if (this.needsIncome) {
-        const validPaymentMethods = this.$refs.paymentMethods.form.methods.filter(method => !!method.value)
-        const incompletedMethod = validPaymentMethods.find(method => !method.name || method.name === 'choose')
-
+        // Find the methods that have some info filled...
+        const filledMethods = this.$refs.paymentMethods.form.methods.filter(method => method.name !== 'choose' || method.value)
+        // From those, find a method with missing info
+        const incompletedMethod = filledMethods.find(method => method.name === 'choose' || !method.value)
+        // and warn the user about it, if necessary!
         if (incompletedMethod) {
-          this.$refs.formMsg.danger(L('Please choose the method name for "{methodValue}".', { methodValue: incompletedMethod.value }))
+          if (!incompletedMethod.value) {
+            this.$refs.formMsg.danger(L('The method "{methodName}" is incomplete.', { methodName: incompletedMethod.name }))
+          } else {
+            this.$refs.formMsg.danger(L('The method name for "{methodValue}" is missing.', { methodValue: incompletedMethod.value }))
+          }
           return
         }
 
-        if (validPaymentMethods.length > 0) {
-          for (const method of validPaymentMethods) {
+        if (filledMethods.length > 0) {
+          for (const method of filledMethods) {
             paymentMethods[method.name] = {
               value: method.value
             }

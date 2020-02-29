@@ -225,17 +225,32 @@ describe('Payments', () => {
         cy.getByDT('remove', 'button').should('be.visible')
       })
 
-      cy.log('Try to add a 3º payment method - incompleted')
+      cy.log('Try to add a 3º payment method - incompleted !name')
       cy.getByDT('addMethod', 'button').click()
-      cy.getByDT('fields', 'ul').children().should('have.length', 3)
-
       cy.getByDT('method').eq(2).within(() => {
         cy.get('input').type('mylink.com')
       })
     })
 
     cy.getByDT('submitIncome').click()
-    cy.getByDT('feedbackMsg').should('contain', 'Please choose the method name for "mylink.com".')
+    cy.getByDT('feedbackMsg').should('contain', 'The method name for "mylink.com" is missing.')
+
+    cy.getByDT('paymentMethods').within(() => {
+      // Remove the previous incomplete method
+      cy.getByDT('method').eq(2).within(() => {
+        cy.getByDT('remove', 'button').click()
+      })
+
+      cy.log('Try to add a 3º payment method - incompleted !value')
+      // Add a new method... incompleted (no value)
+      cy.getByDT('addMethod', 'button').click()
+      cy.getByDT('method').eq(2).within(() => {
+        cy.get('select').select('paypal')
+      })
+    })
+
+    cy.getByDT('submitIncome').click()
+    cy.getByDT('feedbackMsg').should('contain', 'The method "paypal" is incomplete.')
 
     cy.closeModal()
   })

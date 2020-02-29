@@ -17,7 +17,7 @@ fieldset(data-test='paymentMethods')
           i18n.sr-only Payment name
           select.select(v-model='method.name'
             :class='{ "is-empty": method.name === "choose"}'
-            @change='e => handleSelectChange(e, index)'
+            @change='handleSelectChange($event.target.value, index)'
           )
             i18n(tag='option' value='choose' disabled='true') Choose...
             option(v-for='(option, key) in config.options' :value='key') {{ option }}
@@ -99,15 +99,9 @@ export default {
     }
   },
   methods: {
-    handleSelectChange (e, index) {
-      // Reset the respective input and focus on it
-      Vue.set(this.form.methods, index, {
-        name: e.target.value,
-        value: ''
-      })
-      Vue.nextTick(() => {
-        this.$refs.fields.childNodes[index].getElementsByTagName('label')[1].focus()
-      })
+    handleSelectChange (methName, index) {
+      // Focus the respective input
+      this.$refs.fields.childNodes[index].getElementsByTagName('label')[1].focus()
     },
     handleAddMethod () {
       Vue.set(this.form.methods, this.methodsCount, {
