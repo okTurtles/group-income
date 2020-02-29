@@ -44,7 +44,8 @@ modal-base-template(:fullscreen='true')
           v-else=''
           ref='finish'
           @click='submit'
-          :disabled='$v.form.$invalid'
+          :data-loading='ephemeral.isSubmitting'
+          :disabled='$v.form.$invalid || ephemeral.isSubmitting === "true"'
           data-test='finishBtn'
         ) {{ L('Create Group') }}
 </template>
@@ -105,6 +106,9 @@ export default {
         return
       }
 
+      if (this.ephemeral.isSubmitting === 'true') { return }
+      this.ephemeral.isSubmitting = 'true'
+
       try {
         this.$refs.formMsg.clean()
 
@@ -123,6 +127,8 @@ export default {
         console.error('CreateGroup.vue submit() error:', e)
         this.$refs.formMsg.danger(e.message)
       }
+
+      this.ephemeral.isSubmitting = 'false'
     }
   },
   data () {
@@ -138,8 +144,7 @@ export default {
         mincomeCurrency: 'USD' // TODO: grab this as a constant from currencies.js
       },
       ephemeral: {
-        // this determines whether or not to render proxy components for tests
-        dev: process.env.NODE_ENV === 'development'
+        isSubmitting: 'false'
       },
       config: {
         steps: [

@@ -55,7 +55,8 @@ page.c-page
       .buttons
         i18n.is-success(
           tag='button'
-          :disabled='$v.form.$invalid'
+          :data-loading='ephemeral.isSubmitting'
+          :disabled='$v.form.$invalid || ephemeral.isSubmitting === "true"'
           data-test='saveBtn'
         ) Save changes
 
@@ -129,7 +130,7 @@ export default {
         mincomeCurrency
       },
       ephemeral: {
-        isSubmitting: false
+        isSubmitting: 'false'
       }
     }
   },
@@ -157,8 +158,8 @@ export default {
       sbp('okTurtles.events/emit', OPEN_MODAL, component)
     },
     async saveSettings (e) {
-      if (this.ephemeral.isSubmitting) { return }
-      this.ephemeral.isSubmitting = true
+      if (this.ephemeral.isSubmitting === 'true') { return }
+      this.ephemeral.isSubmitting = 'true'
       const attrs = {}
 
       for (const key in this.form) {
@@ -174,7 +175,6 @@ export default {
         console.error('Failed to update group settings.', e)
         this.$refs.formMsg.danger(e.message)
       }
-      this.ephemeral.isSubmitting = false
     },
     handleLeaveGroup () {
       if (this.groupMembersCount === 1) {

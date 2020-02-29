@@ -78,6 +78,20 @@ References to help you:
 - [Accessibility Insights Extension](https://accessibilityinsights.io/)
 - [A11Y Style Guide Resources](https://a11y-style-guide.com/style-guide/section-resources.html)
 
+### Loading State
+When performing an action that requires to send data (ex: submit a form), the application UI is aupdated to reflect the "loading state". The most common case is to add a "spin" animation to the submit button through `data-loading`.
+
+Note: `data-loading` value should be "true" or "false", as a `String` instead of `Boolean`, so [Vue keeps it on the DOM even when "false"](https://github.com/vuejs/vue/issues/5860).
+
+```pug
+  i18n(
+    tag='button'
+    :data-loading='ephemeral.isSubmitting'
+    :disabled='$v.form.$invalid || ephemeral.isSubmitting === "true"'
+  ) Login
+```
+
+
 ## Testing Style Guide
 
 We use [Mocha](https://mochajs.org/) for the unit tests and [Cypress](https://www.cypress.io/) for end-to-end (E2E) tests. **All new functionality must have corresponding tests!**

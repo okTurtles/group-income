@@ -22,6 +22,8 @@ transition(name='replace-list')
           v-if='isEditing && !isAdding'
           tag='button'
           @click='handleDelete'
+          :data-loading='ephemeral.isRemoving'
+          :disabled='ephemeral.isRemoving === "true"'
           data-test='buttonRemoveNonMonetaryContribution'
         ) Remove
         .c-buttons-right
@@ -34,12 +36,16 @@ transition(name='replace-list')
             v-if='isAdding && isFilled'
             tag='button'
             @click='handleSubmit'
+            :data-loading='ephemeral.isSubmitting'
+            :disabled='ephemeral.isSubmitting === "true"'
             data-test='buttonAddNonMonetaryContribution'
           ) Add
           i18n.button.is-small(
             v-if='isEditing && isFilled'
             tag='button'
             @click='handleSubmit'
+            :data-loading='ephemeral.isSubmitting'
+            :disabled='ephemeral.isSubmitting === "true"'
             data-test='buttonSaveNonMonetaryContribution'
           ) Save
 
@@ -93,6 +99,10 @@ export default {
   },
   data () {
     return {
+      ephemeral: {
+        isRemoving: 'false',
+        isSubmitting: 'false'
+      },
       isAdding: false,
       isEditing: false,
       isFilled: null, // decide what input buttons to show
@@ -143,24 +153,36 @@ export default {
       return this.isFilled ? this.handleSubmit() : this.handleDelete()
     },
     handleDelete () {
-      this.$emit('new-value', 'nonMonetaryRemove', this.initialValue)
-      this.cancel()
+      if (this.ephemeral.isRemoving === 'true') { return }
+      this.ephemeral.isRemoving = 'true'
+
+      this.$emit('new-value', 'nonMonetaryRemove', this.initialValue, () => {
+        this.ephemeral.isRemoving = 'false'
+        this.cancel()
+      })
     },
     handleSubmit () {
       if (this.$v.form.$invalid) {
         this.cancel()
       } else {
+        if (this.ephemeral.isSubmitting === 'true') { return }
+        this.ephemeral.isSubmitting = 'true'
+
         if (this.isAdding) {
-          this.$emit('new-value', 'nonMonetaryAdd', this.form.contribution)
-          this.isAdding = false
-          this.form.contribution = null
+          this.$emit('new-value', 'nonMonetaryAdd', this.form.contribution, () => {
+            this.isAdding = false
+            this.form.contribution = null
+            this.ephemeral.isSubmitting = 'false'
+          })
         }
         if (this.isEditing) {
           this.$emit('new-value', 'nonMonetaryEdit', {
             replace: this.initialValue,
             with: this.form.contribution
+          }, () => {
+            this.isEditing = false
+            this.ephemeral.isSubmitting = 'false'
           })
-          this.isEditing = false
         }
       }
     }

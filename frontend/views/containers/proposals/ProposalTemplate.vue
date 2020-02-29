@@ -43,7 +43,8 @@
           :class='submitStyleNonProposal'
           v-if='!groupShouldPropose'
           @click.prevent='submit'
-          :disabled='disabled'
+          :data-loading='ephemeral.isSubmitting'
+          :disabled='disabled || ephemeral.isSubmitting === "true"'
           data-test='submitBtn'
         ) {{ submitTextNonProposal }}
 
@@ -63,7 +64,8 @@
           tag='button'
           v-if='isReasonStep'
           @click.prevent='submit'
-          :disabled='disabled'
+          :data-loading='ephemeral.isSubmitting'
+          :disabled='disabled || ephemeral.isSubmitting === "true"'
           data-test='submitBtn'
         ) Create Proposal
 
@@ -122,6 +124,11 @@ export default {
       }
     }
   },
+  data: () => ({
+    ephemeral: {
+      isSubmitting: 'false'
+    }
+  }),
   computed: {
     ...mapGetters([
       'groupShouldPropose'
@@ -164,13 +171,13 @@ export default {
       }
     },
     submit () {
-      if (this.groupShouldPropose) {
-        this.$emit('submit', {
-          reason: this.$refs.reason.value
-        })
-      } else {
-        this.$emit('submit')
-      }
+      if (this.ephemeral.isSubmitting === 'true') { return }
+      this.ephemeral.isSubmitting = 'true'
+
+      const form = this.groupShouldPropose ? { reason: this.$refs.reason.value } : null
+      this.$emit('submit', form, () => {
+        this.ephemeral.isSubmitting = 'false'
+      })
     }
   }
 }

@@ -228,17 +228,21 @@ export default {
     openModal (modal) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal)
     },
-    async handleNonMonetary (type, value) {
+    async handleNonMonetary (type, value, done) {
       try {
         const groupProfileUpdate = await sbp('gi.contracts/group/groupProfileUpdate/create',
           { [type]: value },
           this.$store.state.currentGroupId
         )
+        console.log('send msg!', groupProfileUpdate)
         await sbp('backend/publishLogEntry', groupProfileUpdate)
+        // TODO/BUG - Discover why "value" gets added to the list
+        // but Contribution input takes longer to unmount. (in Slow 3G).
       } catch (e) {
         console.error('handleNonMonetary', e)
         alert(e.message)
       }
+      done()
     },
     displayName (username) {
       return this.globalProfile(username).displayName || username

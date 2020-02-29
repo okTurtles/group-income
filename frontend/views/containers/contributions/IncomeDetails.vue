@@ -59,7 +59,8 @@ modal-base-template(ref='modal' :fullscreen='true')
         i18n.is-success(
           tag='button'
           type='submit'
-          :disabled='$v.form.$invalid'
+          :data-loading='ephemeral.isSubmitting'
+          :disabled='$v.form.$invalid || ephemeral.isSubmitting === "true"'
           data-test='submitIncome'
         ) Save
 
@@ -96,6 +97,9 @@ export default {
   },
   data () {
     return {
+      ephemeral: {
+        isSubmitting: 'false'
+      },
       form: {
         incomeDetailsType: null,
         amount: null
@@ -157,8 +161,11 @@ export default {
       this.$refs.modal.close()
     },
     async submit () {
+      if (this.ephemeral.isSubmitting === 'true') { return }
+      this.ephemeral.isSubmitting = 'true'
+
       if (this.$v.form.$invalid) {
-        this.$refs.formMsg.danger(L('Your income details are missing. Please review it and try again.'))
+        this.$refs.formMsg.danger(L('Your income details are missing. Please review them and try again.'))
         return
       }
 
@@ -204,6 +211,7 @@ export default {
         console.error('Failed to update income details', e)
         this.$refs.formMsg.danger(L('Failed to update income details, please try again. {codeError}', { codeError: e.message }))
       }
+      this.ephemeral.isSubmitting = 'false'
     }
   },
   validations: {
