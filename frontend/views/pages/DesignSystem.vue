@@ -289,7 +289,13 @@ page(
   article#buttons
     section.card
       h2.is-title-2.card-header Buttons
+      br
+      button.is-small.is-outlined.is-danger(
+        @click='ephemeral.btns.isLoading = ephemeral.btns.isLoading === "true" ? "false" : "true"'
+      ) Toggle Loading State
+      br
       h3.is-title-3 Default size
+      br
       table
         thead
           th code
@@ -298,37 +304,37 @@ page(
           td
             pre .button
           td
-            button Default text
+            button(:data-loading='ephemeral.btns.isLoading') Default text
 
         tr
           td
             pre .button.is-success
           td
-            button.is-success Default text
+            button.is-success(:data-loading='ephemeral.btns.isLoading') Default text
 
         tr
           td
             pre .button.is-danger
           td
-            button.is-danger Default text
+            button.is-danger(:data-loading='ephemeral.btns.isLoading') Default text
 
         tr
           td
             pre .button.is-outlined
           td
-            button.is-outlined Default text
+            button.is-outlined(:data-loading='ephemeral.btns.isLoading') Default text
 
         tr
           td
             pre .button.is-success.is-outlined
           td
-            button.is-success.is-outlined Default text
+            button.is-success.is-outlined(:data-loading='ephemeral.btns.isLoading') Default text
 
         tr
           td
             pre .button.is-danger.is-outlined
           td
-            button.is-danger.is-outlined Default text
+            button.is-danger.is-outlined(:data-loading='ephemeral.btns.isLoading') Default text
 
         tr
           td
@@ -344,25 +350,25 @@ page(
           td
             pre .button.is-small
           td
-            button.is-small Default text
+            button.is-small(:data-loading='ephemeral.btns.isLoading') Default text
 
         tr
           td
             pre .button.is-outlined.is-small
           td
-            button.is-outlined.is-small Default text
+            button.is-outlined.is-small(:data-loading='ephemeral.btns.isLoading') Default text
 
         tr
           td
             pre .button.is-success.is-outlined.is-small
           td
-            button.is-success.is-outlined.is-small Default text
+            button.is-success.is-outlined.is-small(:data-loading='ephemeral.btns.isLoading') Default text
 
         tr
           td
             pre .button.is-danger.is-outlined.is-small
           td
-            button.is-danger.is-outlined.is-small Default text
+            button.is-danger.is-outlined.is-small(:data-loading='ephemeral.btns.isLoading') Default text
 
       h3.is-title-3 With an icon
       table
@@ -1191,6 +1197,9 @@ export default {
         ]
       },
       ephemeral: {
+        btns: {
+          isLoading: 'false'
+        },
         forms: {
           hasError: false,
           isDisabled: false

@@ -78,8 +78,8 @@ References to help you:
 - [Accessibility Insights Extension](https://accessibilityinsights.io/)
 - [A11Y Style Guide Resources](https://a11y-style-guide.com/style-guide/section-resources.html)
 
-### Loading State
-When performing an action that requires to send data (ex: submit a form), the application UI is aupdated to reflect the "loading state". The most common case is to add a "spin" animation to the submit button through `data-loading`.
+### Submitting a Form
+When performing an action that requires data to be sent, the application UI should be updated to reflect this "submitting state". The most common scenario is to add a "spin" animation to the submit button, through `data-loading="true|false"`.
 
 Note: `data-loading` value should be "true" or "false", as a `String` instead of `Boolean`, so [Vue keeps it on the DOM even when "false"](https://github.com/vuejs/vue/issues/5860).
 

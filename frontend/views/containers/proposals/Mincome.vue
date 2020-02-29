@@ -128,10 +128,9 @@ export default {
       }
 
       try {
-        const x = this.x.q.w
         const updatedSettings = await sbp(
           'gi.contracts/group/updateSettings/create',
-          { mincomeAmount, x },
+          { mincomeAmount },
           this.currentGroupId
         )
         await sbp('backend/publishLogEntry', updatedSettings)

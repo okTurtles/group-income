@@ -10,12 +10,12 @@
   }
 }
 
-@mixin outlinedButtonState($color, $color_2, $color_loading) {
+@mixin outlinedButtonState($color, $color_2) {
   &[data-loading="true"] {
     color: transparent;
 
     &::after {
-      color: $color_loading;
+      color: $color;
     }
   }
 
@@ -146,19 +146,19 @@ button,
     background-color: $background;
     border-color: $general_0;
     color: $text_0;
-    @include outlinedButtonState($primary_0_1, $primary_1, $text_0);
+    @include outlinedButtonState($primary_0_1, $primary_1);
 
     &.is-success {
       border-color: $success_0;
       color: $success_0;
-      @include outlinedButtonState($success_0_1, $success_1, $success_0);
+      @include outlinedButtonState($success_0_1, $success_1);
     }
 
     &.is-danger,
     &.error {
       border-color: $danger_0;
       color: $danger_0;
-      @include outlinedButtonState($danger_0_1, $danger_1, $danger_0);
+      @include outlinedButtonState($danger_0_1, $danger_1);
     }
   }
 
