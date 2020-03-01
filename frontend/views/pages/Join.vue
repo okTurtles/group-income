@@ -155,6 +155,7 @@ export default {
       this.ephemeral.errorMsg = null
       const { groupId, secret } = this.$route.query || {}
 
+      sbp('okTurtles.data/set', 'JOINING_GROUP', true)
       try {
         await sbp('gi.actions/group/joinAndSwitch', {
           groupId,
@@ -166,6 +167,7 @@ export default {
         this.ephemeral.errorMsg = e.message
         this.pageStatus = 'INVALID'
       }
+      sbp('okTurtles.data/set', 'JOINING_GROUP', false)
     }
   }
 }

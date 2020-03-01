@@ -1,10 +1,18 @@
 <template lang="pug">
-menu-parent
-  menu-trigger.is-icon-small
+menu-parent(data-test='menuActions')
+  menu-trigger.is-icon-small(aria-label='Show actions')
     i.icon-ellipsis-v
 
   menu-content.c-actions-content
-    ul
+    ul(v-if='username === ourUsername')
+      menu-item(
+        tag='button'
+        item-id='profile'
+        icon='pencil-alt'
+        @click='openModal("UserSettingsModal")'
+      )
+        i18n Edit profile
+    ul(v-else)
       menu-item(
         tag='router-link' :to='`/messages/${username}`'
         item-id='message'
@@ -15,12 +23,14 @@ menu-parent
         tag='button'
         item-id='remove'
         icon='times'
-        @click='openModal("RemoveMember")'
+        v-if='groupShouldPropose || ourUsername === groupSettings.groupCreator'
+        @click='openModal("RemoveMember", { username })'
       )
         i18n Remove member
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
@@ -35,9 +45,16 @@ export default {
   props: {
     username: String
   },
+  computed: {
+    ...mapGetters([
+      'ourUsername',
+      'groupSettings',
+      'groupShouldPropose'
+    ])
+  },
   methods: {
-    openModal (modal) {
-      sbp('okTurtles.events/emit', OPEN_MODAL, modal)
+    openModal (modal, props) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
     },
     closeModal () {
       this.$refs.modal.close()

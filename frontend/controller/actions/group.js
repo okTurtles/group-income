@@ -3,19 +3,19 @@ import {
   INVITE_INITIAL_CREATOR,
   createInvite
 } from '@model/contracts/group.js'
-import proposals, {
+import proposals from '@model/contracts/voting/proposals.js'
+import {
   PROPOSAL_INVITE_MEMBER,
   PROPOSAL_REMOVE_MEMBER,
   PROPOSAL_GROUP_SETTING_CHANGE,
   PROPOSAL_PROPOSAL_SETTING_CHANGE,
   PROPOSAL_GENERIC
-} from '@model/contracts/voting/proposals.js'
+} from '@model/contracts/voting/constants.js'
 import { RULE_THRESHOLD } from '@model/contracts/voting/rules.js'
 import { GIErrorUIRuntimeError } from '@model/errors.js'
 
 import imageUpload from '@utils/imageUpload.js'
 import { merge } from '@utils/giLodash.js'
-// import { CONTRACT_IS_SYNCING } from '@utils/events.js'
 import L from '@view-utils/translations.js'
 
 export default sbp('sbp/selectors/register', {
@@ -119,5 +119,15 @@ export default sbp('sbp/selectors/register', {
   },
   'gi.actions/group/switch': function (groupId) {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
+  },
+  'gi.actions/group/removeMember': async function (params, groupID) {
+    try {
+      const message = await sbp('gi.contracts/group/removeMember/create', params, groupID)
+      await sbp('backend/publishLogEntry', message)
+    } catch (e) {
+      console.error('gi.actions/group/removeMember failed', e)
+      throw new GIErrorUIRuntimeError(L('Failed to remove {member}: {codeError}', { codeError: e.message, member: params.member }))
+    }
+    return true
   }
 })

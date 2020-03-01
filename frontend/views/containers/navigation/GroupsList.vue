@@ -1,5 +1,5 @@
 <template lang='pug'>
-ul.c-group-list(v-if='groupsByName.length')
+ul.c-group-list(v-if='groupsByName.length' data-test='groupsList')
   li.c-group-list-item.group-badge(
     v-for='(group, index) in groupsByName'
     :key='`group-${index}`'

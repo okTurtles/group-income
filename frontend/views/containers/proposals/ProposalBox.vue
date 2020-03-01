@@ -22,7 +22,7 @@ import { mapGetters } from 'vuex'
 import L from '@view-utils/translations.js'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProposalItem from './ProposalItem.vue'
-import { STATUS_OPEN } from '@model/contracts/voting/proposals.js'
+import { STATUS_OPEN } from '@model/contracts/voting/constants.js'
 import { TABLET } from '@view-utils/breakpoints.js'
 
 export default {

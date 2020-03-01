@@ -46,7 +46,7 @@ import Vue from 'vue'
 import { mapState, mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
 import sbp from '~/shared/sbp.js'
-import { PROPOSAL_INVITE_MEMBER } from '@model/contracts/voting/proposals.js'
+import { PROPOSAL_INVITE_MEMBER } from '@model/contracts/voting/constants.js'
 import ProposalTemplate from './ProposalTemplate.vue'
 
 export default {
@@ -84,7 +84,8 @@ export default {
       'ourUsername'
     ]),
     rule () {
-      const { threshold } = this.groupSettings.proposals['invite-member'].ruleSettings.threshold
+      const proposalRule = this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER]
+      const { threshold } = proposalRule.ruleSettings[proposalRule.rule]
       return { value: Math.round(this.groupMembersCount * threshold), total: this.groupMembersCount }
     }
   },
