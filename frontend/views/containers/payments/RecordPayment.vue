@@ -87,11 +87,13 @@ export default {
         paymentsDistribution: [{
           to: 'pierre',
           amount: 910.99,
-          checked: false
+          checked: false,
+          date: new Date(+(new Date()) - Math.floor(Math.random() * 10000000000))
         }, {
           to: 'sandrina',
           amount: 1089.01,
-          checked: true
+          checked: true,
+          date: new Date(+(new Date()) - Math.floor(Math.random() * 10000000000))
         }]
       }
     }

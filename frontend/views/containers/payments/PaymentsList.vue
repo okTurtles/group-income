@@ -22,7 +22,7 @@ table.table.table-in-card.c-payments(:class='{"c-payments-edit": paymentsType ==
         .c-user
           avatar-user.c-avatar(:username='payment.to' size='xs')
           strong.c-name {{payment.to}}
-        .c-user-month(:class='index === 0 ? "has-text-1" : "c-status-danger c-status"') {{ randomMonth() }}
+        .c-user-month(:class='index === 0 ? "has-text-1" : "c-status-danger c-status"') {{ moment(payment.date).format('MMMM') }}
       td.c-payments-amount(v-if='paymentsType !== "edit"')
         .c-payments-amount-info(v-if='index === 0 && (!needsIncome && paymentsType === "todo")')
           i18n.c-payments-amount-text.has-text-1(
@@ -56,7 +56,7 @@ table.table.table-in-card.c-payments(:class='{"c-payments-edit": paymentsType ==
 
       td
         .c-actions
-          .c-actions-month(:class='!(index !== 0 && paymentsType === "todo") ? "has-text-1" : "c-status-danger c-status"') {{ randomMonth() }}
+          .c-actions-month(:class='!(index !== 0 && paymentsType === "todo") ? "has-text-1" : "c-status-danger c-status"') {{ moment(payment.date).format('MMMM') }}
           payments-list-menu(
             v-if='paymentsType !== "edit"'
             :paymentsType='paymentsType'
@@ -73,7 +73,7 @@ table.table.table-in-card.c-payments(:class='{"c-payments-edit": paymentsType ==
         label.field
           .input-combo
             input.input(:value='payment.amount')
-            .suffix {{currency()}}
+            .suffix {{symbolWithCode}}
 </template>
 
 <script>
@@ -82,6 +82,7 @@ import AvatarUser from '@components/AvatarUser.vue'
 import Tooltip from '@components/Tooltip.vue'
 import PaymentsListMenu from '@containers/payments/PaymentsListMenu.vue'
 import currencies from '@view-utils/currencies.js'
+import moment from 'moment'
 
 export default {
   name: 'PaymentTable',
@@ -106,9 +107,9 @@ export default {
   },
   data () {
     return {
+      moment,
       // Temp
-      tableChecked: false,
-      monthsNames: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+      tableChecked: false
     }
   },
   computed: {
@@ -123,18 +124,18 @@ export default {
     ]),
     needsIncome () {
       return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'
+    },
+    currency () {
+      return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
+    },
+    symbolWithCode () {
+      return currencies[this.groupSettings.mincomeCurrency].symbolWithCode
     }
   },
   methods: {
     // TEMP
-    randomMonth () {
-      return this.monthsNames[new Date(+(new Date()) - Math.floor(Math.random() * 10000000000)).getMonth()]
-    },
     async reset () {
       console.log('Todo: Implement reset payment')
-    },
-    currency () {
-      return currencies[this.groupSettings.mincomeCurrency].symbolWithCode
     },
     checkAllpayment () {
       this.tableChecked = !this.tableChecked
