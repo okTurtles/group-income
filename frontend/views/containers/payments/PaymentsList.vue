@@ -68,6 +68,7 @@ table.table.table-in-card.c-payments(:class='{"c-payments-edit": paymentsType ==
             type='button'
             @click='reset'
           ) Reset
+
       td(v-if='paymentsType === "edit"')
         label.field
           .input-combo
