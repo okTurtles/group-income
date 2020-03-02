@@ -55,10 +55,10 @@
         banner-scoped(ref='formMsg' data-test='profileMsg')
 
         .buttons
-          i18n.is-success(
+          i18n.is-success.is-loader(
             tag='button'
             :data-loading='ephemeral.isSubmitting'
-            :disabled='$v.form.$invalid || ephemeral.isSubmitting === "true"'
+            :disabled='$v.form.$invalid || ephemeral.isSubmitting'
             type='submit'
             data-test='saveAccount'
           ) Save account changes
@@ -103,7 +103,7 @@ export default {
     const attrsCopy = cloneDeep(this.$store.getters.ourUserIdentityContract.attributes || {})
     return {
       ephemeral: {
-        isSubmitting: 'false'
+        isSubmitting: false
       },
       form: {
         displayName: attrsCopy.displayName,
@@ -141,8 +141,8 @@ export default {
       return false
     },
     async saveProfile () {
-      if (this.ephemeral.isSubmitting === 'true') { return }
-      this.ephemeral.isSubmitting = 'true'
+      if (this.ephemeral.isSubmitting) { return }
+      this.ephemeral.isSubmitting = true
 
       this.$refs.formMsg.clean()
       const attrs = {}
@@ -164,7 +164,7 @@ export default {
         console.error('Failed to update profile', e)
         this.$refs.formMsg.danger(L('Failed to update profile, please try again. {codeError}', { codeError: e.message }))
       }
-      this.ephemeral.isSubmitting = 'false'
+      this.ephemeral.isSubmitting = false
     }
   }
 }

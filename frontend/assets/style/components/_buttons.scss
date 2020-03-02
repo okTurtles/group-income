@@ -171,7 +171,7 @@ button,
     @include buttonState($general_0, $text_1);
   }
 
-  &[data-loading] {
+  &.is-loader {
     transition: color 150ms;
 
     &::after {
@@ -195,19 +195,19 @@ button,
       width: 1em;
       height: 1em;
     }
-  }
 
-  &[data-loading="true"] {
-    pointer-events: none; /* prevent click and :hover */
-    color: transparent;
-    // Delay the spin for 500ms, in case load is ultra fast.
-    // That way the user won't even see the loading
-    transition: color 200ms 500ms;
-
-    &::after {
-      opacity: 1;
-      transition: opacity 300ms 500ms;
-      animation: loadSpin 1.75s infinite linear;
+    &[data-loading="true"] {
+      pointer-events: none; /* prevent click and :hover */
+      color: transparent;
+      // Delay the spin for 500ms, in case load is ultra fast.
+      // That way the user won't even see the loading
+      transition: color 400ms 500ms;
+  
+      &::after {
+        opacity: 1;
+        transition: opacity 400ms 500ms;
+        animation: loadSpin 1.75s infinite linear;
+      }
     }
   }
 }

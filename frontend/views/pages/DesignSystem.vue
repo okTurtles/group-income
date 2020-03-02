@@ -291,7 +291,7 @@ page(
       h2.is-title-2.card-header Buttons
       br
       button.is-small.is-outlined.is-danger(
-        @click='ephemeral.btns.isLoading = ephemeral.btns.isLoading === "true" ? "false" : "true"'
+        @click='ephemeral.btns.isLoading = !ephemeral.btns.isLoading'
       ) Toggle Loading State
       br
       h3.is-title-3 Default size
@@ -304,37 +304,37 @@ page(
           td
             pre .button
           td
-            button(:data-loading='ephemeral.btns.isLoading') Default text
+            button.is-loader(:data-loading='ephemeral.btns.isLoading') Default text
 
         tr
           td
             pre .button.is-success
           td
-            button.is-success(:data-loading='ephemeral.btns.isLoading') Default text
+            button.is-success.is-loader(:data-loading='ephemeral.btns.isLoading') Default text
 
         tr
           td
             pre .button.is-danger
           td
-            button.is-danger(:data-loading='ephemeral.btns.isLoading') Default text
+            button.is-danger.is-loader(:data-loading='ephemeral.btns.isLoading') Default text
 
         tr
           td
             pre .button.is-outlined
           td
-            button.is-outlined(:data-loading='ephemeral.btns.isLoading') Default text
+            button.is-outlined.is-loader(:data-loading='ephemeral.btns.isLoading') Default text
 
         tr
           td
             pre .button.is-success.is-outlined
           td
-            button.is-success.is-outlined(:data-loading='ephemeral.btns.isLoading') Default text
+            button.is-success.is-outlined.is-loader(:data-loading='ephemeral.btns.isLoading') Default text
 
         tr
           td
             pre .button.is-danger.is-outlined
           td
-            button.is-danger.is-outlined(:data-loading='ephemeral.btns.isLoading') Default text
+            button.is-danger.is-outlined.is-loader(:data-loading='ephemeral.btns.isLoading') Default text
 
         tr
           td
@@ -350,25 +350,25 @@ page(
           td
             pre .button.is-small
           td
-            button.is-small(:data-loading='ephemeral.btns.isLoading') Default text
+            button.is-small.is-loader(:data-loading='ephemeral.btns.isLoading') Default text
 
         tr
           td
             pre .button.is-outlined.is-small
           td
-            button.is-outlined.is-small(:data-loading='ephemeral.btns.isLoading') Default text
+            button.is-outlined.is-small.is-loader(:data-loading='ephemeral.btns.isLoading') Default text
 
         tr
           td
             pre .button.is-success.is-outlined.is-small
           td
-            button.is-success.is-outlined.is-small(:data-loading='ephemeral.btns.isLoading') Default text
+            button.is-success.is-outlined.is-small.is-loader(:data-loading='ephemeral.btns.isLoading') Default text
 
         tr
           td
             pre .button.is-danger.is-outlined.is-small
           td
-            button.is-danger.is-outlined.is-small(:data-loading='ephemeral.btns.isLoading') Default text
+            button.is-danger.is-outlined.is-small.is-loader(:data-loading='ephemeral.btns.isLoading') Default text
 
       h3.is-title-3 With an icon
       table

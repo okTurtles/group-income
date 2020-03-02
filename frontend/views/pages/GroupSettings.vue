@@ -53,10 +53,10 @@ page.c-page
       banner-scoped(ref='formMsg' data-test='formMsg')
 
       .buttons
-        i18n.is-success(
+        i18n.is-success.is-loader(
           tag='button'
           :data-loading='ephemeral.isSubmitting'
-          :disabled='$v.form.$invalid || ephemeral.isSubmitting === "true"'
+          :disabled='$v.form.$invalid || ephemeral.isSubmitting'
           data-test='saveBtn'
         ) Save changes
 
@@ -130,7 +130,7 @@ export default {
         mincomeCurrency
       },
       ephemeral: {
-        isSubmitting: 'false'
+        isSubmitting: false
       }
     }
   },
@@ -158,8 +158,8 @@ export default {
       sbp('okTurtles.events/emit', OPEN_MODAL, component)
     },
     async saveSettings (e) {
-      if (this.ephemeral.isSubmitting === 'true') { return }
-      this.ephemeral.isSubmitting = 'true'
+      if (this.ephemeral.isSubmitting) { return }
+      this.ephemeral.isSubmitting = true
       const attrs = {}
 
       for (const key in this.form) {

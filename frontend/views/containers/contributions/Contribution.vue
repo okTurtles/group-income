@@ -18,12 +18,12 @@ transition(name='replace-list')
         @keydown.enter.prevent='handleEnter'
       )
       .buttons
-        i18n.button.is-small.is-danger.is-outlined(
+        i18n.button.is-small.is-danger.is-outlined.is-loader(
           v-if='isEditing && !isAdding'
           tag='button'
           @click='handleDelete'
           :data-loading='ephemeral.isRemoving'
-          :disabled='ephemeral.isRemoving === "true"'
+          :disabled='ephemeral.isRemoving'
           data-test='buttonRemoveNonMonetaryContribution'
         ) Remove
         .c-buttons-right
@@ -32,20 +32,20 @@ transition(name='replace-list')
             @click='cancel'
             data-test='buttonCancelNonMonetaryContribution'
           ) Cancel
-          i18n.button.is-small(
+          i18n.button.is-small.is-loader(
             v-if='isAdding && isFilled'
             tag='button'
             @click='handleSubmit'
             :data-loading='ephemeral.isSubmitting'
-            :disabled='ephemeral.isSubmitting === "true"'
+            :disabled='ephemeral.isSubmitting'
             data-test='buttonAddNonMonetaryContribution'
           ) Add
-          i18n.button.is-small(
+          i18n.button.is-small.is-loader(
             v-if='isEditing && isFilled'
             tag='button'
             @click='handleSubmit'
             :data-loading='ephemeral.isSubmitting'
-            :disabled='ephemeral.isSubmitting === "true"'
+            :disabled='ephemeral.isSubmitting'
             data-test='buttonSaveNonMonetaryContribution'
           ) Save
 
@@ -100,8 +100,8 @@ export default {
   data () {
     return {
       ephemeral: {
-        isRemoving: 'false',
-        isSubmitting: 'false'
+        isRemoving: false,
+        isSubmitting: false
       },
       isAdding: false,
       isEditing: false,
@@ -153,11 +153,11 @@ export default {
       return this.isFilled ? this.handleSubmit() : this.handleDelete()
     },
     handleDelete () {
-      if (this.ephemeral.isRemoving === 'true') { return }
-      this.ephemeral.isRemoving = 'true'
+      if (this.ephemeral.isRemoving) { return }
+      this.ephemeral.isRemoving = true
 
       this.$emit('new-value', 'nonMonetaryRemove', this.initialValue, () => {
-        this.ephemeral.isRemoving = 'false'
+        this.ephemeral.isRemoving = false
         this.cancel()
       })
     },
@@ -165,14 +165,14 @@ export default {
       if (this.$v.form.$invalid) {
         this.cancel()
       } else {
-        if (this.ephemeral.isSubmitting === 'true') { return }
-        this.ephemeral.isSubmitting = 'true'
+        if (this.ephemeral.isSubmitting) { return }
+        this.ephemeral.isSubmitting = true
 
         if (this.isAdding) {
           this.$emit('new-value', 'nonMonetaryAdd', this.form.contribution, () => {
             this.isAdding = false
             this.form.contribution = null
-            this.ephemeral.isSubmitting = 'false'
+            this.ephemeral.isSubmitting = false
           })
         }
         if (this.isEditing) {
@@ -181,7 +181,7 @@ export default {
             with: this.form.contribution
           }, () => {
             this.isEditing = false
-            this.ephemeral.isSubmitting = 'false'
+            this.ephemeral.isSubmitting = false
           })
         }
       }

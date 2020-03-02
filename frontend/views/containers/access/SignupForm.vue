@@ -34,10 +34,10 @@ form(
   banner-scoped(ref='formMsg')
 
   .buttons.is-centered
-    i18n.is-primary(
+    i18n.is-loader(
       tag='button'
       :data-loading='ephemeral.isSubmitting'
-      :disabled='$v.form.$invalid || ephemeral.isSubmitting === "true"'
+      :disabled='$v.form.$invalid || ephemeral.isSubmitting'
       data-test='signSubmit'
     ) Create an account
 </template>
@@ -72,17 +72,17 @@ export default {
         email: null
       },
       ephemeral: {
-        isSubmitting: 'false'
+        isSubmitting: false
       }
     }
   },
   methods: {
     async signup () {
       // Prevent autocomplete submission when empty field
-      if (!this.form.name || !this.form.email || !this.form.password || this.ephemeral.isSubmitting === 'true') {
+      if (!this.form.name || !this.form.email || !this.form.password || this.ephemeral.isSubmitting) {
         return
       }
-      this.ephemeral.isSubmitting = 'true'
+      this.ephemeral.isSubmitting = true
       try {
         await sbp('gi.actions/user/signupAndLogin', {
           username: this.form.name,
@@ -94,7 +94,7 @@ export default {
         console.error('Signup.vue submit() error:', e)
         this.$refs.formMsg.danger(e.message)
       }
-      this.ephemeral.isSubmitting = 'false'
+      this.ephemeral.isSubmitting = false
     }
   },
   validations: {

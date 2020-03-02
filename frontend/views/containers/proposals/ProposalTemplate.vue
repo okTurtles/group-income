@@ -38,13 +38,13 @@
           data-test='prevBtn'
         ) {{ currentStep === 0 ? L('Cancel') : L('Back') }}
 
-        button(
+        button.is-loader(
           key='change'
           :class='submitStyleNonProposal'
           v-if='!groupShouldPropose'
           @click.prevent='submit'
           :data-loading='ephemeral.isSubmitting'
-          :disabled='disabled || ephemeral.isSubmitting === "true"'
+          :disabled='disabled || ephemeral.isSubmitting'
           data-test='submitBtn'
         ) {{ submitTextNonProposal }}
 
@@ -59,13 +59,13 @@
           i18n Next
           i.icon-arrow-right.is-suffix
 
-        i18n.is-success(
+        i18n.is-success.is-loader(
           key='create'
           tag='button'
           v-if='isReasonStep'
           @click.prevent='submit'
           :data-loading='ephemeral.isSubmitting'
-          :disabled='disabled || ephemeral.isSubmitting === "true"'
+          :disabled='disabled || ephemeral.isSubmitting'
           data-test='submitBtn'
         ) Create Proposal
 
@@ -126,7 +126,7 @@ export default {
   },
   data: () => ({
     ephemeral: {
-      isSubmitting: 'false'
+      isSubmitting: false
     }
   }),
   computed: {
@@ -171,12 +171,12 @@ export default {
       }
     },
     submit () {
-      if (this.ephemeral.isSubmitting === 'true') { return }
-      this.ephemeral.isSubmitting = 'true'
+      if (this.ephemeral.isSubmitting) { return }
+      this.ephemeral.isSubmitting = true
 
       const form = this.groupShouldPropose ? { reason: this.$refs.reason.value } : null
       this.$emit('submit', form, () => {
-        this.ephemeral.isSubmitting = 'false'
+        this.ephemeral.isSubmitting = false
       })
     }
   }

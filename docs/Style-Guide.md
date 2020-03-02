@@ -79,15 +79,13 @@ References to help you:
 - [A11Y Style Guide Resources](https://a11y-style-guide.com/style-guide/section-resources.html)
 
 ### Submitting a Form
-When performing an action that requires data to be sent, the application UI should be updated to reflect this "submitting state". The most common scenario is to add a "spin" animation to the submit button, through `data-loading="true|false"`.
-
-Note: `data-loading` value should be "true" or "false", as a `String` instead of `Boolean`, so [Vue keeps it on the DOM even when "false"](https://github.com/vuejs/vue/issues/5860).
+When performing an action that requires data to be sent, the application UI should be updated to reflect this "loading state". The most common scenario is adding a "spin" animation to the submit button. The button needs the CSS class `.is-loader` by default. When it's submitting it needs `data-loading="true"`. The button should also disabled to prevent duplicated submitions by click.
 
 ```pug
-  i18n(
+  i18n.is-loader(
     tag='button'
     :data-loading='ephemeral.isSubmitting'
-    :disabled='$v.form.$invalid || ephemeral.isSubmitting === "true"'
+    :disabled='$v.form.$invalid || ephemeral.isSubmitting'
   ) Login
 ```
 

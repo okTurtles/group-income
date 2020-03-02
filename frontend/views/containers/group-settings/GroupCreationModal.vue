@@ -40,12 +40,12 @@ modal-base-template(:fullscreen='true')
           | {{ L('Next') }}
           i.icon-arrow-right.is-suffix
 
-        button.is-success(
+        button.is-success.is-loader(
           v-else=''
           ref='finish'
           @click='submit'
           :data-loading='ephemeral.isSubmitting'
-          :disabled='$v.form.$invalid || ephemeral.isSubmitting === "true"'
+          :disabled='$v.form.$invalid || ephemeral.isSubmitting'
           data-test='finishBtn'
         ) {{ L('Create Group') }}
 </template>
@@ -106,8 +106,8 @@ export default {
         return
       }
 
-      if (this.ephemeral.isSubmitting === 'true') { return }
-      this.ephemeral.isSubmitting = 'true'
+      if (this.ephemeral.isSubmitting) { return }
+      this.ephemeral.isSubmitting = true
 
       try {
         this.$refs.formMsg.clean()
@@ -128,7 +128,7 @@ export default {
         this.$refs.formMsg.danger(e.message)
       }
 
-      this.ephemeral.isSubmitting = 'false'
+      this.ephemeral.isSubmitting = false
     }
   },
   data () {
@@ -144,7 +144,7 @@ export default {
         mincomeCurrency: 'USD' // TODO: grab this as a constant from currencies.js
       },
       ephemeral: {
-        isSubmitting: 'false'
+        isSubmitting: false
       },
       config: {
         steps: [

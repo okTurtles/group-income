@@ -26,10 +26,10 @@ form(
   banner-scoped(ref='formMsg' data-test='loginError')
 
   .buttons.is-centered
-    i18n(
+    i18n.is-loader(
       tag='button'
       :data-loading='ephemeral.isSubmitting'
-      :disabled='$v.form.$invalid || ephemeral.isSubmitting === "true"'
+      :disabled='$v.form.$invalid'
       data-test='loginSubmit'
       type='submit'
     ) Login
@@ -62,7 +62,7 @@ export default {
         password: null
       },
       ephemeral: {
-        isSubmitting: 'false'
+        isSubmitting: false
       }
     }
   },
@@ -71,8 +71,8 @@ export default {
   },
   methods: {
     async login () {
-      if (this.ephemeral.isSubmitting === 'true') { return }
-      this.ephemeral.isSubmitting = 'true'
+      if (this.ephemeral.isSubmitting) { return }
+      this.ephemeral.isSubmitting = true
       try {
         await sbp('gi.actions/user/login', {
           username: this.form.name,
@@ -83,7 +83,7 @@ export default {
         console.error('FormLogin.vue login() error:', e)
         this.$refs.formMsg.danger(e.message)
       }
-      this.ephemeral.isSubmitting = 'false'
+      this.ephemeral.isSubmitting = false
     },
     forgotPassword () {
       // TODO: implement forgot password
