@@ -492,6 +492,12 @@ DefineContract({
         incomeAmount: x => typeof x === 'number' && x >= 0,
         pledgeAmount: x => typeof x === 'number' && x >= 0,
         nonMonetaryAdd: string,
+        paymentMethods: objectMaybeOf({
+          bitcoin: objectMaybeOf({ value: string }),
+          paypal: objectMaybeOf({ value: string }),
+          venmo: objectMaybeOf({ value: string }),
+          other: objectMaybeOf({ value: string })
+        }),
         nonMonetaryEdit: objectOf({
           replace: string,
           with: string

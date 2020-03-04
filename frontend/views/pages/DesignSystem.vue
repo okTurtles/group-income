@@ -206,6 +206,8 @@ page(
               i.icon-question icon-question
               i.icon-question-circle icon-question-circle
               i.icon-tag icon-tag
+              i.icon-search search
+              i.icon-sort-down sort-down
               i.icon-times icon-times
               i.icon-times-circle icon-times-circle
               i.icon-undo icon-undo

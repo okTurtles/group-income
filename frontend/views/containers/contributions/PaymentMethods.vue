@@ -1,66 +1,127 @@
 <template lang='pug'>
-fieldset
-  i18n.label(tag='legend') Payment methods
-  .c-list
-    label.c-item(
-      v-for='(method, index) in methodsAvailable'
+fieldset(data-test='paymentMethods')
+  legend.has-text-bold.c-legend
+    i18n.is-title-4 Payment info
+    | &nbsp;
+    i18n.has-text-1.has-text-small.c-optional (optional)
+  i18n.has-text-1 Other group members will be able to use this information to send you monthly contributions.
+
+  ul.c-fields(ref='fields' data-test='fields')
+    li.c-fields-item(
+      v-for='(method, index) in form.methods'
       :key='`method-${index}`'
+      data-test='method'
     )
-      .c-button(
-        type='button'
-        :disabled='!method.isAvailable'
-        :aria-pressed='selected === method.name'
+      .select-wrapper.is-reversed(
+        :class='{"is-shifted": methodsCount > 1 || method.name !== "choose" || method.value }'
       )
-        .c-svg
-          component(:is='method.svg')
-        .radio.c-radio
-          input.input(type='radio' name='method'
-            @change='$emit("select", method.name)'
-            :disabled='!method.isAvailable'
-            :checked='method.name === selected'
+        label
+          i18n.sr-only Payment name
+          select.select(v-model='method.name'
+            :class='{ "is-empty": method.name === "choose"}'
+            @change='handleSelectChange($event.target.value, index)'
           )
-          span(:class='{ "has-text-1": selected !== method.name }') {{method.title}}
-        span.has-text-1.c-description {{method.description}}
+            i18n(tag='option' value='choose' disabled='true') Choose...
+            option(v-for='(option, key) in config.options' :value='key') {{ option }}
+
+        label.c-select-input
+          i18n.sr-only Payment value
+          input.input(
+            type='text'
+            v-model='method.value'
+          )
+        button.is-icon-small.is-btn-shifted(
+          type='button'
+          :aria-label='L("Remove method")'
+          @click='removeMethod(index)'
+          data-test='remove'
+        )
+          i.icon-times
+
+  button.link.has-icon(
+    type='button'
+    @click='handleAddMethod'
+    data-test='addMethod'
+  )
+    i.icon-plus
+    i18n Add more
 </template>
 
 <script>
-import Tooltip from '@components/Tooltip.vue'
-import SvgBitcoin from '@svgs/bitcoin.svg'
-import SvgMoney from '@svgs/money.svg'
+import { mapGetters } from 'vuex'
+import Vue from 'vue'
 import L from '@view-utils/translations.js'
 
 export default {
-  name: 'PaymentsMethod',
-  components: {
-    SvgBitcoin,
-    SvgMoney,
-    Tooltip
-  },
-  props: {
-    selected: {
-      type: String,
-      required: true,
-      validator: (method) => ['manual', 'bitcoin'].includes(method)
+  name: 'PaymentMethods',
+  components: {},
+  data: () => ({
+    config: {
+      options: {
+        // key to store on state and corresponding translation (if needed)
+        bitcoin: 'Bitcoin',
+        paypal: 'Paypal',
+        venmo: 'Venmo',
+        other: L('Other')
+      }
+    },
+    form: {
+      methods: []
+    }
+  }),
+  created () {
+    const savedMethods = this.ourGroupProfile.paymentMethods || {}
+    const savedMethodsKeys = Object.keys(savedMethods)
+    const savedMethodsCount = savedMethodsKeys.length
+
+    if (savedMethodsCount === 0) {
+      // set the minimum necessary to show the first empty field.
+      Vue.set(this.form.methods, 0, {
+        name: 'choose',
+        value: ''
+      })
+      return
+    }
+
+    for (let index = 0; index < savedMethodsCount; index++) {
+      const method = savedMethodsKeys[index]
+      Vue.set(this.form.methods, index, {
+        name: method,
+        value: this.ourGroupProfile.paymentMethods[method].value
+      })
     }
   },
   computed: {
-    methodsAvailable () {
-      return [
-        {
-          name: 'manual',
-          title: L('Manual'),
-          isAvailable: true,
-          svg: SvgMoney,
-          description: L('Send your contributions using whatever method works best for you.')
-        },
-        {
-          name: 'bitcoin',
-          title: L('Bitcoin'),
-          isAvailable: false,
-          svg: SvgBitcoin,
-          description: L('Coming soon!')
-        }
-      ]
+    ...mapGetters([
+      'ourUsername',
+      'ourGroupProfile'
+    ]),
+    methodsCount () {
+      return Object.keys(this.form.methods).length
+    }
+  },
+  methods: {
+    handleSelectChange (methName, index) {
+      // Focus the respective input
+      this.$refs.fields.childNodes[index].getElementsByTagName('label')[1].focus()
+    },
+    handleAddMethod () {
+      Vue.set(this.form.methods, this.methodsCount, {
+        name: 'choose',
+        value: ''
+      })
+    },
+    removeMethod (index) {
+      if (this.form.methods.length > 1) {
+        // Remove the method from the list
+        this.form.methods.splice(index, 1)
+      } else {
+        // Reset the method if it's the only one
+        Vue.set(this.form.methods, 0, {
+          name: 'choose',
+          value: ''
+        })
+      }
     }
   }
 }
@@ -69,67 +130,54 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.c-list {
-  display: flex;
+.c-optional {
+  font-weight: 400;
 }
 
-.c-item {
-  display: block;
-  width: calc(50% - #{$spacer-sm});
+.c-legend {
+  margin-bottom: $spacer-xs;
+}
 
-  &:nth-child(odd) {
-    margin-right: $spacer;
+.c-fields {
+  margin-top: $spacer;
+
+  &-item {
+    display: block;
+    margin-bottom: $spacer;
   }
 }
 
-.c-button {
-  display: block;
-  width: 100%;
-  white-space: normal;
-  line-height: inherit;
+// TODO - Review & Refactor to forms.scss at #833 and #831
+.select-wrapper {
+  .is-btn-shifted {
+    display: none;
+    position: absolute;
+    top: 0.5rem;
+    left: calc(100% + 0.5rem);
+  }
 
-  &[disabled] {
-    background-color: transparent;
-    opacity: 1;
-    cursor: not-allowed;
+  &.is-shifted {
+    width: calc(100% - 2.5rem); // space for .btn-shift (X)
 
-    &:hover,
-    &:focus {
-      background: transparent;
-      border-color: $primary_0_1;
+    .is-btn-shifted {
+      display: block;
     }
   }
 
-  &:hover:not([disabled]),
-  &:focus {
-    background: transparent;
+  .select {
+    min-width: 7rem;
 
-    .c-svg {
-      border-color: $text_0;
+    &.is-empty {
+      color: $text_1;
     }
   }
-}
 
-.c-svg {
-  height: 4.5rem;
-  border: 2px solid $general_0;
-  border-radius: 4px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: $spacer;
-
-  [aria-pressed="true"] & {
-    border-color: $primary_0;
-  }
-
-  svg {
-    height: 3rem;
+  &::after { // icon-sort-down
+    left: 5.5rem;
   }
 }
 
-.c-description {
-  display: block;
-  margin-top: $spacer-xs;
+.c-select-input {
+  flex-grow: 1;
 }
 </style>
