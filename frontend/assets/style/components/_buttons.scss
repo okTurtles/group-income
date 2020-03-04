@@ -202,7 +202,7 @@ button,
       // Delay the spin for 500ms, in case load is ultra fast.
       // That way the user won't even see the loading
       transition: color 400ms 500ms;
-  
+
       &::after {
         opacity: 1;
         transition: opacity 400ms 500ms;
