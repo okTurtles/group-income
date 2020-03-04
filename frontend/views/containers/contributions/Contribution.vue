@@ -112,6 +112,9 @@ export default {
       }
     }
   },
+  beforeUpdate () {
+    console.log('beforeUpdate:', this.contributionsList)
+  },
   computed: {
     itemClasses () {
       return [
@@ -169,7 +172,9 @@ export default {
         this.ephemeral.isSubmitting = true
 
         if (this.isAdding) {
+          console.log('new-value called!', this.contributionsList)
           this.$emit('new-value', 'nonMonetaryAdd', this.form.contribution, () => {
+            console.log('new-value done!', this.contributionsList)
             this.isAdding = false
             this.form.contribution = null
             this.ephemeral.isSubmitting = false
