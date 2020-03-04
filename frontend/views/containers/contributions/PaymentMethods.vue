@@ -12,7 +12,9 @@ fieldset(data-test='paymentMethods')
       :key='`method-${index}`'
       data-test='method'
     )
-      .select-wrapper.is-reversed(:class='{"is-shifted": methodsCount > 1 }')
+      .select-wrapper.is-reversed(
+        :class='{"is-shifted": methodsCount > 1 || method.name !== "choose" || method.value }'
+      )
         label
           i18n.sr-only Payment name
           select.select(v-model='method.name'
@@ -110,7 +112,16 @@ export default {
       })
     },
     removeMethod (index) {
-      this.form.methods.splice(index, 1)
+      if (this.form.methods.length > 1) {
+        // Remove the method from the list
+        this.form.methods.splice(index, 1)
+      } else {
+        // Reset the method if it's the only one
+        Vue.set(this.form.methods, 0, {
+          name: 'choose',
+          value: ''
+        })
+      }
     }
   }
 }

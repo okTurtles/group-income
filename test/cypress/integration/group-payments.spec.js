@@ -168,11 +168,12 @@ describe('Payments', () => {
 
       cy.log('Fill the 1º payment method (bitcoin)')
       cy.getByDT('method').within(() => {
+        cy.getByDT('remove', 'button').should('not.be.visible')
         cy.get('select')
           .should('have.value', null)
           .select('bitcoin')
         cy.get('input').type('h4sh-t0-b3-s4ved')
-        cy.getByDT('remove', 'button').should('not.be.visible')
+        cy.getByDT('remove', 'button').should('be.visible')
       })
 
       cy.log('Add a 2º payment method (paypal)')
@@ -180,11 +181,11 @@ describe('Payments', () => {
       cy.getByDT('fields', 'ul').children().should('have.length', 2)
 
       cy.getByDT('method').eq(1).within(() => {
+        cy.getByDT('remove', 'button').should('be.visible')
         cy.get('select').should('have.value', null)
         cy.get('input').should('have.value', '')
         cy.get('select').select('paypal')
         cy.get('input').type('user1-paypal@email.com')
-        cy.getByDT('remove', 'button').should('be.visible')
       })
 
       cy.log('Add a 3º payment method (other)')
