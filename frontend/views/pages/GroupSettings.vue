@@ -60,7 +60,7 @@ page.c-page
 
   invitations-table
 
-  page-section(:title='L("Leave Group")')
+  page-section(:title='L("Leave Group")' v-if='groupMembersCount > 1')
     i18n.has-text-1(
       tag='p'
       :args='LTags("b")'
@@ -71,24 +71,25 @@ page.c-page
         tag='button'
         ref='leave'
         @click='openProposal("GroupLeaveModal")'
-        data-test='LeaveBtn'
+        data-test='leaveModalBtn'
       ) Leave group
 
-  page-section(:title='L("Delete Group")')
-    i18n.has-text-1(tag='p') This will delete all the data associated with this group permanently.
+  //- | ::: Delete Group won't be implemented for prototype.
+  //- page-section(:title='L("Delete Group")')
+  //-   i18n.has-text-1(tag='p') This will delete all the data associated with this group permanently.
 
-    .buttons(v-if='membersLeft === 0')
-      i18n.is-danger.is-outlined(
-        tag='button'
-        ref='delete'
-        @click='openProposal("GroupDeletionModal")'
-        data-test='deleteBtn'
-      ) Delete group
+  //-   .buttons(v-if='membersLeft === 0')
+  //-     i18n.is-danger.is-outlined(
+  //-       tag='button'
+  //-       ref='delete'
+  //-       @click='openProposal("GroupDeletionModal")'
+  //-       data-test='deleteBtn'
+  //-     ) Delete group
 
-    banner-simple(severity='info' v-else)
-      i18n(
-        :args='{ count: membersLeft, groupName: groupSettings.groupName, ...LTags("b")}'
-      ) You can only delete a group when all the other members have left. {groupName} still has {b_}{count} other members{_b}.
+  //-   banner-simple(severity='info' v-else)
+  //-     i18n(
+  //-       :args='{ count: membersLeft, groupName: groupSettings.groupName, ...LTags("b")}'
+  //-     ) You can only delete a group when all the other members have left. {groupName} still has {b_}{count} other members{_b}.
 </template>
 
 <script>
@@ -139,9 +140,6 @@ export default {
       'groupSettings',
       'groupMembersCount'
     ]),
-    membersLeft () {
-      return this.groupMembersCount - 1
-    },
     currencies () {
       return currencies
     },

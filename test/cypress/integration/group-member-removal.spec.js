@@ -193,4 +193,38 @@ describe('Group - Removing a member', () => {
 
     cy.giLogout({ hasNoGroup: true })
   })
+
+  // ------- A member leaves the group.
+
+  it('user2 leaves the groupA - is left with groupB', () => {
+    cy.giLogin(`user2-${userId}`, { bypassUI: true })
+
+    cy.getByDT('groupSettingsLink').click()
+    cy.getByDT('leaveModalBtn').click()
+
+    cy.getByDT('leaveGroup', 'form').within(() => {
+      cy.log('Fill the form incorrectly...')
+      cy.getByDT('username').type('u3')
+      cy.getByDT('password').type('123456789')
+      cy.getByDT('confirmation').type('LEAVE X')
+
+      cy.log('Assert the errors...')
+      cy.getByDT('usernameError').should('contain', 'Your username is different')
+      cy.getByDT('confirmationError').should('contain', 'Does not match')
+      cy.getByDT('btnSubmit').should('have.attr', 'disabled', 'disabled')
+
+      cy.log('Fix the errors and submit')
+      cy.getByDT('username').clear().type(`user2-${userId}`)
+      cy.getByDT('confirmation').clear().type(`LEAVE ${groupNameA.toUpperCase()}`)
+
+      cy.getByDT('btnSubmit').click()
+    })
+
+    cy.getByDT('closeModal').should('not.exist')
+
+    // User2 is part of only one group now.
+    cy.getByDT('groupName').should('contain', groupNameB)
+
+    cy.giLogout()
+  })
 })
