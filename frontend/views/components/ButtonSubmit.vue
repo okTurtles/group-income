@@ -11,7 +11,7 @@
 
 <script>
 export default {
-  name: 'ButtonSubmit', // TODO rename file to ButtonSubmit
+  name: 'ButtonSubmit',
   props: {
     disabled: Boolean
   },

@@ -92,7 +92,7 @@
 <script>
 import { mapGetters } from 'vuex'
 import L from '@view-utils/translations.js'
-import ButtonSubmit from '@components/Button.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import SvgProposal from '@svgs/proposal.svg'
 

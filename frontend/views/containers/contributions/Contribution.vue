@@ -22,7 +22,7 @@ transition(name='replace-list')
           v-if='isEditing && !isAdding'
           @click='handleDelete'
           data-test='buttonRemoveNonMonetaryContribution'
-        ) Remove
+        ) {{ L('Remove') }}
         .c-buttons-right
           i18n.button.is-small.is-outlined(
             tag='button'
@@ -67,7 +67,7 @@ transition(name='replace-list')
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import L from '@view-utils/translations.js'
-import ButtonSubmit from '@components/Button.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 
 export default {
   name: 'Contribution',
