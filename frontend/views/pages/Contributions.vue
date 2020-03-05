@@ -228,7 +228,7 @@ export default {
     openModal (modal) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal)
     },
-    async handleNonMonetary (type, value, done) {
+    async handleNonMonetary (type, value) {
       console.log('handle new-value')
       try {
         const groupProfileUpdate = await sbp('gi.contracts/group/groupProfileUpdate/create',
@@ -242,8 +242,7 @@ export default {
         console.error('handleNonMonetary', e)
         alert(e.message)
       }
-      console.log('handle new-value done()', this.ourGroupProfile.nonMonetaryContributions)
-      done()
+      console.log('handle new-value finished!', this.ourGroupProfile.nonMonetaryContributions)
     },
     displayName (username) {
       return this.globalProfile(username).displayName || username

@@ -38,13 +38,12 @@
           data-test='prevBtn'
         ) {{ currentStep === 0 ? L('Cancel') : L('Back') }}
 
-        button.is-loader(
+        button-submit(
           key='change'
           :class='submitStyleNonProposal'
           v-if='!groupShouldPropose'
-          @click.prevent='submit'
-          :data-loading='ephemeral.isSubmitting'
-          :disabled='disabled || ephemeral.isSubmitting'
+          @click='submit'
+          :disabled='disabled'
           data-test='submitBtn'
         ) {{ submitTextNonProposal }}
 
@@ -59,19 +58,18 @@
           i18n Next
           i.icon-arrow-right.is-suffix
 
-        i18n.is-success.is-loader(
+        button-submit.is-success(
           key='create'
-          tag='button'
           v-if='isReasonStep'
-          @click.prevent='submit'
-          :data-loading='ephemeral.isSubmitting'
-          :disabled='disabled || ephemeral.isSubmitting'
+          @click='submit'
+          :disabled='disabled'
           data-test='submitBtn'
         ) Create Proposal
 
         i18n.is-outlined(
           key='awesome'
           tag='button'
+          type='button'
           v-if='isConfirmation'
           ref='close'
           @click.prevent='close'
@@ -94,6 +92,7 @@
 <script>
 import { mapGetters } from 'vuex'
 import L from '@view-utils/translations.js'
+import ButtonSubmit from '@components/Button.vue'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import SvgProposal from '@svgs/proposal.svg'
 
@@ -101,7 +100,8 @@ export default {
   name: 'ModalForm',
   components: {
     ModalTemplate,
-    SvgProposal
+    SvgProposal,
+    ButtonSubmit
   },
   props: {
     title: {
@@ -124,11 +124,6 @@ export default {
       }
     }
   },
-  data: () => ({
-    ephemeral: {
-      isSubmitting: false
-    }
-  }),
   computed: {
     ...mapGetters([
       'groupShouldPropose'
@@ -170,14 +165,9 @@ export default {
         this.close()
       }
     },
-    submit () {
-      if (this.ephemeral.isSubmitting) { return }
-      this.ephemeral.isSubmitting = true
-
+    async submit () {
       const form = this.groupShouldPropose ? { reason: this.$refs.reason.value } : null
-      this.$emit('submit', form, () => {
-        this.ephemeral.isSubmitting = false
-      })
+      await this.$listeners.submit(form)
     }
   }
 }

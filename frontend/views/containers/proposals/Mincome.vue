@@ -94,7 +94,7 @@ export default {
     }
   },
   methods: {
-    async submit (form, done) {
+    async submit (form) {
       const mincomeAmount = parseInt(this.form.mincomeAmount, 10)
       this.$refs.formMsg.clean()
 
@@ -123,7 +123,6 @@ export default {
           this.$refs.formMsg.danger(L('Failed to change mincome. {codeError}', { codeError: e.message }))
           this.ephemeral.currentStep = 0
         }
-        done()
         return
       }
 
@@ -139,7 +138,6 @@ export default {
         console.error(`Failed to change mincome to ${mincomeAmount}`, e.message)
         this.$refs.formMsg.danger(L('Failed to change mincome {codeError}', { codeError: e.message }))
       }
-      done()
     }
   }
 }

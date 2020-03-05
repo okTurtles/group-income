@@ -18,12 +18,9 @@ transition(name='replace-list')
         @keydown.enter.prevent='handleEnter'
       )
       .buttons
-        i18n.button.is-small.is-danger.is-outlined.is-loader(
+        button-submit.is-small.is-danger.is-outlined(
           v-if='isEditing && !isAdding'
-          tag='button'
           @click='handleDelete'
-          :data-loading='ephemeral.isRemoving'
-          :disabled='ephemeral.isRemoving'
           data-test='buttonRemoveNonMonetaryContribution'
         ) Remove
         .c-buttons-right
@@ -32,22 +29,16 @@ transition(name='replace-list')
             @click='cancel'
             data-test='buttonCancelNonMonetaryContribution'
           ) Cancel
-          i18n.button.is-small.is-loader(
+          button-submit.is-small(
             v-if='isAdding && isFilled'
-            tag='button'
             @click='handleSubmit'
-            :data-loading='ephemeral.isSubmitting'
-            :disabled='ephemeral.isSubmitting'
             data-test='buttonAddNonMonetaryContribution'
-          ) Add
-          i18n.button.is-small.is-loader(
+          ) {{ L('Add') }}
+          button-submit.is-small(
             v-if='isEditing && isFilled'
-            tag='button'
             @click='handleSubmit'
-            :data-loading='ephemeral.isSubmitting'
-            :disabled='ephemeral.isSubmitting'
             data-test='buttonSaveNonMonetaryContribution'
-          ) Save
+          ) {{ L('Save') }}
 
   li(v-else-if='isEditable' :class='itemClasses' key='editable')
     slot
@@ -76,10 +67,14 @@ transition(name='replace-list')
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import L from '@view-utils/translations.js'
+import ButtonSubmit from '@components/Button.vue'
 
 export default {
   name: 'Contribution',
   mixins: [validationMixin],
+  components: {
+    ButtonSubmit
+  },
   props: {
     variant: {
       type: String,
@@ -100,8 +95,7 @@ export default {
   data () {
     return {
       ephemeral: {
-        isRemoving: false,
-        isSubmitting: false
+        isRemoving: false
       },
       isAdding: false,
       isEditing: false,
@@ -164,30 +158,26 @@ export default {
         this.cancel()
       })
     },
-    handleSubmit () {
+    async handleSubmit () {
       if (this.$v.form.$invalid) {
         this.cancel()
       } else {
-        if (this.ephemeral.isSubmitting) { return }
-        this.ephemeral.isSubmitting = true
-
         if (this.isAdding) {
           console.log('new-value called!', this.contributionsList)
-          this.$emit('new-value', 'nonMonetaryAdd', this.form.contribution, () => {
-            console.log('new-value done!', this.contributionsList)
-            this.isAdding = false
-            this.form.contribution = null
-            this.ephemeral.isSubmitting = false
-          })
+          await this.$listeners['new-value']('nonMonetaryAdd', this.form.contribution)
+
+          console.log('new-value done!', this.contributionsList)
+          this.isAdding = false
+          this.form.contribution = null
+          this.ephemeral.isSubmitting = false
         }
         if (this.isEditing) {
-          this.$emit('new-value', 'nonMonetaryEdit', {
+          await this.$listeners['new-value']('nonMonetaryEdit', {
             replace: this.initialValue,
             with: this.form.contribution
-          }, () => {
-            this.isEditing = false
-            this.ephemeral.isSubmitting = false
           })
+          this.isEditing = false
+          this.ephemeral.isSubmitting = false
         }
       }
     }
