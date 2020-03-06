@@ -290,10 +290,6 @@ page(
     section.card
       h2.is-title-2.card-header Buttons
       br
-      button.is-small.is-outlined.is-danger(
-        @click='ephemeral.btns.isLoading = !ephemeral.btns.isLoading'
-      ) Toggle Loading State
-      br
       h3.is-title-3 Default size
       br
       table
@@ -304,37 +300,37 @@ page(
           td
             pre .button
           td
-            button.is-loader(:data-loading='ephemeral.btns.isLoading') Default text
+            button Default text
 
         tr
           td
             pre .button.is-success
           td
-            button.is-success.is-loader(:data-loading='ephemeral.btns.isLoading') Default text
+            button.is-success Default text
 
         tr
           td
             pre .button.is-danger
           td
-            button.is-danger.is-loader(:data-loading='ephemeral.btns.isLoading') Default text
+            button.is-danger Default text
 
         tr
           td
             pre .button.is-outlined
           td
-            button.is-outlined.is-loader(:data-loading='ephemeral.btns.isLoading') Default text
+            button.is-outlined Default text
 
         tr
           td
             pre .button.is-success.is-outlined
           td
-            button.is-success.is-outlined.is-loader(:data-loading='ephemeral.btns.isLoading') Default text
+            button.is-success.is-outlined Default text
 
         tr
           td
             pre .button.is-danger.is-outlined
           td
-            button.is-danger.is-outlined.is-loader(:data-loading='ephemeral.btns.isLoading') Default text
+            button.is-danger.is-outlined Default text
 
         tr
           td
@@ -350,26 +346,44 @@ page(
           td
             pre .button.is-small
           td
-            button.is-small.is-loader(:data-loading='ephemeral.btns.isLoading') Default text
+            button.is-small Default text
 
         tr
           td
             pre .button.is-outlined.is-small
           td
-            button.is-outlined.is-small.is-loader(:data-loading='ephemeral.btns.isLoading') Default text
+            button.is-outlined.is-small Default text
 
         tr
           td
             pre .button.is-success.is-outlined.is-small
           td
-            button.is-success.is-outlined.is-small.is-loader(:data-loading='ephemeral.btns.isLoading') Default text
+            button.is-success.is-outlined.is-small Default text
 
         tr
           td
             pre .button.is-danger.is-outlined.is-small
           td
-            button.is-danger.is-outlined.is-small.is-loader(:data-loading='ephemeral.btns.isLoading') Default text
+            button.is-danger.is-outlined.is-small Default text
 
+      h3.is-title-3 Button Submit
+      p Use #[code ButtonSubmit] on buttons that will trigger an async action.
+      br
+      table
+        thead
+          th code
+          th demo
+        tr
+          td
+            pre
+              | button-submit.is-sucess(
+              |   @click='saveIn2500ms'
+              | ) Save Changes
+          td
+            button-submit.is-sucess(
+              @click='saveIn2500ms'
+            ) Save Changes
+      br
       h3.is-title-3 With an icon
       table
         thead
@@ -1082,6 +1096,7 @@ import Page from '@components/Page.vue'
 import sbp from '~/shared/sbp.js'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 import Tooltip from '@components/Tooltip.vue'
 import Badge from '@components/Badge.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
@@ -1213,6 +1228,7 @@ export default {
     CalloutCard,
     BannerSimple,
     BannerScoped,
+    ButtonSubmit,
     Tooltip,
     Badge,
     LinkToCopy,
@@ -1263,6 +1279,15 @@ export default {
         el.link.classList.remove('last')
       })
       this.articles[last].link.classList.add('last')
+    },
+    async saveIn2500ms () {
+      const dumbPromiseThatTakes2500ms = () => new Promise((resolve, reject) => {
+        setTimeout(() => {
+          resolve()
+        }, 2500)
+      })
+
+      await dumbPromiseThatTakes2500ms()
     }
   }
 }
