@@ -106,6 +106,7 @@ import AvatarUpload from '@components/AvatarUpload.vue'
 import InvitationsTable from '@containers/group-settings/InvitationsTable.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 import L from '@view-utils/translations.js'
 
 export default {
@@ -117,7 +118,8 @@ export default {
     InvitationsTable,
     AvatarUpload,
     BannerSimple,
-    BannerScoped
+    BannerScoped,
+    ButtonSubmit
   },
   data () {
     const { groupName, sharedValues, mincomeCurrency } = this.$store.getters.groupSettings
