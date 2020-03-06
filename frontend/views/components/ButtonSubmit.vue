@@ -50,7 +50,7 @@ export default {
     }
   }),
   methods: {
-    async submit (e) {
+    async submit (event) {
       if (this.ephemeral.isSubmitting) {
         return
       }
@@ -60,7 +60,11 @@ export default {
       // this.$listeners can await for async handlers.
       // An advantage over using $emit().
       // More at: https://stackoverflow.com/questions/60554270/vuejs-difference-between-emit-and-listeners
-      await this.$listeners.click(e)
+      try {
+        await this.$listeners.click(event)
+      } catch (error) {
+        console.error('ButtonSubmit exception:', error)
+      }
 
       this.ephemeral.isSubmitting = false
     }
