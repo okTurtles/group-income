@@ -99,21 +99,13 @@ export default {
       this.$refs.modal.close()
     },
     async submit () {
-      if (this.$v.form.$invalid) {
-        return
-      }
+      if (this.$v.form.$invalid) { return }
 
       try {
-        const message = await sbp('gi.contracts/group/removeOurselves/create',
-          {
-            groupId: this.currentGroupId
-          },
-          this.currentGroupId
-        )
-        await sbp('backend/publishLogEntry', message)
+        await sbp('gi.actions/group/removeOurselves', this.currentGroupId)
       } catch (e) {
-        console.error('Leave Group failed!', e.message)
-        this.$refs.formMsg.danger(L('Failed to leave group. {codeError}', { codeError: e.message }))
+        console.error('Failed to remove ourselves', e)
+        this.$refs.formMsg.danger(e.message)
       }
     }
   },

@@ -60,7 +60,7 @@ page.c-page
 
   invitations-table
 
-  page-section(:title='L("Leave Group")' v-if='groupMembersCount > 1')
+  page-section(:title='L("Leave Group")')
     i18n.has-text-1(
       tag='p'
       :args='LTags("b")'
@@ -70,7 +70,7 @@ page.c-page
       i18n.is-danger.is-outlined(
         tag='button'
         ref='leave'
-        @click='openProposal("GroupLeaveModal")'
+        @click='handleLeaveGroup'
         data-test='leaveModalBtn'
       ) Leave group
 
@@ -167,16 +167,20 @@ export default {
       }
 
       try {
-        const settings = await sbp('gi.contracts/group/updateSettings/create',
-          attrs,
-          this.currentGroupId
-        )
-        await sbp('backend/publishLogEntry', settings)
+        await sbp('gi.actions/group/updateSettings', attrs, this.currentGroupId)
         this.$refs.formMsg.success(L('Your changes were saved!'))
       } catch (e) {
-        this.$refs.formMsg.danger(L('Failed to update group settings. {codeError}', { codeError: e.message }))
+        console.error('Failed to update group settings.', e)
+        this.$refs.formMsg.danger(e.message)
       }
       this.ephemeral.isSubmitting = false
+    },
+    handleLeaveGroup () {
+      if (this.groupMembersCount === 1) {
+        alert(L("Leaving the group when you're the only person in it will delete it, but deleting groups is not possible yet."))
+      } else {
+        this.openProposal('GroupLeaveModal')
+      }
     }
   },
   validations: {

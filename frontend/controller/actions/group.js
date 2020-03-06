@@ -120,6 +120,14 @@ export default sbp('sbp/selectors/register', {
   'gi.actions/group/switch': function (groupId) {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
   },
+  'gi.actions/group/updateSettings': async function (settings, groupId) {
+    try {
+      const message = await sbp('gi.contracts/group/updateSettings/create', settings, groupId)
+      await sbp('backend/publishLogEntry', message)
+    } catch (e) {
+      throw new GIErrorUIRuntimeError(L('Failed to update group settings. {codeError}', { codeError: e.message }))
+    }
+  },
   'gi.actions/group/removeMember': async function (params, groupID) {
     try {
       const message = await sbp('gi.contracts/group/removeMember/create', params, groupID)
@@ -129,5 +137,14 @@ export default sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Failed to remove {member}: {codeError}', { codeError: e.message, member: params.member }))
     }
     return true
+  },
+  'gi.actions/group/removeOurselves': async function (groupId) {
+    try {
+      const message = await sbp('gi.contracts/group/removeOurselves/create', { groupId }, groupId)
+      await sbp('backend/publishLogEntry', message)
+    } catch (e) {
+      console.error('gi.actions/group/leaveGroup failed', e)
+      throw new GIErrorUIRuntimeError(L('Failed to leave group. {codeError}', { codeError: e.message }))
+    }
   }
 })
