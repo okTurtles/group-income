@@ -1,15 +1,44 @@
 <template lang='pug'>
   button.is-loader(
+    type='submit'
     v-bind='$attrs'
     v-on='bindListeners'
-    type='submit'
     :data-loading='ephemeral.isSubmitting'
     :disabled='disabled || ephemeral.isSubmitting'
   )
     slot
+    i18n.sr-only(v-if='ephemeral.isSubmitting') Loading
 </template>
 
 <script>
+/*
+Use ButtonSubmit on buttons that will trigger an async action.
+
+button-submit(
+@click='handleLogin'
+) Login
+
+This will display a "loading state" on the button while the login is happening.
+
+The button has type="submit" to catch any way of form submittion (ex: press Enter).
+
+That way we don't need to use $refs on the parent.
+
+// ❌ DO NOT do this, it's INCORRECT:
+form(@submit.prevent='$refs.btnSubmit.click')
+
+// ✅ DO this instead:
+form(@submit.prevent='')
+
+`@submit.prevent` prevents the original behavior of a form submit (page reload)
+but it will still look for a submit element and its event handler (@click).
+
+In this case ButtonSubmit is the submit element thanks to type="submit".
+So, when pressing Enter, buttonSubmit(@click) gets called directly too.
+
+More details about this approach:
+https://github.com/okTurtles/group-income-simple/pull/854/files#r388638068
+*/
 export default {
   name: 'ButtonSubmit',
   props: {
@@ -25,11 +54,11 @@ export default {
       if (this.ephemeral.isSubmitting) {
         return
       }
-
       this.ephemeral.isSubmitting = true
 
-      // this.$listeners can await for async events.
-      // An advantage over $emit()
+      // Call the original @click handler.
+      // this.$listeners can await for async handlers.
+      // An advantage over using $emit().
       // More at: https://stackoverflow.com/questions/60554270/vuejs-difference-between-emit-and-listeners
       await this.$listeners.click(e)
 
@@ -40,8 +69,8 @@ export default {
     bindListeners () {
       return {
         ...this.$listeners,
-        // bind passed @click to custom submit fn
-        // so it goes through isSubmitting "guard"
+        // overrides passed @click handler with a custom @click handler
+        // so it goes through "isSubmitting guard"
         click: this.submit
       }
     }

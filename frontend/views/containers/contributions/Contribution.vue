@@ -169,7 +169,6 @@ export default {
           console.log('new-value done!', this.contributionsList)
           this.isAdding = false
           this.form.contribution = null
-          this.ephemeral.isSubmitting = false
         }
         if (this.isEditing) {
           await this.$listeners['new-value']('nonMonetaryEdit', {
@@ -177,7 +176,6 @@ export default {
             with: this.form.contribution
           })
           this.isEditing = false
-          this.ephemeral.isSubmitting = false
         }
       }
     }

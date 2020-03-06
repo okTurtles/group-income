@@ -4,7 +4,7 @@ modal-base-template(ref='modal' :fullscreen='true')
     i18n.is-title-2.c-title(tag='h2') Income Details
 
     form.card.c-card(
-      @submit.prevent='submit'
+      @submit.prevent=''
       novalidate='true'
     )
       fieldset.field
@@ -56,11 +56,8 @@ modal-base-template(ref='modal' :fullscreen='true')
 
       .buttons
         i18n.is-outlined(tag='button' type='button' @click='closeModal') Cancel
-        i18n.is-success.is-loader(
-          tag='button'
-          type='submit'
-          :data-loading='ephemeral.isSubmitting'
-          :disabled='$v.form.$invalid || ephemeral.isSubmitting'
+        button-submit.is-success(
+          @click='submit'
           data-test='submitIncome'
         ) Save
 
@@ -81,6 +78,7 @@ import GroupPledgesGraph from './GroupPledgesGraph.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'
 import L from '@view-utils/translations.js'
 
@@ -91,15 +89,13 @@ export default {
     ModalBaseTemplate,
     TransitionExpand,
     BannerScoped,
+    ButtonSubmit,
     Tooltip,
     PaymentMethods,
     GroupPledgesGraph
   },
   data () {
     return {
-      ephemeral: {
-        isSubmitting: false
-      },
       form: {
         incomeDetailsType: null,
         amount: null
@@ -161,9 +157,6 @@ export default {
       this.$refs.modal.close()
     },
     async submit () {
-      if (this.ephemeral.isSubmitting) { return }
-      this.ephemeral.isSubmitting = true
-
       if (this.$v.form.$invalid) {
         this.$refs.formMsg.danger(L('Your income details are missing. Please review them and try again.'))
         return
@@ -211,7 +204,6 @@ export default {
         console.error('Failed to update income details', e)
         this.$refs.formMsg.danger(L('Failed to update income details, please try again. {codeError}', { codeError: e.message }))
       }
-      this.ephemeral.isSubmitting = false
     }
   },
   validations: {

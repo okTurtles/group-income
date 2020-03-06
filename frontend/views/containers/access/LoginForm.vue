@@ -68,6 +68,11 @@ export default {
   },
   methods: {
     async login () {
+      if (this.$v.form.$invalid) {
+        this.$refs.formMsg.danger('The fields are incompleted.')
+        return
+      }
+
       try {
         await sbp('gi.actions/user/login', {
           username: this.form.name,

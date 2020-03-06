@@ -8,7 +8,7 @@
     )
 
     section.card
-      form(@submit.prevent='saveProfile')
+      form(@submit.prevent='')
         label.field
           i18n.label Display Name
           input.input(
@@ -55,13 +55,10 @@
         banner-scoped(ref='formMsg' data-test='profileMsg')
 
         .buttons
-          i18n.is-success.is-loader(
-            tag='button'
-            :data-loading='ephemeral.isSubmitting'
-            :disabled='$v.form.$invalid || ephemeral.isSubmitting'
-            type='submit'
+          button-submit.is-success(
+            @click='saveProfile'
             data-test='saveAccount'
-          ) Save account changes
+          ) {{ L('Save account changes') }}
 
     section.card
       form(name='DeleteProfileForm' @submit.prevent='')
@@ -87,6 +84,7 @@ import { cloneDeep } from '@utils/giLodash.js'
 import { mapGetters } from 'vuex'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import AvatarUpload from '@components/AvatarUpload.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
 
@@ -95,16 +93,14 @@ export default {
   mixins: [validationMixin, validationsDebouncedMixins],
   components: {
     AvatarUpload,
-    BannerScoped
+    BannerScoped,
+    ButtonSubmit
   },
   data () {
     // create a copy of the attributes to avoid any Vue.js reactivity weirdness
     // so that we do not directly modify the values in the store
     const attrsCopy = cloneDeep(this.$store.getters.ourUserIdentityContract.attributes || {})
     return {
-      ephemeral: {
-        isSubmitting: false
-      },
       form: {
         displayName: attrsCopy.displayName,
         bio: attrsCopy.bio,
@@ -141,9 +137,6 @@ export default {
       return false
     },
     async saveProfile () {
-      if (this.ephemeral.isSubmitting) { return }
-      this.ephemeral.isSubmitting = true
-
       this.$refs.formMsg.clean()
       const attrs = {}
 
@@ -164,7 +157,6 @@ export default {
         console.error('Failed to update profile', e)
         this.$refs.formMsg.danger(L('Failed to update profile, please try again. {codeError}', { codeError: e.message }))
       }
-      this.ephemeral.isSubmitting = false
     }
   }
 }

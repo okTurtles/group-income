@@ -3,7 +3,7 @@ form(
   novalidate
   name='formData'
   data-test='signup'
-  @submit.prevent='signup'
+  @submit.prevent=''
 )
   label.field
     i18n.label Username
@@ -34,12 +34,10 @@ form(
   banner-scoped(ref='formMsg')
 
   .buttons.is-centered
-    i18n.is-loader(
-      tag='button'
-      :data-loading='ephemeral.isSubmitting'
-      :disabled='$v.form.$invalid || ephemeral.isSubmitting'
+    button-submit(
+      @click='signup'
       data-test='signSubmit'
-    ) Create an account
+    ) {{ L('Create an account') }}
 </template>
 
 <script>
@@ -50,6 +48,7 @@ import { nonWhitespace } from '@views/utils/validators.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import PasswordForm from '@containers/access/PasswordForm.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
@@ -62,7 +61,8 @@ export default {
   components: {
     ModalTemplate,
     PasswordForm,
-    BannerScoped
+    BannerScoped,
+    ButtonSubmit
   },
   data () {
     return {
@@ -70,19 +70,15 @@ export default {
         name: null,
         password: null,
         email: null
-      },
-      ephemeral: {
-        isSubmitting: false
       }
     }
   },
   methods: {
     async signup () {
-      // Prevent autocomplete submission when empty field
-      if (!this.form.name || !this.form.email || !this.form.password || this.ephemeral.isSubmitting) {
+      if (this.$v.form.$invalid) {
+        this.$refs.formMsg.danger('The fields are incompleted.')
         return
       }
-      this.ephemeral.isSubmitting = true
       try {
         await sbp('gi.actions/user/signupAndLogin', {
           username: this.form.name,
@@ -94,7 +90,6 @@ export default {
         console.error('Signup.vue submit() error:', e)
         this.$refs.formMsg.danger(e.message)
       }
-      this.ephemeral.isSubmitting = false
     }
   },
   validations: {

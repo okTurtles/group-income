@@ -40,18 +40,17 @@ modal-base-template(:fullscreen='true')
           | {{ L('Next') }}
           i.icon-arrow-right.is-suffix
 
-        button.is-success.is-loader(
+        button-submit.is-success(
           v-else=''
           ref='finish'
           @click='submit'
-          :data-loading='ephemeral.isSubmitting'
-          :disabled='$v.form.$invalid || ephemeral.isSubmitting'
           data-test='finishBtn'
         ) {{ L('Create Group') }}
 </template>
 
 <script>
 import sbp from '~/shared/sbp.js'
+import { validationMixin } from 'vuelidate'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import { RULE_THRESHOLD } from '@model/contracts/voting/rules.js'
 import proposals from '@model/contracts/voting/proposals.js'
@@ -60,7 +59,7 @@ import L from '@view-utils/translations.js'
 import { decimals } from '@view-utils/validators.js'
 import StepAssistant from '@view-utils/stepAssistant.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
-import { validationMixin } from 'vuelidate'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 import GroupWelcome from '@components/GroupWelcome.vue'
 import {
   GroupName,
@@ -84,6 +83,7 @@ export default {
   components: {
     ModalBaseTemplate,
     BannerScoped,
+    ButtonSubmit,
     GroupName,
     GroupPurpose,
     GroupMincome,
@@ -101,13 +101,10 @@ export default {
     },
     async submit () {
       if (this.$v.form.$invalid) {
-        // TODO: more descriptive error message, highlight erroneous step
+        // TODO: more descriptive error message. Perhpahs highlight error step
         this.$refs.formMsg.danger(L('Some information is invalid, please review it and try again.'))
         return
       }
-
-      if (this.ephemeral.isSubmitting) { return }
-      this.ephemeral.isSubmitting = true
 
       try {
         this.$refs.formMsg.clean()
@@ -127,8 +124,6 @@ export default {
         console.error('CreateGroup.vue submit() error:', e)
         this.$refs.formMsg.danger(e.message)
       }
-
-      this.ephemeral.isSubmitting = false
     }
   },
   data () {
@@ -144,7 +139,7 @@ export default {
         mincomeCurrency: 'USD' // TODO: grab this as a constant from currencies.js
       },
       ephemeral: {
-        isSubmitting: false
+        groupPictureFile: '' // passed by GroupName.vue
       },
       config: {
         steps: [
