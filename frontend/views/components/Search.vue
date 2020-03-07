@@ -3,32 +3,55 @@ form.c-search-form(
   @submit.prevent='submit'
 )
   label.field
+    .sr-only {{label}}
+
     .input-combo
       .is-icon(:aria-label='L("Search")')
         i.icon-search
+
       input.input(
         type='text'
         name='search'
         data-test='search'
-        :placeholder='L("Search payments...")'
-        v-model='form.search'
+        :placeholder='placeholder'
+        :value='value'
+        @input='$emit("input", $event.target.value)'
       )
+
       button.is-icon-small(
-        v-if='form.search'
+        v-if='value !== ""'
         :aria-label='L("Clear search")'
-        @click='form.search = null'
+        @click='$emit("input", "")'
       )
         i.icon-times
 </template>
 
 <script>
+import L from '@view-utils/translations.js'
+
 export default {
   name: 'PaymentsSearch',
-  data () {
-    return {
-      form: {
-        search: null
-      }
+
+  props: {
+    value: {
+      type: String,
+      required: true
+    },
+
+    placeholder: {
+      type: String,
+      default: L('Search...')
+    },
+
+    label: {
+      type: String,
+      required: true
+    }
+  },
+
+  watch: {
+    value () {
+      this.$emit('input', this.value)
     }
   }
 }

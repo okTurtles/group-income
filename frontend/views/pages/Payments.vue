@@ -39,7 +39,12 @@ page(
           | {{ link.title }}
           span.tabs-notification(v-if='link.notification') {{ link.notification }}
 
-      payments-search(v-if='needsIncome || activeTab !== "todo"')
+      search(
+        v-if='needsIncome || activeTab !== "todo"'
+        :placeholder='L("Search payments...")'
+        :label='L("Search for a payment")'
+        v-model='searchText'
+      )
 
       .tab-section
         .c-container(v-if='hasPayments')
@@ -72,10 +77,10 @@ page(
 import sbp from '~/shared/sbp.js'
 import { mapGetters } from 'vuex'
 import Page from '@components/Page.vue'
+import Search from '@components/Search.vue'
 import currencies from '@view-utils/currencies.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgContributions from '@svgs/contributions.svg'
-import PaymentsSearch from '@containers/payments/PaymentsSearch.vue'
 import PaymentsList from '@containers/payments/PaymentsList.vue'
 import PaymentsPagination from '@containers/payments/PaymentsPagination.vue'
 import MonthOverview from '@containers/payments/MonthOverview.vue'
@@ -88,7 +93,7 @@ export default {
   components: {
     Page,
     SvgContributions,
-    PaymentsSearch,
+    Search,
     PaymentsList,
     PaymentsPagination,
     MonthOverview,
@@ -112,7 +117,8 @@ export default {
         url: 'received',
         index: 2,
         notification: 0
-      }]
+      }],
+      searchText: ''
     }
   },
   created () {
