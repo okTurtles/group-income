@@ -6,7 +6,7 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background')
 
     .c-content
       form.card.c-card(
-        @submit.prevent='submit'
+        @submit.prevent=''
         novalidate='true'
       )
         i18n.has-text-bold.c-title(tag='h3') Who did you send money to?
