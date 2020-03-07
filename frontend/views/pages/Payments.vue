@@ -86,7 +86,7 @@ import PaymentsPagination from '@containers/payments/PaymentsPagination.vue'
 import MonthOverview from '@containers/payments/MonthOverview.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
 import { PAYMENT_PENDING, PAYMENT_CANCELLED, PAYMENT_ERROR, PAYMENT_COMPLETED, PAYMENT_NOT_RECEIVED } from '@model/contracts/payments/index.js'
-import L from '@view-utils/translations.js'
+import L, { LTags } from '@view-utils/translations.js'
 
 export default {
   name: 'Payments',
@@ -151,7 +151,7 @@ export default {
       }
     },
     introTitle () {
-      let copy = this.needsIncome ? L('You are currently {strong_}receiving{_strong} mincome. ', this.LTags('strong')) : L('You are currently {strong_}sending{_strong} mincome. ', this.LTags('strong'))
+      let copy = this.needsIncome ? L('You are currently {strong_}receiving{_strong} mincome. ', LTags('strong')) : L('You are currently {strong_}sending{_strong} mincome. ', LTags('strong'))
       copy += L('You can change this at any time by updating your {r1}income details{r2}.', { r1: '<button class="link js-btnInvite">', r2: '</button>' })
       return copy
     },
