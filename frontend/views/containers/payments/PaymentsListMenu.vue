@@ -6,7 +6,7 @@ menu-parent
   menu-content.c-actions-content
     ul
       menu-item(
-        v-if='paymentsType === "sent" || needsIncome'
+        v-if='paymentsType !== "todo" || needsIncome'
         tag='button'
         item-id='message'
         icon='info'
@@ -33,7 +33,7 @@ menu-parent
         i18n Cancel this payment
 
       menu-item(
-        v-if='needsIncome'
+        v-if='paymentsType === "received" || needsIncome'
         tag='button'
         item-id='message'
         icon='times'
