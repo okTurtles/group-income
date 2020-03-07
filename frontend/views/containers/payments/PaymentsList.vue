@@ -74,7 +74,8 @@ table.table.table-in-card.c-payments(:class='{"is-editing": paymentsType === "ed
         label.field
           .input-combo
             input.input(:value='payment.amount')
-            .suffix {{symbolWithCode}}
+            .suffix.c-with-code {{symbolWithCode}}
+            .suffix {{symbol}}
 </template>
 
 <script>
@@ -131,6 +132,9 @@ export default {
     },
     symbolWithCode () {
       return currencies[this.groupSettings.mincomeCurrency].symbolWithCode
+    },
+    symbol () {
+      return currencies[this.groupSettings.mincomeCurrency].symbol
     }
   },
   methods: {
@@ -280,6 +284,22 @@ export default {
 
   &-text {
     @include phone {
+      display: block;
+    }
+  }
+}
+
+.suffix {
+  display: none;
+
+  @include phone {
+    display: block;
+  }
+
+  &.c-with-code {
+    display: none;
+
+    @include tablet {
       display: block;
     }
   }
