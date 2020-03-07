@@ -43,6 +43,7 @@ table.table.table-in-card.c-payments(:class='{"c-payments-edit": paymentsType ==
           v-if='index === 0 && (needsIncome || paymentsType === "received")'
           :class='"c-status-warning"'
         )
+          // TODO: Display this tooltip only if the payment is marked has not received
           tooltip.c-name-tooltip(
             v-if=''
             direction='top'
