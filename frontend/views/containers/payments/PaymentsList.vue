@@ -1,5 +1,5 @@
 <template lang='pug'>
-table.table.table-in-card.c-payments(:class='{"c-payments-edit": paymentsType === "edit"}')
+table.table.table-in-card.c-payments(:class='{"is-editing": paymentsType === "edit"}')
   thead
     tr
       th(v-if='paymentsType === "edit"')
@@ -180,35 +180,35 @@ export default {
       text-align: right;
     }
   }
+}
 
-  &-edit {
-    th, td {
-      &:first-child {
-        width: 10%;
-        @include phone {
-          width: 3rem;
-        }
-      }
-
-      &:last-child {
-        width: 40%;
-        min-width: 9,375rem;
-        display: table-cell;
-      }
-    }
-
-    .c-actions {
-      justify-content: flex-end;
-    }
-
-    .c-reset {
-      margin-left: $spacer;
-    }
-
-    .c-payments-date {
+.is-editing {
+  th, td {
+    &:first-child {
+      width: 10%;
       @include phone {
-        display: block;
+        width: 3rem;
       }
+    }
+
+    &:last-child {
+      width: 40%;
+      min-width: 9,375rem;
+      display: table-cell;
+    }
+  }
+
+  .c-actions {
+    justify-content: flex-end;
+  }
+
+  .c-reset {
+    margin-left: $spacer;
+  }
+
+  .c-payments-date {
+    @include phone {
+      display: block;
     }
   }
 }
