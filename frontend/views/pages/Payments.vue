@@ -8,61 +8,64 @@ page(
   template(#sidebar='' v-if='hasPayments')
     month-overview
 
-  p.p-descritpion.has-text-1(
-    data-test='openIncomeDetailsModal'
-    @click='openModal("IncomeDetails")'
-    v-html='introTitle'
-  )
+  add-income-details-widget(v-if='!hasIncomeDetails')
 
-  section.card(v-if='!(needsIncome && !hasPayments)')
-    nav.tabs(
-      v-if='!needsIncome'
-      aria-label='payments type'
-      @click='open = false'
+  template(v-else)
+    p.p-descritpion.has-text-1(
+      data-test='openIncomeDetailsModal'
+      @click='openModal("IncomeDetails")'
+      v-html='introTitle'
     )
-      button.is-unstyled.tabs-link(
-        v-for='(link, index) in tabItems'
-        :key='index'
-        :class='{ "tabs-link-active": activeTab === link.url}'
-        :data-test='`link-${link}`'
-        :aria-expanded='activeTab === link.url'
-        @click='activeTab = link.url'
+
+    section.card(v-if='!(needsIncome && !hasPayments)')
+      nav.tabs(
+        v-if='!needsIncome'
+        aria-label='payments type'
+        @click='open = false'
       )
-        | {{ link.title }}
-        span.tabs-notification(v-if='link.notification') {{ link.notification }}
-
-    payments-search(v-if='needsIncome || activeTab !== "todo"')
-
-    .tab-section
-      .c-container(v-if='hasPayments')
-        payments-list(
-          :titles='tableTitles'
-          :payments='paymentsDistribution'
-          :paymentsType='activeTab'
+        button.is-unstyled.tabs-link(
+          v-for='(link, index) in tabItems'
+          :key='index'
+          :class='{ "tabs-link-active": activeTab === link.url}'
+          :data-test='`link-${link}`'
+          :aria-expanded='activeTab === link.url'
+          @click='activeTab = link.url'
         )
-        .c-footer
-          .c-payment-record(v-if='!needsIncome && activeTab === "todo"')
-            i18n.c-payment-info(
-              tag='b'
-              data-test='paymentInfo'
-              :args='{ total: "$110", count: "3"}'
-            ) {total} in total, to {count} members
+          | {{ link.title }}
+          span.tabs-notification(v-if='link.notification') {{ link.notification }}
 
-            i18n.button(
-              tag='button'
-              data-test='recorPayment'
-              @click='openModal("RecordPayment")'
-            ) Record payments
-          payments-pagination(v-else)
+      payments-search(v-if='needsIncome || activeTab !== "todo"')
 
-      .c-container-empty(v-else)
+      .tab-section
+        .c-container(v-if='hasPayments')
+          payments-list(
+            :titles='tableTitles'
+            :payments='paymentsDistribution'
+            :paymentsType='activeTab'
+          )
+          .c-footer
+            .c-payment-record(v-if='!needsIncome && activeTab === "todo"')
+              i18n.c-payment-info(
+                tag='b'
+                data-test='paymentInfo'
+                :args='{ total: "$110", count: "3"}'
+              ) {total} in total, to {count} members
+
+              i18n.button(
+                tag='button'
+                data-test='recorPayment'
+                @click='openModal("RecordPayment")'
+              ) Record payments
+            payments-pagination(v-else)
+
+        .c-container-empty(v-else)
+          svg-contributions.c-svg
+          i18n.c-description(tag='p') There are no pending payments.
+
+    section(v-else)
+      .c-container-empty
         svg-contributions.c-svg
-        i18n.c-description(tag='p') There are no pending payments.
-
-  section(v-else)
-    .c-container-empty
-      svg-contributions.c-svg
-      i18n.c-description(tag='p') You haven’t received any payments yet
+        i18n.c-description(tag='p') You haven’t received any payments yet
 </template>
 
 <script>
@@ -76,6 +79,7 @@ import PaymentsSearch from '@containers/payments/PaymentsSearch.vue'
 import PaymentsList from '@containers/payments/PaymentsList.vue'
 import PaymentsPagination from '@containers/payments/PaymentsPagination.vue'
 import MonthOverview from '@containers/payments/MonthOverview.vue'
+import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
 import { PAYMENT_PENDING, PAYMENT_CANCELLED, PAYMENT_ERROR, PAYMENT_COMPLETED, PAYMENT_NOT_RECEIVED } from '@model/contracts/payments/index.js'
 import L from '@view-utils/translations.js'
 
@@ -87,7 +91,8 @@ export default {
     PaymentsSearch,
     PaymentsList,
     PaymentsPagination,
-    MonthOverview
+    MonthOverview,
+    AddIncomeDetailsWidget
   },
   data () {
     return {
@@ -167,6 +172,9 @@ export default {
           paymentStatusText: this.paymentStatusText(data, to)
         }
       })
+    },
+    hasIncomeDetails () {
+      return !!this.ourGroupProfile.incomeDetailsType
     },
     hasPayments () {
       return this.paymentsDistribution.length > 0

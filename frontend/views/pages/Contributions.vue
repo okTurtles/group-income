@@ -2,19 +2,7 @@
 page(pageTestName='contributionsPage' pageTestHeaderName='contributionsTitle')
   template(#title='') {{ L('Contributions') }}
 
-  callout-card(
-    :isCard='true'
-    data-test='addIncomeDetailsFirstCard'
-    :title='L("Add your income details")'
-    :svg='SvgContributions'
-    v-if='!ourGroupProfile.incomeDetailsType'
-  )
-    i18n(tag='p') This will allow you to start receiving or giving mincome.
-    i18n(
-      tag='button'
-      data-test='openIncomeDetailsModal'
-      @click='openModal("IncomeDetails")'
-    ) Add income details
+  add-income-details-widget(v-if='!ourGroupProfile.incomeDetailsType')
 
   template(v-else)
     .c-contribution-header
@@ -146,12 +134,12 @@ import sbp from '~/shared/sbp.js'
 import { mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import CalloutCard from '@components/CalloutCard.vue'
-import SvgContributions from '@svgs/contributions.svg'
 import Page from '@components/Page.vue'
 import PageSection from '@components/PageSection.vue'
 import currencies from '@view-utils/currencies.js'
 import Contribution from '@containers/contributions/Contribution.vue'
 import ContributionItem from '@containers/contributions/ContributionItem.vue'
+import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
 
 export default {
   name: 'Contributions',
@@ -161,11 +149,10 @@ export default {
     CalloutCard,
     Contribution,
     ContributionItem,
-    SvgContributions
+    AddIncomeDetailsWidget
   },
   data () {
     return {
-      SvgContributions,
       form: {
         incomeDetailsType: 'incomeAmount',
         incomeAmount: 0,
