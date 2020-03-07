@@ -2,7 +2,7 @@
 page.c-page
   template(#title='') {{ L('Group Settings') }}
   template(#description='')
-    p.p-descritpion.has-text-small.has-text-1 {{ L('Changes to these settings will be visible to all group members') }}
+    p.p-descritpion.has-text-1 {{ L('Changes to these settings will be visible to all group members') }}
 
   avatar-upload(
     :avatar='$store.getters.groupSettings.groupPicture'
