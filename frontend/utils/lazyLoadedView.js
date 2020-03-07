@@ -14,7 +14,7 @@ Vue.component('GroupJoinModal', () => import('../views/containers/group-settings
 
 Vue.component('AddMembers', () => import('../views/containers/proposals/AddMembers.vue'))
 Vue.component('MincomeProposal', () => import('../views/containers/proposals/Mincome.vue'))
-Vue.component('PayGroupHistoryModal', () => import('../views/containers/payments/PayGroupHistoryModal.vue'))
+Vue.component('PaymentsHistoryModal', () => import('../views/containers/payments/PaymentsHistoryModal.vue'))
 Vue.component('RemoveMember', () => import('../views/containers/proposals/RemoveMember.vue'))
 Vue.component('RuleAddMemberProposal', () => import('../views/containers/proposals/RuleAddMember.vue'))
 Vue.component('RuleChangeRuleProposal', () => import('../views/containers/proposals/RuleChangeRule.vue'))

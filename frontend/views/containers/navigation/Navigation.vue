@@ -26,7 +26,7 @@ nav.c-navigation(
             i18n Dashboard
           list-item(tag='router-link' icon='chart-pie' to='/contributions' data-test='contributionsLink')
             i18n Contributions
-          list-item(tag='router-link' icon='tag' to='/pay-group' data-test='payGroupLink')
+          list-item(tag='router-link' icon='tag' to='/pay-group' data-test='paymentsLink')
             i18n Pay Group
           list-item(tag='router-link' icon='comments' to='/group-chat' :badgeCount='3' data-test='groupChatLink')
             i18n Chat

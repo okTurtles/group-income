@@ -11,7 +11,7 @@ import Home from '@pages/Home.vue'
 import Messages from '@pages/Messages.vue'
 import GroupDashboard from '@pages/GroupDashboard.vue'
 import Contributions from '@pages/Contributions.vue'
-import PayGroup from '@pages/PayGroup.vue'
+import Payments from '@pages/Payments.vue'
 import GroupChat from '@pages/GroupChat.vue'
 import Join from '@pages/Join.vue'
 import Mailbox from '@pages/Mailbox.vue'
@@ -104,7 +104,7 @@ const router = new Router({
     },
     {
       path: '/pay-group',
-      component: PayGroup,
+      component: Payments,
       meta: { title: L('Pay Group') },
       beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },

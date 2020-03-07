@@ -1,7 +1,7 @@
 <template lang='pug'>
 page(
-  pageTestName='payGroupPage'
-  pageTestHeaderName='payGroupTitle'
+  pageTestName='paymentsPage'
+  pageTestHeaderName='paymentsTitle'
 )
   template(#title='') {{ L('Payments') }}
 
@@ -80,7 +80,7 @@ import { PAYMENT_PENDING, PAYMENT_CANCELLED, PAYMENT_ERROR, PAYMENT_COMPLETED, P
 import L from '@view-utils/translations.js'
 
 export default {
-  name: 'PayGroup',
+  name: 'Payments',
   components: {
     Page,
     SvgContributions,
