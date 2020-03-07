@@ -32,7 +32,7 @@ page(
           v-for='(link, index) in tabItems'
           :key='index'
           :class='{ "tabs-link-active": activeTab === link.url}'
-          :data-test='`link-${link}`'
+          :data-test='`link-${link.url}`'
           :aria-expanded='activeTab === link.url'
           @click='activeTab = link.url'
         )
