@@ -20,7 +20,7 @@ page(
     section.card(v-if='!(needsIncome && !hasPayments)')
       nav.tabs(
         v-if='!needsIncome'
-        aria-label='payments type'
+        :aria-label='L("Payments type")'
         @click='open = false'
       )
         button.is-unstyled.tabs-link(
