@@ -56,7 +56,10 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background')
     svg-success
     i18n.is-title-2.c-title(tag='h2') Your payments were recorded
     banner-simple(severity='info')
-      i18n Please consider supporting the development of Group Income by sending a donation!
+      i18n(
+        compile
+        :args='{ r1: `<a class="link" href="https://donorbox.org/okturtles-donation" target="_blank">`, r2: "</a>"}'
+      ) Please consider supporting the development of Group Income by {r1}sending a donation{r2}!
 
     i18n.is-outlined(
       tag='button'
