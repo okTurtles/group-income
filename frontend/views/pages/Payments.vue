@@ -140,12 +140,13 @@ export default {
       return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'
     },
     tableTitles () {
+      const firstTab = this.needsIncome ? L('Sent by') : L('Sent to')
       return this.activeTab === 'todo' ? {
-        one: L('Send to'),
+        one: firstTab,
         two: L('Amount'),
         three: L('Due in')
       } : {
-        one: L('Sent to'),
+        one: firstTab,
         two: L('Amount'),
         three: L('Date')
       }
