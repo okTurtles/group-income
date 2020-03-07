@@ -17,7 +17,7 @@
         a.tab-link.no-border(
           v-for='(links, index) in tabItem.links'
           :key='index'
-          :class='{ "tab-active": activeTab === links.index, "has-text-white": isDarkTheme}'
+          :class='{ "is-active": activeTab === links.index, "has-text-white": isDarkTheme}'
           :data-test='`link-${links.url}`'
           @click='tabClick(links)'
         )
@@ -249,7 +249,7 @@ $closeMobileBarBgColor: #3c3c3c;
   background-color: $general_1;
 }
 
-.tab-active {
+.is-active {
   @include desktop {
     background-color: $background_0;
     font-weight: bold;
