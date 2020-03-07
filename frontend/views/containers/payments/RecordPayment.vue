@@ -49,7 +49,7 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background')
 
           button.is-success(
             @click='submit'
-            :disabled='$v.form.$invalid'
+            :disabled='this.recordNumber === 0'
           ) {{ registerPaymentCopy }}
 
   .c-payment-success(v-else)
@@ -113,9 +113,11 @@ export default {
         three: L('Amount sent')
       }
     },
+    recordNumber () {
+      return this.fakeStore.paymentsDistribution.filter(payment => payment.checked).length
+    },
     registerPaymentCopy () {
-      const number = this.fakeStore.paymentsDistribution.filter(payment => payment.checked).length
-      return number === 1 ? L('Record 1 payment') : L('Record {number} payments', { number })
+      return this.recordNumber === 1 ? L('Record 1 payment') : L('Record {number} payments', { number: this.recordNumber })
     }
   },
   methods: {
@@ -207,10 +209,11 @@ export default {
 
 .buttons {
   @include phone {
-    flex-direction: column;
+    flex-direction: column-reverse;
 
-    button + button {
+    button:first-child {
       margin-top: $spacer;
+      margin-right: 0;
     }
   }
 
