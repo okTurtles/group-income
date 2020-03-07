@@ -302,7 +302,8 @@ export default {
     padding-top: 1.5rem;
   }
 
-  > div {
+  .c-pagination,
+  .c-payment-record {
     display: flex;
     justify-content: space-between;
     align-items: center;
