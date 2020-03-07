@@ -47,12 +47,10 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background')
             @click='closeModal'
           ) Cancel
 
-          i18n.is-success(
-            tag='button'
+          button.is-success(
             @click='submit'
             :disabled='$v.form.$invalid'
-            :args='{number: "0"}'
-          ) Register {number} payment
+          ) {{ registerPaymentCopy }}
 
   .c-payment-success(v-else)
     svg-success
@@ -111,6 +109,10 @@ export default {
         two: '',
         three: L('Amount sent')
       }
+    },
+    registerPaymentCopy () {
+      const number = this.fakeStore.paymentsDistribution.filter(payment => payment.checked).length
+      return number === 1 ? L('Register 1 payment') : L('Register {number} payments', { number })
     }
   },
   methods: {
