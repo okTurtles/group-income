@@ -106,9 +106,6 @@ export default {
       }
     }
   },
-  beforeUpdate () {
-    console.log('beforeUpdate:', this.contributionsList)
-  },
   computed: {
     itemClasses () {
       return [
@@ -163,10 +160,9 @@ export default {
         this.cancel()
       } else {
         if (this.isAdding) {
-          console.log('new-value called!', this.contributionsList)
+          this.form.contribution = null
           await this.$listeners['new-value']('nonMonetaryAdd', this.form.contribution)
 
-          console.log('new-value done!', this.contributionsList)
           this.isAdding = false
           this.form.contribution = null
         }
