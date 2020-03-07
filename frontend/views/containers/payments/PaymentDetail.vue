@@ -21,7 +21,8 @@ modal-template(ref='modal')
     li.c-payment-list-item.c-column
       i18n.has-text-1(tag='label') Notes
       p {{ fakeStore.note }}
-  form.buttons(novalidate @submit.prevent='submit')
+
+  .buttons
     i18n.button.is-danger.is-outlined.is-small(
       tag='button'
       @click='submit'
