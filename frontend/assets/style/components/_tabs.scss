@@ -28,11 +28,13 @@
       padding: 1.5rem 2.5rem;
     }
 
+    &:focus,
     &:hover,
     &-active {
       box-shadow: inset 0 -2px 0 $primary_0;
     }
 
+    &:focus,
     &-active {
       color: $primary_0;
     }
