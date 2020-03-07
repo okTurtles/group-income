@@ -759,6 +759,28 @@ page(
               label.checkbox
                 input.input(type='checkbox' name='browser' value='Edge' disabled)
                 span Internet Explorer
+
+        tr
+          td
+            h3.is-title-3 Checkbox
+        tr
+          td
+            pre
+              | pre
+              |   input.switch(
+              |   type='checkbox'
+              |   name='switch'
+              |   @change=''
+              | )
+              | i18n.sr-only(tag='label' for='displayComment') Toggle me
+          td
+            input.switch(
+              type='checkbox'
+              name='switch'
+              @change=''
+            )
+            i18n.sr-only(tag='label' for='displayComment') Toggle me
+
         tr
           td
             h3.is-title-3 Combination
