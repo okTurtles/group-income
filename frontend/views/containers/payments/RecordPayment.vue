@@ -115,7 +115,7 @@ export default {
     },
     registerPaymentCopy () {
       const number = this.fakeStore.paymentsDistribution.filter(payment => payment.checked).length
-      return number === 1 ? L('Register 1 payment') : L('Register {number} payments', { number })
+      return number === 1 ? L('Record 1 payment') : L('Record {number} payments', { number })
     }
   },
   methods: {
