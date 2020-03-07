@@ -17,7 +17,12 @@ page(
       v-html='introTitle'
     )
 
-    section.card(v-if='!(needsIncome && !hasPayments)')
+    section(v-if='needsIncome && !hasPayments')
+      .c-container-empty
+        svg-contributions.c-svg
+        i18n.c-description(tag='p') You haven’t received any payments yet
+
+    section.card(v-else)
       nav.tabs(
         v-if='!needsIncome'
         :aria-label='L("Payments type")'
@@ -61,11 +66,6 @@ page(
         .c-container-empty(v-else)
           svg-contributions.c-svg
           i18n.c-description(tag='p') There are no pending payments.
-
-    section(v-else)
-      .c-container-empty
-        svg-contributions.c-svg
-        i18n.c-description(tag='p') You haven’t received any payments yet
 </template>
 
 <script>
