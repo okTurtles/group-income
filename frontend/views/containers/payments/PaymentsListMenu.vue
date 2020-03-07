@@ -49,7 +49,7 @@ import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu
 import { PAYMENT_CANCELLED } from '@model/contracts/payments/index.js'
 
 export default {
-  name: 'PaymentTable',
+  name: 'PaymentsListMenu',
   props: {
     paymentsType: {
       type: String,

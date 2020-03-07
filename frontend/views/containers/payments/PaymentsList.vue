@@ -87,7 +87,7 @@ import currencies from '@view-utils/currencies.js'
 import moment from 'moment'
 
 export default {
-  name: 'PaymentTable',
+  name: 'PaymentsList',
   components: {
     AvatarUser,
     Tooltip,
