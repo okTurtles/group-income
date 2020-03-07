@@ -1,6 +1,6 @@
 <template lang='pug'>
 modal-base-template(:fullscreen='true')
-  | TODO: Implement Pay Group History
+  | TODO: Implement Payments History
 </template>
 
 <script>

@@ -103,9 +103,9 @@ const router = new Router({
       beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     {
-      path: '/pay-group',
+      path: '/payments',
       component: Payments,
-      meta: { title: L('Pay Group') },
+      meta: { title: L('Payments') },
       beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     /* Guards need to be created for any route that should not be directly accessed by url */
