@@ -1,9 +1,9 @@
 <template lang='pug'>
 modal-base-template(ref='modal' :fullscreen='true' class='has-background')
-  .c-payment-form(v-if='!donePayment')
-    .c-header
-      i18n.is-title-2.c-title(tag='h2') Record payments
+  .c-header(:class='{"hide-desktop": donePayment}')
+    i18n.is-title-2.c-title(tag='h2') Record payments
 
+  .c-payment-form(v-if='!donePayment')
     .c-content
       form.card.c-card(
         @submit.prevent=''
@@ -225,7 +225,15 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  padding-top: 9rem;
+
+  @include tablet {
+    padding-top: 10rem;
+  }
+
+  @include desktop {
+    padding-top: 8rem;
+  }
 
   .c-title {
     margin: 2rem;
