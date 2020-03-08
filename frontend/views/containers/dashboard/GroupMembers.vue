@@ -121,19 +121,19 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 2rem;
+  height: $spacer-lg;
   margin-top: 1rem;
 }
 
 .c-avatar {
-  width: 2rem;
-  height: 2rem;
+  width: $spacer-lg;
+  height: $spacer-lg;
   margin-bottom: 0;
 }
 
 .c-name {
   margin-right: auto;
-  margin-left: 0.5rem;
+  margin-left: $spacer-sm;
 
   .is-pending & {
     color: $text_1;

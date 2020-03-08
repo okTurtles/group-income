@@ -156,7 +156,7 @@ export default {
 .c-summary {
   &-title {
     margin-bottom: 1.75rem;
-    margin-top: -0.25rem;
+    margin-top: -$spacer-xs;
   }
   &-item {
     margin-bottom: $spacer*3;

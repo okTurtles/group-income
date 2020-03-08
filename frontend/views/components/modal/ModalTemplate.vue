@@ -106,7 +106,7 @@ export default {
 .c-modal-footer {
   align-self: center;
   width: 100%;
-  max-width: calc(100% - 2rem);
+  max-width: calc(100% - $spacer-lg);
 
   @include tablet {
     max-width: 534px;
@@ -177,7 +177,7 @@ export default {
   min-height: 53px;
 
   @include touch {
-    border-radius: 0.25rem;
+    border-radius: $spacer-xs;
   }
 
   @include desktop {
@@ -232,7 +232,7 @@ export default {
   .modal-card {
     &-body {
       width: 100%;
-      max-width: calc(400px + 2rem);
+      max-width: calc(400px + $spacer-lg);
       align-self: center;
 
       @include desktop {

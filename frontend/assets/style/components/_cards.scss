@@ -6,7 +6,7 @@
   margin-bottom: $spacer;
 
   &:last-child {
-    margin-bottom: 4rem;
+    margin-bottom: $spacer-xl;
   }
 
   @include tablet {
@@ -23,9 +23,9 @@
 }
 
 @mixin removeSideCardPadding {
-  width: calc(100% + 2rem);
-  margin-left: -1rem;
-  margin-right: -1rem;
+  width: calc(100% + $spacer-lg);
+  margin-left: -$spacer-md;
+  margin-right: -$spacer-md;
 
   @include tablet {
     width: calc(100% + 3rem);

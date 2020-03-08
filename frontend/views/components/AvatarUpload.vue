@@ -108,7 +108,7 @@ export default {
       top: -6.5rem;
       right: 0;
       align-items: flex-end;
-      margin-bottom: -0.5rem;
+      margin-bottom: -$spacer-sm;
     }
   }
 
@@ -133,7 +133,7 @@ export default {
     margin: 0 0 $spacer*1.5;
 
     @include desktop {
-      margin: 0.5rem 0 $spacer*1.5;
+      margin: $spacer-sm 0 $spacer*1.5;
     }
   }
 }

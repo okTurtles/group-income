@@ -49,8 +49,8 @@ export default {
   opacity: 0;
   overflow: hidden;
   pointer-events: none;
-  padding-bottom: 0.5rem;
-  padding-top: .5rem;
+  padding-bottom: $spacer-sm;
+  padding-top: $spacer-sm;
 
   &.is-active {
     // Is that enought for every menu?
@@ -69,7 +69,7 @@ export default {
     width: 100%;
 
     i {
-      margin-right: 0.5rem;
+      margin-right: $spacer-sm;
     }
   }
 }

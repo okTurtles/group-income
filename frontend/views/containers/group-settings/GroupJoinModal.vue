@@ -189,11 +189,11 @@ export default {
 
 .dot {
   background-color: $general_0;
-  width: 0.5rem;
-  height: 0.5rem;
+  width: $spacer-sm;
+  height: $spacer-sm;
   border-radius: 50%;
   overflow: hidden;
-  margin: 0.25rem;
+  margin: $spacer-xs;
 
   &.is-active {
     background-color: $primary_0;
@@ -202,8 +202,8 @@ export default {
 
 #get-an-invitation svg {
   height: 6.5rem;
-  margin-left: 1rem;
-  margin-top: -1rem;
+  margin-left: $spacer-md;
+  margin-top: -$spacer-md;
 }
 
 #use-your-unique-access-link svg {
@@ -213,7 +213,6 @@ export default {
 
 #wait-for-you-group-vote svg {
   height: 6.75rem;
-  margin-left: -2rem;
-  margin-left: -1rem;
+  margin-left: -$spacer-md;
 }
 </style>

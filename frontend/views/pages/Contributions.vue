@@ -269,7 +269,7 @@ export default {
   padding: 1rem 0 1.5rem 0;
 
   button {
-    margin-top: -0.25rem;
+    margin-top: -$spacer-xs;
   }
 
   @include tablet {
@@ -322,8 +322,8 @@ export default {
   display: flex;
 
   .c-svg {
-    width: 4rem;
-    height: 4rem;
+    width: $spacer-xl;
+    height: $spacer-xl;
     margin-right: $spacer;
     flex-shrink: 0;
 

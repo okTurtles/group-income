@@ -289,7 +289,7 @@ p.error {
     content: "\f057";
     font-family: "Font Awesome 5 Free";
     font-weight: 900;
-    margin-right: 0.25rem;
+    margin-right: $spacer-xs;
   }
 
   & + .helper {
@@ -479,7 +479,7 @@ p.error {
     width: 1.1875rem;
     height: 1.1875rem;
     position: absolute;
-    left: 0.25rem;
+    left: $spacer-xs;
     top: 0.2rem;
     background: $white;
     transition: transform 0.25s cubic-bezier(0.165, 0.84, 0.44, 1);

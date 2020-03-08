@@ -140,14 +140,14 @@ export default {
 
 .c-header {
   background: $white;
-  padding: 1.5rem 0 1.125rem 2rem;
+  padding: 1.5rem 0 1.125rem $spacer-lg;
   position: absolute;
   left: 0;
   right: 0;
 
   @include tablet {
     text-align: center;
-    padding: 2rem 0 1.625rem 0;
+    padding: $spacer-lg 0 1.625rem 0;
   }
 
   @include desktop {
@@ -232,11 +232,11 @@ export default {
   }
 
   @include desktop {
-    padding-top: 8rem;
+    padding-top: $spacer-xxl;
   }
 
   .c-title {
-    margin: 2rem;
+    margin: $spacer-lg;
   }
 
   .c-message {
@@ -244,7 +244,7 @@ export default {
   }
 
   button {
-    margin-top: 2rem;
+    margin-top: $spacer-lg;
   }
 }
 </style>

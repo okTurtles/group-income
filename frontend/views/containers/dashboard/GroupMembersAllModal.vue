@@ -162,7 +162,7 @@ export default {
 }
 
 .c-member-count {
-  margin-top: .5rem;
+  margin-top: $spacer-sm;
   margin-bottom: 1.5rem;
 }
 
@@ -229,7 +229,7 @@ export default {
   margin-top: 0;
 
   i {
-    margin-right: .5rem;
+    margin-right: $spacer-sm;
   }
 
   @include tablet {

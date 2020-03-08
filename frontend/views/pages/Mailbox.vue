@@ -318,7 +318,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 0.5rem;
+  padding: $spacer-sm;
   border-radius: 3px;
 
   &:focus,
@@ -338,13 +338,13 @@ export default {
   display: flex;
   align-items: center;
   padding: 0 1rem;
-  height: 2rem;
+  height: $spacer-lg;
   cursor: pointer;
   transition: background-color ease-out 0.3s;
   position: relative;
 
   i {
-    margin-right: 1rem;
+    margin-right: $spacer;
     font-size: 0.77rem;
     color: $text_1;
     transition: transform cubic-bezier(0.18, 0.89, 0.32, 1.28) 0.3s, color ease-in 0.3s;

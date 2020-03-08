@@ -1303,9 +1303,9 @@ table {
 .c-icons {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
-  grid-gap: 1rem;
-  margin-top: 2rem;
-  margin-bottom: 1rem;
+  grid-gap: $spacer-md;
+  margin-top: $spacer-lg;
+  margin-bottom: $spacer-md;
 
   [class^='icon-']::before {
     margin-right: 10px;
@@ -1415,8 +1415,8 @@ table {
 
     .c-svg {
       max-width: none;
-      width: 8rem;
-      height: 8rem;
+      width: $spacer-xxl;
+      height: $spacer-xxl;
     }
   }
 

@@ -269,7 +269,7 @@ export default {
   padding-top: 2.5rem;
 
   @include desktop {
-    padding-top: 4rem;
+    padding-top: $spacer-xl;
   }
 
   .c-description {
@@ -287,7 +287,7 @@ export default {
 }
 
 .card .c-container-empty {
-  padding-top: 2rem;
+  padding-top: $spacer-lg;
 
   @include desktop {
     padding-top: 2.5rem;
