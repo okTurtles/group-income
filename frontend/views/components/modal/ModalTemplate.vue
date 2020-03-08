@@ -106,7 +106,7 @@ export default {
 .c-modal-footer {
   align-self: center;
   width: 100%;
-  max-width: calc(100% - $spacer-lg);
+  max-width: calc(100% - #{$spacer-lg});
 
   @include tablet {
     max-width: 534px;

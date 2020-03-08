@@ -110,7 +110,7 @@ export default {
 
     &-search {
       margin: $spacer $spacer-sm 0;
-      width: calc(100% - #{$spacer});
+      width: calc(100% - #{$spacer-md});
     }
   }
 }
