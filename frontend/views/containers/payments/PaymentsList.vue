@@ -22,23 +22,29 @@ table.table.table-in-card.c-payments(:class='{"is-editing": paymentsType === "ed
         .c-user
           avatar-user.c-avatar(:username='payment.to' size='xs')
           strong.c-name {{payment.to}}
-        .c-user-month(:class='index === 0 ? "has-text-1" : "c-status-danger c-status"') {{ moment(payment.date).format('MMMM') }}
+
+        // TODO: replace condition to indicate whether or not the payment date is < or > than the current date using payment.paymentStatusText
+        i18n.c-user-month(
+          :class='index === 0 ? "has-text-1" : "c-status-danger c-status"'
+          :args='{date: moment(payment.date).format("MMMM DD")}'
+        ) Due {date}
       td.c-payments-amount(v-if='paymentsType !== "edit"')
-        .c-payments-amount-info(v-if='index === 0 && (!needsIncome && paymentsType === "todo")')
+
+        // TODO: replace condition to indicate whether a payment as been paid partialy using payment.paymentStatusText
+        template(
+          v-if='index === 0 && (!needsIncome && paymentsType === "todo")'
+        )
           i18n.c-payments-amount-text.has-text-1(
             tag='span'
-            :args='{partial_amount: `<strong class="has-text-0">$20</strong>`, partial_total: currency(payment.amount)}'
+            role='alert'
+            :args='{partial_amount: `<strong class="has-text-0">${currency(20)}</strong>`, partial_total: currency(payment.amount)}'
           ) {partial_amount} out of {partial_total}
 
           i18n.c-status.c-status-primary Partial
-          //- i18n.c-status.c-status-primary(
-          //-   tag='span'
-          //-   role='alert'
-          //-   v-if='payment.hash'
-          //-   :class='payment.paymentClass'
-          //- ) {{ payment.paymentStatusText }}
 
         strong(v-else) {{currency(payment.amount)}}
+
+        // TODO: replace condition to indicate whether a payment as been received using payment.paymentStatusText
         .c-payments-amount-info(
           v-if='index === 0 && (needsIncome || paymentsType === "received")'
           :class='"c-status-warning"'
@@ -57,7 +63,7 @@ table.table.table-in-card.c-payments(:class='{"is-editing": paymentsType === "ed
 
       td
         .c-actions
-          .c-actions-month(:class='!(index !== 0 && paymentsType === "todo") ? "has-text-1" : "c-status-danger c-status"') {{ moment(payment.date).format('MMMM') }}
+          .c-actions-month(:class='!(index !== 0 && paymentsType === "todo") ? "has-text-1" : "c-status-danger c-status"') {{ moment(payment.date).format('MMMM D') }}
           payments-list-menu(
             v-if='paymentsType !== "edit"'
             :paymentsType='paymentsType'
@@ -280,6 +286,12 @@ export default {
   &-info {
     display: inline-flex;
     align-items: center;
+
+    @include phone {
+      display: flex;
+      flex-direction: row;
+      justify-content: flex-end;
+    }
   }
 
   &-text {
