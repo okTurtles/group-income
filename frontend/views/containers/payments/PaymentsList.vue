@@ -8,7 +8,7 @@ table.table.table-in-card.c-payments(:class='{"is-editing": paymentsType === "ed
             @change='checkAllpayment'
             type='checkbox'
           )
-          span
+          .c-header-checkbox
       th {{ titles.one }}
       th.c-payments-amount {{ titles.two }}
       th.c-payments-date {{ titles.three }}
@@ -181,6 +181,10 @@ export default {
         width: 22%;
       }
     }
+  }
+
+  .c-header-checkbox {
+    vertical-align: sub;
   }
 
   &-date {
