@@ -4,12 +4,12 @@ main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
   //-       and the other showing the create/join group buttons!
   header(v-if='!$store.state.loggedIn' key='title-login')
     img.logo(src='/assets/images/group-income-icon-transparent.png')
-    i18n(tag='h1' data-test='welcomeHome') Welcome to GroupIncome
+    i18n.is-title-1(tag='h1' data-test='welcomeHome') Welcome to GroupIncome
 
   header(v-else key='title-not-login')
     img.logo-2(src='/assets/images/logo-transparent.png')
-    i18n(tag='p' class='subtitle') Welcome to group income
-    i18n(tag='h1' data-test='welcomeHomeLoggedIn') Let’s get this party started
+    i18n.is-subtitle(tag='p') Welcome to group income
+    i18n.is-title-1(tag='h1' data-test='welcomeHomeLoggedIn') Let’s get this party started
 
   .buttons(v-if='!$store.state.loggedIn' key='body-loggin')
     i18n(
@@ -22,8 +22,8 @@ main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
     i18n(
       tag='button'
       ref='signupBtn'
-      @click='openModal("SignUp")'
-      @keyup.enter='openModal("SignUp")'
+      @click='openModal("SignupModal")'
+      @keyup.enter='openModal("SignupModal")'
       data-test='signupBtn'
       v-focus=''
     ) Signup
@@ -31,23 +31,23 @@ main.c-splash(data-test='homeLogo' v-if='!$store.state.currentGroupId')
   .create-or-join(v-else key='body-create')
     .card
       svg-create-group
-      h3 Create
+      h3.is-title-3 Create
       p Create a new group and invite your friends.
 
       i18n(
         tag='button'
-        @click='openModal("CreateGroup")'
+        @click='openModal("GroupCreationModal")'
         data-test='createGroup'
         :aria-label='L("Add a group")'
       ) Create Group
 
     .card
       svg-join-group
-      i18n(tag='h3') Join
+      i18n.is-title-3(tag='h3') Join
       i18n(tag='p') Enter an existing group using your username.
       i18n(
         tag='button'
-        @click='openModal("JoinGroup")'
+        @click='openModal("GroupJoinModal")'
         data-test='joinGroup'
       ) Join a Group
 
@@ -96,7 +96,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
-@import "../../assets/style/_variables.scss";
+@import "@assets/style/_variables.scss";
 
 .c-splash {
   display: flex;
@@ -127,7 +127,7 @@ export default {
   }
 }
 
-.subtitle {
+.is-subtitle {
   @include tablet {
     margin-top: 3rem;
   }

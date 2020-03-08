@@ -1,14 +1,19 @@
+'use strict'
+
 import Vue from 'vue'
 import Router from 'vue-router'
+import sbp from '~/shared/sbp.js'
 import store from '@model/state.js'
+
 import DesignSystem from '@pages/DesignSystem.vue'
+import BypassUI from '@pages/BypassUI.vue'
+
 import Home from '@pages/Home.vue'
 import Messages from '@pages/Messages.vue'
 import GroupDashboard from '@pages/GroupDashboard.vue'
 import Contributions from '@pages/Contributions.vue'
 import PayGroup from '@pages/PayGroup.vue'
 import GroupChat from '@pages/GroupChat.vue'
-import Invite from '@pages/Invite.vue'
 import Join from '@pages/Join.vue'
 import Mailbox from '@pages/Mailbox.vue'
 import GroupSettings from '@pages/GroupSettings.vue'
@@ -21,16 +26,25 @@ Vue.use(Router)
  the 'guard' defines how the route is blocked and the redirect determines the redirect behavior
  when a route is blocked
  */
-var homeGuard = {
+const homeGuard = {
   guard: (to, from) => !!store.state.currentGroupId,
   redirect: (to, from) => ({ path: '/dashboard' })
 }
-var loginGuard = {
+const loginGuard = {
   guard: (to, from) => !store.state.loggedIn,
   redirect: (to, from) => ({ path: '/', query: { next: to.path } })
 }
+
+var inviteGuard = {
+  guard: (to, from) => {
+    // ex: http://localhost:8000/app/join?groupId=21XWnNRE7vggw4ngGqmQz5D4vAwPYqcREhEkGop2mYZTKVkx8H&secret=5157
+    return !(to.query.groupId && to.query.secret)
+  },
+  redirect: (to, from) => ({ path: '/' })
+}
+
 // Check if user has a group
-var groupGuard = {
+const groupGuard = {
   guard: (to, from) => !store.state.currentGroupId,
   redirect: (to, from) => ({ path: '/' })
 }
@@ -49,7 +63,7 @@ function createEnterGuards (...guards) {
     next()
   }
 }
-var router = new Router({
+const router = new Router({
   mode: 'history',
   base: '/app',
   scrollBehavior (to, from, savedPosition) {
@@ -71,6 +85,12 @@ var router = new Router({
       // beforeEnter: createEnterGuards(designGuard)
     },
     {
+      path: '/bypass-ui',
+      component: BypassUI,
+      name: BypassUI.name,
+      meta: { title: L('Cypress - BypassUI') }
+    },
+    {
       path: '/dashboard',
       component: GroupDashboard,
       name: GroupDashboard.name,
@@ -90,13 +110,6 @@ var router = new Router({
       beforeEnter: createEnterGuards(loginGuard, groupGuard)
     },
     /* Guards need to be created for any route that should not be directly accessed by url */
-    {
-      path: '/invite',
-      name: Invite.name,
-      component: Invite,
-      meta: { title: L('Invite Group Members') },
-      beforeEnter: createEnterGuards(loginGuard, groupGuard)
-    },
     {
       path: '/mailbox',
       name: Mailbox.name,
@@ -146,7 +159,7 @@ var router = new Router({
       component: Join,
       meta: { title: L('Join a Group') },
       // beforeEnter: createEnterGuards(loginGuard, mailGuard)
-      beforeEnter: createEnterGuards(loginGuard)
+      beforeEnter: createEnterGuards(inviteGuard)
     },
     ...(process.env.NODE_ENV === 'development' ? [{
       path: '/error-testing',
@@ -164,6 +177,10 @@ var router = new Router({
 router.beforeEach((to, from, next) => {
   document.title = to.meta.title
   next()
+})
+
+sbp('sbp/selectors/register', {
+  'controller/router': () => router
 })
 
 export default router

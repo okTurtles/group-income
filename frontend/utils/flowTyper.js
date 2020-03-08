@@ -2,6 +2,16 @@
 // library into this file (it was refusing to
 // import because of the way functions were being
 // exported).
+// 
+// GI EDIT NOTES:
+// 
+// - The following functions can be used directly with 'validate'
+//   because they've had their '_scope' second parameter removed:
+//   - arrayOf
+//   - mapOf
+//   - object
+//   - objectOf
+//   - objectMaybeOf (this is a custom function that didn't exist in flowTyper)
 
 type LiteralValue = boolean | number | string
 type ObjectRecord<T> = { [key: string]: T }
@@ -133,8 +143,8 @@ const validatorError = <T>(
 }
 
 export const arrayOf =
-  <T>(typeFn: TypeValidator<T>, label?: string = 'Array'): TypeArrayValidator<T> => {
-    function array (value, _scope = label) {
+  <T>(typeFn: TypeValidator<T>, _scope?: string = 'Array'): TypeArrayValidator<T> => {
+    function array (value) {
       if (isEmpty(value)) return [typeFn(value)]
       if (Array.isArray(value)) {
         let index = 0
@@ -163,15 +173,15 @@ export const mapOf = <K, V>(
   keyTypeFn: TypeValidator<K>,
   typeFn: TypeValidator<V>
 ): TypeValidator<{ [K]: V }> => {
-  function mapOf (value, _scope = 'Map') {
+  function mapOf (value) {
     if (isEmpty(value)) return {}
-    const o = object(value, _scope)
+    const o = object(value)
     const reducer = (acc, key) =>
       Object.assign(
         acc,
         {
           // $FlowFixMe
-          [keyTypeFn(key, `${_scope}[_]`)]: typeFn(o[key], `${_scope}.${key}`)
+          [keyTypeFn(key, 'Map[_]')]: typeFn(o[key], `Map.${key}`)
         }
       )
     return Object.keys(o).reduce(reducer, {})
@@ -200,20 +210,20 @@ export const mixed = (
 )
 
 export const object = (
-  function (value, _scope = '') {
+  function (value) {
     if (isEmpty(value)) return {}
     if (isObject(value) && !Array.isArray(value)) {
       return Object.assign({}, value)
     }
-    throw validatorError(object, value, _scope)
+    throw validatorError(object, value)
   }
   : TypeValidator<ObjectRecord<mixed>>
 )
 
 export const objectOf = <O: TypeValidatorRecord<*>>
-  (typeObj: O, label?: string = 'Object'): TypeValidator<$ObjMap<O, <V>(TypeValidator<V>) => V>> => {
-  function object2 (value, _scope = label) {
-    const o = object(value, _scope)
+  (typeObj: O, _scope?: string = 'Object'): TypeValidator<$ObjMap<O, <V>(TypeValidator<V>) => V>> => {
+  function object2 (value) {
+    const o = object(value)
     const typeAttrs = Object.keys(typeObj)
     const unknownAttr = Object.keys(o).find(attr => !typeAttrs.includes(attr))
     if (unknownAttr) {

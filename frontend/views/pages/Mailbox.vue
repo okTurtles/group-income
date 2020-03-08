@@ -2,7 +2,7 @@
 page(pageTestName='dashboard' pageTestHeaderName='groupName')
   template(#title='') {{ L('Mailbox') }}
   template(#sidebar='')
-    i18n(tag='h3') Menu
+    i18n.is-title-3(tag='h3') Menu
     ul
       li
         a.c-item-link(
@@ -26,7 +26,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
 
   article(v-if='ephemeral.mode === "Compose"')
     .card
-      i18n(tag='h3' class='card-header') New Message
+      i18n.is-title-3.card-header(tag='h3') New Message
       .field
         i18n.label(tag='label') To:
         .input-combo
@@ -110,10 +110,10 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
 
   article(v-if='ephemeral.mode === "Inbox" && Object.keys(proposals).length')
     .card
-      i18n(tag='h3' class='card-header') Proposals
+      i18n.is-title-3.card-header(tag='h3') Proposals
 
       .c-message(v-for='(proposal, hash) in proposals' :key='hash')
-        avatar(src='/assets/images/default-avatar.png' alt='' @click='respondToProposal(hash)')
+        avatar(src='/assets/images/default-avatar.png' alt='' @click='respondToProposal(hash)' size='sm')
 
         .c-message-desc(
           @click='respondToProposal(hash)'
@@ -128,12 +128,13 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
 
   article(v-if='ephemeral.mode === "Inbox"' data-test='inbox')
     .card
-      i18n(tag='h3' class='card-header') Inbox
+      i18n.is-title-3.card-header(tag='h3') Inbox
 
       .c-message(v-for='(message, index) in inbox' :key='`inbox-message-${index}`')
         avatar(
           src='/assets/images/default-avatar.png' alt=''
           @click='read({index, type: message.data.messageType})'
+          size='sm'
         )
 
         .c-message-desc(
@@ -160,7 +161,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
 import sbp from '~/shared/sbp.js'
 import { TYPE_MESSAGE } from '@model/contracts/mailbox.js'
 import L from '@view-utils/translations.js'
-import Page from './Page.vue'
+import Page from '@components/Page.vue'
 import Avatar from '@components/Avatar.vue'
 import { mapGetters } from 'vuex'
 
@@ -311,7 +312,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "../../assets/style/_variables.scss";
+@import "@assets/style/_variables.scss";
 
 .c-message {
   display: flex;

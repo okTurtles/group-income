@@ -15,7 +15,7 @@
 - Check the [open issues](https://github.com/okTurtles/group-income-simple/issues).
 - View the [project board](https://github.com/okTurtles/group-income-simple/projects).
 - Check especially what's [`up for grabs`](../../labels/Note%3AUp-for-grabs), [`high priority`](../../labels/Priority%3AHigh), or [`level: starter`](../../labels/Level%3AStarter).
-- Read some docs, like: __[:book: Frontend: Getting Started](docs/Getting-Started-frontend.md)__
+- Read some docs, like: __[:book: Frontend: Getting Started](docs/Getting-Started-frontend.md)__ and  __[:book: Style Guide](docs/Style-Guide.md)__
 
 Then, [tell folks what you'll be working on](https://gitter.im/okTurtles/group-income), and:
 
@@ -23,7 +23,7 @@ Then, [tell folks what you'll be working on](https://gitter.im/okTurtles/group-i
 
 Everyone must follow the rules below (inspired by the [C4.1](http://hintjens.com/blog:93) process) to submit _code_ (documentation may be edited directly by maintainers):
 
-1. **Always** work in your own fork and submit pull requests (PRs) to `master`.
+1. **Always** work in your own fork (Note: it is OK for long-running contributors to work in a branch of this repo, because that is how we get Cypress Dashboard <-> Travis integraton) and submit pull requests (PRs) to `master`.
 2. **Always** add/update tests for any new/modified functionality. (:exclamation:)
 3. **Always** make sure your PR passes all tests (`grunt test`).
 4. **Always** ensure your PR adheres to the **[Contribution Policy](#contribution-policy)** described below.

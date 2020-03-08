@@ -14,6 +14,7 @@
 // ***********************************************************
 
 import './commands.js'
+import './output-logs.js'
 
 // Abort tests on first fail
 afterEach(function () {

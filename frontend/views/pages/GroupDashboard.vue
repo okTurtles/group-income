@@ -2,22 +2,19 @@
 page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings.groupName')
   template(#title='') {{ groupSettings.groupName }}
 
-  start-inviting(v-if='groupMembersCount === 1')
+  add-income-details-widget(v-if='!hasIncomeDetails')
 
-  page-section(title='This months overview')
-    overview
+  template(v-else)
+    start-inviting-widget(v-if='groupMembersCount === 1')
 
-  page-section(title='July Overview')
-    //- group-pledges-graph
-    progress-overview
+    contributions-overview-widget(v-if='canDisplayGraph')
 
-  proposals-widget
+    contributions-summary-widget
 
-  //- page-section(title='Support History')
-  //-   support-history
+  proposals-widget(v-if='hasProposals')
 
   //- page-section(title='Group Settings')
-  //-   group-settings
+  //-   group-settings-widget
 
   template(#sidebar='')
     group-mincome
@@ -28,18 +25,16 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings
 <script>
 import { mapGetters, mapState } from 'vuex'
 
-import Page from '@pages/Page.vue'
-import PageSection from '@components/PageSection.vue'
-import Overview from '@containers/Overview.vue'
+import Page from '@components/Page.vue'
+import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
+import StartInvitingWidget from '@containers/dashboard/StartInvitingWidget.vue'
+import ContributionsOverviewWidget from '@containers/contributions/ContributionsOverviewWidget.vue'
+import ContributionsSummaryWidget from '@containers/contributions/ContributionsWidget.vue'
 import ProposalsWidget from '@containers/proposals/ProposalsWidget.vue'
-// import GroupPledgesGraph from '@containers/GroupPledgesGraph.vue'
-import ProgressOverview from '@components/ProgressOverview.vue'
-import StartInviting from '@components/StartInviting.vue'
-// import SupportHistory from '@components/Graphs/SupportHistory.vue'
+import GroupMincome from '@containers/dashboard/GroupMincome.vue'
+import GroupMembers from '@containers/dashboard/GroupMembers.vue'
+import GroupPurpose from '@containers/dashboard/GroupPurpose.vue'
 // import GroupSettings from '@components/GroupSettings.vue'
-import GroupMincome from '@containers/sidebar/GroupMincome.vue'
-import GroupMembers from '@containers/sidebar/GroupMembers.vue'
-import GroupPurpose from '@containers/sidebar/GroupPurpose.vue'
 
 export default {
   name: 'GroupDashboard',
@@ -48,29 +43,35 @@ export default {
       'currentGroupId'
     ]),
     ...mapGetters([
+      'ourUsername',
       'currentGroupState', // TODO normalize getters names
       'groupSettings',
       'groupsByName',
-      'groupMembersCount'
-    ])
+      'groupMembersCount',
+      'groupProfiles',
+      'ourGroupProfile'
+    ]),
+    canDisplayGraph () {
+      return Object.values(this.groupProfiles).filter(profile => profile.incomeDetailsType).length > 0
+    },
+    hasIncomeDetails () {
+      return !!this.ourGroupProfile.incomeDetailsType
+    },
+    hasProposals () {
+      return Object.keys(this.currentGroupState.proposals).length > 0
+    }
   },
   components: {
     Page,
-    PageSection,
-    Overview,
+    AddIncomeDetailsWidget,
+    StartInvitingWidget,
+    ContributionsOverviewWidget,
+    ContributionsSummaryWidget,
     ProposalsWidget,
-    // GroupPledgesGraph
-    ProgressOverview,
-    // SupportHistory,
-    // GroupSettings,
     GroupMincome,
     GroupMembers,
-    GroupPurpose,
-    StartInviting
+    GroupPurpose
+    // GroupSettings
   }
 }
 </script>
-
-<style lang="scss" scoped>
-@import "../../assets/style/_variables.scss";
-</style>

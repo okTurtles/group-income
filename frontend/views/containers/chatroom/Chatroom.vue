@@ -14,8 +14,8 @@
 
 <script>
 // import { chatTypes, individualMessagesSorted, users, individualConversations, groupA } from './fakeStore.js'
-// import ChatMain from '@components/Chatroom/ChatMain.vue'
-// import ChatNav from '@components/Chatroom/ChatNav.vue'
+// import ChatMain from './ChatMain.vue'
+// import ChatNav from './ChatNav.vue'
 
 // export default {
 //   name: 'Chatroom',
@@ -160,7 +160,7 @@
 </script>
 
 <style lang="scss" scoped>
-// @import "../../../assets/style/_variables.scss";
+// @import "@assets/style/_variables.scss";
 
 // .c-chatroom {
 //   padding: 0;

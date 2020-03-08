@@ -36,9 +36,8 @@ body {
   font-family: "Lato", "Helvetica Neue", "sans-serif";
   font-style: normal;
   font-weight: normal;
-  font-size: $size-4; // 14px
-  line-height: 1.3125rem; // 21px
-  letter-spacing: 0.1px;
+  font-size: $size_4; // 14px
+  line-height: 1.5; // 21/14
   color: $text_0;
 }
 
@@ -53,21 +52,20 @@ p {
 }
 
 // From _variables.scss
-// $size-1 = 2rem     = 32px
-// $size-2 = 1.5rem   = 24px = $size-large
-// $size-3 = 1.125rem = 18px = $size-medium
-// $size-4 = 0.875rem = 14px = $size-normal
-// $size-5 =  0.75rem = 12px = $size-small
+// $size_1 = 2rem     = 32px
+// $size_2 = 1.5rem   = 24px = $size_large
+// $size_3 = 1.125rem = 18px = $size_medium
+// $size_4 = 0.875rem = 14px = $size_normal
+// $size_5 =  0.75rem = 12px = $size_small
 
-$sizes: $size-1, $size-2, $size-3, $size-4, $size-5;
+$titles: $size_1, $size_2, $size_3, $size_4;
 $lineHeight: 3, 2.25, 1.6875, 1.3125, 1;
 // From line height: 48px, 36px, 27px, 21px, 16px
 
-@each $size in $sizes {
-  $i: index($sizes, $size);
+@each $size in $titles {
+  $i: index($titles, $size);
 
-  h#{$i},
-  .is-#{$i} {
+  .is-title-#{$i} {
     font-family: "Poppins";
     font-weight: bold;
     font-size: $size;
@@ -76,43 +74,35 @@ $lineHeight: 3, 2.25, 1.6875, 1.3125, 1;
 }
 
 @include until($tablet) {
-  .is-1,
-  h1 {
-    font-size: $size-2; // 24px
+  .is-title-1 {
+    font-size: $size_2; // 24px
     line-height: 2.125rem; // 34px
   }
 
-  .is-2,
-  h2 {
+  .is-title-2 {
     font-size: 1.25rem; // 20px
     line-height: 1.75rem; // 28px
   }
 }
 
 @include phone {
-  h1 {
+  .is-title-1 {
     font-size: 1.25rem; // 20px
     line-height: 2.125rem; // 34px
   }
 
-  h2 {
-    font-size: $size-3; // 18px
+  .is-title-2 {
+    font-size: $size_3; // 18px
     line-height: 1.5625rem; // 25px
   }
 }
 
-header,
-.title {
-  font-style: normal;
-  font-weight: bold;
-}
-
-.subtitle {
+.is-subtitle {
   font-family: "Poppins";
   text-transform: uppercase;
   letter-spacing: 0.1px;
   font-weight: normal;
-  font-size: $size-5; // 12px
+  font-size: $size_5;
   line-height: 1rem;
   color: $text_1;
 }
@@ -122,13 +112,13 @@ header,
 }
 
 .has-text-big {
-  font-size: 1rem; // 16px
+  font-size: 1rem;
 }
 
 .help,
 .has-text-small,
 small {
-  font-size: 0.75rem; // 12px
+  font-size: $size_5;
 }
 
 .has-text-bold {
@@ -139,4 +129,49 @@ small {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+// formerly in _colors.scss, moved here so that
+// @import "_variables"; in scoped styles in vue components
+// doesn't result in repeated CSS generated
+
+.has-text-0 {
+  color: $text_0;
+}
+
+.help,
+.has-text-1 {
+  color: $text_1;
+}
+
+@each $name in $colors {
+  .has-text-#{$name} {
+    color: var(--#{$name}_0);
+  }
+
+  .has-background-#{$name} {
+    background-color: var(--#{$name}_2);
+  }
+
+  .has-background-#{$name}-solid {
+    background-color: var(--#{$name}_0);
+  }
+}
+
+.has-background-blank {
+  background-color: $background;
+}
+
+.has-text-white {
+  color: $white;
+}
+
+// ---------- SVGs
+
+// NOTE: This is only a POC to handle "themable" illustrations.
+// Final solution should be done at #665
+.svg-hello {
+  path:nth-child(1) {
+    fill: $primary_1;
+  }
 }

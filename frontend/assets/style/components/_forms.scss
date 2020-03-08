@@ -13,11 +13,21 @@ form {
   }
 }
 
+legend.legend {
+  font-weight: 600;
+  margin-bottom: $spacer-sm;
+}
+
 .field {
+  position: relative;
   display: block;
   max-width: 100%;
   width: 100%;
-  margin-bottom: 1rem;
+  margin-bottom: $spacer*1.5;
+
+  &:last-of-type {
+    margin-bottom: 0;
+  }
 
   .helper {
     display: block;
@@ -47,6 +57,7 @@ select,
   line-height: 23px;
   outline: none;
   font-family: inherit;
+  color: $text_0;
 
   @mixin placeholder {
     color: $text_1;
@@ -102,10 +113,14 @@ textarea,
     padding-left: $spacer;
     min-width: 6.5rem;
     cursor: pointer;
+
+    option:disabled {
+      color: $text_1;
+    }
   }
 
   &::after {
-    content: "\f107"; // angle-down
+    content: "\f0dd"; // icon-sort-down
     text-rendering: auto;
     line-height: 1;
     font-family: "Font Awesome 5 Free";
@@ -114,13 +129,14 @@ textarea,
     position: absolute;
     top: 50%;
     right: $spacer;
-    transform: translateY(-50%);
+    transform: translateY(calc(-50% - 2px));
     pointer-events: none;
   }
-}
 
-.input + select {
-  width: auto;
+  &.is-reversed::after {
+    right: auto;
+    left: 5rem;
+  }
 }
 
 .select-wrapper,
@@ -131,84 +147,70 @@ textarea,
   border: 1px solid $general_0;
   border-radius: $radius;
 
-  .input {
-    border-radius: $radius 0 0 $radius;
-    border-right: 1px solid $general_0;
-  }
-
-  .suffix {
-    padding: 0 1rem;
-    font-weight: normal;
-    font-size: 1rem;
-    align-self: center;
-    height: $inputHeight;
-    line-height: $inputHeight;
-    border-left: 1px solid $general_0;
-    white-space: nowrap;
-    color: $text_0;
-  }
-
-  select:not(:first-child) {
-    border-radius: 0;
-    border-left: 1px solid $general_1;
-  }
-
   select,
   .select,
   .input {
+    position: relative;
     border: 1px solid transparent;
+
+    &:hover {
+      border-color: $primary_0;
+      z-index: 1; /* all the border gets visible even if next to another input */
+    }
 
     &:focus {
       box-shadow: 0 0 0 2px $primary_1;
-      border-color: $primary_0;
+    }
+  }
 
-      + label {
-        background-color: $primary_0;
-        color: #fff;
-        line-height: $inputHeight;
-        box-shadow: 0 0 0 2px $primary_1;
-        border-radius: 0 3px 3px 0;
-        position: relative;
+  .input {
+    border-radius: $radius 0 0 $radius;
+  }
 
-        &::before {
-          content: "";
-          background-color: $primary_0;
-          position: absolute;
-          top: 0;
-          left: -2px;
-          width: 2px;
-          height: 100%;
-        }
+  input + select {
+    width: auto;
+    border-left: 1px solid $general_0;
+    border-radius: 0 $radius $radius 0;
+    margin-left: -1px /* border */
+  }
+
+  &.is-reversed {
+    .select {
+      border-radius: $radius 0 0 $radius;
+    }
+
+    .input {
+      border-radius: 0 $radius $radius 0;
+      margin-left: -1px; /* show border */
+      border-left: 1px solid $general_0;
+
+      &:hover {
+        border-color: $primary_0;
       }
     }
   }
 
-  input + select:focus {
-    border-radius: 0 3px 3px 0;
-  }
-
-  button.is-shifted {
-    @include tablet {
-      position: absolute;
-      right: -$spacer-lg;
-      top: $spacer-sm;
-    }
-  }
-
-  button:not(.is-shifted) {
+  button:not(.is-icon-small) {
     border-radius: 0 $radius $radius 0;
 
     &.is-icon {
       &:hover,
       &:focus {
+        color: $primary_0;
+        background-color: transparent;
+      }
+
+      &:focus {
         box-shadow: 0 0 0 2px $primary_1;
-        background-color: $primary_0;
-        color: $white;
+        border-color: $primary_0;
       }
     }
   }
 
   .is-icon:not(.is-shifted) {
+    position: absolute;
+    top: 0;
+    right: 0;
     min-width: 40px;
     height: $inputHeight;
     text-align: center;
@@ -239,6 +241,42 @@ textarea,
   }
 }
 
+.input-combo {
+  .input {
+    border-radius: $radius;
+    padding-right: 5rem; /* avg of suffix width */
+  }
+
+  .suffix {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 0 1rem;
+    font-weight: normal;
+    font-size: 1rem;
+    align-self: center;
+    height: $inputHeight;
+    line-height: $inputHeight;
+    white-space: nowrap;
+    color: $text_1;
+    z-index: 1 /* to be above input, always */
+  }
+}
+
+.input-shifted {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  button {
+    margin-left: $spacer-sm;
+
+    @include tablet {
+      margin-right: -3rem;
+    }
+  }
+}
+
 span.error,
 p.error {
   display: block;
@@ -259,7 +297,8 @@ p.error {
   }
 }
 
-.radio {
+.radio,
+.checkbox {
   position: relative;
   display: inline-block;
   cursor: pointer;
@@ -270,8 +309,38 @@ p.error {
     opacity: 0;
     width: 14px;
     height: 14px;
+    transform: translateY(4px);
   }
 
+  .input:disabled + :last-child {
+    color: $text_1;
+    cursor: default;
+  }
+
+  .input:not(:disabled):hover + :last-child {
+    &::before {
+      border-color: $primary_0;
+    }
+  }
+
+  .input:not(:disabled):focus + :last-child {
+    &::before {
+      border-color: $primary_0;
+      box-shadow: 0 0 0 2px $primary_1;
+    }
+  }
+
+  .is-column & {
+    display: block;
+
+    + .radio,
+    + .checkbox {
+      margin-top: $spacer;
+    }
+  }
+}
+
+.radio {
   :last-child {
     white-space: nowrap;
 
@@ -288,29 +357,76 @@ p.error {
       margin-right: $spacer-sm;
       border: 1px solid $general_0;
       transform: translateY(2px);
+      transition: box-shadow 150ms, background-color 150ms;
     }
 
     &::after {
       position: absolute;
       width: 6px;
       height: 6px;
-      background-color: $primary_0;
+      background-color: $background_0;
       top: 11px;
       left: 7px;
       transform: translate(-50%, -50%) scale(0);
-      transform-origin: 50% 50%;
       transition: transform 150ms;
     }
   }
 
-  .input.is-checked + :last-child,
-  input:focus + :last-child,
-  input:checked + :last-child {
-    font-weight: bold;
-    margin-right: -1px;
-
+  .input:checked + :last-child {
     &::before {
       border-color: $primary_0;
+      background-color: $primary_0;
+    }
+
+    &::after {
+      transform: translate(-50%, -50%) scale(1);
+    }
+  }
+}
+
+.checkbox {
+  :last-child {
+    white-space: nowrap;
+
+    &::before,
+    &::after {
+      display: inline-block;
+      border-radius: 2px;
+    }
+
+    &::before {
+      content: "";
+      width: 14px;
+      height: 14px;
+      margin-right: $spacer-sm;
+      border: 1px solid $general_0;
+      transform: translateY(2px);
+      transition: box-shadow 150ms, background-color 150ms;
+    }
+
+    &::after {
+      content: "\f00c"; // icon-check
+      text-rendering: auto;
+      line-height: 1;
+      font-family: "Font Awesome 5 Free";
+      font-weight: 900;
+      -moz-osx-font-smoothing: grayscale;
+      font-size: 10px;
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      top: 9px;
+      left: 5px;
+      color: $background_0;
+      transform: translate(-50%, -50%) scale(0);
+      transition: transform 150ms;
+    }
+  }
+
+  .input:checked + :last-child {
+    &::before {
+      border-color: $primary_0;
+      background-color: $primary_0;
     }
 
     &::after {

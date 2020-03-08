@@ -3,7 +3,7 @@
 @import "_reset";
 @import "_misc";
 @import "_variables";
-@import "_typography";
+@import "_typography"; // make sure this comes after _variables
 @import "_utilities";
 @import "_base";
 @import "_layout";

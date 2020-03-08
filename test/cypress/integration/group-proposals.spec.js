@@ -1,5 +1,7 @@
 const userId = Math.floor(Math.random() * 10000)
 const groupName = 'Dreamers'
+const groupMincome = 250
+const groupNewMincome = 500
 
 function assertProposalOpenState ({ description }) {
   cy.getByDT('statusDescription')
@@ -8,68 +10,100 @@ function assertProposalOpenState ({ description }) {
   cy.getByDT('voteAgainst').should('exist')
 }
 
+function assertMincome (mincome) {
+  cy.getByDT('groupMincome').within(() => {
+    cy.getByDT('minIncome').should('contain', `$${mincome}`)
+  })
+}
+
 function getProposalBoxes () {
   return cy.getByDT('proposalsWidget', 'ul').children()
 }
 
+function tryUnsuccessfullyToProposeNewSimilarMincome () {
+  cy.log('try Unsuccessfully To Propose New Similar Mincome')
+  // Verify an identical open proposal cannot be created twice.
+  cy.getByDT('groupMincome').within(() => {
+    cy.get('button').click()
+  })
+
+  cy.getByDT('modalProposal').within(() => {
+    cy.get('input[type="number"][name="mincomeAmount"]')
+      .type(groupNewMincome)
+    cy.getByDT('nextBtn', 'button')
+      .click()
+    cy.getByDT('submitBtn').click()
+    cy.getByDT('proposalError').contains('Failed to change mincome. There is an identical open proposal.')
+    cy.getByDT('closeModal').click()
+    cy.getByDT('closeModal').should('not.exist')
+  })
+}
+
 describe('Proposals - Add members', () => {
-  it('register 6 users and logout each one', () => {
+  const invitationLinks = {}
+
+  it('user1 registers, creates a group and share its invitation link', () => {
     cy.visit('/')
-    for (var i = 1; i <= 6; i++) {
-      cy.giSignup(`user${i}-${userId}`)
-      cy.giLogout({ hasNoGroup: true })
-    }
-  })
 
-  it('user1 logins back and creates a group', () => {
-    cy.giLogin(`user1-${userId}`)
+    cy.giSignup(`user1-${userId}`, { bypassUI: true })
 
-    cy.giCreateGroup(groupName, {
-      income: 400
+    cy.giCreateGroup(groupName, { mincome: groupMincome, bypassUI: true })
+
+    cy.giGetInvitationAnyone().then(url => {
+      invitationLinks.anyone = url
     })
-    cy.getByDT('profileName').should('contain', `user1-${userId}`)
-  })
-
-  it('user1 invites user2 and user3 to the group and they accept', () => {
-    cy.giInviteMember([`user2-${userId}`, `user3-${userId}`])
 
     cy.giLogout()
   })
 
-  it('user2 accepts the invite', () => {
-    cy.giLogin(`user2-${userId}`)
-    cy.giAcceptGroupInvite(groupName)
-    cy.giLogout()
+  it('not registered user2 and user3 join the group through the invitation link', () => {
+    cy.giAcceptGroupInvite(invitationLinks.anyone, { username: `user2-${userId}`, groupName })
+    cy.giAcceptGroupInvite(invitationLinks.anyone, { username: `user3-${userId}`, groupName })
   })
 
-  it('user3 accepts the invite', () => {
-    cy.giLogin(`user3-${userId}`)
-    cy.giAcceptGroupInvite(groupName)
-    cy.giLogout()
+  it('user1 proposes to add user4, user5 together to the group', () => {
+    cy.giLogin(`user1-${userId}`, { bypassUI: true })
+
+    cy.giInviteMember([`user4-${userId}`, `user5-${userId}`])
   })
 
-  it('user1 proposes to add user4 and user5 together to the group and user2 proposes to add user6 to the group', () => {
-    cy.giLogin(`user1-${userId}`)
-
-    cy.giInviteMember([`user4-${userId}`, `user5-${userId}`], { isProposal: true })
-
-    cy.giLogout()
-
-    cy.giLogin(`user2-${userId}`)
-
-    cy.giInviteMember(`user6-${userId}`, { isProposal: true })
-
-    cy.giLogout()
+  it('user1 proposes to add user6 to the group', () => {
+    cy.giInviteMember([`user6-${userId}`])
   })
 
-  it('user3 logins and votes "yes" to all 3 proposals', () => {
-    cy.giLogin(`user3-${userId}`)
+  it('user2 proposes to add user7 to the group', () => {
+    cy.giSwitchUser(`user2-${userId}`)
+
+    cy.giInviteMember([`user7-${userId}`])
+  })
+
+  it('user2 proposes to change mincome to $500', () => {
+    cy.getByDT('groupMincome').within(() => {
+      cy.get('button').click()
+    })
+
+    cy.getByDT('modalProposal').within(() => {
+      cy.get('input[type="number"][name="mincomeAmount"]')
+        .type(groupNewMincome)
+      cy.getByDT('nextBtn', 'button')
+        .click()
+      cy.getByDT('reason', 'textarea').clear().type('House renting is increasing.')
+      cy.getByDT('submitBtn').click()
+      cy.getByDT('finishBtn').click()
+      cy.getByDT('closeModal').should('not.exist')
+    })
+
+    tryUnsuccessfullyToProposeNewSimilarMincome()
+  })
+
+  it('user3 votes "yes" to all 5 proposals', () => {
+    cy.giSwitchUser(`user3-${userId}`)
 
     getProposalBoxes()
-      // there are 2 grouped proposals
-      .should('have.length', 2)
-      // with a total of 3 individual proposals
-      .getByDT('proposalItem').should('have.length', 3)
+      // assert grouped proposals
+      .should('have.length', 4)
+      // assert total individual proposals
+      .getByDT('proposalItem').should('have.length', 5)
 
     // Go through each individual proposal and vote yes!
     getProposalBoxes().each(([group]) => {
@@ -105,40 +139,38 @@ describe('Proposals - Add members', () => {
           .should('contain', 'Proposal refused.')
       })
     })
-
-    cy.giLogout()
   })
 
-  it('user2 logins and votes "yes" to add user4. Proposal is accepted and invitation is created.', () => {
-    cy.giLogin(`user2-${userId}`)
+  it('user2 votes "yes" to add user4 and user6. Proposals are accepted and invitations created.', () => {
+    cy.giSwitchUser(`user2-${userId}`)
 
-    getProposalBoxes().eq(0).within(() => {
-      cy.getByDT('title', 'h4').as('title')
-      cy.get('@title').should('contain', `user1-${userId} is proposing:`)
-      cy.getByDT('proposalItem').eq(0).within(() => {
-        assertProposalOpenState({
-          description: '2 out of 3 members voted.'
-        })
-
-        cy.getByDT('voteFor').click()
-        //  Proposal gets accepted and invitation is created!
-        cy.getByDT('statusDescription')
-          .should('contain', 'Proposal accepted!')
-        cy.getByDT('voted').should('not.exist')
-        cy.get('@title').should('contain', `user1-${userId} proposed:`)
-        cy.getByDT('sendLink').should('contain', `Please send the following link to user4-${userId} so they can join the group:`)
-        cy.getByDT('sendLink').get('a.link')
-          .should('contain', 'http://localhost')
-          .invoke('attr', 'href')
-          .then(href => {
-            expect(href).to.contain('http://localhost')
+    function voteForAndIsAccepted (index, username) {
+      getProposalBoxes().eq(index).within(() => {
+        cy.getByDT('title', 'h4').as('title')
+        cy.get('@title').should('contain', `user1-${userId} is proposing:`)
+        cy.getByDT('proposalItem').eq(0).within(() => {
+          cy.getByDT('typeDescription')
+            .should('contain', `Add ${username}-${userId} to group.`)
+          assertProposalOpenState({
+            description: '2 out of 3 members voted.'
           })
+          cy.getByDT('voteFor').click()
+          //  Proposal gets accepted and invitation is created!
+          cy.getByDT('statusDescription')
+            .should('contain', 'Proposal accepted!')
+          cy.getByDT('voted').should('not.exist')
+          cy.get('@title').should('contain', `user1-${userId} proposed:`)
+          cy.getByDT('sendLink').should('not.exist') // Only visible to who created the proposal
+        })
       })
-    })
+    }
+
+    voteForAndIsAccepted(0, 'user4')
+    voteForAndIsAccepted(1, 'user6')
   })
 
   it('user2 decides to cancel his proposal of adding user6', () => {
-    getProposalBoxes().eq(1).within(() => {
+    getProposalBoxes().eq(2).within(() => {
       cy.getByDT('title', 'h4').as('title')
       cy.get('@title').should('contain', 'You are proposing:')
       cy.getByDT('proposalItem').eq(0).within(() => {
@@ -151,12 +183,98 @@ describe('Proposals - Add members', () => {
         cy.get('@title').should('contain', 'You proposed:')
       })
     })
+  })
+
+  it('user1 see their accepted proposals to invite user4 and user6', () => {
+    cy.giSwitchUser(`user1-${userId}`)
+
+    function assertInvitationLinkFor (index, username) {
+      getProposalBoxes().eq(index).within(() => {
+        cy.getByDT('title', 'h4').should('contain', 'You proposed:')
+        cy.getByDT('sendLink').should('contain', `Please send the following link to ${username}-${userId} so they can join the group:`)
+        cy.getByDT('sendLink').within(() => {
+          cy.getByDT('invitationLink').get('.link').should('contain', 'http://localhost')
+          cy.getByDT('invitationLink').get('.c-invisible-input')
+            .invoke('prop', 'value')
+            .then(inviteLink => {
+              invitationLinks[username] = inviteLink
+              expect(inviteLink).to.contain('http://localhost')
+            })
+        })
+      })
+    }
+
+    assertInvitationLinkFor(0, 'user4')
+    assertInvitationLinkFor(1, 'user6')
+  })
+
+  it('user1 votes "yes" to the new mincome ($500) and proposal is accepted.', () => {
+    assertMincome(groupMincome)
+
+    tryUnsuccessfullyToProposeNewSimilarMincome()
+
+    getProposalBoxes().eq(3).within(() => {
+      cy.getByDT('title', 'h4').as('title')
+      cy.get('@title').should('contain', `user2-${userId} is proposing:`)
+      cy.getByDT('proposalItem').eq(0).within(() => {
+        cy.getByDT('typeDescription')
+          .should('contain', `Change mincome from $${groupMincome} to $${groupNewMincome}`)
+        cy.getByDT('statusDescription')
+          .should('contain', '2 out of 3 members voted.')
+
+        cy.getByDT('voteFor').click()
+        //  Proposal gets accepted and mincome is updated on the sidebar!
+        cy.getByDT('statusDescription')
+          .should('contain', 'Proposal accepted!')
+        cy.get('@title').should('contain', `user2-${userId} proposed:`)
+      })
+    })
+
+    assertMincome(groupNewMincome)
 
     cy.giLogout()
   })
 
-  it('user1 logins and sees all 3 proposals with the correct states', () => {
-    cy.giLogin(`user1-${userId}`)
+  it('user4 registers and then joins the group through their unique invitation link', () => {
+    cy.giSignup(`user4-${userId}`, { bypassUI: true })
+    cy.giAcceptGroupInvite(invitationLinks.user4, {
+      isLoggedIn: true,
+      groupName
+    })
+  })
+
+  it('user6 registers through a unique invitation link to join a group', () => {
+    cy.giAcceptGroupInvite(invitationLinks.user6, {
+      groupName,
+      username: `user6-${userId}`,
+      inviteCreator: `user1-${userId}`
+    })
+  })
+
+  it('an expired invitation link cannot used', () => {
+    cy.visit(invitationLinks.user6) // already used on the previous test
+    cy.getByDT('pageTitle')
+      .invoke('text')
+      .should('contain', 'Oh no! Your link has expired.')
+    cy.getByDT('helperText').should('contain', 'You should ask for a new one. Sorry about that!')
+    cy.get('button').click()
+    cy.url().should('eq', 'http://localhost:8000/app/')
+    cy.getByDT('welcomeHome').should('contain', 'Welcome to GroupIncome')
+  })
+
+  it('an invalid invitation link cannot be used', () => {
+    cy.visit('http://localhost:8000/app/join?groupId=321&secret=123')
+    cy.getByDT('pageTitle')
+      .invoke('text')
+      .should('contain', 'Oh no! Something went wrong.')
+    cy.getByDT('helperText').should('contain', 'Something went wrong. Please, try again. 404: Not Found')
+    cy.get('button').click()
+    cy.url().should('eq', 'http://localhost:8000/app/')
+    cy.getByDT('welcomeHome').should('contain', 'Welcome to GroupIncome')
+  })
+
+  it('user1 logins and sees all 5 proposals correctly and the new member', () => {
+    cy.giLogin(`user1-${userId}`, { bypassUI: true })
 
     // A quick checkup that each proposal state is correct.
     // OPTIMIZE: Maybe we should adopt Visual Testing in these cases
@@ -167,7 +285,7 @@ describe('Proposals - Add members', () => {
       cy.getByDT('proposalItem').eq(0).within(() => {
         cy.getByDT('statusDescription')
           .should('contain', 'Proposal accepted!')
-        cy.getByDT('sendLink').should('exist')
+        cy.getByDT('sendLink').should('not.exist') // Because it was already used
       })
 
       cy.getByDT('proposalItem').eq(1).within(() => {
@@ -177,12 +295,43 @@ describe('Proposals - Add members', () => {
     })
 
     getProposalBoxes().eq(1).within(() => {
+      cy.getByDT('title', 'h4').should('contain', 'You proposed:')
+
+      cy.getByDT('proposalItem').eq(0).within(() => {
+        cy.getByDT('statusDescription')
+          .should('contain', 'Proposal accepted!')
+        cy.getByDT('sendLink').should('not.exist')
+      })
+    })
+
+    getProposalBoxes().eq(2).within(() => {
       cy.getByDT('title', 'h4').should('contain', `user2-${userId} proposed:`)
       cy.getByDT('proposalItem').eq(0).within(() => {
         cy.getByDT('statusDescription')
           .should('contain', 'Proposal cancelled.')
       })
     })
+
+    getProposalBoxes().eq(3).within(() => {
+      cy.getByDT('title', 'h4').should('contain', `user2-${userId} proposed:`)
+
+      cy.getByDT('proposalItem').eq(0).within(() => {
+        cy.getByDT('statusDescription')
+          .should('contain', 'Proposal accepted!')
+      })
+    })
+
+    cy.getByDT('groupMembers').find('ul')
+      .children()
+      .should('have.length', 5)
+      .each(([member], index) => {
+        cy.get(member).within(() => {
+          const usersMap = [1, 2, 3, 4, 6]
+          cy.getByDT('username').should('contain', `user${usersMap[index]}-${userId}`)
+        })
+      })
+
+    assertMincome(groupNewMincome)
 
     cy.giLogout()
   })

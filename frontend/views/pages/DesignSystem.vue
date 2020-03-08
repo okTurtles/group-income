@@ -1,6 +1,5 @@
 <template lang='pug'>
 page(
-  mainClass='full-width'
   pageTestName='designSystemPage'
   pageTestHeaderName='designSystemTitle'
   class='p-design-system'
@@ -16,34 +15,26 @@ page(
 
   article#typography
     section.card.c-typography
-      i18n(tag='h2' class='card-header') Typography
+      h2.is-title-2.card-header Typography
 
-      h3 Titles
-
+      h3.is-title-3 Titles
+      br
+      br
       table
         thead
           th code
           th demo
         tr(v-for='(scale, index) in [1, 2, 3, 4]' :key='index')
           td
-            pre h{{scale}} or .title.is-{{scale}}
-          td.title(:class='`is-${scale}`') This is an H{{scale}} title
+            pre .is-title-{{scale}}
+          td(:class='`is-title-${scale}`') This is an title level {{scale}}
         tr
           td
             pre
-              | header p
-              br
-              | or
-              br
-              | .subtitle
-          td.subtitle This is a subtitle
-        tr
-          td
-            pre .label
-          td
-            label.label Label
+              | .is-subtitle
+          td.is-subtitle This is a subtitle
 
-      h3 Body Copy
+      h3.is-title-3 Body Copy
 
       table
         thead
@@ -116,7 +107,7 @@ page(
 
   article#cards
     section.card
-      i18n(tag='h2' class='card-header') Cards
+      h2.is-title-2.card-header Cards
 
       table
         thead
@@ -133,7 +124,7 @@ page(
             pre .card-header
           td
             .card
-              h2.card-header Title
+              h2.is-title-2.card-header Title
               p Description
         tr
           td
@@ -155,7 +146,7 @@ page(
 
   article#icons
     section.card
-      i18n(tag='h2' class='card-header') Icons
+      h2.is-title-2.card-header Icons
       p
         | This is only the currently used icons (at _icons.scss).
         br
@@ -191,8 +182,10 @@ page(
               i.icon-chevron-left icon-chevron-left
               i.icon-chevron-right icon-chevron-right
               i.icon-cog icon-cog
+              i.icon-coins icon-coins
               i.icon-columns icon-columns
               i.icon-comments icon-comments
+              i.icon-copy icon-copy
               i.icon-edit icon-edit
               i.icon-ellipsis-v icon-ellipsis-v
               i.icon-envelope icon-envelope
@@ -210,19 +203,44 @@ page(
               i.icon-pencil-alt icon-pencil-alt
               i.icon-plus icon-plus
               i.icon-poll icon-poll
+              i.icon-question icon-question
               i.icon-question-circle icon-question-circle
               i.icon-tag icon-tag
+              i.icon-search search
+              i.icon-sort-down sort-down
               i.icon-times icon-times
               i.icon-times-circle icon-times-circle
               i.icon-undo icon-undo
               i.icon-user icon-user
               i.icon-user-plus icon-user-plus
-              i.icon-user-times icon-user-times
+              i.icon-user-minus icon-user-minus
               i.icon-vote-yea icon-vote-yea
-              i.icon-copy icon-copy
+              i.icon-wifi icon-wifi
+        tr
+          td
+            pre
+              | i.icon-round
+          td
+            i.icon-angle-left.icon-round.has-background-success.has-text-success
+        tr
+          td
+            pre
+              | Try again
+              | i.icon-undo.is-suffix
+          td
+            | Try again
+            i.icon-undo.is-suffix
+        tr
+          td
+            pre
+              | i.icon-bell.is-prefix
+              | Notifications
+          td
+            i.icon-bell.is-prefix
+            | Notifications
   article#spacing
     section.card
-      i18n(tag='h2' class='card-header') Spacing
+      h2.is-title-2.card-header Spacing
       table
         thead
           th code
@@ -239,9 +257,9 @@ page(
 
   article#color
     section.card
-      i18n(tag='h2' class='card-header') Color
+      h2.is-title-2.card-header Color
 
-      h3 Variable
+      h3.is-title-3 Variable
 
       table.colors
         thead
@@ -255,7 +273,7 @@ page(
           td
             span.c-palette(v-for='num in [0, 1, 2]' :key='num' :style='{ backgroundColor: `var(--${color.name}_${num})`}')
 
-      h3 Background
+      h3.is-title-3 Background
 
       table
         thead
@@ -270,8 +288,8 @@ page(
           //- td(v-html='color.usage')
   article#buttons
     section.card
-      i18n(tag='h2' class='card-header') Buttons
-      h3 Default size
+      h2.is-title-2.card-header Buttons
+      h3.is-title-3 Default size
       table
         thead
           th code
@@ -317,19 +335,7 @@ page(
             pre .button disabled
           td
             button(disabled) Default text
-
-        tr
-          td
-            pre
-              | .button
-              |   | Next
-              |   i.icon-arrow-right
-          td
-            button
-              | Next
-              i.icon-arrow-right
-
-      h3 Small size
+      h3.is-title-3 Small size
       table
         thead
           th code
@@ -358,7 +364,7 @@ page(
           td
             button.is-danger.is-outlined.is-small Default text
 
-      h3 Small size with icon
+      h3.is-title-3 With an icon
       table
         thead
           th code
@@ -366,15 +372,25 @@ page(
         tr
           td
             pre
-              | .button.is-small.is-outlined
-              |   i.icon-plus
-              |   | Add
+              | .button
+              |   i.icon-plus.is-prefix
+              |   Add
           td
-            button.is-small.is-outlined
-              i.icon-plus
+            .button.has-icon-start
+              i.icon-plus.is-prefix
               | Add
+        tr
+          td
+            pre
+              | .button
+              |   Next
+              |   i.icon-arrow-right.is-suffix
+          td
+            .button
+              | Next
+              i.icon-arrow-right.is-suffix
 
-      h3 Icon Buttons
+      h3.is-title-3 Icon Buttons
       table
         thead
           th code
@@ -415,7 +431,7 @@ page(
 
   article#notification-badges
     section.card
-      i18n(tag='h2' class='card-header') Notification Badges
+      h2.is-title-2.card-header Notification Badges
       table
         thead
           th code
@@ -458,7 +474,7 @@ page(
 
   article#pills
     section.card
-      i18n(tag='h2' class='card-header') Pills
+      h2.is-title-2.card-header Pills
       table
         thead
           th code
@@ -471,8 +487,8 @@ page(
 
   article#user-feedback
     section.card
-      i18n(tag='h2' class='card-header') User Feedback
-      h3 Simple
+      h2.is-title-2.card-header Feedback Banners
+      h3.is-title-3 Simple
 
       table
         thead
@@ -480,9 +496,19 @@ page(
           th demo
         tr
           td
-            pre message(severity='warning')
+            pre banner-simple(severity='success')
           td
-            message(severity='warning')
+            banner-simple(severity='success')
+              | This is a&nbsp;
+              strong success message
+              |  with a&nbsp;
+              a.link(href='/') link
+              | . This message can grow in width or height, as needed.
+        tr
+          td
+            pre banner-simple(severity='warning')
+          td
+            banner-simple(severity='warning')
               | This is a&nbsp;
               strong warning message
               |  with a&nbsp;
@@ -490,9 +516,9 @@ page(
               | . This message can grow in width or height, as needed.
         tr
           td
-            pre message(severity='danger')
+            pre banner-simple(severity='danger')
           td
-            message(severity='danger')
+            banner-simple(severity='danger')
               | This is a&nbsp;
               strong danger / error message
               |  with a&nbsp;
@@ -500,16 +526,15 @@ page(
               | . This message can grow in width or height, as needed.
         tr
           td
-            pre message(severity='info')
+            pre banner-simple(severity='info')
           td
-            message(severity='info')
-              | This is an&nbsp;
-              strong infromation message
+            banner-simple(severity='info')
+              | This is a&nbsp;
+              strong short message
               |  with a&nbsp;
-              a.link(href='/') link
-              | . This message can grow in width or height, as needed.
+              a.link(href='/') link.
 
-      h3 With title
+      h4.is-title-4 With title
       table
         thead
           th code
@@ -517,10 +542,10 @@ page(
         tr
           td
             pre
-            | message(severity='warning')
+            | banner-simple(severity='warning')
             |    div(slot='header')
           td
-            message(severity='warning')
+            banner-simple(severity='warning')
               div(slot='header')
                 | A title that gives context to the message
               slot
@@ -529,10 +554,29 @@ page(
                 |  with a&nbsp;
                 a.link(href='/') link
                 | . This message can grow in width or height, as needed.
+      h3.is-title-3 Scoped Banners
+      table
+        thead
+          th code
+          th demo
+        tr
+          td
+            pre
+              | banner-scoped(ref='banner')
+              | button(
+              |   @click='$refs.banner.danger("Ups!")'
+              | ) Save
+
+          td
+            div
+              banner-scoped(ref='banner')
+              .buttons.is-centered
+                button.is-small.is-outlined(@click='$refs.banner.success("Changes saved!")') Save Success
+                button.is-small.is-outlined(@click='$refs.banner.danger("Failed to save the world, please try again.")') Save Danger
 
   article#tooltips
     section.card
-      i18n(tag='h2' class='card-header') Tooltips
+      h2.is-title-2.card-header Tooltips
       tooltip(
         text='A simple text inside'
         )
@@ -557,14 +601,40 @@ page(
         template(slot='tooltip')
           | It accepts multiple directions. Check sourcecode to know more.
 
+  article#InviteLink
+    section.card
+      h2.is-title-2.card-header InviteLink
+
+      p
+        | Invitation links that are used across the app have the uniform design with 'click-to-copy' functionality.
+        | Please refer to&nbsp;
+        a.link(
+          href='https://github.com/okTurtles/group-income-simple/issues/756'
+          target='_link'
+        ) issue #756
+        | &nbsp;for more information.
+      br
+      table
+        thead
+          th code
+          th demo
+        tr
+          td
+            pre
+              | link-to-copy(
+              |   link='https://groupincome.org/f4k3_H45h_t0_5h4r3'
+              | )
+          td
+            link-to-copy(link='https://groupincome.org/f4k3_H45h_t0_5h4r3')
+
   article#forms
     section.card
-      i18n(tag='h2' class='card-header') Forms
+      h2.is-title-2.card-header Forms
 
       p
         | The input's width depends on their container #[br]
         | For consistency, add #[code .field] to have a margin bottom of 1rem #[br]
-        | For A11Y reasons, everything related to a form element, (label text, input element, helper text and error text) should be placed inside its respective #[code <label />] element.
+        | For A11Y reasons, everything related to a form element, (label text, input element, helper text and error text) should be placed inside its respective #[code <\label \>] element.
         | When an element is disabled, required or as an error, add the respective HTML attributes! #[code disabled, aria-required, or aria-describedby="error"]
       br
       button.is-small.is-outlined.is-danger(
@@ -578,7 +648,7 @@ page(
           th demo
         tr
           td
-            h3 Textbox
+            h3.is-title-3 Textbox
         tr
           td
             pre
@@ -613,7 +683,7 @@ page(
 
         tr
           td
-            h3 Selectbox
+            h3.is-title-3 Selectbox
         tr
           td
             pre
@@ -634,33 +704,67 @@ page(
 
         tr
           td
-            h3 Radio
+            h3.is-title-3 Radio
         tr
           td
             pre
               | fieldset
-              |   .legend Pick a favorite food
-              |     label.radio
-              |       input(type='radio'
-              |         name='fruit'
-              |         checked='true')
-              |       span Oranges
-              |     label.radio
-              |       input(type='radio'
-              |         name='fruit')
-              |       span Apples
+              |   legend.legend Pick a favorite food
+              |   label.radio
+              |     input.input(type='radio' name='food'
+              |       value='Pizza'
+              |       checked='true')
+              |     span Pizza
+              |   label.radio
+              |     input.input(type='radio' name='food'
+              |       value='Burger')
+              |     span Burger
           td
             fieldset
-              .legend What's your favorite food?
+              legend.legend Pick a favorite food
               label.radio
-                input.input(type='radio' name='fruit' checked='true')
-                span Oranges
+                input.input(type='radio' name='fruit' value='Pizza' checked='true')
+                span Pizza
               label.radio
-                input.input(type='radio' name='fruit')
-                span Apples
+                input.input(type='radio' name='fruit' value='Burger')
+                span Burger
+              label.radio
+                input.input(type='radio' name='fruit' value='Salad' disabled)
+                span Salad
         tr
           td
-            h3 Combination
+            h3.is-title-3 Checkbox
+        tr
+          td
+            pre
+              | fieldset.is-column
+              |   legend.legend What browsers do you use?
+              |   label.checkbox
+              |     input.input(type='checkbox' name='browser'
+              |       value='Chrome')
+              |     span Chrome
+              |   label.checkbox
+              |     input.input(type='checkbox' name='browser'
+              |       value='Firefox')
+              |     span Firefox
+          td
+            fieldset.is-column
+              legend.legend What browsers do you use?
+              label.checkbox
+                input.input(type='checkbox' name='browser' value='Chrome')
+                span Chrome
+              label.checkbox
+                input.input(type='checkbox' name='browser' value='Firefox')
+                span Firefox
+              label.checkbox
+                input.input(type='checkbox' name='browser' value='Edge')
+                span Edge
+              label.checkbox
+                input.input(type='checkbox' name='browser' value='Edge' disabled)
+                span Internet Explorer
+        tr
+          td
+            h3.is-title-3 Combination
         tr
           td
             pre
@@ -700,20 +804,21 @@ page(
             pre
               | label.field
               |   .label Add invitee
-              |   .input-combo.error
+              |   .input-shifted
               |     input.input
-              |     button.is-icon-small.is-shifted(
+              |     button.is-icon-small(
               |       :aria-label='Remove member'
               |     )
+              |       i.icon-times
           td
             label.field
               .label Add invitee
-              .input-combo(:class='{ error: ephemeral.forms.hasError }')
+              .input-shifted(:class='{ error: ephemeral.forms.hasError }')
                 input.input(type='text' placeholder='New amount')
-                .suffix USD
-                button.is-icon-small.is-shifted(
+                button.is-icon-small(
                   :aria-label='L("Remove member")'
                 )
+                  i.icon-times
               span.error(v-if='ephemeral.forms.hasError') Something went wrong
         tr
           td
@@ -738,7 +843,7 @@ page(
 
   article#stepper
     section.card
-      i18n(tag='h2' class='card-header') Stepper
+      h2.is-title-2.card-header Stepper
 
       p Todo: replace with component once created
       table
@@ -762,7 +867,7 @@ page(
               button.step.next 3
   article#menu
     section.card
-      i18n(tag='h2' class='card-header') Menu
+      h2.is-title-2.card-header Menu
       table
         thead
           th code
@@ -781,7 +886,7 @@ page(
 
   article#modal
     section.card
-      i18n(tag='h2' class='card-header') Modal
+      h2.is-title-2.card-header Modal
       table
         thead
           th code
@@ -791,19 +896,19 @@ page(
             code
               | sbp('okTurtles.events/emit',
               br
-              |   OPEN_MODAL, 'DesignSystemModal'
+              |   OPEN_MODAL, 'DSModalSimple'
               br
               | )
           td
-            button(@click='openModal("DesignSystemModal")')
+            button(@click='openModal("DSModalSimple")')
               i18n Open Modal
 
   article#modalBase
     section.card
-      i18n(tag='h2' class='card-header') Modal Base
+      h2.is-title-2.card-header Modal Base
       i18n(tag='p') The modal base as very basic functionality. Compare to normal modal it has very basic style and let us add any kind of content.
-      i18n(tag='p') It only contain opening and closing mecanism (shared with the modal in modal mixin).
-      i18n(tag='p') The main use at the moment is to have a full screen master modal that can contains other small sub modals (ex: user settings)
+      i18n(tag='p') It only contain opening and closing mechanism (shared with the modal in modal mixin).
+      i18n(tag='p') The main use at the moment is to be used on a fullscreen master modal that can contains other small sub modals (ex: income details)
       br
       i18n(tag='p') NB: at the moment we don't have sub sub modal, there for the implementation is flexible to allow an inifinty of modal but the animation is not implemented
       br
@@ -816,15 +921,15 @@ page(
             code
               | sbp('okTurtles.events/emit',
               br
-              |   OPEN_MODAL, 'DesignSystemModalBase'
+              |   OPEN_MODAL, 'DSModalNested'
               br
               | )
           td
-            button(@click='openModal("DesignSystemModalBase")')
+            button(@click='openModal("DSModalNested")')
               i18n Open Modal
   article#Illustrations
     section.card
-      i18n(tag='h2' class='card-header') Illustrations (SVGs)
+      h2.is-title-2.card-header Illustrations (SVGs)
       p We have a good amount of nice illustrations across Group Income. Those illustrations' colors need to be customized based on the current theme. For that reason we display them in inline SVGs.
       br
       p Here's how you can load a SVG:
@@ -850,7 +955,7 @@ page(
 
       p Know more about how all of this works at #[pre(style='display:inline') assets/svg/README.md]
       br
-      b.title.is-4 Available SVGs:
+      b.is-title-4 Available SVGs:
       .c-svgList
         .c-svgList-item(
           v-for='svg in config.svgs'
@@ -862,11 +967,13 @@ page(
 </template>
 
 <script>
-import Page from '@pages/Page.vue'
+import Page from '@components/Page.vue'
 import sbp from '~/shared/sbp.js'
-import Message from '@components/Message.vue'
+import BannerSimple from '@components/banners/BannerSimple.vue'
+import BannerScoped from '@components/banners/BannerScoped.vue'
 import Tooltip from '@components/Tooltip.vue'
 import Badge from '@components/Badge.vue'
+import LinkToCopy from '@components/LinkToCopy.vue'
 import CalloutCard from '@components/CalloutCard.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgAccess from '@svgs/access.svg'
@@ -990,9 +1097,11 @@ export default {
   components: {
     Page,
     CalloutCard,
-    Message,
+    BannerSimple,
+    BannerScoped,
     Tooltip,
     Badge,
+    LinkToCopy,
     SvgHello
   },
   mounted () {
@@ -1031,11 +1140,11 @@ export default {
       const top = e.target.scrollTop
       let last = 0
       this.articles.forEach((el, index) => {
-        if (top > (el.top)) {
-          el.link.classList.add('active')
+        if (top > (el.top + window.innerHeight - 40)) { // 30 - space between each card.
+          el.link.classList.add('scrolled')
           last = index
         } else {
-          el.link.classList.remove('active')
+          el.link.classList.remove('scrolled')
         }
         el.link.classList.remove('last')
       })
@@ -1046,12 +1155,12 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "../../assets/style/_variables.scss";
+@import "@assets/style/_variables.scss";
 $pagePadding: 1rem;
 $pagePaddingTablet: 24px;
 $pagePaddingDesktop: 75px;
 
-article h3 {
+article .is-title-3 {
   margin-top: $spacer;
 }
 
@@ -1216,12 +1325,13 @@ table {
   display: flex;
   flex-direction: column;
 
-  ::v-deep .active {
-    color: $general_0;
+  ::v-deep .scrolled {
+    opacity: 0.4;
     text-decoration: line-through;
   }
 
   ::v-deep .last {
+    opacity: 1;
     text-decoration: underline;
     color: $primary_0;
   }

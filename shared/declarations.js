@@ -122,7 +122,6 @@ declare module '../views/DesignSystem.vue' { declare module.exports: Object }
 declare module '../views/GroupChat.vue' { declare module.exports: Object }
 declare module '../views/GroupDashboard.vue' { declare module.exports: Object }
 declare module '../views/Home.vue' { declare module.exports: Object }
-declare module '../views/Invite.vue' { declare module.exports: Object }
 declare module '../views/Join.vue' { declare module.exports: Object }
 declare module '../views/Mailbox.vue' { declare module.exports: Object }
 declare module '../views/Messages.vue' { declare module.exports: Object }
@@ -162,7 +161,6 @@ declare module './database.js' { declare module.exports: Function }
 declare module './functions.js' { declare module.exports: Function }
 declare module './GraphLegendGroup.vue' { declare module.exports: Object }
 declare module './GraphLegendItem.vue' { declare module.exports: Object }
-declare module './GroupInvitees.vue' { declare module.exports: Object }
 declare module './GroupMincome.vue' { declare module.exports: Object }
 declare module './GroupName.vue' { declare module.exports: Object }
 declare module './GroupPrivacy.vue' { declare module.exports: Object }
@@ -201,7 +199,7 @@ declare module './views/containers/proposals/RuleAddMember.vue' { declare module
 declare module './views/containers/proposals/RuleChangeRule.vue' { declare module.exports: Object }
 declare module './views/containers/proposals/RuleRemoveMember.vue' { declare module.exports: Object }
 declare module './views/containers/sidebar/Sidebar.vue' { declare module.exports: Object }
-declare module './views/containers/SignUp.vue' { declare module.exports: Object }
+declare module './views/containers/Signup.vue' { declare module.exports: Object }
 declare module './Voting.vue' { declare module.exports: Object }
 declare module '@/utils/stringTemplate.js' { declare module.exports: Function }
 declare module '@utils/events.js' { declare module.exports: any }

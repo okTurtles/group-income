@@ -1,28 +1,36 @@
-import Vue from 'vue'
-import { mapMutations } from 'vuex'
+'use strict'
+
 // import SBP stuff before anything else so that domains register themselves before called
 import sbp from '~/shared/sbp.js'
 import '~/shared/domains/okTurtles/data.js'
 import '~/shared/domains/okTurtles/events.js'
 import '~/shared/domains/okTurtles/eventQueue.js'
 import './controller/namespace.js'
+import './controller/actions/index.js'
+import Vue from 'vue'
+import { mapMutations } from 'vuex'
 import router from './controller/router.js'
 import { createWebSocket } from './controller/backend.js'
 import store from './model/state.js'
 import { SETTING_CURRENT_USER } from './model/database.js'
 import { LOGIN, LOGOUT, CONTRACT_IS_SYNCING } from './utils/events.js'
 import './utils/lazyLoadedView.js'
-import Navigation from './views/containers/sidebar/Navigation.vue'
+import BannerGeneral from './views/components/banners/BannerGeneral.vue'
+import Navigation from './views/containers/navigation/Navigation.vue'
 import AppStyles from './views/components/AppStyles.vue'
-import Modal from './views/components/Modal/Modal.vue'
+import Modal from './views/components/modal/Modal.vue'
+import CypressBypassUi from './views/containers/navigation/CypressBypassUI.vue'
 import './views/utils/translations.js'
 import './views/utils/vFocus.js'
 import './views/utils/vError.js'
 import './views/utils/vStyle.js'
+import 'wicg-inert'
 
 console.log('NODE_ENV:', process.env.NODE_ENV)
 
-// TODO: implement Vue.config.errorHandler: https://vuejs.org/v2/api/#errorHandler
+Vue.config.errorHandler = function (err, vm, info) {
+  console.error(`uncaught Vue error in ${info}:`, err)
+}
 
 async function startApp () {
   // NOTE: we setup this global SBP filter and domain regs here
@@ -54,12 +62,11 @@ async function startApp () {
 
   const username = await sbp('gi.db/settings/load', SETTING_CURRENT_USER)
   if (username) {
-    try {
-      const identityContractID = await sbp('namespace/lookup', username)
+    const identityContractID = await sbp('namespace/lookup', username)
+    if (identityContractID) {
       await sbp('state/vuex/dispatch', 'login', { username, identityContractID })
-    } catch (err) {
-      console.log('lookup failed!', err)
-      sbp('state/vuex/dispatch', 'logout')
+    } else {
+      await sbp('state/vuex/dispatch', 'logout')
       console.warn(`It looks like the local user '${username}' does not exist anymore on the server 😱 If this is unexpected, contact us at https://gitter.im/okTurtles/group-income`)
       // TODO: do not delete the username like this! handle this better!
       //       because of how await works, this exception handler can be triggered
@@ -69,7 +76,7 @@ async function startApp () {
       //         memberUsernames state.js:231
       //
       //       Which doesn't mean that the lookup actually failed!
-      sbp('gi.db/settings/delete', username)
+      await sbp('gi.db/settings/delete', username)
     }
   }
   /* eslint-disable no-new */
@@ -77,6 +84,8 @@ async function startApp () {
     router: router,
     components: {
       AppStyles,
+      BannerGeneral,
+      CypressBypassUi,
       Navigation,
       Modal
     },
@@ -84,13 +93,14 @@ async function startApp () {
       return {
         ephemeral: {
           syncs: [],
+          // TODO/REVIEW page can load with already loggedin. -> this.$store.state.loggedIn ? 'yes' : 'no'
           finishedLogin: 'no'
         }
       }
     },
     mounted () {
       const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)') || {}
-      if (reducedMotionQuery.matches || window.Cypress) {
+      if (reducedMotionQuery.matches || this.isInCypress) {
         this.setReducedMotion(true)
       }
       sbp('okTurtles.events/on', CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
@@ -106,12 +116,17 @@ async function startApp () {
       })
       sbp('okTurtles.events/on', LOGOUT, () => {
         this.ephemeral.finishedLogin = 'no'
-        router.push({ path: '/' }).catch(console.error)
+        router.currentRoute.path !== '/' && router.push({ path: '/' }).catch(console.error)
       })
+
+      // TODO - Ready to receive real information
+      // setTimeout(() => {
+      //   this.$refs.bannerGeneral.show(this.L('Trying to reconnect...'), 'wifi')
+      // }, 2500)
     },
     computed: {
       showNav () {
-        return this.$store.state.loggedIn && this.$store.getters.groupsByName.length > 0
+        return this.$store.state.loggedIn && this.$store.getters.groupsByName.length > 0 && this.$route.path !== '/join'
       },
       appClasses () {
         return {
@@ -119,6 +134,9 @@ async function startApp () {
           'l-no-navigation': !this.showNav,
           'js-reducedMotion': this.$store.state.reducedMotion
         }
+      },
+      isInCypress () {
+        return !!window.Cypress
       }
     },
     methods: {

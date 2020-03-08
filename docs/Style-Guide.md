@@ -6,7 +6,9 @@ Please read all the sections below before writing a single line of code.
 - **[Vue.js Style Guide](#vuejs-style-guide)**
 - **[CSS Style Guide](#css-style-guide)**
 - **[Accessibility Style Guide](#css-style-guide)**
-- **[Testing Style Guide](#css-style-guide)**
+- **[Testing Style Guide](#testing-style-guide)**
+- **[Folder Structure Style Guide](#folder-structure-style-guide)**
+- **[Feedback Messages](#feedback-messages)**
 - **[Group Income Data Model Rules](#group-income-data-model-rules)**
 - **[SBP Paradigm](#sbp) (Soon!)**
 
@@ -27,10 +29,19 @@ Since this is a Vue.js project, any pull requests **must** follow *Priority A* r
 When writing CSS specific to a Vue component, use the prefix `c-`. This makes it easier to debug the CSS (where to find the CSS code) and understand the dependencies.
 All other classes are global, written at `frontend/assets/style` and should be kept to a minimum for simplicity and to avoid conflicts.
 
+### Titles
+
+We strive to keep semantics (HTML) decoupled from styling (CSS). For example, when it comes to headings, we use classes `.is-title-[n]` instead of styling directly the heading tag `h1, h2 ...`. Read [this explanation](https://stackoverflow.com/questions/19099401/why-use-h1-instead-of-actual-h1/19166926#19166926) to know more about this approach.
+
+There should not be headings gap in the page.
+So for example, h3 can be present only if there is an h2 tag.
+But sometimes a title look better in the page if h2 is the size of h3. In that case we will use 
+
 ```html
 <template>
     <!-- We can easily distinguish global classes from component's classes -->
-    <h1 class="title is-2 c-title">Hello world</h1>
+    <h1 class="is-title-1 c-title">Hello world</h1>
+    <h2 class="is-title-3 c-title">I look better smaller</h1>
 </template>
 
 <style lang="scss" scoped>
@@ -40,6 +51,13 @@ All other classes are global, written at `frontend/assets/style` and should be k
 </style>
 ```
 
+When writing the markup make sure its semantics are complete. For example, if there's a page section but no visual heading is needed, add `.sr-only` to the element so screen readers can read it to the users.
+
+```html
+<template>
+    <h2 class="sr-only">Page details</h2>
+</template>
+```
 ## Accessibility Style Guide
 
 We are committed to ensuring digital accessibility for all people, including those with low vision, blindness, hearing impairments, cognitive impairments, motor impairments or situational disabilities. We are continually improving the user experience for everyone, and applying the relevant accessibility standards.
@@ -67,6 +85,121 @@ We use [Mocha](https://mochajs.org/) for the unit tests and [Cypress](https://ww
 When developing any new feature, make sure to add or update the respective tests.
 
 When writing E2E tests, follow [Cypress Best Practices](https://docs.cypress.io/guides/references/best-practices.html).
+
+
+### Feedback Messages
+
+When the user performs an action (ex: submiting a form), it's expected to show them some type of feedback, on success or failure. There are 3 types of messages we want to display to the user:
+
+#### Type 1 - while filling a form
+
+These messages (mostly errors) are displayed whenever the user makes a mistake when filling out a form input. Examples:
+
+> A {fieldname} is required. —— Ex: A password is required.  
+> A {fieldname} cannot {action}. —— Ex: A username cannot contain spaces.  
+
+Because we do inline validations, the error message is shown whenever the input is invalid. To avoid showing the error too earlier, this is, when the user is still typing their answer, we delay the error validation a bit, to make sure the user has finished typing.
+
+```pug
+label.field
+  i18n.label Email
+  input.input(
+    :class='{error: $v.form.email.$error}'
+    name='email'
+    type='email'
+    v-model='form.email'
+    @input='debounceField("email")'
+    @blur='updateField("email")'
+    v-error:email='{ attrs: { "data-test": "badEmail" } }'
+  )
+```
+
+```js
+import { validationMixin } from 'vuelidate'
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+
+mixins: [
+  validationMixin,
+  validationsDebouncedMixins // include debounceField and updateField
+]
+validations: {
+  form: {
+    email: {
+      [L('An email is required.')]: required,
+      [L('Please enter a valid email.')]: email,
+    }
+  }
+}
+```
+
+- Use `v-error` to automatically show the error message on the correct place. Read `vError.js` for more examples.
+- With `debounceField`, the error message (ex: _'Please enter a valid email.'_) is only shown when the user stopped typing. `updateField` shows the error when the user changed the focus no another input (on blur).
+
+Using the "debounce approach" isn't needed in all inputs. Usually it's recommended when a message error doesn't make sense while the user is still typing their answer, such as an e-mail.
+
+#### Type 2 - User action
+
+These banners let the user know that a certain action was completed successfully OR that an error occurred, and what they can do about it. These errors are more general than form errors, because they concern the action as a whole.
+If there was an error, we should tell what's wrong whenever possible, what action should be done and ask them to try again.
+
+```pug
+banner-scoped(ref='formMsg')
+```
+
+```js
+import BannerScoped from '@components/banners/BannerScoped.vue'
+
+submit () {
+  // If everything went right...
+  this.$refs.formMsg.success(L('Changes saved!'))
+
+  // If something wen't wrong... Try to be more specific whenever possible.
+  this.$refs.formMsg.danger(L('Failed to upload the group picture, please try again. {codeError}', {
+    codeError: error.message
+  }))
+}
+```
+
+#### Type 3 - App Error
+
+This banner informs the user that there's something going on with the app itself, or with something that is not related with a user action. Example:
+
+```html
+<!-- index.html -->
+<banner-general ref="bannerGeneral"></banner-general>
+```
+
+```js
+// main.js
+import BannerGeneral from './views/components/banners/BannerGeneral.vue'
+
+this.$refs.bannerGeneral.show(L('Trying to reconnect...'), 'wifi')
+```
+
+NOTE: this type of banner is under construction and will change soon.
+
+## Folder Structure Style Guide
+
+### Naming Conventions
+- The folders are `kebab-case`
+- Vue files are `PascalCase.vue` - follow [Vue Style Guide](https://vuejs.org/v2/style-guide/#Order-of-words-in-component-names-strongly-recommended)
+- JS files are `camelCase.js`
+
+### Structure
+
+```bash
+frontend/
+└─ main.js # App entry point
+└─ assets/ # Any static file including Styles.
+└─ controller/
+└─ model/
+└─ utils/ 
+└─ views/ # where Vue components live
+    └─ components/ # Vue components reused across the app places.
+    └─ containers/ # Vue components related to a specific part of the app, not reusable.
+    └─ pages/ # Vue components connected to a route
+    └─ utils/ # Utils used only within /frontend/views
+```
 
 ## Group Income Data Model Rules
 

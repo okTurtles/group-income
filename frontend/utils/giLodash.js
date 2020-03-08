@@ -9,9 +9,19 @@ export function mapValues (obj: Object, fn: Function, o: Object = {}) {
   return o
 }
 
-export function pick (o: Object, props: Array<*>) {
+export function pick (o: Object, props: [string]) {
   var x = {}
   for (const k of props) { x[k] = o[k] }
+  return x
+}
+
+export function omit (o: Object, props: [string]) {
+  var x = {}
+  for (const k in o) {
+    if (!props.includes(k)) {
+      x[k] = o[k]
+    }
+  }
   return x
 }
 
@@ -46,6 +56,7 @@ export function randomIntFromRange (min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1) + min)
 }
 
+// TODO: maybe a simplified version like this? https://github.com/component/debounce/blob/master/index.js
 export function debounce (func: Function, wait: number, options?: Object) {
   if (typeof func !== 'function') {
     throw new TypeError('Invalid Function')

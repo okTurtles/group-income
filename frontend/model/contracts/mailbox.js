@@ -1,5 +1,6 @@
 'use strict'
 
+import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import { DefineContract } from './Contract.js'
 import { objectOf, string, object, unionOf, literalOf, optional } from '~/frontend/utils/flowTyper.js'
@@ -11,15 +12,6 @@ export const messageType = unionOf(...[TYPE_MESSAGE, TYPE_FRIEND_REQ].map(k => l
 
 DefineContract({
   name: 'gi.contracts/mailbox',
-  contract: {
-    validate: object, // TODO: define this
-    process (state, { data }) {
-      for (const key in data) {
-        Vue.set(state, key, data[key])
-      }
-      Vue.set(state, 'messages', [])
-    }
-  },
   metadata: {
     // TODO: why is this missing the from username..?
     validate: objectOf({
@@ -31,7 +23,19 @@ DefineContract({
       }
     }
   },
+  state (contractID) {
+    return sbp('state/vuex/state')[contractID]
+  },
   actions: {
+    'gi.contracts/mailbox': {
+      validate: object, // TODO: define this
+      process ({ data }, { state }) {
+        for (const key in data) {
+          Vue.set(state, key, data[key])
+        }
+        Vue.set(state, 'messages', [])
+      }
+    },
     'gi.contracts/mailbox/postMessage': {
       validate: objectOf({
         messageType: messageType,
@@ -40,15 +44,15 @@ DefineContract({
         message: optional(string),
         headers: optional(object)
       }),
-      process (state, { data, meta, hash }) {
-        state.messages.push({ data, meta, hash })
+      process (message, { state }) {
+        state.messages.push(message)
       }
     },
     'gi.contracts/mailbox/authorizeSender': {
       validate: objectOf({
         sender: string
       }),
-      process (state, { data }) {
+      process ({ data }, { state }) {
         // TODO: replace this via OP_KEY_*?
         throw new Error('unimplemented!')
       }

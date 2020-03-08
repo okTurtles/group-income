@@ -25,6 +25,26 @@
   max-height: 0;
 }
 
+.replace-list-enter-active,
+.replace-list-leave-active {
+  transition: max-height 0.15s ease, opacity 0.15s ease;
+  opacity: 1;
+
+  /* Todo: move that to dynamic js, so it's mnore generic */
+  max-height: 150px;
+  overflow: hidden;
+}
+
+.replace-list-enter-active {
+  transition: max-height 0.3s ease, opacity 0.3s ease 0.2s;
+}
+
+.replace-list-enter,
+.replace-list-leave-to {
+  max-height: 0;
+  opacity: 0;
+}
+
 /* slide transition */
 .slide-next-enter-active,
 .slide-next-leave-active,
@@ -111,21 +131,6 @@
   @include tablet {
     animation: zoom 0.3s reverse;
   }
-}
-
-.expand-enter-active,
-.expand-leave-active {
-  transition: opacity 0.5s, max-height 0.8s cubic-bezier(0.165, 0.84, 0.44, 1);
-  opacity: 1;
-  max-height: 21rem;
-  overflow: hidden;
-}
-
-.expand-enter,
-.expand-leave-to {
-  opacity: 0;
-  max-height: 0;
-  overflow: hidden;
 }
 
 @keyframes blink-animation {

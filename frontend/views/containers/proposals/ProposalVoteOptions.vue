@@ -1,6 +1,6 @@
 <template lang='pug'>
-.c-ctas
-  .buttons(v-if='!hadVoted || ephemeral.changingVote')
+.c-ctas(v-if='!isToRemoveMe')
+  .buttons.c-options(v-if='!hadVoted || ephemeral.changingVote')
     i18n.button.is-outlined.is-small.is-success(
       tag='button'
       @click='voteFor'
@@ -13,7 +13,7 @@
       data-test='voteAgainst'
     ) Vote no
 
-  .c-cancel(v-else)
+  .buttons(v-else)
     i18n.button.is-outlined.is-small(
       tag='button'
       v-if='ownProposal'
@@ -32,9 +32,9 @@ import { mapGetters, mapState } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
 import { VOTE_FOR, VOTE_AGAINST } from '@model/contracts/voting/rules.js'
-import { TYPE_MESSAGE } from '@model/contracts/mailbox.js'
-import { oneVoteToPass, buildInvitationUrl } from '@model/contracts/voting/proposals.js'
-import { generateInvites } from '@model/contracts/group.js'
+import { oneVoteToPass } from '@model/contracts/voting/proposals.js'
+import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER } from '@model/contracts/voting/constants.js'
+import { createInvite } from '@model/contracts/group.js'
 
 export default {
   name: 'Vote',
@@ -54,6 +54,7 @@ export default {
       'currentGroupId'
     ]),
     ...mapGetters([
+      'ourUsername',
       'currentGroupState',
       'groupSettings',
       'ourUserIdentityContract'
@@ -61,15 +62,12 @@ export default {
     proposal () {
       return this.currentGroupState.proposals[this.proposalHash]
     },
-    currentUsername () {
-      return this.ourUserIdentityContract.attributes.name
-    },
     voteStatus () {
       const humanStatus = {
         [VOTE_FOR]: L('yes'),
         [VOTE_AGAINST]: L('no')
       }
-      return humanStatus[this.proposal.votes[this.currentUsername]]
+      return humanStatus[this.proposal.votes[this.ourUsername]]
     },
     meta () {
       return this.proposal.meta
@@ -80,11 +78,14 @@ export default {
     data () {
       return this.proposal.data.proposalData
     },
+    isToRemoveMe () {
+      return this.type === PROPOSAL_REMOVE_MEMBER && this.data.member === this.ourUsername
+    },
     hadVoted () {
-      return this.proposal.votes[this.currentUsername]
+      return this.proposal.votes[this.ourUsername]
     },
     ownProposal () {
-      return this.currentUsername === this.proposal.meta.username
+      return this.ourUsername === this.proposal.meta.username
     }
   },
   methods: {
@@ -95,15 +96,25 @@ export default {
       this.ephemeral.changingVote = false
       this.ephemeral.errorMsg = null
       // Avoid redundant vote from "Change vote" if already voted FOR before
-      if (!confirm(L('Are you sure you want to vote yes?')) || this.proposal.votes[this.currentUsername] === VOTE_FOR) {
+      if (!confirm(L('Are you sure you want to vote yes?')) || this.proposal.votes[this.ourUsername] === VOTE_FOR) {
         return null
       }
       try {
         const proposalHash = this.proposalHash
+        const isOneVoteToPass = oneVoteToPass(proposalHash)
         const payload = {}
-        if (oneVoteToPass(proposalHash)) {
-          payload.passPayload = generateInvites(1)
+
+        if (isOneVoteToPass && this.type === PROPOSAL_INVITE_MEMBER) {
+          payload.passPayload = createInvite({
+            invitee: this.proposal.data.proposalData.member,
+            creator: this.proposal.meta.username
+          })
+        } else if (isOneVoteToPass && this.type === PROPOSAL_REMOVE_MEMBER) {
+          payload.passPayload = {
+            secret: `${parseInt(Math.random() * 10000)}` // TODO: this
+          }
         }
+
         const vote = await sbp('gi.contracts/group/proposalVote/create',
           {
             proposalHash,
@@ -113,33 +124,6 @@ export default {
           this.currentGroupId
         )
         await sbp('backend/publishLogEntry', vote)
-
-        if (payload.passPayload) {
-          const groupName = this.groupSettings.groupName
-          const username = this.data.member
-          // TODO: delete this entire section, this is just
-          //       here for debug and testing purposes until
-          //       we get the links page working nicely.
-          //       this.data.members will not contain usernames in the future.
-          const contractID = await sbp('namespace/lookup', username)
-          const identityContract = await sbp('state/latestContractState', contractID)
-          console.debug('sending invite to:', contractID, identityContract)
-          const inviteToMailbox = await sbp('gi.contracts/mailbox/postMessage/create',
-            {
-              messageType: TYPE_MESSAGE,
-              from: groupName,
-              subject: `You've been invited to join ${groupName}!`,
-              message: `Hi ${username},
-              
-              ${groupName} has voted to invite you! Horray!
-              Here's your special invite link:
-              
-              ${buildInvitationUrl(this.$store.state.currentGroupId, payload.passPayload.inviteSecret)}`
-            },
-            identityContract.attributes.mailbox
-          )
-          await sbp('backend/publishLogEntry', inviteToMailbox)
-        }
       } catch (ex) {
         console.log(ex)
         this.ephemeral.errorMsg = L('Failed to Cast Vote. Try again.')
@@ -149,7 +133,7 @@ export default {
       this.ephemeral.changingVote = false
       this.ephemeral.errorMsg = null
       // Avoid redundant vote from "Change vote" if already voted AGAINST before
-      if (!confirm(L('Are you sure you want to vote no?')) || this.proposal.votes[this.currentUsername] === VOTE_AGAINST) {
+      if (!confirm(L('Are you sure you want to vote no?')) || this.proposal.votes[this.ourUsername] === VOTE_AGAINST) {
         return null
       }
       try {
@@ -187,10 +171,32 @@ export default {
 }
 </script>
 <style lang="scss" scoped>
-@import "../../../assets/style/_variables.scss";
+@import "@assets/style/_variables.scss";
+
+.c-ctas {
+  @include phone {
+    width: 100%;
+    margin-top: $spacer;
+    margin-bottom: $spacer-sm;
+
+    .button {
+      flex-grow: 1;
+
+      &:not(:last-child) {
+        margin-right: $spacer;
+      }
+    }
+  }
+}
 
 .buttons {
   margin-top: 0;
+}
+
+.c-options {
+  @include tablet {
+    flex-wrap: nowrap;
+  }
 }
 
 .c-error {

@@ -10,24 +10,19 @@ import flowRemoveTypes from 'flow-remove-types'
 import json from 'rollup-plugin-json'
 import globals from 'rollup-plugin-node-globals'
 import { eslint } from 'rollup-plugin-eslint'
-import css from 'rollup-plugin-css-only'
-import scssVariable from 'rollup-plugin-sass-variables'
+import sass from 'rollup-plugin-sass'
 import { createFilter } from 'rollup-pluginutils'
 import transpile from 'vue-template-es2015-compiler'
+import { chompLeft, chompRight } from '~/shared/string.js'
+
 const compiler = require('vue-template-compiler') // NOTE: import doesnt work here?
-
-// import collectSass from 'rollup-plugin-collect-sass'
-// import sass from 'rollup-plugin-sass'
-// import scss from 'rollup-plugin-scss'
-// import browserifyPlugin from 'rollup-plugin-browserify-transform'
-// https://github.com/4lejandrito/rollup-plugin-browsersync
-
-// import rollup from 'rollup'
 const rollup = require('rollup')
 const chalk = require('chalk')
 const fs = require('fs')
 const path = require('path')
 const url = require('url')
+const util = require('util')
+const readFileAsync = util.promisify(fs.readFile)
 
 const development = process.env.NODE_ENV === 'development'
 const livereload = development && (parseInt(process.env.PORT_SHIFT || 0) + 35729)
@@ -36,6 +31,24 @@ const distDir = 'dist'
 const distAssets = `${distDir}/assets`
 const distJS = `${distAssets}/js`
 const distCSS = `${distAssets}/css`
+
+const sassOptions = {
+  // https://github.com/sass/dart-sass#javascript-api
+  sourceMap: development,
+  outputStyle: development ? 'expanded' : 'compressed',
+  includePaths: [
+    path.resolve('./node_modules'), // so we can write @import 'vue-slider-component/lib/theme/default.scss'; in .vue <style>
+    path.resolve('./frontend/assets/style') // so we can write @import '_variables.scss'; in .vue <style> section
+    // but also for compatibility with resolveScssFromId() to prevent errors like this during the build process:
+    // couldn't resolve: @import "_reset"; in group-income-simple/frontend/assets/style/main.scss
+  ],
+  importer (url, prev, done) {
+    // so we can write @import "@assets/style/_variables.scss"; in the <style> section of .vue components too
+    return url.indexOf('@assets/') !== 0
+      ? null
+      : { file: path.resolve('./frontend/assets', chompLeft(url, '@assets/')) }
+  }
+}
 
 module.exports = (grunt) => {
   require('load-grunt-tasks')(grunt)
@@ -53,11 +66,6 @@ module.exports = (grunt) => {
         options: { livereload },
         files: [`${distJS}/main.js`]
       },
-      css: {
-        options: { livereload },
-        files: ['frontend/assets/**/*.{sass,scss}'],
-        tasks: ['sass']
-      },
       html: {
         options: { livereload },
         files: ['frontend/**/*.html'],
@@ -74,26 +82,6 @@ module.exports = (grunt) => {
       gruntfile: {
         files: ['.Gruntfile.babel.js', 'Gruntfile.js'],
         tasks: ['exec:eslintgrunt']
-      }
-    },
-
-    sass: {
-      options: {
-        implementation: require('node-sass'),
-        sourceMap: development,
-        // https://github.com/vuejs/vueify/issues/34#issuecomment-161722961
-        // indentedSyntax: true,
-        // sourceMapRoot: '/',
-        outputStyle: development ? 'nested' : 'compressed'
-      },
-      dev: {
-        files: [{
-          expand: true,
-          cwd: 'frontend/assets/style',
-          src: ['*.{sass,scss}', '!_*/**'],
-          dest: distCSS,
-          ext: '.css'
-        }]
       }
     },
 
@@ -198,7 +186,7 @@ module.exports = (grunt) => {
       sbp('backend/pubsub/setup', require('http').createServer(), true)
     }
     if (!grunt.option('skipbuild')) {
-      grunt.task.run(['exec:eslint', 'exec:puglint', 'exec:stylelint', 'copy', 'sass', rollup])
+      grunt.task.run(['exec:eslint', 'exec:puglint', 'exec:stylelint', 'copy', rollup])
     }
   })
 
@@ -296,8 +284,11 @@ module.exports = (grunt) => {
     let done = this.async()
     const watchFlag = this.flags.watch
     const watchOpts = {
-      clearScreen: false,
       input: 'frontend/main.js',
+      watch: {
+        clearScreen: false,
+        chokidar: true
+      },
       output: {
         format: 'system',
         dir: distJS,
@@ -316,20 +307,21 @@ module.exports = (grunt) => {
       plugins: [
         alias({
           // https://vuejs.org/v2/guide/installation.html#Standalone-vs-Runtime-only-Build
-          resolve: ['.vue', '.js', '.svg'],
-          vue: path.resolve('./node_modules/vue/dist/vue.esm.js'),
-          '~': path.resolve('./'),
-          '@controller': path.resolve('./frontend/controller'),
-          '@model': path.resolve('./frontend/model'),
-          '@utils': path.resolve('./frontend/utils'),
-          '@views': path.resolve('./frontend/views'),
-          '@pages': path.resolve('./frontend/views/pages'),
-          '@components': path.resolve('./frontend/views/components'),
-          '@containers': path.resolve('./frontend/views/containers'),
-          '@view-utils': path.resolve('./frontend/views/utils'),
-          '@assets': path.resolve('./frontend/assets'),
-          '@svgs': path.resolve('./frontend/assets/svgs')
-
+          resolve: ['.vue', '.js', '.svg', '.scss'],
+          entries: {
+            'vue': path.resolve('./node_modules/vue/dist/vue.esm.js'),
+            '~': path.resolve('./'),
+            '@controller': path.resolve('./frontend/controller'),
+            '@model': path.resolve('./frontend/model'),
+            '@utils': path.resolve('./frontend/utils'),
+            '@views': path.resolve('./frontend/views'),
+            '@pages': path.resolve('./frontend/views/pages'),
+            '@components': path.resolve('./frontend/views/components'),
+            '@containers': path.resolve('./frontend/views/containers'),
+            '@view-utils': path.resolve('./frontend/views/utils'),
+            '@assets': path.resolve('./frontend/assets'),
+            '@svgs': path.resolve('./frontend/assets/svgs')
+          }
         }),
         resolve({
           // we set `preferBuiltins` to prevent rollup from erroring with
@@ -338,39 +330,29 @@ module.exports = (grunt) => {
           preferBuiltins: false
         }),
         json(),
-        // TODO: probably don't need browserifyPlugin, just implement ourselves here as a raw object
-        //       per: https://rollupjs.org/guide/en#plugins-overview
-        // browserifyPlugin(script2ify, { include: '*.{vue,html}' }),
-        scssVariable(),
-        // note there is a sourcemap bug for component.css: https://github.com/thgh/rollup-plugin-css-only/issues/10
-        css({ output: `${distCSS}/component.css` }), // SUCCESS - spits out what's in .vue <style> tags
-        // collectSass({ importOnce: true, extract: `${distCSS}/collectSass.css` }), // FAIL - flowtypes conflict
-        // sass({ output: `${distCSS}/sass.css` }), // FAIL - flowtypes conflict
-        // scss({ output: `${distCSS}/scss.css` }), // FAIL - produces empty bundle, probably only
-        //                                              useful in the <script> section, i.e.
-        //                                              <script>import 'foo.scss' ...
+        transformProxy({
+          // NOTE: this completely ignores outFile in the sassOptions
+          //       for some reason, so sourcemaps aren't generated for the SCSS :-\
+          plugin: sass({ output: `${distCSS}/main.css`, options: sassOptions }),
+          match: /\.scss$/,
+          recurse: true
+        }),
         eslint({ throwOnError: true, throwOnWarning: true }),
         svgLoader(),
-        VuePlugin({
-          // https://rollup-plugin-vue.vuejs.org/options.html
-          // https://github.com/vuejs/rollup-plugin-vue/blob/master/src/index.ts
-          // https://github.com/vuejs/vue-component-compiler#api
-          needMap: false,
-          css: false,
-          style: {
-            preprocessOptions: {
-              scss: {
-                // https://github.com/sass/node-sass#includepaths
-                includePaths: [
-                  // so that you can write things like this inside component style sections:
-                  // @import 'vue-slider-component/lib/theme/default.scss';
-                  path.resolve('./node_modules')
-                ]
-              }
+        transformProxy({
+          plugin: VuePlugin({
+            // https://rollup-plugin-vue.vuejs.org/options.html
+            // https://github.com/vuejs/rollup-plugin-vue/blob/master/src/index.ts
+            // https://github.com/vuejs/vue-component-compiler#api
+            needMap: false, // see: https://github.com/okTurtles/group-income-simple/pull/629
+            // css: false, // to prevent loading a massive CSS file, we keep the CSS in components that can be split up
+            style: {
+              preprocessOptions: { scss: sassOptions }
             }
-          }
+          }),
+          match: /\.(scss|vue)$/,
+          recurse: false
         }),
-        // VuePlugin(),
         flow({ all: true }),
         commonjs({
           // NOTE: uncommenting this saves ~1 second off build process
@@ -419,6 +401,53 @@ module.exports = (grunt) => {
       }
     })
   })
+
+  function resolveScssFromId (id: string): ?string {
+    if (id.indexOf('@assets/') === 0) {
+      return path.resolve('./frontend/assets', chompLeft(id, '@assets/'))
+    }
+    for (const incPath of sassOptions.includePaths) {
+      const res = path.join(incPath, id)
+      if (fs.existsSync(res)) return res
+    }
+  }
+
+  const watchScss = async function (source: string, filename: string, recurse: boolean) {
+    try {
+      for (const [match, id1, id2] of source.matchAll(/(?<!\/\/.*)(?:import ['"](.+?\.scss)['"]|@import ['"](.+?)['"];)/g)) {
+        // sometimes the @imports in .scss files will contain the extension, and sometimes they won't
+        const resolvedPath = resolveScssFromId(id1 || `${chompRight(id2, '.scss')}.scss`)
+        if (resolvedPath) {
+          grunt.verbose.debug(chalk`addWatchFile {cyanBright ${match}} => {cyanBright ${resolvedPath}}`)
+          this.addWatchFile(resolvedPath)
+          if (recurse) {
+            await watchScss.call(this, await readFileAsync(resolvedPath, 'utf8'), resolvedPath, recurse)
+          }
+        } else {
+          grunt.log.error(chalk`couldn't resolve: {cyanBright ${match}} in {cyanBright ${filename}}`)
+        }
+      }
+    } catch (e) {
+      grunt.log.error(`watchScss for ${filename} (typeof source = ${typeof source}):`, e.message, source)
+      throw e
+    }
+  }
+  // We use 'transformProxy' to intercept calls to the plugin's transform function,
+  // so that we can watch .scss files for changes and rebuild the bundle + refresh browser
+  const transformProxy = function (opts: { plugin: Object, match: RegExp, recurse: boolean }) {
+    return new Proxy(opts.plugin, {
+      get: function (obj, prop) {
+        if (prop !== 'transform') return obj[prop]
+        return async function (source: string, filename: string) {
+          if (opts.match.test(filename)) {
+            grunt.verbose.debug(chalk`{bold TRANFORM:} ${filename}`)
+            await watchScss.call(this, source, filename, opts.recurse)
+          }
+          return obj.transform.call(this, source, filename)
+        }
+      }
+    })
+  }
 }
 
 // Using this instead of rollup-plugin-flow due to
@@ -466,7 +495,6 @@ function svgLoader (options) {
 // TODO: convert this to a pure rollup plugin
 // ----------------------------------------
 var through = require('through2')
-
 // This will replace <script> with <script2> in .html and .vue files
 // EXCEPT:
 // - within <!-- comments -->

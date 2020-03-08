@@ -12,7 +12,7 @@ This semi-centralized "Simple Edition" of Group Income is our way to rapidly pro
 
 ## Getting Started
 
-1. Install [Node.js](https://nodejs.org) (version 8 or greater).
+1. Install [Node.js](https://nodejs.org) (version 12 or greater).
 2. Install [Grunt](https://github.com/gruntjs/grunt): `npm install -g grunt-cli`
 3. Clone this repo (or a fork of it if you plan on [contributing](#contributing)) and `cd` into it.
 4. Install dependencies: `npm install`
@@ -117,4 +117,4 @@ If you run into any errors [during the setup](docs/Getting-Started-frontend.md#h
 
 ## License
 
-AGPLv3. See [`LICENSE`](docs/LICENSE) for license details and [`CONTRIBUTING.md`](CONTRIBUTING.md) for contributing policy.
+AGPLv3. See [`LICENSE`](LICENSE) for license details and [`CONTRIBUTING.md`](CONTRIBUTING.md) for contributing policy.

@@ -7,14 +7,13 @@
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <link rel="stylesheet" href="/assets/css/main.css">
-    <link rel="stylesheet" href="/assets/css/component.css">
     <link rel="icon" href="/assets/images/group-income-icon-transparent.png" sizes="32x32">
   </head>
   <body lang="eng">
     <!--[if lt IE 9]>
     <div class="modal is-active">
         <div class="modal-content">
-            <h1 class="title">Outdated browser</h1>
+            <h1>Outdated browser</h1>
             <p>You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
         </div>
     </div>
@@ -27,9 +26,11 @@
       :data-logged-in='ephemeral.finishedLogin'
     >
       <app-styles></app-styles>
+      <banner-general ref="bannerGeneral"></banner-general>
       <navigation v-if="showNav" class="l-navigation"></navigation>
       <router-view class="l-page"></router-view>
       <modal class="l-modal"></modal>
+      <cypress-bypass-ui v-if="isInCypress"></cypress-bypass-ui>
     </div>
     <script src="/assets/js/s.min.js"></script>
     <script type="text/javascript">
@@ -56,7 +57,7 @@
       <section class="hero is-fullheight">
         <div class="hero-body">
           <div class="container has-text-centered">
-            <h1 class="title">JavaScript disabled!</h1>
+            <h1>JavaScript disabled!</h1>
             <p>This app requires JavaScript to function.</p>
           </div>
         </div>

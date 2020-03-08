@@ -5,13 +5,14 @@
     :key='`user-${index}`'
     :src='user.picture'
     :alt='user.displayName || user.name'
+    size='sm'
   )
   message-notification {{text}}
 </template>
 
 <script>
 import { chatTypes, users, groupA } from './fakeStore.js'
-import MessageNotification from '@components/Chatroom/MessageNotification.vue'
+import MessageNotification from './MessageNotification.vue'
 import Avatar from '@components/Avatar.vue'
 
 export default {
@@ -61,7 +62,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "../../../assets/style/_variables.scss";
+@import "@assets/style/_variables.scss";
 
 .c-greetings {
   margin-bottom: $spacer-lg;

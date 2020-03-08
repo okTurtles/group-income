@@ -1,23 +1,23 @@
 'use strict'
 
 import sbp from '~/shared/sbp.js'
-// import Vue from 'vue'
 import { objectOf, literalOf, unionOf, number } from '~/frontend/utils/flowTyper.js'
 import { DAYS_MILLIS } from '~/frontend/utils/time.js'
 import { PROPOSAL_RESULT } from '~/frontend/utils/events.js'
 import rules, { ruleType, VOTE_UNDECIDED, VOTE_AGAINST, VOTE_FOR, RULE_THRESHOLD, RULE_DISAGREEMENT } from './rules.js'
 
-export const PROPOSAL_INVITE_MEMBER = 'invite-member'
-export const PROPOSAL_REMOVE_MEMBER = 'remove-member'
-export const PROPOSAL_GROUP_SETTING_CHANGE = 'group-setting-change'
-export const PROPOSAL_PROPOSAL_SETTING_CHANGE = 'proposal-setting-change'
-export const PROPOSAL_GENERIC = 'generic'
-
-export const STATUS_OPEN = 'open'
-export const STATUS_PASSED = 'passed'
-export const STATUS_FAILED = 'failed'
-export const STATUS_EXPIRED = 'expired'
-export const STATUS_CANCELLED = 'cancelled'
+import {
+  PROPOSAL_INVITE_MEMBER,
+  PROPOSAL_REMOVE_MEMBER,
+  PROPOSAL_GROUP_SETTING_CHANGE,
+  PROPOSAL_PROPOSAL_SETTING_CHANGE,
+  PROPOSAL_GENERIC,
+  // STATUS_OPEN,
+  STATUS_PASSED,
+  STATUS_FAILED
+  // STATUS_EXPIRED,
+  // STATUS_CANCELLED
+} from './constants.js'
 
 export function archiveProposal (state, proposalHash) {
   // TODO: handle this better (archive the proposal or whatever)
@@ -73,10 +73,10 @@ const proposals = {
       const proposal = state.proposals[data.proposalHash]
       proposal.payload = data.passPayload
       proposal.status = STATUS_PASSED
-      sbp('gi.contracts/group/invite/process', state, {
-        meta: proposal.meta,
-        data: data.passPayload
-      })
+      // NOTE: if invite/process requires more than just data+meta
+      //       this code will need to be updated...
+      const message = { meta: proposal.meta, data: data.passPayload }
+      sbp('gi.contracts/group/invite/process', message, state)
       sbp('okTurtles.events/emit', PROPOSAL_RESULT, state, VOTE_FOR, data)
       // TODO: for now, generate the link and send it to the user's inbox
       //       however, we cannot send GIMessages in any way from here
@@ -122,10 +122,22 @@ const proposals = {
         [RULE_DISAGREEMENT]: { threshold: 2 }
       }
     },
-    [VOTE_FOR]: function (state, { proposalHash, passPayload }) {
-      console.error('unimplemented!')
-      // TODO: unsubscribe from their mailbox and identity contract
-      //       call commit('removeContract'), etc.
+    [VOTE_FOR]: async function (state, { proposalHash, passPayload }) {
+      const proposal = state.proposals[proposalHash]
+      const { member, memberId, groupId } = proposal.data.proposalData
+      proposal.status = STATUS_PASSED
+      proposal.payload = passPayload
+
+      const data = {
+        member,
+        memberId,
+        groupId,
+        proposalHash,
+        proposalPayload: passPayload
+      }
+      const message = { data, meta: proposal.meta }
+      sbp('gi.contracts/group/removeMember/process', message, state)
+      await sbp('gi.contracts/group/removeMember/process/sideEffect', message)
     },
     [VOTE_AGAINST]: voteAgainst
   },
@@ -138,8 +150,17 @@ const proposals = {
         [RULE_DISAGREEMENT]: { threshold: 1 }
       }
     },
-    [VOTE_FOR]: function (state, { proposalHash, passPayload }) {
-      console.error('unimplemented!')
+    [VOTE_FOR]: function (state, data) {
+      const proposal = state.proposals[data.proposalHash]
+      proposal.status = STATUS_PASSED
+      const { setting, proposedValue } = proposal.data.proposalData
+      // NOTE: if updateSettings ever needs more ethana just meta+data
+      //       this code will need to be updated
+      const message = {
+        meta: proposal.meta,
+        data: { [setting]: proposedValue }
+      }
+      sbp('gi.contracts/group/updateSettings/process', message, state)
     },
     [VOTE_AGAINST]: voteAgainst
   },

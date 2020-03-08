@@ -1,142 +1,193 @@
 <template lang='pug'>
-page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings.groupName')
+page.c-page
   template(#title='') {{ L('Group Settings') }}
   template(#description='') {{ L('Changes to these settings will be visible to all group members') }}
 
-  page-section(title='')
+  avatar-upload(
+    :avatar='$store.getters.groupSettings.groupPicture'
+    :sbpParams='sbpParams'
+  )
 
-    form
-      .field
-        i18n.label(tag='label') Group name
-
-        //- BUG: TODO: cannot bind directly to :value here, as any changes
-        //- to groupSettings must be done via proposals and/or
-        //- like it's done in UserProfile.vue
-        input.input.is-large.is-primary(
-          ref='name'
+  page-section
+    form(@submit.prevent='saveSettings')
+      label.field
+        i18n.label Group name
+        input.input(
           type='text'
-          name='groupName'
-          :class='{ error: $v.form.groupName.$error }'
-          :value='groupSettings.groupName'
-          @input='update'
-          @keyup.enter='next'
+          :class='{error: $v.form.groupName.$error}'
+          v-model='form.groupName'
+          @input='debounceField("groupName")'
+          @blur='updateField("groupName")'
+          v-error:groupName=''
           data-test='groupName'
         )
 
-      .field
-        i18n.label(tag='label') Description
-
+      label.field
+        i18n.label About the group
         textarea.textarea(
-          name='sharedValues'
-          ref='purpose'
-          :placeholder='L("Group Purpose")'
           maxlength='500'
-          :class='{ error: $v.form.sharedValues.$error }'
-          :value='groupSettings.sharedValues'
-          @input='update'
+          :class='{error: $v.form.sharedValues.$error}'
+          v-model='form.sharedValues'
+          @input='debounceField("sharedValues")'
+          @blur='updateField("sharedValues")'
+          v-error:sharedValues=''
+          data-test='sharedValues'
         )
 
-      .field
-        i18n.label(tag='label') Default currency
-        .select-wrapper
+      label.field
+        i18n.label Default currency
+        .select-wrapper.c-currency-select
           select(
             name='mincomeCurrency'
-            required=''
-            :value='groupSettings.mincomeCurrency'
-            @input='update'
+            v-model='form.mincomeCurrency'
           )
             option(
               v-for='(currency, code) in currencies'
               :value='code'
               :key='code'
-            ) {{ currency.symbol }}
+            ) {{ currency.symbolWithCode }}
 
-        i18n(tag='p') This is the currency that will be displayed for every member of the group, across the platform.
+        i18n.helper This is the currency that will be displayed for every member of the group, across the platform.
 
-      i18n.is-success(
-        tag='button'
-        ref='save'
-        @click='save'
-        :disabled='$v.form.$invalid'
-        data-test='saveBtn'
-      ) Save changes
+      banner-scoped(ref='formMsg' data-test='formMsg')
 
-  invite-links
+      .buttons
+        i18n.is-success(
+          tag='button'
+          :disabled='$v.form.$invalid'
+          data-test='saveBtn'
+        ) Save changes
+
+  invitations-table
 
   page-section(:title='L("Leave Group")')
-    i18n(
+    i18n.has-text-1(
       tag='p'
       :args='LTags("b")'
     ) This means you will stop having access to the {b_}group chat{_b} (including direct messages to other group members) and {b_}contributions{_b}. Re-joining the group is possible, but requires other members to vote and reach an agreement.
 
-    i18n.is-danger.is-outlined(
-      tag='button'
-      ref='leave'
-      @click='openProposal("LeaveGroupModal")'
-      data-test='LeaveBtn'
-    ) Leave group
+    .buttons
+      i18n.is-danger.is-outlined(
+        tag='button'
+        ref='leave'
+        @click='openProposal("GroupLeaveModal")'
+        data-test='LeaveBtn'
+      ) Leave group
 
   page-section(:title='L("Delete Group")')
-    i18n(tag='p') This will delete all the data associated with this group permanently.
+    i18n.has-text-1(tag='p') This will delete all the data associated with this group permanently.
 
-    i18n.is-danger.is-outlined(
-      tag='button'
-      ref='delete'
-      @click='openProposal("DeleteGroup")'
-      data-test='deleteBtn'
-    ) Delete group
+    .buttons(v-if='membersLeft === 0')
+      i18n.is-danger.is-outlined(
+        tag='button'
+        ref='delete'
+        @click='openProposal("GroupDeletionModal")'
+        data-test='deleteBtn'
+      ) Delete group
+
+    banner-simple(severity='info' v-else)
+      i18n(
+        :args='{ count: membersLeft, groupName: groupSettings.groupName, ...LTags("b")}'
+      ) You can only delete a group when all the other members have left. {groupName} still has {b_}{count} other members{_b}.
 </template>
 
 <script>
 import sbp from '~/shared/sbp.js'
-import { mapGetters } from 'vuex'
-import { OPEN_MODAL } from '@utils/events.js'
 import { validationMixin } from 'vuelidate'
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import { mapState, mapGetters } from 'vuex'
+import { OPEN_MODAL } from '@utils/events.js'
 import { required } from 'vuelidate/lib/validators'
 import currencies from '@view-utils/currencies.js'
-
-import Page from '@pages/Page.vue'
+import Page from '@components/Page.vue'
 import PageSection from '@components/PageSection.vue'
-import InviteLinks from '@components/GroupSettings/InviteLinks.vue'
+import AvatarUpload from '@components/AvatarUpload.vue'
+import InvitationsTable from '@containers/group-settings/InvitationsTable.vue'
+import BannerSimple from '@components/banners/BannerSimple.vue'
+import BannerScoped from '@components/banners/BannerScoped.vue'
+import L from '@view-utils/translations.js'
 
 export default {
   name: 'GroupSettings',
-  mixins: [validationMixin],
+  mixins: [validationMixin, validationsDebouncedMixins],
   components: {
     Page,
     PageSection,
-    InviteLinks
+    InvitationsTable,
+    AvatarUpload,
+    BannerSimple,
+    BannerScoped
   },
   data () {
+    const { groupName, sharedValues, mincomeCurrency } = this.$store.getters.groupSettings
     return {
-      currencies
+      form: {
+        groupName,
+        sharedValues,
+        mincomeCurrency
+      },
+      ephemeral: {
+        isSubmitting: false
+      }
     }
   },
   computed: {
+    ...mapState([
+      'currentGroupId'
+    ]),
     ...mapGetters([
-      'groupSettings'
-    ])
+      'groupSettings',
+      'groupMembersCount'
+    ]),
+    membersLeft () {
+      return this.groupMembersCount - 1
+    },
+    currencies () {
+      return currencies
+    },
+    sbpParams () {
+      return {
+        selector: 'gi.contracts/group/updateSettings/create',
+        contractID: this.$store.state.currentGroupId,
+        key: 'groupPicture'
+      }
+    }
   },
   methods: {
     openProposal (component) {
       sbp('okTurtles.events/emit', OPEN_MODAL, component)
     },
-    update (e) {
-      // TODO update value
-      console.log('Update', e)
-    },
-    save (e) {
-      // TODO save form
-      console.log('Save', e)
+    async saveSettings (e) {
+      if (this.ephemeral.isSubmitting) { return }
+      this.ephemeral.isSubmitting = true
+      const attrs = {}
+
+      for (const key in this.form) {
+        if (this.form[key] !== this.groupSettings[key]) {
+          attrs[key] = this.form[key]
+        }
+      }
+
+      try {
+        const settings = await sbp('gi.contracts/group/updateSettings/create',
+          attrs,
+          this.currentGroupId
+        )
+        await sbp('backend/publishLogEntry', settings)
+        this.$refs.formMsg.success(L('Your changes were saved!'))
+      } catch (e) {
+        this.$refs.formMsg.danger(L('Failed to update group settings. {codeError}', { codeError: e.message }))
+      }
+      this.ephemeral.isSubmitting = false
     }
   },
   validations: {
     form: {
       groupName: {
-        required
+        [L('This field is required')]: required
       },
       sharedValues: {
-        required
+        [L('This field is required')]: required
       }
     }
   }
@@ -144,4 +195,15 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "@assets/style/_variables.scss";
+
+.c-page ::v-deep .p-main {
+  max-width: 37rem;
+}
+
+.c-currency-select {
+  @include tablet {
+    width: 50%;
+  }
+}
 </style>

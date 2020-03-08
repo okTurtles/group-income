@@ -13,10 +13,12 @@ $icons: (
   chevron-left: "\f053",
   chevron-right: "\f054",
   cog: "\f013",
+  coins: "\f51e",
   copy: "\F0C5",
   columns: "\f0db",
   comment: "\f075",
   comments: "\f086",
+  dollar-sign: "\f155",
   edit: "\f044",
   ellipsis-v: "\f142",
   envelope: "\f0e0",
@@ -34,15 +36,19 @@ $icons: (
   pencil-alt: "\f303",
   plus: "\f067",
   poll: "\f681",
+  question: "\f128",
   question-circle: "\f059",
+  search: "\f002",
+  sort-down: "\f0dd",
   tag: "\f02b",
   times: "\f00d",
   times-circle: "\f057",
   undo: "\f0e2",
   user: "\f007",
   user-plus: "\f234",
-  user-times: "\f235",
+  user-minus: "\f503",
   vote-yea: "\f772",
+  wifi: "\f1eb",
 );
 
 @font-face {
@@ -88,10 +94,32 @@ $icons: (
   &.is-regular::before {
     font-weight: 400;
   }
+
+  &.is-prefix {
+    margin-right: $spacer-sm;
+  }
+
+  &.is-suffix {
+    margin-left: $spacer-sm;
+  }
 }
 
 @each $name, $icon in $icons {
   .icon-#{$name}::before {
     content: $icon;
   }
+}
+
+.icon-eye::before {
+  font-weight: 400; /* thinner version */
+}
+
+.icon-round {
+  width: 2rem;
+  height: 2rem;
+  margin-right: $spacer;
+  flex-shrink: 0;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 2rem;
 }

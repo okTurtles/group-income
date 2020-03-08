@@ -11,7 +11,7 @@
       i18n(key='title1' v-if='isConfirmation') Your proposal was created
       span(v-else) {{ title }}
 
-    form.c-form
+    form.c-form(@submit.prevent='')
       slot
 
       label.field(v-if='isReasonStep' key='reason')
@@ -25,7 +25,9 @@
 
       .c-confirmation(v-if='isConfirmation' key='confirmation')
         svg-proposal.c-svg
-        i18n(html='Members of your group will now be asked to vote.</br>You need <strong>{value} yes votes</strong> for  your proposal to be accepted.' :args='{value: rule.value}')
+        i18n(
+          :args='{ ...LTags("strong"), numVotes: rule.value }'
+        ) Members of your group will now be asked to vote.{br_} You need {strong_}{numVotes} yes votes{_strong} for your proposal to be accepted.
 
       .buttons(:class='{ "is-centered": isConfirmation }')
         button.is-outlined(
@@ -36,8 +38,9 @@
           data-test='prevBtn'
         ) {{ currentStep === 0 ? L('Cancel') : L('Back') }}
 
-        button.is-success(
+        button(
           key='change'
+          :class='submitStyleNonProposal'
           v-if='!groupShouldPropose'
           @click.prevent='submit'
           :disabled='disabled'
@@ -45,6 +48,7 @@
         ) {{ submitTextNonProposal }}
 
         button(
+          type='button'
           key='next'
           v-if='groupShouldPropose && isNextStep'
           @click.prevent='next'
@@ -52,7 +56,7 @@
           data-test='nextBtn'
         )
           i18n Next
-          i.icon-arrow-right
+          i.icon-arrow-right.is-suffix
 
         i18n.is-success(
           key='create'
@@ -88,7 +92,7 @@
 <script>
 import { mapGetters } from 'vuex'
 import L from '@view-utils/translations.js'
-import ModalTemplate from '@components/Modal/ModalTemplate.vue'
+import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import SvgProposal from '@svgs/proposal.svg'
 
 export default {
@@ -107,6 +111,7 @@ export default {
       required: true
     },
     disabled: Boolean,
+    currentStep: Number,
     maxSteps: {
       type: Number,
       required: true
@@ -115,11 +120,6 @@ export default {
       validator (value) {
         return ['addMember', 'removeMember'].indexOf(value) > -1
       }
-    }
-  },
-  data () {
-    return {
-      currentStep: 0
     }
   },
   computed: {
@@ -134,6 +134,9 @@ export default {
     },
     isConfirmation () {
       return this.currentStep === this.maxSteps + 1
+    },
+    submitStyleNonProposal () {
+      return this.variant === 'removeMember' ? 'is-danger' : 'is-success'
     },
     submitTextNonProposal () {
       const text = {
@@ -150,23 +153,18 @@ export default {
       this.$refs.modal.close()
     },
     next () {
-      this.currentStep++
-      this.updateParent()
+      // TODO/BUG - we must clear formMsg (if visible) when changing steps.
+      this.$emit('update:currentStep', this.currentStep + 1)
     },
     prev () {
       if (this.currentStep > 0) {
-        this.currentStep--
-        this.updateParent()
+        this.$emit('update:currentStep', this.currentStep - 1)
       } else {
         this.close()
       }
     },
-    updateParent () {
-      this.$emit('update:currentStep', this.currentStep)
-    },
     submit () {
       if (this.groupShouldPropose) {
-        this.next()
         this.$emit('submit', {
           reason: this.$refs.reason.value
         })
@@ -179,7 +177,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "../../../assets/style/_variables.scss";
+@import "@assets/style/_variables.scss";
 
 .c-sprite {
   display: none;

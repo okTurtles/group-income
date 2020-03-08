@@ -4,13 +4,13 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
   template(#sidebar='')
     chat-nav(
       :title='L("Chat")'
-      :searchplaceholder='L("Search for a channel")'
+      :search-placeholder='L("Search for a channel")'
     )
       conversations-list(
         :title='L("Channels")'
         routepath='/group-chat/'
         :list='channels'
-        routename='GroupChatConversation'
+        route-name='GroupChatConversation'
         :type='type.groups'
       )
 
@@ -25,13 +25,13 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
 
 <script>
 import { mapGetters } from 'vuex'
-import Page from '@pages/Page.vue'
+import Page from '@components/Page.vue'
 import { chatTypes, users, groupA } from '@containers/chatroom/fakeStore.js'
-import ConversationsList from '@components/Chatroom/ConversationsList.vue'
-import ChatNav from '@components/Chatroom/ChatNav.vue'
-import ChatMain from '@components/Chatroom/ChatMain.vue'
+import ConversationsList from '@containers/chatroom/ConversationsList.vue'
+import ChatNav from '@containers/chatroom/ChatNav.vue'
+import ChatMain from '@containers/chatroom/ChatMain.vue'
 import chatroom from '@containers/chatroom/chatroom.js'
-import GroupMembers from '@containers/sidebar/GroupMembers.vue'
+import GroupMembers from '@containers/dashboard/GroupMembers.vue'
 
 export default {
   name: 'GroupChat',
@@ -72,6 +72,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "../../assets/style/_variables.scss";
+@import "@assets/style/_variables.scss";
 
 </style>

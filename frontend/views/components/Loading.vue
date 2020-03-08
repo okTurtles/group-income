@@ -2,7 +2,7 @@
 .c-loading.has-text-centered(
   :class='{ "c-fullView": theme === "fullView" }'
 )
-  h1 {{ title }}&gt;
+  h1.is-title-1 {{ title }}
   p {{ text }}
 </template>
 
@@ -29,7 +29,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "../../assets/style/_variables.scss";
+@import "@assets/style/_variables.scss";
 
 .c-loading {
   opacity: 0;
