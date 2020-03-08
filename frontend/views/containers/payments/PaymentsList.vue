@@ -79,8 +79,8 @@ table.table.table-in-card.c-payments(:class='{"is-editing": paymentsType === "ed
         label.field
           .input-combo
             input.input(:value='payment.amount')
-            .suffix.c-with-code {{symbolWithCode}}
-            .suffix {{symbol}}
+            .suffix.hide-phone {{symbolWithCode}}
+            .suffix.hide-tablet {{symbol}}
 </template>
 
 <script>
@@ -201,7 +201,7 @@ export default {
     }
 
     &:last-child {
-      width: 40%;
+      width: 35%;
       min-width: 9,375rem;
       display: table-cell;
     }
@@ -303,19 +303,9 @@ export default {
   }
 }
 
-.suffix {
-  display: none;
-
+.input-combo .input {
   @include phone {
-    display: block;
-  }
-
-  &.c-with-code {
-    display: none;
-
-    @include tablet {
-      display: block;
-    }
+    padding-right: $spacer-lg;
   }
 }
 

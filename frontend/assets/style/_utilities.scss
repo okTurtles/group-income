@@ -59,3 +59,21 @@ $fills: (
     fill: $color;
   }
 }
+
+.hide-desktop {
+  @include desktop {
+    display: none;
+  }
+}
+
+.hide-phone {
+  @include phone {
+    display: none;
+  }
+}
+
+.hide-tablet {
+  @include tablet {
+    display: none;
+  }
+}
