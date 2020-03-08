@@ -151,6 +151,8 @@ export default {
   }
 
   @include desktop {
+    max-width: 33rem;
+    width: 100%;
     background: transparent;
     text-align: left;
     position: relative;
