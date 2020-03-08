@@ -23,7 +23,7 @@
 }
 
 @mixin removeSideCardPadding {
-  width: calc(100% + $spacer-lg);
+  width: calc(100% + #{$spacer-lg});
   margin-left: -$spacer-md;
   margin-right: -$spacer-md;
 

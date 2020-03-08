@@ -153,7 +153,7 @@ export default {
     display: none;
     position: absolute;
     top: $spacer-sm;
-    left: calc(100% + $spacer-sm);
+    left: calc(100% + #{$spacer-sm});
   }
 
   &.is-shifted {
