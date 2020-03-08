@@ -1,5 +1,6 @@
 <template lang="pug">
 callout-card(
+  data-test='addIncomeDetailsCard'
   :isCard='true'
   :title='title'
   :svg='image'
