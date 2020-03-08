@@ -2,6 +2,8 @@
 
 import { literalOf, unionOf } from '~/frontend/utils/flowTyper.js'
 
+import { PROPOSAL_REMOVE_MEMBER } from '~/frontend/model/contracts/voting/constants.js'
+
 export const VOTE_AGAINST = ':against'
 export const VOTE_INDIFFERENT = ':indifferent'
 export const VOTE_UNDECIDED = ':undecided'
@@ -10,17 +12,21 @@ export const VOTE_FOR = ':for'
 export const RULE_THRESHOLD = 'threshold'
 export const RULE_DISAGREEMENT = 'disagreement'
 export const RULE_MULTI_CHOICE = 'multi-choice'
+
 // TODO: ranked-choice? :D
 
 const rules = {
   [RULE_THRESHOLD]: function (state, proposalType, votes) {
     votes = Object.values(votes)
-    const threshold = state.settings.proposals[proposalType].ruleSettings[RULE_THRESHOLD].threshold
+    const population = Object.keys(state.profiles).length
+    const defaultThreshold = state.settings.proposals[proposalType].ruleSettings[RULE_THRESHOLD].threshold
+    const threshold = proposalType === PROPOSAL_REMOVE_MEMBER
+      ? Math.min(defaultThreshold, (population - 1) / population)
+      : defaultThreshold
     const totalIndifferent = votes.filter(x => x === VOTE_INDIFFERENT).length
     const totalFor = votes.filter(x => x === VOTE_FOR).length
     const totalAgainst = votes.filter(x => x === VOTE_AGAINST).length
     const totalForOrAgainst = totalFor + totalAgainst
-    const population = Object.keys(state.profiles).length
     const turnout = totalForOrAgainst + totalIndifferent
     const absent = population - turnout
     // TODO: figure out if this is the right way to figure out the "neededToPass" number
@@ -39,19 +45,20 @@ const rules = {
   },
   [RULE_DISAGREEMENT]: function (state, proposalType, votes) {
     votes = Object.values(votes)
-    const disagreementThreshold = state.settings.proposals[proposalType].ruleSettings[RULE_DISAGREEMENT].threshold
+    const minimumMax = proposalType === PROPOSAL_REMOVE_MEMBER ? 2 : 0
+    const threshold = Math.max(state.settings.proposals[proposalType].ruleSettings[RULE_DISAGREEMENT].threshold, minimumMax)
     const totalFor = votes.filter(x => x === VOTE_FOR).length
     const totalAgainst = votes.filter(x => x === VOTE_AGAINST).length
     const population = Object.keys(state.profiles).length
     const turnout = votes.length
     const absent = population - turnout
-    console.debug(`votingRule ${RULE_DISAGREEMENT} for ${proposalType}:`, { totalFor, totalAgainst, disagreementThreshold, turnout, population, absent })
-    if (totalAgainst >= disagreementThreshold) {
+    console.debug(`votingRule ${RULE_DISAGREEMENT} for ${proposalType}:`, { totalFor, totalAgainst, threshold, turnout, population, absent })
+    if (totalAgainst >= threshold) {
       return VOTE_AGAINST
     }
     // consider proposal passed if more vote for it than against it and there aren't
-    // enough votes left to tip the scales past the disagreementThreshold
-    return totalAgainst + absent < disagreementThreshold && totalFor > totalAgainst ? VOTE_FOR : VOTE_UNDECIDED
+    // enough votes left to tip the scales past the threshold
+    return totalAgainst + absent < threshold && totalFor > totalAgainst ? VOTE_FOR : VOTE_UNDECIDED
   },
   [RULE_MULTI_CHOICE]: function (state, proposalType, votes) {
     throw new Error('unimplemented!')

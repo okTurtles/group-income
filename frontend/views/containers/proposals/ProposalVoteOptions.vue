@@ -1,6 +1,6 @@
 <template lang='pug'>
-.c-ctas
-  .buttons(v-if='!hadVoted || ephemeral.changingVote')
+.c-ctas(v-if='!isToRemoveMe')
+  .buttons.c-options(v-if='!hadVoted || ephemeral.changingVote')
     i18n.button.is-outlined.is-small.is-success(
       tag='button'
       @click='voteFor'
@@ -32,7 +32,8 @@ import { mapGetters, mapState } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
 import { VOTE_FOR, VOTE_AGAINST } from '@model/contracts/voting/rules.js'
-import { PROPOSAL_INVITE_MEMBER, oneVoteToPass } from '@model/contracts/voting/proposals.js'
+import { oneVoteToPass } from '@model/contracts/voting/proposals.js'
+import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER } from '@model/contracts/voting/constants.js'
 import { createInvite } from '@model/contracts/group.js'
 
 export default {
@@ -77,6 +78,9 @@ export default {
     data () {
       return this.proposal.data.proposalData
     },
+    isToRemoveMe () {
+      return this.type === PROPOSAL_REMOVE_MEMBER && this.data.member === this.ourUsername
+    },
     hadVoted () {
       return this.proposal.votes[this.ourUsername]
     },
@@ -97,14 +101,20 @@ export default {
       }
       try {
         const proposalHash = this.proposalHash
-        const inviteMember = this.type === PROPOSAL_INVITE_MEMBER
+        const isOneVoteToPass = oneVoteToPass(proposalHash)
         const payload = {}
-        if (inviteMember && oneVoteToPass(proposalHash)) {
+
+        if (isOneVoteToPass && this.type === PROPOSAL_INVITE_MEMBER) {
           payload.passPayload = createInvite({
             invitee: this.proposal.data.proposalData.member,
             creator: this.proposal.meta.username
           })
+        } else if (isOneVoteToPass && this.type === PROPOSAL_REMOVE_MEMBER) {
+          payload.passPayload = {
+            secret: `${parseInt(Math.random() * 10000)}` // TODO: this
+          }
         }
+
         const vote = await sbp('gi.contracts/group/proposalVote/create',
           {
             proposalHash,
@@ -181,6 +191,12 @@ export default {
 
 .buttons {
   margin-top: 0;
+}
+
+.c-options {
+  @include tablet {
+    flex-wrap: nowrap;
+  }
 }
 
 .c-error {

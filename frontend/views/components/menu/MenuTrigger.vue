@@ -1,6 +1,8 @@
 <template lang='pug'>
 button(
   v-if='hideWhenActive ? !isActive : true'
+  :aria-pressed='isActive ? "true" : "false"'
+  data-test='menuTrigger'
   @click='handleClick'
 )
   slot

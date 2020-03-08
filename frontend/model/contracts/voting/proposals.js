@@ -1,23 +1,23 @@
 'use strict'
 
 import sbp from '~/shared/sbp.js'
-// import Vue from 'vue'
 import { objectOf, literalOf, unionOf, number } from '~/frontend/utils/flowTyper.js'
 import { DAYS_MILLIS } from '~/frontend/utils/time.js'
 import { PROPOSAL_RESULT } from '~/frontend/utils/events.js'
 import rules, { ruleType, VOTE_UNDECIDED, VOTE_AGAINST, VOTE_FOR, RULE_THRESHOLD, RULE_DISAGREEMENT } from './rules.js'
 
-export const PROPOSAL_INVITE_MEMBER = 'invite-member'
-export const PROPOSAL_REMOVE_MEMBER = 'remove-member'
-export const PROPOSAL_GROUP_SETTING_CHANGE = 'group-setting-change'
-export const PROPOSAL_PROPOSAL_SETTING_CHANGE = 'proposal-setting-change'
-export const PROPOSAL_GENERIC = 'generic'
-
-export const STATUS_OPEN = 'open'
-export const STATUS_PASSED = 'passed'
-export const STATUS_FAILED = 'failed'
-export const STATUS_EXPIRED = 'expired'
-export const STATUS_CANCELLED = 'cancelled'
+import {
+  PROPOSAL_INVITE_MEMBER,
+  PROPOSAL_REMOVE_MEMBER,
+  PROPOSAL_GROUP_SETTING_CHANGE,
+  PROPOSAL_PROPOSAL_SETTING_CHANGE,
+  PROPOSAL_GENERIC,
+  // STATUS_OPEN,
+  STATUS_PASSED,
+  STATUS_FAILED
+  // STATUS_EXPIRED,
+  // STATUS_CANCELLED
+} from './constants.js'
 
 export function archiveProposal (state, proposalHash) {
   // TODO: handle this better (archive the proposal or whatever)
@@ -122,10 +122,22 @@ const proposals = {
         [RULE_DISAGREEMENT]: { threshold: 2 }
       }
     },
-    [VOTE_FOR]: function (state, { proposalHash, passPayload }) {
-      console.error('unimplemented!')
-      // TODO: unsubscribe from their mailbox and identity contract
-      //       call commit('removeContract'), etc.
+    [VOTE_FOR]: async function (state, { proposalHash, passPayload }) {
+      const proposal = state.proposals[proposalHash]
+      const { member, memberId, groupId } = proposal.data.proposalData
+      proposal.status = STATUS_PASSED
+      proposal.payload = passPayload
+
+      const data = {
+        member,
+        memberId,
+        groupId,
+        proposalHash,
+        proposalPayload: passPayload
+      }
+      const message = { data, meta: proposal.meta }
+      sbp('gi.contracts/group/removeMember/process', message, state)
+      await sbp('gi.contracts/group/removeMember/process/sideEffect', message)
     },
     [VOTE_AGAINST]: voteAgainst
   },

@@ -20,6 +20,25 @@ function getProposalBoxes () {
   return cy.getByDT('proposalsWidget', 'ul').children()
 }
 
+function tryUnsuccessfullyToProposeNewSimilarMincome () {
+  cy.log('try Unsuccessfully To Propose New Similar Mincome')
+  // Verify an identical open proposal cannot be created twice.
+  cy.getByDT('groupMincome').within(() => {
+    cy.get('button').click()
+  })
+
+  cy.getByDT('modalProposal').within(() => {
+    cy.get('input[type="number"][name="mincomeAmount"]')
+      .type(groupNewMincome)
+    cy.getByDT('nextBtn', 'button')
+      .click()
+    cy.getByDT('submitBtn').click()
+    cy.getByDT('proposalError').contains('Failed to change mincome. There is an identical open proposal.')
+    cy.getByDT('closeModal').click()
+    cy.getByDT('closeModal').should('not.exist')
+  })
+}
+
 describe('Proposals - Add members', () => {
   const invitationLinks = {}
 
@@ -73,6 +92,8 @@ describe('Proposals - Add members', () => {
       cy.getByDT('finishBtn').click()
       cy.getByDT('closeModal').should('not.exist')
     })
+
+    tryUnsuccessfullyToProposeNewSimilarMincome()
   })
 
   it('user3 votes "yes" to all 5 proposals', () => {
@@ -189,6 +210,8 @@ describe('Proposals - Add members', () => {
 
   it('user1 votes "yes" to the new mincome ($500) and proposal is accepted.', () => {
     assertMincome(groupMincome)
+
+    tryUnsuccessfullyToProposeNewSimilarMincome()
 
     getProposalBoxes().eq(3).within(() => {
       cy.getByDT('title', 'h4').as('title')

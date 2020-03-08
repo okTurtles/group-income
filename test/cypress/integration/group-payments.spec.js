@@ -144,6 +144,8 @@ describe('Payments', () => {
     ])
 
     cy.getByDT('submitIncome').click()
+    cy.getByDT('closeModal').should('not.exist')
+
     // After closing the modal it should dislay how much user need
     cy.getByDT('headerNeed').should('contain', 'You need $100')
     // The user should be inform that even if he can't pledge he can still contribute
@@ -156,6 +158,102 @@ describe('Payments', () => {
       monetaryStatus: 'You will receive $0.',
       nonMonetaryStatus: 'There are no non-monetary contributions.'
     })
+  })
+
+  it('user1 adds their payment info', () => {
+    cy.getByDT('openIncomeDetailsModal').click()
+
+    cy.getByDT('paymentMethods').within(() => {
+      cy.getByDT('fields', 'ul').children().should('have.length', 1)
+
+      cy.log('Fill the 1º payment method (bitcoin)')
+      cy.getByDT('method').within(() => {
+        cy.getByDT('remove', 'button').should('not.be.visible')
+        cy.get('select')
+          .should('have.value', null)
+          .select('bitcoin')
+        cy.get('input').type('h4sh-t0-b3-s4ved')
+        cy.getByDT('remove', 'button').should('be.visible')
+      })
+
+      cy.log('Add a 2º payment method (paypal)')
+      cy.getByDT('addMethod', 'button').click()
+      cy.getByDT('fields', 'ul').children().should('have.length', 2)
+
+      cy.getByDT('method').eq(1).within(() => {
+        cy.getByDT('remove', 'button').should('be.visible')
+        cy.get('select').should('have.value', null)
+        cy.get('input').should('have.value', '')
+        cy.get('select').select('paypal')
+        cy.get('input').type('user1-paypal@email.com')
+      })
+
+      cy.log('Add a 3º payment method (other)')
+      cy.getByDT('addMethod', 'button').click()
+      cy.getByDT('fields', 'ul').children().should('have.length', 3)
+
+      cy.getByDT('method').eq(2).within(() => {
+        cy.get('select').should('have.value', null)
+        cy.get('input').should('have.value', '')
+        cy.get('select').select('other')
+        cy.get('input').type('IBAN: 12345')
+        cy.getByDT('remove', 'button').should('be.visible')
+      })
+
+      cy.log('Remove the 2º payment method (paypal)')
+      cy.getByDT('method').eq(1).within(() => {
+        cy.getByDT('remove', 'button').click()
+      })
+
+      cy.getByDT('fields', 'ul').children().should('have.length', 2)
+    })
+
+    cy.getByDT('submitIncome').click()
+    cy.getByDT('closeModal').should('not.exist')
+
+    cy.log('Verify saved payment info (bitcoin and other)')
+    cy.getByDT('openIncomeDetailsModal').click()
+    cy.getByDT('paymentMethods').within(() => {
+      cy.getByDT('fields', 'ul').children().should('have.length', 2)
+      cy.getByDT('method').eq(0).within(() => {
+        cy.get('select').should('have.value', 'bitcoin')
+        cy.get('input').should('have.value', 'h4sh-t0-b3-s4ved')
+        cy.getByDT('remove', 'button').should('be.visible')
+      })
+      cy.getByDT('method').eq(1).within(() => {
+        cy.get('select').should('have.value', 'other')
+        cy.get('input').should('have.value', 'IBAN: 12345')
+        cy.getByDT('remove', 'button').should('be.visible')
+      })
+
+      cy.log('Try to add a 3º payment method - incompleted !name')
+      cy.getByDT('addMethod', 'button').click()
+      cy.getByDT('method').eq(2).within(() => {
+        cy.get('input').type('mylink.com')
+      })
+    })
+
+    cy.getByDT('submitIncome').click()
+    cy.getByDT('feedbackMsg').should('contain', 'The method name for "mylink.com" is missing.')
+
+    cy.getByDT('paymentMethods').within(() => {
+      // Remove the previous incomplete method
+      cy.getByDT('method').eq(2).within(() => {
+        cy.getByDT('remove', 'button').click()
+      })
+
+      cy.log('Try to add a 3º payment method - incompleted !value')
+      // Add a new method... incompleted (no value)
+      cy.getByDT('addMethod', 'button').click()
+      cy.getByDT('method').eq(2).within(() => {
+        cy.get('select').select('paypal')
+      })
+    })
+
+    cy.getByDT('submitIncome').click()
+    cy.getByDT('feedbackMsg').should('contain', 'The method "paypal" is incomplete.')
+
+    cy.closeModal()
   })
 
   it('user1 adds non monetary contribution', () => {
@@ -220,7 +318,7 @@ describe('Payments', () => {
   })
 
   it('user2 pledges $100 and sees their contributions.', () => {
-    cy.giSwitchUser(`user2-${userId}`, { bypassUI: true })
+    cy.giSwitchUser(`user2-${userId}`)
 
     const graphicLegend = [
       'Total Pledged$100',
@@ -251,7 +349,7 @@ describe('Payments', () => {
   })
 
   it('user3 pledges $100 and sees who they are pledging to - $50 to user1 (Greg)', () => {
-    cy.giSwitchUser(`user3-${userId}`, { bypassUI: true })
+    cy.giSwitchUser(`user3-${userId}`)
     const graphicLegend = [
       'Total Pledged$200',
       'Needed Pledges$0'
@@ -260,7 +358,7 @@ describe('Payments', () => {
   })
 
   it('user4 and user2 increase their pledges to $500 each. user1 sees the receiving contributions from 3 members.', () => {
-    cy.giSwitchUser(`user4-${userId}`, { bypassUI: true })
+    cy.giSwitchUser(`user4-${userId}`)
     const graphicLegend4 = [
       'Total Pledged$700',
       'Needed Pledges$0',
@@ -291,7 +389,7 @@ describe('Payments', () => {
   })
 
   it('user4 and user2 reduced income to $10 and now receive money.', () => {
-    cy.giSwitchUser(`user4-${userId}`, { bypassUI: true })
+    cy.giSwitchUser(`user4-${userId}`)
     const graphicLegend4 = [
       'Total Pledged$600',
       'Needed Pledges$0',
@@ -300,7 +398,7 @@ describe('Payments', () => {
     ]
     updateIncome(10, true, graphicLegend4, '$190 by Margarida and Pierre')
 
-    cy.giSwitchUser(`user2-${userId}`, { bypassUI: true })
+    cy.giSwitchUser(`user2-${userId}`)
     const graphicLegend2 = [
       'Total Pledged$100',
       'Needed Pledges$380',
@@ -317,7 +415,7 @@ describe('Payments', () => {
   })
 
   it('user3 pledges to all 3 members', () => {
-    cy.giSwitchUser(`user3-${userId}`, { bypassUI: true })
+    cy.giSwitchUser(`user3-${userId}`)
     cy.getByDT('contributionsLink').click()
 
     cy.get(elGivingFirst)
@@ -325,7 +423,7 @@ describe('Payments', () => {
   })
 
   it('user1 receives part of what they need', () => {
-    cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
+    cy.giSwitchUser(`user1-${userId}`)
     cy.getByDT('contributionsLink').click()
 
     cy.get(elReceivingFirst)

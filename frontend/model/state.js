@@ -14,7 +14,7 @@ import { ErrorDBBadPreviousHEAD, ErrorDBConnection } from '~/shared/domains/gi/d
 import Colors from './colors.js'
 import { TypeValidatorError } from '~/frontend/utils/flowTyper.js'
 import { GIErrorUnrecoverable, GIErrorIgnoreAndBanIfGroup, GIErrorDropAndReprocess } from './errors.js'
-import { STATUS_OPEN, PROPOSAL_REMOVE_MEMBER } from './contracts/voting/proposals.js'
+import { STATUS_OPEN, PROPOSAL_REMOVE_MEMBER } from './contracts/voting/constants.js'
 import { VOTE_FOR } from '~/frontend/model/contracts/voting/rules.js'
 import { actionWhitelisted, ACTION_REGEX } from '~/frontend/model/contracts/Contract.js'
 import * as _ from '~/frontend/utils/giLodash.js'
@@ -140,6 +140,11 @@ const mutations = {
     sbp('okTurtles.events/emit', EVENTS.CONTRACTS_MODIFIED, state.contracts)
   },
   setContractHEAD (state, { contractID, HEAD }) {
+    const contract = state.contracts[contractID]
+    if (!contract) {
+      console.error(`This contract ${contractID} doesnt exist anymore. Probably you left the group just now.`)
+      return
+    }
     state.contracts[contractID].HEAD = HEAD
   },
   removeContract (state, contractID) {
@@ -308,6 +313,12 @@ const getters = {
 
         return contributions.length > 0 ? contributions : null
       })()
+    }
+  },
+  userDisplayName (state, getters) {
+    return (username) => {
+      const profile = getters.globalProfile(username) || {}
+      return profile.displayName || username
     }
   },
   // list of group names and contractIDs

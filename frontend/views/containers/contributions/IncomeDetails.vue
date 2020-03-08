@@ -50,7 +50,7 @@ modal-base-template(ref='modal' :fullscreen='true')
             .helper(v-if='needsIncome && whoIsPledging.length')
               p {{ contributionMemberText }}
             i18n.helper(v-else-if='!needsIncome') Define up to how much you pledge to contribute to the group each month. Only the minimum needed amount will be given.
-          payment-methods(selected='manual' class='c-methods')
+          payment-methods.c-methods(v-if='needsIncome' ref='paymentMethods')
 
       banner-scoped(ref='formMsg')
 
@@ -158,8 +158,34 @@ export default {
     },
     async submit () {
       if (this.$v.form.$invalid) {
-        this.$refs.formMsg.danger(L('Some information is missing, please review it and try again.'))
+        this.$refs.formMsg.danger(L('Your income details are missing. Please review it and try again.'))
         return
+      }
+
+      const paymentMethods = {}
+
+      if (this.needsIncome) {
+        // Find the methods that have some info filled...
+        const filledMethods = this.$refs.paymentMethods.form.methods.filter(method => method.name !== 'choose' || method.value)
+        // From those, find a method with missing info
+        const incompletedMethod = filledMethods.find(method => method.name === 'choose' || !method.value)
+        // and warn the user about it, if necessary!
+        if (incompletedMethod) {
+          if (!incompletedMethod.value) {
+            this.$refs.formMsg.danger(L('The method "{methodName}" is incomplete.', { methodName: incompletedMethod.name }))
+          } else {
+            this.$refs.formMsg.danger(L('The method name for "{methodValue}" is missing.', { methodValue: incompletedMethod.value }))
+          }
+          return
+        }
+
+        if (filledMethods.length > 0) {
+          for (const method of filledMethods) {
+            paymentMethods[method.name] = {
+              value: method.value
+            }
+          }
+        }
       }
 
       try {
@@ -167,7 +193,8 @@ export default {
         const groupProfileUpdate = await sbp('gi.contracts/group/groupProfileUpdate/create',
           {
             incomeDetailsType,
-            [incomeDetailsType]: +this.form.amount
+            [incomeDetailsType]: +this.form.amount,
+            paymentMethods
           },
           this.$store.state.currentGroupId
         )
@@ -235,8 +262,11 @@ export default {
 
 .c-card {
   grid-area: card;
-  padding: 2.5rem;
   align-self: flex-start;
+
+  @include desktop {
+    padding: 2.5rem;
+  }
 }
 
 .c-methods {

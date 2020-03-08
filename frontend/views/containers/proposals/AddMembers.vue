@@ -10,7 +10,7 @@
   )
     fieldset(v-if='ephemeral.currentStep === 0' key='0' ref='fieldset')
       i18n.label(tag='legend') Full name
-      label.field(
+      label.field.c-fields-item(
         v-for='(member, index) in ephemeral.invitesCount'
         :key='`member-${index}`'
         data-test='invitee'
@@ -24,7 +24,7 @@
             aria-required
           )
           button.is-icon-small(
-            v-if='index > 0'
+            v-if='ephemeral.invitesCount > 1'
             type='button'
             @click='removeInvitee(index)'
             data-test='remove'
@@ -32,7 +32,7 @@
           )
             i.icon-times
 
-      button.link.has-icon.c-addPeople(
+      button.link.has-icon(
         type='button'
         @click='addInviteeSlot'
         data-test='addInviteeSlot'
@@ -46,7 +46,7 @@ import Vue from 'vue'
 import { mapState, mapGetters } from 'vuex'
 import { validationMixin } from 'vuelidate'
 import sbp from '~/shared/sbp.js'
-import { PROPOSAL_INVITE_MEMBER } from '@model/contracts/voting/proposals.js'
+import { PROPOSAL_INVITE_MEMBER } from '@model/contracts/voting/constants.js'
 import ProposalTemplate from './ProposalTemplate.vue'
 
 export default {
@@ -84,7 +84,8 @@ export default {
       'ourUsername'
     ]),
     rule () {
-      const { threshold } = this.groupSettings.proposals['invite-member'].ruleSettings.threshold
+      const proposalRule = this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER]
+      const { threshold } = proposalRule.ruleSettings[proposalRule.rule]
       return { value: Math.round(this.groupMembersCount * threshold), total: this.groupMembersCount }
     }
   },
@@ -149,12 +150,8 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.c-addPeople {
-  margin: $spacer-sm 0 $spacer;
-
-  .icon-plus {
-    margin-right: $spacer-sm;
-  }
+.c-fields-item {
+  margin-bottom: $spacer;
 }
 
 .c-feedback {

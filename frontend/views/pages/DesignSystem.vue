@@ -203,14 +203,17 @@ page(
               i.icon-pencil-alt icon-pencil-alt
               i.icon-plus icon-plus
               i.icon-poll icon-poll
+              i.icon-question icon-question
               i.icon-question-circle icon-question-circle
               i.icon-tag icon-tag
+              i.icon-search search
+              i.icon-sort-down sort-down
               i.icon-times icon-times
               i.icon-times-circle icon-times-circle
               i.icon-undo icon-undo
               i.icon-user icon-user
               i.icon-user-plus icon-user-plus
-              i.icon-user-times icon-user-times
+              i.icon-user-minus icon-user-minus
               i.icon-vote-yea icon-vote-yea
               i.icon-wifi icon-wifi
         tr
@@ -1009,8 +1012,8 @@ page(
     section.card
       h2.is-title-2.card-header Modal Base
       i18n(tag='p') The modal base as very basic functionality. Compare to normal modal it has very basic style and let us add any kind of content.
-      i18n(tag='p') It only contain opening and closing mecanism (shared with the modal in modal mixin).
-      i18n(tag='p') The main use at the moment is to have a full screen master modal that can contains other small sub modals (ex: user settings)
+      i18n(tag='p') It only contain opening and closing mechanism (shared with the modal in modal mixin).
+      i18n(tag='p') The main use at the moment is to be used on a fullscreen master modal that can contains other small sub modals (ex: income details)
       br
       i18n(tag='p') NB: at the moment we don't have sub sub modal, there for the implementation is flexible to allow an inifinty of modal but the animation is not implemented
       br

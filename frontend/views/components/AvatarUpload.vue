@@ -30,10 +30,7 @@ import L from '@view-utils/translations.js'
 export default {
   name: 'AvatarUpload',
   props: {
-    avatar: {
-      type: String,
-      required: true
-    },
+    avatar: String,
     sbpParams: {
       type: Object,
       required: true

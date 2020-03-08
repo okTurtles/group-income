@@ -113,10 +113,14 @@ textarea,
     padding-left: $spacer;
     min-width: 6.5rem;
     cursor: pointer;
+
+    option:disabled {
+      color: $text_1;
+    }
   }
 
   &::after {
-    content: "\f107"; // angle-down
+    content: "\f0dd"; // icon-sort-down
     text-rendering: auto;
     line-height: 1;
     font-family: "Font Awesome 5 Free";
@@ -125,13 +129,14 @@ textarea,
     position: absolute;
     top: 50%;
     right: $spacer;
-    transform: translateY(-50%);
+    transform: translateY(calc(-50% - 2px));
     pointer-events: none;
   }
-}
 
-.input + select {
-  width: auto;
+  &.is-reversed::after {
+    right: auto;
+    left: 5rem;
+  }
 }
 
 .select-wrapper,
@@ -142,23 +147,15 @@ textarea,
   border: 1px solid $general_0;
   border-radius: $radius;
 
-  .input {
-    border-radius: $radius 0 0 $radius;
-    border-right: 1px solid $general_0;
-  }
-
-  select:not(:first-child) {
-    border-radius: 0;
-    border-left: 1px solid $general_1;
-  }
-
   select,
   .select,
   .input {
+    position: relative;
     border: 1px solid transparent;
 
     &:hover {
       border-color: $primary_0;
+      z-index: 1; /* all the border gets visible even if next to another input */
     }
 
     &:focus {
@@ -166,11 +163,34 @@ textarea,
     }
   }
 
-  input + select:focus {
-    border-radius: 0 3px 3px 0;
+  .input {
+    border-radius: $radius 0 0 $radius;
   }
 
-  button {
+  input + select {
+    width: auto;
+    border-left: 1px solid $general_0;
+    border-radius: 0 $radius $radius 0;
+    margin-left: -1px /* border */
+  }
+
+  &.is-reversed {
+    .select {
+      border-radius: $radius 0 0 $radius;
+    }
+
+    .input {
+      border-radius: 0 $radius $radius 0;
+      margin-left: -1px; /* show border */
+      border-left: 1px solid $general_0;
+
+      &:hover {
+        border-color: $primary_0;
+      }
+    }
+  }
+
+  button:not(.is-icon-small) {
     border-radius: 0 $radius $radius 0;
 
     &.is-icon {
@@ -239,6 +259,7 @@ textarea,
     line-height: $inputHeight;
     white-space: nowrap;
     color: $text_1;
+    z-index: 1 /* to be above input, always */
   }
 }
 

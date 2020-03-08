@@ -224,6 +224,7 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
   isLoggedIn,
   inviteCreator,
   displayName,
+  shouldLogoutAfter = true,
   actionBeforeLogout,
   bypassUI
 }) => {
@@ -260,7 +261,10 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
   if (actionBeforeLogout) {
     actionBeforeLogout()
   }
-  cy.giLogout()
+
+  if (shouldLogoutAfter) {
+    cy.giLogout()
+  }
 })
 
 Cypress.Commands.add('giAddRandomIncome', () => {

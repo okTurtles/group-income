@@ -2,6 +2,7 @@
 
 import Vue from 'vue'
 import Router from 'vue-router'
+import sbp from '~/shared/sbp.js'
 import store from '@model/state.js'
 
 import DesignSystem from '@pages/DesignSystem.vue'
@@ -176,6 +177,10 @@ const router = new Router({
 router.beforeEach((to, from, next) => {
   document.title = to.meta.title
   next()
+})
+
+sbp('sbp/selectors/register', {
+  'controller/router': () => router
 })
 
 export default router

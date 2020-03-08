@@ -38,8 +38,9 @@
           data-test='prevBtn'
         ) {{ currentStep === 0 ? L('Cancel') : L('Back') }}
 
-        button.is-success(
+        button(
           key='change'
+          :class='submitStyleNonProposal'
           v-if='!groupShouldPropose'
           @click.prevent='submit'
           :disabled='disabled'
@@ -134,6 +135,9 @@ export default {
     isConfirmation () {
       return this.currentStep === this.maxSteps + 1
     },
+    submitStyleNonProposal () {
+      return this.variant === 'removeMember' ? 'is-danger' : 'is-success'
+    },
     submitTextNonProposal () {
       const text = {
         addMember: L('Send invitation'),
@@ -149,6 +153,7 @@ export default {
       this.$refs.modal.close()
     },
     next () {
+      // TODO/BUG - we must clear formMsg (if visible) when changing steps.
       this.$emit('update:currentStep', this.currentStep + 1)
     },
     prev () {

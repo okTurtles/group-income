@@ -7,15 +7,19 @@ import { mapOf, objectOf, objectMaybeOf, optional, string, number, object, union
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income-simple/issues/603
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST } from './voting/rules.js'
-import proposals, { proposalType, proposalSettingsType, archiveProposal, PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC, STATUS_OPEN, STATUS_CANCELLED } from './voting/proposals.js'
+import proposals, { proposalType, proposalSettingsType, archiveProposal } from './voting/proposals.js'
+import {
+  PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC,
+  STATUS_OPEN, STATUS_CANCELLED
+} from './voting/constants.js'
 import { paymentStatusType, paymentType } from './payments/index.js'
 import * as Errors from '../errors.js'
-import { merge, deepEqualJSONType } from '~/frontend/utils/giLodash.js'
+import { merge, deepEqualJSONType, omit } from '~/frontend/utils/giLodash.js'
 import { currentMonthTimestamp } from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
 import currencies from '~/frontend/views/utils/currencies.js'
-
+import L from '~/frontend/views/utils/translations.js'
 export const INVITE_INITIAL_CREATOR = 'INVITE_INITIAL_CREATOR'
 export const INVITE_STATUS = {
   VALID: 'valid',
@@ -262,30 +266,35 @@ DefineContract({
       }
     },
     'gi.contracts/group/proposal': {
-      validate: objectOf({
-        proposalType: proposalType,
-        proposalData: object, // data for Vue widgets
-        votingRule: ruleType,
-        expires_date_ms: number // calculate by grabbing proposal expiry from group properties and add to `meta.createdDate`
-      }),
-      process ({ data, meta, hash }, { state }) {
-        // make sure this isn't a duplicate proposal
+      validate: (data, { state, meta }) => {
+        objectOf({
+          proposalType: proposalType,
+          proposalData: object, // data for Vue widgets
+          votingRule: ruleType,
+          expires_date_ms: number // calculate by grabbing proposal expiry from group properties and add to `meta.createdDate`
+        })(data)
+
+        const dataToCompare = omit(data.proposalData, 'reason')
+
+        // Validate this isn't a duplicate proposal
         for (const hash in state.proposals) {
           const prop = state.proposals[hash]
-          if (prop.status === STATUS_OPEN &&
-            prop.data.proposalType === data.proposalType &&
-            prop.meta.username === meta.username &&
-            deepEqualJSONType(prop.data.proposalData, data.proposalData)
-          ) {
-            throw new TypeError(`proposal: is identical to proposal ${hash}`)
+          if (prop.status !== STATUS_OPEN || prop.data.proposalType !== data.proposalType) {
+            continue
+          }
+
+          if (deepEqualJSONType(omit(prop.data.proposalData, 'reason'), dataToCompare)) {
+            throw new TypeError(L('There is an identical open proposal.'))
           }
         }
+      },
+      process ({ data, meta, hash }, { state }) {
         Vue.set(state.proposals, hash, {
           data,
           meta,
           votes: { [meta.username]: VOTE_FOR },
           status: STATUS_OPEN,
-          payload: null // set later by proposalVote
+          payload: null // set later by group/proposalVote
         })
         // TODO: save all proposals disk so that we only keep open proposals in memory
         // TODO: create a global timer to auto-pass/archive expired votes
@@ -337,6 +346,79 @@ DefineContract({
         }
         Vue.set(proposal, 'status', STATUS_CANCELLED)
         archiveProposal(state, data.proposalHash)
+      }
+    },
+    'gi.contracts/group/removeMember': {
+      validate: (data, { state, getters, meta }) => {
+        objectOf({
+          member: string,
+          memberId: string,
+          groupId: string,
+          // In case it happens in a big group (by proposal)
+          // we need to validate the associated proposal.
+          proposalHash: optional(string),
+          proposalPayload: optional(objectOf({
+            secret: string // NOTE: simulate the OP_KEY_* stuff for now
+          }))
+        })(data)
+
+        const memberToRemove = data.member
+        const membersCount = getters.groupMembersCount
+
+        if (!state.profiles[memberToRemove]) {
+          throw new TypeError(L('Not part of the group.'))
+        }
+        if (membersCount === 1) {
+          throw new TypeError(L('Cannot remove yourself.'))
+        }
+
+        if (membersCount < 3) {
+          // In a small group only the creator can remove someone
+          // TODO: check whether meta.username has required admin permissions
+          if (meta.username !== state.settings.groupCreator) {
+            throw new TypeError(L('Only the group creator can remove members.'))
+          }
+        } else {
+          // In a big group a removal can only happen through a proposal
+          const proposal = state.proposals[data.proposalHash]
+          if (!proposal) {
+            // TODO this
+            throw new TypeError(L('Admin credentials needed and not implemented yet.'))
+          }
+
+          if (!proposal.payload || proposal.payload.secret !== data.proposalPayload.secret) {
+            throw new TypeError(L('Invalid associated proposal.'))
+          }
+        }
+      },
+      process ({ data, meta }, { state }) {
+        Vue.delete(state.profiles, data.member)
+      },
+      async sideEffect ({ data }) {
+        const rootState = sbp('state/vuex/state')
+        const contracts = rootState.contracts || {}
+
+        if (data.member === rootState.loggedIn.username) {
+          // If this member is re-joining the group, ignore the rest
+          // so the member doesn't remove themself again.
+          if (sbp('okTurtles.data/get', 'JOINING_GROUP')) {
+            return
+          }
+
+          const groupIdToSwitch = Object.keys(contracts)
+            .find(contractID => contracts[contractID].type === 'group' &&
+              contractID !== data.groupId &&
+              rootState[contractID].settings) || null
+
+          sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
+          sbp('state/vuex/commit', 'removeContract', data.groupId)
+          sbp('controller/router').push({ path: groupIdToSwitch ? '/dashboard' : '/' })
+          // TODO - #828 remove other group members contracts if applicable
+        } else {
+          // TODO - #828 remove the member contract if applicable.
+          // sbp('state/vuex/commit', 'removeContract', data.memberID)
+        }
+        // TODO - #850 verify open proposals and see if they need some re-adjustment.
       }
     },
     'gi.contracts/group/invite': {
@@ -410,6 +492,12 @@ DefineContract({
         incomeAmount: x => typeof x === 'number' && x >= 0,
         pledgeAmount: x => typeof x === 'number' && x >= 0,
         nonMonetaryAdd: string,
+        paymentMethods: objectMaybeOf({
+          bitcoin: objectMaybeOf({ value: string }),
+          paypal: objectMaybeOf({ value: string }),
+          venmo: objectMaybeOf({ value: string }),
+          other: objectMaybeOf({ value: string })
+        }),
         nonMonetaryEdit: objectOf({
           replace: string,
           with: string

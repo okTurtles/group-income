@@ -34,7 +34,7 @@ import { decimals } from '@view-utils/validators.js'
 import L from '@view-utils/translations.js'
 import ProposalTemplate from './ProposalTemplate.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
-import { PROPOSAL_GROUP_SETTING_CHANGE } from '@model/contracts/voting/proposals.js'
+import { PROPOSAL_GROUP_SETTING_CHANGE } from '@model/contracts/voting/constants.js'
 
 export default {
   name: 'MincomeProposal',
@@ -88,7 +88,8 @@ export default {
       'groupMincomeSymbolWithCode'
     ]),
     rule () {
-      const { threshold } = this.groupSettings.proposals[PROPOSAL_GROUP_SETTING_CHANGE].ruleSettings.threshold
+      const proposalRule = this.groupSettings.proposals[PROPOSAL_GROUP_SETTING_CHANGE]
+      const { threshold } = proposalRule.ruleSettings[proposalRule.rule]
       return { value: Math.round(this.groupMembersCount * threshold), total: this.groupMembersCount }
     }
   },
