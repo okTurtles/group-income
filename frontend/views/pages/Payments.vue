@@ -64,7 +64,7 @@ page(
               i18n.button(
                 tag='button'
                 data-test='recorPayment'
-                @click='openModal("RecordPayment")'
+                @click='openModal("RecordPayment", { paymentsDistribution })'
               ) Record payments
             payments-pagination(v-else)
 
@@ -188,8 +188,8 @@ export default {
     }
   },
   methods: {
-    openModal (name) {
-      sbp('okTurtles.events/emit', OPEN_MODAL, name)
+    openModal (name, props) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, name, props)
     },
     // Payments
     paymentFor (toUser) {

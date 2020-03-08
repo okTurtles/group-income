@@ -10,7 +10,7 @@ menu-parent
         tag='button'
         item-id='message'
         icon='info'
-        @click='openModal("PaymentDetail")'
+        @click='openModal("PaymentDetail", { payment })'
       )
         i18n Payment details
 
@@ -51,6 +51,10 @@ import { PAYMENT_CANCELLED } from '@model/contracts/payments/index.js'
 export default {
   name: 'PaymentsListMenu',
   props: {
+    payment: {
+      type: Object,
+      required: true
+    },
     paymentsType: {
       type: String,
       required: true
@@ -67,8 +71,8 @@ export default {
     MenuItem
   },
   methods: {
-    openModal (name) {
-      sbp('okTurtles.events/emit', OPEN_MODAL, name)
+    openModal (name, props) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, name, props)
     },
     // TODO: make multiple payments
     async cancelPayment (username, paymentHash) {

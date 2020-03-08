@@ -3,24 +3,24 @@ modal-template(ref='modal')
   template(slot='title')
     i18n Payment details
 
-  .is-title-2.c-title {{ currency(fakeStore.amount) }}
+  .is-title-2.c-title {{ currency(payment.amount) }}
   i18n.c-subtitle.has-text-1(
-    :args='{ name: fakeStore.to }'
+    :args='{ name: payment.to }'
   ) Sent to {name}
 
   ul.c-payment-list
     li.c-payment-list-item
       i18n.has-text-1(tag='label') Date & Time
-      strong {{ moment(fakeStore.date).format('hh:mm - MMMM DD, YYYY') }}
+      strong {{ moment(payment.date).format('hh:mm - MMMM DD, YYYY') }}
     li.c-payment-list-item
       i18n.has-text-1(tag='label') Relative to
-      strong {{ moment(fakeStore.relativeTo).format('MMMM')}}
+      strong {{ moment(payment.relativeTo).format('MMMM')}}
     li.c-payment-list-item
       i18n.has-text-1(tag='label') Mincome at the time
       strong {{ currency(groupSettings.mincomeAmount) }}
     li.c-payment-list-item.c-column
       i18n.has-text-1(tag='label') Notes
-      p {{ fakeStore.note }}
+      p {{ payment.note }}
 
   .buttons
     i18n.button.is-danger.is-outlined.is-small(
@@ -32,25 +32,27 @@ modal-template(ref='modal')
 <script>
 import { mapGetters } from 'vuex'
 import moment from 'moment'
+import sbp from '~/shared/sbp.js'
+import { CLOSE_MODAL } from '@utils/events.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import currencies from '@view-utils/currencies.js'
 
 export default {
   name: 'PaymentDetail',
-  data () {
-    return {
-      // Temp until modal params are merged
-      fakeStore: {
-        to: 'pierre',
-        date: new Date(),
-        relativeTo: new Date(),
-        amount: 20,
-        note: 'Love you so much! Thank you for the Portuguese class last week. P.S.: sent to the Paypal email on your profile.'
-      }
+  props: {
+    payment: {
+      type: Object,
+      required: true
     }
   },
   components: {
     ModalTemplate
+  },
+  created () {
+    if (!this.payment) {
+      console.warn('Missing payment to display PaymentDetail modal')
+      sbp('okTurtles.events/emit', CLOSE_MODAL)
+    }
   },
   computed: {
     ...mapGetters([
@@ -66,7 +68,7 @@ export default {
     },
     async submit () {
       console.log('Todo: Implement cancel payment')
-      this.close()
+      this.closeModal()
     },
     moment
   },

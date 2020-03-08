@@ -12,7 +12,7 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background')
         i18n.has-text-bold.c-title(tag='h3') Who did you send money to?
         payments-list(
           :titles='tableTitles'
-          :payments='fakeStore.paymentsDistribution'
+          :payments='paymentsDistribution'
           paymentsType='edit'
         )
 
@@ -72,31 +72,31 @@ import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import PaymentsList from '@containers/payments/PaymentsList.vue'
 import L from '@view-utils/translations.js'
 import { validationMixin } from 'vuelidate'
+import sbp from '~/shared/sbp.js'
+import { CLOSE_MODAL } from '@utils/events.js'
 import SvgSuccess from '@svgs/success.svg'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 
 export default {
   name: 'RecordPayment',
   mixins: [validationMixin],
+  props: {
+    paymentsDistribution: {
+      type: Array,
+      required: true
+    }
+  },
   data () {
     return {
       displayComment: false,
       form: {},
-      donePayment: false,
-      // Temp until modal params are merged
-      fakeStore: {
-        paymentsDistribution: [{
-          to: 'pierre',
-          amount: 910.99,
-          checked: false,
-          date: new Date(+(new Date()) - Math.floor(Math.random() * 10000000000))
-        }, {
-          to: 'sandrina',
-          amount: 1089.01,
-          checked: true,
-          date: new Date(+(new Date()) - Math.floor(Math.random() * 10000000000))
-        }]
-      }
+      donePayment: false
+    }
+  },
+  created () {
+    if (!this.paymentsDistribution) {
+      console.warn('Missing paymentsDistribution to display RecordPayment modal')
+      sbp('okTurtles.events/emit', CLOSE_MODAL)
     }
   },
   components: {
@@ -114,7 +114,7 @@ export default {
       }
     },
     recordNumber () {
-      return this.fakeStore.paymentsDistribution.filter(payment => payment.checked).length
+      return this.paymentsDistribution.filter(payment => payment.checked).length
     },
     registerPaymentCopy () {
       return this.recordNumber === 1 ? L('Record 1 payment') : L('Record {number} payments', { number: this.recordNumber })

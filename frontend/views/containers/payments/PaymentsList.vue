@@ -69,6 +69,7 @@ table.table.table-in-card.c-payments(:class='{"is-editing": paymentsType === "ed
           .c-actions-month(:class='!(index !== 0 && paymentsType === "todo") ? "has-text-1" : "pill--danger is-small"') {{ moment(payment.date).format('MMMM D') }}
           payments-list-menu(
             v-if='paymentsType !== "edit"'
+            :payment='payment'
             :paymentsType='paymentsType'
             :needsIncome='needsIncome'
           )
@@ -205,7 +206,7 @@ export default {
     }
 
     &:last-child {
-      width: 35%;
+      width: 40%;
       min-width: 9,375rem;
       display: table-cell;
     }
