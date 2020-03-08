@@ -451,19 +451,13 @@ p.error {
   -moz-appearance: none;
 
   @media (hover: hover) {
+    &:checked:hover,
     &:hover {
-      border-color: $primary_0;
+      border-color: $text_1;
+      background: $text_1;
 
       &::after {
-        background: $primary_0;
-      }
-    }
-
-    &:checked:hover {
-      border-color: $general_0;
-
-      &::after {
-        background: $general_0;
+        background: $white;
       }
     }
 
