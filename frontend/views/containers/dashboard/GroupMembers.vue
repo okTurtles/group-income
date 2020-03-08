@@ -21,7 +21,7 @@
       .c-name.has-ellipsis(data-test='username')
         | {{ username }}
 
-      i18n.pill.has-text-small(
+      i18n.pill.has-text-small.has-background-dark(
         v-if='member.pending'
         data-test='pending'
       ) pending

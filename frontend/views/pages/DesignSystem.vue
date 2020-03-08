@@ -478,9 +478,63 @@ page(
           th demo
         tr
           td
-            pre .pill
+            pre .pill.has-background-dark
           td
-            span.pill Pending
+            span.pill.has-background-dark Pending
+
+        tr
+          td
+            pre .pill--success
+          td
+            span.pill--success Payment received
+
+        tr
+          td
+            pre .pill--warning
+          td
+            span.pill--warning Not received
+
+        tr
+          td
+            pre .pill--primary
+          td
+            span.pill--primary Partial
+
+        tr
+          td
+            pre .pill--danger
+          td
+            span.pill--danger Due march 08
+
+        tr
+          td
+            pre .pill.has-background-dark.is-small
+          td
+            span.pill.has-background-dark.is-small Pending
+
+        tr
+          td
+            pre .pill--success.is-small
+          td
+            span.pill--success.is-small Payment received
+
+        tr
+          td
+            pre .pill--warning.is-small
+          td
+            span.pill--warning.is-small Not received
+
+        tr
+          td
+            pre .pill--primary.is-small
+          td
+            span.pill--primary.is-small Partial
+
+        tr
+          td
+            pre .pill--danger.is-small
+          td
+            span.pill--danger.is-small Due march 08
 
   article#user-feedback
     section.card
