@@ -231,6 +231,10 @@ export default {
   }
 }
 
+.checkbox {
+  margin-right: $spacer-sm;
+}
+
 .c-actions {
   justify-content: space-between;
 }
