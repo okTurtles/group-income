@@ -85,6 +85,7 @@ export default {
   },
   computed: {
     ...mapGetters([
+      'ourGroupProfile',
       'groupSettings'
     ]),
     currency () {
@@ -93,7 +94,7 @@ export default {
     paymentSummary () {
       const { sent, confirmed, amoutSent, amountTotal, paymentsTotal } = this.paymentStatus
 
-      return [
+      const pS = [
         {
           title: L('Payments completed'),
           value: sent,
@@ -103,18 +104,10 @@ export default {
             value: sent,
             max: paymentsTotal
           })
-        },
-        {
-          title: L('Amout sent'),
-          value: amoutSent,
-          max: amountTotal,
-          hasMarks: false,
-          label: L('{value} of {max}', {
-            value: this.currency(amoutSent),
-            max: this.currency(amountTotal)
-          })
-        },
-        {
+        }
+      ]
+      if (this.needsIncome) {
+        pS.push({
           title: L('Payments received'),
           value: confirmed,
           max: paymentsTotal,
@@ -123,8 +116,20 @@ export default {
             value: confirmed,
             max: paymentsTotal
           })
-        }
-      ]
+        })
+      } else {
+        pS.push({
+          title: L('Amout sent'),
+          value: amoutSent,
+          max: amountTotal,
+          hasMarks: false,
+          label: L('{value} of {max}', {
+            value: this.currency(amoutSent),
+            max: this.currency(amountTotal)
+          })
+        })
+      }
+      return pS
     },
     paymentStatus () {
       const { usersToPay } = this.fakeStore
@@ -137,6 +142,9 @@ export default {
         amoutSent: usersToPay.reduce((acc, user) => this.statusIsSent(user) ? acc + user.amount : acc, 0),
         amountTotal: usersToPay.reduce((acc, user) => acc + user.amount, 0)
       }
+    },
+    needsIncome () {
+      return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'
     }
   }
 }
