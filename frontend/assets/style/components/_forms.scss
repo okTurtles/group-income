@@ -211,6 +211,7 @@ textarea,
     position: absolute;
     top: 0;
     right: 0;
+    z-index: 1;
     min-width: 40px;
     height: $inputHeight;
     text-align: center;
