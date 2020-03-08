@@ -762,7 +762,7 @@ page(
 
         tr
           td
-            h3.is-title-3 Checkbox
+            h3.is-title-3 Switch
         tr
           td
             pre
@@ -859,6 +859,35 @@ page(
                 button.is-icon(aria-label='Show password')
                   i.icon-eye
             span.error(v-if='ephemeral.forms.hasError') Invalid password
+
+  article#tabs
+    section.card
+      h2.is-title-2.card-header Tabs
+
+      p Todo: replace with component once created
+      table
+        thead
+          th code
+          th demo
+        tr
+          td
+            pre
+              | nav.tabs
+              br
+              | button.is-unstyled.tabs-link tab1
+              br
+              | button.is-unstyled.tabs-link.tabs-link-active
+              br
+              |   | tab2
+              br
+              |   span.tabs-notification 3
+          td
+            br
+            nav.tabs
+              button.is-unstyled.tabs-link tab1
+              button.is-unstyled.tabs-link.tabs-link-active
+                | tab2
+                span.tabs-notification 3
 
   article#stepper
     section.card
