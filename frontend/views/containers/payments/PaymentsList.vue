@@ -3,10 +3,12 @@ table.table.table-in-card.c-payments(:class='{"is-editing": paymentsType === "ed
   thead
     tr
       th(v-if='paymentsType === "edit"')
-        input.input.c-checkbox(
-          @change='checkAllpayment'
-          type='checkbox'
-        )
+        label.checkbox
+          input.input(
+            @change='checkAllpayment'
+            type='checkbox'
+          )
+          span
       th {{ titles.one }}
       th.c-payments-amount {{ titles.two }}
       th.c-payments-date {{ titles.three }}
@@ -17,7 +19,9 @@ table.table.table-in-card.c-payments(:class='{"is-editing": paymentsType === "ed
       :key='index'
     )
       td(v-if='paymentsType === "edit"')
-        input.input.c-checkbox(type='checkbox' v-model='payment.checked')
+        label.checkbox
+          input.input(type='checkbox' v-model='payment.checked')
+          span
       td
         .c-user
           avatar-user.c-avatar(:username='payment.to' size='xs')
@@ -261,8 +265,16 @@ export default {
   }
 }
 
-.c-tooltip-warning .c-tip{
-  background: $warning_0;
+.c-tooltip-warning {
+  outline: none;
+
+  .c-tip{
+    background: $warning_0;
+  }
+
+  &:focus .c-tip {
+    box-shadow: 0px 0px 4px $primary_0;
+  }
 }
 
 // TODO: check if we need generic rule for this (keep until we know)
@@ -322,11 +334,5 @@ export default {
   &:hover {
     color: #fff;
   }
-}
-
-// Edit mode
-.c-checkbox {
-  width: $spacer;
-  margin-right: $spacer;
 }
 </style>
