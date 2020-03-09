@@ -51,7 +51,7 @@ export default {
     ModalTemplate
   },
   created () {
-    if (!this.payment || !this.needsIncome) {
+    if (!this.payment) {
       console.warn('Missing payment or needsIncome to display PaymentDetail modal')
       sbp('okTurtles.events/emit', CLOSE_MODAL)
     }
