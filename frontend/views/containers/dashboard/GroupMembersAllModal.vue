@@ -6,19 +6,16 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
 
     .card.c-card
       search(
-        v-if='needsIncome || activeTab !== "todo"'
         :placeholder='L("Search payments...")'
         :label='L("Search for a payment")'
         v-model='searchText'
       )
 
-      i18n.c-member-count.has-text-1(
+      .c-member-count.has-text-1(
         v-if='searchText && searchCount > 0'
-        tag='div'
-        :args='{ searchCount: `<strong>${searchCount}</strong>`, result: `<strong>${searchCount === 1 ? L("result") : L("results")}</strong>`, searchTerm: `<strong>${searchText}</strong>`}'
         data-test='memberSearchCount'
-        compile
-      ) Showing {searchCount} {result} for "{searchTerm}"
+        v-html='resultsCopy'
+      )
 
       i18n.c-member-count.has-text-1(
         v-if='searchText && searchCount === 0'
@@ -69,6 +66,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
 
 <script>
 import sbp from '~/shared/sbp.js'
+import L, { LTags } from '@view-utils/translations.js'
 import { mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
@@ -108,6 +106,10 @@ export default {
     },
     searchCount () {
       return Object.keys(this.searchResult).length
+    },
+    resultsCopy () {
+      const args = { searchCount: `<strong>${this.searchCount}</strong>`, searchTerm: `<strong>${this.searchText}</strong>`, ...LTags('strong') }
+      return this.searchCount === 1 ? L('Showing {strong_}1 result{_strong} for "{searchTerm}"', args) : L('Showing {searchCount} {strong_}results{_strong} for "{searchTerm}"', args)
     }
   },
   methods: {
