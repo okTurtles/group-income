@@ -10,7 +10,7 @@ menu-parent
         tag='button'
         item-id='message'
         icon='info'
-        @click='openModal("PaymentDetail", { payment })'
+        @click='openModal("PaymentDetail", { payment, needsIncome })'
       )
         i18n Payment details
 

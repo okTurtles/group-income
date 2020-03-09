@@ -1,12 +1,11 @@
 <template lang='pug'>
-modal-template(ref='modal')
+// Stop initialization if payment not present
+modal-template(ref='modal' v-if='payment')
   template(slot='title')
     i18n Payment details
 
   .is-title-2.c-title {{ currency(payment.amount) }}
-  i18n.c-subtitle.has-text-1(
-    :args='{ name: payment.to }'
-  ) Sent to {name}
+  .c-subtitle.has-text-1 {{ subtitleCopy }}
 
   ul.c-payment-list
     li.c-payment-list-item
@@ -31,6 +30,7 @@ modal-template(ref='modal')
 
 <script>
 import { mapGetters } from 'vuex'
+import L from '@view-utils/translations.js'
 import moment from 'moment'
 import sbp from '~/shared/sbp.js'
 import { CLOSE_MODAL } from '@utils/events.js'
@@ -41,16 +41,18 @@ export default {
   name: 'PaymentDetail',
   props: {
     payment: {
-      type: Object,
-      required: true
+      type: Object
+    },
+    needsIncome: {
+      type: Boolean
     }
   },
   components: {
     ModalTemplate
   },
   created () {
-    if (!this.payment) {
-      console.warn('Missing payment to display PaymentDetail modal')
+    if (!this.payment || !this.needsIncome) {
+      console.warn('Missing payment or needsIncome to display PaymentDetail modal')
       sbp('okTurtles.events/emit', CLOSE_MODAL)
     }
   },
@@ -60,6 +62,10 @@ export default {
     ]),
     currency () {
       return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
+    },
+    subtitleCopy () {
+      const args = { name: this.payment.displayName }
+      return this.needsIncome ? L('Sent by {name}', args) : L('Sent to {name}', args)
     }
   },
   methods: {

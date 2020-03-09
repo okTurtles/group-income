@@ -1,7 +1,9 @@
 <template lang='pug'>
+// Stop initialization if group data not available
 page(
   pageTestName='paymentsPage'
   pageTestHeaderName='paymentsTitle'
+  v-if='ourGroupProfile'
 )
   template(#title='') {{ L('Payments') }}
 
@@ -39,6 +41,7 @@ page(
           | {{ link.title }}
           span.tabs-notification(v-if='link.notification') {{ link.notification }}
 
+      // Remove condition -> the search should be available for every tab if more than x result
       search(
         v-if='needsIncome || activeTab !== "todo"'
         :placeholder='L("Search payments...")'
@@ -131,7 +134,8 @@ export default {
       'ourGroupProfile',
       'groupSettings',
       'ourUsername',
-      'thisMonthsPayments'
+      'thisMonthsPayments',
+      'globalProfile'
     ]),
     currency () {
       return currencies[this.groupSettings.mincomeCurrency]
@@ -166,25 +170,39 @@ export default {
       // or new members, using any remainder leftover needed income from the
       // previous distribution
       const distribution = this.thisMonthsPayments.frozenDistribution || this.groupIncomeDistribution
-      return distribution.filter(p => p[this.needsIncome ? 'to' : 'from'] === this.ourUsername).map(transfer => {
-        const { to, amount } = transfer
-        const { hash, data } = this.paymentFor(to)
-        return {
-          to,
-          hash,
-          data,
-          amount: +this.currency.displayWithoutCurrency(amount),
-          amountFormatted: this.currency.displayWithCurrency(amount),
-          paymentClass: this.paymentClass(data),
-          paymentStatusText: this.paymentStatusText(data, to)
-        }
-      })
+      return distribution
+        .filter(p => p[this.needsIncome ? 'to' : 'from'] === this.ourUsername)
+        // TODO: Add filter for the tab todo / sent / received
+        .map(p => {
+          const concerned = this.needsIncome ? 'from' : 'to'
+          p.username = p[concerned]
+          p.displayName = this.globalProfile(p[concerned]).displayName || p.username
+          return p
+        })
+        .filter(p => {
+          const inList = (n) => n.toUpperCase().indexOf(this.searchText.toUpperCase()) > -1
+          return !this.searchText || inList(p.username) || (p.displayName ? inList(p.displayName) : false)
+        })
+        .map(transfer => {
+          const { displayName, username, amount } = transfer
+          const { hash, data } = this.paymentFor(username)
+          return {
+            username,
+            displayName,
+            hash,
+            data,
+            amount: +this.currency.displayWithoutCurrency(amount),
+            amountFormatted: this.currency.displayWithCurrency(amount),
+            paymentClass: this.paymentClass(data),
+            paymentStatusText: this.paymentStatusText(data, username)
+          }
+        })
     },
     hasIncomeDetails () {
       return !!this.ourGroupProfile.incomeDetailsType
     },
     hasPayments () {
-      return this.paymentsDistribution.length > 0
+      return this.paymentsDistribution.length > 0 || this.searchText !== ''
     }
   },
   methods: {

@@ -1,5 +1,6 @@
 <template lang='pug'>
-modal-base-template(ref='modal' :fullscreen='true' class='has-background')
+// Stop initialization if paymentDistribution not present
+modal-base-template(ref='modal' :fullscreen='true' class='has-background' v-if='paymentsDistribution')
   .c-header(:class='{"hide-desktop": donePayment}')
     i18n.is-title-2.c-title(tag='h2') Record payments
 
@@ -82,8 +83,7 @@ export default {
   mixins: [validationMixin],
   props: {
     paymentsDistribution: {
-      type: Array,
-      required: true
+      type: Array
     }
   },
   data () {

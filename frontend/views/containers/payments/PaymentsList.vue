@@ -24,8 +24,8 @@ table.table.table-in-card.c-payments(:class='{"is-editing": paymentsType === "ed
           span
       td
         .c-user
-          avatar-user.c-avatar(:username='payment.to' size='xs')
-          strong.c-name {{payment.to}}
+          avatar-user.c-avatar(:username='payment.username' size='xs')
+          strong.c-name {{payment.displayName}}
 
         // TODO: replace condition to indicate whether or not the payment date is < or > than the current date using payment.paymentStatusText
         i18n.c-user-month(
@@ -57,7 +57,7 @@ table.table.table-in-card.c-payments(:class='{"is-editing": paymentsType === "ed
             v-if=''
             direction='top'
             :isTextCenter='true'
-            :text='L("{personName} marked this payment as not received.", { personName: payment.to })'
+            :text='L("{personName} marked this payment as not received.", { personName: payment.displayName })'
           )
             .button.is-icon-smaller.c-tip
               i.icon-info
