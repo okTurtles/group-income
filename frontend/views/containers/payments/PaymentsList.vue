@@ -184,7 +184,7 @@ export default {
   }
 
   .c-header-checkbox {
-    vertical-align: sub;
+    line-height: 21px;
   }
 
   &-date {
