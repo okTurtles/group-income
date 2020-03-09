@@ -21,8 +21,8 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background' v-if='
           .c-footer-info
             i18n.has-text-bold(
               tag='h4'
-              :args='{ optional: `<span class="has-text-small has-text-1 has-text-normal">(${L("optional")})</span>`}'
-            ) Add a note {optional}
+              :args='{ span_: `<span class="has-text-small has-text-1 has-text-normal">`, _span: "</span>"}'
+            ) Add a note {span_}(optional){_span}
 
             i18n.has-text-small.has-text-1(
               tag='p'
@@ -58,9 +58,8 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background' v-if='
     i18n.is-title-2.c-title(tag='h2') Your payments were recorded
     banner-simple(severity='info')
       i18n(
-        compile
         :args='{ r1: `<a class="link" href="https://donorbox.org/okturtles-donation" target="_blank">`, r2: "</a>"}'
-      ) Please consider supporting the development of Group Income by {r1}sending a donation{r2}!
+      ) Please support the development of Group Income by {r1}sending a donation{r2}!
 
     i18n.is-outlined(
       tag='button'
