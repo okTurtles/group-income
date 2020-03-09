@@ -30,7 +30,7 @@ form.c-search-form(
 import L from '@view-utils/translations.js'
 
 export default {
-  name: 'PaymentsSearch',
+  name: 'Search',
 
   props: {
     value: {
