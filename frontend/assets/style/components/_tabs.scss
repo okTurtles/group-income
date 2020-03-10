@@ -31,18 +31,18 @@
     &:hover {
       box-shadow: inset 0 -2px 0 $general_0;
     }
+  }
 
-    &:focus,
-    &-active:hover,
-    &-active {
-      box-shadow: inset 0 -2px 0 $primary_0;
-    }
+  &-link:focus,
+  .is-active:hover,
+  .is-active {
+    box-shadow: inset 0 -2px 0 $primary_0;
+  }
 
-    &:focus,
-    &:hover,
-    &-active {
-      color: $primary_0;
-    }
+  &-link:focus,
+  &-link:hover,
+  .is-active {
+    color: $primary_0;
   }
 
   &-notification {
