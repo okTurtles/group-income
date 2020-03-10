@@ -94,9 +94,6 @@ export default {
   },
   data () {
     return {
-      ephemeral: {
-        isRemoving: false
-      },
       isAdding: false,
       isEditing: false,
       isFilled: null, // decide what input buttons to show
@@ -146,25 +143,19 @@ export default {
       }
       return this.isFilled ? this.handleSubmit() : this.handleDelete()
     },
-    handleDelete () {
-      if (this.ephemeral.isRemoving) { return }
-      this.ephemeral.isRemoving = true
-
-      this.$emit('new-value', 'nonMonetaryRemove', this.initialValue, () => {
-        this.ephemeral.isRemoving = false
-        this.cancel()
-      })
+    async handleDelete () {
+      await this.$listeners['new-value']('nonMonetaryRemove', this.initialValue)
+      this.ephemeral.isRemoving = false
+      this.cancel()
     },
     async handleSubmit () {
       if (this.$v.form.$invalid) {
         this.cancel()
       } else {
         if (this.isAdding) {
-          this.form.contribution = null
           await this.$listeners['new-value']('nonMonetaryAdd', this.form.contribution)
-
-          this.isAdding = false
           this.form.contribution = null
+          this.isAdding = false
         }
         if (this.isEditing) {
           await this.$listeners['new-value']('nonMonetaryEdit', {
