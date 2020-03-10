@@ -6,8 +6,8 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
 
     .card.c-card
       search(
-        :placeholder='L("Search payments...")'
-        :label='L("Search for a payment")'
+        :placeholder='L("Search...")'
+        :label='L("Search")'
         v-model='searchText'
       )
 
