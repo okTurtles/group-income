@@ -29,7 +29,7 @@ table.table.table-in-card.c-payments(:class='{"is-editing": paymentsType === "ed
 
         // TODO: replace condition to indicate whether or not the payment date is < or > than the current date using payment.paymentStatusText
         i18n.c-user-month(
-          :class='index === 0 ? "has-text-1" : "pill--danger is-small"'
+          :class='index === 0 ? "has-text-1" : "pill is-danger is-small"'
           :args='{date: moment(payment.date).format("MMMM DD")}'
         ) Due {date}
       td.c-payments-amount(v-if='paymentsType !== "edit"')
@@ -44,7 +44,7 @@ table.table.table-in-card.c-payments(:class='{"is-editing": paymentsType === "ed
             :args='{partial_amount: `<strong class="has-text-0">${currency(20)}</strong>`, partial_total: currency(payment.amount)}'
           ) {partial_amount} out of {partial_total}
 
-          i18n.pill--primary.is-small Partial
+          i18n.pill.is-primary.is-small Partial
 
         strong(v-else) {{currency(payment.amount)}}
 
@@ -62,11 +62,11 @@ table.table.table-in-card.c-payments(:class='{"is-editing": paymentsType === "ed
             .button.is-icon-smaller.c-tip
               i.icon-info
 
-          i18n.pill--warning.is-small Not received
+          i18n.pill.is-warning.is-small Not received
 
       td
         .c-actions
-          .c-actions-month(:class='!(index !== 0 && paymentsType === "todo") ? "has-text-1" : "pill--danger is-small"') {{ moment(payment.date).format('MMMM D') }}
+          .c-actions-month(:class='!(index !== 0 && paymentsType === "todo") ? "has-text-1" : "pill is-danger is-small"') {{ moment(payment.date).format('MMMM D') }}
           payments-list-menu(
             v-if='paymentsType !== "edit"'
             :payment='payment'

@@ -487,27 +487,27 @@ page(
 
         tr
           td
-            pre .pill--success
+            pre .pill.is-success
           td
-            span.pill--success Payment received
+            span.pill.is-success Payment received
 
         tr
           td
-            pre .pill--warning
+            pre .pill.is-warning
           td
-            span.pill--warning Not received
+            span.pill.is-warning Not received
 
         tr
           td
-            pre .pill--primary
+            pre .pill.is-primary
           td
-            span.pill--primary Partial
+            span.pill.is-primary Partial
 
         tr
           td
-            pre .pill--danger
+            pre .pill.is-danger
           td
-            span.pill--danger Due march 08
+            span.pill.is-danger Due march 08
 
         tr
           td
@@ -517,27 +517,27 @@ page(
 
         tr
           td
-            pre .pill--success.is-small
+            pre .pill.is-success.is-small
           td
-            span.pill--success.is-small Payment received
+            span.pill.is-success.is-small Payment received
 
         tr
           td
-            pre .pill--warning.is-small
+            pre .pill.is-warning.is-small
           td
-            span.pill--warning.is-small Not received
+            span.pill.is-warning.is-small Not received
 
         tr
           td
-            pre .pill--primary.is-small
+            pre .pill.is-primary.is-small
           td
-            span.pill--primary.is-small Partial
+            span.pill.is-primary.is-small Partial
 
         tr
           td
-            pre .pill--danger.is-small
+            pre .pill.is-danger.is-small
           td
-            span.pill--danger.is-small Due march 08
+            span.pill.is-danger.is-small Due march 08
 
   article#user-feedback
     section.card

@@ -20,7 +20,7 @@
   }
 
   @each $name in $colors {
-    &--#{$name} {
+    &.is-#{$name} {
       @extend .pill;
       @extend .has-background-#{$name};
       @extend .has-text-#{$name};
