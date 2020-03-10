@@ -110,7 +110,7 @@ export default {
         newInviteeSlot && newInviteeSlot.focus()
       })
     },
-    async submit (form, done) {
+    async submit (form) {
       let hasFailed = false
       // NOTE: All invitees proposals will expire at the exact same time.
       // That plus the proposal creator is what we'll use to know
@@ -142,7 +142,6 @@ export default {
       if (!hasFailed) {
         this.ephemeral.currentStep += 1 // Show Success step!
       }
-      done()
     }
   }
 }
