@@ -14,7 +14,8 @@ form.c-search-form(
         name='search'
         data-test='search'
         :placeholder='placeholder'
-        v-model='value'
+        :value='value'
+        @input='$emit("input", $event.target.value)'
       )
 
       button.is-icon-small(
