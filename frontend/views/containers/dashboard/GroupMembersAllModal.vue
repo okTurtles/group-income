@@ -58,7 +58,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
                 i.icon-comment
                 i18n Send message
               button.button.is-outlined.is-small(
-                @click='openModal("RemoveMember")'
+                @click='openModal("RemoveMember", { username })'
               )
                 i.icon-times
                 i18n Remove member
@@ -113,8 +113,8 @@ export default {
     }
   },
   methods: {
-    openModal (name) {
-      sbp('okTurtles.events/emit', OPEN_MODAL, name)
+    openModal (modal, props) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
     },
     closeModal () {
       this.$refs.modal.close()
