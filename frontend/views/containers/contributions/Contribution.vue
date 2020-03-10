@@ -153,8 +153,10 @@ export default {
         this.cancel()
       } else {
         if (this.isAdding) {
-          await this.$listeners['new-value']('nonMonetaryAdd', this.form.contribution)
+          const value = this.form.contribution
           this.form.contribution = null
+          this.$v.$reset() // workaround #858
+          await this.$listeners['new-value']('nonMonetaryAdd', value)
           this.isAdding = false
         }
         if (this.isEditing) {
