@@ -73,6 +73,7 @@ export default {
     right: $spacer-sm;
     background: $general_2;
     border-radius: 50%;
+    z-index: 2;
 
     &:hover {
       background: $general_1;
