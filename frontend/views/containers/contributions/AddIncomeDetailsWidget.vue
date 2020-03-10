@@ -28,7 +28,7 @@ export default {
     CalloutCard
   },
   props: {
-    welcomeMessage: {
+    hasWelcomeMessage: {
       type: Boolean,
       default: false
     }
@@ -44,15 +44,15 @@ export default {
     ]),
 
     title () {
-      return this.welcomeMessage ? L('Welcome, {username}!', { username: this.ourUserDisplayName }) : L('Add your income details')
+      return this.hasWelcomeMessage ? L('Welcome, {username}!', { username: this.ourUserDisplayName }) : L('Add your income details')
     },
 
     copy () {
-      return this.welcomeMessage ? L('Add your income details to start receiving or giving mincome.') : L('This will allow you to start receiving or giving mincome.')
+      return this.hasWelcomeMessage ? L('Add your income details to start receiving or giving mincome.') : L('This will allow you to start receiving or giving mincome.')
     },
 
     image () {
-      return this.welcomeMessage ? SvgHello : SvgContributions
+      return this.hasWelcomeMessage ? SvgHello : SvgContributions
     }
   },
   methods: {
