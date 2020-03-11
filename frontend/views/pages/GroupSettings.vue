@@ -70,25 +70,26 @@ page.c-page
       i18n.is-danger.is-outlined(
         tag='button'
         ref='leave'
-        @click='openProposal("GroupLeaveModal")'
-        data-test='LeaveBtn'
+        @click='handleLeaveGroup'
+        data-test='leaveModalBtn'
       ) Leave group
 
-  page-section(:title='L("Delete Group")')
-    i18n.has-text-1(tag='p') This will delete all the data associated with this group permanently.
+  //- | ::: Delete Group won't be implemented for prototype.
+  //- page-section(:title='L("Delete Group")')
+  //-   i18n.has-text-1(tag='p') This will delete all the data associated with this group permanently.
 
-    .buttons(v-if='membersLeft === 0')
-      i18n.is-danger.is-outlined(
-        tag='button'
-        ref='delete'
-        @click='openProposal("GroupDeletionModal")'
-        data-test='deleteBtn'
-      ) Delete group
+  //-   .buttons(v-if='membersLeft === 0')
+  //-     i18n.is-danger.is-outlined(
+  //-       tag='button'
+  //-       ref='delete'
+  //-       @click='openProposal("GroupDeletionModal")'
+  //-       data-test='deleteBtn'
+  //-     ) Delete group
 
-    banner-simple(severity='info' v-else)
-      i18n(
-        :args='{ count: membersLeft, groupName: groupSettings.groupName, ...LTags("b")}'
-      ) You can only delete a group when all the other members have left. {groupName} still has {b_}{count} other members{_b}.
+  //-   banner-simple(severity='info' v-else)
+  //-     i18n(
+  //-       :args='{ count: membersLeft, groupName: groupSettings.groupName, ...LTags("b")}'
+  //-     ) You can only delete a group when all the other members have left. {groupName} still has {b_}{count} other members{_b}.
 </template>
 
 <script>
@@ -139,9 +140,6 @@ export default {
       'groupSettings',
       'groupMembersCount'
     ]),
-    membersLeft () {
-      return this.groupMembersCount - 1
-    },
     currencies () {
       return currencies
     },
@@ -169,16 +167,20 @@ export default {
       }
 
       try {
-        const settings = await sbp('gi.contracts/group/updateSettings/create',
-          attrs,
-          this.currentGroupId
-        )
-        await sbp('backend/publishLogEntry', settings)
+        await sbp('gi.actions/group/updateSettings', attrs, this.currentGroupId)
         this.$refs.formMsg.success(L('Your changes were saved!'))
       } catch (e) {
-        this.$refs.formMsg.danger(L('Failed to update group settings. {codeError}', { codeError: e.message }))
+        console.error('Failed to update group settings.', e)
+        this.$refs.formMsg.danger(e.message)
       }
       this.ephemeral.isSubmitting = false
+    },
+    handleLeaveGroup () {
+      if (this.groupMembersCount === 1) {
+        alert(L("Leaving the group when you're the only person in it will delete it, but deleting groups is not possible yet."))
+      } else {
+        this.openProposal('GroupLeaveModal')
+      }
     }
   },
   validations: {
