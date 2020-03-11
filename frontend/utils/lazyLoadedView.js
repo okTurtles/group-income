@@ -5,7 +5,7 @@ Vue.component('SignupModal', () => import('../views/containers/access/SignupModa
 Vue.component('UserSettingsModal', () => import('../views/containers/user-settings/UserSettingsModal.vue'))
 Vue.component('PasswordModal', () => import('../views/containers/access/PasswordModal.vue'))
 Vue.component('GroupLeaveModal', () => import('../views/containers/group-settings/GroupLeaveModal.vue'))
-Vue.component('GroupDeletionModal', () => import('../views/containers/group-settings/GroupDeletionModal.vue'))
+// Vue.component('GroupDeletionModal', () => import('../views/containers/group-settings/GroupDeletionModal.vue'))
 Vue.component('GroupMembersAllModal', () => import('../views/containers/dashboard/GroupMembersAllModal.vue'))
 Vue.component('InvitationLinkModal', () => import('../views/containers/group-settings/InvitationLinkModal.vue'))
 
