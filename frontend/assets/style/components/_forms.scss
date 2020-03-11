@@ -219,7 +219,6 @@ textarea,
     align-items: center;
     justify-content: center;
     display: flex;
-    z-index: 1; // to be above input, always
 
     &:first-child {
       position: absolute;
