@@ -108,7 +108,6 @@ export default {
 
 .c-avatar {
   border-radius: 50%;
-  background-color: $general_0;
   object-fit: cover;
   flex-shrink: 0;
 

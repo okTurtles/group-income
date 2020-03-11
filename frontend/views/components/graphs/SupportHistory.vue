@@ -51,23 +51,25 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "@assets/style/_variables.scss";
+
 .history {
   display: flex;
-  margin: 0.5rem;
+  margin: $spacer-sm;
 }
 
 .months {
-  padding: 0.5rem;
+  padding: $spacer-sm;
 }
 
 .period {
   position: relative;
   width: 100%;
   display: inline-block;
-  padding: 2rem 0;
+  padding: $spacer-lg 0;
   color: #fff;
   text-align: center;
-  font-size: 2rem;
+  font-size: $size_1;
   line-height: 1.2;
 
   &:first-child {

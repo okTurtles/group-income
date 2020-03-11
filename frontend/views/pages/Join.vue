@@ -177,8 +177,8 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-logo {
-  min-width: 8rem;
-  width: 8rem;
+  min-width: $spacer-xxl;
+  width: $spacer-xxl;
   margin: auto;
 
   @include tablet {
@@ -218,8 +218,8 @@ export default {
 
   .c-avatars-group.is-lg {
     @include tablet {
-      width: 8rem;
-      height: 8rem;
+      width: $spacer-xxl;
+      height: $spacer-xxl;
     }
   }
 

@@ -5,48 +5,30 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
       i18n.is-title-2.c-title(tag='h2') Group members
 
     .card.c-card
-      form(
-        @submit.prevent='submit'
+      search(
+        :placeholder='L("Search...")'
+        :label='L("Search")'
+        v-model='searchText'
       )
-        label.field
-          i18n.sr-only Search for a member
-          .input-combo
-            .is-icon(:aria-label='L("Search")')
-              i.icon-search
-            input.input(
-              type='text'
-              name='search'
-              data-test='search'
-              placeholder='Search...'
-              v-model='form.search'
-            )
-            button.is-icon-small(
-              v-if='form.search'
-              aria-label='Clear search'
-              @click='form.search = null'
-            )
-              i.icon-times
 
-        i18n.c-member-count.has-text-1(
-          v-if='form.search && searchCount > 0'
-          tag='div'
-          :args='{ searchCount: `<strong>${searchCount}</strong>`, result: `<strong>${searchCount === 1 ? L("result") : L("results")}</strong>`, searchTerm: `<strong>${form.search}</strong>`}'
-          data-test='memberSearchCount'
-          compile
-        ) Showing {searchCount} {result} for "{searchTerm}"
+      .c-member-count.has-text-1(
+        v-if='searchText && searchCount > 0'
+        data-test='memberSearchCount'
+        v-html='resultsCopy'
+      )
 
-        i18n.c-member-count.has-text-1(
-          v-if='form.search && searchCount === 0'
-          tag='div'
-          :args='{searchTerm: `<strong>${form.search}</strong>`}'
-        ) Sorry, we couldn't find anyone called "{searchTerm}"
+      i18n.c-member-count.has-text-1(
+        v-if='searchText && searchCount === 0'
+        tag='div'
+        :args='{searchTerm: `<strong>${searchText}</strong>`}'
+      ) Sorry, we couldn't find anyone called "{searchTerm}"
 
-        i18n.c-member-count.has-text-1(
-          v-if='!form.search'
-          tag='div'
-          :args='{ groupMembersCount }'
-          data-test='memberCount'
-        ) {groupMembersCount} members
+      i18n.c-member-count.has-text-1(
+        v-if='!searchText'
+        tag='div'
+        :args='{ groupMembersCount }'
+        data-test='memberCount'
+      ) {groupMembersCount} members
 
       transition-group(
         v-if='searchResult'
@@ -76,7 +58,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
                 i.icon-comment
                 i18n Send message
               button.button.is-outlined.is-small(
-                @click='openModal("RemoveMember")'
+                @click='openModal("RemoveMember", { username })'
               )
                 i.icon-times
                 i18n Remove member
@@ -84,9 +66,11 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
 
 <script>
 import sbp from '~/shared/sbp.js'
+import L, { LTags } from '@view-utils/translations.js'
 import { mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
+import Search from '@components/Search.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import GroupMemberMenu from '@containers/dashboard/GroupMemberMenu.vue'
 
@@ -94,14 +78,13 @@ export default {
   name: 'GroupMembersAllModal',
   components: {
     ModalBaseTemplate,
+    Search,
     AvatarUser,
     GroupMemberMenu
   },
   data () {
     return {
-      form: {
-        search: null
-      }
+      searchText: ''
     }
   },
   computed: {
@@ -113,9 +96,9 @@ export default {
     searchResult () {
       return Object.keys(this.groupProfiles)
         .map(username => {
-          const inList = (n) => n.toUpperCase().indexOf(this.form.search.toUpperCase()) > -1
+          const inList = (n) => n.toUpperCase().indexOf(this.searchText.toUpperCase()) > -1
           const { displayName } = this.globalProfile(username)
-          if (!this.form.search || inList(username) || (displayName ? inList(displayName) : false)) {
+          if (!this.searchText || inList(username) || (displayName ? inList(displayName) : false)) {
             return { username, displayName }
           }
         })
@@ -123,11 +106,15 @@ export default {
     },
     searchCount () {
       return Object.keys(this.searchResult).length
+    },
+    resultsCopy () {
+      const args = { searchCount: `<strong>${this.searchCount}</strong>`, searchTerm: `<strong>${this.searchText}</strong>`, ...LTags('strong') }
+      return this.searchCount === 1 ? L('Showing {strong_}1 result{_strong} for "{searchTerm}"', args) : L('Showing {searchCount} {strong_}results{_strong} for "{searchTerm}"', args)
     }
   },
   methods: {
-    openModal (name) {
-      sbp('okTurtles.events/emit', OPEN_MODAL, name)
+    openModal (modal, props) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
     },
     closeModal () {
       this.$refs.modal.close()
@@ -177,7 +164,7 @@ export default {
 }
 
 .c-member-count {
-  margin-top: .5rem;
+  margin-top: $spacer-sm;
   margin-bottom: 1.5rem;
 }
 
@@ -244,7 +231,7 @@ export default {
   margin-top: 0;
 
   i {
-    margin-right: .5rem;
+    margin-right: $spacer-sm;
   }
 
   @include tablet {

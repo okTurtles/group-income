@@ -27,7 +27,7 @@ export default {
       'ourContributionSummary'
     ]),
     item () {
-      // TODO - Connect this to store and do the same at PayGroup.js
+      // TODO - Connect this to store and do the same at Payments.js
       return {
         title: this.ourContributionSummary.receivesMonetary
           ? L('Payments Received')

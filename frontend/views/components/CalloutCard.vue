@@ -29,8 +29,8 @@ export default {
 }
 
 .c-svg {
-  width: 4rem;
-  height: 4rem;
+  width: $spacer-xl;
+  height: $spacer-xl;
   margin-right: $spacer;
   flex-shrink: 0;
 

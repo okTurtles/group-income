@@ -55,7 +55,7 @@ export default {
 
 <style lang="scss" scoped>
 .settings-number {
-  font-size: $spacer-xl;
+  font-size: $size_0;
   line-height: 1.1;
 }
 </style>

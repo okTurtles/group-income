@@ -2,7 +2,7 @@
 page(pageTestName='dashboard' pageTestHeaderName='groupName' v-if='groupSettings.groupName')
   template(#title='') {{ groupSettings.groupName }}
 
-  add-income-details-widget(v-if='!hasIncomeDetails')
+  add-income-details-widget(v-if='!hasIncomeDetails' :welcomeMessage='true')
 
   template(v-else)
     start-inviting-widget(v-if='groupMembersCount === 1')
