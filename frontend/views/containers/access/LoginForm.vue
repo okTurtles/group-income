@@ -74,6 +74,8 @@ export default {
       }
 
       try {
+        this.$refs.formMsg.clean()
+
         await sbp('gi.actions/user/login', {
           username: this.form.name,
           password: this.form.password

@@ -101,7 +101,7 @@ export default {
     },
     async submit () {
       if (this.$v.form.$invalid) {
-        // TODO: more descriptive error message. Perhpahs highlight error step
+        // TODO: more descriptive error message. Perhaps highlight error step
         this.$refs.formMsg.danger(L('Some information is invalid, please review it and try again.'))
         return
       }

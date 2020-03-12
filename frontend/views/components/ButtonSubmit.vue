@@ -12,7 +12,7 @@
 
 <script>
 /*
-Use ButtonSubmit on buttons that will trigger an async action.
+Use ButtonSubmit on buttons that will trigger an **async** action.
 
 button-submit(
 @click='handleLogin'
@@ -62,9 +62,12 @@ export default {
       // More at: https://stackoverflow.com/questions/60554270/vuejs-difference-between-emit-and-listeners
       try {
         await this.$listeners.click(event)
+        console.log('passou aqui? 1')
       } catch (error) {
         console.error('ButtonSubmit exception:', error)
       }
+
+      console.log('passou aqui? 2')
 
       this.ephemeral.isSubmitting = false
     }

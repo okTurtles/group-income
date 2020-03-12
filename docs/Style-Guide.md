@@ -80,7 +80,7 @@ References to help you:
 
 ### Submitting a Form
 
-When performing an action that requires data to be sent, the application UI should be updated to reflect this "loading state". The most common scenario is adding a "spin" animation to the submit button. Use `ButtonSubmit` component to do it:
+When performing an async action that requires data to be sent, the application UI should be updated to reflect this "loading state". The most common scenario is adding a "spin" animation to the submit button. Use `ButtonSubmit` component to do it:
 
 ```pug
   button-submit(
