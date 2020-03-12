@@ -37,12 +37,12 @@ modal-base-template(ref='modal' :fullscreen='true')
             .label(
               data-test='introIncomeOrPledge'
             ) {{ needsIncome ? L("What's your monthly income?") : L('How much do you want to pledge?') }}
-            .input-combo(
+            .inputcombo(
               :class='{"error": $v.form.amount.$error }'
               v-error:amount='{ attrs: { "data-test": "badIncome" } }'
             )
               input.input(
-                type='number'
+                inputmode='decimal'
                 v-model='$v.form.amount.$model'
                 data-test='inputIncomeOrPledge'
               )

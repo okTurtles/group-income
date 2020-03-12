@@ -37,8 +37,8 @@ page.c-page
 
       label.field
         i18n.label Default currency
-        .select-wrapper.c-currency-select
-          select(
+        .selectbox.c-currency
+          select.select(
             name='mincomeCurrency'
             v-model='form.mincomeCurrency'
           )
@@ -199,7 +199,7 @@ export default {
   max-width: 37rem;
 }
 
-.c-currency-select {
+.c-currency {
   @include tablet {
     width: 50%;
   }

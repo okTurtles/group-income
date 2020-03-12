@@ -123,3 +123,12 @@ $icons: (
   text-align: center;
   line-height: $spacer-lg;
 }
+
+@mixin icon($name) {
+  content: map-get($icons, $name);
+  text-rendering: auto;
+  line-height: 1;
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  -moz-osx-font-smoothing: grayscale;
+}
