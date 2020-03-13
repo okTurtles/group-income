@@ -11,13 +11,11 @@
 
     label.field(v-if='ephemeral.currentStep === 0' key='0')
       i18n.label New minimum income
-      .input-combo(:class='{ error: $v.form.mincomeAmount.$error }')
+      .inputcombo(:class='{ error: $v.form.mincomeAmount.$error }')
         input.input(
           v-model='$v.form.mincomeAmount.$model'
           name='mincomeAmount'
-          type='number'
-          min='1'
-          required
+          inputmode='decimal'
         )
         .suffix {{ groupMincomeSymbolWithCode }}
       i18n.helper(:args='{groupMincomeFormatted}') Currently {groupMincomeFormatted} monthly.

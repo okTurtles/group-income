@@ -702,8 +702,8 @@ page(
       p
         | The input's width depends on their container #[br]
         | For consistency, add #[code .field] to have a margin bottom of 1rem #[br]
-        | For A11Y reasons, everything related to a form element, (label text, input element, helper text and error text) should be placed inside its respective #[code <\label \>] element.
-        | When an element is disabled, required or as an error, add the respective HTML attributes! #[code disabled, aria-required, or aria-describedby="error"]
+        | For A11Y reasons, everything related to a form element, (label text, input element, helper text and error text) should be placed inside its respective #[code <\label\>] element.
+        | When an element is disabled, required or has an error, add the respective HTML attributes! #[code disabled, aria-required, or aria-describedby="error"]
       br
       button.is-small.is-outlined.is-danger(
         @click='ephemeral.forms.hasError = !ephemeral.forms.hasError'
@@ -863,6 +863,7 @@ page(
               |     .addons
               |       button.is-icon(
               |         :aria-label='Show password'
+              |         :aria-pressed='false'
               |       )
               |         i.icon-eye
           td
@@ -873,7 +874,7 @@ page(
                 .addons
                   button.is-icon(
                     aria-label='Show password'
-                    :aria-pressed='isVisible'
+                    :aria-pressed='false'
                   )
                     i.icon-eye
               span.error(v-if='ephemeral.forms.hasError') Wrong password.
@@ -974,18 +975,37 @@ page(
           tr
             td
               pre
-                | .select-wrapper.combobox
+                | .combobox
                 |   select.button.is-small.is-outlined
                 |     option 10 results
 
             td
-              .select-wrapper.combobox
+              .combobox
                 select.button.is-small.is-outlined
                   option(
                     v-for='count in [10, 20, 30]'
                     :index='count'
                     :value='count'
                   ) {{ count }} results
+        tr
+          td
+            tr
+              h3.is-title-3 Search (component)
+          tr
+            td
+              pre
+                | search(
+                |   label='Search for a payment'
+                |   placeholder='Search...'
+                |   value=""
+                | )
+
+            td
+              search(
+                label='Search for a payment'
+                placeholder='Search...'
+                v-model='form.searchValue'
+              )
 
   article#tabs
     section.card
@@ -1049,15 +1069,37 @@ page(
           th demo
         tr
           td
-            code
-              | sbp('state/vuex/dispatch', 'login',
-              br
-              |   { username: 'TestUser', identityContractID }
-              br
-              | )
+            pre
+              | menu-parent
+              |   menu-trigger.is-icon-small(
+              |    :aria-label='L("Show info")
+              |   )
+              |     i.icon-ellipsis-v
+              |   menu-content
+              |     ul
+              |       menu-item(
+              |         tag='button'
+              |         item-id='profile'
+              |         icon='info'
+              |       ) Edit profile
           td
-            button(@click='login')
-              i18n Open Menu
+            menu-parent
+              menu-trigger.is-icon-small(:aria-label='L("Show info")')
+                i.icon-ellipsis-v
+
+              menu-content.c-menu-content
+                ul
+                  menu-item(
+                    tag='button'
+                    item-id='profile'
+                    icon='pencil-alt'
+                  ) Edit profile
+
+                  menu-item(
+                    tag='button'
+                    item-id='message'
+                    icon='comment'
+                  ) Send message
 
   article#modal
     section.card
@@ -1144,13 +1186,15 @@ page(
 <script>
 import Page from '@components/Page.vue'
 import sbp from '~/shared/sbp.js'
+import Badge from '@components/Badge.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import Tooltip from '@components/Tooltip.vue'
-import Badge from '@components/Badge.vue'
-import LinkToCopy from '@components/LinkToCopy.vue'
 import CalloutCard from '@components/CalloutCard.vue'
+import LinkToCopy from '@components/LinkToCopy.vue'
+import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
+import Tooltip from '@components/Tooltip.vue'
+import Search from '@components/Search.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgAccess from '@svgs/access.svg'
 import SvgBitcoin from '@svgs/bitcoin.svg'
@@ -1261,6 +1305,9 @@ export default {
           }
         ]
       },
+      form: {
+        searchValue: ''
+      },
       ephemeral: {
         btns: {
           isLoading: 'false'
@@ -1275,13 +1322,18 @@ export default {
   },
   components: {
     Page,
-    CalloutCard,
+    Badge,
     BannerSimple,
     BannerScoped,
     ButtonSubmit,
-    Tooltip,
-    Badge,
+    CalloutCard,
     LinkToCopy,
+    MenuParent,
+    MenuTrigger,
+    MenuContent,
+    MenuItem,
+    Search,
+    Tooltip,
     SvgHello
   },
   mounted () {
@@ -1508,6 +1560,11 @@ table {
     padding-top: $spacer-sm;
     text-align: left;
   }
+}
+
+.c-menu-content {
+  width: 12rem;
+  margin-left: 2rem;
 }
 
 #c-design-system-sidebar {

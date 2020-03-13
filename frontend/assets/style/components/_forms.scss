@@ -81,6 +81,11 @@ legend.legend {
     border-color: $danger_0;
     color: initial;
 
+    &:focus,
+    &:hover {
+      border-color: $danger_0;
+    }
+
     @media (hover: hover) {
       &:focus {
         box-shadow: 0 0 0 2px $danger_1;
@@ -119,12 +124,13 @@ legend.legend {
     .select {
       border-color: $danger_0;
 
-      @media (hover: hover) {
-        input:focus,
-        select:focus {
-          box-shadow: 0 0 0 2px $danger_1;
-          border-color: $danger_0;
-        }
+      &:hover,
+      &:focus {
+        border-color: $danger_0;
+      }
+
+      &:focus {
+        box-shadow: 0 0 0 2px $danger_1;
       }
     }
   }

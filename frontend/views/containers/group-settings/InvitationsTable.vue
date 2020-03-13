@@ -1,7 +1,7 @@
 <template lang="pug">
 page-section.c-section(:title='L("Invite links")')
   template(#cta='')
-    .select-wrapper.combobox(:class='{ focus: ephemeral.selectbox.focused }')
+    .combobox(:class='{ focus: ephemeral.selectbox.focused }')
       select.button.is-small.is-outlined(
         ref='select'
         v-model='ephemeral.selectbox.selectedOption'

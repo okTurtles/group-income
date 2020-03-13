@@ -168,26 +168,6 @@ export default {
   margin-bottom: 1.5rem;
 }
 
-.input-combo {
-  align-items: center;
-
-  .is-icon {
-    left: 0;
-    right: auto;
-  }
-
-  .is-icon-small {
-    position: absolute;
-    right: $spacer-sm;
-    background: $general_2;
-    border-radius: 50%;
-
-    &:hover {
-      background: $general_1;
-    }
-  }
-}
-
 .c-identity {
   display: flex;
   align-items: center;

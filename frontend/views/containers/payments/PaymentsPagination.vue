@@ -4,7 +4,7 @@
     i18n.has-text-1(
       tag='span'
     ) Show:
-    .select-wrapper.combobox
+    .combobox.c-combobox
       select.button.is-small.is-outlined(
         ref='select'
         @change='updatePagination'
@@ -67,7 +67,7 @@ export default {
 }
 
 .c-control,
-.select-wrapper {
+.c-combobox {
   margin: 0 $spacer-xs;
 }
 
