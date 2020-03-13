@@ -1,6 +1,7 @@
 <template lang='pug'>
   button.is-loader(
     type='submit'
+    ref='btn'
     v-bind='$attrs'
     v-on='bindListeners'
     :data-loading='ephemeral.isSubmitting'
@@ -70,6 +71,10 @@ export default {
       console.log('passou aqui? 2')
 
       this.ephemeral.isSubmitting = false
+    },
+    focus () {
+      // Used to focus the btn from the parent (ex:GroupCreationModal)
+      this.$refs.btn.focus()
     }
   },
   computed: {
