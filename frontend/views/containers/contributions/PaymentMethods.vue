@@ -14,7 +14,7 @@ fieldset(data-test='paymentMethods')
     )
       label
         i18n.sr-only Payment name and value
-        .selectcombo.is-reversed.c-select(
+        .selectGroup.is-reversed.c-select(
           :class='{"is-shifted": methodsCount > 1 || method.name !== "choose" || method.value }'
         )
           select.select(v-model='method.name'
@@ -100,7 +100,7 @@ export default {
   methods: {
     handleSelectChange (methName, index) {
       // Focus the respective input
-      this.$refs.fields.childNodes[index].getElementsByTagName('input')[1].focus()
+      this.$refs.fields.childNodes[index].getElementsByTagName('input')[0].focus()
     },
     handleAddMethod () {
       Vue.set(this.form.methods, this.methodsCount, {

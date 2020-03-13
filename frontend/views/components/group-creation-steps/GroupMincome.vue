@@ -5,7 +5,7 @@
   .card
     label
       i18n.label What is the minimum each member should receive monthly?
-      .selectcombo
+      .selectGroup
         input.input(
           ref='mincome'
           inputmode='decimal'

@@ -52,12 +52,11 @@ legend.legend {
   height: $inputHeight;
   width: 100%;
   border-radius: $radius;
-  padding: 0 10px;
+  padding: 0 0.625rem;
   background-color: #fff;
   border: 1px solid $general_0;
-  letter-spacing: -0.6px;
   font-size: 1rem;
-  line-height: 23px;
+  line-height: 1.5rem;
   outline: none;
   font-family: inherit;
   color: $text_0;
@@ -95,8 +94,7 @@ legend.legend {
 }
 
 .textarea {
-  padding-top: 10px;
-  padding-bottom: 10px;
+  padding: 0.625rem;
   height: auto;
   min-height: 7.5rem;
   resize: vertical;
@@ -113,8 +111,8 @@ legend.legend {
 /* ------- Combo elements ------- */
 
 .selectbox,
-.selectcombo,
-.inputcombo {
+.selectGroup,
+.inputGroup {
   position: relative;
   display: flex;
   align-items: center;
@@ -142,7 +140,7 @@ legend.legend {
 
 // Input with select
 .selectbox,
-.selectcombo {
+.selectGroup {
   &::after {
     // content: "\f0dd"; // icon-sort-down
     @include icon(sort-down);
@@ -168,7 +166,7 @@ legend.legend {
   }
 }
 
-.selectcombo {
+.selectGroup {
   .select,
   .input {
     border: 1px solid $general_0;
@@ -214,10 +212,24 @@ legend.legend {
   }
 }
 
-.inputcombo {
+.inputGroup {
   .input {
     padding-right: 5rem; /* avg of suffix width */
     flex-grow: 1;
+  }
+
+  .prefix + .input {
+    padding-left: 2.5rem;
+  }
+
+  .prefix {
+    position: absolute;
+    top: 50%;
+    left: 0.75rem;
+    transform: translateY(-50%);
+    color: $general_0;
+    pointer-events: none;
+    z-index: 1;
   }
 
   .suffix {
@@ -281,9 +293,7 @@ p.error {
   color: var(--danger_0);
 
   &::before {
-    content: "\f057";
-    font-family: "Font Awesome 5 Free";
-    font-weight: 900;
+    @include icon(times-circle);
     margin-right: 0.25rem;
   }
 
@@ -347,6 +357,9 @@ p.error {
       border-radius: 50%;
     }
 
+    // Exception: Use px because units
+    // are tiny and may have cause render issues
+    // in diff browsers / zoom resolutions
     &::before {
       width: 14px;
       height: 14px;
@@ -401,12 +414,7 @@ p.error {
     }
 
     &::after {
-      content: "\f00c"; // icon-check
-      text-rendering: auto;
-      line-height: 1;
-      font-family: "Font Awesome 5 Free";
-      font-weight: 900;
-      -moz-osx-font-smoothing: grayscale;
+      @include icon(check);
       font-size: 10px;
       position: absolute;
       width: 6px;

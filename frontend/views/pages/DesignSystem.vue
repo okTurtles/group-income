@@ -700,10 +700,10 @@ page(
       h2.is-title-2.card-header Forms
 
       p
-        | The input's width depends on their container #[br]
-        | For consistency, add #[code .field] to have a margin bottom of 1rem #[br]
-        | For A11Y reasons, everything related to a form element, (label text, input element, helper text and error text) should be placed inside its respective #[code <\label\>] element.
-        | When an element is disabled, required or has an error, add the respective HTML attributes! #[code disabled, aria-required, or aria-describedby="error"]
+        | - The input's width depends on their container #[br]
+        | - Use #[code .field] to have a margin bottom of 1rem #[br]
+        | - #[b Accessibility:] Every form field must have a respective label associated, even if hidden using #[code .sr-only].
+        | Whenever possible, use the respective HTML attributes to describe the field status (type, disabled, required, error, etc...)
       br
       button.is-small.is-outlined.is-danger(
         @click='ephemeral.forms.hasError = !ephemeral.forms.hasError'
@@ -716,7 +716,7 @@ page(
           th demo
         tr
           td
-            h3.is-title-3 Text Input
+            h3.is-title-3 Input
             br
             pre
               | label.field
@@ -730,10 +730,10 @@ page(
               input.input(
                 placeholder='Placeholder'
                 :class='{ error: ephemeral.forms.hasError }'
+                :aria-invalid='ephemeral.forms.hasError'
               )
               span.error(v-if='ephemeral.forms.hasError') Name already taken
               .helper Pick a name without spaces.
-
         tr
           td
             h3.is-title-3 Textarea
@@ -749,25 +749,6 @@ page(
                 :class='{ error: ephemeral.forms.hasError }'
               )
               span.error(v-if='ephemeral.forms.hasError') You can do better than that.
-
-        tr
-          td
-            h3.is-title-3 Inputcombo
-            br
-            pre
-              | label.field
-              |   .label New Amount
-              |   .inputcombo.error
-              |     input.input
-              |     .suffix USD
-          td
-            label.field
-              .label New Amount
-              .inputcombo(:class='{ error: ephemeral.forms.hasError }')
-                input.input(type='text' placeholder='New amount')
-                .suffix USD
-              span.error(v-if='ephemeral.forms.hasError') Something went wrong.
-
         tr
           td
             h3.is-title-3 Selectbox
@@ -789,19 +770,19 @@ page(
             span.error(v-if='ephemeral.forms.hasError') Something went wrong.
         tr
           td
-            h3.is-title-3 Selectcombo
+            h3.is-title-3 SelectGroup
             br
             pre
               | label.field
               |   .label Mincome
-              |   .selectcombo.error
+              |   .selectGroup.error
               |     input.input
               |     select.select
               |       option USD
           td
             label.field
               .label Mincome
-              .selectcombo(:class='{ error: ephemeral.forms.hasError }')
+              .selectGroup(:class='{ error: ephemeral.forms.hasError }')
                 input.input(placeholder='Amount')
                 select.select
                   option USD
@@ -813,7 +794,7 @@ page(
             pre
               | label.field
               |   .label Payment method
-              |   .selectcombo.is-reversed
+              |   .selectGroup.is-reversed
               |     select.select
               |       option(disabled='true') Choose...
               |       option Bitcoin
@@ -821,7 +802,7 @@ page(
           td
             label.field
               .label Payment method
-              .selectcombo.is-reversed(:class='{ error: ephemeral.forms.hasError }')
+              .selectGroup.is-reversed(:class='{ error: ephemeral.forms.hasError }')
                 select.select
                   option(disabled='true') Choose...
                   option Bitcoin
@@ -831,12 +812,30 @@ page(
               span.error(v-if='ephemeral.forms.hasError') Something went wrong.
         tr
           td
-            h3.is-title-3 With addons
+            h3.is-title-3 InputGroup
+            h4.is-title-4 With suffix
+            br
+            pre
+              | label.field
+              |   .label New Amount
+              |   .inputGroup.error
+              |     input.input
+              |     .suffix USD
+          td
+            label.field
+              .label Mincome
+              .inputGroup(:class='{ error: ephemeral.forms.hasError }')
+                input.input(type='text' placeholder='Amount')
+                .suffix USD
+              span.error(v-if='ephemeral.forms.hasError') Something went wrong.
+        tr
+          td
+            h4.is-title-4 With shifted btn
             br
             pre
               | label.field
               |   .label Add invitee
-              |   .inputcombo
+              |   .inputGroup
               |     input.input
               |     button.is-icon-small.is-btn-shifted(
               |       :aria-label='Remove member'
@@ -845,7 +844,7 @@ page(
           td
             label.field
               .label Add invitee
-              .inputcombo(:class='{ error: ephemeral.forms.hasError }')
+              .inputGroup(:class='{ error: ephemeral.forms.hasError }')
                 input.input(type='text' placeholder='Member name')
                 button.is-icon-small.is-btn-shifted(
                   :aria-label='L("Remove member")'
@@ -855,10 +854,12 @@ page(
 
         tr
           td
+            h4.is-title-4 With addons
+            br
             pre
               | label.field
               |   .label Password
-              |   .inputcombo
+              |   .inputGroup
               |     input.input
               |     .addons
               |       button.is-icon(
@@ -869,7 +870,7 @@ page(
           td
             label.field
               .label Password
-              .inputcombo(:class='{ error: ephemeral.forms.hasError }')
+              .inputGroup(:class='{ error: ephemeral.forms.hasError }')
                 input.input(type='text' placeholder='Placeholder')
                 .addons
                   button.is-icon(
@@ -881,7 +882,7 @@ page(
 
             label.field
               .label Your message
-              .inputcombo(:class='{ error: ephemeral.forms.hasError }')
+              .inputGroup(:class='{ error: ephemeral.forms.hasError }')
                 input.input(type='text' placeholder='Placeholder')
                 .addons
                   button.is-icon(aria-label='Copy text')

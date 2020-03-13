@@ -4,7 +4,9 @@ form.c-search-form(
 )
   label.field
     .sr-only {{label}}
-    .inputcombo.c-search
+    .inputGroup.c-search
+      .is-icon.prefix(aria-hidden='true')
+        i.icon-search
       input.input(
         type='text'
         name='search'
@@ -13,8 +15,6 @@ form.c-search-form(
         :value='value'
         @input='$emit("input", $event.target.value)'
       )
-      .is-icon.c-iconSearch(aria-hidden='true')
-        i.icon-search
       .addons
         button.is-icon-small(
           v-if='value !== ""'
@@ -59,19 +59,6 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-search {
-  .c-iconSearch {
-    position: absolute;
-    top: 50%;
-    left: 0.75rem;
-    transform: translateY(-50%);
-    color: $general_0;
-    pointer-events: none;
-  }
-
-  .input {
-    padding-left: 2.5rem;
-  }
-
   .addons {
     display: flex;
     align-items: center;
