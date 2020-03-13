@@ -1281,13 +1281,9 @@ export default {
       this.articles[last].link.classList.add('last')
     },
     async saveIn2500ms () {
-      const dumbPromiseThatTakes2500ms = () => new Promise((resolve, reject) => {
-        setTimeout(() => {
-          resolve()
-        }, 2500)
+      return new Promise((resolve, reject) => {
+        setTimeout(resolve, 2500)
       })
-
-      await dumbPromiseThatTakes2500ms()
     }
   }
 }
