@@ -11,7 +11,9 @@ modal-base-template(class='has-background')
       tab-item
         appearence
       tab-item
-        tab-placeholder(name='Changelog')
+        app-logs
+      tab-item
+        tab-placeholder(name='Troubleshooting')
 </template>
 
 <script>
@@ -20,8 +22,9 @@ import TabItem from '@components/tabs/TabItems.vue'
 import TabWrapper from '@components/tabs/TabWrapper.vue'
 import TabPlaceholder from './Placeholder.vue'
 import Appearence from './Appearence.vue'
+import AppLogs from './AppLogs.vue'
 import UserProfile from './UserProfile.vue'
-import settings from '~/frontend/model/settings.js'
+import settings from './settings.js'
 
 export default {
   name: 'SettingsWrapper',
@@ -31,6 +34,7 @@ export default {
     TabWrapper,
     TabItem,
     Appearence,
+    AppLogs,
     UserProfile,
     TabPlaceholder
   },
@@ -54,6 +58,7 @@ export default {
 .settings-container {
   position: relative;
   margin: 0 26px;
-  max-width: 620px;
+  width: 100%;
+  max-width: 38rem;
 }
 </style>

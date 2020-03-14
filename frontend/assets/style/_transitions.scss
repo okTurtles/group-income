@@ -67,7 +67,7 @@
 .slide-next-enter {
   @include tablet {
     opacity: 0;
-    transform: translate3d(0, -100%, 0);
+    transform: translate3d(0, 100%, 0);
   }
 }
 
@@ -75,7 +75,7 @@
 .slide-next-leave-to {
   @include tablet {
     opacity: 0;
-    transform: translate3d(0, 100%, 0);
+    transform: translate3d(0, -100%, 0);
   }
 }
 
