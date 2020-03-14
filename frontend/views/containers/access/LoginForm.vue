@@ -69,7 +69,7 @@ export default {
   methods: {
     async login () {
       if (this.$v.form.$invalid) {
-        this.$refs.formMsg.danger('The fields are incompleted.')
+        this.$refs.formMsg.danger(L('The form is invalid.'))
         return
       }
 

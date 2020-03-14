@@ -1280,7 +1280,7 @@ export default {
       })
       this.articles[last].link.classList.add('last')
     },
-    async saveIn2500ms () {
+    saveIn2500ms () {
       return new Promise((resolve, reject) => {
         setTimeout(resolve, 2500)
       })
