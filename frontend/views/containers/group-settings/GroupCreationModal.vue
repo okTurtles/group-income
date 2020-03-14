@@ -40,17 +40,17 @@ modal-base-template(:fullscreen='true')
           | {{ L('Next') }}
           i.icon-arrow-right.is-suffix
 
-        button.is-success(
+        button-submit.is-success(
           v-else=''
           ref='finish'
           @click='submit'
-          :disabled='$v.form.$invalid'
           data-test='finishBtn'
         ) {{ L('Create Group') }}
 </template>
 
 <script>
 import sbp from '~/shared/sbp.js'
+import { validationMixin } from 'vuelidate'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import { RULE_THRESHOLD } from '@model/contracts/voting/rules.js'
 import proposals from '@model/contracts/voting/proposals.js'
@@ -59,7 +59,7 @@ import L from '@view-utils/translations.js'
 import { decimals } from '@view-utils/validators.js'
 import StepAssistant from '@view-utils/stepAssistant.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
-import { validationMixin } from 'vuelidate'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 import GroupWelcome from '@components/GroupWelcome.vue'
 import {
   GroupName,
@@ -83,6 +83,7 @@ export default {
   components: {
     ModalBaseTemplate,
     BannerScoped,
+    ButtonSubmit,
     GroupName,
     GroupPurpose,
     GroupMincome,
@@ -100,7 +101,7 @@ export default {
     },
     async submit () {
       if (this.$v.form.$invalid) {
-        // TODO: more descriptive error message, highlight erroneous step
+        // TODO: more descriptive error message. Perhaps highlight error step
         this.$refs.formMsg.danger(L('Some information is invalid, please review it and try again.'))
         return
       }
@@ -138,8 +139,7 @@ export default {
         mincomeCurrency: 'USD' // TODO: grab this as a constant from currencies.js
       },
       ephemeral: {
-        // this determines whether or not to render proxy components for tests
-        dev: process.env.NODE_ENV === 'development'
+        groupPictureFile: '' // passed by GroupName.vue
       },
       config: {
         steps: [

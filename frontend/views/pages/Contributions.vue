@@ -236,7 +236,6 @@ export default {
         )
         await sbp('backend/publishLogEntry', groupProfileUpdate)
       } catch (e) {
-        console.error('handleNonMonetary', e)
         alert(e.message)
       }
     },

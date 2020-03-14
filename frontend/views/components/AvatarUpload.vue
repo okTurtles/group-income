@@ -40,13 +40,6 @@ export default {
     Avatar,
     BannerScoped
   },
-  data () {
-    return {
-      ephemeral: {
-        isSubmitting: false
-      }
-    }
-  },
   methods: {
     async fileChange (fileList) {
       if (!fileList.length) return

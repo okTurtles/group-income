@@ -10,7 +10,7 @@ page.c-page
   )
 
   page-section
-    form(@submit.prevent='saveSettings')
+    form(@submit.prevent='')
       label.field
         i18n.label Group name
         input.input(
@@ -53,11 +53,10 @@ page.c-page
       banner-scoped(ref='formMsg' data-test='formMsg')
 
       .buttons
-        i18n.is-success(
-          tag='button'
-          :disabled='$v.form.$invalid'
+        button-submit.is-success(
+          @click='saveSettings'
           data-test='saveBtn'
-        ) Save changes
+        ) {{ L('Save changes') }}
 
   invitations-table
 
@@ -107,6 +106,7 @@ import AvatarUpload from '@components/AvatarUpload.vue'
 import InvitationsTable from '@containers/group-settings/InvitationsTable.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 import L from '@view-utils/translations.js'
 
 export default {
@@ -118,7 +118,8 @@ export default {
     InvitationsTable,
     AvatarUpload,
     BannerSimple,
-    BannerScoped
+    BannerScoped,
+    ButtonSubmit
   },
   data () {
     const { groupName, sharedValues, mincomeCurrency } = this.$store.getters.groupSettings
@@ -127,9 +128,6 @@ export default {
         groupName,
         sharedValues,
         mincomeCurrency
-      },
-      ephemeral: {
-        isSubmitting: false
       }
     }
   },
@@ -157,8 +155,6 @@ export default {
       sbp('okTurtles.events/emit', OPEN_MODAL, component)
     },
     async saveSettings (e) {
-      if (this.ephemeral.isSubmitting) { return }
-      this.ephemeral.isSubmitting = true
       const attrs = {}
 
       for (const key in this.form) {
@@ -174,7 +170,6 @@ export default {
         console.error('Failed to update group settings.', e)
         this.$refs.formMsg.danger(e.message)
       }
-      this.ephemeral.isSubmitting = false
     },
     handleLeaveGroup () {
       if (this.groupMembersCount === 1) {

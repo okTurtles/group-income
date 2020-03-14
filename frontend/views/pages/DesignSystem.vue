@@ -289,7 +289,9 @@ page(
   article#buttons
     section.card
       h2.is-title-2.card-header Buttons
+      br
       h3.is-title-3 Default size
+      br
       table
         thead
           th code
@@ -364,6 +366,24 @@ page(
           td
             button.is-danger.is-outlined.is-small Default text
 
+      h3.is-title-3 Button Submit
+      p Use #[code ButtonSubmit] on buttons that will trigger an async action.
+      br
+      table
+        thead
+          th code
+          th demo
+        tr
+          td
+            pre
+              | button-submit.is-sucess(
+              |   @click='saveIn2500ms'
+              | ) Save Changes
+          td
+            button-submit.is-sucess(
+              @click='saveIn2500ms'
+            ) Save Changes
+      br
       h3.is-title-3 With an icon
       table
         thead
@@ -1076,6 +1096,7 @@ import Page from '@components/Page.vue'
 import sbp from '~/shared/sbp.js'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 import Tooltip from '@components/Tooltip.vue'
 import Badge from '@components/Badge.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
@@ -1191,6 +1212,9 @@ export default {
         ]
       },
       ephemeral: {
+        btns: {
+          isLoading: 'false'
+        },
         forms: {
           hasError: false,
           isDisabled: false
@@ -1204,6 +1228,7 @@ export default {
     CalloutCard,
     BannerSimple,
     BannerScoped,
+    ButtonSubmit,
     Tooltip,
     Badge,
     LinkToCopy,
@@ -1254,6 +1279,11 @@ export default {
         el.link.classList.remove('last')
       })
       this.articles[last].link.classList.add('last')
+    },
+    saveIn2500ms () {
+      return new Promise((resolve, reject) => {
+        setTimeout(resolve, 2500)
+      })
     }
   }
 }

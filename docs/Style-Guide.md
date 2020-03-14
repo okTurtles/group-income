@@ -78,6 +78,19 @@ References to help you:
 - [Accessibility Insights Extension](https://accessibilityinsights.io/)
 - [A11Y Style Guide Resources](https://a11y-style-guide.com/style-guide/section-resources.html)
 
+### Submitting a Form
+
+When performing an async action that requires data to be sent, the application UI should be updated to reflect this "loading state". The most common scenario is adding a "spin" animation to the submit button. Use `ButtonSubmit` component to do it:
+
+```pug
+  button-submit(
+    @click='handleSubmit'
+  ) Login
+```
+
+All the needed logic to toggle the spinning information is handled by `ButtonSubmit` based on `@click` handler event. Read the source code for further explanation.
+
+
 ## Testing Style Guide
 
 We use [Mocha](https://mochajs.org/) for the unit tests and [Cypress](https://www.cypress.io/) for end-to-end (E2E) tests. **All new functionality must have corresponding tests!**

@@ -38,11 +38,11 @@
           data-test='prevBtn'
         ) {{ currentStep === 0 ? L('Cancel') : L('Back') }}
 
-        button(
+        button-submit(
           key='change'
           :class='submitStyleNonProposal'
           v-if='!groupShouldPropose'
-          @click.prevent='submit'
+          @click='submit'
           :disabled='disabled'
           data-test='submitBtn'
         ) {{ submitTextNonProposal }}
@@ -58,11 +58,10 @@
           i18n Next
           i.icon-arrow-right.is-suffix
 
-        i18n.is-success(
+        button-submit.is-success(
           key='create'
-          tag='button'
           v-if='isReasonStep'
-          @click.prevent='submit'
+          @click='submit'
           :disabled='disabled'
           data-test='submitBtn'
         ) Create Proposal
@@ -70,6 +69,7 @@
         i18n.is-outlined(
           key='awesome'
           tag='button'
+          type='button'
           v-if='isConfirmation'
           ref='close'
           @click.prevent='close'
@@ -92,6 +92,7 @@
 <script>
 import { mapGetters } from 'vuex'
 import L from '@view-utils/translations.js'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import SvgProposal from '@svgs/proposal.svg'
 
@@ -99,7 +100,8 @@ export default {
   name: 'ModalForm',
   components: {
     ModalTemplate,
-    SvgProposal
+    SvgProposal,
+    ButtonSubmit
   },
   props: {
     title: {
@@ -163,14 +165,9 @@ export default {
         this.close()
       }
     },
-    submit () {
-      if (this.groupShouldPropose) {
-        this.$emit('submit', {
-          reason: this.$refs.reason.value
-        })
-      } else {
-        this.$emit('submit')
-      }
+    async submit () {
+      const form = this.groupShouldPropose ? { reason: this.$refs.reason.value } : null
+      await this.$listeners.submit(form)
     }
   }
 }
