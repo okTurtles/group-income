@@ -313,7 +313,10 @@ p.error {
   position: relative;
   display: inline-block;
   cursor: pointer;
-  margin-right: 1.5rem;
+
+  &:not(:last-child) {
+    margin-right: 1.5rem;
+  }
 
   .input {
     position: absolute;

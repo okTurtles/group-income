@@ -186,6 +186,8 @@ page(
               i.icon-columns icon-columns
               i.icon-comments icon-comments
               i.icon-copy icon-copy
+              i.icon-dollar-sign icon-dollar-sign
+              i.icon-download icon-download
               i.icon-edit icon-edit
               i.icon-ellipsis-v icon-ellipsis-v
               i.icon-envelope icon-envelope
@@ -206,6 +208,7 @@ page(
               i.icon-question icon-question
               i.icon-question-circle icon-question-circle
               i.icon-tag icon-tag
+              i.icon-share-atl share-atl
               i.icon-search search
               i.icon-sort-down sort-down
               i.icon-times icon-times

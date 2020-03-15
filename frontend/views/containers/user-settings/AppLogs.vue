@@ -4,7 +4,7 @@
       h2.is-title-3.c-title Application logs
 
       .c-header
-        fieldset
+        fieldset.c-filters
           legend.sr-only Visible logs
           label.checkbox
             input.input(type='checkbox' name='filter' v-model='filter' value='error')
@@ -16,7 +16,11 @@
             input.input(type='checkbox' name='filter' v-model='filter' value='debug')
             i18n Debug
 
-        i18n.is-small(tag='button' @click='downloadLogs') Download
+        button.is-small.c-download(@click='downloadLogs')
+          i.icon-download.is-prefix.c-icon
+          i18n Download
+          //- i18n.hide-touch Download
+          //- i18n.hide-desktop Share
         a(ref='linkDownload' hidden)
 
       textarea.textarea.c-logs(ref='textarea' rows='12' readonly)
@@ -37,17 +41,17 @@
 <script>
 import sbp from '~/shared/sbp.js'
 import { CAPTURED_LOGS } from '@utils/events.js'
-
+import { downloadLogs } from '@view-utils/captureLogs.js'
 export default {
   name: 'AppLogs',
   components: {},
   data () {
     return {
-      filter: ['error'],
+      filter: ['error', 'warn', 'debug'],
       prettyLog: null
     }
   },
-  created () {
+  mounted () {
     this.updateFormLogs()
     sbp('okTurtles.events/on', CAPTURED_LOGS, this.updateFormLogs)
   },
@@ -61,65 +65,32 @@ export default {
   },
   methods: {
     createLog (type) {
-      console[type]('This is a new log of type:', type)
+      console[type](`This is a new log of type: ${type}.`, 'Heres an array to fill ~3Kb:', Array(200).fill(type))
     },
     openTroubleshooting () {
-      alert('TODO link redirect')
+      alert('TODO link redirect. How to do this...')
     },
     downloadLogs () {
-      // TODO REVIEW this logs message:
-      const data = `
-/*
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
-
-GROUP INCOME - Application Logs
-
-Send us this file when reporting a problem: 
- - e-mail: hi@okturtles.com
- - github: https://github.com/okTurtles/group-income-simple/issues  
-
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-*/
-
-var userAgent = ${navigator.userAgent}
-var appLogs = ${localStorage.getItem(CAPTURED_LOGS)}`
-
-      const filename = 'gi_logs.txt'
-      const file = new Blob([data], { type: 'text/plain' })
-
-      if (window.navigator.msSaveOrOpenBlob) {
-        // IE10+
-        console.debug('download ms API')
-        window.navigator.msSaveOrOpenBlob(file, filename)
-      } else {
-        console.debug('download URL obj')
-
-        const link = this.$refs.linkDownload
-        const url = URL.createObjectURL(file)
-        link.href = url
-        link.download = filename
-        link.click()
-        setTimeout(() => {
-          link.href = '#'
-          window.URL.revokeObjectURL(url)
-        }, 0)
-      }
+      downloadLogs('gi_logs.txt', this.$refs.linkDownload)
     },
     updateFormLogs () {
       const logs = JSON.parse(localStorage.getItem(CAPTURED_LOGS)) || []
+      const isNewEntry = (type) => ['NEW_SESSION', 'NEW_VISIT'].includes(type)
       this.prettyLog = logs
         .filter(({ type }) => {
-          return this.filter.includes(type) || type === 'NEW_VISIT'
+          return this.filter.includes(type) || isNewEntry(type)
         })
         .map(({ type, msg }) => {
-          return type === 'NEW_VISIT'
+          return isNewEntry(type)
             ? `--------------- \n [${type}] :: ${msg}`
             : `[${type}] :: ${msg.map(something => JSON.stringify(something)).join(' ')}`
         })
         .join('\n')
 
       this.$nextTick(() => {
-        this.$refs.textarea.scrollTop = this.$refs.textarea.scrollHeight
+        if (this.$refs.textarea) {
+          this.$refs.textarea.scrollTop = this.$refs.textarea.scrollHeight
+        }
       })
     },
     clearLogs () {
@@ -147,11 +118,30 @@ var appLogs = ${localStorage.getItem(CAPTURED_LOGS)}`
 
 .c-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
 }
 
+.c-filters {
+  flex-grow: 99; // to be wider than c-download.
+}
+
+.c-download {
+  flex-grow: 1;
+
+  /* @include touch {
+    .c-icon {
+      &::before {
+        content: "\f1e0", // .icon-share-alt
+      }
+    }
+  } */
+}
+
+.c-filters,
+.c-download,
 .c-logs {
-  margin: 1rem 0;
+  margin-bottom: 1rem;
 }
 
 </style>
