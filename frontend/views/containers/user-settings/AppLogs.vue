@@ -17,6 +17,7 @@
             i18n Debug
 
         i18n.is-small(tag='button' @click='downloadLogs') Download
+        a(ref='linkDownload' hidden)
 
       textarea.textarea.c-logs(ref='textarea' rows='12' readonly)
         | {{ prettyLog }}
@@ -31,7 +32,6 @@
         button.is-small.is-outlined(@click='createLog("error")') Create error log
         button.is-small.is-outlined(@click='createLog("warn")') Create warn log
         button.is-small.is-outlined(@click='createLog("debug")') Create debug log
-
 </template>
 
 <script>
@@ -67,7 +67,43 @@ export default {
       alert('TODO link redirect')
     },
     downloadLogs () {
-      alert('TODO download the logs...')
+      // TODO REVIEW this logs message:
+      const data = `
+/*
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+
+GROUP INCOME - Application Logs
+
+Send us this file when reporting a problem: 
+ - e-mail: hi@okturtles.com
+ - github: https://github.com/okTurtles/group-income-simple/issues  
+
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+*/
+
+var userAgent = ${navigator.userAgent}
+var appLogs = ${localStorage.getItem(CAPTURED_LOGS)}`
+
+      const filename = 'gi_logs.txt'
+      const file = new Blob([data], { type: 'text/plain' })
+
+      if (window.navigator.msSaveOrOpenBlob) {
+        // IE10+
+        console.debug('download ms API')
+        window.navigator.msSaveOrOpenBlob(file, filename)
+      } else {
+        console.debug('download URL obj')
+
+        const link = this.$refs.linkDownload
+        const url = URL.createObjectURL(file)
+        link.href = url
+        link.download = filename
+        link.click()
+        setTimeout(() => {
+          link.href = '#'
+          window.URL.revokeObjectURL(url)
+        }, 0)
+      }
     },
     updateFormLogs () {
       const logs = JSON.parse(localStorage.getItem(CAPTURED_LOGS)) || []

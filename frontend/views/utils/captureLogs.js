@@ -40,8 +40,10 @@ const giConsole = (function (csl) {
 function captureMsg (type, ...msg) {
   const capturedSoFar = JSON.parse(localStorage.getItem(CAPTURED_LOGS)) || []
 
-  // TODO - Verify if store is fulled. If yes, do some type of cleanup.
-  // Perhaps delete all logs before this session?
+  // TODO - Verify if store is fulled.
+  // How: https://stackoverflow.com/questions/4391575/how-to-find-the-size-of-localstorage
+  // If yes, do some type of cleanup.
+  // Perhaps delete all logs before the last session?
 
   localStorage.setItem(CAPTURED_LOGS, JSON.stringify(
     [...capturedSoFar, { type, msg }]
