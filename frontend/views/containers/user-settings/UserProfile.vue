@@ -8,7 +8,7 @@
     )
 
     section.card
-      form(@submit.prevent='saveProfile')
+      form(@submit.prevent='')
         label.field
           i18n.label Display Name
           input.input(
@@ -55,12 +55,10 @@
         banner-scoped(ref='formMsg' data-test='profileMsg')
 
         .buttons
-          i18n.is-success(
-            tag='button'
-            :disabled='$v.form.$invalid'
-            type='submit'
+          button-submit.is-success(
+            @click='saveProfile'
             data-test='saveAccount'
-          ) Save account changes
+          ) {{ L('Save account changes') }}
 
     section.card
       form(name='DeleteProfileForm' @submit.prevent='')
@@ -86,6 +84,7 @@ import { cloneDeep } from '@utils/giLodash.js'
 import { mapGetters } from 'vuex'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import AvatarUpload from '@components/AvatarUpload.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 import sbp from '~/shared/sbp.js'
 import L from '@view-utils/translations.js'
 
@@ -94,7 +93,8 @@ export default {
   mixins: [validationMixin, validationsDebouncedMixins],
   components: {
     AvatarUpload,
-    BannerScoped
+    BannerScoped,
+    ButtonSubmit
   },
   data () {
     // create a copy of the attributes to avoid any Vue.js reactivity weirdness

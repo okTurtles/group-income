@@ -4,7 +4,7 @@ form(
   ref='form'
   name='formData'
   data-test='login'
-  @submit.prevent='login'
+  @submit.prevent=''
 )
   label.field
     i18n.label Username
@@ -26,12 +26,11 @@ form(
   banner-scoped(ref='formMsg' data-test='loginError')
 
   .buttons.is-centered
-    i18n(
-      tag='button'
+    button-submit(
+      @click='login'
       :disabled='$v.form.$invalid'
       data-test='loginSubmit'
-      type='submit'
-    ) Login
+    ) {{ L('Login') }}
 </template>
 
 <script>
@@ -41,6 +40,7 @@ import sbp from '~/shared/sbp.js'
 import { nonWhitespace } from '@views/utils/validators.js'
 import PasswordForm from '@containers/access/PasswordForm.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 
@@ -52,16 +52,14 @@ export default {
   ],
   components: {
     PasswordForm,
-    BannerScoped
+    BannerScoped,
+    ButtonSubmit
   },
   data () {
     return {
       form: {
         name: null,
         password: null
-      },
-      ephemeral: {
-        isSubmitting: false
       }
     }
   },
@@ -70,9 +68,14 @@ export default {
   },
   methods: {
     async login () {
-      if (this.ephemeral.isSubmitting) { return }
-      this.ephemeral.isSubmitting = true
+      if (this.$v.form.$invalid) {
+        this.$refs.formMsg.danger(L('The form is invalid.'))
+        return
+      }
+
       try {
+        this.$refs.formMsg.clean()
+
         await sbp('gi.actions/user/login', {
           username: this.form.name,
           password: this.form.password
@@ -82,7 +85,6 @@ export default {
         console.error('FormLogin.vue login() error:', e)
         this.$refs.formMsg.danger(e.message)
       }
-      this.ephemeral.isSubmitting = false
     },
     forgotPassword () {
       // TODO: implement forgot password

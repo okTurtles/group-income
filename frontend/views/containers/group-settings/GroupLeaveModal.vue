@@ -44,12 +44,11 @@
 
       .buttons
         i18n.is-outlined(tag='button' @click='close') Cancel
-        i18n.is-danger(
-          tag='button'
+        button-submit.is-danger(
           @click='submit'
           :disabled='$v.form.$invalid'
           data-test='btnSubmit'
-          ) Leave Group
+          ) {{ L('Leave Group') }}
 </template>
 
 <script>
@@ -61,6 +60,7 @@ import PasswordForm from '@containers/access/PasswordForm.vue'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import L from '@view-utils/translations.js'
 
@@ -71,7 +71,8 @@ export default {
     ModalTemplate,
     PasswordForm,
     BannerSimple,
-    BannerScoped
+    BannerScoped,
+    ButtonSubmit
   },
   data () {
     return {

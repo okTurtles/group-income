@@ -236,7 +236,6 @@ export default {
         )
         await sbp('backend/publishLogEntry', groupProfileUpdate)
       } catch (e) {
-        console.error('handleNonMonetary', e)
         alert(e.message)
       }
     },
@@ -269,7 +268,7 @@ export default {
   padding: 1rem 0 1.5rem 0;
 
   button {
-    margin-top: -0.25rem;
+    margin-top: -$spacer-xs;
   }
 
   @include tablet {

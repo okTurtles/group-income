@@ -152,8 +152,8 @@ export default {
   .is-btn-shifted {
     display: none;
     position: absolute;
-    top: 0.5rem;
-    left: calc(100% + 0.5rem);
+    top: $spacer-sm;
+    left: calc(100% + #{$spacer-sm});
   }
 
   &.is-shifted {

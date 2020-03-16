@@ -18,30 +18,27 @@ transition(name='replace-list')
         @keydown.enter.prevent='handleEnter'
       )
       .buttons
-        i18n.button.is-small.is-danger.is-outlined(
+        button-submit.is-small.is-danger.is-outlined(
           v-if='isEditing && !isAdding'
-          tag='button'
           @click='handleDelete'
           data-test='buttonRemoveNonMonetaryContribution'
-        ) Remove
+        ) {{ L('Remove') }}
         .c-buttons-right
           i18n.button.is-small.is-outlined(
             tag='button'
             @click='cancel'
             data-test='buttonCancelNonMonetaryContribution'
           ) Cancel
-          i18n.button.is-small(
+          button-submit.is-small(
             v-if='isAdding && isFilled'
-            tag='button'
             @click='handleSubmit'
             data-test='buttonAddNonMonetaryContribution'
-          ) Add
-          i18n.button.is-small(
+          ) {{ L('Add') }}
+          button-submit.is-small(
             v-if='isEditing && isFilled'
-            tag='button'
             @click='handleSubmit'
             data-test='buttonSaveNonMonetaryContribution'
-          ) Save
+          ) {{ L('Save') }}
 
   li(v-else-if='isEditable' :class='itemClasses' key='editable')
     slot
@@ -70,10 +67,14 @@ transition(name='replace-list')
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import L from '@view-utils/translations.js'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 
 export default {
   name: 'Contribution',
   mixins: [validationMixin],
+  components: {
+    ButtonSubmit
+  },
   props: {
     variant: {
       type: String,
@@ -142,21 +143,24 @@ export default {
       }
       return this.isFilled ? this.handleSubmit() : this.handleDelete()
     },
-    handleDelete () {
-      this.$emit('new-value', 'nonMonetaryRemove', this.initialValue)
+    async handleDelete () {
+      await this.$listeners['new-value']('nonMonetaryRemove', this.initialValue)
+      this.ephemeral.isRemoving = false
       this.cancel()
     },
-    handleSubmit () {
+    async handleSubmit () {
       if (this.$v.form.$invalid) {
         this.cancel()
       } else {
         if (this.isAdding) {
-          this.$emit('new-value', 'nonMonetaryAdd', this.form.contribution)
-          this.isAdding = false
+          const value = this.form.contribution
           this.form.contribution = null
+          this.$v.$reset() // workaround #858
+          await this.$listeners['new-value']('nonMonetaryAdd', value)
+          this.isAdding = false
         }
         if (this.isEditing) {
-          this.$emit('new-value', 'nonMonetaryEdit', {
+          await this.$listeners['new-value']('nonMonetaryEdit', {
             replace: this.initialValue,
             with: this.form.contribution
           })

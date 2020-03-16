@@ -111,12 +111,12 @@ export default {
 }
 
 .logo {
-  width: 8rem;
-  margin: 2rem auto;
+  width: $spacer-xxl;
+  margin: $spacer-lg auto;
 }
 
 .logo-2 {
-  width: 8rem;
+  width: $spacer-xxl;
   margin: 0 auto 3rem auto;
 
   @include tablet {
@@ -162,7 +162,7 @@ export default {
   }
 
   h3 {
-    margin-bottom: 0.25rem;
+    margin-bottom: $spacer-xs;
   }
 
   svg {
@@ -177,7 +177,7 @@ export default {
   }
 
   .button {
-    margin-top: 2rem;
+    margin-top: $spacer-lg;
 
     @include tablet {
       margin-bottom: 1rem;

@@ -40,13 +40,6 @@ export default {
     Avatar,
     BannerScoped
   },
-  data () {
-    return {
-      ephemeral: {
-        isSubmitting: false
-      }
-    }
-  },
   methods: {
     async fileChange (fileList) {
       if (!fileList.length) return
@@ -108,7 +101,7 @@ export default {
       top: -6.5rem;
       right: 0;
       align-items: flex-end;
-      margin-bottom: -0.5rem;
+      margin-bottom: -$spacer-sm;
     }
   }
 

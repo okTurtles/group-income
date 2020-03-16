@@ -123,7 +123,6 @@ export default {
           this.$refs.formMsg.danger(L('Failed to change mincome. {codeError}', { codeError: e.message }))
           this.ephemeral.currentStep = 0
         }
-
         return
       }
 

@@ -3,7 +3,7 @@
     .c-container(v-if='ephemeral.text')
       banner-simple(class='c-banner' :severity='ephemeral.severity')
         .c-inner
-          .c-inner-text(:data-test='dataTest') {{ ephemeral.text }}
+          .c-inner-text(:data-test='dataTest' role='alert') {{ ephemeral.text }}
           button.is-icon-small.c-button(
             type='button'
             :class='`is-${ephemeral.severity}`'

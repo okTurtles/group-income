@@ -135,7 +135,7 @@ $pagePaddingDesktop: 5.5rem;
   grid-area: p-header;
   transition: padding ease-out 300ms;
   text-align: center;
-  min-height: 4rem;
+  min-height: $spacer-xl;
 
   @include touch {
     display: flex;
