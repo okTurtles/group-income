@@ -212,8 +212,8 @@ export default {
 
 .p-descritpion {
   display: none;
-  margin-top: $spacer-xs;
-  padding-bottom: $spacer-md*3;
+  margin-top: 0.25rem;
+  padding-bottom: 3rem;
 
   @include desktop {
     display: block;

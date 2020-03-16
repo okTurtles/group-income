@@ -176,14 +176,14 @@ export default {
 .c-ctas {
   @include phone {
     width: 100%;
-    margin-top: $spacer;
-    margin-bottom: $spacer-sm;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
 
     .button {
       flex-grow: 1;
 
       &:not(:last-child) {
-        margin-right: $spacer;
+        margin-right: 1rem;
       }
     }
   }
@@ -200,7 +200,7 @@ export default {
 }
 
 .c-error {
-  margin-top: $spacer-xs;
+  margin-top: 0.25rem;
   text-align: right;
 }
 </style>

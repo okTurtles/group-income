@@ -33,7 +33,7 @@ export default {
 
 .c-loading {
   opacity: 0;
-  padding: $spacer-lg 0;
+  padding: 2rem 0;
   animation: showLoading 200ms 500ms forwards;
 
   &.c-fullView {

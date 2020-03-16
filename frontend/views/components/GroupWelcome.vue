@@ -72,15 +72,15 @@ export default {
   .c-title,
   .c-description {
     text-align: center;
-    padding: 0 $spacer;
+    padding: 0 1rem;
   }
 
   .c-title {
-    margin-top: $spacer;
+    margin-top: 1rem;
   }
 
   .c-description {
-    margin: 0 0 $spacer-sm;
+    margin: 0 0 0.5rem;
   }
 
   @include phone {

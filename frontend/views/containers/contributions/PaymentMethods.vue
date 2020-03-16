@@ -135,15 +135,15 @@ export default {
 }
 
 .c-legend {
-  margin-bottom: $spacer-xs;
+  margin-bottom: 0.25rem;
 }
 
 .c-fields {
-  margin-top: $spacer;
+  margin-top: 1rem;
 
   &-item {
     display: block;
-    margin-bottom: $spacer;
+    margin-bottom: 1rem;
   }
 }
 
@@ -152,8 +152,8 @@ export default {
   .is-btn-shifted {
     display: none;
     position: absolute;
-    top: $spacer-sm;
-    left: calc(100% + #{$spacer-sm});
+    top: 0.5rem;
+    left: calc(100% + 0.5rem);
   }
 
   &.is-shifted {

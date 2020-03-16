@@ -75,8 +75,8 @@ export default {
   display: flex;
   height: 4.75rem;
   width: 100%;
-  padding-left: $spacer-lg;
-  padding-top: $spacer-lg;
+  padding-left: 2rem;
+  padding-top: 2rem;
 }
 
 .has-background .example-header {
@@ -86,13 +86,13 @@ export default {
   background-color: $background_0;
 
   @include tablet {
-    padding-top: $spacer-lg;
+    padding-top: 2rem;
     justify-content: flex-start;
     background-color: transparent;
   }
 }
 
 form {
-  padding: $spacer-lg;
+  padding: 2rem;
 }
 </style>

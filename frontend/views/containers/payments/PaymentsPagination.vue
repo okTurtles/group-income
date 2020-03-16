@@ -68,7 +68,7 @@ export default {
 
 .c-control,
 .select-wrapper {
-  margin: 0 $spacer-xs;
+  margin: 0 0.25rem;
 }
 
 .c-control {

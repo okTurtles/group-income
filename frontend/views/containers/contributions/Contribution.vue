@@ -191,7 +191,7 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-contribution {
-  padding: $spacer * 1.5 0 $spacer 0;
+  padding: 1.5rem 0 1rem 0;
 }
 
 .c-item.is-default {
@@ -205,17 +205,17 @@ export default {
   }
 
   & + .c-spacer-above .c-contribution {
-    padding-top: $spacer;
+    padding-top: 1rem;
   }
 }
 
 .c-spacer-above {
-  padding-top: $spacer * 1.5;
+  padding-top: 1.5rem;
 }
 
 .buttons {
-  padding-top: $spacer;
-  padding-bottom: $spacer-xs;
+  padding-top: 1rem;
+  padding-bottom: 0.25rem;
   margin-top: 0;
 
   button {
@@ -224,7 +224,7 @@ export default {
 }
 
 .c-inline-button {
-  margin-left: $spacer;
+  margin-left: 1rem;
 
   .icon-pencil-alt {
     margin-left: 0;

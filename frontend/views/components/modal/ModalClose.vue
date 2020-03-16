@@ -24,8 +24,8 @@ export default {
 
 .c-modal-close {
   position: fixed;
-  top: $spacer;
-  right: $spacer;
+  top: 1rem;
+  right: 1rem;
   z-index: 4;
   height: 2.75rem;
   width: 2.75rem;
@@ -38,27 +38,27 @@ export default {
   background-color: $general_1;
 
   @include tablet {
-    top: $spacer*1.5;
-    right: $spacer*1.5;
+    top: 1.5rem;
+    right: 1.5rem;
   }
 
   @include desktop {
     position: absolute;
-    top: $spacer;
-    right: $spacer;
+    top: 1rem;
+    right: 1rem;
   }
 
   &.fullscreen {
     @include desktop {
-      top: $spacer*1.5;
+      top: 1.5rem;
       position: fixed;
-      right: $spacer*2.5;
+      right: 2.5rem;
     }
 
     .c-modal-close-text {
       display: block;
       position: absolute;
-      bottom: calc(-1em - #{$spacer-sm});
+      bottom: calc(-1em - 0.5rem);
       left: 0;
       text-align: center;
       width: 100%;
@@ -113,7 +113,7 @@ export default {
       position: relative;
       left: 0;
       top: 0;
-      margin-right: $spacer;
+      margin-right: 1rem;
 
       .c-iconBack {
         display: block;

@@ -111,12 +111,12 @@ export default {
 }
 
 .logo {
-  width: $spacer-xxl;
-  margin: $spacer-lg auto;
+  width: 8rem;
+  margin: 2rem auto;
 }
 
 .logo-2 {
-  width: $spacer-xxl;
+  width: 8rem;
   margin: 0 auto 3rem auto;
 
   @include tablet {
@@ -145,7 +145,7 @@ export default {
   display: flex;
   width: 100%;
   flex-wrap: wrap;
-  margin-top: $spacer-md;
+  margin-top: 0.5rem;
   justify-content: center;
   text-align: left;
   @include tablet {
@@ -162,12 +162,12 @@ export default {
   }
 
   h3 {
-    margin-bottom: $spacer-xs;
+    margin-bottom: 0.25rem;
   }
 
   svg {
     width: 6rem;
-    margin-left: $spacer;
+    margin-left: 1rem;
     float: right;
     @include tablet {
       float: none;
@@ -177,10 +177,10 @@ export default {
   }
 
   .button {
-    margin-top: $spacer-lg;
+    margin-top: 2rem;
 
     @include tablet {
-      margin-bottom: $spacer;
+      margin-bottom: 1rem;
     }
   }
 }
@@ -192,7 +192,7 @@ export default {
   display: flex;
 
   > * {
-    margin: $spacer-sm;
+    margin: 0.5rem;
   }
 }
 </style>

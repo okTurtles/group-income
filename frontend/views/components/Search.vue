@@ -70,7 +70,7 @@ export default {
 
   .is-icon-small {
     position: absolute;
-    right: $spacer-sm;
+    right: 0.5rem;
     background: $general_2;
     border-radius: 50%;
     z-index: 2;

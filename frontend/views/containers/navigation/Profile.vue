@@ -57,8 +57,8 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: $spacer-xl;
-  padding: 0 $spacer;
+  height: 4rem;
+  padding: 0 1rem;
 }
 
 .c-avatar-user {
@@ -69,7 +69,7 @@ export default {
 .c-user {
   display: flex;
   flex-direction: column;
-  margin-left: $spacer-sm;
+  margin-left: 0.5rem;
   max-width: 5rem;
   white-space: nowrap;
   line-height: 1.3rem;

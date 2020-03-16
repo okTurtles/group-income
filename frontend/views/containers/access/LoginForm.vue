@@ -108,6 +108,6 @@ export default {
 
 .c-forgot {
   display: inline-block;
-  margin-top: $spacer;
+  margin-top: 1rem;
 }
 </style>

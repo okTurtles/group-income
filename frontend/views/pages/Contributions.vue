@@ -255,7 +255,7 @@ export default {
 
 .c-contribution-header .has-text-bold {
   font-family: "Poppins";
-  padding-left: $spacer-sm;
+  padding-left: 0.5rem;
 }
 </style>
 
@@ -269,7 +269,7 @@ export default {
   padding: 1rem 0 1.5rem 0;
 
   button {
-    margin-top: -$spacer-xs;
+    margin-top: -0.25rem;
   }
 
   @include tablet {
@@ -295,26 +295,26 @@ export default {
 }
 
 .c-cta {
-  margin-top: $spacer*1.5;
+  margin-top: 1.5rem;
 
   @include phone {
-    margin-bottom: $spacer-xl;
+    margin-bottom: 4rem;
   }
 }
 
 .spacer-around {
-  margin: 0 0 $spacer 0;
+  margin: 0 0 1rem 0;
 
   @include tablet {
-    margin: $spacer 0 0;
+    margin: 1rem 0 0;
   }
 }
 
 .spacer {
-  margin-bottom: $spacer * 2.5;
+  margin-bottom: 2.5rem;
 
   @include tablet {
-    margin-bottom: $spacer * 1;
+    margin-bottom: 1rem;
   }
 }
 
@@ -322,9 +322,9 @@ export default {
   display: flex;
 
   .c-svg {
-    width: $spacer-xl;
-    height: $spacer-xl;
-    margin-right: $spacer;
+    width: 4rem;
+    height: 4rem;
+    margin-right: 1rem;
     flex-shrink: 0;
 
     @include desktop {

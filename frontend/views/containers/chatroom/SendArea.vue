@@ -173,8 +173,8 @@ $initialHeight: 43px;
   }
 
   &-btn {
-    padding: $spacer-sm;
-    padding-right: $spacer;
+    padding: 0.5rem;
+    padding-right: 1rem;
     color: $general_2;
     height: 100%;
     border-radius: 0 $radius $radius 0;

@@ -152,7 +152,7 @@ export default {
   margin: 0 -1rem;
 
   @include tablet {
-    padding-top: $spacer-lg;
+    padding-top: 2rem;
     justify-content: flex-start;
     background-color: transparent;
     margin: 0;
@@ -164,7 +164,7 @@ export default {
 }
 
 .c-member-count {
-  margin-top: $spacer-sm;
+  margin-top: 0.5rem;
   margin-bottom: 1.5rem;
 }
 
@@ -178,7 +178,7 @@ export default {
 
   .is-icon-small {
     position: absolute;
-    right: $spacer-sm;
+    right: 0.5rem;
     background: $general_2;
     border-radius: 50%;
 
@@ -231,7 +231,7 @@ export default {
   margin-top: 0;
 
   i {
-    margin-right: $spacer-sm;
+    margin-right: 0.5rem;
   }
 
   @include tablet {

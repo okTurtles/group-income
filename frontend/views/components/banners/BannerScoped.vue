@@ -66,7 +66,7 @@ export default {
 
 .c-banner {
   width: 100%;
-  margin-top: $spacer*1.5;
+  margin-top: 1.5rem;
   overflow: hidden;
 }
 
@@ -89,7 +89,7 @@ $severities:
 
 .c-button {
   transition: box-shadow 150ms ease-in;
-  margin-left: $spacer-sm;
+  margin-left: 0.5rem;
 
   @each $class, $color, $hover in $severities {
     &.is-#{$class} {

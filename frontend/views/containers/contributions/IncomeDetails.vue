@@ -235,28 +235,28 @@ export default {
     "card card";
   width: 100%;
   max-width: 55rem;
-  margin-top: $spacer*1.5;
+  margin-top: 1.5rem;
 
   @include tablet {
     grid-template-columns: auto 12rem;
-    grid-column-gap: $spacer*1.5;
+    grid-column-gap: 1.5rem;
     grid-template-areas:
       "title title"
       "card graph";
-    margin-top: $spacer*2.5;
+    margin-top: 2.5rem;
   }
 
   @include desktop {
-    grid-column-gap: $spacer-xl;
+    grid-column-gap: 4rem;
   }
 }
 
 .c-title {
   grid-area: title;
-  margin-bottom: $spacer*2.5;
+  margin-bottom: 2.5rem;
 
   @include tablet {
-    margin-bottom: $spacer*1.5;
+    margin-bottom: 1.5rem;
   }
 }
 
@@ -270,17 +270,17 @@ export default {
 }
 
 .c-methods {
-  margin-top: $spacer*1.5;
+  margin-top: 1.5rem;
 }
 
 .c-tip {
   display: inline-block;
-  margin-left: $spacer-xs;
+  margin-left: 0.25rem;
 }
 
 .c-graph {
   grid-area: graph;
   flex-shrink: 0;
-  margin-bottom: $spacer*1.5;
+  margin-bottom: 1.5rem;
 }
 </style>

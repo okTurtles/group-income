@@ -77,7 +77,7 @@ export default {
 svg {
   display: block;
   transition: all 250ms cubic-bezier(0.4, 0.25, 0.3, 1);
-  margin-bottom: $spacer-sm;
+  margin-bottom: 0.5rem;
 }
 
 .theme {

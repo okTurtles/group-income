@@ -99,6 +99,6 @@ export default {
 .c-content {
   width: 13.375rem;
   left: -12rem;
-  top: $spacer-lg;
+  top: 2rem;
 }
 </style>

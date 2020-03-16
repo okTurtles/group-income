@@ -77,7 +77,7 @@ export default {
   justify-content: center;
   align-items: center;
   height: 3.2rem;
-  margin-bottom: $spacer-xs;
+  margin-bottom: 0.25rem;
 }
 
 .group-badge {

@@ -114,7 +114,7 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-wrapper {
-  margin-top: $spacer-lg;
+  margin-top: 2rem;
   display: grid;
   grid-template-columns: auto 1fr;
   grid-template-areas:
@@ -126,7 +126,7 @@ export default {
   }
 
   &:not(:last-child) {
-    padding-bottom: $spacer-lg;
+    padding-bottom: 2rem;
     border-bottom: 1px solid $general_1;
   }
 
@@ -139,7 +139,7 @@ export default {
 
 .c-avatar {
   grid-area: avatar;
-  margin-right: $spacer;
+  margin-right: 1rem;
   flex-shrink: 0;
 
   @include phone {
@@ -172,7 +172,7 @@ export default {
   min-width: 0; // So ellipsis works correctly inside grid. pls refer to a discussion here(https://github.com/okTurtles/group-income-simple/pull/765#issuecomment-551691920) for the context.
 
   @include tablet {
-    margin-top: $spacer;
+    margin-top: 1rem;
   }
 }
 

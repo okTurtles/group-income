@@ -34,7 +34,7 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-wlegend {
-  padding: $spacer 0;
+  padding: 1rem 0;
 
   &.c-wlegend-side {
     &:first-child {
@@ -51,19 +51,19 @@ export default {
   }
 
   &.c-wlegend-inline {
-    padding: $spacer-xs 0;
+    padding: 0.25rem 0;
 
     &:first-child {
-      padding-top: $spacer;
+      padding-top: 1rem;
     }
   }
 
   @include tablet {
     &.c-wlegend-inline {
-      padding: $spacer 0;
+      padding: 1rem 0;
       position: relative;
       margin-right: 2.5rem;
-      padding-left: $spacer;
+      padding-left: 1rem;
 
       .c-marker {
         position: absolute;
@@ -83,7 +83,7 @@ export default {
 
 .c-desc {
   display: block;
-  margin-right: $spacer-sm;
+  margin-right: 0.5rem;
 }
 
 .c-amount {
@@ -92,9 +92,9 @@ export default {
 
 .c-marker {
   display: inline-block;
-  width: $spacer-sm;
-  height: $spacer-sm;
-  margin-left: $spacer-sm;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-left: 0.5rem;
   margin-bottom: 0.06rem; // visually aligned
   border-radius: 1px;
   border: 1px solid;
@@ -121,6 +121,6 @@ export default {
 }
 
 .c-description {
-  margin-top: $spacer-sm;
+  margin-top: 0.5rem;
 }
 </style>

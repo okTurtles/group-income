@@ -156,22 +156,22 @@ export default {
 .c-summary {
   &-title {
     margin-bottom: 1.75rem;
-    margin-top: -$spacer-xs;
+    margin-top: -0.25rem;
   }
   &-item {
-    margin-bottom: $spacer*3;
+    margin-bottom: 3rem;
 
     .label {
-      margin-bottom: $spacer-xs;
+      margin-bottom: 0.25rem;
     }
 
     .icon-check {
-      margin-right: $spacer-sm;
+      margin-right: 0.5rem;
     }
   }
 }
 
 .c-progress {
-  margin: $spacer-xs 0;
+  margin: 0.25rem 0;
 }
 </style>

@@ -51,10 +51,10 @@ export default {
 
 .c-progress {
   position: relative;
-  height: $spacer-sm;
+  height: 0.5rem;
 
   &.has-marks {
-    height: $spacer;
+    height: 1rem;
   }
 }
 
@@ -62,11 +62,11 @@ export default {
 .c-bar {
   position: absolute;
   width: 100%;
-  height: $spacer-sm;
+  height: 0.5rem;
   top: 50%;
   left: 0;
   transform: translateY(-50%);
-  border-radius: $spacer-sm;
+  border-radius: 0.5rem;
 }
 
 .c-bg {
@@ -91,7 +91,7 @@ export default {
   }
 
   .has-marks:not(.is-completed) & {
-    border-radius: $spacer-sm 0 0 $spacer-sm;
+    border-radius: 0.5rem 0 0 0.5rem;
   }
 }
 

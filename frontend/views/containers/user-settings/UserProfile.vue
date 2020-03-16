@@ -167,8 +167,8 @@ export default {
 
 .c-username {
   display: none;
-  margin-bottom: $spacer-lg;
-  margin-top: $spacer-sm;
+  margin-bottom: 2rem;
+  margin-top: 0.5rem;
   color: $text_1;
 
   @include desktop {
@@ -178,9 +178,9 @@ export default {
 
 .fake-password {
   display: inline-block;
-  margin-top: $spacer-sm;
+  margin-top: 0.5rem;
   margin-left: -1px;
-  margin-right: $spacer-sm;
+  margin-right: 0.5rem;
 }
 
 .legend {

@@ -39,8 +39,8 @@ export default {
 .c-content {
   position: absolute;
   top: 0;
-  left: $spacer-sm;
-  right: $spacer-sm;
+  left: 0.5rem;
+  right: 0.5rem;
   z-index: 2;
   border-radius: $radius;
   background-color: $background;
@@ -49,8 +49,8 @@ export default {
   opacity: 0;
   overflow: hidden;
   pointer-events: none;
-  padding-bottom: $spacer-sm;
-  padding-top: $spacer-sm;
+  padding-bottom: 0.5rem;
+  padding-top: 0.5rem;
 
   &.is-active {
     // Is that enought for every menu?
@@ -69,7 +69,7 @@ export default {
     width: 100%;
 
     i {
-      margin-right: $spacer-sm;
+      margin-right: 0.5rem;
     }
   }
 }

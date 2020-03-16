@@ -29,11 +29,11 @@ $iconSize: 2.75rem;
 
 .c-toggle {
   @extend %reset-button;
-  height: $spacer-xl;
+  height: 4rem;
   position: absolute;
   top: 0;
-  padding: $spacer-sm 0;
-  width: $spacer-lg + $iconSize; // gap on the edge
+  padding: 0.5rem 0;
+  width: 2rem + $iconSize; // gap on the edge
   background-color: transparent;
   transition: height 1ms $speed, width 1ms $speed, background $speed/2;
   overflow: hidden;
@@ -88,7 +88,7 @@ $iconSize: 2.75rem;
   }
 
   @include tablet {
-    width: $spacer*3 + $iconSize;
+    width: 3rem + $iconSize;
   }
 
   @include desktop {
