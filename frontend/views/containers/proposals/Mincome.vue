@@ -11,7 +11,7 @@
 
     label.field(v-if='ephemeral.currentStep === 0' key='0')
       i18n.label New minimum income
-      .inputGroup(:class='{ error: $v.form.mincomeAmount.$error }')
+      .inputgroup(:class='{ error: $v.form.mincomeAmount.$error }')
         input.input(
           v-model='$v.form.mincomeAmount.$model'
           name='mincomeAmount'

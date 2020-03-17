@@ -14,7 +14,7 @@ fieldset(data-test='paymentMethods')
     )
       label
         i18n.sr-only Payment name and value
-        .selectGroup.is-reversed.c-select(
+        .selectgroup.is-reversed.c-select(
           :class='{"is-shifted": methodsCount > 1 || method.name !== "choose" || method.value }'
         )
           select.select(v-model='method.name'

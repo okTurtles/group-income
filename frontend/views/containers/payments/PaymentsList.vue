@@ -82,7 +82,7 @@ table.table.table-in-card.c-payments(:class='{"is-editing": paymentsType === "ed
 
       td(v-if='paymentsType === "edit"')
         label.field
-          .inputGroup
+          .inputgroup
             input.input(inputmode='decimal' :value='payment.amount')
             .suffix.hide-phone {{symbolWithCode}}
             .suffix.hide-tablet {{symbol}}
@@ -324,7 +324,7 @@ export default {
   }
 }
 
-.inputGroup .input {
+.inputgroup .input {
   @include phone {
     padding-right: $spacer-lg;
   }

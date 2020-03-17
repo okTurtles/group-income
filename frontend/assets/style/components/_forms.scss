@@ -111,8 +111,8 @@ legend.legend {
 /* ------- Combo elements ------- */
 
 .selectbox,
-.selectGroup,
-.inputGroup {
+.selectgroup,
+.inputgroup {
   position: relative;
   display: flex;
   align-items: center;
@@ -140,7 +140,7 @@ legend.legend {
 
 // Input with select
 .selectbox,
-.selectGroup {
+.selectgroup {
   &::after {
     // content: "\f0dd"; // icon-sort-down
     @include icon(sort-down);
@@ -166,7 +166,7 @@ legend.legend {
   }
 }
 
-.selectGroup {
+.selectgroup {
   .select,
   .input {
     border: 1px solid $general_0;
@@ -212,7 +212,7 @@ legend.legend {
   }
 }
 
-.inputGroup {
+.inputgroup {
   .input {
     padding-right: 5rem; /* avg of suffix width */
     flex-grow: 1;

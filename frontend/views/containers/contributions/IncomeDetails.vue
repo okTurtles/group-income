@@ -37,7 +37,7 @@ modal-base-template(ref='modal' :fullscreen='true')
             .label(
               data-test='introIncomeOrPledge'
             ) {{ needsIncome ? L("What's your monthly income?") : L('How much do you want to pledge?') }}
-            .inputGroup(
+            .inputgroup(
               :class='{"error": $v.form.amount.$error }'
               v-error:amount='{ attrs: { "data-test": "badIncome" } }'
             )

@@ -4,7 +4,7 @@ form.c-search-form(
 )
   label.field
     .sr-only {{label}}
-    .inputGroup.c-search
+    .inputgroup.c-search
       .is-icon.prefix(aria-hidden='true')
         i.icon-search
       input.input(

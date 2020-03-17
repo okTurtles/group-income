@@ -1,7 +1,7 @@
 <template lang='pug'>
 label.field
   .label(v-if='label') {{ label }}
-  .inputGroup(
+  .inputgroup(
     v-error:[name]='{ attrs: { "data-test": "badPassword" }}'
   )
     input.input(

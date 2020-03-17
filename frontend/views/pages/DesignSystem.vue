@@ -770,19 +770,19 @@ page(
             span.error(v-if='ephemeral.forms.hasError') Something went wrong.
         tr
           td
-            h3.is-title-3 SelectGroup
+            h3.is-title-3 selectgroup
             br
             pre
               | label.field
               |   .label Mincome
-              |   .selectGroup.error
+              |   .selectgroup.error
               |     input.input
               |     select.select
               |       option USD
           td
             label.field
               .label Mincome
-              .selectGroup(:class='{ error: ephemeral.forms.hasError }')
+              .selectgroup(:class='{ error: ephemeral.forms.hasError }')
                 input.input(placeholder='Amount')
                 select.select
                   option USD
@@ -794,7 +794,7 @@ page(
             pre
               | label.field
               |   .label Payment method
-              |   .selectGroup.is-reversed
+              |   .selectgroup.is-reversed
               |     select.select
               |       option(disabled='true') Choose...
               |       option Bitcoin
@@ -802,7 +802,7 @@ page(
           td
             label.field
               .label Payment method
-              .selectGroup.is-reversed(:class='{ error: ephemeral.forms.hasError }')
+              .selectgroup.is-reversed(:class='{ error: ephemeral.forms.hasError }')
                 select.select
                   option(disabled='true') Choose...
                   option Bitcoin
@@ -812,19 +812,19 @@ page(
               span.error(v-if='ephemeral.forms.hasError') Something went wrong.
         tr
           td
-            h3.is-title-3 InputGroup
+            h3.is-title-3 Input Group
             h4.is-title-4 With suffix
             br
             pre
               | label.field
               |   .label New Amount
-              |   .inputGroup.error
+              |   .inputgroup.error
               |     input.input
               |     .suffix USD
           td
             label.field
               .label Mincome
-              .inputGroup(:class='{ error: ephemeral.forms.hasError }')
+              .inputgroup(:class='{ error: ephemeral.forms.hasError }')
                 input.input(type='text' placeholder='Amount')
                 .suffix USD
               span.error(v-if='ephemeral.forms.hasError') Something went wrong.
@@ -835,7 +835,7 @@ page(
             pre
               | label.field
               |   .label Add invitee
-              |   .inputGroup
+              |   .inputgroup
               |     input.input
               |     button.is-icon-small.is-btn-shifted(
               |       :aria-label='Remove member'
@@ -844,7 +844,7 @@ page(
           td
             label.field
               .label Add invitee
-              .inputGroup(:class='{ error: ephemeral.forms.hasError }')
+              .inputgroup(:class='{ error: ephemeral.forms.hasError }')
                 input.input(type='text' placeholder='Member name')
                 button.is-icon-small.is-btn-shifted(
                   :aria-label='L("Remove member")'
@@ -859,7 +859,7 @@ page(
             pre
               | label.field
               |   .label Password
-              |   .inputGroup
+              |   .inputgroup
               |     input.input
               |     .addons
               |       button.is-icon(
@@ -870,7 +870,7 @@ page(
           td
             label.field
               .label Password
-              .inputGroup(:class='{ error: ephemeral.forms.hasError }')
+              .inputgroup(:class='{ error: ephemeral.forms.hasError }')
                 input.input(type='text' placeholder='Placeholder')
                 .addons
                   button.is-icon(
@@ -882,7 +882,7 @@ page(
 
             label.field
               .label Your message
-              .inputGroup(:class='{ error: ephemeral.forms.hasError }')
+              .inputgroup(:class='{ error: ephemeral.forms.hasError }')
                 input.input(type='text' placeholder='Placeholder')
                 .addons
                   button.is-icon(aria-label='Copy text')
