@@ -201,11 +201,12 @@ button,
       color: transparent;
       // Delay the spin for 500ms, in case load is ultra fast.
       // That way the user won't even see the loading
-      transition: color 400ms 500ms;
+      // [1] !important so it works even when .js-reducedMotion
+      transition: color 400ms 500ms !important; // [1]
 
       &::after {
         opacity: 1;
-        transition: opacity 400ms 500ms;
+        transition: opacity 400ms 500ms !important; // [1]
         animation: loadSpin 1.75s infinite linear;
       }
     }
