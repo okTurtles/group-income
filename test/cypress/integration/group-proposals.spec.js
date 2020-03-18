@@ -163,6 +163,13 @@ describe('Proposals - Add members', () => {
           cy.getByDT('sendLink').should('not.exist') // Only visible to who created the proposal
         })
       })
+
+      cy.log(`${username} is part of members list as "pending"`)
+
+      cy.getByDT('groupMembers').find(`ul>li:nth-child(${index + 1})`).within(() => {
+        cy.getByDT('username').should('contain', `${username}-${userId}`)
+        cy.getByDT('pillPending').should('contain', 'pending')
+      })
     }
 
     voteForAndIsAccepted(0, 'user4')
@@ -328,6 +335,9 @@ describe('Proposals - Add members', () => {
         cy.get(member).within(() => {
           const usersMap = [1, 2, 3, 4, 6]
           cy.getByDT('username').should('contain', `user${usersMap[index]}-${userId}`)
+          if (index > 1) {
+            cy.getByDT('pillNew').should('contain', 'new')
+          }
         })
       })
 

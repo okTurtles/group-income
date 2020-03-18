@@ -1,29 +1,21 @@
 .pill {
-  font-weight: 600;
-  border-radius: 3px;
-  padding: 0.375rem $spacer-sm;
+  border-radius: $radius;
+  padding: 0.125rem 0.25rem;
   line-height: 1;
-  margin: 0 $spacer-xs;
+  margin: 0 0.25rem;
   display: inline-block;
   white-space: nowrap;
+  text-transform: uppercase;
+  font-size: $size_5;
 
-  &.is-small {
-    padding: ($spacer / 8) $spacer-xs;
-    text-transform: uppercase;
-    font-size: $size_5;
-    font-weight: 100;
-  }
-
-  &.has-background-dark {
-    background: $text_0;
-    color: $general_2;
+  &.is-neutral {
+    background-color: $general_0;
   }
 
   @each $name in $colors {
     &.is-#{$name} {
-      @extend .pill;
-      @extend .has-background-#{$name};
-      @extend .has-text-#{$name};
+      background-color: var(--#{$name}_2);
+      color: var(--#{$name}_0);
     }
   }
 }

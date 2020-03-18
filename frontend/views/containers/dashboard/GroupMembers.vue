@@ -13,21 +13,21 @@
   ul.c-group-list
     li.c-group-member(
       v-for='(member, username) in firstTenMembers'
-      :class='member.pending && "is-pending"'
+      :class='member.isPending && "is-pending"'
       :key='username'
     )
-      avatar-user(:username='username' size='sm')
+      avatar(v-if='member.isPending' size='sm')
+      avatar-user(v-else :username='username' size='sm')
 
       .c-name.has-ellipsis(data-test='username')
-        | {{ username }}
+        | {{ userDisplayName(username) }} &nbsp;
+        i18n(v-if='username === ourUsername') (you)
 
-      i18n.pill.has-text-small.has-background-dark(
-        v-if='member.pending'
-        data-test='pending'
-      ) pending
+      i18n.pill.is-neutral(v-if='member.isPending' data-test='pillPending') pending
+      i18n.pill.is-success(v-else-if='username !== ourUsername && isNewMember(username)' data-test='pillNew') new
 
       tooltip(
-        v-if='member.pending'
+        v-if='member.isPending'
         direction='bottom-end'
       )
         span.button.is-icon-small(
@@ -54,36 +54,47 @@
 import { mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
+import Avatar from '@components/Avatar.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import GroupMemberMenu from '@containers/dashboard/GroupMemberMenu.vue'
 import Tooltip from '@components/Tooltip.vue'
-
+import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/group.js'
 export default {
   name: 'GroupMembers',
   components: {
+    Avatar,
     AvatarUser,
     GroupMemberMenu,
     Tooltip
-  },
-  methods: {
-    invite () {
-      this.$router.push({ path: '/invite' })
-    },
-    openModal (modal, queries) {
-      sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
-    }
   },
   computed: {
     ...mapGetters([
       'groupProfiles',
       'groupShouldPropose',
       'groupMembersCount',
-      'ourUsername'
+      'ourUsername',
+      'userDisplayName',
+      'currentGroupState'
     ]),
+    dateNow () {
+      console.log('calculate dateNow')
+      return Date.now()
+    },
+    pendingMembers () {
+      const invites = this.currentGroupState.invites
+
+      return Object.keys(invites)
+        .filter(id => invites[id].status === INVITE_STATUS.VALID && invites[id].creator !== INVITE_INITIAL_CREATOR)
+        .reduce((acc, id) => {
+          acc[invites[id].invitee] = { isPending: true }
+          return acc
+        }, {})
+    },
     firstTenMembers () {
       const profiles = this.groupProfiles
-      const usernames = Object.keys(profiles).slice(0, 10)
-      return usernames.reduce((acc, username) => {
+      const sliceIndex = 10 - Math.min(10, Object.keys(this.pendingMembers).length) // avoid slicing too many members.
+      const usernames = Object.keys(profiles).slice(0, sliceIndex)
+      const members = usernames.reduce((acc, username) => {
         // Prevent displaying users without a synced contract.
         // It happens at the exact moment a user joins a group and both
         // contracts (group + user) are still syncing
@@ -93,6 +104,21 @@ export default {
         }
         return acc
       }, {})
+
+      return { ...this.pendingMembers, ...members }
+    }
+  },
+  methods: {
+    invite () {
+      this.$router.push({ path: '/invite' })
+    },
+    openModal (modal, queries) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
+    },
+    isNewMember (username) {
+      const joined = this.currentGroupState.profiles[username].joined_ms
+
+      return this.dateNow - joined < 172800000 // joined less than 48h ago.
     }
   }
 }
@@ -143,7 +169,7 @@ export default {
 .c-actions-content.c-content {
   top: calc(100% + #{$spacer-sm});
   left: auto;
-  min-width: 214px;
+  min-width: 13rem;
 }
 
 </style>

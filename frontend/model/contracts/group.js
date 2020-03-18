@@ -62,10 +62,11 @@ function initMonthlyPayments () {
   }
 }
 
-function initGroupProfile (contractID: string) {
+function initGroupProfile (contractID: string, joined: ?number) {
   return {
     contractID: contractID,
-    nonMonetaryContributions: []
+    nonMonetaryContributions: [],
+    joined_ms: joined
   }
 }
 
@@ -423,7 +424,8 @@ DefineContract({
     },
     'gi.contracts/group/inviteAccept': {
       validate: objectOf({
-        inviteSecret: string // NOTE: simulate the OP_KEY_* stuff for now
+        inviteSecret: string, // NOTE: simulate the OP_KEY_* stuff for now,
+        joined_ms: number
       }),
       process ({ data, meta }, { state }) {
         console.debug('inviteAccept:', data, state.invites)
@@ -436,7 +438,7 @@ DefineContract({
         if (Object.keys(invite.responses).length === invite.quantity) {
           invite.status = INVITE_STATUS.USED
         }
-        Vue.set(state.profiles, meta.username, initGroupProfile(meta.identityContractID))
+        Vue.set(state.profiles, meta.username, initGroupProfile(meta.identityContractID, data.joined_ms))
         // If we're triggered by handleEvent in state.js (and not latestContractState)
         // then the asynchronous sideEffect function will get called next
         // and we will subscribe to this new user's identity contract

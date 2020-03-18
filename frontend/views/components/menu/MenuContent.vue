@@ -56,7 +56,7 @@ export default {
     // Is that enought for every menu?
     // Should we use mask transition instead?
     pointer-events: initial;
-    max-height: 400px;
+    max-height: 25rem;
     opacity: 1;
     transition: max-height cubic-bezier(0.25, 0.46, 0.45, 0.94) 1s 100ms, opacity cubic-bezier(0.25, 0.46, 0.45, 0.94) 300ms 100ms;
   }
