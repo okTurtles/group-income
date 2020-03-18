@@ -83,7 +83,7 @@ table.table.table-in-card.c-payments(:class='{"is-editing": paymentsType === "ed
       td(v-if='paymentsType === "edit"')
         label.field
           .inputgroup
-            input.input(inputmode='decimal' :value='payment.amount')
+            input.input(inputmode='decimal' pattern='[0-9]*' :value='payment.amount')
             .suffix.hide-phone {{symbolWithCode}}
             .suffix.hide-tablet {{symbol}}
 </template>

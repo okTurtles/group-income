@@ -43,6 +43,7 @@ modal-base-template(ref='modal' :fullscreen='true')
             )
               input.input(
                 inputmode='decimal'
+                pattern='[0-9]*'
                 v-model='$v.form.amount.$model'
                 data-test='inputIncomeOrPledge'
               )

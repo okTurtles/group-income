@@ -9,6 +9,7 @@
         input.input(
           ref='mincome'
           inputmode='decimal'
+          pattern='[0-9]*'
           placeholder='Amount'
           name='mincomeAmount'
           step='1'

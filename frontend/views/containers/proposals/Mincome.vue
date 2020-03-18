@@ -16,6 +16,7 @@
           v-model='$v.form.mincomeAmount.$model'
           name='mincomeAmount'
           inputmode='decimal'
+          pattern='[0-9]*'
         )
         .suffix {{ groupMincomeSymbolWithCode }}
       i18n.helper(:args='{groupMincomeFormatted}') Currently {groupMincomeFormatted} monthly.
