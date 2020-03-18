@@ -36,7 +36,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
         tag='ul'
       )
         li.c-search-member(
-          v-for='{username, displayName} in searchResult'
+          v-for='{username, displayName, isPending} in searchResult'
           :key='username'
         )
           .c-identity
@@ -47,6 +47,9 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
                 data-test='profileName'
                 v-if='displayName'
               ) @{{ username }}
+
+              i18n.pill.is-neutral(v-if='isPending' data-test='pillPending') pending
+              i18n.pill.is-success(v-else-if='isNewMember(username)' data-test='pillNew') new
 
           .c-actions
             group-member-menu.c-action-menu(:username='username')
@@ -89,11 +92,17 @@ export default {
   },
   computed: {
     ...mapGetters([
+      'currentGroupState',
       'groupProfiles',
       'globalProfile',
       'groupMembersCount',
-      'groupMembersPending'
+      'groupMembersPending',
+      'ourUsername'
     ]),
+    dateNow () {
+      console.log('calculate dateNow')
+      return Date.now()
+    },
     allMembers () {
       return Object.keys({ ...this.groupMembersPending, ...this.groupProfiles })
     },
@@ -103,7 +112,11 @@ export default {
           const inList = (n) => n.toUpperCase().indexOf(this.searchText.toUpperCase()) > -1
           const { displayName } = this.globalProfile(username)
           if (!this.searchText || inList(username) || (displayName ? inList(displayName) : false)) {
-            return { username, displayName }
+            return {
+              username,
+              displayName,
+              isPending: this.groupMembersPending[username]
+            }
           }
         })
         .filter(profile => profile !== undefined)
@@ -117,6 +130,15 @@ export default {
     }
   },
   methods: {
+    isNewMember (username) {
+      if (username === this.ourUsername) {
+        return false
+      }
+      const weJoined = this.currentGroupState.profiles[this.ourUsername].joined_ms
+      const memberJoined = this.currentGroupState.profiles[username].joined_ms
+      const joinedAfterUs = weJoined < memberJoined
+      return joinedAfterUs && this.dateNow - memberJoined < 604800000 // joined less than 1w (168h) ago.
+    },
     openModal (modal, props) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
     },

@@ -25,7 +25,7 @@
         i18n(v-if='username === ourUsername') (you)
 
       i18n.pill.is-neutral(v-if='member.isPending' data-test='pillPending') pending
-      i18n.pill.is-success(v-else-if='username !== ourUsername && isNewMember(username)' data-test='pillNew') new
+      i18n.pill.is-success(v-else-if='isNewMember(username)' data-test='pillNew') new
 
       tooltip(
         v-if='member.isPending'
@@ -107,6 +107,9 @@ export default {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
     },
     isNewMember (username) {
+      if (username === this.ourUsername) {
+        return false
+      }
       const weJoined = this.currentGroupState.profiles[this.ourUsername].joined_ms
       const memberJoined = this.currentGroupState.profiles[username].joined_ms
       const joinedAfterUs = weJoined < memberJoined
