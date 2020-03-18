@@ -142,7 +142,6 @@ legend.legend {
 .selectbox,
 .selectgroup {
   &::after {
-    // content: "\f0dd"; // icon-sort-down
     @include icon(sort-down);
     position: absolute;
     top: 50%;
@@ -188,10 +187,10 @@ legend.legend {
   }
 
   .select {
-    min-width: 5.5rem;
+    min-width: 6rem;
     width: auto;
     border-radius: 0 $radius $radius 0;
-    margin-left: -1px // collapse border
+    margin-left: -1px; // collapse border
   }
 
   &.is-reversed {
