@@ -3,7 +3,7 @@
   i18n.is-title-4.steps-title(tag='h4') 3. Minimum Income
 
   .card
-    label
+    fieldset
       i18n.label What is the minimum each member should receive monthly?
       .selectgroup
         input.input(
@@ -11,6 +11,7 @@
           inputmode='decimal'
           pattern='[0-9]*'
           placeholder='Amount'
+          :aria-label='L("Amount")'
           name='mincomeAmount'
           step='1'
           min='0'
@@ -21,6 +22,7 @@
           @keyup.enter='next'
         )
         select.select(
+          :aria-label='L("Currency")'
           name='mincomeCurrency'
           required=''
           :value='group.mincomeCurrency'

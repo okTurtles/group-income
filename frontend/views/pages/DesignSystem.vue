@@ -757,7 +757,7 @@ page(
               | label.field
               |   .label Select currency
               |   .selectbox.error
-              |     select
+              |     select.select
               |       option USD
           td
             label.field
@@ -769,22 +769,26 @@ page(
                 option EUR
             span.error(v-if='ephemeral.forms.hasError') Something went wrong.
         tr
-          td
-            h3.is-title-3 selectgroup
+          td(colspan='2')
+            h3.is-title-3 Select Group
+            p Use #[code fieldset] to group related inputs. Each input must have an individual label. If a label has multiple associated inputs, it won't work on iPhone. A simple but effective solution is to add #[code aria-label] to each input.&nbsp;
+              a.link(href='https://codepen.io/sandrina-p/pen/oNXyGPE') See reference.
             br
+        tr
+          td
             pre
-              | label.field
-              |   .label Mincome
+              | fieldset.field
+              |   .label What's your mincome
               |   .selectgroup.error
-              |     input.input
-              |     select.select
+              |     input.input(aria-label='Amount')
+              |     select.select(aria-label='Currency')
               |       option USD
           td
-            label.field
-              .label Mincome
+            fieldset.field
+              .label What's your mincome
               .selectgroup(:class='{ error: ephemeral.forms.hasError }')
-                input.input(placeholder='Amount')
-                select.select
+                input.input(aria-label='Amount')
+                select.select(aria-label='Currency')
                   option USD
                   option BTC
                   option EUR
@@ -792,23 +796,23 @@ page(
         tr
           td
             pre
-              | label.field
+              | fieldset.field
               |   .label Payment method
               |   .selectgroup.is-reversed
-              |     select.select
+              |     select.select(aria-label='Method')
               |       option(disabled='true') Choose...
               |       option Bitcoin
-              |     input.input
+              |     input.input(aria-label='Value')
           td
-            label.field
+            fieldset.field
               .label Payment method
               .selectgroup.is-reversed(:class='{ error: ephemeral.forms.hasError }')
-                select.select
+                select.select(aria-label='Method')
                   option(disabled='true') Choose...
                   option Bitcoin
                   option Paypal
                   option Other
-                input.input
+                input.input(aria-label='Value')
               span.error(v-if='ephemeral.forms.hasError') Something went wrong.
         tr
           td
@@ -972,17 +976,17 @@ page(
         tr
           td
             tr
-              h3.is-title-3 Combobox
+              h3.is-title-3 Selectsolo
           tr
             td
               pre
-                | .combobox
-                |   select.button.is-small.is-outlined
+                | .selectsolo
+                |   select.select
                 |     option 10 results
 
             td
-              .combobox
-                select.button.is-small.is-outlined
+              .selectsolo
+                select.select
                   option(
                     v-for='count in [10, 20, 30]'
                     :index='count'

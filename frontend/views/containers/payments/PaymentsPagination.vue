@@ -4,7 +4,7 @@
     i18n.has-text-1(
       tag='span' aria-hidden='true'
     ) Show:
-    label.combobox.c-combobox
+    label.selectsolo.c-select
       i18n.sr-only Show per page
       select.select(
         ref='select'
@@ -67,8 +67,8 @@ export default {
   align-items: center;
 }
 
-.c-combobox {
-  margin: 0 $spacer-sm;
+.c-select {
+  margin: 0 0.5rem;
 }
 
 .c-control {

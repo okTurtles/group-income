@@ -12,19 +12,20 @@ fieldset(data-test='paymentMethods')
       :key='`method-${index}`'
       data-test='method'
     )
-      label
-        i18n.sr-only Payment name and value
+      fieldset
         .selectgroup.is-reversed.c-select(
           :class='{"is-shifted": methodsCount > 1 || method.name !== "choose" || method.value }'
         )
           select.select(v-model='method.name'
             :class='{ "is-empty": method.name === "choose"}'
+            :aria-label='L("Payment method")'
             @change='handleSelectChange($event.target.value, index)'
           )
             i18n(tag='option' value='choose' disabled='true') Choose...
             option(v-for='(option, key) in config.options' :value='key') {{ option }}
           input.input(
             type='text'
+            :aria-label='L("Payment value")'
             v-model='method.value'
           )
           button.is-icon-small.is-btn-shifted(

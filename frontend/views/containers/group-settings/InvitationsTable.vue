@@ -1,7 +1,7 @@
 <template lang="pug">
 page-section.c-section(:title='L("Invite links")')
   template(#cta='')
-    label.combobox(:class='{ focus: ephemeral.selectbox.focused }')
+    label.selectsolo(:class='{ focus: ephemeral.selectbox.focused }')
       i18n.sr-only Filter links
       select.select(
         ref='select'
