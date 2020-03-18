@@ -150,6 +150,18 @@ DefineContract({
     groupMembersCount (state, getters) {
       return getters.groupMembersByUsername.length
     },
+    groupMembersPending (state, getters) {
+      const invites = getters.currentGroupState.invites
+      const invitesValid = Object.keys(invites).filter(id => invites[id].status === INVITE_STATUS.VALID && invites[id].creator !== INVITE_INITIAL_CREATOR)
+      const pendingMembers = {}
+      for (const secretId of invitesValid) {
+        pendingMembers[invites[secretId].invitee] = {
+          isPending: true,
+          invitedBy: invites[secretId].creator
+        }
+      }
+      return pendingMembers
+    },
     groupShouldPropose (state, getters) {
       return getters.groupMembersCount >= 3
     },
@@ -174,6 +186,7 @@ DefineContract({
     'gi.contracts/group': {
       validate: objectMaybeOf({
         invites: mapOf(string, inviteType),
+        joined_ms: number,
         settings: objectOf({
           // TODO: add 'groupPubkey'
           groupName: string,
@@ -200,7 +213,7 @@ DefineContract({
             groupCreator: meta.username
           },
           profiles: {
-            [meta.username]: initGroupProfile(meta.identityContractID)
+            [meta.username]: initGroupProfile(meta.identityContractID, data.joined_ms)
           },
           userPaymentsByMonth: {
             [currentMonthTimestamp()]: initMonthlyPayments()

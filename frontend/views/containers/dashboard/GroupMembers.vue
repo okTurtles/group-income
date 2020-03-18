@@ -20,7 +20,8 @@
       avatar-user(v-else :username='username' size='sm')
 
       .c-name.has-ellipsis(data-test='username')
-        | {{ userDisplayName(username) }} &nbsp;
+        | {{ userDisplayName(username) }}
+        |&nbsp;
         i18n(v-if='username === ourUsername') (you)
 
       i18n.pill.is-neutral(v-if='member.isPending' data-test='pillPending') pending
@@ -58,7 +59,6 @@ import Avatar from '@components/Avatar.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import GroupMemberMenu from '@containers/dashboard/GroupMemberMenu.vue'
 import Tooltip from '@components/Tooltip.vue'
-import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/group.js'
 export default {
   name: 'GroupMembers',
   components: {
@@ -74,28 +74,16 @@ export default {
       'groupMembersCount',
       'ourUsername',
       'userDisplayName',
-      'currentGroupState'
+      'currentGroupState',
+      'groupMembersPending'
     ]),
     dateNow () {
       console.log('calculate dateNow')
       return Date.now()
     },
-    pendingMembers () {
-      const invites = this.currentGroupState.invites
-
-      return Object.keys(invites)
-        .filter(id => invites[id].status === INVITE_STATUS.VALID && invites[id].creator !== INVITE_INITIAL_CREATOR)
-        .reduce((acc, id) => {
-          acc[invites[id].invitee] = {
-            isPending: true,
-            invitedBy: invites[id].creator
-          }
-          return acc
-        }, {})
-    },
     firstTenMembers () {
       const profiles = this.groupProfiles
-      const sliceIndex = 10 - Math.min(10, Object.keys(this.pendingMembers).length) // avoid slicing too many members.
+      const sliceIndex = 10 - Math.min(10, Object.keys(this.groupMembersPending).length) // avoid slicing too many members.
       const usernames = Object.keys(profiles).slice(0, sliceIndex)
       const members = usernames.reduce((acc, username) => {
         // Prevent displaying users without a synced contract.
@@ -108,7 +96,7 @@ export default {
         return acc
       }, {})
 
-      return { ...this.pendingMembers, ...members }
+      return { ...this.groupMembersPending, ...members }
     }
   },
   methods: {

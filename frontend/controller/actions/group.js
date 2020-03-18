@@ -48,6 +48,7 @@ export default sbp('sbp/selectors/register', {
         invites: {
           [initialInvite.inviteSecret]: initialInvite
         },
+        joined_ms: Date.now(),
         settings: {
           // authorizations: [contracts.CanModifyAuths.dummyAuth()], // TODO: this
           groupName: name,

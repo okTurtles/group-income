@@ -166,14 +166,14 @@ describe('Proposals - Add members', () => {
 
       cy.log(`${username} is part of members list as "pending"`)
 
-      cy.getByDT('groupMembers').find(`ul>li:nth-child(${index + 1})`).within(() => {
+      cy.getByDT('groupMembers').find('ul>li:first-child').within(() => {
         cy.getByDT('username').should('contain', `${username}-${userId}`)
         cy.getByDT('pillPending').should('contain', 'pending')
       })
     }
 
-    voteForAndIsAccepted(0, 'user4')
     voteForAndIsAccepted(1, 'user6')
+    voteForAndIsAccepted(0, 'user4')
   })
 
   it('user2 decides to cancel his proposal of adding user6', () => {

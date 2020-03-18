@@ -91,10 +91,14 @@ export default {
     ...mapGetters([
       'groupProfiles',
       'globalProfile',
-      'groupMembersCount'
+      'groupMembersCount',
+      'groupMembersPending'
     ]),
+    allMembers () {
+      return Object.keys({ ...this.groupMembersPending, ...this.groupProfiles })
+    },
     searchResult () {
-      return Object.keys(this.groupProfiles)
+      return this.allMembers
         .map(username => {
           const inList = (n) => n.toUpperCase().indexOf(this.searchText.toUpperCase()) > -1
           const { displayName } = this.globalProfile(username)
