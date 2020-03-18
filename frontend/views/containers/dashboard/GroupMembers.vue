@@ -37,8 +37,8 @@
         template(slot='tooltip')
           i18n(
             tag='p'
-            :args='{ username }'
-          ) We are waiting for {username} to join the group by using their unique invite link.
+            :args='{ invitedBy: `${member.invitedBy} ${member.invitedBy === ourUsername ? `(${L("you")})` : ""}` }'
+          ) This member did not use their invite link to join the group yet. This link should be given to them by {inviter}
 
       group-member-menu(v-else :username='username')
   i18n.link(
@@ -86,7 +86,10 @@ export default {
       return Object.keys(invites)
         .filter(id => invites[id].status === INVITE_STATUS.VALID && invites[id].creator !== INVITE_INITIAL_CREATOR)
         .reduce((acc, id) => {
-          acc[invites[id].invitee] = { isPending: true }
+          acc[invites[id].invitee] = {
+            isPending: true,
+            invitedBy: invites[id].creator
+          }
           return acc
         }, {})
     },
@@ -116,9 +119,10 @@ export default {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
     },
     isNewMember (username) {
-      const joined = this.currentGroupState.profiles[username].joined_ms
-
-      return this.dateNow - joined < 172800000 // joined less than 48h ago.
+      const weJoined = this.currentGroupState.profiles[this.ourUsername].joined_ms
+      const memberJoined = this.currentGroupState.profiles[username].joined_ms
+      const joinedAfterUs = weJoined < memberJoined
+      return joinedAfterUs && this.dateNow - memberJoined < 604800000 // joined less than 1w (168h) ago.
     }
   }
 }

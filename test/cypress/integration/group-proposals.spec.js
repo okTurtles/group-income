@@ -246,7 +246,16 @@ describe('Proposals - Add members', () => {
     cy.giSignup(`user4-${userId}`, { bypassUI: true })
     cy.giAcceptGroupInvite(invitationLinks.user4, {
       isLoggedIn: true,
-      groupName
+      groupName,
+      actionBeforeLogout: () => {
+        cy.log('"New" tag does not appear for previous members')
+        cy.getByDT('groupMembers').find('ul > li')
+          .each(([member], index) => {
+            cy.get(member).within(() => {
+              cy.getByDT('pillNew').should('not.exist')
+            })
+          })
+      }
     })
   })
 
