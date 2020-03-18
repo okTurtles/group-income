@@ -41,7 +41,10 @@ export default {
         title: L('Troubleshooting'),
         url: 'troubleshooting',
         index: 5
-      },
+      }
+    ]
+  }, {
+    links: [
       {
         title: L('Log Out'),
         url: 'logout',

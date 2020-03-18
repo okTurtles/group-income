@@ -18,9 +18,8 @@
 
         button.is-small.c-download(@click='downloadLogs')
           i.icon-download.is-prefix.c-icon
-          i18n Download
-          //- i18n.hide-touch Download
-          //- i18n.hide-desktop Share
+          i18n.hide-touch Download
+          i18n.hide-desktop Share
         a(ref='linkDownload' hidden)
 
       textarea.textarea.c-logs(ref='textarea' rows='12' readonly)
@@ -28,14 +27,14 @@
 
       .buttons
         i18n.link(tag='a' @click='openTroubleshooting') Troubleshooting
-        button.is-small.is-outlined(@click='clearLogs') Clear Logs
       br
       br
       p.has-text-danger DELETE BEFORE MERGE!
       .buttons
-        button.is-small.is-outlined(@click='createLog("error")') Create error log
-        button.is-small.is-outlined(@click='createLog("warn")') Create warn log
-        button.is-small.is-outlined(@click='createLog("debug")') Create debug log
+        button.is-small.is-outlined(@click='createLog("error")') Log error
+        button.is-small.is-outlined(@click='createLog("warn")') Log warn
+        button.is-small.is-outlined(@click='createLog("debug")') Log debug
+        button.is-small.is-outlined(@click='clearLogs') Clear Logs
 </template>
 
 <script>
@@ -47,7 +46,7 @@ export default {
   components: {},
   data () {
     return {
-      filter: ['error', 'warn', 'debug'],
+      filter: ['error', 'warn'],
       prettyLog: null
     }
   },
@@ -65,7 +64,7 @@ export default {
   },
   methods: {
     createLog (type) {
-      console[type](`This is a new log of type: ${type}.`, 'Heres an array to fill ~3Kb:', Array(200).fill(type))
+      console[type](`This is a new log of type: ${type}.`, 'Heres a ~3Kb array:', Array(200).fill(type))
     },
     openTroubleshooting () {
       alert('TODO link redirect. How to do this...')
@@ -94,10 +93,8 @@ export default {
       })
     },
     clearLogs () {
-      if (confirm(this.L('Are you sure you want to delete all logs?'))) {
-        localStorage.removeItem(CAPTURED_LOGS)
-        this.prettyLog = ''
-      }
+      localStorage.removeItem(CAPTURED_LOGS)
+      this.prettyLog = ''
     }
   }
 }
@@ -129,13 +126,13 @@ export default {
 .c-download {
   flex-grow: 1;
 
-  /* @include touch {
+  @include touch {
     .c-icon {
       &::before {
         content: "\f1e0", // .icon-share-alt
       }
     }
-  } */
+  }
 }
 
 .c-filters,
