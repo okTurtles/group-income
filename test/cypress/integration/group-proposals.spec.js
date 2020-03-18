@@ -166,14 +166,16 @@ describe('Proposals - Add members', () => {
 
       cy.log(`${username} is part of members list as "pending"`)
 
-      cy.getByDT('groupMembers').find('ul>li:first-child').within(() => {
-        cy.getByDT('username').should('contain', `${username}-${userId}`)
-        cy.getByDT('pillPending').should('contain', 'pending')
+      cy.getByDT('groupMembers').find('ul').within(() => {
+        cy.getByDT(`${username}-${userId}`, 'li').within(() => {
+          cy.getByDT('username').should('contain', `${username}-${userId}`)
+          cy.getByDT('pillPending').should('contain', 'pending')
+        })
       })
     }
 
-    voteForAndIsAccepted(1, 'user6')
     voteForAndIsAccepted(0, 'user4')
+    voteForAndIsAccepted(1, 'user6')
   })
 
   it('user2 decides to cancel his proposal of adding user6', () => {
@@ -289,7 +291,7 @@ describe('Proposals - Add members', () => {
     cy.getByDT('welcomeHome').should('contain', 'Welcome to GroupIncome')
   })
 
-  it('user1 logins and sees all 5 proposals correctly and the new member', () => {
+  it('user1 logins and sees all 5 proposals correctly and the new members', () => {
     cy.giLogin(`user1-${userId}`, { bypassUI: true })
 
     // A quick checkup that each proposal state is correct.
@@ -343,8 +345,12 @@ describe('Proposals - Add members', () => {
       .each(([member], index) => {
         cy.get(member).within(() => {
           const usersMap = [1, 2, 3, 4, 6]
+
           cy.getByDT('username').should('contain', `user${usersMap[index]}-${userId}`)
-          if (index > 1) {
+
+          if (index === 0) {
+            cy.getByDT('username').should('contain', '(you)')
+          } else {
             cy.getByDT('pillNew').should('contain', 'new')
           }
         })

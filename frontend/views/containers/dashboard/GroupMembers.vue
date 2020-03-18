@@ -13,6 +13,7 @@
   ul.c-group-list
     li.c-group-member(
       v-for='(member, username) in firstTenMembers'
+      :data-test='username'
       :class='member.isPending && "is-pending"'
       :key='username'
     )
@@ -20,8 +21,7 @@
       avatar-user(v-else :username='username' size='sm')
 
       .c-name.has-ellipsis(data-test='username')
-        | {{ userDisplayName(username) }}
-        |&nbsp;
+        | {{ userDisplayName(username) }}&nbsp;
         i18n(v-if='username === ourUsername') (you)
 
       i18n.pill.is-neutral(v-if='member.isPending' data-test='pillPending') pending
