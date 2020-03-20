@@ -25,23 +25,10 @@
         i18n(v-if='username === ourUsername') (you)
 
       i18n.pill.is-neutral(v-if='member.isPending' data-test='pillPending') pending
-      i18n.pill.is-success(v-else-if='isNewMember(username)' data-test='pillNew') new
+      i18n.pill.is-primary(v-else-if='isNewMember(username)' data-test='pillNew') new
 
-      tooltip(
-        v-if='member.isPending'
-        direction='bottom-end'
-      )
-        span.button.is-icon-small(
-          data-test='pendingTooltip'
-        )
-          i.icon-question-circle
-        template(slot='tooltip')
-          i18n(
-            tag='p'
-            :args='{ invitedBy: `${member.invitedBy} ${member.invitedBy === ourUsername ? `(${L("you")})` : ""}` }'
-          ) This member did not use their invite link to join the group yet. This link should be given to them by {inviter}
-
-      group-member-menu(v-else :username='username')
+      group-members-tooltip-pending.c-menu(v-if='member.isPending' :username='username')
+      group-members-menu.c-menu(v-else :username='username')
   i18n.link(
     tag='button'
     v-if='groupMembersCount > 10'
@@ -57,15 +44,16 @@ import { OPEN_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
 import Avatar from '@components/Avatar.vue'
 import AvatarUser from '@components/AvatarUser.vue'
-import GroupMemberMenu from '@containers/dashboard/GroupMemberMenu.vue'
-import Tooltip from '@components/Tooltip.vue'
+import GroupMembersMenu from '@containers/dashboard/GroupMembersMenu.vue'
+import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
+
 export default {
   name: 'GroupMembers',
   components: {
     Avatar,
     AvatarUser,
-    GroupMemberMenu,
-    Tooltip
+    GroupMembersMenu,
+    GroupMembersTooltipPending
   },
   computed: {
     ...mapGetters([
@@ -81,6 +69,9 @@ export default {
       console.log('calculate dateNow')
       return Date.now()
     },
+    weJoined () {
+      return this.currentGroupState.profiles[this.ourUsername].joined_ms
+    },
     firstTenMembers () {
       const profiles = this.groupProfiles
       const sliceIndex = 10 - Math.min(10, Object.keys(this.groupMembersPending).length) // avoid slicing too many members.
@@ -91,11 +82,12 @@ export default {
         // contracts (group + user) are still syncing
         const profile = profiles[username]
         if (profile) {
-          acc[username] = profile
+          acc[username] = { profile }
         }
         return acc
       }, {})
 
+      // TODO - Sort members #869
       return { ...this.groupMembersPending, ...members }
     }
   },
@@ -110,9 +102,8 @@ export default {
       if (username === this.ourUsername) {
         return false
       }
-      const weJoined = this.currentGroupState.profiles[this.ourUsername].joined_ms
       const memberJoined = this.currentGroupState.profiles[username].joined_ms
-      const joinedAfterUs = weJoined < memberJoined
+      const joinedAfterUs = this.weJoined < memberJoined
       return joinedAfterUs && this.dateNow - memberJoined < 604800000 // joined less than 1w (168h) ago.
     }
   }
@@ -155,10 +146,10 @@ export default {
 .c-name {
   margin-right: auto;
   margin-left: $spacer-sm;
+}
 
-  .is-pending & {
-    color: $text_1;
-  }
+.c-menu {
+  margin-left: 0.5rem;
 }
 
 .c-actions-content.c-content {

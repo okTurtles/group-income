@@ -49,22 +49,24 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
               ) @{{ username }}
 
               i18n.pill.is-neutral(v-if='isPending' data-test='pillPending') pending
-              i18n.pill.is-success(v-else-if='isNewMember(username)' data-test='pillNew') new
+              i18n.pill.is-primary(v-else-if='isNewMember(username)' data-test='pillNew') new
 
           .c-actions
-            group-member-menu.c-action-menu(:username='username')
+            group-members-tooltip-pending(v-if='isPending' :username='username')
+            template(v-else)
+              group-members-menu.c-action-menu(:username='username')
 
-            .c-actions-buttons.buttons
-              button.button.is-outlined.is-small(
-                @click='toMessages(username)'
-              )
-                i.icon-comment
-                i18n Send message
-              button.button.is-outlined.is-small(
-                @click='openModal("RemoveMember", { username })'
-              )
-                i.icon-times
-                i18n Remove member
+              .c-actions-buttons.buttons
+                button.button.is-outlined.is-small(
+                  @click='toMessages(username)'
+                )
+                  i.icon-comment
+                  i18n Send message
+                button.button.is-outlined.is-small(
+                  @click='openModal("RemoveMember", { username })'
+                )
+                  i.icon-times
+                  i18n Remove member
 </template>
 
 <script>
@@ -75,7 +77,8 @@ import { OPEN_MODAL } from '@utils/events.js'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import Search from '@components/Search.vue'
 import AvatarUser from '@components/AvatarUser.vue'
-import GroupMemberMenu from '@containers/dashboard/GroupMemberMenu.vue'
+import GroupMembersMenu from '@containers/dashboard/GroupMembersMenu.vue'
+import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
 
 export default {
   name: 'GroupMembersAllModal',
@@ -83,7 +86,8 @@ export default {
     ModalBaseTemplate,
     Search,
     AvatarUser,
-    GroupMemberMenu
+    GroupMembersMenu,
+    GroupMembersTooltipPending
   },
   data () {
     return {
@@ -154,6 +158,7 @@ export default {
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
 .c-container {
   height: 100%;
   width: 100%;
@@ -163,7 +168,7 @@ export default {
 .c-header,
 .c-container {
   @include tablet {
-    width: 38.75rem;
+    width: 50rem;
     max-width: 100%;
   }
 }
@@ -217,11 +222,15 @@ export default {
 .c-identity {
   display: flex;
   align-items: center;
+  flex-grow: 1;
 }
 
 .c-name {
-  margin-left: 1.5rem;
-  min-width: 100%;
+  margin: 0 0.5rem 0 1.5rem;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .c-display-name {
