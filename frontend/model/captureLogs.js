@@ -18,29 +18,17 @@ const setNewEntry = [
 
 localStorage.setItem(CAPTURED_LOGS, JSON.stringify(setNewEntry))
 
-// Create a middleware to capture new console logs...
-const giConsole = (function (csl) {
-  return {
-    log: function (...args) {
-      csl.log(...args)
-    },
-    info: function (...args) {
-      csl.info(...args)
-    },
-    warn: function (...args) {
-      csl.warn(...args)
-      captureMsg('warn', ...args)
-    },
-    error: function (...args) {
-      csl.error(...args)
-      captureMsg('error', ...args)
-    },
-    debug: function (...args) {
-      csl.debug(...args)
-      captureMsg('debug', ...args)
+// Redefine the original console
+window.console = new Proxy(window.console, {
+  get: function (obj, type) {
+    return function (...args) {
+      obj[type](...args)
+      if (['error', 'warn', 'debug'].includes(type)) {
+        captureMsg(type, ...args)
+      }
     }
   }
-}(window.console))
+})
 
 function captureMsg (type, ...msg) {
   const logs = localStorage.getItem(CAPTURED_LOGS)
@@ -61,9 +49,6 @@ function captureMsg (type, ...msg) {
   sbp('okTurtles.events/emit', CAPTURED_LOGS)
 }
 
-// Then redefine the original console
-window.console = giConsole
-
 // Util function to download *all* stored logs.
 export function downloadLogs (filename, elLink) {
   const data = `/*
@@ -71,9 +56,8 @@ export function downloadLogs (filename, elLink) {
 
 GROUP INCOME - Application Logs
 
-Send us this file when reporting a problem: 
-  - e-mail: hi@okturtles.com
-  - github: https://github.com/okTurtles/group-income-simple/issues  
+Attach this file when reporting a problem at: 
+  - Github: https://github.com/okTurtles/group-income-simple/issues  
 
 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 */

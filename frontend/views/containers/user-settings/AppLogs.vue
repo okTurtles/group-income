@@ -1,8 +1,6 @@
 <template lang='pug'>
   .settings-container
     section.card
-      h2.is-title-3.c-title Application logs
-
       .c-header
         fieldset.c-filters
           legend.sr-only Visible logs
@@ -25,8 +23,7 @@
       textarea.textarea.c-logs(ref='textarea' rows='12' readonly)
         | {{ prettyLog }}
 
-      .buttons
-        i18n.link(tag='a' @click='openTroubleshooting') Troubleshooting
+      i18n.link(tag='a' @click='openTroubleshooting') Troubleshooting
       br
       br
       p.has-text-danger DELETE BEFORE MERGE!
@@ -40,7 +37,7 @@
 <script>
 import sbp from '~/shared/sbp.js'
 import { CAPTURED_LOGS } from '@utils/events.js'
-import { downloadLogs } from '@view-utils/captureLogs.js'
+import { downloadLogs } from '@model/captureLogs.js'
 export default {
   name: 'AppLogs',
   components: {},
