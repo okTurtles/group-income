@@ -886,7 +886,7 @@ page(
                     :aria-pressed='false'
                     @click='ephemeral.passwordHidden = !ephemeral.passwordHidden'
                   )
-                    i.icon-eye
+                    i(:class='ephemeral.passwordHidden ? "icon-eye" : "icon-eye-slash"')
               span.error(v-if='ephemeral.forms.hasError') Wrong password.
 
             label.field
