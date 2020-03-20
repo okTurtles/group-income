@@ -758,15 +758,15 @@ page(
               |   .label Select currency
               |   .selectbox.error
               |     select.select
-              |       option USD
+              |       option $ USD
           td
             label.field
             .label Select currency
             .selectbox(:class='{ error: ephemeral.forms.hasError }')
               select.select
-                option USD
-                option BTC
-                option EUR
+                option $ USD
+                option Ƀ BTC
+                option € EUR
             span.error(v-if='ephemeral.forms.hasError') Something went wrong.
         tr
           td(colspan='2')
@@ -782,16 +782,16 @@ page(
               |   .selectgroup.error
               |     input.input(aria-label='Amount')
               |     select.select(aria-label='Currency')
-              |       option USD
+              |       option $ USD
           td
             fieldset.field
               .label What's your mincome
               .selectgroup(:class='{ error: ephemeral.forms.hasError }')
                 input.input(aria-label='Amount')
                 select.select(aria-label='Currency')
-                  option USD
-                  option BTC
-                  option EUR
+                  option $ USD
+                  option Ƀ BTC
+                  option € EUR
               span.error(v-if='ephemeral.forms.hasError') Something went wrong.
         tr
           td
@@ -806,9 +806,13 @@ page(
           td
             fieldset.field
               .label Payment method
-              .selectgroup.is-reversed(:class='{ error: ephemeral.forms.hasError }')
-                select.select(aria-label='Method')
-                  option(disabled='true') Choose...
+              .selectgroup.is-reversed.c-payments(:class='{ error: ephemeral.forms.hasError }')
+                select.select(
+                  v-model='form.selectPayment'
+                  :class='{ "is-empty": form.selectPayment === "choose"}'
+                  aria-label='Method'
+                  selected='choose')
+                  option(value='choose' disabled='true') Choose...
                   option Bitcoin
                   option Paypal
                   option Other
@@ -875,11 +879,12 @@ page(
             label.field
               .label Password
               .inputgroup(:class='{ error: ephemeral.forms.hasError }')
-                input.input(type='text' placeholder='Placeholder')
+                input.input(:type='ephemeral.passwordHidden ? "password" : "text"')
                 .addons
                   button.is-icon(
                     aria-label='Show password'
                     :aria-pressed='false'
+                    @click='ephemeral.passwordHidden = !ephemeral.passwordHidden'
                   )
                     i.icon-eye
               span.error(v-if='ephemeral.forms.hasError') Wrong password.
@@ -1311,12 +1316,11 @@ export default {
         ]
       },
       form: {
-        searchValue: ''
+        searchValue: '',
+        selectPayment: 'choose'
       },
       ephemeral: {
-        btns: {
-          isLoading: 'false'
-        },
+        passwordHidden: true,
         forms: {
           hasError: false,
           isDisabled: false
@@ -1514,6 +1518,16 @@ table {
     line-height: $spacer-md * 1.5;
     text-align: center;
     border: none;
+  }
+}
+
+.c-payments {
+  .select {
+    min-width: 7rem;
+  }
+
+  &::after { // icon-sort-down
+    left: 5.5rem;
   }
 }
 

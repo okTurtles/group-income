@@ -187,10 +187,14 @@ legend.legend {
   }
 
   .select {
-    min-width: 6rem;
+    min-width: 6rem; // customized based on the context
     width: auto;
     border-radius: 0 $radius $radius 0;
     margin-left: -1px; // collapse border
+
+    &.is-empty {
+      color: $text_1;
+    }
   }
 
   &.is-reversed {
@@ -205,7 +209,7 @@ legend.legend {
     }
 
     &::after {
-      left: 4rem;
+      left: 4rem; // customized based on the context
       right: auto;
     }
   }
