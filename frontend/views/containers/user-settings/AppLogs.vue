@@ -28,70 +28,105 @@
       br
       p.has-text-danger DELETE BEFORE MERGE!
       .buttons
-        button.is-small.is-outlined(@click='createLog("error")') Log error
-        button.is-small.is-outlined(@click='createLog("warn")') Log warn
-        button.is-small.is-outlined(@click='createLog("debug")') Log debug
-        button.is-small.is-outlined(@click='clearLogs') Clear Logs
+        button.is-small.is-outlined(@click='_createLog("error")') Log error
+        button.is-small.is-outlined(@click='_createLog("warn")') Log warn
+        button.is-small.is-outlined(@click='_createLog("debug")') Log debug
+        button.is-small.is-outlined(@click='_clearLogs') Clear Logs
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import sbp from '~/shared/sbp.js'
-import { CAPTURED_LOGS } from '@utils/events.js'
-import { downloadLogs } from '@model/captureLogs.js'
+import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '@utils/events.js'
+import { downloadLogs, clearLogs } from '@model/captureLogs.js'
 export default {
   name: 'AppLogs',
   components: {},
   data () {
     return {
-      filter: ['error', 'warn'],
-      prettyLog: null
+      filter: [],
+      logs: []
     }
   },
   mounted () {
-    this.updateFormLogs()
-    sbp('okTurtles.events/on', CAPTURED_LOGS, this.updateFormLogs)
+    this.filter = this.ourUserIdentityContract.settings.appLogsFilter
+    this.setLogs()
+    sbp('okTurtles.events/on', CAPTURED_LOGS, this.addLog)
   },
   beforeDestroy () {
-    sbp('okTurtles.events/off', CAPTURED_LOGS.CON, this.updateFormLogs)
+    sbp('okTurtles.events/off', CAPTURED_LOGS)
   },
   watch: {
-    filter: function () {
-      this.updateFormLogs()
-    }
-  },
-  methods: {
-    createLog (type) {
-      console[type](`This is a new log of type: ${type}.`, 'Heres a ~3Kb array:', Array(200).fill(type))
+    async filter (value) {
+      sbp('okTurtles.events/emit', SET_APP_LOGS_FILTER, value)
+      await sbp('gi.actions/user/updateSettings',
+        { appLogsFilter: value },
+        this.$store.state.loggedIn.identityContractID
+      )
     },
-    openTroubleshooting () {
-      alert('TODO link redirect. How to do this...')
-    },
-    downloadLogs () {
-      downloadLogs('gi_logs.txt', this.$refs.linkDownload)
-    },
-    updateFormLogs () {
-      const logs = JSON.parse(localStorage.getItem(CAPTURED_LOGS)) || []
-      const isNewEntry = (type) => ['NEW_SESSION', 'NEW_VISIT'].includes(type)
-      this.prettyLog = logs
-        .filter(({ type }) => {
-          return this.filter.includes(type) || isNewEntry(type)
-        })
-        .map(({ type, msg }) => {
-          return isNewEntry(type)
-            ? `--------------- \n [${type}] :: ${msg}`
-            : `[${type}] :: ${msg.map(something => JSON.stringify(something)).join(' ')}`
-        })
-        .join('\n')
-
+    prettyLog () {
+      // Automatically scroll textarea to the bottom
       this.$nextTick(() => {
         if (this.$refs.textarea) {
           this.$refs.textarea.scrollTop = this.$refs.textarea.scrollHeight
         }
       })
+    }
+  },
+  computed: {
+    ...mapGetters([
+      'ourUserIdentityContract'
+    ]),
+    prettyLog () {
+      const isEntryNew = (type) => ['NEW_SESSION', 'NEW_VISIT'].includes(type)
+      return this.logs
+        .filter(({ type }) => {
+          return this.filter.includes(type) || isEntryNew(type)
+        })
+        .map(({ type, msg }) => {
+          return isEntryNew(type)
+            ? `--------------- \n [${type}] :: ${msg}`
+            : `[${type}] :: ${msg.map(something => JSON.stringify(something)).join(' ')}`
+        })
+        .join('\n')
+    }
+  },
+  methods: {
+    setLogs () {
+      const logs = []
+      let lastEntry = localStorage.getItem('giConsole/lastEntry')
+      do {
+        const entry = JSON.parse(localStorage.getItem(`giConsole/${lastEntry}`)) || {}
+        logs.push(entry)
+        lastEntry = entry.prev
+      } while (lastEntry)
+      this.logs = logs
     },
-    clearLogs () {
-      localStorage.removeItem(CAPTURED_LOGS)
-      this.prettyLog = ''
+    addLog (logHash) {
+      const entry = JSON.parse(localStorage.getItem(`giConsole/${logHash}`))
+      if (entry) {
+        this.logs.push(entry)
+      }
+    },
+    openTroubleshooting () {
+      alert('TODO link redirect. How to do this...')
+      // this.$router.push({
+      //   query: {
+      //     ...this.$route.query,
+      //     section: 'troubleshooting'
+      //   }
+      // })
+    },
+    downloadLogs () {
+      downloadLogs('gi_logs.txt', this.$refs.linkDownload)
+    },
+    // DELETE BEFORE MERGE
+    _clearLogs () {
+      clearLogs()
+      this.logs = []
+    },
+    _createLog (type) {
+      console[type]('This is a new log of type:', type)
     }
   }
 }

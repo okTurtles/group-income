@@ -14,3 +14,4 @@ export const PROPOSAL_RESULT = 'proposal-result'
 export const CONTRACT_IS_SYNCING = 'contract-is-syncing'
 
 export const CAPTURED_LOGS = 'captured-logs'
+export const SET_APP_LOGS_FILTER = 'set-app-logs-filter'

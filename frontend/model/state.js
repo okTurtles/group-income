@@ -22,6 +22,7 @@ import * as EVENTS from '~/frontend/utils/events.js'
 import './contracts/group.js'
 import './contracts/mailbox.js'
 import './contracts/identity.js'
+import { captureLogsStart, captureLogsPause } from '~/frontend/model/captureLogs.js'
 
 Vue.use(Vuex)
 var store // this is set and made the default export at the bottom of the file.
@@ -388,6 +389,7 @@ const actions = {
     if (settings) {
       console.debug('loadSettings:', settings)
       store.replaceState(settings)
+      captureLogsStart()
       // This may seem unintuitive to use the store.state from the global store object
       // but the state object in scope is a copy that becomes stale if something modifies it
       // like an outside dispatch
@@ -426,6 +428,7 @@ const actions = {
     for (const contractID in state.contracts) {
       commit('removeContract', contractID)
     }
+    captureLogsPause()
     commit('logout')
     Vue.nextTick(() => sbp('okTurtles.events/emit', EVENTS.LOGOUT))
   },

@@ -1,69 +1,157 @@
 import sbp from '~/shared/sbp.js'
-import { CAPTURED_LOGS } from '~/frontend/utils/events.js'
+import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '~/frontend/utils/events.js'
 
-const SIZE_LIMIT_KB = 100
-const isNewSession = !sessionStorage.getItem('NEW_SESSION')
-const initialLogs = localStorage.getItem(CAPTURED_LOGS)
+/*
+  giConsole/count - total logs stored
+  giConsole/lastEntry - latest log hash.
+  giConsole/markers - an array of markers at every 1000th entry.
+*/
+const ENTRIES_LIMIT = 4000
+const ENTRIES_MARKER = 1000
 
-// Mark in localStorage that is a new visit (and session)
-if (isNewSession) { sessionStorage.setItem('NEW_SESSION', 1) }
+let isCapturing = true
+let isConsoleOveride = false
+let lastEntry = null
+let entriesCount = null
+let appLogsFilter = []
 
-const setNewEntry = [
-  ...(JSON.parse(initialLogs) || []),
-  {
-    type: isNewSession ? 'NEW_SESSION' : 'NEW_VISIT',
-    msg: Date.now()
-  }
-]
-
-localStorage.setItem(CAPTURED_LOGS, JSON.stringify(setNewEntry))
-
-// Redefine the original console
-window.console = new Proxy(window.console, {
-  get: function (obj, type) {
-    return function (...args) {
-      obj[type](...args)
-      if (['error', 'warn', 'debug'].includes(type)) {
-        captureMsg(type, ...args)
-      }
-    }
-  }
-})
-
-function captureMsg (type, ...msg) {
-  const logs = localStorage.getItem(CAPTURED_LOGS)
-  const logsParsed = JSON.parse(logs) || []
-
-  // Reference: https://stackoverflow.com/a/15720835/4737729
-  // REVIEW: Cut the log from a better place? Maybe since last session?
-  var size = logs ? logs.length * 2 / 1024 : 0
-  if (size > SIZE_LIMIT_KB) {
-    console.log(`LocalStorage is too big. (${size}Kb). Deleting 2/3 of it.`)
-    logsParsed.splice(0, Math.round(logsParsed.length / 1.5))
-  }
-
-  localStorage.setItem(CAPTURED_LOGS, JSON.stringify(
-    [...logsParsed, { type, msg }]
-  ))
-
-  sbp('okTurtles.events/emit', CAPTURED_LOGS)
+function hashFn () {
+  // REVIEW - a better hash?
+  return `${Date.now()}_${Math.floor(Math.random() * 100000)}`
 }
 
-// Util function to download *all* stored logs.
+function captureLog (type, ...msg) {
+  const logEntry = hashFn()
+
+  localStorage.setItem(`giConsole/${logEntry}`,
+    JSON.stringify({ type, msg, prev: lastEntry })
+  )
+
+  lastEntry = logEntry
+  entriesCount++
+
+  localStorage.setItem('giConsole/lastEntry', logEntry)
+  localStorage.setItem('giConsole/count', entriesCount)
+
+  verifyLogsSize()
+
+  sbp('okTurtles.events/emit', CAPTURED_LOGS, lastEntry)
+}
+
+function verifyLogsSize () {
+  if (entriesCount % ENTRIES_MARKER === 0) {
+    // Save entry as a marker to be later deleted when logs are too big.
+    const markers = JSON.parse(localStorage.getItem('giConsole/markers')) || []
+    markers.push(lastEntry)
+    localStorage.setItem('giConsole/markers', JSON.stringify(markers))
+  }
+
+  if (entriesCount >= ENTRIES_LIMIT) {
+    const markers = JSON.parse(localStorage.getItem('giConsole/markers')) || []
+    let toDelete = ENTRIES_MARKER // delete the latest x entries
+    let prevEntry = markers.shift()
+    do {
+      const entry = JSON.parse(localStorage.getItem(`giConsole/${prevEntry}`)) || {}
+      localStorage.removeItem(`giConsole/${prevEntry}`)
+      prevEntry = entry.prev
+      entriesCount--
+      toDelete--
+    } while (toDelete && prevEntry)
+    localStorage.setItem('giConsole/markers', JSON.stringify(markers))
+    localStorage.setItem('giConsole/count', entriesCount)
+  }
+}
+
+export function captureLogsStart () {
+  isCapturing = true
+  lastEntry = localStorage.getItem('giConsole/lastEntry')
+  entriesCount = +localStorage.getItem('giConsole/count') || 0
+
+  // Set a new visit or session - useful to understand logs through time.
+  // NEW_SESSION -> The user opened a new browser or tab.
+  // NEW_VISIT -> The user comes from an ongoing session (refresh or login)
+  const isNewSession = !sessionStorage.getItem('NEW_SESSION')
+  if (isNewSession) { sessionStorage.setItem('NEW_SESSION', 1) }
+  captureLog(isNewSession ? 'NEW_SESSION' : 'NEW_VISIT', Date.now())
+
+  // Subscribe to appLogs applied filter
+  const state = sbp('state/vuex/state')
+  const userContract = state[state.loggedIn.identityContractID] || {}
+  appLogsFilter = (userContract.settings || {}).appLogsFilter || []
+  sbp('okTurtles.events/on', SET_APP_LOGS_FILTER, filter => { appLogsFilter = filter })
+
+  console.debug('Starting to capture logs of type:', appLogsFilter)
+
+  // Override the console to start capturing the logs
+  if (!isConsoleOveride) {
+    // avoid duplicated captures, in case captureLogsStart
+    // is called multiple times. (ex: login twice in the same visit)
+    isConsoleOveride = true
+
+    const _cError = console.error
+    const _cWarn = console.warn
+    const _cDebug = console.debug
+    const guardCapture = (type, args) => {
+      if (isCapturing && appLogsFilter.includes(type)) {
+        captureLog(type, ...args)
+      }
+    }
+
+    console.error = function () {
+      _cError.apply(console, arguments)
+      guardCapture('error', arguments)
+    }
+    console.warn = function () {
+      _cWarn.apply(console, arguments)
+      guardCapture('warn', arguments)
+    }
+    console.debug = function () {
+      _cDebug.apply(console, arguments)
+      guardCapture('debug', arguments)
+    }
+  }
+
+  // // REMOVE THIS: It overrides all types,
+  // // (including log and info). It's not needed.
+  // window.console = new Proxy(window.console, {
+  //   get: (obj, type) => (...args) => {
+  //     obj[type](...args)
+  //     if (isCapturing && appLogsFilter.includes(type)) {
+  //       captureLog(type, ...args)
+  //     }
+  //   }
+  // })
+}
+
+export function captureLogsPause () {
+  isCapturing = false
+  sbp('okTurtles.events/off', SET_APP_LOGS_FILTER)
+}
+
+// Util to download *all* stored logs so far
 export function downloadLogs (filename, elLink) {
+  const logsArr = []
+  let lastEntry = localStorage.getItem('giConsole/lastEntry')
+  do {
+    const entry = localStorage.getItem(`giConsole/${lastEntry}`)
+    const entryParsed = JSON.parse(entry) || {}
+    lastEntry = entryParsed.prev
+    logsArr.push(entry)
+  } while (lastEntry)
   const data = `/*
 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
 
 GROUP INCOME - Application Logs
 
-Attach this file when reporting a problem at: 
+Attach this file when reporting a problem:
   - Github: https://github.com/okTurtles/group-income-simple/issues  
 
 . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
 */
 
 var userAgent = ${navigator.userAgent}
-var appLogs = ${localStorage.getItem(CAPTURED_LOGS)}`
+var appLogs = [${logsArr}]
+`
 
   const file = new Blob([data], { type: 'text/plain' })
 
@@ -83,4 +171,16 @@ var appLogs = ${localStorage.getItem(CAPTURED_LOGS)}`
       window.URL.revokeObjectURL(url)
     }, 0)
   }
+}
+
+export function clearLogs () {
+  let i = localStorage.length
+  while (i--) {
+    const key = localStorage.key(i)
+    if (/giConsole/.test(key)) {
+      localStorage.removeItem(key)
+    }
+  }
+  lastEntry = ''
+  entriesCount = 0
 }

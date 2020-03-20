@@ -20,6 +20,9 @@ DefineContract({
         })
       }),
       process ({ data }, { state }) {
+        Vue.set(state, 'settings', {
+          appLogsFilter: ['error', 'warn']
+        })
         for (const key in data) {
           Vue.set(state, key, data[key])
         }
@@ -38,6 +41,14 @@ DefineContract({
       process ({ data }, { state }) {
         for (var attribute of data) {
           Vue.delete(state.attributes, attribute)
+        }
+      }
+    },
+    'gi.contracts/identity/updateSettings': {
+      validate: object,
+      process ({ data }, { state }) {
+        for (var key in data) {
+          Vue.set(state.settings, key, data[key])
         }
       }
     }

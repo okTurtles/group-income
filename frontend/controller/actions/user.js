@@ -100,9 +100,12 @@ export default sbp('sbp/selectors/register', {
     await sbp('gi.actions/user/login', signupParams, { sync: true })
     return contractIDs
   },
-
   'gi.actions/user/logout': async function () {
     // TODO: move the logout vuex action code into this function (see #804)
     await sbp('state/vuex/dispatch', 'logout')
+  },
+  'gi.actions/user/updateSettings': async function (settings, contractID) {
+    const msg = await sbp('gi.contracts/identity/updateSettings/create', settings, contractID)
+    await sbp('backend/publishLogEntry', msg)
   }
 })
