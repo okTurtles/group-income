@@ -90,7 +90,7 @@ describe('Payments', () => {
 
   it('user1 fills their Income Details - pledges $500', () => {
     cy.getByDT('contributionsLink').click()
-    cy.getByDT('addIncomeDetailsFirstCard').should('contain', 'Add your income details')
+    cy.getByDT('addIncomeDetailsCard').should('contain', 'Add your income details')
 
     cy.getByDT('openIncomeDetailsModal').click()
     // Make sure only radio box to select the type is visible at the begining

@@ -19,7 +19,7 @@ li.c-wrapper
 
 <script>
 import { mapGetters } from 'vuex'
-import L from '@view-utils/translations.js'
+import L, { LTags } from '@view-utils/translations.js'
 import AvatarUser from '@components/AvatarUser.vue'
 import ProposalItem from './ProposalItem.vue'
 import { STATUS_OPEN } from '@model/contracts/voting/constants.js'
@@ -63,14 +63,14 @@ export default {
 
       if (isAnyOpen) {
         return isOwnProposal
-          ? L('{strong_}You{_strong} are proposing:', this.LTags('strong'))
+          ? L('{strong_}You{_strong} are proposing:', LTags('strong'))
           : L('{username} is proposing:', { username: `<strong>${username}</strong>` })
       }
 
       // Note: In English, no matter the subject, the wording is the same,
       // but in other languages the wording is different (ex: Portuguese)
       return isOwnProposal
-        ? L('{strong_}You{_strong} proposed:', this.LTags('strong'))
+        ? L('{strong_}You{_strong} proposed:', LTags('strong'))
         : L('{username} proposed:', { username: `<strong>${username}</strong>` })
     },
     humanDate () {

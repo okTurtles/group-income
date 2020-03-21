@@ -125,7 +125,7 @@ declare module '../views/Home.vue' { declare module.exports: Object }
 declare module '../views/Join.vue' { declare module.exports: Object }
 declare module '../views/Mailbox.vue' { declare module.exports: Object }
 declare module '../views/Messages.vue' { declare module.exports: Object }
-declare module '../views/PayGroup.vue' { declare module.exports: Object }
+declare module '../views/Payments.vue' { declare module.exports: Object }
 declare module '../views/ProposeMember.vue' { declare module.exports: Object }
 declare module '../views/UserGroup.vue' { declare module.exports: Object }
 declare module '../views/UserProfile.vue' { declare module.exports: Object }

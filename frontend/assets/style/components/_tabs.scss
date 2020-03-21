@@ -1,0 +1,59 @@
+.tabs {
+  display: flex;
+  flex-direction: row;
+  text-align: center;
+  box-shadow: inset 0 -2px 0 $general_2;
+  font-family: "Poppins";
+  font-size: 0.75rem;
+  line-height: 1rem;
+  @include removeSideCardPadding;
+  @include removeTopCardPadding;
+
+  &-link {
+    display: flex;
+    align-items: center;
+    letter-spacing: 0.1px;
+    text-transform: uppercase;
+    padding: $spacer;
+    cursor: pointer;
+    color: $text_1;
+    transition: box-shadow 0.2s ease-in;
+    box-shadow: inset 0 0 0 transparent;
+
+    @include tablet {
+      padding: $spacer 1.5rem;
+    }
+
+    @include desktop {
+      padding: 1.5rem 2.5rem;
+    }
+
+    &:hover {
+      box-shadow: inset 0 -2px 0 $general_0;
+    }
+  }
+
+  &-link:focus,
+  .is-active:hover,
+  .is-active {
+    box-shadow: inset 0 -2px 0 $primary_0;
+  }
+
+  &-link:focus,
+  &-link:hover,
+  .is-active {
+    color: $primary_0;
+  }
+
+  &-notification {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: $spacer;
+    height: $spacer;
+    margin-left: $spacer-sm;
+    border-radius: 3px;
+    background-color: $primary_2;
+    color: $primary_0;
+  }
+}

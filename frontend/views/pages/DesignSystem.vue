@@ -289,7 +289,9 @@ page(
   article#buttons
     section.card
       h2.is-title-2.card-header Buttons
+      br
       h3.is-title-3 Default size
+      br
       table
         thead
           th code
@@ -364,6 +366,24 @@ page(
           td
             button.is-danger.is-outlined.is-small Default text
 
+      h3.is-title-3 Button Submit
+      p Use #[code ButtonSubmit] on buttons that will trigger an async action.
+      br
+      table
+        thead
+          th code
+          th demo
+        tr
+          td
+            pre
+              | button-submit.is-sucess(
+              |   @click='saveIn2500ms'
+              | ) Save Changes
+          td
+            button-submit.is-sucess(
+              @click='saveIn2500ms'
+            ) Save Changes
+      br
       h3.is-title-3 With an icon
       table
         thead
@@ -481,9 +501,63 @@ page(
           th demo
         tr
           td
-            pre .pill
+            pre .pill.has-background-dark
           td
-            span.pill Pending
+            span.pill.has-background-dark Pending
+
+        tr
+          td
+            pre .pill.is-success
+          td
+            span.pill.is-success Payment received
+
+        tr
+          td
+            pre .pill.is-warning
+          td
+            span.pill.is-warning Not received
+
+        tr
+          td
+            pre .pill.is-primary
+          td
+            span.pill.is-primary Partial
+
+        tr
+          td
+            pre .pill.is-danger
+          td
+            span.pill.is-danger Due march 08
+
+        tr
+          td
+            pre .pill.has-background-dark.is-small
+          td
+            span.pill.has-background-dark.is-small Pending
+
+        tr
+          td
+            pre .pill.is-success.is-small
+          td
+            span.pill.is-success.is-small Payment received
+
+        tr
+          td
+            pre .pill.is-warning.is-small
+          td
+            span.pill.is-warning.is-small Not received
+
+        tr
+          td
+            pre .pill.is-primary.is-small
+          td
+            span.pill.is-primary.is-small Partial
+
+        tr
+          td
+            pre .pill.is-danger.is-small
+          td
+            span.pill.is-danger.is-small Due march 08
 
   article#user-feedback
     section.card
@@ -762,6 +836,28 @@ page(
               label.checkbox
                 input.input(type='checkbox' name='browser' value='Edge' disabled)
                 span Internet Explorer
+
+        tr
+          td
+            h3.is-title-3 Switch
+        tr
+          td
+            pre
+              | pre
+              |   input.switch(
+              |   type='checkbox'
+              |   name='switch'
+              |   @change=''
+              | )
+              | i18n.sr-only(tag='label' for='displayComment') Toggle me
+          td
+            input.switch(
+              type='checkbox'
+              name='switch'
+              @change=''
+            )
+            i18n.sr-only(tag='label' for='displayComment') Toggle me
+
         tr
           td
             h3.is-title-3 Combination
@@ -840,6 +936,35 @@ page(
                 button.is-icon(aria-label='Show password')
                   i.icon-eye
             span.error(v-if='ephemeral.forms.hasError') Invalid password
+
+  article#tabs
+    section.card
+      h2.is-title-2.card-header Tabs
+
+      p Todo: replace with component once created
+      table
+        thead
+          th code
+          th demo
+        tr
+          td
+            pre
+              | nav.tabs
+              br
+              | button.is-unstyled.tabs-link tab1
+              br
+              | button.is-unstyled.tabs-link.tabs-link-active
+              br
+              |   | tab2
+              br
+              |   span.tabs-notification 3
+          td
+            br
+            nav.tabs
+              button.is-unstyled.tabs-link tab1
+              button.is-unstyled.tabs-link.tabs-link-active
+                | tab2
+                span.tabs-notification 3
 
   article#stepper
     section.card
@@ -971,6 +1096,7 @@ import Page from '@components/Page.vue'
 import sbp from '~/shared/sbp.js'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 import Tooltip from '@components/Tooltip.vue'
 import Badge from '@components/Badge.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
@@ -1086,6 +1212,9 @@ export default {
         ]
       },
       ephemeral: {
+        btns: {
+          isLoading: 'false'
+        },
         forms: {
           hasError: false,
           isDisabled: false
@@ -1099,6 +1228,7 @@ export default {
     CalloutCard,
     BannerSimple,
     BannerScoped,
+    ButtonSubmit,
     Tooltip,
     Badge,
     LinkToCopy,
@@ -1149,6 +1279,11 @@ export default {
         el.link.classList.remove('last')
       })
       this.articles[last].link.classList.add('last')
+    },
+    saveIn2500ms () {
+      return new Promise((resolve, reject) => {
+        setTimeout(resolve, 2500)
+      })
     }
   }
 }
@@ -1198,9 +1333,9 @@ table {
 .c-icons {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
-  grid-gap: 1rem;
-  margin-top: 2rem;
-  margin-bottom: 1rem;
+  grid-gap: $spacer-md;
+  margin-top: $spacer-lg;
+  margin-bottom: $spacer-md;
 
   [class^='icon-']::before {
     margin-right: 10px;
@@ -1310,8 +1445,8 @@ table {
 
     .c-svg {
       max-width: none;
-      width: 8rem;
-      height: 8rem;
+      width: $spacer-xxl;
+      height: $spacer-xxl;
     }
   }
 

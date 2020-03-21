@@ -3,7 +3,7 @@
     template(slot='title')
       i18n Leave group
 
-    form(novalidate @submit.prevent='submit')
+    form(novalidate @submit.prevent='submit' data-test='leaveGroup')
       i18n(
         tag='p'
         :args='LTags("strong")'
@@ -14,51 +14,54 @@
           :args='LTags("strong")'
         ) This action {strong_}cannot be undone{_strong}.
 
-      form(novalidate @submit.prevent='submit')
-        label.field
-          i18n.label Username
-          input.input(
-            :class='{error: $v.form.username.$error}'
-            type='text'
-            v-model='form.username'
-            @input='debounceField("username")'
-            @blur='updateField("username")'
-            v-error:username=''
-          )
+      label.field
+        i18n.label Username
+        input.input(
+          :class='{error: $v.form.username.$error}'
+          type='text'
+          v-model='form.username'
+          @input='debounceField("username")'
+          @blur='updateField("username")'
+          data-test='username'
+          v-error:username='{ attrs: { "data-test": "usernameError" } }'
+        )
 
-        password-form(:label='L("Password")' :$v='$v')
+      password-form(:label='L("Password")' :$v='$v')
 
-        label.field
-          i18n.label(:args='{ code }') Type "{code}" below
-          input.input(
-            :class='{error: $v.form.confirmation.$error}'
-            type='text'
-            v-model='form.confirmation'
-            @input='debounceField("confirmation")'
-            @blur='updateField("confirmation")'
-            v-error:confirmation=''
-          )
+      label.field
+        i18n.label(:args='{ code }') Type "{code}" below
+        input.input(
+          :class='{error: $v.form.confirmation.$error}'
+          type='text'
+          v-model='form.confirmation'
+          @input='debounceField("confirmation")'
+          @blur='updateField("confirmation")'
+          v-error:confirmation='{ attrs: { "data-test": "confirmationError" } }'
+          data-test='confirmation'
+        )
 
-        banner-scoped(ref='formMsg')
+      banner-scoped(ref='formMsg')
 
-        .buttons
-          i18n.is-outlined(tag='button' @click='close') Cancel
-          i18n.is-danger(
-            tag='button'
-            @click='submit'
-            :disabled='$v.form.$invalid'
-          ) Leave Group
+      .buttons
+        i18n.is-outlined(tag='button' @click='close') Cancel
+        button-submit.is-danger(
+          @click='submit'
+          :disabled='$v.form.$invalid'
+          data-test='btnSubmit'
+          ) {{ L('Leave Group') }}
 </template>
 
 <script>
+import sbp from '~/shared/sbp.js'
 import { validationMixin } from 'vuelidate'
-import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-import { mapGetters } from 'vuex'
-import ModalTemplate from '@components/modal/ModalTemplate.vue'
-import PasswordForm from '@containers/access/PasswordForm.vue'
 import { required } from 'vuelidate/lib/validators'
+import { mapGetters, mapState } from 'vuex'
+import PasswordForm from '@containers/access/PasswordForm.vue'
+import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
+import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
 import L from '@view-utils/translations.js'
 
 export default {
@@ -68,7 +71,8 @@ export default {
     ModalTemplate,
     PasswordForm,
     BannerSimple,
-    BannerScoped
+    BannerScoped,
+    ButtonSubmit
   },
   data () {
     return {
@@ -80,6 +84,9 @@ export default {
     }
   },
   computed: {
+    ...mapState([
+      'currentGroupId'
+    ]),
     ...mapGetters([
       'groupSettings',
       'ourUsername'
@@ -93,7 +100,14 @@ export default {
       this.$refs.modal.close()
     },
     async submit () {
-      alert('TODO implement this')
+      if (this.$v.form.$invalid) { return }
+
+      try {
+        await sbp('gi.actions/group/removeOurselves', this.currentGroupId)
+      } catch (e) {
+        console.error('Failed to remove ourselves', e)
+        this.$refs.formMsg.danger(e.message)
+      }
     }
   },
   validations: {

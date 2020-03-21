@@ -61,6 +61,11 @@ export default {
 
 .has-background .c-modal-close {
   background-color: $general_1;
+  top: 0.75rem;
+
+  @include tablet {
+    top: 1.5rem
+  }
 
   @include desktop {
     background-color: $background;

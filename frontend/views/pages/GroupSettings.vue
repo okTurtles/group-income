@@ -1,7 +1,8 @@
 <template lang='pug'>
 page.c-page
   template(#title='') {{ L('Group Settings') }}
-  template(#description='') {{ L('Changes to these settings will be visible to all group members') }}
+  template(#description='')
+    p.p-descritpion.has-text-1 {{ L('Changes to these settings will be visible to all group members') }}
 
   avatar-upload(
     :avatar='$store.getters.groupSettings.groupPicture'
@@ -9,7 +10,7 @@ page.c-page
   )
 
   page-section
-    form(@submit.prevent='saveSettings')
+    form(@submit.prevent='')
       label.field
         i18n.label Group name
         input.input(
@@ -52,11 +53,10 @@ page.c-page
       banner-scoped(ref='formMsg' data-test='formMsg')
 
       .buttons
-        i18n.is-success(
-          tag='button'
-          :disabled='$v.form.$invalid'
+        button-submit.is-success(
+          @click='saveSettings'
           data-test='saveBtn'
-        ) Save changes
+        ) {{ L('Save changes') }}
 
   invitations-table
 
@@ -70,25 +70,26 @@ page.c-page
       i18n.is-danger.is-outlined(
         tag='button'
         ref='leave'
-        @click='openProposal("GroupLeaveModal")'
-        data-test='LeaveBtn'
+        @click='handleLeaveGroup'
+        data-test='leaveModalBtn'
       ) Leave group
 
-  page-section(:title='L("Delete Group")')
-    i18n.has-text-1(tag='p') This will delete all the data associated with this group permanently.
+  //- | ::: Delete Group won't be implemented for prototype.
+  //- page-section(:title='L("Delete Group")')
+  //-   i18n.has-text-1(tag='p') This will delete all the data associated with this group permanently.
 
-    .buttons(v-if='membersLeft === 0')
-      i18n.is-danger.is-outlined(
-        tag='button'
-        ref='delete'
-        @click='openProposal("GroupDeletionModal")'
-        data-test='deleteBtn'
-      ) Delete group
+  //-   .buttons(v-if='membersLeft === 0')
+  //-     i18n.is-danger.is-outlined(
+  //-       tag='button'
+  //-       ref='delete'
+  //-       @click='openProposal("GroupDeletionModal")'
+  //-       data-test='deleteBtn'
+  //-     ) Delete group
 
-    banner-simple(severity='info' v-else)
-      i18n(
-        :args='{ count: membersLeft, groupName: groupSettings.groupName, ...LTags("b")}'
-      ) You can only delete a group when all the other members have left. {groupName} still has {b_}{count} other members{_b}.
+  //-   banner-simple(severity='info' v-else)
+  //-     i18n(
+  //-       :args='{ count: membersLeft, groupName: groupSettings.groupName, ...LTags("b")}'
+  //-     ) You can only delete a group when all the other members have left. {groupName} still has {b_}{count} other members{_b}.
 </template>
 
 <script>
@@ -105,6 +106,7 @@ import AvatarUpload from '@components/AvatarUpload.vue'
 import InvitationsTable from '@containers/group-settings/InvitationsTable.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 import L from '@view-utils/translations.js'
 
 export default {
@@ -116,7 +118,8 @@ export default {
     InvitationsTable,
     AvatarUpload,
     BannerSimple,
-    BannerScoped
+    BannerScoped,
+    ButtonSubmit
   },
   data () {
     const { groupName, sharedValues, mincomeCurrency } = this.$store.getters.groupSettings
@@ -125,9 +128,6 @@ export default {
         groupName,
         sharedValues,
         mincomeCurrency
-      },
-      ephemeral: {
-        isSubmitting: false
       }
     }
   },
@@ -139,9 +139,6 @@ export default {
       'groupSettings',
       'groupMembersCount'
     ]),
-    membersLeft () {
-      return this.groupMembersCount - 1
-    },
     currencies () {
       return currencies
     },
@@ -158,8 +155,6 @@ export default {
       sbp('okTurtles.events/emit', OPEN_MODAL, component)
     },
     async saveSettings (e) {
-      if (this.ephemeral.isSubmitting) { return }
-      this.ephemeral.isSubmitting = true
       const attrs = {}
 
       for (const key in this.form) {
@@ -169,16 +164,19 @@ export default {
       }
 
       try {
-        const settings = await sbp('gi.contracts/group/updateSettings/create',
-          attrs,
-          this.currentGroupId
-        )
-        await sbp('backend/publishLogEntry', settings)
+        await sbp('gi.actions/group/updateSettings', attrs, this.currentGroupId)
         this.$refs.formMsg.success(L('Your changes were saved!'))
       } catch (e) {
-        this.$refs.formMsg.danger(L('Failed to update group settings. {codeError}', { codeError: e.message }))
+        console.error('Failed to update group settings.', e)
+        this.$refs.formMsg.danger(e.message)
       }
-      this.ephemeral.isSubmitting = false
+    },
+    handleLeaveGroup () {
+      if (this.groupMembersCount === 1) {
+        alert(L("Leaving the group when you're the only person in it will delete it, but deleting groups is not possible yet."))
+      } else {
+        this.openProposal('GroupLeaveModal')
+      }
     }
   },
   validations: {
@@ -204,6 +202,16 @@ export default {
 .c-currency-select {
   @include tablet {
     width: 50%;
+  }
+}
+
+.p-descritpion {
+  display: none;
+  margin-top: $spacer-xs;
+  padding-bottom: $spacer-md*3;
+
+  @include desktop {
+    display: block;
   }
 }
 </style>

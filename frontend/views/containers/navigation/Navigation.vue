@@ -26,8 +26,8 @@ nav.c-navigation(
             i18n Dashboard
           list-item(tag='router-link' icon='chart-pie' to='/contributions' data-test='contributionsLink')
             i18n Contributions
-          list-item(tag='router-link' icon='tag' to='/pay-group' data-test='payGroupLink')
-            i18n Pay Group
+          list-item(tag='router-link' icon='tag' to='/payments' data-test='paymentsLink')
+            i18n Payments
           list-item(tag='router-link' icon='comments' to='/group-chat' :badgeCount='3' data-test='groupChatLink')
             i18n Chat
           list-item(tag='router-link' icon='cog' to='/group-settings' data-test='groupSettingsLink')
@@ -235,8 +235,8 @@ export default {
 }
 
 .c-logo {
-  min-width: 8rem;
-  width: 8rem;
+  min-width: $spacer-xxl;
+  width: $spacer-xxl;
 }
 
 .c-toggle {

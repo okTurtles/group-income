@@ -82,7 +82,7 @@ button:focus {
 }
 
 .c-content {
-  left: 2rem;
+  left: $spacer-lg;
   width: 16rem;
 }
 

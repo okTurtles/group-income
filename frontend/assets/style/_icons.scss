@@ -115,11 +115,11 @@ $icons: (
 }
 
 .icon-round {
-  width: 2rem;
-  height: 2rem;
+  width: $spacer-lg;
+  height: $spacer-lg;
   margin-right: $spacer;
   flex-shrink: 0;
   border-radius: 50%;
   text-align: center;
-  line-height: 2rem;
+  line-height: $spacer-lg;
 }

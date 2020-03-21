@@ -139,7 +139,6 @@ export default {
           break
         }
       }
-
       if (!hasFailed) {
         this.ephemeral.currentStep += 1 // Show Success step!
       }

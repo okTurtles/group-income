@@ -33,7 +33,7 @@ import { mapGetters } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import PageSection from '@components/PageSection.vue'
-import L from '@view-utils/translations.js'
+import L, { LTags } from '@view-utils/translations.js'
 import currencies from '@view-utils/currencies.js'
 import PaymentsSummary from '@containers/payments/PaymentsSummary.vue'
 
@@ -74,7 +74,7 @@ export default {
 
         copy.monetary = {
           title: L('You need {br_}{amount}', {
-            ...this.LTags(),
+            ...LTags(),
             amount: this.withCurrency(receivingMonetary.needed)
           }),
           status: L('You will receive {amount}.', {
@@ -83,7 +83,7 @@ export default {
         }
       } else if (givingMonetary) {
         const copyMonetaryTitle = (amount) => L('You are pledging {br_}{amount}', {
-          ...this.LTags(),
+          ...LTags(),
           amount: this.withCurrency(amount)
         })
 

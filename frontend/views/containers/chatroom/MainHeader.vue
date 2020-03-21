@@ -64,7 +64,7 @@ export default {
     bottom: -$spacer;
     left: 0;
     height: $spacer;
-    width: calc(100% - #{$spacer}); // so it doesn't get above scrollbar
+    width: calc(100% - #{$spacer-md}); // so it doesn't get above scrollbar
     background: linear-gradient($background, rgba($background, 0));
     pointer-events: none;
   }

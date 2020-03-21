@@ -137,7 +137,10 @@ const proposals = {
       }
       const message = { data, meta: proposal.meta }
       sbp('gi.contracts/group/removeMember/process', message, state)
-      await sbp('gi.contracts/group/removeMember/process/sideEffect', message)
+      await sbp('gi.sideEffects/group/removeMember', {
+        username: data.member,
+        groupId: data.groupId
+      })
     },
     [VOTE_AGAINST]: voteAgainst
   },

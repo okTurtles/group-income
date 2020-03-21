@@ -213,7 +213,7 @@ export default {
 }
 
 .c-sendLink {
-  border-radius: 0.25rem;
+  border-radius: $spacer-xs;
   background-color: $general_2;
   padding: 1.1875rem $spacer;
   margin-top: $spacer;

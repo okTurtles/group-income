@@ -5,7 +5,7 @@ Vue.component('SignupModal', () => import('../views/containers/access/SignupModa
 Vue.component('UserSettingsModal', () => import('../views/containers/user-settings/UserSettingsModal.vue'))
 Vue.component('PasswordModal', () => import('../views/containers/access/PasswordModal.vue'))
 Vue.component('GroupLeaveModal', () => import('../views/containers/group-settings/GroupLeaveModal.vue'))
-Vue.component('GroupDeletionModal', () => import('../views/containers/group-settings/GroupDeletionModal.vue'))
+// Vue.component('GroupDeletionModal', () => import('../views/containers/group-settings/GroupDeletionModal.vue'))
 Vue.component('GroupMembersAllModal', () => import('../views/containers/dashboard/GroupMembersAllModal.vue'))
 Vue.component('InvitationLinkModal', () => import('../views/containers/group-settings/InvitationLinkModal.vue'))
 
@@ -14,13 +14,16 @@ Vue.component('GroupJoinModal', () => import('../views/containers/group-settings
 
 Vue.component('AddMembers', () => import('../views/containers/proposals/AddMembers.vue'))
 Vue.component('MincomeProposal', () => import('../views/containers/proposals/Mincome.vue'))
-Vue.component('PayGroupHistoryModal', () => import('../views/containers/payments/PayGroupHistoryModal.vue'))
+Vue.component('PaymentsHistoryModal', () => import('../views/containers/payments/PaymentsHistoryModal.vue'))
 Vue.component('RemoveMember', () => import('../views/containers/proposals/RemoveMember.vue'))
 Vue.component('RuleAddMemberProposal', () => import('../views/containers/proposals/RuleAddMember.vue'))
 Vue.component('RuleChangeRuleProposal', () => import('../views/containers/proposals/RuleChangeRule.vue'))
 Vue.component('RuleRemoveMemberProposal', () => import('../views/containers/proposals/RuleRemoveMember.vue'))
 
 Vue.component('IncomeDetails', () => import('../views/containers/contributions/IncomeDetails.vue'))
+
+Vue.component('PaymentDetail', () => import('../views/containers/payments/PaymentDetail.vue'))
+Vue.component('RecordPayment', () => import('../views/containers/payments/RecordPayment.vue'))
 
 // TODO Remove after design test period
 Vue.component('DSModalSimple', () => import('../views/containers/design-system/DSModalSimple.vue'))
