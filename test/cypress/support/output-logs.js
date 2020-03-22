@@ -31,7 +31,7 @@ Cypress.on('window:before:load', (window) => {
       // you make to keep track of the logs
       // Use JSON.stringify to avoid [object, object] in the output
       // logs += JSON.stringify(args.join(' ')) + '\n'
-      logs += `::${consoleProperty}:: ${args} \n`
+      logs += `::${consoleProperty}:: ${JSON.stringify(args)} \n`
     }
   })
 })

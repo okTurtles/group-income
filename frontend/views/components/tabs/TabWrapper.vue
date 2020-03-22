@@ -72,7 +72,6 @@ export default {
       }
     }
   },
-
   methods: {
     /**
      * Change the active tab and emit change event.
