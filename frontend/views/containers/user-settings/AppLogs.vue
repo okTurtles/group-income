@@ -136,12 +136,8 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .settings-container {
-  @include tablet {
+  @include desktop {
     padding-top: 1.5rem;
-  }
-
-  .c-title {
-    margin-bottom: 1.5rem;
   }
 }
 
