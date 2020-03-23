@@ -189,11 +189,11 @@ export default {
 
 .dot {
   background-color: $general_0;
-  width: $spacer-sm;
-  height: $spacer-sm;
+  width: 0.5rem;
+  height: 0.5rem;
   border-radius: 50%;
   overflow: hidden;
-  margin: $spacer-xs;
+  margin: 0.25rem;
 
   &.is-active {
     background-color: $primary_0;

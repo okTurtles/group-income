@@ -235,8 +235,8 @@ export default {
 }
 
 .c-logo {
-  min-width: $spacer-xxl;
-  width: $spacer-xxl;
+  min-width: 8rem;
+  width: 8rem;
 }
 
 .c-toggle {

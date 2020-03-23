@@ -69,7 +69,7 @@ export default {
 .c-user {
   display: flex;
   flex-direction: column;
-  margin-left: $spacer-sm;
+  margin-left: 0.5rem;
   max-width: 5rem;
   white-space: nowrap;
   line-height: 1.3rem;

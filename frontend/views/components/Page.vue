@@ -120,7 +120,7 @@ $pagePaddingDesktop: 5.5rem;
   }
 
   @include tablet {
-    width: calc(100% - #{4rem});
+    width: calc(100% - 4rem);
   }
 
   @include desktop {
@@ -135,7 +135,7 @@ $pagePaddingDesktop: 5.5rem;
   grid-area: p-header;
   transition: padding ease-out 300ms;
   text-align: center;
-  min-height: $spacer-xl;
+  min-height: 4rem;
 
   @include touch {
     display: flex;

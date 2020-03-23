@@ -443,7 +443,6 @@ page(
         tr
           td
             pre
-              | 2rem
               |   badge(type='default') 3
           td
             span.c-badge-container
@@ -451,7 +450,6 @@ page(
         tr
           td
             pre
-              | 2rem
               |   badge(type='compact') 3
           td
             span.c-badge-container
@@ -1429,8 +1427,8 @@ table {
 
     .c-svg {
       max-width: none;
-      width: $spacer-xxl;
-      height: $spacer-xxl;
+      width: 8rem;
+      height: 8rem;
     }
   }
 

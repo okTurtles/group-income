@@ -101,7 +101,7 @@ export default {
       top: -6.5rem;
       right: 0;
       align-items: flex-end;
-      margin-bottom: -$spacer-sm;
+      margin-bottom: -0.5rem;
     }
   }
 

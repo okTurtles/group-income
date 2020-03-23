@@ -69,7 +69,7 @@ export default {
     width: 100%;
 
     i {
-      margin-right: $spacer-sm;
+      margin-right: 0.5rem;
     }
   }
 }

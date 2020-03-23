@@ -268,7 +268,7 @@ export default {
   padding: 1rem 0 1.5rem 0;
 
   button {
-    margin-top: -$spacer-xs;
+    margin-top: -0.25rem;
   }
 
   @include tablet {
