@@ -42,7 +42,11 @@ function captureLog (type, ...msg) {
 
   verifyLogsSize()
 
-  sbp('okTurtles.events/emit', CAPTURED_LOGS, lastEntry)
+  // To avoid infinite loop because we log all selector calls, we run sbp calls
+  // here in a roundabout way by getting the function to which they're mapped.
+  // The reason this works is because the entire `sbp` domain is blacklisted
+  // from being logged in main.js.
+  sbp('sbp/selectors/fn', 'okTurtles.events/emit')(CAPTURED_LOGS, lastEntry)
 }
 
 function verifyLogsSize () {

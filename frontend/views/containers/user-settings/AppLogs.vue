@@ -16,6 +16,9 @@
           label.checkbox
             input.input(type='checkbox' name='filter' v-model='form.filter' value='info')
             i18n Info
+          label.checkbox
+            input.input(type='checkbox' name='filter' v-model='form.filter' value='log')
+            i18n Log
 
         button.is-small.c-download(@click='downloadLogs')
           i.icon-download.is-prefix.c-icon
