@@ -414,6 +414,8 @@ const actions = {
         console.error(`login: lost current identity state somehow for ${user.username} / ${user.identityContractID}! attempting resync...`)
         await sbp('state/enqueueContractSync', user.identityContractID)
       }
+    } else {
+      captureLogsStart()
     }
     await sbp('gi.db/settings/save', SETTING_CURRENT_USER, user.username)
     commit('login', user)
@@ -428,9 +430,11 @@ const actions = {
     for (const contractID in state.contracts) {
       commit('removeContract', contractID)
     }
-    captureLogsPause()
     commit('logout')
-    Vue.nextTick(() => sbp('okTurtles.events/emit', EVENTS.LOGOUT))
+    Vue.nextTick(() => {
+      sbp('okTurtles.events/emit', EVENTS.LOGOUT)
+      captureLogsPause()
+    })
   },
   // persisting the state
   async saveSettings (

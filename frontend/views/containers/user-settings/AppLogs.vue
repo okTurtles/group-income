@@ -5,13 +5,13 @@
         fieldset.c-filters
           legend.sr-only Visible logs
           label.checkbox
-            input.input(type='checkbox' name='filter' v-model='filter' value='error')
+            input.input(type='checkbox' name='filter' v-model='form.filter' value='error')
             i18n Errors
           label.checkbox
-            input.input(type='checkbox' name='filter' v-model='filter' value='warn')
+            input.input(type='checkbox' name='filter' v-model='form.filter' value='warn')
             i18n Warnings
           label.checkbox
-            input.input(type='checkbox' name='filter' v-model='filter' value='debug')
+            input.input(type='checkbox' name='filter' v-model='form.filter' value='debug')
             i18n Debug
 
         button.is-small.c-download(@click='downloadLogs')
@@ -21,7 +21,7 @@
         a(ref='linkDownload' hidden)
 
       textarea.textarea.c-logs(ref='textarea' rows='12' readonly)
-        | {{ prettyLog }}
+        | {{ prettyLogs }}
 
       i18n.link(tag='a' @click='openTroubleshooting') Troubleshooting
       br
@@ -44,27 +44,40 @@ export default {
   components: {},
   data () {
     return {
-      filter: [],
-      logs: []
+      form: {
+        filter: []
+      },
+      ephemeral: {
+        logs: []
+      }
     }
   },
   mounted () {
-    this.filter = this.ourUserIdentityContract.settings.appLogsFilter
-    this.setLogs()
+    this.form.filter = this.ourUserIdentityContract.settings.appLogsFilter
     sbp('okTurtles.events/on', CAPTURED_LOGS, this.addLog)
+
+    const logs = []
+    let lastEntry = localStorage.getItem('giConsole/lastEntry')
+    do {
+      const entry = JSON.parse(localStorage.getItem(`giConsole/${lastEntry}`)) || {}
+      if (!entry) break
+      logs.push(entry)
+      lastEntry = entry.prev
+    } while (lastEntry)
+    this.ephemeral.logs = logs.reverse()
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', CAPTURED_LOGS)
   },
   watch: {
-    async filter (value) {
+    async 'form.filter' (value) {
       sbp('okTurtles.events/emit', SET_APP_LOGS_FILTER, value)
       await sbp('gi.actions/user/updateSettings',
         { appLogsFilter: value },
         this.$store.state.loggedIn.identityContractID
       )
     },
-    prettyLog () {
+    prettyLogs () {
       // Automatically scroll textarea to the bottom
       this.$nextTick(() => {
         if (this.$refs.textarea) {
@@ -77,35 +90,25 @@ export default {
     ...mapGetters([
       'ourUserIdentityContract'
     ]),
-    prettyLog () {
+    prettyLogs () {
       const isEntryNew = (type) => ['NEW_SESSION', 'NEW_VISIT'].includes(type)
-      return this.logs
+      return this.ephemeral.logs
         .filter(({ type }) => {
-          return this.filter.includes(type) || isEntryNew(type)
+          return this.form.filter.includes(type) || isEntryNew(type)
         })
         .map(({ type, msg }) => {
           return isEntryNew(type)
-            ? `--------------- \n [${type}] :: ${msg}`
-            : `[${type}] :: ${msg.map(something => JSON.stringify(something)).join(' ')}`
+            ? `--------------- \n [${type}] ${msg}`
+            : `[${type}] ${msg.map(part => JSON.stringify(part)).join(' ')}`
         })
         .join('\n')
     }
   },
   methods: {
-    setLogs () {
-      const logs = []
-      let lastEntry = localStorage.getItem('giConsole/lastEntry')
-      do {
-        const entry = JSON.parse(localStorage.getItem(`giConsole/${lastEntry}`)) || {}
-        logs.push(entry)
-        lastEntry = entry.prev
-      } while (lastEntry)
-      this.logs = logs
-    },
     addLog (logHash) {
       const entry = JSON.parse(localStorage.getItem(`giConsole/${logHash}`))
       if (entry) {
-        this.logs.push(entry)
+        this.ephemeral.logs.push(entry)
       }
     },
     openTroubleshooting () {
@@ -123,7 +126,7 @@ export default {
     // DELETE BEFORE MERGE
     _clearLogs () {
       clearLogs()
-      this.logs = []
+      this.ephemeral.logs = []
     },
     _createLog (type) {
       console[type]('This is a new log of type:', type)

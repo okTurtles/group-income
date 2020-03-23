@@ -9,19 +9,23 @@ import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '~/frontend/utils/events.js'
 const ENTRIES_LIMIT = 4000
 const ENTRIES_MARKER = 1000
 
-let isCapturing = true
-let isConsoleOveride = false
+const getMarkers = () => JSON.parse(localStorage.getItem('giConsole/markers')) || []
+
+// these are initialized at captureLogsStart()
+let isCapturing = false
+let isConsoleOveridden = false
 let lastEntry = null
 let entriesCount = null
 let appLogsFilter = []
 
-function hashFn () {
-  // REVIEW - a better hash?
-  return `${Date.now()}_${Math.floor(Math.random() * 100000)}`
-}
-
 function captureLog (type, ...msg) {
-  const logEntry = hashFn()
+  const logEntry = `${Date.now()}_${Math.floor(Math.random() * 100000)}` // uuid
+
+  // detect when is an Error and capture it property
+  // ex: uncaught Vue errors or custom try/catch errors.
+  if (msg[1] instanceof Error) {
+    msg[1] = JSON.stringify(msg[1].stack) || msg[1]
+  }
 
   localStorage.setItem(`giConsole/${logEntry}`,
     JSON.stringify({ type, msg, prev: lastEntry })
@@ -40,14 +44,14 @@ function captureLog (type, ...msg) {
 
 function verifyLogsSize () {
   if (entriesCount % ENTRIES_MARKER === 0) {
+    const markers = getMarkers()
     // Save entry as a marker to be later deleted when logs are too big.
-    const markers = JSON.parse(localStorage.getItem('giConsole/markers')) || []
     markers.push(lastEntry)
     localStorage.setItem('giConsole/markers', JSON.stringify(markers))
   }
 
   if (entriesCount >= ENTRIES_LIMIT) {
-    const markers = JSON.parse(localStorage.getItem('giConsole/markers')) || []
+    const markers = getMarkers()
     let toDelete = ENTRIES_MARKER // delete the latest x entries
     let prevEntry = markers.shift()
     do {
@@ -72,7 +76,7 @@ export function captureLogsStart () {
   // NEW_VISIT -> The user comes from an ongoing session (refresh or login)
   const isNewSession = !sessionStorage.getItem('NEW_SESSION')
   if (isNewSession) { sessionStorage.setItem('NEW_SESSION', 1) }
-  captureLog(isNewSession ? 'NEW_SESSION' : 'NEW_VISIT', Date.now())
+  captureLog(isNewSession ? 'NEW_SESSION' : 'NEW_VISIT', new Date(Date.now()).toISOString())
 
   // Subscribe to appLogs applied filter
   const state = sbp('state/vuex/state')
@@ -83,10 +87,10 @@ export function captureLogsStart () {
   console.debug('Starting to capture logs of type:', appLogsFilter)
 
   // Override the console to start capturing the logs
-  if (!isConsoleOveride) {
+  if (!isConsoleOveridden) {
     // avoid duplicated captures, in case captureLogsStart
     // is called multiple times. (ex: login twice in the same visit)
-    isConsoleOveride = true
+    isConsoleOveridden = true
 
     const _cError = console.error
     const _cWarn = console.warn
