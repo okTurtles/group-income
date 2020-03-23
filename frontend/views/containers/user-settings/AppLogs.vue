@@ -31,11 +31,13 @@
         button.is-small.is-outlined(@click='_createLog("error")') Log error
         button.is-small.is-outlined(@click='_createLog("warn")') Log warn
         button.is-small.is-outlined(@click='_createLog("debug")') Log debug
+        button.is-small.is-outlined(@click='_createLog("log")') Log log
+        button.is-small.is-outlined(@click='_createLog("info")') Log info
         button.is-small.is-outlined(@click='_clearLogs') Clear Logs
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
+import { mapState, mapMutations, mapActions } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '@utils/events.js'
 import { downloadLogs, clearLogs } from '@model/captureLogs.js'
@@ -52,8 +54,8 @@ export default {
       }
     }
   },
-  mounted () {
-    this.form.filter = this.ourUserIdentityContract.settings.appLogsFilter
+  created () {
+    this.form.filter = this.appLogsFilter
     sbp('okTurtles.events/on', CAPTURED_LOGS, this.addLog)
 
     const logs = []
@@ -70,12 +72,15 @@ export default {
     sbp('okTurtles.events/off', CAPTURED_LOGS)
   },
   watch: {
-    async 'form.filter' (value) {
-      sbp('okTurtles.events/emit', SET_APP_LOGS_FILTER, value)
-      await sbp('gi.actions/user/updateSettings',
-        { appLogsFilter: value },
-        this.$store.state.loggedIn.identityContractID
-      )
+    async 'form.filter' (filters) {
+      console.log('filttter', filters)
+      if (!filters) return
+
+      // update Vuex state with new filters
+      this.setAppLogsFilters(filters)
+      // and save the new settings on localStorage
+      await this.saveSettings()
+      sbp('okTurtles.events/emit', SET_APP_LOGS_FILTER, filters)
     },
     prettyLogs () {
       // Automatically scroll textarea to the bottom
@@ -87,8 +92,8 @@ export default {
     }
   },
   computed: {
-    ...mapGetters([
-      'ourUserIdentityContract'
+    ...mapState([
+      'appLogsFilter'
     ]),
     prettyLogs () {
       const isEntryNew = (type) => ['NEW_SESSION', 'NEW_VISIT'].includes(type)
@@ -105,6 +110,12 @@ export default {
     }
   },
   methods: {
+    ...mapMutations([
+      'setAppLogsFilters'
+    ]),
+    ...mapActions([
+      'saveSettings'
+    ]),
     addLog (logHash) {
       const entry = JSON.parse(localStorage.getItem(`giConsole/${logHash}`))
       if (entry) {

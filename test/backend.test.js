@@ -48,7 +48,8 @@ const vuexState = {
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
   theme: 'blue',
-  fontSize: 1
+  fontSize: 1,
+  appLogsFilter: ['error', 'warn']
 }
 
 sbp('sbp/selectors/overwrite', {

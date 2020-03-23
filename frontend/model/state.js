@@ -39,7 +39,8 @@ const initialState = {
   loggedIn: false, // false | { username: string, identityContractID: string }
   theme: 'blue',
   reducedMotion: false,
-  fontSize: 1
+  fontSize: 1,
+  appLogsFilter: ['error', 'warn']
 }
 
 // guard all sbp calls for contract actions with this function
@@ -187,6 +188,9 @@ const mutations = {
   },
   setFontSize (state, fontSize) {
     state.fontSize = fontSize
+  },
+  setAppLogsFilters (state, filters) {
+    state.appLogsFilter = filters
   }
 }
 // https://vuex.vuejs.org/en/getters.html

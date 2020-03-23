@@ -67,6 +67,7 @@ function verifyLogsSize () {
 }
 
 export function captureLogsStart () {
+  console.debug('captureLogsStart called')
   isCapturing = true
   lastEntry = localStorage.getItem('giConsole/lastEntry')
   entriesCount = +localStorage.getItem('giConsole/count') || 0
@@ -78,10 +79,9 @@ export function captureLogsStart () {
   if (isNewSession) { sessionStorage.setItem('NEW_SESSION', 1) }
   captureLog(isNewSession ? 'NEW_SESSION' : 'NEW_VISIT', new Date(Date.now()).toISOString())
 
-  // Subscribe to appLogs applied filter
+  // Subscribe to appLogsFilter
   const state = sbp('state/vuex/state')
-  const userContract = state[state.loggedIn.identityContractID] || {}
-  appLogsFilter = (userContract.settings || {}).appLogsFilter || []
+  appLogsFilter = state.appLogsFilter || []
   sbp('okTurtles.events/on', SET_APP_LOGS_FILTER, filter => { appLogsFilter = filter })
 
   console.debug('Starting to capture logs of type:', appLogsFilter)
@@ -92,39 +92,18 @@ export function captureLogsStart () {
     // is called multiple times. (ex: login twice in the same visit)
     isConsoleOveridden = true
 
-    const _cError = console.error
-    const _cWarn = console.warn
-    const _cDebug = console.debug
-    const guardCapture = (type, args) => {
-      if (isCapturing && appLogsFilter.includes(type)) {
-        captureLog(type, ...args)
+    // NOTE: Find a way to capture logs without messing up with log file location.
+    // console.log() doesnt include stack trace, so when logged, we can't access
+    // where the log came from (file name), which difficults debugging if needed.
+    window.console = new Proxy(window.console, {
+      get: (obj, type) => (...args) => {
+        obj[type](...args)
+        if (isCapturing && appLogsFilter.includes(type)) {
+          captureLog(type, ...args)
+        }
       }
-    }
-
-    console.error = function () {
-      _cError.apply(console, arguments)
-      guardCapture('error', arguments)
-    }
-    console.warn = function () {
-      _cWarn.apply(console, arguments)
-      guardCapture('warn', arguments)
-    }
-    console.debug = function () {
-      _cDebug.apply(console, arguments)
-      guardCapture('debug', arguments)
-    }
+    })
   }
-
-  // // REMOVE THIS: It overrides all types,
-  // // (including log and info). It's not needed.
-  // window.console = new Proxy(window.console, {
-  //   get: (obj, type) => (...args) => {
-  //     obj[type](...args)
-  //     if (isCapturing && appLogsFilter.includes(type)) {
-  //       captureLog(type, ...args)
-  //     }
-  //   }
-  // })
 }
 
 export function captureLogsPause () {

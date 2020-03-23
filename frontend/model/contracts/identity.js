@@ -20,9 +20,6 @@ DefineContract({
         })
       }),
       process ({ data }, { state }) {
-        Vue.set(state, 'settings', {
-          appLogsFilter: ['error', 'warn']
-        })
         for (const key in data) {
           Vue.set(state, key, data[key])
         }
