@@ -123,13 +123,12 @@ export default {
       }
     },
     openTroubleshooting () {
-      alert('TODO link redirect. How to do this...')
-      // this.$router.push({
-      //   query: {
-      //     ...this.$route.query,
-      //     section: 'troubleshooting'
-      //   }
-      // })
+      this.$router.push({
+        query: {
+          ...this.$route.query,
+          section: 'troubleshooting'
+        }
+      })
     },
     downloadLogs () {
       downloadLogs('gi_logs.txt', this.$refs.linkDownload)

@@ -15,13 +15,13 @@
         hr.tab-nav-separator(v-else)
 
         a.tab-link.no-border(
-          v-for='(links, index) in tabItem.links'
+          v-for='(link, index) in tabItem.links'
           :key='index'
-          :class='{ "is-active": activeTab === links.index, "has-text-white": isDarkTheme}'
-          :data-test='`link-${links.url}`'
-          @click='tabClick(links)'
+          :class='{ "is-active": activeTab === link.index, "has-text-white": isDarkTheme}'
+          :data-test='`link-${link.url}`'
+          @click='tabClick(link)'
         )
-          | {{ links.title }}
+          | {{ link.title }}
           .c-icons
             i.icon-chevron-right
 
@@ -69,6 +69,22 @@ export default {
     tabItems () {
       if (this.tabItems.length) {
         this.tabItems[this.activeTab].isActive = true
+      }
+    },
+    '$route' (to, from) {
+      const section = to.query.section
+      if (!section) return
+
+      let foundTheTab = false
+      for (const tabItem of this.tabNav) {
+        for (const link of tabItem.links) {
+          if (this.activeTab !== link.index && link.url === section) {
+            this.changeTab(link.index)
+            foundTheTab = true
+            break
+          }
+        }
+        if (foundTheTab) break
       }
     }
   },
