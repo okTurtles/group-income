@@ -1,0 +1,26 @@
+.selectsolo {
+  position: relative;
+  border: none;
+  width: max-content;
+
+  &::after {
+    @include icon(angle-down);
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    transform: translateY(calc(-50% + 1px));
+    pointer-events: none;
+  }
+
+  .select {
+    display: block;
+    height: 1.7rem;
+    border-radius: 1.7rem;
+    padding: 0 1.7rem 0 1rem;
+    font-family: "Poppins";
+
+    &:focus {
+      border-radius: 0.8rem 0.8rem 0 0;
+    }
+  }
+}

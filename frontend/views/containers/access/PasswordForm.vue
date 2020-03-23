@@ -1,7 +1,7 @@
 <template lang='pug'>
 label.field
   .label(v-if='label') {{ label }}
-  .input-combo(
+  .inputgroup(
     v-error:[name]='{ attrs: { "data-test": "badPassword" }}'
   )
     input.input(
@@ -14,14 +14,15 @@ label.field
       @input='debounceField("password")'
       @blur='updateField("password")'
     )
-    button.is-icon(
-      type='button'
-      v-if='hasIconRight'
-      :aria-label='L("Toggle password visibility")'
-      :aria-pressed='!isLock'
-      @click.prevent='isLock = !isLock'
-    )
-      i(:class='isLock ? "icon-eye" : "icon-eye-slash"')
+    .addons
+      button.is-icon(
+        type='button'
+        v-if='hasIconRight'
+        :aria-label='L("Toggle password visibility")'
+        :aria-pressed='!isLock'
+        @click.prevent='isLock = !isLock'
+      )
+        i(:class='isLock ? "icon-eye" : "icon-eye-slash"')
 </template>
 
 <script>

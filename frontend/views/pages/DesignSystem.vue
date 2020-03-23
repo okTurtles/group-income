@@ -9,7 +9,7 @@ page(
     | A design system exists to help you build more cohesive interfaces.
     br
     | Follow the guidelines for the most common elements: Typography, Spacing, Colors, etc...
-
+  br
   template(#sidebar='')
     #c-design-system-sidebar
 
@@ -85,7 +85,7 @@ page(
         tr
           td
             pre .has-text-danger
-          td.has-text-danger Ups! something went wrong.
+          td.has-text-danger Ups! something went wrong..
         tr
           td
             pre .has-ellipsis
@@ -148,18 +148,12 @@ page(
     section.card
       h2.is-title-2.card-header Icons
       p
-        | This is only the currently used icons (at _icons.scss).
+        | This is only the currently used icons (at _icons.scss). A complete list can be find here:&nbsp;
         br
-        | A complete list can be find here:&nbsp;
-        br
-        a.link(href='https://fortawesome.com/sets/font-awesome-5-solid' target='_blank')
-          | https://fortawesome.com/sets/font-awesome-5-solid
+        a.link(href='https://fortawesome.com/sets/font-awesome-5-solid' target='_blank') fortawesome 5 solid
         |  or&nbsp;
-        br
-        a.link(href='https://fortawesome.com/sets/font-awesome-5-regular' target='_blank')
-          | https://fortawesome.com/sets/font-awesome-5-regular
-        br
-
+        a.link(href='https://fortawesome.com/sets/font-awesome-5-regular' target='_blank') fortawesome 5 regular
+      br
       table
         thead
           th code
@@ -706,10 +700,10 @@ page(
       h2.is-title-2.card-header Forms
 
       p
-        | The input's width depends on their container #[br]
-        | For consistency, add #[code .field] to have a margin bottom of 1rem #[br]
-        | For A11Y reasons, everything related to a form element, (label text, input element, helper text and error text) should be placed inside its respective #[code <\label \>] element.
-        | When an element is disabled, required or as an error, add the respective HTML attributes! #[code disabled, aria-required, or aria-describedby="error"]
+        | - The input's width depends on their container #[br]
+        | - Use #[code .field] to have a margin bottom of 1rem #[br]
+        | - #[b Accessibility:] Every form field must have a respective label associated, even if hidden using #[code .sr-only].
+        | Whenever possible, use the respective HTML attributes to describe the field status (type, disabled, required, error, etc...)
       br
       button.is-small.is-outlined.is-danger(
         @click='ephemeral.forms.hasError = !ephemeral.forms.hasError'
@@ -722,9 +716,8 @@ page(
           th demo
         tr
           td
-            h3.is-title-3 Textbox
-        tr
-          td
+            h3.is-title-3 Input
+            br
             pre
               | label.field
               |   .label Your username
@@ -737,45 +730,175 @@ page(
               input.input(
                 placeholder='Placeholder'
                 :class='{ error: ephemeral.forms.hasError }'
+                :aria-invalid='ephemeral.forms.hasError'
               )
               span.error(v-if='ephemeral.forms.hasError') Name already taken
-              .helper Pick a name without spaces
-
+              .helper Pick a name without spaces.
         tr
           td
+            h3.is-title-3 Textarea
+            br
             pre
               | label.field
               |   .label Explain why
-              |   textarea.error(rows='4')
+              |   textarea.textarea.error(rows='4')
           td
             label.field
               .label Explain why
-              textarea(placeholder='Placeholder' rows='4'
+              textarea.textarea(placeholder='Placeholder' rows='4'
                 :class='{ error: ephemeral.forms.hasError }'
               )
-              span.error(v-if='ephemeral.forms.hasError') You can do better than that
-
+              span.error(v-if='ephemeral.forms.hasError') You can do better than that.
         tr
           td
             h3.is-title-3 Selectbox
-        tr
-          td
+            br
             pre
               | label.field
               |   .label Select currency
-              |   .select-wrapper.error
-              |     select
-              |       option USD
+              |   .selectbox.error
+              |     select.select
+              |       option $ USD
           td
             label.field
             .label Select currency
-            .select-wrapper(:class='{ error: ephemeral.forms.hasError }')
-              select
-                option USD
-                option BTC
-                option EUR
-            span.error(v-if='ephemeral.forms.hasError') Something went wrong
+            .selectbox(:class='{ error: ephemeral.forms.hasError }')
+              select.select
+                option $ USD
+                option Ƀ BTC
+                option € EUR
+            span.error(v-if='ephemeral.forms.hasError') Something went wrong.
+        tr
+          td(colspan='2')
+            h3.is-title-3 Select Group
+            p Use #[code fieldset] to group related inputs. Each input must have an individual label. If a label has multiple associated inputs, it won't work on iPhone. A simple but effective solution is to add #[code aria-label] to each input.&nbsp;
+              a.link(href='https://codepen.io/sandrina-p/pen/oNXyGPE') See reference.
+            br
+        tr
+          td
+            pre
+              | fieldset.field
+              |   .label What's your mincome
+              |   .selectgroup.error
+              |     input.input(aria-label='Amount')
+              |     select.select(aria-label='Currency')
+              |       option $ USD
+          td
+            fieldset.field
+              .label What's your mincome
+              .selectgroup(:class='{ error: ephemeral.forms.hasError }')
+                input.input(aria-label='Amount')
+                select.select(aria-label='Currency')
+                  option $ USD
+                  option Ƀ BTC
+                  option € EUR
+              span.error(v-if='ephemeral.forms.hasError') Something went wrong.
+        tr
+          td
+            pre
+              | fieldset.field
+              |   .label Payment method
+              |   .selectgroup.is-reversed
+              |     select.select(aria-label='Method')
+              |       option(disabled='true') Choose...
+              |       option Bitcoin
+              |     input.input(aria-label='Value')
+          td
+            fieldset.field
+              .label Payment method
+              .selectgroup.is-reversed.c-payments(:class='{ error: ephemeral.forms.hasError }')
+                select.select(
+                  v-model='form.selectPayment'
+                  :class='{ "is-empty": form.selectPayment === "choose"}'
+                  aria-label='Method'
+                  selected='choose')
+                  option(value='choose' disabled='true') Choose...
+                  option Bitcoin
+                  option Paypal
+                  option Other
+                input.input(aria-label='Value')
+              span.error(v-if='ephemeral.forms.hasError') Something went wrong.
+        tr
+          td
+            h3.is-title-3 Input Group
+            h4.is-title-4 With suffix
+            br
+            pre
+              | label.field
+              |   .label New Amount
+              |   .inputgroup.error
+              |     input.input
+              |     .suffix USD
+          td
+            label.field
+              .label Mincome
+              .inputgroup(:class='{ error: ephemeral.forms.hasError }')
+                input.input(type='text' placeholder='Amount')
+                .suffix USD
+              span.error(v-if='ephemeral.forms.hasError') Something went wrong.
+        tr
+          td
+            h4.is-title-4 With shifted btn
+            br
+            pre
+              | label.field
+              |   .label Add invitee
+              |   .inputgroup
+              |     input.input
+              |     button.is-icon-small.is-btn-shifted(
+              |       :aria-label='Remove member'
+              |     )
+              |       i.icon-times
+          td
+            label.field
+              .label Add invitee
+              .inputgroup(:class='{ error: ephemeral.forms.hasError }')
+                input.input(type='text' placeholder='Member name')
+                button.is-icon-small.is-btn-shifted(
+                  :aria-label='L("Remove member")'
+                )
+                  i.icon-times
+              span.error(v-if='ephemeral.forms.hasError') Something went wrong.
 
+        tr
+          td
+            h4.is-title-4 With addons
+            br
+            pre
+              | label.field
+              |   .label Password
+              |   .inputgroup
+              |     input.input
+              |     .addons
+              |       button.is-icon(
+              |         :aria-label='Show password'
+              |         :aria-pressed='false'
+              |       )
+              |         i.icon-eye
+          td
+            label.field
+              .label Password
+              .inputgroup(:class='{ error: ephemeral.forms.hasError }')
+                input.input(:type='ephemeral.passwordHidden ? "password" : "text"')
+                .addons
+                  button.is-icon(
+                    aria-label='Show password'
+                    :aria-pressed='false'
+                    @click='ephemeral.passwordHidden = !ephemeral.passwordHidden'
+                  )
+                    i(:class='ephemeral.passwordHidden ? "icon-eye" : "icon-eye-slash"')
+              span.error(v-if='ephemeral.forms.hasError') Wrong password.
+
+            label.field
+              .label Your message
+              .inputgroup(:class='{ error: ephemeral.forms.hasError }')
+                input.input(type='text' placeholder='Placeholder')
+                .addons
+                  button.is-icon(aria-label='Copy text')
+                    i.icon-copy
+                  button.is-icon(aria-label='Create pool')
+                    i.icon-poll
+              span.error(v-if='ephemeral.forms.hasError') Say something.
         tr
           td
             h3.is-title-3 Radio
@@ -836,106 +959,63 @@ page(
               label.checkbox
                 input.input(type='checkbox' name='browser' value='Edge' disabled)
                 span Internet Explorer
-
-        tr
-          td
-            h3.is-title-3 Switch
-        tr
-          td
-            pre
-              | pre
-              |   input.switch(
-              |   type='checkbox'
-              |   name='switch'
-              |   @change=''
-              | )
-              | i18n.sr-only(tag='label' for='displayComment') Toggle me
-          td
-            input.switch(
-              type='checkbox'
-              name='switch'
-              @change=''
-            )
-            i18n.sr-only(tag='label' for='displayComment') Toggle me
-
-        tr
-          td
-            h3.is-title-3 Combination
-        tr
-          td
-            pre
-              | label.field
-              |   .label Mincome
-              |   .select-wrapper.error
-              |     input.input
-              |     select
-              |       option USD
-          td
-            label.field
-              .label Mincome
-              .select-wrapper(:class='{ error: ephemeral.forms.hasError }')
-                input.input(placeholder='Amount')
-                select
-                  option USD
-                  option BTC
-                  option EUR
-              span.error(v-if='ephemeral.forms.hasError') Something went wrong
-        tr
-          td
-            pre
-              | label.field
-              |   .label New Amount
-              |   .input-combo.error
-              |     input.input
-              |     .suffix USD
-          td
-            label.field
-              .label New Amount
-              .input-combo(:class='{ error: ephemeral.forms.hasError }')
-                input.input(type='text' placeholder='New amount')
-                .suffix USD
-              span.error(v-if='ephemeral.forms.hasError') Something went wrong
-        tr
-          td
-            pre
-              | label.field
-              |   .label Add invitee
-              |   .input-shifted
-              |     input.input
-              |     button.is-icon-small(
-              |       :aria-label='Remove member'
-              |     )
-              |       i.icon-times
-          td
-            label.field
-              .label Add invitee
-              .input-shifted(:class='{ error: ephemeral.forms.hasError }')
-                input.input(type='text' placeholder='New amount')
-                button.is-icon-small(
-                  :aria-label='L("Remove member")'
+          tr
+            td
+              h3.is-title-3 Switch
+          tr
+            td
+              pre
+                | label
+                |   i18n.sr-only Send donation
+                |   input.switch(
+                |     type='checkbox'
+                |     name='switch'
+                |     @change=''
+                |   )
+            td
+              label
+                i18n.sr-only Send donation
+                input.switch(
+                  type='checkbox'
                 )
-                  i.icon-times
-              span.error(v-if='ephemeral.forms.hasError') Something went wrong
         tr
           td
-            | A11Y: Add #[code aria-label] to button.
-            pre
-              | label.field
-              |   .label Password
-              |   .input-combo.error
-              |     input.input(type='text')
-              |     button.is-icon(
-              |       aria-label='Show password'
-              |     )
-              |       i.icon-eye
+            tr
+              h3.is-title-3 Selectsolo
+          tr
+            td
+              pre
+                | .selectsolo
+                |   select.select
+                |     option 10 results
+
+            td
+              .selectsolo
+                select.select
+                  option(
+                    v-for='count in [10, 20, 30]'
+                    :index='count'
+                    :value='count'
+                  ) {{ count }} results
+        tr
           td
-            label.field
-              .label Password
-              .input-combo(:class='{ error: ephemeral.forms.hasError }')
-                input.input(type='text' placeholder='Placeholder')
-                button.is-icon(aria-label='Show password')
-                  i.icon-eye
-            span.error(v-if='ephemeral.forms.hasError') Invalid password
+            tr
+              h3.is-title-3 Search (component)
+          tr
+            td
+              pre
+                | search(
+                |   label='Search for a payment'
+                |   placeholder='Search...'
+                |   value=""
+                | )
+
+            td
+              search(
+                label='Search for a payment'
+                placeholder='Search...'
+                v-model='form.searchValue'
+              )
 
   article#tabs
     section.card
@@ -999,15 +1079,37 @@ page(
           th demo
         tr
           td
-            code
-              | sbp('state/vuex/dispatch', 'login',
-              br
-              |   { username: 'TestUser', identityContractID }
-              br
-              | )
+            pre
+              | menu-parent
+              |   menu-trigger.is-icon-small(
+              |    :aria-label='L("Show info")
+              |   )
+              |     i.icon-ellipsis-v
+              |   menu-content
+              |     ul
+              |       menu-item(
+              |         tag='button'
+              |         item-id='profile'
+              |         icon='info'
+              |       ) Edit profile
           td
-            button(@click='login')
-              i18n Open Menu
+            menu-parent
+              menu-trigger.is-icon-small(:aria-label='L("Show info")')
+                i.icon-ellipsis-v
+
+              menu-content.c-menu-content
+                ul
+                  menu-item(
+                    tag='button'
+                    item-id='profile'
+                    icon='pencil-alt'
+                  ) Edit profile
+
+                  menu-item(
+                    tag='button'
+                    item-id='message'
+                    icon='comment'
+                  ) Send message
 
   article#modal
     section.card
@@ -1094,13 +1196,15 @@ page(
 <script>
 import Page from '@components/Page.vue'
 import sbp from '~/shared/sbp.js'
+import Badge from '@components/Badge.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import Tooltip from '@components/Tooltip.vue'
-import Badge from '@components/Badge.vue'
-import LinkToCopy from '@components/LinkToCopy.vue'
 import CalloutCard from '@components/CalloutCard.vue'
+import LinkToCopy from '@components/LinkToCopy.vue'
+import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
+import Tooltip from '@components/Tooltip.vue'
+import Search from '@components/Search.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgAccess from '@svgs/access.svg'
 import SvgBitcoin from '@svgs/bitcoin.svg'
@@ -1211,10 +1315,12 @@ export default {
           }
         ]
       },
+      form: {
+        searchValue: '',
+        selectPayment: 'choose'
+      },
       ephemeral: {
-        btns: {
-          isLoading: 'false'
-        },
+        passwordHidden: true,
         forms: {
           hasError: false,
           isDisabled: false
@@ -1225,13 +1331,18 @@ export default {
   },
   components: {
     Page,
-    CalloutCard,
+    Badge,
     BannerSimple,
     BannerScoped,
     ButtonSubmit,
-    Tooltip,
-    Badge,
+    CalloutCard,
     LinkToCopy,
+    MenuParent,
+    MenuTrigger,
+    MenuContent,
+    MenuItem,
+    Search,
+    Tooltip,
     SvgHello
   },
   mounted () {
@@ -1294,6 +1405,10 @@ export default {
 $pagePadding: 1rem;
 $pagePaddingTablet: 24px;
 $pagePaddingDesktop: 75px;
+
+.p-design-system ::v-deep .p-main {
+  max-width: 70rem;
+}
 
 article .is-title-3 {
   margin-top: $spacer;
@@ -1406,6 +1521,16 @@ table {
   }
 }
 
+.c-payments {
+  .select {
+    min-width: 7rem;
+  }
+
+  &::after { // icon-sort-down
+    left: 5.5rem;
+  }
+}
+
 .c-svg {
   width: 6rem;
   height: 6rem;
@@ -1454,6 +1579,11 @@ table {
     padding-top: $spacer-sm;
     text-align: left;
   }
+}
+
+.c-menu-content {
+  width: 12rem;
+  margin-left: 2rem;
 }
 
 #c-design-system-sidebar {

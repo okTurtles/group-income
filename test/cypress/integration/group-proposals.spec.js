@@ -28,7 +28,7 @@ function tryUnsuccessfullyToProposeNewSimilarMincome () {
   })
 
   cy.getByDT('modalProposal').within(() => {
-    cy.get('input[type="number"][name="mincomeAmount"]')
+    cy.get('input[inputmode="decimal"][name="mincomeAmount"]')
       .type(groupNewMincome)
     cy.getByDT('nextBtn', 'button')
       .click()
@@ -83,7 +83,7 @@ describe('Proposals - Add members', () => {
     })
 
     cy.getByDT('modalProposal').within(() => {
-      cy.get('input[type="number"][name="mincomeAmount"]')
+      cy.get('input[inputmode="decimal"][name="mincomeAmount"]')
         .type(groupNewMincome)
       cy.getByDT('nextBtn', 'button')
         .click()
