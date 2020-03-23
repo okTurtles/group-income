@@ -48,7 +48,6 @@ export default sbp('sbp/selectors/register', {
         invites: {
           [initialInvite.inviteSecret]: initialInvite
         },
-        joined_ms: Date.now(),
         settings: {
           // authorizations: [contracts.CanModifyAuths.dummyAuth()], // TODO: this
           groupName: name,
@@ -99,7 +98,7 @@ export default sbp('sbp/selectors/register', {
     try {
       // post acceptance event to the group contract
       const acceptance = await sbp('gi.contracts/group/inviteAccept/create',
-        { inviteSecret, joined_ms: Date.now() },
+        { inviteSecret },
         groupId
       )
       // let the group know we've accepted their invite

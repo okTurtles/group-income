@@ -334,7 +334,7 @@ const getters = {
     return username => {
       const groupProfile = getters.groupProfile(username)
       const identityState = groupProfile && state[groupProfile.contractID]
-      return identityState ? identityState.attributes : {}
+      return identityState && identityState.attributes
     }
   },
   colors (state) {
