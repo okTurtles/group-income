@@ -101,8 +101,8 @@ export default {
         })
         .map(({ type, msg, timestamp }) => {
           return isEntryNew(type)
-            ? `--------------- \n [${type}] ${timestamp}`
-            : `[${type}] [${timestamp}] ${msg.map(part => JSON.stringify(part)).join(' ')}`
+            ? `--------------- \n ${timestamp} [${type}]`
+            : `${timestamp} [${type}] ${msg.map(part => JSON.stringify(part)).join(' ')}`
         })
         .join('\n')
     }

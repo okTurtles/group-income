@@ -3,7 +3,8 @@
 import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import { DefineContract } from './Contract.js'
-import { objectOf, objectMaybeOf, arrayOf, string, object } from '~/frontend/utils/flowTyper.js'
+import { objectMaybeOf, arrayOf, string, object } from '~/frontend/utils/flowTyper.js'
+import { merge } from '~/frontend/utils/giLodash.js'
 
 DefineContract({
   name: 'gi.contracts/identity',
@@ -12,7 +13,7 @@ DefineContract({
   },
   actions: {
     'gi.contracts/identity': {
-      validate: objectOf({
+      validate: objectMaybeOf({
         attributes: objectMaybeOf({
           name: string,
           email: string,
@@ -20,11 +21,12 @@ DefineContract({
         })
       }),
       process ({ data }, { state }) {
-        // Set default settings to be populated later
-        Vue.set(state.settings, {})
-
-        for (const key in data) {
-          Vue.set(state, key, data[key])
+        const initialState = merge({
+          settings: {},
+          attributes: {}
+        }, data)
+        for (const key in initialState) {
+          Vue.set(state, key, initialState[key])
         }
       }
     },
@@ -45,7 +47,7 @@ DefineContract({
       }
     },
     'gi.contracts/identity/updateSettings': {
-      validate: objectMaybeOf,
+      validate: object,
       process ({ data }, { state }) {
         for (var key in data) {
           Vue.set(state.settings, key, data[key])
