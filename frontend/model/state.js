@@ -40,7 +40,7 @@ const initialState = {
   theme: 'blue',
   reducedMotion: false,
   fontSize: 1,
-  appLogsFilter: ['error', 'warn']
+  appLogsFilter: ['error', 'info', 'warn']
 }
 
 // guard all sbp calls for contract actions with this function

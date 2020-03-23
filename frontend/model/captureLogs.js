@@ -21,14 +21,17 @@ let appLogsFilter = []
 function captureLog (type, ...msg) {
   const logEntry = `${Date.now()}_${Math.floor(Math.random() * 100000)}` // uuid
 
-  // detect when is an Error and capture it property
+  // detect when is an Error and capture it properly
   // ex: uncaught Vue errors or custom try/catch errors.
-  if (msg[1] instanceof Error) {
-    msg[1] = JSON.stringify(msg[1].stack) || msg[1]
-  }
+  msg = msg.map((m) => m instanceof Error ? (JSON.stringify(m.stack) || m) : m)
 
   localStorage.setItem(`giConsole/${logEntry}`,
-    JSON.stringify({ type, msg, prev: lastEntry })
+    JSON.stringify({
+      type,
+      msg,
+      prev: lastEntry,
+      timestamp: new Date().toISOString()
+    })
   )
 
   lastEntry = logEntry
@@ -77,7 +80,7 @@ export function captureLogsStart () {
   // NEW_VISIT -> The user comes from an ongoing session (refresh or login)
   const isNewSession = !sessionStorage.getItem('NEW_SESSION')
   if (isNewSession) { sessionStorage.setItem('NEW_SESSION', 1) }
-  captureLog(isNewSession ? 'NEW_SESSION' : 'NEW_VISIT', new Date(Date.now()).toISOString())
+  captureLog(isNewSession ? 'NEW_SESSION' : 'NEW_VISIT')
 
   // Subscribe to appLogsFilter
   const state = sbp('state/vuex/state')

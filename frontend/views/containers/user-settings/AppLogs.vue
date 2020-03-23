@@ -13,6 +13,9 @@
           label.checkbox
             input.input(type='checkbox' name='filter' v-model='form.filter' value='debug')
             i18n Debug
+          label.checkbox
+            input.input(type='checkbox' name='filter' v-model='form.filter' value='info')
+            i18n Info
 
         button.is-small.c-download(@click='downloadLogs')
           i.icon-download.is-prefix.c-icon
@@ -31,8 +34,8 @@
         button.is-small.is-outlined(@click='_createLog("error")') Log error
         button.is-small.is-outlined(@click='_createLog("warn")') Log warn
         button.is-small.is-outlined(@click='_createLog("debug")') Log debug
-        button.is-small.is-outlined(@click='_createLog("log")') Log log
         button.is-small.is-outlined(@click='_createLog("info")') Log info
+        button.is-small.is-outlined(@click='_createLog("log")') Log log
         button.is-small.is-outlined(@click='_clearLogs') Clear Logs
 </template>
 
@@ -61,7 +64,7 @@ export default {
     const logs = []
     let lastEntry = localStorage.getItem('giConsole/lastEntry')
     do {
-      const entry = JSON.parse(localStorage.getItem(`giConsole/${lastEntry}`)) || {}
+      const entry = JSON.parse(localStorage.getItem(`giConsole/${lastEntry}`))
       if (!entry) break
       logs.push(entry)
       lastEntry = entry.prev
@@ -73,13 +76,8 @@ export default {
   },
   watch: {
     async 'form.filter' (filters) {
-      console.log('filttter', filters)
       if (!filters) return
-
-      // update Vuex state with new filters
       this.setAppLogsFilters(filters)
-      // and save the new settings on localStorage
-      await this.saveSettings()
       sbp('okTurtles.events/emit', SET_APP_LOGS_FILTER, filters)
     },
     prettyLogs () {
@@ -101,10 +99,10 @@ export default {
         .filter(({ type }) => {
           return this.form.filter.includes(type) || isEntryNew(type)
         })
-        .map(({ type, msg }) => {
+        .map(({ type, msg, timestamp }) => {
           return isEntryNew(type)
-            ? `--------------- \n [${type}] ${msg}`
-            : `[${type}] ${msg.map(part => JSON.stringify(part)).join(' ')}`
+            ? `--------------- \n [${type}] ${timestamp}`
+            : `[${type}] [${timestamp}] ${msg.map(part => JSON.stringify(part)).join(' ')}`
         })
         .join('\n')
     }
@@ -157,11 +155,16 @@ export default {
 .c-header {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: space-between;
 }
 
 .c-filters {
   flex-grow: 99; // to be wider than c-download.
+
+  .checkbox:last-child {
+    margin-right: 1rem;
+  }
 }
 
 .c-download {

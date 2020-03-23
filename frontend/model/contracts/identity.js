@@ -20,6 +20,9 @@ DefineContract({
         })
       }),
       process ({ data }, { state }) {
+        // Set default settings to be populated later
+        Vue.set(state.settings, {})
+
         for (const key in data) {
           Vue.set(state, key, data[key])
         }
@@ -42,7 +45,7 @@ DefineContract({
       }
     },
     'gi.contracts/identity/updateSettings': {
-      validate: object,
+      validate: objectMaybeOf,
       process ({ data }, { state }) {
         for (var key in data) {
           Vue.set(state.settings, key, data[key])
