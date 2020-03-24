@@ -68,8 +68,7 @@ export default {
     sbp('okTurtles.events/off', CAPTURED_LOGS)
   },
   watch: {
-    async 'form.filter' (filters) {
-      if (!filters) return
+    'form.filter' (filters) {
       this.setAppLogsFilters(filters)
       sbp('okTurtles.events/emit', SET_APP_LOGS_FILTER, filters)
     },
