@@ -49,7 +49,7 @@ const vuexState = {
   loggedIn: false, // false | { username: string, identityContractID: string }
   theme: 'blue',
   fontSize: 1,
-  appLogsFilter: ['error', 'warn']
+  appLogsFilter: ['error', 'info', 'warn']
 }
 
 sbp('sbp/selectors/overwrite', {
