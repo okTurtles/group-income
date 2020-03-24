@@ -70,7 +70,6 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
 </template>
 
 <script>
-import moment from 'moment'
 import sbp from '~/shared/sbp.js'
 import L, { LTags } from '@view-utils/translations.js'
 import { mapGetters } from 'vuex'
@@ -104,9 +103,6 @@ export default {
       'groupMembersPending',
       'ourUsername'
     ]),
-    now () {
-      return moment()
-    },
     allMembers () {
       return Object.keys({ ...this.groupMembersPending, ...this.groupProfiles })
     },
@@ -140,7 +136,7 @@ export default {
       const weJoined = this.currentGroupState.profiles[this.ourUsername].joined_ms
       const memberJoined = this.currentGroupState.profiles[username].joined_ms
       const joinedAfterUs = weJoined < memberJoined
-      return joinedAfterUs && !moment(memberJoined).isBefore(this.now, 'week')
+      return joinedAfterUs && Date.now() - memberJoined < 604800000 // joined less than 1w (168h) ago.
     },
     openModal (modal, props) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)

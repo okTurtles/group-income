@@ -40,7 +40,6 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import moment from 'moment'
 import { OPEN_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
 import Avatar from '@components/Avatar.vue'
@@ -66,9 +65,6 @@ export default {
       'currentGroupState',
       'groupMembersPending'
     ]),
-    now () {
-      return moment()
-    },
     weJoined () {
       return this.currentGroupState.profiles[this.ourUsername].joined_ms
     },
@@ -103,7 +99,7 @@ export default {
 
       const memberJoined = this.currentGroupState.profiles[username].joined_ms
       const joinedAfterUs = this.weJoined < memberJoined
-      return joinedAfterUs && !moment(memberJoined).isBefore(this.now, 'week')
+      return joinedAfterUs && Date.now() - memberJoined < 604800000 // joined less than 1w (168h) ago.
     }
   }
 }
