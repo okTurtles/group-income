@@ -30,23 +30,13 @@
         | {{ prettyLogs }}
 
       i18n.link(tag='a' @click='openTroubleshooting') Troubleshooting
-      br
-      br
-      p.has-text-danger DELETE BEFORE MERGE!
-      .buttons
-        button.is-small.is-outlined(@click='_createLog("error")') Log error
-        button.is-small.is-outlined(@click='_createLog("warn")') Log warn
-        button.is-small.is-outlined(@click='_createLog("debug")') Log debug
-        button.is-small.is-outlined(@click='_createLog("info")') Log info
-        button.is-small.is-outlined(@click='_createLog("log")') Log log
-        button.is-small.is-outlined(@click='_clearLogs') Clear Logs
 </template>
 
 <script>
 import { mapState, mapMutations, mapActions } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '@utils/events.js'
-import { downloadLogs, clearLogs } from '@model/captureLogs.js'
+import { downloadLogs } from '@model/captureLogs.js'
 export default {
   name: 'AppLogs',
   components: {},
@@ -133,14 +123,6 @@ export default {
     },
     downloadLogs () {
       downloadLogs('gi_logs.txt', this.$refs.linkDownload)
-    },
-    // DELETE BEFORE MERGE
-    _clearLogs () {
-      clearLogs()
-      this.ephemeral.logs = []
-    },
-    _createLog (type) {
-      console[type]('This is a new log of type:', type)
     }
   }
 }
