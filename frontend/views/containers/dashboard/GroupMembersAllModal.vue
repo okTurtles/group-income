@@ -103,6 +103,9 @@ export default {
       'groupMembersPending',
       'ourUsername'
     ]),
+    weJoinedMs () {
+      return new Date(this.currentGroupState.profiles[this.ourUsername].joinedDate).getTime()
+    },
     allMembers () {
       return Object.keys({ ...this.groupMembersPending, ...this.groupProfiles })
     },
@@ -133,10 +136,9 @@ export default {
     isNewMember (username) {
       if (username === this.ourUsername) { return false }
 
-      const weJoined = this.currentGroupState.profiles[this.ourUsername].joined_ms
-      const memberJoined = this.currentGroupState.profiles[username].joined_ms
-      const joinedAfterUs = weJoined < memberJoined
-      return joinedAfterUs && Date.now() - memberJoined < 604800000 // joined less than 1w (168h) ago.
+      const memberJoinedMs = new Date(this.currentGroupState.profiles[username].joinedDate).getTime()
+      const joinedAfterUs = this.weJoinedMs < memberJoinedMs
+      return joinedAfterUs && Date.now() - memberJoinedMs < 604800000 // joined less than 1w (168h) ago.
     },
     openModal (modal, props) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)

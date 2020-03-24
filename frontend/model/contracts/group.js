@@ -66,7 +66,7 @@ function initGroupProfile (contractID: string, joined: ?number) {
   return {
     contractID: contractID,
     nonMonetaryContributions: [],
-    joined_ms: joined
+    joinedDate: joined
   }
 }
 
