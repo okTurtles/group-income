@@ -104,7 +104,7 @@ export default {
         })
         .map(({ type, msg, timestamp }) => {
           return isEntryNew(type)
-            ? `--------------- \n ${timestamp} [${type}]`
+            ? `--------------- \n${timestamp} [${type}]`
             : `${timestamp} [${type}] ${msg.map(part => JSON.stringify(part)).join(' ')}`
         })
         .join('\n')
@@ -188,4 +188,9 @@ export default {
   margin-bottom: 1rem;
 }
 
+.c-logs {
+  font-family: "Monaco", "Menlo", "Courier", monospace;
+  font-size: $size_5;
+  white-space: pre;
+}
 </style>
