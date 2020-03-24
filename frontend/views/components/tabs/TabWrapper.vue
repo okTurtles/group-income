@@ -75,16 +75,12 @@ export default {
       const section = to.query.section
       if (!section) return
 
-      let foundTheTab = false
       for (const tabItem of this.tabNav) {
         for (const link of tabItem.links) {
           if (this.activeTab !== link.index && link.url === section) {
-            this.changeTab(link.index)
-            foundTheTab = true
-            break
+            return this.changeTab(link.index)
           }
         }
-        if (foundTheTab) break
       }
     }
   },
