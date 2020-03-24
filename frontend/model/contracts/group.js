@@ -152,12 +152,13 @@ DefineContract({
     },
     groupMembersPending (state, getters) {
       const invites = getters.currentGroupState.invites
-      const invitesValid = Object.keys(invites).filter(id => invites[id].status === INVITE_STATUS.VALID && invites[id].creator !== INVITE_INITIAL_CREATOR)
       const pendingMembers = {}
-      for (const secretId of invitesValid) {
-        pendingMembers[invites[secretId].invitee] = {
-          isPending: true,
-          invitedBy: invites[secretId].creator
+      for (const inviteId in invites) {
+        const invite = invites[inviteId]
+        if (invite.status === INVITE_STATUS.VALID && invite.creator !== INVITE_INITIAL_CREATOR) {
+          pendingMembers[invites[inviteId].invitee] = {
+            invitedBy: invites[inviteId].creator
+          }
         }
       }
       return pendingMembers
@@ -186,7 +187,6 @@ DefineContract({
     'gi.contracts/group': {
       validate: objectMaybeOf({
         invites: mapOf(string, inviteType),
-        joined_ms: number,
         settings: objectOf({
           // TODO: add 'groupPubkey'
           groupName: string,
@@ -213,7 +213,7 @@ DefineContract({
             groupCreator: meta.username
           },
           profiles: {
-            [meta.username]: initGroupProfile(meta.identityContractID, data.joined_ms)
+            [meta.username]: initGroupProfile(meta.identityContractID, meta.createdDate)
           },
           userPaymentsByMonth: {
             [currentMonthTimestamp()]: initMonthlyPayments()
@@ -437,8 +437,7 @@ DefineContract({
     },
     'gi.contracts/group/inviteAccept': {
       validate: objectOf({
-        inviteSecret: string, // NOTE: simulate the OP_KEY_* stuff for now,
-        joined_ms: number
+        inviteSecret: string // NOTE: simulate the OP_KEY_* stuff for now,
       }),
       process ({ data, meta }, { state }) {
         console.debug('inviteAccept:', data, state.invites)
@@ -451,7 +450,7 @@ DefineContract({
         if (Object.keys(invite.responses).length === invite.quantity) {
           invite.status = INVITE_STATUS.USED
         }
-        Vue.set(state.profiles, meta.username, initGroupProfile(meta.identityContractID, data.joined_ms))
+        Vue.set(state.profiles, meta.username, initGroupProfile(meta.identityContractID, meta.createdDate))
         // If we're triggered by handleEvent in state.js (and not latestContractState)
         // then the asynchronous sideEffect function will get called next
         // and we will subscribe to this new user's identity contract

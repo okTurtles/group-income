@@ -14,20 +14,20 @@
     li.c-group-member(
       v-for='(member, username) in firstTenMembers'
       :data-test='username'
-      :class='member.isPending && "is-pending"'
+      :class='member.invitedBy && "is-pending"'
       :key='username'
     )
-      avatar(v-if='member.isPending' size='sm')
+      avatar(v-if='member.invitedBy' size='sm')
       avatar-user(v-else :username='username' size='sm')
 
       .c-name.has-ellipsis(data-test='username')
         | {{ userDisplayName(username) }}&nbsp;
         i18n(v-if='username === ourUsername') (you)
 
-      i18n.pill.is-neutral(v-if='member.isPending' data-test='pillPending') pending
+      i18n.pill.is-neutral(v-if='member.invitedBy' data-test='pillPending') pending
       i18n.pill.is-primary(v-else-if='isNewMember(username)' data-test='pillNew') new
 
-      group-members-tooltip-pending.c-menu(v-if='member.isPending' :username='username')
+      group-members-tooltip-pending.c-menu(v-if='member.invitedBy' :username='username')
       group-members-menu.c-menu(v-else :username='username')
   i18n.link(
     tag='button'
@@ -40,6 +40,7 @@
 
 <script>
 import { mapGetters } from 'vuex'
+import moment from 'moment'
 import { OPEN_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
 import Avatar from '@components/Avatar.vue'
@@ -65,9 +66,8 @@ export default {
       'currentGroupState',
       'groupMembersPending'
     ]),
-    dateNow () {
-      console.log('calculate dateNow')
-      return Date.now()
+    now () {
+      return moment()
     },
     weJoined () {
       return this.currentGroupState.profiles[this.ourUsername].joined_ms
@@ -99,12 +99,11 @@ export default {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
     },
     isNewMember (username) {
-      if (username === this.ourUsername) {
-        return false
-      }
+      if (username === this.ourUsername) { return false }
+
       const memberJoined = this.currentGroupState.profiles[username].joined_ms
       const joinedAfterUs = this.weJoined < memberJoined
-      return joinedAfterUs && this.dateNow - memberJoined < 604800000 // joined less than 1w (168h) ago.
+      return joinedAfterUs && !moment(memberJoined).isBefore(this.now, 'week')
     }
   }
 }

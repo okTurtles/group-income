@@ -3,15 +3,13 @@
     span.button.is-icon-small(data-test='pendingTooltip')
       i.icon-question-circle
     template(slot='tooltip')
-      i18n(
-        tag='p'
-        :args='{ invitedBy: `${invitedBy} ${invitedBy === ourUsername ? `(${L("you")})` : ""}` }'
-      ) This member did not use their invite link to join the group yet. This link should be given to them by {invitedBy}
+      p {{tooltipText }}
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
 import Tooltip from '@components/Tooltip.vue'
+import L from '@view-utils/translations.js'
 
 export default {
   name: 'GroupMembersTooltipPending',
@@ -26,8 +24,12 @@ export default {
       'ourUsername',
       'groupMembersPending'
     ]),
-    invitedBy () {
-      return (this.groupMembersPending[this.username] || {}).invitedBy
+    tooltipText () {
+      const invitedBy = (this.groupMembersPending[this.username] || {}).invitedBy
+
+      return this.username === this.ourUsername
+        ? L('This member did not use their invite link to join the group yet. This link should be given to them by {invitedBy} (you).', { invitedBy })
+        : L('This member did not use their invite link to join the group yet. This link should be given to them by {invitedBy}.', { invitedBy })
     }
   }
 }

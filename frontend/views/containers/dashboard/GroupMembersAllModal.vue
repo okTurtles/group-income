@@ -36,7 +36,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
         tag='ul'
       )
         li.c-search-member(
-          v-for='{username, displayName, isPending} in searchResult'
+          v-for='{username, displayName, invitedBy} in searchResult'
           :key='username'
         )
           .c-identity
@@ -48,11 +48,11 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
                 v-if='displayName'
               ) @{{ username }}
 
-              i18n.pill.is-neutral(v-if='isPending' data-test='pillPending') pending
+              i18n.pill.is-neutral(v-if='invitedBy' data-test='pillPending') pending
               i18n.pill.is-primary(v-else-if='isNewMember(username)' data-test='pillNew') new
 
           .c-actions
-            group-members-tooltip-pending(v-if='isPending' :username='username')
+            group-members-tooltip-pending(v-if='invitedBy' :username='username')
             template(v-else)
               group-members-menu.c-action-menu(:username='username')
 
@@ -70,6 +70,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
 </template>
 
 <script>
+import moment from 'moment'
 import sbp from '~/shared/sbp.js'
 import L, { LTags } from '@view-utils/translations.js'
 import { mapGetters } from 'vuex'
@@ -103,9 +104,8 @@ export default {
       'groupMembersPending',
       'ourUsername'
     ]),
-    dateNow () {
-      console.log('calculate dateNow')
-      return Date.now()
+    now () {
+      return moment()
     },
     allMembers () {
       return Object.keys({ ...this.groupMembersPending, ...this.groupProfiles })
@@ -114,12 +114,12 @@ export default {
       return this.allMembers
         .map(username => {
           const inList = (n) => n.toUpperCase().indexOf(this.searchText.toUpperCase()) > -1
-          const { displayName } = this.globalProfile(username)
+          const { displayName } = this.globalProfile(username) || {}
           if (!this.searchText || inList(username) || (displayName ? inList(displayName) : false)) {
             return {
               username,
               displayName,
-              isPending: this.groupMembersPending[username]
+              invitedBy: this.groupMembersPending[username]
             }
           }
         })
@@ -135,13 +135,12 @@ export default {
   },
   methods: {
     isNewMember (username) {
-      if (username === this.ourUsername) {
-        return false
-      }
+      if (username === this.ourUsername) { return false }
+
       const weJoined = this.currentGroupState.profiles[this.ourUsername].joined_ms
       const memberJoined = this.currentGroupState.profiles[username].joined_ms
       const joinedAfterUs = weJoined < memberJoined
-      return joinedAfterUs && this.dateNow - memberJoined < 604800000 // joined less than 1w (168h) ago.
+      return joinedAfterUs && !moment(memberJoined).isBefore(this.now, 'week')
     },
     openModal (modal, props) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
