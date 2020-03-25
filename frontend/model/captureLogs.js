@@ -6,8 +6,8 @@ import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '~/frontend/utils/events.js'
   giConsole/lastEntry - latest log hash.
   giConsole/markers - an array of markers at every 1000th entry.
 */
-const ENTRIES_LIMIT = 4000
-const ENTRIES_MARKER = 1000
+const ENTRIES_LIMIT = 500
+const ENTRIES_MARKER = 100
 
 const getMarkers = () => JSON.parse(localStorage.getItem('giConsole/markers')) || []
 
@@ -23,7 +23,7 @@ function captureLog (type, ...msg) {
 
   // detect when is an Error and capture it properly
   // ex: uncaught Vue errors or custom try/catch errors.
-  msg = msg.map((m) => m instanceof Error ? (JSON.stringify(m.stack) || m) : m)
+  msg = msg.map((m) => m instanceof Error ? (m.stack || m.message) : m)
 
   localStorage.setItem(`giConsole/${logEntry}`,
     JSON.stringify({
@@ -59,7 +59,7 @@ function verifyLogsSize () {
 
   if (entriesCount >= ENTRIES_LIMIT) {
     const markers = getMarkers()
-    let toDelete = ENTRIES_MARKER // delete the latest x entries
+    let toDelete = ENTRIES_MARKER + (entriesCount - ENTRIES_LIMIT - 1) - 1
     let prevEntry = markers.shift()
     do {
       const entry = JSON.parse(localStorage.getItem(`giConsole/${prevEntry}`)) || {}
@@ -93,9 +93,9 @@ export function captureLogsStart () {
     // where the log came from (file name), which difficults debugging if needed.
     window.console = new Proxy(window.console, {
       get: (obj, type) => (...args) => {
-        obj[type](...args)
-        if (isCapturing && appLogsFilter.includes(type)) {
-          captureLog(type, ...args)
+        if (appLogsFilter.includes(type)) {
+          obj[type](...args)
+          isCapturing && captureLog(type, ...args)
         }
       }
     })
@@ -106,7 +106,7 @@ export function captureLogsStart () {
   // NEW_VISIT -> The user comes from an ongoing session (refresh or login)
   const isNewSession = !sessionStorage.getItem('NEW_SESSION')
   if (isNewSession) { sessionStorage.setItem('NEW_SESSION', 1) }
-  captureLog(isNewSession ? 'NEW_SESSION' : 'NEW_VISIT')
+  console.info(isNewSession ? 'NEW_SESSION' : 'NEW_VISIT', 'Starting to capture logs of type:', appLogsFilter)
 }
 
 export function captureLogsPause () {

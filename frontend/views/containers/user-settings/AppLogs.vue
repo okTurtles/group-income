@@ -86,9 +86,8 @@ export default {
       'appLogsFilter'
     ]),
     prettyLogs () {
-      const isEntryNew = (type) => ['NEW_SESSION', 'NEW_VISIT'].includes(type)
       return this.ephemeral.logs
-        .filter(({ type }) => this.form.filter.includes(type) || isEntryNew(type))
+        .filter(({ type }) => this.form.filter.includes(type))
         .map(({ type, msg, timestamp }) => `${timestamp} [${type}] ${msg.map(JSON.stringify).join(' ')}`)
         .join('\n')
     }
