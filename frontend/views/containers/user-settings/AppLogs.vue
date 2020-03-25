@@ -5,11 +5,11 @@
         fieldset.c-filters
           legend.sr-only Visible logs
           label.checkbox
-            input.input(type='checkbox' name='filter' v-model='form.filter' value='error')
-            i18n Errors
+            input.input(type='checkbox' name='filter' v-model='form.filter' disabled value='error')
+            i18n Error
           label.checkbox
-            input.input(type='checkbox' name='filter' v-model='form.filter' value='warn')
-            i18n Warnings
+            input.input(type='checkbox' name='filter' v-model='form.filter' disabled value='warn')
+            i18n Warning
           label.checkbox
             input.input(type='checkbox' name='filter' v-model='form.filter' value='debug')
             i18n Debug
@@ -62,7 +62,7 @@ export default {
       logs.push(entry)
       lastEntry = entry.prev
     } while (lastEntry)
-    this.ephemeral.logs = logs.reverse()
+    this.ephemeral.logs = logs.reverse() // chronological order (oldest to most recent)
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', CAPTURED_LOGS)
@@ -73,9 +73,9 @@ export default {
       sbp('okTurtles.events/emit', SET_APP_LOGS_FILTER, filters)
     },
     prettyLogs () {
-      // Automatically scroll textarea to the bottom
       this.$nextTick(() => {
         if (this.$refs.textarea) {
+          // Automatically scroll textarea to the bottom
           this.$refs.textarea.scrollTop = this.$refs.textarea.scrollHeight
         }
       })
@@ -88,14 +88,8 @@ export default {
     prettyLogs () {
       const isEntryNew = (type) => ['NEW_SESSION', 'NEW_VISIT'].includes(type)
       return this.ephemeral.logs
-        .filter(({ type }) => {
-          return this.form.filter.includes(type) || isEntryNew(type)
-        })
-        .map(({ type, msg, timestamp }) => {
-          return isEntryNew(type)
-            ? `--------------- \n${timestamp} [${type}]`
-            : `${timestamp} [${type}] ${msg.map(part => JSON.stringify(part)).join(' ')}`
-        })
+        .filter(({ type }) => this.form.filter.includes(type) || isEntryNew(type))
+        .map(({ type, msg, timestamp }) => `${timestamp} [${type}] ${msg.map(JSON.stringify).join(' ')}`)
         .join('\n')
     }
   },
@@ -121,7 +115,7 @@ export default {
       })
     },
     downloadLogs () {
-      downloadLogs('gi_logs.txt', this.$refs.linkDownload)
+      downloadLogs(this.$refs.linkDownload)
     }
   }
 }
@@ -144,7 +138,7 @@ export default {
 }
 
 .c-filters {
-  flex-grow: 99; // to be wider than c-download.
+  flex-grow: 99; // to be wider than c-download
 
   .checkbox:last-child {
     margin-right: 1rem;

@@ -78,20 +78,9 @@ export function captureLogsStart () {
   isCapturing = true
   lastEntry = localStorage.getItem('giConsole/lastEntry')
   entriesCount = +localStorage.getItem('giConsole/count') || 0
-
-  // Set a new visit or session - useful to understand logs through time.
-  // NEW_SESSION -> The user opened a new browser or tab.
-  // NEW_VISIT -> The user comes from an ongoing session (refresh or login)
-  const isNewSession = !sessionStorage.getItem('NEW_SESSION')
-  if (isNewSession) { sessionStorage.setItem('NEW_SESSION', 1) }
-  captureLog(isNewSession ? 'NEW_SESSION' : 'NEW_VISIT')
-
+  appLogsFilter = sbp('state/vuex/state').appLogsFilter || []
   // Subscribe to appLogsFilter
-  const state = sbp('state/vuex/state')
-  appLogsFilter = state.appLogsFilter || []
   sbp('okTurtles.events/on', SET_APP_LOGS_FILTER, filter => { appLogsFilter = filter })
-
-  console.debug('Starting to capture logs of type:', appLogsFilter)
 
   // Override the console to start capturing the logs
   if (!isConsoleOveridden) {
@@ -111,6 +100,13 @@ export function captureLogsStart () {
       }
     })
   }
+
+  // Set a new visit or session - useful to understand logs through time.
+  // NEW_SESSION -> The user opened a new browser or tab.
+  // NEW_VISIT -> The user comes from an ongoing session (refresh or login)
+  const isNewSession = !sessionStorage.getItem('NEW_SESSION')
+  if (isNewSession) { sessionStorage.setItem('NEW_SESSION', 1) }
+  captureLog(isNewSession ? 'NEW_SESSION' : 'NEW_VISIT')
 }
 
 export function captureLogsPause () {
@@ -119,31 +115,26 @@ export function captureLogsPause () {
 }
 
 // Util to download *all* stored logs so far
-export function downloadLogs (filename, elLink) {
-  const logsArr = []
+export function downloadLogs (elLink) {
+  const filename = 'gi_logs.json'
+  const appLogsArr = []
   let lastEntry = localStorage.getItem('giConsole/lastEntry')
   do {
     const entry = localStorage.getItem(`giConsole/${lastEntry}`)
-    const entryParsed = JSON.parse(entry) || {}
+    if (!entry) break
+    const entryParsed = JSON.parse(entry)
     lastEntry = entryParsed.prev
-    logsArr.push(entry)
+    appLogsArr.push(entry)
   } while (lastEntry)
-  const data = `/*
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 
+  appLogsArr.reverse() // chronological order (oldest to most recent)
 
-GROUP INCOME - Application Logs
-
-Attach this file when reporting a problem:
-  - Github: https://github.com/okTurtles/group-income-simple/issues  
-
-. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
-*/
-
-var userAgent = ${navigator.userAgent}
-var appLogs = [${logsArr}]
-`
-
-  const file = new Blob([data], { type: 'text/plain' })
+  const file = new Blob([JSON.stringify({
+    // Add instructions in case the user opens the file.
+    '_instructions': 'GROUP INCOME - Application Logs - Attach this file when reporting an issue: https://github.com/okTurtles/group-income-simple/issues',
+    'ua': navigator.userAgent,
+    // stringify logs upront because it's an array...
+    logs: JSON.stringify(appLogsArr)
+  })], { type: 'application/json' })
 
   if (window.navigator.msSaveOrOpenBlob) {
     // IE10+ and Edge
