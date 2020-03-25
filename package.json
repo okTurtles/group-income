@@ -101,7 +101,6 @@
     "buffer": "5.4.3",
     "form-data": "2.5.1",
     "localforage": "1.7.3",
-    "moment": "2.24.0",
     "multihashes": "0.4.15",
     "nacl-blob": "2.0.2",
     "nacl-stream": "0.3.5",
