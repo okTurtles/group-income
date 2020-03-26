@@ -14,7 +14,7 @@ DefineContract({
     'gi.contracts/identity': {
       validate: objectOf({
         attributes: objectMaybeOf({
-          name: string,
+          username: string,
           email: string,
           picture: string
         })

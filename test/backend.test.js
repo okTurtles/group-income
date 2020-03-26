@@ -84,7 +84,7 @@ describe('Full walkthrough', function () {
     // we set this so that the metadata on subsequent messages is properly filled in
     // currently group and mailbox contracts use this to determine message sender
     vuexState.loggedIn = {
-      username: user.data().attributes.name,
+      username: user.data().attributes.username,
       identityContractID: user.hash()
     }
   }
@@ -93,10 +93,10 @@ describe('Full walkthrough', function () {
     return createWebSocket(process.env.API_URL, { timeout: 3000, strategy: false })
   }
 
-  function createIdentity (name, email) {
+  function createIdentity (username, email) {
     return sbp('gi.contracts/identity/create', {
       // authorizations: [Events.CanModifyAuths.dummyAuth(name)],
-      attributes: { name, email }
+      attributes: { username, email }
     })
   }
   function createGroup (name) {
@@ -126,7 +126,7 @@ describe('Full walkthrough', function () {
   function createPaymentTo (to, amount, contractID, currency = 'USD') {
     return sbp('gi.contracts/group/payment/create',
       {
-        toUser: to.data().attributes.name,
+        toUser: to.data().attributes.username,
         amount: amount,
         currency: currency,
         txid: String(parseInt(Math.random() * 10000000)),
@@ -164,7 +164,7 @@ describe('Full walkthrough', function () {
       users.alice = await createIdentity('Alice', 'alice@okturtles.org')
       const { alice, bob } = users
       // verify attribute creation and state initialization
-      bob.data().attributes.name.should.equal('Bob')
+      bob.data().attributes.username.should.equal('Bob')
       bob.data().attributes.email.should.equal('bob@okturtles.com')
       // send them off!
       await postEntry(alice)
@@ -173,9 +173,9 @@ describe('Full walkthrough', function () {
 
     it('Should register Alice and Bob in the namespace', async function () {
       const { alice, bob } = users
-      var res = await sbp('namespace/register', alice.data().attributes.name, alice.hash())
+      var res = await sbp('namespace/register', alice.data().attributes.username, alice.hash())
       res.value.should.equal(alice.hash())
-      res = await sbp('namespace/register', bob.data().attributes.name, bob.hash())
+      res = await sbp('namespace/register', bob.data().attributes.username, bob.hash())
       res.value.should.equal(bob.hash())
       alice.socket = 'hello'
       should(alice.socket).equal('hello')
@@ -183,7 +183,7 @@ describe('Full walkthrough', function () {
 
     it('Should verify namespace lookups work', async function () {
       const { alice } = users
-      var res = await sbp('namespace/lookup', alice.data().attributes.name)
+      var res = await sbp('namespace/lookup', alice.data().attributes.username)
       res.should.equal(alice.hash())
       const contractID = await sbp('namespace/lookup', 'susan')
       should(contractID).equal(null)
@@ -218,7 +218,7 @@ describe('Full walkthrough', function () {
     it('Should get mailbox info for Bob', async function () {
       // 1. look up bob's username to get his identity contract
       const { bob } = users
-      const bobsName = bob.data().attributes.name
+      const bobsName = bob.data().attributes.username
       const bobsContractId = await sbp('namespace/lookup', bobsName)
       should(bobsContractId).equal(bob.hash())
       // 2. fetch all events for his identity contract to get latest state for it
@@ -250,7 +250,7 @@ describe('Full walkthrough', function () {
       var mailbox = users.bob.mailbox
       sbp('gi.contracts/mailbox/postMessage/create',
         {
-          from: users.bob.data().attributes.name,
+          from: users.bob.data().attributes.username,
           messageType: TYPE_MESSAGE,
           message: groups.group1.hash()
         },
