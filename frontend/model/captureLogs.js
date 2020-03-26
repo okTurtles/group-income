@@ -2,12 +2,16 @@ import sbp from '~/shared/sbp.js'
 import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '~/frontend/utils/events.js'
 
 /*
-  giConsole/count - total logs stored
-  giConsole/lastEntry - latest log hash.
-  giConsole/markers - an array of markers at every 1000th entry.
+  - giConsole/count - total logs stored
+  - giConsole/lastEntry - latest log hash
+  - giConsole/limit - the limit of entries.
+  - giConsole/markers - an array of markers at every nth entry
+  - giConsole/markerNth - the nth index in which marker log
 */
-const ENTRIES_LIMIT = 500
-const ENTRIES_MARKER = 100
+
+// Configuration:
+const ENTRIES_LIMIT = 5000
+const ENTRIES_MARKER_NTH = 1000
 
 const getMarkers = () => JSON.parse(localStorage.getItem('giConsole/markers')) || []
 
@@ -40,6 +44,7 @@ function captureLog (type, ...msg) {
   localStorage.setItem('giConsole/lastEntry', logEntry)
   localStorage.setItem('giConsole/count', entriesCount)
 
+  verifyEntryIsMarker()
   verifyLogsSize()
 
   // To avoid infinite loop because we log all selector calls, we run sbp calls
@@ -49,27 +54,74 @@ function captureLog (type, ...msg) {
   sbp('sbp/selectors/fn', 'okTurtles.events/emit')(CAPTURED_LOGS, lastEntry)
 }
 
-function verifyLogsSize () {
-  if (entriesCount % ENTRIES_MARKER === 0) {
+function verifyEntryIsMarker () {
+  if (entriesCount % ENTRIES_MARKER_NTH === 0) {
     const markers = getMarkers()
     // Save entry as a marker to be later deleted when logs are too big.
     markers.push(lastEntry)
     localStorage.setItem('giConsole/markers', JSON.stringify(markers))
   }
+}
 
+function verifyLogsSize () {
   if (entriesCount >= ENTRIES_LIMIT) {
     const markers = getMarkers()
-    let toDelete = ENTRIES_MARKER + (entriesCount - ENTRIES_LIMIT - 1) - 1
-    let prevEntry = markers.shift()
+    let toDelete = ENTRIES_MARKER_NTH
+    let oldestEntry = markers.shift() // the oldest marker
     do {
-      const entry = JSON.parse(localStorage.getItem(`giConsole/${prevEntry}`)) || {}
-      localStorage.removeItem(`giConsole/${prevEntry}`)
-      prevEntry = entry.prev
+      const log = JSON.parse(localStorage.getItem(`giConsole/${oldestEntry}`)) || {}
+      localStorage.removeItem(`giConsole/${oldestEntry}`)
       entriesCount--
       toDelete--
-    } while (toDelete && prevEntry)
+      oldestEntry = log.prev
+    } while (toDelete && oldestEntry)
+
     localStorage.setItem('giConsole/markers', JSON.stringify(markers))
     localStorage.setItem('giConsole/count', entriesCount)
+
+    // Delete nth oldest logs recursively. This scenario can happen when the
+    // entries limit is changed. Example: There are 400 logs and the limit is 500.
+    // We change the limit to 100 and the marker nth to 25. 325 logs need to be deleted.
+    // We do it recursively in chunks of 25 until there's only 75 logs again.
+    verifyLogsSize()
+  }
+}
+
+function verifyLogsConfigs () {
+  // If ENTRIES_LIMIT or ENTRIES_MARKER_NTH are changed in a release
+  // we need to recalculate markers and verify if it reached the size limit.
+  const storedLimit = +localStorage.getItem('giConsole/limit')
+  const storedMarkerNth = +localStorage.getItem('giConsole/markerNth')
+
+  // when it's the first time running this, just set the correct limits
+  if (storedLimit === 0) {
+    localStorage.setItem('giConsole/limit', ENTRIES_LIMIT)
+    localStorage.setItem('giConsole/markerNth', ENTRIES_MARKER_NTH)
+    return
+  }
+
+  if (storedMarkerNth !== ENTRIES_MARKER_NTH) {
+    // recalculate markers based on new nth rule.
+    const newMarkers = []
+    let entryIndex = entriesCount
+    let prevEntry = lastEntry
+    do {
+      const log = JSON.parse(localStorage.getItem(`giConsole/${prevEntry}`))
+      if (!log) break
+      if (entryIndex % ENTRIES_MARKER_NTH === 0) {
+        newMarkers.push(prevEntry)
+      }
+      entryIndex--
+      prevEntry = log.prev
+    } while (prevEntry)
+    // reverse new markers to be in chronological order, and then store them.
+    localStorage.setItem('giConsole/markers', JSON.stringify(newMarkers.reverse()))
+    localStorage.setItem('giConsole/markerNth', ENTRIES_MARKER_NTH)
+  }
+
+  if (storedLimit !== ENTRIES_LIMIT) {
+    localStorage.setItem('giConsole/limit', ENTRIES_LIMIT)
+    verifyLogsSize()
   }
 }
 
@@ -82,10 +134,12 @@ export function captureLogsStart () {
   // Subscribe to appLogsFilter
   sbp('okTurtles.events/on', SET_APP_LOGS_FILTER, filter => { appLogsFilter = filter })
 
+  verifyLogsConfigs()
+
   // Override the console to start capturing the logs
   if (!isConsoleOveridden) {
-    // avoid duplicated captures, in case captureLogsStart
-    // is called multiple times. (ex: login twice in the same visit)
+    // avoid duplicated captures, in case captureLogsStart gets
+    // called multiple times. (ex: login twice in the same visit)
     isConsoleOveridden = true
 
     // NOTE: Find a way to capture logs without messing up with log file location.
@@ -114,18 +168,17 @@ export function captureLogsPause () {
   sbp('okTurtles.events/off', SET_APP_LOGS_FILTER)
 }
 
-// Util to download *all* stored logs so far
+// Util to download all stored logs so far
 export function downloadLogs (elLink) {
   const filename = 'gi_logs.json'
   const appLogsArr = []
-  let lastEntry = localStorage.getItem('giConsole/lastEntry')
+  let prevEntry = localStorage.getItem('giConsole/lastEntry')
   do {
-    const entry = localStorage.getItem(`giConsole/${lastEntry}`)
-    if (!entry) break
-    const entryParsed = JSON.parse(entry)
-    lastEntry = entryParsed.prev
-    appLogsArr.push(entry)
-  } while (lastEntry)
+    const log = localStorage.getItem(`giConsole/${prevEntry}`)
+    if (!log) break
+    prevEntry = JSON.parse(log).prev
+    appLogsArr.push(log)
+  } while (prevEntry)
   appLogsArr.reverse() // chronological order (oldest to most recent)
 
   const file = new Blob([JSON.stringify({
