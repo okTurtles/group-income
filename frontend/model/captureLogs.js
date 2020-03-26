@@ -160,7 +160,7 @@ export function captureLogsStart () {
   // NEW_VISIT -> The user comes from an ongoing session (refresh or login)
   const isNewSession = !sessionStorage.getItem('NEW_SESSION')
   if (isNewSession) { sessionStorage.setItem('NEW_SESSION', 1) }
-  console.info(isNewSession ? 'NEW_SESSION' : 'NEW_VISIT', 'Starting to capture logs of type:', appLogsFilter)
+  console.log(isNewSession ? 'NEW_SESSION' : 'NEW_VISIT', 'Starting to capture logs of type:', appLogsFilter)
 }
 
 export function captureLogsPause () {

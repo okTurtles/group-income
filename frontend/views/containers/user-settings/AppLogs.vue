@@ -14,9 +14,6 @@
             input.input(type='checkbox' name='filter' v-model='form.filter' value='debug')
             i18n Debug
           label.checkbox
-            input.input(type='checkbox' name='filter' v-model='form.filter' value='info')
-            i18n Info
-          label.checkbox
             input.input(type='checkbox' name='filter' v-model='form.filter' value='log')
             i18n Log
 

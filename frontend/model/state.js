@@ -41,8 +41,8 @@ const initialState = {
   reducedMotion: false,
   fontSize: 1,
   appLogsFilter: process.env.NODE_ENV === 'development'
-    ? ['error', 'info', 'warn', 'debug', 'log']
-    : ['error', 'info', 'warn']
+    ? ['error', 'warn', 'debug', 'log']
+    : ['error', 'warn']
 }
 
 // guard all sbp calls for contract actions with this function
