@@ -71,13 +71,13 @@
         v-if='!superMajority'
         severity='warning'
       )
-        i18n The percentage value you are choosing is most likely too low for a decision that can have a potentially significant impact  on a person&rsquo;s life. Please consider using a supermajority 175.
+        i18n This percentage is most likely too low for a decision that can have a potentially significant impact on a person's life.
         i18n(
           tag='a'
           class='link'
           href='https://groupincome.org/2016/09/deprecating-mays-theorem/#when-majority-rule-can-harm'
           target='_blank'
-        ) Read more on our blog about the dangers of majority rule.
+        ) Read more about the dangers of majority rule.
     slot
 </template>
 

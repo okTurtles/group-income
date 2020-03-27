@@ -156,7 +156,7 @@ export default {
       }
     },
     introTitle () {
-      let copy = this.needsIncome ? L('You are currently {strong_}receiving{_strong} mincome. ', LTags('strong')) : L('You are currently {strong_}sending{_strong} mincome. ', LTags('strong'))
+      let copy = this.needsIncome ? L('You are currently {strong_}receiving{_strong} mincome.', LTags('strong')) : L('You are currently {strong_}sending{_strong} mincome.', LTags('strong'))
       copy += L('You can change this at any time by updating your {r1}income details{r2}.', { r1: '<button class="link js-btnInvite">', r2: '</button>' })
       return copy
     },
