@@ -62,7 +62,7 @@ function initMonthlyPayments () {
   }
 }
 
-function initGroupProfile (contractID: string, joined: ?number) {
+function initGroupProfile (contractID: string, joined: ?string) {
   return {
     contractID: contractID,
     nonMonetaryContributions: [],
