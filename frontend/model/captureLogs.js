@@ -64,7 +64,11 @@ function verifyEntryIsMarker () {
 }
 
 function verifyLogsSize () {
-  if (entriesCount >= ENTRIES_LIMIT) {
+  // Delete nth oldest logs recursively. This scenario can happen when the
+  // entries limit is changed. Example: There are 400 logs and the limit is 500.
+  // We change the limit to 100 and the marker nth to 25. 325 logs need to be deleted.
+  // We do it recursively in chunks of 25 until there's only 75 logs again.
+  while (entriesCount >= ENTRIES_LIMIT) {
     const markers = getMarkers()
     let toDelete = ENTRIES_MARKER_NTH
     let oldestEntry = markers.shift() // the oldest marker
@@ -78,12 +82,6 @@ function verifyLogsSize () {
 
     localStorage.setItem('giConsole/markers', JSON.stringify(markers))
     localStorage.setItem('giConsole/count', entriesCount)
-
-    // Delete nth oldest logs recursively. This scenario can happen when the
-    // entries limit is changed. Example: There are 400 logs and the limit is 500.
-    // We change the limit to 100 and the marker nth to 25. 325 logs need to be deleted.
-    // We do it recursively in chunks of 25 until there's only 75 logs again.
-    verifyLogsSize()
   }
 }
 
