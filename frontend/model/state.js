@@ -395,7 +395,7 @@ const actions = {
     if (settings) {
       console.debug('loadSettings:', settings)
       store.replaceState(settings)
-      captureLogsStart()
+      captureLogsStart(user.username)
       // This may seem unintuitive to use the store.state from the global store object
       // but the state object in scope is a copy that becomes stale if something modifies it
       // like an outside dispatch
@@ -421,7 +421,7 @@ const actions = {
         await sbp('state/enqueueContractSync', user.identityContractID)
       }
     } else {
-      captureLogsStart()
+      captureLogsStart(user.username)
     }
     await sbp('gi.db/settings/save', SETTING_CURRENT_USER, user.username)
     commit('login', user)

@@ -33,7 +33,7 @@
 import { mapState, mapMutations, mapActions } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '@utils/events.js'
-import { downloadLogs } from '@model/captureLogs.js'
+import { downloadLogs, getLog } from '@model/captureLogs.js'
 export default {
   name: 'AppLogs',
   components: {},
@@ -52,9 +52,9 @@ export default {
     sbp('okTurtles.events/on', CAPTURED_LOGS, this.addLog)
 
     const logs = []
-    let lastEntry = localStorage.getItem('giConsole/lastEntry')
+    let lastEntry = getLog('lastEntry')
     do {
-      const entry = JSON.parse(localStorage.getItem(`giConsole/${lastEntry}`))
+      const entry = JSON.parse(getLog(lastEntry))
       if (!entry) break
       logs.push(entry)
       lastEntry = entry.prev
@@ -97,7 +97,7 @@ export default {
       'saveSettings'
     ]),
     addLog (logHash) {
-      const entry = JSON.parse(localStorage.getItem(`giConsole/${logHash}`))
+      const entry = JSON.parse(getLog(logHash))
       if (entry) {
         this.ephemeral.logs.push(entry)
       }
