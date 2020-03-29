@@ -437,7 +437,7 @@ DefineContract({
     },
     'gi.contracts/group/inviteAccept': {
       validate: objectOf({
-        inviteSecret: string // NOTE: simulate the OP_KEY_* stuff for now,
+        inviteSecret: string // NOTE: simulate the OP_KEY_* stuff for now
       }),
       process ({ data, meta }, { state }) {
         console.debug('inviteAccept:', data, state.invites)

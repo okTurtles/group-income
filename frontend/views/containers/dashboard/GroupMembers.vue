@@ -20,9 +20,7 @@
       avatar(v-if='member.invitedBy' size='sm')
       avatar-user(v-else :username='username' size='sm')
 
-      .c-name.has-ellipsis(data-test='username')
-        | {{ userDisplayName(username) }}&nbsp;
-        i18n(v-if='username === ourUsername') (you)
+      .c-name.has-ellipsis(data-test='username') {{ localizedName(username) }}
 
       i18n.pill.is-neutral(v-if='member.invitedBy' data-test='pillPending') pending
       i18n.pill.is-primary(v-else-if='isNewMember(username)' data-test='pillNew') new
@@ -46,6 +44,7 @@ import Avatar from '@components/Avatar.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import GroupMembersMenu from '@containers/dashboard/GroupMembersMenu.vue'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
+import L from '@view-utils/translations.js'
 
 export default {
   name: 'GroupMembers',
@@ -100,6 +99,10 @@ export default {
       const memberJoinedMs = new Date(this.currentGroupState.profiles[username].joinedDate).getTime()
       const joinedAfterUs = this.weJoinedMs < memberJoinedMs
       return joinedAfterUs && Date.now() - memberJoinedMs < 604800000 // joined less than 1w (168h) ago.
+    },
+    localizedName (username) {
+      const name = this.userDisplayName(username)
+      return username === this.ourUsername ? L('{name} (you)', { name }) : name
     }
   }
 }
