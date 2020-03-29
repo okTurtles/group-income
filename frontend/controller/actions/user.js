@@ -23,7 +23,7 @@ export default sbp('sbp/selectors/register', {
     const user = await sbp('gi.contracts/identity/create', {
       // authorizations: [Events.CanModifyAuths.dummyAuth()],
       attributes: {
-        name: username,
+        username,
         email: email,
         picture: `${window.location.origin}/assets/images/default-avatar.png`
       }

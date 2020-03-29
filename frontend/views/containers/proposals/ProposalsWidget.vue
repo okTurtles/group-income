@@ -103,7 +103,7 @@ export default {
   },
   methods: {
     hadVoted (proposal) {
-      return proposal.votes[this.ourUserIdentityContract.attributes.name] || proposal.status !== STATUS_OPEN
+      return proposal.votes[this.ourUserIdentityContract.attributes.username] || proposal.status !== STATUS_OPEN
     }
   }
 }

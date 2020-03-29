@@ -1,21 +1,15 @@
 <template lang='pug'>
-form(
-  novalidate
-  ref='form'
-  name='formData'
-  data-test='login'
-  @submit.prevent=''
-)
+form(data-test='login' @submit.prevent='')
   label.field
     i18n.label Username
     input.input(
-      :class='{error: $v.form.name.$error}'
-      name='name'
-      v-model='form.name'
-      @input='debounceField("name")'
-      @blur='updateField("name")'
+      :class='{error: $v.form.username.$error}'
+      name='username'
+      v-model='form.username'
+      @input='debounceField("username")'
+      @blur='updateField("username")'
       data-test='loginName'
-      v-error:name='{ attrs: { "data-test": "badUsername" } }'
+      v-error:username='{ attrs: { "data-test": "badUsername" } }'
       autofocus
     )
 
@@ -58,7 +52,7 @@ export default {
   data () {
     return {
       form: {
-        name: null,
+        username: null,
         password: null
       }
     }
@@ -77,7 +71,7 @@ export default {
         this.$refs.formMsg.clean()
 
         await sbp('gi.actions/user/login', {
-          username: this.form.name,
+          username: this.form.username,
           password: this.form.password
         })
         this.$emit('submitSucceeded')
@@ -93,7 +87,7 @@ export default {
   },
   validations: {
     form: {
-      name: {
+      username: {
         [L('A username is required.')]: required,
         [L('A username cannot contain spaces.')]: nonWhitespace
       },

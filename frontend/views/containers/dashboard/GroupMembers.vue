@@ -110,7 +110,7 @@ export default {
 .c-group-members-header {
   display: flex;
   justify-content: space-between;
-  align-items: end;
+  align-items: center;
 }
 
 .c-group-list {
