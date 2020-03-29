@@ -439,7 +439,11 @@ const actions = {
     commit('logout')
     Vue.nextTick(() => {
       sbp('okTurtles.events/emit', EVENTS.LOGOUT)
-      captureLogsPause()
+      captureLogsPause({
+        // Let's clear all stored logs to prevent someone else
+        // accessing sensitve data after the user logs out.
+        wipeOut: true
+      })
     })
   },
   // persisting the state

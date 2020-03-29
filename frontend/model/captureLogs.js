@@ -48,7 +48,13 @@ function captureLog (type, ...msg) {
   giLSset('lastEntry', logEntry)
   giLSset('count', entriesCount)
 
-  verifyEntryIsMarker()
+  // verify if entry is marker
+  if (entriesCount % ENTRIES_MARKER_NTH === 0) {
+    const markers = getMarkers()
+    // Save entry as a marker to be later deleted when logs are too big.
+    markers.push(lastEntry)
+    giLSset('markers', JSON.stringify(markers))
+  }
 
   // To avoid infinite loop because we log all selector calls, we run sbp calls
   // here in a roundabout way by getting the function to which they're mapped.
@@ -57,31 +63,27 @@ function captureLog (type, ...msg) {
   sbp('sbp/selectors/fn', 'okTurtles.events/emit')(CAPTURED_LOGS, lastEntry)
 }
 
-function verifyEntryIsMarker () {
-  if (entriesCount % ENTRIES_MARKER_NTH === 0) {
-    const markers = getMarkers()
-    // Save entry as a marker to be later deleted when logs are too big.
-    markers.push(lastEntry)
-    giLSset('markers', JSON.stringify(markers))
-  }
-}
-
 function verifyLogsSize () {
   let lastEntriesCount = null
-  let failedDeletionCount = 0
   let markers = null
 
   // Delete nth oldest logs recursively. This scenario can happen when the
   // entries limit is changed. Example: There are 400 logs and the limit is 500.
   // We change the limit to 100 and the marker nth to 25. 325 logs need to be deleted.
   // We do it recursively in chunks of 25 until there's only 75 logs again.
-  while (entriesCount >= ENTRIES_LIMIT && failedDeletionCount < 3) {
+  while (entriesCount >= ENTRIES_LIMIT) {
+    if (entriesCount === lastEntriesCount) {
+      // There are too many entriesCount, however, for some unknown reason
+      // we weren't able to remove them. Call clearLogs to reset everything.
+      clearLogs()
+      console.error('verifyLogsSize(): unable to delete oldest logs, had to clear them!')
+      return
+    }
+    lastEntriesCount = entriesCount
+
     markers = markers || getMarkers()
     let toDelete = ENTRIES_MARKER_NTH
     let oldestEntry = markers.shift() // the oldest marker
-
-    if (entriesCount === lastEntriesCount) { failedDeletionCount++ }
-    lastEntriesCount = entriesCount
 
     do {
       const log = JSON.parse(giLSget(oldestEntry)) || {}
@@ -90,27 +92,16 @@ function verifyLogsSize () {
       toDelete--
       oldestEntry = log.prev
     } while (toDelete && oldestEntry)
-  }
 
-  if (failedDeletionCount < 3) {
     giLSset('markers', JSON.stringify(markers))
     giLSset('count', entriesCount)
-  } else {
-    // - There are too many entriesCount, however, for some unknown reason
-    //   we weren't able to remove them.
-    // - Capture a new log error manually (withou console.error) so
-    //   that verifyLogsSize() doesn't get called again. There's no need
-    //   for that and it would cause a loop of failed deletions.
-    captureLog('error', 'verifyLogsSize() failed! Unable to delete oldest logs.')
-
-    // To avoid infinite loops or memory leaks, let's just pause the capturing.
-    captureLogsPause()
-    // Or... if we want to be extreme, clear the logs and have a fresh start?
-    // clearLogs()
   }
 }
 
-function verifyLogsConfigs () {
+function verifyLogsConfig () {
+  lastEntry = giLSget('lastEntry')
+  entriesCount = +giLSget('count') || 0
+
   // If ENTRIES_LIMIT or ENTRIES_MARKER_NTH are changed in a release
   // we need to recalculate markers and verify if it reached the size limit.
   const storedLimit = +giLSget('limit')
@@ -151,13 +142,12 @@ function verifyLogsConfigs () {
 export function captureLogsStart (userLogged) {
   isCapturing = true
   username = userLogged
-  lastEntry = giLSget('lastEntry')
-  entriesCount = +giLSget('count') || 0
-  appLogsFilter = sbp('state/vuex/state').appLogsFilter || []
+
   // Subscribe to appLogsFilter
+  appLogsFilter = sbp('state/vuex/state').appLogsFilter || []
   sbp('okTurtles.events/on', SET_APP_LOGS_FILTER, filter => { appLogsFilter = filter })
 
-  verifyLogsConfigs()
+  verifyLogsConfig()
 
   // Override the console to start capturing the logs
   if (!isConsoleOveridden) {
@@ -189,11 +179,13 @@ export function captureLogsStart (userLogged) {
   console.log(isNewSession ? 'NEW_SESSION' : 'NEW_VISIT', 'Starting to capture logs of type:', appLogsFilter)
 }
 
-export function captureLogsPause () {
-  captureLog('log', 'PAUSE_LOGS for:', username)
+export function captureLogsPause ({ wipeOut }) {
+  if (wipeOut) { clearLogs() }
+
   isCapturing = false
   username = null
   sbp('okTurtles.events/off', SET_APP_LOGS_FILTER)
+  console.log('captureLogs paused to:', username)
 }
 
 export const getLog = giLSget
@@ -241,7 +233,7 @@ export function clearLogs () {
   let i = localStorage.length
   while (i--) {
     const key = localStorage.key(i)
-    if (/giConsole/.test(key)) {
+    if (key.indexOf(`giConsole/${username}`) >= 0) {
       localStorage.removeItem(key)
     }
   }
