@@ -495,9 +495,9 @@ page(
           th demo
         tr
           td
-            pre .pill.has-background-dark
+            pre .pill.is-neutral
           td
-            span.pill.has-background-dark Pending
+            span.pill.is-neutral Pending
 
         tr
           td
@@ -522,36 +522,6 @@ page(
             pre .pill.is-danger
           td
             span.pill.is-danger Due march 08
-
-        tr
-          td
-            pre .pill.has-background-dark.is-small
-          td
-            span.pill.has-background-dark.is-small Pending
-
-        tr
-          td
-            pre .pill.is-success.is-small
-          td
-            span.pill.is-success.is-small Payment received
-
-        tr
-          td
-            pre .pill.is-warning.is-small
-          td
-            span.pill.is-warning.is-small Not received
-
-        tr
-          td
-            pre .pill.is-primary.is-small
-          td
-            span.pill.is-primary.is-small Partial
-
-        tr
-          td
-            pre .pill.is-danger.is-small
-          td
-            span.pill.is-danger.is-small Due march 08
 
   article#user-feedback
     section.card

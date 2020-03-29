@@ -34,16 +34,13 @@ describe('Large group', () => {
       })
     }
 
-    cy.giLogin(`user1-${userId}`)
+    cy.giLogin(`user1-${userId}`, { bypassUI: true })
     cy.giAddRandomIncome()
     cy.get('.graph-bar')
       .should('have.length', groupLength)
-    cy.giLogout()
   })
 
   it('A search for "user1" should display 4 members', () => {
-    cy.visit('/')
-    cy.giLogin(`user1-${userId}`)
     cy.getByDT('seeAllMembers').click()
     cy.getByDT('memberCount')
       .should('contain', '12 members')

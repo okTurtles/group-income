@@ -38,7 +38,7 @@ export default {
       console.debug(`Looking for ${this.username} profile picture`)
       const userContractId = await sbp('namespace/lookup', this.username)
       if (!userContractId) {
-        console.error(`AvatarUser: ${this.username} doesn't exist!`)
+        console.warn(`AvatarUser: ${this.username} doesn't exist!`)
         return
       }
       const state = await sbp('state/latestContractState', userContractId)
