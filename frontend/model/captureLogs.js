@@ -98,21 +98,27 @@ function verifyLogsSize () {
   }
 }
 
+function setConfig () {
+  giLSset('limit', ENTRIES_LIMIT)
+  giLSset('markerNth', ENTRIES_MARKER_NTH)
+}
+
 function verifyLogsConfig () {
   lastEntry = giLSget('lastEntry')
   entriesCount = +giLSget('count') || 0
 
-  // If ENTRIES_LIMIT or ENTRIES_MARKER_NTH are changed in a release
-  // we need to recalculate markers and verify if it reached the size limit.
-  const storedLimit = +giLSget('limit')
-  const storedMarkerNth = +giLSget('markerNth')
-
-  // when it's the first time running this, just set the correct limits
-  if (storedLimit === 0) {
-    giLSset('limit', ENTRIES_LIMIT)
-    giLSset('markerNth', ENTRIES_MARKER_NTH)
+  // if one of these is empty, it means it's a fresh start
+  if (!entriesCount || !lastEntry) {
+    clearLogs() // make sure we don't leave any lost log behind
+    setConfig()
     return
   }
+
+  // If ENTRIES_LIMIT or ENTRIES_MARKER_NTH are changed in a release
+  // we need to recalculate markers and verify if it reached the size limit
+  const storedLimit = +giLSget('limit')
+  const storedMarkerNth = +giLSget('markerNth')
+  setConfig()
 
   if (storedMarkerNth !== ENTRIES_MARKER_NTH) {
     // recalculate markers based on new nth rule.
@@ -134,7 +140,6 @@ function verifyLogsConfig () {
   }
 
   if (storedLimit !== ENTRIES_LIMIT) {
-    giLSset('limit', ENTRIES_LIMIT)
     verifyLogsSize()
   }
 }
@@ -143,11 +148,11 @@ export function captureLogsStart (userLogged) {
   isCapturing = true
   username = userLogged
 
+  verifyLogsConfig()
+
   // Subscribe to appLogsFilter
   appLogsFilter = sbp('state/vuex/state').appLogsFilter || []
   sbp('okTurtles.events/on', SET_APP_LOGS_FILTER, filter => { appLogsFilter = filter })
-
-  verifyLogsConfig()
 
   // Override the console to start capturing the logs
   if (!isConsoleOveridden) {
