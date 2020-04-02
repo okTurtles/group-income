@@ -3,19 +3,14 @@
     section.card
       .c-header
         fieldset.c-filters
-          legend.sr-only Visible logs
-          label.checkbox
-            input.input(type='checkbox' name='filter' v-model='form.filter' disabled value='error')
-            i18n Error
-          label.checkbox
-            input.input(type='checkbox' name='filter' v-model='form.filter' disabled value='warn')
-            i18n Warning
-          label.checkbox
-            input.input(type='checkbox' name='filter' v-model='form.filter' value='debug')
-            i18n Debug
-          label.checkbox
-            input.input(type='checkbox' name='filter' v-model='form.filter' value='log')
-            i18n Log
+          .c-filters-inner
+            legend.c-filters-legend Optional logs:
+            label.checkbox
+              input.input(type='checkbox' name='filter' v-model='form.filter' value='debug')
+              i18n Debug
+            label.checkbox
+              input.input(type='checkbox' name='filter' v-model='form.filter' value='log')
+              i18n Log
 
         button.is-small.c-download(@click='downloadLogs')
           i.icon-download.is-prefix.c-icon
@@ -135,6 +130,14 @@ export default {
 
 .c-filters {
   flex-grow: 99; // to be wider than c-download
+
+  &-inner {
+    display: flex;
+  }
+
+  &-legend {
+    margin-right: 1.5rem;
+  }
 
   .checkbox:last-child {
     margin-right: 1rem;
