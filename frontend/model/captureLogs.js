@@ -100,26 +100,15 @@ function verifyLogsSize () {
   }
 }
 
-function setConfig () {
-  giLSset('limit', ENTRIES_LIMIT)
-  giLSset('markerNth', ENTRIES_MARKER_NTH)
-}
-
 function verifyLogsConfig () {
   lastEntry = giLSget('lastEntry')
   entriesCount = +giLSget('count') || 0
 
-  // if one of these is empty, it means it's a fresh start
-  if (!entriesCount || !lastEntry) {
-    clearLogs() // make sure we don't leave any lost log behind
-    setConfig()
-    return
-  }
-
   // If ENTRIES_LIMIT or ENTRIES_MARKER_NTH are changed in a release
   // we need to recalculate markers and verify if it reached the size limit
   const storedMarkerNth = +giLSget('markerNth')
-  setConfig()
+  giLSset('limit', ENTRIES_LIMIT)
+  giLSset('markerNth', ENTRIES_MARKER_NTH)
 
   if (storedMarkerNth !== ENTRIES_MARKER_NTH) {
     // recalculate markers based on new nth rule.
