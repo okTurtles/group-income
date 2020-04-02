@@ -116,7 +116,6 @@ function verifyLogsConfig () {
 
   // If ENTRIES_LIMIT or ENTRIES_MARKER_NTH are changed in a release
   // we need to recalculate markers and verify if it reached the size limit
-  const storedLimit = +giLSget('limit')
   const storedMarkerNth = +giLSget('markerNth')
   setConfig()
 
@@ -124,24 +123,21 @@ function verifyLogsConfig () {
     // recalculate markers based on new nth rule.
     const newMarkers = []
     let entryIndex = entriesCount
-    let prevEntry = lastEntry
-    do {
-      const log = JSON.parse(giLSget(`${prevEntry}`))
+    let curEntry = lastEntry
+    while (curEntry) {
+      const log = JSON.parse(giLSget(curEntry))
       if (!log) break
       if (entryIndex % ENTRIES_MARKER_NTH === 0) {
-        newMarkers.push(prevEntry)
+        newMarkers.push(curEntry)
       }
       entryIndex--
-      prevEntry = log.prev
-    } while (prevEntry)
+      curEntry = log.prev
+    }
     // reverse new markers to be in chronological order, and then store them.
     giLSset('markers', JSON.stringify(newMarkers.reverse()))
-    giLSset('markerNth', ENTRIES_MARKER_NTH)
   }
-
-  if (storedLimit !== ENTRIES_LIMIT) {
-    verifyLogsSize()
-  }
+  // will delete logs if necessary due to any changes in ENTRIES_LIMIT
+  verifyLogsSize()
 }
 
 export function captureLogsStart (userLogged) {
