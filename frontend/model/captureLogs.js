@@ -76,6 +76,8 @@ function verifyLogsSize () {
       // There are too many entriesCount, however, for some unknown reason
       // we weren't able to remove them. Call clearLogs to reset everything.
       clearLogs()
+      // Note: It's safe to use directly console here and avoid any possible loop
+      // because clearLogs delete all logs and resets entriesCount back to zero.
       console.error('verifyLogsSize(): unable to delete oldest logs, had to clear them!')
       return
     }
