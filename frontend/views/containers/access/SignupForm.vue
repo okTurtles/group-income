@@ -75,7 +75,7 @@ export default {
         return
       }
       try {
-        await sbp('gi.actions/user/signupAndLogin', {
+        await sbp('gi.actions/identity/signupAndLogin', {
           username: this.form.username,
           email: this.form.email,
           password: this.form.password
