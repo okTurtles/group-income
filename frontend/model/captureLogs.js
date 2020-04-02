@@ -73,11 +73,11 @@ function verifyLogsSize () {
   // We do it recursively in chunks of 25 until there's only 75 logs again.
   while (entriesCount >= ENTRIES_LIMIT) {
     if (entriesCount === lastEntriesCount) {
-      // There are too many entriesCount, however, for some unknown reason
-      // we weren't able to remove them. Call clearLogs to reset everything.
-      clearLogs()
+      // There are too many entriesCount, however, for some unknown reason we weren't
+      // able to remove them. Call resetLogs to delete all logs and reset everything.
+      resetLogs()
       // Note: It's safe to use directly console here and avoid any possible loop
-      // because clearLogs delete all logs and resets entriesCount back to zero.
+      // because resetLogs delete all logs and resets entriesCount back to zero.
       console.error('verifyLogsSize(): unable to delete oldest logs, had to clear them!')
       return
     }
@@ -221,7 +221,7 @@ export function downloadLogs (elLink) {
   }
 }
 
-export function clearLogs () {
+function clearLogs () {
   let i = localStorage.length
   while (i--) {
     const key = localStorage.key(i)
@@ -231,4 +231,10 @@ export function clearLogs () {
   }
   lastEntry = ''
   entriesCount = 0
+}
+
+function resetLogs () {
+  clearLogs()
+  // make sure all configs are set correctly
+  verifyLogsConfig()
 }
