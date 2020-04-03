@@ -147,15 +147,16 @@ export default {
       }
 
       try {
+        this.foo.profile = 'force-an-error' // DELETE THIS BEFORE MERGE
         const attributes = await sbp('gi.contracts/identity/setAttributes/create',
           attrs,
           this.$store.state.loggedIn.identityContractID
         )
         await sbp('backend/publishLogEntry', attributes)
         this.$refs.formMsg.success(L('Your changes were saved!'))
-      } catch (e) {
-        console.error('Failed to update profile', e)
-        this.$refs.formMsg.danger(L('Failed to update profile, please try again. {codeError}', { codeError: e.message }))
+      } catch (error) {
+        console.error('UserProfile.vue saveProfile() error:', error)
+        this.$refs.formMsg.danger(L('Failed to update profile'), { error })
       }
     }
   }

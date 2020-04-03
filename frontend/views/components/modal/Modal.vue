@@ -1,7 +1,7 @@
 <template lang='pug'>
   div
     component(:is='content' ref='content' v-bind='contentProps')
-    component(:is='subcontent[subcontent.length-1]' v-bind='contentSubContentProps')
+    component(:is='subcontent[subcontent.length-1]' v-bind='subContentProps')
 </template>
 <script>
 import sbp from '~/shared/sbp.js'
@@ -13,8 +13,9 @@ export default {
       content: null, // Main modal
       contentProps: {}, // Custom props passed down to the main modal
       subcontent: [], // Collection of modal on top of modals
-      contentSubContentProps: {}, // Custom props passed down to the sub modal
+      subContentProps: {}, // Custom props passed down to the sub modal
       replacement: null, // Replace the modal once the first one is close without updating the url
+      customQuery: {}, // Custom queries passed down to modal
       lastFocus: null // Record element that open the modal
     }
   },
@@ -81,28 +82,43 @@ export default {
         this.$router.push({
           query: {
             ...this.$route.query,
-            ...{ modal: this.content, subcontent: this.activeSubcontent() }
+            modal: this.content,
+            subcontent: this.activeSubcontent(),
+            ...this.customQuery
           }
         }).catch(console.error)
       } else if (this.$route.query.modal) {
         const query = { ...this.$route.query }
         delete query['modal']
         delete query['subcontent']
+        for (const queryKey in this.customQuery) {
+          delete query[queryKey]
+        }
+        this.customQuery = {}
         this.$router.push({ query }).catch(console.error)
       }
     },
-    openModal (componentName, componentProps = {}) {
-      // Don't open the same kind of modal twice.
-      if (this.content === componentName) return
+    openModal (componentName, componentProps = {}, customQuery = {}) {
+      if (this.content === componentName) {
+        // Don't open the same kind of modal twice.
+        if (this.componentProps === componentProps) return
+        // Otherwise update its content...
+        this.lastFocus = document.activeElement
+        this.contentProps = componentProps
+        this.customQuery = customQuery
+        this.updateUrl()
+        return // TODO dry this
+      }
       // Record active element
       this.lastFocus = document.activeElement
       if (this.content) {
         this.subcontent.push(componentName)
-        this.contentSubContentProps = componentProps
+        this.subContentProps = componentProps
       } else {
         this.content = componentName
         this.contentProps = componentProps
       }
+      this.customQuery = customQuery
       this.updateUrl()
     },
     unloadModal () {

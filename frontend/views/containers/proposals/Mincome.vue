@@ -126,6 +126,7 @@ export default {
       }
 
       try {
+        this.foo.mincome = 'force-an-error' // DELETE THIS BEFORE MERGE
         const updatedSettings = await sbp(
           'gi.contracts/group/updateSettings/create',
           { mincomeAmount },
@@ -133,9 +134,9 @@ export default {
         )
         await sbp('backend/publishLogEntry', updatedSettings)
         this.$refs.proposal.close()
-      } catch (e) {
-        console.error(`Failed to change mincome to ${mincomeAmount}`, e.message)
-        this.$refs.formMsg.danger(L('Failed to change mincome {codeError}', { codeError: e.message }))
+      } catch (error) {
+        console.error('Mincome.vue submit() error:', error.message)
+        this.$refs.formMsg.danger(L('Failed to change mincome.'), { error })
       }
     }
   }

@@ -1,7 +1,7 @@
 <template lang='pug'>
 modal-base-template(class='has-background')
   .wrapper-container
-    tab-wrapper(:title='L("Settings")' :tabNav='settings' @close='$emit("close")')
+    tab-wrapper(:title='L("Settings")' :tabNav='settings' :defaultTab='defaultTab' @close='$emit("close")')
       tab-item
         user-profile
       tab-item
@@ -11,7 +11,7 @@ modal-base-template(class='has-background')
       tab-item
         appearence
       tab-item
-        app-logs
+        app-logs(v-bind='tabProps["application-logs"]')
       tab-item
         tab-placeholder(name='Troubleshooting')
 </template>
@@ -28,7 +28,6 @@ import settings from './settings.js'
 
 export default {
   name: 'SettingsWrapper',
-
   components: {
     ModalBaseTemplate,
     TabWrapper,
@@ -38,7 +37,13 @@ export default {
     UserProfile,
     TabPlaceholder
   },
-
+  props: {
+    defaultTab: String, // initial tab name
+    tabProps: {
+      type: Object, // props to pass down to a specific tab
+      default () { return {} }
+    }
+  },
   data () {
     return settings
   }

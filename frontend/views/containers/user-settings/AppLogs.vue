@@ -2,6 +2,10 @@
   .settings-container
     section.card
       .c-header
+        span(v-if='referalError')
+          p You should report this last error: #[b {{referalError.message}}].
+          p And we should talk with @mmbotelho about the UX/UI of this! 💅
+          br
         fieldset.c-filters
           .c-filters-inner
             legend.c-filters-legend Optional logs:
@@ -31,7 +35,9 @@ import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '@utils/events.js'
 import { downloadLogs, getLog } from '@model/captureLogs.js'
 export default {
   name: 'AppLogs',
-  components: {},
+  props: {
+    referalError: Error // The Error that leaded the user to this page.
+  },
   data () {
     return {
       form: {
@@ -43,6 +49,7 @@ export default {
     }
   },
   created () {
+    console.log('referalError:', this.referalError)
     this.form.filter = this.appLogsFilter
     sbp('okTurtles.events/on', CAPTURED_LOGS, this.addLog)
 

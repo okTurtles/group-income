@@ -37,19 +37,17 @@ export default {
   name: 'TabWrapper',
 
   props: {
-    value: Number,
-    tabNav: Array
+    tabNav: Array,
+    defaultTab: String // initial tab name
   },
-
   data () {
     return {
-      activeTab: this.value || 0,
+      activeTab: 0, // this.value || 0,
       tabItems: [],
       open: true,
       title: this.tabNav[0].links[0].title || ''
     }
   },
-
   computed: {
     ...mapGetters([
       'isDarkTheme'
@@ -116,12 +114,12 @@ export default {
       }
     }
   },
-
   mounted () {
-    if (this.$route.query.section) {
+    const defaultTab = this.$route.query.section || this.defaultTab
+    if (defaultTab) {
       this.tabNav.forEach(item => {
         item.links.forEach(link => {
-          if (this.$route.query.section === link.url) {
+          if (defaultTab === link.url) {
             this.activeTab = link.index
             this.title = link.title
           }

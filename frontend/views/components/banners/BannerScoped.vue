@@ -3,7 +3,10 @@
     .c-container(v-if='ephemeral.text')
       banner-simple(class='c-banner' :severity='ephemeral.severity')
         .c-inner
-          .c-inner-text(:data-test='dataTest' role='alert') {{ ephemeral.text }}
+          .c-inner-text(:data-test='dataTest' role='alert' @click='handleMsgClick')
+            | {{ ephemeral.text }}
+            |
+            span(v-if='ephemeral.error' v-html='linkToErrorReport')
           button.is-icon-small.c-button(
             type='button'
             :class='`is-${ephemeral.severity}`'
@@ -14,6 +17,9 @@
 </template>
 
 <script>
+import sbp from '~/shared/sbp.js'
+import { OPEN_MODAL } from '@utils/events.js'
+import L from '@view-utils/translations.js'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'
 
@@ -32,17 +38,43 @@ export default {
   data: () => ({
     ephemeral: {
       text: null,
-      severity: null
+      severity: null,
+      error: null
     }
   }),
+  computed: {
+    linkToErrorReport () {
+      return L('Please check the {b1}error logs{b2} for more info.', {
+        'b1': '<button class="link js-btnError">',
+        'b2': '</button>'
+      })
+    }
+  },
   methods: {
+    handleMsgClick (e) {
+      if (this.ephemeral.error && e.target.classList.contains('js-btnError')) {
+        sbp('okTurtles.events/emit', OPEN_MODAL, 'UserSettingsModal',
+          { // custom props
+            tabProps: {
+              'application-logs': {
+                referalError: this.ephemeral.error
+              }
+            }
+          },
+          { // custom url query
+            section: 'application-logs'
+          }
+        )
+      }
+    },
     // To be used by parent. Example:
     // this.$refs.BannerScoped.success(L('Changes saved!'))
     clean () {
       this.updateBanner('', '')
     },
-    danger (text) {
+    danger (text, opts) {
       this.updateBanner(text, 'danger')
+      if (opts.error) { this.ephemeral.error = opts.error }
     },
     success (text) {
       this.updateBanner(text, 'success')
@@ -50,6 +82,7 @@ export default {
     updateBanner (text, severity) {
       this.ephemeral.text = text
       this.ephemeral.severity = severity
+      this.ephemeral.error = null
     }
   }
 }
