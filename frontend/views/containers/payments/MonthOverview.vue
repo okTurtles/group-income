@@ -3,7 +3,7 @@
   i18n.c-summary-title.is-title-4(
     tag='h4'
     data-test='thisMonth'
-    :args='{ month: moment(new Date()).format("MMMM") }'
+    :args='{ month: humanDate(Date.now(), { month: "long" }) }'
   ) {month} overview
 
   .c-summary-item(
@@ -27,7 +27,7 @@ import currencies from '@view-utils/currencies.js'
 import { mapGetters } from 'vuex'
 import ProgressBar from '@components/graphs/Progress.vue'
 import L from '@view-utils/translations.js'
-import moment from 'moment'
+import { humanDate } from '@view-utils/humanDate.js'
 
 export default {
   name: 'MonthOverview',
@@ -74,7 +74,7 @@ export default {
     }
   },
   methods: {
-    moment,
+    humanDate,
     // TEMP
     statusIsSent (user) {
       return ['completed', 'pending'].includes(user.status)
