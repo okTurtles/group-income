@@ -30,7 +30,7 @@ table.table.table-in-card.c-payments(:class='{"is-editing": paymentsType === "ed
         // TODO: replace condition to indicate whether or not the payment date is < or > than the current date using payment.paymentStatusText
         i18n.c-user-month(
           :class='index === 0 ? "has-text-1" : "pill is-danger"'
-          :args='{date: moment(payment.date).format("MMMM DD")}'
+          :args='{date: dueDate(payment.date) }'
         ) Due {date}
       td.c-payments-amount(v-if='paymentsType !== "edit"')
 
@@ -66,7 +66,7 @@ table.table.table-in-card.c-payments(:class='{"is-editing": paymentsType === "ed
 
       td
         .c-actions
-          .c-actions-month(:class='!(index !== 0 && paymentsType === "todo") ? "has-text-1" : "pill is-danger"') {{ moment(payment.date).format('MMMM D') }}
+          .c-actions-month(:class='!(index !== 0 && paymentsType === "todo") ? "has-text-1" : "pill is-danger"') {{ dueDate(payment.date) }}
           payments-list-menu.c-actions-menu(
             v-if='paymentsType !== "edit"'
             :payment='payment'
@@ -94,8 +94,7 @@ import AvatarUser from '@components/AvatarUser.vue'
 import Tooltip from '@components/Tooltip.vue'
 import PaymentsListMenu from '@containers/payments/PaymentsListMenu.vue'
 import currencies from '@view-utils/currencies.js'
-import moment from 'moment'
-
+import { humanDate } from '@view-utils/humanDate.js'
 export default {
   name: 'PaymentsList',
   components: {
@@ -119,7 +118,6 @@ export default {
   },
   data () {
     return {
-      moment,
       // Temp
       tableChecked: false
     }
@@ -157,6 +155,10 @@ export default {
       this.payments.map(payment => {
         payment.checked = this.tableChecked
       })
+    },
+    dueDate (datems) {
+      const date = datems || new Date() // remote new Date() when dealing with real data.
+      return humanDate(date, { month: 'short', day: 'numeric' })
     }
   }
 }
