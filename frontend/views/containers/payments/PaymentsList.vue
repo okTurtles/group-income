@@ -157,8 +157,7 @@ export default {
       })
     },
     dueDate (datems) {
-      const date = datems || new Date() // remote new Date() when dealing with real data.
-      return humanDate(date, { month: 'short', day: 'numeric' })
+      return humanDate(datems, { month: 'short', day: 'numeric' })
     }
   }
 }

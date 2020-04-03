@@ -10,12 +10,10 @@ modal-template(ref='modal' v-if='payment')
   ul.c-payment-list
     li.c-payment-list-item
       i18n.has-text-1(tag='label') Date & Time
-      // TODO remove new Date() when dealing with real data.
-      strong {{ humanDate(this.payment.date || new Date(), { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }}
+      strong {{ humanDate(this.payment.date, { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }}
     li.c-payment-list-item
       i18n.has-text-1(tag='label') Relative to
-      // TODO remove new Date() when dealing with real data.
-      strong {{ humanDate(payment.relativeTo || new Date(), { month: 'long' }) }}
+      strong {{ humanDate(payment.relativeTo, { month: 'long' }) }}
     li.c-payment-list-item
       i18n.has-text-1(tag='label') Mincome at the time
       strong {{ currency(groupSettings.mincomeAmount) }}

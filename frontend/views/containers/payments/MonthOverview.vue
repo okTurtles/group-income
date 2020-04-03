@@ -3,7 +3,7 @@
   i18n.c-summary-title.is-title-4(
     tag='h4'
     data-test='thisMonth'
-    :args='{ month: humanDate(new Date(), { month: "long" }) }'
+    :args='{ month: humanDate(Date.now(), { month: "long" }) }'
   ) {month} overview
 
   .c-summary-item(
