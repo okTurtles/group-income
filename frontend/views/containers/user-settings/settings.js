@@ -33,10 +33,18 @@ export default {
   }, {
     links: [
       {
-        title: L('Changelog'),
-        url: 'changelog',
+        title: L('Application Logs'),
+        url: 'application-logs',
         index: 4
       },
+      {
+        title: L('Troubleshooting'),
+        url: 'troubleshooting',
+        index: 5
+      }
+    ]
+  }, {
+    links: [
       {
         title: L('Log Out'),
         url: 'logout',

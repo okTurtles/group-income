@@ -15,13 +15,13 @@
         hr.tab-nav-separator(v-else)
 
         a.tab-link.no-border(
-          v-for='(links, index) in tabItem.links'
+          v-for='(link, index) in tabItem.links'
           :key='index'
-          :class='{ "is-active": activeTab === links.index, "has-text-white": isDarkTheme}'
-          :data-test='`link-${links.url}`'
-          @click='tabClick(links)'
+          :class='{ "is-active": activeTab === link.index, "has-text-white": isDarkTheme}'
+          :data-test='`link-${link.url}`'
+          @click='tabClick(link)'
         )
-          | {{ links.title }}
+          | {{ link.title }}
           .c-icons
             i.icon-chevron-right
 
@@ -70,9 +70,20 @@ export default {
       if (this.tabItems.length) {
         this.tabItems[this.activeTab].isActive = true
       }
+    },
+    '$route' (to, from) {
+      const section = to.query.section
+      if (!section) return
+
+      for (const tabItem of this.tabNav) {
+        for (const link of tabItem.links) {
+          if (this.activeTab !== link.index && link.url === section) {
+            return this.changeTab(link.index)
+          }
+        }
+      }
     }
   },
-
   methods: {
     /**
      * Change the active tab and emit change event.
@@ -214,14 +225,11 @@ $closeMobileBarBgColor: #3c3c3c;
   border-radius: 3px;
   cursor: pointer;
   transition: background-color 150ms cubic-bezier(0.4, 0.25, 0.3, 1);
-
-  @include desktop {
-    margin-right: 4px;
-  }
 }
 
 .c-icons {
   color: $text_1;
+
   @include desktop {
     display: none;
   }
@@ -230,14 +238,12 @@ $closeMobileBarBgColor: #3c3c3c;
 .tab-nav-list {
   display: flex;
   flex-direction: column;
-  width: 456px;
+  width: 28rem;
   max-width: calc(100% - 1rem);
   padding-top: 1.5rem;
-  padding-bottom: 6px;
 
   @include desktop {
-    width: 183px;
-    padding-bottom: 0;
+    width: 11rem;
   }
 }
 
@@ -258,8 +264,12 @@ $closeMobileBarBgColor: #3c3c3c;
 
 .tab-nav-separator {
   height: 1px;
-  margin: 0 $spacer $spacer $spacer;
+  margin: -0.5rem 1rem 1rem;
   background: $general_0;
+
+  @include desktop {
+    margin-right: 0;
+  }
 }
 
 // Main content

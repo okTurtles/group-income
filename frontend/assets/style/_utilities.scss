@@ -66,6 +66,12 @@ $fills: (
   }
 }
 
+.hide-touch {
+  @include touch {
+    display: none;
+  }
+}
+
 .hide-phone {
   @include phone {
     display: none;

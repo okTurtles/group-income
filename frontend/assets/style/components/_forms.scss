@@ -98,6 +98,16 @@ legend.legend {
   height: auto;
   min-height: 7.5rem;
   resize: vertical;
+
+  &[readonly] {
+    background-color: $general_2;
+
+    &:hover,
+    &:focus {
+      border-color: var(--general_0);
+      box-shadow: none;
+    }
+  }
 }
 
 .select {
