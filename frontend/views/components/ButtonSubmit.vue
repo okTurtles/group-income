@@ -16,12 +16,12 @@
 Use ButtonSubmit on buttons that will trigger an **async** action.
 
 button-submit(
-@click='handleLogin'
+  @click='handleLogin'
 ) Login
 
-This will display a "loading state" on the button while the login is happening.
+This will display a spinner (the loading state) on the button while the login is happening.
 
-The button has type="submit" to catch any way of form submittion (ex: press Enter).
+The button has type="submit" to catch any way of form submission (ex: press Enter).
 
 That way we don't need to use $refs on the parent.
 
