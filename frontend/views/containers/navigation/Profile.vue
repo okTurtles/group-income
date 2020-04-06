@@ -2,18 +2,19 @@
 .c-profile(
   v-if='$store.state.loggedIn'
   data-test='userProfile'
-  )
-  .c-avatar-user
-    avatar-user(:username='ourUsername' size='sm')
-    .c-user
-      strong(
-        :data-test='userDisplayName ? "profileDisplayName" : "profileName"'
-      ) {{ userDisplayName ? userDisplayName : ourUsername }}
+)
+  profile-card(:username='ourUsername' :isSelf='true')
+    .c-avatar-user
+      avatar-user(:username='ourUsername' size='sm')
+      .c-user
+        strong(
+          :data-test='userDisplayName ? "profileDisplayName" : "profileName"'
+        ) {{ userDisplayName ? userDisplayName : ourUsername }}
 
-      span(
-        data-test='profileName'
-        v-if='userDisplayName'
-      ) @{{ ourUsername }}
+        span(
+          data-test='profileName'
+          v-if='userDisplayName'
+        ) @{{ ourUsername }}
 
   button.is-icon-small(
     data-test='settingsBtn'
@@ -24,6 +25,7 @@
 
 <script>
 import AvatarUser from '@components/AvatarUser.vue'
+import ProfileCard from '@components/ProfileCard.vue'
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import { mapGetters } from 'vuex'
@@ -31,7 +33,8 @@ import { mapGetters } from 'vuex'
 export default {
   name: 'Profile',
   components: {
-    AvatarUser
+    AvatarUser,
+    ProfileCard
   },
   computed: {
     ...mapGetters([

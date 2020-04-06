@@ -16,10 +16,11 @@
       :class='member.pending && "is-pending"'
       :key='username'
     )
-      avatar-user(:username='username' size='sm')
+      profile-card(:username='ourUsername' :isSelf='true' direction='left')
+        avatar-user(:username='username' size='sm')
 
-      .c-name.has-ellipsis(data-test='username')
-        | {{ username }}
+        .c-name.has-ellipsis(data-test='username')
+          | {{ username }}
 
       i18n.pill.has-text-small.has-background-dark(
         v-if='member.pending'
@@ -57,13 +58,15 @@ import sbp from '~/shared/sbp.js'
 import AvatarUser from '@components/AvatarUser.vue'
 import GroupMemberMenu from '@containers/dashboard/GroupMemberMenu.vue'
 import Tooltip from '@components/Tooltip.vue'
+import ProfileCard from '@components/ProfileCard.vue'
 
 export default {
   name: 'GroupMembers',
   components: {
     AvatarUser,
     GroupMemberMenu,
-    Tooltip
+    Tooltip,
+    ProfileCard
   },
   methods: {
     invite () {
