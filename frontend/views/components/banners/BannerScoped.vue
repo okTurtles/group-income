@@ -72,7 +72,7 @@ export default {
     clean () {
       this.updateBanner('', '')
     },
-    danger (text, opts) {
+    danger (text, opts = {}) {
       this.updateBanner(text, 'danger')
       if (opts.error) { this.ephemeral.error = opts.error }
     },

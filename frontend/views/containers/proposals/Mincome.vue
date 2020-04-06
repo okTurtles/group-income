@@ -30,7 +30,7 @@ import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import { mapGetters, mapState } from 'vuex'
 import { decimals } from '@view-utils/validators.js'
-import L from '@view-utils/translations.js'
+import L, { LError } from '@view-utils/translations.js'
 import ProposalTemplate from './ProposalTemplate.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import { PROPOSAL_GROUP_SETTING_CHANGE } from '@model/contracts/voting/constants.js'
@@ -126,7 +126,7 @@ export default {
       }
 
       try {
-        this.foo.mincome = 'force-an-error' // DELETE THIS BEFORE MERGE
+        this.foo.dumbError = 'force-an-error' // DELETE THIS BEFORE MERGE
         const updatedSettings = await sbp(
           'gi.contracts/group/updateSettings/create',
           { mincomeAmount },
@@ -136,7 +136,11 @@ export default {
         this.$refs.proposal.close()
       } catch (error) {
         console.error('Mincome.vue submit() error:', error.message)
-        this.$refs.formMsg.danger(L('Failed to change mincome.'), { error })
+        // @taoeffect, please try to make this work!
+        this.$refs.formMsg.danger(`${L('Failed to change mincome.')} ${LError(error)}`)
+
+        // The original implemented solution:
+        // this.$refs.formMsg.danger(L('Failed to change mincome.'), { error })
       }
     }
   }
