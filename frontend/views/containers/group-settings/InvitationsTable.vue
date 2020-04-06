@@ -1,15 +1,15 @@
 <template lang="pug">
 page-section.c-section(:title='L("Invite links")')
   template(#cta='')
-    .select-wrapper.combobox(:class='{ focus: ephemeral.selectbox.focused }')
-      select.button.is-small.is-outlined(
+    label.selectsolo(:class='{ focus: ephemeral.selectbox.focused }')
+      i18n.sr-only Filter links
+      select.select(
         ref='select'
         v-model='ephemeral.selectbox.selectedOption'
         @change='unfocusSelect'
       )
         option(value='Active') {{ L('Active links') }}
         option(value='All') {{ L('All links') }}
-      span.combobox-rect
 
   i18n.has-text-1.c-invite-description(tag='p') Here's a list of all invite links you own
 

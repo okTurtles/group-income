@@ -62,10 +62,11 @@ function initMonthlyPayments () {
   }
 }
 
-function initGroupProfile (contractID: string) {
+function initGroupProfile (contractID: string, joined: ?string) {
   return {
     contractID: contractID,
-    nonMonetaryContributions: []
+    nonMonetaryContributions: [],
+    joinedDate: joined
   }
 }
 
@@ -149,6 +150,19 @@ DefineContract({
     groupMembersCount (state, getters) {
       return getters.groupMembersByUsername.length
     },
+    groupMembersPending (state, getters) {
+      const invites = getters.currentGroupState.invites
+      const pendingMembers = {}
+      for (const inviteId in invites) {
+        const invite = invites[inviteId]
+        if (invite.status === INVITE_STATUS.VALID && invite.creator !== INVITE_INITIAL_CREATOR) {
+          pendingMembers[invites[inviteId].invitee] = {
+            invitedBy: invites[inviteId].creator
+          }
+        }
+      }
+      return pendingMembers
+    },
     groupShouldPropose (state, getters) {
       return getters.groupMembersCount >= 3
     },
@@ -199,7 +213,7 @@ DefineContract({
             groupCreator: meta.username
           },
           profiles: {
-            [meta.username]: initGroupProfile(meta.identityContractID)
+            [meta.username]: initGroupProfile(meta.identityContractID, meta.createdDate)
           },
           userPaymentsByMonth: {
             [currentMonthTimestamp()]: initMonthlyPayments()
@@ -436,7 +450,7 @@ DefineContract({
         if (Object.keys(invite.responses).length === invite.quantity) {
           invite.status = INVITE_STATUS.USED
         }
-        Vue.set(state.profiles, meta.username, initGroupProfile(meta.identityContractID))
+        Vue.set(state.profiles, meta.username, initGroupProfile(meta.identityContractID, meta.createdDate))
         // If we're triggered by handleEvent in state.js (and not latestContractState)
         // then the asynchronous sideEffect function will get called next
         // and we will subscribe to this new user's identity contract

@@ -50,7 +50,7 @@ async function startApp () {
     ].reduce(reducer, {})
     sbp('sbp/filters/global/add', (domain, selector, data) => {
       if (domainBlacklist[domain] || selBlacklist[selector]) return
-      console.log(`[sbp] ${selector}`, data)
+      console.debug(`[sbp] ${selector}`, data)
     })
   }
 

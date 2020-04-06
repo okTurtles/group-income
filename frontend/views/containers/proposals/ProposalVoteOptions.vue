@@ -1,30 +1,25 @@
 <template lang='pug'>
 .c-ctas(v-if='!isToRemoveMe')
   .buttons.c-options(v-if='!hadVoted || ephemeral.changingVote')
-    i18n.button.is-outlined.is-small.is-success(
-      tag='button'
+    button-submit.is-outlined.is-small.is-success(
       @click='voteFor'
       data-test='voteFor'
-    ) Vote yes
+    ) {{ L('Vote yes') }}
 
-    i18n.button.is-outlined.is-small.is-danger(
-      tag='button'
+    button-submit.is-outlined.is-small.is-danger(
       @click='voteAgainst'
       data-test='voteAgainst'
-    ) Vote no
-
+    ) {{ L('Vote no') }}
   .buttons(v-else)
-    i18n.button.is-outlined.is-small(
-      tag='button'
+    button-submit.is-outlined.is-small(
       v-if='ownProposal'
       @click='cancelProposal'
       data-test='cancelProposal'
-    ) Cancel Proposal
+    ) {{ L('Cancel proposal') }}
     p.has-text-1(v-else data-test='voted')
       | {{ L('You voted {voteStatus}', { voteStatus }) }}.
       | &nbsp;
       i18n.link(tag='button' @click='startChangingVote') Change vote.
-  .help.has-text-danger.c-error(v-if='ephemeral.errorMsg') {{ ephemeral.errorMsg }}
 </template>
 
 <script>
@@ -35,18 +30,21 @@ import { VOTE_FOR, VOTE_AGAINST } from '@model/contracts/voting/rules.js'
 import { oneVoteToPass } from '@model/contracts/voting/proposals.js'
 import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER } from '@model/contracts/voting/constants.js'
 import { createInvite } from '@model/contracts/group.js'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 
 export default {
   name: 'Vote',
   props: {
     proposalHash: String
   },
+  components: {
+    ButtonSubmit
+  },
   data () {
     return {
       ephemeral: {
         changingVote: false
-      },
-      errorMsg: null
+      }
     }
   },
   computed: {
@@ -86,6 +84,9 @@ export default {
     },
     ownProposal () {
       return this.ourUsername === this.proposal.meta.username
+    },
+    refVoteMsg () {
+      return this.$parent.$refs.voteMsg
     }
   },
   methods: {
@@ -93,13 +94,13 @@ export default {
       this.ephemeral.changingVote = true
     },
     async voteFor () {
-      this.ephemeral.changingVote = false
-      this.ephemeral.errorMsg = null
       // Avoid redundant vote from "Change vote" if already voted FOR before
       if (!confirm(L('Are you sure you want to vote yes?')) || this.proposal.votes[this.ourUsername] === VOTE_FOR) {
         return null
       }
+      this.ephemeral.changingVote = false
       try {
+        this.refVoteMsg.clean()
         const proposalHash = this.proposalHash
         const isOneVoteToPass = oneVoteToPass(proposalHash)
         const payload = {}
@@ -124,19 +125,19 @@ export default {
           this.currentGroupId
         )
         await sbp('backend/publishLogEntry', vote)
-      } catch (ex) {
-        console.log(ex)
-        this.ephemeral.errorMsg = L('Failed to Cast Vote. Try again.')
+      } catch (error) {
+        console.error('ProposalVoteOptions voteFor failed:', error)
+        this.refVoteMsg.danger(L('We couldn’t register your vote.'))
       }
     },
     async voteAgainst () {
-      this.ephemeral.changingVote = false
-      this.ephemeral.errorMsg = null
       // Avoid redundant vote from "Change vote" if already voted AGAINST before
       if (!confirm(L('Are you sure you want to vote no?')) || this.proposal.votes[this.ourUsername] === VOTE_AGAINST) {
         return null
       }
+      this.ephemeral.changingVote = false
       try {
+        this.refVoteMsg.clean()
         const vote = await sbp('gi.contracts/group/proposalVote/create',
           {
             proposalHash: this.proposalHash,
@@ -145,9 +146,9 @@ export default {
           this.currentGroupId
         )
         await sbp('backend/publishLogEntry', vote)
-      } catch (ex) {
-        console.log(ex)
-        this.ephemeral.errorMsg = L('Failed to Cast Vote. Try again.')
+      } catch (error) {
+        console.error('ProposalVoteOptions voteAgainst failed:', error)
+        this.refVoteMsg.danger(L('We couldn’t register your vote.'))
       }
     },
     async cancelProposal () {
@@ -155,6 +156,7 @@ export default {
         return null
       }
       try {
+        this.refVoteMsg.clean()
         const vote = await sbp('gi.contracts/group/proposalCancel/create',
           {
             proposalHash: this.proposalHash
@@ -162,9 +164,9 @@ export default {
           this.currentGroupId
         )
         await sbp('backend/publishLogEntry', vote)
-      } catch (ex) {
-        console.log(ex)
-        this.ephemeral.errorMsg = L('Failed to Cancel Proposal. Try again.')
+      } catch (error) {
+        console.error('ProposalVoteOptions cancelProposal failed:', error)
+        this.refVoteMsg.danger(L('Failed to cancel proposal.'))
       }
     }
   }

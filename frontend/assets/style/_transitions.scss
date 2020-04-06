@@ -52,6 +52,7 @@
 .slide-prev-leave-active {
   @include tablet {
     position: absolute;
+    width: 100%;
     transition: transform 0.3s cubic-bezier(0.785, 0.135, 0.15, 0.86), opacity 0.3s cubic-bezier(0.785, 0.135, 0.15, 0.86) 0.1s;
   }
 }
@@ -67,7 +68,7 @@
 .slide-next-enter {
   @include tablet {
     opacity: 0;
-    transform: translate3d(0, -100%, 0);
+    transform: translate3d(0, 100%, 0);
   }
 }
 
@@ -75,7 +76,7 @@
 .slide-next-leave-to {
   @include tablet {
     opacity: 0;
-    transform: translate3d(0, 100%, 0);
+    transform: translate3d(0, -100%, 0);
   }
 }
 

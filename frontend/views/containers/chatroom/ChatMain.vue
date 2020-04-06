@@ -190,7 +190,7 @@ export default {
     who (isCurrentUser, fromId) {
       const user = isCurrentUser ? this.currentUserAttr : this.details.participants[fromId]
 
-      return user.displayName || user.name
+      return user.displayName || user.username
     },
     variant (isCurrentUser) {
       return isCurrentUser ? this.messageVariants.SENT : this.messageVariants.RECEIVED

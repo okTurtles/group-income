@@ -4,11 +4,9 @@ form.c-search-form(
 )
   label.field
     .sr-only {{label}}
-
-    .input-combo
-      .is-icon(:aria-label='L("Search")')
+    .inputgroup.c-search
+      .is-icon.prefix(aria-hidden='true')
         i.icon-search
-
       input.input(
         type='text'
         name='search'
@@ -17,13 +15,13 @@ form.c-search-form(
         :value='value'
         @input='$emit("input", $event.target.value)'
       )
-
-      button.is-icon-small(
-        v-if='value !== ""'
-        :aria-label='L("Clear search")'
-        @click='$emit("input", "")'
-      )
-        i.icon-times
+      .addons
+        button.is-icon-small(
+          v-if='value !== ""'
+          :aria-label='L("Clear search")'
+          @click='$emit("input", "")'
+        )
+          i.icon-times
 </template>
 
 <script>
@@ -60,24 +58,11 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.input-combo {
-  align-items: center;
-
-  .is-icon {
-    left: 0;
-    right: auto;
-  }
-
-  .is-icon-small {
-    position: absolute;
-    right: $spacer-sm;
-    background: $general_2;
-    border-radius: 50%;
-    z-index: 2;
-
-    &:hover {
-      background: $general_1;
-    }
+.c-search {
+  .addons {
+    display: flex;
+    align-items: center;
+    margin-right: 0.5rem;
   }
 }
 </style>

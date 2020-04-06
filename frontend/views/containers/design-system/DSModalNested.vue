@@ -15,7 +15,7 @@ modal-template(:class='{ "has-background": background, "is-left-aligned": backOn
       i18n.label(tag='label') Introduce the potential new member(s) to your group
       //- We aren't using L or i18n here to avoid this example text being
       //- translated by the translators (since it won't appear in the UI)
-      textarea(rows='5')
+      textarea.textarea(rows='5')
         | Felix and Brian are two very important figures in the electronic music scene. They have greatly contributed to the development of genres like ambient music and are now ready to contribute to this group. They are Dreamers like us!'
 
     .buttons
