@@ -36,7 +36,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
         tag='ul'
       )
         li.c-search-member(
-          v-for='{username, displayName} in searchResult'
+          v-for='{username, displayName, invitedBy} in searchResult'
           :key='username'
         )
           .c-identity
@@ -48,20 +48,25 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
                 v-if='displayName'
               ) @{{ username }}
 
-          .c-actions
-            group-member-menu.c-action-menu(:username='username')
+              i18n.pill.is-neutral(v-if='invitedBy' data-test='pillPending') pending
+              i18n.pill.is-primary(v-else-if='isNewMember(username)' data-test='pillNew') new
 
-            .c-actions-buttons.buttons
-              button.button.is-outlined.is-small(
-                @click='toMessages(username)'
-              )
-                i.icon-comment
-                i18n Send message
-              button.button.is-outlined.is-small(
-                @click='openModal("RemoveMember", { username })'
-              )
-                i.icon-times
-                i18n Remove member
+          .c-actions
+            group-members-tooltip-pending(v-if='invitedBy' :username='username')
+            template(v-else)
+              group-members-menu.c-action-menu(:username='username')
+
+              .c-actions-buttons.buttons
+                button.button.is-outlined.is-small(
+                  @click='toMessages(username)'
+                )
+                  i.icon-comment
+                  i18n Send message
+                button.button.is-outlined.is-small(
+                  @click='openModal("RemoveMember", { username })'
+                )
+                  i.icon-times
+                  i18n Remove member
 </template>
 
 <script>
@@ -72,7 +77,8 @@ import { OPEN_MODAL } from '@utils/events.js'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import Search from '@components/Search.vue'
 import AvatarUser from '@components/AvatarUser.vue'
-import GroupMemberMenu from '@containers/dashboard/GroupMemberMenu.vue'
+import GroupMembersMenu from '@containers/dashboard/GroupMembersMenu.vue'
+import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
 
 export default {
   name: 'GroupMembersAllModal',
@@ -80,7 +86,8 @@ export default {
     ModalBaseTemplate,
     Search,
     AvatarUser,
-    GroupMemberMenu
+    GroupMembersMenu,
+    GroupMembersTooltipPending
   },
   data () {
     return {
@@ -89,17 +96,30 @@ export default {
   },
   computed: {
     ...mapGetters([
+      'currentGroupState',
       'groupProfiles',
       'globalProfile',
-      'groupMembersCount'
+      'groupMembersCount',
+      'groupMembersPending',
+      'ourUsername'
     ]),
+    weJoinedMs () {
+      return new Date(this.currentGroupState.profiles[this.ourUsername].joinedDate).getTime()
+    },
+    allMembers () {
+      return Object.keys({ ...this.groupMembersPending, ...this.groupProfiles })
+    },
     searchResult () {
-      return Object.keys(this.groupProfiles)
+      return this.allMembers
         .map(username => {
           const inList = (n) => n.toUpperCase().indexOf(this.searchText.toUpperCase()) > -1
-          const { displayName } = this.globalProfile(username)
+          const { displayName } = this.globalProfile(username) || {}
           if (!this.searchText || inList(username) || (displayName ? inList(displayName) : false)) {
-            return { username, displayName }
+            return {
+              username,
+              displayName,
+              invitedBy: this.groupMembersPending[username]
+            }
           }
         })
         .filter(profile => profile !== undefined)
@@ -113,6 +133,13 @@ export default {
     }
   },
   methods: {
+    isNewMember (username) {
+      if (username === this.ourUsername) { return false }
+
+      const memberJoinedMs = new Date(this.currentGroupState.profiles[username].joinedDate).getTime()
+      const joinedAfterUs = this.weJoinedMs < memberJoinedMs
+      return joinedAfterUs && Date.now() - memberJoinedMs < 604800000 // joined less than 1w (168h) ago.
+    },
     openModal (modal, props) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
     },
@@ -128,6 +155,7 @@ export default {
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
 .c-container {
   height: 100%;
   width: 100%;
@@ -137,7 +165,7 @@ export default {
 .c-header,
 .c-container {
   @include tablet {
-    width: 38.75rem;
+    width: 50rem;
     max-width: 100%;
   }
 }
@@ -168,34 +196,18 @@ export default {
   margin-bottom: 1.5rem;
 }
 
-.input-combo {
-  align-items: center;
-
-  .is-icon {
-    left: 0;
-    right: auto;
-  }
-
-  .is-icon-small {
-    position: absolute;
-    right: 0.5rem;
-    background: $general_2;
-    border-radius: 50%;
-
-    &:hover {
-      background: $general_1;
-    }
-  }
-}
-
 .c-identity {
   display: flex;
   align-items: center;
+  flex-grow: 1;
 }
 
 .c-name {
-  margin-left: 1.5rem;
-  min-width: 100%;
+  margin: 0 0.5rem 0 1.5rem;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .c-display-name {

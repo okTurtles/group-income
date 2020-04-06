@@ -10,10 +10,10 @@ modal-template(ref='modal' v-if='payment')
   ul.c-payment-list
     li.c-payment-list-item
       i18n.has-text-1(tag='label') Date & Time
-      strong {{ moment(payment.date).format('hh:mm - MMMM DD, YYYY') }}
+      strong {{ humanDate(this.payment.date, { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }}
     li.c-payment-list-item
       i18n.has-text-1(tag='label') Relative to
-      strong {{ moment(payment.relativeTo).format('MMMM')}}
+      strong {{ humanDate(payment.relativeTo, { month: 'long' }) }}
     li.c-payment-list-item
       i18n.has-text-1(tag='label') Mincome at the time
       strong {{ currency(groupSettings.mincomeAmount) }}
@@ -31,11 +31,11 @@ modal-template(ref='modal' v-if='payment')
 <script>
 import { mapGetters } from 'vuex'
 import L from '@view-utils/translations.js'
-import moment from 'moment'
 import sbp from '~/shared/sbp.js'
 import { CLOSE_MODAL } from '@utils/events.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import currencies from '@view-utils/currencies.js'
+import { humanDate } from '@view-utils/humanDate.js'
 
 export default {
   name: 'PaymentDetail',
@@ -76,7 +76,7 @@ export default {
       console.log('Todo: Implement cancel payment')
       this.closeModal()
     },
-    moment
+    humanDate
   },
   validations: {
     form: {}

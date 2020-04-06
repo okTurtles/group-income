@@ -50,7 +50,7 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .settings-container {
-  @include tablet {
+  @include desktop {
     padding-top: 1.5rem;
   }
 

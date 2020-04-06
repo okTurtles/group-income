@@ -4,7 +4,7 @@
     v-for='(user, index) in founders'
     :key='`user-${index}`'
     :src='user.picture'
-    :alt='user.displayName || user.name'
+    :alt='user.displayName || user.username'
     size='sm'
   )
   message-notification {{text}}

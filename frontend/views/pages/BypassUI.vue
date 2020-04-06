@@ -92,7 +92,7 @@ export default {
             const username = this.$store.getters.ourUsername
             // QUESTION: Maybe we should do this validation inside sbp action...
             if (username) { throw Error(`You're signed as '${username}'. Logout first and re-run the tests.`) }
-            await sbp('gi.actions/user/signupAndLogin', params)
+            await sbp('gi.actions/identity/signupAndLogin', params)
           },
           finalize: () => {
             // Bug vue/no-side-effects-in-computed-properties
@@ -104,7 +104,7 @@ export default {
           actionFn: async (params) => {
             const username = this.$store.getters.ourUsername
             if (username) { throw Error(`You're loggedin as '${username}'. Logout first and re-run the tests.`) }
-            await sbp('gi.actions/user/login', params)
+            await sbp('gi.actions/identity/login', params)
           },
           finalize: () => {
             this.$router.push({ path: '/app' }) // eslint-disable-line

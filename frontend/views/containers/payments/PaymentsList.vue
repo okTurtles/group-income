@@ -29,8 +29,8 @@ table.table.table-in-card.c-payments(:class='{"is-editing": paymentsType === "ed
 
         // TODO: replace condition to indicate whether or not the payment date is < or > than the current date using payment.paymentStatusText
         i18n.c-user-month(
-          :class='index === 0 ? "has-text-1" : "pill is-danger is-small"'
-          :args='{date: moment(payment.date).format("MMMM DD")}'
+          :class='index === 0 ? "has-text-1" : "pill is-danger"'
+          :args='{date: dueDate(payment.date) }'
         ) Due {date}
       td.c-payments-amount(v-if='paymentsType !== "edit"')
 
@@ -44,7 +44,7 @@ table.table.table-in-card.c-payments(:class='{"is-editing": paymentsType === "ed
             :args='{partial_amount: `<strong class="has-text-0">${currency(20)}</strong>`, partial_total: currency(payment.amount)}'
           ) {partial_amount} out of {partial_total}
 
-          i18n.pill.is-primary.is-small Partial
+          i18n.pill.is-primary Partial
 
         strong(v-else) {{currency(payment.amount)}}
 
@@ -62,12 +62,12 @@ table.table.table-in-card.c-payments(:class='{"is-editing": paymentsType === "ed
             .button.is-icon-smaller.c-tip
               i.icon-info
 
-          i18n.pill.is-warning.is-small Not received
+          i18n.pill.is-warning Not received
 
       td
         .c-actions
-          .c-actions-month(:class='!(index !== 0 && paymentsType === "todo") ? "has-text-1" : "pill is-danger is-small"') {{ moment(payment.date).format('MMMM D') }}
-          payments-list-menu(
+          .c-actions-month(:class='!(index !== 0 && paymentsType === "todo") ? "has-text-1" : "pill is-danger"') {{ dueDate(payment.date) }}
+          payments-list-menu.c-actions-menu(
             v-if='paymentsType !== "edit"'
             :payment='payment'
             :paymentsType='paymentsType'
@@ -82,8 +82,8 @@ table.table.table-in-card.c-payments(:class='{"is-editing": paymentsType === "ed
 
       td(v-if='paymentsType === "edit"')
         label.field
-          .input-combo
-            input.input(:value='payment.amount')
+          .inputgroup
+            input.input(inputmode='decimal' pattern='[0-9]*' :value='payment.amount')
             .suffix.hide-phone {{symbolWithCode}}
             .suffix.hide-tablet {{symbol}}
 </template>
@@ -94,8 +94,7 @@ import AvatarUser from '@components/AvatarUser.vue'
 import Tooltip from '@components/Tooltip.vue'
 import PaymentsListMenu from '@containers/payments/PaymentsListMenu.vue'
 import currencies from '@view-utils/currencies.js'
-import moment from 'moment'
-
+import { humanDate } from '@view-utils/humanDate.js'
 export default {
   name: 'PaymentsList',
   components: {
@@ -119,7 +118,6 @@ export default {
   },
   data () {
     return {
-      moment,
       // Temp
       tableChecked: false
     }
@@ -157,6 +155,9 @@ export default {
       this.payments.map(payment => {
         payment.checked = this.tableChecked
       })
+    },
+    dueDate (datems) {
+      return humanDate(datems, { month: 'short', day: 'numeric' })
     }
   }
 }
@@ -258,6 +259,11 @@ export default {
 
 .c-actions-month {
   margin-left: 0;
+  white-space: nowrap;
+}
+
+.c-actions-menu {
+  margin-left: 1rem;
 }
 
 .c-name {
@@ -324,7 +330,7 @@ export default {
   }
 }
 
-.input-combo .input {
+.inputgroup .input {
   @include phone {
     padding-right: 2rem;
   }

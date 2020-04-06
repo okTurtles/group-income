@@ -123,7 +123,7 @@ export default {
         } else {
           const identityContractID = await sbp('namespace/lookup', invite.creator)
           const userState = await sbp('state/latestContractState', identityContractID)
-          const userDisplayName = userState.attributes.displayName || userState.attributes.name
+          const userDisplayName = userState.attributes.displayName || userState.attributes.username
           message = L('{who} invited you to join their group!', { who: userDisplayName })
           creator = userDisplayName
           creatorPicture = userState.attributes.picture

@@ -3,36 +3,38 @@
   i18n.is-title-4.steps-title(tag='h4') 3. Minimum Income
 
   .card
-    i18n.label(tag='label') What is the minimum each member should receive monthly?
+    fieldset
+      i18n.label What is the minimum each member should receive monthly?
+      .selectgroup
+        input.input(
+          ref='mincome'
+          inputmode='decimal'
+          pattern='[0-9]*'
+          placeholder='Amount'
+          :aria-label='L("Amount")'
+          name='mincomeAmount'
+          step='1'
+          min='0'
+          required=''
+          :class='{ error: $v.form.mincomeAmount.$error }'
+          :value='group.mincomeAmount'
+          @input='update'
+          @keyup.enter='next'
+        )
+        select.select(
+          :aria-label='L("Currency")'
+          name='mincomeCurrency'
+          required=''
+          :value='group.mincomeCurrency'
+          @input='update'
+        )
+          option(
+            v-for='(currency, code) in currencies'
+            :value='code'
+            :key='code'
+          ) {{ currency.symbolWithCode }}
 
-    .select-wrapper
-      input.input(
-        ref='mincome'
-        type='number'
-        placeholder='Amount'
-        name='mincomeAmount'
-        step='1'
-        min='0'
-        required=''
-        :class='{ error: $v.form.mincomeAmount.$error }'
-        :value='group.mincomeAmount'
-        @input='update'
-        @keyup.enter='next'
-      )
-
-      select(
-        name='mincomeCurrency'
-        required=''
-        :value='group.mincomeCurrency'
-        @input='update'
-      )
-        option(
-          v-for='(currency, code) in currencies'
-          :value='code'
-          :key='code'
-        ) {{ currency.symbolWithCode }}
-
-    i18n.has-text-1(tag='p') This value can be adjusted in the future.
+    i18n.has-text-1 This value can be adjusted in the future.
 
     slot
 </template>

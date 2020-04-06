@@ -1,11 +1,13 @@
 <template lang='pug'>
   img.c-avatar(
+    v-if='imageURL'
     :class='`is-${size}`'
     :src='imageURL'
     :alt='alt'
     ref='img'
     v-on='$listeners'
   )
+  .c-avatar.is-empty(v-else :class='`is-${size}`')
 </template>
 
 <script>
@@ -115,6 +117,10 @@ export default {
     content: "";
     display: block;
     padding-bottom: 100%;
+  }
+
+  &.is-empty {
+    background-color: $general_0;
   }
 
   &.is-xs { @include size(1.5rem); }

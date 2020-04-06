@@ -2,10 +2,11 @@
 .c-pagination
   .c-pagination-settings
     i18n.has-text-1(
-      tag='span'
+      tag='span' aria-hidden='true'
     ) Show:
-    .select-wrapper.combobox
-      select.button.is-small.is-outlined(
+    label.selectsolo.c-select
+      i18n.sr-only Show per page
+      select.select(
         ref='select'
         @change='updatePagination'
       )
@@ -15,7 +16,7 @@
           :value='numberPerPage'
         ) {{ `${numberPerPage} ${L('results')}` }}
     i18n.has-text-1(
-      tag='span'
+      tag='span' aria-hidden='true'
     ) per page
 
   .c-pagination-controls
@@ -66,9 +67,8 @@ export default {
   align-items: center;
 }
 
-.c-control,
-.select-wrapper {
-  margin: 0 0.25rem;
+.c-select {
+  margin: 0 0.5rem;
 }
 
 .c-control {
@@ -77,6 +77,7 @@ export default {
   border-radius: 50%;
   color: $general_0;
   background-color: $general_2;
+  margin: 0 $spacer-xs;
 
   &:first-child i {
     margin-left: -1px;

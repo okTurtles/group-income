@@ -21,6 +21,8 @@
         v-if='proposal.status === statuses.STATUS_OPEN'
         :proposalHash='proposalHash'
       )
+    // Note: $refs.voteMsg is used by children ProposalVoteOptions
+    banner-scoped(ref='voteMsg' data-test='voteMsg')
     p.c-sendLink(v-if='invitationLink' data-test='sendLink')
       i18n(
         :args='{ user: proposal.data.proposalData.member}'
@@ -50,6 +52,7 @@ import {
   STATUS_CANCELLED
 } from '@model/contracts/voting/constants.js'
 import ProposalVoteOptions from '@containers/proposals/ProposalVoteOptions.vue'
+import BannerScoped from '@components/banners/BannerScoped.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import Tooltip from '@components/Tooltip.vue'
 import { INVITE_STATUS } from '@model/contracts/group.js'
@@ -60,6 +63,7 @@ export default {
     proposalHash: String
   },
   components: {
+    BannerScoped,
     ProposalVoteOptions,
     LinkToCopy,
     Tooltip

@@ -22,6 +22,7 @@ import * as EVENTS from '~/frontend/utils/events.js'
 import './contracts/group.js'
 import './contracts/mailbox.js'
 import './contracts/identity.js'
+import { captureLogsStart, captureLogsPause } from '~/frontend/model/captureLogs.js'
 
 Vue.use(Vuex)
 var store // this is set and made the default export at the bottom of the file.
@@ -38,7 +39,10 @@ const initialState = {
   loggedIn: false, // false | { username: string, identityContractID: string }
   theme: 'blue',
   reducedMotion: false,
-  fontSize: 1
+  fontSize: 1,
+  appLogsFilter: process.env.NODE_ENV === 'development'
+    ? ['error', 'warn', 'debug', 'log']
+    : ['error', 'warn']
 }
 
 // guard all sbp calls for contract actions with this function
@@ -186,6 +190,9 @@ const mutations = {
   },
   setFontSize (state, fontSize) {
     state.fontSize = fontSize
+  },
+  setAppLogsFilters (state, filters) {
+    state.appLogsFilter = filters
   }
 }
 // https://vuex.vuejs.org/en/getters.html
@@ -388,6 +395,7 @@ const actions = {
     if (settings) {
       console.debug('loadSettings:', settings)
       store.replaceState(settings)
+      captureLogsStart(user.username)
       // This may seem unintuitive to use the store.state from the global store object
       // but the state object in scope is a copy that becomes stale if something modifies it
       // like an outside dispatch
@@ -412,6 +420,8 @@ const actions = {
         console.error(`login: lost current identity state somehow for ${user.username} / ${user.identityContractID}! attempting resync...`)
         await sbp('state/enqueueContractSync', user.identityContractID)
       }
+    } else {
+      captureLogsStart(user.username)
     }
     await sbp('gi.db/settings/save', SETTING_CURRENT_USER, user.username)
     commit('login', user)
@@ -427,7 +437,14 @@ const actions = {
       commit('removeContract', contractID)
     }
     commit('logout')
-    Vue.nextTick(() => sbp('okTurtles.events/emit', EVENTS.LOGOUT))
+    Vue.nextTick(() => {
+      sbp('okTurtles.events/emit', EVENTS.LOGOUT)
+      captureLogsPause({
+        // Let's clear all stored logs to prevent someone else
+        // accessing sensitve data after the user logs out.
+        wipeOut: true
+      })
+    })
   },
   // persisting the state
   async saveSettings (

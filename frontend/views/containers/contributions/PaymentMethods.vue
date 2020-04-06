@@ -12,31 +12,29 @@ fieldset(data-test='paymentMethods')
       :key='`method-${index}`'
       data-test='method'
     )
-      .select-wrapper.is-reversed(
-        :class='{"is-shifted": methodsCount > 1 || method.name !== "choose" || method.value }'
-      )
-        label
-          i18n.sr-only Payment name
+      fieldset
+        .selectgroup.is-reversed.c-select(
+          :class='{"is-shifted": methodsCount > 1 || method.name !== "choose" || method.value }'
+        )
           select.select(v-model='method.name'
             :class='{ "is-empty": method.name === "choose"}'
+            :aria-label='L("Payment method")'
             @change='handleSelectChange($event.target.value, index)'
           )
             i18n(tag='option' value='choose' disabled='true') Choose...
             option(v-for='(option, key) in config.options' :value='key') {{ option }}
-
-        label.c-select-input
-          i18n.sr-only Payment value
           input.input(
             type='text'
+            :aria-label='L("Payment value")'
             v-model='method.value'
           )
-        button.is-icon-small.is-btn-shifted(
-          type='button'
-          :aria-label='L("Remove method")'
-          @click='removeMethod(index)'
-          data-test='remove'
-        )
-          i.icon-times
+          button.is-icon-small.is-btn-shifted(
+            type='button'
+            :aria-label='L("Remove method")'
+            @click='removeMethod(index)'
+            data-test='remove'
+          )
+            i.icon-times
 
   button.link.has-icon(
     type='button'
@@ -103,7 +101,7 @@ export default {
   methods: {
     handleSelectChange (methName, index) {
       // Focus the respective input
-      this.$refs.fields.childNodes[index].getElementsByTagName('label')[1].focus()
+      this.$refs.fields.childNodes[index].getElementsByTagName('input')[0].focus()
     },
     handleAddMethod () {
       Vue.set(this.form.methods, this.methodsCount, {
@@ -147,37 +145,23 @@ export default {
   }
 }
 
-// TODO - Review & Refactor to forms.scss at #833 and #831
-.select-wrapper {
-  .is-btn-shifted {
-    display: none;
-    position: absolute;
-    top: 0.5rem;
-    left: calc(100% + 0.5rem);
-  }
-
-  &.is-shifted {
-    width: calc(100% - 2.5rem); // space for .btn-shift (X)
-
-    .is-btn-shifted {
-      display: block;
-    }
-  }
-
+.c-select {
   .select {
     min-width: 7rem;
-
-    &.is-empty {
-      color: $text_1;
-    }
   }
 
   &::after { // icon-sort-down
     left: 5.5rem;
   }
-}
 
-.c-select-input {
-  flex-grow: 1;
+  .is-btn-shifted {
+    display: none;
+  }
+
+  &.is-shifted {
+    .is-btn-shifted {
+      display: block;
+    }
+  }
 }
 </style>

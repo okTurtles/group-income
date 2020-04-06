@@ -13,7 +13,7 @@ modal-base-template(:class='{ "has-background": background }')
 
         .field
           i18n.label(tag='label') Introduce the potential new member(s) to your group
-          textarea(rows='5')
+          textarea.textarea(rows='5')
             | Felix and Brian are two very important figures in the electronic music scene. They have greatly contributed to the development of genres like ambient music and are now ready to contribute to this group. They are Dreamers like us!'
 
         .buttons

@@ -29,7 +29,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
       i18n.is-title-3.card-header(tag='h3') New Message
       .field
         i18n.label(tag='label') To:
-        .input-combo
+        .inputgroup
           input.input(
             type='text'
             data-test='addRecipient'

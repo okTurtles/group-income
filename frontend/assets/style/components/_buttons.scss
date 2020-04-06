@@ -10,12 +10,12 @@
   }
 }
 
-@mixin outlinedButtonState($color, $color_2) {
+@mixin outlinedButtonState($color, $color_focus, $color_loading) {
   &[data-loading="true"] {
     color: transparent;
 
     &::after {
-      color: $color;
+      color: $color_loading;
     }
   }
 
@@ -28,7 +28,7 @@
     }
 
     &:focus {
-      box-shadow: 0 0 0 2px #{$color_2};
+      box-shadow: 0 0 0 2px $color_focus;
     }
   }
 }
@@ -147,19 +147,19 @@ button,
     background-color: $background;
     border-color: $general_0;
     color: $text_0;
-    @include outlinedButtonState($primary_0_1, $primary_1);
+    @include outlinedButtonState($primary_0_1, $primary_1, $text_0);
 
     &.is-success {
       border-color: $success_0;
       color: $success_0;
-      @include outlinedButtonState($success_0_1, $success_1);
+      @include outlinedButtonState($success_0_1, $success_1, $success_0);
     }
 
     &.is-danger,
     &.error {
       border-color: $danger_0;
       color: $danger_0;
-      @include outlinedButtonState($danger_0_1, $danger_1);
+      @include outlinedButtonState($danger_0_1, $danger_1, $danger_0);
     }
   }
 
@@ -202,11 +202,12 @@ button,
       color: transparent;
       // Delay the spin for 500ms, in case load is ultra fast.
       // That way the user won't even see the loading
-      transition: color 400ms 500ms;
+      // [1] !important so it works even when .js-reducedMotion
+      transition: color 400ms 500ms !important; // [1]
 
       &::after {
         opacity: 1;
-        transition: opacity 400ms 500ms;
+        transition: opacity 400ms 500ms !important; // [1]
         animation: loadSpin 1.75s infinite linear;
       }
     }
@@ -224,6 +225,7 @@ button,
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
+  align-items: flex-start;
 
   &.is-centered {
     justify-content: center;
