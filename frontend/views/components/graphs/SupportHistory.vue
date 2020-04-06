@@ -55,18 +55,18 @@ export default {
 
 .history {
   display: flex;
-  margin: $spacer-sm;
+  margin: 0.5rem;
 }
 
 .months {
-  padding: $spacer-sm;
+  padding: 0.5rem;
 }
 
 .period {
   position: relative;
   width: 100%;
   display: inline-block;
-  padding: $spacer-lg 0;
+  padding: 2rem 0;
   color: #fff;
   text-align: center;
   font-size: $size_1;

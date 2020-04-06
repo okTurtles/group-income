@@ -109,9 +109,9 @@ $pagePaddingDesktop: 5.5rem;
 
 .p-main {
   grid-area: p-main;
-  width: calc(100% - #{$spacer-lg});
+  width: calc(100% - 2rem);
   margin: 0 auto;
-  padding-top: $spacer*1.5;
+  padding-top: 1.5rem;
   max-width: 50rem;
   @include overflow-touch;
 
@@ -120,13 +120,13 @@ $pagePaddingDesktop: 5.5rem;
   }
 
   @include tablet {
-    width: calc(100% - #{$spacer-xl});
+    width: calc(100% - 4rem);
   }
 
   @include desktop {
     width: auto;
     padding-top: 0;
-    margin-right: $spacer-lg;
+    margin-right: 2rem;
     margin-left: $pagePaddingDesktop;
   }
 }
@@ -135,7 +135,7 @@ $pagePaddingDesktop: 5.5rem;
   grid-area: p-header;
   transition: padding ease-out 300ms;
   text-align: center;
-  min-height: $spacer-xl;
+  min-height: 4rem;
 
   @include touch {
     display: flex;
@@ -163,7 +163,7 @@ $pagePaddingDesktop: 5.5rem;
 .c-logo {
   width: 1.5rem;
   height: 1.5rem;
-  margin-right: $spacer;
+  margin-right: 1rem;
 
   @include desktop {
     display: none;
@@ -183,7 +183,7 @@ $pagePaddingDesktop: 5.5rem;
 
   &-inner {
     height: 100%;
-    padding: $spacer*1.5 $spacer*1.5 $spacer;
+    padding: 1.5rem 1.5rem 1rem;
     overflow: auto;
     -webkit-overflow-scrolling: touch;
   }

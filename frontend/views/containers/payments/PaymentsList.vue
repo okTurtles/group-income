@@ -167,7 +167,7 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-payments {
-  margin-top: $spacer;
+  margin-top: 1rem;
 
   th, td {
     &:first-child {
@@ -176,7 +176,7 @@ export default {
 
     &:last-child {
       width: 10%;
-      padding-left: $spacer;
+      padding-left: 1rem;
 
       @include tablet {
         width: 22%;
@@ -222,7 +222,7 @@ export default {
   }
 
   .c-reset {
-    margin-left: $spacer;
+    margin-left: 1rem;
   }
 
   .c-payments-date {
@@ -233,7 +233,7 @@ export default {
 }
 
 .checkbox {
-  margin-right: $spacer-sm;
+  margin-right: 0.5rem;
 }
 
 .c-actions {
@@ -247,7 +247,7 @@ export default {
 }
 
 .c-avatar {
-  margin-right: $spacer-sm;
+  margin-right: 0.5rem;
 }
 
 .c-avatar,
@@ -303,7 +303,7 @@ export default {
 
 .c-payments-amount-text {
   @include tablet {
-    margin-right: $spacer-sm;
+    margin-right: 0.5rem;
   }
 }
 
@@ -332,7 +332,7 @@ export default {
 
 .inputgroup .input {
   @include phone {
-    padding-right: $spacer-lg;
+    padding-right: 2rem;
   }
 }
 
@@ -341,8 +341,8 @@ export default {
   width: 0.875rem;
   height: 0.875rem;
   border-radius: 50%;
-  margin-left: $spacer-sm;
-  margin-right: $spacer-xs;
+  margin-left: 0.5rem;
+  margin-right: 0.25rem;
   font-size: 0.5rem;
 
   &,

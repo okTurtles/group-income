@@ -34,19 +34,19 @@ export default {
   align-items: center;
 
   &.is-default {
-    top: -$spacer-xs;
-    right: -$spacer-xs;
+    top: -0.25rem;
+    right: -0.25rem;
     color: $background;
-    width: $spacer;
-    height: $spacer;
+    width: 1rem;
+    height: 1rem;
     font-size: 0.7rem;
     font-weight: normal;
     line-height: 0.2; // force pixel alignment on Chrome
   }
 
   &.is-compact {
-    width: $spacer-sm;
-    height: $spacer-sm;
+    width: 0.5rem;
+    height: 0.5rem;
     font-size: 0;
   }
 }

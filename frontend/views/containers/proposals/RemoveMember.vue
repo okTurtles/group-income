@@ -137,11 +137,11 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: $spacer-sm;
+  margin-bottom: 0.5rem;
 
   // BUG on VUE? - without nesting it doesn't work
   .c-avatar {
-    margin-bottom: $spacer;
+    margin-bottom: 1rem;
   }
 }
 

@@ -91,7 +91,7 @@ export default {
 }
 
 .c-copy-button {
-  margin-left: $spacer-xs;
+  margin-left: 0.25rem;
   flex-shrink: 0;
   font-weight: normal;
 }

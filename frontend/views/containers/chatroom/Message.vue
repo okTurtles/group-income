@@ -54,22 +54,22 @@ export default {
 
 .c-message {
   display: flex;
-  margin: $spacer 0 0;
+  margin: 1rem 0 0;
   align-items: flex-start;
 
   &.sent,
   &.failed {
-    margin-left: $spacer-xl;
+    margin-left: 4rem;
     flex-direction: row-reverse;
     text-align: right;
   }
 
   &.sameSender {
-    margin-top: $spacer-xs;
+    margin-top: 0.25rem;
   }
 
   &:last-of-type {
-    margin-bottom: $spacer;
+    margin-bottom: 1rem;
   }
 
   .button {
@@ -77,7 +77,7 @@ export default {
   }
 
   .c-avatar {
-    margin-right: $spacer-sm;
+    margin-right: 0.5rem;
   }
 }
 
@@ -85,14 +85,14 @@ export default {
 .c-retry {
   &.alignToText {
     color: red;
-    margin-top: $spacer; // visually center align to text
+    margin-top: 1rem; // visually center align to text
   }
 }
 
 .c-avatar {
   .sent &,
   .failed & {
-    margin: 0 0 0 $spacer-sm;
+    margin: 0 0 0 0.5rem;
 
     &.alignToText {
       margin-top: 1.3rem; // visually center align to bubble text
@@ -115,7 +115,7 @@ export default {
 
   .sent &,
   .failed & {
-    margin-right: $spacer-xs;
+    margin-right: 0.25rem;
   }
 }
 
@@ -130,19 +130,19 @@ export default {
     color: $background;
     border: 1px solid;
     border-radius: $radius-large;
-    padding: $spacer-xs $spacer-sm;
+    padding: 0.25rem 0.5rem;
   }
 
   .failed & {
     color: $text_1;
     border: 1px dashed $danger_0;
     border-radius: $radius-large;
-    padding: $spacer-xs $spacer-sm;
+    padding: 0.25rem 0.5rem;
   }
 
   // When .c-shot is the only element (when .c-who isn't rendered)
   &:first-child:last-child {
-    margin-bottom: $spacer-sm;
+    margin-bottom: 0.5rem;
   }
 }
 </style>

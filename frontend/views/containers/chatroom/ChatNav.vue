@@ -78,24 +78,24 @@ export default {
 
 .c-chatnav {
   .c-actions-content {
-    top: $spacer-lg;
+    top: 2rem;
     right: 0;
     left: auto;
     min-width: 10rem;
   }
 
   &-search {
-    margin-top: $spacer;
+    margin-top: 1rem;
   }
 
   ::v-deep .c-item-link {
-    padding: 1.25rem $spacer-sm;
-    margin: $spacer-xs -$spacer-sm;
+    padding: 1.25rem 0.5rem;
+    margin: 0.25rem -0.5rem;
     border-radius: $radius;
   }
 
   ::v-deep .c-avatar {
-    margin-right: $spacer-sm;
+    margin-right: 0.5rem;
   }
 }
 
@@ -109,8 +109,8 @@ export default {
     overflow: auto;
 
     &-search {
-      margin: $spacer $spacer-sm 0;
-      width: calc(100% - #{$spacer-md});
+      margin: 1rem 0.5rem 0;
+      width: calc(100% - 1rem);
     }
   }
 }

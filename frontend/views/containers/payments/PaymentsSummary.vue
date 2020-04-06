@@ -50,10 +50,10 @@ export default {
 
 .c-header {
   display: flex;
-  margin-bottom: $spacer;
+  margin-bottom: 1rem;
 }
 
 .c-status {
-  margin-left: $spacer-sm;
+  margin-left: 0.5rem;
 }
 </style>

@@ -186,7 +186,7 @@ export default {
   justify-content: space-between;
   align-items: center;
   flex-shrink: 0;
-  padding: 0 $spacer;
+  padding: 0 1rem;
   height: 4.6rem;
   margin-bottom: -0.1rem;
 }
@@ -208,8 +208,8 @@ export default {
 }
 
 .c-navigation-bottom {
-  padding-top: $spacer-lg;
-  padding-bottom: $spacer-sm;
+  padding-top: 2rem;
+  padding-bottom: 0.5rem;
 }
 
 .c-navigation-footer {
@@ -219,7 +219,7 @@ export default {
 .c-menu-list-bottom {
   display: flex;
   flex-direction: column;
-  margin-left: $spacer;
+  margin-left: 1rem;
   font-size: $size_5;
 
   a {
@@ -235,8 +235,8 @@ export default {
 }
 
 .c-logo {
-  min-width: $spacer-xxl;
-  width: $spacer-xxl;
+  min-width: 8rem;
+  width: 8rem;
 }
 
 .c-toggle {

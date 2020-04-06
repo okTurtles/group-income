@@ -93,7 +93,7 @@ export default {
 
   &-label {
     @include touch {
-      margin-bottom: $spacer*1.5;
+      margin-bottom: 1.5rem;
     }
 
     @include desktop {
@@ -101,7 +101,7 @@ export default {
       top: -6.5rem;
       right: 0;
       align-items: flex-end;
-      margin-bottom: -$spacer-sm;
+      margin-bottom: -0.5rem;
     }
   }
 
@@ -123,10 +123,10 @@ export default {
   width: 100%;
 
   ::v-deep .c-banner {
-    margin: 0 0 $spacer*1.5;
+    margin: 0 0 1.5rem;
 
     @include desktop {
-      margin: $spacer-sm 0 $spacer*1.5;
+      margin: 0.5rem 0 1.5rem;
     }
   }
 }

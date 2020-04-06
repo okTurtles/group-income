@@ -96,6 +96,6 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-banner {
-  margin: $spacer*1.5 0;
+  margin: 1.5rem 0;
 }
 </style>

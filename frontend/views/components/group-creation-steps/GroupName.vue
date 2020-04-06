@@ -84,7 +84,7 @@ export default {
 
 .username {
   display: none;
-  margin-bottom: $spacer-lg;
+  margin-bottom: 2rem;
   color: $text_1;
 
   @include tablet {
@@ -94,7 +94,7 @@ export default {
 
 .avatar {
   height: 10rem;
-  margin: $spacer*2.5 auto $spacer-lg auto;
+  margin: 2.5rem auto 2rem auto;
   text-align: center;
   display: flex;
   flex-direction: column;
@@ -103,7 +103,7 @@ export default {
 
   .link {
     display: inline-block;
-    margin-top: $spacer-sm;
+    margin-top: 0.5rem;
   }
 }
 

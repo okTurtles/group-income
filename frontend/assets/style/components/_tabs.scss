@@ -14,14 +14,14 @@
     align-items: center;
     letter-spacing: 0.1px;
     text-transform: uppercase;
-    padding: $spacer;
+    padding: 1rem;
     cursor: pointer;
     color: $text_1;
     transition: box-shadow 0.2s ease-in;
     box-shadow: inset 0 0 0 transparent;
 
     @include tablet {
-      padding: $spacer 1.5rem;
+      padding: 1rem 1.5rem;
     }
 
     @include desktop {
@@ -49,9 +49,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: $spacer;
-    height: $spacer;
-    margin-left: $spacer-sm;
+    width: 1rem;
+    height: 1rem;
+    margin-left: 0.5rem;
     border-radius: 3px;
     background-color: $primary_2;
     color: $primary_0;

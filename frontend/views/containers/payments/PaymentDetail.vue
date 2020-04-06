@@ -88,7 +88,7 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-payment-list {
-  margin: $spacer auto $spacer-sm auto;
+  margin: 1rem auto 0.5rem auto;
   width: 100%;
   max-width: 25rem;
 }
@@ -100,10 +100,10 @@ export default {
 }
 
 .c-subtitle {
-  margin-top: $spacer-xs;
+  margin-top: 0.25rem;
 
   @include tablet {
-    margin-bottom: $spacer-xs;
+    margin-bottom: 0.25rem;
   }
 }
 

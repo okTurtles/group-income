@@ -139,14 +139,14 @@ export default {
 
 .c-header {
   background: $white;
-  padding: 1.5rem 0 1.125rem $spacer-lg;
+  padding: 1.5rem 0 1.125rem 2rem;
   position: absolute;
   left: 0;
   right: 0;
 
   @include tablet {
     text-align: center;
-    padding: $spacer-lg 0 1.625rem 0;
+    padding: 2rem 0 1.625rem 0;
   }
 
   @include desktop {
@@ -179,11 +179,11 @@ export default {
   }
 
   .c-title {
-    margin-bottom: $spacer*0.5;
+    margin-bottom: 0.5rem;
     font-size: $size_4;
 
     @include tablet {
-      margin-bottom: $spacer;
+      margin-bottom: 1rem;
     }
   }
 }
@@ -205,7 +205,7 @@ export default {
 
 // Actions
 .c-comment {
-  margin-top: $spacer;
+  margin-top: 1rem;
 }
 
 .buttons {
@@ -213,7 +213,7 @@ export default {
     flex-direction: column-reverse;
 
     button:first-child {
-      margin-top: $spacer;
+      margin-top: 1rem;
       margin-right: 0;
     }
   }
@@ -233,11 +233,11 @@ export default {
   }
 
   @include desktop {
-    padding-top: $spacer-xxl;
+    padding-top: 8rem;
   }
 
   .c-title {
-    margin: $spacer-lg;
+    margin: 2rem;
   }
 
   .c-message {
@@ -245,7 +245,7 @@ export default {
   }
 
   button {
-    margin-top: $spacer-lg;
+    margin-top: 2rem;
   }
 }
 </style>
