@@ -6,6 +6,7 @@
     - [3. Follow this Contribution Policy](#3-follow-this-contribution-policy)
         - [Licensing and Ownership](#licensing-and-ownership)
         - [Pull Request Requirements](#pull-request-requirements)
+- [How to help by translating](#how-to-help-by-translating)
 - [How to submit an issue](#how-to-submit-an-issue)
 
 ## How to contribute code
@@ -49,6 +50,10 @@ This contribution policy will evolve over time. For now it is based on a slightl
 7. A PR **MUST** receive approval from at least one long-term contributor before being merged. Contributors **MAY NOT** review their own PRs, **MUST NOT** push commits to someone else's PR, and **SHOULD NOT** merge their own PRs.
 8. A PR **MUST** receive approval from the designer when it's related to the user interface before being merged.
 9. A PR **MAY NOT** be merged if there exist unaddressed concerns from a current maintainer (via the Github "request changes" review feature). Contributors are encouraged to discuss the requested changes, and may even argue against them if there are strong reasons to do so. However, maintainers have veto power over all PRs.
+
+## How to help by translating
+
+We always appreciate translation efforts, even if they're not perfect or complete! The instruction are [here](https://github.com/okTurtles/strings/blob/master/README.md#help-translate-a-language).
 
 ## How to submit an issue
 
