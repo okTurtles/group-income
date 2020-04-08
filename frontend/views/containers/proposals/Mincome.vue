@@ -135,12 +135,8 @@ export default {
         await sbp('backend/publishLogEntry', updatedSettings)
         this.$refs.proposal.close()
       } catch (error) {
-        console.error('Mincome.vue submit() error:', error.message)
-        // @taoeffect, please try to make this work!
-        this.$refs.formMsg.danger(`${L('Failed to change mincome.')} ${LError(error)}`)
-
-        // The original implemented solution:
-        // this.$refs.formMsg.danger(L('Failed to change mincome.'), { error })
+        console.error('Mincome.vue submit() error:', error)
+        this.$refs.formMsg.danger(L('Failed to change mincome. {reportError}', LError(error)))
       }
     }
   }

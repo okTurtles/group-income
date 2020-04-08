@@ -35,14 +35,13 @@ import sbp from '~/shared/sbp.js'
 
 export default {
   name: 'TabWrapper',
-
   props: {
     tabNav: Array,
     defaultTab: String // initial tab name
   },
   data () {
     return {
-      activeTab: 0, // this.value || 0,
+      activeTab: 0,
       tabItems: [],
       open: true,
       title: this.tabNav[0].links[0].title || ''
@@ -53,7 +52,6 @@ export default {
       'isDarkTheme'
     ])
   },
-
   watch: {
     /**
      * When v-model is changed set the new active tab.

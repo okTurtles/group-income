@@ -86,7 +86,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import AvatarUpload from '@components/AvatarUpload.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import sbp from '~/shared/sbp.js'
-import L from '@view-utils/translations.js'
+import L, { LError } from '@view-utils/translations.js'
 
 export default {
   name: 'UserProfile',
@@ -156,7 +156,7 @@ export default {
         this.$refs.formMsg.success(L('Your changes were saved!'))
       } catch (error) {
         console.error('UserProfile.vue saveProfile() error:', error)
-        this.$refs.formMsg.danger(L('Failed to update profile'), { error })
+        this.$refs.formMsg.danger(L('Failed to update profile. {reportError}', LError(error)))
       }
     }
   }

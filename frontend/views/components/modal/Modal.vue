@@ -15,7 +15,6 @@ export default {
       subcontent: [], // Collection of modal on top of modals
       subContentProps: {}, // Custom props passed down to the sub modal
       replacement: null, // Replace the modal once the first one is close without updating the url
-      customQuery: {}, // Custom queries passed down to modal
       lastFocus: null // Record element that open the modal
     }
   },
@@ -83,32 +82,19 @@ export default {
           query: {
             ...this.$route.query,
             modal: this.content,
-            subcontent: this.activeSubcontent(),
-            ...this.customQuery
+            subcontent: this.activeSubcontent()
           }
         }).catch(console.error)
       } else if (this.$route.query.modal) {
         const query = { ...this.$route.query }
         delete query['modal']
         delete query['subcontent']
-        for (const queryKey in this.customQuery) {
-          delete query[queryKey]
-        }
-        this.customQuery = {}
         this.$router.push({ query }).catch(console.error)
       }
     },
-    openModal (componentName, componentProps = {}, customQuery = {}) {
-      if (this.content === componentName) {
-        // Don't open the same kind of modal twice.
-        if (this.componentProps === componentProps) return
-        // Otherwise update its content...
-        this.lastFocus = document.activeElement
-        this.contentProps = componentProps
-        this.customQuery = customQuery
-        this.updateUrl()
-        return // TODO dry this
-      }
+    openModal (componentName, componentProps = {}) {
+      // Don't open the same kind of modal twice.
+      if (this.content === componentName) return
       // Record active element
       this.lastFocus = document.activeElement
       if (this.content) {
@@ -118,7 +104,6 @@ export default {
         this.content = componentName
         this.contentProps = componentProps
       }
-      this.customQuery = customQuery
       this.updateUrl()
     },
     unloadModal () {

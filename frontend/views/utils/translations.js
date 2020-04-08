@@ -66,38 +66,12 @@ export default function L (
 }
 
 export function LError (error) {
-  const translation = L('{link_}Click to troubleshoot.{_link}', {
-    // Note/TODO: change /group-settings to correct path.
-    'link_': `<router-link class='link' :to="{ path: '/group-settings', query: { error: "${error.message}" } }">`,
-    '_link': '</router-link>'
-  })
-
-  console.log(translation)
-  const result = Vue.compile('<wrap>' + translation + '</wrap>')
-
-  console.log(':::', result)
-
-  // WIP...
-
-  /*
-    h variable comes from Vue render(). But here that doesn't exist.
-    h stands for hyperscript. Searching how to create a component programatically.
-    Some resources:
-    https://css-tricks.com/what-does-the-h-stand-for-in-vues-render-method/
-    https://css-tricks.com/creating-vue-js-component-instances-programmatically/
-  */
-
-  const h = (tag, ...args) => {
-    console.log(tag, args)
-    return tag
+  return {
+    reportError: L('Please {a_}report to us{_a} the error.', {
+      'a_': `<a class="link" target="_blank" href="/app/dashboard?modal=UserSettingsModal&section=application-logs&errorMsg=${error.message}">`,
+      '_a': '</a>'
+    })
   }
-
-  return result.render.call({
-    _c: (tag, ...args) => {
-      return h(tag, ...args)
-    },
-    _v: x => x
-  })
 }
 
 Vue.component('i18n', {

@@ -2,10 +2,8 @@
   .settings-container
     section.card
       .c-header
-        span(v-if='referalError')
-          p You should report this last error: #[b {{referalError.message}}].
-          p And we should talk with @mmbotelho about the UX/UI of this! 💅
-          br
+        p.c-instructions(v-if='ephemeral.reportError')
+          | [Give some instructions to the user about this page. Ask @mmbotelho for help]
         fieldset.c-filters
           .c-filters-inner
             legend.c-filters-legend Optional logs:
@@ -35,21 +33,18 @@ import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '@utils/events.js'
 import { downloadLogs, getLog } from '@model/captureLogs.js'
 export default {
   name: 'AppLogs',
-  props: {
-    referalError: Error // The Error that leaded the user to this page.
-  },
   data () {
     return {
       form: {
         filter: []
       },
       ephemeral: {
-        logs: []
+        logs: [],
+        reportError: null
       }
     }
   },
   created () {
-    console.log('referalError:', this.referalError)
     this.form.filter = this.appLogsFilter
     sbp('okTurtles.events/on', CAPTURED_LOGS, this.addLog)
 
@@ -62,6 +57,8 @@ export default {
       lastEntry = entry.prev
     } while (lastEntry)
     this.ephemeral.logs = logs.reverse() // chronological order (oldest to most recent)
+
+    this.ephemeral.reportError = this.$route.query.errorMsg
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', CAPTURED_LOGS)
@@ -133,6 +130,10 @@ export default {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+}
+
+.c-instructions {
+  margin-bottom: 1.5rem;
 }
 
 .c-filters {
