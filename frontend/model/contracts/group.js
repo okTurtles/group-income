@@ -298,7 +298,7 @@ DefineContract({
           }
 
           if (deepEqualJSONType(omit(prop.data.proposalData, 'reason'), dataToCompare)) {
-            throw new TypeError(L('There is an identical open proposal'))
+            throw new Errors.GIErrorUIRuntimeError(L('There is an identical open proposal.'))
           }
         }
       },
