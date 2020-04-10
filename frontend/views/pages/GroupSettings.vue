@@ -167,7 +167,7 @@ export default {
         await sbp('gi.actions/group/updateSettings', attrs, this.currentGroupId)
         this.$refs.formMsg.success(L('Your changes were saved!'))
       } catch (e) {
-        console.error('GroupSettings saveSettings failed!', e)
+        console.error('GroupSettings saveSettings() failed:', e)
         this.$refs.formMsg.danger(e.message)
       }
     },

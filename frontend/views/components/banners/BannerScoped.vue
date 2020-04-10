@@ -3,7 +3,7 @@
     .c-container(v-if='ephemeral.text')
       banner-simple(class='c-banner' :severity='ephemeral.severity')
         .c-inner
-          .c-inner-text(:data-test='dataTest' role='alert' v-html="ephemeral.text")
+          .c-inner-text(:data-test='dataTest' role='alert' v-html='ephemeral.text')
           button.is-icon-small.c-button(
             type='button'
             :class='`is-${ephemeral.severity}`'
@@ -84,9 +84,7 @@ export default {
   }
 }
 
-$severities:
-  "success" $success_0 $success_1,
-  "danger" $danger_0 $danger_1;
+$severities: "success" $success_0 $success_1, "danger" $danger_0 $danger_1;
 
 .c-button {
   transition: box-shadow 150ms ease-in;

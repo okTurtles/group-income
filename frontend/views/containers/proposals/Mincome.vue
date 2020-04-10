@@ -118,15 +118,14 @@ export default {
 
           this.ephemeral.currentStep += 1 // Show Success step
         } catch (e) {
-          console.error(`Failed to change mincome to ${mincomeAmount}`, e.message)
-          this.$refs.formMsg.danger(L('Failed to change mincome. {codeError}', { codeError: e.message }))
+          console.error('Mincome submit() error:', mincomeAmount, e.message)
+          this.$refs.formMsg.danger(L('Failed to change mincome. {reportError}', LError(e)))
           this.ephemeral.currentStep = 0
         }
         return
       }
 
       try {
-        this.foo.dumbError = 'force-an-error' // DELETE THIS BEFORE MERGE
         const updatedSettings = await sbp(
           'gi.contracts/group/updateSettings/create',
           { mincomeAmount },
@@ -134,9 +133,9 @@ export default {
         )
         await sbp('backend/publishLogEntry', updatedSettings)
         this.$refs.proposal.close()
-      } catch (error) {
-        console.error('Mincome.vue submit() error:', error)
-        this.$refs.formMsg.danger(L('Failed to change mincome. {reportError}', LError(error)))
+      } catch (e) {
+        console.error('Mincome.vue submit() error:', e)
+        this.$refs.formMsg.danger(L('Failed to change mincome. {reportError}', LError(e)))
       }
     }
   }

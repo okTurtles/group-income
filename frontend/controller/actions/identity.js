@@ -1,8 +1,6 @@
 import sbp from '~/shared/sbp.js'
 import { GIErrorUIRuntimeError } from '@model/errors.js'
-import L from '@view-utils/translations.js'
-
-// import { CONTRACT_IS_SYNCING } from '@utils/events.js'
+import L, { LError } from '@view-utils/translations.js'
 
 export default sbp('sbp/selectors/register', {
   'gi.actions/identity/create': async function ({
@@ -65,7 +63,7 @@ export default sbp('sbp/selectors/register', {
     } catch (e) {
       await sbp('gi.actions/identity/logout') // TODO: should this be here?
       console.error('gi.actions/identity/signup failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to signup: {codeError}', { codeError: e.message }))
+      throw new GIErrorUIRuntimeError(L('Failed to signup: {reportError}', LError(e)))
     }
   },
   'gi.actions/identity/login': async function ({
@@ -92,7 +90,7 @@ export default sbp('sbp/selectors/register', {
       return userId
     } catch (e) {
       console.error('gi.actions/identity/login failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to login: {codeError}', { codeError: e.message }))
+      throw new GIErrorUIRuntimeError(L('Failed to login: {reportError}', LError(e)))
     }
   },
   'gi.actions/identity/signupAndLogin': async function (signupParams) {
