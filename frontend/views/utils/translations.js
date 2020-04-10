@@ -74,7 +74,7 @@ export function LError (error) {
   return {
     reportError: L('"{errorMsg}". {a_}Report the error{_a}.', {
       errorMsg: error.message,
-      'a_': `<a class='link' target='_blank' href='/app/dashboard?modal=UserSettingsModal&section=application-logs&errorMsg=${encodeURI(error.message)}'>`,
+      'a_': `<a class="link" target="_blank" href="/app/dashboard?modal=UserSettingsModal&section=application-logs&errorMsg=${encodeURI(error.message)}">`,
       '_a': '</a>'
     })
   }

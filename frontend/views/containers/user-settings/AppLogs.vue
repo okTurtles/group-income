@@ -2,8 +2,7 @@
   .settings-container
     section.card
       .c-header
-        p.c-instructions(v-if='ephemeral.reportError')
-          | [Give some instructions to the user about this page. Ask @mmbotelho for help]
+        p.c-instructions(v-html='instructions')
         fieldset.c-filters
           .c-filters-inner
             legend.c-filters-legend Optional logs:
@@ -31,6 +30,8 @@ import { mapState, mapMutations, mapActions } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import { CAPTURED_LOGS, SET_APP_LOGS_FILTER } from '@utils/events.js'
 import { downloadLogs, getLog } from '@model/captureLogs.js'
+import L from '@view-utils/translations.js'
+
 export default {
   name: 'AppLogs',
   data () {
@@ -86,6 +87,16 @@ export default {
         .filter(({ type }) => this.form.filter.includes(type))
         .map(({ type, msg, timestamp }) => `${timestamp} [${type}] ${msg.map(JSON.stringify).join(' ')}`)
         .join('\n')
+    },
+    instructions () {
+      const errorMsg = this.ephemeral.reportError
+      const linkTag = {
+        'a_': '<a class="link" target="_blank" href="https://github.com/okTurtles/group-income-simple/issues/new">',
+        '_a': '</a>'
+      }
+      return errorMsg
+        ? L('You faced a recent error: "{errorMsg}". Please download the logs and {a_}send to us{_a}, so that we can help you solve the problem.', { errorMsg, ...linkTag })
+        : L('If you are facing any problem with Group Income, download the logs and {a_}send to us{_a}, so that we can help you solve the problem.', linkTag)
     }
   },
   methods: {
