@@ -1,5 +1,5 @@
 <template lang="pug">
-modal-base-template(:class='{ "has-background": background }')
+modal-base-template(:class='{ "has-background": background }' :a11yTitle='L("Modal title")')
   .wrapper-container
     .example-header
       h2.is-title-2 Modal base example

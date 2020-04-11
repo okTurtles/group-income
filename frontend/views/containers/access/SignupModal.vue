@@ -1,5 +1,5 @@
 <template lang='pug'>
-  modal-template(class='has-background' ref='modal')
+  modal-template(class='has-background' ref='modal' :a11yTitle='L("Sign up")')
     template(slot='title')
       i18n Sign Up
 

@@ -1,5 +1,5 @@
 <template lang='pug'>
-modal-base-template(ref='modal' :fullscreen='true')
+modal-base-template(ref='modal' :fullscreen='true' :a11yTitle='L("Income Details")')
   .c-content
     i18n.is-title-2.c-title(tag='h2') Income Details
 
