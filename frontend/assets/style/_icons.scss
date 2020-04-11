@@ -98,11 +98,11 @@ $icons: (
   }
 
   &.is-prefix {
-    margin-right: $spacer-sm;
+    margin-right: 0.5rem;
   }
 
   &.is-suffix {
-    margin-left: $spacer-sm;
+    margin-left: 0.5rem;
   }
 }
 
@@ -117,13 +117,13 @@ $icons: (
 }
 
 .icon-round {
-  width: $spacer-lg;
-  height: $spacer-lg;
-  margin-right: $spacer;
+  width: 2rem;
+  height: 2rem;
+  margin-right: 1rem;
   flex-shrink: 0;
   border-radius: 50%;
   text-align: center;
-  line-height: $spacer-lg;
+  line-height: 2rem;
 }
 
 @mixin icon($name) {

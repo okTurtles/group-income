@@ -150,7 +150,7 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-fields-item {
-  margin-bottom: $spacer;
+  margin-bottom: 1rem;
 }
 
 .c-feedback {

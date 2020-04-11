@@ -77,7 +77,7 @@ export default {
   border-radius: 50%;
   color: $general_0;
   background-color: $general_2;
-  margin: 0 $spacer-xs;
+  margin: 0 0.25rem;
 
   &:first-child i {
     margin-left: -1px;

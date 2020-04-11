@@ -244,14 +244,14 @@ export default {
 }
 
 .c-header-top .c-actions-content {
-  top: $spacer-lg;
+  top: 2rem;
   right: 0;
   left: auto;
   width: 10rem;
 }
 
 .c-header-private {
-  margin-right: $spacer-xs;
+  margin-right: 0.25rem;
 }
 
 .c-header-private,
@@ -269,14 +269,14 @@ export default {
 }
 
 .c-body-conversation {
-  padding: $spacer 0;
+  padding: 1rem 0;
 }
 
 .c-divider {
   display: flex;
   align-items: center;
   text-align: center;
-  margin: $spacer 0;
+  margin: 1rem 0;
 
   &::before,
   &::after {
@@ -286,17 +286,17 @@ export default {
   }
 
   &::before {
-    margin-right: $spacer-sm;
+    margin-right: 0.5rem;
   }
 
   &::after {
-    margin-left: $spacer-sm;
+    margin-left: 0.5rem;
   }
 }
 
 @include tablet {
   .c-header {
-    padding: $spacer;
+    padding: 1rem;
   }
 
   .c-body {

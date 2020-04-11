@@ -170,7 +170,7 @@ export default {
   min-width: 3rem;
   max-width: 12rem;
   border-radius: $radius;
-  padding: $spacer-sm;
+  padding: 0.5rem;
   z-index: $zindex-tooltip;
   color: #fff;
   opacity: 0.95;

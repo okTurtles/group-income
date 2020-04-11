@@ -38,7 +38,7 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-message {
-  padding: $spacer;
+  padding: 1rem;
   border-radius: $radius-large;
   display: flex;
   align-items: flex-start;
@@ -98,7 +98,7 @@ export default {
 
 .c-icon {
   font-size: $size_3;
-  margin-right: $spacer;
+  margin-right: 1rem;
 }
 
 .c-content {

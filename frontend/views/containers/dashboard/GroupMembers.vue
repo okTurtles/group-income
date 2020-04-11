@@ -130,34 +130,33 @@ export default {
 }
 
 .c-group-list {
-  margin-bottom: $spacer-md + $spacer-sm;
+  margin-bottom: 1.5rem;
 }
 
 .c-group-member {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: $spacer-lg;
+  height: 2rem;
   margin-top: 1rem;
 }
 
 .c-avatar {
-  width: $spacer-lg;
-  height: $spacer-lg;
+  width: 2rem;
+  height: 2rem;
   margin-bottom: 0;
 }
 
 .c-name {
   margin-right: auto;
-  margin-left: $spacer-sm;
+  margin-left: 0.5rem;
 }
-
 .c-menu {
   margin-left: 0.5rem;
 }
 
 .c-actions-content.c-content {
-  top: calc(100% + #{$spacer-sm});
+  top: calc(100% + 0.5rem);
   left: auto;
   min-width: 13rem;
 }

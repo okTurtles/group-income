@@ -55,7 +55,7 @@ export default {
 
 .c-wrapper {
   position: relative;
-  padding-left: $spacer-sm;
+  padding-left: 0.5rem;
 
   // fadeInRight: a gradient mask to indicate there are more groups by scrolling to the right.
   &::after {
@@ -76,15 +76,15 @@ export default {
 
 .c-ul {
   display: flex;
-  padding: $spacer 0;
+  padding: 1rem 0;
   overflow-x: auto;
 
   &-li {
     position: relative;
-    margin-right: $spacer;
+    margin-right: 1rem;
 
     &:last-child {
-      margin-right: $spacer*3; // To not be under fadeInRight
+      margin-right: 3rem; // To not be under fadeInRight
     }
 
     &:hover,

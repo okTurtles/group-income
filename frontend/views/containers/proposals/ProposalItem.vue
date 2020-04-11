@@ -213,17 +213,17 @@ export default {
 }
 
 .c-tip {
-  margin-left: $spacer-xs;
+  margin-left: 0.25rem;
 }
 
 .c-sendLink {
-  border-radius: $spacer-xs;
+  border-radius: 0.25rem;
   background-color: $general_2;
-  padding: 1.1875rem $spacer;
-  margin-top: $spacer;
+  padding: 1.1875rem 1rem;
+  margin-top: 1rem;
 
   @include tablet {
-    padding: $spacer;
+    padding: 1rem;
   }
 
   .c-invite-link {
@@ -235,7 +235,7 @@ export default {
 
 .icon-round {
   @include phone {
-    margin-left: $spacer-sm;
+    margin-left: 0.5rem;
   }
 }
 </style>

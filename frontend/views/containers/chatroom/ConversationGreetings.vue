@@ -65,12 +65,12 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-greetings {
-  margin-bottom: $spacer-lg;
+  margin-bottom: 2rem;
   display: flex;
   align-items: flex-end;
 }
 
 .c-avatar {
-  margin-right: $spacer-sm;
+  margin-right: 0.5rem;
 }
 </style>

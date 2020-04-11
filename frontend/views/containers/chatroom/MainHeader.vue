@@ -53,7 +53,7 @@ export default {
 
 .c-header {
   position: relative;
-  padding: $spacer 0;
+  padding: 1rem 0;
   z-index: $zindex-header;
   background-color: $background;
 
@@ -61,10 +61,10 @@ export default {
   &::after {
     content: "";
     position: absolute;
-    bottom: -$spacer;
+    bottom: -1rem;
     left: 0;
-    height: $spacer;
-    width: calc(100% - #{$spacer-md}); // so it doesn't get above scrollbar
+    height: 1rem;
+    width: calc(100% - 1rem); // so it doesn't get above scrollbar
     background: linear-gradient($background, rgba($background, 0));
     pointer-events: none;
   }
@@ -77,7 +77,7 @@ export default {
 }
 
 .c-avatar {
-  margin-right: $spacer;
+  margin-right: 1rem;
 }
 
 .c-header-text {

@@ -318,7 +318,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: $spacer-sm;
+  padding: 0.5rem;
   border-radius: 3px;
 
   &:focus,
@@ -338,13 +338,13 @@ export default {
   display: flex;
   align-items: center;
   padding: 0 1rem;
-  height: $spacer-lg;
+  height: 2rem;
   cursor: pointer;
   transition: background-color ease-out 0.3s;
   position: relative;
 
   i {
-    margin-right: $spacer;
+    margin-right: 1rem;
     font-size: 0.77rem;
     color: $text_1;
     transition: transform cubic-bezier(0.18, 0.89, 0.32, 1.28) 0.3s, color ease-in 0.3s;
@@ -359,9 +359,9 @@ export default {
 
 .c-unread {
   position: absolute;
-  right: $spacer;
-  width: $spacer;
-  height: $spacer;
+  right: 1rem;
+  width: 1rem;
+  height: 1rem;
   display: flex;
   justify-content: center;
   align-items: center;

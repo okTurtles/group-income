@@ -203,7 +203,7 @@ $closeMobileBarBgColor: #3c3c3c;
   color: $legendColor;
   font-size: 12px;
   text-transform: uppercase;
-  margin-bottom: $spacer-sm;
+  margin-bottom: 0.5rem;
 
   @include desktop {
     letter-spacing: 0.1px;
@@ -220,8 +220,8 @@ $closeMobileBarBgColor: #3c3c3c;
 .tab-link {
   display: flex;
   align-items: center;
-  padding-left: $spacer;
-  padding-right: $spacer;
+  padding-left: 1rem;
+  padding-right: 1rem;
   border-radius: 3px;
   cursor: pointer;
   transition: background-color 150ms cubic-bezier(0.4, 0.25, 0.3, 1);

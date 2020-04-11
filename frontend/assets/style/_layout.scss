@@ -10,7 +10,7 @@ $bannerGeneralHeight: 2.3rem;
   grid-template-rows: min-content auto;
 
   .l-page {
-    padding: $spacer;
+    padding: 1rem;
 
     @include tablet {
       padding: 1.5rem;
@@ -42,7 +42,7 @@ $bannerGeneralHeight: 2.3rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: $spacer-sm;
+  padding: 0.5rem;
   z-index: $zindex-banner;
 
   & ~ .l-navigation {
@@ -64,7 +64,7 @@ $bannerGeneralHeight: 2.3rem;
       }
 
       .c-modal-close {
-        top: $spacer*3;
+        top: 3rem;
       }
     }
 

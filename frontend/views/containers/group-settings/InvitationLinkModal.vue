@@ -59,11 +59,11 @@ export default {
 }
 
 .c-link {
-  margin-top: $spacer-lg;
-  margin-bottom: $spacer-sm;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
 }
 
 .c-cta {
-  margin-top: $spacer-lg;
+  margin-top: 2rem;
 }
 </style>

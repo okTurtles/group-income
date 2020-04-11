@@ -185,12 +185,12 @@ export default {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  margin-bottom: $spacer;
+  margin-bottom: 1rem;
 }
 
 .c-svg {
   height: 7rem;
-  margin-bottom: $spacer-lg;
+  margin-bottom: 2rem;
 }
 
 .c-form {
@@ -202,7 +202,7 @@ export default {
 
   .icon-vote-yea {
     color: $primary_0;
-    margin-right: $spacer-sm;
+    margin-right: 0.5rem;
 
     @include phone {
       display: none;

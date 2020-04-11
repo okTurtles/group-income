@@ -35,3 +35,6 @@
 /test/cypress/screenshots
 /test/cypress/cache/*
 !/test/cypress/cache/.gitkeep
+
+# Translation
+strings.exe

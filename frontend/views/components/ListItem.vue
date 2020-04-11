@@ -54,8 +54,8 @@ export default {
 
 .c-item {
   &.has-divider {
-    margin-bottom: $spacer-sm;
-    padding-bottom: $spacer-sm;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
     border-bottom: 1px solid $general_0;
   }
 
@@ -70,7 +70,7 @@ export default {
   position: relative;
   display: flex;
   align-items: center;
-  padding: 0 $spacer;
+  padding: 0 1rem;
   height: 3rem;
   transition: background-color ease-out 0.3s;
   color: $text_0;
@@ -80,9 +80,9 @@ export default {
 
   i {
     position: relative;
-    width: $spacer * 1.5;
-    height: $spacer * 1.5;
-    margin-right: $spacer;
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-right: 1rem;
     font-size: 1rem;
     color: $text_1;
     transform: translateY(0.125rem); // visually vertical aligned

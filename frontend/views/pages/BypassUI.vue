@@ -143,8 +143,8 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-list {
-  margin-top: $spacer;
-  margin-left: $spacer;
+  margin-top: 1rem;
+  margin-left: 1rem;
   list-style-type: circle;
 }
 
@@ -153,6 +153,6 @@ export default {
 }
 
 .c-btn {
-  margin-top: $spacer;
+  margin-top: 1rem;
 }
 </style>

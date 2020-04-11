@@ -43,6 +43,6 @@ export default {
 }
 
 .c-text {
-  margin: $spacer-sm 0;
+  margin: 0.5rem 0;
 }
 </style>

@@ -266,10 +266,10 @@ export default {
 // Header
 .p-descritpion {
   margin-top: -1.5rem;
-  padding-bottom: $spacer;
+  padding-bottom: 1rem;
 
   @include desktop {
-    margin-top: -$spacer;
+    margin-top: -1rem;
     padding-bottom: 1.5rem;
   }
 }
@@ -287,7 +287,7 @@ export default {
   padding-top: 2.5rem;
 
   @include desktop {
-    padding-top: $spacer-xl;
+    padding-top: 4rem;
   }
 
   .c-description {
@@ -299,13 +299,13 @@ export default {
     display: inline-block;
     width: 8.25rem;
     height: 8.25rem;
-    margin-left: -$spacer-sm;
+    margin-left: -0.5rem;
     filter: contrast(0%) brightness(172%);
   }
 }
 
 .card .c-container-empty {
-  padding-top: $spacer-lg;
+  padding-top: 2rem;
 
   @include desktop {
     padding-top: 2.5rem;

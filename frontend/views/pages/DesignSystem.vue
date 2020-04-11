@@ -235,22 +235,6 @@ page(
           td
             i.icon-bell.is-prefix
             | Notifications
-  article#spacing
-    section.card
-      h2.is-title-2.card-header Spacing
-      table
-        thead
-          th code
-          th demo
-          //- th usage
-        tr(v-for='(spacer, index) in ["xs", "sm", "", "lg"]' :key='index')
-          td(v-if='spacer')
-            code $spacer-{{spacer}}
-          td(v-else='')
-            code $spacer
-          td
-            span.c-spacer(:class='spacer')
-          //- td Used to space element by {{Math.pow(2, (index+1))}}px
 
   article#color
     section.card
@@ -456,7 +440,6 @@ page(
         tr
           td
             pre
-              | $spacer-lg
               |   badge(type='default') 3
           td
             span.c-badge-container
@@ -464,7 +447,6 @@ page(
         tr
           td
             pre
-              | $spacer-lg
               |   badge(type='compact') 3
           td
             span.c-badge-container
@@ -1384,7 +1366,7 @@ $pagePaddingDesktop: 75px;
 }
 
 article .is-title-3 {
-  margin-top: $spacer;
+  margin-top: 1rem;
 }
 
 pre {
@@ -1396,7 +1378,7 @@ code {
 }
 
 section.card {
-  margin-bottom: $spacer-lg;
+  margin-bottom: 2rem;
 }
 
 table {
@@ -1421,9 +1403,9 @@ table {
 .c-icons {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
-  grid-gap: $spacer-md;
-  margin-top: $spacer-lg;
-  margin-bottom: $spacer-md;
+  grid-gap: 0.5rem;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
 
   [class^='icon-']::before {
     margin-right: 10px;
@@ -1433,32 +1415,32 @@ table {
 .c-spacer {
   display: inline-block;
   border: 1px dashed $primary_0;
-  width: $spacer;
-  height: $spacer;
-  margin-right: $spacer;
+  width: 1rem;
+  height: 1rem;
+  margin-right: 1rem;
 
   &.lg {
-    width: $spacer-lg;
-    height: $spacer-lg;
+    width: 2rem;
+    height: 2rem;
   }
 
   &.sm {
-    width: $spacer-sm;
-    height: $spacer-sm;
+    width: 0.5rem;
+    height: 0.5rem;
   }
 
   &.xs {
-    width: $spacer-xs;
-    height: $spacer-xs;
+    width: 0.25rem;
+    height: 0.25rem;
   }
 }
 
 .c-palette {
   display: inline-block;
-  width: $spacer-xl;
-  height: $spacer-xl;
+  width: 4rem;
+  height: 4rem;
   border-radius: $radius;
-  margin-right: $spacer;
+  margin-right: 1rem;
 
   .table td{
     vertical-align: top;
@@ -1474,21 +1456,21 @@ table {
 }
 
 .message {
-  margin-bottom: $spacer-lg;
+  margin-bottom: 2rem;
 }
 
 .c-badge-container {
   position: relative;
   display: inline-block;
-  width: $spacer-lg;
-  height: $spacer-lg;
+  width: 2rem;
+  height: 2rem;
   border: 1px dashed $primary_1;
 
   &-small {
     @extend .c-badge-container;
-    width: $spacer-md * 1.5;
-    height: $spacer-md * 1.5;
-    line-height: $spacer-md * 1.5;
+    width: 1.5rem;
+    height: 1.5rem;
+    line-height: 1.5rem;
     text-align: center;
     border: none;
   }
@@ -1531,10 +1513,10 @@ table {
 .c-svgList {
   display: flex;
   flex-wrap: wrap;
-  margin-top: $spacer;
+  margin-top: 1rem;
 
   &-item {
-    padding: $spacer;
+    padding: 1rem;
     border: 1px solid $general_1;
     width: 50%;
     min-width: 16rem;
@@ -1543,13 +1525,13 @@ table {
 
     .c-svg {
       max-width: none;
-      width: $spacer-xxl;
-      height: $spacer-xxl;
+      width: 8rem;
+      height: 8rem;
     }
   }
 
   &-text {
-    padding-top: $spacer-sm;
+    padding-top: 0.5rem;
     text-align: left;
   }
 }

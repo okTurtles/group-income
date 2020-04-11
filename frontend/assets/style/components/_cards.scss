@@ -1,12 +1,12 @@
 .card {
-  padding: 1.5rem $spacer;
+  padding: 1.5rem 1rem;
   background-color: $background_0;
   border-radius: 0.625rem; // 10px
   box-shadow: 0 0 20px rgba(219, 219, 219, 0.6); // $general_0
-  margin-bottom: $spacer;
+  margin-bottom: 1rem;
 
   &:last-child {
-    margin-bottom: $spacer-xl;
+    margin-bottom: 4rem;
   }
 
   @include tablet {
@@ -19,13 +19,43 @@
 }
 
 .card-header {
-  margin-bottom: $spacer-sm;
+  margin-bottom: 0.5rem;
 }
 
 @mixin removeSideCardPadding {
-  width: calc(100% + #{$spacer-lg});
-  margin-left: -$spacer-md;
-  margin-right: -$spacer-md;
+  width: calc(100% + 2rem);
+  margin-left: -0.5rem;
+  margin-right: -0.5rem;
+
+  @include tablet {
+    width: calc(100% + 3rem);
+    margin-left: -1.5rem;
+    margin-right: -1.5rem;
+  }
+
+  @include desktop {
+    width: calc(100% + 5rem);
+    margin-left: -2.5rem;
+    margin-right: -2.5rem;
+  }
+}
+
+@mixin removeTopCardPadding {
+  margin-top: -1.5rem;
+
+  @include tablet {
+    margin-top: -1.5rem;
+  }
+
+  @include desktop {
+    margin-top: -2.5rem;
+  }
+}
+
+@mixin removeSideCardPadding {
+  width: calc(100% + 2rem);
+  margin-left: -1rem;
+  margin-right: -1rem;
 
   @include tablet {
     width: calc(100% + 3rem);

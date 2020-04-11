@@ -46,7 +46,7 @@ But sometimes a title look better in the page if h2 is the size of h3. In that c
 
 <style lang="scss" scoped>
 .c-title {
-    margin-bottom: $spacer;
+    margin-bottom: 1rem;
 }
 </style>
 ```

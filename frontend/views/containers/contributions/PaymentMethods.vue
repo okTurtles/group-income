@@ -133,15 +133,15 @@ export default {
 }
 
 .c-legend {
-  margin-bottom: $spacer-xs;
+  margin-bottom: 0.25rem;
 }
 
 .c-fields {
-  margin-top: $spacer;
+  margin-top: 1rem;
 
   &-item {
     display: block;
-    margin-bottom: $spacer;
+    margin-bottom: 1rem;
   }
 }
 

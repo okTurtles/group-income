@@ -239,7 +239,7 @@ export default {
 }
 
 .c-invite-description {
-  margin: $spacer-sm 0;
+  margin: 0.5rem 0;
 }
 
 .c-table {
@@ -303,7 +303,7 @@ export default {
 
     @include phone {
       justify-content: flex-end;
-      padding-right: $spacer-sm;
+      padding-right: 0.5rem;
 
       &-wrapper {
         display: none;
@@ -352,7 +352,7 @@ export default {
         content: "\00b7";
         display: inline-block;
         color: $text_0;
-        padding: 0 $spacer-xs;
+        padding: 0 0.25rem;
       }
     }
   }
@@ -362,7 +362,7 @@ export default {
     justify-content: flex-end;
 
     .c-invite-action-button {
-      margin-right: $spacer-sm;
+      margin-right: 0.5rem;
     }
 
     @include until($tablet) {
@@ -378,11 +378,11 @@ export default {
 
   .c-dropdown-action {
     min-width: 13.375rem;
-    margin: 3.5*$spacer 0 0 3*$spacer;
+    margin: 3.5rem 0 0 3rem;
   }
   .c-dropdown-fallback {
     min-width: 8.5rem;
-    margin-top: 2*$spacer;
+    margin-top: 2rem;
   }
 
   .c-webshare-fallback {
@@ -390,7 +390,7 @@ export default {
     right: 0;
     top: 50%;
     transform: translateY(-50%);
-    margin-right: $spacer-sm;
+    margin-right: 0.5rem;
     z-index: $zindex-tooltip;
   }
 

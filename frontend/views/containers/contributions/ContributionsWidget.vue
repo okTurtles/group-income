@@ -154,14 +154,14 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-widget {
-  margin-top: $spacer;
+  margin-top: 1rem;
   display: grid;
   grid-template-columns: 1fr 1fr;
   grid-template-areas:
     "payments payments"
     "monetary nonMonetary";
-  grid-column-gap: $spacer*1.5;
-  grid-row-gap: $spacer*1.5;
+  grid-column-gap: 1.5rem;
+  grid-row-gap: 1.5rem;
 
   @include tablet {
     grid-template-columns: 2fr 1fr 1fr;
@@ -176,10 +176,10 @@ export default {
 }
 
 .c-title {
-  margin-bottom: $spacer-sm;
+  margin-bottom: 0.5rem;
 }
 
 .c-status {
-  margin-bottom: $spacer*1.5;
+  margin-bottom: 1.5rem;
 }
 </style>
