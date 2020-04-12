@@ -44,7 +44,7 @@ import { OPEN_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
 import Avatar from '@components/Avatar.vue'
 import AvatarUser from '@components/AvatarUser.vue'
-import GroupMemberMenu from '@containers/dashboard/GroupMemberMenu.vue'
+import GroupMembersMenu from '@containers/dashboard/GroupMembersMenu.vue'
 import Tooltip from '@components/Tooltip.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
@@ -55,7 +55,7 @@ export default {
   components: {
     Avatar,
     AvatarUser,
-    GroupMemberMenu,
+    GroupMembersMenu,
     Tooltip,
     ProfileCard,
     GroupMembersTooltipPending
