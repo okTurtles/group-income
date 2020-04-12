@@ -76,7 +76,6 @@ export default {
     },
     adjustPosition () {
       this.trigger = this.$el.getBoundingClientRect()
-      console.log(this.trigger)
       const { scrollX, scrollY } = window
       const { width, height, left, top } = this.trigger
       const spacing = 16
@@ -85,8 +84,6 @@ export default {
       if (y < 0) y = spacing
       if (y + this.tooltipHeight > window.innerHeight) y = window.innerHeight - spacing - this.tooltipHeight
 
-      // TODO/BUG: If the tooltip transpasses the window edges, it get's cutted.
-      // In the future it must be smart enough to adjust its position.
       switch (this.direction) {
         case 'right':
           x = scrollX + left + width + spacing
