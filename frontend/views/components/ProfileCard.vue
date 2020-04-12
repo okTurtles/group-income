@@ -2,6 +2,7 @@
 tooltip(
   :direction='direction'
   :manual='true'
+  ref='tooltip'
 )
   slot
 
@@ -113,6 +114,7 @@ export default {
   },
   methods: {
     openModal (modal, props) {
+      this.$refs.tooltip.toggle()
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
     },
     sendMessage () {
