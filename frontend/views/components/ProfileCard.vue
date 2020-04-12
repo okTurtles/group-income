@@ -3,11 +3,12 @@ tooltip(
   :direction='direction'
   :manual='true'
   ref='tooltip'
+  :opacity='1'
 )
   slot
 
   template(slot='tooltip')
-    .card.c-profile
+    .card.c-profile(v-if='profile')
       .c-identity(:class='{notGroupMember: !isActiveGroupMember}')
         avatar-user(:username='username' size='lg')
         user-name(:username='username')
@@ -83,8 +84,8 @@ export default {
     },
     direction: {
       type: String,
-      validator: (value) => ['right', 'left'].includes(value),
-      default: 'right'
+      validator: (value) => ['left', 'top-left'].includes(value),
+      default: 'left'
     }
   },
   components: {
@@ -161,6 +162,12 @@ export default {
   color: $text_1;
   max-width: 100vw;
   width: 24.3rem;
+
+  @include phone {
+    box-shadow: none;
+    width: 100vw;
+    padding-bottom: 4rem;
+  }
 }
 
 .c-profile {

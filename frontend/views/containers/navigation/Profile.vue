@@ -3,7 +3,7 @@
   v-if='$store.state.loggedIn'
   data-test='userProfile'
 )
-  profile-card(:username='ourUsername' :isSelf='true')
+  profile-card(:username='ourUsername' :isSelf='true' direction='top-left')
     .c-avatar-user
       avatar-user(:username='ourUsername' size='sm')
       .c-user

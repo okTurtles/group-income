@@ -15,24 +15,25 @@ span.c-twrapper(
     @click='toggle'
     v-append-to-body=''
   )
+
   .c-tooltip(
     :style='styles'
-    :class='isTextCenter ? "has-text-center" : ""'
+    :class='{"has-text-center": isTextCenter}'
     v-if='isActive || isVisible'
     v-append-to-body=''
   )
+    modal-close(
+      v-if='manual'
+      @close='toggle'
+    )
     template(v-if='text') {{text}}
     slot(v-else='' name='tooltip')
 </template>
 
 <script>
-/*
-NOTE: when needed, this component can be improved with more options:
-- Click instead of hover
-- More directions
-- Controlled tooltip from outside
-For now I've just did the needed API for this particular task but I think it's pretty easy to scale it.
-*/
+import { TABLET } from '@view-utils/breakpoints.js'
+import ModalClose from '@components/modal/ModalClose.vue'
+
 export default {
   name: 'Tooltip',
   props: {
@@ -43,12 +44,23 @@ export default {
       type: Boolean,
       default: false
     },
-    isTextCenter: Boolean,
+    isTextCenter: {
+      type: Boolean,
+      default: false
+    },
     direction: {
       type: String,
-      validator: (value) => ['bottom', 'bottom-end', 'right', 'left', 'top'].includes(value),
+      validator: (value) => ['bottom', 'bottom-end', 'right', 'left', 'top', 'top-left'].includes(value),
       default: 'bottom'
+    },
+    opacity: {
+      type: Number,
+      required: false,
+      default: 0.95
     }
+  },
+  components: {
+    ModalClose
   },
   data: () => ({
     trigger: null,
@@ -78,36 +90,48 @@ export default {
       this.trigger = this.$el.getBoundingClientRect()
       const { scrollX, scrollY } = window
       const { width, height, left, top } = this.trigger
+      const windowHeight = window.innerHeight
       const spacing = 16
-      let x
-      let y = scrollY + top + height / 2 - this.tooltipHeight / 2
-      if (y < 0) y = spacing
-      if (y + this.tooltipHeight > window.innerHeight) y = window.innerHeight - spacing - this.tooltipHeight
+      let x, y
 
-      switch (this.direction) {
-        case 'right':
-          x = scrollX + left + width + spacing
-          break
-        case 'left':
-          x = scrollX + left - spacing - this.tooltipWidth
-          break
-        case 'bottom-end':
-          x = scrollX + left + width - this.tooltipWidth
-          y = scrollY + top + height + spacing
-          break
-        case 'top':
-          x = scrollX + left + width / 2 - this.tooltipWidth / 2
-          y = scrollY + top - (this.tooltipHeight + spacing)
-          break
-        default: // 'bottom' as default
-          x = scrollX + left + width / 2 - this.tooltipWidth / 2
-          y = scrollY + top + height + spacing
+      if (this.manual && window.innerWidth < TABLET) {
+        y = windowHeight - this.tooltipHeight // Position at the bottom of the screen on mobile
+        x = -8 // Remove tooltip padding
+      } else {
+        y = scrollY + top + height / 2 - this.tooltipHeight / 2
+        if (y < 0) y = spacing
+        if (y + this.tooltipHeight > windowHeight) y = windowHeight - spacing - this.tooltipHeight
+
+        switch (this.direction) {
+          case 'right':
+            x = scrollX + left + width + spacing
+            break
+          case 'left':
+            x = scrollX + left - spacing - this.tooltipWidth
+            break
+          case 'bottom-end':
+            x = scrollX + left + width - this.tooltipWidth
+            y = scrollY + top + height + spacing
+            break
+          case 'top':
+            x = scrollX + left + width / 2 - this.tooltipWidth / 2
+            y = scrollY + top - (this.tooltipHeight + spacing)
+            break
+          case 'top-left':
+            y = y - height - spacing
+            x = scrollX + left + spacing
+            break
+          default: // 'bottom' as default
+            x = scrollX + left + width / 2 - this.tooltipWidth / 2
+            y = scrollY + top + height + spacing
+        }
       }
 
       this.styles = {
         transform: `translate(${x}px, ${y}px)`,
         pointerEvents: this.manual ? 'initial' : 'none',
-        backgroundColor: this.manual ? 'transparent' : 'var(--text_0)'
+        backgroundColor: this.manual ? 'transparent' : 'var(--text_0)',
+        opacity: this.opacity
       }
     }
   },
@@ -170,7 +194,6 @@ export default {
   padding: 0.5rem;
   z-index: $zindex-tooltip;
   color: #fff;
-  opacity: 0.95;
 
   &.has-text-center {
     text-align: center;
@@ -184,5 +207,14 @@ export default {
   height: 100%;
   top: 0;
   left: 0;
+}
+
+.c-modal-close {
+  left: calc(100vw - 4rem);
+  margin-top: 1.5rem;
+
+  @include tablet {
+    display: none;
+  }
 }
 </style>
