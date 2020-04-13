@@ -33,7 +33,7 @@ function tryUnsuccessfullyToProposeNewSimilarMincome () {
     cy.getByDT('nextBtn', 'button')
       .click()
     cy.getByDT('submitBtn').click()
-    cy.getByDT('proposalError').contains('Failed to change mincome. There is an identical open proposal.')
+    cy.getByDT('proposalError').contains('Failed to change mincome. "There is an identical open proposal."')
     cy.getByDT('closeModal').click()
     cy.getByDT('closeModal').should('not.exist')
   })

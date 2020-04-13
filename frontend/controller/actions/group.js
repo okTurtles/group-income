@@ -122,7 +122,6 @@ export default sbp('sbp/selectors/register', {
   },
   'gi.actions/group/updateSettings': async function (settings, groupId) {
     try {
-      this.dumbError.forced = 123 // DELETE THIS BEFORE MERGE
       const message = await sbp('gi.contracts/group/updateSettings/create', settings, groupId)
       await sbp('backend/publishLogEntry', message)
     } catch (e) {
