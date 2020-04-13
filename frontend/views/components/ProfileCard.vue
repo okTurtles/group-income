@@ -162,6 +162,7 @@ export default {
   color: $text_1;
   max-width: 100vw;
   width: 24.3rem;
+  box-shadow: 0px 8px 20px rgba(54, 54, 54, 0.3);
 
   @include phone {
     box-shadow: none;
@@ -174,6 +175,12 @@ export default {
   position: absolute;
   display: flex;
   flex-direction: column;
+}
+
+.is-active {
+  .c-profile {
+    animation: enterFromBottom 500ms both cubic-bezier(0.165, 0.84, 0.44, 1);
+  }
 }
 
 .c-identity {
