@@ -10,8 +10,8 @@
   )
     fieldset.c-fieldset(
       v-if='ephemeral.currentStep === 0'
+      :class='{"is-shifted": ephemeral.invitesCount > 1}'
       ref='fieldset'
-      :class='{"is-shifted": ephemeral.invitesCount.length > 1}'
     )
       i18n.label(tag='legend') Full name
       .field.c-fields-item(
@@ -29,7 +29,6 @@
             aria-required
           )
           button.is-icon-small.is-btn-shifted(
-            v-if='ephemeral.invitesCount > 1'
             type='button'
             @click='removeInvitee(index)'
             data-test='remove'
