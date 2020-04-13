@@ -2,7 +2,6 @@
 
 import Vue from 'vue'
 import template from '~/frontend/utils/stringTemplate.js'
-import { GIErrorUIRuntimeError } from '@model/errors.js'
 
 Vue.prototype.L = L
 Vue.prototype.LTags = LTags
@@ -67,12 +66,8 @@ export default function L (
 }
 
 export function LError (error) {
-  if (error instanceof GIErrorUIRuntimeError) {
-    // It's a controlled/predictable error, so we don't need the user to report it to us.
-    return { reportError: error.message }
-  }
   return {
-    reportError: L('"{errorMsg}". {a_}Report the error{_a}.', {
+    reportError: L('"{errorMsg}". You can {a_}report the error{_a}.', {
       errorMsg: error.message,
       'a_': `<a class="link" target="_blank" href="/app/dashboard?modal=UserSettingsModal&section=application-logs&errorMsg=${encodeURI(error.message)}">`,
       '_a': '</a>'

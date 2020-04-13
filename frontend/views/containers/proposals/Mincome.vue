@@ -118,8 +118,6 @@ export default {
 
           this.ephemeral.currentStep += 1 // Show Success step
         } catch (e) {
-          this.dumbError.dumbError = 'forcer-error' // DELETE BEFORE MERGE!!
-          console.error('Mincome submit() error:', mincomeAmount, e.message)
           this.$refs.formMsg.danger(L('Failed to change mincome. {reportError}', LError(e)))
           this.ephemeral.currentStep = 0
         }
