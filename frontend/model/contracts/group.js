@@ -163,7 +163,7 @@ DefineContract({
       }
       return pendingMembers
     },
-    groupMembersSortedByTypeAndName (state, getters) {
+    groupMembersSorted (state, getters) {
       const weJoinedMs = new Date(getters.currentGroupState.profiles[getters.ourUsername].joinedDate).getTime()
       const isNewMember = (username) => {
         if (username === getters.ourUsername) { return false }

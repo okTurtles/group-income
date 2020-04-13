@@ -56,13 +56,13 @@ export default {
   computed: {
     ...mapGetters([
       'groupMembersCount',
-      'groupMembersSortedByTypeAndName',
+      'groupMembersSorted',
       'groupShouldPropose',
       'ourUsername',
       'userDisplayName'
     ]),
     firstTenMembers () {
-      return this.groupMembersSortedByTypeAndName.slice(0, 10)
+      return this.groupMembersSorted.slice(0, 10)
     }
   },
   methods: {
@@ -75,13 +75,6 @@ export default {
     localizedName (username) {
       const name = this.userDisplayName(username)
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
-    },
-    sortUsersByName (userA, userB) {
-      const nameA = userA.displayName.toUpperCase()
-      const nameB = userB.displayName.toUpperCase()
-      if (nameA < nameB) { return -1 }
-      if (nameA > nameB) { return 1 }
-      return 0 // names are equal
     }
   }
 }

@@ -43,7 +43,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
             avatar-user(:username='username' size='sm')
             .c-name(data-test='username')
               span
-                strong {{ localizedName(displayName) }}
+                strong {{ localizedName(username) }}
                 .c-display-name(v-if='displayName !== username' data-test='profileName') @{{ username }}
 
               i18n.pill.is-neutral(v-if='invitedBy' data-test='pillPending') pending
@@ -94,16 +94,18 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'currentGroupState',
+      'groupMembersSorted',
       'groupMembersCount',
-      'ourUsername'
+      'ourUsername',
+      'userDisplayName'
     ]),
     searchResult () {
-      if (!this.searchText) { return this.groupMembersSortedByTypeAndName }
+      if (!this.searchText) { return this.groupMembersSorted }
+
       const searchTextCaps = this.searchText.toUpperCase()
       const isInList = (n) => n.toUpperCase().indexOf(searchTextCaps) > -1
-      return this.groupMembersSortedByTypeAndName.filter(({ username, displayName }) =>
-        (!searchTextCaps || isInList(username) || (displayName ? isInList(displayName) : false))
+      return this.groupMembersSorted.filter(({ username, displayName }) =>
+        (!searchTextCaps || isInList(username) || isInList(displayName))
       )
     },
     searchCount () {
