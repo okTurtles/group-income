@@ -17,7 +17,7 @@
       :class='member.invitedBy && "is-pending"'
       :key='username'
     )
-      profile-card(:username='ourUsername' :isSelf='true')
+      profile-card(:username='username' :isSelf='username === ourUsername')
         avatar(v-if='member.invitedBy' size='sm')
         avatar-user(v-else :username='username' size='sm')
 

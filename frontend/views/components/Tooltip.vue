@@ -18,7 +18,7 @@ span.c-twrapper(
 
   .c-tooltip(
     :style='styles'
-    :class='{"has-text-center": isTextCenter}'
+    :class='{"has-text-center": isTextCenter, "is-active": isActive}'
     v-if='isActive || isVisible'
     v-append-to-body=''
   )
@@ -142,7 +142,8 @@ export default {
     appendToBody: {
       inserted (el, bindings, vnode) {
         document.body.appendChild(el)
-        if (el.className === 'c-tooltip') {
+
+        if (el.classList.contains('c-tooltip')) {
           const $this = vnode.context // Vue component instance
           if (!$this.tooltip) {
             $this.tooltip = el.getBoundingClientRect()
