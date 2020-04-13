@@ -36,20 +36,18 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
         tag='ul'
       )
         li.c-search-member(
-          v-for='{username, displayName, invitedBy} in searchResult'
+          v-for='{username, displayName, invitedBy, isNew} in searchResult'
           :key='username'
         )
           .c-identity
             avatar-user(:username='username' size='sm')
             .c-name(data-test='username')
-              strong {{ displayName ? displayName : username }}
-              .c-display-name(
-                data-test='profileName'
-                v-if='displayName'
-              ) @{{ username }}
+              span
+                strong {{ localizedName(displayName) }}
+                .c-display-name(v-if='displayName !== username' data-test='profileName') @{{ username }}
 
               i18n.pill.is-neutral(v-if='invitedBy' data-test='pillPending') pending
-              i18n.pill.is-primary(v-else-if='isNewMember(username)' data-test='pillNew') new
+              i18n.pill.is-primary(v-else-if='isNew' data-test='pillNew') new
 
           .c-actions
             group-members-tooltip-pending(v-if='invitedBy' :username='username')
@@ -97,32 +95,16 @@ export default {
   computed: {
     ...mapGetters([
       'currentGroupState',
-      'groupProfiles',
-      'globalProfile',
       'groupMembersCount',
-      'groupMembersPending',
       'ourUsername'
     ]),
-    weJoinedMs () {
-      return new Date(this.currentGroupState.profiles[this.ourUsername].joinedDate).getTime()
-    },
-    allMembers () {
-      return Object.keys({ ...this.groupMembersPending, ...this.groupProfiles })
-    },
     searchResult () {
-      return this.allMembers
-        .map(username => {
-          const inList = (n) => n.toUpperCase().indexOf(this.searchText.toUpperCase()) > -1
-          const { displayName } = this.globalProfile(username) || {}
-          if (!this.searchText || inList(username) || (displayName ? inList(displayName) : false)) {
-            return {
-              username,
-              displayName,
-              invitedBy: this.groupMembersPending[username]
-            }
-          }
-        })
-        .filter(profile => profile !== undefined)
+      if (!this.searchText) { return this.groupMembersSortedByTypeAndName }
+      const searchTextCaps = this.searchText.toUpperCase()
+      const isInList = (n) => n.toUpperCase().indexOf(searchTextCaps) > -1
+      return this.groupMembersSortedByTypeAndName.filter(({ username, displayName }) =>
+        (!searchTextCaps || isInList(username) || (displayName ? isInList(displayName) : false))
+      )
     },
     searchCount () {
       return Object.keys(this.searchResult).length
@@ -133,12 +115,9 @@ export default {
     }
   },
   methods: {
-    isNewMember (username) {
-      if (username === this.ourUsername) { return false }
-
-      const memberJoinedMs = new Date(this.currentGroupState.profiles[username].joinedDate).getTime()
-      const joinedAfterUs = this.weJoinedMs < memberJoinedMs
-      return joinedAfterUs && Date.now() - memberJoinedMs < 604800000 // joined less than 1w (168h) ago.
+    localizedName (username) {
+      const name = this.userDisplayName(username)
+      return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
     openModal (modal, props) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
