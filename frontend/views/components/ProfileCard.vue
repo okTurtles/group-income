@@ -177,9 +177,10 @@ export default {
   flex-direction: column;
 }
 
-.is-active {
-  .c-profile {
-    animation: enterFromBottom 500ms both cubic-bezier(0.165, 0.84, 0.44, 1);
+.is-active .c-profile {
+  animation: enterFromLeft 500ms both cubic-bezier(0.165, 0.84, 0.44, 1);
+  @include phone {
+    animation-name: enterFromBottom;
   }
 }
 
