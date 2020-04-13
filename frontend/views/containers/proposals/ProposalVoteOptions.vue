@@ -25,7 +25,7 @@
 <script>
 import { mapGetters, mapState } from 'vuex'
 import sbp from '~/shared/sbp.js'
-import L from '@view-utils/translations.js'
+import L, { LError } from '@view-utils/translations.js'
 import { VOTE_FOR, VOTE_AGAINST } from '@model/contracts/voting/rules.js'
 import { oneVoteToPass } from '@model/contracts/voting/proposals.js'
 import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER } from '@model/contracts/voting/constants.js'
@@ -125,9 +125,9 @@ export default {
           this.currentGroupId
         )
         await sbp('backend/publishLogEntry', vote)
-      } catch (error) {
-        console.error('ProposalVoteOptions voteFor failed:', error)
-        this.refVoteMsg.danger(L('We couldn’t register your vote.'))
+      } catch (e) {
+        console.error('ProposalVoteOptions voteFor failed:', e)
+        this.refVoteMsg.danger(L('We couldn’t register your vote. {reportError}', LError(e)))
       }
     },
     async voteAgainst () {
@@ -146,9 +146,9 @@ export default {
           this.currentGroupId
         )
         await sbp('backend/publishLogEntry', vote)
-      } catch (error) {
-        console.error('ProposalVoteOptions voteAgainst failed:', error)
-        this.refVoteMsg.danger(L('We couldn’t register your vote.'))
+      } catch (e) {
+        console.error('ProposalVoteOptions voteAgainst failed:', e)
+        this.refVoteMsg.danger(L('We couldn’t register your vote. {reportError}', LError(e)))
       }
     },
     async cancelProposal () {
@@ -164,9 +164,9 @@ export default {
           this.currentGroupId
         )
         await sbp('backend/publishLogEntry', vote)
-      } catch (error) {
-        console.error('ProposalVoteOptions cancelProposal failed:', error)
-        this.refVoteMsg.danger(L('Failed to cancel proposal.'))
+      } catch (e) {
+        console.error('ProposalVoteOptions cancelProposal failed:', e)
+        this.refVoteMsg.danger(L('Failed to cancel proposal. {reportError}', LError(e)))
       }
     }
   }
