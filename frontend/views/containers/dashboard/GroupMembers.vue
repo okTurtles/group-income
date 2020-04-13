@@ -21,7 +21,7 @@
         avatar(v-if='member.invitedBy' size='sm')
         avatar-user(v-else :username='username' size='sm')
 
-      .c-name.has-ellipsis(data-test='username') {{ localizedName(username) }}
+        .c-name.has-ellipsis(data-test='username') {{ localizedName(username) }}
 
       i18n.pill.is-neutral(v-if='member.invitedBy' data-test='pillPending') pending
       i18n.pill.is-primary(v-else-if='isNewMember(username)' data-test='pillNew') new
