@@ -58,8 +58,6 @@ export default {
       lastEntry = entry.prev
     } while (lastEntry)
     this.ephemeral.logs = logs.reverse() // chronological order (oldest to most recent)
-
-    this.ephemeral.reportError = this.$route.query.errorMsg
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', CAPTURED_LOGS)
@@ -89,9 +87,9 @@ export default {
         .join('\n')
     },
     instructions () {
-      const errorMsg = this.ephemeral.reportError
+      const errorMsg = this.$route.query.errorMsg
       const linkTag = {
-        'a_': '<a class="link" target="_blank" href="https://github.com/okTurtles/group-income-simple/issues/new">',
+        'a_': '<a class="link" target="_blank" href="https://github.com/okTurtles/group-income-simple/issues">',
         '_a': '</a>'
       }
       return errorMsg
