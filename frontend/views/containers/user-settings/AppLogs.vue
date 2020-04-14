@@ -40,8 +40,7 @@ export default {
         filter: []
       },
       ephemeral: {
-        logs: [],
-        reportError: null
+        logs: []
       }
     }
   },
@@ -93,8 +92,8 @@ export default {
         '_a': '</a>'
       }
       return errorMsg
-        ? L('You faced a recent error: "{errorMsg}". Please download the logs and {a_}send to us{_a}, so that we can help you solve the problem.', { errorMsg, ...linkTag })
-        : L('If you are facing any problem with Group Income, download the logs and {a_}send to us{_a}, so that we can help you solve the problem.', linkTag)
+        ? L('Recent error: "{errorMsg}". Please download the logs and {a_}send them to us{_a}, so we can help troubleshoot.', { errorMsg, ...linkTag })
+        : L('If you encounter problems, please download the logs and {a_}send them to us{_a}.', linkTag)
     }
   },
   methods: {

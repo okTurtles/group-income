@@ -118,7 +118,7 @@ export default {
 
           this.ephemeral.currentStep += 1 // Show Success step
         } catch (e) {
-          this.$refs.formMsg.danger(L('Failed to change mincome. {reportError}', LError(e)))
+          this.$refs.formMsg.danger(L('Failed to propose mincome change: {reportError}', LError(e)))
           this.ephemeral.currentStep = 0
         }
         return
@@ -134,7 +134,7 @@ export default {
         this.$refs.proposal.close()
       } catch (e) {
         console.error('Mincome.vue submit() error:', e)
-        this.$refs.formMsg.danger(L('Failed to change mincome. {reportError}', LError(e)))
+        this.$refs.formMsg.danger(L('Failed to change mincome: {reportError}', LError(e)))
       }
     }
   }
