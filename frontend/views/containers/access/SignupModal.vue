@@ -9,7 +9,7 @@
       p
         i18n Already have an account?
         | &nbsp;
-        i18n.link(tag='a' @click='showLoginModal' data-test='goToLogin') Log in
+        i18n.link(tag='button' @click='showLoginModal' data-test='goToLogin') Log in
 </template>
 
 <script>
