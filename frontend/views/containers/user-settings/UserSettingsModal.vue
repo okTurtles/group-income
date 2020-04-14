@@ -28,7 +28,6 @@ import settings from './settings.js'
 
 export default {
   name: 'SettingsWrapper',
-
   components: {
     ModalBaseTemplate,
     TabWrapper,
@@ -38,7 +37,6 @@ export default {
     UserProfile,
     TabPlaceholder
   },
-
   data () {
     return settings
   }

@@ -21,7 +21,7 @@ proposal-template(
 import { mapState, mapGetters } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import { CLOSE_MODAL } from '@utils/events.js'
-import L from '@view-utils/translations.js'
+import L, { LError } from '@view-utils/translations.js'
 import Avatar from '@components/Avatar.vue'
 import { PROPOSAL_REMOVE_MEMBER } from '@model/contracts/voting/constants.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
@@ -105,8 +105,8 @@ export default {
 
           this.ephemeral.currentStep += 1
         } catch (e) {
-          console.error(`Failed to propose remove ${member}.`, e)
-          this.$refs.formMsg.danger(L('Failed to propose remove {member}: {codeError}', { codeError: e.message, member }))
+          console.error('RemoveMember submit() error:', member, e)
+          this.$refs.formMsg.danger(L('Failed to propose remove {member}: {reportError}', { ...LError(e), member }))
 
           this.ephemeral.currentStep = 0
         }

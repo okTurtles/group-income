@@ -105,7 +105,7 @@ export default {
       try {
         await sbp('gi.actions/group/removeOurselves', this.currentGroupId)
       } catch (e) {
-        console.error('Failed to remove ourselves', e)
+        console.error('GroupLeaveModal submit() error:', e)
         this.$refs.formMsg.danger(e.message)
       }
     }

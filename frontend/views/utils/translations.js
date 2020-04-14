@@ -65,6 +65,16 @@ export default function L (
   return template(key, args)
 }
 
+export function LError (error) {
+  return {
+    reportError: L('"{errorMsg}". You can {a_}report the error{_a}.', {
+      errorMsg: error.message,
+      'a_': `<a class="link" target="_blank" href="/app/dashboard?modal=UserSettingsModal&section=application-logs&errorMsg=${encodeURI(error.message)}">`,
+      '_a': '</a>'
+    })
+  }
+}
+
 Vue.component('i18n', {
   functional: true,
   props: {
