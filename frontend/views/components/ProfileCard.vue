@@ -62,7 +62,7 @@ tooltip(
 
         i18n.button.is-outlined.is-small(
           tag='button'
-          @click='removeMember'
+          @click='openModal("RemoveMember", { username })'
         ) Remove member
 </template>
 
@@ -121,14 +121,11 @@ export default {
     sendMessage () {
       console.log('To do: implement send message')
     },
-    removeMember () {
-      console.log('To do: implement remove member')
-    },
     hasIncomeDetails () {
       return !!this.ourGroupProfile.incomeDetailsType
     },
     receivingMonetary () {
-      return this.ourContributionSummary.receivingMonetary
+      return !!this.ourContributionSummary.receivingMonetary
     }
   },
   watch: {},
@@ -148,7 +145,7 @@ export default {
       return this.$store.getters.globalProfile(this.username)
     },
     isActiveGroupMember () {
-      return true
+      return !!this.groupProfiles[this.username]
     }
   }
 }
@@ -162,7 +159,7 @@ export default {
   color: $text_1;
   max-width: 100vw;
   width: 24.3rem;
-  box-shadow: 0px 8px 20px rgba(54, 54, 54, 0.3);
+  box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
 
   @include phone {
     box-shadow: none;

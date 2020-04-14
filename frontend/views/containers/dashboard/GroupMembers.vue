@@ -45,7 +45,6 @@ import sbp from '~/shared/sbp.js'
 import Avatar from '@components/Avatar.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import GroupMembersMenu from '@containers/dashboard/GroupMembersMenu.vue'
-import Tooltip from '@components/Tooltip.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
 import L from '@view-utils/translations.js'
@@ -56,7 +55,6 @@ export default {
     Avatar,
     AvatarUser,
     GroupMembersMenu,
-    Tooltip,
     ProfileCard,
     GroupMembersTooltipPending
   },

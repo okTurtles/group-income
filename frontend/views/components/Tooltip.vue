@@ -143,30 +143,28 @@ export default {
       inserted (el, bindings, vnode) {
         document.body.appendChild(el)
 
-        if (el.classList.contains('c-tooltip')) {
-          const $this = vnode.context // Vue component instance
-          if (!$this.tooltip) {
-            $this.tooltip = el.getBoundingClientRect()
-          }
-
-          if (!$this.tooltipWidth) {
-            if ($this.$slots.tooltip) {
-              const elm = $this.$slots.tooltip[0].elm
-              if (elm.offsetWidth) {
-                $this.tooltipWidth = elm.offsetWidth
-                $this.tooltipHeight = elm.offsetHeight
-              }
-            } else {
-              const elm = el.getBoundingClientRect()
-              $this.tooltipWidth = elm.width
-              $this.tooltipHeight = elm.height
-            }
-          }
-
-          // That way the adjustPosition() method can have the same logic
-          // applied in every tooltip as expected
-          $this.adjustPosition()
+        const $this = vnode.context // Vue component instance
+        if (!$this.tooltip) {
+          $this.tooltip = el.getBoundingClientRect()
         }
+
+        if (!$this.tooltipWidth) {
+          if ($this.$slots.tooltip) {
+            const elm = $this.$slots.tooltip[0].elm
+            if (elm.offsetWidth) {
+              $this.tooltipWidth = elm.offsetWidth
+              $this.tooltipHeight = elm.offsetHeight
+            }
+          } else {
+            const elm = el.getBoundingClientRect()
+            $this.tooltipWidth = elm.width
+            $this.tooltipHeight = elm.height
+          }
+        }
+
+        // That way the adjustPosition() method can have the same logic
+        // applied in every tooltip as expected
+        $this.adjustPosition()
       },
       unbind (el) {
         if (el.parentNode) {
