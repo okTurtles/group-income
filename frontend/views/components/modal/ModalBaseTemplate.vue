@@ -1,12 +1,13 @@
 <template lang='pug'>
   transition(name='zoom' appear @after-leave='unload')
     .modal(
+      v-if='modalIsActive'
       :class='{ fullscreen }'
-      data-test='modal'
       role='dialog'
       tabindex='-1'
-      @keyup.tab='trapFocus'
-      v-if='modalIsActive'
+      :aria-label='a11yTitle'
+      v-focus=''
+      data-test='modal'
       @close='close'
     )
       modal-close(@close='close' :fullscreen='fullscreen')

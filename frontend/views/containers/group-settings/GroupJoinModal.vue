@@ -1,5 +1,5 @@
 <template lang='pug'>
-modal-base-template(:fullscreen='true')
+modal-base-template(:fullscreen='true' :a11yTitle='L("How to join a group")')
   i18n.is-title-1.c-title(tag='h1') How to join a group
 
   .wrapper

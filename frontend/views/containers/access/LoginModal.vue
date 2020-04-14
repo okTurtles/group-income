@@ -1,5 +1,5 @@
 <template lang='pug'>
-  modal-template(class='has-background' ref='modal')
+  modal-template(class='has-background' ref='modal' :a11yTitle='L("Log in")')
     template(slot='title')
       i18n Log in
 
@@ -9,7 +9,7 @@
       p
         i18n Not on Group Income yet?
         | &nbsp;
-        i18n.link(tag='button' data-test='goToSignup' @click='showSignupModal') Create an account
+        i18n.link(tag='button' @click='showSignupModal' data-test='goToSignup') Create an account
 </template>
 
 <script>

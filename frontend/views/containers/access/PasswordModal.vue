@@ -1,5 +1,5 @@
 <template lang='pug'>
-modal-template(class='is-centered is-left-aligned' back-on-mobile=true ref='modalTemplate')
+modal-template(class='is-centered is-left-aligned' back-on-mobile=true ref='modalTemplate' :a11yTitle='L("Change Password")')
   template(slot='title') Change password
 
   form(
