@@ -192,7 +192,7 @@ DefineContract({
           if (!userA.invitedBy && userB.invitedBy) { return 1 }
           // Then new members...
           if (userA.isNew && !userB.isNew) { return -1 }
-          if (!userA.isNew && userB.isNew) { return -1 }
+          if (!userA.isNew && userB.isNew) { return 1 }
           // and sort them all by A-Z
           if (nameA < nameB) { return -1 }
           if (nameA > nameB) { return 1 }
