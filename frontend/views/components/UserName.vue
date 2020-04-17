@@ -1,6 +1,6 @@
 <template lang='pug'>
 .c-name(data-test='username')
-  strong {{ displayName ? displayName : username }}
+  strong {{ displayName ? displayName : '@' + username }}
   .c-display-name(
     data-test='profileName'
     v-if='displayName'

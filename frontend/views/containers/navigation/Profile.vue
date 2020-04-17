@@ -83,6 +83,10 @@ export default {
     font-family: "Lato";
     color: $text_1;
   }
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 
 button {

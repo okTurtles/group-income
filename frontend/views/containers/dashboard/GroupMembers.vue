@@ -148,6 +148,10 @@ export default {
 .c-name {
   margin-right: auto;
   margin-left: 0.5rem;
+
+  &:hover {
+    text-decoration: underline;
+  }
 }
 .c-menu {
   margin-left: 0.5rem;

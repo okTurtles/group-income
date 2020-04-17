@@ -8,7 +8,7 @@ tooltip(
   slot
 
   template(slot='tooltip')
-    .card.c-profile(v-if='profile')
+    .card.c-profile(v-if='profile' v-focus='')
       .c-identity(:class='{notGroupMember: !isActiveGroupMember}')
         avatar-user(:username='username' size='lg')
         user-name(:username='username')
@@ -21,10 +21,11 @@ tooltip(
       p.c-bio(v-if='profile.bio')
         | {{profile.bio}}
         i18n.c-bio-link.is-unstyled.link(
+          v-if='isSelf'
           tag='button'
           @click='openModal("UserSettingsModal")'
           data-test='linkEditBio'
-        ) Edit Bio
+        ) Edit bio
 
       i18n.button.is-small.is-outlined.c-bio-button(
         v-else-if='isSelf'
@@ -155,7 +156,7 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .card {
-  padding: 1rem 1.5rem;
+  padding: 1rem 1.5rem 1.5rem 1.5rem;
   color: $text_1;
   max-width: 100vw;
   width: 24.3rem;
@@ -175,7 +176,7 @@ export default {
 }
 
 .is-active .c-profile {
-  animation: enterFromLeft 500ms both cubic-bezier(0.165, 0.84, 0.44, 1);
+  animation: zoom 500ms both cubic-bezier(0.165, 0.84, 0.44, 1);
   @include phone {
     animation-name: enterFromBottom;
   }
