@@ -17,25 +17,22 @@
 <script>
 export default {
   name: 'TabItem',
-
   data () {
     return {
       isActive: false,
       transitionName: null
     }
   },
-
   methods: {
+    // Used by parent TabWrapper.vue
     changeTab (isActive, transitionName) {
       this.transitionName = transitionName
       this.isActive = isActive
     }
   },
-
   created () {
     this.$parent.tabItems.push(this)
   },
-
   beforeDestroy () {
     const index = this.$parent.tabItems.indexOf(this)
     if (index >= 0) {

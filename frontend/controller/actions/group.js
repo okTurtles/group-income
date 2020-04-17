@@ -16,7 +16,7 @@ import { GIErrorUIRuntimeError } from '@model/errors.js'
 
 import imageUpload from '@utils/imageUpload.js'
 import { merge } from '@utils/giLodash.js'
-import L from '@view-utils/translations.js'
+import L, { LError } from '@view-utils/translations.js'
 
 export default sbp('sbp/selectors/register', {
   'gi.actions/group/create': async function ({
@@ -125,7 +125,8 @@ export default sbp('sbp/selectors/register', {
       const message = await sbp('gi.contracts/group/updateSettings/create', settings, groupId)
       await sbp('backend/publishLogEntry', message)
     } catch (e) {
-      throw new GIErrorUIRuntimeError(L('Failed to update group settings. {codeError}', { codeError: e.message }))
+      console.error('gi.actions/group/updateSettings failed!', e)
+      throw new GIErrorUIRuntimeError(L('Failed to update group settings. {reportError}', LError(e)))
     }
   },
   'gi.actions/group/removeMember': async function (params, groupID) {

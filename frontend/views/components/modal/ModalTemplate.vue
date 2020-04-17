@@ -2,10 +2,9 @@
   .c-modal(
     data-test='modal'
     role='dialog'
-    :aria-labelledby='$scopedSlots.title'
     tabindex='-1'
+    :aria-label='a11yTitle'
     v-focus=''
-    @keyup.tab='trapFocus'
   )
     transition(name='fade' appear)
       .c-modal-background(@click='close' v-if='modalIsActive')

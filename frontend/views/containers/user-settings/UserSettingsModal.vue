@@ -1,5 +1,5 @@
 <template lang='pug'>
-modal-base-template(class='has-background')
+modal-base-template(class='has-background' :a11yTitle='L("Settings")')
   .wrapper-container
     tab-wrapper(:title='L("Settings")' :tabNav='settings' @close='$emit("close")')
       tab-item
@@ -28,7 +28,6 @@ import settings from './settings.js'
 
 export default {
   name: 'SettingsWrapper',
-
   components: {
     ModalBaseTemplate,
     TabWrapper,
@@ -38,7 +37,6 @@ export default {
     UserProfile,
     TabPlaceholder
   },
-
   data () {
     return settings
   }

@@ -2,7 +2,7 @@
 //- NOTE: If you use it as an example when creating other modals
 //-       (instead of existing modals), make sure to replace many
 //-       of the tags below with their equivalent i18n tags.
-modal-template(:class='{ "has-background": background, "is-left-aligned": backOnMobile }' :back-on-mobile='backOnMobile')
+modal-template(:class='{ "has-background": background, "is-left-aligned": backOnMobile }' :back-on-mobile='backOnMobile' :a11yTitle='L("Modal example")')
   template(#title='') Title
   template(#subtitle='' v-if='subtitle') subtitle
 

@@ -1,5 +1,5 @@
 <template lang='pug'>
-  modal-template(ref='modal')
+  modal-template(ref='modal' :a11yTitle='L("Delete group")')
     template(slot='title')
       i18n Delete group
 

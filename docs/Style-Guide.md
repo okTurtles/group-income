@@ -160,6 +160,7 @@ banner-scoped(ref='formMsg')
 ```
 
 ```js
+import L, { LError } from '@view-utils/translations.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 
 submit () {
@@ -167,9 +168,7 @@ submit () {
   this.$refs.formMsg.success(L('Changes saved!'))
 
   // If something wen't wrong... Try to be more specific whenever possible.
-  this.$refs.formMsg.danger(L('Failed to upload the group picture, please try again. {codeError}', {
-    codeError: error.message
-  }))
+  this.$refs.formMsg.danger(L('Failed to upload the group picture. {reportError}', LError(error)))
 }
 ```
 

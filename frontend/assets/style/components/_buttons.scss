@@ -1,6 +1,7 @@
 @mixin buttonState($color, $color_2) {
   @media (hover: hover) {
-    &:hover {
+    &:hover,
+    &:focus {
       background-color: #{$color};
     }
 
@@ -261,7 +262,8 @@ button.link {
   }
 
   @media (hover: hover) {
-    &:hover {
+    &:hover,
+    &:focus {
       background-color: transparent;
     }
 
