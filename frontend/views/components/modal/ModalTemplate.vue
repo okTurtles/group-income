@@ -30,10 +30,11 @@
 
 <script>
 import modalMixins from './ModalMixins.js'
+import trapFocus from '@utils/trapFocus.js'
 
 export default {
   name: 'ModalTemplate',
-  mixins: [modalMixins]
+  mixins: [modalMixins, trapFocus]
 }
 </script>
 
