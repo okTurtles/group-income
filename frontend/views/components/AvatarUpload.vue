@@ -25,7 +25,7 @@ import sbp from '~/shared/sbp.js'
 import imageUpload from '@utils/imageUpload.js'
 import Avatar from '@components/Avatar.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
-import L from '@view-utils/translations.js'
+import L, { LError } from '@view-utils/translations.js'
 
 export default {
   name: 'AvatarUpload',
@@ -49,8 +49,8 @@ export default {
       try {
         picture = await imageUpload(fileReceived)
       } catch (e) {
-        console.error(e)
-        this.$refs.formMsg.danger(L('Failed to upload avatar. {codeError}', { codeError: e.message }))
+        console.error('AvatarUpload imageUpload() error:', e)
+        this.$refs.formMsg.danger(L('Failed to upload avatar. {reportError}', LError(e)))
         return false
       }
 
@@ -64,8 +64,8 @@ export default {
         this.$refs.picture.setFromBlob(fileReceived)
         this.$refs.formMsg.success(L('Avatar updated!'))
       } catch (e) {
-        console.error('Failed to save avatar', e)
-        this.$refs.formMsg.danger(L('Failed to save avatar. {codeError}', { codeError: e.message }))
+        console.error('AvatarUpload fileChange() error:', e)
+        this.$refs.formMsg.danger(L('Failed to save avatar. {reportError}', LError(e)))
       }
     }
   }

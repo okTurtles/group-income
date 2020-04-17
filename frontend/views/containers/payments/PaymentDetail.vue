@@ -1,6 +1,6 @@
 <template lang='pug'>
 // Stop initialization if payment not present
-modal-template(ref='modal' v-if='payment')
+modal-template(ref='modal' v-if='payment' :a11yTitle='L("Payment details")')
   template(slot='title')
     i18n Payment details
 

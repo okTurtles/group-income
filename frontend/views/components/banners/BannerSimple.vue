@@ -47,7 +47,7 @@ export default {
     color: currentColor;
   }
 
-  ::v-deep a.link {
+  ::v-deep .link {
     font-weight: 400;
     color: currentColor;
     border-bottom-color: currentColor;

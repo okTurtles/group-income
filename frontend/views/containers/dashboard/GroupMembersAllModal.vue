@@ -1,5 +1,5 @@
 <template lang='pug'>
-modal-base-template.has-background(ref='modal' :fullscreen='true')
+modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L("Group members")')
   .c-container
     .c-header
       i18n.is-title-2.c-title(tag='h2') Group members

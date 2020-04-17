@@ -86,7 +86,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import AvatarUpload from '@components/AvatarUpload.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import sbp from '~/shared/sbp.js'
-import L from '@view-utils/translations.js'
+import L, { LError } from '@view-utils/translations.js'
 
 export default {
   name: 'UserProfile',
@@ -154,8 +154,8 @@ export default {
         await sbp('backend/publishLogEntry', attributes)
         this.$refs.formMsg.success(L('Your changes were saved!'))
       } catch (e) {
-        console.error('Failed to update profile', e)
-        this.$refs.formMsg.danger(L('Failed to update profile, please try again. {codeError}', { codeError: e.message }))
+        console.error('UserProfile saveProfile() error:', e)
+        this.$refs.formMsg.danger(L('Failed to update profile. {reportError}', LError(e)))
       }
     }
   }

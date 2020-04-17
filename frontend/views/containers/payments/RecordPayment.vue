@@ -1,6 +1,6 @@
 <template lang='pug'>
 // Stop initialization if paymentDistribution not present
-modal-base-template(ref='modal' :fullscreen='true' class='has-background' v-if='paymentsDistribution')
+modal-base-template(ref='modal' :fullscreen='true' class='has-background' v-if='paymentsDistribution' :a11yTitle='L("Record payments")')
   .c-header(:class='{"hide-desktop": donePayment}')
     i18n.is-title-2.c-title(tag='h2') Record payments
 

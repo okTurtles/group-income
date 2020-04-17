@@ -4,6 +4,7 @@
     class='is-centered'
     :class='{"has-background": !isConfirmation}'
     ref='modal'
+    :a11yTitle='title'
   )
     template(slot='subtitle')
       i18n(v-if='groupShouldPropose') New proposal
