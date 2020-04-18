@@ -126,6 +126,9 @@ export default {
     async submit () {
       this.donePayment = true
       console.log('Todo: Implement record payment')
+      // TODO: remember when creating 'gi.contracts/group/payment' to set the payment
+      //       currency using:
+      //       getters.thisMonthsPaymentInfo.firstMonthsCurrency || getters.groupMincomeCurrency
     }
   },
   validations: {

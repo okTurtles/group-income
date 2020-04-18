@@ -129,8 +129,7 @@ export default {
       'groupProfiles',
       'ourGroupProfile',
       'groupSettings',
-      'ourUsername',
-      'thisMonthsPayments'
+      'ourUsername'
     ]),
     needsIncome () {
       return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'

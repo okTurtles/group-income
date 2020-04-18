@@ -54,7 +54,7 @@ export default {
       return this.groupSettings.mincomeAmount
     },
     distribution () {
-      return this.thisMonthsPayments.frozenDistribution || this.groupIncomeDistribution
+      return this.groupIncomeDistribution
     },
     // Extract members incomes
     members () {

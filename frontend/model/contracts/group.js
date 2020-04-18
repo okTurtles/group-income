@@ -12,14 +12,15 @@ import {
   PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC,
   STATUS_OPEN, STATUS_CANCELLED
 } from './voting/constants.js'
-import { paymentStatusType, paymentType } from './payments/index.js'
+import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './payments/index.js'
 import * as Errors from '../errors.js'
 import { merge, deepEqualJSONType, omit } from '~/frontend/utils/giLodash.js'
-import { currentMonthTimestamp } from '~/frontend/utils/time.js'
+import { currentMonthstamp, ISOStringToMonthstamp } from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
-import currencies from '~/frontend/views/utils/currencies.js'
+import currencies, { saferFloat } from '~/frontend/views/utils/currencies.js'
 import L from '~/frontend/views/utils/translations.js'
+
 export const INVITE_INITIAL_CREATOR = 'INVITE_INITIAL_CREATOR'
 export const INVITE_STATUS = {
   VALID: 'valid',
@@ -54,19 +55,31 @@ export function createInvite (
   }
 }
 
-function initMonthlyPayments () {
-  return {
-    payments: {},
-    frozenDistribution: null,
-    frozenMincome: null
-  }
-}
-
 function initGroupProfile (contractID: string, joined: ?string) {
   return {
     contractID: contractID,
     nonMonetaryContributions: [],
     joinedDate: joined
+  }
+}
+
+function initPaymentMonth (currency: string) {
+  return {
+    // all payments during the month use this to set their exchangeRateToGroupCurrency
+    // see notes and code in groupIncomeAdjustedDistribution for details.
+    firstMonthsCurrency: currency,
+    // TODO: for the currency change proposal, have it push to mincomeExchangeRates
+    mincomeExchangeRates: [1], // modified by proposals to change mincome currency
+    paymentsFrom: {} // fromUser => toUser => Array<paymentHash>
+  }
+}
+
+function clearOldPayments ({ state }) {
+  const sortedMonthKeys = Object.keys(state.paymentsByMonth).sort()
+  // save two months payments, max
+  while (sortedMonthKeys.length > 2) {
+    // TODO: archive these payments?
+    Vue.delete(state.paymentsByMonth, sortedMonthKeys.shift())
   }
 }
 
@@ -129,6 +142,10 @@ DefineContract({
     groupMincomeAmount (state, getters) {
       return getters.groupSettings.mincomeAmount
     },
+    groupMincomeCurrency (state, getters) {
+      return getters.groupSettings.mincomeCurrency
+    },
+    // used with graphs like those in the dashboard and in the income details modal
     groupIncomeDistribution (state, getters) {
       const groupProfiles = getters.groupProfiles
       const mincomeAmount = getters.groupMincomeAmount
@@ -139,7 +156,60 @@ DefineContract({
         if (incomeDetailsType) {
           const adjustment = incomeDetailsType === 'incomeAmount' ? 0 : mincomeAmount
           const adjustedAmount = adjustment + profile[incomeDetailsType]
-          currentIncomeDistribution.push({ name: username, amount: adjustedAmount })
+          currentIncomeDistribution.push({
+            name: username,
+            amount: saferFloat(adjustedAmount)
+          })
+        }
+      }
+      return incomeDistribution(currentIncomeDistribution, mincomeAmount)
+    },
+    // adjusted version of groupIncomeDistribution, used by the payments system
+    groupIncomeAdjustedDistribution (state, getters) {
+      const groupProfiles = getters.groupProfiles
+      const mincomeAmount = getters.groupMincomeAmount
+      // mincomeExchangeRateMultiplier comes from reducing mincomeExchangeRates,
+      // a list of mincome currency conversions from any proposals that converted the mincome
+      // to a different currency.
+      // For this to work exchangeRateToGroupCurrency must be based on the very FIRST
+      // mincome currency of the month and it must remain that way for all future
+      // month's payments!
+      // so in other words, we convert from whatever original payment currency to the
+      // first mincome currency of the month, and then to any subsequent mincome currencies
+      // that we switched to via proposals during the month. Any proposal that suggests
+      // switching to a new mincome currency will include this conversion rate in
+      // the proposal data, and it will be added to the mincomeExchangeRates list.
+      const mincomeExchangeRate = getters.mincomeExchangeRateMultiplier
+      const thisMonthsPaymentsFrom = getters.thisMonthsPaymentsFrom
+      const currentIncomeDistribution = []
+      // TODO: figure out how to handle mincome currency changing via proposal
+      for (const username in groupProfiles) {
+        const profile = groupProfiles[username]
+        const incomeDetailsType = profile && profile.incomeDetailsType
+        if (incomeDetailsType) {
+          var paymentsMade = 0
+          // if this user has already made some payments to other users this
+          // month, we need to take that into account and adjust the distribution.
+          // this will be used by the Payments page to tell how much still
+          // needs to be paid (if it was a partial payment).
+          if (thisMonthsPaymentsFrom) {
+            const paymentsFromUser = thisMonthsPaymentsFrom[username]
+            for (const toUser in paymentsFromUser) {
+              for (const paymentHash of paymentsFromUser[toUser]) {
+                const paymentData = state.payments[paymentHash].data
+                if (paymentData.status === PAYMENT_COMPLETED) {
+                  const { amount, exchangeRateToGroupCurrency } = paymentData
+                  paymentsMade += amount * exchangeRateToGroupCurrency * mincomeExchangeRate
+                }
+              }
+            }
+          }
+          const adjustment = incomeDetailsType === 'incomeAmount' ? 0 : mincomeAmount
+          const adjustedAmount = adjustment + profile[incomeDetailsType] - paymentsMade
+          currentIncomeDistribution.push({
+            name: username,
+            amount: saferFloat(adjustedAmount)
+          })
         }
       }
       return incomeDistribution(currentIncomeDistribution, mincomeAmount)
@@ -211,9 +281,16 @@ DefineContract({
       const currency = currencies[getters.groupSettings.mincomeCurrency]
       return currency && currency.symbolWithCode
     },
-    thisMonthsPayments (state, getters) {
-      const payments = getters.currentGroupState.userPaymentsByMonth
-      return (payments && payments[currentMonthTimestamp()]) || {}
+    thisMonthsPaymentInfo (state, getters) {
+      return getters.currentGroupState.paymentsByMonth[currentMonthstamp()] || {}
+    },
+    thisMonthsPaymentsFrom (state, getters) {
+      return getters.thisMonthsPaymentInfo.paymentsFrom
+    },
+    mincomeExchangeRateMultiplier (state, getters) {
+      // TODO: for the currency change proposal, have it push to mincomeExchangeRates
+      const rates = getters.thisMonthsPaymentInfo.mincomeExchangeRates || [1]
+      return rates.reduce((a, c) => a * c)
     }
   },
   // NOTE: All mutations must be atomic in their edits of the contract state.
@@ -243,6 +320,7 @@ DefineContract({
         // TODO: checkpointing: https://github.com/okTurtles/group-income-simple/issues/354
         const initialState = merge({
           payments: {},
+          paymentsByMonth: {},
           invites: {},
           proposals: {}, // hashes => {} TODO: this, see related TODOs in GroupProposal
           settings: {
@@ -250,9 +328,6 @@ DefineContract({
           },
           profiles: {
             [meta.username]: initGroupProfile(meta.identityContractID, meta.createdDate)
-          },
-          userPaymentsByMonth: {
-            [currentMonthTimestamp()]: initMonthlyPayments()
           }
         }, data)
         for (const key in initialState) {
@@ -261,10 +336,11 @@ DefineContract({
       }
     },
     'gi.contracts/group/payment': {
-      validate: objectOf({
+      validate: objectMaybeOf({
         toUser: string,
         amount: number,
-        currency: string,
+        currency: string, // must be one of the keys in currencies.js (e.g. USD, EUR, etc.)
+        exchangeRateToGroupCurrency: number, // multiply 'amount' by this
         txid: string,
         status: paymentStatusType,
         paymentType: paymentType,
@@ -272,24 +348,17 @@ DefineContract({
         memo: optional(string)
       }),
       process ({ data, meta, hash }, { state, getters }) {
-        const monthstamp = currentMonthTimestamp()
-        const thisMonth = vueFetchInitKV(state.userPaymentsByMonth, monthstamp, initMonthlyPayments())
-        const paymentsFromUser = vueFetchInitKV(thisMonth.payments, meta.username, {})
         Vue.set(state.payments, hash, { data, meta, history: [data] })
-        if (paymentsFromUser[data.toUser]) {
-          throw new Errors.GIErrorIgnoreAndBanIfGroup(`payment: ${meta.username} already paying ${data.toUser}! payment hash: ${hash}`)
-        }
-        Vue.set(paymentsFromUser, data.toUser, hash)
-        // if this is the first payment, freeze the monthy's distribution
-        if (!thisMonth.frozenDistribution) {
-          // const getters = sbp('state/groupContractSafeGetters', state)
-          thisMonth.frozenDistribution = getters.groupIncomeDistribution
-          thisMonth.frozenMincome = getters.groupMincomeAmount
-        }
+        const monthstamp = ISOStringToMonthstamp(meta.createdDate)
+        const { paymentsFrom } = vueFetchInitKV(state.paymentsByMonth, monthstamp, initPaymentMonth(data.currency))
+        const fromUser = vueFetchInitKV(paymentsFrom, meta.username, {})
+        const toUser = vueFetchInitKV(fromUser, data.toUser, [])
+        toUser.push(hash)
+        clearOldPayments({ state })
       }
     },
     'gi.contracts/group/paymentUpdate': {
-      validate: objectOf({
+      validate: objectMaybeOf({
         paymentHash: string,
         updatedProperties: objectMaybeOf({
           status: paymentStatusType,

@@ -13,11 +13,16 @@ page(
   add-income-details-widget(v-if='!hasIncomeDetails')
 
   template(v-else)
-    p.p-descritpion.has-text-1(
-      data-test='openIncomeDetailsModal'
-      @click='openModal("IncomeDetails")'
-      v-html='introTitle'
-    )
+    p.p-description
+      span.has-text-1(v-html='introTitle')
+      | &nbsp;
+      i18n.has-text-1(
+        @click='handleIncomeClick'
+        :args='{ \
+          r1: `<button class="link js-btnInvite" data-test="openIncomeDetailsModal">`, \
+          r2: "</button>" \
+        }'
+      ) You can change this at any time by updating your {r1}income details{r2}.
 
     section(v-if='needsIncome && !hasPayments')
       .c-container-empty
@@ -66,7 +71,7 @@ page(
 
               i18n.button(
                 tag='button'
-                data-test='recorPayment'
+                data-test='recordPayment'
                 @click='openModal("RecordPayment", { paymentsDistribution })'
               ) Record payments
             payments-pagination(v-else)
@@ -88,7 +93,7 @@ import PaymentsList from '@containers/payments/PaymentsList.vue'
 import PaymentsPagination from '@containers/payments/PaymentsPagination.vue'
 import MonthOverview from '@containers/payments/MonthOverview.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
-import { PAYMENT_PENDING, PAYMENT_CANCELLED, PAYMENT_ERROR, PAYMENT_COMPLETED, PAYMENT_NOT_RECEIVED } from '@model/contracts/payments/index.js'
+// import { PAYMENT_PENDING, PAYMENT_CANCELLED, PAYMENT_ERROR, PAYMENT_COMPLETED, PAYMENT_NOT_RECEIVED } from '@model/contracts/payments/index.js'
 import L, { LTags } from '@view-utils/translations.js'
 
 export default {
@@ -130,12 +135,12 @@ export default {
   computed: {
     ...mapGetters([
       'currentGroupState',
-      'groupIncomeDistribution',
+      'groupIncomeAdjustedDistribution',
       'ourGroupProfile',
       'groupSettings',
       'ourUsername',
       'thisMonthsPayments',
-      'globalProfile'
+      'userDisplayName'
     ]),
     currency () {
       return currencies[this.groupSettings.mincomeCurrency]
@@ -156,9 +161,9 @@ export default {
       }
     },
     introTitle () {
-      let copy = this.needsIncome ? L('You are currently {strong_}receiving{_strong} mincome.', LTags('strong')) : L('You are currently {strong_}sending{_strong} mincome.', LTags('strong'))
-      copy += L('You can change this at any time by updating your {r1}income details{r2}.', { r1: '<button class="link js-btnInvite">', r2: '</button>' })
-      return copy
+      return this.needsIncome
+        ? L('You are currently {strong_}receiving{_strong} mincome.', LTags('strong'))
+        : L('You are currently {strong_}sending{_strong} mincome.', LTags('strong'))
     },
     paymentsDistribution () {
       // TODO: make sure we create a new month if month roll's over
@@ -169,34 +174,34 @@ export default {
       // TODO: Have multiple frozen distributions based on new income details
       // or new members, using any remainder leftover needed income from the
       // previous distribution
-      const distribution = this.thisMonthsPayments.frozenDistribution || this.groupIncomeDistribution
-      return distribution
-        .filter(p => p[this.needsIncome ? 'to' : 'from'] === this.ourUsername)
-        // TODO: Add filter for the tab todo / sent / received
-        .map(p => {
-          const concerned = this.needsIncome ? 'from' : 'to'
-          p.username = p[concerned]
-          p.displayName = this.globalProfile(p[concerned]).displayName || p.username
-          return p
-        })
-        .filter(p => {
-          const inList = (n) => n.toUpperCase().indexOf(this.searchText.toUpperCase()) > -1
-          return !this.searchText || inList(p.username) || (p.displayName ? inList(p.displayName) : false)
-        })
-        .map(transfer => {
-          const { displayName, username, amount } = transfer
-          const { hash, data } = this.paymentFor(username)
-          return {
+      const payments = []
+      const needsIncome = this.needsIncome
+      const ourUsername = this.ourUsername
+      for (const p of this.groupIncomeAdjustedDistribution) {
+        if (p[needsIncome ? 'to' : 'from'] === ourUsername) {
+          const amount = p.amount
+          const username = p[needsIncome ? 'from' : 'to']
+          const displayName = this.userDisplayName(username)
+          // TODO: Add filter for the tab todo / sent / received
+          // TODO: move this .filter elsewhere, it shouldn't be here
+          // .filter(p => {
+          //   const inList = (n) => n.toUpperCase().indexOf(this.searchText.toUpperCase()) > -1
+          //   return !this.searchText || inList(p.username) || (p.displayName && inList(p.displayName))
+          // })
+          // const { hash, data } = this.paymentFor(username)
+          payments.push({
             username,
             displayName,
-            hash,
-            data,
-            amount: +this.currency.displayWithoutCurrency(amount),
-            amountFormatted: this.currency.displayWithCurrency(amount),
-            paymentClass: this.paymentClass(data),
-            paymentStatusText: this.paymentStatusText(data, username)
-          }
-        })
+            // hash,
+            // data,
+            amount: +this.currency.displayWithoutCurrency(amount)
+            // amountFormatted: this.currency.displayWithCurrency(amount),
+            // paymentClass: this.paymentClass(data),
+            // paymentStatusText: this.paymentStatusText(data, username)
+          })
+        }
+      }
+      return payments
     },
     hasIncomeDetails () {
       return !!this.ourGroupProfile.incomeDetailsType
@@ -209,31 +214,36 @@ export default {
     openModal (name, props) {
       sbp('okTurtles.events/emit', OPEN_MODAL, name, props)
     },
+    handleIncomeClick (e) {
+      if (e.target.classList.contains('js-btnInvite')) {
+        sbp('okTurtles.events/emit', OPEN_MODAL, 'IncomeDetails')
+      }
+    }
     // Payments
-    paymentFor (toUser) {
-      const payments = this.thisMonthsPayments.payments
-      const ourPayments = payments && payments[this.ourUsername]
-      const paymentHash = ourPayments && ourPayments[toUser]
-      const data = paymentHash && this.currentGroupState.payments[paymentHash].data
-      return data ? { hash: paymentHash, data } : { data: {} }
-    },
-    paymentClass (paymentData) {
-      return paymentData.status ? {
-        [PAYMENT_PENDING]: 'has-text-1',
-        [PAYMENT_CANCELLED]: '',
-        [PAYMENT_ERROR]: 'has-text-weight-normal has-text-warning',
-        [PAYMENT_NOT_RECEIVED]: 'has-text-weight-normal has-text-warning',
-        [PAYMENT_COMPLETED]: 'has-text-success'
-      }[paymentData.status] : ''
-    },
-    paymentStatusText (paymentData, username) {
-      return paymentData.status ? {
-        [PAYMENT_PENDING]: L('Waiting for {username} confirmation...', { username }),
-        [PAYMENT_CANCELLED]: '',
-        [PAYMENT_ERROR]: L('There was an error processing this payment'),
-        [PAYMENT_NOT_RECEIVED]: L('The payment was not received by {username}.', { username }),
-        [PAYMENT_COMPLETED]: L('Payment confirmed!')
-      }[paymentData.status] : ''
+    // paymentFor (toUser) {
+    //   const payments = this.thisMonthsPaymentsFrom
+    //   const ourPayments = payments && payments[this.ourUsername]
+    //   const paymentHash = ourPayments && ourPayments[toUser]
+    //   const data = paymentHash && this.currentGroupState.payments[paymentHash].data
+    //   return data ? { hash: paymentHash, data } : { data: {} }
+    // },
+    // paymentClass (paymentData) {
+    //   return paymentData.status ? {
+    //     [PAYMENT_PENDING]: 'has-text-1',
+    //     [PAYMENT_CANCELLED]: '',
+    //     [PAYMENT_ERROR]: 'has-text-weight-normal has-text-warning',
+    //     [PAYMENT_NOT_RECEIVED]: 'has-text-weight-normal has-text-warning',
+    //     [PAYMENT_COMPLETED]: 'has-text-success'
+    //   }[paymentData.status] : ''
+    // },
+    // paymentStatusText (paymentData, username) {
+    //   return paymentData.status ? {
+    //     [PAYMENT_PENDING]: L('Waiting for {username} confirmation...', { username }),
+    //     [PAYMENT_CANCELLED]: '',
+    //     [PAYMENT_ERROR]: L('There was an error processing this payment'),
+    //     [PAYMENT_NOT_RECEIVED]: L('The payment was not received by {username}.', { username }),
+    //     [PAYMENT_COMPLETED]: L('Payment confirmed!')
+    //   }[paymentData.status] : ''
     // },
     // showMarkAsPaid (payment) {
     //   return !payment.hash ||
@@ -255,7 +265,7 @@ export default {
     //     console.error(e)
     //     alert(e.message)
     //   }
-    }
+    // }
   }
 }
 </script>
@@ -264,7 +274,7 @@ export default {
 @import "@assets/style/_variables.scss";
 
 // Header
-.p-descritpion {
+.p-description {
   margin-top: -1.5rem;
   padding-bottom: 1rem;
 

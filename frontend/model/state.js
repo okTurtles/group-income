@@ -266,7 +266,7 @@ const getters = {
     }
 
     const doWeNeedIncome = ourGroupProfile.incomeDetailsType === 'incomeAmount'
-    const distribution = getters.thisMonthsPayments.frozenDistribution || getters.groupIncomeDistribution
+    const distribution = getters.groupIncomeAdjustedDistribution
 
     const nonMonetaryContributionsOf = (username) => groupProfiles[username].nonMonetaryContributions || []
     const getDisplayName = (username) => getters.globalProfile(username).displayName || username
