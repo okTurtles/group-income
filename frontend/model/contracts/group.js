@@ -26,6 +26,10 @@ export const INVITE_STATUS = {
   VALID: 'valid',
   USED: 'used'
 }
+export const PROFILE_STATUS = {
+  ACTIVE: 'active',
+  REMOVED: 'removed'
+}
 
 export const inviteType = objectOf({
   inviteSecret: string,
@@ -57,20 +61,28 @@ export function createInvite (
 
 function initGroupProfile (contractID: string, joined: ?string) {
   return {
+    globalUsername: 'TODO: this! e.g. groupincome:greg / namecoin:bob / ens:alice',
     contractID: contractID,
     nonMonetaryContributions: [],
-    joinedDate: joined
+    joinedDate: joined,
+    status: PROFILE_STATUS.ACTIVE,
+    departedDate: null
   }
 }
 
-function initPaymentMonth (currency: string) {
+function initPaymentMonth ({ getters }) {
   return {
+    // this saved so that it can be used when creating a payment
+    firstMonthsCurrency: getters.groupMincomeCurrency,
     // all payments during the month use this to set their exchangeRateToGroupCurrency
     // see notes and code in groupIncomeAdjustedDistribution for details.
-    firstMonthsCurrency: currency,
     // TODO: for the currency change proposal, have it push to mincomeExchangeRates
     mincomeExchangeRates: [1], // modified by proposals to change mincome currency
-    paymentsFrom: {} // fromUser => toUser => Array<paymentHash>
+    paymentsFrom: {}, // fromUser => toUser => Array<paymentHash>
+    lastMincomeAmount: getters.groupMincomeAmount,
+    // snapshot of adjusted distribution after each completed payment
+    // lastAdjustedDistribution: null,
+    activeUsernames: Object.keys(getters.groupProfiles)
   }
 }
 
@@ -78,9 +90,86 @@ function clearOldPayments ({ state }) {
   const sortedMonthKeys = Object.keys(state.paymentsByMonth).sort()
   // save two months payments, max
   while (sortedMonthKeys.length > 2) {
-    // TODO: archive these payments?
+    // TODO: archive the old payments and clear them from state.payments!
     Vue.delete(state.paymentsByMonth, sortedMonthKeys.shift())
   }
+}
+
+function ensureLatestMonthlyPaymentValues ({ meta, state, getters }) {
+  const monthstamp = ISOStringToMonthstamp(meta.createdDate)
+  const monthlyPayments = vueFetchInitKV(state.paymentsByMonth, monthstamp, initPaymentMonth({ getters }))
+  const months = Object.keys(state.paymentsByMonth).sort()
+  const mostRecentMonth = months[months.length - 1]
+  if (monthstamp === mostRecentMonth) {
+    monthlyPayments.lastMincomeAmount = getters.groupMincomeAmount
+    monthlyPayments.activeUsernames = Object.keys(getters.groupProfiles)
+    // TODO: do we need to store lastAdjustedDistribution or can we calculate that
+    //       from the values in monthlyPayments?
+    // TODO: delete this if it's not needed (as it seems not to be)
+    // monthlyPayments.lastAdjustedDistribution = groupIncomeDistribution({
+    //   state, getters, monthstamp, adjusted: true
+    // })
+  } else {
+    console.warn(`ensureLatestMonthlyPaymentValues: ${monthstamp} != ${mostRecentMonth}`)
+  }
+  clearOldPayments({ state })
+  return monthlyPayments
+}
+
+function groupIncomeDistribution ({ state, getters, monthstamp, adjusted }) {
+  const paymentsInfo = getters.groupMonthlyPayments[monthstamp]
+  const { paymentsFrom, mincomeExchangeRates, lastMincomeAmount, activeUsernames } = paymentsInfo
+  // mincomeExchangeRateMultiplier comes from reducing mincomeExchangeRates,
+  // a list of mincome currency conversions from any proposals that converted the mincome
+  // to a different currency.
+  // For this to work exchangeRateToGroupCurrency must be based on the very FIRST
+  // mincome currency of the month and it must remain that way for all future
+  // month's payments!
+  // so in other words, we convert from whatever original payment currency to the
+  // first mincome currency of the month, and then to any subsequent mincome currencies
+  // that we switched to via proposals during the month. Any proposal that suggests
+  // switching to a new mincome currency will include this conversion rate in
+  // the proposal data, and it will be added to the mincomeExchangeRates list.
+  const mincomeExchangeRate = mincomeExchangeRates.reduce((a, c) => a * c)
+  const currentIncomeDistribution = []
+  // TODO: figure out how to handle mincome currency changing via proposal
+  for (const username of activeUsernames) {
+    const profile = getters.groupProfile(username)
+    const incomeDetailsType = profile && profile.incomeDetailsType
+    if (incomeDetailsType) {
+      var paymentsMade = 0
+      // if this user has already made some payments to other users this
+      // month, we need to take that into account and adjust the distribution.
+      // this will be used by the Payments page to tell how much still
+      // needs to be paid (if it was a partial payment).
+      if (adjusted) {
+        const paymentsFromUser = paymentsFrom[username]
+        for (const toUser in paymentsFromUser) {
+          for (const paymentHash of paymentsFromUser[toUser]) {
+            const paymentData = state.payments[paymentHash].data
+            if (paymentData.status === PAYMENT_COMPLETED) {
+              const { amount, exchangeRateToGroupCurrency } = paymentData
+              paymentsMade += amount * exchangeRateToGroupCurrency * mincomeExchangeRate
+            }
+          }
+        }
+      }
+      var amount = profile[incomeDetailsType]
+      if (incomeDetailsType === 'pledgeAmount') {
+        // take into account any payments we've already made. since we're supporting
+        // the ability to calculate distributions for previous months, for past
+        // payments, and in the face of income detail changes, we make sure that
+        // if we "overpaid" due to any weirdness, the algorithm simply removes
+        // us from consideration in the distribution for this month
+        amount = Math.max(lastMincomeAmount, lastMincomeAmount + amount - paymentsMade)
+      }
+      currentIncomeDistribution.push({
+        name: username,
+        amount: saferFloat(amount)
+      })
+    }
+  }
+  return incomeDistribution(currentIncomeDistribution, lastMincomeAmount)
 }
 
 DefineContract({
@@ -131,13 +220,14 @@ DefineContract({
       }
     },
     groupProfiles (state, getters) {
-      return Object.keys(getters.currentGroupState.profiles || {}).reduce(
-        (result, username) => {
-          result[username] = getters.groupProfile(username)
-          return result
-        },
-        {}
-      )
+      const profiles = {}
+      for (const username in (getters.currentGroupState.profiles || {})) {
+        const profile = getters.groupProfile(username)
+        if (profile.status === PROFILE_STATUS.ACTIVE) {
+          profiles[username] = profile
+        }
+      }
+      return profiles
     },
     groupMincomeAmount (state, getters) {
       return getters.groupSettings.mincomeAmount
@@ -147,72 +237,34 @@ DefineContract({
     },
     // used with graphs like those in the dashboard and in the income details modal
     groupIncomeDistribution (state, getters) {
-      const groupProfiles = getters.groupProfiles
-      const mincomeAmount = getters.groupMincomeAmount
-      const currentIncomeDistribution = []
-      for (const username in groupProfiles) {
-        const profile = groupProfiles[username]
-        const incomeDetailsType = profile && profile.incomeDetailsType
-        if (incomeDetailsType) {
-          const adjustment = incomeDetailsType === 'incomeAmount' ? 0 : mincomeAmount
-          const adjustedAmount = adjustment + profile[incomeDetailsType]
-          currentIncomeDistribution.push({
-            name: username,
-            amount: saferFloat(adjustedAmount)
-          })
-        }
-      }
-      return incomeDistribution(currentIncomeDistribution, mincomeAmount)
+      const monthstamp = currentMonthstamp()
+      return groupIncomeDistribution({ state, getters, monthstamp })
     },
+    // groupIncomeDistribution (state, getters) {
+    //   const groupProfiles = getters.groupProfiles
+    //   const mincomeAmount = getters.groupMincomeAmount
+    //   const currentIncomeDistribution = []
+    //   for (const username in groupProfiles) {
+    //     const profile = groupProfiles[username]
+    //     const incomeDetailsType = profile && profile.incomeDetailsType
+    //     if (incomeDetailsType) {
+    //       const adjustment = incomeDetailsType === 'incomeAmount' ? 0 : mincomeAmount
+    //       const adjustedAmount = adjustment + profile[incomeDetailsType]
+    //       currentIncomeDistribution.push({
+    //         name: username,
+    //         amount: saferFloat(adjustedAmount)
+    //       })
+    //     }
+    //   }
+    //   return incomeDistribution(currentIncomeDistribution, mincomeAmount)
+    // },
     // adjusted version of groupIncomeDistribution, used by the payments system
     groupIncomeAdjustedDistribution (state, getters) {
-      const groupProfiles = getters.groupProfiles
-      const mincomeAmount = getters.groupMincomeAmount
-      // mincomeExchangeRateMultiplier comes from reducing mincomeExchangeRates,
-      // a list of mincome currency conversions from any proposals that converted the mincome
-      // to a different currency.
-      // For this to work exchangeRateToGroupCurrency must be based on the very FIRST
-      // mincome currency of the month and it must remain that way for all future
-      // month's payments!
-      // so in other words, we convert from whatever original payment currency to the
-      // first mincome currency of the month, and then to any subsequent mincome currencies
-      // that we switched to via proposals during the month. Any proposal that suggests
-      // switching to a new mincome currency will include this conversion rate in
-      // the proposal data, and it will be added to the mincomeExchangeRates list.
-      const mincomeExchangeRate = getters.mincomeExchangeRateMultiplier
-      const thisMonthsPaymentsFrom = getters.thisMonthsPaymentsFrom
-      const currentIncomeDistribution = []
-      // TODO: figure out how to handle mincome currency changing via proposal
-      for (const username in groupProfiles) {
-        const profile = groupProfiles[username]
-        const incomeDetailsType = profile && profile.incomeDetailsType
-        if (incomeDetailsType) {
-          var paymentsMade = 0
-          // if this user has already made some payments to other users this
-          // month, we need to take that into account and adjust the distribution.
-          // this will be used by the Payments page to tell how much still
-          // needs to be paid (if it was a partial payment).
-          if (thisMonthsPaymentsFrom) {
-            const paymentsFromUser = thisMonthsPaymentsFrom[username]
-            for (const toUser in paymentsFromUser) {
-              for (const paymentHash of paymentsFromUser[toUser]) {
-                const paymentData = state.payments[paymentHash].data
-                if (paymentData.status === PAYMENT_COMPLETED) {
-                  const { amount, exchangeRateToGroupCurrency } = paymentData
-                  paymentsMade += amount * exchangeRateToGroupCurrency * mincomeExchangeRate
-                }
-              }
-            }
-          }
-          const adjustment = incomeDetailsType === 'incomeAmount' ? 0 : mincomeAmount
-          const adjustedAmount = adjustment + profile[incomeDetailsType] - paymentsMade
-          currentIncomeDistribution.push({
-            name: username,
-            amount: saferFloat(adjustedAmount)
-          })
-        }
-      }
-      return incomeDistribution(currentIncomeDistribution, mincomeAmount)
+      const monthstamp = currentMonthstamp()
+      return groupIncomeDistribution({ state, getters, monthstamp, adjusted: true })
+    },
+    groupIncomeAdjustedDistributionForMonth (state, getters) {
+      return monthstamp => groupIncomeDistribution({ state, getters, monthstamp, adjusted: true })
     },
     groupMembersByUsername (state, getters) {
       return Object.keys(getters.currentGroupState.profiles || {})
@@ -281,8 +333,11 @@ DefineContract({
       const currency = currencies[getters.groupSettings.mincomeCurrency]
       return currency && currency.symbolWithCode
     },
+    groupMonthlyPayments (state, getters) {
+      return getters.currentGroupState.paymentsByMonth
+    },
     thisMonthsPaymentInfo (state, getters) {
-      return getters.currentGroupState.paymentsByMonth[currentMonthstamp()] || {}
+      return getters.groupMonthlyPayments[currentMonthstamp()] || {}
     },
     thisMonthsPaymentsFrom (state, getters) {
       return getters.thisMonthsPaymentInfo.paymentsFrom
@@ -316,7 +371,7 @@ DefineContract({
           })
         })
       }),
-      process ({ data, meta }, { state }) {
+      process ({ data, meta }, { state, getters }) {
         // TODO: checkpointing: https://github.com/okTurtles/group-income-simple/issues/354
         const initialState = merge({
           payments: {},
@@ -333,6 +388,7 @@ DefineContract({
         for (const key in initialState) {
           Vue.set(state, key, initialState[key])
         }
+        ensureLatestMonthlyPaymentValues({ meta, state, getters })
       }
     },
     'gi.contracts/group/payment': {
@@ -348,13 +404,15 @@ DefineContract({
         memo: optional(string)
       }),
       process ({ data, meta, hash }, { state, getters }) {
+        if (data.status === PAYMENT_COMPLETED) {
+          console.error(`payment: payment ${hash} cannot have status = 'completed'!`, { data, meta, hash })
+          throw new Errors.GIErrorIgnoreAndBanIfGroup('payments cannot be instsantly completed!')
+        }
         Vue.set(state.payments, hash, { data, meta, history: [data] })
-        const monthstamp = ISOStringToMonthstamp(meta.createdDate)
-        const { paymentsFrom } = vueFetchInitKV(state.paymentsByMonth, monthstamp, initPaymentMonth(data.currency))
+        const { paymentsFrom } = ensureLatestMonthlyPaymentValues({ meta, state, getters })
         const fromUser = vueFetchInitKV(paymentsFrom, meta.username, {})
         const toUser = vueFetchInitKV(fromUser, data.toUser, [])
         toUser.push(hash)
-        clearOldPayments({ state })
       }
     },
     'gi.contracts/group/paymentUpdate': {
@@ -366,7 +424,7 @@ DefineContract({
           memo: string
         })
       }),
-      process ({ data, meta, hash }, { state }) {
+      process ({ data, meta, hash }, { state, getters }) {
         // TODO: we don't want to keep a history of all payments in memory all the time
         //       https://github.com/okTurtles/group-income-simple/issues/426
         const payment = state.payments[data.paymentHash]
@@ -382,6 +440,24 @@ DefineContract({
         }
         payment.history.push(data.updatedProperties)
         merge(payment.data, data.updatedProperties)
+        // TODO: delete this if it's not needed (as it seems not to be)
+        // // create a snapshot of the distribution upon each completed payment
+        // if (data.updatedProperties.status === PAYMENT_COMPLETED) {
+        //   // we want to adjust the distribution for the month when this payment was *created*
+        //   const monthstamp = ISOStringToMonthstamp(payment.meta.createdDate)
+        //   const paymentMonth = state.paymentsByMonth[monthstamp]
+        //   if (paymentMonth) {
+        //     const adjustedDistribution = groupIncomeDistribution({
+        //       state, getters, monthstamp, adjusted: true
+        //     })
+        //     paymentMonth.lastAdjustedDistribution = adjustedDistribution
+        //   } else {
+        //     // this month was cleared by clearOldPayments()
+        //     console.warn(`paymentUpdate: ignoring completed payment for old month: ${monthstamp}`,
+        //       { data, meta, hash }
+        //     )
+        //   }
+        // }
       }
     },
     'gi.contracts/group/proposal': {
@@ -445,7 +521,7 @@ DefineContract({
         const result = votingRules[proposal.data.votingRule](state, proposal.data.proposalType, proposal.votes)
         if (result === VOTE_FOR || result === VOTE_AGAINST) {
           // handles proposal pass or fail, will update proposal.status accordingly
-          proposals[proposal.data.proposalType][result](state, data)
+          proposals[proposal.data.proposalType][result](state, { meta, data })
         }
       }
     },
@@ -511,7 +587,8 @@ DefineContract({
         }
       },
       process ({ data, meta }, { state }) {
-        Vue.delete(state.profiles, data.member)
+        state.profiles[data.member].status = PROFILE_STATUS.REMOVED
+        state.profiles[data.member].departedDate = meta.createdDate
       },
       async sideEffect ({ data }) {
         await sbp('gi.sideEffects/group/removeMember', {
@@ -525,7 +602,8 @@ DefineContract({
         groupId: string
       }),
       process ({ data, meta }, { state }) {
-        Vue.delete(state.profiles, meta.username)
+        state.profiles[meta.username].status = PROFILE_STATUS.REMOVED
+        state.profiles[meta.username].departedDate = meta.createdDate
       },
       async sideEffect ({ data, meta }) {
         await sbp('gi.sideEffects/group/removeMember', {
@@ -544,7 +622,7 @@ DefineContract({
       validate: objectOf({
         inviteSecret: string // NOTE: simulate the OP_KEY_* stuff for now
       }),
-      process ({ data, meta }, { state }) {
+      process ({ data, meta }, { state, getters }) {
         console.debug('inviteAccept:', data, state.invites)
         const invite = state.invites[data.inviteSecret]
         if (invite.status !== INVITE_STATUS.VALID) {
@@ -555,7 +633,13 @@ DefineContract({
         if (Object.keys(invite.responses).length === invite.quantity) {
           invite.status = INVITE_STATUS.USED
         }
+        // TODO: ensure `meta.username` is unique for the lifetime of the username
+        //       since we are making it possible for the same username to leave and
+        //       rejoin the group. All of their past posts will be re-associated with
+        //       them upon re-joining.
         Vue.set(state.profiles, meta.username, initGroupProfile(meta.identityContractID, meta.createdDate))
+        // make sure to update activeUsernames!
+        ensureLatestMonthlyPaymentValues({ meta, state, getters })
         // If we're triggered by handleEvent in state.js (and not latestContractState)
         // then the asynchronous sideEffect function will get called next
         // and we will subscribe to this new user's identity contract
@@ -593,10 +677,12 @@ DefineContract({
         mincomeAmount: x => typeof x === 'number' && x > 0,
         mincomeCurrency: x => typeof x === 'string'
       }),
-      process ({ data }, { state }) {
+      process ({ meta, data }, { state, getters }) {
         for (var key in data) {
           Vue.set(state.settings, key, data[key])
         }
+        // if we updated the mincome amount/currency, update income distribution
+        ensureLatestMonthlyPaymentValues({ meta, state, getters })
       }
     },
     'gi.contracts/group/groupProfileUpdate': {

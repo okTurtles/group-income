@@ -122,24 +122,27 @@ const proposals = {
         [RULE_DISAGREEMENT]: { threshold: 2 }
       }
     },
-    [VOTE_FOR]: async function (state, { proposalHash, passPayload }) {
+    [VOTE_FOR]: async function (state, { meta, data }) {
+      const { proposalHash, passPayload } = data
       const proposal = state.proposals[proposalHash]
       const { member, memberId, groupId } = proposal.data.proposalData
       proposal.status = STATUS_PASSED
       proposal.payload = passPayload
 
-      const data = {
+      const messageData = {
         member,
         memberId,
         groupId,
         proposalHash,
         proposalPayload: passPayload
       }
-      const message = { data, meta: proposal.meta }
+      const message = { data: messageData, meta }
       sbp('gi.contracts/group/removeMember/process', message, state)
+      // TODO: this await usage is a violation... we shouldn't
+      //       have any async calls / side-effects inside /process
       await sbp('gi.sideEffects/group/removeMember', {
-        username: data.member,
-        groupId: data.groupId
+        username: messageData.member,
+        groupId: messageData.groupId
       })
     },
     [VOTE_AGAINST]: voteAgainst
@@ -153,14 +156,14 @@ const proposals = {
         [RULE_DISAGREEMENT]: { threshold: 1 }
       }
     },
-    [VOTE_FOR]: function (state, data) {
+    [VOTE_FOR]: function (state, { meta, data }) {
       const proposal = state.proposals[data.proposalHash]
       proposal.status = STATUS_PASSED
       const { setting, proposedValue } = proposal.data.proposalData
       // NOTE: if updateSettings ever needs more ethana just meta+data
       //       this code will need to be updated
       const message = {
-        meta: proposal.meta,
+        meta,
         data: { [setting]: proposedValue }
       }
       sbp('gi.contracts/group/updateSettings/process', message, state)

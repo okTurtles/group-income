@@ -13,7 +13,7 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background' v-if='
         i18n.has-text-bold.c-title(tag='h3') Who did you send money to?
         payments-list(
           :titles='tableTitles'
-          :payments='paymentsDistribution'
+          :paymentsDistribution='paymentsDistribution'
           paymentsType='edit'
         )
 

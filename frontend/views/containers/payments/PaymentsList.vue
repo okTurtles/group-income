@@ -15,7 +15,7 @@ table.table.table-in-card.c-payments(:class='{"is-editing": paymentsType === "ed
 
   tbody
     tr(
-      v-for='(payment, index) in payments'
+      v-for='(payment, index) in paymentsList'
       :key='index'
     )
       td(v-if='paymentsType === "edit"')
@@ -95,6 +95,8 @@ import Tooltip from '@components/Tooltip.vue'
 import PaymentsListMenu from '@containers/payments/PaymentsListMenu.vue'
 import currencies from '@view-utils/currencies.js'
 import { humanDate } from '@view-utils/humanDate.js'
+import { currentMonthstamp, prevMonthstamp } from '~/frontend/utils/time.js'
+
 export default {
   name: 'PaymentsList',
   components: {
@@ -107,7 +109,7 @@ export default {
       type: Object,
       required: true
     },
-    payments: {
+    paymentsDistribution: {
       type: Array,
       required: true
     },
@@ -124,12 +126,13 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'currentGroupState',
-      'groupIncomeDistribution',
-      'groupProfiles',
+      'thisMonthsPaymentsFrom',
+      'groupMonthlyPayments',
+      'groupIncomeAdjustedDistributionForMonth',
       'ourGroupProfile',
       'groupSettings',
-      'ourUsername'
+      'ourUsername',
+      'userDisplayName'
     ]),
     needsIncome () {
       return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'
@@ -142,6 +145,51 @@ export default {
     },
     symbol () {
       return currencies[this.groupSettings.mincomeCurrency].symbol
+    },
+    paymentsReceived () {
+      return 'TODO'
+    },
+    paymentsTodo () {
+      // const paymentsFrom = this.thisMonthsPaymentsFrom
+      const monthlyPayments = this.groupMonthlyPayments
+      const pMonthstamp = prevMonthstamp(currentMonthstamp())
+      const payments = []
+      if (monthlyPayments[pMonthstamp]) {
+        const pastDistribution = this.groupIncomeAdjustedDistributionForMonth(pMonthstamp)
+        // this creates a date at the end of the previous month
+        // (see comment in time.js:dateFromMonthstamp())
+        // const date = new Date(monthstamp) // TODO: return this in a computed property called prevMonthDueDate and reference that in the pug instead of repeatedly adding it to this data
+        // TODO: do we do it using lastAdjustedDistribution or do we call
+        //       getters.groupIncomeAdjustedDistributionForMonth(monthstamp) ?
+        for (const payment of pastDistribution) {
+          if (payment.from === this.ourUsername && payment.amount > 0) {
+            payments.push({
+              username: payment.to,
+              displayName: this.userDisplayName(payment.to),
+              amount: payment.amount, // TODO: include currency (what if it was changed?)
+              late: true
+            })
+          }
+        }
+      }
+      for (const p of this.paymentsDistribution) {
+        payments.push(p)
+      }
+      return payments
+    },
+    paymentsSent () {
+      return 'TODO'
+    },
+    paymentsList () {
+      console.debug('paymentsType:', this.paymentsType)
+      return {
+        todo: () => this.paymentsTodo,
+        edit: () => this.paymentsDistribution,
+        sent: () => this.paymentsDistribution,
+        received: () => this.paymentsDistribution,
+        // TODO: fix this nonsense
+        '': () => this.paymentsDistribution
+      }[this.paymentsType]()
     }
   },
   methods: {
@@ -151,7 +199,7 @@ export default {
     },
     checkAllpayment () {
       this.tableChecked = !this.tableChecked
-      this.payments.map(payment => {
+      this.paymentsDistribution.map(payment => {
         payment.checked = this.tableChecked
       })
     },

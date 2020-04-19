@@ -47,8 +47,7 @@ export default {
     ...mapGetters([
       'groupProfiles',
       'groupSettings',
-      'groupIncomeDistribution',
-      'thisMonthsPayments'
+      'groupIncomeDistribution'
     ]),
     mincome () {
       return this.groupSettings.mincomeAmount

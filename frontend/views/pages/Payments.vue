@@ -58,7 +58,7 @@ page(
         .c-container(v-if='hasPayments')
           payments-list(
             :titles='tableTitles'
-            :payments='paymentsDistribution'
+            :paymentsDistribution='paymentsDistribution'
             :paymentsType='activeTab'
           )
           .c-footer
