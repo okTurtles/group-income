@@ -216,6 +216,10 @@ export default {
   height: 100%;
   top: 0;
   left: 0;
+
+  @include phone {
+    background-color: rgba(0, 0, 0, 0.7);
+  }
 }
 
 .c-modal-close {
