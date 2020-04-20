@@ -8,7 +8,7 @@ tooltip(
   slot
 
   template(slot='tooltip')
-    .card.c-profile(v-if='profile' v-focus='')
+    .card.c-profile(v-if='profile')
       .c-identity(:class='{notGroupMember: !isActiveGroupMember}')
         avatar-user(:username='username' size='lg')
         user-name(:username='username')

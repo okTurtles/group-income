@@ -33,9 +33,11 @@ span.c-twrapper(
 <script>
 import { TABLET } from '@view-utils/breakpoints.js'
 import ModalClose from '@components/modal/ModalClose.vue'
+import trapFocus from '@utils/trapFocus.js'
 
 export default {
   name: 'Tooltip',
+  mixins: [trapFocus],
   props: {
     text: String,
     // Force to show tooltip manually
@@ -85,6 +87,14 @@ export default {
     },
     toggle () {
       this.isActive = !this.isActive
+      if (this.$slots.tooltip) {
+        document[this.isActive ? 'addEventListener' : 'removeEventListener']('keydown', this.trapFunction)
+        // Wait for element to be present before auto focus
+        setTimeout(() => this.focusOnFirst(this.$slots.tooltip[0].elm))
+      }
+    },
+    trapFunction (e) {
+      this.trapFocus(e, this.$slots.tooltip[0].elm)
     },
     adjustPosition () {
       this.trigger = this.$el.getBoundingClientRect()

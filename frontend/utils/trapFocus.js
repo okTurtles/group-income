@@ -6,20 +6,17 @@ const trapFocus = {
         'button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]'
     }
   },
-  mounted () {
-    document.addEventListener('keydown', this.trapFocus)
-  },
-  beforeDestroy () {
-    document.removeEventListener('keydown', this.trapFocus)
-  },
   methods: {
-    trapFocus (e) {
+    focusOnFirst (el = this.$el) {
+      Array.from(el.querySelectorAll(this.focusableElements))[0].focus()
+    },
+    trapFocus (e, el = this.$el) {
       // Trap focus on modal while navigating through clickable elements only
       if (e.key === 'Tab') {
         // look for focusableChilds each time tab is pressed
         // to catch any element that may have changed disabled attr.
         // ex: submit button gets enabled or a form step changed.
-        const focusableChilds = Array.from(this.$el.querySelectorAll(this.focusableElements))
+        const focusableChilds = Array.from(el.querySelectorAll(this.focusableElements))
         const firstFocusChild = focusableChilds[0]
         const lastFocusChild = focusableChilds[focusableChilds.length - 1]
 
