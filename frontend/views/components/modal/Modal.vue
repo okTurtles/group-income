@@ -78,10 +78,8 @@ export default {
         this.$router.push({
           query: {
             ...this.$route.query,
-            ...{
-              modal: this.content,
-              subcontent: this.subcontent.length ? this.subcontent.join('+') : undefined
-            }
+            modal: this.content,
+            subcontent: this.subcontent.length ? this.subcontent.join('+') : undefined
           }
         }).catch(console.error)
       } else if (this.$route.query.modal) {
