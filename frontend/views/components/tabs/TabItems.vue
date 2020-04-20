@@ -60,6 +60,7 @@ export default {
   @include desktop {
     justify-content: start;
     background-color: transparent;
+    position: relative;
   }
 }
 
