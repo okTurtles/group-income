@@ -50,7 +50,8 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  position: relative;
+  position: sticky;
+  top: 0;
   height: 4.75rem;
   width: 100%;
   z-index: 3;
