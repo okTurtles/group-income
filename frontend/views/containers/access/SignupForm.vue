@@ -32,6 +32,7 @@ form(data-test='signup' @submit.prevent='')
     button-submit(
       @click='signup'
       data-test='signSubmit'
+      :disabled='$v.form.$invalid'
     ) {{ L('Create an account') }}
 </template>
 
