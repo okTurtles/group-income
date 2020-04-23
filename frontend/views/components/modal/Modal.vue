@@ -26,7 +26,10 @@ export default {
     window.addEventListener('keyup', this.handleKeyUp)
   },
   mounted () {
-    this.initializeModals()
+    const modal = this.$route.query.modal
+    if (modal) this.openModal(modal)
+    const subcontent = this.$route.query.subcontent
+    if (subcontent) this.openModal(subcontent)
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', OPEN_MODAL)
@@ -39,7 +42,7 @@ export default {
       if (to.query.modal) {
         // We reset the modals with no animation for simplicity
         if (to.query.modal !== this.content) this.content = to.query.modal
-        const subcontent = to.query.subcontent
+        const subcontent = to.query.subcontent ? to.query.subcontent.split('+').pop() : []
         if (subcontent !== this.activeSubcontent()) {
           // Try to find the new subcontent in the list of subcontent
           const i = this.subcontent.indexOf(subcontent)
@@ -70,19 +73,13 @@ export default {
     activeSubcontent () {
       return this.subcontent[this.subcontent.length - 1]
     },
-    initializeModals () {
-      const modal = this.$route.query.modal
-      if (modal) this.openModal(modal)
-      const subcontent = this.$route.query.subcontent
-      if (subcontent) this.openModal(subcontent)
-    },
     updateUrl () {
       if (this.content) {
         this.$router.push({
           query: {
             ...this.$route.query,
             modal: this.content,
-            subcontent: this.activeSubcontent()
+            subcontent: this.subcontent.length ? this.subcontent.join('+') : undefined
           }
         }).catch(console.error)
       } else if (this.$route.query.modal) {
