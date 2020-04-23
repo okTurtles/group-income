@@ -144,7 +144,7 @@ $pagePaddingDesktop: 5.5rem;
     position: sticky;
     top: 0;
     background: $general_2;
-    z-index: 1;
+    z-index: 3;
   }
 
   @include desktop {
