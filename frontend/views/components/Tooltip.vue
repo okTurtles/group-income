@@ -26,7 +26,9 @@ span.c-twrapper(
       v-if='manual'
       @close='toggle'
     )
+    // Default tooltip is text
     template(v-if='text') {{text}}
+    // But any content can fit in
     slot(v-else='' name='tooltip')
 </template>
 
