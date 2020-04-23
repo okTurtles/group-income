@@ -3,9 +3,9 @@
   i18n.is-title-4.steps-title(tag='h4') 2. Group Purpose
 
   .card
-    i18n.label(tag='label') How would you describe your group?
+    label.field
+      i18n.label(tag='label') How would you describe your group?
 
-    .field
       textarea.textarea(
         name='sharedValues'
         ref='purpose'
