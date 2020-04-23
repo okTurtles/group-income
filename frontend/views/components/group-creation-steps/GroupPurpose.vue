@@ -5,15 +5,18 @@
   .card
     i18n.label(tag='label') How would you describe your group?
 
-    textarea.textarea(
-      name='sharedValues'
-      ref='purpose'
-      :placeholder='L("Group Purpose")'
-      maxlength='500'
-      :class='{ error: $v.form.sharedValues.$error }'
-      :value='group.sharedValues'
-      @input='update'
-    )
+    .field
+      textarea.textarea(
+        name='sharedValues'
+        ref='purpose'
+        :placeholder='L("Group Purpose")'
+        maxlength='500'
+        :class='{ error: $v.form.sharedValues.$error }'
+        :value='group.sharedValues'
+        @input='update'
+      )
+      i18n.helper This is optional.
+
     slot
 </template>
 

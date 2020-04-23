@@ -156,7 +156,7 @@ export default {
     form: {
       groupName: { required },
       groupPicture: { },
-      sharedValues: { required },
+      sharedValues: { },
       changeThreshold: {
         required,
         between: between(0.01, 1)
