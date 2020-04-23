@@ -131,7 +131,7 @@ export default {
       form: {
         groupName: '',
         groupPicture: '',
-        sharedValues: null,
+        sharedValues: '',
         changeThreshold: proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults.ruleSettings[RULE_THRESHOLD].threshold,
         memberApprovalThreshold: proposals[PROPOSAL_INVITE_MEMBER].defaults.ruleSettings[RULE_THRESHOLD].threshold,
         memberRemovalThreshold: proposals[PROPOSAL_REMOVE_MEMBER].defaults.ruleSettings[RULE_THRESHOLD].threshold,
