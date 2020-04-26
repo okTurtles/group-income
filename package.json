@@ -167,7 +167,7 @@
     "rollup-plugin-alias": "2.2.0",
     "rollup-plugin-babel": "4.4.0",
     "rollup-plugin-commonjs": "10.1.0",
-    "rollup-plugin-eslint": "7.0.0",
+    "rollup-plugin-eslint": "okTurtles/rollup-plugin-eslint#22776453edd6d70cecf007c24f7727a9d9e2ca2a",
     "rollup-plugin-json": "4.0.0",
     "rollup-plugin-node-globals": "1.4.0",
     "rollup-plugin-node-resolve": "5.2.0",

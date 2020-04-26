@@ -159,8 +159,7 @@ export default {
       // const currentDistribution = this.groupIncomeAdjustedDistribution
       const currentDistribution = this.paymentsDistribution
       const pledgeAmount = this.ourGroupProfile['pledgeAmount']
-      // first we need to check if there are any late payments that need to be added to the
-      // paymentsTodo list.
+      // first we need to check if there are any late payments that need to be added to the paymentsTodo list
       if (pastMonth) {
         const previousDistribution = pastMonth.lastAdjustedDistribution
         // this creates a date at the end of the previous month
