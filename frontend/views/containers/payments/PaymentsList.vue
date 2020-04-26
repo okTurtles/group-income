@@ -126,9 +126,10 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'thisMonthsPaymentsFrom',
+      'currentGroupState',
+      'paymentTotalFromUserToUser',
       'groupMonthlyPayments',
-      'groupIncomeAdjustedDistributionForMonth',
+      'groupIncomeAdjustedDistribution',
       'ourGroupProfile',
       'groupSettings',
       'ourUsername',
@@ -150,32 +151,56 @@ export default {
       return 'TODO'
     },
     paymentsTodo () {
-      // const paymentsFrom = this.thisMonthsPaymentsFrom
       const monthlyPayments = this.groupMonthlyPayments
-      const pMonthstamp = prevMonthstamp(currentMonthstamp())
-      const payments = []
-      if (monthlyPayments[pMonthstamp]) {
-        const pastDistribution = this.groupIncomeAdjustedDistributionForMonth(pMonthstamp)
+      const cMonthstamp = currentMonthstamp()
+      const pMonthstamp = prevMonthstamp(cMonthstamp)
+      const paymentsTodo = []
+      const pastMonth = monthlyPayments[pMonthstamp]
+      // const currentDistribution = this.groupIncomeAdjustedDistribution
+      const currentDistribution = this.paymentsDistribution
+      const pledgeAmount = this.ourGroupProfile['pledgeAmount']
+      // first we need to check if there are any late payments that need to be added to the
+      // paymentsTodo list.
+      if (pastMonth) {
+        const previousDistribution = pastMonth.lastAdjustedDistribution
         // this creates a date at the end of the previous month
         // (see comment in time.js:dateFromMonthstamp())
         // const date = new Date(monthstamp) // TODO: return this in a computed property called prevMonthDueDate and reference that in the pug instead of repeatedly adding it to this data
-        // TODO: do we do it using lastAdjustedDistribution or do we call
-        //       getters.groupIncomeAdjustedDistributionForMonth(monthstamp) ?
-        for (const payment of pastDistribution) {
+        for (const payment of previousDistribution) {
           if (payment.from === this.ourUsername && payment.amount > 0) {
-            payments.push({
-              username: payment.to,
-              displayName: this.userDisplayName(payment.to),
-              amount: payment.amount, // TODO: include currency (what if it was changed?)
-              late: true
-            })
+            // Let A = the amount we owe from the previous distribution.
+            // Let B = the total we've sent to payment.to from the current
+            //         month's paymentsFrom.
+            // Let C = the total amount we "owe" to payment.to from the
+            //         current month's distribution.
+            // Let D = the amount we're pledging this month
+            // Let E = the amount still unpaid for the previous month's distribution,
+            //         calculated as: C > 0 ? A : A + D - B
+            //
+            // If E > 0, then display a row for the late payment.
+            const A = payment.amount
+            const B = this.paymentTotalFromUserToUser(this.ourUsername, payment.to, cMonthstamp)
+            // var C = currentDistribution
+            //   .filter(a => a.from === this.ourUsername && a.to === payment.to)
+            var C = currentDistribution.filter(a => a.username === payment.to)
+            C = C.length > 0 ? C[0].amount : 0
+            const D = pledgeAmount
+            const E = C > 0 ? A : A + D - B
+            if (E > 0) {
+              // for each uncompleted payment in the previous month, we need
+              // to check if there exists a payment in completedLatePayments
+              // that completes (in part or in whole).
+              paymentsTodo.push({
+                username: payment.to,
+                displayName: this.userDisplayName(payment.to),
+                amount: payment.amount, // TODO: include currency (what if it was changed?)
+                late: true
+              })
+            }
           }
         }
       }
-      for (const p of this.paymentsDistribution) {
-        payments.push(p)
-      }
-      return payments
+      return paymentsTodo.concat(this.paymentsDistribution)
     },
     paymentsSent () {
       return 'TODO'

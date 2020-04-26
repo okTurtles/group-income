@@ -15,7 +15,7 @@ import {
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './payments/index.js'
 import * as Errors from '../errors.js'
 import { merge, deepEqualJSONType, omit } from '~/frontend/utils/giLodash.js'
-import { currentMonthstamp, ISOStringToMonthstamp, compareMonthstamps } from '~/frontend/utils/time.js'
+import { currentMonthstamp, ISOStringToMonthstamp } from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
 import currencies, { saferFloat } from '~/frontend/views/utils/currencies.js'
@@ -59,12 +59,12 @@ export function createInvite (
   }
 }
 
-function initGroupProfile (contractID: string, joinedDate: string) {
+function initGroupProfile (contractID: string, joined: ?string) {
   return {
-    globalUsername: 'TODO: this? e.g. groupincome:greg / namecoin:bob / ens:alice',
-    contractID,
-    joinedDate,
+    globalUsername: 'TODO: this! e.g. groupincome:greg / namecoin:bob / ens:alice',
+    contractID: contractID,
     nonMonetaryContributions: [],
+    joinedDate: joined,
     status: PROFILE_STATUS.ACTIVE,
     departedDate: null
   }
@@ -72,17 +72,22 @@ function initGroupProfile (contractID: string, joinedDate: string) {
 
 function initPaymentMonth ({ getters }) {
   return {
-    // this saved so that it can be used when creating a new payment
+    // this saved so that it can be used when creating a payment
     firstMonthsCurrency: getters.groupMincomeCurrency,
     // all payments during the month use this to set their exchangeRateToGroupCurrency
     // see notes and code in groupIncomeAdjustedDistribution for details.
-    // TODO: for the currency change proposal, have it update the mincomeExchangeRate
-    //       using .mincomeExchangeRate *= proposal.exchangeRate
-    mincomeExchangeRate: 1, // modified by proposals to change mincome currency
+    // TODO: for the currency change proposal, have it push to mincomeExchangeRates
+    mincomeExchangeRates: [1], // modified by proposals to change mincome currency
     paymentsFrom: {}, // fromUser => toUser => Array<paymentHash>
+    completedLatePayments: {},
+    // lastMincomeAmount: getters.groupMincomeAmount,
+    // activeUsernames: Object.keys(getters.groupProfiles),
     // snapshot of adjusted distribution after each completed payment
-    // yes, it is possible a payment began in one month and completed in another,
-    // in which case it is added to both month's 'paymentsFrom'
+    // yes, it is possible a payment began in one month and completed in another.
+    // in both that case, and in the case of a normal late payment (that starts
+    // and completes in the current month), it is added to "completedLatePayments".
+    // lastAdjustedDistribution is not updated for late payments. Instead, it is updated
+    // for each completed payment in the current month.
     lastAdjustedDistribution: null
   }
 }
@@ -96,29 +101,53 @@ function clearOldPayments ({ state }) {
   }
 }
 
-function initFetchMonthlyPayments ({ meta, state, getters }) {
+function ensureLatestMonthlyPaymentValues ({ meta, state, getters }) {
   const monthstamp = ISOStringToMonthstamp(meta.createdDate)
   const monthlyPayments = vueFetchInitKV(state.paymentsByMonth, monthstamp, initPaymentMonth({ getters }))
+  const months = Object.keys(state.paymentsByMonth).sort()
+  const mostRecentMonth = months[months.length - 1]
+  if (monthstamp === mostRecentMonth) {
+    // TODO: adjust this value only when the mincome changes
+    monthlyPayments.lastMincomeAmount = getters.groupMincomeAmount
+    // TODO: another possibility is to just freeze the distribution as it is
+    //       in 'group/payment'. then for figuring out late payments, any completed
+    //       payments that occur in a month for which the opening payment exists
+    //       in the previous month, save it to a special dictionary in the monthly
+    //       payments called "latePayments", and use that to adjust late TODO
+    //       value displayed in the UI.
+    monthlyPayments.activeUsernames = Object.keys(getters.groupProfiles)
+    // TODO: do we need to store lastAdjustedDistribution or can we calculate that
+    //       from the values in monthlyPayments?
+    // TODO: delete this if it's not needed (as it seems not to be)
+    // monthlyPayments.lastAdjustedDistribution = groupIncomeDistribution({
+    //   state, getters, monthstamp, adjusted: true
+    // })
+  } else {
+    console.warn(`ensureLatestMonthlyPaymentValues: ${monthstamp} != ${mostRecentMonth}`)
+  }
   clearOldPayments({ state })
   return monthlyPayments
 }
 
 function groupIncomeDistribution ({ state, getters, monthstamp, adjusted }) {
-  // the monthstamp will always be for the current month. the alternative
-  // is to allow the re-generation of the distribution for previous months,
-  // but that approach requires also storing the historical mincomeAmount
-  // and historical groupProfiles. Since together these change across multiple
-  // locations in the code, it involves less 'code smell' to do it this way.
-  // see historical/group.js for the old way of doing it, which required having
-  // to remember to call a initFetchMonthlyPayments() function in multiple
-  // locations.
-  const paymentMonth = getters.groupMonthlyPayments[monthstamp]
-  const mincomeAmount = getters.groupMincomeAmount
-  const groupProfiles = getters.groupProfiles
+  const paymentsInfo = getters.groupMonthlyPayments[monthstamp]
+  const { paymentsFrom, mincomeExchangeRates, lastMincomeAmount, activeUsernames } = paymentsInfo
+  // mincomeExchangeRateMultiplier comes from reducing mincomeExchangeRates,
+  // a list of mincome currency conversions from any proposals that converted the mincome
+  // to a different currency.
+  // For this to work exchangeRateToGroupCurrency must be based on the very FIRST
+  // mincome currency of the month and it must remain that way for all future
+  // month's payments!
+  // so in other words, we convert from whatever original payment currency to the
+  // first mincome currency of the month, and then to any subsequent mincome currencies
+  // that we switched to via proposals during the month. Any proposal that suggests
+  // switching to a new mincome currency will include this conversion rate in
+  // the proposal data, and it will be added to the mincomeExchangeRates list.
+  const mincomeExchangeRate = mincomeExchangeRates.reduce((a, c) => a * c)
   const currentIncomeDistribution = []
   // TODO: figure out how to handle mincome currency changing via proposal
-  for (const username in groupProfiles) {
-    const profile = groupProfiles[username]
+  for (const username of activeUsernames) {
+    const profile = getters.groupProfile(username)
     const incomeDetailsType = profile && profile.incomeDetailsType
     if (incomeDetailsType) {
       var paymentsMade = 0
@@ -127,14 +156,25 @@ function groupIncomeDistribution ({ state, getters, monthstamp, adjusted }) {
       // this will be used by the Payments page to tell how much still
       // needs to be paid (if it was a partial payment).
       if (adjusted) {
-        for (const toUser in paymentMonth.paymentsFrom[username]) {
-          paymentsMade += getters.paymentTotalFromUserToUser(username, toUser, monthstamp)
+        const paymentsFromUser = paymentsFrom[username]
+        for (const toUser in paymentsFromUser) {
+          for (const paymentHash of paymentsFromUser[toUser]) {
+            const paymentData = state.payments[paymentHash].data
+            if (paymentData.status === PAYMENT_COMPLETED) {
+              const { amount, exchangeRateToGroupCurrency } = paymentData
+              paymentsMade += amount * exchangeRateToGroupCurrency * mincomeExchangeRate
+            }
+          }
         }
       }
       var amount = profile[incomeDetailsType]
       if (incomeDetailsType === 'pledgeAmount') {
-        // if we "overpaid" because we sent late payments, remove us from consideration
-        amount = Math.max(mincomeAmount, mincomeAmount + amount - paymentsMade)
+        // take into account any payments we've already made. since we're supporting
+        // the ability to calculate distributions for previous months, for past
+        // payments, and in the face of income detail changes, we make sure that
+        // if we "overpaid" due to any weirdness, the algorithm simply removes
+        // us from consideration in the distribution for this month
+        amount = Math.max(lastMincomeAmount, lastMincomeAmount + amount - paymentsMade)
       }
       currentIncomeDistribution.push({
         name: username,
@@ -142,7 +182,7 @@ function groupIncomeDistribution ({ state, getters, monthstamp, adjusted }) {
       })
     }
   }
-  return incomeDistribution(currentIncomeDistribution, mincomeAmount)
+  return incomeDistribution(currentIncomeDistribution, lastMincomeAmount)
 }
 
 DefineContract({
@@ -208,36 +248,29 @@ DefineContract({
     groupMincomeCurrency (state, getters) {
       return getters.groupSettings.mincomeCurrency
     },
-    paymentTotalFromUserToUser (state, getters) {
-      return (fromUser, toUser, paymentMonthstamp) => {
-        const payments = getters.currentGroupState.payments
-        const monthlyPayments = getters.groupMonthlyPayments
-        const { paymentsFrom, mincomeExchangeRate } = monthlyPayments[paymentMonthstamp]
-        // NOTE: @babel/plugin-proposal-optional-chaining would come in super-handy
-        //       here, but I couldn't get it to work with our linter. :(
-        //       https://github.com/babel/babel-eslint/issues/511
-        return (((paymentsFrom || {})[fromUser] || {})[toUser] || []).reduce((a, hash) => {
-          const payment = payments[hash]
-          var { amount, exchangeRateToGroupCurrency, status } = payment.data
-          if (status !== PAYMENT_COMPLETED) {
-            return a
-          }
-          const paymentCreatedMonthstamp = ISOStringToMonthstamp(payment.meta.createdDate)
-          // if this payment is from a previous month, then make sure to take into account
-          // any proposals that passed in between the payment creation and the payment
-          // completion that modified the group currency by multiplying both month's
-          // exchange rates
-          if (paymentMonthstamp !== paymentCreatedMonthstamp) {
-            exchangeRateToGroupCurrency *= monthlyPayments[paymentCreatedMonthstamp].mincomeExchangeRate
-          }
-          return a + (amount * exchangeRateToGroupCurrency * mincomeExchangeRate)
-        }, 0)
-      }
-    },
     // used with graphs like those in the dashboard and in the income details modal
     groupIncomeDistribution (state, getters) {
-      return groupIncomeDistribution({ state, getters, monthstamp: currentMonthstamp() })
+      const monthstamp = currentMonthstamp()
+      return groupIncomeDistribution({ state, getters, monthstamp })
     },
+    // groupIncomeDistribution (state, getters) {
+    //   const groupProfiles = getters.groupProfiles
+    //   const mincomeAmount = getters.groupMincomeAmount
+    //   const currentIncomeDistribution = []
+    //   for (const username in groupProfiles) {
+    //     const profile = groupProfiles[username]
+    //     const incomeDetailsType = profile && profile.incomeDetailsType
+    //     if (incomeDetailsType) {
+    //       const adjustment = incomeDetailsType === 'incomeAmount' ? 0 : mincomeAmount
+    //       const adjustedAmount = adjustment + profile[incomeDetailsType]
+    //       currentIncomeDistribution.push({
+    //         name: username,
+    //         amount: saferFloat(adjustedAmount)
+    //       })
+    //     }
+    //   }
+    //   return incomeDistribution(currentIncomeDistribution, mincomeAmount)
+    // },
     // adjusted version of groupIncomeDistribution, used by the payments system
     groupIncomeAdjustedDistribution (state, getters) {
       const monthstamp = currentMonthstamp()
@@ -264,42 +297,6 @@ DefineContract({
         }
       }
       return pendingMembers
-    },
-    groupMembersSorted (state, getters) {
-      const weJoinedMs = new Date(getters.currentGroupState.profiles[getters.ourUsername].joinedDate).getTime()
-      const isNewMember = (username) => {
-        if (username === getters.ourUsername) { return false }
-        const memberProfile = getters.currentGroupState.profiles[username]
-        if (!memberProfile) return false
-        const memberJoinedMs = new Date(memberProfile.joinedDate).getTime()
-        const joinedAfterUs = weJoinedMs < memberJoinedMs
-        return joinedAfterUs && Date.now() - memberJoinedMs < 604800000 // joined less than 1w (168h) ago.
-      }
-
-      return Object.keys({ ...getters.groupMembersPending, ...getters.groupProfiles })
-        .map(username => {
-          const { displayName } = getters.globalProfile(username) || {}
-          return {
-            username,
-            displayName: displayName || username,
-            invitedBy: getters.groupMembersPending[username],
-            isNew: isNewMember(username)
-          }
-        })
-        .sort((userA, userB) => {
-          const nameA = userA.displayName.toUpperCase()
-          const nameB = userB.displayName.toUpperCase()
-          // Show pending members first
-          if (userA.invitedBy && !userB.invitedBy) { return -1 }
-          if (!userA.invitedBy && userB.invitedBy) { return 1 }
-          // Then new members...
-          if (userA.isNew && !userB.isNew) { return -1 }
-          if (!userA.isNew && userB.isNew) { return 1 }
-          // and sort them all by A-Z
-          if (nameA < nameB) { return -1 }
-          if (nameA > nameB) { return 1 }
-          return 0 // names are equal
-        })
     },
     groupShouldPropose (state, getters) {
       return getters.groupMembersCount >= 3
@@ -360,7 +357,7 @@ DefineContract({
         for (const key in initialState) {
           Vue.set(state, key, initialState[key])
         }
-        initFetchMonthlyPayments({ meta, state, getters })
+        ensureLatestMonthlyPaymentValues({ meta, state, getters })
       }
     },
     'gi.contracts/group/payment': {
@@ -368,11 +365,7 @@ DefineContract({
         toUser: string,
         amount: number,
         currency: string, // must be one of the keys in currencies.js (e.g. USD, EUR, etc.)
-        // multiply 'amount' by 'exchangeRateToGroupCurrency', which must always be
-        // based on the firstMonthsCurrency of the month in which this payment was created.
-        // it is then further multiplied by the month's 'mincomeExchangeRate', which
-        // is modified if any proposals pass to change the mincomeCurrency
-        exchangeRateToGroupCurrency: number,
+        exchangeRateToGroupCurrency: number, // multiply 'amount' by this
         txid: string,
         status: paymentStatusType,
         paymentType: paymentType,
@@ -385,7 +378,7 @@ DefineContract({
           throw new Errors.GIErrorIgnoreAndBanIfGroup('payments cannot be instsantly completed!')
         }
         Vue.set(state.payments, hash, { data, meta, history: [data] })
-        const { paymentsFrom } = initFetchMonthlyPayments({ meta, state, getters })
+        const { paymentsFrom } = ensureLatestMonthlyPaymentValues({ meta, state, getters })
         const fromUser = vueFetchInitKV(paymentsFrom, meta.username, {})
         const toUser = vueFetchInitKV(fromUser, data.toUser, [])
         toUser.push(hash)
@@ -416,26 +409,24 @@ DefineContract({
         }
         payment.history.push(data.updatedProperties)
         merge(payment.data, data.updatedProperties)
-        // we update "this month"'s snapshot 'lastAdjustedDistribution' on each completed payment
-        if (data.updatedProperties.status === PAYMENT_COMPLETED) {
-          // in case we receive a paymentUpdate in a new month (where the original payment
-          // was initiated in the previous month), we make sure that month
-          // exists by retrieving it through initFetchMonthlyPayments
-          const paymentMonth = initFetchMonthlyPayments({ meta, state, getters })
-          const updateMonthstamp = ISOStringToMonthstamp(meta.createdDate)
-          const paymentMonthstamp = ISOStringToMonthstamp(payment.meta.createdDate)
-          // if this update is for a payment from the previous month, we need to
-          // add it to this month's paymentFrom, and do so before we create an updated
-          // lastAdjustedDistribution snapshot.
-          if (compareMonthstamps(updateMonthstamp, paymentMonthstamp) > 0) {
-            const fromUser = vueFetchInitKV(paymentMonth.paymentsFrom, meta.username, {})
-            const toUser = vueFetchInitKV(fromUser, data.toUser, [])
-            toUser.push(data.paymentHash)
-          }
-          paymentMonth.lastAdjustedDistribution = groupIncomeDistribution({
-            state, getters, updateMonthstamp, adjusted: true
-          })
-        }
+        // TODO: delete this if it's not needed (as it seems not to be)
+        // // create a snapshot of the distribution upon each completed payment
+        // if (data.updatedProperties.status === PAYMENT_COMPLETED) {
+        //   // we want to adjust the distribution for the month when this payment was *created*
+        //   const monthstamp = ISOStringToMonthstamp(payment.meta.createdDate)
+        //   const paymentMonth = state.paymentsByMonth[monthstamp]
+        //   if (paymentMonth) {
+        //     const adjustedDistribution = groupIncomeDistribution({
+        //       state, getters, monthstamp, adjusted: true
+        //     })
+        //     paymentMonth.lastAdjustedDistribution = adjustedDistribution
+        //   } else {
+        //     // this month was cleared by clearOldPayments()
+        //     console.warn(`paymentUpdate: ignoring completed payment for old month: ${monthstamp}`,
+        //       { data, meta, hash }
+        //     )
+        //   }
+        // }
       }
     },
     'gi.contracts/group/proposal': {
@@ -567,6 +558,10 @@ DefineContract({
       process ({ data, meta }, { state, getters }) {
         state.profiles[data.member].status = PROFILE_STATUS.REMOVED
         state.profiles[data.member].departedDate = meta.createdDate
+        // TODO: this is code smell having to remember to put this everywhere
+        //       
+        //       figure out a way to not have to do this.
+        ensureLatestMonthlyPaymentValues({ meta, state, getters })
       },
       async sideEffect ({ data }) {
         await sbp('gi.sideEffects/group/removeMember', {
@@ -582,6 +577,7 @@ DefineContract({
       process ({ data, meta }, { state, getters }) {
         state.profiles[meta.username].status = PROFILE_STATUS.REMOVED
         state.profiles[meta.username].departedDate = meta.createdDate
+        ensureLatestMonthlyPaymentValues({ meta, state, getters })
       },
       async sideEffect ({ data, meta }) {
         await sbp('gi.sideEffects/group/removeMember', {
@@ -616,6 +612,8 @@ DefineContract({
         //       rejoin the group. All of their past posts will be re-associated with
         //       them upon re-joining.
         Vue.set(state.profiles, meta.username, initGroupProfile(meta.identityContractID, meta.createdDate))
+        // make sure to update activeUsernames!
+        ensureLatestMonthlyPaymentValues({ meta, state, getters })
         // If we're triggered by handleEvent in state.js (and not latestContractState)
         // then the asynchronous sideEffect function will get called next
         // and we will subscribe to this new user's identity contract
@@ -657,6 +655,8 @@ DefineContract({
         for (var key in data) {
           Vue.set(state.settings, key, data[key])
         }
+        // if we updated the mincome amount/currency, update income distribution
+        ensureLatestMonthlyPaymentValues({ meta, state, getters })
       }
     },
     'gi.contracts/group/groupProfileUpdate': {

@@ -51,7 +51,7 @@ export function oneVoteToPass (proposalHash) {
   return currentResult === VOTE_UNDECIDED && newResult === VOTE_FOR
 }
 
-function voteAgainst (state, data) {
+function voteAgainst (state, { meta, data }) {
   const { proposalHash } = data
   const proposal = state.proposals[proposalHash]
   proposal.status = STATUS_FAILED
@@ -69,13 +69,13 @@ const proposals = {
         [RULE_DISAGREEMENT]: { threshold: 1 }
       }
     },
-    [VOTE_FOR]: function (state, data) {
+    [VOTE_FOR]: function (state, { meta, data }) {
       const proposal = state.proposals[data.proposalHash]
       proposal.payload = data.passPayload
       proposal.status = STATUS_PASSED
       // NOTE: if invite/process requires more than just data+meta
       //       this code will need to be updated...
-      const message = { meta: proposal.meta, data: data.passPayload }
+      const message = { meta, data: data.passPayload }
       sbp('gi.contracts/group/invite/process', message, state)
       sbp('okTurtles.events/emit', PROPOSAL_RESULT, state, VOTE_FOR, data)
       // TODO: for now, generate the link and send it to the user's inbox
@@ -180,7 +180,7 @@ const proposals = {
         [RULE_DISAGREEMENT]: { threshold: 1 }
       }
     },
-    [VOTE_FOR]: function (state, { proposalHash, passPayload }) {
+    [VOTE_FOR]: function (state, { meta, data }) {
       throw new Error('unimplemented!')
     },
     [VOTE_AGAINST]: voteAgainst
@@ -194,7 +194,7 @@ const proposals = {
         [RULE_DISAGREEMENT]: { threshold: 1 }
       }
     },
-    [VOTE_FOR]: function (state, { proposalHash, passPayload }) {
+    [VOTE_FOR]: function (state, { meta, data }) {
       throw new Error('unimplemented!')
     },
     [VOTE_AGAINST]: voteAgainst
