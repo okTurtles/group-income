@@ -33,7 +33,7 @@ export default {
   display: flex;
   flex-direction: column;
   padding-left: 1rem;
-  font-size: 1rem;
+  font-size: $size_4;
 
   strong {
     font-size: $size_2;
