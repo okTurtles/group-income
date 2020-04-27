@@ -3,7 +3,7 @@ describe('Changing Group Settings', () => {
   const groupName = 'Dreamers'
   const groupMincome = 750
   const groupNewMincome = groupMincome + 100
-  const sharedValues = 'One dream at the time.'
+  const sharedValues = ''
 
   it('user1 creates a new group', () => {
     cy.visit('/')
