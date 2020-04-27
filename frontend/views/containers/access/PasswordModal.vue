@@ -127,7 +127,6 @@ export default {
     },
     openModal (mode) {
       sbp('okTurtles.events/emit', OPEN_MODAL, mode)
-      return false
     },
     async changePassword () {
       try {
