@@ -4,7 +4,7 @@
 
   .card
     label.field
-      i18n.label(tag='label') How would you describe your group?
+      i18n.label How would you describe your group?
 
       textarea.textarea(
         name='sharedValues'
