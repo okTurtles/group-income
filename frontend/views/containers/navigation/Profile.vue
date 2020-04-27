@@ -4,7 +4,7 @@
   data-test='userProfile'
 )
   profile-card(:username='ourUsername' :isSelf='true' direction='top-left')
-    .c-avatar-user
+    button.is-unstyled.c-avatar-user
       avatar-user(:username='ourUsername' size='sm')
       .c-user
         strong(
@@ -67,6 +67,13 @@ export default {
 .c-avatar-user {
   display: flex;
   align-items: center;
+
+  &:focus,
+  &:hover {
+    .c-user {
+      text-decoration: underline;
+    }
+  }
 }
 
 .c-user {
@@ -82,10 +89,6 @@ export default {
   span {
     font-family: "Lato";
     color: $text_1;
-  }
-
-  &:hover {
-    text-decoration: underline;
   }
 }
 
