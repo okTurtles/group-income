@@ -70,8 +70,8 @@ export default {
 
   &:focus,
   &:hover {
-    .c-user {
-      text-decoration: underline;
+    .c-user strong {
+      border-bottom-color: $text_0;
     }
   }
 }
@@ -79,12 +79,16 @@ export default {
 .c-user {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   margin-left: 0.5rem;
-  max-width: 5rem;
+  max-width: 7rem;
   white-space: nowrap;
-  line-height: 1.3rem;
-  font-family: "Poppins";
+  line-height: 1.3;
   margin-top: 1px;
+
+  strong {
+    border-bottom: 1px solid transparent;
+  }
 
   span {
     font-family: "Lato";

@@ -1,12 +1,12 @@
 <template lang='pug'>
 span.c-twrapper(
-  tabindex='0'
+  :tabindex='manual ? "-1" : "0"'
   @click='toggle'
   @mouseenter='show'
   @mouseleave='hide'
   @focus='show'
   @blur='hide'
-  aria-label='text'
+  :aria-label='text'
 )
   slot
 
@@ -18,14 +18,10 @@ span.c-twrapper(
 
   .c-tooltip(
     :style='styles'
-    :class='{"has-text-center": isTextCenter, "is-active": isActive}'
+    :class='{"has-text-center": isTextCenter, "is-active": isActive, manual}'
     v-if='isActive || isVisible'
-    v-append-to-body=''
+    v-append-to-body='{ manual }'
   )
-    modal-close(
-      v-if='manual'
-      @close='toggle'
-    )
     // Default tooltip is text
     template(v-if='text') {{text}}
     // But any content can fit in
@@ -34,7 +30,6 @@ span.c-twrapper(
 
 <script>
 import { TABLET } from '@view-utils/breakpoints.js'
-import ModalClose from '@components/modal/ModalClose.vue'
 import trapFocus from '@utils/trapFocus.js'
 
 export default {
@@ -63,40 +58,37 @@ export default {
       default: 0.95
     }
   },
-  components: {
-    ModalClose
-  },
   data: () => ({
     trigger: null,
     tooltip: null,
     tooltipHeight: 0,
     tooltipWidth: 0,
     isActive: false,
-    styles: null
+    styles: null,
+    lastFocus: null
   }),
-  mounted () {
-    window.addEventListener('resize', this.adjustPosition)
-  },
-  beforeDestroy: function () {
-    window.removeEventListener('resize', this.adjustPosition)
-  },
+  // mounted () {
+  //   window.addEventListener('resize', this.adjustPosition)
+  // },
+  // beforeDestroy: function () {
+  //   window.removeEventListener('resize', this.adjustPosition)
+  // },
   methods: {
     show () {
-      if (!this.manual) this.isActive = true
-    },
-    hide () {
-      if (!this.manual) this.isActive = false
-    },
-    toggle () {
-      this.isActive = !this.isActive
-      if (this.$slots.tooltip) {
-        document[this.isActive ? 'addEventListener' : 'removeEventListener']('keydown', this.trapFunction)
-        // Wait for element to be present before auto focus
-        setTimeout(() => this.focusOnFirst(this.$slots.tooltip[0].elm))
+      if (!this.manual) {
+        this.isActive = true
       }
     },
-    trapFunction (e) {
-      this.trapFocus(e, this.$slots.tooltip[0].elm)
+    hide () {
+      if (!this.manual) {
+        this.isActive = false
+      }
+    },
+    // Used by parent (ProfileCard.vue)
+    toggle () {
+      if (!this.manual) { return false }
+      this.isActive = !this.isActive
+      this.$emit('update:isActive', true)
     },
     adjustPosition () {
       this.trigger = this.$el.getBoundingClientRect()
@@ -177,10 +169,23 @@ export default {
         // That way the adjustPosition() method can have the same logic
         // applied in every tooltip as expected
         $this.adjustPosition()
+
+        if (bindings.value && bindings.value.manual) {
+          document.addEventListener('keydown', e => $this.trapFocus(e, el))
+          $this.lastFocus = document.activeElement
+          $this.focusEl(el)
+        }
       },
-      unbind (el) {
+      unbind (el, bindings, vnode) {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
+        }
+        if (bindings.value && bindings.value.manual) {
+          const $this = vnode.context
+
+          document.removeEventListener('keydown', e => $this.trapFocus(e, el))
+          // move focus to latest focused element before opening the tooltip.
+          $this.lastFocus.focus()
         }
       }
     }
@@ -209,6 +214,14 @@ export default {
   &.has-text-center {
     text-align: center;
   }
+
+  &.manual {
+    max-width: auto;
+  }
+
+  &:focus {
+    outline: none; // TODO #889
+  }
 }
 
 .c-background {
@@ -221,15 +234,6 @@ export default {
 
   @include phone {
     background-color: rgba(0, 0, 0, 0.7);
-  }
-}
-
-.c-modal-close {
-  left: calc(100vw - 4rem);
-  margin-top: 1.5rem;
-
-  @include tablet {
-    display: none;
   }
 }
 </style>

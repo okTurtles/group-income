@@ -7,8 +7,11 @@ const trapFocus = {
     }
   },
   methods: {
-    focusOnFirst (el = this.$el) {
-      Array.from(el.querySelectorAll(this.focusableElements))[0].focus()
+    focusEl (el = this.$el) {
+      // prepare the element to be focused programmatically
+      el.setAttribute('tabindex', -1)
+      // ...and focus it for keyboard/screen reader users
+      el.focus()
     },
     trapFocus (e, el = this.$el) {
       // Trap focus on modal while navigating through clickable elements only

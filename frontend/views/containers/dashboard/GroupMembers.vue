@@ -21,7 +21,7 @@
         avatar(v-if='member.invitedBy' size='sm')
         avatar-user(v-else :username='username' size='sm')
 
-        .c-name.has-ellipsis(data-test='username') {{ localizedName(username) }}
+        button.is-unstyled.c-name.has-ellipsis(data-test='username') {{ localizedName(username) }}
 
       i18n.pill.is-neutral(v-if='member.invitedBy' data-test='pillPending') pending
       i18n.pill.is-primary(v-else-if='isNewMember(username)' data-test='pillNew') new
@@ -148,11 +148,15 @@ export default {
 .c-name {
   margin-right: auto;
   margin-left: 0.5rem;
+  font-family: inherit;
+  border-bottom: 1px solid transparent;
 
-  &:hover {
-    text-decoration: underline;
+  &:hover,
+  &:focus {
+    border-bottom-color: $text_0;
   }
 }
+
 .c-menu {
   margin-left: 0.5rem;
 }

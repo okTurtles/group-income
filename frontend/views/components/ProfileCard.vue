@@ -4,11 +4,12 @@ tooltip(
   :manual='true'
   ref='tooltip'
   :opacity='1'
+  :aria-label='L("Show profile")'
 )
   slot
 
   template(slot='tooltip')
-    .card.c-profile(v-if='profile')
+    .card.c-profile(v-if='profile' role='dialog' :aria-label='L("{username} profile", { username })')
       .c-identity(:class='{notGroupMember: !isActiveGroupMember}')
         avatar-user(:username='username' size='lg')
         user-name(:username='username')
@@ -40,7 +41,7 @@ tooltip(
             span.c-payment-type.has-text-0.has-text-bold {{payment.name}}
             span.has-text-1 {{payment.address}}
 
-        i18n.is-unstyled.link(
+        i18n.link(
           v-if='isSelf && receivingMonetary'
           tag='button'
           @click='openModal("incomeDetails")'
@@ -65,9 +66,11 @@ tooltip(
           tag='button'
           @click='openModal("RemoveMember", { username })'
         ) Remove member
+      modal-close.c-close(:aria-label='L("Close profile")' @close='toggleTooltip')
 </template>
 
 <script>
+import ModalClose from '@components/modal/ModalClose.vue'
 import AvatarUser from '@components/AvatarUser.vue'
 import UserName from '@components/UserName.vue'
 import Tooltip from '@components/Tooltip.vue'
@@ -91,6 +94,7 @@ export default {
   },
   components: {
     AvatarUser,
+    ModalClose,
     UserName,
     Tooltip
   },
@@ -116,8 +120,11 @@ export default {
   },
   methods: {
     openModal (modal, props) {
-      this.$refs.tooltip.toggle()
+      this.toggleTooltip()
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
+    },
+    toggleTooltip () {
+      this.$refs.tooltip.toggle()
     },
     sendMessage () {
       console.log('To do: implement send message')
@@ -162,6 +169,10 @@ export default {
   width: 24.3rem;
   box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
 
+  &:last-child {
+    margin-bottom: 0;
+  }
+
   @include phone {
     box-shadow: none;
     width: 100vw;
@@ -170,7 +181,7 @@ export default {
 }
 
 .c-profile {
-  position: absolute;
+  position: relative; // why absolute?
   display: flex;
   flex-direction: column;
 }
@@ -236,6 +247,25 @@ export default {
 
   .is-outlined {
     width: calc(50% - 0.5rem);
+  }
+}
+
+.c-close {
+  left: calc(100vw - 4rem);
+  top: 1.5rem;
+
+  @include tablet {
+    left: auto;
+    right: 1rem;
+
+    /* Hide it visually... */
+    opacity: 0;
+    pointer-events: none;
+
+    /* ...but keep it for keyboard users. */
+    &:focus {
+      opacity: 1;
+    }
   }
 }
 </style>
