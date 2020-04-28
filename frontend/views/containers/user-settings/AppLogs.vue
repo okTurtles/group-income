@@ -22,7 +22,7 @@
       textarea.textarea.c-logs(ref='textarea' rows='12' readonly)
         | {{ prettyLogs }}
 
-      i18n.link(tag='a' @click='openTroubleshooting') Troubleshooting
+      i18n.link(tag='button' @click='openTroubleshooting') Troubleshooting
 </template>
 
 <script>

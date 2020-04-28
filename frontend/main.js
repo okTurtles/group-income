@@ -126,15 +126,15 @@ async function startApp () {
       // }, 2500)
 
       // #761 - Hardcoded banner
-      setTimeout(() => {
-        this.$refs.bannerGeneral.danger(
-          this.L('Your app seems to be corrupted and some functionality is unavailable. {a_}Click here to fix it.{_a}', {
-            'a_': '<a class="link" target="_blank" href="/app/dashboard?modal=UserSettingsModal&section=troubleshooting">',
-            '_a': '</a>'
-          }),
-          'times-circle'
-        )
-      }, 2500)
+      // setTimeout(() => {
+      //   this.$refs.bannerGeneral.danger(
+      //     this.L('Your app seems to be corrupted and some functionality is unavailable. {a_}Click here to fix it.{_a}', {
+      //       'a_': '<a class="link" target="_blank" href="/app/dashboard?modal=UserSettingsModal&section=troubleshooting">',
+      //       '_a': '</a>'
+      //     }),
+      //     'times-circle'
+      //   )
+      // }, 2500)
     },
     computed: {
       showNav () {

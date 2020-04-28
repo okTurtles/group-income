@@ -55,6 +55,10 @@ $bannerGeneralHeight: 2.3rem;
     height: calc(100vh - #{$bannerGeneralHeight});
   }
 
+  & ~ .l-modal .modal {
+    top: $bannerGeneralHeight;
+  }
+
   @include touch {
     & ~ .l-modal {
       .c-modal {
@@ -65,8 +69,6 @@ $bannerGeneralHeight: 2.3rem;
         top: 3rem;
       }
     }
-
-    // TODO - handle fullscreen modals
   }
 }
 

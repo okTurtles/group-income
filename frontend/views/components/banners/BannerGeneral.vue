@@ -4,6 +4,7 @@
       v-if='ephemeral.message'
       data-test='bannerGeneral'
       :class='`is-${ephemeral.severity}`'
+      aria-live='polite'
     )
       i(:class='`icon-${ephemeral.icon} is-prefix`')
       span(v-html='ephemeral.message')

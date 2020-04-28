@@ -1,5 +1,5 @@
 <template lang='pug'>
-.c-message(:class='`is-${severity}`')
+.c-message(:class='`is-${severity}`' aria-live='polite')
   i(:class='getIcon')
 
   .c-content
@@ -14,8 +14,10 @@
 export default {
   name: 'Message',
   props: {
-    severity: String,
-    default () { return 'info' }
+    severity: {
+      type: String,
+      default: 'info'
+    }
   },
   validator: function (value) {
     // The value must match one of these strings
