@@ -95,7 +95,8 @@ async function startApp () {
         ephemeral: {
           syncs: [],
           // TODO/REVIEW page can load with already loggedin. -> this.$store.state.loggedIn ? 'yes' : 'no'
-          finishedLogin: 'no'
+          finishedLogin: 'no',
+          isCorrupted: true // TODO #761
         }
       }
     },
@@ -125,16 +126,15 @@ async function startApp () {
       //   this.$refs.bannerGeneral.show(this.L('Trying to reconnect...'), 'wifi')
       // }, 2500)
 
-      // #761 - Hardcoded banner
-      // setTimeout(() => {
-      //   this.$refs.bannerGeneral.danger(
-      //     this.L('Your app seems to be corrupted and some functionality is unavailable. {a_}Click here to fix it.{_a}', {
-      //       'a_': '<a class="link" target="_blank" href="/app/dashboard?modal=UserSettingsModal&section=troubleshooting">',
-      //       '_a': '</a>'
-      //     }),
-      //     'times-circle'
-      //   )
-      // }, 2500)
+      if (this.ephemeral.isCorrupted) {
+        this.$refs.bannerGeneral.danger(
+          this.L('Your app seems to be corrupted and some functionality is unavailable. {a_}Click here to fix it.{_a}', {
+            'a_': '<a class="link" target="_blank" href="/app/dashboard?modal=UserSettingsModal&section=troubleshooting">',
+            '_a': '</a>'
+          }),
+          'times-circle'
+        )
+      }
     },
     computed: {
       showNav () {

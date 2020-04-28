@@ -37,9 +37,7 @@ $bannerGeneralHeight: 2.3rem;
   position: sticky;
   height: $bannerGeneralHeight;
   width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  text-align: center;
   padding: 0.5rem;
   z-index: $zindex-banner;
 
@@ -65,7 +63,8 @@ $bannerGeneralHeight: 2.3rem;
         margin-top: $bannerGeneralHeight;
       }
 
-      .c-modal-close {
+      .c-modal-close,
+      .has-background .c-modal-close {
         top: 3rem;
       }
     }
