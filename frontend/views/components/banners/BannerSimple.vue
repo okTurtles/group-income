@@ -50,7 +50,7 @@ export default {
   }
 
   ::v-deep .link {
-    font-weight: 400;
+    font-weight: inherit;
     color: currentColor;
     border-bottom-color: currentColor;
 

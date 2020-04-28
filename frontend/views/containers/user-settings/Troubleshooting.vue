@@ -2,7 +2,6 @@
   .settings-container
     section.card
       i18n.is-title-3(tag='h3') Re-sync and rebuild data
-
       p.c-desc.has-text-1
         i18n All of your information is stored locally, on your personal device, and encrypted when sent {over the network, to other group members}. Re-syncing will download the latest version of the group's information.
         | &nbsp;
@@ -20,10 +19,13 @@
       template(v-if='ephemeral.status === "corrupted"')
         banner-simple.c-banner(data-test='corruptedMsg' severity='danger')
           i18n Please use the re-sync option below to restore functionality.
+
       template(v-else-if='ephemeral.status === "recovering"')
-        p [progress bar on the way!]
-        | {{ephemeral.progress.part}}
-        | {{ephemeral.progress.percentage}}
+        .c-progress
+          progress-bar(:max='1' :value='ephemeral.progress.percentage')
+          .c-progress-desc.has-text-1
+            span {{ephemeral.progress.part}}
+            span {{ephemeral.progress.percentage * 100}} %
 
       banner-scoped(ref='doneMsg' data-test='doneMsg')
 
@@ -35,52 +37,53 @@
 </template>
 
 <script>
+// import sbp from '~/shared/sbp.js'
 import { mapState } from 'vuex'
 import L, { LError } from '@view-utils/translations.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
-
-// import sbp from '~/shared/sbp.js'
+import ProgressBar from '@components/graphs/Progress.vue'
 
 export default {
   name: 'Troubleshooting',
   components: {
     BannerScoped,
-    BannerSimple
+    BannerSimple,
+    ProgressBar
   },
   data () {
     return {
+      config: {
+        ok: {
+          statusText: L('Ok'),
+          style: 'success'
+        },
+        corrupted: {
+          statusText: L('Corrupted'),
+          style: 'danger'
+        }
+      },
       ephemeral: {
-        status: 'ok', //  'ok' | 'corrupted' | 'recovering' | 'done'
+        status: 'ok', //  'ok' | 'corrupted' | 'recovering' | 'failed'
         sizeMb: '', // e.g. '9Mb'
         statusText: '', //  Corrupted | Ok
         style: '', // danger | success
         progress: {
           part: '', // e.g. 'Downloading...'
-          percentage: '' // e.g. '0.75'
+          percentage: 0 // Number: e.g. 0.75
         }
       }
     }
   },
   created () {
-    const dummyStatus = 'corrupted' // 'ok' or 'corrupted'
+    // TODO #761
+    const status = 'ok' // 'ok' or 'corrupted'
 
-    const mapData = {
-      corrupted: {
-        statusText: L('Corrupted'),
-        style: 'danger'
-      },
-      ok: {
-        statusText: L('Ok'),
-        style: 'success'
-      }
-    }
+    this.ephemeral.status = status
+    this.ephemeral.statusText = this.config[status].statusText
+    this.ephemeral.style = this.config[status].style
 
-    this.ephemeral.status = dummyStatus
-    this.ephemeral.statusText = mapData[dummyStatus].statusText
-    this.ephemeral.style = mapData[dummyStatus].style
-    // Get dummy size Mb.
-    this.ephemeral.sizeMb = '9Mb'
+    this.ephemeral.sizeMb = '9Mb' // TODO this
   },
   computed: {
     ...mapState([
@@ -102,32 +105,38 @@ export default {
       })
     },
     async startResync () {
+      if (this.ephemeral.status === 'ok' && !confirm(L('Are you sure you want to re-sync your app data? This might take a few minutes.'))) {
+        return null
+      }
+
       this.ephemeral.status = 'recovering'
       this.$refs.doneMsg.clean()
 
-      // Dummy logic, obviously.
-      this.updateProgress(L('Deleting local data...'), 0.25)
+      try {
+        // Dummy logic, obviously.
+        this.updateProgress(L('Deleting local data...'), 0.25)
+        await this.dummy3secTask()
+        this.updateProgress(L('Downloading new data...'), 0.50)
+        await this.dummy3secTask()
+        this.updateProgress(L('Last touches...'), 0.90)
 
-      await this.dummy3secTask()
+        // Change false to true to force a dummy error
+        if (false) { // eslint-disable-line
+          throw Error('Dummy error forced')
+        }
 
-      this.updateProgress(L('Downloading new data...'), 0.50)
+        await this.dummy3secTask()
 
-      await this.dummy3secTask()
+        // All done!
+        this.ephemeral.status = 'ok'
+        this.updateProgress('', 1)
 
-      this.updateProgress(L('Last touches...'), 0.75)
-
-      await this.dummy3secTask()
-
-      // Done!
-      this.ephemeral.status = 'done'
-      this.updateProgress('', '')
-
-      // Success or failure
-      if (1 === 1) { // eslint-disable-line
         this.$refs.doneMsg.success(L('Your local contract version is synced! All the app functionality was restored!'))
-      } else {
-        const e = Error
-        this.$refs.doneMsg.danger(L('Re-sync failed. Make sure you are online and try again. {reportError}', LError(e)))
+        this.ephemeral.statusText = this.config.ok.statusText
+        this.ephemeral.style = this.config.ok.style
+      } catch (e) {
+        this.ephemeral.status = 'failed'
+        this.$refs.doneMsg.danger(L('Re-sync failed. {reportError}', LError(e)))
       }
     },
     updateProgress (part, percentage) {
@@ -187,12 +196,18 @@ export default {
   }
 }
 
-.c-banner {
+.c-banner,
+.c-progress,
+.c-cta {
   margin-top: 1.5rem;
 }
 
-.c-cta {
-  margin-top: 1.5rem;
+.c-progress {
+  &-desc {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 0.5rem;
+  }
 }
 
 </style>
