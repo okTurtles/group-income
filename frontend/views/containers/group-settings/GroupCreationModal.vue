@@ -132,6 +132,11 @@ export default {
         groupName: '',
         groupPicture: '',
         sharedValues: null,
+
+        // randomize to reduce choice bias
+        ruleOrder: Math.round(Math.random()) === 1 ? ['threshold', 'disagreement'] : ['disagreement', 'threshold'],
+        // TODO connect rule option in a next PR.
+
         changeThreshold: proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults.ruleSettings[RULE_THRESHOLD].threshold,
         memberApprovalThreshold: proposals[PROPOSAL_INVITE_MEMBER].defaults.ruleSettings[RULE_THRESHOLD].threshold,
         memberRemovalThreshold: proposals[PROPOSAL_REMOVE_MEMBER].defaults.ruleSettings[RULE_THRESHOLD].threshold,
