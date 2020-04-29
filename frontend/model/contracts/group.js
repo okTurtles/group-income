@@ -3,7 +3,7 @@
 import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import { DefineContract } from './Contract.js'
-import { mapOf, objectOf, objectMaybeOf, optional, string, number, object, unionOf } from '~/frontend/utils/flowTyper.js'
+import { mapOf, objectOf, objectMaybeOf, optional, string, number, object, unionOf, tupleOf } from '~/frontend/utils/flowTyper.js'
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income-simple/issues/603
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST } from './voting/rules.js'
@@ -61,7 +61,7 @@ export function createInvite (
 
 function initGroupProfile (contractID: string, joinedDate: string) {
   return {
-    globalUsername: 'TODO: this? e.g. groupincome:greg / namecoin:bob / ens:alice',
+    globalUsername: '', // TODO: this? e.g. groupincome:greg / namecoin:bob / ens:alice
     contractID,
     joinedDate,
     nonMonetaryContributions: [],
@@ -74,7 +74,7 @@ function initPaymentMonth ({ getters }) {
   return {
     // this saved so that it can be used when creating a new payment
     firstMonthsCurrency: getters.groupMincomeCurrency,
-    // all payments during the month use this to set their exchangeRateToGroupCurrency
+    // all payments during the month use this to set their exchangeRate
     // see notes and code in groupIncomeAdjustedDistribution for details.
     // TODO: for the currency change proposal, have it update the mincomeExchangeRate
     //       using .mincomeExchangeRate *= proposal.exchangeRate
@@ -218,7 +218,7 @@ DefineContract({
         //       https://github.com/babel/babel-eslint/issues/511
         return (((paymentsFrom || {})[fromUser] || {})[toUser] || []).reduce((a, hash) => {
           const payment = payments[hash]
-          var { amount, exchangeRateToGroupCurrency, status } = payment.data
+          var { amount, exchangeRate, status } = payment.data
           if (status !== PAYMENT_COMPLETED) {
             return a
           }
@@ -228,9 +228,9 @@ DefineContract({
           // completion that modified the group currency by multiplying both month's
           // exchange rates
           if (paymentMonthstamp !== paymentCreatedMonthstamp) {
-            exchangeRateToGroupCurrency *= monthlyPayments[paymentCreatedMonthstamp].mincomeExchangeRate
+            exchangeRate *= monthlyPayments[paymentCreatedMonthstamp].mincomeExchangeRate
           }
-          return a + (amount * exchangeRateToGroupCurrency * mincomeExchangeRate)
+          return a + (amount * exchangeRate * mincomeExchangeRate)
         }, 0)
       }
     },
@@ -240,8 +240,7 @@ DefineContract({
     },
     // adjusted version of groupIncomeDistribution, used by the payments system
     groupIncomeAdjustedDistribution (state, getters) {
-      const monthstamp = currentMonthstamp()
-      return groupIncomeDistribution({ state, getters, monthstamp, adjusted: true })
+      return getters.groupIncomeAdjustedDistributionForMonth(currentMonthstamp())
     },
     groupIncomeAdjustedDistributionForMonth (state, getters) {
       return monthstamp => groupIncomeDistribution({ state, getters, monthstamp, adjusted: true })
@@ -365,14 +364,16 @@ DefineContract({
     },
     'gi.contracts/group/payment': {
       validate: objectMaybeOf({
+        // TODO: how to handle donations to okTurtles?
+        // TODO: how to handle payments to groups or users outside of this group?
         toUser: string,
         amount: number,
-        currency: string, // must be one of the keys in currencies.js (e.g. USD, EUR, etc.)
-        // multiply 'amount' by 'exchangeRateToGroupCurrency', which must always be
+        currencyFromTo: tupleOf(string, string), // must be one of the keys in currencies.js (e.g. USD, EUR, etc.) TODO: handle old clients not having one of these keys, see OP_PROTOCOL_UPGRADE https://github.com/okTurtles/group-income-simple/issues/603
+        // multiply 'amount' by 'exchangeRate', which must always be
         // based on the firstMonthsCurrency of the month in which this payment was created.
         // it is then further multiplied by the month's 'mincomeExchangeRate', which
         // is modified if any proposals pass to change the mincomeCurrency
-        exchangeRateToGroupCurrency: number,
+        exchangeRate: number,
         txid: string,
         status: paymentStatusType,
         paymentType: paymentType,
@@ -568,11 +569,31 @@ DefineContract({
         state.profiles[data.member].status = PROFILE_STATUS.REMOVED
         state.profiles[data.member].departedDate = meta.createdDate
       },
-      async sideEffect ({ data }) {
-        await sbp('gi.sideEffects/group/removeMember', {
-          username: data.member,
-          groupId: data.groupId
-        })
+      async sideEffect ({ data }, { state }) {
+        const rootState = sbp('state/vuex/state')
+        const contracts = rootState.contracts || {}
+
+        if (data.member === rootState.loggedIn.username) {
+          // If this member is re-joining the group, ignore the rest
+          // so the member doesn't remove themself again.
+          if (sbp('okTurtles.data/get', 'JOINING_GROUP')) {
+            return
+          }
+
+          const groupIdToSwitch = Object.keys(contracts)
+            .find(contractID => contracts[contractID].type === 'group' &&
+                  contractID !== data.groupId &&
+                  rootState[contractID].settings) || null
+
+          sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
+          sbp('state/vuex/commit', 'removeContract', data.groupId)
+          sbp('controller/router').push({ path: groupIdToSwitch ? '/dashboard' : '/' })
+          // TODO - #828 remove other group members contracts if applicable
+        } else {
+          // TODO - #828 remove the member contract if applicable.
+          // sbp('state/vuex/commit', 'removeContract', data.memberID)
+        }
+        // TODO - #850 verify open proposals and see if they need some re-adjustment.
       }
     },
     'gi.contracts/group/removeOurselves': {
@@ -582,12 +603,12 @@ DefineContract({
       process ({ data, meta }, { state, getters }) {
         state.profiles[meta.username].status = PROFILE_STATUS.REMOVED
         state.profiles[meta.username].departedDate = meta.createdDate
-      },
-      async sideEffect ({ data, meta }) {
-        await sbp('gi.sideEffects/group/removeMember', {
-          username: meta.username,
-          groupId: data.groupId
-        })
+        sbp('gi.contracts/group/pushSideEffect',
+          ['gi.contracts/group/removeMember/process/sideEffect', {
+            meta,
+            data: { groupId: data.groupId, member: meta.username }
+          }]
+        )
       }
     },
     'gi.contracts/group/invite': {
@@ -626,14 +647,14 @@ DefineContract({
       // They should only coordinate the actions of outside contracts.
       // Otherwise `latestContractState` and `handleEvent` will not produce same state!
       async sideEffect ({ meta, contractID }, { state }) {
-        const vuexState = sbp('state/vuex/state')
+        const rootState = sbp('state/vuex/state')
         // TODO: per #257 this will have to be encompassed in a recoverable transaction
         // however per #610 that might be handled in handleEvent (?), or per #356 might not be needed
-        if (meta.username === vuexState.loggedIn.username) {
+        if (meta.username === rootState.loggedIn.username) {
           // we're the person who just accepted the group invite
           // so subscribe to founder's IdentityContract & everyone else's
           for (const name of Object.keys(state.profiles)) {
-            if (name === vuexState.loggedIn.username) continue
+            if (name === rootState.loggedIn.username) continue
             await sbp('state/enqueueContractSync', state.profiles[name].contractID)
           }
         } else {

@@ -205,7 +205,6 @@ export default {
       return 'TODO'
     },
     paymentsList () {
-      console.debug('paymentsType:', this.paymentsType)
       return {
         todo: () => this.paymentsTodo,
         edit: () => this.paymentsDistribution,

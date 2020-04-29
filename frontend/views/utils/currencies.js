@@ -5,7 +5,7 @@
 // issues that can arise due to different floating point values
 // at extreme precisions. If this becomes inadequate, instead of increasing
 // this value, switch to a different currency base, e.g. from BTC to mBTC.
-export const DECIMALS_MAX = 7
+export const DECIMALS_MAX = 8
 
 export function saferFloat (value: number): number {
   return parseFloat(value.toFixed(DECIMALS_MAX))

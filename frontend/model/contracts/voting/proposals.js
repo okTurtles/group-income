@@ -122,7 +122,7 @@ const proposals = {
         [RULE_DISAGREEMENT]: { threshold: 2 }
       }
     },
-    [VOTE_FOR]: async function (state, { meta, data }) {
+    [VOTE_FOR]: function (state, { meta, data }) {
       const { proposalHash, passPayload } = data
       const proposal = state.proposals[proposalHash]
       const { member, memberId, groupId } = proposal.data.proposalData
@@ -138,12 +138,9 @@ const proposals = {
       }
       const message = { data: messageData, meta }
       sbp('gi.contracts/group/removeMember/process', message, state)
-      // TODO: this await usage is a violation... we shouldn't
-      //       have any async calls / side-effects inside /process
-      await sbp('gi.sideEffects/group/removeMember', {
-        username: messageData.member,
-        groupId: messageData.groupId
-      })
+      sbp('gi.contracts/group/pushSideEffect',
+        ['gi.contracts/group/removeMember/process/sideEffect', message]
+      )
     },
     [VOTE_AGAINST]: voteAgainst
   },
