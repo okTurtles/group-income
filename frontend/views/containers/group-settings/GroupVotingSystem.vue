@@ -15,7 +15,7 @@
           span(v-html='votingValue(option)')
           i18n.link(
             tag='button'
-            @click='openProposal(option)'
+            @click='openVotingProposal(option)'
           ) Propose change
 
       banner-simple.c-banner(
@@ -28,14 +28,14 @@
       i18n.link(
         v-if='!isVotingActive(option)'
         tag='button'
-        @click='openProposal(option)'
+        @click='openVotingProposal(option)'
       ) Propose changing to this voting system
 </template>
 
 <script>
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
-import L, { LTags } from '@view-utils/translations.js'
+import L from '@view-utils/translations.js'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 
 export default {
@@ -47,24 +47,24 @@ export default {
     config: {
       threshold: {
         title: L('Percentage based'),
-        explanation: L('Define the percentage of members that will need to agree to a proposal.'),
+        explanation: L('[TODO description about "percentage" voting system].'),
         status: L('Percentage of members that need to agree:')
       },
       disagreement: {
         title: L('Disagreement number'),
-        explanation: L('Define the maximum number of people who can {b_}disagree{_b} on a proposal', LTags('b')),
+        explanation: L('[TODO description about "disagreement" voting system].'),
         status: L('Maximum number of “no” votes:')
       }
     }
   }),
   computed: {
     votingSytemSorted () {
-      return ['disagreement', 'threshold'] // TODO sort order based on settings.
+      return ['threshold', 'disagreement'] // TODO sort order based on groupSettings.
     }
   },
   methods: {
-    openProposal (setting) {
-      sbp('okTurtles.events/emit', OPEN_MODAL, 'ChangeVotingProposal', { setting })
+    openVotingProposal (type) {
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'ChangeVotingProposal', { type })
     },
     isVotingActive (option) {
       return option === this.votingSytemSorted[0]
@@ -72,7 +72,7 @@ export default {
     isVotingRuleAdjusted (option) {
       if (!this.isVotingActive(option)) return false
 
-      return true // TODO this
+      return option === 'disagreement' // TODO this
     },
     votingValue (option) {
       const HTMLBold = (txt) => `<span class="has-text-bold">${txt}</span>`

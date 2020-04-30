@@ -16,7 +16,7 @@ export default {
     danger_1: '#ebb3b3',
     danger_2: '#faebeb',
     text_0: '#363636',
-    text_1: '#7a7a7a',
+    text_1: '#707070',
     general_0: '#dbdbdb',
     general_1: '#ededed',
     general_2: '#f5f5f5',

@@ -1,81 +1,89 @@
 <template lang='pug'>
 proposal-template(
-  :title= 'L("Change voting [xxx]")'
+  :title='title'
   :rule='{ value: 8, total: 10 }'
-  :disabled='$v.form.$invalid || ($v.steps[config.steps[currentStep]] && $v.steps[config.steps[currentStep]].$invalid)'
+  :disabled='false'
   :maxSteps='config.steps.length'
-  :currentStep.sync='currentStep'
+  :currentStep.sync='ephemeral.currentStep'
   @submit='submit'
 )
-
-  .field(v-if='currentStep === 0' key='0')
-    i18n.label(tag='label') A step to change "{{setting}}" is on the way
-
-  .field(v-if='currentStep === 1' key='1')
-    i18n.label(tag='label') Why are you proposing this change?
-
-    textarea.textarea(
-      name='changeReason'
-      ref='purpose'
-      :class='{ error: $v.form.changeReason.$error }'
-      v-model='form.changeReason'
+  .c-step
+    voting-system-input.c-input(
+      :type='type'
+      :value='form.value'
+      @update='setValue'
     )
+
+    template(v-if='type === "disagreement"')
+      // TODO review this copy on Figma
+      i18n.has-text-1.has-text-small(v-if='form.value > 0' :args='{nr: form.value}') Future proposals will be accepted if {nr} or fewer members disagree.
+      i18n.has-text-1.has-text-small(v-else :args='LTags("b")') Future proposals will be accepted if {b_}no one{_b} disagrees.
 </template>
 
 <script>
+import L from '@view-utils/translations.js'
 import ProposalTemplate from './ProposalTemplate.vue'
-import { validationMixin } from 'vuelidate'
-import { minLength } from 'vuelidate/lib/validators'
+import VotingSystemInput from '@components/VotingSystemInput.vue'
 
 export default {
   name: 'ChangeVotingProposal',
   components: {
-    ProposalTemplate
+    ProposalTemplate,
+    VotingSystemInput
   },
   props: {
-    setting: String
+    type: String // 'threshold' or 'disagreement'
   },
-  mixins: [
-    validationMixin
-  ],
   data () {
     return {
-      currentStep: 0,
-      v: { type: Object },
+      config: {
+        steps: ['VotingSystem']
+      },
       form: {
+        value: null,
         changeReason: null
       },
       ephemeral: {
         errorMsg: null,
-        // this determines whether or not to render proxy components for tests
-        dev: process.env.NODE_ENV === 'development'
-      },
-      config: {
-        steps: [
-          'AddMemberRule',
-          'ChangeReason'
-        ]
+        currentStep: 0
       }
+    }
+  },
+  created () {
+    this.form.value = this.type === 'threshold' ? 75 : 2 // TODO this.
+  },
+  computed: {
+    title () {
+      return L('Chage voting [xxxx]') // TODO this
     }
   },
   methods: {
+    setValue (value) {
+      this.form.value = value
+    },
     submit () {
-      console.log('TODO: Logic to Propose a new rule to change a rule')
+      alert('TODO change on a next PR')
     }
   },
   validations: {
-    form: {
-      changeReason: {
-        minLength: minLength(10)
-      }
-    },
-    // validation groups by route name for steps
+    form: {},
     steps: {
-      AddMemberRule: [],
-      Reason: [
-        'form.changeReason'
+      VotingSystem: [
+        'form.value'
       ]
     }
   }
 }
 </script>
+
+<style lang="scss" scoped>
+@import "@assets/style/_variables.scss";
+
+.c-step {
+  margin-bottom: 2rem;
+}
+
+.c-input {
+  margin-bottom: 1rem;
+}
+</style>
