@@ -74,6 +74,7 @@ function initPaymentMonth ({ getters }) {
   return {
     // this saved so that it can be used when creating a new payment
     firstMonthsCurrency: getters.groupMincomeCurrency,
+    // TODO: should we also save the first month's currency exchange rate..?
     // all payments during the month use this to set their exchangeRate
     // see notes and code in groupIncomeAdjustedDistribution for details.
     // TODO: for the currency change proposal, have it update the mincomeExchangeRate
@@ -126,7 +127,10 @@ function groupIncomeDistribution ({ state, getters, monthstamp, adjusted }) {
       // month, we need to take that into account and adjust the distribution.
       // this will be used by the Payments page to tell how much still
       // needs to be paid (if it was a partial payment).
-      if (adjusted) {
+      // BUG/TODO: if `&& paymentMonth` is removed, and you record a payment
+      // in a group of 3 people (from one person to another), then this can
+      // trigger a strange auto-ban loop. Figure out what happened.
+      if (adjusted && paymentMonth) {
         for (const toUser in paymentMonth.paymentsFrom[username]) {
           paymentsMade += getters.paymentTotalFromUserToUser(username, toUser, monthstamp)
         }
@@ -385,11 +389,16 @@ DefineContract({
           console.error(`payment: payment ${hash} cannot have status = 'completed'!`, { data, meta, hash })
           throw new Errors.GIErrorIgnoreAndBanIfGroup('payments cannot be instsantly completed!')
         }
-        Vue.set(state.payments, hash, { data, meta, history: [data] })
+        Vue.set(state.payments, hash, {
+          data,
+          meta,
+          history: [[meta.createdDate, data]]
+        })
         const { paymentsFrom } = initFetchMonthlyPayments({ meta, state, getters })
         const fromUser = vueFetchInitKV(paymentsFrom, meta.username, {})
         const toUser = vueFetchInitKV(fromUser, data.toUser, [])
         toUser.push(hash)
+        // TODO: handle completed payments here too! (for manual payment support)
       }
     },
     'gi.contracts/group/paymentUpdate': {
@@ -415,10 +424,11 @@ DefineContract({
           console.error(`paymentUpdate: bad username ${meta.username} != ${payment.meta.username}`, { data, meta, hash })
           throw new Errors.GIErrorIgnoreAndBanIfGroup('paymentUpdate from wrong user!')
         }
-        payment.history.push(data.updatedProperties)
+        payment.history.push([meta.createdDate, data.updatedProperties])
         merge(payment.data, data.updatedProperties)
         // we update "this month"'s snapshot 'lastAdjustedDistribution' on each completed payment
         if (data.updatedProperties.status === PAYMENT_COMPLETED) {
+          payment.data.completedDate = meta.createdDate
           // in case we receive a paymentUpdate in a new month (where the original payment
           // was initiated in the previous month), we make sure that month
           // exists by retrieving it through initFetchMonthlyPayments

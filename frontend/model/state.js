@@ -621,9 +621,7 @@ const handleEvent = {
       const meta = message.meta()
       const mutation = { data, meta, hash, contractID }
       // this selector is created by Contract.js
-      if (sbp('sbp/selectors/fn', `${selector}/sideEffect`)) {
-        await sbp(`${selector}/sideEffect`, mutation)
-      }
+      await sbp(`${selector}/sideEffect`, mutation)
       // let any listening components know that we've received, processed, and stored the event
       sbp('okTurtles.events/emit', hash, contractID, message)
       sbp('okTurtles.events/emit', EVENTS.EVENT_HANDLED, contractID, message)

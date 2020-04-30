@@ -120,6 +120,25 @@ export default sbp('sbp/selectors/register', {
   'gi.actions/group/switch': function (groupId) {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
   },
+  'gi.actions/group/payment': async function (info, groupId) {
+    try {
+      const message = await sbp('gi.contracts/group/payment/create', info, groupId)
+      await sbp('backend/publishLogEntry', message)
+      return message
+    } catch (e) {
+      console.error('gi.actions/group/payment failed!', e)
+      throw new GIErrorUIRuntimeError(L('Failed to create payment. {reportError}', LError(e)))
+    }
+  },
+  'gi.actions/group/paymentUpdate': async function (info, groupId) {
+    try {
+      const message = await sbp('gi.contracts/group/paymentUpdate/create', info, groupId)
+      await sbp('backend/publishLogEntry', message)
+    } catch (e) {
+      console.error('gi.actions/group/payment failed!', e)
+      throw new GIErrorUIRuntimeError(L('Failed to update payment. {reportError}', LError(e)))
+    }
+  },
   'gi.actions/group/updateSettings': async function (settings, groupId) {
     try {
       const message = await sbp('gi.contracts/group/updateSettings/create', settings, groupId)
