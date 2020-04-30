@@ -5,7 +5,7 @@
       p.c-desc.has-text-1
         i18n All of your information is stored locally, on your personal device, and encrypted when sent {over the network, to other group members}. Re-syncing will download the latest version of the group's information.
         | &nbsp;
-        i18n.link(tag='button' @click='openAppLogs') See application logs.
+        i18n.link(tag='button' @click='openAppLogs') See application logs
 
       ul.c-legend
         li.c-legend-item
