@@ -24,7 +24,7 @@
 
 <script>
 export default {
-  name: 'SliderContinuos',
+  name: 'SliderContinuous',
   props: {
     /** Unique id to connect form and label */
     uid: {

@@ -5,7 +5,7 @@
   .card
     fieldset.c-step
       i18n.has-text-bold(tag='legend') Which voting system would you like to use?
-      i18n.has-text-1.c-desc(tag='p') You will need to use this system to vote on proposals. You can propose for example, to add or remove members, or to change your group’s mincome value.
+      i18n.has-text-1.has-text-small.c-desc(tag='p') You will need to use this system to vote on proposals. You can propose for example, to add or remove members, or to change your group’s mincome value.
 
       .cardBox.c-box(v-for='option in group.ruleOrder' :class='{isActive: form.option === option }')
         .c-box-option

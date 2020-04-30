@@ -1,6 +1,6 @@
 <template lang='pug'>
   div
-    slider-continuos.c-slider(
+    slider-continuous.c-slider(
       :class='ephemeral.sliderClass'
       :uid='type'
       :label='config[type].slideLabel'
@@ -27,7 +27,7 @@
 <script>
 import L from '@view-utils/translations.js'
 import BannerSimple from '@components/banners/BannerSimple.vue'
-import SliderContinuos from '@components/SliderContinuos.vue'
+import SliderContinuous from '@components/SliderContinuous.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'
 
 const SUPERMAJORITY = 0.67
@@ -36,7 +36,7 @@ export default {
   name: 'VotingSystemInput',
   components: {
     BannerSimple,
-    SliderContinuos,
+    SliderContinuous,
     TransitionExpand
   },
   props: {
