@@ -7,7 +7,7 @@
       i18n.has-text-bold(tag='legend') Which voting system would you like to use?
       i18n.has-text-1.c-desc(tag='p') You will need to use this system to vote on proposals. You can propose for example, to add or remove members, or to change your group’s mincome value.
 
-      .c-box(v-for='option in group.ruleOrder' :class='{isActive: form.option === option }')
+      .cardBox.c-box(v-for='option in group.ruleOrder' :class='{isActive: form.option === option }')
         .c-box-option
           label.checkbox.c-option
             input.input(type='radio' name='rule' :value='option' @change='setOption(option)')
@@ -23,7 +23,7 @@
               span.label(:for='`range${option}`') {{ config[option].rangeLabel }}
 
               span.sliderRange-marks
-                span.sliderRange-edge(aria-hidden='true') {{ config[option].rangeMin + config[option].rangeUnit }}
+                span.sliderRange-edge(aria-hidden='true') {{ config[option].rangeMin }}
                 span.sliderRange-slider(:style='ephemeral.rangeInputStyle')
                   input.sliderRange-input(
                     type='range'
@@ -39,7 +39,7 @@
                     :style='ephemeral.rangeTextStyle'
                     :class='ephemeral.rangeTextClass'
                   ) {{ form.value + config[option].rangeUnit }}
-                span.sliderRange-edge(aria-hidden='true') {{ config[option].rangeMax + config[option].rangeUnit }}
+                span.sliderRange-edge(aria-hidden='true') {{ config[option].rangeMax }}
 
             transition-expand
               div(v-if='warnMajority')
@@ -183,14 +183,7 @@ export default {
 }
 
 .c-box {
-  border: 1px solid $general_0;
-  padding: 1.5rem 1rem;
-  border-radius: 0.25rem;
   margin-bottom: 1rem;
-
-  &.isActive {
-    border-color: $primary_0;
-  }
 
   &-option {
     display: flex;

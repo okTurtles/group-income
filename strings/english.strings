@@ -141,7 +141,7 @@
 /* views/containers/proposals/ProposalVoteOptions.vue */
 "Are you sure you want to vote yes?" = "Are you sure you want to vote yes?";
 
-/* views/containers/proposals/RuleChangeRule.vue */
+/* views/containers/proposals/ChangeVotingProposal.vue */
 "Change Rule to change Rule" = "Change Rule to change Rule";
 
 /* views/containers/access/LoginForm.vue, views/containers/access/SignupForm.vue, views/containers/group-settings/GroupLeaveModal.vue */
@@ -165,7 +165,7 @@
 /* views/pages/Mailbox.vue */
 "compose" = "compose";
 
-/* views/containers/proposals/RuleAddMember.vue, views/containers/proposals/RuleChangeRule.vue, views/containers/proposals/RuleRemoveMember.vue */
+/* views/containers/proposals/RuleAddMember.vue, views/containers/proposals/ChangeVotingProposal.vue, views/containers/proposals/RuleRemoveMember.vue */
 "According to your voting rules, 8 out of 10 members will have to agree with this." = "According to your voting rules, 8 out of 10 members will have to agree with this.";
 
 /* views/containers/contributions/ContributionItem.vue */
@@ -678,7 +678,7 @@
 /* views/containers/payments/MonthOverview.vue */
 "Amout sent" = "Amout sent";
 
-/* views/containers/proposals/RuleAddMember.vue, views/containers/proposals/RuleChangeRule.vue, views/containers/proposals/RuleRemoveMember.vue */
+/* views/containers/proposals/RuleAddMember.vue, views/containers/proposals/ChangeVotingProposal.vue, views/containers/proposals/RuleRemoveMember.vue */
 "The reason why I' propositiong this change is..." = "The reason why I' propositiong this change is...";
 
 /* views/containers/contributions/ContributionsOverviewWidget.vue */
