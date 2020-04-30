@@ -9,6 +9,7 @@ export default {
     success_1: '#bfd4c3',
     success_2: '#e4f1e7',
     warning_0: '#ff6f00',
+    warning_0_text: '#73492a',
     warning_1: '#ffcea8',
     warning_2: '#ffeee0',
     danger_0: '#c62828',

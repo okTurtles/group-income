@@ -86,7 +86,7 @@ export default sbp('sbp/selectors/register', {
       return groupId
     } catch (e) {
       console.error('gi.actions/group/create failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to create the group: {codeError}', { codeError: e.message }))
+      throw new GIErrorUIRuntimeError(L('Failed to create the group: {reportError}', LError(e)))
     }
   },
   'gi.actions/group/createAndSwitch': async function (groupParams) {

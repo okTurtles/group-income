@@ -17,7 +17,7 @@
           img.c-box-img(src='/assets/images/rule-placeholder.png' alt='')
 
         // [1] - Keep div so that transition works smoothly with inner paddings.
-        transition(name='slidedown')
+        transition-expand
           div(v-if='form.option === option') <!-- [1] -->
             .sliderRange.c-range
               span.label(:for='`range${option}`') {{ config[option].rangeLabel }}
@@ -41,18 +41,17 @@
                   ) {{ form.value + config[option].rangeUnit }}
                 span.sliderRange-edge(aria-hidden='true') {{ config[option].rangeMax + config[option].rangeUnit }}
 
-            transition(name='slidedown' v-if='warnMajority')
-              div <!-- [1] -->
-                // TODO warning color.
+            transition-expand
+              div(v-if='warnMajority')
                 banner-simple.c-banner(severity='warning')
-                  i18n The percentage value you are choosing is most likely too low for a decision that can have a potentially significant impact  on a person's life. Please consider using a supermajority threshold.
+                  i18n The percentage value you are choosing is most likely too low for a decision that can have a potentially significant impact  on a person's life. Please consider using a
                   | &nbsp;
                   i18n(
                     tag='a'
                     class='link'
                     href='https://groupincome.org/2016/09/deprecating-mays-theorem/#when-majority-rule-can-harm'
                     target='_blank'
-                  ) Read more about the dangers of majority rule.
+                  ) supermajority threshold.
 
       i18n.help You can change this later in your Group Settings.
     slot
@@ -60,9 +59,9 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import { toPercent } from '@view-utils/filters.js'
-import BannerSimple from '@components/banners/BannerSimple.vue'
 import L, { LTags } from '@view-utils/translations.js'
+import BannerSimple from '@components/banners/BannerSimple.vue'
+import TransitionExpand from '@components/TransitionExpand.vue'
 
 const SUPERMAJORITY = 0.67
 
@@ -73,7 +72,8 @@ export default {
     $v: { type: Object }
   },
   components: {
-    BannerSimple
+    BannerSimple,
+    TransitionExpand
   },
   data: () => ({
     config: {
@@ -107,9 +107,6 @@ export default {
       rangeTextStyle: null
     }
   }),
-  filters: {
-    toPercent
-  },
   methods: {
     getPercent (value) {
       const { rangeMin, rangeMax } = this.config[this.form.option]
@@ -229,54 +226,11 @@ export default {
 
 .c-range,
 .c-banner {
-  padding-top: 1rem;
+  margin-top: 1rem;
 
   @include tablet {
-    padding-left: 1.8rem;
+    margin-left: 1.8rem;
+    width: calc(100% - 1.8rem);
   }
 }
-
-/* .c-rules {
-  display: flex;
-  font-family: 'Poppins';
-}
-
-.c-rule {
-  position: relative;
-  width: 9.8rem;
-  height: 9.8rem;
-  margin: 1rem auto;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.c-percent {
-  font-size: $size-extra-large;
-  font-weight: bold;
-  margin: 0;
-}
-
-.c-pourcent-number {
-  display: inline-block;
-  padding-bottom: 5px;
-  border-bottom: 2px solid $general_0;
-  min-width: 57px;
-  margin: 3px 4px 8px 0;
-}
-
-.is-subtitle {
-  margin: 0;
-}
-
-.circle-slider {
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-
-.rulesStep .message-body {
-  border-color: #f68b39;
-} */
 </style>
