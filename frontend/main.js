@@ -96,7 +96,7 @@ async function startApp () {
           syncs: [],
           // TODO/REVIEW page can load with already loggedin. -> this.$store.state.loggedIn ? 'yes' : 'no'
           finishedLogin: 'no',
-          isCorrupted: false // TODO #761
+          isCorrupted: true // TODO #761
         }
       }
     },
