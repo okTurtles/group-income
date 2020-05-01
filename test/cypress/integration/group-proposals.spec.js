@@ -344,11 +344,11 @@ describe('Proposals - Add members', () => {
       .should('have.length', 5)
       .each(([member], index) => {
         cy.get(member).within(() => {
-          const usersMap = [1, 2, 3, 4, 6]
+          const usersMap = [2, 3, 4, 6, 1]
 
           cy.getByDT('username').should('contain', `user${usersMap[index]}-${userId}`)
 
-          if (index === 0) {
+          if (index === 4) { // last member
             cy.getByDT('username').should('contain', '(you)')
           } else {
             cy.getByDT('pillNew').should('contain', 'new')
