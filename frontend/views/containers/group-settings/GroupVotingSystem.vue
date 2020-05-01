@@ -1,39 +1,40 @@
 <template lang='pug'>
   ul.c-wrapper
     li.cardBox(
-      v-for='option in votingSytemSorted'
-      :class='{ isActive: isVotingActive(option) }'
-      :aria-current='isVotingActive(option) ? "true" : "false"'
+      v-for='type in votingSytemSorted'
+      :class='{ isActive: isVotingActive(type) }'
+      :aria-current='isVotingActive(type)'
     )
-      span.pill.is-primary.c-active(v-if='isVotingActive(option)') Active
-      p.is-title-4 {{ config[option].title }}
-      p.has-text-1.c-expl(v-html='config[option].explanation')
+      p.is-title-4 {{ config[type].title }}
+      p.has-text-1.c-expl(v-html='config[type].explanation')
+      i18n.pill.is-primary.c-active(v-if='isVotingActive(type)') Active
 
-      dl.c-status(v-if='isVotingActive(option)')
-        dt.c-status-term {{ config[option].status }}
+      dl.c-status(v-if='isVotingActive(type)')
+        dt.c-status-term {{ config[type].status }}
         dd.c-status-desc
-          span(v-html='votingValue(option)')
+          span(v-html='votingValue(type)')
           i18n.link(
             tag='button'
-            @click='openVotingProposal(option)'
+            @click='openVotingProposal(type)'
           ) Propose change
 
       banner-simple.c-banner(
         severity='info'
-        v-if='isVotingRuleAdjusted(option)'
+        v-if='isVotingRuleAdjusted(type)'
       )
         | * &nbsp;
         i18n This value was automatically adjusted because your group is currently smaller than the disagreement number.
 
       i18n.link(
-        v-if='!isVotingActive(option)'
+        v-if='!isVotingActive(type)'
         tag='button'
-        @click='openVotingProposal(option)'
+        @click='openVotingProposal(type)'
       ) Propose changing to this voting system
 </template>
 
 <script>
 import sbp from '~/shared/sbp.js'
+import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/voting/rules.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import L from '@view-utils/translations.js'
 import BannerSimple from '@components/banners/BannerSimple.vue'
@@ -45,12 +46,12 @@ export default {
   },
   data: () => ({
     config: {
-      threshold: {
+      [RULE_PERCENTAGE]: {
         title: L('Percentage based'),
         explanation: L('[TODO description about "percentage" voting system].'),
         status: L('Percentage of members that need to agree:')
       },
-      disagreement: {
+      [RULE_DISAGREEMENT]: {
         title: L('Disagreement number'),
         explanation: L('[TODO description about "disagreement" voting system].'),
         status: L('Maximum number of “no” votes:')
@@ -59,7 +60,7 @@ export default {
   }),
   computed: {
     votingSytemSorted () {
-      return ['threshold', 'disagreement'] // TODO sort order based on groupSettings.
+      return [RULE_PERCENTAGE, RULE_DISAGREEMENT] // TODO sort order based on groupSettings.
     }
   },
   methods: {
@@ -72,27 +73,32 @@ export default {
     isVotingRuleAdjusted (option) {
       if (!this.isVotingActive(option)) return false
 
-      return option === 'disagreement' // TODO this
+      return option === RULE_DISAGREEMENT // TODO this
     },
     votingValue (option) {
-      const HTMLBold = (txt) => `<span class="has-text-bold">${txt}</span>`
-      const HTMLSmall = (txt) => ` <span class="has-text-1 has-text-small">(${txt})</span>`
+      const HTMLTags = {
+        b_: '<span class="has-text-bold">',
+        _b: '</span>',
+        sm_: '<span class="has-text-1 has-text-small">',
+        _sm: '</span>'
+      }
 
-      if (option === 'threshold') {
+      if (option === RULE_PERCENTAGE) {
         const percent = '75%'
-        return `${HTMLBold(percent)} ${HTMLSmall(L('{count} out of {total} members', {
+        return L('{b_}{percent}{_b} {sm_}({count} out of {total} members){_sm}', {
+          percent,
           count: 8,
-          total: 10
-        }))}`
+          total: 10,
+          ...HTMLTags
+        })
       } else {
-        const original = 5
+        const count = 5
         const adjusted = 1
-        let result = HTMLBold(original)
 
-        if (original !== adjusted) {
-          result += HTMLSmall(L('adjusted to {nr}', { nr: adjusted }) + '*')
+        if (count !== adjusted) {
+          return L('{b_}{count}{_b} {sm_}(adjusted to {nr}*){_sm}', { count, nr: adjusted, ...HTMLTags })
         }
-        return result
+        return L('{b_}{count}{_b}', { count, ...HTMLTags })
       }
     }
   }

@@ -9,17 +9,17 @@ export const VOTE_INDIFFERENT = ':indifferent'
 export const VOTE_UNDECIDED = ':undecided'
 export const VOTE_FOR = ':for'
 
-export const RULE_THRESHOLD = 'threshold'
+export const RULE_PERCENTAGE = 'percentage'
 export const RULE_DISAGREEMENT = 'disagreement'
 export const RULE_MULTI_CHOICE = 'multi-choice'
 
 // TODO: ranked-choice? :D
 
 const rules = {
-  [RULE_THRESHOLD]: function (state, proposalType, votes) {
+  [RULE_PERCENTAGE]: function (state, proposalType, votes) {
     votes = Object.values(votes)
     const population = Object.keys(state.profiles).length
-    const defaultThreshold = state.settings.proposals[proposalType].ruleSettings[RULE_THRESHOLD].threshold
+    const defaultThreshold = state.settings.proposals[proposalType].ruleSettings[RULE_PERCENTAGE].threshold
     const threshold = proposalType === PROPOSAL_REMOVE_MEMBER
       ? Math.min(defaultThreshold, (population - 1) / population)
       : defaultThreshold
@@ -37,7 +37,7 @@ const rules = {
     //       60%, since anything near that range indicates disagreement among the voting
     //       group (which can be very small if we allow an explicit third option.)
     const neededToPass = Math.ceil(threshold * (population - totalIndifferent))
-    console.debug(`votingRule ${RULE_THRESHOLD} for ${proposalType}:`, { neededToPass, totalFor, totalAgainst, totalIndifferent, threshold, absent, turnout, population })
+    console.debug(`votingRule ${RULE_PERCENTAGE} for ${proposalType}:`, { neededToPass, totalFor, totalAgainst, totalIndifferent, threshold, absent, turnout, population })
     if (totalFor >= neededToPass) {
       return VOTE_FOR
     }

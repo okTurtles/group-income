@@ -26,6 +26,7 @@
 
 <script>
 import L from '@view-utils/translations.js'
+import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/voting/rules.js'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import SliderContinuous from '@components/SliderContinuous.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'
@@ -40,18 +41,21 @@ export default {
     TransitionExpand
   },
   props: {
-    type: String, // 'threshold' or 'disagreement'
+    type: {
+      type: String,
+      validator: (type) => [RULE_PERCENTAGE, RULE_DISAGREEMENT].includes(type)
+    },
     value: [String, Number]
   },
   data: () => ({
     config: {
-      threshold: {
+      [RULE_PERCENTAGE]: {
         slideLabel: L('What percentage of members need to agree?'),
         slideMin: 0,
         slideMax: 100,
         slideUnit: '%'
       },
-      disagreement: {
+      [RULE_DISAGREEMENT]: {
         slideLabel: L('Maximum number of “no” votes'),
         slideMin: 0,
         slideMax: 60,
@@ -64,7 +68,7 @@ export default {
   }),
   computed: {
     warnMajority () {
-      return this.type === 'threshold' && this.value / 100 < SUPERMAJORITY
+      return this.type === RULE_PERCENTAGE && this.value / 100 < SUPERMAJORITY
     }
   },
   methods: {

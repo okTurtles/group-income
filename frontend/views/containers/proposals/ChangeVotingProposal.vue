@@ -14,7 +14,7 @@ proposal-template(
       @update='setValue'
     )
 
-    template(v-if='type === "disagreement"')
+    template(v-if='type === RULE_DISAGREEMENT')
       // TODO review this copy on Figma
       i18n.has-text-1.has-text-small(v-if='form.value > 0' :args='{nr: form.value}') Future proposals will be accepted if {nr} or fewer members disagree.
       i18n.has-text-1.has-text-small(v-else :args='LTags("b")') Future proposals will be accepted if {b_}no one{_b} disagrees.
@@ -22,6 +22,7 @@ proposal-template(
 
 <script>
 import L from '@view-utils/translations.js'
+import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/voting/rules.js'
 import ProposalTemplate from './ProposalTemplate.vue'
 import VotingSystemInput from '@components/VotingSystemInput.vue'
 
@@ -32,10 +33,14 @@ export default {
     VotingSystemInput
   },
   props: {
-    type: String // 'threshold' or 'disagreement'
+    type: {
+      type: String,
+      validator: (value) => [RULE_PERCENTAGE, RULE_DISAGREEMENT].includes(value)
+    }
   },
   data () {
     return {
+      RULE_DISAGREEMENT,
       config: {
         steps: ['VotingSystem']
       },
@@ -50,11 +55,11 @@ export default {
     }
   },
   created () {
-    this.form.value = this.type === 'threshold' ? 75 : 2 // TODO this.
+    this.form.value = this.type === RULE_PERCENTAGE ? 75 : 2 // TODO this.
   },
   computed: {
     title () {
-      return L('Chage voting [xxxx]') // TODO this
+      return L('Change voting [xxxx]') // TODO this
     }
   },
   methods: {

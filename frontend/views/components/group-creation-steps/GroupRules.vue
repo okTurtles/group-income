@@ -25,6 +25,7 @@
 </template>
 
 <script>
+import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/voting/rules.js'
 import L, { LTags } from '@view-utils/translations.js'
 import TransitionExpand from '@components/TransitionExpand.vue'
 import VotingSystemInput from '@components/VotingSystemInput.vue'
@@ -41,12 +42,12 @@ export default {
   },
   data: () => ({
     config: {
-      threshold: {
+      [RULE_PERCENTAGE]: {
         optionLabel: L('Percentage based'),
         optionHint: L('Define the percentage of members that will need to {b_}agree{_b} to a proposal.', LTags('b')),
         slideDefault: 75 // TODO connect to store.
       },
-      disagreement: {
+      [RULE_DISAGREEMENT]: {
         optionLabel: L('Disagreement number'),
         optionHint: L('Define the maximum number of people who can {b_}disagree{_b} on a proposal', LTags('b')),
         slideLabel: L('Maximum number of “no” votes'),
