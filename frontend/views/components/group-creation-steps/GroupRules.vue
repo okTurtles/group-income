@@ -44,7 +44,7 @@ export default {
     config: {
       [RULE_PERCENTAGE]: {
         optionLabel: L('Percentage based'),
-        optionHint: L('Define the percentage of members that will need to {b_}agree{_b} to a proposal.', LTags('b')),
+        optionHint: L('Define the percentage of members who will need to {b_}agree{_b} to a proposal.', LTags('b')),
         slideDefault: 75 // TODO connect to store.
       },
       [RULE_DISAGREEMENT]: {
