@@ -15,11 +15,9 @@ tr
 
     // TODO: replace condition to indicate whether a payment as been received using payment.paymentStatusText
     .c-payments-amount-info(
-      v-if='Math.round(Math.random()) && needsIncome'
+      v-if='notReceived'
     )
-      // TODO: Display this tooltip only if the payment is marked has not received
       tooltip.c-tooltip-warning(
-        v-if=''
         direction='top'
         :isTextCenter='true'
         :text='L("{personName} marked this payment as not received.", { personName: payment.displayName })'
@@ -50,7 +48,7 @@ tr
               tag='button'
               item-id='message'
               icon='times'
-              @click='cancelPayment(payment.to, payment.hash)'
+              @click='cancelPayment'
             )
               i18n Cancel this payment
 </template>
@@ -62,7 +60,7 @@ import AvatarUser from '@components/AvatarUser.vue'
 import Tooltip from '@components/Tooltip.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
-import { PAYMENT_CANCELLED } from '@model/contracts/payments/index.js'
+import { PAYMENT_CANCELLED, PAYMENT_NOT_RECEIVED } from '@model/contracts/payments/index.js'
 import { humanDate } from '@view-utils/humanDate.js'
 import currencies from '@view-utils/currencies.js'
 
@@ -90,6 +88,9 @@ export default {
     needsIncome () {
       return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'
     },
+    notReceived () {
+      return this.payment.data.status === PAYMENT_NOT_RECEIVED
+    },
     currency () {
       return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
     }
@@ -103,10 +104,10 @@ export default {
       sbp('okTurtles.events/emit', OPEN_MODAL, name, props)
     },
     // TODO: make multiple payments
-    async cancelPayment (username, paymentHash) {
+    async cancelPayment () {
       try {
         const paymentMessage = await sbp('gi.contracts/group/paymentUpdate/create', {
-          paymentHash,
+          paymentHash: this.payment.hash,
           updatedProperties: {
             status: PAYMENT_CANCELLED
           }

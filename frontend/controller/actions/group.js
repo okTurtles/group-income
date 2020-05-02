@@ -44,7 +44,7 @@ export default sbp('sbp/selectors/register', {
 
     try {
       const initialInvite = createInvite({ quantity: 60, creator: INVITE_INITIAL_CREATOR })
-      const entry = await sbp('gi.contracts/group/create', {
+      const message = await sbp('gi.contracts/group/create', {
         invites: {
           [initialInvite.inviteSecret]: initialInvite
         },
@@ -75,47 +75,47 @@ export default sbp('sbp/selectors/register', {
           }
         }
       })
-      const groupId = entry.hash()
+      const groupId = message.hash()
 
-      await sbp('backend/publishLogEntry', entry)
+      await sbp('backend/publishLogEntry', message)
 
       if (sync) {
         await sbp('gi.actions/contract/syncAndWait', groupId)
       }
 
-      return groupId
+      return message
     } catch (e) {
       console.error('gi.actions/group/create failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to create the group: {codeError}', { codeError: e.message }))
     }
   },
   'gi.actions/group/createAndSwitch': async function (groupParams) {
-    const groupID = await sbp('gi.actions/group/create', groupParams, { sync: true })
-    sbp('gi.actions/group/switch', groupID)
-    return groupID
+    const message = await sbp('gi.actions/group/create', groupParams, { sync: true })
+    sbp('gi.actions/group/switch', message.contractID())
+    return message
   },
   'gi.actions/group/join': async function ({ groupId, inviteSecret }) {
     try {
       // post acceptance event to the group contract
-      const acceptance = await sbp('gi.contracts/group/inviteAccept/create',
+      const message = await sbp('gi.contracts/group/inviteAccept/create',
         { inviteSecret },
         groupId
       )
       // let the group know we've accepted their invite
-      await sbp('backend/publishLogEntry', acceptance)
+      await sbp('backend/publishLogEntry', message)
       // sync the group's contract state
       await sbp('state/enqueueContractSync', groupId)
-      return groupId
+      return message
     } catch (e) {
       console.error('gi.actions/group/join failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to join the group: {codeError}', { codeError: e.message }))
     }
   },
   'gi.actions/group/joinAndSwitch': async function (joinParams) {
-    const groupId = await sbp('gi.actions/group/join', joinParams)
+    const message = await sbp('gi.actions/group/join', joinParams)
     // after joining, we can set the current group
-    sbp('gi.actions/group/switch', groupId)
-    return groupId
+    sbp('gi.actions/group/switch', message.contractID())
+    return message
   },
   'gi.actions/group/switch': function (groupId) {
     sbp('state/vuex/commit', 'setCurrentGroupId', groupId)
@@ -134,6 +134,7 @@ export default sbp('sbp/selectors/register', {
     try {
       const message = await sbp('gi.contracts/group/paymentUpdate/create', info, groupId)
       await sbp('backend/publishLogEntry', message)
+      return message
     } catch (e) {
       console.error('gi.actions/group/payment failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to update payment. {reportError}', LError(e)))
@@ -143,6 +144,7 @@ export default sbp('sbp/selectors/register', {
     try {
       const message = await sbp('gi.contracts/group/updateSettings/create', settings, groupId)
       await sbp('backend/publishLogEntry', message)
+      return message
     } catch (e) {
       console.error('gi.actions/group/updateSettings failed!', e)
       throw new GIErrorUIRuntimeError(L('Failed to update group settings. {reportError}', LError(e)))
@@ -152,16 +154,17 @@ export default sbp('sbp/selectors/register', {
     try {
       const message = await sbp('gi.contracts/group/removeMember/create', params, groupID)
       await sbp('backend/publishLogEntry', message)
+      return message
     } catch (e) {
       console.error('gi.actions/group/removeMember failed', e)
       throw new GIErrorUIRuntimeError(L('Failed to remove {member}: {codeError}', { codeError: e.message, member: params.member }))
     }
-    return true
   },
   'gi.actions/group/removeOurselves': async function (groupId) {
     try {
-      const message = await sbp('gi.contracts/group/removeOurselves/create', { groupId }, groupId)
+      const message = await sbp('gi.contracts/group/removeOurselves/create', {}, groupId)
       await sbp('backend/publishLogEntry', message)
+      return message
     } catch (e) {
       console.error('gi.actions/group/leaveGroup failed', e)
       throw new GIErrorUIRuntimeError(L('Failed to leave group. {codeError}', { codeError: e.message }))

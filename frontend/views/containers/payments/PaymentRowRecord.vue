@@ -27,7 +27,7 @@ tr
   td
     label.field
       .inputgroup
-        input.input(inputmode='decimal' pattern='[0-9]*' :value='payment.amount')
+        input.input(inputmode='decimal' pattern='[0-9]*' v-model='payment.amount')
         .suffix.hide-phone {{symbolWithCode}}
         .suffix.hide-tablet {{symbol}}
 </template>
@@ -47,6 +47,13 @@ export default {
     payment: {
       type: Object,
       required: true
+    }
+  },
+  data () {
+    return {
+      form: {
+        amount: this.payment.amount
+      }
     }
   },
   computed: {

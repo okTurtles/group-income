@@ -12,7 +12,7 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background' v-if='
       )
         i18n.has-text-bold.c-title(tag='h3') Who did you send money to?
         record-payments-list(
-          :paymentsList='paymentsList'
+          :paymentsList='ephemeral.payments'
         )
 
         .c-footer
@@ -89,7 +89,10 @@ export default {
     return {
       displayComment: false,
       form: {},
-      donePayment: false
+      donePayment: false,
+      ephemeral: {
+        payments: this.paymentsList
+      }
     }
   },
   created () {
@@ -129,7 +132,7 @@ export default {
       // TODO: remember when creating 'gi.contracts/group/payment' to set the payment
       //       currency using:
       //       getters.thisMonthsPaymentInfo.firstMonthsCurrency || getters.groupMincomeCurrency
-      for (const payment of this.paymentsList) {
+      for (const payment of this.ephemeral.payments) {
         if (payment.checked) {
           // TODO: handle errors!
           try {
@@ -137,7 +140,7 @@ export default {
             const groupCurrency = this.groupMincomeCurrency
             const paymentInfo = {
               toUser: payment.username,
-              amount: payment.amount,
+              amount: +payment.amount,
               currencyFromTo: ['USD', groupCurrency], // TODO: this!
               exchangeRate: 1,
               txid: '' + Math.random(),

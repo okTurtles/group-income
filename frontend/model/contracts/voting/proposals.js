@@ -51,7 +51,7 @@ export function oneVoteToPass (proposalHash) {
   return currentResult === VOTE_UNDECIDED && newResult === VOTE_FOR
 }
 
-function voteAgainst (state, { meta, data }) {
+function voteAgainst (state, { meta, data, contractID }) {
   const { proposalHash } = data
   const proposal = state.proposals[proposalHash]
   proposal.status = STATUS_FAILED
@@ -69,13 +69,13 @@ const proposals = {
         [RULE_DISAGREEMENT]: { threshold: 1 }
       }
     },
-    [VOTE_FOR]: function (state, { meta, data }) {
+    [VOTE_FOR]: function (state, { meta, data, contractID }) {
       const proposal = state.proposals[data.proposalHash]
       proposal.payload = data.passPayload
       proposal.status = STATUS_PASSED
       // NOTE: if invite/process requires more than just data+meta
       //       this code will need to be updated...
-      const message = { meta, data: data.passPayload }
+      const message = { meta, data: data.passPayload, contractID }
       sbp('gi.contracts/group/invite/process', message, state)
       sbp('okTurtles.events/emit', PROPOSAL_RESULT, state, VOTE_FOR, data)
       // TODO: for now, generate the link and send it to the user's inbox
@@ -122,21 +122,17 @@ const proposals = {
         [RULE_DISAGREEMENT]: { threshold: 2 }
       }
     },
-    [VOTE_FOR]: function (state, { meta, data }) {
+    [VOTE_FOR]: function (state, { meta, data, contractID }) {
       const { proposalHash, passPayload } = data
       const proposal = state.proposals[proposalHash]
-      const { member, memberId, groupId } = proposal.data.proposalData
       proposal.status = STATUS_PASSED
       proposal.payload = passPayload
-
       const messageData = {
-        member,
-        memberId,
-        groupId,
+        ...proposal.data.proposalData,
         proposalHash,
         proposalPayload: passPayload
       }
-      const message = { data: messageData, meta }
+      const message = { data: messageData, meta, contractID }
       sbp('gi.contracts/group/removeMember/process', message, state)
       sbp('gi.contracts/group/pushSideEffect',
         ['gi.contracts/group/removeMember/process/sideEffect', message]
@@ -153,7 +149,7 @@ const proposals = {
         [RULE_DISAGREEMENT]: { threshold: 1 }
       }
     },
-    [VOTE_FOR]: function (state, { meta, data }) {
+    [VOTE_FOR]: function (state, { meta, data, contractID }) {
       const proposal = state.proposals[data.proposalHash]
       proposal.status = STATUS_PASSED
       const { setting, proposedValue } = proposal.data.proposalData
@@ -161,7 +157,8 @@ const proposals = {
       //       this code will need to be updated
       const message = {
         meta,
-        data: { [setting]: proposedValue }
+        data: { [setting]: proposedValue },
+        contractID
       }
       sbp('gi.contracts/group/updateSettings/process', message, state)
     },

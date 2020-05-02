@@ -14,14 +14,14 @@ tr
 
     // TODO: replace condition to indicate whether a payment as been paid partialy using payment.paymentStatusText
     template(
-      v-if='Math.round(Math.random()) && !needsIncome'
+      v-if='payment.partial'
     )
       i18n.c-payments-amount-text.has-text-1(
         tag='span'
         role='alert'
         :args='{ \
           partial_amount: `<strong class="has-text-0">${currency(payment.amount)}</strong>`, \
-          partial_total: currency(payment.amount + 100) \
+          partial_total: currency(payment.total) \
         }'
       ) {partial_amount} out of {partial_total}
 
@@ -31,11 +31,9 @@ tr
 
     // TODO: replace condition to indicate whether a payment as been received using payment.paymentStatusText
     .c-payments-amount-info(
-      v-if='Math.round(Math.random()) && needsIncome'
+      v-if='notReceived'
     )
-      // TODO: Display this tooltip only if the payment is marked has not received
       tooltip.c-tooltip-warning(
-        v-if=''
         direction='top'
         :isTextCenter='true'
         :text='L("{personName} marked this payment as not received.", { personName: payment.displayName })'
@@ -58,7 +56,7 @@ tr
               tag='button'
               item-id='message'
               icon='times'
-              @click='cancelPayment(payment.to, payment.hash)'
+              @click='cancelPayment'
             )
               i18n Dismiss this payment
 </template>
@@ -70,7 +68,7 @@ import AvatarUser from '@components/AvatarUser.vue'
 import Tooltip from '@components/Tooltip.vue'
 import { humanDate } from '@view-utils/humanDate.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
-import { PAYMENT_CANCELLED } from '@model/contracts/payments/index.js'
+import { PAYMENT_CANCELLED, PAYMENT_NOT_RECEIVED } from '@model/contracts/payments/index.js'
 import currencies from '@view-utils/currencies.js'
 
 export default {
@@ -100,6 +98,10 @@ export default {
     currency () {
       return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
     },
+    notReceived () {
+      const { data } = this.payment
+      return data && data.status === PAYMENT_NOT_RECEIVED
+    },
     prevMonthDueDate () {
       // this creates a date at the end of the previous month
       // (see comment in time.js:dateFromMonthstamp())
@@ -113,10 +115,10 @@ export default {
       return humanDate(datems, { month: 'short', day: 'numeric' })
     },
     // TODO: make multiple payments
-    async cancelPayment (username, paymentHash) {
+    async cancelPayment () {
       try {
         const paymentMessage = await sbp('gi.contracts/group/paymentUpdate/create', {
-          paymentHash,
+          paymentHash: this.payment.hash,
           updatedProperties: {
             status: PAYMENT_CANCELLED
           }

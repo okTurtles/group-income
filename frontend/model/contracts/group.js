@@ -110,43 +110,36 @@ function groupIncomeDistribution ({ state, getters, monthstamp, adjusted }) {
   // but that approach requires also storing the historical mincomeAmount
   // and historical groupProfiles. Since together these change across multiple
   // locations in the code, it involves less 'code smell' to do it this way.
-  // see historical/group.js for the old way of doing it, which required having
-  // to remember to call a initFetchMonthlyPayments() function in multiple
-  // locations.
-  const paymentMonth = getters.groupMonthlyPayments[monthstamp]
+  // see historical/group.js for the ugly way of doing it.
   const mincomeAmount = getters.groupMincomeAmount
   const groupProfiles = getters.groupProfiles
   const currentIncomeDistribution = []
-  // TODO: figure out how to handle mincome currency changing via proposal
   for (const username in groupProfiles) {
     const profile = groupProfiles[username]
     const incomeDetailsType = profile && profile.incomeDetailsType
     if (incomeDetailsType) {
-      var paymentsMade = 0
-      // if this user has already made some payments to other users this
-      // month, we need to take that into account and adjust the distribution.
-      // this will be used by the Payments page to tell how much still
-      // needs to be paid (if it was a partial payment).
-      // BUG/TODO: if `&& paymentMonth` is removed, and you record a payment
-      // in a group of 3 people (from one person to another), then this can
-      // trigger a strange auto-ban loop. Figure out what happened.
-      if (adjusted && paymentMonth) {
-        for (const toUser in paymentMonth.paymentsFrom[username]) {
-          paymentsMade += getters.paymentTotalFromUserToUser(username, toUser, monthstamp)
-        }
-      }
-      var amount = profile[incomeDetailsType]
-      if (incomeDetailsType === 'pledgeAmount') {
-        // if we "overpaid" because we sent late payments, remove us from consideration
-        amount = Math.max(mincomeAmount, mincomeAmount + amount - paymentsMade)
-      }
+      const adjustment = incomeDetailsType === 'incomeAmount' ? 0 : mincomeAmount
+      const amount = adjustment + profile[incomeDetailsType]
       currentIncomeDistribution.push({
         name: username,
         amount: saferFloat(amount)
       })
     }
   }
-  return incomeDistribution(currentIncomeDistribution, mincomeAmount)
+  var dist = incomeDistribution(currentIncomeDistribution, mincomeAmount)
+  if (adjusted) {
+    // if this user has already made some payments to other users this
+    // month, we need to take that into account and adjust the distribution.
+    // this will be used by the Payments page to tell how much still
+    // needs to be paid (if it was a partial payment).
+    for (const p of dist) {
+      const alreadyPaid = getters.paymentTotalFromUserToUser(p.from, p.to, monthstamp)
+      // if we "overpaid" because we sent late payments, remove us from consideration
+      p.amount = saferFloat(Math.max(0, p.amount - alreadyPaid))
+    }
+    dist = dist.filter(p => p.amount > 0)
+  }
+  return dist
 }
 
 DefineContract({
@@ -216,11 +209,11 @@ DefineContract({
       return (fromUser, toUser, paymentMonthstamp) => {
         const payments = getters.currentGroupState.payments
         const monthlyPayments = getters.groupMonthlyPayments
-        const { paymentsFrom, mincomeExchangeRate } = monthlyPayments[paymentMonthstamp]
+        const { paymentsFrom, mincomeExchangeRate } = monthlyPayments[paymentMonthstamp] || {}
         // NOTE: @babel/plugin-proposal-optional-chaining would come in super-handy
         //       here, but I couldn't get it to work with our linter. :(
         //       https://github.com/babel/babel-eslint/issues/511
-        return (((paymentsFrom || {})[fromUser] || {})[toUser] || []).reduce((a, hash) => {
+        const total = (((paymentsFrom || {})[fromUser] || {})[toUser] || []).reduce((a, hash) => {
           const payment = payments[hash]
           var { amount, exchangeRate, status } = payment.data
           if (status !== PAYMENT_COMPLETED) {
@@ -236,6 +229,7 @@ DefineContract({
           }
           return a + (amount * exchangeRate * mincomeExchangeRate)
         }, 0)
+        return saferFloat(total)
       }
     },
     // used with graphs like those in the dashboard and in the income details modal
@@ -299,9 +293,7 @@ DefineContract({
           if (userA.isNew && !userB.isNew) { return -1 }
           if (!userA.isNew && userB.isNew) { return 1 }
           // and sort them all by A-Z
-          if (nameA < nameB) { return -1 }
-          if (nameA > nameB) { return 1 }
-          return 0 // names are equal
+          return nameA < nameB ? -1 : 1
         })
     },
     groupShouldPropose (state, getters) {
@@ -420,9 +412,10 @@ DefineContract({
           console.error(`paymentUpdate: no payment ${data.paymentHash}`, { data, meta, hash })
           throw new Errors.GIErrorIgnoreAndBanIfGroup('paymentUpdate without existing payment')
         }
-        if (meta.username !== payment.meta.username) {
-          console.error(`paymentUpdate: bad username ${meta.username} != ${payment.meta.username}`, { data, meta, hash })
-          throw new Errors.GIErrorIgnoreAndBanIfGroup('paymentUpdate from wrong user!')
+        // if the payment is being modified by someone other than the person who sent or received it, throw an exception
+        if (meta.username !== payment.meta.username && meta.username !== payment.data.toUser) {
+          console.error(`paymentUpdate: bad username ${meta.username} != ${payment.meta.username} != ${payment.data.username}`, { data, meta, hash })
+          throw new Errors.GIErrorIgnoreAndBanIfGroup('paymentUpdate from bad user!')
         }
         payment.history.push([meta.createdDate, data.updatedProperties])
         merge(payment.data, data.updatedProperties)
@@ -491,7 +484,8 @@ DefineContract({
         vote: string,
         passPayload: optional(unionOf(object, string)) // TODO: this, somehow we need to send an OP_KEY_ADD GIMessage to add a generated once-only writeonly message public key to the contract, and (encrypted) include the corresponding invite link, also, we need all clients to verify that this message/operation was valid to prevent a hacked client from adding arbitrary OP_KEY_ADD messages, and automatically ban anyone generating such messages
       }),
-      process ({ data, hash, meta }, { state }) {
+      process (message, { state }) {
+        const { data, hash, meta } = message
         const proposal = state.proposals[data.proposalHash]
         if (!proposal) {
           // https://github.com/okTurtles/group-income-simple/issues/602
@@ -510,7 +504,7 @@ DefineContract({
         const result = votingRules[proposal.data.votingRule](state, proposal.data.proposalType, proposal.votes)
         if (result === VOTE_FOR || result === VOTE_AGAINST) {
           // handles proposal pass or fail, will update proposal.status accordingly
-          proposals[proposal.data.proposalType][result](state, { meta, data })
+          proposals[proposal.data.proposalType][result](state, message)
         }
       }
     },
@@ -535,9 +529,8 @@ DefineContract({
     'gi.contracts/group/removeMember': {
       validate: (data, { state, getters, meta }) => {
         objectOf({
-          member: string,
-          memberId: string,
-          groupId: string,
+          member: string, // username to remove
+          reason: optional(string),
           // In case it happens in a big group (by proposal)
           // we need to validate the associated proposal.
           proposalHash: optional(string),
@@ -579,7 +572,7 @@ DefineContract({
         state.profiles[data.member].status = PROFILE_STATUS.REMOVED
         state.profiles[data.member].departedDate = meta.createdDate
       },
-      async sideEffect ({ data }, { state }) {
+      async sideEffect ({ data, contractID }, { state }) {
         const rootState = sbp('state/vuex/state')
         const contracts = rootState.contracts || {}
 
@@ -591,9 +584,9 @@ DefineContract({
           }
 
           const groupIdToSwitch = Object.keys(contracts)
-            .find(contractID => contracts[contractID].type === 'group' &&
-                  contractID !== data.groupId &&
-                  rootState[contractID].settings) || null
+            .find(cID => contracts[cID].type === 'group' &&
+                  cID !== contractID &&
+                  rootState[cID].settings) || null
 
           sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
           sbp('state/vuex/commit', 'removeContract', data.groupId)
@@ -601,22 +594,23 @@ DefineContract({
           // TODO - #828 remove other group members contracts if applicable
         } else {
           // TODO - #828 remove the member contract if applicable.
-          // sbp('state/vuex/commit', 'removeContract', data.memberID)
+          // sbp('state/vuex/commit', 'removeContract', getters.groupProfile(data.member).contractID)
         }
         // TODO - #850 verify open proposals and see if they need some re-adjustment.
       }
     },
     'gi.contracts/group/removeOurselves': {
-      validate: objectOf({
-        groupId: string
+      validate: objectMaybeOf({
+        reason: string
       }),
-      process ({ data, meta }, { state, getters }) {
+      process ({ data, meta, contractID }, { state, getters }) {
         state.profiles[meta.username].status = PROFILE_STATUS.REMOVED
         state.profiles[meta.username].departedDate = meta.createdDate
         sbp('gi.contracts/group/pushSideEffect',
           ['gi.contracts/group/removeMember/process/sideEffect', {
             meta,
-            data: { groupId: data.groupId, member: meta.username }
+            data: { member: meta.username, reason: data.reason || '' },
+            contractID
           }]
         )
       }

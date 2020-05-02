@@ -102,25 +102,26 @@ export default {
       try {
         this.refVoteMsg.clean()
         const proposalHash = this.proposalHash
-        const isOneVoteToPass = oneVoteToPass(proposalHash)
-        const payload = {}
+        var passPayload = {}
 
-        if (isOneVoteToPass && this.type === PROPOSAL_INVITE_MEMBER) {
-          payload.passPayload = createInvite({
-            invitee: this.proposal.data.proposalData.member,
-            creator: this.proposal.meta.username
-          })
-        } else if (isOneVoteToPass && this.type === PROPOSAL_REMOVE_MEMBER) {
-          payload.passPayload = {
-            secret: `${parseInt(Math.random() * 10000)}` // TODO: this
+        if (oneVoteToPass(proposalHash)) {
+          if (this.type === PROPOSAL_INVITE_MEMBER) {
+            passPayload = createInvite({
+              invitee: this.proposal.data.proposalData.member,
+              creator: this.proposal.meta.username
+            })
+          } else if (this.type === PROPOSAL_REMOVE_MEMBER) {
+            passPayload = {
+              secret: `${parseInt(Math.random() * 10000)}` // TODO: this
+            }
           }
         }
-
+        // TODO: move this into into controller/actions/group.js !
         const vote = await sbp('gi.contracts/group/proposalVote/create',
           {
-            proposalHash,
             vote: VOTE_FOR,
-            ...payload
+            proposalHash,
+            passPayload
           },
           this.currentGroupId
         )
@@ -138,10 +139,11 @@ export default {
       this.ephemeral.changingVote = false
       try {
         this.refVoteMsg.clean()
+        // TODO: move this into into controller/actions/group.js !
         const vote = await sbp('gi.contracts/group/proposalVote/create',
           {
-            proposalHash: this.proposalHash,
-            vote: VOTE_AGAINST
+            vote: VOTE_AGAINST,
+            proposalHash: this.proposalHash
           },
           this.currentGroupId
         )
