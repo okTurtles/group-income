@@ -44,12 +44,12 @@ export default {
     config: {
       [RULE_PERCENTAGE]: {
         optionLabel: L('Percentage based'),
-        optionHint: L('Define the percentage of members who will need to {b_}agree{_b} to a proposal.', LTags('b')),
+        optionHint: L('Define the percentage of members who will need to agree to a proposal.', LTags('b')),
         slideDefault: 75 // TODO connect to store.
       },
       [RULE_DISAGREEMENT]: {
         optionLabel: L('Disagreement number'),
-        optionHint: L('Define the maximum number of people who can {b_}disagree{_b} on a proposal', LTags('b')),
+        optionHint: L('Define the number of people required to block a proposal.', LTags('b')),
         slideLabel: L('Maximum number of “no” votes'),
         slideDefault: 2 // TODO connect to store.
       }

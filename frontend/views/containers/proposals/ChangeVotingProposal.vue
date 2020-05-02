@@ -16,8 +16,8 @@ proposal-template(
 
     template(v-if='type === RULE_DISAGREEMENT')
       // TODO review this copy on Figma
-      i18n.has-text-1.has-text-small(v-if='form.value > 0' :args='{nr: form.value}') Future proposals will be accepted if {nr} or fewer members disagree.
-      i18n.has-text-1.has-text-small(v-else :args='LTags("b")') Future proposals will be accepted if {b_}no one{_b} disagrees.
+      i18n.has-text-1.has-text-small(v-if='form.value > 0' :args='{nr: form.value}') Future proposals would be accepted if {nr} or fewer members disagree.
+      i18n.has-text-1.has-text-small(v-else :args='LTags("b")') Future proposals would be accepted if {b_}no one{_b} disagrees.
 </template>
 
 <script>

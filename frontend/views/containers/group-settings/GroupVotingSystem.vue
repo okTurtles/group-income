@@ -48,19 +48,19 @@ export default {
     config: {
       [RULE_PERCENTAGE]: {
         title: L('Percentage based'),
-        explanation: L('[TODO description about "percentage" voting system].'),
+        explanation: L('Proposals are accepted when the required percentage of members agree to the proposal.'),
         status: L('Percentage of members that need to agree:')
       },
       [RULE_DISAGREEMENT]: {
         title: L('Disagreement number'),
-        explanation: L('[TODO description about "disagreement" voting system].'),
+        explanation: L('Proposals are rejected when a certain number of members disagree with the proposal.'),
         status: L('Maximum number of “no” votes:')
       }
     }
   }),
   computed: {
     votingSytemSorted () {
-      return [RULE_PERCENTAGE, RULE_DISAGREEMENT] // TODO sort order based on groupSettings.
+      return [RULE_DISAGREEMENT, RULE_PERCENTAGE] // TODO sort order based on groupSettings.
     }
   },
   methods: {
