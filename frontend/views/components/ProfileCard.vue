@@ -37,9 +37,9 @@ tooltip(
 
       div(v-if='hasIncomeDetails')
         ul.c-payment-list
-          li.c-payment-item(v-for='payment in fakeStore.paymentMethods')
-            span.c-payment-type.has-text-0.has-text-bold {{payment.name}}
-            span.has-text-1 {{payment.address}}
+          li.c-payment-item(v-for='(paymentMethod, name) in this.paymentMethods')
+            span.c-payment-type.has-text-0.has-text-bold {{name}}
+            span.has-text-1 {{paymentMethod.value}}
 
         i18n.link(
           v-if='isSelf && receivingMonetary'
@@ -98,26 +98,6 @@ export default {
     UserName,
     Tooltip
   },
-  data () {
-    return {
-      // Temp
-      fakeStore: {
-        paymentMethods: [{
-          name: 'Paypal',
-          address: 'maggie@mail.com'
-        }, {
-          name: 'Bitcoin',
-          address: '1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2'
-        }, {
-          name: 'Venmo',
-          address: '@maggieb'
-        }, {
-          name: 'MBWAY',
-          address: '+351913000330'
-        }]
-      }
-    }
-  },
   methods: {
     openModal (modal, props) {
       this.toggleTooltip()
@@ -152,8 +132,14 @@ export default {
     profile () {
       return this.$store.getters.globalProfile(this.username)
     },
+    // TODO:  there will be a .statusproperty on the groupProfile that you can check
+    // e.g. return this.groupProfiles[this.username].status === INVITE_STATUS.VALID
     isActiveGroupMember () {
       return !!this.groupProfiles[this.username]
+    },
+
+    paymentMethods () {
+      return this.ourGroupProfile.paymentMethods
     }
   }
 }

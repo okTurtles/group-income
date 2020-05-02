@@ -9,7 +9,7 @@
       .c-user
         strong(
           :data-test='userDisplayName ? "profileDisplayName" : "profileName"'
-        ) {{ userDisplayName ? userDisplayName : ourUsername }}
+        ) {{ userDisplayName || ourUsername }}
 
         span(
           data-test='profileName'

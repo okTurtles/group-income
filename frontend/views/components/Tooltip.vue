@@ -10,11 +10,12 @@ span.c-twrapper(
 )
   slot
 
-  .c-background(
-    v-if='(isActive || isVisible) && manual'
-    @click='toggle'
-    v-append-to-body=''
-  )
+  transition(name='fade')
+    .c-background(
+      v-if='(isActive || isVisible) && manual'
+      @click='toggle'
+      v-append-to-body=''
+    )
 
   .c-tooltip(
     :style='styles'
@@ -172,7 +173,6 @@ export default {
       unbind (el, bindings, vnode) {
         if (el.parentNode) {
           el.parentNode.removeChild(el)
-          window.removeEventListener('resize', this.adjustPosition)
         }
         if (bindings.value && bindings.value.manual) {
           const $this = vnode.context
@@ -180,6 +180,7 @@ export default {
           // move focus to latest focused element before opening the tooltip.
           $this.lastFocus.focus()
         }
+        window.removeEventListener('resize', this.adjustPosition)
       }
     }
   }

@@ -9,7 +9,6 @@ const trapFocus = {
   methods: {
     focusEl (el = this.$el) {
       // prepare the element to be focused programmatically
-      Array.from(el.querySelectorAll(this.focusableElements))[0].focus()
       el.setAttribute('tabindex', -1)
       // ...and focus it for keyboard/screen reader users
       el.focus()
