@@ -163,6 +163,42 @@ DefineContract({
       }
       return pendingMembers
     },
+    groupMembersSorted (state, getters) {
+      const weJoinedMs = new Date(getters.currentGroupState.profiles[getters.ourUsername].joinedDate).getTime()
+      const isNewMember = (username) => {
+        if (username === getters.ourUsername) { return false }
+        const memberProfile = getters.currentGroupState.profiles[username]
+        if (!memberProfile) return false
+        const memberJoinedMs = new Date(memberProfile.joinedDate).getTime()
+        const joinedAfterUs = weJoinedMs < memberJoinedMs
+        return joinedAfterUs && Date.now() - memberJoinedMs < 604800000 // joined less than 1w (168h) ago.
+      }
+
+      return Object.keys({ ...getters.groupMembersPending, ...getters.groupProfiles })
+        .map(username => {
+          const { displayName } = getters.globalProfile(username) || {}
+          return {
+            username,
+            displayName: displayName || username,
+            invitedBy: getters.groupMembersPending[username],
+            isNew: isNewMember(username)
+          }
+        })
+        .sort((userA, userB) => {
+          const nameA = userA.displayName.toUpperCase()
+          const nameB = userB.displayName.toUpperCase()
+          // Show pending members first
+          if (userA.invitedBy && !userB.invitedBy) { return -1 }
+          if (!userA.invitedBy && userB.invitedBy) { return 1 }
+          // Then new members...
+          if (userA.isNew && !userB.isNew) { return -1 }
+          if (!userA.isNew && userB.isNew) { return 1 }
+          // and sort them all by A-Z
+          if (nameA < nameB) { return -1 }
+          if (nameA > nameB) { return 1 }
+          return 0 // names are equal
+        })
+    },
     groupShouldPropose (state, getters) {
       return getters.groupMembersCount >= 3
     },

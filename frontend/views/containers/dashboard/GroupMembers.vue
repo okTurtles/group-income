@@ -12,21 +12,20 @@
 
   ul.c-group-list
     li.c-group-member(
-      v-for='(member, username) in firstTenMembers'
+      v-for='{username, displayName, invitedBy, isNew} in firstTenMembers'
       :data-test='username'
-      :class='member.invitedBy && "is-pending"'
+      :class='invitedBy && "is-pending"'
       :key='username'
     )
       profile-card(:username='username' :isSelf='username === ourUsername')
-        avatar(v-if='member.invitedBy' size='sm')
+        avatar(v-if='invitedBy' size='sm')
         avatar-user(v-else :username='username' size='sm')
 
         button.is-unstyled.c-name.has-ellipsis(data-test='username') {{ localizedName(username) }}
+        i18n.pill.is-neutral(v-if='invitedBy' data-test='pillPending') pending
+        i18n.pill.is-primary(v-else-if='isNew' data-test='pillNew') new
 
-      i18n.pill.is-neutral(v-if='member.invitedBy' data-test='pillPending') pending
-      i18n.pill.is-primary(v-else-if='isNewMember(username)' data-test='pillNew') new
-
-      group-members-tooltip-pending.c-menu(v-if='member.invitedBy' :username='username')
+      group-members-tooltip-pending.c-menu(v-if='invitedBy' :username='username')
       group-members-menu.c-menu(v-else :username='username')
 
   i18n.link(
@@ -60,34 +59,14 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'groupProfiles',
-      'groupShouldPropose',
       'groupMembersCount',
+      'groupMembersSorted',
+      'groupShouldPropose',
       'ourUsername',
-      'userDisplayName',
-      'currentGroupState',
-      'groupMembersPending'
+      'userDisplayName'
     ]),
-    weJoinedMs () {
-      return new Date(this.currentGroupState.profiles[this.ourUsername].joinedDate).getTime()
-    },
     firstTenMembers () {
-      const profiles = this.groupProfiles
-      const sliceIndex = 10 - Math.min(10, Object.keys(this.groupMembersPending).length) // avoid slicing too many members.
-      const usernames = Object.keys(profiles).slice(0, sliceIndex)
-      const members = usernames.reduce((acc, username) => {
-        // Prevent displaying users without a synced contract.
-        // It happens at the exact moment a user joins a group and both
-        // contracts (group + user) are still syncing
-        const profile = profiles[username]
-        if (profile) {
-          acc[username] = { profile }
-        }
-        return acc
-      }, {})
-
-      // TODO - Sort members #869
-      return { ...this.groupMembersPending, ...members }
+      return this.groupMembersSorted.slice(0, 10)
     }
   },
   methods: {
@@ -96,13 +75,6 @@ export default {
     },
     openModal (modal, queries) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
-    },
-    isNewMember (username) {
-      if (username === this.ourUsername) { return false }
-
-      const memberJoinedMs = new Date(this.currentGroupState.profiles[username].joinedDate).getTime()
-      const joinedAfterUs = this.weJoinedMs < memberJoinedMs
-      return joinedAfterUs && Date.now() - memberJoinedMs < 604800000 // joined less than 1w (168h) ago.
     },
     localizedName (username) {
       const name = this.userDisplayName(username)
