@@ -75,12 +75,10 @@ export default sbp('sbp/selectors/register', {
           }
         }
       })
-      const groupId = message.hash()
-
       await sbp('backend/publishLogEntry', message)
 
       if (sync) {
-        await sbp('gi.actions/contract/syncAndWait', groupId)
+        await sbp('gi.actions/contract/syncAndWait', message.hash())
       }
 
       return message
@@ -91,7 +89,7 @@ export default sbp('sbp/selectors/register', {
   },
   'gi.actions/group/createAndSwitch': async function (groupParams) {
     const message = await sbp('gi.actions/group/create', groupParams, { sync: true })
-    sbp('gi.actions/group/switch', message.contractID())
+    sbp('gi.actions/group/switch', message.hash())
     return message
   },
   'gi.actions/group/join': async function ({ groupId, inviteSecret }) {

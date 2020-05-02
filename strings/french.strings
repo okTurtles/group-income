@@ -267,7 +267,7 @@
 /* MISSING TRANSLATION - views/pages/Payments.vue */
 "Date" = "Date";
 
-/* MISSING TRANSLATION - views/containers/payments/PaymentsList.vue */
+/* MISSING TRANSLATION - views/containers/payments/PaymentRowRecord.vue */
 "Reset" = "Reset";
 
 /* MISSING TRANSLATION - views/containers/proposals/ProposalBox.vue */
@@ -306,7 +306,7 @@
 /* MISSING TRANSLATION - views/containers/payments/RecordPayment.vue */
 "Please support the development of Group Income by {r1}sending a donation{r2}!" = "Please support the development of Group Income by {r1}sending a donation{r2}!";
 
-/* MISSING TRANSLATION - views/containers/payments/PaymentsListMenu.vue */
+/* MISSING TRANSLATION - views/containers/payments/PaymentRowReceived.vue, views/containers/payments/PaymentRowSent.vue, views/containers/payments/PaymentRowTodo.vue */
 "Show payment menu" = "Show payment menu";
 
 /* MISSING TRANSLATION - views/containers/contributions/PaymentMethods.vue, views/containers/proposals/AddMembers.vue */
@@ -339,7 +339,7 @@
 /* MISSING TRANSLATION - views/pages/Payments.vue */
 "You are currently {strong_}receiving{_strong} mincome." = "You are currently {strong_}receiving{_strong} mincome.";
 
-/* MISSING TRANSLATION - views/containers/payments/PaymentsList.vue */
+/* MISSING TRANSLATION - views/containers/payments/PaymentRowReceived.vue, views/containers/payments/PaymentRowSent.vue, views/containers/payments/PaymentRowTodo.vue */
 "{personName} marked this payment as not received." = "{personName} marked this payment as not received.";
 
 /* MISSING TRANSLATION - views/containers/contributions/ContributionsWidget.vue */
@@ -414,7 +414,7 @@
 /* MISSING TRANSLATION - views/containers/access/PasswordModal.vue */
 "Invalid password" = "Invalid password";
 
-/* MISSING TRANSLATION - views/containers/payments/RecordPayment.vue, views/pages/Payments.vue */
+/* MISSING TRANSLATION - views/containers/payments/RecordPaymentsList.vue, views/pages/Payments.vue */
 "Sent to" = "Sent to";
 
 /* MISSING TRANSLATION - views/containers/chatroom/ChatNav.vue */
@@ -441,7 +441,7 @@
 /* MISSING TRANSLATION - views/pages/DesignSystem.vue */
 "Send donation" = "Send donation";
 
-/* MISSING TRANSLATION - views/containers/payments/PaymentsList.vue */
+/* MISSING TRANSLATION - views/containers/payments/PaymentRowTodo.vue */
 "Partial" = "Partial";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMincome.vue */
@@ -519,7 +519,7 @@
 /* MISSING TRANSLATION - views/containers/group-settings/GroupDeletionModal.vue */
 "Are you sure you want to delete this group?" = "Are you sure you want to delete this group?";
 
-/* MISSING TRANSLATION - views/containers/payments/PaymentsListMenu.vue */
+/* MISSING TRANSLATION - views/containers/payments/PaymentRowReceived.vue */
 "I did not receive this" = "I did not receive this";
 
 /* MISSING TRANSLATION - views/containers/proposals/ProposalVoteOptions.vue */
@@ -720,7 +720,7 @@
 /* MISSING TRANSLATION - views/containers/user-settings/AppLogs.vue */
 "Debug" = "Debug";
 
-/* MISSING TRANSLATION - views/containers/payments/PaymentDetail.vue, views/containers/payments/PaymentsListMenu.vue */
+/* MISSING TRANSLATION - views/containers/payments/PaymentDetail.vue, views/containers/payments/PaymentRowReceived.vue, views/containers/payments/PaymentRowSent.vue */
 "Payment details" = "Payment details";
 
 /* MISSING TRANSLATION - views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/pages/GroupSettings.vue */
@@ -762,7 +762,7 @@
 /* MISSING TRANSLATION - views/containers/contributions/ContributionsWidget.vue */
 "You need {br_}{amount}" = "You need {br_}{amount}";
 
-/* MISSING TRANSLATION - views/containers/payments/PaymentsList.vue */
+/* MISSING TRANSLATION - views/containers/payments/PaymentRowTodo.vue */
 "{partial_amount} out of {partial_total}" = "{partial_amount} out of {partial_total}";
 
 /* MISSING TRANSLATION - views/containers/access/LoginForm.vue */
@@ -786,7 +786,7 @@
 /* MISSING TRANSLATION - views/containers/group-settings/GroupLeaveModal.vue */
 "LEAVE {GROUP_NAME}" = "LEAVE {GROUP_NAME}";
 
-/* MISSING TRANSLATION - views/containers/payments/PaymentsList.vue */
+/* MISSING TRANSLATION - views/containers/payments/PaymentRowReceived.vue, views/containers/payments/PaymentRowSent.vue, views/containers/payments/PaymentRowTodo.vue */
 "Not received" = "Not received";
 
 /* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
@@ -800,9 +800,6 @@
 
 /* MISSING TRANSLATION - views/pages/GroupChat.vue */
 "Search for a channel" = "Search for a channel";
-
-/* MISSING TRANSLATION - views/containers/proposals/RuleAddMember.vue, views/containers/proposals/RuleChangeRule.vue, views/containers/proposals/RuleRemoveMember.vue */
-"The reason I'm proposing this change is..." = "The reason I'm proposing this change is...";
 
 /* MISSING TRANSLATION - views/pages/Payments.vue */
 "Sent by" = "Sent by";
@@ -957,7 +954,7 @@
 /* MISSING TRANSLATION - views/containers/proposals/RuleChangeRule.vue */
 "I step to change rule of change rule it's on the way" = "I step to change rule of change rule it's on the way";
 
-/* MISSING TRANSLATION - views/containers/payments/RecordPayment.vue */
+/* MISSING TRANSLATION - views/containers/payments/RecordPaymentsList.vue */
 "Amount sent" = "Amount sent";
 
 /* MISSING TRANSLATION - views/containers/payments/PaymentsPagination.vue */
@@ -1107,6 +1104,9 @@
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersAllModal.vue */
 "Sorry, we couldn't find anyone called \"{searchTerm}\"" = "Sorry, we couldn't find anyone called \"{searchTerm}\"";
 
+/* MISSING TRANSLATION - views/containers/payments/PaymentRowReceived.vue */
+"Already marked as not received!" = "Already marked as not received!";
+
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersTooltipPending.vue */
 "This member did not use their invite link to join the group yet. This link should be given to them by {invitedBy} (you)." = "This member did not use their invite link to join the group yet. This link should be given to them by {invitedBy} (you).";
 
@@ -1128,7 +1128,7 @@
 /* MISSING TRANSLATION - views/containers/access/LoginModal.vue, views/containers/access/SignupForm.vue, views/pages/Join.vue */
 "Create an account" = "Create an account";
 
-/* MISSING TRANSLATION - views/containers/payments/PaymentsListMenu.vue */
+/* MISSING TRANSLATION - views/containers/payments/PaymentRowTodo.vue */
 "Dismiss this payment" = "Dismiss this payment";
 
 /* MISSING TRANSLATION - views/containers/navigation/Navigation.vue */
@@ -1152,7 +1152,7 @@
 /* MISSING TRANSLATION - views/containers/group-settings/InvitationsTable.vue */
 "Anyone" = "Anyone";
 
-/* MISSING TRANSLATION - views/containers/payments/PaymentsListMenu.vue */
+/* MISSING TRANSLATION - views/containers/payments/PaymentRowSent.vue */
 "Cancel this payment" = "Cancel this payment";
 
 /* MISSING TRANSLATION - views/containers/access/SignupModal.vue, views/pages/Join.vue */
@@ -1173,7 +1173,7 @@
 /* MISSING TRANSLATION - views/components/group-creation-steps/GroupRules.vue, views/containers/group-settings/SettingsWidget.vue, views/containers/proposals/ProposalTemplate.vue, views/containers/proposals/RemoveMember.vue */
 "Remove Member" = "Remove Member";
 
-/* MISSING TRANSLATION - views/containers/dashboard/GroupMembers.vue */
+/* MISSING TRANSLATION - views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
 "{name} (you)" = "{name} (you)";
 
 /* MISSING TRANSLATION - views/containers/group-settings/InvitationsTable.vue */
@@ -1380,7 +1380,7 @@
 /* MISSING TRANSLATION - views/pages/Payments.vue */
 "Due in" = "Due in";
 
-/* MISSING TRANSLATION - views/containers/payments/PaymentsList.vue */
+/* MISSING TRANSLATION - views/containers/payments/PaymentRowReceived.vue, views/containers/payments/PaymentRowRecord.vue, views/containers/payments/PaymentRowSent.vue, views/containers/payments/PaymentRowTodo.vue */
 "Due {date}" = "Due {date}";
 
 /* MISSING TRANSLATION - views/pages/Payments.vue */

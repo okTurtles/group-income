@@ -73,6 +73,7 @@ export default {
       console.log('Todo: Implement reset payment')
     },
     dueDate (datems) {
+      // TODO: move humanDate and everything associated with it into frontend/utils/time.js !
       return humanDate(datems, { month: 'short', day: 'numeric' })
     }
   }

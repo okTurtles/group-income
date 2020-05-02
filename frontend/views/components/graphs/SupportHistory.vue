@@ -17,7 +17,7 @@ div
 </template>
 
 <script>
-import { toPercent } from '../../utils/filters.js'
+import { toPercent } from '@view-utils/filters.js'
 
 export default {
   name: 'GroupSupportHistory',

@@ -589,7 +589,7 @@ DefineContract({
                   rootState[cID].settings) || null
 
           sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
-          sbp('state/vuex/commit', 'removeContract', data.groupId)
+          sbp('state/vuex/commit', 'removeContract', contractID)
           sbp('controller/router').push({ path: groupIdToSwitch ? '/dashboard' : '/' })
           // TODO - #828 remove other group members contracts if applicable
         } else {
@@ -657,9 +657,10 @@ DefineContract({
         if (meta.username === rootState.loggedIn.username) {
           // we're the person who just accepted the group invite
           // so subscribe to founder's IdentityContract & everyone else's
-          for (const name of Object.keys(state.profiles)) {
-            if (name === rootState.loggedIn.username) continue
-            await sbp('state/enqueueContractSync', state.profiles[name].contractID)
+          for (const name in state.profiles) {
+            if (name !== rootState.loggedIn.username) {
+              await sbp('state/enqueueContractSync', state.profiles[name].contractID)
+            }
           }
         } else {
           // we're an existing member of the group getting notified that a
