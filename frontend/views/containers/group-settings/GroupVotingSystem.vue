@@ -123,8 +123,6 @@ export default {
 }
 
 .c-status {
-  margin-bottom: 1rem;
-
   &-term,
   &-desc {
     display: inline;
@@ -134,6 +132,20 @@ export default {
   &-desc > :first-child {
     margin-right: 0.5rem;
   }
+
+  &-desc {
+    .link {
+      margin-top: 0.5rem;
+    }
+
+    @include phone {
+      display: block;
+    }
+  }
+}
+
+.c-banner {
+  margin-top: 1rem;
 }
 
 </style>
