@@ -52,7 +52,7 @@ export default {
       },
       [RULE_DISAGREEMENT]: {
         slideLabel: L('Maximum number of “no” votes'),
-        slideMin: 0,
+        slideMin: 1,
         slideMax: 60,
         slideUnit: ''
       }

@@ -116,4 +116,10 @@
 .steps-title {
   margin-top: 1rem;
   margin-bottom: 1.5rem;
+
+  @include phone {
+    font-size: 1.25rem; // 20px
+    margin-top: 1.25rem;
+    margin-bottom: 2.5rem;
+  }
 }

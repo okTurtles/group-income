@@ -10,7 +10,7 @@ modal-base-template(:fullscreen='true' :a11yTitle='L("Create Group")')
     ) {{ index + 1 }}
 
   .wrapper.mobile-steps.subtitle(v-if='currentStep + 1 < config.steps.length')
-    i18n(:args='{ current: currentStep + 1, max: config.steps.length - 1}') Step {current} of {max}
+    i18n.is-subtitle(:args='{ current: currentStep + 1, max: config.steps.length - 1}') Step {current} of {max}
 
   transition(name='fade' mode='out-in')
     component(

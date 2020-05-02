@@ -5,7 +5,7 @@
   .card
     fieldset.c-step
       i18n.has-text-bold(tag='legend') Which voting system would you like to use?
-      i18n.has-text-1.has-text-small.c-desc(tag='p') You will need to use this system to vote on proposals. You can propose for example, to add or remove members, or to change your group’s mincome value.
+      i18n.has-text-1.c-desc(tag='p') You will need to use this system to vote on proposals. You can propose for example, to add or remove members, or to change your group’s mincome value.
 
       .cardBox.c-box(v-for='option in group.ruleOrder' :class='{isActive: form.option === option }')
         .c-box-option
@@ -13,7 +13,7 @@
             input.input(type='radio' name='rule' :value='option' @change='setOption(option)')
             span
               span.has-text-bold {{ config[option].optionLabel }}
-              span.help(v-html='config[option].optionHint')
+              span.has-text-1.c-option-hint(v-html='config[option].optionHint')
           img.c-box-img(src='/assets/images/rule-placeholder.png' alt='')
 
         transition-expand
@@ -87,6 +87,7 @@ export default {
 }
 
 .c-desc {
+  margin-top: 0.25rem;
   margin-bottom: 1.5rem;
 }
 
@@ -119,17 +120,19 @@ export default {
     }
   }
 
-  .help {
+  &-hint {
     display: block;
+    margin-top: 0.25rem;
     margin-left: 1.85rem;
   }
 }
 
 .c-input {
-  margin: 1rem 0 0.5rem;
+  margin: 2rem 0 0.5rem;
 
   @include tablet {
     margin-left: 1.8rem;
+    margin-right: 1.8rem;
   }
 }
 </style>
