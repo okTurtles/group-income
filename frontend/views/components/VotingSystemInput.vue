@@ -10,18 +10,13 @@
       :value='value'
       @input='handleInput'
     )
-    // [1] - inner el has paddings. A wrap is needed for a smooth transition.
     transition-expand
-      div(v-if='warnMajority') <!-- [1] -->
+      // inner el has paddings. A wrap is needed for a smooth transition.
+      div(v-if='warnMajority')
         banner-simple.c-banner(severity='warning')
-          i18n The percentage value you are choosing is most likely too low for a decision that can have a potentially significant impact  on a person's life. Please consider using a
-          | &nbsp;
           i18n(
-            tag='a'
-            class='link'
-            href='https://groupincome.org/2016/09/deprecating-mays-theorem/#when-majority-rule-can-harm'
-            target='_blank'
-          ) supermajority threshold.
+            :args='{ a_:`<a class="link" href="https://groupincome.org/2016/09/deprecating-mays-theorem/#when-majority-rule-can-harm" target="_blank">`, _a: "</a>" }'
+          ) The percentage value you are choosing is most likely too low for a decision that can have a potentially significant impact  on a person's life. Please consider using a {a_}supermajority threshold{_a}.
 </template>
 
 <script>
