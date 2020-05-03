@@ -68,7 +68,7 @@ describe('Group - Removing a member', () => {
   it('user1 removes user2 from groupA', () => {
     cy.giLogin(`user1-${userId}`)
 
-    openRemoveMemberModal('user2', 2)
+    openRemoveMemberModal('user2', 1)
     removeMemberNow('user2')
     cy.giLogout()
 
@@ -115,7 +115,7 @@ describe('Group - Removing a member', () => {
   it('user2 removes user1 from groupB - user1 is left with groupA.', () => {
     cy.giLogin(`user2-${userId}`)
 
-    openRemoveMemberModal('user1', 2)
+    openRemoveMemberModal('user1', 1)
     removeMemberNow('user1')
     cy.giLogout()
 
@@ -139,7 +139,7 @@ describe('Group - Removing a member', () => {
   it('user1 proposes to remove userBot', () => {
     cy.giLogin(`user1-${userId}`, { bypassUI: true })
 
-    openRemoveMemberModal('userBot', 3)
+    openRemoveMemberModal('userBot', 2)
 
     cy.getByDT('modalProposal').within(() => {
       cy.getByDT('description').should('contain', `Remove userBot-${userId} from the group`)
