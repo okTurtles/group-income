@@ -134,7 +134,7 @@ async function startApp () {
           'l-with-navigation': this.showNav,
           'l-no-navigation': !this.showNav,
           'js-reducedMotion': this.$store.state.reducedMotion,
-          'dark-theme': this.$store.getters.isDarkTheme
+          'is-dark-theme': this.$store.getters.isDarkTheme
         }
       },
       isInCypress () {

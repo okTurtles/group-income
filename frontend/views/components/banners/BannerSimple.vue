@@ -111,7 +111,7 @@ export default {
   color: $text_0;
 }
 
-.dark-theme .c-message{
+.is-dark-theme .c-message{
   color: $text_0;
 
   &.is-info .c-icon {

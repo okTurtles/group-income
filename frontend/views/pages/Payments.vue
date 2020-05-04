@@ -315,6 +315,12 @@ export default {
   }
 }
 
+.is-dark-theme {
+  .card .c-container-empty .c-svg {
+    opacity: 0.5;
+  }
+}
+
 // Footer
 .c-footer {
   padding-top: 1.5rem;
