@@ -80,8 +80,11 @@ export default {
       if (!this.manual) { return false }
       this.isActive = !this.isActive
     },
-    trapFunction (e) {
-      this.trapFocus(e, this.$slots.tooltip[0].elm)
+    handleKeyUp (e) {
+      // Close after pressing escape
+      if (e.key === 'Escape') {
+        this.isActive = false
+      }
     },
     adjustPosition () {
       this.trigger = this.$el.getBoundingClientRect()
@@ -166,21 +169,23 @@ export default {
 
         if (bindings.value && bindings.value.manual) {
           document.addEventListener('keydown', e => $this.trapFocus(e, el))
+          window.addEventListener('keyup', $this.handleKeyUp)
           $this.lastFocus = document.activeElement
           $this.focusEl(el)
         }
       },
       unbind (el, bindings, vnode) {
+        const $this = vnode.context
         if (el.parentNode) {
           el.parentNode.removeChild(el)
         }
         if (bindings.value && bindings.value.manual) {
-          const $this = vnode.context
           document.removeEventListener('keydown', e => $this.trapFocus(e, el))
+          window.removeEventListener('keyup', $this.handleKeyUp)
           // move focus to latest focused element before opening the tooltip.
           $this.lastFocus.focus()
         }
-        window.removeEventListener('resize', this.adjustPosition)
+        window.removeEventListener('resize', $this.adjustPosition)
       }
     }
   }
