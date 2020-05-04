@@ -110,6 +110,12 @@ $rangeSize: 1rem;
     border: none;
     border-radius: 50%;
     background: currentColor;
+    transition: transform 200ms;
+    cursor: pointer;
+
+    &:hover {
+      transform: scale(1.2);
+    }
   }
 
   &::-webkit-slider-thumb {
