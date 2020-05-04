@@ -61,6 +61,11 @@ export default {
       sliderClass: ''
     }
   }),
+  watch: {
+    value (value) {
+      this.ephemeral.sliderClass = this.warnMajority ? 'is-warning' : ''
+    }
+  },
   computed: {
     warnMajority () {
       return this.type === RULE_PERCENTAGE && this.value / 100 < SUPERMAJORITY
@@ -69,7 +74,6 @@ export default {
   methods: {
     handleInput (e) {
       this.$emit('update', e.target.value)
-      this.ephemeral.sliderClass = this.warnMajority ? 'is-warning' : ''
     }
   }
 }
