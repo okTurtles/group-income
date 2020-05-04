@@ -67,7 +67,7 @@ export default {
   width: 100%;
   display: inline-block;
   padding: 2rem 0;
-  color: #fff;
+  color: $background_0;
   text-align: center;
   font-size: $size_1;
   line-height: 1.2;
@@ -88,7 +88,7 @@ export default {
     width: 100%;
     height: 100%;
     opacity: 0.5;
-    background-color: #fff;
+    background-color: $background_0;
   }
 
   &-title,

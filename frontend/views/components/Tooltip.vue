@@ -10,7 +10,7 @@ span.c-twrapper(
   slot
   .c-tooltip(
     :style='stylesPosition'
-    :class='isTextCenter ? "has-text-center" : ""'
+    :class='{"has-text-center": isTextCenter, "dark-theme": $store.getters.isDarkTheme}'
     v-if='isActive || isVisible'
     v-append-to-body=''
   )
@@ -128,11 +128,16 @@ export default {
   z-index: $zindex-tooltip;
   pointer-events: none;
   background-color: $text_0;
-  color: #fff;
+  color: $white;
   opacity: 0.95;
 
   &.has-text-center {
     text-align: center;
   }
+
+  &.dark-theme {
+    background-color: $general_1;
+  }
 }
+
 </style>

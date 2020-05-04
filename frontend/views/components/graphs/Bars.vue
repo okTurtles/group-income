@@ -274,7 +274,7 @@ export default {
   right: 0;
   font-size: 12px;
   min-width: 30px;
-  background-color: #fff;
+  background-color: $background_0;
   color: var(--text_1);
   text-align: right;
   padding-left: 2px;

@@ -31,7 +31,7 @@
           :cy='cpPathY'
         )
         circle(
-          fill='#fff'
+          fill='var(--background_0)'
           r='2px'
           :cx='cpPathX'
           :cy='cpPathY'

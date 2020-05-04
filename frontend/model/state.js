@@ -37,7 +37,7 @@ const initialState = {
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
-  theme: 'blue',
+  theme: 'light',
   reducedMotion: false,
   fontSize: 1,
   appLogsFilter: process.env.NODE_ENV === 'development'
@@ -348,6 +348,7 @@ const getters = {
     return Colors[state.theme]
   },
   isDarkTheme (state) {
+    if (!state.theme) state.theme = 'light' // TODO: check color available, prevent setting something differrent than available colors
     return Colors[state.theme].theme === 'dark'
   }
 }

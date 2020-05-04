@@ -47,7 +47,7 @@ const vuexState = {
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
-  theme: 'blue',
+  theme: 'light',
   fontSize: 1,
   appLogsFilter: ['error', 'info', 'warn']
 }

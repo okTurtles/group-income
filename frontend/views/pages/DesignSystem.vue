@@ -9,6 +9,7 @@ page(
     | A design system exists to help you build more cohesive interfaces.
     br
     | Follow the guidelines for the most common elements: Typography, Spacing, Colors, etc...
+    button.is-small.dark-team-toggle(@click='toggleTheme') Toggle {{isDarkTheme ? 'Dark' : 'Light' }} Theme
   br
   template(#sidebar='')
     #c-design-system-sidebar
@@ -106,7 +107,7 @@ page(
               | Share with everyone
 
   article#cards
-    section.card
+    section.card.special-card
       h2.is-title-2.card-header Cards
 
       table
@@ -1116,7 +1117,7 @@ page(
       br
       p Here's how you can load a SVG:
       br
-      table.c-svgTable(:class='{ isDarkTheme }')
+      table.c-svgTable
         thead
           th code
           th demo
@@ -1128,10 +1129,6 @@ page(
               | import SvgHello from '@svgs/hello.svg'
           td
             svg-hello.c-svg
-
-            // NOTE: this is a very dummy POC for handling themes
-            // The final solution should be implemented at #665.
-            button.is-small(@click='isDarkTheme = !isDarkTheme') Toggle Dark Theme
       br
       br
 
@@ -1173,6 +1170,7 @@ import SvgJoinGroup from '@svgs/join-group.svg'
 import SvgMoney from '@svgs/money.svg'
 import SvgProposal from '@svgs/proposal.svg'
 import SvgVote from '@svgs/vote.svg'
+import { mapGetters, mapMutations } from 'vuex'
 
 export default {
   name: 'DesignSystemView',
@@ -1280,8 +1278,7 @@ export default {
           hasError: false,
           isDisabled: false
         }
-      },
-      isDarkTheme: false
+      }
     }
   },
   components: {
@@ -1326,6 +1323,9 @@ export default {
     window.removeEventListener('scroll', this.handleScroll)
   },
   methods: {
+    ...mapMutations([
+      'setTheme'
+    ]),
     login () {
       console.error('unimplemented, try using the actual Login.vue modal')
     },
@@ -1350,7 +1350,16 @@ export default {
       return new Promise((resolve, reject) => {
         setTimeout(resolve, 2500)
       })
+    },
+    toggleTheme () {
+      this.setTheme(this.isDarkTheme ? 'light' : 'dark')
     }
+  },
+  computed: {
+    ...mapGetters([
+      'colors',
+      'isDarkTheme'
+    ])
   }
 }
 </script>
@@ -1363,6 +1372,16 @@ $pagePaddingDesktop: 75px;
 
 .p-design-system ::v-deep .p-main {
   max-width: 70rem;
+}
+
+.dark-team-toggle {
+  float: right;
+  margin-right: 3rem;
+  margin-top: -3rem;
+}
+
+.special-card {
+  background-color: var(--general_1);
 }
 
 article .is-title-3 {
@@ -1489,25 +1508,6 @@ table {
 .c-svg {
   width: 6rem;
   height: 6rem;
-}
-
-.c-svgTable {
-  &.isDarkTheme {
-    --text_0: white;
-    --primary_0: white;
-    --primary_1: wheat;
-    --primary_0_1: white;
-    --background_0: #363636;
-    background: $background_0;
-
-    th {
-      color: $text_0;
-    }
-
-    pre {
-      color: $primary_1;
-    }
-  }
 }
 
 .c-svgList {
