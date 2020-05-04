@@ -606,7 +606,7 @@ DefineContract({
       process ({ data, meta, contractID }, { state, getters }) {
         state.profiles[meta.username].status = PROFILE_STATUS.REMOVED
         state.profiles[meta.username].departedDate = meta.createdDate
-        sbp('gi.contracts/group/pushSideEffect',
+        sbp('gi.contracts/group/pushSideEffect', contractID,
           ['gi.contracts/group/removeMember/process/sideEffect', {
             meta,
             data: { member: meta.username, reason: data.reason || '' },

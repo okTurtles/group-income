@@ -5,6 +5,7 @@ import { GIMessage } from '~/shared/GIMessage.js'
 
 // this must not be exported, but instead accessed through 'actionWhitelisted'
 const whitelistedSelectors = {}
+const sideEffectStacks = {} // [contractID]: Array<*>
 
 export const ACTION_REGEX = /^(([\w.]+)\/([^/]+)\/(?:([^/]+)\/)?)process$/
 // ACTION_REGEX.exec('gi.contracts/group/payment/process')
@@ -18,7 +19,6 @@ export const ACTION_REGEX = /^(([\w.]+)\/([^/]+)\/(?:([^/]+)\/)?)process$/
 export function DefineContract (contract: Object) {
   const metadata = contract.metadata || { validate () {}, create: () => ({}) }
   const getters = contract.getters
-  const sideEffectStack = []
   sbp('sbp/selectors/register', {
     // expose getters for Vuex integration and other conveniences
     [`${contract.name}/getters`]: () => getters,
@@ -26,8 +26,8 @@ export function DefineContract (contract: Object) {
     // there are 2 ways to cause sideEffects to happen: by defining a sideEffect function
     // in the contract, or by calling /pushSideEffect with an async SBP call. You can
     // also do both.
-    [`${contract.name}/pushSideEffect`]: function (asyncSbpCall: Array<*>) {
-      sideEffectStack.push(asyncSbpCall)
+    [`${contract.name}/pushSideEffect`]: function (contractID, asyncSbpCall: Array<*>) {
+      sideEffectStack(contractID).push(asyncSbpCall)
     }
   })
   for (const action in contract.actions) {
@@ -61,8 +61,9 @@ export function DefineContract (contract: Object) {
         contract.actions[action].process(message, { state, ...gProxy })
       },
       [`${action}/process/sideEffect`]: async function (message: Object, state: ?Object) {
-        while (sideEffectStack.length > 0) {
-          await sbp(...sideEffectStack.shift())
+        const sideEffects = sideEffectStack(message.contractID)
+        while (sideEffects.length > 0) {
+          await sbp(...sideEffects.shift())
         }
         if (contract.actions[action].sideEffect) {
           state = state || contract.state(message.contractID)
@@ -81,6 +82,14 @@ function gettersProxy (state: Object, getters: Object) {
     }
   })
   return { getters: proxyGetters }
+}
+
+function sideEffectStack (contractID: string): Array {
+  var stack = sideEffectStacks[contractID]
+  if (!stack) {
+    sideEffectStacks[contractID] = stack = []
+  }
+  return stack
 }
 
 export function actionWhitelisted (sel: string): boolean {
