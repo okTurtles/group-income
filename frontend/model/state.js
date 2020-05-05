@@ -53,6 +53,13 @@ function guardedSBP (sel: string, ...data: any): any {
   return sbp(sel, ...data)
 }
 
+function checkThemeState (state) {
+  // Prevent bug if for some reason state doesn't have a theme
+  // TODO replace default from 0 to system preference if it exist
+  // Will be implemetaed in issue #844 Implement updates to the User Settings page
+  if (!state.theme) state.theme = Colors[0].theme
+}
+
 sbp('okTurtles.events/on', EVENTS.CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
   contractIsSyncing[contractID] = isSyncing
 })
@@ -183,7 +190,8 @@ const mutations = {
     }
   },
   setTheme (state, color) {
-    state.theme = color
+    if (getters.colors[color]) state.theme = color
+    else checkThemeState(state)
   },
   setReducedMotion (state, isChecked) {
     state.reducedMotion = isChecked
@@ -345,10 +353,11 @@ const getters = {
     }
   },
   colors (state) {
+    checkThemeState(state)
     return Colors[state.theme]
   },
   isDarkTheme (state) {
-    if (!state.theme) state.theme = 'light' // TODO: check color available, prevent setting something differrent than available colors
+    checkThemeState(state)
     return Colors[state.theme].theme === 'dark'
   }
 }
