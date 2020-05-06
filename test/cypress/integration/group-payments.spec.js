@@ -206,15 +206,25 @@ describe('Payments', () => {
       })
 
       cy.getByDT('fields', 'ul').children().should('have.length', 2)
+
+      cy.log('Add a 3º same payment method (other)')
+      cy.getByDT('addMethod', 'button').click()
+      cy.getByDT('method').eq(2).within(() => {
+        cy.get('select').should('have.value', null)
+        cy.get('input').should('have.value', '')
+        cy.get('select').select('other')
+        cy.get('input').type('MBWAY: 91 2345678')
+        cy.getByDT('remove', 'button').should('be.visible')
+      })
     })
 
     cy.getByDT('submitIncome').click()
     cy.getByDT('closeModal').should('not.exist')
 
-    cy.log('Verify saved payment info (bitcoin and other)')
+    cy.log('Verify saved payment info (bitcoin and 2 other)')
     cy.getByDT('openIncomeDetailsModal').click()
     cy.getByDT('paymentMethods').within(() => {
-      cy.getByDT('fields', 'ul').children().should('have.length', 2)
+      cy.getByDT('fields', 'ul').children().should('have.length', 3)
       cy.getByDT('method').eq(0).within(() => {
         cy.get('select').should('have.value', 'bitcoin')
         cy.get('input').should('have.value', 'h4sh-t0-b3-s4ved')
@@ -225,10 +235,15 @@ describe('Payments', () => {
         cy.get('input').should('have.value', 'IBAN: 12345')
         cy.getByDT('remove', 'button').should('be.visible')
       })
-
-      cy.log('Try to add a 3º payment method - incompleted !name')
-      cy.getByDT('addMethod', 'button').click()
       cy.getByDT('method').eq(2).within(() => {
+        cy.get('select').should('have.value', 'other')
+        cy.get('input').should('have.value', 'MBWAY: 91 2345678')
+        cy.getByDT('remove', 'button').should('be.visible')
+      })
+
+      cy.log('Try to add a 4º payment method - incompleted !name')
+      cy.getByDT('addMethod', 'button').click()
+      cy.getByDT('method').eq(3).within(() => {
         cy.get('input').type('mylink.com')
       })
     })
@@ -238,14 +253,14 @@ describe('Payments', () => {
 
     cy.getByDT('paymentMethods').within(() => {
       // Remove the previous incomplete method
-      cy.getByDT('method').eq(2).within(() => {
+      cy.getByDT('method').eq(3).within(() => {
         cy.getByDT('remove', 'button').click()
       })
 
-      cy.log('Try to add a 3º payment method - incompleted !value')
+      cy.log('Try to add a 4º payment method - incompleted !value')
       // Add a new method... incompleted (no value)
       cy.getByDT('addMethod', 'button').click()
-      cy.getByDT('method').eq(2).within(() => {
+      cy.getByDT('method').eq(3).within(() => {
         cy.get('select').select('paypal')
       })
     })
