@@ -384,7 +384,7 @@ DefineContract({
         Vue.set(state.payments, hash, {
           data,
           meta,
-          history: [[meta.createdDate, data]]
+          history: [[meta.createdDate, hash]]
         })
         const { paymentsFrom } = initFetchMonthlyPayments({ meta, state, getters })
         const fromUser = vueFetchInitKV(paymentsFrom, meta.username, {})
@@ -417,7 +417,7 @@ DefineContract({
           console.error(`paymentUpdate: bad username ${meta.username} != ${payment.meta.username} != ${payment.data.username}`, { data, meta, hash })
           throw new Errors.GIErrorIgnoreAndBanIfGroup('paymentUpdate from bad user!')
         }
-        payment.history.push([meta.createdDate, data.updatedProperties])
+        payment.history.push([meta.createdDate, hash])
         merge(payment.data, data.updatedProperties)
         // we update "this month"'s snapshot 'lastAdjustedDistribution' on each completed payment
         if (data.updatedProperties.status === PAYMENT_COMPLETED) {
