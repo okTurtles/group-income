@@ -218,24 +218,34 @@ export default {
       const payments = []
       const ourUsername = this.ourUsername
       const unadjusted = this.groupIncomeDistribution.filter(p => p.from === ourUsername)
+      const sentPayments = this.paymentsSent
       for (const p of this.groupIncomeAdjustedDistribution) {
         if (p.from === ourUsername) {
           const existPayment = unadjusted.find(({ to }) => to === p.to) || { amount: 0 }
           const amount = +this.currency.displayWithoutCurrency(p.amount)
           const existingAmount = +this.currency.displayWithoutCurrency(existPayment.amount)
           if (amount > 0) {
+            const partialAmount = existingAmount - amount
+            var existingPayment = {}
+            if (partialAmount > 0) {
+              const sent = sentPayments.find((s) => s.username === p.to && s.amount === partialAmount)
+              if (sent) {
+                existingPayment = { hash: sent.hash }
+              }
+            }
             payments.push({
+              ...existingPayment,
               username: p.to,
               amount,
               displayName: this.userDisplayName(p.to),
               checked: false, // checkbox support in RecordPayments,
-              partial: (existingAmount - amount) > 0,
+              partial: partialAmount > 0,
               total: existingAmount
             })
           }
         }
       }
-      const notReceived = this.paymentsSent.filter(p => p.data.status === PAYMENT_NOT_RECEIVED)
+      const notReceived = sentPayments.filter(p => p.data.status === PAYMENT_NOT_RECEIVED)
       return this.paymentsLate.concat(notReceived, payments)
     },
     paymentsSent () {

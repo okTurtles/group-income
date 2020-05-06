@@ -36,7 +36,7 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background' v-if='
         transition(name='slidedown')
           label.field(v-if='displayComment')
             i18n.sr-only.label Leave a message
-            textarea.c-comment(
+            textarea.textarea.c-comment(
               rows='4'
             )
 

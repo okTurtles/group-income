@@ -102,7 +102,7 @@ export default {
       try {
         this.refVoteMsg.clean()
         const proposalHash = this.proposalHash
-        var passPayload = {}
+        let passPayload = {}
 
         if (oneVoteToPass(proposalHash)) {
           if (this.type === PROPOSAL_INVITE_MEMBER) {

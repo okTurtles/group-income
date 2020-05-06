@@ -65,6 +65,8 @@ import { humanDate } from '@view-utils/humanDate.js'
 import currencies from '@view-utils/currencies.js'
 import L from '@view-utils/translations.js'
 
+// TODO: handle showing PAYMENT_CANCELLED ?
+
 export default {
   name: 'PaymentRowReceived',
   components: {
@@ -182,7 +184,7 @@ export default {
 
     &:last-child {
       width: 40%;
-      min-width: 9,375rem;
+      min-width: 9.375rem;
       display: table-cell;
     }
   }

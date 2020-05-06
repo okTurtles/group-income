@@ -44,6 +44,7 @@ export default {
     },
     paymentsType: {
       type: String,
+      validator: (value) => ['PaymentRowTodo', 'PaymentRowSent', 'PaymentRowReceived'].includes(value),
       required: true
     }
   },
@@ -127,7 +128,7 @@ export default {
 
     &:last-child {
       width: 40%;
-      min-width: 9,375rem;
+      min-width: 9.375rem;
       display: table-cell;
     }
   }

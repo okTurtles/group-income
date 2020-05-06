@@ -70,6 +70,7 @@ import { humanDate } from '@view-utils/humanDate.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import { PAYMENT_CANCELLED, PAYMENT_NOT_RECEIVED } from '@model/contracts/payments/index.js'
 import currencies from '@view-utils/currencies.js'
+import L from '@view-utils/translations.js'
 
 export default {
   name: 'PaymentRowTodo',
@@ -117,13 +118,18 @@ export default {
     // TODO: make multiple payments
     async cancelPayment () {
       try {
-        const paymentMessage = await sbp('gi.contracts/group/paymentUpdate/create', {
-          paymentHash: this.payment.hash,
-          updatedProperties: {
-            status: PAYMENT_CANCELLED
-          }
-        }, this.$store.state.currentGroupId)
-        await sbp('backend/publishLogEntry', paymentMessage)
+        if (this.payment.hash) {
+          // TODO: move this into controller/actions/group.js
+          const paymentMessage = await sbp('gi.contracts/group/paymentUpdate/create', {
+            paymentHash: this.payment.hash,
+            updatedProperties: {
+              status: PAYMENT_CANCELLED
+            }
+          }, this.$store.state.currentGroupId)
+          await sbp('backend/publishLogEntry', paymentMessage)
+        } else {
+          alert(L("Cannot dismiss a payment that hasn't been sent yet."))
+        }
       } catch (e) {
         console.error(e)
         alert(e.message)
@@ -189,7 +195,7 @@ export default {
 
     &:last-child {
       width: 40%;
-      min-width: 9,375rem;
+      min-width: 9.375rem;
       display: table-cell;
     }
   }
