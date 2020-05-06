@@ -68,9 +68,8 @@ export default {
     }
   }),
   created () {
-    const savedMethods = this.ourGroupProfile.paymentMethods || {}
-    const savedMethodsKeys = Object.keys(savedMethods)
-    const savedMethodsCount = savedMethodsKeys.length
+    const savedMethods = this.ourGroupProfile.paymentMethods || []
+    const savedMethodsCount = savedMethods.length
 
     if (savedMethodsCount === 0) {
       // set the minimum necessary to show the first empty field.
@@ -82,10 +81,10 @@ export default {
     }
 
     for (let index = 0; index < savedMethodsCount; index++) {
-      const method = savedMethodsKeys[index]
+      const method = savedMethods[index]
       Vue.set(this.form.methods, index, {
-        name: method,
-        value: this.ourGroupProfile.paymentMethods[method].value
+        name: method.name,
+        value: method.value
       })
     }
   },

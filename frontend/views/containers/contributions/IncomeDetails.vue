@@ -163,7 +163,7 @@ export default {
         return
       }
 
-      const paymentMethods = {}
+      const paymentMethods = []
 
       if (this.needsIncome) {
         // Find the methods that have some info filled...
@@ -182,9 +182,7 @@ export default {
 
         if (filledMethods.length > 0) {
           for (const method of filledMethods) {
-            paymentMethods[method.name] = {
-              value: method.value
-            }
+            paymentMethods.push(method)
           }
         }
       }
