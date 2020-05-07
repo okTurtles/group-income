@@ -68,6 +68,12 @@ export default {
       sbp('okTurtles.events/emit', OPEN_MODAL, 'ChangeVotingProposal', { type })
     },
     isVotingActive (option) {
+      /*
+      TODO: This should be based on the value of store.getters.groupSettings.proposals[PROPOSAL_GROUP_SETTING_CHANGE].rule.
+
+      Note: technically it can be based on the value of store.getters.groupSettings.proposals[PROPOSAL_INVITE_MEMBER].rule
+      or store.getters.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].rule or any of the other proposal types,
+      since we've decided that we are making it the same voting rule for all proposal types. */
       return option === this.votingSytemSorted[0]
     },
     isVotingRuleAdjusted (option) {
