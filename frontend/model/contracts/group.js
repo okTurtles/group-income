@@ -3,7 +3,7 @@
 import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import { DefineContract } from './Contract.js'
-import { mapOf, objectOf, objectMaybeOf, optional, string, number, object, unionOf, tupleOf } from '~/frontend/utils/flowTyper.js'
+import { arrayOf, mapOf, objectOf, objectMaybeOf, optional, string, number, object, unionOf, tupleOf } from '~/frontend/utils/flowTyper.js'
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income-simple/issues/603
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST } from './voting/rules.js'
@@ -691,17 +691,17 @@ DefineContract({
         incomeAmount: x => typeof x === 'number' && x >= 0,
         pledgeAmount: x => typeof x === 'number' && x >= 0,
         nonMonetaryAdd: string,
-        paymentMethods: objectMaybeOf({
-          bitcoin: objectMaybeOf({ value: string }),
-          paypal: objectMaybeOf({ value: string }),
-          venmo: objectMaybeOf({ value: string }),
-          other: objectMaybeOf({ value: string })
-        }),
         nonMonetaryEdit: objectOf({
           replace: string,
           with: string
         }),
-        nonMonetaryRemove: string
+        nonMonetaryRemove: string,
+        paymentMethods: arrayOf(
+          objectOf({
+            name: string,
+            value: string
+          })
+        )
       }),
       process ({ data, meta }, { state }) {
         var groupProfile = state.profiles[meta.username]
