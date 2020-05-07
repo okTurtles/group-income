@@ -228,7 +228,7 @@
 /* MISSING TRANSLATION - views/containers/proposals/ProposalVoteOptions.vue */
 "Are you sure you want to vote yes?" = "Are you sure you want to vote yes?";
 
-/* MISSING TRANSLATION - views/containers/proposals/RuleChangeRule.vue */
+/* MISSING TRANSLATION - views/containers/proposals/ChangeVotingProposal.vue */
 "Change Rule to change Rule" = "Change Rule to change Rule";
 
 /* MISSING TRANSLATION - views/containers/group-settings/InvitationLinkModal.vue */
@@ -258,7 +258,7 @@
 /* MISSING TRANSLATION - views/pages/Mailbox.vue */
 "compose" = "compose";
 
-/* MISSING TRANSLATION - views/containers/proposals/RuleAddMember.vue, views/containers/proposals/RuleChangeRule.vue, views/containers/proposals/RuleRemoveMember.vue */
+/* MISSING TRANSLATION - views/containers/proposals/RuleAddMember.vue, views/containers/proposals/ChangeVotingProposal.vue, views/containers/proposals/RuleRemoveMember.vue */
 "According to your voting rules, 8 out of 10 members will have to agree with this." = "According to your voting rules, 8 out of 10 members will have to agree with this.";
 
 /* MISSING TRANSLATION - views/containers/contributions/ContributionItem.vue */

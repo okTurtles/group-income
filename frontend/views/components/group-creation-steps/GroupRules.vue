@@ -1,93 +1,34 @@
 <template lang='pug'>
 .wrapper(data-test='rulesStep')
-  i18n.is-title-4.steps-title(tag='h4') 4. Voting Rules
+  i18n.is-title-4.steps-title(tag='h4') 4. Voting System
 
   .card
-    i18n.label(tag='label') What percentage approval is necessary to adjust the group rules?
+    fieldset.c-step
+      i18n.has-text-bold(tag='legend') Which voting system would you like to use?
+      i18n.has-text-1.c-desc(tag='p') You will need to use this system to vote on proposals. You can propose for example, to add or remove members, or to change your group’s mincome value.
 
-    .c-rules
-      .c-rule
-        p.c-percent
-          span.c-pourcent-number {{ group.changeThreshold | toPercent }}
-          | %
-        circle-slider.circle-slider(
-          :value='group.changeThreshold'
-          @input='value => update("changeThreshold", value)'
-          :min='0.01'
-          :max='1'
-          :step-size='0.01'
-          :side='156'
-          :circleWidth='4'
-          :progressWidth='4'
-          :knobRadius='12'
-          :progressColor='changeColor'
-          :knobColor='changeColor'
-          circleColor='#F4F8E7'
-        )
-        i18n.is-subtitle(tag='p') Change Rules
+      .cardBox.c-box(v-for='option in group.ruleOrder' :class='{isActive: form.option === option }')
+        .c-box-option
+          label.checkbox.c-option
+            input.input(type='radio' name='rule' :value='option' @change='setOption(option)')
+            span
+              span.has-text-bold {{ config[option].optionLabel }}
+              span.has-text-1.c-option-hint(v-html='config[option].optionHint')
+          img.c-box-img(src='/assets/images/rule-placeholder.png' alt='')
 
-      .c-rule
-        p.c-percent
-          span.c-pourcent-number {{ group.memberApprovalThreshold | toPercent }}
-          | %
-        circle-slider.circle-slider(
-          :value='group.memberApprovalThreshold'
-          @input='value => update("memberApprovalThreshold", value)'
-          :min='0.01'
-          :max='1'
-          :step-size='0.01'
-          :side='156'
-          :circleWidth='4'
-          :progressWidth='4'
-          :knobRadius='12'
-          :progressColor='approveColor'
-          :knobColor='approveColor'
-          circleColor='#F4F8E7'
-        )
-        i18n.is-subtitle(tag='p') Add Member
+        transition-expand
+          div(v-if='option === form.option')
+            voting-system-input.c-input(:type='option' :value='form.value' @update='setValue')
 
-      .c-rule
-        p.c-percent
-          span.c-pourcent-number {{ group.memberRemovalThreshold | toPercent }}
-          | %
-        circle-slider.circle-slider(
-          :value='group.memberRemovalThreshold'
-          @input='value => update("memberRemovalThreshold", value)'
-          :min='0.01'
-          :max='1'
-          :step-size='0.01'
-          :side='156'
-          :circleWidth='4'
-          :progressWidth='4'
-          :knobRadius='12'
-          :progressColor='removeColor'
-          :knobColor='removeColor'
-          circleColor='#F4F8E7'
-        )
-        i18n.is-subtitle(tag='p') Remove Member
-
-    transition(name='slidedown')
-      banner-simple(
-        v-if='!superMajority'
-        severity='warning'
-      )
-        i18n This percentage is most likely too low for a decision that can have a potentially significant impact on a person's life.
-        i18n(
-          tag='a'
-          class='link'
-          href='https://groupincome.org/2016/09/deprecating-mays-theorem/#when-majority-rule-can-harm'
-          target='_blank'
-        ) Read more about the dangers of majority rule.
+      i18n.help You can change this later in your Group Settings.
     slot
 </template>
 
 <script>
-import { toPercent } from '@view-utils/filters.js'
-import { CircleSlider } from '@components/slider-circular/index.js'
-import BannerSimple from '@components/banners/BannerSimple.vue'
-import { mapGetters } from 'vuex'
-
-const SUPERMAJORITY = 0.67
+import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/voting/rules.js'
+import L from '@view-utils/translations.js'
+import TransitionExpand from '@components/TransitionExpand.vue'
+import VotingSystemInput from '@components/VotingSystemInput.vue'
 
 export default {
   name: 'GroupRules',
@@ -96,13 +37,36 @@ export default {
     $v: { type: Object }
   },
   components: {
-    CircleSlider,
-    BannerSimple
+    TransitionExpand,
+    VotingSystemInput
   },
-  filters: {
-    toPercent
-  },
+  data: () => ({
+    config: {
+      [RULE_PERCENTAGE]: {
+        optionLabel: L('Percentage based'),
+        optionHint: L('Define the percentage of members who will need to agree to a proposal.'),
+        slideDefault: 75 // TODO connect to store.
+      },
+      [RULE_DISAGREEMENT]: {
+        optionLabel: L('Disagreement number'),
+        optionHint: L('Define the number of people required to block a proposal.'),
+        slideLabel: L('Maximum number of "no" votes'),
+        slideDefault: 2 // TODO connect to store.
+      }
+    },
+    form: {
+      option: null,
+      value: null
+    }
+  }),
   methods: {
+    setOption (option) {
+      this.form.option = option
+      this.form.value = this.config[option].slideDefault
+    },
+    setValue (value) {
+      this.form.value = value
+    },
     update (prop, value) {
       this.$v.form[prop].$touch()
       this.$emit('input', {
@@ -111,28 +75,6 @@ export default {
         }
       })
     }
-  },
-  computed: {
-    ...mapGetters([
-      'colors'
-    ]),
-    changeColor: function () {
-      return this.group.changeThreshold >= SUPERMAJORITY ? this.colors.success_0 : this.colors.warning_0
-    },
-    approveColor: function () {
-      return this.group.memberApprovalThreshold >= SUPERMAJORITY ? this.colors.success_0 : this.colors.warning_0
-    },
-    removeColor: function () {
-      return this.group.memberRemovalThreshold >= SUPERMAJORITY ? this.colors.success_0 : this.colors.warning_0
-    },
-    superMajority: function () {
-      return this.group.changeThreshold >= SUPERMAJORITY &&
-             this.group.memberApprovalThreshold >= SUPERMAJORITY &&
-             this.group.memberRemovalThreshold >= SUPERMAJORITY
-    }
-  },
-  mounted () {
-    this.$emit('focusref', 'finish')
   }
 }
 </script>
@@ -140,47 +82,57 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
-.c-rules {
-  display: flex;
-  font-family: 'Poppins';
+.c-step {
+  margin-bottom: 2rem;
 }
 
-.c-rule {
-  position: relative;
-  width: 9.8rem;
-  height: 9.8rem;
-  margin: 1rem auto;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+.c-desc {
+  margin-top: 0.25rem;
+  margin-bottom: 1.5rem;
 }
 
-.c-percent {
-  font-size: $size-extra-large;
-  font-weight: bold;
-  margin: 0;
+.c-box {
+  margin-bottom: 1rem;
+
+  &-option {
+    display: flex;
+    align-items: center;
+  }
+
+  &-img {
+    max-width: 100%;
+    margin: -1rem 0;
+
+    @include phone {
+      display: none;
+    }
+  }
 }
 
-.c-pourcent-number {
-  display: inline-block;
-  padding-bottom: 5px;
-  border-bottom: 2px solid $general_0;
-  min-width: 57px;
-  margin: 3px 4px 8px 0;
+.c-option {
+  flex: 1;
+
+  > :last-child {
+    white-space: normal;
+
+    &::before {
+      margin-right: 1rem;
+    }
+  }
+
+  &-hint {
+    display: block;
+    margin-top: 0.25rem;
+    margin-left: 1.85rem;
+  }
 }
 
-.is-subtitle {
-  margin: 0;
-}
+.c-input {
+  margin: 2rem 0 0.5rem;
 
-.circle-slider {
-  position: absolute;
-  top: 0;
-  left: 0;
-}
-
-.rulesStep .message-body {
-  border-color: #f68b39;
+  @include tablet {
+    margin-left: 1.8rem;
+    margin-right: 1.8rem;
+  }
 }
 </style>

@@ -81,7 +81,7 @@ export default {
 
   &.is-warning {
     background-color: $warning_2;
-    color: $warning_0;
+    color: $warning_0_text;
 
     .c-icon {
       color: $warning_1;

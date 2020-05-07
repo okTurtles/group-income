@@ -314,6 +314,13 @@ export default {
     }
   }
 
+  th.c-invite-link {
+    @include phone {
+      white-space: nowrap;
+      opacity: 0;
+    }
+  }
+
   .c-state {
     grid-area: state;
     padding-right: 3px;
@@ -336,6 +343,7 @@ export default {
       flex-direction: row;
       align-items: baseline;
       justify-content: flex-start;
+      padding-left: 1rem;
     }
   }
 

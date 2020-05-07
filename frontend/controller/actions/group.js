@@ -11,7 +11,7 @@ import {
   PROPOSAL_PROPOSAL_SETTING_CHANGE,
   PROPOSAL_GENERIC
 } from '@model/contracts/voting/constants.js'
-import { RULE_THRESHOLD } from '@model/contracts/voting/rules.js'
+import { RULE_PERCENTAGE } from '@model/contracts/voting/rules.js'
 import { GIErrorUIRuntimeError } from '@model/errors.js'
 
 import imageUpload from '@utils/imageUpload.js'
@@ -60,15 +60,15 @@ export default sbp('sbp/selectors/register', {
             //       a component for RULE_DISAGREEMENT as well
             [PROPOSAL_GROUP_SETTING_CHANGE]: merge({},
               proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults,
-              { ruleSettings: { [RULE_THRESHOLD]: { threshold: thresholdChange } } }
+              { ruleSettings: { [RULE_PERCENTAGE]: { threshold: thresholdChange } } }
             ),
             [PROPOSAL_INVITE_MEMBER]: merge({},
               proposals[PROPOSAL_INVITE_MEMBER].defaults,
-              { ruleSettings: { [RULE_THRESHOLD]: { threshold: thresholdMemberApproval } } }
+              { ruleSettings: { [RULE_PERCENTAGE]: { threshold: thresholdMemberApproval } } }
             ),
             [PROPOSAL_REMOVE_MEMBER]: merge({},
               proposals[PROPOSAL_REMOVE_MEMBER].defaults,
-              { ruleSettings: { [RULE_THRESHOLD]: { threshold: thresholdMemberRemoval } } }
+              { ruleSettings: { [RULE_PERCENTAGE]: { threshold: thresholdMemberRemoval } } }
             ),
             [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].defaults,
             [PROPOSAL_GENERIC]: proposals[PROPOSAL_GENERIC].defaults
@@ -84,7 +84,7 @@ export default sbp('sbp/selectors/register', {
       return message
     } catch (e) {
       console.error('gi.actions/group/create failed!', e)
-      throw new GIErrorUIRuntimeError(L('Failed to create the group: {codeError}', { codeError: e.message }))
+      throw new GIErrorUIRuntimeError(L('Failed to create the group: {reportError}', LError(e)))
     }
   },
   'gi.actions/group/createAndSwitch': async function (groupParams) {

@@ -4,7 +4,7 @@ import sbp from '~/shared/sbp.js'
 import { objectOf, literalOf, unionOf, number } from '~/frontend/utils/flowTyper.js'
 import { DAYS_MILLIS } from '~/frontend/utils/time.js'
 import { PROPOSAL_RESULT } from '~/frontend/utils/events.js'
-import rules, { ruleType, VOTE_UNDECIDED, VOTE_AGAINST, VOTE_FOR, RULE_THRESHOLD, RULE_DISAGREEMENT } from './rules.js'
+import rules, { ruleType, VOTE_UNDECIDED, VOTE_AGAINST, VOTE_FOR, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './rules.js'
 
 import {
   PROPOSAL_INVITE_MEMBER,
@@ -33,7 +33,7 @@ export const proposalSettingsType = objectOf({
   rule: ruleType,
   expires_ms: number,
   ruleSettings: objectOf({
-    [RULE_THRESHOLD]: objectOf({ threshold: number }),
+    [RULE_PERCENTAGE]: objectOf({ threshold: number }),
     [RULE_DISAGREEMENT]: objectOf({ threshold: number })
   })
 })
@@ -62,10 +62,10 @@ function voteAgainst (state, { meta, data, contractID }) {
 const proposals = {
   [PROPOSAL_INVITE_MEMBER]: {
     defaults: {
-      rule: RULE_THRESHOLD, // the default voting rule governing invites
+      rule: RULE_PERCENTAGE, // the default voting rule governing invites
       expires_ms: 14 * DAYS_MILLIS,
       ruleSettings: {
-        [RULE_THRESHOLD]: { threshold: 0.8 },
+        [RULE_PERCENTAGE]: { threshold: 0.8 },
         [RULE_DISAGREEMENT]: { threshold: 1 }
       }
     },
@@ -113,10 +113,10 @@ const proposals = {
   },
   [PROPOSAL_REMOVE_MEMBER]: {
     defaults: {
-      rule: RULE_THRESHOLD,
+      rule: RULE_PERCENTAGE,
       expires_ms: 14 * DAYS_MILLIS,
       ruleSettings: {
-        [RULE_THRESHOLD]: { threshold: 0.8 },
+        [RULE_PERCENTAGE]: { threshold: 0.8 },
         // at least 2, since the member being removed shouldn't be able to
         // block the proposal themselves
         [RULE_DISAGREEMENT]: { threshold: 2 }
@@ -142,10 +142,10 @@ const proposals = {
   },
   [PROPOSAL_GROUP_SETTING_CHANGE]: {
     defaults: {
-      rule: RULE_THRESHOLD,
+      rule: RULE_PERCENTAGE,
       expires_ms: 7 * DAYS_MILLIS,
       ruleSettings: {
-        [RULE_THRESHOLD]: { threshold: 0.8 },
+        [RULE_PERCENTAGE]: { threshold: 0.8 },
         [RULE_DISAGREEMENT]: { threshold: 1 }
       }
     },
@@ -167,10 +167,10 @@ const proposals = {
   // used to adjust settings like `rule` and `expires_ms` on proposals themselves
   [PROPOSAL_PROPOSAL_SETTING_CHANGE]: {
     defaults: {
-      rule: RULE_THRESHOLD,
+      rule: RULE_PERCENTAGE,
       expires_ms: 7 * DAYS_MILLIS,
       ruleSettings: {
-        [RULE_THRESHOLD]: { threshold: 0.8 },
+        [RULE_PERCENTAGE]: { threshold: 0.8 },
         [RULE_DISAGREEMENT]: { threshold: 1 }
       }
     },
@@ -181,10 +181,10 @@ const proposals = {
   },
   [PROPOSAL_GENERIC]: {
     defaults: {
-      rule: RULE_THRESHOLD,
+      rule: RULE_PERCENTAGE,
       expires_ms: 7 * DAYS_MILLIS,
       ruleSettings: {
-        [RULE_THRESHOLD]: { threshold: 0.8 },
+        [RULE_PERCENTAGE]: { threshold: 0.8 },
         [RULE_DISAGREEMENT]: { threshold: 1 }
       }
     },
