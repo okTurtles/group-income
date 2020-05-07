@@ -16,7 +16,7 @@
         banner-simple.c-banner(severity='warning')
           i18n(
             :args='{ a_:`<a class="link" href="https://groupincome.org/2016/09/deprecating-mays-theorem/#when-majority-rule-can-harm" target="_blank">`, _a: "</a>" }'
-          ) The percentage value you are choosing is most likely too low for a decision that can have a potentially significant impact  on a person's life. Please consider using a {a_}supermajority threshold{_a}.
+          ) The percentage value you are choosing is most likely too low for a decision that can have a potentially significant impact on a person's life. Please consider using a {a_}supermajority threshold{_a}.
 </template>
 
 <script>
@@ -51,7 +51,7 @@ export default {
         slideUnit: '%'
       },
       [RULE_DISAGREEMENT]: {
-        slideLabel: L('Maximum number of “no” votes'),
+        slideLabel: L('Maximum number of "no" votes'),
         slideMin: 1,
         slideMax: 60,
         slideUnit: ''

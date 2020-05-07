@@ -22,8 +22,7 @@
         severity='info'
         v-if='isVotingRuleAdjusted(type)'
       )
-        | * &nbsp;
-        i18n This value was automatically adjusted because your group is currently smaller than the disagreement number.
+        i18n \* This value was automatically adjusted because your group is currently smaller than the disagreement number.
 
       i18n.link(
         v-if='!isVotingActive(type)'
@@ -54,7 +53,7 @@ export default {
       [RULE_DISAGREEMENT]: {
         title: L('Disagreement number'),
         explanation: L('Proposals are rejected when a certain number of members disagree with the proposal.'),
-        status: L('Maximum number of “no” votes:')
+        status: L('Maximum number of "no" votes:')
       }
     }
   }),
