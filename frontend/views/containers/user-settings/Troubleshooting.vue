@@ -23,7 +23,7 @@
       template(v-else-if='ephemeral.status === "recovering"')
         .c-progress
           progress-bar(:max='1' :value='ephemeral.progress.percentage')
-          .c-progress-desc.has-text-1
+          .c-progress-desc.has-text-1(aria-label='polite')
             span {{ephemeral.progress.part}}
             span {{ephemeral.progress.percentage * 100}} %
 
@@ -114,6 +114,8 @@ export default {
 
       try {
         // Dummy logic, obviously.
+        this.updateProgress(L('Deleting local data...'), 0.05)
+        await this.dummy3secTask()
         this.updateProgress(L('Deleting local data...'), 0.25)
         await this.dummy3secTask()
         this.updateProgress(L('Downloading new data...'), 0.50)
