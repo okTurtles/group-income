@@ -3,13 +3,8 @@
     :class='{ "is-completed": percent === "100%", "has-marks": hasMarks }'
   )
   .c-bg
-  .c-marks(
-    v-if='hasMarks'
-    :style='marksStyle'
-  )
-  .c-bar(
-    :style='{ width: percent }'
-  )
+  .c-marks(v-if='hasMarks' :style='marksStyle')
+  .c-bar(:style='`--percent: ${percent}`')
 </template>
 
 <script>
@@ -74,17 +69,13 @@ export default {
 }
 
 .c-bar {
+  width: 100%;
   background-color: $primary_0;
-  // Animation to modify the bar
-  transition: width 450ms ease-in-out;
-  // Animation to show up the bar
-  transform: translateY(-50%) scaleX(0);
+  transition: transform 450ms ease-out;
+  // Animation to modify grow the bar
+  transform: translateY(-50%) scaleX(1); // fallback
+  transform: translateY(-50%) scaleX(calc(1 * var(--percent)));
   transform-origin: 0 0;
-  animation: progress 700ms ease-out 350ms forwards;
-
-  .js-reducedMotion & {
-    transform: translateY(-50%) scaleX(1);
-  }
 
   .is-completed & {
     background-color: $success_0;
@@ -105,14 +96,5 @@ export default {
   // hide last marker
   $edge: calc(100% - 2px);
   clip-path: polygon(0 0, $edge 0, $edge 100%, 0 100%);
-}
-
-@keyframes progress {
-  from {
-    transform: translateY(-50%) scaleX(0);
-  }
-  to {
-    transform: translateY(-50%) scaleX(1);
-  }
 }
 </style>
