@@ -541,12 +541,12 @@ DefineContract({
           with: string
         }),
         nonMonetaryRemove: string,
-        paymentMethods: optional(arrayOf(
+        paymentMethods: arrayOf(
           objectOf({
             name: string,
             value: string
           })
-        ))
+        )
       }),
       process ({ data, meta }, { state }) {
         var groupProfile = state.profiles[meta.username]
