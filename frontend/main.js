@@ -129,7 +129,7 @@ async function startApp () {
       if (this.ephemeral.isCorrupted) {
         this.$refs.bannerGeneral.danger(
           this.L('Your app seems to be corrupted. Please {a_}re-sync your app data.{_a}', {
-            'a_': '<a class="link" href="/app/dashboard?modal=UserSettingsModal&section=troubleshooting">',
+            'a_': `<a class="link" href="${window.location.pathname}?modal=UserSettingsModal&section=troubleshooting">`,
             '_a': '</a>'
           }),
           'times-circle'
