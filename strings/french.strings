@@ -6,23 +6,20 @@
 /* views/pages/Home.vue */
 "Logout" = "Déconnexion";
 
-/* MISSING TRANSLATION - views/components/group-creation-steps/GroupRules.vue */
-"4. Voting Rules" = "4. Voting Rules";
-
 /* MISSING TRANSLATION - views/components/AvatarUpload.vue */
 "Failed to save avatar. {reportError}" = "Failed to save avatar. {reportError}";
 
 /* views/containers/proposals/ProposalVoteOptions.vue */
 "Are you sure you want to cancel this proposal?" = "Êtes-vous certain de vouloir annuler cette offre?";
 
-/* MISSING TRANSLATION - views/components/group-creation-steps/GroupRules.vue */
-"Read more about the dangers of majority rule." = "Read more about the dangers of majority rule.";
-
 /* MISSING TRANSLATION - views/containers/user-settings/UserProfile.vue, views/pages/GroupSettings.vue */
 "Your changes were saved!" = "Your changes were saved!";
 
 /* MISSING TRANSLATION - views/containers/access/LoginModal.vue, views/pages/Join.vue */
 "Not on Group Income yet?" = "Not on Group Income yet?";
+
+/* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue */
+"Re-sync failed. {reportError}" = "Re-sync failed. {reportError}";
 
 /* MISSING TRANSLATION - views/containers/contributions/ContributionsWidget.vue */
 "You will receive {amount}." = "You will receive {amount}.";
@@ -78,6 +75,9 @@
 /* MISSING TRANSLATION - views/components/graphs/Overview.vue */
 "Group members and their pledges" = "Group members and their pledges";
 
+/* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue */
+"Are you sure you want to re-sync your app data? This might take a few minutes." = "Are you sure you want to re-sync your app data? This might take a few minutes.";
+
 /* MISSING TRANSLATION - views/components/group-creation-steps/GroupMincome.vue */
 "What is the minimum each member should receive monthly?" = "What is the minimum each member should receive monthly?";
 
@@ -89,6 +89,9 @@
 
 /* MISSING TRANSLATION - views/containers/contributions/IncomeDetails.vue */
 "Oops, you entered a negative number" = "Oops, you entered a negative number";
+
+/* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue */
+"Re-sync" = "Re-sync";
 
 /* MISSING TRANSLATION - views/pages/Payments.vue */
 "{total} in total, to {count} members" = "{total} in total, to {count} members";
@@ -110,6 +113,9 @@
 
 /* MISSING TRANSLATION - views/containers/payments/PaymentDetail.vue */
 "Date & Time" = "Date & Time";
+
+/* MISSING TRANSLATION - views/containers/group-settings/GroupVotingSystem.vue */
+"\\* This value was automatically adjusted because your group is currently smaller than the disagreement number." = "\\* This value was automatically adjusted because your group is currently smaller than the disagreement number.";
 
 /* MISSING TRANSLATION - views/containers/design-system/DSModalNested.vue, views/containers/design-system/DSModalSimple.vue, views/containers/proposals/AddMembers.vue */
 "Full name" = "Full name";
@@ -141,7 +147,7 @@
 /* MISSING TRANSLATION - views/containers/chatroom/ChatMain.vue */
 "Option 2" = "Option 2";
 
-/* MISSING TRANSLATION - views/containers/proposals/ProposalTemplate.vue, views/containers/proposals/RuleAddMember.vue, views/containers/proposals/RuleChangeRule.vue, views/containers/proposals/RuleRemoveMember.vue */
+/* MISSING TRANSLATION - views/containers/proposals/ProposalTemplate.vue, views/containers/proposals/RuleAddMember.vue, views/containers/proposals/RuleRemoveMember.vue */
 "Why are you proposing this change?" = "Why are you proposing this change?";
 
 /* MISSING TRANSLATION - views/containers/contributions/Contribution.vue */
@@ -174,6 +180,9 @@
 /* MISSING TRANSLATION - views/containers/access/LoginForm.vue */
 "Coming soon" = "Coming soon";
 
+/* MISSING TRANSLATION - views/containers/group-settings/GroupVotingSystem.vue */
+"Proposals are rejected when a certain number of members disagree with the proposal." = "Proposals are rejected when a certain number of members disagree with the proposal.";
+
 /* MISSING TRANSLATION - views/containers/contributions/ContributionsWidget.vue */
 "See all contributions" = "See all contributions";
 
@@ -182,9 +191,6 @@
 
 /* MISSING TRANSLATION - views/containers/group-settings/GroupCreationModal.vue, views/containers/proposals/ProposalTemplate.vue */
 "Next" = "Next";
-
-/* MISSING TRANSLATION - views/components/group-creation-steps/GroupRules.vue */
-"This percentage is most likely too low for a decision that can have a potentially significant impact on a person's life." = "This percentage is most likely too low for a decision that can have a potentially significant impact on a person's life.";
 
 /* MISSING TRANSLATION - views/containers/user-settings/Appearence.vue */
 "When enabled the amount of animations you see around are reduced." = "When enabled the amount of animations you see around are reduced.";
@@ -213,6 +219,9 @@
 /* MISSING TRANSLATION - views/containers/chatroom/ChatMain.vue */
 "New messages" = "New messages";
 
+/* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue */
+"Ok" = "Ok";
+
 /* MISSING TRANSLATION - views/components/Search.vue */
 "Clear search" = "Clear search";
 
@@ -229,7 +238,7 @@
 "Are you sure you want to vote yes?" = "Are you sure you want to vote yes?";
 
 /* MISSING TRANSLATION - views/containers/proposals/ChangeVotingProposal.vue */
-"Change Rule to change Rule" = "Change Rule to change Rule";
+"Change voting [xxxx]" = "Change voting [xxxx]";
 
 /* MISSING TRANSLATION - views/containers/group-settings/InvitationLinkModal.vue */
 "After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!" = "After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!";
@@ -246,6 +255,9 @@
 /* MISSING TRANSLATION - views/containers/contributions/PaymentMethods.vue */
 "Payment value" = "Payment value";
 
+/* MISSING TRANSLATION - views/containers/payments/PaymentRowTodo.vue */
+"Cannot dismiss a payment that hasn't been sent yet." = "Cannot dismiss a payment that hasn't been sent yet.";
+
 /* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
 "Remove {user} from the group." = "Remove {user} from the group.";
 
@@ -258,8 +270,11 @@
 /* MISSING TRANSLATION - views/pages/Mailbox.vue */
 "compose" = "compose";
 
-/* MISSING TRANSLATION - views/containers/proposals/RuleAddMember.vue, views/containers/proposals/ChangeVotingProposal.vue, views/containers/proposals/RuleRemoveMember.vue */
+/* MISSING TRANSLATION - views/containers/proposals/RuleAddMember.vue, views/containers/proposals/RuleRemoveMember.vue */
 "According to your voting rules, 8 out of 10 members will have to agree with this." = "According to your voting rules, 8 out of 10 members will have to agree with this.";
+
+/* MISSING TRANSLATION - views/containers/proposals/ChangeVotingProposal.vue */
+"Future proposals would be accepted if {nr} or fewer members disagree." = "Future proposals would be accepted if {nr} or fewer members disagree.";
 
 /* MISSING TRANSLATION - views/containers/contributions/ContributionItem.vue */
 "{amount} to {who}" = "{amount} to {who}";
@@ -284,6 +299,9 @@
 
 /* MISSING TRANSLATION - views/containers/payments/RecordPayment.vue */
 "Toggle comment box" = "Toggle comment box";
+
+/* MISSING TRANSLATION - views/containers/group-settings/GroupVotingSystem.vue */
+"Active" = "Active";
 
 /* MISSING TRANSLATION - views/components/LinkToCopy.vue, views/containers/group-settings/InvitationsTable.vue */
 "Copy link" = "Copy link";
@@ -348,8 +366,14 @@
 /* MISSING TRANSLATION - views/containers/contributions/PaymentMethods.vue */
 "Other" = "Other";
 
+/* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue */
+"Corrupted" = "Corrupted";
+
 /* MISSING TRANSLATION - views/containers/proposals/RemoveMember.vue */
 "Are you sure you want to remove {name} from the group?" = "Are you sure you want to remove {name} from the group?";
+
+/* MISSING TRANSLATION - views/containers/group-settings/GroupVotingSystem.vue */
+"Percentage of members that need to agree:" = "Percentage of members that need to agree:";
 
 /* MISSING TRANSLATION - views/containers/group-settings/InvitationsTable.vue */
 "Not used" = "Not used";
@@ -396,6 +420,9 @@
 /* MISSING TRANSLATION - views/containers/contributions/IncomeDetails.vue */
 "Your income must be lower than the group mincome" = "Your income must be lower than the group mincome";
 
+/* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue */
+"Please use the re-sync option below to restore functionality." = "Please use the re-sync option below to restore functionality.";
+
 /* MISSING TRANSLATION - views/containers/proposals/ProposalBox.vue */
 "{username} proposed:" = "{username} proposed:";
 
@@ -422,6 +449,9 @@
 
 /* MISSING TRANSLATION - views/containers/contributions/ContributionsWidget.vue */
 "No members in the group are pledging yet! 😔" = "No members in the group are pledging yet! 😔";
+
+/* MISSING TRANSLATION - views/containers/group-settings/GroupVotingSystem.vue */
+"Proposals are accepted when the required percentage of members agree to the proposal." = "Proposals are accepted when the required percentage of members agree to the proposal.";
 
 /* MISSING TRANSLATION - views/containers/access/PasswordModal.vue */
 "Confirm new Password" = "Confirm new Password";
@@ -507,6 +537,9 @@
 /* MISSING TRANSLATION - views/pages/Payments.vue */
 "Todo" = "Todo";
 
+/* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue */
+"Your local contract version is synced! All the app functionality was restored!" = "Your local contract version is synced! All the app functionality was restored!";
+
 /* MISSING TRANSLATION - views/containers/payments/RecordPayment.vue */
 "Your payments were recorded" = "Your payments were recorded";
 
@@ -518,6 +551,12 @@
 
 /* MISSING TRANSLATION - views/containers/group-settings/GroupDeletionModal.vue */
 "Are you sure you want to delete this group?" = "Are you sure you want to delete this group?";
+
+/* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue */
+"Deleting local data..." = "Deleting local data...";
+
+/* MISSING TRANSLATION - views/containers/group-settings/GroupVotingSystem.vue */
+"{b_}{percent}{_b} {sm_}({count} out of {total} members){_sm}" = "{b_}{percent}{_b} {sm_}({count} out of {total} members){_sm}";
 
 /* MISSING TRANSLATION - views/containers/payments/PaymentRowReceived.vue */
 "I did not receive this" = "I did not receive this";
@@ -546,6 +585,9 @@
 /* MISSING TRANSLATION - views/containers/payments/PaymentDetail.vue */
 "Mincome at the time" = "Mincome at the time";
 
+/* MISSING TRANSLATION - views/components/group-creation-steps/GroupRules.vue */
+"Define the number of people required to block a proposal." = "Define the number of people required to block a proposal.";
+
 /* MISSING TRANSLATION - views/pages/Mailbox.vue */
 "Delete" = "Delete";
 
@@ -573,8 +615,17 @@
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersMenu.vue */
 "Edit profile" = "Edit profile";
 
+/* MISSING TRANSLATION - views/components/VotingSystemInput.vue, views/components/group-creation-steps/GroupRules.vue */
+"Maximum number of \"no\" votes" = "Maximum number of \"no\" votes";
+
 /* MISSING TRANSLATION - views/pages/Contributions.vue */
 "No one needs monetary contributions at the moment. You can still add non-monetary contributions if you would like." = "No one needs monetary contributions at the moment. You can still add non-monetary contributions if you would like.";
+
+/* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue */
+"See application logs" = "See application logs";
+
+/* MISSING TRANSLATION - views/pages/GroupSettings.vue */
+"Voting System" = "Voting System";
 
 /* MISSING TRANSLATION - views/components/group-creation-steps/GroupMincome.vue */
 "Currency" = "Currency";
@@ -588,8 +639,14 @@
 /* MISSING TRANSLATION - views/containers/contributions/IncomeDetails.vue */
 "The method name for \"{methodValue}\" is missing." = "The method name for \"{methodValue}\" is missing.";
 
+/* MISSING TRANSLATION - views/components/group-creation-steps/GroupRules.vue */
+"Define the percentage of members who will need to agree to a proposal." = "Define the percentage of members who will need to agree to a proposal.";
+
 /* MISSING TRANSLATION - views/pages/Mailbox.vue */
 "Invalid Username" = "Invalid Username";
+
+/* MISSING TRANSLATION - views/components/group-creation-steps/GroupRules.vue */
+"4. Voting System" = "4. Voting System";
 
 /* MISSING TRANSLATION - views/components/group-creation-steps/GroupName.vue */
 "The group picture must be a valid url" = "The group picture must be a valid url";
@@ -647,6 +704,9 @@
 
 /* MISSING TRANSLATION - views/pages/Home.vue */
 "Let’s get this party started" = "Let’s get this party started";
+
+/* MISSING TRANSLATION - views/components/VotingSystemInput.vue */
+"What percentage of members need to agree?" = "What percentage of members need to agree?";
 
 /* MISSING TRANSLATION - views/containers/contributions/ContributionsWidget.vue */
 "{amount} will be used." = "{amount} will be used.";
@@ -723,8 +783,14 @@
 /* MISSING TRANSLATION - views/containers/payments/PaymentDetail.vue, views/containers/payments/PaymentRowReceived.vue, views/containers/payments/PaymentRowSent.vue */
 "Payment details" = "Payment details";
 
+/* MISSING TRANSLATION - views/components/VotingSystemInput.vue */
+"The percentage value you are choosing is most likely too low for a decision that can have a potentially significant impact on a person's life. Please consider using a {a_}supermajority threshold{_a}." = "The percentage value you are choosing is most likely too low for a decision that can have a potentially significant impact on a person's life. Please consider using a {a_}supermajority threshold{_a}.";
+
 /* MISSING TRANSLATION - views/containers/contributions/IncomeDetails.vue, views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue, views/pages/GroupSettings.vue */
 "This field is required" = "This field is required";
+
+/* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue */
+"Re-sync and rebuild data" = "Re-sync and rebuild data";
 
 /* MISSING TRANSLATION - views/components/GroupWelcome.vue */
 "Welcome to {groupName}!" = "Welcome to {groupName}!";
@@ -738,6 +804,9 @@
 /* MISSING TRANSLATION - views/containers/access/SignupForm.vue */
 "Your password must be at least 7 characteres long." = "Your password must be at least 7 characteres long.";
 
+/* MISSING TRANSLATION - views/containers/group-settings/GroupVotingSystem.vue */
+"{b_}{count}{_b} {sm_}(adjusted to {nr}*){_sm}" = "{b_}{count}{_b} {sm_}(adjusted to {nr}*){_sm}";
+
 /* MISSING TRANSLATION - views/containers/access/SignupForm.vue */
 "This username is already being used." = "This username is already being used.";
 
@@ -746,6 +815,9 @@
 
 /* MISSING TRANSLATION - views/containers/contributions/ContributionsWidget.vue */
 "There are no non-monetary contributions." = "There are no non-monetary contributions.";
+
+/* MISSING TRANSLATION - views/containers/group-settings/GroupVotingSystem.vue */
+"Maximum number of \"no\" votes:" = "Maximum number of \"no\" votes:";
 
 /* MISSING TRANSLATION - views/containers/contributions/ContributionsWidget.vue */
 "Non-monetary" = "Non-monetary";
@@ -788,6 +860,9 @@
 
 /* MISSING TRANSLATION - views/containers/payments/PaymentRowReceived.vue, views/containers/payments/PaymentRowSent.vue, views/containers/payments/PaymentRowTodo.vue */
 "Not received" = "Not received";
+
+/* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue */
+"Downloading new data..." = "Downloading new data...";
 
 /* MISSING TRANSLATION - views/containers/proposals/ProposalItem.vue */
 "TODO: Change [generic] from [current] to [new-value]" = "TODO: Change [generic] from [current] to [new-value]";
@@ -888,11 +963,11 @@
 /* MISSING TRANSLATION - views/pages/GroupSettings.vue */
 "This means you will stop having access to the {b_}group chat{_b} (including direct messages to other group members) and {b_}contributions{_b}. Re-joining the group is possible, but requires other members to vote and reach an agreement." = "This means you will stop having access to the {b_}group chat{_b} (including direct messages to other group members) and {b_}contributions{_b}. Re-joining the group is possible, but requires other members to vote and reach an agreement.";
 
+/* MISSING TRANSLATION - views/components/group-creation-steps/GroupRules.vue */
+"Which voting system would you like to use?" = "Which voting system would you like to use?";
+
 /* MISSING TRANSLATION - views/containers/user-settings/AppLogs.vue */
 "Recent error: \"{errorMsg}\". Please download the logs and {a_}send them to us{_a}, so we can help troubleshoot." = "Recent error: \"{errorMsg}\". Please download the logs and {a_}send them to us{_a}, so we can help troubleshoot.";
-
-/* MISSING TRANSLATION - views/components/group-creation-steps/GroupRules.vue, views/containers/group-settings/SettingsWidget.vue */
-"Add Member" = "Add Member";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersAllModal.vue, views/containers/dashboard/GroupMembersMenu.vue */
 "Send message" = "Send message";
@@ -951,9 +1026,6 @@
 /* MISSING TRANSLATION - views/pages/Home.vue, views/pages/Mailbox.vue */
 "Inbox" = "Inbox";
 
-/* MISSING TRANSLATION - views/containers/proposals/RuleChangeRule.vue */
-"I step to change rule of change rule it's on the way" = "I step to change rule of change rule it's on the way";
-
 /* MISSING TRANSLATION - views/containers/payments/RecordPaymentsList.vue */
 "Amount sent" = "Amount sent";
 
@@ -1005,6 +1077,9 @@
 /* MISSING TRANSLATION - views/containers/payments/RecordPayment.vue */
 "Add a note {span_}(optional){_span}" = "Add a note {span_}(optional){_span}";
 
+/* MISSING TRANSLATION - views/containers/proposals/ChangeVotingProposal.vue */
+"Future proposals would be accepted if {b_}no one{_b} disagrees." = "Future proposals would be accepted if {b_}no one{_b} disagrees.";
+
 /* MISSING TRANSLATION - views/components/Toggle.vue */
 "Toggle navigation" = "Toggle navigation";
 
@@ -1043,6 +1118,9 @@
 
 /* MISSING TRANSLATION - views/containers/group-settings/GroupDeletionModal.vue */
 "DELETE {GROUP_NAME}" = "DELETE {GROUP_NAME}";
+
+/* MISSING TRANSLATION - views/components/group-creation-steps/GroupRules.vue */
+"You will need to use this system to vote on proposals. You can propose for example, to add or remove members, or to change your group’s mincome value." = "You will need to use this system to vote on proposals. You can propose for example, to add or remove members, or to change your group’s mincome value.";
 
 /* MISSING TRANSLATION - views/containers/group-settings/GroupLeaveModal.vue */
 "If you leave, you will stop having access to the {strong_}group chat{_strong} and {strong_}contributions{_strong}. Re-joining the group is possible, but requires other members to {strong_}vote and reach an agreement{_strong}." = "If you leave, you will stop having access to the {strong_}group chat{_strong} and {strong_}contributions{_strong}. Re-joining the group is possible, but requires other members to {strong_}vote and reach an agreement{_strong}.";
@@ -1095,7 +1173,7 @@
 /* MISSING TRANSLATION - views/components/Loading.vue */
 "Magic is happening..." = "Magic is happening...";
 
-/* MISSING TRANSLATION - views/containers/group-settings/SettingsWidget.vue */
+/* MISSING TRANSLATION - views/containers/group-settings/GroupVotingSystem.vue */
 "Propose change" = "Propose change";
 
 /* MISSING TRANSLATION - views/containers/chatroom/MainHeader.vue */
@@ -1103,6 +1181,9 @@
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembersAllModal.vue */
 "Sorry, we couldn't find anyone called \"{searchTerm}\"" = "Sorry, we couldn't find anyone called \"{searchTerm}\"";
+
+/* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue */
+"All of your information is stored locally, on your personal device, and encrypted when sent {over the network, to other group members}. Re-syncing will download the latest version of the group's information." = "All of your information is stored locally, on your personal device, and encrypted when sent {over the network, to other group members}. Re-syncing will download the latest version of the group's information.";
 
 /* MISSING TRANSLATION - views/containers/payments/PaymentRowReceived.vue */
 "Already marked as not received!" = "Already marked as not received!";
@@ -1170,7 +1251,7 @@
 /* MISSING TRANSLATION - views/containers/proposals/ProposalTemplate.vue */
 "This is optional." = "This is optional.";
 
-/* MISSING TRANSLATION - views/components/group-creation-steps/GroupRules.vue, views/containers/group-settings/SettingsWidget.vue, views/containers/proposals/ProposalTemplate.vue, views/containers/proposals/RemoveMember.vue */
+/* MISSING TRANSLATION - views/containers/proposals/ProposalTemplate.vue, views/containers/proposals/RemoveMember.vue */
 "Remove Member" = "Remove Member";
 
 /* MISSING TRANSLATION - views/containers/dashboard/GroupMembers.vue, views/containers/dashboard/GroupMembersAllModal.vue */
@@ -1188,6 +1269,9 @@
 /* MISSING TRANSLATION - views/pages/GroupSettings.vue */
 "Default currency" = "Default currency";
 
+/* MISSING TRANSLATION - views/components/group-creation-steps/GroupRules.vue */
+"You can change this later in your Group Settings." = "You can change this later in your Group Settings.";
+
 /* MISSING TRANSLATION - views/containers/proposals/ProposalVoteOptions.vue */
 "Are you sure you want to vote no?" = "Are you sure you want to vote no?";
 
@@ -1199,6 +1283,9 @@
 
 /* MISSING TRANSLATION - views/containers/group-settings/GroupDeletionModal.vue, views/containers/group-settings/GroupLeaveModal.vue */
 "Does not match" = "Does not match";
+
+/* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue */
+"Total space used" = "Total space used";
 
 /* MISSING TRANSLATION - views/containers/contributions/IncomeDetails.vue */
 "How much do you want to pledge?" = "How much do you want to pledge?";
@@ -1245,8 +1332,8 @@
 /* MISSING TRANSLATION - views/containers/access/SignupForm.vue, views/containers/user-settings/UserProfile.vue */
 "An email is required." = "An email is required.";
 
-/* MISSING TRANSLATION - views/components/group-creation-steps/GroupRules.vue */
-"What percentage approval is necessary to adjust the group rules?" = "What percentage approval is necessary to adjust the group rules?";
+/* MISSING TRANSLATION - views/components/group-creation-steps/GroupRules.vue, views/containers/group-settings/GroupVotingSystem.vue */
+"Disagreement number" = "Disagreement number";
 
 /* MISSING TRANSLATION - views/containers/user-settings/UserProfile.vue */
 "Save account changes" = "Save account changes";
@@ -1299,6 +1386,9 @@
 /* MISSING TRANSLATION - views/containers/payments/PaymentsPagination.vue */
 "Show:" = "Show:";
 
+/* MISSING TRANSLATION - views/components/group-creation-steps/GroupRules.vue, views/containers/group-settings/GroupVotingSystem.vue */
+"Percentage based" = "Percentage based";
+
 /* MISSING TRANSLATION - views/containers/payments/RecordPayment.vue */
 "Record 1 payment" = "Record 1 payment";
 
@@ -1338,11 +1428,17 @@
 /* MISSING TRANSLATION - views/containers/group-settings/GroupDeletionModal.vue */
 "Delete group" = "Delete group";
 
+/* MISSING TRANSLATION - views/containers/group-settings/GroupVotingSystem.vue */
+"Propose changing to this voting system" = "Propose changing to this voting system";
+
 /* MISSING TRANSLATION - views/containers/contributions/IncomeDetails.vue */
 "No, I don't" = "No, I don't";
 
 /* MISSING TRANSLATION - views/containers/user-settings/UserProfile.vue */
 "Bio" = "Bio";
+
+/* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue */
+"Status" = "Status";
 
 /* MISSING TRANSLATION - views/containers/group-settings/InvitationsTable.vue */
 "Here's a list of all invite links you own" = "Here's a list of all invite links you own";
@@ -1352,6 +1448,9 @@
 
 /* MISSING TRANSLATION - views/pages/Payments.vue */
 "Payments type" = "Payments type";
+
+/* MISSING TRANSLATION - views/containers/group-settings/GroupVotingSystem.vue */
+"{b_}{count}{_b}" = "{b_}{count}{_b}";
 
 /* MISSING TRANSLATION - views/pages/GroupSettings.vue */
 "Save changes" = "Save changes";
@@ -1380,14 +1479,14 @@
 /* MISSING TRANSLATION - views/pages/Payments.vue */
 "Due in" = "Due in";
 
+/* MISSING TRANSLATION - views/containers/user-settings/Troubleshooting.vue */
+"Last touches..." = "Last touches...";
+
 /* MISSING TRANSLATION - views/containers/payments/PaymentRowReceived.vue, views/containers/payments/PaymentRowRecord.vue, views/containers/payments/PaymentRowSent.vue, views/containers/payments/PaymentRowTodo.vue */
 "Due {date}" = "Due {date}";
 
 /* MISSING TRANSLATION - views/pages/Payments.vue */
 "There are no pending payments." = "There are no pending payments.";
-
-/* MISSING TRANSLATION - views/components/group-creation-steps/GroupRules.vue, views/containers/group-settings/SettingsWidget.vue */
-"Change Rules" = "Change Rules";
 
 /* MISSING TRANSLATION - views/containers/group-settings/GroupJoinModal.vue */
 "For now, the only way to join a group is to get an invitation. Don’t know anyone using Group Income?" = "For now, the only way to join a group is to get an invitation. Don’t know anyone using Group Income?";
