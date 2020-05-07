@@ -196,7 +196,7 @@ declare module './views/components/Modal/Modal.vue' { declare module.exports: Ob
 declare module './views/containers/LoginModal.vue' { declare module.exports: Object }
 declare module './views/containers/proposals/Mincome.vue' { declare module.exports: Object }
 declare module './views/containers/proposals/RuleAddMember.vue' { declare module.exports: Object }
-declare module './views/containers/proposals/RuleChangeRule.vue' { declare module.exports: Object }
+declare module './views/containers/proposals/ChangeVotingProposal.vue' { declare module.exports: Object }
 declare module './views/containers/proposals/RuleRemoveMember.vue' { declare module.exports: Object }
 declare module './views/containers/sidebar/Sidebar.vue' { declare module.exports: Object }
 declare module './views/containers/Signup.vue' { declare module.exports: Object }
