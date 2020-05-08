@@ -27,11 +27,7 @@ page.c-page
         i18n.label About the group
         textarea.textarea(
           maxlength='500'
-          :class='{error: $v.form.sharedValues.$error}'
           v-model='form.sharedValues'
-          @input='debounceField("sharedValues")'
-          @blur='updateField("sharedValues")'
-          v-error:sharedValues=''
           data-test='sharedValues'
         )
 
@@ -155,6 +151,10 @@ export default {
       sbp('okTurtles.events/emit', OPEN_MODAL, component)
     },
     async saveSettings (e) {
+      if (this.$v.form.$invalid) {
+        this.$refs.formMsg.danger(L('The form is invalid.'))
+        return
+      }
       const attrs = {}
 
       for (const key in this.form) {
@@ -182,9 +182,6 @@ export default {
   validations: {
     form: {
       groupName: {
-        [L('This field is required')]: required
-      },
-      sharedValues: {
         [L('This field is required')]: required
       }
     }
