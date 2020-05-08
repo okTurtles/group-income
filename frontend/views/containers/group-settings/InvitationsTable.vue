@@ -89,7 +89,6 @@ page-section.c-section(:title='L("Invite links")')
   i18n.c-invite-footer(
     tag='p'
     @click='handleInviteClick'
-    compile
     :args='{ r1: `<button class="link js-btnInvite">`, r2: "</button>"}'
   ) To generate a new link, you need to {r1}propose adding a new member{r2} to your group.
 </template>

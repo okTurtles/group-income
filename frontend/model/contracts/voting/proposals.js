@@ -51,7 +51,7 @@ export function oneVoteToPass (proposalHash) {
   return currentResult === VOTE_UNDECIDED && newResult === VOTE_FOR
 }
 
-function voteAgainst (state, data) {
+function voteAgainst (state, { meta, data, contractID }) {
   const { proposalHash } = data
   const proposal = state.proposals[proposalHash]
   proposal.status = STATUS_FAILED
@@ -69,13 +69,13 @@ const proposals = {
         [RULE_DISAGREEMENT]: { threshold: 1 }
       }
     },
-    [VOTE_FOR]: function (state, data) {
+    [VOTE_FOR]: function (state, { meta, data, contractID }) {
       const proposal = state.proposals[data.proposalHash]
       proposal.payload = data.passPayload
       proposal.status = STATUS_PASSED
       // NOTE: if invite/process requires more than just data+meta
       //       this code will need to be updated...
-      const message = { meta: proposal.meta, data: data.passPayload }
+      const message = { meta, data: data.passPayload, contractID }
       sbp('gi.contracts/group/invite/process', message, state)
       sbp('okTurtles.events/emit', PROPOSAL_RESULT, state, VOTE_FOR, data)
       // TODO: for now, generate the link and send it to the user's inbox
@@ -122,25 +122,21 @@ const proposals = {
         [RULE_DISAGREEMENT]: { threshold: 2 }
       }
     },
-    [VOTE_FOR]: async function (state, { proposalHash, passPayload }) {
+    [VOTE_FOR]: function (state, { meta, data, contractID }) {
+      const { proposalHash, passPayload } = data
       const proposal = state.proposals[proposalHash]
-      const { member, memberId, groupId } = proposal.data.proposalData
       proposal.status = STATUS_PASSED
       proposal.payload = passPayload
-
-      const data = {
-        member,
-        memberId,
-        groupId,
+      const messageData = {
+        ...proposal.data.proposalData,
         proposalHash,
         proposalPayload: passPayload
       }
-      const message = { data, meta: proposal.meta }
+      const message = { data: messageData, meta, contractID }
       sbp('gi.contracts/group/removeMember/process', message, state)
-      await sbp('gi.sideEffects/group/removeMember', {
-        username: data.member,
-        groupId: data.groupId
-      })
+      sbp('gi.contracts/group/pushSideEffect', contractID,
+        ['gi.contracts/group/removeMember/process/sideEffect', message]
+      )
     },
     [VOTE_AGAINST]: voteAgainst
   },
@@ -153,15 +149,16 @@ const proposals = {
         [RULE_DISAGREEMENT]: { threshold: 1 }
       }
     },
-    [VOTE_FOR]: function (state, data) {
+    [VOTE_FOR]: function (state, { meta, data, contractID }) {
       const proposal = state.proposals[data.proposalHash]
       proposal.status = STATUS_PASSED
       const { setting, proposedValue } = proposal.data.proposalData
       // NOTE: if updateSettings ever needs more ethana just meta+data
       //       this code will need to be updated
       const message = {
-        meta: proposal.meta,
-        data: { [setting]: proposedValue }
+        meta,
+        data: { [setting]: proposedValue },
+        contractID
       }
       sbp('gi.contracts/group/updateSettings/process', message, state)
     },
@@ -177,7 +174,7 @@ const proposals = {
         [RULE_DISAGREEMENT]: { threshold: 1 }
       }
     },
-    [VOTE_FOR]: function (state, { proposalHash, passPayload }) {
+    [VOTE_FOR]: function (state, { meta, data }) {
       throw new Error('unimplemented!')
     },
     [VOTE_AGAINST]: voteAgainst
@@ -191,7 +188,7 @@ const proposals = {
         [RULE_DISAGREEMENT]: { threshold: 1 }
       }
     },
-    [VOTE_FOR]: function (state, { proposalHash, passPayload }) {
+    [VOTE_FOR]: function (state, { meta, data }) {
       throw new Error('unimplemented!')
     },
     [VOTE_AGAINST]: voteAgainst
