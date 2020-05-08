@@ -23,6 +23,7 @@ import './contracts/group.js'
 import './contracts/mailbox.js'
 import './contracts/identity.js'
 import { captureLogsStart, captureLogsPause } from '~/frontend/model/captureLogs.js'
+import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
 
 Vue.use(Vuex)
 var store // this is set and made the default export at the bottom of the file.
@@ -37,7 +38,7 @@ const initialState = {
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
-  theme: 'blue',
+  theme: THEME_LIGHT,
   reducedMotion: false,
   fontSize: 1,
   appLogsFilter: process.env.NODE_ENV === 'development'
@@ -348,7 +349,7 @@ const getters = {
     return Colors[state.theme]
   },
   isDarkTheme (state) {
-    return Colors[state.theme].theme === 'dark'
+    return Colors[state.theme].theme === THEME_DARK
   }
 }
 

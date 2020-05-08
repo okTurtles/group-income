@@ -263,7 +263,7 @@ export default {
 
   &,
   &:hover {
-    color: #fff;
+    color: $background_0;
   }
 }
 </style>

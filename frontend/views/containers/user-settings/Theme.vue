@@ -71,7 +71,7 @@ export default {
 }
 
 .search {
-  fill: #fff;
+  fill: $white;
 }
 
 svg {

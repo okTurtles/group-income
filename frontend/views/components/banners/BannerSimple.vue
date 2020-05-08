@@ -112,4 +112,24 @@ export default {
   display: block;
   color: $text_0;
 }
+
+.is-dark-theme .c-message{
+  color: $text_0;
+
+  &.is-info .c-icon {
+    color: $primary_0;
+  }
+
+  &.is-danger .c-icon {
+    color: $danger_0;
+  }
+
+  &.is-warning .c-icon {
+    color: $warning_0;
+  }
+
+  &.is-success .c-icon {
+    color: $success_0;
+  }
+}
 </style>

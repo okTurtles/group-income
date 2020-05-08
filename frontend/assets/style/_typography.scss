@@ -170,13 +170,3 @@ small {
 .has-text-white {
   color: $white;
 }
-
-// ---------- SVGs
-
-// NOTE: This is only a POC to handle "themable" illustrations.
-// Final solution should be done at #665
-.svg-hello {
-  path:nth-child(1) {
-    fill: $primary_1;
-  }
-}

@@ -135,12 +135,6 @@ export default {
 <style lang='scss' scoped>
 @import "@assets/style/_variables.scss";
 
-$separatorColor: #b2c3ca;
-$legendColor: #7b7b7b;
-$activeColor: #fff;
-$closeMobileBgColor: #000;
-$closeMobileBarBgColor: #3c3c3c;
-
 // Page wrapper
 .tab-wrapper {
   position: relative;
@@ -196,7 +190,7 @@ $closeMobileBarBgColor: #3c3c3c;
 }
 
 .tab-legend {
-  color: $legendColor;
+  color: $text_1;
   font-size: 12px;
   text-transform: uppercase;
   margin-bottom: 0.5rem;

@@ -1,0 +1,37 @@
+.is-dark-theme {
+  .c-svg {
+    --success_1: var(--success_0);
+    --primary_1: var(--primary_0);
+    --warning_1: var(--warning_0);
+    --danger_1: var(--danger_0);
+  }
+
+  .svg-invitation,
+  .svg-proposal,
+  .svg-broken-proposal,
+  .svg-broken-link {
+    .special {
+      --primary_0: var(--text_1);
+    }
+  }
+
+  .svg-contributions,
+  .svg-create-group,
+  .svg-join-group {
+    .special {
+      --primary_0: var(--text_0);
+    }
+  }
+
+  .svg-vote,
+  .svg-access {
+    --primary_0: var(--text_0);
+  }
+
+  .svg-money,
+  .svg-contributions,
+  .svg-conversation,
+  .svg-hello {
+    --primary_0: var(--text_1);
+  }
+}
