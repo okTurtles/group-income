@@ -3,7 +3,7 @@
   v-if='$store.state.loggedIn'
   data-test='userProfile'
 )
-  profile-card(:username='ourUsername' :isSelf='true' direction='top-left')
+  profile-card(:username='ourUsername' direction='top-left')
     button.is-unstyled.c-avatar-user
       avatar-user(:username='ourUsername' size='sm')
       .c-user

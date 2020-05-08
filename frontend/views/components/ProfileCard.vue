@@ -29,7 +29,7 @@ tooltip(
         ) Edit bio
 
       i18n.button.is-small.is-outlined.c-bio-button(
-        v-else-if='isSelf'
+        v-else-if='isSelf && hasIncomeDetails'
         tag='button'
         @click='openModal("UserSettingsModal")'
         data-test='buttonEditBio'
@@ -77,15 +77,12 @@ import ModalClose from '@components/modal/ModalClose.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
 import { mapGetters } from 'vuex'
+import { PROFILE_STATUS } from '~/frontend/model/contracts/group.js'
 
 export default {
   name: 'ProfileCard',
   props: {
     username: String,
-    isSelf: {
-      type: Boolean,
-      default: false
-    },
     direction: {
       type: String,
       validator: (value) => ['left', 'top-left'].includes(value),
@@ -108,38 +105,39 @@ export default {
     },
     sendMessage () {
       console.log('To do: implement send message')
-    },
-    hasIncomeDetails () {
-      return !!this.ourGroupProfile.incomeDetailsType
-    },
-    receivingMonetary () {
-      return !!this.ourContributionSummary.receivingMonetary
     }
   },
-  watch: {},
   computed: {
     ...mapGetters([
       'ourUsername',
-      'ourGroupProfile',
-      'groupSettings',
-      'groupMembersCount',
       'groupProfile',
       'groupProfiles',
-      'groupMincomeFormatted',
       'globalProfile',
       'ourContributionSummary'
     ]),
+    isSelf () {
+      return this.username === this.ourUsername
+    },
     profile () {
       return this.$store.getters.globalProfile(this.username)
     },
-    // TODO:  there will be a .statusproperty on the groupProfile that you can check
-    // e.g. return this.groupProfiles[this.username].status === INVITE_STATUS.VALID
+    userGroupProfile () {
+      return this.groupProfiles[this.username]
+    },
     isActiveGroupMember () {
-      return !!this.groupProfiles[this.username]
+      return this.userGroupProfile.status === PROFILE_STATUS.ACTIVE
     },
 
     paymentMethods () {
-      return this.ourGroupProfile.paymentMethods
+      return this.userGroupProfile.paymentMethods
+    },
+
+    hasIncomeDetails () {
+      return !!this.userGroupProfile.incomeDetailsType
+    },
+
+    receivingMonetary () {
+      return !!this.ourContributionSummary.receivingMonetary
     }
   }
 }
