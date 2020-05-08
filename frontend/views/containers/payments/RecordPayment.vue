@@ -1,6 +1,6 @@
 <template lang='pug'>
 // Stop initialization if paymentDistribution not present
-modal-base-template(ref='modal' :fullscreen='true' class='has-background' v-if='paymentsDistribution' :a11yTitle='L("Record payments")')
+modal-base-template(ref='modal' :fullscreen='true' class='has-background' v-if='paymentsList' :a11yTitle='L("Record payments")')
   .c-header(:class='{"hide-desktop": donePayment}')
     i18n.is-title-2.c-title(tag='h2') Record payments
 
@@ -11,10 +11,8 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background' v-if='
         novalidate='true'
       )
         i18n.has-text-bold.c-title(tag='h3') Who did you send money to?
-        payments-list(
-          :titles='tableTitles'
-          :payments='paymentsDistribution'
-          paymentsType='edit'
+        record-payments-list(
+          :paymentsList='ephemeral.payments'
         )
 
         .c-footer
@@ -38,7 +36,7 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background' v-if='
         transition(name='slidedown')
           label.field(v-if='displayComment')
             i18n.sr-only.label Leave a message
-            textarea.c-comment(
+            textarea.textarea.c-comment(
               rows='4'
             )
 
@@ -68,20 +66,22 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background' v-if='
 </template>
 
 <script>
+import sbp from '~/shared/sbp.js'
+import { mapState, mapGetters } from 'vuex'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
-import PaymentsList from '@containers/payments/PaymentsList.vue'
+import RecordPaymentsList from '@containers/payments/RecordPaymentsList.vue'
 import L from '@view-utils/translations.js'
 import { validationMixin } from 'vuelidate'
-import sbp from '~/shared/sbp.js'
 import { CLOSE_MODAL } from '@utils/events.js'
 import SvgSuccess from '@svgs/success.svg'
 import BannerSimple from '@components/banners/BannerSimple.vue'
+import { PAYMENT_PENDING, PAYMENT_COMPLETED, PAYMENT_TYPE_MANUAL } from '@model/contracts/payments/index.js'
 
 export default {
   name: 'RecordPayment',
   mixins: [validationMixin],
   props: {
-    paymentsDistribution: {
+    paymentsList: {
       type: Array
     }
   },
@@ -89,34 +89,39 @@ export default {
     return {
       displayComment: false,
       form: {},
-      donePayment: false
+      donePayment: false,
+      ephemeral: {
+        payments: this.paymentsList
+      }
     }
   },
   created () {
-    if (!this.paymentsDistribution) {
-      console.warn('Missing paymentsDistribution to display RecordPayment modal')
+    if (!this.paymentsList) {
+      console.warn('Missing paymentsList to display RecordPayment modal')
       sbp('okTurtles.events/emit', CLOSE_MODAL)
     }
   },
   components: {
     ModalBaseTemplate,
-    PaymentsList,
+    RecordPaymentsList,
     SvgSuccess,
     BannerSimple
   },
   computed: {
-    tableTitles () {
-      return {
-        one: L('Sent to'),
-        two: '',
-        three: L('Amount sent')
-      }
-    },
+    ...mapState([
+      'currentGroupId'
+    ]),
+    ...mapGetters([
+      'groupMincomeCurrency',
+      'thisMonthsPaymentInfo'
+    ]),
     recordNumber () {
-      return this.paymentsDistribution.filter(payment => payment.checked).length
+      return this.paymentsList.filter(payment => payment.checked).length
     },
     registerPaymentCopy () {
-      return this.recordNumber === 1 ? L('Record 1 payment') : L('Record {number} payments', { number: this.recordNumber })
+      return this.recordNumber === 1
+        ? L('Record 1 payment')
+        : L('Record {number} payments', { number: this.recordNumber })
     }
   },
   methods: {
@@ -124,8 +129,40 @@ export default {
       this.$refs.modal.close()
     },
     async submit () {
+      // TODO: remember when creating 'gi.contracts/group/payment' to set the payment
+      //       currency using:
+      //       getters.thisMonthsPaymentInfo.firstMonthsCurrency || getters.groupMincomeCurrency
+      for (const payment of this.ephemeral.payments) {
+        if (payment.checked) {
+          // TODO: handle errors!
+          try {
+            // TODO: do currency conversion here using firstMonthsCurrency ?
+            const groupCurrency = this.groupMincomeCurrency
+            const paymentInfo = {
+              toUser: payment.username,
+              amount: +payment.amount,
+              currencyFromTo: ['USD', groupCurrency], // TODO: this!
+              exchangeRate: 1,
+              txid: '' + Math.random(),
+              status: PAYMENT_PENDING,
+              paymentType: PAYMENT_TYPE_MANUAL
+              // TOOD: add memo if user added a note
+            }
+            const msg = await sbp('gi.actions/group/payment', paymentInfo, this.currentGroupId)
+            // TODO: hack until /payment supports sending completed payment
+            //       (and "uncompleting" a payment)
+            await sbp('gi.actions/group/paymentUpdate', {
+              paymentHash: msg.hash(),
+              updatedProperties: {
+                status: PAYMENT_COMPLETED
+              }
+            }, this.currentGroupId)
+          } catch (e) {
+            console.error('TODO: this!', e)
+          }
+        }
+      }
       this.donePayment = true
-      console.log('Todo: Implement record payment')
     }
   },
   validations: {

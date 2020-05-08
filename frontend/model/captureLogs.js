@@ -22,6 +22,7 @@ let entriesCount = null
 let appLogsFilter = []
 
 // LS = Local Storage
+// TODO: handle QuotaExceededError
 const giLSset = (key, value) => localStorage.setItem(`giConsole/${username}/${key}`, value)
 const giLSget = (key) => localStorage.getItem(`giConsole/${username}/${key}`)
 const giLSremove = (key) => localStorage.removeItem(`giConsole/${username}/${key}`)

@@ -56,6 +56,8 @@ page.c-page
 
   invitations-table
 
+  page-section(:title='L("Voting System")')
+    group-voting-system
   page-section(:title='L("Leave Group")')
     i18n.has-text-1(
       tag='p'
@@ -100,7 +102,7 @@ import Page from '@components/Page.vue'
 import PageSection from '@components/PageSection.vue'
 import AvatarUpload from '@components/AvatarUpload.vue'
 import InvitationsTable from '@containers/group-settings/InvitationsTable.vue'
-import BannerSimple from '@components/banners/BannerSimple.vue'
+import GroupVotingSystem from '@containers/group-settings/GroupVotingSystem.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import L from '@view-utils/translations.js'
@@ -109,13 +111,13 @@ export default {
   name: 'GroupSettings',
   mixins: [validationMixin, validationsDebouncedMixins],
   components: {
-    Page,
-    PageSection,
-    InvitationsTable,
     AvatarUpload,
-    BannerSimple,
     BannerScoped,
-    ButtonSubmit
+    ButtonSubmit,
+    GroupVotingSystem,
+    InvitationsTable,
+    Page,
+    PageSection
   },
   data () {
     const { groupName, sharedValues, mincomeCurrency } = this.$store.getters.groupSettings

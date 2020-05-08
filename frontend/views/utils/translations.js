@@ -83,20 +83,14 @@ Vue.component('i18n', {
       type: String,
       default: 'span'
     },
-    html: String,
     compile: Boolean
   },
   render: function (h, context) {
-    // const text = context.props.html || context.children[0].text || context.$slots.default[0].text
-    const text = context.props.html || context.children[0].text
+    const text = context.children[0].text
     const translation = L(text, context.props.args || {}, { defaultValue: text })
     if (!translation) {
       console.warn('The following i18n text was not translated correctly:', text)
       return h(context.props.tag, context.data, text)
-    }
-    if (context.props.html) {
-      console.warn("i18n: using 'html' as string is deprecated! Instead: set 'compile' attribute and place HTML opening/closing tags in :args variables, then place text as child of i18n!", { text })
-      context.props.compile = true
     }
     if (context.props.compile) {
       var result = Vue.compile('<wrap>' + translation + '</wrap>')

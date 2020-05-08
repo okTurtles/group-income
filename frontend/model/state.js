@@ -266,7 +266,7 @@ const getters = {
     }
 
     const doWeNeedIncome = ourGroupProfile.incomeDetailsType === 'incomeAmount'
-    const distribution = getters.thisMonthsPayments.frozenDistribution || getters.groupIncomeDistribution
+    const distribution = getters.groupIncomeDistribution
 
     const nonMonetaryContributionsOf = (username) => groupProfiles[username].nonMonetaryContributions || []
     const getDisplayName = (username) => getters.globalProfile(username).displayName || username
@@ -573,6 +573,7 @@ const handleEvent = {
         // this error it means somehow we're getting valid messages out of order
         throw new GIErrorDropAndReprocess(e.message)
       } else if (e instanceof ErrorDBConnection) {
+        // TODO: handle QuotaExceededError from localStorage!
         // we cannot throw GIErrorDropAndReprocess because saving is clearly broken
         // so we re-throw this special error condition that means we can't do anything
         throw new GIErrorUnrecoverable(`${e.name} during addMessageToDB!`)
@@ -609,6 +610,13 @@ const handleEvent = {
         // this is likely a GUI-related error/bug, so it's safe to save and reprocess later
         throw new GIErrorDropAndReprocess(`${e.name} during processMutation: ${e.message}`)
       }
+      // BUG/TODO: we can get into an auto ban loop when the proposal made
+      //       to autoban a member has itself a problem (e.g. because
+      //       it requires a 'member' field in but the proposal created to
+      //       ban the user didn't have one in its proposalData). The original
+      //       proposal will be accepted into the chain, but each subsequent
+      //       /proposalVote will throw the exception because /removeMember
+      //       validation will break.
       throw new GIErrorIgnoreAndBanIfGroup(`${e.name} during processMutation: ${e.message}`)
     }
   },
@@ -621,9 +629,7 @@ const handleEvent = {
       const meta = message.meta()
       const mutation = { data, meta, hash, contractID }
       // this selector is created by Contract.js
-      if (sbp('sbp/selectors/fn', `${selector}/sideEffect`)) {
-        await sbp(`${selector}/sideEffect`, mutation)
-      }
+      await sbp(`${selector}/sideEffect`, mutation)
       // let any listening components know that we've received, processed, and stored the event
       sbp('okTurtles.events/emit', hash, contractID, message)
       sbp('okTurtles.events/emit', EVENTS.EVENT_HANDLED, contractID, message)
@@ -706,6 +712,7 @@ const handleEvent = {
           }
         } else {
           // create our proposal to ban the user
+          // TODO: move this into into controller/actions/group.js !
           proposal = await sbp('gi.contracts/group/proposal/create', {
             proposalType: PROPOSAL_REMOVE_MEMBER,
             proposalData: {
