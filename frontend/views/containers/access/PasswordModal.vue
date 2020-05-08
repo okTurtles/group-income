@@ -8,11 +8,6 @@ modal-template(class='is-centered is-left-aligned' back-on-mobile=true ref='moda
     name='formData'
     @submit.prevent='changePassword'
   )
-    i18n.link(
-      tag='button'
-      data-test='passwordBtn'
-      @click.prevent='openModal("incomeDetails")'
-    ) Update Password
     password-form(
       name='current'
       :label='L("Current Password")'
