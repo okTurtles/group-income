@@ -27,7 +27,7 @@ import currencies from '@view-utils/currencies.js'
 import { mapGetters } from 'vuex'
 import ProgressBar from '@components/graphs/Progress.vue'
 import L from '@view-utils/translations.js'
-import { humanDate } from '@view-utils/humanDate.js'
+import { humanDate } from '@utils/time.js'
 
 export default {
   name: 'MonthOverview',

@@ -1,5 +1,7 @@
 'use strict'
 
+const locale = navigator.languages ? navigator.languages[0] : navigator.language
+
 export const MINS_MILLIS = 60000
 export const HOURS_MILLIS = 60 * MINS_MILLIS
 export const DAYS_MILLIS = 24 * HOURS_MILLIS
@@ -42,4 +44,11 @@ export function compareISOTimestamps (a: string, b: string): number {
   const A = new Date(a).getTime()
   const B = new Date(b).getTime()
   return A > B ? 1 : (A < B ? -1 : 0)
+}
+
+export function humanDate (
+  datems = Date.now(),
+  opts = { month: 'short', day: 'numeric' }
+) {
+  return new Date(datems).toLocaleDateString(locale, opts)
 }
