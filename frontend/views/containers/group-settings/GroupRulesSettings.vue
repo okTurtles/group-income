@@ -1,9 +1,10 @@
 <template lang='pug'>
-  ul.c-wrapper
+  ul.c-wrapper(data-test='votingRules')
     li.cardBox(
       v-for='rule in votingRulesSorted'
       :class='{ isActive: isRuleActive(rule) }'
       :aria-current='isRuleActive(rule)'
+      :data-test='rule'
     )
       p.is-title-4 {{ config[rule].title }}
       p.has-text-1.c-expl(v-html='config[rule].explanation')
@@ -12,7 +13,7 @@
       dl.c-status(v-if='isRuleActive(rule)')
         dt.c-status-term {{ config[rule].status }}
         dd.c-status-desc
-          span(v-html='votingValue(rule)')
+          span(v-html='votingValue(rule)' data-test='ruleStatus')
           i18n.link(
             tag='button'
             @click='openVotingProposal(rule)'
@@ -20,6 +21,7 @@
 
       banner-simple.c-banner(
         severity='info'
+        data-test='ruleAdjusted'
         v-if='isVotingRuleAdjusted(rule)'
       )
         i18n * This value was automatically adjusted because your group is currently smaller than the disagreement number.

@@ -47,8 +47,8 @@ export default sbp('sbp/selectors/register', {
         rule: ruleName,
         ruleSettings: {
           [ruleName]: {
-            ...thresholdAdjusted(ruleName, ruleThreshold, 3),
-            threshold: ruleThreshold
+            ...thresholdAdjusted(ruleName, +ruleThreshold, 1), // 1 = group initial size.
+            threshold: +ruleThreshold
           }
         }
       }

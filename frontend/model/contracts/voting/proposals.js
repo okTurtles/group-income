@@ -63,7 +63,6 @@ function voteAgainst (state, { meta, data, contractID }) {
 // However, we decided to make all settings the same, to simplify the UI/UX proptotype.
 const proposalDefaults = {
   rule: RULE_PERCENTAGE,
-  // PR REVIEW: Some proposals have 7 and other 14. Can we make all the same?
   expires_ms: 7 * DAYS_MILLIS,
   ruleSettings: {
     [RULE_PERCENTAGE]: { threshold: 0.8 },
@@ -140,7 +139,6 @@ const proposals = {
     },
     [VOTE_AGAINST]: voteAgainst
   },
-  // REVIEW PR: What's the diff between GROUP_SETTING_CHANGE and PROPOSAL_SETTING_CHANGE?
   [PROPOSAL_GROUP_SETTING_CHANGE]: {
     defaults: proposalDefaults,
     [VOTE_FOR]: function (state, { meta, data, contractID }) {

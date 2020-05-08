@@ -9,7 +9,7 @@
 
       .cardBox.c-box(v-for='rule in group.rulesOrder' :class='{isActive: group.ruleName === rule }')
         .c-box-option
-          label.checkbox.c-option
+          label.checkbox.c-option(:data-test='rule')
             input.input(
               type='radio'
               :value='rule'

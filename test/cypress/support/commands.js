@@ -135,6 +135,8 @@ Cypress.Commands.add('giCreateGroup', (name, {
   image = 'imageTest.png',
   sharedValues = 'Testing group values',
   mincome = 200,
+  ruleName = 'percentage',
+  ruleThreshold = 80,
   bypassUI = false
 } = {}) => {
   if (bypassUI) {
@@ -143,9 +145,8 @@ Cypress.Commands.add('giCreateGroup', (name, {
       sharedValues,
       mincomeAmount: mincome,
       mincomeCurrency: 'USD',
-      thresholdChange: 0.8,
-      thresholdMemberApproval: 0.8,
-      thresholdMemberRemoval: 0.8
+      ruleName,
+      ruleThreshold: ruleName === 'percentage' ? ruleThreshold / 100 : ruleThreshold
     })
 
     cy.url().should('eq', 'http://localhost:8000/app/dashboard')
@@ -154,31 +155,40 @@ Cypress.Commands.add('giCreateGroup', (name, {
   }
 
   cy.getByDT('createGroup').click()
-  cy.getByDT('groupName').type(name)
 
-  cy.fixture(image, 'base64').then(fileContent => {
-    cy.get('[data-test="groupPicture"]').upload({ fileContent, fileName: image, mimeType: 'image/png' }, { subjectType: 'input' })
+  cy.getByDT('modal').within(() => {
+    cy.getByDT('groupName').type(name)
+    cy.fixture(image, 'base64').then(fileContent => {
+      cy.get('[data-test="groupPicture"]').upload({ fileContent, fileName: image, mimeType: 'image/png' }, { subjectType: 'input' })
+    })
+    cy.getByDT('nextBtn').click()
+
+    if (sharedValues) {
+      cy.get('textarea[name="sharedValues"]').type(sharedValues)
+    } else {
+      // Make sure this step is in the DOM...
+      cy.get('textarea[name="sharedValues"]')
+    }
+    // ...so that it catches correctly the next "Next" button.
+    cy.getByDT('nextBtn').click()
+
+    cy.get('input[name="mincomeAmount"]').type(mincome)
+    cy.getByDT('nextBtn').click()
+
+    cy.getByDT('rulesStep').within(() => {
+      cy.getByDT(ruleName, 'label').click()
+
+      cy.get(`input[type='range']#range${ruleName}`)
+        .invoke('val', ruleThreshold)
+        .trigger('input')
+      // Verify the input value was really changed
+      cy.get(`input[type='range']#range${ruleName}`).should('have.value', ruleThreshold.toString())
+    })
+    cy.getByDT('finishBtn').click()
+
+    cy.getByDT('welcomeGroup').should('contain', `Welcome to ${name}!`)
+    cy.getByDT('toDashboardBtn').click()
   })
-  cy.getByDT('nextBtn').click()
-
-  if (sharedValues) {
-    cy.get('textarea[name="sharedValues"]').type(sharedValues)
-  } else {
-    // Make sure this step is in the DOM...
-    cy.get('textarea[name="sharedValues"]')
-  }
-  // ...so that it catches correctly the next "Next" button.
-  cy.getByDT('nextBtn').click()
-
-  cy.get('input[name="mincomeAmount"]').type(mincome)
-  cy.getByDT('nextBtn').click()
-
-  // TODO - It seems we are not testing the Percentages Rules ATM, so, let's just move on...
-
-  cy.getByDT('finishBtn').click()
-
-  cy.getByDT('welcomeGroup').should('contain', `Welcome to ${name}!`)
-  cy.getByDT('toDashboardBtn').click()
 
   cy.url().should('eq', 'http://localhost:8000/app/dashboard')
 })

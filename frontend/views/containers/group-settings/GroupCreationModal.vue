@@ -120,7 +120,7 @@ export default {
           ruleName: this.form.ruleName,
           ruleThreshold: this.form.ruleName === RULE_PERCENTAGE
             ? ruleThreshold / 100 // convert percent to decimal (e.g 60 -> 0.6)
-            : +ruleThreshold
+            : ruleThreshold
         })
         this.next()
       } catch (e) {
@@ -137,14 +137,8 @@ export default {
         groupName: '',
         groupPicture: '',
         sharedValues: '',
-
         // randomize to reduce choice bias
         ruleOrder: Math.round(Math.random()) === 1 ? [RULE_PERCENTAGE, RULE_DISAGREEMENT] : [RULE_DISAGREEMENT, RULE_PERCENTAGE],
-        // TODO connect rule option in a next PR.
-
-        changeThreshold: proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults.ruleSettings[RULE_PERCENTAGE].threshold,
-        memberApprovalThreshold: proposals[PROPOSAL_INVITE_MEMBER].defaults.ruleSettings[RULE_PERCENTAGE].threshold,
-        memberRemovalThreshold: proposals[PROPOSAL_REMOVE_MEMBER].defaults.ruleSettings[RULE_PERCENTAGE].threshold,
         mincomeAmount: null,
         mincomeCurrency: currencies.USD.code,
         ruleName: null,

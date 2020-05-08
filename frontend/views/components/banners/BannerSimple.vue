@@ -6,7 +6,7 @@
     .c-header
       slot(name='header')
 
-    .c-body
+    .c-body(data-test='bannerMsg')
       slot
 </template>
 
