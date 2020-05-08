@@ -1171,6 +1171,7 @@ import SvgMoney from '@svgs/money.svg'
 import SvgProposal from '@svgs/proposal.svg'
 import SvgVote from '@svgs/vote.svg'
 import { mapGetters, mapMutations } from 'vuex'
+import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
 
 export default {
   name: 'DesignSystemView',
@@ -1352,7 +1353,7 @@ export default {
       })
     },
     toggleTheme () {
-      this.setTheme(this.isDarkTheme ? 'light' : 'dark')
+      this.setTheme(this.isDarkTheme ? THEME_LIGHT : THEME_DARK)
     }
   },
   computed: {

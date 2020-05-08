@@ -19,6 +19,7 @@ import { INVITE_INITIAL_CREATOR, createInvite } from '~/frontend/model/contracts
 import '~/frontend/model/state.js'
 import '~/frontend/controller/namespace.js'
 import chalk from 'chalk'
+import { THEME_LIGHT } from '~/frontend/utils/themes.js'
 
 global.fetch = require('node-fetch')
 const should = require('should') // eslint-disable-line
@@ -47,7 +48,7 @@ const vuexState = {
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
-  theme: 'light',
+  theme: THEME_LIGHT,
   fontSize: 1,
   appLogsFilter: ['error', 'info', 'warn']
 }

@@ -23,6 +23,7 @@ import './contracts/group.js'
 import './contracts/mailbox.js'
 import './contracts/identity.js'
 import { captureLogsStart, captureLogsPause } from '~/frontend/model/captureLogs.js'
+import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
 
 Vue.use(Vuex)
 var store // this is set and made the default export at the bottom of the file.
@@ -37,7 +38,7 @@ const initialState = {
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
-  theme: 'light',
+  theme: THEME_LIGHT,
   reducedMotion: false,
   fontSize: 1,
   appLogsFilter: process.env.NODE_ENV === 'development'
@@ -51,13 +52,6 @@ function guardedSBP (sel: string, ...data: any): any {
     throw new GIErrorIgnoreAndBanIfGroup(`guardedSBP('${sel}') not whitelisted!`)
   }
   return sbp(sel, ...data)
-}
-
-function checkThemeState (state) {
-  // Prevent bug if for some reason state doesn't have a theme
-  // TODO replace default from 0 to system preference if it exist
-  // Will be implemetaed in issue #844 Implement updates to the User Settings page
-  if (!state.theme) state.theme = Colors[0].theme
 }
 
 sbp('okTurtles.events/on', EVENTS.CONTRACT_IS_SYNCING, (contractID, isSyncing) => {
@@ -190,8 +184,7 @@ const mutations = {
     }
   },
   setTheme (state, color) {
-    if (getters.colors[color]) state.theme = color
-    else checkThemeState(state)
+    state.theme = color
   },
   setReducedMotion (state, isChecked) {
     state.reducedMotion = isChecked
@@ -353,12 +346,10 @@ const getters = {
     }
   },
   colors (state) {
-    checkThemeState(state)
     return Colors[state.theme]
   },
   isDarkTheme (state) {
-    checkThemeState(state)
-    return Colors[state.theme].theme === 'dark'
+    return Colors[state.theme].theme === THEME_DARK
   }
 }
 
