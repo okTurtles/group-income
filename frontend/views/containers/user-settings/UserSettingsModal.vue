@@ -13,7 +13,7 @@ modal-base-template(class='has-background' :a11yTitle='L("Settings")')
       tab-item
         app-logs
       tab-item
-        tab-placeholder(name='Troubleshooting')
+        troubleshooting
 </template>
 
 <script>
@@ -23,6 +23,7 @@ import TabWrapper from '@components/tabs/TabWrapper.vue'
 import TabPlaceholder from './Placeholder.vue'
 import Appearence from './Appearence.vue'
 import AppLogs from './AppLogs.vue'
+import Troubleshooting from './Troubleshooting.vue'
 import UserProfile from './UserProfile.vue'
 import settings from './settings.js'
 
@@ -34,6 +35,7 @@ export default {
     TabItem,
     Appearence,
     AppLogs,
+    Troubleshooting,
     UserProfile,
     TabPlaceholder
   },

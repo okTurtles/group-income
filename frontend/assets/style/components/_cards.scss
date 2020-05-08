@@ -85,3 +85,15 @@
     margin-top: -2.5rem;
   }
 }
+
+.cardBox {
+  position: relative;
+  border: 1px solid $general_0;
+  padding: 1.5rem 1rem;
+  border-radius: 0.25rem;
+  margin-bottom: 1rem;
+
+  &.isActive {
+    border-color: $primary_0;
+  }
+}

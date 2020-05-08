@@ -360,7 +360,7 @@ p.error {
 }
 
 .radio {
-  :last-child {
+  > :last-child {
     white-space: nowrap;
 
     &::before,
@@ -407,7 +407,7 @@ p.error {
 }
 
 .checkbox {
-  :last-child {
+  > :last-child {
     white-space: nowrap;
 
     &::before,

@@ -972,7 +972,33 @@ page(
                 placeholder='Search...'
                 v-model='form.searchValue'
               )
+        tr
+          td
+            tr
+              h3.is-title-3 SliderContinuous (component)
+          tr
+            td
+              pre
+                | slider-continuous(
+                |   uid='dsSlider'
+                |   label='How many tabs are opened?'
+                |   min='3'
+                |   max='50'
+                |   unit=' tabs'
+                |   :value='form.sliderValue'
+                |   @input='handleSliderInput'
+                | )
 
+            td
+              slider-continuous(
+                uid='dsSlider'
+                label='How many tabs do you have opened?'
+                min='3'
+                max='50'
+                unit=' tabs'
+                :value='form.sliderValue'
+                @input='(e) => form.sliderValue = e.target.value'
+              )
   article#tabs
     section.card
       h2.is-title-2.card-header Tabs
@@ -1156,6 +1182,7 @@ import CalloutCard from '@components/CalloutCard.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import Tooltip from '@components/Tooltip.vue'
+import SliderContinuous from '@components/SliderContinuous.vue'
 import Search from '@components/Search.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgAccess from '@svgs/access.svg'
@@ -1271,7 +1298,8 @@ export default {
       },
       form: {
         searchValue: '',
-        selectPayment: 'choose'
+        selectPayment: 'choose',
+        sliderValue: 25
       },
       ephemeral: {
         passwordHidden: true,
@@ -1296,7 +1324,8 @@ export default {
     MenuItem,
     Search,
     Tooltip,
-    SvgHello
+    SvgHello,
+    SliderContinuous
   },
   mounted () {
     const menu = document.getElementById('c-design-system-sidebar')

@@ -89,7 +89,6 @@ page-section.c-section(:title='L("Invite links")')
   i18n.c-invite-footer(
     tag='p'
     @click='handleInviteClick'
-    compile
     :args='{ r1: `<button class="link js-btnInvite">`, r2: "</button>"}'
   ) To generate a new link, you need to {r1}propose adding a new member{r2} to your group.
 </template>
@@ -315,6 +314,13 @@ export default {
     }
   }
 
+  th.c-invite-link {
+    @include phone {
+      white-space: nowrap;
+      opacity: 0;
+    }
+  }
+
   .c-state {
     grid-area: state;
     padding-right: 3px;
@@ -337,6 +343,7 @@ export default {
       flex-direction: row;
       align-items: baseline;
       justify-content: flex-start;
+      padding-left: 1rem;
     }
   }
 

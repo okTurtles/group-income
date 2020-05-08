@@ -70,6 +70,8 @@ export default sbp('sbp/selectors/register', {
       if (e.name.indexOf('ErrorDB') === 0) {
         throw e // throw the specific type of ErrorDB instance
       }
+      // TODO: save e.name as a property of ErrorDBConnection
+      //       so that we can handle QuotaExceededError
       throw new ErrorDBConnection(`${e.name} during addEntry: ${e.message}`)
     }
   },

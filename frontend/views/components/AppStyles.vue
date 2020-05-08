@@ -11,6 +11,8 @@ v-style.
     --success_2: {{colors.success_2}};
     --warning_0: {{colors.warning_0}};
     --warning_0_1: {{lightenDarkenColor(colors.warning_0, softTone)}};
+    --warning_0_text: {{colors.warning_0_text}};
+    --warning_0_2: {{colors.warning_0_2}};
     --warning_1: {{colors.warning_1}};
     --warning_2: {{colors.warning_2}};
     --danger_0: {{colors.danger_0}};
