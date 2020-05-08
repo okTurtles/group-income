@@ -73,3 +73,10 @@ const rules = {
 export default rules
 
 export const ruleType = unionOf(...Object.keys(rules).map(k => literalOf(k)))
+
+export const thresholdAdjusted = (rule, threshold, groupSize) => {
+  if (rule === RULE_DISAGREEMENT) {
+    return { thresholdAdjusted: Math.min(threshold, groupSize) }
+  }
+  return {}
+}

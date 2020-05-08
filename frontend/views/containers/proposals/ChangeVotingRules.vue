@@ -8,13 +8,13 @@ proposal-template(
   @submit='submit'
 )
   .c-step
-    voting-system-input.c-input(
-      :type='type'
+    voting-rules-input.c-input(
+      :rule='rule'
       :value='form.value'
       @update='setValue'
     )
 
-    template(v-if='type === RULE_DISAGREEMENT')
+    template(v-if='rule === RULE_DISAGREEMENT')
       // TODO review this copy on Figma
       i18n.has-text-1.has-text-small(v-if='form.value > 1' :args='{nr: form.value}') Future proposals would be accepted if {nr} or fewer members disagree.
       i18n.has-text-1.has-text-small(v-else :args='LTags("b")') Future proposals would be accepted if {b_}no one{_b} disagrees.
@@ -26,16 +26,16 @@ import { CLOSE_MODAL } from '@utils/events.js'
 import L from '@view-utils/translations.js'
 import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/voting/rules.js'
 import ProposalTemplate from './ProposalTemplate.vue'
-import VotingSystemInput from '@components/VotingSystemInput.vue'
+import VotingRulesInput from '@components/VotingRulesInput.vue'
 
 export default {
-  name: 'ChangeVotingProposal',
+  name: 'ChangeVotingRules',
   components: {
     ProposalTemplate,
-    VotingSystemInput
+    VotingRulesInput
   },
   props: {
-    type: {
+    rule: {
       type: String,
       validator: (value) => [RULE_PERCENTAGE, RULE_DISAGREEMENT].includes(value)
     }
@@ -57,10 +57,10 @@ export default {
     }
   },
   created () {
-    if (!this.type) {
+    if (!this.rule) {
       sbp('okTurtles.events/emit', CLOSE_MODAL)
     } else {
-      this.form.value = this.type === RULE_PERCENTAGE ? 75 : 2 // TODO this.
+      this.form.value = this.rule === RULE_PERCENTAGE ? 75 : 2 // TODO this.
     }
   },
   computed: {

@@ -54,7 +54,8 @@ import { validationMixin } from 'vuelidate'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/voting/rules.js'
 import proposals from '@model/contracts/voting/proposals.js'
-import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE } from '@model/contracts/voting/constants.js'
+import { PROPOSAL_GENERIC } from '@model/contracts/voting/constants.js'
+import currencies from '@view-utils/currencies.js'
 import L from '@view-utils/translations.js'
 import { decimals } from '@view-utils/validators.js'
 import StepAssistant from '@view-utils/stepAssistant.js'
@@ -72,7 +73,7 @@ import {
 // we use require instead of import with this file to make rollup happy
 // or not... using require only makes rollup happy during compilation
 // but then the browser complains about "require is not defined"
-import { required, between } from 'vuelidate/lib/validators'
+import { required, requiredIf, between } from 'vuelidate/lib/validators'
 
 export default {
   name: 'GroupCreationModal',
@@ -109,15 +110,17 @@ export default {
       try {
         this.$refs.formMsg.clean()
 
+        const ruleThreshold = this.form.ruleThreshold[this.form.ruleName]
         await sbp('gi.actions/group/createAndSwitch', {
           name: this.form.groupName,
           picture: this.ephemeral.groupPictureFile,
           sharedValues: this.form.sharedValues,
           mincomeAmount: this.form.mincomeAmount,
           mincomeCurrency: this.form.mincomeCurrency,
-          thresholdChange: this.form.changeThreshold,
-          thresholdMemberApproval: this.form.memberApprovalThreshold,
-          thresholdMemberRemoval: this.form.memberRemovalThreshold
+          ruleName: this.form.ruleName,
+          ruleThreshold: this.form.ruleName === RULE_PERCENTAGE
+            ? ruleThreshold / 100 // convert percent to decimal (e.g 60 -> 0.6)
+            : +ruleThreshold
         })
         this.next()
       } catch (e) {
@@ -127,6 +130,8 @@ export default {
     }
   },
   data () {
+    // It's okay to use "PROPOSAL_GENERIC" as an example because all the settings are the same.
+    const proposalsSettings = proposals[PROPOSAL_GENERIC].defaults.ruleSettings
     return {
       form: {
         groupName: '',
@@ -141,7 +146,14 @@ export default {
         memberApprovalThreshold: proposals[PROPOSAL_INVITE_MEMBER].defaults.ruleSettings[RULE_PERCENTAGE].threshold,
         memberRemovalThreshold: proposals[PROPOSAL_REMOVE_MEMBER].defaults.ruleSettings[RULE_PERCENTAGE].threshold,
         mincomeAmount: null,
-        mincomeCurrency: 'USD' // TODO: grab this as a constant from currencies.js
+        mincomeCurrency: currencies.USD.code,
+        ruleName: null,
+        ruleThreshold: {
+          [RULE_DISAGREEMENT]: proposalsSettings[RULE_DISAGREEMENT].threshold,
+          [RULE_PERCENTAGE]: proposalsSettings[RULE_PERCENTAGE].threshold * 100 // convert decimal to percent (e.g 0.6 -> 60)
+        },
+        // randomize to reduce choice bias
+        rulesOrder: Math.round(Math.random()) ? [RULE_PERCENTAGE, RULE_DISAGREEMENT] : [RULE_DISAGREEMENT, RULE_PERCENTAGE]
       },
       ephemeral: {
         groupPictureFile: '' // passed by GroupName.vue
@@ -162,18 +174,6 @@ export default {
       groupName: { required },
       groupPicture: { },
       sharedValues: { },
-      changeThreshold: {
-        required,
-        between: between(0.01, 1)
-      },
-      memberApprovalThreshold: {
-        required,
-        between: between(0.01, 1)
-      },
-      memberRemovalThreshold: {
-        required,
-        between: between(0.01, 1)
-      },
       mincomeAmount: {
         required,
         minValue: (val) => val > 0,
@@ -181,6 +181,24 @@ export default {
       },
       mincomeCurrency: {
         required
+      },
+      ruleName: {
+        required,
+        oneOf: (value) => [RULE_DISAGREEMENT, RULE_PERCENTAGE].includes(value)
+      },
+      ruleThreshold: {
+        [RULE_DISAGREEMENT]: {
+          required: requiredIf(function () {
+            return this.form.ruleName === RULE_DISAGREEMENT
+          }),
+          between: between(1, 60)
+        },
+        [RULE_PERCENTAGE]: {
+          required: requiredIf(function (nestedModel) {
+            return this.form.ruleName === RULE_PERCENTAGE
+          }),
+          between: between(0, 100)
+        }
       }
     },
     // validation groups by route name for steps

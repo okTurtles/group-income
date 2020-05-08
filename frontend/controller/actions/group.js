@@ -11,7 +11,7 @@ import {
   PROPOSAL_PROPOSAL_SETTING_CHANGE,
   PROPOSAL_GENERIC
 } from '@model/contracts/voting/constants.js'
-import { RULE_PERCENTAGE } from '@model/contracts/voting/rules.js'
+import { thresholdAdjusted } from '@model/contracts/voting/rules.js'
 import { GIErrorUIRuntimeError } from '@model/errors.js'
 
 import imageUpload from '@utils/imageUpload.js'
@@ -25,9 +25,8 @@ export default sbp('sbp/selectors/register', {
     sharedValues,
     mincomeAmount,
     mincomeCurrency,
-    thresholdChange,
-    thresholdMemberApproval,
-    thresholdMemberRemoval
+    ruleName,
+    ruleThreshold
   }, {
     sync = true
   } = {}) {
@@ -44,6 +43,15 @@ export default sbp('sbp/selectors/register', {
 
     try {
       const initialInvite = createInvite({ quantity: 60, creator: INVITE_INITIAL_CREATOR })
+      const proposalSettings = {
+        rule: ruleName,
+        ruleSettings: {
+          [ruleName]: {
+            ...thresholdAdjusted(ruleName, ruleThreshold, 3),
+            threshold: ruleThreshold
+          }
+        }
+      }
       const message = await sbp('gi.contracts/group/create', {
         invites: {
           [initialInvite.inviteSecret]: initialInvite
@@ -53,25 +61,29 @@ export default sbp('sbp/selectors/register', {
           groupName: name,
           groupPicture: finalPicture,
           sharedValues,
-          mincomeAmount: +mincomeAmount, // ensure this is a number
+          mincomeAmount: +mincomeAmount,
           mincomeCurrency: mincomeCurrency,
           proposals: {
-            // TODO: make the UI support changing the rule type, so that we have
-            //       a component for RULE_DISAGREEMENT as well
-            [PROPOSAL_GROUP_SETTING_CHANGE]: merge({},
-              proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults,
-              { ruleSettings: { [RULE_PERCENTAGE]: { threshold: thresholdChange } } }
+            [PROPOSAL_GROUP_SETTING_CHANGE]: merge(
+              merge({}, proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults),
+              proposalSettings
             ),
-            [PROPOSAL_INVITE_MEMBER]: merge({},
-              proposals[PROPOSAL_INVITE_MEMBER].defaults,
-              { ruleSettings: { [RULE_PERCENTAGE]: { threshold: thresholdMemberApproval } } }
+            [PROPOSAL_INVITE_MEMBER]: merge(
+              merge({}, proposals[PROPOSAL_INVITE_MEMBER].defaults),
+              proposalSettings
             ),
-            [PROPOSAL_REMOVE_MEMBER]: merge({},
-              proposals[PROPOSAL_REMOVE_MEMBER].defaults,
-              { ruleSettings: { [RULE_PERCENTAGE]: { threshold: thresholdMemberRemoval } } }
+            [PROPOSAL_REMOVE_MEMBER]: merge(
+              merge({}, proposals[PROPOSAL_REMOVE_MEMBER].defaults),
+              proposalSettings
             ),
-            [PROPOSAL_PROPOSAL_SETTING_CHANGE]: proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].defaults,
-            [PROPOSAL_GENERIC]: proposals[PROPOSAL_GENERIC].defaults
+            [PROPOSAL_PROPOSAL_SETTING_CHANGE]: merge(
+              merge({}, proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].defaults),
+              proposalSettings
+            ),
+            [PROPOSAL_GENERIC]: merge(
+              merge({}, proposals[PROPOSAL_GENERIC].defaults),
+              proposalSettings
+            )
           }
         }
       })

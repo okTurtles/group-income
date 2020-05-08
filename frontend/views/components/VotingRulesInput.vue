@@ -2,11 +2,11 @@
   div
     slider-continuous.c-slider(
       :class='ephemeral.sliderClass'
-      :uid='type'
-      :label='config[type].slideLabel'
-      :min='config[type].slideMin'
-      :max='config[type].slideMax'
-      :unit='config[type].slideUnit'
+      :uid='rule'
+      :label='config[rule].slideLabel'
+      :min='config[rule].slideMin'
+      :max='config[rule].slideMax'
+      :unit='config[rule].slideUnit'
       :value='value'
       @input='handleInput'
     )
@@ -29,16 +29,16 @@ import TransitionExpand from '@components/TransitionExpand.vue'
 const SUPERMAJORITY = 0.67
 
 export default {
-  name: 'VotingSystemInput',
+  name: 'VotingRulesInput',
   components: {
     BannerSimple,
     SliderContinuous,
     TransitionExpand
   },
   props: {
-    type: {
+    rule: {
       type: String,
-      validator: (type) => [RULE_PERCENTAGE, RULE_DISAGREEMENT].includes(type)
+      validator: (rule) => [RULE_PERCENTAGE, RULE_DISAGREEMENT].includes(rule)
     },
     value: [String, Number]
   },
@@ -68,7 +68,7 @@ export default {
   },
   computed: {
     warnMajority () {
-      return this.type === RULE_PERCENTAGE && this.value / 100 < SUPERMAJORITY
+      return this.rule === RULE_PERCENTAGE && this.value / 100 < SUPERMAJORITY
     }
   },
   methods: {

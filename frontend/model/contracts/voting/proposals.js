@@ -34,7 +34,7 @@ export const proposalSettingsType = objectOf({
   expires_ms: number,
   ruleSettings: objectOf({
     [RULE_PERCENTAGE]: objectOf({ threshold: number }),
-    [RULE_DISAGREEMENT]: objectOf({ threshold: number })
+    [RULE_DISAGREEMENT]: objectOf({ threshold: number, thresholdAdjusted: number })
   })
 })
 
@@ -59,16 +59,21 @@ function voteAgainst (state, { meta, data, contractID }) {
   sbp('okTurtles.events/emit', PROPOSAL_RESULT, state, VOTE_AGAINST, data)
 }
 
+// NOTE: The code is ready to receive different proposals settings,
+// However, we decided to make all settings the same, to simplify the UI/UX proptotype.
+const proposalDefaults = {
+  rule: RULE_PERCENTAGE,
+  // PR REVIEW: Some proposals have 7 and other 14. Can we make all the same?
+  expires_ms: 7 * DAYS_MILLIS,
+  ruleSettings: {
+    [RULE_PERCENTAGE]: { threshold: 0.8 },
+    [RULE_DISAGREEMENT]: { threshold: 1, thresholdAdjusted: 1 }
+  }
+}
+
 const proposals = {
   [PROPOSAL_INVITE_MEMBER]: {
-    defaults: {
-      rule: RULE_PERCENTAGE, // the default voting rule governing invites
-      expires_ms: 14 * DAYS_MILLIS,
-      ruleSettings: {
-        [RULE_PERCENTAGE]: { threshold: 0.8 },
-        [RULE_DISAGREEMENT]: { threshold: 1 }
-      }
-    },
+    defaults: proposalDefaults,
     [VOTE_FOR]: function (state, { meta, data, contractID }) {
       const proposal = state.proposals[data.proposalHash]
       proposal.payload = data.passPayload
@@ -113,14 +118,9 @@ const proposals = {
   },
   [PROPOSAL_REMOVE_MEMBER]: {
     defaults: {
-      rule: RULE_PERCENTAGE,
-      expires_ms: 14 * DAYS_MILLIS,
-      ruleSettings: {
-        [RULE_PERCENTAGE]: { threshold: 0.8 },
-        // at least 2, since the member being removed shouldn't be able to
-        // block the proposal themselves
-        [RULE_DISAGREEMENT]: { threshold: 2 }
-      }
+      // REVIEW PR:
+      // - the default threshold was 2. Maybe we need some manual "adjustement" when running the rules.js?
+      ...proposalDefaults
     },
     [VOTE_FOR]: function (state, { meta, data, contractID }) {
       const { proposalHash, passPayload } = data
@@ -140,15 +140,9 @@ const proposals = {
     },
     [VOTE_AGAINST]: voteAgainst
   },
+  // REVIEW PR: What's the diff between GROUP_SETTING_CHANGE and PROPOSAL_SETTING_CHANGE?
   [PROPOSAL_GROUP_SETTING_CHANGE]: {
-    defaults: {
-      rule: RULE_PERCENTAGE,
-      expires_ms: 7 * DAYS_MILLIS,
-      ruleSettings: {
-        [RULE_PERCENTAGE]: { threshold: 0.8 },
-        [RULE_DISAGREEMENT]: { threshold: 1 }
-      }
-    },
+    defaults: proposalDefaults,
     [VOTE_FOR]: function (state, { meta, data, contractID }) {
       const proposal = state.proposals[data.proposalHash]
       proposal.status = STATUS_PASSED
@@ -166,28 +160,14 @@ const proposals = {
   },
   // used to adjust settings like `rule` and `expires_ms` on proposals themselves
   [PROPOSAL_PROPOSAL_SETTING_CHANGE]: {
-    defaults: {
-      rule: RULE_PERCENTAGE,
-      expires_ms: 7 * DAYS_MILLIS,
-      ruleSettings: {
-        [RULE_PERCENTAGE]: { threshold: 0.8 },
-        [RULE_DISAGREEMENT]: { threshold: 1 }
-      }
-    },
+    defaults: proposalDefaults,
     [VOTE_FOR]: function (state, { meta, data }) {
       throw new Error('unimplemented!')
     },
     [VOTE_AGAINST]: voteAgainst
   },
   [PROPOSAL_GENERIC]: {
-    defaults: {
-      rule: RULE_PERCENTAGE,
-      expires_ms: 7 * DAYS_MILLIS,
-      ruleSettings: {
-        [RULE_PERCENTAGE]: { threshold: 0.8 },
-        [RULE_DISAGREEMENT]: { threshold: 1 }
-      }
-    },
+    defaults: proposalDefaults,
     [VOTE_FOR]: function (state, { meta, data }) {
       throw new Error('unimplemented!')
     },

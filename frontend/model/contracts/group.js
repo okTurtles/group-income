@@ -299,6 +299,10 @@ DefineContract({
     groupShouldPropose (state, getters) {
       return getters.groupMembersCount >= 3
     },
+    groupVotingRule (state, getters) {
+      // It's okay to use "PROPOSAL_GENERIC" as an example because all the settings are the same.
+      return getters.groupSettings.proposals[PROPOSAL_GENERIC]
+    },
     groupMincomeFormatted (state, getters) {
       const settings = getters.groupSettings
       const currency = currencies[settings.mincomeCurrency]
@@ -574,6 +578,7 @@ DefineContract({
       process ({ data, meta }, { state, getters }) {
         state.profiles[data.member].status = PROFILE_STATUS.REMOVED
         state.profiles[data.member].departedDate = meta.createdDate
+        // TODO: verify votingRules thresholdAdjusted
       },
       async sideEffect ({ data, contractID }, { state }) {
         const rootState = sbp('state/vuex/state')
@@ -647,6 +652,8 @@ DefineContract({
         // If we're triggered by handleEvent in state.js (and not latestContractState)
         // then the asynchronous sideEffect function will get called next
         // and we will subscribe to this new user's identity contract
+
+        // TODO: verify votingRules thresholdAdjusted
       },
       // !! IMPORANT!!
       // Actions here MUST NOT modify contract state!
