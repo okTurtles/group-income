@@ -1,5 +1,5 @@
 <template lang='pug'>
-  // Note: .cpr- are from payment-row
+  // Note: .cpr- is from payment-row
   payment-row(:payment='payment')
     template(slot='cellPrefix')
       label.checkbox.c-check
@@ -50,9 +50,6 @@ export default {
         amount: this.payment.amount
       }
     }
-  },
-  filters: {
-    humanDate
   },
   computed: {
     ...mapGetters([

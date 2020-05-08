@@ -44,8 +44,7 @@ export default {
       validator: (value) => ['PaymentRowTodo', 'PaymentRowSent', 'PaymentRowReceived'].includes(value),
       required: true
     }
-  },
-  computed: {}
+  }
 }
 </script>
 

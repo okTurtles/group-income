@@ -52,7 +52,7 @@ export default {
 @import "@assets/style/_variables.scss";
 
 // .cpr = c-payments-row
-// .cpr are used/overridden by parents
+// .cpr-* is used/overridden by parents
 
 .cpr-date {
   margin-left: 0;
