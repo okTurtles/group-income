@@ -1,17 +1,20 @@
 <template lang='pug'>
-table.table.table-in-card.c-payments
+table.table.table-in-card.c-payments.is-editing
   thead
     tr
-      th {{ titles.one }}
-      th.c-payments-amount {{ titles.two }}
-      th.c-payments-date {{ titles.three }}
+      th
+        label.checkbox
+          input.input(type='checkbox' v-model='tableChecked')
+          .c-header-checkbox
+      i18n(tag='th') Sent to
+      th.c-payments-amount
+      i18n.c-payments-date(tag='th') Amount sent
 
   tbody
-    component(
+    payment-row-record(
       v-for='(payment, index) in paymentsList'
       :key='index'
       :payment='payment'
-      :is='paymentsType'
     )
 </template>
 
@@ -19,38 +22,24 @@ table.table.table-in-card.c-payments
 import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
 import Tooltip from '@components/Tooltip.vue'
-import PaymentRowTodo from '@containers/payments/PaymentRowTodo.vue'
-import PaymentRowSent from '@containers/payments/PaymentRowSent.vue'
-import PaymentRowReceived from '@containers/payments/PaymentRowReceived.vue'
-import currencies from '@view-utils/currencies.js'
+import PaymentRowRecord from '@containers/payments/PaymentRowRecord.vue'
+import { humanDate } from '@view-utils/humanDate.js'
 
 export default {
-  name: 'PaymentsList',
+  name: 'RecordPaymentsList',
   components: {
     AvatarUser,
     Tooltip,
-    PaymentRowTodo,
-    PaymentRowSent,
-    PaymentRowReceived
+    PaymentRowRecord
   },
   props: {
-    titles: {
-      type: Object,
-      required: true
-    },
     paymentsList: {
       type: Array,
-      required: true
-    },
-    paymentsType: {
-      type: String,
-      validator: (value) => ['PaymentRowTodo', 'PaymentRowSent', 'PaymentRowReceived'].includes(value),
       required: true
     }
   },
   data () {
     return {
-      // Temp
       tableChecked: false
     }
   },
@@ -64,17 +53,23 @@ export default {
       'groupSettings',
       'ourUsername',
       'userDisplayName'
-    ]),
-    needsIncome () {
-      return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'
-    },
-    symbolWithCode () {
-      return currencies[this.groupSettings.mincomeCurrency].symbolWithCode
-    },
-    symbol () {
-      return currencies[this.groupSettings.mincomeCurrency].symbol
+    ])
+  },
+  watch: {
+    tableChecked (newVal) {
+      for (const payment of this.paymentsList) {
+        payment.checked = newVal
+      }
     }
-
+  },
+  methods: {
+    // TEMP
+    async reset () {
+      console.log('Todo: Implement reset payment')
+    },
+    dueDate (datems) {
+      return humanDate(datems, { month: 'short', day: 'numeric' })
+    }
   }
 }
 </script>

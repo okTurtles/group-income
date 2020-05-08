@@ -1,80 +1,81 @@
 <template lang='pug'>
-table.table.table-in-card.c-payments
-  thead
-    tr
-      th {{ titles.one }}
-      th.c-payments-amount {{ titles.two }}
-      th.c-payments-date {{ titles.three }}
+tr
+  td
+    label.checkbox
+      input.input(type='checkbox' v-model='payment.checked')
+      span
+  td
+    .c-user
+      avatar-user.c-avatar(:username='payment.username' size='xs')
+      strong.c-name {{ payment.displayName }}
 
-  tbody
-    component(
-      v-for='(payment, index) in paymentsList'
-      :key='index'
-      :payment='payment'
-      :is='paymentsType'
-    )
+    // TODO: replace condition to indicate whether or not the payment date is < or > than the current date using payment.paymentStatusText
+    i18n.c-user-month(
+      :class='Math.round(Math.random()) ? "has-text-1" : "pill is-danger"'
+      :args='{date: dueDate(payment.date) }'
+    ) Due {date}
+
+  td
+    .c-actions
+      .c-actions-month.has-text-1 {{ dueDate(payment.date) }}
+      i18n.is-unstyled.is-link-inherit.link.c-reset(
+        tag='button'
+        type='button'
+        @click='reset'
+      ) Reset
+
+  td
+    label.field
+      .inputgroup
+        input.input(inputmode='decimal' pattern='[0-9]*' v-model='payment.amount')
+        .suffix.hide-phone {{symbolWithCode}}
+        .suffix.hide-tablet {{symbol}}
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
-import Tooltip from '@components/Tooltip.vue'
-import PaymentRowTodo from '@containers/payments/PaymentRowTodo.vue'
-import PaymentRowSent from '@containers/payments/PaymentRowSent.vue'
-import PaymentRowReceived from '@containers/payments/PaymentRowReceived.vue'
 import currencies from '@view-utils/currencies.js'
+import { humanDate } from '@view-utils/humanDate.js'
 
 export default {
-  name: 'PaymentsList',
+  name: 'PaymentRowRecord',
   components: {
-    AvatarUser,
-    Tooltip,
-    PaymentRowTodo,
-    PaymentRowSent,
-    PaymentRowReceived
+    AvatarUser
   },
   props: {
-    titles: {
+    payment: {
       type: Object,
-      required: true
-    },
-    paymentsList: {
-      type: Array,
-      required: true
-    },
-    paymentsType: {
-      type: String,
-      validator: (value) => ['PaymentRowTodo', 'PaymentRowSent', 'PaymentRowReceived'].includes(value),
       required: true
     }
   },
   data () {
     return {
-      // Temp
-      tableChecked: false
+      form: {
+        amount: this.payment.amount
+      }
     }
   },
   computed: {
     ...mapGetters([
-      'currentGroupState',
-      'paymentTotalFromUserToUser',
-      'groupMonthlyPayments',
-      'groupIncomeAdjustedDistribution',
-      'ourGroupProfile',
-      'groupSettings',
-      'ourUsername',
-      'userDisplayName'
+      'groupSettings'
     ]),
-    needsIncome () {
-      return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'
-    },
     symbolWithCode () {
       return currencies[this.groupSettings.mincomeCurrency].symbolWithCode
     },
     symbol () {
       return currencies[this.groupSettings.mincomeCurrency].symbol
     }
-
+  },
+  methods: {
+    // TEMP
+    async reset () {
+      console.log('Todo: Implement reset payment')
+    },
+    dueDate (datems) {
+      // TODO: move humanDate and everything associated with it into frontend/utils/time.js !
+      return humanDate(datems, { month: 'short', day: 'numeric' })
+    }
   }
 }
 </script>
@@ -196,27 +197,6 @@ export default {
   }
 }
 
-.c-tooltip-warning {
-  outline: none;
-
-  .c-tip{
-    background: $warning_0;
-  }
-
-  &:focus .c-tip {
-    box-shadow: 0px 0px 4px $primary_0;
-  }
-}
-
-// TODO: check if we need generic rule for this (keep until we know)
-// .c-tooltip {
-//   @each $name in $colors {
-//     &-#{$name} .c-tip{
-//       background: var(--#{$name}_0);
-//     }
-//   }
-// }
-
 .c-payments-amount-text {
   @include tablet {
     margin-right: 0.5rem;
@@ -252,18 +232,4 @@ export default {
   }
 }
 
-// Tooltip
-.c-tip {
-  width: 0.875rem;
-  height: 0.875rem;
-  border-radius: 50%;
-  margin-left: 0.5rem;
-  margin-right: 0.25rem;
-  font-size: 0.5rem;
-
-  &,
-  &:hover {
-    color: #fff;
-  }
-}
 </style>

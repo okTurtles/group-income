@@ -82,7 +82,6 @@ export default {
     async submit (form) {
       this.$refs.formMsg.clean()
       const member = this.username
-      const memberId = this.groupProfiles[member].contractID
 
       if (this.groupShouldPropose) {
         try {
@@ -90,13 +89,12 @@ export default {
             proposalType: PROPOSAL_REMOVE_MEMBER,
             proposalData: {
               member,
-              memberId,
-              groupId: this.currentGroupId,
               reason: form.reason
             },
             votingRule: this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].rule,
             expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].expires_ms
           }
+          // TODO: move this into into controller/actions/group.js !
           const proposal = await sbp('gi.contracts/group/proposal/create',
             data,
             this.currentGroupId
@@ -115,11 +113,7 @@ export default {
       }
 
       try {
-        await sbp('gi.actions/group/removeMember', {
-          member,
-          memberId,
-          groupId: this.currentGroupId
-        }, this.currentGroupId)
+        await sbp('gi.actions/group/removeMember', { member }, this.currentGroupId)
         this.$refs.proposal.close()
       } catch (e) {
         console.error(`Failed to remove member ${member}.`, e)

@@ -128,6 +128,7 @@ route.POST('/file', {
   // TODO: only allow uploads from registered users
   payload: {
     output: 'data',
+    multipart: true,
     allow: 'multipart/form-data',
     failAction: async function (request, h, err) {
       console.error('failAction error:', err)

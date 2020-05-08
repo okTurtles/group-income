@@ -4,7 +4,7 @@ import sbp from '~/shared/sbp.js'
 import { objectOf, literalOf, unionOf, number } from '~/frontend/utils/flowTyper.js'
 import { DAYS_MILLIS } from '~/frontend/utils/time.js'
 import { PROPOSAL_RESULT } from '~/frontend/utils/events.js'
-import rules, { ruleType, VOTE_UNDECIDED, VOTE_AGAINST, VOTE_FOR, RULE_THRESHOLD, RULE_DISAGREEMENT } from './rules.js'
+import rules, { ruleType, VOTE_UNDECIDED, VOTE_AGAINST, VOTE_FOR, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './rules.js'
 
 import {
   PROPOSAL_INVITE_MEMBER,
@@ -33,7 +33,7 @@ export const proposalSettingsType = objectOf({
   rule: ruleType,
   expires_ms: number,
   ruleSettings: objectOf({
-    [RULE_THRESHOLD]: objectOf({ threshold: number }),
+    [RULE_PERCENTAGE]: objectOf({ threshold: number }),
     [RULE_DISAGREEMENT]: objectOf({ threshold: number })
   })
 })
@@ -51,7 +51,7 @@ export function oneVoteToPass (proposalHash) {
   return currentResult === VOTE_UNDECIDED && newResult === VOTE_FOR
 }
 
-function voteAgainst (state, data) {
+function voteAgainst (state, { meta, data, contractID }) {
   const { proposalHash } = data
   const proposal = state.proposals[proposalHash]
   proposal.status = STATUS_FAILED
@@ -62,20 +62,20 @@ function voteAgainst (state, data) {
 const proposals = {
   [PROPOSAL_INVITE_MEMBER]: {
     defaults: {
-      rule: RULE_THRESHOLD, // the default voting rule governing invites
+      rule: RULE_PERCENTAGE, // the default voting rule governing invites
       expires_ms: 14 * DAYS_MILLIS,
       ruleSettings: {
-        [RULE_THRESHOLD]: { threshold: 0.8 },
+        [RULE_PERCENTAGE]: { threshold: 0.8 },
         [RULE_DISAGREEMENT]: { threshold: 1 }
       }
     },
-    [VOTE_FOR]: function (state, data) {
+    [VOTE_FOR]: function (state, { meta, data, contractID }) {
       const proposal = state.proposals[data.proposalHash]
       proposal.payload = data.passPayload
       proposal.status = STATUS_PASSED
       // NOTE: if invite/process requires more than just data+meta
       //       this code will need to be updated...
-      const message = { meta: proposal.meta, data: data.passPayload }
+      const message = { meta, data: data.passPayload, contractID }
       sbp('gi.contracts/group/invite/process', message, state)
       sbp('okTurtles.events/emit', PROPOSAL_RESULT, state, VOTE_FOR, data)
       // TODO: for now, generate the link and send it to the user's inbox
@@ -113,55 +113,52 @@ const proposals = {
   },
   [PROPOSAL_REMOVE_MEMBER]: {
     defaults: {
-      rule: RULE_THRESHOLD,
+      rule: RULE_PERCENTAGE,
       expires_ms: 14 * DAYS_MILLIS,
       ruleSettings: {
-        [RULE_THRESHOLD]: { threshold: 0.8 },
+        [RULE_PERCENTAGE]: { threshold: 0.8 },
         // at least 2, since the member being removed shouldn't be able to
         // block the proposal themselves
         [RULE_DISAGREEMENT]: { threshold: 2 }
       }
     },
-    [VOTE_FOR]: async function (state, { proposalHash, passPayload }) {
+    [VOTE_FOR]: function (state, { meta, data, contractID }) {
+      const { proposalHash, passPayload } = data
       const proposal = state.proposals[proposalHash]
-      const { member, memberId, groupId } = proposal.data.proposalData
       proposal.status = STATUS_PASSED
       proposal.payload = passPayload
-
-      const data = {
-        member,
-        memberId,
-        groupId,
+      const messageData = {
+        ...proposal.data.proposalData,
         proposalHash,
         proposalPayload: passPayload
       }
-      const message = { data, meta: proposal.meta }
+      const message = { data: messageData, meta, contractID }
       sbp('gi.contracts/group/removeMember/process', message, state)
-      await sbp('gi.sideEffects/group/removeMember', {
-        username: data.member,
-        groupId: data.groupId
-      })
+      sbp('gi.contracts/group/pushSideEffect', contractID,
+        ['gi.contracts/group/removeMember/process/sideEffect', message]
+      )
     },
     [VOTE_AGAINST]: voteAgainst
   },
   [PROPOSAL_GROUP_SETTING_CHANGE]: {
     defaults: {
-      rule: RULE_THRESHOLD,
+      rule: RULE_PERCENTAGE,
       expires_ms: 7 * DAYS_MILLIS,
       ruleSettings: {
-        [RULE_THRESHOLD]: { threshold: 0.8 },
+        [RULE_PERCENTAGE]: { threshold: 0.8 },
         [RULE_DISAGREEMENT]: { threshold: 1 }
       }
     },
-    [VOTE_FOR]: function (state, data) {
+    [VOTE_FOR]: function (state, { meta, data, contractID }) {
       const proposal = state.proposals[data.proposalHash]
       proposal.status = STATUS_PASSED
       const { setting, proposedValue } = proposal.data.proposalData
       // NOTE: if updateSettings ever needs more ethana just meta+data
       //       this code will need to be updated
       const message = {
-        meta: proposal.meta,
-        data: { [setting]: proposedValue }
+        meta,
+        data: { [setting]: proposedValue },
+        contractID
       }
       sbp('gi.contracts/group/updateSettings/process', message, state)
     },
@@ -170,28 +167,28 @@ const proposals = {
   // used to adjust settings like `rule` and `expires_ms` on proposals themselves
   [PROPOSAL_PROPOSAL_SETTING_CHANGE]: {
     defaults: {
-      rule: RULE_THRESHOLD,
+      rule: RULE_PERCENTAGE,
       expires_ms: 7 * DAYS_MILLIS,
       ruleSettings: {
-        [RULE_THRESHOLD]: { threshold: 0.8 },
+        [RULE_PERCENTAGE]: { threshold: 0.8 },
         [RULE_DISAGREEMENT]: { threshold: 1 }
       }
     },
-    [VOTE_FOR]: function (state, { proposalHash, passPayload }) {
+    [VOTE_FOR]: function (state, { meta, data }) {
       throw new Error('unimplemented!')
     },
     [VOTE_AGAINST]: voteAgainst
   },
   [PROPOSAL_GENERIC]: {
     defaults: {
-      rule: RULE_THRESHOLD,
+      rule: RULE_PERCENTAGE,
       expires_ms: 7 * DAYS_MILLIS,
       ruleSettings: {
-        [RULE_THRESHOLD]: { threshold: 0.8 },
+        [RULE_PERCENTAGE]: { threshold: 0.8 },
         [RULE_DISAGREEMENT]: { threshold: 1 }
       }
     },
-    [VOTE_FOR]: function (state, { proposalHash, passPayload }) {
+    [VOTE_FOR]: function (state, { meta, data }) {
       throw new Error('unimplemented!')
     },
     [VOTE_AGAINST]: voteAgainst
