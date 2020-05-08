@@ -28,7 +28,7 @@
 import { mapGetters } from 'vuex'
 import currencies from '@view-utils/currencies.js'
 import { humanDate } from '@utils/time.js'
-import PaymentRow from './PaymentRow.vue'
+import PaymentRow from './payment-row/PaymentRow.vue'
 
 export default {
   name: 'PaymentRowRecord',

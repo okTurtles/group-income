@@ -23,7 +23,7 @@ table.table.table-in-card.c-payments.is-editing
 import { mapGetters } from 'vuex'
 import AvatarUser from '@components/AvatarUser.vue'
 import Tooltip from '@components/Tooltip.vue'
-import PaymentRowRecord from './payment-row/PaymentRowRecord.vue'
+import PaymentRowRecord from './PaymentRowRecord.vue'
 
 export default {
   name: 'RecordPaymentsList',

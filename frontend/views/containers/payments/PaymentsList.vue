@@ -17,9 +17,9 @@ table.table.table-in-card.c-payments
 <script>
 import AvatarUser from '@components/AvatarUser.vue'
 import Tooltip from '@components/Tooltip.vue'
-import PaymentRowTodo from './payment-row/PaymentRowTodo.vue'
-import PaymentRowSent from './payment-row/PaymentRowSent.vue'
-import PaymentRowReceived from './payment-row/PaymentRowReceived.vue'
+import PaymentRowTodo from './PaymentRowTodo.vue'
+import PaymentRowSent from './PaymentRowSent.vue'
+import PaymentRowReceived from './PaymentRowReceived.vue'
 
 export default {
   name: 'PaymentsList',

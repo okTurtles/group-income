@@ -32,9 +32,9 @@ import { humanDate } from '@utils/time.js'
 import { MenuItem } from '@components/menu/index.js'
 import { PAYMENT_CANCELLED, PAYMENT_NOT_RECEIVED } from '@model/contracts/payments/index.js'
 import L from '@view-utils/translations.js'
-import PaymentActionsMenu from './PaymentActionsMenu.vue'
-import PaymentNotReceivedTooltip from './PaymentNotReceivedTooltip.vue'
-import PaymentRow from './PaymentRow.vue'
+import PaymentRow from './payment-row/PaymentRow.vue'
+import PaymentActionsMenu from './payment-row/PaymentActionsMenu.vue'
+import PaymentNotReceivedTooltip from './payment-row/PaymentNotReceivedTooltip.vue'
 
 export default {
   name: 'PaymentRowTodo',

@@ -20,28 +20,27 @@
           tag='button'
           item-id='message'
           icon='times'
-          @click='markNotReceived'
+          @click='cancelPayment'
         )
-          i18n I did not receive this
+          i18n Cancel this payment
 </template>
 
 <script>
 import sbp from '~/shared/sbp.js'
 import { mapGetters } from 'vuex'
-import PaymentActionsMenu from './PaymentActionsMenu.vue'
-import PaymentNotReceivedTooltip from './PaymentNotReceivedTooltip.vue'
-import PaymentRow from './PaymentRow.vue'
-import { MenuItem } from '@components/menu/index.js'
+import AvatarUser from '@components/AvatarUser.vue'
 import { OPEN_MODAL } from '@utils/events.js'
-import { PAYMENT_NOT_RECEIVED } from '@model/contracts/payments/index.js'
+import { MenuItem } from '@components/menu/index.js'
+import { PAYMENT_CANCELLED, PAYMENT_NOT_RECEIVED } from '@model/contracts/payments/index.js'
 import { humanDate } from '@utils/time.js'
-import L from '@view-utils/translations.js'
-
-// TODO: handle showing PAYMENT_CANCELLED ?
+import PaymentRow from './payment-row/PaymentRow.vue'
+import PaymentActionsMenu from './payment-row/PaymentActionsMenu.vue'
+import PaymentNotReceivedTooltip from './payment-row/PaymentNotReceivedTooltip.vue'
 
 export default {
-  name: 'PaymentRowReceived',
+  name: 'PaymentRowSent',
   components: {
+    AvatarUser,
     MenuItem,
     PaymentActionsMenu,
     PaymentNotReceivedTooltip,
@@ -55,8 +54,12 @@ export default {
   },
   computed: {
     ...mapGetters([
+      'ourGroupProfile',
       'withGroupCurrency'
     ]),
+    needsIncome () {
+      return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'
+    },
     notReceived () {
       return this.payment.data.status === PAYMENT_NOT_RECEIVED
     }
@@ -67,18 +70,15 @@ export default {
       sbp('okTurtles.events/emit', OPEN_MODAL, name, props)
     },
     // TODO: make multiple payments
-    async markNotReceived () {
+    async cancelPayment () {
       try {
-        if (this.payment.data.status === PAYMENT_NOT_RECEIVED) {
-          alert(L('Already marked as not received!'))
-          return
-        }
-        await sbp('gi.actions/group/paymentUpdate', {
+        const paymentMessage = await sbp('gi.contracts/group/paymentUpdate/create', {
           paymentHash: this.payment.hash,
           updatedProperties: {
-            status: PAYMENT_NOT_RECEIVED
+            status: PAYMENT_CANCELLED
           }
         }, this.$store.state.currentGroupId)
+        await sbp('backend/publishLogEntry', paymentMessage)
       } catch (e) {
         console.error(e)
         alert(e.message)
