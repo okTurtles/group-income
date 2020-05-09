@@ -44,13 +44,12 @@ export function compareISOTimestamps (a: string, b: string): number {
   return A > B ? 1 : (A < B ? -1 : 0)
 }
 
-// Do not initialize locale here so that it runs on the server/travis (navigator is undefined there)
-let locale
+// TODO: Provide locale fallback in case navigator does not exist (e.g. server, Mocha, etc...)
+const locale = (navigator && navigator.languages ? navigator.languages[0] : navigator.language) || 'en-US'
 
 export function humanDate (
   datems = Date.now(),
   opts = { month: 'short', day: 'numeric' }
 ) {
-  locale = locale || navigator.languages ? navigator.languages[0] : navigator.language
   return new Date(datems).toLocaleDateString(locale, opts)
 }
