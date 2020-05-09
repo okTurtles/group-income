@@ -45,7 +45,7 @@ export function compareISOTimestamps (a: string, b: string): number {
 }
 
 // TODO: Provide locale fallback in case navigator does not exist (e.g. server, Mocha, etc...)
-const locale = (navigator && navigator.languages ? navigator.languages[0] : navigator.language) || 'en-US'
+const locale = (typeof navigator === 'undefined' && 'en-US') || (navigator.languages ? navigator.languages[0] : navigator.language)
 
 export function humanDate (
   datems = Date.now(),
