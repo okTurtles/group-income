@@ -140,12 +140,14 @@ export default {
             const groupCurrency = this.groupMincomeCurrency
             const paymentInfo = {
               toUser: payment.username,
-              amount: +payment.amount,
+              amount: +payment.amount, // TODO/BUG do not modify payment.amout directly on RecordPaymentRow...
+              total: payment.amount, // ...we need to know it here, to know if it's a partial payment or not.
               currencyFromTo: ['USD', groupCurrency], // TODO: this!
               exchangeRate: 1,
               txid: '' + Math.random(),
               status: PAYMENT_PENDING,
-              paymentType: PAYMENT_TYPE_MANUAL
+              paymentType: PAYMENT_TYPE_MANUAL,
+              month: payment.monthstamp
               // TOOD: add memo if user added a note
             }
             const msg = await sbp('gi.actions/group/payment', paymentInfo, this.currentGroupId)

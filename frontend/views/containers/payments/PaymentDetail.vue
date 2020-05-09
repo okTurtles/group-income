@@ -9,17 +9,20 @@ modal-template(ref='modal' v-if='payment' :a11yTitle='L("Payment details")')
 
   ul.c-payment-list
     li.c-payment-list-item
-      i18n.has-text-1(tag='label') Date & Time
+      i18n.has-text-1 Date & Time
+      // TODO humanDate date should be required.
       strong {{ humanDate(this.payment.date, { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }}
     li.c-payment-list-item
-      i18n.has-text-1(tag='label') Relative to
+      i18n.has-text-1 Relative to
+      // TODO this. How to get this info? Q: monthstamp must contain the year.
       strong {{ humanDate(payment.relativeTo, { month: 'long' }) }}
     li.c-payment-list-item
-      i18n.has-text-1(tag='label') Mincome at the time
+      i18n.has-text-1 Mincome at the time
+      // TODO this. How to get this info? Q: Add to recordPayment
       strong {{ currency(groupSettings.mincomeAmount) }}
-    li.c-payment-list-item.c-column
-      i18n.has-text-1(tag='label') Notes
-      p {{ payment.note }}
+    li.c-payment-list-item.c-column(v-if='payment.memo')
+      i18n.has-text-1 Notes
+      p {{ payment.memo }}
 
   .buttons
     i18n.button.is-danger.is-outlined.is-small(
@@ -121,7 +124,7 @@ export default {
 
     .has-text-1 {
       padding-top: 1rem;
-      padding-bottom: 0.3125rem
+      padding-bottom: 0.3125rem;
     }
   }
 }

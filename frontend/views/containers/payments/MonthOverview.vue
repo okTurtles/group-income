@@ -6,76 +6,51 @@
     :args='{ month: humanDate(Date.now(), { month: "long" }) }'
   ) {month} overview
 
-  .c-summary-item(
-    v-for='(item, index) in paymentSummary'
-    :key='index'
-  )
-    h5.label {{ item.title }}
-
-    progress-bar.c-progress(
-      :max='item.max'
-      :value='item.value'
-      :hasMarks='item.hasMarks'
+  ul
+    li.c-summary-item(
+      v-for='(item, index) in paymentSummary'
+      :key='index'
     )
-    p(:class='{"has-text-success": item.max === item.value}')
-      i.icon-check(v-if='item.max === item.value')
-      .has-text-1 {{ item.label }}
+      .label {{ item.title }}
+
+      progress-bar.c-progress(
+        :max='item.max'
+        :value='item.value'
+        :hasMarks='item.hasMarks'
+      )
+      p(:class='{"has-text-success": item.max === item.value}')
+        i.icon-check(v-if='item.max === item.value')
+        .has-text-1 {{ item.label }}
+
+    li.c-summary-item(v-if='notReceivedPayments')
+      i18n.label.is-title-4 Payment not received
+      i18n.c-desc.has-text-1(:args='{nr: 1 }') There was a problem with {nr} of your payments.
+
+  // TODO: Overdue payments (only visible for who's giving)
 </template>
 
 <script>
 import currencies from '@view-utils/currencies.js'
 import { mapGetters } from 'vuex'
+import { PAYMENT_COMPLETED, PAYMENT_NOT_RECEIVED } from '@model/contracts/payments/index.js'
 import ProgressBar from '@components/graphs/Progress.vue'
 import L from '@view-utils/translations.js'
 import { humanDate } from '@utils/time.js'
+import { uniq } from '@utils/giLodash.js'
 
 export default {
   name: 'MonthOverview',
   components: {
     ProgressBar
   },
-  data () {
-    return {
-      // Temp
-      fakeStore: {
-        usersToPay: [
-          {
-            name: 'Lilia Bouvet',
-            avatar: '/assets/images/default-avatar.png',
-            status: 'todo',
-            amount: 10
-          },
-          {
-            name: 'Charlotte Doherty',
-            avatar: '/assets/images/default-avatar.png',
-            status: 'todo',
-            amount: 20
-          },
-          {
-            name: 'Kim Kr',
-            avatar: '/assets/images/default-avatar.png',
-            status: 'rejected',
-            amount: 25
-          },
-          {
-            name: 'Zoe Kim',
-            avatar: '/assets/images/default-avatar.png',
-            status: 'pending',
-            amount: 30
-          },
-          {
-            name: 'Hugo Lil',
-            avatar: '/assets/images/default-avatar.png',
-            status: 'completed',
-            amount: 50
-          }
-        ]
-      }
+  props: {
+    paymentsData: {
+      type: Object,
+      required: true
     }
   },
   methods: {
     humanDate,
-    // TEMP
     statusIsSent (user) {
       return ['completed', 'pending'].includes(user.status)
     },
@@ -92,39 +67,40 @@ export default {
       return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
     },
     paymentSummary () {
-      const { sent, confirmed, amoutSent, amountTotal, paymentsTotal } = this.paymentStatus
+      // TODO support partial payments
+      const { paymentsTotal, paymentsDone, amountTotal, amountDone } = this.paymentStatus
 
       const pS = [
         {
           title: L('Payments completed'),
-          value: sent,
+          value: paymentsDone,
           max: paymentsTotal,
           hasMarks: true,
           label: L('{value} out of {max}', {
-            value: sent,
+            value: paymentsDone,
             max: paymentsTotal
           })
         }
       ]
       if (this.needsIncome) {
         pS.push({
-          title: L('Payments received'),
-          value: confirmed,
-          max: paymentsTotal,
-          hasMarks: true,
+          title: L('Amount received'),
+          value: amountDone,
+          max: amountTotal,
+          hasMarks: false,
           label: L('{value} of {max}', {
-            value: confirmed,
-            max: paymentsTotal
+            value: this.currency(amountDone),
+            max: this.currency(amountTotal)
           })
         })
       } else {
         pS.push({
           title: L('Amout sent'),
-          value: amoutSent,
+          value: amountDone,
           max: amountTotal,
           hasMarks: false,
-          label: L('{value} of {max}', {
-            value: this.currency(amoutSent),
+          label: L('{value} out of {max}', {
+            value: this.currency(amountDone),
             max: this.currency(amountTotal)
           })
         })
@@ -132,16 +108,40 @@ export default {
       return pS
     },
     paymentStatus () {
-      const { usersToPay } = this.fakeStore
-
-      return {
-        month: 'July',
-        paymentsTotal: usersToPay.length,
-        sent: usersToPay.reduce((acc, user) => this.statusIsSent(user) ? acc + 1 : acc, 0),
-        confirmed: usersToPay.reduce((acc, user) => this.statusIsCompleted(user) ? acc + 1 : acc, 0),
-        amoutSent: usersToPay.reduce((acc, user) => this.statusIsSent(user) ? acc + user.amount : acc, 0),
-        amountTotal: usersToPay.reduce((acc, user) => acc + user.amount, 0)
+      // TODO/BUG support partial payments. paymentsTotal will be wrong.
+      const { todo, sent, toBeReceived, received } = this.paymentsData
+      const isCompleted = (p) => p.data.status === PAYMENT_COMPLETED
+      const getUniquePayments = (payments) => {
+        // We need to filter the partial payments already done (sent/received).
+        // E.G. I need to send 4 payments. I have done 2 partial and 3 uniques.
+        // A quick way is to list all usernames I sent to and find the unique ones.
+        const users = payments.map(p => p.username)
+        return uniq(users).length
       }
+
+      if (this.needsIncome) {
+        const receivedCompleted = received.filter(isCompleted)
+        return {
+          paymentsDone: receivedCompleted.length,
+          paymentsTotal: getUniquePayments([...toBeReceived, ...received]),
+          amountDone: receivedCompleted.reduce((total, p) => total + p.data.amount, 0),
+          amountTotal: toBeReceived.reduce((total, p) => total + p.amount, 0) + received.reduce((total, p) => total + p.amount, 0)
+        }
+      }
+
+      const sentCompleted = sent.filter(isCompleted)
+      return {
+        paymentsDone: sentCompleted.length,
+        paymentsTotal: getUniquePayments([...todo, ...sent]),
+        amountDone: sentCompleted.reduce((total, p) => total + p.data.amount, 0),
+        amountTotal: todo.reduce((total, p) => total + p.amount, 0) + sent.reduce((total, p) => total + p.amount, 0)
+      }
+    },
+    notReceivedPayments () {
+      const { todo, received } = this.paymentsData
+      const payments = this.needsIncome ? received : todo
+
+      return payments.filter(p => p.data.status === PAYMENT_NOT_RECEIVED).length
     },
     needsIncome () {
       return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'

@@ -7,8 +7,8 @@ page(
 )
   template(#title='') {{ L('Payments') }}
 
-  template(#sidebar='' v-if='hasPayments')
-    month-overview
+  template(#sidebar='' v-if='hasPayments || needsIncome')
+    month-overview(:paymentsData='paymentsAllData')
 
   add-income-details-widget(v-if='!hasIncomeDetails')
 
@@ -57,7 +57,7 @@ page(
         .c-container(v-if='hasPayments')
           payments-list(
             :titles='tableTitles'
-            :paymentsList='paymentsList'
+            :paymentsList='paymentsListData'
             :paymentsType='ephemeral.activeTab'
           )
           .c-footer
@@ -144,13 +144,13 @@ export default {
       }, {
         title: L('Sent'),
         url: 'PaymentRowSent',
-        notification: 0
+        notification: this.paymentsSent.length
       }]
       if (this.paymentsReceived.length > 0) {
         items.push({
           title: L('Received'),
           url: 'PaymentRowReceived',
-          notification: 0
+          notification: this.paymentsReceived.length
         })
       }
       return items
@@ -180,6 +180,7 @@ export default {
       const pMonthstamp = prevMonthstamp(cMonthstamp)
       const latePayments = []
       const pastMonth = monthlyPayments[pMonthstamp]
+      // QUESTION: Is this only from the previous month? What if there are payments from 2-3 months ago?
       if (pastMonth) {
         for (const payment of pastMonth.lastAdjustedDistribution) {
           if (payment.from === this.ourUsername && payment.amount > 0) {
@@ -206,6 +207,7 @@ export default {
                 displayName: this.userDisplayName(payment.to),
                 amount: payment.amount, // TODO: include currency (what if it was changed?)
                 late: true,
+                monthstamp: pMonthstamp,
                 checked: false // checkbox support in RecordPayments
               })
             }
@@ -219,6 +221,7 @@ export default {
       const ourUsername = this.ourUsername
       const unadjusted = this.groupIncomeDistribution.filter(p => p.from === ourUsername)
       const sentPayments = this.paymentsSent
+      const cMonthstamp = currentMonthstamp()
       for (const p of this.groupIncomeAdjustedDistribution) {
         if (p.from === ourUsername) {
           const existPayment = unadjusted.find(({ to }) => to === p.to) || { amount: 0 }
@@ -228,6 +231,7 @@ export default {
             const partialAmount = existingAmount - amount
             var existingPayment = {}
             if (partialAmount > 0) {
+              // TODO/BUG this won't work if the partial amount is done in 3 parts.
               const sent = sentPayments.find((s) => s.username === p.to && s.amount === partialAmount)
               if (sent) {
                 existingPayment = { hash: sent.hash }
@@ -239,6 +243,7 @@ export default {
               amount,
               displayName: this.userDisplayName(p.to),
               checked: false, // checkbox support in RecordPayments,
+              monthstamp: cMonthstamp,
               partial: partialAmount > 0,
               total: existingAmount
             })
@@ -250,8 +255,11 @@ export default {
     },
     paymentsSent () {
       const monthlyPayments = this.groupMonthlyPayments
+      const cMonthstamp = currentMonthstamp()
       const payments = []
       // TODO: support sort direction
+      // QUESTION: Is this only from this month? What about the previous payments from months ago?
+      //           Same question for received.
       for (const monthstamp of Object.keys(monthlyPayments).sort()) {
         const { paymentsFrom } = monthlyPayments[monthstamp]
         if (paymentsFrom) {
@@ -265,7 +273,8 @@ export default {
                 username: toUser,
                 displayName: this.userDisplayName(toUser),
                 date: meta.createdDate,
-                amount: data.amount // TODO: properly display and convert in the correct currency using data.currencyFromTo and data.exchangeRate
+                monthstamp: cMonthstamp,
+                amount: data.amount // TODO: properly display and convert in the correct currency using data.currencyFromTo and data.exchangeRate,
               }
               if (this.filterPayment(payment)) {
                 payments.push(payment)
@@ -276,6 +285,44 @@ export default {
       }
       // TODO: implement better / more correct sorting
       return payments.sort((a, b) => a.date < b.date)
+    },
+    paymentsToBeReceived () {
+      // REVIEW - Very similar to paymentsTodo with these diff:
+      // - paymentsSent -> paymentsReceived
+      // - p.from -> p.to
+      const payments = []
+      const ourUsername = this.ourUsername
+      const unadjusted = this.groupIncomeDistribution.filter(p => p.from === ourUsername)
+      const paymentsReceived = this.paymentsReceived
+      for (const p of this.groupIncomeAdjustedDistribution) {
+        if (p.to === ourUsername) {
+          const existPayment = unadjusted.find(({ to }) => to === p.to) || { amount: 0 }
+          const amount = +this.currency.displayWithoutCurrency(p.amount)
+          const existingAmount = +this.currency.displayWithoutCurrency(existPayment.amount)
+          if (amount > 0) {
+            const partialAmount = existingAmount - amount
+            var existingPayment = {}
+            if (partialAmount > 0) {
+              // TODO/BUG this won't work if the partial amount is done in 3 parts.
+              const received = paymentsReceived.find((r) => r.username === p.to && r.amount === partialAmount)
+              if (received) {
+                existingPayment = { hash: received.hash }
+              }
+            }
+            payments.push({
+              ...existingPayment,
+              username: p.from,
+              amount,
+              // displayName: this.userDisplayName(p.to),
+              // checked: false, // checkbox support in RecordPayments,
+              // monthstamp: cMonthstamp,
+              partial: partialAmount > 0,
+              total: existingAmount
+            })
+          }
+        }
+      }
+      return payments
     },
     paymentsReceived () {
       const monthlyPayments = this.groupMonthlyPayments[currentMonthstamp()]
@@ -308,18 +355,26 @@ export default {
       // TODO: implement better / more correct sorting
       return payments.sort((a, b) => a.date < b.date)
     },
-    paymentsList () {
+    paymentsListData () {
       return {
         PaymentRowTodo: () => this.paymentsTodo,
         PaymentRowSent: () => this.paymentsSent,
         PaymentRowReceived: () => this.paymentsReceived
       }[this.ephemeral.activeTab]()
     },
+    paymentsAllData () {
+      return {
+        todo: this.paymentsTodo,
+        sent: this.paymentsSent,
+        toBeReceived: this.paymentsToBeReceived,
+        received: this.paymentsReceived
+      }
+    },
     hasIncomeDetails () {
       return !!this.ourGroupProfile.incomeDetailsType
     },
     hasPayments () {
-      return this.paymentsList.length > 0 || this.ephemeral.searchText !== ''
+      return this.paymentsListData.length > 0 || this.ephemeral.searchText !== ''
     }
   },
   methods: {
