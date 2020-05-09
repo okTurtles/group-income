@@ -45,12 +45,12 @@ export function compareISOTimestamps (a: string, b: string): number {
 }
 
 // Do not initialize locale here so that it runs on the server (navigator is undefined there)
-let locale
+const locale = navigator.languages ? navigator.languages[0] : navigator.language
 
 export function humanDate (
   datems = Date.now(),
   opts = { month: 'short', day: 'numeric' }
 ) {
-  locale = locale || navigator.languages ? navigator.languages[0] : navigator.language
+  // locale = locale || navigator.languages ? navigator.languages[0] : navigator.language
   return new Date(datems).toLocaleDateString(locale, opts)
 }
