@@ -4,7 +4,7 @@
   )
   .c-bg
   .c-marks(v-if='hasMarks' :style='marksStyle')
-  .c-bar(:style='`--percent: ${percent}`')
+  .c-bar(:style='`width: ${percent}; ${ephemeral.widthZero}`')
 </template>
 
 <script>
@@ -14,6 +14,20 @@ export default {
     max: Number,
     value: Number,
     hasMarks: Boolean
+  },
+  data: () => ({
+    ephemeral: {
+      widthZero: 'width: 0;'
+    }
+  }),
+  mounted () {
+    // Animate the progressBar width from 0 to this.percent on first render:
+    // 1.On the first render, the width must be zero. (widthZero)
+    // 2. Wait for the component to be mounted and the DOM processed.
+    setTimeout(() => {
+      // 3. Finally remove the widthZero, and it will animate from 0 to this.percent.
+      this.ephemeral.widthZero = ''
+    }, 0)
   },
   computed: {
     percent () {
@@ -69,13 +83,8 @@ export default {
 }
 
 .c-bar {
-  width: 100%;
   background-color: $primary_0;
-  transition: transform 450ms ease-out;
-  // Animation to modify grow the bar
-  transform: translateY(-50%) scaleX(1); // fallback
-  transform: translateY(-50%) scaleX(calc(1 * var(--percent)));
-  transform-origin: 0 0;
+  transition: width 450ms ease-out;
 
   .is-completed & {
     background-color: $success_0;

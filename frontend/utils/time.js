@@ -43,3 +43,13 @@ export function compareISOTimestamps (a: string, b: string): number {
   const B = new Date(b).getTime()
   return A > B ? 1 : (A < B ? -1 : 0)
 }
+
+// TODO: Provide locale fallback in case navigator does not exist (e.g. server, Mocha, etc...)
+const locale = (typeof navigator === 'undefined' && 'en-US') || (navigator.languages ? navigator.languages[0] : navigator.language)
+
+export function humanDate (
+  datems = Date.now(),
+  opts = { month: 'short', day: 'numeric' }
+) {
+  return new Date(datems).toLocaleDateString(locale, opts)
+}

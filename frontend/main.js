@@ -143,7 +143,8 @@ async function startApp () {
         return {
           'l-with-navigation': this.showNav,
           'l-no-navigation': !this.showNav,
-          'js-reducedMotion': this.$store.state.reducedMotion
+          'js-reducedMotion': this.$store.state.reducedMotion,
+          'is-dark-theme': this.$store.getters.isDarkTheme
         }
       },
       isInCypress () {

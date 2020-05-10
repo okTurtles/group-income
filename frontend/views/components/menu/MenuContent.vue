@@ -74,4 +74,8 @@ export default {
   }
 }
 
+.is-dark-theme .c-content {
+  background-color: var(--general_1);
+}
+
 </style>
