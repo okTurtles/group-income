@@ -12,35 +12,20 @@
 
   ul.c-group-list
     li.c-group-member(
-      v-for='(member, username) in firstTenMembers'
-      :class='member.pending && "is-pending"'
+      v-for='{username, displayName, invitedBy, isNew} in firstTenMembers'
+      :data-test='username'
+      :class='invitedBy && "is-pending"'
       :key='username'
     )
-      avatar-user(:username='username' size='sm')
+      avatar(v-if='invitedBy' size='sm')
+      avatar-user(v-else :username='username' size='sm')
 
-      .c-name.has-ellipsis(data-test='username')
-        | {{ username }}
+      .c-name.has-ellipsis(data-test='username') {{ localizedName(username) }}
+      i18n.pill.is-neutral(v-if='invitedBy' data-test='pillPending') pending
+      i18n.pill.is-primary(v-else-if='isNew' data-test='pillNew') new
 
-      i18n.pill.has-text-small.has-background-dark(
-        v-if='member.pending'
-        data-test='pending'
-      ) pending
-
-      tooltip(
-        v-if='member.pending'
-        direction='bottom-end'
-      )
-        span.button.is-icon-small(
-          data-test='pendingTooltip'
-        )
-          i.icon-question-circle
-        template(slot='tooltip')
-          i18n(
-            tag='p'
-            :args='{ username }'
-          ) We are waiting for {username} to join the group by using their unique invite link.
-
-      group-member-menu(v-else :username='username')
+      group-members-tooltip-pending.c-menu(v-if='invitedBy' :username='username')
+      group-members-menu.c-menu(v-else :username='username')
   i18n.link(
     tag='button'
     v-if='groupMembersCount > 10'
@@ -54,16 +39,31 @@
 import { mapGetters } from 'vuex'
 import { OPEN_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
+import Avatar from '@components/Avatar.vue'
 import AvatarUser from '@components/AvatarUser.vue'
-import GroupMemberMenu from '@containers/dashboard/GroupMemberMenu.vue'
-import Tooltip from '@components/Tooltip.vue'
+import GroupMembersMenu from '@containers/dashboard/GroupMembersMenu.vue'
+import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
+import L from '@view-utils/translations.js'
 
 export default {
   name: 'GroupMembers',
   components: {
+    Avatar,
     AvatarUser,
-    GroupMemberMenu,
-    Tooltip
+    GroupMembersMenu,
+    GroupMembersTooltipPending
+  },
+  computed: {
+    ...mapGetters([
+      'groupMembersCount',
+      'groupMembersSorted',
+      'groupShouldPropose',
+      'ourUsername',
+      'userDisplayName'
+    ]),
+    firstTenMembers () {
+      return this.groupMembersSorted.slice(0, 10)
+    }
   },
   methods: {
     invite () {
@@ -71,28 +71,10 @@ export default {
     },
     openModal (modal, queries) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, queries)
-    }
-  },
-  computed: {
-    ...mapGetters([
-      'groupProfiles',
-      'groupShouldPropose',
-      'groupMembersCount',
-      'ourUsername'
-    ]),
-    firstTenMembers () {
-      const profiles = this.groupProfiles
-      const usernames = Object.keys(profiles).slice(0, 10)
-      return usernames.reduce((acc, username) => {
-        // Prevent displaying users without a synced contract.
-        // It happens at the exact moment a user joins a group and both
-        // contracts (group + user) are still syncing
-        const profile = profiles[username]
-        if (profile) {
-          acc[username] = profile
-        }
-        return acc
-      }, {})
+    },
+    localizedName (username) {
+      const name = this.userDisplayName(username)
+      return username === this.ourUsername ? L('{name} (you)', { name }) : name
     }
   }
 }
@@ -110,40 +92,39 @@ export default {
 .c-group-members-header {
   display: flex;
   justify-content: space-between;
-  align-items: end;
+  align-items: center;
 }
 
 .c-group-list {
-  margin-bottom: $spacer-md + $spacer-sm;
+  margin-bottom: 1.5rem;
 }
 
 .c-group-member {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: $spacer-lg;
+  height: 2rem;
   margin-top: 1rem;
 }
 
 .c-avatar {
-  width: $spacer-lg;
-  height: $spacer-lg;
+  width: 2rem;
+  height: 2rem;
   margin-bottom: 0;
 }
 
 .c-name {
   margin-right: auto;
-  margin-left: $spacer-sm;
-
-  .is-pending & {
-    color: $text_1;
-  }
+  margin-left: 0.5rem;
+}
+.c-menu {
+  margin-left: 0.5rem;
 }
 
 .c-actions-content.c-content {
-  top: calc(100% + #{$spacer-sm});
+  top: calc(100% + 0.5rem);
   left: auto;
-  min-width: 214px;
+  min-width: 13rem;
 }
 
 </style>

@@ -145,16 +145,16 @@ export default {
 .c-contribution-item {
   display: flex;
   align-items: baseline;
-  margin: $spacer-sm 0;
+  margin: 0.5rem 0;
 }
 
 ::v-deep .c-contribution-list-item {
   &:nth-child(2) {
-    padding-top: $spacer-sm;
+    padding-top: 0.5rem;
   }
 
   &:last-child {
-    padding-bottom: $spacer-sm;
+    padding-bottom: 0.5rem;
   }
 }
 </style>

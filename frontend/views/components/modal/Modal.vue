@@ -1,7 +1,7 @@
 <template lang='pug'>
   div
     component(:is='content' ref='content' v-bind='contentProps')
-    component(:is='subcontent[subcontent.length-1]' v-bind='contentSubContentProps')
+    component(:is='subcontent[subcontent.length-1]' v-bind='subContentProps')
 </template>
 <script>
 import sbp from '~/shared/sbp.js'
@@ -13,7 +13,7 @@ export default {
       content: null, // Main modal
       contentProps: {}, // Custom props passed down to the main modal
       subcontent: [], // Collection of modal on top of modals
-      contentSubContentProps: {}, // Custom props passed down to the sub modal
+      subContentProps: {}, // Custom props passed down to the sub modal
       replacement: null, // Replace the modal once the first one is close without updating the url
       lastFocus: null // Record element that open the modal
     }
@@ -26,7 +26,10 @@ export default {
     window.addEventListener('keyup', this.handleKeyUp)
   },
   mounted () {
-    this.initializeModals()
+    const modal = this.$route.query.modal
+    if (modal) this.openModal(modal)
+    const subcontent = this.$route.query.subcontent
+    if (subcontent) this.openModal(subcontent)
   },
   beforeDestroy () {
     sbp('okTurtles.events/off', OPEN_MODAL)
@@ -39,7 +42,7 @@ export default {
       if (to.query.modal) {
         // We reset the modals with no animation for simplicity
         if (to.query.modal !== this.content) this.content = to.query.modal
-        const subcontent = to.query.subcontent
+        const subcontent = to.query.subcontent ? to.query.subcontent.split('+').pop() : []
         if (subcontent !== this.activeSubcontent()) {
           // Try to find the new subcontent in the list of subcontent
           const i = this.subcontent.indexOf(subcontent)
@@ -70,18 +73,13 @@ export default {
     activeSubcontent () {
       return this.subcontent[this.subcontent.length - 1]
     },
-    initializeModals () {
-      const modal = this.$route.query.modal
-      if (modal) this.openModal(modal)
-      const subcontent = this.$route.query.subcontent
-      if (subcontent) this.openModal(subcontent)
-    },
     updateUrl () {
       if (this.content) {
         this.$router.push({
           query: {
             ...this.$route.query,
-            ...{ modal: this.content, subcontent: this.activeSubcontent() }
+            modal: this.content,
+            subcontent: this.subcontent.length ? this.subcontent.join('+') : undefined
           }
         }).catch(console.error)
       } else if (this.$route.query.modal) {
@@ -98,7 +96,7 @@ export default {
       this.lastFocus = document.activeElement
       if (this.content) {
         this.subcontent.push(componentName)
-        this.contentSubContentProps = componentProps
+        this.subContentProps = componentProps
       } else {
         this.content = componentName
         this.contentProps = componentProps

@@ -19,6 +19,7 @@ $icons: (
   comment: "\f075",
   comments: "\f086",
   dollar-sign: "\f155",
+  download: "\f019",
   edit: "\f044",
   ellipsis-v: "\f142",
   envelope: "\f0e0",
@@ -38,6 +39,7 @@ $icons: (
   poll: "\f681",
   question: "\f128",
   question-circle: "\f059",
+  share-alt: "\f1e0",
   search: "\f002",
   sort-down: "\f0dd",
   tag: "\f02b",
@@ -96,11 +98,11 @@ $icons: (
   }
 
   &.is-prefix {
-    margin-right: $spacer-sm;
+    margin-right: 0.5rem;
   }
 
   &.is-suffix {
-    margin-left: $spacer-sm;
+    margin-left: 0.5rem;
   }
 }
 
@@ -115,11 +117,20 @@ $icons: (
 }
 
 .icon-round {
-  width: $spacer-lg;
-  height: $spacer-lg;
-  margin-right: $spacer;
+  width: 2rem;
+  height: 2rem;
+  margin-right: 1rem;
   flex-shrink: 0;
   border-radius: 50%;
   text-align: center;
-  line-height: $spacer-lg;
+  line-height: 2rem;
+}
+
+@mixin icon($name) {
+  content: map-get($icons, $name);
+  text-rendering: auto;
+  line-height: 1;
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  -moz-osx-font-smoothing: grayscale;
 }

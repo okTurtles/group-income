@@ -1,11 +1,3 @@
-$spacer: 1rem; // same as Gulp $gap but using rem
-$spacer-xxl: $spacer * 8; // 128px
-$spacer-xl: $spacer * 4; // 64px
-$spacer-lg: $spacer * 2; // 32px
-$spacer-md: $spacer;     // 16px
-$spacer-sm: $spacer / 2; // 8px
-$spacer-xs: $spacer / 4; // 4px
-
 // z-index constants
 // Why: https://css-tricks.com/handling-z-index/
 $zindex-banner: 70;

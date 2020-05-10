@@ -17,7 +17,7 @@ div
 </template>
 
 <script>
-import { toPercent } from '../../utils/filters'
+import { toPercent } from '@view-utils/filters.js'
 
 export default {
   name: 'GroupSupportHistory',
@@ -55,19 +55,19 @@ export default {
 
 .history {
   display: flex;
-  margin: $spacer-sm;
+  margin: 0.5rem;
 }
 
 .months {
-  padding: $spacer-sm;
+  padding: 0.5rem;
 }
 
 .period {
   position: relative;
   width: 100%;
   display: inline-block;
-  padding: $spacer-lg 0;
-  color: #fff;
+  padding: 2rem 0;
+  color: $background_0;
   text-align: center;
   font-size: $size_1;
   line-height: 1.2;
@@ -88,7 +88,7 @@ export default {
     width: 100%;
     height: 100%;
     opacity: 0.5;
-    background-color: #fff;
+    background-color: $background_0;
   }
 
   &-title,

@@ -36,6 +36,6 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .income {
-  margin: $spacer-xs 0;
+  margin: 0.25rem 0;
 }
 </style>

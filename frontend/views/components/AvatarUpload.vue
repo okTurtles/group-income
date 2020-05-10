@@ -25,7 +25,7 @@ import sbp from '~/shared/sbp.js'
 import imageUpload from '@utils/imageUpload.js'
 import Avatar from '@components/Avatar.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
-import L from '@view-utils/translations.js'
+import L, { LError } from '@view-utils/translations.js'
 
 export default {
   name: 'AvatarUpload',
@@ -49,8 +49,8 @@ export default {
       try {
         picture = await imageUpload(fileReceived)
       } catch (e) {
-        console.error(e)
-        this.$refs.formMsg.danger(L('Failed to upload avatar. {codeError}', { codeError: e.message }))
+        console.error('AvatarUpload imageUpload() error:', e)
+        this.$refs.formMsg.danger(L('Failed to upload avatar. {reportError}', LError(e)))
         return false
       }
 
@@ -64,8 +64,8 @@ export default {
         this.$refs.picture.setFromBlob(fileReceived)
         this.$refs.formMsg.success(L('Avatar updated!'))
       } catch (e) {
-        console.error('Failed to save avatar', e)
-        this.$refs.formMsg.danger(L('Failed to save avatar. {codeError}', { codeError: e.message }))
+        console.error('AvatarUpload fileChange() error:', e)
+        this.$refs.formMsg.danger(L('Failed to save avatar. {reportError}', LError(e)))
       }
     }
   }
@@ -93,7 +93,7 @@ export default {
 
   &-label {
     @include touch {
-      margin-bottom: $spacer*1.5;
+      margin-bottom: 1.5rem;
     }
 
     @include desktop {
@@ -101,7 +101,7 @@ export default {
       top: -6.5rem;
       right: 0;
       align-items: flex-end;
-      margin-bottom: -$spacer-sm;
+      margin-bottom: -0.5rem;
     }
   }
 
@@ -123,10 +123,10 @@ export default {
   width: 100%;
 
   ::v-deep .c-banner {
-    margin: 0 0 $spacer*1.5;
+    margin: 0 0 1.5rem;
 
     @include desktop {
-      margin: $spacer-sm 0 $spacer*1.5;
+      margin: 0.5rem 0 1.5rem;
     }
   }
 }

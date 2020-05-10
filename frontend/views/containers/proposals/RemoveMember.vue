@@ -21,7 +21,7 @@ proposal-template(
 import { mapState, mapGetters } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import { CLOSE_MODAL } from '@utils/events.js'
-import L from '@view-utils/translations.js'
+import L, { LError } from '@view-utils/translations.js'
 import Avatar from '@components/Avatar.vue'
 import { PROPOSAL_REMOVE_MEMBER } from '@model/contracts/voting/constants.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
@@ -82,7 +82,6 @@ export default {
     async submit (form) {
       this.$refs.formMsg.clean()
       const member = this.username
-      const memberId = this.groupProfiles[member].contractID
 
       if (this.groupShouldPropose) {
         try {
@@ -90,13 +89,12 @@ export default {
             proposalType: PROPOSAL_REMOVE_MEMBER,
             proposalData: {
               member,
-              memberId,
-              groupId: this.currentGroupId,
               reason: form.reason
             },
             votingRule: this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].rule,
             expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER].expires_ms
           }
+          // TODO: move this into into controller/actions/group.js !
           const proposal = await sbp('gi.contracts/group/proposal/create',
             data,
             this.currentGroupId
@@ -105,8 +103,8 @@ export default {
 
           this.ephemeral.currentStep += 1
         } catch (e) {
-          console.error(`Failed to propose remove ${member}.`, e)
-          this.$refs.formMsg.danger(L('Failed to propose remove {member}: {codeError}', { codeError: e.message, member }))
+          console.error('RemoveMember submit() error:', member, e)
+          this.$refs.formMsg.danger(L('Failed to propose remove {member}: {reportError}', { ...LError(e), member }))
 
           this.ephemeral.currentStep = 0
         }
@@ -115,11 +113,7 @@ export default {
       }
 
       try {
-        await sbp('gi.actions/group/removeMember', {
-          member,
-          memberId,
-          groupId: this.currentGroupId
-        }, this.currentGroupId)
+        await sbp('gi.actions/group/removeMember', { member }, this.currentGroupId)
         this.$refs.proposal.close()
       } catch (e) {
         console.error(`Failed to remove member ${member}.`, e)
@@ -137,11 +131,11 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: $spacer-sm;
+  margin-bottom: 0.5rem;
 
   // BUG on VUE? - without nesting it doesn't work
   .c-avatar {
-    margin-bottom: $spacer;
+    margin-bottom: 1rem;
   }
 }
 

@@ -1,12 +1,13 @@
 <template lang='pug'>
   transition(name='zoom' appear @after-leave='unload')
     .modal(
+      v-if='modalIsActive'
       :class='{ fullscreen }'
-      data-test='modal'
       role='dialog'
       tabindex='-1'
-      @keyup.tab='trapFocus'
-      v-if='modalIsActive'
+      :aria-label='a11yTitle'
+      v-focus=''
+      data-test='modal'
       @close='close'
     )
       modal-close(@close='close' :fullscreen='fullscreen')
@@ -43,10 +44,10 @@ export default {
     justify-content: flex-start;
     align-items: center;
     background: $general_2;
-    padding: 0 $spacer;
+    padding: 0 1rem;
 
     @include tablet {
-      padding: 0 $spacer*1.5;
+      padding: 0 1.5rem;
     }
   }
 }

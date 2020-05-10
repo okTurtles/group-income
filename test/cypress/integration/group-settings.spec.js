@@ -19,7 +19,7 @@ describe('Changing Group Settings', () => {
     })
 
     cy.getByDT('modalProposal').within(() => {
-      cy.get('input[type="number"][name="mincomeAmount"]')
+      cy.get('input[inputmode="decimal"][name="mincomeAmount"]')
         .type(groupNewMincome)
 
       cy.getByDT('submitBtn', 'button')

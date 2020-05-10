@@ -1,19 +1,14 @@
 <template lang='pug'>
-form(
-  novalidate
-  name='formData'
-  data-test='signup'
-  @submit.prevent=''
-)
+form(data-test='signup' @submit.prevent='')
   label.field
     i18n.label Username
     input.input(
-      :class='{error: $v.form.name.$error}'
-      name='name'
-      @input='e => debounceValidation("name", e.target.value)'
-      @blur='e => updateField("name", e.target.value)'
+      :class='{error: $v.form.username.$error}'
+      name='username'
+      @input='e => debounceValidation("username", e.target.value)'
+      @blur='e => updateField("username", e.target.value)'
       data-test='signName'
-      v-error:name='{ attrs: { "data-test": "badUsername" } }'
+      v-error:username='{ attrs: { "data-test": "badUsername" } }'
     )
 
   label.field
@@ -37,6 +32,7 @@ form(
     button-submit(
       @click='signup'
       data-test='signSubmit'
+      :disabled='$v.form.$invalid'
     ) {{ L('Create an account') }}
 </template>
 
@@ -67,7 +63,7 @@ export default {
   data () {
     return {
       form: {
-        name: null,
+        username: null,
         password: null,
         email: null
       }
@@ -80,8 +76,8 @@ export default {
         return
       }
       try {
-        await sbp('gi.actions/user/signupAndLogin', {
-          username: this.form.name,
+        await sbp('gi.actions/identity/signupAndLogin', {
+          username: this.form.username,
           email: this.form.email,
           password: this.form.password
         })
@@ -94,7 +90,7 @@ export default {
   },
   validations: {
     form: {
-      name: {
+      username: {
         [L('A username is required.')]: required,
         [L('A username cannot contain spaces.')]: nonWhitespace,
         [L('This username is already being used.')]: async (value) => {

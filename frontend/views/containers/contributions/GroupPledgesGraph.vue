@@ -235,7 +235,7 @@ export default {
 }
 
 .c-title {
-  margin-bottom: $spacer-xs;
+  margin-bottom: 0.25rem;
 
   @include phone {
     text-transform: capitalize;
@@ -248,11 +248,11 @@ export default {
 
 .c-legendList {
   flex-grow: 1;
-  margin: 0 $spacer-sm 0 $spacer;
+  margin: 0 0.5rem 0 1rem;
   max-width: 20rem;
 
   @include tablet {
-    margin: $spacer*1.5 0 0 0;
+    margin: 1.5rem 0 0 0;
     width: 100%;
   }
 }

@@ -123,7 +123,7 @@ export default {
         } else {
           const identityContractID = await sbp('namespace/lookup', invite.creator)
           const userState = await sbp('state/latestContractState', identityContractID)
-          const userDisplayName = userState.attributes.displayName || userState.attributes.name
+          const userDisplayName = userState.attributes.displayName || userState.attributes.username
           message = L('{who} invited you to join their group!', { who: userDisplayName })
           creator = userDisplayName
           creatorPicture = userState.attributes.picture
@@ -177,8 +177,8 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-logo {
-  min-width: $spacer-xxl;
-  width: $spacer-xxl;
+  min-width: 8rem;
+  width: 8rem;
   margin: auto;
 
   @include tablet {
@@ -198,7 +198,7 @@ export default {
 }
 
 .c-header {
-  margin-top: $spacer;
+  margin-top: 1rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -218,8 +218,8 @@ export default {
 
   .c-avatars-group.is-lg {
     @include tablet {
-      width: $spacer-xxl;
-      height: $spacer-xxl;
+      width: 8rem;
+      height: 8rem;
     }
   }
 
@@ -232,7 +232,7 @@ export default {
 }
 
 .card {
-  padding: 1.5rem $spacer;
+  padding: 1.5rem 1rem;
   margin-top: 1.5rem;
 
   @include tablet {
@@ -251,11 +251,11 @@ export default {
 
   .is-title-1 {
     margin-top: 3rem;
-    margin-bottom: $spacer-sm;
+    margin-bottom: 0.5rem;
   }
 
   .c-goHome {
-    margin-top: $spacer-lg;
+    margin-top: 2rem;
   }
 }
 

@@ -19,15 +19,15 @@ export default {
 
   &-bubble {
     display: inline-block;
-    margin: $spacer $spacer 0;
-    padding: $spacer-xs $spacer-sm;
+    margin: 1rem 1rem 0;
+    padding: 0.25rem 0.5rem;
     text-align: center;
     max-width: 32rem;
     background-color: $general_2;
     border-radius: $radius-large;
 
     @include tablet {
-      margin: $spacer $spacer 0;
+      margin: 1rem 1rem 0;
     }
   }
 }

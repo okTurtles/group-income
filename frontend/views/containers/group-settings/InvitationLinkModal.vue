@@ -1,5 +1,5 @@
 <template lang='pug'>
-modal-template(ref='modal')
+modal-template(ref='modal' :a11yTitle='L("Add new members")')
   template(#title='')
     i18n Add new members
 
@@ -59,11 +59,11 @@ export default {
 }
 
 .c-link {
-  margin-top: $spacer-lg;
-  margin-bottom: $spacer-sm;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
 }
 
 .c-cta {
-  margin-top: $spacer-lg;
+  margin-top: 2rem;
 }
 </style>

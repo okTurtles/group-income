@@ -1,5 +1,5 @@
 <template lang='pug'>
-modal-base-template(:fullscreen='true')
+modal-base-template(:fullscreen='true' :a11yTitle='L("Create Group")')
   .steps(v-if='currentStep + 1 < config.steps.length')
     button.step(
       v-for='(step, index) in config.steps'
@@ -10,7 +10,7 @@ modal-base-template(:fullscreen='true')
     ) {{ index + 1 }}
 
   .wrapper.mobile-steps.subtitle(v-if='currentStep + 1 < config.steps.length')
-    i18n(:args='{ current: currentStep + 1, max: config.steps.length - 1}') Step {current} of {max}
+    i18n.is-subtitle(:args='{ current: currentStep + 1, max: config.steps.length - 1}') Step {current} of {max}
 
   transition(name='fade' mode='out-in')
     component(
@@ -52,7 +52,7 @@ modal-base-template(:fullscreen='true')
 import sbp from '~/shared/sbp.js'
 import { validationMixin } from 'vuelidate'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
-import { RULE_THRESHOLD } from '@model/contracts/voting/rules.js'
+import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/voting/rules.js'
 import proposals from '@model/contracts/voting/proposals.js'
 import { PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE } from '@model/contracts/voting/constants.js'
 import L from '@view-utils/translations.js'
@@ -132,9 +132,14 @@ export default {
         groupName: '',
         groupPicture: '',
         sharedValues: null,
-        changeThreshold: proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults.ruleSettings[RULE_THRESHOLD].threshold,
-        memberApprovalThreshold: proposals[PROPOSAL_INVITE_MEMBER].defaults.ruleSettings[RULE_THRESHOLD].threshold,
-        memberRemovalThreshold: proposals[PROPOSAL_REMOVE_MEMBER].defaults.ruleSettings[RULE_THRESHOLD].threshold,
+
+        // randomize to reduce choice bias
+        ruleOrder: Math.round(Math.random()) === 1 ? [RULE_PERCENTAGE, RULE_DISAGREEMENT] : [RULE_DISAGREEMENT, RULE_PERCENTAGE],
+        // TODO connect rule option in a next PR.
+
+        changeThreshold: proposals[PROPOSAL_GROUP_SETTING_CHANGE].defaults.ruleSettings[RULE_PERCENTAGE].threshold,
+        memberApprovalThreshold: proposals[PROPOSAL_INVITE_MEMBER].defaults.ruleSettings[RULE_PERCENTAGE].threshold,
+        memberRemovalThreshold: proposals[PROPOSAL_REMOVE_MEMBER].defaults.ruleSettings[RULE_PERCENTAGE].threshold,
         mincomeAmount: null,
         mincomeCurrency: 'USD' // TODO: grab this as a constant from currencies.js
       },
@@ -203,14 +208,14 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .steps {
-  width: calc(100% - #{$spacer-lg});
+  width: calc(100% - 2rem);
   max-width: 34rem;
   margin-top: 3.5rem;
   flex-shrink: 0;
 }
 
 .wrapper {
-  width: calc(100% - #{$spacer-lg});
+  width: calc(100% - 2rem);
   max-width: 33rem;
 }
 </style>

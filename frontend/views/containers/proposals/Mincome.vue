@@ -11,13 +11,12 @@
 
     label.field(v-if='ephemeral.currentStep === 0' key='0')
       i18n.label New minimum income
-      .input-combo(:class='{ error: $v.form.mincomeAmount.$error }')
+      .inputgroup(:class='{ error: $v.form.mincomeAmount.$error }')
         input.input(
           v-model='$v.form.mincomeAmount.$model'
           name='mincomeAmount'
-          type='number'
-          min='1'
-          required
+          inputmode='decimal'
+          pattern='[0-9]*'
         )
         .suffix {{ groupMincomeSymbolWithCode }}
       i18n.helper(:args='{groupMincomeFormatted}') Currently {groupMincomeFormatted} monthly.
@@ -31,7 +30,7 @@ import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import { mapGetters, mapState } from 'vuex'
 import { decimals } from '@view-utils/validators.js'
-import L from '@view-utils/translations.js'
+import L, { LError } from '@view-utils/translations.js'
 import ProposalTemplate from './ProposalTemplate.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import { PROPOSAL_GROUP_SETTING_CHANGE } from '@model/contracts/voting/constants.js'
@@ -119,8 +118,7 @@ export default {
 
           this.ephemeral.currentStep += 1 // Show Success step
         } catch (e) {
-          console.error(`Failed to change mincome to ${mincomeAmount}`, e.message)
-          this.$refs.formMsg.danger(L('Failed to change mincome. {codeError}', { codeError: e.message }))
+          this.$refs.formMsg.danger(L('Failed to propose mincome change: {reportError}', LError(e)))
           this.ephemeral.currentStep = 0
         }
         return
@@ -135,8 +133,8 @@ export default {
         await sbp('backend/publishLogEntry', updatedSettings)
         this.$refs.proposal.close()
       } catch (e) {
-        console.error(`Failed to change mincome to ${mincomeAmount}`, e.message)
-        this.$refs.formMsg.danger(L('Failed to change mincome {codeError}', { codeError: e.message }))
+        console.error('Mincome.vue submit() error:', e)
+        this.$refs.formMsg.danger(L('Failed to change mincome: {reportError}', LError(e)))
       }
     }
   }

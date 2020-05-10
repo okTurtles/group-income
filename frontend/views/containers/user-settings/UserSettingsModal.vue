@@ -1,5 +1,5 @@
 <template lang='pug'>
-modal-base-template(class='has-background')
+modal-base-template(class='has-background' :a11yTitle='L("Settings")')
   .wrapper-container
     tab-wrapper(:title='L("Settings")' :tabNav='settings' @close='$emit("close")')
       tab-item
@@ -11,7 +11,9 @@ modal-base-template(class='has-background')
       tab-item
         appearence
       tab-item
-        tab-placeholder(name='Changelog')
+        app-logs
+      tab-item
+        troubleshooting
 </template>
 
 <script>
@@ -20,21 +22,23 @@ import TabItem from '@components/tabs/TabItems.vue'
 import TabWrapper from '@components/tabs/TabWrapper.vue'
 import TabPlaceholder from './Placeholder.vue'
 import Appearence from './Appearence.vue'
+import AppLogs from './AppLogs.vue'
+import Troubleshooting from './Troubleshooting.vue'
 import UserProfile from './UserProfile.vue'
-import settings from '~/frontend/model/settings.js'
+import settings from './settings.js'
 
 export default {
   name: 'SettingsWrapper',
-
   components: {
     ModalBaseTemplate,
     TabWrapper,
     TabItem,
     Appearence,
+    AppLogs,
+    Troubleshooting,
     UserProfile,
     TabPlaceholder
   },
-
   data () {
     return settings
   }
@@ -54,6 +58,7 @@ export default {
 .settings-container {
   position: relative;
   margin: 0 26px;
-  max-width: 620px;
+  width: 100%;
+  max-width: 38rem;
 }
 </style>

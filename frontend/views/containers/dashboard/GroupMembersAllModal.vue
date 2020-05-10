@@ -1,5 +1,5 @@
 <template lang='pug'>
-modal-base-template.has-background(ref='modal' :fullscreen='true')
+modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L("Group members")')
   .c-container
     .c-header
       i18n.is-title-2.c-title(tag='h2') Group members
@@ -36,32 +36,35 @@ modal-base-template.has-background(ref='modal' :fullscreen='true')
         tag='ul'
       )
         li.c-search-member(
-          v-for='{username, displayName} in searchResult'
+          v-for='{username, displayName, invitedBy, isNew} in searchResult'
           :key='username'
         )
           .c-identity
             avatar-user(:username='username' size='sm')
             .c-name(data-test='username')
-              strong {{ displayName ? displayName : username }}
-              .c-display-name(
-                data-test='profileName'
-                v-if='displayName'
-              ) @{{ username }}
+              span
+                strong {{ localizedName(username) }}
+                .c-display-name(v-if='displayName !== username' data-test='profileName') @{{ username }}
+
+              i18n.pill.is-neutral(v-if='invitedBy' data-test='pillPending') pending
+              i18n.pill.is-primary(v-else-if='isNew' data-test='pillNew') new
 
           .c-actions
-            group-member-menu.c-action-menu(:username='username')
+            group-members-tooltip-pending(v-if='invitedBy' :username='username')
+            template(v-else)
+              group-members-menu.c-action-menu(:username='username')
 
-            .c-actions-buttons.buttons
-              button.button.is-outlined.is-small(
-                @click='toMessages(username)'
-              )
-                i.icon-comment
-                i18n Send message
-              button.button.is-outlined.is-small(
-                @click='openModal("RemoveMember", { username })'
-              )
-                i.icon-times
-                i18n Remove member
+              .c-actions-buttons.buttons
+                button.button.is-outlined.is-small(
+                  @click='toMessages(username)'
+                )
+                  i.icon-comment
+                  i18n Send message
+                button.button.is-outlined.is-small(
+                  @click='openModal("RemoveMember", { username })'
+                )
+                  i.icon-times
+                  i18n Remove member
 </template>
 
 <script>
@@ -72,7 +75,8 @@ import { OPEN_MODAL } from '@utils/events.js'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import Search from '@components/Search.vue'
 import AvatarUser from '@components/AvatarUser.vue'
-import GroupMemberMenu from '@containers/dashboard/GroupMemberMenu.vue'
+import GroupMembersMenu from '@containers/dashboard/GroupMembersMenu.vue'
+import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
 
 export default {
   name: 'GroupMembersAllModal',
@@ -80,7 +84,8 @@ export default {
     ModalBaseTemplate,
     Search,
     AvatarUser,
-    GroupMemberMenu
+    GroupMembersMenu,
+    GroupMembersTooltipPending
   },
   data () {
     return {
@@ -89,20 +94,19 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'groupProfiles',
-      'globalProfile',
-      'groupMembersCount'
+      'groupMembersSorted',
+      'groupMembersCount',
+      'ourUsername',
+      'userDisplayName'
     ]),
     searchResult () {
-      return Object.keys(this.groupProfiles)
-        .map(username => {
-          const inList = (n) => n.toUpperCase().indexOf(this.searchText.toUpperCase()) > -1
-          const { displayName } = this.globalProfile(username)
-          if (!this.searchText || inList(username) || (displayName ? inList(displayName) : false)) {
-            return { username, displayName }
-          }
-        })
-        .filter(profile => profile !== undefined)
+      if (!this.searchText) { return this.groupMembersSorted }
+
+      const searchTextCaps = this.searchText.toUpperCase()
+      const isInList = (n) => n.toUpperCase().indexOf(searchTextCaps) > -1
+      return this.groupMembersSorted.filter(({ username, displayName }) =>
+        (!searchTextCaps || isInList(username) || isInList(displayName))
+      )
     },
     searchCount () {
       return Object.keys(this.searchResult).length
@@ -113,6 +117,10 @@ export default {
     }
   },
   methods: {
+    localizedName (username) {
+      const name = this.userDisplayName(username)
+      return username === this.ourUsername ? L('{name} (you)', { name }) : name
+    },
     openModal (modal, props) {
       sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
     },
@@ -128,6 +136,7 @@ export default {
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
 .c-container {
   height: 100%;
   width: 100%;
@@ -137,7 +146,7 @@ export default {
 .c-header,
 .c-container {
   @include tablet {
-    width: 38.75rem;
+    width: 50rem;
     max-width: 100%;
   }
 }
@@ -152,7 +161,7 @@ export default {
   margin: 0 -1rem;
 
   @include tablet {
-    padding-top: $spacer-lg;
+    padding-top: 2rem;
     justify-content: flex-start;
     background-color: transparent;
     margin: 0;
@@ -164,38 +173,22 @@ export default {
 }
 
 .c-member-count {
-  margin-top: $spacer-sm;
+  margin-top: 0.5rem;
   margin-bottom: 1.5rem;
-}
-
-.input-combo {
-  align-items: center;
-
-  .is-icon {
-    left: 0;
-    right: auto;
-  }
-
-  .is-icon-small {
-    position: absolute;
-    right: $spacer-sm;
-    background: $general_2;
-    border-radius: 50%;
-
-    &:hover {
-      background: $general_1;
-    }
-  }
 }
 
 .c-identity {
   display: flex;
   align-items: center;
+  flex-grow: 1;
 }
 
 .c-name {
-  margin-left: 1.5rem;
-  min-width: 100%;
+  margin: 0 0.5rem 0 1.5rem;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .c-display-name {
@@ -231,7 +224,7 @@ export default {
   margin-top: 0;
 
   i {
-    margin-right: $spacer-sm;
+    margin-right: 0.5rem;
   }
 
   @include tablet {

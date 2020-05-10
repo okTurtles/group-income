@@ -1,5 +1,5 @@
 <template lang="pug">
-modal-base-template(:class='{ "has-background": background }')
+modal-base-template(:class='{ "has-background": background }' :a11yTitle='L("Modal title")')
   .wrapper-container
     .example-header
       h2.is-title-2 Modal base example
@@ -13,7 +13,7 @@ modal-base-template(:class='{ "has-background": background }')
 
         .field
           i18n.label(tag='label') Introduce the potential new member(s) to your group
-          textarea(rows='5')
+          textarea.textarea(rows='5')
             | Felix and Brian are two very important figures in the electronic music scene. They have greatly contributed to the development of genres like ambient music and are now ready to contribute to this group. They are Dreamers like us!'
 
         .buttons
@@ -75,8 +75,8 @@ export default {
   display: flex;
   height: 4.75rem;
   width: 100%;
-  padding-left: $spacer-lg;
-  padding-top: $spacer-lg;
+  padding-left: 2rem;
+  padding-top: 2rem;
 }
 
 .has-background .example-header {
@@ -86,13 +86,13 @@ export default {
   background-color: $background_0;
 
   @include tablet {
-    padding-top: $spacer-lg;
+    padding-top: 2rem;
     justify-content: flex-start;
     background-color: transparent;
   }
 }
 
 form {
-  padding: $spacer-lg;
+  padding: 2rem;
 }
 </style>

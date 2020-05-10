@@ -1,5 +1,5 @@
 <template lang='pug'>
-.c-message(:class='`is-${severity}`')
+.c-message(:class='`is-${severity}`' aria-live='polite')
   i(:class='getIcon')
 
   .c-content
@@ -14,8 +14,10 @@
 export default {
   name: 'Message',
   props: {
-    severity: String,
-    default () { return 'info' }
+    severity: {
+      type: String,
+      default: 'info'
+    }
   },
   validator: function (value) {
     // The value must match one of these strings
@@ -38,7 +40,7 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-message {
-  padding: $spacer;
+  padding: 1rem;
   border-radius: $radius-large;
   display: flex;
   align-items: flex-start;
@@ -47,8 +49,8 @@ export default {
     color: currentColor;
   }
 
-  ::v-deep a.link {
-    font-weight: 400;
+  ::v-deep .link {
+    font-weight: inherit;
     color: currentColor;
     border-bottom-color: currentColor;
 
@@ -79,7 +81,7 @@ export default {
 
   &.is-warning {
     background-color: $warning_2;
-    color: $warning_0;
+    color: $warning_0_text;
 
     .c-icon {
       color: $warning_1;
@@ -98,7 +100,7 @@ export default {
 
 .c-icon {
   font-size: $size_3;
-  margin-right: $spacer;
+  margin-right: 1rem;
 }
 
 .c-content {
@@ -109,5 +111,25 @@ export default {
 .c-header {
   display: block;
   color: $text_0;
+}
+
+.is-dark-theme .c-message{
+  color: $text_0;
+
+  &.is-info .c-icon {
+    color: $primary_0;
+  }
+
+  &.is-danger .c-icon {
+    color: $danger_0;
+  }
+
+  &.is-warning .c-icon {
+    color: $warning_0;
+  }
+
+  &.is-success .c-icon {
+    color: $success_0;
+  }
 }
 </style>

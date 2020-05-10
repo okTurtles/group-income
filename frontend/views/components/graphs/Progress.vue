@@ -3,13 +3,8 @@
     :class='{ "is-completed": percent === "100%", "has-marks": hasMarks }'
   )
   .c-bg
-  .c-marks(
-    v-if='hasMarks'
-    :style='marksStyle'
-  )
-  .c-bar(
-    :style='{ width: percent }'
-  )
+  .c-marks(v-if='hasMarks' :style='marksStyle')
+  .c-bar(:style='`width: ${percent}; ${ephemeral.widthZero}`')
 </template>
 
 <script>
@@ -19,6 +14,20 @@ export default {
     max: Number,
     value: Number,
     hasMarks: Boolean
+  },
+  data: () => ({
+    ephemeral: {
+      widthZero: 'width: 0;'
+    }
+  }),
+  mounted () {
+    // Animate the progressBar width from 0 to this.percent on first render:
+    // 1.On the first render, the width must be zero. (widthZero)
+    // 2. Wait for the component to be mounted and the DOM processed.
+    setTimeout(() => {
+      // 3. Finally remove the widthZero, and it will animate from 0 to this.percent.
+      this.ephemeral.widthZero = ''
+    }, 0)
   },
   computed: {
     percent () {
@@ -51,10 +60,10 @@ export default {
 
 .c-progress {
   position: relative;
-  height: $spacer-sm;
+  height: 0.5rem;
 
   &.has-marks {
-    height: $spacer;
+    height: 1rem;
   }
 }
 
@@ -62,11 +71,11 @@ export default {
 .c-bar {
   position: absolute;
   width: 100%;
-  height: $spacer-sm;
+  height: 0.5rem;
   top: 50%;
   left: 0;
   transform: translateY(-50%);
-  border-radius: $spacer-sm;
+  border-radius: 0.5rem;
 }
 
 .c-bg {
@@ -75,23 +84,14 @@ export default {
 
 .c-bar {
   background-color: $primary_0;
-  // Animation to modify the bar
-  transition: width 450ms ease-in-out;
-  // Animation to show up the bar
-  transform: translateY(-50%) scaleX(0);
-  transform-origin: 0 0;
-  animation: progress 700ms ease-out 350ms forwards;
-
-  .js-reducedMotion & {
-    transform: translateY(-50%) scaleX(1);
-  }
+  transition: width 450ms ease-out;
 
   .is-completed & {
     background-color: $success_0;
   }
 
   .has-marks:not(.is-completed) & {
-    border-radius: $spacer-sm 0 0 $spacer-sm;
+    border-radius: 0.5rem 0 0 0.5rem;
   }
 }
 
@@ -105,14 +105,5 @@ export default {
   // hide last marker
   $edge: calc(100% - 2px);
   clip-path: polygon(0 0, $edge 0, $edge 100%, 0 100%);
-}
-
-@keyframes progress {
-  from {
-    transform: translateY(-50%) scaleX(0);
-  }
-  to {
-    transform: translateY(-50%) scaleX(1);
-  }
 }
 </style>

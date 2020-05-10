@@ -1,8 +1,4 @@
-$inputHeight: 43px;
-
-form {
-  width: 100%;
-}
+$inputHeight: 2.75rem;
 
 @mixin placeholder {
   $placeholders: ":-moz" ":-webkit-input" "-moz" "-ms-input";
@@ -13,9 +9,13 @@ form {
   }
 }
 
+form {
+  width: 100%;
+}
+
 legend.legend {
   font-weight: 600;
-  margin-bottom: $spacer-sm;
+  margin-bottom: 0.5rem;
 }
 
 .field {
@@ -23,7 +23,7 @@ legend.legend {
   display: block;
   max-width: 100%;
   width: 100%;
-  margin-bottom: $spacer*1.5;
+  margin-bottom: 1.5rem;
 
   &:last-of-type {
     margin-bottom: 0;
@@ -32,29 +32,31 @@ legend.legend {
   .helper {
     display: block;
     color: $text_1;
-    margin-top: $spacer-sm;
+    margin-top: 0.5rem;
   }
 }
 
-// [1] - make the border-corner around totally visisble at combo elements
+.label {
+  display: block;
+  font-weight: bold;
+  line-height: 1.5rem;
+  margin-bottom: 0.5rem;
+}
 
-textarea,
 .textarea,
-select,
 .select,
 .input {
-  background: $background_0; // [1]
+  position: relative;
   display: flex;
   justify-content: center;
   height: $inputHeight;
   width: 100%;
   border-radius: $radius;
-  padding: 0 10px;
-  background-color: #fff;
+  padding: 0 0.625rem;
+  background-color: $background_0;
   border: 1px solid $general_0;
-  letter-spacing: -0.6px;
   font-size: 1rem;
-  line-height: 23px;
+  line-height: 1.5rem;
   outline: none;
   font-family: inherit;
   color: $text_0;
@@ -78,6 +80,11 @@ select,
     border-color: $danger_0;
     color: initial;
 
+    &:focus,
+    &:hover {
+      border-color: $danger_0;
+    }
+
     @media (hover: hover) {
       &:focus {
         box-shadow: 0 0 0 2px $danger_1;
@@ -86,76 +93,97 @@ select,
   }
 }
 
-textarea,
 .textarea {
-  padding-top: 10px;
-  padding-bottom: 10px;
+  padding: 0.625rem;
   height: auto;
   min-height: 7.5rem;
   resize: vertical;
+
+  &[readonly] {
+    background-color: $general_2;
+
+    &:hover,
+    &:focus {
+      border-color: var(--general_0);
+      box-shadow: none;
+    }
+  }
 }
 
-.label {
-  display: block;
-  font-weight: bold;
-  line-height: 24px;
-  margin-bottom: $spacer-sm;
+.select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-color: transparent;
+  cursor: pointer;
 }
 
-.select-wrapper {
-  .select,
-  select {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    background-color: transparent;
-    padding-right: $spacer-lg;
-    padding-left: $spacer;
-    min-width: 6.5rem;
-    cursor: pointer;
+/* ------- Combo elements ------- */
 
-    option:disabled {
-      color: $text_1;
+.selectbox,
+.selectgroup,
+.inputgroup {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  &.error {
+    .input,
+    .select {
+      border-color: $danger_0;
+
+      &:hover,
+      &:focus {
+        border-color: $danger_0;
+      }
+
+      &:focus {
+        box-shadow: 0 0 0 2px $danger_1;
+      }
     }
   }
 
-  &::after {
-    content: "\f0dd"; // icon-sort-down
-    text-rendering: auto;
-    line-height: 1;
-    font-family: "Font Awesome 5 Free";
-    font-weight: 900;
-    -moz-osx-font-smoothing: grayscale;
-    position: absolute;
-    top: 50%;
-    right: $spacer;
-    transform: translateY(calc(-50% - 2px));
-    pointer-events: none;
-  }
-
-  &.is-reversed::after {
-    right: auto;
-    left: 5rem;
+  .is-btn-shifted {
+    margin-left: 0.5rem;
   }
 }
 
-.select-wrapper,
-.input-combo {
-  position: relative;
-  display: flex;
-  align-items: stretch;
-  border: 1px solid $general_0;
-  border-radius: $radius;
+// Input with select
+.selectbox,
+.selectgroup {
+  &::after {
+    @include icon(sort-down);
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    transform: translateY(calc(-50% - 2px));
+    pointer-events: none;
+    z-index: 2; // be above input, even when :hover it.
+  }
+}
 
-  select,
+.selectbox {
+  .select {
+    padding-right: 2rem;
+    padding-left: 1rem;
+    min-width: 6.5rem;
+
+    option:disabled,
+    &.is-empty {
+      color: $text_1;
+    }
+  }
+}
+
+.selectgroup {
   .select,
   .input {
-    position: relative;
-    border: 1px solid transparent;
+    border: 1px solid $general_0;
 
-    &:hover {
+    &:hover,
+    &:focus {
       border-color: $primary_0;
-      z-index: 1; /* all the border gets visible even if next to another input */
+      z-index: 1; // keep the "edge" border visible.
     }
 
     &:focus {
@@ -165,87 +193,56 @@ textarea,
 
   .input {
     border-radius: $radius 0 0 $radius;
+    flex-grow: 1;
   }
 
-  input + select {
+  .select {
+    min-width: 6rem; // customized based on the context
     width: auto;
-    border-left: 1px solid $general_0;
     border-radius: 0 $radius $radius 0;
-    margin-left: -1px /* border */
+    margin-left: -1px; // collapse border
+
+    &.is-empty {
+      color: $text_1;
+    }
   }
 
   &.is-reversed {
     .select {
       border-radius: $radius 0 0 $radius;
+      margin-left: 0;
     }
 
     .input {
       border-radius: 0 $radius $radius 0;
-      margin-left: -1px; /* show border */
-      border-left: 1px solid $general_0;
-
-      &:hover {
-        border-color: $primary_0;
-      }
-    }
-  }
-
-  button:not(.is-icon-small) {
-    border-radius: 0 $radius $radius 0;
-
-    &.is-icon {
-      &:hover,
-      &:focus {
-        color: $primary_0;
-        background-color: transparent;
-      }
-
-      &:focus {
-        box-shadow: 0 0 0 2px $primary_1;
-        border-color: $primary_0;
-      }
-    }
-  }
-
-  .is-icon:not(.is-shifted) {
-    position: absolute;
-    top: 0;
-    right: 0;
-    z-index: 2;
-    min-width: 40px;
-    height: $inputHeight;
-    text-align: center;
-    color: $general_0;
-    align-items: center;
-    justify-content: center;
-    display: flex;
-
-    &:first-child {
-      position: absolute;
+      margin-left: -1px; // collapse border
     }
 
-    + .input {
-      padding-left: 40px;
-      border-radius: $radius;
-    }
-  }
-
-  &.error {
-    border-color: $danger_0;
-
-    @media (hover: hover) {
-      input:focus {
-        box-shadow: 0 0 0 2px $danger_1;
-        border-color: $danger_0;
-      }
+    &::after {
+      left: 4rem; // customized based on the context
+      right: auto;
     }
   }
 }
 
-.input-combo {
+.inputgroup {
   .input {
-    border-radius: $radius;
     padding-right: 5rem; /* avg of suffix width */
+    flex-grow: 1;
+  }
+
+  .prefix + .input {
+    padding-left: 2.5rem;
+  }
+
+  .prefix {
+    position: absolute;
+    top: 50%;
+    left: 0.75rem;
+    transform: translateY(-50%);
+    color: $general_0;
+    pointer-events: none;
+    z-index: 1;
   }
 
   .suffix {
@@ -262,18 +259,41 @@ textarea,
     color: $text_1;
     z-index: 1 /* to be above input, always */
   }
-}
 
-.input-shifted {
-  position: relative;
-  display: flex;
-  align-items: center;
+  .addons {
+    position: absolute;
+    display: flex;
+    top: 0;
+    right: 0;
+    height: 100%;
 
-  button {
-    margin-left: $spacer-sm;
+    button.is-icon {
+      z-index: 1;
+      width: 2rem;
+      height: 100%;
+      border-radius: 0;
+      text-align: center;
+      color: var(--general_0);
 
-    @include tablet {
-      margin-right: -3rem;
+      &:hover,
+      &:focus {
+        color: $primary_0;
+        background-color: transparent;
+      }
+
+      &:focus {
+        box-shadow: 0 0 0 2px $primary_1;
+        border-color: $primary_0;
+      }
+
+      &:last-child {
+        border-radius: 0 $radius $radius 0;
+      }
+
+      // when it's the only child.
+      &:first-child:last-child {
+        width: 2.75rem;
+      }
     }
   }
 }
@@ -281,20 +301,18 @@ textarea,
 span.error,
 p.error {
   display: block;
-  margin-top: $spacer-sm;
+  margin-top: 0.5rem;
   margin-bottom: 0;
   color: var(--danger_0);
 
   &::before {
-    content: "\f057";
-    font-family: "Font Awesome 5 Free";
-    font-weight: 900;
-    margin-right: $spacer-xs;
+    @include icon(times-circle);
+    margin-right: 0.25rem;
   }
 
   & + .helper {
     // When the error and a helper are visisble at the same time
-    margin-top: $spacer-sm;
+    margin-top: 0.5rem;
   }
 }
 
@@ -336,13 +354,13 @@ p.error {
 
     + .radio,
     + .checkbox {
-      margin-top: $spacer;
+      margin-top: 1rem;
     }
   }
 }
 
 .radio {
-  :last-child {
+  > :last-child {
     white-space: nowrap;
 
     &::before,
@@ -352,10 +370,13 @@ p.error {
       border-radius: 50%;
     }
 
+    // Exception: Use px because units
+    // are tiny and may have cause render issues
+    // in diff browsers / zoom resolutions
     &::before {
       width: 14px;
       height: 14px;
-      margin-right: $spacer-sm;
+      margin-right: 0.5rem;
       border: 1px solid $general_0;
       transform: translateY(2px);
       transition: box-shadow 150ms, background-color 150ms;
@@ -386,7 +407,7 @@ p.error {
 }
 
 .checkbox {
-  :last-child {
+  > :last-child {
     white-space: nowrap;
 
     &::before,
@@ -399,19 +420,14 @@ p.error {
       content: "";
       width: 14px;
       height: 14px;
-      margin-right: $spacer-sm;
+      margin-right: 0.5rem;
       border: 1px solid $general_0;
       transform: translateY(2px);
       transition: box-shadow 150ms, background-color 150ms;
     }
 
     &::after {
-      content: "\f00c"; // icon-check
-      text-rendering: auto;
-      line-height: 1;
-      font-family: "Font Awesome 5 Free";
-      font-weight: 900;
-      -moz-osx-font-smoothing: grayscale;
+      @include icon(check);
       font-size: 10px;
       position: absolute;
       width: 6px;
@@ -473,7 +489,7 @@ p.error {
     width: 1.1875rem;
     height: 1.1875rem;
     position: absolute;
-    left: $spacer-xs;
+    left: 0.25rem;
     top: 0.2rem;
     background: $white;
     transition: transform 0.25s cubic-bezier(0.165, 0.84, 0.44, 1);
@@ -489,5 +505,20 @@ p.error {
 
   &:disabled:not(:checked)::after {
     opacity: 0.6;
+  }
+}
+
+.is-dark-theme {
+  .radio :last-child::after {
+    background: $text_0;
+  }
+
+  .checkbox :last-child::after {
+    color: $white;
+  }
+
+  .switch:checked:hover {
+    background: var(--primary_0);
+    border-color: transparent;
   }
 }

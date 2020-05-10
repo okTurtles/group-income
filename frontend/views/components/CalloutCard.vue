@@ -24,14 +24,14 @@ export default {
   display: flex;
 
   p + button {
-    margin-top: $spacer-lg;
+    margin-top: 2rem;
   }
 }
 
 .c-svg {
-  width: $spacer-xl;
-  height: $spacer-xl;
-  margin-right: $spacer;
+  width: 4rem;
+  height: 4rem;
+  margin-right: 1rem;
   flex-shrink: 0;
 
   @include tablet {
@@ -42,6 +42,6 @@ export default {
 }
 
 .c-title {
-  margin-bottom: $spacer-sm;
+  margin-bottom: 0.5rem;
 }
 </style>

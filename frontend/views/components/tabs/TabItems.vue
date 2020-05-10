@@ -17,25 +17,22 @@
 <script>
 export default {
   name: 'TabItem',
-
   data () {
     return {
       isActive: false,
       transitionName: null
     }
   },
-
   methods: {
+    // Used by parent TabWrapper.vue
     changeTab (isActive, transitionName) {
       this.transitionName = transitionName
       this.isActive = isActive
     }
   },
-
   created () {
     this.$parent.tabItems.push(this)
   },
-
   beforeDestroy () {
     const index = this.$parent.tabItems.indexOf(this)
     if (index >= 0) {
@@ -53,7 +50,8 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  position: relative;
+  position: sticky;
+  top: 0;
   height: 4.75rem;
   width: 100%;
   z-index: 3;
@@ -62,6 +60,7 @@ export default {
   @include desktop {
     justify-content: start;
     background-color: transparent;
+    position: relative;
   }
 }
 

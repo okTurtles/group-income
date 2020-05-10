@@ -1,27 +1,21 @@
 <template lang='pug'>
-form(
-  novalidate
-  ref='form'
-  name='formData'
-  data-test='login'
-  @submit.prevent=''
-)
+form(data-test='login' @submit.prevent='')
   label.field
     i18n.label Username
     input.input(
-      :class='{error: $v.form.name.$error}'
-      name='name'
-      v-model='form.name'
-      @input='debounceField("name")'
-      @blur='updateField("name")'
+      :class='{error: $v.form.username.$error}'
+      name='username'
+      v-model='form.username'
+      @input='debounceField("username")'
+      @blur='updateField("username")'
       data-test='loginName'
-      v-error:name='{ attrs: { "data-test": "badUsername" } }'
+      v-error:username='{ attrs: { "data-test": "badUsername" } }'
       autofocus
     )
 
   password-form(:label='L("Password")' name='password' :$v='$v')
 
-  i18n.link.c-forgot(tag='a' @click='forgotPassword') Forgot your password?
+  i18n.link.c-forgot(tag='button' @click='forgotPassword') Forgot your password?
 
   banner-scoped(ref='formMsg' data-test='loginError')
 
@@ -58,7 +52,7 @@ export default {
   data () {
     return {
       form: {
-        name: null,
+        username: null,
         password: null
       }
     }
@@ -76,8 +70,8 @@ export default {
       try {
         this.$refs.formMsg.clean()
 
-        await sbp('gi.actions/user/login', {
-          username: this.form.name,
+        await sbp('gi.actions/identity/login', {
+          username: this.form.username,
           password: this.form.password
         })
         this.$emit('submitSucceeded')
@@ -93,7 +87,7 @@ export default {
   },
   validations: {
     form: {
-      name: {
+      username: {
         [L('A username is required.')]: required,
         [L('A username cannot contain spaces.')]: nonWhitespace
       },
@@ -110,6 +104,6 @@ export default {
 
 .c-forgot {
   display: inline-block;
-  margin-top: $spacer;
+  margin-top: 1rem;
 }
 </style>

@@ -37,8 +37,8 @@ page.c-page
 
       label.field
         i18n.label Default currency
-        .select-wrapper.c-currency-select
-          select(
+        .selectbox.c-currency
+          select.select(
             name='mincomeCurrency'
             v-model='form.mincomeCurrency'
           )
@@ -60,6 +60,8 @@ page.c-page
 
   invitations-table
 
+  page-section(:title='L("Voting System")')
+    group-voting-system
   page-section(:title='L("Leave Group")')
     i18n.has-text-1(
       tag='p'
@@ -104,7 +106,7 @@ import Page from '@components/Page.vue'
 import PageSection from '@components/PageSection.vue'
 import AvatarUpload from '@components/AvatarUpload.vue'
 import InvitationsTable from '@containers/group-settings/InvitationsTable.vue'
-import BannerSimple from '@components/banners/BannerSimple.vue'
+import GroupVotingSystem from '@containers/group-settings/GroupVotingSystem.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import L from '@view-utils/translations.js'
@@ -113,13 +115,13 @@ export default {
   name: 'GroupSettings',
   mixins: [validationMixin, validationsDebouncedMixins],
   components: {
-    Page,
-    PageSection,
-    InvitationsTable,
     AvatarUpload,
-    BannerSimple,
     BannerScoped,
-    ButtonSubmit
+    ButtonSubmit,
+    GroupVotingSystem,
+    InvitationsTable,
+    Page,
+    PageSection
   },
   data () {
     const { groupName, sharedValues, mincomeCurrency } = this.$store.getters.groupSettings
@@ -167,7 +169,7 @@ export default {
         await sbp('gi.actions/group/updateSettings', attrs, this.currentGroupId)
         this.$refs.formMsg.success(L('Your changes were saved!'))
       } catch (e) {
-        console.error('Failed to update group settings.', e)
+        console.error('GroupSettings saveSettings() error:', e)
         this.$refs.formMsg.danger(e.message)
       }
     },
@@ -199,7 +201,7 @@ export default {
   max-width: 37rem;
 }
 
-.c-currency-select {
+.c-currency {
   @include tablet {
     width: 50%;
   }
@@ -207,8 +209,8 @@ export default {
 
 .p-descritpion {
   display: none;
-  margin-top: $spacer-xs;
-  padding-bottom: $spacer-md*3;
+  margin-top: 0.25rem;
+  padding-bottom: 3rem;
 
   @include desktop {
     display: block;

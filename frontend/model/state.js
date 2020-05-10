@@ -22,6 +22,8 @@ import * as EVENTS from '~/frontend/utils/events.js'
 import './contracts/group.js'
 import './contracts/mailbox.js'
 import './contracts/identity.js'
+import { captureLogsStart, captureLogsPause } from '~/frontend/model/captureLogs.js'
+import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
 
 Vue.use(Vuex)
 var store // this is set and made the default export at the bottom of the file.
@@ -36,9 +38,12 @@ const initialState = {
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
-  theme: 'blue',
+  theme: THEME_LIGHT,
   reducedMotion: false,
-  fontSize: 1
+  fontSize: 1,
+  appLogsFilter: process.env.NODE_ENV === 'development'
+    ? ['error', 'warn', 'debug', 'log']
+    : ['error', 'warn']
 }
 
 // guard all sbp calls for contract actions with this function
@@ -186,6 +191,9 @@ const mutations = {
   },
   setFontSize (state, fontSize) {
     state.fontSize = fontSize
+  },
+  setAppLogsFilters (state, filters) {
+    state.appLogsFilter = filters
   }
 }
 // https://vuex.vuejs.org/en/getters.html
@@ -259,7 +267,7 @@ const getters = {
     }
 
     const doWeNeedIncome = ourGroupProfile.incomeDetailsType === 'incomeAmount'
-    const distribution = getters.thisMonthsPayments.frozenDistribution || getters.groupIncomeDistribution
+    const distribution = getters.groupIncomeDistribution
 
     const nonMonetaryContributionsOf = (username) => groupProfiles[username].nonMonetaryContributions || []
     const getDisplayName = (username) => getters.globalProfile(username).displayName || username
@@ -341,7 +349,7 @@ const getters = {
     return Colors[state.theme]
   },
   isDarkTheme (state) {
-    return Colors[state.theme].theme === 'dark'
+    return Colors[state.theme].theme === THEME_DARK
   }
 }
 
@@ -388,6 +396,7 @@ const actions = {
     if (settings) {
       console.debug('loadSettings:', settings)
       store.replaceState(settings)
+      captureLogsStart(user.username)
       // This may seem unintuitive to use the store.state from the global store object
       // but the state object in scope is a copy that becomes stale if something modifies it
       // like an outside dispatch
@@ -412,6 +421,8 @@ const actions = {
         console.error(`login: lost current identity state somehow for ${user.username} / ${user.identityContractID}! attempting resync...`)
         await sbp('state/enqueueContractSync', user.identityContractID)
       }
+    } else {
+      captureLogsStart(user.username)
     }
     await sbp('gi.db/settings/save', SETTING_CURRENT_USER, user.username)
     commit('login', user)
@@ -427,7 +438,14 @@ const actions = {
       commit('removeContract', contractID)
     }
     commit('logout')
-    Vue.nextTick(() => sbp('okTurtles.events/emit', EVENTS.LOGOUT))
+    Vue.nextTick(() => {
+      sbp('okTurtles.events/emit', EVENTS.LOGOUT)
+      captureLogsPause({
+        // Let's clear all stored logs to prevent someone else
+        // accessing sensitve data after the user logs out.
+        wipeOut: true
+      })
+    })
   },
   // persisting the state
   async saveSettings (
@@ -556,6 +574,7 @@ const handleEvent = {
         // this error it means somehow we're getting valid messages out of order
         throw new GIErrorDropAndReprocess(e.message)
       } else if (e instanceof ErrorDBConnection) {
+        // TODO: handle QuotaExceededError from localStorage!
         // we cannot throw GIErrorDropAndReprocess because saving is clearly broken
         // so we re-throw this special error condition that means we can't do anything
         throw new GIErrorUnrecoverable(`${e.name} during addMessageToDB!`)
@@ -592,6 +611,13 @@ const handleEvent = {
         // this is likely a GUI-related error/bug, so it's safe to save and reprocess later
         throw new GIErrorDropAndReprocess(`${e.name} during processMutation: ${e.message}`)
       }
+      // BUG/TODO: we can get into an auto ban loop when the proposal made
+      //       to autoban a member has itself a problem (e.g. because
+      //       it requires a 'member' field in but the proposal created to
+      //       ban the user didn't have one in its proposalData). The original
+      //       proposal will be accepted into the chain, but each subsequent
+      //       /proposalVote will throw the exception because /removeMember
+      //       validation will break.
       throw new GIErrorIgnoreAndBanIfGroup(`${e.name} during processMutation: ${e.message}`)
     }
   },
@@ -604,9 +630,7 @@ const handleEvent = {
       const meta = message.meta()
       const mutation = { data, meta, hash, contractID }
       // this selector is created by Contract.js
-      if (sbp('sbp/selectors/fn', `${selector}/sideEffect`)) {
-        await sbp(`${selector}/sideEffect`, mutation)
-      }
+      await sbp(`${selector}/sideEffect`, mutation)
       // let any listening components know that we've received, processed, and stored the event
       sbp('okTurtles.events/emit', hash, contractID, message)
       sbp('okTurtles.events/emit', EVENTS.EVENT_HANDLED, contractID, message)
@@ -689,6 +713,7 @@ const handleEvent = {
           }
         } else {
           // create our proposal to ban the user
+          // TODO: move this into into controller/actions/group.js !
           proposal = await sbp('gi.contracts/group/proposal/create', {
             proposalType: PROPOSAL_REMOVE_MEMBER,
             proposalData: {

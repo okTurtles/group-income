@@ -1,6 +1,6 @@
 <template lang='pug'>
 // Stop initialization if payment not present
-modal-template(ref='modal' v-if='payment')
+modal-template(ref='modal' v-if='payment' :a11yTitle='L("Payment details")')
   template(slot='title')
     i18n Payment details
 
@@ -10,10 +10,10 @@ modal-template(ref='modal' v-if='payment')
   ul.c-payment-list
     li.c-payment-list-item
       i18n.has-text-1(tag='label') Date & Time
-      strong {{ moment(payment.date).format('hh:mm - MMMM DD, YYYY') }}
+      strong {{ humanDate(this.payment.date, { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }}
     li.c-payment-list-item
       i18n.has-text-1(tag='label') Relative to
-      strong {{ moment(payment.relativeTo).format('MMMM')}}
+      strong {{ humanDate(payment.relativeTo, { month: 'long' }) }}
     li.c-payment-list-item
       i18n.has-text-1(tag='label') Mincome at the time
       strong {{ currency(groupSettings.mincomeAmount) }}
@@ -31,11 +31,11 @@ modal-template(ref='modal' v-if='payment')
 <script>
 import { mapGetters } from 'vuex'
 import L from '@view-utils/translations.js'
-import moment from 'moment'
 import sbp from '~/shared/sbp.js'
 import { CLOSE_MODAL } from '@utils/events.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import currencies from '@view-utils/currencies.js'
+import { humanDate } from '@utils/time.js'
 
 export default {
   name: 'PaymentDetail',
@@ -76,7 +76,7 @@ export default {
       console.log('Todo: Implement cancel payment')
       this.closeModal()
     },
-    moment
+    humanDate
   },
   validations: {
     form: {}
@@ -88,7 +88,7 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-payment-list {
-  margin: $spacer auto $spacer-sm auto;
+  margin: 1rem auto 0.5rem auto;
   width: 100%;
   max-width: 25rem;
 }
@@ -100,10 +100,10 @@ export default {
 }
 
 .c-subtitle {
-  margin-top: $spacer-xs;
+  margin-top: 0.25rem;
 
   @include tablet {
-    margin-bottom: $spacer-xs;
+    margin-bottom: 0.25rem;
   }
 }
 

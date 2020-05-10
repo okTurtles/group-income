@@ -7,7 +7,6 @@ import '~/shared/domains/okTurtles/events.js'
 import '~/shared/domains/okTurtles/eventQueue.js'
 import './controller/namespace.js'
 import './controller/actions/index.js'
-import './controller/sideEffects/index.js'
 import Vue from 'vue'
 import { mapMutations } from 'vuex'
 import router from './controller/router.js'
@@ -50,7 +49,7 @@ async function startApp () {
     ].reduce(reducer, {})
     sbp('sbp/filters/global/add', (domain, selector, data) => {
       if (domainBlacklist[domain] || selBlacklist[selector]) return
-      console.log(`[sbp] ${selector}`, data)
+      console.debug(`[sbp] ${selector}`, data)
     })
   }
 
@@ -95,7 +94,8 @@ async function startApp () {
         ephemeral: {
           syncs: [],
           // TODO/REVIEW page can load with already loggedin. -> this.$store.state.loggedIn ? 'yes' : 'no'
-          finishedLogin: 'no'
+          finishedLogin: 'no',
+          isCorrupted: false // TODO #761
         }
       }
     },
@@ -124,6 +124,16 @@ async function startApp () {
       // setTimeout(() => {
       //   this.$refs.bannerGeneral.show(this.L('Trying to reconnect...'), 'wifi')
       // }, 2500)
+
+      if (this.ephemeral.isCorrupted) {
+        this.$refs.bannerGeneral.danger(
+          this.L('Your app seems to be corrupted. Please {a_}re-sync your app data.{_a}', {
+            'a_': `<a class="link" href="${window.location.pathname}?modal=UserSettingsModal&section=troubleshooting">`,
+            '_a': '</a>'
+          }),
+          'times-circle'
+        )
+      }
     },
     computed: {
       showNav () {
@@ -133,7 +143,8 @@ async function startApp () {
         return {
           'l-with-navigation': this.showNav,
           'l-no-navigation': !this.showNav,
-          'js-reducedMotion': this.$store.state.reducedMotion
+          'js-reducedMotion': this.$store.state.reducedMotion,
+          'is-dark-theme': this.$store.getters.isDarkTheme
         }
       },
       isInCypress () {

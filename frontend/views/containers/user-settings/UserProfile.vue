@@ -86,7 +86,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import AvatarUpload from '@components/AvatarUpload.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import sbp from '~/shared/sbp.js'
-import L from '@view-utils/translations.js'
+import L, { LError } from '@view-utils/translations.js'
 
 export default {
   name: 'UserProfile',
@@ -154,8 +154,8 @@ export default {
         await sbp('backend/publishLogEntry', attributes)
         this.$refs.formMsg.success(L('Your changes were saved!'))
       } catch (e) {
-        console.error('Failed to update profile', e)
-        this.$refs.formMsg.danger(L('Failed to update profile, please try again. {codeError}', { codeError: e.message }))
+        console.error('UserProfile saveProfile() error:', e)
+        this.$refs.formMsg.danger(L('Failed to update profile. {reportError}', LError(e)))
       }
     }
   }
@@ -167,8 +167,8 @@ export default {
 
 .c-username {
   display: none;
-  margin-bottom: $spacer-lg;
-  margin-top: $spacer-sm;
+  margin-bottom: 2rem;
+  margin-top: 0.5rem;
   color: $text_1;
 
   @include desktop {
@@ -178,9 +178,9 @@ export default {
 
 .fake-password {
   display: inline-block;
-  margin-top: $spacer-sm;
+  margin-top: 0.5rem;
   margin-left: -1px;
-  margin-right: $spacer-sm;
+  margin-right: 0.5rem;
 }
 
 .legend {

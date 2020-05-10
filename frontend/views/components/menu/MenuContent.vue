@@ -39,8 +39,8 @@ export default {
 .c-content {
   position: absolute;
   top: 0;
-  left: $spacer-sm;
-  right: $spacer-sm;
+  left: 0.5rem;
+  right: 0.5rem;
   z-index: 2;
   border-radius: $radius;
   background-color: $background;
@@ -49,14 +49,14 @@ export default {
   opacity: 0;
   overflow: hidden;
   pointer-events: none;
-  padding-bottom: $spacer-sm;
-  padding-top: $spacer-sm;
+  padding-bottom: 0.5rem;
+  padding-top: 0.5rem;
 
   &.is-active {
     // Is that enought for every menu?
     // Should we use mask transition instead?
     pointer-events: initial;
-    max-height: 400px;
+    max-height: 25rem;
     opacity: 1;
     transition: max-height cubic-bezier(0.25, 0.46, 0.45, 0.94) 1s 100ms, opacity cubic-bezier(0.25, 0.46, 0.45, 0.94) 300ms 100ms;
   }
@@ -69,9 +69,13 @@ export default {
     width: 100%;
 
     i {
-      margin-right: $spacer-sm;
+      margin-right: 0.5rem;
     }
   }
+}
+
+.is-dark-theme .c-content {
+  background-color: var(--general_1);
 }
 
 </style>

@@ -67,5 +67,7 @@ export default {
 .c-content {
   width: 12rem;
   margin-left: -12rem;
+  top: 2rem;
+  left: auto;
 }
 </style>

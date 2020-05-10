@@ -1,6 +1,6 @@
 {
   "baseUrl": "http://localhost:8000",
-  "viewportWidth": 1200,
+  "viewportWidth": 1201,
   "viewportHeight": 900,
   "defaultCommandTimeout": 5000, 
   "fixturesFolder": "test/cypress/fixtures",

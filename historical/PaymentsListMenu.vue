@@ -47,7 +47,6 @@ import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
 import { PAYMENT_CANCELLED } from '@model/contracts/payments/index.js'
-
 export default {
   name: 'PaymentsListMenu',
   props: {
@@ -99,6 +98,6 @@ export default {
 .c-content {
   width: 13.375rem;
   left: -12rem;
-  top: $spacer-lg;
+  top: 2rem;
 }
 </style>

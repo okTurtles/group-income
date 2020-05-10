@@ -58,10 +58,10 @@ div
       .card.tile.is-child
         .card-image
           figure.image.is-square
-            img(:src='invitee.state.attributes.picture' :alt='invitee.state.attributes.name')
+            img(:src='invitee.state.attributes.picture' :alt='invitee.state.attributes.username')
         header.card-header
           p
-            | {{invitee.state.attributes.name}}
+            | {{invitee.state.attributes.username}}
   p.has-text-right
     router-link.button(:to="{name: 'GroupInvitees'}")
       i18n Edit

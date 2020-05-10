@@ -4,7 +4,7 @@
     v-for='(user, index) in founders'
     :key='`user-${index}`'
     :src='user.picture'
-    :alt='user.displayName || user.name'
+    :alt='user.displayName || user.username'
     size='sm'
   )
   message-notification {{text}}
@@ -65,12 +65,12 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-greetings {
-  margin-bottom: $spacer-lg;
+  margin-bottom: 2rem;
   display: flex;
   align-items: flex-end;
 }
 
 .c-avatar {
-  margin-right: $spacer-sm;
+  margin-right: 0.5rem;
 }
 </style>

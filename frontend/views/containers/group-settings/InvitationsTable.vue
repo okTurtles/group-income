@@ -1,15 +1,15 @@
 <template lang="pug">
 page-section.c-section(:title='L("Invite links")')
   template(#cta='')
-    .select-wrapper.combobox(:class='{ focus: ephemeral.selectbox.focused }')
-      select.button.is-small.is-outlined(
+    label.selectsolo(:class='{ focus: ephemeral.selectbox.focused }')
+      i18n.sr-only Filter links
+      select.select(
         ref='select'
         v-model='ephemeral.selectbox.selectedOption'
         @change='unfocusSelect'
       )
         option(value='Active') {{ L('Active links') }}
         option(value='All') {{ L('All links') }}
-      span.combobox-rect
 
   i18n.has-text-1.c-invite-description(tag='p') Here's a list of all invite links you own
 
@@ -89,7 +89,6 @@ page-section.c-section(:title='L("Invite links")')
   i18n.c-invite-footer(
     tag='p'
     @click='handleInviteClick'
-    compile
     :args='{ r1: `<button class="link js-btnInvite">`, r2: "</button>"}'
   ) To generate a new link, you need to {r1}propose adding a new member{r2} to your group.
 </template>
@@ -239,7 +238,7 @@ export default {
 }
 
 .c-invite-description {
-  margin: $spacer-sm 0;
+  margin: 0.5rem 0;
 }
 
 .c-table {
@@ -303,7 +302,7 @@ export default {
 
     @include phone {
       justify-content: flex-end;
-      padding-right: $spacer-sm;
+      padding-right: 0.5rem;
 
       &-wrapper {
         display: none;
@@ -312,6 +311,13 @@ export default {
       .c-invite-link-button-mobile {
         display: inline-block;
       }
+    }
+  }
+
+  th.c-invite-link {
+    @include phone {
+      white-space: nowrap;
+      opacity: 0;
     }
   }
 
@@ -337,6 +343,7 @@ export default {
       flex-direction: row;
       align-items: baseline;
       justify-content: flex-start;
+      padding-left: 1rem;
     }
   }
 
@@ -352,7 +359,7 @@ export default {
         content: "\00b7";
         display: inline-block;
         color: $text_0;
-        padding: 0 $spacer-xs;
+        padding: 0 0.25rem;
       }
     }
   }
@@ -362,7 +369,7 @@ export default {
     justify-content: flex-end;
 
     .c-invite-action-button {
-      margin-right: $spacer-sm;
+      margin-right: 0.5rem;
     }
 
     @include until($tablet) {
@@ -378,11 +385,11 @@ export default {
 
   .c-dropdown-action {
     min-width: 13.375rem;
-    margin: 3.5*$spacer 0 0 3*$spacer;
+    margin: 3.5rem 0 0 3rem;
   }
   .c-dropdown-fallback {
     min-width: 8.5rem;
-    margin-top: 2*$spacer;
+    margin-top: 2rem;
   }
 
   .c-webshare-fallback {
@@ -390,7 +397,7 @@ export default {
     right: 0;
     top: 50%;
     transform: translateY(-50%);
-    margin-right: $spacer-sm;
+    margin-right: 0.5rem;
     z-index: $zindex-tooltip;
   }
 

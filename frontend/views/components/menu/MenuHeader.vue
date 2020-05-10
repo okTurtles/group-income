@@ -13,7 +13,7 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-header {
-  padding: $spacer-sm $spacer $spacer-sm $spacer;
+  padding: 0.5rem 1rem;
   font-weight: bold;
   text-transform: uppercase;
 }

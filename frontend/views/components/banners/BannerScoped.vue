@@ -3,7 +3,7 @@
     .c-container(v-if='ephemeral.text')
       banner-simple(class='c-banner' :severity='ephemeral.severity')
         .c-inner
-          .c-inner-text(:data-test='dataTest' role='alert') {{ ephemeral.text }}
+          .c-inner-text(:data-test='dataTest' role='alert' v-html='ephemeral.text')
           button.is-icon-small.c-button(
             type='button'
             :class='`is-${ephemeral.severity}`'
@@ -66,7 +66,7 @@ export default {
 
 .c-banner {
   width: 100%;
-  margin-top: $spacer*1.5;
+  margin-top: 1.5rem;
   overflow: hidden;
 }
 
@@ -77,19 +77,17 @@ export default {
   align-items: flex-start;
 
   &-text {
-    margin-top: 0.1875rem; // visually better centered aligned
     text-align: left; // force even when the parent has another alignment
     word-break: break-word; // handle long messages
+    font-weight: 600;
   }
 }
 
-$severities:
-  "success" $success_0 $success_1,
-  "danger" $danger_0 $danger_1;
+$severities: "success" $success_0 $success_1, "danger" $danger_0 $danger_1;
 
 .c-button {
   transition: box-shadow 150ms ease-in;
-  margin-left: $spacer-sm;
+  margin-left: 0.5rem;
 
   @each $class, $color, $hover in $severities {
     &.is-#{$class} {

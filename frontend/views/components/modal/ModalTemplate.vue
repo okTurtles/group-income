@@ -2,10 +2,9 @@
   .c-modal(
     data-test='modal'
     role='dialog'
-    :aria-labelledby='$scopedSlots.title'
     tabindex='-1'
+    :aria-label='a11yTitle'
     v-focus=''
-    @keyup.tab='trapFocus'
   )
     transition(name='fade' appear)
       .c-modal-background(@click='close' v-if='modalIsActive')
@@ -74,7 +73,7 @@ export default {
   width: 100%;
   height: 100%;
   margin: 0 auto;
-  background: #fff;
+  background: $background_0;
 
   @include desktop {
     position: relative;
@@ -106,7 +105,7 @@ export default {
 .c-modal-footer {
   align-self: center;
   width: 100%;
-  max-width: calc(100% - #{$spacer-lg});
+  max-width: calc(100% - 2rem);
 
   @include tablet {
     max-width: 534px;
@@ -118,7 +117,7 @@ export default {
 
 .c-modal-header {
   position: relative;
-  padding: 0 $spacer;
+  padding: 0 1rem;
   min-height: 4.75rem;
 
   @include tablet {
@@ -157,10 +156,10 @@ export default {
 }
 
 .c-modal-body {
-  margin: $spacer $spacer $spacer-lg $spacer;
+  margin: 1rem 1rem 2rem 1rem;
 
   &:last-child {
-    padding-bottom: $spacer-lg;
+    padding-bottom: 2rem;
   }
 
   > * {
@@ -177,17 +176,17 @@ export default {
   min-height: 53px;
 
   @include touch {
-    border-radius: $spacer-xs;
+    border-radius: 0.25rem;
   }
 
   @include desktop {
-    padding-bottom: $spacer-xl;
+    padding-bottom: 4rem;
     max-width: 100%;
     align-self: normal;
   }
 
   @media screen and (max-height: 500px) {
-    padding-bottom: $spacer;
+    padding-bottom: 1rem;
   }
 
   .button {
@@ -198,27 +197,27 @@ export default {
 }
 
 .c-modal-close {
-  background-color: #fff;
+  background-color: $background_0;
 }
 
 // Mofifiers
 .has-background {
   .c-modal-close {
-    background-color: #fff;
+    background-color: $background_0;
   }
 
   .c-modal-header {
-    background-color: #f5f5f5;
+    background-color: $general_2;
   }
 
   .c-modal-body {
-    margin-top: $spacer-lg;
+    margin-top: 2rem;
   }
 
   .c-modal-footer {
-    background-color: #f5f5f5;
-    margin: $spacer;
-    padding: $spacer;
+    background-color: $general_2;
+    margin: 1rem;
+    padding: 1rem;
 
     @include desktop {
       align-items: flex-start;
@@ -232,7 +231,7 @@ export default {
   .modal-card {
     &-body {
       width: 100%;
-      max-width: calc(400px + $spacer-lg);
+      max-width: calc(400px + 2rem);
       align-self: center;
 
       @include desktop {

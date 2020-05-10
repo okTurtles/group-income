@@ -10,7 +10,7 @@ $bannerGeneralHeight: 2.3rem;
   grid-template-rows: min-content auto;
 
   .l-page {
-    padding: $spacer;
+    padding: 1rem;
 
     @include tablet {
       padding: 1.5rem;
@@ -37,12 +37,9 @@ $bannerGeneralHeight: 2.3rem;
   position: sticky;
   height: $bannerGeneralHeight;
   width: 100%;
-  background: $text_0;
-  color: $background;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: $spacer-sm;
+  text-align: center;
+  font-weight: 600;
+  padding: 0.5rem;
   z-index: $zindex-banner;
 
   & ~ .l-navigation {
@@ -57,18 +54,21 @@ $bannerGeneralHeight: 2.3rem;
     height: calc(100vh - #{$bannerGeneralHeight});
   }
 
+  & ~ .l-modal .modal {
+    top: $bannerGeneralHeight;
+  }
+
   @include touch {
     & ~ .l-modal {
       .c-modal {
         margin-top: $bannerGeneralHeight;
       }
 
-      .c-modal-close {
-        top: $spacer*3;
+      .c-modal-close,
+      .has-background .c-modal-close {
+        top: 3rem;
       }
     }
-
-    // TODO - handle fullscreen modals
   }
 }
 

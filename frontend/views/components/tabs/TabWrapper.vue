@@ -15,13 +15,13 @@
         hr.tab-nav-separator(v-else)
 
         a.tab-link.no-border(
-          v-for='(links, index) in tabItem.links'
+          v-for='(link, index) in tabItem.links'
           :key='index'
-          :class='{ "is-active": activeTab === links.index, "has-text-white": isDarkTheme}'
-          :data-test='`link-${links.url}`'
-          @click='tabClick(links)'
+          :class='{ "is-active": activeTab === link.index, "has-text-white": isDarkTheme}'
+          :data-test='`link-${link.url}`'
+          @click='tabClick(link)'
         )
-          | {{ links.title }}
+          | {{ link.title }}
           .c-icons
             i.icon-chevron-right
 
@@ -35,27 +35,23 @@ import sbp from '~/shared/sbp.js'
 
 export default {
   name: 'TabWrapper',
-
   props: {
-    value: Number,
-    tabNav: Array
+    tabNav: Array,
+    defaultTab: String // initial tab name
   },
-
   data () {
     return {
-      activeTab: this.value || 0,
+      activeTab: 0,
       tabItems: [],
       open: true,
       title: this.tabNav[0].links[0].title || ''
     }
   },
-
   computed: {
     ...mapGetters([
       'isDarkTheme'
     ])
   },
-
   watch: {
     /**
      * When v-model is changed set the new active tab.
@@ -70,9 +66,20 @@ export default {
       if (this.tabItems.length) {
         this.tabItems[this.activeTab].isActive = true
       }
+    },
+    '$route' (to, from) {
+      const section = to.query.section
+      if (!section) return
+
+      for (const tabItem of this.tabNav) {
+        for (const link of tabItem.links) {
+          if (this.activeTab !== link.index && link.url === section) {
+            return this.changeTab(link.index)
+          }
+        }
+      }
     }
   },
-
   methods: {
     /**
      * Change the active tab and emit change event.
@@ -105,12 +112,12 @@ export default {
       }
     }
   },
-
   mounted () {
-    if (this.$route.query.section) {
+    const defaultTab = this.$route.query.section || this.defaultTab
+    if (defaultTab) {
       this.tabNav.forEach(item => {
         item.links.forEach(link => {
-          if (this.$route.query.section === link.url) {
+          if (defaultTab === link.url) {
             this.activeTab = link.index
             this.title = link.title
           }
@@ -127,12 +134,6 @@ export default {
 
 <style lang='scss' scoped>
 @import "@assets/style/_variables.scss";
-
-$separatorColor: #b2c3ca;
-$legendColor: #7b7b7b;
-$activeColor: #fff;
-$closeMobileBgColor: #000;
-$closeMobileBarBgColor: #3c3c3c;
 
 // Page wrapper
 .tab-wrapper {
@@ -189,10 +190,10 @@ $closeMobileBarBgColor: #3c3c3c;
 }
 
 .tab-legend {
-  color: $legendColor;
+  color: $text_1;
   font-size: 12px;
   text-transform: uppercase;
-  margin-bottom: $spacer-sm;
+  margin-bottom: 0.5rem;
 
   @include desktop {
     letter-spacing: 0.1px;
@@ -209,19 +210,16 @@ $closeMobileBarBgColor: #3c3c3c;
 .tab-link {
   display: flex;
   align-items: center;
-  padding-left: $spacer;
-  padding-right: $spacer;
+  padding-left: 1rem;
+  padding-right: 1rem;
   border-radius: 3px;
   cursor: pointer;
   transition: background-color 150ms cubic-bezier(0.4, 0.25, 0.3, 1);
-
-  @include desktop {
-    margin-right: 4px;
-  }
 }
 
 .c-icons {
   color: $text_1;
+
   @include desktop {
     display: none;
   }
@@ -230,14 +228,12 @@ $closeMobileBarBgColor: #3c3c3c;
 .tab-nav-list {
   display: flex;
   flex-direction: column;
-  width: 456px;
+  width: 28rem;
   max-width: calc(100% - 1rem);
   padding-top: 1.5rem;
-  padding-bottom: 6px;
 
   @include desktop {
-    width: 183px;
-    padding-bottom: 0;
+    width: 11rem;
   }
 }
 
@@ -258,8 +254,12 @@ $closeMobileBarBgColor: #3c3c3c;
 
 .tab-nav-separator {
   height: 1px;
-  margin: 0 $spacer $spacer $spacer;
+  margin: -0.5rem 1rem 1rem;
   background: $general_0;
+
+  @include desktop {
+    margin-right: 0;
+  }
 }
 
 // Main content

@@ -1,5 +1,5 @@
 <template lang='pug'>
-modal-base-template(:fullscreen='true')
+modal-base-template(:fullscreen='true' :a11yTitle='L("How to join a group")')
   i18n.is-title-1.c-title(tag='h1') How to join a group
 
   .wrapper
@@ -189,11 +189,11 @@ export default {
 
 .dot {
   background-color: $general_0;
-  width: $spacer-sm;
-  height: $spacer-sm;
+  width: 0.5rem;
+  height: 0.5rem;
   border-radius: 50%;
   overflow: hidden;
-  margin: $spacer-xs;
+  margin: 0.25rem;
 
   &.is-active {
     background-color: $primary_0;
@@ -202,8 +202,8 @@ export default {
 
 #get-an-invitation svg {
   height: 6.5rem;
-  margin-left: $spacer-md;
-  margin-top: -$spacer-md;
+  margin-left: 0.5rem;
+  margin-top: -0.5rem;
 }
 
 #use-your-unique-access-link svg {
@@ -213,6 +213,6 @@ export default {
 
 #wait-for-you-group-vote svg {
   height: 6.75rem;
-  margin-left: -$spacer-md;
+  margin-left: -0.5rem;
 }
 </style>

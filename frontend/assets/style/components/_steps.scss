@@ -6,8 +6,8 @@
   position: relative;
   z-index: 0;
   overflow: hidden;
-  padding: 4px;
-  margin-left: -4px;
+  padding: 0.25rem;
+  margin-left: -0.25rem;
 
   @include tablet() {
     display: flex;
@@ -26,7 +26,7 @@
   }
 
   &::after {
-    background-color: #fff;
+    background-color: $background_0;
     z-index: 3;
     width: 4px;
     right: 0;
@@ -116,4 +116,10 @@
 .steps-title {
   margin-top: 1rem;
   margin-bottom: 1.5rem;
+
+  @include phone {
+    font-size: 1.25rem; // 20px
+    margin-top: 1.25rem;
+    margin-bottom: 2.5rem;
+  }
 }

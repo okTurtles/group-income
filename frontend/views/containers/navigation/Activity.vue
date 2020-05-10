@@ -48,8 +48,8 @@ export default {
   top: -1px;
   right: -1px;
   line-height: 1rem;
-  width: $spacer;
-  height: $spacer;
+  width: 1rem;
+  height: 1rem;
   color: $background;
   background-color: $danger_0;
   border-radius: 50%;
@@ -82,12 +82,12 @@ button:focus {
 }
 
 .c-content {
-  left: $spacer-lg;
+  left: 2rem;
   width: 16rem;
 }
 
 .c-seeall {
-  padding: $spacer-sm;
+  padding: 0.5rem;
   text-align: center;
 }
 </style>

@@ -3,7 +3,7 @@
 import sbp from '~/shared/sbp.js'
 import Vue from 'vue'
 import { DefineContract } from './Contract.js'
-import { mapOf, objectOf, objectMaybeOf, optional, string, number, object, unionOf } from '~/frontend/utils/flowTyper.js'
+import { arrayOf, mapOf, objectOf, objectMaybeOf, optional, string, number, object, unionOf, tupleOf } from '~/frontend/utils/flowTyper.js'
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income-simple/issues/603
 import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST } from './voting/rules.js'
@@ -12,18 +12,23 @@ import {
   PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC,
   STATUS_OPEN, STATUS_CANCELLED
 } from './voting/constants.js'
-import { paymentStatusType, paymentType } from './payments/index.js'
+import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './payments/index.js'
 import * as Errors from '../errors.js'
 import { merge, deepEqualJSONType, omit } from '~/frontend/utils/giLodash.js'
-import { currentMonthTimestamp } from '~/frontend/utils/time.js'
+import { currentMonthstamp, ISOStringToMonthstamp, compareMonthstamps } from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
-import currencies from '~/frontend/views/utils/currencies.js'
+import currencies, { saferFloat } from '~/frontend/views/utils/currencies.js'
 import L from '~/frontend/views/utils/translations.js'
+
 export const INVITE_INITIAL_CREATOR = 'INVITE_INITIAL_CREATOR'
 export const INVITE_STATUS = {
   VALID: 'valid',
   USED: 'used'
+}
+export const PROFILE_STATUS = {
+  ACTIVE: 'active',
+  REMOVED: 'removed'
 }
 
 export const inviteType = objectOf({
@@ -54,19 +59,87 @@ export function createInvite (
   }
 }
 
-function initMonthlyPayments () {
+function initGroupProfile (contractID: string, joinedDate: string) {
   return {
-    payments: {},
-    frozenDistribution: null,
-    frozenMincome: null
+    globalUsername: '', // TODO: this? e.g. groupincome:greg / namecoin:bob / ens:alice
+    contractID,
+    joinedDate,
+    nonMonetaryContributions: [],
+    status: PROFILE_STATUS.ACTIVE,
+    departedDate: null
   }
 }
 
-function initGroupProfile (contractID: string) {
+function initPaymentMonth ({ getters }) {
   return {
-    contractID: contractID,
-    nonMonetaryContributions: []
+    // this saved so that it can be used when creating a new payment
+    firstMonthsCurrency: getters.groupMincomeCurrency,
+    // TODO: should we also save the first month's currency exchange rate..?
+    // all payments during the month use this to set their exchangeRate
+    // see notes and code in groupIncomeAdjustedDistribution for details.
+    // TODO: for the currency change proposal, have it update the mincomeExchangeRate
+    //       using .mincomeExchangeRate *= proposal.exchangeRate
+    mincomeExchangeRate: 1, // modified by proposals to change mincome currency
+    paymentsFrom: {}, // fromUser => toUser => Array<paymentHash>
+    // snapshot of adjusted distribution after each completed payment
+    // yes, it is possible a payment began in one month and completed in another,
+    // in which case it is added to both month's 'paymentsFrom'
+    lastAdjustedDistribution: null
   }
+}
+
+function clearOldPayments ({ state }) {
+  const sortedMonthKeys = Object.keys(state.paymentsByMonth).sort()
+  // save two months payments, max
+  while (sortedMonthKeys.length > 2) {
+    // TODO: archive the old payments and clear them from state.payments!
+    Vue.delete(state.paymentsByMonth, sortedMonthKeys.shift())
+  }
+}
+
+function initFetchMonthlyPayments ({ meta, state, getters }) {
+  const monthstamp = ISOStringToMonthstamp(meta.createdDate)
+  const monthlyPayments = vueFetchInitKV(state.paymentsByMonth, monthstamp, initPaymentMonth({ getters }))
+  clearOldPayments({ state })
+  return monthlyPayments
+}
+
+function groupIncomeDistribution ({ state, getters, monthstamp, adjusted }) {
+  // the monthstamp will always be for the current month. the alternative
+  // is to allow the re-generation of the distribution for previous months,
+  // but that approach requires also storing the historical mincomeAmount
+  // and historical groupProfiles. Since together these change across multiple
+  // locations in the code, it involves less 'code smell' to do it this way.
+  // see historical/group.js for the ugly way of doing it.
+  const mincomeAmount = getters.groupMincomeAmount
+  const groupProfiles = getters.groupProfiles
+  const currentIncomeDistribution = []
+  for (const username in groupProfiles) {
+    const profile = groupProfiles[username]
+    const incomeDetailsType = profile && profile.incomeDetailsType
+    if (incomeDetailsType) {
+      const adjustment = incomeDetailsType === 'incomeAmount' ? 0 : mincomeAmount
+      const amount = adjustment + profile[incomeDetailsType]
+      currentIncomeDistribution.push({
+        name: username,
+        amount: saferFloat(amount)
+      })
+    }
+  }
+  var dist = incomeDistribution(currentIncomeDistribution, mincomeAmount)
+  if (adjusted) {
+    // if this user has already made some payments to other users this
+    // month, we need to take that into account and adjust the distribution.
+    // this will be used by the Payments page to tell how much still
+    // needs to be paid (if it was a partial payment).
+    for (const p of dist) {
+      const alreadyPaid = getters.paymentTotalFromUserToUser(p.from, p.to, monthstamp)
+      // if we "overpaid" because we sent late payments, remove us from consideration
+      p.amount = saferFloat(Math.max(0, p.amount - alreadyPaid))
+    }
+    dist = dist.filter(p => p.amount > 0)
+  }
+  return dist
 }
 
 DefineContract({
@@ -117,37 +190,111 @@ DefineContract({
       }
     },
     groupProfiles (state, getters) {
-      return Object.keys(getters.currentGroupState.profiles || {}).reduce(
-        (result, username) => {
-          result[username] = getters.groupProfile(username)
-          return result
-        },
-        {}
-      )
+      const profiles = {}
+      for (const username in (getters.currentGroupState.profiles || {})) {
+        const profile = getters.groupProfile(username)
+        if (profile.status === PROFILE_STATUS.ACTIVE) {
+          profiles[username] = profile
+        }
+      }
+      return profiles
     },
     groupMincomeAmount (state, getters) {
       return getters.groupSettings.mincomeAmount
     },
-    groupIncomeDistribution (state, getters) {
-      const groupProfiles = getters.groupProfiles
-      const mincomeAmount = getters.groupMincomeAmount
-      const currentIncomeDistribution = []
-      for (const username in groupProfiles) {
-        const profile = groupProfiles[username]
-        const incomeDetailsType = profile && profile.incomeDetailsType
-        if (incomeDetailsType) {
-          const adjustment = incomeDetailsType === 'incomeAmount' ? 0 : mincomeAmount
-          const adjustedAmount = adjustment + profile[incomeDetailsType]
-          currentIncomeDistribution.push({ name: username, amount: adjustedAmount })
-        }
+    groupMincomeCurrency (state, getters) {
+      return getters.groupSettings.mincomeCurrency
+    },
+    paymentTotalFromUserToUser (state, getters) {
+      return (fromUser, toUser, paymentMonthstamp) => {
+        const payments = getters.currentGroupState.payments
+        const monthlyPayments = getters.groupMonthlyPayments
+        const { paymentsFrom, mincomeExchangeRate } = monthlyPayments[paymentMonthstamp] || {}
+        // NOTE: @babel/plugin-proposal-optional-chaining would come in super-handy
+        //       here, but I couldn't get it to work with our linter. :(
+        //       https://github.com/babel/babel-eslint/issues/511
+        const total = (((paymentsFrom || {})[fromUser] || {})[toUser] || []).reduce((a, hash) => {
+          const payment = payments[hash]
+          var { amount, exchangeRate, status } = payment.data
+          if (status !== PAYMENT_COMPLETED) {
+            return a
+          }
+          const paymentCreatedMonthstamp = ISOStringToMonthstamp(payment.meta.createdDate)
+          // if this payment is from a previous month, then make sure to take into account
+          // any proposals that passed in between the payment creation and the payment
+          // completion that modified the group currency by multiplying both month's
+          // exchange rates
+          if (paymentMonthstamp !== paymentCreatedMonthstamp) {
+            exchangeRate *= monthlyPayments[paymentCreatedMonthstamp].mincomeExchangeRate
+          }
+          return a + (amount * exchangeRate * mincomeExchangeRate)
+        }, 0)
+        return saferFloat(total)
       }
-      return incomeDistribution(currentIncomeDistribution, mincomeAmount)
+    },
+    // used with graphs like those in the dashboard and in the income details modal
+    groupIncomeDistribution (state, getters) {
+      return groupIncomeDistribution({ state, getters, monthstamp: currentMonthstamp() })
+    },
+    // adjusted version of groupIncomeDistribution, used by the payments system
+    groupIncomeAdjustedDistribution (state, getters) {
+      return getters.groupIncomeAdjustedDistributionForMonth(currentMonthstamp())
+    },
+    groupIncomeAdjustedDistributionForMonth (state, getters) {
+      return monthstamp => groupIncomeDistribution({ state, getters, monthstamp, adjusted: true })
     },
     groupMembersByUsername (state, getters) {
       return Object.keys(getters.currentGroupState.profiles || {})
     },
     groupMembersCount (state, getters) {
       return getters.groupMembersByUsername.length
+    },
+    groupMembersPending (state, getters) {
+      const invites = getters.currentGroupState.invites
+      const pendingMembers = {}
+      for (const inviteId in invites) {
+        const invite = invites[inviteId]
+        if (invite.status === INVITE_STATUS.VALID && invite.creator !== INVITE_INITIAL_CREATOR) {
+          pendingMembers[invites[inviteId].invitee] = {
+            invitedBy: invites[inviteId].creator
+          }
+        }
+      }
+      return pendingMembers
+    },
+    groupMembersSorted (state, getters) {
+      const weJoinedMs = new Date(getters.currentGroupState.profiles[getters.ourUsername].joinedDate).getTime()
+      const isNewMember = (username) => {
+        if (username === getters.ourUsername) { return false }
+        const memberProfile = getters.currentGroupState.profiles[username]
+        if (!memberProfile) return false
+        const memberJoinedMs = new Date(memberProfile.joinedDate).getTime()
+        const joinedAfterUs = weJoinedMs < memberJoinedMs
+        return joinedAfterUs && Date.now() - memberJoinedMs < 604800000 // joined less than 1w (168h) ago.
+      }
+
+      return Object.keys({ ...getters.groupMembersPending, ...getters.groupProfiles })
+        .map(username => {
+          const { displayName } = getters.globalProfile(username) || {}
+          return {
+            username,
+            displayName: displayName || username,
+            invitedBy: getters.groupMembersPending[username],
+            isNew: isNewMember(username)
+          }
+        })
+        .sort((userA, userB) => {
+          const nameA = userA.displayName.toUpperCase()
+          const nameB = userB.displayName.toUpperCase()
+          // Show pending members first
+          if (userA.invitedBy && !userB.invitedBy) { return -1 }
+          if (!userA.invitedBy && userB.invitedBy) { return 1 }
+          // Then new members...
+          if (userA.isNew && !userB.isNew) { return -1 }
+          if (!userA.isNew && userB.isNew) { return 1 }
+          // and sort them all by A-Z
+          return nameA < nameB ? -1 : 1
+        })
     },
     groupShouldPropose (state, getters) {
       return getters.groupMembersCount >= 3
@@ -161,9 +308,14 @@ DefineContract({
       const currency = currencies[getters.groupSettings.mincomeCurrency]
       return currency && currency.symbolWithCode
     },
-    thisMonthsPayments (state, getters) {
-      const payments = getters.currentGroupState.userPaymentsByMonth
-      return (payments && payments[currentMonthTimestamp()]) || {}
+    groupMonthlyPayments (state, getters) {
+      return getters.currentGroupState.paymentsByMonth
+    },
+    thisMonthsPaymentInfo (state, getters) {
+      return getters.groupMonthlyPayments[currentMonthstamp()] || {}
+    },
+    withGroupCurrency (state, getters) {
+      return currencies[getters.groupSettings.mincomeCurrency].displayWithCurrency
     }
   },
   // NOTE: All mutations must be atomic in their edits of the contract state.
@@ -189,32 +341,38 @@ DefineContract({
           })
         })
       }),
-      process ({ data, meta }, { state }) {
+      process ({ data, meta }, { state, getters }) {
         // TODO: checkpointing: https://github.com/okTurtles/group-income-simple/issues/354
         const initialState = merge({
           payments: {},
+          paymentsByMonth: {},
           invites: {},
           proposals: {}, // hashes => {} TODO: this, see related TODOs in GroupProposal
           settings: {
             groupCreator: meta.username
           },
           profiles: {
-            [meta.username]: initGroupProfile(meta.identityContractID)
-          },
-          userPaymentsByMonth: {
-            [currentMonthTimestamp()]: initMonthlyPayments()
+            [meta.username]: initGroupProfile(meta.identityContractID, meta.createdDate)
           }
         }, data)
         for (const key in initialState) {
           Vue.set(state, key, initialState[key])
         }
+        initFetchMonthlyPayments({ meta, state, getters })
       }
     },
     'gi.contracts/group/payment': {
-      validate: objectOf({
+      validate: objectMaybeOf({
+        // TODO: how to handle donations to okTurtles?
+        // TODO: how to handle payments to groups or users outside of this group?
         toUser: string,
         amount: number,
-        currency: string,
+        currencyFromTo: tupleOf(string, string), // must be one of the keys in currencies.js (e.g. USD, EUR, etc.) TODO: handle old clients not having one of these keys, see OP_PROTOCOL_UPGRADE https://github.com/okTurtles/group-income-simple/issues/603
+        // multiply 'amount' by 'exchangeRate', which must always be
+        // based on the firstMonthsCurrency of the month in which this payment was created.
+        // it is then further multiplied by the month's 'mincomeExchangeRate', which
+        // is modified if any proposals pass to change the mincomeCurrency
+        exchangeRate: number,
         txid: string,
         status: paymentStatusType,
         paymentType: paymentType,
@@ -222,24 +380,24 @@ DefineContract({
         memo: optional(string)
       }),
       process ({ data, meta, hash }, { state, getters }) {
-        const monthstamp = currentMonthTimestamp()
-        const thisMonth = vueFetchInitKV(state.userPaymentsByMonth, monthstamp, initMonthlyPayments())
-        const paymentsFromUser = vueFetchInitKV(thisMonth.payments, meta.username, {})
-        Vue.set(state.payments, hash, { data, meta, history: [data] })
-        if (paymentsFromUser[data.toUser]) {
-          throw new Errors.GIErrorIgnoreAndBanIfGroup(`payment: ${meta.username} already paying ${data.toUser}! payment hash: ${hash}`)
+        if (data.status === PAYMENT_COMPLETED) {
+          console.error(`payment: payment ${hash} cannot have status = 'completed'!`, { data, meta, hash })
+          throw new Errors.GIErrorIgnoreAndBanIfGroup('payments cannot be instsantly completed!')
         }
-        Vue.set(paymentsFromUser, data.toUser, hash)
-        // if this is the first payment, freeze the monthy's distribution
-        if (!thisMonth.frozenDistribution) {
-          // const getters = sbp('state/groupContractSafeGetters', state)
-          thisMonth.frozenDistribution = getters.groupIncomeDistribution
-          thisMonth.frozenMincome = getters.groupMincomeAmount
-        }
+        Vue.set(state.payments, hash, {
+          data,
+          meta,
+          history: [[meta.createdDate, hash]]
+        })
+        const { paymentsFrom } = initFetchMonthlyPayments({ meta, state, getters })
+        const fromUser = vueFetchInitKV(paymentsFrom, meta.username, {})
+        const toUser = vueFetchInitKV(fromUser, data.toUser, [])
+        toUser.push(hash)
+        // TODO: handle completed payments here too! (for manual payment support)
       }
     },
     'gi.contracts/group/paymentUpdate': {
-      validate: objectOf({
+      validate: objectMaybeOf({
         paymentHash: string,
         updatedProperties: objectMaybeOf({
           status: paymentStatusType,
@@ -247,7 +405,7 @@ DefineContract({
           memo: string
         })
       }),
-      process ({ data, meta, hash }, { state }) {
+      process ({ data, meta, hash }, { state, getters }) {
         // TODO: we don't want to keep a history of all payments in memory all the time
         //       https://github.com/okTurtles/group-income-simple/issues/426
         const payment = state.payments[data.paymentHash]
@@ -257,12 +415,34 @@ DefineContract({
           console.error(`paymentUpdate: no payment ${data.paymentHash}`, { data, meta, hash })
           throw new Errors.GIErrorIgnoreAndBanIfGroup('paymentUpdate without existing payment')
         }
-        if (meta.username !== payment.meta.username) {
-          console.error(`paymentUpdate: bad username ${meta.username} != ${payment.meta.username}`, { data, meta, hash })
-          throw new Errors.GIErrorIgnoreAndBanIfGroup('paymentUpdate from wrong user!')
+        // if the payment is being modified by someone other than the person who sent or received it, throw an exception
+        if (meta.username !== payment.meta.username && meta.username !== payment.data.toUser) {
+          console.error(`paymentUpdate: bad username ${meta.username} != ${payment.meta.username} != ${payment.data.username}`, { data, meta, hash })
+          throw new Errors.GIErrorIgnoreAndBanIfGroup('paymentUpdate from bad user!')
         }
-        payment.history.push(data.updatedProperties)
+        payment.history.push([meta.createdDate, hash])
         merge(payment.data, data.updatedProperties)
+        // we update "this month"'s snapshot 'lastAdjustedDistribution' on each completed payment
+        if (data.updatedProperties.status === PAYMENT_COMPLETED) {
+          payment.data.completedDate = meta.createdDate
+          // in case we receive a paymentUpdate in a new month (where the original payment
+          // was initiated in the previous month), we make sure that month
+          // exists by retrieving it through initFetchMonthlyPayments
+          const paymentMonth = initFetchMonthlyPayments({ meta, state, getters })
+          const updateMonthstamp = ISOStringToMonthstamp(meta.createdDate)
+          const paymentMonthstamp = ISOStringToMonthstamp(payment.meta.createdDate)
+          // if this update is for a payment from the previous month, we need to
+          // add it to this month's paymentFrom, and do so before we create an updated
+          // lastAdjustedDistribution snapshot.
+          if (compareMonthstamps(updateMonthstamp, paymentMonthstamp) > 0) {
+            const fromUser = vueFetchInitKV(paymentMonth.paymentsFrom, meta.username, {})
+            const toUser = vueFetchInitKV(fromUser, data.toUser, [])
+            toUser.push(data.paymentHash)
+          }
+          paymentMonth.lastAdjustedDistribution = groupIncomeDistribution({
+            state, getters, updateMonthstamp, adjusted: true
+          })
+        }
       }
     },
     'gi.contracts/group/proposal': {
@@ -307,7 +487,8 @@ DefineContract({
         vote: string,
         passPayload: optional(unionOf(object, string)) // TODO: this, somehow we need to send an OP_KEY_ADD GIMessage to add a generated once-only writeonly message public key to the contract, and (encrypted) include the corresponding invite link, also, we need all clients to verify that this message/operation was valid to prevent a hacked client from adding arbitrary OP_KEY_ADD messages, and automatically ban anyone generating such messages
       }),
-      process ({ data, hash, meta }, { state }) {
+      process (message, { state }) {
+        const { data, hash, meta } = message
         const proposal = state.proposals[data.proposalHash]
         if (!proposal) {
           // https://github.com/okTurtles/group-income-simple/issues/602
@@ -326,7 +507,7 @@ DefineContract({
         const result = votingRules[proposal.data.votingRule](state, proposal.data.proposalType, proposal.votes)
         if (result === VOTE_FOR || result === VOTE_AGAINST) {
           // handles proposal pass or fail, will update proposal.status accordingly
-          proposals[proposal.data.proposalType][result](state, data)
+          proposals[proposal.data.proposalType][result](state, message)
         }
       }
     },
@@ -351,9 +532,8 @@ DefineContract({
     'gi.contracts/group/removeMember': {
       validate: (data, { state, getters, meta }) => {
         objectOf({
-          member: string,
-          memberId: string,
-          groupId: string,
+          member: string, // username to remove
+          reason: optional(string),
           // In case it happens in a big group (by proposal)
           // we need to validate the associated proposal.
           proposalHash: optional(string),
@@ -391,28 +571,51 @@ DefineContract({
           }
         }
       },
-      process ({ data, meta }, { state }) {
-        Vue.delete(state.profiles, data.member)
+      process ({ data, meta }, { state, getters }) {
+        state.profiles[data.member].status = PROFILE_STATUS.REMOVED
+        state.profiles[data.member].departedDate = meta.createdDate
       },
-      async sideEffect ({ data }) {
-        await sbp('gi.sideEffects/group/removeMember', {
-          username: data.member,
-          groupId: data.groupId
-        })
+      async sideEffect ({ data, contractID }, { state }) {
+        const rootState = sbp('state/vuex/state')
+        const contracts = rootState.contracts || {}
+
+        if (data.member === rootState.loggedIn.username) {
+          // If this member is re-joining the group, ignore the rest
+          // so the member doesn't remove themself again.
+          if (sbp('okTurtles.data/get', 'JOINING_GROUP')) {
+            return
+          }
+
+          const groupIdToSwitch = Object.keys(contracts)
+            .find(cID => contracts[cID].type === 'group' &&
+                  cID !== contractID &&
+                  rootState[cID].settings) || null
+
+          sbp('state/vuex/commit', 'setCurrentGroupId', groupIdToSwitch)
+          sbp('state/vuex/commit', 'removeContract', contractID)
+          sbp('controller/router').push({ path: groupIdToSwitch ? '/dashboard' : '/' })
+          // TODO - #828 remove other group members contracts if applicable
+        } else {
+          // TODO - #828 remove the member contract if applicable.
+          // sbp('state/vuex/commit', 'removeContract', getters.groupProfile(data.member).contractID)
+        }
+        // TODO - #850 verify open proposals and see if they need some re-adjustment.
       }
     },
     'gi.contracts/group/removeOurselves': {
-      validate: objectOf({
-        groupId: string
+      validate: objectMaybeOf({
+        reason: string
       }),
-      process ({ data, meta }, { state }) {
-        Vue.delete(state.profiles, meta.username)
-      },
-      async sideEffect ({ data, meta }) {
-        await sbp('gi.sideEffects/group/removeMember', {
-          username: meta.username,
-          groupId: data.groupId
-        })
+      process ({ data, meta, contractID }, { state, getters }) {
+        state.profiles[meta.username].status = PROFILE_STATUS.REMOVED
+        state.profiles[meta.username].departedDate = meta.createdDate
+        sbp('gi.contracts/group/pushSideEffect', contractID,
+          ['gi.contracts/group/removeMember/process/sideEffect', {
+            meta,
+            data: { member: meta.username, reason: data.reason || '' },
+            contractID
+          }]
+        )
       }
     },
     'gi.contracts/group/invite': {
@@ -425,7 +628,7 @@ DefineContract({
       validate: objectOf({
         inviteSecret: string // NOTE: simulate the OP_KEY_* stuff for now
       }),
-      process ({ data, meta }, { state }) {
+      process ({ data, meta }, { state, getters }) {
         console.debug('inviteAccept:', data, state.invites)
         const invite = state.invites[data.inviteSecret]
         if (invite.status !== INVITE_STATUS.VALID) {
@@ -436,7 +639,11 @@ DefineContract({
         if (Object.keys(invite.responses).length === invite.quantity) {
           invite.status = INVITE_STATUS.USED
         }
-        Vue.set(state.profiles, meta.username, initGroupProfile(meta.identityContractID))
+        // TODO: ensure `meta.username` is unique for the lifetime of the username
+        //       since we are making it possible for the same username to leave and
+        //       rejoin the group. All of their past posts will be re-associated with
+        //       them upon re-joining.
+        Vue.set(state.profiles, meta.username, initGroupProfile(meta.identityContractID, meta.createdDate))
         // If we're triggered by handleEvent in state.js (and not latestContractState)
         // then the asynchronous sideEffect function will get called next
         // and we will subscribe to this new user's identity contract
@@ -447,15 +654,16 @@ DefineContract({
       // They should only coordinate the actions of outside contracts.
       // Otherwise `latestContractState` and `handleEvent` will not produce same state!
       async sideEffect ({ meta, contractID }, { state }) {
-        const vuexState = sbp('state/vuex/state')
+        const rootState = sbp('state/vuex/state')
         // TODO: per #257 this will have to be encompassed in a recoverable transaction
         // however per #610 that might be handled in handleEvent (?), or per #356 might not be needed
-        if (meta.username === vuexState.loggedIn.username) {
+        if (meta.username === rootState.loggedIn.username) {
           // we're the person who just accepted the group invite
           // so subscribe to founder's IdentityContract & everyone else's
-          for (const name of Object.keys(state.profiles)) {
-            if (name === vuexState.loggedIn.username) continue
-            await sbp('state/enqueueContractSync', state.profiles[name].contractID)
+          for (const name in state.profiles) {
+            if (name !== rootState.loggedIn.username) {
+              await sbp('state/enqueueContractSync', state.profiles[name].contractID)
+            }
           }
         } else {
           // we're an existing member of the group getting notified that a
@@ -474,7 +682,7 @@ DefineContract({
         mincomeAmount: x => typeof x === 'number' && x > 0,
         mincomeCurrency: x => typeof x === 'string'
       }),
-      process ({ data }, { state }) {
+      process ({ meta, data }, { state, getters }) {
         for (var key in data) {
           Vue.set(state.settings, key, data[key])
         }
@@ -486,17 +694,17 @@ DefineContract({
         incomeAmount: x => typeof x === 'number' && x >= 0,
         pledgeAmount: x => typeof x === 'number' && x >= 0,
         nonMonetaryAdd: string,
-        paymentMethods: objectMaybeOf({
-          bitcoin: objectMaybeOf({ value: string }),
-          paypal: objectMaybeOf({ value: string }),
-          venmo: objectMaybeOf({ value: string }),
-          other: objectMaybeOf({ value: string })
-        }),
         nonMonetaryEdit: objectOf({
           replace: string,
           with: string
         }),
-        nonMonetaryRemove: string
+        nonMonetaryRemove: string,
+        paymentMethods: arrayOf(
+          objectOf({
+            name: string,
+            value: string
+          })
+        )
       }),
       process ({ data, meta }, { state }) {
         var groupProfile = state.profiles[meta.username]

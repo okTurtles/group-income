@@ -8,23 +8,27 @@
     variant='addMember'
     @submit='submit'
   )
-    fieldset(v-if='ephemeral.currentStep === 0' key='0' ref='fieldset')
+    fieldset.c-fieldset(
+      v-if='ephemeral.currentStep === 0'
+      :class='{"is-shifted": ephemeral.invitesCount > 1}'
+      ref='fieldset'
+    )
       i18n.label(tag='legend') Full name
-      label.field.c-fields-item(
+      .field.c-fields-item(
         v-for='(member, index) in ephemeral.invitesCount'
         :key='`member-${index}`'
         data-test='invitee'
       )
         i18n.label.sr-only Invitee name
-        .input-shifted
+        .inputgroup
           input.input(
             type='text'
+            :aria-label='L("Full name")'
             v-model='form.invitees[index]'
             @keyup='(e) => inviteeUpdate(e, index)'
             aria-required
           )
-          button.is-icon-small(
-            v-if='ephemeral.invitesCount > 1'
+          button.is-icon-small.is-btn-shifted(
             type='button'
             @click='removeInvitee(index)'
             data-test='remove'
@@ -150,10 +154,22 @@ export default {
 @import "@assets/style/_variables.scss";
 
 .c-fields-item {
-  margin-bottom: $spacer;
+  margin-bottom: 1rem;
 }
 
 .c-feedback {
   text-align: center;
+}
+
+.c-fieldset {
+  .is-btn-shifted {
+    display: none;
+  }
+
+  &.is-shifted {
+    .is-btn-shifted {
+      display: block;
+    }
+  }
 }
 </style>

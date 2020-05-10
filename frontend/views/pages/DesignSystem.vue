@@ -9,7 +9,8 @@ page(
     | A design system exists to help you build more cohesive interfaces.
     br
     | Follow the guidelines for the most common elements: Typography, Spacing, Colors, etc...
-
+    button.is-small.dark-team-toggle(@click='toggleTheme') Toggle {{isDarkTheme ? 'Dark' : 'Light' }} Theme
+  br
   template(#sidebar='')
     #c-design-system-sidebar
 
@@ -85,7 +86,7 @@ page(
         tr
           td
             pre .has-text-danger
-          td.has-text-danger Ups! something went wrong.
+          td.has-text-danger Ups! something went wrong..
         tr
           td
             pre .has-ellipsis
@@ -106,7 +107,7 @@ page(
               | Share with everyone
 
   article#cards
-    section.card
+    section.card.special-card
       h2.is-title-2.card-header Cards
 
       table
@@ -148,18 +149,12 @@ page(
     section.card
       h2.is-title-2.card-header Icons
       p
-        | This is only the currently used icons (at _icons.scss).
+        | This is only the currently used icons (at _icons.scss). A complete list can be find here:&nbsp;
         br
-        | A complete list can be find here:&nbsp;
-        br
-        a.link(href='https://fortawesome.com/sets/font-awesome-5-solid' target='_blank')
-          | https://fortawesome.com/sets/font-awesome-5-solid
+        a.link(href='https://fortawesome.com/sets/font-awesome-5-solid' target='_blank') fortawesome 5 solid
         |  or&nbsp;
-        br
-        a.link(href='https://fortawesome.com/sets/font-awesome-5-regular' target='_blank')
-          | https://fortawesome.com/sets/font-awesome-5-regular
-        br
-
+        a.link(href='https://fortawesome.com/sets/font-awesome-5-regular' target='_blank') fortawesome 5 regular
+      br
       table
         thead
           th code
@@ -186,6 +181,8 @@ page(
               i.icon-columns icon-columns
               i.icon-comments icon-comments
               i.icon-copy icon-copy
+              i.icon-dollar-sign icon-dollar-sign
+              i.icon-download icon-download
               i.icon-edit icon-edit
               i.icon-ellipsis-v icon-ellipsis-v
               i.icon-envelope icon-envelope
@@ -206,6 +203,7 @@ page(
               i.icon-question icon-question
               i.icon-question-circle icon-question-circle
               i.icon-tag icon-tag
+              i.icon-share-atl share-atl
               i.icon-search search
               i.icon-sort-down sort-down
               i.icon-times icon-times
@@ -238,22 +236,6 @@ page(
           td
             i.icon-bell.is-prefix
             | Notifications
-  article#spacing
-    section.card
-      h2.is-title-2.card-header Spacing
-      table
-        thead
-          th code
-          th demo
-          //- th usage
-        tr(v-for='(spacer, index) in ["xs", "sm", "", "lg"]' :key='index')
-          td(v-if='spacer')
-            code $spacer-{{spacer}}
-          td(v-else='')
-            code $spacer
-          td
-            span.c-spacer(:class='spacer')
-          //- td Used to space element by {{Math.pow(2, (index+1))}}px
 
   article#color
     section.card
@@ -459,7 +441,6 @@ page(
         tr
           td
             pre
-              | $spacer-lg
               |   badge(type='default') 3
           td
             span.c-badge-container
@@ -467,7 +448,6 @@ page(
         tr
           td
             pre
-              | $spacer-lg
               |   badge(type='compact') 3
           td
             span.c-badge-container
@@ -501,9 +481,9 @@ page(
           th demo
         tr
           td
-            pre .pill.has-background-dark
+            pre .pill.is-neutral
           td
-            span.pill.has-background-dark Pending
+            span.pill.is-neutral Pending
 
         tr
           td
@@ -528,36 +508,6 @@ page(
             pre .pill.is-danger
           td
             span.pill.is-danger Due march 08
-
-        tr
-          td
-            pre .pill.has-background-dark.is-small
-          td
-            span.pill.has-background-dark.is-small Pending
-
-        tr
-          td
-            pre .pill.is-success.is-small
-          td
-            span.pill.is-success.is-small Payment received
-
-        tr
-          td
-            pre .pill.is-warning.is-small
-          td
-            span.pill.is-warning.is-small Not received
-
-        tr
-          td
-            pre .pill.is-primary.is-small
-          td
-            span.pill.is-primary.is-small Partial
-
-        tr
-          td
-            pre .pill.is-danger.is-small
-          td
-            span.pill.is-danger.is-small Due march 08
 
   article#user-feedback
     section.card
@@ -706,10 +656,10 @@ page(
       h2.is-title-2.card-header Forms
 
       p
-        | The input's width depends on their container #[br]
-        | For consistency, add #[code .field] to have a margin bottom of 1rem #[br]
-        | For A11Y reasons, everything related to a form element, (label text, input element, helper text and error text) should be placed inside its respective #[code <\label \>] element.
-        | When an element is disabled, required or as an error, add the respective HTML attributes! #[code disabled, aria-required, or aria-describedby="error"]
+        | - The input's width depends on their container #[br]
+        | - Use #[code .field] to have a margin bottom of 1rem #[br]
+        | - #[b Accessibility:] Every form field must have a respective label associated, even if hidden using #[code .sr-only].
+        | Whenever possible, use the respective HTML attributes to describe the field status (type, disabled, required, error, etc...)
       br
       button.is-small.is-outlined.is-danger(
         @click='ephemeral.forms.hasError = !ephemeral.forms.hasError'
@@ -722,9 +672,8 @@ page(
           th demo
         tr
           td
-            h3.is-title-3 Textbox
-        tr
-          td
+            h3.is-title-3 Input
+            br
             pre
               | label.field
               |   .label Your username
@@ -737,45 +686,175 @@ page(
               input.input(
                 placeholder='Placeholder'
                 :class='{ error: ephemeral.forms.hasError }'
+                :aria-invalid='ephemeral.forms.hasError'
               )
               span.error(v-if='ephemeral.forms.hasError') Name already taken
-              .helper Pick a name without spaces
-
+              .helper Pick a name without spaces.
         tr
           td
+            h3.is-title-3 Textarea
+            br
             pre
               | label.field
               |   .label Explain why
-              |   textarea.error(rows='4')
+              |   textarea.textarea.error(rows='4')
           td
             label.field
               .label Explain why
-              textarea(placeholder='Placeholder' rows='4'
+              textarea.textarea(placeholder='Placeholder' rows='4'
                 :class='{ error: ephemeral.forms.hasError }'
               )
-              span.error(v-if='ephemeral.forms.hasError') You can do better than that
-
+              span.error(v-if='ephemeral.forms.hasError') You can do better than that.
         tr
           td
             h3.is-title-3 Selectbox
-        tr
-          td
+            br
             pre
               | label.field
               |   .label Select currency
-              |   .select-wrapper.error
-              |     select
-              |       option USD
+              |   .selectbox.error
+              |     select.select
+              |       option $ USD
           td
             label.field
             .label Select currency
-            .select-wrapper(:class='{ error: ephemeral.forms.hasError }')
-              select
-                option USD
-                option BTC
-                option EUR
-            span.error(v-if='ephemeral.forms.hasError') Something went wrong
+            .selectbox(:class='{ error: ephemeral.forms.hasError }')
+              select.select
+                option $ USD
+                option Ƀ BTC
+                option € EUR
+            span.error(v-if='ephemeral.forms.hasError') Something went wrong.
+        tr
+          td(colspan='2')
+            h3.is-title-3 Select Group
+            p Use #[code fieldset] to group related inputs. Each input must have an individual label. If a label has multiple associated inputs, it won't work on iPhone. A simple but effective solution is to add #[code aria-label] to each input.&nbsp;
+              a.link(href='https://codepen.io/sandrina-p/pen/oNXyGPE') See reference.
+            br
+        tr
+          td
+            pre
+              | fieldset.field
+              |   .label What's your mincome
+              |   .selectgroup.error
+              |     input.input(aria-label='Amount')
+              |     select.select(aria-label='Currency')
+              |       option $ USD
+          td
+            fieldset.field
+              .label What's your mincome
+              .selectgroup(:class='{ error: ephemeral.forms.hasError }')
+                input.input(aria-label='Amount')
+                select.select(aria-label='Currency')
+                  option $ USD
+                  option Ƀ BTC
+                  option € EUR
+              span.error(v-if='ephemeral.forms.hasError') Something went wrong.
+        tr
+          td
+            pre
+              | fieldset.field
+              |   .label Payment method
+              |   .selectgroup.is-reversed
+              |     select.select(aria-label='Method')
+              |       option(disabled='true') Choose...
+              |       option Bitcoin
+              |     input.input(aria-label='Value')
+          td
+            fieldset.field
+              .label Payment method
+              .selectgroup.is-reversed.c-payments(:class='{ error: ephemeral.forms.hasError }')
+                select.select(
+                  v-model='form.selectPayment'
+                  :class='{ "is-empty": form.selectPayment === "choose"}'
+                  aria-label='Method'
+                  selected='choose')
+                  option(value='choose' disabled='true') Choose...
+                  option Bitcoin
+                  option Paypal
+                  option Other
+                input.input(aria-label='Value')
+              span.error(v-if='ephemeral.forms.hasError') Something went wrong.
+        tr
+          td
+            h3.is-title-3 Input Group
+            h4.is-title-4 With suffix
+            br
+            pre
+              | label.field
+              |   .label New Amount
+              |   .inputgroup.error
+              |     input.input
+              |     .suffix USD
+          td
+            label.field
+              .label Mincome
+              .inputgroup(:class='{ error: ephemeral.forms.hasError }')
+                input.input(type='text' placeholder='Amount')
+                .suffix USD
+              span.error(v-if='ephemeral.forms.hasError') Something went wrong.
+        tr
+          td
+            h4.is-title-4 With shifted btn
+            br
+            pre
+              | label.field
+              |   .label Add invitee
+              |   .inputgroup
+              |     input.input
+              |     button.is-icon-small.is-btn-shifted(
+              |       :aria-label='Remove member'
+              |     )
+              |       i.icon-times
+          td
+            label.field
+              .label Add invitee
+              .inputgroup(:class='{ error: ephemeral.forms.hasError }')
+                input.input(type='text' placeholder='Member name')
+                button.is-icon-small.is-btn-shifted(
+                  :aria-label='L("Remove member")'
+                )
+                  i.icon-times
+              span.error(v-if='ephemeral.forms.hasError') Something went wrong.
 
+        tr
+          td
+            h4.is-title-4 With addons
+            br
+            pre
+              | label.field
+              |   .label Password
+              |   .inputgroup
+              |     input.input
+              |     .addons
+              |       button.is-icon(
+              |         :aria-label='Show password'
+              |         :aria-pressed='false'
+              |       )
+              |         i.icon-eye
+          td
+            label.field
+              .label Password
+              .inputgroup(:class='{ error: ephemeral.forms.hasError }')
+                input.input(:type='ephemeral.passwordHidden ? "password" : "text"')
+                .addons
+                  button.is-icon(
+                    aria-label='Show password'
+                    :aria-pressed='false'
+                    @click='ephemeral.passwordHidden = !ephemeral.passwordHidden'
+                  )
+                    i(:class='ephemeral.passwordHidden ? "icon-eye" : "icon-eye-slash"')
+              span.error(v-if='ephemeral.forms.hasError') Wrong password.
+
+            label.field
+              .label Your message
+              .inputgroup(:class='{ error: ephemeral.forms.hasError }')
+                input.input(type='text' placeholder='Placeholder')
+                .addons
+                  button.is-icon(aria-label='Copy text')
+                    i.icon-copy
+                  button.is-icon(aria-label='Create pool')
+                    i.icon-poll
+              span.error(v-if='ephemeral.forms.hasError') Say something.
         tr
           td
             h3.is-title-3 Radio
@@ -836,107 +915,90 @@ page(
               label.checkbox
                 input.input(type='checkbox' name='browser' value='Edge' disabled)
                 span Internet Explorer
-
-        tr
-          td
-            h3.is-title-3 Switch
-        tr
-          td
-            pre
-              | pre
-              |   input.switch(
-              |   type='checkbox'
-              |   name='switch'
-              |   @change=''
-              | )
-              | i18n.sr-only(tag='label' for='displayComment') Toggle me
-          td
-            input.switch(
-              type='checkbox'
-              name='switch'
-              @change=''
-            )
-            i18n.sr-only(tag='label' for='displayComment') Toggle me
-
-        tr
-          td
-            h3.is-title-3 Combination
-        tr
-          td
-            pre
-              | label.field
-              |   .label Mincome
-              |   .select-wrapper.error
-              |     input.input
-              |     select
-              |       option USD
-          td
-            label.field
-              .label Mincome
-              .select-wrapper(:class='{ error: ephemeral.forms.hasError }')
-                input.input(placeholder='Amount')
-                select
-                  option USD
-                  option BTC
-                  option EUR
-              span.error(v-if='ephemeral.forms.hasError') Something went wrong
-        tr
-          td
-            pre
-              | label.field
-              |   .label New Amount
-              |   .input-combo.error
-              |     input.input
-              |     .suffix USD
-          td
-            label.field
-              .label New Amount
-              .input-combo(:class='{ error: ephemeral.forms.hasError }')
-                input.input(type='text' placeholder='New amount')
-                .suffix USD
-              span.error(v-if='ephemeral.forms.hasError') Something went wrong
-        tr
-          td
-            pre
-              | label.field
-              |   .label Add invitee
-              |   .input-shifted
-              |     input.input
-              |     button.is-icon-small(
-              |       :aria-label='Remove member'
-              |     )
-              |       i.icon-times
-          td
-            label.field
-              .label Add invitee
-              .input-shifted(:class='{ error: ephemeral.forms.hasError }')
-                input.input(type='text' placeholder='New amount')
-                button.is-icon-small(
-                  :aria-label='L("Remove member")'
+          tr
+            td
+              h3.is-title-3 Switch
+          tr
+            td
+              pre
+                | label
+                |   i18n.sr-only Send donation
+                |   input.switch(
+                |     type='checkbox'
+                |     name='switch'
+                |     @change=''
+                |   )
+            td
+              label
+                i18n.sr-only Send donation
+                input.switch(
+                  type='checkbox'
                 )
-                  i.icon-times
-              span.error(v-if='ephemeral.forms.hasError') Something went wrong
         tr
           td
-            | A11Y: Add #[code aria-label] to button.
-            pre
-              | label.field
-              |   .label Password
-              |   .input-combo.error
-              |     input.input(type='text')
-              |     button.is-icon(
-              |       aria-label='Show password'
-              |     )
-              |       i.icon-eye
-          td
-            label.field
-              .label Password
-              .input-combo(:class='{ error: ephemeral.forms.hasError }')
-                input.input(type='text' placeholder='Placeholder')
-                button.is-icon(aria-label='Show password')
-                  i.icon-eye
-            span.error(v-if='ephemeral.forms.hasError') Invalid password
+            tr
+              h3.is-title-3 Selectsolo
+          tr
+            td
+              pre
+                | .selectsolo
+                |   select.select
+                |     option 10 results
 
+            td
+              .selectsolo
+                select.select
+                  option(
+                    v-for='count in [10, 20, 30]'
+                    :index='count'
+                    :value='count'
+                  ) {{ count }} results
+        tr
+          td
+            tr
+              h3.is-title-3 Search (component)
+          tr
+            td
+              pre
+                | search(
+                |   label='Search for a payment'
+                |   placeholder='Search...'
+                |   value=""
+                | )
+
+            td
+              search(
+                label='Search for a payment'
+                placeholder='Search...'
+                v-model='form.searchValue'
+              )
+        tr
+          td
+            tr
+              h3.is-title-3 SliderContinuous (component)
+          tr
+            td
+              pre
+                | slider-continuous(
+                |   uid='dsSlider'
+                |   label='How many tabs are opened?'
+                |   min='3'
+                |   max='50'
+                |   unit=' tabs'
+                |   :value='form.sliderValue'
+                |   @input='handleSliderInput'
+                | )
+
+            td
+              slider-continuous(
+                uid='dsSlider'
+                label='How many tabs do you have opened?'
+                min='3'
+                max='50'
+                unit=' tabs'
+                :value='form.sliderValue'
+                @input='(e) => form.sliderValue = e.target.value'
+              )
   article#tabs
     section.card
       h2.is-title-2.card-header Tabs
@@ -999,15 +1061,37 @@ page(
           th demo
         tr
           td
-            code
-              | sbp('state/vuex/dispatch', 'login',
-              br
-              |   { username: 'TestUser', identityContractID }
-              br
-              | )
+            pre
+              | menu-parent
+              |   menu-trigger.is-icon-small(
+              |    :aria-label='L("Show info")
+              |   )
+              |     i.icon-ellipsis-v
+              |   menu-content
+              |     ul
+              |       menu-item(
+              |         tag='button'
+              |         item-id='profile'
+              |         icon='info'
+              |       ) Edit profile
           td
-            button(@click='login')
-              i18n Open Menu
+            menu-parent
+              menu-trigger.is-icon-small(:aria-label='L("Show info")')
+                i.icon-ellipsis-v
+
+              menu-content.c-menu-content
+                ul
+                  menu-item(
+                    tag='button'
+                    item-id='profile'
+                    icon='pencil-alt'
+                  ) Edit profile
+
+                  menu-item(
+                    tag='button'
+                    item-id='message'
+                    icon='comment'
+                  ) Send message
 
   article#modal
     section.card
@@ -1059,7 +1143,7 @@ page(
       br
       p Here's how you can load a SVG:
       br
-      table.c-svgTable(:class='{ isDarkTheme }')
+      table.c-svgTable
         thead
           th code
           th demo
@@ -1071,10 +1155,6 @@ page(
               | import SvgHello from '@svgs/hello.svg'
           td
             svg-hello.c-svg
-
-            // NOTE: this is a very dummy POC for handling themes
-            // The final solution should be implemented at #665.
-            button.is-small(@click='isDarkTheme = !isDarkTheme') Toggle Dark Theme
       br
       br
 
@@ -1094,13 +1174,16 @@ page(
 <script>
 import Page from '@components/Page.vue'
 import sbp from '~/shared/sbp.js'
+import Badge from '@components/Badge.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
-import Tooltip from '@components/Tooltip.vue'
-import Badge from '@components/Badge.vue'
-import LinkToCopy from '@components/LinkToCopy.vue'
 import CalloutCard from '@components/CalloutCard.vue'
+import LinkToCopy from '@components/LinkToCopy.vue'
+import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
+import Tooltip from '@components/Tooltip.vue'
+import SliderContinuous from '@components/SliderContinuous.vue'
+import Search from '@components/Search.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import SvgAccess from '@svgs/access.svg'
 import SvgBitcoin from '@svgs/bitcoin.svg'
@@ -1114,6 +1197,8 @@ import SvgJoinGroup from '@svgs/join-group.svg'
 import SvgMoney from '@svgs/money.svg'
 import SvgProposal from '@svgs/proposal.svg'
 import SvgVote from '@svgs/vote.svg'
+import { mapGetters, mapMutations } from 'vuex'
+import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
 
 export default {
   name: 'DesignSystemView',
@@ -1211,28 +1296,36 @@ export default {
           }
         ]
       },
+      form: {
+        searchValue: '',
+        selectPayment: 'choose',
+        sliderValue: 25
+      },
       ephemeral: {
-        btns: {
-          isLoading: 'false'
-        },
+        passwordHidden: true,
         forms: {
           hasError: false,
           isDisabled: false
         }
-      },
-      isDarkTheme: false
+      }
     }
   },
   components: {
     Page,
-    CalloutCard,
+    Badge,
     BannerSimple,
     BannerScoped,
     ButtonSubmit,
-    Tooltip,
-    Badge,
+    CalloutCard,
     LinkToCopy,
-    SvgHello
+    MenuParent,
+    MenuTrigger,
+    MenuContent,
+    MenuItem,
+    Search,
+    Tooltip,
+    SvgHello,
+    SliderContinuous
   },
   mounted () {
     const menu = document.getElementById('c-design-system-sidebar')
@@ -1260,6 +1353,9 @@ export default {
     window.removeEventListener('scroll', this.handleScroll)
   },
   methods: {
+    ...mapMutations([
+      'setTheme'
+    ]),
     login () {
       console.error('unimplemented, try using the actual Login.vue modal')
     },
@@ -1284,7 +1380,16 @@ export default {
       return new Promise((resolve, reject) => {
         setTimeout(resolve, 2500)
       })
+    },
+    toggleTheme () {
+      this.setTheme(this.isDarkTheme ? THEME_LIGHT : THEME_DARK)
     }
+  },
+  computed: {
+    ...mapGetters([
+      'colors',
+      'isDarkTheme'
+    ])
   }
 }
 </script>
@@ -1295,8 +1400,22 @@ $pagePadding: 1rem;
 $pagePaddingTablet: 24px;
 $pagePaddingDesktop: 75px;
 
+.p-design-system ::v-deep .p-main {
+  max-width: 70rem;
+}
+
+.dark-team-toggle {
+  float: right;
+  margin-right: 3rem;
+  margin-top: -3rem;
+}
+
+.special-card {
+  background-color: var(--general_1);
+}
+
 article .is-title-3 {
-  margin-top: $spacer;
+  margin-top: 1rem;
 }
 
 pre {
@@ -1308,7 +1427,7 @@ code {
 }
 
 section.card {
-  margin-bottom: $spacer-lg;
+  margin-bottom: 2rem;
 }
 
 table {
@@ -1333,9 +1452,9 @@ table {
 .c-icons {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
-  grid-gap: $spacer-md;
-  margin-top: $spacer-lg;
-  margin-bottom: $spacer-md;
+  grid-gap: 0.5rem;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
 
   [class^='icon-']::before {
     margin-right: 10px;
@@ -1345,32 +1464,32 @@ table {
 .c-spacer {
   display: inline-block;
   border: 1px dashed $primary_0;
-  width: $spacer;
-  height: $spacer;
-  margin-right: $spacer;
+  width: 1rem;
+  height: 1rem;
+  margin-right: 1rem;
 
   &.lg {
-    width: $spacer-lg;
-    height: $spacer-lg;
+    width: 2rem;
+    height: 2rem;
   }
 
   &.sm {
-    width: $spacer-sm;
-    height: $spacer-sm;
+    width: 0.5rem;
+    height: 0.5rem;
   }
 
   &.xs {
-    width: $spacer-xs;
-    height: $spacer-xs;
+    width: 0.25rem;
+    height: 0.25rem;
   }
 }
 
 .c-palette {
   display: inline-block;
-  width: $spacer-xl;
-  height: $spacer-xl;
+  width: 4rem;
+  height: 4rem;
   border-radius: $radius;
-  margin-right: $spacer;
+  margin-right: 1rem;
 
   .table td{
     vertical-align: top;
@@ -1386,23 +1505,33 @@ table {
 }
 
 .message {
-  margin-bottom: $spacer-lg;
+  margin-bottom: 2rem;
 }
 
 .c-badge-container {
   position: relative;
   display: inline-block;
-  width: $spacer-lg;
-  height: $spacer-lg;
+  width: 2rem;
+  height: 2rem;
   border: 1px dashed $primary_1;
 
   &-small {
     @extend .c-badge-container;
-    width: $spacer-md * 1.5;
-    height: $spacer-md * 1.5;
-    line-height: $spacer-md * 1.5;
+    width: 1.5rem;
+    height: 1.5rem;
+    line-height: 1.5rem;
     text-align: center;
     border: none;
+  }
+}
+
+.c-payments {
+  .select {
+    min-width: 7rem;
+  }
+
+  &::after { // icon-sort-down
+    left: 5.5rem;
   }
 }
 
@@ -1411,32 +1540,13 @@ table {
   height: 6rem;
 }
 
-.c-svgTable {
-  &.isDarkTheme {
-    --text_0: white;
-    --primary_0: white;
-    --primary_1: wheat;
-    --primary_0_1: white;
-    --background_0: #363636;
-    background: $background_0;
-
-    th {
-      color: $text_0;
-    }
-
-    pre {
-      color: $primary_1;
-    }
-  }
-}
-
 .c-svgList {
   display: flex;
   flex-wrap: wrap;
-  margin-top: $spacer;
+  margin-top: 1rem;
 
   &-item {
-    padding: $spacer;
+    padding: 1rem;
     border: 1px solid $general_1;
     width: 50%;
     min-width: 16rem;
@@ -1445,15 +1555,20 @@ table {
 
     .c-svg {
       max-width: none;
-      width: $spacer-xxl;
-      height: $spacer-xxl;
+      width: 8rem;
+      height: 8rem;
     }
   }
 
   &-text {
-    padding-top: $spacer-sm;
+    padding-top: 0.5rem;
     text-align: left;
   }
+}
+
+.c-menu-content {
+  width: 12rem;
+  margin-left: 2rem;
 }
 
 #c-design-system-sidebar {

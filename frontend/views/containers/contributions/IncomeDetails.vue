@@ -1,5 +1,5 @@
 <template lang='pug'>
-modal-base-template(ref='modal' :fullscreen='true')
+modal-base-template(ref='modal' :fullscreen='true' :a11yTitle='L("Income Details")')
   .c-content
     i18n.is-title-2.c-title(tag='h2') Income Details
 
@@ -37,12 +37,13 @@ modal-base-template(ref='modal' :fullscreen='true')
             .label(
               data-test='introIncomeOrPledge'
             ) {{ needsIncome ? L("What's your monthly income?") : L('How much do you want to pledge?') }}
-            .input-combo(
+            .inputgroup(
               :class='{"error": $v.form.amount.$error }'
               v-error:amount='{ attrs: { "data-test": "badIncome" } }'
             )
               input.input(
-                type='number'
+                inputmode='decimal'
+                pattern='[0-9]*'
                 v-model='$v.form.amount.$model'
                 data-test='inputIncomeOrPledge'
               )
@@ -80,7 +81,7 @@ import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'
-import L from '@view-utils/translations.js'
+import L, { LError } from '@view-utils/translations.js'
 
 export default {
   name: 'IncomeDetails',
@@ -162,7 +163,7 @@ export default {
         return
       }
 
-      const paymentMethods = {}
+      const paymentMethods = []
 
       if (this.needsIncome) {
         // Find the methods that have some info filled...
@@ -181,9 +182,7 @@ export default {
 
         if (filledMethods.length > 0) {
           for (const method of filledMethods) {
-            paymentMethods[method.name] = {
-              value: method.value
-            }
+            paymentMethods.push(method)
           }
         }
       }
@@ -201,8 +200,8 @@ export default {
         await sbp('backend/publishLogEntry', groupProfileUpdate)
         this.closeModal()
       } catch (e) {
-        console.error('Failed to update income details', e)
-        this.$refs.formMsg.danger(L('Failed to update income details, please try again. {codeError}', { codeError: e.message }))
+        console.error('IncomeDetails submit() error:', e)
+        this.$refs.formMsg.danger(L('Failed to update income details. {reportError}', LError(e)))
       }
     }
   },
@@ -235,28 +234,28 @@ export default {
     "card card";
   width: 100%;
   max-width: 55rem;
-  margin-top: $spacer*1.5;
+  margin-top: 1.5rem;
 
   @include tablet {
     grid-template-columns: auto 12rem;
-    grid-column-gap: $spacer*1.5;
+    grid-column-gap: 1.5rem;
     grid-template-areas:
       "title title"
       "card graph";
-    margin-top: $spacer*2.5;
+    margin-top: 2.5rem;
   }
 
   @include desktop {
-    grid-column-gap: $spacer-xl;
+    grid-column-gap: 4rem;
   }
 }
 
 .c-title {
   grid-area: title;
-  margin-bottom: $spacer*2.5;
+  margin-bottom: 2.5rem;
 
   @include tablet {
-    margin-bottom: $spacer*1.5;
+    margin-bottom: 1.5rem;
   }
 }
 
@@ -270,17 +269,17 @@ export default {
 }
 
 .c-methods {
-  margin-top: $spacer*1.5;
+  margin-top: 1.5rem;
 }
 
 .c-tip {
   display: inline-block;
-  margin-left: $spacer-xs;
+  margin-left: 0.25rem;
 }
 
 .c-graph {
   grid-area: graph;
   flex-shrink: 0;
-  margin-bottom: $spacer*1.5;
+  margin-bottom: 1.5rem;
 }
 </style>

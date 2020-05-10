@@ -13,11 +13,16 @@ page(
   add-income-details-widget(v-if='!hasIncomeDetails')
 
   template(v-else)
-    p.p-descritpion.has-text-1(
-      data-test='openIncomeDetailsModal'
-      @click='openModal("IncomeDetails")'
-      v-html='introTitle'
-    )
+    p.p-description
+      span.has-text-1(v-html='introTitle')
+      | &nbsp;
+      i18n.has-text-1(
+        @click='handleIncomeClick'
+        :args='{ \
+          r1: `<button class="link js-btnInvite" data-test="openIncomeDetailsModal">`, \
+          r2: "</button>" \
+        }'
+      ) You can change this at any time by updating your {r1}income details{r2}.
 
     section(v-if='needsIncome && !hasPayments')
       .c-container-empty
@@ -28,36 +33,35 @@ page(
       nav.tabs(
         v-if='!needsIncome'
         :aria-label='L("Payments type")'
-        @click='open = false'
       )
         button.is-unstyled.tabs-link(
           v-for='(link, index) in tabItems'
           :key='index'
-          :class='{ "is-active": activeTab === link.url}'
+          :class='{ "is-active": ephemeral.activeTab === link.url}'
           :data-test='`link-${link.url}`'
-          :aria-expanded='activeTab === link.url'
-          @click='activeTab = link.url'
+          :aria-expanded='ephemeral.activeTab === link.url'
+          @click='ephemeral.activeTab = link.url'
         )
           | {{ link.title }}
           span.tabs-notification(v-if='link.notification') {{ link.notification }}
 
       // Remove condition -> the search should be available for every tab if more than x result
       search(
-        v-if='needsIncome || activeTab !== "todo"'
+        v-if='needsIncome || ephemeral.activeTab !== "PaymentRowTodo"'
         :placeholder='L("Search payments...")'
         :label='L("Search for a payment")'
-        v-model='searchText'
+        v-model='ephemeral.searchText'
       )
 
       .tab-section
         .c-container(v-if='hasPayments')
           payments-list(
             :titles='tableTitles'
-            :payments='paymentsDistribution'
-            :paymentsType='activeTab'
+            :paymentsList='paymentsList'
+            :paymentsType='ephemeral.activeTab'
           )
           .c-footer
-            .c-payment-record(v-if='!needsIncome && activeTab === "todo"')
+            .c-payment-record(v-if='!needsIncome && ephemeral.activeTab === "PaymentRowTodo"')
               i18n.c-payment-info(
                 tag='b'
                 data-test='paymentInfo'
@@ -66,8 +70,8 @@ page(
 
               i18n.button(
                 tag='button'
-                data-test='recorPayment'
-                @click='openModal("RecordPayment", { paymentsDistribution })'
+                data-test='recordPayment'
+                @click='openModal("RecordPayment", { paymentsList: paymentsTodo })'
               ) Record payments
             payments-pagination(v-else)
 
@@ -88,7 +92,8 @@ import PaymentsList from '@containers/payments/PaymentsList.vue'
 import PaymentsPagination from '@containers/payments/PaymentsPagination.vue'
 import MonthOverview from '@containers/payments/MonthOverview.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
-import { PAYMENT_PENDING, PAYMENT_CANCELLED, PAYMENT_ERROR, PAYMENT_COMPLETED, PAYMENT_NOT_RECEIVED } from '@model/contracts/payments/index.js'
+import { PAYMENT_NOT_RECEIVED } from '@model/contracts/payments/index.js'
+import { currentMonthstamp, prevMonthstamp } from '~/frontend/utils/time.js'
 import L, { LTags } from '@view-utils/translations.js'
 
 export default {
@@ -104,38 +109,26 @@ export default {
   },
   data () {
     return {
-      activeTab: '',
-      tabItems: [{
-        title: L('Todo'),
-        url: 'todo',
-        index: 0,
-        notification: 2
-      }, {
-        title: L('Sent'),
-        url: 'sent',
-        index: 1,
-        notification: 0
-      }, {
-        title: L('Received'),
-        url: 'received',
-        index: 2,
-        notification: 0
-      }],
-      searchText: ''
+      ephemeral: {
+        activeTab: 'PaymentRowReceived',
+        searchText: ''
+      }
     }
   },
   created () {
-    if (!this.needsIncome) this.activeTab = 'todo'
+    if (!this.needsIncome) this.ephemeral.activeTab = 'PaymentRowTodo'
   },
   computed: {
     ...mapGetters([
       'currentGroupState',
       'groupIncomeDistribution',
+      'groupIncomeAdjustedDistribution',
+      'paymentTotalFromUserToUser',
+      'groupMonthlyPayments',
       'ourGroupProfile',
       'groupSettings',
       'ourUsername',
-      'thisMonthsPayments',
-      'globalProfile'
+      'userDisplayName'
     ]),
     currency () {
       return currencies[this.groupSettings.mincomeCurrency]
@@ -143,9 +136,28 @@ export default {
     needsIncome () {
       return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'
     },
+    tabItems () {
+      const items = [{
+        title: L('Todo'),
+        url: 'PaymentRowTodo',
+        notification: this.paymentsTodo.length
+      }, {
+        title: L('Sent'),
+        url: 'PaymentRowSent',
+        notification: 0
+      }]
+      if (this.paymentsReceived.length > 0) {
+        items.push({
+          title: L('Received'),
+          url: 'PaymentRowReceived',
+          notification: 0
+        })
+      }
+      return items
+    },
     tableTitles () {
-      const firstTab = this.needsIncome ? L('Sent by') : L('Sent to')
-      return this.activeTab === 'todo' ? {
+      const firstTab = this.needsIncome ? L('Sent by') : L('Send to')
+      return this.ephemeral.activeTab === 'PaymentRowTodo' ? {
         one: firstTab,
         two: L('Amount'),
         three: L('Due in')
@@ -156,105 +168,173 @@ export default {
       }
     },
     introTitle () {
-      let copy = this.needsIncome ? L('You are currently {strong_}receiving{_strong} mincome. ', LTags('strong')) : L('You are currently {strong_}sending{_strong} mincome. ', LTags('strong'))
-      copy += L('You can change this at any time by updating your {r1}income details{r2}.', { r1: '<button class="link js-btnInvite">', r2: '</button>' })
-      return copy
+      return this.needsIncome
+        ? L('You are currently {strong_}receiving{_strong} mincome.', LTags('strong'))
+        : L('You are currently {strong_}sending{_strong} mincome.', LTags('strong'))
     },
-    paymentsDistribution () {
-      // TODO: make sure we create a new month if month roll's over
-      //       perhaps send a message to do that, however make sure
-      //       that there are no conflicts with timezones, to do that
-      //       we need to go by the server's time, and not our time.
-      //       https://github.com/okTurtles/group-income-simple/issues/531
-      // TODO: Have multiple frozen distributions based on new income details
-      // or new members, using any remainder leftover needed income from the
-      // previous distribution
-      const distribution = this.thisMonthsPayments.frozenDistribution || this.groupIncomeDistribution
-      return distribution
-        .filter(p => p[this.needsIncome ? 'to' : 'from'] === this.ourUsername)
-        // TODO: Add filter for the tab todo / sent / received
-        .map(p => {
-          const concerned = this.needsIncome ? 'from' : 'to'
-          p.username = p[concerned]
-          p.displayName = this.globalProfile(p[concerned]).displayName || p.username
-          return p
-        })
-        .filter(p => {
-          const inList = (n) => n.toUpperCase().indexOf(this.searchText.toUpperCase()) > -1
-          return !this.searchText || inList(p.username) || (p.displayName ? inList(p.displayName) : false)
-        })
-        .map(transfer => {
-          const { displayName, username, amount } = transfer
-          const { hash, data } = this.paymentFor(username)
-          return {
-            username,
-            displayName,
-            hash,
-            data,
-            amount: +this.currency.displayWithoutCurrency(amount),
-            amountFormatted: this.currency.displayWithCurrency(amount),
-            paymentClass: this.paymentClass(data),
-            paymentStatusText: this.paymentStatusText(data, username)
+    paymentsLate () {
+      const monthlyPayments = this.groupMonthlyPayments
+      const currentDistribution = this.groupIncomeAdjustedDistribution
+      const { pledgeAmount } = this.ourGroupProfile
+      const cMonthstamp = currentMonthstamp()
+      const pMonthstamp = prevMonthstamp(cMonthstamp)
+      const latePayments = []
+      const pastMonth = monthlyPayments[pMonthstamp]
+      if (pastMonth) {
+        for (const payment of pastMonth.lastAdjustedDistribution) {
+          if (payment.from === this.ourUsername && payment.amount > 0) {
+            // Let A = the amount we owe from the previous distribution.
+            // Let B = the total we've sent to payment.to from the current
+            //         month's paymentsFrom.
+            // Let C = the total amount we "owe" to payment.to from the
+            //         current month's distribution.
+            // Let D = the amount we're pledging this month
+            // Let E = the amount still unpaid for the previous month's distribution,
+            //         calculated as: C > 0 ? A : A + D - B
+            //
+            // If E > 0, then display a row for the late payment.
+            const A = payment.amount
+            const B = this.paymentTotalFromUserToUser(this.ourUsername, payment.to, cMonthstamp)
+            var C = currentDistribution
+              .filter(a => a.from === payment.from && a.to === payment.to)
+            C = C.length > 0 ? C[0].amount : 0
+            const D = pledgeAmount
+            const E = C > 0 ? A : A + D - B
+            if (E > 0) {
+              latePayments.push({
+                username: payment.to,
+                displayName: this.userDisplayName(payment.to),
+                amount: payment.amount, // TODO: include currency (what if it was changed?)
+                late: true,
+                checked: false // checkbox support in RecordPayments
+              })
+            }
           }
-        })
+        }
+      }
+      return latePayments
+    },
+    paymentsTodo () {
+      const payments = []
+      const ourUsername = this.ourUsername
+      const unadjusted = this.groupIncomeDistribution.filter(p => p.from === ourUsername)
+      const sentPayments = this.paymentsSent
+      for (const p of this.groupIncomeAdjustedDistribution) {
+        if (p.from === ourUsername) {
+          const existPayment = unadjusted.find(({ to }) => to === p.to) || { amount: 0 }
+          const amount = +this.currency.displayWithoutCurrency(p.amount)
+          const existingAmount = +this.currency.displayWithoutCurrency(existPayment.amount)
+          if (amount > 0) {
+            const partialAmount = existingAmount - amount
+            var existingPayment = {}
+            if (partialAmount > 0) {
+              const sent = sentPayments.find((s) => s.username === p.to && s.amount === partialAmount)
+              if (sent) {
+                existingPayment = { hash: sent.hash }
+              }
+            }
+            payments.push({
+              ...existingPayment,
+              username: p.to,
+              amount,
+              displayName: this.userDisplayName(p.to),
+              checked: false, // checkbox support in RecordPayments,
+              partial: partialAmount > 0,
+              total: existingAmount
+            })
+          }
+        }
+      }
+      const notReceived = sentPayments.filter(p => p.data.status === PAYMENT_NOT_RECEIVED)
+      return this.paymentsLate.concat(notReceived, payments)
+    },
+    paymentsSent () {
+      const monthlyPayments = this.groupMonthlyPayments
+      const payments = []
+      // TODO: support sort direction
+      for (const monthstamp of Object.keys(monthlyPayments).sort()) {
+        const { paymentsFrom } = monthlyPayments[monthstamp]
+        if (paymentsFrom) {
+          for (const toUser in paymentsFrom[this.ourUsername]) {
+            for (const paymentHash of paymentsFrom[this.ourUsername][toUser]) {
+              const { data, meta } = this.currentGroupState.payments[paymentHash]
+              const payment = {
+                hash: paymentHash,
+                data,
+                meta,
+                username: toUser,
+                displayName: this.userDisplayName(toUser),
+                date: meta.createdDate,
+                amount: data.amount // TODO: properly display and convert in the correct currency using data.currencyFromTo and data.exchangeRate
+              }
+              if (this.filterPayment(payment)) {
+                payments.push(payment)
+              }
+            }
+          }
+        }
+      }
+      // TODO: implement better / more correct sorting
+      return payments.sort((a, b) => a.date < b.date)
+    },
+    paymentsReceived () {
+      const monthlyPayments = this.groupMonthlyPayments[currentMonthstamp()]
+      const paymentsFrom = monthlyPayments && monthlyPayments.paymentsFrom
+      const payments = []
+      // TODO: support sort direction
+      if (paymentsFrom) {
+        for (const fromUser in paymentsFrom) {
+          for (const toUser in paymentsFrom[fromUser]) {
+            if (toUser === this.ourUsername) {
+              for (const paymentHash of paymentsFrom[fromUser][toUser]) {
+                const { data, meta } = this.currentGroupState.payments[paymentHash]
+                const payment = {
+                  hash: paymentHash,
+                  data,
+                  meta,
+                  username: fromUser,
+                  displayName: this.userDisplayName(fromUser),
+                  date: meta.createdDate,
+                  amount: data.amount // TODO: properly display and convert in the correct currency using data.currencyFromTo and data.exchangeRate
+                }
+                if (this.filterPayment(payment)) {
+                  payments.push(payment)
+                }
+              }
+            }
+          }
+        }
+      }
+      // TODO: implement better / more correct sorting
+      return payments.sort((a, b) => a.date < b.date)
+    },
+    paymentsList () {
+      return {
+        PaymentRowTodo: () => this.paymentsTodo,
+        PaymentRowSent: () => this.paymentsSent,
+        PaymentRowReceived: () => this.paymentsReceived
+      }[this.ephemeral.activeTab]()
     },
     hasIncomeDetails () {
       return !!this.ourGroupProfile.incomeDetailsType
     },
     hasPayments () {
-      return this.paymentsDistribution.length > 0 || this.searchText !== ''
+      return this.paymentsList.length > 0 || this.ephemeral.searchText !== ''
     }
   },
   methods: {
     openModal (name, props) {
       sbp('okTurtles.events/emit', OPEN_MODAL, name, props)
     },
-    // Payments
-    paymentFor (toUser) {
-      const payments = this.thisMonthsPayments.payments
-      const ourPayments = payments && payments[this.ourUsername]
-      const paymentHash = ourPayments && ourPayments[toUser]
-      const data = paymentHash && this.currentGroupState.payments[paymentHash].data
-      return data ? { hash: paymentHash, data } : { data: {} }
+    filterPayment (payment) {
+      const query = this.ephemeral.searchText
+      const { amount, username, displayName } = payment
+      return query === '' || `${amount}${username.toUpperCase()}${displayName.toUpperCase()}`.indexOf(query.toUpperCase()) !== -1
     },
-    paymentClass (paymentData) {
-      return paymentData.status ? {
-        [PAYMENT_PENDING]: 'has-text-1',
-        [PAYMENT_CANCELLED]: '',
-        [PAYMENT_ERROR]: 'has-text-weight-normal has-text-warning',
-        [PAYMENT_NOT_RECEIVED]: 'has-text-weight-normal has-text-warning',
-        [PAYMENT_COMPLETED]: 'has-text-success'
-      }[paymentData.status] : ''
-    },
-    paymentStatusText (paymentData, username) {
-      return paymentData.status ? {
-        [PAYMENT_PENDING]: L('Waiting for {username} confirmation...', { username }),
-        [PAYMENT_CANCELLED]: '',
-        [PAYMENT_ERROR]: L('There was an error processing this payment'),
-        [PAYMENT_NOT_RECEIVED]: L('The payment was not received by {username}.', { username }),
-        [PAYMENT_COMPLETED]: L('Payment confirmed!')
-      }[paymentData.status] : ''
-    // },
-    // showMarkAsPaid (payment) {
-    //   return !payment.hash ||
-    //     payment.data.status === PAYMENT_NOT_RECEIVED ||
-    //     payment.data.status === PAYMENT_CANCELLED
-    // },
-    // async markAsPayed (toUser, payment) {
-    //   try {
-    //     const paymentMessage = await sbp('gi.contracts/group/payment/create', {
-    //       toUser,
-    //       amount: payment.amount,
-    //       currency: this.currency.symbol,
-    //       txid: String(Math.random()),
-    //       status: PAYMENT_PENDING,
-    //       paymentType: PAYMENT_TYPE_MANUAL
-    //     }, this.$store.state.currentGroupId)
-    //     await sbp('backend/publishLogEntry', paymentMessage)
-    //   } catch (e) {
-    //     console.error(e)
-    //     alert(e.message)
-    //   }
+    handleIncomeClick (e) {
+      if (e.target.classList.contains('js-btnInvite')) {
+        sbp('okTurtles.events/emit', OPEN_MODAL, 'IncomeDetails')
+      }
     }
   }
 }
@@ -264,12 +344,12 @@ export default {
 @import "@assets/style/_variables.scss";
 
 // Header
-.p-descritpion {
+.p-description {
   margin-top: -1.5rem;
-  padding-bottom: $spacer;
+  padding-bottom: 1rem;
 
   @include desktop {
-    margin-top: -$spacer;
+    margin-top: -1rem;
     padding-bottom: 1.5rem;
   }
 }
@@ -287,7 +367,7 @@ export default {
   padding-top: 2.5rem;
 
   @include desktop {
-    padding-top: $spacer-xl;
+    padding-top: 4rem;
   }
 
   .c-description {
@@ -299,19 +379,25 @@ export default {
     display: inline-block;
     width: 8.25rem;
     height: 8.25rem;
-    margin-left: -$spacer-sm;
+    margin-left: -0.5rem;
     filter: contrast(0%) brightness(172%);
   }
 }
 
 .card .c-container-empty {
-  padding-top: $spacer-lg;
+  padding-top: 2rem;
 
   @include desktop {
     padding-top: 2.5rem;
   }
   .c-svg {
     filter: contrast(0%) brightness(186%);
+  }
+}
+
+.is-dark-theme {
+  .card .c-container-empty .c-svg {
+    opacity: 0.5;
   }
 }
 
