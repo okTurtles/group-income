@@ -156,7 +156,7 @@ export default {
       return items
     },
     tableTitles () {
-      const firstTab = this.needsIncome ? L('Sent by') : L('Sent to')
+      const firstTab = this.needsIncome ? L('Sent by') : L('Send to')
       return this.ephemeral.activeTab === 'PaymentRowTodo' ? {
         one: firstTab,
         two: L('Amount'),
@@ -392,6 +392,12 @@ export default {
   }
   .c-svg {
     filter: contrast(0%) brightness(186%);
+  }
+}
+
+.is-dark-theme {
+  .card .c-container-empty .c-svg {
+    opacity: 0.5;
   }
 }
 

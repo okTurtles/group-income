@@ -114,8 +114,6 @@ export default {
 
       try {
         // Dummy logic, obviously.
-        this.updateProgress(L('Deleting local data...'), 0.05)
-        await this.dummy3secTask()
         this.updateProgress(L('Deleting local data...'), 0.25)
         await this.dummy3secTask()
         this.updateProgress(L('Downloading new data...'), 0.50)

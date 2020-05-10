@@ -436,10 +436,6 @@ $barColor: #c4c4c4;
   transform: translate(-50%, 0);
 }
 
-.dark .slide-bar-separate-text {
-  color: #fff;
-}
-
 .slide-bar-separate {
   position: relative;
   top: -15px;

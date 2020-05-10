@@ -35,7 +35,7 @@ import sbp from '~/shared/sbp.js'
 import { CLOSE_MODAL } from '@utils/events.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import currencies from '@view-utils/currencies.js'
-import { humanDate } from '@view-utils/humanDate.js'
+import { humanDate } from '@utils/time.js'
 
 export default {
   name: 'PaymentDetail',

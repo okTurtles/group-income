@@ -40,7 +40,7 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background' v-if='
               rows='4'
             )
 
-        .buttons
+        .buttons.c-buttons
           i18n.is-outlined(
             tag='button'
             @click='closeModal'
@@ -245,7 +245,7 @@ export default {
   margin-top: 1rem;
 }
 
-.buttons {
+.c-buttons {
   @include phone {
     flex-direction: column-reverse;
 
@@ -253,8 +253,11 @@ export default {
       margin-top: 1rem;
       margin-right: 0;
     }
-  }
 
+    button {
+      width: 100%;
+    }
+  }
 }
 
 // Sucess

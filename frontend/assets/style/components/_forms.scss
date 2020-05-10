@@ -53,7 +53,7 @@ legend.legend {
   width: 100%;
   border-radius: $radius;
   padding: 0 0.625rem;
-  background-color: #fff;
+  background-color: $background_0;
   border: 1px solid $general_0;
   font-size: 1rem;
   line-height: 1.5rem;
@@ -505,5 +505,20 @@ p.error {
 
   &:disabled:not(:checked)::after {
     opacity: 0.6;
+  }
+}
+
+.is-dark-theme {
+  .radio :last-child::after {
+    background: $text_0;
+  }
+
+  .checkbox :last-child::after {
+    color: $white;
+  }
+
+  .switch:checked:hover {
+    background: var(--primary_0);
+    border-color: transparent;
   }
 }

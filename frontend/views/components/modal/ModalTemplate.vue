@@ -74,7 +74,7 @@ export default {
   width: 100%;
   height: 100%;
   margin: 0 auto;
-  background: #fff;
+  background: $background_0;
 
   @include desktop {
     position: relative;
@@ -198,17 +198,17 @@ export default {
 }
 
 .c-modal-close {
-  background-color: #fff;
+  background-color: $background_0;
 }
 
 // Mofifiers
 .has-background {
   .c-modal-close {
-    background-color: #fff;
+    background-color: $background_0;
   }
 
   .c-modal-header {
-    background-color: #f5f5f5;
+    background-color: $general_2;
   }
 
   .c-modal-body {
@@ -216,7 +216,7 @@ export default {
   }
 
   .c-modal-footer {
-    background-color: #f5f5f5;
+    background-color: $general_2;
     margin: 1rem;
     padding: 1rem;
 

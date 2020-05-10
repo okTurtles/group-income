@@ -19,7 +19,7 @@ span.c-twrapper(
 
   .c-tooltip(
     :style='styles'
-    :class='{"has-text-center": isTextCenter, "is-active": isActive, manual}'
+    :class='{"has-text-center": isTextCenter, "is-active": isActive, manual, "is-dark-theme": $store.getters.isDarkTheme}'
     v-if='isActive || isVisible'
     v-append-to-body='{ manual }'
   )
@@ -210,7 +210,10 @@ export default {
   border-radius: $radius;
   padding: 0.5rem;
   z-index: $zindex-tooltip;
-  color: #fff;
+  pointer-events: none;
+  background-color: $text_0;
+  color: $white;
+  opacity: 0.95;
 
   &.has-text-center {
     text-align: center;
@@ -218,6 +221,14 @@ export default {
 
   &.manual {
     max-width: auto;
+  }
+
+  &.is-dark-theme {
+    background-color: $general_1;
+
+    .card {
+      background-color: $general_1;
+    }
   }
 
   &:focus {
@@ -237,4 +248,5 @@ export default {
     background-color: rgba(0, 0, 0, 0.7);
   }
 }
+
 </style>
