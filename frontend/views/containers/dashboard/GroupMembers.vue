@@ -18,8 +18,8 @@
       :key='username'
     )
       profile-card(:username='username')
-        avatar(v-if='invitedBy' size='sm')
-        avatar-user(v-else :username='username' size='sm')
+        avatar(v-if='invitedBy' size='sm' data-test='openMembersProfileCard')
+        avatar-user(v-else :username='username' size='sm' data-test='openMemberProfileCard')
 
         button.is-unstyled.c-name.has-ellipsis(data-test='username') {{ localizedName(username) }}
         i18n.pill.is-neutral(v-if='invitedBy' data-test='pillPending') pending

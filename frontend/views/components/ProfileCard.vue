@@ -35,9 +35,9 @@ tooltip(
         data-test='buttonEditBio'
       ) Add a bio
 
-      div(v-if='hasIncomeDetails')
+      div(v-if='hasIncomeDetails' data-test='profilePaymentMethods')
         ul.c-payment-list
-          li.c-payment-item(v-for='(paymentMethod, name) in this.paymentMethods')
+          li.c-payment-item(v-for='(paymentMethod, name) in this.paymentMethods' data-test='profilePaymentMethod')
             span.c-payment-type.has-text-0.has-text-bold {{paymentMethod.name}}
             span.has-text-1 {{paymentMethod.value}}
 

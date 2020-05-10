@@ -15,6 +15,7 @@ span.c-twrapper(
       v-if='(isActive || isVisible) && manual'
       @click='toggle'
       v-append-to-body=''
+      data-test='closeProfileCard'
     )
 
   .c-tooltip(

@@ -271,6 +271,27 @@ describe('Payments', () => {
     cy.closeModal()
   })
 
+  it('user1 have their payment info on the profile card', () => {
+    cy.getByDT('openProfileCard').click()
+
+    cy.getByDT('profilePaymentMethods').within(() => {
+      cy.get('ul').children().should('have.length', 3)
+      cy.getByDT('profilePaymentMethod').eq(0).within(() => {
+        cy.get('span').eq(0).should('contain', 'bitcoin')
+        cy.get('span').eq(1).should('contain', 'h4sh-t0-b3-s4ved')
+      })
+      cy.getByDT('profilePaymentMethod').eq(1).within(() => {
+        cy.get('span').eq(0).should('contain', 'other')
+        cy.get('span').eq(1).should('contain', 'IBAN: 12345')
+      })
+      cy.getByDT('profilePaymentMethod').eq(2).within(() => {
+        cy.get('span').eq(0).should('contain', 'other')
+        cy.get('span').eq(1).should('contain', 'MBWAY: 91 2345678')
+      })
+    })
+    cy.getByDT('closeProfileCard').click()
+  })
+
   it('user1 adds non monetary contribution', () => {
     addNonMonetaryContribution('Portuguese classes')
 
@@ -330,6 +351,35 @@ describe('Payments', () => {
     assertContributionsWidget({
       nonMonetaryStatus: 'You are contributing.'
     })
+  })
+
+  it('user1 have their payment info on the member list profile card', () => {
+    cy.getByDT('dashboard', 'a').click()
+    cy.getByDT('openMemberProfileCard').eq(0).click()
+
+    cy.log('The first member card should not contain payment info')
+    cy.getByDT('profilePaymentMethods').should('not.exist')
+    cy.getByDT('closeProfileCard').click()
+
+    cy.log('The last member card should contain payments info')
+    cy.getByDT('openMemberProfileCard').eq(3).click()
+    cy.getByDT('profilePaymentMethods').within(() => {
+      cy.get('ul').children().should('have.length', 3)
+      cy.getByDT('profilePaymentMethod').eq(0).within(() => {
+        cy.get('span').eq(0).should('contain', 'bitcoin')
+        cy.get('span').eq(1).should('contain', 'h4sh-t0-b3-s4ved')
+      })
+      cy.getByDT('profilePaymentMethod').eq(1).within(() => {
+        cy.get('span').eq(0).should('contain', 'other')
+        cy.get('span').eq(1).should('contain', 'IBAN: 12345')
+      })
+      cy.getByDT('profilePaymentMethod').eq(2).within(() => {
+        cy.get('span').eq(0).should('contain', 'other')
+        cy.get('span').eq(1).should('contain', 'MBWAY: 91 2345678')
+      })
+    })
+
+    cy.getByDT('closeProfileCard').click(('topLeft'))
   })
 
   it('user2 pledges $100 and sees their contributions.', () => {

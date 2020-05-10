@@ -4,7 +4,7 @@
   data-test='userProfile'
 )
   profile-card(:username='ourUsername' direction='top-left')
-    button.is-unstyled.c-avatar-user
+    button.is-unstyled.c-avatar-user(data-test='openProfileCard')
       avatar-user(:username='ourUsername' size='sm')
       .c-user
         strong(
