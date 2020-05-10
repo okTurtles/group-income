@@ -16,10 +16,11 @@
 
 <script>
 import modalMixins from './ModalMixins.js'
+import trapFocus from '@utils/trapFocus.js'
 
 export default {
   name: 'ModalBaseTemplate',
-  mixins: [modalMixins],
+  mixins: [modalMixins, trapFocus],
   props: {
     fullscreen: Boolean
   }
