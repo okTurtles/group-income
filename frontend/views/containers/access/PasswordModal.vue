@@ -68,8 +68,6 @@ import PasswordForm from '@containers/access/PasswordForm.vue'
 import { required, minLength } from 'vuelidate/lib/validators'
 import sameAs from 'vuelidate/lib/validators/sameAs.js'
 import L from '@view-utils/translations.js'
-import { OPEN_MODAL } from '@utils/events.js'
-import sbp from '~/shared/sbp.js'
 
 export default {
   name: 'PasswordModal',
@@ -119,9 +117,6 @@ export default {
     closeModal () {
       // We access directly the modal here to avoid broacasting event to every possible modal
       this.$refs.modalTemplate.close()
-    },
-    openModal (mode) {
-      sbp('okTurtles.events/emit', OPEN_MODAL, mode)
     },
     async changePassword () {
       try {
