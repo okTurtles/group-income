@@ -1,6 +1,8 @@
 const trapFocus = {
   data () {
     return {
+      // focusedElement used when $el is not available (ex: the tooltip)
+      focusedElement: null,
       focusableElements: 'a[href], area[href], ' +
         'input:not([disabled]), select:not([disabled]), textarea:not([disabled]), ' +
         'button:not([disabled]), iframe, object, embed, [tabindex="0"], [contenteditable]'
@@ -13,7 +15,8 @@ const trapFocus = {
       // ...and focus it for keyboard/screen reader users
       el.focus()
     },
-    trapFocus (e, el = this.$el) {
+    trapFocus (e) {
+      const el = this.focusedElement || this.$el
       // Trap focus on modal while navigating through clickable elements only
       if (e.key === 'Tab') {
         // look for focusableChilds each time tab is pressed

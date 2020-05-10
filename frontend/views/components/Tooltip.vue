@@ -168,7 +168,8 @@ export default {
         window.addEventListener('resize', $this.adjustPosition)
 
         if (bindings.value && bindings.value.manual) {
-          document.addEventListener('keydown', e => $this.trapFocus(e, el))
+          $this.focusedElement = el
+          document.addEventListener('keydown', $this.trapFocus)
           window.addEventListener('keyup', $this.handleKeyUp)
           $this.lastFocus = document.activeElement
           $this.focusEl(el)
@@ -180,7 +181,8 @@ export default {
           el.parentNode.removeChild(el)
         }
         if (bindings.value && bindings.value.manual) {
-          document.removeEventListener('keydown', e => $this.trapFocus(e, el))
+          $this.focusedElement = null
+          document.removeEventListener('keydown', $this.trapFocus)
           window.removeEventListener('keyup', $this.handleKeyUp)
           // move focus to latest focused element before opening the tooltip.
           $this.lastFocus.focus()

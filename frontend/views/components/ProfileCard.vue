@@ -38,7 +38,7 @@ tooltip(
       div(v-if='hasIncomeDetails')
         ul.c-payment-list
           li.c-payment-item(v-for='(paymentMethod, name) in this.paymentMethods')
-            span.c-payment-type.has-text-0.has-text-bold {{name}}
+            span.c-payment-type.has-text-0.has-text-bold {{paymentMethod.name}}
             span.has-text-1 {{paymentMethod.value}}
 
         i18n.link(
@@ -171,7 +171,7 @@ export default {
 }
 
 .is-active .c-profile {
-  animation: zoom 500ms both cubic-bezier(0.165, 0.84, 0.44, 1);
+  animation: zoom 100ms both cubic-bezier(0.165, 0.84, 0.44, 1);
   @include phone {
     animation-name: enterFromBottom;
   }
