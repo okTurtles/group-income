@@ -4,6 +4,7 @@
   )
   .c-bg
   .c-marks(v-if='hasMarks' :style='marksStyle')
+  .c-bar.is-soft(v-if='percentSoft' :style='`width: ${percentSoft}; ${ephemeral.widthZero}`')
   .c-bar(:style='`width: ${percent}; ${ephemeral.widthZero}`')
 </template>
 
@@ -13,6 +14,7 @@ export default {
   props: {
     max: Number,
     value: Number,
+    secValue: Number, // When there's a 2nd value, e.g MonthOverview
     hasMarks: Boolean
   },
   data: () => ({
@@ -32,6 +34,10 @@ export default {
   computed: {
     percent () {
       return `${100 * this.value / this.max}%`
+    },
+    percentSoft () {
+      if (!this.secValue) return false
+      return `${100 * this.secValue / this.max}%`
     },
     marksStyle () {
       const color = this.percent === '100%'
@@ -92,6 +98,10 @@ export default {
 
   .has-marks:not(.is-completed) & {
     border-radius: 0.5rem 0 0 0.5rem;
+  }
+
+  &.is-soft {
+    background-color: $primary_1;
   }
 }
 

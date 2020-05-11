@@ -37,7 +37,7 @@ export default {
   },
   props: {
     payment: {
-      type: Object, // { index, checked, date, isLate, amount, username, displayName }
+      type: Object, // { index, checked, ...paymentData }
       required: true
     }
   },

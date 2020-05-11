@@ -16,9 +16,9 @@ modal-template(ref='modal' v-if='payment' :a11yTitle='L("Payment details")')
     li.c-payment-list-item
       i18n.has-text-1 Mincome at the time
       strong {{ withCurrency(payment.data.groupMincome) }}
-    li.c-payment-list-item.c-column(v-if='payment.memo')
+    li.c-payment-list-item.c-column(v-if='payment.data.memo')
       i18n.has-text-1 Notes
-      p {{ payment.memo }}
+      p.has-text-bold {{ payment.data.memo }}
 
   .buttons
     i18n.button.is-danger.is-outlined.is-small(

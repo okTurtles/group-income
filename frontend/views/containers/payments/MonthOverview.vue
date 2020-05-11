@@ -16,6 +16,7 @@
       progress-bar.c-progress(
         :max='item.max'
         :value='item.value'
+        :secValue='item.hasPartials ? item.value + 0.5 : 0'
         :hasMarks='item.hasMarks'
       )
       p(:class='{"has-text-success": item.max === item.value}')
@@ -67,8 +68,7 @@ export default {
       return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
     },
     paymentSummary () {
-      // TODO support partial payments
-      const { paymentsTotal, paymentsDone, amountTotal, amountDone } = this.paymentStatus
+      const { paymentsTotal, paymentsDone, hasPartials, amountTotal, amountDone } = this.paymentStatus
 
       const pS = [
         {
@@ -76,6 +76,7 @@ export default {
           value: paymentsDone,
           max: paymentsTotal,
           hasMarks: true,
+          hasPartials,
           label: L('{value} out of {max}', {
             value: paymentsDone,
             max: paymentsTotal
@@ -108,21 +109,24 @@ export default {
       return pS
     },
     paymentStatus () {
-      // TODO/BUG support partial payments. paymentsTotal will be wrong.
       const { todo, sent, toBeReceived, received } = this.paymentsData
       const isCompleted = (p) => p.data.status === PAYMENT_COMPLETED
+      const isPartialCount = (list) => list.filter(p => p.partial).length
       const getUniquePayments = (payments) => {
         // We need to filter the partial payments already done (sent/received).
-        // E.G. I need to send 4 payments. I have done 2 partial and 3 uniques.
-        // A quick way is to list all usernames I sent to and find the unique ones.
+        // E.G. We need to send 4 payments. We've sent 1 full payment and another
+        // in 2 parts. The total must be 2, instead of 3. A quick way to solve this
+        // is by listing all usernames we sent to and count the uniq ones.
         const users = payments.map(p => p.username)
         return uniq(users).length
       }
 
       if (this.needsIncome) {
         const receivedCompleted = received.filter(isCompleted)
+        const pPartials = isPartialCount(toBeReceived)
         return {
-          paymentsDone: receivedCompleted.length,
+          paymentsDone: getUniquePayments(received) - pPartials,
+          hasPartials: pPartials > 0,
           paymentsTotal: getUniquePayments([...toBeReceived, ...received]),
           amountDone: receivedCompleted.reduce((total, p) => total + p.data.amount, 0),
           amountTotal: toBeReceived.reduce((total, p) => total + p.amount, 0) + received.reduce((total, p) => total + p.amount, 0)
@@ -130,8 +134,10 @@ export default {
       }
 
       const sentCompleted = sent.filter(isCompleted)
+      const pPartials = isPartialCount(todo)
       return {
-        paymentsDone: sentCompleted.length,
+        paymentsDone: getUniquePayments(sent) - pPartials,
+        hasPartials: pPartials > 0,
         paymentsTotal: getUniquePayments([...todo, ...sent]),
         amountDone: sentCompleted.reduce((total, p) => total + p.data.amount, 0),
         amountTotal: todo.reduce((total, p) => total + p.amount, 0) + sent.reduce((total, p) => total + p.amount, 0)

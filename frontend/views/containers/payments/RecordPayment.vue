@@ -166,12 +166,13 @@ export default {
           // TODO: remember when creating 'gi.contracts/group/payment' to set the payment
           //       currency using:
           //       getters.thisMonthsPaymentInfo.firstMonthsCurrency || getters.groupMincomeCurrency
+          const memo = this.form.memo
           const paymentInfo = {
             toUser: payment.username,
             amount: +pRecord.amount,
             total: payment.amount,
-            // Even if everything is payed, it might be from a previous partial payment, so mark it has partial.
-            // TODO - Maybe this can fix the bug on Payments.vue when looking for other partials' hash.
+            // Even if amount is the same, it can be a partial from a previous partial payment
+            // TODO: Maybe this can fix the Payments.vue bug when looking for other partials' hash.
             partial: payment.partial || pRecord.amount - payment.amount > 0,
             monthstamp: payment.monthstamp,
             currencyFromTo: ['USD', groupCurrency], // TODO: this!
@@ -180,7 +181,7 @@ export default {
             txid: '' + Math.random(),
             status: PAYMENT_PENDING,
             paymentType: PAYMENT_TYPE_MANUAL,
-            memo: this.form.memo + ' ' // TODO/BUG with flowTyper. Empty string does not pass validations.
+            ...(memo ? { memo } : {}) // TODO/BUG with flowTyper validation. Empty string '' fails.
           }
           const msg = await sbp('gi.actions/group/payment', paymentInfo, this.currentGroupId)
           // TODO: hack until /payment supports sending completed payment
