@@ -1,85 +1,139 @@
 <template lang='pug'>
 span.c-twrapper(
-  tabindex='0'
+  :tabindex='manual ? "-1" : "0"'
+  @click='toggle'
   @mouseenter='show'
   @mouseleave='hide'
   @focus='show'
   @blur='hide'
-  aria-label='text'
+  :aria-label='text'
 )
   slot
+
+  transition(name='fade')
+    .c-background(
+      v-if='(isActive || isVisible) && manual'
+      @click='toggle'
+      v-append-to-body=''
+      data-test='closeProfileCard'
+    )
+
   .c-tooltip(
-    :style='stylesPosition'
-    :class='{"has-text-center": isTextCenter, "is-dark-theme": $store.getters.isDarkTheme}'
+    :style='styles'
+    :class='{"has-text-center": isTextCenter, "is-active": isActive, manual, "is-dark-theme": $store.getters.isDarkTheme}'
     v-if='isActive || isVisible'
-    v-append-to-body=''
+    v-append-to-body='{ manual }'
   )
+    // Default tooltip is text
     template(v-if='text') {{text}}
+    // But any content can fit in
     slot(v-else='' name='tooltip')
 </template>
 
 <script>
-/*
-NOTE: when needed, this component can be improved with more options:
-- Click instead of hover
-- More directions
-- Controlled tooltip from outside
-For now I've just did the needed API for this particular task but I think it's pretty easy to scale it.
-*/
+import { TABLET } from '@view-utils/breakpoints.js'
+import trapFocus from '@utils/trapFocus.js'
+
 export default {
   name: 'Tooltip',
+  mixins: [trapFocus],
   props: {
     text: String,
     // Force to show tooltip manually
     isVisible: Boolean,
-    isTextCenter: Boolean,
+    manual: {
+      type: Boolean,
+      default: false
+    },
+    isTextCenter: {
+      type: Boolean,
+      default: false
+    },
     direction: {
       type: String,
-      validator: (value) => ['bottom', 'bottom-end', 'right', 'right-start', 'top'].includes(value),
+      validator: (value) => ['bottom', 'bottom-end', 'right', 'left', 'top', 'top-left'].includes(value),
       default: 'bottom'
+    },
+    opacity: {
+      type: Number,
+      required: false,
+      default: 0.95
     }
   },
   data: () => ({
     trigger: null,
     tooltip: null,
+    tooltipHeight: 0,
+    tooltipWidth: 0,
     isActive: false,
-    stylesPosition: null
+    styles: null,
+    lastFocus: null
   }),
   methods: {
     show () {
-      this.isActive = true
+      if (!this.manual) this.isActive = true
     },
     hide () {
-      this.isActive = false
+      if (!this.manual) this.isActive = false
+    },
+    // Used by parent (ProfileCard.vue)
+    toggle () {
+      if (!this.manual) { return false }
+      this.isActive = !this.isActive
+    },
+    handleKeyUp (e) {
+      // Close after pressing escape
+      if (e.key === 'Escape') {
+        this.isActive = false
+      }
     },
     adjustPosition () {
       this.trigger = this.$el.getBoundingClientRect()
       const { scrollX, scrollY } = window
       const { width, height, left, top } = this.trigger
+      const windowHeight = window.innerHeight
       const spacing = 16
-      let x
-      let y
+      let x, y
 
-      // TODO/BUG: If the tooltip transpasses the window edges, it get's cutted.
-      // In the future it must be smart enough to adjust its position.
-      if (this.direction === 'right') {
-        x = scrollX + left + width + spacing
-        y = scrollY + top + height / 2 - this.tooltip.height / 2
-      } else if (this.direction === 'right-start') {
-        x = scrollX + left + width + spacing
-        y = scrollY + top
-      } else if (this.direction === 'bottom-end') {
-        x = scrollX + left + width - this.tooltip.width
-        y = scrollY + top + height + spacing
-      } else if (this.direction === 'top') {
-        x = scrollX + left + width / 2 - this.tooltip.width / 2
-        y = scrollY + top - (this.tooltip.height + spacing)
-      } else { // 'bottom' as default
-        x = scrollX + left + width / 2 - this.tooltip.width / 2
-        y = scrollY + top + height + spacing
+      if (this.manual && window.innerWidth < TABLET) {
+        y = windowHeight - this.tooltipHeight // Position at the bottom of the screen on mobile
+        x = -8 // Remove tooltip padding
+      } else {
+        y = scrollY + top + height / 2 - this.tooltipHeight / 2
+        if (y < 0) y = spacing
+        if (y + this.tooltipHeight > windowHeight) y = windowHeight - spacing - this.tooltipHeight
+
+        switch (this.direction) {
+          case 'right':
+            x = scrollX + left + width + spacing
+            break
+          case 'left':
+            x = scrollX + left - spacing - this.tooltipWidth
+            break
+          case 'bottom-end':
+            x = scrollX + left + width - this.tooltipWidth
+            y = scrollY + top + height + spacing
+            break
+          case 'top':
+            x = scrollX + left + width / 2 - this.tooltipWidth / 2
+            y = scrollY + top - (this.tooltipHeight + spacing)
+            break
+          case 'top-left':
+            y = y - height - spacing
+            x = scrollX + left + spacing
+            break
+          default: // 'bottom' as default
+            x = scrollX + left + width / 2 - this.tooltipWidth / 2
+            y = scrollY + top + height + spacing
+        }
       }
 
-      this.stylesPosition = `transform: translate(${x}px, ${y}px)`
+      this.styles = {
+        transform: `translate(${x}px, ${y}px)`,
+        pointerEvents: this.manual ? 'initial' : 'none',
+        backgroundColor: this.manual ? 'transparent' : 'var(--text_0)',
+        opacity: this.opacity
+      }
     }
   },
   directives: {
@@ -91,19 +145,50 @@ export default {
         document.body.appendChild(el)
 
         const $this = vnode.context // Vue component instance
-
         if (!$this.tooltip) {
           $this.tooltip = el.getBoundingClientRect()
+        }
+
+        if (!$this.tooltipWidth) {
+          if ($this.$slots.tooltip) {
+            const elm = $this.$slots.tooltip[0].elm
+            if (elm.offsetWidth) {
+              $this.tooltipWidth = elm.offsetWidth
+              $this.tooltipHeight = elm.offsetHeight
+            }
+          } else {
+            const elm = el.getBoundingClientRect()
+            $this.tooltipWidth = elm.width
+            $this.tooltipHeight = elm.height
+          }
         }
 
         // That way the adjustPosition() method can have the same logic
         // applied in every tooltip as expected
         $this.adjustPosition()
+        window.addEventListener('resize', $this.adjustPosition)
+
+        if (bindings.value && bindings.value.manual) {
+          $this.focusedElement = el
+          document.addEventListener('keydown', $this.trapFocus)
+          window.addEventListener('keyup', $this.handleKeyUp)
+          $this.lastFocus = document.activeElement
+          $this.focusEl(el)
+        }
       },
-      unbind (el) {
+      unbind (el, bindings, vnode) {
+        const $this = vnode.context
         if (el.parentNode) {
           el.parentNode.removeChild(el)
         }
+        if (bindings.value && bindings.value.manual) {
+          $this.focusedElement = null
+          document.removeEventListener('keydown', $this.trapFocus)
+          window.removeEventListener('keyup', $this.handleKeyUp)
+          // move focus to latest focused element before opening the tooltip.
+          $this.lastFocus.focus()
+        }
+        window.removeEventListener('resize', $this.adjustPosition)
       }
     }
   }
@@ -135,8 +220,33 @@ export default {
     text-align: center;
   }
 
+  &.manual {
+    max-width: auto;
+  }
+
   &.is-dark-theme {
     background-color: $general_1;
+
+    .card {
+      background-color: $general_1;
+    }
+  }
+
+  &:focus {
+    outline: none; // TODO #889
+  }
+}
+
+.c-background {
+  position: absolute;
+  z-index: $zindex-tooltip - 1;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+
+  @include phone {
+    background-color: rgba(0, 0, 0, 0.7);
   }
 }
 
