@@ -1,25 +1,21 @@
 <template lang='pug'>
-// Stop initialization if payment not present
 modal-template(ref='modal' v-if='payment' :a11yTitle='L("Payment details")')
   template(slot='title')
     i18n Payment details
 
-  .is-title-2.c-title {{ currency(payment.amount) }}
+  .is-title-2.c-title {{ withCurrency(payment.data.amount) }}
   .c-subtitle.has-text-1 {{ subtitleCopy }}
 
   ul.c-payment-list
     li.c-payment-list-item
       i18n.has-text-1 Date & Time
-      // TODO humanDate date should be required.
       strong {{ humanDate(this.payment.date, { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }}
     li.c-payment-list-item
       i18n.has-text-1 Relative to
-      // TODO this. How to get this info? Q: monthstamp must contain the year.
-      strong {{ humanDate(payment.relativeTo, { month: 'long' }) }}
+      strong {{ humanDate(dateFromMonthstamp(payment.monthstamp), { month: 'long', year: 'numeric' }) }}
     li.c-payment-list-item
       i18n.has-text-1 Mincome at the time
-      // TODO this. How to get this info? Q: Add to recordPayment
-      strong {{ currency(groupSettings.mincomeAmount) }}
+      strong {{ withCurrency(payment.data.groupMincome) }}
     li.c-payment-list-item.c-column(v-if='payment.memo')
       i18n.has-text-1 Notes
       p {{ payment.memo }}
@@ -38,7 +34,7 @@ import sbp from '~/shared/sbp.js'
 import { CLOSE_MODAL } from '@utils/events.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import currencies from '@view-utils/currencies.js'
-import { humanDate } from '@utils/time.js'
+import { dateFromMonthstamp, humanDate } from '@utils/time.js'
 
 export default {
   name: 'PaymentDetail',
@@ -63,8 +59,8 @@ export default {
     ...mapGetters([
       'groupSettings'
     ]),
-    currency () {
-      return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
+    withCurrency () {
+      return currencies[this.payment.data.currencyFromTo[0]].displayWithCurrency
     },
     subtitleCopy () {
       const args = { name: this.payment.displayName }
@@ -76,9 +72,9 @@ export default {
       this.$refs.modal.close()
     },
     async submit () {
-      console.log('Todo: Implement cancel payment')
-      this.closeModal()
+      alert('TODO: Implement cancel payment')
     },
+    dateFromMonthstamp,
     humanDate
   },
   validations: {

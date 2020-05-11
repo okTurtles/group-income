@@ -7,7 +7,7 @@ page(
 )
   template(#title='') {{ L('Payments') }}
 
-  template(#sidebar='' v-if='hasPayments || needsIncome')
+  template(#sidebar='' v-if='hasPayments || (hasPayments && needsIncome)')
     month-overview(:paymentsData='paymentsAllData')
 
   add-income-details-widget(v-if='!hasIncomeDetails')
@@ -65,8 +65,8 @@ page(
               i18n.c-payment-info(
                 tag='b'
                 data-test='paymentInfo'
-                :args='{ total: "$110", count: "3"}'
-              ) {total} in total, to {count} members
+                :args='tableFooterStatus'
+              ) {amount} in total, to {count} members
 
               i18n.button(
                 tag='button'
@@ -93,7 +93,7 @@ import PaymentsPagination from '@containers/payments/PaymentsPagination.vue'
 import MonthOverview from '@containers/payments/MonthOverview.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/payments/index.js'
-import { currentMonthstamp, prevMonthstamp } from '~/frontend/utils/time.js'
+import { currentMonthstamp, dateFromMonthstamp, lastDayOfMonth, prevMonthstamp } from '~/frontend/utils/time.js'
 import L, { LTags } from '@view-utils/translations.js'
 
 export default {
@@ -182,6 +182,9 @@ export default {
       const pastMonth = monthlyPayments[pMonthstamp]
       // QUESTION: Is this only from the previous month? What if there are payments from 2-3 months ago?
       if (pastMonth) {
+        const pDate = dateFromMonthstamp(pMonthstamp)
+        const dueIn = lastDayOfMonth(pDate)
+
         for (const payment of pastMonth.lastAdjustedDistribution) {
           if (payment.from === this.ourUsername && payment.amount > 0) {
             // Let A = the amount we owe from the previous distribution.
@@ -204,11 +207,11 @@ export default {
             if (E > 0) {
               latePayments.push({
                 username: payment.to,
-                displayName: this.userDisplayName(payment.to),
+                displayName: this.userDisplayName(payment.to), // TODO delete this
                 amount: payment.amount, // TODO: include currency (what if it was changed?)
-                late: true,
-                monthstamp: pMonthstamp,
-                checked: false // checkbox support in RecordPayments
+                checked: false, // checkbox support in RecordPayments // TODO delete this.
+                isLate: true,
+                date: dueIn
               })
             }
           }
@@ -222,6 +225,9 @@ export default {
       const unadjusted = this.groupIncomeDistribution.filter(p => p.from === ourUsername)
       const sentPayments = this.paymentsSent
       const cMonthstamp = currentMonthstamp()
+      const pDate = dateFromMonthstamp(cMonthstamp)
+      const dueIn = lastDayOfMonth(pDate)
+
       for (const p of this.groupIncomeAdjustedDistribution) {
         if (p.from === ourUsername) {
           const existPayment = unadjusted.find(({ to }) => to === p.to) || { amount: 0 }
@@ -243,9 +249,10 @@ export default {
               amount,
               displayName: this.userDisplayName(p.to),
               checked: false, // checkbox support in RecordPayments,
-              monthstamp: cMonthstamp,
               partial: partialAmount > 0,
-              total: existingAmount
+              total: existingAmount,
+              date: dueIn,
+              isLate: false
             })
           }
         }
@@ -375,6 +382,13 @@ export default {
     },
     hasPayments () {
       return this.paymentsListData.length > 0 || this.ephemeral.searchText !== ''
+    },
+    tableFooterStatus () {
+      const amount = this.paymentsTodo.reduce((total, p) => total + p.amount, 0)
+      return {
+        amount: this.currency.displayWithCurrency(amount),
+        count: this.paymentsTodo.length
+      }
     }
   },
   methods: {

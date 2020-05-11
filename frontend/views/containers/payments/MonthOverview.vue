@@ -138,8 +138,8 @@ export default {
       }
     },
     notReceivedPayments () {
-      const { todo, received } = this.paymentsData
-      const payments = this.needsIncome ? received : todo
+      const { received, sent } = this.paymentsData
+      const payments = this.needsIncome ? received : sent
 
       return payments.filter(p => p.data.status === PAYMENT_NOT_RECEIVED).length
     },
@@ -158,6 +158,7 @@ export default {
     margin-bottom: 1.75rem;
     margin-top: -0.25rem;
   }
+
   &-item {
     margin-bottom: 3rem;
 

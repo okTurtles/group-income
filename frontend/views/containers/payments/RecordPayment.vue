@@ -112,6 +112,7 @@ export default {
       'currentGroupId'
     ]),
     ...mapGetters([
+      'groupSettings',
       'groupMincomeCurrency',
       'thisMonthsPaymentInfo'
     ]),
@@ -143,6 +144,7 @@ export default {
               amount: +payment.amount, // TODO/BUG do not modify payment.amout directly on RecordPaymentRow...
               total: payment.amount, // ...we need to know it here, to know if it's a partial payment or not.
               currencyFromTo: ['USD', groupCurrency], // TODO: this!
+              groupMincome: this.groupSettings.mincomeAmount,
               exchangeRate: 1,
               txid: '' + Math.random(),
               status: PAYMENT_PENDING,
