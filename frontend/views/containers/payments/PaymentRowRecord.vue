@@ -3,7 +3,7 @@
   payment-row(:payment='payment')
     template(slot='cellPrefix')
       label.checkbox.c-check
-        input.input(type='checkbox' v-model='payment.checked')
+        input.input(type='checkbox' v-model='form.checked')
         span
           i18n.sr-only Mark as sent
 
@@ -19,7 +19,7 @@
     template(slot='cellSuffix')
       label.field
         .inputgroup
-          input.input(inputmode='decimal' pattern='[0-9]*' v-model='payment.amount')
+          input.input(inputmode='decimal' pattern='[0-9]*' v-model='form.amount')
           .suffix.hide-phone {{symbolWithCode}}
           .suffix.hide-tablet {{symbol}}
 </template>
@@ -37,7 +37,7 @@ export default {
   },
   props: {
     payment: {
-      type: Object,
+      type: Object, // { index, checked, date, isLate, amount, username, displayName }
       required: true
     }
   },
@@ -47,8 +47,20 @@ export default {
         initialAmount: this.payment.amount
       },
       form: {
+        checked: this.payment.checked,
         amount: this.payment.amount
       }
+    }
+  },
+  watch: {
+    'form.amount' (amount) {
+      this.$emit('update', { index: this.payment.index, checked: true, amount })
+    },
+    'form.checked' (checked) {
+      this.$emit('update', { index: this.payment.index, checked })
+    },
+    'payment.checked' (checked) {
+      this.form.checked = checked
     }
   },
   computed: {
@@ -65,7 +77,7 @@ export default {
   methods: {
     humanDate,
     reset () {
-      this.payment.amount = this.config.initialAmount
+      this.form.amount = this.config.initialAmount
     }
   }
 }

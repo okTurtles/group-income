@@ -207,9 +207,9 @@ export default {
             if (E > 0) {
               latePayments.push({
                 username: payment.to,
-                displayName: this.userDisplayName(payment.to), // TODO delete this
+                displayName: this.userDisplayName(payment.to),
                 amount: payment.amount, // TODO: include currency (what if it was changed?)
-                checked: false, // checkbox support in RecordPayments // TODO delete this.
+                // partiaL: TODO add this info as it is in this.paymentsTodo
                 isLate: true,
                 date: dueIn
               })
@@ -235,24 +235,23 @@ export default {
           const existingAmount = +this.currency.displayWithoutCurrency(existPayment.amount)
           if (amount > 0) {
             const partialAmount = existingAmount - amount
-            var existingPayment = {}
+            const existingPayment = {}
             if (partialAmount > 0) {
               // TODO/BUG this won't work if the partial amount is done in 3 parts.
               const sent = sentPayments.find((s) => s.username === p.to && s.amount === partialAmount)
               if (sent) {
-                existingPayment = { hash: sent.hash }
+                existingPayment.hash = sent.hash // Q: Why do we need this hash?
               }
             }
             payments.push({
               ...existingPayment,
               username: p.to,
-              amount,
               displayName: this.userDisplayName(p.to),
-              checked: false, // checkbox support in RecordPayments,
+              amount,
               partial: partialAmount > 0,
               total: existingAmount,
-              date: dueIn,
-              isLate: false
+              isLate: false,
+              date: dueIn
             })
           }
         }
@@ -294,7 +293,7 @@ export default {
       return payments.sort((a, b) => a.date < b.date)
     },
     paymentsToBeReceived () {
-      // REVIEW - Very similar to paymentsTodo with these diff:
+      // TODO/DRY - Very similar to paymentsTodo with these diff:
       // - paymentsSent -> paymentsReceived
       // - p.from -> p.to
       const payments = []
@@ -320,9 +319,6 @@ export default {
               ...existingPayment,
               username: p.from,
               amount,
-              // displayName: this.userDisplayName(p.to),
-              // checked: false, // checkbox support in RecordPayments,
-              // monthstamp: cMonthstamp,
               partial: partialAmount > 0,
               total: existingAmount
             })

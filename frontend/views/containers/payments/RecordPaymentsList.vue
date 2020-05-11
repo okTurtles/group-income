@@ -16,6 +16,7 @@ table.table.table-in-card.c-payments.is-editing
       v-for='(payment, index) in paymentsList'
       :key='index'
       :payment='payment'
+      @update='(data) => $emit("update", data)'
     )
 </template>
 

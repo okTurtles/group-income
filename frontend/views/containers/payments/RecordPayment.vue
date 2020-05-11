@@ -12,7 +12,8 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background' v-if='
       )
         i18n.has-text-bold.c-title(tag='h3') Who did you send money to?
         record-payments-list(
-          :paymentsList='ephemeral.payments'
+          :paymentsList='form.paymentsToRecord'
+          @update='updateRecord'
         )
 
         .c-footer
@@ -29,16 +30,16 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background' v-if='
             input.switch#showComment(
               type='checkbox'
               name='displayComment'
-              @change='displayComment = !displayComment'
+              @change='ephemeral.displayMemo = !ephemeral.displayMemo'
             )
-            i18n.sr-only(tag='label' for='displayComment') Toggle comment box
+            i18n.sr-only(tag='label' for='displayMemo') Toggle comment box
 
         transition(name='slidedown')
-          label.field(v-if='displayComment')
+          label.field(v-if='ephemeral.displayMemo')
             i18n.sr-only.label Leave a message
-            textarea.textarea.c-comment(
-              rows='4'
-            )
+            textarea.textarea.c-comment(v-model='form.memo' rows='4')
+
+        banner-scoped(ref='formMsg' data-test='formMsg')
 
         .buttons.c-buttons
           i18n.is-outlined(
@@ -46,7 +47,7 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background' v-if='
             @click='closeModal'
           ) Cancel
 
-          button.is-success(
+          button-submit.is-success(
             @click='submit'
             :disabled='this.recordNumber === 0'
           ) {{ registerPaymentCopy }}
@@ -66,20 +67,31 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background' v-if='
 </template>
 
 <script>
+import Vue from 'vue'
 import sbp from '~/shared/sbp.js'
 import { mapState, mapGetters } from 'vuex'
-import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
-import RecordPaymentsList from '@containers/payments/RecordPaymentsList.vue'
+import { PAYMENT_PENDING, PAYMENT_COMPLETED, PAYMENT_TYPE_MANUAL } from '@model/contracts/payments/index.js'
 import L from '@view-utils/translations.js'
 import { validationMixin } from 'vuelidate'
 import { CLOSE_MODAL } from '@utils/events.js'
 import SvgSuccess from '@svgs/success.svg'
+import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
+import RecordPaymentsList from '@containers/payments/RecordPaymentsList.vue'
+import BannerScoped from '@components/banners/BannerScoped.vue'
 import BannerSimple from '@components/banners/BannerSimple.vue'
-import { PAYMENT_PENDING, PAYMENT_COMPLETED, PAYMENT_TYPE_MANUAL } from '@model/contracts/payments/index.js'
+import ButtonSubmit from '@components/ButtonSubmit.vue'
 
 export default {
   name: 'RecordPayment',
   mixins: [validationMixin],
+  components: {
+    ModalBaseTemplate,
+    RecordPaymentsList,
+    SvgSuccess,
+    BannerScoped,
+    BannerSimple,
+    ButtonSubmit
+  },
   props: {
     paymentsList: {
       type: Array
@@ -87,12 +99,19 @@ export default {
   },
   data () {
     return {
-      displayComment: false,
-      form: {},
-      donePayment: false,
+      form: {
+        // Do a shallow copy to avoid mutating the prop this.paymentsList
+        paymentsToRecord: this.paymentsList ? this.paymentsList.map((payment, index) => ({
+          ...payment,
+          index: index, // A link between original payment and this copy
+          checked: false
+        })) : [],
+        memo: ''
+      },
       ephemeral: {
-        payments: this.paymentsList
-      }
+        displayMemo: false
+      },
+      donePayment: false
     }
   },
   created () {
@@ -100,12 +119,6 @@ export default {
       console.warn('Missing paymentsList to display RecordPayment modal')
       sbp('okTurtles.events/emit', CLOSE_MODAL)
     }
-  },
-  components: {
-    ModalBaseTemplate,
-    RecordPaymentsList,
-    SvgSuccess,
-    BannerSimple
   },
   computed: {
     ...mapState([
@@ -117,7 +130,7 @@ export default {
       'thisMonthsPaymentInfo'
     ]),
     recordNumber () {
-      return this.paymentsList.filter(payment => payment.checked).length
+      return this.form.paymentsToRecord.filter(p => p.checked).length
     },
     registerPaymentCopy () {
       return this.recordNumber === 1
@@ -129,48 +142,66 @@ export default {
     closeModal () {
       this.$refs.modal.close()
     },
+    updateRecord ({ index, ...data }) {
+      Vue.set(this.form.paymentsToRecord, index, {
+        ...this.form.paymentsToRecord[index],
+        ...data
+      })
+    },
     async submit () {
-      // TODO: remember when creating 'gi.contracts/group/payment' to set the payment
-      //       currency using:
-      //       getters.thisMonthsPaymentInfo.firstMonthsCurrency || getters.groupMincomeCurrency
-      for (const payment of this.ephemeral.payments) {
-        if (payment.checked) {
-          // TODO: handle errors!
-          try {
-            // TODO: do currency conversion here using firstMonthsCurrency ?
-            const groupCurrency = this.groupMincomeCurrency
-            const paymentInfo = {
-              toUser: payment.username,
-              amount: +payment.amount, // TODO/BUG do not modify payment.amout directly on RecordPaymentRow...
-              total: payment.amount, // ...we need to know it here, to know if it's a partial payment or not.
-              currencyFromTo: ['USD', groupCurrency], // TODO: this!
-              groupMincome: this.groupSettings.mincomeAmount,
-              exchangeRate: 1,
-              txid: '' + Math.random(),
-              status: PAYMENT_PENDING,
-              paymentType: PAYMENT_TYPE_MANUAL,
-              month: payment.monthstamp
-              // TOOD: add memo if user added a note
-            }
-            const msg = await sbp('gi.actions/group/payment', paymentInfo, this.currentGroupId)
-            // TODO: hack until /payment supports sending completed payment
-            //       (and "uncompleting" a payment)
-            await sbp('gi.actions/group/paymentUpdate', {
-              paymentHash: msg.hash(),
-              updatedProperties: {
-                status: PAYMENT_COMPLETED
-              }
-            }, this.currentGroupId)
-          } catch (e) {
-            console.error('TODO: this!', e)
+      const groupCurrency = this.groupMincomeCurrency
+      const paymentsToRecord = this.form.paymentsToRecord.filter(p => p.checked)
+      let hasError = false
+      this.$refs.formMsg.clean()
+
+      for (const pRecord of paymentsToRecord) {
+        const payment = this.paymentsList[pRecord.index]
+
+        if (pRecord.amount > payment.amount) {
+          // TODO/REVIEW - Should we show a warning?
+        }
+
+        try {
+          // TODO: do currency conversion here using firstMonthsCurrency?
+          // TODO: remember when creating 'gi.contracts/group/payment' to set the payment
+          //       currency using:
+          //       getters.thisMonthsPaymentInfo.firstMonthsCurrency || getters.groupMincomeCurrency
+          const paymentInfo = {
+            toUser: payment.username,
+            amount: +pRecord.amount,
+            total: payment.amount,
+            // Even if everything is payed, it might be from a previous partial payment, so mark it has partial.
+            // TODO - Maybe this can fix the bug on Payments.vue when looking for other partials' hash.
+            partial: payment.partial || pRecord.amount - payment.amount > 0,
+            monthstamp: payment.monthstamp,
+            currencyFromTo: ['USD', groupCurrency], // TODO: this!
+            groupMincome: this.groupSettings.mincomeAmount,
+            exchangeRate: 1,
+            txid: '' + Math.random(),
+            status: PAYMENT_PENDING,
+            paymentType: PAYMENT_TYPE_MANUAL,
+            memo: this.form.memo + ' ' // TODO/BUG with flowTyper. Empty string does not pass validations.
           }
+          const msg = await sbp('gi.actions/group/payment', paymentInfo, this.currentGroupId)
+          // TODO: hack until /payment supports sending completed payment
+          //       (and "uncompleting" a payment)
+          await sbp('gi.actions/group/paymentUpdate', {
+            paymentHash: msg.hash(),
+            updatedProperties: {
+              status: PAYMENT_COMPLETED
+            }
+          }, this.currentGroupId)
+        } catch (e) {
+          hasError = true
+          console.error('RecordPayment submit() error:', e)
+          this.$refs.formMsg.danger(e)
         }
       }
-      this.donePayment = true
+
+      if (!hasError) {
+        this.donePayment = true
+      }
     }
-  },
-  validations: {
-    form: {}
   }
 }
 </script>
