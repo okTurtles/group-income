@@ -36,7 +36,7 @@
 <script>
 import sbp from '~/shared/sbp.js'
 import { mapGetters } from 'vuex'
-import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/voting/rules.js'
+import { RULE_PERCENTAGE, RULE_DISAGREEMENT, getThresholdAdjusted } from '@model/contracts/voting/rules.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import L from '@view-utils/translations.js'
 import BannerSimple from '@components/banners/BannerSimple.vue'
@@ -70,6 +70,9 @@ export default {
     },
     votingRuleSettings () {
       return this.groupVotingRule.ruleSettings[this.groupVotingRule.rule]
+    },
+    thresholdAdjusted () {
+      return getThresholdAdjusted(this.votingRuleSettings.threshold, this.groupMembersCount)
     }
   },
   methods: {
@@ -82,7 +85,7 @@ export default {
     isVotingRuleAdjusted (ruleName) {
       if (!this.isRuleActive(ruleName) || ruleName !== RULE_DISAGREEMENT) return false
 
-      return this.votingRuleSettings.threshold !== this.votingRuleSettings.thresholdAdjusted
+      return this.votingRuleSettings.threshold !== this.thresholdAdjusted
     },
     votingValue (option) {
       const HTMLTags = {
@@ -102,9 +105,9 @@ export default {
           total: this.groupMembersCount,
           ...HTMLTags
         })
-      } else {
+      } else if (option === RULE_DISAGREEMENT) {
         const count = this.votingRuleSettings.threshold
-        const adjusted = this.votingRuleSettings.thresholdAdjusted
+        const adjusted = this.thresholdAdjusted
 
         if (count === adjusted) {
           return L('{b_}{count}{_b}', { count, ...HTMLTags })

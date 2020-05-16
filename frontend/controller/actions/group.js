@@ -11,7 +11,6 @@ import {
   PROPOSAL_PROPOSAL_SETTING_CHANGE,
   PROPOSAL_GENERIC
 } from '@model/contracts/voting/constants.js'
-import { thresholdAdjusted } from '@model/contracts/voting/rules.js'
 import { GIErrorUIRuntimeError } from '@model/errors.js'
 
 import imageUpload from '@utils/imageUpload.js'
@@ -47,7 +46,6 @@ export default sbp('sbp/selectors/register', {
         rule: ruleName,
         ruleSettings: {
           [ruleName]: {
-            ...thresholdAdjusted(ruleName, +ruleThreshold, 1), // 1 = group initial size.
             threshold: +ruleThreshold
           }
         }

@@ -52,6 +52,8 @@ const rules = {
     const population = Object.keys(state.profiles).length
     const turnout = votes.length
     const absent = population - turnout
+    // const thresholdAdjusted = getThresholdAdjusted(threshold, groupSize) TODO on next PR.
+
     console.debug(`votingRule ${RULE_DISAGREEMENT} for ${proposalType}:`, { totalFor, totalAgainst, threshold, turnout, population, absent })
     if (totalAgainst >= threshold) {
       return VOTE_AGAINST
@@ -74,9 +76,4 @@ export default rules
 
 export const ruleType = unionOf(...Object.keys(rules).map(k => literalOf(k)))
 
-export const thresholdAdjusted = (rule, threshold, groupSize) => {
-  if (rule === RULE_DISAGREEMENT) {
-    return { thresholdAdjusted: Math.min(threshold, groupSize) }
-  }
-  return {}
-}
+export const getThresholdAdjusted = (threshold, groupSize) => Math.min(threshold, groupSize)

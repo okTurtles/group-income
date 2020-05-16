@@ -34,7 +34,7 @@ export const proposalSettingsType = objectOf({
   expires_ms: number,
   ruleSettings: objectOf({
     [RULE_PERCENTAGE]: objectOf({ threshold: number }),
-    [RULE_DISAGREEMENT]: objectOf({ threshold: number, thresholdAdjusted: number })
+    [RULE_DISAGREEMENT]: objectOf({ threshold: number })
   })
 })
 
@@ -66,7 +66,7 @@ const proposalDefaults = {
   expires_ms: 7 * DAYS_MILLIS,
   ruleSettings: {
     [RULE_PERCENTAGE]: { threshold: 0.8 },
-    [RULE_DISAGREEMENT]: { threshold: 1, thresholdAdjusted: 1 }
+    [RULE_DISAGREEMENT]: { threshold: 1 }
   }
 }
 
