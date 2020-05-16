@@ -44,7 +44,7 @@ export function compareISOTimestamps (a: string, b: string): number {
   return A > B ? 1 : (A < B ? -1 : 0)
 }
 
-export function lastDayOfMonth (date: Date): Strin {
+export function lastDayOfMonth (date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth() + 1, 0)
 }
 

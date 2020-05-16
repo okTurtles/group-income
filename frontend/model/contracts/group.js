@@ -401,7 +401,8 @@ DefineContract({
         paymentHash: string,
         updatedProperties: objectMaybeOf({
           status: paymentStatusType,
-          details: object
+          details: object,
+          memo: string
         })
       }),
       process ({ data, meta, hash }, { state, getters }) {

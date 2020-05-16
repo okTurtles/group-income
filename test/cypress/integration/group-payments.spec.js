@@ -405,7 +405,7 @@ describe('Payments', () => {
     updateIncome(100, false, graphicLegend, '$100 to Greg')
 
     cy.get(elReceivingFirst)
-      .should('contain', 'French classes by Greg')
+      .should('contain', 'French classes from Greg')
 
     cy.get('.receiving .c-contribution-list')
       .should('have.length', 4)
@@ -474,7 +474,7 @@ describe('Payments', () => {
       'Surplus$310',
       "You'll receive$190"
     ]
-    updateIncome(10, true, graphicLegend4, '$190 by Margarida and Pierre')
+    updateIncome(10, true, graphicLegend4, '$190 from Margarida and Pierre')
 
     cy.giSwitchUser(`user2-${userId}`)
     const graphicLegend2 = [
@@ -482,7 +482,7 @@ describe('Payments', () => {
       'Needed Pledges$380',
       "You'll receive$39.58"
     ]
-    updateIncome(10, true, graphicLegend2, '$39.58 by Pierre')
+    updateIncome(10, true, graphicLegend2, '$39.58 from Pierre')
 
     assertContributionsWidget({
       paymentsSummary: ' ', // TODO - just confirm it exists for now.
@@ -505,7 +505,7 @@ describe('Payments', () => {
     cy.getByDT('contributionsLink').click()
 
     cy.get(elReceivingFirst)
-      .should('contain', '$20.83 by Pierre')
+      .should('contain', '$20.83 from Pierre')
 
     assertContributionsWidget({
       paymentsSummary: ' ', // TODO - just confirm it exists for now.
@@ -521,13 +521,13 @@ describe('Payments', () => {
 Summary of the group status so far:
 user1
   - needs $100
-  - $20.83 by pierre
+  - $20.83 from pierre
 user2
   - needs $190
-  - $39.58 by pierre
+  - $39.58 from pierre
 user3
   - pledges $100 to user1, user2 and user4
 user4
   - needs $190
-  - $39.58 by pierre
+  - $39.58 from pierre
 */
