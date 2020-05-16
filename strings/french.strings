@@ -237,9 +237,6 @@
 /* MISSING TRANSLATION - views/containers/proposals/ChangeVotingProposal.vue */
 "Change voting [xxxx]" = "Change voting [xxxx]";
 
-/* MISSING TRANSLATION - views/containers/proposals/ChangeVotingRules.vue */
-"Change Rule to change Rule" = "Change Rule to change Rule";
-
 /* MISSING TRANSLATION - views/containers/group-settings/InvitationLinkModal.vue */
 "After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!" = "After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!";
 
@@ -271,8 +268,6 @@
 "compose" = "compose";
 
 /* MISSING TRANSLATION - views/containers/proposals/RuleAddMember.vue, views/containers/proposals/RuleRemoveMember.vue */
-
-/* MISSING TRANSLATION - views/containers/proposals/RuleAddMember.vue, views/containers/proposals/ChangeVotingRules.vue, views/containers/proposals/RuleRemoveMember.vue */
 "According to your voting rules, 8 out of 10 members will have to agree with this." = "According to your voting rules, 8 out of 10 members will have to agree with this.";
 
 /* MISSING TRANSLATION - views/containers/proposals/ChangeVotingProposal.vue */
@@ -1097,9 +1092,6 @@
 /* MISSING TRANSLATION - views/pages/Home.vue */
 "Welcome to group income" = "Welcome to group income";
 
-/* MISSING TRANSLATION - views/containers/proposals/RuleAddMember.vue, views/containers/proposals/ChangeVotingRules.vue, views/containers/proposals/RuleRemoveMember.vue */
-"The reason why I' propositiong this change is..." = "The reason why I' propositiong this change is...";
-
 /* MISSING TRANSLATION - views/containers/contributions/ContributionsOverviewWidget.vue */
 "Support History" = "Support History";
 
@@ -1498,4 +1490,3 @@
 
 /* Not currently used */
 "There was an error processing this payment" = "Une erreur est survenue durant le traitement de votre paiement";
-
