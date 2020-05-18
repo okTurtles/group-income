@@ -82,8 +82,8 @@ export default {
     position: absolute;
     left: 50%;
     top: 50%;
-    width: 12px;
-    height: 2px;
+    width: 0.75rem;
+    height: 0.125rem;
     transition: transform 0.15s ease-in;
     transform: translateX(-50%) translateY(-50%) rotate(45deg);
     transform-origin: center center;

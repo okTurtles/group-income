@@ -98,7 +98,7 @@ export default {
 
 button {
   .icon-cog {
-    font-size: 0.9rem;
+    font-size: $size_4;
   }
 
   &:hover .icon-cog,

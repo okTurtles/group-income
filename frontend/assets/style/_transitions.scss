@@ -16,7 +16,7 @@
   transition: max-height 0.3s ease;
 
   /* Todo: move that to dynmaic js, so it's mnore generic */
-  max-height: 150px;
+  max-height: 10rem;
   overflow: hidden;
 }
 
@@ -31,7 +31,7 @@
   opacity: 1;
 
   /* Todo: move that to dynamic js, so it's mnore generic */
-  max-height: 150px;
+  max-height: 10rem;
   overflow: hidden;
 }
 

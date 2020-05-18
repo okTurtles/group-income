@@ -57,7 +57,7 @@ export default {
 
 .settings-container {
   position: relative;
-  margin: 0 26px;
+  margin: 0 1.625rem;
   width: 100%;
   max-width: 38rem;
 }

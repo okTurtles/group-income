@@ -17,7 +17,7 @@ export default {
 
   data () {
     return {
-      fontVariations: 7,
+      fontVariations: 4,
       fontRange: [],
       fontData: []
     }
@@ -39,26 +39,24 @@ export default {
     ])
   },
 
-  created () {
-    let size = 57.5
-    for (let index = 0; index < this.fontVariations; index++) {
-      // Add data to the slider
-      this.fontData.push(size)
-      size += 2.5
-
-      // Hise one label out of two
-      this.fontRange.push({
-        label: 'Aa',
-        isHide: index % 2
-      })
+  watch: {
+    fontSize () {
+      this.$refs.slider.refresh()
     }
   },
 
-  mounted () {
-    setTimeout(() => {
-      // Todo: find out why position is offset when loading component in popup dynamicaly
-      this.$refs.slider.refresh()
-    }, 1000)
+  created () {
+    let size = 12
+    for (let index = 0; index < this.fontVariations; index++) {
+      // Add data to the slider
+      this.fontData.push(size)
+      size += 2
+
+      // Hise one label out of two
+      this.fontRange.push({
+        label: 'Aa'
+      })
+    }
   }
 }
 </script>

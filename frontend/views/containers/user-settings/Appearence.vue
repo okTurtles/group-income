@@ -1,45 +1,60 @@
 <template lang='pug'>
   .settings-container
     section.card
-      h2.is-title-3.c-title Theme
-
+      i18n.is-title-2.c-title(tag='h2') Theme
       SelectorTheme
 
-    section.card
-      h2.is-title-3.c-title Reduced Motion
+      .c-subcontent
+        .c-text-content
+          i18n.c-smaller-title(tag='h3') Use high-contrast colors
+          i18n.help(tag='p') Increases contrast and improves readability
+        label
+          i18n.sr-only Increases contrast
+          input.switch(
+            type='checkbox'
+            name='switch'
+            :checked='$store.state.increaseContrast'
+            @change='handleIncreasedContrast'
+          )
 
-      label.checkbox
-        input.input(type='checkbox' :checked='$store.state.reducedMotion' @change='handleCheckbox')
-        i18n Reduced motion
-      i18n.help(tag='p') When enabled the amount of animations you see around are reduced.
+      i18n.is-title-2.c-title(tag='h2') Text size
+      SelectorFontSize
 
-    section.card
-      h2.is-title-3.c-title Text settings
-
-      //- TODO in separate tickets
-      //- SelectorFontSize
-
-      .preview
-        p.is-title-4 Text size preview
-        p.para Group Income (n) is an efficient, fair, decentralized Basic Income system for you and your friends.
+      i18n.is-title-2.c-title(tag='h2') Animations
+      .c-subcontent
+        .c-text-content
+          i18n.c-smaller-title(tag='h3') Reduced Motion
+          i18n.help(tag='p') When enabled the amount of animations you see around are reduced.
+        label
+          i18n.sr-only Reduced motion
+          input.switch(
+            type='checkbox'
+            name='switch'
+            :checked='$store.state.reducedMotion'
+            @change='handleReducedMotion'
+          )
 </template>
 
 <script>
 import { mapMutations } from 'vuex'
 import SelectorTheme from './Theme.vue'
-// import SelectorFontSize from './FontSize.vue'
+import SelectorFontSize from './FontSize.vue'
 
 export default {
   name: 'SettingsAppearence',
   components: {
-    SelectorTheme
-    //   SelectorFontSize
+    SelectorTheme,
+    SelectorFontSize
   },
   methods: {
     ...mapMutations([
-      'setReducedMotion'
+      'setReducedMotion',
+      'setIncreasedContrast'
     ]),
-    handleCheckbox (e) {
+    handleIncreasedContrast (e) {
+      this.setIncreasesContrast(e.target.checked)
+    },
+    handleReducedMotion (e) {
       this.setReducedMotion(e.target.checked)
     }
   }
@@ -55,26 +70,23 @@ export default {
   }
 
   .c-title {
+    margin-bottom: 1rem;
+  }
+}
+
+.c-subcontent {
+  border: none;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+
+  &:last-child {
     margin-bottom: 1.5rem;
   }
 }
 
-.preview {
-  .is-title-4 {
-    margin: 0 0 6px 0;
-    font-size: $size_5;
-
-    @include tablet {
-      margin-left: 0;
-    }
-  }
-
-  .para {
-    margin: 0 0 50px 0;
-    width: 450px;
-    max-width: calc(100% - 45px);
-    line-height: 20px;
-    letter-spacing: 0.1px;
-  }
+.c-smaller-title {
+  font-size: $size_4;
+  font-weight: bold;
 }
 </style>

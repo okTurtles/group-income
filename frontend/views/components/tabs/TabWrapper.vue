@@ -191,7 +191,7 @@ export default {
 
 .tab-legend {
   color: $text_1;
-  font-size: 12px;
+  font-size: $size_5;
   text-transform: uppercase;
   margin-bottom: 0.5rem;
 

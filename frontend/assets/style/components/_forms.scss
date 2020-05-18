@@ -326,9 +326,9 @@ p.error {
   .input {
     position: absolute;
     opacity: 0;
-    width: 14px;
-    height: 14px;
-    transform: translateY(4px);
+    width: 0.875rem;
+    height: 0.875rem;
+    transform: translateY(0.25rem);
   }
 
   .input:disabled + :last-child {
@@ -374,8 +374,8 @@ p.error {
     // are tiny and may have cause render issues
     // in diff browsers / zoom resolutions
     &::before {
-      width: 14px;
-      height: 14px;
+      width: 0.875rem;
+      height: 0.875rem;
       margin-right: 0.5rem;
       border: 1px solid $general_0;
       transform: translateY(2px);
@@ -384,11 +384,11 @@ p.error {
 
     &::after {
       position: absolute;
-      width: 6px;
-      height: 6px;
+      width: 0.375rem;
+      height: 0.375rem;
       background-color: $background_0;
-      top: 11px;
-      left: 7px;
+      top: 0.6875rem;
+      left: 0.4375rem;
       transform: translate(-50%, -50%) scale(0);
       transition: transform 150ms;
     }
@@ -418,22 +418,22 @@ p.error {
 
     &::before {
       content: "";
-      width: 14px;
-      height: 14px;
+      width: 0.875rem;
+      height: 0.875rem;
       margin-right: 0.5rem;
       border: 1px solid $general_0;
-      transform: translateY(2px);
+      transform: translateY(0.125rem);
       transition: box-shadow 150ms, background-color 150ms;
     }
 
     &::after {
       @include icon(check);
-      font-size: 10px;
+      font-size: 0.625rem;
       position: absolute;
-      width: 6px;
-      height: 6px;
-      top: 9px;
-      left: 5px;
+      width: 0.375rem;
+      height: 0.375rem;
+      top: 0.5625rem;
+      left: 0.3125rem;
       color: $background_0;
       transform: translate(-50%, -50%) scale(0);
       transition: transform 150ms;
