@@ -162,7 +162,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
 
   cy.getByDT('nextBtn').click()
 
-  cy.get('textarea[name="sharedValues"]').type(sharedValues)
+  if (sharedValues) cy.get('textarea[name="sharedValues"]').type(sharedValues)
   cy.getByDT('nextBtn').click()
 
   cy.get('input[name="mincomeAmount"]').type(mincome)

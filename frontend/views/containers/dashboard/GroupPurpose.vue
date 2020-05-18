@@ -3,13 +3,20 @@
   .c-group-purpose-header
     i18n.is-title-4(tag='h3') About the group
 
-  p.c-text.has-text-1(data-test='sharedValues')
-    | {{ groupSettings.sharedValues }}
+  div(v-if='groupSettings.sharedValues')
+    p.c-text.has-text-1(data-test='sharedValues')
+      | {{ groupSettings.sharedValues }}
+
+    router-link.link(
+      to='/group-settings'
+    )
+      i18n Edit
 
   router-link.link(
+    v-else
     to='/group-settings'
-    )
-    i18n Edit
+  )
+    i18n Add description
 
   slot
 </template>
@@ -35,6 +42,12 @@ export default {
 
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
+
+.c-group-purpose-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
 
 .c-group-purpose {
   margin-top: 1.5rem;
