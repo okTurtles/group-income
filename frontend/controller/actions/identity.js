@@ -6,7 +6,8 @@ export default sbp('sbp/selectors/register', {
   'gi.actions/identity/create': async function ({
     username,
     email,
-    password
+    password,
+    picture
   }) {
     // TODO: make sure we namespace these names:
     //       https://github.com/okTurtles/group-income-simple/issues/598
@@ -23,7 +24,7 @@ export default sbp('sbp/selectors/register', {
       attributes: {
         username,
         email: email,
-        picture: `${window.location.origin}/assets/images/default-avatar.png`
+        picture: picture || `${window.location.origin}/assets/images/default-avatar.png`
       }
     })
     const mailbox = await sbp('gi.contracts/mailbox/create', {
@@ -47,12 +48,13 @@ export default sbp('sbp/selectors/register', {
   'gi.actions/identity/signup': async function ({
     username,
     email,
-    password // TODO - implement
+    password, // TODO - implement
+    picture
   }, {
     sync = true
   } = {}) {
     try {
-      const [userID, mailboxID] = await sbp('gi.actions/identity/create', { username, email, password })
+      const [userID, mailboxID] = await sbp('gi.actions/identity/create', { username, email, password, picture })
 
       await sbp('namespace/register', username, userID)
 

@@ -105,7 +105,7 @@ export default {
     }
   }
 
-  &-img.is-xl {
+  &-img.is-xl.is-xl { // need .is-xl 2x for specificity
     margin: 0 auto;
 
     @include desktop {

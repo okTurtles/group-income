@@ -26,6 +26,8 @@ form(data-test='signup' @submit.prevent='')
 
   password-form(:label='L("Password")' name='password' :$v='$v')
 
+  avatar-generator(@generated='handleAvatarUrl')
+
   banner-scoped(ref='formMsg')
 
   .buttons.is-centered
@@ -37,6 +39,7 @@ form(data-test='signup' @submit.prevent='')
 </template>
 
 <script>
+import AvatarGenerator from '@components/AvatarGenerator.vue'
 import { required, minLength, email } from 'vuelidate/lib/validators'
 import { validationMixin } from 'vuelidate'
 import sbp from '~/shared/sbp.js'
@@ -47,6 +50,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
+import imageUpload from '@utils/imageUpload.js'
 
 export default {
   name: 'SignupForm',
@@ -55,6 +59,7 @@ export default {
     validationsDebouncedMixins
   ],
   components: {
+    AvatarGenerator,
     ModalTemplate,
     PasswordForm,
     BannerScoped,
@@ -65,21 +70,48 @@ export default {
       form: {
         username: null,
         password: null,
-        email: null
+        email: null,
+        pictureBase64: null
+      }
+    }
+  },
+  computed: {
+    sbpParams () {
+      return {
+        selector: 'gi.contracts/identity/setAttributes/create',
+        contractID: this.$store.state.loggedIn.identityContractID,
+        key: 'picture'
       }
     }
   },
   methods: {
+    handleAvatarUrl (url) {
+      this.form.pictureBase64 = url
+    },
     async signup () {
       if (this.$v.form.$invalid) {
         this.$refs.formMsg.danger(L('The form is invalid.'))
         return
       }
+
+      let picture
+
+      try {
+        if (this.form.pictureBase64) {
+          picture = await imageUpload(this.form.pictureBase64, { type: 'base64' })
+        }
+      } catch (e) {
+        console.error('Signup.vue submit() - imageUpload error:', e)
+        // Don't throw any error because there's nothing the user can do about it.
+        // Just keep going and create the profile without giving a generated picture.
+      }
+
       try {
         await sbp('gi.actions/identity/signupAndLogin', {
           username: this.form.username,
           email: this.form.email,
-          password: this.form.password
+          password: this.form.password,
+          picture
         })
         this.$emit('submitSucceeded')
       } catch (e) {
