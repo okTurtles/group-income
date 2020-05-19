@@ -13,7 +13,7 @@ export function b64toBlob (dataURI) {
   return new Blob([ab], { type: 'image/jpeg' })
 }
 
-const imageUpload = async (imageFile) => {
+export const imageUpload = async (imageFile) => {
   const file = imageFile
   console.debug('will upload a picture of type:', file.type)
   // https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications#Asynchronously_handling_the_file_upload_process
@@ -37,5 +37,3 @@ const imageUpload = async (imageFile) => {
 
   return reply + '?type=' + encodeURIComponent(file.type)
 }
-
-export default imageUpload

@@ -22,7 +22,7 @@
 </template>
 <script>
 import sbp from '~/shared/sbp.js'
-import imageUpload from '@utils/imageUpload.js'
+import { imageUpload } from '@utils/image.js'
 import Avatar from '@components/Avatar.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import L, { LError } from '@view-utils/translations.js'

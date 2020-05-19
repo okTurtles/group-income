@@ -290,7 +290,7 @@ describe('Full walkthrough', function () {
   describe('File upload', function () {
     it('Should upload "avatar-default.png" as "multipart/form-data"', async function () {
       const form = new FormData()
-      const filepath = './frontend/assets/images/avatar-default.png'
+      const filepath = './frontend/assets/images/user-avatar-default.png'
       // const context = blake2bInit(32, null)
       // const stream = fs.createReadStream(filepath)
       // // the problem here is that we need to get the hash of the file

@@ -113,7 +113,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
       i18n.is-title-3.card-header(tag='h3') Proposals
 
       .c-message(v-for='(proposal, hash) in proposals' :key='hash')
-        avatar(src='/assets/images/avatar-default.png' alt='' @click='respondToProposal(hash)' size='sm')
+        avatar(src='/assets/images/user-avatar-default.png' alt='' @click='respondToProposal(hash)' size='sm')
 
         .c-message-desc(
           @click='respondToProposal(hash)'
@@ -132,7 +132,7 @@ page(pageTestName='dashboard' pageTestHeaderName='groupName')
 
       .c-message(v-for='(message, index) in inbox' :key='`inbox-message-${index}`')
         avatar(
-          src='/assets/images/avatar-default.png' alt=''
+          src='/assets/images/user-avatar-default.png' alt=''
           @click='read({index, type: message.data.messageType})'
           size='sm'
         )

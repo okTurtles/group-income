@@ -43,6 +43,48 @@ export default {
   components: {
     ProgressBar
   },
+<<<<<<< HEAD
+=======
+  data () {
+    return {
+      // Temp
+      fakeStore: {
+        usersToPay: [
+          {
+            name: 'Lilia Bouvet',
+            avatar: '/assets/images/user-avatar-default.png',
+            status: 'todo',
+            amount: 10
+          },
+          {
+            name: 'Charlotte Doherty',
+            avatar: '/assets/images/user-avatar-default.png',
+            status: 'todo',
+            amount: 20
+          },
+          {
+            name: 'Kim Kr',
+            avatar: '/assets/images/user-avatar-default.png',
+            status: 'rejected',
+            amount: 25
+          },
+          {
+            name: 'Zoe Kim',
+            avatar: '/assets/images/user-avatar-default.png',
+            status: 'pending',
+            amount: 30
+          },
+          {
+            name: 'Hugo Lil',
+            avatar: '/assets/images/user-avatar-default.png',
+            status: 'completed',
+            amount: 50
+          }
+        ]
+      }
+    }
+  },
+>>>>>>> Rename image/avatar stuff
   methods: {
     humanDate,
     statusIsSent (user) {

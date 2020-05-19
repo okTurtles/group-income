@@ -50,7 +50,7 @@ import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import L from '@view-utils/translations.js'
 import validationsDebouncedMixins from '@view-utils/validationsDebouncedMixins.js'
-import imageUpload from '@utils/imageUpload.js'
+import { b64toBlob } from '@utils/image.js'
 
 export default {
   name: 'SignupForm',
@@ -85,8 +85,8 @@ export default {
     }
   },
   methods: {
-    handleAvatarUrl (url) {
-      this.form.pictureBase64 = url
+    handleAvatarUrl (base64Url) {
+      this.form.pictureBase64 = base64Url
     },
     async signup () {
       if (this.$v.form.$invalid) {
@@ -94,24 +94,12 @@ export default {
         return
       }
 
-      let picture
-
-      try {
-        if (this.form.pictureBase64) {
-          picture = await imageUpload(this.form.pictureBase64, { type: 'base64' })
-        }
-      } catch (e) {
-        console.error('Signup.vue submit() - imageUpload error:', e)
-        // Don't throw any error because there's nothing the user can do about it.
-        // Just keep going and create the profile without giving a generated picture.
-      }
-
       try {
         await sbp('gi.actions/identity/signupAndLogin', {
           username: this.form.username,
           email: this.form.email,
           password: this.form.password,
-          picture
+          picture: this.form.pictureBase64 ? b64toBlob(this.form.pictureBase64) : ''
         })
         this.$emit('submitSucceeded')
       } catch (e) {

@@ -4,7 +4,7 @@
 
   label.avatar(for='groupPicture')
     canvas.c-pictureCanvas(ref='pictureCanvas' :class='{isHidden: !!$assistant.ephemeral.groupPictureFile }')
-    avatar.c-pictureAvatar(ref='pictureAvatar' size='xl' src='/assets/images/group-default-avatar.png')
+    avatar.c-pictureAvatar(ref='pictureAvatar' size='xl' src='/assets/images/group-avatar-default.png')
 
     i18n.link Upload an image
     input.groupPictureInput#groupPicture(
@@ -28,7 +28,7 @@
       name='groupName'
       :class='{ error: $v.form.groupName.$error }'
       :value='group.groupName'
-      @input='update'
+      @input='updateName'
       @keyup.enter='next'
       data-test='groupName'
     )
@@ -38,7 +38,7 @@
 
 <script>
 import Avatar from '@components/Avatar.vue'
-import { b64toBlob } from '@utils/imageUpload.js'
+import { b64toBlob } from '@utils/image.js'
 
 export default {
   name: 'GroupName',
@@ -82,12 +82,12 @@ export default {
       ctx.fillStyle = '#7a7a7a'
       ctx.fill()
 
-      ctx.font = '78px Lato'
+      ctx.font = '70px Lato'
       ctx.fillStyle = 'white'
       ctx.textAlign = 'center'
-      ctx.fillText(initials, 128 / 2, 95)
+      ctx.fillText(initials, 128 / 2, 90)
     },
-    update (e) {
+    updateName (e) {
       this.$v.form.groupName.$touch()
       this.$emit('input', {
         data: {

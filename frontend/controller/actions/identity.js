@@ -1,6 +1,7 @@
 import sbp from '~/shared/sbp.js'
 import { GIErrorUIRuntimeError } from '@model/errors.js'
 import L, { LError } from '@view-utils/translations.js'
+import { imageUpload } from '@utils/image.js'
 
 export default sbp('sbp/selectors/register', {
   'gi.actions/identity/create': async function ({
@@ -18,13 +19,25 @@ export default sbp('sbp/selectors/register', {
       console.warn(`deleting settings for pre-existing identity ${username}!`, oldSettings)
       await sbp('gi.db/settings/delete', username)
     }
+
+    let finalPicture = `${window.location.origin}/assets/images/user-avatar-default.png`
+
+    if (picture) {
+      try {
+        finalPicture = await imageUpload(picture)
+      } catch (e) {
+        console.error('actions/identity.js picture upload error:', e)
+        throw new GIErrorUIRuntimeError(L('Failed to upload the profile picture. {codeError}', { codeError: e.message }))
+      }
+    }
+
     // proceed with creation
     const user = await sbp('gi.contracts/identity/create', {
       // authorizations: [Events.CanModifyAuths.dummyAuth()],
       attributes: {
         username,
         email: email,
-        picture: picture || `${window.location.origin}/assets/images/avatar-default.png`
+        picture: finalPicture
       }
     })
     const mailbox = await sbp('gi.contracts/mailbox/create', {
