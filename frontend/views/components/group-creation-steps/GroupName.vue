@@ -3,12 +3,10 @@
   i18n.is-title-4.steps-title(tag='h4') 1. Create a new group
 
   label.avatar(for='groupPicture')
-    avatar(ref='picture' size='xl' src='/assets/images/default-group-avatar.png')
-    //- we don't need to add any code to trigger the hidden file input field
-    //- because we use this label(for='elem') trick:
-    //- https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications#Using_a_label_element_to_trigger_a_hidden_file_input_element
-    i18n.link Upload an image
+    canvas.c-pictureCanvas(ref='pictureCanvas' :class='{isHidden: !!$assistant.ephemeral.groupPictureFile }')
+    avatar.c-pictureAvatar(ref='pictureAvatar' size='xl' src='/assets/images/group-default-avatar.png')
 
+    i18n.link Upload an image
     input.groupPictureInput#groupPicture(
       type='file'
       name='groupPicture'
@@ -40,6 +38,7 @@
 
 <script>
 import Avatar from '@components/Avatar.vue'
+import { b64toBlob } from '@utils/imageUpload.js'
 
 export default {
   name: 'GroupName',
@@ -51,10 +50,43 @@ export default {
   components: {
     Avatar
   },
+  watch: {
+    'groupInitials': function (initials) {
+      this.updatePictureCanvas(initials)
+    }
+  },
   mounted () {
     this.$refs.name.focus()
+    const c = this.$refs.pictureCanvas
+    c.width = 128
+    c.height = 128
+    this.updatePictureCanvas(this.groupInitials)
+  },
+  beforeDestroy () {
+    if (!this.$assistant.ephemeral.groupPictureFile) {
+      const pictureBase64 = this.$refs.pictureCanvas.toDataURL('image/png')
+      this.$v.form.groupPicture.$touch()
+      this.$assistant.ephemeral.groupPictureFile = b64toBlob(pictureBase64)
+    }
+  },
+  computed: {
+    groupInitials () {
+      return this.group.groupName ? this.group.groupName.match(/\b(\w)/g).join('').slice(0, 2).toUpperCase() : ''
+    }
   },
   methods: {
+    updatePictureCanvas (initials) {
+      const c = this.$refs.pictureCanvas
+      const ctx = c.getContext('2d')
+      ctx.rect(0, 0, 128, 128)
+      ctx.fillStyle = '#7a7a7a'
+      ctx.fill()
+
+      ctx.font = '78px Lato'
+      ctx.fillStyle = 'white'
+      ctx.textAlign = 'center'
+      ctx.fillText(initials, 128 / 2, 95)
+    },
     update (e) {
       this.$v.form.groupName.$touch()
       this.$emit('input', {
@@ -73,7 +105,7 @@ export default {
       if (!files.length) return
       this.$v.form.groupPicture.$touch()
       this.$assistant.ephemeral.groupPictureFile = files[0]
-      this.$refs.picture.setFromBlob(files[0])
+      this.$refs.pictureAvatar.setFromBlob(files[0])
     }
   }
 }
@@ -107,7 +139,21 @@ export default {
   }
 }
 
+.c-pictureCanvas {
+  position: absolute;
+  background: $text_1;
+  width: 8rem;
+  height: 8rem;
+  border-radius: 50%;
+
+  &.isHidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
 .groupPictureInput {
-  display: none;
+  position: absolute;
+  opacity: 0;
 }
 </style>

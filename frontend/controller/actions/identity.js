@@ -24,7 +24,7 @@ export default sbp('sbp/selectors/register', {
       attributes: {
         username,
         email: email,
-        picture: picture || `${window.location.origin}/assets/images/default-avatar.png`
+        picture: picture || `${window.location.origin}/assets/images/avatar-default.png`
       }
     })
     const mailbox = await sbp('gi.contracts/mailbox/create', {

@@ -2,7 +2,7 @@ import { blake32Hash } from '~/shared/functions.js'
 import { handleFetchResult } from '~/frontend/controller/utils/misc.js'
 
 // Copied from https://stackoverflow.com/a/27980815/4737729
-function b64toBlob (dataURI) {
+export function b64toBlob (dataURI) {
   var byteString = atob(dataURI.split(',')[1])
   var ab = new ArrayBuffer(byteString.length)
   var ia = new Uint8Array(ab)
@@ -13,13 +13,8 @@ function b64toBlob (dataURI) {
   return new Blob([ab], { type: 'image/jpeg' })
 }
 
-const imageUpload = async (imageFile, opts = {}) => {
-  let file = imageFile
-
-  if (opts.type === 'base64') {
-    file = b64toBlob(imageFile)
-  }
-
+const imageUpload = async (imageFile) => {
+  const file = imageFile
   console.debug('will upload a picture of type:', file.type)
   // https://developer.mozilla.org/en-US/docs/Web/API/File/Using_files_from_web_applications#Asynchronously_handling_the_file_upload_process
   const reply = await new Promise((resolve, reject) => {

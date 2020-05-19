@@ -1,6 +1,6 @@
 <template lang='pug'>
   // Leave in the DOM for debug
-  div(style='display: block;')
+  div(style='display: none;')
     img(:src='ephemeral.avatarBase64')
 </template>
 <script>

@@ -27,7 +27,7 @@ export default sbp('sbp/selectors/register', {
   }, {
     sync = true
   } = {}) {
-    let finalPicture = `${window.location.origin}/assets/images/default-group-avatar.png`
+    let finalPicture = `${window.location.origin}/assets/images/group-default-avatar.png`
 
     if (picture) {
       try {
