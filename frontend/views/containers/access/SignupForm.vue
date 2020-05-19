@@ -75,15 +75,6 @@ export default {
       }
     }
   },
-  computed: {
-    sbpParams () {
-      return {
-        selector: 'gi.contracts/identity/setAttributes/create',
-        contractID: this.$store.state.loggedIn.identityContractID,
-        key: 'picture'
-      }
-    }
-  },
   methods: {
     handleAvatarUrl (base64Url) {
       this.form.pictureBase64 = base64Url
@@ -93,7 +84,6 @@ export default {
         this.$refs.formMsg.danger(L('The form is invalid.'))
         return
       }
-
       try {
         await sbp('gi.actions/identity/signupAndLogin', {
           username: this.form.username,
