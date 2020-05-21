@@ -8,7 +8,7 @@
 
   ul
     li.c-summary-item(
-      v-for='(item, index) in paymentSummary'
+      v-for='(item, index) in summaryCopy'
       :key='index'
     )
       .label {{ item.title }}
@@ -20,8 +20,8 @@
         :hasMarks='item.hasMarks'
       )
       p(:class='{"has-text-success": item.max === item.value}')
-        i.icon-check(v-if='item.max === item.value')
-        .has-text-1 {{ item.label }}
+        i.icon-check.is-prefix(v-if='item.max === item.value')
+        span.has-text-1 {{ item.label }}
 
     li.c-summary-item(v-if='notReceivedPayments')
       i18n.label.is-title-4 Payment not received
@@ -33,22 +33,15 @@
 <script>
 import currencies from '@view-utils/currencies.js'
 import { mapGetters } from 'vuex'
-import { PAYMENT_COMPLETED, PAYMENT_NOT_RECEIVED } from '@model/contracts/payments/index.js'
+import { PAYMENT_NOT_RECEIVED } from '@model/contracts/payments/index.js'
 import ProgressBar from '@components/graphs/Progress.vue'
 import L from '@view-utils/translations.js'
 import { humanDate } from '@utils/time.js'
-import { uniq } from '@utils/giLodash.js'
 
 export default {
   name: 'MonthOverview',
   components: {
     ProgressBar
-  },
-  props: {
-    paymentsData: {
-      type: Object,
-      required: true
-    }
   },
   methods: {
     humanDate,
@@ -62,17 +55,19 @@ export default {
   computed: {
     ...mapGetters([
       'ourGroupProfile',
-      'groupSettings'
+      'groupSettings',
+      'ourPaymentsSummary',
+      'ourPayments'
     ]),
     currency () {
       return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
     },
-    paymentSummary () {
-      const { paymentsTotal, paymentsDone, hasPartials, amountTotal, amountDone } = this.paymentStatus
+    summaryCopy () {
+      const { paymentsTotal, paymentsDone, hasPartials, amountTotal, amountDone } = this.ourPaymentsSummary
 
       const pS = [
         {
-          title: L('Payments completed'),
+          title: this.needsIncome ? L('Payments received') : L('Payments sent'),
           value: paymentsDone,
           max: paymentsTotal,
           hasMarks: true,
@@ -108,45 +103,9 @@ export default {
       }
       return pS
     },
-    paymentStatus () {
-      const { todo, sent, toBeReceived, received } = this.paymentsData
-      const isCompleted = (p) => p.data.status === PAYMENT_COMPLETED
-      const isPartialCount = (list) => list.filter(p => p.partial).length
-      const getUniquePayments = (payments) => {
-        // We need to filter the partial payments already done (sent/received).
-        // E.G. We need to send 4 payments. We've sent 1 full payment and another
-        // in 2 parts. The total must be 2, instead of 3. A quick way to solve this
-        // is by listing all usernames we sent to and count the uniq ones.
-        const users = payments.map(p => p.username)
-        return uniq(users).length
-      }
-
-      if (this.needsIncome) {
-        const receivedCompleted = received.filter(isCompleted)
-        const pPartials = isPartialCount(toBeReceived)
-        return {
-          paymentsDone: getUniquePayments(received) - pPartials,
-          hasPartials: pPartials > 0,
-          paymentsTotal: getUniquePayments([...toBeReceived, ...received]),
-          amountDone: receivedCompleted.reduce((total, p) => total + p.data.amount, 0),
-          amountTotal: toBeReceived.reduce((total, p) => total + p.amount, 0) + received.reduce((total, p) => total + p.amount, 0)
-        }
-      }
-
-      const sentCompleted = sent.filter(isCompleted)
-      const pPartials = isPartialCount(todo)
-      return {
-        paymentsDone: getUniquePayments(sent) - pPartials,
-        hasPartials: pPartials > 0,
-        paymentsTotal: getUniquePayments([...todo, ...sent]),
-        amountDone: sentCompleted.reduce((total, p) => total + p.data.amount, 0),
-        amountTotal: todo.reduce((total, p) => total + p.amount, 0) + sent.reduce((total, p) => total + p.amount, 0)
-      }
-    },
     notReceivedPayments () {
-      const { received, sent } = this.paymentsData
+      const { received, sent } = this.ourPayments
       const payments = this.needsIncome ? received : sent
-
       return payments.filter(p => p.data.status === PAYMENT_NOT_RECEIVED).length
     },
     needsIncome () {

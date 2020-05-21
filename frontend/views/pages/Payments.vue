@@ -7,8 +7,8 @@ page(
 )
   template(#title='') {{ L('Payments') }}
 
-  template(#sidebar='' v-if='hasPayments || (hasPayments && needsIncome)')
-    month-overview(:paymentsData='paymentsAllData')
+  template(#sidebar='' v-if='hasIncomeDetails')
+    month-overview
 
   add-income-details-widget(v-if='!hasIncomeDetails')
 
@@ -124,6 +124,7 @@ export default {
       'groupIncomeDistribution',
       'groupIncomeAdjustedDistribution',
       'paymentTotalFromUserToUser',
+      'ourPayments',
       'groupMonthlyPayments',
       'ourGroupProfile',
       'groupSettings',
@@ -221,138 +222,82 @@ export default {
     },
     paymentsTodo () {
       const payments = []
-      const ourUsername = this.ourUsername
-      const unadjusted = this.groupIncomeDistribution.filter(p => p.from === ourUsername)
       const sentPayments = this.paymentsSent
       const cMonthstamp = currentMonthstamp()
       const pDate = dateFromMonthstamp(cMonthstamp)
       const dueIn = lastDayOfMonth(pDate)
 
-      for (const p of this.groupIncomeAdjustedDistribution) {
-        if (p.from === ourUsername) {
-          const existPayment = unadjusted.find(({ to }) => to === p.to) || { amount: 0 }
-          const amount = +this.currency.displayWithoutCurrency(p.amount)
-          const existingAmount = +this.currency.displayWithoutCurrency(existPayment.amount)
-          if (amount > 0) {
-            const partialAmount = existingAmount - amount
-            const existingPayment = {}
-            if (partialAmount > 0) {
-              // TODO/BUG this won't work if the partial amount is done in 3 parts.
-              const sent = sentPayments.find((s) => s.username === p.to && s.amount === partialAmount)
-              if (sent) {
-                existingPayment.hash = sent.hash // Q: Why do we need this hash?
-              }
-            }
-            payments.push({
-              ...existingPayment,
-              username: p.to,
-              displayName: this.userDisplayName(p.to),
-              amount,
-              partial: partialAmount > 0,
-              total: existingAmount,
-              isLate: false,
-              date: dueIn
-            })
-          }
-        }
+      for (const payment of this.ourPayments.todo) {
+        payments.push({
+          hash: payment.hash,
+          username: payment.to,
+          displayName: this.userDisplayName(payment.to),
+          amount: payment.amount,
+          total: payment.total,
+          partial: payment.partial,
+          isLate: false,
+          date: dueIn
+        })
       }
+
       const notReceived = sentPayments.filter(p => p.data.status === PAYMENT_NOT_RECEIVED)
       return this.paymentsLate.concat(notReceived, payments)
     },
     paymentsSent () {
-      const monthlyPayments = this.groupMonthlyPayments
       const cMonthstamp = currentMonthstamp()
       const payments = []
-      // TODO: support sort direction
-      // QUESTION: Is this only from this month? What about the previous payments from months ago?
-      //           Same question for received.
-      for (const monthstamp of Object.keys(monthlyPayments).sort()) {
-        const { paymentsFrom } = monthlyPayments[monthstamp]
-        if (paymentsFrom) {
-          for (const toUser in paymentsFrom[this.ourUsername]) {
-            for (const paymentHash of paymentsFrom[this.ourUsername][toUser]) {
-              const { data, meta } = this.currentGroupState.payments[paymentHash]
-              const payment = {
-                hash: paymentHash,
-                data,
-                meta,
-                username: toUser,
-                displayName: this.userDisplayName(toUser),
-                date: meta.createdDate,
-                monthstamp: cMonthstamp,
-                amount: data.amount // TODO: properly display and convert in the correct currency using data.currencyFromTo and data.exchangeRate,
-              }
-              if (this.filterPayment(payment)) {
-                payments.push(payment)
-              }
-            }
-          }
+
+      for (const payment of this.ourPayments.sent) {
+        const { hash, data, meta } = payment
+        const p = {
+          hash,
+          data,
+          meta,
+          username: data.toUser,
+          displayName: this.userDisplayName(data.toUser),
+          date: meta.createdDate,
+          monthstamp: cMonthstamp,
+          amount: data.amount // TODO: properly display and convert in the correct currency using data.currencyFromTo and data.exchangeRate,
+        }
+
+        if (this.filterPayment(p)) {
+          payments.push(p)
         }
       }
+
       // TODO: implement better / more correct sorting
       return payments.sort((a, b) => a.date < b.date)
     },
     paymentsToBeReceived () {
-      // TODO/DRY - Very similar to paymentsTodo with these diff:
-      // - paymentsSent -> paymentsReceived
-      // - p.from -> p.to
       const payments = []
-      const ourUsername = this.ourUsername
-      const unadjusted = this.groupIncomeDistribution.filter(p => p.from === ourUsername)
-      const paymentsReceived = this.paymentsReceived
-      for (const p of this.groupIncomeAdjustedDistribution) {
-        if (p.to === ourUsername) {
-          const existPayment = unadjusted.find(({ to }) => to === p.to) || { amount: 0 }
-          const amount = +this.currency.displayWithoutCurrency(p.amount)
-          const existingAmount = +this.currency.displayWithoutCurrency(existPayment.amount)
-          if (amount > 0) {
-            const partialAmount = existingAmount - amount
-            var existingPayment = {}
-            if (partialAmount > 0) {
-              // TODO/BUG this won't work if the partial amount is done in 3 parts.
-              const received = paymentsReceived.find((r) => r.username === p.to && r.amount === partialAmount)
-              if (received) {
-                existingPayment = { hash: received.hash }
-              }
-            }
-            payments.push({
-              ...existingPayment,
-              username: p.from,
-              amount,
-              partial: partialAmount > 0,
-              total: existingAmount
-            })
-          }
-        }
+      for (const payment of this.ourPayments.toBeReceived) {
+        payments.push({
+          hash: payment.hash,
+          username: payment.from,
+          amount: payment.amount,
+          total: payment.total,
+          partial: payment.partial
+        })
       }
       return payments
     },
     paymentsReceived () {
-      const monthlyPayments = this.groupMonthlyPayments[currentMonthstamp()]
-      const paymentsFrom = monthlyPayments && monthlyPayments.paymentsFrom
       const payments = []
-      // TODO: support sort direction
-      if (paymentsFrom) {
-        for (const fromUser in paymentsFrom) {
-          for (const toUser in paymentsFrom[fromUser]) {
-            if (toUser === this.ourUsername) {
-              for (const paymentHash of paymentsFrom[fromUser][toUser]) {
-                const { data, meta } = this.currentGroupState.payments[paymentHash]
-                const payment = {
-                  hash: paymentHash,
-                  data,
-                  meta,
-                  username: fromUser,
-                  displayName: this.userDisplayName(fromUser),
-                  date: meta.createdDate,
-                  amount: data.amount // TODO: properly display and convert in the correct currency using data.currencyFromTo and data.exchangeRate
-                }
-                if (this.filterPayment(payment)) {
-                  payments.push(payment)
-                }
-              }
-            }
-          }
+
+      for (const payment of this.ourPayments.received) {
+        const { hash, data, meta } = payment
+        const fromUser = meta.username
+        const p = {
+          hash,
+          data,
+          meta,
+          username: fromUser,
+          displayName: this.userDisplayName(fromUser),
+          date: meta.createdDate,
+          amount: data.amount // TODO: properly display and convert in the correct currency using data.currencyFromTo and data.exchangeRate
+        }
+        if (this.filterPayment(p)) {
+          payments.push(p)
         }
       }
       // TODO: implement better / more correct sorting

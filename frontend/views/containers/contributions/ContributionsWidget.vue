@@ -9,7 +9,17 @@
             v-html='copy.payments.status'
             @click='handlePaymentStatusClick'
           )
-        payments-summary.c-status(v-else data-test='paymentsSummary')
+        .c-status(v-else data-test='paymentsSummary')
+          .c-pSummary
+            h3.is-title-4 {{ pSummary.title }}
+            p.c-pSummary-status(:class='{"has-text-success": pSummary.max === pSummary.value}')
+              i.icon-check.is-prefix(v-if='pSummary.max === pSummary.value')
+              span.has-text-1 {{ pSummary.label }}
+          progress-bar.c-progress(
+            :max='pSummary.max'
+            :value='pSummary.value'
+            :hasMarks='pSummary.hasMarks'
+          )
 
         router-link.button.is-small(
           v-if='copy.payments.ctaText'
@@ -33,15 +43,15 @@ import { mapGetters } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import PageSection from '@components/PageSection.vue'
+import ProgressBar from '@components/graphs/Progress.vue'
 import L, { LTags } from '@view-utils/translations.js'
 import currencies from '@view-utils/currencies.js'
-import PaymentsSummary from '@containers/payments/PaymentsSummary.vue'
 
 export default {
   name: 'ContributionsWidget',
   components: {
     PageSection,
-    PaymentsSummary
+    ProgressBar
   },
   computed: {
     ...mapGetters([
@@ -50,7 +60,9 @@ export default {
       'groupProfiles',
       'ourUserIdentityContract',
       'ourUsername',
-      'ourContributionSummary'
+      'ourGroupProfile',
+      'ourContributionSummary',
+      'ourPaymentsSummary'
     ]),
     withCurrency () {
       return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
@@ -88,7 +100,7 @@ export default {
         })
 
         if (givingMonetary.pledged > 0) {
-          const payedAll = false // TODO - connect with real data when PaymentsSystem is done.
+          const payedAll = this.ourPaymentsSummary.paymentsTotal === this.ourPaymentsSummary.paymentsDone
 
           copy.payments = {
             title: !givingMonetary.total && L('Payments sent'),
@@ -136,6 +148,21 @@ export default {
       })()
 
       return copy
+    },
+    pSummary () {
+      const { paymentsTotal, paymentsDone, hasPartials } = this.ourPaymentsSummary
+
+      return {
+        title: this.ourGroupProfile.incomeDetailsType === 'incomeAmount' ? L('Payments received') : L('Payments sent'),
+        value: paymentsDone,
+        max: paymentsTotal,
+        hasMarks: true,
+        hasPartials,
+        label: L('{value} out of {max}', {
+          value: paymentsDone,
+          max: paymentsTotal
+        })
+      }
     }
   },
   methods: {
@@ -181,5 +208,14 @@ export default {
 
 .c-status {
   margin-bottom: 1.5rem;
+}
+
+.c-pSummary {
+  display: flex;
+  margin-bottom: 1rem;
+
+  &-status {
+    margin-left: 0.5rem;
+  }
 }
 </style>

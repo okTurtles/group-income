@@ -14,7 +14,7 @@ import {
 } from './voting/constants.js'
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './payments/index.js'
 import * as Errors from '../errors.js'
-import { merge, deepEqualJSONType, omit } from '~/frontend/utils/giLodash.js'
+import { merge, deepEqualJSONType, omit, uniq } from '~/frontend/utils/giLodash.js'
 import { currentMonthstamp, ISOStringToMonthstamp, compareMonthstamps } from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
@@ -225,6 +225,158 @@ DefineContract({
           return a + (amount * exchangeRate * mincomeExchangeRate)
         }, 0)
         return saferFloat(total)
+      }
+    },
+    ourPayments (state, getters) {
+      const currency = currencies[getters.groupSettings.mincomeCurrency]
+      const ourUsername = getters.ourUsername
+
+      const sent = (() => {
+        const monthlyPayments = getters.groupMonthlyPayments
+        const payments = []
+        // QUESTION: Is this only from this month? What about the previous payments from months ago?
+        //           Same question for received.
+        for (const monthstamp of Object.keys(monthlyPayments).sort()) {
+          const { paymentsFrom } = monthlyPayments[monthstamp]
+
+          if (!paymentsFrom) { continue }
+
+          for (const toUser in paymentsFrom[getters.ourUsername]) {
+            for (const paymentHash of paymentsFrom[getters.ourUsername][toUser]) {
+              const { data, meta } = getters.currentGroupState.payments[paymentHash]
+
+              payments.push({ hash: paymentHash, data, meta })
+            }
+          }
+        }
+        return payments
+      })()
+      const received = (() => {
+        const monthlyPayments = getters.groupMonthlyPayments[currentMonthstamp()]
+        const paymentsFrom = monthlyPayments && monthlyPayments.paymentsFrom
+        const allPayments = getters.currentGroupState.payments
+        const payments = []
+
+        if (!paymentsFrom) { return [] }
+
+        for (const fromUser in paymentsFrom) {
+          for (const toUser in paymentsFrom[fromUser]) {
+            if (toUser === getters.ourUsername) {
+              for (const paymentHash of paymentsFrom[fromUser][toUser]) {
+                const { data, meta } = allPayments[paymentHash]
+
+                payments.push({ hash: paymentHash, data, meta })
+              }
+            }
+          }
+        }
+
+        return payments
+      })()
+      const todo = (() => {
+        const payments = []
+        const unadjusted = getters.groupIncomeDistribution.filter(p => p.from === ourUsername)
+
+        for (const p of getters.groupIncomeAdjustedDistribution) {
+          if (p.from !== ourUsername) { continue }
+          const existPayment = unadjusted.find(({ to }) => to === p.to) || { amount: 0 }
+          const amount = +currency.displayWithoutCurrency(p.amount)
+          const existingAmount = +currency.displayWithoutCurrency(existPayment.amount)
+
+          if (amount <= 0) { continue }
+
+          const partialAmount = existingAmount - amount
+          const existingPayment = {}
+          if (partialAmount > 0) {
+            // TODO/BUG this only work if the payment is done in 2 parts. if done in >=3 won't work.
+            const sentPartial = sent.find((s) => s.username === p.to && s.amount === partialAmount)
+            if (sentPartial) {
+              existingPayment.hash = sentPartial.hash // Q: Why do we need this hash?
+            }
+          }
+
+          payments.push({
+            ...existingPayment,
+            ...p,
+            total: existingAmount,
+            partial: partialAmount > 0
+          })
+        }
+        return payments
+      })()
+      const toBeReceived = (() => {
+        const unadjusted = getters.groupIncomeDistribution.filter(p => p.to === ourUsername)
+        const payments = []
+        for (const p of getters.groupIncomeAdjustedDistribution) {
+          if (p.to !== ourUsername) { continue }
+
+          const existPayment = unadjusted.find(({ from }) => from === p.from) || { amount: 0 }
+          const amount = +currency.displayWithoutCurrency(p.amount)
+          const existingAmount = +currency.displayWithoutCurrency(existPayment.amount)
+
+          if (amount <= 0) { continue }
+
+          const partialAmount = existingAmount - amount
+          const existingPayment = {}
+          if (partialAmount > 0) {
+            // TODO/BUG this only work if the payment is done in 2 parts. if done in >=3 won't work.
+            const receivePartial = received.find((r) => r.username === p.to && r.amount === partialAmount)
+            if (receivePartial) {
+              existingPayment.hash = receivePartial.hash
+            }
+          }
+          payments.push({
+            ...existingPayment,
+            ...p,
+            total: existingAmount,
+            partial: partialAmount > 0
+          })
+        }
+        return payments
+      })()
+
+      return { sent, todo, received, toBeReceived }
+    },
+    ourPaymentsSummary (state, getters) {
+      const { todo, sent, toBeReceived, received } = getters.ourPayments
+      const isCompleted = (p) => p.data.status === PAYMENT_COMPLETED
+      const isPartialCount = (list) => list.filter(p => p.partial).length
+      const getUniqPayments = (users) => {
+        // We need to filter the partial payments already done (sent/received).
+        // E.G. We need to send 4 payments. We've sent 1 full payment and another
+        // in 2 parts. The total must be 2, instead of 3. A quick way to solve this
+        // is by listing all usernames we sent to and count the uniq ones.
+        return uniq(users).length
+      }
+
+      if (getters.ourGroupProfile.incomeDetailsType === 'incomeAmount') {
+        const receivedCompleted = received.filter(isCompleted)
+        const pPartials = isPartialCount(toBeReceived)
+        const pByUser = {
+          toBeReceived: toBeReceived.map(p => p.from),
+          received: received.map(p => p.meta.username)
+        }
+        return {
+          paymentsDone: getUniqPayments(pByUser.received) - pPartials,
+          hasPartials: pPartials > 0,
+          paymentsTotal: getUniqPayments([...pByUser.toBeReceived, ...pByUser.received]),
+          amountDone: receivedCompleted.reduce((total, p) => total + p.data.amount, 0),
+          amountTotal: toBeReceived.reduce((total, p) => total + p.amount, 0) + received.reduce((total, p) => total + p.data.amount, 0)
+        }
+      } else {
+        const sentCompleted = sent.filter(isCompleted)
+        const pPartials = isPartialCount(todo)
+        const pByUser = {
+          todo: todo.map(p => p.to),
+          sent: sent.map(p => p.data.toUser)
+        }
+        return {
+          paymentsDone: getUniqPayments(pByUser.sent) - pPartials,
+          hasPartials: pPartials > 0,
+          paymentsTotal: getUniqPayments([...pByUser.todo, ...pByUser.sent]),
+          amountDone: sentCompleted.reduce((total, p) => total + p.data.amount, 0),
+          amountTotal: todo.reduce((total, p) => total + p.amount, 0) + sent.reduce((total, p) => total + p.data.amount, 0)
+        }
       }
     },
     // used with graphs like those in the dashboard and in the income details modal
