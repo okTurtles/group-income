@@ -4,18 +4,18 @@
       i18n.is-title-2.c-title(tag='h2') Theme
       SelectorTheme
 
-      .c-subcontent
-        .c-text-content
-          i18n.c-smaller-title(tag='h3') Use high-contrast colors
-          i18n.help(tag='p') Increases contrast and improves readability
-        label
-          i18n.sr-only Increases contrast
-          input.switch(
-            type='checkbox'
-            name='switch'
-            :checked='$store.state.increaseContrast'
-            @change='handleIncreasedContrast'
-          )
+      //- .c-subcontent
+      //-   .c-text-content
+      //-     i18n.c-smaller-title(tag='h3') Use high-contrast colors
+      //-     i18n.help(tag='p') Increases contrast and improves readability
+      //-   label
+      //-     i18n.sr-only Increases contrast
+      //-     input.switch(
+      //-       type='checkbox'
+      //-       name='switch'
+      //-       :checked='$store.state.increaseContrast'
+      //-       @change='handleIncreasedContrast'
+      //-     )
 
       i18n.is-title-2.c-title(tag='h2') Text size
       SelectorFontSize
