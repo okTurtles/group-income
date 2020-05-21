@@ -46,7 +46,7 @@ export default {
   },
 
   created () {
-    let size = 12
+    let size = 14
     for (let index = 0; index < this.fontVariations; index++) {
       // Add data to the slider
       this.fontData.push(size)
@@ -57,6 +57,10 @@ export default {
         label: 'Aa'
       })
     }
+  },
+
+  mounted () {
+    setTimeout(() => this.$refs.slider.refresh(), 2000)
   }
 }
 </script>

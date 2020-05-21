@@ -29,7 +29,7 @@ export default {
       currentSlider: 0,
       isComponentExists: true,
       interval: 1,
-      lazy: false,
+      lazy: true,
       realTime: false
     }
   },
@@ -375,8 +375,10 @@ export default {
 .slide-bar-tooltip-container {
   position: absolute;
   z-index: 3;
-  left: 0;
-  top: -1rem;
+  left: 0.15rem;
+  width: 2rem;
+  height: 5rem;
+  top: -3rem;
   transition: all 0s;
   will-change: transform;
   cursor: pointer;
@@ -390,15 +392,15 @@ export default {
 }
 
 .slide-bar-tooltip-top {
-  top: -0.75rem;
-  left: 40%;
+  top: 6.3rem;
+  left: 73%;
   transform: translate(-50%, -100%);
 }
 
 .slide-bar-tooltip {
   display: block;
   position: relative;
-  top: 1.375rem;
+  top: 1.3rem;
   height: 1rem;
   width: 1rem;
   white-space: nowrap;
@@ -425,6 +427,7 @@ export default {
   display: flex;
   padding: 0.3125rem 0;
   justify-content: space-between;
+  margin-top: 0.05rem;
 }
 
 .slide-bar-separate-text {
