@@ -3,8 +3,8 @@
   i18n.is-title-4.steps-title(tag='h4') 1. Create a new group
 
   label.avatar(for='groupPicture')
-    canvas.c-pictureCanvas(ref='pictureCanvas' :class='{isHidden: !!$assistant.ephemeral.groupPictureFile }')
-    avatar.c-pictureAvatar(ref='pictureAvatar' size='xl' src='/assets/images/group-avatar-default.png')
+    canvas.c-pictureCanvas(ref='pictureCanvas' :class='{isHidden: $assistant.ephemeral.groupPictureType === "image" }')
+    avatar.c-pictureAvatar(ref='pictureAvatar' size='xl' src='/assets/images/group-avatar-default.png' :alt='L("Group avatar")')
 
     i18n.link Upload an image
     input.groupPictureInput#groupPicture(
@@ -20,18 +20,18 @@
   i18n.error(v-if='$v.form.groupPicture.$error' tag='p') The group picture must be a valid url
 
   .card
-    i18n.label(tag='label') What is the name of your group?
-
-    input.input.is-large.is-primary(
-      ref='name'
-      type='text'
-      name='groupName'
-      :class='{ error: $v.form.groupName.$error }'
-      :value='group.groupName'
-      @input='updateName'
-      @keyup.enter='next'
-      data-test='groupName'
-    )
+    label.field
+      i18n.label What is the name of your group?
+      input.input.is-large.is-primary(
+        ref='name'
+        type='text'
+        name='groupName'
+        :class='{ error: $v.form.groupName.$error }'
+        :value='group.groupName'
+        @input='updateName'
+        @keyup.enter='next'
+        data-test='groupName'
+      )
 
     slot
 </template>
@@ -58,15 +58,22 @@ export default {
   mounted () {
     this.$refs.name.focus()
     const c = this.$refs.pictureCanvas
-    c.width = 128
-    c.height = 128
-    this.updatePictureCanvas(this.groupInitials)
+    c.width = 256
+    c.height = 256
+
+    // Recover the saved picture, in case user is coming back to this step.
+    if (this.$assistant.ephemeral.groupPictureType === 'image') {
+      this.$refs.pictureAvatar.setFromBlob(this.$assistant.ephemeral.groupPictureFile)
+    } else {
+      this.updatePictureCanvas(this.groupInitials)
+    }
   },
   beforeDestroy () {
     if (!this.$assistant.ephemeral.groupPictureFile) {
       const pictureBase64 = this.$refs.pictureCanvas.toDataURL('image/png')
       this.$v.form.groupPicture.$touch()
       this.$assistant.ephemeral.groupPictureFile = b64toBlob(pictureBase64)
+      this.$assistant.ephemeral.groupPictureType = 'canvas'
     }
   },
   computed: {
@@ -78,14 +85,14 @@ export default {
     updatePictureCanvas (initials) {
       const c = this.$refs.pictureCanvas
       const ctx = c.getContext('2d')
-      ctx.rect(0, 0, 128, 128)
+      ctx.rect(0, 0, 256, 256)
       ctx.fillStyle = '#7a7a7a'
       ctx.fill()
 
-      ctx.font = '70px Lato'
+      ctx.font = '140px Lato'
       ctx.fillStyle = 'white'
       ctx.textAlign = 'center'
-      ctx.fillText(initials, 128 / 2, 90)
+      ctx.fillText(initials, 256 / 2, 180)
     },
     updateName (e) {
       this.$v.form.groupName.$touch()
@@ -106,6 +113,7 @@ export default {
       this.$v.form.groupPicture.$touch()
       this.$assistant.ephemeral.groupPictureFile = files[0]
       this.$refs.pictureAvatar.setFromBlob(files[0])
+      this.$assistant.ephemeral.groupPictureType = 'image'
     }
   }
 }
