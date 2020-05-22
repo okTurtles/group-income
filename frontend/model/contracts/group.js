@@ -50,7 +50,7 @@ export function createInvite (
     invitee,
     status: INVITE_STATUS.VALID,
     responses: {}, // { bob: true } list of usernames that accepted the invite.
-    expires: 123456789 // TODO: this
+    expires: 1638588240000 // 04 december 2021.
   }
 }
 
@@ -590,6 +590,22 @@ DefineContract({
           // new member has joined, so subscribe to their identity contract
           await sbp('state/enqueueContractSync', meta.identityContractID)
         }
+      }
+    },
+    'gi.contracts/group/inviteRevoke': {
+      validate: (data, { state, getters, meta }) => {
+        objectOf({
+          inviteSecret: string // NOTE: simulate the OP_KEY_* stuff for now
+        })(data)
+
+        if (!state.invites[data.inviteSecret]) {
+          throw new TypeError(L('The link does not exist.'))
+        }
+      },
+      process ({ data, meta }, { state, getters }) {
+        console.debug('inviteRevoke:', data, state.invites)
+        const invite = state.invites[data.inviteSecret]
+        Vue.set(invite, 'status', INVITE_STATUS.REVOKED)
       }
     },
     'gi.contracts/group/updateSettings': {

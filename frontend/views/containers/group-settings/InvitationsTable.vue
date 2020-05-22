@@ -13,6 +13,8 @@ page-section.c-section(:title='L("Invite links")')
 
   i18n.has-text-1.c-invite-description(tag='p') Here's a list of all invite links you own
 
+  banner-scoped(ref='inviteError' data-test='inviteError')
+
   table.table.table-in-card.c-table(v-if='invitesToShow && invitesToShow.length !== 0')
     thead
       tr
@@ -55,32 +57,32 @@ page-section.c-section(:title='L("Invite links")')
                 )
                   i18n Copy link
         td.c-state
-          span.c-state-description {{ item.status.description }}
+          span.c-state-description {{ item.description }}
           span.c-state-expire(
-            v-if='item.status.expiryInfo'
-            :class='{ "is-expired": item.status.isExpired }'
-          ) {{ item.status.expiryInfo }}
+            v-if='item.expiryInfo'
+            :class='{ "is-danger": item.status.isExpired || item.status.isRevoked }'
+          ) {{ item.expiryInfo }}
         td.c-action
-          menu-parent(v-if='!item.isAnyoneLink')
+          menu-parent(v-if='!item.isAnyoneLink & item.status.isActive')
             menu-trigger.is-icon(:aria-label='L("Show list")')
               i.icon-ellipsis-v
 
             menu-content.c-dropdown-action
               ul
-                menu-item(
-                  tag='button'
-                  item-id='original'
-                  icon='vote-yea'
-                )
-                  // TODO: Implement the action for this menu button.
-                  i18n See original proposal
+                //- menu-item(
+                //-   tag='button'
+                //-   item-id='original'
+                //-   icon='vote-yea'
+                //- )
+                //-   // TODO: #925
+                //-   i18n See original proposal
                 menu-item(
                   v-if='item.status.isActive'
                   tag='button'
                   item-id='revoke'
                   icon='times'
+                  @click='handleRevokeClick(item.inviteSecret)'
                 )
-                  // TODO: Implement the action for this menu button
                   i18n Revoke Link
 
   .c-empty-list(v-else)
@@ -97,18 +99,20 @@ page-section.c-section(:title='L("Invite links")')
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import { MenuParent, MenuTrigger, MenuContent, MenuItem } from '@components/menu/index.js'
+import BannerScoped from '@components/banners/BannerScoped.vue'
 import PageSection from '@components/PageSection.vue'
 import Tooltip from '@components/Tooltip.vue'
 import SvgInvitation from '@svgs/invitation.svg'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import { buildInvitationUrl } from '@model/contracts/voting/proposals.js'
-import { INVITE_INITIAL_CREATOR } from '@model/contracts/constants.js'
+import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/constants.js'
 import { mapGetters, mapState } from 'vuex'
-import L from '@view-utils/translations.js'
+import L, { LError } from '@view-utils/translations.js'
 
 export default {
   name: 'InvitationsTable',
   components: {
+    BannerScoped,
     PageSection,
     SvgInvitation,
     Tooltip,
@@ -128,6 +132,30 @@ export default {
       }
     }
   },
+  computed: {
+    ...mapGetters([
+      'currentGroupState',
+      'ourUsername'
+    ]),
+    ...mapState([
+      'currentGroupId'
+    ]),
+    invitesToShow () {
+      const { invites } = this.currentGroupState
+
+      if (!invites) { return [] }
+
+      const invitesList = Object.values(invites)
+        .filter(invite => invite.creator === INVITE_INITIAL_CREATOR || invite.creator === this.ourUsername)
+        .map(this.mapInvite)
+      const options = {
+        Active: () => invitesList.filter(invite => invite.status.isActive),
+        All: () => invitesList
+      }
+
+      return options[this.ephemeral.selectbox.selectedOption]()
+    }
+  },
   methods: {
     unfocusSelect () {
       this.$refs.select.blur()
@@ -145,23 +173,26 @@ export default {
     inviteStatusDescription ({
       isAnyoneLink,
       isInviteExpired,
+      isInviteRevoked,
       isAllInviteUsed,
       quantity,
       numberOfResponses
     }) {
       if (isAnyoneLink) return L('{numberOfResponses}/{quantity} used', { numberOfResponses, quantity })
       else if (isAllInviteUsed) return L('Used')
-      else return isInviteExpired ? L('Not used') : L('Not used yet')
+      else if (isInviteRevoked) return L('Not used')
+      else return isInviteExpired || isInviteRevoked ? L('Not used') : L('Not used yet')
     },
     readableExpiryInfo (expiryTime) {
+      const timeLeft = expiryTime - Date.now()
       const MIL = 1000
       const MIL_MIN = 60 * MIL
       const MIL_HR = MIL_MIN * 60
       const MIL_DAY = 24 * MIL_HR
       let remainder
 
-      const days = Math.floor(expiryTime / MIL_DAY)
-      remainder = expiryTime % MIL_DAY
+      const days = Math.floor(timeLeft / MIL_DAY)
+      remainder = timeLeft % MIL_DAY
       const hours = Math.floor(remainder / MIL_HR)
       remainder = remainder % MIL_HR
       const minutes = Math.ceil(remainder / MIL_MIN)
@@ -169,18 +200,20 @@ export default {
       if (days) return L('{days}d {hours}h {minutes}m left', { days, hours, minutes })
       if (hours) return L('{hours}h {minutes}m left', { hours, minutes })
       if (minutes) return L('{minutes}m left', { minutes })
-      return L('Expired')
+      return L('Not used')
     },
     mapInvite ({
       creator,
-      inviteSecret,
-      responses,
-      quantity,
       expires: expiryTime,
-      invitee
+      invitee,
+      inviteSecret,
+      quantity,
+      responses,
+      status
     }) {
       const isAnyoneLink = creator === INVITE_INITIAL_CREATOR
       const isInviteExpired = expiryTime <= 0
+      const isInviteRevoked = status === INVITE_STATUS.REVOKED
       const numberOfResponses = Object.keys(responses).length
       const isAllInviteUsed = numberOfResponses === quantity
 
@@ -189,13 +222,14 @@ export default {
         invitee: isAnyoneLink ? L('Anyone') : invitee,
         inviteSecret,
         inviteLink: buildInvitationUrl(this.currentGroupId, inviteSecret),
+        description: this.inviteStatusDescription({
+          isAnyoneLink, isInviteExpired, isInviteRevoked, isAllInviteUsed, quantity, numberOfResponses
+        }),
+        expiryInfo: isInviteExpired ? L('Expired') : isInviteRevoked ? L('Revoked') : isAllInviteUsed ? '' : this.readableExpiryInfo(expiryTime),
         status: {
           isExpired: isInviteExpired,
-          isActive: !isInviteExpired && !isAllInviteUsed,
-          description: this.inviteStatusDescription({
-            isAnyoneLink, isInviteExpired, isAllInviteUsed, quantity, numberOfResponses
-          }),
-          expiryInfo: isAllInviteUsed ? '' : this.readableExpiryInfo(expiryTime)
+          isActive: !isInviteExpired && !isInviteRevoked && !isAllInviteUsed,
+          isRevoked: isInviteRevoked
         }
       }
     },
@@ -203,25 +237,21 @@ export default {
       if (e.target.classList.contains('js-btnInvite')) {
         sbp('okTurtles.events/emit', OPEN_MODAL, 'AddMembers')
       }
-    }
-  },
-  computed: {
-    ...mapGetters(['currentGroupState', 'ourUsername']),
-    ...mapState(['currentGroupId']),
-    invitesToShow () {
-      const { invites } = this.currentGroupState
-
-      if (!invites) { return [] }
-
-      const invitesList = Object.values(invites)
-        .filter(invite => invite.creator === INVITE_INITIAL_CREATOR || invite.creator === this.ourUsername)
-        .map(this.mapInvite)
-      const options = {
-        Active: () => invitesList.filter(invite => invite.status.isActive),
-        All: () => invitesList
+    },
+    async handleRevokeClick (inviteSecret) {
+      if (!confirm(L('Are you sure you want to revoke this link? This action cannot be undone.'))) {
+        return null
       }
 
-      return options[this.ephemeral.selectbox.selectedOption]()
+      try {
+        const message = await sbp('gi.contracts/group/inviteRevoke/create', {
+          inviteSecret
+        }, this.currentGroupId)
+        await sbp('backend/publishLogEntry', message)
+      } catch (e) {
+        console.error('InvitationsTable.vue handleRevokeClick() error:', e)
+        this.$refs.inviteError.danger(L('Failed to revoke link. {reportError}', LError(e)))
+      }
     }
   }
 }
@@ -337,7 +367,7 @@ export default {
       font-size: $size_5;
       color: $text-1;
 
-      &.is-expired {
+      &.is-danger {
         color: $danger_0;
       }
     }
