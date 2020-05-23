@@ -384,10 +384,11 @@ p.error {
 
     &::after {
       position: absolute;
-      width: 0.375rem;
-      height: 0.375rem;
+      width: 6px;
+      height: 6px;
       background-color: $background_0;
-      top: 11px;
+      margin-top: 1px;
+      top: 50%;
       left: 7px;
       transform: translate(-50%, -50%) scale(0);
       transition: transform 150ms;
