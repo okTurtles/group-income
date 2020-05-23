@@ -15,7 +15,7 @@
       v-for='(r, index) in range'
       :key='index'
     )
-      span.slide-bar-separate-text {{ r.label }}
+      span.slide-bar-separate-text(:class='{isActive: index===currentValue}') {{ r.label }}
 </template>
 <script>
 export default {
@@ -446,6 +446,10 @@ export default {
   width: 0.125rem;
   background-color: $general_0;
   cursor: pointer;
+
+  .isActive {
+    color: $primary_0;
+  }
 
   &:nth-child(1) {
     .slide-bar-separate-text {
