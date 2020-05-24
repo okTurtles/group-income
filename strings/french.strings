@@ -84,9 +84,6 @@
 /* MISSING TRANSLATION - views/containers/contributions/GroupPledgesGraph.vue */
 "{span_}Group{_span} goal" = "{span_}Group{_span} goal";
 
-/* MISSING TRANSLATION - views/containers/dashboard/GroupMembersAllModal.vue, views/containers/dashboard/GroupMembersMenu.vue, views/pages/DesignSystem.vue */
-"Remove member" = "Remove member";
-
 /* MISSING TRANSLATION - views/containers/contributions/IncomeDetails.vue */
 "Oops, you entered a negative number" = "Oops, you entered a negative number";
 
@@ -612,9 +609,6 @@
 /* MISSING TRANSLATION - views/containers/contributions/IncomeDetails.vue */
 "What's your monthly income?" = "What's your monthly income?";
 
-/* MISSING TRANSLATION - views/containers/dashboard/GroupMembersMenu.vue */
-"Edit profile" = "Edit profile";
-
 /* MISSING TRANSLATION - views/components/VotingSystemInput.vue, views/components/group-creation-steps/GroupRules.vue */
 "Maximum number of \"no\" votes" = "Maximum number of \"no\" votes";
 
@@ -968,9 +962,6 @@
 
 /* MISSING TRANSLATION - views/containers/user-settings/AppLogs.vue */
 "Recent error: \"{errorMsg}\". Please download the logs and {a_}send them to us{_a}, so we can help troubleshoot." = "Recent error: \"{errorMsg}\". Please download the logs and {a_}send them to us{_a}, so we can help troubleshoot.";
-
-/* MISSING TRANSLATION - views/containers/dashboard/GroupMembersAllModal.vue, views/containers/dashboard/GroupMembersMenu.vue */
-"Send message" = "Send message";
 
 /* MISSING TRANSLATION - views/containers/proposals/RuleRemoveMember.vue */
 "Change Rule to Remove Member" = "Change Rule to Remove Member";

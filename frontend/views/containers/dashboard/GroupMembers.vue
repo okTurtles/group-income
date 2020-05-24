@@ -26,7 +26,6 @@
         i18n.pill.is-primary(v-else-if='isNew' data-test='pillNew') new
 
       group-members-tooltip-pending.c-menu(v-if='invitedBy' :username='username')
-      group-members-menu.c-menu(v-else :username='username')
 
   i18n.link(
     tag='button'
@@ -43,7 +42,6 @@ import { OPEN_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
 import Avatar from '@components/Avatar.vue'
 import AvatarUser from '@components/AvatarUser.vue'
-import GroupMembersMenu from '@containers/dashboard/GroupMembersMenu.vue'
 import ProfileCard from '@components/ProfileCard.vue'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
 import L from '@view-utils/translations.js'
@@ -53,7 +51,6 @@ export default {
   components: {
     Avatar,
     AvatarUser,
-    GroupMembersMenu,
     ProfileCard,
     GroupMembersTooltipPending
   },

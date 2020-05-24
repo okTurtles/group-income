@@ -52,8 +52,6 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
           .c-actions
             group-members-tooltip-pending(v-if='invitedBy' :username='username')
             template(v-else)
-              group-members-menu.c-action-menu(:username='username')
-
               .c-actions-buttons.buttons
                 button.button.is-outlined.is-small(
                   @click='toMessages(username)'
@@ -75,7 +73,6 @@ import { OPEN_MODAL } from '@utils/events.js'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import Search from '@components/Search.vue'
 import AvatarUser from '@components/AvatarUser.vue'
-import GroupMembersMenu from '@containers/dashboard/GroupMembersMenu.vue'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
 
 export default {
@@ -84,7 +81,6 @@ export default {
     ModalBaseTemplate,
     Search,
     AvatarUser,
-    GroupMembersMenu,
     GroupMembersTooltipPending
   },
   data () {
