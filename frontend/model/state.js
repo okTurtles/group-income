@@ -33,12 +33,17 @@ var dropAllMessagesUntilRefresh = false
 var attemptToReprocessMessageID
 const contractIsSyncing: {[string]: boolean} = {}
 
+let defaultTheme = THEME_LIGHT
+if (window && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+  defaultTheme = THEME_DARK
+}
+
 const initialState = {
   currentGroupId: null,
   contracts: {}, // contractIDs => { type:string, HEAD:string } (for contracts we've successfully subscribed to)
   pending: [], // contractIDs we've just published but haven't received back yet
   loggedIn: false, // false | { username: string, identityContractID: string }
-  theme: window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? THEME_DARK : THEME_LIGHT,
+  theme: defaultTheme,
   reducedMotion: false,
   increasedContrast: false,
   fontSize: 16,
