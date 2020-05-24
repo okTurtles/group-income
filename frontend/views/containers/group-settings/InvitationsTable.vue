@@ -24,7 +24,7 @@ page-section.c-section(:title='L("Invite links")')
         th.c-action(
           :aria-label='L("action")'
         )
-    tbody
+    transition-group(name='slidedown' tag='tbody')
       tr(
         v-for='(item, index) in invitesToShow'
         :key='item.inviteSecret'
@@ -128,7 +128,9 @@ export default {
         selectbox: {
           focused: false,
           selectedOption: 'Active'
-        }
+        },
+        // keep invite in "Active" list for a few seconds after being revoked
+        inviteRevokedNow: null
       }
     }
   },
@@ -149,7 +151,7 @@ export default {
         .filter(invite => invite.creator === INVITE_INITIAL_CREATOR || invite.creator === this.ourUsername)
         .map(this.mapInvite)
       const options = {
-        Active: () => invitesList.filter(invite => invite.status.isActive),
+        Active: () => invitesList.filter(invite => invite.status.isActive || (invite.status.isRevoked && invite.inviteSecret === this.ephemeral.inviteRevokedNow)),
         All: () => invitesList
       }
 
@@ -244,11 +246,16 @@ export default {
       }
 
       try {
+        this.ephemeral.inviteRevokedNow = inviteSecret
         const message = await sbp('gi.contracts/group/inviteRevoke/create', {
           inviteSecret
         }, this.currentGroupId)
         await sbp('backend/publishLogEntry', message)
+        setTimeout(() => {
+          this.ephemeral.inviteRevokedNow = null
+        }, 2000)
       } catch (e) {
+        this.ephemeral.inviteRevokedNow = null
         console.error('InvitationsTable.vue handleRevokeClick() error:', e)
         this.$refs.inviteError.danger(L('Failed to revoke link. {reportError}', LError(e)))
       }
