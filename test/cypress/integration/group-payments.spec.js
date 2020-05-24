@@ -14,6 +14,15 @@ function addNonMonetaryContribution (name) {
   cy.getByDT('addNonMonetaryContribution', 'button').click()
   cy.getByDT('inputNonMonetaryContribution').type(name)
   cy.getByDT('buttonAddNonMonetaryContribution', 'button').click()
+  cy.getByDT('buttonAddNonMonetaryContribution', 'button').should('not.exist')
+
+  // Assert the contribution was added to the list once
+  cy.getByDT('givingList').should($list => {
+    const contribution = $list.find('li').filter((i, item) => {
+      return item.textContent.includes(name) && item.getAttribute('data-test') === 'editable'
+    })
+    expect(contribution).to.have.length(1)
+  })
 }
 
 function assertNonMonetaryEditableValue (name) {
@@ -292,36 +301,40 @@ describe('Payments', () => {
     cy.getByDT('closeProfileCard').click()
   })
 
+  const firstContribution = 'Portuguese classes'
+
   it('user1 adds non monetary contribution', () => {
-    addNonMonetaryContribution('Portuguese classes')
+    addNonMonetaryContribution(firstContribution)
 
     cy.getByDT('givingList', 'ul')
       .get('li.is-editable')
       .should('have.length', 1)
-      .should('contain', 'Portuguese classes')
+      .should('contain', firstContribution)
   })
 
   it('user1 removes non monetary contribution', () => {
+    cy.getByDT('buttonEditNonMonetaryContribution')
+
+    cy.getByDT('givingList').find('li').should('have.length', 2) // contribution + cta to add
     cy.getByDT('buttonEditNonMonetaryContribution').click()
     cy.getByDT('buttonRemoveNonMonetaryContribution').click()
-    cy.getByDT('givingList', 'ul')
-      .get('li.is-editable')
-      .should('have.length', 0)
+    cy.getByDT('givingList').find('li').should('have.length', 1) // cta to add
+    cy.getByDT('givingParagraph').should('exist')
   })
 
   it('user1 re-adds the same non monetary contribution', () => {
-    addNonMonetaryContribution('Portuguese classes')
+    addNonMonetaryContribution(firstContribution)
     cy.getByDT('givingList', 'ul')
       .get('li.is-editable')
       .should('have.length', 1)
-      .should('contain', 'Portuguese classes')
+      .should('contain', firstContribution)
   })
 
   it('user1 edits the non monetary contribution', () => {
     cy.getByDT('buttonEditNonMonetaryContribution').click()
     cy.getByDT('inputNonMonetaryContribution').clear().type('French classes{enter}')
     assertNonMonetaryEditableValue('French classes')
-    // Double check
+    // Double check // TODO - Why do we need this?
     assertNonMonetaryEditableValue('French classes')
 
     cy.getByDT('givingList', 'ul')

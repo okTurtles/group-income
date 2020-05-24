@@ -1,6 +1,6 @@
 <template lang='pug'>
 transition(name='replace-list')
-  li.c-contribution-edit(v-if='isEditing || isAdding' key='editing')
+  li.c-contribution-edit(v-if='isEditing || isAdding' data-test='editing' key='editing')
     form.c-contribution(
       @submit.prevent=''
       novalidate='true'
@@ -40,7 +40,7 @@ transition(name='replace-list')
             data-test='buttonSaveNonMonetaryContribution'
           ) {{ L('Save') }}
 
-  li(v-else-if='isEditable' :class='itemClasses' key='editable')
+  li(v-else-if='isEditable' :class='itemClasses' data-test='editable' key='editable')
     slot
 
     button.button.is-small.is-outlined.c-inline-button(
@@ -51,7 +51,7 @@ transition(name='replace-list')
       i.icon-pencil-alt.is-prefix
       | {{ L('Edit') }}
 
-  li.c-spacer-above(v-else-if='isUnfilled' key='isUnfilled')
+  li.c-spacer-above(v-else-if='isUnfilled' data-test='unfilled' key='unfilled')
     button.button.is-small(
       data-test='addNonMonetaryContribution'
       :class='itemClasses'
@@ -59,7 +59,7 @@ transition(name='replace-list')
     )
       slot
 
-  li(v-else='' :class='itemClasses' key='basic')
+  li(v-else='' :class='itemClasses' data-test='basic' key='basic')
     slot
 </template>
 
@@ -244,7 +244,7 @@ export default {
 .c-buttons-right {
   display: flex;
   justify-content: flex-end;
-  width: 100%;
+  flex-grow: 1;
 }
 
 .button + .c-buttons-right {
