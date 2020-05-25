@@ -57,10 +57,6 @@ export default {
         label: 'Aa'
       })
     }
-  },
-
-  mounted () {
-    setTimeout(() => this.$refs.slider.refresh(), 2000)
   }
 }
 </script>

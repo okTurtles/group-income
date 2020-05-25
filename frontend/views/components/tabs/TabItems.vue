@@ -1,44 +1,23 @@
 <template lang='pug'>
-  transition(:name='transitionName')
-    div(v-show='isActive' class='tab-item')
-      .tab-header
-        button.is-icon.tab-back.has-background(
-          aria-label='back'
-          @click='$parent.open = !$parent.open'
-        )
-          i.icon-chevron-left(aria-hidden='true')
+  .tab-item
+    .tab-header
+      button.is-icon.tab-back.has-background(
+        aria-label='back'
+        @click='$parent.open = !$parent.open'
+      )
+        i.icon-chevron-left(aria-hidden='true')
 
-        h2.is-title-2.main-title {{ $parent.title }}
+      transition(:name='$parent.transitionName' mode='out-in')
+        h2.is-title-2.main-title(:key='$parent.title') {{ $parent.title }}
 
-      .tab-body
-        slot
+    .tab-body
+      transition(:name='$parent.transitionName' mode='out-in')
+        component(v-bind:is='$parent.activeComponent')
 </template>
 
 <script>
 export default {
-  name: 'TabItem',
-  data () {
-    return {
-      isActive: false,
-      transitionName: null
-    }
-  },
-  methods: {
-    // Used by parent TabWrapper.vue
-    changeTab (isActive, transitionName) {
-      this.transitionName = transitionName
-      this.isActive = isActive
-    }
-  },
-  created () {
-    this.$parent.tabItems.push(this)
-  },
-  beforeDestroy () {
-    const index = this.$parent.tabItems.indexOf(this)
-    if (index >= 0) {
-      this.$parent.tabItems.splice(index, 1)
-    }
-  }
+  name: 'TabItem'
 }
 </script>
 
@@ -85,6 +64,7 @@ export default {
   display: flex;
   justify-content: center;
   padding-top: 1.5rem;
+  padding-left: 1.5rem;
 
   @include desktop {
     justify-content: flex-start;
