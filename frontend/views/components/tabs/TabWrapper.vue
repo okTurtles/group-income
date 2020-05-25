@@ -26,15 +26,19 @@
             i.icon-chevron-right
 
     section.tab-section
-      slot
+      tab-item
 </template>
 
 <script>
 import { mapGetters } from 'vuex'
 import sbp from '~/shared/sbp.js'
+import TabItem from '@components/tabs/TabItems.vue'
 
 export default {
   name: 'TabWrapper',
+  components: {
+    TabItem
+  },
   props: {
     tabNav: Array,
     defaultTab: String // initial tab name
@@ -69,7 +73,7 @@ export default {
   },
   methods: {
     /**
-     * Change the active tab and emit change event.
+     * Change the active tab.
      */
     changeTab (newIndex) {
       if (this.activeTab === newIndex) return
@@ -110,6 +114,9 @@ export default {
         })
       })
     }
+  },
+  beforeDestroy () {
+    this.$router.push(this.$route.query)
   }
 }
 </script>
