@@ -9,7 +9,12 @@ tooltip(
   slot
 
   template(slot='tooltip')
-    .card.c-profile(v-if='profile' role='dialog' :aria-label='L("{username} profile", { username })')
+    .card.c-profile(
+      v-if='profile'
+      role='dialog'
+      data-test='memberProfileCard'
+      :aria-label='L("{username} profile", { username })'
+    )
       .c-identity(:class='{notGroupMember: !isActiveGroupMember}')
         avatar-user(:username='username' size='lg')
         user-name(:username='username')
@@ -60,13 +65,20 @@ tooltip(
         i18n.button.is-outlined.is-small(
           tag='button'
           @click='sendMessage'
+          data-test='buttonSendMessage'
         ) Send message
 
         i18n.button.is-outlined.is-small(
+          v-if='groupShouldPropose || ourUsername === groupSettings.groupCreator'
           tag='button'
           @click='openModal("RemoveMember", { username })'
+          data-test='buttonRemoveMember'
         ) Remove member
-      modal-close.c-close(:aria-label='L("Close profile")' @close='toggleTooltip')
+
+      modal-close.c-close(
+        :aria-label='L("Close profile")'
+        @close='toggleTooltip'
+      )
 </template>
 
 <script>
@@ -112,7 +124,9 @@ export default {
       'ourUsername',
       'groupProfile',
       'groupProfiles',
+      'groupSettings',
       'globalProfile',
+      'groupShouldPropose',
       'ourContributionSummary'
     ]),
     isSelf () {

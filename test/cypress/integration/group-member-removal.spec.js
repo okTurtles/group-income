@@ -17,8 +17,11 @@ describe('Group - Removing a member', () => {
     cy.getByDT('groupMembers').find(`ul>li:nth-child(${nth})`).within(() => {
       cy.getByDT('username').should('contain', `${username}-${userId}`)
 
-      cy.getByDT('menuActions').find('button').click()
-      cy.getByDT('menuContent').find('ul>li:nth-child(2) button')
+      cy.getByDT('openMemberProfileCard').click()
+    })
+
+    cy.getByDT('memberProfileCard').within(() => {
+      cy.getByDT('buttonRemoveMember')
         .should('contain', 'Remove member')
         .click()
     })
@@ -58,9 +61,10 @@ describe('Group - Removing a member', () => {
         cy.log('Option to Remove Member does not exist')
         cy.getByDT('groupMembers').find('ul>li:nth-child(1)').within(() => {
           cy.getByDT('username').should('contain', `user1-${userId}`)
-          cy.getByDT('menuActions').find('button').click()
-          cy.getByDT('menuContent').find('ul>li').should('have.length', 1) // Edit Profile
+          cy.getByDT('openMemberProfileCard').click()
         })
+        cy.getByDT('memberProfileCard').find('button').should('have.length', 2) // Send message and close
+        cy.getByDT('closeProfileCard').click()
       }
     })
   })
