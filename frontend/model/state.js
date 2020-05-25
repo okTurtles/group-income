@@ -34,7 +34,7 @@ var attemptToReprocessMessageID
 const contractIsSyncing: {[string]: boolean} = {}
 
 let defaultTheme = THEME_LIGHT
-if (window && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+if (typeof (window) !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
   defaultTheme = THEME_DARK
 }
 
