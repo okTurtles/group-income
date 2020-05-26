@@ -48,14 +48,23 @@ page-section.c-section(:title='L("Invite links")')
             i.icon-ellipsis-v
           menu-parent.c-webshare-fallback
             menu-trigger.is-icon-small.c-fallback-trigger(ref='webShareFallbackBtn')
-
             menu-content.c-dropdown-fallback
               ul
                 menu-item(
                   tag='button'
                   icon='link'
                 )
+                  // #780 TODO test/verify if webShare works in a real mobile device.
+                  //      And refactor this markup to only have one menu-parent
                   i18n Copy link
+                menu-item(
+                  v-if='item.status.isActive'
+                  tag='button'
+                  item-id='revoke'
+                  icon='times'
+                  @click='handleRevokeClick(item.inviteSecret)'
+                )
+                  i18n Revoke Link
         td.c-state
           span.c-state-description {{ item.description }}
           span.c-state-expire(
