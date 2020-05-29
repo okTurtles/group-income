@@ -3,13 +3,13 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
   .c-container
     .c-header
       i18n.is-title-2.c-title(tag='h2') Notifications
-      //- try to use as Vue link
+      //- TODO - try to use as Vue link
       button.is-small.is-outlined
         i.icon-cog.is-prefix
         i18n Settings
 
     .card.c-card
-      notifications-list
+      notifications-list(variant='default')
 </template>
 
 <script>

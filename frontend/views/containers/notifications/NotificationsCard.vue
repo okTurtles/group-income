@@ -18,7 +18,7 @@ tooltip(
         i18n.has-text-1 Nothing to see here... yet!
       div(v-else)
         .c-list
-          notifications-list
+          notifications-list(variant='compact')
         .c-footer
           i18n.link(tag='button' @click='openModal("NotificationsModal")') See all
 
@@ -111,9 +111,8 @@ export default {
 .c-header {
   display: flex;
   justify-content: space-between;
-  align-items: baseline;
-  padding: 1rem 1rem;
-  border-bottom: 1px solid $general_1;
+  align-items: center;
+  padding: 1rem 1rem 0.5rem;
 }
 
 .c-empty {
