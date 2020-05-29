@@ -25,7 +25,7 @@
         i18n.pill.is-neutral(v-if='invitedBy' data-test='pillPending') pending
         i18n.pill.is-primary(v-else-if='isNew' data-test='pillNew') new
 
-      group-members-tooltip-pending.c-menu(v-if='invitedBy' :username='username')
+        group-members-tooltip-pending.c-menu(v-if='invitedBy' :username='username')
 
   i18n.link(
     tag='button'
@@ -104,8 +104,18 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 2rem;
-  margin-top: 1rem;
+  height: 3rem;
+  padding: 0.5rem 1.5rem;
+  margin: 0 -1.5rem;
+
+  &:hover {
+    background-color: $general_1;
+    cursor: pointer;
+  }
+
+  > .c-twrapper {
+    width: 100%;
+  }
 }
 
 .c-avatar {
