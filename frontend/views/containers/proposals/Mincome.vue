@@ -31,7 +31,7 @@ import sbp from '~/shared/sbp.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import { mapGetters, mapState } from 'vuex'
-import currencies, { mincomePositive, saferFloat } from '@view-utils/currencies.js'
+import currencies, { mincomePositive, normalizeCurrency } from '@view-utils/currencies.js'
 import L, { LError } from '@view-utils/translations.js'
 import ProposalTemplate from './ProposalTemplate.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
@@ -100,7 +100,7 @@ export default {
   },
   methods: {
     validateMincome () {
-      const mincomeAmount = saferFloat(this.form.mincomeAmount)
+      const mincomeAmount = normalizeCurrency(this.form.mincomeAmount)
       if (mincomeAmount === this.groupSettings.mincomeAmount) {
         this.$refs.formMsg.danger(L('The new mincome should be different than the current one.'))
         this.ephemeral.currentStep = 0
@@ -114,7 +114,7 @@ export default {
         return
       }
 
-      const mincomeAmount = saferFloat(this.form.mincomeAmount)
+      const mincomeAmount = normalizeCurrency(this.form.mincomeAmount)
 
       if (this.groupShouldPropose) {
         try {
