@@ -36,11 +36,4 @@ export default {
   opacity: 1;
   background-color: $general_2;
 }
-
-.settings-container {
-  position: relative;
-  margin: 0 1.5rem;
-  width: 100%;
-  max-width: 38rem;
-}
 </style>

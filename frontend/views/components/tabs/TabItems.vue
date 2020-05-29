@@ -63,12 +63,12 @@ export default {
 .tab-body {
   display: flex;
   justify-content: center;
-  padding-top: 1.5rem;
-  padding-left: 1.5rem;
+  padding: 1.5rem 1.5rem 0 1.5rem;
 
   @include desktop {
     justify-content: flex-start;
     padding-top: 0;
+    max-width: 43rem;
   }
 }
 </style>
