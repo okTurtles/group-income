@@ -80,6 +80,6 @@ $fills: (
 
 .hide-tablet {
   @include tablet {
-    display: none;
+    display: none !important;
   }
 }
