@@ -20,7 +20,8 @@ tooltip(
         .c-list
           notifications-list(variant='compact')
         .c-footer
-          i18n.link(tag='button' @click='openModal("NotificationsModal")') See all
+          router-link.link(:to='{ query: { modal: "NotificationsModal" }}' @click.native='toggleTooltip')
+            i18n See all
 
       // TODO @mmbotelho find a better place for btn.
       modal-close.c-close(:aria-label='L("Close profile")' @close='toggleTooltip')
@@ -28,8 +29,6 @@ tooltip(
 
 <script>
 import { mapGetters } from 'vuex'
-import sbp from '~/shared/sbp.js'
-import { OPEN_MODAL } from '@utils/events.js'
 import ModalClose from '@components/modal/ModalClose.vue'
 import NotificationsList from './NotificationsList.vue'
 import Tooltip from '@components/Tooltip.vue'
@@ -42,10 +41,6 @@ export default {
     Tooltip
   },
   methods: {
-    openModal (name) {
-      this.toggleTooltip()
-      sbp('okTurtles.events/emit', OPEN_MODAL, name)
-    },
     toggleTooltip () {
       this.$refs.tooltip.toggle()
     }

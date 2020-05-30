@@ -13,10 +13,8 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
 </template>
 
 <script>
-import sbp from '~/shared/sbp.js'
 // import L, { LTags } from '@view-utils/translations.js'
 import { mapGetters } from 'vuex'
-import { OPEN_MODAL } from '@utils/events.js'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import NotificationsList from './NotificationsList.vue'
 
@@ -38,10 +36,6 @@ export default {
 
   },
   methods: {
-    openModal (modal, props) {
-      // Hum...
-      sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
-    },
     closeModal () {
       this.$refs.modal.close()
     }
