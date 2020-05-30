@@ -4,7 +4,7 @@ nav.c-navigation(
   :class='{ "is-active": ephemeral.isActive }'
 )
   toggle(@toggle='toggleMenu' element='navigation' :aria-expanded='ephemeral.isActive')
-
+    badge.c-toggle-badge(v-if='notificationsCount') {{ notificationsCount }}
   groups-list(v-if='groupsByName.length > 1' :inert='isInert')
 
   .c-navigation-wrapper(:inert='isInert')
@@ -77,6 +77,7 @@ nav.c-navigation(
 </template>
 
 <script>
+import Badge from '@components/Badge.vue'
 import NotificationsBell from '@containers/notifications/NotificationsBell.vue'
 import GroupsList from './GroupsList.vue'
 import Profile from './Profile.vue'
@@ -91,6 +92,7 @@ import { debounce } from '@utils/giLodash.js'
 export default {
   name: 'Navigation',
   components: {
+    Badge,
     Toggle,
     NotificationsBell,
     GroupsList,
@@ -131,7 +133,8 @@ export default {
     ...mapGetters([
       'groupsByName',
       'unreadMessageCount',
-      'colors'
+      'colors',
+      'notificationsCount'
     ]),
     activityCount () {
       // TODO: implement this? (or not?)
@@ -242,4 +245,11 @@ export default {
 .c-toggle {
   left: 100%;
 }
+
+// Need this nesting because of order of CSS
+.c-navigation .c-toggle .c-toggle-badge {
+  top: 0.5rem;
+  right: 1rem;
+}
+
 </style>
