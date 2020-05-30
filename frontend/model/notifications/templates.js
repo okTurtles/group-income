@@ -3,100 +3,104 @@ import L from '@view-utils/translations.js'
 // Notification templates based on issue #663
 // TODO/REVIEW - list might be stale / incomplete.
 
-export const MEMBER_ADDED = ({ username }) => {
-  const name = 'todo' // getDisplayName(username)
-  const avatarUrl = 'todo.jpg'
+// TODO - improve displayed values: avatar, name, linkTo, date
+export const MEMBER_ADDED = ({ timestamp, data }) => {
+  const name = data.username
+  const avatar = ''
   return {
-    avatarUrl,
+    avatar,
     icon: 'user-plus',
     level: 'info',
-    text: L('The group has a new member! Sai hi to {name}!', {
+    body: L('The group has a new member! Sai hi to {name}!', {
       name: `<strong>${name}</strong>`
     }),
-    linkTo: '/chat',
+    linkTo: '/chat/XXXX',
     date: '1h'
   }
 }
 
-export const MEMBER_REMOVED = ({ username }) => {
-  const name = 'todo' // getDisplayName(username)
-  const avatarUrl = 'todo.jpg'
+export const MEMBER_REMOVED = ({ timestamp, data }) => {
+  const name = data.username
+  const avatar = ''
   return {
-    avatarUrl,
+    avatar,
     icon: 'user-minus',
     level: 'danger',
-    // REVIEW - Not only contributions, but also proposals.
-    text: L('{name} was kicked out of the group. Contributions were updated accordingly.', {
+    body: L('{name} was kicked out of the group. Contributions were updated accordingly.', {
       name: `<strong>${name}</strong>`
     }),
-    linkTo: '/contributions'
+    // REVIEW @mmbotelho - Not only contributions, but also proposals.
+    linkTo: '/contributions',
+    date: ''
   }
 }
 
-export const MEMBER_LEFT = ({ username }) => {
-  const name = 'todo' // getDisplayName(username)
-  const avatarUrl = 'todo.jpg'
+export const MEMBER_LEFT = ({ timestamp, data }) => {
+  const name = data.username
+  const avatar = ''
   return {
-    avatarUrl,
+    avatar,
     icon: 'icon-minus',
     level: 'info',
-    text: L('{name} has left your group. Contributions were updated accordingly.', {
+    body: L('{name} has left your group. Contributions were updated accordingly.', {
       name: `<strong>${name}</strong>`
     }),
-    linkTo: '/contributions'
+    linkTo: '/contributions',
+    date: ''
   }
 }
 
-export const INCOMDE_DETAILS_OLD = ({ monthsCount }) => {
-  // const name = 'todo' // getDisplayName(username)
-  const avatarUrl = 'todo.jpg'
+export const INCOMDE_DETAILS_OLD = ({ timestamp }) => {
+  const avatar = ''
   return {
-    avatarUrl,
+    avatar,
     icon: 'coins',
     level: 'info',
-    text: L("You haven't updated your income details in {n} months. Would you like to review them now?", {
-      n: monthsCount
-    }),
-    linkTo: '/contributions/TODO-LINK-MODAL'
+    body: L("You haven't updated your income details in more than 6 months. Would you like to review them now?"),
+    linkTo: '/contributions/TODO-LINK-MODAL',
+    date: ''
   }
 }
 
-export const SEND_CONTRIBUTION = ({ month }) => {
-  // const name = 'todo' // getDisplayName(username)
-  const avatarUrl = 'todo.jpg'
+export const SEND_CONTRIBUTION = ({ timestamp, data }) => {
+  const month = 'July'
+  const avatar = ''
   return {
-    avatarUrl,
+    avatar,
     icon: 'coins',
     level: 'info',
-    text: L('Do not forget to send your {month} contributions.', {
+    // REVIEW @mmbotelho - ranem contribution to payments?
+    body: L('Do not forget to send your {month} contributions.', {
       month: `<strong>${month}</strong>`
     }),
-    linkTo: '/contributions'
+    linkTo: '/payments',
+    date: ''
   }
 }
 
-export const PROPOSAL_NEW = ({ creator, type }) => {
-  const avatarUrl = 'todo.jpg'
-  const member = `<strong>${creator}</strong>`
-  const textMap = {
-    mincome: L('{member} proposed to change the group mincome. Vote now!', { member }), // @mmbotelho copy changed
-    addMember: L('{member} proposed to add members to the group. Vote now!', { member }),
-    removeMember: L('{member} proposed to remove a member from the group. Vote now!', { member }),
-    votingRule: L('{member} proposed to change the group voting system. Vote now!', { member })
+export const PROPOSAL_NEW = ({ timestamp, data }) => {
+  const avatar = ''
+  const member = `<strong>${data.creator}</strong>`
+
+  const bodyMap = {
+    MINCOME: L('{member} proposed to change the group mincome. Vote now!', { member }), // @mmbotelho copy changed
+    ADD_MEMBER: L('{member} proposed to add members to the group. Vote now!', { member }),
+    REMOVE_MEMBER: L('{member} proposed to remove a member from the group. Vote now!', { member }),
+    VOTING_RULE: L('{member} proposed to change the group voting system. Vote now!', { member })
   }
 
   const iconMap = {
-    mincome: 'coins',
-    addMember: 'user-plus',
-    removeMember: 'user-minus',
-    votingRule: 'vote-yea'
+    MINCOME: 'coins',
+    ADD_MEMBER: 'user-plus',
+    REMOVE_MEMBER: 'user-minus',
+    VOTING_RULE: 'vote-yea'
   }
 
   return {
-    avatarUrl,
-    icon: iconMap[type],
+    avatar,
+    icon: iconMap[data.type],
     level: 'info',
-    text: textMap[type],
-    linkTo: '/dashboard#proposals'
+    body: bodyMap[data.type],
+    linkTo: '/dashboard#TODO-proposals'
   }
 }

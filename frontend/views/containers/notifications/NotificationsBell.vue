@@ -6,6 +6,7 @@ notifications-card
 </template>
 
 <script>
+import { mapGetters } from 'vuex'
 import NotificationsCard from './NotificationsCard.vue'
 import Badge from '@components/Badge.vue'
 
@@ -16,8 +17,19 @@ export default {
     NotificationsCard
   },
   computed: {
-    notifCount: () => {
-      return 2 // TODO
+    ...mapGetters([
+      'groupMembersCount'
+    ]),
+    notifCount () {
+      // TODO this
+      if (this.groupMembersCount === 1) {
+        return 0
+      }
+      if (this.groupMembersCount === 2) {
+        return 1
+      }
+
+      return 7
     }
   }
 }

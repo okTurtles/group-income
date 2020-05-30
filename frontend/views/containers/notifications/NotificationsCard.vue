@@ -52,10 +52,18 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'ourUsername'
+      'groupMembersCount'
     ]),
-    notifCount: () => {
-      return 2 // TODO
+    notifCount () {
+      // TODO this
+      if (this.groupMembersCount === 1) {
+        return 0
+      }
+      if (this.groupMembersCount === 2) {
+        return 1
+      }
+
+      return 7
     }
   }
 }
