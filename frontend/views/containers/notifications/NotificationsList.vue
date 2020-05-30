@@ -6,14 +6,13 @@
     .c-empty(v-else-if='ephemeral.isLoading')
       i18n.has-text-1 Loading...
 
-    // TODO
-      - Timestamp
-      - close card on notif click
-      - open issue modal
-
     template(v-else v-for='(list, type) in notifications')
       span.is-subtitle.c-title {{ title(type) }}
-      ul.c-list(:aria-label='title(type)' :class='variant')
+      ul.c-list(
+        :aria-label='title(type)'
+        :class='variant'
+        @click='() => $emit("select")'
+      )
         li(v-for='item of list')
           router-link.c-item(:to='item.linkTo' :class='item.read ? "" : "unread"')
             span.c-thumbCircle

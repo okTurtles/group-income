@@ -15,7 +15,7 @@ tooltip(
         i18n.link(tag='button' @click='clickSettings') Settings
 
       .c-body
-        notifications-list(variant='compact')
+        notifications-list(variant='compact' @select='toggleTooltip')
       .c-footer(v-if='notificationsCount')
         router-link.link(:to='{ query: { modal: "NotificationsModal" }}' @click.native='toggleTooltip')
           i18n See all

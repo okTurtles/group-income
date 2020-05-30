@@ -13,7 +13,7 @@ export const MEMBER_ADDED = ({ timestamp, data }) => {
     avatar,
     icon: 'user-plus',
     level: 'info',
-    body: L('The group has a new member! Sai hi to {name}!', {
+    body: L('The group has a new member. Say hi to {name}!', {
       name: `<strong>${name}</strong>`
     }),
     linkTo: '/group-chat/XXXX',
@@ -29,10 +29,10 @@ export const MEMBER_REMOVED = ({ timestamp, data }) => {
     avatar,
     icon: 'user-minus',
     level: 'danger',
+    // REVIEW @mmbotelho - Not only contributions, but also proposals.
     body: L('{name} was kicked out of the group. Contributions were updated accordingly.', {
       name: `<strong>${name}</strong>`
     }),
-    // REVIEW @mmbotelho - Not only contributions, but also proposals.
     linkTo: '/contributions',
     date: timeSince(timestamp),
     read: true
