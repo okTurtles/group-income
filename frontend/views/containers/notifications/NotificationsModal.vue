@@ -3,8 +3,7 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
   .c-container
     .c-header
       i18n.is-title-2.c-title(tag='h2') Notifications
-      //- TODO - try to use as Vue link
-      button.is-small.is-outlined
+      button.is-small.is-outlined.c-btnSettings(@click='clickSettings')
         i.icon-cog.is-prefix
         i18n Settings
 
@@ -13,8 +12,9 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
 </template>
 
 <script>
-// import L, { LTags } from '@view-utils/translations.js'
 import { mapGetters } from 'vuex'
+import sbp from '~/shared/sbp.js'
+import { OPEN_MODAL } from '@utils/events.js'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import NotificationsList from './NotificationsList.vue'
 
@@ -36,8 +36,11 @@ export default {
 
   },
   methods: {
-    closeModal () {
-      this.$refs.modal.close()
+    clickSettings () {
+      // BUG - Section notification does not open.
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'UserSettingsModal', {
+        section: 'notifications'
+      })
     }
   }
 }
@@ -62,15 +65,15 @@ export default {
 
 .c-header {
   display: flex;
-  height: 4.75rem;
-  justify-content: center;
+  min-height: 4.75rem;
+  padding: 0 1rem;
+  justify-content: flex-start;
   align-items: center;
-  padding-top: 0;
   background-color: $background_0;
   margin: 0 -1rem;
 
   @include tablet {
-    padding-top: 2rem;
+    padding: 2rem 0 0;
     justify-content: space-between;
     align-items: baseline;
     background-color: transparent;
@@ -80,5 +83,17 @@ export default {
 
 .c-card {
   margin-top: 1.5rem;
+}
+
+@include phone {
+  .c-btnSettings {
+    position: absolute;
+    left: 1rem;
+    margin-top: 4rem;
+  }
+
+  .c-card {
+    margin-top: 3.5rem;
+  }
 }
 </style>

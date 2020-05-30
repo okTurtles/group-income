@@ -1,18 +1,27 @@
 <template lang='pug'>
   div
-    template(v-if='ephemeral.isLoading')
+    .c-empty(v-if='!notificationsCount')
+      i18n.has-text-1 Nothing to see here... yet!
+
+    .c-empty(v-else-if='ephemeral.isLoading')
       i18n.has-text-1 Loading...
+
+    // TODO
+      - Timestamp
+      - close card on notif click
+      - open issue modal
+
     template(v-else v-for='(list, type) in notifications')
       span.is-subtitle.c-title {{ title(type) }}
       ul.c-list(:aria-label='title(type)' :class='variant')
-        li.c-item(v-for='item of list')
-          // TODO - add link
-          .c-thumbCircle
-            avatar(:src='item.avatarUrlTODO' size='md')
-            i(:class='`icon-${item.icon} ${iconBg(item.level)}`')
-          .c-item-content
-            p.c-item-text(v-html='item.body')
-            span.c-item-date.has-text-1.has-text-small(v-html='item.date')
+        li(v-for='item of list')
+          router-link.c-item(:to='item.linkTo' :class='item.read ? "" : "unread"')
+            span.c-thumbCircle
+              avatar(:src='item.avatarUrlTODO' size='md')
+              i(:class='`icon-${item.icon} ${iconBg(item.level)}`')
+            span.c-item-content
+              span.c-item-text(v-html='item.body')
+              span.c-item-date.has-text-1.has-text-small(v-html='item.date')
 </template>
 
 <script>
@@ -36,7 +45,7 @@ export default {
       notifications: null
     },
     ephemeral: {
-      isLoading: true
+      isLoading: false
     }
   }),
   components: {
@@ -46,14 +55,12 @@ export default {
     // TODO this (All dumb logic for now)
 
     // Simulate view with no notifications
-    if (this.groupMembersCount === 1) {
-      this.config.notifications = null
-      this.ephemeral.isLoading = false
-      return
+    if (this.notificationsCount === 0) {
+      return null
     }
 
     // Simulate view with only 1 notification
-    if (this.groupMembersCount === 2) {
+    if (this.notificationsCount === 1) {
       this.ephemeral.isLoading = true
       setTimeout(() => {
         // handpick a notification that is "MEMBER_ADDED"
@@ -61,7 +68,7 @@ export default {
           3213: fakeDBWithNotifications[3213]
         }
         this.ephemeral.isLoading = false
-      })
+      }, 500)
       return
     }
 
@@ -74,7 +81,7 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'groupMembersCount'
+      'notificationsCount'
     ]),
     dateNow () {
       // Hardcoded so the dummy layout makes sense
@@ -128,6 +135,11 @@ export default {
 <style lang="scss" scoped>
 @import "@assets/style/_variables.scss";
 
+.c-empty {
+  padding: 3rem 1rem;
+  text-align: center;
+}
+
 .c-title {
   padding: 0 0 0.5rem 1rem;
 }
@@ -137,30 +149,52 @@ export default {
 }
 
 .c-item {
+  position: relative;
   display: flex;
   align-items: center;
   min-height: 3rem;
 
-  &-content {
-    flex-grow: 1;
-    margin-left: 0.5rem;
+  &:hover,
+  &:focus {
+    background-color: $general_2;
   }
 
-  .c-list.compact & {
-    padding: 1rem;
+  &:focus {
+    z-index: 1;
+    outline: 1px solid $primary_0;
+  }
 
-    .c-item-text {
-      display: inline;
-    }
+  &.unread {
+    background-color: $general_2;
 
-    .c-item-date {
-      margin-left: 0.5rem;
+    &:hover,
+    &:focus {
+      background-color: $general_1;
     }
   }
 
   .c-list.default & {
     padding: 1rem 0.5rem;
+
+    @include tablet {
+      .c-item-text {
+        display: block;
+      }
+    }
   }
+
+  .c-list.compact & {
+    padding: 1rem;
+
+    .c-item-date {
+      margin-left: 0.5rem;
+    }
+  }
+}
+
+.c-item-content {
+  flex-grow: 1;
+  margin-left: 0.5rem;
 }
 
 .c-thumbCircle {

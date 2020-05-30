@@ -121,7 +121,8 @@ export default {
       } else {
         this.content = null
         // Refocus on button that open the modal
-        this.lastFocus.focus()
+        // TODO/BUG It might not exist... (e.g. profile card was closed). What's the best approach then?
+        this.lastFocus && this.lastFocus.focus()
       }
       if (this.replacement) {
         this.openModal(this.replacement)

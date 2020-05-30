@@ -1,11 +1,13 @@
 import L from '@view-utils/translations.js'
+import { timeSince } from '@utils/time.js'
 
 // Notification templates based on issue #663
 // TODO/REVIEW - list might be stale / incomplete.
 
-// TODO - improve displayed values: avatar, name, linkTo, date
+// TODO - add/improve logic to needed keys:
+// - avatar, name, linkTo, date, read
 export const MEMBER_ADDED = ({ timestamp, data }) => {
-  const name = data.username
+  const name = data.username // getDisplayName()
   const avatar = ''
   return {
     avatar,
@@ -14,8 +16,9 @@ export const MEMBER_ADDED = ({ timestamp, data }) => {
     body: L('The group has a new member! Sai hi to {name}!', {
       name: `<strong>${name}</strong>`
     }),
-    linkTo: '/chat/XXXX',
-    date: '1h'
+    linkTo: '/group-chat/XXXX',
+    date: timeSince(timestamp),
+    read: false
   }
 }
 
@@ -31,7 +34,8 @@ export const MEMBER_REMOVED = ({ timestamp, data }) => {
     }),
     // REVIEW @mmbotelho - Not only contributions, but also proposals.
     linkTo: '/contributions',
-    date: ''
+    date: timeSince(timestamp),
+    read: true
   }
 }
 
@@ -46,7 +50,8 @@ export const MEMBER_LEFT = ({ timestamp, data }) => {
       name: `<strong>${name}</strong>`
     }),
     linkTo: '/contributions',
-    date: ''
+    date: timeSince(timestamp),
+    read: true
   }
 }
 
@@ -58,7 +63,8 @@ export const INCOMDE_DETAILS_OLD = ({ timestamp }) => {
     level: 'info',
     body: L("You haven't updated your income details in more than 6 months. Would you like to review them now?"),
     linkTo: '/contributions/TODO-LINK-MODAL',
-    date: ''
+    date: timeSince(timestamp),
+    read: true
   }
 }
 
@@ -74,7 +80,8 @@ export const SEND_CONTRIBUTION = ({ timestamp, data }) => {
       month: `<strong>${month}</strong>`
     }),
     linkTo: '/payments',
-    date: ''
+    date: timeSince(timestamp),
+    read: true
   }
 }
 
@@ -101,6 +108,8 @@ export const PROPOSAL_NEW = ({ timestamp, data }) => {
     icon: iconMap[data.type],
     level: 'info',
     body: bodyMap[data.type],
-    linkTo: '/dashboard#TODO-proposals'
+    linkTo: '/dashboard#TODO-proposals',
+    date: timeSince(timestamp),
+    read: true
   }
 }

@@ -1,8 +1,12 @@
 <template lang='pug'>
-notifications-card
-  button.is-icon-small.c-btn
-    i.icon-bell(:class='notifCount ? "" : "is-active"')
-    badge(v-if='notifCount' data-test='alertNotification') {{ notifCount }}
+div
+  router-link.button.is-icon-small.c-btn.hide-tablet(:to='{ query: { modal: "NotificationsModal" }}')
+    i.icon-bell(:class='notificationsCount ? "" : "is-active"')
+    badge(v-if='notificationsCount' data-test='alertNotification') {{ notificationsCount }}
+  notifications-card
+    button.is-icon-small.c-btn.hide-phone
+      i.icon-bell(:class='notificationsCount ? "" : "is-active"')
+      badge(v-if='notificationsCount' data-test='alertNotification') {{ notificationsCount }}
 </template>
 
 <script>
@@ -18,19 +22,8 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'groupMembersCount'
-    ]),
-    notifCount () {
-      // TODO this
-      if (this.groupMembersCount === 1) {
-        return 0
-      }
-      if (this.groupMembersCount === 2) {
-        return 1
-      }
-
-      return 7
-    }
+      'notificationsCount'
+    ])
   }
 }
 </script>

@@ -12,16 +12,13 @@ tooltip(
     .card.c-card(role='dialog' :aria-label='L("Notifications")')
       .c-header
         i18n.is-title-4(tag='h2') Notifications
-        i18n.link(tag='button') Settings
+        i18n.link(tag='button' @click='clickSettings') Settings
 
-      .c-empty(v-if='!notifCount')
-        i18n.has-text-1 Nothing to see here... yet!
-      div(v-else)
-        .c-list
-          notifications-list(variant='compact')
-        .c-footer
-          router-link.link(:to='{ query: { modal: "NotificationsModal" }}' @click.native='toggleTooltip')
-            i18n See all
+      .c-body
+        notifications-list(variant='compact')
+      .c-footer(v-if='notificationsCount')
+        router-link.link(:to='{ query: { modal: "NotificationsModal" }}' @click.native='toggleTooltip')
+          i18n See all
 
       // TODO @mmbotelho find a better place for btn.
       modal-close.c-close(:aria-label='L("Close profile")' @close='toggleTooltip')
@@ -29,9 +26,11 @@ tooltip(
 
 <script>
 import { mapGetters } from 'vuex'
+import sbp from '~/shared/sbp.js'
+import { OPEN_MODAL } from '@utils/events.js'
 import ModalClose from '@components/modal/ModalClose.vue'
-import NotificationsList from './NotificationsList.vue'
 import Tooltip from '@components/Tooltip.vue'
+import NotificationsList from './NotificationsList.vue'
 
 export default {
   name: 'NotificationsCard',
@@ -43,23 +42,17 @@ export default {
   methods: {
     toggleTooltip () {
       this.$refs.tooltip.toggle()
+    },
+    clickSettings () {
+      sbp('okTurtles.events/emit', OPEN_MODAL, 'UserSettingsModal', {
+        section: 'notifications'
+      })
     }
   },
   computed: {
     ...mapGetters([
-      'groupMembersCount'
-    ]),
-    notifCount () {
-      // TODO this
-      if (this.groupMembersCount === 1) {
-        return 0
-      }
-      if (this.groupMembersCount === 2) {
-        return 1
-      }
-
-      return 7
-    }
+      'notificationsCount'
+    ])
   }
 }
 </script>
@@ -89,9 +82,24 @@ export default {
   }
 
   @include tablet {
+    margin-top: -0.5rem; // better aligned with bell icon
     box-shadow: 0 0.5rem 1.25rem rgba(54, 54, 54, 0.3);
     width: 25rem;
     padding: 0;
+
+    // triangle corner
+    &::before {
+      content: "";
+      position: absolute;
+      top: 1rem;
+      left: -0.5rem;
+      display: block;
+      width: 0;
+      z-index: 0;
+      border-top: 0.5rem solid transparent;
+      border-right: 0.5rem solid $background;
+      border-bottom: 0.5rem solid transparent;
+    }
   }
 }
 
@@ -118,13 +126,8 @@ export default {
   padding: 1rem 1rem 0.5rem;
 }
 
-.c-empty {
-  padding: 2rem 1rem;
-  text-align: center;
-}
-
-.c-list {
-  height: 18rem;
+.c-body {
+  max-height: 18rem;
   overflow: scroll;
   overscroll-behavior-y: contain;
 }
