@@ -26,6 +26,7 @@
 <script>
 import { mapGetters } from 'vuex'
 import * as templates from '@model/notifications/templates.js'
+import { HOURS_MILLIS } from '@utils/time.js'
 import fakeDBWithNotifications from '@model/notifications/fakeDB.js'
 import Avatar from '@components/Avatar.vue'
 import L from '@view-utils/translations.js'
@@ -84,7 +85,7 @@ export default {
     ]),
     dateNow () {
       // Hardcoded so the dummy layout makes sense
-      return 1590825807327
+      return 1590823007327
     },
     notifications () {
       if (!this.config.notifications) {
@@ -94,11 +95,10 @@ export default {
       const list = {}
       const listNew = []
       const listOlder = []
-      const hourMs = 3600000
 
       for (const nId in this.config.notifications) {
         const { timestamp, type, data } = this.config.notifications[nId]
-        const listToPush = this.dateNow - timestamp < hourMs ? listNew : listOlder
+        const listToPush = this.dateNow - timestamp < HOURS_MILLIS * 2 ? listNew : listOlder
         listToPush.push(templates[type]({ data, timestamp }))
       }
 

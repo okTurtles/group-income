@@ -4,6 +4,9 @@ import { timeSince } from '@utils/time.js'
 // Notification templates based on issue #663
 // TODO/REVIEW - list might be stale / incomplete.
 
+// Hardcoded so the dummy layout makes sense
+const dateNow = 1590823007327
+
 // TODO - add/improve logic to needed keys:
 // - avatar, name, linkTo, date, read
 export const MEMBER_ADDED = ({ timestamp, data }) => {
@@ -17,7 +20,7 @@ export const MEMBER_ADDED = ({ timestamp, data }) => {
       name: `<strong>${name}</strong>`
     }),
     linkTo: '/group-chat/XXXX',
-    date: timeSince(timestamp),
+    date: timeSince(timestamp, dateNow),
     read: false
   }
 }
@@ -34,7 +37,7 @@ export const MEMBER_REMOVED = ({ timestamp, data }) => {
       name: `<strong>${name}</strong>`
     }),
     linkTo: '/contributions',
-    date: timeSince(timestamp),
+    date: timeSince(timestamp, dateNow),
     read: true
   }
 }
@@ -50,12 +53,12 @@ export const MEMBER_LEFT = ({ timestamp, data }) => {
       name: `<strong>${name}</strong>`
     }),
     linkTo: '/contributions',
-    date: timeSince(timestamp),
+    date: timeSince(timestamp, dateNow),
     read: true
   }
 }
 
-export const INCOMDE_DETAILS_OLD = ({ timestamp }) => {
+export const INCOME_DETAILS_OLD = ({ timestamp }) => {
   const avatar = ''
   return {
     avatar,
@@ -63,13 +66,13 @@ export const INCOMDE_DETAILS_OLD = ({ timestamp }) => {
     level: 'info',
     body: L("You haven't updated your income details in more than 6 months. Would you like to review them now?"),
     linkTo: '/contributions/TODO-LINK-MODAL',
-    date: timeSince(timestamp),
+    date: timeSince(timestamp, dateNow),
     read: true
   }
 }
 
 export const SEND_CONTRIBUTION = ({ timestamp, data }) => {
-  const month = 'July'
+  const month = 'June'
   const avatar = ''
   return {
     avatar,
@@ -80,7 +83,7 @@ export const SEND_CONTRIBUTION = ({ timestamp, data }) => {
       month: `<strong>${month}</strong>`
     }),
     linkTo: '/payments',
-    date: timeSince(timestamp),
+    date: timeSince(timestamp, dateNow),
     read: true
   }
 }
@@ -109,7 +112,7 @@ export const PROPOSAL_NEW = ({ timestamp, data }) => {
     level: 'info',
     body: bodyMap[data.type],
     linkTo: '/dashboard#TODO-proposals',
-    date: timeSince(timestamp),
+    date: timeSince(timestamp, dateNow),
     read: true
   }
 }
