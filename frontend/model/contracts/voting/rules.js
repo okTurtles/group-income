@@ -52,7 +52,7 @@ const rules = {
     const population = Object.keys(state.profiles).length
     const turnout = votes.length
     const absent = population - turnout
-    // const thresholdAdjusted = getThresholdAdjusted(threshold, groupSize) TODO on next PR.
+    // const thresholdAdjusted = getThresholdAdjusted(threshold, groupSize) TODO in a next PR.
 
     console.debug(`votingRule ${RULE_DISAGREEMENT} for ${proposalType}:`, { totalFor, totalAgainst, threshold, turnout, population, absent })
     if (totalAgainst >= threshold) {
@@ -76,4 +76,29 @@ export default rules
 
 export const ruleType = unionOf(...Object.keys(rules).map(k => literalOf(k)))
 
-export const getThresholdAdjusted = (threshold, groupSize) => Math.min(threshold, groupSize)
+/**
+ *
+ * @example ('disagreement', 2, 1) => 2
+ * @example ('disagreement', 5, 1) => 3
+ * @example ('disagreement', 7, 10) => 7
+ * @example ('disagreement', 20, 10) => 10
+ *
+ * @example ('percentage', 0.5, 3) => 0.5
+ * @example ('percentage', 0.1, 3) => 0.33
+ * @example ('percentage', 0.1, 10) => 0.2
+ * @example ('percentage', 0.3, 10) => 0.3
+ */
+export const getThresholdAdjusted = (rule, threshold, groupSize) => {
+  const groupSizeVoting = Math.max(3, groupSize) // 3 = minimum groupSize to vote
+
+  if (rule === RULE_DISAGREEMENT) {
+    // Maximum "no" votes correspondent to group size
+    return Math.min(groupSizeVoting, threshold)
+  }
+
+  if (rule === RULE_PERCENTAGE) {
+    // Minimum threshold correspondent to 2 "yes" votes
+    const minThreshold = 2 / groupSizeVoting
+    return Math.max(minThreshold, threshold)
+  }
+}

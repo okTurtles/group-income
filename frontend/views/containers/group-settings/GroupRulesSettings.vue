@@ -22,9 +22,8 @@
       banner-simple.c-banner(
         severity='info'
         data-test='ruleAdjusted'
-        v-if='isVotingRuleAdjusted(rule)'
-      )
-        i18n * This value was automatically adjusted because your group is currently smaller than the disagreement number.
+        v-if='votingRuleAdjusted(rule)'
+      ) {{ votingRuleAdjusted(rule) }}
 
       i18n.link(
         v-if='!isRuleActive(rule)'
@@ -71,8 +70,11 @@ export default {
     votingRuleSettings () {
       return this.groupVotingRule.ruleSettings[this.groupVotingRule.rule]
     },
+    thresholdOriginal () {
+      return this.votingRuleSettings.threshold
+    },
     thresholdAdjusted () {
-      return getThresholdAdjusted(this.votingRuleSettings.threshold, this.groupMembersCount)
+      return getThresholdAdjusted(this.groupVotingRule.rule, this.thresholdOriginal, this.groupMembersCount)
     }
   },
   methods: {
@@ -82,10 +84,19 @@ export default {
     isRuleActive (rule) {
       return rule === this.groupVotingRule.rule
     },
-    isVotingRuleAdjusted (ruleName) {
-      if (!this.isRuleActive(ruleName) || ruleName !== RULE_DISAGREEMENT) return false
+    votingRuleAdjusted (ruleName) {
+      if (!this.isRuleActive(ruleName) || this.thresholdAdjusted === this.thresholdOriginal) {
+        return ''
+      }
 
-      return this.votingRuleSettings.threshold !== this.thresholdAdjusted
+      if (ruleName === RULE_DISAGREEMENT) {
+        return L('*This value was automatically adjusted because your group is currently smaller than the disagreement number.')
+      }
+      if (ruleName === RULE_PERCENTAGE) {
+        return L('*This value was automatically adjusted because there should always be at least 2 yes votes.')
+      }
+
+      return ''
     },
     votingValue (option) {
       const HTMLTags = {
@@ -94,21 +105,24 @@ export default {
         sm_: '<span class="has-text-1 has-text-small">',
         _sm: '</span>'
       }
+      const count = this.thresholdOriginal
+      const adjusted = this.thresholdAdjusted
 
       if (option === RULE_PERCENTAGE) {
-        const percent = this.votingRuleSettings.threshold * 100 + '%'
-
-        // TODO/BUG/REVIEW: in a 1 member group with 49%, it says: 0 out of 1 members. Is it rights?
-        return L('{b_}{percent}{_b} {sm_}({count} out of {total} members){_sm}', {
+        const percent = this.thresholdOriginal * 100 + '%'
+        const membersCount = Math.max(3, this.groupMembersCount) // 3 = minimum groupSize to vote
+        const LArgs = {
           percent,
-          count: Math.round(this.groupMembersCount * this.votingRuleSettings.threshold),
-          total: this.groupMembersCount,
+          count: Math.round(membersCount * adjusted),
+          total: membersCount,
           ...HTMLTags
-        })
-      } else if (option === RULE_DISAGREEMENT) {
-        const count = this.votingRuleSettings.threshold
-        const adjusted = this.thresholdAdjusted
+        }
 
+        if (count === adjusted) {
+          return L('{b_}{percent}{_b} {sm_}({count} out of {total} members){_sm}', LArgs)
+        }
+        return L('{b_}{percent}{_b} {sm_}({count}* out of {total} members){_sm}', LArgs)
+      } else if (option === RULE_DISAGREEMENT) {
         if (count === adjusted) {
           return L('{b_}{count}{_b}', { count, ...HTMLTags })
         }

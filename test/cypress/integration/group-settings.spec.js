@@ -75,37 +75,46 @@ describe('Group Voting Rules', () => {
       cy.getByDT('ruleStatus').should('contain', status)
 
       if (ruleAdjusted) {
-        cy.getByDT('ruleAdjusted').should('contain', '* This value was autom') // assert start of sentence is enough.
+        cy.getByDT('ruleAdjusted').should('contain', '*This value was autom') // asserting beginning of sentence is enough
       } else {
         cy.getByDT('ruleAdjusted').should('not.exist')
       }
     })
   }
 
-  it('user1 creates a group with rule "disagreement" and threshold "1"', () => {
-    cy.giCreateGroup('groupDis_1', { ruleName: 'disagreement', ruleThreshold: 1 })
+  it('user1 creates a group with rule "disagreement" and threshold "2"', () => {
+    cy.giCreateGroup('groupDis_1', { ruleName: 'disagreement', ruleThreshold: 2 })
 
     verifyRuleSelected('disagreement', {
-      status: '1',
+      status: '2',
       ruleAdjusted: false
     })
   })
 
   it('user1 creates a group with rule "disagreement" and threshold "37"', () => {
-    cy.giCreateGroup('groupDis_37_adjusted', { ruleName: 'disagreement', ruleThreshold: 37 })
+    cy.giCreateGroup('groupDis_37_adjusted', { bypassUI: true, ruleName: 'disagreement', ruleThreshold: 37 })
 
     verifyRuleSelected('disagreement', {
-      status: '37 (adjusted to 1*)',
+      status: '37 (adjusted to 3*)',
       ruleAdjusted: true
     })
   })
 
-  it('user1 creates a group with rule "percentage" and threshold "75"', () => {
-    cy.giCreateGroup('groupPerc_75', { ruleName: 'percentage', ruleThreshold: 75 })
+  it('user1 creates a group with rule "percentage" and threshold "90"', () => {
+    cy.giCreateGroup('groupPerc_75', { ruleName: 'percentage', ruleThreshold: 90 })
 
     verifyRuleSelected('percentage', {
-      status: '75% (1 out of 1 members)',
+      status: '90% (3 out of 3 members)',
       ruleAdjusted: false
+    })
+  })
+
+  it('user1 creates a group with rule "percentage" and threshold "40"', () => {
+    cy.giCreateGroup('groupPerc_75', { bypassUI: true, ruleName: 'percentage', ruleThreshold: 40 })
+
+    verifyRuleSelected('percentage', {
+      status: '40% (2* out of 3 members)',
+      ruleAdjusted: true
     })
 
     cy.giLogout()
