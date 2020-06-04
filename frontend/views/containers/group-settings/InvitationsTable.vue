@@ -210,6 +210,9 @@ export default {
     ...mapState(['currentGroupId']),
     invitesToShow () {
       const { invites } = this.currentGroupState
+
+      if (!invites) { return [] }
+
       const invitesList = Object.values(invites)
         .filter(invite => invite.creator === INVITE_INITIAL_CREATOR || invite.creator === this.ourUsername)
         .map(this.mapInvite)
