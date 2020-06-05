@@ -110,7 +110,6 @@ export default {
       try {
         this.$refs.formMsg.clean()
 
-        const ruleThreshold = this.form.ruleThreshold[this.form.ruleName]
         await sbp('gi.actions/group/createAndSwitch', {
           name: this.form.groupName,
           picture: this.ephemeral.groupPictureFile,
@@ -118,9 +117,7 @@ export default {
           mincomeAmount: this.form.mincomeAmount,
           mincomeCurrency: this.form.mincomeCurrency,
           ruleName: this.form.ruleName,
-          ruleThreshold: this.form.ruleName === RULE_PERCENTAGE
-            ? ruleThreshold / 100 // convert percent to decimal (e.g 60 -> 0.6)
-            : ruleThreshold
+          ruleThreshold: this.form.ruleThreshold[this.form.ruleName]
         })
         this.next()
       } catch (e) {
@@ -144,7 +141,7 @@ export default {
         ruleName: null,
         ruleThreshold: {
           [RULE_DISAGREEMENT]: proposalsSettings[RULE_DISAGREEMENT].threshold,
-          [RULE_PERCENTAGE]: proposalsSettings[RULE_PERCENTAGE].threshold * 100 // convert decimal to percent (e.g 0.6 -> 60)
+          [RULE_PERCENTAGE]: proposalsSettings[RULE_PERCENTAGE].threshold
         },
         // randomize to reduce choice bias
         rulesOrder: Math.round(Math.random()) ? [RULE_PERCENTAGE, RULE_DISAGREEMENT] : [RULE_DISAGREEMENT, RULE_PERCENTAGE]

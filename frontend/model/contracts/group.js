@@ -6,7 +6,7 @@ import { DefineContract } from './Contract.js'
 import { arrayOf, mapOf, objectOf, objectMaybeOf, optional, string, number, object, unionOf, tupleOf } from '~/frontend/utils/flowTyper.js'
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income-simple/issues/603
-import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST } from './voting/rules.js'
+import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './voting/rules.js'
 import proposals, { proposalType, proposalSettingsType, archiveProposal } from './voting/proposals.js'
 import {
   PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC,
@@ -734,6 +734,17 @@ DefineContract({
         }
       }
     },
+    'gi.contracts/group/updateVotingRules': {
+      validate: objectOf({
+        ruleName: x => [RULE_PERCENTAGE, RULE_DISAGREEMENT].includes(x),
+        ruleThreshold: number
+      }),
+      process ({ data, meta }, { state }) {
+        Vue.set(state.settings.proposals.generic, 'rule', data.ruleName)
+        Vue.set(state.settings.proposals.generic.ruleSettings[data.ruleName], 'threshold', data.ruleThreshold)
+      }
+    },
+
     ...(process.env.NODE_ENV === 'development' ? {
       'gi.contracts/group/malformedMutation': {
         validate: objectOf({ errorType: string }),

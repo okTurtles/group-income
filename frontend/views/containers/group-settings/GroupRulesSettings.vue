@@ -16,6 +16,7 @@
           span(v-html='votingValue(rule)' data-test='ruleStatus')
           i18n.link(
             tag='button'
+            data-test='changeRule'
             @click='openVotingProposal(rule)'
           ) Change
 
@@ -28,6 +29,7 @@
       i18n.link(
         v-if='!isRuleActive(rule)'
         tag='button'
+        data-test='changeRule'
         @click='openVotingProposal(rule)'
       ) Change to this voting system
 </template>
@@ -93,7 +95,7 @@ export default {
         return L('*This value was automatically adjusted because your group is currently smaller than the disagreement number.')
       }
       if (ruleName === RULE_PERCENTAGE) {
-        return L('*This value was automatically adjusted because there should always be at least 2 yes votes.')
+        return L('*This value was automatically adjusted because there should always be at least 2 "yes" votes.')
       }
 
       return ''

@@ -61,6 +61,30 @@ describe('Changing Group Settings', () => {
 })
 
 describe('Group Voting Rules', () => {
+  function updateRuleSettings (ruleName, threshold, opts = {}) {
+    cy.log(`Update group Voting Rule: ${ruleName}, ${threshold}`)
+
+    cy.getByDT('groupSettingsLink').click()
+    cy.getByDT('votingRules', 'ul').find(`li[data-test='${ruleName}']`).within(() => {
+      cy.getByDT('changeRule', 'button').click()
+    })
+
+    if (opts.changeSystem) {
+      cy.getByDT('changeSystem').should('exist')
+    }
+
+    const ruleThreshold = ruleName === 'percentage' ? threshold * 100 : threshold
+    cy.getByDT('modalProposal').within(() => {
+      cy.get(`input[type='range']#range${ruleName}`)
+        .invoke('val', ruleThreshold)
+        .trigger('input')
+      // Verify the input value has really changed
+      cy.get(`input[type='range']#range${ruleName}`).should('have.value', ruleThreshold.toString())
+
+      cy.getByDT('submitBtn').click()
+    })
+  }
+
   function verifyRuleSelected (ruleName, { status, ruleAdjusted }) {
     cy.log(`Verify selected group Voting Rule: ${ruleName}`)
 
@@ -82,8 +106,8 @@ describe('Group Voting Rules', () => {
     })
   }
 
-  it('user1 creates a group with rule "disagreement" and threshold "2"', () => {
-    cy.giCreateGroup('groupDis_1', { ruleName: 'disagreement', ruleThreshold: 2 })
+  it('user1 creates a group with rule "disagreement" of "2"', () => {
+    cy.giCreateGroup('groupDis_2', { ruleName: 'disagreement', ruleThreshold: 2 })
 
     verifyRuleSelected('disagreement', {
       status: '2',
@@ -91,29 +115,27 @@ describe('Group Voting Rules', () => {
     })
   })
 
-  it('user1 creates a group with rule "disagreement" and threshold "37"', () => {
-    cy.giCreateGroup('groupDis_37_adjusted', { bypassUI: true, ruleName: 'disagreement', ruleThreshold: 37 })
+  it('user1 creates a group with rule "percentage" of 40%', () => {
+    cy.giCreateGroup('groupPerc_40', { bypassUI: true, ruleName: 'percentage', ruleThreshold: 0.4 })
 
-    verifyRuleSelected('disagreement', {
-      status: '37 (adjusted to 3*)',
+    verifyRuleSelected('percentage', {
+      status: '40% (2* out of 3 members)',
       ruleAdjusted: true
     })
   })
 
-  it('user1 creates a group with rule "percentage" and threshold "90"', () => {
-    cy.giCreateGroup('groupPerc_75', { ruleName: 'percentage', ruleThreshold: 90 })
-
+  it('user1 updates the group rule "percentage" to 90%', () => {
+    updateRuleSettings('percentage', 0.9)
     verifyRuleSelected('percentage', {
       status: '90% (3 out of 3 members)',
       ruleAdjusted: false
     })
   })
 
-  it('user1 creates a group with rule "percentage" and threshold "40"', () => {
-    cy.giCreateGroup('groupPerc_75', { bypassUI: true, ruleName: 'percentage', ruleThreshold: 40 })
-
-    verifyRuleSelected('percentage', {
-      status: '40% (2* out of 3 members)',
+  it('user1 changes the group rule to "disagrement" of "37"', () => {
+    updateRuleSettings('disagreement', 37, { changeSystem: true })
+    verifyRuleSelected('disagreement', {
+      status: '37 (adjusted to 3*)',
       ruleAdjusted: true
     })
 

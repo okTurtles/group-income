@@ -146,7 +146,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
       mincomeAmount: mincome,
       mincomeCurrency: 'USD',
       ruleName,
-      ruleThreshold: ruleName === 'percentage' ? ruleThreshold / 100 : ruleThreshold
+      ruleThreshold
     })
 
     cy.url().should('eq', 'http://localhost:8000/app/dashboard')
@@ -181,7 +181,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
       cy.get(`input[type='range']#range${ruleName}`)
         .invoke('val', ruleThreshold)
         .trigger('input')
-      // Verify the input value was really changed
+      // Verify the input value has really changed
       cy.get(`input[type='range']#range${ruleName}`).should('have.value', ruleThreshold.toString())
     })
     cy.getByDT('finishBtn').click()

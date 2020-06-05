@@ -3,11 +3,11 @@
     slider-continuous.c-slider(
       :class='ephemeral.sliderClass'
       :uid='rule'
-      :label='config[rule].slideLabel'
-      :min='config[rule].slideMin'
-      :max='config[rule].slideMax'
-      :unit='config[rule].slideUnit'
-      :value='value'
+      :label='config[rule].sliderLabel'
+      :min='config[rule].sliderMin'
+      :max='config[rule].sliderMax'
+      :unit='config[rule].sliderUnit'
+      :value='sliderValue'
       @input='handleInput'
     )
     transition-expand
@@ -45,16 +45,16 @@ export default {
   data: () => ({
     config: {
       [RULE_PERCENTAGE]: {
-        slideLabel: L('What percentage of members need to agree?'),
-        slideMin: 0,
-        slideMax: 100,
-        slideUnit: '%'
+        sliderLabel: L('What percentage of members need to agree?'),
+        sliderMin: 0,
+        sliderMax: 100,
+        sliderUnit: '%'
       },
       [RULE_DISAGREEMENT]: {
-        slideLabel: L('Maximum number of "no" votes'),
-        slideMin: 1,
-        slideMax: 60,
-        slideUnit: ''
+        sliderLabel: L('"No" votes required to block a proposal'),
+        sliderMin: 1,
+        sliderMax: 60,
+        sliderUnit: ''
       }
     },
     ephemeral: {
@@ -67,13 +67,23 @@ export default {
     }
   },
   computed: {
+    sliderValue () {
+      if (this.rule === RULE_PERCENTAGE) {
+        // convert decimal to percentage avoiding weird decimals results.
+        // e.g. 0.58 -> 58 instead of 57.99999
+        // based on https://stackoverflow.com/a/11832950/4737729
+        return Math.round(this.value * 100 * 100 / 100)
+      }
+      return this.value
+    },
     warnMajority () {
-      return this.rule === RULE_PERCENTAGE && this.value / 100 < SUPERMAJORITY
+      return this.rule === RULE_PERCENTAGE && this.value < SUPERMAJORITY
     }
   },
   methods: {
     handleInput (e) {
-      this.$emit('update', e.target.value)
+      const value = this.rule === RULE_PERCENTAGE ? e.target.value / 100 : e.target.value
+      this.$emit('update', value)
     }
   }
 }

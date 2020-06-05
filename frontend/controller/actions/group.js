@@ -177,5 +177,15 @@ export default sbp('sbp/selectors/register', {
       console.error('gi.actions/group/leaveGroup failed', e)
       throw new GIErrorUIRuntimeError(L('Failed to leave group. {codeError}', { codeError: e.message }))
     }
+  },
+  'gi.actions/group/updateVotingRules': async function (params, groupId) {
+    try {
+      const message = await sbp('gi.contracts/group/updateVotingRules/create', params, groupId)
+      await sbp('backend/publishLogEntry', message)
+      return message
+    } catch (e) {
+      console.error('gi.actions/group/leaveGroup failed', e)
+      throw new GIErrorUIRuntimeError(L('Failed to update voting rules. {codeError}', { codeError: e.message }))
+    }
   }
 })
