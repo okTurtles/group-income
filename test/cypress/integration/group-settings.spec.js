@@ -3,6 +3,7 @@ const groupName = 'Dreamers'
 const groupMincome = 750
 const groupNewMincome = groupMincome + 100
 const sharedValues = ''
+let invitationLinkAnyone
 
 describe('Changing Group Settings', () => {
   it('user1 creates a new group', () => {
@@ -132,13 +133,65 @@ describe('Group Voting Rules', () => {
     })
   })
 
-  it('user1 changes the group rule to "disagrement" of "37"', () => {
-    updateRuleSettings('disagreement', 37, { changeSystem: true })
+  it('user1 changes the group rule to "disagrement" of "4"', () => {
+    updateRuleSettings('disagreement', 4, { changeSystem: true })
     verifyRuleSelected('disagreement', {
-      status: '37 (adjusted to 3*)',
+      status: '4 (adjusted to 2*)',
       ruleAdjusted: true
+    })
+  })
+
+  it('user1 shares the invitation link for others to join the group', () => {
+    cy.getByDT('dashboard').click()
+    cy.giGetInvitationAnyone().then(url => {
+      invitationLinkAnyone = url
+    })
+    cy.giLogout()
+  })
+
+  it('in a group with 4 members, the "disagrement" rule is adjusted from 4 to 3', () => {
+    for (let i = 2; i <= 4; i++) {
+      cy.giAcceptGroupInvite(invitationLinkAnyone, {
+        username: `user${i}-${userId}`, groupName, bypassUI: true
+      })
+    }
+
+    cy.giLogin(`user1-${userId}`, { bypassUI: true })
+
+    verifyRuleSelected('disagreement', {
+      status: '4 (adjusted to 3*)',
+      ruleAdjusted: true
+    })
+    cy.giLogout()
+  })
+
+  it('in a group with 5 members, the "disagrement" rule of 4 is not adjusted.', () => {
+    cy.giAcceptGroupInvite(invitationLinkAnyone, {
+      username: `user5-${userId}`, groupName, bypassUI: true
+    })
+
+    cy.giLogin(`user1-${userId}`, { bypassUI: true })
+
+    verifyRuleSelected('disagreement', {
+      status: '4',
+      ruleAdjusted: false
     })
 
     cy.giLogout()
   })
+
+  /* For another PR:
+
+  it('user1 proposes to update voting rule to 1. Everyone disagrees and it gets rejected.', () => {
+  })
+
+  it('user1 proposes to update voting rule to 1. It gets accepted with 3 against vs 2 in favor', () => {
+  })
+
+  it('user1 proposes to change system to "percentage" 50%". It gets rejected when anyone disagrees.', () => {
+  })
+
+  it('user1 proposes to change system to "percentage" 50%". It gets accepted when everyone agrees.', () => {
+  })
+  */
 })

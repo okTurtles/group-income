@@ -2,23 +2,23 @@
 proposal-template(
   ref='proposal'
   :title='title'
-  :rule='{ value: 8, total: 10 }'
   :disabled='false'
   :maxSteps='config.steps.length'
   :currentStep.sync='ephemeral.currentStep'
   @submit='submit'
 )
-  .c-step
+  .c-step(v-if='ephemeral.currentStep === 0' key='0')
     p.has-text-1.c-desc(v-if='changeSystem' v-html='changeSystem' data-test='changeSystem')
 
     voting-rules-input.c-input(
       :rule='rule'
-      :value='form.value'
-      @update='setValue'
+      :value='form.threshold'
+      @update='setThreshold'
     )
 
+    // REVIEW - Why disagreement has an explanation but percentage doesn't?
     template(v-if='rule === RULE_DISAGREEMENT')
-      i18n.has-text-1(v-if='form.value > 1' :args='{nr: form.value}') Future proposals would be accepted if {nr} or fewer members disagree.
+      i18n.has-text-1(v-if='form.threshold > 1' :args='{nr: form.threshold}') Future proposals would be accepted if {nr} or fewer members disagree.
       i18n.has-text-1(v-else :args='LTags("b")') Future proposals would be accepted if {b_}no one{_b} disagrees.
 
   banner-scoped(ref='formMsg' data-test='proposalError')
@@ -30,6 +30,7 @@ import { mapGetters, mapState } from 'vuex'
 import { CLOSE_MODAL } from '@utils/events.js'
 import L, { LTags } from '@view-utils/translations.js'
 import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/voting/rules.js'
+import { PROPOSAL_PROPOSAL_SETTING_CHANGE } from '@model/contracts/voting/constants.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ProposalTemplate from './ProposalTemplate.vue'
 import VotingRulesInput from '@components/VotingRulesInput.vue'
@@ -45,7 +46,7 @@ export default {
     rule: {
       type: String,
       validator: (value) => [RULE_DISAGREEMENT, RULE_PERCENTAGE].includes(value),
-      default: RULE_DISAGREEMENT
+      default: RULE_DISAGREEMENT // remove this. related to #935
     }
   },
   data () {
@@ -55,8 +56,8 @@ export default {
         steps: ['VotingSystem']
       },
       form: {
-        value: null,
-        changeReason: null
+        threshold: null,
+        reason: ''
       },
       ephemeral: {
         errorMsg: null,
@@ -68,7 +69,7 @@ export default {
     if (!this.rule) {
       sbp('okTurtles.events/emit', CLOSE_MODAL)
     } else {
-      this.form.value = this.groupVotingRule.ruleSettings[this.rule].threshold
+      this.form.threshold = this.groupVotingRule.ruleSettings[this.rule].threshold
     }
   },
   computed: {
@@ -77,7 +78,8 @@ export default {
     ]),
     ...mapGetters([
       'groupShouldPropose',
-      'groupVotingRule'
+      'groupVotingRule',
+      'groupSettings'
     ]),
     title () {
       if (this.groupVotingRule.rule === this.rule) {
@@ -103,17 +105,37 @@ export default {
     }
   },
   methods: {
-    setValue (value) {
-      this.form.value = value
+    setThreshold (value) {
+      this.form.threshold = value
     },
     async submit () {
+      const isProposalImplemented = false // TODO in another PR
+
       if (this.groupShouldPropose) {
-        alert('TODO proposal')
+        const proposal = await sbp('gi.contracts/group/proposal/create',
+          {
+            proposalType: PROPOSAL_PROPOSAL_SETTING_CHANGE,
+            proposalData: {
+              setting: 'votingRule',
+              ruleName: this.rule,
+              ruleThreshold: +this.form.threshold,
+              reason: this.form.reason
+            },
+            votingRule: this.groupSettings.proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].rule,
+            expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].expires_ms
+          },
+          this.currentGroupId
+        )
+        await sbp('backend/publishLogEntry', proposal)
+        this.ephemeral.currentStep += 1 // Show Success step
       } else {
+        if (this.groupShouldPropose && !isProposalImplemented) {
+          alert('TODO: Proposal not implemented. This will be a direct change.')
+        }
         try {
           await sbp('gi.actions/group/updateVotingRules', {
             ruleName: this.rule,
-            ruleThreshold: +this.form.value
+            ruleThreshold: +this.form.threshold
           }, this.currentGroupId)
 
           this.$refs.proposal.close()
@@ -128,7 +150,7 @@ export default {
     form: {},
     steps: {
       VotingSystem: [
-        'form.value'
+        'form.threshold'
       ]
     }
   }

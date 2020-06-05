@@ -26,9 +26,8 @@
 
       .c-confirmation(v-if='isConfirmation' key='confirmation')
         svg-proposal.c-svg
-        i18n(
-          :args='{ ...LTags("strong"), numVotes: rule.value }'
-        ) Members of your group will now be asked to vote.{br_} You need {strong_}{numVotes} yes votes{_strong} for your proposal to be accepted.
+        i18n Members of your group will now be asked to vote.
+        span(v-html='votingRequirements')
 
       .buttons(:class='{ "is-centered": isConfirmation }')
         button.is-outlined(
@@ -77,13 +76,10 @@
           data-test='finishBtn'
         ) Awesome
 
-    template(slot='footer' v-if='!isConfirmation && rule')
+    template(slot='footer' v-if='!isConfirmation')
       .c-footer
         i.icon-vote-yea
-        i18n(
-          v-if='groupShouldPropose'
-          :args='{ ...rule, ...LTags("strong") }'
-        ) According to your voting rules, {strong_}{value} out of {total} members{_strong} will have to agree with this.
+        span(v-if='groupShouldPropose' v-html='votingExplanation')
         i18n(
           v-else
           :args='LTags("strong")'
@@ -92,7 +88,8 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import L from '@view-utils/translations.js'
+import L, { LTags } from '@view-utils/translations.js'
+import { RULE_PERCENTAGE, RULE_DISAGREEMENT, getThresholdAdjusted } from '@model/contracts/voting/rules.js'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import SvgProposal from '@svgs/proposal.svg'
@@ -109,10 +106,6 @@ export default {
       type: String,
       required: true
     },
-    rule: {
-      type: Object,
-      required: true
-    },
     disabled: Boolean,
     currentStep: Number,
     maxSteps: {
@@ -127,7 +120,9 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'groupShouldPropose'
+      'groupMembersCount',
+      'groupShouldPropose',
+      'groupVotingRule'
     ]),
     isNextStep () {
       return this.currentStep <= this.maxSteps - 1
@@ -137,6 +132,46 @@ export default {
     },
     isConfirmation () {
       return this.currentStep === this.maxSteps + 1
+    },
+    threshold () {
+      const threshold = this.groupVotingRule.ruleSettings[this.groupVotingRule.rule].threshold
+      return getThresholdAdjusted(this.groupVotingRule.rule, threshold, this.groupMembersCount)
+    },
+    votingExplanation () {
+      if (this.groupVotingRule.rule === RULE_DISAGREEMENT) {
+        if (this.threshold === 1) {
+          return L('Your proposal will be accepted if {b_}no one{_b} disagrees.', LTags('b'))
+        }
+        // REVIEW - This copy is not very positive.
+        return L('Your proposal will be rejected if {b_}{n} members{_b} disagree.', { n: this.threshold, ...LTags('b') })
+      }
+
+      if (this.groupVotingRule.rule === RULE_PERCENTAGE) {
+        return L('According to your voting rules, {b_}{value} out of {total} members{_b} will have to agree with this.', {
+          value: Math.round(this.groupMembersCount * this.threshold),
+          total: this.groupMembersCount,
+          ...LTags('b')
+        })
+      }
+
+      return ''
+    },
+    votingRequirements () {
+      if (this.groupVotingRule.rule === RULE_DISAGREEMENT) {
+        if (this.threshold === 1) {
+          return L('Your proposal will be accepted if {b_}no one{_b} disagrees.', LTags('b'))
+        }
+        return L('Your proposal will be accepted if {b_}less than {n} members{_b} disagree.', { n: this.threshold, ...LTags('b') })
+      }
+
+      if (this.groupVotingRule.rule === RULE_PERCENTAGE) {
+        return L('You need {b_}{n} yes votes{_b} for your proposal to be accepted.', {
+          n: Math.round(this.groupMembersCount * this.threshold),
+          ...LTags('b')
+        })
+      }
+
+      return ''
     },
     submitStyleNonProposal () {
       return this.variant === 'removeMember' ? 'is-danger' : 'is-success'

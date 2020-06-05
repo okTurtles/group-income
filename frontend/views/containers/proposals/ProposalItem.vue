@@ -114,6 +114,15 @@ export default {
                 currentValue: currencies[mincomeCurrency].displayWithCurrency(currentValue),
                 proposedValue: currencies[mincomeCurrency].displayWithCurrency(proposedValue)
               }
+            },
+            'votingRule': () => {
+              // TODO layout for this type of proposal. Waiting for designs.
+              const { ruleName, ruleThreshold } = this.proposal.data.proposalData
+              return {
+                setting: L('Voting System'),
+                currentValue: '',
+                proposedValue: ruleName + ' ' + ruleThreshold
+              }
             }
           }[setting]()
 

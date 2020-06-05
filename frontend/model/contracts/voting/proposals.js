@@ -156,11 +156,18 @@ const proposals = {
     },
     [VOTE_AGAINST]: voteAgainst
   },
-  // used to adjust settings like `rule` and `expires_ms` on proposals themselves
   [PROPOSAL_PROPOSAL_SETTING_CHANGE]: {
     defaults: proposalDefaults,
-    [VOTE_FOR]: function (state, { meta, data }) {
-      throw new Error('unimplemented!')
+    [VOTE_FOR]: function (state, { meta, data, contractID }) {
+      const proposal = state.proposals[data.proposalHash]
+      const { ruleName, ruleThreshold } = proposal.data.proposalData
+      proposal.status = STATUS_PASSED // REVIEW/BUG This mutates the state and it's a Vue bad practice.
+      const message = {
+        meta,
+        data: { ruleName, ruleThreshold },
+        contractID
+      }
+      sbp('gi.contracts/group/updateSettings/process', message, state)
     },
     [VOTE_AGAINST]: voteAgainst
   },

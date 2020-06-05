@@ -93,7 +93,7 @@ export const getThresholdAdjusted = (rule, threshold, groupSize) => {
 
   if (rule === RULE_DISAGREEMENT) {
     // Maximum "no" votes correspondent to group size
-    return Math.min(groupSizeVoting, threshold)
+    return Math.min(groupSizeVoting - 1, threshold)
   }
 
   if (rule === RULE_PERCENTAGE) {

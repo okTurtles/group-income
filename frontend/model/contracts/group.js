@@ -740,8 +740,11 @@ DefineContract({
         ruleThreshold: number
       }),
       process ({ data, meta }, { state }) {
-        Vue.set(state.settings.proposals.generic, 'rule', data.ruleName)
-        Vue.set(state.settings.proposals.generic.ruleSettings[data.ruleName], 'threshold', data.ruleThreshold)
+        // Update all types of proposal settings for simplicity
+        for (const ruleName in state.settings.proposals) {
+          Vue.set(state.settings.proposals[ruleName], 'rule', data.ruleName)
+          Vue.set(state.settings.proposals[ruleName].ruleSettings[data.ruleName], 'threshold', data.ruleThreshold)
+        }
       }
     },
 

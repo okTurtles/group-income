@@ -1,7 +1,6 @@
 <template lang='pug'>
   proposal-template(
     :title='L("Add new members")'
-    :rule='rule'
     :disabled='!ephemeral.isValid'
     :maxSteps='config.steps.length'
     :currentStep.sync='ephemeral.currentStep'
@@ -86,12 +85,7 @@ export default {
       'groupSettings',
       'groupMembersCount',
       'ourUsername'
-    ]),
-    rule () {
-      const proposalRule = this.groupSettings.proposals[PROPOSAL_INVITE_MEMBER]
-      const { threshold } = proposalRule.ruleSettings[proposalRule.rule]
-      return { value: Math.round(this.groupMembersCount * threshold), total: this.groupMembersCount }
-    }
+    ])
   },
   methods: {
     inviteeUpdate (e, index) {
