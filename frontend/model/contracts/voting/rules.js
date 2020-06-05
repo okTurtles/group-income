@@ -103,6 +103,11 @@ export const getThresholdAdjusted = (rule, threshold, groupSize) => {
   }
 }
 
+/**
+ *
+ * @example (10, 0.5) => 5
+ * @example (3, 0.8) => 3
+ */
 export const getPercentageToCount = (groupSize, decimal) => {
   return Math.ceil(groupSize * decimal)
 }

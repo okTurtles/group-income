@@ -136,7 +136,7 @@ Cypress.Commands.add('giCreateGroup', (name, {
   sharedValues = 'Testing group values',
   mincome = 200,
   ruleName = 'percentage',
-  ruleThreshold = 80,
+  ruleThreshold = 0.8,
   bypassUI = false
 } = {}) => {
   if (bypassUI) {
@@ -176,13 +176,14 @@ Cypress.Commands.add('giCreateGroup', (name, {
     cy.getByDT('nextBtn').click()
 
     cy.getByDT('rulesStep').within(() => {
+      const threshold = ruleName === 'percentage' ? ruleThreshold * 100 : ruleThreshold
       cy.getByDT(ruleName, 'label').click()
 
       cy.get(`input[type='range']#range${ruleName}`)
-        .invoke('val', ruleThreshold)
+        .invoke('val', threshold)
         .trigger('input')
       // Verify the input value has really changed
-      cy.get(`input[type='range']#range${ruleName}`).should('have.value', ruleThreshold.toString())
+      cy.get(`input[type='range']#range${ruleName}`).should('have.value', threshold.toString())
     })
     cy.getByDT('finishBtn').click()
 

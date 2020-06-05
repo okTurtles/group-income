@@ -117,8 +117,6 @@ const proposals = {
   },
   [PROPOSAL_REMOVE_MEMBER]: {
     defaults: {
-      // REVIEW PR:
-      // - the default threshold was 2. Maybe we need some manual "adjustement" when running the rules.js?
       ...proposalDefaults
     },
     [VOTE_FOR]: function (state, { meta, data, contractID }) {

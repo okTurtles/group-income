@@ -180,18 +180,12 @@ describe('Group Voting Rules', () => {
     cy.giLogout()
   })
 
-  /* For another PR:
+  /* TODO in a few days:
 
   it('user1 proposes to update voting rule to 1. Everyone disagrees and it gets rejected.', () => {
   })
 
-  it('user1 proposes to update voting rule to 1. It gets accepted with 3 against vs 2 in favor', () => {
-  })
-
-  it('user1 proposes to change system to "percentage" 50%". It gets rejected when anyone disagrees.', () => {
-  })
-
-  it('user1 proposes to change system to "percentage" 50%". It gets accepted when everyone agrees.', () => {
+  it('user1 proposes to update voting rule to 1. It gets accepted once everyone agrees', () => {
   })
   */
 })
