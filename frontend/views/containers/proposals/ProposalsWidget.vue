@@ -96,7 +96,7 @@ export default {
       // })
       // this.proposalsSorted = sortByNotVoted // eslint-disable-line vue/no-side-effects-in-computed-properties
 
-      this.proposalsGrouped = proposalsGrouped // eslint-disable-line vue/no-side-effects-in-computed-properties
+      this.proposalsGrouped = proposalsGrouped.reverse() // eslint-disable-line vue/no-side-effects-in-computed-properties
 
       return this.proposalsGrouped
     }

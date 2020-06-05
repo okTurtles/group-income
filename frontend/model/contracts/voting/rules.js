@@ -14,11 +14,11 @@ export const RULE_DISAGREEMENT = 'disagreement'
 export const RULE_MULTI_CHOICE = 'multi-choice'
 
 // TODO: ranked-choice? :D
-
+// TODO: Unit test this. Doing e2e tests for each case is a huge CI time consuming.
 const rules = {
   [RULE_PERCENTAGE]: function (state, proposalType, votes) {
     votes = Object.values(votes)
-    const population = Object.keys(state.profiles).length
+    const population = Object.keys(state.profiles).length // TODO/BUG - filter ACTIVE profiles
     const defaultThreshold = state.settings.proposals[proposalType].ruleSettings[RULE_PERCENTAGE].threshold
     const threshold = proposalType === PROPOSAL_REMOVE_MEMBER
       ? Math.min(defaultThreshold, (population - 1) / population)
@@ -45,14 +45,14 @@ const rules = {
   },
   [RULE_DISAGREEMENT]: function (state, proposalType, votes) {
     votes = Object.values(votes)
+    const population = Object.keys(state.profiles).length // TODO/BUG - filter ACTIVE profiles
     const minimumMax = proposalType === PROPOSAL_REMOVE_MEMBER ? 2 : 0
-    const threshold = Math.max(state.settings.proposals[proposalType].ruleSettings[RULE_DISAGREEMENT].threshold, minimumMax)
+    const thresholdOriginal = Math.max(state.settings.proposals[proposalType].ruleSettings[RULE_DISAGREEMENT].threshold, minimumMax)
+    const threshold = getThresholdAdjusted(RULE_DISAGREEMENT, thresholdOriginal, population)
     const totalFor = votes.filter(x => x === VOTE_FOR).length
     const totalAgainst = votes.filter(x => x === VOTE_AGAINST).length
-    const population = Object.keys(state.profiles).length
     const turnout = votes.length
     const absent = population - turnout
-    // const thresholdAdjusted = getThresholdAdjusted(threshold, groupSize) TODO in a next PR.
 
     console.debug(`votingRule ${RULE_DISAGREEMENT} for ${proposalType}:`, { totalFor, totalAgainst, threshold, turnout, population, absent })
     if (totalAgainst >= threshold) {
@@ -92,7 +92,7 @@ export const getThresholdAdjusted = (rule, threshold, groupSize) => {
   const groupSizeVoting = Math.max(3, groupSize) // 3 = minimum groupSize to vote
 
   if (rule === RULE_DISAGREEMENT) {
-    // Maximum "no" votes correspondent to group size
+    // Limit number of maximum "no" votes to group size
     return Math.min(groupSizeVoting - 1, threshold)
   }
 
@@ -101,4 +101,8 @@ export const getThresholdAdjusted = (rule, threshold, groupSize) => {
     const minThreshold = 2 / groupSizeVoting
     return Math.max(minThreshold, threshold)
   }
+}
+
+export const getPercentageToCount = (groupSize, decimal) => {
+  return Math.ceil(groupSize * decimal)
 }

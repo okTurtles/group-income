@@ -104,7 +104,7 @@ export default {
         },
         [PROPOSAL_GROUP_SETTING_CHANGE]: () => {
           const { setting } = this.proposal.data.proposalData
-
+          // TODO layout for this type of proposal. Waiting for designs.
           const variablesMap = {
             'mincomeAmount': () => {
               const { mincomeCurrency, currentValue, proposedValue } = this.proposal.data.proposalData
@@ -114,21 +114,17 @@ export default {
                 currentValue: currencies[mincomeCurrency].displayWithCurrency(currentValue),
                 proposedValue: currencies[mincomeCurrency].displayWithCurrency(proposedValue)
               }
-            },
-            'votingRule': () => {
-              // TODO layout for this type of proposal. Waiting for designs.
-              const { ruleName, ruleThreshold } = this.proposal.data.proposalData
-              return {
-                setting: L('Voting System'),
-                currentValue: '',
-                proposedValue: ruleName + ' ' + ruleThreshold
-              }
             }
           }[setting]()
 
           return L('Change {setting} from {currentValue} to {proposedValue}', variablesMap)
         },
-        [PROPOSAL_PROPOSAL_SETTING_CHANGE]: () => L('TODO: Change [rule setting] from [current] to [new-value]', {}),
+        [PROPOSAL_PROPOSAL_SETTING_CHANGE]: () => {
+          const { ruleName, ruleThreshold } = this.proposal.data.proposalData
+          return L('TODO: Change Voting System to {proposedValue}', {
+            proposedValue: `"${ruleName}: ${ruleThreshold}"`
+          })
+        },
         [PROPOSAL_GENERIC]: () => L('TODO: Change [generic] from [current] to [new-value]', {})
       }[this.proposalType]()
     },

@@ -69,7 +69,7 @@ export default {
     if (!this.rule) {
       sbp('okTurtles.events/emit', CLOSE_MODAL)
     } else {
-      this.form.threshold = this.groupVotingRule.ruleSettings[this.rule].threshold
+      this.form.threshold = this.currentThreshold
     }
   },
   computed: {
@@ -81,6 +81,9 @@ export default {
       'groupVotingRule',
       'groupSettings'
     ]),
+    currentThreshold () {
+      return this.groupVotingRule.ruleSettings[this.rule].threshold
+    },
     title () {
       if (this.groupVotingRule.rule === this.rule) {
         return L('Change voting rules')
@@ -109,29 +112,36 @@ export default {
       this.form.threshold = value
     },
     async submit () {
-      const isProposalImplemented = false // TODO in another PR
+      if (+this.form.threshold === this.currentThreshold) {
+        this.ephemeral.currentStep = 0
+        this.$refs.formMsg.danger(L('You are proposing to keep the same value as the actual.'))
+        return
+      }
 
       if (this.groupShouldPropose) {
-        const proposal = await sbp('gi.contracts/group/proposal/create',
-          {
-            proposalType: PROPOSAL_PROPOSAL_SETTING_CHANGE,
-            proposalData: {
-              setting: 'votingRule',
-              ruleName: this.rule,
-              ruleThreshold: +this.form.threshold,
-              reason: this.form.reason
+        try {
+          const proposal = await sbp('gi.contracts/group/proposal/create',
+            {
+              proposalType: PROPOSAL_PROPOSAL_SETTING_CHANGE,
+              proposalData: {
+                setting: 'votingRule',
+                ruleName: this.rule,
+                ruleThreshold: +this.form.threshold,
+                reason: this.form.reason
+              },
+              votingRule: this.groupSettings.proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].rule,
+              expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].expires_ms
             },
-            votingRule: this.groupSettings.proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].rule,
-            expires_date_ms: Date.now() + this.groupSettings.proposals[PROPOSAL_PROPOSAL_SETTING_CHANGE].expires_ms
-          },
-          this.currentGroupId
-        )
-        await sbp('backend/publishLogEntry', proposal)
-        this.ephemeral.currentStep += 1 // Show Success step
-      } else {
-        if (this.groupShouldPropose && !isProposalImplemented) {
-          alert('TODO: Proposal not implemented. This will be a direct change.')
+            this.currentGroupId
+          )
+          await sbp('backend/publishLogEntry', proposal)
+          this.ephemeral.currentStep += 1 // Show Success step
+        } catch (e) {
+          console.error('ChangeVotingRules.vue failed:', e)
+          this.$refs.formMsg.danger(e.message)
+          this.ephemeral.currentStep = 0
         }
+      } else {
         try {
           await sbp('gi.actions/group/updateVotingRules', {
             ruleName: this.rule,

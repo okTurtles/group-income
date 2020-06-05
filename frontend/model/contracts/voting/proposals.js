@@ -167,7 +167,7 @@ const proposals = {
         data: { ruleName, ruleThreshold },
         contractID
       }
-      sbp('gi.contracts/group/updateSettings/process', message, state)
+      sbp('gi.contracts/group/updateVotingRules/process', message, state)
     },
     [VOTE_AGAINST]: voteAgainst
   },
