@@ -159,14 +159,18 @@ Cypress.Commands.add('giCreateGroup', (name, {
   cy.fixture(image, 'base64').then(fileContent => {
     cy.get('[data-test="groupPicture"]').upload({ fileContent, fileName: image, mimeType: 'image/png' }, { subjectType: 'input' })
   })
-
   cy.getByDT('nextBtn').click()
 
-  cy.get('textarea[name="sharedValues"]').type(sharedValues)
+  if (sharedValues) {
+    cy.get('textarea[name="sharedValues"]').type(sharedValues)
+  } else {
+    // Make sure this step is in the DOM...
+    cy.get('textarea[name="sharedValues"]')
+  }
+  // ...so that it catches correctly the next "Next" button.
   cy.getByDT('nextBtn').click()
 
   cy.get('input[name="mincomeAmount"]').type(mincome)
-
   cy.getByDT('nextBtn').click()
 
   // TODO - It seems we are not testing the Percentages Rules ATM, so, let's just move on...

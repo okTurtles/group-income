@@ -3,7 +3,7 @@ describe('Changing Group Settings', () => {
   const groupName = 'Dreamers'
   const groupMincome = 750
   const groupNewMincome = groupMincome + 100
-  const sharedValues = 'One dream at the time.'
+  const sharedValues = null
 
   it('user1 creates a new group', () => {
     cy.visit('/')
@@ -47,7 +47,7 @@ describe('Changing Group Settings', () => {
     cy.getByDT('groupName').should('have.value', groupName)
     cy.getByDT('groupName').clear().type(newGroupName)
 
-    cy.getByDT('sharedValues').should('have.value', sharedValues)
+    cy.getByDT('sharedValues').should('have.value', '')
     cy.getByDT('sharedValues').clear().type(newSharedValues)
 
     cy.getByDT('saveBtn', 'button').click()

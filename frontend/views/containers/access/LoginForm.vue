@@ -15,7 +15,7 @@ form(data-test='login' @submit.prevent='')
 
   password-form(:label='L("Password")' name='password' :$v='$v')
 
-  i18n.link.c-forgot(tag='button' @click='forgotPassword') Forgot your password?
+  i18n.link.c-forgot(tag='button' type='button' @click='forgotPassword') Forgot your password?
 
   banner-scoped(ref='formMsg' data-test='loginError')
 

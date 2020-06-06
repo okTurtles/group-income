@@ -14,6 +14,15 @@ function addNonMonetaryContribution (name) {
   cy.getByDT('addNonMonetaryContribution', 'button').click()
   cy.getByDT('inputNonMonetaryContribution').type(name)
   cy.getByDT('buttonAddNonMonetaryContribution', 'button').click()
+  cy.getByDT('buttonAddNonMonetaryContribution', 'button').should('not.exist')
+
+  // Assert the contribution was added to the list once
+  cy.getByDT('givingList').should($list => {
+    const contribution = $list.find('li').filter((i, item) => {
+      return item.textContent.includes(name) && item.getAttribute('data-test') === 'editable'
+    })
+    expect(contribution).to.have.length(1)
+  })
 }
 
 function assertNonMonetaryEditableValue (name) {
@@ -271,36 +280,61 @@ describe('Payments', () => {
     cy.closeModal()
   })
 
+  it('user1 have their payment info on the profile card', () => {
+    cy.getByDT('openProfileCard').click()
+
+    cy.getByDT('profilePaymentMethods').within(() => {
+      cy.get('ul').children().should('have.length', 3)
+      cy.getByDT('profilePaymentMethod').eq(0).within(() => {
+        cy.get('span').eq(0).should('contain', 'bitcoin')
+        cy.get('span').eq(1).should('contain', 'h4sh-t0-b3-s4ved')
+      })
+      cy.getByDT('profilePaymentMethod').eq(1).within(() => {
+        cy.get('span').eq(0).should('contain', 'other')
+        cy.get('span').eq(1).should('contain', 'IBAN: 12345')
+      })
+      cy.getByDT('profilePaymentMethod').eq(2).within(() => {
+        cy.get('span').eq(0).should('contain', 'other')
+        cy.get('span').eq(1).should('contain', 'MBWAY: 91 2345678')
+      })
+    })
+    cy.getByDT('closeProfileCard').click()
+  })
+
+  const firstContribution = 'Portuguese classes'
+
   it('user1 adds non monetary contribution', () => {
-    addNonMonetaryContribution('Portuguese classes')
+    addNonMonetaryContribution(firstContribution)
 
     cy.getByDT('givingList', 'ul')
       .get('li.is-editable')
       .should('have.length', 1)
-      .should('contain', 'Portuguese classes')
+      .should('contain', firstContribution)
   })
 
   it('user1 removes non monetary contribution', () => {
+    cy.getByDT('buttonEditNonMonetaryContribution')
+
+    cy.getByDT('givingList').find('li').should('have.length', 2) // contribution + cta to add
     cy.getByDT('buttonEditNonMonetaryContribution').click()
     cy.getByDT('buttonRemoveNonMonetaryContribution').click()
-    cy.getByDT('givingList', 'ul')
-      .get('li.is-editable')
-      .should('have.length', 0)
+    cy.getByDT('givingList').find('li').should('have.length', 1) // cta to add
+    cy.getByDT('givingParagraph').should('exist')
   })
 
   it('user1 re-adds the same non monetary contribution', () => {
-    addNonMonetaryContribution('Portuguese classes')
+    addNonMonetaryContribution(firstContribution)
     cy.getByDT('givingList', 'ul')
       .get('li.is-editable')
       .should('have.length', 1)
-      .should('contain', 'Portuguese classes')
+      .should('contain', firstContribution)
   })
 
   it('user1 edits the non monetary contribution', () => {
     cy.getByDT('buttonEditNonMonetaryContribution').click()
     cy.getByDT('inputNonMonetaryContribution').clear().type('French classes{enter}')
     assertNonMonetaryEditableValue('French classes')
-    // Double check
+    // Double check // TODO - Why do we need this?
     assertNonMonetaryEditableValue('French classes')
 
     cy.getByDT('givingList', 'ul')
@@ -330,6 +364,35 @@ describe('Payments', () => {
     assertContributionsWidget({
       nonMonetaryStatus: 'You are contributing.'
     })
+  })
+
+  it('user1 have their payment info on the member list profile card', () => {
+    cy.getByDT('dashboard', 'a').click()
+    cy.getByDT('openMemberProfileCard').eq(0).click()
+
+    cy.log('The first member card should not contain payment info')
+    cy.getByDT('profilePaymentMethods').should('not.exist')
+    cy.getByDT('closeProfileCard').click()
+
+    cy.log('The last member card should contain payments info')
+    cy.getByDT('openMemberProfileCard').eq(3).click()
+    cy.getByDT('profilePaymentMethods').within(() => {
+      cy.get('ul').children().should('have.length', 3)
+      cy.getByDT('profilePaymentMethod').eq(0).within(() => {
+        cy.get('span').eq(0).should('contain', 'bitcoin')
+        cy.get('span').eq(1).should('contain', 'h4sh-t0-b3-s4ved')
+      })
+      cy.getByDT('profilePaymentMethod').eq(1).within(() => {
+        cy.get('span').eq(0).should('contain', 'other')
+        cy.get('span').eq(1).should('contain', 'IBAN: 12345')
+      })
+      cy.getByDT('profilePaymentMethod').eq(2).within(() => {
+        cy.get('span').eq(0).should('contain', 'other')
+        cy.get('span').eq(1).should('contain', 'MBWAY: 91 2345678')
+      })
+    })
+
+    cy.getByDT('closeProfileCard').click(('topLeft'))
   })
 
   it('user2 pledges $100 and sees their contributions.', () => {

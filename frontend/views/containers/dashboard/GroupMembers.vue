@@ -17,15 +17,16 @@
       :class='invitedBy && "is-pending"'
       :key='username'
     )
-      avatar(v-if='invitedBy' size='sm')
-      avatar-user(v-else :username='username' size='sm')
+      profile-card(:username='username')
+        avatar(v-if='invitedBy' size='sm' data-test='openMembersProfileCard')
+        avatar-user(v-else :username='username' size='sm' data-test='openMemberProfileCard')
 
-      .c-name.has-ellipsis(data-test='username') {{ localizedName(username) }}
-      i18n.pill.is-neutral(v-if='invitedBy' data-test='pillPending') pending
-      i18n.pill.is-primary(v-else-if='isNew' data-test='pillNew') new
+        button.is-unstyled.c-name.has-ellipsis(data-test='username') {{ localizedName(username) }}
+        i18n.pill.is-neutral(v-if='invitedBy' data-test='pillPending') pending
+        i18n.pill.is-primary(v-else-if='isNew' data-test='pillNew') new
 
-      group-members-tooltip-pending.c-menu(v-if='invitedBy' :username='username')
-      group-members-menu.c-menu(v-else :username='username')
+        group-members-tooltip-pending.c-menu(v-if='invitedBy' :username='username')
+
   i18n.link(
     tag='button'
     v-if='groupMembersCount > 10'
@@ -41,7 +42,7 @@ import { OPEN_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
 import Avatar from '@components/Avatar.vue'
 import AvatarUser from '@components/AvatarUser.vue'
-import GroupMembersMenu from '@containers/dashboard/GroupMembersMenu.vue'
+import ProfileCard from '@components/ProfileCard.vue'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
 import L from '@view-utils/translations.js'
 
@@ -50,7 +51,7 @@ export default {
   components: {
     Avatar,
     AvatarUser,
-    GroupMembersMenu,
+    ProfileCard,
     GroupMembersTooltipPending
   },
   computed: {
@@ -93,6 +94,7 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 0.5rem;
 }
 
 .c-group-list {
@@ -103,8 +105,18 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 2rem;
-  margin-top: 1rem;
+  height: 3rem;
+  padding: 0.5rem 1.5rem;
+  margin: 0 -1.5rem;
+
+  &:hover {
+    background-color: $general_1;
+    cursor: pointer;
+  }
+
+  > .c-twrapper {
+    width: 100%;
+  }
 }
 
 .c-avatar {
@@ -116,7 +128,15 @@ export default {
 .c-name {
   margin-right: auto;
   margin-left: 0.5rem;
+  font-family: inherit;
+  border-bottom: 1px solid transparent;
+
+  &:hover,
+  &:focus {
+    border-bottom-color: $text_0;
+  }
 }
+
 .c-menu {
   margin-left: 0.5rem;
 }

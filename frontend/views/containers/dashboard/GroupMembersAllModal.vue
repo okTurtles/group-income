@@ -39,43 +39,28 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
           v-for='{username, displayName, invitedBy, isNew} in searchResult'
           :key='username'
         )
-          .c-identity
-            avatar-user(:username='username' size='sm')
-            .c-name(data-test='username')
-              span
-                strong {{ localizedName(username) }}
-                .c-display-name(v-if='displayName !== username' data-test='profileName') @{{ username }}
+          profile-card(:username='username' direction='top-left')
+            .c-identity
+              avatar-user(:username='username' size='sm')
+              .c-name(data-test='username')
+                span
+                  strong {{ localizedName(username) }}
+                  .c-display-name(v-if='displayName !== username' data-test='profileName') @{{ username }}
 
-              i18n.pill.is-neutral(v-if='invitedBy' data-test='pillPending') pending
-              i18n.pill.is-primary(v-else-if='isNew' data-test='pillNew') new
+                i18n.pill.is-neutral(v-if='invitedBy' data-test='pillPending') pending
+                i18n.pill.is-primary(v-else-if='isNew' data-test='pillNew') new
 
-          .c-actions
-            group-members-tooltip-pending(v-if='invitedBy' :username='username')
-            template(v-else)
-              group-members-menu.c-action-menu(:username='username')
-
-              .c-actions-buttons.buttons
-                button.button.is-outlined.is-small(
-                  @click='toMessages(username)'
-                )
-                  i.icon-comment
-                  i18n Send message
-                button.button.is-outlined.is-small(
-                  @click='openModal("RemoveMember", { username })'
-                )
-                  i.icon-times
-                  i18n Remove member
+            .c-actions
+              group-members-tooltip-pending(v-if='invitedBy' :username='username')
 </template>
 
 <script>
-import sbp from '~/shared/sbp.js'
 import L, { LTags } from '@view-utils/translations.js'
 import { mapGetters } from 'vuex'
-import { OPEN_MODAL } from '@utils/events.js'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import Search from '@components/Search.vue'
 import AvatarUser from '@components/AvatarUser.vue'
-import GroupMembersMenu from '@containers/dashboard/GroupMembersMenu.vue'
+import ProfileCard from '@components/ProfileCard.vue'
 import GroupMembersTooltipPending from '@containers/dashboard/GroupMembersTooltipPending.vue'
 
 export default {
@@ -84,8 +69,8 @@ export default {
     ModalBaseTemplate,
     Search,
     AvatarUser,
-    GroupMembersMenu,
-    GroupMembersTooltipPending
+    GroupMembersTooltipPending,
+    ProfileCard
   },
   data () {
     return {
@@ -121,14 +106,8 @@ export default {
       const name = this.userDisplayName(username)
       return username === this.ourUsername ? L('{name} (you)', { name }) : name
     },
-    openModal (modal, props) {
-      sbp('okTurtles.events/emit', OPEN_MODAL, modal, props)
-    },
     closeModal () {
       this.$refs.modal.close()
-    },
-    toMessages (username) {
-      this.$router.push({ path: `/messages/${username}` })
     }
   }
 }
@@ -195,10 +174,10 @@ export default {
   color: var(--text_1);
 }
 
-.c-search-member {
+.c-search-member .c-twrapper {
   display: flex;
   height: 4.5rem;
-  padding: 0;
+  padding: 0 0.5rem;
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid $general_0;
@@ -206,6 +185,11 @@ export default {
 
   &:last-child {
     border-bottom: 0;
+  }
+
+  &:hover {
+    background-color: $general_1;
+    cursor: pointer;
   }
 }
 
