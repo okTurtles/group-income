@@ -14,15 +14,23 @@ export const RULE_DISAGREEMENT = 'disagreement'
 export const RULE_MULTI_CHOICE = 'multi-choice'
 
 // TODO: ranked-choice? :D
-// TODO: Unit test this. Doing e2e tests for each case is a huge CI time consuming.
+
+/* REVIVEW PR
+  the whole "state" being passed as argument to rules[rule]() is overwhelmed.
+  It would be simpler with just 2 simple args: "threshold" and "population".
+  Advantages:
+  - population: No need to do the logic to get it (and avoid import PROFILE_STATUS.ACTIVE from group.js).
+  - threshold: The selector to get the selector is huge.
+  - tests: Avoid the need to mock a complex state.
+  My suggestion: 1 parameter (object) with 4 explicit keys.
+  [RULE_PERCENTAGE]: function ({ votes, proposalType, population, threshold })
+*/
 const rules = {
   [RULE_PERCENTAGE]: function (state, proposalType, votes) {
     votes = Object.values(votes)
-    const population = Object.keys(state.profiles).length // TODO/BUG - filter ACTIVE profiles
+    const population = Object.keys(state.profiles).filter(p => state.profiles[p].status === 'active').length
     const defaultThreshold = state.settings.proposals[proposalType].ruleSettings[RULE_PERCENTAGE].threshold
-    const threshold = proposalType === PROPOSAL_REMOVE_MEMBER
-      ? Math.min(defaultThreshold, (population - 1) / population)
-      : defaultThreshold
+    const threshold = getThresholdAdjusted(RULE_PERCENTAGE, defaultThreshold, population)
     const totalIndifferent = votes.filter(x => x === VOTE_INDIFFERENT).length
     const totalFor = votes.filter(x => x === VOTE_FOR).length
     const totalAgainst = votes.filter(x => x === VOTE_AGAINST).length
@@ -45,8 +53,8 @@ const rules = {
   },
   [RULE_DISAGREEMENT]: function (state, proposalType, votes) {
     votes = Object.values(votes)
-    const population = Object.keys(state.profiles).length // TODO/BUG - filter ACTIVE profiles
-    const minimumMax = proposalType === PROPOSAL_REMOVE_MEMBER ? 2 : 0
+    const population = Object.keys(state.profiles).filter(p => state.profiles[p].status === 'active').length
+    const minimumMax = proposalType === PROPOSAL_REMOVE_MEMBER ? 2 : 1
     const thresholdOriginal = Math.max(state.settings.proposals[proposalType].ruleSettings[RULE_DISAGREEMENT].threshold, minimumMax)
     const threshold = getThresholdAdjusted(RULE_DISAGREEMENT, thresholdOriginal, population)
     const totalFor = votes.filter(x => x === VOTE_FOR).length
@@ -60,7 +68,7 @@ const rules = {
     }
     // consider proposal passed if more vote for it than against it and there aren't
     // enough votes left to tip the scales past the threshold
-    return totalAgainst + absent < threshold && totalFor > totalAgainst ? VOTE_FOR : VOTE_UNDECIDED
+    return totalAgainst + absent < threshold ? VOTE_FOR : VOTE_UNDECIDED
   },
   [RULE_MULTI_CHOICE]: function (state, proposalType, votes) {
     throw new Error('unimplemented!')

@@ -180,12 +180,10 @@ describe('Group Voting Rules', () => {
     cy.giLogout()
   })
 
-  /* TODO in a few days:
+  // TODO in a few days...
+  // it('user1 proposes to update voting rule to 1. Gets rejected once everyone else disagrees.', () => {
+  // })
 
-  it('user1 proposes to update voting rule to 1. Everyone disagrees and it gets rejected.', () => {
-  })
-
-  it('user1 proposes to update voting rule to 1. It gets accepted once everyone agrees', () => {
-  })
-  */
+  // it('user1 proposes to update voting rule to 1. It gets accepted once everyone else agrees', () => {
+  // })
 })
