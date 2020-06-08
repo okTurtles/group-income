@@ -61,7 +61,7 @@ function voteAgainst (state, { meta, data, contractID }) {
 
 // NOTE: The code is ready to receive different proposals settings,
 // However, we decided to make all settings the same, to simplify the UI/UX proptotype.
-const proposalDefaults = {
+export const proposalDefaults = {
   rule: RULE_PERCENTAGE,
   expires_ms: 7 * DAYS_MILLIS,
   ruleSettings: {

@@ -1,6 +1,6 @@
 <template lang='pug'>
   ul.c-wrapper(data-test='votingRules')
-    li.cardBox(
+    li.cardBox.c-card(
       v-for='rule in votingRulesSorted'
       :class='{ isActive: isRuleActive(rule) }'
       :aria-current='isRuleActive(rule)'
@@ -14,11 +14,11 @@
         dt.c-status-term {{ config[rule].status }}
         dd.c-status-desc
           span(v-html='votingValue(rule)' data-test='ruleStatus')
-          i18n.link(
+          button.link(
             tag='button'
             data-test='changeRule'
             @click='openVotingProposal(rule)'
-          ) Change
+          ) {{ groupShouldPropose ? L('Propose change') : L('Change') }}
 
       banner-simple.c-banner(
         severity='info'
@@ -26,12 +26,11 @@
         v-if='votingRuleAdjusted(rule)'
       ) {{ votingRuleAdjusted(rule) }}
 
-      i18n.link(
+      button.link(
         v-if='!isRuleActive(rule)'
-        tag='button'
         data-test='changeRule'
         @click='openVotingProposal(rule)'
-      ) Change to this voting system
+      ) {{ groupShouldPropose ? L('Propose changing to this system') : L('Change to this system') }}
 </template>
 
 <script>
@@ -64,7 +63,8 @@ export default {
   computed: {
     ...mapGetters([
       'groupMembersCount',
-      'groupVotingRule'
+      'groupVotingRule',
+      'groupShouldPropose'
     ]),
     votingRulesSorted () {
       return this.groupVotingRule.rule === RULE_DISAGREEMENT ? [RULE_DISAGREEMENT, RULE_PERCENTAGE] : [RULE_PERCENTAGE, RULE_DISAGREEMENT]
@@ -151,20 +151,20 @@ export default {
 }
 
 .c-status {
-  &-term,
-  &-desc {
-    display: inline;
-  }
+  margin-bottom: -0.5rem;
 
   &-term,
   &-desc > :first-child {
     margin-right: 0.5rem;
   }
 
+  &-term {
+    display: inline-block;
+    margin-bottom: 0.5rem;
+  }
+
   &-desc {
-    .link {
-      margin-top: 0.5rem;
-    }
+    display: inline;
 
     @include phone {
       display: block;
@@ -174,6 +174,17 @@ export default {
 
 .c-banner {
   margin-top: 1rem;
+}
+
+@include tablet {
+  .c-card {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
+  .c-active {
+    right: 1.5rem;
+  }
 }
 
 </style>

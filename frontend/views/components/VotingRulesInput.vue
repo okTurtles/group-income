@@ -61,6 +61,9 @@ export default {
       sliderClass: ''
     }
   }),
+  created () {
+    this.ephemeral.sliderClass = this.warnMajority ? 'is-warning' : ''
+  },
   watch: {
     value (value) {
       this.ephemeral.sliderClass = this.warnMajority ? 'is-warning' : ''

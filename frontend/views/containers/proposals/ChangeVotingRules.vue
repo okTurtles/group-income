@@ -11,6 +11,7 @@ proposal-template(
     p.has-text-1.c-desc(v-if='changeSystem' v-html='changeSystem' data-test='changeSystem')
 
     voting-rules-input.c-input(
+      v-if='rule'
       :rule='rule'
       :value='form.threshold'
       @update='setThreshold'
@@ -29,6 +30,7 @@ import sbp from '~/shared/sbp.js'
 import { mapGetters, mapState } from 'vuex'
 import { CLOSE_MODAL } from '@utils/events.js'
 import L, { LTags } from '@view-utils/translations.js'
+import { proposalDefaults } from '@model/contracts/voting/proposals.js'
 import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/voting/rules.js'
 import { PROPOSAL_PROPOSAL_SETTING_CHANGE } from '@model/contracts/voting/constants.js'
 import BannerScoped from '@components/banners/BannerScoped.vue'
@@ -45,8 +47,8 @@ export default {
   props: {
     rule: {
       type: String,
-      validator: (value) => [RULE_DISAGREEMENT, RULE_PERCENTAGE].includes(value),
-      default: RULE_DISAGREEMENT // TODO this. related to #935
+      validator: (value) => [RULE_DISAGREEMENT, RULE_PERCENTAGE].includes(value)
+      // default: RULE_DISAGREEMENT // TODO this. Related to #935
     }
   },
   data () {
@@ -69,7 +71,9 @@ export default {
     if (!this.rule) {
       sbp('okTurtles.events/emit', CLOSE_MODAL)
     } else {
-      this.form.threshold = this.currentThreshold
+      this.form.threshold = this.rule === this.groupVotingRule.rule
+        ? this.currentThreshold
+        : proposalDefaults.ruleSettings[this.rule].threshold
     }
   },
   computed: {
