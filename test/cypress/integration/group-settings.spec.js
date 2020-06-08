@@ -82,7 +82,13 @@ describe('Group Voting Rules', () => {
       // Verify the input value has really changed
       cy.get(`input[type='range']#range${ruleName}`).should('have.value', ruleThreshold.toString())
 
-      cy.getByDT('submitBtn').click()
+      if (opts.isProposal) {
+        cy.getByDT('nextBtn').click()
+        cy.getByDT('submitBtn').click()
+        cy.getByDT('finishBtn').click()
+      } else {
+        cy.getByDT('submitBtn').click()
+      }
     })
   }
 
@@ -176,14 +182,72 @@ describe('Group Voting Rules', () => {
       status: '4',
       ruleAdjusted: false
     })
+  })
+
+  function voteInProposal (username, proposalNth, votesSoFar, voteType, opts = {}) {
+    cy.log(`${username} votes "${voteType}"`)
+    cy.giSwitchUser(`${username}-${userId}`)
+    cy.getByDT('proposalsWidget', 'ul').children().eq(proposalNth).within(() => {
+      cy.getByDT('statusDescription').should('contain', `${votesSoFar} out of 5 members voted.`)
+      cy.getByDT(voteType).click()
+
+      if (opts.decisive) {
+        if (opts.decisive === 'rejected') {
+          cy.getByDT('statusDescription').should('contain', 'Proposal refused.')
+        } else if (opts.decisive === 'approved') {
+          cy.getByDT('statusDescription').should('contain', 'Proposal accepted!')
+        }
+        cy.getByDT('voted').should('not.exist')
+      } else {
+        cy.getByDT('statusDescription').should('contain', `${votesSoFar + 1} out of 5 members voted.`)
+        if (voteType === 'voteFor') {
+          cy.getByDT('voted').should('contain', 'You voted yes.')
+        } else {
+          cy.getByDT('voted').should('contain', 'You voted no.')
+        }
+      }
+    })
+  }
+
+  it('user1 creates a new proposal. It is rejected once everyone else disagrees.', () => {
+    updateRuleSettings('disagreement', 3, { isProposal: true })
+
+    cy.getByDT('dashboard').click()
+
+    cy.log('Proposal is in the dashboard')
+    cy.getByDT('proposalsWidget', 'ul').children().should('have.length', 1)
+
+    cy.getByDT('proposalsWidget', 'ul').children().eq(0).within(() => {
+      cy.get('i.icon-round').should('have.class', 'icon-chart-pie')
+      cy.getByDT('typeDescription').should('contain', 'TODO: Change Voting System to "disagreement: 3"')
+      cy.getByDT('statusDescription').should('contain', '1 out of 5 members voted.')
+    })
+
+    voteInProposal('user2', 0, 1, 'voteAgainst')
+    voteInProposal('user3', 0, 2, 'voteAgainst')
+    voteInProposal('user4', 0, 3, 'voteAgainst')
+    voteInProposal('user5', 0, 4, 'voteAgainst', { decisive: 'rejected' })
+  })
+
+  it('user5 creates a new proposal. It is accepted once someone agrees.', () => {
+    updateRuleSettings('disagreement', 2, { isProposal: true })
+
+    cy.getByDT('dashboard').click()
+
+    cy.log('Proposal is in the dashboard')
+    cy.getByDT('proposalsWidget', 'ul').children().should('have.length', 2)
+
+    cy.getByDT('proposalsWidget', 'ul').children().eq(1).within(() => {
+      cy.get('i.icon-round').should('have.class', 'icon-chart-pie')
+      cy.getByDT('typeDescription').should('contain', 'TODO: Change Voting System to "disagreement: 2"')
+      cy.getByDT('statusDescription').should('contain', '1 out of 5 members voted.')
+    })
+
+    voteInProposal('user1', 1, 1, 'voteFor', { decisive: 'approved' })
+
+    cy.log('Verify new Voting System: disagreement of "2"')
+    verifyRuleSelected('disagreement', { status: '2', ruleAdjusted: false })
 
     cy.giLogout()
   })
-
-  // TODO in a few days...
-  // it('user1 proposes to update voting rule to 1. Gets rejected once everyone else disagrees.', () => {
-  // })
-
-  // it('user1 proposes to update voting rule to 1. It gets accepted once everyone else agrees', () => {
-  // })
 })

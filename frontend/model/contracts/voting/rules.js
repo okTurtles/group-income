@@ -116,8 +116,9 @@ export const getThresholdAdjusted = (rule, threshold, groupSize) => {
  *
  * @example (10, 0.5) => 5
  * @example (3, 0.8) => 3
+ * @example (1, 0.6) => 2
  */
 export const getPercentageToCount = (groupSize, decimal) => {
-  const minGropSize = Math.max(3, this.groupMembersCount) // 3 = minimum groupSize to vote
-  return Math.ceil(minGropSize * decimal)
+  const minGroupSize = 3 // when group can vote
+  return Math.ceil(Math.max(minGroupSize, groupSize) * decimal)
 }
