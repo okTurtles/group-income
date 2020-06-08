@@ -27,7 +27,7 @@
       .c-confirmation(v-if='isConfirmation' key='confirmation')
         svg-proposal.c-svg
         i18n Members of your group will now be asked to vote.
-        span(v-html='votingRequirements')
+        span(v-html='confirmationVotingExplanation')
 
       .buttons(:class='{ "is-centered": isConfirmation }')
         button.is-outlined(
@@ -79,7 +79,7 @@
     template(slot='footer' v-if='!isConfirmation')
       .c-footer
         i.icon-vote-yea
-        span(v-if='groupShouldPropose' v-html='votingExplanation')
+        span(v-if='groupShouldPropose' v-html='footerVotingExplanation')
         i18n(
           v-else
           :args='LTags("strong")'
@@ -137,41 +137,40 @@ export default {
       const threshold = this.groupVotingRule.ruleSettings[this.groupVotingRule.rule].threshold
       return getThresholdAdjusted(this.groupVotingRule.rule, threshold, this.groupMembersCount)
     },
-    votingExplanation () {
-      if (this.groupVotingRule.rule === RULE_DISAGREEMENT) {
-        if (this.threshold === 1) {
-          return L('Your proposal will be accepted if {b_}no one{_b} disagrees.', LTags('b'))
+    footerVotingExplanation () {
+      return {
+        [RULE_DISAGREEMENT]: () => {
+          if (this.threshold === 1) {
+            return L('Your proposal will be accepted if {b_}no one{_b} disagrees.', LTags('b'))
+          }
+          // REVIEW - This copy is not very positive.
+          return L('Your proposal will be rejected if {b_}{n} members{_b} disagree.', { n: this.threshold, ...LTags('b') })
+        },
+        [RULE_PERCENTAGE]: () => {
+          return L('According to your voting rules, {b_}{value} out of {total} members{_b} will have to agree with this.', {
+            value: getPercentageToCount(this.groupMembersCount, this.threshold),
+            total: this.groupMembersCount,
+            ...LTags('b')
+          })
         }
-        // REVIEW - This copy is not very positive.
-        return L('Your proposal will be rejected if {b_}{n} members{_b} disagree.', { n: this.threshold, ...LTags('b') })
-      }
-
-      if (this.groupVotingRule.rule === RULE_PERCENTAGE) {
-        return L('According to your voting rules, {b_}{value} out of {total} members{_b} will have to agree with this.', {
-          value: getPercentageToCount(this.groupMembersCount, this.threshold),
-          total: this.groupMembersCount,
-          ...LTags('b')
-        })
-      }
-
-      return ''
+      }[this.groupVotingRule.rule]()
     },
-    votingRequirements () {
-      if (this.groupVotingRule.rule === RULE_DISAGREEMENT) {
-        if (this.threshold === 1) {
-          return L('Your proposal will be accepted if {b_}no one{_b} disagrees.', LTags('b'))
+    confirmationVotingExplanation () {
+      // REVIEW PR - @mmbotelho - This and footerVotingExplanation could be the same text for simplicity.
+      return {
+        [RULE_DISAGREEMENT]: () => {
+          if (this.threshold === 1) {
+            return L('Your proposal will be accepted if {b_}no one{_b} disagrees.', LTags('b'))
+          }
+          return L('Your proposal will be accepted if {b_}less than {n} members{_b} disagree.', { n: this.threshold, ...LTags('b') })
+        },
+        [RULE_PERCENTAGE]: () => {
+          return L('You need {b_}{n} yes votes{_b} for your proposal to be accepted.', {
+            n: getPercentageToCount(this.groupMembersCount, this.threshold),
+            ...LTags('b')
+          })
         }
-        return L('Your proposal will be accepted if {b_}less than {n} members{_b} disagree.', { n: this.threshold, ...LTags('b') })
-      }
-
-      if (this.groupVotingRule.rule === RULE_PERCENTAGE) {
-        return L('You need {b_}{n} yes votes{_b} for your proposal to be accepted.', {
-          n: getPercentageToCount(this.groupMembersCount, this.threshold),
-          ...LTags('b')
-        })
-      }
-
-      return ''
+      }[this.groupVotingRule.rule]()
     },
     submitStyleNonProposal () {
       return this.variant === 'removeMember' ? 'is-danger' : 'is-success'

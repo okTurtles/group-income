@@ -3,7 +3,7 @@
 import { literalOf, unionOf } from '~/frontend/utils/flowTyper.js'
 
 import { PROPOSAL_REMOVE_MEMBER } from '~/frontend/model/contracts/voting/constants.js'
-
+import { PROFILE_STATUS } from '~/frontend/model/contracts/group.js'
 export const VOTE_AGAINST = ':against'
 export const VOTE_INDIFFERENT = ':indifferent'
 export const VOTE_UNDECIDED = ':undecided'
@@ -25,10 +25,13 @@ export const RULE_MULTI_CHOICE = 'multi-choice'
   My suggestion: 1 parameter (object) with 4 explicit keys.
   [RULE_PERCENTAGE]: function ({ votes, proposalType, population, threshold })
 */
+
+const getPopulation = (state) => Object.keys(state.profiles).filter(p => state.profiles[p].status === PROFILE_STATUS.ACTIVE).length
+
 const rules = {
   [RULE_PERCENTAGE]: function (state, proposalType, votes) {
     votes = Object.values(votes)
-    const population = Object.keys(state.profiles).filter(p => state.profiles[p].status === 'active').length
+    const population = getPopulation(state)
     const defaultThreshold = state.settings.proposals[proposalType].ruleSettings[RULE_PERCENTAGE].threshold
     const threshold = getThresholdAdjusted(RULE_PERCENTAGE, defaultThreshold, population)
     const totalIndifferent = votes.filter(x => x === VOTE_INDIFFERENT).length
@@ -41,9 +44,6 @@ const rules = {
     //       and if so, explain it in the UI that the threshold is applied only to
     //       *those who care, plus those who were abscent*.
     //       Those who explicitely say they don't care are removed from consideration.
-    // TODO: if we're doing it this way we should never allow the threshold to go below
-    //       60%, since anything near that range indicates disagreement among the voting
-    //       group (which can be very small if we allow an explicit third option.)
     const neededToPass = Math.ceil(threshold * (population - totalIndifferent))
     console.debug(`votingRule ${RULE_PERCENTAGE} for ${proposalType}:`, { neededToPass, totalFor, totalAgainst, totalIndifferent, threshold, absent, turnout, population })
     if (totalFor >= neededToPass) {
@@ -53,7 +53,7 @@ const rules = {
   },
   [RULE_DISAGREEMENT]: function (state, proposalType, votes) {
     votes = Object.values(votes)
-    const population = Object.keys(state.profiles).filter(p => state.profiles[p].status === 'active').length
+    const population = getPopulation(state)
     const minimumMax = proposalType === PROPOSAL_REMOVE_MEMBER ? 2 : 1
     const thresholdOriginal = Math.max(state.settings.proposals[proposalType].ruleSettings[RULE_DISAGREEMENT].threshold, minimumMax)
     const threshold = getThresholdAdjusted(RULE_DISAGREEMENT, thresholdOriginal, population)
@@ -99,16 +99,17 @@ export const ruleType = unionOf(...Object.keys(rules).map(k => literalOf(k)))
 export const getThresholdAdjusted = (rule, threshold, groupSize) => {
   const groupSizeVoting = Math.max(3, groupSize) // 3 = minimum groupSize to vote
 
-  if (rule === RULE_DISAGREEMENT) {
-    // Limit number of maximum "no" votes to group size
-    return Math.min(groupSizeVoting - 1, threshold)
-  }
-
-  if (rule === RULE_PERCENTAGE) {
-    // Minimum threshold correspondent to 2 "yes" votes
-    const minThreshold = 2 / groupSizeVoting
-    return Math.max(minThreshold, threshold)
-  }
+  return {
+    [RULE_DISAGREEMENT]: () => {
+      // Limit number of maximum "no" votes to group size
+      return Math.min(groupSizeVoting - 1, threshold)
+    },
+    [RULE_PERCENTAGE]: () => {
+      // Minimum threshold correspondent to 2 "yes" votes
+      const minThreshold = 2 / groupSizeVoting
+      return Math.max(minThreshold, threshold)
+    }
+  }[rule]()
 }
 
 /**
@@ -117,5 +118,6 @@ export const getThresholdAdjusted = (rule, threshold, groupSize) => {
  * @example (3, 0.8) => 3
  */
 export const getPercentageToCount = (groupSize, decimal) => {
-  return Math.ceil(groupSize * decimal)
+  const minGropSize = Math.max(3, this.groupMembersCount) // 3 = minimum groupSize to vote
+  return Math.ceil(minGropSize * decimal)
 }

@@ -231,7 +231,7 @@ describe('inactive members - RULE_PERCENTAGE - 60%', function () {
     should(result).equal(VOTE_UNDECIDED)
   })
 
-  it('6 members (1 inactive) - 3VF returns FOR', () => {
+  it('6 members (1 inactive) - 3VF returns for', () => {
     const state = buildState(6, RULE_PERCENTAGE, 0.6, { membersInactive: 1 })
     const result = rules[RULE_PERCENTAGE](state, 'generic', {
       u1: VOTE_FOR,

@@ -91,14 +91,10 @@ export default {
         return ''
       }
 
-      if (ruleName === RULE_DISAGREEMENT) {
-        return L('*This value was automatically adjusted because your group is currently smaller than the disagreement number.')
-      }
-      if (ruleName === RULE_PERCENTAGE) {
-        return L('*This value was automatically adjusted because there should always be at least 2 "yes" votes.')
-      }
-
-      return ''
+      return {
+        [RULE_DISAGREEMENT]: L('*This value was automatically adjusted because your group is currently smaller than the disagreement number.'),
+        [RULE_PERCENTAGE]: L('*This value was automatically adjusted because there should always be at least 2 "yes" votes.')
+      }[ruleName]
     },
     votingValue (option) {
       const HTMLTags = {
@@ -110,26 +106,28 @@ export default {
       const count = this.thresholdOriginal
       const adjusted = this.thresholdAdjusted
 
-      if (option === RULE_PERCENTAGE) {
-        const percent = this.thresholdOriginal * 100 + '%'
-        const membersCount = Math.max(3, this.groupMembersCount) // 3 = minimum groupSize to vote
-        const LArgs = {
-          percent,
-          count: getPercentageToCount(membersCount, adjusted),
-          total: membersCount,
-          ...HTMLTags
-        }
+      return {
+        [RULE_DISAGREEMENT]: () => {
+          if (count === adjusted) {
+            return L('{b_}{count}{_b}', { count, ...HTMLTags })
+          }
+          return L('{b_}{count}{_b} {sm_}(adjusted to {nr}*){_sm}', { count, nr: adjusted, ...HTMLTags })
+        },
+        [RULE_PERCENTAGE]: () => {
+          const percent = this.thresholdOriginal * 100 + '%'
+          const LArgs = {
+            percent,
+            count: getPercentageToCount(this.groupMembersCount, adjusted),
+            total: Math.max(3, this.groupMembersCount), // 3 = minimum groupSize to vote,
+            ...HTMLTags
+          }
 
-        if (count === adjusted) {
-          return L('{b_}{percent}{_b} {sm_}({count} out of {total} members){_sm}', LArgs)
+          if (count === adjusted) {
+            return L('{b_}{percent}{_b} {sm_}({count} out of {total} members){_sm}', LArgs)
+          }
+          return L('{b_}{percent}{_b} {sm_}({count}* out of {total} members){_sm}', LArgs)
         }
-        return L('{b_}{percent}{_b} {sm_}({count}* out of {total} members){_sm}', LArgs)
-      } else if (option === RULE_DISAGREEMENT) {
-        if (count === adjusted) {
-          return L('{b_}{count}{_b}', { count, ...HTMLTags })
-        }
-        return L('{b_}{count}{_b} {sm_}(adjusted to {nr}*){_sm}', { count, nr: adjusted, ...HTMLTags })
-      }
+      }[option]()
     }
   }
 }
