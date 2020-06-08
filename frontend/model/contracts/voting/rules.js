@@ -33,7 +33,9 @@ const rules = {
     votes = Object.values(votes)
     const population = getPopulation(state)
     const defaultThreshold = state.settings.proposals[proposalType].ruleSettings[RULE_PERCENTAGE].threshold
-    const threshold = getThresholdAdjusted(RULE_PERCENTAGE, defaultThreshold, population)
+    const thresholdAdapted = proposalType === PROPOSAL_REMOVE_MEMBER ? Math.min(defaultThreshold, (population - 1) / population)
+      : defaultThreshold
+    const threshold = getThresholdAdjusted(RULE_PERCENTAGE, thresholdAdapted, population)
     const totalIndifferent = votes.filter(x => x === VOTE_INDIFFERENT).length
     const totalFor = votes.filter(x => x === VOTE_FOR).length
     const totalAgainst = votes.filter(x => x === VOTE_AGAINST).length
