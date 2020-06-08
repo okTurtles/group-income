@@ -46,7 +46,7 @@ export default {
     rule: {
       type: String,
       validator: (value) => [RULE_DISAGREEMENT, RULE_PERCENTAGE].includes(value),
-      default: RULE_DISAGREEMENT // remove this. related to #935
+      default: RULE_DISAGREEMENT // TODO this. related to #935
     }
   },
   data () {
