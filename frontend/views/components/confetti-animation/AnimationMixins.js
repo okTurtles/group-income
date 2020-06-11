@@ -8,8 +8,12 @@ const CONFETTI_AMOUNT_MIN = 25
 const CONFETTI_AMOUNT_MAX = 40
 const BP_PHONE = 400
 const BP_LARGESCREEN = 1000
-const COLORSET_LIGHT = ['#0288d1', '#40854f', '#ff6f00', '#c62828']
-const COLORSET_DARK = ['#2CB1E5', '#7BD199', '#F28A2B', '#FF938C']
+const COLORS = [
+  'var(--primary_0)',
+  'var(--success_0)',
+  'var(--warning_0)',
+  'var(--danger_0)'
+]
 const confettiAmountScaler = linearScale(
   [BP_PHONE, BP_LARGESCREEN],
   [CONFETTI_AMOUNT_MIN, CONFETTI_AMOUNT_MAX]
@@ -276,11 +280,6 @@ const animationMixins = {
       timeout: null // animation begins after a bit of delay
     }
   },
-  computed: {
-    isDarkTheme () {
-      return this.$store.getters.isDarkTheme
-    }
-  },
   methods: {
     initializeAnimation () {
       const {
@@ -313,9 +312,7 @@ const animationMixins = {
             explosionTip.x,
             explosionTip.y,
             i,
-            randomFromArray(
-              this.isDarkTheme ? COLORSET_DARK : COLORSET_LIGHT
-            ),
+            randomFromArray(COLORS),
             randomFromArray(confettiNames)
           )
         )
