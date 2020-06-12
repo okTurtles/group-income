@@ -6,6 +6,7 @@ modal-template(ref='modal' v-if='payment' :a11yTitle='L("Payment details")')
   .is-title-2.c-title {{ withCurrency(payment.data.amount) }}
   .c-subtitle.has-text-1 {{ subtitleCopy }}
 
+  //- TODO This should be a table...
   ul.c-payment-list
     li.c-payment-list-item
       i18n.has-text-1 Date & Time
@@ -41,9 +42,6 @@ export default {
   props: {
     payment: {
       type: Object
-    },
-    needsIncome: {
-      type: Boolean
     }
   },
   components: {
@@ -57,8 +55,12 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'groupSettings'
+      'groupSettings',
+      'ourGroupProfile'
     ]),
+    needsIncome () {
+      return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'
+    },
     withCurrency () {
       return currencies[this.payment.data.currencyFromTo[0]].displayWithCurrency
     },

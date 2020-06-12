@@ -12,7 +12,7 @@
           tag='button'
           item-id='message'
           icon='info'
-          @click='openModal("PaymentDetail", { payment, needsIncome })'
+          @click='openModal("PaymentDetail", { payment })'
         )
           i18n Payment details
 
