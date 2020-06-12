@@ -124,7 +124,14 @@ export const getThresholdAdjusted = (rule, threshold, groupSize) => {
  * @example (3, 0.8) => 3
  * @example (1, 0.6) => 2
  */
-export const getPercentageToCount = (groupSize, decimal) => {
+export const getCountOutOfMembers = (groupSize, decimal) => {
   const minGroupSize = 3 // when group can vote
   return Math.ceil(Math.max(minGroupSize, groupSize) * decimal)
+}
+
+export const getPercentFromDecimal = (decimal) => {
+  // convert decimal to percentage avoiding weird decimals results.
+  // e.g. 0.58 -> 58 instead of 57.99999
+  // based on https://stackoverflow.com/a/11832950/4737729
+  return Math.round(decimal * 100 * 100 / 100)
 }

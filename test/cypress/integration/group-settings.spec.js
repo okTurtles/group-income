@@ -205,7 +205,7 @@ describe('Group Voting Rules', () => {
     })
   }
 
-  it('user1 creates a new proposal. It is rejected once everyone else disagrees.', () => {
+  it('user1 proposes to change rule to percentage 15%). It is rejected once everyone else disagrees.', () => {
     updateRuleSettings('percentage', 0.15, { isProposal: true })
 
     cy.getByDT('dashboard').click()
@@ -214,8 +214,8 @@ describe('Group Voting Rules', () => {
     cy.getByDT('proposalsWidget', 'ul').children().should('have.length', 1)
 
     cy.getByDT('proposalsWidget', 'ul').children().eq(0).within(() => {
-      cy.get('i.icon-round').should('have.class', 'icon-chart-pie')
-      // cy.getByDT('typeDescription').should('contain', 'TODO: Change Voting System to "disagreement: 3"')
+      cy.get('i.icon-round').should('have.class', 'icon-vote-yea')
+      cy.getByDT('typeDescription').should('contain', 'Change from a disagreement based voting system to a percentage based one, with minimum agreement of 15%.')
     })
 
     voteInProposal('user2', 0, 1, 'voteAgainst')
@@ -233,17 +233,17 @@ describe('Group Voting Rules', () => {
     cy.getByDT('proposalsWidget', 'ul').children().should('have.length', 2)
 
     cy.getByDT('proposalsWidget', 'ul').children().eq(1).within(() => {
-      cy.get('i.icon-round').should('have.class', 'icon-chart-pie')
-      // cy.getByDT('typeDescription').should('contain', 'TODO: Change Voting System to "disagreement: 2"')
+      cy.get('i.icon-round').should('have.class', 'icon-vote-yea')
+      cy.getByDT('typeDescription').should('contain', 'Change from a disagreement based voting system to a percentage based one, with minimum agreement of 15%.')
     })
 
     voteInProposal('user1', 1, 1, 'voteFor', { decisive: 'approved' })
 
-    cy.log('Verify new Voting System: percentage of "15%*"')
+    cy.log('Verify new Voting System: percentage of 15% (adjusted)')
     verifyRuleSelected('percentage', { status: '15% (2* out of 5 members)', ruleAdjusted: true })
   })
 
-  it('user1 creates a new proposal. It is accepted once someone agrees.', () => {
+  it('user1 proposes to update "percentage" to 80%. It is accepted once someone agrees.', () => {
     updateRuleSettings('percentage', 0.80, { isProposal: true })
 
     cy.getByDT('dashboard').click()
@@ -252,13 +252,13 @@ describe('Group Voting Rules', () => {
     cy.getByDT('proposalsWidget', 'ul').children().should('have.length', 3)
 
     cy.getByDT('proposalsWidget', 'ul').children().eq(2).within(() => {
-      cy.get('i.icon-round').should('have.class', 'icon-chart-pie')
-      // cy.getByDT('typeDescription').should('contain', 'TODO: Change Voting System to "disagreement: 2"')
+      cy.get('i.icon-round').should('have.class', 'icon-vote-yea')
+      cy.getByDT('typeDescription').should('contain', 'Change percentage based from 15% to 80%.')
     })
 
     voteInProposal('user2', 2, 1, 'voteFor', { decisive: 'approved' })
 
-    cy.log('Verify new Voting System: percentage of "80%"')
+    cy.log('Verify new Voting System: percentage of 80%.')
     verifyRuleSelected('percentage', { status: '80% (4 out of 5 members)', ruleAdjusted: false })
 
     cy.giLogout()

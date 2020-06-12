@@ -128,7 +128,10 @@ export default {
             {
               proposalType: PROPOSAL_PROPOSAL_SETTING_CHANGE,
               proposalData: {
-                setting: 'votingRule',
+                current: {
+                  ruleName: this.groupVotingRule.rule,
+                  ruleThreshold: this.currentThreshold
+                },
                 ruleName: this.rule,
                 ruleThreshold: +this.form.threshold,
                 reason: this.form.reason

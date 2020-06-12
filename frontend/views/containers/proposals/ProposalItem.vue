@@ -51,6 +51,7 @@ import {
   STATUS_EXPIRED,
   STATUS_CANCELLED
 } from '@model/contracts/voting/constants.js'
+import { RULE_PERCENTAGE, RULE_DISAGREEMENT, getPercentFromDecimal } from '@model/contracts/voting/rules.js'
 import ProposalVoteOptions from '@containers/proposals/ProposalVoteOptions.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
@@ -120,10 +121,29 @@ export default {
           return L('Change {setting} from {currentValue} to {proposedValue}', variablesMap)
         },
         [PROPOSAL_PROPOSAL_SETTING_CHANGE]: () => {
-          const { ruleName, ruleThreshold } = this.proposal.data.proposalData
-          return L('TODO: Change Voting System to {proposedValue}', {
-            proposedValue: `"${ruleName}: ${ruleThreshold}"`
-          })
+          const { current, ruleName, ruleThreshold } = this.proposal.data.proposalData
+
+          if (current.ruleName === ruleName) {
+            return {
+              [RULE_DISAGREEMENT]: () => L('Change disagreement number from {X} to {N}.', {
+                X: current.ruleThreshold,
+                N: ruleThreshold
+              }),
+              [RULE_PERCENTAGE]: () => L('Change percentage based from {X} to {N}.', {
+                X: getPercentFromDecimal(current.ruleThreshold) + '%',
+                N: getPercentFromDecimal(ruleThreshold) + '%'
+              })
+            }[ruleName]()
+          }
+
+          return {
+            [RULE_DISAGREEMENT]: () => L('Change from a percentage based voting system to a disagreement based one, with a maximum of {N} “no” votes.', {
+              N: ruleThreshold
+            }),
+            [RULE_PERCENTAGE]: () => L('Change from a disagreement based voting system to a percentage based one, with minimum agreement of {percent}.', {
+              percent: getPercentFromDecimal(ruleThreshold) + '%'
+            })
+          }[ruleName]()
         },
         [PROPOSAL_GENERIC]: () => L('TODO: Change [generic] from [current] to [new-value]', {})
       }[this.proposalType]()
@@ -156,7 +176,7 @@ export default {
         [PROPOSAL_INVITE_MEMBER]: 'icon-user-plus',
         [PROPOSAL_REMOVE_MEMBER]: 'icon-user-minus',
         [PROPOSAL_GROUP_SETTING_CHANGE]: 'icon-coins',
-        [PROPOSAL_PROPOSAL_SETTING_CHANGE]: 'icon-chart-pie',
+        [PROPOSAL_PROPOSAL_SETTING_CHANGE]: 'icon-vote-yea',
         [PROPOSAL_GENERIC]: 'icon-poll'
       }
 

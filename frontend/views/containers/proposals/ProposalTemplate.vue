@@ -89,7 +89,7 @@
 <script>
 import { mapGetters } from 'vuex'
 import L, { LTags } from '@view-utils/translations.js'
-import { RULE_PERCENTAGE, RULE_DISAGREEMENT, getThresholdAdjusted, getPercentageToCount } from '@model/contracts/voting/rules.js'
+import { RULE_PERCENTAGE, RULE_DISAGREEMENT, getThresholdAdjusted, getCountOutOfMembers } from '@model/contracts/voting/rules.js'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import SvgProposal from '@svgs/proposal.svg'
@@ -148,7 +148,7 @@ export default {
         },
         [RULE_PERCENTAGE]: () => {
           return L('According to your voting rules, {b_}{value} out of {total} members{_b} will have to agree with this.', {
-            value: getPercentageToCount(this.groupMembersCount, this.threshold),
+            value: getCountOutOfMembers(this.groupMembersCount, this.threshold),
             total: this.groupMembersCount,
             ...LTags('b')
           })
@@ -166,7 +166,7 @@ export default {
         },
         [RULE_PERCENTAGE]: () => {
           return L('You need {b_}{n} yes votes{_b} for your proposal to be accepted.', {
-            n: getPercentageToCount(this.groupMembersCount, this.threshold),
+            n: getCountOutOfMembers(this.groupMembersCount, this.threshold),
             ...LTags('b')
           })
         }

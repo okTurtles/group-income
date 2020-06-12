@@ -36,7 +36,7 @@
 <script>
 import sbp from '~/shared/sbp.js'
 import { mapGetters } from 'vuex'
-import { RULE_PERCENTAGE, RULE_DISAGREEMENT, getThresholdAdjusted, getPercentageToCount } from '@model/contracts/voting/rules.js'
+import { RULE_PERCENTAGE, RULE_DISAGREEMENT, getThresholdAdjusted, getCountOutOfMembers, getPercentFromDecimal } from '@model/contracts/voting/rules.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import L from '@view-utils/translations.js'
 import BannerSimple from '@components/banners/BannerSimple.vue'
@@ -104,10 +104,10 @@ export default {
           return L('{b_}{count}{_b} {sm_}(adjusted to {nr}*){_sm}', { count, nr: adjusted, ...HTMLTags })
         },
         [RULE_PERCENTAGE]: () => {
-          const percent = Math.round(this.thresholdOriginal * 100 * 100 / 100) + '%'
+          const percent = getPercentFromDecimal(this.thresholdOriginal) + '%'
           const LArgs = {
             percent,
-            count: getPercentageToCount(this.groupMembersCount, adjusted),
+            count: getCountOutOfMembers(this.groupMembersCount, adjusted),
             total: Math.max(3, this.groupMembersCount), // 3 = minimum groupSize to vote,
             ...HTMLTags
           }

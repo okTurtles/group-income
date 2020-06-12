@@ -21,7 +21,7 @@
 
 <script>
 import L from '@view-utils/translations.js'
-import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/voting/rules.js'
+import { RULE_PERCENTAGE, RULE_DISAGREEMENT, getPercentFromDecimal } from '@model/contracts/voting/rules.js'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import SliderContinuous from '@components/SliderContinuous.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'
@@ -72,10 +72,7 @@ export default {
   computed: {
     sliderValue () {
       if (this.rule === RULE_PERCENTAGE) {
-        // convert decimal to percentage avoiding weird decimals results.
-        // e.g. 0.58 -> 58 instead of 57.99999
-        // based on https://stackoverflow.com/a/11832950/4737729
-        return Math.round(this.value * 100 * 100 / 100)
+        return getPercentFromDecimal(this.value)
       }
       return this.value
     },
