@@ -23,7 +23,7 @@
       banner-simple.c-banner(
         severity='info'
         data-test='ruleAdjusted'
-        v-if='votingRuleAdjusted(rule)'
+        v-if='groupShouldPropose && votingRuleAdjusted(rule)'
       ) {{ votingRuleAdjusted(rule) }}
 
       button.link(
@@ -86,16 +86,6 @@ export default {
     isRuleActive (rule) {
       return rule === this.groupVotingRule.rule
     },
-    votingRuleAdjusted (ruleName) {
-      if (!this.isRuleActive(ruleName) || this.thresholdAdjusted === this.thresholdOriginal) {
-        return ''
-      }
-
-      return {
-        [RULE_DISAGREEMENT]: L('*This value was automatically adjusted because your group is currently smaller than the disagreement number.'),
-        [RULE_PERCENTAGE]: L('*This value was automatically adjusted because there should always be at least 2 "yes" votes.')
-      }[ruleName]
-    },
     votingValue (option) {
       const HTMLTags = {
         b_: '<span class="has-text-bold">',
@@ -108,13 +98,13 @@ export default {
 
       return {
         [RULE_DISAGREEMENT]: () => {
-          if (count === adjusted) {
+          if (!this.groupShouldPropose || count === adjusted) {
             return L('{b_}{count}{_b}', { count, ...HTMLTags })
           }
           return L('{b_}{count}{_b} {sm_}(adjusted to {nr}*){_sm}', { count, nr: adjusted, ...HTMLTags })
         },
         [RULE_PERCENTAGE]: () => {
-          const percent = this.thresholdOriginal * 100 + '%'
+          const percent = Math.round(this.thresholdOriginal * 100 * 100 / 100) + '%'
           const LArgs = {
             percent,
             count: getPercentageToCount(this.groupMembersCount, adjusted),
@@ -122,12 +112,25 @@ export default {
             ...HTMLTags
           }
 
+          if (!this.groupShouldPropose) {
+            return L('{b_}{percent}{_b}', LArgs)
+          }
           if (count === adjusted) {
             return L('{b_}{percent}{_b} {sm_}({count} out of {total} members){_sm}', LArgs)
           }
           return L('{b_}{percent}{_b} {sm_}({count}* out of {total} members){_sm}', LArgs)
         }
       }[option]()
+    },
+    votingRuleAdjusted (ruleName) {
+      if (!this.groupShouldPropose || !this.isRuleActive(ruleName) || this.thresholdAdjusted === this.thresholdOriginal) {
+        return ''
+      }
+
+      return {
+        [RULE_DISAGREEMENT]: L('*This value was automatically adjusted because your group is too small for the disagreement number.'),
+        [RULE_PERCENTAGE]: L('*This value was automatically adjusted because there should always be at least 2 "yes" votes.')
+      }[ruleName]
     }
   }
 }
