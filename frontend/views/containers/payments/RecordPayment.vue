@@ -44,6 +44,7 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background' v-if='
         .buttons.c-buttons
           i18n.is-outlined(
             tag='button'
+            type='button'
             @click='closeModal'
           ) Cancel
 
