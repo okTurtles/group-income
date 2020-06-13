@@ -76,6 +76,14 @@ export default {
         : proposalDefaults.ruleSettings[this.rule].threshold
     }
   },
+  watch: {
+    'ephemeral.currentStep': function (step) {
+      // Validate threshold when reaching step 1
+      if (this.groupShouldPropose && step === 1) {
+        this.validateThreshold()
+      }
+    }
+  },
   computed: {
     ...mapState([
       'currentGroupId'
@@ -86,7 +94,8 @@ export default {
       'groupSettings'
     ]),
     currentThreshold () {
-      return this.groupVotingRule.ruleSettings[this.rule].threshold
+      // Only check currentThreshold if the system is the same.
+      return this.changeSystem ? null : this.groupVotingRule.ruleSettings[this.rule].threshold
     },
     title () {
       if (this.groupVotingRule.rule === this.rule) {
@@ -115,10 +124,17 @@ export default {
     setThreshold (value) {
       this.form.threshold = value
     },
-    async submit () {
+    validateThreshold () {
       if (+this.form.threshold === this.currentThreshold) {
         this.ephemeral.currentStep = 0
         this.$refs.formMsg.danger(L('You are proposing to keep the same value as the actual.'))
+        return false
+      }
+      this.$refs.formMsg.clean()
+      return true
+    },
+    async submit () {
+      if (!this.validateThreshold()) {
         return
       }
 

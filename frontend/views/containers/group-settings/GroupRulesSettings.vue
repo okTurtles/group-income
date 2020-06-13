@@ -176,7 +176,7 @@ export default {
 }
 
 .c-banner {
-  margin-top: 1rem;
+  margin-top: 1.5rem;
 }
 
 @include tablet {
