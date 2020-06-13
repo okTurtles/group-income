@@ -140,7 +140,12 @@ export default {
 }
 
 .c-title {
+  display: block;
   padding: 0 0 0.5rem 1rem;
+
+  .c-list.compact & {
+    padding-left: 0.5rem;
+  }
 }
 
 .c-list {

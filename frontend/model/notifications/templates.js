@@ -8,7 +8,7 @@ import { timeSince } from '@utils/time.js'
 const dateNow = 1590823007327
 
 // TODO - add/improve logic to needed keys:
-// - avatar, name, linkTo, date, read
+// - avatar, name, linkTo, read
 export const MEMBER_ADDED = ({ timestamp, data }) => {
   const name = data.username // getDisplayName()
   const avatar = ''
