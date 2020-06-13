@@ -19,7 +19,7 @@ proposal-template(
 <script>
 import { mapState, mapGetters } from 'vuex'
 import sbp from '~/shared/sbp.js'
-import { CLOSE_MODAL } from '@utils/events.js'
+import { CLOSE_MODAL, SET_MODAL_QUERIES } from '@utils/events.js'
 import L, { LError } from '@view-utils/translations.js'
 import Avatar from '@components/Avatar.vue'
 import { PROPOSAL_REMOVE_MEMBER } from '@model/contracts/voting/constants.js'
@@ -33,11 +33,9 @@ export default {
     BannerScoped,
     ProposalTemplate
   },
-  props: {
-    username: String
-  },
   data () {
     return {
+      username: null,
       ephemeral: {
         currentStep: 0
       },
@@ -49,8 +47,12 @@ export default {
     }
   },
   created () {
-    if (!this.username) {
-      console.warn('Missing username to display RemoveMember modal')
+    const username = this.$route.query.username
+    if (username) {
+      this.username = username
+      sbp('okTurtles.events/emit', SET_MODAL_QUERIES, 'RemoveMember', { username })
+    } else {
+      console.warn('RemoveMember: Missing query "username".')
       sbp('okTurtles.events/emit', CLOSE_MODAL)
     }
   },

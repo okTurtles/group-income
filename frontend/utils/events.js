@@ -8,6 +8,7 @@ export const CONTRACTS_MODIFIED = 'contracts-modified'
 export const OPEN_MODAL = 'open-modal'
 export const CLOSE_MODAL = 'close-modal'
 export const REPLACE_MODAL = 'replace-modal'
+export const SET_MODAL_QUERIES = 'set-modal-queries'
 
 export const PROPOSAL_RESULT = 'proposal-result'
 
