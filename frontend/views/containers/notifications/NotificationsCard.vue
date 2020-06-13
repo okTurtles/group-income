@@ -128,7 +128,7 @@ export default {
 
 .c-body {
   max-height: 18rem;
-  overflow: scroll;
+  overflow: auto;
   overscroll-behavior-y: contain;
 }
 
