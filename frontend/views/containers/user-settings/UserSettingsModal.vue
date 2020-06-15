@@ -7,10 +7,11 @@ modal-base-template(class='has-background' :a11yTitle='L("Settings")')
       defaultTab='my-account'
       @close='$emit("close")'
     )
-
 </template>
 
 <script>
+import sbp from '~/shared/sbp.js'
+import { SET_MODAL_QUERIES } from '@utils/events.js'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import TabWrapper from '@components/tabs/TabWrapper.vue'
 import settings from './settings.js'
@@ -23,6 +24,9 @@ export default {
   },
   data () {
     return settings
+  },
+  created () {
+    sbp('okTurtles.events/emit', SET_MODAL_QUERIES, 'UserSettingsModal', { section: true })
   }
 }
 </script>

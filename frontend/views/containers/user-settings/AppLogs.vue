@@ -166,7 +166,7 @@ export default {
   @include touch {
     .c-icon {
       &::before {
-        content: "\f1e0", // .icon-share-alt
+        content: "\f1e0"; // .icon-share-alt
       }
     }
   }

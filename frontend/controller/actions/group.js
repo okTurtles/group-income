@@ -163,7 +163,7 @@ export default sbp('sbp/selectors/register', {
       return message
     } catch (e) {
       console.error('gi.actions/group/removeMember failed', e)
-      throw new GIErrorUIRuntimeError(L('Failed to remove {member}: {codeError}', { codeError: e.message, member: params.member }))
+      throw new GIErrorUIRuntimeError(L('Failed to remove {member}: {reportError}', { member: params.member, ...LError(e) }))
     }
   },
   'gi.actions/group/removeOurselves': async function (groupId) {
