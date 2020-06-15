@@ -8,23 +8,45 @@ import store from '@model/state.js'
 import DesignSystem from '@pages/DesignSystem.vue'
 import BypassUI from '@pages/BypassUI.vue'
 
+import LoadingPage from '@components/LoadingPage.vue'
+// TODO: once the 404 and 500 error message is design, replace the loading page with this one
+// import ErrorPage from './ErrorPage.vue'
+
 import Home from '@pages/Home.vue'
-import Messages from '@pages/Messages.vue'
-import GroupDashboard from '@pages/GroupDashboard.vue'
-import Contributions from '@pages/Contributions.vue'
-import Payments from '@pages/Payments.vue'
-import GroupChat from '@pages/GroupChat.vue'
 import Join from '@pages/Join.vue'
-import Mailbox from '@pages/Mailbox.vue'
-import GroupSettings from '@pages/GroupSettings.vue'
 import L from '@view-utils/translations.js'
+
+const lazyLoadView = ({ component, loading = LoadingPage, error = LoadingPage }) => {
+  const AsyncHandler = () => ({ component, loading, error })
+
+  return () =>
+    Promise.resolve({
+      functional: true,
+      render (h, { data, children }) {
+        return h(AsyncHandler, data, children)
+      }
+    })
+}
+
+/*
+  Lazy load all the pages that are not necessary at initial loading off the app
+  lazyLoadView function by default use the generic LoadingPage, but can be
+  over written to show specific loading layout (same for the error page not yet implented)
+*/
+const GroupDashboard = lazyLoadView({ component: import('@pages/GroupDashboard.vue') })
+const Messages = lazyLoadView({ component: import('@pages/Messages.vue') })
+const Contributions = lazyLoadView({ component: import('@pages/Contributions.vue') })
+const Payments = lazyLoadView({ component: import('@pages/Payments.vue') })
+const GroupChat = lazyLoadView({ component: import('@pages/GroupChat.vue') })
+const Mailbox = lazyLoadView({ component: import('@pages/Mailbox.vue') })
+const GroupSettings = lazyLoadView({ component: import('@pages/GroupSettings.vue') })
 
 Vue.use(Router)
 
 /*
- The following are reusable guard for routes
- the 'guard' defines how the route is blocked and the redirect determines the redirect behavior
- when a route is blocked
+  The following are reusable guard for routes
+  the 'guard' defines how the route is blocked and the redirect determines the redirect behavior
+  when a route is blocked
  */
 const homeGuard = {
   guard: (to, from) => !!store.state.currentGroupId,
