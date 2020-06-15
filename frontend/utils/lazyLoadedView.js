@@ -30,6 +30,7 @@ Vue.component('AppLogs', () => import('../views/containers/user-settings/AppLogs
 Vue.component('Troubleshooting', () => import('../views/containers/user-settings/Troubleshooting.vue'))
 
 // TODO Remove after design test period
-Vue.component('DSModalSimple', () => import('../views/containers/design-system/DSModalSimple.vue'))
+Vue.component('DSModalFullscreen', () => import('../views/containers/design-system/DSModalFullscreen.vue'))
 Vue.component('DSModalNested', () => import('../views/containers/design-system/DSModalNested.vue'))
+Vue.component('DSModalQuery', () => import('../views/containers/design-system/DSModalQuery.vue'))
 Vue.component('TimeTravel', () => import('../views/containers/navigation/TimeTravel.vue'))

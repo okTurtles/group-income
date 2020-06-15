@@ -29,9 +29,8 @@ export default {
     window.addEventListener('keyup', this.handleKeyUp)
   },
   mounted () {
-    const modal = this.$route.query.modal
+    const { modal, subcontent } = this.$route.query
     if (modal) this.openModal(modal)
-    const subcontent = this.$route.query.subcontent
     if (subcontent) this.openModal(subcontent)
   },
   beforeDestroy () {
@@ -89,25 +88,24 @@ export default {
           }
         }).catch(console.error)
       } else if (this.$route.query.modal) {
-        const query = { ...this.$route.query }
+        const rQueries = { ...this.$route.query }
         const queriesToDelete = {
           modal: true,
           subcontent: true,
-          ...this.queries[query.modal]
+          ...this.queries[rQueries.modal]
         }
 
         for (const mQuery in queriesToDelete) {
-          delete query[mQuery]
+          delete rQueries[mQuery]
         }
 
-        this.$router.push({ query }).catch(console.error)
+        this.$router.push({ rQueries }).catch(console.error)
       }
     },
     openModal (componentName, queries = {}) {
       // Don't open the same kind of modal twice.
       if (this.content === componentName) return
 
-      // Record active element to get back to when modal is closed
       this.lastFocus = document.activeElement
       if (this.content) {
         this.subcontent.push(componentName)

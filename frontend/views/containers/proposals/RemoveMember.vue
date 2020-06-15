@@ -48,11 +48,15 @@ export default {
   },
   created () {
     const username = this.$route.query.username
+    const isPartOfGroup = this.groupProfiles[username]
+
     if (username) {
-      this.username = username
       sbp('okTurtles.events/emit', SET_MODAL_QUERIES, 'RemoveMember', { username })
+    }
+    if (isPartOfGroup) {
+      this.username = username
     } else {
-      console.warn('RemoveMember: Missing query "username".')
+      console.warn('RemoveMember: Missing valid query "username".')
       sbp('okTurtles.events/emit', CLOSE_MODAL)
     }
   },

@@ -75,9 +75,8 @@ export default {
     subtitleCopy () {
       const toUser = this.payment.data.toUser
       const fromUser = this.payment.meta.username
-      return toUser === this.ourUsername
-        ? L('Sent by {name}', { name: this.userDisplayName(fromUser) })
-        : L('Sent to {name}', { name: this.userDisplayName(toUser) })
+      const arg = (username) => ({ name: this.userDisplayName(username) })
+      return toUser === this.ourUsername ? L('Sent by {name}', arg(fromUser)) : L('Sent to {name}', arg(toUser))
     }
   },
   methods: {
