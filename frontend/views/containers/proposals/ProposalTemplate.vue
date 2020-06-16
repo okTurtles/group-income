@@ -122,8 +122,11 @@ export default {
     ...mapGetters([
       'groupMembersCount',
       'groupShouldPropose',
-      'groupVotingRule'
+      'groupProposalSettings'
     ]),
+    proposalSettings () {
+      return this.groupProposalSettings()
+    },
     isNextStep () {
       return this.currentStep <= this.maxSteps - 1
     },
@@ -134,8 +137,8 @@ export default {
       return this.currentStep === this.maxSteps + 1
     },
     threshold () {
-      const threshold = this.groupVotingRule.ruleSettings[this.groupVotingRule.rule].threshold
-      return getThresholdAdjusted(this.groupVotingRule.rule, threshold, this.groupMembersCount)
+      const threshold = this.proposalSettings.ruleSettings[this.proposalSettings.rule].threshold
+      return getThresholdAdjusted(this.proposalSettings.rule, threshold, this.groupMembersCount)
     },
     footerVotingExplanation () {
       return {
@@ -153,7 +156,7 @@ export default {
             ...LTags('b')
           })
         }
-      }[this.groupVotingRule.rule]()
+      }[this.proposalSettings.rule]()
     },
     confirmationVotingExplanation () {
       // REVIEW PR - @mmbotelho - This and footerVotingExplanation could be the same text for simplicity.
@@ -170,7 +173,7 @@ export default {
             ...LTags('b')
           })
         }
-      }[this.groupVotingRule.rule]()
+      }[this.proposalSettings.rule]()
     },
     submitStyleNonProposal () {
       return this.variant === 'removeMember' ? 'is-danger' : 'is-success'

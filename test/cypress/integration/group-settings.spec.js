@@ -5,7 +5,7 @@ const groupNewMincome = groupMincome + 100
 const sharedValues = ''
 let invitationLinkAnyone
 
-describe.skip('Changing Group Settings', () => {
+describe('Changing Group Settings', () => {
   it('user1 creates a new group', () => {
     cy.visit('/')
     cy.giSignup(`user1-${userId}`, { bypassUI: true })
@@ -114,10 +114,6 @@ describe('Group Voting Rules', () => {
   }
 
   it('user1 creates a group with rule "disagreement" of "2"', () => {
-    // ****
-    cy.visit('/')
-    cy.giSignup(`user1-${userId}`, { bypassUI: true })
-
     cy.giCreateGroup('groupDis_2', { ruleName: 'disagreement', ruleThreshold: 2 })
 
     verifyRuleSelected('disagreement', {

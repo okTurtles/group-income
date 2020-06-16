@@ -71,7 +71,7 @@ export default {
     if (!this.rule) {
       sbp('okTurtles.events/emit', CLOSE_MODAL)
     } else {
-      this.form.threshold = this.rule === this.groupVotingRule.rule
+      this.form.threshold = this.rule === this.proposalSettings.rule
         ? this.currentThreshold
         : proposalDefaults.ruleSettings[this.rule].threshold
     }
@@ -90,21 +90,24 @@ export default {
     ]),
     ...mapGetters([
       'groupShouldPropose',
-      'groupVotingRule',
+      'groupProposalSettings',
       'groupSettings'
     ]),
+    proposalSettings () {
+      return this.groupProposalSettings()
+    },
     currentThreshold () {
       // Only check currentThreshold if the system is the same.
-      return this.changeSystem ? null : this.groupVotingRule.ruleSettings[this.rule].threshold
+      return this.changeSystem ? null : this.proposalSettings.ruleSettings[this.rule].threshold
     },
     title () {
-      if (this.groupVotingRule.rule === this.rule) {
+      if (this.proposalSettings.rule === this.rule) {
         return L('Change voting rules')
       }
       return L('Change voting system')
     },
     changeSystem () {
-      if (this.groupVotingRule.rule === this.rule) {
+      if (this.proposalSettings.rule === this.rule) {
         return ''
       }
 
@@ -115,7 +118,7 @@ export default {
 
       return L('Change from a {b_}{oldSystem}{_b} voting system to a {b_}{newSystem}{_b} voting system.', {
         ...LTags('b'),
-        oldSystem: nameMap[this.groupVotingRule.rule],
+        oldSystem: nameMap[this.proposalSettings.rule],
         newSystem: nameMap[this.rule]
       })
     }
@@ -145,7 +148,7 @@ export default {
               proposalType: PROPOSAL_PROPOSAL_SETTING_CHANGE,
               proposalData: {
                 current: {
-                  ruleName: this.groupVotingRule.rule,
+                  ruleName: this.proposalSettings.rule,
                   ruleThreshold: this.currentThreshold
                 },
                 ruleName: this.rule,

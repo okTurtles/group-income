@@ -63,20 +63,23 @@ export default {
   computed: {
     ...mapGetters([
       'groupMembersCount',
-      'groupVotingRule',
+      'groupProposalSettings',
       'groupShouldPropose'
     ]),
+    proposalSettings () {
+      return this.groupProposalSettings()
+    },
     votingRulesSorted () {
-      return this.groupVotingRule.rule === RULE_DISAGREEMENT ? [RULE_DISAGREEMENT, RULE_PERCENTAGE] : [RULE_PERCENTAGE, RULE_DISAGREEMENT]
+      return this.proposalSettings.rule === RULE_DISAGREEMENT ? [RULE_DISAGREEMENT, RULE_PERCENTAGE] : [RULE_PERCENTAGE, RULE_DISAGREEMENT]
     },
     votingRuleSettings () {
-      return this.groupVotingRule.ruleSettings[this.groupVotingRule.rule]
+      return this.proposalSettings.ruleSettings[this.proposalSettings.rule]
     },
     thresholdOriginal () {
       return this.votingRuleSettings.threshold
     },
     thresholdAdjusted () {
-      return getThresholdAdjusted(this.groupVotingRule.rule, this.thresholdOriginal, this.groupMembersCount)
+      return getThresholdAdjusted(this.proposalSettings.rule, this.thresholdOriginal, this.groupMembersCount)
     }
   },
   methods: {
@@ -84,7 +87,7 @@ export default {
       sbp('okTurtles.events/emit', OPEN_MODAL, 'ChangeVotingRules', { rule })
     },
     isRuleActive (rule) {
-      return rule === this.groupVotingRule.rule
+      return rule === this.proposalSettings.rule
     },
     votingValue (option) {
       const HTMLTags = {

@@ -299,9 +299,10 @@ DefineContract({
     groupShouldPropose (state, getters) {
       return getters.groupMembersCount >= 3
     },
-    groupVotingRule (state, getters) {
-      // It's okay to use "PROPOSAL_GENERIC" as an example because all the settings are the same.
-      return getters.groupSettings.proposals[PROPOSAL_GENERIC]
+    groupProposalSettings (state, getters) {
+      return (proposalType = PROPOSAL_GENERIC) => {
+        return getters.groupSettings.proposals[proposalType]
+      }
     },
     groupMincomeFormatted (state, getters) {
       const settings = getters.groupSettings

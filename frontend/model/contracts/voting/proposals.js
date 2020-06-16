@@ -63,7 +63,7 @@ function voteAgainst (state, { meta, data, contractID }) {
 // However, we decided to make all settings the same, to simplify the UI/UX proptotype.
 export const proposalDefaults = {
   rule: RULE_PERCENTAGE,
-  expires_ms: 7 * DAYS_MILLIS,
+  expires_ms: 14 * DAYS_MILLIS,
   ruleSettings: {
     [RULE_PERCENTAGE]: { threshold: 0.8 },
     [RULE_DISAGREEMENT]: { threshold: 1 }
