@@ -17,7 +17,6 @@ export function saferFloat (value: number): number {
 //       having to "recompile" a new version of the app.
 const currencies = {
   USD: {
-    code: 'USD',
     symbol: '$',
     symbolWithCode: '$ USD',
     decimalsMax: 2,
@@ -25,7 +24,6 @@ const currencies = {
     displayWithoutCurrency: n => decimalsOrInt(n, 'USD')
   },
   EUR: {
-    code: 'EUR',
     symbol: '€',
     symbolWithCode: '€ EUR',
     decimalsMax: 2,
@@ -34,7 +32,6 @@ const currencies = {
 
   },
   BTC: {
-    code: 'BTC',
     symbol: 'Ƀ',
     symbolWithCode: 'Ƀ BTC',
     decimalsMax: DECIMALS_MAX,
