@@ -244,7 +244,7 @@ DefineContract({
       return monthstamp => groupIncomeDistribution({ state, getters, monthstamp, adjusted: true })
     },
     groupMembersByUsername (state, getters) {
-      return Object.keys(getters.currentGroupState.profiles || {})
+      return Object.keys(getters.groupProfiles)
     },
     groupMembersCount (state, getters) {
       return getters.groupMembersByUsername.length
