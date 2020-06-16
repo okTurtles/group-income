@@ -1,16 +1,18 @@
 <template lang='pug'>
-  div
+  div(:class='variant')
     .c-empty(v-if='!notificationsCount')
       i18n.has-text-1 Nothing to see here... yet!
 
-    .c-empty(v-else-if='ephemeral.isLoading')
-      i18n.has-text-1 Loading...
+    .c-loading(v-else-if='ephemeral.isLoading')
+      i18n.sr-only Loading...
+      .c-skeleton(v-for='i in [0, 1, 2, 3]' :key='i')
+        .c-skeleton-circle
+        .c-skeleton-line
 
     template(v-else v-for='(list, type) in notifications')
       span.is-subtitle.c-title {{ title(type) }}
       ul.c-list(
         :aria-label='title(type)'
-        :class='variant'
         @click='() => $emit("select")'
       )
         li(v-for='item of list')
@@ -139,12 +141,40 @@ export default {
   text-align: center;
 }
 
+.c-loading {
+  .compact & {
+    padding: 0 1rem;
+  }
+}
+
+.c-skeleton {
+  display: flex;
+  align-items: center;
+  padding: 1rem 0;
+
+  &-circle {
+    display: block;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+    background-color: $general_2;
+  }
+
+  &-line {
+    flex-grow: 1;
+    height: 1.5rem;
+    border-radius: 0.7rem;
+    background-color: $general_2;
+  }
+}
+
 .c-title {
   display: block;
-  padding: 0 0 0.5rem 1rem;
+  padding: 0 0 0.5rem 0.5rem;
 
-  .c-list.compact & {
-    padding-left: 0.5rem;
+  .compact & {
+    padding-left: 1rem;
   }
 }
 
@@ -177,7 +207,7 @@ export default {
     }
   }
 
-  .c-list.default & {
+  .default & {
     padding: 1rem 0.5rem;
 
     @include tablet {
@@ -187,7 +217,7 @@ export default {
     }
   }
 
-  .c-list.compact & {
+  .compact & {
     padding: 1rem;
 
     .c-item-date {

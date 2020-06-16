@@ -12,7 +12,6 @@ modal-base-template.has-background(ref='modal' :fullscreen='true' :a11yTitle='L(
 </template>
 
 <script>
-import { mapGetters } from 'vuex'
 import sbp from '~/shared/sbp.js'
 import { OPEN_MODAL } from '@utils/events.js'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
@@ -29,15 +28,9 @@ export default {
       searchText: ''
     }
   },
-  computed: {
-    ...mapGetters([
-
-    ])
-
-  },
   methods: {
     clickSettings () {
-      // BUG - Section notification does not open.
+      // BUG - Section notification does not open. Fixed at #946
       sbp('okTurtles.events/emit', OPEN_MODAL, 'UserSettingsModal', {
         section: 'notifications'
       })

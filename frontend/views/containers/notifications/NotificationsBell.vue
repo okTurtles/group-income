@@ -1,11 +1,11 @@
 <template lang='pug'>
 div
   router-link.button.is-icon-small.c-btn.hide-tablet(:to='{ query: { modal: "NotificationsModal" }}')
-    i.icon-bell(:class='notificationsCount ? "" : "is-active"')
+    i.icon-bell(:class='{ "is-active": notificationsCount }')
     badge(v-if='notificationsCount' data-test='alertNotification') {{ notificationsCount }}
   notifications-card
     button.is-icon-small.c-btn.hide-phone
-      i.icon-bell(:class='notificationsCount ? "" : "is-active"')
+      i.icon-bell(:class='{ "is-active": notificationsCount }')
       badge(v-if='notificationsCount' data-test='alertNotification') {{ notificationsCount }}
 </template>
 

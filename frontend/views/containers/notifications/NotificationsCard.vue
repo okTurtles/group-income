@@ -12,7 +12,7 @@ tooltip(
     .card.c-card(role='dialog' :aria-label='L("Notifications")')
       .c-header
         i18n.is-title-4(tag='h2') Notifications
-        i18n.link(tag='button' @click='clickSettings') Settings
+        i18n.link(tag='button' @click='handleSettingsClick') Settings
 
       .c-body
         notifications-list(variant='compact' @select='toggleTooltip')
@@ -20,7 +20,6 @@ tooltip(
         router-link.link(:to='{ query: { modal: "NotificationsModal" }}' @click.native='toggleTooltip')
           i18n See all
 
-      // TODO @mmbotelho find a better place for btn.
       modal-close.c-close(:aria-label='L("Close profile")' @close='toggleTooltip')
 </template>
 
@@ -43,10 +42,12 @@ export default {
     toggleTooltip () {
       this.$refs.tooltip.toggle()
     },
-    clickSettings () {
+    handleSettingsClick () {
+      // BUG - Section notification does not open. Fixed at #946
       sbp('okTurtles.events/emit', OPEN_MODAL, 'UserSettingsModal', {
         section: 'notifications'
       })
+      this.toggleTooltip()
     }
   },
   computed: {
@@ -127,7 +128,7 @@ export default {
 }
 
 .c-body {
-  max-height: 18rem;
+  height: 18rem;
   overflow: auto;
   overscroll-behavior-y: contain;
 }
