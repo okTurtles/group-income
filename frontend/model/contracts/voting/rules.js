@@ -132,6 +132,5 @@ export const getCountOutOfMembers = (groupSize, decimal) => {
 export const getPercentFromDecimal = (decimal) => {
   // convert decimal to percentage avoiding weird decimals results.
   // e.g. 0.58 -> 58 instead of 57.99999
-  // based on https://stackoverflow.com/a/11832950/4737729
-  return Math.round(decimal * 100 * 100 / 100)
+  return Math.round(decimal * 100)
 }
