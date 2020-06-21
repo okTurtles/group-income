@@ -1,5 +1,5 @@
 <template lang='pug'>
-table.table.table-in-card.c-payments.is-editing
+table.table.table-in-card.c-payments.is-editing(data-test='payRecord')
   thead
     tr
       th.c-th-checkbox

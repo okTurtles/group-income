@@ -3,6 +3,7 @@
 page(
   pageTestName='paymentsPage'
   pageTestHeaderName='paymentsTitle'
+  :data-test-date='humanDate(Date.now())'
   v-if='ourGroupProfile'
 )
   template(#title='') {{ L('Payments') }}
@@ -33,6 +34,7 @@ page(
       nav.tabs(
         v-if='!needsIncome'
         :aria-label='L("Payments type")'
+        data-test='payNav'
       )
         button.is-unstyled.tabs-link(
           v-for='(link, index) in tabItems'
@@ -95,6 +97,7 @@ import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWi
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/payments/index.js'
 import { currentMonthstamp, dateFromMonthstamp, lastDayOfMonth, prevMonthstamp } from '~/frontend/utils/time.js'
 import L, { LTags } from '@view-utils/translations.js'
+import { humanDate } from '@utils/time.js'
 
 export default {
   name: 'Payments',
@@ -126,6 +129,7 @@ export default {
       'paymentTotalFromUserToUser',
       'ourPayments',
       'groupMonthlyPayments',
+      'groupIncomeAdjustedDistributionForMonth',
       'ourGroupProfile',
       'groupSettings',
       'ourUsername',
@@ -175,8 +179,8 @@ export default {
     },
     paymentsLate () {
       const monthlyPayments = this.groupMonthlyPayments
-      const currentDistribution = this.groupIncomeAdjustedDistribution
-      const { pledgeAmount } = this.ourGroupProfile
+      // const currentDistribution = this.groupIncomeAdjustedDistribution
+      // const { pledgeAmount } = this.ourGroupProfile
       const cMonthstamp = currentMonthstamp()
       const pMonthstamp = prevMonthstamp(cMonthstamp)
       const latePayments = []
@@ -185,7 +189,10 @@ export default {
       if (pastMonth) {
         const pDate = dateFromMonthstamp(pMonthstamp)
         const dueIn = lastDayOfMonth(pDate)
+        const adjusted = this.groupIncomeAdjustedDistributionForMonth(pMonthstamp)
 
+        // This math below is wrong (based on cypress tests). Commented for further analysis.
+        /*
         for (const payment of pastMonth.lastAdjustedDistribution) {
           if (payment.from === this.ourUsername && payment.amount > 0) {
             // Let A = the amount we owe from the previous distribution.
@@ -216,6 +223,23 @@ export default {
               })
             }
           }
+        }
+        */
+
+        // On the other hand this seems to work as expected. "partial" is the only thing missing
+        for (const payment of adjusted) {
+          if (payment.from !== this.ourUsername) {
+            continue
+          }
+
+          latePayments.push({
+            username: payment.to,
+            displayName: this.userDisplayName(payment.to),
+            amount: payment.amount,
+            // partial: TODO add this info, but what's the cleanest way to do it?
+            isLate: true,
+            date: dueIn
+          })
         }
       }
       return latePayments
@@ -333,6 +357,7 @@ export default {
     }
   },
   methods: {
+    humanDate,
     openModal (name, props) {
       sbp('okTurtles.events/emit', OPEN_MODAL, name, props)
     },

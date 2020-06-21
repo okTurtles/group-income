@@ -145,7 +145,6 @@ export default {
     },
     async handleDelete () {
       await this.$listeners['new-value']('nonMonetaryRemove', this.initialValue)
-      this.ephemeral.isRemoving = false
       this.cancel()
     },
     async handleSubmit () {

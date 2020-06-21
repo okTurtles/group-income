@@ -1,6 +1,6 @@
 <template lang='pug'>
   // Note: .cpr- is from payment-row
-  payment-row(:payment='payment')
+  payment-row(:payment='payment' data-test='payRow')
     template(slot='cellAmount')
       template(v-if='payment.partial')
         i18n.c-partial(

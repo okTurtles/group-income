@@ -416,7 +416,7 @@ DefineContract({
         const memberProfile = getters.currentGroupState.profiles[username]
         if (!memberProfile) return false
         const memberJoinedMs = new Date(memberProfile.joinedDate).getTime()
-        const joinedAfterUs = weJoinedMs < memberJoinedMs
+        const joinedAfterUs = weJoinedMs <= memberJoinedMs
         return joinedAfterUs && Date.now() - memberJoinedMs < 604800000 // joined less than 1w (168h) ago.
       }
 

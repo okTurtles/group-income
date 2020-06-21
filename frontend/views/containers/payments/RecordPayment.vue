@@ -63,6 +63,7 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background' v-if='
 
     i18n.is-outlined(
       tag='button'
+      data-test='successClose'
       @click='closeModal'
     ) Close
 </template>

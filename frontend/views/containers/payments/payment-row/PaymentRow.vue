@@ -1,5 +1,5 @@
 <template lang='pug'>
-  tr.c-row
+  tr.c-row(data-test='payRow')
     td(v-if='$slots["cellPrefix"]')
       slot(name='cellPrefix')
     td
