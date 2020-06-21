@@ -169,7 +169,7 @@ export default {
         }
       } else {
         try {
-          await sbp('gi.actions/group/updateVotingRules', {
+          await sbp('gi.actions/group/updateAllVotingRules', {
             ruleName: this.rule,
             ruleThreshold: +this.form.threshold
           }, this.currentGroupId)

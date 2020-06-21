@@ -734,17 +734,27 @@ DefineContract({
         }
       }
     },
-    'gi.contracts/group/updateVotingRules': {
-      validate: objectOf({
+    'gi.contracts/group/updateAllVotingRules': {
+      validate: objectMaybeOf({
         ruleName: x => [RULE_PERCENTAGE, RULE_DISAGREEMENT].includes(x),
-        ruleThreshold: number
+        ruleThreshold: number,
+        expires_ms: number
       }),
       process ({ data, meta }, { state }) {
         // Update all types of proposal settings for simplicity
-        for (const ruleName in state.settings.proposals) {
-          Vue.set(state.settings.proposals[ruleName], 'rule', data.ruleName)
-          Vue.set(state.settings.proposals[ruleName].ruleSettings[data.ruleName], 'threshold', data.ruleThreshold)
+        if (data.ruleName && data.ruleThreshold) {
+          for (const proposalSettings in state.settings.proposals) {
+            Vue.set(state.settings.proposals[proposalSettings], 'rule', data.ruleName)
+            Vue.set(state.settings.proposals[proposalSettings].ruleSettings[data.ruleName], 'threshold', data.ruleThreshold)
+          }
         }
+
+        // TODO later - support update expires_ms
+        // if (data.ruleName && data.expires_ms) {
+        //   for (const proposalSetting in state.settings.proposals) {
+        //     Vue.set(state.settings.proposals[proposalSetting].ruleSettings[data.ruleName], 'expires_ms', data.expires_ms)
+        //   }
+        // }
       }
     },
 

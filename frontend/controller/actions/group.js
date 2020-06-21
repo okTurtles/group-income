@@ -46,7 +46,7 @@ export default sbp('sbp/selectors/register', {
         rule: ruleName,
         ruleSettings: {
           [ruleName]: {
-            threshold: +ruleThreshold
+            threshold: +ruleThreshold // ensure this is a number
           }
         }
       }
@@ -178,9 +178,9 @@ export default sbp('sbp/selectors/register', {
       throw new GIErrorUIRuntimeError(L('Failed to leave group. {codeError}', { codeError: e.message }))
     }
   },
-  'gi.actions/group/updateVotingRules': async function (params, groupId) {
+  'gi.actions/group/updateAllVotingRules': async function (params, groupId) {
     try {
-      const message = await sbp('gi.contracts/group/updateVotingRules/create', params, groupId)
+      const message = await sbp('gi.contracts/group/updateAllVotingRules/create', params, groupId)
       await sbp('backend/publishLogEntry', message)
       return message
     } catch (e) {

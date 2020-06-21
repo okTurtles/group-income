@@ -144,10 +144,9 @@ export default {
       return {
         [RULE_DISAGREEMENT]: () => {
           if (this.threshold === 1) {
-            return L('Your proposal will be accepted if {b_}no one{_b} disagrees.', LTags('b'))
+            return L('Your proposal will pass if {b_}no one{_b} disagrees.', LTags('b'))
           }
-          // REVIEW - This copy is not very positive.
-          return L('Your proposal will be rejected if {b_}{n} members{_b} disagree.', { n: this.threshold, ...LTags('b') })
+          return L('Your proposal will pass if {b_}fewer than {n} members{_b} disagree.', { n: this.threshold, ...LTags('b') })
         },
         [RULE_PERCENTAGE]: () => {
           return L('According to your voting rules, {b_}{value} out of {total} members{_b} will have to agree with this.', {
