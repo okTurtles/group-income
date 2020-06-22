@@ -8,7 +8,7 @@ import store from '@model/state.js'
 import DesignSystem from '@pages/DesignSystem.vue'
 import BypassUI from '@pages/BypassUI.vue'
 
-import LoadingPage from '@views/containers/loading-error/LoadingPage.vue'
+import LoadingPage from '@components/LoadingPage.vue'
 // TODO: once the 404 and 500 error message is design, replace the loading page with this one
 // import ErrorPage from './ErrorPage.vue'
 
