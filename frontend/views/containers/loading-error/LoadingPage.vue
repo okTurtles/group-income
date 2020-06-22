@@ -9,9 +9,9 @@
       | {{$route.meta.title}}
 
   main.p-main
-    .c-loading-box
-    .c-loading-box
-    .c-loading-box
+    .loading-box
+    .loading-box
+    .loading-box
 </template>
 
 <script>
@@ -102,27 +102,6 @@ $pagePaddingDesktop: 5.5rem;
 
   @include desktop {
     display: none;
-  }
-}
-
-.c-loading-box {
-  display: flex;
-  height: 100%;
-  width: 100%;
-  border-radius: 0.625rem; // 10px
-  margin-bottom: 1rem;
-  background: $general_1;
-  background: linear-gradient(to right, $general_1 8%, $general_2 18%, $general_1 33%);
-  background-size: 1200px 104px;
-  animation: 1s 3s linear forwards infinite placeload;
-}
-
-@keyframes placeload {
-  0% {
-    background-position: -468px 0;
-  }
-  100% {
-    background-position: 468px 0;
   }
 }
 </style>
