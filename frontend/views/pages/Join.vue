@@ -54,7 +54,7 @@ div
 <script>
 import sbp from '~/shared/sbp.js'
 import { mapGetters } from 'vuex'
-import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/group.js'
+import { INVITE_INITIAL_CREATOR, INVITE_STATUS } from '@model/contracts/constants.js'
 import SignupForm from '@containers/access/SignupForm.vue'
 import LoginForm from '@containers/access/LoginForm.vue'
 import Loading from '@components/Loading.vue'

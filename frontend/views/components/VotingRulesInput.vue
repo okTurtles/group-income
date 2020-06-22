@@ -2,12 +2,12 @@
   div
     slider-continuous.c-slider(
       :class='ephemeral.sliderClass'
-      :uid='type'
-      :label='config[type].slideLabel'
-      :min='config[type].slideMin'
-      :max='config[type].slideMax'
-      :unit='config[type].slideUnit'
-      :value='value'
+      :uid='rule'
+      :label='config[rule].sliderLabel'
+      :min='config[rule].sliderMin'
+      :max='config[rule].sliderMax'
+      :unit='config[rule].sliderUnit'
+      :value='sliderValue'
       @input='handleInput'
     )
     transition-expand
@@ -21,7 +21,7 @@
 
 <script>
 import L from '@view-utils/translations.js'
-import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/voting/rules.js'
+import { RULE_PERCENTAGE, RULE_DISAGREEMENT, getPercentFromDecimal } from '@model/contracts/voting/rules.js'
 import BannerSimple from '@components/banners/BannerSimple.vue'
 import SliderContinuous from '@components/SliderContinuous.vue'
 import TransitionExpand from '@components/TransitionExpand.vue'
@@ -29,51 +29,61 @@ import TransitionExpand from '@components/TransitionExpand.vue'
 const SUPERMAJORITY = 0.67
 
 export default {
-  name: 'VotingSystemInput',
+  name: 'VotingRulesInput',
   components: {
     BannerSimple,
     SliderContinuous,
     TransitionExpand
   },
   props: {
-    type: {
+    rule: {
       type: String,
-      validator: (type) => [RULE_PERCENTAGE, RULE_DISAGREEMENT].includes(type)
+      validator: (rule) => [RULE_PERCENTAGE, RULE_DISAGREEMENT].includes(rule)
     },
     value: [String, Number]
   },
   data: () => ({
     config: {
       [RULE_PERCENTAGE]: {
-        slideLabel: L('What percentage of members need to agree?'),
-        slideMin: 0,
-        slideMax: 100,
-        slideUnit: '%'
+        sliderLabel: L('What percentage of members need to agree?'),
+        sliderMin: 0,
+        sliderMax: 100,
+        sliderUnit: '%'
       },
       [RULE_DISAGREEMENT]: {
-        slideLabel: L('Maximum number of "no" votes'),
-        slideMin: 1,
-        slideMax: 60,
-        slideUnit: ''
+        sliderLabel: L('"No" votes required to block a proposal'),
+        sliderMin: 1,
+        sliderMax: 60,
+        sliderUnit: ''
       }
     },
     ephemeral: {
       sliderClass: ''
     }
   }),
+  created () {
+    this.ephemeral.sliderClass = this.warnMajority ? 'is-warning' : ''
+  },
   watch: {
     value (value) {
       this.ephemeral.sliderClass = this.warnMajority ? 'is-warning' : ''
     }
   },
   computed: {
+    sliderValue () {
+      if (this.rule === RULE_PERCENTAGE) {
+        return getPercentFromDecimal(this.value)
+      }
+      return this.value
+    },
     warnMajority () {
-      return this.type === RULE_PERCENTAGE && this.value / 100 < SUPERMAJORITY
+      return this.rule === RULE_PERCENTAGE && this.value < SUPERMAJORITY
     }
   },
   methods: {
     handleInput (e) {
-      this.$emit('update', e.target.value)
+      const value = this.rule === RULE_PERCENTAGE ? e.target.value / 100 : e.target.value
+      this.$emit('update', value)
     }
   }
 }

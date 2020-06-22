@@ -6,7 +6,7 @@ import { DefineContract } from './Contract.js'
 import { arrayOf, mapOf, objectOf, objectMaybeOf, optional, string, number, object, unionOf, tupleOf } from '~/frontend/utils/flowTyper.js'
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income-simple/issues/603
-import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST } from './voting/rules.js'
+import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './voting/rules.js'
 import proposals, { proposalType, proposalSettingsType, archiveProposal } from './voting/proposals.js'
 import {
   PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC,
@@ -20,16 +20,11 @@ import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
 import currencies, { saferFloat } from '~/frontend/views/utils/currencies.js'
 import L from '~/frontend/views/utils/translations.js'
-
-export const INVITE_INITIAL_CREATOR = 'INVITE_INITIAL_CREATOR'
-export const INVITE_STATUS = {
-  VALID: 'valid',
-  USED: 'used'
-}
-export const PROFILE_STATUS = {
-  ACTIVE: 'active',
-  REMOVED: 'removed'
-}
+import {
+  INVITE_INITIAL_CREATOR,
+  INVITE_STATUS,
+  PROFILE_STATUS
+} from './constants.js'
 
 export const inviteType = objectOf({
   inviteSecret: string,
@@ -299,6 +294,11 @@ DefineContract({
     groupShouldPropose (state, getters) {
       return getters.groupMembersCount >= 3
     },
+    groupProposalSettings (state, getters) {
+      return (proposalType = PROPOSAL_GENERIC) => {
+        return getters.groupSettings.proposals[proposalType]
+      }
+    },
     groupMincomeFormatted (state, getters) {
       const settings = getters.groupSettings
       const currency = currencies[settings.mincomeCurrency]
@@ -466,6 +466,8 @@ DefineContract({
           if (deepEqualJSONType(omit(prop.data.proposalData, 'reason'), dataToCompare)) {
             throw new TypeError(L('There is an identical open proposal.'))
           }
+
+          // TODO - verify if type of proposal already exists (SETTING_CHANGE).
         }
       },
       process ({ data, meta, hash }, { state }) {
@@ -727,6 +729,30 @@ DefineContract({
         }
       }
     },
+    'gi.contracts/group/updateAllVotingRules': {
+      validate: objectMaybeOf({
+        ruleName: x => [RULE_PERCENTAGE, RULE_DISAGREEMENT].includes(x),
+        ruleThreshold: number,
+        expires_ms: number
+      }),
+      process ({ data, meta }, { state }) {
+        // Update all types of proposal settings for simplicity
+        if (data.ruleName && data.ruleThreshold) {
+          for (const proposalSettings in state.settings.proposals) {
+            Vue.set(state.settings.proposals[proposalSettings], 'rule', data.ruleName)
+            Vue.set(state.settings.proposals[proposalSettings].ruleSettings[data.ruleName], 'threshold', data.ruleThreshold)
+          }
+        }
+
+        // TODO later - support update expires_ms
+        // if (data.ruleName && data.expires_ms) {
+        //   for (const proposalSetting in state.settings.proposals) {
+        //     Vue.set(state.settings.proposals[proposalSetting].ruleSettings[data.ruleName], 'expires_ms', data.expires_ms)
+        //   }
+        // }
+      }
+    },
+
     ...(process.env.NODE_ENV === 'development' ? {
       'gi.contracts/group/malformedMutation': {
         validate: objectOf({ errorType: string }),

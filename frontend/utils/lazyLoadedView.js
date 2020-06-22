@@ -16,9 +16,7 @@ Vue.component('AddMembers', () => import('../views/containers/proposals/AddMembe
 Vue.component('MincomeProposal', () => import('../views/containers/proposals/Mincome.vue'))
 Vue.component('PaymentsHistoryModal', () => import('../views/containers/payments/PaymentsHistoryModal.vue'))
 Vue.component('RemoveMember', () => import('../views/containers/proposals/RemoveMember.vue'))
-Vue.component('RuleAddMemberProposal', () => import('../views/containers/proposals/RuleAddMember.vue'))
-Vue.component('ChangeVotingProposal', () => import('../views/containers/proposals/ChangeVotingProposal.vue'))
-Vue.component('RuleRemoveMemberProposal', () => import('../views/containers/proposals/RuleRemoveMember.vue'))
+Vue.component('ChangeVotingRules', () => import('../views/containers/proposals/ChangeVotingRules.vue'))
 
 Vue.component('IncomeDetails', () => import('../views/containers/contributions/IncomeDetails.vue'))
 

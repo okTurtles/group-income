@@ -26,9 +26,8 @@
 
       .c-confirmation(v-if='isConfirmation' key='confirmation')
         svg-proposal.c-svg
-        i18n(
-          :args='{ ...LTags("strong"), numVotes: rule.value }'
-        ) Members of your group will now be asked to vote.{br_} You need {strong_}{numVotes} yes votes{_strong} for your proposal to be accepted.
+        i18n Members of your group will now be asked to vote.
+        span(v-html='confirmationVotingExplanation')
 
       .buttons(:class='{ "is-centered": isConfirmation }')
         button.is-outlined(
@@ -77,13 +76,10 @@
           data-test='finishBtn'
         ) Awesome
 
-    template(slot='footer' v-if='!isConfirmation && rule')
+    template(slot='footer' v-if='!isConfirmation')
       .c-footer
         i.icon-vote-yea
-        i18n(
-          v-if='groupShouldPropose'
-          :args='{ ...rule, ...LTags("strong") }'
-        ) According to your voting rules, {strong_}{value} out of {total} members{_strong} will have to agree with this.
+        span(v-if='groupShouldPropose' v-html='footerVotingExplanation')
         i18n(
           v-else
           :args='LTags("strong")'
@@ -92,7 +88,8 @@
 
 <script>
 import { mapGetters } from 'vuex'
-import L from '@view-utils/translations.js'
+import L, { LTags } from '@view-utils/translations.js'
+import { RULE_PERCENTAGE, RULE_DISAGREEMENT, getThresholdAdjusted, getCountOutOfMembers } from '@model/contracts/voting/rules.js'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import SvgProposal from '@svgs/proposal.svg'
@@ -109,10 +106,6 @@ export default {
       type: String,
       required: true
     },
-    rule: {
-      type: Object,
-      required: true
-    },
     disabled: Boolean,
     currentStep: Number,
     maxSteps: {
@@ -127,8 +120,13 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'groupShouldPropose'
+      'groupMembersCount',
+      'groupShouldPropose',
+      'groupProposalSettings'
     ]),
+    proposalSettings () {
+      return this.groupProposalSettings()
+    },
     isNextStep () {
       return this.currentStep <= this.maxSteps - 1
     },
@@ -137,6 +135,44 @@ export default {
     },
     isConfirmation () {
       return this.currentStep === this.maxSteps + 1
+    },
+    threshold () {
+      const threshold = this.proposalSettings.ruleSettings[this.proposalSettings.rule].threshold
+      return getThresholdAdjusted(this.proposalSettings.rule, threshold, this.groupMembersCount)
+    },
+    footerVotingExplanation () {
+      return {
+        [RULE_DISAGREEMENT]: () => {
+          if (this.threshold === 1) {
+            return L('Your proposal will pass if {b_}no one{_b} disagrees.', LTags('b'))
+          }
+          return L('Your proposal will pass if {b_}fewer than {n} members{_b} disagree.', { n: this.threshold, ...LTags('b') })
+        },
+        [RULE_PERCENTAGE]: () => {
+          return L('Your proposal will pass if {b_}{value} out of {total} members{_b} agree.', {
+            value: getCountOutOfMembers(this.groupMembersCount, this.threshold),
+            total: this.groupMembersCount,
+            ...LTags('b')
+          })
+        }
+      }[this.proposalSettings.rule]()
+    },
+    confirmationVotingExplanation () {
+      // REVIEW PR - @mmbotelho - This and footerVotingExplanation could be the same text for simplicity.
+      return {
+        [RULE_DISAGREEMENT]: () => {
+          if (this.threshold === 1) {
+            return L('Your proposal will pass if {b_}no one{_b} disagrees.', LTags('b'))
+          }
+          return L('Your proposal will pass if {b_}less than {n} members{_b} disagree.', { n: this.threshold, ...LTags('b') })
+        },
+        [RULE_PERCENTAGE]: () => {
+          return L('You need {b_}{n} yes votes{_b} for your proposal to be accepted.', {
+            n: getCountOutOfMembers(this.groupMembersCount, this.threshold),
+            ...LTags('b')
+          })
+        }
+      }[this.proposalSettings.rule]()
     },
     submitStyleNonProposal () {
       return this.variant === 'removeMember' ? 'is-danger' : 'is-success'
