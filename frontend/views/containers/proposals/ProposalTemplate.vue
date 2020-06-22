@@ -149,7 +149,7 @@ export default {
           return L('Your proposal will pass if {b_}fewer than {n} members{_b} disagree.', { n: this.threshold, ...LTags('b') })
         },
         [RULE_PERCENTAGE]: () => {
-          return L('According to your voting rules, {b_}{value} out of {total} members{_b} will have to agree with this.', {
+          return L('Your proposal will pass if {b_}{value} out of {total} members{_b} agree.', {
             value: getCountOutOfMembers(this.groupMembersCount, this.threshold),
             total: this.groupMembersCount,
             ...LTags('b')
@@ -162,9 +162,9 @@ export default {
       return {
         [RULE_DISAGREEMENT]: () => {
           if (this.threshold === 1) {
-            return L('Your proposal will be accepted if {b_}no one{_b} disagrees.', LTags('b'))
+            return L('Your proposal will pass if {b_}no one{_b} disagrees.', LTags('b'))
           }
-          return L('Your proposal will be accepted if {b_}less than {n} members{_b} disagree.', { n: this.threshold, ...LTags('b') })
+          return L('Your proposal will pass if {b_}less than {n} members{_b} disagree.', { n: this.threshold, ...LTags('b') })
         },
         [RULE_PERCENTAGE]: () => {
           return L('You need {b_}{n} yes votes{_b} for your proposal to be accepted.', {
