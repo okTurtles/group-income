@@ -20,16 +20,11 @@ import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
 import currencies, { saferFloat } from '~/frontend/views/utils/currencies.js'
 import L from '~/frontend/views/utils/translations.js'
-
-export const INVITE_INITIAL_CREATOR = 'INVITE_INITIAL_CREATOR'
-export const INVITE_STATUS = {
-  VALID: 'valid',
-  USED: 'used'
-}
-export const PROFILE_STATUS = {
-  ACTIVE: 'active',
-  REMOVED: 'removed'
-}
+import {
+  INVITE_INITIAL_CREATOR,
+  INVITE_STATUS,
+  PROFILE_STATUS
+} from './constants.js'
 
 export const inviteType = objectOf({
   inviteSecret: string,

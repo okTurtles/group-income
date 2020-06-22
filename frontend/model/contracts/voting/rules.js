@@ -2,11 +2,8 @@
 
 import { literalOf, unionOf } from '~/frontend/utils/flowTyper.js'
 
-import { PROPOSAL_REMOVE_MEMBER } from '~/frontend/model/contracts/voting/constants.js'
-
-// TODO REVIEW PR - Can't import this because it would create a "Circular Dependency".
-// import { PROFILE_STATUS } from '~/frontend/model/contracts/group.js'
-const PROFILE_STATUS = { ACTIVE: 'active' }
+import { PROPOSAL_REMOVE_MEMBER } from './constants.js'
+import { PROFILE_STATUS } from '../constants.js'
 
 export const VOTE_AGAINST = ':against'
 export const VOTE_INDIFFERENT = ':indifferent'

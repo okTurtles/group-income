@@ -56,7 +56,7 @@ import ProposalVoteOptions from '@containers/proposals/ProposalVoteOptions.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import Tooltip from '@components/Tooltip.vue'
-import { INVITE_STATUS } from '@model/contracts/group.js'
+import { INVITE_STATUS } from '@model/contracts/constants.js'
 
 export default {
   name: 'ProposalItem',

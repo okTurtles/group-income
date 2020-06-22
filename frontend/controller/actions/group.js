@@ -1,8 +1,6 @@
 import sbp from '~/shared/sbp.js'
-import {
-  INVITE_INITIAL_CREATOR,
-  createInvite
-} from '@model/contracts/group.js'
+import { createInvite } from '@model/contracts/group.js'
+import { INVITE_INITIAL_CREATOR } from '@model/contracts/constants.js'
 import proposals from '@model/contracts/voting/proposals.js'
 import {
   PROPOSAL_INVITE_MEMBER,
