@@ -17,7 +17,6 @@ function assertPaymentsTabs (tabs) {
   cy.getByDT('payNav').within(() => {
     for (let i = 0; i < tabs.length; i++) {
       cy.get('button').eq(i).should('contain', tabs[i])
-      cy.get('button').eq(i).should('contain', tabs[i])
     }
   })
 }
@@ -42,7 +41,7 @@ describe('Group Payments', () => {
     cy.giLogout()
   })
 
-  it('3 users join the group and add their income details', () => {
+  it('Three users join the group and add their income details', () => {
     cy.giAcceptGroupInvite(invitationLinks.anyone, {
       username: `user2-${userId}`,
       groupName,
