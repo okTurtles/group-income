@@ -28,7 +28,7 @@ import sbp from '~/shared/sbp.js'
 import { validationMixin } from 'vuelidate'
 import { required } from 'vuelidate/lib/validators'
 import { mapGetters, mapState } from 'vuex'
-import { decimals } from '@view-utils/validators.js'
+import currencies, { mincomePositive, saferFloat } from '@view-utils/currencies.js'
 import L, { LError } from '@view-utils/translations.js'
 import ProposalTemplate from './ProposalTemplate.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
@@ -63,8 +63,10 @@ export default {
     form: {
       mincomeAmount: {
         required,
-        minValue: value => value > 0,
-        decimals: decimals(2)
+        positive: mincomePositive,
+        decimals: function (val) {
+          return currencies[this.groupSettings.mincomeCurrency].validate(val)
+        }
       }
     },
     // validation groups by route name for steps
@@ -88,7 +90,7 @@ export default {
   },
   methods: {
     async submit (form) {
-      const mincomeAmount = parseInt(this.form.mincomeAmount, 10)
+      const mincomeAmount = saferFloat(this.form.mincomeAmount)
       this.$refs.formMsg.clean()
 
       if (this.groupShouldPropose) {
