@@ -341,7 +341,7 @@ DefineContract({
       const { todo, sent, toBeReceived, received } = getters.ourPayments
       const isCompleted = (p) => p.data.status === PAYMENT_COMPLETED
       const isPartialCount = (list) => list.filter(p => p.partial).length
-      const getUniqPayments = (users) => {
+      const getUniqPCount = (users) => {
         // We need to filter the partial payments already done (sent/received).
         // E.G. We need to send 4 payments. We've sent 1 full payment and another
         // in 2 parts. The total must be 2, instead of 3. A quick way to solve this
@@ -357,9 +357,9 @@ DefineContract({
           received: received.map(p => p.meta.username)
         }
         return {
-          paymentsDone: getUniqPayments(pByUser.received) - pPartials,
+          paymentsDone: getUniqPCount(pByUser.received) - pPartials,
           hasPartials: pPartials > 0,
-          paymentsTotal: getUniqPayments([...pByUser.toBeReceived, ...pByUser.received]),
+          paymentsTotal: getUniqPCount([...pByUser.toBeReceived, ...pByUser.received]),
           amountDone: receivedCompleted.reduce((total, p) => total + p.data.amount, 0),
           amountTotal: toBeReceived.reduce((total, p) => total + p.amount, 0) + received.reduce((total, p) => total + p.data.amount, 0)
         }
@@ -371,9 +371,9 @@ DefineContract({
           sent: sent.map(p => p.data.toUser)
         }
         return {
-          paymentsDone: getUniqPayments(pByUser.sent) - pPartials,
+          paymentsDone: getUniqPCount(pByUser.sent) - pPartials,
           hasPartials: pPartials > 0,
-          paymentsTotal: getUniqPayments([...pByUser.todo, ...pByUser.sent]),
+          paymentsTotal: getUniqPCount([...pByUser.todo, ...pByUser.sent]),
           amountDone: sentCompleted.reduce((total, p) => total + p.data.amount, 0),
           amountTotal: todo.reduce((total, p) => total + p.amount, 0) + sent.reduce((total, p) => total + p.data.amount, 0)
         }
