@@ -1,16 +1,35 @@
 import Vue from 'vue'
-// NOTE: any modals opened with `OPEN_MODAL` go here
-Vue.component('LoginModal', () => import('../views/containers/access/LoginModal.vue'))
-Vue.component('SignupModal', () => import('../views/containers/access/SignupModal.vue'))
-Vue.component('UserSettingsModal', () => import('../views/containers/user-settings/UserSettingsModal.vue'))
-Vue.component('PasswordModal', () => import('../views/containers/access/PasswordModal.vue'))
-Vue.component('GroupLeaveModal', () => import('../views/containers/group-settings/GroupLeaveModal.vue'))
-// Vue.component('GroupDeletionModal', () => import('../views/containers/group-settings/GroupDeletionModal.vue'))
-Vue.component('GroupMembersAllModal', () => import('../views/containers/dashboard/GroupMembersAllModal.vue'))
-Vue.component('InvitationLinkModal', () => import('../views/containers/group-settings/InvitationLinkModal.vue'))
+import LoadingPage from '@views/containers/loading-error/LoadingPage.vue'
+import LoadingModal from '@views/containers/loading-error/LoadingModal.vue'
+import LoadingModalFullScreen from '@views/containers/loading-error/LoadingBaseModal.vue'
 
-Vue.component('GroupCreationModal', () => import('../views/containers/group-settings/GroupCreationModal.vue'))
-Vue.component('GroupJoinModal', () => import('../views/containers/group-settings/GroupJoinModal.vue'))
+// TODO Remove after design test period
+Vue.component('DSModalSimple', () => import('../views/containers/design-system/DSModalSimple.vue'))
+Vue.component('DSModalNested', () => import('../views/containers/design-system/DSModalNested.vue'))
+Vue.component('TimeTravel', () => import('../views/containers/navigation/TimeTravel.vue'))
+
+const lazyLoadView = ({ component, loading = LoadingPage, error = LoadingPage }) => {
+  const AsyncHandler = () => ({ component, loading, error })
+
+  return () =>
+    Promise.resolve({
+      functional: true,
+      render (h, { data, children }) {
+        return h(AsyncHandler, data, children)
+      }
+    })
+}
+
+Vue.component('LoginModal', lazyLoadView({ component: import('../views/containers/access/LoginModal.vue'), loading: LoadingModal, error: LoadingModal }))
+Vue.component('SignupModal', lazyLoadView({ component: import('../views/containers/access/SignupModal.vue'), loading: LoadingModal, error: LoadingModal }))
+Vue.component('PasswordModal', lazyLoadView({ component: import('../views/containers/access/PasswordModal.vue'), loading: LoadingModal, error: LoadingModal }))
+Vue.component('UserSettingsModal', lazyLoadView({ component: import('../views/containers/user-settings/UserSettingsModal.vue'), loading: LoadingModalFullScreen, error: LoadingModal }))
+Vue.component('GroupLeaveModal', lazyLoadView({ component: import('../views/containers/group-settings/GroupLeaveModal.vue'), loading: LoadingModal, error: LoadingModal }))
+// Vue.component('GroupDeletionModal', lazyLoadView({ component: import('../views/containers/group-settings/GroupDeletionModal.vue'), loading: LoadingModal, error: LoadingModal }))
+Vue.component('GroupMembersAllModal', lazyLoadView({ component: import('../views/containers/dashboard/GroupMembersAllModal.vue'), loading: LoadingModalFullScreen, error: LoadingModalFullScreen }))
+Vue.component('InvitationLinkModal', lazyLoadView({ component: import('../views/containers/group-settings/InvitationLinkModal.vue'), loading: LoadingModal, error: LoadingModal }))
+Vue.component('GroupCreationModal', lazyLoadView({ component: import('../views/containers/group-settings/GroupCreationModal.vue'), loading: LoadingModalFullScreen, error: LoadingModalFullScreen }))
+Vue.component('GroupJoinModal', lazyLoadView({ component: import('../views/containers/group-settings/GroupJoinModal.vue'), loading: LoadingModalFullScreen, error: LoadingModalFullScreen }))
 
 Vue.component('AddMembers', () => import('../views/containers/proposals/AddMembers.vue'))
 Vue.component('MincomeProposal', () => import('../views/containers/proposals/Mincome.vue'))
