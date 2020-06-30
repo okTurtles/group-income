@@ -116,7 +116,7 @@ describe('Group Payments', () => {
     // TODO - assert user3 received the payment.
   })
 
-  it('one month later, user1 sends to user3 the missing $78.57', () => {
+  it('one month later, user1 sends to user3 the missing $78.57 (test incomplete)', () => {
     cy.visit('/')
     cy.tick(60000 * 60 * 24 * 31) // time travel 1 month later
     cy.getByDT('paymentsLink').click()
