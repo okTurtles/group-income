@@ -15,7 +15,7 @@ import {
 import { paymentStatusType, paymentType, PAYMENT_COMPLETED } from './payments/index.js'
 import * as Errors from '../errors.js'
 import { merge, deepEqualJSONType, omit, uniq } from '~/frontend/utils/giLodash.js'
-import { currentMonthstamp, ISOStringToMonthstamp, compareMonthstamps } from '~/frontend/utils/time.js'
+import { currentMonthstamp, ISOStringToMonthstamp, compareMonthstamps, prevMonthstamp, dateFromMonthstamp, lastDayOfMonth } from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
 import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
 import currencies, { saferFloat } from '~/frontend/views/utils/currencies.js'
@@ -230,9 +230,13 @@ DefineContract({
     ourPayments (state, getters) {
       const currency = currencies[getters.groupSettings.mincomeCurrency]
       const ourUsername = getters.ourUsername
+      const cMonthstamp = currentMonthstamp()
+      const pDate = dateFromMonthstamp(cMonthstamp)
+      const dueIn = lastDayOfMonth(pDate)
+      const monthlyPayments = getters.groupMonthlyPayments
+      const allPayments = getters.currentGroupState.payments
 
       const sent = (() => {
-        const monthlyPayments = getters.groupMonthlyPayments
         const payments = []
         // QUESTION: Is this only from this month? What about the previous payments from months ago?
         //           Same question for received.
@@ -243,7 +247,7 @@ DefineContract({
 
           for (const toUser in paymentsFrom[getters.ourUsername]) {
             for (const paymentHash of paymentsFrom[getters.ourUsername][toUser]) {
-              const { data, meta } = getters.currentGroupState.payments[paymentHash]
+              const { data, meta } = allPayments[paymentHash]
 
               payments.push({ hash: paymentHash, data, meta })
             }
@@ -252,9 +256,8 @@ DefineContract({
         return payments
       })()
       const received = (() => {
-        const monthlyPayments = getters.groupMonthlyPayments[currentMonthstamp()]
-        const paymentsFrom = monthlyPayments && monthlyPayments.paymentsFrom
-        const allPayments = getters.currentGroupState.payments
+        const thisMonthPayments = monthlyPayments[cMonthstamp]
+        const paymentsFrom = thisMonthPayments && thisMonthPayments.paymentsFrom
         const payments = []
 
         if (!paymentsFrom) { return [] }
@@ -299,10 +302,73 @@ DefineContract({
             ...existingPayment,
             ...p,
             total: existingAmount,
-            partial: partialAmount > 0
+            partial: partialAmount > 0,
+            dueIn
           })
         }
         return payments
+      })()
+      const late = (() => {
+        // const currentDistribution = this.groupIncomeAdjustedDistribution
+        // const { pledgeAmount } = this.ourGroupProfile
+        const pMonthstamp = prevMonthstamp(cMonthstamp)
+        const latePayments = []
+        const pastMonth = monthlyPayments[pMonthstamp]
+        // QUESTION: Is this only from the previous month? What if there are payments from 2-3 months ago?
+        if (pastMonth) {
+          const pDate = dateFromMonthstamp(pMonthstamp)
+          const dueIn = lastDayOfMonth(pDate)
+          const adjusted = getters.groupIncomeAdjustedDistributionForMonth(pMonthstamp)
+
+          // This logic below is wrong (based on cypress tests). Commented for later analysis.
+          /*
+          for (const payment of pastMonth.lastAdjustedDistribution) {
+            if (payment.from === this.ourUsername && payment.amount > 0) {
+              // Let A = the amount we owe from the previous distribution.
+              // Let B = the total we've sent to payment.to from the current
+              //         month's paymentsFrom.
+              // Let C = the total amount we "owe" to payment.to from the
+              //         current month's distribution.
+              // Let D = the amount we're pledging this month
+              // Let E = the amount still unpaid for the previous month's distribution,
+              //         calculated as: C > 0 ? A : A + D - B
+              //
+              // If E > 0, then display a row for the late payment.
+              const A = payment.amount
+              const B = this.paymentTotalFromUserToUser(this.ourUsername, payment.to, cMonthstamp)
+              var C = currentDistribution
+                .filter(a => a.from === payment.from && a.to === payment.to)
+              C = C.length > 0 ? C[0].amount : 0
+              const D = pledgeAmount
+              const E = C > 0 ? A : A + D - B
+              if (E > 0) {
+                latePayments.push({
+                  username: payment.to,
+                  displayName: this.userDisplayName(payment.to),
+                  amount: payment.amount, // TODO: include currency (what if it was changed?)
+                  // partiaL: TODO add this info as it is in this.paymentsTodo
+                  isLate: true,
+                  date: dueIn
+                })
+              }
+            }
+          }
+          */
+
+          // On the other hand this seems to work as expected. "partial" is the only thing missing
+          for (const payment of adjusted) {
+            if (payment.from !== ourUsername) {
+              continue
+            }
+
+            latePayments.push({
+              ...payment,
+              // partial: TODO add this info, but what's the cleanest way to do it?
+              date: dueIn
+            })
+          }
+        }
+        return latePayments
       })()
       const toBeReceived = (() => {
         const unadjusted = getters.groupIncomeDistribution.filter(p => p.to === ourUsername)
@@ -335,7 +401,7 @@ DefineContract({
         return payments
       })()
 
-      return { sent, todo, received, toBeReceived }
+      return { sent, todo, late, received, toBeReceived }
     },
     ourPaymentsSummary (state, getters) {
       const { todo, sent, toBeReceived, received } = getters.ourPayments

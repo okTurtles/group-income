@@ -73,7 +73,7 @@ page(
               i18n.button(
                 tag='button'
                 data-test='recordPayment'
-                @click='openModal("RecordPayment", { paymentsList: paymentsTodo })'
+                @click='openModal("RecordPayment")'
               ) Record payments
             payments-pagination(v-else)
 
@@ -95,9 +95,8 @@ import PaymentsPagination from '@containers/payments/PaymentsPagination.vue'
 import MonthOverview from '@containers/payments/MonthOverview.vue'
 import AddIncomeDetailsWidget from '@containers/contributions/AddIncomeDetailsWidget.vue'
 import { PAYMENT_NOT_RECEIVED } from '@model/contracts/payments/index.js'
-import { currentMonthstamp, dateFromMonthstamp, lastDayOfMonth, prevMonthstamp } from '~/frontend/utils/time.js'
 import L, { LTags } from '@view-utils/translations.js'
-import { humanDate } from '@utils/time.js'
+import { ISOStringToMonthstamp, humanDate } from '@utils/time.js'
 
 export default {
   name: 'Payments',
@@ -178,78 +177,22 @@ export default {
         : L('You are currently {strong_}sending{_strong} mincome.', LTags('strong'))
     },
     paymentsLate () {
-      const monthlyPayments = this.groupMonthlyPayments
-      // const currentDistribution = this.groupIncomeAdjustedDistribution
-      // const { pledgeAmount } = this.ourGroupProfile
-      const cMonthstamp = currentMonthstamp()
-      const pMonthstamp = prevMonthstamp(cMonthstamp)
-      const latePayments = []
-      const pastMonth = monthlyPayments[pMonthstamp]
-      // QUESTION: Is this only from the previous month? What if there are payments from 2-3 months ago?
-      if (pastMonth) {
-        const pDate = dateFromMonthstamp(pMonthstamp)
-        const dueIn = lastDayOfMonth(pDate)
-        const adjusted = this.groupIncomeAdjustedDistributionForMonth(pMonthstamp)
-
-        // This math below is wrong (based on cypress tests). Commented for further analysis.
-        /*
-        for (const payment of pastMonth.lastAdjustedDistribution) {
-          if (payment.from === this.ourUsername && payment.amount > 0) {
-            // Let A = the amount we owe from the previous distribution.
-            // Let B = the total we've sent to payment.to from the current
-            //         month's paymentsFrom.
-            // Let C = the total amount we "owe" to payment.to from the
-            //         current month's distribution.
-            // Let D = the amount we're pledging this month
-            // Let E = the amount still unpaid for the previous month's distribution,
-            //         calculated as: C > 0 ? A : A + D - B
-            //
-            // If E > 0, then display a row for the late payment.
-            const A = payment.amount
-            const B = this.paymentTotalFromUserToUser(this.ourUsername, payment.to, cMonthstamp)
-            var C = currentDistribution
-              .filter(a => a.from === payment.from && a.to === payment.to)
-            C = C.length > 0 ? C[0].amount : 0
-            const D = pledgeAmount
-            const E = C > 0 ? A : A + D - B
-            if (E > 0) {
-              latePayments.push({
-                username: payment.to,
-                displayName: this.userDisplayName(payment.to),
-                amount: payment.amount, // TODO: include currency (what if it was changed?)
-                // partiaL: TODO add this info as it is in this.paymentsTodo
-                isLate: true,
-                date: dueIn
-              })
-            }
-          }
-        }
-        */
-
-        // On the other hand this seems to work as expected. "partial" is the only thing missing
-        for (const payment of adjusted) {
-          if (payment.from !== this.ourUsername) {
-            continue
-          }
-
-          latePayments.push({
-            username: payment.to,
-            displayName: this.userDisplayName(payment.to),
-            amount: payment.amount,
-            // partial: TODO add this info, but what's the cleanest way to do it?
-            isLate: true,
-            date: dueIn
-          })
-        }
+      const payments = []
+      for (const payment of this.ourPayments.late) {
+        payments.push({
+          username: payment.to,
+          displayName: this.userDisplayName(payment.to),
+          amount: payment.amount,
+          partial: payment.partial,
+          isLate: true,
+          date: payment.dueIn
+        })
       }
-      return latePayments
+      return payments
     },
     paymentsTodo () {
       const payments = []
       const sentPayments = this.paymentsSent
-      const cMonthstamp = currentMonthstamp()
-      const pDate = dateFromMonthstamp(cMonthstamp)
-      const dueIn = lastDayOfMonth(pDate)
 
       for (const payment of this.ourPayments.todo) {
         payments.push({
@@ -260,7 +203,7 @@ export default {
           total: payment.total,
           partial: payment.partial,
           isLate: false,
-          date: dueIn
+          date: payment.dueIn
         })
       }
 
@@ -268,7 +211,6 @@ export default {
       return this.paymentsLate.concat(notReceived, payments)
     },
     paymentsSent () {
-      const cMonthstamp = currentMonthstamp()
       const payments = []
 
       for (const payment of this.ourPayments.sent) {
@@ -280,7 +222,7 @@ export default {
           username: data.toUser,
           displayName: this.userDisplayName(data.toUser),
           date: meta.createdDate,
-          monthstamp: cMonthstamp,
+          monthstamp: ISOStringToMonthstamp(meta.createdDate),
           amount: data.amount // TODO: properly display and convert in the correct currency using data.currencyFromTo and data.exchangeRate,
         }
 
@@ -291,19 +233,6 @@ export default {
 
       // TODO: implement better / more correct sorting
       return payments.sort((a, b) => a.date < b.date)
-    },
-    paymentsToBeReceived () {
-      const payments = []
-      for (const payment of this.ourPayments.toBeReceived) {
-        payments.push({
-          hash: payment.hash,
-          username: payment.from,
-          amount: payment.amount,
-          total: payment.total,
-          partial: payment.partial
-        })
-      }
-      return payments
     },
     paymentsReceived () {
       const payments = []
@@ -333,14 +262,6 @@ export default {
         PaymentRowSent: () => this.paymentsSent,
         PaymentRowReceived: () => this.paymentsReceived
       }[this.ephemeral.activeTab]()
-    },
-    paymentsAllData () {
-      return {
-        todo: this.paymentsTodo,
-        sent: this.paymentsSent,
-        toBeReceived: this.paymentsToBeReceived,
-        received: this.paymentsReceived
-      }
     },
     hasIncomeDetails () {
       return !!this.ourGroupProfile.incomeDetailsType

@@ -72,11 +72,11 @@ modal-base-template(ref='modal' :fullscreen='true' class='has-background' v-if='
 import Vue from 'vue'
 import sbp from '~/shared/sbp.js'
 import { mapState, mapGetters } from 'vuex'
-import { PAYMENT_PENDING, PAYMENT_COMPLETED, PAYMENT_TYPE_MANUAL } from '@model/contracts/payments/index.js'
+import { PAYMENT_PENDING, PAYMENT_COMPLETED, PAYMENT_NOT_RECEIVED, PAYMENT_TYPE_MANUAL } from '@model/contracts/payments/index.js'
 import L from '@view-utils/translations.js'
 import { validationMixin } from 'vuelidate'
-import { CLOSE_MODAL } from '@utils/events.js'
 import SvgSuccess from '@svgs/success.svg'
+import { ISOStringToMonthstamp } from '@utils/time.js'
 import ModalBaseTemplate from '@components/modal/ModalBaseTemplate.vue'
 import RecordPaymentsList from '@containers/payments/RecordPaymentsList.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
@@ -94,20 +94,10 @@ export default {
     BannerSimple,
     ButtonSubmit
   },
-  props: {
-    paymentsList: {
-      type: Array
-    }
-  },
   data () {
     return {
       form: {
-        // Do a shallow copy to avoid mutating the prop this.paymentsList
-        paymentsToRecord: this.paymentsList ? this.paymentsList.map((payment, index) => ({
-          ...payment,
-          index: index, // A link between original payment and this copy
-          checked: false
-        })) : [],
+        paymentsToRecord: [],
         memo: ''
       },
       ephemeral: {
@@ -117,10 +107,11 @@ export default {
     }
   },
   created () {
-    if (!this.paymentsList) {
-      console.warn('Missing paymentsList to display RecordPayment modal')
-      sbp('okTurtles.events/emit', CLOSE_MODAL)
-    }
+    this.form.paymentsToRecord = this.paymentsList.map((payment, index) => ({
+      ...payment,
+      index: index, // A link between original payment and this copy
+      checked: false
+    }))
   },
   computed: {
     ...mapState([
@@ -129,8 +120,58 @@ export default {
     ...mapGetters([
       'groupSettings',
       'groupMincomeCurrency',
-      'thisMonthsPaymentInfo'
+      'thisMonthsPaymentInfo',
+      'ourPayments',
+      'userDisplayName'
     ]),
+    paymentsList () {
+      const latePayments = []
+      const notReceivedPayments = []
+      const todoPayments = []
+
+      for (const payment of this.ourPayments.sent) {
+        const { hash, data, meta } = payment
+        if (data.status !== PAYMENT_NOT_RECEIVED) {
+          continue
+        }
+        notReceivedPayments.push({
+          hash,
+          data,
+          meta,
+          username: data.toUser,
+          displayName: this.userDisplayName(data.toUser),
+          date: meta.createdDate,
+          monthstamp: ISOStringToMonthstamp(meta.createdDate),
+          amount: data.amount
+        })
+      }
+
+      for (const payment of this.ourPayments.late) {
+        latePayments.push({
+          username: payment.to,
+          displayName: this.userDisplayName(payment.to),
+          amount: payment.amount,
+          partial: payment.partial,
+          isLate: true,
+          date: payment.dueIn
+        })
+      }
+
+      for (const payment of this.ourPayments.todo) {
+        todoPayments.push({
+          hash: payment.hash,
+          username: payment.to,
+          displayName: this.userDisplayName(payment.to),
+          amount: payment.amount,
+          total: payment.total,
+          partial: payment.partial,
+          isLate: false,
+          date: payment.dueIn
+        })
+      }
+
+      return latePayments.concat(notReceivedPayments, todoPayments)
+    },
     recordNumber () {
       return this.form.paymentsToRecord.filter(p => p.checked).length
     },
