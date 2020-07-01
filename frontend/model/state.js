@@ -362,13 +362,12 @@ const getters = {
       for (const monthstamp of Object.keys(monthlyPayments).sort()) {
         const { paymentsFrom } = monthlyPayments[monthstamp]
 
-        if (!paymentsFrom) { continue }
-
-        for (const toUser in paymentsFrom[getters.ourUsername]) {
-          for (const paymentHash of paymentsFrom[getters.ourUsername][toUser]) {
-            const { data, meta } = allPayments[paymentHash]
-
-            payments.push({ hash: paymentHash, data, meta })
+        if (paymentsFrom) {
+          for (const toUser in paymentsFrom[getters.ourUsername]) {
+            for (const paymentHash of paymentsFrom[getters.ourUsername][toUser]) {
+              const { data, meta } = allPayments[paymentHash]
+              payments.push({ hash: paymentHash, data, meta })
+            }
           }
         }
       }
@@ -379,20 +378,18 @@ const getters = {
       const paymentsFrom = thisMonthPayments && thisMonthPayments.paymentsFrom
       const payments = []
 
-      if (!paymentsFrom) { return [] }
-
-      for (const fromUser in paymentsFrom) {
-        for (const toUser in paymentsFrom[fromUser]) {
-          if (toUser === getters.ourUsername) {
-            for (const paymentHash of paymentsFrom[fromUser][toUser]) {
-              const { data, meta } = allPayments[paymentHash]
-
-              payments.push({ hash: paymentHash, data, meta })
+      if (paymentsFrom) {
+        for (const fromUser in paymentsFrom) {
+          for (const toUser in paymentsFrom[fromUser]) {
+            if (toUser === getters.ourUsername) {
+              for (const paymentHash of paymentsFrom[fromUser][toUser]) {
+                const { data, meta } = allPayments[paymentHash]
+                payments.push({ hash: paymentHash, data, meta })
+              }
             }
           }
         }
       }
-
       return payments
     })()
     const todo = (() => {
@@ -400,30 +397,31 @@ const getters = {
       const unadjusted = getters.groupIncomeDistribution.filter(p => p.from === ourUsername)
 
       for (const p of getters.groupIncomeAdjustedDistribution) {
-        if (p.from !== ourUsername) { continue }
-        const existPayment = unadjusted.find(({ to }) => to === p.to) || { amount: 0 }
-        const amount = +currency.displayWithoutCurrency(p.amount)
-        const existingAmount = +currency.displayWithoutCurrency(existPayment.amount)
+        if (p.from === ourUsername) {
+          const existPayment = unadjusted.find(({ to }) => to === p.to) || { amount: 0 }
+          const amount = +currency.displayWithoutCurrency(p.amount)
+          const existingAmount = +currency.displayWithoutCurrency(existPayment.amount)
 
-        if (amount <= 0) { continue }
+          if (amount > 0) {
+            const partialAmount = existingAmount - amount
+            const existingPayment = {}
+            if (partialAmount > 0) {
+              // TODO/BUG this only work if the payment is done in 2 parts. if done in >=3 won't work.
+              const sentPartial = sent.find((s) => s.username === p.to && s.amount === partialAmount)
+              if (sentPartial) {
+                existingPayment.hash = sentPartial.hash
+              }
+            }
 
-        const partialAmount = existingAmount - amount
-        const existingPayment = {}
-        if (partialAmount > 0) {
-          // TODO/BUG this only work if the payment is done in 2 parts. if done in >=3 won't work.
-          const sentPartial = sent.find((s) => s.username === p.to && s.amount === partialAmount)
-          if (sentPartial) {
-            existingPayment.hash = sentPartial.hash // Q: Why do we need this hash?
+            payments.push({
+              ...existingPayment,
+              ...p,
+              total: existingAmount,
+              partial: partialAmount > 0,
+              dueIn
+            })
           }
         }
-
-        payments.push({
-          ...existingPayment,
-          ...p,
-          total: existingAmount,
-          partial: partialAmount > 0,
-          dueIn
-        })
       }
       return payments
     })()
@@ -433,7 +431,6 @@ const getters = {
       const pMonthstamp = prevMonthstamp(cMonthstamp)
       const latePayments = []
       const pastMonth = monthlyPayments[pMonthstamp]
-      // QUESTION: Is this only from the previous month? What if there are payments from 2-3 months ago?
       if (pastMonth) {
         const pDate = dateFromMonthstamp(pMonthstamp)
         const dueIn = lastDayOfMonth(pDate)
@@ -493,29 +490,29 @@ const getters = {
       const unadjusted = getters.groupIncomeDistribution.filter(p => p.to === ourUsername)
       const payments = []
       for (const p of getters.groupIncomeAdjustedDistribution) {
-        if (p.to !== ourUsername) { continue }
+        if (p.to === ourUsername) {
+          const existPayment = unadjusted.find(({ from }) => from === p.from) || { amount: 0 }
+          const amount = +currency.displayWithoutCurrency(p.amount)
+          const existingAmount = +currency.displayWithoutCurrency(existPayment.amount)
 
-        const existPayment = unadjusted.find(({ from }) => from === p.from) || { amount: 0 }
-        const amount = +currency.displayWithoutCurrency(p.amount)
-        const existingAmount = +currency.displayWithoutCurrency(existPayment.amount)
-
-        if (amount <= 0) { continue }
-
-        const partialAmount = existingAmount - amount
-        const existingPayment = {}
-        if (partialAmount > 0) {
-          // TODO/BUG this only work if the payment is done in 2 parts. if done in >=3 won't work.
-          const receivePartial = received.find((r) => r.username === p.to && r.amount === partialAmount)
-          if (receivePartial) {
-            existingPayment.hash = receivePartial.hash
+          if (amount > 0) {
+            const partialAmount = existingAmount - amount
+            const existingPayment = {}
+            if (partialAmount > 0) {
+              // TODO/BUG this only work if the payment is done in 2 parts. if done in >=3 won't work.
+              const receivePartial = received.find((r) => r.username === p.to && r.amount === partialAmount)
+              if (receivePartial) {
+                existingPayment.hash = receivePartial.hash
+              }
+            }
+            payments.push({
+              ...existingPayment,
+              ...p,
+              total: existingAmount,
+              partial: partialAmount > 0
+            })
           }
         }
-        payments.push({
-          ...existingPayment,
-          ...p,
-          total: existingAmount,
-          partial: partialAmount > 0
-        })
       }
       return payments
     })()
@@ -572,6 +569,40 @@ const getters = {
     return Object.keys(contracts || {})
       .filter(contractID => contracts[contractID].type === 'group' && state[contractID].settings)
       .map(contractID => ({ groupName: state[contractID].settings.groupName, contractID }))
+  },
+  groupMembersSorted (state, getters) {
+    const weJoinedMs = new Date(getters.currentGroupState.profiles[getters.ourUsername].joinedDate).getTime()
+    const isNewMember = (username) => {
+      if (username === getters.ourUsername) { return false }
+      const memberProfile = getters.currentGroupState.profiles[username]
+      if (!memberProfile) return false
+      const memberJoinedMs = new Date(memberProfile.joinedDate).getTime()
+      const joinedAfterUs = weJoinedMs <= memberJoinedMs
+      return joinedAfterUs && Date.now() - memberJoinedMs < 604800000 // joined less than 1w (168h) ago.
+    }
+
+    return Object.keys({ ...getters.groupMembersPending, ...getters.groupProfiles })
+      .map(username => {
+        const { displayName } = getters.globalProfile(username) || {}
+        return {
+          username,
+          displayName: displayName || username,
+          invitedBy: getters.groupMembersPending[username],
+          isNew: isNewMember(username)
+        }
+      })
+      .sort((userA, userB) => {
+        const nameA = userA.displayName.toUpperCase()
+        const nameB = userB.displayName.toUpperCase()
+        // Show pending members first
+        if (userA.invitedBy && !userB.invitedBy) { return -1 }
+        if (!userA.invitedBy && userB.invitedBy) { return 1 }
+        // Then new members...
+        if (userA.isNew && !userB.isNew) { return -1 }
+        if (!userA.isNew && userB.isNew) { return 1 }
+        // and sort them all by A-Z
+        return nameA < nameB ? -1 : 1
+      })
   },
   globalProfile (state, getters) {
     return username => {

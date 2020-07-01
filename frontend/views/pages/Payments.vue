@@ -185,7 +185,7 @@ export default {
           amount: payment.amount,
           partial: payment.partial,
           isLate: true,
-          date: payment.dueIn
+          date: payment.date
         })
       }
       return payments
