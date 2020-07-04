@@ -59,6 +59,13 @@ export default {
       }
     }
   },
+  watch: {
+    'ephemeral.currentStep': function (step) {
+      if (step === 1) {
+        this.validateMincome()
+      }
+    }
+  },
   validations: {
     form: {
       mincomeAmount: {
@@ -89,9 +96,22 @@ export default {
     ])
   },
   methods: {
-    async submit (form) {
+    validateMincome () {
       const mincomeAmount = saferFloat(this.form.mincomeAmount)
+      if (mincomeAmount === this.groupSettings.mincomeAmount) {
+        this.$refs.formMsg.danger(L('The new mincome should be different than the current one.'))
+        this.ephemeral.currentStep = 0
+        return false
+      }
       this.$refs.formMsg.clean()
+      return true
+    },
+    async submit (form) {
+      if (!this.validateMincome()) {
+        return
+      }
+
+      const mincomeAmount = saferFloat(this.form.mincomeAmount)
 
       if (this.groupShouldPropose) {
         try {

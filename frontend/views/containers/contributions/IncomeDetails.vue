@@ -213,7 +213,7 @@ export default {
       },
       amount: {
         [L('Oops, you entered 0 or a negative number')]: mincomePositive,
-        [L('The amount has too many decimals')]: function (value) {
+        [L('The amount must be a number. (E.g. 100.75)')]: function (value) {
           return currencies[this.groupSettings.mincomeCurrency].validate(value)
         },
         [L('This field is required')]: required,
