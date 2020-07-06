@@ -212,11 +212,11 @@ export default {
         [L('This field is required')]: required
       },
       amount: {
+        [L('This field is required')]: required,
         [L('Oops, you entered 0 or a negative number')]: mincomePositive,
         [L('The amount must be a number. (E.g. 100.75)')]: function (value) {
           return currencies[this.groupSettings.mincomeCurrency].validate(value)
         },
-        [L('This field is required')]: required,
         [L('Your income must be lower than the group mincome')]: function (value) {
           return !this.needsIncome || saferFloat(value) < this.groupSettings.mincomeAmount
         }

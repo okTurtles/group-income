@@ -10,7 +10,10 @@
 
     label.field(v-if='ephemeral.currentStep === 0' key='0')
       i18n.label New minimum income
-      .inputgroup(:class='{ error: $v.form.mincomeAmount.$error }')
+      .inputgroup(
+        :class='{ error: $v.form.mincomeAmount.$error }'
+        v-error:mincomeAmount=''
+      )
         input.input(
           v-model='$v.form.mincomeAmount.$model'
           name='mincomeAmount'
@@ -69,10 +72,10 @@ export default {
   validations: {
     form: {
       mincomeAmount: {
-        required,
-        positive: mincomePositive,
-        decimals: function (val) {
-          return currencies[this.groupSettings.mincomeCurrency].validate(val)
+        [L('This field is required')]: required,
+        [L('Oops, you entered 0 or a negative number')]: mincomePositive,
+        [L('The amount must be a number. (E.g. 100.75)')]: function (value) {
+          return currencies[this.groupSettings.mincomeCurrency].validate(value)
         }
       }
     },

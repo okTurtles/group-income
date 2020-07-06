@@ -165,10 +165,10 @@ export default {
       groupPicture: { },
       sharedValues: { },
       mincomeAmount: {
-        required,
-        positive: mincomePositive,
-        decimals: function (val) {
-          return currencies[this.form.mincomeCurrency].validate(val)
+        [L('This field is required')]: required,
+        [L('Oops, you entered 0 or a negative number')]: mincomePositive,
+        [L('The amount must be a number. (E.g. 100.75)')]: function (value) {
+          return currencies[this.form.mincomeCurrency].validate(value)
         }
       },
       mincomeCurrency: {
