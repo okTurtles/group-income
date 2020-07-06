@@ -424,18 +424,16 @@ const getters = {
       return payments
     })()
     const late = (() => {
-      // const currentDistribution = this.groupIncomeAdjustedDistribution
-      // const { pledgeAmount } = this.ourGroupProfile
+      const currentDistribution = this.groupIncomeAdjustedDistribution
+      const { pledgeAmount } = this.ourGroupProfile
       const pMonthstamp = prevMonthstamp(cMonthstamp)
       const latePayments = []
       const pastMonth = monthlyPayments[pMonthstamp]
       if (pastMonth) {
         const pDate = dateFromMonthstamp(pMonthstamp)
         const dueIn = lastDayOfMonth(pDate)
-        const adjusted = getters.groupIncomeAdjustedDistributionForMonth(pMonthstamp)
 
-        // This logic below is wrong (based on cypress tests). Commented for later analysis.
-        /*
+        // This "for loop" logic is wrong (based on cypress tests).
         for (const payment of pastMonth.lastAdjustedDistribution) {
           if (payment.from === this.ourUsername && payment.amount > 0) {
             // Let A = the amount we owe from the previous distribution.
@@ -467,9 +465,10 @@ const getters = {
             }
           }
         }
-        */
 
-        // On the other hand this seems to work as expected. "partial" is the only thing missing
+        // If we comment the "for loop" above and and uncomment this block of code, it seems to work as expected.
+        /*
+        const adjusted = getters.groupIncomeAdjustedDistributionForMonth(pMonthstamp)
         for (const payment of adjusted) {
           if (payment.from !== ourUsername) {
             continue
@@ -481,6 +480,7 @@ const getters = {
             date: dueIn
           })
         }
+        */
       }
       return latePayments
     })()

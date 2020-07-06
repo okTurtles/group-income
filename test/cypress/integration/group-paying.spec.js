@@ -122,7 +122,9 @@ describe('Group Payments', () => {
     cy.getByDT('paymentsLink').click()
     cy.get('[data-test-date]').should('have.attr', 'data-test-date', 'Mar 12')
 
+    // BUG - The payments are incorrect. The getter ourPayments.late logic is wrong.
     assertPaymentsTabs(['Todo3', 'Sent2'])
+
     // TODO: Assert each payment data. 1 late (Feb 29) and 2 new (Mar 31).
 
     cy.getByDT('recordPayment').click()
