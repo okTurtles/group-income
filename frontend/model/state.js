@@ -424,8 +424,8 @@ const getters = {
       return payments
     })()
     const late = (() => {
-      const currentDistribution = this.groupIncomeAdjustedDistribution
-      const { pledgeAmount } = this.ourGroupProfile
+      const currentDistribution = getters.groupIncomeAdjustedDistribution
+      const { pledgeAmount } = getters.ourGroupProfile
       const pMonthstamp = prevMonthstamp(cMonthstamp)
       const latePayments = []
       const pastMonth = monthlyPayments[pMonthstamp]
@@ -435,7 +435,7 @@ const getters = {
 
         // This "for loop" logic is wrong (based on cypress tests).
         for (const payment of pastMonth.lastAdjustedDistribution) {
-          if (payment.from === this.ourUsername && payment.amount > 0) {
+          if (payment.from === ourUsername && payment.amount > 0) {
             // Let A = the amount we owe from the previous distribution.
             // Let B = the total we've sent to payment.to from the current
             //         month's paymentsFrom.
@@ -447,7 +447,7 @@ const getters = {
             //
             // If E > 0, then display a row for the late payment.
             const A = payment.amount
-            const B = this.paymentTotalFromUserToUser(this.ourUsername, payment.to, cMonthstamp)
+            const B = getters.paymentTotalFromUserToUser(ourUsername, payment.to, cMonthstamp)
             var C = currentDistribution
               .filter(a => a.from === payment.from && a.to === payment.to)
             C = C.length > 0 ? C[0].amount : 0
@@ -456,7 +456,7 @@ const getters = {
             if (E > 0) {
               latePayments.push({
                 username: payment.to,
-                displayName: this.userDisplayName(payment.to),
+                displayName: getters.userDisplayName(payment.to),
                 amount: payment.amount, // TODO: include currency (what if it was changed?)
                 // partiaL: TODO add this info as it is in this.paymentsTodo
                 isLate: true,
