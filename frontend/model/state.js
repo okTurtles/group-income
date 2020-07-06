@@ -357,8 +357,6 @@ const getters = {
 
     const sent = (() => {
       const payments = []
-      // QUESTION: Is this only from this month? What about the previous payments from months ago?
-      //           Same question for received.
       for (const monthstamp of Object.keys(monthlyPayments).sort()) {
         const { paymentsFrom } = monthlyPayments[monthstamp]
 

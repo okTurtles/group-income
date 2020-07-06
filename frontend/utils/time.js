@@ -59,5 +59,6 @@ export function humanDate (
     console.error('humanDate:: 1st arg `datems` is required')
     return ''
   }
-  return new Date(datems).toLocaleDateString(locale, opts)
+  const timezone = window.cypress ? { timeZone: 'UTC' } : {} // ensure tests work consistently anywhere in the world.
+  return new Date(datems).toLocaleDateString(locale, { ...opts, ...timezone })
 }
