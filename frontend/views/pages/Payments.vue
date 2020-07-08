@@ -25,14 +25,14 @@ page(
         }'
       ) You can change this at any time by updating your {r1}income details{r2}.
 
-    section(v-if='needsIncome && !hasPayments')
+    section(v-if='tabItems.length === 0 && paymentsListData.length === 0')
       .c-container-empty
         svg-contributions.c-svg
         i18n.c-description(tag='p') You haven’t received any payments yet
 
     section.card(v-else)
       nav.tabs(
-        v-if='!needsIncome'
+        v-if='tabItems.length > 0'
         :aria-label='L("Payments type")'
         data-test='payNav'
       )
@@ -42,28 +42,27 @@ page(
           :class='{ "is-active": ephemeral.activeTab === link.url}'
           :data-test='`link-${link.url}`'
           :aria-expanded='ephemeral.activeTab === link.url'
-          @click='ephemeral.activeTab = link.url'
+          @click='handleTabClick(link.url)'
         )
           | {{ link.title }}
           span.tabs-notification(v-if='link.notification') {{ link.notification }}
 
-      // Remove condition -> the search should be available for every tab if more than x result
       search(
-        v-if='needsIncome || ephemeral.activeTab !== "PaymentRowTodo"'
+        v-if='paymentsListData.length > 0'
         :placeholder='L("Search payments...")'
         :label='L("Search for a payment")'
-        v-model='ephemeral.searchText'
+        v-model='form.search'
       )
 
       .tab-section
-        .c-container(v-if='hasPayments')
+        .c-container(v-if='paymentsFiltered.length')
           payments-list(
             :titles='tableTitles'
-            :paymentsList='paymentsListData'
+            :paymentsList='paymentsFiltered'
             :paymentsType='ephemeral.activeTab'
           )
           .c-footer
-            .c-payment-record(v-if='!needsIncome && ephemeral.activeTab === "PaymentRowTodo"')
+            .c-payment-record(v-if='ephemeral.activeTab === "PaymentRowTodo"')
               i18n.c-payment-info(
                 tag='b'
                 data-test='paymentInfo'
@@ -79,7 +78,7 @@ page(
 
         .c-container-empty(v-else)
           svg-contributions.c-svg
-          i18n.c-description(tag='p') There are no pending payments.
+          i18n.c-description(tag='p') There are no payments.
 </template>
 
 <script>
@@ -111,14 +110,21 @@ export default {
   },
   data () {
     return {
+      form: {
+        search: ''
+      },
       ephemeral: {
-        activeTab: 'PaymentRowReceived',
-        searchText: ''
+        activeTab: ''
       }
     }
   },
   created () {
-    if (!this.needsIncome) this.ephemeral.activeTab = 'PaymentRowTodo'
+    this.setInitialActiveTab()
+  },
+  watch: {
+    needsIncome () {
+      this.setInitialActiveTab()
+    }
   },
   computed: {
     ...mapGetters([
@@ -141,22 +147,41 @@ export default {
       return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'
     },
     tabItems () {
-      const items = [{
-        title: L('Todo'),
-        url: 'PaymentRowTodo',
-        notification: this.paymentsTodo.length
-      }, {
-        title: L('Sent'),
-        url: 'PaymentRowSent',
-        notification: this.paymentsSent.length
-      }]
-      if (this.paymentsReceived.length > 0) {
+      const items = []
+
+      if (!this.needsIncome) {
+        items.push({
+          title: L('Todo'),
+          url: 'PaymentRowTodo',
+          notification: this.paymentsTodo.length
+        })
+
+        items.push({
+          title: L('Sent'),
+          url: 'PaymentRowSent',
+          notification: this.paymentsSent.length
+        })
+      }
+
+      const doesNotNeedIncomeAndDidReceiveBefore = !this.needsIncome && this.paymentsReceived.length
+      const doesNeedIncomeAndDidSentBefore = this.needsIncome && this.paymentsSent.length
+
+      if (doesNotNeedIncomeAndDidReceiveBefore || doesNeedIncomeAndDidSentBefore) {
         items.push({
           title: L('Received'),
           url: 'PaymentRowReceived',
           notification: this.paymentsReceived.length
         })
       }
+
+      if (doesNeedIncomeAndDidSentBefore) {
+        items.push({
+          title: L('Sent'),
+          url: 'PaymentRowSent',
+          notification: this.paymentsSent.length
+        })
+      }
+
       return items
     },
     tableTitles () {
@@ -215,7 +240,7 @@ export default {
 
       for (const payment of this.ourPayments.sent) {
         const { hash, data, meta } = payment
-        const p = {
+        payments.push({
           hash,
           data,
           meta,
@@ -224,11 +249,7 @@ export default {
           date: meta.createdDate,
           monthstamp: ISOStringToMonthstamp(meta.createdDate),
           amount: data.amount // TODO: properly display and convert in the correct currency using data.currencyFromTo and data.exchangeRate,
-        }
-
-        if (this.filterPayment(p)) {
-          payments.push(p)
-        }
+        })
       }
 
       // TODO: implement better / more correct sorting
@@ -240,7 +261,7 @@ export default {
       for (const payment of this.ourPayments.received) {
         const { hash, data, meta } = payment
         const fromUser = meta.username
-        const p = {
+        payments.push({
           hash,
           data,
           meta,
@@ -248,10 +269,7 @@ export default {
           displayName: this.userDisplayName(fromUser),
           date: meta.createdDate,
           amount: data.amount // TODO: properly display and convert in the correct currency using data.currencyFromTo and data.exchangeRate
-        }
-        if (this.filterPayment(p)) {
-          payments.push(p)
-        }
+        })
       }
       // TODO: implement better / more correct sorting
       return payments.sort((a, b) => a.date < b.date)
@@ -266,8 +284,8 @@ export default {
     hasIncomeDetails () {
       return !!this.ourGroupProfile.incomeDetailsType
     },
-    hasPayments () {
-      return this.paymentsListData.length > 0 || this.ephemeral.searchText !== ''
+    paymentsFiltered () {
+      return this.paymentsListData.filter(this.filterPayment)
     },
     tableFooterStatus () {
       const amount = this.paymentsTodo.reduce((total, p) => total + p.amount, 0)
@@ -279,13 +297,20 @@ export default {
   },
   methods: {
     humanDate,
+    setInitialActiveTab () {
+      this.ephemeral.activeTab = this.needsIncome ? 'PaymentRowReceived' : 'PaymentRowTodo'
+    },
     openModal (name, props) {
       sbp('okTurtles.events/emit', OPEN_MODAL, name, props)
     },
     filterPayment (payment) {
-      const query = this.ephemeral.searchText
+      const query = this.form.search
       const { amount, username, displayName } = payment
       return query === '' || `${amount}${username.toUpperCase()}${displayName.toUpperCase()}`.indexOf(query.toUpperCase()) !== -1
+    },
+    handleTabClick (url) {
+      this.ephemeral.activeTab = url
+      this.form.search = ''
     },
     handleIncomeClick (e) {
       if (e.target.classList.contains('js-btnInvite')) {
