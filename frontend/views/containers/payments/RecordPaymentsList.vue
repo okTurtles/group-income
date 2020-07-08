@@ -1,5 +1,5 @@
 <template lang='pug'>
-table.table.table-in-card.c-payments.is-editing
+table.table.table-in-card.c-payments.is-editing(data-test='payRecord')
   thead
     tr
       th.c-th-checkbox
@@ -16,6 +16,7 @@ table.table.table-in-card.c-payments.is-editing
       v-for='(payment, index) in paymentsList'
       :key='index'
       :payment='payment'
+      @update='(data) => $emit("update", data)'
     )
 </template>
 

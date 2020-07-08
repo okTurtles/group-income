@@ -285,7 +285,7 @@ Cypress.Commands.add('giAcceptGroupInvite', (invitationLink, {
 Cypress.Commands.add('giAddRandomIncome', () => {
   cy.getByDT('openIncomeDetailsModal').click()
   let salary = Math.floor(Math.random() * (600 - 20) + 20)
-  let action = 'dontNeedsIncomeRadio'
+  let action = 'doesntNeedIncomeRadio'
   // Add randomly negative or positive income
   if (Math.random() < 0.5) {
     salary = Math.floor(Math.random() * (200 - 20) + 20)

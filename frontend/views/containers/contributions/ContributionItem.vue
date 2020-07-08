@@ -80,7 +80,7 @@ export default {
             service: `<span class="has-text-bold">${this.what}</span>`,
             who: this.firstWho
           }
-          return L('{service} by {who}', html)
+          return L('{service} from {who}', html)
         } else {
           if (this.type === 'MONETARY') {
             const html = {

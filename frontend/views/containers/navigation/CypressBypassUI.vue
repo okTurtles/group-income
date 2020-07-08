@@ -3,13 +3,16 @@
     to='#'
     data-test='cy_bypassUI'
     @click='handleBypass'
-  ) BypassUI
+  ) BypassUI ({{humanDate(Date.now())}})
 </template>
 
 <script>
+import { humanDate } from '@utils/time.js'
+
 export default {
   name: 'CypressBypassUI',
   methods: {
+    humanDate,
     handleBypass (e) {
       e.preventDefault()
       // NOTE: Read Cypress commands.js cyBypassUI() for more details.

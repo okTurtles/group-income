@@ -1,25 +1,25 @@
 <template lang='pug'>
-// Stop initialization if payment not present
 modal-template(ref='modal' v-if='payment' :a11yTitle='L("Payment details")')
   template(slot='title')
     i18n Payment details
 
-  .is-title-2.c-title {{ currency(payment.amount) }}
+  .is-title-2.c-title {{ withCurrency(payment.data.amount) }}
   .c-subtitle.has-text-1 {{ subtitleCopy }}
 
+  //- TODO This should be a table...
   ul.c-payment-list
     li.c-payment-list-item
-      i18n.has-text-1(tag='label') Date & Time
+      i18n.has-text-1 Date & Time
       strong {{ humanDate(this.payment.date, { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }}
     li.c-payment-list-item
-      i18n.has-text-1(tag='label') Relative to
-      strong {{ humanDate(payment.relativeTo, { month: 'long' }) }}
+      i18n.has-text-1 Relative to
+      strong {{ humanDate(dateFromMonthstamp(payment.monthstamp), { month: 'long', year: 'numeric' }) }}
     li.c-payment-list-item
-      i18n.has-text-1(tag='label') Mincome at the time
-      strong {{ currency(groupSettings.mincomeAmount) }}
-    li.c-payment-list-item.c-column
-      i18n.has-text-1(tag='label') Notes
-      p {{ payment.note }}
+      i18n.has-text-1 Mincome at the time
+      strong {{ withCurrency(payment.data.groupMincome) }}
+    li.c-payment-list-item.c-column(v-if='payment.data.memo')
+      i18n.has-text-1 Notes
+      p.has-text-bold {{ payment.data.memo }}
 
   .buttons
     i18n.button.is-danger.is-outlined.is-small(
@@ -35,16 +35,13 @@ import sbp from '~/shared/sbp.js'
 import { CLOSE_MODAL } from '@utils/events.js'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import currencies from '@view-utils/currencies.js'
-import { humanDate } from '@utils/time.js'
+import { dateFromMonthstamp, humanDate } from '@utils/time.js'
 
 export default {
   name: 'PaymentDetail',
   props: {
     payment: {
       type: Object
-    },
-    needsIncome: {
-      type: Boolean
     }
   },
   components: {
@@ -58,10 +55,14 @@ export default {
   },
   computed: {
     ...mapGetters([
-      'groupSettings'
+      'groupSettings',
+      'ourGroupProfile'
     ]),
-    currency () {
-      return currencies[this.groupSettings.mincomeCurrency].displayWithCurrency
+    needsIncome () {
+      return this.ourGroupProfile.incomeDetailsType === 'incomeAmount'
+    },
+    withCurrency () {
+      return currencies[this.payment.data.currencyFromTo[0]].displayWithCurrency
     },
     subtitleCopy () {
       const args = { name: this.payment.displayName }
@@ -73,9 +74,9 @@ export default {
       this.$refs.modal.close()
     },
     async submit () {
-      console.log('Todo: Implement cancel payment')
-      this.closeModal()
+      alert('TODO: Implement cancel payment')
     },
+    dateFromMonthstamp,
     humanDate
   },
   validations: {
@@ -121,7 +122,7 @@ export default {
 
     .has-text-1 {
       padding-top: 1rem;
-      padding-bottom: 0.3125rem
+      padding-bottom: 0.3125rem;
     }
   }
 }

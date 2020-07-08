@@ -1,5 +1,5 @@
 <template lang='pug'>
-  tr.c-row
+  tr.c-row(data-test='payRow')
     td(v-if='$slots["cellPrefix"]')
       slot(name='cellPrefix')
     td
@@ -7,12 +7,7 @@
         avatar-user.c-avatar(:username='payment.username' size='xs')
         strong.c-name {{payment.displayName}}
 
-      // TODO: replace condition to indicate whether or not the payment date
-      // is < or > than the current date using payment.paymentStatusText
-      i18n.c-user-date(
-        :class='Math.round(Math.random()) ? "has-text-1" : "pill is-danger"'
-        :args='{ date: humanDate(payment.date) }'
-      ) Due {date}
+      span.c-user-date(:class='payment.isLate ? "pill is-danger" : "has-text-1"') {{dateText}}
 
     td.c-td-amount(v-if='$slots["cellAmount"]')
       slot(name='cellAmount')
@@ -28,6 +23,7 @@
 <script>
 import AvatarUser from '@components/AvatarUser.vue'
 import { humanDate } from '@utils/time.js'
+import L from '@view-utils/translations.js'
 
 export default {
   name: 'PaymentRowSent',
@@ -41,6 +37,16 @@ export default {
     }
   },
   computed: {
+    dateText () {
+      const hDate = humanDate(this.payment.date)
+      if (this.payment.isLate === false) {
+        // Make sure isLate is false to avoid false positives with "undefined".
+        // isLate only exists in "TODO" row. Use it to show the text "Due".
+        // Maybe a key "showDue" would be better, but for now this works.
+        return L('Due {date}', { date: hDate })
+      }
+      return hDate
+    }
   },
   methods: {
     humanDate

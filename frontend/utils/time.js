@@ -44,12 +44,21 @@ export function compareISOTimestamps (a: string, b: string): number {
   return A > B ? 1 : (A < B ? -1 : 0)
 }
 
+export function lastDayOfMonth (date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0)
+}
+
 // TODO: Provide locale fallback in case navigator does not exist (e.g. server, Mocha, etc...)
 const locale = (typeof navigator === 'undefined' && 'en-US') || (navigator.languages ? navigator.languages[0] : navigator.language)
 
 export function humanDate (
-  datems = Date.now(),
+  datems,
   opts = { month: 'short', day: 'numeric' }
 ) {
-  return new Date(datems).toLocaleDateString(locale, opts)
+  if (!datems) {
+    console.error('humanDate:: 1st arg `datems` is required')
+    return ''
+  }
+  const timezone = window.cypress ? { timeZone: 'UTC' } : {} // ensure tests work consistently anywhere in the world.
+  return new Date(datems).toLocaleDateString(locale, { ...opts, ...timezone })
 }

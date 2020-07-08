@@ -15,6 +15,7 @@ import Colors from './colors.js'
 import { TypeValidatorError } from '~/frontend/utils/flowTyper.js'
 import { GIErrorUnrecoverable, GIErrorIgnoreAndBanIfGroup, GIErrorDropAndReprocess } from './errors.js'
 import { STATUS_OPEN, PROPOSAL_REMOVE_MEMBER } from './contracts/voting/constants.js'
+import { PAYMENT_COMPLETED } from '~/frontend/model/contracts/payments/index.js'
 import { VOTE_FOR } from '~/frontend/model/contracts/voting/rules.js'
 import { actionWhitelisted, ACTION_REGEX } from '~/frontend/model/contracts/Contract.js'
 import * as _ from '~/frontend/utils/giLodash.js'
@@ -24,6 +25,10 @@ import './contracts/mailbox.js'
 import './contracts/identity.js'
 import { captureLogsStart, captureLogsPause } from '~/frontend/model/captureLogs.js'
 import { THEME_LIGHT, THEME_DARK } from '~/frontend/utils/themes.js'
+import { uniq } from '~/frontend/utils/giLodash.js'
+import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
+import { currentMonthstamp, prevMonthstamp, dateFromMonthstamp, lastDayOfMonth } from '~/frontend/utils/time.js'
+import currencies from '~/frontend/views/utils/currencies.js'
 
 Vue.use(Vuex)
 var store // this is set and made the default export at the bottom of the file.
@@ -196,6 +201,7 @@ const mutations = {
     state.appLogsFilter = filters
   }
 }
+
 // https://vuex.vuejs.org/en/getters.html
 // https://vuex.vuejs.org/en/modules.html
 const getters = {
@@ -329,6 +335,230 @@ const getters = {
       return profile.displayName || username
     }
   },
+  // used with graphs like those in the dashboard and in the income details modal
+  groupIncomeDistribution (state, getters) {
+    return groupIncomeDistribution({ state, getters, monthstamp: currentMonthstamp() })
+  },
+  // adjusted version of groupIncomeDistribution, used by the payments system
+  groupIncomeAdjustedDistribution (state, getters) {
+    return getters.groupIncomeAdjustedDistributionForMonth(currentMonthstamp())
+  },
+  groupIncomeAdjustedDistributionForMonth (state, getters) {
+    return monthstamp => groupIncomeDistribution({ state, getters, monthstamp, adjusted: true })
+  },
+  ourPayments (state, getters) {
+    const currency = currencies[getters.groupSettings.mincomeCurrency]
+    const ourUsername = getters.ourUsername
+    const cMonthstamp = currentMonthstamp()
+    const pDate = dateFromMonthstamp(cMonthstamp)
+    const dueIn = lastDayOfMonth(pDate)
+    const monthlyPayments = getters.groupMonthlyPayments
+    const allPayments = getters.currentGroupState.payments
+
+    const sent = (() => {
+      const payments = []
+      for (const monthstamp of Object.keys(monthlyPayments).sort()) {
+        const { paymentsFrom } = monthlyPayments[monthstamp]
+
+        if (paymentsFrom) {
+          for (const toUser in paymentsFrom[getters.ourUsername]) {
+            for (const paymentHash of paymentsFrom[getters.ourUsername][toUser]) {
+              const { data, meta } = allPayments[paymentHash]
+              payments.push({ hash: paymentHash, data, meta })
+            }
+          }
+        }
+      }
+      return payments
+    })()
+    const received = (() => {
+      const thisMonthPayments = monthlyPayments[cMonthstamp]
+      const paymentsFrom = thisMonthPayments && thisMonthPayments.paymentsFrom
+      const payments = []
+
+      if (paymentsFrom) {
+        for (const fromUser in paymentsFrom) {
+          for (const toUser in paymentsFrom[fromUser]) {
+            if (toUser === getters.ourUsername) {
+              for (const paymentHash of paymentsFrom[fromUser][toUser]) {
+                const { data, meta } = allPayments[paymentHash]
+                payments.push({ hash: paymentHash, data, meta })
+              }
+            }
+          }
+        }
+      }
+      return payments
+    })()
+    const todo = (() => {
+      const payments = []
+      const unadjusted = getters.groupIncomeDistribution.filter(p => p.from === ourUsername)
+
+      for (const p of getters.groupIncomeAdjustedDistribution) {
+        if (p.from === ourUsername) {
+          const existPayment = unadjusted.find(({ to }) => to === p.to) || { amount: 0 }
+          const amount = +currency.displayWithoutCurrency(p.amount)
+          const existingAmount = +currency.displayWithoutCurrency(existPayment.amount)
+
+          if (amount > 0) {
+            const partialAmount = existingAmount - amount
+            const existingPayment = {}
+            if (partialAmount > 0) {
+              // TODO/BUG this only work if the payment is done in 2 parts. if done in >=3 won't work.
+              const sentPartial = sent.find((s) => s.username === p.to && s.amount === partialAmount)
+              if (sentPartial) {
+                existingPayment.hash = sentPartial.hash
+              }
+            }
+
+            payments.push({
+              ...existingPayment,
+              ...p,
+              total: existingAmount,
+              partial: partialAmount > 0,
+              dueIn
+            })
+          }
+        }
+      }
+      return payments
+    })()
+    const late = (() => {
+      const currentDistribution = getters.groupIncomeAdjustedDistribution
+      const { pledgeAmount } = getters.ourGroupProfile
+      const pMonthstamp = prevMonthstamp(cMonthstamp)
+      const latePayments = []
+      const pastMonth = monthlyPayments[pMonthstamp]
+      if (pastMonth) {
+        const pDate = dateFromMonthstamp(pMonthstamp)
+        const dueIn = lastDayOfMonth(pDate)
+
+        // This "for loop" logic is wrong (based on cypress tests).
+        for (const payment of pastMonth.lastAdjustedDistribution) {
+          if (payment.from === ourUsername && payment.amount > 0) {
+            // Let A = the amount we owe from the previous distribution.
+            // Let B = the total we've sent to payment.to from the current
+            //         month's paymentsFrom.
+            // Let C = the total amount we "owe" to payment.to from the
+            //         current month's distribution.
+            // Let D = the amount we're pledging this month
+            // Let E = the amount still unpaid for the previous month's distribution,
+            //         calculated as: C > 0 ? A : A + D - B
+            //
+            // If E > 0, then display a row for the late payment.
+            const A = payment.amount
+            const B = getters.paymentTotalFromUserToUser(ourUsername, payment.to, cMonthstamp)
+            var C = currentDistribution
+              .filter(a => a.from === payment.from && a.to === payment.to)
+            C = C.length > 0 ? C[0].amount : 0
+            const D = pledgeAmount
+            const E = C > 0 ? A : A + D - B
+            if (E > 0) {
+              latePayments.push({
+                username: payment.to,
+                displayName: getters.userDisplayName(payment.to),
+                amount: payment.amount, // TODO: include currency (what if it was changed?)
+                // partiaL: TODO add this info as it is in this.paymentsTodo
+                isLate: true,
+                date: dueIn
+              })
+            }
+          }
+        }
+
+        // If we comment the "for loop" above and and uncomment this block of code, it seems to work as expected.
+        /*
+        const adjusted = getters.groupIncomeAdjustedDistributionForMonth(pMonthstamp)
+        for (const payment of adjusted) {
+          if (payment.from !== ourUsername) {
+            continue
+          }
+
+          latePayments.push({
+            ...payment,
+            // partial: TODO add this info, but what's the cleanest way to do it?
+            date: dueIn
+          })
+        }
+        */
+      }
+      return latePayments
+    })()
+    const toBeReceived = (() => {
+      const unadjusted = getters.groupIncomeDistribution.filter(p => p.to === ourUsername)
+      const payments = []
+      for (const p of getters.groupIncomeAdjustedDistribution) {
+        if (p.to === ourUsername) {
+          const existPayment = unadjusted.find(({ from }) => from === p.from) || { amount: 0 }
+          const amount = +currency.displayWithoutCurrency(p.amount)
+          const existingAmount = +currency.displayWithoutCurrency(existPayment.amount)
+
+          if (amount > 0) {
+            const partialAmount = existingAmount - amount
+            const existingPayment = {}
+            if (partialAmount > 0) {
+              // TODO/BUG this only work if the payment is done in 2 parts. if done in >=3 won't work.
+              const receivePartial = received.find((r) => r.username === p.to && r.amount === partialAmount)
+              if (receivePartial) {
+                existingPayment.hash = receivePartial.hash
+              }
+            }
+            payments.push({
+              ...existingPayment,
+              ...p,
+              total: existingAmount,
+              partial: partialAmount > 0
+            })
+          }
+        }
+      }
+      return payments
+    })()
+
+    return { sent, todo, late, received, toBeReceived }
+  },
+  ourPaymentsSummary (state, getters) {
+    const { todo, sent, toBeReceived, received } = getters.ourPayments
+    const isCompleted = (p) => p.data.status === PAYMENT_COMPLETED
+    const isPartialCount = (list) => list.filter(p => p.partial).length
+    const getUniqPCount = (users) => {
+      // We need to filter the partial payments already done (sent/received).
+      // E.G. We need to send 4 payments. We've sent 1 full payment and another
+      // in 2 parts. The total must be 2, instead of 3. A quick way to solve this
+      // is by listing all usernames we sent to and count the uniq ones.
+      return uniq(users).length
+    }
+
+    if (getters.ourGroupProfile.incomeDetailsType === 'incomeAmount') {
+      const receivedCompleted = received.filter(isCompleted)
+      const pPartials = isPartialCount(toBeReceived)
+      const pByUser = {
+        toBeReceived: toBeReceived.map(p => p.from),
+        received: received.map(p => p.meta.username)
+      }
+      return {
+        paymentsDone: getUniqPCount(pByUser.received) - pPartials,
+        hasPartials: pPartials > 0,
+        paymentsTotal: getUniqPCount([...pByUser.toBeReceived, ...pByUser.received]),
+        amountDone: receivedCompleted.reduce((total, p) => total + p.data.amount, 0),
+        amountTotal: toBeReceived.reduce((total, p) => total + p.amount, 0) + received.reduce((total, p) => total + p.data.amount, 0)
+      }
+    } else {
+      const sentCompleted = sent.filter(isCompleted)
+      const pPartials = isPartialCount(todo)
+      const pByUser = {
+        todo: todo.map(p => p.to),
+        sent: sent.map(p => p.data.toUser)
+      }
+      return {
+        paymentsDone: getUniqPCount(pByUser.sent) - pPartials,
+        hasPartials: pPartials > 0,
+        paymentsTotal: getUniqPCount([...pByUser.todo, ...pByUser.sent]),
+        amountDone: sentCompleted.reduce((total, p) => total + p.data.amount, 0),
+        amountTotal: todo.reduce((total, p) => total + p.amount, 0) + sent.reduce((total, p) => total + p.data.amount, 0)
+      }
+    }
+  },
   // list of group names and contractIDs
   groupsByName (state) {
     const contracts = state.contracts
@@ -338,6 +568,40 @@ const getters = {
       .filter(contractID => contracts[contractID].type === 'group' && state[contractID].settings)
       .map(contractID => ({ groupName: state[contractID].settings.groupName, contractID }))
   },
+  groupMembersSorted (state, getters) {
+    const weJoinedMs = new Date(getters.currentGroupState.profiles[getters.ourUsername].joinedDate).getTime()
+    const isNewMember = (username) => {
+      if (username === getters.ourUsername) { return false }
+      const memberProfile = getters.currentGroupState.profiles[username]
+      if (!memberProfile) return false
+      const memberJoinedMs = new Date(memberProfile.joinedDate).getTime()
+      const joinedAfterUs = weJoinedMs <= memberJoinedMs
+      return joinedAfterUs && Date.now() - memberJoinedMs < 604800000 // joined less than 1w (168h) ago.
+    }
+
+    return Object.keys({ ...getters.groupMembersPending, ...getters.groupProfiles })
+      .map(username => {
+        const { displayName } = getters.globalProfile(username) || {}
+        return {
+          username,
+          displayName: displayName || username,
+          invitedBy: getters.groupMembersPending[username],
+          isNew: isNewMember(username)
+        }
+      })
+      .sort((userA, userB) => {
+        const nameA = userA.displayName.toUpperCase()
+        const nameB = userB.displayName.toUpperCase()
+        // Show pending members first
+        if (userA.invitedBy && !userB.invitedBy) { return -1 }
+        if (!userA.invitedBy && userB.invitedBy) { return 1 }
+        // Then new members...
+        if (userA.isNew && !userB.isNew) { return -1 }
+        if (!userA.isNew && userB.isNew) { return 1 }
+        // and sort them all by A-Z
+        return nameA < nameB ? -1 : 1
+      })
+  },
   globalProfile (state, getters) {
     return username => {
       const groupProfile = getters.groupProfile(username)
@@ -345,6 +609,7 @@ const getters = {
       return identityState && identityState.attributes
     }
   },
+
   colors (state) {
     return Colors[state.theme]
   },
