@@ -13,6 +13,7 @@ form.c-search-form(
         data-test='search'
         :placeholder='placeholder'
         :value='value'
+        @keyup.esc='$emit("input", "")'
         @input='$emit("input", $event.target.value)'
       )
       .addons
