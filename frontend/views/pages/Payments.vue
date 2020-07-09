@@ -76,7 +76,7 @@ page(
               ) Record payments
             payments-pagination(v-else)
 
-        .c-container-empty(v-else)
+        .c-container-empty(v-else data-test='noPayments')
           svg-contributions.c-svg
           i18n.c-description(tag='p') There are no payments.
 </template>

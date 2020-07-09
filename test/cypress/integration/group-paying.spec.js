@@ -12,7 +12,7 @@ const timeStart = Date.now()
 const timeOneMonth = 60000 * 60 * 24 * 31
 const humanDateToday = humanDate(timeStart)
 
-function addIncome (doesPledge, incomeAmount) {
+function setIncomeDetails (doesPledge, incomeAmount) {
   cy.getByDT('contributionsLink').click()
   cy.getByDT('openIncomeDetailsModal').click()
   cy.getByDT(doesPledge ? 'doesntNeedIncomeRadio' : 'needsIncomeRadio').click()
@@ -31,6 +31,7 @@ function assertPaymentsTabs (tabs) {
 }
 
 function assertMonthOverview (items) {
+  cy.log('MonthOverview values are correct')
   cy.getByDT('monthOverview').within(() => {
     items.forEach((text, i) => {
       cy.get(`ul > li:nth-child(${i + 1})`).should('contain', text)
@@ -50,7 +51,7 @@ describe('Group Payments', () => {
       invitationLinks.anyone = url
     })
 
-    addIncome(true, 250)
+    setIncomeDetails(true, 250)
     cy.giLogout()
   })
 
@@ -60,7 +61,7 @@ describe('Group Payments', () => {
       groupName,
       bypassUI: true,
       actionBeforeLogout: () => {
-        addIncome(false, 900)
+        setIncomeDetails(false, 900)
       }
     })
 
@@ -69,7 +70,7 @@ describe('Group Payments', () => {
       groupName,
       bypassUI: true,
       actionBeforeLogout: () => {
-        addIncome(false, 750)
+        setIncomeDetails(false, 750)
       }
     })
 
@@ -79,12 +80,12 @@ describe('Group Payments', () => {
       bypassUI: true,
       shouldLogoutAfter: false,
       actionBeforeLogout: () => {
-        addIncome(true, 100)
+        setIncomeDetails(true, 100)
       }
     })
   })
 
-  it('user1 sends to user2 $71.43 (total)', () => {
+  it('user1 sends $71.43 to user2 (total)', () => {
     cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
 
     cy.getByDT('paymentsLink').click()
@@ -138,7 +139,7 @@ describe('Group Payments', () => {
     ])
   })
 
-  it('user1 sends to user3 $100 (partial)', () => {
+  it('user1 sends $100 to user3 (partial)', () => {
     cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
     cy.getByDT('paymentsLink').click()
     cy.getByDT('recordPayment').click()
@@ -155,6 +156,11 @@ describe('Group Payments', () => {
 
     assertPaymentsTabs(['Todo1', 'Sent2'])
 
+    assertMonthOverview([
+      'Payments sent1 out of 2',
+      'Amount sent$171.43 out of $250'
+    ])
+
     cy.getByDT('payList').within(() => {
       cy.getByDT('payRow').eq(0).find('td:nth-child(2)').should('contain', '$78.57 out of $178.57')
     })
@@ -169,6 +175,30 @@ describe('Group Payments', () => {
       cy.getByDT('payRow').eq(0).find('td:nth-child(2)').should('contain', '$100')
       cy.getByDT('payRow').eq(0).find('td:nth-child(3)').should('contain', humanDateToday)
     })
+  })
+
+  it('user1 changes their income details to "needing" and sees the correct UI', () => {
+    cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
+
+    setIncomeDetails(false, 950)
+
+    cy.getByDT('paymentsLink').click()
+
+    assertPaymentsTabs(['Received', 'Sent2'])
+
+    cy.getByDT('noPayments').should('exist')
+
+    assertMonthOverview([
+      'Payments received0 out of 1',
+      'Amount received$0 out of $12.50'
+    ])
+  })
+
+  it('user1 changes their income details back to "giving" and sees the correct UI', () => {
+    setIncomeDetails(true, 250)
+
+    cy.getByDT('paymentsLink').click()
+    assertPaymentsTabs(['Todo1', 'Sent2'])
   })
 
   it('one month later, user1 sends to user3 the missing $78.57 (test incomplete)', () => {
