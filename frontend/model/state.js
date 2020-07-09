@@ -347,6 +347,7 @@ const getters = {
     return monthstamp => groupIncomeDistribution({ state, getters, monthstamp, adjusted: true })
   },
   ourPayments (state, getters) {
+    // Payments relative to the current month only
     const currency = currencies[getters.groupSettings.mincomeCurrency]
     const ourUsername = getters.ourUsername
     const cMonthstamp = currentMonthstamp()
@@ -354,26 +355,23 @@ const getters = {
     const dueIn = lastDayOfMonth(pDate)
     const monthlyPayments = getters.groupMonthlyPayments
     const allPayments = getters.currentGroupState.payments
+    const thisMonthPayments = monthlyPayments[cMonthstamp]
+    const paymentsFrom = thisMonthPayments && thisMonthPayments.paymentsFrom
 
     const sent = (() => {
       const payments = []
-      for (const monthstamp of Object.keys(monthlyPayments).sort()) {
-        const { paymentsFrom } = monthlyPayments[monthstamp]
 
-        if (paymentsFrom) {
-          for (const toUser in paymentsFrom[getters.ourUsername]) {
-            for (const paymentHash of paymentsFrom[getters.ourUsername][toUser]) {
-              const { data, meta } = allPayments[paymentHash]
-              payments.push({ hash: paymentHash, data, meta })
-            }
+      if (paymentsFrom) {
+        for (const toUser in paymentsFrom[getters.ourUsername]) {
+          for (const paymentHash of paymentsFrom[getters.ourUsername][toUser]) {
+            const { data, meta } = allPayments[paymentHash]
+            payments.push({ hash: paymentHash, data, meta })
           }
         }
       }
       return payments
     })()
     const received = (() => {
-      const thisMonthPayments = monthlyPayments[cMonthstamp]
-      const paymentsFrom = thisMonthPayments && thisMonthPayments.paymentsFrom
       const payments = []
 
       if (paymentsFrom) {

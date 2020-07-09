@@ -8,7 +8,7 @@ page(
 )
   template(#title='') {{ L('Payments') }}
 
-  template(#sidebar='' v-if='hasIncomeDetails')
+  template(#sidebar='' v-if='tabItems.length > 0 || paymentsListData.length > 0')
     month-overview
 
   add-income-details-widget(v-if='!hasIncomeDetails')

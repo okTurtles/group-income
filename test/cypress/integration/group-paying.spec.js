@@ -30,6 +30,14 @@ function assertPaymentsTabs (tabs) {
   })
 }
 
+function assertMonthOverview (items) {
+  cy.getByDT('monthOverview').within(() => {
+    items.forEach((text, i) => {
+      cy.get(`ul > li:nth-child(${i + 1})`).should('contain', text)
+    })
+  })
+}
+
 describe('Group Payments', () => {
   const invitationLinks = {}
 
@@ -83,6 +91,10 @@ describe('Group Payments', () => {
     cy.get('[data-test-date]').should('have.attr', 'data-test-date', humanDateToday)
 
     assertPaymentsTabs(['Todo2', 'Sent'])
+    assertMonthOverview([
+      'Payments sent0 out of 2',
+      'Amount sent$0 out of $250'
+    ])
 
     cy.getByDT('recordPayment').click()
     cy.getByDT('modal').within(() => {
@@ -94,12 +106,41 @@ describe('Group Payments', () => {
       cy.getByDT('successClose').click()
       cy.getByDT('closeModal').should('not.exist')
     })
-    assertPaymentsTabs(['Todo1', 'Sent1'])
 
-    // TODO - assert user2 received the payment.
+    assertPaymentsTabs(['Todo1', 'Sent1'])
+    cy.getByDT('link-PaymentRowSent').click()
+    cy.getByDT('payList').find('tbody').children().should('have.length', 1)
+    cy.getByDT('payList').within(() => {
+      cy.getByDT('payRow').eq(0).find('td:nth-child(1)').should('contain', `user2-${userId}`)
+      cy.getByDT('payRow').eq(0).find('td:nth-child(2)').should('contain', '$71.43')
+      cy.getByDT('payRow').eq(0).find('td:nth-child(3)').should('contain', humanDateToday)
+    })
+
+    assertMonthOverview([
+      'Payments sent1 out of 2',
+      'Amount sent$71.43 out of $250'
+    ])
+
+    cy.log('user2 confirms the received payment')
+    cy.giSwitchUser(`user2-${userId}`, { bypassUI: true })
+    cy.getByDT('paymentsLink').click()
+
+    cy.getByDT('payList').find('tbody').children().should('have.length', 1)
+    cy.getByDT('payList').within(() => {
+      cy.getByDT('payRow').eq(0).find('td:nth-child(1)').should('contain', `user1-${userId}`)
+      cy.getByDT('payRow').eq(0).find('td:nth-child(2)').should('contain', '$71.43')
+      cy.getByDT('payRow').eq(0).find('td:nth-child(3)').should('contain', humanDateToday)
+    })
+
+    assertMonthOverview([
+      'Payments received1 out of 2',
+      'Amount received$71.43 out of $100'
+    ])
   })
 
   it('user1 sends to user3 $100 (partial)', () => {
+    cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
+    cy.getByDT('paymentsLink').click()
     cy.getByDT('recordPayment').click()
     cy.getByDT('modal').within(() => {
       cy.getByDT('payRecord').find('tbody').children().should('have.length', 1)
@@ -118,7 +159,16 @@ describe('Group Payments', () => {
       cy.getByDT('payRow').eq(0).find('td:nth-child(2)').should('contain', '$78.57 out of $178.57')
     })
 
-    // TODO - assert user3 received the payment.
+    cy.log('user3 confirms the received payment')
+    cy.giSwitchUser(`user3-${userId}`, { bypassUI: true })
+    cy.getByDT('paymentsLink').click()
+
+    cy.getByDT('payList').find('tbody').children().should('have.length', 1)
+    cy.getByDT('payList').within(() => {
+      cy.getByDT('payRow').eq(0).find('td:nth-child(1)').should('contain', `user1-${userId}`)
+      cy.getByDT('payRow').eq(0).find('td:nth-child(2)').should('contain', '$100')
+      cy.getByDT('payRow').eq(0).find('td:nth-child(3)').should('contain', humanDateToday)
+    })
   })
 
   it('one month later, user1 sends to user3 the missing $78.57 (test incomplete)', () => {
@@ -126,8 +176,14 @@ describe('Group Payments', () => {
     cy.visit('/')
     cy.tick(timeOneMonth)
 
+    cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
     cy.getByDT('paymentsLink').click()
     cy.get('[data-test-date]').should('have.attr', 'data-test-date', humanDate(timeStart + timeOneMonth))
+
+    assertMonthOverview([
+      'Payments sent0 out of 2',
+      'Amount sent$0 out of $250'
+    ])
 
     // BUG - The payments are incorrect. The getter ourPayments.late logic is wrong.
     /*
