@@ -58,7 +58,7 @@ page(
         .c-container(v-if='paymentsFiltered.length')
           payments-list(
             :titles='tableTitles'
-            :paymentsList='paymentsFiltered'
+            :paymentsList='paginateList(paymentsFiltered)'
             :paymentsType='ephemeral.activeTab'
           )
           .c-footer
@@ -66,7 +66,7 @@ page(
               i18n.c-payment-info(
                 tag='b'
                 data-test='paymentInfo'
-                :args='tableFooterStatus'
+                :args='footerTodoStatus'
               ) {amount} in total, to {count} members
 
               i18n.button(
@@ -74,7 +74,14 @@ page(
                 data-test='recordPayment'
                 @click='openModal("RecordPayment")'
               ) Record payments
-            payments-pagination(v-else)
+            payments-pagination(
+              v-else
+              :count='paymentsFiltered.length'
+              :rowsPerPage='ephemeral.rowsPerPage'
+              :page.sync='ephemeral.currentPage'
+              @changePage='handlePageChange'
+              @changeRowsPerPage='handleRowsPerPageChange'
+            )
         .c-container-noresults(v-else-if='paymentsListData.length && !paymentsFiltered.length' data-test='noResults')
           i18n(tag='p' :args='{query: form.search }') No results for "{query}".
         .c-container-empty(v-else data-test='noPayments')
@@ -115,7 +122,9 @@ export default {
         search: ''
       },
       ephemeral: {
-        activeTab: ''
+        activeTab: '',
+        rowsPerPage: 10,
+        currentPage: 0
       }
     }
   },
@@ -250,6 +259,20 @@ export default {
         })
       }
 
+      // DELETE THIS BEFORE MERGE!!!
+      // Create a bunch of copies of the first payment. For pagination tests only
+      /*
+      const copies = 50
+      if (payments[0]) {
+        for (let index = 0; index < copies; index++) {
+          payments.push({
+            ...payments[0],
+            displayName: payments[0].displayName + '_copy_' + (index + 1)
+          })
+        }
+      }
+      */
+
       // TODO: implement better / more correct sorting
       return payments.sort((a, b) => a.date < b.date)
     },
@@ -285,7 +308,7 @@ export default {
     paymentsFiltered () {
       return this.paymentsListData.filter(this.filterPayment)
     },
-    tableFooterStatus () {
+    footerTodoStatus () {
       const amount = this.paymentsTodo.reduce((total, p) => total + p.amount, 0)
       return {
         amount: this.currency.displayWithCurrency(amount),
@@ -306,6 +329,10 @@ export default {
       const { amount, username, displayName } = payment
       return query === '' || `${amount}${username.toUpperCase()}${displayName.toUpperCase()}`.indexOf(query.toUpperCase()) !== -1
     },
+    paginateList (list) {
+      const start = this.ephemeral.rowsPerPage * this.ephemeral.currentPage
+      return list.slice(start, start + this.ephemeral.rowsPerPage)
+    },
     handleTabClick (url) {
       this.ephemeral.activeTab = url
       this.form.search = ''
@@ -314,6 +341,14 @@ export default {
       if (e.target.classList.contains('js-btnInvite')) {
         sbp('okTurtles.events/emit', OPEN_MODAL, 'IncomeDetails')
       }
+    },
+    handlePageChange (type) {
+      const current = this.ephemeral.currentPage
+      this.ephemeral.currentPage = type === 'next' ? current + 1 : current - 1
+    },
+    handleRowsPerPageChange (value) {
+      this.ephemeral.rowsPerPage = value
+      this.ephemeral.currentPage = 0 // go back to first page.
     }
   }
 }
