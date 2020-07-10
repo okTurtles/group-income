@@ -3,11 +3,11 @@ modal-template(ref='modal' v-if='payment' :a11yTitle='L("Payment details")')
   template(slot='title')
     i18n Payment details
 
-  .is-title-2.c-title {{ withCurrency(payment.data.amount) }}
-  .c-subtitle.has-text-1 {{ subtitleCopy }}
+  .is-title-2.c-title(data-test='amount') {{ withCurrency(payment.data.amount) }}
+  .c-subtitle.has-text-1(data-test='subtitle') {{ subtitleCopy }}
 
   //- TODO This should be a table...
-  ul.c-payment-list
+  ul.c-payment-list(data-test='details')
     li.c-payment-list-item
       i18n.has-text-1 Date & Time
       strong {{ humanDate(this.payment.date, { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) }}

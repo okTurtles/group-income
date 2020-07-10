@@ -19,9 +19,10 @@ function setIncomeDetails (doesPledge, incomeAmount) {
   cy.getByDT('inputIncomeOrPledge').clear().type(incomeAmount)
   cy.getByDT('submitIncome').click()
   cy.getByDT('closeModal').should('not.exist')
+  cy.url().should('eq', 'http://localhost:8000/app/contributions')
 }
 
-function assertPaymentsTabs (tabs) {
+function assertNavTabs (tabs) {
   cy.getByDT('payNav').children().should('have.length', tabs.length)
   cy.getByDT('payNav').within(() => {
     for (let i = 0; i < tabs.length; i++) {
@@ -56,33 +57,17 @@ describe('Group Payments', () => {
   })
 
   it('Three users join the group and add their income details', () => {
-    cy.giAcceptGroupInvite(invitationLinks.anyone, {
-      username: `user2-${userId}`,
-      groupName,
-      bypassUI: true,
-      actionBeforeLogout: () => {
-        setIncomeDetails(false, 900)
-      }
-    })
+    const options = { groupName, bypassUI: true, shouldLogoutAfter: false }
+    cy.giAcceptGroupInvite(invitationLinks.anyone, { username: `user2-${userId}`, ...options })
+    setIncomeDetails(false, 900)
+    cy.giLogout()
 
-    cy.giAcceptGroupInvite(invitationLinks.anyone, {
-      username: `user3-${userId}`,
-      groupName,
-      bypassUI: true,
-      actionBeforeLogout: () => {
-        setIncomeDetails(false, 750)
-      }
-    })
+    cy.giAcceptGroupInvite(invitationLinks.anyone, { username: `user3-${userId}`, ...options })
+    setIncomeDetails(false, 750)
+    cy.giLogout()
 
-    cy.giAcceptGroupInvite(invitationLinks.anyone, {
-      username: `user4-${userId}`,
-      groupName,
-      bypassUI: true,
-      shouldLogoutAfter: false,
-      actionBeforeLogout: () => {
-        setIncomeDetails(true, 100)
-      }
-    })
+    cy.giAcceptGroupInvite(invitationLinks.anyone, { username: `user4-${userId}`, ...options })
+    setIncomeDetails(true, 100)
   })
 
   it('user1 sends $71.43 to user2 (total)', () => {
@@ -91,7 +76,7 @@ describe('Group Payments', () => {
     cy.getByDT('paymentsLink').click()
     cy.get('[data-test-date]').should('have.attr', 'data-test-date', humanDateToday)
 
-    assertPaymentsTabs(['Todo2', 'Sent'])
+    assertNavTabs(['Todo2', 'Sent'])
     assertMonthOverview([
       'Payments sent0 out of 2',
       'Amount sent$0 out of $250'
@@ -108,19 +93,35 @@ describe('Group Payments', () => {
       cy.getByDT('closeModal').should('not.exist')
     })
 
-    assertPaymentsTabs(['Todo1', 'Sent1'])
+    assertMonthOverview([
+      'Payments sent1 out of 2',
+      'Amount sent$71.43 out of $250'
+    ])
+
+    cy.log('assert payments table is correct')
+    assertNavTabs(['Todo1', 'Sent'])
     cy.getByDT('link-PaymentRowSent').click()
     cy.getByDT('payList').find('tbody').children().should('have.length', 1)
     cy.getByDT('payList').within(() => {
       cy.getByDT('payRow').eq(0).find('td:nth-child(1)').should('contain', `user2-${userId}`)
       cy.getByDT('payRow').eq(0).find('td:nth-child(2)').should('contain', '$71.43')
       cy.getByDT('payRow').eq(0).find('td:nth-child(3)').should('contain', humanDateToday)
+
+      cy.log('assert payment detail is correct')
+      cy.getByDT('menuTrigger').click()
+      cy.getByDT('menuContent').find('ul > li:nth-child(1)').as('btnDetails')
+      cy.get('@btnDetails').should('contain', 'Payment details')
+      cy.get('@btnDetails').click()
     })
 
-    assertMonthOverview([
-      'Payments sent1 out of 2',
-      'Amount sent$71.43 out of $250'
-    ])
+    cy.getByDT('modal').within(() => {
+      cy.getByDT('amount').should('contain', '$71.43')
+      cy.getByDT('subtitle').should('contain', `Sent to user2-${userId}`)
+
+      cy.getByDT('details').find('li:nth-child(1)').should('contain', humanDate(timeStart, { month: 'long', year: 'numeric' }))
+      cy.getByDT('details').find('li:nth-child(3)').should('contain', '$1000')
+    })
+    cy.closeModal()
 
     cy.log('user2 confirms the received payment')
     cy.giSwitchUser(`user2-${userId}`, { bypassUI: true })
@@ -154,7 +155,7 @@ describe('Group Payments', () => {
       cy.getByDT('closeModal').should('not.exist')
     })
 
-    assertPaymentsTabs(['Todo1', 'Sent2'])
+    assertNavTabs(['Todo1', 'Sent'])
 
     assertMonthOverview([
       'Payments sent1 out of 2',
@@ -163,6 +164,14 @@ describe('Group Payments', () => {
 
     cy.getByDT('payList').within(() => {
       cy.getByDT('payRow').eq(0).find('td:nth-child(2)').should('contain', '$78.57 out of $178.57')
+    })
+
+    cy.getByDT('link-PaymentRowSent').click()
+    cy.getByDT('payList').find('tbody').children().should('have.length', 2)
+    cy.getByDT('payList').within(() => {
+      cy.getByDT('payRow').eq(1).find('td:nth-child(1)').should('contain', `user3-${userId}`)
+      cy.getByDT('payRow').eq(1).find('td:nth-child(2)').should('contain', '$100')
+      cy.getByDT('payRow').eq(1).find('td:nth-child(3)').should('contain', 'Feb 10')
     })
 
     cy.log('user3 confirms the received payment')
@@ -184,9 +193,11 @@ describe('Group Payments', () => {
 
     cy.getByDT('paymentsLink').click()
 
-    assertPaymentsTabs(['Received', 'Sent2'])
-
+    assertNavTabs(['Received', 'Sent'])
     cy.getByDT('noPayments').should('exist')
+
+    cy.getByDT('link-PaymentRowSent').click()
+    cy.getByDT('payList').find('tbody').children().should('have.length', 2)
 
     assertMonthOverview([
       'Payments received0 out of 1',
@@ -198,7 +209,7 @@ describe('Group Payments', () => {
     setIncomeDetails(true, 250)
 
     cy.getByDT('paymentsLink').click()
-    assertPaymentsTabs(['Todo1', 'Sent2'])
+    assertNavTabs(['Todo1', 'Sent'])
   })
 
   it('one month later, user1 sends to user3 the missing $78.57 (test incomplete)', () => {
@@ -217,7 +228,7 @@ describe('Group Payments', () => {
 
     // BUG - The payments are incorrect. The getter ourPayments.late logic is wrong.
     /*
-    assertPaymentsTabs(['Todo3', 'Sent2'])
+    assertNavTabs(['Todo3', 'Sent2'])
     */
     // TODO: Assert each payment data. 1 late (Feb 29) and 2 new (Mar 31).
     /*
@@ -243,7 +254,7 @@ describe('Group Payments', () => {
     // Once that is fixed, uncomment the assertions bellow:
 
     /*
-    assertPaymentsTabs(['Todo2', 'Sent3'])
+    assertNavTabs(['Todo2', 'Sent3'])
     cy.getByDT('payList').within(() => {
       cy.getByDT('payRow').eq(0).find('td:nth-child(1)').should('contain', 'user2')
       cy.getByDT('payRow').eq(0).find('td:nth-child(2)').should('contain', '$71.43')

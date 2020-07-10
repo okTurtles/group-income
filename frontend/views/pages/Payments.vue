@@ -48,7 +48,7 @@ page(
           span.tabs-notification(v-if='link.notification') {{ link.notification }}
 
       search(
-        v-if='paymentsListData.length > 0'
+        v-if='paymentsListData.length && ephemeral.activeTab !== "PaymentRowTodo"'
         :placeholder='L("Search payments...")'
         :label='L("Search for a payment")'
         v-model='form.search'
@@ -75,7 +75,8 @@ page(
                 @click='openModal("RecordPayment")'
               ) Record payments
             payments-pagination(v-else)
-
+        .c-container-noresults(v-else-if='paymentsListData.length && !paymentsFiltered.length' data-test='noResults')
+          i18n(tag='p' :args='{query: form.search }') No results for "{query}".
         .c-container-empty(v-else data-test='noPayments')
           svg-contributions.c-svg
           i18n.c-description(tag='p') There are no payments.
@@ -158,8 +159,7 @@ export default {
 
         items.push({
           title: L('Sent'),
-          url: 'PaymentRowSent',
-          notification: this.paymentsSent.length
+          url: 'PaymentRowSent'
         })
       }
 
@@ -169,16 +169,14 @@ export default {
       if (doesNotNeedIncomeAndDidReceiveBefore || doesNeedIncomeAndDidSentBefore) {
         items.push({
           title: L('Received'),
-          url: 'PaymentRowReceived',
-          notification: this.paymentsReceived.length
+          url: 'PaymentRowReceived'
         })
       }
 
       if (doesNeedIncomeAndDidSentBefore) {
         items.push({
           title: L('Sent'),
-          url: 'PaymentRowSent',
-          notification: this.paymentsSent.length
+          url: 'PaymentRowSent'
         })
       }
 
@@ -340,7 +338,6 @@ export default {
   margin-top: 1.5rem;
 }
 
-// Empty
 .c-container-empty {
   max-width: 25rem;
   margin: 0 auto;
@@ -363,6 +360,10 @@ export default {
     margin-left: -0.5rem;
     filter: contrast(0%) brightness(172%);
   }
+}
+
+.c-container-noresults {
+  padding-top: 1.5rem;
 }
 
 .card .c-container-empty {
