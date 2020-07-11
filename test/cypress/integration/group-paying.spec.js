@@ -2,7 +2,7 @@
 // Similar to time.js but without the import.
 export function humanDate (datems, opts = { month: 'short', day: 'numeric' }) {
   const locale = navigator.languages ? navigator.languages[0] : navigator.language
-  return new Date(datems).toLocaleDateString(locale, { ...opts, timeZone: 'UTC' })
+  return new Date(datems).toLocaleDateString(locale, opts)
 }
 
 const userId = Math.floor(Math.random() * 10000)
