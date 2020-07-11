@@ -1,7 +1,16 @@
+
+// Similar to time.js but without the import.
+export function humanDate (datems, opts = { month: 'short', day: 'numeric' }) {
+  const locale = navigator.languages ? navigator.languages[0] : navigator.language
+  return new Date(datems).toLocaleDateString(locale, { ...opts, timeZone: 'UTC' })
+}
+
 const userId = Math.floor(Math.random() * 10000)
 const groupName = 'Dreamers'
 const mincome = 1000
-const timeStart = Date.UTC(2020, 1, 10)
+const timeStart = Date.now()
+const timeOneMonth = 60000 * 60 * 24 * 31
+const humanDateToday = humanDate(timeStart)
 
 function addIncome (doesPledge, incomeAmount) {
   cy.getByDT('contributionsLink').click()
@@ -23,10 +32,6 @@ function assertPaymentsTabs (tabs) {
 
 describe('Group Payments', () => {
   const invitationLinks = {}
-
-  beforeEach(() => {
-    cy.clock(timeStart, ['Date'])
-  })
 
   it('user1 creates a group', () => {
     cy.visit('/')
@@ -75,7 +80,7 @@ describe('Group Payments', () => {
     cy.giSwitchUser(`user1-${userId}`, { bypassUI: true })
 
     cy.getByDT('paymentsLink').click()
-    cy.get('[data-test-date]').should('have.attr', 'data-test-date', 'Feb 10')
+    cy.get('[data-test-date]').should('have.attr', 'data-test-date', humanDateToday)
 
     assertPaymentsTabs(['Todo2', 'Sent'])
 
@@ -117,10 +122,12 @@ describe('Group Payments', () => {
   })
 
   it('one month later, user1 sends to user3 the missing $78.57 (test incomplete)', () => {
+    cy.clock(timeStart, ['Date'])
     cy.visit('/')
-    cy.tick(60000 * 60 * 24 * 31) // time travel 1 month later
+    cy.tick(timeOneMonth)
+
     cy.getByDT('paymentsLink').click()
-    cy.get('[data-test-date]').should('have.attr', 'data-test-date', 'Mar 12')
+    cy.get('[data-test-date]').should('have.attr', 'data-test-date', humanDate(timeStart + timeOneMonth))
 
     // BUG - The payments are incorrect. The getter ourPayments.late logic is wrong.
     /*
