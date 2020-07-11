@@ -118,7 +118,7 @@ describe('Group Payments', () => {
       cy.getByDT('amount').should('contain', '$71.43')
       cy.getByDT('subtitle').should('contain', `Sent to user2-${userId}`)
 
-      cy.getByDT('details').find('li:nth-child(1)').should('contain', humanDate(timeStart, { month: 'long', year: 'numeric' }))
+      cy.getByDT('details').find('li:nth-child(2)').should('contain', humanDate(timeStart, { month: 'long', year: 'numeric' }))
       cy.getByDT('details').find('li:nth-child(3)').should('contain', '$1000')
     })
     cy.closeModal()
@@ -171,7 +171,7 @@ describe('Group Payments', () => {
     cy.getByDT('payList').within(() => {
       cy.getByDT('payRow').eq(1).find('td:nth-child(1)').should('contain', `user3-${userId}`)
       cy.getByDT('payRow').eq(1).find('td:nth-child(2)').should('contain', '$100')
-      cy.getByDT('payRow').eq(1).find('td:nth-child(3)').should('contain', 'Feb 10')
+      cy.getByDT('payRow').eq(1).find('td:nth-child(3)').should('contain', humanDateToday)
     })
 
     cy.log('user3 confirms the received payment')
@@ -230,7 +230,7 @@ describe('Group Payments', () => {
     /*
     assertNavTabs(['Todo3', 'Sent2'])
     */
-    // TODO: Assert each payment data. 1 late (Feb 29) and 2 new (Mar 31).
+    // TODO: Assert each payment data. 1 late and 2 new.
     /*
     cy.getByDT('recordPayment').click()
     cy.getByDT('modal').within(() => {
