@@ -10,13 +10,13 @@ import BypassUI from '@pages/BypassUI.vue'
 
 import LoadingPage from '@views/containers/loading-error/LoadingPage.vue'
 // TODO: once the 404 and 500 error message is design, replace the loading page with this one
-// import ErrorPage from './ErrorPage.vue'
+import ErrorPage from '@views/containers/loading-error/ErrorPage.vue'
 
 import Home from '@pages/Home.vue'
 import Join from '@pages/Join.vue'
 import L from '@view-utils/translations.js'
 
-const lazyLoadView = ({ component, loading = LoadingPage, error = LoadingPage }) => {
+const lazyLoadView = ({ component, loading = LoadingPage, error = ErrorPage }) => {
   const AsyncHandler = () => ({ component, loading, error })
 
   return () =>
