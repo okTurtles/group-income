@@ -17,7 +17,7 @@ modal-template(ref='modal' :a11yTitle='L("Add new members")')
 import { mapGetters } from 'vuex'
 import ModalTemplate from '@components/modal/ModalTemplate.vue'
 import LinkToCopy from '@components/LinkToCopy.vue'
-import { INVITE_INITIAL_CREATOR } from '@model/contracts/group.js'
+import { INVITE_INITIAL_CREATOR } from '@model/contracts/constants.js'
 import { buildInvitationUrl } from '@model/contracts/voting/proposals.js'
 
 export default {

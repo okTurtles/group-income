@@ -89,7 +89,7 @@ import ModalClose from '@components/modal/ModalClose.vue'
 import { OPEN_MODAL } from '@utils/events.js'
 import sbp from '~/shared/sbp.js'
 import { mapGetters } from 'vuex'
-import { PROFILE_STATUS } from '~/frontend/model/contracts/group.js'
+import { PROFILE_STATUS } from '~/frontend/model/contracts/constants.js'
 
 export default {
   name: 'ProfileCard',

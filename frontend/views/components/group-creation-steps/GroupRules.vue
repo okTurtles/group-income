@@ -7,18 +7,23 @@
       i18n.has-text-bold(tag='legend') Which voting system would you like to use?
       i18n.has-text-1.c-desc(tag='p') You will need to use this system to vote on proposals. You can propose for example, to add or remove members, or to change your group’s mincome value.
 
-      .cardBox.c-box(v-for='option in group.ruleOrder' :class='{isActive: form.option === option }')
+      .cardBox.c-box(v-for='rule in group.rulesOrder' :class='{isActive: group.ruleName === rule }')
         .c-box-option
-          label.checkbox.c-option
-            input.input(type='radio' name='rule' :value='option' @change='setOption(option)')
+          label.checkbox.c-option(:data-test='rule')
+            input.input(
+              type='radio'
+              :value='rule'
+              :checked='group.ruleName === rule'
+              @change='setRule(rule)'
+            )
             span
-              span.has-text-bold {{ config[option].optionLabel }}
-              span.has-text-1.c-option-hint(v-html='config[option].optionHint')
+              span.has-text-bold {{ config[rule].label }}
+              span.has-text-1.c-option-hint(v-html='config[rule].hint')
           img.c-box-img(src='/assets/images/rule-placeholder.png' alt='')
 
         transition-expand
-          div(v-if='option === form.option')
-            voting-system-input.c-input(:type='option' :value='form.value' @update='setValue')
+          div(v-if='rule === group.ruleName')
+            voting-rules-input.c-input(:rule='rule' :value='group.ruleThreshold[rule]' @update='setThreshold')
 
       i18n.help You can change this later in your Group Settings.
     slot
@@ -28,7 +33,7 @@
 import { RULE_PERCENTAGE, RULE_DISAGREEMENT } from '@model/contracts/voting/rules.js'
 import L from '@view-utils/translations.js'
 import TransitionExpand from '@components/TransitionExpand.vue'
-import VotingSystemInput from '@components/VotingSystemInput.vue'
+import VotingRulesInput from '@components/VotingRulesInput.vue'
 
 export default {
   name: 'GroupRules',
@@ -38,40 +43,45 @@ export default {
   },
   components: {
     TransitionExpand,
-    VotingSystemInput
+    VotingRulesInput
   },
   data: () => ({
     config: {
       [RULE_PERCENTAGE]: {
-        optionLabel: L('Percentage based'),
-        optionHint: L('Define the percentage of members who will need to agree to a proposal.'),
-        slideDefault: 75 // TODO connect to store.
+        label: L('Percentage based'),
+        hint: L('Define the percentage of members who will need to agree to a proposal.')
       },
       [RULE_DISAGREEMENT]: {
-        optionLabel: L('Disagreement number'),
-        optionHint: L('Define the number of people required to block a proposal.'),
-        slideLabel: L('Maximum number of "no" votes'),
-        slideDefault: 2 // TODO connect to store.
+        label: L('Disagreement number'),
+        hint: L('Define the number of people required to block a proposal.')
       }
-    },
-    form: {
-      option: null,
-      value: null
     }
   }),
+  created () {
+
+  },
   methods: {
-    setOption (option) {
-      this.form.option = option
-      this.form.value = this.config[option].slideDefault
-    },
-    setValue (value) {
-      this.form.value = value
-    },
-    update (prop, value) {
-      this.$v.form[prop].$touch()
+    setRule (rule) {
+      this.$v.form.ruleName.$touch()
+      this.$v.form.ruleThreshold[rule].$touch()
       this.$emit('input', {
         data: {
-          [prop]: value
+          ruleName: rule,
+          ruleThreshold: {
+            ...this.group.ruleThreshold,
+            [rule]: this.group.ruleThreshold[rule]
+          }
+        }
+      })
+    },
+    setThreshold (threshold) {
+      this.$v.form.ruleThreshold[this.group.ruleName].$touch()
+      this.$emit('input', {
+        data: {
+          ruleThreshold: {
+            ...this.group.ruleThreshold,
+            [this.group.ruleName]: threshold
+          }
         }
       })
     }

@@ -2,7 +2,8 @@
 
 import { literalOf, unionOf } from '~/frontend/utils/flowTyper.js'
 
-import { PROPOSAL_REMOVE_MEMBER } from '~/frontend/model/contracts/voting/constants.js'
+import { PROPOSAL_REMOVE_MEMBER } from './constants.js'
+import { PROFILE_STATUS } from '../constants.js'
 
 export const VOTE_AGAINST = ':against'
 export const VOTE_INDIFFERENT = ':indifferent'
@@ -15,14 +16,28 @@ export const RULE_MULTI_CHOICE = 'multi-choice'
 
 // TODO: ranked-choice? :D
 
+/* REVIVEW PR
+  the whole "state" being passed as argument to rules[rule]() is overwhelmed.
+  It would be simpler with just 2 simple args: "threshold" and "population".
+  Advantages:
+  - population: No need to do the logic to get it (and avoid import PROFILE_STATUS.ACTIVE from group.js).
+  - threshold: The selector to get the selector is huge.
+  - tests: Avoid the need to mock a complex state.
+  My suggestion: 1 parameter (object) with 4 explicit keys.
+  [RULE_PERCENTAGE]: function ({ votes, proposalType, population, threshold })
+*/
+
+const getPopulation = (state) => Object.keys(state.profiles).filter(p => state.profiles[p].status === PROFILE_STATUS.ACTIVE).length
+
 const rules = {
   [RULE_PERCENTAGE]: function (state, proposalType, votes) {
     votes = Object.values(votes)
-    const population = Object.keys(state.profiles).length
+    const population = getPopulation(state)
     const defaultThreshold = state.settings.proposals[proposalType].ruleSettings[RULE_PERCENTAGE].threshold
-    const threshold = proposalType === PROPOSAL_REMOVE_MEMBER
+    const thresholdAdapted = proposalType === PROPOSAL_REMOVE_MEMBER
       ? Math.min(defaultThreshold, (population - 1) / population)
       : defaultThreshold
+    const threshold = getThresholdAdjusted(RULE_PERCENTAGE, thresholdAdapted, population)
     const totalIndifferent = votes.filter(x => x === VOTE_INDIFFERENT).length
     const totalFor = votes.filter(x => x === VOTE_FOR).length
     const totalAgainst = votes.filter(x => x === VOTE_AGAINST).length
@@ -33,9 +48,6 @@ const rules = {
     //       and if so, explain it in the UI that the threshold is applied only to
     //       *those who care, plus those who were abscent*.
     //       Those who explicitely say they don't care are removed from consideration.
-    // TODO: if we're doing it this way we should never allow the threshold to go below
-    //       60%, since anything near that range indicates disagreement among the voting
-    //       group (which can be very small if we allow an explicit third option.)
     const neededToPass = Math.ceil(threshold * (population - totalIndifferent))
     console.debug(`votingRule ${RULE_PERCENTAGE} for ${proposalType}:`, { neededToPass, totalFor, totalAgainst, totalIndifferent, threshold, absent, turnout, population })
     if (totalFor >= neededToPass) {
@@ -45,20 +57,22 @@ const rules = {
   },
   [RULE_DISAGREEMENT]: function (state, proposalType, votes) {
     votes = Object.values(votes)
-    const minimumMax = proposalType === PROPOSAL_REMOVE_MEMBER ? 2 : 0
-    const threshold = Math.max(state.settings.proposals[proposalType].ruleSettings[RULE_DISAGREEMENT].threshold, minimumMax)
+    const population = getPopulation(state)
+    const minimumMax = proposalType === PROPOSAL_REMOVE_MEMBER ? 2 : 1
+    const thresholdOriginal = Math.max(state.settings.proposals[proposalType].ruleSettings[RULE_DISAGREEMENT].threshold, minimumMax)
+    const threshold = getThresholdAdjusted(RULE_DISAGREEMENT, thresholdOriginal, population)
     const totalFor = votes.filter(x => x === VOTE_FOR).length
     const totalAgainst = votes.filter(x => x === VOTE_AGAINST).length
-    const population = Object.keys(state.profiles).length
     const turnout = votes.length
     const absent = population - turnout
+
     console.debug(`votingRule ${RULE_DISAGREEMENT} for ${proposalType}:`, { totalFor, totalAgainst, threshold, turnout, population, absent })
     if (totalAgainst >= threshold) {
       return VOTE_AGAINST
     }
     // consider proposal passed if more vote for it than against it and there aren't
     // enough votes left to tip the scales past the threshold
-    return totalAgainst + absent < threshold && totalFor > totalAgainst ? VOTE_FOR : VOTE_UNDECIDED
+    return totalAgainst + absent < threshold ? VOTE_FOR : VOTE_UNDECIDED
   },
   [RULE_MULTI_CHOICE]: function (state, proposalType, votes) {
     throw new Error('unimplemented!')
@@ -73,3 +87,48 @@ const rules = {
 export default rules
 
 export const ruleType = unionOf(...Object.keys(rules).map(k => literalOf(k)))
+
+/**
+ *
+ * @example ('disagreement', 2, 1) => 2
+ * @example ('disagreement', 5, 1) => 3
+ * @example ('disagreement', 7, 10) => 7
+ * @example ('disagreement', 20, 10) => 10
+ *
+ * @example ('percentage', 0.5, 3) => 0.5
+ * @example ('percentage', 0.1, 3) => 0.33
+ * @example ('percentage', 0.1, 10) => 0.2
+ * @example ('percentage', 0.3, 10) => 0.3
+ */
+export const getThresholdAdjusted = (rule, threshold, groupSize) => {
+  const groupSizeVoting = Math.max(3, groupSize) // 3 = minimum groupSize to vote
+
+  return {
+    [RULE_DISAGREEMENT]: () => {
+      // Limit number of maximum "no" votes to group size
+      return Math.min(groupSizeVoting - 1, threshold)
+    },
+    [RULE_PERCENTAGE]: () => {
+      // Minimum threshold correspondent to 2 "yes" votes
+      const minThreshold = 2 / groupSizeVoting
+      return Math.max(minThreshold, threshold)
+    }
+  }[rule]()
+}
+
+/**
+ *
+ * @example (10, 0.5) => 5
+ * @example (3, 0.8) => 3
+ * @example (1, 0.6) => 2
+ */
+export const getCountOutOfMembers = (groupSize, decimal) => {
+  const minGroupSize = 3 // when group can vote
+  return Math.ceil(Math.max(minGroupSize, groupSize) * decimal)
+}
+
+export const getPercentFromDecimal = (decimal) => {
+  // convert decimal to percentage avoiding weird decimals results.
+  // e.g. 0.58 -> 58 instead of 57.99999
+  return Math.round(decimal * 100)
+}

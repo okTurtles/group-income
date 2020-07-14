@@ -3,7 +3,6 @@ proposal-template(
   ref='proposal'
   variant='removeMember'
   :title='L("Remove Member")'
-  :rule='rule'
   :maxSteps='config.steps.length'
   :currentStep.sync='ephemeral.currentStep'
   @submit='submit'
@@ -71,11 +70,6 @@ export default {
     ]),
     memberGlobalProfile () {
       return this.globalProfile(this.username) || {}
-    },
-    rule () {
-      const proposalRule = this.groupSettings.proposals[PROPOSAL_REMOVE_MEMBER]
-      const { threshold } = proposalRule.ruleSettings[proposalRule.rule]
-      return { value: Math.round(this.groupMembersCount - 1 * threshold), total: this.groupMembersCount - 1 }
     }
   },
   methods: {

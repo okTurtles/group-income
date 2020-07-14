@@ -1,5 +1,5 @@
 <template lang='pug'>
-table.table.table-in-card.c-payments
+table.table.table-in-card.c-payments(data-test='payList')
   thead
     tr
       th {{ titles.one }}

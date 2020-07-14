@@ -21,7 +21,7 @@ modal-base-template(ref='modal' :fullscreen='true' :a11yTitle='L("Income Details
             v-model='$v.form.incomeDetailsType.$model'
             @change='resetAmount'
           )
-          i18n(data-test='dontNeedsIncomeRadio') Yes, I do
+          i18n(data-test='doesntNeedIncomeRadio') Yes, I do
         label.radio(v-error:incomeDetailsType='')
           input.input(
             type='radio'
