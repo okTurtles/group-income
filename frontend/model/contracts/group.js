@@ -6,7 +6,7 @@ import { DefineContract } from './Contract.js'
 import { arrayOf, mapOf, objectOf, objectMaybeOf, optional, string, number, object, unionOf, tupleOf } from '~/frontend/utils/flowTyper.js'
 // TODO: use protocol versioning to load these (and other) files
 //       https://github.com/okTurtles/group-income-simple/issues/603
-import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST } from './voting/rules.js'
+import votingRules, { ruleType, VOTE_FOR, VOTE_AGAINST, RULE_PERCENTAGE, RULE_DISAGREEMENT } from './voting/rules.js'
 import proposals, { proposalType, proposalSettingsType, archiveProposal } from './voting/proposals.js'
 import {
   PROPOSAL_INVITE_MEMBER, PROPOSAL_REMOVE_MEMBER, PROPOSAL_GROUP_SETTING_CHANGE, PROPOSAL_PROPOSAL_SETTING_CHANGE, PROPOSAL_GENERIC,
@@ -17,19 +17,14 @@ import * as Errors from '../errors.js'
 import { merge, deepEqualJSONType, omit } from '~/frontend/utils/giLodash.js'
 import { currentMonthstamp, ISOStringToMonthstamp, compareMonthstamps } from '~/frontend/utils/time.js'
 import { vueFetchInitKV } from '~/frontend/views/utils/misc.js'
-import incomeDistribution from '~/frontend/utils/distribution/mincome-proportional.js'
+import groupIncomeDistribution from '~/frontend/utils/distribution/group-income-distribution.js'
 import currencies, { saferFloat } from '~/frontend/views/utils/currencies.js'
 import L from '~/frontend/views/utils/translations.js'
-
-export const INVITE_INITIAL_CREATOR = 'INVITE_INITIAL_CREATOR'
-export const INVITE_STATUS = {
-  VALID: 'valid',
-  USED: 'used'
-}
-export const PROFILE_STATUS = {
-  ACTIVE: 'active',
-  REMOVED: 'removed'
-}
+import {
+  INVITE_INITIAL_CREATOR,
+  INVITE_STATUS,
+  PROFILE_STATUS
+} from './constants.js'
 
 export const inviteType = objectOf({
   inviteSecret: string,
@@ -102,44 +97,6 @@ function initFetchMonthlyPayments ({ meta, state, getters }) {
   const monthlyPayments = vueFetchInitKV(state.paymentsByMonth, monthstamp, initPaymentMonth({ getters }))
   clearOldPayments({ state })
   return monthlyPayments
-}
-
-function groupIncomeDistribution ({ state, getters, monthstamp, adjusted }) {
-  // the monthstamp will always be for the current month. the alternative
-  // is to allow the re-generation of the distribution for previous months,
-  // but that approach requires also storing the historical mincomeAmount
-  // and historical groupProfiles. Since together these change across multiple
-  // locations in the code, it involves less 'code smell' to do it this way.
-  // see historical/group.js for the ugly way of doing it.
-  const mincomeAmount = getters.groupMincomeAmount
-  const groupProfiles = getters.groupProfiles
-  const currentIncomeDistribution = []
-  for (const username in groupProfiles) {
-    const profile = groupProfiles[username]
-    const incomeDetailsType = profile && profile.incomeDetailsType
-    if (incomeDetailsType) {
-      const adjustment = incomeDetailsType === 'incomeAmount' ? 0 : mincomeAmount
-      const amount = adjustment + profile[incomeDetailsType]
-      currentIncomeDistribution.push({
-        name: username,
-        amount: saferFloat(amount)
-      })
-    }
-  }
-  var dist = incomeDistribution(currentIncomeDistribution, mincomeAmount)
-  if (adjusted) {
-    // if this user has already made some payments to other users this
-    // month, we need to take that into account and adjust the distribution.
-    // this will be used by the Payments page to tell how much still
-    // needs to be paid (if it was a partial payment).
-    for (const p of dist) {
-      const alreadyPaid = getters.paymentTotalFromUserToUser(p.from, p.to, monthstamp)
-      // if we "overpaid" because we sent late payments, remove us from consideration
-      p.amount = saferFloat(Math.max(0, p.amount - alreadyPaid))
-    }
-    dist = dist.filter(p => p.amount > 0)
-  }
-  return dist
 }
 
 DefineContract({
@@ -232,19 +189,9 @@ DefineContract({
         return saferFloat(total)
       }
     },
-    // used with graphs like those in the dashboard and in the income details modal
-    groupIncomeDistribution (state, getters) {
-      return groupIncomeDistribution({ state, getters, monthstamp: currentMonthstamp() })
-    },
-    // adjusted version of groupIncomeDistribution, used by the payments system
-    groupIncomeAdjustedDistribution (state, getters) {
-      return getters.groupIncomeAdjustedDistributionForMonth(currentMonthstamp())
-    },
-    groupIncomeAdjustedDistributionForMonth (state, getters) {
-      return monthstamp => groupIncomeDistribution({ state, getters, monthstamp, adjusted: true })
-    },
+
     groupMembersByUsername (state, getters) {
-      return Object.keys(getters.currentGroupState.profiles || {})
+      return Object.keys(getters.groupProfiles)
     },
     groupMembersCount (state, getters) {
       return getters.groupMembersByUsername.length
@@ -262,42 +209,13 @@ DefineContract({
       }
       return pendingMembers
     },
-    groupMembersSorted (state, getters) {
-      const weJoinedMs = new Date(getters.currentGroupState.profiles[getters.ourUsername].joinedDate).getTime()
-      const isNewMember = (username) => {
-        if (username === getters.ourUsername) { return false }
-        const memberProfile = getters.currentGroupState.profiles[username]
-        if (!memberProfile) return false
-        const memberJoinedMs = new Date(memberProfile.joinedDate).getTime()
-        const joinedAfterUs = weJoinedMs < memberJoinedMs
-        return joinedAfterUs && Date.now() - memberJoinedMs < 604800000 // joined less than 1w (168h) ago.
-      }
-
-      return Object.keys({ ...getters.groupMembersPending, ...getters.groupProfiles })
-        .map(username => {
-          const { displayName } = getters.globalProfile(username) || {}
-          return {
-            username,
-            displayName: displayName || username,
-            invitedBy: getters.groupMembersPending[username],
-            isNew: isNewMember(username)
-          }
-        })
-        .sort((userA, userB) => {
-          const nameA = userA.displayName.toUpperCase()
-          const nameB = userB.displayName.toUpperCase()
-          // Show pending members first
-          if (userA.invitedBy && !userB.invitedBy) { return -1 }
-          if (!userA.invitedBy && userB.invitedBy) { return 1 }
-          // Then new members...
-          if (userA.isNew && !userB.isNew) { return -1 }
-          if (!userA.isNew && userB.isNew) { return 1 }
-          // and sort them all by A-Z
-          return nameA < nameB ? -1 : 1
-        })
-    },
     groupShouldPropose (state, getters) {
       return getters.groupMembersCount >= 3
+    },
+    groupProposalSettings (state, getters) {
+      return (proposalType = PROPOSAL_GENERIC) => {
+        return getters.groupSettings.proposals[proposalType]
+      }
     },
     groupMincomeFormatted (state, getters) {
       const settings = getters.groupSettings
@@ -466,6 +384,8 @@ DefineContract({
           if (deepEqualJSONType(omit(prop.data.proposalData, 'reason'), dataToCompare)) {
             throw new TypeError(L('There is an identical open proposal.'))
           }
+
+          // TODO - verify if type of proposal already exists (SETTING_CHANGE).
         }
       },
       process ({ data, meta, hash }, { state }) {
@@ -727,6 +647,30 @@ DefineContract({
         }
       }
     },
+    'gi.contracts/group/updateAllVotingRules': {
+      validate: objectMaybeOf({
+        ruleName: x => [RULE_PERCENTAGE, RULE_DISAGREEMENT].includes(x),
+        ruleThreshold: number,
+        expires_ms: number
+      }),
+      process ({ data, meta }, { state }) {
+        // Update all types of proposal settings for simplicity
+        if (data.ruleName && data.ruleThreshold) {
+          for (const proposalSettings in state.settings.proposals) {
+            Vue.set(state.settings.proposals[proposalSettings], 'rule', data.ruleName)
+            Vue.set(state.settings.proposals[proposalSettings].ruleSettings[data.ruleName], 'threshold', data.ruleThreshold)
+          }
+        }
+
+        // TODO later - support update expires_ms
+        // if (data.ruleName && data.expires_ms) {
+        //   for (const proposalSetting in state.settings.proposals) {
+        //     Vue.set(state.settings.proposals[proposalSetting].ruleSettings[data.ruleName], 'expires_ms', data.expires_ms)
+        //   }
+        // }
+      }
+    },
+
     ...(process.env.NODE_ENV === 'development' ? {
       'gi.contracts/group/malformedMutation': {
         validate: objectOf({ errorType: string }),

@@ -2,13 +2,13 @@
   // Note: .cpr- is from payment-row
   payment-row(:payment='payment')
     template(slot='cellPrefix')
-      label.checkbox.c-check
-        input.input(type='checkbox' v-model='payment.checked')
+      label.checkbox.c-check(data-test='check')
+        input.input(type='checkbox' v-model='form.checked')
         span
           i18n.sr-only Mark as sent
 
     template(slot='cellActions')
-      .cpr-date.pill.is-danger(v-if='Math.round(Math.random())') {{ humanDate(payment.date) }}
+      .cpr-date.pill.is-danger(v-if='payment.isLate' data-test='isLate') {{ humanDate(payment.date) }}
       i18n.is-unstyled.is-link-inherit.link.c-reset(
         tag='button'
         type='button'
@@ -19,9 +19,9 @@
     template(slot='cellSuffix')
       label.field
         .inputgroup
-          input.input(inputmode='decimal' pattern='[0-9]*' v-model='payment.amount')
-          .suffix.hide-phone {{symbolWithCode}}
-          .suffix.hide-tablet {{symbol}}
+          input.input(data-test='amount' inputmode='decimal' pattern='[0-9]*' v-model='form.amount')
+          .suffix.hide-phone {{currencies.symbolWithCode}}
+          .suffix.hide-tablet {{currencies.symbol}}
 </template>
 
 <script>
@@ -37,35 +37,45 @@ export default {
   },
   props: {
     payment: {
-      type: Object,
+      type: Object, // { index, checked, ...paymentData }
       required: true
     }
   },
   data () {
+    const gCurrency = currencies[this.$store.getters.groupSettings.mincomeCurrency]
     return {
       config: {
         initialAmount: this.payment.amount
       },
       form: {
-        amount: this.payment.amount
+        checked: this.payment.checked,
+        amount: gCurrency.displayWithoutCurrency(this.payment.amount)
       }
+    }
+  },
+  watch: {
+    'form.amount' (amount) {
+      this.$emit('update', { index: this.payment.index, checked: true, amount })
+    },
+    'form.checked' (checked) {
+      this.$emit('update', { index: this.payment.index, checked })
+    },
+    'payment.checked' (checked) {
+      this.form.checked = checked
     }
   },
   computed: {
     ...mapGetters([
       'groupSettings'
     ]),
-    symbolWithCode () {
-      return currencies[this.groupSettings.mincomeCurrency].symbolWithCode
-    },
-    symbol () {
-      return currencies[this.groupSettings.mincomeCurrency].symbol
+    currencies () {
+      return currencies[this.groupSettings.mincomeCurrency]
     }
   },
   methods: {
     humanDate,
     reset () {
-      this.payment.amount = this.config.initialAmount
+      this.form.amount = this.config.initialAmount
     }
   }
 }

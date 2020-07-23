@@ -57,7 +57,7 @@ page.c-page
   invitations-table
 
   page-section(:title='L("Voting System")')
-    group-voting-system
+    group-rules-settings
   page-section(:title='L("Leave Group")')
     i18n.has-text-1(
       tag='p'
@@ -102,7 +102,7 @@ import Page from '@components/Page.vue'
 import PageSection from '@components/PageSection.vue'
 import AvatarUpload from '@components/AvatarUpload.vue'
 import InvitationsTable from '@containers/group-settings/InvitationsTable.vue'
-import GroupVotingSystem from '@containers/group-settings/GroupVotingSystem.vue'
+import GroupRulesSettings from '@containers/group-settings/GroupRulesSettings.vue'
 import BannerScoped from '@components/banners/BannerScoped.vue'
 import ButtonSubmit from '@components/ButtonSubmit.vue'
 import L from '@view-utils/translations.js'
@@ -114,7 +114,7 @@ export default {
     AvatarUpload,
     BannerScoped,
     ButtonSubmit,
-    GroupVotingSystem,
+    GroupRulesSettings,
     InvitationsTable,
     Page,
     PageSection

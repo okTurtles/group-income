@@ -1,6 +1,6 @@
 <template lang='pug'>
   // Note: .cpr- is from payment-row
-  payment-row(:payment='payment')
+  payment-row(:payment='payment' data-test='payRow')
     template(slot='cellAmount')
       template(v-if='payment.partial')
         i18n.c-partial(
@@ -11,10 +11,10 @@
         ) {partial_amount} out of {partial_total}
         i18n.pill.is-primary Partial
       strong(v-else) {{withGroupCurrency(payment.amount)}}
-      payment-not-received-tooltip(v-if='notReceived' :member='payment.displayName')
+      payment-not-received-tooltip(v-if='wasNotReceived' :member='payment.displayName')
 
     template(slot='cellActions')
-      .cpr-date(:class='Math.round(Math.random()) ? "has-text-1" : "pill is-danger"') {{ humanDate(payment.date) }}
+      .cpr-date(:class='payment.isLate ? "pill is-danger" : "has-text-1"') {{ humanDate(payment.date) }}
       payment-actions-menu
         menu-item(
           tag='button'
@@ -54,7 +54,7 @@ export default {
     ...mapGetters([
       'withGroupCurrency'
     ]),
-    notReceived () {
+    wasNotReceived () {
       const { data } = this.payment
       return data && data.status === PAYMENT_NOT_RECEIVED
     }

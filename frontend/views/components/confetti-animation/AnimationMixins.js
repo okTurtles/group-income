@@ -8,7 +8,12 @@ const CONFETTI_AMOUNT_MIN = 25
 const CONFETTI_AMOUNT_MAX = 40
 const BP_PHONE = 400
 const BP_LARGESCREEN = 1000
-const COLORS = ['#a0d10e', '#5dc8f0', '#f89201', '#FE6E61']
+const COLORS = [
+  'var(--primary_0)',
+  'var(--success_0)',
+  'var(--warning_0)',
+  'var(--danger_0)'
+]
 const confettiAmountScaler = linearScale(
   [BP_PHONE, BP_LARGESCREEN],
   [CONFETTI_AMOUNT_MIN, CONFETTI_AMOUNT_MAX]

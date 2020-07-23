@@ -102,7 +102,7 @@ import Tooltip from '@components/Tooltip.vue'
 import SvgInvitation from '@svgs/invitation.svg'
 import LinkToCopy from '@components/LinkToCopy.vue'
 import { buildInvitationUrl } from '@model/contracts/voting/proposals.js'
-import { INVITE_INITIAL_CREATOR } from '@model/contracts/group.js'
+import { INVITE_INITIAL_CREATOR } from '@model/contracts/constants.js'
 import { mapGetters, mapState } from 'vuex'
 import L from '@view-utils/translations.js'
 

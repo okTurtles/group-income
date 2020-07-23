@@ -228,7 +228,26 @@ describe('Group - Removing a member', () => {
 
     // User2 is part of only one group now.
     cy.getByDT('groupName').should('contain', groupNameB)
+  })
 
+  it('user2 rejoins the groupA', () => {
+    // Wait for contracts to sync before visiting invitationLink. TODO avoid .wait().
+    cy.wait(500); // eslint-disable-line
+    cy.giAcceptGroupInvite(invitationLinks.anyone_groupA, {
+      username: `user2-${userId}`,
+      groupName: groupNameA,
+      isLoggedIn: true,
+      shouldLogoutAfter: false
+    })
+    assertMembersCount(2)
+  })
+
+  it('user1 removes user2 from groupA', () => {
+    // this covers edge case scenario described at #944
+    cy.giSwitchUser(`user1-${userId}`)
+
+    openRemoveMemberModal('user2', 1)
+    removeMemberNow('user2')
     cy.giLogout()
   })
 })
