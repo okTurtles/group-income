@@ -17,7 +17,7 @@ Try:
 
 *NOTE: this should no longer be an issue, but we're leaving this here just in case.*
 
-This can happen when you re-run `grunt dev` and then can no longer sign up an user because the database on the backend has been wiped, but the database in the browser still contains contracts that the frontend will try to re-subscribe to (although they no longer exist on the backend).
+This can happen when you re-run `grunt dev` and then can no longer sign up a user because the database on the backend has been wiped, but the database in the browser still contains contracts that the frontend will try to re-subscribe to (although they no longer exist on the backend).
 
 Until [Issue #495](https://github.com/okTurtles/group-income-simple/issues/495) is closed, the workaround is to do one of the following:
 

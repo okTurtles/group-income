@@ -109,7 +109,7 @@ When the user performs an action (ex: submitting a form), it's expected to show 
 These messages (mostly errors) are displayed whenever the user makes a mistake when filling out a form input. Examples:
 
 > A {fieldname} is required. —— Ex: A password is required.  
-> A {fieldname} cannot {action}. —— Ex: An username cannot contain spaces.  
+> A {fieldname} cannot {action}. —— Ex: A username cannot contain spaces.  
 
 Because we do inline validations, the error message is shown whenever the input is invalid. To avoid showing the error too early, this is, when the user is still typing their answer, we delay the error validation a bit, to make sure the user has finished typing.
 
@@ -174,7 +174,7 @@ submit () {
 
 #### Type 3 - App Error
 
-This banner informs the user that there's something going on with the app itself, or with something that is not related with an user action. Example:
+This banner informs the user that there's something going on with the app itself, or with something that is not related with a user action. Example:
 
 ```html
 <!-- index.html -->
