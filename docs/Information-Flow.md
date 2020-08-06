@@ -1,6 +1,6 @@
 # Information Flow
 
-It's recommended you understand the [basics of `sbp`](Style-Guide.md#sbp) before moving on because everything that will come next, works around it.
+It's recommended that you understand the [basics of `sbp`](Style-Guide.md#sbp) before moving on because everything that will come next, works around it.
 
 The simplest way to explain this is by starting to explain a couple of functions you'll see together a lot of times across the project. These two functions are the core to make any logical change at Group Income:
 
@@ -22,14 +22,14 @@ Now, let's see in more detail what really happens in each function:
 
 ##### 1. Create a Message
 First, we need to create a message using a selector under _'gi.contracts'_ domain.
-When we call the first `sbp` function we need to pass 3 parameters:
+When we call the first `sbp` function we need to pass three parameters:
 - `selector`: For example, _'gi.contracts/group/updateSettings/create'_ has a [_domain_ _gi.contracts/_](../frontend/model/contracts/group.js) based on a [Contract](../frontend/model/Contract.js) which will process the action _group/updateSettings/create_.
 - `data`: a set of information passed to the action when it's processed.
 - `contractId`: the current group hash where the action should take effect on.
 
 The `gi.contract/*/create` selector will create and return a [GIMessage](../shared/GIMessage.js) (an event) based on the parameters passed.
 
-> **Note:** _Contracts_ can be thought of as *distributed classes*. When you create a contract, you create an *instance*, similarly to how instances in [OOP](https://en.wikipedia.org/wiki/Object-oriented_programming) can be created. Contracts have an internal state that is updated by *actions*. A contract can be a group, a user profile (identity), or any other thing. All current contracts can be found at [`model/contacts/`](../frontend/model/contracts/).
+> **Note:** _Contracts_ can be thought of as *distributed classes*. When you create a contract, you create an *instance*, similarly to how instances in [OOP](https://en.wikipedia.org/wiki/Object-oriented_programming) can be created. Contracts have an internal state that is updated by *actions*. A contract can be a group, a user profile (identity), or any other thing. All current contracts can be found at [`model/contracts/`](../frontend/model/contracts/).
 
 ##### 2. Perform a Mutation
 
@@ -43,7 +43,7 @@ await sbp('backend/publishLogEntry', message)
 
 GIMessages ("events") are used to represent either the creation of a contract, or an action performed upon that contract. When a client sends these messages to the server, they are sent back to everyone who is subscribed to that contract. Then, upon receiving a message/event, each client uses it to update their local copy of the contract state. That's all done under the selector _'backend/publishLogEntry'_.
 
-The sbp selector `'backend/publishLogEntry'` sends a POST request to the server with the _message_ serialized. The server will, through a _websocket_, return the _message_ back to the client, deserializes and dispatches it to Vuex.
+The sbp selector `'backend/publishLogEntry'` sends a POST request to the server with the _message_ serialized. The server will, through a _websocket_, return the _message_ back to the client, then deserialize and dispatch it to Vuex.
 
 Then, [the dispatch event is handled by Vuex at model/state.js](../frontend/model/state.js#L302). There, the event is verified and, if all goes right, the message is processed through `sbp`, with the given `selector` (the action), the state based on the `contractId` and the `data`.
 
@@ -94,4 +94,4 @@ When subscribed to a Contract, the user is updated each time an action there is 
 So you don't need to worry about this for now, it just works 🔮.
 
 
-That's all for now! Feel free to dive deeply even more in the files mentioned so far and complement this docs with your discoveries.
+That's all for now! Feel free to dive even more deeply in the files mentioned so far and complement these docs with your discoveries.

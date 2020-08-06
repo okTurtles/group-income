@@ -53,7 +53,7 @@ This contribution policy will evolve over time. For now it is based on a slightl
 
 ## How to help by translating
 
-We always appreciate translation efforts, even if they're not perfect or complete! The instruction are [here](https://github.com/okTurtles/strings/blob/master/README.md#help-translate-a-language).
+We always appreciate translation efforts, even if they're not perfect or complete! The instructions are [here](https://github.com/okTurtles/strings/blob/master/README.md#help-translate-a-language).
 
 ## How to submit an issue
 

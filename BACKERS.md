@@ -1,8 +1,8 @@
 # Backers
 
-This is a (probably incomplete) list of those who've sponsored this project.
+This is a (probably incomplete) list of those who have sponsored this project.
 
-_If your name isn't listed and you are a Patron, it is because you chose 'No Reward', which I assume means you wanted to remain anonymous. If you've changed our mind, let me know!_
+_If your name isn't listed below although you are a Patron, it is because you chose 'No Reward', which I assume means that you wanted to remain anonymous. If you've changed your mind, let me know!_
 
 - Greg Slepak ([mastodon](https://mastodon.social/@taoeffect), [twitter](https://twitter.com/taoeffect))
 - Vlad Zamfir ([twitter](https://twitter.com/VladZamfir))

@@ -112,7 +112,7 @@ When links are clicked, or a new "page" is visited, a piece of JavaScript called
 - It will load the requested document/component/page asynchronously using an AJAX (`XMLHttpRequest` aka XHR)
 - It will swap out the old HTML and javascript for the new HTML and JavaScript
 - If necessary, it will *programmatically change the website's location bar to display a new URL to give the appearance of a normal "page visit"!*
-- It will also programmatically update the browser's history so that the back/forward buttons work normally as user's expect.
+- It will also programmatically update the browser's history so that the back/forward buttons work normally as users expect.
 
 **Client-side routers are *the* secret sauce behind SPAs**, and while most "modern frontend web frameworks" will ship with their own, you can find plenty of [standalone ones](https://github.com/tildeio/router.js/), or even [code your own](http://joakim.beng.se/blog/posts/a-javascript-router-in-20-lines.html).
 
@@ -121,7 +121,7 @@ When links are clicked, or a new "page" is visited, a piece of JavaScript called
 Two main reasons:
 
 1. Managing web servers is a PITA.
-2. Web apps can become huge, and bundlers like rollup/browserify/webpack can make it simpler to manage dependencies. At the same time, many of these tools and frameworks (especially webpack and anything more complicated than Vue.js), add lots of totally unnecessary complexity that 95% of front-end developers *[don't need](https://slack-files.com/T03JT4FC2-F151AAF7A-13fe6f98da)*, especially in an [HTTP2 world](https://blog.cloudflare.com/http-2-for-web-developers/).
+2. Web apps can become huge, and bundlers like rollup/browserify/webpack can make it simpler to manage dependencies. At the same time, many of these tools and frameworks (especially Webpack and anything more complicated than Vue.js), add lots of totally unnecessary complexity that 95% of front-end developers *[don't need](https://slack-files.com/T03JT4FC2-F151AAF7A-13fe6f98da)*, especially in an [HTTP2 world](https://blog.cloudflare.com/http-2-for-web-developers/).
 
 It used to be that servers would render HTML (using a server-side templating language and/or programming language like PHP) for each page that is visited. Everyone remembers putting this in their HTML (right?):
 
@@ -129,12 +129,12 @@ It used to be that servers would render HTML (using a server-side templating lan
 <? include($_SERVER['DOCUMENT_ROOT'] . '/includes/header.php'); ?>
 ```
 
-Well, as convenient as that was (to avoiding repeating the same HTML all over the place), it required there be *a server* that did all the heavy-lifting, assembling each one of these pages and sending the HTML back to clients. That's problematic for several reasons:
+Well, as convenient as that was (to avoid repeating the same HTML all over the place), it required there be *a server* that did all the heavy-lifting, assembling each one of these pages and sending the HTML back to clients. That's problematic for several reasons:
 
 - It puts more load on the server for something that clients (web browsers) could do themselves
-- More importantly, it requires that someone run and maintain one of these PHP servers
+- More importantly, it requires that someone runs and maintains one of these PHP servers
 
-Well, with client-side rendering and single-page apps, you can now put all of that logic into the client-side javascript and ship *most of your website, except the database (essentially)* as **static files** that can be hosted anywhere! Just toss them onto a CDN (or multiple CDNs!) and be done with it!
+Well, with client-side rendering and single-page apps, you can now put all of that logic into the client-side JavaScript and ship *most of your website, except the database (essentially)* as **static files** that can be hosted anywhere! Just toss them onto a CDN (or multiple CDNs!) and be done with it!
 
 The database portion continues to live on the server and now *just* provides a RESTful API.
 
@@ -144,7 +144,7 @@ __Cons__
 
 - Some people might find this setup confusing and difficult to work with as it requires a lot of machinery (like Browserify/Webpack).
 - Only some search engines support indexing such ~~websites~~ web *apps*, because they require JavaScript to display the page.
-- Similarly, won't work for users who disable JavaScript.
+- Similarly, it won't work for users who disable JavaScript.
 
 __Pros__
 
@@ -158,7 +158,7 @@ These are the technologies this project uses. You don't need to understand every
 
 ###### __[Node.js](https://nodejs.org/)__ - _JavaScript Environment_
 
-Node.js is the platform that all the other tech we use builds upon. It's _an environment for running javascript outside of the browser_, and it has been used to do almost everything, from creating web servers, to creating tools and utilities, to powering standalone applications like Slack.
+Node.js is the platform that all the other tech we use builds upon. It's _an environment for running JavaScript outside of the browser_, and it has been used to do almost everything, from creating web servers, to creating tools and utilities, to powering standalone applications like Slack.
 
 ###### __[NPM](https://www.npmjs.com/)__ - _Node Package Manager_
 
@@ -168,7 +168,7 @@ Used for all kinds of JavaScript projects (backend and/or frontend). Any sort of
 
 For doing things like:
 
-- Setting up a local development environment with servers to view your website, power a backend API, and automatically refreshing your browser anytime files are modified
+- Setting up a local development environment with servers to view your website, power a backend API, and automatically refresh your browser anytime files are modified
 - Watching files for changes and performing actions automatically (like syntax-checking/"linting" them, combining them, copying them, etc.)
 - Converting files from one format into another (bundling `.vue` files into `.js`, etc.)
 
@@ -188,7 +188,7 @@ Makes it possible to write front-end code in the same way Node.js backend code i
 
 ###### __[Babel](https://babeljs.io/)__ - _Tomorrow's JavaScript Features—Today!_
 
-The JavaScript language is always evolving. Oftentimes new features will be "solidified" by the standards bodies but won't yet be available in either web browser or Node.js environments. That's where Babel comes in. It lets you use tomorrow's by automatically rewriting files with new syntax into older syntax that browsers (and/or node.js) support.
+The JavaScript language is always evolving. Oftentimes new features will be "solidified" by the standards bodies but won't yet be available in either web browser or Node.js environments. That's where Babel comes in. It lets you use tomorrow's syntax by automatically rewriting files with new syntax into older syntax that browsers (and/or node.js) support.
 
 - Babel can be used through a variety of tools, including Browserify! Vue.js templates automatically use Babel, so you can use the latest JS features within them.
 - Like Browserify, Babel also supports plugins. In fact we use one called `transform-inline-environment-variables` to automatically replace environment variables like `process.env.NODE_ENV` with their corresponding values (both on the frontend and the backend).
@@ -270,7 +270,7 @@ Here are the important files and folders within `frontend/`:
 - `views/` - This contains all of the interface (pages and components) of the website. These are stored as [`.vue` files](https://vue-loader.vuejs.org/en/start/spec.html).
 - `utils/` - Folder for placing "handy js that's used in lots of places" _that you wrote_ (not third-party, [that goes in `assets/vendor/`](#where-should-i-put-javascript-someone-else-wrote-eg-jquery)).
 - `assets/` - Grunt simply copies the folders within here to the output directory: `dist/`. This is where you drop in CSS files, images, and any other static assets.
-    + __Note:__ Currently we do not [translate](https://github.com/gruntjs/grunt-contrib-sass), optimize, minify, or [fingerprint](http://guides.rubyonrails.org/asset_pipeline.html#what-is-fingerprinting-and-why-should-i-care-questionmark) any of these assets, but we will (using grunt). We won't, however, be "bundling" these assets via Webpack or rollup. "Bundling" refers to the practice of concatenating js, css (sometimes [even images!](https://github.com/webpack/file-loader)) and putting into a single `.js` file. This might have [made sense in the HTTP/1.0 days](https://jakearchibald.com/2016/link-in-body), however HTTP/2.0 makes this bizarro practice [totally unnecessary](https://blog.cloudflare.com/http-2-for-web-developers/).
+    + __Note:__ Currently we do not [translate](https://github.com/gruntjs/grunt-contrib-sass), optimize, minify, or [fingerprint](http://guides.rubyonrails.org/asset_pipeline.html#what-is-fingerprinting-and-why-should-i-care-questionmark) any of these assets, but we will (using Grunt). We won't, however, be "bundling" these assets via Webpack or Rollup. "Bundling" refers to the practice of concatenating js, css (sometimes [even images!](https://github.com/webpack/file-loader)) files and putting them into a single `.js` file. This might have [made sense in the HTTP/1.0 days](https://jakearchibald.com/2016/link-in-body), however HTTP/2.0 makes this bizarre practice [totally unnecessary](https://blog.cloudflare.com/http-2-for-web-developers/).
 
 ----
 
@@ -322,7 +322,7 @@ Then load them like normal (so `frontend/assets/images/bitcoin.png` is loaded as
 
 Place them in `assets/vendor`.
 
-Please add only uncompressed/unminified assets to this folder (if possible) as that makes debugging simpler. We'll add minification later on (via grunt).
+Please add only uncompressed/unminified assets to this folder (if possible) as that makes debugging simpler. We'll add minification later on (via Grunt).
 
 ----
 
@@ -333,7 +333,7 @@ Recall that single-page-apps (SPAs) often have [*a single* global JavaScript bun
 There are two ways to include third-party code:
 
 1. **"Asynchronously" / "Lazily" / "On Demand":** This is the preferred approach as it prevents `app.js` from getting bloated.
-2. **"Globally":** This is through the standard use of `require`. Anything that's `require`'d gets placed into the `app.js` bundle (unless you're using webpack's fancy-but-unnecessary code-splitting features). Unless a third-party library is used so frequently that it makes sense to have it in `app.js`, you should prefer the lazy-load approach.
+2. **"Globally":** This is through the standard use of `require`. Anything that's `require`'d gets placed into the `app.js` bundle (unless you're using Webpack's fancy-but-unnecessary code-splitting features). Unless a third-party library is used so frequently that it makes sense to have it in `app.js`, you should prefer the lazy-load approach.
 
 We cover both approaches below.
 
@@ -379,9 +379,9 @@ Behind the scenes, this `<script>` tag is transformed into a VueScript2 Vue.js c
 
 - :book: See [the `vue-script2` documentation](https://github.com/taoeffect/vue-script2) for more info
 
-**Method 1.2: Lazy-load an entire route**
+**Method 1.2: Lazy-loading an entire route**
 
-You can lazy-load an entire route (i.e. an entire "page") by leveraging the *code-splitting* capabilities of browserify or webpack.
+You can lazy-load an entire route (i.e. an entire "page") by leveraging the *code-splitting* capabilities of Browserify or Webpack.
 
 - :book: See [the `vue-router` documentation](https://router.vuejs.org/en/advanced/lazy-loading.html) for more info
 
@@ -418,8 +418,8 @@ That's OK! Ask us in the [chat](https://gitter.im/okTurtles/group-income) or the
 
 ### What Vue.js is good for (and not)
 
-- Reducing HTML markup and making collaboration easier. To open a facebook-style chatbox at the bottom of the window, you just insert `<chatbox param1="foo" param2="bar"></chatbox>`, etc.
-- Synchronizing data between the view (the widget) and the model (the JS object). I.e. [two-way data bindings](https://vuejs.org/guide/forms.html). **Rule of thumb:** if data-binding is unnecessary then there's no need for Vue.js to be involved.
+- Reducing HTML markup and making collaboration easier. To open a Facebook-style chatbox at the bottom of the window, you just insert `<chatbox param1="foo" param2="bar"></chatbox>`, etc.
+- Synchronizing data between the view (the widget) and the model (the JS object), i.e. [two-way data bindings](https://vuejs.org/guide/forms.html). **Rule of thumb:** if data-binding is unnecessary then there's no need for Vue.js to be involved.
 - Creating logic-heavy widgets for widget-heavy "apps" like Slack, etc.
 - Serving "web 2.0" (2.5?) static websites. I.e. you put your entire modern website in an `.html` file, have it call an API, and serve it to people over a CDN. Thanks to client-side routers the URL will magically change on "page visit". :point_left: This might be the most relevant part for us as it works well with the future move to Ethereum.
 
