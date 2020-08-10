@@ -73,7 +73,7 @@
 "Group Settings" = "Paramètres de Groupe";
 
 /* views/components/graphs/Overview.vue */
-"Group members and their pledges" = "Les membres du groupe et leurs participations";
+"Group members and their pledges" = "Les membres du groupe et leurs contributions";
 
 /* views/containers/user-settings/Troubleshooting.vue */
 "Are you sure you want to re-sync your app data? This might take a few minutes." = "Êtes-vous sûr(e) de vouloir resynchroniser les données de l'application ? Cela peut durer quelques minutes.";
@@ -160,7 +160,7 @@
 "A username is required." = "Un nom d'utilisateur est requis.";
 
 /* MISSING TRANSLATION - views/containers/contributions/GroupPledgesGraph.vue */
-"Group pledging summary" = "Group pledging summary";
+"Group pledging summary" = "Résumé des contributions du groupe";
 
 /* views/containers/group-settings/GroupJoinModal.vue */
 "Once the group agrees that you should join them, a unique access link will be generated, giving you instant access to the group" = "Lorsque le groupe aura approuvé votre entrée, un lien d'accès unique sera généré, vous donnant immédiatement accès au groupe";
@@ -316,7 +316,7 @@
 "{strong_}You{_strong} proposed:" = "{strong_}Vous{_strong} proposiez:";
 
 /* MISSING TRANSLATION - views/pages/Contributions.vue */
-"Add a non-monetary pledge" = "Add a non-monetary pledge";
+"Add a non-monetary pledge" = "Ajouter une contribution non-monétaire";
 
 /* views/containers/payments/RecordPayment.vue */
 "Please support the development of Group Income by {r1}sending a donation{r2}!" = "Soutenez le développement de Group Income en {r1}faisant un don{r2} !";
@@ -481,7 +481,7 @@
 "This is the minimum income in your group" = "Ceci est le revenu minimum dans votre groupe";
 
 /* MISSING TRANSLATION - views/containers/contributions/ContributionsWidget.vue */
-"You are pledging {br_}{amount}" = "You are pledging {br_}{amount}";
+"You are pledging {br_}{amount}" = "Vous contribuez à hauteur de {br_}{amount}";
 
 /* views/containers/group-settings/GroupJoinModal.vue */
 "2. Wait for the group vote" = "2. Attendez le vote du groupe";
@@ -676,7 +676,7 @@
 "invite link" = "lien d'invitation";
 
 /* MISSING TRANSLATION - views/containers/contributions/GroupPledgesGraph.vue */
-"Based on other members pledges, the group is not able to provide a full mincome yet." = "Based on other members pledges, the group is not able to provide a full mincome yet.";
+"Based on other members pledges, the group is not able to provide a full mincome yet." = "Sur base des contributions actuelles de ses autres membres, le groupe n'est pas encore en mesure de garantir le revenu minimum en entier.";
 
 /* views/containers/user-settings/UserProfile.vue */
 "Failed to update profile. {reportError}" = "La mise à jour du profil a échoué. {reportError}";
@@ -1081,7 +1081,7 @@
 "Change" = "Changer";
 
 /* MISSING TRANSLATION - views/containers/contributions/GroupPledgesGraph.vue */
-"Group Pledging Status" = "Group Pledging Status";
+"Group Pledging Status" = "État des Contributions du Groupe";
 
 /* views/containers/payments/RecordPayment.vue */
 "Who did you send money to?" = "À qui avez-vous envoyé de l'argent ?";
@@ -1213,7 +1213,7 @@
 "Payments received" = "Payements reçus";
 
 /* MISSING TRANSLATION - views/containers/contributions/GroupPledgesGraph.vue */
-"Total Pledged" = "Total Pledged";
+"Total Pledged" = "Total Contribué";
 
 /* views/pages/Contributions.vue */
 "Receiving" = "Reçoit";
@@ -1237,7 +1237,7 @@
 "Failed to cancel proposal. {reportError}" = "L'annulation de la proposition a échoué. {reportError}";
 
 /* MISSING TRANSLATION - views/pages/Contributions.vue */
-"No one is pledging money at the moment." = "No one is pledging money at the moment.";
+"No one is pledging money at the moment." = "Personne ne contribue de l'argent pour le moment.";
 
 /* views/containers/proposals/ProposalTemplate.vue */
 "This is optional." = "Ceci est optionnel.";
@@ -1279,7 +1279,7 @@
 "Total space used" = "Espace total utilisé";
 
 /* MISSING TRANSLATION - views/containers/contributions/IncomeDetails.vue */
-"How much do you want to pledge?" = "How much do you want to pledge?";
+"How much do you want to pledge?" = "Combien souhaitez-vous contribuez ?";
 
 /* MISSING TRANSLATION - views/containers/contributions/IncomeDetails.vue */
 "Do you make at least {groupMincomeFormatted} per month?" = "Gagnez-vous au moins {groupMincomeFormatted} par mois ?";
@@ -1357,7 +1357,7 @@
 "According to your voting rules, {strong_}{value} out of {total} members{_strong} will have to agree with this." = "Selon vos règles de vote, {strong_}{value} membres sur {total}{_strong} devront approuver ceci.";
 
 /* MISSING TRANSLATION - views/pages/Contributions.vue */
-"You are pledging up to {upTo}" = "You are pledging up to {upTo}";
+"You are pledging up to {upTo}" = "Vous contribuez jusqu'à {upTo}";
 
 /* views/containers/group-settings/GroupJoinModal.vue */
 "How to join a group" = "Comment rejoindre un groupe";
@@ -1402,7 +1402,7 @@
 "Payments Sent" = "Payements Envoyés";
 
 /* MISSING TRANSLATION - views/containers/contributions/GroupPledgesGraph.vue */
-"Needed Pledges" = "Needed Pledges";
+"Needed Pledges" = "Contributions Nécessaires";
 
 /* views/containers/payments/PaymentsPagination.vue */
 "results" = "résultats";
