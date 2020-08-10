@@ -598,7 +598,7 @@
 "Total needed" = "Total requis";
 
 /* MISSING TRANSLATION - views/containers/design-system/DSModalNested.vue, views/containers/design-system/DSModalSimple.vue */
-"Toggle background" = "Arrière-plan";
+"Toggle background" = "Montrer/cacher l'arrière-plan";
 
 /* MISSING TRANSLATION - views/containers/payments/MonthOverview.vue */
 "{value} of {max}" = "{value} sur {max}";
@@ -1048,7 +1048,7 @@
 "This invite is not valid." = "Cette invitation n'est pas valide.";
 
 /* views/containers/design-system/DSModalNested.vue */
-"Toggle subtitle" = "Sous-titres";
+"Toggle subtitle" = "Montrer/cacher les sous-titres";
 
 /* views/containers/contributions/ContributionItem.vue */
 "{amount} from {listName}" = "{amount} de {listName}";
@@ -1072,7 +1072,7 @@
 "Future proposals would be accepted if {b_}no one{_b} disagrees." = "Les futures propositions seraient acceptées si {b_}personne{_b} ne désapprouve.";
 
 /* views/components/Toggle.vue */
-"Toggle navigation" = "Navigation";
+"Toggle navigation" = "Montrer/cacher la navigation";
 
 /* views/containers/proposals/ProposalVoteOptions.vue */
 "We couldn’t register your vote. {reportError}" = "Nous n'avons pas pu enregistrer votre vote. {reportError}";
