@@ -238,7 +238,7 @@
 "Change voting [xxxx]" = "Changer le vote [xxxx]";
 
 /* MISSING TRANSLATION - views/containers/group-settings/InvitationLinkModal.vue */
-"After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!" = "Après la période d'accueil, pour tout ajout ultérieur d'un nouveau membre il sera demandé à chaque membre actuel de voter. Mais pour le moment, profitez de 60 pass gratuits !";
+"After the onboarding period has ended, everyone will be asked to vote on whether or not a new member should be added. But for now, enjoy 60 free passes!" = "Une fois la période d'initiation terminée, pour tout ajout ultérieur d'un nouveau membre il sera demandé à chaque membre actuel de voter. Mais pour l'heure, profitez de 60 pass gratuits !";
 
 /* MISSING TRANSLATION - views/containers/user-settings/AppLogs.vue */
 "If you encounter problems, please download the logs and {a_}send them to us{_a}." = "En cas de problème, veuillez télécharger le fichier journal et {a_}nous l'envoyer{_a}.";
@@ -334,7 +334,7 @@
 "Revoke Link" = "Révoquer le Lien";
 
 /* views/containers/group-settings/InvitationsTable.vue */
-"This invite link is only available during the onboarding period." = "Ce lien d'invitation est seulement disponible pendant la période d'accueil.";
+"This invite link is only available during the onboarding period." = "Ce lien d'invitation est seulement disponible pendant la période d'initiation.";
 
 /* views/containers/dashboard/GroupMincome.vue */
 "Change Mincome" = "Modifier le Revenu Minimum";
